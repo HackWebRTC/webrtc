@@ -1679,7 +1679,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
   DestroyVideoEncoder(&allocated_encoder_);
 }
 
-static void CreateBlackFrame(webrtc::I420VideoFrame* video_frame,
+static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
                              int width,
                              int height) {
   video_frame->CreateEmptyFrame(width, height, width, (width + 1) / 2,
@@ -1696,8 +1696,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
     VideoCapturer* capturer,
     const VideoFrame* frame) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::InputFrame");
-  webrtc::I420VideoFrame video_frame(frame->GetVideoFrameBuffer(), 0, 0,
-                                     frame->GetVideoRotation());
+  webrtc::VideoFrame video_frame(frame->GetVideoFrameBuffer(), 0, 0,
+                                 frame->GetVideoRotation());
   rtc::CritScope cs(&lock_);
   if (stream_ == NULL) {
     // Frame input before send codecs are configured, dropping frame.
@@ -1744,7 +1744,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
     if (capturer == NULL) {
       if (stream_ != NULL) {
         LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
-        webrtc::I420VideoFrame black_frame;
+        webrtc::VideoFrame black_frame;
 
         CreateBlackFrame(&black_frame, last_dimensions_.width,
                          last_dimensions_.height);
@@ -2368,7 +2368,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders(
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
-    const webrtc::I420VideoFrame& frame,
+    const webrtc::VideoFrame& frame,
     int time_to_render_ms) {
   rtc::CritScope crit(&renderer_lock_);
 

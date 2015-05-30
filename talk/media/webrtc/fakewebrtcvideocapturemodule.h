@@ -109,7 +109,7 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
 
   bool SendFrame(int w, int h) {
     if (!running_) return false;
-    webrtc::I420VideoFrame sample;
+    webrtc::VideoFrame sample;
     // Setting stride based on width.
     if (sample.CreateEmptyFrame(w, h, w, (w + 1) / 2, (w + 1) / 2) < 0) {
       return false;

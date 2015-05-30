@@ -57,7 +57,7 @@ class FileOutputFrameReceiver : public webrtc::VCMReceiveCallback {
   virtual ~FileOutputFrameReceiver();
 
   // VCMReceiveCallback
-  virtual int32_t FrameToRender(webrtc::I420VideoFrame& video_frame);
+  virtual int32_t FrameToRender(webrtc::VideoFrame& video_frame);
 
  private:
   std::string out_filename_;

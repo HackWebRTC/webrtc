@@ -1416,8 +1416,7 @@ CallStatsObserver* ViEChannel::GetStatsObserver() {
 // necessarily be called from the decoding thread. The decoding thread may have
 // held the lock when calling VideoDecoder::Decode, Reset, or Release. Acquiring
 // the same lock in the path of decode callback can deadlock.
-int32_t ViEChannel::FrameToRender(
-    I420VideoFrame& video_frame) {  // NOLINT
+int32_t ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
   CriticalSectionScoped cs(callback_cs_.get());
 
   if (decoder_reset_) {

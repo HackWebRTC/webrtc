@@ -24,7 +24,7 @@ class VPMDeflickering {
   ~VPMDeflickering();
 
   void Reset();
-  int32_t ProcessFrame(I420VideoFrame* frame,
+  int32_t ProcessFrame(VideoFrame* frame,
                        VideoProcessingModule::FrameStats* stats);
 
  private:

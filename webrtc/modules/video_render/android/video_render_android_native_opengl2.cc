@@ -381,9 +381,8 @@ int32_t AndroidNativeOpenGl2Channel::Init(int32_t zOrder,
   return 0;
 }
 
-int32_t AndroidNativeOpenGl2Channel::RenderFrame(
-    const uint32_t /*streamId*/,
-    const I420VideoFrame& videoFrame) {
+int32_t AndroidNativeOpenGl2Channel::RenderFrame(const uint32_t /*streamId*/,
+                                                 const VideoFrame& videoFrame) {
   //   WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer,_id, "%s:" ,__FUNCTION__);
   _renderCritSect.Enter();
   _bufferToRender = videoFrame;

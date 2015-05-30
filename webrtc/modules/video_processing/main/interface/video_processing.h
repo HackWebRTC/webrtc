@@ -114,8 +114,7 @@ class VideoProcessingModule : public Module {
 
      \return 0 on success, -1 on failure.
   */
-  static int32_t GetFrameStats(FrameStats* stats,
-                               const I420VideoFrame& frame);
+  static int32_t GetFrameStats(FrameStats* stats, const VideoFrame& frame);
 
   /**
      Checks the validity of a FrameStats struct. Currently, valid implies only
@@ -148,7 +147,7 @@ class VideoProcessingModule : public Module {
 
      \return 0 on success, -1 on failure.
   */
-  static int32_t Brighten(I420VideoFrame* frame, int delta);
+  static int32_t Brighten(VideoFrame* frame, int delta);
 
   /**
      Detects and removes camera flicker from a video stream. Every frame from
@@ -165,7 +164,7 @@ class VideoProcessingModule : public Module {
 
      \return 0 on success, -1 on failure.
   */
-  virtual int32_t Deflickering(I420VideoFrame* frame, FrameStats* stats) = 0;
+  virtual int32_t Deflickering(VideoFrame* frame, FrameStats* stats) = 0;
 
   /**
      Detects if a video frame is excessively bright or dark. Returns a
@@ -180,7 +179,7 @@ class VideoProcessingModule : public Module {
 
      \return A member of BrightnessWarning on success, -1 on error
   */
-  virtual int32_t BrightnessDetection(const I420VideoFrame& frame,
+  virtual int32_t BrightnessDetection(const VideoFrame& frame,
                                       const FrameStats& stats) = 0;
 
   /**
@@ -250,8 +249,8 @@ class VideoProcessingModule : public Module {
 
   \return VPM_OK on success, a negative value on error (see error codes)
   */
-  virtual int32_t PreprocessFrame(const I420VideoFrame& frame,
-                                  I420VideoFrame** processed_frame) = 0;
+  virtual int32_t PreprocessFrame(const VideoFrame& frame,
+                                  VideoFrame** processed_frame) = 0;
 
   /**
   Return content metrics for the last processed frame

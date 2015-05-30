@@ -95,7 +95,7 @@ FileOutputFrameReceiver::~FileOutputFrameReceiver() {
 }
 
 int32_t FileOutputFrameReceiver::FrameToRender(
-    webrtc::I420VideoFrame& video_frame) {
+    webrtc::VideoFrame& video_frame) {
   if (timing_file_ == NULL) {
     std::string basename;
     std::string extension;
@@ -123,7 +123,7 @@ int32_t FileOutputFrameReceiver::FrameToRender(
   }
   fprintf(timing_file_, "%u, %u\n", video_frame.timestamp(),
       webrtc::MaskWord64ToUWord32(video_frame.render_time_ms()));
-  if (PrintI420VideoFrame(video_frame, out_file_) < 0) {
+  if (PrintVideoFrame(video_frame, out_file_) < 0) {
     return -1;
   }
   return 0;

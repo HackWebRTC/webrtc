@@ -28,7 +28,7 @@ class DecodedImageCallback {
  public:
   virtual ~DecodedImageCallback() {}
 
-  virtual int32_t Decoded(I420VideoFrame& decodedImage) = 0;
+  virtual int32_t Decoded(VideoFrame& decodedImage) = 0;
   virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) {
     return -1;
   }

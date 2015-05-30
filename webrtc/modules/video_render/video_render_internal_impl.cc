@@ -773,10 +773,8 @@ int32_t ModuleVideoRenderImpl::ConfigureRenderer(
                                            bottom);
 }
 
-int32_t ModuleVideoRenderImpl::SetStartImage(
-    const uint32_t streamId,
-    const I420VideoFrame& videoFrame)
-{
+int32_t ModuleVideoRenderImpl::SetStartImage(const uint32_t streamId,
+                                             const VideoFrame& videoFrame) {
     CriticalSectionScoped cs(&_moduleCrit);
 
     if (!_ptrRenderer)
@@ -800,11 +798,9 @@ int32_t ModuleVideoRenderImpl::SetStartImage(
 
 }
 
-int32_t ModuleVideoRenderImpl::SetTimeoutImage(
-    const uint32_t streamId,
-    const I420VideoFrame& videoFrame,
-    const uint32_t timeout)
-{
+int32_t ModuleVideoRenderImpl::SetTimeoutImage(const uint32_t streamId,
+                                               const VideoFrame& videoFrame,
+                                               const uint32_t timeout) {
     CriticalSectionScoped cs(&_moduleCrit);
 
     if (!_ptrRenderer)

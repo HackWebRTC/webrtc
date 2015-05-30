@@ -135,7 +135,7 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
         creation_time_ms_(clock_->TimeInMilliseconds()),
         first_time_in_sync_(-1) {}
 
-  void RenderFrame(const I420VideoFrame& video_frame,
+  void RenderFrame(const VideoFrame& video_frame,
                    int time_to_render_ms) override {
     int64_t now_ms = clock_->TimeInMilliseconds();
     uint32_t playout_timestamp = 0;
@@ -335,7 +335,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
           rtp_start_timestamp_(0) {}
 
    private:
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       if (video_frame.ntp_time_ms() <= 0) {
         // Haven't got enough RTCP SR in order to calculate the capture ntp

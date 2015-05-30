@@ -78,8 +78,7 @@ public:
         bool videoOnly = false) = 0;
 
     // Record the video frame in videoFrame to AVI file.
-    virtual int32_t RecordVideoToFile(
-        const I420VideoFrame& videoFrame) = 0;
+    virtual int32_t RecordVideoToFile(const VideoFrame& videoFrame) = 0;
 
 protected:
     virtual ~FileRecorder() {}

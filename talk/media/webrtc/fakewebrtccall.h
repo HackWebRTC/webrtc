@@ -71,7 +71,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
   void SetStats(const webrtc::VideoSendStream::Stats& stats);
 
  private:
-  void IncomingCapturedFrame(const webrtc::I420VideoFrame& frame) override;
+  void IncomingCapturedFrame(const webrtc::VideoFrame& frame) override;
   webrtc::VideoSendStream::Stats GetStats() override;
 
   bool ReconfigureVideoEncoder(
@@ -91,7 +91,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
     webrtc::VideoCodecVP9 vp9;
   } vpx_settings_;
   int num_swapped_frames_;
-  webrtc::I420VideoFrame last_frame_;
+  webrtc::VideoFrame last_frame_;
   webrtc::VideoSendStream::Stats stats_;
 };
 
@@ -104,7 +104,7 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
 
   bool IsReceiving() const;
 
-  void InjectFrame(const webrtc::I420VideoFrame& frame, int time_to_render_ms);
+  void InjectFrame(const webrtc::VideoFrame& frame, int time_to_render_ms);
 
   void SetStats(const webrtc::VideoReceiveStream::Stats& stats);
 

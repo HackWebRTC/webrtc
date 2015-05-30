@@ -74,7 +74,7 @@ void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
       cricket::kRtcpFbParamCcm, cricket::kRtcpFbCcmParamFir)));
 }
 
-static void CreateBlackFrame(webrtc::I420VideoFrame* video_frame,
+static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
                              int width,
                              int height) {
   video_frame->CreateEmptyFrame(
@@ -1727,7 +1727,7 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeAndElapsedTimeCorrectly) {
   EXPECT_TRUE(channel_->SetRenderer(last_ssrc_, &renderer));
   EXPECT_TRUE(channel_->SetRender(true));
 
-  webrtc::I420VideoFrame video_frame;
+  webrtc::VideoFrame video_frame;
   CreateBlackFrame(&video_frame, 4, 4);
   video_frame.set_timestamp(kInitialTimestamp);
   // Initial NTP time is not available on the first frame, but should still be

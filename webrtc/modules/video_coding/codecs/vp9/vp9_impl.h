@@ -32,7 +32,7 @@ class VP9EncoderImpl : public VP9Encoder {
                  int number_of_cores,
                  size_t max_payload_size) override;
 
-  int Encode(const I420VideoFrame& input_image,
+  int Encode(const VideoFrame& input_image,
              const CodecSpecificInfo* codec_specific_info,
              const std::vector<VideoFrameType>* frame_types) override;
 
@@ -55,7 +55,7 @@ class VP9EncoderImpl : public VP9Encoder {
                              const vpx_codec_cx_pkt& pkt,
                              uint32_t timestamp);
 
-  int GetEncodedPartitions(const I420VideoFrame& input_image);
+  int GetEncodedPartitions(const VideoFrame& input_image);
 
   // Determine maximum target for Intra frames
   //

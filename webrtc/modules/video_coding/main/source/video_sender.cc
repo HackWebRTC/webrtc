@@ -297,7 +297,7 @@ void VideoSender::SetVideoProtection(bool enable,
   }
 }
 // Add one raw video frame to the encoder, blocking.
-int32_t VideoSender::AddVideoFrame(const I420VideoFrame& videoFrame,
+int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
                                    const VideoContentMetrics* contentMetrics,
                                    const CodecSpecificInfo* codecSpecificInfo) {
   CriticalSectionScoped cs(_sendCritSect);

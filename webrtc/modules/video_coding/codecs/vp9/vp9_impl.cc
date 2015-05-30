@@ -261,7 +261,7 @@ uint32_t VP9EncoderImpl::MaxIntraTarget(uint32_t optimal_buffer_size) {
   return (target_pct < min_intra_size) ? min_intra_size: target_pct;
 }
 
-int VP9EncoderImpl::Encode(const I420VideoFrame& input_image,
+int VP9EncoderImpl::Encode(const VideoFrame& input_image,
                            const CodecSpecificInfo* codec_specific_info,
                            const std::vector<VideoFrameType>* frame_types) {
   if (!inited_) {
@@ -323,7 +323,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   picture_id_ = (picture_id_ + 1) & 0x7FFF;
 }
 
-int VP9EncoderImpl::GetEncodedPartitions(const I420VideoFrame& input_image) {
+int VP9EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image) {
   vpx_codec_iter_t iter = NULL;
   encoded_image_._length = 0;
   encoded_image_._frameType = kDeltaFrame;
@@ -513,7 +513,7 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
   Vp9FrameBufferPool::Vp9FrameBuffer* img_buffer =
       static_cast<Vp9FrameBufferPool::Vp9FrameBuffer*>(img->fb_priv);
   img_buffer->AddRef();
-  // The buffer can be used directly by the I420VideoFrame (without copy) by
+  // The buffer can be used directly by the VideoFrame (without copy) by
   // using a WrappedI420Buffer.
   rtc::scoped_refptr<WrappedI420Buffer> img_wrapped_buffer(
       new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
@@ -527,7 +527,7 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
           // release |img_buffer|.
           rtc::Bind(&WrappedI420BufferNoLongerUsedCb, img_buffer)));
 
-  I420VideoFrame decoded_image;
+  VideoFrame decoded_image;
   decoded_image.set_video_frame_buffer(img_wrapped_buffer);
   decoded_image.set_timestamp(timestamp);
   int ret = decode_complete_callback_->Decoded(decoded_image);

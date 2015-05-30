@@ -30,7 +30,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       ++init_encode_count_;
       return init_encode_return_code_;
     }
-    int32_t Encode(const I420VideoFrame& frame,
+    int32_t Encode(const VideoFrame& frame,
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<VideoFrameType>* frame_types) override {
       ++encode_count_;
@@ -86,7 +86,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
   CountingFakeEncoder fake_encoder_;
   VideoEncoderSoftwareFallbackWrapper fallback_wrapper_;
   VideoCodec codec_ = {};
-  I420VideoFrame frame_;
+  VideoFrame frame_;
 };
 
 void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {

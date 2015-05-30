@@ -81,7 +81,7 @@ class VCMPacketizationCallback {
 // Callback class used for passing decoded frames which are ready to be rendered.
 class VCMReceiveCallback {
  public:
-  virtual int32_t FrameToRender(I420VideoFrame& videoFrame) = 0;
+  virtual int32_t FrameToRender(VideoFrame& videoFrame) = 0;
   virtual int32_t ReceivedDecodedReferenceFrame(
       const uint64_t pictureId) {
     return -1;

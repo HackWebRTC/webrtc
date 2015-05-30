@@ -45,8 +45,8 @@ void VPMSimpleSpatialResampler::Reset() {
   target_height_ = 0;
 }
 
-int32_t VPMSimpleSpatialResampler::ResampleFrame(const I420VideoFrame& inFrame,
-                                                 I420VideoFrame* outFrame) {
+int32_t VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
+                                                 VideoFrame* outFrame) {
   // Don't copy if frame remains as is.
   if (resampling_mode_ == kNoRescaling)
      return VPM_OK;

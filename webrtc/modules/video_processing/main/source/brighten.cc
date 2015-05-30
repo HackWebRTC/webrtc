@@ -15,7 +15,7 @@
 namespace webrtc {
 namespace VideoProcessing {
 
-int32_t Brighten(I420VideoFrame* frame, int delta) {
+int32_t Brighten(VideoFrame* frame, int delta) {
   assert(frame);
   if (frame->IsZeroSize()) {
     return VPM_PARAMETER_ERROR;

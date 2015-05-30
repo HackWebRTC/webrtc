@@ -42,7 +42,7 @@ public:
     virtual ~VideoChannelNSOpenGL();
 
     // A new frame is delivered
-    virtual int DeliverFrame(const I420VideoFrame& videoFrame);
+    virtual int DeliverFrame(const VideoFrame& videoFrame);
 
     // Called when the incoming frame size and/or number of streams in mix
     // changes.
@@ -63,7 +63,7 @@ public:
 
     // ********** new module functions ************ //
     virtual int32_t RenderFrame(const uint32_t streamId,
-                                const I420VideoFrame& videoFrame);
+                                const VideoFrame& videoFrame);
 
     // ********** new module helper functions ***** //
     int ChangeContext(NSOpenGLContext *nsglContext);

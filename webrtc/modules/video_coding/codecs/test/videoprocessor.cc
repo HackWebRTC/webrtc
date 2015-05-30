@@ -292,7 +292,7 @@ void VideoProcessorImpl::FrameEncoded(const EncodedImage& encoded_image) {
   last_frame_missing_ = copied_image._length == 0;
 }
 
-void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
+void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
   TickTime decode_stop = TickTime::Now();
   int frame_number = image.timestamp();
   // Report stats
@@ -312,7 +312,7 @@ void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
   // upsample back to original size: needed for PSNR and SSIM computations.
   if (image.width() !=  config_.codec_settings->width ||
       image.height() != config_.codec_settings->height) {
-    I420VideoFrame up_image;
+    VideoFrame up_image;
     int ret_val = scaler_.Set(image.width(), image.height(),
                               config_.codec_settings->width,
                               config_.codec_settings->height,
@@ -404,9 +404,8 @@ VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::Encoded(
   video_processor_->FrameEncoded(encoded_image);  // Forward to parent class.
   return 0;
 }
-int32_t
-VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
-    I420VideoFrame& image) {
+int32_t VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
+    VideoFrame& image) {
   video_processor_->FrameDecoded(image);  // forward to parent class
   return 0;
 }

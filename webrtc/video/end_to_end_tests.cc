@@ -123,7 +123,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
    public:
     Renderer() : event_(EventWrapper::Create()) {}
 
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int /*time_to_render_ms*/) override {
       event_->Set();
     }
@@ -142,7 +142,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
     EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
 
    private:
-    void FrameCallback(I420VideoFrame* frame) override {
+    void FrameCallback(VideoFrame* frame) override {
       SleepMs(kDelayRenderCallbackMs);
       event_->Set();
     }
@@ -191,7 +191,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
    public:
     Renderer() : event_(EventWrapper::Create()) {}
 
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int /*time_to_render_ms*/) override {
       event_->Set();
     }
@@ -266,7 +266,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
       (*receive_configs)[0].decoders[0].decoder = decoder_.get();
     }
 
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       const int kRequiredFrames = 500;
       if (++frame_counter_ == kRequiredFrames)
@@ -318,7 +318,7 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
       (*receive_configs)[0].decoders[0].decoder = &fake_decoder_;
     }
 
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       const int kRequiredFrames = 500;
       if (++frame_counter_ == kRequiredFrames)
@@ -507,7 +507,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
       return SEND_PACKET;
     }
 
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       rtc::CritScope lock(&crit_);
       // Rendering frame with timestamp of packet that was dropped -> FEC
@@ -720,7 +720,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
       return SEND_PACKET;
     }
 
-    void FrameCallback(I420VideoFrame* frame) override {
+    void FrameCallback(VideoFrame* frame) override {
       rtc::CritScope lock(&crit_);
       if (frame->timestamp() == retransmitted_timestamp_) {
         EXPECT_TRUE(frame_retransmitted_);
@@ -797,7 +797,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
    public:
     Renderer() : event_(EventWrapper::Create()) {}
 
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int /*time_to_render_ms*/) override {
       EXPECT_EQ(0, *video_frame.buffer(kYPlane))
           << "Rendered frame should have zero luma which is applied by the "
@@ -821,7 +821,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
     EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
 
    private:
-    virtual void FrameCallback(I420VideoFrame* frame) {
+    virtual void FrameCallback(VideoFrame* frame) {
       EXPECT_EQ(kWidth, frame->width())
           << "Width not as expected, callback done before resize?";
       EXPECT_EQ(kHeight, frame->height())
@@ -942,7 +942,7 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
       return SEND_PACKET;
     }
 
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       rtc::CritScope lock(&crit_);
       if (received_pli_ &&
@@ -1148,7 +1148,7 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
           height_(height),
           done_(EventWrapper::Create()) {}
 
-    void RenderFrame(const I420VideoFrame& video_frame,
+    void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       EXPECT_EQ(width_, video_frame.width());
       EXPECT_EQ(height_, video_frame.height());
@@ -1954,7 +1954,7 @@ TEST_F(EndToEndTest, GetStats) {
       return SEND_PACKET;
     }
 
-    void FrameCallback(I420VideoFrame* video_frame) override {
+    void FrameCallback(VideoFrame* video_frame) override {
       // Ensure that we have at least 5ms send side delay.
       int64_t render_time = video_frame->render_time_ms();
       if (render_time > 0)
@@ -2582,7 +2582,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       WaitForPacketsOrSilence(false, false);
     }
 
-    int32_t Encode(const I420VideoFrame& input_image,
+    int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<VideoFrameType>* frame_types) override {
       {
@@ -2707,7 +2707,7 @@ TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
   class UnusedEncoder : public test::FakeEncoder {
     public:
      UnusedEncoder() : FakeEncoder(Clock::GetRealTimeClock()) {}
-     int32_t Encode(const I420VideoFrame& input_image,
+     int32_t Encode(const VideoFrame& input_image,
                     const CodecSpecificInfo* codec_specific_info,
                     const std::vector<VideoFrameType>* frame_types) override {
       ADD_FAILURE() << "Unexpected frame encode.";

@@ -23,7 +23,8 @@ class ThreadWrapper;
 class VideoRenderCallback {
  public:
   virtual int32_t RenderFrame(const uint32_t streamId,
-                              const I420VideoFrame& videoFrame) = 0;
+                              const VideoFrame& videoFrame) = 0;
+
  protected:
   virtual ~VideoRenderCallback() {}
 };
@@ -36,7 +37,7 @@ class IncomingVideoStream : public VideoRenderCallback {
   // Get callback to deliver frames to the module.
   VideoRenderCallback* ModuleCallback();
   virtual int32_t RenderFrame(const uint32_t stream_id,
-                              const I420VideoFrame& video_frame);
+                              const VideoFrame& video_frame);
 
   // Set callback to the platform dependent code.
   void SetRenderCallback(VideoRenderCallback* render_callback);
@@ -55,9 +56,9 @@ class IncomingVideoStream : public VideoRenderCallback {
   uint32_t StreamId() const;
   uint32_t IncomingRate() const;
 
-  int32_t SetStartImage(const I420VideoFrame& video_frame);
+  int32_t SetStartImage(const VideoFrame& video_frame);
 
-  int32_t SetTimeoutImage(const I420VideoFrame& video_frame,
+  int32_t SetTimeoutImage(const VideoFrame& video_frame,
                           const uint32_t timeout);
 
   int32_t SetExpectedRenderDelay(int32_t delay_ms);
@@ -90,9 +91,9 @@ class IncomingVideoStream : public VideoRenderCallback {
   int64_t last_rate_calculation_time_ms_ GUARDED_BY(stream_critsect_);
   uint16_t num_frames_since_last_calculation_ GUARDED_BY(stream_critsect_);
   int64_t last_render_time_ms_ GUARDED_BY(thread_critsect_);
-  I420VideoFrame temp_frame_ GUARDED_BY(thread_critsect_);
-  I420VideoFrame start_image_ GUARDED_BY(thread_critsect_);
-  I420VideoFrame timeout_image_ GUARDED_BY(thread_critsect_);
+  VideoFrame temp_frame_ GUARDED_BY(thread_critsect_);
+  VideoFrame start_image_ GUARDED_BY(thread_critsect_);
+  VideoFrame timeout_image_ GUARDED_BY(thread_critsect_);
   uint32_t timeout_time_ GUARDED_BY(thread_critsect_);
 };
 

@@ -25,7 +25,7 @@ class VideoRenderIosChannel : public VideoRenderCallback {
 
   // Implementation of VideoRenderCallback.
   int32_t RenderFrame(const uint32_t stream_id,
-                      const I420VideoFrame& video_frame) override;
+                      const VideoFrame& video_frame) override;
 
   int SetStreamSettings(const float z_order,
                         const float left,
@@ -37,7 +37,7 @@ class VideoRenderIosChannel : public VideoRenderCallback {
 
  private:
   VideoRenderIosView* view_;
-  I420VideoFrame* current_frame_;
+  VideoFrame* current_frame_;
   bool buffer_is_updated_;
 };
 

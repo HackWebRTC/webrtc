@@ -26,7 +26,7 @@ namespace test {
 
 class GlRenderer : public VideoRenderer {
  public:
-  void RenderFrame(const webrtc::I420VideoFrame& frame,
+  void RenderFrame(const webrtc::VideoFrame& frame,
                    int time_to_render_ms) override;
 
  protected:

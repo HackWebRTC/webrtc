@@ -28,7 +28,7 @@ class VcmCapturer : public VideoCapturer, public VideoCaptureDataCallback {
   void Stop() override;
 
   void OnIncomingCapturedFrame(const int32_t id,
-                               const I420VideoFrame& frame) override;  // NOLINT
+                               const VideoFrame& frame) override;  // NOLINT
   void OnCaptureDelayChanged(const int32_t id, const int32_t delay) override;
 
  private:

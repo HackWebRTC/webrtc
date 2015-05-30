@@ -44,7 +44,7 @@ class WebRtcPassthroughRenderTest : public testing::Test {
     }
 
     virtual int32_t RenderFrame(const uint32_t stream_id,
-                                const webrtc::I420VideoFrame& videoFrame) {
+                                const webrtc::VideoFrame& videoFrame) {
       ++frame_num_;
       LOG(INFO) << "RenderFrame stream_id: " << stream_id
                 << " frame_num: " << frame_num_;
@@ -121,7 +121,7 @@ TEST_F(WebRtcPassthroughRenderTest, Streams) {
 }
 
 TEST_F(WebRtcPassthroughRenderTest, Renderer) {
-  webrtc::I420VideoFrame frame;
+  webrtc::VideoFrame frame;
   const int stream_id1 = 1234;
   const int stream_id2 = 5678;
   const int stream_id3 = 9012;  // A stream that doesn't exist.

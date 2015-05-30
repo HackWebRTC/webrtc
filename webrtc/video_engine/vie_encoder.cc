@@ -490,7 +490,7 @@ void ViEEncoder::TraceFrameDropEnd() {
   encoder_paused_and_dropped_frame_ = false;
 }
 
-void ViEEncoder::DeliverFrame(I420VideoFrame video_frame) {
+void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
   DCHECK(send_payload_router_ != NULL);
   if (!send_payload_router_->active()) {
     // We've paused or we have no channels attached, don't waste resources on
@@ -509,7 +509,7 @@ void ViEEncoder::DeliverFrame(I420VideoFrame video_frame) {
 
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
-  I420VideoFrame* decimated_frame = NULL;
+  VideoFrame* decimated_frame = NULL;
   // TODO(wuchengli): support texture frames.
   if (video_frame.native_handle() == NULL) {
     // Pass frame via preprocessor.
@@ -525,7 +525,7 @@ void ViEEncoder::DeliverFrame(I420VideoFrame video_frame) {
 
   // If we haven't resampled the frame and we have a FrameCallback, we need to
   // make a deep copy of |video_frame|.
-  I420VideoFrame copied_frame;
+  VideoFrame copied_frame;
   {
     CriticalSectionScoped cs(callback_cs_.get());
     if (pre_encode_callback_) {
@@ -540,7 +540,7 @@ void ViEEncoder::DeliverFrame(I420VideoFrame video_frame) {
 
   // If the frame was not resampled, scaled, or touched by FrameCallback => use
   // original. The frame is const from here.
-  const I420VideoFrame* output_frame =
+  const VideoFrame* output_frame =
       (decimated_frame != NULL) ? decimated_frame : &video_frame;
 
   if (video_frame.native_handle() != NULL) {

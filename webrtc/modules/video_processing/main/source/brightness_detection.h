@@ -24,7 +24,7 @@ class VPMBrightnessDetection {
   ~VPMBrightnessDetection();
 
   void Reset();
-  int32_t ProcessFrame(const I420VideoFrame& frame,
+  int32_t ProcessFrame(const VideoFrame& frame,
                        const VideoProcessingModule::FrameStats& stats);
 
  private:

@@ -25,7 +25,7 @@ class FrameGenerator {
   virtual ~FrameGenerator() {}
 
   // Returns video frame that remains valid until next call.
-  virtual I420VideoFrame* NextFrame() = 0;
+  virtual VideoFrame* NextFrame() = 0;
 
   // Creates a test frame generator that creates fully saturated frames with
   // varying U, V values over time.

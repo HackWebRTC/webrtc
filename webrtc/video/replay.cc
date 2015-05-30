@@ -152,7 +152,7 @@ class FileRenderPassthrough : public VideoRenderer {
   }
 
  private:
-  void RenderFrame(const I420VideoFrame& video_frame,
+  void RenderFrame(const VideoFrame& video_frame,
                    int time_to_render_ms) override {
     if (renderer_ != nullptr)
       renderer_->RenderFrame(video_frame, time_to_render_ms);
@@ -179,7 +179,7 @@ class FileRenderPassthrough : public VideoRenderer {
     last_height_ = video_frame.height();
     if (file_ == nullptr)
       return;
-    PrintI420VideoFrame(video_frame, file_);
+    PrintVideoFrame(video_frame, file_);
   }
 
   bool IsTextureSupported() const override { return false; }

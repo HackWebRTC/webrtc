@@ -99,7 +99,7 @@ public:
     * cameraFrameRate   : Request or information from the remote side
     * frameType         : The requested frame type to encode
     */
-    int32_t Encode(const I420VideoFrame& inputFrame,
+    int32_t Encode(const VideoFrame& inputFrame,
                    const CodecSpecificInfo* codecSpecificInfo,
                    const std::vector<FrameType>& frameTypes);
     /**

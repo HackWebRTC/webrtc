@@ -38,18 +38,15 @@ namespace webrtc {
 
 class MockViEFrameCallback : public ViEFrameCallback {
  public:
-  MOCK_METHOD1(DeliverFrame, void(I420VideoFrame video_frame));
+  MOCK_METHOD1(DeliverFrame, void(VideoFrame video_frame));
 };
 
-bool EqualFrames(const I420VideoFrame& frame1,
-                 const I420VideoFrame& frame2);
-bool EqualTextureFrames(const I420VideoFrame& frame1,
-                        const I420VideoFrame& frame2);
-bool EqualBufferFrames(const I420VideoFrame& frame1,
-                       const I420VideoFrame& frame2);
-bool EqualFramesVector(const ScopedVector<I420VideoFrame>& frames1,
-                       const ScopedVector<I420VideoFrame>& frames2);
-I420VideoFrame* CreateI420VideoFrame(uint8_t length);
+bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2);
+bool EqualTextureFrames(const VideoFrame& frame1, const VideoFrame& frame2);
+bool EqualBufferFrames(const VideoFrame& frame1, const VideoFrame& frame2);
+bool EqualFramesVector(const ScopedVector<VideoFrame>& frames1,
+                       const ScopedVector<VideoFrame>& frames2);
+VideoFrame* CreateVideoFrame(uint8_t length);
 
 class ViECapturerTest : public ::testing::Test {
  protected:
@@ -74,14 +71,14 @@ class ViECapturerTest : public ::testing::Test {
     vie_capturer_.reset();
   }
 
-  void AddInputFrame(I420VideoFrame* frame) {
+  void AddInputFrame(VideoFrame* frame) {
     vie_capturer_->IncomingFrame(*frame);
   }
 
-  void AddOutputFrame(const I420VideoFrame& frame) {
+  void AddOutputFrame(const VideoFrame& frame) {
     if (frame.native_handle() == NULL)
       output_frame_ybuffers_.push_back(frame.buffer(kYPlane));
-    output_frames_.push_back(new I420VideoFrame(frame));
+    output_frames_.push_back(new VideoFrame(frame));
     output_frame_event_->Set();
   }
 
@@ -96,13 +93,13 @@ class ViECapturerTest : public ::testing::Test {
   rtc::scoped_ptr<ViECapturer> vie_capturer_;
 
   // Input capture frames of ViECapturer.
-  ScopedVector<I420VideoFrame> input_frames_;
+  ScopedVector<VideoFrame> input_frames_;
 
   // Indicate an output frame has arrived.
   rtc::scoped_ptr<EventWrapper> output_frame_event_;
 
   // Output delivered frames of ViECaptuer.
-  ScopedVector<I420VideoFrame> output_frames_;
+  ScopedVector<VideoFrame> output_frames_;
 
   // The pointers of Y plane buffers of output frames. This is used to verify
   // the frame are swapped and not copied.
@@ -122,7 +119,7 @@ TEST_F(ViECapturerTest, DoesNotRetainHandleNorCopyBuffer) {
     EventWrapper* event_;
   };
 
-  I420VideoFrame frame(
+  VideoFrame frame(
       new rtc::RefCountedObject<TestBuffer>(frame_destroyed_event.get()), 1, 1,
       kVideoRotation_0);
 
@@ -137,7 +134,7 @@ TEST_F(ViECapturerTest, DoesNotRetainHandleNorCopyBuffer) {
 }
 
 TEST_F(ViECapturerTest, TestNtpTimeStampSetIfRenderTimeSet) {
-  input_frames_.push_back(CreateI420VideoFrame(static_cast<uint8_t>(0)));
+  input_frames_.push_back(CreateVideoFrame(static_cast<uint8_t>(0)));
   input_frames_[0]->set_render_time_ms(5);
   input_frames_[0]->set_ntp_time_ms(0);
 
@@ -148,7 +145,7 @@ TEST_F(ViECapturerTest, TestNtpTimeStampSetIfRenderTimeSet) {
 }
 
 TEST_F(ViECapturerTest, TestRtpTimeStampSet) {
-  input_frames_.push_back(CreateI420VideoFrame(static_cast<uint8_t>(0)));
+  input_frames_.push_back(CreateVideoFrame(static_cast<uint8_t>(0)));
   input_frames_[0]->set_render_time_ms(0);
   input_frames_[0]->set_ntp_time_ms(1);
   input_frames_[0]->set_timestamp(0);
@@ -164,9 +161,9 @@ TEST_F(ViECapturerTest, TestTextureFrames) {
   for (int i = 0 ; i < kNumFrame; ++i) {
     void* dummy_handle = reinterpret_cast<void*>(i+1);
     // Add one to |i| so that width/height > 0.
-    input_frames_.push_back(
-        new I420VideoFrame(dummy_handle, i + 1, i + 1, i + 1, i + 1,
-                           webrtc::kVideoRotation_0, rtc::Callback0<void>()));
+    input_frames_.push_back(new VideoFrame(dummy_handle, i + 1, i + 1, i + 1,
+                                           i + 1, webrtc::kVideoRotation_0,
+                                           rtc::Callback0<void>()));
     AddInputFrame(input_frames_[i]);
     WaitOutputFrame();
     EXPECT_EQ(dummy_handle, output_frames_[i]->native_handle());
@@ -179,8 +176,8 @@ TEST_F(ViECapturerTest, TestI420Frames) {
   const int kNumFrame = 4;
   std::vector<const uint8_t*> ybuffer_pointers;
   for (int i = 0; i < kNumFrame; ++i) {
-    input_frames_.push_back(CreateI420VideoFrame(static_cast<uint8_t>(i + 1)));
-    const I420VideoFrame* const_input_frame = input_frames_[i];
+    input_frames_.push_back(CreateVideoFrame(static_cast<uint8_t>(i + 1)));
+    const VideoFrame* const_input_frame = input_frames_[i];
     ybuffer_pointers.push_back(const_input_frame->buffer(kYPlane));
     AddInputFrame(input_frames_[i]);
     WaitOutputFrame();
@@ -194,14 +191,14 @@ TEST_F(ViECapturerTest, TestI420Frames) {
 
 TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
   void* dummy_handle = &input_frames_;
-  input_frames_.push_back(new I420VideoFrame(dummy_handle, 1, 1, 1, 1,
-                                             webrtc::kVideoRotation_0,
-                                             rtc::Callback0<void>()));
+  input_frames_.push_back(new VideoFrame(dummy_handle, 1, 1, 1, 1,
+                                         webrtc::kVideoRotation_0,
+                                         rtc::Callback0<void>()));
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
   EXPECT_EQ(dummy_handle, output_frames_[0]->native_handle());
 
-  input_frames_.push_back(CreateI420VideoFrame(2));
+  input_frames_.push_back(CreateVideoFrame(2));
   AddInputFrame(input_frames_[1]);
   WaitOutputFrame();
 
@@ -209,37 +206,34 @@ TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
 }
 
 TEST_F(ViECapturerTest, TestTextureFrameAfterI420Frame) {
-  input_frames_.push_back(CreateI420VideoFrame(1));
+  input_frames_.push_back(CreateVideoFrame(1));
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
 
   void* dummy_handle = &input_frames_;
-  input_frames_.push_back(new I420VideoFrame(dummy_handle, 1, 1, 2, 2,
-                                             webrtc::kVideoRotation_0,
-                                             rtc::Callback0<void>()));
+  input_frames_.push_back(new VideoFrame(dummy_handle, 1, 1, 2, 2,
+                                         webrtc::kVideoRotation_0,
+                                         rtc::Callback0<void>()));
   AddInputFrame(input_frames_[1]);
   WaitOutputFrame();
 
   EXPECT_TRUE(EqualFramesVector(input_frames_, output_frames_));
 }
 
-bool EqualFrames(const I420VideoFrame& frame1,
-                 const I420VideoFrame& frame2) {
+bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
   if (frame1.native_handle() != NULL || frame2.native_handle() != NULL)
     return EqualTextureFrames(frame1, frame2);
   return EqualBufferFrames(frame1, frame2);
 }
 
-bool EqualTextureFrames(const I420VideoFrame& frame1,
-                        const I420VideoFrame& frame2) {
+bool EqualTextureFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
   return ((frame1.native_handle() == frame2.native_handle()) &&
           (frame1.width() == frame2.width()) &&
           (frame1.height() == frame2.height()) &&
           (frame1.render_time_ms() == frame2.render_time_ms()));
 }
 
-bool EqualBufferFrames(const I420VideoFrame& frame1,
-                       const I420VideoFrame& frame2) {
+bool EqualBufferFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
   return ((frame1.width() == frame2.width()) &&
           (frame1.height() == frame2.height()) &&
           (frame1.stride(kYPlane) == frame2.stride(kYPlane)) &&
@@ -257,8 +251,8 @@ bool EqualBufferFrames(const I420VideoFrame& frame1,
                   frame1.allocated_size(kVPlane)) == 0));
 }
 
-bool EqualFramesVector(const ScopedVector<I420VideoFrame>& frames1,
-                       const ScopedVector<I420VideoFrame>& frames2) {
+bool EqualFramesVector(const ScopedVector<VideoFrame>& frames1,
+                       const ScopedVector<VideoFrame>& frames2) {
   if (frames1.size() != frames2.size())
     return false;
   for (size_t i = 0; i < frames1.size(); ++i) {
@@ -268,8 +262,8 @@ bool EqualFramesVector(const ScopedVector<I420VideoFrame>& frames1,
   return true;
 }
 
-I420VideoFrame* CreateI420VideoFrame(uint8_t data) {
-  I420VideoFrame* frame = new I420VideoFrame();
+VideoFrame* CreateVideoFrame(uint8_t data) {
+  VideoFrame* frame = new VideoFrame();
   const int width = 36;
   const int height = 24;
   const int kSizeY = width * height * 2;

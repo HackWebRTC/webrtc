@@ -39,7 +39,7 @@ int32_t ConfigurableFrameSizeEncoder::InitEncode(
 }
 
 int32_t ConfigurableFrameSizeEncoder::Encode(
-    const I420VideoFrame& inputImage,
+    const VideoFrame& inputImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const std::vector<VideoFrameType>* frame_types) {
   EncodedImage encodedImage(

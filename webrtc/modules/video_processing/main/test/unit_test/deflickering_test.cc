@@ -70,7 +70,7 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
 
             if (run_idx == 0)
             {
-              if (PrintI420VideoFrame(video_frame_, deflickerFile) < 0) {
+              if (PrintVideoFrame(video_frame_, deflickerFile) < 0) {
                 return;
               }
             }

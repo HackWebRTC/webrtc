@@ -291,7 +291,7 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t AddVideoFrame(
-        const I420VideoFrame& videoFrame,
+        const VideoFrame& videoFrame,
         const VideoContentMetrics* contentMetrics = NULL,
         const CodecSpecificInfo* codecSpecificInfo = NULL) = 0;
 

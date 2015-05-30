@@ -86,9 +86,8 @@ uint32_t VPMFramePreprocessor::DecimatedHeight() const {
   return spatial_resampler_->TargetHeight();
 }
 
-
-int32_t VPMFramePreprocessor::PreprocessFrame(const I420VideoFrame& frame,
-    I420VideoFrame** processed_frame) {
+int32_t VPMFramePreprocessor::PreprocessFrame(const VideoFrame& frame,
+                                              VideoFrame** processed_frame) {
   if (frame.IsZeroSize()) {
     return VPM_PARAMETER_ERROR;
   }

@@ -147,7 +147,7 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, ForwardsResetCall) {
 TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
        ForwardsRegisterDecodeCompleteCallback) {
   class FakeDecodedImageCallback : public DecodedImageCallback {
-    int32_t Decoded(I420VideoFrame& decodedImage) override { return 0; }
+    int32_t Decoded(VideoFrame& decodedImage) override { return 0; }
   } callback, callback2;
 
   VideoCodec codec = {};

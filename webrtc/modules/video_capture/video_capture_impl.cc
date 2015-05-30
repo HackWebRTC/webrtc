@@ -211,7 +211,7 @@ int32_t VideoCaptureImpl::CaptureDelay()
     return _setCaptureDelay;
 }
 
-int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame& captureFrame) {
+int32_t VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame) {
   UpdateFrameCount();  // frame count used for local frame rate callback.
 
   const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;

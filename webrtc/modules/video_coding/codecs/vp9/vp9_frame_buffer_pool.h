@@ -32,7 +32,7 @@ namespace webrtc {
 // The benefit of owning the pool that libvpx relies on for decoding is that the
 // decoded frames returned by libvpx (from vpx_codec_get_frame) use parts of our
 // buffers for the decoded image data. By retaining ownership of this buffer
-// using scoped_refptr, the image buffer can be reused by I420VideoFrames and no
+// using scoped_refptr, the image buffer can be reused by VideoFrames and no
 // frame copy has to occur during decoding and frame delivery.
 //
 // Pseudo example usage case:

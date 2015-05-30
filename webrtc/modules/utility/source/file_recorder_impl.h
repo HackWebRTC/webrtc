@@ -72,8 +72,7 @@ public:
     {
         return -1;
     }
-    virtual int32_t RecordVideoToFile(const I420VideoFrame& videoFrame)
-    {
+    virtual int32_t RecordVideoToFile(const VideoFrame& videoFrame) {
         return -1;
     }
 

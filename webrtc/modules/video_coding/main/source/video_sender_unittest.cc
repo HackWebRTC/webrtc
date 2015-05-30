@@ -71,8 +71,8 @@ MATCHER_P(MatchesVp8StreamInfo, expected, "") {
 class EmptyFrameGenerator : public FrameGenerator {
  public:
   EmptyFrameGenerator(int width, int height) : width_(width), height_(height) {}
-  I420VideoFrame* NextFrame() override {
-    frame_.reset(new I420VideoFrame());
+  VideoFrame* NextFrame() override {
+    frame_.reset(new VideoFrame());
     frame_->CreateEmptyFrame(width_, height_, width_, (width_ + 1) / 2,
                              (width_ + 1) / 2);
     return frame_.get();
@@ -81,7 +81,7 @@ class EmptyFrameGenerator : public FrameGenerator {
  private:
   const int width_;
   const int height_;
-  rtc::scoped_ptr<I420VideoFrame> frame_;
+  rtc::scoped_ptr<VideoFrame> frame_;
 };
 
 class PacketizationCallback : public VCMPacketizationCallback {

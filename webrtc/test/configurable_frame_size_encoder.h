@@ -28,7 +28,7 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
                      int32_t number_of_cores,
                      size_t max_payload_size) override;
 
-  int32_t Encode(const I420VideoFrame& input_image,
+  int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<VideoFrameType>* frame_types) override;
 

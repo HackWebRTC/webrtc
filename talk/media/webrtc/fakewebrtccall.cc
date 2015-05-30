@@ -108,7 +108,7 @@ int FakeVideoSendStream::GetLastHeight() const {
 }
 
 void FakeVideoSendStream::IncomingCapturedFrame(
-    const webrtc::I420VideoFrame& frame) {
+    const webrtc::VideoFrame& frame) {
   ++num_swapped_frames_;
   last_frame_.ShallowCopy(frame);
 }
@@ -166,7 +166,7 @@ bool FakeVideoReceiveStream::IsReceiving() const {
   return receiving_;
 }
 
-void FakeVideoReceiveStream::InjectFrame(const webrtc::I420VideoFrame& frame,
+void FakeVideoReceiveStream::InjectFrame(const webrtc::VideoFrame& frame,
                                          int time_to_render_ms) {
   config_.renderer->RenderFrame(frame, time_to_render_ms);
 }

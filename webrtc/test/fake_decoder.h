@@ -41,7 +41,7 @@ class FakeDecoder : public VideoDecoder {
 
  private:
   VideoCodec config_;
-  I420VideoFrame frame_;
+  VideoFrame frame_;
   DecodedImageCallback* callback_;
 };
 

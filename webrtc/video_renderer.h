@@ -13,14 +13,14 @@
 
 namespace webrtc {
 
-class I420VideoFrame;
+class VideoFrame;
 
 class VideoRenderer {
  public:
   // This function should return as soon as possible and not block until it's
   // time to render the frame.
-  // TODO(mflodman) Remove time_to_render_ms when I420VideoFrame contains NTP.
-  virtual void RenderFrame(const I420VideoFrame& video_frame,
+  // TODO(mflodman) Remove time_to_render_ms when VideoFrame contains NTP.
+  virtual void RenderFrame(const VideoFrame& video_frame,
                            int time_to_render_ms) = 0;
 
   virtual bool IsTextureSupported() const = 0;

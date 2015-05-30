@@ -40,7 +40,7 @@
       ],
       'sources': [
         'i420_buffer_pool.cc',
-        'i420_video_frame.cc',
+        'video_frame.cc',
         'incoming_video_stream.cc',
         'interface/i420_buffer_pool.h',
         'interface/incoming_video_stream.h',

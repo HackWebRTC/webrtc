@@ -46,7 +46,7 @@ void QualityScaler::ReportDroppedFrame() {
 }
 
 QualityScaler::Resolution QualityScaler::GetScaledResolution(
-    const I420VideoFrame& frame) {
+    const VideoFrame& frame) {
   // Should be set through InitEncode -> Should be set by now.
   assert(low_qp_threshold_ >= 0);
   assert(num_samples_ > 0);
@@ -83,8 +83,7 @@ QualityScaler::Resolution QualityScaler::GetScaledResolution(
   return res;
 }
 
-const I420VideoFrame& QualityScaler::GetScaledFrame(
-    const I420VideoFrame& frame) {
+const VideoFrame& QualityScaler::GetScaledFrame(const VideoFrame& frame) {
   Resolution res = GetScaledResolution(frame);
   if (res.width == frame.width())
     return frame;

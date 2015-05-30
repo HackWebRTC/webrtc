@@ -26,7 +26,7 @@ VideoRenderFrames::VideoRenderFrames()
     : render_delay_ms_(10) {
 }
 
-int32_t VideoRenderFrames::AddFrame(const I420VideoFrame& new_frame) {
+int32_t VideoRenderFrames::AddFrame(const VideoFrame& new_frame) {
   const int64_t time_now = TickTime::MillisecondTimestamp();
 
   // Drop old frames only when there are other frames in the queue, otherwise, a
@@ -53,8 +53,8 @@ int32_t VideoRenderFrames::AddFrame(const I420VideoFrame& new_frame) {
   return static_cast<int32_t>(incoming_frames_.size());
 }
 
-I420VideoFrame VideoRenderFrames::FrameToRender() {
-  I420VideoFrame render_frame;
+VideoFrame VideoRenderFrames::FrameToRender() {
+  VideoFrame render_frame;
   // Get the newest frame that can be released for rendering.
   while (!incoming_frames_.empty() && TimeToNextFrameRelease() <= 0) {
     render_frame = incoming_frames_.front();

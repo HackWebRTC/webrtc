@@ -64,8 +64,8 @@ static const int kTestWidth = 352;
 static const int kTestFramerate = 30;
 
 // Compares the content of two video frames.
-static bool CompareFrames(const webrtc::I420VideoFrame& frame1,
-                          const webrtc::I420VideoFrame& frame2) {
+static bool CompareFrames(const webrtc::VideoFrame& frame1,
+                          const webrtc::VideoFrame& frame2) {
   bool result =
       (frame1.stride(webrtc::kYPlane) == frame2.stride(webrtc::kYPlane)) &&
       (frame1.stride(webrtc::kUPlane) == frame2.stride(webrtc::kUPlane)) &&
@@ -104,9 +104,8 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
       printf("No of timing warnings %d\n", timing_warnings_);
   }
 
-  virtual void OnIncomingCapturedFrame(
-      const int32_t id,
-      const webrtc::I420VideoFrame& videoFrame) {
+  virtual void OnIncomingCapturedFrame(const int32_t id,
+                                       const webrtc::VideoFrame& videoFrame) {
     CriticalSectionScoped cs(capture_cs_.get());
     int height = videoFrame.height();
     int width = videoFrame.width();
@@ -175,7 +174,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     return capability_;
   }
 
-  bool CompareLastFrame(const webrtc::I420VideoFrame& frame) {
+  bool CompareLastFrame(const webrtc::VideoFrame& frame) {
     CriticalSectionScoped cs(capture_cs_.get());
     return CompareFrames(last_frame_, frame);
   }
@@ -192,7 +191,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
   int64_t last_render_time_ms_;
   int incoming_frames_;
   int timing_warnings_;
-  webrtc::I420VideoFrame last_frame_;
+  webrtc::VideoFrame last_frame_;
   webrtc::VideoRotation rotate_frame_;
 };
 
@@ -463,7 +462,7 @@ class VideoCaptureExternalTest : public testing::Test {
   webrtc::VideoCaptureExternal* capture_input_interface_;
   webrtc::scoped_refptr<VideoCaptureModule> capture_module_;
   rtc::scoped_ptr<webrtc::ProcessThread> process_module_;
-  webrtc::I420VideoFrame test_frame_;
+  webrtc::VideoFrame test_frame_;
   TestVideoCaptureCallback capture_callback_;
   TestVideoCaptureFeedBack capture_feedback_;
 };

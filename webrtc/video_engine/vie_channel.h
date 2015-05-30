@@ -293,7 +293,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   CallStatsObserver* GetStatsObserver();
 
   // Implements VCMReceiveCallback.
-  virtual int32_t FrameToRender(I420VideoFrame& video_frame);  // NOLINT
+  virtual int32_t FrameToRender(VideoFrame& video_frame);  // NOLINT
 
   // Implements VCMReceiveCallback.
   virtual int32_t ReceivedDecodedReferenceFrame(

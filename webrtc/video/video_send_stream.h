@@ -60,7 +60,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   bool DeliverRtcp(const uint8_t* packet, size_t length);
 
   // From VideoSendStreamInput.
-  void IncomingCapturedFrame(const I420VideoFrame& frame) override;
+  void IncomingCapturedFrame(const VideoFrame& frame) override;
 
   // From webrtc::VideoSendStream.
   VideoSendStreamInput* Input() override;

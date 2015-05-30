@@ -87,7 +87,7 @@ void VcmCapturer::Destroy() {
 VcmCapturer::~VcmCapturer() { Destroy(); }
 
 void VcmCapturer::OnIncomingCapturedFrame(const int32_t id,
-                                          const I420VideoFrame& frame) {
+                                          const VideoFrame& frame) {
   if (started_)
     input_->IncomingCapturedFrame(frame);
 }

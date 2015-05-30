@@ -102,7 +102,7 @@ size_t CalcBufferSize(VideoType type, int width, int height) {
   return buffer_size;
 }
 
-int PrintI420VideoFrame(const I420VideoFrame& frame, FILE* file) {
+int PrintVideoFrame(const VideoFrame& frame, FILE* file) {
   if (file == NULL)
     return -1;
   if (frame.IsZeroSize())
@@ -123,8 +123,7 @@ int PrintI420VideoFrame(const I420VideoFrame& frame, FILE* file) {
  return 0;
 }
 
-int ExtractBuffer(const I420VideoFrame& input_frame,
-                  size_t size, uint8_t* buffer) {
+int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer) {
   assert(buffer);
   if (input_frame.IsZeroSize())
     return -1;
@@ -237,7 +236,7 @@ int ConvertToI420(VideoType src_video_type,
                   int src_height,
                   size_t sample_size,
                   VideoRotation rotation,
-                  I420VideoFrame* dst_frame) {
+                  VideoFrame* dst_frame) {
   int dst_width = dst_frame->width();
   int dst_height = dst_frame->height();
   // LibYuv expects pre-rotation values for dst.
@@ -260,8 +259,9 @@ int ConvertToI420(VideoType src_video_type,
                                ConvertVideoType(src_video_type));
 }
 
-int ConvertFromI420(const I420VideoFrame& src_frame,
-                    VideoType dst_video_type, int dst_sample_size,
+int ConvertFromI420(const VideoFrame& src_frame,
+                    VideoType dst_video_type,
+                    int dst_sample_size,
                     uint8_t* dst_frame) {
   return libyuv::ConvertFromI420(src_frame.buffer(kYPlane),
                                  src_frame.stride(kYPlane),
@@ -275,8 +275,9 @@ int ConvertFromI420(const I420VideoFrame& src_frame,
 }
 
 // TODO(mikhal): Create a designated VideoFrame for non I420.
-int ConvertFromYV12(const I420VideoFrame& src_frame,
-                    VideoType dst_video_type, int dst_sample_size,
+int ConvertFromYV12(const VideoFrame& src_frame,
+                    VideoType dst_video_type,
+                    int dst_sample_size,
                     uint8_t* dst_frame) {
   // YV12 = Y, V, U
   return libyuv::ConvertFromI420(src_frame.buffer(kYPlane),
@@ -291,8 +292,7 @@ int ConvertFromYV12(const I420VideoFrame& src_frame,
 }
 
 // Compute PSNR for an I420 frame (all planes)
-double I420PSNR(const I420VideoFrame* ref_frame,
-                const I420VideoFrame* test_frame) {
+double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
   if (!ref_frame || !test_frame)
     return -1;
   else if ((ref_frame->width() !=  test_frame->width()) ||
@@ -320,8 +320,7 @@ double I420PSNR(const I420VideoFrame* ref_frame,
 }
 
 // Compute SSIM for an I420 frame (all planes)
-double I420SSIM(const I420VideoFrame* ref_frame,
-                const I420VideoFrame* test_frame) {
+double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
   if (!ref_frame || !test_frame)
     return -1;
   else if ((ref_frame->width() !=  test_frame->width()) ||

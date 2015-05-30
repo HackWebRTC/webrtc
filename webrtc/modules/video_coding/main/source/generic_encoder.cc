@@ -98,10 +98,9 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
     return 0;
 }
 
-int32_t
-VCMGenericEncoder::Encode(const I420VideoFrame& inputFrame,
-                          const CodecSpecificInfo* codecSpecificInfo,
-                          const std::vector<FrameType>& frameTypes) {
+int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
+                                  const CodecSpecificInfo* codecSpecificInfo,
+                                  const std::vector<FrameType>& frameTypes) {
   std::vector<VideoFrameType> video_frame_types(frameTypes.size(),
                                                 kDeltaFrame);
   VCMEncodedFrame::ConvertFrameTypes(frameTypes, &video_frame_types);
@@ -176,7 +175,7 @@ VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
 
 int32_t VCMGenericEncoder::RequestFrame(
     const std::vector<FrameType>& frame_types) {
-  I420VideoFrame image;
+  VideoFrame image;
   std::vector<VideoFrameType> video_frame_types(frame_types.size(),
                                                 kDeltaFrame);
   VCMEncodedFrame::ConvertFrameTypes(frame_types, &video_frame_types);

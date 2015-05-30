@@ -51,7 +51,7 @@ using rtc::scoped_ptr;
 using webrtc::CodecSpecificInfo;
 using webrtc::DecodedImageCallback;
 using webrtc::EncodedImage;
-using webrtc::I420VideoFrame;
+using webrtc::VideoFrame;
 using webrtc::RTPFragmentationHeader;
 using webrtc::TickTime;
 using webrtc::VideoCodec;
@@ -108,7 +108,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   bool use_surface_;
   int error_count_;
   VideoCodec codec_;
-  I420VideoFrame decoded_image_;
+  VideoFrame decoded_image_;
   NativeHandleImpl native_handle_;
   DecodedImageCallback* callback_;
   int frames_received_;  // Number of frames received by decoder.
@@ -654,9 +654,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int32_t callback_status = WEBRTC_VIDEO_CODEC_OK;
   if (use_surface_) {
     native_handle_.SetTextureObject(surface_texture_, texture_id);
-    I420VideoFrame texture_image(&native_handle_, width, height,
-                                 output_timestamp_, 0, webrtc::kVideoRotation_0,
-                                 rtc::Callback0<void>());
+    VideoFrame texture_image(&native_handle_, width, height, output_timestamp_,
+                             0, webrtc::kVideoRotation_0,
+                             rtc::Callback0<void>());
     texture_image.set_ntp_time_ms(output_ntp_time_ms_);
     callback_status = callback_->Decoded(texture_image);
   } else {

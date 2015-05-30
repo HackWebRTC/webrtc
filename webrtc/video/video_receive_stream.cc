@@ -294,7 +294,7 @@ bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
   return vie_channel_->ReceivedRTPPacket(packet, length, PacketTime()) == 0;
 }
 
-void VideoReceiveStream::FrameCallback(I420VideoFrame* video_frame) {
+void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {
   stats_proxy_->OnDecodedFrame();
 
   if (config_.pre_render_callback)
@@ -302,10 +302,10 @@ void VideoReceiveStream::FrameCallback(I420VideoFrame* video_frame) {
 }
 
 int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
-                                    const I420VideoFrame& video_frame) {
+                                    const VideoFrame& video_frame) {
   // TODO(pbos): Wire up config_.render->IsTextureSupported() and convert if not
   // supported. Or provide methods for converting a texture frame in
-  // I420VideoFrame.
+  // VideoFrame.
 
   if (config_.renderer != nullptr)
     config_.renderer->RenderFrame(

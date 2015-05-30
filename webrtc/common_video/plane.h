@@ -17,7 +17,7 @@
 
 namespace webrtc {
 
-// Helper class for I420VideoFrame: Store plane data and perform basic plane
+// Helper class for VideoFrame: Store plane data and perform basic plane
 // operations.
 class Plane {
  public:

@@ -28,9 +28,9 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
 
   void Reset() override;
 
-  int32_t Deflickering(I420VideoFrame* frame, FrameStats* stats) override;
+  int32_t Deflickering(VideoFrame* frame, FrameStats* stats) override;
 
-  int32_t BrightnessDetection(const I420VideoFrame& frame,
+  int32_t BrightnessDetection(const VideoFrame& frame,
                               const FrameStats& stats) override;
 
   // Frame pre-processor functions
@@ -57,8 +57,8 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
   // Pre-process incoming frame: Sample when needed and compute content
   // metrics when enabled.
   // If no resampling takes place - processed_frame is set to NULL.
-  int32_t PreprocessFrame(const I420VideoFrame& frame,
-                          I420VideoFrame** processed_frame) override;
+  int32_t PreprocessFrame(const VideoFrame& frame,
+                          VideoFrame** processed_frame) override;
   VideoContentMetrics* ContentMetrics() const override;
 
  private:

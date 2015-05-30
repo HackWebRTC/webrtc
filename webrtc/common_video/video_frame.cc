@@ -19,17 +19,16 @@
 
 namespace webrtc {
 
-I420VideoFrame::I420VideoFrame() {
+VideoFrame::VideoFrame() {
   // Intentionally using Reset instead of initializer list so that any missed
   // fields in Reset will be caught by memory checkers.
   Reset();
 }
 
-I420VideoFrame::I420VideoFrame(
-    const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
-    uint32_t timestamp,
-    int64_t render_time_ms,
-    VideoRotation rotation)
+VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+                       uint32_t timestamp,
+                       int64_t render_time_ms,
+                       VideoRotation rotation)
     : video_frame_buffer_(buffer),
       timestamp_(timestamp),
       ntp_time_ms_(0),
@@ -37,24 +36,27 @@ I420VideoFrame::I420VideoFrame(
       rotation_(rotation) {
 }
 
-I420VideoFrame::I420VideoFrame(void* native_handle,
-                               int width,
-                               int height,
-                               uint32_t timestamp,
-                               int64_t render_time_ms,
-                               VideoRotation rotation,
-                               const rtc::Callback0<void>& no_longer_used)
-    : I420VideoFrame(new rtc::RefCountedObject<TextureBuffer>(native_handle,
-                                                              width,
-                                                              height,
-                                                              no_longer_used),
-                     timestamp,
-                     render_time_ms,
-                     rotation) {
+VideoFrame::VideoFrame(void* native_handle,
+                       int width,
+                       int height,
+                       uint32_t timestamp,
+                       int64_t render_time_ms,
+                       VideoRotation rotation,
+                       const rtc::Callback0<void>& no_longer_used)
+    : VideoFrame(new rtc::RefCountedObject<TextureBuffer>(native_handle,
+                                                          width,
+                                                          height,
+                                                          no_longer_used),
+                 timestamp,
+                 render_time_ms,
+                 rotation) {
 }
 
-int I420VideoFrame::CreateEmptyFrame(int width, int height,
-                                     int stride_y, int stride_u, int stride_v) {
+int VideoFrame::CreateEmptyFrame(int width,
+                                 int height,
+                                 int stride_y,
+                                 int stride_u,
+                                 int stride_v) {
   const int half_width = (width + 1) / 2;
   DCHECK_GT(width, 0);
   DCHECK_GT(height, 0);
@@ -69,14 +71,11 @@ int I420VideoFrame::CreateEmptyFrame(int width, int height,
   rotation_ = kVideoRotation_0;
 
   // Check if it's safe to reuse allocation.
-  if (video_frame_buffer_ &&
-      video_frame_buffer_->HasOneRef() &&
+  if (video_frame_buffer_ && video_frame_buffer_->HasOneRef() &&
       !video_frame_buffer_->native_handle() &&
       width == video_frame_buffer_->width() &&
-      height == video_frame_buffer_->height() &&
-      stride_y == stride(kYPlane) &&
-      stride_u == stride(kUPlane) &&
-      stride_v == stride(kVPlane)) {
+      height == video_frame_buffer_->height() && stride_y == stride(kYPlane) &&
+      stride_u == stride(kUPlane) && stride_v == stride(kVPlane)) {
     return 0;
   }
 
@@ -86,27 +85,27 @@ int I420VideoFrame::CreateEmptyFrame(int width, int height,
   return 0;
 }
 
-int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
-                                const uint8_t* buffer_u,
-                                const uint8_t* buffer_v,
-                                int width, int height,
-                                int stride_y,
-                                int stride_u,
-                                int stride_v) {
-  return CreateFrame(buffer_y, buffer_u, buffer_v,
-                     width, height, stride_y, stride_u, stride_v,
-                     kVideoRotation_0);
+int VideoFrame::CreateFrame(const uint8_t* buffer_y,
+                            const uint8_t* buffer_u,
+                            const uint8_t* buffer_v,
+                            int width,
+                            int height,
+                            int stride_y,
+                            int stride_u,
+                            int stride_v) {
+  return CreateFrame(buffer_y, buffer_u, buffer_v, width, height, stride_y,
+                     stride_u, stride_v, kVideoRotation_0);
 }
 
-int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
-                                const uint8_t* buffer_u,
-                                const uint8_t* buffer_v,
-                                int width,
-                                int height,
-                                int stride_y,
-                                int stride_u,
-                                int stride_v,
-                                VideoRotation rotation) {
+int VideoFrame::CreateFrame(const uint8_t* buffer_y,
+                            const uint8_t* buffer_u,
+                            const uint8_t* buffer_v,
+                            int width,
+                            int height,
+                            int stride_y,
+                            int stride_u,
+                            int stride_v,
+                            VideoRotation rotation) {
   const int half_height = (height + 1) / 2;
   const int expected_size_y = height * stride_y;
   const int expected_size_u = half_height * stride_u;
@@ -119,10 +118,10 @@ int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
   return 0;
 }
 
-int I420VideoFrame::CreateFrame(const uint8_t* buffer,
-                                int width,
-                                int height,
-                                VideoRotation rotation) {
+int VideoFrame::CreateFrame(const uint8_t* buffer,
+                            int width,
+                            int height,
+                            VideoRotation rotation) {
   const int stride_y = width;
   const int stride_uv = (width + 1) / 2;
 
@@ -133,7 +132,7 @@ int I420VideoFrame::CreateFrame(const uint8_t* buffer,
                      stride_uv, stride_uv, rotation);
 }
 
-int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
+int VideoFrame::CopyFrame(const VideoFrame& videoFrame) {
   if (videoFrame.IsZeroSize()) {
     video_frame_buffer_ = nullptr;
   } else if (videoFrame.native_handle()) {
@@ -152,7 +151,7 @@ int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   return 0;
 }
 
-void I420VideoFrame::ShallowCopy(const I420VideoFrame& videoFrame) {
+void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
   video_frame_buffer_ = videoFrame.video_frame_buffer();
   timestamp_ = videoFrame.timestamp_;
   ntp_time_ms_ = videoFrame.ntp_time_ms_;
@@ -160,7 +159,7 @@ void I420VideoFrame::ShallowCopy(const I420VideoFrame& videoFrame) {
   rotation_ = videoFrame.rotation_;
 }
 
-void I420VideoFrame::Reset() {
+void VideoFrame::Reset() {
   video_frame_buffer_ = nullptr;
   timestamp_ = 0;
   ntp_time_ms_ = 0;
@@ -168,47 +167,46 @@ void I420VideoFrame::Reset() {
   rotation_ = kVideoRotation_0;
 }
 
-uint8_t* I420VideoFrame::buffer(PlaneType type) {
+uint8_t* VideoFrame::buffer(PlaneType type) {
   return video_frame_buffer_ ? video_frame_buffer_->data(type) : nullptr;
 }
 
-const uint8_t* I420VideoFrame::buffer(PlaneType type) const {
+const uint8_t* VideoFrame::buffer(PlaneType type) const {
   // Const cast to call the correct const-version of data.
   const VideoFrameBuffer* const_buffer = video_frame_buffer_.get();
   return const_buffer ? const_buffer->data(type) : nullptr;
 }
 
-int I420VideoFrame::allocated_size(PlaneType type) const {
+int VideoFrame::allocated_size(PlaneType type) const {
   const int plane_height = (type == kYPlane) ? height() : (height() + 1) / 2;
   return plane_height * stride(type);
 }
 
-int I420VideoFrame::stride(PlaneType type) const {
+int VideoFrame::stride(PlaneType type) const {
   return video_frame_buffer_ ? video_frame_buffer_->stride(type) : 0;
 }
 
-int I420VideoFrame::width() const {
+int VideoFrame::width() const {
   return video_frame_buffer_ ? video_frame_buffer_->width() : 0;
 }
 
-int I420VideoFrame::height() const {
+int VideoFrame::height() const {
   return video_frame_buffer_ ? video_frame_buffer_->height() : 0;
 }
 
-bool I420VideoFrame::IsZeroSize() const {
+bool VideoFrame::IsZeroSize() const {
   return !video_frame_buffer_;
 }
 
-void* I420VideoFrame::native_handle() const {
+void* VideoFrame::native_handle() const {
   return video_frame_buffer_ ? video_frame_buffer_->native_handle() : nullptr;
 }
 
-rtc::scoped_refptr<VideoFrameBuffer> I420VideoFrame::video_frame_buffer()
-    const {
+rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
 
-void I420VideoFrame::set_video_frame_buffer(
+void VideoFrame::set_video_frame_buffer(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer) {
   video_frame_buffer_ = buffer;
 }

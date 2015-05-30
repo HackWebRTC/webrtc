@@ -142,7 +142,7 @@ using namespace webrtc;
   return YES;
 }
 
-- (BOOL)renderFrame:(I420VideoFrame*)frameToRender {
+- (BOOL)renderFrame:(VideoFrame*)frameToRender {
   if (![EAGLContext setCurrentContext:_context]) {
     return NO;
   }

@@ -416,7 +416,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void SetRecvCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
     void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions);
 
-    void RenderFrame(const webrtc::I420VideoFrame& frame,
+    void RenderFrame(const webrtc::VideoFrame& frame,
                      int time_to_render_ms) override;
     bool IsTextureSupported() const override;
     bool IsDefaultStream() const;

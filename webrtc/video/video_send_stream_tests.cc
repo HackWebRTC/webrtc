@@ -41,15 +41,14 @@ namespace webrtc {
 
 enum VideoFormat { kGeneric, kVP8, };
 
-void ExpectEqualFrames(const I420VideoFrame& frame1,
-                       const I420VideoFrame& frame2);
-void ExpectEqualTextureFrames(const I420VideoFrame& frame1,
-                              const I420VideoFrame& frame2);
-void ExpectEqualBufferFrames(const I420VideoFrame& frame1,
-                             const I420VideoFrame& frame2);
-void ExpectEqualFramesVector(const std::vector<I420VideoFrame>& frames1,
-                             const std::vector<I420VideoFrame>& frames2);
-I420VideoFrame CreateI420VideoFrame(int width, int height, uint8_t data);
+void ExpectEqualFrames(const VideoFrame& frame1, const VideoFrame& frame2);
+void ExpectEqualTextureFrames(const VideoFrame& frame1,
+                              const VideoFrame& frame2);
+void ExpectEqualBufferFrames(const VideoFrame& frame1,
+                             const VideoFrame& frame2);
+void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
+                             const std::vector<VideoFrame>& frames2);
+VideoFrame CreateVideoFrame(int width, int height, uint8_t data);
 
 class FakeNativeHandle {
  public:
@@ -726,7 +725,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     }
 
     // This method implements the I420FrameCallback.
-    void FrameCallback(I420VideoFrame* video_frame) override {
+    void FrameCallback(VideoFrame* video_frame) override {
       rtc::CritScope lock(&crit_);
       if (test_state_ == kDuringSuspend &&
           ++suspended_frame_count_ > kSuspendTimeFrames) {
@@ -1043,12 +1042,12 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   DestroyStreams();
 }
 
-TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
+TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   class FrameObserver : public I420FrameCallback {
    public:
     FrameObserver() : output_frame_event_(EventWrapper::Create()) {}
 
-    void FrameCallback(I420VideoFrame* video_frame) override {
+    void FrameCallback(VideoFrame* video_frame) override {
       output_frames_.push_back(*video_frame);
       output_frame_event_->Set();
     }
@@ -1059,13 +1058,13 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
           << "Timeout while waiting for output frames.";
     }
 
-    const std::vector<I420VideoFrame>& output_frames() const {
+    const std::vector<VideoFrame>& output_frames() const {
       return output_frames_;
     }
 
    private:
     // Delivered output frames.
-    std::vector<I420VideoFrame> output_frames_;
+    std::vector<VideoFrame> output_frames_;
 
     // Indicate an output frame has arrived.
     rtc::scoped_ptr<EventWrapper> output_frame_event_;
@@ -1080,25 +1079,25 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
   send_config_.pre_encode_callback = &observer;
   CreateStreams();
 
-  // Prepare five input frames. Send ordinary I420VideoFrame and texture frames
+  // Prepare five input frames. Send ordinary VideoFrame and texture frames
   // alternatively.
-  std::vector<I420VideoFrame> input_frames;
+  std::vector<VideoFrame> input_frames;
   int width = static_cast<int>(encoder_config_.streams[0].width);
   int height = static_cast<int>(encoder_config_.streams[0].height);
   FakeNativeHandle* handle1 = new FakeNativeHandle();
   FakeNativeHandle* handle2 = new FakeNativeHandle();
   FakeNativeHandle* handle3 = new FakeNativeHandle();
-  input_frames.push_back(
-      I420VideoFrame(handle1, width, height, 1, 1, kVideoRotation_0,
-                     rtc::Bind(&DeleteNativeHandle, handle1)));
-  input_frames.push_back(
-      I420VideoFrame(handle2, width, height, 2, 2, kVideoRotation_0,
-                     rtc::Bind(&DeleteNativeHandle, handle2)));
-  input_frames.push_back(CreateI420VideoFrame(width, height, 3));
-  input_frames.push_back(CreateI420VideoFrame(width, height, 4));
-  input_frames.push_back(
-      I420VideoFrame(handle3, width, height, 5, 5, kVideoRotation_0,
-                     rtc::Bind(&DeleteNativeHandle, handle3)));
+  input_frames.push_back(VideoFrame(handle1, width, height, 1, 1,
+                                    kVideoRotation_0,
+                                    rtc::Bind(&DeleteNativeHandle, handle1)));
+  input_frames.push_back(VideoFrame(handle2, width, height, 2, 2,
+                                    kVideoRotation_0,
+                                    rtc::Bind(&DeleteNativeHandle, handle2)));
+  input_frames.push_back(CreateVideoFrame(width, height, 3));
+  input_frames.push_back(CreateVideoFrame(width, height, 4));
+  input_frames.push_back(VideoFrame(handle3, width, height, 5, 5,
+                                    kVideoRotation_0,
+                                    rtc::Bind(&DeleteNativeHandle, handle3)));
 
   send_stream_->Start();
   for (size_t i = 0; i < input_frames.size(); i++) {
@@ -1119,24 +1118,23 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
   DestroyStreams();
 }
 
-void ExpectEqualFrames(const I420VideoFrame& frame1,
-                       const I420VideoFrame& frame2) {
+void ExpectEqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
   if (frame1.native_handle() != nullptr || frame2.native_handle() != nullptr)
     ExpectEqualTextureFrames(frame1, frame2);
   else
     ExpectEqualBufferFrames(frame1, frame2);
 }
 
-void ExpectEqualTextureFrames(const I420VideoFrame& frame1,
-                              const I420VideoFrame& frame2) {
+void ExpectEqualTextureFrames(const VideoFrame& frame1,
+                              const VideoFrame& frame2) {
   EXPECT_EQ(frame1.native_handle(), frame2.native_handle());
   EXPECT_EQ(frame1.width(), frame2.width());
   EXPECT_EQ(frame1.height(), frame2.height());
   EXPECT_EQ(frame1.render_time_ms(), frame2.render_time_ms());
 }
 
-void ExpectEqualBufferFrames(const I420VideoFrame& frame1,
-                             const I420VideoFrame& frame2) {
+void ExpectEqualBufferFrames(const VideoFrame& frame1,
+                             const VideoFrame& frame2) {
   EXPECT_EQ(frame1.width(), frame2.width());
   EXPECT_EQ(frame1.height(), frame2.height());
   EXPECT_EQ(frame1.stride(kYPlane), frame2.stride(kYPlane));
@@ -1160,18 +1158,18 @@ void ExpectEqualBufferFrames(const I420VideoFrame& frame1,
                    frame1.allocated_size(kVPlane)));
 }
 
-void ExpectEqualFramesVector(const std::vector<I420VideoFrame>& frames1,
-                             const std::vector<I420VideoFrame>& frames2) {
+void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
+                             const std::vector<VideoFrame>& frames2) {
   EXPECT_EQ(frames1.size(), frames2.size());
   for (size_t i = 0; i < std::min(frames1.size(), frames2.size()); ++i)
     ExpectEqualFrames(frames1[i], frames2[i]);
 }
 
-I420VideoFrame CreateI420VideoFrame(int width, int height, uint8_t data) {
+VideoFrame CreateVideoFrame(int width, int height, uint8_t data) {
   const int kSizeY = width * height * 2;
   rtc::scoped_ptr<uint8_t[]> buffer(new uint8_t[kSizeY]);
   memset(buffer.get(), data, kSizeY);
-  I420VideoFrame frame;
+  VideoFrame frame;
   frame.CreateFrame(buffer.get(), buffer.get(), buffer.get(), width, height,
                     width, width / 2, width / 2);
   frame.set_timestamp(data);
@@ -1215,7 +1213,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
       return 0;
     }
 
-    int32_t Encode(const I420VideoFrame& inputImage,
+    int32_t Encode(const VideoFrame& inputImage,
                    const CodecSpecificInfo* codecSpecificInfo,
                    const std::vector<VideoFrameType>* frame_types) override {
       EXPECT_TRUE(IsReadyForEncode());
@@ -1414,7 +1412,7 @@ class VideoCodecConfigObserver : public test::SendTest,
            "new encoder settings.";
   }
 
-  int32_t Encode(const I420VideoFrame& input_image,
+  int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<VideoFrameType>* frame_types) override {
     // Silently skip the encode, FakeEncoder::Encode doesn't produce VP8.
@@ -1705,7 +1703,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
           test::FakeEncoder(Clock::GetRealTimeClock()) {}
 
    private:
-    int32_t Encode(const I420VideoFrame& input_image,
+    int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codecSpecificInfo,
                    const std::vector<VideoFrameType>* frame_types) override {
       CodecSpecificInfo specifics;

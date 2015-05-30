@@ -48,7 +48,7 @@ using rtc::scoped_ptr;
 
 using webrtc::CodecSpecificInfo;
 using webrtc::EncodedImage;
-using webrtc::I420VideoFrame;
+using webrtc::VideoFrame;
 using webrtc::RTPFragmentationHeader;
 using webrtc::VideoCodec;
 using webrtc::VideoCodecType;
@@ -85,7 +85,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
                      int32_t /* number_of_cores */,
                      size_t /* max_payload_size */) override;
   int32_t Encode(
-      const webrtc::I420VideoFrame& input_image,
+      const webrtc::VideoFrame& input_image,
       const webrtc::CodecSpecificInfo* /* codec_specific_info */,
       const std::vector<webrtc::VideoFrameType>* frame_types) override;
   int32_t RegisterEncodeCompleteCallback(
@@ -116,7 +116,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // (makes it easier to reason about thread-safety).
   int32_t InitEncodeOnCodecThread(int width, int height, int kbps, int fps);
   int32_t EncodeOnCodecThread(
-      const webrtc::I420VideoFrame& input_image,
+      const webrtc::VideoFrame& input_image,
       const std::vector<webrtc::VideoFrameType>* frame_types);
   int32_t RegisterEncodeCompleteCallbackOnCodecThread(
       webrtc::EncodedImageCallback* callback);
@@ -309,7 +309,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
 }
 
 int32_t MediaCodecVideoEncoder::Encode(
-    const webrtc::I420VideoFrame& frame,
+    const webrtc::VideoFrame& frame,
     const webrtc::CodecSpecificInfo* /* codec_specific_info */,
     const std::vector<webrtc::VideoFrameType>* frame_types) {
   return codec_thread_->Invoke<int32_t>(Bind(
@@ -471,7 +471,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
 }
 
 int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
-    const webrtc::I420VideoFrame& frame,
+    const webrtc::VideoFrame& frame,
     const std::vector<webrtc::VideoFrameType>* frame_types) {
   CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
@@ -493,9 +493,9 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   }
 
   CHECK(frame_types->size() == 1) << "Unexpected stream count";
-  const I420VideoFrame& input_frame =
-      (scale_ && codecType_ == kVideoCodecVP8) ?
-      quality_scaler_->GetScaledFrame(frame) : frame;
+  const VideoFrame& input_frame = (scale_ && codecType_ == kVideoCodecVP8)
+                                      ? quality_scaler_->GetScaledFrame(frame)
+                                      : frame;
 
   if (input_frame.width() != width_ || input_frame.height() != height_) {
     ALOGD("Frame resolution change from %d x %d to %d x %d",

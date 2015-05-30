@@ -28,7 +28,7 @@ class ChromaGenerator : public FrameGenerator {
     assert(height > 0);
   }
 
-  I420VideoFrame* NextFrame() override {
+  VideoFrame* NextFrame() override {
     frame_.CreateEmptyFrame(static_cast<int>(width_),
                             static_cast<int>(height_),
                             static_cast<int>(width_),
@@ -48,7 +48,7 @@ class ChromaGenerator : public FrameGenerator {
   double angle_;
   size_t width_;
   size_t height_;
-  I420VideoFrame frame_;
+  VideoFrame frame_;
 };
 
 class YuvFileGenerator : public FrameGenerator {
@@ -77,7 +77,7 @@ class YuvFileGenerator : public FrameGenerator {
       fclose(file);
   }
 
-  I420VideoFrame* NextFrame() override {
+  VideoFrame* NextFrame() override {
     if (current_display_count_ == 0)
       ReadNextFrame();
     if (++current_display_count_ >= frame_display_count_)
@@ -123,8 +123,8 @@ class YuvFileGenerator : public FrameGenerator {
   const rtc::scoped_ptr<uint8_t[]> frame_buffer_;
   const int frame_display_count_;
   int current_display_count_;
-  I420VideoFrame last_read_frame_;
-  I420VideoFrame temp_frame_copy_;
+  VideoFrame last_read_frame_;
+  VideoFrame temp_frame_copy_;
 };
 }  // namespace
 

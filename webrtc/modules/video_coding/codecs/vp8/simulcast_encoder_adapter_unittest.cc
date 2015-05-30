@@ -115,9 +115,11 @@ class MockVideoEncoder : public VideoEncoder {
     return 0;
   }
 
-  int32_t Encode(const I420VideoFrame& inputImage,
+  int32_t Encode(const VideoFrame& inputImage,
                  const CodecSpecificInfo* codecSpecificInfo,
-                 const std::vector<VideoFrameType>* frame_types) { return 0; }
+                 const std::vector<VideoFrameType>* frame_types) {
+    return 0;
+  }
 
   int32_t RegisterEncodeCompleteCallback(EncodedImageCallback* callback) {
     callback_ = callback;

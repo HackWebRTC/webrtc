@@ -52,8 +52,8 @@ class VPMFramePreprocessor {
   uint32_t DecimatedHeight() const;
 
   // Preprocess output:
-  int32_t PreprocessFrame(const I420VideoFrame& frame,
-                          I420VideoFrame** processed_frame);
+  int32_t PreprocessFrame(const VideoFrame& frame,
+                          VideoFrame** processed_frame);
   VideoContentMetrics* ContentMetrics() const;
 
  private:
@@ -62,7 +62,7 @@ class VPMFramePreprocessor {
   enum { kSkipFrameCA = 2 };
 
   VideoContentMetrics* content_metrics_;
-  I420VideoFrame resampled_frame_;
+  VideoFrame resampled_frame_;
   VPMSpatialResampler* spatial_resampler_;
   VPMContentAnalysis* ca_;
   VPMVideoDecimator* vd_;

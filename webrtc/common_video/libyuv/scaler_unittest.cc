@@ -37,7 +37,7 @@ class TestScaler : public ::testing::Test {
 
   Scaler test_scaler_;
   FILE* source_file_;
-  I420VideoFrame test_frame_;
+  VideoFrame test_frame_;
   const int width_;
   const int half_width_;
   const int height_;
@@ -88,7 +88,7 @@ TEST_F(TestScaler, ScaleBadInitialValues) {
 }
 
 TEST_F(TestScaler, ScaleSendingNullSourcePointer) {
-  I420VideoFrame null_src_frame;
+  VideoFrame null_src_frame;
   EXPECT_EQ(-1, test_scaler_.Scale(null_src_frame, &test_frame_));
 }
 
@@ -98,7 +98,7 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
                                 half_width_, half_height_,
                                 kI420, kI420,
                                 kScalePoint));
-  I420VideoFrame test_frame2;
+  VideoFrame test_frame2;
   rtc::scoped_ptr<uint8_t[]> orig_buffer(new uint8_t[frame_length_]);
   EXPECT_GT(fread(orig_buffer.get(), 1, frame_length_, source_file_), 0U);
   test_frame_.CreateFrame(orig_buffer.get(),
@@ -296,7 +296,7 @@ double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
 
   int frame_count = 0;
   double avg_psnr = 0;
-  I420VideoFrame in_frame, out_frame;
+  VideoFrame in_frame, out_frame;
   const int half_width = (width + 1) / 2;
   in_frame.CreateEmptyFrame(width, height, width, half_width, half_width);
   out_frame.CreateEmptyFrame(width, height, width, half_width, half_width);
@@ -337,8 +337,8 @@ void TestScaler::ScaleSequence(ScaleMethod method,
 
   rewind(source_file);
 
-  I420VideoFrame input_frame;
-  I420VideoFrame output_frame;
+  VideoFrame input_frame;
+  VideoFrame output_frame;
   int64_t start_clock, total_clock;
   total_clock = 0;
   int frame_count = 0;
@@ -363,7 +363,7 @@ void TestScaler::ScaleSequence(ScaleMethod method,
     start_clock = TickTime::MillisecondTimestamp();
     EXPECT_EQ(0, test_scaler_.Scale(input_frame, &output_frame));
     total_clock += TickTime::MillisecondTimestamp() - start_clock;
-    if (PrintI420VideoFrame(output_frame, output_file) < 0) {
+    if (PrintVideoFrame(output_frame, output_file) < 0) {
         return;
     }
     frame_count++;

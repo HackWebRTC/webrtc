@@ -42,7 +42,7 @@ class VideoChannelAGL : public VideoRenderCallback {
   VideoChannelAGL(AGLContext& aglContext, int iId, VideoRenderAGL* owner);
   virtual ~VideoChannelAGL();
   virtual int FrameSizeChange(int width, int height, int numberOfStreams);
-  virtual int DeliverFrame(const I420VideoFrame& videoFrame);
+  virtual int DeliverFrame(const VideoFrame& videoFrame);
   virtual int UpdateSize(int width, int height);
   int SetStreamSettings(int streamId, float startWidth, float startHeight,
                         float stopWidth, float stopHeight);
@@ -51,8 +51,7 @@ class VideoChannelAGL : public VideoRenderCallback {
   int RenderOffScreenBuffer();
   int IsUpdated(bool& isUpdated);
   virtual int UpdateStretchSize(int stretchHeight, int stretchWidth);
-  virtual int32_t RenderFrame(const uint32_t streamId,
-                              I420VideoFrame& videoFrame);
+  virtual int32_t RenderFrame(const uint32_t streamId, VideoFrame& videoFrame);
 
  private:
 

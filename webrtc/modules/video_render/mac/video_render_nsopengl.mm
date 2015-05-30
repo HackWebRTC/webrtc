@@ -89,9 +89,8 @@ int32_t VideoChannelNSOpenGL::GetChannelProperties(float& left, float& top,
     return 0;
 }
 
-int32_t VideoChannelNSOpenGL::RenderFrame(
-  const uint32_t /*streamId*/, const I420VideoFrame& videoFrame) {
-
+int32_t VideoChannelNSOpenGL::RenderFrame(const uint32_t /*streamId*/,
+                                          const VideoFrame& videoFrame) {
   _owner->LockAGLCntx();
 
   if(_width != videoFrame.width() ||
@@ -206,8 +205,7 @@ int VideoChannelNSOpenGL::FrameSizeChange(int width, int height, int numberOfStr
     return 0;
 }
 
-int VideoChannelNSOpenGL::DeliverFrame(const I420VideoFrame& videoFrame) {
-
+int VideoChannelNSOpenGL::DeliverFrame(const VideoFrame& videoFrame) {
   _owner->LockAGLCntx();
 
   if (_texture == 0) {
@@ -221,7 +219,7 @@ int VideoChannelNSOpenGL::DeliverFrame(const I420VideoFrame& videoFrame) {
     return -1;
   }
 
-  // Using the I420VideoFrame for YV12: YV12 is YVU; I420 assumes
+  // Using the VideoFrame for YV12: YV12 is YVU; I420 assumes
   // YUV.
   // TODO(mikhal) : Use appropriate functionality.
   // TODO(wu): See if we are using glTexSubImage2D correctly.

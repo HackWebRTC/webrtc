@@ -61,7 +61,7 @@ class QualityScalerTest : public ::testing::Test {
 
   void ExpectScaleUsingReportedResolution() {
     QualityScaler::Resolution res = qs_.GetScaledResolution(input_frame_);
-    const I420VideoFrame& scaled_frame = qs_.GetScaledFrame(input_frame_);
+    const VideoFrame& scaled_frame = qs_.GetScaledFrame(input_frame_);
     EXPECT_EQ(res.width, scaled_frame.width());
     EXPECT_EQ(res.height, scaled_frame.height());
   }
@@ -71,7 +71,7 @@ class QualityScalerTest : public ::testing::Test {
   void DoesNotDownscaleFrameDimensions(int width, int height);
 
   QualityScaler qs_;
-  I420VideoFrame input_frame_;
+  VideoFrame input_frame_;
 };
 
 TEST_F(QualityScalerTest, UsesOriginalFrameInitially) {

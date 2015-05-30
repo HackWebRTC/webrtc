@@ -44,7 +44,7 @@ VideoX11Channel::~VideoX11Channel()
 }
 
 int32_t VideoX11Channel::RenderFrame(const uint32_t streamId,
-                                     const I420VideoFrame& videoFrame) {
+                                     const VideoFrame& videoFrame) {
   CriticalSectionScoped cs(&_crit);
   if (_width != videoFrame.width() || _height
       != videoFrame.height()) {
@@ -72,7 +72,7 @@ int32_t VideoX11Channel::FrameSizeChange(int32_t width,
     return 0;
 }
 
-int32_t VideoX11Channel::DeliverFrame(const I420VideoFrame& videoFrame) {
+int32_t VideoX11Channel::DeliverFrame(const VideoFrame& videoFrame) {
   CriticalSectionScoped cs(&_crit);
   if (!_prepared) {
     return 0;

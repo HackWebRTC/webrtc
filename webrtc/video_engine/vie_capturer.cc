@@ -103,8 +103,8 @@ void ViECapturer::RegisterCpuOveruseMetricsObserver(
   cpu_overuse_metrics_observer_->Set(observer);
 }
 
-void ViECapturer::IncomingFrame(const I420VideoFrame& video_frame) {
-  I420VideoFrame incoming_frame = video_frame;
+void ViECapturer::IncomingFrame(const VideoFrame& video_frame) {
+  VideoFrame incoming_frame = video_frame;
 
   if (incoming_frame.ntp_time_ms() != 0) {
     // If a NTP time stamp is set, this is the time stamp we will use.
@@ -156,7 +156,7 @@ bool ViECapturer::ViECaptureProcess() {
 
     overuse_detector_->FrameProcessingStarted();
     int64_t encode_start_time = -1;
-    I420VideoFrame deliver_frame;
+    VideoFrame deliver_frame;
     {
       CriticalSectionScoped cs(capture_cs_.get());
       if (!captured_frame_.IsZeroSize()) {

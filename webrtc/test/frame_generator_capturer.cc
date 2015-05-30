@@ -110,7 +110,7 @@ void FrameGeneratorCapturer::InsertFrame() {
   {
     rtc::CritScope cs(&lock_);
     if (sending_) {
-      I420VideoFrame* frame = frame_generator_->NextFrame();
+      VideoFrame* frame = frame_generator_->NextFrame();
       frame->set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
       if (first_frame_capture_time_ == -1) {
         first_frame_capture_time_ = frame->ntp_time_ms();

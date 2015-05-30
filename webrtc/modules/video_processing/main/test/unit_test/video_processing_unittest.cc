@@ -26,11 +26,11 @@ DEFINE_bool(gen_files, false, "Output files for visual inspection.");
 
 }  // namespace
 
-static void PreprocessFrameAndVerify(const I420VideoFrame& source,
+static void PreprocessFrameAndVerify(const VideoFrame& source,
                                      int target_width,
                                      int target_height,
                                      VideoProcessingModule* vpm,
-                                     I420VideoFrame** out_frame);
+                                     VideoFrame** out_frame);
 static void CropFrame(const uint8_t* source_data,
                       int source_width,
                       int source_height,
@@ -38,22 +38,21 @@ static void CropFrame(const uint8_t* source_data,
                       int offset_y,
                       int cropped_width,
                       int cropped_height,
-                      I420VideoFrame* cropped_frame);
+                      VideoFrame* cropped_frame);
 // The |source_data| is cropped and scaled to |target_width| x |target_height|,
 // and then scaled back to the expected cropped size. |expected_psnr| is used to
 // verify basic quality, and is set to be ~0.1/0.05dB lower than actual PSNR
 // verified under the same conditions.
-static void TestSize(const I420VideoFrame& source_frame,
-                     const I420VideoFrame& cropped_source_frame,
+static void TestSize(const VideoFrame& source_frame,
+                     const VideoFrame& cropped_source_frame,
                      int target_width,
                      int target_height,
                      double expected_psnr,
                      VideoProcessingModule* vpm);
-static bool CompareFrames(const webrtc::I420VideoFrame& frame1,
-                          const webrtc::I420VideoFrame& frame2);
-static void WriteProcessedFrameForVisualInspection(
-    const I420VideoFrame& source,
-    const I420VideoFrame& processed);
+static bool CompareFrames(const webrtc::VideoFrame& frame1,
+                          const webrtc::VideoFrame& frame2);
+static void WriteProcessedFrameForVisualInspection(const VideoFrame& source,
+                                                   const VideoFrame& processed);
 
 VideoProcessingModuleTest::VideoProcessingModuleTest()
     : vpm_(NULL),
@@ -98,7 +97,7 @@ TEST_F(VideoProcessingModuleTest, HandleNullBuffer) {
   // TODO(mikhal/stefan): Do we need this one?
   VideoProcessingModule::FrameStats stats;
   // Video frame with unallocated buffer.
-  I420VideoFrame videoFrame;
+  VideoFrame videoFrame;
 
   EXPECT_EQ(-3, vpm_->GetFrameStats(&stats, videoFrame));
 
@@ -121,7 +120,7 @@ TEST_F(VideoProcessingModuleTest, HandleBadStats) {
 }
 
 TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset) {
-  I420VideoFrame video_frame2;
+  VideoFrame video_frame2;
   VideoProcessingModule::FrameStats stats;
   // Only testing non-static functions here.
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
@@ -184,7 +183,7 @@ TEST_F(VideoProcessingModuleTest, PreprocessorLogic) {
   // Disable spatial sampling.
   vpm_->SetInputFrameResampleMode(kNoRescaling);
   EXPECT_EQ(VPM_OK, vpm_->SetTargetResolution(resolution, resolution, 30));
-  I420VideoFrame* out_frame = NULL;
+  VideoFrame* out_frame = NULL;
   // Set rescaling => output frame != NULL.
   vpm_->SetInputFrameResampleMode(kFastRescaling);
   PreprocessFrameAndVerify(video_frame_, resolution, resolution, vpm_,
@@ -218,7 +217,7 @@ TEST_F(VideoProcessingModuleTest, Resampler) {
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
   // Cropped source frame that will contain the expected visible region.
-  I420VideoFrame cropped_source_frame;
+  VideoFrame cropped_source_frame;
   cropped_source_frame.CopyFrame(video_frame_);
 
   for (uint32_t run_idx = 0; run_idx < NumRuns; run_idx++) {
@@ -283,11 +282,11 @@ TEST_F(VideoProcessingModuleTest, Resampler) {
          static_cast<int>(min_runtime));
 }
 
-void PreprocessFrameAndVerify(const I420VideoFrame& source,
+void PreprocessFrameAndVerify(const VideoFrame& source,
                               int target_width,
                               int target_height,
                               VideoProcessingModule* vpm,
-                              I420VideoFrame** out_frame) {
+                              VideoFrame** out_frame) {
   ASSERT_EQ(VPM_OK, vpm->SetTargetResolution(target_width, target_height, 30));
   ASSERT_EQ(VPM_OK, vpm->PreprocessFrame(source, out_frame));
 
@@ -312,7 +311,7 @@ void CropFrame(const uint8_t* source_data,
                int offset_y,
                int cropped_width,
                int cropped_height,
-               I420VideoFrame* cropped_frame) {
+               VideoFrame* cropped_frame) {
   cropped_frame->CreateEmptyFrame(cropped_width, cropped_height, cropped_width,
                                   (cropped_width + 1) / 2,
                                   (cropped_width + 1) / 2);
@@ -321,14 +320,14 @@ void CropFrame(const uint8_t* source_data,
                           source_height, 0, kVideoRotation_0, cropped_frame));
 }
 
-void TestSize(const I420VideoFrame& source_frame,
-              const I420VideoFrame& cropped_source_frame,
+void TestSize(const VideoFrame& source_frame,
+              const VideoFrame& cropped_source_frame,
               int target_width,
               int target_height,
               double expected_psnr,
               VideoProcessingModule* vpm) {
   // Resample source_frame to out_frame.
-  I420VideoFrame* out_frame = NULL;
+  VideoFrame* out_frame = NULL;
   vpm->SetInputFrameResampleMode(kBox);
   PreprocessFrameAndVerify(source_frame, target_width, target_height, vpm,
                            &out_frame);
@@ -337,7 +336,7 @@ void TestSize(const I420VideoFrame& source_frame,
   WriteProcessedFrameForVisualInspection(source_frame, *out_frame);
 
   // Scale |resampled_source_frame| back to the source scale.
-  I420VideoFrame resampled_source_frame;
+  VideoFrame resampled_source_frame;
   resampled_source_frame.CopyFrame(*out_frame);
   PreprocessFrameAndVerify(resampled_source_frame, cropped_source_frame.width(),
                            cropped_source_frame.height(), vpm, &out_frame);
@@ -352,8 +351,8 @@ void TestSize(const I420VideoFrame& source_frame,
          target_width, target_height);
 }
 
-bool CompareFrames(const webrtc::I420VideoFrame& frame1,
-                   const webrtc::I420VideoFrame& frame2) {
+bool CompareFrames(const webrtc::VideoFrame& frame1,
+                   const webrtc::VideoFrame& frame2) {
   for (int plane = 0; plane < webrtc::kNumOfPlanes; plane ++) {
     webrtc::PlaneType plane_type = static_cast<webrtc::PlaneType>(plane);
     int allocated_size1 = frame1.allocated_size(plane_type);
@@ -368,8 +367,8 @@ bool CompareFrames(const webrtc::I420VideoFrame& frame1,
   return true;
 }
 
-void WriteProcessedFrameForVisualInspection(const I420VideoFrame& source,
-                                            const I420VideoFrame& processed) {
+void WriteProcessedFrameForVisualInspection(const VideoFrame& source,
+                                            const VideoFrame& processed) {
   // Skip if writing to files is not enabled.
   if (!FLAGS_gen_files)
     return;
@@ -381,7 +380,7 @@ void WriteProcessedFrameForVisualInspection(const I420VideoFrame& source,
   std::cout << "Watch " << filename.str() << " and verify that it is okay."
             << std::endl;
   FILE* stand_alone_file = fopen(filename.str().c_str(), "wb");
-  if (PrintI420VideoFrame(processed, stand_alone_file) < 0)
+  if (PrintVideoFrame(processed, stand_alone_file) < 0)
     std::cerr << "Failed to write: " << filename.str() << std::endl;
   if (stand_alone_file)
     fclose(stand_alone_file);

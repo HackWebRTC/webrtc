@@ -93,15 +93,16 @@ public:
     virtual int32_t video_codec_info(VideoCodec& /*videoCodec*/) const
     {return -1;}
 
-    virtual int32_t GetVideoFromFile(I420VideoFrame& /*videoFrame*/)
-    { return -1;}
+    virtual int32_t GetVideoFromFile(VideoFrame& /*videoFrame*/) { return -1; }
 
     // Same as GetVideoFromFile(). videoFrame will have the resolution specified
     // by the width outWidth and height outHeight in pixels.
-    virtual int32_t GetVideoFromFile(I420VideoFrame& /*videoFrame*/,
+    virtual int32_t GetVideoFromFile(VideoFrame& /*videoFrame*/,
                                      const uint32_t /*outWidth*/,
-                                     const uint32_t /*outHeight*/)
-    {return -1;}
+                                     const uint32_t /*outHeight*/) {
+      return -1;
+    }
+
 protected:
     virtual ~FilePlayer() {}
 

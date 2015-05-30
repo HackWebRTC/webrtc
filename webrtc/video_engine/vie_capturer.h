@@ -43,7 +43,7 @@ class ViEFrameCallback {
  public:
   virtual ~ViEFrameCallback() {}
 
-  virtual void DeliverFrame(I420VideoFrame video_frame) = 0;
+  virtual void DeliverFrame(VideoFrame video_frame) = 0;
 };
 
 class ViECapturer {
@@ -52,7 +52,7 @@ class ViECapturer {
               ViEFrameCallback* frame_callback);
   ~ViECapturer();
 
-  void IncomingFrame(const I420VideoFrame& frame);
+  void IncomingFrame(const VideoFrame& frame);
 
   void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
   void RegisterCpuOveruseMetricsObserver(CpuOveruseMetricsObserver* observer);
@@ -69,7 +69,7 @@ class ViECapturer {
   bool ViECaptureProcess();
 
  private:
-  void DeliverI420Frame(I420VideoFrame* video_frame);
+  void DeliverI420Frame(VideoFrame* video_frame);
 
   rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
   ProcessThread* const module_process_thread_;
@@ -78,7 +78,7 @@ class ViECapturer {
 
   // Frame used in IncomingFrameI420.
   rtc::scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
-  I420VideoFrame incoming_frame_;
+  VideoFrame incoming_frame_;
 
   // Capture thread.
   rtc::scoped_ptr<ThreadWrapper> capture_thread_;
@@ -88,7 +88,7 @@ class ViECapturer {
 
   volatile int stop_;
 
-  I420VideoFrame captured_frame_ GUARDED_BY(capture_cs_.get());
+  VideoFrame captured_frame_ GUARDED_BY(capture_cs_.get());
   // Used to make sure incoming time stamp is increasing for every frame.
   int64_t last_captured_timestamp_;
   // Delta used for translating between NTP and internal timestamps.

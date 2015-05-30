@@ -62,7 +62,7 @@ VideoRenderCallback* IncomingVideoStream::ModuleCallback() {
 }
 
 int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
-                                         const I420VideoFrame& video_frame) {
+                                         const VideoFrame& video_frame) {
   CriticalSectionScoped csS(stream_critsect_.get());
 
   if (!running_) {
@@ -88,14 +88,13 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
   return 0;
 }
 
-int32_t IncomingVideoStream::SetStartImage(
-    const I420VideoFrame& video_frame) {
+int32_t IncomingVideoStream::SetStartImage(const VideoFrame& video_frame) {
   CriticalSectionScoped csS(thread_critsect_.get());
   return start_image_.CopyFrame(video_frame);
 }
 
-int32_t IncomingVideoStream::SetTimeoutImage(
-    const I420VideoFrame& video_frame, const uint32_t timeout) {
+int32_t IncomingVideoStream::SetTimeoutImage(const VideoFrame& video_frame,
+                                             const uint32_t timeout) {
   CriticalSectionScoped csS(thread_critsect_.get());
   timeout_time_ = timeout;
   return timeout_image_.CopyFrame(video_frame);
@@ -207,7 +206,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
       return false;
     }
     // Get a new frame to render and the time for the frame after this one.
-    I420VideoFrame frame_to_render;
+    VideoFrame frame_to_render;
     uint32_t wait_time;
     {
       CriticalSectionScoped cs(buffer_critsect_.get());

@@ -95,7 +95,7 @@ class VideoEncoder {
   //                                  WEBRTC_VIDEO_CODEC_MEMORY
   //                                  WEBRTC_VIDEO_CODEC_ERROR
   //                                  WEBRTC_VIDEO_CODEC_TIMEOUT
-  virtual int32_t Encode(const I420VideoFrame& frame,
+  virtual int32_t Encode(const VideoFrame& frame,
                          const CodecSpecificInfo* codec_specific_info,
                          const std::vector<VideoFrameType>* frame_types) = 0;
 
@@ -142,7 +142,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
       EncodedImageCallback* callback) override;
 
   int32_t Release() override;
-  int32_t Encode(const I420VideoFrame& frame,
+  int32_t Encode(const VideoFrame& frame,
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<VideoFrameType>* frame_types) override;
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;

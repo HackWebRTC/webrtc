@@ -80,7 +80,7 @@ VideoChannelAGL::~VideoChannelAGL()
 }
 
 int32_t VideoChannelAGL::RenderFrame(const uint32_t streamId,
-                                     I420VideoFrame& videoFrame) {
+                                     VideoFrame& videoFrame) {
   _owner->LockAGLCntx();
   if (_width != videoFrame.width() ||
       _height != videoFrame.height()) {
@@ -219,7 +219,7 @@ int VideoChannelAGL::FrameSizeChange(int width, int height, int numberOfStreams)
 }
 
 // Called from video engine when a new frame should be rendered.
-int VideoChannelAGL::DeliverFrame(const I420VideoFrame& videoFrame) {
+int VideoChannelAGL::DeliverFrame(const VideoFrame& videoFrame) {
   _owner->LockAGLCntx();
 
   if (_texture == 0) {

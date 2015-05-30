@@ -82,7 +82,7 @@ class WebRtcVideoCapturer : public VideoCapturer,
  private:
   // Callback when a frame is captured by camera.
   virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       const webrtc::I420VideoFrame& frame);
+                                       const webrtc::VideoFrame& frame);
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay);
 
@@ -92,7 +92,7 @@ class WebRtcVideoCapturer : public VideoCapturer,
   // directly from OnIncomingCapturedFrame.
   // TODO(tommi): Remove this workaround when we've updated the WebRTC capturers
   // to follow the same contract.
-  void SignalFrameCapturedOnStartThread(const webrtc::I420VideoFrame frame);
+  void SignalFrameCapturedOnStartThread(const webrtc::VideoFrame frame);
 
   rtc::scoped_ptr<WebRtcVcmFactoryInterface> factory_;
   webrtc::VideoCaptureModule* module_;
@@ -105,8 +105,9 @@ class WebRtcVideoCapturer : public VideoCapturer,
 
 struct WebRtcCapturedFrame : public CapturedFrame {
  public:
-  WebRtcCapturedFrame(const webrtc::I420VideoFrame& frame,
-                      void* buffer, size_t length);
+  WebRtcCapturedFrame(const webrtc::VideoFrame& frame,
+                      void* buffer,
+                      size_t length);
 };
 
 }  // namespace cricket

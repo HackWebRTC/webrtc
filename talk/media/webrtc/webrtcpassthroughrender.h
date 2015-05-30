@@ -161,12 +161,12 @@ class WebRtcPassthroughRender : public webrtc::VideoRender {
   }
 
   int32_t SetStartImage(const uint32_t stream_id,
-                        const webrtc::I420VideoFrame& videoFrame) override {
+                        const webrtc::VideoFrame& videoFrame) override {
     return -1;
   }
 
   int32_t SetTimeoutImage(const uint32_t stream_id,
-                          const webrtc::I420VideoFrame& videoFrame,
+                          const webrtc::VideoFrame& videoFrame,
                           const uint32_t timeout) override {
     return -1;
   }

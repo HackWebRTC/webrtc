@@ -99,7 +99,7 @@ class VideoSender {
   int32_t RegisterProtectionCallback(VCMProtectionCallback* protection);
   void SetVideoProtection(bool enable, VCMVideoProtection videoProtection);
 
-  int32_t AddVideoFrame(const I420VideoFrame& videoFrame,
+  int32_t AddVideoFrame(const VideoFrame& videoFrame,
                         const VideoContentMetrics* _contentMetrics,
                         const CodecSpecificInfo* codecSpecificInfo);
 

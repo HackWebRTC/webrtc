@@ -25,10 +25,10 @@ class VideoRenderFrames {
   VideoRenderFrames();
 
   // Add a frame to the render queue
-  int32_t AddFrame(const I420VideoFrame& new_frame);
+  int32_t AddFrame(const VideoFrame& new_frame);
 
   // Get a frame for rendering, or a zero-size frame if it's not time to render.
-  I420VideoFrame FrameToRender();
+  VideoFrame FrameToRender();
 
   // Releases all frames
   int32_t ReleaseAllFrames();
@@ -48,7 +48,7 @@ class VideoRenderFrames {
   enum { KFutureRenderTimestampMS = 10000 };
 
   // Sorted list with framed to be rendered, oldest first.
-  std::list<I420VideoFrame> incoming_frames_;
+  std::list<VideoFrame> incoming_frames_;
 
   // Estimated delay from a frame is released until it's rendered.
   uint32_t render_delay_ms_;

@@ -18,20 +18,20 @@
 
 namespace webrtc {
 
-class I420VideoFrame {
+class VideoFrame {
  public:
-  I420VideoFrame();
-  I420VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-                 uint32_t timestamp,
-                 int64_t render_time_ms,
-                 VideoRotation rotation);
-  I420VideoFrame(void* native_handle,
-                 int width,
-                 int height,
-                 uint32_t timestamp,
-                 int64_t render_time_ms,
-                 VideoRotation rotation,
-                 const rtc::Callback0<void>& no_longer_used);
+  VideoFrame();
+  VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+             uint32_t timestamp,
+             int64_t render_time_ms,
+             VideoRotation rotation);
+  VideoFrame(void* native_handle,
+             int width,
+             int height,
+             uint32_t timestamp,
+             int64_t render_time_ms,
+             VideoRotation rotation,
+             const rtc::Callback0<void>& no_longer_used);
 
   // TODO(pbos): Make all create/copy functions void, they should not be able to
   // fail (which should be DCHECK/CHECKed instead).
@@ -82,11 +82,11 @@ class I420VideoFrame {
   // Deep copy frame: If required size is bigger than allocated one, new
   // buffers of adequate size will be allocated.
   // Return value: 0 on success, -1 on error.
-  int CopyFrame(const I420VideoFrame& videoFrame);
+  int CopyFrame(const VideoFrame& videoFrame);
 
   // Creates a shallow copy of |videoFrame|, i.e, the this object will retain a
   // reference to the video buffer also retained by |videoFrame|.
-  void ShallowCopy(const I420VideoFrame& videoFrame);
+  void ShallowCopy(const VideoFrame& videoFrame);
 
   // Release frame buffer and reset time stamps.
   void Reset();

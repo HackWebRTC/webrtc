@@ -32,9 +32,10 @@ class MockVideoEncoder : public VideoEncoder {
   MOCK_METHOD3(InitEncode, int32_t(const VideoCodec* codecSettings,
                                    int32_t numberOfCores,
                                    size_t maxPayloadSize));
-  MOCK_METHOD3(Encode, int32_t(const I420VideoFrame& inputImage,
-                               const CodecSpecificInfo* codecSpecificInfo,
-                               const std::vector<VideoFrameType>* frame_types));
+  MOCK_METHOD3(Encode,
+               int32_t(const VideoFrame& inputImage,
+                       const CodecSpecificInfo* codecSpecificInfo,
+                       const std::vector<VideoFrameType>* frame_types));
   MOCK_METHOD1(RegisterEncodeCompleteCallback,
                int32_t(EncodedImageCallback* callback));
   MOCK_METHOD0(Release, int32_t());
@@ -48,8 +49,7 @@ class MockVideoEncoder : public VideoEncoder {
 
 class MockDecodedImageCallback : public DecodedImageCallback {
  public:
-  MOCK_METHOD1(Decoded,
-               int32_t(I420VideoFrame& decodedImage));
+  MOCK_METHOD1(Decoded, int32_t(VideoFrame& decodedImage));
   MOCK_METHOD1(ReceivedDecodedReferenceFrame,
                int32_t(const uint64_t pictureId));
   MOCK_METHOD1(ReceivedDecodedFrame,

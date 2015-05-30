@@ -713,10 +713,9 @@ uint32_t VP8EncoderImpl::MaxIntraTarget(uint32_t optimalBuffersize) {
   return (targetPct < minIntraTh) ? minIntraTh: targetPct;
 }
 
-int VP8EncoderImpl::Encode(
-    const I420VideoFrame& frame,
-    const CodecSpecificInfo* codec_specific_info,
-    const std::vector<VideoFrameType>* frame_types) {
+int VP8EncoderImpl::Encode(const VideoFrame& frame,
+                           const CodecSpecificInfo* codec_specific_info,
+                           const std::vector<VideoFrameType>* frame_types) {
   TRACE_EVENT1("webrtc", "VP8::Encode", "timestamp", frame.timestamp());
 
   if (!inited_) {
@@ -734,7 +733,7 @@ int VP8EncoderImpl::Encode(
   const bool use_quality_scaler = encoders_.size() == 1 &&
                                   configurations_[0].rc_dropframe_thresh > 0 &&
                                   codec_.codecSpecific.VP8.automaticResizeOn;
-  const I420VideoFrame& input_image =
+  const VideoFrame& input_image =
       use_quality_scaler ? quality_scaler_.GetScaledFrame(frame) : frame;
 
   if (use_quality_scaler && (input_image.width() != codec_.width ||
@@ -902,8 +901,7 @@ int VP8EncoderImpl::Encode(
 }
 
 // TODO(pbos): Make sure this works for properly for >1 encoders.
-int VP8EncoderImpl::UpdateCodecFrameSize(
-    const I420VideoFrame& input_image) {
+int VP8EncoderImpl::UpdateCodecFrameSize(const VideoFrame& input_image) {
   codec_.width = input_image.width();
   codec_.height = input_image.height();
   // Update the cpu_speed setting for resolution change.
@@ -952,9 +950,8 @@ void VP8EncoderImpl::PopulateCodecSpecific(
   picture_id_[stream_idx] = (picture_id_[stream_idx] + 1) & 0x7FFF;
 }
 
-int VP8EncoderImpl::GetEncodedPartitions(
-    const I420VideoFrame& input_image,
-    bool only_predicting_from_key_frame) {
+int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
+                                         bool only_predicting_from_key_frame) {
   int stream_idx = static_cast<int>(encoders_.size()) - 1;
   for (size_t encoder_idx = 0; encoder_idx < encoders_.size();
       ++encoder_idx, --stream_idx) {
@@ -1342,8 +1339,8 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
   last_frame_width_ = img->d_w;
   last_frame_height_ = img->d_h;
   // Allocate memory for decoded image.
-  I420VideoFrame decoded_image(buffer_pool_.CreateBuffer(img->d_w, img->d_h),
-                               timestamp, 0, kVideoRotation_0);
+  VideoFrame decoded_image(buffer_pool_.CreateBuffer(img->d_w, img->d_h),
+                           timestamp, 0, kVideoRotation_0);
   libyuv::I420Copy(
       img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
       img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],

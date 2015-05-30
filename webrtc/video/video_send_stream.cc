@@ -247,7 +247,7 @@ VideoSendStream::~VideoSendStream() {
   channel_group_->DeleteChannel(channel_id_);
 }
 
-void VideoSendStream::IncomingCapturedFrame(const I420VideoFrame& frame) {
+void VideoSendStream::IncomingCapturedFrame(const VideoFrame& frame) {
   // TODO(pbos): Local rendering should not be done on the capture thread.
   if (config_.local_renderer != nullptr)
     config_.local_renderer->RenderFrame(frame, 0);

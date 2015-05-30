@@ -123,7 +123,7 @@ class ViEEncoder
   int32_t ScaleInputImage(bool enable);
 
   // Implementing ViEFrameCallback.
-  void DeliverFrame(I420VideoFrame video_frame) override;
+  void DeliverFrame(VideoFrame video_frame) override;
 
   int32_t SendKeyFrame();
   int32_t SendCodecStatistics(uint32_t* num_key_frames,

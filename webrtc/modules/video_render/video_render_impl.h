@@ -193,10 +193,10 @@ public:
                             const float right, const float bottom);
 
     virtual int32_t SetStartImage(const uint32_t streamId,
-                                  const I420VideoFrame& videoFrame);
+                                  const VideoFrame& videoFrame);
 
     virtual int32_t SetTimeoutImage(const uint32_t streamId,
-                                    const I420VideoFrame& videoFrame,
+                                    const VideoFrame& videoFrame,
                                     const uint32_t timeout);
 
 private:

@@ -80,7 +80,8 @@ void VPMDeflickering::Reset() {
   }
 }
 
-int32_t VPMDeflickering::ProcessFrame(I420VideoFrame* frame,
+int32_t VPMDeflickering::ProcessFrame(
+    VideoFrame* frame,
     VideoProcessingModule::FrameStats* stats) {
   assert(frame);
   uint32_t frame_memory;

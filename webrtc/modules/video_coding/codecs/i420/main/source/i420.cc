@@ -72,9 +72,7 @@ int I420Encoder::InitEncode(const VideoCodec* codecSettings,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-
-
-int I420Encoder::Encode(const I420VideoFrame& inputImage,
+int I420Encoder::Encode(const VideoFrame& inputImage,
                         const CodecSpecificInfo* /*codecSpecificInfo*/,
                         const std::vector<VideoFrameType>* /*frame_types*/) {
   if (!_inited) {

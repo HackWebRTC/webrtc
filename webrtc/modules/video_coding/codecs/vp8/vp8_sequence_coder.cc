@@ -68,15 +68,15 @@ class Vp8SequenceCoderDecodeCallback : public webrtc::DecodedImageCallback {
  public:
   explicit Vp8SequenceCoderDecodeCallback(FILE* decoded_file)
       : decoded_file_(decoded_file) {}
-  int Decoded(webrtc::I420VideoFrame& frame);
+  int Decoded(webrtc::VideoFrame& frame);
   bool DecodeComplete();
 
  private:
   FILE* decoded_file_;
 };
 
-int Vp8SequenceCoderDecodeCallback::Decoded(webrtc::I420VideoFrame& image) {
-  EXPECT_EQ(0, webrtc::PrintI420VideoFrame(image, decoded_file_));
+int Vp8SequenceCoderDecodeCallback::Decoded(webrtc::VideoFrame& image) {
+  EXPECT_EQ(0, webrtc::PrintVideoFrame(image, decoded_file_));
   return 0;
 }
 
@@ -140,7 +140,7 @@ int SequenceCoder(webrtc::test::CommandLineParser& parser) {
     return -1;
   }
   EXPECT_EQ(0, decoder->InitDecode(&inst, 1));
-  webrtc::I420VideoFrame input_frame;
+  webrtc::VideoFrame input_frame;
   size_t length = webrtc::CalcBufferSize(webrtc::kI420, width, height);
   rtc::scoped_ptr<uint8_t[]> frame_buffer(new uint8_t[length]);
 

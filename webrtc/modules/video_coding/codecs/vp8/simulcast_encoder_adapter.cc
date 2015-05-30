@@ -233,7 +233,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
 }
 
 int SimulcastEncoderAdapter::Encode(
-    const I420VideoFrame& input_image,
+    const VideoFrame& input_image,
     const CodecSpecificInfo* codec_specific_info,
     const std::vector<VideoFrameType>* frame_types) {
   if (!Initialized()) {
@@ -286,7 +286,7 @@ int SimulcastEncoderAdapter::Encode(
                                                codec_specific_info,
                                                &stream_frame_types);
     } else {
-      I420VideoFrame dst_frame;
+      VideoFrame dst_frame;
       // Making sure that destination frame is of sufficient size.
       // Aligning stride values based on width.
       dst_frame.CreateEmptyFrame(dst_width, dst_height,

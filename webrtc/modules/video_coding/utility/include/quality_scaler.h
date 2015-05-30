@@ -30,15 +30,15 @@ class QualityScaler {
   void ReportQP(int qp);
   void ReportDroppedFrame();
   void Reset(int framerate, int bitrate, int width, int height);
-  Resolution GetScaledResolution(const I420VideoFrame& frame);
-  const I420VideoFrame& GetScaledFrame(const I420VideoFrame& frame);
+  Resolution GetScaledResolution(const VideoFrame& frame);
+  const VideoFrame& GetScaledFrame(const VideoFrame& frame);
 
  private:
   void AdjustScale(bool up);
   void ClearSamples();
 
   Scaler scaler_;
-  I420VideoFrame scaled_frame_;
+  VideoFrame scaled_frame_;
 
   size_t num_samples_;
   int low_qp_threshold_;

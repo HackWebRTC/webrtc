@@ -40,7 +40,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
   int InitEncode(const VideoCodec* inst,
                  int number_of_cores,
                  size_t max_payload_size) override;
-  int Encode(const I420VideoFrame& input_image,
+  int Encode(const VideoFrame& input_image,
              const CodecSpecificInfo* codec_specific_info,
              const std::vector<VideoFrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;

@@ -27,7 +27,7 @@ void VPMBrightnessDetection::Reset() {
 }
 
 int32_t VPMBrightnessDetection::ProcessFrame(
-    const I420VideoFrame& frame,
+    const VideoFrame& frame,
     const VideoProcessingModule::FrameStats& stats) {
   if (frame.IsZeroSize()) {
     return VPM_PARAMETER_ERROR;

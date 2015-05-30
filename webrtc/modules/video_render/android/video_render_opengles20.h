@@ -25,7 +25,7 @@ class VideoRenderOpenGles20 {
   ~VideoRenderOpenGles20();
 
   int32_t Setup(int32_t widht, int32_t height);
-  int32_t Render(const I420VideoFrame& frameToRender);
+  int32_t Render(const VideoFrame& frameToRender);
   int32_t SetCoordinates(int32_t zOrder, const float left, const float top,
                          const float right, const float bottom);
 
@@ -35,8 +35,8 @@ class VideoRenderOpenGles20 {
   GLuint loadShader(GLenum shaderType, const char* pSource);
   GLuint createProgram(const char* pVertexSource,
                        const char* pFragmentSource);
-  void SetupTextures(const I420VideoFrame& frameToRender);
-  void UpdateTextures(const I420VideoFrame& frameToRender);
+  void SetupTextures(const VideoFrame& frameToRender);
+  void UpdateTextures(const VideoFrame& frameToRender);
 
   int32_t _id;
   GLuint _textureIds[3]; // Texture id of Y,U and V texture.

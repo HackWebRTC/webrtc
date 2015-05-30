@@ -172,7 +172,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_->SetVideoProtection(videoProtection, enable);
   }
 
-  int32_t AddVideoFrame(const I420VideoFrame& videoFrame,
+  int32_t AddVideoFrame(const VideoFrame& videoFrame,
                         const VideoContentMetrics* contentMetrics,
                         const CodecSpecificInfo* codecSpecificInfo) override {
     return sender_->AddVideoFrame(

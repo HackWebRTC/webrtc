@@ -29,7 +29,7 @@ class VideoSendStreamInput {
   // These methods do not lock internally and must be called sequentially.
   // If your application switches input sources synchronization must be done
   // externally to make sure that any old frames are not delivered concurrently.
-  virtual void IncomingCapturedFrame(const I420VideoFrame& video_frame) = 0;
+  virtual void IncomingCapturedFrame(const VideoFrame& video_frame) = 0;
 
  protected:
   virtual ~VideoSendStreamInput() {}

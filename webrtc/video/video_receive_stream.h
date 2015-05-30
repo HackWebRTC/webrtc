@@ -51,11 +51,11 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   Stats GetStats() const override;
 
   // Overrides I420FrameCallback.
-  void FrameCallback(I420VideoFrame* video_frame) override;
+  void FrameCallback(VideoFrame* video_frame) override;
 
   // Overrides VideoRenderCallback.
   int RenderFrame(const uint32_t /*stream_id*/,
-                  const I420VideoFrame& video_frame) override;
+                  const VideoFrame& video_frame) override;
 
   void SignalNetworkState(Call::NetworkState state);
 

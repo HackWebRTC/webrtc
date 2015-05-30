@@ -46,7 +46,7 @@ class VP8EncoderImpl : public VP8Encoder {
                          int number_of_cores,
                          size_t max_payload_size);
 
-  virtual int Encode(const I420VideoFrame& input_image,
+  virtual int Encode(const VideoFrame& input_image,
                      const CodecSpecificInfo* codec_specific_info,
                      const std::vector<VideoFrameType>* frame_types);
 
@@ -72,7 +72,7 @@ class VP8EncoderImpl : public VP8Encoder {
   int InitAndSetControlSettings();
 
   // Update frame size for codec.
-  int UpdateCodecFrameSize(const I420VideoFrame& input_image);
+  int UpdateCodecFrameSize(const VideoFrame& input_image);
 
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt,
@@ -80,7 +80,7 @@ class VP8EncoderImpl : public VP8Encoder {
                              uint32_t timestamp,
                              bool only_predicting_from_key_frame);
 
-  int GetEncodedPartitions(const I420VideoFrame& input_image,
+  int GetEncodedPartitions(const VideoFrame& input_image,
                            bool only_predicting_from_key_frame);
 
   // Get the stream bitrate, for the stream |stream_idx|, given the bitrate

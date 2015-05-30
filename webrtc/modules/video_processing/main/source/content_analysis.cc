@@ -49,9 +49,8 @@ VPMContentAnalysis::~VPMContentAnalysis() {
   Release();
 }
 
-
 VideoContentMetrics* VPMContentAnalysis::ComputeContentMetrics(
-  const I420VideoFrame& inputFrame) {
+    const VideoFrame& inputFrame) {
   if (inputFrame.IsZeroSize())
     return NULL;
 
