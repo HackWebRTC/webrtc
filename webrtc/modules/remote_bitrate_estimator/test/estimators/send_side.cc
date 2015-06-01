@@ -17,6 +17,8 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
+const int kFeedbackIntervalMs = 50;
+
 FullBweSender::FullBweSender(int kbps, BitrateObserver* observer, Clock* clock)
     : bitrate_controller_(
           BitrateController::CreateBitrateController(clock, observer)),
@@ -38,7 +40,7 @@ FullBweSender::~FullBweSender() {
 }
 
 int FullBweSender::GetFeedbackIntervalMs() const {
-  return 100;
+  return kFeedbackIntervalMs;
 }
 
 void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
@@ -128,7 +130,7 @@ void SendSideBweReceiver::ReceivePacket(int64_t arrival_time_ms,
 }
 
 FeedbackPacket* SendSideBweReceiver::GetFeedback(int64_t now_ms) {
-  if (now_ms - last_feedback_ms_ < 100)
+  if (now_ms - last_feedback_ms_ < kFeedbackIntervalMs)
     return NULL;
   last_feedback_ms_ = now_ms;
   int64_t corrected_send_time_ms =

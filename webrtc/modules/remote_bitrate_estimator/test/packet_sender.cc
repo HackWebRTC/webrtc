@@ -40,12 +40,6 @@ std::list<FeedbackPacket*> GetFeedbackPackets(Packets* in_out,
   return fb_packets;
 }
 
-void PacketSender::SetSenderTimestamps(Packets* in_out) {
-  for (auto it = in_out->begin(); it != in_out->end(); ++it) {
-    (*it)->set_sender_timestamp_us(clock_.TimeInMilliseconds() * 1000);
-  }
-}
-
 VideoSender::VideoSender(PacketProcessorListener* listener,
                          VideoSource* source,
                          BandwidthEstimatorType estimator_type)
@@ -65,7 +59,6 @@ void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   std::list<FeedbackPacket*> feedbacks = GetFeedbackPackets(
       in_out, clock_.TimeInMilliseconds() + time_ms, source_->flow_id());
   ProcessFeedbackAndGeneratePackets(time_ms, &feedbacks, in_out);
-  SetSenderTimestamps(in_out);
 }
 
 void VideoSender::ProcessFeedbackAndGeneratePackets(
@@ -192,7 +185,6 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
     }
   } while (clock_.TimeInMilliseconds() < end_time_ms);
   QueuePackets(in_out, end_time_ms * 1000);
-  SetSenderTimestamps(in_out);
 }
 
 int64_t PacedVideoSender::TimeUntilNextProcess(
@@ -248,6 +240,7 @@ bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
       assert(pace_out_time_ms >= (media_packet->send_time_us() + 500) / 1000);
       media_packet->SetAbsSendTimeMs(pace_out_time_ms);
       media_packet->set_send_time_us(1000 * pace_out_time_ms);
+      media_packet->set_sender_timestamp_us(1000 * pace_out_time_ms);
       queue_.push_back(media_packet);
       pacer_queue_.erase(it);
       return true;
@@ -301,7 +294,6 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
   clock_.AdvanceTimeMilliseconds(time_ms -
                                  (clock_.TimeInMilliseconds() - start_time_ms));
   SendPackets(in_out);
-  SetSenderTimestamps(in_out);
 }
 
 void TcpSender::SendPackets(Packets* in_out) {
@@ -371,6 +363,8 @@ Packets TcpSender::GeneratePackets(size_t num_packets) {
     generated.push_back(new MediaPacket(*flow_ids().begin(),
                                         1000 * clock_.TimeInMilliseconds(),
                                         1200, next_sequence_number_++));
+    generated.back()->set_sender_timestamp_us(
+        1000 * clock_.TimeInMilliseconds());
   }
   return generated;
 }

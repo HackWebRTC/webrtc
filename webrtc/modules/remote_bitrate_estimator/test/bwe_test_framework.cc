@@ -676,6 +676,7 @@ void VideoSource::RunFor(int64_t time_ms, Packets* in_out) {
           new MediaPacket(flow_id_, send_time_us, size, prototype_header_);
       new_packets.push_back(new_packet);
       new_packet->SetAbsSendTimeMs(next_frame_ms_);
+      new_packet->set_sender_timestamp_us(send_time_us);
       payload_size -= size;
     }
 
