@@ -222,13 +222,15 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     RtcpMuxPolicy rtcp_mux_policy;
     TcpCandidatePolicy tcp_candidate_policy;
     int audio_jitter_buffer_max_packets;
+    bool audio_jitter_buffer_fast_accelerate;
 
     RTCConfiguration()
         : type(kAll),
           bundle_policy(kBundlePolicyBalanced),
           rtcp_mux_policy(kRtcpMuxPolicyNegotiate),
           tcp_candidate_policy(kTcpCandidatePolicyEnabled),
-          audio_jitter_buffer_max_packets(50) {}
+          audio_jitter_buffer_max_packets(50),
+          audio_jitter_buffer_fast_accelerate(false) {}
   };
 
   struct RTCOfferAnswerOptions {

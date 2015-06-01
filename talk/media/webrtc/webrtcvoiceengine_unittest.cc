@@ -2843,6 +2843,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_EQ(ec_mode, webrtc::kEcConference);
   EXPECT_EQ(ns_mode, webrtc::kNsHighSuppression);
   EXPECT_EQ(50, voe_.GetNetEqCapacity());  // From GetDefaultEngineOptions().
+  EXPECT_FALSE(
+      voe_.GetNetEqFastAccelerate());  // From GetDefaultEngineOptions().
 
   // Turn echo cancellation off
   options.echo_cancellation.Set(false);

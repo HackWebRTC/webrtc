@@ -352,6 +352,7 @@ static AudioOptions GetDefaultEngineOptions() {
   options.highpass_filter.Set(true);
   options.stereo_swapping.Set(false);
   options.audio_jitter_buffer_max_packets.Set(50);
+  options.audio_jitter_buffer_fast_accelerate.Set(false);
   options.typing_detection.Set(true);
   options.conference_mode.Set(false);
   options.adjust_agc_delta.Set(0);
@@ -799,6 +800,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     LOG(LS_INFO) << "NetEq capacity is " << audio_jitter_buffer_max_packets;
     voe_config_.Set<webrtc::NetEqCapacityConfig>(
         new webrtc::NetEqCapacityConfig(audio_jitter_buffer_max_packets));
+  }
+
+  bool audio_jitter_buffer_fast_accelerate;
+  if (options.audio_jitter_buffer_fast_accelerate.Get(
+          &audio_jitter_buffer_fast_accelerate)) {
+    LOG(LS_INFO) << "NetEq fast mode? " << audio_jitter_buffer_fast_accelerate;
+    voe_config_.Set<webrtc::NetEqFastAccelerate>(
+        new webrtc::NetEqFastAccelerate(audio_jitter_buffer_fast_accelerate));
   }
 
   bool typing_detection;

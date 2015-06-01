@@ -127,6 +127,12 @@ struct NetEqCapacityConfig {
   int capacity;
 };
 
+struct NetEqFastAccelerate {
+  NetEqFastAccelerate() : enabled(false) {}
+  explicit NetEqFastAccelerate(bool value) : enabled(value) {}
+  bool enabled;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_CONFIG_H_

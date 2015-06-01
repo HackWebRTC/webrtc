@@ -644,6 +644,9 @@ bool WebRtcSession::Initialize(
   audio_options_.audio_jitter_buffer_max_packets.Set(
       rtc_configuration.audio_jitter_buffer_max_packets);
 
+  audio_options_.audio_jitter_buffer_fast_accelerate.Set(
+      rtc_configuration.audio_jitter_buffer_fast_accelerate);
+
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,
       JsepSessionDescription::kDefaultVideoCodecName,

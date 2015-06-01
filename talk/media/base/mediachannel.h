@@ -152,6 +152,8 @@ struct AudioOptions {
     stereo_swapping.SetFrom(change.stereo_swapping);
     audio_jitter_buffer_max_packets.SetFrom(
         change.audio_jitter_buffer_max_packets);
+    audio_jitter_buffer_fast_accelerate.SetFrom(
+        change.audio_jitter_buffer_fast_accelerate);
     typing_detection.SetFrom(change.typing_detection);
     aecm_generate_comfort_noise.SetFrom(change.aecm_generate_comfort_noise);
     conference_mode.SetFrom(change.conference_mode);
@@ -183,6 +185,8 @@ struct AudioOptions {
         highpass_filter == o.highpass_filter &&
         stereo_swapping == o.stereo_swapping &&
         audio_jitter_buffer_max_packets == o.audio_jitter_buffer_max_packets &&
+        audio_jitter_buffer_fast_accelerate ==
+            o.audio_jitter_buffer_fast_accelerate &&
         typing_detection == o.typing_detection &&
         aecm_generate_comfort_noise == o.aecm_generate_comfort_noise &&
         conference_mode == o.conference_mode &&
@@ -215,6 +219,8 @@ struct AudioOptions {
     ost << ToStringIfSet("swap", stereo_swapping);
     ost << ToStringIfSet("audio_jitter_buffer_max_packets",
                          audio_jitter_buffer_max_packets);
+    ost << ToStringIfSet("audio_jitter_buffer_fast_accelerate",
+                         audio_jitter_buffer_fast_accelerate);
     ost << ToStringIfSet("typing", typing_detection);
     ost << ToStringIfSet("comfort_noise", aecm_generate_comfort_noise);
     ost << ToStringIfSet("conference", conference_mode);
@@ -255,6 +261,8 @@ struct AudioOptions {
   Settable<bool> stereo_swapping;
   // Audio receiver jitter buffer (NetEq) max capacity in number of packets.
   Settable<int> audio_jitter_buffer_max_packets;
+  // Audio receiver jitter buffer (NetEq) fast accelerate mode.
+  Settable<bool> audio_jitter_buffer_fast_accelerate;
   // Audio processing to detect typing.
   Settable<bool> typing_detection;
   Settable<bool> aecm_generate_comfort_noise;

@@ -134,6 +134,7 @@ public class PeerConnection {
     public RtcpMuxPolicy rtcpMuxPolicy;
     public TcpCandidatePolicy tcpCandidatePolicy;
     public int audioJitterBufferMaxPackets;
+    public boolean audioJitterBufferFastAccelerate;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
@@ -142,6 +143,7 @@ public class PeerConnection {
       tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
       this.iceServers = iceServers;
       audioJitterBufferMaxPackets = 50;
+      audioJitterBufferFastAccelerate = false;
     }
   };
 

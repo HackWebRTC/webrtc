@@ -817,6 +817,8 @@ Channel::Channel(int32_t channelId,
       acm_config.neteq_config.max_packets_in_buffer =
           std::max(20, config.Get<NetEqCapacityConfig>().capacity);
     }
+    acm_config.neteq_config.enable_fast_accelerate =
+        config.Get<NetEqFastAccelerate>().enabled;
     audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
     _inbandDtmfQueue.ResetDtmf();
