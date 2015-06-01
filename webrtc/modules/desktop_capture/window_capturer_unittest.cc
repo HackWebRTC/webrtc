@@ -75,8 +75,8 @@ TEST_F(WindowCapturerTest, Capture) {
     if (!frame_.get()) {
       WindowCapturer::WindowList new_list;
       EXPECT_TRUE(capturer_->GetWindowList(&new_list));
-      for (WindowCapturer::WindowList::iterator new_list_it = windows.begin();
-           new_list_it != windows.end(); ++new_list_it) {
+      for (WindowCapturer::WindowList::iterator new_list_it = new_list.begin();
+           new_list_it != new_list.end(); ++new_list_it) {
         EXPECT_FALSE(it->id == new_list_it->id);
       }
       continue;
