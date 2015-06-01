@@ -200,6 +200,10 @@ void VCMGenericEncoder::OnDroppedFrame() {
   encoder_->OnDroppedFrame();
 }
 
+bool VCMGenericEncoder::SupportsNativeHandle() const {
+  return encoder_->SupportsNativeHandle();
+}
+
  /***************************
   * Callback Implementation
   ***************************/

@@ -36,22 +36,6 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
       rotation_(rotation) {
 }
 
-VideoFrame::VideoFrame(void* native_handle,
-                       int width,
-                       int height,
-                       uint32_t timestamp,
-                       int64_t render_time_ms,
-                       VideoRotation rotation,
-                       const rtc::Callback0<void>& no_longer_used)
-    : VideoFrame(new rtc::RefCountedObject<TextureBuffer>(native_handle,
-                                                          width,
-                                                          height,
-                                                          no_longer_used),
-                 timestamp,
-                 render_time_ms,
-                 rotation) {
-}
-
 int VideoFrame::CreateEmptyFrame(int width,
                                  int height,
                                  int stride_y,
@@ -209,6 +193,14 @@ rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
 void VideoFrame::set_video_frame_buffer(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer) {
   video_frame_buffer_ = buffer;
+}
+
+VideoFrame VideoFrame::ConvertNativeToI420Frame() const {
+  DCHECK(native_handle());
+  VideoFrame frame;
+  frame.ShallowCopy(*this);
+  frame.set_video_frame_buffer(video_frame_buffer_->NativeToI420Buffer());
+  return frame;
 }
 
 }  // namespace webrtc

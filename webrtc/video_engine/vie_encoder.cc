@@ -543,11 +543,6 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
   const VideoFrame* output_frame =
       (decimated_frame != NULL) ? decimated_frame : &video_frame;
 
-  if (video_frame.native_handle() != NULL) {
-    // TODO(wuchengli): add texture support. http://crbug.com/362437
-    return;
-  }
-
 #ifdef VIDEOCODEC_VP8
   if (vcm_->SendCodec() == webrtc::kVideoCodecVP8) {
     webrtc::CodecSpecificInfo codec_specific_info;

@@ -123,7 +123,8 @@ class VideoEncoder {
   virtual int32_t CodecConfigParameters(uint8_t* /*buffer*/, int32_t /*size*/) {
     return -1;
   }
-  virtual void OnDroppedFrame() {};
+  virtual void OnDroppedFrame() {}
+  virtual bool SupportsNativeHandle() const { return false; }
 };
 
 // Class used to wrap external VideoEncoders to provide a fallback option on
@@ -149,6 +150,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
 
   int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;
   void OnDroppedFrame() override;
+  bool SupportsNativeHandle() const override;
 
  private:
   const EncoderType encoder_type_;

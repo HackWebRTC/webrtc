@@ -29,6 +29,7 @@
 
 #include "talk/media/base/videoframe_unittest.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/test/fake_texture_frame.h"
 
 namespace {
 
@@ -297,10 +298,11 @@ TEST_F(WebRtcVideoFrameTest, InitRotated90DontApplyRotation) {
 }
 
 TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
-  void* dummy_handle = reinterpret_cast<void*>(0x1);
-  webrtc::TextureBuffer* buffer =
-      new rtc::RefCountedObject<webrtc::TextureBuffer>(dummy_handle, 640, 480,
-                                                       rtc::Callback0<void>());
+  webrtc::test::FakeNativeHandle* dummy_handle =
+      new webrtc::test::FakeNativeHandle();
+  webrtc::NativeHandleBuffer* buffer =
+      new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
+          dummy_handle, 640, 480);
   cricket::WebRtcVideoFrame frame(buffer, 100, 200, webrtc::kVideoRotation_0);
   EXPECT_EQ(dummy_handle, frame.GetNativeHandle());
   EXPECT_EQ(640u, frame.GetWidth());
@@ -314,10 +316,11 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
 }
 
 TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
-  void* dummy_handle = reinterpret_cast<void*>(0x1);
-  webrtc::TextureBuffer* buffer =
-      new rtc::RefCountedObject<webrtc::TextureBuffer>(dummy_handle, 640, 480,
-                                                       rtc::Callback0<void>());
+  webrtc::test::FakeNativeHandle* dummy_handle =
+      new webrtc::test::FakeNativeHandle();
+  webrtc::NativeHandleBuffer* buffer =
+      new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
+          dummy_handle, 640, 480);
   cricket::WebRtcVideoFrame frame1(buffer, 100, 200, webrtc::kVideoRotation_0);
   cricket::VideoFrame* frame2 = frame1.Copy();
   EXPECT_EQ(frame1.GetNativeHandle(), frame2->GetNativeHandle());
