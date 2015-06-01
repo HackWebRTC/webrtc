@@ -192,7 +192,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   RtpState GetRtpStateForSsrc(uint32_t ssrc);
 
   // Sets the CName for the outgoing stream on the channel.
-  int32_t SetRTCPCName(const char rtcp_cname[]);
+  int32_t SetRTCPCName(const char* rtcp_cname);
 
   // Gets the CName of the incoming stream.
   int32_t GetRemoteRTCPCName(char rtcp_cname[]);

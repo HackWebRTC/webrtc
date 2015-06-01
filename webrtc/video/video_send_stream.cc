@@ -172,12 +172,7 @@ VideoSendStream::VideoSendStream(
 
   ConfigureSsrcs();
 
-  char rtcp_cname[RTCP_CNAME_SIZE];
-  DCHECK_LT(config_.rtp.c_name.length(), sizeof(rtcp_cname));
-  strncpy(rtcp_cname, config_.rtp.c_name.c_str(), sizeof(rtcp_cname) - 1);
-  rtcp_cname[sizeof(rtcp_cname) - 1] = '\0';
-
-  vie_channel_->SetRTCPCName(rtcp_cname);
+  vie_channel_->SetRTCPCName(config_.rtp.c_name.c_str());
 
   vie_capturer_ = new ViECapturer(module_process_thread_, vie_encoder_);
 

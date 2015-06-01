@@ -95,7 +95,7 @@ public:
 
  void SetRemoteSSRC(uint32_t ssrc);
 
- int32_t SetCNAME(const char cName[RTCP_CNAME_SIZE]);
+ int32_t SetCNAME(const char* cName);
 
  int32_t AddMixedCNAME(uint32_t SSRC, const char cName[RTCP_CNAME_SIZE]);
 

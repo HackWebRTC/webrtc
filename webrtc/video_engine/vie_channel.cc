@@ -1075,7 +1075,7 @@ RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) {
   return rtp_state;
 }
 
-int32_t ViEChannel::SetRTCPCName(const char rtcp_cname[]) {
+int32_t ViEChannel::SetRTCPCName(const char* rtcp_cname) {
   if (rtp_rtcp_->Sending()) {
     return -1;
   }

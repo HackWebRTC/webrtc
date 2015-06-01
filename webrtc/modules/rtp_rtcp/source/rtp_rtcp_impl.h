@@ -131,7 +131,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   void SetRTCPStatus(RTCPMethod method) override;
 
   // Set RTCP CName.
-  int32_t SetCNAME(const char c_name[RTCP_CNAME_SIZE]) override;
+  int32_t SetCNAME(const char* c_name) override;
 
   // Get remote CName.
   int32_t RemoteCNAME(uint32_t remote_ssrc,

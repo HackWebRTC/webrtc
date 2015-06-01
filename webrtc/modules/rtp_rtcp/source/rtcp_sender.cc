@@ -315,13 +315,14 @@ void RTCPSender::SetRemoteSSRC(uint32_t ssrc) {
   remote_ssrc_ = ssrc;
 }
 
-int32_t RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
-  if (!cName)
+int32_t RTCPSender::SetCNAME(const char* c_name) {
+  if (!c_name)
     return -1;
 
+  DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
   cname_[RTCP_CNAME_SIZE - 1] = 0;
-  strncpy(cname_, cName, RTCP_CNAME_SIZE - 1);
+  strncpy(cname_, c_name, RTCP_CNAME_SIZE - 1);
   return 0;
 }
 
