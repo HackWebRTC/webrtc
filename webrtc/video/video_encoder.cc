@@ -122,10 +122,4 @@ void VideoEncoderSoftwareFallbackWrapper::OnDroppedFrame() {
   return encoder_->OnDroppedFrame();
 }
 
-bool VideoEncoderSoftwareFallbackWrapper::SupportsNativeHandle() const {
-  if (fallback_encoder_)
-    return fallback_encoder_->SupportsNativeHandle();
-  return encoder_->SupportsNativeHandle();
-}
-
 }  // namespace webrtc

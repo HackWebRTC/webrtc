@@ -24,7 +24,6 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
-#include "webrtc/test/fake_texture_frame.h"
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -160,10 +159,11 @@ TEST_F(ViECapturerTest, TestRtpTimeStampSet) {
 TEST_F(ViECapturerTest, TestTextureFrames) {
   const int kNumFrame = 3;
   for (int i = 0 ; i < kNumFrame; ++i) {
-    test::FakeNativeHandle* dummy_handle = new test::FakeNativeHandle();
+    void* dummy_handle = reinterpret_cast<void*>(i+1);
     // Add one to |i| so that width/height > 0.
-    input_frames_.push_back(new VideoFrame(test::CreateFakeNativeHandleFrame(
-        dummy_handle, i + 1, i + 1, i + 1, i + 1, webrtc::kVideoRotation_0)));
+    input_frames_.push_back(new VideoFrame(dummy_handle, i + 1, i + 1, i + 1,
+                                           i + 1, webrtc::kVideoRotation_0,
+                                           rtc::Callback0<void>()));
     AddInputFrame(input_frames_[i]);
     WaitOutputFrame();
     EXPECT_EQ(dummy_handle, output_frames_[i]->native_handle());
@@ -190,9 +190,10 @@ TEST_F(ViECapturerTest, TestI420Frames) {
 }
 
 TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
-  test::FakeNativeHandle* dummy_handle = new test::FakeNativeHandle();
-  input_frames_.push_back(new VideoFrame(test::CreateFakeNativeHandleFrame(
-      dummy_handle, 1, 1, 1, 1, webrtc::kVideoRotation_0)));
+  void* dummy_handle = &input_frames_;
+  input_frames_.push_back(new VideoFrame(dummy_handle, 1, 1, 1, 1,
+                                         webrtc::kVideoRotation_0,
+                                         rtc::Callback0<void>()));
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
   EXPECT_EQ(dummy_handle, output_frames_[0]->native_handle());
@@ -209,9 +210,10 @@ TEST_F(ViECapturerTest, TestTextureFrameAfterI420Frame) {
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
 
-  test::FakeNativeHandle* dummy_handle = new test::FakeNativeHandle();
-  input_frames_.push_back(new VideoFrame(test::CreateFakeNativeHandleFrame(
-      dummy_handle, 1, 1, 2, 2, webrtc::kVideoRotation_0)));
+  void* dummy_handle = &input_frames_;
+  input_frames_.push_back(new VideoFrame(dummy_handle, 1, 1, 2, 2,
+                                         webrtc::kVideoRotation_0,
+                                         rtc::Callback0<void>()));
   AddInputFrame(input_frames_[1]);
   WaitOutputFrame();
 

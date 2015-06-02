@@ -654,9 +654,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int32_t callback_status = WEBRTC_VIDEO_CODEC_OK;
   if (use_surface_) {
     native_handle_.SetTextureObject(surface_texture_, texture_id);
-    VideoFrame texture_image(new rtc::RefCountedObject<JniNativeHandleBuffer>(
-                                 &native_handle_, width, height),
-                             output_timestamp_, 0, webrtc::kVideoRotation_0);
+    VideoFrame texture_image(&native_handle_, width, height, output_timestamp_,
+                             0, webrtc::kVideoRotation_0,
+                             rtc::Callback0<void>());
     texture_image.set_ntp_time_ms(output_ntp_time_ms_);
     callback_status = callback_->Decoded(texture_image);
   } else {

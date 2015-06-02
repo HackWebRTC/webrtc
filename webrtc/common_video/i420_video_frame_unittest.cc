@@ -16,9 +16,19 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/test/fake_texture_frame.h"
 
 namespace webrtc {
+
+class NativeHandleImpl {
+ public:
+  NativeHandleImpl() : no_longer_needed_(false) {}
+  virtual ~NativeHandleImpl() {}
+  bool no_longer_needed() const { return no_longer_needed_; }
+  void SetNoLongerNeeded() { no_longer_needed_ = true; }
+
+ private:
+  bool no_longer_needed_;
+};
 
 bool EqualPlane(const uint8_t* data1,
                 const uint8_t* data2,
@@ -26,6 +36,7 @@ bool EqualPlane(const uint8_t* data1,
                 int width,
                 int height);
 bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2);
+bool EqualTextureFrames(const VideoFrame& frame1, const VideoFrame& frame2);
 int ExpectedSize(int plane_stride, int image_height, PlaneType type);
 
 TEST(TestVideoFrame, InitialValues) {
@@ -243,19 +254,30 @@ TEST(TestVideoFrame, FailToReuseAllocation) {
 }
 
 TEST(TestVideoFrame, TextureInitialValues) {
-  test::FakeNativeHandle* handle = new test::FakeNativeHandle();
-  VideoFrame frame = test::CreateFakeNativeHandleFrame(
-      handle, 640, 480, 100, 10, webrtc::kVideoRotation_0);
+  NativeHandleImpl handle;
+  VideoFrame frame(&handle, 640, 480, 100, 10, webrtc::kVideoRotation_0,
+                   rtc::Callback0<void>());
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
   EXPECT_EQ(100u, frame.timestamp());
   EXPECT_EQ(10, frame.render_time_ms());
-  EXPECT_EQ(handle, frame.native_handle());
+  EXPECT_EQ(&handle, frame.native_handle());
 
   frame.set_timestamp(200);
   EXPECT_EQ(200u, frame.timestamp());
   frame.set_render_time_ms(20);
   EXPECT_EQ(20, frame.render_time_ms());
+}
+
+TEST(TestVideoFrame, NoLongerNeeded) {
+  NativeHandleImpl handle;
+  ASSERT_FALSE(handle.no_longer_needed());
+  VideoFrame* frame =
+      new VideoFrame(&handle, 640, 480, 100, 200, webrtc::kVideoRotation_0,
+                     rtc::Bind(&NativeHandleImpl::SetNoLongerNeeded, &handle));
+  EXPECT_FALSE(handle.no_longer_needed());
+  delete frame;
+  EXPECT_TRUE(handle.no_longer_needed());
 }
 
 bool EqualPlane(const uint8_t* data1,
@@ -291,6 +313,14 @@ bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
                     frame1.stride(kUPlane), half_width, half_height) &&
          EqualPlane(frame1.buffer(kVPlane), frame2.buffer(kVPlane),
                     frame1.stride(kVPlane), half_width, half_height);
+}
+
+bool EqualTextureFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
+  return ((frame1.native_handle() == frame2.native_handle()) &&
+          (frame1.width() == frame2.width()) &&
+          (frame1.height() == frame2.height()) &&
+          (frame1.timestamp() == frame2.timestamp()) &&
+          (frame1.render_time_ms() == frame2.render_time_ms()));
 }
 
 int ExpectedSize(int plane_stride, int image_height, PlaneType type) {

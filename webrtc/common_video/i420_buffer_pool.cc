@@ -40,11 +40,6 @@ class PooledI420Buffer : public webrtc::VideoFrameBuffer {
   }
   void* native_handle() const override { return nullptr; }
 
-  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {
-    RTC_NOTREACHED();
-    return nullptr;
-  }
-
   friend class rtc::RefCountedObject<PooledI420Buffer>;
   rtc::scoped_refptr<webrtc::I420Buffer> buffer_;
 };
