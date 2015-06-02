@@ -177,8 +177,8 @@ VideoSendStream::VideoSendStream(
   vie_capturer_ = new ViECapturer(module_process_thread_, vie_encoder_);
 
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
-  vie_channel_->SetMTU(
-      static_cast<unsigned int>(config_.rtp.max_packet_size + 28));
+  DCHECK_LE(config_.rtp.max_packet_size, static_cast<size_t>(0xFFFF - 28));
+  vie_channel_->SetMTU(static_cast<uint16_t>(config_.rtp.max_packet_size + 28));
 
   DCHECK(config.encoder_settings.encoder != nullptr);
   DCHECK_GE(config.encoder_settings.payload_type, 0);
