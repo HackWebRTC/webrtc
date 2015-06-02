@@ -43,7 +43,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 /** End-to-end tests for PeerConnection.java. */
 public class PeerConnectionTest {
