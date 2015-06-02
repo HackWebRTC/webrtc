@@ -759,12 +759,13 @@ int OpenSSLStreamAdapter::BeginSSL() {
   SSL_set_app_data(ssl_, this);
 
   SSL_set_bio(ssl_, bio, bio);  // the SSL object owns the bio now.
+#ifndef OPENSSL_IS_BORINGSSL
   if (ssl_mode_ == SSL_MODE_DTLS) {
     // Enable read-ahead for DTLS so whole packets are read from internal BIO
-    // before parsing.
-    // TODO(jbauch): Remove for BoringSSL when this is handled internally.
+    // before parsing. This is done internally by BoringSSL for DTLS.
     SSL_set_read_ahead(ssl_, 1);
   }
+#endif
 
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE |
                SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
