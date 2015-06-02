@@ -44,6 +44,9 @@ class EventWrapper {
   // are waiting for the same Set(), only one (random) thread is guaranteed to
   // be released. It is possible that multiple (random) threads are released
   // Depending on timing.
+  //
+  // |max_time| is the maximum time to wait in milliseconds or
+  // WEBRTC_EVENT_INFINITE to wait infinitely.
   virtual EventTypeWrapper Wait(unsigned long max_time) = 0;
 };
 
@@ -54,6 +57,8 @@ class EventTimerWrapper : public EventWrapper {
   // Starts a timer that will call a non-sticky version of Set() either once
   // or periodically. If the timer is periodic it ensures that there is no
   // drift over time relative to the system clock.
+  //
+  // |time| is in milliseconds.
   virtual bool StartTimer(bool periodic, unsigned long time) = 0;
 
   virtual bool StopTimer() = 0;
