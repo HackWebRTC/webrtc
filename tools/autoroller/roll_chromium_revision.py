@@ -182,9 +182,9 @@ def GetMatchingDepsEntries(depsentry_dict, dir_path):
     if path == dir_path:
       result.append(depsentry)
     else:
-      parts = path.split(os.sep)
+      parts = path.split('/')
       if all(part == parts[i]
-             for i, part in enumerate(dir_path.split(os.sep))):
+             for i, part in enumerate(dir_path.split('/'))):
         result.append(depsentry)
   return result
 
