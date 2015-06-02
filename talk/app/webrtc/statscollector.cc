@@ -129,6 +129,9 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
     { StatsReport::kStatsValueNameSecondaryDecodedRate,
       info.secondary_decoded_rate },
     { StatsReport::kStatsValueNameSpeechExpandRate, info.speech_expand_rate },
+    { StatsReport::kStatsValueNameAccelerateRate, info.accelerate_rate },
+    { StatsReport::kStatsValueNamePreemptiveExpandRate,
+      info.preemptive_expand_rate },
   };
 
   const IntForAdd ints[] = {

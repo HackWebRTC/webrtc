@@ -313,6 +313,12 @@ void VerifyVoiceReceiverInfoReport(
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameSpeechExpandRate, &value_in_report));
   EXPECT_EQ(rtc::ToString<float>(info.speech_expand_rate), value_in_report);
+  EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAccelerateRate,
+                       &value_in_report));
+  EXPECT_EQ(rtc::ToString<float>(info.accelerate_rate), value_in_report);
+  EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNamePreemptiveExpandRate,
+                       &value_in_report));
+  EXPECT_EQ(rtc::ToString<float>(info.preemptive_expand_rate), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameSecondaryDecodedRate,
                        &value_in_report));
   EXPECT_EQ(rtc::ToString<float>(info.secondary_decoded_rate), value_in_report);
@@ -451,6 +457,8 @@ void InitVoiceReceiverInfo(cricket::VoiceReceiverInfo* voice_receiver_info) {
   voice_receiver_info->expand_rate = 121;
   voice_receiver_info->speech_expand_rate = 122;
   voice_receiver_info->secondary_decoded_rate = 123;
+  voice_receiver_info->accelerate_rate = 124;
+  voice_receiver_info->preemptive_expand_rate = 125;
 }
 
 class StatsCollectorForTest : public webrtc::StatsCollector {

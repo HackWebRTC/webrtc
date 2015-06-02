@@ -3345,6 +3345,10 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
             static_cast<float>(ns.currentSpeechExpandRate) / (1 << 14);
         rinfo.secondary_decoded_rate =
             static_cast<float>(ns.currentSecondaryDecodedRate) / (1 << 14);
+        rinfo.accelerate_rate =
+            static_cast<float>(ns.currentAccelerateRate) / (1 << 14);
+        rinfo.preemptive_expand_rate =
+            static_cast<float>(ns.currentPreemptiveRate) / (1 << 14);
       }
 
       webrtc::AudioDecodingCallStats ds;

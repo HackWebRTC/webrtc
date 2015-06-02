@@ -131,6 +131,7 @@ class StatsReport {
     kStatsValueNameTransportId,
 
     // Internal StatsValue names.
+    kStatsValueNameAccelerateRate,
     kStatsValueNameActualEncBitrate,
     kStatsValueNameAdaptationChanges,
     kStatsValueNameAvailableReceiveBandwidth,
@@ -197,6 +198,7 @@ class StatsReport {
     kStatsValueNameNacksSent,
     kStatsValueNamePlisReceived,
     kStatsValueNamePlisSent,
+    kStatsValueNamePreemptiveExpandRate,
     kStatsValueNamePreferredJitterBufferMs,
     kStatsValueNameRemoteAddress,
     kStatsValueNameRemoteCandidateId,

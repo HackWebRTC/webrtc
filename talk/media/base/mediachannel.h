@@ -784,14 +784,15 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         expand_rate(0),
         speech_expand_rate(0),
         secondary_decoded_rate(0),
+        accelerate_rate(0),
+        preemptive_expand_rate(0),
         decoding_calls_to_silence_generator(0),
         decoding_calls_to_neteq(0),
         decoding_normal(0),
         decoding_plc(0),
         decoding_cng(0),
         decoding_plc_cng(0),
-        capture_start_ntp_time_ms(-1) {
-  }
+        capture_start_ntp_time_ms(-1) {}
 
   int ext_seqnum;
   int jitter_ms;
@@ -805,6 +806,10 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   float speech_expand_rate;
   // fraction of data out of secondary decoding, including FEC and RED.
   float secondary_decoded_rate;
+  // Fraction of data removed through time compression.
+  float accelerate_rate;
+  // Fraction of data inserted through time stretching.
+  float preemptive_expand_rate;
   int decoding_calls_to_silence_generator;
   int decoding_calls_to_neteq;
   int decoding_normal;

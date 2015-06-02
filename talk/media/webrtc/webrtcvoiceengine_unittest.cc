@@ -2066,6 +2066,12 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
       (1 << 14), info.receivers[0].speech_expand_rate);
   EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSecondaryDecodedRate) /
       (1 << 14), info.receivers[0].secondary_decoded_rate);
+  EXPECT_EQ(
+      static_cast<float>(cricket::kNetStats.currentAccelerateRate) / (1 << 14),
+      info.receivers[0].accelerate_rate);
+  EXPECT_EQ(
+      static_cast<float>(cricket::kNetStats.currentPreemptiveRate) / (1 << 14),
+      info.receivers[0].preemptive_expand_rate);
 }
 
 // Test that we can add and remove receive streams, and do proper send/playout.

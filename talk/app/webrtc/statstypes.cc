@@ -408,6 +408,8 @@ const char* StatsReport::Value::display_name() const {
       return "datachannelid";
 
     // 'goog' prefixed constants.
+    case kStatsValueNameAccelerateRate:
+      return "googAccelerateRate";
     case kStatsValueNameActiveConnection:
       return "googActiveConnection";
     case kStatsValueNameActualEncBitrate:
@@ -544,6 +546,8 @@ const char* StatsReport::Value::display_name() const {
       return "googNacksReceived";
     case kStatsValueNameNacksSent:
       return "googNacksSent";
+    case kStatsValueNamePreemptiveExpandRate:
+      return "googPreemptiveExpandRate";
     case kStatsValueNamePlisReceived:
       return "googPlisReceived";
     case kStatsValueNamePlisSent:
