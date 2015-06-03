@@ -404,8 +404,6 @@ void NetEqDecodingTest::DecodeAndCompare(const std::string& rtp_file,
       ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
       ASSERT_NO_FATAL_FAILURE(
           network_stat_files.ProcessReference(network_stats));
-      // Compare with CurrentDelay, which should be identical.
-      EXPECT_EQ(network_stats.current_buffer_size_ms, neteq_->CurrentDelayMs());
 
       // Process RTCPstat.
       RtcpStatistics rtcp_stats;

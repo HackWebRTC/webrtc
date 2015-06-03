@@ -15,7 +15,6 @@
 
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
@@ -292,19 +291,8 @@ int NetEqImpl::TargetDelay() {
   return kNotImplemented;
 }
 
-int NetEqImpl::CurrentDelayMs() const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  if (fs_hz_ == 0)
-    return 0;
-  // Sum up the samples in the packet buffer with the future length of the sync
-  // buffer, and divide the sum by the sample rate.
-  const int delay_samples =
-      packet_buffer_->NumSamplesInBuffer(decoder_database_.get(),
-                                         decoder_frame_length_) +
-      static_cast<int>(sync_buffer_->FutureLength());
-  // The division below will truncate.
-  const int delay_ms = delay_samples / rtc::CheckedDivExact(fs_hz_, 1000);
-  return delay_ms;
+int NetEqImpl::CurrentDelay() {
+  return kNotImplemented;
 }
 
 // Deprecated.
