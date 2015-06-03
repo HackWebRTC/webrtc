@@ -111,9 +111,9 @@ static std::string GetThreadId() {
 
 // Return the current thread's name.
 static std::string GetThreadName() {
-  char name[17];
-  CHECK_EQ(0, prctl(PR_GET_NAME, name)) << "prctl(PR_GET_NAME) failed";
-  name[16] = '\0';
+  char name[17] = {0};
+  if (prctl(PR_GET_NAME, name) != 0)
+    return std::string("<noname>");
   return std::string(name);
 }
 
