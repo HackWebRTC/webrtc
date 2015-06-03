@@ -142,7 +142,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
       // We're not allowed to wait until the frame is supposed to be rendered,
       // waiting as long as we're allowed to avoid busy looping, and then return
       // NULL. Next call to this function might return the frame.
-      render_wait_event_->Wait(max_wait_time_ms);
+      render_wait_event_->Wait(new_max_wait_time);
       return NULL;
     }
     // Wait until it's time to render.
