@@ -142,7 +142,6 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock, EventFactory* event_factory)
       low_rtt_nack_threshold_ms_(-1),
       high_rtt_nack_threshold_ms_(-1),
       missing_sequence_numbers_(SequenceNumberLessThan()),
-      nack_seq_nums_(),
       max_nack_list_size_(0),
       max_packet_age_to_nack_(0),
       max_incomplete_time_ms_(0),
@@ -839,7 +838,6 @@ void VCMJitterBuffer::SetNackSettings(size_t max_nack_list_size,
   max_nack_list_size_ = max_nack_list_size;
   max_packet_age_to_nack_ = max_packet_age_to_nack;
   max_incomplete_time_ms_ = max_incomplete_time_ms;
-  nack_seq_nums_.resize(max_nack_list_size_);
 }
 
 VCMNackMode VCMJitterBuffer::nack_mode() const {
@@ -869,13 +867,11 @@ uint16_t VCMJitterBuffer::EstimatedLowSequenceNumber(
   return frame.GetLowSeqNum() - 1;
 }
 
-uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
-                                       bool* request_key_frame) {
+std::vector<uint16_t> VCMJitterBuffer::GetNackList(bool* request_key_frame) {
   CriticalSectionScoped cs(crit_sect_);
   *request_key_frame = false;
   if (nack_mode_ == kNoNack) {
-    *nack_list_size = 0;
-    return NULL;
+    return std::vector<uint16_t>();
   }
   if (last_decoded_state_.in_initial_state()) {
     VCMFrameBuffer* next_frame = NextFrame();
@@ -894,8 +890,7 @@ uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
       bool found_key_frame = RecycleFramesUntilKeyFrame();
       if (!found_key_frame) {
         *request_key_frame = have_non_empty_frame;
-        *nack_list_size = 0;
-        return NULL;
+        return std::vector<uint16_t>();
       }
     }
   }
@@ -914,8 +909,7 @@ uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
       if (rit == incomplete_frames_.rend()) {
         // Request a key frame if we don't have one already.
         *request_key_frame = true;
-        *nack_list_size = 0;
-        return NULL;
+        return std::vector<uint16_t>();
       } else {
         // Skip to the last key frame. If it's incomplete we will start
         // NACKing it.
@@ -926,13 +920,9 @@ uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
       }
     }
   }
-  unsigned int i = 0;
-  SequenceNumberSet::iterator it = missing_sequence_numbers_.begin();
-  for (; it != missing_sequence_numbers_.end(); ++it, ++i) {
-    nack_seq_nums_[i] = *it;
-  }
-  *nack_list_size = i;
-  return &nack_seq_nums_[0];
+  std::vector<uint16_t> nack_list(missing_sequence_numbers_.begin(),
+                                  missing_sequence_numbers_.end());
+  return nack_list;
 }
 
 void VCMJitterBuffer::SetDecodeErrorMode(VCMDecodeErrorMode error_mode) {

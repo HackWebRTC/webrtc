@@ -163,11 +163,9 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_Empty) {
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs);
   EXPECT_TRUE(DecodeNextFrame());
-  uint16_t nack_list[kMaxNackListSize];
-  uint16_t nack_list_length = 0;
-  VCMNackStatus ret = receiver_.NackList(nack_list, kMaxNackListSize,
-                                         &nack_list_length);
-  EXPECT_EQ(kNackOk, ret);
+  bool request_key_frame = false;
+  std::vector<uint16_t> nack_list = receiver_.NackList(&request_key_frame);
+  EXPECT_FALSE(request_key_frame);
 }
 
 TEST_F(TestVCMReceiver, NonDecodableDuration_NoKeyFrame) {
@@ -182,11 +180,9 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoKeyFrame) {
   for (int i = 0; i < kNumFrames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
-  uint16_t nack_list[kMaxNackListSize];
-  uint16_t nack_list_length = 0;
-  VCMNackStatus ret = receiver_.NackList(nack_list, kMaxNackListSize,
-                                         &nack_list_length);
-  EXPECT_EQ(kNackKeyFrameRequest, ret);
+  bool request_key_frame = false;
+  std::vector<uint16_t> nack_list = receiver_.NackList(&request_key_frame);
+  EXPECT_TRUE(request_key_frame);
 }
 
 TEST_F(TestVCMReceiver, NonDecodableDuration_OneIncomplete) {
@@ -215,11 +211,9 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_OneIncomplete) {
       key_frame_inserted);
   EXPECT_TRUE(DecodeNextFrame());
   // Make sure we get a key frame request.
-  uint16_t nack_list[kMaxNackListSize];
-  uint16_t nack_list_length = 0;
-  VCMNackStatus ret = receiver_.NackList(nack_list, kMaxNackListSize,
-                                         &nack_list_length);
-  EXPECT_EQ(kNackKeyFrameRequest, ret);
+  bool request_key_frame = false;
+  std::vector<uint16_t> nack_list = receiver_.NackList(&request_key_frame);
+  EXPECT_TRUE(request_key_frame);
 }
 
 TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger) {
@@ -250,11 +244,9 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger) {
   EXPECT_TRUE(DecodeNextFrame());
   // Make sure we don't get a key frame request since we haven't generated
   // enough frames.
-  uint16_t nack_list[kMaxNackListSize];
-  uint16_t nack_list_length = 0;
-  VCMNackStatus ret = receiver_.NackList(nack_list, kMaxNackListSize,
-                                         &nack_list_length);
-  EXPECT_EQ(kNackOk, ret);
+  bool request_key_frame = false;
+  std::vector<uint16_t> nack_list = receiver_.NackList(&request_key_frame);
+  EXPECT_FALSE(request_key_frame);
 }
 
 TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger2) {
@@ -285,11 +277,9 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger2) {
   EXPECT_TRUE(DecodeNextFrame());
   // Make sure we don't get a key frame request since the non-decodable duration
   // is only one frame.
-  uint16_t nack_list[kMaxNackListSize];
-  uint16_t nack_list_length = 0;
-  VCMNackStatus ret = receiver_.NackList(nack_list, kMaxNackListSize,
-                                         &nack_list_length);
-  EXPECT_EQ(kNackOk, ret);
+  bool request_key_frame = false;
+  std::vector<uint16_t> nack_list = receiver_.NackList(&request_key_frame);
+  EXPECT_FALSE(request_key_frame);
 }
 
 TEST_F(TestVCMReceiver, NonDecodableDuration_KeyFrameAfterIncompleteFrames) {
@@ -320,10 +310,8 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_KeyFrameAfterIncompleteFrames) {
   EXPECT_TRUE(DecodeNextFrame());
   // Make sure we don't get a key frame request since we have a key frame
   // in the list.
-  uint16_t nack_list[kMaxNackListSize];
-  uint16_t nack_list_length = 0;
-  VCMNackStatus ret = receiver_.NackList(nack_list, kMaxNackListSize,
-                                         &nack_list_length);
-  EXPECT_EQ(kNackOk, ret);
+  bool request_key_frame = false;
+  std::vector<uint16_t> nack_list = receiver_.NackList(&request_key_frame);
+  EXPECT_FALSE(request_key_frame);
 }
 }  // namespace webrtc

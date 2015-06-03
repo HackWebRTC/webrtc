@@ -194,7 +194,6 @@ class VideoReceiver {
       EXCLUSIVE_LOCKS_REQUIRED(_receiveCritSect);
   int32_t RequestKeyFrame();
   int32_t RequestSliceLossIndication(const uint64_t pictureID) const;
-  int32_t NackList(uint16_t* nackList, uint16_t* size);
 
  private:
   enum VCMKeyRequestMode {

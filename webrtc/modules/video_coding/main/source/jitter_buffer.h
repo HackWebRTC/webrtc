@@ -172,9 +172,7 @@ class VCMJitterBuffer {
   VCMNackMode nack_mode() const;
 
   // Returns a list of the sequence numbers currently missing.
-  // WARNING: GetNackList() returns a pointer to an internal buffer that is only
-  // valid until the next GetNackList() call.
-  uint16_t* GetNackList(uint16_t* nack_list_size, bool* request_key_frame);
+  std::vector<uint16_t> GetNackList(bool* request_key_frame);
 
   // Set decode error mode - Should not be changed in the middle of the
   // session. Changes will not influence frames already in the buffer.
@@ -348,7 +346,6 @@ class VCMJitterBuffer {
   // Holds the internal NACK list (the missing sequence numbers).
   SequenceNumberSet missing_sequence_numbers_;
   uint16_t latest_received_sequence_number_;
-  std::vector<uint16_t> nack_seq_nums_;
   size_t max_nack_list_size_;
   int max_packet_age_to_nack_;  // Measured in sequence numbers.
   int max_incomplete_time_ms_;

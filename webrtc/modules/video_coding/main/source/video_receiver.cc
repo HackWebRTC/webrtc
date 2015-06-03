@@ -136,15 +136,20 @@ int32_t VideoReceiver::Process() {
       callback_registered = _packetRequestCallback != NULL;
     }
     if (callback_registered && length > 0) {
-      std::vector<uint16_t> nackList(length);
-      const int32_t ret = NackList(&nackList[0], &length);
-      if (ret != VCM_OK && returnValue == VCM_OK) {
-        returnValue = ret;
+      // Collect sequence numbers from the default receiver.
+      bool request_key_frame = false;
+      std::vector<uint16_t> nackList = _receiver.NackList(&request_key_frame);
+      int32_t ret = VCM_OK;
+      if (request_key_frame) {
+        ret = RequestKeyFrame();
+        if (ret != VCM_OK && returnValue == VCM_OK) {
+          returnValue = ret;
+        }
       }
-      if (ret == VCM_OK && length > 0) {
+      if (ret == VCM_OK && !nackList.empty()) {
         CriticalSectionScoped cs(process_crit_sect_.get());
         if (_packetRequestCallback != NULL) {
-          _packetRequestCallback->ResendPackets(&nackList[0], length);
+          _packetRequestCallback->ResendPackets(&nackList[0], nackList.size());
         }
       }
     }
@@ -548,22 +553,6 @@ int32_t VideoReceiver::SetRenderDelay(uint32_t timeMS) {
 
 // Current video delay
 int32_t VideoReceiver::Delay() const { return _timing.TargetVideoDelay(); }
-
-// Nack list
-int32_t VideoReceiver::NackList(uint16_t* nackList, uint16_t* size) {
-  VCMNackStatus nackStatus = kNackOk;
-  uint16_t nack_list_length = 0;
-  // Collect sequence numbers from the default receiver
-  // if in normal nack mode.
-  if (_receiver.NackMode() != kNoNack) {
-    nackStatus = _receiver.NackList(nackList, *size, &nack_list_length);
-  }
-  *size = nack_list_length;
-  if (nackStatus == kNackKeyFrameRequest) {
-      return RequestKeyFrame();
-  }
-  return VCM_OK;
-}
 
 uint32_t VideoReceiver::DiscardedPackets() const {
   return _receiver.DiscardedPackets();

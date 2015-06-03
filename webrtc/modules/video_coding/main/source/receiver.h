@@ -23,11 +23,6 @@ namespace webrtc {
 class Clock;
 class VCMEncodedFrame;
 
-enum VCMNackStatus {
-  kNackOk,
-  kNackKeyFrameRequest
-};
-
 class VCMReceiver {
  public:
   VCMReceiver(VCMTiming* timing,
@@ -55,8 +50,7 @@ class VCMReceiver {
                        int max_packet_age_to_nack,
                        int max_incomplete_time_ms);
   VCMNackMode NackMode() const;
-  VCMNackStatus NackList(uint16_t* nackList, uint16_t size,
-                         uint16_t* nack_list_length);
+  std::vector<uint16_t> NackList(bool* request_key_frame);
 
   // Receiver video delay.
   int SetMinReceiverDelay(int desired_delay_ms);
