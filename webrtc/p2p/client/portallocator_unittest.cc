@@ -472,6 +472,10 @@ TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationMultipleInterfaces) {
   CheckDisableAdapterEnumeration();
 }
 
+// Disable for TSan v2, see
+// https://code.google.com/p/webrtc/issues/detail?id=4743 for details.
+#if !defined(THREAD_SANITIZER)
+
 // Test that we can get OnCandidatesAllocationDone callback when all the ports
 // are disabled.
 TEST_F(PortAllocatorTest, TestDisableAllPorts) {
@@ -508,6 +512,8 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoUdpSockets) {
       "relay", "ssltcp", kRelaySslTcpIntAddr);
   EXPECT_TRUE(candidate_allocation_done_);
 }
+
+#endif // if !defined(THREAD_SANITIZER)
 
 // Test that we don't crash or malfunction if we can't create UDP sockets or
 // listen on TCP sockets. We still give out a local TCP address, since
