@@ -74,28 +74,11 @@ void StunProber::Requester::SendStunRequest() {
   auto addr = server_ips_[num_request_sent_];
   request.server_addr = addr.ipaddr();
 
-  int rv = 0;
-
-  // Only bind to the interface at the first request.
-  if (num_request_sent_ == 0) {
-    rtc::IPAddress local_addr;
-    rv = prober_->GetLocalAddress(&local_addr);
-    if (rv != 0) {
-      prober_->End(GENERIC_FAILURE, rv);
-      return;
-    }
-    rv = socket_->Bind(rtc::SocketAddress(local_addr, 0));
-    if (rv < 0) {
-      prober_->End(GENERIC_FAILURE, rv);
-      return;
-    }
-  }
-
   // The write must succeed immediately. Otherwise, the calculating of the STUN
   // request timing could become too complicated. Callback is ignored by passing
   // empty AsyncCallback.
-  rv = socket_->SendTo(addr, const_cast<char*>(request_packet->Data()),
-                       request_packet->Length(), AsyncCallback());
+  int rv = socket_->SendTo(addr, const_cast<char*>(request_packet->Data()),
+                           request_packet->Length(), AsyncCallback());
   if (rv < 0) {
     prober_->End(WRITE_FAILED, rv);
     return;
@@ -279,7 +262,12 @@ void StunProber::OnServerResolved(int index, int result) {
     return;
   }
 
-  MaybeScheduleStunRequests();
+  socket_factory_->Prepare(GetTotalClientSockets(), GetTotalServerSockets(),
+                           [this](int result) {
+                             if (result == 0) {
+                               this->MaybeScheduleStunRequests();
+                             }
+                           });
 }
 
 int StunProber::GetLocalAddress(rtc::IPAddress* addr) {
@@ -440,6 +428,8 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) {
   stats.num_request_sent = num_sent;
   stats.num_response_received = num_received;
   stats.target_request_interval_ns = interval_ms_ * 1000;
+  stats.symmetric_nat =
+      stats.srflx_addrs.size() > static_cast<size_t>(GetTotalServerSockets());
 
   if (num_sent) {
     stats.success_percent = static_cast<int>(100 * num_received / num_sent);

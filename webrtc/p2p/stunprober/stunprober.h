@@ -55,7 +55,6 @@ class SocketInterface {
     FAILED = -2,
   };
   SocketInterface() {}
-  virtual int GetLocalAddress(rtc::SocketAddress* local_address) = 0;
   virtual void Close() = 0;
   virtual ~SocketInterface() {}
 
@@ -70,6 +69,8 @@ class ClientSocketInterface : public SocketInterface {
   // getsockname will only return 0.0.0.0.
   virtual int Connect(const rtc::SocketAddress& addr) = 0;
 
+  virtual int GetLocalAddress(rtc::SocketAddress* local_address) = 0;
+
  private:
   DISALLOW_COPY_AND_ASSIGN(ClientSocketInterface);
 };
@@ -77,7 +78,6 @@ class ClientSocketInterface : public SocketInterface {
 class ServerSocketInterface : public SocketInterface {
  public:
   ServerSocketInterface() {}
-  virtual int Bind(const rtc::SocketAddress& addr) = 0;
 
   virtual int SendTo(const rtc::SocketAddress& addr,
                      char* buf,
@@ -99,6 +99,14 @@ class ServerSocketInterface : public SocketInterface {
 class SocketFactoryInterface {
  public:
   SocketFactoryInterface() {}
+  // To provide a chance to prepare the sockets that we need. This is
+  // implemented for chrome renderer process as the socket needs to be ready to
+  // use in browser process.
+  virtual void Prepare(size_t total_client_socket,
+                       size_t total_server_socket,
+                       AsyncCallback callback) {
+    callback(0);
+  }
   virtual ClientSocketInterface* CreateClientSocket() = 0;
   virtual ServerSocketInterface* CreateServerSocket(
       size_t send_buffer_size,
@@ -134,6 +142,7 @@ class StunProber {
     int num_request_sent = 0;
     int num_response_received = 0;
     bool behind_nat = false;
+    bool symmetric_nat = false;
     int average_rtt_ms = -1;
     int success_percent = 0;
     int target_request_interval_ns = 0;
@@ -148,8 +157,6 @@ class StunProber {
 
     // If the srflx_addrs has more than 1 element, the NAT is symmetric.
     std::set<std::string> srflx_addrs;
-
-    bool symmetric_nat() { return srflx_addrs.size() > 1; }
   };
 
   // StunProber is not thread safe. It's task_runner's responsibility to ensure
@@ -263,6 +270,12 @@ class StunProber {
 
   bool Done() {
     return num_request_sent_ >= requests_per_ip_ * all_servers_ips_.size();
+  }
+
+  int GetTotalClientSockets() { return 1; }
+  int GetTotalServerSockets() {
+    return (shared_socket_mode_ ? 1 : all_servers_ips_.size()) *
+           requests_per_ip_;
   }
 
   bool SendNextRequest();

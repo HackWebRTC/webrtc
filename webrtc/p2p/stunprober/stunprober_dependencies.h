@@ -35,10 +35,6 @@ class Socket : public ClientSocketInterface,
     return MapResult(socket_->Connect(addr));
   }
 
-  int Bind(const rtc::SocketAddress& addr) override {
-    return MapResult(socket_->Bind(addr));
-  }
-
   int SendTo(const rtc::SocketAddress& addr,
              char* buf,
              size_t buf_len,
