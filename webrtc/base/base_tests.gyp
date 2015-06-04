@@ -23,7 +23,6 @@
         'testbase64.h',
         'testechoserver.h',
         'testutils.h',
-        'win32toolhelp.h',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',
@@ -129,7 +128,6 @@
               'win32_unittest.cc',
               'win32regkey_unittest.cc',
               'win32socketserver_unittest.cc',
-              'win32toolhelp_unittest.cc',
               'win32window_unittest.cc',
               'win32windowpicker_unittest.cc',
               'winfirewall_unittest.cc',
