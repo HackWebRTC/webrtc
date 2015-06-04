@@ -1,5 +1,5 @@
 # This file is used by gcl to get repository specific information.
-CODE_REVIEW_SERVER: webrtc-codereview.appspot.com
+CODE_REVIEW_SERVER: codereview.webrtc.org
 CC_LIST: webrtc-reviews@webrtc.org
 VIEW_VC: https://chromium.googlesource.com/external/webrtc/+/
 TRY_ON_UPLOAD: False
