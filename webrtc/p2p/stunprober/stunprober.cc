@@ -31,6 +31,80 @@ void IncrementCounterByAddress(std::map<rtc::IPAddress, int>* counter_per_ip,
 
 }  // namespace
 
+// A requester tracks the requests and responses from a single socket to many
+// STUN servers
+class StunProber::Requester {
+ public:
+  // Each Request maps to a request and response.
+  struct Request {
+    // Actual time the STUN bind request was sent.
+    int64 sent_time_ms = 0;
+    // Time the response was received.
+    int64 received_time_ms = 0;
+
+    // See whether the observed address returned matches the
+    // local address as in StunProber.local_addr_.
+    bool behind_nat = false;
+
+    // Server reflexive address from STUN response for this given request.
+    rtc::SocketAddress srflx_addr;
+
+    rtc::IPAddress server_addr;
+
+    int64 rtt() { return received_time_ms - sent_time_ms; }
+    void ProcessResponse(rtc::ByteBuffer* message,
+                         int buf_len,
+                         const rtc::IPAddress& local_addr);
+  };
+
+  // StunProber provides |server_ips| for Requester to probe. For shared
+  // socket mode, it'll be all the resolved IP addresses. For non-shared mode,
+  // it'll just be a single address.
+  Requester(StunProber* prober,
+            ServerSocketInterface* socket,
+            const std::vector<rtc::SocketAddress>& server_ips);
+  virtual ~Requester();
+
+  // There is no callback for SendStunRequest as the underneath socket send is
+  // expected to be completed immediately. Otherwise, it'll skip this request
+  // and move to the next one.
+  void SendStunRequest();
+
+  void ReadStunResponse();
+
+  // |result| is the positive return value from RecvFrom when data is
+  // available.
+  void OnStunResponseReceived(int result);
+
+  const std::vector<Request*>& requests() { return requests_; }
+
+  // Whether this Requester has completed all requests.
+  bool Done() {
+    return static_cast<size_t>(num_request_sent_) == server_ips_.size();
+  }
+
+ private:
+  Request* GetRequestByAddress(const rtc::IPAddress& ip);
+
+  StunProber* prober_;
+
+  // The socket for this session.
+  rtc::scoped_ptr<ServerSocketInterface> socket_;
+
+  // Temporary SocketAddress and buffer for RecvFrom.
+  rtc::SocketAddress addr_;
+  rtc::scoped_ptr<rtc::ByteBuffer> response_packet_;
+
+  std::vector<Request*> requests_;
+  std::vector<rtc::SocketAddress> server_ips_;
+  int16 num_request_sent_ = 0;
+  int16 num_response_received_ = 0;
+
+  rtc::ThreadChecker& thread_checker_;
+
+  DISALLOW_COPY_AND_ASSIGN(Requester);
+};
+
 StunProber::Requester::Requester(
     StunProber* prober,
     ServerSocketInterface* socket,
