@@ -274,8 +274,8 @@ class StunProber {
 
   int GetTotalClientSockets() { return 1; }
   int GetTotalServerSockets() {
-    return (shared_socket_mode_ ? 1 : all_servers_ips_.size()) *
-           requests_per_ip_;
+    return static_cast<int>(
+        (shared_socket_mode_ ? 1 : all_servers_ips_.size()) * requests_per_ip_);
   }
 
   bool SendNextRequest();
