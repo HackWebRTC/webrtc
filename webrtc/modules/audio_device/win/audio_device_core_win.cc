@@ -4205,7 +4205,7 @@ int AudioDeviceWindowsCore::SetDMOProperties()
     HRESULT hr = S_OK;
     assert(_dmo != NULL);
 
-    scoped_refptr<IPropertyStore> ps;
+    rtc::scoped_refptr<IPropertyStore> ps;
     {
         IPropertyStore* ptrPS = NULL;
         hr = _dmo->QueryInterface(IID_IPropertyStore,
@@ -4638,7 +4638,7 @@ int32_t AudioDeviceWindowsCore::_GetDefaultDeviceIndex(EDataFlow dir,
     for (UINT i = 0; i < count; i++)
     {
         memset(szDeviceID, 0, sizeof(szDeviceID));
-        scoped_refptr<IMMDevice> device;
+        rtc::scoped_refptr<IMMDevice> device;
         {
             IMMDevice* ptrDevice = NULL;
             hr = collection->Item(i, &ptrDevice);

@@ -55,7 +55,7 @@ int32_t ForwardErrorCorrection::Packet::Release() {
 // TODO(holmer): Refactor into a proper class.
 class ProtectedPacket : public ForwardErrorCorrection::SortablePacket {
  public:
-  scoped_refptr<ForwardErrorCorrection::Packet> pkt;
+  rtc::scoped_refptr<ForwardErrorCorrection::Packet> pkt;
 };
 
 typedef std::list<ProtectedPacket*> ProtectedPacketList;
@@ -68,7 +68,7 @@ class FecPacket : public ForwardErrorCorrection::SortablePacket {
  public:
   ProtectedPacketList protected_pkt_list;
   uint32_t ssrc;  // SSRC of the current frame.
-  scoped_refptr<ForwardErrorCorrection::Packet> pkt;
+  rtc::scoped_refptr<ForwardErrorCorrection::Packet> pkt;
 };
 
 bool ForwardErrorCorrection::SortablePacket::LessThan(

@@ -179,7 +179,7 @@ bool ViEEncoder::Init() {
 }
 
 void ViEEncoder::StartThreadsAndSetSharedMembers(
-    scoped_refptr<PayloadRouter> send_payload_router,
+    rtc::scoped_refptr<PayloadRouter> send_payload_router,
     VCMProtectionCallback* vcm_protection_callback) {
   DCHECK(send_payload_router_ == NULL);
 

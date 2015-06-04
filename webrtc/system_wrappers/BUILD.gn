@@ -32,7 +32,6 @@ static_library("system_wrappers") {
     "interface/ref_count.h",
     "interface/rtp_to_ntp.h",
     "interface/rw_lock_wrapper.h",
-    "interface/scoped_refptr.h",
     "interface/scoped_vector.h",
     "interface/sleep.h",
     "interface/sort.h",

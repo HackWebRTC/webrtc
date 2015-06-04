@@ -190,7 +190,7 @@ CGImageRef CreateExcludedWindowRegionImage(const DesktopRect& pixel_bounds,
 class ScreenCapturerMac : public ScreenCapturer {
  public:
   explicit ScreenCapturerMac(
-      scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor);
+      rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor);
   virtual ~ScreenCapturerMac();
 
   bool Init();
@@ -262,7 +262,7 @@ class ScreenCapturerMac : public ScreenCapturer {
   DesktopRegion last_invalid_region_;
 
   // Monitoring display reconfiguration.
-  scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor_;
+  rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor_;
 
   // Power management assertion to prevent the screen from sleeping.
   IOPMAssertionID power_assertion_id_display_;
@@ -307,7 +307,7 @@ class InvertedDesktopFrame : public DesktopFrame {
 };
 
 ScreenCapturerMac::ScreenCapturerMac(
-    scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor)
+    rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor)
     : callback_(NULL),
       cgl_context_(NULL),
       current_display_(0),

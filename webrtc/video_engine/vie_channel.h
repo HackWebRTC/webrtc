@@ -14,12 +14,12 @@
 #include <list>
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -286,7 +286,7 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
-  scoped_refptr<PayloadRouter> send_payload_router();
+  rtc::scoped_refptr<PayloadRouter> send_payload_router();
   VCMProtectionCallback* vcm_protection_callback();
 
 
@@ -476,7 +476,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
   std::list<RtpRtcp*> simulcast_rtp_rtcp_;
   std::list<RtpRtcp*> removed_rtp_rtcp_;
-  scoped_refptr<PayloadRouter> send_payload_router_;
+  rtc::scoped_refptr<PayloadRouter> send_payload_router_;
   rtc::scoped_ptr<ViEChannelProtectionCallback> vcm_protection_callback_;
 
   VideoCodingModule* const vcm_;

@@ -49,7 +49,7 @@ SharedDesktopFrame::~SharedDesktopFrame() {}
 // static
 SharedDesktopFrame* SharedDesktopFrame::Wrap(
     DesktopFrame* desktop_frame) {
-  scoped_refptr<Core> core(new Core(desktop_frame));
+  rtc::scoped_refptr<Core> core(new Core(desktop_frame));
   return new SharedDesktopFrame(core);
 }
 
@@ -69,9 +69,11 @@ bool SharedDesktopFrame::IsShared() {
   return !core_->HasOneRef();
 }
 
-SharedDesktopFrame::SharedDesktopFrame(scoped_refptr<Core> core)
-    : DesktopFrame(core->frame()->size(), core->frame()->stride(),
-                   core->frame()->data(), core->frame()->shared_memory()),
+SharedDesktopFrame::SharedDesktopFrame(rtc::scoped_refptr<Core> core)
+    : DesktopFrame(core->frame()->size(),
+                   core->frame()->stride(),
+                   core->frame()->data(),
+                   core->frame()->shared_memory()),
       core_(core) {
 }
 
