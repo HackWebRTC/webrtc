@@ -115,6 +115,7 @@ void Loopback::Run() {
   receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.rtp.nack.rtp_history_ms = 1000;
+  receive_config.rtp.remb = true;
   receive_config.rtp.rtx[kVideoPayloadType].ssrc = kSendRtxSsrc;
   receive_config.rtp.rtx[kVideoPayloadType].payload_type = kRtxVideoPayloadType;
   receive_config.rtp.extensions.push_back(

@@ -107,8 +107,8 @@ class VideoReceiveStream {
       Rtp()
           : remote_ssrc(0),
             local_ssrc(0),
-            rtcp_mode(newapi::kRtcpReducedSize),
-            remb(true) {}
+            rtcp_mode(newapi::kRtcpCompound),
+            remb(false) {}
       std::string ToString() const;
 
       // Synchronization source (stream identifier) to be received.

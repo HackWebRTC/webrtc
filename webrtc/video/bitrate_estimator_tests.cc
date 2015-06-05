@@ -151,6 +151,7 @@ class BitrateEstimatorTest : public test::CallTest {
     // receive_config_.decoders will be set by every stream separately.
     receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
     receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
+    receive_config_.rtp.remb = true;
     receive_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
     receive_config_.rtp.extensions.push_back(

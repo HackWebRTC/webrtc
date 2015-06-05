@@ -2789,4 +2789,50 @@ TEST_F(EndToEndTest, CanCreateAndDestroyManyVideoStreams) {
     call->DestroyVideoReceiveStream(receive_stream);
   }
 }
+
+void VerifyEmptyNackConfig(const NackConfig& config) {
+  EXPECT_EQ(0, config.rtp_history_ms)
+      << "Enabling NACK requires rtcp-fb: nack negotiation.";
+}
+
+void VerifyEmptyFecConfig(const FecConfig& config) {
+  EXPECT_EQ(-1, config.ulpfec_payload_type)
+      << "Enabling FEC requires rtpmap: ulpfec negotiation.";
+  EXPECT_EQ(-1, config.red_payload_type)
+      << "Enabling FEC requires rtpmap: red negotiation.";
+  EXPECT_EQ(-1, config.red_rtx_payload_type)
+      << "Enabling RTX in FEC requires rtpmap: rtx negotiation.";
+}
+
+TEST_F(EndToEndTest, VerifyDefaultSendConfigParameters) {
+  VideoSendStream::Config default_send_config;
+  EXPECT_EQ(0, default_send_config.rtp.nack.rtp_history_ms)
+      << "Enabling NACK require rtcp-fb: nack negotiation.";
+  EXPECT_TRUE(default_send_config.rtp.rtx.ssrcs.empty())
+      << "Enabling RTX requires rtpmap: rtx negotiation.";
+  EXPECT_TRUE(default_send_config.rtp.extensions.empty())
+      << "Enabling RTP extensions require negotiation.";
+
+  VerifyEmptyNackConfig(default_send_config.rtp.nack);
+  VerifyEmptyFecConfig(default_send_config.rtp.fec);
+}
+
+TEST_F(EndToEndTest, VerifyDefaultReceiveConfigParameters) {
+  VideoReceiveStream::Config default_receive_config;
+  EXPECT_EQ(newapi::kRtcpCompound, default_receive_config.rtp.rtcp_mode)
+      << "Reduced-size RTCP require rtcp-rsize to be negotiated.";
+  EXPECT_FALSE(default_receive_config.rtp.remb)
+      << "REMB require rtcp-fb: goog-remb to be negotiated.";
+  EXPECT_FALSE(
+      default_receive_config.rtp.rtcp_xr.receiver_reference_time_report)
+      << "RTCP XR settings require rtcp-xr to be negotiated.";
+  EXPECT_TRUE(default_receive_config.rtp.rtx.empty())
+      << "Enabling RTX requires rtpmap: rtx negotiation.";
+  EXPECT_TRUE(default_receive_config.rtp.extensions.empty())
+      << "Enabling RTP extensions require negotiation.";
+
+  VerifyEmptyNackConfig(default_receive_config.rtp.nack);
+  VerifyEmptyFecConfig(default_receive_config.rtp.fec);
+}
+
 }  // namespace webrtc

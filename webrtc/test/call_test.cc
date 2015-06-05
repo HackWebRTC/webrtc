@@ -108,6 +108,7 @@ void CallTest::CreateMatchingReceiveConfigs() {
   assert(receive_configs_.empty());
   assert(allocated_decoders_.empty());
   VideoReceiveStream::Config config;
+  config.rtp.remb = true;
   config.rtp.local_ssrc = kReceiverLocalSsrc;
   for (const RtpExtension& extension : send_config_.rtp.extensions)
     config.rtp.extensions.push_back(extension);
