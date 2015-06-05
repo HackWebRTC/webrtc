@@ -33,8 +33,8 @@ AudioManager::JavaAudioManager::JavaAudioManager(
     : audio_manager_(audio_manager.Pass()),
       init_(native_reg->GetMethodId("init", "()Z")),
       dispose_(native_reg->GetMethodId("dispose", "()V")),
-      set_communication_mode_(
-          native_reg->GetMethodId("setCommunicationMode", "(Z)V")) {
+      is_communication_mode_enabled_(
+          native_reg->GetMethodId("isCommunicationModeEnabled", "()Z")) {
   ALOGD("JavaAudioManager::ctor%s", GetThreadInfo().c_str());
 }
 
@@ -50,9 +50,8 @@ void AudioManager::JavaAudioManager::Close() {
   audio_manager_->CallVoidMethod(dispose_);
 }
 
-void AudioManager::JavaAudioManager::SetCommunicationMode(bool enable) {
-  audio_manager_->CallVoidMethod(set_communication_mode_,
-                                 static_cast<jboolean>(enable));
+bool AudioManager::JavaAudioManager::IsCommunicationModeEnabled() {
+  return audio_manager_->CallBooleanMethod(is_communication_mode_enabled_);
 }
 
 // AudioManager implementation
@@ -126,11 +125,10 @@ bool AudioManager::Close() {
   return true;
 }
 
-void AudioManager::SetCommunicationMode(bool enable) {
-  ALOGD("SetCommunicationMode(%d)%s", enable, GetThreadInfo().c_str());
+bool AudioManager::IsCommunicationModeEnabled() const {
+  ALOGD("IsCommunicationModeEnabled()");
   DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(initialized_);
-  j_audio_manager_->SetCommunicationMode(enable);
+  return j_audio_manager_->IsCommunicationModeEnabled();
 }
 
 bool AudioManager::IsAcousticEchoCancelerSupported() const {

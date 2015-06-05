@@ -11,11 +11,16 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_DEVICE_TEMPLATE_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_DEVICE_TEMPLATE_H_
 
+#include <android/log.h>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+
+#define TAG "AudioDeviceTemplate"
+#define ALOGW(...) __android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__)
 
 namespace webrtc {
 
@@ -125,12 +130,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t InitPlayout() override {
-    // Switches the Android audio mode to MODE_IN_COMMUNICATION to ensure that
-    // audio routing, volume control and echo performance are the best possible
-    // for VoIP. InitRecording() does the same type of call but only the first
-    // call has any effect.
-    // This call does nothing if MODE_IN_COMMUNICATION was already set.
-    audio_manager_->SetCommunicationMode(true);
     return output_.InitPlayout();
   }
 
@@ -144,12 +143,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t InitRecording() override {
-    // Switches the Android audio mode to MODE_IN_COMMUNICATION to ensure that
-    // audio routing, volume control and echo performance are the best possible
-    // for VoIP. InitRecording() does the same type of call but only the first
-    // call has any effect.
-    // This call does nothing if MODE_IN_COMMUNICATION was already set.
-    audio_manager_->SetCommunicationMode(true);
     return input_.InitRecording();
   }
 
@@ -158,6 +151,9 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t StartPlayout() override {
+    if (!audio_manager_->IsCommunicationModeEnabled()) {
+      ALOGW("The application should use MODE_IN_COMMUNICATION audio mode!");
+    }
     return output_.StartPlayout();
   }
 
@@ -166,11 +162,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     if (!Playing())
       return 0;
     int32_t err = output_.StopPlayout();
-    if (!Recording()) {
-      // Restore initial audio mode since all audio streaming is disabled.
-      // The default mode was stored in Init().
-      audio_manager_->SetCommunicationMode(false);
-    }
     return err;
   }
 
@@ -179,6 +170,9 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t StartRecording() override {
+    if (!audio_manager_->IsCommunicationModeEnabled()) {
+      ALOGW("The application should use MODE_IN_COMMUNICATION audio mode!");
+    }
     return input_.StartRecording();
   }
 
@@ -187,11 +181,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     if (!Recording())
       return 0;
     int32_t err = input_.StopRecording();
-    if (!Playing()) {
-      // Restore initial audio mode since all audio streaming is disabled.
-      // The default mode was is stored in Init().
-      audio_manager_->SetCommunicationMode(false);
-    }
     return err;
   }
 

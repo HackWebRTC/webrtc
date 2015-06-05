@@ -151,10 +151,11 @@ public class AppRTCAudioManager {
     audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
         AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 
-    // Start by setting RINGTONE as default audio mode. The native WebRTC
-    // audio layer will switch to COMMUNICATION mode when the first streaming
-    // session starts and return to RINGTONE mode when all streaming stops.
-    audioManager.setMode(AudioManager.MODE_RINGTONE);
+    // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
+    // required to be in this mode when playout and/or recording starts for
+    // best possible VoIP performance.
+    // TODO(henrika): we migh want to start with RINGTONE mode here instead.
+    audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
     // Always disable microphone mute during a WebRTC call.
     setMicrophoneMute(false);

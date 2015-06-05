@@ -62,10 +62,8 @@ class WebRtcAudioManager {
   private final AudioManager audioManager;
 
   private boolean initialized = false;
-  private boolean audioModeNeedsRestore = false;
   private int nativeSampleRate;
   private int nativeChannels;
-  private int savedAudioMode = AudioManager.MODE_INVALID;
 
   private boolean hardwareAEC;
   private boolean lowLatencyOutput;
@@ -94,16 +92,7 @@ class WebRtcAudioManager {
     if (initialized) {
       return true;
     }
-
-    // Store current audio state so we can restore it when close() or
-    // setCommunicationMode(false) is called.
-    savedAudioMode = audioManager.getMode();
-
-    if (DEBUG) {
-      Logd("savedAudioMode: " + savedAudioMode);
-      Logd("hasEarpiece: " + hasEarpiece());
-    }
-
+    Logd("audio mode is: " + AUDIO_MODES[audioManager.getMode()]);
     initialized = true;
     return true;
   }
@@ -113,31 +102,10 @@ class WebRtcAudioManager {
     if (!initialized) {
       return;
     }
-    // Restore previously stored audio states.
-    if (audioModeNeedsRestore) {
-      audioManager.setMode(savedAudioMode);
-    }
   }
 
-  private void setCommunicationMode(boolean enable) {
-    Logd("setCommunicationMode(" + enable + ")"
-        + WebRtcAudioUtils.getThreadInfo());
-    assertTrue(initialized);
-    if (enable) {
-      // Avoid switching mode if MODE_IN_COMMUNICATION is already in use.
-      if (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION) {
-        return;
-      }
-      // Switch to COMMUNICATION mode for best possible VoIP performance.
-      audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-      audioModeNeedsRestore = true;
-      Logd("changing audio mode to: " + AUDIO_MODES[audioManager.getMode()]);
-    } else if (audioModeNeedsRestore) {
-      // Restore audio mode that was stored in init().
-      audioManager.setMode(savedAudioMode);
-      audioModeNeedsRestore = false;
-      Logd("restoring audio mode to: " + AUDIO_MODES[audioManager.getMode()]);
-    }
+  private boolean isCommunicationModeEnabled() {
+    return (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION);
   }
 
   private void storeAudioParameters() {
