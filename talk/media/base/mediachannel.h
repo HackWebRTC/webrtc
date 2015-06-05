@@ -159,7 +159,7 @@ struct AudioOptions {
     conference_mode.SetFrom(change.conference_mode);
     adjust_agc_delta.SetFrom(change.adjust_agc_delta);
     experimental_agc.SetFrom(change.experimental_agc);
-    experimental_aec.SetFrom(change.experimental_aec);
+    extended_filter_aec.SetFrom(change.extended_filter_aec);
     delay_agnostic_aec.SetFrom(change.delay_agnostic_aec);
     experimental_ns.SetFrom(change.experimental_ns);
     aec_dump.SetFrom(change.aec_dump);
@@ -191,7 +191,7 @@ struct AudioOptions {
         aecm_generate_comfort_noise == o.aecm_generate_comfort_noise &&
         conference_mode == o.conference_mode &&
         experimental_agc == o.experimental_agc &&
-        experimental_aec == o.experimental_aec &&
+        extended_filter_aec == o.extended_filter_aec &&
         delay_agnostic_aec == o.delay_agnostic_aec &&
         experimental_ns == o.experimental_ns &&
         adjust_agc_delta == o.adjust_agc_delta &&
@@ -226,7 +226,7 @@ struct AudioOptions {
     ost << ToStringIfSet("conference", conference_mode);
     ost << ToStringIfSet("agc_delta", adjust_agc_delta);
     ost << ToStringIfSet("experimental_agc", experimental_agc);
-    ost << ToStringIfSet("experimental_aec", experimental_aec);
+    ost << ToStringIfSet("extended_filter_aec", extended_filter_aec);
     ost << ToStringIfSet("delay_agnostic_aec", delay_agnostic_aec);
     ost << ToStringIfSet("experimental_ns", experimental_ns);
     ost << ToStringIfSet("aec_dump", aec_dump);
@@ -269,7 +269,7 @@ struct AudioOptions {
   Settable<bool> conference_mode;
   Settable<int> adjust_agc_delta;
   Settable<bool> experimental_agc;
-  Settable<bool> experimental_aec;
+  Settable<bool> extended_filter_aec;
   Settable<bool> delay_agnostic_aec;
   Settable<bool> experimental_ns;
   Settable<bool> aec_dump;

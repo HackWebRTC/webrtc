@@ -48,7 +48,7 @@ const char MediaConstraintsInterface::kMinFrameRate[] = "minFrameRate";
 // Audio constraints.
 const char MediaConstraintsInterface::kEchoCancellation[] =
     "googEchoCancellation";
-const char MediaConstraintsInterface::kExperimentalEchoCancellation[] =
+const char MediaConstraintsInterface::kExtendedFilterEchoCancellation[] =
     "googEchoCancellation2";
 const char MediaConstraintsInterface::kDAEchoCancellation[] =
     "googDAEchoCancellation";

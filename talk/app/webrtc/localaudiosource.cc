@@ -58,8 +58,8 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
     if (iter->key == MediaConstraintsInterface::kEchoCancellation)
       options->echo_cancellation.Set(value);
     else if (iter->key ==
-        MediaConstraintsInterface::kExperimentalEchoCancellation)
-      options->experimental_aec.Set(value);
+             MediaConstraintsInterface::kExtendedFilterEchoCancellation)
+      options->extended_filter_aec.Set(value);
     else if (iter->key == MediaConstraintsInterface::kDAEchoCancellation)
       options->delay_agnostic_aec.Set(value);
     else if (iter->key == MediaConstraintsInterface::kAutoGainControl)

@@ -258,7 +258,7 @@ void void_main(int argc, char* argv[]) {
                         suppression_level)));
 
     } else if (strcmp(argv[i], "--extended_filter") == 0) {
-      config.Set<DelayCorrection>(new DelayCorrection(true));
+      config.Set<ExtendedFilter>(new ExtendedFilter(true));
 
     } else if (strcmp(argv[i], "--no_reported_delay") == 0) {
       config.Set<ReportedDelay>(new ReportedDelay(false));
