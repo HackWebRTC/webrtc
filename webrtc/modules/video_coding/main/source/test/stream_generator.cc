@@ -29,7 +29,7 @@ void StreamGenerator::Init(uint16_t start_seq_num, int64_t current_time) {
   packets_.clear();
   sequence_number_ = start_seq_num;
   start_time_ = current_time;
-  memset(&packet_buffer, 0, sizeof(packet_buffer));
+  memset(packet_buffer_, 0, sizeof(packet_buffer_));
 }
 
 void StreamGenerator::GenerateFrame(FrameType type,
@@ -66,7 +66,7 @@ VCMPacket StreamGenerator::GeneratePacket(uint16_t sequence_number,
   packet.isFirstPacket = first_packet;
   packet.markerBit = marker_bit;
   packet.sizeBytes = size;
-  packet.dataPtr = packet_buffer;
+  packet.dataPtr = packet_buffer_;
   if (packet.isFirstPacket)
     packet.completeNALU = kNaluStart;
   else if (packet.markerBit)
