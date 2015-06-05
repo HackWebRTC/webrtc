@@ -21,20 +21,13 @@
 
 namespace webrtc {
 
-StreamGenerator::StreamGenerator(uint16_t start_seq_num,
-                                 uint32_t start_timestamp,
-                                 int64_t current_time)
-    : packets_(),
-      sequence_number_(start_seq_num),
-      timestamp_(start_timestamp),
-      start_time_(current_time) {}
+StreamGenerator::StreamGenerator(uint16_t start_seq_num, int64_t current_time)
+    : packets_(), sequence_number_(start_seq_num), start_time_(current_time) {
+}
 
-void StreamGenerator::Init(uint16_t start_seq_num,
-                           uint32_t start_timestamp,
-                           int64_t current_time) {
+void StreamGenerator::Init(uint16_t start_seq_num, int64_t current_time) {
   packets_.clear();
   sequence_number_ = start_seq_num;
-  timestamp_ = start_timestamp;
   start_time_ = current_time;
   memset(&packet_buffer, 0, sizeof(packet_buffer));
 }
@@ -43,18 +36,18 @@ void StreamGenerator::GenerateFrame(FrameType type,
                                     int num_media_packets,
                                     int num_empty_packets,
                                     int64_t current_time) {
-  timestamp_ = 90 * (current_time - start_time_);
+  uint32_t timestamp = 90 * (current_time - start_time_);
   for (int i = 0; i < num_media_packets; ++i) {
     const int packet_size =
         (kFrameSize + num_media_packets / 2) / num_media_packets;
     bool marker_bit = (i == num_media_packets - 1);
     packets_.push_back(GeneratePacket(
-        sequence_number_, timestamp_, packet_size, (i == 0), marker_bit, type));
+        sequence_number_, timestamp, packet_size, (i == 0), marker_bit, type));
     ++sequence_number_;
   }
   for (int i = 0; i < num_empty_packets; ++i) {
     packets_.push_back(GeneratePacket(
-        sequence_number_, timestamp_, 0, false, false, kFrameEmpty));
+        sequence_number_, timestamp, 0, false, false, kFrameEmpty));
     ++sequence_number_;
   }
 }

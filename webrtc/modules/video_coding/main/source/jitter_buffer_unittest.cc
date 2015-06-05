@@ -129,7 +129,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
     max_nack_list_size_ = 150;
     oldest_packet_to_nack_ = 250;
     jitter_buffer_ = new VCMJitterBuffer(clock_.get(), &event_factory_);
-    stream_generator_ = new StreamGenerator(0, 0, clock_->TimeInMilliseconds());
+    stream_generator_ = new StreamGenerator(0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_,
                                     oldest_packet_to_nack_, 0);
@@ -1995,7 +1995,7 @@ TEST_F(TestJitterBufferNack, NoNackListReturnedBeforeFirstDecode) {
 }
 
 TEST_F(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
-  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(0, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
   stream_generator_->GenerateFrame(kVideoFrameDelta, 2, 0,
                                   clock_->TimeInMilliseconds());
@@ -2008,7 +2008,7 @@ TEST_F(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
 }
 
 TEST_F(TestJitterBufferNack, VerifyRetransmittedFlag) {
-  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(0, clock_->TimeInMilliseconds());
   stream_generator_->GenerateFrame(kVideoFrameKey, 3, 0,
                                    clock_->TimeInMilliseconds());
   VCMPacket packet;
@@ -2033,7 +2033,7 @@ TEST_F(TestJitterBufferNack, VerifyRetransmittedFlag) {
 }
 
 TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
-  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(0, clock_->TimeInMilliseconds());
   stream_generator_->GenerateFrame(kVideoFrameKey, 3, 0,
                                   clock_->TimeInMilliseconds());
   EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
@@ -2050,7 +2050,7 @@ TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
 
 TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrameSecondInQueue) {
   VCMPacket packet;
-  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(0, clock_->TimeInMilliseconds());
   // First frame is delta.
   stream_generator_->GenerateFrame(kVideoFrameDelta, 3, 0,
                                    clock_->TimeInMilliseconds());
@@ -2114,7 +2114,7 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap) {
   //  -------   ------------------------------------------------------------
   // | 65532 | | 65533 | 65534 | 65535 | x | 1 | .. | 9 | x | 11 |.....| 96 |
   //  -------   ------------------------------------------------------------
-  stream_generator_->Init(65532, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(65532, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
   EXPECT_FALSE(request_key_frame);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -2148,7 +2148,7 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap2) {
   //  -----------------------------------
   // | 65532 | 65533 | 65534 | x | 0 | 1 |
   //  -----------------------------------
-  stream_generator_->Init(65532, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(65532, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
   EXPECT_FALSE(request_key_frame);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -2176,7 +2176,7 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap2) {
 }
 
 TEST_F(TestJitterBufferNack, ResetByFutureKeyFrameDoesntError) {
-  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(0, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
   EXPECT_TRUE(DecodeCompleteFrame());
   bool extended = false;
@@ -2186,7 +2186,7 @@ TEST_F(TestJitterBufferNack, ResetByFutureKeyFrameDoesntError) {
   // Far-into-the-future video frame, could be caused by resetting the encoder
   // or otherwise restarting. This should not fail when error when the packet is
   // a keyframe, even if all of the nack list needs to be flushed.
-  stream_generator_->Init(10000, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(10000, clock_->TimeInMilliseconds());
   clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
   InsertFrame(kVideoFrameKey);
   EXPECT_TRUE(DecodeCompleteFrame());

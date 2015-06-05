@@ -28,24 +28,13 @@ const int kDefaultFramePeriodMs = 1000 / kDefaultFrameRate;
 
 class StreamGenerator {
  public:
-  StreamGenerator(uint16_t start_seq_num,
-                  uint32_t start_timestamp,
-                  int64_t current_time);
-  void Init(uint16_t start_seq_num,
-            uint32_t start_timestamp,
-            int64_t current_time);
+  StreamGenerator(uint16_t start_seq_num, int64_t current_time);
+  void Init(uint16_t start_seq_num, int64_t current_time);
 
   void GenerateFrame(FrameType type,
                      int num_media_packets,
                      int num_empty_packets,
                      int64_t current_time);
-
-  VCMPacket GeneratePacket(uint16_t sequence_number,
-                           uint32_t timestamp,
-                           unsigned int size,
-                           bool first_packet,
-                           bool marker_bit,
-                           FrameType type);
 
   bool PopPacket(VCMPacket* packet, int index);
   void DropLastPacket();
@@ -59,11 +48,17 @@ class StreamGenerator {
   int PacketsRemaining() const;
 
  private:
+  VCMPacket GeneratePacket(uint16_t sequence_number,
+                           uint32_t timestamp,
+                           unsigned int size,
+                           bool first_packet,
+                           bool marker_bit,
+                           FrameType type);
+
   std::list<VCMPacket>::iterator GetPacketIterator(int index);
 
   std::list<VCMPacket> packets_;
   uint16_t sequence_number_;
-  uint32_t timestamp_;
   int64_t start_time_;
   uint8_t packet_buffer[kMaxPacketSize];
 
