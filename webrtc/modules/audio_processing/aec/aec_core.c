@@ -98,9 +98,13 @@ ALIGN16_BEG const float ALIGN16_END WebRtcAec_overDriveCurve[65] = {
     1.9354f, 1.9437f, 1.9520f, 1.9601f, 1.9682f, 1.9763f, 1.9843f, 1.9922f,
     2.0000f};
 
-// TODO(bjornv): These parameters will be tuned.
+// Delay Agnostic AEC parameters, still under development and may change.
 static const float kDelayQualityThresholdMax = 0.07f;
+static const float kDelayQualityThresholdMin = 0.01f;
 static const int kInitialShiftOffset = 5;
+#if !defined(WEBRTC_ANDROID)
+static const int kDelayCorrectionStart = 1500;  // 10 ms chunks
+#endif
 
 // Target suppression levels for nlp modes.
 // log{0.001, 0.00001, 0.00000001}
@@ -857,6 +861,16 @@ static int SignalBasedDelayCorrection(AecCore* self) {
   int delay_correction = 0;
   int last_delay = -2;
   assert(self != NULL);
+#if !defined(WEBRTC_ANDROID)
+  // On desktops, turn on correction after |kDelayCorrectionStart| frames.  This
+  // is to let the delay estimation get a chance to converge.  Also, if the
+  // playout audio volume is low (or even muted) the delay estimation can return
+  // a very large delay, which will break the AEC if it is applied.
+  if (self->frame_count < kDelayCorrectionStart) {
+    return 0;
+  }
+#endif
+
   // 1. Check for non-negative delay estimate.  Note that the estimates we get
   //    from the delay estimation are not compensated for lookahead.  Hence, a
   //    negative |last_delay| is an invalid one.
@@ -874,11 +888,14 @@ static int SignalBasedDelayCorrection(AecCore* self) {
       (WebRtc_last_delay_quality(self->delay_estimator) >
            self->delay_quality_threshold)) {
     int delay = last_delay - WebRtc_lookahead(self->delay_estimator);
-    // Allow for a slack in the actual delay.  The adaptive echo cancellation
-    // filter is currently |num_partitions| (of 64 samples) long.  If the
-    // delay estimate indicates a delay of at least one quarter of the filter
-    // length we open up for correction.
-    if (delay <= 0 || delay > (self->num_partitions / 4)) {
+    // Allow for a slack in the actual delay, defined by a |lower_bound| and an
+    // |upper_bound|.  The adaptive echo cancellation filter is currently
+    // |num_partitions| (of 64 samples) long.  If the delay estimate is negative
+    // or at least 3/4 of the filter length we open up for correction.
+    const int lower_bound = 0;
+    const int upper_bound = self->num_partitions * 3 / 4;
+    const int do_correction = delay <= lower_bound || delay > upper_bound;
+    if (do_correction == 1) {
       int available_read = (int)WebRtc_available_read(self->far_buf);
       // Adjust w.r.t. a |shift_offset| to account for not as reliable estimates
       // in the beginning, hence we are more conservative.
@@ -1583,7 +1600,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->previous_delay = -2;  // (-2): Uninitialized.
   aec->delay_correction_count = 0;
   aec->shift_offset = kInitialShiftOffset;
-  aec->delay_quality_threshold = 0;
+  aec->delay_quality_threshold = kDelayQualityThresholdMin;
 
 #ifdef WEBRTC_ANDROID
   aec->reported_delay_enabled = 0;  // Disabled by default.
@@ -1603,6 +1620,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   // all the time and the APIs to turn it on/off will be removed.  Hence, remove
   // this line then.
   WebRtc_enable_robust_validation(aec->delay_estimator, 1);
+  aec->frame_count = 0;
 
   // Default target suppression mode.
   aec->nlp_mode = 1;
@@ -1725,6 +1743,7 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
   int i, j;
   int out_elements = 0;
 
+  aec->frame_count++;
   // For each frame the process is as follows:
   // 1) If the system_delay indicates on being too small for processing a
   //    frame we stuff the buffer with enough data for 10 ms.
