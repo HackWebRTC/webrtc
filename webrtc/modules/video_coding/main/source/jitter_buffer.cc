@@ -820,7 +820,7 @@ void VCMJitterBuffer::SetNackMode(VCMNackMode mode,
   low_rtt_nack_threshold_ms_ = low_rtt_nack_threshold_ms;
   high_rtt_nack_threshold_ms_ = high_rtt_nack_threshold_ms;
   // Don't set a high start rtt if high_rtt_nack_threshold_ms_ is used, to not
-  // disable NACK in hybrid mode.
+  // disable NACK in |kNack| mode.
   if (rtt_ms_ == kDefaultRtt && high_rtt_nack_threshold_ms_ != -1) {
     rtt_ms_ = 0;
   }

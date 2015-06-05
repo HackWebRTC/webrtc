@@ -156,8 +156,8 @@ class VCMJitterBuffer {
   void UpdateRtt(int64_t rtt_ms);
 
   // Set the NACK mode. |high_rtt_nack_threshold_ms| is an RTT threshold in ms
-  // above which NACK will be disabled if the NACK mode is |kNackHybrid|, -1
-  // meaning that NACK is always enabled in the hybrid mode.
+  // above which NACK will be disabled if the NACK mode is |kNack|, -1 meaning
+  // that NACK is always enabled in the |kNack| mode.
   // |low_rtt_nack_threshold_ms| is an RTT threshold in ms below which we expect
   // to rely on NACK only, and therefore are using larger buffers to have time
   // to wait for retransmissions.
