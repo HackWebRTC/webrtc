@@ -138,6 +138,8 @@ public:
 
     void OnDroppedFrame();
 
+    bool SupportsNativeHandle() const;
+
 private:
     VideoEncoder* const encoder_;
     VideoEncoderRateObserver* const rate_observer_;

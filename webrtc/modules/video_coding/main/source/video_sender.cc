@@ -321,8 +321,16 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
     LOG(LS_ERROR) << "Incoming frame doesn't match set resolution. Dropping.";
     return VCM_PARAMETER_ERROR;
   }
+  VideoFrame converted_frame = videoFrame;
+  if (converted_frame.native_handle() && !_encoder->SupportsNativeHandle()) {
+    // This module only supports software encoding.
+    // TODO(pbos): Offload conversion from the encoder thread.
+    converted_frame = converted_frame.ConvertNativeToI420Frame();
+    CHECK(!converted_frame.IsZeroSize())
+        << "Frame conversion failed, won't be able to encode frame.";
+  }
   int32_t ret =
-      _encoder->Encode(videoFrame, codecSpecificInfo, _nextFrameTypes);
+      _encoder->Encode(converted_frame, codecSpecificInfo, _nextFrameTypes);
   if (ret < 0) {
     LOG(LS_ERROR) << "Failed to encode frame. Error code: " << ret;
     return ret;

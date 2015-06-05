@@ -94,50 +94,46 @@ void* I420Buffer::native_handle() const {
   return nullptr;
 }
 
-TextureBuffer::TextureBuffer(void* native_handle,
-                             int width,
-                             int height,
-                             const rtc::Callback0<void>& no_longer_used)
-    : native_handle_(native_handle),
-      width_(width),
-      height_(height),
-      no_longer_used_cb_(no_longer_used) {
+rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::NativeToI420Buffer() {
+  RTC_NOTREACHED();
+  return nullptr;
+}
+
+NativeHandleBuffer::NativeHandleBuffer(void* native_handle,
+                                       int width,
+                                       int height)
+    : native_handle_(native_handle), width_(width), height_(height) {
   DCHECK(native_handle != nullptr);
   DCHECK_GT(width, 0);
   DCHECK_GT(height, 0);
 }
 
-TextureBuffer::~TextureBuffer() {
-  no_longer_used_cb_();
-}
-
-int TextureBuffer::width() const {
+int NativeHandleBuffer::width() const {
   return width_;
 }
 
-int TextureBuffer::height() const {
+int NativeHandleBuffer::height() const {
   return height_;
 }
 
-const uint8_t* TextureBuffer::data(PlaneType type) const {
+const uint8_t* NativeHandleBuffer::data(PlaneType type) const {
   RTC_NOTREACHED();  // Should not be called.
   return nullptr;
 }
 
-uint8_t* TextureBuffer::data(PlaneType type) {
+uint8_t* NativeHandleBuffer::data(PlaneType type) {
   RTC_NOTREACHED();  // Should not be called.
   return nullptr;
 }
 
-int TextureBuffer::stride(PlaneType type) const {
+int NativeHandleBuffer::stride(PlaneType type) const {
   RTC_NOTREACHED();  // Should not be called.
   return 0;
 }
 
-void* TextureBuffer::native_handle() const {
+void* NativeHandleBuffer::native_handle() const {
   return native_handle_;
 }
-
 
 WrappedI420Buffer::WrappedI420Buffer(int desired_width,
                                      int desired_height,
@@ -217,6 +213,11 @@ int WrappedI420Buffer::stride(PlaneType type) const {
 }
 
 void* WrappedI420Buffer::native_handle() const {
+  return nullptr;
+}
+
+rtc::scoped_refptr<VideoFrameBuffer> WrappedI420Buffer::NativeToI420Buffer() {
+  RTC_NOTREACHED();
   return nullptr;
 }
 

@@ -25,13 +25,6 @@ class VideoFrame {
              uint32_t timestamp,
              int64_t render_time_ms,
              VideoRotation rotation);
-  VideoFrame(void* native_handle,
-             int width,
-             int height,
-             uint32_t timestamp,
-             int64_t render_time_ms,
-             VideoRotation rotation,
-             const rtc::Callback0<void>& no_longer_used);
 
   // TODO(pbos): Make all create/copy functions void, they should not be able to
   // fail (which should be DCHECK/CHECKed instead).
@@ -159,6 +152,10 @@ class VideoFrame {
   // Set the underlying buffer.
   void set_video_frame_buffer(
       const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer);
+
+  // Convert native-handle frame to memory-backed I420 frame. Should not be
+  // called on a non-native-handle frame.
+  VideoFrame ConvertNativeToI420Frame() const;
 
  private:
   // An opaque reference counted handle that stores the pixel data.

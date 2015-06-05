@@ -30,6 +30,7 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/configurable_frame_size_encoder.h"
+#include "webrtc/test/fake_texture_frame.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/send_statistics_proxy.h"
@@ -49,16 +50,6 @@ void ExpectEqualBufferFrames(const VideoFrame& frame1,
 void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
                              const std::vector<VideoFrame>& frames2);
 VideoFrame CreateVideoFrame(int width, int height, uint8_t data);
-
-class FakeNativeHandle {
- public:
-  FakeNativeHandle() {}
-  ~FakeNativeHandle() {}
-};
-
-void DeleteNativeHandle(FakeNativeHandle* handle) {
-  delete handle;
-}
 
 class VideoSendStreamTest : public test::CallTest {
  protected:
@@ -1084,20 +1075,17 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   std::vector<VideoFrame> input_frames;
   int width = static_cast<int>(encoder_config_.streams[0].width);
   int height = static_cast<int>(encoder_config_.streams[0].height);
-  FakeNativeHandle* handle1 = new FakeNativeHandle();
-  FakeNativeHandle* handle2 = new FakeNativeHandle();
-  FakeNativeHandle* handle3 = new FakeNativeHandle();
-  input_frames.push_back(VideoFrame(handle1, width, height, 1, 1,
-                                    kVideoRotation_0,
-                                    rtc::Bind(&DeleteNativeHandle, handle1)));
-  input_frames.push_back(VideoFrame(handle2, width, height, 2, 2,
-                                    kVideoRotation_0,
-                                    rtc::Bind(&DeleteNativeHandle, handle2)));
+  test::FakeNativeHandle* handle1 = new test::FakeNativeHandle();
+  test::FakeNativeHandle* handle2 = new test::FakeNativeHandle();
+  test::FakeNativeHandle* handle3 = new test::FakeNativeHandle();
+  input_frames.push_back(test::CreateFakeNativeHandleFrame(
+      handle1, width, height, 1, 1, kVideoRotation_0));
+  input_frames.push_back(test::CreateFakeNativeHandleFrame(
+      handle2, width, height, 2, 2, kVideoRotation_0));
   input_frames.push_back(CreateVideoFrame(width, height, 3));
   input_frames.push_back(CreateVideoFrame(width, height, 4));
-  input_frames.push_back(VideoFrame(handle3, width, height, 5, 5,
-                                    kVideoRotation_0,
-                                    rtc::Bind(&DeleteNativeHandle, handle3)));
+  input_frames.push_back(test::CreateFakeNativeHandleFrame(
+      handle3, width, height, 5, 5, kVideoRotation_0));
 
   send_stream_->Start();
   for (size_t i = 0; i < input_frames.size(); i++) {
