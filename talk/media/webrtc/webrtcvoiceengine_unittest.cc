@@ -2895,7 +2895,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
 
   // Turn off echo cancellation and delay agnostic aec.
   options.delay_agnostic_aec.Set(false);
-  options.extended_filter_aec.Set(false);
+  options.experimental_aec.Set(false);
   options.echo_cancellation.Set(false);
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetEcStatus(ec_enabled, ec_mode);

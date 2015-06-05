@@ -18,7 +18,7 @@ extern "C" {
 
 namespace webrtc {
 
-TEST(EchoCancellationInternalTest, ExtendedFilter) {
+TEST(EchoCancellationInternalTest, DelayCorrection) {
   rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
   EXPECT_TRUE(ap->echo_cancellation()->aec_core() == NULL);
 
@@ -28,24 +28,24 @@ TEST(EchoCancellationInternalTest, ExtendedFilter) {
   AecCore* aec_core = ap->echo_cancellation()->aec_core();
   ASSERT_TRUE(aec_core != NULL);
   // Disabled by default.
-  EXPECT_EQ(0, WebRtcAec_extended_filter_enabled(aec_core));
+  EXPECT_EQ(0, WebRtcAec_delay_correction_enabled(aec_core));
 
   Config config;
-  config.Set<ExtendedFilter>(new ExtendedFilter(true));
+  config.Set<DelayCorrection>(new DelayCorrection(true));
   ap->SetExtraOptions(config);
-  EXPECT_EQ(1, WebRtcAec_extended_filter_enabled(aec_core));
+  EXPECT_EQ(1, WebRtcAec_delay_correction_enabled(aec_core));
 
   // Retains setting after initialization.
   EXPECT_EQ(ap->kNoError, ap->Initialize());
-  EXPECT_EQ(1, WebRtcAec_extended_filter_enabled(aec_core));
+  EXPECT_EQ(1, WebRtcAec_delay_correction_enabled(aec_core));
 
-  config.Set<ExtendedFilter>(new ExtendedFilter(false));
+  config.Set<DelayCorrection>(new DelayCorrection(false));
   ap->SetExtraOptions(config);
-  EXPECT_EQ(0, WebRtcAec_extended_filter_enabled(aec_core));
+  EXPECT_EQ(0, WebRtcAec_delay_correction_enabled(aec_core));
 
   // Retains setting after initialization.
   EXPECT_EQ(ap->kNoError, ap->Initialize());
-  EXPECT_EQ(0, WebRtcAec_extended_filter_enabled(aec_core));
+  EXPECT_EQ(0, WebRtcAec_delay_correction_enabled(aec_core));
 }
 
 TEST(EchoCancellationInternalTest, ReportedDelay) {

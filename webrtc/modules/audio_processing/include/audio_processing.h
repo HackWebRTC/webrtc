@@ -37,10 +37,10 @@ class LevelEstimator;
 class NoiseSuppression;
 class VoiceDetection;
 
-// Use to enable the extended filter mode in the AEC, along with robustness
-// measures around the reported system delays. It comes with a significant
-// increase in AEC complexity, but is much more robust to unreliable reported
-// delays.
+// Use to enable the delay correction feature. This now engages an extended
+// filter mode in the AEC, along with robustness measures around the reported
+// system delays. It comes with a significant increase in AEC complexity, but is
+// much more robust to unreliable reported delays.
 //
 // Detailed changes to the algorithm:
 // - The filter length is changed from 48 to 128 ms. This comes with tuning of
@@ -54,17 +54,9 @@ class VoiceDetection;
 //   the delay difference more heavily, and back off from the difference more.
 //   Adjustments force a readaptation of the filter, so they should be avoided
 //   except when really necessary.
-// TODO(henrik.lundin): Remove DelayCorrection once ExtendedFilter has
-// propagated through to all channels
-// (https://code.google.com/p/webrtc/issues/detail?id=4696).
 struct DelayCorrection {
   DelayCorrection() : enabled(false) {}
   explicit DelayCorrection(bool enabled) : enabled(enabled) {}
-  bool enabled;
-};
-struct ExtendedFilter {
-  ExtendedFilter() : enabled(false) {}
-  explicit ExtendedFilter(bool enabled) : enabled(enabled) {}
   bool enabled;
 };
 

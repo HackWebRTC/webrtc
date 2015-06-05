@@ -108,11 +108,14 @@ void WebRtcAec_enable_reported_delay(AecCore* self, int enable);
 // Returns non-zero if reported delay is enabled and zero if disabled.
 int WebRtcAec_reported_delay_enabled(AecCore* self);
 
-// Enables or disables extended filter mode. Non-zero enables, zero disables.
-void WebRtcAec_enable_extended_filter(AecCore* self, int enable);
+// We now interpret delay correction to mean an extended filter length feature.
+// We reuse the delay correction infrastructure to avoid changes through to
+// libjingle. See details along with |DelayCorrection| in
+// echo_cancellation_impl.h. Non-zero enables, zero disables.
+void WebRtcAec_enable_delay_correction(AecCore* self, int enable);
 
-// Returns non-zero if extended filter mode is enabled and zero if disabled.
-int WebRtcAec_extended_filter_enabled(AecCore* self);
+// Returns non-zero if delay correction is enabled and zero if disabled.
+int WebRtcAec_delay_correction_enabled(AecCore* self);
 
 // Returns the current |system_delay|, i.e., the buffered difference between
 // far-end and near-end.

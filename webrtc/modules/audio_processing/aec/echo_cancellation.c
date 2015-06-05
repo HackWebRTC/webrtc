@@ -373,7 +373,7 @@ int32_t WebRtcAec_Process(void* aecInst,
   }
 
   // This returns the value of aec->extended_filter_enabled.
-  if (WebRtcAec_extended_filter_enabled(aecpc->aec)) {
+  if (WebRtcAec_delay_correction_enabled(aecpc->aec)) {
     ProcessExtended(aecpc,
                     nearend,
                     num_bands,

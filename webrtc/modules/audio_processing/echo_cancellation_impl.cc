@@ -57,19 +57,18 @@ AudioProcessing::Error MapError(int err) {
 
 EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
                                            CriticalSectionWrapper* crit)
-    : ProcessingComponent(),
-      apm_(apm),
-      crit_(crit),
-      drift_compensation_enabled_(false),
-      metrics_enabled_(false),
-      suppression_level_(kModerateSuppression),
-      stream_drift_samples_(0),
-      was_stream_drift_set_(false),
-      stream_has_echo_(false),
-      delay_logging_enabled_(false),
-      extended_filter_enabled_(false),
-      reported_delay_enabled_(true) {
-}
+  : ProcessingComponent(),
+    apm_(apm),
+    crit_(crit),
+    drift_compensation_enabled_(false),
+    metrics_enabled_(false),
+    suppression_level_(kModerateSuppression),
+    stream_drift_samples_(0),
+    was_stream_drift_set_(false),
+    stream_has_echo_(false),
+    delay_logging_enabled_(false),
+    delay_correction_enabled_(false),
+    reported_delay_enabled_(true) {}
 
 EchoCancellationImpl::~EchoCancellationImpl() {}
 
@@ -328,10 +327,7 @@ int EchoCancellationImpl::Initialize() {
 }
 
 void EchoCancellationImpl::SetExtraOptions(const Config& config) {
-  // Both ExtendedFilter and DelayCorrection are diabled by default. If any one
-  // of them is true, then the extended filter mode is enabled.
-  extended_filter_enabled_ = config.Get<ExtendedFilter>().enabled ||
-                             config.Get<DelayCorrection>().enabled;
+  delay_correction_enabled_ = config.Get<DelayCorrection>().enabled;
   reported_delay_enabled_ = config.Get<ReportedDelay>().enabled;
   Configure();
 }
@@ -370,9 +366,8 @@ int EchoCancellationImpl::ConfigureHandle(void* handle) const {
   config.skewMode = drift_compensation_enabled_;
   config.delay_logging = delay_logging_enabled_;
 
-  WebRtcAec_enable_extended_filter(
-      WebRtcAec_aec_core(static_cast<Handle*>(handle)),
-      extended_filter_enabled_ ? 1 : 0);
+  WebRtcAec_enable_delay_correction(WebRtcAec_aec_core(
+      static_cast<Handle*>(handle)), delay_correction_enabled_ ? 1 : 0);
   WebRtcAec_enable_reported_delay(WebRtcAec_aec_core(
       static_cast<Handle*>(handle)), reported_delay_enabled_ ? 1 : 0);
   return WebRtcAec_set_config(static_cast<Handle*>(handle), config);

@@ -74,7 +74,7 @@ class EchoCancellationImpl : public EchoCancellation,
   bool was_stream_drift_set_;
   bool stream_has_echo_;
   bool delay_logging_enabled_;
-  bool extended_filter_enabled_;
+  bool delay_correction_enabled_;
   bool reported_delay_enabled_;
 };
 
