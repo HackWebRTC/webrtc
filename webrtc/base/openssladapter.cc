@@ -39,6 +39,8 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
 
+#ifndef OPENSSL_IS_BORINGSSL
+
 // TODO: Use a nicer abstraction for mutex.
 
 #if defined(WEBRTC_WIN)
@@ -62,6 +64,8 @@
 struct CRYPTO_dynlock_value {
   MUTEX_TYPE mutex;
 };
+
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
 
 //////////////////////////////////////////////////////////////////////
 // SocketBIO
@@ -172,6 +176,8 @@ static long socket_ctrl(BIO* b, int cmd, long num, void* ptr) {
 
 namespace rtc {
 
+#ifndef OPENSSL_IS_BORINGSSL
+
 // This array will store all of the mutexes available to OpenSSL.
 static MUTEX_TYPE* mutex_buf = NULL;
 
@@ -213,6 +219,8 @@ static void dyn_destroy_function(CRYPTO_dynlock_value* l,
   delete l;
 }
 
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
+
 VerificationCallback OpenSSLAdapter::custom_verify_callback_ = NULL;
 
 bool OpenSSLAdapter::InitializeSSL(VerificationCallback callback) {
@@ -230,6 +238,9 @@ bool OpenSSLAdapter::InitializeSSL(VerificationCallback callback) {
 }
 
 bool OpenSSLAdapter::InitializeSSLThread() {
+  // BoringSSL is doing the locking internally, so the callbacks are not used
+  // in this case (and are no-ops anyways).
+#ifndef OPENSSL_IS_BORINGSSL
   mutex_buf = new MUTEX_TYPE[CRYPTO_num_locks()];
   if (!mutex_buf)
     return false;
@@ -243,10 +254,12 @@ bool OpenSSLAdapter::InitializeSSLThread() {
   CRYPTO_set_dynlock_create_callback(dyn_create_function);
   CRYPTO_set_dynlock_lock_callback(dyn_lock_function);
   CRYPTO_set_dynlock_destroy_callback(dyn_destroy_function);
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
   return true;
 }
 
 bool OpenSSLAdapter::CleanupSSL() {
+#ifndef OPENSSL_IS_BORINGSSL
   if (!mutex_buf)
     return false;
   CRYPTO_set_id_callback(NULL);
@@ -258,6 +271,7 @@ bool OpenSSLAdapter::CleanupSSL() {
     MUTEX_CLEANUP(mutex_buf[i]);
   delete [] mutex_buf;
   mutex_buf = NULL;
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
   return true;
 }
 
