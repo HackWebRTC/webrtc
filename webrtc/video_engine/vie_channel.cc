@@ -1430,11 +1430,9 @@ int32_t ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
     }
     decoder_reset_ = false;
   }
-  // Post processing is not supported if the frame is backed by a texture.
-  if (video_frame.native_handle() == NULL) {
-    if (pre_render_callback_ != NULL)
-      pre_render_callback_->FrameCallback(&video_frame);
-  }
+
+  if (pre_render_callback_ != NULL)
+    pre_render_callback_->FrameCallback(&video_frame);
 
   incoming_video_stream_->RenderFrame(channel_id_, video_frame);
   return 0;

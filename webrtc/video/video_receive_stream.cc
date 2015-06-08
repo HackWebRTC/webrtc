@@ -297,8 +297,11 @@ bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
 void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {
   stats_proxy_->OnDecodedFrame();
 
-  if (config_.pre_render_callback)
-    config_.pre_render_callback->FrameCallback(video_frame);
+  // Post processing is not supported if the frame is backed by a texture.
+  if (video_frame->native_handle() == NULL) {
+    if (config_.pre_render_callback)
+      config_.pre_render_callback->FrameCallback(video_frame);
+  }
 }
 
 int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
