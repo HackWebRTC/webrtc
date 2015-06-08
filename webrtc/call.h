@@ -15,12 +15,16 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/audio_receive_stream.h"
+#include "webrtc/audio_send_stream.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
 
+class AudioDeviceModule;
+class AudioProcessing;
 class VoiceEngine;
+class VoiceEngineObserver;
 
 const char* Version();
 
@@ -76,6 +80,8 @@ class Call {
 
     static const int kDefaultStartBitrateBps;
 
+    // TODO(solenberg): Need to add media type to the interface for outgoing
+    // packets too.
     newapi::Transport* send_transport;
 
     // VoiceEngine used for audio/video synchronization for this Call.
@@ -96,6 +102,12 @@ class Call {
       int start_bitrate_bps;
       int max_bitrate_bps;
     } bitrate_config;
+
+    struct AudioConfig {
+      AudioDeviceModule* audio_device_manager;
+      AudioProcessing* audio_processing;
+      VoiceEngineObserver* voice_engine_observer;
+    } audio_config;
   };
 
   struct Stats {
@@ -112,6 +124,10 @@ class Call {
   };
 
   static Call* Create(const Call::Config& config);
+
+  virtual AudioSendStream* CreateAudioSendStream(
+      const AudioSendStream::Config& config) = 0;
+  virtual void DestroyAudioSendStream(AudioSendStream* send_stream) = 0;
 
   virtual AudioReceiveStream* CreateAudioReceiveStream(
       const AudioReceiveStream::Config& config) = 0;

@@ -39,6 +39,10 @@ FakeAudioReceiveStream::FakeAudioReceiveStream(
     : config_(config), received_packets_(0) {
 }
 
+webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
+  return webrtc::AudioReceiveStream::Stats();
+}
+
 const webrtc::AudioReceiveStream::Config&
     FakeAudioReceiveStream::GetConfig() const {
   return config_;
@@ -228,6 +232,14 @@ const FakeAudioReceiveStream* FakeCall::GetAudioReceiveStream(uint32_t ssrc) {
 
 webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
   return network_state_;
+}
+
+webrtc::AudioSendStream* FakeCall::CreateAudioSendStream(
+    const webrtc::AudioSendStream::Config& config) {
+  return nullptr;
+}
+
+void FakeCall::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
 }
 
 webrtc::AudioReceiveStream* FakeCall::CreateAudioReceiveStream(

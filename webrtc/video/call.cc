@@ -72,6 +72,10 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   PacketReceiver* Receiver() override;
 
+  webrtc::AudioSendStream* CreateAudioSendStream(
+      const webrtc::AudioSendStream::Config& config) override;
+  void DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) override;
+
   webrtc::AudioReceiveStream* CreateAudioReceiveStream(
       const webrtc::AudioReceiveStream::Config& config) override;
   void DestroyAudioReceiveStream(
@@ -195,6 +199,14 @@ Call::~Call() {
 }
 
 PacketReceiver* Call::Receiver() { return this; }
+
+webrtc::AudioSendStream* Call::CreateAudioSendStream(
+    const webrtc::AudioSendStream::Config& config) {
+  return nullptr;
+}
+
+void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
+}
 
 webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {

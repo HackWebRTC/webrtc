@@ -8,21 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_RECEIVE_STREAM_H_
-#define WEBRTC_AUDIO_RECEIVE_STREAM_H_
+#ifndef WEBRTC_AUDIO_SEND_STREAM_H_
+#define WEBRTC_AUDIO_SEND_STREAM_H_
 
-#include <map>
 #include <string>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/config.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class AudioDecoder;
-
-class AudioReceiveStream {
+class AudioSendStream {
  public:
   struct Stats {};
 
@@ -33,28 +32,23 @@ class AudioReceiveStream {
     struct Rtp {
       std::string ToString() const;
 
-      // Synchronization source (stream identifier) to be received.
-      uint32_t remote_ssrc = 0;
-
-      // Sender SSRC used for sending RTCP (such as receiver reports).
-      uint32_t local_ssrc = 0;
+      // Sender SSRC.
+      uint32_t ssrc = 0;
 
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
     } rtp;
 
-    // Decoders for every payload that we can receive. Call owns the
-    // AudioDecoder instances once the Config is submitted to
-    // Call::CreateReceiveStream().
-    // TODO(solenberg): Use unique_ptr<> once our std lib fully supports C++11.
-    std::map<uint8_t, AudioDecoder*> decoder_map;
+    rtc::scoped_ptr<AudioEncoder> encoder;
+    int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.
+    int red_payload_type = -1;  // pt, or -1 to disable REDundant coding.
   };
 
   virtual Stats GetStats() const = 0;
 
  protected:
-  virtual ~AudioReceiveStream() {}
+  virtual ~AudioSendStream() {}
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_RECEIVE_STREAM_H_
+#endif  // WEBRTC_AUDIO_SEND_STREAM_H_

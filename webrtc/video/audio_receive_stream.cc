@@ -63,6 +63,10 @@ AudioReceiveStream::AudioReceiveStream(
   }
 }
 
+webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
+  return webrtc::AudioReceiveStream::Stats();
+}
+
 bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return false;
 }

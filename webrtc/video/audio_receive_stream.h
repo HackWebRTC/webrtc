@@ -26,6 +26,8 @@ class AudioReceiveStream : public webrtc::AudioReceiveStream {
                      const webrtc::AudioReceiveStream::Config& config);
   ~AudioReceiveStream() override {}
 
+  webrtc::AudioReceiveStream::Stats GetStats() const override;
+
   bool DeliverRtcp(const uint8_t* packet, size_t length);
   bool DeliverRtp(const uint8_t* packet, size_t length);
 
