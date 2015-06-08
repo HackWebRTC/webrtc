@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
@@ -23,8 +24,8 @@
 namespace webrtc {
 namespace rtcp {
 
-enum { kCommonFbFmtLength = 12 };
-enum { kReportBlockLength = 24 };
+static const int kCommonFbFmtLength = 12;
+static const int kReportBlockLength = 24;
 
 class Dlrr;
 class RawPacket;
@@ -64,21 +65,51 @@ class RtcpPacket {
 
   void Append(RtcpPacket* packet);
 
-  RawPacket Build() const;
+  // Callback used to signal that an RTCP packet is ready. Note that this may
+  // not contain all data in this RtcpPacket; if a packet cannot fit in
+  // max_length bytes, it will be fragmented and multiple calls to this
+  // callback will be made.
+  class PacketReadyCallback {
+   public:
+    PacketReadyCallback() {}
+    virtual ~PacketReadyCallback() {}
 
-  void Build(uint8_t* packet, size_t* length, size_t max_length) const;
+    virtual void OnPacketReady(uint8_t* data, size_t length) = 0;
+  };
+
+  // Convenience method mostly used for test. Max length of IP_PACKET_SIZE is
+  // used, will cause assertion error if fragmentation occurs.
+  rtc::scoped_ptr<RawPacket> Build() const;
+
+  // Returns true if all calls to Create succeeded. A buffer of size
+  // IP_PACKET_SIZE will be allocated and reused between calls to callback.
+  bool Build(PacketReadyCallback* callback) const;
+
+  // Returns true if all calls to Create succeeded. Provided buffer reference
+  // will be used for all calls to callback.
+  bool BuildExternalBuffer(uint8_t* buffer,
+                           size_t max_length,
+                           PacketReadyCallback* callback) const;
 
  protected:
   RtcpPacket() : kHeaderLength(4) {}
 
-  virtual void Create(
-      uint8_t* packet, size_t* length, size_t max_length) const = 0;
+  virtual bool Create(uint8_t* packet,
+                      size_t* index,
+                      size_t max_length,
+                      PacketReadyCallback* callback) const = 0;
+
+  bool OnBufferFull(uint8_t* packet,
+                    size_t* index,
+                    RtcpPacket::PacketReadyCallback* callback) const;
 
   const size_t kHeaderLength;
 
  private:
-  void CreateAndAddAppended(
-      uint8_t* packet, size_t* length, size_t max_length) const;
+  bool CreateAndAddAppended(uint8_t* packet,
+                            size_t* index,
+                            size_t max_length,
+                            PacketReadyCallback* callback) const;
 
   std::vector<RtcpPacket*> appended_packets_;
 };
@@ -90,9 +121,10 @@ class Empty : public RtcpPacket {
   virtual ~Empty() {}
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Empty);
@@ -202,15 +234,16 @@ class SenderReport : public RtcpPacket {
   void WithOctetCount(uint32_t octet_count) {
     sr_.SenderOctetCount = octet_count;
   }
-  void WithReportBlock(ReportBlock* block);
+  bool WithReportBlock(ReportBlock* block);
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  enum { kMaxNumberOfReportBlocks = 0x1f };
+  static const int kMaxNumberOfReportBlocks = 0x1f;
 
   size_t BlockLength() const {
     const size_t kSrHeaderLength = 8;
@@ -249,15 +282,16 @@ class ReceiverReport : public RtcpPacket {
   void From(uint32_t ssrc) {
     rr_.SenderSSRC = ssrc;
   }
-  void WithReportBlock(ReportBlock* block);
+  bool WithReportBlock(ReportBlock* block);
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  enum { kMaxNumberOfReportBlocks = 0x1f };
+  static const int kMaxNumberOfReportBlocks = 0x1F;
 
   size_t BlockLength() const {
     const size_t kRrHeaderLength = 8;
@@ -295,15 +329,16 @@ class Ij : public RtcpPacket {
 
   virtual ~Ij() {}
 
-  void WithJitterItem(uint32_t jitter);
+  bool WithJitterItem(uint32_t jitter);
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  enum { kMaxNumberOfIjItems = 0x1f };
+  static const int kMaxNumberOfIjItems = 0x1f;
 
   size_t BlockLength() const {
     return kHeaderLength + 4 * ij_items_.size();
@@ -346,7 +381,7 @@ class Sdes : public RtcpPacket {
 
   virtual ~Sdes() {}
 
-  void WithCName(uint32_t ssrc, std::string cname);
+  bool WithCName(uint32_t ssrc, const std::string& cname);
 
   struct Chunk {
     uint32_t ssrc;
@@ -355,12 +390,13 @@ class Sdes : public RtcpPacket {
   };
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  enum { kMaxNumberOfChunks = 0x1f };
+  static const int kMaxNumberOfChunks = 0x1f;
 
   size_t BlockLength() const;
 
@@ -394,15 +430,19 @@ class Bye : public RtcpPacket {
   void From(uint32_t ssrc) {
     bye_.SenderSSRC = ssrc;
   }
-  void WithCsrc(uint32_t csrc);
+
+  bool WithCsrc(uint32_t csrc);
+
+  // TODO(sprang): Add support for reason field?
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  enum { kMaxNumberOfCsrcs = 0x1f - 1 };
+  static const int kMaxNumberOfCsrcs = 0x1f - 1;  // First item is sender SSRC.
 
   size_t BlockLength() const {
     size_t source_count = 1 + csrcs_.size();
@@ -458,9 +498,10 @@ class App : public RtcpPacket {
   }
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
   size_t BlockLength() const {
@@ -509,9 +550,10 @@ class Pli : public RtcpPacket {
   }
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
   size_t BlockLength() const {
@@ -561,9 +603,10 @@ class Sli : public RtcpPacket {
   }
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
   size_t BlockLength() const {
@@ -603,15 +646,12 @@ class Nack : public RtcpPacket {
   void WithList(const uint16_t* nack_list, int length);
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  size_t BlockLength() const {
-    size_t fci_length = 4 * nack_fields_.size();
-    return kCommonFbFmtLength + fci_length;
-  }
 
   RTCPUtility::RTCPPacketRTPFBNACK nack_;
   std::vector<RTCPUtility::RTCPPacketRTPFBNACKItem> nack_fields_;
@@ -654,9 +694,10 @@ class Rpsi : public RtcpPacket {
   void WithPictureId(uint64_t picture_id);
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
   size_t BlockLength() const {
@@ -702,9 +743,10 @@ class Fir : public RtcpPacket {
   }
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
   size_t BlockLength() const {
@@ -752,9 +794,10 @@ class Tmmbr : public RtcpPacket {
   }
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
   size_t BlockLength() const {
@@ -791,15 +834,17 @@ class Tmmbn : public RtcpPacket {
   void From(uint32_t ssrc) {
     tmmbn_.SenderSSRC = ssrc;
   }
-  void WithTmmbr(uint32_t ssrc, uint32_t bitrate_kbps, uint16_t overhead);
+  // Max 50 TMMBR can be added per TMMBN.
+  bool WithTmmbr(uint32_t ssrc, uint32_t bitrate_kbps, uint16_t overhead);
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  enum { kMaxNumberOfTmmbrs = 50 };
+  static const int kMaxNumberOfTmmbrs = 50;
 
   size_t BlockLength() const {
     const size_t kFciLen = 8;
@@ -850,12 +895,13 @@ class Remb : public RtcpPacket {
   }
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  enum { kMaxNumberOfSsrcs = 0xff };
+  static const int kMaxNumberOfSsrcs = 0xff;
 
   size_t BlockLength() const {
     return (remb_item_.NumberOfSSRCs + 5) * 4;
@@ -893,19 +939,22 @@ class Xr : public RtcpPacket {
   void From(uint32_t ssrc) {
     xr_header_.OriginatorSSRC = ssrc;
   }
-  void WithRrtr(Rrtr* rrtr);
-  void WithDlrr(Dlrr* dlrr);
-  void WithVoipMetric(VoipMetric* voip_metric);
+
+  // Max 50 items of each of {Rrtr, Dlrr, VoipMetric} allowed per Xr.
+  bool WithRrtr(Rrtr* rrtr);
+  bool WithDlrr(Dlrr* dlrr);
+  bool WithVoipMetric(VoipMetric* voip_metric);
 
  protected:
-  void Create(uint8_t* packet,
-              size_t* length,
-              size_t max_length) const override;
+  bool Create(uint8_t* packet,
+              size_t* index,
+              size_t max_length,
+              RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  enum { kMaxNumberOfRrtrBlocks = 50 };
-  enum { kMaxNumberOfDlrrBlocks = 50 };
-  enum { kMaxNumberOfVoipMetricBlocks = 50 };
+  static const int kMaxNumberOfRrtrBlocks = 50;
+  static const int kMaxNumberOfDlrrBlocks = 50;
+  static const int kMaxNumberOfVoipMetricBlocks = 50;
 
   size_t BlockLength() const {
     const size_t kXrHeaderLength = 8;
@@ -987,11 +1036,12 @@ class Dlrr {
   Dlrr() {}
   ~Dlrr() {}
 
-  void WithDlrrItem(uint32_t ssrc, uint32_t last_rr, uint32_t delay_last_rr);
+  // Max 100 DLRR Items can be added per DLRR report block.
+  bool WithDlrrItem(uint32_t ssrc, uint32_t last_rr, uint32_t delay_last_rr);
 
  private:
   friend class Xr;
-  enum { kMaxNumberOfDlrrItems = 100 };
+  static const int kMaxNumberOfDlrrItems = 100;
 
   std::vector<RTCPUtility::RTCPPacketXRDLRRReportBlockItem> dlrr_block_;
 
@@ -1074,27 +1124,24 @@ class VoipMetric {
 //  RawPacket raw_packet(buffer, length);
 //
 // To access the raw packet:
-//  raw_packet.buffer();         - pointer to the raw packet
-//  raw_packet.buffer_length();  - the length of the raw packet
+//  raw_packet.Buffer();         - pointer to the raw packet
+//  raw_packet.BufferLength();   - the length of the raw packet
 
 class RawPacket {
  public:
-  RawPacket(const uint8_t* packet, size_t length) {
-    assert(length <= IP_PACKET_SIZE);
-    memcpy(buffer_, packet, length);
-    buffer_length_ = length;
-  }
+  explicit RawPacket(size_t buffer_length);
+  RawPacket(const uint8_t* packet, size_t packet_length);
 
-  const uint8_t* buffer() {
-    return buffer_;
-  }
-  size_t buffer_length() const {
-    return buffer_length_;
-  }
+  const uint8_t* Buffer() const;
+  uint8_t* MutableBuffer();
+  size_t BufferLength() const;
+  size_t Length() const;
+  void SetLength(size_t length);
 
  private:
-  size_t buffer_length_;
-  uint8_t buffer_[IP_PACKET_SIZE];
+  const size_t buffer_length_;
+  size_t length_;
+  rtc::scoped_ptr<uint8_t[]> buffer_;
 };
 
 }  // namespace rtcp

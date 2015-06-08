@@ -10,10 +10,13 @@
  * This file includes unit tests for the RtcpPacket.
  */
 
+#include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/test/rtcp_packet_parser.h"
+
+using ::testing::ElementsAre;
 
 using webrtc::rtcp::App;
 using webrtc::rtcp::Bye;
@@ -48,9 +51,9 @@ TEST(RtcpPacketTest, Rr) {
   ReceiverReport rr;
   rr.From(kSenderSsrc);
 
-  RawPacket packet = rr.Build();
+  rtc::scoped_ptr<RawPacket> packet(rr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.receiver_report()->Ssrc());
   EXPECT_EQ(0, parser.report_block()->num_packets());
@@ -68,11 +71,11 @@ TEST(RtcpPacketTest, RrWithOneReportBlock) {
 
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  rr.WithReportBlock(&rb);
+  EXPECT_TRUE(rr.WithReportBlock(&rb));
 
-  RawPacket packet = rr.Build();
+  rtc::scoped_ptr<RawPacket> packet(rr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.receiver_report()->Ssrc());
   EXPECT_EQ(1, parser.report_block()->num_packets());
@@ -93,17 +96,30 @@ TEST(RtcpPacketTest, RrWithTwoReportBlocks) {
 
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  rr.WithReportBlock(&rb1);
-  rr.WithReportBlock(&rb2);
+  EXPECT_TRUE(rr.WithReportBlock(&rb1));
+  EXPECT_TRUE(rr.WithReportBlock(&rb2));
 
-  RawPacket packet = rr.Build();
+  rtc::scoped_ptr<RawPacket> packet(rr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.receiver_report()->Ssrc());
   EXPECT_EQ(2, parser.report_block()->num_packets());
   EXPECT_EQ(1, parser.report_blocks_per_ssrc(kRemoteSsrc));
   EXPECT_EQ(1, parser.report_blocks_per_ssrc(kRemoteSsrc + 1));
+}
+
+TEST(RtcpPacketTest, RrWithTooManyReportBlocks) {
+  ReceiverReport rr;
+  rr.From(kSenderSsrc);
+  const int kMaxReportBlocks = (1 << 5) - 1;
+  ReportBlock rb;
+  for (int i = 0; i < kMaxReportBlocks; ++i) {
+    rb.To(kRemoteSsrc + i);
+    EXPECT_TRUE(rr.WithReportBlock(&rb));
+  }
+  rb.To(kRemoteSsrc + kMaxReportBlocks);
+  EXPECT_FALSE(rr.WithReportBlock(&rb));
 }
 
 TEST(RtcpPacketTest, Sr) {
@@ -115,9 +131,9 @@ TEST(RtcpPacketTest, Sr) {
   sr.WithPacketCount(0x44444444);
   sr.WithOctetCount(0x55555555);
 
-  RawPacket packet = sr.Build();
+  rtc::scoped_ptr<RawPacket> packet(sr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
 
   EXPECT_EQ(1, parser.sender_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.sender_report()->Ssrc());
@@ -135,11 +151,11 @@ TEST(RtcpPacketTest, SrWithOneReportBlock) {
 
   SenderReport sr;
   sr.From(kSenderSsrc);
-  sr.WithReportBlock(&rb);
+  EXPECT_TRUE(sr.WithReportBlock(&rb));
 
-  RawPacket packet = sr.Build();
+  rtc::scoped_ptr<RawPacket> packet(sr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.sender_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.sender_report()->Ssrc());
   EXPECT_EQ(1, parser.report_block()->num_packets());
@@ -154,12 +170,12 @@ TEST(RtcpPacketTest, SrWithTwoReportBlocks) {
 
   SenderReport sr;
   sr.From(kSenderSsrc);
-  sr.WithReportBlock(&rb1);
-  sr.WithReportBlock(&rb2);
+  EXPECT_TRUE(sr.WithReportBlock(&rb1));
+  EXPECT_TRUE(sr.WithReportBlock(&rb2));
 
-  RawPacket packet = sr.Build();
+  rtc::scoped_ptr<RawPacket> packet(sr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.sender_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.sender_report()->Ssrc());
   EXPECT_EQ(2, parser.report_block()->num_packets());
@@ -167,23 +183,36 @@ TEST(RtcpPacketTest, SrWithTwoReportBlocks) {
   EXPECT_EQ(1, parser.report_blocks_per_ssrc(kRemoteSsrc + 1));
 }
 
+TEST(RtcpPacketTest, SrWithTooManyReportBlocks) {
+  SenderReport sr;
+  sr.From(kSenderSsrc);
+  const int kMaxReportBlocks = (1 << 5) - 1;
+  ReportBlock rb;
+  for (int i = 0; i < kMaxReportBlocks; ++i) {
+    rb.To(kRemoteSsrc + i);
+    EXPECT_TRUE(sr.WithReportBlock(&rb));
+  }
+  rb.To(kRemoteSsrc + kMaxReportBlocks);
+  EXPECT_FALSE(sr.WithReportBlock(&rb));
+}
+
 TEST(RtcpPacketTest, IjNoItem) {
   Ij ij;
 
-  RawPacket packet = ij.Build();
+  rtc::scoped_ptr<RawPacket> packet(ij.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.ij()->num_packets());
   EXPECT_EQ(0, parser.ij_item()->num_packets());
 }
 
 TEST(RtcpPacketTest, IjOneItem) {
   Ij ij;
-  ij.WithJitterItem(0x11111111);
+  EXPECT_TRUE(ij.WithJitterItem(0x11111111));
 
-  RawPacket packet = ij.Build();
+  rtc::scoped_ptr<RawPacket> packet(ij.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.ij()->num_packets());
   EXPECT_EQ(1, parser.ij_item()->num_packets());
   EXPECT_EQ(0x11111111U, parser.ij_item()->Jitter());
@@ -191,15 +220,24 @@ TEST(RtcpPacketTest, IjOneItem) {
 
 TEST(RtcpPacketTest, IjTwoItems) {
   Ij ij;
-  ij.WithJitterItem(0x11111111);
-  ij.WithJitterItem(0x22222222);
+  EXPECT_TRUE(ij.WithJitterItem(0x11111111));
+  EXPECT_TRUE(ij.WithJitterItem(0x22222222));
 
-  RawPacket packet = ij.Build();
+  rtc::scoped_ptr<RawPacket> packet(ij.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.ij()->num_packets());
   EXPECT_EQ(2, parser.ij_item()->num_packets());
   EXPECT_EQ(0x22222222U, parser.ij_item()->Jitter());
+}
+
+TEST(RtcpPacketTest, IjTooManyItems) {
+  Ij ij;
+  const int kMaxIjItems = (1 << 5) - 1;
+  for (int i = 0; i < kMaxIjItems; ++i) {
+    EXPECT_TRUE(ij.WithJitterItem(i));
+  }
+  EXPECT_FALSE(ij.WithJitterItem(kMaxIjItems));
 }
 
 TEST(RtcpPacketTest, AppWithNoData) {
@@ -211,9 +249,9 @@ TEST(RtcpPacketTest, AppWithNoData) {
   name += 'e';
   app.WithName(name);
 
-  RawPacket packet = app.Build();
+  rtc::scoped_ptr<RawPacket> packet(app.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.app()->num_packets());
   EXPECT_EQ(30U, parser.app()->SubType());
   EXPECT_EQ(name, parser.app()->Name());
@@ -233,9 +271,9 @@ TEST(RtcpPacketTest, App) {
   const size_t kDataLength = sizeof(kData) / sizeof(kData[0]);
   app.WithData((const uint8_t*)kData, kDataLength);
 
-  RawPacket packet = app.Build();
+  rtc::scoped_ptr<RawPacket> packet(app.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.app()->num_packets());
   EXPECT_EQ(30U, parser.app()->SubType());
   EXPECT_EQ(name, parser.app()->Name());
@@ -247,11 +285,11 @@ TEST(RtcpPacketTest, App) {
 
 TEST(RtcpPacketTest, SdesWithOneChunk) {
   Sdes sdes;
-  sdes.WithCName(kSenderSsrc, "alice@host");
+  EXPECT_TRUE(sdes.WithCName(kSenderSsrc, "alice@host"));
 
-  RawPacket packet = sdes.Build();
+  rtc::scoped_ptr<RawPacket> packet(sdes.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.sdes()->num_packets());
   EXPECT_EQ(1, parser.sdes_chunk()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.sdes_chunk()->Ssrc());
@@ -260,29 +298,41 @@ TEST(RtcpPacketTest, SdesWithOneChunk) {
 
 TEST(RtcpPacketTest, SdesWithMultipleChunks) {
   Sdes sdes;
-  sdes.WithCName(kSenderSsrc, "a");
-  sdes.WithCName(kSenderSsrc + 1, "ab");
-  sdes.WithCName(kSenderSsrc + 2, "abc");
-  sdes.WithCName(kSenderSsrc + 3, "abcd");
-  sdes.WithCName(kSenderSsrc + 4, "abcde");
-  sdes.WithCName(kSenderSsrc + 5, "abcdef");
+  EXPECT_TRUE(sdes.WithCName(kSenderSsrc, "a"));
+  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 1, "ab"));
+  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 2, "abc"));
+  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 3, "abcd"));
+  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 4, "abcde"));
+  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 5, "abcdef"));
 
-  RawPacket packet = sdes.Build();
+  rtc::scoped_ptr<RawPacket> packet(sdes.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.sdes()->num_packets());
   EXPECT_EQ(6, parser.sdes_chunk()->num_packets());
   EXPECT_EQ(kSenderSsrc + 5, parser.sdes_chunk()->Ssrc());
   EXPECT_EQ("abcdef", parser.sdes_chunk()->Cname());
 }
 
+TEST(RtcpPacketTest, SdesWithTooManyChunks) {
+  Sdes sdes;
+  const int kMaxChunks = (1 << 5) - 1;
+  for (int i = 0; i < kMaxChunks; ++i) {
+    uint32_t ssrc = kSenderSsrc + i;
+    std::ostringstream oss;
+    oss << "cname" << i;
+    EXPECT_TRUE(sdes.WithCName(ssrc, oss.str()));
+  }
+  EXPECT_FALSE(sdes.WithCName(kSenderSsrc + kMaxChunks, "foo"));
+}
+
 TEST(RtcpPacketTest, CnameItemWithEmptyString) {
   Sdes sdes;
-  sdes.WithCName(kSenderSsrc, "");
+  EXPECT_TRUE(sdes.WithCName(kSenderSsrc, ""));
 
-  RawPacket packet = sdes.Build();
+  rtc::scoped_ptr<RawPacket> packet(sdes.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.sdes()->num_packets());
   EXPECT_EQ(1, parser.sdes_chunk()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.sdes_chunk()->Ssrc());
@@ -294,9 +344,9 @@ TEST(RtcpPacketTest, Pli) {
   pli.From(kSenderSsrc);
   pli.To(kRemoteSsrc);
 
-  RawPacket packet = pli.Build();
+  rtc::scoped_ptr<RawPacket> packet(pli.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.pli()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.pli()->Ssrc());
   EXPECT_EQ(kRemoteSsrc, parser.pli()->MediaSsrc());
@@ -313,9 +363,9 @@ TEST(RtcpPacketTest, Sli) {
   sli.WithNumberOfMb(kNumberOfMb);
   sli.WithPictureId(kPictureId);
 
-  RawPacket packet = sli.Build();
+  rtc::scoped_ptr<RawPacket> packet(sli.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.sli()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.sli()->Ssrc());
   EXPECT_EQ(kRemoteSsrc, parser.sli()->MediaSsrc());
@@ -332,9 +382,9 @@ TEST(RtcpPacketTest, Nack) {
   nack.From(kSenderSsrc);
   nack.To(kRemoteSsrc);
   nack.WithList(kList, kListLength);
-  RawPacket packet = nack.Build();
+  rtc::scoped_ptr<RawPacket> packet(nack.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.nack()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.nack()->Ssrc());
   EXPECT_EQ(kRemoteSsrc, parser.nack()->MediaSsrc());
@@ -353,9 +403,9 @@ TEST(RtcpPacketTest, NackWithWrap) {
   nack.From(kSenderSsrc);
   nack.To(kRemoteSsrc);
   nack.WithList(kList, kListLength);
-  RawPacket packet = nack.Build();
+  rtc::scoped_ptr<RawPacket> packet(nack.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.nack()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.nack()->Ssrc());
   EXPECT_EQ(kRemoteSsrc, parser.nack()->MediaSsrc());
@@ -367,6 +417,62 @@ TEST(RtcpPacketTest, NackWithWrap) {
   }
 }
 
+TEST(RtcpPacketTest, NackFragmented) {
+  Nack nack;
+  const uint16_t kList[] = {1, 100, 200, 300, 400};
+  const uint16_t kListLength = sizeof(kList) / sizeof(kList[0]);
+  nack.From(kSenderSsrc);
+  nack.To(kRemoteSsrc);
+  nack.WithList(kList, kListLength);
+
+  class Verifier : public rtcp::RtcpPacket::PacketReadyCallback {
+   public:
+    void OnPacketReady(uint8_t* data, size_t length) override {
+      ++packets_created_;
+      RtcpPacketParser parser;
+      parser.Parse(data, length);
+      EXPECT_EQ(1, parser.nack()->num_packets());
+      EXPECT_EQ(kSenderSsrc, parser.nack()->Ssrc());
+      EXPECT_EQ(kRemoteSsrc, parser.nack()->MediaSsrc());
+      switch (packets_created_) {
+        case 1:
+          EXPECT_THAT(parser.nack_item()->last_nack_list(),
+                      ElementsAre(1, 100, 200));
+          break;
+        case 2:
+          EXPECT_THAT(parser.nack_item()->last_nack_list(),
+                      ElementsAre(300, 400));
+          break;
+        default:
+          ADD_FAILURE() << "Unexpected packet count: " << packets_created_;
+      }
+    }
+    int packets_created_ = 0;
+  } verifier;
+  const size_t kBufferSize = 12 + (3 * 4);  // Fits common header + 3 nack items
+  uint8_t buffer[kBufferSize];
+  EXPECT_TRUE(nack.BuildExternalBuffer(buffer, kBufferSize, &verifier));
+  EXPECT_EQ(2, verifier.packets_created_);
+}
+
+TEST(RtcpPacketTest, NackWithTooSmallBuffer) {
+  const uint16_t kList[] = {1};
+  const size_t kMinNackBlockSize = 16;
+  Nack nack;
+  nack.From(kSenderSsrc);
+  nack.To(kRemoteSsrc);
+  nack.WithList(kList, 1);
+  class Verifier : public rtcp::RtcpPacket::PacketReadyCallback {
+   public:
+    void OnPacketReady(uint8_t* data, size_t length) override {
+      ADD_FAILURE() << "Buffer should be too small.";
+    }
+  } verifier;
+  uint8_t buffer[kMinNackBlockSize - 1];
+  EXPECT_FALSE(
+      nack.BuildExternalBuffer(buffer, kMinNackBlockSize - 1, &verifier));
+}
+
 TEST(RtcpPacketTest, Rpsi) {
   Rpsi rpsi;
   // 1000001 (7 bits = 1 byte in native string).
@@ -375,9 +481,9 @@ TEST(RtcpPacketTest, Rpsi) {
   rpsi.WithPayloadType(100);
   rpsi.WithPictureId(kPictureId);
 
-  RawPacket packet = rpsi.Build();
+  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(100, parser.rpsi()->PayloadType());
   EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
   EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
@@ -390,9 +496,9 @@ TEST(RtcpPacketTest, RpsiWithTwoByteNativeString) {
   const uint16_t kNumberOfValidBytes = 2;
   rpsi.WithPictureId(kPictureId);
 
-  RawPacket packet = rpsi.Build();
+  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
   EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
 }
@@ -404,9 +510,9 @@ TEST(RtcpPacketTest, RpsiWithThreeByteNativeString) {
   const uint16_t kNumberOfValidBytes = 3;
   rpsi.WithPictureId(kPictureId);
 
-  RawPacket packet = rpsi.Build();
+  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
   EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
 }
@@ -418,9 +524,9 @@ TEST(RtcpPacketTest, RpsiWithFourByteNativeString) {
   const uint16_t kNumberOfValidBytes = 4;
   rpsi.WithPictureId(kPictureId);
 
-  RawPacket packet = rpsi.Build();
+  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
   EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
 }
@@ -433,9 +539,9 @@ TEST(RtcpPacketTest, RpsiWithMaxPictureId) {
   const uint16_t kNumberOfValidBytes = 10;
   rpsi.WithPictureId(kPictureId);
 
-  RawPacket packet = rpsi.Build();
+  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
   EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
 }
@@ -446,9 +552,9 @@ TEST(RtcpPacketTest, Fir) {
   fir.To(kRemoteSsrc);
   fir.WithCommandSeqNum(123);
 
-  RawPacket packet = fir.Build();
+  rtc::scoped_ptr<RawPacket> packet(fir.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.fir()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.fir()->Ssrc());
   EXPECT_EQ(1, parser.fir_item()->num_packets());
@@ -461,12 +567,12 @@ TEST(RtcpPacketTest, AppendPacket) {
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  rr.WithReportBlock(&rb);
+  EXPECT_TRUE(rr.WithReportBlock(&rb));
   rr.Append(&fir);
 
-  RawPacket packet = rr.Build();
+  rtc::scoped_ptr<RawPacket> packet(rr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.receiver_report()->Ssrc());
   EXPECT_EQ(1, parser.report_block()->num_packets());
@@ -479,9 +585,9 @@ TEST(RtcpPacketTest, AppendPacketOnEmpty) {
   rr.From(kSenderSsrc);
   empty.Append(&rr);
 
-  RawPacket packet = empty.Build();
+  rtc::scoped_ptr<RawPacket> packet(empty.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(0, parser.report_block()->num_packets());
 }
@@ -492,16 +598,16 @@ TEST(RtcpPacketTest, AppendPacketWithOwnAppendedPacket) {
   ReportBlock rb;
 
   ReceiverReport rr;
-  rr.WithReportBlock(&rb);
+  EXPECT_TRUE(rr.WithReportBlock(&rb));
   rr.Append(&fir);
 
   SenderReport sr;
   sr.Append(&bye);
   sr.Append(&rr);
 
-  RawPacket packet = sr.Build();
+  rtc::scoped_ptr<RawPacket> packet(sr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.sender_report()->num_packets());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(1, parser.report_block()->num_packets());
@@ -513,9 +619,9 @@ TEST(RtcpPacketTest, Bye) {
   Bye bye;
   bye.From(kSenderSsrc);
 
-  RawPacket packet = bye.Build();
+  rtc::scoped_ptr<RawPacket> packet(bye.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.bye()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.bye()->Ssrc());
 }
@@ -524,16 +630,26 @@ TEST(RtcpPacketTest, ByeWithCsrcs) {
   Fir fir;
   Bye bye;
   bye.From(kSenderSsrc);
-  bye.WithCsrc(0x22222222);
-  bye.WithCsrc(0x33333333);
+  EXPECT_TRUE(bye.WithCsrc(0x22222222));
+  EXPECT_TRUE(bye.WithCsrc(0x33333333));
   bye.Append(&fir);
 
-  RawPacket packet = bye.Build();
+  rtc::scoped_ptr<RawPacket> packet(bye.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.bye()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.bye()->Ssrc());
   EXPECT_EQ(1, parser.fir()->num_packets());
+}
+
+TEST(RtcpPacketTest, ByeWithTooManyCsrcs) {
+  Bye bye;
+  bye.From(kSenderSsrc);
+  const int kMaxCsrcs = (1 << 5) - 2;  // 5 bit len, first item is sender SSRC.
+  for (int i = 0; i < kMaxCsrcs; ++i) {
+    EXPECT_TRUE(bye.WithCsrc(i));
+  }
+  EXPECT_FALSE(bye.WithCsrc(kMaxCsrcs));
 }
 
 TEST(RtcpPacketTest, BuildWithInputBuffer) {
@@ -541,59 +657,91 @@ TEST(RtcpPacketTest, BuildWithInputBuffer) {
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  rr.WithReportBlock(&rb);
+  EXPECT_TRUE(rr.WithReportBlock(&rb));
   rr.Append(&fir);
 
   const size_t kRrLength = 8;
   const size_t kReportBlockLength = 24;
   const size_t kFirLength = 20;
 
-  size_t len = 0;
-  uint8_t packet[kRrLength + kReportBlockLength + kFirLength];
-  rr.Build(packet, &len, kRrLength + kReportBlockLength + kFirLength);
+  class Verifier : public rtcp::RtcpPacket::PacketReadyCallback {
+   public:
+    void OnPacketReady(uint8_t* data, size_t length) override {
+      RtcpPacketParser parser;
+      parser.Parse(data, length);
+      EXPECT_EQ(1, parser.receiver_report()->num_packets());
+      EXPECT_EQ(1, parser.report_block()->num_packets());
+      EXPECT_EQ(1, parser.fir()->num_packets());
+      ++packets_created_;
+    }
 
-  RtcpPacketParser parser;
-  parser.Parse(packet, len);
-  EXPECT_EQ(1, parser.receiver_report()->num_packets());
-  EXPECT_EQ(1, parser.report_block()->num_packets());
-  EXPECT_EQ(1, parser.fir()->num_packets());
+    int packets_created_ = 0;
+  } verifier;
+  const size_t kBufferSize = kRrLength + kReportBlockLength + kFirLength;
+  uint8_t buffer[kBufferSize];
+  EXPECT_TRUE(rr.BuildExternalBuffer(buffer, kBufferSize, &verifier));
+  EXPECT_EQ(1, verifier.packets_created_);
 }
 
 TEST(RtcpPacketTest, BuildWithTooSmallBuffer) {
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  rr.WithReportBlock(&rb);
+  EXPECT_TRUE(rr.WithReportBlock(&rb));
 
   const size_t kRrLength = 8;
   const size_t kReportBlockLength = 24;
 
   // No packet.
-  size_t len = 0;
-  uint8_t packet[kRrLength + kReportBlockLength - 1];
-  rr.Build(packet, &len, kRrLength + kReportBlockLength - 1);
-  EXPECT_EQ(0U, len);
+  class Verifier : public rtcp::RtcpPacket::PacketReadyCallback {
+    void OnPacketReady(uint8_t* data, size_t length) override {
+      ADD_FAILURE() << "Packet should not fit within max size.";
+    }
+  } verifier;
+  const size_t kBufferSize = kRrLength + kReportBlockLength - 1;
+  uint8_t buffer[kBufferSize];
+  EXPECT_FALSE(rr.BuildExternalBuffer(buffer, kBufferSize, &verifier));
 }
 
-TEST(RtcpPacketTest, BuildWithTooSmallBuffer_LastBlockFits) {
+TEST(RtcpPacketTest, BuildWithTooSmallBuffer_FragmentedSend) {
   Fir fir;
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  rr.WithReportBlock(&rb);
+  EXPECT_TRUE(rr.WithReportBlock(&rb));
   rr.Append(&fir);
 
   const size_t kRrLength = 8;
   const size_t kReportBlockLength = 24;
 
-  size_t len = 0;
-  uint8_t packet[kRrLength + kReportBlockLength - 1];
-  rr.Build(packet, &len, kRrLength + kReportBlockLength - 1);
-  RtcpPacketParser parser;
-  parser.Parse(packet, len);
-  EXPECT_EQ(0, parser.receiver_report()->num_packets());
-  EXPECT_EQ(0, parser.report_block()->num_packets());
-  EXPECT_EQ(1, parser.fir()->num_packets());
+  class Verifier : public rtcp::RtcpPacket::PacketReadyCallback {
+   public:
+    void OnPacketReady(uint8_t* data, size_t length) override {
+      RtcpPacketParser parser;
+      parser.Parse(data, length);
+      switch (packets_created_++) {
+        case 0:
+          EXPECT_EQ(1, parser.receiver_report()->num_packets());
+          EXPECT_EQ(1, parser.report_block()->num_packets());
+          EXPECT_EQ(0, parser.fir()->num_packets());
+          break;
+        case 1:
+          EXPECT_EQ(0, parser.receiver_report()->num_packets());
+          EXPECT_EQ(0, parser.report_block()->num_packets());
+          EXPECT_EQ(1, parser.fir()->num_packets());
+          break;
+        default:
+          ADD_FAILURE() << "OnPacketReady not expected to be called "
+                        << packets_created_ << " times.";
+      }
+    }
+
+    int packets_created_ = 0;
+  } verifier;
+  const size_t kBufferSize = kRrLength + kReportBlockLength;
+  uint8_t buffer[kBufferSize];
+  EXPECT_TRUE(rr.BuildExternalBuffer(buffer, kBufferSize, &verifier));
+  EXPECT_EQ(2, verifier.packets_created_);
 }
 
 TEST(RtcpPacketTest, Remb) {
@@ -604,9 +752,9 @@ TEST(RtcpPacketTest, Remb) {
   remb.AppliesTo(kRemoteSsrc + 2);
   remb.WithBitrateBps(261011);
 
-  RawPacket packet = remb.Build();
+  rtc::scoped_ptr<RawPacket> packet(remb.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.psfb_app()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.psfb_app()->Ssrc());
   EXPECT_EQ(1, parser.remb_item()->num_packets());
@@ -624,9 +772,9 @@ TEST(RtcpPacketTest, Tmmbr) {
   tmmbr.WithBitrateKbps(312);
   tmmbr.WithOverhead(60);
 
-  RawPacket packet = tmmbr.Build();
+  rtc::scoped_ptr<RawPacket> packet(tmmbr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.tmmbr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.tmmbr()->Ssrc());
   EXPECT_EQ(1, parser.tmmbr_item()->num_packets());
@@ -638,9 +786,9 @@ TEST(RtcpPacketTest, TmmbnWithNoItem) {
   Tmmbn tmmbn;
   tmmbn.From(kSenderSsrc);
 
-  RawPacket packet = tmmbn.Build();
+  rtc::scoped_ptr<RawPacket> packet(tmmbn.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.tmmbn()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.tmmbn()->Ssrc());
   EXPECT_EQ(0, parser.tmmbn_items()->num_packets());
@@ -649,11 +797,11 @@ TEST(RtcpPacketTest, TmmbnWithNoItem) {
 TEST(RtcpPacketTest, TmmbnWithOneItem) {
   Tmmbn tmmbn;
   tmmbn.From(kSenderSsrc);
-  tmmbn.WithTmmbr(kRemoteSsrc, 312, 60);
+  EXPECT_TRUE(tmmbn.WithTmmbr(kRemoteSsrc, 312, 60));
 
-  RawPacket packet = tmmbn.Build();
+  rtc::scoped_ptr<RawPacket> packet(tmmbn.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.tmmbn()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.tmmbn()->Ssrc());
   EXPECT_EQ(1, parser.tmmbn_items()->num_packets());
@@ -665,12 +813,12 @@ TEST(RtcpPacketTest, TmmbnWithOneItem) {
 TEST(RtcpPacketTest, TmmbnWithTwoItems) {
   Tmmbn tmmbn;
   tmmbn.From(kSenderSsrc);
-  tmmbn.WithTmmbr(kRemoteSsrc, 312, 60);
-  tmmbn.WithTmmbr(kRemoteSsrc + 1, 1288, 40);
+  EXPECT_TRUE(tmmbn.WithTmmbr(kRemoteSsrc, 312, 60));
+  EXPECT_TRUE(tmmbn.WithTmmbr(kRemoteSsrc + 1, 1288, 40));
 
-  RawPacket packet = tmmbn.Build();
+  rtc::scoped_ptr<RawPacket> packet(tmmbn.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.tmmbn()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.tmmbn()->Ssrc());
   EXPECT_EQ(2, parser.tmmbn_items()->num_packets());
@@ -682,13 +830,23 @@ TEST(RtcpPacketTest, TmmbnWithTwoItems) {
   EXPECT_EQ(40U, parser.tmmbn_items()->Overhead(1));
 }
 
+TEST(RtcpPacketTest, TmmbnWithTooManyItems) {
+  Tmmbn tmmbn;
+  tmmbn.From(kSenderSsrc);
+  const int kMaxTmmbrItems = 50;
+  for (int i = 0; i < kMaxTmmbrItems; ++i)
+    EXPECT_TRUE(tmmbn.WithTmmbr(kRemoteSsrc + i, 312, 60));
+
+  EXPECT_FALSE(tmmbn.WithTmmbr(kRemoteSsrc + kMaxTmmbrItems, 312, 60));
+}
+
 TEST(RtcpPacketTest, XrWithNoReportBlocks) {
   Xr xr;
   xr.From(kSenderSsrc);
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
 }
@@ -699,11 +857,11 @@ TEST(RtcpPacketTest, XrWithRrtr) {
   rrtr.WithNtpFrac(0x22222222);
   Xr xr;
   xr.From(kSenderSsrc);
-  xr.WithRrtr(&rrtr);
+  EXPECT_TRUE(xr.WithRrtr(&rrtr));
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
   EXPECT_EQ(1, parser.rrtr()->num_packets());
@@ -720,12 +878,12 @@ TEST(RtcpPacketTest, XrWithTwoRrtrBlocks) {
   rrtr2.WithNtpFrac(0x44444444);
   Xr xr;
   xr.From(kSenderSsrc);
-  xr.WithRrtr(&rrtr1);
-  xr.WithRrtr(&rrtr2);
+  EXPECT_TRUE(xr.WithRrtr(&rrtr1));
+  EXPECT_TRUE(xr.WithRrtr(&rrtr2));
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
   EXPECT_EQ(2, parser.rrtr()->num_packets());
@@ -735,14 +893,14 @@ TEST(RtcpPacketTest, XrWithTwoRrtrBlocks) {
 
 TEST(RtcpPacketTest, XrWithDlrrWithOneSubBlock) {
   Dlrr dlrr;
-  dlrr.WithDlrrItem(0x11111111, 0x22222222, 0x33333333);
+  EXPECT_TRUE(dlrr.WithDlrrItem(0x11111111, 0x22222222, 0x33333333));
   Xr xr;
   xr.From(kSenderSsrc);
-  xr.WithDlrr(&dlrr);
+  EXPECT_TRUE(xr.WithDlrr(&dlrr));
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
   EXPECT_EQ(1, parser.dlrr()->num_packets());
@@ -754,15 +912,15 @@ TEST(RtcpPacketTest, XrWithDlrrWithOneSubBlock) {
 
 TEST(RtcpPacketTest, XrWithDlrrWithTwoSubBlocks) {
   Dlrr dlrr;
-  dlrr.WithDlrrItem(0x11111111, 0x22222222, 0x33333333);
-  dlrr.WithDlrrItem(0x44444444, 0x55555555, 0x66666666);
+  EXPECT_TRUE(dlrr.WithDlrrItem(0x11111111, 0x22222222, 0x33333333));
+  EXPECT_TRUE(dlrr.WithDlrrItem(0x44444444, 0x55555555, 0x66666666));
   Xr xr;
   xr.From(kSenderSsrc);
-  xr.WithDlrr(&dlrr);
+  EXPECT_TRUE(xr.WithDlrr(&dlrr));
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
   EXPECT_EQ(1, parser.dlrr()->num_packets());
@@ -775,19 +933,27 @@ TEST(RtcpPacketTest, XrWithDlrrWithTwoSubBlocks) {
   EXPECT_EQ(0x66666666U, parser.dlrr_items()->DelayLastRr(1));
 }
 
+TEST(RtcpPacketTest, DlrrWithTooManySubBlocks) {
+  const int kMaxItems = 100;
+  Dlrr dlrr;
+  for (int i = 0; i < kMaxItems; ++i)
+    EXPECT_TRUE(dlrr.WithDlrrItem(i, i, i));
+  EXPECT_FALSE(dlrr.WithDlrrItem(kMaxItems, kMaxItems, kMaxItems));
+}
+
 TEST(RtcpPacketTest, XrWithTwoDlrrBlocks) {
   Dlrr dlrr1;
-  dlrr1.WithDlrrItem(0x11111111, 0x22222222, 0x33333333);
+  EXPECT_TRUE(dlrr1.WithDlrrItem(0x11111111, 0x22222222, 0x33333333));
   Dlrr dlrr2;
-  dlrr2.WithDlrrItem(0x44444444, 0x55555555, 0x66666666);
+  EXPECT_TRUE(dlrr2.WithDlrrItem(0x44444444, 0x55555555, 0x66666666));
   Xr xr;
   xr.From(kSenderSsrc);
-  xr.WithDlrr(&dlrr1);
-  xr.WithDlrr(&dlrr2);
+  EXPECT_TRUE(xr.WithDlrr(&dlrr1));
+  EXPECT_TRUE(xr.WithDlrr(&dlrr2));
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
   EXPECT_EQ(2, parser.dlrr()->num_packets());
@@ -826,11 +992,11 @@ TEST(RtcpPacketTest, XrWithVoipMetric) {
 
   Xr xr;
   xr.From(kSenderSsrc);
-  xr.WithVoipMetric(&metric);
+  EXPECT_TRUE(xr.WithVoipMetric(&metric));
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
   EXPECT_EQ(1, parser.voip_metric()->num_packets());
@@ -860,17 +1026,17 @@ TEST(RtcpPacketTest, XrWithVoipMetric) {
 TEST(RtcpPacketTest, XrWithMultipleReportBlocks) {
   Rrtr rrtr;
   Dlrr dlrr;
-  dlrr.WithDlrrItem(1, 2, 3);
+  EXPECT_TRUE(dlrr.WithDlrrItem(1, 2, 3));
   VoipMetric metric;
   Xr xr;
   xr.From(kSenderSsrc);
-  xr.WithRrtr(&rrtr);
-  xr.WithDlrr(&dlrr);
-  xr.WithVoipMetric(&metric);
+  EXPECT_TRUE(xr.WithRrtr(&rrtr));
+  EXPECT_TRUE(xr.WithDlrr(&dlrr));
+  EXPECT_TRUE(xr.WithVoipMetric(&metric));
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
   EXPECT_EQ(1, parser.rrtr()->num_packets());
@@ -885,17 +1051,37 @@ TEST(RtcpPacketTest, DlrrWithoutItemNotIncludedInPacket) {
   VoipMetric metric;
   Xr xr;
   xr.From(kSenderSsrc);
-  xr.WithRrtr(&rrtr);
-  xr.WithDlrr(&dlrr);
-  xr.WithVoipMetric(&metric);
+  EXPECT_TRUE(xr.WithRrtr(&rrtr));
+  EXPECT_TRUE(xr.WithDlrr(&dlrr));
+  EXPECT_TRUE(xr.WithVoipMetric(&metric));
 
-  RawPacket packet = xr.Build();
+  rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;
-  parser.Parse(packet.buffer(), packet.buffer_length());
+  parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(1, parser.xr_header()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
   EXPECT_EQ(1, parser.rrtr()->num_packets());
   EXPECT_EQ(0, parser.dlrr()->num_packets());
   EXPECT_EQ(1, parser.voip_metric()->num_packets());
+}
+
+TEST(RtcpPacketTest, XrWithTooManyBlocks) {
+  const int kMaxBlocks = 50;
+  Xr xr;
+
+  Rrtr rrtr;
+  for (int i = 0; i < kMaxBlocks; ++i)
+    EXPECT_TRUE(xr.WithRrtr(&rrtr));
+  EXPECT_FALSE(xr.WithRrtr(&rrtr));
+
+  Dlrr dlrr;
+  for (int i = 0; i < kMaxBlocks; ++i)
+    EXPECT_TRUE(xr.WithDlrr(&dlrr));
+  EXPECT_FALSE(xr.WithDlrr(&dlrr));
+
+  VoipMetric voip_metric;
+  for (int i = 0; i < kMaxBlocks; ++i)
+    EXPECT_TRUE(xr.WithVoipMetric(&voip_metric));
+  EXPECT_FALSE(xr.WithVoipMetric(&voip_metric));
 }
 }  // namespace webrtc
