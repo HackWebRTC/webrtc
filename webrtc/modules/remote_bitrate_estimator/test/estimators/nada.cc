@@ -28,10 +28,9 @@ namespace testing {
 namespace bwe {
 
 const int NadaBweReceiver::kMedian;
-const int64_t NadaBweReceiver::kPacketLossTimeWindowMs;
-const int64_t NadaBweReceiver::kReceivingRateTimeWindowMs;
 const int NadaBweSender::kMinRefRateKbps;
 const int NadaBweSender::kMaxRefRateKbps;
+const int64_t NadaBweReceiver::kReceivingRateTimeWindowMs;
 
 NadaBweReceiver::NadaBweReceiver(int flow_id)
     : BweReceiver(flow_id),
@@ -84,9 +83,9 @@ void NadaBweReceiver::ReceivePacket(int64_t arrival_time_ms,
     est_queuing_delay_signal_ms_ = 0;
   }
 
-  received_packets_->Insert(media_packet.sequence_number(),
-                            media_packet.send_time_ms(), arrival_time_ms,
-                            media_packet.payload_size());
+  received_packets_.Insert(media_packet.sequence_number(),
+                           media_packet.send_time_ms(), arrival_time_ms,
+                           media_packet.payload_size());
 }
 
 FeedbackPacket* NadaBweReceiver::GetFeedback(int64_t now_ms) {
@@ -110,7 +109,7 @@ FeedbackPacket* NadaBweReceiver::GetFeedback(int64_t now_ms) {
   last_feedback_ms_ = now_ms;
   last_congestion_signal_ms_ = congestion_signal_ms;
 
-  PacketIdentifierNode* latest = *(received_packets_->begin());
+  PacketIdentifierNode* latest = *(received_packets_.begin());
   int64_t corrected_send_time_ms =
       latest->send_time_ms + now_ms - latest->arrival_time_ms;
 
@@ -122,83 +121,22 @@ FeedbackPacket* NadaBweReceiver::GetFeedback(int64_t now_ms) {
                           corrected_send_time_ms);
 }
 
-float NadaBweReceiver::GlobalPacketLossRatio() {
-  if (received_packets_->empty()) {
-    return 0.0f;
-  }
-  // Possibly there are packets missing.
-  const uint16_t kMaxGap = 1.5 * kSetCapacity;
-  uint16_t min = received_packets_->find_min();
-  uint16_t max = received_packets_->find_max();
-
-  int gap;
-  if (max - min < kMaxGap) {
-    gap = max - min + 1;
-  } else {  // There was an overflow.
-    max = received_packets_->upper_bound(kMaxGap);
-    min = received_packets_->lower_bound(0xFFFF - kMaxGap);
-    gap = max + (0xFFFF - min) + 2;
-  }
-  return static_cast<float>(received_packets_->size()) / gap;
-}
-
-// Go through a fixed time window of most recent packets received and
-// counts packets missing to obtain the packet loss ratio. If an unordered
-// packet falls out of the timewindow it will be counted as missing.
-// E.g.: for a timewindow covering 5 packets of the following arrival sequence
-// {10 7 9 5 6} 8 3 2 4 1, the output will be 1/6 (#8 is considered as missing).
-float NadaBweReceiver::RecentPacketLossRatio() {
-
-  if (received_packets_->empty()) {
-    return 0.0f;
-  }
-  int number_packets_received = 0;
-
-  PacketNodeIt node_it = received_packets_->begin();  // Latest.
-
-  // Lowest timestamp limit, oldest one that should be checked.
-  int64_t time_limit_ms = (*node_it)->arrival_time_ms - kPacketLossTimeWindowMs;
-  // Oldest and newest values found within the given time window.
-  uint16_t oldest_seq_nb = (*node_it)->sequence_number;
-  uint16_t newest_seq_nb = oldest_seq_nb;
-
-  while (node_it != received_packets_->end()) {
-    if ((*node_it)->arrival_time_ms < time_limit_ms) {
-      break;
-    }
-    uint16_t seq_nb = (*node_it)->sequence_number;
-    if (IsNewerSequenceNumber(seq_nb, newest_seq_nb)) {
-      newest_seq_nb = seq_nb;
-    }
-    if (IsNewerSequenceNumber(oldest_seq_nb, seq_nb)) {
-      oldest_seq_nb = seq_nb;
-    }
-    ++node_it;
-    ++number_packets_received;
-  }
-  // Interval width between oldest and newest sequence number.
-  // There was an overflow if newest_seq_nb < oldest_seq_nb.
-  int gap = static_cast<uint16_t>(newest_seq_nb - oldest_seq_nb + 1);
-
-  return static_cast<float>(gap - number_packets_received) / gap;
-}
-
 // For a given time window, compute the receiving speed rate in kbps.
 // As described below, three cases are considered depending on the number of
 // packets received.
 size_t NadaBweReceiver::RecentReceivingRate() {
   // If the receiver didn't receive any packet, return 0.
-  if (received_packets_->empty()) {
+  if (received_packets_.empty()) {
     return 0.0f;
   }
   size_t total_size = 0;
   int number_packets = 0;
 
-  PacketNodeIt node_it = received_packets_->begin();
+  PacketNodeIt node_it = received_packets_.begin();
 
   int64_t last_time_ms = (*node_it)->arrival_time_ms;
   int64_t start_time_ms = last_time_ms;
-  PacketNodeIt end = received_packets_->end();
+  PacketNodeIt end = received_packets_.end();
 
   // Stops after including the first packet out of the timeWindow.
   // Ameliorates results when there are wide gaps between packets.
@@ -218,13 +156,14 @@ size_t NadaBweReceiver::RecentReceivingRate() {
   // If the receiver received a single packet, return its size*8/timeWindow.
   if (number_packets == 1) {
     corrected_time_ms = kReceivingRateTimeWindowMs;
-  } else {
-    // If the receiver received multiple packets, use as time interval the gap
-    // between first and last packet falling in the timeWindow corrected by the
-    // factor number_packets/(number_packets-1).
-    // E.g: Let timeWindow = 500ms, payload_size = 500bytes, number_packets=2,
-    // packets received at t1(0ms) and t2(499 or 501ms). This prevent the
-    // function from returning ~2*8, sending instead a more likely ~1*8 kbps.
+  }
+  // If the receiver received multiple packets, use as time interval the gap
+  // between first and last packet falling in the timeWindow corrected by the
+  // factor number_packets/(number_packets-1).
+  // E.g: Let timeWindow = 500ms, payload_size = 500 bytes, number_packets = 2,
+  // packets received at t1(0ms) and t2(499 or 501ms). This prevent the function
+  // from returning ~2*8, sending instead a more likely ~1*8 kbps.
+  else {
     corrected_time_ms = (number_packets * (start_time_ms - last_time_ms)) /
                         (number_packets - 1);
   }
@@ -381,37 +320,6 @@ void NadaBweSender::GradualRateUpdate(const NadaFeedback& fb,
                        0.5f);
 
   bitrate_kbps_ = bitrate_kbps_ + smoothing_factor * original_increase;
-}
-
-void LinkedSet::Insert(uint16_t sequence_number,
-                       int64_t send_time_ms,
-                       int64_t arrival_time_ms,
-                       size_t payload_size) {
-  std::map<uint16_t, PacketNodeIt>::iterator it = map_.find(sequence_number);
-  if (it != map_.end()) {
-    PacketNodeIt node_it = it->second;
-    PacketIdentifierNode* node = *node_it;
-    node->arrival_time_ms = arrival_time_ms;
-    if (node_it != list_.begin()) {
-      list_.erase(node_it);
-      list_.push_front(node);
-      map_[sequence_number] = list_.begin();
-    }
-  } else {
-    if (size() == capacity_) {
-      RemoveTail();
-    }
-    UpdateHead(new PacketIdentifierNode(sequence_number, send_time_ms,
-                                        arrival_time_ms, payload_size));
-  }
-}
-void LinkedSet::RemoveTail() {
-  map_.erase(list_.back()->sequence_number);
-  list_.pop_back();
-}
-void LinkedSet::UpdateHead(PacketIdentifierNode* new_head) {
-  list_.push_front(new_head);
-  map_[new_head->sequence_number] = list_.begin();
 }
 
 }  // namespace bwe

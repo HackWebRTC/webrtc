@@ -35,6 +35,10 @@ void TcpBweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                    const MediaPacket& media_packet) {
   latest_owd_ms_ = arrival_time_ms - media_packet.sender_timestamp_us() / 1000;
   acks_.push_back(media_packet.header().sequenceNumber);
+
+  received_packets_.Insert(media_packet.sequence_number(),
+                           media_packet.send_time_ms(), arrival_time_ms,
+                           media_packet.payload_size());
 }
 
 FeedbackPacket* TcpBweReceiver::GetFeedback(int64_t now_ms) {

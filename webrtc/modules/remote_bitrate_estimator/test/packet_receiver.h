@@ -40,13 +40,26 @@ class PacketReceiver : public PacketProcessor {
 
  protected:
   void PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms);
+  void PlotObjectiveFunction(int64_t arrival_time_ms);
+  void PlotPacketLoss(int64_t arrival_time_ms);
+  double ObjectiveFunction();
 
   int64_t now_ms_;
   std::string delay_log_prefix_;
+  std::string metric_log_prefix_;
+  std::string packet_loss_log_prefix_;
   int64_t last_delay_plot_ms_;
+  int64_t last_metric_plot_ms_;
+  int64_t last_packet_loss_plot_ms_;
   bool plot_delay_;
+  bool plot_objective_function_;
+  bool plot_packet_loss_;
   Stats<double> delay_stats_;
   rtc::scoped_ptr<BweReceiver> bwe_receiver_;
+
+  int64_t total_delay_ms_;
+  size_t total_throughput_;
+  int number_packets_;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);

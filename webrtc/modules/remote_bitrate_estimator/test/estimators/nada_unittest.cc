@@ -435,7 +435,7 @@ TEST_F(NadaReceiverSideTest, PacketLossSinglePacket) {
 
 TEST_F(NadaReceiverSideTest, PacketLossContiguousPackets) {
   const int64_t kTimeWindowMs = NadaBweReceiver::kPacketLossTimeWindowMs;
-  const int kSetCapacity = NadaBweReceiver::kSetCapacity;
+  size_t set_capacity = nada_receiver_.GetSetCapacity();
 
   for (int i = 0; i < 10; ++i) {
     uint16_t sequence_number = static_cast<uint16_t>(i);
@@ -465,7 +465,7 @@ TEST_F(NadaReceiverSideTest, PacketLossContiguousPackets) {
   EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
 
   // Should handle set overflow.
-  for (int i = 0; i < kSetCapacity * 1.5; ++i) {
+  for (int i = 0; i < set_capacity * 1.5; ++i) {
     uint16_t sequence_number = static_cast<uint16_t>(i);
     const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
     // Only the packets sent in this for loop will be considered.
@@ -503,11 +503,11 @@ TEST_F(NadaReceiverSideTest, PacketLossDuplicatedPackets) {
 }
 
 TEST_F(NadaReceiverSideTest, PacketLossLakingPackets) {
-  const int kSetCapacity = NadaBweReceiver::kSetCapacity;
-  EXPECT_LT(kSetCapacity, 0xFFFF);
+  size_t set_capacity = nada_receiver_.GetSetCapacity();
+  EXPECT_LT(set_capacity, static_cast<size_t>(0xFFFF));
 
   // Missing every other packet.
-  for (int i = 0; i < kSetCapacity; ++i) {
+  for (size_t i = 0; i < set_capacity; ++i) {
     if ((i & 1) == 0) {  // Only even sequence numbers.
       uint16_t sequence_number = static_cast<uint16_t>(i);
       const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
@@ -519,12 +519,12 @@ TEST_F(NadaReceiverSideTest, PacketLossLakingPackets) {
 }
 
 TEST_F(NadaReceiverSideTest, PacketLossLakingFewPackets) {
-  const int kSetCapacity = NadaBweReceiver::kSetCapacity;
-  EXPECT_LT(kSetCapacity, 0xFFFF);
+  size_t set_capacity = nada_receiver_.GetSetCapacity();
+  EXPECT_LT(set_capacity, static_cast<size_t>(0xFFFF));
 
   const int kPeriod = 100;
   // Missing one for each kPeriod packets.
-  for (int i = 0; i < kSetCapacity; ++i) {
+  for (size_t i = 0; i < set_capacity; ++i) {
     if ((i % kPeriod) != 0) {
       uint16_t sequence_number = static_cast<uint16_t>(i);
       const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
@@ -557,16 +557,16 @@ TEST_F(NadaReceiverSideTest, PacketLossWideGap) {
 
 // Packets arriving unordered should not be counted as losted.
 TEST_F(NadaReceiverSideTest, PacketLossUnorderedPackets) {
-  const int kNumPackets = NadaBweReceiver::kSetCapacity / 2;
+  int num_packets = nada_receiver_.GetSetCapacity() / 2;
   std::vector<uint16_t> sequence_numbers;
 
-  for (int i = 0; i < kNumPackets; ++i) {
+  for (int i = 0; i < num_packets; ++i) {
     sequence_numbers.push_back(static_cast<uint16_t>(i + 1));
   }
 
   random_shuffle(sequence_numbers.begin(), sequence_numbers.end());
 
-  for (int i = 0; i < kNumPackets; ++i) {
+  for (int i = 0; i < num_packets; ++i) {
     const MediaPacket media_packet(kFlowId, 0, 0, sequence_numbers[i]);
     // Arrival time = 0, all packets will be considered.
     nada_receiver_.ReceivePacket(0, media_packet);
