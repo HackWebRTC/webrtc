@@ -83,12 +83,6 @@ class VP8EncoderImpl : public VP8Encoder {
   int GetEncodedPartitions(const VideoFrame& input_image,
                            bool only_predicting_from_key_frame);
 
-  // Get the stream bitrate, for the stream |stream_idx|, given the bitrate
-  // |new_bitrate_kbit|.
-  int GetStreamBitrate(int stream_idx,
-                       uint32_t new_bitrate_kbit,
-                       bool* send_stream) const;
-
   // Set the stream state for stream |stream_idx|.
   void SetStreamState(bool send_stream, int stream_idx);
 

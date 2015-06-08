@@ -60,12 +60,45 @@ int GCD(int a, int b) {
   return b;
 }
 
-uint32_t SumStreamTargetBitrate(int streams, const VideoCodec& codec) {
-  uint32_t bitrate_sum = 0;
-  for (int i = 0; i < streams; ++i) {
-    bitrate_sum += codec.simulcastStream[i].targetBitrate;
+std::vector<int> GetStreamBitratesKbps(const VideoCodec& codec,
+                                       int bitrate_to_allocate_kbps) {
+  if (codec.numberOfSimulcastStreams <= 1) {
+    return std::vector<int>(1, bitrate_to_allocate_kbps);
   }
-  return bitrate_sum;
+
+  std::vector<int> bitrates_kbps(codec.numberOfSimulcastStreams);
+  // Allocate min -> target bitrates as long as we have bitrate to spend.
+  size_t last_active_stream = 0;
+  for (size_t i = 0;
+       i < static_cast<size_t>(codec.numberOfSimulcastStreams) &&
+           bitrate_to_allocate_kbps >=
+               static_cast<int>(codec.simulcastStream[i].minBitrate);
+       ++i) {
+    last_active_stream = i;
+    int allocated_bitrate_kbps =
+        std::min(static_cast<int>(codec.simulcastStream[i].targetBitrate),
+                 bitrate_to_allocate_kbps);
+    bitrates_kbps[i] = allocated_bitrate_kbps;
+    bitrate_to_allocate_kbps -= allocated_bitrate_kbps;
+  }
+
+  // Spend additional bits on the highest-quality active layer, up to max
+  // bitrate.
+  // TODO(pbos): Consider spending additional bits on last_active_stream-1 down
+  // to 0 and not just the top layer when we have additional bitrate to spend.
+  int allocated_bitrate_kbps = std::min(
+      static_cast<int>(codec.simulcastStream[last_active_stream].maxBitrate -
+                       bitrates_kbps[last_active_stream]),
+      bitrate_to_allocate_kbps);
+  bitrates_kbps[last_active_stream] += allocated_bitrate_kbps;
+  bitrate_to_allocate_kbps -= allocated_bitrate_kbps;
+
+  // Make sure we can always send something. Suspending below min bitrate is
+  // controlled outside the codec implementation and is not overriden by this.
+  if (bitrates_kbps[0] < static_cast<int>(codec.simulcastStream[0].minBitrate))
+    bitrates_kbps[0] = static_cast<int>(codec.simulcastStream[0].minBitrate);
+
+  return bitrates_kbps;
 }
 
 uint32_t SumStreamMaxBitrate(int streams, const VideoCodec& codec) {
@@ -167,7 +200,7 @@ int VP8EncoderImpl::Release() {
 }
 
 int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
-                                     uint32_t new_framerate) {
+                             uint32_t new_framerate) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -224,20 +257,14 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
     }
   }
 
-  bool send_stream = true;
-  int stream_bitrate = 0;
+  std::vector<int> stream_bitrates =
+      GetStreamBitratesKbps(codec_, new_bitrate_kbit);
   size_t stream_idx = encoders_.size() - 1;
   for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
-    if (encoders_.size() == 1) {
-      stream_bitrate = new_bitrate_kbit;
-    } else {
-      stream_bitrate = GetStreamBitrate(stream_idx,
-                                        new_bitrate_kbit,
-                                        &send_stream);
-      SetStreamState(send_stream, stream_idx);
-    }
+    if (encoders_.size() > 1)
+      SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
 
-    unsigned int target_bitrate = stream_bitrate;
+    unsigned int target_bitrate = stream_bitrates[stream_idx];
     unsigned int max_bitrate = codec_.maxBitrate;
     int framerate = new_framerate;
     // TODO(holmer): This is a temporary hack for screensharing, where we
@@ -264,46 +291,6 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
   }
   quality_scaler_.ReportFramerate(new_framerate);
   return WEBRTC_VIDEO_CODEC_OK;
-}
-
-int VP8EncoderImpl::GetStreamBitrate(int stream_idx,
-                                             uint32_t new_bitrate_kbit,
-                                             bool* send_stream) const {
-  // The bitrate needed to start sending this stream is given by the
-  // minimum bitrate allowed for encoding this stream, plus the sum target
-  // rates of all lower streams.
-  uint32_t sum_target_lower_streams = (stream_idx == 0) ? 0 :
-      SumStreamTargetBitrate(stream_idx, codec_);
-  uint32_t bitrate_to_send_this_layer =
-      codec_.simulcastStream[stream_idx].minBitrate + sum_target_lower_streams;
-  if (new_bitrate_kbit >= bitrate_to_send_this_layer) {
-    // We have enough bandwidth to send this stream.
-    *send_stream = true;
-    // Bitrate for this stream is the new bitrate (|new_bitrate_kbit|) minus the
-    // sum target rates of the lower streams, and capped to a maximum bitrate.
-    // The maximum cap depends on whether we send the next higher stream.
-    // If we will be sending the next higher stream, |max_rate| is given by
-    // current stream's |targetBitrate|, otherwise it's capped by |maxBitrate|.
-    if (stream_idx < codec_.numberOfSimulcastStreams - 1) {
-      uint32 max_rate = codec_.simulcastStream[stream_idx].maxBitrate;
-      if (new_bitrate_kbit >= SumStreamTargetBitrate(stream_idx + 1, codec_) +
-          codec_.simulcastStream[stream_idx + 1].minBitrate) {
-        max_rate = codec_.simulcastStream[stream_idx].targetBitrate;
-      }
-      return std::min(new_bitrate_kbit - sum_target_lower_streams, max_rate);
-    } else {
-        // For the highest stream (highest resolution), the |targetBitRate| and
-        // |maxBitrate| are not used. Any excess bitrate (above the targets of
-        // all lower streams) is given to this (highest resolution) stream.
-        return new_bitrate_kbit - sum_target_lower_streams;
-    }
-  } else {
-    // Not enough bitrate for this stream.
-    // Return our max bitrate of |stream_idx| - 1, but we don't send it. We need
-    // to keep this resolution coding in order for the multi-encoder to work.
-    *send_stream = false;
-    return 0;
-  }
 }
 
 void VP8EncoderImpl::SetStreamState(bool send_stream,
@@ -563,16 +550,13 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
     // Note the order we use is different from webm, we have lowest resolution
     // at position 0 and they have highest resolution at position 0.
     int stream_idx = encoders_.size() - 1;
-    bool send_stream = true;
-    int stream_bitrate = GetStreamBitrate(stream_idx,
-                                          inst->startBitrate,
-                                          &send_stream);
-    SetStreamState(send_stream, stream_idx);
-    configurations_[0].rc_target_bitrate = stream_bitrate;
-    temporal_layers_[stream_idx]->ConfigureBitrates(stream_bitrate,
-                                                    inst->maxBitrate,
-                                                    inst->maxFramerate,
-                                                    &configurations_[0]);
+    std::vector<int> stream_bitrates =
+        GetStreamBitratesKbps(codec_, inst->startBitrate);
+    SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
+    configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx];
+    temporal_layers_[stream_idx]->ConfigureBitrates(
+        stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate,
+        &configurations_[0]);
     --stream_idx;
     for (size_t i = 1; i < encoders_.size(); ++i, --stream_idx) {
       memcpy(&configurations_[i], &configurations_[0],
@@ -590,15 +574,11 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
       vpx_img_alloc(&raw_images_[i], VPX_IMG_FMT_I420,
                     inst->simulcastStream[stream_idx].width,
                     inst->simulcastStream[stream_idx].height, kVp832ByteAlign);
-      int stream_bitrate = GetStreamBitrate(stream_idx,
-                                            inst->startBitrate,
-                                            &send_stream);
-      SetStreamState(send_stream, stream_idx);
-      configurations_[i].rc_target_bitrate = stream_bitrate;
-      temporal_layers_[stream_idx]->ConfigureBitrates(stream_bitrate,
-                                                      inst->maxBitrate,
-                                                      inst->maxFramerate,
-                                                      &configurations_[i]);
+      SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
+      configurations_[i].rc_target_bitrate = stream_bitrates[stream_idx];
+      temporal_layers_[stream_idx]->ConfigureBitrates(
+          stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate,
+          &configurations_[i]);
     }
   }
 
