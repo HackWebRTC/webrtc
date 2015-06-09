@@ -76,7 +76,8 @@ DIRECTORIES = [
 ]
 
 from sync_chromium import get_target_os_list
-if 'android' in get_target_os_list():
+target_os = get_target_os_list()
+if 'android' in target_os:
   DIRECTORIES += [
     'base',
     'third_party/android_testrunner',
@@ -95,6 +96,8 @@ if 'android' in get_target_os_list():
     'tools/grit',
     'tools/relocation_packer'
   ]
+if 'ios' in target_os:
+  DIRECTORIES.append('third_party/class-dump')
 
 FILES = {
   'tools/find_depot_tools.py': None,
