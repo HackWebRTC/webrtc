@@ -87,11 +87,6 @@
     <string name="pref_audiocodec_dlg">Select default audio codec.</string>
     <string name="pref_audiocodec_default">OPUS</string>
 
-    <string name="pref_noaudioprocessing_key">audioprocessing_preference</string>
-    <string name="pref_noaudioprocessing_title">Disable audio processing.</string>
-    <string name="pref_noaudioprocessing_dlg">Disable audio processing pipeline.</string>
-    <string name="pref_noaudioprocessing_default">false</string>
-
     <string name="pref_miscsettings_key">misc_settings_key</string>
     <string name="pref_miscsettings_title">Miscellaneous settings.</string>
 

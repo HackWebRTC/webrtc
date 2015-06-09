@@ -79,10 +79,6 @@ public class PeerConnectionClient {
   private static final String VIDEO_CODEC_PARAM_START_BITRATE =
       "x-google-start-bitrate";
   private static final String AUDIO_CODEC_PARAM_BITRATE = "maxaveragebitrate";
-  private static final String AUDIO_ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation";
-  private static final String AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT= "googAutoGainControl";
-  private static final String AUDIO_HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter";
-  private static final String AUDIO_NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression";
   private static final String MAX_VIDEO_WIDTH_CONSTRAINT = "maxWidth";
   private static final String MIN_VIDEO_WIDTH_CONSTRAINT = "minWidth";
   private static final String MAX_VIDEO_HEIGHT_CONSTRAINT = "maxHeight";
@@ -148,7 +144,6 @@ public class PeerConnectionClient {
     public final boolean videoCodecHwAcceleration;
     public final int audioStartBitrate;
     public final String audioCodec;
-    public final boolean noAudioProcessing;
     public final boolean cpuOveruseDetection;
 
     public PeerConnectionParameters(
@@ -156,7 +151,7 @@ public class PeerConnectionClient {
         int videoWidth, int videoHeight, int videoFps, int videoStartBitrate,
         String videoCodec, boolean videoCodecHwAcceleration,
         int audioStartBitrate, String audioCodec,
-        boolean noAudioProcessing, boolean cpuOveruseDetection) {
+        boolean cpuOveruseDetection) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.videoWidth = videoWidth;
@@ -167,7 +162,6 @@ public class PeerConnectionClient {
       this.videoCodecHwAcceleration = videoCodecHwAcceleration;
       this.audioStartBitrate = audioStartBitrate;
       this.audioCodec = audioCodec;
-      this.noAudioProcessing = noAudioProcessing;
       this.cpuOveruseDetection = cpuOveruseDetection;
     }
   }
@@ -393,18 +387,7 @@ public class PeerConnectionClient {
 
     // Create audio constraints.
     audioConstraints = new MediaConstraints();
-    // added for audio performance measurements
-    if (peerConnectionParameters.noAudioProcessing) {
-      Log.d(TAG, "Disabling audio processing");
-      audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-            AUDIO_ECHO_CANCELLATION_CONSTRAINT, "false"));
-      audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-            AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT, "false"));
-      audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-            AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "false"));
-      audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-           AUDIO_NOISE_SUPPRESSION_CONSTRAINT , "false"));
-    }
+
     // Create SDP constraints.
     sdpMediaConstraints = new MediaConstraints();
     sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(

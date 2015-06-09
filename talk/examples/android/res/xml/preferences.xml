@@ -82,12 +82,6 @@
             android:dialogTitle="@string/pref_audiocodec_dlg"
             android:entries="@array/audioCodecs"
             android:entryValues="@array/audioCodecs" />
-
-        <CheckBoxPreference
-            android:key="@string/pref_noaudioprocessing_key"
-            android:title="@string/pref_noaudioprocessing_title"
-            android:dialogTitle="@string/pref_noaudioprocessing_dlg"
-            android:defaultValue="@string/pref_noaudioprocessing_default" />
     </PreferenceCategory>
 
     <PreferenceCategory
