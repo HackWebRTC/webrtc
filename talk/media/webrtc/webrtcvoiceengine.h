@@ -266,11 +266,11 @@ class WebRtcVoiceEngine
 
   rtc::CriticalSection signal_media_critical_;
 
-  // Cache received experimental_aec, delay_agnostic_aec and experimental_ns
+  // Cache received extended_filter_aec, delay_agnostic_aec and experimental_ns
   // values, and apply them in case they are missing in the audio options. We
   // need to do this because SetExtraOptions() will revert to defaults for
   // options which are not provided.
-  Settable<bool> experimental_aec_;
+  Settable<bool> extended_filter_aec_;
   Settable<bool> delay_agnostic_aec_;
   Settable<bool> experimental_ns_;
 };

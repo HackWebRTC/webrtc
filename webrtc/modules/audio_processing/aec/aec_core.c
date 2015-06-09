@@ -1934,14 +1934,14 @@ int WebRtcAec_reported_delay_enabled(AecCore* self) {
   return self->reported_delay_enabled;
 }
 
-void WebRtcAec_enable_delay_correction(AecCore* self, int enable) {
+void WebRtcAec_enable_extended_filter(AecCore* self, int enable) {
   self->extended_filter_enabled = enable;
   self->num_partitions = enable ? kExtendedNumPartitions : kNormalNumPartitions;
   // Update the delay estimator with filter length.  See InitAEC() for details.
   WebRtc_set_allowed_offset(self->delay_estimator, self->num_partitions / 2);
 }
 
-int WebRtcAec_delay_correction_enabled(AecCore* self) {
+int WebRtcAec_extended_filter_enabled(AecCore* self) {
   return self->extended_filter_enabled;
 }
 

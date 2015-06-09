@@ -45,7 +45,7 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   webrtc::FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kEchoCancellation, false);
   constraints.AddOptional(
-      MediaConstraintsInterface::kExperimentalEchoCancellation, true);
+      MediaConstraintsInterface::kExtendedFilterEchoCancellation, true);
   constraints.AddOptional(MediaConstraintsInterface::kDAEchoCancellation, true);
   constraints.AddOptional(MediaConstraintsInterface::kAutoGainControl, true);
   constraints.AddOptional(
@@ -61,7 +61,7 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   bool value;
   EXPECT_TRUE(source->options().echo_cancellation.Get(&value));
   EXPECT_FALSE(value);
-  EXPECT_TRUE(source->options().experimental_aec.Get(&value));
+  EXPECT_TRUE(source->options().extended_filter_aec.Get(&value));
   EXPECT_TRUE(value);
   EXPECT_TRUE(source->options().delay_agnostic_aec.Get(&value));
   EXPECT_TRUE(value);
@@ -75,6 +75,51 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   EXPECT_TRUE(value);
   EXPECT_TRUE(source->options().aec_dump.Get(&value));
   EXPECT_TRUE(value);
+}
+
+// TODO(henrik.lundin) Remove SetExtendedFilterEchoCancellationOff test.
+// https://code.google.com/p/webrtc/issues/detail?id=4696
+TEST(LocalAudioSourceTest, SetExtendedFilterEchoCancellationOff) {
+  webrtc::FakeConstraints constraints;
+  constraints.AddOptional(
+      MediaConstraintsInterface::kExtendedFilterEchoCancellation, false);
+
+  rtc::scoped_refptr<LocalAudioSource> source = LocalAudioSource::Create(
+      PeerConnectionFactoryInterface::Options(), &constraints);
+
+  bool value;
+  EXPECT_TRUE(source->options().extended_filter_aec.Get(&value));
+  EXPECT_FALSE(value);
+}
+
+// TODO(henrik.lundin) Remove SetExperimentalEchoCancellationOn test.
+// https://code.google.com/p/webrtc/issues/detail?id=4696
+TEST(LocalAudioSourceTest, SetExperimentalEchoCancellationOn) {
+  webrtc::FakeConstraints constraints;
+  constraints.AddOptional(
+      MediaConstraintsInterface::kExperimentalEchoCancellation, true);
+
+  rtc::scoped_refptr<LocalAudioSource> source = LocalAudioSource::Create(
+      PeerConnectionFactoryInterface::Options(), &constraints);
+
+  bool value;
+  EXPECT_TRUE(source->options().extended_filter_aec.Get(&value));
+  EXPECT_TRUE(value);
+}
+
+// TODO(henrik.lundin) Remove SetExperimentalEchoCancellationOff test.
+// https://code.google.com/p/webrtc/issues/detail?id=4696
+TEST(LocalAudioSourceTest, SetExperimentalEchoCancellationOff) {
+  webrtc::FakeConstraints constraints;
+  constraints.AddOptional(
+      MediaConstraintsInterface::kExperimentalEchoCancellation, false);
+
+  rtc::scoped_refptr<LocalAudioSource> source = LocalAudioSource::Create(
+      PeerConnectionFactoryInterface::Options(), &constraints);
+
+  bool value;
+  EXPECT_TRUE(source->options().extended_filter_aec.Get(&value));
+  EXPECT_FALSE(value);
 }
 
 TEST(LocalAudioSourceTest, OptionNotSet) {

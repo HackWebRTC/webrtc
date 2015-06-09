@@ -50,6 +50,8 @@ const char MediaConstraintsInterface::kEchoCancellation[] =
     "googEchoCancellation";
 const char MediaConstraintsInterface::kExperimentalEchoCancellation[] =
     "googEchoCancellation2";
+const char MediaConstraintsInterface::kExtendedFilterEchoCancellation[] =
+    "googEchoCancellation2";
 const char MediaConstraintsInterface::kDAEchoCancellation[] =
     "googDAEchoCancellation";
 const char MediaConstraintsInterface::kAutoGainControl[] =

@@ -43,43 +43,51 @@ namespace {
 // invalid.
 void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
                      cricket::AudioOptions* options) {
-  MediaConstraintsInterface::Constraints::const_iterator iter;
-
   // This design relies on the fact that all the audio constraints are actually
   // "options", i.e. boolean-valued and always satisfiable.  If the constraints
   // are extended to include non-boolean values or actual format constraints,
   // a different algorithm will be required.
-  for (iter = constraints.begin(); iter != constraints.end(); ++iter) {
-    bool value = false;
+  struct {
+    const char* name;
+    cricket::Settable<bool>& value;
+  } key_to_value[] = {
+      {MediaConstraintsInterface::kEchoCancellation,
+       options->echo_cancellation},
+      // Both kExperimentalEchoCancellation (old) and
+      // kExtendedFilterEchoCancellation (new) translate to
+      // extended_filter_aec
+      // option being set. This is to manage the transition from the old to
+      // the
+      // new without breaking dependent code.
+      {MediaConstraintsInterface::kExperimentalEchoCancellation,
+       options->extended_filter_aec},
+      {MediaConstraintsInterface::kExtendedFilterEchoCancellation,
+       options->extended_filter_aec},
+      {MediaConstraintsInterface::kDAEchoCancellation,
+       options->delay_agnostic_aec},
+      {MediaConstraintsInterface::kAutoGainControl, options->auto_gain_control},
+      {MediaConstraintsInterface::kExperimentalAutoGainControl,
+       options->experimental_agc},
+      {MediaConstraintsInterface::kNoiseSuppression,
+       options->noise_suppression},
+      {MediaConstraintsInterface::kExperimentalNoiseSuppression,
+       options->experimental_ns},
+      {MediaConstraintsInterface::kHighpassFilter, options->highpass_filter},
+      {MediaConstraintsInterface::kTypingNoiseDetection,
+       options->typing_detection},
+      {MediaConstraintsInterface::kAudioMirroring, options->stereo_swapping},
+      {MediaConstraintsInterface::kAecDump, options->aec_dump}
+  };
 
-    if (!rtc::FromString(iter->value, &value))
+  for (const auto& constraint : constraints) {
+    bool value = false;
+    if (!rtc::FromString(constraint.value, &value))
       continue;
 
-    if (iter->key == MediaConstraintsInterface::kEchoCancellation)
-      options->echo_cancellation.Set(value);
-    else if (iter->key ==
-        MediaConstraintsInterface::kExperimentalEchoCancellation)
-      options->experimental_aec.Set(value);
-    else if (iter->key == MediaConstraintsInterface::kDAEchoCancellation)
-      options->delay_agnostic_aec.Set(value);
-    else if (iter->key == MediaConstraintsInterface::kAutoGainControl)
-      options->auto_gain_control.Set(value);
-    else if (iter->key ==
-        MediaConstraintsInterface::kExperimentalAutoGainControl)
-      options->experimental_agc.Set(value);
-    else if (iter->key == MediaConstraintsInterface::kNoiseSuppression)
-      options->noise_suppression.Set(value);
-    else if (iter->key ==
-          MediaConstraintsInterface::kExperimentalNoiseSuppression)
-      options->experimental_ns.Set(value);
-    else if (iter->key == MediaConstraintsInterface::kHighpassFilter)
-      options->highpass_filter.Set(value);
-    else if (iter->key == MediaConstraintsInterface::kTypingNoiseDetection)
-      options->typing_detection.Set(value);
-    else if (iter->key == MediaConstraintsInterface::kAudioMirroring)
-      options->stereo_swapping.Set(value);
-    else if (iter->key == MediaConstraintsInterface::kAecDump)
-      options->aec_dump.Set(value);
+    for (auto& entry : key_to_value) {
+      if (constraint.key.compare(entry.name) == 0)
+        entry.value.Set(value);
+    }
   }
 }
 

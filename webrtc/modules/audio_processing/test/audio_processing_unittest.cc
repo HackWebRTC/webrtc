@@ -1587,7 +1587,7 @@ TEST_F(ApmTest, SplittingFilter) {
   // Make sure we have extended filter enabled. This makes sure nothing is
   // touched until we have a farend frame.
   Config config;
-  config.Set<DelayCorrection>(new DelayCorrection(true));
+  config.Set<ExtendedFilter>(new ExtendedFilter(true));
   apm_->SetExtraOptions(config);
   SetFrameTo(frame_, 1000);
   frame_copy.CopyFrom(*frame_);
@@ -1969,8 +1969,8 @@ TEST_F(ApmTest, Process) {
 
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-    config.Set<DelayCorrection>(
-        new DelayCorrection(test->use_aec_extended_filter()));
+    config.Set<ExtendedFilter>(
+        new ExtendedFilter(test->use_aec_extended_filter()));
     apm_.reset(AudioProcessing::Create(config));
 
     EnableAllComponents();

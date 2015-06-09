@@ -357,7 +357,7 @@ static AudioOptions GetDefaultEngineOptions() {
   options.conference_mode.Set(false);
   options.adjust_agc_delta.Set(0);
   options.experimental_agc.Set(false);
-  options.experimental_aec.Set(false);
+  options.extended_filter_aec.Set(false);
   options.delay_agnostic_aec.Set(false);
   options.experimental_ns.Set(false);
   options.aec_dump.Set(false);
@@ -661,7 +661,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   agc_mode = webrtc::kAgcFixedDigital;
   options.typing_detection.Set(false);
   options.experimental_agc.Set(false);
-  options.experimental_aec.Set(false);
+  options.extended_filter_aec.Set(false);
   options.experimental_ns.Set(false);
 #endif
 
@@ -672,7 +672,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.delay_agnostic_aec.Get(&use_delay_agnostic_aec)) {
     if (use_delay_agnostic_aec) {
       options.echo_cancellation.Set(true);
-      options.experimental_aec.Set(true);
+      options.extended_filter_aec.Set(true);
       ec_mode = webrtc::kEcConference;
     }
   }
@@ -848,12 +848,12 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         new webrtc::ReportedDelay(!delay_agnostic_aec));
   }
 
-  experimental_aec_.SetFrom(options.experimental_aec);
-  bool experimental_aec;
-  if (experimental_aec_.Get(&experimental_aec)) {
-    LOG(LS_INFO) << "Experimental aec is enabled? " << experimental_aec;
-    config.Set<webrtc::DelayCorrection>(
-        new webrtc::DelayCorrection(experimental_aec));
+  extended_filter_aec_.SetFrom(options.extended_filter_aec);
+  bool extended_filter;
+  if (extended_filter_aec_.Get(&extended_filter)) {
+    LOG(LS_INFO) << "Extended filter aec is enabled? " << extended_filter;
+    config.Set<webrtc::ExtendedFilter>(
+        new webrtc::ExtendedFilter(extended_filter));
   }
 
   experimental_ns_.SetFrom(options.experimental_ns);
