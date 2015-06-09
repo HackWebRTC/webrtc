@@ -289,6 +289,13 @@ def UpdateDeps(deps_filename, old_cr_revision, new_cr_revision):
   with open(deps_filename, 'wb') as deps_file:
     deps_file.write(deps_content)
 
+def _IsTreeClean():
+  stdout, _ = _RunCommand(['git', 'status', '--porcelain'])
+  if len(stdout) == 0:
+    return True
+
+  logging.error('Dirty/unversioned files:\n%s', stdout)
+  return False
 
 def _CreateRollBranch(dry_run):
   current_branch = _RunCommand(
@@ -298,6 +305,9 @@ def _CreateRollBranch(dry_run):
     if not dry_run:
       sys.exit(-1)
 
+  logging.info('Updating master branch...')
+  if not dry_run:
+    _RunCommand(['git', 'pull'])
   logging.info('Creating roll branch: %s', ROLL_BRANCH_NAME)
   if not dry_run:
     _RunCommand(['git', 'checkout', '-b', ROLL_BRANCH_NAME])
@@ -352,6 +362,10 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
   else:
     logging.basicConfig(level=logging.INFO)
+
+  if not _IsTreeClean():
+    logging.error('Please clean your local checkout first.')
+    return 1
 
   if opts.clean:
     _RemovePreviousRollBranch(opts.dry_run)
