@@ -168,7 +168,7 @@ class StunProberTest : public testing::Test {
     EXPECT_EQ(ss_->num_socket(), total_sockets);
     EXPECT_TRUE(prober->GetStats(&stats));
     EXPECT_EQ(stats.success_percent, 100);
-    EXPECT_TRUE(stats.behind_nat);
+    EXPECT_TRUE(stats.nat_type > stunprober::NATTYPE_NONE);
     EXPECT_EQ(stats.host_ip, kLocalAddr.ipaddr().ToString());
     EXPECT_EQ(stats.srflx_addrs, srflx_addresses);
     EXPECT_EQ(static_cast<uint32>(stats.num_request_sent),

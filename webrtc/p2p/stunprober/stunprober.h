@@ -30,6 +30,14 @@ static const int kMaxUdpBufferSize = 1200;
 
 typedef rtc::Callback1<void, int> AsyncCallback;
 
+enum NatType {
+  NATTYPE_INVALID,
+  NATTYPE_NONE,          // Not behind a NAT.
+  NATTYPE_UNKNOWN,       // Behind a NAT but type can't be determine.
+  NATTYPE_SYMMETRIC,     // Behind a symmetric NAT.
+  NATTYPE_NON_SYMMETRIC  // Behind a non-symmetric NAT.
+};
+
 class HostNameResolverInterface {
  public:
   HostNameResolverInterface() {}
@@ -139,10 +147,10 @@ class StunProber {
 
   struct Stats {
     Stats() {}
+
     int num_request_sent = 0;
     int num_response_received = 0;
-    bool behind_nat = false;
-    bool symmetric_nat = false;
+    NatType nat_type = NATTYPE_INVALID;
     int average_rtt_ms = -1;
     int success_percent = 0;
     int target_request_interval_ns = 0;
@@ -188,7 +196,7 @@ class StunProber {
   // Method to retrieve the Stats once |finish_callback| is invoked. Returning
   // false when the result is inconclusive, for example, whether it's behind a
   // NAT or not.
-  bool GetStats(Stats* stats);
+  bool GetStats(Stats* stats) const;
 
  private:
   // A requester tracks the requests and responses from a single socket to many

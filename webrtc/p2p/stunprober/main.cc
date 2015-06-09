@@ -106,16 +106,19 @@ class HostNameResolver : public HostNameResolverInterface,
   rtc::AsyncResolver* resolver_;
 };
 
-std::string HistogramName(bool behind_nat,
-                          bool is_src_port_shared,
-                          int interval_ms,
-                          std::string suffix) {
-  char output[1000];
-  rtc::sprintfn(output, sizeof(output), "NetConnectivity6.%s.%s.%dms.%s",
-                behind_nat ? "NAT" : "NoNAT",
-                is_src_port_shared ? "SrcPortShared" : "SrcPortUnique",
-                interval_ms, suffix.c_str());
-  return std::string(output);
+const char* PrintNatType(stunprober::NatType type) {
+  switch (type) {
+    case stunprober::NATTYPE_NONE:
+      return "Not behind a NAT";
+    case stunprober::NATTYPE_UNKNOWN:
+      return "Unknown NAT type";
+    case stunprober::NATTYPE_SYMMETRIC:
+      return "Symmetric NAT";
+    case stunprober::NATTYPE_NON_SYMMETRIC:
+      return "Non-Symmetric NAT";
+    default:
+      return "Invalid";
+  }
 }
 
 void PrintStats(StunProber* prober) {
@@ -130,27 +133,15 @@ void PrintStats(StunProber* prober) {
   LOG(LS_INFO) << "Responses received: " << stats.num_response_received;
   LOG(LS_INFO) << "Target interval (ns): " << stats.target_request_interval_ns;
   LOG(LS_INFO) << "Actual interval (ns): " << stats.actual_request_interval_ns;
-  LOG(LS_INFO) << "Behind NAT: " << stats.behind_nat;
-  if (stats.behind_nat) {
-    LOG(LS_INFO) << "NAT is symmetrical: " << (stats.srflx_addrs.size() > 1);
-  }
+  LOG(LS_INFO) << "NAT Type: " << PrintNatType(stats.nat_type);
   LOG(LS_INFO) << "Host IP: " << stats.host_ip;
   LOG(LS_INFO) << "Server-reflexive ips: ";
   for (auto& ip : stats.srflx_addrs) {
     LOG(LS_INFO) << "\t" << ip;
   }
 
-  std::string histogram_name = HistogramName(
-      stats.behind_nat, FLAG_shared_socket, FLAG_interval, "SuccessPercent");
-
-  LOG(LS_INFO) << "Histogram '" << histogram_name.c_str()
-               << "' = " << stats.success_percent;
-
-  histogram_name = HistogramName(stats.behind_nat, FLAG_shared_socket,
-                                 FLAG_interval, "ResponseLatency");
-
-  LOG(LS_INFO) << "Histogram '" << histogram_name.c_str()
-               << "' = " << stats.average_rtt_ms << " ms";
+  LOG(LS_INFO) << "Success Precent: " << stats.success_percent;
+  LOG(LS_INFO) << "Response Latency:" << stats.average_rtt_ms;
 }
 
 void StopTrial(rtc::Thread* thread, StunProber* prober, int result) {

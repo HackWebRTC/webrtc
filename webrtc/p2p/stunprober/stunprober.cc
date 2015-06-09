@@ -24,9 +24,13 @@ namespace stunprober {
 
 namespace {
 
-void IncrementCounterByAddress(std::map<rtc::IPAddress, int>* counter_per_ip,
-                               const rtc::IPAddress& ip) {
+template <typename T>
+void IncrementCounterByAddress(std::map<T, int>* counter_per_ip, const T& ip) {
   counter_per_ip->insert(std::make_pair(ip, 0)).first->second++;
+}
+
+bool behind_nat(NatType nat_type) {
+  return nat_type > stunprober::NATTYPE_NONE;
 }
 
 }  // namespace
@@ -418,7 +422,7 @@ void StunProber::MaybeScheduleStunRequests() {
       rtc::Bind(&StunProber::MaybeScheduleStunRequests, this), 1 /* ms */);
 }
 
-bool StunProber::GetStats(StunProber::Stats* prob_stats) {
+bool StunProber::GetStats(StunProber::Stats* prob_stats) const {
   // No need to be on the same thread.
   if (!prob_stats) {
     return false;
@@ -427,25 +431,26 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) {
   StunProber::Stats stats;
 
   int rtt_sum = 0;
-  bool behind_nat_set = false;
   int64 first_sent_time = 0;
   int64 last_sent_time = 0;
+  NatType nat_type = NATTYPE_INVALID;
 
   // Track of how many srflx IP that we have seen.
   std::set<rtc::IPAddress> srflx_ips;
 
   // If we're not receiving any response on a given IP, all requests sent to
   // that IP should be ignored as this could just be an DNS error.
-  std::map<rtc::IPAddress, int> num_response_per_ip;
-  std::map<rtc::IPAddress, int> num_request_per_ip;
+  std::map<rtc::IPAddress, int> num_response_per_server;
+  std::map<rtc::IPAddress, int> num_request_per_server;
 
   for (auto* requester : requesters_) {
+    std::map<rtc::SocketAddress, int> num_response_per_srflx_addr;
     for (auto request : requester->requests()) {
       if (request->sent_time_ms <= 0) {
         continue;
       }
 
-      IncrementCounterByAddress(&num_request_per_ip, request->server_addr);
+      IncrementCounterByAddress(&num_request_per_server, request->server_addr);
 
       if (!first_sent_time) {
         first_sent_time = request->sent_time_ms;
@@ -456,18 +461,25 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) {
         continue;
       }
 
-      IncrementCounterByAddress(&num_response_per_ip, request->server_addr);
+      IncrementCounterByAddress(&num_response_per_server, request->server_addr);
+      IncrementCounterByAddress(&num_response_per_srflx_addr,
+                                request->srflx_addr);
 
       rtt_sum += request->rtt();
-      if (!behind_nat_set) {
-        stats.behind_nat = request->behind_nat;
-        behind_nat_set = true;
-      } else if (stats.behind_nat != request->behind_nat) {
+      if (nat_type == NATTYPE_INVALID) {
+        nat_type = request->behind_nat ? NATTYPE_UNKNOWN : NATTYPE_NONE;
+      } else if (behind_nat(nat_type) != request->behind_nat) {
         // Detect the inconsistency in NAT presence.
         return false;
       }
       stats.srflx_addrs.insert(request->srflx_addr.ToString());
       srflx_ips.insert(request->srflx_addr.ipaddr());
+    }
+
+    // If we're using shared mode and seeing >1 srflx addresses for a single
+    // requester, it's symmetric NAT.
+    if (shared_socket_mode_ && num_response_per_srflx_addr.size() > 1) {
+      nat_type = NATTYPE_SYMMETRIC;
     }
   }
 
@@ -481,11 +493,11 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) {
   int num_received = 0;
   int num_server_ip_with_response = 0;
 
-  for (const auto& kv : num_response_per_ip) {
+  for (const auto& kv : num_response_per_server) {
     DCHECK_GT(kv.second, 0);
     num_server_ip_with_response++;
     num_received += kv.second;
-    num_sent += num_request_per_ip[kv.first];
+    num_sent += num_request_per_server[kv.first];
   }
 
   // Not receiving any response, the trial is inconclusive.
@@ -493,17 +505,21 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) {
     return false;
   }
 
+  stats.nat_type = nat_type;
+
   // Shared mode is only true if we use the shared socket and there are more
   // than 1 responding servers.
   stats.shared_socket_mode =
       shared_socket_mode_ && (num_server_ip_with_response > 1);
 
+  if (stats.shared_socket_mode && nat_type == NATTYPE_UNKNOWN) {
+    stats.nat_type = NATTYPE_NON_SYMMETRIC;
+  }
+
   stats.host_ip = local_addr_.ToString();
   stats.num_request_sent = num_sent;
   stats.num_response_received = num_received;
   stats.target_request_interval_ns = interval_ms_ * 1000;
-  stats.symmetric_nat =
-      stats.srflx_addrs.size() > static_cast<size_t>(GetTotalServerSockets());
 
   if (num_sent) {
     stats.success_percent = static_cast<int>(100 * num_received / num_sent);
