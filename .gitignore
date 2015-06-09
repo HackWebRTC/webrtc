@@ -78,6 +78,7 @@
 /talk/app/webrtc/androidtests/libs
 /testing
 /third_party/WebKit/Tools/Scripts
+/third_party/android_platform
 /third_party/android_testrunner
 /third_party/android_tools
 /third_party/appurify-python
@@ -87,6 +88,7 @@
 /third_party/boringssl
 /third_party/BUILD.gn
 /third_party/clang_format
+/third_party/class-dump
 /third_party/colorama
 /third_party/cygwin
 /third_party/directxsdk
