@@ -79,8 +79,8 @@ class DtlsIdentityStore : public rtc::MessageHandler {
 
   void PostGenerateIdentityResult_w(rtc::scoped_ptr<rtc::SSLIdentity> identity);
 
-  rtc::Thread* signaling_thread_;
-  rtc::Thread* worker_thread_;
+  rtc::Thread* const signaling_thread_;
+  rtc::Thread* const worker_thread_;
 
   // These members should be accessed on the signaling thread only.
   int pending_jobs_;

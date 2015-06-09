@@ -57,13 +57,14 @@ class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
   explicit WorkerTask(DtlsIdentityStore* store)
       : signaling_thread_(rtc::Thread::Current()), store_(store) {
     store_->SignalDestroyed.connect(this, &WorkerTask::OnStoreDestroyed);
-  };
+  }
 
   virtual ~WorkerTask() { DCHECK(rtc::Thread::Current() == signaling_thread_); }
 
-  void GenerateIdentity() {
+ private:
+  void GenerateIdentity_w() {
     rtc::scoped_ptr<rtc::SSLIdentity> identity(
-      rtc::SSLIdentity::Generate(DtlsIdentityStore::kIdentityName));
+        rtc::SSLIdentity::Generate(DtlsIdentityStore::kIdentityName));
 
     {
       rtc::CritScope cs(&cs_);
@@ -76,27 +77,29 @@ class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
   void OnMessage(rtc::Message* msg) override {
     switch (msg->message_id) {
       case MSG_GENERATE_IDENTITY:
-        GenerateIdentity();
+        // This message always runs on the worker thread.
+        GenerateIdentity_w();
 
         // Must delete |this|, owned by msg->pdata, on the signaling thread to
         // avoid races on disconnecting the signal.
         signaling_thread_->Post(this, MSG_DESTROY, msg->pdata);
         break;
       case MSG_DESTROY:
+        DCHECK(rtc::Thread::Current() == signaling_thread_);
         delete msg->pdata;
+        // |this| has now been deleted. Don't touch member variables.
         break;
       default:
         CHECK(false) << "Unexpected message type";
     }
   }
 
- private:
   void OnStoreDestroyed() {
     rtc::CritScope cs(&cs_);
     store_ = NULL;
   }
 
-  rtc::Thread* signaling_thread_;
+  rtc::Thread* const signaling_thread_;
   rtc::CriticalSection cs_;
   DtlsIdentityStore* store_;
 };
@@ -116,6 +119,7 @@ DtlsIdentityStore::~DtlsIdentityStore() {
 }
 
 void DtlsIdentityStore::Initialize() {
+  DCHECK(rtc::Thread::Current() == signaling_thread_);
   // Do not aggressively generate the free identity if the worker thread and the
   // signaling thread are the same.
   if (worker_thread_ != signaling_thread_) {
@@ -139,6 +143,7 @@ void DtlsIdentityStore::RequestIdentity(DTLSIdentityRequestObserver* observer) {
 }
 
 void DtlsIdentityStore::OnMessage(rtc::Message* msg) {
+  DCHECK(rtc::Thread::Current() == signaling_thread_);
   switch (msg->message_id) {
     case MSG_GENERATE_IDENTITY_RESULT: {
       rtc::scoped_ptr<IdentityResultMessageData> pdata(
@@ -156,10 +161,12 @@ void DtlsIdentityStore::OnMessage(rtc::Message* msg) {
 }
 
 bool DtlsIdentityStore::HasFreeIdentityForTesting() const {
-  return free_identity_.get();
+  DCHECK(rtc::Thread::Current() == signaling_thread_);
+  return free_identity_.get() != nullptr;
 }
 
 void DtlsIdentityStore::GenerateIdentity() {
+  DCHECK(rtc::Thread::Current() == signaling_thread_);
   pending_jobs_++;
   LOG(LS_VERBOSE) << "New DTLS identity generation is posted, "
                   << "pending_identities=" << pending_jobs_;
@@ -191,6 +198,7 @@ void DtlsIdentityStore::OnIdentityGenerated(
 
 void DtlsIdentityStore::ReturnIdentity(
     rtc::scoped_ptr<rtc::SSLIdentity> identity) {
+  DCHECK(rtc::Thread::Current() == signaling_thread_);
   DCHECK(!free_identity_.get());
   DCHECK(!pending_observers_.empty());
 
@@ -211,8 +219,8 @@ void DtlsIdentityStore::ReturnIdentity(
   if (worker_thread_ != signaling_thread_ &&
       pending_observers_.empty() &&
       pending_jobs_ == 0) {
-      // Generate a free identity in the background.
-      GenerateIdentity();
+    // Generate a free identity in the background.
+    GenerateIdentity();
   }
 }
 
