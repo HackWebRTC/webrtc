@@ -35,6 +35,13 @@ public final class WebRtcAudioUtils {
       "D6503",   // Sony Xperia Z2 D6503
   };
 
+  // List of devices where we have seen issues (e.g. bad audio quality) using
+  // the low latency ouput mode in combination with OpenSL ES.
+  // The device name is given by Build.MODEL.
+  private static final String[] BLACKLISTED_OPEN_SL_ES_MODELS = new String[] {
+      "Nexus 6", // Nexus 6
+  };
+
   // Use 44.1kHz as the default sampling rate.
   private static final int SAMPLE_RATE_HZ = 44100;
 
@@ -73,6 +80,13 @@ public final class WebRtcAudioUtils {
   // Returns true if the device is blacklisted for HW AEC usage.
   public static boolean deviceIsBlacklistedForHwAecUsage() {
     List<String> blackListedModels = Arrays.asList(BLACKLISTED_AEC_MODELS);
+    return blackListedModels.contains(Build.MODEL);
+  }
+
+  // Returns true if the device is blacklisted for OpenSL ES usage.
+  public static boolean deviceIsBlacklistedForOpenSLESUsage() {
+    List<String> blackListedModels =
+        Arrays.asList(BLACKLISTED_OPEN_SL_ES_MODELS);
     return blackListedModels.contains(Build.MODEL);
   }
 

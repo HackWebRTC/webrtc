@@ -98,12 +98,14 @@ class AudioManager {
     bool Init();
     void Close();
     bool IsCommunicationModeEnabled();
+    bool IsDeviceBlacklistedForOpenSLESUsage();
 
    private:
     rtc::scoped_ptr<GlobalRef> audio_manager_;
     jmethodID init_;
     jmethodID dispose_;
     jmethodID is_communication_mode_enabled_;
+    jmethodID is_device_blacklisted_for_open_sles_usage_;
   };
 
   AudioManager();

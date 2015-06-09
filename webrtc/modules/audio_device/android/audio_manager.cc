@@ -34,7 +34,10 @@ AudioManager::JavaAudioManager::JavaAudioManager(
       init_(native_reg->GetMethodId("init", "()Z")),
       dispose_(native_reg->GetMethodId("dispose", "()V")),
       is_communication_mode_enabled_(
-          native_reg->GetMethodId("isCommunicationModeEnabled", "()Z")) {
+          native_reg->GetMethodId("isCommunicationModeEnabled", "()Z")),
+      is_device_blacklisted_for_open_sles_usage_(
+          native_reg->GetMethodId(
+              "isDeviceBlacklistedForOpenSLESUsage", "()Z")) {
   ALOGD("JavaAudioManager::ctor%s", GetThreadInfo().c_str());
 }
 
@@ -52,6 +55,11 @@ void AudioManager::JavaAudioManager::Close() {
 
 bool AudioManager::JavaAudioManager::IsCommunicationModeEnabled() {
   return audio_manager_->CallBooleanMethod(is_communication_mode_enabled_);
+}
+
+bool AudioManager::JavaAudioManager::IsDeviceBlacklistedForOpenSLESUsage() {
+  return audio_manager_->CallBooleanMethod(
+      is_device_blacklisted_for_open_sles_usage_);
 }
 
 // AudioManager implementation
@@ -139,10 +147,10 @@ bool AudioManager::IsAcousticEchoCancelerSupported() const {
 bool AudioManager::IsLowLatencyPlayoutSupported() const {
   DCHECK(thread_checker_.CalledOnValidThread());
   ALOGD("IsLowLatencyPlayoutSupported()");
-  // TODO(henrika): enable again once issue in b/21485703 has been sorted out.
-  // This is just a temporary fix.
-  ALOGW("NOTE: OpenSL ES output is currently disabled!");
-  return false;
+  // Some devices are blacklisted for usage of OpenSL ES even if they report
+  // that low-latency playout is supported. See b/21485703 for details.
+  return j_audio_manager_->IsDeviceBlacklistedForOpenSLESUsage() ?
+      false : low_latency_playout_;
 }
 
 int AudioManager::GetDelayEstimateInMilliseconds() const {

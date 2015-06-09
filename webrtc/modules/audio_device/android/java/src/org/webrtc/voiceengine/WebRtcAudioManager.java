@@ -108,6 +108,17 @@ class WebRtcAudioManager {
     return (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION);
   }
 
+   private boolean isDeviceBlacklistedForOpenSLESUsage() {
+    boolean blacklisted =
+        WebRtcAudioUtils.deviceIsBlacklistedForOpenSLESUsage();
+    if (blacklisted) {
+      // TODO(henrika): enable again for all devices once issue in b/21485703
+      // has been resolved.
+      Loge(Build.MODEL + " is blacklisted for OpenSL ES usage!");
+    }
+    return blacklisted;
+  }
+
   private void storeAudioParameters() {
     // Only mono is supported currently (in both directions).
     // TODO(henrika): add support for stereo playout.
