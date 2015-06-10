@@ -50,6 +50,7 @@ public class SettingsActivity extends Activity
   private String keyprefStartAudioBitrateType;
   private String keyprefStartAudioBitrateValue;
   private String keyPrefAudioCodec;
+  private String keyprefNoAudioProcessing;
 
   private String keyprefCpuUsageDetection;
   private String keyPrefRoomServerUrl;
@@ -69,6 +70,7 @@ public class SettingsActivity extends Activity
     keyprefStartAudioBitrateType = getString(R.string.pref_startaudiobitrate_key);
     keyprefStartAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
     keyPrefAudioCodec = getString(R.string.pref_audiocodec_key);
+    keyprefNoAudioProcessing = getString(R.string.pref_noaudioprocessing_key);
 
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
@@ -101,6 +103,7 @@ public class SettingsActivity extends Activity
     updateSummaryBitrate(sharedPreferences, keyprefStartAudioBitrateValue);
     setAudioBitrateEnable(sharedPreferences);
     updateSummary(sharedPreferences, keyPrefAudioCodec);
+    updateSummaryB(sharedPreferences, keyprefNoAudioProcessing);
 
     updateSummaryB(sharedPreferences, keyprefCpuUsageDetection);
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
@@ -131,6 +134,7 @@ public class SettingsActivity extends Activity
       updateSummaryBitrate(sharedPreferences, key);
     } else if (key.equals(keyprefVideoCall)
         || key.equals(keyprefHwCodec)
+        || key.equals(keyprefNoAudioProcessing)
         || key.equals(keyprefCpuUsageDetection)
         || key.equals(keyPrefDisplayHud)) {
       updateSummaryB(sharedPreferences, key);
