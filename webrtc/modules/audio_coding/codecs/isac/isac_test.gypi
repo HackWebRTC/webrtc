@@ -10,10 +10,10 @@
   'targets': [
     # simple kenny
     {
-      'target_name': 'iSACtest',
+      'target_name': 'isac_test',
       'type': 'executable',
       'dependencies': [
-        'iSAC',
+        'isac',
       ],
       'include_dirs': [
         './main/test',
@@ -28,10 +28,10 @@
     },
     # ReleaseTest-API
     {
-      'target_name': 'iSACAPITest',
+      'target_name': 'isac_api_test',
       'type': 'executable',
       'dependencies': [
-        'iSAC',
+        'isac',
       ],
       'include_dirs': [
         './main/test',
@@ -46,10 +46,10 @@
     },
     # SwitchingSampRate
     {
-      'target_name': 'iSACSwitchSampRateTest',
+      'target_name': 'isac_switch_samprate_test',
       'type': 'executable',
       'dependencies': [
-        'iSAC',
+        'isac',
       ],
       'include_dirs': [
         './main/test',
@@ -61,7 +61,7 @@
       'sources': [
         './main/test/SwitchingSampRate/SwitchingSampRate.cc',
         './main/util/utility.c',
-      ],    
+      ],
     },
 
   ],

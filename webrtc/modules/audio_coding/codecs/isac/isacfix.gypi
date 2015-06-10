@@ -9,7 +9,7 @@
 {
   'targets': [
     {
-      'target_name': 'iSACFix',
+      'target_name': 'isac_fix',
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',

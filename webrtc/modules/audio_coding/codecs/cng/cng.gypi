@@ -9,7 +9,7 @@
 {
   'targets': [
     {
-      'target_name': 'CNG',
+      'target_name': 'cng',
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',

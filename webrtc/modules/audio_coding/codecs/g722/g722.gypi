@@ -8,7 +8,7 @@
 {
   'targets': [
     {
-      'target_name': 'G722',
+      'target_name': 'g722',
       'type': 'static_library',
       'dependencies': [
         'audio_encoder_interface',
@@ -38,10 +38,10 @@
     ['include_tests==1', {
       'targets': [
         {
-          'target_name': 'G722Test',
+          'target_name': 'g722_test',
           'type': 'executable',
           'dependencies': [
-            'G722',
+            'g722',
           ],
           'sources': [
             'test/testG722.cc',

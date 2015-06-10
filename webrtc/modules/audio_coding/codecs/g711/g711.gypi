@@ -9,7 +9,7 @@
 {
   'targets': [
     {
-      'target_name': 'G711',
+      'target_name': 'g711',
       'type': 'static_library',
       'dependencies': [
         'audio_encoder_interface',
@@ -41,7 +41,7 @@
           'target_name': 'g711_test',
           'type': 'executable',
           'dependencies': [
-            'G711',
+            'g711',
           ],
           'sources': [
             'test/testG711.cc',

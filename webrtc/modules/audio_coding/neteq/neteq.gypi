@@ -9,13 +9,13 @@
 {
   'variables': {
     'codecs': [
-      'G711',
-      'G722',
-      'PCM16B',
-      'iLBC',
-      'iSAC',
-      'iSACFix',
-      'CNG',
+      'cng',
+      'g711',
+      'g722',
+      'ilbc',
+      'isac',
+      'isac_fix',
+      'pcm16b',
     ],
     'neteq_defines': [],
     'conditions': [

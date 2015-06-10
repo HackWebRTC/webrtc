@@ -64,7 +64,7 @@ source_set("audio_coding") {
     ":g722",
     ":ilbc",
     ":isac",
-    ":isacfix",
+    ":isac_fix",
     ":neteq",
     ":pcm16b",
     ":red",
@@ -469,7 +469,7 @@ config("isac_fix_config") {
   ]
 }
 
-source_set("isacfix") {
+source_set("isac_fix") {
   sources = [
     "codecs/isac/audio_encoder_isac_t.h",
     "codecs/isac/audio_encoder_isac_t_impl.h",
@@ -776,7 +776,7 @@ source_set("neteq") {
     ":g722",
     ":ilbc",
     ":isac",
-    ":isacfix",
+    ":isac_fix",
     ":pcm16b",
     "../..:webrtc_common",
     "../../common_audio",

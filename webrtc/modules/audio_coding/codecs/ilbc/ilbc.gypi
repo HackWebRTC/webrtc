@@ -9,7 +9,7 @@
 {
   'targets': [
     {
-      'target_name': 'iLBC',
+      'target_name': 'ilbc',
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
@@ -168,21 +168,21 @@
         'window32_w32.h',
         'xcorr_coef.h',
      ], # sources
-    }, # iLBC
+    }, # ilbc
   ], # targets
   'conditions': [
     ['include_tests==1', {
       'targets': [
         {
-          'target_name': 'iLBCtest',
+          'target_name': 'ilbc_test',
           'type': 'executable',
           'dependencies': [
-            'iLBC',
+            'ilbc',
           ],
           'sources': [
             'test/iLBC_test.c',
           ],
-        }, # iLBCtest
+        }, # ilbc_test
       ], # targets
     }], # include_tests
   ], # conditions

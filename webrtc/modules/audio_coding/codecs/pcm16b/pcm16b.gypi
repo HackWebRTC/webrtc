@@ -9,11 +9,11 @@
 {
   'targets': [
     {
-      'target_name': 'PCM16B',
+      'target_name': 'pcm16b',
       'type': 'static_library',
       'dependencies': [
         'audio_encoder_interface',
-        'G711',
+        'g711',
       ],
       'include_dirs': [
         'include',

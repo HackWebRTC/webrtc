@@ -9,13 +9,13 @@
 {
   'variables': {
     'audio_coding_dependencies': [
-      'CNG',
-      'G711',
-      'G722',
-      'iLBC',
-      'iSAC',
-      'iSACFix',
-      'PCM16B',
+      'cng',
+      'g711',
+      'g722',
+      'ilbc',
+      'isac',
+      'isac_fix',
+      'pcm16b',
       'red',
       '<(webrtc_root)/common.gyp:webrtc_common',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',

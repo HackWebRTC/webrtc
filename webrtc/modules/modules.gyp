@@ -62,15 +62,15 @@
             'audioproc_test_utils',
             'bitrate_controller',
             'bwe_simulator',
-            'CNG',
+            'cng',
             'desktop_capture',
-            'iSACFix',
+            'isac_fix',
             'media_file',
             'neteq',
             'neteq_test_support',
             'neteq_unittest_tools',
             'paced_sender',
-            'PCM16B',  # Needed by NetEq tests.
+            'pcm16b',  # Needed by NetEq tests.
             'red',
             'remote_bitrate_estimator',
             'rtp_rtcp',
