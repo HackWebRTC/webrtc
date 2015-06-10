@@ -13,6 +13,7 @@
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
 #include "webrtc/p2p/client/basicportallocator.h"
+#include "webrtc/p2p/client/fakeportallocator.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/firewallsocketserver.h"
@@ -1017,7 +1018,7 @@ const P2PTransportChannelTest::Result*
     P2PTransportChannelTest::kMatrixSharedSocketAsIce
         [NUM_CONFIGS][NUM_CONFIGS] = {
 //      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
-/*OP*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, PTLT, LTPT, LSRS, NULL, PTLT},
+/*OP*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, PTLT, LTPT, LSRS, NULL, LTPT},
 /*CO*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
 /*AD*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
 /*PO*/ {LULU, LUSU, LUSU, LUSU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
@@ -1697,4 +1698,112 @@ TEST_F(P2PTransportChannelMultihomedTest, TestDrain) {
       3000);
 
   DestroyChannels();
+}
+
+class P2PTransportChannelPingOrderTest : public testing::Test,
+                                         public sigslot::has_slots<> {
+ public:
+  P2PTransportChannelPingOrderTest() :
+      pss_(new rtc::PhysicalSocketServer),
+      vss_(new rtc::VirtualSocketServer(pss_.get())),
+      ss_scope_(vss_.get()) {
+  }
+
+ protected:
+  void PrepareChannel(cricket::P2PTransportChannel* ch) {
+    ch->SignalRequestSignaling.connect(
+        this, &P2PTransportChannelPingOrderTest::OnChannelRequestSignaling);
+    ch->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
+    ch->SetIceRole(cricket::ICEROLE_CONTROLLING);
+    ch->SetIceCredentials(kIceUfrag[0], kIcePwd[0]);
+    ch->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  }
+
+  void OnChannelRequestSignaling(cricket::TransportChannelImpl* channel) {
+    channel->OnSignalingReady();
+  }
+
+  cricket::Candidate CreateCandidate(const std::string& ip,
+                                     int port,
+                                     int priority) {
+    cricket::Candidate c;
+    c.set_address(rtc::SocketAddress(ip, port));
+    c.set_component(1);
+    c.set_protocol(cricket::UDP_PROTOCOL_NAME);
+    c.set_priority(priority);
+    return c;
+  }
+
+  cricket::Connection* WaitForConnectionTo(cricket::P2PTransportChannel* ch,
+                                           const std::string& ip,
+                                           int port_num) {
+    EXPECT_TRUE_WAIT(GetConnectionTo(ch, ip, port_num) != nullptr, 3000);
+    return GetConnectionTo(ch, ip, port_num);
+  }
+
+  cricket::Connection* GetConnectionTo(cricket::P2PTransportChannel* ch,
+                                       const std::string& ip,
+                                       int port_num) {
+    if (ch->ports().empty()) {
+      return nullptr;
+    }
+    cricket::Port* port = static_cast<cricket::Port*>(ch->ports()[0]);
+    if (!port) {
+      return nullptr;
+    }
+    return port->GetConnection(rtc::SocketAddress(ip, port_num));
+  }
+
+ private:
+  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
+  rtc::SocketServerScope ss_scope_;
+};
+
+TEST_F(P2PTransportChannelPingOrderTest, TestTriggeredChecks) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("trigger checks", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 2));
+
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn1 != nullptr);
+  ASSERT_TRUE(conn2 != nullptr);
+
+  // Before a triggered check, the first connection to ping is the
+  // highest priority one.
+  EXPECT_EQ(conn2, ch.FindNextPingableConnection());
+
+  // Receiving a ping causes a triggered check which should make conn1
+  // be pinged first instead of conn2, even though conn2 has a higher
+  // priority.
+  conn1->ReceivedPing();
+  EXPECT_EQ(conn1, ch.FindNextPingableConnection());
+}
+
+TEST_F(P2PTransportChannelPingOrderTest, TestNoTriggeredChecksWhenWritable) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("trigger checks", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 2));
+
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn1 != nullptr);
+  ASSERT_TRUE(conn2 != nullptr);
+
+  EXPECT_EQ(conn2, ch.FindNextPingableConnection());
+  conn1->ReceivedPingResponse();
+  ASSERT_TRUE(conn1->writable());
+  conn1->ReceivedPing();
+
+  // Ping received, but the connection is already writable, so no
+  // "triggered check" and conn2 is pinged before conn1 because it has
+  // a higher priority.
+  EXPECT_EQ(conn2, ch.FindNextPingableConnection());
 }

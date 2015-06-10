@@ -87,7 +87,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // Note: This is only for testing purpose.
   // |ports_| should not be changed from outside.
-  const std::vector<PortInterface *>& ports() { return ports_; }
+  const std::vector<PortInterface*>& ports() { return ports_; }
 
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
 

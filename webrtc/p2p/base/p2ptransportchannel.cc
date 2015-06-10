@@ -1222,17 +1222,37 @@ Connection* P2PTransportChannel::FindNextPingableConnection() {
     return best_connection_;
   }
 
-  Connection* oldest_conn = NULL;
-  uint32 oldest_time = 0xFFFFFFFF;
-  for (uint32 i = 0; i < connections_.size(); ++i) {
-    if (IsPingable(connections_[i])) {
-      if (connections_[i]->last_ping_sent() < oldest_time) {
-        oldest_time = connections_[i]->last_ping_sent();
-        oldest_conn = connections_[i];
-      }
+  // First, find "triggered checks".  We ping first those connections
+  // that have received a ping but have not sent a ping since receiving
+  // it (last_received_ping > last_sent_ping).  But we shouldn't do
+  // triggered checks if the connection is already writable.
+  Connection* oldest_needing_triggered_check = nullptr;
+  Connection* oldest = nullptr;
+  for (Connection* conn : connections_) {
+    if (!IsPingable(conn)) {
+      continue;
+    }
+    bool needs_triggered_check =
+        (protocol_type_ == ICEPROTO_RFC5245 &&
+         !conn->writable() &&
+         conn->last_ping_received() > conn->last_ping_sent());
+    if (needs_triggered_check &&
+        (!oldest_needing_triggered_check ||
+         (conn->last_ping_received() <
+          oldest_needing_triggered_check->last_ping_received()))) {
+      oldest_needing_triggered_check = conn;
+    }
+    if (!oldest || (conn->last_ping_sent() < oldest->last_ping_sent())) {
+      oldest = conn;
     }
   }
-  return oldest_conn;
+
+  if (oldest_needing_triggered_check) {
+    LOG(LS_INFO) << "Selecting connection for triggered check: " <<
+        oldest_needing_triggered_check->ToString();
+    return oldest_needing_triggered_check;
+  }
+  return oldest;
 }
 
 // Apart from sending ping from |conn| this method also updates

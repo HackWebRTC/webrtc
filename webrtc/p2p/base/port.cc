@@ -1240,6 +1240,18 @@ void Connection::ReceivedPing() {
   set_read_state(STATE_READABLE);
 }
 
+void Connection::ReceivedPingResponse() {
+  // We've already validated that this is a STUN binding response with
+  // the correct local and remote username for this connection.
+  // So if we're not already, become writable. We may be bringing a pruned
+  // connection back to life, but if we don't really want it, we can always
+  // prune it again.
+  set_write_state(STATE_WRITABLE);
+  set_state(STATE_SUCCEEDED);
+  pings_since_last_response_.clear();
+  last_ping_response_received_ = rtc::Time();
+}
+
 std::string Connection::ToDebugId() const {
   std::stringstream ss;
   ss << std::hex << this;
@@ -1304,19 +1316,13 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
   // connection.
   rtc::LoggingSeverity sev = !writable() ? rtc::LS_INFO : rtc::LS_VERBOSE;
 
-  // We've already validated that this is a STUN binding response with
-  // the correct local and remote username for this connection.
-  // So if we're not already, become writable. We may be bringing a pruned
-  // connection back to life, but if we don't really want it, we can always
-  // prune it again.
   uint32 rtt = request->Elapsed();
-  set_write_state(STATE_WRITABLE);
-  set_state(STATE_SUCCEEDED);
 
+  ReceivedPingResponse();
   if (remote_ice_mode_ == ICEMODE_LITE) {
     // A ice-lite end point never initiates ping requests. This will allow
-    // us to move to STATE_READABLE.
-    ReceivedPing();
+    // us to move to STATE_READABLE without an incoming ping request.
+    set_read_state(STATE_READABLE);
   }
 
   if (LOG_CHECK_LEVEL_V(sev)) {
@@ -1332,8 +1338,6 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
                       << ", pings_since_last_response=" << pings;
   }
 
-  pings_since_last_response_.clear();
-  last_ping_response_received_ = rtc::Time();
   rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
 
   // Peer reflexive candidate is only for RFC 5245 ICE.

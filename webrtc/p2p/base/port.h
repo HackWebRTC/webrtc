@@ -519,6 +519,7 @@ class Connection : public rtc::MessageHandler,
   // Called when this connection should try checking writability again.
   uint32 last_ping_sent() const { return last_ping_sent_; }
   void Ping(uint32 now);
+  void ReceivedPingResponse();
 
   // Called whenever a valid ping is received on this connection.  This is
   // public because the connection intercepts the first ping for us.
