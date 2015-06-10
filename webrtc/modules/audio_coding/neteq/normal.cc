@@ -108,7 +108,7 @@ int Normal::Process(const int16_t* input,
       }
 
       // If muted increase by 0.64 for every 20 ms (NB/WB 0.0040/0.0020 in Q14).
-      int16_t increment = 64 / fs_mult;
+      int increment = static_cast<int>(64 / fs_mult);
       for (size_t i = 0; i < length_per_channel; i++) {
         // Scale with mute factor.
         assert(channel_ix < output->Channels());
@@ -174,7 +174,7 @@ int Normal::Process(const int16_t* input,
     // Previous was neither of Expand, FadeToBGN or RFC3389_CNG, but we are
     // still ramping up from previous muting.
     // If muted increase by 0.64 for every 20 ms (NB/WB 0.0040/0.0020 in Q14).
-    int16_t increment = 64 / fs_mult;
+    int increment = static_cast<int>(64 / fs_mult);
     size_t length_per_channel = length / output->Channels();
     for (size_t i = 0; i < length_per_channel; i++) {
       for (size_t channel_ix = 0; channel_ix < output->Channels();

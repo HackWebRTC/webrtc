@@ -131,10 +131,10 @@ OpusFecTest::OpusFecTest()
 }
 
 void OpusFecTest::EncodeABlock() {
-  int16_t value = WebRtcOpus_Encode(opus_encoder_,
-                                    &in_data_[data_pointer_],
-                                    block_length_sample_,
-                                    max_bytes_, &bit_stream_[0]);
+  int value = WebRtcOpus_Encode(opus_encoder_,
+                                &in_data_[data_pointer_],
+                                block_length_sample_,
+                                max_bytes_, &bit_stream_[0]);
   EXPECT_GT(value, 0);
 
   encoded_bytes_ = value;
@@ -142,7 +142,7 @@ void OpusFecTest::EncodeABlock() {
 
 void OpusFecTest::DecodeABlock(bool lost_previous, bool lost_current) {
   int16_t audio_type;
-  int16_t value_1 = 0, value_2 = 0;
+  int value_1 = 0, value_2 = 0;
 
   if (lost_previous) {
     // Decode previous frame.

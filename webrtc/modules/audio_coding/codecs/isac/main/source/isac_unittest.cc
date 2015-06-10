@@ -79,7 +79,7 @@ TEST_F(IsacTest, IsacUpdateBWE) {
   WebRtcIsac_EncoderInit(isac_codec_, 0);
   WebRtcIsac_DecoderInit(isac_codec_);
 
-  int16_t encoded_bytes;
+  int encoded_bytes;
 
   // Test with call with a small packet (sync packet).
   EXPECT_EQ(-1, WebRtcIsac_UpdateBwEstimate(isac_codec_, bitstream_small_, 7, 1,

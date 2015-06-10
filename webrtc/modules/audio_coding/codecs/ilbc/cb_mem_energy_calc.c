@@ -28,7 +28,7 @@ void WebRtcIlbcfix_CbMemEnergyCalc(
     int16_t *ppo,   /* (i) input pointer 2 */
     int16_t *energyW16,  /* (o) Energy in the CB vectors */
     int16_t *energyShifts, /* (o) Shift value of the energy */
-    int16_t scale,   /* (i) The scaling of all energy values */
+    int scale,   /* (i) The scaling of all energy values */
     int16_t base_size  /* (i) Index to where the energy values should be stored */
                                    )
 {

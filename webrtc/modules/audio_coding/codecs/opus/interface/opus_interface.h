@@ -64,11 +64,11 @@ int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
  * Return value                 : >=0 - Length (in bytes) of coded data
  *                                -1 - Error
  */
-int16_t WebRtcOpus_Encode(OpusEncInst* inst,
-                          const int16_t* audio_in,
-                          int16_t samples,
-                          int16_t length_encoded_buffer,
-                          uint8_t* encoded);
+int WebRtcOpus_Encode(OpusEncInst* inst,
+                      const int16_t* audio_in,
+                      int16_t samples,
+                      int16_t length_encoded_buffer,
+                      uint8_t* encoded);
 
 /****************************************************************************
  * WebRtcOpus_SetBitRate(...)
@@ -236,9 +236,9 @@ int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst);
  * Return value              : >0 - Samples per channel in decoded vector
  *                             -1 - Error
  */
-int16_t WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
-                          int16_t encoded_bytes, int16_t* decoded,
-                          int16_t* audio_type);
+int WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
+                      int16_t encoded_bytes, int16_t* decoded,
+                      int16_t* audio_type);
 
 /****************************************************************************
  * WebRtcOpus_DecodePlc(...)
@@ -254,8 +254,8 @@ int16_t WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
  * Return value                   : >0 - number of samples in decoded PLC vector
  *                                  -1 - Error
  */
-int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
-                             int16_t number_of_lost_frames);
+int WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
+                         int number_of_lost_frames);
 
 /****************************************************************************
  * WebRtcOpus_DecodeFec(...)
@@ -275,9 +275,9 @@ int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
  *                              0 - No FEC data in the packet
  *                             -1 - Error
  */
-int16_t WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
-                             int16_t encoded_bytes, int16_t* decoded,
-                             int16_t* audio_type);
+int WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
+                         int16_t encoded_bytes, int16_t* decoded,
+                         int16_t* audio_type);
 
 /****************************************************************************
  * WebRtcOpus_DurationEst(...)

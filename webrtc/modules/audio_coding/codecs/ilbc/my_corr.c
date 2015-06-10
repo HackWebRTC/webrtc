@@ -29,7 +29,8 @@ void WebRtcIlbcfix_MyCorr(
     const int16_t *seq2, /* (i) second sequence */
     int16_t dim2   /* (i) dimension seq2 */
                           ){
-  int16_t max, scale, loops;
+  int16_t max, loops;
+  int scale;
 
   /* Calculate correlation between the two sequences. Scale the
      result of the multiplcication to maximum 26 bits in order
@@ -37,7 +38,7 @@ void WebRtcIlbcfix_MyCorr(
   max=WebRtcSpl_MaxAbsValueW16(seq1, dim1);
   scale=WebRtcSpl_GetSizeInBits(max);
 
-  scale = (int16_t)(2 * scale - 26);
+  scale = 2 * scale - 26;
   if (scale<0) {
     scale=0;
   }

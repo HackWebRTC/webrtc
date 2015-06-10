@@ -128,9 +128,9 @@ extern "C" {
    *                            -1 - Error
    */
 
-  int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
-                               const int16_t *speechIn,
-                               uint8_t* encoded);
+  int WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
+                           const int16_t *speechIn,
+                           uint8_t* encoded);
 
 
 
@@ -251,11 +251,11 @@ extern "C" {
    *                            -1 - Error
    */
 
-  int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
-                               const uint8_t* encoded,
-                               int16_t len,
-                               int16_t *decoded,
-                               int16_t *speechType);
+  int WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
+                           const uint8_t* encoded,
+                           int16_t len,
+                           int16_t *decoded,
+                           int16_t *speechType);
 
 
   /****************************************************************************
@@ -280,11 +280,11 @@ extern "C" {
    */
 
 #ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
-  int16_t WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
-                                 const uint16_t *encoded,
-                                 int16_t len,
-                                 int16_t *decoded,
-                                 int16_t *speechType);
+  int WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
+                             const uint16_t *encoded,
+                             int16_t len,
+                             int16_t *decoded,
+                             int16_t *speechType);
 #endif //  WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 
 
@@ -378,8 +378,8 @@ extern "C" {
    */
 
   int16_t WebRtcIsacfix_Control(ISACFIX_MainStruct *ISAC_main_inst,
-                                int16_t          rate,
-                                int16_t          framesize);
+                                int16_t rate,
+                                int framesize);
 
 
 
@@ -407,7 +407,7 @@ extern "C" {
 
   int16_t WebRtcIsacfix_ControlBwe(ISACFIX_MainStruct *ISAC_main_inst,
                                    int16_t rateBPS,
-                                   int16_t frameSizeMs,
+                                   int frameSizeMs,
                                    int16_t enforceFrameSize);
 
 
