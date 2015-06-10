@@ -260,6 +260,12 @@ static long stream_ctrl(BIO* b, int cmd, long num, void* ptr) {
       return 0;
     case BIO_CTRL_FLUSH:
       return 1;
+    case BIO_CTRL_DGRAM_QUERY_MTU:
+      // openssl defaults to mtu=256 unless we return something here.
+      // The handshake doesn't actually need to send packets above 1k,
+      // so this seems like a sensible value that should work in most cases.
+      // Webrtc uses the same value for video packets.
+      return 1200;
     default:
       return 0;
   }
