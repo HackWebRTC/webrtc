@@ -134,19 +134,11 @@ float NoiseSuppressionImpl::speech_probability() const {
 }
 
 void* NoiseSuppressionImpl::CreateHandle() const {
-  Handle* handle = NULL;
 #if defined(WEBRTC_NS_FLOAT)
-  if (WebRtcNs_Create(&handle) != apm_->kNoError)
+  return WebRtcNs_Create();
 #elif defined(WEBRTC_NS_FIXED)
-  if (WebRtcNsx_Create(&handle) != apm_->kNoError)
+  return WebRtcNsx_Create();
 #endif
-  {
-    handle = NULL;
-  } else {
-    assert(handle != NULL);
-  }
-
-  return handle;
 }
 
 void NoiseSuppressionImpl::DestroyHandle(void* handle) const {

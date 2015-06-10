@@ -337,14 +337,7 @@ void EchoCancellationImpl::SetExtraOptions(const Config& config) {
 }
 
 void* EchoCancellationImpl::CreateHandle() const {
-  Handle* handle = NULL;
-  if (WebRtcAec_Create(&handle) != apm_->kNoError) {
-    handle = NULL;
-  } else {
-    assert(handle != NULL);
-  }
-
-  return handle;
+  return WebRtcAec_Create();
 }
 
 void EchoCancellationImpl::DestroyHandle(void* handle) const {

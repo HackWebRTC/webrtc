@@ -51,7 +51,7 @@ typedef struct Stats {
 
 typedef struct AecCore AecCore;
 
-int WebRtcAec_CreateAec(AecCore** aec);
+AecCore* WebRtcAec_CreateAec();  // Returns NULL on error.
 void WebRtcAec_FreeAec(AecCore* aec);
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq);
 void WebRtcAec_InitAec_SSE2(void);

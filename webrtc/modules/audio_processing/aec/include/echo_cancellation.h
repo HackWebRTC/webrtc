@@ -64,19 +64,10 @@ extern "C" {
 
 /*
  * Allocates the memory needed by the AEC. The memory needs to be initialized
- * separately using the WebRtcAec_Init() function.
- *
- * Inputs                       Description
- * -------------------------------------------------------------------
- * void**  aecInst              Pointer to the AEC instance to be created
- *                              and initialized
- *
- * Outputs                      Description
- * -------------------------------------------------------------------
- * int32_t return               0: OK
- *                             -1: error
+ * separately using the WebRtcAec_Init() function. Returns a pointer to the
+ * object or NULL on error.
  */
-int32_t WebRtcAec_Create(void** aecInst);
+void* WebRtcAec_Create();
 
 /*
  * This function releases the memory allocated by WebRtcAec_Create().

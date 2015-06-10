@@ -118,28 +118,22 @@ static void ProcessExtended(Aec* self,
                             int16_t reported_delay_ms,
                             int32_t skew);
 
-int32_t WebRtcAec_Create(void** aecInst) {
-  Aec* aecpc;
-  if (aecInst == NULL) {
-    return -1;
+void* WebRtcAec_Create() {
+  Aec* aecpc = malloc(sizeof(Aec));
+
+  if (!aecpc) {
+    return NULL;
   }
 
-  aecpc = malloc(sizeof(Aec));
-  *aecInst = aecpc;
-  if (aecpc == NULL) {
-    return -1;
-  }
-
-  if (WebRtcAec_CreateAec(&aecpc->aec) == -1) {
+  aecpc->aec = WebRtcAec_CreateAec();
+  if (!aecpc->aec) {
     WebRtcAec_Free(aecpc);
-    aecpc = NULL;
-    return -1;
+    return NULL;
   }
-
-  if (WebRtcAec_CreateResampler(&aecpc->resampler) == -1) {
+  aecpc->resampler = WebRtcAec_CreateResampler();
+  if (!aecpc->resampler) {
     WebRtcAec_Free(aecpc);
-    aecpc = NULL;
-    return -1;
+    return NULL;
   }
   // Create far-end pre-buffer. The buffer size has to be large enough for
   // largest possible drift compensation (kResamplerBufferSize) + "almost" an
@@ -148,8 +142,7 @@ int32_t WebRtcAec_Create(void** aecInst) {
       WebRtc_CreateBuffer(PART_LEN2 + kResamplerBufferSize, sizeof(float));
   if (!aecpc->far_pre_buf) {
     WebRtcAec_Free(aecpc);
-    aecpc = NULL;
-    return -1;
+    return NULL;
   }
 
   aecpc->initFlag = 0;
@@ -168,7 +161,7 @@ int32_t WebRtcAec_Create(void** aecInst) {
   }
 #endif
 
-  return 0;
+  return aecpc;
 }
 
 void WebRtcAec_Free(void* aecInst) {

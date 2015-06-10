@@ -20,8 +20,8 @@ enum {
   kResamplerBufferSize = FRAME_LEN * 4
 };
 
-// Unless otherwise specified, functions return 0 on success and -1 on error
-int WebRtcAec_CreateResampler(void** resampInst);
+// Unless otherwise specified, functions return 0 on success and -1 on error.
+void* WebRtcAec_CreateResampler();  // Returns NULL on error.
 int WebRtcAec_InitResampler(void* resampInst, int deviceSampleRateHz);
 void WebRtcAec_FreeResampler(void* resampInst);
 

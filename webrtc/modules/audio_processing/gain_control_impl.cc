@@ -301,14 +301,7 @@ int GainControlImpl::Initialize() {
 }
 
 void* GainControlImpl::CreateHandle() const {
-  Handle* handle = NULL;
-  if (WebRtcAgc_Create(&handle) != apm_->kNoError) {
-    handle = NULL;
-  } else {
-    assert(handle != NULL);
-  }
-
-  return handle;
+  return WebRtcAgc_Create();
 }
 
 void GainControlImpl::DestroyHandle(void* handle) const {

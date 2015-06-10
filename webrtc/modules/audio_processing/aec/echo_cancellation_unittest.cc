@@ -20,22 +20,20 @@ extern "C" {
 }
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
 TEST(EchoCancellationTest, CreateAndFreeHasExpectedBehavior) {
-  EXPECT_EQ(-1, WebRtcAec_Create(NULL));
-  void* handle = NULL;
-  ASSERT_EQ(0, WebRtcAec_Create(&handle));
-  EXPECT_TRUE(handle != NULL);
+  void* handle = WebRtcAec_Create();
+  ASSERT_TRUE(handle);
   WebRtcAec_Free(nullptr);
   WebRtcAec_Free(handle);
 }
 
 TEST(EchoCancellationTest, ApplyAecCoreHandle) {
-  void* handle = NULL;
-  ASSERT_EQ(0, WebRtcAec_Create(&handle));
-  EXPECT_TRUE(handle != NULL);
+  void* handle = WebRtcAec_Create();
+  ASSERT_TRUE(handle);
   EXPECT_TRUE(WebRtcAec_aec_core(NULL) == NULL);
   AecCore* aec_core = WebRtcAec_aec_core(handle);
   EXPECT_TRUE(aec_core != NULL);

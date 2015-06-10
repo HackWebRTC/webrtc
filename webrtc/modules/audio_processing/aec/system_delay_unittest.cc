@@ -9,6 +9,7 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/checks.h"
 extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 }
@@ -67,7 +68,8 @@ SystemDelayTest::SystemDelayTest()
 }
 
 void SystemDelayTest::SetUp() {
-  ASSERT_EQ(0, WebRtcAec_Create(&handle_));
+  handle_ = WebRtcAec_Create();
+  ASSERT_TRUE(handle_);
   self_ = reinterpret_cast<Aec*>(handle_);
 }
 

@@ -16,19 +16,12 @@
 #include "webrtc/modules/audio_processing/ns/nsx_core.h"
 #include "webrtc/modules/audio_processing/ns/nsx_defines.h"
 
-int WebRtcNsx_Create(NsxHandle** nsxInst) {
+NsxHandle* WebRtcNsx_Create() {
   NoiseSuppressionFixedC* self = malloc(sizeof(NoiseSuppressionFixedC));
-  *nsxInst = (NsxHandle*)self;
-
-  if (self != NULL) {
-    WebRtcSpl_Init();
-    self->real_fft = NULL;
-    self->initFlag = 0;
-    return 0;
-  } else {
-    return -1;
-  }
-
+  WebRtcSpl_Init();
+  self->real_fft = NULL;
+  self->initFlag = 0;
+  return (NsxHandle*)self;
 }
 
 void WebRtcNsx_Free(NsxHandle* nsxInst) {

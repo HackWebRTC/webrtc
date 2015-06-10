@@ -1313,31 +1313,19 @@ int WebRtcAgc_get_config(void* agcInst, WebRtcAgcConfig* config) {
     return 0;
 }
 
-int WebRtcAgc_Create(void **agcInst)
-{
-  LegacyAgc* stt;
-    if (agcInst == NULL)
-    {
-        return -1;
-    }
-    stt = (LegacyAgc*)malloc(sizeof(LegacyAgc));
-
-    *agcInst = stt;
-    if (stt == NULL)
-    {
-        return -1;
-    }
+void* WebRtcAgc_Create() {
+  LegacyAgc* stt = malloc(sizeof(LegacyAgc));
 
 #ifdef WEBRTC_AGC_DEBUG_DUMP
-    stt->fpt = fopen("./agc_test_log.txt", "wt");
-    stt->agcLog = fopen("./agc_debug_log.txt", "wt");
-    stt->digitalAgc.logFile = fopen("./agc_log.txt", "wt");
+  stt->fpt = fopen("./agc_test_log.txt", "wt");
+  stt->agcLog = fopen("./agc_debug_log.txt", "wt");
+  stt->digitalAgc.logFile = fopen("./agc_log.txt", "wt");
 #endif
 
-    stt->initFlag = 0;
-    stt->lastError = 0;
+  stt->initFlag = 0;
+  stt->lastError = 0;
 
-    return 0;
+  return stt;
 }
 
 void WebRtcAgc_Free(void *state) {

@@ -20,20 +20,9 @@ extern "C" {
 #endif
 
 /*
- * This function creates an instance to the noise reduction structure
- *
- * Input:
- *      - nsxInst       : Pointer to noise reduction instance that should be
- *                       created
- *
- * Output:
- *      - nsxInst       : Pointer to created noise reduction instance
- *
- * Return value         :  0 - Ok
- *                        -1 - Error
+ * This function creates an instance of the fixed point Noise Suppression.
  */
-int WebRtcNsx_Create(NsxHandle** nsxInst);
-
+NsxHandle* WebRtcNsx_Create();
 
 /*
  * This function frees the dynamic memory of a specified Noise Suppression

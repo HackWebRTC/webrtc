@@ -1367,26 +1367,23 @@ static void ProcessBlock(AecCore* aec) {
 #endif
 }
 
-int WebRtcAec_CreateAec(AecCore** aecInst) {
+AecCore* WebRtcAec_CreateAec() {
   int i;
   AecCore* aec = malloc(sizeof(AecCore));
-  *aecInst = aec;
-  if (aec == NULL) {
-    return -1;
+  if (!aec) {
+    return NULL;
   }
 
   aec->nearFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(float));
   if (!aec->nearFrBuf) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
 
   aec->outFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(float));
   if (!aec->outFrBuf) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
 
   for (i = 0; i < NUM_HIGH_BANDS_MAX; ++i) {
@@ -1394,15 +1391,13 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
                                              sizeof(float));
     if (!aec->nearFrBufH[i]) {
       WebRtcAec_FreeAec(aec);
-      aec = NULL;
-      return -1;
+      return NULL;
     }
     aec->outFrBufH[i] = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
                                             sizeof(float));
     if (!aec->outFrBufH[i]) {
       WebRtcAec_FreeAec(aec);
-      aec = NULL;
-      return -1;
+      return NULL;
     }
   }
 
@@ -1411,15 +1406,13 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
       WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * 2 * PART_LEN1);
   if (!aec->far_buf) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
   aec->far_buf_windowed =
       WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * 2 * PART_LEN1);
   if (!aec->far_buf_windowed) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   aec->instance_index = webrtc_aec_instance_count;
@@ -1427,8 +1420,7 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
       WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * PART_LEN);
   if (!aec->far_time_buf) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
   aec->farFile = aec->nearFile = aec->outFile = aec->outLinearFile = NULL;
   aec->debug_dump_count = 0;
@@ -1437,8 +1429,7 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
       WebRtc_CreateDelayEstimatorFarend(PART_LEN1, kHistorySizeBlocks);
   if (aec->delay_estimator_farend == NULL) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
   // We create the delay_estimator with the same amount of maximum lookahead as
   // the delay history size (kHistorySizeBlocks) for symmetry reasons.
@@ -1446,8 +1437,7 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
       aec->delay_estimator_farend, kHistorySizeBlocks);
   if (aec->delay_estimator == NULL) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
 #ifdef WEBRTC_ANDROID
   // DA-AEC assumes the system is causal from the beginning and will self adjust
@@ -1485,7 +1475,7 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
 
   aec_rdft_init();
 
-  return 0;
+  return aec;
 }
 
 void WebRtcAec_FreeAec(AecCore* aec) {
