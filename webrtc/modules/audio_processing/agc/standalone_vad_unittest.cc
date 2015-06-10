@@ -16,6 +16,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -54,7 +55,7 @@ TEST(StandaloneVadTest, Api) {
   EXPECT_EQ(kMode, vad->mode());
 }
 
-TEST(StandaloneVadTest, ActivityDetection) {
+TEST(StandaloneVadTest, DISABLED_ON_IOS(ActivityDetection)) {
   rtc::scoped_ptr<StandaloneVad> vad(StandaloneVad::Create());
   const size_t kDataLength = kLength10Ms;
   int16_t data[kDataLength] = { 0 };

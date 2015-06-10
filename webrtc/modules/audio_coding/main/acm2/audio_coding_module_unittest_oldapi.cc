@@ -595,7 +595,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   rtc::scoped_ptr<SimulatedClock> fake_clock_;
 };
 
-TEST_F(AudioCodingModuleMtTestOldApi, DoTest) {
+TEST_F(AudioCodingModuleMtTestOldApi, DISABLED_ON_IOS(DoTest)) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
@@ -695,9 +695,13 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   test::AudioLoop audio_loop_;
 };
 
-TEST_F(AcmIsacMtTestOldApi, DoTest) {
+TEST_F(AcmIsacMtTestOldApi, DISABLED_ON_IOS(DoTest)) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
+
+// Disabling all of these tests on iOS until file support has been added.
+// See https://code.google.com/p/webrtc/issues/detail?id=4752 for details.
+#if !defined(WEBRTC_IOS)
 
 class AcmReceiverBitExactnessOldApi : public ::testing::Test {
  public:
@@ -1524,4 +1528,7 @@ TEST_F(AcmSwitchingOutputFrequencyOldApi, Toggle16KhzTo8Khz) {
 TEST_F(AcmSwitchingOutputFrequencyOldApi, Toggle8KhzTo16Khz) {
   Run(8000, 16000, 1000);
 }
+
+#endif
+
 }  // namespace webrtc

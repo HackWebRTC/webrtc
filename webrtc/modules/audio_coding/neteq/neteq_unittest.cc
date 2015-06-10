@@ -437,7 +437,10 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestBitExactness)) {
+// TODO(henrika): add support for IOS for all tests in this file.
+// See https://code.google.com/p/webrtc/issues/detail?id=4752 for details.
+TEST_F(NetEqDecodingTest,
+       DISABLED_ON_IOS(DISABLED_ON_ANDROID(TestBitExactness))) {
   const std::string input_rtp_file = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq_universal_new.rtp";
   // Note that neteq4_universal_ref.pcm and neteq4_universal_ref_win_32.pcm
@@ -1052,19 +1055,19 @@ class NetEqBgnTestFade : public NetEqBgnTest {
   }
 };
 
-TEST_F(NetEqBgnTestOn, RunTest) {
+TEST_F(NetEqBgnTestOn, DISABLED_ON_IOS(RunTest)) {
   CheckBgn(8000);
   CheckBgn(16000);
   CheckBgn(32000);
 }
 
-TEST_F(NetEqBgnTestOff, RunTest) {
+TEST_F(NetEqBgnTestOff, DISABLED_ON_IOS(RunTest)) {
   CheckBgn(8000);
   CheckBgn(16000);
   CheckBgn(32000);
 }
 
-TEST_F(NetEqBgnTestFade, RunTest) {
+TEST_F(NetEqBgnTestFade, DISABLED_ON_IOS(RunTest)) {
   CheckBgn(8000);
   CheckBgn(16000);
   CheckBgn(32000);

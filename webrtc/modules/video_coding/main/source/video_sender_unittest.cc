@@ -386,7 +386,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
 };
 
 TEST_F(TestVideoSenderWithVp8,
-       DISABLED_ON_ANDROID(FixedTemporalLayersStrategy)) {
+       DISABLED_ON_IOS(DISABLED_ON_ANDROID(FixedTemporalLayersStrategy))) {
   const int low_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][0];
   const int mid_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][1];
   const int high_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][2];
@@ -401,7 +401,7 @@ TEST_F(TestVideoSenderWithVp8,
 }
 
 TEST_F(TestVideoSenderWithVp8,
-       DISABLED_ON_ANDROID(RealTimeTemporalLayersStrategy)) {
+       DISABLED_ON_IOS(DISABLED_ON_ANDROID(RealTimeTemporalLayersStrategy))) {
   Config extra_options;
   extra_options.Set<TemporalLayers::Factory>(
       new RealTimeTemporalLayersFactory());

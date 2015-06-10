@@ -11,6 +11,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc_cng.h"
 
 namespace webrtc {
@@ -61,14 +62,14 @@ void CngTest::SetUp() {
 }
 
 // Test failing Create.
-TEST_F(CngTest, CngCreateFail) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngCreateFail)) {
   // Test to see that an invalid pointer is caught.
   EXPECT_EQ(-1, WebRtcCng_CreateEnc(NULL));
   EXPECT_EQ(-1, WebRtcCng_CreateDec(NULL));
 }
 
 // Test normal Create.
-TEST_F(CngTest, CngCreate) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngCreate)) {
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_TRUE(cng_enc_inst_ != NULL);
@@ -79,7 +80,7 @@ TEST_F(CngTest, CngCreate) {
 }
 
 // Create CNG encoder, init with faulty values, free CNG encoder.
-TEST_F(CngTest, CngInitFail) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngInitFail)) {
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
 
@@ -97,7 +98,7 @@ TEST_F(CngTest, CngInitFail) {
   EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
 }
 
-TEST_F(CngTest, CngEncode) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngEncode)) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t number_bytes;
 
@@ -149,7 +150,7 @@ TEST_F(CngTest, CngEncode) {
 }
 
 // Encode Cng with too long input vector.
-TEST_F(CngTest, CngEncodeTooLong) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngEncodeTooLong)) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t number_bytes;
 
@@ -168,7 +169,7 @@ TEST_F(CngTest, CngEncodeTooLong) {
 }
 
 // Call encode without calling init.
-TEST_F(CngTest, CngEncodeNoInit) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngEncodeNoInit)) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t number_bytes;
 
@@ -185,7 +186,7 @@ TEST_F(CngTest, CngEncodeNoInit) {
 }
 
 // Update SID parameters, for both 9 and 16 parameters.
-TEST_F(CngTest, CngUpdateSid) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngUpdateSid)) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t number_bytes;
 
@@ -222,7 +223,7 @@ TEST_F(CngTest, CngUpdateSid) {
 }
 
 // Update SID parameters, with wrong parameters or without calling decode.
-TEST_F(CngTest, CngUpdateSidErroneous) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngUpdateSidErroneous)) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t number_bytes;
 
@@ -258,7 +259,7 @@ TEST_F(CngTest, CngUpdateSidErroneous) {
 }
 
 // Test to generate cng data, by forcing SID. Both normal and faulty condition.
-TEST_F(CngTest, CngGenerate) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngGenerate)) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t out_data[640];
   int16_t number_bytes;
@@ -292,7 +293,7 @@ TEST_F(CngTest, CngGenerate) {
 }
 
 // Test automatic SID.
-TEST_F(CngTest, CngAutoSid) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngAutoSid)) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t number_bytes;
 
@@ -319,7 +320,7 @@ TEST_F(CngTest, CngAutoSid) {
 }
 
 // Test automatic SID, with very short interval.
-TEST_F(CngTest, CngAutoSidShort) {
+TEST_F(CngTest, DISABLED_ON_IOS(CngAutoSidShort)) {
   uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t number_bytes;
 

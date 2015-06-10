@@ -28,7 +28,8 @@ class MediaFileTest : public testing::Test {
   webrtc::MediaFile* media_file_;
 };
 
-TEST_F(MediaFileTest, DISABLED_ON_ANDROID(StartPlayingAudioFileWithoutError)) {
+TEST_F(MediaFileTest, DISABLED_ON_IOS(
+       DISABLED_ON_ANDROID(StartPlayingAudioFileWithoutError))) {
   // TODO(leozwang): Use hard coded filename here, we want to
   // loop through all audio files in future
   const std::string audio_file = webrtc::test::ProjectRootPath() +
@@ -46,7 +47,7 @@ TEST_F(MediaFileTest, DISABLED_ON_ANDROID(StartPlayingAudioFileWithoutError)) {
   ASSERT_EQ(0, media_file_->StopPlaying());
 }
 
-TEST_F(MediaFileTest, WriteWavFile) {
+TEST_F(MediaFileTest, DISABLED_ON_IOS(WriteWavFile)) {
   // Write file.
   static const size_t kHeaderSize = 44;
   static const size_t kPayloadSize = 320;

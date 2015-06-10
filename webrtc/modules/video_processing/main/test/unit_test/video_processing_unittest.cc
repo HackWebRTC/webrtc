@@ -16,6 +16,7 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -93,7 +94,7 @@ void VideoProcessingModuleTest::TearDown() {
   vpm_ = NULL;
 }
 
-TEST_F(VideoProcessingModuleTest, HandleNullBuffer) {
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(HandleNullBuffer)) {
   // TODO(mikhal/stefan): Do we need this one?
   VideoProcessingModule::FrameStats stats;
   // Video frame with unallocated buffer.
@@ -106,7 +107,7 @@ TEST_F(VideoProcessingModuleTest, HandleNullBuffer) {
   EXPECT_EQ(-3, vpm_->BrightnessDetection(videoFrame, stats));
 }
 
-TEST_F(VideoProcessingModuleTest, HandleBadStats) {
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(HandleBadStats)) {
   VideoProcessingModule::FrameStats stats;
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
@@ -119,7 +120,7 @@ TEST_F(VideoProcessingModuleTest, HandleBadStats) {
   EXPECT_EQ(-3, vpm_->BrightnessDetection(video_frame_, stats));
 }
 
-TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset) {
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(IdenticalResultsAfterReset)) {
   VideoFrame video_frame2;
   VideoProcessingModule::FrameStats stats;
   // Only testing non-static functions here.
@@ -149,7 +150,7 @@ TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset) {
   EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
 }
 
-TEST_F(VideoProcessingModuleTest, FrameStats) {
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(FrameStats)) {
   VideoProcessingModule::FrameStats stats;
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
@@ -174,7 +175,7 @@ TEST_F(VideoProcessingModuleTest, FrameStats) {
   EXPECT_FALSE(vpm_->ValidFrameStats(stats));
 }
 
-TEST_F(VideoProcessingModuleTest, PreprocessorLogic) {
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(PreprocessorLogic)) {
   // Disable temporal sampling (frame dropping).
   vpm_->EnableTemporalDecimation(false);
   int resolution = 100;
@@ -194,7 +195,7 @@ TEST_F(VideoProcessingModuleTest, PreprocessorLogic) {
   EXPECT_TRUE(out_frame == NULL);
 }
 
-TEST_F(VideoProcessingModuleTest, Resampler) {
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Resampler)) {
   enum { NumRuns = 1 };
 
   int64_t min_runtime = 0;

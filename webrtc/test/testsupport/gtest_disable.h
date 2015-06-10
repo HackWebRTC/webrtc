@@ -36,10 +36,22 @@
 #define DISABLED_ON_WIN(test) test
 #endif
 
+// Using some extra magic here to be able to chain Android and iOS macros.
+// http://stackoverflow.com/questions/8231966/why-do-i-need-double-layer-of-indirection-for-macros
 #ifdef WEBRTC_ANDROID
-#define DISABLED_ON_ANDROID(test) DISABLED_##test
+#define DISABLED_ON_ANDROID_HIDDEN(test) DISABLED_##test
+#define DISABLED_ON_ANDROID(test) DISABLED_ON_ANDROID_HIDDEN(test)
 #else
-#define DISABLED_ON_ANDROID(test) test
+#define DISABLED_ON_ANDROID_HIDDEN(test) test
+#define DISABLED_ON_ANDROID(test) DISABLED_ON_ANDROID_HIDDEN(test)
+#endif
+
+#ifdef WEBRTC_IOS
+#define DISABLED_ON_IOS_HIDDEN(test) DISABLED_##test
+#define DISABLED_ON_IOS(test) DISABLED_ON_IOS_HIDDEN(test)
+#else
+#define DISABLED_ON_IOS_HIDDEN(test) test
+#define DISABLED_ON_IOS(test) DISABLED_ON_IOS_HIDDEN(test)
 #endif
 
 #endif  // TEST_TESTSUPPORT_INCLUDE_GTEST_DISABLE_H_

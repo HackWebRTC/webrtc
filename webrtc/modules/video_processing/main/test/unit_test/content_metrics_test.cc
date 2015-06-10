@@ -12,10 +12,11 @@
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/modules/video_processing/main/source/content_analysis.h"
 #include "webrtc/modules/video_processing/main/test/unit_test/video_processing_unittest.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
-TEST_F(VideoProcessingModuleTest, ContentAnalysis) {
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(ContentAnalysis)) {
   VPMContentAnalysis    ca__c(false);
   VPMContentAnalysis    ca__sse(true);
   VideoContentMetrics  *_cM_c, *_cM_SSE;

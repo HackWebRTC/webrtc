@@ -17,6 +17,7 @@
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -233,7 +234,7 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
   int16_t output_[kMaxBlockSize];
 };
 
-TEST_F(NetEqExternalVsInternalDecoderTest, RunTest) {
+TEST_F(NetEqExternalVsInternalDecoderTest, DISABLED_ON_IOS(RunTest)) {
   RunTest(100);  // Run 100 laps @ 10 ms each in the test loop.
 }
 
@@ -328,7 +329,7 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
   int16_t output_[kMaxBlockSize];
 };
 
-TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRange) {
+TEST_F(LargeTimestampJumpTest, DISABLED_ON_IOS(JumpLongerThanHalfRange)) {
   // Set the timestamp series to start at 2880, increase to 7200, then jump to
   // 2869342376. The sequence numbers start at 42076 and increase by 1 for each
   // packet, also when the timestamp jumps.
@@ -352,7 +353,8 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRange) {
   EXPECT_EQ(kRecovered, test_state_);
 }
 
-TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRangeAndWrap) {
+TEST_F(LargeTimestampJumpTest,
+       DISABLED_ON_IOS(JumpLongerThanHalfRangeAndWrap)) {
   // Make a jump larger than half the 32-bit timestamp range. Set the start
   // timestamp such that the jump will result in a wrap around.
   static const uint16_t kStartSeqeunceNumber = 42076;
@@ -411,7 +413,7 @@ class ShortTimestampJumpTest : public LargeTimestampJumpTest {
   }
 };
 
-TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRange) {
+TEST_F(ShortTimestampJumpTest, DISABLED_ON_IOS(JumpShorterThanHalfRange)) {
   // Make a jump shorter than half the 32-bit timestamp range. Set the start
   // timestamp such that the jump will not result in a wrap around.
   static const uint16_t kStartSeqeunceNumber = 42076;
@@ -435,7 +437,8 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRange) {
   EXPECT_EQ(kRecovered, test_state_);
 }
 
-TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRangeAndWrap) {
+TEST_F(ShortTimestampJumpTest,
+       DISABLED_ON_IOS(JumpShorterThanHalfRangeAndWrap)) {
   // Make a jump shorter than half the 32-bit timestamp range. Set the start
   // timestamp such that the jump will result in a wrap around.
   static const uint16_t kStartSeqeunceNumber = 42076;

@@ -12,6 +12,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 struct WebRtcISACStruct;
 
@@ -54,24 +55,24 @@ void IsacTest::SetUp() {
 }
 
 // Test failing Create.
-TEST_F(IsacTest, IsacCreateFail) {
+TEST_F(IsacTest, DISABLED_ON_IOS(IsacCreateFail)) {
   // Test to see that an invalid pointer is caught.
   EXPECT_EQ(-1, WebRtcIsac_Create(NULL));
 }
 
 // Test failing Free.
-TEST_F(IsacTest, IsacFreeFail) {
+TEST_F(IsacTest, DISABLED_ON_IOS(IsacFreeFail)) {
   // Test to see that free function doesn't crash.
   EXPECT_EQ(0, WebRtcIsac_Free(NULL));
 }
 
 // Test normal Create and Free.
-TEST_F(IsacTest, IsacCreateFree) {
+TEST_F(IsacTest, DISABLED_ON_IOS(IsacCreateFree)) {
   EXPECT_EQ(0, WebRtcIsac_Create(&isac_codec_));
   EXPECT_TRUE(isac_codec_ != NULL);
   EXPECT_EQ(0, WebRtcIsac_Free(isac_codec_));}
 
-TEST_F(IsacTest, IsacUpdateBWE) {
+TEST_F(IsacTest, DISABLED_ON_IOS(IsacUpdateBWE)) {
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcIsac_Create(&isac_codec_));
 
