@@ -122,39 +122,30 @@ int main(int argc, char* argv[]) {
     printf("\n\nWrong number of arguments or flag values.\n\n");
 
     printf("Usage:\n\n");
-    printf("%s infile outfile -bn bottelneck [options] \n\n", argv[0]);
+    printf("%s infile outfile -bn bottleneck [options]\n\n", argv[0]);
     printf("with:\n");
-    printf("-I................... indicates encoding in instantaneous mode.\n");
-    printf(
-        "-bn bottleneck....... the value of the bottleneck in bit/sec, e.g. "
-        "39742,\n");
-    printf(
-        "                      in instantaneous (channel-independent) "
-        "mode.\n\n");
-    printf("infile............... Normal speech input file\n\n");
-    printf("outfile.............. Speech output file\n\n");
+    printf("-I.............. indicates encoding in instantaneous mode.\n");
+    printf("-bn bottleneck.. the value of the bottleneck in bit/sec, e.g.\n");
+    printf("                 39742, in instantaneous (channel-independent)\n");
+    printf("                 mode.\n\n");
+    printf("infile.......... Normal speech input file\n\n");
+    printf("outfile......... Speech output file\n\n");
     printf("OPTIONS\n");
     printf("-------\n");
-    printf(
-        "-fs sampFreq......... sampling frequency of codec 16 or 32 (default) "
-        "kHz.\n");
-    printf("-plim payloadLim..... payload limit in bytes,\n");
-    printf("                      default is the maximum possible.\n");
-    printf("-rlim rateLim........ rate limit in bits/sec, \n");
-    printf("                      default is the maimum possible.\n");
-    printf("-h file.............. record histogram and *append* to 'file'.\n");
-    printf(
-        "-ave file............ record average rate of 3 sec intervales and "
-        "*append* to 'file'.\n");
-    printf("-ploss............... packet-loss percentage.\n");
-    printf("-enc................. do only encoding and store the bit-stream\n");
-    printf(
-        "-dec................. the input file is a bit-stream, decode it.\n");
-
-    printf("\n");
+    printf("-fs sampFreq.... sampling frequency of codec 16 or 32 (default)\n");
+    printf("                 kHz.\n");
+    printf("-plim payloadLim payload limit in bytes, default is the maximum\n");
+    printf("                 possible.\n");
+    printf("-rlim rateLim... rate limit in bits/sec, default is the maximum\n");
+    printf("                 possible.\n");
+    printf("-h file......... record histogram and *append* to 'file'.\n");
+    printf("-ave file....... record average rate of 3 sec intervales and\n");
+    printf("                 *append* to 'file'.\n");
+    printf("-ploss.......... packet-loss percentage.\n");
+    printf("-enc............ do only encoding and store the bit-stream\n");
+    printf("-dec............ the input file is a bit-stream, decode it.\n\n");
     printf("Example usage:\n\n");
-    printf("%s speechIn.pcm speechOut.pcm -B 40000 -fs 32 \n\n", argv[0]);
-
+    printf("%s speechIn.pcm speechOut.pcm -B 40000 -fs 32\n\n", argv[0]);
     printf("structure size %d bytes\n", size);
 
     exit(0);
@@ -205,10 +196,8 @@ int main(int argc, char* argv[]) {
       break;
     }
     default:
-      printf(
-          "A sampling frequency of %d kHz is not supported,\
-valid values are 8 and 16.\n",
-          sampFreqKHz);
+      printf("A sampling frequency of %d kHz is not supported, valid values are"
+             " 8 and 16.\n", sampFreqKHz);
       exit(-1);
   }
   payloadLimit = (int16_t)readParamInt(argc, argv, "-plim", 400);
@@ -268,18 +257,17 @@ valid values are 8 and 16.\n",
     return -1;
   }
 
-  //{
-  //    int32_t b1, b2;
-  //    FILE* fileID = fopen("GetBNTest.txt", "w");
-  //    b2 = 32100;
-  //    while(b2 <= 52000)
-  //    {
-  //        WebRtcIsac_Control(ISAC_main_inst, b2, frameSize);
-  //        WebRtcIsac_GetUplinkBw(ISAC_main_inst, &b1);
-  //        fprintf(fileID, "%5d %5d\n", b2, b1);
-  //        b2 += 10;
-  //    }
-  //}
+  // {
+  //   int32_t b1, b2;
+  //   FILE* fileID = fopen("GetBNTest.txt", "w");
+  //   b2 = 32100;
+  //   while (b2 <= 52000) {
+  //     WebRtcIsac_Control(ISAC_main_inst, b2, frameSize);
+  //     WebRtcIsac_GetUplinkBw(ISAC_main_inst, &b1);
+  //     fprintf(fileID, "%5d %5d\n", b2, b1);
+  //     b2 += 10;
+  //   }
+  // }
 
   if (codingMode == 1) {
     if (WebRtcIsac_Control(ISAC_main_inst, bottleneck, frameSize) < 0) {
@@ -445,9 +433,9 @@ valid values are 8 and 16.\n",
   rateRCU = ((double)totalBitsRCU * (sampFreqKHz)) / (double)totalsmpls;
 
   printf("\n\n");
-  printf("Sampling Rate......................... %d kHz\n", sampFreqKHz);
-  printf("Payload Limit......................... %d bytes \n", payloadLimit);
-  printf("Rate Limit............................ %d bits/sec \n", rateLimit);
+  printf("Sampling Rate............... %d kHz\n", sampFreqKHz);
+  printf("Payload Limit............... %d bytes \n", payloadLimit);
+  printf("Rate Limit.................. %d bits/sec \n", rateLimit);
 
 #ifdef WIN32
 #ifdef HAVE_DEBUG_INFO
@@ -463,24 +451,24 @@ valid values are 8 and 16.\n",
 #endif  // WIN32
 
   printf("\n");
-  printf("Measured bit-rate..................... %0.3f kbps\n", rate);
-  printf("Measured RCU bit-ratre................ %0.3f kbps\n", rateRCU);
-  printf("Maximum bit-rate/payloadsize.......... %0.3f / %d\n",
+  printf("Measured bit-rate........... %0.3f kbps\n", rate);
+  printf("Measured RCU bit-ratre...... %0.3f kbps\n", rateRCU);
+  printf("Maximum bit-rate/payloadsize %0.3f / %d\n",
          maxStreamLen * 8 / 0.03, maxStreamLen);
-  printf("Measured packet-loss.................. %0.1f%% \n",
+  printf("Measured packet-loss........ %0.1f%% \n",
          100.0f * (float)lostPacketCntr / (float)packetCntr);
 
-  //#ifdef HAVE_DEBUG_INFO
-  //    printf("Measured lower-band bit-rate.......... %0.3f kbps (%.0f%%)\n",
+  // #ifdef HAVE_DEBUG_INFO
+  // printf("Measured lower-band bit-rate %0.3f kbps (%.0f%%)\n",
   //        rateLB, (double)(rateLB) * 100. /(double)(rate));
-  //    printf("Measured upper-band bit-rate.......... %0.3f kbps (%.0f%%)\n",
+  // printf("Measured upper-band bit-rate %0.3f kbps (%.0f%%)\n",
   //        rateUB, (double)(rateUB) * 100. /(double)(rate));
   //
-  //    printf("Maximum payload lower-band............ %d bytes (%0.3f kbps)\n",
+  // printf("Maximum payload lower-band.. %d bytes (%0.3f kbps)\n",
   //        debugInfo.maxPayloadLB, debugInfo.maxPayloadLB * 8.0 / 0.03);
-  //    printf("Maximum payload upper-band............ %d bytes (%0.3f kbps)\n",
+  // printf("Maximum payload upper-band.. %d bytes (%0.3f kbps)\n",
   //        debugInfo.maxPayloadUB, debugInfo.maxPayloadUB * 8.0 / 0.03);
-  //#endif
+  // #endif
 
   printf("\n");
 
@@ -488,10 +476,9 @@ valid values are 8 and 16.\n",
 #ifdef WIN32
   runtime = (double)(clock() / (double)CLOCKS_PER_SEC - starttime);
   length_file = ((double)framecnt * (double)declen / (sampFreqKHz * 1000));
-  printf("Length of speech file................ %.1f s\n", length_file);
-  printf(
-      "Time to run iSAC..................... %.2f s (%.2f %% of realtime)\n\n",
-      runtime, (100 * runtime / length_file));
+  printf("Length of speech file....... %.1f s\n", length_file);
+  printf("Time to run iSAC............ %.2f s (%.2f %% of realtime)\n\n",
+         runtime, (100 * runtime / length_file));
 #endif
   printf("\n\n_______________________________________________\n");
 

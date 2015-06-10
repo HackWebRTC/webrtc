@@ -33,7 +33,7 @@
 #include <time.h>
 #define CLOCKS_PER_SEC 1000
 
-//	FILE *histfile, *ratefile;
+// FILE *histfile, *ratefile;
 
 /* function for reading audio data from PCM file */
 int readframe(int16_t* data, FILE* inp, int length) {
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
   uint16_t streamdata[600];
   int16_t speechType[1];
 
-  //	int16_t	*iSACstruct;
+  // int16_t* iSACstruct;
 
   char version_number[20];
   int mode = -1, tmp, nbTest = 0; /*,sss;*/
@@ -147,37 +147,23 @@ int main(int argc, char* argv[]) {
     printf("./kenny.exe [-I] bottleneck_value infile outfile \n\n");
     printf("with:\n");
 
-    printf(
-        "[-I]			:	if -I option is specified, the coder "
-        "will use\n");
-    printf(
-        "				an instantaneous Bottleneck value. If "
-        "not, it\n");
-    printf(
-        "				will be an adaptive Bottleneck "
-        "value.\n\n");
-    printf(
-        "bottleneck_value	:	the value of the bottleneck provided "
-        "either\n");
-    printf(
-        "				as a fixed value (e.g. 25000) or\n");
-    printf(
-        "				read from a file (e.g. "
-        "bottleneck.txt)\n\n");
-    printf("[-m] mode		: Mode (encoder - decoder):\n");
-    printf(
-        "				:		0 - float - float \n");
-    printf(
-        "				:		1 - float - fix \n");
-    printf(
-        "				:		2 - fix - float \n");
-    printf("				:		3 - fix - fix \n");
-    printf("[-PLC]	 		:	Test PLC packetlosses\n");
-    printf(
-        "[-NB] num		:	Test NB interfaces, num=1 encNB, num=2 "
-        "decNB\n");
-    printf("infile			:	Normal speech input file\n\n");
-    printf("outfile			:	Speech output file\n\n");
+    printf("[-I]            : If -I option is specified, the coder will use\n");
+    printf("                  an instantaneous Bottleneck value. If not, it\n");
+    printf("                  will be an adaptive Bottleneck value.\n\n");
+    printf("bottleneck_value: The value of the bottleneck provided either\n");
+    printf("                  as a fixed value (e.g. 25000) or\n");
+    printf("                  read from a file (e.g. bottleneck.txt)\n\n");
+    printf("[-m] mode       : Mode (encoder - decoder):\n");
+    printf("                    0 - float - float\n");
+    printf("                    1 - float - fix\n");
+    printf("                    2 - fix - float\n");
+    printf("                    3 - fix - fix\n\n");
+    printf("[-PLC]          : Test PLC packetlosses\n\n");
+    printf("[-NB] num       : Test NB interfaces:\n");
+    printf("                    1 - encNB\n");
+    printf("                    2 - decNB\n\n");
+    printf("infile          : Normal speech input file\n\n");
+    printf("outfile         : Speech output file\n\n");
     printf("Example usage:\n\n");
     printf("./kenny.exe -I bottleneck.txt -m 1 speechIn.pcm speechOut.pcm\n\n");
     exit(0);
@@ -240,12 +226,12 @@ int main(int argc, char* argv[]) {
         fscanf(f_bn, "%d", &bottleneck);
       }
 
-      /*	Bottleneck is a cosine function
-      *	Matlab code for writing the bottleneck file:
-      *	BottleNeck_10ms = 20e3 + 10e3 * cos((0:5999)/5999*2*pi);
-      *	fid = fopen('bottleneck.txt', 'wb');
-      *	fprintf(fid, '%d\n', BottleNeck_10ms); fclose(fid);
-      */
+      /* Bottleneck is a cosine function
+       * Matlab code for writing the bottleneck file:
+       * BottleNeck_10ms = 20e3 + 10e3 * cos((0:5999)/5999*2*pi);
+       * fid = fopen('bottleneck.txt', 'wb');
+       * fprintf(fid, '%d\n', BottleNeck_10ms); fclose(fid);
+       */
     }
   } else {
     printf("\nfixed bottleneck rate of %d bits/s\n\n", bottleneck);
@@ -284,9 +270,6 @@ int main(int argc, char* argv[]) {
 
   /* Initialize the ISAC and BN structs */
   WebRtcIsac_create(&ISAC_main_inst);
-  /*	WebRtcIsacfix_AssignSize(&sss);
-          iSACstruct=malloc(sss);
-          WebRtcIsacfix_Assign(&ISACFIX_main_inst,iSACstruct);*/
   WebRtcIsacfix_Create(&ISACFIX_main_inst);
 
   BN_data.send_time = 0;
@@ -311,7 +294,7 @@ int main(int argc, char* argv[]) {
         /* exit if returned with error */
         errtype = WebRtcIsac_GetErrorCode(ISAC_main_inst);
         printf("\n\n Error in initialization: %d.\n\n", errtype);
-        //	exit(EXIT_FAILURE);
+        // exit(EXIT_FAILURE);
       }
     }
 
@@ -328,7 +311,7 @@ int main(int argc, char* argv[]) {
         /* exit if returned with error */
         errtype = WebRtcIsac_GetErrorCode(ISAC_main_inst);
         printf("\n\n Error in initialization: %d.\n\n", errtype);
-        //	exit(EXIT_FAILURE);
+        // exit(EXIT_FAILURE);
       }
     }
 
@@ -424,22 +407,23 @@ int main(int argc, char* argv[]) {
           /* exit if returned with error */
           errtype = WebRtcIsac_GetErrorCode(ISAC_main_inst);
           printf("\n\nError in encoder: %d.\n\n", errtype);
-          //	exit(EXIT_FAILURE);
+          // exit(EXIT_FAILURE);
         }
       } else if (mode == 2 || mode == 3) {
         /* iSAC encoding */
-        if (nbTest != 1)
+        if (nbTest != 1) {
           stream_len = WebRtcIsacfix_Encode(ISACFIX_main_inst, shortdata,
                                             (uint8_t*)streamdata);
-        else
+        } else {
           stream_len =
               WebRtcIsacfix_EncodeNb(ISACFIX_main_inst, shortdata, streamdata);
+        }
 
         if (stream_len < 0) {
           /* exit if returned with error */
           errtype = WebRtcIsacfix_GetErrorCode(ISACFIX_main_inst);
           printf("\n\nError in encoder: %d.\n\n", errtype);
-          //	exit(EXIT_FAILURE);
+          // exit(EXIT_FAILURE);
         }
       }
 
@@ -608,8 +592,8 @@ int main(int argc, char* argv[]) {
   }
 
 #ifdef _DEBUG
-  printf("\n\ntotal bits				= %d bits", totalbits);
-  printf("\nmeasured average bitrate		= %0.3f kbits/s",
+  printf("\n\ntotal bits               = %d bits", totalbits);
+  printf("\nmeasured average bitrate = %0.3f kbits/s",
          (double)totalbits * (FS / 1000) / totalsmpls);
   printf("\n");
 #endif /* _DEBUG */
@@ -628,8 +612,8 @@ int main(int argc, char* argv[]) {
   WebRtcIsac_Free(ISAC_main_inst);
   WebRtcIsacfix_Free(ISACFIX_main_inst);
 
-  //	fclose(histfile);
-  //	fclose(ratefile);
+  // fclose(histfile);
+  // fclose(ratefile);
 
   return 0;
 }

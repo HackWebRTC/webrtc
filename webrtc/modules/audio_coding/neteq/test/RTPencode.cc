@@ -305,14 +305,12 @@ int main(int argc, char* argv[]) {
   if ((argc != 6) && (argc != 7)) {
     /* print help text and exit */
     printf("Application to encode speech into an RTP stream.\n");
-    printf(
-        "The program reads a PCM file and encodes is using the specified "
-        "codec.\n");
-    printf(
-        "The coded speech is packetized in RTP packest and written to the "
-        "output file.\n");
-    printf(
-        "The format of the RTP stream file is simlilar to that of rtpplay,\n");
+    printf("The program reads a PCM file and encodes is using the specified "
+           "codec.\n");
+    printf("The coded speech is packetized in RTP packest and written to the "
+           "output file.\n");
+    printf("The format of the RTP stream file is simlilar to that of "
+           "rtpplay,\n");
     printf("but with the receive time euqal to 0 for all packets.\n");
     printf("Usage:\n\n");
     printf("%s PCMfile RTPfile frameLen codec useVAD bitrate\n", argv[0]);
@@ -322,9 +320,8 @@ int main(int argc, char* argv[]) {
 
     printf("RTPfile      : RTP stream output file\n\n");
 
-    printf(
-        "frameLen     : 80...960...  Number of samples per packet (limit "
-        "depends on codec)\n\n");
+    printf("frameLen     : 80...960...  Number of samples per packet (limit "
+           "depends on codec)\n\n");
 
     printf("codecName\n");
 #ifdef CODEC_PCM16B
@@ -346,43 +343,36 @@ int main(int argc, char* argv[]) {
     printf("             : pcmu         g711 u-law (8kHz)\n");
 #endif
 #ifdef CODEC_G729
-    printf(
-        "             : g729         G729 (8kHz and 8kbps) CELP (One-Three "
-        "frame(s)/packet)\n");
+    printf("             : g729         G729 (8kHz and 8kbps) CELP (One-Three "
+           "frame(s)/packet)\n");
 #endif
 #ifdef CODEC_G729_1
-    printf(
-        "             : g729.1       G729.1 (16kHz) variable rate (8--32 "
-        "kbps)\n");
+    printf("             : g729.1       G729.1 (16kHz) variable rate (8--32 "
+           "kbps)\n");
 #endif
 #ifdef CODEC_G722_1_16
-    printf(
-        "             : g722.1_16    G722.1 coder (16kHz) (g722.1 with "
-        "16kbps)\n");
+    printf("             : g722.1_16    G722.1 coder (16kHz) (g722.1 with "
+           "16kbps)\n");
 #endif
 #ifdef CODEC_G722_1_24
-    printf(
-        "             : g722.1_24    G722.1 coder (16kHz) (the 24kbps "
-        "version)\n");
+    printf("             : g722.1_24    G722.1 coder (16kHz) (the 24kbps "
+           "version)\n");
 #endif
 #ifdef CODEC_G722_1_32
-    printf(
-        "             : g722.1_32    G722.1 coder (16kHz) (the 32kbps "
-        "version)\n");
+    printf("             : g722.1_32    G722.1 coder (16kHz) (the 32kbps "
+           "version)\n");
 #endif
 #ifdef CODEC_G722_1C_24
-    printf(
-        "             : g722.1C_24    G722.1 C coder (32kHz) (the 24kbps "
-        "version)\n");
+    printf("             : g722.1C_24    G722.1 C coder (32kHz) (the 24kbps "
+           "version)\n");
 #endif
 #ifdef CODEC_G722_1C_32
-    printf(
-        "             : g722.1C_32    G722.1 C coder (32kHz) (the 32kbps "
-        "version)\n");
+    printf("             : g722.1C_32    G722.1 C coder (32kHz) (the 32kbps "
+           "version)\n");
 #endif
 #ifdef CODEC_G722_1C_48
-    printf(
-        "             : g722.1C_48    G722.1 C coder (32kHz) (the 48kbps)\n");
+    printf("             : g722.1C_48    G722.1 C coder (32kHz) (the 48kbps "
+           "version)\n");
 #endif
 
 #ifdef CODEC_G726
@@ -392,39 +382,34 @@ int main(int argc, char* argv[]) {
     printf("             : g726_40      G726 coder (8kHz) 40kbps\n");
 #endif
 #ifdef CODEC_AMR
-    printf(
-        "             : AMRXk        Adaptive Multi Rate CELP codec (8kHz)\n");
-    printf(
-        "                            X = 4.75, 5.15, 5.9, 6.7, 7.4, 7.95, 10.2 "
-        "or 12.2\n");
+    printf("             : AMRXk        Adaptive Multi Rate CELP codec "
+           "(8kHz)\n");
+    printf("                            X = 4.75, 5.15, 5.9, 6.7, 7.4, 7.95, "
+           "10.2 or 12.2\n");
 #endif
 #ifdef CODEC_AMRWB
-    printf(
-        "             : AMRwbXk      Adaptive Multi Rate Wideband CELP codec "
-        "(16kHz)\n");
-    printf(
-        "                            X = 7, 9, 12, 14, 16, 18, 20, 23 or 24\n");
+    printf("             : AMRwbXk      Adaptive Multi Rate Wideband CELP "
+           "codec (16kHz)\n");
+    printf("                            X = 7, 9, 12, 14, 16, 18, 20, 23 or "
+           "24\n");
 #endif
 #ifdef CODEC_ILBC
     printf("             : ilbc         iLBC codec (8kHz and 13.8kbps)\n");
 #endif
 #ifdef CODEC_ISAC
-    printf(
-        "             : isac         iSAC (16kHz and 32.0 kbps). To set rate "
-        "specify a rate parameter as last parameter\n");
+    printf("             : isac         iSAC (16kHz and 32.0 kbps). To set "
+           "rate specify a rate parameter as last parameter\n");
 #endif
 #ifdef CODEC_ISAC_SWB
-    printf(
-        "             : isacswb       iSAC SWB (32kHz and 32.0-52.0 kbps). To "
-        "set rate specify a rate parameter as last parameter\n");
+    printf("             : isacswb       iSAC SWB (32kHz and 32.0-52.0 kbps). "
+           "To set rate specify a rate parameter as last parameter\n");
 #endif
 #ifdef CODEC_GSMFR
     printf("             : gsmfr        GSM FR codec (8kHz and 13kbps)\n");
 #endif
 #ifdef CODEC_G722
-    printf(
-        "             : g722         g722 coder (16kHz) (the 64kbps "
-        "version)\n");
+    printf("             : g722         g722 coder (16kHz) (the 64kbps "
+           "version)\n");
 #endif
 #ifdef CODEC_SPEEX_8
     printf("             : speex8       speex coder (8 kHz)\n");
@@ -434,14 +419,12 @@ int main(int argc, char* argv[]) {
 #endif
 #ifdef CODEC_RED
 #ifdef CODEC_G711
-    printf(
-        "             : red_pcm      Redundancy RTP packet with 2*G711A "
-        "frames\n");
+    printf("             : red_pcm      Redundancy RTP packet with 2*G711A "
+           "frames\n");
 #endif
 #ifdef CODEC_ISAC
-    printf(
-        "             : red_isac     Redundancy RTP packet with 2*iSAC "
-        "frames\n");
+    printf("             : red_isac     Redundancy RTP packet with 2*iSAC "
+           "frames\n");
 #endif
 #endif
     printf("\n");
@@ -451,12 +434,11 @@ int main(int argc, char* argv[]) {
     printf("useVAD       : 0 Voice Activity Detection is switched off\n");
     printf("             : 1 Voice Activity Detection is switched on\n\n");
 #else
-    printf(
-        "useVAD       : 0 Voice Activity Detection switched off (on not "
-        "supported)\n\n");
+    printf("useVAD       : 0 Voice Activity Detection switched off (on not "
+           "supported)\n\n");
 #endif
-    printf(
-        "bitrate      : Codec bitrate in bps (only applies to vbr codecs)\n\n");
+    printf("bitrate      : Codec bitrate in bps (only applies to vbr "
+           "codecs)\n\n");
 
     return (0);
   }
@@ -528,43 +510,36 @@ int main(int argc, char* argv[]) {
     if (argc != 7) {
       if (usedCodec == webrtc::kDecoderISAC) {
         bitrate = 32000;
-        printf(
-            "Running iSAC at default bitrate of 32000 bps (to specify "
-            "explicitly add the bps as last parameter)\n");
+        printf("Running iSAC at default bitrate of 32000 bps (to specify "
+               "explicitly add the bps as last parameter)\n");
       } else  // (usedCodec==webrtc::kDecoderISACswb)
       {
         bitrate = 56000;
-        printf(
-            "Running iSAC at default bitrate of 56000 bps (to specify "
-            "explicitly add the bps as last parameter)\n");
+        printf("Running iSAC at default bitrate of 56000 bps (to specify "
+               "explicitly add the bps as last parameter)\n");
       }
     } else {
       bitrate = atoi(argv[6]);
       if (usedCodec == webrtc::kDecoderISAC) {
         if ((bitrate < 10000) || (bitrate > 32000)) {
-          printf(
-              "Error: iSAC bitrate must be between 10000 and 32000 bps (%i is "
-              "invalid)\n",
-              bitrate);
+          printf("Error: iSAC bitrate must be between 10000 and 32000 bps (%i "
+                 "is invalid)\n", bitrate);
           exit(0);
         }
         printf("Running iSAC at bitrate of %i bps\n", bitrate);
       } else  // (usedCodec==webrtc::kDecoderISACswb)
       {
         if ((bitrate < 32000) || (bitrate > 56000)) {
-          printf(
-              "Error: iSAC SWB bitrate must be between 32000 and 56000 bps (%i "
-              "is invalid)\n",
-              bitrate);
+          printf("Error: iSAC SWB bitrate must be between 32000 and 56000 bps "
+                 "(%i is invalid)\n", bitrate);
           exit(0);
         }
       }
     }
   } else {
     if (argc == 7) {
-      printf(
-          "Error: Bitrate parameter can only be specified for iSAC, G.723, and "
-          "G.729.1\n");
+      printf("Error: Bitrate parameter can only be specified for iSAC, G.723, "
+             "and G.729.1\n");
       exit(0);
     }
   }
@@ -972,23 +947,19 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
               (enc_frameSize == 400) || (enc_frameSize == 480)) {
             ok = WebRtcG729_CreateEnc(&G729enc_inst[k]);
             if (ok != 0) {
-              printf(
-                  "Error: Couldn't allocate memory for G729 encoding "
-                  "instance\n");
+              printf("Error: Couldn't allocate memory for G729 encoding "
+                     "instance\n");
               exit(0);
             }
           } else {
-            printf(
-                "\nError: g729 only supports 10, 20, 30, 40, 50 or 60 "
-                "ms!!\n\n");
+            printf("\nError: g729 only supports 10, 20, 30, 40, 50 or 60 "
+                   "ms!!\n\n");
             exit(0);
           }
           WebRtcG729_EncoderInit(G729enc_inst[k], vad);
           if ((vad == 1) && (enc_frameSize != 80)) {
-            printf(
-                "\nError - This simulation only supports VAD for G729 at 10ms "
-                "packets (not %dms)\n",
-                (enc_frameSize >> 3));
+            printf("\nError - This simulation only supports VAD for G729 at "
+                   "10ms packets (not %dms)\n", (enc_frameSize >> 3));
           }
         } else {
           printf("\nError - g729 is only developed for 8kHz \n");
@@ -1003,9 +974,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
               (enc_frameSize == 960)) {
             ok = WebRtcG7291_Create(&G729_1_inst[k]);
             if (ok != 0) {
-              printf(
-                  "Error: Couldn't allocate memory for G.729.1 codec "
-                  "instance\n");
+              printf("Error: Couldn't allocate memory for G.729.1 codec "
+                     "instance\n");
               exit(0);
             }
           } else {
@@ -1016,9 +986,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
                  (bitrate % 2000 == 0)) ||
                 (bitrate == 8000))) {
             /* must be 8, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, or 32 kbps */
-            printf(
-                "\nError: G.729.1 bitrate must be 8000 or 12000--32000 in "
-                "steps of 2000 bps\n");
+            printf("\nError: G.729.1 bitrate must be 8000 or 12000--32000 in "
+                   "steps of 2000 bps\n");
             exit(0);
           }
           WebRtcG7291_EncoderInit(G729_1_inst[k], bitrate, 0 /* flag8kHz*/,
@@ -1036,9 +1005,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
               (enc_frameSize == 480)) {
             ok = WebRtcSpeex_CreateEnc(&SPEEX8enc_inst[k], sampfreq);
             if (ok != 0) {
-              printf(
-                  "Error: Couldn't allocate memory for Speex encoding "
-                  "instance\n");
+              printf("Error: Couldn't allocate memory for Speex encoding "
+                     "instance\n");
               exit(0);
             }
           } else {
@@ -1046,9 +1014,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
             exit(0);
           }
           if ((vad == 1) && (enc_frameSize != 160)) {
-            printf(
-                "\nError - This simulation only supports VAD for Speex at 20ms "
-                "packets (not %dms)\n",
+            printf("\nError - This simulation only supports VAD for Speex at "
+                   "20ms packets (not %dms)\n",
                 (enc_frameSize >> 3));
             vad = 0;
           }
@@ -1057,9 +1024,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
           if (ok != 0)
             exit(0);
         } else {
-          printf(
-              "\nError - Speex8 called with sample frequency other than 8 "
-              "kHz.\n\n");
+          printf("\nError - Speex8 called with sample frequency other than 8 "
+                 "kHz.\n\n");
         }
         break;
 #endif
@@ -1070,9 +1036,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
               (enc_frameSize == 960)) {
             ok = WebRtcSpeex_CreateEnc(&SPEEX16enc_inst[k], sampfreq);
             if (ok != 0) {
-              printf(
-                  "Error: Couldn't allocate memory for Speex encoding "
-                  "instance\n");
+              printf("Error: Couldn't allocate memory for Speex encoding "
+                     "instance\n");
               exit(0);
             }
           } else {
@@ -1080,9 +1045,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
             exit(0);
           }
           if ((vad == 1) && (enc_frameSize != 320)) {
-            printf(
-                "\nError - This simulation only supports VAD for Speex at 20ms "
-                "packets (not %dms)\n",
+            printf("\nError - This simulation only supports VAD for Speex at "
+                   "20ms packets (not %dms)\n",
                 (enc_frameSize >> 4));
             vad = 0;
           }
@@ -1091,9 +1055,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
           if (ok != 0)
             exit(0);
         } else {
-          printf(
-              "\nError - Speex16 called with sample frequency other than 16 "
-              "kHz.\n\n");
+          printf("\nError - Speex16 called with sample frequency other than 16 "
+                 "kHz.\n\n");
         }
         break;
 #endif
@@ -1268,9 +1231,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
         if (sampfreq == 16000) {
           ok = WebRtcAmrWb_CreateEnc(&AMRWBenc_inst[k]);
           if (ok != 0) {
-            printf(
-                "Error: Couldn't allocate memory for AMRWB encoding "
-                "instance\n");
+            printf("Error: Couldn't allocate memory for AMRWB encoding "
+                   "instance\n");
             exit(0);
           }
           if (((enc_frameSize / 320) < 0) || ((enc_frameSize / 320) > 3) ||
@@ -1311,16 +1273,15 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
         if (sampfreq == 8000) {
           ok = WebRtcIlbcfix_EncoderCreate(&iLBCenc_inst[k]);
           if (ok != 0) {
-            printf(
-                "Error: Couldn't allocate memory for iLBC encoding instance\n");
+            printf("Error: Couldn't allocate memory for iLBC encoding "
+                   "instance\n");
             exit(0);
           }
           if ((enc_frameSize == 160) || (enc_frameSize == 240) ||
               (enc_frameSize == 320) || (enc_frameSize == 480)) {
           } else {
-            printf(
-                "\nError - iLBC only supports 160, 240, 320 and 480 "
-                "enc_frameSize (20, 30, 40 and 60 ms)\n");
+            printf("\nError - iLBC only supports 160, 240, 320 and 480 "
+                   "enc_frameSize (20, 30, 40 and 60 ms)\n");
             exit(0);
           }
           if ((enc_frameSize == 160) || (enc_frameSize == 320)) {
@@ -1351,17 +1312,15 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
           }
           WebRtcIsac_EncoderInit(ISAC_inst[k], 1);
           if ((bitrate < 10000) || (bitrate > 32000)) {
-            printf(
-                "\nError - iSAC bitrate has to be between 10000 and 32000 bps "
-                "(not %i)\n",
+            printf("\nError - iSAC bitrate has to be between 10000 and 32000 "
+                   "bps (not %i)\n",
                 bitrate);
             exit(0);
           }
           WebRtcIsac_Control(ISAC_inst[k], bitrate, enc_frameSize >> 4);
         } else {
-          printf(
-              "\nError - iSAC only supports 480 or 960 enc_frameSize (30 or 60 "
-              "ms)\n");
+          printf("\nError - iSAC only supports 480 or 960 enc_frameSize (30 or "
+                 "60 ms)\n");
           exit(0);
         }
         break;
@@ -1381,17 +1340,14 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
           }
           WebRtcIsacfix_EncoderInit(ISAC_inst[k], 1);
           if ((bitrate < 10000) || (bitrate > 32000)) {
-            printf(
-                "\nError - iSAC bitrate has to be between 10000 and 32000 bps "
-                "(not %i)\n",
-                bitrate);
+            printf("\nError - iSAC bitrate has to be between 10000 and 32000 "
+                   "bps (not %i)\n", bitrate);
             exit(0);
           }
           WebRtcIsacfix_Control(ISAC_inst[k], bitrate, enc_frameSize >> 4);
         } else {
-          printf(
-              "\nError - iSAC only supports 480 or 960 enc_frameSize (30 or 60 "
-              "ms)\n");
+          printf("\nError - iSAC only supports 480 or 960 enc_frameSize (30 or "
+                 "60 ms)\n");
           exit(0);
         }
         break;
@@ -1416,16 +1372,14 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
           }
           WebRtcIsac_EncoderInit(ISACSWB_inst[k], 1);
           if ((bitrate < 32000) || (bitrate > 56000)) {
-            printf(
-                "\nError - iSAC SWB bitrate has to be between 32000 and 56000 "
-                "bps (not %i)\n",
-                bitrate);
+            printf("\nError - iSAC SWB bitrate has to be between 32000 and "
+                   "56000 bps (not %i)\n", bitrate);
             exit(0);
           }
           WebRtcIsac_Control(ISACSWB_inst[k], bitrate, enc_frameSize >> 5);
         } else {
-          printf(
-              "\nError - iSAC SWB only supports 960 enc_frameSize (30 ms)\n");
+          printf("\nError - iSAC SWB only supports 960 enc_frameSize (30 "
+                 "ms)\n");
           exit(0);
         }
         break;
@@ -1435,16 +1389,15 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
         if (sampfreq == 8000) {
           ok = WebRtcGSMFR_CreateEnc(&GSMFRenc_inst[k]);
           if (ok != 0) {
-            printf(
-                "Error: Couldn't allocate memory for GSM FR encoding "
-                "instance\n");
+            printf("Error: Couldn't allocate memory for GSM FR encoding "
+                   "instance\n");
             exit(0);
           }
           if ((enc_frameSize == 160) || (enc_frameSize == 320) ||
               (enc_frameSize == 480)) {
           } else {
-            printf(
-                "\nError - GSM FR must have a multiple of 160 enc_frameSize\n");
+            printf("\nError - GSM FR must have a multiple of 160 "
+                   "enc_frameSize\n");
             exit(0);
           }
           WebRtcGSMFR_EncoderInit(GSMFRenc_inst[k], 0);

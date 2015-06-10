@@ -23,15 +23,13 @@
 #include "utility.h"
 
 /* Defines */
-#define SEED_FILE \
-  "randseed.txt" /* Used when running decoder on garbage data  */
-#define MAX_FRAMESAMPLES                                         \
-  960                         /* max number of samples per frame \
-                                  (= 60 ms frame & 16 kHz) or    \
-                                  (= 30 ms frame & 32 kHz)                  */
-#define FRAMESAMPLES_10ms 160 /* number of samples per 10ms frame          */
+#define SEED_FILE "randseed.txt" /* Used when running decoder on garbage data */
+#define MAX_FRAMESAMPLES 960     /* max number of samples per frame
+                                    (= 60 ms frame & 16 kHz) or
+                                    (= 30 ms frame & 32 kHz) */
+#define FRAMESAMPLES_10ms 160 /* number of samples per 10ms frame */
 #define SWBFRAMESAMPLES_10ms 320
-//#define FS		        	16000 /* sampling frequency (Hz) */
+//#define FS 16000 /* sampling frequency (Hz) */
 
 #ifdef WIN32
 #define CLOCKS_PER_SEC 1000 /* Runtime statistics */
@@ -121,80 +119,56 @@ int main(int argc, char* argv[]) {
     printf("Usage:\n\n");
     printf("./kenny.exe [-I] bottleneck_value infile outfile \n\n");
     printf("with:\n");
-    printf(
-        "[-FS num]       :   sampling frequency in kHz, valid values are 16 & "
-        "32,\n");
-    printf("                    with 16 as default.\n");
-    printf(
-        "[-I]            :   if -I option is specified, the coder will use\n");
-    printf(
-        "                    an instantaneous Bottleneck value. If not, it\n");
-    printf("                    will be an adaptive Bottleneck value.\n\n");
-    printf("[-assign]       :   Use Assign API.\n");
-    printf("[-B num]        :   the value of the bottleneck provided either\n");
-    printf(
-        "                    as a fixed value in bits/sec (e.g. 25000) or\n");
-    printf("                    read from a file (e.g. bottleneck.txt)\n\n");
-    printf(
-        "[-INITRATE num] :   Set a new value for initial rate. Note! Only used "
-        "in \n");
-    printf("                    adaptive mode.\n\n");
-    printf(
-        "[-FL num]       :   Set (initial) frame length in msec. Valid length "
-        "are \n");
-    printf("                    30 and 60 msec.\n\n");
-    printf(
-        "[-FIXED_FL]     :   Frame length will be fixed to initial value.\n\n");
-    printf(
-        "[-MAX num]      :   Set the limit for the payload size of iSAC in "
-        "bytes. \n");
-    printf("                    Minimum 100 maximum 400.\n\n");
-    printf(
-        "[-MAXRATE num]  :   Set the maxrate for iSAC in bits per second. \n");
-    printf("                    Minimum 32000, maximum 53400.\n\n");
-    printf(
-        "[-F num]        :   if -F option is specified, the test function\n");
-    printf(
-        "                    will run the iSAC API fault scenario specified by "
-        "the\n");
-    printf("                    supplied number.\n");
-    printf(
-        "                    F 1 - Call encoder prior to init encoder call\n");
-    printf(
-        "                    F 2 - Call decoder prior to init decoder call\n");
-    printf("                    F 3 - Call decoder prior to encoder call\n");
-    printf(
-        "                    F 4 - Call decoder with a too short coded "
-        "sequence\n");
-    printf(
-        "                    F 5 - Call decoder with a too long coded "
-        "sequence\n");
-    printf("                    F 6 - Call decoder with random bit stream\n");
-    printf(
-        "                    F 7 - Call init encoder/decoder at random during "
-        "a call\n");
-    printf(
-        "                    F 8 - Call encoder/decoder without having "
-        "allocated memory \n");
-    printf("                          for encoder/decoder instance\n");
-    printf("                    F 9 - Call decodeB without calling decodeA\n");
-    printf("                    F 10 - Call decodeB with garbage data\n");
-    printf("[-PL num]       :   if -PL option is specified \n");
-    printf(
-        "[-T rate file]  :   test trans-coding with target bottleneck 'rate' "
-        "bits/sec\n");
-    printf("                    the output file is written to 'file'\n");
-    printf(
-        "[-LOOP num]     :   number of times to repeat coding the input file "
-        "for stress testing\n");
-    // printf("[-CE num]       :   Test of APIs used by Conference Engine.\n");
-    // printf("                    CE 1 - getNewBitstream, getBWE \n");
-    // printf("                    (CE 2 - RESERVED for transcoding)\n");
-    // printf("                    CE 3 - getSendBWE, setSendBWE.  \n\n");
-    // printf("-L filename     :   write the logging info into file
+    printf("[-FS num]       : sampling frequency in kHz, valid values are\n");
+    printf("                  16 & 32, with 16 as default.\n");
+    printf("[-I]            : if -I option is specified, the coder will use\n");
+    printf("                  an instantaneous Bottleneck value. If not, it\n");
+    printf("                  will be an adaptive Bottleneck value.\n");
+    printf("[-assign]       : Use Assign API.\n");
+    printf("[-B num]        : the value of the bottleneck provided either\n");
+    printf("                  as a fixed value in bits/sec (e.g. 25000) or\n");
+    printf("                  read from a file (e.g. bottleneck.txt)\n");
+    printf("[-INITRATE num] : Set a new value for initial rate. Note! Only\n");
+    printf("                  used in adaptive mode.\n");
+    printf("[-FL num]       : Set (initial) frame length in msec. Valid\n");
+    printf("                  lengths are 30 and 60 msec.\n");
+    printf("[-FIXED_FL]     : Frame length will be fixed to initial value.\n");
+    printf("[-MAX num]      : Set the limit for the payload size of iSAC\n");
+    printf("                  in bytes. Minimum 100 maximum 400.\n");
+    printf("[-MAXRATE num]  : Set the maxrate for iSAC in bits per second.\n");
+    printf("                  Minimum 32000, maximum 53400.\n");
+    printf("[-F num]        : if -F option is specified, the test function\n");
+    printf("                  will run the iSAC API fault scenario\n");
+    printf("                  specified by the supplied number.\n");
+    printf("                  F 1 - Call encoder prior to init encoder call\n");
+    printf("                  F 2 - Call decoder prior to init decoder call\n");
+    printf("                  F 3 - Call decoder prior to encoder call\n");
+    printf("                  F 4 - Call decoder with a too short coded\n");
+    printf("                        sequence\n");
+    printf("                  F 5 - Call decoder with a too long coded\n");
+    printf("                        sequence\n");
+    printf("                  F 6 - Call decoder with random bit stream\n");
+    printf("                  F 7 - Call init encoder/decoder at random\n");
+    printf("                        during a call\n");
+    printf("                  F 8 - Call encoder/decoder without having\n");
+    printf("                        allocated memory for encoder/decoder\n");
+    printf("                        instance\n");
+    printf("                  F 9 - Call decodeB without calling decodeA\n");
+    printf("                  F 10 - Call decodeB with garbage data\n");
+    printf("[-PL num]       : if -PL option is specified \n");
+    printf("[-T rate file]  : test trans-coding with target bottleneck\n");
+    printf("                  'rate' bits/sec\n");
+    printf("                  the output file is written to 'file'\n");
+    printf("[-LOOP num]     : number of times to repeat coding the input\n");
+    printf("                  file for stress testing\n");
+    // printf("[-CE num]       : Test of APIs used by Conference Engine.\n");
+    // printf("                  CE 1 - getNewBitstream, getBWE \n");
+    // printf("                  (CE 2 - RESERVED for transcoding)\n");
+    // printf("                  CE 3 - getSendBWE, setSendBWE.  \n");
+    // printf("-L filename     : write the logging info into file
     // (appending)\n");
-    printf("infile          :   Normal speech input file\n\n");
-    printf("outfile         :   Speech output file\n\n");
+    printf("infile          :   Normal speech input file\n");
+    printf("outfile         :   Speech output file\n");
     exit(0);
   }
 
@@ -252,10 +226,8 @@ int main(int argc, char* argv[]) {
       rateBPS = atoi(argv[i + 1]);
       setControlBWE = 1;
       if ((rateBPS < 10000) || (rateBPS > 32000)) {
-        printf(
-            "\n%d is not a initial rate. Valid values are in the range 10000 "
-            "to 32000.\n",
-            rateBPS);
+        printf("\n%d is not a initial rate. Valid values are in the range "
+               "10000 to 32000.\n", rateBPS);
         exit(0);
       }
       printf("New initial rate: %d\n", rateBPS);
@@ -266,10 +238,8 @@ int main(int argc, char* argv[]) {
     if (!strcmp("-FL", argv[i])) {
       framesize = atoi(argv[i + 1]);
       if ((framesize != 30) && (framesize != 60)) {
-        printf(
-            "\n%d is not a valid frame length. Valid length are 30 and 60 "
-            "msec.\n",
-            framesize);
+        printf("\n%d is not a valid frame length. Valid length are 30 and 60 "
+               "msec.\n", framesize);
         exit(0);
       }
       setControlBWE = 1;
@@ -303,10 +273,8 @@ int main(int argc, char* argv[]) {
       testNum = atoi(argv[i + 1]);
       printf("Fault test: %d\n", testNum);
       if (testNum < 1 || testNum > 10) {
-        printf(
-            "\n%d is not a valid Fault Scenario number. Valid Fault Scenarios "
-            "are numbered 1-10.\n",
-            testNum);
+        printf("\n%d is not a valid Fault Scenario number. Valid Fault "
+               "Scenarios are numbered 1-10.\n", testNum);
         exit(0);
       }
       i++;
@@ -364,10 +332,8 @@ int main(int argc, char* argv[]) {
         sscanf(argv[i], "%s", bottleneck_file);
         f_bn = fopen(bottleneck_file, "rb");
         if (f_bn == NULL) {
-          printf(
-              "Error No value provided for BottleNeck and cannot read file "
-              "%s.\n",
-              bottleneck_file);
+          printf("Error No value provided for BottleNeck and cannot read file "
+                 "%s.\n", bottleneck_file);
           exit(0);
         } else {
           printf("reading bottleneck rates from file %s\n\n", bottleneck_file);
@@ -379,12 +345,12 @@ int main(int argc, char* argv[]) {
             }
           }
 
-          /*	Bottleneck is a cosine function
-          *	Matlab code for writing the bottleneck file:
-          *	BottleNeck_10ms = 20e3 + 10e3 * cos((0:5999)/5999*2*pi);
-          *	fid = fopen('bottleneck.txt', 'wb');
-          *	fprintf(fid, '%d\n', BottleNeck_10ms); fclose(fid);
-          */
+          /* Bottleneck is a cosine function
+           * Matlab code for writing the bottleneck file:
+           * BottleNeck_10ms = 20e3 + 10e3 * cos((0:5999)/5999*2*pi);
+           * fid = fopen('bottleneck.txt', 'wb');
+           * fprintf(fid, '%d\n', BottleNeck_10ms); fclose(fid);
+           */
         }
       } else {
         printf("\nfixed bottleneck rate of %d bits/s\n\n", bottleneck);
@@ -651,8 +617,7 @@ int main(int argc, char* argv[]) {
             int16_t indexStream;
             uint8_t auxUW8;
 
-            /************************* Main Transcoding stream
-             * *******************************/
+            /******************** Main Transcoding stream ********************/
             WebRtcIsac_GetDownLinkBwIndex(ISAC_main_inst, &bnIdxTC,
                                           &jitterInfoTC);
             streamLenTransCoding = WebRtcIsac_GetNewBitStream(
@@ -895,28 +860,23 @@ int main(int argc, char* argv[]) {
     framecnt++;
 
     /* Error test number 10, garbage data */
-    // if(testNum == 10)
-    //{
-    //    /* Test to run decoder with garbage data */
-    //    if( (seedfile = fopen(SEED_FILE, "a+t") ) == NULL )
-    //    {
-    //        fprintf(stderr, "Error: Could not open file %s\n", SEED_FILE);
-    //    }
-    //    else
-    //    {
-    //        fprintf(seedfile, "ok\n\n");
-    //        fclose(seedfile);
-    //    }
-    //}
+    // if (testNum == 10)
+    // {
+    //   /* Test to run decoder with garbage data */
+    //   if ((seedfile = fopen(SEED_FILE, "a+t")) == NULL) {
+    //     fprintf(stderr, "Error: Could not open file %s\n", SEED_FILE);
+    //   } else {
+    //     fprintf(seedfile, "ok\n\n");
+    //     fclose(seedfile);
+    //   }
+    // }
     /* Error test number 10, garbage data */
-    // if(testNum == 10)
-    //{
-    //    /* Test to run decoder with garbage data */
-    //    for ( i = 0; i < stream_len; i++)
-    //    {
-    //        streamdata[i] = (short) (streamdata[i] + (short) rand());
-    //    }
-    //}
+    // if (testNum == 10) {
+    //   /* Test to run decoder with garbage data */
+    //   for (i = 0; i < stream_len; i++) {
+    //     streamdata[i] = (short) (streamdata[i] + (short) rand());
+    //   }
+    // }
 
     totalsmpls += declen;
     totalbits += 8 * stream_len;
