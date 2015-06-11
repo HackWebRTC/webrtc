@@ -79,6 +79,7 @@ class MediaOptimization {
   // Informs Media Optimization of encoded output.
   int32_t UpdateWithEncodedData(const EncodedImage& encoded_image);
 
+  // InputFrameRate 0 = no frame rate estimate available.
   uint32_t InputFrameRate();
   uint32_t SentFrameRate();
   uint32_t SentBitRate();

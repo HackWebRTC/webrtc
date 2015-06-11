@@ -314,6 +314,20 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
   EXPECT_EQ(-1, sender_->IntraFrameRequest(-1));
 }
 
+TEST_F(TestVideoSenderWithMockEncoder, EncoderFramerateUpdatedViaProcess) {
+  sender_->SetChannelParameters(settings_.startBitrate, 0, 200);
+  const int64_t kRateStatsWindowMs = 2000;
+  const uint32_t kInputFps = 20;
+  int64_t start_time = clock_.TimeInMilliseconds();
+  while (clock_.TimeInMilliseconds() < start_time + kRateStatsWindowMs) {
+    AddFrame();
+    clock_.AdvanceTimeMilliseconds(1000 / kInputFps);
+  }
+  EXPECT_CALL(encoder_, SetRates(_, kInputFps)).Times(1).WillOnce(Return(0));
+  sender_->Process();
+  AddFrame();
+}
+
 class TestVideoSenderWithVp8 : public TestVideoSender {
  public:
   TestVideoSenderWithVp8()
@@ -354,15 +368,13 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
       EXPECT_CALL(post_encode_callback_, Encoded(_, NULL, NULL))
           .WillOnce(Return(0));
       AddFrame();
-
       // SetChannelParameters needs to be called frequently to propagate
       // framerate from the media optimization into the encoder.
       // Note: SetChannelParameters fails if less than 2 frames are in the
       // buffer since it will fail to calculate the framerate.
       if (i != 0) {
-        EXPECT_EQ(VCM_OK,
-                  sender_->SetChannelParameters(
-                      available_bitrate_kbps_ * 1000, 0, 200));
+        EXPECT_EQ(VCM_OK, sender_->SetChannelParameters(
+                              available_bitrate_kbps_ * 1000, 0, 200));
       }
     }
   }

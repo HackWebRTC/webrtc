@@ -93,6 +93,7 @@ class VideoSender {
   int32_t SetChannelParameters(uint32_t target_bitrate,  // bits/s.
                                uint8_t lossRate,
                                int64_t rtt);
+  int32_t UpdateEncoderParameters();
 
   int32_t RegisterTransportCallback(VCMPacketizationCallback* transport);
   int32_t RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
@@ -132,6 +133,15 @@ class VideoSender {
 
   VCMQMSettingsCallback* const qm_settings_callback_;
   VCMProtectionCallback* protection_callback_;
+
+  rtc::CriticalSection params_lock_;
+  struct EncoderParameters {
+    uint32_t target_bitrate;
+    uint8_t loss_rate;
+    int64_t rtt;
+    uint32_t input_frame_rate;
+    bool updated;
+  } encoder_params_ GUARDED_BY(params_lock_);
 };
 
 class VideoReceiver {

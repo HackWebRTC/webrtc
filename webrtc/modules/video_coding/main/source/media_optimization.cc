@@ -631,8 +631,9 @@ void MediaOptimization::ProcessIncomingFrameRate(int64_t now) {
     }
   }
   if (num > 1) {
-    const int64_t diff = now - incoming_frame_times_[num - 1];
-    incoming_frame_rate_ = 1.0;
+    const int64_t diff =
+        incoming_frame_times_[0] - incoming_frame_times_[num - 1];
+    incoming_frame_rate_ = 0.0;  // No frame rate estimate available.
     if (diff > 0) {
       incoming_frame_rate_ = nr_of_frames * 1000.0f / static_cast<float>(diff);
     }

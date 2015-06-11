@@ -42,6 +42,7 @@ VideoSender::VideoSender(Clock* clock,
       current_codec_(),
       qm_settings_callback_(qm_settings_callback),
       protection_callback_(nullptr) {
+  encoder_params_ = {0, 0, 0, 0, false};
   // Allow VideoSender to be created on one thread but used on another, post
   // construction. This is currently how this class is being used by at least
   // one external project (diffractor).
@@ -65,6 +66,14 @@ int32_t VideoSender::Process() {
       uint32_t frameRate = _mediaOpt.SentFrameRate();
       _sendStatsCallback->SendStatistics(bitRate, frameRate);
     }
+  }
+
+  {
+    rtc::CritScope cs(&params_lock_);
+    // Force an encoder parameters update, so that incoming frame rate is
+    // updated even if bandwidth hasn't changed.
+    encoder_params_.input_frame_rate = _mediaOpt.InputFrameRate();
+    encoder_params_.updated = true;
   }
 
   return returnValue;
@@ -216,27 +225,42 @@ int VideoSender::FrameRate(unsigned int* framerate) const {
 int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
                                           uint8_t lossRate,
                                           int64_t rtt) {
-  // TODO(tommi,mflodman): This method is called on the network thread via the
-  // OnNetworkChanged event (ViEEncoder::OnNetworkChanged). Could we instead
-  // post the updated information to the encoding thread and not grab a lock
-  // here?  This effectively means that the network thread will be blocked for
-  // as much as frame encoding period.
+  uint32_t target_rate =
+      _mediaOpt.SetTargetRates(target_bitrate, lossRate, rtt,
+                               protection_callback_, qm_settings_callback_);
 
-  uint32_t target_rate = _mediaOpt.SetTargetRates(target_bitrate,
-                                                  lossRate,
-                                                  rtt,
-                                                  protection_callback_,
-                                                  qm_settings_callback_);
   uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
+
+  rtc::CritScope cs(&params_lock_);
+  encoder_params_ =
+      EncoderParameters{target_rate, lossRate, rtt, input_frame_rate, true};
+
+  return VCM_OK;
+}
+
+int32_t VideoSender::UpdateEncoderParameters() {
+  EncoderParameters params;
+  {
+    rtc::CritScope cs(&params_lock_);
+    params = encoder_params_;
+    encoder_params_.updated = false;
+  }
+
+  if (!params.updated || params.target_bitrate == 0)
+    return VCM_OK;
 
   CriticalSectionScoped sendCs(_sendCritSect);
   int32_t ret = VCM_UNINITIALIZED;
   static_assert(VCM_UNINITIALIZED < 0, "VCM_UNINITIALIZED must be negative.");
 
+  if (params.input_frame_rate == 0) {
+    // No frame rate estimate available, use default.
+    params.input_frame_rate = current_codec_.maxFramerate;
+  }
   if (_encoder != nullptr) {
-    ret = _encoder->SetChannelParameters(lossRate, rtt);
+    ret = _encoder->SetChannelParameters(params.loss_rate, params.rtt);
     if (ret >= 0) {
-      ret = _encoder->SetRates(target_rate, input_frame_rate);
+      ret = _encoder->SetRates(params.target_bitrate, params.input_frame_rate);
     }
   }
   return ret;
@@ -300,6 +324,7 @@ void VideoSender::SetVideoProtection(bool enable,
 int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
                                    const VideoContentMetrics* contentMetrics,
                                    const CodecSpecificInfo* codecSpecificInfo) {
+  UpdateEncoderParameters();
   CriticalSectionScoped cs(_sendCritSect);
   if (_encoder == nullptr) {
     return VCM_UNINITIALIZED;
