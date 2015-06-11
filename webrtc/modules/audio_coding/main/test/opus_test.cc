@@ -277,12 +277,12 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
           bitstream_len_byte = WebRtcOpus_Encode(
               opus_mono_encoder_, &audio[read_samples],
               frame_length, kMaxBytes, bitstream);
-          ASSERT_GT(bitstream_len_byte, -1);
+          ASSERT_GE(bitstream_len_byte, 0);
         } else {
           bitstream_len_byte = WebRtcOpus_Encode(
               opus_stereo_encoder_, &audio[read_samples],
               frame_length, kMaxBytes, bitstream);
-          ASSERT_GT(bitstream_len_byte, -1);
+          ASSERT_GE(bitstream_len_byte, 0);
         }
 
         // Simulate packet loss by setting |packet_loss_| to "true" in

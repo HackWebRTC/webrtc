@@ -606,8 +606,8 @@ static void ComputeSpectralDifference(NoiseSuppressionC* self,
     // Conservative smooth noise spectrum from pause frames.
     avgPause += self->magnAvgPause[i];
   }
-  avgPause = avgPause / ((float)self->magnLen);
-  avgMagn = avgMagn / ((float)self->magnLen);
+  avgPause /= self->magnLen;
+  avgMagn /= self->magnLen;
 
   covMagnPause = 0.0;
   varPause = 0.0;
@@ -619,9 +619,9 @@ static void ComputeSpectralDifference(NoiseSuppressionC* self,
         (self->magnAvgPause[i] - avgPause) * (self->magnAvgPause[i] - avgPause);
     varMagn += (magnIn[i] - avgMagn) * (magnIn[i] - avgMagn);
   }
-  covMagnPause = covMagnPause / ((float)self->magnLen);
-  varPause = varPause / ((float)self->magnLen);
-  varMagn = varMagn / ((float)self->magnLen);
+  covMagnPause /= self->magnLen;
+  varPause /= self->magnLen;
+  varMagn /= self->magnLen;
   // Update of average magnitude spectrum.
   self->featureData[6] += self->signalEnergy;
 
@@ -1099,7 +1099,7 @@ void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
       }
     }
   }
-  signalEnergy = signalEnergy / ((float)self->magnLen);
+  signalEnergy /= self->magnLen;
   self->signalEnergy = signalEnergy;
   self->sumMagn = sumMagn;
 
@@ -1108,9 +1108,9 @@ void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
   // Compute simplified noise model during startup.
   if (self->blockInd < END_STARTUP_SHORT) {
     // Estimate White noise.
-    self->whiteNoiseLevel += sumMagn / ((float)self->magnLen) * self->overdrive;
+    self->whiteNoiseLevel += sumMagn / self->magnLen * self->overdrive;
     // Estimate Pink noise parameters.
-    tmpFloat1 = sum_log_i_square * ((float)(self->magnLen - kStartBand));
+    tmpFloat1 = sum_log_i_square * (self->magnLen - kStartBand);
     tmpFloat1 -= (sum_log_i * sum_log_i);
     tmpFloat2 =
         (sum_log_i_square * sum_log_magn - sum_log_i * sum_log_i_log_magn);
@@ -1121,7 +1121,7 @@ void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
     }
     self->pinkNoiseNumerator += tmpFloat3;
     tmpFloat2 = (sum_log_i * sum_log_magn);
-    tmpFloat2 -= ((float)(self->magnLen - kStartBand)) * sum_log_i_log_magn;
+    tmpFloat2 -= (self->magnLen - kStartBand) * sum_log_i_log_magn;
     tmpFloat3 = tmpFloat2 / tmpFloat1;
     // Constrain the pink noise power to be in the interval [0, 1].
     if (tmpFloat3 < 0.f) {

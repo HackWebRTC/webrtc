@@ -74,7 +74,8 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   float be, tnew;
   int tn, mm;
 
-  assert(!(size < 0 || size > 2 * FRAME_LEN));
+  assert(size >= 0);
+  assert(size <= 2 * FRAME_LEN);
   assert(resampInst != NULL);
   assert(inspeech != NULL);
   assert(outspeech != NULL);

@@ -840,8 +840,7 @@ int Resampler::Push(const int16_t * samplesIn, int lengthIn,
             outLen = lengthIn / 3;
             free(tmp_mem);
             // 4:2
-            WebRtcSpl_DownsampleBy2(tmp, outLen, tmp_2,
-                                    (int32_t*) state2_);
+            WebRtcSpl_DownsampleBy2(tmp, outLen, tmp_2, (int32_t*) state2_);
             outLen = outLen / 2;
             free(tmp);
             // 2:1
@@ -900,7 +899,8 @@ int Resampler::Push(const int16_t * samplesIn, int lengthIn,
             }
             lengthIn = (lengthIn * 4) / 11;
 
-            WebRtcSpl_DownsampleBy2(tmp, lengthIn, samplesOut, (int32_t*)state2_);
+            WebRtcSpl_DownsampleBy2(tmp, lengthIn, samplesOut,
+                                    (int32_t*)state2_);
             outLen = lengthIn / 2;
 
             free(tmp_mem);

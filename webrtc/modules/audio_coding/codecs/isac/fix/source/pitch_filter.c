@@ -34,19 +34,6 @@ static const int16_t kIntrpCoef[PITCH_FRACS][PITCH_FRACORDER] = {
   { 271, -743,  1570, -3320, 12963,  7301, -2292,  953, -325}
 };
 
-// Function prototype for pitch filtering.
-// TODO(Turaj): Add descriptions of input and output parameters.
-void WebRtcIsacfix_PitchFilterCore(int loopNumber,
-                                   int16_t gain,
-                                   int index,
-                                   int16_t sign,
-                                   int16_t* inputState,
-                                   int16_t* outputBuf2,
-                                   const int16_t* coefficient,
-                                   int16_t* inputBuf,
-                                   int16_t* outputBuf,
-                                   int* index2);
-
 static __inline int32_t CalcLrIntQ(int32_t fixVal,
                                    int16_t qDomain) {
   int32_t roundVal = 1 << (qDomain - 1);

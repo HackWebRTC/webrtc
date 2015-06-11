@@ -37,7 +37,7 @@ class AgcAudioProc {
 
  private:
   void PitchAnalysis(double* pitch_gains, double* pitch_lags_hz, int length);
-  void SubframeCorrelation(double* corr, int lenght_corr, int subframe_index);
+  void SubframeCorrelation(double* corr, int length_corr, int subframe_index);
   void GetLpcPolynomials(double* lpc, int length_lpc);
   void FindFirstSpectralPeaks(double* f_peak, int length_f_peak);
   void Rms(double* rms, int length_rms);

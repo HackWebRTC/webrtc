@@ -78,8 +78,8 @@ static const double kLpcCorrWindow[WINLEN] = {
 double WebRtcIsac_LevDurb(double *a, double *k, double *r, int order)
 {
 
-  double  sum, alpha;
-  int     m, m_h, i;
+  double sum, alpha;
+  int m, m_h, i;
   alpha = 0; //warning -DH
   a[0] = 1.0;
   if (r[0] < LEVINSON_EPS) { /* if r[0] <= 0, set LPC coeff. to zero */

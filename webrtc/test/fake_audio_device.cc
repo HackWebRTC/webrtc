@@ -115,9 +115,10 @@ void FakeAudioDevice::CaptureAudio() {
       uint32_t samples_needed = kFrequencyHz / 100;
       int64_t now_ms = clock_->TimeInMilliseconds();
       uint32_t time_since_last_playout_ms = now_ms - last_playout_ms_;
-      if (last_playout_ms_ > 0 && time_since_last_playout_ms > 0)
+      if (last_playout_ms_ > 0 && time_since_last_playout_ms > 0) {
         samples_needed = std::min(kFrequencyHz / time_since_last_playout_ms,
                                   kBufferSizeBytes / 2);
+      }
       uint32_t samples_out = 0;
       int64_t elapsed_time_ms = -1;
       int64_t ntp_time_ms = -1;

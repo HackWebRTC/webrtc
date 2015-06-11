@@ -1675,7 +1675,7 @@ int WebRtcIsacfix_DecodePitchLag(Bitstr_dec *streamdata,
 
   int32_t meangainQ12;
   int32_t CQ11, CQ10,tmp32a,tmp32b;
-  int16_t shft,tmp16a,tmp16c;
+  int16_t shft;
 
   meangainQ12=0;
   for (k = 0; k < 4; k++)
@@ -1725,22 +1725,19 @@ int WebRtcIsacfix_DecodePitchLag(Bitstr_dec *streamdata,
   CQ11 = WEBRTC_SPL_SHIFT_W32(CQ11,11-shft); // Scale with StepSize, Q11
   for (k=0; k<PITCH_SUBFRAMES; k++) {
     tmp32a =  WEBRTC_SPL_MUL_16_32_RSFT11(WebRtcIsacfix_kTransform[0][k], CQ11);
-    tmp16a = (int16_t)(tmp32a >> 5);
-    PitchLags_Q7[k] = tmp16a;
+    PitchLags_Q7[k] = (int16_t)(tmp32a >> 5);
   }
 
   CQ10 = mean_val2Q10[index[1]];
   for (k=0; k<PITCH_SUBFRAMES; k++) {
     tmp32b = WebRtcIsacfix_kTransform[1][k] * (int16_t)CQ10 >> 10;
-    tmp16c = (int16_t)(tmp32b >> 5);
-    PitchLags_Q7[k] += tmp16c;
+    PitchLags_Q7[k] += (int16_t)(tmp32b >> 5);
   }
 
   CQ10 = mean_val4Q10[index[3]];
   for (k=0; k<PITCH_SUBFRAMES; k++) {
     tmp32b = WebRtcIsacfix_kTransform[3][k] * (int16_t)CQ10 >> 10;
-    tmp16c = (int16_t)(tmp32b >> 5);
-    PitchLags_Q7[k] += tmp16c;
+    PitchLags_Q7[k] += (int16_t)(tmp32b >> 5);
   }
 
   return 0;
@@ -1761,7 +1758,7 @@ int WebRtcIsacfix_EncodePitchLag(int16_t* PitchLagsQ7,
   const int16_t *mean_val2Q10,*mean_val4Q10;
   const int16_t *lower_limit, *upper_limit;
   const uint16_t **cdf;
-  int16_t shft, tmp16a, tmp16b, tmp16c;
+  int16_t shft, tmp16b;
   int32_t tmp32b;
   int status = 0;
 
@@ -1832,22 +1829,19 @@ int WebRtcIsacfix_EncodePitchLag(int16_t* PitchLagsQ7,
 
   for (k=0; k<PITCH_SUBFRAMES; k++) {
     tmp32a =  WEBRTC_SPL_MUL_16_32_RSFT11(WebRtcIsacfix_kTransform[0][k], CQ11); // Q12
-    tmp16a = (int16_t)(tmp32a >> 5);  // Q7.
-    PitchLagsQ7[k] = tmp16a;
+    PitchLagsQ7[k] = (int16_t)(tmp32a >> 5);  // Q7.
   }
 
   CQ10 = mean_val2Q10[index[1]];
   for (k=0; k<PITCH_SUBFRAMES; k++) {
     tmp32b = WebRtcIsacfix_kTransform[1][k] * (int16_t)CQ10 >> 10;
-    tmp16c = (int16_t)(tmp32b >> 5);  // Q7.
-    PitchLagsQ7[k] += tmp16c;
+    PitchLagsQ7[k] += (int16_t)(tmp32b >> 5);  // Q7.
   }
 
   CQ10 = mean_val4Q10[index[3]];
   for (k=0; k<PITCH_SUBFRAMES; k++) {
     tmp32b = WebRtcIsacfix_kTransform[3][k] * (int16_t)CQ10 >> 10;
-    tmp16c = (int16_t)(tmp32b >> 5);  // Q7.
-    PitchLagsQ7[k] += tmp16c;
+    PitchLagsQ7[k] += (int16_t)(tmp32b >> 5);  // Q7.
   }
 
   /* entropy coding of quantization pitch lags */

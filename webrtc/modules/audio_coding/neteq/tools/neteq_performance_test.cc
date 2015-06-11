@@ -103,8 +103,8 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
     static const int kMaxChannels = 1;
     static const int kMaxSamplesPerMs = 48000 / 1000;
     static const int kOutputBlockSizeMs = 10;
-    static const int kOutDataLen = kOutputBlockSizeMs * kMaxSamplesPerMs *
-        kMaxChannels;
+    static const int kOutDataLen =
+        kOutputBlockSizeMs * kMaxSamplesPerMs * kMaxChannels;
     int16_t out_data[kOutDataLen];
     int num_channels;
     int samples_per_channel;

@@ -90,12 +90,12 @@ extern "C" {
   /* Index         - integer (range 0...23) indicating bottle neck & jitter as estimated by other side */
   /* returns 0 if everything went fine, -1 otherwise                                                   */
   int16_t WebRtcIsac_UpdateBandwidthEstimator(
-      BwEstimatorstr*    bwest_str,
+      BwEstimatorstr* bwest_str,
       const uint16_t rtp_number,
-      const int32_t  frame_length,
+      const int32_t frame_length,
       const uint32_t send_ts,
       const uint32_t arr_ts,
-      const int32_t  pksize);
+      const int32_t pksize);
 
   /* Update receiving estimates. Used when we only receive BWE index, no iSAC data packet. */
   int16_t WebRtcIsac_UpdateUplinkBwImpl(

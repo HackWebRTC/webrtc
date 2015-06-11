@@ -49,9 +49,7 @@ class Event;
 
 class AudioRate {
  public:
-  explicit AudioRate(int sample_rate_hz)
-      : rate_(sample_rate_hz),
-        samples_per_channel_(AudioProcessing::kChunkSizeMs * rate_ / 1000) {}
+  explicit AudioRate(int sample_rate_hz) { set(sample_rate_hz); }
   virtual ~AudioRate() {}
 
   void set(int rate) {

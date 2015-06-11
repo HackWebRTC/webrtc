@@ -61,7 +61,8 @@ class DecisionLogicNormal : public DecisionLogic {
   virtual Operations FuturePacketAvailable(
       const SyncBuffer& sync_buffer,
       const Expand& expand,
-      int decoder_frame_length, Modes prev_mode,
+      int decoder_frame_length,
+      Modes prev_mode,
       uint32_t target_timestamp,
       uint32_t available_timestamp,
       bool play_dtmf);

@@ -19,11 +19,9 @@
 namespace webrtc {
 namespace {
 
-enum {
-  kSamplesPer16kHzChannel = 160,
-  kSamplesPer32kHzChannel = 320,
-  kSamplesPer48kHzChannel = 480
-};
+const int kSamplesPer16kHzChannel = 160;
+const int kSamplesPer32kHzChannel = 320;
+const int kSamplesPer48kHzChannel = 480;
 
 bool HasKeyboardChannel(AudioProcessing::ChannelLayout layout) {
   switch (layout) {
@@ -84,8 +82,7 @@ AudioBuffer::AudioBuffer(int input_num_frames,
     output_num_frames_(output_num_frames),
     num_channels_(num_process_channels),
     num_bands_(NumBandsFromSamplesPerChannel(proc_num_frames_)),
-    num_split_frames_(rtc::CheckedDivExact(
-        proc_num_frames_, num_bands_)),
+    num_split_frames_(rtc::CheckedDivExact(proc_num_frames_, num_bands_)),
     mixed_low_pass_valid_(false),
     reference_copied_(false),
     activity_(AudioFrame::kVadUnknown),
@@ -399,7 +396,7 @@ int AudioBuffer::num_bands() const {
 // The resampler is only for supporting 48kHz to 16kHz in the reverse stream.
 void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   assert(frame->num_channels_ == num_input_channels_);
-  assert(frame->samples_per_channel_ ==  input_num_frames_);
+  assert(frame->samples_per_channel_ == input_num_frames_);
   InitForNewData();
   // Initialized lazily because there's a different condition in CopyFrom.
   if ((input_num_frames_ != proc_num_frames_) && !input_buffer_) {

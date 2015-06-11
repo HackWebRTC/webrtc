@@ -315,9 +315,10 @@ NetEqPlayoutMode NetEqImpl::PlayoutMode() const {
 int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
   CriticalSectionScoped lock(crit_sect_.get());
   assert(decoder_database_.get());
-  const int total_samples_in_buffers = packet_buffer_->NumSamplesInBuffer(
-      decoder_database_.get(), decoder_frame_length_) +
-          static_cast<int>(sync_buffer_->FutureLength());
+  const int total_samples_in_buffers =
+      packet_buffer_->NumSamplesInBuffer(decoder_database_.get(),
+                                         decoder_frame_length_) +
+      static_cast<int>(sync_buffer_->FutureLength());
   assert(delay_manager_.get());
   assert(decision_logic_.get());
   stats_.GetNetworkStatistics(fs_hz_, total_samples_in_buffers,
@@ -704,8 +705,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   return 0;
 }
 
-int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
-                                int* samples_per_channel, int* num_channels) {
+int NetEqImpl::GetAudioInternal(size_t max_length,
+                                int16_t* output,
+                                int* samples_per_channel,
+                                int* num_channels) {
   PacketList packet_list;
   DtmfEvent dtmf_event;
   Operations operation;

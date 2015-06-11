@@ -52,8 +52,8 @@ int16_t WebRtcG722_Encode(G722EncInst *G722enc_inst,
 {
     unsigned char *codechar = (unsigned char*) encoded;
     // Encode the input speech vector
-    return WebRtc_g722_encode((G722EncoderState*) G722enc_inst,
-                       codechar, speechIn, len);
+    return WebRtc_g722_encode((G722EncoderState*) G722enc_inst, codechar,
+                              speechIn, len);
 }
 
 int16_t WebRtcG722_CreateDecoder(G722DecInst **G722dec_inst)
@@ -93,8 +93,8 @@ int16_t WebRtcG722_Decode(G722DecInst *G722dec_inst,
 {
     // Decode the G.722 encoder stream
     *speechType=G722_WEBRTC_SPEECH;
-    return WebRtc_g722_decode((G722DecoderState*) G722dec_inst,
-                              decoded, encoded, len);
+    return WebRtc_g722_decode((G722DecoderState*) G722dec_inst, decoded,
+                              encoded, len);
 }
 
 int16_t WebRtcG722_Version(char *versionStr, short len)

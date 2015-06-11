@@ -52,13 +52,6 @@ int16_t WebRtcG711_DecodeU(const uint8_t* encoded,
   return len;
 }
 
-int WebRtcG711_DurationEst(const uint8_t* payload,
-                           int payload_length_bytes) {
-  (void) payload;
-  /* G.711 is one byte per sample, so we can just return the number of bytes. */
-  return payload_length_bytes;
-}
-
 int16_t WebRtcG711_Version(char* version, int16_t lenBytes) {
   strncpy(version, "2.0.0", lenBytes);
   return 0;

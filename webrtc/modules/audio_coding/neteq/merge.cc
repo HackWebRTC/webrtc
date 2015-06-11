@@ -312,8 +312,8 @@ int16_t Merge::CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
                                       int expand_period) const {
   // Calculate correlation without any normalization.
   const int max_corr_length = kMaxCorrelationLength;
-  int stop_position_downsamp = std::min(
-      max_corr_length, expand_->max_lag() / (fs_mult_ * 2) + 1);
+  int stop_position_downsamp =
+      std::min(max_corr_length, expand_->max_lag() / (fs_mult_ * 2) + 1);
   int16_t correlation_shift = 0;
   if (expanded_max * input_max > 26843546) {
     correlation_shift = 3;
@@ -367,9 +367,9 @@ int16_t Merge::CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
   // Ensure that underrun does not occur for 10ms case => we have to get at
   // least 10ms + overlap . (This should never happen thanks to the above
   // modification of peak-finding starting point.)
-  while ((best_correlation_index + input_length) <
-      static_cast<int>(timestamps_per_call_ + expand_->overlap_length()) ||
-      best_correlation_index + input_length < start_position) {
+  while (((best_correlation_index + input_length) <
+      static_cast<int>(timestamps_per_call_ + expand_->overlap_length())) ||
+      ((best_correlation_index + input_length) < start_position)) {
     assert(false);  // Should never happen.
     best_correlation_index += expand_period;  // Jump one lag ahead.
   }

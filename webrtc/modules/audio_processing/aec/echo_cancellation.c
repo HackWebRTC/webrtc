@@ -270,7 +270,7 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
                                const float* farend,
                                int16_t nrOfSamples) {
   Aec* aecpc = aecInst;
-  int newNrOfSamples = (int)nrOfSamples;
+  int newNrOfSamples = nrOfSamples;
   float new_farend[MAX_RESAMP_LEN];
   const float* farend_ptr = farend;
 

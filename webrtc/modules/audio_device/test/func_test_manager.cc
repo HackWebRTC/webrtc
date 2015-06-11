@@ -367,8 +367,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                 const uint16_t nSamplesIn = packet->nSamples;
                 const uint8_t nChannelsIn = packet->nChannels;
                 const uint32_t samplesPerSecIn = packet->samplesPerSec;
-                const uint16_t nBytesPerSampleIn =
-                    packet->nBytesPerSample;
+                const uint16_t nBytesPerSampleIn = packet->nBytesPerSample;
 
                 int32_t fsInHz(samplesPerSecIn);
                 int32_t fsOutHz(samplesPerSec);
@@ -389,15 +388,14 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                         {
                             _resampler.Push(
                                 (const int16_t*) packet->dataBuffer,
-                                2 * nSamplesIn,
-                                (int16_t*) audioSamples, 2
-                                * nSamples, lenOut);
+                                2 * nSamplesIn, (int16_t*) audioSamples,
+                                2 * nSamples, lenOut);
                         } else
                         {
                             _resampler.Push(
                                 (const int16_t*) packet->dataBuffer,
-                                2 * nSamplesIn, tmpBuf_96kHz, 2
-                                * nSamples, lenOut);
+                                2 * nSamplesIn, tmpBuf_96kHz, 2 * nSamples,
+                                lenOut);
 
                             ptr16In = &tmpBuf_96kHz[0];
                             ptr16Out = (int16_t*) audioSamples;
@@ -429,16 +427,13 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                         if (nChannels == 1)
                         {
                             _resampler.Push(
-                                (const int16_t*) packet->dataBuffer,
-                                nSamplesIn,
-                                (int16_t*) audioSamples,
-                                nSamples, lenOut);
+                                (const int16_t*) packet->dataBuffer, nSamplesIn,
+                                (int16_t*) audioSamples, nSamples, lenOut);
                         } else
                         {
                             _resampler.Push(
-                                (const int16_t*) packet->dataBuffer,
-                                nSamplesIn, tmpBuf_96kHz, nSamples,
-                                lenOut);
+                                (const int16_t*) packet->dataBuffer, nSamplesIn,
+                                tmpBuf_96kHz, nSamples, lenOut);
 
                             ptr16In = &tmpBuf_96kHz[0];
                             ptr16Out = (int16_t*) audioSamples;
@@ -472,8 +467,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
         int16_t fileBuf[480];
 
         // read mono-file
-        int32_t len = _playFile.Read((int8_t*) fileBuf, 2
-            * nSamples);
+        int32_t len = _playFile.Read((int8_t*) fileBuf, 2 * nSamples);
         if (len != 2 * (int32_t) nSamples)
         {
             _playFile.Rewind();

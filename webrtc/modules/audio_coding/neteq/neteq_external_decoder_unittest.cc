@@ -74,7 +74,7 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
       return -1;
     }
     payload_size_bytes_ = WebRtcPcm16b_Encode(input_, frame_size_samples_,
-                                              encoded_);;
+                                              encoded_);
 
     int next_send_time = rtp_generator_->GetRtpHeader(
         kPayloadType, frame_size_samples_, &rtp_header_);

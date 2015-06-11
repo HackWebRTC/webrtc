@@ -336,8 +336,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
           enh_bufPtr1,
           synt,
           &iLBCdec_inst->old_syntdenum[
-                                       (iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)],
-                                       LPC_FILTERORDER+1, lag);
+              (iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)],
+          LPC_FILTERORDER+1, lag);
 
       WEBRTC_SPL_MEMCPY_W16(&synt[-LPC_FILTERORDER], &synt[lag-LPC_FILTERORDER],
                             LPC_FILTERORDER);
@@ -347,8 +347,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       WebRtcSpl_FilterARFastQ12(
           enh_bufPtr1, synt,
           &iLBCdec_inst->old_syntdenum[
-                                       (iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)],
-                                       LPC_FILTERORDER+1, lag);
+              (iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)],
+          LPC_FILTERORDER+1, lag);
 
       WEBRTC_SPL_MEMCPY_W16(iLBCdec_inst->syntMem, &synt[lag-LPC_FILTERORDER],
                             LPC_FILTERORDER);

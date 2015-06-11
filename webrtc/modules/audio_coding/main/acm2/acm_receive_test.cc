@@ -25,12 +25,12 @@ namespace test {
 AcmReceiveTest::AcmReceiveTest(PacketSource* packet_source,
                                AudioSink* audio_sink,
                                int output_freq_hz,
-                               NumOutputChannels exptected_output_channels)
+                               NumOutputChannels expected_output_channels)
     : clock_(0),
       packet_source_(packet_source),
       audio_sink_(audio_sink),
       output_freq_hz_(output_freq_hz),
-      exptected_output_channels_(exptected_output_channels) {
+      expected_output_channels_(expected_output_channels) {
   webrtc::AudioCoding::Config config;
   config.clock = &clock_;
   config.playout_frequency_hz = output_freq_hz_;
@@ -95,13 +95,13 @@ void AcmReceiveTest::Run() {
       EXPECT_EQ(output_freq_hz_, output_frame.sample_rate_hz_);
       const int samples_per_block = output_freq_hz_ * 10 / 1000;
       EXPECT_EQ(samples_per_block, output_frame.samples_per_channel_);
-      if (exptected_output_channels_ != kArbitraryChannels) {
+      if (expected_output_channels_ != kArbitraryChannels) {
         if (output_frame.speech_type_ == webrtc::AudioFrame::kPLC) {
           // Don't check number of channels for PLC output, since each test run
           // usually starts with a short period of mono PLC before decoding the
           // first packet.
         } else {
-          EXPECT_EQ(exptected_output_channels_, output_frame.num_channels_);
+          EXPECT_EQ(expected_output_channels_, output_frame.num_channels_);
         }
       }
       ASSERT_TRUE(audio_sink_->WriteAudioFrame(output_frame));

@@ -77,11 +77,8 @@ public:
     }
 
 protected:
-    virtual int32_t WriteEncodedAudioData(
-        const int8_t* audioBuffer,
-        size_t bufferLength,
-        uint16_t millisecondsOfData,
-        const TickTime* playoutTS);
+    int32_t WriteEncodedAudioData(const int8_t* audioBuffer,
+                                  size_t bufferLength);
 
     int32_t SetUpAudioEncoder();
 

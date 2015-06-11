@@ -83,14 +83,14 @@ float IsacSpeedTest::EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
   return 1000.0 * clocks / CLOCKS_PER_SEC;
 }
 
-float IsacSpeedTest::DecodeABlock(const uint8_t* bit_stream, int encoded_bytes,
+float IsacSpeedTest::DecodeABlock(const uint8_t* bit_stream,
+                                  int encoded_bytes,
                                   int16_t* out_data) {
   int value;
   int16_t audio_type;
   clock_t clocks = clock();
-  value = WebRtcIsacfix_Decode(ISACFIX_main_inst_,
-                               bit_stream,
-                               encoded_bytes, out_data, &audio_type);
+  value = WebRtcIsacfix_Decode(ISACFIX_main_inst_, bit_stream, encoded_bytes,
+                               out_data, &audio_type);
   clocks = clock() - clocks;
   EXPECT_EQ(output_length_sample_, value);
   return 1000.0 * clocks / CLOCKS_PER_SEC;

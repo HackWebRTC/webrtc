@@ -20,10 +20,8 @@
 namespace webrtc {
 namespace {
 
-enum {
-  kSamplesPer16kHzChannel = 160,
-  kSamplesPer48kHzChannel = 480
-};
+const int kSamplesPer16kHzChannel = 160;
+const int kSamplesPer48kHzChannel = 480;
 
 }  // namespace
 

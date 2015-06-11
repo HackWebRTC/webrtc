@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
@@ -129,18 +130,16 @@ TEST_F(VadTest, ValidRatesFrameLengths) {
   // This test verifies valid and invalid rate/frame_length combinations. We
   // loop through some sampling rates and frame lengths from negative values to
   // values larger than possible.
-  const int kNumRates = 12;
-  const int kRates[kNumRates] = {
+  const int kRates[] = {
     -8000, -4000, 0, 4000, 8000, 8001, 15999, 16000, 32000, 48000, 48001, 96000
   };
 
-  const int kNumFrameLengths = 13;
-  const int kFrameLengths[kNumFrameLengths] = {
+  const int kFrameLengths[] = {
     -10, 0, 80, 81, 159, 160, 240, 320, 480, 640, 960, 1440, 2000
   };
 
-  for (int i = 0; i < kNumRates; i++) {
-    for (int j = 0; j < kNumFrameLengths; j++) {
+  for (size_t i = 0; i < arraysize(kRates); i++) {
+    for (size_t j = 0; j < arraysize(kFrameLengths); j++) {
       if (ValidRatesAndFrameLengths(kRates[i], kFrameLengths[j])) {
         EXPECT_EQ(0, WebRtcVad_ValidRateAndFrameLength(kRates[i],
                                                        kFrameLengths[j]));

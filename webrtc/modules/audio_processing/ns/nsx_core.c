@@ -1215,7 +1215,8 @@ void WebRtcNsx_DataAnalysis(NoiseSuppressionFixedC* inst,
   WebRtcNsx_AnalysisUpdate(inst, winData, speechFrame);
 
   // Get input energy
-  inst->energyIn = WebRtcSpl_Energy(winData, (int)inst->anaLen, &(inst->scaleEnergyIn));
+  inst->energyIn =
+      WebRtcSpl_Energy(winData, inst->anaLen, &inst->scaleEnergyIn);
 
   // Reset zero input flag
   inst->zeroInputSignal = 0;
@@ -1460,7 +1461,8 @@ void WebRtcNsx_DataSynthesis(NoiseSuppressionFixedC* inst, short* outFrame) {
   if (inst->gainMap == 1 &&
       inst->blockIndex > END_STARTUP_LONG &&
       inst->energyIn > 0) {
-    energyOut = WebRtcSpl_Energy(inst->real, (int)inst->anaLen, &scaleEnergyOut); // Q(-scaleEnergyOut)
+    // Q(-scaleEnergyOut)
+    energyOut = WebRtcSpl_Energy(inst->real, inst->anaLen, &scaleEnergyOut);
     if (scaleEnergyOut == 0 && !(energyOut & 0x7f800000)) {
       energyOut = WEBRTC_SPL_SHIFT_W32(energyOut, 8 + scaleEnergyOut
                                        - inst->scaleEnergyIn);

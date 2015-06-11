@@ -289,7 +289,9 @@ Appendix :
 static void makewt(int nw, int *ip, float *w);
 static void makect(int nc, int *ip, float *c);
 static void bitrv2(int n, int *ip, float *a);
+#if 0  // Not used.
 static void bitrv2conj(int n, int *ip, float *a);
+#endif
 static void cftfsub(int n, float *a, float *w);
 static void cftbsub(int n, float *a, float *w);
 static void cft1st(int n, float *a, float *w);
@@ -302,6 +304,7 @@ static void dstsub(int n, float *a, int nc, float *c)
 #endif
 
 
+#if 0  // Not used.
 void WebRtc_cdft(int n, int isgn, float *a, int *ip, float *w)
 {
     if (n > (ip[0] << 2)) {
@@ -319,6 +322,7 @@ void WebRtc_cdft(int n, int isgn, float *a, int *ip, float *w)
         cftfsub(n, a, w);
     }
 }
+#endif
 
 
 void WebRtc_rdft(int n, int isgn, float *a, int *ip, float *w)
@@ -789,7 +793,7 @@ static void bitrv2(int n, int *ip, float *a)
     }
 }
 
-
+#if 0  // Not used.
 static void bitrv2conj(int n, int *ip, float *a)
 {
     int j, j1, k, k1, l, m, m2;
@@ -897,7 +901,7 @@ static void bitrv2conj(int n, int *ip, float *a)
         }
     }
 }
-
+#endif
 
 static void cftfsub(int n, float *a, float *w)
 {

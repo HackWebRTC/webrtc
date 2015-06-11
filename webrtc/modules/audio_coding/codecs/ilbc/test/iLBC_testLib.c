@@ -42,6 +42,7 @@ int main(int argc, char* argv[])
   FILE *ifileid,*efileid,*ofileid, *chfileid;
   short encoded_data[55], data[240], speechType;
   short len, mode, pli;
+  size_t readlen;
   int blockcount = 0;
 
   IlbcEncoderInstance *Enc_Inst;
@@ -125,19 +126,16 @@ int main(int argc, char* argv[])
 
   /* loop over input blocks */
 #ifdef SPLIT_10MS
-  while(fread(data, sizeof(short), 80, ifileid) == 80) {
+  readlen = 80;
 #else
-  while((short)fread(data,sizeof(short),(mode<<3),ifileid)==(mode<<3)) {
+  readlen = (size_t)(mode << 3);
 #endif
+  while(fread(data, sizeof(short), readlen, ifileid) == readlen) {
     blockcount++;
 
     /* encoding */
     fprintf(stderr, "--- Encoding block %i --- ",blockcount);
-#ifdef SPLIT_10MS
-    len=WebRtcIlbcfix_Encode(Enc_Inst, data, 80, encoded_data);
-#else
-    len=WebRtcIlbcfix_Encode(Enc_Inst, data, (short)(mode<<3), encoded_data);
-#endif
+    len=WebRtcIlbcfix_Encode(Enc_Inst, data, (short)readlen, encoded_data);
     if (len < 0) {
       fprintf(stderr, "Error encoding\n");
       exit(0);
@@ -152,9 +150,7 @@ int main(int argc, char* argv[])
     /* write byte file */
     if(len != 0){ //len may be 0 in 10ms split case
       fwrite(encoded_data,1,len,efileid);
-    }
 
-    if(len != 0){ //len may be 0 in 10ms split case
       /* get channel data if provided */
       if (argc==6) {
         if (fread(&pli, sizeof(int16_t), 1, chfileid)) {

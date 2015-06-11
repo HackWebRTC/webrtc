@@ -25,7 +25,9 @@ class NoopCallback : public webrtc::LappedTransform::Callback {
   NoopCallback() : block_num_(0) {}
 
   virtual void ProcessAudioBlock(const complex<float>* const* in_block,
-                                 int in_channels, int frames, int out_channels,
+                                 int in_channels,
+                                 int frames,
+                                 int out_channels,
                                  complex<float>* const* out_block) {
     CHECK_EQ(in_channels, out_channels);
     for (int i = 0; i < out_channels; ++i) {
@@ -47,7 +49,9 @@ class FftCheckerCallback : public webrtc::LappedTransform::Callback {
   FftCheckerCallback() : block_num_(0) {}
 
   virtual void ProcessAudioBlock(const complex<float>* const* in_block,
-                                 int in_channels, int frames, int out_channels,
+                                 int in_channels,
+                                 int frames,
+                                 int out_channels,
                                  complex<float>* const* out_block) {
     CHECK_EQ(in_channels, out_channels);
 

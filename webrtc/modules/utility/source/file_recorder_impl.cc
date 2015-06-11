@@ -227,11 +227,7 @@ int32_t FileRecorderImpl::RecordAudioToFile(
     // will be available. Wait until then.
     if (encodedLenInBytes)
     {
-        uint16_t msOfData =
-            ptrAudioFrame->samples_per_channel_ /
-            uint16_t(ptrAudioFrame->sample_rate_hz_ / 1000);
-        if (WriteEncodedAudioData(_audioBuffer, encodedLenInBytes, msOfData,
-                                  playoutTS) == -1)
+        if (WriteEncodedAudioData(_audioBuffer, encodedLenInBytes) == -1)
         {
             return -1;
         }
@@ -264,11 +260,8 @@ int32_t FileRecorderImpl::codec_info(CodecInst& codecInst) const
     return 0;
 }
 
-int32_t FileRecorderImpl::WriteEncodedAudioData(
-    const int8_t* audioBuffer,
-    size_t bufferLength,
-    uint16_t /*millisecondsOfData*/,
-    const TickTime* /*playoutTS*/)
+int32_t FileRecorderImpl::WriteEncodedAudioData(const int8_t* audioBuffer,
+                                                size_t bufferLength)
 {
     return _moduleFile->IncomingAudioData(audioBuffer, bufferLength);
 }

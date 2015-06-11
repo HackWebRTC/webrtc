@@ -57,11 +57,11 @@ int WebRtcIlbcfix_XcorrCoef(
   if (step==1) {
     max=WebRtcSpl_MaxAbsValueW16(regressor, subl + searchLen - 1);
     rp_beg = regressor;
-    rp_end = &regressor[subl];
+    rp_end = regressor + subl;
   } else { /* step==-1 */
-    max=WebRtcSpl_MaxAbsValueW16(&regressor[-searchLen], subl + searchLen - 1);
-    rp_beg = &regressor[-1];
-    rp_end = &regressor[subl-1];
+    max = WebRtcSpl_MaxAbsValueW16(regressor - searchLen, subl + searchLen - 1);
+    rp_beg = regressor - 1;
+    rp_end = regressor + subl - 1;
   }
 
   /* Introduce a scale factor on the Energy in int32_t in

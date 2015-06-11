@@ -152,7 +152,7 @@ void stereoInterleave(unsigned char* data, int dataLen, int stride);
 #ifdef NETEQ_ISACFIX_CODEC
 #include "isacfix.h"
 #ifdef CODEC_ISAC
-#error Cannot have both ISAC and ISACfix defined. Please de-select one in the beginning of RTPencode.cpp
+#error Cannot have both ISAC and ISACfix defined. Please de-select one.
 #endif
 #endif
 #ifdef CODEC_G722

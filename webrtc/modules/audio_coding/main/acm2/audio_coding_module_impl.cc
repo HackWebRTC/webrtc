@@ -339,8 +339,8 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
   }
 
   // If the length and frequency matches. We currently just support raw PCM.
-  if ((audio_frame.sample_rate_hz_ / 100)
-      != audio_frame.samples_per_channel_) {
+  if ((audio_frame.sample_rate_hz_ / 100) !=
+      audio_frame.samples_per_channel_) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "Cannot Add 10 ms audio, input frequency and length doesn't"
                  " match");

@@ -582,8 +582,7 @@ int main(int argc, char* argv[]) {
 
     totalsmpls += declen;
     totalbits += 8 * stream_len;
-    kbps = ((double)FS) / ((double)cur_framesmpls) * 8.0 * stream_len /
-           1000.0;  // kbits/s
+    kbps = ((double)FS) / ((double)cur_framesmpls) * 8.0 * stream_len / 1000.0;
     fy = fopen("bit_rate.dat", "a");
     fprintf(fy, "Frame %i = %0.14f\n", framecnt, kbps);
     fclose(fy);

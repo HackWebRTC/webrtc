@@ -227,10 +227,10 @@ extern "C" {
 
   int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
                                          const uint8_t* encoded,
-                                         int32_t          packet_size,
-                                         uint16_t         rtp_seq_number,
-                                         uint32_t         send_ts,
-                                         uint32_t         arr_ts);
+                                         int32_t packet_size,
+                                         uint16_t rtp_seq_number,
+                                         uint32_t send_ts,
+                                         uint32_t arr_ts);
 
   /****************************************************************************
    * WebRtcIsacfix_Decode(...)

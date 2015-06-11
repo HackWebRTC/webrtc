@@ -55,16 +55,16 @@ class FakeAdmTest : public testing::Test,
 
   // Callbacks inherited from webrtc::AudioTransport.
   // ADM is pushing data.
-  virtual int32_t RecordedDataIsAvailable(const void* audioSamples,
-                                          const uint32_t nSamples,
-                                          const uint8_t nBytesPerSample,
-                                          const uint8_t nChannels,
-                                          const uint32_t samplesPerSec,
-                                          const uint32_t totalDelayMS,
-                                          const int32_t clockDrift,
-                                          const uint32_t currentMicLevel,
-                                          const bool keyPressed,
-                                          uint32_t& newMicLevel) {
+  int32_t RecordedDataIsAvailable(const void* audioSamples,
+                                  const uint32_t nSamples,
+                                  const uint8_t nBytesPerSample,
+                                  const uint8_t nChannels,
+                                  const uint32_t samplesPerSec,
+                                  const uint32_t totalDelayMS,
+                                  const int32_t clockDrift,
+                                  const uint32_t currentMicLevel,
+                                  const bool keyPressed,
+                                  uint32_t& newMicLevel) override {
     rec_buffer_bytes_ = nSamples * nBytesPerSample;
     if ((rec_buffer_bytes_ == 0) ||
         (rec_buffer_bytes_ > FakeAudioCaptureModule::kNumberSamples *
@@ -79,14 +79,14 @@ class FakeAdmTest : public testing::Test,
   }
 
   // ADM is pulling data.
-  virtual int32_t NeedMorePlayData(const uint32_t nSamples,
-                                   const uint8_t nBytesPerSample,
-                                   const uint8_t nChannels,
-                                   const uint32_t samplesPerSec,
-                                   void* audioSamples,
-                                   uint32_t& nSamplesOut,
-                                   int64_t* elapsed_time_ms,
-                                   int64_t* ntp_time_ms) {
+  int32_t NeedMorePlayData(const uint32_t nSamples,
+                           const uint8_t nBytesPerSample,
+                           const uint8_t nChannels,
+                           const uint32_t samplesPerSec,
+                           void* audioSamples,
+                           uint32_t& nSamplesOut,
+                           int64_t* elapsed_time_ms,
+                           int64_t* ntp_time_ms) override {
     ++pull_iterations_;
     const uint32_t audio_buffer_size = nSamples * nBytesPerSample;
     const uint32_t bytes_out = RecordedDataReceived() ?

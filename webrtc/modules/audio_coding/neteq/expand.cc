@@ -214,24 +214,24 @@ int Expand::Process(AudioMultiVector* output) {
 
     // Create combined signal by shifting in more and more of unvoiced part.
     temp_shift = 8 - temp_shift;  // = getbits(mix_factor_increment).
-    size_t temp_lenght = (parameters.current_voice_mix_factor -
+    size_t temp_length = (parameters.current_voice_mix_factor -
         parameters.voice_mix_factor) >> temp_shift;
-    temp_lenght = std::min(temp_lenght, current_lag);
-    DspHelper::CrossFade(voiced_vector, unvoiced_vector, temp_lenght,
+    temp_length = std::min(temp_length, current_lag);
+    DspHelper::CrossFade(voiced_vector, unvoiced_vector, temp_length,
                          &parameters.current_voice_mix_factor,
                          mix_factor_increment, temp_data);
 
     // End of cross-fading period was reached before end of expanded signal
     // path. Mix the rest with a fixed mixing factor.
-    if (temp_lenght < current_lag) {
+    if (temp_length < current_lag) {
       if (mix_factor_increment != 0) {
         parameters.current_voice_mix_factor = parameters.voice_mix_factor;
       }
       int16_t temp_scale = 16384 - parameters.current_voice_mix_factor;
       WebRtcSpl_ScaleAndAddVectorsWithRound(
-          voiced_vector + temp_lenght, parameters.current_voice_mix_factor,
-          unvoiced_vector + temp_lenght, temp_scale, 14,
-          temp_data + temp_lenght, static_cast<int>(current_lag - temp_lenght));
+          voiced_vector + temp_length, parameters.current_voice_mix_factor,
+          unvoiced_vector + temp_length, temp_scale, 14,
+          temp_data + temp_length, static_cast<int>(current_lag - temp_length));
     }
 
     // Select muting slope depending on how many consecutive expands we have
@@ -428,13 +428,12 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
 
   // Calculate the exact best correlation in the range between
   // |correlation_lag| and |distortion_lag|.
-  correlation_length = distortion_lag + 10;
-  correlation_length = std::min(correlation_length, fs_mult_120);
-  correlation_length = std::max(correlation_length, 60 * fs_mult);
+  correlation_length =
+      std::max(std::min(distortion_lag + 10, fs_mult_120), 60 * fs_mult);
 
   int start_index = std::min(distortion_lag, correlation_lag);
-  int correlation_lags = WEBRTC_SPL_ABS_W16((distortion_lag-correlation_lag))
-      + 1;
+  int correlation_lags =
+      WEBRTC_SPL_ABS_W16((distortion_lag-correlation_lag)) + 1;
   assert(correlation_lags <= 99 * fs_mult + 1);  // Cannot be larger.
 
   for (size_t channel_ix = 0; channel_ix < num_channels_; ++channel_ix) {
@@ -753,8 +752,10 @@ Expand::ChannelParameters::ChannelParameters()
   memset(ar_filter_state, 0, sizeof(ar_filter_state));
 }
 
-int16_t Expand::Correlation(const int16_t* input, size_t input_length,
-                            int16_t* output, int16_t* output_scale) const {
+void Expand::Correlation(const int16_t* input,
+                         size_t input_length,
+                         int16_t* output,
+                         int16_t* output_scale) const {
   // Set parameters depending on sample rate.
   const int16_t* filter_coefficients;
   int16_t num_coefficients;
@@ -818,7 +819,6 @@ int16_t Expand::Correlation(const int16_t* input, size_t input_length,
                                    norm_shift2);
   // Total scale factor (right shifts) of correlation value.
   *output_scale = 2 * norm_shift + kCorrelationShift + norm_shift2;
-  return kNumCorrelationLags;
 }
 
 void Expand::UpdateLagIndex() {
@@ -850,7 +850,7 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
                                      int16_t* buffer) {
   static const int kNoiseLpcOrder = BackgroundNoise::kMaxLpcOrder;
   int16_t scaled_random_vector[kMaxSampleRate / 8000 * 125];
-  assert(static_cast<size_t>(kMaxSampleRate / 8000 * 125) >= num_noise_samples);
+  assert(num_noise_samples <= static_cast<size_t>(kMaxSampleRate / 8000 * 125));
   int16_t* noise_samples = &buffer[kNoiseLpcOrder];
   if (background_noise_->initialized()) {
     // Use background noise parameters.

@@ -160,6 +160,9 @@ END:
 @  int i = 0;
 @  int j = 0;
 @
+@  assert(data_length > 0);
+@  assert(coefficients_length > 1);
+@
 @  for (i = 0; i < data_length - 1; i += 2) {
 @    int32_t output1 = 0;
 @    int32_t sum1 = 0;

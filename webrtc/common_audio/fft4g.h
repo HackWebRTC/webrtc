@@ -17,7 +17,6 @@ extern "C" {
 
 // Refer to fft4g.c for documentation.
 void WebRtc_rdft(int n, int isgn, float *a, int *ip, float *w);
-void WebRtc_cdft(int n, int isgn, float *a, int *ip, float *w);
 
 #if defined(__cplusplus)
 }

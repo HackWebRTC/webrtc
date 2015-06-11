@@ -55,9 +55,11 @@ ORDER_COEF_LOOP:  @ for(k = order_coef ; k > 0; k--)
   smlabb  r11, r7, r5, r12       @ sth_Q15[k - 1] * tmpAR + 16384
   smlabb  r10, r6, r5, r12       @ cth_Q15[k - 1] * tmpAR + 16384
   smulbb  r7, r7, r8             @ sth_Q15[k - 1] * ar_g_Q0[k - 1]
-  smlabb  r11, r6, r8, r11       @ cth_Q15[k - 1]*ar_g_Q0[k - 1]+(sth_Q15[k - 1]*tmpAR+16384)
+  smlabb  r11, r6, r8, r11       @ cth_Q15[k - 1] * ar_g_Q0[k - 1] +
+                                 @     (sth_Q15[k - 1] * tmpAR + 16384)
 
-  sub     r10, r10, r7           @ cth_Q15[k - 1]*tmpAR+16384-(sth_Q15[k - 1]*ar_g_Q0[k - 1])
+  sub     r10, r10, r7           @ cth_Q15[k - 1] * tmpAR + 16384 -
+                                 @     (sth_Q15[k - 1] * ar_g_Q0[k - 1])
   ssat    r11, #16, r11, asr #15
   ssat    r5, #16, r10, asr #15
   strh    r11, [r0], #-2         @ Output: ar_g_Q0[k]

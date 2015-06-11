@@ -48,12 +48,14 @@ void ReadAndWriteTest(const ChannelBuffer<float>& input,
   }
 
   // Write and read the last bit.
-  if (input_pos < total_frames)
+  if (input_pos < total_frames) {
     buf.Write(input.Slice(slice.get(), static_cast<int>(input_pos)),
               num_channels, total_frames - input_pos);
-  if (buf.ReadFramesAvailable())
+  }
+  if (buf.ReadFramesAvailable()) {
     buf.Read(output->Slice(slice.get(), static_cast<int>(output_pos)),
              num_channels, buf.ReadFramesAvailable());
+  }
   EXPECT_EQ(0u, buf.ReadFramesAvailable());
 }
 

@@ -46,7 +46,7 @@ class OpusTest : public TestWithParam<::testing::tuple<int, int>> {
 
   int EncodeDecode(WebRtcOpusEncInst* encoder,
                    const int16_t* input_audio,
-                   const int input_samples,
+                   int input_samples,
                    WebRtcOpusDecInst* decoder,
                    int16_t* output_audio,
                    int16_t* audio_type);
@@ -98,7 +98,7 @@ void OpusTest::SetMaxPlaybackRate(WebRtcOpusEncInst* encoder,
 
 int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
                            const int16_t* input_audio,
-                           const int input_samples,
+                           int input_samples,
                            WebRtcOpusDecInst* decoder,
                            int16_t* output_audio,
                            int16_t* audio_type) {
@@ -165,7 +165,7 @@ void OpusTest::TestDtxEffect(bool dtx) {
       EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
       EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(0, audio_type);  // Speech.
-    } else if (1 == encoded_bytes_) {
+    } else if (encoded_bytes_ == 1) {
       EXPECT_EQ(1, opus_encoder_->in_dtx_mode);
       EXPECT_EQ(1, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(2, audio_type);  // Comfort noise.

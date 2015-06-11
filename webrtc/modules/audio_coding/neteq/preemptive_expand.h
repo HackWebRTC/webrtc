@@ -52,9 +52,9 @@ class PreemptiveExpand : public TimeStretch {
  protected:
   // Sets the parameters |best_correlation| and |peak_index| to suitable
   // values when the signal contains no active speech.
-  void SetParametersForPassiveSpeech(size_t len,
-                                     int16_t* w16_bestCorr,
-                                     int* w16_bestIndex) const override;
+  void SetParametersForPassiveSpeech(size_t input_length,
+                                     int16_t* best_correlation,
+                                     int* peak_index) const override;
 
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.

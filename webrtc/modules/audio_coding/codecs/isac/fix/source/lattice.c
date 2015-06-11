@@ -279,7 +279,8 @@ void WebRtcIsacfix_NormLatticeFilterAr(int16_t orderCoef,
       ARfQ0vec[i] = (int16_t)WebRtcSpl_SatW32ToW16(tmp32); // Q0
     }
 
-    for (i=orderCoef;i>0;i--) //get the state of f&g for the first input, for all orders
+    // Get the state of f & g for the first input, for all orders.
+    for (i = orderCoef; i > 0; i--)
     {
       tmp32 = (cthQ15[i - 1] * ARfQ0vec[0] - sthQ15[i - 1] * stateGQ0[i - 1] +
                16384) >> 15;

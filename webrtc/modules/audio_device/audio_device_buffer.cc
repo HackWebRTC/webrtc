@@ -406,12 +406,6 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audioBuffer,
         return -1;
     }
 
-    if (nSamples != _recSamples)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "invalid number of recorded samples (%d)", nSamples);
-        return -1;
-    }
-
     if (_recChannel == AudioDeviceModule::kChannelBoth)
     {
         // (default) copy the complete input buffer to the local buffer
@@ -576,8 +570,9 @@ int32_t AudioDeviceBuffer::GetPlayoutData(void* audioBuffer)
 
     if (_playSize > kMaxBufferSizeBytes)
     {
-       WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "_playSize %i exceeds "
-       "kMaxBufferSizeBytes in AudioDeviceBuffer::GetPlayoutData", _playSize);
+       WEBRTC_TRACE(kTraceError, kTraceUtility, _id,
+                    "_playSize %i exceeds kMaxBufferSizeBytes in "
+                    "AudioDeviceBuffer::GetPlayoutData", _playSize);
        assert(false);
        return -1;
     }

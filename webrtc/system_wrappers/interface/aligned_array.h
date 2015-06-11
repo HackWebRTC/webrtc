@@ -68,14 +68,6 @@ template<typename T> class AlignedArray {
     return Row(row)[col];
   }
 
-  int rows() const {
-    return rows_;
-  }
-
-  int cols() const {
-    return cols_;
-  }
-
  private:
   int rows_;
   int cols_;

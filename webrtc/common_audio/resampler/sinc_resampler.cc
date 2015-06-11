@@ -86,8 +86,6 @@
 #define _USE_MATH_DEFINES
 
 #include "webrtc/common_audio/resampler/sinc_resampler.h"
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
-#include "webrtc/typedefs.h"
 
 #include <assert.h>
 #include <math.h>
@@ -95,9 +93,13 @@
 
 #include <limits>
 
-namespace webrtc {
+#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/typedefs.h"
 
-static double SincScaleFactor(double io_ratio) {
+namespace webrtc {
+namespace {
+
+double SincScaleFactor(double io_ratio) {
   // |sinc_scale_factor| is basically the normalized cutoff frequency of the
   // low-pass filter.
   double sinc_scale_factor = io_ratio > 1.0 ? 1.0 / io_ratio : 1.0;
@@ -112,6 +114,8 @@ static double SincScaleFactor(double io_ratio) {
 
   return sinc_scale_factor;
 }
+
+}  // namespace
 
 // If we know the minimum architecture at compile time, avoid CPU detection.
 #if defined(WEBRTC_ARCH_X86_FAMILY)

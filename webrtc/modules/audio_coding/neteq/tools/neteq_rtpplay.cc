@@ -552,8 +552,8 @@ int main(int argc, char* argv[]) {
 
     // Check if it is time to get output audio.
     if (time_now_ms >= next_output_time_ms) {
-      static const int kOutDataLen = kOutputBlockSizeMs * kMaxSamplesPerMs *
-          kMaxChannels;
+      static const int kOutDataLen =
+          kOutputBlockSizeMs * kMaxSamplesPerMs * kMaxChannels;
       int16_t out_data[kOutDataLen];
       int num_channels;
       int samples_per_channel;

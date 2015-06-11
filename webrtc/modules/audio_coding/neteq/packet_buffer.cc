@@ -250,16 +250,12 @@ int PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
     Packet* packet = (*it);
     AudioDecoder* decoder =
         decoder_database->GetDecoder(packet->header.payloadType);
-    if (decoder) {
-      int duration;
-      if (packet->sync_packet) {
-        duration = last_duration;
-      } else if (packet->primary) {
-        duration =
-            decoder->PacketDuration(packet->payload, packet->payload_length);
-      } else {
+    if (decoder && !packet->sync_packet) {
+      if (!packet->primary) {
         continue;
       }
+      int duration =
+        decoder->PacketDuration(packet->payload, packet->payload_length);
       if (duration >= 0) {
         last_duration = duration;  // Save the most up-to-date (valid) duration.
       }

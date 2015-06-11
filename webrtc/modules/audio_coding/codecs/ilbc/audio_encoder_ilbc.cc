@@ -25,12 +25,9 @@ const int kSampleRateHz = 8000;
 }  // namespace
 
 bool AudioEncoderIlbc::Config::IsOk() const {
-  if (!(frame_size_ms == 20 || frame_size_ms == 30 || frame_size_ms == 40 ||
-        frame_size_ms == 60))
-    return false;
-  if (kSampleRateHz / 100 * (frame_size_ms / 10) > kMaxSamplesPerPacket)
-    return false;
-  return true;
+  return (frame_size_ms == 20 || frame_size_ms == 30 || frame_size_ms == 40 ||
+          frame_size_ms == 60) &&
+      (kSampleRateHz / 100 * (frame_size_ms / 10)) <= kMaxSamplesPerPacket;
 }
 
 AudioEncoderIlbc::AudioEncoderIlbc(const Config& config)

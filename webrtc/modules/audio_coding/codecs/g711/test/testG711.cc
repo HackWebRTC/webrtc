@@ -24,18 +24,12 @@
 #define CLOCKS_PER_SEC_G711 1000
 
 /* function for reading audio data from PCM file */
-int readframe(int16_t* data, FILE* inp, int length) {
-
-  short k, rlen, status = 0;
-
-  rlen = (short) fread(data, sizeof(int16_t), length, inp);
-  if (rlen < length) {
-    for (k = rlen; k < length; k++)
-      data[k] = 0;
-    status = 1;
-  }
-
-  return status;
+bool readframe(int16_t* data, FILE* inp, int length) {
+  short rlen = (short) fread(data, sizeof(int16_t), length, inp);
+  if (rlen >= length)
+    return false;
+  memset(data + rlen, 0, (length - rlen) * sizeof(int16_t));
+  return true;
 }
 
 int main(int argc, char* argv[]) {
@@ -43,7 +37,8 @@ int main(int argc, char* argv[]) {
   FILE* inp;
   FILE* outp;
   FILE* bitp = NULL;
-  int framecnt, endfile;
+  int framecnt;
+  bool endfile;
 
   int16_t framelength = 80;
 
@@ -122,8 +117,8 @@ int main(int argc, char* argv[]) {
 
   /* Initialize encoder and decoder */
   framecnt = 0;
-  endfile = 0;
-  while (endfile == 0) {
+  endfile = false;
+  while (!endfile) {
     framecnt++;
     /* Read speech block */
     endfile = readframe(shortdata, inp, framelength);

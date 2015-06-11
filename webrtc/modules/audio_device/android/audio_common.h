@@ -16,7 +16,6 @@ namespace webrtc {
 enum {
   kDefaultSampleRate = 44100,
   kNumChannels = 1,
-  kDefaultBufSizeInSamples = kDefaultSampleRate * 10 / 1000,
   // Number of bytes per audio frame.
   // Example: 16-bit PCM in mono => 1*(16/8)=2 [bytes/frame]
   kBytesPerFrame = kNumChannels * (16 / 8),

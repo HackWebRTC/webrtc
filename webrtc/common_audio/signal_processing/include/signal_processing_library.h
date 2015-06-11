@@ -844,14 +844,11 @@ void WebRtcSpl_ResetResample8khzTo22khz(WebRtcSpl_State8khzTo22khz* state);
  *
  ******************************************************************/
 
-void WebRtcSpl_Resample48khzTo32khz(const int32_t* In, int32_t* Out,
-                                    int32_t K);
+void WebRtcSpl_Resample48khzTo32khz(const int32_t* In, int32_t* Out, int32_t K);
 
-void WebRtcSpl_Resample32khzTo24khz(const int32_t* In, int32_t* Out,
-                                    int32_t K);
+void WebRtcSpl_Resample32khzTo24khz(const int32_t* In, int32_t* Out, int32_t K);
 
-void WebRtcSpl_Resample44khzTo32khz(const int32_t* In, int32_t* Out,
-                                    int32_t K);
+void WebRtcSpl_Resample44khzTo32khz(const int32_t* In, int32_t* Out, int32_t K);
 
 /*******************************************************************
  * resample_48khz.c

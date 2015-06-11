@@ -495,10 +495,11 @@ TEST_F(SplTest, AutoCorrelationTest) {
   const int32_t expected[kVector16Size] = {302681398, 14223410, -121705063,
     -85221647, -17104971, 61806945, 6644603, -669329, 43};
 
-  EXPECT_EQ(-1, WebRtcSpl_AutoCorrelation(vector16,
-      kVector16Size, kVector16Size + 1, vector32, &scale));
-  EXPECT_EQ(kVector16Size, WebRtcSpl_AutoCorrelation(vector16,
-      kVector16Size, kVector16Size - 1, vector32, &scale));
+  EXPECT_EQ(-1, WebRtcSpl_AutoCorrelation(vector16, kVector16Size,
+                                          kVector16Size + 1, vector32, &scale));
+  EXPECT_EQ(kVector16Size,
+            WebRtcSpl_AutoCorrelation(vector16, kVector16Size,
+                                      kVector16Size - 1, vector32, &scale));
   EXPECT_EQ(3, scale);
   for (int i = 0; i < kVector16Size; ++i) {
     EXPECT_EQ(expected[i], vector32[i]);

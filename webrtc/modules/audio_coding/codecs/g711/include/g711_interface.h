@@ -111,23 +111,6 @@ int16_t WebRtcG711_DecodeU(const uint8_t* encoded,
                            int16_t* decoded,
                            int16_t* speechType);
 
-/****************************************************************************
- * WebRtcG711_DurationEst(...)
- *
- * This function estimates the duration of a G711 packet in samples.
- *
- * Input:
- *      - payload            : Encoded data
- *      - payloadLengthBytes : Bytes in encoded vector
- *
- * Return value              : The duration of the packet in samples, which is
- *                             just payload_length_bytes, since G.711 uses one
- *                             byte per sample.
- */
-
-int WebRtcG711_DurationEst(const uint8_t* payload,
-                           int payload_length_bytes);
-
 /**********************************************************************
 * WebRtcG711_Version(...)
 *

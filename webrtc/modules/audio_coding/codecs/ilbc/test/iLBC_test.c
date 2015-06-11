@@ -52,6 +52,7 @@ int main(int argc, char* argv[])
   int blockcount = 0;
   int packetlosscount = 0;
   int frameLen;
+  size_t len_i16s;
   int16_t speechType;
   IlbcEncoderInstance *Enc_Inst;
   IlbcDecoderInstance *Dec_Inst;
@@ -173,9 +174,8 @@ int main(int argc, char* argv[])
 
     /* write byte file */
 
-    if (fwrite(encoded_data, sizeof(int16_t),
-               ((len+1)/sizeof(int16_t)), efileid) !=
-        (size_t)(((len+1)/sizeof(int16_t)))) {
+    len_i16s = (len + 1) / sizeof(int16_t);
+    if (fwrite(encoded_data, sizeof(int16_t), len_i16s, efileid) != len_i16s) {
       return -1;
     }
 

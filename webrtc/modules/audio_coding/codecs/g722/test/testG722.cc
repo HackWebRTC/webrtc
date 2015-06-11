@@ -29,18 +29,13 @@ typedef struct WebRtcG722EncInst    G722EncInst;
 typedef struct WebRtcG722DecInst    G722DecInst;
 
 /* function for reading audio data from PCM file */
-int readframe(int16_t *data, FILE *inp, int length)
+bool readframe(int16_t *data, FILE *inp, int length)
 {
-    short k, rlen, status = 0;
-
-    rlen = (short)fread(data, sizeof(int16_t), length, inp);
-    if (rlen < length) {
-        for (k = rlen; k < length; k++)
-            data[k] = 0;
-        status = 1;
-    }
-
-    return status;
+    short rlen = (short)fread(data, sizeof(int16_t), length, inp);
+    if (rlen >= length)
+      return false;
+    memset(data + rlen, 0, (length - rlen) * sizeof(int16_t));
+    return true;
 }
 
 int main(int argc, char* argv[])
@@ -48,7 +43,8 @@ int main(int argc, char* argv[])
     char inname[60], outbit[40], outname[40];
     FILE *inp, *outbitp, *outp;
 
-    int framecnt, endfile;
+    int framecnt;
+    bool endfile;
     int16_t framelength = 160;
     G722EncInst *G722enc_inst;
     G722DecInst *G722dec_inst;
@@ -116,8 +112,8 @@ int main(int argc, char* argv[])
 
     /* Initialize encoder and decoder */
     framecnt = 0;
-    endfile = 0;
-    while (endfile == 0) {
+    endfile = false;
+    while (!endfile) {
         framecnt++;
 
         /* Read speech block */
@@ -139,13 +135,13 @@ int main(int argc, char* argv[])
             printf("Error in encoder/decoder\n");
         } else {
           /* Write coded bits to file */
-          if (fwrite(streamdata, sizeof(short), stream_len/2,
-                     outbitp) != static_cast<size_t>(stream_len/2)) {
+          if (fwrite(streamdata, sizeof(short), stream_len / 2, outbitp) !=
+              static_cast<size_t>(stream_len / 2)) {
             return -1;
           }
           /* Write coded speech to file */
-          if (fwrite(decoded, sizeof(short), framelength,
-                     outp) != static_cast<size_t>(framelength)) {
+          if (fwrite(decoded, sizeof(short), framelength, outp) !=
+              static_cast<size_t>(framelength)) {
             return -1;
           }
         }

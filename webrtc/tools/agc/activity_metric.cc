@@ -292,7 +292,7 @@ void void_main(int argc, char* argv[]) {
     ASSERT_GE(ret_val, 0);
 
     if (ret_val > 0) {
-      ASSERT_TRUE(ret_val == true_vad_index);
+      ASSERT_EQ(true_vad_index, ret_val);
       for (int n = 0; n < ret_val; n++) {
         if (true_vad[n] == 1) {
           total_active++;

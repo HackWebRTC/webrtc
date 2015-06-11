@@ -620,9 +620,9 @@ int16_t WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
 
 int16_t WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst,
                                         const uint8_t* encoded,
-                                        int32_t          packet_size,
-                                        uint16_t         rtp_seq_number,
-                                        uint32_t         arr_ts)
+                                        int32_t packet_size,
+                                        uint16_t rtp_seq_number,
+                                        uint32_t arr_ts)
 {
   ISACFIX_SubStruct *ISAC_inst;
   Bitstr_dec streamdata;
@@ -692,10 +692,10 @@ int16_t WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst,
 
 int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
                                        const uint8_t* encoded,
-                                       int32_t          packet_size,
-                                       uint16_t         rtp_seq_number,
-                                       uint32_t         send_ts,
-                                       uint32_t         arr_ts)
+                                       int32_t packet_size,
+                                       uint16_t rtp_seq_number,
+                                       uint32_t send_ts,
+                                       uint32_t arr_ts)
 {
   ISACFIX_SubStruct *ISAC_inst;
   Bitstr_dec streamdata;
@@ -767,11 +767,11 @@ int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
  */
 
 
-int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
+int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct* ISAC_main_inst,
                              const uint8_t* encoded,
-                             int16_t          len,
-                             int16_t          *decoded,
-                             int16_t     *speechType)
+                             int16_t len,
+                             int16_t* decoded,
+                             int16_t* speechType)
 {
   ISACFIX_SubStruct *ISAC_inst;
   /* number of samples (480 or 960), output from decoder */
@@ -981,9 +981,8 @@ int16_t WebRtcIsacfix_DecodePlcNb(ISACFIX_MainStruct *ISAC_main_inst,
   declen = 0;
   while( noOfLostFrames > 0 )
   {
-    ok = WebRtcIsacfix_DecodePlcImpl( outframeWB, &ISAC_inst->ISACdec_obj, &no_of_samples );
-    if(ok)
-      return -1;
+    WebRtcIsacfix_DecodePlcImpl(outframeWB, &ISAC_inst->ISACdec_obj,
+                                &no_of_samples);
 
     WebRtcIsacfix_SplitAndFilter2(outframeWB, &(outframeNB[k*240]), dummy, &ISAC_inst->ISACdec_obj.decimatorstr_obj);
 
@@ -1029,7 +1028,7 @@ int16_t WebRtcIsacfix_DecodePlc(ISACFIX_MainStruct *ISAC_main_inst,
                                 int16_t noOfLostFrames)
 {
 
-  int16_t no_of_samples, declen, k, ok;
+  int16_t no_of_samples, declen, k;
   int16_t outframe16[MAX_FRAMESAMPLES];
 
   ISACFIX_SubStruct *ISAC_inst;
@@ -1044,9 +1043,8 @@ int16_t WebRtcIsacfix_DecodePlc(ISACFIX_MainStruct *ISAC_main_inst,
   declen = 0;
   while( noOfLostFrames > 0 )
   {
-    ok = WebRtcIsacfix_DecodePlcImpl( &(outframe16[k*480]), &ISAC_inst->ISACdec_obj, &no_of_samples );
-    if(ok)
-      return -1;
+    WebRtcIsacfix_DecodePlcImpl(&(outframe16[k*480]), &ISAC_inst->ISACdec_obj,
+                                &no_of_samples);
     declen += no_of_samples;
     noOfLostFrames--;
     k++;

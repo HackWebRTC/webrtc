@@ -72,7 +72,7 @@ class Blocker {
           BlockerCallback* callback);
 
   void ProcessChunk(const float* const* input,
-                    int num_frames,
+                    int chunk_size,
                     int num_input_channels,
                     int num_output_channels,
                     float* const* output);

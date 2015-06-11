@@ -147,7 +147,8 @@ void WebRtcIlbcfix_CbSearch(
 
     /* Compute the CB vectors' energies for the second cb section (filtered cb) */
     WebRtcIlbcfix_CbMemEnergyAugmentation(interpSamplesFilt, cbvectors,
-                                          scale, (int16_t)(base_size+20), energyW16, energyShifts);
+                                          scale, (int16_t)(base_size + 20),
+                                          energyW16, energyShifts);
 
     /* Compute the CB vectors' energies and store them in the vector
      * energyW16. Also the corresponding shift values are stored. The
@@ -238,9 +239,12 @@ void WebRtcIlbcfix_CbSearch(
     if (lTarget==SUBL) {
       i=sInd;
       if (sInd<20) {
-        WebRtcIlbcfix_AugmentedCbCorr(target, cbvectors+lMem,
+        WebRtcIlbcfix_AugmentedCbCorr(target, cbvectors + lMem,
                                       interpSamplesFilt, cDot,
-                                      (int16_t)(sInd+20), (int16_t)(WEBRTC_SPL_MIN(39, (eInd+20))), scale);
+                                      (int16_t)(sInd + 20),
+                                      (int16_t)(WEBRTC_SPL_MIN(39,
+                                                               (eInd + 20))),
+                                      scale);
         i=20;
         cDotPtr = &cDot[20 - sInd];
       } else {
@@ -250,14 +254,16 @@ void WebRtcIlbcfix_CbSearch(
       cb_vecPtr = cbvectors+lMem-20-i;
 
       /* Calculate the cross correlations (main part of the filtered CB) */
-      WebRtcSpl_CrossCorrelation(cDotPtr, target, cb_vecPtr, lTarget, (int16_t)(eInd-i+1), scale, -1);
+      WebRtcSpl_CrossCorrelation(cDotPtr, target, cb_vecPtr, lTarget,
+                                 (int16_t)(eInd - i + 1), scale, -1);
 
     } else {
       cDotPtr = cDot;
       cb_vecPtr = cbvectors+lMem-lTarget-sInd;
 
       /* Calculate the cross correlations (main part of the filtered CB) */
-      WebRtcSpl_CrossCorrelation(cDotPtr, target, cb_vecPtr, lTarget, (int16_t)(eInd-sInd+1), scale, -1);
+      WebRtcSpl_CrossCorrelation(cDotPtr, target, cb_vecPtr, lTarget,
+                                 (int16_t)(eInd - sInd + 1), scale, -1);
 
     }
 

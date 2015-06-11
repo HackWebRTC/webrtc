@@ -427,11 +427,14 @@ inline void AudioFrame::Reset() {
   interleaved_ = true;
 }
 
-inline void AudioFrame::UpdateFrame(int id, uint32_t timestamp,
+inline void AudioFrame::UpdateFrame(int id,
+                                    uint32_t timestamp,
                                     const int16_t* data,
-                                    int samples_per_channel, int sample_rate_hz,
+                                    int samples_per_channel,
+                                    int sample_rate_hz,
                                     SpeechType speech_type,
-                                    VADActivity vad_activity, int num_channels,
+                                    VADActivity vad_activity,
+                                    int num_channels,
                                     uint32_t energy) {
   id_ = id;
   timestamp_ = timestamp;

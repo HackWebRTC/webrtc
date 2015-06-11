@@ -149,7 +149,7 @@ void StatisticsCalculator::GetNetworkStatistics(
 
   stats->speech_expand_rate =
       CalculateQ14Ratio(expanded_speech_samples_,
-      timestamps_since_last_report_);
+                        timestamps_since_last_report_);
 
   stats->secondary_decoded_rate =
       CalculateQ14Ratio(secondary_decoded_samples_,

@@ -175,7 +175,10 @@ static void MemshipValQ15( int16_t in, int16_t *A, int16_t *B )
 
 
 
-static void LinearResampler( int16_t *in, int16_t *out, int16_t lenIn, int16_t lenOut )
+static void LinearResampler(int16_t* in,
+                            int16_t* out,
+                            int16_t lenIn,
+                            int16_t lenOut)
 {
   int32_t n = (lenIn - 1) * RESAMP_RES;
   int16_t resOut, i, j, relativePos, diff; /* */
@@ -230,12 +233,11 @@ static void LinearResampler( int16_t *in, int16_t *out, int16_t lenIn, int16_t l
 
 
 
-int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
-                                    IsacFixDecoderInstance *ISACdec_obj,
-                                    int16_t *current_framesamples )
+void WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
+                                 IsacFixDecoderInstance *ISACdec_obj,
+                                 int16_t *current_framesamples )
 {
   int subframecnt;
-  int16_t len = 0;
 
   int16_t* Vector_Word16_1;
   int16_t  Vector_Word16_Extended_1[FRAMESAMPLES_HALF + NOISE_FILTER_LEN];
@@ -797,6 +799,4 @@ int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
 
   (ISACdec_obj->plcstr_obj).used = PLC_WAS_USED;
   *current_framesamples = 480;
-
-  return len;
 }

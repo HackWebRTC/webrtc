@@ -82,17 +82,16 @@ class AudioTransportAPI: public AudioTransport {
 
   ~AudioTransportAPI() {}
 
-  virtual int32_t RecordedDataIsAvailable(
-      const void* audioSamples,
-      const uint32_t nSamples,
-      const uint8_t nBytesPerSample,
-      const uint8_t nChannels,
-      const uint32_t sampleRate,
-      const uint32_t totalDelay,
-      const int32_t clockSkew,
-      const uint32_t currentMicLevel,
-      const bool keyPressed,
-      uint32_t& newMicLevel) {
+  int32_t RecordedDataIsAvailable(const void* audioSamples,
+                                  const uint32_t nSamples,
+                                  const uint8_t nBytesPerSample,
+                                  const uint8_t nChannels,
+                                  const uint32_t sampleRate,
+                                  const uint32_t totalDelay,
+                                  const int32_t clockSkew,
+                                  const uint32_t currentMicLevel,
+                                  const bool keyPressed,
+                                  uint32_t& newMicLevel) override {
     rec_count_++;
     if (rec_count_ % 100 == 0) {
       if (nChannels == 1) {
@@ -109,15 +108,14 @@ class AudioTransportAPI: public AudioTransport {
     return 0;
   }
 
-  virtual int32_t NeedMorePlayData(
-      const uint32_t nSamples,
-      const uint8_t nBytesPerSample,
-      const uint8_t nChannels,
-      const uint32_t sampleRate,
-      void* audioSamples,
-      uint32_t& nSamplesOut,
-      int64_t* elapsed_time_ms,
-      int64_t* ntp_time_ms) {
+  int32_t NeedMorePlayData(const uint32_t nSamples,
+                           const uint8_t nBytesPerSample,
+                           const uint8_t nChannels,
+                           const uint32_t sampleRate,
+                           void* audioSamples,
+                           uint32_t& nSamplesOut,
+                           int64_t* elapsed_time_ms,
+                           int64_t* ntp_time_ms) override {
     play_count_++;
     if (play_count_ % 100 == 0) {
       if (nChannels == 1) {
@@ -130,29 +128,29 @@ class AudioTransportAPI: public AudioTransport {
     return 0;
   }
 
-  virtual int OnDataAvailable(const int voe_channels[],
-                              int number_of_voe_channels,
-                              const int16_t* audio_data,
-                              int sample_rate,
-                              int number_of_channels,
-                              int number_of_frames,
-                              int audio_delay_milliseconds,
-                              int current_volume,
-                              bool key_pressed,
-                              bool need_audio_processing) {
+  int OnDataAvailable(const int voe_channels[],
+                      int number_of_voe_channels,
+                      const int16_t* audio_data,
+                      int sample_rate,
+                      int number_of_channels,
+                      int number_of_frames,
+                      int audio_delay_milliseconds,
+                      int current_volume,
+                      bool key_pressed,
+                      bool need_audio_processing) override {
     return 0;
   }
 
-  virtual void PushCaptureData(int voe_channel, const void* audio_data,
-                               int bits_per_sample, int sample_rate,
-                               int number_of_channels,
-                               int number_of_frames) {}
+  void PushCaptureData(int voe_channel, const void* audio_data,
+                       int bits_per_sample, int sample_rate,
+                       int number_of_channels,
+                       int number_of_frames) override {}
 
-  virtual void PullRenderData(int bits_per_sample, int sample_rate,
-                              int number_of_channels, int number_of_frames,
-                              void* audio_data,
-                              int64_t* elapsed_time_ms,
-                              int64_t* ntp_time_ms) {}
+  void PullRenderData(int bits_per_sample, int sample_rate,
+                      int number_of_channels, int number_of_frames,
+                      void* audio_data,
+                      int64_t* elapsed_time_ms,
+                      int64_t* ntp_time_ms) override {}
  private:
   uint32_t rec_count_;
   uint32_t play_count_;
