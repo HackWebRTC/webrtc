@@ -140,6 +140,9 @@
                 # included here, or better yet, build a proper .jar in webrtc
                 # and include it here.
                 'android_java_files': [
+                  'app/webrtc/java/android/org/webrtc/EglBase.java',
+                  'app/webrtc/java/android/org/webrtc/GlShader.java',
+                  'app/webrtc/java/android/org/webrtc/GlUtil.java',
                   'app/webrtc/java/android/org/webrtc/VideoRendererGui.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoEncoder.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoDecoder.java',

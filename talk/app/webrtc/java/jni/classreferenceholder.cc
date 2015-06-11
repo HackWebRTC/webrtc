@@ -73,17 +73,18 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "android/graphics/SurfaceTexture");
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid");
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid$NativeObserver");
+  LoadClass(jni, "org/webrtc/EglBase");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$VideoCodecType");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$VideoCodecType");
-  jclass j_decoder_class = GetClass("org/webrtc/MediaCodecVideoDecoder");
+  jclass j_egl_base_class = GetClass("org/webrtc/EglBase");
   jmethodID j_is_egl14_supported_method = jni->GetStaticMethodID(
-      j_decoder_class, "isEGL14Supported", "()Z");
+      j_egl_base_class, "isEGL14Supported", "()Z");
   bool is_egl14_supported = jni->CallStaticBooleanMethod(
-      j_decoder_class, j_is_egl14_supported_method);
+      j_egl_base_class, j_is_egl14_supported_method);
   CHECK_EXCEPTION(jni);
   if (is_egl14_supported) {
     LoadClass(jni, "android/opengl/EGLContext");

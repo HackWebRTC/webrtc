@@ -34,10 +34,7 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.opengl.EGL14;
-import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
-import android.opengl.EGLDisplay;
-import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
@@ -101,15 +98,7 @@ public class MediaCodecVideoDecoder {
   private int textureID = -1;
   private SurfaceTexture surfaceTexture = null;
   private Surface surface = null;
-  private float[] stMatrix = new float[16];
-  private EGLDisplay eglDisplay = EGL14.EGL_NO_DISPLAY;
-  private EGLContext eglContext = EGL14.EGL_NO_CONTEXT;
-  private EGLSurface eglSurface = EGL14.EGL_NO_SURFACE;
-  private static final int EGL14_SDK_VERSION =
-      android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
-  private static final int CURRENT_SDK_VERSION =
-      android.os.Build.VERSION.SDK_INT;
-
+  private EglBase eglBase;
 
   private MediaCodecVideoDecoder() { }
 
@@ -177,11 +166,6 @@ public class MediaCodecVideoDecoder {
     return null;  // No HW decoder.
   }
 
-  private static boolean isEGL14Supported() {
-    Log.d(TAG, "SDK version: " + CURRENT_SDK_VERSION);
-    return (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION);
-  }
-
   public static boolean isVp8HwSupported() {
     return findDecoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null;
   }
@@ -195,100 +179,6 @@ public class MediaCodecVideoDecoder {
       throw new RuntimeException(
           "MediaCodecVideoDecoder previously operated on " + mediaCodecThread +
           " but is now called on " + Thread.currentThread());
-    }
-  }
-
-  private void checkEglError(String msg) {
-    int error;
-    if ((error = EGL14.eglGetError()) != EGL14.EGL_SUCCESS) {
-      Log.e(TAG, msg + ": EGL Error: 0x" + Integer.toHexString(error));
-      throw new RuntimeException(
-          msg + ": EGL error: 0x" + Integer.toHexString(error));
-    }
-  }
-
-  private void checkGlError(String msg) {
-    int error;
-    if ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-      Log.e(TAG, msg + ": GL Error: 0x" + Integer.toHexString(error));
-      throw new RuntimeException(
-          msg + ": GL Error: 0x " + Integer.toHexString(error));
-    }
-  }
-
-  private void eglSetup(EGLContext sharedContext, int width, int height) {
-    Log.d(TAG, "EGL setup");
-    if (sharedContext == null) {
-      sharedContext = EGL14.EGL_NO_CONTEXT;
-    }
-    eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-    if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
-      throw new RuntimeException("Unable to get EGL14 display");
-    }
-    int[] version = new int[2];
-    if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
-      throw new RuntimeException("Unable to initialize EGL14");
-    }
-
-    // Configure EGL for pbuffer and OpenGL ES 2.0.
-    int[] attribList = {
-      EGL14.EGL_RED_SIZE, 8,
-      EGL14.EGL_GREEN_SIZE, 8,
-      EGL14.EGL_BLUE_SIZE, 8,
-      EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-      EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,
-      EGL14.EGL_NONE
-    };
-    EGLConfig[] configs = new EGLConfig[1];
-    int[] numConfigs = new int[1];
-    if (!EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0,
-        configs.length, numConfigs, 0)) {
-      throw new RuntimeException("Unable to find RGB888 EGL config");
-    }
-
-    // Configure context for OpenGL ES 2.0.
-    int[] attrib_list = {
-      EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
-      EGL14.EGL_NONE
-    };
-    eglContext = EGL14.eglCreateContext(eglDisplay, configs[0], sharedContext,
-        attrib_list, 0);
-    checkEglError("eglCreateContext");
-    if (eglContext == null) {
-      throw new RuntimeException("Null EGL context");
-    }
-
-    // Create a pbuffer surface.
-    int[] surfaceAttribs = {
-      EGL14.EGL_WIDTH, width,
-      EGL14.EGL_HEIGHT, height,
-      EGL14.EGL_NONE
-    };
-    eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, configs[0],
-        surfaceAttribs, 0);
-    checkEglError("eglCreatePbufferSurface");
-    if (eglSurface == null) {
-      throw new RuntimeException("EGL surface was null");
-    }
-  }
-
-  private void eglRelease() {
-    Log.d(TAG, "EGL release");
-    if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
-      EGL14.eglDestroySurface(eglDisplay, eglSurface);
-      EGL14.eglDestroyContext(eglDisplay, eglContext);
-      EGL14.eglReleaseThread();
-      EGL14.eglTerminate(eglDisplay);
-    }
-    eglDisplay = EGL14.EGL_NO_DISPLAY;
-    eglContext = EGL14.EGL_NO_CONTEXT;
-    eglSurface = EGL14.EGL_NO_SURFACE;
-  }
-
-
-  private void makeCurrent() {
-    if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-      throw new RuntimeException("eglMakeCurrent failed");
     }
   }
 
@@ -336,16 +226,17 @@ public class MediaCodecVideoDecoder {
 
       if (useSurface) {
         // Create shared EGL context.
-        eglSetup(sharedContext, width, height);
-        makeCurrent();
+        eglBase = new EglBase(sharedContext, EglBase.ConfigType.PIXEL_BUFFER);
+        eglBase.createDummyPbufferSurface();
+        eglBase.makeCurrent();
 
         // Create output surface
         int[] textures = new int[1];
         GLES20.glGenTextures(1, textures, 0);
-        checkGlError("glGenTextures");
+        GlUtil.checkNoGLES2Error("glGenTextures");
         textureID = textures[0];
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureID);
-        checkGlError("glBindTexture mTextureID");
+        GlUtil.checkNoGLES2Error("glBindTexture mTextureID");
 
         GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
             GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
@@ -355,12 +246,12 @@ public class MediaCodecVideoDecoder {
             GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
             GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        checkGlError("glTexParameter");
+        GlUtil.checkNoGLES2Error("glTexParameter");
         Log.d(TAG, "Video decoder TextureID = " + textureID);
         surfaceTexture = new SurfaceTexture(textureID);
         surface = new Surface(surfaceTexture);
         decodeSurface = surface;
-     }
+      }
 
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
       if (!useSurface) {
@@ -404,9 +295,10 @@ public class MediaCodecVideoDecoder {
         textures[0] = textureID;
         Log.d(TAG, "Delete video decoder TextureID " + textureID);
         GLES20.glDeleteTextures(1, textures, 0);
-        checkGlError("glDeleteTextures");
+        GlUtil.checkNoGLES2Error("glDeleteTextures");
       }
-      eglRelease();
+      eglBase.release();
+      eglBase = null;
     }
   }
 

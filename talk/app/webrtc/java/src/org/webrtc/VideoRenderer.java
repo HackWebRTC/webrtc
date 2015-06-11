@@ -71,6 +71,9 @@ public class VideoRenderer {
       this.yuvPlanes = yuvPlanes;
       this.yuvFrame = true;
       this.rotationDegree = rotationDegree;
+      if (rotationDegree % 90 != 0) {
+        throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
+      }
     }
 
     /**
@@ -87,6 +90,17 @@ public class VideoRenderer {
       this.textureId = textureId;
       this.yuvFrame = false;
       this.rotationDegree = rotationDegree;
+      if (rotationDegree % 90 != 0) {
+        throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
+      }
+    }
+
+    public int rotatedWidth() {
+      return (rotationDegree % 180 == 0) ? width : height;
+    }
+
+    public int rotatedHeight() {
+      return (rotationDegree % 180 == 0) ? height : width;
     }
 
     /**
