@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 
   short streamLen;
   short numSamplesRead;
-  int lenDecodedAudio;
+  short lenDecodedAudio;
   short senderIdx;
   short receiverIdx;
 

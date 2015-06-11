@@ -88,8 +88,8 @@ int main(int argc, char* argv[]) {
   int16_t CodingMode;
   int16_t bottleneck;
 
-  int framesize = 30; /* ms */
-  // int framesize = 60; /* To invoke cisco complexity case at frame 2252 */
+  int16_t framesize = 30; /* ms */
+  // int16_t framesize = 60; /* To invoke cisco complexity case at frame 2252 */
 
   int cur_framesmpls, err;
 
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
   double length_file;
 
   int16_t stream_len = 0;
-  int declen;
+  int16_t declen;
 
   int16_t shortdata[FRAMESAMPLES_10ms];
   int16_t decoded[MAX_FRAMESAMPLES];

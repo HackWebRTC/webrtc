@@ -101,15 +101,14 @@ int main(int argc, char* argv[])
   int i, errtype, h = 0, k, packetLossPercent = 0;
   int16_t CodingMode;
   int16_t bottleneck;
-  int framesize = 30;           /* ms */
+  int16_t framesize = 30;           /* ms */
   int cur_framesmpls, err = 0, lostPackets = 0;
 
   /* Runtime statistics */
   double starttime, runtime, length_file;
 
   int16_t stream_len = 0;
-  int16_t framecnt;
-  int declen = 0;
+  int16_t framecnt, declen = 0;
   int16_t shortdata[FRAMESAMPLES_10ms];
   int16_t decoded[MAX_FRAMESAMPLES];
   uint16_t streamdata[500];
@@ -767,7 +766,7 @@ int main(int argc, char* argv[])
 #else
           declen = -1;
 #endif
-          prevFrameSize = static_cast<int16_t>(declen / 240);
+          prevFrameSize = declen/240;
         }
       }
 

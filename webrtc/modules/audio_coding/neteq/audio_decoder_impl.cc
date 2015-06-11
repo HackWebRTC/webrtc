@@ -163,9 +163,9 @@ int AudioDecoderIlbc::DecodeInternal(const uint8_t* encoded,
                                      SpeechType* speech_type) {
   DCHECK_EQ(sample_rate_hz, 8000);
   int16_t temp_type = 1;  // Default is speech.
-  int ret = WebRtcIlbcfix_Decode(dec_state_, encoded,
-                                 static_cast<int16_t>(encoded_len), decoded,
-                                 &temp_type);
+  int16_t ret = WebRtcIlbcfix_Decode(dec_state_, encoded,
+                                     static_cast<int16_t>(encoded_len), decoded,
+                                     &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }
@@ -330,11 +330,11 @@ int AudioDecoderOpus::DecodeInternal(const uint8_t* encoded,
                                      SpeechType* speech_type) {
   DCHECK_EQ(sample_rate_hz, 48000);
   int16_t temp_type = 1;  // Default is speech.
-  int ret = WebRtcOpus_Decode(dec_state_, encoded,
-                              static_cast<int16_t>(encoded_len), decoded,
-                              &temp_type);
+  int16_t ret = WebRtcOpus_Decode(dec_state_, encoded,
+                                  static_cast<int16_t>(encoded_len), decoded,
+                                  &temp_type);
   if (ret > 0)
-    ret *= static_cast<int>(channels_);  // Return total number of samples.
+    ret *= static_cast<int16_t>(channels_);  // Return total number of samples.
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }
@@ -352,11 +352,11 @@ int AudioDecoderOpus::DecodeRedundantInternal(const uint8_t* encoded,
 
   DCHECK_EQ(sample_rate_hz, 48000);
   int16_t temp_type = 1;  // Default is speech.
-  int ret = WebRtcOpus_DecodeFec(dec_state_, encoded,
-                                 static_cast<int16_t>(encoded_len), decoded,
-                                 &temp_type);
+  int16_t ret = WebRtcOpus_DecodeFec(dec_state_, encoded,
+                                     static_cast<int16_t>(encoded_len), decoded,
+                                     &temp_type);
   if (ret > 0)
-    ret *= static_cast<int>(channels_);  // Return total number of samples.
+    ret *= static_cast<int16_t>(channels_);  // Return total number of samples.
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }

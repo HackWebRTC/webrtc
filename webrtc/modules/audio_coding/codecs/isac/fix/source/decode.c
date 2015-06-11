@@ -27,14 +27,14 @@
 
 
 
-int WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
-                             IsacFixDecoderInstance *ISACdec_obj,
-                             int16_t       *current_framesamples)
+int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
+                                 IsacFixDecoderInstance *ISACdec_obj,
+                                 int16_t       *current_framesamples)
 {
   int k;
   int err;
   int16_t BWno;
-  int len = 0;
+  int16_t len = 0;
 
   int16_t model;
 

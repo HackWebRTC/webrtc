@@ -135,10 +135,10 @@ extern "C" {
    *                            -1 - Error
    */
 
-  int WebRtcIlbcfix_Encode(IlbcEncoderInstance *iLBCenc_inst,
-                           const int16_t *speechIn,
-                           int16_t len,
-                           uint8_t* encoded);
+  int16_t WebRtcIlbcfix_Encode(IlbcEncoderInstance *iLBCenc_inst,
+                               const int16_t *speechIn,
+                               int16_t len,
+                               uint8_t* encoded);
 
   /****************************************************************************
    * WebRtcIlbcfix_DecoderInit(...)
@@ -180,21 +180,21 @@ extern "C" {
    *                            -1 - Error
    */
 
-  int WebRtcIlbcfix_Decode(IlbcDecoderInstance* iLBCdec_inst,
-                           const uint8_t* encoded,
-                           int16_t len,
-                           int16_t* decoded,
-                           int16_t* speechType);
-  int WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance* iLBCdec_inst,
+  int16_t WebRtcIlbcfix_Decode(IlbcDecoderInstance* iLBCdec_inst,
                                const uint8_t* encoded,
                                int16_t len,
                                int16_t* decoded,
                                int16_t* speechType);
-  int WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance* iLBCdec_inst,
-                               const uint8_t* encoded,
-                               int16_t len,
-                               int16_t* decoded,
-                               int16_t* speechType);
+  int16_t WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance* iLBCdec_inst,
+                                   const uint8_t* encoded,
+                                   int16_t len,
+                                   int16_t* decoded,
+                                   int16_t* speechType);
+  int16_t WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance* iLBCdec_inst,
+                                   const uint8_t* encoded,
+                                   int16_t len,
+                                   int16_t* decoded,
+                                   int16_t* speechType);
 
   /****************************************************************************
    * WebRtcIlbcfix_DecodePlc(...)

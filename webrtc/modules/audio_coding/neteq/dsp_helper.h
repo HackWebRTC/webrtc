@@ -110,11 +110,11 @@ class DspHelper {
   // sample and increases the gain by |increment| (Q20) for each sample. The
   // result is written to |output|. |length| samples are processed.
   static void UnmuteSignal(const int16_t* input, size_t length, int16_t* factor,
-                           int increment, int16_t* output);
+                           int16_t increment, int16_t* output);
 
   // Starts at unity gain and gradually fades out |signal|. For each sample,
   // the gain is reduced by |mute_slope| (Q14). |length| samples are processed.
-  static void MuteSignal(int16_t* signal, int mute_slope, size_t length);
+  static void MuteSignal(int16_t* signal, int16_t mute_slope, size_t length);
 
   // Downsamples |input| from |sample_rate_hz| to 4 kHz sample rate. The input
   // has |input_length| samples, and the method will write |output_length|

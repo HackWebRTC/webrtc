@@ -272,7 +272,7 @@ void DspHelper::CrossFade(const int16_t* input1, const int16_t* input2,
 }
 
 void DspHelper::UnmuteSignal(const int16_t* input, size_t length,
-                             int16_t* factor, int increment,
+                             int16_t* factor, int16_t increment,
                              int16_t* output) {
   uint16_t factor_16b = *factor;
   int32_t factor_32b = (static_cast<int32_t>(factor_16b) << 6) + 32;
@@ -284,7 +284,7 @@ void DspHelper::UnmuteSignal(const int16_t* input, size_t length,
   *factor = factor_16b;
 }
 
-void DspHelper::MuteSignal(int16_t* signal, int mute_slope, size_t length) {
+void DspHelper::MuteSignal(int16_t* signal, int16_t mute_slope, size_t length) {
   int32_t factor = (16384 << 6) + 32;
   for (size_t i = 0; i < length; i++) {
     signal[i] = ((factor >> 6) * signal[i] + 8192) >> 14;

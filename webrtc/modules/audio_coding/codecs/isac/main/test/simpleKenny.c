@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   unsigned long totalsmpls = 0;
 
   int32_t bottleneck = 39;
-  int frameSize = 30; /* ms */
+  int16_t frameSize = 30; /* ms */
   int16_t codingMode = 1;
   int16_t shortdata[FRAMESAMPLES_SWB_10ms];
   int16_t decoded[MAX_FRAMESAMPLES_SWB];
@@ -73,9 +73,9 @@ int main(int argc, char* argv[]) {
   ISACStruct* ISAC_main_inst;
 
   int16_t stream_len = 0;
-  int declen = 0;
+  int16_t declen = 0;
   int16_t err;
-  int cur_framesmpls;
+  int16_t cur_framesmpls;
   int endfile;
 #ifdef WIN32
   double length_file;

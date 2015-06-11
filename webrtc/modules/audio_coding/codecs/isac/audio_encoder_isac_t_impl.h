@@ -184,7 +184,7 @@ int AudioEncoderDecoderIsacT<T>::DecodeInternal(const uint8_t* encoded,
     decoder_sample_rate_hz_ = sample_rate_hz;
   }
   int16_t temp_type = 1;  // Default is speech.
-  int ret =
+  int16_t ret =
       T::DecodeInternal(isac_state_, encoded, static_cast<int16_t>(encoded_len),
                         decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);

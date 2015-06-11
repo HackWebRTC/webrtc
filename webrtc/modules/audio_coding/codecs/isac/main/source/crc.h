@@ -36,10 +36,10 @@
  *                   -1 - Error
  */
 
-int WebRtcIsac_GetCrc(
+int16_t WebRtcIsac_GetCrc(
     const int16_t* encoded,
-    int no_of_word8s,
-    uint32_t* crc);
+    int16_t        no_of_word8s,
+    uint32_t*      crc);
 
 
 

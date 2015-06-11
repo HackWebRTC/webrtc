@@ -1561,7 +1561,7 @@ int NetEQTest_encode(int coder,
                      int useVAD,
                      int bitrate,
                      int numChannels) {
-  int cdlen = 0;
+  short cdlen = 0;
   int16_t* tempdata;
   static int first_cng = 1;
   int16_t tempLen;

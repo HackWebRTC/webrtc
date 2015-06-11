@@ -36,6 +36,7 @@ void WebRtcIlbcfix_AugmentedCbCorr(
     int16_t low,    /* (i) Lag to start from (typically
                                                    20) */
     int16_t high,   /* (i) Lag to end at (typically 39 */
-    int scale);   /* (i) Scale factor to use for the crossDot */
+    int16_t scale);   /* (i) Scale factor to use for
+                                                   the crossDot */
 
 #endif

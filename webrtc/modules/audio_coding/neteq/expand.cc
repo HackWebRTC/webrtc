@@ -239,12 +239,14 @@ int Expand::Process(AudioMultiVector* output) {
     if (consecutive_expands_ == 3) {
       // Let the mute factor decrease from 1.0 to 0.95 in 6.25 ms.
       // mute_slope = 0.0010 / fs_mult in Q20.
-      parameters.mute_slope = std::max(parameters.mute_slope, 1049 / fs_mult);
+      parameters.mute_slope = std::max(parameters.mute_slope,
+                                       static_cast<int16_t>(1049 / fs_mult));
     }
     if (consecutive_expands_ == 7) {
       // Let the mute factor decrease from 1.0 to 0.90 in 6.25 ms.
       // mute_slope = 0.0020 / fs_mult in Q20.
-      parameters.mute_slope = std::max(parameters.mute_slope, 2097 / fs_mult);
+      parameters.mute_slope = std::max(parameters.mute_slope,
+                                       static_cast<int16_t>(2097 / fs_mult));
     }
 
     // Mute segment according to slope value.
@@ -366,7 +368,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
   InitializeForAnExpandPeriod();
 
   // Calculate correlation in downsampled domain (4 kHz sample rate).
-  int correlation_scale;
+  int16_t correlation_scale;
   int correlation_length = 51;  // TODO(hlundin): Legacy bit-exactness.
   // If it is decided to break bit-exactness |correlation_length| should be
   // initialized to the return value of Correlation().
@@ -444,7 +446,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
                        correlation_length + start_index + correlation_lags - 1);
     correlation_scale = ((31 - WebRtcSpl_NormW32(signal_max * signal_max))
         + (31 - WebRtcSpl_NormW32(correlation_length))) - 31;
-    correlation_scale = std::max(0, correlation_scale);
+    correlation_scale = std::max(static_cast<int16_t>(0), correlation_scale);
 
     // Calculate the correlation, store in |correlation_vector2|.
     WebRtcSpl_CrossCorrelation(
@@ -471,7 +473,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
 
     // Calculate the correlation coefficient between the two portions of the
     // signal.
-    int32_t corr_coefficient;
+    int16_t corr_coefficient;
     if ((energy1 > 0) && (energy2 > 0)) {
       int energy1_scale = std::max(16 - WebRtcSpl_NormW32(energy1), 0);
       int energy2_scale = std::max(16 - WebRtcSpl_NormW32(energy2), 0);
@@ -480,17 +482,17 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
         // If sum is odd, add 1 to make it even.
         energy1_scale += 1;
       }
-      int32_t scaled_energy1 = energy1 >> energy1_scale;
-      int32_t scaled_energy2 = energy2 >> energy2_scale;
-      int16_t sqrt_energy_product = static_cast<int16_t>(
-          WebRtcSpl_SqrtFloor(scaled_energy1 * scaled_energy2));
+      int16_t scaled_energy1 = energy1 >> energy1_scale;
+      int16_t scaled_energy2 = energy2 >> energy2_scale;
+      int16_t sqrt_energy_product = WebRtcSpl_SqrtFloor(
+          scaled_energy1 * scaled_energy2);
       // Calculate max_correlation / sqrt(energy1 * energy2) in Q14.
       int cc_shift = 14 - (energy1_scale + energy2_scale) / 2;
       max_correlation = WEBRTC_SPL_SHIFT_W32(max_correlation, cc_shift);
       corr_coefficient = WebRtcSpl_DivW32W16(max_correlation,
                                              sqrt_energy_product);
-      // Cap at 1.0 in Q14.
-      corr_coefficient = std::min(16384, corr_coefficient);
+      corr_coefficient = std::min(static_cast<int16_t>(16384),
+                                  corr_coefficient);  // Cap at 1.0 in Q14.
     } else {
       corr_coefficient = 0;
     }
@@ -511,8 +513,8 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
     if ((energy1 / 4 < energy2) && (energy1 > energy2 / 4)) {
       // Energy constraint fulfilled. Use both vectors and scale them
       // accordingly.
-      int32_t scaled_energy2 = std::max(16 - WebRtcSpl_NormW32(energy2), 0);
-      int32_t scaled_energy1 = scaled_energy2 - 13;
+      int16_t scaled_energy2 = std::max(16 - WebRtcSpl_NormW32(energy2), 0);
+      int16_t scaled_energy1 = scaled_energy2 - 13;
       // Calculate scaled_energy1 / scaled_energy2 in Q13.
       int32_t energy_ratio = WebRtcSpl_DivW32W16(
           WEBRTC_SPL_SHIFT_W32(energy1, -scaled_energy1),
@@ -680,8 +682,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
     //   voice_mix_factor = 0;
     if (corr_coefficient > 7875) {
       int16_t x1, x2, x3;
-      // |corr_coefficient| is in Q14.
-      x1 = static_cast<int16_t>(corr_coefficient);
+      x1 = corr_coefficient;  // |corr_coefficient| is in Q14.
       x2 = (x1 * x1) >> 14;   // Shift 14 to keep result in Q14.
       x3 = (x1 * x2) >> 14;
       static const int kCoefficients[4] = { -5179, 19931, -16422, 5776 };
@@ -708,8 +709,8 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       // the division.
       // Shift the denominator from Q13 to Q5 before the division. The result of
       // the division will then be in Q20.
-      int temp_ratio = WebRtcSpl_DivW32W16((slope - 8192) << 12,
-                                           (distortion_lag * slope) >> 8);
+      int16_t temp_ratio = WebRtcSpl_DivW32W16((slope - 8192) << 12,
+                                               (distortion_lag * slope) >> 8);
       if (slope > 14746) {
         // slope > 1.8.
         // Divide by 2, with proper rounding.
@@ -728,7 +729,8 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
         // Make sure the mute factor decreases from 1.0 to 0.9 in no more than
         // 6.25 ms.
         // mute_slope >= 0.005 / fs_mult in Q20.
-        parameters.mute_slope = std::max(5243 / fs_mult, parameters.mute_slope);
+        parameters.mute_slope = std::max(static_cast<int16_t>(5243 / fs_mult),
+                                         parameters.mute_slope);
       } else if (slope > 8028) {
         parameters.mute_slope = 0;
       }
@@ -750,7 +752,7 @@ Expand::ChannelParameters::ChannelParameters()
 }
 
 int16_t Expand::Correlation(const int16_t* input, size_t input_length,
-                            int16_t* output, int* output_scale) const {
+                            int16_t* output, int16_t* output_scale) const {
   // Set parameters depending on sample rate.
   const int16_t* filter_coefficients;
   int16_t num_coefficients;
@@ -839,7 +841,7 @@ Expand* ExpandFactory::Create(BackgroundNoise* background_noise,
 // TODO(turajs): This can be moved to BackgroundNoise class.
 void Expand::GenerateBackgroundNoise(int16_t* random_vector,
                                      size_t channel,
-                                     int mute_slope,
+                                     int16_t mute_slope,
                                      bool too_many_expands,
                                      size_t num_noise_samples,
                                      int16_t* buffer) {
@@ -882,7 +884,7 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
         bgn_mute_factor > 0) {
       // Fade BGN to zero.
       // Calculate muting slope, approximately -2^18 / fs_hz.
-      int mute_slope;
+      int16_t mute_slope;
       if (fs_hz_ == 8000) {
         mute_slope = -32;
       } else if (fs_hz_ == 16000) {

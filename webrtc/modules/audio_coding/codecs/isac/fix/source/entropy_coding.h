@@ -22,10 +22,10 @@
 #include "structs.h"
 
 /* decode complex spectrum (return number of bytes in stream) */
-int WebRtcIsacfix_DecodeSpec(Bitstr_dec  *streamdata,
-                             int16_t *frQ7,
-                             int16_t *fiQ7,
-                             int16_t AvgPitchGain_Q12);
+int16_t WebRtcIsacfix_DecodeSpec(Bitstr_dec  *streamdata,
+                                 int16_t *frQ7,
+                                 int16_t *fiQ7,
+                                 int16_t AvgPitchGain_Q12);
 
 /* encode complex spectrum */
 int WebRtcIsacfix_EncodeSpec(const int16_t *fr,

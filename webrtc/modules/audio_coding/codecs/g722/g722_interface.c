@@ -39,7 +39,7 @@ int16_t WebRtcG722_EncoderInit(G722EncInst *G722enc_inst)
     }
 }
 
-int WebRtcG722_FreeEncoder(G722EncInst *G722enc_inst)
+int16_t WebRtcG722_FreeEncoder(G722EncInst *G722enc_inst)
 {
     // Free encoder memory
     return WebRtc_g722_encode_release((G722EncoderState*) G722enc_inst);
@@ -79,7 +79,7 @@ int16_t WebRtcG722_DecoderInit(G722DecInst *G722dec_inst)
     }
 }
 
-int WebRtcG722_FreeDecoder(G722DecInst *G722dec_inst)
+int16_t WebRtcG722_FreeDecoder(G722DecInst *G722dec_inst)
 {
     // Free encoder memory
     return WebRtc_g722_decode_release((G722DecoderState*) G722dec_inst);

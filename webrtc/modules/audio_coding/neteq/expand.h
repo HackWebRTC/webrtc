@@ -72,7 +72,7 @@ class Expand {
 
   void GenerateBackgroundNoise(int16_t* random_vector,
                                size_t channel,
-                               int mute_slope,
+                               int16_t mute_slope,
                                bool too_many_expands,
                                size_t num_noise_samples,
                                int16_t* buffer);
@@ -113,7 +113,7 @@ class Expand {
     AudioVector expand_vector0;
     AudioVector expand_vector1;
     bool onset;
-    int mute_slope; /* Q20 */
+    int16_t mute_slope; /* Q20 */
   };
 
   // Calculate the auto-correlation of |input|, with length |input_length|
@@ -121,7 +121,7 @@ class Expand {
   // |input|, and is written to |output|. The scale factor is written to
   // |output_scale|. Returns the length of the correlation vector.
   int16_t Correlation(const int16_t* input, size_t input_length,
-                      int16_t* output, int* output_scale) const;
+                      int16_t* output, int16_t* output_scale) const;
 
   void UpdateLagIndex();
 

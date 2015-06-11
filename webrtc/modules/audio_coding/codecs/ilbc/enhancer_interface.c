@@ -120,8 +120,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     shifts = WEBRTC_SPL_MAX(0, shifts);
 
     /* compute cross correlation */
-    WebRtcSpl_CrossCorrelation(corr32, target, regressor, ENH_BLOCKL_HALF, 50,
-                               shifts, -1);
+    WebRtcSpl_CrossCorrelation(corr32, target, regressor,
+                               ENH_BLOCKL_HALF, 50, (int16_t)shifts, -1);
 
     /* Find 3 highest correlations that should be compared for the
        highest (corr*corr)/ener */
@@ -206,8 +206,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       shifts=0;
 
     /* compute cross correlation */
-    WebRtcSpl_CrossCorrelation(corr32, target, regressor, plc_blockl, 3, shifts,
-                               1);
+    WebRtcSpl_CrossCorrelation(corr32, target, regressor,
+                               plc_blockl, 3, (int16_t)shifts, 1);
 
     /* find lag */
     lag=WebRtcSpl_MaxIndexW32(corr32, 3);

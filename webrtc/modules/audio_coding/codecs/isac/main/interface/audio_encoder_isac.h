@@ -24,12 +24,12 @@ struct IsacFloat {
   static const bool has_swb = true;
   static inline int16_t Control(instance_type* inst,
                                 int32_t rate,
-                                int framesize) {
+                                int16_t framesize) {
     return WebRtcIsac_Control(inst, rate, framesize);
   }
   static inline int16_t ControlBwe(instance_type* inst,
                                    int32_t rate_bps,
-                                   int frame_size_ms,
+                                   int16_t frame_size_ms,
                                    int16_t enforce_frame_size) {
     return WebRtcIsac_ControlBwe(inst, rate_bps, frame_size_ms,
                                  enforce_frame_size);
@@ -37,11 +37,11 @@ struct IsacFloat {
   static inline int16_t Create(instance_type** inst) {
     return WebRtcIsac_Create(inst);
   }
-  static inline int DecodeInternal(instance_type* inst,
-                                   const uint8_t* encoded,
-                                   int16_t len,
-                                   int16_t* decoded,
-                                   int16_t* speech_type) {
+  static inline int16_t DecodeInternal(instance_type* inst,
+                                       const uint8_t* encoded,
+                                       int16_t len,
+                                       int16_t* decoded,
+                                       int16_t* speech_type) {
     return WebRtcIsac_Decode(inst, encoded, len, decoded, speech_type);
   }
   static inline int16_t DecodePlc(instance_type* inst,
@@ -53,9 +53,9 @@ struct IsacFloat {
   static inline int16_t DecoderInit(instance_type* inst) {
     return WebRtcIsac_DecoderInit(inst);
   }
-  static inline int Encode(instance_type* inst,
-                           const int16_t* speech_in,
-                           uint8_t* encoded) {
+  static inline int16_t Encode(instance_type* inst,
+                               const int16_t* speech_in,
+                               uint8_t* encoded) {
     return WebRtcIsac_Encode(inst, speech_in, encoded);
   }
   static inline int16_t EncoderInit(instance_type* inst, int16_t coding_mode) {

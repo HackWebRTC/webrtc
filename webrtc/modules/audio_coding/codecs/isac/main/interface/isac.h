@@ -144,7 +144,7 @@ extern "C" {
    *                            : -1 - Error
    */
 
-  int WebRtcIsac_Encode(
+  int16_t WebRtcIsac_Encode(
       ISACStruct*        ISAC_main_inst,
       const int16_t* speechIn,
       uint8_t* encoded);
@@ -214,7 +214,7 @@ extern "C" {
    *                              -1 - Error.
    */
 
-  int WebRtcIsac_Decode(
+  int16_t WebRtcIsac_Decode(
       ISACStruct*           ISAC_main_inst,
       const uint8_t* encoded,
       int16_t         len,
@@ -269,7 +269,7 @@ extern "C" {
   int16_t WebRtcIsac_Control(
       ISACStruct*   ISAC_main_inst,
       int32_t rate,
-      int framesize);
+      int16_t framesize);
 
 
   /******************************************************************************
@@ -300,7 +300,7 @@ extern "C" {
   int16_t WebRtcIsac_ControlBwe(
       ISACStruct* ISAC_main_inst,
       int32_t rateBPS,
-      int frameSizeMs,
+      int16_t frameSizeMs,
       int16_t enforceFrameSize);
 
 
@@ -701,7 +701,7 @@ extern "C" {
    * Return value              : >0 - number of samples in decoded vector
    *                             -1 - Error
    */
-  int WebRtcIsac_DecodeRcu(
+  int16_t WebRtcIsac_DecodeRcu(
       ISACStruct*           ISAC_main_inst,
       const uint8_t* encoded,
       int16_t         len,
