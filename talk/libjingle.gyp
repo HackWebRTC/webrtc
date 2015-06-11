@@ -438,8 +438,6 @@
         'media/base/cryptoparams.h',
         'media/base/device.h',
         'media/base/fakescreencapturerfactory.h',
-        'media/base/filemediaengine.cc',
-        'media/base/filemediaengine.h',
         'media/base/hybriddataengine.h',
         'media/base/mediachannel.h',
         'media/base/mediacommon.h',
