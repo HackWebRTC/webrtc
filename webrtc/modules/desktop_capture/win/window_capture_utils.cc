@@ -29,7 +29,7 @@ GetCroppedWindowRect(HWND window,
   *original_rect = DesktopRect::MakeLTRB(
       rect.left, rect.top, rect.right, rect.bottom);
 
-  if (window_placement.showCmd & SW_SHOWMAXIMIZED) {
+  if (window_placement.showCmd == SW_SHOWMAXIMIZED) {
     DesktopSize border = DesktopSize(GetSystemMetrics(SM_CXSIZEFRAME),
                                      GetSystemMetrics(SM_CYSIZEFRAME));
     *cropped_rect = DesktopRect::MakeLTRB(
