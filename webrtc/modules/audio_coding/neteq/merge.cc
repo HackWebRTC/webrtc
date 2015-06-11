@@ -175,7 +175,7 @@ int Merge::GetExpandedSignal(int* old_length, int* expand_period) {
     // This is the truncated length.
   }
   // This assert should always be true thanks to the if statement above.
-  assert(210 * kMaxSampleRate / 8000 - *old_length >= 0);
+  assert(210 * kMaxSampleRate / 8000 >= *old_length);
 
   AudioMultiVector expanded_temp(num_channels_);
   expand_->Process(&expanded_temp);
@@ -342,7 +342,7 @@ int16_t Merge::CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
   int start_index = timestamps_per_call_ +
       static_cast<int>(expand_->overlap_length());
   start_index = std::max(start_position, start_index);
-  start_index = std::max(start_index - input_length, 0);
+  start_index = (input_length > start_index) ? 0 : (start_index - input_length);
   // Downscale starting index to 4kHz domain. (fs_mult_ * 2 = fs_hz_ / 4000.)
   int start_index_downsamp = start_index / (fs_mult_ * 2);
 

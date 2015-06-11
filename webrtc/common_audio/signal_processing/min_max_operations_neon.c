@@ -86,7 +86,7 @@ int32_t WebRtcSpl_MaxAbsValueW32Neon(const int32_t* vector, int length) {
   uint32x4_t max32x4_1 = vdupq_n_u32(0);
 
   // First part, unroll the loop 8 times.
-  for (i = length - residual; i >0; i -= 8) {
+  for (i = 0; i < length - residual; i += 8) {
     int32x4_t in32x4_0 = vld1q_s32(p_start);
     p_start += 4;
     int32x4_t in32x4_1 = vld1q_s32(p_start);
@@ -139,7 +139,7 @@ int16_t WebRtcSpl_MaxValueW16Neon(const int16_t* vector, int length) {
   int16x8_t max16x8 = vdupq_n_s16(WEBRTC_SPL_WORD16_MIN);
 
   // First part, unroll the loop 8 times.
-  for (i = length - residual; i >0; i -= 8) {
+  for (i = 0; i < length - residual; i += 8) {
     int16x8_t in16x8 = vld1q_s16(p_start);
     max16x8 = vmaxq_s16(max16x8, in16x8);
     p_start += 8;
@@ -180,7 +180,7 @@ int32_t WebRtcSpl_MaxValueW32Neon(const int32_t* vector, int length) {
   int32x4_t max32x4_1 = vdupq_n_s32(WEBRTC_SPL_WORD32_MIN);
 
   // First part, unroll the loop 8 times.
-  for (i = length - residual; i >0; i -= 8) {
+  for (i = 0; i < length - residual; i += 8) {
     int32x4_t in32x4_0 = vld1q_s32(p_start);
     p_start += 4;
     int32x4_t in32x4_1 = vld1q_s32(p_start);
@@ -223,7 +223,7 @@ int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, int length) {
   int16x8_t min16x8 = vdupq_n_s16(WEBRTC_SPL_WORD16_MAX);
 
   // First part, unroll the loop 8 times.
-  for (i = length - residual; i >0; i -= 8) {
+  for (i = 0; i < length - residual; i += 8) {
     int16x8_t in16x8 = vld1q_s16(p_start);
     min16x8 = vminq_s16(min16x8, in16x8);
     p_start += 8;
@@ -264,7 +264,7 @@ int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, int length) {
   int32x4_t min32x4_1 = vdupq_n_s32(WEBRTC_SPL_WORD32_MAX);
 
   // First part, unroll the loop 8 times.
-  for (i = length - residual; i >0; i -= 8) {
+  for (i = 0; i < length - residual; i += 8) {
     int32x4_t in32x4_0 = vld1q_s32(p_start);
     p_start += 4;
     int32x4_t in32x4_1 = vld1q_s32(p_start);

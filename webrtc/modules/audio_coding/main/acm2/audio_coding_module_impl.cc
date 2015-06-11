@@ -89,9 +89,11 @@ int UpMix(const AudioFrame& frame, int length_out_buff, int16_t* out_buff) {
   if (length_out_buff < frame.samples_per_channel_) {
     return -1;
   }
-  for (int n = frame.samples_per_channel_ - 1; n >= 0; --n) {
-    out_buff[2 * n + 1] = frame.data_[n];
-    out_buff[2 * n] = frame.data_[n];
+  for (int n = frame.samples_per_channel_; n > 0; --n) {
+    int i = n - 1;
+    int16_t sample = frame.data_[i];
+    out_buff[2 * i + 1] = sample;
+    out_buff[2 * i] = sample;
   }
   return 0;
 }

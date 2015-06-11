@@ -41,7 +41,7 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
 
     norm = WebRtcSpl_NormW32(R[0]);
 
-    for (i = order; i >= 0; i--)
+    for (i = 0; i <= order; ++i)
     {
         temp1W32 = WEBRTC_SPL_LSHIFT_W32(R[i], norm);
         // Put R in hi and low format

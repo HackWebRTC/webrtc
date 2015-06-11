@@ -40,7 +40,7 @@ class SinusoidalLinearChirpSource : public SincResamplerCallback {
     kMinFrequency = 5
   };
 
-  double sample_rate_;
+  int sample_rate_;
   int total_samples_;
   double max_frequency_;
   double k_;

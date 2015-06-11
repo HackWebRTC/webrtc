@@ -48,7 +48,7 @@ void WebRtcIlbcfix_EncodeImpl(
     IlbcEncoder *iLBCenc_inst /* (i/o) the general encoder
                                      state */
                           ){
-  int n, meml_gotten, Nfor, Nback;
+  int n, meml_gotten, Nfor;
   int16_t diff, start_pos;
   int index;
   int subcount, subframe;
@@ -379,15 +379,14 @@ void WebRtcIlbcfix_EncodeImpl(
 
   /* backward prediction of subframes */
 
-  Nback = iLBCbits_inst->startIdx-1;
-
-  if( Nback > 0 ){
+  if (iLBCbits_inst->startIdx > 1) {
 
     /* create reverse order vectors
        (The decresidual does not need to be copied since it is
        contained in the same vector as the residual)
     */
 
+    int Nback = iLBCbits_inst->startIdx - 1;
     WebRtcSpl_MemCpyReversedOrder(&reverseResidual[Nback*SUBL-1], residual, Nback*SUBL);
 
     /* setup memory */
@@ -425,11 +424,11 @@ void WebRtcIlbcfix_EncodeImpl(
       if (iLBCenc_inst->section == 1)
       {
         start_count = 0;
-        end_count = WEBRTC_SPL_MAX (2 - Nfor, 0);
+        end_count = (Nfor >= 2) ? 0 : (2 - NFor);
       }
       if (iLBCenc_inst->section == 2)
       {
-        start_count = WEBRTC_SPL_MAX (2 - Nfor, 0);
+        start_count = (Nfor >= 2) ? 0 : (2 - NFor);
         end_count = Nback;
       }
     }

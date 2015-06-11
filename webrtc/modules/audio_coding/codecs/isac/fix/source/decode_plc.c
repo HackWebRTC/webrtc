@@ -309,7 +309,7 @@ int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
         &((ISACdec_obj->plcstr_obj).prevPitchInvIn[FRAMESAMPLES_HALF - lag0]);
     minCorr = WEBRTC_SPL_WORD32_MAX;
 
-    if ( (FRAMESAMPLES_HALF - 2*lag0 - 10) > 0 )
+    if ((FRAMESAMPLES_HALF - 10) > 2 * lag0)
     {
       minIdx = 11;
       for( i = 0; i < 21; i++ )

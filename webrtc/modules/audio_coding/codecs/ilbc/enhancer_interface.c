@@ -110,9 +110,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   for(iblock = 0; iblock<new_blocks; iblock++){
 
     /* references */
-    i = 60 + iblock * ENH_BLOCKL_HALF;
-    target=downsampled+i;
-    regressor=downsampled+i-10;
+    target = downsampled + 60 + iblock * ENH_BLOCKL_HALF;
+    regressor = target - 10;
 
     /* scaling */
     max16=WebRtcSpl_MaxAbsValueW16(&regressor[-50],

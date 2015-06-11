@@ -41,7 +41,7 @@ void WebRtcIlbcfix_CbMemEnergyCalc(
   eSh_ptr  = &energyShifts[1+base_size];
   eW16_ptr = &energyW16[1+base_size];
 
-  for(j=0;j<range-1;j++) {
+  for (j = 0; j + 1 < range; j++) {
 
     /* Calculate next energy by a +/-
        operation on the edge samples */

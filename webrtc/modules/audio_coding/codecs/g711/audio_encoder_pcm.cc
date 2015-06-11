@@ -88,13 +88,13 @@ AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
   }
   CHECK_EQ(speech_buffer_.size(), full_frame_samples_);
   CHECK_GE(max_encoded_bytes, full_frame_samples_);
-  int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
-  CHECK_GE(ret, 0);
-  speech_buffer_.clear();
   EncodedInfo info;
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;
+  int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
+  CHECK_GE(ret, 0);
   info.encoded_bytes = static_cast<size_t>(ret);
+  speech_buffer_.clear();
   return info;
 }
 

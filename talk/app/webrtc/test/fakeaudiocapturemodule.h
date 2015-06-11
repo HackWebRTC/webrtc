@@ -58,8 +58,8 @@ class FakeAudioCaptureModule
 
   // The value for the following constants have been derived by running VoE
   // using a real ADM. The constants correspond to 10ms of mono audio at 44kHz.
-  enum{kNumberSamples = 440};
-  enum{kNumberBytesPerSample = sizeof(Sample)};
+  static const int kNumberSamples = 440;
+  static const int kNumberBytesPerSample = sizeof(Sample);
 
   // Creates a FakeAudioCaptureModule or returns NULL on failure.
   // |process_thread| is used to push and pull audio frames to and from the

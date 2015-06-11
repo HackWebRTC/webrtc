@@ -69,7 +69,6 @@ void WebRtcIsacfix_PitchFilter(int16_t* indatQQ, // Q10 if type is 1 or 4,
   int16_t oldLagQ7;
   int16_t oldGainQ12, lagdeltaQ7, curLagQ7, gaindeltaQ12, curGainQ12;
   int indW32 = 0, frcQQ = 0;
-  int32_t tmpW32;
   const int16_t* fracoeffQQ = NULL;
 
   // Assumptions in ARM assembly for WebRtcIsacfix_PitchFilterCoreARM().
@@ -123,8 +122,7 @@ void WebRtcIsacfix_PitchFilter(int16_t* indatQQ, // Q10 if type is 1 or 4,
       curGainQ12 += gaindeltaQ12;
       curLagQ7 += lagdeltaQ7;
       indW32 = CalcLrIntQ(curLagQ7, 7);
-      tmpW32 = (indW32 << 7) - curLagQ7;
-      frcQQ = (tmpW32 >> 4) + 4;
+      frcQQ = ((indW32 << 7) + 64 - curLagQ7) >> 4;
 
       if (frcQQ == PITCH_FRACS) {
         frcQQ = 0;
@@ -195,8 +193,7 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
       // Update parameters for each segment.
       curLagQ7 += lagdeltaQ7;
       indW16 = (int16_t)CalcLrIntQ(curLagQ7, 7);
-      tmpW16 = (indW16 << 7) - curLagQ7;
-      frcQQ = (tmpW16 >> 4) + 4;
+      frcQQ = ((indW16 << 7) + 64 - curLagQ7) >> 4;
 
       if (frcQQ == PITCH_FRACS) {
         frcQQ = 0;

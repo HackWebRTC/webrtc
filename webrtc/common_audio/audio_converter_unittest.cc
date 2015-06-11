@@ -49,7 +49,7 @@ float ComputeSNR(const ChannelBuffer<float>& ref,
   int best_delay = 0;
 
   // Search within one sample of the expected delay.
-  for (int delay = std::max(expected_delay - 1, 0);
+  for (int delay = std::max(expected_delay, 1) - 1;
        delay <= std::min(expected_delay + 1, ref.num_frames());
        ++delay) {
     float mse = 0;

@@ -56,7 +56,7 @@ int AudioDecoder::DecodeRedundantInternal(const uint8_t* encoded,
 
 bool AudioDecoder::HasDecodePlc() const { return false; }
 
-int AudioDecoder::DecodePlc(int num_frames, int16_t* decoded) { return -1; }
+int AudioDecoder::DecodePlc(int num_frames, int16_t* decoded) { return 0; }
 
 int AudioDecoder::IncomingPacket(const uint8_t* payload,
                                  size_t payload_len,

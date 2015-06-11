@@ -279,13 +279,15 @@ void WebRtcIsacfix_NormLatticeFilterAr(int16_t orderCoef,
       ARfQ0vec[i] = (int16_t)WebRtcSpl_SatW32ToW16(tmp32); // Q0
     }
 
-    for (i=orderCoef-1;i>=0;i--) //get the state of f&g for the first input, for all orders
+    for (i=orderCoef;i>0;i--) //get the state of f&g for the first input, for all orders
     {
-      tmp32 = (cthQ15[i] * ARfQ0vec[0] - sthQ15[i] * stateGQ0[i] + 16384) >> 15;
+      tmp32 = (cthQ15[i - 1] * ARfQ0vec[0] - sthQ15[i - 1] * stateGQ0[i - 1] +
+               16384) >> 15;
       tmpAR = (int16_t)WebRtcSpl_SatW32ToW16(tmp32); // Q0
 
-      tmp32 = (sthQ15[i] * ARfQ0vec[0] + cthQ15[i] * stateGQ0[i] + 16384) >> 15;
-      ARgQ0vec[i+1] = (int16_t)WebRtcSpl_SatW32ToW16(tmp32); // Q0
+      tmp32 = (sthQ15[i - 1] * ARfQ0vec[0] + cthQ15[i - 1] * stateGQ0[i - 1] +
+               16384) >> 15;
+      ARgQ0vec[i] = (int16_t)WebRtcSpl_SatW32ToW16(tmp32); // Q0
       ARfQ0vec[0] = tmpAR;
     }
     ARgQ0vec[0] = ARfQ0vec[0];

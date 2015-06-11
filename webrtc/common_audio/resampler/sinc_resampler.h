@@ -34,22 +34,20 @@ class SincResamplerCallback {
 // SincResampler is a high-quality single-channel sample-rate converter.
 class SincResampler {
  public:
-  enum {
-    // The kernel size can be adjusted for quality (higher is better) at the
-    // expense of performance.  Must be a multiple of 32.
-    // TODO(dalecurtis): Test performance to see if we can jack this up to 64+.
-    kKernelSize = 32,
+  // The kernel size can be adjusted for quality (higher is better) at the
+  // expense of performance.  Must be a multiple of 32.
+  // TODO(dalecurtis): Test performance to see if we can jack this up to 64+.
+  static const int kKernelSize = 32;
 
-    // Default request size.  Affects how often and for how much SincResampler
-    // calls back for input.  Must be greater than kKernelSize.
-    kDefaultRequestSize = 512,
+  // Default request size.  Affects how often and for how much SincResampler
+  // calls back for input.  Must be greater than kKernelSize.
+  static const int kDefaultRequestSize = 512;
 
-    // The kernel offset count is used for interpolation and is the number of
-    // sub-sample kernel shifts.  Can be adjusted for quality (higher is better)
-    // at the expense of allocating more memory.
-    kKernelOffsetCount = 32,
-    kKernelStorageSize = kKernelSize * (kKernelOffsetCount + 1),
-  };
+  // The kernel offset count is used for interpolation and is the number of
+  // sub-sample kernel shifts.  Can be adjusted for quality (higher is better)
+  // at the expense of allocating more memory.
+  static const int kKernelOffsetCount = 32;
+  static const int kKernelStorageSize = kKernelSize * (kKernelOffsetCount + 1);
 
   // Constructs a SincResampler with the specified |read_cb|, which is used to
   // acquire audio data for resampling.  |io_sample_rate_ratio| is the ratio

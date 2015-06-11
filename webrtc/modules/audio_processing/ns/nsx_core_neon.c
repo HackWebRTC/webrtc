@@ -208,7 +208,7 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
     uint16x8_t tmp16x8_4;
     int32x4_t tmp32x4;
 
-    for (i = 0; i < inst->magnLen - 7; i += 8) {
+    for (i = 0; i + 7 < inst->magnLen; i += 8) {
       // Compute delta.
       // Smaller step size during startup. This prevents from using
       // unrealistic values causing overflow.

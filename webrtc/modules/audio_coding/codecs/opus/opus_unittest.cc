@@ -106,6 +106,7 @@ int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
                                     input_audio,
                                     input_samples, kMaxBytes,
                                     bitstream_);
+  EXPECT_GE(encoded_bytes_, 0);
   return WebRtcOpus_Decode(decoder, bitstream_,
                            encoded_bytes_, output_audio,
                            audio_type);
@@ -539,6 +540,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusDurationEstimation)) {
                                      speech_data_.GetNextBlock(),
                                      kOpus10msFrameSamples, kMaxBytes,
                                      bitstream_);
+  EXPECT_GE(encoded_bytes_, 0);
   EXPECT_EQ(kOpus10msFrameSamples,
             WebRtcOpus_DurationEst(opus_decoder_, bitstream_,
                                    encoded_bytes_));
@@ -548,6 +550,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusDurationEstimation)) {
                                      speech_data_.GetNextBlock(),
                                      kOpus20msFrameSamples, kMaxBytes,
                                      bitstream_);
+  EXPECT_GE(encoded_bytes_, 0);
   EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_DurationEst(opus_decoder_, bitstream_,
                                    encoded_bytes_));

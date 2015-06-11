@@ -37,7 +37,7 @@ void WebRtcIlbcfix_DoThePlc(
     IlbcDecoder *iLBCdec_inst
     /* (i/o) decoder instance */
                             ){
-  int16_t i, pick;
+  int16_t i;
   int32_t cross, ener, cross_comp, ener_comp = 0;
   int32_t measure, maxMeasure, energy;
   int16_t max, crossSquareMax, crossSquare;
@@ -234,22 +234,19 @@ void WebRtcIlbcfix_DoThePlc(
       /* noise component -  52 < randlagFIX < 117 */
       iLBCdec_inst->seed = (int16_t)(iLBCdec_inst->seed * 31821 + 13849);
       randlag = 53 + (int16_t)(iLBCdec_inst->seed & 63);
-
-      pick = i - randlag;
-
-      if (pick < 0) {
-        randvec[i] = iLBCdec_inst->prevResidual[iLBCdec_inst->blockl+pick];
+      if (randlag > i) {
+        randvec[i] =
+            iLBCdec_inst->prevResidual[iLBCdec_inst->blockl + i - randlag];
       } else {
-        randvec[i] = iLBCdec_inst->prevResidual[pick];
+        randvec[i] = iLBCdec_inst->prevResidual[i - randlag];
       }
 
       /* pitch repeatition component */
-      pick = i - use_lag;
-
-      if (pick < 0) {
-        PLCresidual[i] = iLBCdec_inst->prevResidual[iLBCdec_inst->blockl+pick];
+      if (use_lag > i) {
+        PLCresidual[i] =
+            iLBCdec_inst->prevResidual[iLBCdec_inst->blockl + i - use_lag];
       } else {
-        PLCresidual[i] = PLCresidual[pick];
+        PLCresidual[i] = PLCresidual[i - use_lag];
       }
 
       /* Attinuate total gain for each 10 ms */

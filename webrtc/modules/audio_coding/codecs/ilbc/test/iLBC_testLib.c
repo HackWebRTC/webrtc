@@ -139,6 +139,10 @@ int main(int argc, char* argv[])
 #else
     len=WebRtcIlbcfix_Encode(Enc_Inst, data, (short)(mode<<3), encoded_data);
 #endif
+    if (len < 0) {
+      fprintf(stderr, "Error encoding\n");
+      exit(0);
+    }
     fprintf(stderr, "\r");
 
 #ifdef JUNK_DATA
@@ -176,6 +180,10 @@ int main(int argc, char* argv[])
       if (pli==1) {
         len=WebRtcIlbcfix_Decode(Dec_Inst, encoded_data, (int16_t)len, data,
                                  &speechType);
+        if (len < 0) {
+          fprintf(stderr, "Error decoding\n");
+          exit(0);
+        }
       } else {
         len=WebRtcIlbcfix_DecodePlc(Dec_Inst, data, 1);
       }

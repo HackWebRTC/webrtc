@@ -1520,10 +1520,10 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
     borrowed_samples_per_channel = static_cast<int>(required_samples -
         decoded_length_per_channel);
     // Calculate how many of these were already played out.
-    old_borrowed_samples_per_channel = static_cast<int>(
-        borrowed_samples_per_channel - sync_buffer_->FutureLength());
-    old_borrowed_samples_per_channel = std::max(
-        0, old_borrowed_samples_per_channel);
+    const int future_length = static_cast<int>(sync_buffer_->FutureLength());
+    old_borrowed_samples_per_channel =
+        (borrowed_samples_per_channel > future_length) ?
+        (borrowed_samples_per_channel - future_length) : 0;
     memmove(&decoded_buffer[borrowed_samples_per_channel * num_channels],
             decoded_buffer,
             sizeof(int16_t) * decoded_length);

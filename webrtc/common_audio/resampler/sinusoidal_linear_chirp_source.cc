@@ -36,12 +36,11 @@ void SinusoidalLinearChirpSource::Run(int frames, float* destination) {
       destination[i] = 0;
     } else {
       // Calculate time in seconds.
-      double t = (static_cast<double>(current_index_) - delay_samples_) /
-          sample_rate_;
-      if (t < 0) {
+      if (current_index_ < delay_samples_) {
         destination[i] = 0;
       } else {
         // Sinusoidal linear chirp.
+        double t = (current_index_ - delay_samples_) / sample_rate_;
         destination[i] =
             sin(2 * M_PI * (kMinFrequency * t + (k_ / 2) * t * t));
       }

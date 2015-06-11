@@ -83,8 +83,10 @@ int Normal::Process(const int16_t* input,
       scaling = std::max(scaling, 0);  // |scaling| should always be >= 0.
       int32_t energy = WebRtcSpl_DotProductWithScale(signal, signal,
                                                      energy_length, scaling);
-      if ((energy_length >> scaling) > 0) {
-        energy = energy / (energy_length >> scaling);
+      int32_t scaled_energy_length =
+          static_cast<int32_t>(energy_length >> scaling);
+      if (scaled_energy_length > 0) {
+        energy = energy / scaled_energy_length;
       } else {
         energy = 0;
       }

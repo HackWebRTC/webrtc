@@ -41,7 +41,7 @@ void WebRtcIlbcfix_DecodeResidual(
     int16_t *syntdenum   /* (i) the decoded synthesis filter
                                   coefficients */
                                   ) {
-  int16_t meml_gotten, Nfor, Nback, diff, start_pos;
+  int16_t meml_gotten, diff, start_pos;
   int16_t subcount, subframe;
   int16_t *reverseDecresidual = iLBCdec_inst->enh_buf; /* Reversed decoded data, used for decoding backwards in time (reuse memory in state) */
   int16_t *memVec = iLBCdec_inst->prevResidual;  /* Memory for codebook and filter state (reuse memory in state) */
@@ -110,9 +110,7 @@ void WebRtcIlbcfix_DecodeResidual(
 
   /* forward prediction of subframes */
 
-  Nfor = iLBCdec_inst->nsub-iLBC_encbits->startIdx-1;
-
-  if( Nfor > 0 ) {
+  if (iLBCdec_inst->nsub > iLBC_encbits->startIdx + 1) {
 
     /* setup memory */
     WebRtcSpl_MemSetW16(mem, 0, CB_MEML-STATE_LEN);
@@ -121,6 +119,7 @@ void WebRtcIlbcfix_DecodeResidual(
 
     /* loop over subframes to encode */
 
+    int16_t Nfor = iLBCdec_inst->nsub - iLBC_encbits->startIdx - 1;
     for (subframe=0; subframe<Nfor; subframe++) {
 
       /* construct decoded vector */
@@ -143,9 +142,7 @@ void WebRtcIlbcfix_DecodeResidual(
 
   /* backward prediction of subframes */
 
-  Nback = iLBC_encbits->startIdx-1;
-
-  if( Nback > 0 ){
+  if (iLBC_encbits->startIdx > 1) {
 
     /* setup memory */
 
@@ -160,6 +157,7 @@ void WebRtcIlbcfix_DecodeResidual(
 
     /* loop over subframes to decode */
 
+    int16_t Nback = iLBC_encbits->startIdx - 1;
     for (subframe=0; subframe<Nback; subframe++) {
 
       /* construct decoded vector */

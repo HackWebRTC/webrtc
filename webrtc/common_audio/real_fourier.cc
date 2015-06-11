@@ -40,8 +40,7 @@ int RealFourier::FftLength(int order) {
 }
 
 int RealFourier::ComplexLength(int order) {
-  CHECK_GE(order, 0);
-  return (1 << order) / 2 + 1;
+  return FftLength(order) / 2 + 1;
 }
 
 RealFourier::fft_real_scoper RealFourier::AllocRealBuffer(int count) {

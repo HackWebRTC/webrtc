@@ -450,7 +450,10 @@ int main(int argc, char* argv[]) {
   CHECK_NOT_NULL(out_file);
   printf("Output file: %s\n\n", argv[2]);
   packet_size = atoi(argv[3]);
-  CHECK_NOT_NULL(packet_size);
+  if (packet_size <= 0) {
+     printf("Packet size %d must be positive", packet_size);
+     return -1;
+  }
   printf("Packet size: %i\n", packet_size);
 
   // check for stereo

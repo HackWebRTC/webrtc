@@ -404,7 +404,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
   // Find the maximizing index |i| of the cost function
   // f[i] = best_correlation[i] / best_distortion[i].
   int32_t best_ratio = std::numeric_limits<int32_t>::min();
-  int best_index = -1;
+  int best_index = std::numeric_limits<int>::max();
   for (int i = 0; i < kNumCorrelationCandidates; ++i) {
     int32_t ratio;
     if (best_distortion[i] > 0) {
@@ -549,9 +549,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
     }
 
     // Set the 3 lag values.
-    int lag_difference = distortion_lag - correlation_lag;
-    if (lag_difference == 0) {
-      // |distortion_lag| and |correlation_lag| are equal.
+    if (distortion_lag == correlation_lag) {
       expand_lags_[0] = distortion_lag;
       expand_lags_[1] = distortion_lag;
       expand_lags_[2] = distortion_lag;
@@ -563,7 +561,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       // Second lag is the average of the two.
       expand_lags_[1] = (distortion_lag + correlation_lag) / 2;
       // Third lag is the average again, but rounding towards |correlation_lag|.
-      if (lag_difference > 0) {
+      if (distortion_lag > correlation_lag) {
         expand_lags_[2] = (distortion_lag + correlation_lag - 1) / 2;
       } else {
         expand_lags_[2] = (distortion_lag + correlation_lag + 1) / 2;
@@ -691,9 +689,8 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       temp_sum += kCoefficients[1] * x1;
       temp_sum += kCoefficients[2] * x2;
       temp_sum += kCoefficients[3] * x3;
-      parameters.voice_mix_factor = temp_sum / 4096;
-      parameters.voice_mix_factor = std::min(parameters.voice_mix_factor,
-                                             static_cast<int16_t>(16384));
+      parameters.voice_mix_factor =
+          static_cast<int16_t>(std::min(temp_sum / 4096, 16384));
       parameters.voice_mix_factor = std::max(parameters.voice_mix_factor,
                                              static_cast<int16_t>(0));
     } else {

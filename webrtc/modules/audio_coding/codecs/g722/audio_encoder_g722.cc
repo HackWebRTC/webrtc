@@ -24,7 +24,8 @@ const int kSampleRateHz = 16000;
 }  // namespace
 
 bool AudioEncoderG722::Config::IsOk() const {
-  return (frame_size_ms % 10 == 0) && (num_channels >= 1);
+  return (frame_size_ms > 0) && (frame_size_ms % 10 == 0) &&
+      (num_channels >= 1);
 }
 
 AudioEncoderG722::EncoderState::EncoderState() {

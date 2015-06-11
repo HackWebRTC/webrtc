@@ -165,6 +165,10 @@ int main(int argc, char* argv[])
 
     fprintf(stderr, "--- Encoding block %i --- ",blockcount);
     len = WebRtcIlbcfix_Encode(Enc_Inst, data, (int16_t)frameLen, encoded_data);
+    if (len < 0) {
+      fprintf(stderr, "Error encoding\n");
+      exit(0);
+    }
     fprintf(stderr, "\r");
 
     /* write byte file */
@@ -202,6 +206,10 @@ int main(int argc, char* argv[])
     if (pli==1) {
       len=WebRtcIlbcfix_Decode(Dec_Inst, encoded_data,
                                (int16_t)len, decoded_data,&speechType);
+      if (len < 0) {
+        fprintf(stderr, "Error decoding\n");
+        exit(0);
+      }
     } else {
       len=WebRtcIlbcfix_DecodePlc(Dec_Inst, decoded_data, 1);
     }

@@ -86,6 +86,10 @@ int main(int argc, char* argv[]) {
   printf("G.711 version: %s\n\n", versionNumber);
   /* Get frame length */
   framelength = atoi(argv[1]);
+  if (framelength < 0) {
+    printf("  G.711: Invalid framelength %d.\n", framelength);
+    exit(1);
+  }
 
   /* Get compression law */
   strcpy(law, argv[2]);

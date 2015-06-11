@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
   char transCodingFileName[500];
   int16_t totFileLoop = 0;
   int16_t numFileLoop = 0;
-  for (i = 1; i < argc - 2; i++) {
+  for (i = 1; i + 2 < argc; i++) {
     if (!strcmp("-LOOP", argv[i])) {
       i++;
       totFileLoop = (int16_t)atol(argv[i]);

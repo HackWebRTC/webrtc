@@ -227,12 +227,9 @@ void WebRtcIlbcfix_CbSearch(
         inverseEnergy[indexNew+indexOffset], inverseEnergyShifts[indexNew+indexOffset],
         &CritMax, &shTotMax, &bestIndex, &bestGain);
 
-    sInd=bestIndex-(int16_t)(CB_RESRANGE>>1);
+    sInd = ((CB_RESRANGE >> 1) > bestIndex) ?
+        0 : (bestIndex - (CB_RESRANGE >> 1));
     eInd=sInd+CB_RESRANGE;
-    if (sInd<0) {
-      eInd-=sInd;
-      sInd=0;
-    }
     if (eInd>=range) {
       eInd=range-1;
       sInd=eInd-CB_RESRANGE;
@@ -247,9 +244,11 @@ void WebRtcIlbcfix_CbSearch(
                                       interpSamplesFilt, cDot,
                                       (int16_t)(sInd+20), (int16_t)(WEBRTC_SPL_MIN(39, (eInd+20))), scale);
         i=20;
+        cDotPtr = &cDot[20 - sInd];
+      } else {
+        cDotPtr = cDot;
       }
 
-      cDotPtr=&cDot[WEBRTC_SPL_MAX(0,(20-sInd))];
       cb_vecPtr = cbvectors+lMem-20-i;
 
       /* Calculate the cross correlations (main part of the filtered CB) */

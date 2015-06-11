@@ -442,8 +442,9 @@ inline void AudioFrame::UpdateFrame(int id, uint32_t timestamp,
   num_channels_ = num_channels;
   energy_ = energy;
 
+  assert(num_channels >= 0);
   const int length = samples_per_channel * num_channels;
-  assert(length <= kMaxDataSizeSamples && length >= 0);
+  assert(length <= kMaxDataSizeSamples);
   if (data != NULL) {
     memcpy(data_, data, sizeof(int16_t) * length);
   } else {
@@ -466,8 +467,9 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src) {
   energy_ = src.energy_;
   interleaved_ = src.interleaved_;
 
+  assert(num_channels_ >= 0);
   const int length = samples_per_channel_ * num_channels_;
-  assert(length <= kMaxDataSizeSamples && length >= 0);
+  assert(length <= kMaxDataSizeSamples);
   memcpy(data_, src.data_, sizeof(int16_t) * length);
 }
 

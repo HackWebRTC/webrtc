@@ -51,7 +51,7 @@ int WebRtcSpl_AutoCorrelation(const int16_t* in_vector,
   for (i = 0; i < order + 1; i++) {
     sum = 0;
     /* Unroll the loop to improve performance. */
-    for (j = 0; j < in_vector_length - i - 3; j += 4) {
+    for (j = 0; i + j + 3 < in_vector_length; j += 4) {
       sum += (in_vector[j + 0] * in_vector[i + j + 0]) >> scaling;
       sum += (in_vector[j + 1] * in_vector[i + j + 1]) >> scaling;
       sum += (in_vector[j + 2] * in_vector[i + j + 2]) >> scaling;

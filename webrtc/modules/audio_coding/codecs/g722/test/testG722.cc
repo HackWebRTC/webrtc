@@ -83,6 +83,10 @@ int main(int argc, char* argv[])
 
     /* Get frame length */
     framelength = atoi(argv[1]);
+    if (framelength < 0) {
+        printf("  G.722: Invalid framelength %d.\n", framelength);
+        exit(1);
+    }
 
     /* Get Input and Output files */
     sscanf(argv[2], "%s", inname);

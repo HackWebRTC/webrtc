@@ -46,21 +46,21 @@ HALF_SUBFRAME_LOOP:  @ for(n = 0; n < HALF_SUBFRAMELEN - 1; n++)
   add     r2, r9, asl #1         @ Restore r2 to &cth_Q15[order_coef]
   add     r3, r9, asl #1         @ Restore r3 to &sth_Q15[order_coef]
 
-ORDER_COEF_LOOP:  @ for(k = order_coef - 1 ; k >= 0; k--)
+ORDER_COEF_LOOP:  @ for(k = order_coef ; k > 0; k--)
 
-  ldrh    r7, [r3, #-2]!         @ sth_Q15[k]
-  ldrh    r6, [r2, #-2]!         @ cth_Q15[k]
+  ldrh    r7, [r3, #-2]!         @ sth_Q15[k - 1]
+  ldrh    r6, [r2, #-2]!         @ cth_Q15[k - 1]
 
-  ldrh    r8, [r0, #-2]          @ ar_g_Q0[k]
-  smlabb  r11, r7, r5, r12       @ sth_Q15[k] * tmpAR + 16384
-  smlabb  r10, r6, r5, r12       @ cth_Q15[k] * tmpAR + 16384
-  smulbb  r7, r7, r8             @ sth_Q15[k] * ar_g_Q0[k]
-  smlabb  r11, r6, r8, r11       @ cth_Q15[k]*ar_g_Q0[k]+(sth_Q15[k]*tmpAR+16384)
+  ldrh    r8, [r0, #-2]          @ ar_g_Q0[k - 1]
+  smlabb  r11, r7, r5, r12       @ sth_Q15[k - 1] * tmpAR + 16384
+  smlabb  r10, r6, r5, r12       @ cth_Q15[k - 1] * tmpAR + 16384
+  smulbb  r7, r7, r8             @ sth_Q15[k - 1] * ar_g_Q0[k - 1]
+  smlabb  r11, r6, r8, r11       @ cth_Q15[k - 1]*ar_g_Q0[k - 1]+(sth_Q15[k - 1]*tmpAR+16384)
 
-  sub     r10, r10, r7           @ cth_Q15[k]*tmpAR+16384-(sth_Q15[k]*ar_g_Q0[k])
+  sub     r10, r10, r7           @ cth_Q15[k - 1]*tmpAR+16384-(sth_Q15[k - 1]*ar_g_Q0[k - 1])
   ssat    r11, #16, r11, asr #15
   ssat    r5, #16, r10, asr #15
-  strh    r11, [r0], #-2         @ Output: ar_g_Q0[k+1]
+  strh    r11, [r0], #-2         @ Output: ar_g_Q0[k]
 
   subs    r9, #1
   bgt     ORDER_COEF_LOOP
