@@ -50,7 +50,7 @@ int Normal::Process(const int16_t* input,
   // fs_shift = log2(fs_mult), rounded down.
   // Note that |fs_shift| is not "exact" for 48 kHz.
   // TODO(hlundin): Investigate this further.
-  const int fs_shift = 30 - WebRtcSpl_NormW32(fs_mult);
+  const int fs_shift = 30 - WebRtcSpl_NormW32(static_cast<int32_t>(fs_mult));
 
   // Check if last RecOut call resulted in an Expand. If so, we have to take
   // care of some cross-fading and unmuting.
@@ -99,14 +99,15 @@ int Normal::Process(const int16_t* input,
         // We want background_noise_.energy() / energy in Q14.
         int32_t bgn_energy =
             background_noise_.Energy(channel_ix) << (scaling+14);
-        int16_t energy_scaled = energy << scaling;
-        int16_t ratio = WebRtcSpl_DivW32W16(bgn_energy, energy_scaled);
-        mute_factor = WebRtcSpl_SqrtFloor(static_cast<int32_t>(ratio) << 14);
+        int16_t energy_scaled = static_cast<int16_t>(energy << scaling);
+        int32_t ratio = WebRtcSpl_DivW32W16(bgn_energy, energy_scaled);
+        mute_factor = WebRtcSpl_SqrtFloor(ratio << 14);
       } else {
         mute_factor = 16384;  // 1.0 in Q14.
       }
       if (mute_factor > external_mute_factor_array[channel_ix]) {
-        external_mute_factor_array[channel_ix] = std::min(mute_factor, 16384);
+        external_mute_factor_array[channel_ix] =
+            static_cast<int16_t>(std::min(mute_factor, 16384));
       }
 
       // If muted increase by 0.64 for every 20 ms (NB/WB 0.0040/0.0020 in Q14).
@@ -118,10 +119,11 @@ int Normal::Process(const int16_t* input,
         int32_t scaled_signal = (*output)[channel_ix][i] *
             external_mute_factor_array[channel_ix];
         // Shift 14 with proper rounding.
-        (*output)[channel_ix][i] = (scaled_signal + 8192) >> 14;
+        (*output)[channel_ix][i] =
+            static_cast<int16_t>((scaled_signal + 8192) >> 14);
         // Increase mute_factor towards 16384.
-        external_mute_factor_array[channel_ix] =
-            std::min(external_mute_factor_array[channel_ix] + increment, 16384);
+        external_mute_factor_array[channel_ix] = static_cast<int16_t>(std::min(
+            external_mute_factor_array[channel_ix] + increment, 16384));
       }
 
       // Interpolate the expanded data into the new vector.
@@ -135,8 +137,8 @@ int Normal::Process(const int16_t* input,
         assert(channel_ix < output->Channels());
         assert(i < output->Size());
         (*output)[channel_ix][i] =
-            (fraction * (*output)[channel_ix][i] +
-                (32 - fraction) * expanded[channel_ix][i] + 8) >> 5;
+            static_cast<int16_t>((fraction * (*output)[channel_ix][i] +
+                (32 - fraction) * expanded[channel_ix][i] + 8) >> 5);
         fraction += increment;
       }
     }
@@ -187,10 +189,11 @@ int Normal::Process(const int16_t* input,
         int32_t scaled_signal = (*output)[channel_ix][i] *
             external_mute_factor_array[channel_ix];
         // Shift 14 with proper rounding.
-        (*output)[channel_ix][i] = (scaled_signal + 8192) >> 14;
+        (*output)[channel_ix][i] =
+            static_cast<int16_t>((scaled_signal + 8192) >> 14);
         // Increase mute_factor towards 16384.
-        external_mute_factor_array[channel_ix] =
-            std::min(16384, external_mute_factor_array[channel_ix] + increment);
+        external_mute_factor_array[channel_ix] = static_cast<int16_t>(std::min(
+            16384, external_mute_factor_array[channel_ix] + increment));
       }
     }
   }

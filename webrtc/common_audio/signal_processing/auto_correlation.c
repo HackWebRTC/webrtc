@@ -36,7 +36,7 @@ int WebRtcSpl_AutoCorrelation(const int16_t* in_vector,
     scaling = 0;
   } else {
     // Number of bits in the sum loop.
-    int nbits = WebRtcSpl_GetSizeInBits(in_vector_length);
+    int nbits = WebRtcSpl_GetSizeInBits((uint32_t)in_vector_length);
     // Number of bits to normalize smax.
     int t = WebRtcSpl_NormW32(WEBRTC_SPL_MUL(smax, smax));
 

@@ -66,7 +66,7 @@ class FakeAdmTest : public testing::Test,
                                           const bool keyPressed,
                                           uint32_t& newMicLevel) {
     rec_buffer_bytes_ = nSamples * nBytesPerSample;
-    if ((rec_buffer_bytes_ <= 0) ||
+    if ((rec_buffer_bytes_ == 0) ||
         (rec_buffer_bytes_ > FakeAudioCaptureModule::kNumberSamples *
          FakeAudioCaptureModule::kNumberBytesPerSample)) {
       ADD_FAILURE();

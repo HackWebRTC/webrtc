@@ -898,10 +898,10 @@ static void FFT(NoiseSuppressionC* self,
 
   imag[0] = 0;
   real[0] = time_data[0];
-  magn[0] = fabs(real[0]) + 1.f;
+  magn[0] = fabsf(real[0]) + 1.f;
   imag[magnitude_length - 1] = 0;
   real[magnitude_length - 1] = time_data[1];
-  magn[magnitude_length - 1] = fabs(real[magnitude_length - 1]) + 1.f;
+  magn[magnitude_length - 1] = fabsf(real[magnitude_length - 1]) + 1.f;
   for (i = 1; i < magnitude_length - 1; ++i) {
     real[i] = time_data[2 * i];
     imag[i] = time_data[2 * i + 1];
@@ -1090,10 +1090,10 @@ void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
     sumMagn += magn[i];
     if (self->blockInd < END_STARTUP_SHORT) {
       if (i >= kStartBand) {
-        tmpFloat2 = log((float)i);
+        tmpFloat2 = logf((float)i);
         sum_log_i += tmpFloat2;
         sum_log_i_square += tmpFloat2 * tmpFloat2;
-        tmpFloat1 = log(magn[i]);
+        tmpFloat1 = logf(magn[i]);
         sum_log_magn += tmpFloat1;
         sum_log_i_log_magn += tmpFloat2 * tmpFloat1;
       }
@@ -1136,7 +1136,7 @@ void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
     if (self->pinkNoiseExp > 0.f) {
       // Use pink noise estimate.
       parametric_num =
-          exp(self->pinkNoiseNumerator / (float)(self->blockInd + 1));
+          expf(self->pinkNoiseNumerator / (float)(self->blockInd + 1));
       parametric_num *= (float)(self->blockInd + 1);
       parametric_exp = self->pinkNoiseExp / (float)(self->blockInd + 1);
     }
@@ -1150,7 +1150,7 @@ void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
         // Use pink noise estimate.
         float use_band = (float)(i < kStartBand ? kStartBand : i);
         self->parametricNoise[i] =
-            parametric_num / pow(use_band, parametric_exp);
+            parametric_num / powf(use_band, parametric_exp);
       }
       // Weight quantile noise with modeled noise.
       noise[i] *= (self->blockInd);

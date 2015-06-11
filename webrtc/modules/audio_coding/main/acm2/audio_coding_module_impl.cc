@@ -431,8 +431,8 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
 
   if (!down_mix && !resample) {
     // No pre-processing is required.
-    expected_in_ts_ += in_frame.samples_per_channel_;
-    expected_codec_ts_ += in_frame.samples_per_channel_;
+    expected_in_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
+    expected_codec_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
     *ptr_out = &in_frame;
     return 0;
   }
@@ -477,8 +477,9 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
         codec_manager_.CurrentEncoder()->SampleRateHz();
   }
 
-  expected_codec_ts_ += preprocess_frame_.samples_per_channel_;
-  expected_in_ts_ += in_frame.samples_per_channel_;
+  expected_codec_ts_ +=
+      static_cast<uint32_t>(preprocess_frame_.samples_per_channel_);
+  expected_in_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
 
   return 0;
 }

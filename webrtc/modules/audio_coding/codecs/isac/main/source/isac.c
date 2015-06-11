@@ -504,7 +504,7 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
   int16_t streamLenUB = 0;
   int16_t streamLen = 0;
   int16_t k = 0;
-  int garbageLen = 0;
+  uint8_t garbageLen = 0;
   int32_t bottleneck = 0;
   int16_t bottleneckIdx = 0;
   int16_t jitterInfo = 0;
@@ -645,7 +645,7 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
     memcpy(encoded, instLB->ISACencLB_obj.bitstr_obj.stream, streamLenLB);
     streamLen = streamLenLB;
     if (streamLenUB > 0) {
-      encoded[streamLenLB] = streamLenUB + 1 + LEN_CHECK_SUM_WORD8;
+      encoded[streamLenLB] = (uint8_t)(streamLenUB + 1 + LEN_CHECK_SUM_WORD8);
       memcpy(&encoded[streamLenLB + 1],
              instUB->ISACencUB_obj.bitstr_obj.stream,
              streamLenUB);
@@ -703,7 +703,7 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
     }
     minBytes = (minBytes > limit) ? limit : minBytes;
 
-    garbageLen = (minBytes > streamLen) ? (minBytes - streamLen) : 0;
+    garbageLen = (minBytes > streamLen) ? (uint8_t)(minBytes - streamLen) : 0;
 
     /* Save data for creation of multiple bit-streams. */
     /* If bit-stream too short then add garbage at the end. */

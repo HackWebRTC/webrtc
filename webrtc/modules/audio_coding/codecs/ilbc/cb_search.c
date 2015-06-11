@@ -108,8 +108,8 @@ void WebRtcIlbcfix_CbSearch(
 
   /* Find the highest absolute value to calculate proper
      vector scale factor (so that it uses 12 bits) */
-  temp1 = WebRtcSpl_MaxAbsValueW16(buf, (int16_t)lMem);
-  temp2 = WebRtcSpl_MaxAbsValueW16(target, (int16_t)lTarget);
+  temp1 = WebRtcSpl_MaxAbsValueW16(buf, lMem);
+  temp2 = WebRtcSpl_MaxAbsValueW16(target, lTarget);
 
   if ((temp1>0)&&(temp2>0)) {
     temp1 = WEBRTC_SPL_MAX(temp1, temp2);
@@ -332,7 +332,8 @@ void WebRtcIlbcfix_CbSearch(
     /* Subtract the best codebook vector, according
        to measure, from the target vector */
 
-    WebRtcSpl_AddAffineVectorToVector(target, pp, (int16_t)(-bestGain), (int32_t)8192, (int16_t)14, (int)lTarget);
+    WebRtcSpl_AddAffineVectorToVector(target, pp, (int16_t)(-bestGain),
+                                      (int32_t)8192, (int16_t)14, lTarget);
 
     /* record quantized gain */
     gains[stage+1] = bestGain;

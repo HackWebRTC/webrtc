@@ -648,7 +648,7 @@ static void makewt(int nw, int *ip, float *w)
     ip[1] = 1;
     if (nw > 2) {
         nwh = nw >> 1;
-        delta = (float)atan(1.0f) / nwh;
+        delta = atanf(1.0f) / nwh;
         w[0] = 1;
         w[1] = 0;
         w[nwh] = (float)cos(delta * nwh);
@@ -676,7 +676,7 @@ static void makect(int nc, int *ip, float *c)
     ip[1] = nc;
     if (nc > 1) {
         nch = nc >> 1;
-        delta = (float)atan(1.0f) / nch;
+        delta = atanf(1.0f) / nch;
         c[0] = (float)cos(delta * nch);
         c[nch] = 0.5f * c[0];
         for (j = 1; j < nch; j++) {

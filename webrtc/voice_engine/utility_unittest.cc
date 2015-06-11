@@ -54,7 +54,7 @@ void SetMonoFrame(AudioFrame* frame, float data, int sample_rate_hz) {
   frame->sample_rate_hz_ = sample_rate_hz;
   frame->samples_per_channel_ = sample_rate_hz / 100;
   for (int i = 0; i < frame->samples_per_channel_; i++) {
-    frame->data_[i] = data * i;
+    frame->data_[i] = static_cast<int16_t>(data * i);
   }
 }
 
@@ -72,8 +72,8 @@ void SetStereoFrame(AudioFrame* frame, float left, float right,
   frame->sample_rate_hz_ = sample_rate_hz;
   frame->samples_per_channel_ = sample_rate_hz / 100;
   for (int i = 0; i < frame->samples_per_channel_; i++) {
-    frame->data_[i * 2] = left * i;
-    frame->data_[i * 2 + 1] = right * i;
+    frame->data_[i * 2] = static_cast<int16_t>(left * i);
+    frame->data_[i * 2 + 1] = static_cast<int16_t>(right * i);
   }
 }
 

@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
   char histFileName[500];
   char averageFileName[500];
   unsigned int hist[600];
-  unsigned int tmpSumStreamLen = 0;
+  double tmpSumStreamLen = 0;
   unsigned int packetCntr = 0;
   unsigned int lostPacketCntr = 0;
   uint8_t payload[1200];
@@ -374,7 +374,7 @@ int main(int argc, char* argv[]) {
       if (packetCntr == 100) {
         // kbps
         fprintf(averageFile, "%8.3f ",
-                (double)tmpSumStreamLen * 8.0 / (30.0 * packetCntr));
+                tmpSumStreamLen * 8.0 / (30.0 * packetCntr));
         packetCntr = 0;
         tmpSumStreamLen = 0;
       }
@@ -493,7 +493,7 @@ int main(int argc, char* argv[]) {
   if (averageFile != NULL) {
     if (packetCntr > 0) {
       fprintf(averageFile, "%8.3f ",
-              (double)tmpSumStreamLen * 8.0 / (30.0 * packetCntr));
+              tmpSumStreamLen * 8.0 / (30.0 * packetCntr));
     }
     fprintf(averageFile, "\n");
     fclose(averageFile);

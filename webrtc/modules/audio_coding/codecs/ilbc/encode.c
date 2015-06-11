@@ -193,7 +193,7 @@ void WebRtcIlbcfix_EncodeImpl(
 
       /* setup memory */
 
-      WebRtcSpl_MemSetW16(mem, 0, (int16_t)(CB_MEML-iLBCenc_inst->state_short_len));
+      WebRtcSpl_MemSetW16(mem, 0, CB_MEML - iLBCenc_inst->state_short_len);
       WEBRTC_SPL_MEMCPY_W16(mem+CB_MEML-iLBCenc_inst->state_short_len,
                             decresidual+start_pos, iLBCenc_inst->state_short_len);
 
@@ -224,7 +224,7 @@ void WebRtcIlbcfix_EncodeImpl(
 
       meml_gotten = iLBCenc_inst->state_short_len;
       WebRtcSpl_MemCpyReversedOrder(&mem[CB_MEML-1], &decresidual[start_pos], meml_gotten);
-      WebRtcSpl_MemSetW16(mem, 0, (int16_t)(CB_MEML-iLBCenc_inst->state_short_len));
+      WebRtcSpl_MemSetW16(mem, 0, CB_MEML - iLBCenc_inst->state_short_len);
 
       /* encode subframes */
       WebRtcIlbcfix_CbSearch(iLBCenc_inst, iLBCbits_inst->cb_index, iLBCbits_inst->gain_index,
@@ -397,7 +397,7 @@ void WebRtcIlbcfix_EncodeImpl(
     }
 
     WebRtcSpl_MemCpyReversedOrder(&mem[CB_MEML-1], &decresidual[Nback*SUBL], meml_gotten);
-    WebRtcSpl_MemSetW16(mem, 0, (int16_t)(CB_MEML-meml_gotten));
+    WebRtcSpl_MemSetW16(mem, 0, CB_MEML - meml_gotten);
 
 #ifdef SPLIT_10MS
     if (iLBCenc_inst->Nback_flag > 0)

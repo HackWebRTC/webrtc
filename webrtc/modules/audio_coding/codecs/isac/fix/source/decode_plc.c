@@ -447,7 +447,7 @@ int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
   /* inverse pitch filter */
 
   pitchLags_Q7[0] = pitchLags_Q7[1] = pitchLags_Q7[2] = pitchLags_Q7[3] =
-      ((ISACdec_obj->plcstr_obj).stretchLag<<7);
+      (int16_t)((ISACdec_obj->plcstr_obj).stretchLag<<7);
   pitchGains_Q12[3] = ( (ISACdec_obj->plcstr_obj).lastPitchGain_Q12);
   pitchGains_Q12[2] = (int16_t)(pitchGains_Q12[3] * 1010 >> 10);
   pitchGains_Q12[1] = (int16_t)(pitchGains_Q12[2] * 1010 >> 10);
@@ -749,7 +749,8 @@ int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
     k = ( k < ((ISACdec_obj->plcstr_obj).stretchLag - 1) )? (k+1):0;
   }
 
-  (ISACdec_obj->plcstr_obj).lastPitchLag_Q7 = (ISACdec_obj->plcstr_obj).stretchLag << 7;
+  (ISACdec_obj->plcstr_obj).lastPitchLag_Q7 =
+      (int16_t)((ISACdec_obj->plcstr_obj).stretchLag << 7);
 
 
   /* --- Inverse Pitch Filter --- */

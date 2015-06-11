@@ -206,7 +206,7 @@ void WebRtcIlbcfix_DecodeImpl(
     }
 
     /* Store lag (it is needed if next packet is lost) */
-    (*iLBCdec_inst).last_lag = (int)lag;
+    (*iLBCdec_inst).last_lag = lag;
 
     /* copy data and run synthesis filter */
     WEBRTC_SPL_MEMCPY_W16(data, decresidual, iLBCdec_inst->blockl);

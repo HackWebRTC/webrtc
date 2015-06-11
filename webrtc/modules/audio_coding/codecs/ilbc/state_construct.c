@@ -100,7 +100,7 @@ void WebRtcIlbcfix_StateConstruct(
   WebRtcSpl_MemSetW16(&sampleMa[len + LPC_FILTERORDER], 0, (len - LPC_FILTERORDER));
   WebRtcSpl_FilterARFastQ12(
       sampleMa, sampleAr,
-      syntDenum, LPC_FILTERORDER+1, (int16_t)(2*len));
+      syntDenum, LPC_FILTERORDER+1, 2 * len);
 
   tmp1 = &sampleAr[len-1];
   tmp2 = &sampleAr[2*len-1];

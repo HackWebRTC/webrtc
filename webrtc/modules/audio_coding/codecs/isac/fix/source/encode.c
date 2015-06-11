@@ -498,7 +498,7 @@ int WebRtcIsacfix_EncodeStoredData(IsacFixEncoderInstance  *ISACenc_obj,
 {
   int ii;
   int status;
-  int16_t BWno = BWnumber;
+  int16_t BWno = (int16_t)BWnumber;
   int stream_length = 0;
 
   int16_t model;

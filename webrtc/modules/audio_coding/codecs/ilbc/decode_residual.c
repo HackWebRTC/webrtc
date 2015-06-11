@@ -66,7 +66,7 @@ void WebRtcIlbcfix_DecodeResidual(
 
     /* setup memory */
 
-    WebRtcSpl_MemSetW16(mem, 0, (int16_t)(CB_MEML-iLBCdec_inst->state_short_len));
+    WebRtcSpl_MemSetW16(mem, 0, CB_MEML - iLBCdec_inst->state_short_len);
     WEBRTC_SPL_MEMCPY_W16(mem+CB_MEML-iLBCdec_inst->state_short_len, decresidual+start_pos,
                           iLBCdec_inst->state_short_len);
 
@@ -76,8 +76,7 @@ void WebRtcIlbcfix_DecodeResidual(
         &decresidual[start_pos+iLBCdec_inst->state_short_len],
         iLBC_encbits->cb_index, iLBC_encbits->gain_index,
         mem+CB_MEML-ST_MEM_L_TBL,
-        ST_MEM_L_TBL, (int16_t)diff
-                              );
+        ST_MEM_L_TBL, diff);
 
   }
   else {/* put adaptive part in the beginning */
@@ -87,7 +86,7 @@ void WebRtcIlbcfix_DecodeResidual(
     meml_gotten = iLBCdec_inst->state_short_len;
     WebRtcSpl_MemCpyReversedOrder(mem+CB_MEML-1,
                                   decresidual+start_pos, meml_gotten);
-    WebRtcSpl_MemSetW16(mem, 0, (int16_t)(CB_MEML-meml_gotten));
+    WebRtcSpl_MemSetW16(mem, 0, CB_MEML - meml_gotten);
 
     /* construct decoded vector */
 
@@ -153,7 +152,7 @@ void WebRtcIlbcfix_DecodeResidual(
 
     WebRtcSpl_MemCpyReversedOrder(mem+CB_MEML-1,
                                   decresidual+(iLBC_encbits->startIdx-1)*SUBL, meml_gotten);
-    WebRtcSpl_MemSetW16(mem, 0, (int16_t)(CB_MEML-meml_gotten));
+    WebRtcSpl_MemSetW16(mem, 0, CB_MEML - meml_gotten);
 
     /* loop over subframes to decode */
 

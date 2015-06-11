@@ -96,11 +96,11 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   memmove(enh_period, &enh_period[new_blocks],
           (ENH_NBLOCKS_TOT - new_blocks) * sizeof(*enh_period));
 
-  k=WebRtcSpl_DownsampleFast(
+  k = WebRtcSpl_DownsampleFast(
       enh_buf+ENH_BUFL-inLen,    /* Input samples */
-      (int16_t)(inLen+ENH_BUFL_FILTEROVERHEAD),
+      inLen + ENH_BUFL_FILTEROVERHEAD,
       downsampled,
-      (int16_t)(inLen / 2),
+      inLen / 2,
       (int16_t*)WebRtcIlbcfix_kLpFiltCoefs,  /* Coefficients in Q12 */
       FILTERORDER_DS_PLUS1,    /* Length of filter (order-1) */
       FACTOR_DS,
@@ -114,8 +114,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     regressor = target - 10;
 
     /* scaling */
-    max16=WebRtcSpl_MaxAbsValueW16(&regressor[-50],
-                                   (int16_t)(ENH_BLOCKL_HALF+50-1));
+    max16 = WebRtcSpl_MaxAbsValueW16(&regressor[-50], ENH_BLOCKL_HALF + 50 - 1);
     shifts = WebRtcSpl_GetSizeInBits((uint32_t)(max16 * max16)) - 25;
     shifts = WEBRTC_SPL_MAX(0, shifts);
 
@@ -199,7 +198,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     regressor=in+tlag-1;
 
     /* scaling */
-    max16=WebRtcSpl_MaxAbsValueW16(regressor, (int16_t)(plc_blockl+3-1));
+    max16 = WebRtcSpl_MaxAbsValueW16(regressor, plc_blockl + 3 - 1);
     if (max16>5000)
       shifts=2;
     else
@@ -338,7 +337,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
           synt,
           &iLBCdec_inst->old_syntdenum[
                                        (iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)],
-                                       LPC_FILTERORDER+1, (int16_t)lag);
+                                       LPC_FILTERORDER+1, lag);
 
       WEBRTC_SPL_MEMCPY_W16(&synt[-LPC_FILTERORDER], &synt[lag-LPC_FILTERORDER],
                             LPC_FILTERORDER);
@@ -349,7 +348,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
           enh_bufPtr1, synt,
           &iLBCdec_inst->old_syntdenum[
                                        (iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)],
-                                       LPC_FILTERORDER+1, (int16_t)lag);
+                                       LPC_FILTERORDER+1, lag);
 
       WEBRTC_SPL_MEMCPY_W16(iLBCdec_inst->syntMem, &synt[lag-LPC_FILTERORDER],
                             LPC_FILTERORDER);

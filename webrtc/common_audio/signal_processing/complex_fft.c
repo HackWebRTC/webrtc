@@ -181,7 +181,7 @@ int WebRtcSpl_ComplexIFFT(int16_t frfi[], int stages, int mode)
         shift = 0;
         round2 = 8192;
 
-        tmp32 = (int32_t)WebRtcSpl_MaxAbsValueW16(frfi, 2 * n);
+        tmp32 = WebRtcSpl_MaxAbsValueW16(frfi, 2 * n);
         if (tmp32 > 13573)
         {
             shift++;

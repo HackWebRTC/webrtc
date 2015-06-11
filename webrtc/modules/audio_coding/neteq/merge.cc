@@ -108,10 +108,11 @@ int Merge::Process(int16_t* input, size_t input_length,
       // Set a suitable muting slope (Q20). 0.004 for NB, 0.002 for WB,
       // and so on.
       int increment = 4194 / fs_mult_;
-      *external_mute_factor = DspHelper::RampSignal(input_channel,
-                                                    interpolation_length,
-                                                    *external_mute_factor,
-                                                    increment);
+      *external_mute_factor =
+          static_cast<int16_t>(DspHelper::RampSignal(input_channel,
+                                                     interpolation_length,
+                                                     *external_mute_factor,
+                                                     increment));
       DspHelper::UnmuteSignal(&input_channel[interpolation_length],
                               input_length_per_channel - interpolation_length,
                               external_mute_factor, increment,
@@ -125,7 +126,8 @@ int Merge::Process(int16_t* input, size_t input_length,
     }
 
     // Do overlap and mix linearly.
-    int increment = 16384 / (interpolation_length + 1);  // In Q14.
+    int16_t increment =
+        static_cast<int16_t>(16384 / (interpolation_length + 1));  // In Q14.
     int16_t mute_factor = 16384 - increment;
     memmove(temp_data, expanded_channel,
             sizeof(int16_t) * best_correlation_index);
@@ -246,7 +248,8 @@ int16_t Merge::SignalScaling(const int16_t* input, int input_length,
     // energy_expanded / energy_input is in Q14.
     energy_expanded = WEBRTC_SPL_SHIFT_W32(energy_expanded, temp_shift + 14);
     // Calculate sqrt(energy_expanded / energy_input) in Q14.
-    mute_factor = WebRtcSpl_SqrtFloor((energy_expanded / energy_input) << 14);
+    mute_factor = static_cast<int16_t>(
+        WebRtcSpl_SqrtFloor((energy_expanded / energy_input) << 14));
   } else {
     // Set to 1 (in Q14) when |expanded| has higher energy than |input|.
     mute_factor = 16384;

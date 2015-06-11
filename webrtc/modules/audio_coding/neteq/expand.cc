@@ -227,7 +227,7 @@ int Expand::Process(AudioMultiVector* output) {
       if (mix_factor_increment != 0) {
         parameters.current_voice_mix_factor = parameters.voice_mix_factor;
       }
-      int temp_scale = 16384 - parameters.current_voice_mix_factor;
+      int16_t temp_scale = 16384 - parameters.current_voice_mix_factor;
       WebRtcSpl_ScaleAndAddVectorsWithRound(
           voiced_vector + temp_lenght, parameters.current_voice_mix_factor,
           unvoiced_vector + temp_lenght, temp_scale, 14,
@@ -669,7 +669,8 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
     // even, which is suitable for the sqrt.
     unvoiced_scale += ((unvoiced_scale & 0x1) ^ 0x1);
     unvoiced_energy = WEBRTC_SPL_SHIFT_W32(unvoiced_energy, unvoiced_scale);
-    int32_t unvoiced_gain = WebRtcSpl_SqrtFloor(unvoiced_energy);
+    int16_t unvoiced_gain =
+        static_cast<int16_t>(WebRtcSpl_SqrtFloor(unvoiced_energy));
     parameters.ar_gain_scale = 13
         + (unvoiced_scale + 7 - unvoiced_prescale) / 2;
     parameters.ar_gain = unvoiced_gain;
@@ -709,8 +710,9 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       // the division.
       // Shift the denominator from Q13 to Q5 before the division. The result of
       // the division will then be in Q20.
-      int16_t temp_ratio = WebRtcSpl_DivW32W16((slope - 8192) << 12,
-                                               (distortion_lag * slope) >> 8);
+      int16_t temp_ratio = WebRtcSpl_DivW32W16(
+          (slope - 8192) << 12,
+          static_cast<int16_t>((distortion_lag * slope) >> 8));
       if (slope > 14746) {
         // slope > 1.8.
         // Divide by 2, with proper rounding.
@@ -723,8 +725,8 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
     } else {
       // Calculate (1 - slope) / distortion_lag.
       // Shift |slope| by 7 to Q20 before the division. The result is in Q20.
-      parameters.mute_slope = WebRtcSpl_DivW32W16((8192 - slope) << 7,
-                                                   distortion_lag);
+      parameters.mute_slope = WebRtcSpl_DivW32W16(
+          (8192 - slope) << 7, static_cast<int16_t>(distortion_lag));
       if (parameters.voice_mix_factor <= 13107) {
         // Make sure the mute factor decreases from 1.0 to 0.9 in no more than
         // 6.25 ms.
@@ -810,7 +812,8 @@ int16_t Expand::Correlation(const int16_t* input, size_t input_length,
   // Normalize and move data from 32-bit to 16-bit vector.
   int32_t max_correlation = WebRtcSpl_MaxAbsValueW32(correlation,
                                                      kNumCorrelationLags);
-  int16_t norm_shift2 = std::max(18 - WebRtcSpl_NormW32(max_correlation), 0);
+  int16_t norm_shift2 = static_cast<int16_t>(
+      std::max(18 - WebRtcSpl_NormW32(max_correlation), 0));
   WebRtcSpl_VectorBitShiftW32ToW16(output, kNumCorrelationLags, correlation,
                                    norm_shift2);
   // Total scale factor (right shifts) of correlation value.
@@ -928,7 +931,7 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
   }
 }
 
-void Expand::GenerateRandomVector(int seed_increment,
+void Expand::GenerateRandomVector(int16_t seed_increment,
                                   size_t length,
                                   int16_t* random_vector) {
   // TODO(turajs): According to hlundin The loop should not be needed. Should be

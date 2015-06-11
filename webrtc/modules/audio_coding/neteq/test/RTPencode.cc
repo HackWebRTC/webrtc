@@ -621,8 +621,8 @@ int main(int argc, char* argv[]) {
       }
 
       /* write RTP packet to file */
-      length = htons(12 + enc_len + 8);
-      plen = htons(12 + enc_len);
+      length = htons(static_cast<unsigned short>(12 + enc_len + 8));
+      plen = htons(static_cast<unsigned short>(12 + enc_len));
       offset = (uint32_t)sendtime;  //(timestamp/(fs/1000));
       offset = htonl(offset);
       if (fwrite(&length, 2, 1, out_file) != 1) {
@@ -673,7 +673,7 @@ int main(int argc, char* argv[]) {
           memmove(&rtp_data[RTPheaderLen + red_len[0]], &rtp_data[12], enc_len);
           memcpy(&rtp_data[RTPheaderLen], red_data, red_len[0]);
 
-          red_len[1] = enc_len;
+          red_len[1] = static_cast<uint16_t>(enc_len);
           red_TS[1] = timestamp;
           if (vad)
             red_PT[1] = payloadType;
@@ -689,7 +689,7 @@ int main(int argc, char* argv[]) {
           memmove(&rtp_data[RTPheaderLen - 4], &rtp_data[12], enc_len);
           // memcpy(&rtp_data[RTPheaderLen], red_data, red_len[0]);
 
-          red_len[1] = enc_len;
+          red_len[1] = static_cast<uint16_t>(enc_len);
           red_TS[1] = timestamp;
           if (vad)
             red_PT[1] = payloadType;
@@ -714,8 +714,8 @@ int main(int argc, char* argv[]) {
       do {
 #endif  // MULTIPLE_SAME_TIMESTAMP
         /* write RTP packet to file */
-        length = htons(12 + enc_len + 8);
-        plen = htons(12 + enc_len);
+        length = htons(static_cast<unsigned short>(12 + enc_len + 8));
+        plen = htons(static_cast<unsigned short>(12 + enc_len));
         offset = (uint32_t)sendtime;
         //(timestamp/(fs/1000));
         offset = htonl(offset);

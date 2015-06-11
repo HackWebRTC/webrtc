@@ -62,7 +62,8 @@ void get_arrival_time(int current_framesamples,   /* samples */
   /* everything in samples */
   BN_data->sample_count = BN_data->sample_count + current_framesamples;
 
-  BN_data->arrival_time += ((packet_size + HeaderSize) * 8 * FS) / (bottleneck + HeaderRate);
+  BN_data->arrival_time += static_cast<uint32_t>(
+      ((packet_size + HeaderSize) * 8 * FS) / (bottleneck + HeaderRate));
   BN_data->send_time += current_framesamples;
 
   if (BN_data->arrival_time < BN_data->sample_count)

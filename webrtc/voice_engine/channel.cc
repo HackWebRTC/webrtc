@@ -1097,7 +1097,7 @@ int32_t
 Channel::UpdateLocalTimeStamp()
 {
 
-    _timeStamp += _audioFrame.samples_per_channel_;
+    _timeStamp += static_cast<uint32_t>(_audioFrame.samples_per_channel_);
     return 0;
 }
 
@@ -3454,7 +3454,7 @@ Channel::EncodeAndSend()
         return 0xFFFFFFFF;
     }
 
-    _timeStamp += _audioFrame.samples_per_channel_;
+    _timeStamp += static_cast<uint32_t>(_audioFrame.samples_per_channel_);
     return 0;
 }
 

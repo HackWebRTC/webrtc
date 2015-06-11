@@ -45,7 +45,7 @@ void WebRtcIlbcfix_MyCorr(
   loops=dim1-dim2+1;
 
   /* Calculate the cross correlations */
-  WebRtcSpl_CrossCorrelation(corr, (int16_t*)seq2, seq1, dim2, loops, scale, 1);
+  WebRtcSpl_CrossCorrelation(corr, seq2, seq1, dim2, loops, scale, 1);
 
   return;
 }

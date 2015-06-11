@@ -79,7 +79,7 @@ Packet* AcmSendTest::NextPacket() {
     }
     int32_t encoded_bytes = acm_->Add10MsAudio(input_frame_);
     EXPECT_GE(encoded_bytes, 0);
-    input_frame_.timestamp_ += input_block_size_samples_;
+    input_frame_.timestamp_ += static_cast<uint32_t>(input_block_size_samples_);
     if (encoded_bytes > 0) {
       // Encoded packet received.
       return CreatePacket();

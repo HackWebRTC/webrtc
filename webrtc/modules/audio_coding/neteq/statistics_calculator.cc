@@ -83,7 +83,7 @@ void StatisticsCalculator::LostSamples(int num_samples) {
 }
 
 void StatisticsCalculator::IncreaseCounter(int num_samples, int fs_hz) {
-  timestamps_since_last_report_ += num_samples;
+  timestamps_since_last_report_ += static_cast<uint32_t>(num_samples);
   if (timestamps_since_last_report_ >
       static_cast<uint32_t>(fs_hz * kMaxReportPeriod)) {
     lost_timestamps_ = 0;
@@ -121,7 +121,8 @@ void StatisticsCalculator::GetNetworkStatistics(
   }
 
   stats->added_zero_samples = added_zero_samples_;
-  stats->current_buffer_size_ms = num_samples_in_buffers * 1000 / fs_hz;
+  stats->current_buffer_size_ms =
+      static_cast<uint16_t>(num_samples_in_buffers * 1000 / fs_hz);
   const int ms_per_packet = decision_logic.packet_length_samples() /
       (fs_hz / 1000);
   stats->preferred_buffer_size_ms = (delay_manager.TargetLevel() >> 8) *
@@ -167,14 +168,14 @@ void StatisticsCalculator::WaitingTimes(std::vector<int>* waiting_times) {
   ResetWaitingTimeStatistics();
 }
 
-int StatisticsCalculator::CalculateQ14Ratio(uint32_t numerator,
-                                            uint32_t denominator) {
+uint16_t StatisticsCalculator::CalculateQ14Ratio(uint32_t numerator,
+                                                 uint32_t denominator) {
   if (numerator == 0) {
     return 0;
   } else if (numerator < denominator) {
     // Ratio must be smaller than 1 in Q14.
     assert((numerator << 14) / denominator < (1 << 14));
-    return (numerator << 14) / denominator;
+    return static_cast<uint16_t>((numerator << 14) / denominator);
   } else {
     // Will not produce a ratio larger than 1, since this is probably an error.
     return 1 << 14;

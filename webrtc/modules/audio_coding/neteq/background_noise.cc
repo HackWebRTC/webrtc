@@ -239,7 +239,7 @@ void BackgroundNoise::SaveParameters(size_t channel,
   parameters.low_energy_update_threshold = 0;
 
   // Normalize residual_energy to 29 or 30 bits before sqrt.
-  int norm_shift = WebRtcSpl_NormW32(residual_energy) - 1;
+  int16_t norm_shift = WebRtcSpl_NormW32(residual_energy) - 1;
   if (norm_shift & 0x1) {
     norm_shift -= 1;  // Even number of shifts required.
   }
@@ -251,7 +251,8 @@ void BackgroundNoise::SaveParameters(size_t channel,
   // Add 13 to the |scale_shift_|, since the random numbers table is in
   // Q13.
   // TODO(hlundin): Move the "13" to where the |scale_shift_| is used?
-  parameters.scale_shift = 13 + ((kLogResidualLength + norm_shift) / 2);
+  parameters.scale_shift =
+      static_cast<int16_t>(13 + ((kLogResidualLength + norm_shift) / 2));
 
   initialized_ = true;
 }

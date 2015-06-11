@@ -75,7 +75,7 @@ void WebRtcIlbcfix_Refiner(
 
   /* Calculate the rescaling factor for the correlation in order to
      put the correlation in a int16_t vector instead */
-  maxtemp=WebRtcSpl_MaxAbsValueW32(corrVecTemp, (int16_t)corrdim);
+  maxtemp=WebRtcSpl_MaxAbsValueW32(corrVecTemp, corrdim);
 
   scalefact=WebRtcSpl_GetSizeInBits(maxtemp)-15;
 
@@ -97,7 +97,7 @@ void WebRtcIlbcfix_Refiner(
   WebRtcIlbcfix_EnhUpsample(corrVecUps,corrVec);
 
   /* Find maximum */
-  tloc=WebRtcSpl_MaxIndexW32(corrVecUps, (int16_t) (ENH_UPS0*corrdim));
+  tloc=WebRtcSpl_MaxIndexW32(corrVecUps, ENH_UPS0 * corrdim);
 
   /* make vector can be upsampled without ever running outside
      bounds */

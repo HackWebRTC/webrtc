@@ -563,7 +563,7 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(uint32_t nSamples)
         }
     }
 
-    return nSamplesOut;
+    return static_cast<int32_t>(nSamplesOut);
 }
 
 // ----------------------------------------------------------------------------
@@ -590,7 +590,7 @@ int32_t AudioDeviceBuffer::GetPlayoutData(void* audioBuffer)
         _playFile.Write(&_playBuffer[0], _playSize);
     }
 
-    return _playSamples;
+    return static_cast<int32_t>(_playSamples);
 }
 
 }  // namespace webrtc

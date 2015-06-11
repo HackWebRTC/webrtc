@@ -343,7 +343,8 @@ void NetEqDecodingTest::Process(int* out_len) {
       ASSERT_EQ(0, neteq_->InsertPacket(
                        rtp_header, packet_->payload(),
                        packet_->payload_length_bytes(),
-                       packet_->time_ms() * (output_sample_rate_ / 1000)));
+                       static_cast<uint32_t>(
+                           packet_->time_ms() * (output_sample_rate_ / 1000))));
     }
     // Get next packet.
     packet_.reset(rtp_source_->NextPacket());

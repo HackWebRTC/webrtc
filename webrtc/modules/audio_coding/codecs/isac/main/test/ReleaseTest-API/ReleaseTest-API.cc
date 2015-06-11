@@ -52,7 +52,8 @@ int main(int argc, char* argv[]) {
   double starttime, runtime, length_file;
 
   int16_t stream_len = 0;
-  int16_t declen = 0, lostFrame = 0, declenTC = 0;
+  int16_t declen = 0, declenTC = 0;
+  bool lostFrame = false;
 
   int16_t shortdata[SWBFRAMESAMPLES_10ms];
   int16_t vaddata[SWBFRAMESAMPLES_10ms * 3];
@@ -696,7 +697,7 @@ int main(int argc, char* argv[]) {
     if (!lostFrame) {
       lostFrame = ((rand() % 100) < packetLossPercent);
     } else {
-      lostFrame = 0;
+      lostFrame = false;
     }
 
     // RED.

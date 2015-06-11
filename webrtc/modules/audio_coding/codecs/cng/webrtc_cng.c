@@ -370,7 +370,7 @@ int16_t WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
     }
     if ((i == 93) && (index == 0))
       index = 94;
-    SIDdata[0] = index;
+    SIDdata[0] = (uint8_t)index;
 
     /* Quantize coefficients with tweak for WebRtc implementation of RFC3389. */
     if (inst->enc_nrOfCoefs == WEBRTC_CNG_MAX_LPC_ORDER) {

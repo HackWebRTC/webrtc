@@ -115,9 +115,9 @@ size_t AudioEncoderOpus::MaxEncodedBytes() const {
   // Calculate the number of bytes we expect the encoder to produce,
   // then multiply by two to give a wide margin for error.
   int frame_size_ms = num_10ms_frames_per_packet_ * 10;
-  int bytes_per_millisecond = bitrate_bps_ / (1000 * 8) + 1;
-  size_t approx_encoded_bytes =
-      static_cast<size_t>(frame_size_ms * bytes_per_millisecond);
+  size_t bytes_per_millisecond =
+      static_cast<size_t>(bitrate_bps_ / (1000 * 8) + 1);
+  size_t approx_encoded_bytes = frame_size_ms * bytes_per_millisecond;
   return 2 * approx_encoded_bytes;
 }
 
@@ -206,7 +206,7 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
   CHECK_GE(status, 0);  // Fails only if fed invalid data.
   input_buffer_.clear();
   EncodedInfo info;
-  info.encoded_bytes = status;
+  info.encoded_bytes = static_cast<size_t>(status);
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;
   info.send_even_if_empty = true;  // Allows Opus to send empty packets.

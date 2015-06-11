@@ -51,11 +51,12 @@ class FftCheckerCallback : public webrtc::LappedTransform::Callback {
                                  complex<float>* const* out_block) {
     CHECK_EQ(in_channels, out_channels);
 
-    float full_length = (frames - 1) * 2;
+    int full_length = (frames - 1) * 2;
     ++block_num_;
 
     if (block_num_ > 0) {
-      ASSERT_NEAR(in_block[0][0].real(), full_length, 1e-5f);
+      ASSERT_NEAR(in_block[0][0].real(), static_cast<float>(full_length),
+                  1e-5f);
       ASSERT_NEAR(in_block[0][0].imag(), 0.0f, 1e-5f);
       for (int i = 1; i < frames; ++i) {
         ASSERT_NEAR(in_block[0][i].real(), 0.0f, 1e-5f);

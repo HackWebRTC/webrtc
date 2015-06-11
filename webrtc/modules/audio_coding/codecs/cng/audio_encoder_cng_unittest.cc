@@ -77,7 +77,7 @@ class AudioEncoderCngTest : public ::testing::Test {
     ASSERT_TRUE(cng_) << "Must call CreateCng() first.";
     encoded_info_ = cng_->Encode(timestamp_, audio_, num_audio_samples_10ms_,
                                  encoded_.size(), &encoded_[0]);
-    timestamp_ += num_audio_samples_10ms_;
+    timestamp_ += static_cast<uint32_t>(num_audio_samples_10ms_);
   }
 
   // Expect |num_calls| calls to the encoder, all successful. The last call

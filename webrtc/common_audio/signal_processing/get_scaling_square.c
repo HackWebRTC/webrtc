@@ -21,7 +21,7 @@ int16_t WebRtcSpl_GetScalingSquare(int16_t* in_vector,
                                    int in_vector_length,
                                    int times)
 {
-    int16_t nbits = WebRtcSpl_GetSizeInBits(times);
+    int16_t nbits = WebRtcSpl_GetSizeInBits((uint32_t)times);
     int i;
     int16_t smax = -1;
     int16_t sabs;

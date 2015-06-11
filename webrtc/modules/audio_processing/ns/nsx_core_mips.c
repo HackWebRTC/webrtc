@@ -758,7 +758,7 @@ void WebRtcNsx_PrepareSpectrum_mips(NoiseSuppressionFixedC* inst,
   int16_t *imag = inst->imag;
   int32_t loop_count = 2;
   int16_t tmp_1, tmp_2, tmp_3, tmp_4, tmp_5, tmp_6;
-  int16_t tmp16 = (inst->anaLen << 1) - 4;
+  int16_t tmp16 = (int16_t)(inst->anaLen << 1) - 4;
   int16_t* freq_buf_f = freq_buf;
   int16_t* freq_buf_s = &freq_buf[tmp16];
 

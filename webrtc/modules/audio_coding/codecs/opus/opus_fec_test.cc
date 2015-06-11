@@ -196,7 +196,7 @@ TEST_P(OpusFecTest, RandomPacketLossTest) {
       EncodeABlock();
 
       // Check if payload has FEC.
-      int16_t fec = WebRtcOpus_PacketHasFec(&bit_stream_[0], encoded_bytes_);
+      int fec = WebRtcOpus_PacketHasFec(&bit_stream_[0], encoded_bytes_);
 
       // If FEC is disabled or the target packet loss rate is set to 0, there
       // should be no FEC in the bit stream.

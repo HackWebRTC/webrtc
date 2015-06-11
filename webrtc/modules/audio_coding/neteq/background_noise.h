@@ -79,7 +79,7 @@ class BackgroundNoise {
   static const int kVecLen = 256;
   static const int kLogVecLen = 8;  // log2(kVecLen).
   static const int kResidualLength = 64;
-  static const int kLogResidualLength = 6;  // log2(kResidualLength)
+  static const int16_t kLogResidualLength = 6;  // log2(kResidualLength)
 
   struct ChannelParameters {
     // Constructor.

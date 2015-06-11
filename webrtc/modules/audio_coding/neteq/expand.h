@@ -66,7 +66,7 @@ class Expand {
 
  protected:
   static const int kMaxConsecutiveExpands = 200;
-  void GenerateRandomVector(int seed_increment,
+  void GenerateRandomVector(int16_t seed_increment,
                             size_t length,
                             int16_t* random_vector);
 

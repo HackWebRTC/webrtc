@@ -92,7 +92,7 @@ Packet* AcmSendTestOldApi::NextPacket() {
     }
     data_to_send_ = false;
     CHECK_GE(acm_->Add10MsData(input_frame_), 0);
-    input_frame_.timestamp_ += input_block_size_samples_;
+    input_frame_.timestamp_ += static_cast<uint32_t>(input_block_size_samples_);
     if (data_to_send_) {
       // Encoded packet received.
       return CreatePacket();

@@ -425,7 +425,8 @@ int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
     return -1;
   }
 
-  write_be16(ISAC_inst->ISACenc_obj.bitstr_obj.stream, stream_len, encoded);
+  write_be16(ISAC_inst->ISACenc_obj.bitstr_obj.stream, (size_t)stream_len,
+             encoded);
   return stream_len;
 
 }

@@ -788,7 +788,8 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
     }
     case kAudioRepetitionIncreaseTimestamp: {
       // TODO(hlundin): Write test for this.
-      sync_buffer_->IncreaseEndTimestamp(output_size_samples_);
+      sync_buffer_->IncreaseEndTimestamp(
+          static_cast<uint32_t>(output_size_samples_));
       // Skipping break on purpose. Execution should move on into the
       // next case.
       FALLTHROUGH();
@@ -881,7 +882,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
     }
   } else {
     // Use dead reckoning to estimate the |playout_timestamp_|.
-    playout_timestamp_ += output_size_samples_;
+    playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
   }
 
   if (decode_return_value) return decode_return_value;
@@ -940,9 +941,10 @@ int NetEqImpl::GetDecision(Operations* operation,
   }
 
   // Check if it is time to play a DTMF event.
-  if (dtmf_buffer_->GetEvent(end_timestamp +
-                             decision_logic_->generated_noise_samples(),
-                             dtmf_event)) {
+  if (dtmf_buffer_->GetEvent(
+      static_cast<uint32_t>(
+          end_timestamp + decision_logic_->generated_noise_samples()),
+      dtmf_event)) {
     *play_dtmf = true;
   }
 
@@ -1030,7 +1032,8 @@ int NetEqImpl::GetDecision(Operations* operation,
       if (decision_logic_->generated_noise_samples() > 0 &&
           last_mode_ != kModeDtmf) {
         // Make a jump in timestamp due to the recently played comfort noise.
-        uint32_t timestamp_jump = decision_logic_->generated_noise_samples();
+        uint32_t timestamp_jump =
+            static_cast<uint32_t>(decision_logic_->generated_noise_samples());
         sync_buffer_->IncreaseEndTimestamp(timestamp_jump);
         timestamp_ += timestamp_jump;
       }
@@ -1224,7 +1227,8 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
   if (*decoded_length < 0) {
     // Error returned from the decoder.
     *decoded_length = 0;
-    sync_buffer_->IncreaseEndTimestamp(decoder_frame_length_);
+    sync_buffer_->IncreaseEndTimestamp(
+        static_cast<uint32_t>(decoder_frame_length_));
     int error_code = 0;
     if (decoder)
       error_code = decoder->ErrorCode();
@@ -1719,7 +1723,8 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   //    algorithm_buffer_->PopFront(sync_buffer_->FutureLength());
   //  }
 
-  sync_buffer_->IncreaseEndTimestamp(output_size_samples_);
+  sync_buffer_->IncreaseEndTimestamp(
+      static_cast<uint32_t>(output_size_samples_));
   expand_->Reset();
   last_mode_ = kModeDtmf;
 
@@ -1749,7 +1754,7 @@ void NetEqImpl::DoAlternativePlc(bool increase_timestamp) {
     stats_.AddZeros(length);
   }
   if (increase_timestamp) {
-    sync_buffer_->IncreaseEndTimestamp(length);
+    sync_buffer_->IncreaseEndTimestamp(static_cast<uint32_t>(length));
   }
   expand_->Reset();
 }

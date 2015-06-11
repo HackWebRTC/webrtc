@@ -71,7 +71,7 @@ void WebRtcIlbcfix_StateSearch(
 
   WebRtcSpl_FilterARFastQ12(
       sampleMa, sampleAr,
-      syntDenum, LPC_FILTERORDER+1, (int16_t)(2*iLBCenc_inst->state_short_len));
+      syntDenum, LPC_FILTERORDER+1, 2 * iLBCenc_inst->state_short_len);
 
   for(k=0;k<iLBCenc_inst->state_short_len;k++){
     sampleAr[k] += sampleAr[k+iLBCenc_inst->state_short_len];

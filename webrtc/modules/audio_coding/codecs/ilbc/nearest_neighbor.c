@@ -42,5 +42,5 @@ void WebRtcIlbcfix_NearestNeighbor(
   }
 
   /* Find the minimum square distance */
-  *index=WebRtcSpl_MinIndexW32(crit, (int16_t)arlength);
+  *index=WebRtcSpl_MinIndexW32(crit, arlength);
 }

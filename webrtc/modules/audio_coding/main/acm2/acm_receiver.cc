@@ -461,8 +461,8 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   // |audio_frame|.
   uint32_t playout_timestamp = 0;
   if (GetPlayoutTimestamp(&playout_timestamp)) {
-    audio_frame->timestamp_ =
-        playout_timestamp - audio_frame->samples_per_channel_;
+    audio_frame->timestamp_ = playout_timestamp -
+        static_cast<uint32_t>(audio_frame->samples_per_channel_);
   } else {
     // Remain 0 until we have a valid |playout_timestamp|.
     audio_frame->timestamp_ = 0;

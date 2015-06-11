@@ -91,7 +91,7 @@ class StatisticsCalculator {
   static const int kLenWaitingTimes = 100;
 
   // Calculates numerator / denominator, and returns the value in Q14.
-  static int CalculateQ14Ratio(uint32_t numerator, uint32_t denominator);
+  static uint16_t CalculateQ14Ratio(uint32_t numerator, uint32_t denominator);
 
   uint32_t preemptive_samples_;
   uint32_t accelerate_samples_;
