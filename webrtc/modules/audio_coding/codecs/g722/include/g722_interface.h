@@ -73,7 +73,7 @@ int16_t WebRtcG722_EncoderInit(G722EncInst *G722enc_inst);
  * Return value               :  0 - Ok
  *                              -1 - Error
  */
-int16_t WebRtcG722_FreeEncoder(G722EncInst *G722enc_inst);
+int WebRtcG722_FreeEncoder(G722EncInst *G722enc_inst);
 
 
 
@@ -142,7 +142,7 @@ int16_t WebRtcG722_DecoderInit(G722DecInst *G722dec_inst);
  *                              -1 - Error
  */
 
-int16_t WebRtcG722_FreeDecoder(G722DecInst *G722dec_inst);
+int WebRtcG722_FreeDecoder(G722DecInst *G722dec_inst);
 
 
 /****************************************************************************

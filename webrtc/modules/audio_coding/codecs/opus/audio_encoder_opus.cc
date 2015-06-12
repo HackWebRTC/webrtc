@@ -198,7 +198,7 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
   CHECK_EQ(input_buffer_.size(),
            static_cast<size_t>(num_10ms_frames_per_packet_) *
            samples_per_10ms_frame_);
-  int16_t status = WebRtcOpus_Encode(
+  int status = WebRtcOpus_Encode(
       inst_, &input_buffer_[0],
       rtc::CheckedDivExact(CastInt16(input_buffer_.size()),
                            static_cast<int16_t>(num_channels_)),

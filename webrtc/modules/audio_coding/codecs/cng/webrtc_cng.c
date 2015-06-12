@@ -36,7 +36,7 @@ typedef struct WebRtcCngDecoder_ {
 
 typedef struct WebRtcCngEncoder_ {
   int16_t enc_nrOfCoefs;
-  uint16_t enc_sampfreq;
+  int enc_sampfreq;
   int16_t enc_interval;
   int16_t enc_msSinceSID;
   int32_t enc_Energy;
@@ -142,8 +142,8 @@ int16_t WebRtcCng_CreateDec(CNG_dec_inst** cng_inst) {
  * Return value       :  0 - Ok
  *                      -1 - Error
  */
-int16_t WebRtcCng_InitEnc(CNG_enc_inst* cng_inst, uint16_t fs, int16_t interval,
-                          int16_t quality) {
+int WebRtcCng_InitEnc(CNG_enc_inst* cng_inst, int fs, int16_t interval,
+                      int16_t quality) {
   int i;
   WebRtcCngEncoder* inst = (WebRtcCngEncoder*) cng_inst;
   memset(inst, 0, sizeof(WebRtcCngEncoder));
@@ -227,9 +227,9 @@ int16_t WebRtcCng_FreeDec(CNG_dec_inst* cng_inst) {
  * Return value       :  0 - Ok
  *                      -1 - Error
  */
-int16_t WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
-                         int16_t nrOfSamples, uint8_t* SIDdata,
-                         int16_t* bytesOut, int16_t forceSID) {
+int WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
+                     int16_t nrOfSamples, uint8_t* SIDdata,
+                     int16_t* bytesOut, int16_t forceSID) {
   WebRtcCngEncoder* inst = (WebRtcCngEncoder*) cng_inst;
 
   int16_t arCoefs[WEBRTC_CNG_MAX_LPC_ORDER + 1];
@@ -388,10 +388,12 @@ int16_t WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
     inst->enc_msSinceSID = 0;
     *bytesOut = inst->enc_nrOfCoefs + 1;
 
-    inst->enc_msSinceSID += (1000 * nrOfSamples) / inst->enc_sampfreq;
+    inst->enc_msSinceSID +=
+        (int16_t)((1000 * nrOfSamples) / inst->enc_sampfreq);
     return inst->enc_nrOfCoefs + 1;
   } else {
-    inst->enc_msSinceSID += (1000 * nrOfSamples) / inst->enc_sampfreq;
+    inst->enc_msSinceSID +=
+        (int16_t)((1000 * nrOfSamples) / inst->enc_sampfreq);
     *bytesOut = 0;
     return 0;
   }

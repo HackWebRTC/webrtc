@@ -68,8 +68,8 @@ int16_t WebRtcCng_CreateDec(CNG_dec_inst** cng_inst);
  *                      -1 - Error
  */
 
-int16_t WebRtcCng_InitEnc(CNG_enc_inst* cng_inst, uint16_t fs, int16_t interval,
-                          int16_t quality);
+int WebRtcCng_InitEnc(CNG_enc_inst* cng_inst, int fs, int16_t interval,
+                      int16_t quality);
 int16_t WebRtcCng_InitDec(CNG_dec_inst* cng_inst);
 
 /****************************************************************************
@@ -103,9 +103,9 @@ int16_t WebRtcCng_FreeDec(CNG_dec_inst* cng_inst);
  * Return value       :  0 - Ok
  *                      -1 - Error
  */
-int16_t WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
-                         int16_t nrOfSamples, uint8_t* SIDdata,
-                         int16_t* bytesOut, int16_t forceSID);
+int WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
+                     int16_t nrOfSamples, uint8_t* SIDdata,
+                     int16_t* bytesOut, int16_t forceSID);
 
 /****************************************************************************
  * WebRtcCng_UpdateSid(...)
