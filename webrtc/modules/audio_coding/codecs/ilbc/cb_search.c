@@ -46,7 +46,9 @@ void WebRtcIlbcfix_CbSearch(
     int16_t block  /* (i) the subblock number */
                             ) {
   int16_t i, j, stage, range;
-  int16_t *pp, scale, tmp;
+  int16_t *pp;
+  int16_t tmp;
+  int scale;
   int16_t bits, temp1, temp2;
   int16_t base_size;
   int32_t codedEner, targetEner;

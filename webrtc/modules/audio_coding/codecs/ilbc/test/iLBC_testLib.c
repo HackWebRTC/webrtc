@@ -41,7 +41,8 @@ int main(int argc, char* argv[])
 {
   FILE *ifileid,*efileid,*ofileid, *chfileid;
   short encoded_data[55], data[240], speechType;
-  short len, mode, pli;
+  int len;
+  short mode, pli;
   size_t readlen;
   int blockcount = 0;
 
@@ -173,7 +174,7 @@ int main(int argc, char* argv[])
       /* decoding */
       fprintf(stderr, "--- Decoding block %i --- ",blockcount);
       if (pli==1) {
-        len=WebRtcIlbcfix_Decode(Dec_Inst, encoded_data, len, data,
+        len=WebRtcIlbcfix_Decode(Dec_Inst, encoded_data, (int16_t)len, data,
                                  &speechType);
         if (len < 0) {
           fprintf(stderr, "Error decoding\n");
