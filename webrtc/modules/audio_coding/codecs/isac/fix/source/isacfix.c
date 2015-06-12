@@ -399,12 +399,12 @@ static void write_be16(const uint16_t* src, size_t nbytes, uint8_t* dest) {
  *                          : -1 - Error
  */
 
-int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
-                             const int16_t    *speechIn,
-                             uint8_t* encoded)
+int WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
+                         const int16_t    *speechIn,
+                         uint8_t* encoded)
 {
   ISACFIX_SubStruct *ISAC_inst;
-  int16_t stream_len;
+  int stream_len;
 
   /* typecast pointer to rela structure */
   ISAC_inst = (ISACFIX_SubStruct *)ISAC_main_inst;
@@ -421,7 +421,7 @@ int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
                                         &ISAC_inst->bwestimator_obj,
                                         ISAC_inst->CodingMode);
   if (stream_len<0) {
-    ISAC_inst->errorcode = - stream_len;
+    ISAC_inst->errorcode = -(int16_t)stream_len;
     return -1;
   }
 
@@ -767,17 +767,17 @@ int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
  */
 
 
-int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct* ISAC_main_inst,
-                             const uint8_t* encoded,
-                             int16_t len,
-                             int16_t* decoded,
-                             int16_t* speechType)
+int WebRtcIsacfix_Decode(ISACFIX_MainStruct* ISAC_main_inst,
+                         const uint8_t* encoded,
+                         int16_t len,
+                         int16_t* decoded,
+                         int16_t* speechType)
 {
   ISACFIX_SubStruct *ISAC_inst;
   /* number of samples (480 or 960), output from decoder */
   /* that were actually used in the encoder/decoder (determined on the fly) */
   int16_t     number_of_samples;
-  int16_t declen = 0;
+  int declen = 0;
 
   /* typecast pointer to real structure */
   ISAC_inst = (ISACFIX_SubStruct *)ISAC_main_inst;
@@ -810,7 +810,7 @@ int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct* ISAC_main_inst,
 
   if (declen < 0) {
     /* Some error inside the decoder */
-    ISAC_inst->errorcode = -declen;
+    ISAC_inst->errorcode = -(int16_t)declen;
     memset(decoded, 0, sizeof(int16_t) * MAX_FRAMESAMPLES);
     return -1;
   }
@@ -860,17 +860,17 @@ int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct* ISAC_main_inst,
  */
 
 #ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
-int16_t WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
-                               const uint16_t   *encoded,
-                               int16_t          len,
-                               int16_t          *decoded,
-                               int16_t    *speechType)
+int WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
+                           const uint16_t   *encoded,
+                           int16_t          len,
+                           int16_t          *decoded,
+                           int16_t    *speechType)
 {
   ISACFIX_SubStruct *ISAC_inst;
   /* twice the number of samples (480 or 960), output from decoder */
   /* that were actually used in the encoder/decoder (determined on the fly) */
   int16_t     number_of_samples;
-  int16_t declen = 0;
+  int declen = 0;
   int16_t dummy[FRAMESAMPLES/2];
 
 
@@ -904,7 +904,7 @@ int16_t WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
 
   if (declen < 0) {
     /* Some error inside the decoder */
-    ISAC_inst->errorcode = -declen;
+    ISAC_inst->errorcode = -(int16_t)declen;
     memset(decoded, 0, sizeof(int16_t) * FRAMESAMPLES);
     return -1;
   }
@@ -1075,8 +1075,8 @@ int16_t WebRtcIsacfix_DecodePlc(ISACFIX_MainStruct *ISAC_main_inst,
  */
 
 int16_t WebRtcIsacfix_Control(ISACFIX_MainStruct *ISAC_main_inst,
-                              int16_t          rate,
-                              int16_t          framesize)
+                              int16_t rate,
+                              int framesize)
 {
   ISACFIX_SubStruct *ISAC_inst;
   /* typecast pointer to real structure */
@@ -1100,7 +1100,7 @@ int16_t WebRtcIsacfix_Control(ISACFIX_MainStruct *ISAC_main_inst,
 
 
   if (framesize  == 30 || framesize == 60)
-    ISAC_inst->ISACenc_obj.new_framelength = (FS/1000) * framesize;
+    ISAC_inst->ISACenc_obj.new_framelength = (int16_t)((FS/1000) * framesize);
   else {
     ISAC_inst->errorcode = ISAC_DISALLOWED_FRAME_LENGTH;
     return -1;
@@ -1135,7 +1135,7 @@ int16_t WebRtcIsacfix_Control(ISACFIX_MainStruct *ISAC_main_inst,
 
 int16_t WebRtcIsacfix_ControlBwe(ISACFIX_MainStruct *ISAC_main_inst,
                                  int16_t rateBPS,
-                                 int16_t frameSizeMs,
+                                 int frameSizeMs,
                                  int16_t enforceFrameSize)
 {
   ISACFIX_SubStruct *ISAC_inst;
@@ -1169,7 +1169,7 @@ int16_t WebRtcIsacfix_ControlBwe(ISACFIX_MainStruct *ISAC_main_inst,
 
   /* Set initial framesize. If enforceFrameSize is set the frame size will not change */
   if ((frameSizeMs  == 30) || (frameSizeMs == 60)) {
-    ISAC_inst->ISACenc_obj.new_framelength = (FS/1000) * frameSizeMs;
+    ISAC_inst->ISACenc_obj.new_framelength = (int16_t)((FS/1000) * frameSizeMs);
   } else {
     ISAC_inst->errorcode = ISAC_DISALLOWED_FRAME_LENGTH;
     return -1;

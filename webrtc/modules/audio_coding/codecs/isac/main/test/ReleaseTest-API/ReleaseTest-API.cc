@@ -45,14 +45,14 @@ int main(int argc, char* argv[]) {
   int i, errtype, VADusage = 0, packetLossPercent = 0;
   int16_t CodingMode;
   int32_t bottleneck = 0;
-  int16_t framesize = 30; /* ms */
+  int framesize = 30; /* ms */
   int cur_framesmpls, err;
 
   /* Runtime statistics */
   double starttime, runtime, length_file;
 
   int16_t stream_len = 0;
-  int16_t declen = 0, declenTC = 0;
+  int declen = 0, declenTC = 0;
   bool lostFrame = false;
 
   int16_t shortdata[SWBFRAMESAMPLES_10ms];

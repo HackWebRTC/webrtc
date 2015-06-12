@@ -450,10 +450,10 @@ static void GenerateDitherQ7(int16_t *bufQ7,
  * function to decode the complex spectrum from the bitstream
  * returns the total number of bytes in the stream
  */
-int16_t WebRtcIsacfix_DecodeSpec(Bitstr_dec *streamdata,
-                                 int16_t *frQ7,
-                                 int16_t *fiQ7,
-                                 int16_t AvgPitchGain_Q12)
+int WebRtcIsacfix_DecodeSpec(Bitstr_dec *streamdata,
+                             int16_t *frQ7,
+                             int16_t *fiQ7,
+                             int16_t AvgPitchGain_Q12)
 {
   int16_t  data[FRAMESAMPLES];
   int32_t  invARSpec2_Q16[FRAMESAMPLES/4];
@@ -461,7 +461,7 @@ int16_t WebRtcIsacfix_DecodeSpec(Bitstr_dec *streamdata,
   int16_t  RCQ15[AR_ORDER];
   int16_t  gainQ10;
   int32_t  gain2_Q10;
-  int16_t  len;
+  int len;
   int          k;
 
   /* create dither signal */

@@ -494,15 +494,15 @@ int16_t WebRtcIsac_EncoderInit(ISACStruct* ISAC_main_inst,
  *                                 samples.
  *                            : -1 - Error
  */
-int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
-                          const int16_t* speechIn,
-                          uint8_t* encoded) {
+int WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
+                      const int16_t* speechIn,
+                      uint8_t* encoded) {
   float inFrame[FRAMESAMPLES_10ms];
   int16_t speechInLB[FRAMESAMPLES_10ms];
   int16_t speechInUB[FRAMESAMPLES_10ms];
-  int16_t streamLenLB = 0;
-  int16_t streamLenUB = 0;
-  int16_t streamLen = 0;
+  int streamLenLB = 0;
+  int streamLenUB = 0;
+  int streamLen = 0;
   int16_t k = 0;
   uint8_t garbageLen = 0;
   int32_t bottleneck = 0;
@@ -601,8 +601,8 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
 
     /* Tell to upper-band the number of bytes used so far.
      * This is for payload limitation. */
-    instUB->ISACencUB_obj.numBytesUsed = streamLenLB + 1 +
-                                         LEN_CHECK_SUM_WORD8;
+    instUB->ISACencUB_obj.numBytesUsed =
+        (int16_t)(streamLenLB + 1 + LEN_CHECK_SUM_WORD8);
     /* Encode upper-band. */
     switch (instISAC->bandwidthKHz) {
       case isac12kHz: {
@@ -1045,12 +1045,12 @@ int16_t WebRtcIsac_UpdateBwEstimate(ISACStruct* ISAC_main_inst,
   return 0;
 }
 
-static int16_t Decode(ISACStruct* ISAC_main_inst,
-                      const uint8_t* encoded,
-                      int16_t lenEncodedBytes,
-                      int16_t* decoded,
-                      int16_t* speechType,
-                      int16_t isRCUPayload) {
+static int Decode(ISACStruct* ISAC_main_inst,
+                  const uint8_t* encoded,
+                  int16_t lenEncodedBytes,
+                  int16_t* decoded,
+                  int16_t* speechType,
+                  int16_t isRCUPayload) {
   /* Number of samples (480 or 960), output from decoder
      that were actually used in the encoder/decoder
      (determined on the fly). */
@@ -1060,8 +1060,8 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
   float outFrame[MAX_FRAMESAMPLES];
   int16_t outFrameLB[MAX_FRAMESAMPLES];
   int16_t outFrameUB[MAX_FRAMESAMPLES];
-  int16_t numDecodedBytesLB;
-  int16_t numDecodedBytesUB;
+  int numDecodedBytesLB;
+  int numDecodedBytesUB;
   int16_t lenEncodedLBBytes;
   int16_t validChecksum = 1;
   int16_t k;
@@ -1350,11 +1350,11 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
  *                              -1 - Error
  */
 
-int16_t WebRtcIsac_Decode(ISACStruct* ISAC_main_inst,
-                          const uint8_t* encoded,
-                          int16_t lenEncodedBytes,
-                          int16_t* decoded,
-                          int16_t* speechType) {
+int WebRtcIsac_Decode(ISACStruct* ISAC_main_inst,
+                      const uint8_t* encoded,
+                      int16_t lenEncodedBytes,
+                      int16_t* decoded,
+                      int16_t* speechType) {
   int16_t isRCUPayload = 0;
   return Decode(ISAC_main_inst, encoded, lenEncodedBytes, decoded,
                 speechType, isRCUPayload);
@@ -1382,11 +1382,11 @@ int16_t WebRtcIsac_Decode(ISACStruct* ISAC_main_inst,
 
 
 
-int16_t WebRtcIsac_DecodeRcu(ISACStruct* ISAC_main_inst,
-                             const uint8_t* encoded,
-                             int16_t lenEncodedBytes,
-                             int16_t* decoded,
-                             int16_t* speechType) {
+int WebRtcIsac_DecodeRcu(ISACStruct* ISAC_main_inst,
+                         const uint8_t* encoded,
+                         int16_t lenEncodedBytes,
+                         int16_t* decoded,
+                         int16_t* speechType) {
   int16_t isRCUPayload = 1;
   return Decode(ISAC_main_inst, encoded, lenEncodedBytes, decoded,
                 speechType, isRCUPayload);
@@ -1485,7 +1485,7 @@ static int16_t ControlUb(ISACUBStruct* instISAC, double rate) {
 
 int16_t WebRtcIsac_Control(ISACStruct* ISAC_main_inst,
                            int32_t bottleneckBPS,
-                           int16_t frameSize) {
+                           int frameSize) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
   int16_t status;
   double rateLB;
@@ -1526,7 +1526,7 @@ int16_t WebRtcIsac_Control(ISACStruct* ISAC_main_inst,
     return -1;
   }
 
-  status = ControlLb(&instISAC->instLB, rateLB, frameSize);
+  status = ControlLb(&instISAC->instLB, rateLB, (int16_t)frameSize);
   if (status < 0) {
     instISAC->errorCode = -status;
     return -1;
@@ -1594,7 +1594,7 @@ int16_t WebRtcIsac_Control(ISACStruct* ISAC_main_inst,
  */
 int16_t WebRtcIsac_ControlBwe(ISACStruct* ISAC_main_inst,
                               int32_t bottleneckBPS,
-                              int16_t frameSizeMs,
+                              int frameSizeMs,
                               int16_t enforceFrameSize) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
   enum ISACBandwidth bandwidth;
@@ -1641,8 +1641,8 @@ int16_t WebRtcIsac_ControlBwe(ISACStruct* ISAC_main_inst,
    *  will not change */
   if (frameSizeMs != 0) {
     if ((frameSizeMs  == 30) || (frameSizeMs == 60)) {
-      instISAC->instLB.ISACencLB_obj.new_framelength = (FS / 1000) *
-          frameSizeMs;
+      instISAC->instLB.ISACencLB_obj.new_framelength =
+          (int16_t)((FS / 1000) * frameSizeMs);
     } else {
       instISAC->errorCode = ISAC_DISALLOWED_FRAME_LENGTH;
       return -1;
