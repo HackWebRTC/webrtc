@@ -314,7 +314,7 @@ int16_t Merge::CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
   const int max_corr_length = kMaxCorrelationLength;
   int stop_position_downsamp =
       std::min(max_corr_length, expand_->max_lag() / (fs_mult_ * 2) + 1);
-  int16_t correlation_shift = 0;
+  int correlation_shift = 0;
   if (expanded_max * input_max > 26843546) {
     correlation_shift = 3;
   }
@@ -333,7 +333,7 @@ int16_t Merge::CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
   int16_t* correlation_ptr = &correlation16[pad_length];
   int32_t max_correlation = WebRtcSpl_MaxAbsValueW32(correlation,
                                                      stop_position_downsamp);
-  int16_t norm_shift = std::max(0, 17 - WebRtcSpl_NormW32(max_correlation));
+  int norm_shift = std::max(0, 17 - WebRtcSpl_NormW32(max_correlation));
   WebRtcSpl_VectorBitShiftW32ToW16(correlation_ptr, stop_position_downsamp,
                                    correlation, norm_shift);
 
