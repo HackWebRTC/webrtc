@@ -151,8 +151,10 @@
   self.remoteVideoTrack = nil;
   self.localVideoTrack = nil;
   [_client disconnect];
-  [self.presentingViewController dismissViewControllerAnimated:YES
-                                                    completion:nil];
+  if (![self isBeingDismissed]) {
+    [self.presentingViewController dismissViewControllerAnimated:YES
+                                                      completion:nil];
+  }
 }
 
 - (void)switchCamera {
