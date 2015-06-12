@@ -1700,19 +1700,20 @@ TEST_F(P2PTransportChannelMultihomedTest, TestDrain) {
   DestroyChannels();
 }
 
-class P2PTransportChannelPingOrderTest : public testing::Test,
-                                         public sigslot::has_slots<> {
+// A collection of tests which tests a single P2PTransportChannel by sending
+// pings.
+class P2PTransportChannelPingTest : public testing::Test,
+                                    public sigslot::has_slots<> {
  public:
-  P2PTransportChannelPingOrderTest() :
-      pss_(new rtc::PhysicalSocketServer),
-      vss_(new rtc::VirtualSocketServer(pss_.get())),
-      ss_scope_(vss_.get()) {
-  }
+  P2PTransportChannelPingTest()
+      : pss_(new rtc::PhysicalSocketServer),
+        vss_(new rtc::VirtualSocketServer(pss_.get())),
+        ss_scope_(vss_.get()) {}
 
  protected:
   void PrepareChannel(cricket::P2PTransportChannel* ch) {
     ch->SignalRequestSignaling.connect(
-        this, &P2PTransportChannelPingOrderTest::OnChannelRequestSignaling);
+        this, &P2PTransportChannelPingTest::OnChannelRequestSignaling);
     ch->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
     ch->SetIceRole(cricket::ICEROLE_CONTROLLING);
     ch->SetIceCredentials(kIceUfrag[0], kIcePwd[0]);
@@ -1741,13 +1742,17 @@ class P2PTransportChannelPingOrderTest : public testing::Test,
     return GetConnectionTo(ch, ip, port_num);
   }
 
-  cricket::Connection* GetConnectionTo(cricket::P2PTransportChannel* ch,
-                                       const std::string& ip,
-                                       int port_num) {
+  cricket::Port* GetPort(cricket::P2PTransportChannel* ch) {
     if (ch->ports().empty()) {
       return nullptr;
     }
-    cricket::Port* port = static_cast<cricket::Port*>(ch->ports()[0]);
+    return static_cast<cricket::Port*>(ch->ports()[0]);
+  }
+
+  cricket::Connection* GetConnectionTo(cricket::P2PTransportChannel* ch,
+                                       const std::string& ip,
+                                       int port_num) {
+    cricket::Port* port = GetPort(ch);
     if (!port) {
       return nullptr;
     }
@@ -1760,7 +1765,7 @@ class P2PTransportChannelPingOrderTest : public testing::Test,
   rtc::SocketServerScope ss_scope_;
 };
 
-TEST_F(P2PTransportChannelPingOrderTest, TestTriggeredChecks) {
+TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   cricket::P2PTransportChannel ch("trigger checks", 1, nullptr, &pa);
   PrepareChannel(&ch);
@@ -1784,7 +1789,7 @@ TEST_F(P2PTransportChannelPingOrderTest, TestTriggeredChecks) {
   EXPECT_EQ(conn1, ch.FindNextPingableConnection());
 }
 
-TEST_F(P2PTransportChannelPingOrderTest, TestNoTriggeredChecksWhenWritable) {
+TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   cricket::P2PTransportChannel ch("trigger checks", 1, nullptr, &pa);
   PrepareChannel(&ch);
@@ -1806,4 +1811,53 @@ TEST_F(P2PTransportChannelPingOrderTest, TestNoTriggeredChecksWhenWritable) {
   // "triggered check" and conn2 is pinged before conn1 because it has
   // a higher priority.
   EXPECT_EQ(conn2, ch.FindNextPingableConnection());
+}
+
+TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("connection resurrection", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+
+  // Create conn1 and keep track of original candidate priority.
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  uint32 remote_priority = conn1->remote_candidate().priority();
+
+  // Create a higher priority candidate and make the connection
+  // readable/writable. This will prune conn1.
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 2));
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn2 != nullptr);
+  conn2->ReceivedPing();
+  conn2->ReceivedPingResponse();
+
+  // Wait for conn1 being destroyed.
+  EXPECT_TRUE_WAIT(GetConnectionTo(&ch, "1.1.1.1", 1) == nullptr, 3000);
+  cricket::Port* port = GetPort(&ch);
+
+  // Create a minimal STUN message with prflx priority.
+  cricket::IceMessage request;
+  request.SetType(cricket::STUN_BINDING_REQUEST);
+  request.AddAttribute(new cricket::StunByteStringAttribute(
+      cricket::STUN_ATTR_USERNAME, kIceUfrag[1]));
+  uint32 prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
+  request.AddAttribute(new cricket::StunUInt32Attribute(
+      cricket::STUN_ATTR_PRIORITY, prflx_priority));
+  EXPECT_NE(prflx_priority, remote_priority);
+
+  // conn1 should be resurrected with original priority.
+  port->SignalUnknownAddress(port, rtc::SocketAddress("1.1.1.1", 1),
+                             cricket::PROTO_UDP, &request, kIceUfrag[1], false);
+  conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(conn1->remote_candidate().priority(), remote_priority);
+
+  // conn3, a real prflx connection, should have prflx priority.
+  port->SignalUnknownAddress(port, rtc::SocketAddress("3.3.3.3", 1),
+                             cricket::PROTO_UDP, &request, kIceUfrag[1], false);
+  cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 1);
+  ASSERT_TRUE(conn3 != nullptr);
+  EXPECT_EQ(conn3->remote_candidate().priority(), prflx_priority);
 }

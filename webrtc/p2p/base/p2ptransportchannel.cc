@@ -478,17 +478,38 @@ void P2PTransportChannel::OnUnknownAddress(
     remote_password = remote_ice_pwd_;
   }
 
-  Candidate new_remote_candidate;
-  if (candidate != NULL) {
-    new_remote_candidate = *candidate;
+  Candidate remote_candidate;
+  bool remote_candidate_is_new = (candidate == nullptr);
+  if (!remote_candidate_is_new) {
+    remote_candidate = *candidate;
     if (ufrag_per_port) {
-      new_remote_candidate.set_address(address);
+      remote_candidate.set_address(address);
     }
   } else {
     // Create a new candidate with this address.
     std::string type;
+    int remote_candidate_priority;
     if (port->IceProtocol() == ICEPROTO_RFC5245) {
+      // RFC 5245
+      // If the source transport address of the request does not match any
+      // existing remote candidates, it represents a new peer reflexive remote
+      // candidate.
       type = PRFLX_PORT_TYPE;
+
+      // The priority of the candidate is set to the PRIORITY attribute
+      // from the request.
+      const StunUInt32Attribute* priority_attr =
+          stun_msg->GetUInt32(STUN_ATTR_PRIORITY);
+      if (!priority_attr) {
+        LOG(LS_WARNING) << "P2PTransportChannel::OnUnknownAddress - "
+                        << "No STUN_ATTR_PRIORITY found in the "
+                        << "stun request message";
+        port->SendBindingErrorResponse(stun_msg, address,
+                                       STUN_ERROR_BAD_REQUEST,
+                                       STUN_ERROR_REASON_BAD_REQUEST);
+        return;
+      }
+      remote_candidate_priority = priority_attr->value();
     } else {
       // G-ICE doesn't support prflx candidate.
       // We set candidate type to STUN_PORT_TYPE if the binding request comes
@@ -499,43 +520,24 @@ void P2PTransportChannel::OnUnknownAddress(
       } else {
         type = port->Type();
       }
+      remote_candidate_priority = remote_candidate.GetPriority(
+          ICE_TYPE_PREFERENCE_PRFLX, port->Network()->preference(), 0);
     }
 
-    new_remote_candidate =
+    remote_candidate =
         Candidate(component(), ProtoToString(proto), address, 0,
                   remote_username, remote_password, type, 0U, "");
 
     // From RFC 5245, section-7.2.1.3:
     // The foundation of the candidate is set to an arbitrary value, different
     // from the foundation for all other remote candidates.
-    new_remote_candidate.set_foundation(
-        rtc::ToString<uint32>(rtc::ComputeCrc32(new_remote_candidate.id())));
+    remote_candidate.set_foundation(
+        rtc::ToString<uint32>(rtc::ComputeCrc32(remote_candidate.id())));
 
-    new_remote_candidate.set_priority(new_remote_candidate.GetPriority(
-        ICE_TYPE_PREFERENCE_PRFLX, port->Network()->preference(), 0));
+    remote_candidate.set_priority(remote_candidate_priority);
   }
 
   if (port->IceProtocol() == ICEPROTO_RFC5245) {
-    // RFC 5245
-    // If the source transport address of the request does not match any
-    // existing remote candidates, it represents a new peer reflexive remote
-    // candidate.
-
-    // The priority of the candidate is set to the PRIORITY attribute
-    // from the request.
-    const StunUInt32Attribute* priority_attr =
-        stun_msg->GetUInt32(STUN_ATTR_PRIORITY);
-    if (!priority_attr) {
-      LOG(LS_WARNING) << "P2PTransportChannel::OnUnknownAddress - "
-                      << "No STUN_ATTR_PRIORITY found in the "
-                      << "stun request message";
-      port->SendBindingErrorResponse(stun_msg, address,
-                                     STUN_ERROR_BAD_REQUEST,
-                                     STUN_ERROR_REASON_BAD_REQUEST);
-      return;
-    }
-    new_remote_candidate.set_priority(priority_attr->value());
-
     // RFC5245, the agent constructs a pair whose local candidate is equal to
     // the transport address on which the STUN request was received, and a
     // remote candidate equal to the source transport address where the
@@ -545,10 +547,10 @@ void P2PTransportChannel::OnUnknownAddress(
     // When ports are muxed, this channel might get multiple unknown address
     // signals. In that case if the connection is already exists, we should
     // simply ignore the signal othewise send server error.
-    if (port->GetConnection(new_remote_candidate.address())) {
+    if (port->GetConnection(remote_candidate.address())) {
       if (port_muxed) {
         LOG(LS_INFO) << "Connection already exists for peer reflexive "
-                     << "candidate: " << new_remote_candidate.ToString();
+                     << "candidate: " << remote_candidate.ToString();
         return;
       } else {
         ASSERT(false);
@@ -560,7 +562,7 @@ void P2PTransportChannel::OnUnknownAddress(
     }
 
     Connection* connection = port->CreateConnection(
-        new_remote_candidate, cricket::PortInterface::ORIGIN_THIS_PORT);
+        remote_candidate, cricket::PortInterface::ORIGIN_THIS_PORT);
     if (!connection) {
       ASSERT(false);
       port->SendBindingErrorResponse(stun_msg, address,
@@ -569,8 +571,9 @@ void P2PTransportChannel::OnUnknownAddress(
       return;
     }
 
-    LOG(LS_INFO) << "Adding connection from peer reflexive candidate: "
-                 << new_remote_candidate.ToString();
+    LOG(LS_INFO) << "Adding connection from "
+                 << (remote_candidate_is_new ? "peer reflexive" : "resurrected")
+                 << " candidate: " << remote_candidate.ToString();
     AddConnection(connection);
     connection->ReceivedPing();
 
@@ -585,7 +588,7 @@ void P2PTransportChannel::OnUnknownAddress(
     // Check for connectivity to this address. Create connections
     // to this address across all local ports. First, add this as a new remote
     // address
-    if (!CreateConnections(new_remote_candidate, port, true)) {
+    if (!CreateConnections(remote_candidate, port, true)) {
       // Hopefully this won't occur, because changing a destination address
       // shouldn't cause a new connection to fail
       ASSERT(false);
