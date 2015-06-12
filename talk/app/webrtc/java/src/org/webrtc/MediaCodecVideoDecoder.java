@@ -75,9 +75,6 @@ public class MediaCodecVideoDecoder {
   // List of supported HW H.264 decoders.
   private static final String[] supportedH264HwCodecPrefixes =
     {"OMX.qcom." };
-  // List of supported SW decoders.
-  private static final String[] supportedSwCodecPrefixes =
-    {"OMX.google."};
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
   private static final int
@@ -183,7 +180,7 @@ public class MediaCodecVideoDecoder {
   }
 
   private boolean initDecode(
-      VideoCodecType type, int width, int height, boolean useSwCodec,
+      VideoCodecType type, int width, int height,
       boolean useSurface, EGLContext sharedContext) {
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
@@ -202,16 +199,13 @@ public class MediaCodecVideoDecoder {
     } else {
       throw new RuntimeException("Non supported codec " + type);
     }
-    if (useSwCodec) {
-      supportedCodecPrefixes = supportedSwCodecPrefixes;
-    }
     DecoderProperties properties = findDecoder(mime, supportedCodecPrefixes);
     if (properties == null) {
       throw new RuntimeException("Cannot find HW decoder for " + type);
     }
     Log.d(TAG, "Java initDecode: " + type + " : "+ width + " x " + height +
         ". Color: 0x" + Integer.toHexString(properties.colorFormat) +
-        ". Use Surface: " + useSurface + ". Use SW codec: " + useSwCodec);
+        ". Use Surface: " + useSurface);
     if (sharedContext != null) {
       Log.d(TAG, "Decoder shared EGL Context: " + sharedContext);
     }

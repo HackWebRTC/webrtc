@@ -92,6 +92,18 @@ static inline jobject JavaEnumFromIndex(
                            state_class, index);
 }
 
+// Checks for any Java exception, prints stack backtrace and clears
+// currently thrown exception.
+static inline bool CheckException(JNIEnv* jni) {
+  if (jni->ExceptionCheck()) {
+    ALOGE("Java JNI exception.");
+    jni->ExceptionDescribe();
+    jni->ExceptionClear();
+    return true;
+  }
+  return false;
+}
+
 }  // namespace webrtc_jni
 
 #endif  // TALK_APP_WEBRTC_JAVA_JNI_ANDROIDMEDIACODECCOMMON_H_

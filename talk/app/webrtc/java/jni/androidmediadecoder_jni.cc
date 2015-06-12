@@ -99,14 +99,15 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   // Deliver any outputs pending in the MediaCodec to our |callback_| and return
   // true on success.
   bool DeliverPendingOutputs(JNIEnv* jni, int dequeue_timeout_us);
+  int32_t ProcessHWErrorOnCodecThread();
 
   // Type of video codec.
   VideoCodecType codecType_;
 
   bool key_frame_required_;
   bool inited_;
+  bool sw_fallback_required_;
   bool use_surface_;
-  int error_count_;
   VideoCodec codec_;
   VideoFrame decoded_image_;
   NativeHandleImpl native_handle_;
@@ -164,7 +165,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
     codecType_(codecType),
     key_frame_required_(true),
     inited_(false),
-    error_count_(0),
+    sw_fallback_required_(false),
     surface_texture_(NULL),
     previous_surface_texture_(NULL),
     codec_thread_(new Thread()),
@@ -185,7 +186,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
   j_init_decode_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "initDecode",
       "(Lorg/webrtc/MediaCodecVideoDecoder$VideoCodecType;"
-      "IIZZLandroid/opengl/EGLContext;)Z");
+      "IIZLandroid/opengl/EGLContext;)Z");
   j_release_method_ =
       GetMethodID(jni, *j_media_codec_video_decoder_class_, "release", "()V");
   j_dequeue_input_buffer_method_ = GetMethodID(
@@ -255,6 +256,7 @@ MediaCodecVideoDecoder::~MediaCodecVideoDecoder() {
 
 int32_t MediaCodecVideoDecoder::InitDecode(const VideoCodec* inst,
     int32_t numberOfCores) {
+  ALOGD("InitDecode.");
   if (inst == NULL) {
     ALOGE("NULL VideoCodec instance");
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -263,20 +265,15 @@ int32_t MediaCodecVideoDecoder::InitDecode(const VideoCodec* inst,
   CHECK(inst->codecType == codecType_) << "Unsupported codec " <<
       inst->codecType << " for " << codecType_;
 
-  int ret_val = Release();
-  if (ret_val < 0) {
-    return ret_val;
+  if (sw_fallback_required_) {
+    ALOGE("InitDecode() - fallback to SW decoder");
+    return WEBRTC_VIDEO_CODEC_OK;
   }
   // Save VideoCodec instance for later.
   if (&codec_ != inst) {
     codec_ = *inst;
   }
   codec_.maxFramerate = (codec_.maxFramerate >= 1) ? codec_.maxFramerate : 1;
-
-  // Always start with a complete key frame.
-  key_frame_required_ = true;
-  frames_received_ = 0;
-  frames_decoded_ = 0;
 
   // Call Java init.
   return codec_thread_->Invoke<int32_t>(
@@ -287,14 +284,22 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  ALOGD("InitDecodeOnCodecThread Type: %d. %d x %d. Fps: %d. Errors: %d",
+  ALOGD("InitDecodeOnCodecThread Type: %d. %d x %d. Fps: %d.",
       (int)codecType_, codec_.width, codec_.height,
-      codec_.maxFramerate, error_count_);
-  bool use_sw_codec = false;
-  if (error_count_ > 1) {
-    // If more than one critical errors happen for HW codec, switch to SW codec.
-    use_sw_codec = true;
+      codec_.maxFramerate);
+
+  // Release previous codec first if it was allocated before.
+  int ret_val = ReleaseOnCodecThread();
+  if (ret_val < 0) {
+    ALOGE("Release failure: %d - fallback to SW codec", ret_val);
+    sw_fallback_required_ = true;
+    return WEBRTC_VIDEO_CODEC_ERROR;
   }
+
+  // Always start with a complete key frame.
+  key_frame_required_ = true;
+  frames_received_ = 0;
+  frames_decoded_ = 0;
 
   jobject j_video_codec_enum = JavaEnumFromIndex(
       jni, "MediaCodecVideoDecoder$VideoCodecType", codecType_);
@@ -304,11 +309,11 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
       j_video_codec_enum,
       codec_.width,
       codec_.height,
-      use_sw_codec,
       use_surface_,
       MediaCodecVideoDecoderFactory::render_egl_context_);
-  CHECK_EXCEPTION(jni);
-  if (!success) {
+  if (CheckException(jni) || !success) {
+    ALOGE("Codec initialization error - fallback to SW codec.");
+    sw_fallback_required_ = true;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   inited_ = true;
@@ -340,7 +345,11 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   for (size_t i = 0; i < num_input_buffers; ++i) {
     input_buffers_[i] =
         jni->NewGlobalRef(jni->GetObjectArrayElement(input_buffers, i));
-    CHECK_EXCEPTION(jni);
+    if (CheckException(jni)) {
+      ALOGE("NewGlobalRef error - fallback to SW codec.");
+      sw_fallback_required_ = true;
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
   }
 
   if (use_surface_) {
@@ -376,9 +385,12 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
   }
   input_buffers_.clear();
   jni->CallVoidMethod(*j_media_codec_video_decoder_, j_release_method_);
-  CHECK_EXCEPTION(jni);
-  rtc::MessageQueueManager::Clear(this);
   inited_ = false;
+  rtc::MessageQueueManager::Clear(this);
+  if (CheckException(jni)) {
+    ALOGE("Decoder release exception");
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -387,38 +399,77 @@ void MediaCodecVideoDecoder::CheckOnCodecThread() {
       << "Running on wrong thread!";
 }
 
+int32_t MediaCodecVideoDecoder::ProcessHWErrorOnCodecThread() {
+  CheckOnCodecThread();
+  int ret_val = ReleaseOnCodecThread();
+  if (ret_val < 0) {
+    ALOGE("ProcessHWError: Release failure");
+  }
+  if (codecType_ == kVideoCodecH264) {
+    // For now there is no SW H.264 which can be used as fallback codec.
+    // So try to restart hw codec for now.
+    ret_val = InitDecodeOnCodecThread();
+    ALOGE("Reset H.264 codec done. Status: %d", ret_val);
+    if (ret_val == WEBRTC_VIDEO_CODEC_OK) {
+      // H.264 codec was succesfully reset - return regular error code.
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    } else {
+      // Fail to restart H.264 codec - return error code which should stop the
+      // call.
+      return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+    }
+  } else {
+    sw_fallback_required_ = true;
+    ALOGE("Return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE");
+    return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+  }
+}
+
 int32_t MediaCodecVideoDecoder::Decode(
     const EncodedImage& inputImage,
     bool missingFrames,
     const RTPFragmentationHeader* fragmentation,
     const CodecSpecificInfo* codecSpecificInfo,
     int64_t renderTimeMs) {
-  if (!inited_) {
-    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  if (sw_fallback_required_) {
+    ALOGE("Decode() - fallback to SW codec");
+    return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   }
   if (callback_ == NULL) {
+    ALOGE("Decode() - callback_ is NULL");
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (inputImage._buffer == NULL && inputImage._length > 0) {
+    ALOGE("Decode() - inputImage is incorrect");
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
+  if (!inited_) {
+    ALOGE("Decode() - decoder is not initialized");
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+
   // Check if encoded frame dimension has changed.
   if ((inputImage._encodedWidth * inputImage._encodedHeight > 0) &&
       (inputImage._encodedWidth != codec_.width ||
       inputImage._encodedHeight != codec_.height)) {
     codec_.width = inputImage._encodedWidth;
     codec_.height = inputImage._encodedHeight;
-    InitDecode(&codec_, 1);
+    int32_t ret = InitDecode(&codec_, 1);
+    if (ret < 0) {
+      ALOGE("InitDecode failure: %d - fallback to SW codec", ret);
+      sw_fallback_required_ = true;
+      return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+    }
   }
 
   // Always start with a complete key frame.
   if (key_frame_required_) {
     if (inputImage._frameType != webrtc::kKeyFrame) {
-      ALOGE("Key frame is required");
+      ALOGE("Decode() - key frame is required");
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
     if (!inputImage._completeFrame) {
-      ALOGE("Complete frame is required");
+      ALOGE("Decode() - complete frame is required");
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
     key_frame_required_ = false;
@@ -443,27 +494,21 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
     ALOGV("Received: %d. Decoded: %d. Wait for output...",
         frames_received_, frames_decoded_);
     if (!DeliverPendingOutputs(jni, kMediaCodecTimeoutMs * 1000)) {
-      error_count_++;
-      Reset();
-      return WEBRTC_VIDEO_CODEC_ERROR;
+      ALOGE("DeliverPendingOutputs error");
+      return ProcessHWErrorOnCodecThread();
     }
     if (frames_received_ > frames_decoded_ + max_pending_frames_) {
       ALOGE("Output buffer dequeue timeout");
-      error_count_++;
-      Reset();
-      return WEBRTC_VIDEO_CODEC_ERROR;
+      return ProcessHWErrorOnCodecThread();
     }
   }
 
   // Get input buffer.
   int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_decoder_,
                                                 j_dequeue_input_buffer_method_);
-  CHECK_EXCEPTION(jni);
-  if (j_input_buffer_index < 0) {
+  if (CheckException(jni) || j_input_buffer_index < 0) {
     ALOGE("dequeueInputBuffer error");
-    error_count_++;
-    Reset();
-    return WEBRTC_VIDEO_CODEC_ERROR;
+    return ProcessHWErrorOnCodecThread();
   }
 
   // Copy encoded data to Java ByteBuffer.
@@ -472,13 +517,10 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
       reinterpret_cast<uint8*>(jni->GetDirectBufferAddress(j_input_buffer));
   CHECK(buffer) << "Indirect buffer??";
   int64 buffer_capacity = jni->GetDirectBufferCapacity(j_input_buffer);
-  CHECK_EXCEPTION(jni);
-  if (buffer_capacity < inputImage._length) {
+  if (CheckException(jni) || buffer_capacity < inputImage._length) {
     ALOGE("Input frame size %d is bigger than buffer size %d.",
         inputImage._length, buffer_capacity);
-    error_count_++;
-    Reset();
-    return WEBRTC_VIDEO_CODEC_ERROR;
+    return ProcessHWErrorOnCodecThread();
   }
   jlong timestamp_us = (frames_received_ * 1000000) / codec_.maxFramerate;
   ALOGV("Decoder frame in # %d. Type: %d. Buffer # %d. TS: %lld. Size: %d",
@@ -499,20 +541,15 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
                                         j_input_buffer_index,
                                         inputImage._length,
                                         timestamp_us);
-  CHECK_EXCEPTION(jni);
-  if (!success) {
+  if (CheckException(jni) || !success) {
     ALOGE("queueInputBuffer error");
-    error_count_++;
-    Reset();
-    return WEBRTC_VIDEO_CODEC_ERROR;
+    return ProcessHWErrorOnCodecThread();
   }
 
   // Try to drain the decoder
   if (!DeliverPendingOutputs(jni, 0)) {
     ALOGE("DeliverPendingOutputs error");
-    error_count_++;
-    Reset();
-    return WEBRTC_VIDEO_CODEC_ERROR;
+    return ProcessHWErrorOnCodecThread();
   }
 
   return WEBRTC_VIDEO_CODEC_OK;
@@ -529,8 +566,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       *j_media_codec_video_decoder_,
       j_dequeue_output_buffer_method_,
       dequeue_timeout_us);
-
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    return false;
+  }
   if (IsNull(jni, j_decoder_output_buffer_info)) {
     return true;
   }
@@ -548,8 +586,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       GetIntField(jni, j_decoder_output_buffer_info, j_info_size_field_);
   long output_timestamps_ms = GetLongField(jni, j_decoder_output_buffer_info,
       j_info_presentation_timestamp_us_field_) / 1000;
-
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    return false;
+  }
 
   // Get decoded video frame properties.
   int color_format = GetIntField(jni, *j_media_codec_video_decoder_,
@@ -575,7 +614,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
         jni->GetObjectArrayElement(output_buffers, output_buffer_index);
     uint8_t* payload = reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(
         output_buffer));
-    CHECK_EXCEPTION(jni);
+    if (CheckException(jni)) {
+      return false;
+    }
     payload += output_buffer_offset;
 
     // Create yuv420 frame.
@@ -627,8 +668,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       j_release_output_buffer_method_,
       output_buffer_index,
       use_surface_);
-  CHECK_EXCEPTION(jni);
-  if (!success) {
+  if (CheckException(jni) || !success) {
     ALOGE("releaseOutputBuffer error");
     return false;
   }
@@ -698,8 +738,9 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
   CheckOnCodecThread();
 
   if (!DeliverPendingOutputs(jni, 0)) {
-    error_count_++;
-    Reset();
+    ALOGE("OnMessage: DeliverPendingOutputs error");
+    ProcessHWErrorOnCodecThread();
+    return;
   }
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
 }
@@ -714,12 +755,16 @@ int MediaCodecVideoDecoderFactory::SetAndroidObjects(JNIEnv* jni,
     render_egl_context_ = NULL;
   } else {
     render_egl_context_ = jni->NewGlobalRef(render_egl_context);
-    CHECK_EXCEPTION(jni) << "error calling NewGlobalRef for EGL Context.";
-    jclass j_egl_context_class = FindClass(jni, "android/opengl/EGLContext");
-    if (!jni->IsInstanceOf(render_egl_context_, j_egl_context_class)) {
-      ALOGE("Wrong EGL Context.");
-      jni->DeleteGlobalRef(render_egl_context_);
+    if (CheckException(jni)) {
+      ALOGE("error calling NewGlobalRef for EGL Context.");
       render_egl_context_ = NULL;
+    } else {
+      jclass j_egl_context_class = FindClass(jni, "android/opengl/EGLContext");
+      if (!jni->IsInstanceOf(render_egl_context_, j_egl_context_class)) {
+        ALOGE("Wrong EGL Context.");
+        jni->DeleteGlobalRef(render_egl_context_);
+        render_egl_context_ = NULL;
+      }
     }
   }
   if (render_egl_context_ == NULL) {
@@ -737,7 +782,9 @@ MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() {
   bool is_vp8_hw_supported = jni->CallStaticBooleanMethod(
       j_decoder_class,
       GetStaticMethodID(jni, j_decoder_class, "isVp8HwSupported", "()Z"));
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    is_vp8_hw_supported = false;
+  }
   if (is_vp8_hw_supported) {
     ALOGD("VP8 HW Decoder supported.");
     supported_codec_types_.push_back(kVideoCodecVP8);
@@ -746,7 +793,9 @@ MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() {
   bool is_h264_hw_supported = jni->CallStaticBooleanMethod(
       j_decoder_class,
       GetStaticMethodID(jni, j_decoder_class, "isH264HwSupported", "()Z"));
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    is_h264_hw_supported = false;
+  }
   if (is_h264_hw_supported) {
     ALOGD("H264 HW Decoder supported.");
     supported_codec_types_.push_back(kVideoCodecH264);
