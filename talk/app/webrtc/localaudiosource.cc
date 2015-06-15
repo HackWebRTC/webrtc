@@ -51,7 +51,7 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
     const char* name;
     cricket::Settable<bool>& value;
   } key_to_value[] = {
-      {MediaConstraintsInterface::kEchoCancellation,
+      {MediaConstraintsInterface::kGoogEchoCancellation,
        options->echo_cancellation},
       // Both kExperimentalEchoCancellation (old) and
       // kExtendedFilterEchoCancellation (new) translate to

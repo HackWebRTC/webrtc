@@ -43,7 +43,8 @@ using webrtc::PeerConnectionFactoryInterface;
 
 TEST(LocalAudioSourceTest, SetValidOptions) {
   webrtc::FakeConstraints constraints;
-  constraints.AddMandatory(MediaConstraintsInterface::kEchoCancellation, false);
+  constraints.AddMandatory(
+      MediaConstraintsInterface::kGoogEchoCancellation, false);
   constraints.AddOptional(
       MediaConstraintsInterface::kExtendedFilterEchoCancellation, true);
   constraints.AddOptional(MediaConstraintsInterface::kDAEchoCancellation, true);
@@ -133,8 +134,10 @@ TEST(LocalAudioSourceTest, OptionNotSet) {
 
 TEST(LocalAudioSourceTest, MandatoryOverridesOptional) {
   webrtc::FakeConstraints constraints;
-  constraints.AddMandatory(MediaConstraintsInterface::kEchoCancellation, false);
-  constraints.AddOptional(MediaConstraintsInterface::kEchoCancellation, true);
+  constraints.AddMandatory(
+      MediaConstraintsInterface::kGoogEchoCancellation, false);
+  constraints.AddOptional(
+      MediaConstraintsInterface::kGoogEchoCancellation, true);
 
   rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),

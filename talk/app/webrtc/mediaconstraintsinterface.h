@@ -73,7 +73,13 @@ class MediaConstraintsInterface {
 
   // Constraint keys used by a local audio source.
   // These keys are google specific.
+  // TODO(tommi): Change kEchoCancellation to be "echoCancellation" once
+  // Chrome has been updated to use kGoogEchoCancellation where the 'goog'
+  // variant is needed.
+  // See https://code.google.com/p/webrtc/issues/detail?id=4747
   static const char kEchoCancellation[];  // googEchoCancellation
+  static const char kGoogEchoCancellation[];  // googEchoCancellation
+
   // TODO(henrik.lundin) Remove kExperimentalEchoCancellation.
   // https://code.google.com/p/webrtc/issues/detail?id=4696
   static const char kExperimentalEchoCancellation[];  // googEchoCancellation2
