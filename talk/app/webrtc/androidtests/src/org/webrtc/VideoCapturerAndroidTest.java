@@ -92,6 +92,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       }
     }
 
+    @Override
+    public void OnOutputFormatRequest(int width, int height, int fps) {}
+
     public boolean WaitForCapturerToStart() throws InterruptedException {
       synchronized (capturerStartLock) {
         capturerStartLock.wait();

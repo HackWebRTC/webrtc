@@ -270,6 +270,21 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     return true;
   }
 
+  // Requests a new output format from the video capturer. Captured frames
+  // by the camera will be scaled/or dropped by the video capturer.
+  public synchronized void onOutputFormatRequest(
+      final int width, final int height, final int fps) {
+    if (cameraThreadHandler == null) {
+      Log.e(TAG, "Calling onOutputFormatRequest() for already stopped camera.");
+      return;
+    }
+    cameraThreadHandler.post(new Runnable() {
+      @Override public void run() {
+        onOutputFormatRequestOnCameraThread(width, height, fps);
+      }
+    });
+  }
+
   private VideoCapturerAndroid() {
     Log.d(TAG, "VideoCapturerAndroid");
   }
@@ -641,6 +656,16 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
   }
 
+  private void onOutputFormatRequestOnCameraThread(
+      int width, int height, int fps) {
+    if (camera == null) {
+      return;
+    }
+    Log.d(TAG, "onOutputFormatRequestOnCameraThread: " + width + "x" + height +
+        "@" + fps);
+    frameObserver.OnOutputFormatRequest(width, height, fps);
+  }
+
   synchronized void returnBuffer(final long timeStamp) {
     if (cameraThreadHandler == null) {
       // The camera has been stopped.
@@ -919,6 +944,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     // VideoCapturerAndroid.
     abstract void OnFrameCaptured(byte[] data, int length, int rotation,
         long timeStamp);
+
+    // Requests an output format from the video capturer. Captured frames
+    // by the camera will be scaled/or dropped by the video capturer.
+    // Called on a Java thread owned by VideoCapturerAndroid.
+    abstract void OnOutputFormatRequest(int width, int height, int fps);
   }
 
   // An implementation of CapturerObserver that forwards all calls from
@@ -941,9 +971,16 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       nativeOnFrameCaptured(nativeCapturer, data, length, rotation, timeStamp);
     }
 
+    @Override
+    public void OnOutputFormatRequest(int width, int height, int fps) {
+      nativeOnOutputFormatRequest(nativeCapturer, width, height, fps);
+    }
+
     private native void nativeCapturerStarted(long nativeCapturer,
         boolean success);
     private native void nativeOnFrameCaptured(long nativeCapturer,
         byte[] data, int length, int rotation, long timeStamp);
+    private native void nativeOnOutputFormatRequest(long nativeCapturer,
+        int width, int height, int fps);
   }
 }

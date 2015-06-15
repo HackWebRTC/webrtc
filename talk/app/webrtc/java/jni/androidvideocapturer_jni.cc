@@ -182,6 +182,15 @@ void AndroidVideoCapturerJni::OnIncomingFrame(void* video_frame,
                 this, video_frame, length, rotation, time_stamp));
 }
 
+void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,
+                                                    int height,
+                                                    int fps) {
+  invoker_.AsyncInvoke<void>(
+      thread_,
+      rtc::Bind(&AndroidVideoCapturerJni::OnOutputFormatRequest_w,
+                this, width, height, fps));
+}
+
 void AndroidVideoCapturerJni::OnCapturerStarted_w(bool success) {
   CHECK(thread_checker_.CalledOnValidThread());
   if (capturer_) {
@@ -203,6 +212,17 @@ void AndroidVideoCapturerJni::OnIncomingFrame_w(void* video_frame,
         "Frame arrived after camera has been stopped: " << time_stamp <<
         ". Valid global refs: " << valid_global_refs_;
     ReturnBuffer_w(time_stamp);
+  }
+}
+
+void AndroidVideoCapturerJni::OnOutputFormatRequest_w(int width,
+                                                      int height,
+                                                      int fps) {
+  CHECK(thread_checker_.CalledOnValidThread());
+  if (capturer_) {
+    capturer_->OnOutputFormatRequest(width, height, fps);
+  } else {
+    LOG(LS_WARNING) << "OnOutputFormatRequest_w is called for closed capturer.";
   }
 }
 
@@ -231,6 +251,14 @@ JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeCapturerStarted)
   LOG(LS_INFO) << "NativeObserver_nativeCapturerStarted";
   reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)->OnCapturerStarted(
       j_success);
+}
+
+JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnOutputFormatRequest)
+    (JNIEnv* jni, jclass, jlong j_capturer, jint j_width, jint j_height,
+        jint j_fps) {
+  LOG(LS_INFO) << "NativeObserver_nativeOnOutputFormatRequest";
+  reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)->OnOutputFormatRequest(
+      j_width, j_height, j_fps);
 }
 
 }  // namespace webrtc_jni

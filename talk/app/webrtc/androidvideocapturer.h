@@ -74,6 +74,9 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
                        int rotation,
                        int64 time_stamp);
 
+  // Called from JNI to request a new video format.
+  void OnOutputFormatRequest(int width, int height, int fps);
+
   AndroidVideoCapturerDelegate* delegate() { return delegate_.get(); }
 
  private:
