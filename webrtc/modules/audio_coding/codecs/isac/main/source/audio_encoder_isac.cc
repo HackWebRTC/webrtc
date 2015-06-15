@@ -65,6 +65,7 @@ int AudioEncoderDecoderMutableIsacFloat::Decode(const uint8_t* encoded,
                                                 size_t max_decoded_bytes,
                                                 int16_t* decoded,
                                                 SpeechType* speech_type) {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->Decode(encoded, encoded_len, sample_rate_hz,
                            max_decoded_bytes, decoded, speech_type);
 }
@@ -76,20 +77,24 @@ int AudioEncoderDecoderMutableIsacFloat::DecodeRedundant(
     size_t max_decoded_bytes,
     int16_t* decoded,
     SpeechType* speech_type) {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->DecodeRedundant(encoded, encoded_len, sample_rate_hz,
                                     max_decoded_bytes, decoded, speech_type);
 }
 
 bool AudioEncoderDecoderMutableIsacFloat::HasDecodePlc() const {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->HasDecodePlc();
 }
 
 int AudioEncoderDecoderMutableIsacFloat::DecodePlc(int num_frames,
                                                    int16_t* decoded) {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->DecodePlc(num_frames, decoded);
 }
 
 int AudioEncoderDecoderMutableIsacFloat::Init() {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->Init();
 }
 
@@ -99,33 +104,39 @@ int AudioEncoderDecoderMutableIsacFloat::IncomingPacket(
     uint16_t rtp_sequence_number,
     uint32_t rtp_timestamp,
     uint32_t arrival_timestamp) {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->IncomingPacket(payload, payload_len, rtp_sequence_number,
                                    rtp_timestamp, arrival_timestamp);
 }
 
 int AudioEncoderDecoderMutableIsacFloat::ErrorCode() {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->ErrorCode();
 }
 
 int AudioEncoderDecoderMutableIsacFloat::PacketDuration(
     const uint8_t* encoded,
     size_t encoded_len) const {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->PacketDuration(encoded, encoded_len);
 }
 
 int AudioEncoderDecoderMutableIsacFloat::PacketDurationRedundant(
     const uint8_t* encoded,
     size_t encoded_len) const {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->PacketDurationRedundant(encoded, encoded_len);
 }
 
 bool AudioEncoderDecoderMutableIsacFloat::PacketHasFec(
     const uint8_t* encoded,
     size_t encoded_len) const {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->PacketHasFec(encoded, encoded_len);
 }
 
 size_t AudioEncoderDecoderMutableIsacFloat::Channels() const {
+  CriticalSectionScoped cs(encoder_lock_.get());
   return encoder()->Channels();
 }
 

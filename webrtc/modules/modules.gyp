@@ -64,6 +64,7 @@
             'bwe_simulator',
             'cng',
             'desktop_capture',
+            'isac',
             'isac_fix',
             'media_file',
             'neteq',

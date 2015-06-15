@@ -12,7 +12,10 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_MUTABLE_IMPL_H_
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 namespace webrtc {
 
@@ -24,7 +27,14 @@ namespace webrtc {
 template <typename T, typename P = AudioEncoderMutable>
 class AudioEncoderMutableImpl : public P {
  public:
-  void Reset() override { Reconstruct(config_); }
+  void Reset() override {
+    typename T::Config config;
+    {
+      CriticalSectionScoped cs(encoder_lock_.get());
+      config = config_;
+    }
+    Reconstruct(config);
+  }
 
   bool SetFec(bool enable) override { return false; }
 
@@ -44,50 +54,74 @@ class AudioEncoderMutableImpl : public P {
                                                   const int16_t* audio,
                                                   size_t max_encoded_bytes,
                                                   uint8_t* encoded) override {
+    CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->EncodeInternal(rtp_timestamp, audio, max_encoded_bytes,
                                     encoded);
   }
-  int SampleRateHz() const override { return encoder_->SampleRateHz(); }
-  int NumChannels() const override { return encoder_->NumChannels(); }
+  int SampleRateHz() const override {
+    CriticalSectionScoped cs(encoder_lock_.get());
+    return encoder_->SampleRateHz();
+  }
+  int NumChannels() const override {
+    CriticalSectionScoped cs(encoder_lock_.get());
+    return encoder_->NumChannels();
+  }
   size_t MaxEncodedBytes() const override {
+    CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->MaxEncodedBytes();
   }
   int RtpTimestampRateHz() const override {
+    CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->RtpTimestampRateHz();
   }
   int Num10MsFramesInNextPacket() const override {
+    CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->Num10MsFramesInNextPacket();
   }
   int Max10MsFramesInAPacket() const override {
+    CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->Max10MsFramesInAPacket();
   }
   void SetTargetBitrate(int bits_per_second) override {
+    CriticalSectionScoped cs(encoder_lock_.get());
     encoder_->SetTargetBitrate(bits_per_second);
   }
   void SetProjectedPacketLossRate(double fraction) override {
+    CriticalSectionScoped cs(encoder_lock_.get());
     encoder_->SetProjectedPacketLossRate(fraction);
   }
 
  protected:
-  explicit AudioEncoderMutableImpl(const typename T::Config& config) {
+  explicit AudioEncoderMutableImpl(const typename T::Config& config)
+      : encoder_lock_(CriticalSectionWrapper::CreateCriticalSection()) {
     Reconstruct(config);
   }
 
   bool Reconstruct(const typename T::Config& config) {
     if (!config.IsOk())
       return false;
+    CriticalSectionScoped cs(encoder_lock_.get());
     config_ = config;
     encoder_.reset(new T(config_));
     return true;
   }
 
-  const typename T::Config& config() const { return config_; }
-  T* encoder() { return encoder_.get(); }
-  const T* encoder() const { return encoder_.get(); }
+  typename T::Config config() const {
+    CriticalSectionScoped cs(encoder_lock_.get());
+    return config_;
+  }
+  T* encoder() EXCLUSIVE_LOCKS_REQUIRED(encoder_lock_) {
+    return encoder_.get();
+  }
+  const T* encoder() const EXCLUSIVE_LOCKS_REQUIRED(encoder_lock_) {
+    return encoder_.get();
+  }
+
+  const rtc::scoped_ptr<CriticalSectionWrapper> encoder_lock_;
 
  private:
-  rtc::scoped_ptr<T> encoder_;
-  typename T::Config config_;
+  rtc::scoped_ptr<T> encoder_ GUARDED_BY(encoder_lock_);
+  typename T::Config config_ GUARDED_BY(encoder_lock_);
 };
 
 }  // namespace webrtc

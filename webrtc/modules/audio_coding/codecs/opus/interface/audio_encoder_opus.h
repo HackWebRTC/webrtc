@@ -93,10 +93,17 @@ class AudioEncoderMutableOpus
   bool SetApplication(Application application) override;
   bool SetMaxPlaybackRate(int frequency_hz) override;
   AudioEncoderOpus::ApplicationMode application() const {
+    CriticalSectionScoped cs(encoder_lock_.get());
     return encoder()->application();
   }
-  double packet_loss_rate() const { return encoder()->packet_loss_rate(); }
-  bool dtx_enabled() const { return encoder()->dtx_enabled(); }
+  double packet_loss_rate() const {
+    CriticalSectionScoped cs(encoder_lock_.get());
+    return encoder()->packet_loss_rate();
+  }
+  bool dtx_enabled() const {
+    CriticalSectionScoped cs(encoder_lock_.get());
+    return encoder()->dtx_enabled();
+  }
 };
 
 }  // namespace webrtc
