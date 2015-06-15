@@ -251,6 +251,8 @@ int16_t WebRtcIsac_Assign(ISACStruct** ISAC_main_inst,
     instISAC->decoderSamplingRateKHz = kIsacWideband;
     instISAC->bandwidthKHz           = isac8kHz;
     instISAC->in_sample_rate_hz = 16000;
+
+    WebRtcIsac_InitTransform(&instISAC->transform_tables);
     return 0;
   } else {
     return -1;
@@ -284,6 +286,8 @@ int16_t WebRtcIsac_Create(ISACStruct** ISAC_main_inst) {
       instISAC->encoderSamplingRateKHz = kIsacWideband;
       instISAC->decoderSamplingRateKHz = kIsacWideband;
       instISAC->in_sample_rate_hz = 16000;
+
+      WebRtcIsac_InitTransform(&instISAC->transform_tables);
       return 0;
     } else {
       return -1;
@@ -579,7 +583,8 @@ int WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
   GetSendBandwidthInfo(instISAC, &bottleneckIdx, &jitterInfo);
 
   /* Encode lower-band. */
-  streamLenLB = WebRtcIsac_EncodeLb(inFrame, &instLB->ISACencLB_obj,
+  streamLenLB = WebRtcIsac_EncodeLb(&instISAC->transform_tables,
+                                    inFrame, &instLB->ISACencLB_obj,
                                     instISAC->codingMode, bottleneckIdx);
   if (streamLenLB < 0) {
     return -1;
@@ -606,12 +611,14 @@ int WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
     /* Encode upper-band. */
     switch (instISAC->bandwidthKHz) {
       case isac12kHz: {
-        streamLenUB = WebRtcIsac_EncodeUb12(inFrame, &instUB->ISACencUB_obj,
+        streamLenUB = WebRtcIsac_EncodeUb12(&instISAC->transform_tables,
+                                            inFrame, &instUB->ISACencUB_obj,
                                             jitterInfo);
         break;
       }
       case isac16kHz: {
-        streamLenUB = WebRtcIsac_EncodeUb16(inFrame, &instUB->ISACencUB_obj,
+        streamLenUB = WebRtcIsac_EncodeUb16(&instISAC->transform_tables,
+                                            inFrame, &instUB->ISACencUB_obj,
                                             jitterInfo);
         break;
       }
@@ -1106,7 +1113,8 @@ static int Decode(ISACStruct* ISAC_main_inst,
   /* Regardless of that the current codec is setup to work in
    * wideband or super-wideband, the decoding of the lower-band
    * has to be performed. */
-  numDecodedBytesLB = WebRtcIsac_DecodeLb(outFrame, decInstLB,
+  numDecodedBytesLB = WebRtcIsac_DecodeLb(&instISAC->transform_tables,
+                                          outFrame, decInstLB,
                                           &numSamplesLB, isRCUPayload);
 
   if ((numDecodedBytesLB < 0) || (numDecodedBytesLB > lenEncodedLBBytes) ||
@@ -1249,8 +1257,8 @@ static int Decode(ISACStruct* ISAC_main_inst,
 
         switch (bandwidthKHz) {
           case isac12kHz: {
-            numDecodedBytesUB = WebRtcIsac_DecodeUb12(outFrame, decInstUB,
-                                                      isRCUPayload);
+            numDecodedBytesUB = WebRtcIsac_DecodeUb12(
+                &instISAC->transform_tables, outFrame, decInstUB, isRCUPayload);
 
             /* Hang-over for transient alleviation -
              * wait two frames to add the upper band going up from 8 kHz. */
@@ -1277,8 +1285,8 @@ static int Decode(ISACStruct* ISAC_main_inst,
             break;
           }
           case isac16kHz: {
-            numDecodedBytesUB = WebRtcIsac_DecodeUb16(outFrame, decInstUB,
-                                                      isRCUPayload);
+            numDecodedBytesUB = WebRtcIsac_DecodeUb16(
+                &instISAC->transform_tables, outFrame, decInstUB, isRCUPayload);
             break;
           }
           default:
