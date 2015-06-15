@@ -123,7 +123,8 @@ TEST_F(MacAsyncSocketTest, DISABLED_TestConnectFailIPv4) {
   SocketTest::TestConnectFailIPv4();
 }
 
-TEST_F(MacAsyncSocketTest, TestConnectFailIPv6) {
+// Flaky. See webrtc:4738.
+TEST_F(MacAsyncSocketTest, DISABLED_TestConnectFailIPv6) {
   SocketTest::TestConnectFailIPv6();
 }
 
