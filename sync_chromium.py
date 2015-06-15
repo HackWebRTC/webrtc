@@ -24,6 +24,7 @@ incremented. The file can be removed manually to force a new sync.
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -104,6 +105,14 @@ def main():
     os.unlink(flag_file)
 
   env = os.environ.copy()
+
+  # Workaround to avoid sync failure due move in
+  # https://codereview.chromium.org/1155743013
+  # TODO(kjellander): Remove this after the summer of 2015.
+  freetype_src = os.path.join(CR_DIR, 'src', 'third_party', 'freetype-android',
+                              'src')
+  if os.path.isdir(freetype_src):
+    shutil.rmtree(freetype_src)
 
   # Avoid downloading NaCl toolchain as part of the Chromium hooks.
   env.setdefault('GYP_DEFINES', '')

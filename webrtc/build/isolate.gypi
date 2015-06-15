@@ -104,9 +104,6 @@
             '--extra-variable', 'mac_product_name', '<(mac_product_name)',
           ],
         }],
-        ["test_isolation_outdir!=''", {
-          'action': [ '--isolate-server', '<(test_isolation_outdir)' ],
-        }],
       ],
     },
   ],
