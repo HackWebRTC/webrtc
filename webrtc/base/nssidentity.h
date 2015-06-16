@@ -13,7 +13,13 @@
 
 #include <string>
 
+// Hack: Define+undefine int64 and uint64 to avoid typedef conflict with NSS.
+// TODO(kjellander): Remove when webrtc:4497 is completed.
+#define uint64 foo_uint64
+#define int64 foo_int64
 #include "cert.h"
+#undef uint64
+#undef int64
 #include "nspr.h"
 #include "hasht.h"
 #include "keythi.h"

@@ -49,8 +49,8 @@ typedef int64_t int64;
 #endif
 #define INT64_F "l"
 #elif defined(__LP64__)
-typedef unsigned long uint64;  // NOLINT
-typedef long int64;  // NOLINT
+typedef unsigned long long uint64;  // NOLINT
+typedef long long int64;  // NOLINT
 #ifndef INT64_C
 #define INT64_C(x) x ## L
 #endif

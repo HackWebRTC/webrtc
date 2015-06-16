@@ -14,6 +14,15 @@
 
 namespace rtc {
 
+static_assert(sizeof(int8) == 1, "Unexpected size");
+static_assert(sizeof(uint8) == 1, "Unexpected size");
+static_assert(sizeof(int16) == 2, "Unexpected size");
+static_assert(sizeof(uint16) == 2, "Unexpected size");
+static_assert(sizeof(int32) == 4, "Unexpected size");
+static_assert(sizeof(uint32) == 4, "Unexpected size");
+static_assert(sizeof(int64) == 8, "Unexpected size");
+static_assert(sizeof(uint64) == 8, "Unexpected size");
+
 TEST(BasicTypesTest, Endian) {
   uint16 v16 = 0x1234u;
   uint8 first_byte = *reinterpret_cast<uint8*>(&v16);
