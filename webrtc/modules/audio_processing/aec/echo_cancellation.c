@@ -718,9 +718,7 @@ static int ProcessNormal(Aec* aecpc,
     }
   } else {
     // AEC is enabled.
-    if (WebRtcAec_reported_delay_enabled(aecpc->aec)) {
-      EstBufDelayNormal(aecpc);
-    }
+    EstBufDelayNormal(aecpc);
 
     // Call the AEC.
     // TODO(bjornv): Re-structure such that we don't have to pass
@@ -795,9 +793,7 @@ static void ProcessExtended(Aec* self,
     self->startup_phase = 0;
   }
 
-  if (WebRtcAec_reported_delay_enabled(self->aec)) {
-    EstBufDelayExtended(self);
-  }
+  EstBufDelayExtended(self);
 
   {
     // |delay_diff_offset| gives us the option to manually rewind the delay on
