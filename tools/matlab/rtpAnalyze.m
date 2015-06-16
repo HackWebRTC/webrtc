@@ -65,9 +65,12 @@ if length(uPT) > 1
 end
 fprintf('\n');
 fprintf('Packets: %i\n', length(SeqNo));
+SortSeqNo = sort(SeqNoUW);
 fprintf('Missing sequence numbers: %i\n', ...
-    length(find(diff(sort(SeqNoUW)) > 1)));
-fprintf('Reordered packets: %i\n', length(find(diff(sort(SeqNoUW)) < 1)));
+    length(find(diff(SortSeqNo) > 1)));
+fprintf('Duplicated packets: %i\n', length(find(diff(SortSeqNo) == 0)));
+reorderIx = findReorderedPackets(SeqNoUW);
+fprintf('Reordered packets: %i\n', length(reorderIx));
 tsdiff = diff(TimeStampUW);
 tsdiff = tsdiff(diff(SeqNoUW) == 1);
 [utsdiff, ~, ixtsdiff] = unique(tsdiff);
@@ -117,8 +120,20 @@ fprintf('Received average bitrate: %i kbps\n', ...
 %% Plots.
 delay = ArrTime - SendTimeMs;
 delay = delay - min(delay);
+delayOrdered = delay;
+delayOrdered(reorderIx) = nan;  % Set reordered packets to NaN.
+delayReordered = delay(reorderIx);  % Pick the reordered packets.
+sendTimeMsReordered = SendTimeMs(reorderIx);
+
+% Sort time arrays in packet send order.
+[~, sortix] = sort(SeqNoUW);
+SendTimeMs = SendTimeMs(sortix);
+Size = Size(sortix);
+delayOrdered = delayOrdered(sortix);
+
 figure
-plot(SendTimeMs / 1000, delay);
+plot(SendTimeMs / 1000, delayOrdered, ...
+    sendTimeMsReordered / 1000, delayReordered, 'r.');
 xlabel('Send time [s]');
 ylabel('Relative transport delay [ms]');
 title(sprintf('SSRC: %s', SSRC{1}));
@@ -128,6 +143,23 @@ figure
 plot(SendTimeMs(1:end-1)/1000, SendBitrateKbps);
 xlabel('Send time [s]');
 ylabel('Send bitrate [kbps]');
+end
+
+%% Subfunctions.
+
+% findReorderedPackets returns the index to all packets that are considered
+% old compared with the largest seen sequence number. The input seqNo must
+% be unwrapped for this to work.
+function reorderIx = findReorderedPackets(seqNo)
+largestSeqNo = seqNo(1);
+reorderIx = [];
+for i = 2:length(seqNo)
+    if seqNo(i) < largestSeqNo
+        reorderIx = [reorderIx; i]; %#ok<AGROW>
+    else
+        largestSeqNo = seqNo(i);
+    end
+end
 end
 
 %% Auto-generated subfunction.
