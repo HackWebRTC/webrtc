@@ -328,10 +328,7 @@ int EchoCancellationImpl::Initialize() {
 }
 
 void EchoCancellationImpl::SetExtraOptions(const Config& config) {
-  // Both ExtendedFilter and DelayCorrection are diabled by default. If any one
-  // of them is true, then the extended filter mode is enabled.
-  extended_filter_enabled_ = config.Get<ExtendedFilter>().enabled ||
-                             config.Get<DelayCorrection>().enabled;
+  extended_filter_enabled_ = config.Get<ExtendedFilter>().enabled;
   reported_delay_enabled_ = config.Get<ReportedDelay>().enabled;
   Configure();
 }

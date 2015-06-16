@@ -53,14 +53,6 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
   } key_to_value[] = {
       {MediaConstraintsInterface::kGoogEchoCancellation,
        options->echo_cancellation},
-      // Both kExperimentalEchoCancellation (old) and
-      // kExtendedFilterEchoCancellation (new) translate to
-      // extended_filter_aec
-      // option being set. This is to manage the transition from the old to
-      // the
-      // new without breaking dependent code.
-      {MediaConstraintsInterface::kExperimentalEchoCancellation,
-       options->extended_filter_aec},
       {MediaConstraintsInterface::kExtendedFilterEchoCancellation,
        options->extended_filter_aec},
       {MediaConstraintsInterface::kDAEchoCancellation,

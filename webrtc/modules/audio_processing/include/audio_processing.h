@@ -54,14 +54,6 @@ class VoiceDetection;
 //   the delay difference more heavily, and back off from the difference more.
 //   Adjustments force a readaptation of the filter, so they should be avoided
 //   except when really necessary.
-// TODO(henrik.lundin): Remove DelayCorrection once ExtendedFilter has
-// propagated through to all channels
-// (https://code.google.com/p/webrtc/issues/detail?id=4696).
-struct DelayCorrection {
-  DelayCorrection() : enabled(false) {}
-  explicit DelayCorrection(bool enabled) : enabled(enabled) {}
-  bool enabled;
-};
 struct ExtendedFilter {
   ExtendedFilter() : enabled(false) {}
   explicit ExtendedFilter(bool enabled) : enabled(enabled) {}
