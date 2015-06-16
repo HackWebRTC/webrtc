@@ -14,7 +14,6 @@
 #include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -248,7 +247,7 @@ void OpusTest::TestDtxEffect(bool dtx) {
 }
 
 // Test failing Create.
-TEST(OpusTest, DISABLED_ON_IOS(OpusCreateFail)) {
+TEST(OpusTest, OpusCreateFail) {
   WebRtcOpusEncInst* opus_encoder;
   WebRtcOpusDecInst* opus_decoder;
 
@@ -265,14 +264,14 @@ TEST(OpusTest, DISABLED_ON_IOS(OpusCreateFail)) {
 }
 
 // Test failing Free.
-TEST(OpusTest, DISABLED_ON_IOS(OpusFreeFail)) {
+TEST(OpusTest, OpusFreeFail) {
   // Test to see that an invalid pointer is caught.
   EXPECT_EQ(-1, WebRtcOpus_EncoderFree(NULL));
   EXPECT_EQ(-1, WebRtcOpus_DecoderFree(NULL));
 }
 
 // Test normal Create and Free.
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusCreateFree)) {
+TEST_P(OpusTest, OpusCreateFree) {
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_encoder_,
                                         channels_,
                                         application_));
@@ -284,7 +283,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusCreateFree)) {
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusEncodeDecode)) {
+TEST_P(OpusTest, OpusEncodeDecode) {
   PrepareSpeechData(channels_, 20, 20);
 
   // Create encoder memory.
@@ -322,7 +321,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusEncodeDecode)) {
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusSetBitRate)) {
+TEST_P(OpusTest, OpusSetBitRate) {
   // Test without creating encoder memory.
   EXPECT_EQ(-1, WebRtcOpus_SetBitRate(opus_encoder_, 60000));
 
@@ -358,7 +357,7 @@ TEST_P(OpusTest, OpusSetComplexity) {
 
 // Encode and decode one frame, initialize the decoder and
 // decode once more.
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusDecodeInit)) {
+TEST_P(OpusTest, OpusDecodeInit) {
   PrepareSpeechData(channels_, 20, 20);
 
   // Create encoder memory.
@@ -388,7 +387,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusDecodeInit)) {
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusEnableDisableFec)) {
+TEST_P(OpusTest, OpusEnableDisableFec) {
   // Test without creating encoder memory.
   EXPECT_EQ(-1, WebRtcOpus_EnableFec(opus_encoder_));
   EXPECT_EQ(-1, WebRtcOpus_DisableFec(opus_encoder_));
@@ -405,7 +404,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusEnableDisableFec)) {
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusEnableDisableDtx)) {
+TEST_P(OpusTest, OpusEnableDisableDtx) {
   // Test without creating encoder memory.
   EXPECT_EQ(-1, WebRtcOpus_EnableDtx(opus_encoder_));
   EXPECT_EQ(-1, WebRtcOpus_DisableDtx(opus_encoder_));
@@ -439,15 +438,15 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusEnableDisableDtx)) {
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusDtxOff)) {
+TEST_P(OpusTest, OpusDtxOff) {
   TestDtxEffect(false);
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusDtxOn)) {
+TEST_P(OpusTest, OpusDtxOn) {
   TestDtxEffect(true);
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusSetPacketLossRate)) {
+TEST_P(OpusTest, OpusSetPacketLossRate) {
   // Test without creating encoder memory.
   EXPECT_EQ(-1, WebRtcOpus_SetPacketLossRate(opus_encoder_, 50));
 
@@ -464,7 +463,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusSetPacketLossRate)) {
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusSetMaxPlaybackRate)) {
+TEST_P(OpusTest, OpusSetMaxPlaybackRate) {
   // Test without creating encoder memory.
   EXPECT_EQ(-1, WebRtcOpus_SetMaxPlaybackRate(opus_encoder_, 20000));
 
@@ -489,7 +488,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusSetMaxPlaybackRate)) {
 }
 
 // Test PLC.
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusDecodePlc)) {
+TEST_P(OpusTest, OpusDecodePlc) {
   PrepareSpeechData(channels_, 20, 20);
 
   // Create encoder memory.
@@ -526,7 +525,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusDecodePlc)) {
 }
 
 // Duration estimation.
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusDurationEstimation)) {
+TEST_P(OpusTest, OpusDurationEstimation) {
   PrepareSpeechData(channels_, 20, 20);
 
   // Create.
@@ -560,7 +559,7 @@ TEST_P(OpusTest, DISABLED_ON_IOS(OpusDurationEstimation)) {
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
 }
 
-TEST_P(OpusTest, DISABLED_ON_IOS(OpusDecodeRepacketized)) {
+TEST_P(OpusTest, OpusDecodeRepacketized) {
   const int kPackets = 6;
 
   PrepareSpeechData(channels_, 20, 20 * kPackets);

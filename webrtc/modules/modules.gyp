@@ -345,6 +345,23 @@
                 'audio_device/android/fine_audio_buffer_unittest.cc',
               ],
             }],
+            ['OS=="ios"', {
+              'mac_bundle_resources': [
+                '<(DEPTH)/resources/audio_coding/speech_mono_16kHz.pcm',
+                '<(DEPTH)/resources/audio_coding/testfile32kHz.pcm',
+                '<(DEPTH)/resources/audio_coding/teststereo32kHz.pcm',
+                '<(DEPTH)/resources/audio_processing/agc/agc_no_circular_buffer.dat',
+                '<(DEPTH)/resources/audio_processing/agc/agc_pitch_gain.dat',
+                '<(DEPTH)/resources/audio_processing/agc/agc_pitch_lag.dat',
+                '<(DEPTH)/resources/audio_processing/agc/agc_spectral_peak.dat',
+                '<(DEPTH)/resources/audio_processing/agc/agc_voicing_prob.dat',
+                '<(DEPTH)/resources/audio_processing/agc/agc_with_circular_buffer.dat',
+                '<(DEPTH)/resources/short_mixed_mono_48.dat',
+                '<(DEPTH)/resources/short_mixed_mono_48.pcm',
+                '<(DEPTH)/resources/short_mixed_stereo_48.dat',
+                '<(DEPTH)/resources/short_mixed_stereo_48.pcm',
+              ],
+            }],
           ],
           # Disable warnings to enable Win64 build, issue 1323.
           'msvs_disabled_warnings': [

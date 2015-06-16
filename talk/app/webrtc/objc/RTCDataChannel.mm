@@ -57,7 +57,8 @@ class RTCDataChannelObserver : public DataChannelObserver {
 };
 }
 
-// TODO(tkchin): move to shared location
+// TODO(henrika): move to shared location.
+// See https://code.google.com/p/webrtc/issues/detail?id=4773 for details.
 NSString* NSStringFromStdString(const std::string& stdString) {
   // std::string may contain null termination character so we construct
   // using length.

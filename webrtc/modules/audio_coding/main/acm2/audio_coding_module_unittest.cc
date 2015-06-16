@@ -503,18 +503,12 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
   test::AudioLoop audio_loop_;
 };
 
-#if defined(WEBRTC_IOS)
-// See https://code.google.com/p/webrtc/issues/detail?id=4752 for details.
-#define MAYBE_DoTest DISABLED_DoTest
-#else
-#define MAYBE_DoTest DoTest
-#endif
-TEST_F(AcmIsacMtTest, MAYBE_DoTest) {
+TEST_F(AcmIsacMtTest, DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
-// Disabling all of these tests on iOS until file support has been added.
-// See https://code.google.com/p/webrtc/issues/detail?id=4752 for details.
+// Disabling all of these tests on iOS for now.
+// See https://code.google.com/p/webrtc/issues/detail?id=4768 for details.
 #if !defined(WEBRTC_IOS)
 
 class AcmReceiverBitExactness : public ::testing::Test {

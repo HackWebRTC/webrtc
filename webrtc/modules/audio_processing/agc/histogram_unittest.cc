@@ -17,7 +17,6 @@
 
 #include "gtest/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
 
 namespace webrtc {
@@ -90,13 +89,13 @@ void HistogramTest::RunTest(bool enable_circular_buff, const char* filename) {
   fclose(in_file);
 }
 
-TEST_F(HistogramTest, DISABLED_ON_IOS(ActiveCircularBuffer)) {
+TEST_F(HistogramTest, ActiveCircularBuffer) {
   RunTest(true,
           test::ResourcePath("audio_processing/agc/agc_with_circular_buffer",
                              "dat").c_str());
 }
 
-TEST_F(HistogramTest, DISABLED_ON_IOS(InactiveCircularBuffer)) {
+TEST_F(HistogramTest, InactiveCircularBuffer) {
   RunTest(false,
           test::ResourcePath("audio_processing/agc/agc_no_circular_buffer",
                              "dat").c_str());

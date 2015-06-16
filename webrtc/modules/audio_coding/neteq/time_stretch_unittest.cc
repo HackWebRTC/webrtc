@@ -21,7 +21,6 @@
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -109,7 +108,7 @@ class TimeStretchTest : public ::testing::Test {
   BackgroundNoise background_noise_;
 };
 
-TEST_F(TimeStretchTest, DISABLED_ON_IOS(Accelerate)) {
+TEST_F(TimeStretchTest, Accelerate) {
   // TestAccelerate returns the total length change in samples.
   EXPECT_EQ(15268, TestAccelerate(100, false));
   EXPECT_EQ(9, return_stats_[TimeStretch::kSuccess]);
@@ -117,7 +116,7 @@ TEST_F(TimeStretchTest, DISABLED_ON_IOS(Accelerate)) {
   EXPECT_EQ(33, return_stats_[TimeStretch::kNoStretch]);
 }
 
-TEST_F(TimeStretchTest, DISABLED_ON_IOS(AccelerateFastMode)) {
+TEST_F(TimeStretchTest, AccelerateFastMode) {
   // TestAccelerate returns the total length change in samples.
   EXPECT_EQ(21400, TestAccelerate(100, true));
   EXPECT_EQ(31, return_stats_[TimeStretch::kSuccess]);

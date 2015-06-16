@@ -18,7 +18,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -61,13 +60,13 @@ void RunAnalysisTest(const std::string& audio_filename,
   fclose(data_file);
 }
 
-TEST(AudioClassifierTest, DISABLED_ON_IOS(DoAnalysisMono)) {
+TEST(AudioClassifierTest, DoAnalysisMono) {
   RunAnalysisTest(test::ResourcePath("short_mixed_mono_48", "pcm"),
                   test::ResourcePath("short_mixed_mono_48", "dat"),
                   1);
 }
 
-TEST(AudioClassifierTest, DISABLED_ON_IOS(DoAnalysisStereo)) {
+TEST(AudioClassifierTest, DoAnalysisStereo) {
   RunAnalysisTest(test::ResourcePath("short_mixed_stereo_48", "pcm"),
                   test::ResourcePath("short_mixed_stereo_48", "dat"),
                   2);

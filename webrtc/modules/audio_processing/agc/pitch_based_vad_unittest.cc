@@ -16,11 +16,10 @@
 
 #include "gtest/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
-TEST(PitchBasedVadTest, DISABLED_ON_IOS(VoicingProbabilityTest)) {
+TEST(PitchBasedVadTest, VoicingProbabilityTest) {
   std::string spectral_peak_file_name = test::ResourcePath(
       "audio_processing/agc/agc_spectral_peak", "dat");
   FILE* spectral_peak_file = fopen(spectral_peak_file_name.c_str(), "rb");
