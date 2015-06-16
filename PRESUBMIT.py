@@ -6,8 +6,11 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import json
 import os
+import platform
 import re
+import subprocess
 import sys
 
 
@@ -332,85 +335,26 @@ def CheckChangeOnCommit(input_api, output_api):
   return results
 
 
-def GetDefaultTryConfigs(bots=None):
-  """Returns a list of ('bot', set(['tests']), optionally filtered by [bots].
-
-  For WebRTC purposes, we always return an empty list of tests, since we want
-  to run all tests by default on all our trybots.
-  """
-  return {'tryserver.webrtc': dict((bot, []) for bot in bots)}
-
-
 # pylint: disable=W0613
 def GetPreferredTryMasters(project, change):
-  files = change.LocalPaths()
+  cq_config_path = os.path.join(
+      change.RepositoryRoot(), 'infra', 'config', 'cq.cfg')
+  # commit_queue.py below is a script in depot_tools directory, which has a
+  # 'builders' command to retrieve a list of CQ builders from the CQ config.
+  is_win = platform.system() == 'Windows'
+  masters = json.loads(subprocess.check_output(
+      ['commit_queue', 'builders', cq_config_path], shell=is_win))
 
-  android_gn_bots = [
-      'android_gn',
-      'android_gn_rel',
-  ]
-  android_bots = [
-      'android',
-      'android_arm64_rel',
-      'android_rel',
-      'android_clang',
-  ] + android_gn_bots
-  ios_bots = [
-      'ios',
-      'ios_arm64',
-      'ios_arm64_rel',
-      'ios_rel',
-      'ios32_sim',
-      'ios64_sim',
-  ]
-  linux_gn_bots = [
-      'linux_gn',
-      'linux_gn_rel',
-  ]
-  linux_bots = [
-      'linux',
-      'linux_asan',
-      'linux_baremetal',
-      'linux_msan',
-      'linux_rel',
-      'linux_tsan2',
-  ] + linux_gn_bots
-  mac_gn_bots = [
-      'mac_x64_gn',
-      'mac_x64_gn_rel',
-  ]
-  mac_bots = [
-      'mac',
-      'mac_asan',
-      'mac_baremetal',
-      'mac_rel',
-      'mac_x64',
-      'mac_x64_rel',
-  ] + mac_gn_bots
-  win_gn_bots = [
-      'win_x64_gn',
-      'win_x64_gn_rel',
-  ]
-  win_bots = [
-      'win',
-      'win_baremetal',
-      'win_drmemory_light',
-      'win_rel',
-      'win_x64_rel',
-  ] + win_gn_bots
-  if not files or all(re.search(r'[\\/]OWNERS$', f) for f in files):
-    return {}
-  if all(re.search(r'[\\/]BUILD.gn$', f) for f in files):
-    return GetDefaultTryConfigs(android_gn_bots + linux_gn_bots + mac_gn_bots +
-                                win_gn_bots)
-  if all(re.search('[/_]mac[/_.]', f) for f in files):
-    return GetDefaultTryConfigs(mac_bots)
-  if all(re.search('(^|[/_])win[/_.]', f) for f in files):
-    return GetDefaultTryConfigs(win_bots)
-  if all(re.search('(^|[/_])android[/_.]', f) for f in files):
-    return GetDefaultTryConfigs(android_bots)
-  if all(re.search('[/_]ios[/_.]', f) for f in files):
-    return GetDefaultTryConfigs(ios_bots)
+  try_config = {}
+  for master in masters:
+    try_config.setdefault(master, {})
+    for builder in masters[master]:
+      if 'presubmit' in builder:
+        # Do not trigger presubmit builders, since they're likely to fail
+        # (e.g. OWNERS checks before finished code review), and we're running
+        # local presubmit anyway.
+        pass
+      else:
+        try_config[master][builder] = ['defaulttests']
 
-  return GetDefaultTryConfigs(android_bots + ios_bots + linux_bots + mac_bots +
-                              win_bots)
+  return try_config
