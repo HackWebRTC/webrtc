@@ -857,14 +857,6 @@ static void TimeToFrequency(float time_data[PART_LEN2],
   }
 }
 
-static int MoveFarReadPtrWithoutSystemDelayUpdate(AecCore* self, int elements) {
-  WebRtc_MoveReadPtr(self->far_buf_windowed, elements);
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  WebRtc_MoveReadPtr(self->far_time_buf, elements);
-#endif
-  return WebRtc_MoveReadPtr(self->far_buf, elements);
-}
-
 static int SignalBasedDelayCorrection(AecCore* self) {
   int delay_correction = 0;
   int last_delay = -2;
@@ -905,13 +897,9 @@ static int SignalBasedDelayCorrection(AecCore* self) {
     const int do_correction = delay <= lower_bound || delay > upper_bound;
     if (do_correction == 1) {
       int available_read = (int)WebRtc_available_read(self->far_buf);
-      // With |shift_offset| we gradually rely on the delay estimates.  For
-      // positive delays we reduce the correction by |shift_offset| to lower the
-      // risk of pushing the AEC into a non causal state.  For negative delays
-      // we rely on the values up to a rounding error, hence compensate by 1
-      // element to make sure to push the delay into the causal region.
-      delay_correction = -delay;
-      delay_correction += delay > self->shift_offset ? self->shift_offset : 1;
+      // Adjust w.r.t. a |shift_offset| to account for not as reliable estimates
+      // in the beginning, hence we are more conservative.
+      delay_correction = -(delay - self->shift_offset);
       self->shift_offset--;
       self->shift_offset = (self->shift_offset <= 1 ? 1 : self->shift_offset);
       if (delay_correction > available_read - self->mult - 1) {
@@ -1727,7 +1715,11 @@ void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend) {
 }
 
 int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements) {
-  int elements_moved = MoveFarReadPtrWithoutSystemDelayUpdate(aec, elements);
+  int elements_moved = WebRtc_MoveReadPtr(aec->far_buf_windowed, elements);
+  WebRtc_MoveReadPtr(aec->far_buf, elements);
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+  WebRtc_MoveReadPtr(aec->far_time_buf, elements);
+#endif
   aec->system_delay -= elements_moved * PART_LEN;
   return elements_moved;
 }
@@ -1800,27 +1792,42 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
       // which should be investigated. Maybe, allow for a non-symmetric
       // rounding, like -16.
       int move_elements = (aec->knownDelay - knownDelay - 32) / PART_LEN;
-      int moved_elements =
-          MoveFarReadPtrWithoutSystemDelayUpdate(aec, move_elements);
+      int moved_elements = WebRtc_MoveReadPtr(aec->far_buf, move_elements);
+      WebRtc_MoveReadPtr(aec->far_buf_windowed, move_elements);
       aec->knownDelay -= moved_elements * PART_LEN;
+  #ifdef WEBRTC_AEC_DEBUG_DUMP
+      WebRtc_MoveReadPtr(aec->far_time_buf, move_elements);
+  #endif
     } else {
       // 2 b) Apply signal based delay correction.
       int move_elements = SignalBasedDelayCorrection(aec);
-      int moved_elements =
-          MoveFarReadPtrWithoutSystemDelayUpdate(aec, move_elements);
-      int far_near_buffer_diff = WebRtc_available_read(aec->far_buf) -
-          WebRtc_available_read(aec->nearFrBuf) / PART_LEN;
+      int moved_elements = WebRtc_MoveReadPtr(aec->far_buf, move_elements);
+      WebRtc_MoveReadPtr(aec->far_buf_windowed, move_elements);
+  #ifdef WEBRTC_AEC_DEBUG_DUMP
+      WebRtc_MoveReadPtr(aec->far_time_buf, move_elements);
+  #endif
       WebRtc_SoftResetDelayEstimator(aec->delay_estimator, moved_elements);
       WebRtc_SoftResetDelayEstimatorFarend(aec->delay_estimator_farend,
                                            moved_elements);
       aec->signal_delay_correction += moved_elements;
-      // If we rely on reported system delay values only, a buffer underrun here
-      // can never occur since we've taken care of that in 1) above.  Here, we
-      // apply signal based delay correction and can therefore end up with
-      // buffer underruns since the delay estimation can be wrong.  We therefore
-      // stuff the buffer with enough elements if needed.
-      if (far_near_buffer_diff < 0) {
-        WebRtcAec_MoveFarReadPtr(aec, far_near_buffer_diff);
+      // TODO(bjornv): Investigate if this is reasonable.  I had to add this
+      // guard when the signal based delay correction replaces the system based
+      // one. Otherwise there was a buffer underrun in the "qa-new/01/"
+      // recording when adding 44 ms extra delay.  This was not seen if we kept
+      // both delay correction algorithms running in parallel.
+      // A first investigation showed that we have a drift in this case that
+      // causes the buffer underrun.  Compared to when delay correction was
+      // turned off, we get buffer underrun as well which was triggered in 1)
+      // above.  In addition there was a shift in |knownDelay| later increasing
+      // the buffer.  When running in parallel, this if statement was not
+      // triggered.  This suggests two alternatives; (a) use both algorithms, or
+      // (b) allow for smaller delay corrections when we operate close to the
+      // buffer limit.  At the time of testing we required a change of 6 blocks,
+      // but could change it to, e.g., 2 blocks. It requires some testing
+      // though.
+      if ((int)WebRtc_available_read(aec->far_buf) < (aec->mult + 1)) {
+        // We don't have enough data so we stuff the far-end buffers.
+        WebRtcAec_MoveFarReadPtr(aec, -(aec->mult + 1));
       }
     }
 
