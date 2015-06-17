@@ -8,16 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//
-//  Specifies helper classes for intelligibility enhancement.
-//
-
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_UTILS_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_UTILS_H_
 
 #include <complex>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -67,10 +63,14 @@ class VarianceArray {
   void ApplyScale(float scale);
 
   // The current set of variances.
-  const float* variance() const { return variance_.get(); }
+  const float* variance() const {
+    return variance_.get();
+  }
 
   // The mean value of the current set of variances.
-  float array_mean() const { return array_mean_; }
+  float array_mean() const {
+    return array_mean_;
+  }
 
  private:
   void InfiniteStep(const std::complex<float>* data, bool dummy);
@@ -78,26 +78,23 @@ class VarianceArray {
   void WindowedStep(const std::complex<float>* data, bool dummy);
   void BlockedStep(const std::complex<float>* data, bool dummy);
 
-  // TODO(ekmeyerson): Switch the following running means
-  // and histories from rtc::scoped_ptr to std::vector.
-
   // The current average X and X^2.
-  rtc::scoped_ptr<std::complex<float>[]> running_mean_;
-  rtc::scoped_ptr<std::complex<float>[]> running_mean_sq_;
+  scoped_ptr<std::complex<float>[]> running_mean_;
+  scoped_ptr<std::complex<float>[]> running_mean_sq_;
 
   // Average X and X^2 for the current block in kStepBlocked.
-  rtc::scoped_ptr<std::complex<float>[]> sub_running_mean_;
-  rtc::scoped_ptr<std::complex<float>[]> sub_running_mean_sq_;
+  scoped_ptr<std::complex<float>[]> sub_running_mean_;
+  scoped_ptr<std::complex<float>[]> sub_running_mean_sq_;
 
   // Sample history for the rolling window in kStepWindowed and block-wise
   // histories for kStepBlocked.
-  rtc::scoped_ptr<rtc::scoped_ptr<std::complex<float>[]>[]> history_;
-  rtc::scoped_ptr<rtc::scoped_ptr<std::complex<float>[]>[]> subhistory_;
-  rtc::scoped_ptr<rtc::scoped_ptr<std::complex<float>[]>[]> subhistory_sq_;
+  scoped_ptr<scoped_ptr<std::complex<float>[]>[]> history_;
+  scoped_ptr<scoped_ptr<std::complex<float>[]>[]> subhistory_;
+  scoped_ptr<scoped_ptr<std::complex<float>[]>[]> subhistory_sq_;
 
   // The current set of variances and sums for Welford's algorithm.
-  rtc::scoped_ptr<float[]> variance_;
-  rtc::scoped_ptr<float[]> conj_sum_;
+  scoped_ptr<float[]> variance_;
+  scoped_ptr<float[]> conj_sum_;
 
   const int freqs_;
   const int window_size_;
@@ -121,13 +118,15 @@ class GainApplier {
              std::complex<float>* out_block);
 
   // Return the current target gain set. Modify this array to set the targets.
-  float* target() const { return target_.get(); }
+  float* target() const {
+    return target_.get();
+  }
 
  private:
   const int freqs_;
   const float change_limit_;
-  rtc::scoped_ptr<float[]> target_;
-  rtc::scoped_ptr<float[]> current_;
+  scoped_ptr<float[]> target_;
+  scoped_ptr<float[]> current_;
 };
 
 }  // namespace intelligibility
@@ -135,3 +134,4 @@ class GainApplier {
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_UTILS_H_
+
