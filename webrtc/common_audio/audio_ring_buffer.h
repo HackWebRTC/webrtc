@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#ifndef WEBRTC_COMMON_AUDIO_AUDIO_RING_BUFFER_H_
+#define WEBRTC_COMMON_AUDIO_AUDIO_RING_BUFFER_H_
 
 #include <stddef.h>
 #include <vector>
@@ -47,3 +49,5 @@ class AudioRingBuffer final {
 };
 
 }  // namespace webrtc
+
+#endif  // WEBRTC_COMMON_AUDIO_AUDIO_RING_BUFFER_H_
