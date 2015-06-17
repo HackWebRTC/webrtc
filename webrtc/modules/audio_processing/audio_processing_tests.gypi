@@ -59,6 +59,19 @@
         'beamformer/nonlinear_beamformer_test.cc',
       ],
     }, # nonlinear_beamformer_test
+    {
+      'target_name': 'intelligibility_proc',
+      'type': 'executable',
+      'dependencies': [
+        'audioproc_test_utils',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/modules/modules.gyp:audio_processing',
+      ],
+      'sources': [
+        'intelligibility/intelligibility_proc.cc',
+      ],
+    }, # intelligibility_proc
   ],
   'conditions': [
     ['enable_protobuf==1', {

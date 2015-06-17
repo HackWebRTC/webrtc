@@ -8,6 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+//
+//  Implements core class for intelligibility enhancer.
+//
+//  Details of the model and algorithm can be found in the original paper:
+//  http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6882788
+//
+
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 
 #include <cmath>
@@ -27,13 +34,16 @@ namespace webrtc {
 
 const int IntelligibilityEnhancer::kErbResolution = 2;
 const int IntelligibilityEnhancer::kWindowSizeMs = 2;
-// The size of the chunk provided by APM, in milliseconds.
-const int IntelligibilityEnhancer::kChunkSizeMs = 10;
+const int IntelligibilityEnhancer::kChunkSizeMs = 10;  // Size provided by APM.
 const int IntelligibilityEnhancer::kAnalyzeRate = 800;
 const int IntelligibilityEnhancer::kVarianceRate = 2;
 const float IntelligibilityEnhancer::kClipFreq = 200.0f;
 const float IntelligibilityEnhancer::kConfigRho = 0.02f;
 const float IntelligibilityEnhancer::kKbdAlpha = 1.5f;
+
+// To disable gain update smoothing, set gain limit to be VERY high.
+// TODO(ekmeyerson): Add option to disable gain smoothing altogether
+// to avoid the extra computation.
 const float IntelligibilityEnhancer::kGainChangeLimit = 0.0125f;
 
 using VarianceType = intelligibility::VarianceArray::StepType;
@@ -41,12 +51,14 @@ using VarianceType = intelligibility::VarianceArray::StepType;
 IntelligibilityEnhancer::TransformCallback::TransformCallback(
     IntelligibilityEnhancer* parent,
     IntelligibilityEnhancer::AudioSource source)
-    : parent_(parent),
-      source_(source) {}
+    : parent_(parent), source_(source) {
+}
 
 void IntelligibilityEnhancer::TransformCallback::ProcessAudioBlock(
     const complex<float>* const* in_block,
-    int in_channels, int frames, int /* out_channels */,
+    int in_channels,
+    int frames,
+    int /* out_channels */,
     complex<float>* const* out_block) {
   DCHECK_EQ(parent_->freqs_, frames);
   for (int i = 0; i < in_channels; ++i) {
@@ -57,13 +69,14 @@ void IntelligibilityEnhancer::TransformCallback::ProcessAudioBlock(
 IntelligibilityEnhancer::IntelligibilityEnhancer(int erb_resolution,
                                                  int sample_rate_hz,
                                                  int channels,
-                                                 int cv_type, float cv_alpha,
+                                                 int cv_type,
+                                                 float cv_alpha,
                                                  int cv_win,
                                                  int analysis_rate,
                                                  int variance_rate,
                                                  float gain_limit)
-    : freqs_(RealFourier::ComplexLength(RealFourier::FftOrder(
-          sample_rate_hz * kWindowSizeMs / 1000))),
+    : freqs_(RealFourier::ComplexLength(
+          RealFourier::FftOrder(sample_rate_hz * kWindowSizeMs / 1000))),
       window_size_(1 << RealFourier::FftOrder(freqs_)),
       chunk_length_(sample_rate_hz * kChunkSizeMs / 1000),
       bank_size_(GetBankSize(sample_rate_hz, erb_resolution)),
@@ -72,7 +85,9 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int erb_resolution,
       channels_(channels),
       analysis_rate_(analysis_rate),
       variance_rate_(variance_rate),
-      clear_variance_(freqs_, static_cast<VarianceType>(cv_type), cv_win,
+      clear_variance_(freqs_,
+                      static_cast<VarianceType>(cv_type),
+                      cv_win,
                       cv_alpha),
       noise_variance_(freqs_, VarianceType::kStepInfinite, 475, 0.01f),
       filtered_clear_var_(new float[bank_size_]),
@@ -83,58 +98,51 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int erb_resolution,
       gains_eq_(new float[bank_size_]),
       gain_applier_(freqs_, gain_limit),
       temp_out_buffer_(nullptr),
-      input_audio_(new float*[channels]),
+      input_audio_(new float* [channels]),
       kbd_window_(new float[window_size_]),
       render_callback_(this, AudioSource::kRenderStream),
       capture_callback_(this, AudioSource::kCaptureStream),
       block_count_(0),
       analysis_step_(0),
-      vad_high_(nullptr),
-      vad_low_(nullptr),
+      vad_high_(WebRtcVad_Create()),
+      vad_low_(WebRtcVad_Create()),
       vad_tmp_buffer_(new int16_t[chunk_length_]) {
   DCHECK_LE(kConfigRho, 1.0f);
 
   CreateErbBank();
 
-  WebRtcVad_Create(&vad_high_);
   WebRtcVad_Init(vad_high_);
-  WebRtcVad_set_mode(vad_high_, 0);  // high likelihood of speech
-  WebRtcVad_Create(&vad_low_);
+  WebRtcVad_set_mode(vad_high_, 0);  // High likelihood of speech.
   WebRtcVad_Init(vad_low_);
-  WebRtcVad_set_mode(vad_low_, 3);  // low likelihood of speech
+  WebRtcVad_set_mode(vad_low_, 3);  // Low likelihood of speech.
 
-  temp_out_buffer_ = static_cast<float**>(malloc(
-      sizeof(*temp_out_buffer_) * channels_ +
-      sizeof(**temp_out_buffer_) * chunk_length_ * channels_));
+  temp_out_buffer_ = static_cast<float**>(
+      malloc(sizeof(*temp_out_buffer_) * channels_ +
+             sizeof(**temp_out_buffer_) * chunk_length_ * channels_));
   for (int i = 0; i < channels_; ++i) {
-    temp_out_buffer_[i] = reinterpret_cast<float*>(temp_out_buffer_ + channels_)
-        + chunk_length_ * i;
+    temp_out_buffer_[i] =
+        reinterpret_cast<float*>(temp_out_buffer_ + channels_) +
+        chunk_length_ * i;
   }
 
+  // Assumes all rho equal.
   for (int i = 0; i < bank_size_; ++i) {
     rho_[i] = kConfigRho * kConfigRho;
   }
 
   float freqs_khz = kClipFreq / 1000.0f;
-  int erb_index = static_cast<int>(ceilf(11.17f * logf((freqs_khz + 0.312f) /
-                                                       (freqs_khz + 14.6575f))
-                                         + 43.0f));
+  int erb_index = static_cast<int>(ceilf(
+      11.17f * logf((freqs_khz + 0.312f) / (freqs_khz + 14.6575f)) + 43.0f));
   start_freq_ = max(1, erb_index * kErbResolution);
 
   WindowGenerator::KaiserBesselDerived(kKbdAlpha, window_size_,
                                        kbd_window_.get());
-  render_mangler_.reset(new LappedTransform(channels_, channels_,
-                                            chunk_length_,
-                                            kbd_window_.get(),
-                                            window_size_,
-                                            window_size_ / 2,
-                                            &render_callback_));
-  capture_mangler_.reset(new LappedTransform(channels_, channels_,
-                                             chunk_length_,
-                                             kbd_window_.get(),
-                                             window_size_,
-                                             window_size_ / 2,
-                                             &capture_callback_));
+  render_mangler_.reset(new LappedTransform(
+      channels_, channels_, chunk_length_, kbd_window_.get(), window_size_,
+      window_size_ / 2, &render_callback_));
+  capture_mangler_.reset(new LappedTransform(
+      channels_, channels_, chunk_length_, kbd_window_.get(), window_size_,
+      window_size_ / 2, &capture_callback_));
 }
 
 IntelligibilityEnhancer::~IntelligibilityEnhancer() {
@@ -150,7 +158,9 @@ void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio) {
   has_voice_low_ = WebRtcVad_Process(vad_low_, sample_rate_hz_,
                                      vad_tmp_buffer_.get(), chunk_length_) == 1;
 
+  // Process and enhance chunk of |audio|
   render_mangler_->ProcessChunk(audio, temp_out_buffer_);
+
   for (int i = 0; i < channels_; ++i) {
     memcpy(audio[i], temp_out_buffer_[i],
            chunk_length_ * sizeof(**temp_out_buffer_));
@@ -161,21 +171,25 @@ void IntelligibilityEnhancer::ProcessCaptureAudio(float* const* audio) {
   for (int i = 0; i < chunk_length_; ++i) {
     vad_tmp_buffer_[i] = (int16_t)audio[0][i];
   }
-  // TODO(bercic): the VAD was always detecting voice in the noise stream,
-  // no matter what the aggressiveness, so it was temporarily disabled here
+  // TODO(bercic): The VAD was always detecting voice in the noise stream,
+  // no matter what the aggressiveness, so it was temporarily disabled here.
 
-  //if (WebRtcVad_Process(vad_high_, sample_rate_hz_, vad_tmp_buffer_.get(),
-  //    chunk_length_) == 1) {
-  //  printf("capture HAS speech\n");
-  //  return;
-  //}
-  //printf("capture NO speech\n");
+  #if 0
+    if (WebRtcVad_Process(vad_high_, sample_rate_hz_, vad_tmp_buffer_.get(),
+      chunk_length_) == 1) {
+      printf("capture HAS speech\n");
+      return;
+    }
+    printf("capture NO speech\n");
+  #endif
+
   capture_mangler_->ProcessChunk(audio, temp_out_buffer_);
 }
 
 void IntelligibilityEnhancer::DispatchAudio(
     IntelligibilityEnhancer::AudioSource source,
-    const complex<float>* in_block, complex<float>* out_block) {
+    const complex<float>* in_block,
+    complex<float>* out_block) {
   switch (source) {
     case kRenderStream:
       ProcessClearBlock(in_block, out_block);
@@ -196,6 +210,9 @@ void IntelligibilityEnhancer::ProcessClearBlock(const complex<float>* in_block,
     return;
   }
 
+  // For now, always assumes enhancement is necessary.
+  // TODO(ekmeyerson): Change to only enhance if necessary,
+  // based on experiments with different cutoffs.
   if (has_voice_low_ || true) {
     clear_variance_.Step(in_block, false);
     power_target = std::accumulate(clear_variance_.variance(),
@@ -221,23 +238,25 @@ void IntelligibilityEnhancer::AnalyzeClearBlock(float power_target) {
   FilterVariance(clear_variance_.variance(), filtered_clear_var_.get());
   FilterVariance(noise_variance_.variance(), filtered_noise_var_.get());
 
-  /* lambda binary search */
+  // Bisection search for optimal |lambda|
 
   float lambda_bot = -1.0f, lambda_top = -10e-18f, lambda;
   float power_bot, power_top, power;
-  SolveEquation14(lambda_top, start_freq_, gains_eq_.get());
-  power_top = DotProduct(gains_eq_.get(), filtered_clear_var_.get(),
-                         bank_size_);
-  SolveEquation14(lambda_bot, start_freq_, gains_eq_.get());
-  power_bot = DotProduct(gains_eq_.get(), filtered_clear_var_.get(),
-                         bank_size_);
+  SolveForGainsGivenLambda(lambda_top, start_freq_, gains_eq_.get());
+  power_top =
+      DotProduct(gains_eq_.get(), filtered_clear_var_.get(), bank_size_);
+  SolveForGainsGivenLambda(lambda_bot, start_freq_, gains_eq_.get());
+  power_bot =
+      DotProduct(gains_eq_.get(), filtered_clear_var_.get(), bank_size_);
   DCHECK(power_target >= power_bot && power_target <= power_top);
 
-  float power_ratio = 2.0f;
+  float power_ratio = 2.0f;  // Ratio of achieved power to target power.
+  const float kConvergeThresh = 0.001f;  // TODO(ekmeyerson): Find best values
+  const int kMaxIters = 100;             // for these, based on experiments.
   int iters = 0;
-  while (fabs(power_ratio - 1.0f) > 0.001f && iters <= 100) {
+  while (fabs(power_ratio - 1.0f) > kConvergeThresh && iters <= kMaxIters) {
     lambda = lambda_bot + (lambda_top - lambda_bot) / 2.0f;
-    SolveEquation14(lambda, start_freq_, gains_eq_.get());
+    SolveForGainsGivenLambda(lambda, start_freq_, gains_eq_.get());
     power = DotProduct(gains_eq_.get(), filtered_clear_var_.get(), bank_size_);
     if (power < power_target) {
       lambda_bot = lambda;
@@ -248,7 +267,7 @@ void IntelligibilityEnhancer::AnalyzeClearBlock(float power_target) {
     ++iters;
   }
 
-  /* b = filterbank' * b */
+  // (ERB gain) = filterbank' * (freq gain)
   float* gains = gain_applier_.target();
   for (int i = 0; i < freqs_; ++i) {
     gains[i] = 0.0f;
@@ -265,8 +284,8 @@ void IntelligibilityEnhancer::ProcessNoiseBlock(const complex<float>* in_block,
 
 int IntelligibilityEnhancer::GetBankSize(int sample_rate, int erb_resolution) {
   float freq_limit = sample_rate / 2000.0f;
-  int erb_scale = ceilf(11.17f * logf((freq_limit + 0.312f) /
-                                      (freq_limit + 14.6575f)) + 43.0f);
+  int erb_scale = ceilf(
+      11.17f * logf((freq_limit + 0.312f) / (freq_limit + 14.6575f)) + 43.0f);
   return erb_scale * erb_resolution;
 }
 
@@ -283,29 +302,29 @@ void IntelligibilityEnhancer::CreateErbBank() {
     center_freqs_[i] *= 0.5f * sample_rate_hz_ / last_center_freq;
   }
 
-  filter_bank_ = static_cast<float**>(malloc(
-      sizeof(*filter_bank_) * bank_size_ +
-      sizeof(**filter_bank_) * freqs_ * bank_size_));
+  filter_bank_ = static_cast<float**>(
+      malloc(sizeof(*filter_bank_) * bank_size_ +
+             sizeof(**filter_bank_) * freqs_ * bank_size_));
   for (int i = 0; i < bank_size_; ++i) {
-    filter_bank_[i] = reinterpret_cast<float*>(filter_bank_ + bank_size_) +
-        freqs_ * i;
+    filter_bank_[i] =
+        reinterpret_cast<float*>(filter_bank_ + bank_size_) + freqs_ * i;
   }
 
   for (int i = 1; i <= bank_size_; ++i) {
     int lll, ll, rr, rrr;
     lll = round(center_freqs_[max(1, i - lf) - 1] * freqs_ /
-        (0.5f * sample_rate_hz_));
-    ll  = round(center_freqs_[max(1, i     ) - 1] * freqs_ /
-        (0.5f * sample_rate_hz_));
+                (0.5f * sample_rate_hz_));
+    ll =
+        round(center_freqs_[max(1, i) - 1] * freqs_ / (0.5f * sample_rate_hz_));
     lll = min(freqs_, max(lll, 1)) - 1;
-    ll  = min(freqs_, max(ll, 1)) - 1;
+    ll = min(freqs_, max(ll, 1)) - 1;
 
     rrr = round(center_freqs_[min(bank_size_, i + rf) - 1] * freqs_ /
-        (0.5f * sample_rate_hz_));
-    rr  = round(center_freqs_[min(bank_size_, i + 1)  - 1] * freqs_ /
-        (0.5f * sample_rate_hz_));
+                (0.5f * sample_rate_hz_));
+    rr = round(center_freqs_[min(bank_size_, i + 1) - 1] * freqs_ /
+               (0.5f * sample_rate_hz_));
     rrr = min(freqs_, max(rrr, 1)) - 1;
-    rr  = min(freqs_, max(rr, 1)) - 1;
+    rr = min(freqs_, max(rr, 1)) - 1;
 
     float step, element;
 
@@ -338,8 +357,9 @@ void IntelligibilityEnhancer::CreateErbBank() {
   }
 }
 
-void IntelligibilityEnhancer::SolveEquation14(float lambda, int start_freq,
-                                              float* sols) {
+void IntelligibilityEnhancer::SolveForGainsGivenLambda(float lambda,
+                                                       int start_freq,
+                                                       float* sols) {
   bool quadratic = (kConfigRho < 1.0f);
   const float* var_x0 = filtered_clear_var_.get();
   const float* var_n0 = filtered_noise_var_.get();
@@ -347,15 +367,17 @@ void IntelligibilityEnhancer::SolveEquation14(float lambda, int start_freq,
   for (int n = 0; n < start_freq; ++n) {
     sols[n] = 1.0f;
   }
+
+  // Analytic solution for optimal gains. See paper for derivation.
   for (int n = start_freq - 1; n < bank_size_; ++n) {
     float alpha0, beta0, gamma0;
     gamma0 = 0.5f * rho_[n] * var_x0[n] * var_n0[n] +
-        lambda * var_x0[n] * var_n0[n] * var_n0[n];
+             lambda * var_x0[n] * var_n0[n] * var_n0[n];
     beta0 = lambda * var_x0[n] * (2 - rho_[n]) * var_x0[n] * var_n0[n];
     if (quadratic) {
       alpha0 = lambda * var_x0[n] * (1 - rho_[n]) * var_x0[n] * var_x0[n];
-      sols[n] = (-beta0 - sqrtf(beta0 * beta0 - 4 * alpha0 * gamma0))
-          / (2 * alpha0);
+      sols[n] =
+          (-beta0 - sqrtf(beta0 * beta0 - 4 * alpha0 * gamma0)) / (2 * alpha0);
     } else {
       sols[n] = -gamma0 / beta0;
     }
@@ -369,8 +391,9 @@ void IntelligibilityEnhancer::FilterVariance(const float* var, float* result) {
   }
 }
 
-float IntelligibilityEnhancer::DotProduct(const float* a, const float* b,
-                                               int length) {
+float IntelligibilityEnhancer::DotProduct(const float* a,
+                                          const float* b,
+                                          int length) {
   float ret = 0.0f;
 
   for (int i = 0; i < length; ++i) {
@@ -380,4 +403,3 @@ float IntelligibilityEnhancer::DotProduct(const float* a, const float* b,
 }
 
 }  // namespace webrtc
-
