@@ -375,9 +375,6 @@
             '../../boringssl/src/include',
           ],
           'sources!': [
-            'asyncinvoker.cc',
-            'asyncinvoker.h',
-            'asyncinvoker-inl.h',
             'atomicops.h',
             'bandwidthsmoother.cc',
             'bandwidthsmoother.h',

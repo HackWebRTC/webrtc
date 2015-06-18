@@ -15,20 +15,32 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/callback.h"
 #include "webrtc/base/ipaddress.h"
+#include "webrtc/base/network.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketaddress.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/typedefs.h"
 
+namespace rtc {
+class AsyncPacketSocket;
+class PacketSocketFactory;
+class Thread;
+class NetworkManager;
+}  // namespace rtc
+
 namespace stunprober {
+
+class StunProber;
 
 static const int kMaxUdpBufferSize = 1200;
 
-typedef rtc::Callback1<void, int> AsyncCallback;
+typedef rtc::Callback2<void, StunProber*, int> AsyncCallback;
 
 enum NatType {
   NATTYPE_INVALID,
@@ -38,104 +50,7 @@ enum NatType {
   NATTYPE_NON_SYMMETRIC  // Behind a non-symmetric NAT.
 };
 
-class HostNameResolverInterface {
- public:
-  HostNameResolverInterface() {}
-
-  // Resolve should allow re-entry as |callback| could trigger another
-  // Resolve().
-  virtual void Resolve(const rtc::SocketAddress& addr,
-                       std::vector<rtc::SocketAddress>* addresses,
-                       AsyncCallback callback) = 0;
-
-  virtual ~HostNameResolverInterface() {}
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(HostNameResolverInterface);
-};
-
-// Chrome has client and server socket. Client socket supports Connect but not
-// Bind. Server is opposite.
-class SocketInterface {
- public:
-  enum {
-    IO_PENDING = -1,
-    FAILED = -2,
-  };
-  SocketInterface() {}
-  virtual void Close() = 0;
-  virtual ~SocketInterface() {}
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(SocketInterface);
-};
-
-class ClientSocketInterface : public SocketInterface {
- public:
-  ClientSocketInterface() {}
-  // Even though we have SendTo and RecvFrom, if Connect is not called first,
-  // getsockname will only return 0.0.0.0.
-  virtual int Connect(const rtc::SocketAddress& addr) = 0;
-
-  virtual int GetLocalAddress(rtc::SocketAddress* local_address) = 0;
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(ClientSocketInterface);
-};
-
-class ServerSocketInterface : public SocketInterface {
- public:
-  ServerSocketInterface() {}
-
-  virtual int SendTo(const rtc::SocketAddress& addr,
-                     char* buf,
-                     size_t buf_len,
-                     AsyncCallback callback) = 0;
-
-  // If the returned value is positive, it means that buf has been
-  // sent. Otherwise, it should return IO_PENDING. Callback will be invoked
-  // after the data is successfully read into buf.
-  virtual int RecvFrom(char* buf,
-                       size_t buf_len,
-                       rtc::SocketAddress* addr,
-                       AsyncCallback callback) = 0;
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(ServerSocketInterface);
-};
-
-class SocketFactoryInterface {
- public:
-  SocketFactoryInterface() {}
-  // To provide a chance to prepare the sockets that we need. This is
-  // implemented for chrome renderer process as the socket needs to be ready to
-  // use in browser process.
-  virtual void Prepare(size_t total_client_socket,
-                       size_t total_server_socket,
-                       AsyncCallback callback) {
-    callback(0);
-  }
-  virtual ClientSocketInterface* CreateClientSocket() = 0;
-  virtual ServerSocketInterface* CreateServerSocket(
-      size_t send_buffer_size,
-      size_t receive_buffer_size) = 0;
-  virtual ~SocketFactoryInterface() {}
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(SocketFactoryInterface);
-};
-
-class TaskRunnerInterface {
- public:
-  TaskRunnerInterface() {}
-  virtual void PostTask(rtc::Callback0<void>, uint32_t delay_ms) = 0;
-  virtual ~TaskRunnerInterface() {}
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(TaskRunnerInterface);
-};
-
-class StunProber {
+class StunProber : public sigslot::has_slots<> {
  public:
   enum Status {       // Used in UMA_HISTOGRAM_ENUMERATION.
     SUCCESS,          // Successfully received bytes from the server.
@@ -167,11 +82,9 @@ class StunProber {
     std::set<std::string> srflx_addrs;
   };
 
-  // StunProber is not thread safe. It's task_runner's responsibility to ensure
-  // all calls happen sequentially.
-  StunProber(HostNameResolverInterface* host_name_resolver,
-             SocketFactoryInterface* socket_factory,
-             TaskRunnerInterface* task_runner);
+  StunProber(rtc::PacketSocketFactory* socket_factory,
+             rtc::Thread* thread,
+             const rtc::NetworkManager::NetworkList& networks);
   virtual ~StunProber();
 
   // Begin performing the probe test against the |servers|. If
@@ -203,16 +116,19 @@ class StunProber {
   // STUN servers.
   class Requester;
 
-  void OnServerResolved(int index, int result);
+  bool ResolveServerName(const rtc::SocketAddress& addr);
+  void OnServerResolved(rtc::AsyncResolverInterface* resolver);
+
+  void OnSocketReady(rtc::AsyncPacketSocket* socket,
+                     const rtc::SocketAddress& addr);
 
   bool Done() {
-    return num_request_sent_ >= requests_per_ip_ * all_servers_ips_.size();
+    return num_request_sent_ >= requests_per_ip_ * all_servers_addrs_.size();
   }
 
-  int GetTotalClientSockets() { return 1; }
-  int GetTotalServerSockets() {
-    return static_cast<int>(
-        (shared_socket_mode_ ? 1 : all_servers_ips_.size()) * requests_per_ip_);
+  size_t total_socket_required() {
+    return (shared_socket_mode_ ? 1 : all_servers_addrs_.size()) *
+           requests_per_ip_;
   }
 
   bool SendNextRequest();
@@ -223,14 +139,7 @@ class StunProber {
 
   // End the probe with the given |status|.  Invokes |fininsh_callback|, which
   // may destroy the class.
-  void End(StunProber::Status status, int result);
-
-  // Create a socket, connect to the first resolved server, and return the
-  // result of getsockname().  All Requesters will bind to this name. We do this
-  // because if a socket is not bound nor connected, getsockname will return
-  // 0.0.0.0. We can't connect to a single STUN server IP either as that will
-  // fail subsequent requests in shared mode.
-  int GetLocalAddress(rtc::IPAddress* addr);
+  void End(StunProber::Status status);
 
   Requester* CreateRequester();
 
@@ -256,19 +165,12 @@ class StunProber {
   // STUN server name to be resolved.
   std::vector<rtc::SocketAddress> servers_;
 
-  // The local address that each probing socket will be bound to.
-  rtc::IPAddress local_addr_;
+  // Weak references.
+  rtc::PacketSocketFactory* socket_factory_;
+  rtc::Thread* thread_;
 
-  // Owned pointers.
-  rtc::scoped_ptr<SocketFactoryInterface> socket_factory_;
-  rtc::scoped_ptr<HostNameResolverInterface> resolver_;
-  rtc::scoped_ptr<TaskRunnerInterface> task_runner_;
-
-  // Addresses filled out by HostNameResolver for a single server.
-  std::vector<rtc::SocketAddress> resolved_ips_;
-
-  // Accumulate all resolved IPs.
-  std::vector<rtc::SocketAddress> all_servers_ips_;
+  // Accumulate all resolved addresses.
+  std::vector<rtc::SocketAddress> all_servers_addrs_;
 
   // Caller-supplied callback executed when testing is completed, called by
   // End().
@@ -278,6 +180,15 @@ class StunProber {
   std::vector<Requester*> requesters_;
 
   rtc::ThreadChecker thread_checker_;
+
+  // Temporary storage for created sockets.
+  std::vector<rtc::AsyncPacketSocket*> sockets_;
+  // This tracks how many of the sockets are ready.
+  size_t total_ready_sockets_ = 0;
+
+  rtc::AsyncInvoker invoker_;
+
+  rtc::NetworkManager::NetworkList networks_;
 
   DISALLOW_COPY_AND_ASSIGN(StunProber);
 };

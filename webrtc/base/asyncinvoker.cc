@@ -64,6 +64,18 @@ void AsyncInvoker::DoInvoke(Thread* thread,
   thread->Post(this, id, new ScopedRefMessageData<AsyncClosure>(closure));
 }
 
+void AsyncInvoker::DoInvokeDelayed(Thread* thread,
+                                   const scoped_refptr<AsyncClosure>& closure,
+                                   uint32 delay_ms,
+                                   uint32 id) {
+  if (destroying_) {
+    LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
+    return;
+  }
+  thread->PostDelayed(delay_ms, this, id,
+                      new ScopedRefMessageData<AsyncClosure>(closure));
+}
+
 NotifyingAsyncClosureBase::NotifyingAsyncClosureBase(AsyncInvoker* invoker,
                                                      Thread* calling_thread)
     : invoker_(invoker), calling_thread_(calling_thread) {

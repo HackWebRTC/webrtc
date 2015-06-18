@@ -14,29 +14,22 @@
 
 #include <iostream>
 #include <map>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/flags.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/nethelpers.h"
+#include "webrtc/base/network.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.cc"
 #include "webrtc/p2p/stunprober/stunprober.h"
-#include "webrtc/p2p/stunprober/stunprober_dependencies.h"
 
-using stunprober::HostNameResolverInterface;
-using stunprober::TaskRunner;
-using stunprober::SocketFactory;
 using stunprober::StunProber;
 using stunprober::AsyncCallback;
-using stunprober::ClientSocketInterface;
-using stunprober::ServerSocketInterface;
-using stunprober::SocketFactory;
-using stunprober::TaskRunner;
 
 DEFINE_bool(help, false, "Prints this message");
 DEFINE_int(interval, 10, "Interval of consecutive stun pings in milliseconds");
@@ -53,58 +46,6 @@ DEFINE_string(
     "Comma separated STUN server addresses with ports");
 
 namespace {
-
-class HostNameResolver : public HostNameResolverInterface,
-                         public sigslot::has_slots<> {
- public:
-  HostNameResolver() {}
-  virtual ~HostNameResolver() {}
-
-  void Resolve(const rtc::SocketAddress& addr,
-               std::vector<rtc::SocketAddress>* addresses,
-               AsyncCallback callback) override {
-    resolver_ = new rtc::AsyncResolver();
-    DCHECK(callback_.empty());
-    addr_ = addr;
-    callback_ = callback;
-    result_ = addresses;
-    resolver_->SignalDone.connect(this, &HostNameResolver::OnResolveResult);
-    resolver_->Start(addr);
-  }
-
-  void OnResolveResult(rtc::AsyncResolverInterface* resolver) {
-    DCHECK(resolver);
-    int rv = resolver_->GetError();
-    LOG(LS_INFO) << "ResolveResult for " << addr_.ToString() << " : " << rv;
-    if (rv == 0 && result_) {
-      for (auto addr : resolver_->addresses()) {
-        rtc::SocketAddress ip(addr, addr_.port());
-        result_->push_back(ip);
-        LOG(LS_INFO) << "\t" << ip.ToString();
-      }
-    }
-    if (!callback_.empty()) {
-      // Need to be the last statement as the object could be deleted by the
-      // callback_ in the failure case.
-      AsyncCallback callback = callback_;
-      callback_ = AsyncCallback();
-
-      // rtc::AsyncResolver inherits from SignalThread which requires explicit
-      // Release().
-      resolver_->Release();
-      resolver_ = nullptr;
-      callback(rv);
-    }
-  }
-
- private:
-  AsyncCallback callback_;
-  rtc::SocketAddress addr_;
-  std::vector<rtc::SocketAddress>* result_;
-
-  // Not using smart ptr here as this requires specific release pattern.
-  rtc::AsyncResolver* resolver_;
-};
 
 const char* PrintNatType(stunprober::NatType type) {
   switch (type) {
@@ -178,10 +119,17 @@ int main(int argc, char** argv) {
   rtc::InitializeSSL();
   rtc::InitRandom(rtc::Time());
   rtc::Thread* thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
-  StunProber* prober = new StunProber(new HostNameResolver(),
-                                      new SocketFactory(), new TaskRunner());
-  auto finish_callback =
-      [thread, prober](int result) { StopTrial(thread, prober, result); };
+  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> socket_factory(
+      new rtc::BasicPacketSocketFactory());
+  rtc::scoped_ptr<rtc::BasicNetworkManager> network_manager(
+      new rtc::BasicNetworkManager());
+  rtc::NetworkManager::NetworkList networks;
+  network_manager->GetNetworks(&networks);
+  StunProber* prober =
+      new StunProber(socket_factory.get(), rtc::Thread::Current(), networks);
+  auto finish_callback = [thread](StunProber* prober, int result) {
+    StopTrial(thread, prober, result);
+  };
   prober->Start(server_addresses, FLAG_shared_socket, FLAG_interval,
                 FLAG_pings_per_ip, FLAG_timeout,
                 AsyncCallback(finish_callback));

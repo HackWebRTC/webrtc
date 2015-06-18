@@ -82,6 +82,18 @@ class AsyncInvoker : public MessageHandler {
     DoInvoke(thread, closure, id);
   }
 
+  // Call |functor| asynchronously on |thread| with |delay_ms|, with no callback
+  // upon completion. Returns immediately.
+  template <class ReturnT, class FunctorT>
+  void AsyncInvokeDelayed(Thread* thread,
+                          const FunctorT& functor,
+                          uint32 delay_ms,
+                          uint32 id = 0) {
+    scoped_refptr<AsyncClosure> closure(
+        new RefCountedObject<FireAndForgetAsyncClosure<FunctorT> >(functor));
+    DoInvokeDelayed(thread, closure, delay_ms, id);
+  }
+
   // Call |functor| asynchronously on |thread|, calling |callback| when done.
   template <class ReturnT, class FunctorT, class HostT>
   void AsyncInvoke(Thread* thread,
@@ -123,7 +135,10 @@ class AsyncInvoker : public MessageHandler {
   void OnMessage(Message* msg) override;
   void DoInvoke(Thread* thread, const scoped_refptr<AsyncClosure>& closure,
                 uint32 id);
-
+  void DoInvokeDelayed(Thread* thread,
+                       const scoped_refptr<AsyncClosure>& closure,
+                       uint32 delay_ms,
+                       uint32 id);
   bool destroying_;
 
   DISALLOW_COPY_AND_ASSIGN(AsyncInvoker);
