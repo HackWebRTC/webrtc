@@ -34,6 +34,7 @@ include_rules = [
   # WebRTC production code.
   '-base',
   '-chromium',
+  '+external/webrtc/webrtc',  # Android platform build.
   '+gflags',
   '+libyuv',
   '+net',
