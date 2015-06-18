@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_processing/agc/common.h"
+#include "webrtc/modules/audio_processing/vad/common.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -20,14 +20,14 @@ namespace webrtc {
 class AudioFrame;
 class PoleZeroFilter;
 
-class AgcAudioProc {
+class VadAudioProc {
  public:
   // Forward declare iSAC structs.
   struct PitchAnalysisStruct;
   struct PreFiltBankstr;
 
-  AgcAudioProc();
-  ~AgcAudioProc();
+  VadAudioProc();
+  ~VadAudioProc();
 
   int ExtractFeatures(const int16_t* audio_frame,
                       int length,
@@ -55,7 +55,8 @@ class AgcAudioProc {
 
   static const int kNum10msSubframes = 3;
   static const int kNumSubframeSamples = kSampleRateHz / 100;
-  static const int kNumSamplesToProcess = kNum10msSubframes *
+  static const int kNumSamplesToProcess =
+      kNum10msSubframes *
       kNumSubframeSamples;  // Samples in 30 ms @ given sampling rate.
   static const int kBufferLength = kNumPastSignalSamples + kNumSamplesToProcess;
   static const int kIpLength = kDftSize >> 1;
@@ -80,4 +81,4 @@ class AgcAudioProc {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_

@@ -321,7 +321,7 @@ void AgcManagerDirect::SetCaptureMuted(bool muted) {
 }
 
 float AgcManagerDirect::voice_probability() {
-  return static_cast<float>(agc_->voice_probability());
+  return agc_->voice_probability();
 }
 
 int AgcManagerDirect::CheckVolumeAndReset() {
