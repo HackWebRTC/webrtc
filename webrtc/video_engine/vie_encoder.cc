@@ -163,8 +163,9 @@ bool ViEEncoder::Init() {
       CriticalSectionScoped cs(data_cs_.get());
       send_padding_ = video_codec.numberOfSimulcastStreams > 1;
     }
-    if (vcm_->RegisterSendCodec(&video_codec, number_of_cores_,
-                                PayloadRouter::DefaultMaxPayloadLength()) !=
+    if (vcm_->RegisterSendCodec(
+            &video_codec, number_of_cores_,
+            static_cast<uint32_t>(PayloadRouter::DefaultMaxPayloadLength())) !=
         0) {
       return false;
     }
@@ -298,8 +299,9 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
     // for realz.  https://code.google.com/p/chromium/issues/detail?id=348222
     current_send_codec.extra_options = NULL;
     size_t max_data_payload_length = send_payload_router_->MaxPayloadLength();
-    if (vcm_->RegisterSendCodec(&current_send_codec, number_of_cores_,
-                                max_data_payload_length) != VCM_OK) {
+    if (vcm_->RegisterSendCodec(
+            &current_send_codec, number_of_cores_,
+            static_cast<uint32_t>(max_data_payload_length)) != VCM_OK) {
       LOG(LS_INFO) << "De-registered the currently used external encoder ("
                    << static_cast<int>(pl_type) << ") and therefore tried to "
                    << "register the corresponding internal encoder, but none "
@@ -354,7 +356,8 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
 
   size_t max_data_payload_length = send_payload_router_->MaxPayloadLength();
   if (vcm_->RegisterSendCodec(&modified_video_codec, number_of_cores_,
-                              max_data_payload_length) != VCM_OK) {
+                              static_cast<uint32_t>(max_data_payload_length)) !=
+      VCM_OK) {
     return -1;
   }
   return 0;
@@ -627,7 +630,8 @@ int32_t ViEEncoder::UpdateProtectionMethod(bool nack, bool fec) {
       codec.startBitrate = (current_bitrate_bps + 500) / 1000;
       size_t max_payload_length = send_payload_router_->MaxPayloadLength();
       if (vcm_->RegisterSendCodec(&codec, number_of_cores_,
-                                  max_payload_length) != 0) {
+                                  static_cast<uint32_t>(max_payload_length)) !=
+          0) {
         return -1;
       }
     }

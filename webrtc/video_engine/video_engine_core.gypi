@@ -66,8 +66,6 @@
         'vie_remb.cc',
         'vie_sync_module.cc',
       ], # source
-      # TODO(jschuh): Bug 1348: fix size_t to int truncations.
-      'msvs_disabled_warnings': [ 4267, ],
     },
   ], # targets
   'conditions': [

@@ -70,8 +70,8 @@ RTCPReportBlock ReportBlockStats::AggregateAndStore(
   // Fraction lost since previous report block.
   aggregate.fractionLost =
       FractionLost(num_lost_sequence_numbers, num_sequence_numbers);
-  aggregate.jitter =
-      (aggregate.jitter + report_blocks.size() / 2) / report_blocks.size();
+  aggregate.jitter = static_cast<uint32_t>(
+      (aggregate.jitter + report_blocks.size() / 2) / report_blocks.size());
   return aggregate;
 }
 

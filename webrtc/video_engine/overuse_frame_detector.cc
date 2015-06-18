@@ -250,7 +250,7 @@ class OveruseFrameDetector::FrameQueue {
   }
 
   void Reset() { frame_times_.clear(); }
-  int NumFrames() const { return frame_times_.size(); }
+  int NumFrames() const { return static_cast<int>(frame_times_.size()); }
   int last_processing_time_ms() const { return last_processing_time_ms_; }
 
  private:

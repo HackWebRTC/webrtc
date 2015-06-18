@@ -271,23 +271,32 @@ void ViEChannel::UpdateHistograms() {
     rtp_rtx.Add(rtx);
     elapsed_sec = rtp_rtx.TimeSinceFirstPacketInMs(now) / 1000;
     if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
-      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.BitrateReceivedInKbps",
-          rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
-      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateReceivedInKbps",
-          rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000);
-      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateReceivedInKbps",
-          rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec / 1000);
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Video.BitrateReceivedInKbps",
+          static_cast<int>(rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
+                           1000));
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Video.MediaBitrateReceivedInKbps",
+          static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000));
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Video.PaddingBitrateReceivedInKbps",
+          static_cast<int>(rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec /
+                           1000));
       RTC_HISTOGRAM_COUNTS_10000(
           "WebRTC.Video.RetransmittedBitrateReceivedInKbps",
-              rtp_rtx.retransmitted.TotalBytes() * 8 / elapsed_sec / 1000);
+          static_cast<int>(rtp_rtx.retransmitted.TotalBytes() * 8 /
+                           elapsed_sec / 1000));
       uint32_t ssrc = 0;
       if (vie_receiver_.GetRtxSsrc(&ssrc)) {
-        RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
-            rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
+        RTC_HISTOGRAM_COUNTS_10000(
+            "WebRTC.Video.RtxBitrateReceivedInKbps",
+            static_cast<int>(rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
+                             1000));
       }
       if (vie_receiver_.IsFecEnabled()) {
         RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FecBitrateReceivedInKbps",
-            rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000);
+                                   static_cast<int>(rtp_rtx.fec.TotalBytes() *
+                                                    8 / elapsed_sec / 1000));
       }
     }
   }
@@ -305,25 +314,34 @@ void ViEChannel::UpdateHistogramsAtStopSend() {
   if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
     return;
   }
-  RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.BitrateSentInKbps",
-      rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
-  RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateSentInKbps",
-      rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000);
-  RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateSentInKbps",
-      rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec / 1000);
-  RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RetransmittedBitrateSentInKbps",
-      rtp_rtx.retransmitted.TotalBytes() * 8 / elapsed_sec / 1000);
+  RTC_HISTOGRAM_COUNTS_100000(
+      "WebRTC.Video.BitrateSentInKbps",
+      static_cast<int>(rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
+                       1000));
+  RTC_HISTOGRAM_COUNTS_10000(
+      "WebRTC.Video.MediaBitrateSentInKbps",
+      static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000));
+  RTC_HISTOGRAM_COUNTS_10000(
+      "WebRTC.Video.PaddingBitrateSentInKbps",
+      static_cast<int>(rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec /
+                       1000));
+  RTC_HISTOGRAM_COUNTS_10000(
+      "WebRTC.Video.RetransmittedBitrateSentInKbps",
+      static_cast<int>(rtp_rtx.retransmitted.TotalBytes() * 8 / elapsed_sec /
+                       1000));
   if (rtp_rtcp_->RtxSendStatus() != kRtxOff) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateSentInKbps",
-        rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
+                               static_cast<int>(rtx.transmitted.TotalBytes() *
+                                                8 / elapsed_sec / 1000));
   }
   bool fec_enabled = false;
   uint8_t pltype_red;
   uint8_t pltype_fec;
   rtp_rtcp_->GenericFECStatus(fec_enabled, pltype_red, pltype_fec);
   if (fec_enabled) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FecBitrateSentInKbps",
-        rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000);
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.FecBitrateSentInKbps",
+        static_cast<int>(rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000));
   }
 }
 
@@ -375,8 +393,8 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
     if (video_codec.numberOfSimulcastStreams > 0) {
       // Set correct bitrate to base layer.
       // Create our simulcast RTP modules.
-      int num_modules_to_add =
-          video_codec.numberOfSimulcastStreams - simulcast_rtp_rtcp_.size() - 1;
+      int num_modules_to_add = video_codec.numberOfSimulcastStreams -
+                               static_cast<int>(simulcast_rtp_rtcp_.size()) - 1;
       if (num_modules_to_add < 0) {
         num_modules_to_add = 0;
       }
@@ -425,8 +443,9 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       }
 
       // Remove last in list if we have too many.
-      for (int j = simulcast_rtp_rtcp_.size();
-           j > (video_codec.numberOfSimulcastStreams - 1); j--) {
+      for (size_t j = simulcast_rtp_rtcp_.size();
+           j > static_cast<size_t>(video_codec.numberOfSimulcastStreams - 1);
+           j--) {
         RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
         deregistered_modules.push_back(rtp_rtcp);
         rtp_rtcp->SetSendingStatus(false);
