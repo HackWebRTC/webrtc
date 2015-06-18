@@ -235,7 +235,10 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
   aecpc->checkBuffSize = 1;
   aecpc->firstVal = 0;
 
-  aecpc->startup_phase = WebRtcAec_reported_delay_enabled(aecpc->aec);
+  // We skip the startup_phase completely (setting to 0) if DA-AEC is enabled,
+  // but not extended_filter mode.
+  aecpc->startup_phase = WebRtcAec_extended_filter_enabled(aecpc->aec) ||
+      WebRtcAec_reported_delay_enabled(aecpc->aec);
   aecpc->bufSizeStart = 0;
   aecpc->checkBufSizeCtr = 0;
   aecpc->msInSndCardBuf = 0;
@@ -718,9 +721,7 @@ static int ProcessNormal(Aec* aecpc,
     }
   } else {
     // AEC is enabled.
-    if (WebRtcAec_reported_delay_enabled(aecpc->aec)) {
-      EstBufDelayNormal(aecpc);
-    }
+    EstBufDelayNormal(aecpc);
 
     // Call the AEC.
     // TODO(bjornv): Re-structure such that we don't have to pass
@@ -782,12 +783,13 @@ static void ProcessExtended(Aec* self,
     // measurement.
     int startup_size_ms =
         reported_delay_ms < kFixedDelayMs ? kFixedDelayMs : reported_delay_ms;
+#if defined(WEBRTC_ANDROID)
     int target_delay = startup_size_ms * self->rate_factor * 8;
-#if !defined(WEBRTC_ANDROID)
+#else
     // To avoid putting the AEC in a non-causal state we're being slightly
     // conservative and scale by 2. On Android we use a fixed delay and
     // therefore there is no need to scale the target_delay.
-    target_delay /= 2;
+    int target_delay = startup_size_ms * self->rate_factor * 8 / 2;
 #endif
     int overhead_elements =
         (WebRtcAec_system_delay(self->aec) - target_delay) / PART_LEN;
@@ -795,9 +797,7 @@ static void ProcessExtended(Aec* self,
     self->startup_phase = 0;
   }
 
-  if (WebRtcAec_reported_delay_enabled(self->aec)) {
-    EstBufDelayExtended(self);
-  }
+  EstBufDelayExtended(self);
 
   {
     // |delay_diff_offset| gives us the option to manually rewind the delay on
