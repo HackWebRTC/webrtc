@@ -52,12 +52,14 @@ class AudioEncoderOpus final : public AudioEncoder {
   size_t MaxEncodedBytes() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
+  int GetTargetBitrate() const override;
   void SetTargetBitrate(int bits_per_second) override;
   void SetProjectedPacketLossRate(double fraction) override;
 
   double packet_loss_rate() const { return packet_loss_rate_; }
   ApplicationMode application() const { return application_; }
   bool dtx_enabled() const { return dtx_enabled_; }
+
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
                              size_t max_encoded_bytes,

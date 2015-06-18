@@ -52,6 +52,7 @@ class AudioEncoderCng final : public AudioEncoder {
   int RtpTimestampRateHz() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
+  int GetTargetBitrate() const override;
   void SetTargetBitrate(int bits_per_second) override;
   void SetProjectedPacketLossRate(double fraction) override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,

@@ -82,6 +82,10 @@ class AudioEncoderMutableImpl : public P {
     CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->Max10MsFramesInAPacket();
   }
+  int GetTargetBitrate() const override {
+    CriticalSectionScoped cs(encoder_lock_.get());
+    return encoder_->GetTargetBitrate();
+  }
   void SetTargetBitrate(int bits_per_second) override {
     CriticalSectionScoped cs(encoder_lock_.get());
     encoder_->SetTargetBitrate(bits_per_second);

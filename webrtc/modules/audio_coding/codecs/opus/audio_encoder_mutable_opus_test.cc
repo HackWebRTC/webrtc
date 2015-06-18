@@ -79,6 +79,30 @@ TEST_F(AudioEncoderMutableOpusTest, ToggleDtx) {
   // Turn off DTX.
   EXPECT_TRUE(encoder_->SetDtx(false));
 }
+
+TEST_F(AudioEncoderMutableOpusTest, SetBitrate) {
+  CreateCodec(1);
+  // Constants are replicated from audio_encoder_opus.cc.
+  const int kMinBitrateBps = 500;
+  const int kMaxBitrateBps = 512000;
+  // Set a too low bitrate.
+  encoder_->SetTargetBitrate(kMinBitrateBps - 1);
+  EXPECT_EQ(kMinBitrateBps, encoder_->GetTargetBitrate());
+  // Set a too high bitrate.
+  encoder_->SetTargetBitrate(kMaxBitrateBps + 1);
+  EXPECT_EQ(kMaxBitrateBps, encoder_->GetTargetBitrate());
+  // Set the minimum rate.
+  encoder_->SetTargetBitrate(kMinBitrateBps);
+  EXPECT_EQ(kMinBitrateBps, encoder_->GetTargetBitrate());
+  // Set the maximum rate.
+  encoder_->SetTargetBitrate(kMaxBitrateBps);
+  EXPECT_EQ(kMaxBitrateBps, encoder_->GetTargetBitrate());
+  // Set rates from 1000 up to 32000 bps.
+  for (int rate = 1000; rate <= 32000; rate += 1000) {
+    encoder_->SetTargetBitrate(rate);
+    EXPECT_EQ(rate, encoder_->GetTargetBitrate());
+  }
+}
 #endif  // WEBRTC_CODEC_OPUS
 
 }  // namespace acm2

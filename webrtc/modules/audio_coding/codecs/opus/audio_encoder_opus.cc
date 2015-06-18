@@ -129,6 +129,10 @@ int AudioEncoderOpus::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
+int AudioEncoderOpus::GetTargetBitrate() const {
+  return bitrate_bps_;
+}
+
 void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
   bitrate_bps_ = std::max(std::min(bits_per_second, kMaxBitrateBps),
                           kMinBitrateBps);

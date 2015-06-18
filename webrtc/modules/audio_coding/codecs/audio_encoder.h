@@ -96,6 +96,11 @@ class AudioEncoder {
   // Num10MsFramesInNextPacket().
   virtual int Max10MsFramesInAPacket() const = 0;
 
+  // Returns the current target bitrate in bits/s. The value -1 means that the
+  // codec adapts the target automatically, and a current target cannot be
+  // provided.
+  virtual int GetTargetBitrate() const = 0;
+
   // Changes the target bitrate. The implementation is free to alter this value,
   // e.g., if the desired value is outside the valid range.
   virtual void SetTargetBitrate(int bits_per_second) {}

@@ -17,7 +17,7 @@
 
 namespace webrtc {
 
-class AudioEncoderPcm16B : public AudioEncoderPcm {
+class AudioEncoderPcm16B final : public AudioEncoderPcm {
  public:
   struct Config : public AudioEncoderPcm::Config {
    public:
@@ -34,6 +34,8 @@ class AudioEncoderPcm16B : public AudioEncoderPcm {
   int16_t EncodeCall(const int16_t* audio,
                      size_t input_len,
                      uint8_t* encoded) override;
+
+  int BytesPerSample() const override;
 };
 
 struct CodecInst;

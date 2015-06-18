@@ -49,6 +49,10 @@ int AudioEncoderCopyRed::Max10MsFramesInAPacket() const {
   return speech_encoder_->Max10MsFramesInAPacket();
 }
 
+int AudioEncoderCopyRed::GetTargetBitrate() const {
+  return speech_encoder_->GetTargetBitrate();
+}
+
 void AudioEncoderCopyRed::SetTargetBitrate(int bits_per_second) {
   speech_encoder_->SetTargetBitrate(bits_per_second);
 }

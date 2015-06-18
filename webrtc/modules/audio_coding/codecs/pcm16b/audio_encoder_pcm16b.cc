@@ -29,6 +29,10 @@ int16_t AudioEncoderPcm16B::EncodeCall(const int16_t* audio,
   return WebRtcPcm16b_Encode(audio, static_cast<int16_t>(input_len), encoded);
 }
 
+int AudioEncoderPcm16B::BytesPerSample() const {
+  return 2;
+}
+
 namespace {
 AudioEncoderPcm16B::Config CreateConfig(const CodecInst& codec_inst) {
   AudioEncoderPcm16B::Config config;

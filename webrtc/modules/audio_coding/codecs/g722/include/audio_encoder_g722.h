@@ -19,7 +19,7 @@
 
 namespace webrtc {
 
-class AudioEncoderG722 : public AudioEncoder {
+class AudioEncoderG722 final : public AudioEncoder {
  public:
   struct Config {
     Config() : payload_type(9), frame_size_ms(20), num_channels(1) {}
@@ -39,6 +39,7 @@ class AudioEncoderG722 : public AudioEncoder {
   int RtpTimestampRateHz() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
+  int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
                              size_t max_encoded_bytes,

@@ -18,7 +18,7 @@
 
 namespace webrtc {
 
-class AudioEncoderIlbc : public AudioEncoder {
+class AudioEncoderIlbc final : public AudioEncoder {
  public:
   struct Config {
     Config() : payload_type(102), frame_size_ms(30) {}
@@ -38,6 +38,7 @@ class AudioEncoderIlbc : public AudioEncoder {
   size_t MaxEncodedBytes() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
+  int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
                              size_t max_encoded_bytes,

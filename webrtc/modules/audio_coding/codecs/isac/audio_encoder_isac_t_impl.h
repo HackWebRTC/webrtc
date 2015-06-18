@@ -70,16 +70,18 @@ AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(const Config& config)
       state_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       decoder_sample_rate_hz_(0),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      packet_in_progress_(false) {
+      packet_in_progress_(false),
+      target_bitrate_bps_(config.adaptive_mode ? -1 : (config.bit_rate == 0
+                                                           ? kDefaultBitRate
+                                                           : config.bit_rate)) {
   CHECK(config.IsOk());
   CHECK_EQ(0, T::Create(&isac_state_));
   CHECK_EQ(0, T::EncoderInit(isac_state_, config.adaptive_mode ? 0 : 1));
   CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
   const int bit_rate = config.bit_rate == 0 ? kDefaultBitRate : config.bit_rate;
   if (config.adaptive_mode) {
-    CHECK_EQ(0, T::ControlBwe(isac_state_, bit_rate,
-                              config.frame_size_ms, config.enforce_frame_size));
-
+    CHECK_EQ(0, T::ControlBwe(isac_state_, bit_rate, config.frame_size_ms,
+                              config.enforce_frame_size));
   } else {
     CHECK_EQ(0, T::Control(isac_state_, bit_rate, config.frame_size_ms));
   }
@@ -127,6 +129,11 @@ int AudioEncoderDecoderIsacT<T>::Num10MsFramesInNextPacket() const {
 template <typename T>
 int AudioEncoderDecoderIsacT<T>::Max10MsFramesInAPacket() const {
   return 6;  // iSAC puts at most 60 ms in a packet.
+}
+
+template <typename T>
+int AudioEncoderDecoderIsacT<T>::GetTargetBitrate() const {
+  return target_bitrate_bps_;
 }
 
 template <typename T>

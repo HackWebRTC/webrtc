@@ -485,6 +485,24 @@ TEST_F(AudioDecoderPcmUTest, EncodeDecode) {
   EXPECT_FALSE(decoder_->HasDecodePlc());
 }
 
+namespace {
+int SetAndGetTargetBitrate(AudioEncoder* audio_encoder, int rate) {
+  audio_encoder->SetTargetBitrate(rate);
+  return audio_encoder->GetTargetBitrate();
+}
+void TestSetAndGetTargetBitratesWithFixedCodec(AudioEncoder* audio_encoder,
+                                               int fixed_rate) {
+  EXPECT_EQ(fixed_rate, SetAndGetTargetBitrate(audio_encoder, 32000));
+  EXPECT_EQ(fixed_rate, SetAndGetTargetBitrate(audio_encoder, fixed_rate - 1));
+  EXPECT_EQ(fixed_rate, SetAndGetTargetBitrate(audio_encoder, fixed_rate));
+  EXPECT_EQ(fixed_rate, SetAndGetTargetBitrate(audio_encoder, fixed_rate + 1));
+}
+}  // namespace
+
+TEST_F(AudioDecoderPcmUTest, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 64000);
+}
+
 TEST_F(AudioDecoderPcmATest, EncodeDecode) {
   int tolerance = 308;
   double mse = 1931.0;
@@ -492,6 +510,10 @@ TEST_F(AudioDecoderPcmATest, EncodeDecode) {
   EncodeDecodeTest(data_length_, tolerance, mse);
   ReInitTest();
   EXPECT_FALSE(decoder_->HasDecodePlc());
+}
+
+TEST_F(AudioDecoderPcmATest, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 64000);
 }
 
 TEST_F(AudioDecoderPcm16BTest, EncodeDecode) {
@@ -506,6 +528,11 @@ TEST_F(AudioDecoderPcm16BTest, EncodeDecode) {
   EXPECT_FALSE(decoder_->HasDecodePlc());
 }
 
+TEST_F(AudioDecoderPcm16BTest, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(),
+                                            codec_input_rate_hz_ * 16);
+}
+
 TEST_F(AudioDecoderIlbcTest, EncodeDecode) {
   int tolerance = 6808;
   double mse = 2.13e6;
@@ -515,6 +542,10 @@ TEST_F(AudioDecoderIlbcTest, EncodeDecode) {
   ReInitTest();
   EXPECT_TRUE(decoder_->HasDecodePlc());
   DecodePlcTest();
+}
+
+TEST_F(AudioDecoderIlbcTest, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 13333);
 }
 
 TEST_F(AudioDecoderIsacFloatTest, EncodeDecode) {
@@ -527,6 +558,10 @@ TEST_F(AudioDecoderIsacFloatTest, EncodeDecode) {
   EXPECT_FALSE(decoder_->HasDecodePlc());
 }
 
+TEST_F(AudioDecoderIsacFloatTest, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 32000);
+}
+
 TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   int tolerance = 19757;
   double mse = 8.18e6;
@@ -535,6 +570,10 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
   EXPECT_FALSE(decoder_->HasDecodePlc());
+}
+
+TEST_F(AudioDecoderIsacSwbTest, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 32000);
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4198
@@ -558,6 +597,10 @@ TEST_F(AudioDecoderIsacFixTest, MAYBE_EncodeDecode) {
   EXPECT_FALSE(decoder_->HasDecodePlc());
 }
 
+TEST_F(AudioDecoderIsacFixTest, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 32000);
+}
+
 TEST_F(AudioDecoderG722Test, EncodeDecode) {
   int tolerance = 6176;
   double mse = 238630.0;
@@ -566,6 +609,10 @@ TEST_F(AudioDecoderG722Test, EncodeDecode) {
   EncodeDecodeTest(data_length_ / 2, tolerance, mse, delay);
   ReInitTest();
   EXPECT_FALSE(decoder_->HasDecodePlc());
+}
+
+TEST_F(AudioDecoderG722Test, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 64000);
 }
 
 TEST_F(AudioDecoderG722StereoTest, CreateAndDestroy) {
@@ -583,6 +630,10 @@ TEST_F(AudioDecoderG722StereoTest, EncodeDecode) {
   EXPECT_FALSE(decoder_->HasDecodePlc());
 }
 
+TEST_F(AudioDecoderG722StereoTest, SetTargetBitrate) {
+  TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 128000);
+}
+
 TEST_F(AudioDecoderOpusTest, EncodeDecode) {
   int tolerance = 6176;
   double mse = 238630.0;
@@ -591,6 +642,20 @@ TEST_F(AudioDecoderOpusTest, EncodeDecode) {
   EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
   EXPECT_FALSE(decoder_->HasDecodePlc());
+}
+
+namespace {
+void TestOpusSetTargetBitrates(AudioEncoder* audio_encoder) {
+  EXPECT_EQ(500, SetAndGetTargetBitrate(audio_encoder, 499));
+  EXPECT_EQ(500, SetAndGetTargetBitrate(audio_encoder, 500));
+  EXPECT_EQ(32000, SetAndGetTargetBitrate(audio_encoder, 32000));
+  EXPECT_EQ(512000, SetAndGetTargetBitrate(audio_encoder, 512000));
+  EXPECT_EQ(512000, SetAndGetTargetBitrate(audio_encoder, 513000));
+}
+}  // namespace
+
+TEST_F(AudioDecoderOpusTest, SetTargetBitrate) {
+  TestOpusSetTargetBitrates(audio_encoder_.get());
 }
 
 TEST_F(AudioDecoderOpusStereoTest, EncodeDecode) {
@@ -602,6 +667,10 @@ TEST_F(AudioDecoderOpusStereoTest, EncodeDecode) {
   EncodeDecodeTest(0, tolerance, mse, delay, channel_diff_tolerance);
   ReInitTest();
   EXPECT_FALSE(decoder_->HasDecodePlc());
+}
+
+TEST_F(AudioDecoderOpusStereoTest, SetTargetBitrate) {
+  TestOpusSetTargetBitrates(audio_encoder_.get());
 }
 
 TEST(AudioDecoder, CodecSampleRateHz) {
