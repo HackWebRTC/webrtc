@@ -338,7 +338,7 @@ def CheckChangeOnCommit(input_api, output_api):
 # pylint: disable=W0613
 def GetPreferredTryMasters(project, change):
   cq_config_path = os.path.join(
-      change.RepositoryRoot(), 'infra', 'config', 'cq.cfg')
+      change.RepositoryRoot(), 'infra', 'config', 'cq_disabled.cfg')
   # commit_queue.py below is a script in depot_tools directory, which has a
   # 'builders' command to retrieve a list of CQ builders from the CQ config.
   is_win = platform.system() == 'Windows'
