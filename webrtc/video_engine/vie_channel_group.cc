@@ -55,10 +55,11 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
   void IncomingPacket(int64_t arrival_time_ms,
                       size_t payload_size,
-                      const RTPHeader& header) override {
+                      const RTPHeader& header,
+                      bool was_paced) override {
     CriticalSectionScoped cs(crit_sect_.get());
     PickEstimatorFromHeader(header);
-    rbe_->IncomingPacket(arrival_time_ms, payload_size, header);
+    rbe_->IncomingPacket(arrival_time_ms, payload_size, header, was_paced);
   }
 
   int32_t Process() override {

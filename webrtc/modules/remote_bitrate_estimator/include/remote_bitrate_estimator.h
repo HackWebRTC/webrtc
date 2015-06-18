@@ -67,11 +67,13 @@ struct PacketInfo {
   PacketInfo(int64_t arrival_time_ms,
              int64_t send_time_ms,
              uint16_t sequence_number,
-             size_t payload_size)
+             size_t payload_size,
+             bool was_paced)
       : arrival_time_ms(arrival_time_ms),
         send_time_ms(send_time_ms),
         sequence_number(sequence_number),
-        payload_size(payload_size) {}
+        payload_size(payload_size),
+        was_paced(was_paced) {}
   // Time corresponding to when the packet was received. Timestamped with the
   // receiver's clock.
   int64_t arrival_time_ms;
@@ -83,6 +85,8 @@ struct PacketInfo {
   uint16_t sequence_number;
   // Size of the packet excluding RTP headers.
   size_t payload_size;
+  // True if the packet was paced out by the pacer.
+  bool was_paced;
 };
 
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
@@ -101,7 +105,8 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   // Note that |arrival_time_ms| can be of an arbitrary time base.
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               size_t payload_size,
-                              const RTPHeader& header) = 0;
+                              const RTPHeader& header,
+                              bool was_paced) = 0;
 
   // Removes all data for |ssrc|.
   virtual void RemoveStream(unsigned int ssrc) = 0;

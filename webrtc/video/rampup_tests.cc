@@ -121,8 +121,8 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
   payload_registry_->SetIncomingPayloadType(header);
-  remote_bitrate_estimator_->IncomingPacket(
-      clock_->TimeInMilliseconds(), length - 12, header);
+  remote_bitrate_estimator_->IncomingPacket(clock_->TimeInMilliseconds(),
+                                            length - 12, header, true);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
     remote_bitrate_estimator_->Process();
   }
@@ -267,8 +267,8 @@ PacketReceiver::DeliveryStatus LowRateStreamObserver::DeliverPacket(
   RTPHeader header;
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
-  remote_bitrate_estimator_->IncomingPacket(
-      clock_->TimeInMilliseconds(), length - 12, header);
+  remote_bitrate_estimator_->IncomingPacket(clock_->TimeInMilliseconds(),
+                                            length - 12, header, true);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
     remote_bitrate_estimator_->Process();
   }

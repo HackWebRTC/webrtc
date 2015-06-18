@@ -116,7 +116,8 @@ class RemoteBitrateEstimatorAbsSendTimeImpl : public RemoteBitrateEstimator {
 
   void IncomingPacket(int64_t arrival_time_ms,
                       size_t payload_size,
-                      const RTPHeader& header) override;
+                      const RTPHeader& header,
+                      bool was_paced) override;
   // This class relies on Process() being called periodically (at least once
   // every other second) for streams to be timed out properly. Therefore it
   // shouldn't be detached from the ProcessThread except if it's about to be
@@ -155,7 +156,8 @@ class RemoteBitrateEstimatorAbsSendTimeImpl : public RemoteBitrateEstimator {
   void IncomingPacketInfo(int64_t arrival_time_ms,
                           uint32_t send_time_24bits,
                           size_t payload_size,
-                          uint32_t ssrc);
+                          uint32_t ssrc,
+                          bool was_paced);
 
   bool IsProbe(int64_t send_time_ms, int payload_size) const
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get());
@@ -338,27 +340,29 @@ void RemoteBitrateEstimatorAbsSendTimeImpl::IncomingPacketFeedbackVector(
     uint32_t send_time_24bits =
         send_time_32bits >> kAbsSendTimeInterArrivalUpshift;
     IncomingPacketInfo(packet_info.arrival_time_ms, send_time_24bits,
-                       packet_info.payload_size, 0);
+                       packet_info.payload_size, 0, packet_info.was_paced);
   }
 }
 
 void RemoteBitrateEstimatorAbsSendTimeImpl::IncomingPacket(
     int64_t arrival_time_ms,
     size_t payload_size,
-    const RTPHeader& header) {
+    const RTPHeader& header,
+    bool was_paced) {
   if (!header.extension.hasAbsoluteSendTime) {
     LOG(LS_WARNING) << "RemoteBitrateEstimatorAbsSendTimeImpl: Incoming packet "
                        "is missing absolute send time extension!";
   }
   IncomingPacketInfo(arrival_time_ms, header.extension.absoluteSendTime,
-                     payload_size, header.ssrc);
+                     payload_size, header.ssrc, was_paced);
 }
 
 void RemoteBitrateEstimatorAbsSendTimeImpl::IncomingPacketInfo(
     int64_t arrival_time_ms,
     uint32_t send_time_24bits,
     size_t payload_size,
-    uint32_t ssrc) {
+    uint32_t ssrc,
+    bool was_paced) {
   assert(send_time_24bits < (1ul << 24));
   // Shift up send time to use the full 32 bits that inter_arrival works with,
   // so wrapping works properly.
@@ -380,8 +384,9 @@ void RemoteBitrateEstimatorAbsSendTimeImpl::IncomingPacketInfo(
   int64_t t_delta = 0;
   int size_delta = 0;
   // For now only try to detect probes while we don't have a valid estimate.
-  if (!remote_rate_->ValidEstimate() ||
-      now_ms - first_packet_time_ms_ < kInitialProbingIntervalMs) {
+  if (was_paced &&
+      (!remote_rate_->ValidEstimate() ||
+       now_ms - first_packet_time_ms_ < kInitialProbingIntervalMs)) {
     // TODO(holmer): Use a map instead to get correct order?
     if (total_probes_received_ < kMaxProbePackets) {
       int send_delta_ms = -1;

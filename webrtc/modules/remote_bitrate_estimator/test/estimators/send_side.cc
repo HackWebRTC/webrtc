@@ -126,7 +126,7 @@ void SendSideBweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                         const MediaPacket& media_packet) {
   packet_feedback_vector_.push_back(PacketInfo(
       arrival_time_ms, media_packet.sender_timestamp_us() / 1000,
-      media_packet.header().sequenceNumber, media_packet.payload_size()));
+      media_packet.header().sequenceNumber, media_packet.payload_size(), true));
 
   received_packets_.Insert(media_packet.sequence_number(),
                            media_packet.send_time_ms(), arrival_time_ms,
