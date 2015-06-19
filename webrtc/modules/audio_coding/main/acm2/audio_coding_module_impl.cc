@@ -272,6 +272,11 @@ int AudioCodingModuleImpl::SendFrequency() const {
 // TODO(henrik.lundin): Remove; not used.
 int AudioCodingModuleImpl::SendBitrate() const {
   FATAL() << "Deprecated";
+  // This return statement is required to workaround a bug in VS2013 Update 4
+  // when turning on the whole program optimizations. Without hit the linker
+  // will hang because it doesn't seem to find an exit path for this function.
+  // This is likely a bug in link.exe and would probably be fixed in VS2015.
+  return -1;
   //  CriticalSectionScoped lock(acm_crit_sect_);
   //
   //  if (!codec_manager_.current_encoder()) {
