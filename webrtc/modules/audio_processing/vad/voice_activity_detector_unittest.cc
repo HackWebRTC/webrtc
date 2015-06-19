@@ -21,7 +21,7 @@ namespace {
 
 const int kStartTimeSec = 16;
 const float kMeanSpeechProbability = 0.3f;
-const float kMaxNoiseProbability = 0.1f;
+const float kMaxNoiseProbability = 0.07f;
 const size_t kNumChunks = 300u;
 const size_t kNumChunksPerIsacBlock = 3;
 
