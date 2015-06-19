@@ -8,21 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/vad/pitch_based_vad.h"
+#include "webrtc/modules/audio_processing/agc/pitch_based_vad.h"
 
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 
-#include <string>
-
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 
 TEST(PitchBasedVadTest, VoicingProbabilityTest) {
-  std::string spectral_peak_file_name =
-      test::ResourcePath("audio_processing/agc/agc_spectral_peak", "dat");
+  std::string spectral_peak_file_name = test::ResourcePath(
+      "audio_processing/agc/agc_spectral_peak", "dat");
   FILE* spectral_peak_file = fopen(spectral_peak_file_name.c_str(), "rb");
   ASSERT_TRUE(spectral_peak_file != NULL);
 
@@ -52,15 +51,12 @@ TEST(PitchBasedVadTest, VoicingProbabilityTest) {
                sizeof(audio_features.spectral_peak[0]), 1,
                spectral_peak_file) == 1u) {
     double p;
-    ASSERT_EQ(1u, fread(audio_features.log_pitch_gain,
-                        sizeof(audio_features.log_pitch_gain[0]), 1,
-                        pitch_gain_file));
-    ASSERT_EQ(1u,
-              fread(audio_features.pitch_lag_hz,
-                    sizeof(audio_features.pitch_lag_hz[0]), 1, pitch_lag_file));
-    ASSERT_EQ(1u, fread(&reference_activity_probability,
-                        sizeof(reference_activity_probability), 1,
-                        voicing_prob_file));
+    ASSERT_EQ(1u, fread(audio_features.log_pitch_gain, sizeof(
+        audio_features.log_pitch_gain[0]), 1, pitch_gain_file));
+    ASSERT_EQ(1u, fread(audio_features.pitch_lag_hz, sizeof(
+        audio_features.pitch_lag_hz[0]), 1, pitch_lag_file));
+    ASSERT_EQ(1u, fread(&reference_activity_probability, sizeof(
+        reference_activity_probability), 1, voicing_prob_file));
 
     p = 0.5;  // Initialize to the neutral value for combining probabilities.
     EXPECT_EQ(0, vad_.VoicingProbability(audio_features, &p));

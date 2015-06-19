@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/vad/vad_circular_buffer.h"
+#include "webrtc/modules/audio_processing/agc/circular_buffer.h"
 
 #include <stdio.h>
 
@@ -22,7 +22,7 @@ static const double kValThreshold = 1.0;
 static const int kLongBuffSize = 100;
 static const int kShortBuffSize = 10;
 
-static void InsertSequentially(int k, VadCircularBuffer* circular_buffer) {
+static void InsertSequentially(int k, AgcCircularBuffer* circular_buffer) {
   double mean_val;
   for (int n = 1; n <= k; n++) {
     EXPECT_TRUE(!circular_buffer->is_full());
@@ -32,20 +32,19 @@ static void InsertSequentially(int k, VadCircularBuffer* circular_buffer) {
   }
 }
 
-static void Insert(double value,
-                   int num_insertion,
-                   VadCircularBuffer* circular_buffer) {
+static void Insert(double value, int num_insertion,
+                   AgcCircularBuffer* circular_buffer) {
   for (int n = 0; n < num_insertion; n++)
     circular_buffer->Insert(value);
 }
 
-static void InsertZeros(int num_zeros, VadCircularBuffer* circular_buffer) {
+static void InsertZeros(int num_zeros, AgcCircularBuffer* circular_buffer) {
   Insert(0.0, num_zeros, circular_buffer);
 }
 
-TEST(VadCircularBufferTest, GeneralTest) {
-  rtc::scoped_ptr<VadCircularBuffer> circular_buffer(
-      VadCircularBuffer::Create(kShortBuffSize));
+TEST(AgcCircularBufferTest, GeneralTest) {
+  rtc::scoped_ptr<AgcCircularBuffer> circular_buffer(
+      AgcCircularBuffer::Create(kShortBuffSize));
   double mean_val;
 
   // Mean should return zero if nothing is inserted.
@@ -71,9 +70,9 @@ TEST(VadCircularBufferTest, GeneralTest) {
   EXPECT_TRUE(circular_buffer->is_full());
 }
 
-TEST(VadCircularBufferTest, TransientsRemoval) {
-  rtc::scoped_ptr<VadCircularBuffer> circular_buffer(
-      VadCircularBuffer::Create(kLongBuffSize));
+TEST(AgcCircularBufferTest, TransientsRemoval) {
+  rtc::scoped_ptr<AgcCircularBuffer> circular_buffer(
+      AgcCircularBuffer::Create(kLongBuffSize));
   // Let the first transient be in wrap-around.
   InsertZeros(kLongBuffSize - kWidthThreshold / 2, circular_buffer.get());
 
@@ -90,9 +89,9 @@ TEST(VadCircularBufferTest, TransientsRemoval) {
   }
 }
 
-TEST(VadCircularBufferTest, TransientDetection) {
-  rtc::scoped_ptr<VadCircularBuffer> circular_buffer(
-      VadCircularBuffer::Create(kLongBuffSize));
+TEST(AgcCircularBufferTest, TransientDetection) {
+  rtc::scoped_ptr<AgcCircularBuffer> circular_buffer(
+      AgcCircularBuffer::Create(kLongBuffSize));
   // Let the first transient be in wrap-around.
   int num_insertion = kLongBuffSize - kWidthThreshold / 2;
   InsertZeros(num_insertion, circular_buffer.get());
@@ -105,8 +104,8 @@ TEST(VadCircularBufferTest, TransientDetection) {
   double mean_val = circular_buffer->Mean();
   EXPECT_DOUBLE_EQ(num_non_zero_elements * push_val / kLongBuffSize, mean_val);
   circular_buffer->Insert(0);
-  EXPECT_EQ(0,
-            circular_buffer->RemoveTransient(kWidthThreshold, kValThreshold));
+  EXPECT_EQ(0, circular_buffer->RemoveTransient(kWidthThreshold,
+                                                kValThreshold));
   mean_val = circular_buffer->Mean();
   EXPECT_DOUBLE_EQ(num_non_zero_elements * push_val / kLongBuffSize, mean_val);
 
@@ -115,8 +114,8 @@ TEST(VadCircularBufferTest, TransientDetection) {
   num_insertion = 3;
   Insert(push_val, num_insertion, circular_buffer.get());
   circular_buffer->Insert(0);
-  EXPECT_EQ(0,
-            circular_buffer->RemoveTransient(kWidthThreshold, kValThreshold));
+  EXPECT_EQ(0, circular_buffer->RemoveTransient(kWidthThreshold,
+                                                kValThreshold));
   mean_val = circular_buffer->Mean();
   EXPECT_DOUBLE_EQ(num_non_zero_elements * push_val / kLongBuffSize, mean_val);
 
@@ -124,8 +123,8 @@ TEST(VadCircularBufferTest, TransientDetection) {
   // it shouldn't be considered transient.
   Insert(push_val, num_insertion, circular_buffer.get());
   num_non_zero_elements += num_insertion;
-  EXPECT_EQ(0,
-            circular_buffer->RemoveTransient(kWidthThreshold, kValThreshold));
+  EXPECT_EQ(0, circular_buffer->RemoveTransient(kWidthThreshold,
+                                                kValThreshold));
   mean_val = circular_buffer->Mean();
   EXPECT_DOUBLE_EQ(num_non_zero_elements * push_val / kLongBuffSize, mean_val);
 }

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/vad/pitch_based_vad.h"
+#include "webrtc/modules/audio_processing/agc/pitch_based_vad.h"
 
 #include <assert.h>
 #include <math.h>
 #include <string.h>
 
-#include "webrtc/modules/audio_processing/vad/vad_circular_buffer.h"
-#include "webrtc/modules/audio_processing/vad/common.h"
-#include "webrtc/modules/audio_processing/vad/noise_gmm_tables.h"
-#include "webrtc/modules/audio_processing/vad/voice_gmm_tables.h"
+#include "webrtc/modules/audio_processing/agc/circular_buffer.h"
+#include "webrtc/modules/audio_processing/agc/common.h"
+#include "webrtc/modules/audio_processing/agc/noise_gmm_tables.h"
+#include "webrtc/modules/audio_processing/agc/voice_gmm_tables.h"
 #include "webrtc/modules/interface/module_common_types.h"
 
 namespace webrtc {
@@ -44,7 +44,7 @@ static double LimitProbability(double p) {
 
 PitchBasedVad::PitchBasedVad()
     : p_prior_(kInitialPriorProbability),
-      circular_buffer_(VadCircularBuffer::Create(kPosteriorHistorySize)) {
+      circular_buffer_(AgcCircularBuffer::Create(kPosteriorHistorySize)) {
   // Setup noise GMM.
   noise_gmm_.dimension = kNoiseGmmDim;
   noise_gmm_.num_mixtures = kNoiseGmmNumMixtures;
@@ -60,8 +60,7 @@ PitchBasedVad::PitchBasedVad()
   voice_gmm_.covar_inverse = &kVoiceGmmCovarInverse[0][0][0];
 }
 
-PitchBasedVad::~PitchBasedVad() {
-}
+PitchBasedVad::~PitchBasedVad() {}
 
 int PitchBasedVad::VoicingProbability(const AudioFeatures& features,
                                       double* p_combined) {
@@ -91,9 +90,8 @@ int PitchBasedVad::VoicingProbability(const AudioFeatures& features,
       pdf_features_given_noise = kEps * pdf_features_given_voice;
     }
 
-    p = p_prior_ * pdf_features_given_voice /
-        (pdf_features_given_voice * p_prior_ +
-         pdf_features_given_noise * (1 - p_prior_));
+    p = p_prior_ * pdf_features_given_voice / (pdf_features_given_voice *
+        p_prior_ + pdf_features_given_noise * (1 - p_prior_));
 
     p = LimitProbability(p);
 

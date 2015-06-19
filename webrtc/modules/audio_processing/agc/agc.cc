@@ -14,10 +14,13 @@
 #include <cstdlib>
 
 #include <algorithm>
-#include <vector>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/modules/audio_processing/agc/agc_audio_proc.h"
+#include "webrtc/modules/audio_processing/agc/common.h"
 #include "webrtc/modules/audio_processing/agc/histogram.h"
+#include "webrtc/modules/audio_processing/agc/pitch_based_vad.h"
+#include "webrtc/modules/audio_processing/agc/standalone_vad.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
 #include "webrtc/modules/interface/module_common_types.h"
 
@@ -25,6 +28,7 @@ namespace webrtc {
 namespace {
 
 const int kDefaultLevelDbfs = -18;
+const double kDefaultVoiceValue = 1.0;
 const int kNumAnalysisFrames = 100;
 const double kActivityThreshold = 0.3;
 
@@ -32,9 +36,16 @@ const double kActivityThreshold = 0.3;
 
 Agc::Agc()
     : target_level_loudness_(Dbfs2Loudness(kDefaultLevelDbfs)),
+      last_voice_probability_(kDefaultVoiceValue),
       target_level_dbfs_(kDefaultLevelDbfs),
+      standalone_vad_enabled_(true),
       histogram_(Histogram::Create(kNumAnalysisFrames)),
-      inactive_histogram_(Histogram::Create()) {
+      inactive_histogram_(Histogram::Create()),
+      audio_processing_(new AgcAudioProc()),
+      pitch_based_vad_(new PitchBasedVad()),
+      standalone_vad_(StandaloneVad::Create()),
+      // Initialize to the most common resampling situation.
+      resampler_(new Resampler(32000, kSampleRateHz, 1)) {
   }
 
 Agc::~Agc() {}
@@ -50,13 +61,55 @@ float Agc::AnalyzePreproc(const int16_t* audio, int length) {
 }
 
 int Agc::Process(const int16_t* audio, int length, int sample_rate_hz) {
-  vad_.ProcessChunk(audio, length, sample_rate_hz);
-  const std::vector<double>& rms = vad_.chunkwise_rms();
-  const std::vector<double>& probabilities =
-      vad_.chunkwise_voice_probabilities();
-  DCHECK_EQ(rms.size(), probabilities.size());
-  for (size_t i = 0; i < rms.size(); ++i) {
-    histogram_->Update(rms[i], probabilities[i]);
+  assert(length == sample_rate_hz / 100);
+  if (sample_rate_hz > 32000) {
+    return -1;
+  }
+  // Resample to the required rate.
+  int16_t resampled[kLength10Ms];
+  const int16_t* resampled_ptr = audio;
+  if (sample_rate_hz != kSampleRateHz) {
+    if (resampler_->ResetIfNeeded(sample_rate_hz, kSampleRateHz, 1) != 0) {
+      return -1;
+    }
+    resampler_->Push(audio, length, resampled, kLength10Ms, length);
+    resampled_ptr = resampled;
+  }
+  assert(length == kLength10Ms);
+
+  if (standalone_vad_enabled_) {
+    if (standalone_vad_->AddAudio(resampled_ptr, length) != 0)
+      return -1;
+  }
+
+  AudioFeatures features;
+  audio_processing_->ExtractFeatures(resampled_ptr, length, &features);
+  if (features.num_frames > 0) {
+    if (features.silence) {
+      // The other features are invalid, so update the histogram with an
+      // arbitrary low value.
+      for (int n = 0; n < features.num_frames; ++n)
+        histogram_->Update(features.rms[n], 0.01);
+      return 0;
+    }
+
+    // Initialize to 0.5 which is a neutral value for combining probabilities,
+    // in case the standalone-VAD is not enabled.
+    double p_combined[] = {0.5, 0.5, 0.5, 0.5};
+    static_assert(sizeof(p_combined) / sizeof(p_combined[0]) == kMaxNumFrames,
+                  "combined probability incorrect size");
+    if (standalone_vad_enabled_) {
+      if (standalone_vad_->GetActivity(p_combined, kMaxNumFrames) < 0)
+        return -1;
+    }
+    // If any other VAD is enabled it must be combined before calling the
+    // pitch-based VAD.
+    if (pitch_based_vad_->VoicingProbability(features, p_combined) < 0)
+      return -1;
+    for (int n = 0; n < features.num_frames; n++) {
+      histogram_->Update(features.rms[n], p_combined[n]);
+      last_voice_probability_ = p_combined[n];
+    }
   }
   return 0;
 }
@@ -96,6 +149,10 @@ int Agc::set_target_level_dbfs(int level) {
   target_level_dbfs_ = level;
   target_level_loudness_ = Dbfs2Loudness(level);
   return 0;
+}
+
+void Agc::EnableStandaloneVad(bool enable) {
+  standalone_vad_enabled_ = enable;
 }
 
 }  // namespace webrtc

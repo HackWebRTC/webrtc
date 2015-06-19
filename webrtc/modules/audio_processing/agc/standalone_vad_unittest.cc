@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/vad/standalone_vad.h"
+#include "webrtc/modules/audio_processing/agc/standalone_vad.h"
 
 #include <string.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -22,7 +22,7 @@ namespace webrtc {
 
 TEST(StandaloneVadTest, Api) {
   rtc::scoped_ptr<StandaloneVad> vad(StandaloneVad::Create());
-  int16_t data[kLength10Ms] = {0};
+  int16_t data[kLength10Ms] = { 0 };
 
   // Valid frame length (for 32 kHz rate), but not what the VAD is expecting.
   EXPECT_EQ(-1, vad->AddAudio(data, 320));
@@ -58,7 +58,7 @@ TEST(StandaloneVadTest, Api) {
 TEST(StandaloneVadTest, DISABLED_ON_IOS(ActivityDetection)) {
   rtc::scoped_ptr<StandaloneVad> vad(StandaloneVad::Create());
   const size_t kDataLength = kLength10Ms;
-  int16_t data[kDataLength] = {0};
+  int16_t data[kDataLength] = { 0 };
 
   FILE* pcm_file =
       fopen(test::ResourcePath("audio_processing/agc/agc_audio", "pcm").c_str(),
@@ -101,4 +101,4 @@ TEST(StandaloneVadTest, DISABLED_ON_IOS(ActivityDetection)) {
   fclose(reference_file);
   fclose(pcm_file);
 }
-}  // namespace webrtc
+}
