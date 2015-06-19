@@ -30,10 +30,13 @@ class StreamGenerator {
   StreamGenerator(uint16_t start_seq_num, int64_t current_time);
   void Init(uint16_t start_seq_num, int64_t current_time);
 
+  // |time_ms| denotes the timestamp you want to put on the frame, and the unit
+  // is millisecond. GenerateFrame will translate |time_ms| into a 90kHz
+  // timestamp and put it on the frame.
   void GenerateFrame(FrameType type,
                      int num_media_packets,
                      int num_empty_packets,
-                     int64_t current_time);
+                     int64_t time_ms);
 
   bool PopPacket(VCMPacket* packet, int index);
   void DropLastPacket();

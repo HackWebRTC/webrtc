@@ -28,6 +28,16 @@ class VCMReceiver {
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
               EventFactory* event_factory);
+
+  // Using this constructor, you can specify a different event factory for the
+  // jitter buffer. Useful for unit tests when you want to simulate incoming
+  // packets, in which case the jitter buffer's wait event is different from
+  // that of VCMReceiver itself.
+  VCMReceiver(VCMTiming* timing,
+              Clock* clock,
+              rtc::scoped_ptr<EventWrapper> receiver_event,
+              rtc::scoped_ptr<EventWrapper> jitter_buffer_event);
+
   ~VCMReceiver();
 
   void Reset();

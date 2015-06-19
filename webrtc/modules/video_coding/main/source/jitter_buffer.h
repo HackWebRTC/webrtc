@@ -76,8 +76,8 @@ class FrameList
 
 class VCMJitterBuffer {
  public:
-  VCMJitterBuffer(Clock* clock,
-                  EventFactory* event_factory);
+  VCMJitterBuffer(Clock* clock, rtc::scoped_ptr<EventWrapper> event);
+
   ~VCMJitterBuffer();
 
   // Initializes and starts jitter buffer.

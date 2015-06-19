@@ -29,8 +29,9 @@ class TestBasicJitterBuffer : public ::testing::Test {
  protected:
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(0));
-    jitter_buffer_.reset(
-        new VCMJitterBuffer(clock_.get(), &event_factory_));
+    jitter_buffer_.reset(new VCMJitterBuffer(
+        clock_.get(),
+        rtc::scoped_ptr<EventWrapper>(event_factory_.CreateEvent())));
     jitter_buffer_->Start();
     seq_num_ = 1234;
     timestamp_ = 0;
@@ -128,7 +129,9 @@ class TestRunningJitterBuffer : public ::testing::Test {
     clock_.reset(new SimulatedClock(0));
     max_nack_list_size_ = 150;
     oldest_packet_to_nack_ = 250;
-    jitter_buffer_ = new VCMJitterBuffer(clock_.get(), &event_factory_);
+    jitter_buffer_ = new VCMJitterBuffer(
+        clock_.get(),
+        rtc::scoped_ptr<EventWrapper>(event_factory_.CreateEvent()));
     stream_generator_ = new StreamGenerator(0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_,

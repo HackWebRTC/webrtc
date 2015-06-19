@@ -113,11 +113,12 @@ void FrameList::Reset(UnorderedFrameList* free_frames) {
   }
 }
 
-VCMJitterBuffer::VCMJitterBuffer(Clock* clock, EventFactory* event_factory)
+VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
+                                 rtc::scoped_ptr<EventWrapper> event)
     : clock_(clock),
       running_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      frame_event_(event_factory->CreateEvent()),
+      frame_event_(event.Pass()),
       max_number_of_frames_(kStartNumberOfFrames),
       free_frames_(),
       decodable_frames_(),

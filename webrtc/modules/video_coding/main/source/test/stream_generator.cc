@@ -35,8 +35,8 @@ void StreamGenerator::Init(uint16_t start_seq_num, int64_t current_time) {
 void StreamGenerator::GenerateFrame(FrameType type,
                                     int num_media_packets,
                                     int num_empty_packets,
-                                    int64_t current_time) {
-  uint32_t timestamp = 90 * (current_time - start_time_);
+                                    int64_t time_ms) {
+  uint32_t timestamp = 90 * (time_ms - start_time_);
   for (int i = 0; i < num_media_packets; ++i) {
     const int packet_size =
         (kFrameSize + num_media_packets / 2) / num_media_packets;
