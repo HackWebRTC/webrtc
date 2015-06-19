@@ -333,15 +333,23 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   // given a binding address, and the platform is expected to pick the
   // correct local address.
 
-  // Further, to workaround issue 3927 in which a proxy is forcing TCP bound to
-  // localhost only, we're allowing Loopback IP even if it's not the same as the
-  // local Turn port.
+  // However, there are two situations in which we allow the bound address to
+  // differ from the requested address: 1. The bound address is the loopback
+  // address.  This happens when a proxy forces TCP to bind to only the
+  // localhost address (see issue 3927). 2. The bound address is the "any
+  // address".  This happens when multiple_routes is disabled (see issue 4780).
   if (socket->GetLocalAddress().ipaddr() != ip()) {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
       LOG(LS_WARNING) << "Socket is bound to a different address:"
                       << socket->GetLocalAddress().ipaddr().ToString()
                       << ", rather then the local port:" << ip().ToString()
                       << ". Still allowing it since it's localhost.";
+    } else if (IPIsAny(ip())) {
+      LOG(LS_WARNING) << "Socket is bound to a different address:"
+                      << socket->GetLocalAddress().ipaddr().ToString()
+                      << ", rather then the local port:" << ip().ToString()
+                      << ". Still allowing it since it's any address"
+                      << ", possibly caused by multiple_routes being disabled.";
     } else {
       LOG(LS_WARNING) << "Socket is bound to a different address:"
                       << socket->GetLocalAddress().ipaddr().ToString()
