@@ -51,5 +51,10 @@ TEST(AlignedArrayTest, CheckOverlap) {
   }
 }
 
-}  // namespace webrtc
+TEST(AlignedArrayTest, CheckRowsCols) {
+  AlignedArray<bool> arr(10, 7, 128);
+  ASSERT_EQ(arr.rows(), 10);
+  ASSERT_EQ(arr.cols(), 7);
+}
 
+}  // namespace webrtc

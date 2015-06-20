@@ -68,6 +68,14 @@ template<typename T> class AlignedArray {
     return Row(row)[col];
   }
 
+  int rows() const {
+    return rows_;
+  }
+
+  int cols() const {
+    return cols_;
+  }
+
  private:
   int rows_;
   int cols_;
@@ -78,4 +86,3 @@ template<typename T> class AlignedArray {
 }  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_ALIGNED_ARRAY_
-
