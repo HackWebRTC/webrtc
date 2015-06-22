@@ -194,6 +194,9 @@ static_library("rtc_base") {
     "asyncfile.h",
     "asynchttprequest.cc",
     "asynchttprequest.h",
+    "asyncinvoker-inl.h",
+    "asyncinvoker.cc",
+    "asyncinvoker.h",
     "asyncpacketsocket.cc",
     "asyncpacketsocket.h",
     "asyncresolverinterface.cc",
@@ -350,9 +353,6 @@ static_library("rtc_base") {
     public_configs += [ ":rtc_base_chromium_config" ]
   } else {
     sources += [
-      "asyncinvoker-inl.h",
-      "asyncinvoker.cc",
-      "asyncinvoker.h",
       "bandwidthsmoother.cc",
       "bandwidthsmoother.h",
       "bind.h",
