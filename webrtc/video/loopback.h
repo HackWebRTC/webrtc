@@ -32,6 +32,7 @@ class Loopback {
     size_t max_bitrate_kbps;
     int32_t min_transmit_bitrate_kbps;
     std::string codec;
+    size_t num_temporal_layers;
     int32_t loss_percent;
     int32_t link_capacity_kbps;
     int32_t queue_size;

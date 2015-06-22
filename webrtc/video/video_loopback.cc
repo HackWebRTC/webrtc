@@ -103,6 +103,15 @@ DEFINE_string(
     "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
     " will assign the group Enable to field trial WebRTC-FooFeature. Multiple "
     "trials are separated by \"/\"");
+
+DEFINE_int32(num_temporal_layers,
+             0,
+             "Number of temporal layers. Set to 1-4 to override.");
+
+size_t NumTemporalLayers() {
+  return static_cast<size_t>(FLAGS_num_temporal_layers);
+}
+
 }  // namespace flags
 
 void Loopback() {
@@ -114,6 +123,7 @@ void Loopback() {
                                 flags::MaxBitrate(),
                                 0,  // No min transmit bitrate.
                                 flags::Codec(),
+                                flags::NumTemporalLayers(),
                                 flags::LossPercent(),
                                 flags::LinkCapacity(),
                                 flags::QueueSize(),

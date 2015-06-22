@@ -159,6 +159,7 @@ void Loopback() {
                                 flags::MaxBitrate(),
                                 flags::MinTransmitBitrate(),
                                 flags::Codec(),
+                                0,  // Default number of temporal layers.
                                 flags::LossPercent(),
                                 flags::LinkCapacity(),
                                 flags::QueueSize(),

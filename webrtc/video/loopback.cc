@@ -158,6 +158,10 @@ VideoEncoderConfig Loopback::CreateEncoderConfig() {
       static_cast<int>(config_.max_bitrate_kbps) * 1000;
   stream->max_framerate = config_.fps;
   stream->max_qp = 56;
+  if (config_.num_temporal_layers != 0) {
+    stream->temporal_layer_thresholds_bps.resize(config_.num_temporal_layers -
+                                                 1);
+  }
   return encoder_config;
 }
 
