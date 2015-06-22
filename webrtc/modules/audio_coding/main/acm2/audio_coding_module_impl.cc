@@ -23,6 +23,7 @@
 #include "webrtc/modules/audio_coding/main/acm2/call_statistics.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/typedefs.h"
@@ -293,9 +294,11 @@ int AudioCodingModuleImpl::SendBitrate() const {
 
 void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
   CriticalSectionScoped lock(acm_crit_sect_);
-
   if (codec_manager_.CurrentEncoder()) {
     codec_manager_.CurrentEncoder()->SetTargetBitrate(bitrate_bps);
+    RTC_HISTOGRAM_COUNTS_100(
+        HISTOGRAM_NAME_AUDIO_TARGET_BITRATE_IN_KBPS,
+        codec_manager_.CurrentEncoder()->GetTargetBitrate() / 1000);
   }
 }
 
