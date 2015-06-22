@@ -22,6 +22,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
@@ -176,24 +177,13 @@ private:
 
  int32_t SendToNetwork(const uint8_t* dataBuffer, size_t length);
 
- RTCPSender::BuildResult WriteAllReportBlocksToBuffer(
-     RtcpContext* context,
-     uint8_t* numberOfReportBlocks)
+ int32_t AddReportBlock(const RTCPReportBlock& report_block)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
- void WriteReportBlocksToBuffer(
-     RtcpContext* context,
-     const std::map<uint32_t, RTCPReportBlock*>& report_blocks);
-
- int32_t AddReportBlock(uint32_t SSRC,
-                        std::map<uint32_t, RTCPReportBlock*>* report_blocks,
-                        const RTCPReportBlock* receiveBlock);
-
  bool PrepareReport(const FeedbackState& feedback_state,
+                    uint32_t ssrc,
                     StreamStatistician* statistician,
-                    RTCPReportBlock* report_block,
-                    uint32_t* ntp_secs,
-                    uint32_t* ntp_frac);
+                    RTCPReportBlock* report_block);
 
  int PrepareRTCP(const FeedbackState& feedback_state,
                  const std::set<RTCPPacketType>& packetTypes,
@@ -266,8 +256,9 @@ private:
 
  ReceiveStatistics* receive_statistics_
      GUARDED_BY(critical_section_rtcp_sender_);
- std::map<uint32_t, RTCPReportBlock*> internal_report_blocks_
+ std::map<uint32_t, rtcp::ReportBlock> report_blocks_
      GUARDED_BY(critical_section_rtcp_sender_);
+ // TODO(sprang): Can we avoid pointers here?
  std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> csrc_cnames_
      GUARDED_BY(critical_section_rtcp_sender_);
 
@@ -338,6 +329,8 @@ private:
 
  typedef BuildResult (RTCPSender::*Builder)(RtcpContext*);
  std::map<RTCPPacketType, Builder> builders_;
+
+ class PacketBuiltCallback;
 };
 }  // namespace webrtc
 

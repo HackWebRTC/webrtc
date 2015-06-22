@@ -234,7 +234,7 @@ class SenderReport : public RtcpPacket {
   void WithOctetCount(uint32_t octet_count) {
     sr_.SenderOctetCount = octet_count;
   }
-  bool WithReportBlock(ReportBlock* block);
+  bool WithReportBlock(const ReportBlock& block);
 
  protected:
   bool Create(uint8_t* packet,
@@ -282,7 +282,7 @@ class ReceiverReport : public RtcpPacket {
   void From(uint32_t ssrc) {
     rr_.SenderSSRC = ssrc;
   }
-  bool WithReportBlock(ReportBlock* block);
+  bool WithReportBlock(const ReportBlock& block);
 
  protected:
   bool Create(uint8_t* packet,

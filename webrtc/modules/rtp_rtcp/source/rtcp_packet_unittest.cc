@@ -71,7 +71,7 @@ TEST(RtcpPacketTest, RrWithOneReportBlock) {
 
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  EXPECT_TRUE(rr.WithReportBlock(&rb));
+  EXPECT_TRUE(rr.WithReportBlock(rb));
 
   rtc::scoped_ptr<RawPacket> packet(rr.Build());
   RtcpPacketParser parser;
@@ -96,8 +96,8 @@ TEST(RtcpPacketTest, RrWithTwoReportBlocks) {
 
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  EXPECT_TRUE(rr.WithReportBlock(&rb1));
-  EXPECT_TRUE(rr.WithReportBlock(&rb2));
+  EXPECT_TRUE(rr.WithReportBlock(rb1));
+  EXPECT_TRUE(rr.WithReportBlock(rb2));
 
   rtc::scoped_ptr<RawPacket> packet(rr.Build());
   RtcpPacketParser parser;
@@ -116,10 +116,10 @@ TEST(RtcpPacketTest, RrWithTooManyReportBlocks) {
   ReportBlock rb;
   for (int i = 0; i < kMaxReportBlocks; ++i) {
     rb.To(kRemoteSsrc + i);
-    EXPECT_TRUE(rr.WithReportBlock(&rb));
+    EXPECT_TRUE(rr.WithReportBlock(rb));
   }
   rb.To(kRemoteSsrc + kMaxReportBlocks);
-  EXPECT_FALSE(rr.WithReportBlock(&rb));
+  EXPECT_FALSE(rr.WithReportBlock(rb));
 }
 
 TEST(RtcpPacketTest, Sr) {
@@ -151,7 +151,7 @@ TEST(RtcpPacketTest, SrWithOneReportBlock) {
 
   SenderReport sr;
   sr.From(kSenderSsrc);
-  EXPECT_TRUE(sr.WithReportBlock(&rb));
+  EXPECT_TRUE(sr.WithReportBlock(rb));
 
   rtc::scoped_ptr<RawPacket> packet(sr.Build());
   RtcpPacketParser parser;
@@ -170,8 +170,8 @@ TEST(RtcpPacketTest, SrWithTwoReportBlocks) {
 
   SenderReport sr;
   sr.From(kSenderSsrc);
-  EXPECT_TRUE(sr.WithReportBlock(&rb1));
-  EXPECT_TRUE(sr.WithReportBlock(&rb2));
+  EXPECT_TRUE(sr.WithReportBlock(rb1));
+  EXPECT_TRUE(sr.WithReportBlock(rb2));
 
   rtc::scoped_ptr<RawPacket> packet(sr.Build());
   RtcpPacketParser parser;
@@ -190,10 +190,10 @@ TEST(RtcpPacketTest, SrWithTooManyReportBlocks) {
   ReportBlock rb;
   for (int i = 0; i < kMaxReportBlocks; ++i) {
     rb.To(kRemoteSsrc + i);
-    EXPECT_TRUE(sr.WithReportBlock(&rb));
+    EXPECT_TRUE(sr.WithReportBlock(rb));
   }
   rb.To(kRemoteSsrc + kMaxReportBlocks);
-  EXPECT_FALSE(sr.WithReportBlock(&rb));
+  EXPECT_FALSE(sr.WithReportBlock(rb));
 }
 
 TEST(RtcpPacketTest, IjNoItem) {
@@ -567,7 +567,7 @@ TEST(RtcpPacketTest, AppendPacket) {
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  EXPECT_TRUE(rr.WithReportBlock(&rb));
+  EXPECT_TRUE(rr.WithReportBlock(rb));
   rr.Append(&fir);
 
   rtc::scoped_ptr<RawPacket> packet(rr.Build());
@@ -598,7 +598,7 @@ TEST(RtcpPacketTest, AppendPacketWithOwnAppendedPacket) {
   ReportBlock rb;
 
   ReceiverReport rr;
-  EXPECT_TRUE(rr.WithReportBlock(&rb));
+  EXPECT_TRUE(rr.WithReportBlock(rb));
   rr.Append(&fir);
 
   SenderReport sr;
@@ -657,7 +657,7 @@ TEST(RtcpPacketTest, BuildWithInputBuffer) {
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  EXPECT_TRUE(rr.WithReportBlock(&rb));
+  EXPECT_TRUE(rr.WithReportBlock(rb));
   rr.Append(&fir);
 
   const size_t kRrLength = 8;
@@ -687,7 +687,7 @@ TEST(RtcpPacketTest, BuildWithTooSmallBuffer) {
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  EXPECT_TRUE(rr.WithReportBlock(&rb));
+  EXPECT_TRUE(rr.WithReportBlock(rb));
 
   const size_t kRrLength = 8;
   const size_t kReportBlockLength = 24;
@@ -708,7 +708,7 @@ TEST(RtcpPacketTest, BuildWithTooSmallBuffer_FragmentedSend) {
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
-  EXPECT_TRUE(rr.WithReportBlock(&rb));
+  EXPECT_TRUE(rr.WithReportBlock(rb));
   rr.Append(&fir);
 
   const size_t kRrLength = 8;

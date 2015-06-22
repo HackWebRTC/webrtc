@@ -810,13 +810,12 @@ bool SenderReport::Create(uint8_t* packet,
   return true;
 }
 
-bool SenderReport::WithReportBlock(ReportBlock* block) {
-  assert(block);
+bool SenderReport::WithReportBlock(const ReportBlock& block) {
   if (report_blocks_.size() >= kMaxNumberOfReportBlocks) {
     LOG(LS_WARNING) << "Max report blocks reached.";
     return false;
   }
-  report_blocks_.push_back(block->report_block_);
+  report_blocks_.push_back(block.report_block_);
   sr_.NumberOfReportBlocks = report_blocks_.size();
   return true;
 }
@@ -834,13 +833,12 @@ bool ReceiverReport::Create(uint8_t* packet,
   return true;
 }
 
-bool ReceiverReport::WithReportBlock(ReportBlock* block) {
-  assert(block);
+bool ReceiverReport::WithReportBlock(const ReportBlock& block) {
   if (report_blocks_.size() >= kMaxNumberOfReportBlocks) {
     LOG(LS_WARNING) << "Max report blocks reached.";
     return false;
   }
-  report_blocks_.push_back(block->report_block_);
+  report_blocks_.push_back(block.report_block_);
   rr_.NumberOfReportBlocks = report_blocks_.size();
   return true;
 }
