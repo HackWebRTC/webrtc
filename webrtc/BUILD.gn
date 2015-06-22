@@ -195,7 +195,6 @@ source_set("webrtc") {
     "system_wrappers",
     "tools",
     "video",
-    "video_engine",
     "voice_engine",
   ]
 

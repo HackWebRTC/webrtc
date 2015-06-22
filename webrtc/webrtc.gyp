@@ -32,7 +32,6 @@
       'p2p/p2p.gyp:*',
       'system_wrappers/system_wrappers.gyp:*',
       'tools/tools.gyp:*',
-      'video_engine/video_engine.gyp:*',
       'voice_engine/voice_engine.gyp:*',
       '<(webrtc_vp8_dir)/vp8.gyp:*',
       '<(webrtc_vp9_dir)/vp9.gyp:*',
@@ -50,12 +49,13 @@
         ['include_tests==1', {
           'dependencies': [
             'common_video/common_video_unittests.gyp:*',
+            'rtc_unittests',
             'system_wrappers/system_wrappers_tests.gyp:*',
             'test/metrics.gyp:*',
             'test/test.gyp:*',
             'test/webrtc_test_common.gyp:webrtc_test_common_unittests',
+            'video_engine/video_engine_core_unittests.gyp:video_engine_core_unittests',
             'webrtc_tests',
-            'rtc_unittests',
           ],
         }],
       ],
