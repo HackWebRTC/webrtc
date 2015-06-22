@@ -350,6 +350,7 @@ class PeerConnectionTestClientBase
     EXPECT_TRUE(peer_connection_->GetStats(
         observer, track, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    EXPECT_NE(0, observer->timestamp());
     return observer->AudioOutputLevel();
   }
 
@@ -359,6 +360,7 @@ class PeerConnectionTestClientBase
     EXPECT_TRUE(peer_connection_->GetStats(
         observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    EXPECT_NE(0, observer->timestamp());
     return observer->AudioInputLevel();
   }
 
@@ -368,6 +370,7 @@ class PeerConnectionTestClientBase
     EXPECT_TRUE(peer_connection_->GetStats(
         observer, track, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    EXPECT_NE(0, observer->timestamp());
     return observer->BytesReceived();
   }
 
@@ -377,6 +380,7 @@ class PeerConnectionTestClientBase
     EXPECT_TRUE(peer_connection_->GetStats(
         observer, track, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    EXPECT_NE(0, observer->timestamp());
     return observer->BytesSent();
   }
 
@@ -386,6 +390,7 @@ class PeerConnectionTestClientBase
     EXPECT_TRUE(peer_connection_->GetStats(
         observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    EXPECT_NE(0, observer->timestamp());
     int bw = observer->AvailableReceiveBandwidth();
     return bw;
   }
@@ -396,6 +401,7 @@ class PeerConnectionTestClientBase
     EXPECT_TRUE(peer_connection_->GetStats(
         observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    EXPECT_NE(0, observer->timestamp());
     return observer->DtlsCipher();
   }
 
@@ -405,6 +411,7 @@ class PeerConnectionTestClientBase
     EXPECT_TRUE(peer_connection_->GetStats(
         observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    EXPECT_NE(0, observer->timestamp());
     return observer->SrtpCipher();
   }
 

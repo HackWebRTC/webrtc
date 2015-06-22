@@ -52,6 +52,9 @@ const char* IceCandidateTypeToStatsType(const std::string& candidate_type);
 // only used by stats collector.
 const char* AdapterTypeToStatsType(rtc::AdapterType type);
 
+// A mapping between track ids and their StatsReport.
+typedef std::map<std::string, StatsReport*> TrackIdMap;
+
 class StatsCollector {
  public:
   // The caller is responsible for ensuring that the session outlives the
@@ -139,8 +142,12 @@ class StatsCollector {
   bool GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
                         StatsReport::Direction direction);
 
+  // Helper method to update the timestamp of track records.
+  void UpdateTrackReports();
+
   // A collection for all of our stats reports.
   StatsCollection reports_;
+  TrackIdMap track_ids_;
   // Raw pointer to the session the statistics are gathered from.
   WebRtcSession* const session_;
   double stats_gathering_started_;

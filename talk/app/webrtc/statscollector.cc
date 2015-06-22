@@ -80,18 +80,25 @@ StatsReport::Id GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
       found->second, cricket::ICE_CANDIDATE_COMPONENT_RTP);
 }
 
-void AddTrackReport(StatsCollection* reports, const std::string& track_id) {
+StatsReport* AddTrackReport(StatsCollection* reports,
+                            const std::string& track_id) {
   // Adds an empty track report.
   StatsReport::Id id(
       StatsReport::NewTypedId(StatsReport::kStatsReportTypeTrack, track_id));
   StatsReport* report = reports->ReplaceOrAddNew(id);
   report->AddString(StatsReport::kStatsValueNameTrackId, track_id);
+  return report;
 }
 
 template <class TrackVector>
-void CreateTrackReports(const TrackVector& tracks, StatsCollection* reports) {
-  for (const auto& track : tracks)
-    AddTrackReport(reports, track->id());
+void CreateTrackReports(const TrackVector& tracks, StatsCollection* reports,
+                        TrackIdMap& track_ids) {
+  for (const auto& track : tracks) {
+    const std::string& track_id = track->id();
+    StatsReport* report = AddTrackReport(reports, track_id);
+    DCHECK(report != nullptr);
+    track_ids[track_id] = report;
+  }
 }
 
 void ExtractCommonSendProperties(const cricket::MediaSenderInfo& info,
@@ -365,9 +372,9 @@ void StatsCollector::AddStream(MediaStreamInterface* stream) {
   DCHECK(stream != NULL);
 
   CreateTrackReports<AudioTrackVector>(stream->GetAudioTracks(),
-                                       &reports_);
+                                       &reports_, track_ids_);
   CreateTrackReports<VideoTrackVector>(stream->GetVideoTracks(),
-                                       &reports_);
+                                       &reports_, track_ids_);
 }
 
 void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
@@ -466,6 +473,7 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
     ExtractVoiceInfo();
     ExtractVideoInfo(level);
     ExtractDataInfo();
+    UpdateTrackReports();
   }
 }
 
@@ -869,6 +877,7 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
     if (!v || v->string_val() != track->id())
       continue;
 
+    report->set_timestamp(stats_gathering_started_);
     UpdateReportFromAudioTrack(track, report);
   }
 }
@@ -914,6 +923,18 @@ bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
   }
 
   return true;
+}
+
+void StatsCollector::UpdateTrackReports() {
+  DCHECK(session_->signaling_thread()->IsCurrent());
+
+  rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
+
+  for (const auto& entry : track_ids_) {
+    StatsReport* report = entry.second;
+    report->set_timestamp(stats_gathering_started_);
+  }
+
 }
 
 void StatsCollector::ClearUpdateStatsCacheForTest() {

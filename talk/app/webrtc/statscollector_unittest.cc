@@ -597,6 +597,7 @@ class StatsCollectorTest : public testing::Test {
     const StatsReport* report = FindNthReportByType(
         *reports, StatsReport::kStatsReportTypeSsrc, 1);
     EXPECT_FALSE(report == NULL);
+    EXPECT_EQ(stats->GetTimeNow(), report->timestamp());
     std::string track_id = ExtractSsrcStatsValue(
         *reports, StatsReport::kStatsValueNameTrackId);
     EXPECT_EQ(audio_track->id(), track_id);
@@ -619,6 +620,7 @@ class StatsCollectorTest : public testing::Test {
     const StatsReport* track_report = FindNthReportByType(
         track_reports, StatsReport::kStatsReportTypeSsrc, 1);
     EXPECT_TRUE(track_report);
+    EXPECT_EQ(stats->GetTimeNow(), track_report->timestamp());
     track_id = ExtractSsrcStatsValue(track_reports,
                                      StatsReport::kStatsValueNameTrackId);
     EXPECT_EQ(audio_track->id(), track_id);
@@ -929,6 +931,7 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
   stats.GetStats(NULL, &reports);
   EXPECT_EQ((size_t)1, reports.size());
   EXPECT_EQ(StatsReport::kStatsReportTypeTrack, reports[0]->type());
+  EXPECT_EQ(0, reports[0]->timestamp());
 
   std::string trackValue =
       ExtractStatsValue(StatsReport::kStatsReportTypeTrack,
@@ -991,6 +994,7 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   track_report = FindNthReportByType(
       reports, StatsReport::kStatsReportTypeTrack, 1);
   EXPECT_TRUE(track_report);
+  EXPECT_EQ(stats.GetTimeNow(), track_report->timestamp());
 
   std::string ssrc_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameSsrc);
@@ -1179,6 +1183,7 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
   const StatsReport* track_report = FindNthReportByType(
       reports, StatsReport::kStatsReportTypeTrack, 1);
   EXPECT_TRUE(track_report);
+  EXPECT_EQ(stats.GetTimeNow(), track_report->timestamp());
 
   std::string ssrc_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameSsrc);
@@ -1553,6 +1558,7 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
   const StatsReport* report = FindNthReportByType(
       reports, StatsReport::kStatsReportTypeSsrc, 1);
   EXPECT_FALSE(report == NULL);
+  EXPECT_EQ(stats.GetTimeNow(), report->timestamp());
   std::string track_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameTrackId);
   EXPECT_EQ(kLocalTrackId, track_id);
@@ -1630,6 +1636,7 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
   const StatsReport* track_report = FindNthReportByType(
       reports, StatsReport::kStatsReportTypeSsrc, 1);
   EXPECT_TRUE(track_report);
+  EXPECT_EQ(stats.GetTimeNow(), track_report->timestamp());
   std::string track_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameTrackId);
   EXPECT_EQ(kLocalTrackId, track_id);
@@ -1641,6 +1648,7 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
   track_report = FindNthReportByType(reports,
                                      StatsReport::kStatsReportTypeSsrc, 1);
   EXPECT_TRUE(track_report);
+  EXPECT_EQ(stats.GetTimeNow(), track_report->timestamp());
   track_id = ExtractSsrcStatsValue(reports,
                                    StatsReport::kStatsValueNameTrackId);
   EXPECT_EQ(kRemoteTrackId, track_id);
