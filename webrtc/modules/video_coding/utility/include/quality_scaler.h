@@ -15,9 +15,10 @@
 #include "webrtc/modules/video_coding/utility/include/moving_average.h"
 
 namespace webrtc {
-const int kDefaultLowQpDenominator = 3;
 class QualityScaler {
  public:
+  static const int kDefaultLowQpDenominator;
+  static const int kDefaultMinDownscaleDimension;
   struct Resolution {
     int width;
     int height;

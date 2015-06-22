@@ -15,9 +15,17 @@ static const int kMinFps = 10;
 static const int kMeasureSeconds = 5;
 static const int kFramedropPercentThreshold = 60;
 
+const int QualityScaler::kDefaultLowQpDenominator = 3;
+// Note that this is the same for width and height to permit 120x90 in both
+// portrait and landscape mode.
+const int QualityScaler::kDefaultMinDownscaleDimension = 90;
+
 QualityScaler::QualityScaler()
-    : num_samples_(0), low_qp_threshold_(-1), downscale_shift_(0),
-      min_width_(0), min_height_(0) {
+    : num_samples_(0),
+      low_qp_threshold_(-1),
+      downscale_shift_(0),
+      min_width_(kDefaultMinDownscaleDimension),
+      min_height_(kDefaultMinDownscaleDimension) {
 }
 
 void QualityScaler::Init(int low_qp_threshold) {
@@ -68,16 +76,11 @@ QualityScaler::Resolution QualityScaler::GetScaledResolution(
 
   assert(downscale_shift_ >= 0);
   for (int shift = downscale_shift_;
-       shift > 0 && res.width > 1 && res.height > 1;
+       shift > 0 && (res.width >> 1 >= min_width_) &&
+           (res.height >> 1 >= min_height_);
        --shift) {
     res.width >>= 1;
     res.height >>= 1;
-  }
-
-  // Set this limitation for VP8 HW encoder to avoid crash.
-  if (min_width_ > 0 && res.width * res.height < min_width_ * min_height_) {
-    res.width = min_width_;
-    res.height = min_height_;
   }
 
   return res;

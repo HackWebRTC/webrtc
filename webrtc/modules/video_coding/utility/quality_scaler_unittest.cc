@@ -31,11 +31,11 @@ class QualityScalerTest : public ::testing::Test {
   QualityScalerTest() {
     input_frame_.CreateEmptyFrame(
         kWidth, kHeight, kWidth, kHalfWidth, kHalfWidth);
-    qs_.Init(kMaxQp / kDefaultLowQpDenominator);
+    qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator);
     qs_.ReportFramerate(kFramerate);
   }
 
-  void TriggerScale(ScaleDirection scale_direction) {
+  bool TriggerScale(ScaleDirection scale_direction) {
     int initial_width = qs_.GetScaledResolution(input_frame_).width;
     for (int i = 0; i < kFramerate * kNumSeconds; ++i) {
       switch (scale_direction) {
@@ -48,10 +48,10 @@ class QualityScalerTest : public ::testing::Test {
       }
 
       if (qs_.GetScaledResolution(input_frame_).width != initial_width)
-        return;
+        return true;
     }
 
-    FAIL() << "No downscale within " << kNumSeconds << " seconds.";
+    return false;
   }
 
   void ExpectOriginalFrame() {
@@ -70,6 +70,11 @@ class QualityScalerTest : public ::testing::Test {
 
   void DoesNotDownscaleFrameDimensions(int width, int height);
 
+  void DownscaleEndsAt(int input_width,
+                       int input_height,
+                       int end_width,
+                       int end_height);
+
   QualityScaler qs_;
   VideoFrame input_frame_;
 };
@@ -85,7 +90,8 @@ TEST_F(QualityScalerTest, ReportsOriginalResolutionInitially) {
 }
 
 TEST_F(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
-  TriggerScale(kScaleDown);
+  EXPECT_TRUE(TriggerScale(kScaleDown)) << "No downscale within " << kNumSeconds
+                                        << " seconds.";
   QualityScaler::Resolution res = qs_.GetScaledResolution(input_frame_);
   EXPECT_LT(res.width, input_frame_.width());
   EXPECT_LT(res.height, input_frame_.height());
@@ -130,8 +136,9 @@ void QualityScalerTest::ContinuouslyDownscalesByHalfDimensionsAndBackUp() {
   int min_dimension = initial_min_dimension;
   int current_shift = 0;
   // Drop all frames to force-trigger downscaling.
-  while (min_dimension > 16) {
-    TriggerScale(kScaleDown);
+  while (min_dimension >= 2 * QualityScaler::kDefaultMinDownscaleDimension) {
+    EXPECT_TRUE(TriggerScale(kScaleDown)) << "No downscale within "
+                                          << kNumSeconds << " seconds.";
     QualityScaler::Resolution res = qs_.GetScaledResolution(input_frame_);
     min_dimension = res.width < res.height ? res.width : res.height;
     ++current_shift;
@@ -142,7 +149,8 @@ void QualityScalerTest::ContinuouslyDownscalesByHalfDimensionsAndBackUp() {
 
   // Make sure we can scale back with good-quality frames.
   while (min_dimension < initial_min_dimension) {
-    TriggerScale(kScaleUp);
+    EXPECT_TRUE(TriggerScale(kScaleUp)) << "No upscale within " << kNumSeconds
+                                        << " seconds.";
     QualityScaler::Resolution res = qs_.GetScaledResolution(input_frame_);
     min_dimension = res.width < res.height ? res.width : res.height;
     --current_shift;
@@ -193,6 +201,74 @@ TEST_F(QualityScalerTest, DoesNotDownscaleFrom1PxHeight) {
 
 TEST_F(QualityScalerTest, DoesNotDownscaleFrom1Px) {
   DoesNotDownscaleFrameDimensions(1, 1);
+}
+
+TEST_F(QualityScalerTest, DoesNotDownscaleBelow2xDefaultMinDimensionsWidth) {
+  DoesNotDownscaleFrameDimensions(
+      2 * QualityScaler::kDefaultMinDownscaleDimension - 1, 1000);
+}
+
+TEST_F(QualityScalerTest, DoesNotDownscaleBelow2xDefaultMinDimensionsHeight) {
+  DoesNotDownscaleFrameDimensions(
+      1000, 2 * QualityScaler::kDefaultMinDownscaleDimension - 1);
+}
+
+void QualityScalerTest::DownscaleEndsAt(int input_width,
+                                        int input_height,
+                                        int end_width,
+                                        int end_height) {
+  // Create a frame with 2x expected end width/height to verify that we can
+  // scale down to expected end width/height.
+  input_frame_.CreateEmptyFrame(input_width, input_height, input_width,
+                                (input_width + 1) / 2, (input_width + 1) / 2);
+
+  int last_width = input_width;
+  int last_height = input_height;
+  // Drop all frames to force-trigger downscaling.
+  while (true) {
+    TriggerScale(kScaleDown);
+    QualityScaler::Resolution res = qs_.GetScaledResolution(input_frame_);
+    if (last_width == res.width) {
+      EXPECT_EQ(last_height, res.height);
+      EXPECT_EQ(end_width, res.width);
+      EXPECT_EQ(end_height, res.height);
+      break;
+    }
+    last_width = res.width;
+    last_height = res.height;
+  }
+}
+
+TEST_F(QualityScalerTest, DefaultDownscalesTo160x90) {
+  DownscaleEndsAt(320, 180, 160, 90);
+}
+
+TEST_F(QualityScalerTest, DefaultDownscalesTo90x160) {
+  DownscaleEndsAt(180, 320, 90, 160);
+}
+
+TEST_F(QualityScalerTest, DefaultDownscalesFrom1280x720To160x90) {
+  DownscaleEndsAt(1280, 720, 160, 90);
+}
+
+TEST_F(QualityScalerTest, DefaultDoesntDownscaleBelow160x90) {
+  DownscaleEndsAt(320 - 1, 180 - 1, 320 - 1, 180 - 1);
+}
+
+TEST_F(QualityScalerTest, DefaultDoesntDownscaleBelow90x160) {
+  DownscaleEndsAt(180 - 1, 320 - 1, 180 - 1, 320 - 1);
+}
+
+TEST_F(QualityScalerTest, RespectsMinResolutionWidth) {
+  // Should end at 200x100, as width can't go lower.
+  qs_.SetMinResolution(200, 10);
+  DownscaleEndsAt(1600, 800, 200, 100);
+}
+
+TEST_F(QualityScalerTest, RespectsMinResolutionHeight) {
+  // Should end at 100x200, as height can't go lower.
+  qs_.SetMinResolution(10, 200);
+  DownscaleEndsAt(800, 1600, 100, 200);
 }
 
 }  // namespace webrtc

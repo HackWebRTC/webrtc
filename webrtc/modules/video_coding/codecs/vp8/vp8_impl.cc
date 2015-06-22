@@ -583,7 +583,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   rps_.Init();
-  quality_scaler_.Init(codec_.qpMax / kDefaultLowQpDenominator);
+  quality_scaler_.Init(codec_.qpMax / QualityScaler::kDefaultLowQpDenominator);
   quality_scaler_.ReportFramerate(codec_.maxFramerate);
 
   return InitAndSetControlSettings();
