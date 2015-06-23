@@ -23,10 +23,8 @@ void WebRtcSpl_CrossCorrelationC(int32_t* cross_correlation,
   for (i = 0; i < dim_cross_correlation; i++) {
     int32_t corr = 0;
     /* Unrolling doesn't seem to improve performance. */
-    for (j = 0; j < dim_seq; j++) {
-      // It's not clear why casting |right_shifts| here helps performance.
-      corr += (seq1[j] * seq2[j]) >> (int16_t)right_shifts;
-    }
+    for (j = 0; j < dim_seq; j++)
+      corr += (seq1[j] * seq2[j]) >> right_shifts;
     seq2 += step_seq2;
     *cross_correlation++ = corr;
   }
