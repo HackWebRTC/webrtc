@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+//
+//  Implements helper functions and classes for intelligibility enhancement.
+//
+
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
 
 #include <algorithm>
@@ -40,10 +44,13 @@ inline bool cplxnormal(complex<float> c) {
 // were chosen randomly, so that even a series of all zeroes has some small
 // variability.
 inline complex<float> zerofudge(complex<float> c) {
-  const static complex<float> fudge[7] = {
-    {0.001f, 0.002f}, {0.008f, 0.001f}, {0.003f, 0.008f}, {0.0006f, 0.0009f},
-    {0.001f, 0.004f}, {0.003f, 0.004f}, {0.002f, 0.009f}
-  };
+  const static complex<float> fudge[7] = {{0.001f, 0.002f},
+                                          {0.008f, 0.001f},
+                                          {0.003f, 0.008f},
+                                          {0.0006f, 0.0009f},
+                                          {0.001f, 0.004f},
+                                          {0.003f, 0.004f},
+                                          {0.002f, 0.009f}};
   static int fudge_index = 0;
   if (cplxfinite(c) && !cplxnormal(c)) {
     fudge_index = (fudge_index + 1) % 7;
@@ -54,8 +61,9 @@ inline complex<float> zerofudge(complex<float> c) {
 
 // Incremental mean computation. Return the mean of the series with the
 // mean |mean| with added |data|.
-inline complex<float> NewMean(complex<float> mean, complex<float> data,
-                                 int count) {
+inline complex<float> NewMean(complex<float> mean,
+                              complex<float> data,
+                              int count) {
   return mean + (data - mean) / static_cast<float>(count);
 }
 
@@ -73,7 +81,9 @@ namespace intelligibility {
 
 static const int kWindowBlockSize = 10;
 
-VarianceArray::VarianceArray(int freqs, StepType type, int window_size,
+VarianceArray::VarianceArray(int freqs,
+                             StepType type,
+                             int window_size,
                              float decay)
     : running_mean_(new complex<float>[freqs]()),
       running_mean_sq_(new complex<float>[freqs]()),
@@ -87,15 +97,15 @@ VarianceArray::VarianceArray(int freqs, StepType type, int window_size,
       history_cursor_(0),
       count_(0),
       array_mean_(0.0f) {
-  history_.reset(new scoped_ptr<complex<float>[]>[freqs_]());
+  history_.reset(new rtc::scoped_ptr<complex<float>[]>[freqs_]());
   for (int i = 0; i < freqs_; ++i) {
     history_[i].reset(new complex<float>[window_size_]());
   }
-  subhistory_.reset(new scoped_ptr<complex<float>[]>[freqs_]());
+  subhistory_.reset(new rtc::scoped_ptr<complex<float>[]>[freqs_]());
   for (int i = 0; i < freqs_; ++i) {
     subhistory_[i].reset(new complex<float>[window_size_]());
   }
-  subhistory_sq_.reset(new scoped_ptr<complex<float>[]>[freqs_]());
+  subhistory_sq_.reset(new rtc::scoped_ptr<complex<float>[]>[freqs_]());
   for (int i = 0; i < freqs_; ++i) {
     subhistory_sq_[i].reset(new complex<float>[window_size_]());
   }
@@ -131,13 +141,15 @@ void VarianceArray::InfiniteStep(const complex<float>* data, bool skip_fudge) {
     } else {
       float old_sum = conj_sum_[i];
       complex<float> old_mean = running_mean_[i];
-      running_mean_[i] = old_mean + (sample - old_mean) /
-          static_cast<float>(count_);
-      conj_sum_[i] = (old_sum + std::conj(sample - old_mean) *
-          (sample - running_mean_[i])).real();
-      variance_[i] = conj_sum_[i] / (count_ - 1); // + fudge[fudge_index].real();
+      running_mean_[i] =
+          old_mean + (sample - old_mean) / static_cast<float>(count_);
+      conj_sum_[i] =
+          (old_sum + std::conj(sample - old_mean) * (sample - running_mean_[i]))
+              .real();
+      variance_[i] =
+          conj_sum_[i] / (count_ - 1);  // + fudge[fudge_index].real();
       if (skip_fudge && false) {
-        //variance_[i] -= fudge[fudge_index].real();
+        // variance_[i] -= fudge[fudge_index].real();
       }
     }
     array_mean_ += (variance_[i] - array_mean_) / (i + 1);
@@ -161,11 +173,13 @@ void VarianceArray::DecayStep(const complex<float>* data, bool /*dummy*/) {
       complex<float> prev = running_mean_[i];
       complex<float> prev2 = running_mean_sq_[i];
       running_mean_[i] = decay_ * prev + (1.0f - decay_) * sample;
-      running_mean_sq_[i] = decay_ * prev2 +
-        (1.0f - decay_) * sample * std::conj(sample);
-      //variance_[i] = decay_ * variance_[i] + (1.0f - decay_) * (
-      //  (sample - running_mean_[i]) * std::conj(sample - running_mean_[i])).real();
-      variance_[i] = (running_mean_sq_[i] - running_mean_[i] * std::conj(running_mean_[i])).real();
+      running_mean_sq_[i] =
+          decay_ * prev2 + (1.0f - decay_) * sample * std::conj(sample);
+      // variance_[i] = decay_ * variance_[i] + (1.0f - decay_) * (
+      //  (sample - running_mean_[i]) * std::conj(sample -
+      //  running_mean_[i])).real();
+      variance_[i] = (running_mean_sq_[i] -
+                      running_mean_[i] * std::conj(running_mean_[i])).real();
     }
 
     array_mean_ += (variance_[i] - array_mean_) / (i + 1);
@@ -186,15 +200,15 @@ void VarianceArray::WindowedStep(const complex<float>* data, bool /*dummy*/) {
     mean = history_[i][history_cursor_];
     variance_[i] = 0.0f;
     for (int j = 1; j < num; ++j) {
-      complex<float> sample = zerofudge(
-          history_[i][(history_cursor_ + j) % window_size_]);
+      complex<float> sample =
+          zerofudge(history_[i][(history_cursor_ + j) % window_size_]);
       sample = history_[i][(history_cursor_ + j) % window_size_];
       float old_sum = conj_sum;
       complex<float> old_mean = mean;
 
       mean = old_mean + (sample - old_mean) / static_cast<float>(j + 1);
-      conj_sum = (old_sum + std::conj(sample - old_mean) *
-                                     (sample - mean)).real();
+      conj_sum =
+          (old_sum + std::conj(sample - old_mean) * (sample - mean)).real();
       variance_[i] = conj_sum / (j);
     }
     array_mean_ += (variance_[i] - array_mean_) / (i + 1);
@@ -217,11 +231,11 @@ void VarianceArray::BlockedStep(const complex<float>* data, bool /*dummy*/) {
     subhistory_[i][history_cursor_ % window_size_] = sub_running_mean_[i];
     subhistory_sq_[i][history_cursor_ % window_size_] = sub_running_mean_sq_[i];
 
-    variance_[i] = (NewMean(running_mean_sq_[i], sub_running_mean_sq_[i],
-                            blocks) -
-                   NewMean(running_mean_[i], sub_running_mean_[i], blocks) *
-                   std::conj(NewMean(running_mean_[i], sub_running_mean_[i],
-                                     blocks))).real();
+    variance_[i] =
+        (NewMean(running_mean_sq_[i], sub_running_mean_sq_[i], blocks) -
+         NewMean(running_mean_[i], sub_running_mean_[i], blocks) *
+             std::conj(NewMean(running_mean_[i], sub_running_mean_[i], blocks)))
+            .real();
     if (count_ == kWindowBlockSize - 1) {
       sub_running_mean_[i] = complex<float>(0.0f, 0.0f);
       sub_running_mean_sq_[i] = complex<float>(0.0f, 0.0f);
@@ -284,4 +298,3 @@ void GainApplier::Apply(const complex<float>* in_block,
 }  // namespace intelligibility
 
 }  // namespace webrtc
-
