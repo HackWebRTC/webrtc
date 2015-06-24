@@ -56,8 +56,24 @@ public class MediaConstraints {
     public String toString() {
       return key + ": " + value;
     }
-  }
 
+    @Override
+    public boolean equals(Object other) {
+      if (this == other) {
+        return true;
+      }
+      if (other == null || getClass() != other.getClass()) {
+        return false;
+      }
+      KeyValuePair that = (KeyValuePair)other;
+      return key.equals(that.key) && value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return key.hashCode() + value.hashCode();
+    }
+  }
 
   public final List<KeyValuePair> mandatory;
   public final List<KeyValuePair> optional;
