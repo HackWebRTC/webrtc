@@ -1698,12 +1698,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
 
   std::string expected_sdp = kSdpString;
   expected_sdp.append(kSdpRtpDataChannelString);
-  // We want to test that serializing data content ignores bandwidth
-  // settings (it should always be the default).  Thus, we don't do
-  // the following:
-  // TODO(pthatcher): We need to temporarily allow the SDP to control
-  // this for backwards-compatibility.  Once we don't need that any
-  // more, remove this.
+  // Serializing data content shouldn't ignore bandwidth settings.
   InjectAfter("m=application 9 RTP/SAVPF 101\r\nc=IN IP4 0.0.0.0\r\n",
               "b=AS:100\r\n",
               &expected_sdp);
@@ -2259,19 +2254,11 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithRtpDataChannelsAndBandwidth) {
-  AddRtpDataChannel();
-  JsepSessionDescription jdesc(kDummyString);
-  // We want to test that deserializing data content ignores bandwidth
-  // settings (it should always be the default).  Thus, we don't do
-  // the following:
-  // TODO(pthatcher): We need to temporarily allow the SDP to control
-  // this for backwards-compatibility.  Once we don't need that any
-  // more, remove this.
-  DataContentDescription* dcd = static_cast<DataContentDescription*>(
-     GetFirstDataContent(&desc_)->description);
-  dcd->set_bandwidth(100 * 1000);
-  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
-
+  // We want to test that deserializing data content limits bandwidth
+  // settings (it should never be greater than the default).
+  // This should prevent someone from using unlimited data bandwidth through
+  // JS and "breaking the Internet".
+  // See: https://code.google.com/p/chromium/issues/detail?id=280726
   std::string sdp_with_bandwidth = kSdpString;
   sdp_with_bandwidth.append(kSdpRtpDataChannelString);
   InjectAfter("a=mid:data_content_name\r\n",
@@ -2279,8 +2266,27 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithRtpDataChannelsAndBandwidth) {
               &sdp_with_bandwidth);
   JsepSessionDescription jdesc_with_bandwidth(kDummyString);
 
-  EXPECT_TRUE(
-      SdpDeserialize(sdp_with_bandwidth, &jdesc_with_bandwidth));
+  EXPECT_FALSE(SdpDeserialize(sdp_with_bandwidth, &jdesc_with_bandwidth));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsAndBandwidth) {
+  AddSctpDataChannel();
+  JsepSessionDescription jdesc(kDummyString);
+  DataContentDescription* dcd = static_cast<DataContentDescription*>(
+     GetFirstDataContent(&desc_)->description);
+  dcd->set_bandwidth(100 * 1000);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  std::string sdp_with_bandwidth = kSdpString;
+  sdp_with_bandwidth.append(kSdpSctpDataChannelString);
+  InjectAfter("a=mid:data_content_name\r\n",
+              "b=AS:100\r\n",
+              &sdp_with_bandwidth);
+  JsepSessionDescription jdesc_with_bandwidth(kDummyString);
+
+  // SCTP has congestion control, so we shouldn't limit the bandwidth
+  // as we do for RTP.
+  EXPECT_TRUE(SdpDeserialize(sdp_with_bandwidth, &jdesc_with_bandwidth));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_with_bandwidth));
 }
 

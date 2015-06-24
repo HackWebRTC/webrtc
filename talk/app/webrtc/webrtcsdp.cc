@@ -1274,16 +1274,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
 
   // RFC 4566
   // b=AS:<bandwidth>
-  // We should always use the default bandwidth for RTP-based data
-  // channels.  Don't allow SDP to set the bandwidth, because that
-  // would give JS the opportunity to "break the Internet".
-  // TODO(pthatcher): But we need to temporarily allow the SDP to control
-  // this for backwards-compatibility.  Once we don't need that any
-  // more, remove this.
-  bool support_dc_sdp_bandwidth_temporarily = true;
-  if (media_desc->bandwidth() >= 1000 &&
-      (media_type != cricket::MEDIA_TYPE_DATA ||
-       support_dc_sdp_bandwidth_temporarily)) {
+  if (media_desc->bandwidth() >= 1000) {
     InitLine(kLineTypeSessionBandwidth, kApplicationSpecificMaximum, &os);
     os << kSdpDelimiterColon << (media_desc->bandwidth() / 1000);
     AddLine(os.str(), message);
@@ -2249,17 +2240,6 @@ bool ParseMediaDescription(const std::string& message,
         if (!AddSctpDataCodec(data_desc, p))
           return false;
       }
-
-      // We should always use the default bandwidth for RTP-based data
-      // channels.  Don't allow SDP to set the bandwidth, because that
-      // would give JS the opportunity to "break the Internet".
-      // TODO(pthatcher): But we need to temporarily allow the SDP to control
-      // this for backwards-compatibility.  Once we don't need that any
-      // more, remove this.
-      bool support_dc_sdp_bandwidth_temporarily = true;
-      if (content.get() && !support_dc_sdp_bandwidth_temporarily) {
-        content->set_bandwidth(cricket::kAutoBandwidth);
-      }
     } else {
       LOG(LS_WARNING) << "Unsupported media type: " << line;
       continue;
@@ -2516,6 +2496,17 @@ bool ParseContent(const std::string& message,
           int b = 0;
           if (!GetValueFromString(line, bandwidth, &b, error)) {
             return false;
+          }
+          // We should never use more than the default bandwidth for RTP-based
+          // data channels. Don't allow SDP to set the bandwidth, because
+          // that would give JS the opportunity to "break the Internet".
+          // See: https://code.google.com/p/chromium/issues/detail?id=280726
+          if (media_type == cricket::MEDIA_TYPE_DATA && IsRtp(protocol) &&
+              b > cricket::kDataMaxBandwidth / 1000) {
+            std::ostringstream description;
+            description << "RTP-based data channels may not send more than "
+                        << cricket::kDataMaxBandwidth / 1000 << "kbps.";
+            return ParseFailed(line, description.str(), error);
           }
           media_desc->set_bandwidth(b * 1000);
         }
