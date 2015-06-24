@@ -820,13 +820,7 @@ TEST_F(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
 
 // Tests that playout can be initiated, started and stopped. No audio callback
 // is registered in this test.
-// TODO(henrika): figure out why this test can fail on Nexus 9.
-// See https://code.google.com/p/webrtc/issues/detail?id=4682 for details.
 TEST_F(AudioDeviceTest, StartStopPlayout) {
-  if (DisableTestForThisDevice("Nexus 9")) {
-    PRINT("Test is disabled for Nexus 9!\n");
-    return;
-  }
   StartPlayout();
   StopPlayout();
   StartPlayout();
