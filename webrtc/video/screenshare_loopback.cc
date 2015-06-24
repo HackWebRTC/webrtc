@@ -45,12 +45,12 @@ size_t MinBitrate() {
   return static_cast<size_t>(FLAGS_min_bitrate);
 }
 
-DEFINE_int32(tl0_bitrate, 100, "Temporal layer 0 target bitrate.");
+DEFINE_int32(tl0_bitrate, 200, "Temporal layer 0 target bitrate.");
 size_t StartBitrate() {
   return static_cast<size_t>(FLAGS_tl0_bitrate);
 }
 
-DEFINE_int32(tl1_bitrate, 1000, "Temporal layer 1 target bitrate.");
+DEFINE_int32(tl1_bitrate, 2000, "Temporal layer 1 target bitrate.");
 size_t MaxBitrate() {
   return static_cast<size_t>(FLAGS_tl1_bitrate);
 }

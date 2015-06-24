@@ -278,7 +278,6 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
       int tl0_bitrate = std::min(codec_.targetBitrate, target_bitrate);
       max_bitrate = std::min(codec_.maxBitrate, target_bitrate);
       target_bitrate = tl0_bitrate;
-      framerate = -1;
     }
     configurations_[i].rc_target_bitrate = target_bitrate;
     temporal_layers_[stream_idx]->ConfigureBitrates(target_bitrate,
@@ -312,10 +311,8 @@ void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
   if (num_streams == 1) {
     if (codec.mode == kScreensharing) {
       // Special mode when screensharing on a single stream.
-      temporal_layers_.push_back(new ScreenshareLayers(num_temporal_layers,
-                                                       rand(),
-                                                       &tl0_frame_dropper_,
-                                                       &tl1_frame_dropper_));
+      temporal_layers_.push_back(
+          new ScreenshareLayers(num_temporal_layers, rand()));
     } else {
       temporal_layers_.push_back(
           tl_factory.Create(num_temporal_layers, rand()));
@@ -670,8 +667,10 @@ int VP8EncoderImpl::InitAndSetControlSettings() {
                       static_cast<vp8e_token_partitions>(token_partitions_));
     vpx_codec_control(&(encoders_[i]), VP8E_SET_MAX_INTRA_BITRATE_PCT,
                       rc_max_intra_target_);
+    // VP8E_SET_SCREEN_CONTENT_MODE 2 = screen content with more aggressive
+    // rate control (drop frames on large target bitrate overshoot)
     vpx_codec_control(&(encoders_[i]), VP8E_SET_SCREEN_CONTENT_MODE,
-                      codec_.mode == kScreensharing);
+                      codec_.mode == kScreensharing ? 2 : 0);
   }
   inited_ = true;
   return WEBRTC_VIDEO_CODEC_OK;
@@ -698,15 +697,12 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
                            const std::vector<VideoFrameType>* frame_types) {
   TRACE_EVENT1("webrtc", "VP8::Encode", "timestamp", frame.timestamp());
 
-  if (!inited_) {
+  if (!inited_)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  }
-  if (frame.IsZeroSize()) {
+  if (frame.IsZeroSize())
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  }
-  if (encoded_complete_callback_ == NULL) {
+  if (encoded_complete_callback_ == NULL)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  }
 
   // Only apply scaling to improve for single-layer streams. The scaling metrics
   // use frame drops as a signal and is only applicable when we drop frames.
@@ -851,6 +847,16 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   // whereas |encoder_| is from highest to lowest resolution.
   size_t stream_idx = encoders_.size() - 1;
   for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
+    // Allow the layers adapter to temporarily modify the configuration. This
+    // change isn't stored in configurations_ so change will be discarded at
+    // the next update.
+    vpx_codec_enc_cfg_t temp_config;
+    memcpy(&temp_config, &configurations_[i], sizeof(vpx_codec_enc_cfg_t));
+    if (temporal_layers_[stream_idx]->UpdateConfiguration(&temp_config)) {
+      if (vpx_codec_enc_config_set(&encoders_[i], &temp_config))
+        return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+
     vpx_codec_control(&encoders_[i], VP8E_SET_FRAME_FLAGS, flags[stream_idx]);
     vpx_codec_control(&encoders_[i],
                       VP8E_SET_TEMPORAL_LAYER_ID,
@@ -873,9 +879,8 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
     vpx_codec_control(&(encoders_[0]), VP8E_SET_MAX_INTRA_BITRATE_PCT,
         rc_max_intra_target_);
   }
-  if (error) {
+  if (error)
     return WEBRTC_VIDEO_CODEC_ERROR;
-  }
   timestamp_ += duration;
   return GetEncodedPartitions(input_image, only_predict_from_key_frame);
 }
@@ -933,6 +938,7 @@ void VP8EncoderImpl::PopulateCodecSpecific(
 int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
                                          bool only_predicting_from_key_frame) {
   int stream_idx = static_cast<int>(encoders_.size()) - 1;
+  int result = WEBRTC_VIDEO_CODEC_OK;
   for (size_t encoder_idx = 0; encoder_idx < encoders_.size();
       ++encoder_idx, --stream_idx) {
     vpx_codec_iter_t iter = NULL;
@@ -981,9 +987,12 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
     encoded_images_[encoder_idx]._timeStamp = input_image.timestamp();
     encoded_images_[encoder_idx].capture_time_ms_ =
         input_image.render_time_ms();
+
+    int qp = -1;
+    vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER_64, &qp);
     temporal_layers_[stream_idx]->FrameEncoded(
         encoded_images_[encoder_idx]._length,
-        encoded_images_[encoder_idx]._timeStamp);
+        encoded_images_[encoder_idx]._timeStamp, qp);
     if (send_stream_[stream_idx]) {
       if (encoded_images_[encoder_idx]._length > 0) {
         TRACE_COUNTER_ID1("webrtc", "EncodedFrameSize", encoder_idx,
@@ -994,6 +1003,8 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
             codec_.simulcastStream[stream_idx].width;
         encoded_complete_callback_->Encoded(encoded_images_[encoder_idx],
                                             &codec_specific, &frag_info);
+      } else if (codec_.mode == kScreensharing) {
+        result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
       }
     } else {
       // Required in case padding is applied to dropped frames.
@@ -1017,7 +1028,7 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
       quality_scaler_.ReportDroppedFrame();
     }
   }
-  return WEBRTC_VIDEO_CODEC_OK;
+  return result;
 }
 
 int VP8EncoderImpl::SetChannelParameters(uint32_t packetLoss, int64_t rtt) {

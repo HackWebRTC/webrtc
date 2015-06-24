@@ -60,7 +60,8 @@ VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
       bit_rate_(0),
       frame_rate_(0),
       internal_source_(internalSource),
-      rotation_(kVideoRotation_0) {
+      rotation_(kVideoRotation_0),
+      is_screenshare_(false) {
 }
 
 VCMGenericEncoder::~VCMGenericEncoder()
@@ -90,6 +91,7 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
       frame_rate_ = settings->maxFramerate;
     }
 
+    is_screenshare_ = settings->mode == VideoCodecMode::kScreensharing;
     if (encoder_->InitEncode(settings, numberOfCores, maxPayloadSize) != 0) {
       LOG(LS_ERROR) << "Failed to initialize the encoder associated with "
                        "payload name: " << settings->plName;
@@ -114,7 +116,15 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
     vcm_encoded_frame_callback_->SetRotation(rotation_);
   }
 
-  return encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
+  int32_t result =
+      encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
+  if (is_screenshare_ &&
+      result == WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT) {
+    // Target bitrate exceeded, encoder state has been reset - try again.
+    return encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
+  }
+
+  return result;
 }
 
 int32_t

@@ -102,10 +102,7 @@ struct ScreenshareTemporalLayersFactory : webrtc::TemporalLayers::Factory {
 
   virtual webrtc::TemporalLayers* Create(int num_temporal_layers,
                                          uint8_t initial_tl0_pic_idx) const {
-    return new webrtc::ScreenshareLayers(num_temporal_layers,
-                                         rand(),
-                                         &tl0_frame_dropper_,
-                                         &tl1_frame_dropper_);
+    return new webrtc::ScreenshareLayers(num_temporal_layers, rand());
   }
 
   mutable webrtc::FrameDropper tl0_frame_dropper_;

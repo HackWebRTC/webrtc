@@ -149,6 +149,7 @@ private:
     const bool internal_source_;
     mutable rtc::CriticalSection rates_lock_;
     VideoRotation rotation_;
+    bool is_screenshare_;
 }; // end of VCMGenericEncoder class
 
 }  // namespace webrtc

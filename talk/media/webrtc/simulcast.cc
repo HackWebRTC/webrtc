@@ -411,7 +411,7 @@ void LogSimulcastSubstreams(const webrtc::VideoCodec& codec) {
 
 static const int kScreenshareMinBitrateKbps = 50;
 static const int kScreenshareMaxBitrateKbps = 6000;
-static const int kScreenshareDefaultTl0BitrateKbps = 100;
+static const int kScreenshareDefaultTl0BitrateKbps = 200;
 static const int kScreenshareDefaultTl1BitrateKbps = 1000;
 
 static const char* kScreencastLayerFieldTrialName =

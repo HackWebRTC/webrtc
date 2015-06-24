@@ -649,8 +649,8 @@ TEST_F(FullStackTest, ScreenshareSlides) {
       {"screenshare_slides", 1850, 1110, 5},
       true,
       50000,
-      100000,
-      1000000,
+      200000,
+      2000000,
       0.0,
       0.0,
       kFullStackTestDurationSecs};

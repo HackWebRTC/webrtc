@@ -196,11 +196,15 @@ class SkipEncodingUnusedStreamsTest {
       layers_->PopulateCodecSpecific(base_layer_sync, vp8_info, timestamp);
     }
 
-    void FrameEncoded(unsigned int size, uint32_t timestamp) override {
-      layers_->FrameEncoded(size, timestamp);
+    void FrameEncoded(unsigned int size, uint32_t timestamp, int qp) override {
+      layers_->FrameEncoded(size, timestamp, qp);
     }
 
     int CurrentLayerId() const override { return layers_->CurrentLayerId(); }
+
+    bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) override {
+      return false;
+    }
 
     int configured_bitrate_;
     TemporalLayers* layers_;

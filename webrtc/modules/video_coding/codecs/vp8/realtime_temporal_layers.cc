@@ -239,7 +239,9 @@ class RealTimeTemporalLayers : public TemporalLayers {
     }
   }
 
-  void FrameEncoded(unsigned int size, uint32_t timestamp) {}
+  void FrameEncoded(unsigned int size, uint32_t timestamp, int qp) override {}
+
+  bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) override { return false; }
 
  private:
   int temporal_layers_;
