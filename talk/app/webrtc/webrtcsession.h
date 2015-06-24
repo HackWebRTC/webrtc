@@ -299,8 +299,6 @@ class WebRtcSession : public cricket::BaseSession,
       const cricket::Candidates& candidates);
   virtual void OnCandidatesAllocationDone();
 
-  // Creates local session description with audio and video contents.
-  bool CreateDefaultLocalDescription();
   // Enables media channels to allow sending of media.
   void EnableChannels();
   // Creates a JsepIceCandidate and adds it to the local session description
