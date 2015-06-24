@@ -30,6 +30,8 @@ package org.webrtc;
 import android.opengl.GLES20;
 import android.util.Log;
 
+import java.nio.FloatBuffer;
+
 // Helper class for handling OpenGL shaders and shader programs.
 public class GlShader {
   private static final String TAG = "GlShader";
@@ -86,6 +88,20 @@ public class GlShader {
       throw new RuntimeException("Could not locate '" + label + "' in program");
     }
     return location;
+  }
+
+  /**
+   * Enable and upload a vertex array for attribute |label|. The vertex data is specified in
+   * |buffer| with |dimension| number of components per vertex.
+   */
+  public void setVertexAttribArray(String label, int dimension, FloatBuffer buffer) {
+    if (program == -1) {
+      throw new RuntimeException("The program has been released");
+    }
+    int location = getAttribLocation(label);
+    GLES20.glEnableVertexAttribArray(location);
+    GLES20.glVertexAttribPointer(location, dimension, GLES20.GL_FLOAT, false, 0, buffer);
+    GlUtil.checkNoGLES2Error("setVertexAttribArray");
   }
 
   public int getUniformLocation(String label) {
