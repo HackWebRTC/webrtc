@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/agc/pitch_internal.h"
+#include "webrtc/modules/audio_processing/vad/pitch_internal.h"
 
 #include <cmath>
 
@@ -24,7 +24,6 @@ static void PitchInterpolation(double old_val, const double* in, double* out) {
   out[1] = 5. / 6. * in[1] + 1. / 6. * in[2];
   out[2] = 0.5 * in[2] + 0.5 * in[3];
 }
-
 
 void GetSubframesPitchParameters(int sampling_rate_hz,
                                  double* gains,

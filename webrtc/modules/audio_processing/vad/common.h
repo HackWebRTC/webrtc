@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_COMMON_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_COMMON_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_COMMON_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_COMMON_H_
 
 static const int kSampleRateHz = 16000;
 static const int kLength10Ms = kSampleRateHz / 100;
@@ -24,4 +24,4 @@ struct AudioFeatures {
   bool silence;
 };
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_COMMON_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_VAD_COMMON_H_

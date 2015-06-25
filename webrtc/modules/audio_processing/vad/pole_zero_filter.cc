@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/agc/pole_zero_filter.h"
+#include "webrtc/modules/audio_processing/vad/pole_zero_filter.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -20,13 +20,10 @@ PoleZeroFilter* PoleZeroFilter::Create(const float* numerator_coefficients,
                                        int order_numerator,
                                        const float* denominator_coefficients,
                                        int order_denominator) {
-  if (order_numerator < 0 ||
-      order_denominator < 0 ||
+  if (order_numerator < 0 || order_denominator < 0 ||
       order_numerator > kMaxFilterOrder ||
-      order_denominator > kMaxFilterOrder ||
-      denominator_coefficients[0] == 0 ||
-      numerator_coefficients == NULL ||
-      denominator_coefficients == NULL)
+      order_denominator > kMaxFilterOrder || denominator_coefficients[0] == 0 ||
+      numerator_coefficients == NULL || denominator_coefficients == NULL)
     return NULL;
   return new PoleZeroFilter(numerator_coefficients, order_numerator,
                             denominator_coefficients, order_denominator);
@@ -57,8 +54,7 @@ PoleZeroFilter::PoleZeroFilter(const float* numerator_coefficients,
 }
 
 template <typename T>
-static float FilterArPast(const T* past, int order,
-                          const float* coefficients) {
+static float FilterArPast(const T* past, int order, const float* coefficients) {
   float sum = 0.0f;
   int past_index = order - 1;
   for (int k = 1; k <= order; k++, past_index--)
@@ -87,8 +83,8 @@ int PoleZeroFilter::Filter(const int16_t* in,
   if (highest_order_ < num_input_samples) {
     for (int m = 0; n < num_input_samples; n++, m++) {
       output[n] = in[n] * numerator_coefficients_[0];
-      output[n] += FilterArPast(&in[m], order_numerator_,
-                                numerator_coefficients_);
+      output[n] +=
+          FilterArPast(&in[m], order_numerator_, numerator_coefficients_);
       output[n] -= FilterArPast(&output[m], order_denominator_,
                                 denominator_coefficients_);
     }
@@ -99,13 +95,12 @@ int PoleZeroFilter::Filter(const int16_t* in,
            sizeof(output[0]) * order_denominator_);
   } else {
     // Odd case that the length of the input is shorter that filter order.
-    memmove(past_input_, &past_input_[num_input_samples], order_numerator_ *
-            sizeof(past_input_[0]));
-    memmove(past_output_, &past_output_[num_input_samples], order_denominator_ *
-            sizeof(past_output_[0]));
+    memmove(past_input_, &past_input_[num_input_samples],
+            order_numerator_ * sizeof(past_input_[0]));
+    memmove(past_output_, &past_output_[num_input_samples],
+            order_denominator_ * sizeof(past_output_[0]));
   }
   return 0;
 }
 
 }  // namespace webrtc
-
