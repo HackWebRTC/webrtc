@@ -180,7 +180,7 @@ source_set("audio_processing") {
     deps += [ ":audio_processing_sse2" ]
   }
 
-  if (rtc_build_armv7_neon || current_cpu == "arm64") {
+  if (rtc_build_with_neon) {
     deps += [ ":audio_processing_neon" ]
   }
 
@@ -242,7 +242,7 @@ if (current_cpu == "x86" || current_cpu == "x64") {
   }
 }
 
-if (rtc_build_armv7_neon || current_cpu == "arm64") {
+if (rtc_build_with_neon) {
   source_set("audio_processing_neon") {
     sources = [
       "aec/aec_core_neon.c",
@@ -251,32 +251,28 @@ if (rtc_build_armv7_neon || current_cpu == "arm64") {
       "ns/nsx_core_neon.c",
     ]
 
-    configs += [ "../..:common_config" ]
-    public_configs = [ "../..:common_inherited_config" ]
-
-    deps = [
-      "../../common_audio",
-    ]
-
-    # Enable compilation for the ARM v7 Neon instruction set. This is needed
-    # since //build/config/arm.gni only enables Neon for iOS, not Android.
-    # This provides the same functionality as webrtc/build/arm_neon.gypi.
-    # TODO(kjellander): Investigate if this can be moved into webrtc.gni or
-    # //build/config/arm.gni instead, to reduce code duplication.
-    # Remove the -mfpu=vfpv3-d16 cflag.
-    configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
-
-    # "-mfpu=neon" is not requried for arm64 in GCC.
     if (current_cpu != "arm64") {
+      # Enable compilation for the NEON instruction set. This is needed
+      # since //build/config/arm.gni only enables NEON for iOS, not Android.
+      # This provides the same functionality as webrtc/build/arm_neon.gypi.
+      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
 
-    # Disable LTO in audio_processing_neon target due to compiler bug.
+    # Disable LTO on NEON targets due to compiler bug.
+    # TODO(fdegans): Enable this. See crbug.com/408997.
     if (rtc_use_lto) {
       cflags -= [
         "-flto",
         "-ffat-lto-objects",
       ]
     }
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    deps = [
+      "../../common_audio",
+    ]
   }
 }

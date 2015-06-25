@@ -89,13 +89,8 @@
             'fix/source/lattice_c.c',
             'fix/source/pitch_filter_c.c',
           ],
-          'conditions': [
-            ['arm_neon==1 or arm_neon_optional==1', {
-              'dependencies': [ 'isac_neon' ],
-            }],
-          ],
         }],
-        ['target_arch=="arm64"', {
+        ['build_with_neon==1', {
           'dependencies': ['isac_neon', ],
         }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
@@ -131,7 +126,7 @@
     },
   ],
   'conditions': [
-    ['target_arch=="arm" and arm_version>=7 or target_arch=="arm64"', {
+    ['build_with_neon==1', {
       'targets': [
         {
           'target_name': 'isac_neon',
@@ -147,18 +142,11 @@
             'fix/source/transform_neon.c',
           ],
           'conditions': [
-            # Disable LTO in isac_neon target due to compiler bug
-            ['use_lto==1', {
-              'cflags!': [
-                '-flto',
-                '-ffat-lto-objects',
-              ],
-            }],
-            # Disable AllpassFilter2FixDec16Neon function due to a clang
-            # bug. Refer more details at:
+            # Disable AllpassFilter2FixDec16Neon function due to a clang bug.
+            # For more details refer to:
             # https://code.google.com/p/webrtc/issues/detail?id=4567
             ['target_arch!="arm64" or clang==0', {
-                  'sources': ['fix/source/filterbanks_neon.c',],
+              'sources': ['fix/source/filterbanks_neon.c',],
             }]
           ],
         },

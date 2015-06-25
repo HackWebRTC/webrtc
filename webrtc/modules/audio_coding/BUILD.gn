@@ -528,6 +528,7 @@ source_set("isac_fix") {
     "codecs/isac/fix/source/initialize.c",
     "codecs/isac/fix/source/isacfix.c",
     "codecs/isac/fix/source/lattice.c",
+    "codecs/isac/fix/source/lattice_c.c",
     "codecs/isac/fix/source/lpc_masking_model.c",
     "codecs/isac/fix/source/lpc_masking_model.h",
     "codecs/isac/fix/source/lpc_tables.c",
@@ -566,27 +567,19 @@ source_set("isac_fix") {
     "../../system_wrappers",
   ]
 
-  if (current_cpu == "arm64") {
+  if (rtc_build_with_neon) {
     deps += [ ":isac_neon" ]
   }
 
-  if (rtc_build_armv7_neon) {
-    deps += [ ":isac_neon" ]
-
-    # Enable compilation for the ARM v7 Neon instruction set. This is needed
-    # since //build/config/arm.gni only enables Neon for iOS, not Android.
-    # This provides the same functionality as webrtc/build/arm_neon.gypi.
-    # TODO(kjellander): Investigate if this can be moved into webrtc.gni or
-    # //build/config/arm.gni instead, to reduce code duplication.
-    # Remove the -mfpu=vfpv3-d16 cflag.
-    configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
-    cflags = [ "-mfpu=neon" ]
-
+  if (current_cpu == "arm" && arm_version >= 7) {
     sources += [
       "codecs/isac/fix/source/lattice_armv7.S",
       "codecs/isac/fix/source/pitch_filter_armv6.S",
     ]
-    sources -= [ "codecs/isac/fix/source/pitch_filter_c.c" ]
+    sources -= [
+      "codecs/isac/fix/source/lattice_c.c",
+      "codecs/isac/fix/source/pitch_filter_c.c",
+    ]
   }
 
   if (current_cpu == "mipsel") {
@@ -597,7 +590,10 @@ source_set("isac_fix") {
       "codecs/isac/fix/source/pitch_estimator_mips.c",
       "codecs/isac/fix/source/transform_mips.c",
     ]
-    sources -= [ "codecs/isac/fix/source/pitch_estimator_c.c" ]
+    sources -= [
+      "codecs/isac/fix/source/lattice_c.c",
+      "codecs/isac/fix/source/pitch_estimator_c.c",
+    ]
     if (mips_dsp_rev > 0) {
       sources += [ "codecs/isac/fix/source/filterbanks_mips.c" ]
     }
@@ -609,13 +605,9 @@ source_set("isac_fix") {
       sources -= [ "codecs/isac/fix/source/pitch_filter_c.c" ]
     }
   }
-
-  if (!rtc_build_armv7_neon && current_cpu != "mipsel") {
-    sources += [ "codecs/isac/fix/source/lattice_c.c" ]
-  }
 }
 
-if (rtc_build_armv7_neon || current_cpu == "arm64") {
+if (rtc_build_with_neon) {
   source_set("isac_neon") {
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
@@ -623,26 +615,23 @@ if (rtc_build_armv7_neon || current_cpu == "arm64") {
       "codecs/isac/fix/source/lattice_neon.c",
       "codecs/isac/fix/source/transform_neon.c",
     ]
-
-    if (rtc_build_armv7_neon) {
-      # Enable compilation for the ARM v7 Neon instruction set. This is needed
-      # since //build/config/arm.gni only enables Neon for iOS, not Android.
-      # This provides the same functionality as webrtc/build/arm_neon.gypi.
-      # TODO(kjellander): Investigate if this can be moved into webrtc.gni or
-      # //build/config/arm.gni instead, to reduce code duplication.
-      # Remove the -mfpu=vfpv3-d16 cflag.
-      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
-      cflags = [ "-mfpu=neon" ]
-    }
-
     if (current_cpu != "arm64" || !is_clang) {
       # Disable AllpassFilter2FixDec16Neon function due to a clang bug.
-      # Refer more details at:
+      # For more details refer to:
       # https://code.google.com/p/webrtc/issues/detail?id=4567
       sources += [ "codecs/isac/fix/source/filterbanks_neon.c" ]
     }
 
-    # Disable LTO in audio_processing_neon target due to compiler bug.
+    if (current_cpu != "arm64") {
+      # Enable compilation for the NEON instruction set. This is needed
+      # since //build/config/arm.gni only enables NEON for iOS, not Android.
+      # This provides the same functionality as webrtc/build/arm_neon.gypi.
+      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+      cflags = [ "-mfpu=neon" ]
+    }
+
+    # Disable LTO on NEON targets due to compiler bug.
+    # TODO(fdegans): Enable this. See crbug.com/408997.
     if (rtc_use_lto) {
       cflags -= [
         "-flto",

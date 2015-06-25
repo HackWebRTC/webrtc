@@ -186,7 +186,7 @@
         ['target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': ['audio_processing_sse2',],
         }],
-        ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
+        ['build_with_neon==1', {
           'dependencies': ['audio_processing_neon',],
         }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
@@ -249,7 +249,7 @@
         },
       ],
     }],
-    ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
+    ['build_with_neon==1', {
       'targets': [{
         'target_name': 'audio_processing_neon',
         'type': 'static_library',
@@ -262,15 +262,6 @@
           'aec/aec_rdft_neon.c',
           'aecm/aecm_core_neon.c',
           'ns/nsx_core_neon.c',
-        ],
-        'conditions': [
-          # Disable LTO in audio_processing_neon target due to compiler bug
-          ['use_lto==1', {
-            'cflags!': [
-              '-flto',
-              '-ffat-lto-objects',
-            ],
-          }],
         ],
       }],
     }],

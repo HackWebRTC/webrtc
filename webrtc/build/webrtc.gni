@@ -105,10 +105,10 @@ declare_args() {
     rtc_use_openmax_dl = false
   }
 
-  # WebRTC builds ARM v7 Neon instruction set optimized code for both iOS and
-  # Android, which is why we currently cannot use the variables in
-  # //build/config/arm.gni (since it disables Neon for Android).
-  rtc_build_armv7_neon = current_cpu == "arm" && arm_version >= 7
+  # Determines whether NEON code will be built.
+  rtc_build_with_neon = (current_cpu == "arm" &&
+                         (arm_use_neon == 1 || arm_optionally_use_neon == 1)) ||
+                        current_cpu == "arm64"
 }
 
 # Make it possible to provide custom locations for some libraries (move these

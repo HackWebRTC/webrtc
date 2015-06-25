@@ -130,14 +130,13 @@ source_set("common_audio") {
     ]
 
     if (arm_version >= 7) {
-      deps += [ ":common_audio_neon" ]
       sources += [ "signal_processing/filter_ar_fast_q12_armv7.S" ]
     } else {
       sources += [ "signal_processing/filter_ar_fast_q12.c" ]
     }
   }
 
-  if (current_cpu == "arm64") {
+  if (rtc_build_with_neon) {
     deps += [ ":common_audio_neon" ]
   }
 
@@ -211,7 +210,7 @@ if (current_cpu == "x86" || current_cpu == "x64") {
   }
 }
 
-if (rtc_build_armv7_neon || current_cpu == "arm64") {
+if (rtc_build_with_neon) {
   source_set("common_audio_neon") {
     sources = [
       "fir_filter_neon.cc",
@@ -221,20 +220,24 @@ if (rtc_build_armv7_neon || current_cpu == "arm64") {
       "signal_processing/min_max_operations_neon.c",
     ]
 
-    configs += [ "..:common_config" ]
-    public_configs = [ "..:common_inherited_config" ]
-
-    if (!arm_use_neon) {
+    if (current_cpu != "arm64") {
+      # Enable compilation for the NEON instruction set. This is needed
+      # since //build/config/arm.gni only enables NEON for iOS, not Android.
+      # This provides the same functionality as webrtc/build/arm_neon.gypi.
       configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
 
-    # Disable LTO in audio_processing_neon target due to compiler bug.
+    # Disable LTO on NEON targets due to compiler bug.
+    # TODO(fdegans): Enable this. See crbug.com/408997.
     if (rtc_use_lto) {
       cflags -= [
         "-flto",
         "-ffat-lto-objects",
       ]
     }
+
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
   }
 }
