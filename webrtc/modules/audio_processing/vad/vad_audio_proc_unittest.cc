@@ -12,20 +12,22 @@
 // routines. However, interpolation of pitch-gain and lags is in a separate
 // class and has its own unit-test.
 
-#include "webrtc/modules/audio_processing/agc/agc_audio_proc.h"
+#include "webrtc/modules/audio_processing/vad/vad_audio_proc.h"
 
 #include <math.h>
 #include <stdio.h>
 
-#include "gtest/gtest.h"
-#include "webrtc/modules/audio_processing/agc/common.h"
+#include <string>
+
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_processing/vad/common.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 
 TEST(AudioProcessingTest, DISABLED_ComputingFirstSpectralPeak) {
-  AgcAudioProc audioproc;
+  VadAudioProc audioproc;
 
   std::string peak_file_name =
       test::ResourcePath("audio_processing/agc/agc_spectral_peak", "dat");
@@ -39,7 +41,7 @@ TEST(AudioProcessingTest, DISABLED_ComputingFirstSpectralPeak) {
 
   // Read 10 ms audio in each iteration.
   const size_t kDataLength = kLength10Ms;
-  int16_t data[kDataLength] = { 0 };
+  int16_t data[kDataLength] = {0};
   AudioFeatures features;
   double sp[kMaxNumFrames];
   while (fread(data, sizeof(int16_t), kDataLength, pcm_file) == kDataLength) {

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/agc/gmm.h"
+#include "webrtc/modules/audio_processing/vad/gmm.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -19,13 +19,16 @@ namespace webrtc {
 
 static const int kMaxDimension = 10;
 
-static void RemoveMean(const double* in, const double* mean_vec,
-                       int dimension, double* out) {
+static void RemoveMean(const double* in,
+                       const double* mean_vec,
+                       int dimension,
+                       double* out) {
   for (int n = 0; n < dimension; ++n)
     out[n] = in[n] - mean_vec[n];
 }
 
-static double ComputeExponent(const double* in, const double* covar_inv,
+static double ComputeExponent(const double* in,
+                              const double* covar_inv,
                               int dimension) {
   double q = 0;
   for (int i = 0; i < dimension; ++i) {
@@ -50,7 +53,7 @@ double EvaluateGmm(const double* x, const GmmParameters& gmm_parameters) {
   for (int n = 0; n < gmm_parameters.num_mixtures; n++) {
     RemoveMean(x, mean_vec, gmm_parameters.dimension, v);
     double q = ComputeExponent(v, covar_inv, gmm_parameters.dimension) +
-        gmm_parameters.weight[n];
+               gmm_parameters.weight[n];
     f += exp(q);
     mean_vec += gmm_parameters.dimension;
     covar_inv += gmm_parameters.dimension * gmm_parameters.dimension;

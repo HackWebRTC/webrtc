@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_PITCH_BASED_VAD_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_PITCH_BASED_VAD_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_PITCH_BASED_VAD_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_PITCH_BASED_VAD_H_
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_processing/agc/common.h"
-#include "webrtc/modules/audio_processing/agc/gmm.h"
+#include "webrtc/modules/audio_processing/vad/common.h"
+#include "webrtc/modules/audio_processing/vad/gmm.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class AudioFrame;
-class AgcCircularBuffer;
+class VadCircularBuffer;
 
 // Computes the probability of the input audio frame to be active given
 // the corresponding pitch-gain and lag of the frame.
@@ -37,6 +37,7 @@ class PitchBasedVad {
   //               then, computes the voicing probabilities and combine them
   //               with the given values. The result are returned in |p|.
   int VoicingProbability(const AudioFeatures& features, double* p_combined);
+
  private:
   int UpdatePrior(double p);
 
@@ -49,8 +50,8 @@ class PitchBasedVad {
 
   double p_prior_;
 
-  rtc::scoped_ptr<AgcCircularBuffer> circular_buffer_;
+  rtc::scoped_ptr<VadCircularBuffer> circular_buffer_;
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_PITCH_BASED_VAD_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_VAD_PITCH_BASED_VAD_H_
