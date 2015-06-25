@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/vad/vad_audio_proc.h"
+#include "webrtc/modules/audio_processing/agc/agc_audio_proc.h"
 
 #include <math.h>
 #include <stdio.h>
 
 #include "webrtc/common_audio/fft4g.h"
-#include "webrtc/modules/audio_processing/vad/vad_audio_proc_internal.h"
-#include "webrtc/modules/audio_processing/vad/pitch_internal.h"
-#include "webrtc/modules/audio_processing/vad/pole_zero_filter.h"
+#include "webrtc/modules/audio_processing/agc/agc_audio_proc_internal.h"
+#include "webrtc/modules/audio_processing/agc/pitch_internal.h"
+#include "webrtc/modules/audio_processing/agc/pole_zero_filter.h"
 extern "C" {
 #include "webrtc/modules/audio_coding/codecs/isac/main/source/codec.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/source/lpc_analysis.h"
@@ -29,25 +29,23 @@ namespace webrtc {
 
 // The following structures are declared anonymous in iSAC's structs.h. To
 // forward declare them, we use this derived class trick.
-struct VadAudioProc::PitchAnalysisStruct : public ::PitchAnalysisStruct {};
-struct VadAudioProc::PreFiltBankstr : public ::PreFiltBankstr {};
+struct AgcAudioProc::PitchAnalysisStruct : public ::PitchAnalysisStruct {};
+struct AgcAudioProc::PreFiltBankstr : public ::PreFiltBankstr {};
 
-static const float kFrequencyResolution =
-    kSampleRateHz / static_cast<float>(VadAudioProc::kDftSize);
+static const float kFrequencyResolution = kSampleRateHz /
+    static_cast<float>(AgcAudioProc::kDftSize);
 static const int kSilenceRms = 5;
 
-// TODO(turajs): Make a Create or Init for VadAudioProc.
-VadAudioProc::VadAudioProc()
+// TODO(turajs): Make a Create or Init for AgcAudioProc.
+AgcAudioProc::AgcAudioProc()
     : audio_buffer_(),
       num_buffer_samples_(kNumPastSignalSamples),
       log_old_gain_(-2),
       old_lag_(50),  // Arbitrary but valid as pitch-lag (in samples).
       pitch_analysis_handle_(new PitchAnalysisStruct),
       pre_filter_handle_(new PreFiltBankstr),
-      high_pass_filter_(PoleZeroFilter::Create(kCoeffNumerator,
-                                               kFilterOrder,
-                                               kCoeffDenominator,
-                                               kFilterOrder)) {
+      high_pass_filter_(PoleZeroFilter::Create(
+          kCoeffNumerator, kFilterOrder, kCoeffDenominator, kFilterOrder)) {
   static_assert(kNumPastSignalSamples + kNumSubframeSamples ==
                     sizeof(kLpcAnalWin) / sizeof(kLpcAnalWin[0]),
                 "lpc analysis window incorrect size");
@@ -66,16 +64,15 @@ VadAudioProc::VadAudioProc()
   WebRtcIsac_InitPitchAnalysis(pitch_analysis_handle_.get());
 }
 
-VadAudioProc::~VadAudioProc() {
-}
+AgcAudioProc::~AgcAudioProc() {}
 
-void VadAudioProc::ResetBuffer() {
+void AgcAudioProc::ResetBuffer() {
   memcpy(audio_buffer_, &audio_buffer_[kNumSamplesToProcess],
          sizeof(audio_buffer_[0]) * kNumPastSignalSamples);
   num_buffer_samples_ = kNumPastSignalSamples;
 }
 
-int VadAudioProc::ExtractFeatures(const int16_t* frame,
+int AgcAudioProc::ExtractFeatures(const int16_t* frame,
                                   int length,
                                   AudioFeatures* features) {
   features->num_frames = 0;
@@ -88,7 +85,7 @@ int VadAudioProc::ExtractFeatures(const int16_t* frame,
   // classification.
   if (high_pass_filter_->Filter(frame, kNumSubframeSamples,
                                 &audio_buffer_[num_buffer_samples_]) != 0) {
-    return -1;
+      return -1;
   }
 
   num_buffer_samples_ += kNumSubframeSamples;
@@ -118,8 +115,7 @@ int VadAudioProc::ExtractFeatures(const int16_t* frame,
 }
 
 // Computes |kLpcOrder + 1| correlation coefficients.
-void VadAudioProc::SubframeCorrelation(double* corr,
-                                       int length_corr,
+void AgcAudioProc::SubframeCorrelation(double* corr, int length_corr,
                                        int subframe_index) {
   assert(length_corr >= kLpcOrder + 1);
   double windowed_audio[kNumSubframeSamples + kNumPastSignalSamples];
@@ -128,20 +124,20 @@ void VadAudioProc::SubframeCorrelation(double* corr,
   for (int n = 0; n < kNumSubframeSamples + kNumPastSignalSamples; n++)
     windowed_audio[n] = audio_buffer_[buffer_index++] * kLpcAnalWin[n];
 
-  WebRtcIsac_AutoCorr(corr, windowed_audio,
-                      kNumSubframeSamples + kNumPastSignalSamples, kLpcOrder);
+  WebRtcIsac_AutoCorr(corr, windowed_audio, kNumSubframeSamples +
+                      kNumPastSignalSamples, kLpcOrder);
 }
 
 // Compute |kNum10msSubframes| sets of LPC coefficients, one per 10 ms input.
 // The analysis window is 15 ms long and it is centered on the first half of
 // each 10ms sub-frame. This is equivalent to computing LPC coefficients for the
 // first half of each 10 ms subframe.
-void VadAudioProc::GetLpcPolynomials(double* lpc, int length_lpc) {
+void AgcAudioProc::GetLpcPolynomials(double* lpc, int length_lpc) {
   assert(length_lpc >= kNum10msSubframes * (kLpcOrder + 1));
   double corr[kLpcOrder + 1];
   double reflec_coeff[kLpcOrder];
   for (int i = 0, offset_lpc = 0; i < kNum10msSubframes;
-       i++, offset_lpc += kLpcOrder + 1) {
+      i++, offset_lpc += kLpcOrder + 1) {
     SubframeCorrelation(corr, kLpcOrder + 1, i);
     corr[0] *= 1.0001;
     // This makes Lev-Durb a bit more stable.
@@ -154,8 +150,7 @@ void VadAudioProc::GetLpcPolynomials(double* lpc, int length_lpc) {
 
 // Fit a second order curve to these 3 points and find the location of the
 // extremum. The points are inverted before curve fitting.
-static float QuadraticInterpolation(float prev_val,
-                                    float curr_val,
+static float QuadraticInterpolation(float prev_val, float curr_val,
                                     float next_val) {
   // Doing the interpolation in |1 / A(z)|^2.
   float fractional_index = 0;
@@ -163,8 +158,8 @@ static float QuadraticInterpolation(float prev_val,
   prev_val = 1.0f / prev_val;
   curr_val = 1.0f / curr_val;
 
-  fractional_index =
-      -(next_val - prev_val) * 0.5f / (next_val + prev_val - 2.f * curr_val);
+  fractional_index = -(next_val - prev_val) * 0.5f / (next_val + prev_val -
+      2.f * curr_val);
   assert(fabs(fractional_index) < 1);
   return fractional_index;
 }
@@ -174,7 +169,7 @@ static float QuadraticInterpolation(float prev_val,
 // with the local minimum of A(z). It saves complexity, as we save one
 // inversion. Furthermore, we find the first local maximum of magnitude squared,
 // to save on one square root.
-void VadAudioProc::FindFirstSpectralPeaks(double* f_peak, int length_f_peak) {
+void AgcAudioProc::FindFirstSpectralPeaks(double* f_peak, int length_f_peak) {
   assert(length_f_peak >= kNum10msSubframes);
   double lpc[kNum10msSubframes * (kLpcOrder + 1)];
   // For all sub-frames.
@@ -198,8 +193,8 @@ void VadAudioProc::FindFirstSpectralPeaks(double* f_peak, int length_f_peak) {
     float next_magn_sqr;
     bool found_peak = false;
     for (int n = 2; n < kNumDftCoefficients - 1; n++) {
-      next_magn_sqr =
-          data[2 * n] * data[2 * n] + data[2 * n + 1] * data[2 * n + 1];
+      next_magn_sqr = data[2 * n] * data[2 * n] +
+          data[2 * n + 1] * data[2 * n + 1];
       if (curr_magn_sqr < prev_magn_sqr && curr_magn_sqr < next_magn_sqr) {
         found_peak = true;
         index_peak = n - 1;
@@ -218,16 +213,15 @@ void VadAudioProc::FindFirstSpectralPeaks(double* f_peak, int length_f_peak) {
     } else {
       // A peak is found, do a simple quadratic interpolation to get a more
       // accurate estimate of the peak location.
-      fractional_index =
-          QuadraticInterpolation(prev_magn_sqr, curr_magn_sqr, next_magn_sqr);
+      fractional_index = QuadraticInterpolation(prev_magn_sqr, curr_magn_sqr,
+                                                next_magn_sqr);
     }
     f_peak[i] = (index_peak + fractional_index) * kFrequencyResolution;
   }
 }
 
 // Using iSAC functions to estimate pitch gains & lags.
-void VadAudioProc::PitchAnalysis(double* log_pitch_gains,
-                                 double* pitch_lags_hz,
+void AgcAudioProc::PitchAnalysis(double* log_pitch_gains, double* pitch_lags_hz,
                                  int length) {
   // TODO(turajs): This can be "imported" from iSAC & and the next two
   // constants.
@@ -247,27 +241,28 @@ void VadAudioProc::PitchAnalysis(double* log_pitch_gains,
                                     kNumLookaheadSamples];
 
   // Split signal to lower and upper bands
-  WebRtcIsac_SplitAndFilterFloat(&audio_buffer_[kNumPastSignalSamples], lower,
-                                 upper, lower_lookahead, upper_lookahead,
+  WebRtcIsac_SplitAndFilterFloat(&audio_buffer_[kNumPastSignalSamples],
+                                 lower, upper, lower_lookahead, upper_lookahead,
                                  pre_filter_handle_.get());
   WebRtcIsac_PitchAnalysis(lower_lookahead, lower_lookahead_pre_filter,
                            pitch_analysis_handle_.get(), lags, gains);
 
   // Lags are computed on lower-band signal with sampling rate half of the
   // input signal.
-  GetSubframesPitchParameters(
-      kSampleRateHz / 2, gains, lags, kNumPitchSubframes, kNum10msSubframes,
-      &log_old_gain_, &old_lag_, log_pitch_gains, pitch_lags_hz);
+  GetSubframesPitchParameters(kSampleRateHz / 2, gains, lags,
+                              kNumPitchSubframes, kNum10msSubframes,
+                              &log_old_gain_, &old_lag_,
+                              log_pitch_gains, pitch_lags_hz);
 }
 
-void VadAudioProc::Rms(double* rms, int length_rms) {
+void AgcAudioProc::Rms(double* rms, int length_rms) {
   assert(length_rms >= kNum10msSubframes);
   int offset = kNumPastSignalSamples;
   for (int i = 0; i < kNum10msSubframes; i++) {
     rms[i] = 0;
     for (int n = 0; n < kNumSubframeSamples; n++, offset++)
       rms[i] += audio_buffer_[offset] * audio_buffer_[offset];
-    rms[i] = sqrt(rms[i] / kNumSubframeSamples);
+    rms[i] =  sqrt(rms[i] / kNumSubframeSamples);
   }
 }
 

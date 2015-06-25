@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_CIRCULAR_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_CIRCULAR_BUFFER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_CIRCULAR_BUFFER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_CIRCULAR_BUFFER_H_
 
 #include "webrtc/base/scoped_ptr.h"
 
@@ -21,10 +21,10 @@ namespace webrtc {
 // It is used in class "PitchBasedActivity" to keep track of posterior
 // probabilities in the past few seconds. The posterior probabilities are used
 // to recursively update prior probabilities.
-class VadCircularBuffer {
+class AgcCircularBuffer {
  public:
-  static VadCircularBuffer* Create(int buffer_size);
-  ~VadCircularBuffer();
+  static AgcCircularBuffer* Create(int buffer_size);
+  ~AgcCircularBuffer();
 
   // If buffer is wrapped around.
   bool is_full() const { return is_full_; }
@@ -44,7 +44,7 @@ class VadCircularBuffer {
   int RemoveTransient(int width_threshold, double val_threshold);
 
  private:
-  explicit VadCircularBuffer(int buffer_size);
+  explicit AgcCircularBuffer(int buffer_size);
   // Get previous values. |index = 0| corresponds to the most recent
   // insertion. |index = 1| is the one before the most recent insertion, and
   // so on.
@@ -66,4 +66,4 @@ class VadCircularBuffer {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_CIRCULAR_BUFFER_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_CIRCULAR_BUFFER_H_

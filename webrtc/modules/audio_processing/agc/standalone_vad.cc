@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/vad/standalone_vad.h"
+#include "webrtc/modules/audio_processing/agc/standalone_vad.h"
 
 #include <assert.h>
 
@@ -21,8 +21,10 @@ namespace webrtc {
 static const int kDefaultStandaloneVadMode = 3;
 
 StandaloneVad::StandaloneVad(VadInst* vad)
-    : vad_(vad), buffer_(), index_(0), mode_(kDefaultStandaloneVadMode) {
-}
+    : vad_(vad),
+      buffer_(),
+      index_(0),
+      mode_(kDefaultStandaloneVadMode) {}
 
 StandaloneVad::~StandaloneVad() {
   WebRtcVad_Free(vad_);
@@ -91,3 +93,4 @@ int StandaloneVad::set_mode(int mode) {
 }
 
 }  // namespace webrtc
+

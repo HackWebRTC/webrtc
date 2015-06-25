@@ -8,44 +8,42 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/vad/vad_circular_buffer.h"
+#include "webrtc/modules/audio_processing/agc/circular_buffer.h"
 
 #include <assert.h>
 #include <stdlib.h>
 
 namespace webrtc {
 
-VadCircularBuffer::VadCircularBuffer(int buffer_size)
+AgcCircularBuffer::AgcCircularBuffer(int buffer_size)
     : buffer_(new double[buffer_size]),
       is_full_(false),
       index_(0),
       buffer_size_(buffer_size),
-      sum_(0) {
-}
+      sum_(0) {}
 
-VadCircularBuffer::~VadCircularBuffer() {
-}
+AgcCircularBuffer::~AgcCircularBuffer() {}
 
-void VadCircularBuffer::Reset() {
+void AgcCircularBuffer::Reset() {
   is_full_ = false;
   index_ = 0;
   sum_ = 0;
 }
 
-VadCircularBuffer* VadCircularBuffer::Create(int buffer_size) {
+AgcCircularBuffer* AgcCircularBuffer::Create(int buffer_size) {
   if (buffer_size <= 0)
     return NULL;
-  return new VadCircularBuffer(buffer_size);
+  return new AgcCircularBuffer(buffer_size);
 }
 
-double VadCircularBuffer::Oldest() const {
+double AgcCircularBuffer::Oldest() const {
   if (!is_full_)
     return buffer_[0];
   else
     return buffer_[index_];
 }
 
-double VadCircularBuffer::Mean() {
+double AgcCircularBuffer::Mean() {
   double m;
   if (is_full_) {
     m = sum_ / buffer_size_;
@@ -58,7 +56,7 @@ double VadCircularBuffer::Mean() {
   return m;
 }
 
-void VadCircularBuffer::Insert(double value) {
+void AgcCircularBuffer::Insert(double value) {
   if (is_full_) {
     sum_ -= buffer_[index_];
   }
@@ -70,13 +68,13 @@ void VadCircularBuffer::Insert(double value) {
     index_ = 0;
   }
 }
-int VadCircularBuffer::BufferLevel() {
+int AgcCircularBuffer::BufferLevel() {
   if (is_full_)
     return buffer_size_;
   return index_;
 }
 
-int VadCircularBuffer::Get(int index, double* value) const {
+int AgcCircularBuffer::Get(int index, double* value) const {
   int err = ConvertToLinearIndex(&index);
   if (err < 0)
     return -1;
@@ -84,7 +82,7 @@ int VadCircularBuffer::Get(int index, double* value) const {
   return 0;
 }
 
-int VadCircularBuffer::Set(int index, double value) {
+int AgcCircularBuffer::Set(int index, double value) {
   int err = ConvertToLinearIndex(&index);
   if (err < 0)
     return -1;
@@ -95,7 +93,7 @@ int VadCircularBuffer::Set(int index, double value) {
   return 0;
 }
 
-int VadCircularBuffer::ConvertToLinearIndex(int* index) const {
+int AgcCircularBuffer::ConvertToLinearIndex(int* index) const {
   if (*index < 0 || *index >= buffer_size_)
     return -1;
 
@@ -108,7 +106,7 @@ int VadCircularBuffer::ConvertToLinearIndex(int* index) const {
   return 0;
 }
 
-int VadCircularBuffer::RemoveTransient(int width_threshold,
+int AgcCircularBuffer::RemoveTransient(int width_threshold,
                                        double val_threshold) {
   if (!is_full_ && index_ < width_threshold + 2)
     return 0;
