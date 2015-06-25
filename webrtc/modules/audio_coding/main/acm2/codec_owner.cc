@@ -21,8 +21,6 @@
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
-#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
-#include "webrtc/system_wrappers/interface/metrics.h"
 
 namespace webrtc {
 namespace acm2 {
@@ -182,8 +180,6 @@ void CodecOwner::SetEncoders(const CodecInst& speech_inst,
                       &isac_is_encoder_);
   external_speech_encoder_ = nullptr;
   ChangeCngAndRed(cng_payload_type, vad_mode, red_payload_type);
-  RTC_HISTOGRAM_COUNTS_100(HISTOGRAM_NAME_AUDIO_TARGET_BITRATE_IN_KBPS,
-                           SpeechEncoder()->GetTargetBitrate() / 1000);
 }
 
 void CodecOwner::SetEncoders(AudioEncoderMutable* external_speech_encoder,
@@ -194,8 +190,6 @@ void CodecOwner::SetEncoders(AudioEncoderMutable* external_speech_encoder,
   speech_encoder_.reset();
   isac_is_encoder_ = false;
   ChangeCngAndRed(cng_payload_type, vad_mode, red_payload_type);
-  RTC_HISTOGRAM_COUNTS_100(HISTOGRAM_NAME_AUDIO_TARGET_BITRATE_IN_KBPS,
-                           SpeechEncoder()->GetTargetBitrate() / 1000);
 }
 
 void CodecOwner::ChangeCngAndRed(int cng_payload_type,

@@ -13,8 +13,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
-#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
-#include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -314,9 +312,6 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   // Check if a change in Rate is required.
   if (send_codec.rate != send_codec_inst_.rate) {
     codec_owner_.SpeechEncoder()->SetTargetBitrate(send_codec.rate);
-    RTC_HISTOGRAM_COUNTS_100(
-        HISTOGRAM_NAME_AUDIO_TARGET_BITRATE_IN_KBPS,
-        codec_owner_.SpeechEncoder()->GetTargetBitrate() / 1000);
     send_codec_inst_.rate = send_codec.rate;
   }
 

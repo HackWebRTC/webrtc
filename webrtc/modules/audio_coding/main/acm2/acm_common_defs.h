@@ -76,9 +76,6 @@ struct WebRtcACMAudioBuff {
   uint32_t last_in_timestamp;
 };
 
-#define HISTOGRAM_NAME_AUDIO_TARGET_BITRATE_IN_KBPS \
-  "WebRTC.Audio.TargetBitrateInKbps"
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_COMMON_DEFS_H_

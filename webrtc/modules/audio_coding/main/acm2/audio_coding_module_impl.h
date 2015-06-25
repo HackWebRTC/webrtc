@@ -250,6 +250,22 @@ class AudioCodingModuleImpl : public AudioCodingModule {
     int16_t buffer[WEBRTC_10MS_PCM_AUDIO];
   };
 
+  // This member class writes values to the named UMA histogram, but only if
+  // the value has changed since the last time (and always for the first call).
+  class ChangeLogger {
+   public:
+    explicit ChangeLogger(const std::string& histogram_name)
+        : histogram_name_(histogram_name) {}
+    // Logs the new value if it is different from the last logged value, or if
+    // this is the first call.
+    void MaybeLog(int value);
+
+   private:
+    int last_value_ = 0;
+    int first_time_ = true;
+    const std::string histogram_name_;
+  };
+
   int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
   int Encode(const InputData& input_data)
@@ -285,6 +301,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   uint32_t expected_in_ts_ GUARDED_BY(acm_crit_sect_);
   ACMResampler resampler_ GUARDED_BY(acm_crit_sect_);
   AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
+  ChangeLogger bitrate_logger_ GUARDED_BY(acm_crit_sect_);
   CodecManager codec_manager_ GUARDED_BY(acm_crit_sect_);
 
   // This is to keep track of CN instances where we can send DTMFs.

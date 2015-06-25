@@ -122,6 +122,14 @@ void ConvertEncodedInfoToFragmentationHeader(
 }
 }  // namespace
 
+void AudioCodingModuleImpl::ChangeLogger::MaybeLog(int value) {
+  if (value != last_value_ || first_time_) {
+    first_time_ = false;
+    last_value_ = value;
+    RTC_HISTOGRAM_COUNTS_100(histogram_name_, value);
+  }
+}
+
 AudioCodingModuleImpl::AudioCodingModuleImpl(
     const AudioCodingModule::Config& config)
     : acm_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -129,6 +137,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       expected_codec_ts_(0xD87F3F9F),
       expected_in_ts_(0xD87F3F9F),
       receiver_(config),
+      bitrate_logger_("WebRTC.Audio.TargetBitrateInKbps"),
       previous_pltype_(255),
       aux_rtp_header_(NULL),
       receiver_initialized_(false),
@@ -185,6 +194,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   encoded_info = audio_encoder->Encode(rtp_timestamp, input_data.audio,
                                        input_data.length_per_channel,
                                        sizeof(stream), stream);
+  bitrate_logger_.MaybeLog(audio_encoder->GetTargetBitrate() / 1000);
   if (encoded_info.encoded_bytes == 0 && !encoded_info.send_even_if_empty) {
     // Not enough data.
     return 0;
@@ -296,9 +306,6 @@ void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
   CriticalSectionScoped lock(acm_crit_sect_);
   if (codec_manager_.CurrentEncoder()) {
     codec_manager_.CurrentEncoder()->SetTargetBitrate(bitrate_bps);
-    RTC_HISTOGRAM_COUNTS_100(
-        HISTOGRAM_NAME_AUDIO_TARGET_BITRATE_IN_KBPS,
-        codec_manager_.CurrentEncoder()->GetTargetBitrate() / 1000);
   }
 }
 
