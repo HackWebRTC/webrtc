@@ -98,7 +98,7 @@ public:
 
  int32_t SetCNAME(const char* cName);
 
- int32_t AddMixedCNAME(uint32_t SSRC, const char cName[RTCP_CNAME_SIZE]);
+ int32_t AddMixedCNAME(uint32_t SSRC, const char* c_name);
 
  int32_t RemoveMixedCNAME(uint32_t SSRC);
 
@@ -200,7 +200,7 @@ private:
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
  BuildResult BuildExtendedJitterReport(RtcpContext* context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildSDEC(RtcpContext* context)
+ BuildResult BuildSDES(RtcpContext* context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
  BuildResult BuildPLI(RtcpContext* context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
@@ -252,14 +252,13 @@ private:
  uint32_t ssrc_ GUARDED_BY(critical_section_rtcp_sender_);
  // SSRC that we receive on our RTP channel
  uint32_t remote_ssrc_ GUARDED_BY(critical_section_rtcp_sender_);
- char cname_[RTCP_CNAME_SIZE] GUARDED_BY(critical_section_rtcp_sender_);
+ std::string cname_ GUARDED_BY(critical_section_rtcp_sender_);
 
  ReceiveStatistics* receive_statistics_
      GUARDED_BY(critical_section_rtcp_sender_);
  std::map<uint32_t, rtcp::ReportBlock> report_blocks_
      GUARDED_BY(critical_section_rtcp_sender_);
- // TODO(sprang): Can we avoid pointers here?
- std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> csrc_cnames_
+ std::map<uint32_t, std::string> csrc_cnames_
      GUARDED_BY(critical_section_rtcp_sender_);
 
  // Sent

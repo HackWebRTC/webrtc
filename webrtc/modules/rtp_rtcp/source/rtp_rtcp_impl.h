@@ -144,8 +144,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                     uint32_t* rtcp_arrival_time_frac,
                     uint32_t* rtcp_timestamp) const override;
 
-  int32_t AddMixedCNAME(uint32_t ssrc,
-                        const char c_name[RTCP_CNAME_SIZE]) override;
+  int32_t AddMixedCNAME(uint32_t ssrc, const char* c_name) override;
 
   int32_t RemoveMixedCNAME(uint32_t ssrc) override;
 

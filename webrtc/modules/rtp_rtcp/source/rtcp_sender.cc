@@ -170,13 +170,12 @@ RTCPSender::RTCPSender(
 
       xr_send_receiver_reference_time_enabled_(false),
       packet_type_counter_observer_(packet_type_counter_observer) {
-  memset(cname_, 0, sizeof(cname_));
   memset(last_send_report_, 0, sizeof(last_send_report_));
   memset(last_rtcp_time_, 0, sizeof(last_rtcp_time_));
 
   builders_[kRtcpSr] = &RTCPSender::BuildSR;
   builders_[kRtcpRr] = &RTCPSender::BuildRR;
-  builders_[kRtcpSdes] = &RTCPSender::BuildSDEC;
+  builders_[kRtcpSdes] = &RTCPSender::BuildSDES;
   builders_[kRtcpTransmissionTimeOffset] =
       &RTCPSender::BuildExtendedJitterReport;
   builders_[kRtcpPli] = &RTCPSender::BuildPLI;
@@ -196,8 +195,6 @@ RTCPSender::RTCPSender(
 }
 
 RTCPSender::~RTCPSender() {
-  for (auto it : csrc_cnames_)
-    delete it.second;
 }
 
 int32_t RTCPSender::RegisterSendTransport(Transport* outgoingTransport) {
@@ -333,34 +330,28 @@ int32_t RTCPSender::SetCNAME(const char* c_name) {
 
   DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-  cname_[RTCP_CNAME_SIZE - 1] = 0;
-  strncpy(cname_, c_name, RTCP_CNAME_SIZE - 1);
+  cname_ = c_name;
   return 0;
 }
 
-int32_t RTCPSender::AddMixedCNAME(uint32_t SSRC,
-                                  const char cName[RTCP_CNAME_SIZE]) {
-  assert(cName);
+int32_t RTCPSender::AddMixedCNAME(uint32_t SSRC, const char* c_name) {
+  assert(c_name);
+  DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-  if (csrc_cnames_.size() >= kRtpCsrcSize) {
+  if (csrc_cnames_.size() >= kRtpCsrcSize)
     return -1;
-  }
-  RTCPCnameInformation* ptr = new RTCPCnameInformation();
-  ptr->name[RTCP_CNAME_SIZE - 1] = 0;
-  strncpy(ptr->name, cName, RTCP_CNAME_SIZE - 1);
-  csrc_cnames_[SSRC] = ptr;
+
+  csrc_cnames_[SSRC] = c_name;
   return 0;
 }
 
 int32_t RTCPSender::RemoveMixedCNAME(uint32_t SSRC) {
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-  std::map<uint32_t, RTCPCnameInformation*>::iterator it =
-      csrc_cnames_.find(SSRC);
+  auto it = csrc_cnames_.find(SSRC);
 
   if (it == csrc_cnames_.end())
     return -1;
 
-  delete it->second;
   csrc_cnames_.erase(it);
   return 0;
 }
@@ -535,80 +526,22 @@ RTCPSender::BuildResult RTCPSender::BuildSR(RtcpContext* ctx) {
   return BuildResult::kSuccess;
 }
 
-RTCPSender::BuildResult RTCPSender::BuildSDEC(RtcpContext* ctx) {
-  size_t lengthCname = strlen(cname_);
-  assert(lengthCname < RTCP_CNAME_SIZE);
+RTCPSender::BuildResult RTCPSender::BuildSDES(RtcpContext* ctx) {
+  size_t length_cname = cname_.length();
+  CHECK_LT(length_cname, static_cast<size_t>(RTCP_CNAME_SIZE));
 
-  // sanity
-  if (ctx->position + 12 + lengthCname >= IP_PACKET_SIZE) {
-    LOG(LS_WARNING) << "Failed to build SDEC.";
+  rtcp::Sdes sdes;
+  sdes.WithCName(ssrc_, cname_);
+
+  for (const auto it : csrc_cnames_)
+    sdes.WithCName(it.first, it.second);
+
+  PacketBuiltCallback callback(ctx);
+  if (!sdes.BuildExternalBuffer(&ctx->buffer[ctx->position],
+                                ctx->buffer_size - ctx->position, &callback)) {
     return BuildResult::kTruncated;
   }
-  // SDEC Source Description
 
-  // We always need to add SDES CNAME
-  size_t size = 0x80 + 1 + csrc_cnames_.size();
-  DCHECK_LE(size, std::numeric_limits<uint8_t>::max());
-  *ctx->AllocateData(1) = static_cast<uint8_t>(size);
-  *ctx->AllocateData(1) = 202;
-
-  // handle SDES length later on
-  uint32_t SDESLengthPos = ctx->position;
-  ctx->AllocateData(2);
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // CNAME = 1
-  *ctx->AllocateData(1) = 1;
-  DCHECK_LE(lengthCname, std::numeric_limits<uint8_t>::max());
-  *ctx->AllocateData(1) = static_cast<uint8_t>(lengthCname);
-
-  uint16_t SDESLength = 10;
-
-  memcpy(ctx->AllocateData(lengthCname), cname_, lengthCname);
-  SDESLength += static_cast<uint16_t>(lengthCname);
-
-  uint16_t padding = 0;
-  // We must have a zero field even if we have an even multiple of 4 bytes
-  do {
-    ++padding;
-    *ctx->AllocateData(1) = 0;
-  } while ((ctx->position % 4) != 0);
-  SDESLength += padding;
-
-  for (auto it = csrc_cnames_.begin(); it != csrc_cnames_.end(); ++it) {
-    RTCPCnameInformation* cname = it->second;
-    uint32_t SSRC = it->first;
-
-    // Add SSRC
-    ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), SSRC);
-
-    // CNAME = 1
-    *ctx->AllocateData(1) = 1;
-
-    size_t length = strlen(cname->name);
-    assert(length < RTCP_CNAME_SIZE);
-
-    *ctx->AllocateData(1) = static_cast<uint8_t>(length);
-    SDESLength += 6;
-
-    memcpy(ctx->AllocateData(length), cname->name, length);
-
-    SDESLength += length;
-    uint16_t padding = 0;
-
-    // We must have a zero field even if we have an even multiple of 4 bytes
-    do {
-      ++padding;
-      *ctx->AllocateData(1) = 0;
-    } while ((ctx->position % 4) != 0);
-    SDESLength += padding;
-  }
-  // in 32-bit words minus one and we don't count the header
-  uint16_t buffer_length = (SDESLength / 4) - 1;
-  ByteWriter<uint16_t>::WriteBigEndian(&ctx->buffer[SDESLengthPos],
-                                       buffer_length);
   return BuildResult::kSuccess;
 }
 
@@ -1409,7 +1342,7 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
       SetFlag(sending_ ? kRtcpSr : kRtcpRr, true);
   }
 
-  if (IsFlagPresent(kRtcpSr) || (IsFlagPresent(kRtcpRr) && cname_[0] != 0))
+  if (IsFlagPresent(kRtcpSr) || (IsFlagPresent(kRtcpRr) && !cname_.empty()))
     SetFlag(kRtcpSdes, true);
 
   // We need to send our NTP even if we haven't received any reports.
@@ -1469,7 +1402,7 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
     }
 
     uint32_t start_position = context.position;
-    BuildResult result = (*this.*(builder->second))(&context);
+    BuildResult result = (this->*(builder->second))(&context);
     switch (result) {
       case BuildResult::kError:
         return -1;
