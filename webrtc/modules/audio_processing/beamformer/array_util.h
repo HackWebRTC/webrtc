@@ -23,19 +23,13 @@ struct CartesianPoint {
     c[1] = y;
     c[2] = z;
   }
-  T x() const {
-    return c[0];
-  }
-  T y() const {
-    return c[1];
-  }
-  T z() const {
-    return c[2];
-  }
+  T x() const { return c[0]; }
+  T y() const { return c[1]; }
+  T z() const { return c[2]; }
   T c[3];
 };
 
-typedef CartesianPoint<float> Point;
+using Point = CartesianPoint<float>;
 
 template<typename T>
 float Distance(CartesianPoint<T> a, CartesianPoint<T> b) {
@@ -43,6 +37,21 @@ float Distance(CartesianPoint<T> a, CartesianPoint<T> b) {
                    (a.y() - b.y()) * (a.y() - b.y()) +
                    (a.z() - b.z()) * (a.z() - b.z()));
 }
+
+template <typename T>
+struct SphericalPoint {
+  SphericalPoint(T azimuth, T elevation, T radius) {
+    s[0] = azimuth;
+    s[1] = elevation;
+    s[2] = radius;
+  }
+  T azimuth() const { return s[0]; }
+  T elevation() const { return s[1]; }
+  T distance() const { return s[2]; }
+  T s[3];
+};
+
+using SphericalPointf = SphericalPoint<float>;
 
 }  // namespace webrtc
 
