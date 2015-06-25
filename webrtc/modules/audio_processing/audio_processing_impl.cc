@@ -178,7 +178,11 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
       use_new_agc_(config.Get<ExperimentalAgc>().enabled),
 #endif
       agc_startup_min_volume_(config.Get<ExperimentalAgc>().startup_min_volume),
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+      transient_suppressor_enabled_(false),
+#else
       transient_suppressor_enabled_(config.Get<ExperimentalNs>().enabled),
+#endif
       beamformer_enabled_(config.Get<Beamforming>().enabled),
       beamformer_(beamformer),
       array_geometry_(config.Get<Beamforming>().array_geometry),
