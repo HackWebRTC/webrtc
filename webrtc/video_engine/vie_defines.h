@@ -36,13 +36,6 @@ enum { kViEMinKeyRequestIntervalMs = 300 };
 // ViEBase
 enum { kViEMaxNumberOfChannels = 64 };
 
-// ViECapture
-enum { kViEMaxCaptureDevices = 256 };
-enum { kViECaptureDefaultWidth = 352 };
-enum { kViECaptureDefaultHeight = 288 };
-enum { kViECaptureDefaultFramerate = 30 };
-enum { kViECaptureMaxSnapshotWaitTimeMs = 500 };
-
 // ViECodec
 enum { kViEMaxCodecWidth = 4096 };
 enum { kViEMaxCodecHeight = 3072 };
@@ -72,8 +65,6 @@ enum { kMaxNackListSize = 250 };
 enum {
   kViEChannelIdBase = 0x0,
   kViEChannelIdMax = 0xFF,
-  kViECaptureIdBase = 0x1001,
-  kViECaptureIdMax = 0x10FF,
   kViEDummyChannelId = 0xFFFF
 };
 

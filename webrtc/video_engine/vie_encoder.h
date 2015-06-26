@@ -25,7 +25,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/vie_capturer.h"
+#include "webrtc/video/video_capture_input.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -63,12 +63,11 @@ class ViEEncoderObserver {
   virtual ~ViEEncoderObserver() {}
 };
 
-class ViEEncoder
-    : public RtcpIntraFrameObserver,
-      public VideoEncoderRateObserver,
-      public VCMPacketizationCallback,
-      public VCMSendStatisticsCallback,
-      public ViEFrameCallback {
+class ViEEncoder : public RtcpIntraFrameObserver,
+                   public VideoEncoderRateObserver,
+                   public VCMPacketizationCallback,
+                   public VCMSendStatisticsCallback,
+                   public VideoCaptureCallback {
  public:
   friend class ViEBitrateObserver;
 
@@ -122,7 +121,7 @@ class ViEEncoder
   // Scale or crop/pad image.
   int32_t ScaleInputImage(bool enable);
 
-  // Implementing ViEFrameCallback.
+  // Implementing VideoCaptureCallback.
   void DeliverFrame(VideoFrame video_frame) override;
 
   int32_t SendKeyFrame();

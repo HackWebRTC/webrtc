@@ -56,8 +56,6 @@ static const int kMaxVideoBitrate = 1000;
 // renderer for a channel or it is adding a renderer for a capturer.
 static const int kViEChannelIdBase = 0;
 static const int kViEChannelIdMax = 1000;
-static const int kViECaptureIdBase = 10000;  // Make sure there is a gap.
-static const int kViECaptureIdMax = 11000;
 
 // Fake class for mocking out webrtc::VideoDecoder
 class FakeWebRtcVideoDecoder : public webrtc::VideoDecoder {

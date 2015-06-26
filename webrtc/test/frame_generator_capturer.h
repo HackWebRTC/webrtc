@@ -29,13 +29,13 @@ class FrameGenerator;
 
 class FrameGeneratorCapturer : public VideoCapturer {
  public:
-  static FrameGeneratorCapturer* Create(VideoSendStreamInput* input,
+  static FrameGeneratorCapturer* Create(VideoCaptureInput* input,
                                         size_t width,
                                         size_t height,
                                         int target_fps,
                                         Clock* clock);
 
-  static FrameGeneratorCapturer* CreateFromYuvFile(VideoSendStreamInput* input,
+  static FrameGeneratorCapturer* CreateFromYuvFile(VideoCaptureInput* input,
                                                    const std::string& file_name,
                                                    size_t width,
                                                    size_t height,
@@ -49,7 +49,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 
   FrameGeneratorCapturer(Clock* clock,
-                         VideoSendStreamInput* input,
+                         VideoCaptureInput* input,
                          FrameGenerator* frame_generator,
                          int target_fps);
   bool Init();

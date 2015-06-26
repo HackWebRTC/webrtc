@@ -129,11 +129,10 @@ class CpuOveruseMetricsObserver {
 // TODO(pbos): Move this somewhere appropriate.
 class Statistics {
  public:
-  Statistics();
+  explicit Statistics(const CpuOveruseOptions& options);
 
   void AddSample(float sample_ms);
   void Reset();
-  void SetOptions(const CpuOveruseOptions& options);
 
   float Mean() const;
   float StdDev() const;
@@ -145,7 +144,7 @@ class Statistics {
 
   float sum_;
   uint64_t count_;
-  CpuOveruseOptions options_;
+  const CpuOveruseOptions options_;
   rtc::scoped_ptr<rtc::ExpFilter> filtered_samples_;
   rtc::scoped_ptr<rtc::ExpFilter> filtered_variance_;
 };
@@ -154,15 +153,10 @@ class Statistics {
 class OveruseFrameDetector : public Module {
  public:
   OveruseFrameDetector(Clock* clock,
+                       const CpuOveruseOptions& options,
+                       CpuOveruseObserver* overuse_observer,
                        CpuOveruseMetricsObserver* metrics_observer);
   ~OveruseFrameDetector();
-
-  // Registers an observer receiving overuse and underuse callbacks. Set
-  // 'observer' to NULL to disable callbacks.
-  void SetObserver(CpuOveruseObserver* observer);
-
-  // Sets options for overuse detection.
-  void SetOptions(const CpuOveruseOptions& options);
 
   // Called for each captured frame.
   void FrameCaptured(int width, int height, int64_t capture_time_ms);
@@ -215,10 +209,10 @@ class OveruseFrameDetector : public Module {
   // processing contends with reading stats and the processing thread.
   mutable rtc::CriticalSection crit_;
 
-  // Observer getting overuse reports.
-  CpuOveruseObserver* observer_ GUARDED_BY(crit_);
+  const CpuOveruseOptions options_;
 
-  CpuOveruseOptions options_ GUARDED_BY(crit_);
+  // Observer getting overuse reports.
+  CpuOveruseObserver* const observer_;
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;

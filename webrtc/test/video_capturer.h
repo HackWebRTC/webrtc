@@ -16,13 +16,13 @@ namespace webrtc {
 
 class Clock;
 
-class VideoSendStreamInput;
+class VideoCaptureInput;
 
 namespace test {
 
 class VideoCapturer {
  public:
-  static VideoCapturer* Create(VideoSendStreamInput* input,
+  static VideoCapturer* Create(VideoCaptureInput* input,
                                size_t width,
                                size_t height,
                                int fps,
@@ -33,8 +33,8 @@ class VideoCapturer {
   virtual void Stop() = 0;
 
  protected:
-  explicit VideoCapturer(VideoSendStreamInput* input);
-  VideoSendStreamInput* input_;
+  explicit VideoCapturer(VideoCaptureInput* input);
+  VideoCaptureInput* input_;
 };
 }  // test
 }  // webrtc

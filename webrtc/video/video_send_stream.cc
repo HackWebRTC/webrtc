@@ -19,8 +19,8 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/video/video_capture_input.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
-#include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -174,7 +174,9 @@ VideoSendStream::VideoSendStream(
 
   vie_channel_->SetRTCPCName(config_.rtp.c_name.c_str());
 
-  vie_capturer_ = new ViECapturer(module_process_thread_, vie_encoder_);
+  input_.reset(new internal::VideoCaptureInput(
+      module_process_thread_, vie_encoder_, config_.local_renderer,
+      &stats_proxy_, overuse_observer));
 
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
   DCHECK_LE(config_.rtp.max_packet_size, static_cast<size_t>(0xFFFF - 28));
@@ -189,12 +191,6 @@ VideoSendStream::VideoSendStream(
                   config.encoder_settings.payload_type, false));
 
   CHECK(ReconfigureVideoEncoder(encoder_config));
-
-  if (overuse_observer) {
-    vie_capturer_->RegisterCpuOveruseObserver(overuse_observer);
-  }
-  // Registered regardless of monitoring, used for stats.
-  vie_capturer_->RegisterCpuOveruseMetricsObserver(&stats_proxy_);
 
   vie_channel_->RegisterSendSideDelayObserver(&stats_proxy_);
   vie_encoder_->RegisterSendStatisticsProxy(&stats_proxy_);
@@ -233,8 +229,9 @@ VideoSendStream::~VideoSendStream() {
   vie_encoder_->RegisterPreEncodeCallback(nullptr);
   vie_encoder_->RegisterPostEncodeImageCallback(nullptr);
 
-  vie_capturer_->RegisterCpuOveruseObserver(nullptr);
-  delete vie_capturer_;
+  // Remove capture input (thread) so that it's not running after the current
+  // channel is deleted.
+  input_.reset();
 
   vie_encoder_->DeRegisterExternalEncoder(
       config_.encoder_settings.payload_type);
@@ -242,16 +239,9 @@ VideoSendStream::~VideoSendStream() {
   channel_group_->DeleteChannel(channel_id_);
 }
 
-void VideoSendStream::IncomingCapturedFrame(const VideoFrame& frame) {
-  // TODO(pbos): Local rendering should not be done on the capture thread.
-  if (config_.local_renderer != nullptr)
-    config_.local_renderer->RenderFrame(frame, 0);
-
-  stats_proxy_.OnIncomingFrame();
-  vie_capturer_->IncomingFrame(frame);
+VideoCaptureInput* VideoSendStream::Input() {
+  return input_.get();
 }
-
-VideoSendStreamInput* VideoSendStream::Input() { return this; }
 
 void VideoSendStream::Start() {
   transport_adapter_.Enable();

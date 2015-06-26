@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_
+#ifndef WEBRTC_VIDEO_VIDEO_CAPTURE_INPUT_H_
+#define WEBRTC_VIDEO_VIDEO_CAPTURE_INPUT_H_
 
 #include <vector>
 
@@ -26,6 +26,7 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/vie_defines.h"
+#include "webrtc/video_send_stream.h"
 
 namespace webrtc {
 
@@ -37,44 +38,41 @@ class EventWrapper;
 class OveruseFrameDetector;
 class ProcessThread;
 class RegistrableCpuOveruseMetricsObserver;
-class ViEEffectFilter;
+class SendStatisticsProxy;
+class VideoRenderer;
 
-class ViEFrameCallback {
+class VideoCaptureCallback {
  public:
-  virtual ~ViEFrameCallback() {}
+  virtual ~VideoCaptureCallback() {}
 
   virtual void DeliverFrame(VideoFrame video_frame) = 0;
 };
 
-class ViECapturer {
+namespace internal {
+class VideoCaptureInput : public webrtc::VideoCaptureInput {
  public:
-  ViECapturer(ProcessThread* module_process_thread,
-              ViEFrameCallback* frame_callback);
-  ~ViECapturer();
+  VideoCaptureInput(ProcessThread* module_process_thread,
+                    VideoCaptureCallback* frame_callback,
+                    VideoRenderer* local_renderer,
+                    SendStatisticsProxy* send_stats_proxy,
+                    CpuOveruseObserver* overuse_observer);
+  ~VideoCaptureInput();
 
-  void IncomingFrame(const VideoFrame& frame);
-
-  void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
-  void RegisterCpuOveruseMetricsObserver(CpuOveruseMetricsObserver* observer);
-
- protected:
-  // Help function used for keeping track of VideoImageProcesingModule.
-  // Creates the module if it is needed, returns 0 on success and guarantees
-  // that the image proc module exist.
-  int32_t IncImageProcRefCount();
-  int32_t DecImageProcRefCount();
-
-  // Thread functions for deliver captured frames to receivers.
-  static bool ViECaptureThreadFunction(void* obj);
-  bool ViECaptureProcess();
+  void IncomingCapturedFrame(const VideoFrame& video_frame) override;
 
  private:
+  // Thread functions for deliver captured frames to receivers.
+  static bool CaptureThreadFunction(void* obj);
+  bool CaptureProcess();
+
   void DeliverI420Frame(VideoFrame* video_frame);
 
   rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
   ProcessThread* const module_process_thread_;
 
-  ViEFrameCallback* const frame_callback_;
+  VideoCaptureCallback* const frame_callback_;
+  VideoRenderer* const local_renderer_;
+  SendStatisticsProxy* const stats_proxy_;
 
   // Frame used in IncomingFrameI420.
   rtc::scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
@@ -94,12 +92,10 @@ class ViECapturer {
   // Delta used for translating between NTP and internal timestamps.
   const int64_t delta_ntp_internal_ms_;
 
-  // Must be declared before overuse_detector_ where it's registered.
-  const rtc::scoped_ptr<RegistrableCpuOveruseMetricsObserver>
-      cpu_overuse_metrics_observer_;
   rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
 };
 
+}  // namespace internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_
+#endif  // WEBRTC_VIDEO_VIDEO_CAPTURE_INPUT_H_

@@ -7,10 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-// This file includes unit tests for ViECapturer.
-
-#include "webrtc/video_engine/vie_capturer.h"
+#include "webrtc/video/video_capture_input.h"
 
 #include <vector>
 
@@ -25,6 +22,7 @@
 #include "webrtc/system_wrappers/interface/ref_count.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/test/fake_texture_frame.h"
+#include "webrtc/video/send_statistics_proxy.h"
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -37,7 +35,7 @@ using ::testing::WithArg;
 
 namespace webrtc {
 
-class MockViEFrameCallback : public ViEFrameCallback {
+class MockVideoCaptureCallback : public VideoCaptureCallback {
  public:
   MOCK_METHOD1(DeliverFrame, void(VideoFrame video_frame));
 };
@@ -49,31 +47,35 @@ bool EqualFramesVector(const ScopedVector<VideoFrame>& frames1,
                        const ScopedVector<VideoFrame>& frames2);
 VideoFrame* CreateVideoFrame(uint8_t length);
 
-class ViECapturerTest : public ::testing::Test {
+class VideoCaptureInputTest : public ::testing::Test {
  protected:
-  ViECapturerTest()
+  VideoCaptureInputTest()
       : mock_process_thread_(new NiceMock<MockProcessThread>),
-        mock_frame_callback_(new NiceMock<MockViEFrameCallback>),
-        output_frame_event_(EventWrapper::Create()) {}
+        mock_frame_callback_(new NiceMock<MockVideoCaptureCallback>),
+        output_frame_event_(EventWrapper::Create()),
+        stats_proxy_(Clock::GetRealTimeClock(),
+                     webrtc::VideoSendStream::Config()) {}
 
   virtual void SetUp() {
     EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_))
         .WillRepeatedly(
-            WithArg<0>(Invoke(this, &ViECapturerTest::AddOutputFrame)));
+            WithArg<0>(Invoke(this, &VideoCaptureInputTest::AddOutputFrame)));
 
     Config config;
-    vie_capturer_.reset(new ViECapturer(mock_process_thread_.get(),
-                                        mock_frame_callback_.get()));
+    input_.reset(new internal::VideoCaptureInput(
+        mock_process_thread_.get(), mock_frame_callback_.get(), nullptr,
+        &stats_proxy_, nullptr));
   }
 
   virtual void TearDown() {
-    // ViECapturer accesses |mock_process_thread_| in destructor and should
+    // VideoCaptureInput accesses |mock_process_thread_| in destructor and
+    // should
     // be deleted first.
-    vie_capturer_.reset();
+    input_.reset();
   }
 
   void AddInputFrame(VideoFrame* frame) {
-    vie_capturer_->IncomingFrame(*frame);
+    input_->IncomingCapturedFrame(*frame);
   }
 
   void AddOutputFrame(const VideoFrame& frame) {
@@ -88,31 +90,33 @@ class ViECapturerTest : public ::testing::Test {
   }
 
   rtc::scoped_ptr<MockProcessThread> mock_process_thread_;
-  rtc::scoped_ptr<MockViEFrameCallback> mock_frame_callback_;
+  rtc::scoped_ptr<MockVideoCaptureCallback> mock_frame_callback_;
 
-  // Used to send input capture frames to ViECapturer.
-  rtc::scoped_ptr<ViECapturer> vie_capturer_;
+  // Used to send input capture frames to VideoCaptureInput.
+  rtc::scoped_ptr<internal::VideoCaptureInput> input_;
 
-  // Input capture frames of ViECapturer.
+  // Input capture frames of VideoCaptureInput.
   ScopedVector<VideoFrame> input_frames_;
 
   // Indicate an output frame has arrived.
   rtc::scoped_ptr<EventWrapper> output_frame_event_;
 
-  // Output delivered frames of ViECaptuer.
+  // Output delivered frames of VideoCaptureInput.
   ScopedVector<VideoFrame> output_frames_;
 
   // The pointers of Y plane buffers of output frames. This is used to verify
   // the frame are swapped and not copied.
   std::vector<const uint8_t*> output_frame_ybuffers_;
+  SendStatisticsProxy stats_proxy_;
 };
 
-TEST_F(ViECapturerTest, DoesNotRetainHandleNorCopyBuffer) {
+TEST_F(VideoCaptureInputTest, DoesNotRetainHandleNorCopyBuffer) {
   // Indicate an output frame has arrived.
   rtc::scoped_ptr<EventWrapper> frame_destroyed_event(EventWrapper::Create());
   class TestBuffer : public webrtc::I420Buffer {
    public:
-    TestBuffer(EventWrapper* event) : I420Buffer(5, 5), event_(event) {}
+    explicit TestBuffer(EventWrapper* event)
+        : I420Buffer(5, 5), event_(event) {}
 
    private:
     friend class rtc::RefCountedObject<TestBuffer>;
@@ -134,7 +138,7 @@ TEST_F(ViECapturerTest, DoesNotRetainHandleNorCopyBuffer) {
   EXPECT_EQ(kEventSignaled, frame_destroyed_event->Wait(FRAME_TIMEOUT_MS));
 }
 
-TEST_F(ViECapturerTest, TestNtpTimeStampSetIfRenderTimeSet) {
+TEST_F(VideoCaptureInputTest, TestNtpTimeStampSetIfRenderTimeSet) {
   input_frames_.push_back(CreateVideoFrame(static_cast<uint8_t>(0)));
   input_frames_[0]->set_render_time_ms(5);
   input_frames_[0]->set_ntp_time_ms(0);
@@ -145,7 +149,7 @@ TEST_F(ViECapturerTest, TestNtpTimeStampSetIfRenderTimeSet) {
             input_frames_[0]->render_time_ms());
 }
 
-TEST_F(ViECapturerTest, TestRtpTimeStampSet) {
+TEST_F(VideoCaptureInputTest, TestRtpTimeStampSet) {
   input_frames_.push_back(CreateVideoFrame(static_cast<uint8_t>(0)));
   input_frames_[0]->set_render_time_ms(0);
   input_frames_[0]->set_ntp_time_ms(1);
@@ -157,7 +161,7 @@ TEST_F(ViECapturerTest, TestRtpTimeStampSet) {
             input_frames_[0]->ntp_time_ms() * 90);
 }
 
-TEST_F(ViECapturerTest, TestTextureFrames) {
+TEST_F(VideoCaptureInputTest, TestTextureFrames) {
   const int kNumFrame = 3;
   for (int i = 0 ; i < kNumFrame; ++i) {
     test::FakeNativeHandle* dummy_handle = new test::FakeNativeHandle();
@@ -172,7 +176,7 @@ TEST_F(ViECapturerTest, TestTextureFrames) {
   EXPECT_TRUE(EqualFramesVector(input_frames_, output_frames_));
 }
 
-TEST_F(ViECapturerTest, TestI420Frames) {
+TEST_F(VideoCaptureInputTest, TestI420Frames) {
   const int kNumFrame = 4;
   std::vector<const uint8_t*> ybuffer_pointers;
   for (int i = 0; i < kNumFrame; ++i) {
@@ -189,7 +193,7 @@ TEST_F(ViECapturerTest, TestI420Frames) {
     EXPECT_EQ(ybuffer_pointers[i], output_frame_ybuffers_[i]);
 }
 
-TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
+TEST_F(VideoCaptureInputTest, TestI420FrameAfterTextureFrame) {
   test::FakeNativeHandle* dummy_handle = new test::FakeNativeHandle();
   input_frames_.push_back(new VideoFrame(test::CreateFakeNativeHandleFrame(
       dummy_handle, 1, 1, 1, 1, webrtc::kVideoRotation_0)));
@@ -204,7 +208,7 @@ TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
   EXPECT_TRUE(EqualFramesVector(input_frames_, output_frames_));
 }
 
-TEST_F(ViECapturerTest, TestTextureFrameAfterI420Frame) {
+TEST_F(VideoCaptureInputTest, TestTextureFrameAfterI420Frame) {
   input_frames_.push_back(CreateVideoFrame(1));
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
@@ -267,9 +271,8 @@ VideoFrame* CreateVideoFrame(uint8_t data) {
   const int kSizeY = width * height * 2;
   uint8_t buffer[kSizeY];
   memset(buffer, data, kSizeY);
-  frame->CreateFrame(
-      buffer, buffer, buffer, width, height, width,
-      width / 2, width / 2);
+  frame->CreateFrame(buffer, buffer, buffer, width, height, width, width / 2,
+                     width / 2);
   frame->set_render_time_ms(data);
   return frame;
 }

@@ -53,13 +53,15 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(1234));
     observer_.reset(new MockCpuOveruseObserver());
-    overuse_detector_.reset(new OveruseFrameDetector(clock_.get(), this));
-
     options_.low_capture_jitter_threshold_ms = 10.0f;
     options_.high_capture_jitter_threshold_ms = 15.0f;
     options_.min_process_count = 0;
-    overuse_detector_->SetOptions(options_);
-    overuse_detector_->SetObserver(observer_.get());
+    ReinitializeOveruseDetector();
+  }
+
+  void ReinitializeOveruseDetector() {
+    overuse_detector_.reset(new OveruseFrameDetector(clock_.get(), options_,
+                                                     observer_.get(), this));
   }
 
   void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) override {
@@ -149,7 +151,7 @@ TEST_F(OveruseFrameDetectorTest, TriggerOveruse) {
   options_.enable_capture_jitter_method = true;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   // capture_jitter > high => overuse
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
@@ -159,7 +161,7 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecover) {
   options_.enable_capture_jitter_method = true;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   // capture_jitter > high => overuse
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
@@ -172,8 +174,8 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithNoObserver) {
   options_.enable_capture_jitter_method = true;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
-  overuse_detector_->SetObserver(NULL);
+  overuse_detector_.reset(
+      new OveruseFrameDetector(clock_.get(), options_, nullptr, this));
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
@@ -184,7 +186,7 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithMethodDisabled) {
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
@@ -195,7 +197,7 @@ TEST_F(OveruseFrameDetectorTest, DoubleOveruseAndRecover) {
   options_.enable_capture_jitter_method = true;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(2);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   TriggerOveruse(options_.high_threshold_consecutive_count);
@@ -207,23 +209,23 @@ TEST_F(OveruseFrameDetectorTest, TriggerUnderuseWithMinProcessCount) {
   options_.enable_capture_jitter_method = true;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  CpuOveruseObserverImpl overuse_observer_;
-  overuse_detector_->SetObserver(&overuse_observer_);
   options_.min_process_count = 1;
-  overuse_detector_->SetOptions(options_);
+  CpuOveruseObserverImpl overuse_observer;
+  overuse_detector_.reset(new OveruseFrameDetector(clock_.get(), options_,
+                                                   &overuse_observer, this));
   InsertFramesWithInterval(1200, kFrameInterval33ms, kWidth, kHeight);
   overuse_detector_->Process();
-  EXPECT_EQ(0, overuse_observer_.normaluse_);
+  EXPECT_EQ(0, overuse_observer.normaluse_);
   clock_->AdvanceTimeMilliseconds(kProcessIntervalMs);
   overuse_detector_->Process();
-  EXPECT_EQ(1, overuse_observer_.normaluse_);
+  EXPECT_EQ(1, overuse_observer.normaluse_);
 }
 
 TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
   options_.enable_capture_jitter_method = true;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(64);
   for(size_t i = 0; i < 64; ++i) {
@@ -232,22 +234,22 @@ TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
 }
 
 TEST_F(OveruseFrameDetectorTest, ConsecutiveCountTriggersOveruse) {
+  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
   options_.enable_capture_jitter_method = true;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
   options_.high_threshold_consecutive_count = 2;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   TriggerOveruse(2);
 }
 
 TEST_F(OveruseFrameDetectorTest, IncorrectConsecutiveCountTriggersNoOveruse) {
+  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
   options_.enable_capture_jitter_method = true;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
   options_.high_threshold_consecutive_count = 2;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   TriggerOveruse(1);
 }
 
@@ -279,19 +281,9 @@ TEST_F(OveruseFrameDetectorTest, CaptureJitterResetAfterFrameTimeout) {
   EXPECT_EQ(InitialJitter(), CaptureJitterMs());
 }
 
-TEST_F(OveruseFrameDetectorTest, CaptureJitterResetAfterChangingThreshold) {
-  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
-  options_.high_capture_jitter_threshold_ms = 90.0f;
-  overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
-  options_.low_capture_jitter_threshold_ms = 30.0f;
-  overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
-}
-
 TEST_F(OveruseFrameDetectorTest, MinFrameSamplesBeforeUpdatingCaptureJitter) {
   options_.min_frame_samples = 40;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   InsertFramesWithInterval(40, kFrameInterval33ms, kWidth, kHeight);
   EXPECT_EQ(InitialJitter(), CaptureJitterMs());
 }
@@ -351,7 +343,7 @@ TEST_F(OveruseFrameDetectorTest, CaptureQueueDelayNoMatchingCapturedFrame) {
 
 TEST_F(OveruseFrameDetectorTest, FrameDelay_OneFrameDisabled) {
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   const int kProcessingTimeMs = 100;
   overuse_detector_->FrameCaptured(kWidth, kHeight, 33);
   clock_->AdvanceTimeMilliseconds(kProcessingTimeMs);
@@ -361,7 +353,7 @@ TEST_F(OveruseFrameDetectorTest, FrameDelay_OneFrameDisabled) {
 
 TEST_F(OveruseFrameDetectorTest, FrameDelay_OneFrame) {
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   const int kProcessingTimeMs = 100;
   overuse_detector_->FrameCaptured(kWidth, kHeight, 33);
   clock_->AdvanceTimeMilliseconds(kProcessingTimeMs);
@@ -373,7 +365,7 @@ TEST_F(OveruseFrameDetectorTest, FrameDelay_OneFrame) {
 
 TEST_F(OveruseFrameDetectorTest, FrameDelay_TwoFrames) {
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   const int kProcessingTimeMs1 = 100;
   const int kProcessingTimeMs2 = 50;
   const int kTimeBetweenFramesMs = 200;
@@ -390,7 +382,7 @@ TEST_F(OveruseFrameDetectorTest, FrameDelay_TwoFrames) {
 
 TEST_F(OveruseFrameDetectorTest, FrameDelay_MaxQueueSize) {
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   const int kMaxQueueSize = 91;
   for (int i = 0; i < kMaxQueueSize * 2; ++i) {
     overuse_detector_->FrameCaptured(kWidth, kHeight, i);
@@ -400,7 +392,7 @@ TEST_F(OveruseFrameDetectorTest, FrameDelay_MaxQueueSize) {
 
 TEST_F(OveruseFrameDetectorTest, FrameDelay_NonProcessedFramesRemoved) {
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   const int kProcessingTimeMs = 100;
   overuse_detector_->FrameCaptured(kWidth, kHeight, 33);
   clock_->AdvanceTimeMilliseconds(kProcessingTimeMs);
@@ -423,7 +415,7 @@ TEST_F(OveruseFrameDetectorTest, FrameDelay_NonProcessedFramesRemoved) {
 
 TEST_F(OveruseFrameDetectorTest, FrameDelay_ResetClearsFrames) {
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   const int kProcessingTimeMs = 100;
   overuse_detector_->FrameCaptured(kWidth, kHeight, 33);
   EXPECT_EQ(1, overuse_detector_->FramesInQueue());
@@ -439,7 +431,7 @@ TEST_F(OveruseFrameDetectorTest, FrameDelay_ResetClearsFrames) {
 
 TEST_F(OveruseFrameDetectorTest, FrameDelay_NonMatchingSendFrameIgnored) {
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   const int kProcessingTimeMs = 100;
   overuse_detector_->FrameCaptured(kWidth, kHeight, 33);
   clock_->AdvanceTimeMilliseconds(kProcessingTimeMs);
@@ -470,16 +462,6 @@ TEST_F(OveruseFrameDetectorTest, ProcessingUsage) {
   EXPECT_EQ(kProcessingTimeMs * 100 / kFrameInterval33ms, UsagePercent());
 }
 
-TEST_F(OveruseFrameDetectorTest, ProcessingUsageResetAfterChangingThreshold) {
-  EXPECT_EQ(InitialUsage(), UsagePercent());
-  options_.high_encode_usage_threshold_percent = 100;
-  overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialUsage(), UsagePercent());
-  options_.low_encode_usage_threshold_percent = 20;
-  overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialUsage(), UsagePercent());
-}
-
 // enable_encode_usage_method = true;
 // UsagePercent() > high_encode_usage_threshold_percent => overuse.
 // UsagePercent() < low_encode_usage_threshold_percent => underuse.
@@ -487,7 +469,7 @@ TEST_F(OveruseFrameDetectorTest, TriggerOveruseWithProcessingUsage) {
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = true;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   // usage > high => overuse
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
   TriggerOveruseWithProcessingUsage(options_.high_threshold_consecutive_count);
@@ -497,7 +479,7 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithProcessingUsage) {
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = true;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   // usage > high => overuse
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
   TriggerOveruseWithProcessingUsage(options_.high_threshold_consecutive_count);
@@ -511,7 +493,7 @@ TEST_F(OveruseFrameDetectorTest,
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = false;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   // usage > high => overuse
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
   TriggerOveruseWithProcessingUsage(options_.high_threshold_consecutive_count);
@@ -528,7 +510,7 @@ TEST_F(OveruseFrameDetectorTest, TriggerOveruseWithExtendedProcessingUsage) {
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = true;
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   // usage > high => overuse
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
   TriggerOveruseWithProcessingUsage(options_.high_threshold_consecutive_count);
@@ -538,7 +520,7 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithExtendedProcessingUsage) {
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = true;
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   // usage > high => overuse
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
   TriggerOveruseWithProcessingUsage(options_.high_threshold_consecutive_count);
@@ -552,7 +534,7 @@ TEST_F(OveruseFrameDetectorTest,
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = false;
   options_.enable_extended_processing_usage = true;
-  overuse_detector_->SetOptions(options_);
+  ReinitializeOveruseDetector();
   // usage > high => overuse
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
   TriggerOveruseWithProcessingUsage(options_.high_threshold_consecutive_count);

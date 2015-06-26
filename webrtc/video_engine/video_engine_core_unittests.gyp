@@ -29,7 +29,6 @@
         'payload_router_unittest.cc',
         'report_block_stats_unittest.cc',
         'stream_synchronization_unittest.cc',
-        'vie_capturer_unittest.cc',
         'vie_codec_unittest.cc',
         'vie_remb_unittest.cc',
       ],

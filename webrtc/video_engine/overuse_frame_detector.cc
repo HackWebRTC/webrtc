@@ -52,16 +52,13 @@ const float kMaxExp = 7.0f;
 }  // namespace
 
 // TODO(asapersson): Remove this class. Not used.
-Statistics::Statistics() :
-    sum_(0.0),
-    count_(0),
-    filtered_samples_(new rtc::ExpFilter(kWeightFactorMean)),
-    filtered_variance_(new rtc::ExpFilter(kWeightFactor)) {
+Statistics::Statistics(const CpuOveruseOptions& options)
+    : sum_(0.0),
+      count_(0),
+      options_(options),
+      filtered_samples_(new rtc::ExpFilter(kWeightFactorMean)),
+      filtered_variance_(new rtc::ExpFilter(kWeightFactor)) {
   Reset();
-}
-
-void Statistics::SetOptions(const CpuOveruseOptions& options) {
-  options_ = options;
 }
 
 void Statistics::Reset() {
@@ -143,21 +140,18 @@ class OveruseFrameDetector::EncodeTimeAvg {
 // captured frames).
 class OveruseFrameDetector::SendProcessingUsage {
  public:
-  SendProcessingUsage()
+  explicit SendProcessingUsage(const CpuOveruseOptions& options)
       : kWeightFactorFrameDiff(0.998f),
         kWeightFactorProcessing(0.995f),
         kInitialSampleDiffMs(40.0f),
         kMaxSampleDiffMs(45.0f),
         count_(0),
+        options_(options),
         filtered_processing_ms_(new rtc::ExpFilter(kWeightFactorProcessing)),
         filtered_frame_diff_ms_(new rtc::ExpFilter(kWeightFactorFrameDiff)) {
     Reset();
   }
   ~SendProcessingUsage() {}
-
-  void SetOptions(const CpuOveruseOptions& options) {
-    options_ = options;
-  }
 
   void Reset() {
     count_ = 0;
@@ -207,7 +201,7 @@ class OveruseFrameDetector::SendProcessingUsage {
   const float kInitialSampleDiffMs;
   const float kMaxSampleDiffMs;
   uint64_t count_;
-  CpuOveruseOptions options_;
+  const CpuOveruseOptions options_;
   rtc::scoped_ptr<rtc::ExpFilter> filtered_processing_ms_;
   rtc::scoped_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
 };
@@ -319,12 +313,16 @@ class OveruseFrameDetector::CaptureQueueDelay {
 
 OveruseFrameDetector::OveruseFrameDetector(
     Clock* clock,
+    const CpuOveruseOptions& options,
+    CpuOveruseObserver* observer,
     CpuOveruseMetricsObserver* metrics_observer)
-    : observer_(NULL),
+    : options_(options),
+      observer_(observer),
       metrics_observer_(metrics_observer),
       clock_(clock),
       next_process_time_(clock_->TimeInMilliseconds()),
       num_process_times_(0),
+      capture_deltas_(options),
       last_capture_time_(0),
       last_overuse_time_(0),
       checks_above_threshold_(0),
@@ -335,32 +333,19 @@ OveruseFrameDetector::OveruseFrameDetector(
       num_pixels_(0),
       last_encode_sample_ms_(0),
       encode_time_(new EncodeTimeAvg()),
-      usage_(new SendProcessingUsage()),
+      usage_(new SendProcessingUsage(options)),
       frame_queue_(new FrameQueue()),
       last_sample_time_ms_(0),
       capture_queue_delay_(new CaptureQueueDelay()) {
   DCHECK(metrics_observer != nullptr);
+  // Make sure stats are initially up-to-date. This simplifies unit testing
+  // since we don't have to trigger an update using one of the methods which
+  // would also alter the overuse state.
+  UpdateCpuOveruseMetrics();
   processing_thread_.DetachFromThread();
 }
 
 OveruseFrameDetector::~OveruseFrameDetector() {
-}
-
-void OveruseFrameDetector::SetObserver(CpuOveruseObserver* observer) {
-  rtc::CritScope cs(&crit_);
-  observer_ = observer;
-}
-
-void OveruseFrameDetector::SetOptions(const CpuOveruseOptions& options) {
-  assert(options.min_frame_samples > 0);
-  rtc::CritScope cs(&crit_);
-  if (options_.Equals(options)) {
-    return;
-  }
-  options_ = options;
-  capture_deltas_.SetOptions(options);
-  usage_->SetOptions(options);
-  ResetAll(num_pixels_);
 }
 
 int OveruseFrameDetector::CaptureQueueDelayMsPerS() const {

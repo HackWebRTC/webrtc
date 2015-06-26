@@ -24,7 +24,7 @@ namespace webrtc {
 class VideoEncoder;
 
 // Class to deliver captured frame to the video send stream.
-class VideoSendStreamInput {
+class VideoCaptureInput {
  public:
   // These methods do not lock internally and must be called sequentially.
   // If your application switches input sources synchronization must be done
@@ -32,7 +32,7 @@ class VideoSendStreamInput {
   virtual void IncomingCapturedFrame(const VideoFrame& video_frame) = 0;
 
  protected:
-  virtual ~VideoSendStreamInput() {}
+  virtual ~VideoCaptureInput() {}
 };
 
 class VideoSendStream {
@@ -138,7 +138,7 @@ class VideoSendStream {
 
   // Gets interface used to insert captured frames. Valid as long as the
   // VideoSendStream is valid.
-  virtual VideoSendStreamInput* Input() = 0;
+  virtual VideoCaptureInput* Input() = 0;
 
   virtual void Start() = 0;
   virtual void Stop() = 0;

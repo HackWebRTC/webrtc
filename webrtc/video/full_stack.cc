@@ -63,9 +63,9 @@ class FullStackTest : public test::CallTest {
 class VideoAnalyzer : public PacketReceiver,
                       public newapi::Transport,
                       public VideoRenderer,
-                      public VideoSendStreamInput {
+                      public VideoCaptureInput {
  public:
-  VideoAnalyzer(VideoSendStreamInput* input,
+  VideoAnalyzer(VideoCaptureInput* input,
                 Transport* transport,
                 const char* test_label,
                 double avg_psnr_threshold,
@@ -224,7 +224,7 @@ class VideoAnalyzer : public PacketReceiver,
     }
   }
 
-  VideoSendStreamInput* input_;
+  VideoCaptureInput* input_;
   Transport* transport_;
   PacketReceiver* receiver_;
 

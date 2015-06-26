@@ -55,7 +55,7 @@ class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
 };
 
 class FakeVideoSendStream : public webrtc::VideoSendStream,
-                            public webrtc::VideoSendStreamInput {
+                            public webrtc::VideoCaptureInput {
  public:
   FakeVideoSendStream(const webrtc::VideoSendStream::Config& config,
                       const webrtc::VideoEncoderConfig& encoder_config);
@@ -79,7 +79,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
   bool ReconfigureVideoEncoder(
       const webrtc::VideoEncoderConfig& config) override;
 
-  webrtc::VideoSendStreamInput* Input() override;
+  webrtc::VideoCaptureInput* Input() override;
 
   void Start() override;
   void Stop() override;

@@ -16,8 +16,9 @@
 namespace webrtc {
 namespace test {
 
-VcmCapturer::VcmCapturer(webrtc::VideoSendStreamInput* input)
-    : VideoCapturer(input), started_(false), vcm_(NULL) {}
+VcmCapturer::VcmCapturer(webrtc::VideoCaptureInput* input)
+    : VideoCapturer(input), started_(false), vcm_(NULL) {
+}
 
 bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
   VideoCaptureModule::DeviceInfo* device_info =
@@ -53,8 +54,9 @@ bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
   return true;
 }
 
-VcmCapturer* VcmCapturer::Create(VideoSendStreamInput* input,
-                                 size_t width, size_t height,
+VcmCapturer* VcmCapturer::Create(VideoCaptureInput* input,
+                                 size_t width,
+                                 size_t height,
                                  size_t target_fps) {
   VcmCapturer* vcm__capturer = new VcmCapturer(input);
   if (!vcm__capturer->Init(width, height, target_fps)) {

@@ -145,7 +145,7 @@ bool FakeVideoSendStream::ReconfigureVideoEncoder(
   return true;
 }
 
-webrtc::VideoSendStreamInput* FakeVideoSendStream::Input() {
+webrtc::VideoCaptureInput* FakeVideoSendStream::Input() {
   return this;
 }
 

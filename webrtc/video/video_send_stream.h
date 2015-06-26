@@ -20,6 +20,7 @@
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
+#include "webrtc/video/video_capture_input.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -29,14 +30,12 @@ namespace webrtc {
 class ChannelGroup;
 class CpuOveruseObserver;
 class ProcessThread;
-class ViECapturer;
 class ViEChannel;
 class ViEEncoder;
 
 namespace internal {
 
-class VideoSendStream : public webrtc::VideoSendStream,
-                        public VideoSendStreamInput {
+class VideoSendStream : public webrtc::VideoSendStream {
  public:
   VideoSendStream(newapi::Transport* transport,
                   CpuOveruseObserver* overuse_observer,
@@ -50,6 +49,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   virtual ~VideoSendStream();
 
+  VideoCaptureInput* Input() override;
+
   void Start() override;
   void Stop() override;
 
@@ -58,12 +59,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   Stats GetStats() override;
 
   bool DeliverRtcp(const uint8_t* packet, size_t length);
-
-  // From VideoSendStreamInput.
-  void IncomingCapturedFrame(const VideoFrame& frame) override;
-
-  // From webrtc::VideoSendStream.
-  VideoSendStreamInput* Input() override;
 
   typedef std::map<uint32_t, RtpState> RtpStateMap;
   RtpStateMap GetRtpStates() const;
@@ -85,9 +80,9 @@ class VideoSendStream : public webrtc::VideoSendStream,
   ChannelGroup* const channel_group_;
   const int channel_id_;
 
+  rtc::scoped_ptr<VideoCaptureInput> input_;
   ViEChannel* vie_channel_;
   ViEEncoder* vie_encoder_;
-  ViECapturer* vie_capturer_;
 
   // Used as a workaround to indicate that we should be using the configured
   // start bitrate initially, instead of the one reported by VideoEngine (which
