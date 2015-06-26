@@ -35,12 +35,11 @@ namespace webrtc {
 // back to see if they match.
 class AcmDumpTest : public ::testing::Test {
  public:
-  AcmDumpTest() : log_dumper_(AcmDump::Create()) {}
   void VerifyResults(const ACMDumpEventStream& parsed_stream,
                      size_t packet_size) {
     // Verify the result.
-    EXPECT_EQ(3, parsed_stream.stream_size());
-    const ACMDumpEvent& start_event = parsed_stream.stream(0);
+    EXPECT_EQ(5, parsed_stream.stream_size());
+    const ACMDumpEvent& start_event = parsed_stream.stream(2);
     ASSERT_TRUE(start_event.has_type());
     EXPECT_EQ(ACMDumpEvent::DEBUG_EVENT, start_event.type());
     EXPECT_TRUE(start_event.has_timestamp_us());
@@ -51,7 +50,11 @@ class AcmDumpTest : public ::testing::Test {
     EXPECT_EQ(ACMDumpDebugEvent::LOG_START, start_debug_event.type());
     ASSERT_TRUE(start_debug_event.has_message());
 
-    for (int i = 1; i < parsed_stream.stream_size(); i++) {
+    for (int i = 0; i < parsed_stream.stream_size(); i++) {
+      if (i == 2) {
+        // This is the LOG_START packet that was already verified.
+        continue;
+      }
       const ACMDumpEvent& test_event = parsed_stream.stream(i);
       ASSERT_TRUE(test_event.has_type());
       EXPECT_EQ(ACMDumpEvent::RTP_EVENT, test_event.type());
@@ -60,9 +63,9 @@ class AcmDumpTest : public ::testing::Test {
       ASSERT_TRUE(test_event.has_packet());
       const ACMDumpRTPPacket& test_packet = test_event.packet();
       ASSERT_TRUE(test_packet.has_direction());
-      if (i == 1) {
+      if (i <= 1) {
         EXPECT_EQ(ACMDumpRTPPacket::INCOMING, test_packet.direction());
-      } else if (i == 2) {
+      } else if (i >= 3) {
         EXPECT_EQ(ACMDumpRTPPacket::OUTGOING, test_packet.direction());
       }
       ASSERT_TRUE(test_packet.has_rtp_data());
@@ -88,9 +91,16 @@ class AcmDumpTest : public ::testing::Test {
     const std::string temp_filename =
         test::OutputPath() + test_info->test_case_name() + test_info->name();
 
-    log_dumper_->StartLogging(temp_filename, 10000000);
-    log_dumper_->LogRtpPacket(true, rtp_packet_.data(), rtp_packet_.size());
-    log_dumper_->LogRtpPacket(false, rtp_packet_.data(), rtp_packet_.size());
+    // When log_dumper goes out of scope, it causes the log file to be flushed
+    // to disk.
+    {
+      rtc::scoped_ptr<AcmDump> log_dumper(AcmDump::Create());
+      log_dumper->LogRtpPacket(true, rtp_packet_.data(), rtp_packet_.size());
+      log_dumper->LogRtpPacket(true, rtp_packet_.data(), rtp_packet_.size());
+      log_dumper->StartLogging(temp_filename, 10000000);
+      log_dumper->LogRtpPacket(false, rtp_packet_.data(), rtp_packet_.size());
+      log_dumper->LogRtpPacket(false, rtp_packet_.data(), rtp_packet_.size());
+    }
 
     // Read the generated file from disk.
     ACMDumpEventStream parsed_stream;
@@ -102,14 +112,11 @@ class AcmDumpTest : public ::testing::Test {
     // Clean up temporary file - can be pretty slow.
     remove(temp_filename.c_str());
   }
-
   std::vector<uint8_t> rtp_packet_;
-  rtc::scoped_ptr<AcmDump> log_dumper_;
 };
 
 TEST_F(AcmDumpTest, DumpAndRead) {
   Run(256, 321);
-  Run(256, 123);
 }
 
 }  // namespace webrtc

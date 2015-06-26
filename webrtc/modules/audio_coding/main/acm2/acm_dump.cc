@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/main/acm2/acm_dump.h"
 
-#include <sstream>
+#include <deque>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread_annotations.h"
@@ -54,27 +54,35 @@ class AcmDumpImpl final : public AcmDump {
   void LogDebugEvent(DebugEvent event_type) override;
 
  private:
-  // Checks if the logging time has expired, and if so stops the logging.
-  void StopIfNecessary() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  // Stops logging and clears the stored data and buffers.
-  void Clear() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  // Returns true if the logging is currently active.
-  bool CurrentlyLogging() const EXCLUSIVE_LOCKS_REQUIRED(crit_) {
-    return active_ &&
-           (clock_->TimeInMicroseconds() <= start_time_us_ + duration_us_);
-  }
   // This function is identical to LogDebugEvent, but requires holding the lock.
   void LogDebugEventLocked(DebugEvent event_type,
                            const std::string& event_message)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Stops logging and clears the stored data and buffers.
+  void Clear() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Adds a new event to the logfile if logging is active, or adds it to the
+  // list of recent log events otherwise.
+  void HandleEvent(ACMDumpEvent* event) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Writes the event to the file. Note that this will destroy the state of the
+  // input argument.
+  void StoreToFile(ACMDumpEvent* event) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Adds the event to the list of recent events, and removes any events that
+  // are too old and no longer fall in the time window.
+  void AddRecentEvent(const ACMDumpEvent& event)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  // Amount of time in microseconds to record log events, before starting the
+  // actual log.
+  const int recent_log_duration_us = 10000000;
 
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> crit_;
   rtc::scoped_ptr<webrtc::FileWrapper> file_ GUARDED_BY(crit_);
   rtc::scoped_ptr<ACMDumpEventStream> stream_ GUARDED_BY(crit_);
-  bool active_ GUARDED_BY(crit_);
+  std::deque<ACMDumpEvent> recent_log_events_ GUARDED_BY(crit_);
+  bool currently_logging_ GUARDED_BY(crit_);
   int64_t start_time_us_ GUARDED_BY(crit_);
   int64_t duration_us_ GUARDED_BY(crit_);
-  const webrtc::Clock* clock_ GUARDED_BY(crit_);
+  const webrtc::Clock* const clock_;
 };
 
 namespace {
@@ -100,7 +108,7 @@ AcmDumpImpl::AcmDumpImpl()
     : crit_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       file_(webrtc::FileWrapper::Create()),
       stream_(new webrtc::ACMDumpEventStream()),
-      active_(false),
+      currently_logging_(false),
       start_time_us_(0),
       duration_us_(0),
       clock_(webrtc::Clock::GetRealTimeClock()) {
@@ -112,38 +120,31 @@ void AcmDumpImpl::StartLogging(const std::string& file_name, int duration_ms) {
   if (file_->OpenFile(file_name.c_str(), false) != 0) {
     return;
   }
-  // Add a single object to the stream that is reused at every log event.
-  stream_->add_stream();
-  active_ = true;
+  // Add LOG_START event to the recent event list. This call will also remove
+  // any events that are too old from the recent event list.
+  LogDebugEventLocked(DebugEvent::kLogStart, "");
+  currently_logging_ = true;
   start_time_us_ = clock_->TimeInMicroseconds();
   duration_us_ = static_cast<int64_t>(duration_ms) * 1000;
-  // Log the start event.
-  std::stringstream log_msg;
-  log_msg << "Initial timestamp: " << start_time_us_;
-  LogDebugEventLocked(DebugEvent::kLogStart, log_msg.str());
+  // Write all the recent events to the log file.
+  for (auto&& event : recent_log_events_) {
+    StoreToFile(&event);
+  }
+  recent_log_events_.clear();
 }
 
 void AcmDumpImpl::LogRtpPacket(bool incoming,
                                const uint8_t* packet,
                                size_t length) {
   CriticalSectionScoped lock(crit_.get());
-  if (!CurrentlyLogging()) {
-    StopIfNecessary();
-    return;
-  }
-  // Reuse the same object at every log event.
-  auto rtp_event = stream_->mutable_stream(0);
-  rtp_event->clear_debug_event();
-  const int64_t timestamp = clock_->TimeInMicroseconds() - start_time_us_;
-  rtp_event->set_timestamp_us(timestamp);
-  rtp_event->set_type(webrtc::ACMDumpEvent::RTP_EVENT);
-  rtp_event->mutable_packet()->set_direction(
+  ACMDumpEvent rtp_event;
+  const int64_t timestamp = clock_->TimeInMicroseconds();
+  rtp_event.set_timestamp_us(timestamp);
+  rtp_event.set_type(webrtc::ACMDumpEvent::RTP_EVENT);
+  rtp_event.mutable_packet()->set_direction(
       incoming ? ACMDumpRTPPacket::INCOMING : ACMDumpRTPPacket::OUTGOING);
-  rtp_event->mutable_packet()->set_rtp_data(packet, length);
-  std::string dump_buffer;
-  stream_->SerializeToString(&dump_buffer);
-  file_->Write(dump_buffer.data(), dump_buffer.size());
-  file_->Flush();
+  rtp_event.mutable_packet()->set_rtp_data(packet, length);
+  HandleEvent(&rtp_event);
 }
 
 void AcmDumpImpl::LogDebugEvent(DebugEvent event_type,
@@ -157,41 +158,59 @@ void AcmDumpImpl::LogDebugEvent(DebugEvent event_type) {
   LogDebugEventLocked(event_type, "");
 }
 
-void AcmDumpImpl::StopIfNecessary() {
-  if (active_) {
-    DCHECK_GT(clock_->TimeInMicroseconds(), start_time_us_ + duration_us_);
-    LogDebugEventLocked(DebugEvent::kLogEnd, "");
-    Clear();
-  }
+void AcmDumpImpl::LogDebugEventLocked(DebugEvent event_type,
+                                      const std::string& event_message) {
+  ACMDumpEvent event;
+  int64_t timestamp = clock_->TimeInMicroseconds();
+  event.set_timestamp_us(timestamp);
+  event.set_type(webrtc::ACMDumpEvent::DEBUG_EVENT);
+  auto debug_event = event.mutable_debug_event();
+  debug_event->set_type(convertDebugEvent(event_type));
+  debug_event->set_message(event_message);
+  HandleEvent(&event);
 }
 
 void AcmDumpImpl::Clear() {
-  if (active_ || file_->Open()) {
+  if (file_->Open()) {
     file_->CloseFile();
   }
-  active_ = false;
+  currently_logging_ = false;
   stream_->Clear();
 }
 
-void AcmDumpImpl::LogDebugEventLocked(DebugEvent event_type,
-                                      const std::string& event_message) {
-  if (!CurrentlyLogging()) {
-    StopIfNecessary();
-    return;
+void AcmDumpImpl::HandleEvent(ACMDumpEvent* event) {
+  if (currently_logging_) {
+    if (clock_->TimeInMicroseconds() < start_time_us_ + duration_us_) {
+      StoreToFile(event);
+    } else {
+      LogDebugEventLocked(DebugEvent::kLogEnd, "");
+      Clear();
+      AddRecentEvent(*event);
+    }
+  } else {
+    AddRecentEvent(*event);
   }
+}
 
+void AcmDumpImpl::StoreToFile(ACMDumpEvent* event) {
   // Reuse the same object at every log event.
-  auto event = stream_->mutable_stream(0);
-  int64_t timestamp = clock_->TimeInMicroseconds() - start_time_us_;
-  event->set_timestamp_us(timestamp);
-  event->set_type(webrtc::ACMDumpEvent::DEBUG_EVENT);
-  event->clear_packet();
-  auto debug_event = event->mutable_debug_event();
-  debug_event->set_type(convertDebugEvent(event_type));
-  debug_event->set_message(event_message);
+  if (stream_->stream_size() < 1) {
+    stream_->add_stream();
+  }
+  DCHECK_EQ(stream_->stream_size(), 1);
+  stream_->mutable_stream(0)->Swap(event);
+
   std::string dump_buffer;
   stream_->SerializeToString(&dump_buffer);
   file_->Write(dump_buffer.data(), dump_buffer.size());
+}
+
+void AcmDumpImpl::AddRecentEvent(const ACMDumpEvent& event) {
+  recent_log_events_.push_back(event);
+  while (recent_log_events_.front().timestamp_us() <
+         event.timestamp_us() - recent_log_duration_us) {
+    recent_log_events_.pop_front();
+  }
 }
 
 #endif  // RTC_AUDIOCODING_DEBUG_DUMP
