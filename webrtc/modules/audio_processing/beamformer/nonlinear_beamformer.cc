@@ -50,6 +50,8 @@ const float kInterfAngleRadians = static_cast<float>(M_PI) / 4.f;
 // Rpsi = Rpsi_angled * kBalance + Rpsi_uniform * (1 - kBalance)
 const float kBalance = 0.4f;
 
+const float kHalfBeamWidthRadians = static_cast<float>(M_PI) * 20.f / 180.f;
+
 // TODO(claguna): need comment here.
 const float kBeamwidthConstant = 0.00002f;
 
@@ -332,6 +334,13 @@ void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
       output->channels(i)[0][j] = sum / input.num_channels() * smoothed_mask;
     }
   }
+}
+
+bool NonlinearBeamformer::IsInBeam(const SphericalPointf& spherical_point) {
+  // If more than half-beamwidth degrees away from the beam's center,
+  // you are out of the beam.
+  return fabs(spherical_point.azimuth() - kTargetAngleRadians) <
+         kHalfBeamWidthRadians;
 }
 
 void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,

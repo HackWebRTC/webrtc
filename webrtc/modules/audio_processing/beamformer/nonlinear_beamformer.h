@@ -48,6 +48,8 @@ class NonlinearBeamformer
   void ProcessChunk(const ChannelBuffer<float>& input,
                     ChannelBuffer<float>* output) override;
 
+  bool IsInBeam(const SphericalPointf& spherical_point) override;
+
   // After processing each block |is_target_present_| is set to true if the
   // target signal es present and to false otherwise. This methods can be called
   // to know if the data is target signal or interference and process it

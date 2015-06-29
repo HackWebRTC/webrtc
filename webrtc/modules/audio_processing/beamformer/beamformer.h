@@ -31,6 +31,9 @@ class Beamformer {
   // Needs to be called before the the Beamformer can be used.
   virtual void Initialize(int chunk_size_ms, int sample_rate_hz) = 0;
 
+  // Indicates whether a given point is inside of the beam.
+  virtual bool IsInBeam(const SphericalPointf& spherical_point) { return true; }
+
   // Returns true if the current data contains the target signal.
   // Which signals are considered "targets" is implementation dependent.
   virtual bool is_target_present() = 0;
