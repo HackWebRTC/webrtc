@@ -54,7 +54,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
 
-
 @implementation RTCPeerConnectionFactory {
   rtc::scoped_ptr<rtc::Thread> _signalingThread;
   rtc::scoped_ptr<rtc::Thread> _workerThread;
@@ -80,8 +79,9 @@
     _workerThread.reset(new rtc::Thread());
     result = _workerThread->Start();
     NSAssert(result, @"Failed to start worker thread.");
+
     _nativeFactory = webrtc::CreatePeerConnectionFactory(
-        _signalingThread.get(), _workerThread.get(), NULL, NULL, NULL);
+        _signalingThread.get(), _workerThread.get(), nullptr, nullptr, nullptr);
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
     // Uncomment to get sensitive logs emitted (to stderr or logcat).
     // rtc::LogMessage::LogToDebug(rtc::LS_SENSITIVE);

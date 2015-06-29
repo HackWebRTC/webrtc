@@ -42,6 +42,7 @@
 #import "ARDCEODTURNClient.h"
 #import "ARDJoinResponse.h"
 #import "ARDMessageResponse.h"
+#import "ARDSDPUtils.h"
 #import "ARDSignalingMessage.h"
 #import "ARDUtilities.h"
 #import "ARDWebSocketChannel.h"
@@ -344,10 +345,15 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
       [_delegate appClient:self didError:sdpError];
       return;
     }
+    // Prefer H264 if available.
+    RTCSessionDescription *sdpPreferringH264 =
+        [ARDSDPUtils descriptionForDescription:sdp
+                           preferredVideoCodec:@"H264"];
     [_peerConnection setLocalDescriptionWithDelegate:self
-                                  sessionDescription:sdp];
+                                  sessionDescription:sdpPreferringH264];
     ARDSessionDescriptionMessage *message =
-        [[ARDSessionDescriptionMessage alloc] initWithDescription:sdp];
+        [[ARDSessionDescriptionMessage alloc]
+            initWithDescription:sdpPreferringH264];
     [self sendSignalingMessage:message];
   });
 }
@@ -441,8 +447,12 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
       ARDSessionDescriptionMessage *sdpMessage =
           (ARDSessionDescriptionMessage *)message;
       RTCSessionDescription *description = sdpMessage.sessionDescription;
+      // Prefer H264 if available.
+      RTCSessionDescription *sdpPreferringH264 =
+          [ARDSDPUtils descriptionForDescription:description
+                             preferredVideoCodec:@"H264"];
       [_peerConnection setRemoteDescriptionWithDelegate:self
-                                     sessionDescription:description];
+                                     sessionDescription:sdpPreferringH264];
       break;
     }
     case kARDSignalingMessageTypeCandidate: {

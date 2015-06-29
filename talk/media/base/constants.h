@@ -158,9 +158,11 @@ extern const int kNumDefaultUnsignalledVideoRecvStreams;
 
 extern const char kVp8CodecName[];
 extern const char kVp9CodecName[];
+extern const char kH264CodecName[];
 
 extern const int kDefaultVp8PlType;
 extern const int kDefaultVp9PlType;
+extern const int kDefaultH264PlType;
 extern const int kDefaultRedPlType;
 extern const int kDefaultUlpfecType;
 extern const int kDefaultRtxVp8PlType;

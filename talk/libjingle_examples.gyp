@@ -173,6 +173,8 @@
             'examples/objc/AppRTCDemo/ARDMessageResponse.m',
             'examples/objc/AppRTCDemo/ARDMessageResponse+Internal.h',
             'examples/objc/AppRTCDemo/ARDRoomServerClient.h',
+            'examples/objc/AppRTCDemo/ARDSDPUtils.h',
+            'examples/objc/AppRTCDemo/ARDSDPUtils.m',
             'examples/objc/AppRTCDemo/ARDSignalingChannel.h',
             'examples/objc/AppRTCDemo/ARDSignalingMessage.h',
             'examples/objc/AppRTCDemo/ARDSignalingMessage.m',

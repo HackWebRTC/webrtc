@@ -43,6 +43,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/call.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/system_wrappers/interface/field_trial.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
@@ -156,6 +157,10 @@ bool CodecIsInternallySupported(const std::string& codec_name) {
     const std::string group_name =
         webrtc::field_trial::FindFullName("WebRTC-SupportVP9");
     return group_name == "Enabled" || group_name == "EnabledByFlag";
+  }
+  if (CodecNamesEq(codec_name, kH264CodecName)) {
+    return webrtc::H264Encoder::IsSupported() &&
+        webrtc::H264Decoder::IsSupported();
   }
   return false;
 }
@@ -316,8 +321,6 @@ static const int kDefaultQpMax = 56;
 
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
-const char kH264CodecName[] = "H264";
-
 const int kMinBandwidthBps = 30000;
 const int kStartBandwidthBps = 300000;
 const int kMaxBandwidthBps = 2000000;
@@ -331,6 +334,10 @@ std::vector<VideoCodec> DefaultVideoCodecList() {
   }
   codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType,
                                                            kVp8CodecName));
+  if (CodecIsInternallySupported(kH264CodecName)) {
+    codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultH264PlType,
+                                                             kH264CodecName));
+  }
   codecs.push_back(
       VideoCodec::CreateRtxCodec(kDefaultRtxVp8PlType, kDefaultVp8PlType));
   codecs.push_back(VideoCodec(kDefaultRedPlType, kRedCodecName));
@@ -1876,6 +1883,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoder(
   } else if (type == webrtc::kVideoCodecVP9) {
     return AllocatedEncoder(
         webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kVp9), type, false);
+  } else if (type == webrtc::kVideoCodecH264) {
+    return AllocatedEncoder(
+        webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kH264), type, false);
   }
 
   // This shouldn't happen, we should not be trying to create something we don't
@@ -2282,6 +2292,11 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
   if (type == webrtc::kVideoCodecVP9) {
     return AllocatedDecoder(
         webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kVp9), type, false);
+  }
+
+  if (type == webrtc::kVideoCodecH264) {
+    return AllocatedDecoder(
+        webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kH264), type, false);
   }
 
   // This shouldn't happen, we should not be trying to create something we don't

@@ -14,6 +14,9 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/engine_configurations.h"
+#ifdef VIDEOCODEC_H264
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
+#endif
 #ifdef VIDEOCODEC_I420
 #include "webrtc/modules/video_coding/codecs/i420/main/interface/i420.h"
 #endif
@@ -661,10 +664,20 @@ VCMGenericEncoder* VCMCodecDataBase::CreateEncoder(
       return new VCMGenericEncoder(new I420Encoder(), encoder_rate_observer_,
                                    false);
 #endif
+#ifdef VIDEOCODEC_H264
+    case kVideoCodecH264:
+      if (H264Encoder::IsSupported()) {
+        return new VCMGenericEncoder(H264Encoder::Create(),
+                                     encoder_rate_observer_,
+                                     false);
+      }
+      break;
+#endif
     default:
-      LOG(LS_WARNING) << "No internal encoder of this type exists.";
-      return NULL;
+      break;
   }
+  LOG(LS_WARNING) << "No internal encoder of this type exists.";
+  return NULL;
 }
 
 void VCMCodecDataBase::DeleteEncoder() {
@@ -691,10 +704,18 @@ VCMGenericDecoder* VCMCodecDataBase::CreateDecoder(VideoCodecType type) const {
     case kVideoCodecI420:
       return new VCMGenericDecoder(*(new I420Decoder));
 #endif
+#ifdef VIDEOCODEC_H264
+    case kVideoCodecH264:
+      if (H264Decoder::IsSupported()) {
+        return new VCMGenericDecoder(*(H264Decoder::Create()));
+      }
+      break;
+#endif
     default:
-      LOG(LS_WARNING) << "No internal decoder of this type exists.";
-      return NULL;
+      break;
   }
+  LOG(LS_WARNING) << "No internal decoder of this type exists.";
+  return NULL;
 }
 
 const VCMDecoderMapItem* VCMCodecDataBase::FindDecoderItem(

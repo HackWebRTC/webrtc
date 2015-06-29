@@ -31,8 +31,10 @@
 #import "ARDAppClient+Internal.h"
 #import "ARDJoinResponse+Internal.h"
 #import "ARDMessageResponse+Internal.h"
+#import "ARDSDPUtils.h"
 #import "RTCMediaConstraints.h"
 #import "RTCPeerConnectionFactory.h"
+#import "RTCSessionDescription.h"
 
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/ssladapter.h"
@@ -304,6 +306,27 @@
 
 @end
 
+@interface ARDSDPUtilsTest : ARDTestCase
+- (void)testPreferVideoCodec;
+@end
+
+@implementation ARDSDPUtilsTest
+
+- (void)testPreferVideoCodec {
+  NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120\n"
+                    "a=rtpmap:120 H264/90000\n");
+  NSString *expectedSdp = @("m=video 9 RTP/SAVPF 120 100 116 117 96\n"
+                            "a=rtpmap:120 H264/90000\n");
+  RTCSessionDescription* desc =
+      [[RTCSessionDescription alloc] initWithType:@"offer" sdp:sdp];
+  RTCSessionDescription *h264Desc =
+      [ARDSDPUtils descriptionForDescription:desc
+                         preferredVideoCodec:@"H264"];
+  EXPECT_TRUE([h264Desc.description isEqualToString:expectedSdp]);
+}
+
+@end
+
 class SignalingTest : public ::testing::Test {
  protected:
   static void SetUpTestCase() {
@@ -320,3 +343,12 @@ TEST_F(SignalingTest, SessionTest) {
     [test testSession];
   }
 }
+
+TEST_F(SignalingTest, SDPTest) {
+  @autoreleasepool {
+    ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
+    [test testPreferVideoCodec];
+  }
+}
+
+

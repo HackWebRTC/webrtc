@@ -20,6 +20,7 @@
     'remote_bitrate_estimator/remote_bitrate_estimator.gypi',
     'rtp_rtcp/rtp_rtcp.gypi',
     'utility/utility.gypi',
+    'video_coding/codecs/h264/h264.gypi',
     'video_coding/codecs/i420/main/source/i420.gypi',
     'video_coding/video_coding.gypi',
     'video_capture/video_capture.gypi',
@@ -352,6 +353,9 @@
               ],
             }],
             ['OS=="ios"', {
+              'sources': [
+                'video_coding/codecs/h264/h264_video_toolbox_nalu_unittest.cc',
+              ],
               'mac_bundle_resources': [
                 '<(DEPTH)/resources/audio_coding/speech_mono_16kHz.pcm',
                 '<(DEPTH)/resources/audio_coding/testfile32kHz.pcm',

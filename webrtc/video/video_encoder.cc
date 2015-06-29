@@ -11,6 +11,7 @@
 #include "webrtc/video_encoder.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -18,6 +19,9 @@
 namespace webrtc {
 VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
   switch (codec_type) {
+    case kH264:
+      DCHECK(H264Encoder::IsSupported());
+      return H264Encoder::Create();
     case kVp8:
       return VP8Encoder::Create();
     case kVp9:
@@ -32,6 +36,8 @@ VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
 
 VideoEncoder::EncoderType CodecToEncoderType(VideoCodecType codec_type) {
   switch (codec_type) {
+    case kVideoCodecH264:
+      return VideoEncoder::kH264;
     case kVideoCodecVP8:
       return VideoEncoder::kVp8;
     case kVideoCodecVP9:

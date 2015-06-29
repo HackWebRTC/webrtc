@@ -37,6 +37,7 @@ class EncodedImageCallback {
 class VideoEncoder {
  public:
   enum EncoderType {
+    kH264,
     kVp8,
     kVp9,
     kUnsupportedCodec,

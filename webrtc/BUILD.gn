@@ -40,6 +40,9 @@ config("common_inherited_config") {
       "WEBRTC_IOS",
     ]
   }
+  if (is_ios && rtc_use_objc_h264) {
+    defines += [ "WEBRTC_OBJC_H264" ]
+  }
   if (is_linux) {
     defines += [ "WEBRTC_LINUX" ]
   }
