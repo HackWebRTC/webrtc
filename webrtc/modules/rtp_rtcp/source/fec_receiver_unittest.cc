@@ -16,6 +16,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/interface/fec_receiver.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
@@ -80,6 +81,10 @@ class ReceiverFecTest : public ::testing::Test {
                      red_packet->length, kFecPayloadType));
     delete red_packet;
   }
+
+  static void SurvivesMaliciousPacket(const uint8_t* data,
+                                      size_t length,
+                                      uint8_t ulpfec_payload_type);
 
   MockRtpData rtp_data_callback_;
   rtc::scoped_ptr<ForwardErrorCorrection> fec_;
@@ -360,6 +365,40 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
 
   DeletePackets(&media_packets);
+}
+
+void ReceiverFecTest::SurvivesMaliciousPacket(const uint8_t* data,
+                                              size_t length,
+                                              uint8_t ulpfec_payload_type) {
+  webrtc::RTPHeader header;
+  rtc::scoped_ptr<webrtc::RtpHeaderParser> parser(
+      webrtc::RtpHeaderParser::Create());
+  ASSERT_TRUE(parser->Parse(data, length, &header));
+
+  webrtc::NullRtpData null_callback;
+  rtc::scoped_ptr<webrtc::FecReceiver> receiver_fec(
+      webrtc::FecReceiver::Create(&null_callback));
+
+  receiver_fec->AddReceivedRedPacket(header, data, length, ulpfec_payload_type);
+}
+
+TEST_F(ReceiverFecTest, TruncatedPacketWithFBitSet) {
+  const uint8_t kTruncatedPacket[] = {0x80,
+                                      0x2a,
+                                      0x68,
+                                      0x71,
+                                      0x29,
+                                      0xa1,
+                                      0x27,
+                                      0x3a,
+                                      0x29,
+                                      0x12,
+                                      0x2a,
+                                      0x98,
+                                      0xe0,
+                                      0x29};
+
+  SurvivesMaliciousPacket(kTruncatedPacket, sizeof(kTruncatedPacket), 100);
 }
 
 }  // namespace webrtc
