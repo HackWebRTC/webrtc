@@ -22,11 +22,8 @@ void WebRtcSpl_CrossCorrelationC(int32_t* cross_correlation,
 
   for (i = 0; i < dim_cross_correlation; i++) {
     int32_t corr = 0;
-    // Linux 64-bit performance is improved by the int16_t cast below.
-    // Presumably this is some sort of compiler bug, as there's no obvious
-    // reason why that should result in better code.
     for (j = 0; j < dim_seq; j++)
-      corr += (seq1[j] * seq2[j]) >> (int16_t)right_shifts;
+      corr += (seq1[j] * seq2[j]) >> right_shifts;
     seq2 += step_seq2;
     *cross_correlation++ = corr;
   }
