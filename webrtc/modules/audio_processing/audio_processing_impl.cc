@@ -12,10 +12,14 @@
 
 #include <assert.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+extern "C" {
+#include "webrtc/modules/audio_processing/aec/aec_core.h"
+}
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
@@ -33,6 +37,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
 // Files generated at build-time by the protobuf compiler.
@@ -170,6 +175,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
       stream_delay_ms_(0),
       delay_offset_ms_(0),
       was_stream_delay_set_(false),
+      last_stream_delay_ms_(0),
+      last_aec_system_delay_ms_(0),
       output_will_be_muted_(false),
       key_pressed_(false),
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
@@ -587,6 +594,8 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   }
 #endif
 
+  MaybeUpdateHistograms();
+
   AudioBuffer* ca = capture_audio_.get();  // For brevity.
   if (use_new_agc_ && gain_control_->is_enabled()) {
     agc_manager_->AnalyzePreProcess(ca->channels()[0],
@@ -987,6 +996,34 @@ void AudioProcessingImpl::InitializeBeamformer() {
       beamformer_.reset(new NonlinearBeamformer(array_geometry_));
     }
     beamformer_->Initialize(kChunkSizeMs, split_rate_);
+  }
+}
+
+void AudioProcessingImpl::MaybeUpdateHistograms() {
+  static const int kMinDiffDelayMs = 50;
+
+  if (echo_cancellation()->is_enabled()) {
+    // Detect a jump in platform reported system delay and log the difference.
+    const int diff_stream_delay_ms = stream_delay_ms_ - last_stream_delay_ms_;
+    if (diff_stream_delay_ms > kMinDiffDelayMs && last_stream_delay_ms_ != 0) {
+      RTC_HISTOGRAM_COUNTS("WebRTC.Audio.PlatformReportedStreamDelayJump",
+                           diff_stream_delay_ms, kMinDiffDelayMs, 1000, 100);
+    }
+    last_stream_delay_ms_ = stream_delay_ms_;
+
+    // Detect a jump in AEC system delay and log the difference.
+    const int frames_per_ms = rtc::CheckedDivExact(split_rate_, 1000);
+    const int aec_system_delay_ms =
+        WebRtcAec_system_delay(echo_cancellation()->aec_core()) / frames_per_ms;
+    const int diff_aec_system_delay_ms = aec_system_delay_ms -
+        last_aec_system_delay_ms_;
+    if (diff_aec_system_delay_ms > kMinDiffDelayMs &&
+        last_aec_system_delay_ms_ != 0) {
+      RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AecSystemDelayJump",
+                           diff_aec_system_delay_ms, kMinDiffDelayMs, 1000,
+                           100);
+    }
+    last_aec_system_delay_ms_ = aec_system_delay_ms;
   }
 }
 

@@ -171,6 +171,7 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void InitializeBeamformer() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void MaybeUpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   EchoCancellationImpl* echo_cancellation_;
   EchoControlMobileImpl* echo_control_mobile_;
@@ -207,6 +208,8 @@ class AudioProcessingImpl : public AudioProcessing {
   int stream_delay_ms_;
   int delay_offset_ms_;
   bool was_stream_delay_set_;
+  int last_stream_delay_ms_;
+  int last_aec_system_delay_ms_;
 
   bool output_will_be_muted_ GUARDED_BY(crit_);
 
