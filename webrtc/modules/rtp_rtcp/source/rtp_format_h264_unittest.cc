@@ -545,4 +545,22 @@ TEST_F(RtpDepacketizerH264Test, TestEmptyPayload) {
   EXPECT_FALSE(depacketizer_->Parse(&payload, garbage_ptr, 0));
 }
 
+TEST_F(RtpDepacketizerH264Test, TestTruncatedFuaNalu) {
+  const uint8_t kPayload[] = {0x9c};
+  RtpDepacketizer::ParsedPayload payload;
+  EXPECT_FALSE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
+}
+
+TEST_F(RtpDepacketizerH264Test, TestTruncatedSingleStapANalu) {
+  const uint8_t kPayload[] = {0xd8, 0x27};
+  RtpDepacketizer::ParsedPayload payload;
+  EXPECT_FALSE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
+}
+
+TEST_F(RtpDepacketizerH264Test, TestTruncationJustAfterSingleStapANalu) {
+  const uint8_t kPayload[] = {0x38, 0x27, 0x27};
+  RtpDepacketizer::ParsedPayload payload;
+  EXPECT_FALSE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
+}
+
 }  // namespace webrtc

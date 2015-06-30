@@ -40,7 +40,7 @@ enum NalDefs { kFBit = 0x80, kNriMask = 0x60, kTypeMask = 0x1F };
 // Bit masks for FU (A and B) headers.
 enum FuDefs { kSBit = 0x80, kEBit = 0x40, kRBit = 0x20 };
 
-void ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
+bool ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
                      const uint8_t* payload_data,
                      size_t payload_data_length) {
   parsed_payload->type.Video.width = 0;
@@ -55,6 +55,10 @@ void ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
   uint8_t nal_type = payload_data[0] & kTypeMask;
   if (nal_type == kStapA) {
     // Skip the StapA header (StapA nal type + length).
+    if (payload_data_length <= kStapAHeaderSize) {
+      LOG(LS_ERROR) << "StapA header truncated.";
+      return false;
+    }
     nal_type = payload_data[kStapAHeaderSize] & kTypeMask;
     nalu_start += kStapAHeaderSize;
     nalu_length -= kStapAHeaderSize;
@@ -82,12 +86,17 @@ void ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
       parsed_payload->frame_type = kVideoFrameDelta;
       break;
   }
+  return true;
 }
 
-void ParseFuaNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
+bool ParseFuaNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
                   const uint8_t* payload_data,
                   size_t payload_data_length,
                   size_t* offset) {
+  if (payload_data_length < kFuAHeaderSize) {
+    LOG(LS_ERROR) << "FU-A NAL units truncated.";
+    return false;
+  }
   uint8_t fnri = payload_data[0] & (kFBit | kNriMask);
   uint8_t original_nal_type = payload_data[1] & kTypeMask;
   bool first_fragment = (payload_data[1] & kSBit) > 0;
@@ -114,6 +123,7 @@ void ParseFuaNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
       &parsed_payload->type.Video.codecHeader.H264;
   h264_header->packetization_type = kH264FuA;
   h264_header->nalu_type = original_nal_type;
+  return true;
 }
 }  // namespace
 
@@ -326,11 +336,15 @@ bool RtpDepacketizerH264::Parse(ParsedPayload* parsed_payload,
   size_t offset = 0;
   if (nal_type == kFuA) {
     // Fragmented NAL units (FU-A).
-    ParseFuaNalu(parsed_payload, payload_data, payload_data_length, &offset);
+    if (!ParseFuaNalu(
+            parsed_payload, payload_data, payload_data_length, &offset)) {
+      return false;
+    }
   } else {
     // We handle STAP-A and single NALU's the same way here. The jitter buffer
     // will depacketize the STAP-A into NAL units later.
-    ParseSingleNalu(parsed_payload, payload_data, payload_data_length);
+    if (!ParseSingleNalu(parsed_payload, payload_data, payload_data_length))
+      return false;
   }
 
   parsed_payload->payload = payload_data + offset;
