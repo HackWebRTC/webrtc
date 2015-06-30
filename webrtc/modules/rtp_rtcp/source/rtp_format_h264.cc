@@ -10,6 +10,7 @@
 
 #include <string.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_sps_parser.h"
@@ -316,6 +317,11 @@ bool RtpDepacketizerH264::Parse(ParsedPayload* parsed_payload,
                                 const uint8_t* payload_data,
                                 size_t payload_data_length) {
   assert(parsed_payload != NULL);
+  if (payload_data_length == 0) {
+    LOG(LS_ERROR) << "Empty payload.";
+    return false;
+  }
+
   uint8_t nal_type = payload_data[0] & kTypeMask;
   size_t offset = 0;
   if (nal_type == kFuA) {
