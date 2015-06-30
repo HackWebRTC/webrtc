@@ -104,7 +104,7 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
   if (incoming_rtp_packet[header.headerLength] & 0x80) {
     // f bit set in RED header
     REDHeaderLength = 4;
-    if (payload_data_length < REDHeaderLength) {
+    if (payload_data_length < REDHeaderLength + 1u) {
       LOG(LS_WARNING) << "Corrupt/truncated FEC packet.";
       return -1;
     }
@@ -128,7 +128,9 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
       LOG(LS_WARNING) << "More than 2 blocks in packet not supported.";
       return -1;
     }
-    if (blockLength > payload_data_length - REDHeaderLength) {
+    // Check that the packet is long enough to contain data in the following
+    // block.
+    if (blockLength > payload_data_length - (REDHeaderLength + 1)) {
       LOG(LS_WARNING) << "Block length longer than packet.";
       return -1;
     }
