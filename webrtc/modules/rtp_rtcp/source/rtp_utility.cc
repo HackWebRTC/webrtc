@@ -355,6 +355,8 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
     }
     header.headerLength += XLen;
   }
+  if (header.headerLength + header.paddingLength > static_cast<size_t>(length))
+    return false;
   return true;
 }
 

@@ -402,7 +402,7 @@ TEST_F(ReceiverFecTest, TruncatedPacketWithFBitSet) {
 }
 
 TEST_F(ReceiverFecTest, TruncatedPacketWithFBitSetEndingAfterFirstRedHeader) {
-  const uint8_t kPacket[] = {0xa9,
+  const uint8_t kPacket[] = {0x89,
                              0x27,
                              0x3a,
                              0x83,

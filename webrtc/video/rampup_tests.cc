@@ -131,7 +131,9 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
   ++total_packets_sent_;
   if (header.paddingLength > 0)
     ++padding_packets_sent_;
-  if (rtx_media_ssrcs_.find(header.ssrc) != rtx_media_ssrcs_.end()) {
+  // Handle RTX retransmission, but only for non-padding-only packets.
+  if (rtx_media_ssrcs_.find(header.ssrc) != rtx_media_ssrcs_.end() &&
+      header.headerLength + header.paddingLength != length) {
     rtx_media_sent_ += length - header.headerLength - header.paddingLength;
     if (header.paddingLength == 0)
       ++rtx_media_packets_sent_;
@@ -141,9 +143,8 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
     EXPECT_TRUE(payload_registry_->RestoreOriginalPacket(
         &restored_packet_ptr, packet, &restored_length,
         rtx_media_ssrcs_[header.ssrc], header));
-    length = restored_length;
-    EXPECT_TRUE(rtp_parser_->Parse(
-        restored_packet, static_cast<int>(length), &header));
+    EXPECT_TRUE(
+        rtp_parser_->Parse(restored_packet_ptr, restored_length, &header));
   } else {
     rtp_rtcp_->SetRemoteSSRC(header.ssrc);
   }

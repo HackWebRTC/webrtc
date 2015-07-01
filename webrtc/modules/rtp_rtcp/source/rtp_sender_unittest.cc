@@ -770,8 +770,10 @@ TEST_F(RtpSenderTest, SendPadding) {
     EXPECT_EQ(kMaxPaddingLength + rtp_header_len,
               transport_.last_sent_packet_len_);
     // Parse sent packet.
-    ASSERT_TRUE(rtp_parser->Parse(transport_.last_sent_packet_, kPaddingBytes,
+    ASSERT_TRUE(rtp_parser->Parse(transport_.last_sent_packet_,
+                                  transport_.last_sent_packet_len_,
                                   &rtp_header));
+    EXPECT_EQ(kMaxPaddingLength, rtp_header.paddingLength);
 
     // Verify sequence number and timestamp.
     EXPECT_EQ(seq_num++, rtp_header.sequenceNumber);

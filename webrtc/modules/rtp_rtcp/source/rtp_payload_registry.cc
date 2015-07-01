@@ -237,7 +237,8 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
                                                size_t* packet_length,
                                                uint32_t original_ssrc,
                                                const RTPHeader& header) const {
-  if (kRtxHeaderSize + header.headerLength > *packet_length) {
+  if (kRtxHeaderSize + header.headerLength + header.paddingLength >
+      *packet_length) {
     return false;
   }
   const uint8_t* rtx_header = packet + header.headerLength;

@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
@@ -60,6 +61,7 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                rtp_header->header.timestamp);
   rtp_header->type.Video.codec = specific_payload.Video.videoCodecType;
 
+  DCHECK_GE(payload_length, rtp_header->header.paddingLength);
   const size_t payload_data_length =
       payload_length - rtp_header->header.paddingLength;
 
