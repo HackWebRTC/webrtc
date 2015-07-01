@@ -563,4 +563,10 @@ TEST_F(RtpDepacketizerH264Test, TestTruncationJustAfterSingleStapANalu) {
   EXPECT_FALSE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
 }
 
+TEST_F(RtpDepacketizerH264Test, TestShortSpsPacket) {
+  const uint8_t kPayload[] = {0x27, 0x80, 0x00};
+  RtpDepacketizer::ParsedPayload payload;
+  EXPECT_TRUE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
+}
+
 }  // namespace webrtc

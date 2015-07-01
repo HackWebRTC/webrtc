@@ -36,8 +36,8 @@ bool H264SpsParser::Parse() {
   // section 7.3.1 of the H.264 standard.
   rtc::ByteBuffer rbsp_buffer;
   for (size_t i = 0; i < byte_length_;) {
-    if (i < byte_length_ - 3 &&
-        sps_[i] == 0 && sps_[i + 1] == 0 && sps_[i + 2] == 3) {
+    if (i + 3 < byte_length_ && sps_[i] == 0 && sps_[i + 1] == 0 &&
+        sps_[i + 2] == 3) {
       // Two rbsp bytes + the emulation byte.
       rbsp_buffer.WriteBytes(sps_bytes + i, 2);
       i += 3;
