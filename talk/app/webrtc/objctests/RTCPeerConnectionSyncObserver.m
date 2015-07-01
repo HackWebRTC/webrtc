@@ -231,6 +231,12 @@
 }
 
 - (void)channel:(RTCDataChannel*)channel
+    didChangeBufferedAmount:(NSUInteger)previousAmount {
+  NSAssert(channel.bufferedAmount != previousAmount,
+           @"Invalid bufferedAmount change");
+}
+
+- (void)channel:(RTCDataChannel*)channel
     didReceiveMessageWithBuffer:(RTCDataBuffer*)buffer {
   NSAssert([_expectedMessages count] > 0,
            @"Unexpected message received");

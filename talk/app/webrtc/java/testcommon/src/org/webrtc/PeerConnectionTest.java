@@ -259,6 +259,11 @@ public class PeerConnectionTest {
     }
 
     @Override
+    public synchronized void onBufferedAmountChange(long previousAmount) {
+      assertFalse(previousAmount == dataChannel.bufferedAmount());
+    }
+
+    @Override
     public synchronized void onStateChange() {
       assertEquals(expectedStateChanges.removeFirst(), dataChannel.state());
     }

@@ -77,6 +77,8 @@ public class DataChannel {
 
   /** Java version of C++ DataChannelObserver. */
   public interface Observer {
+    /** The data channel's bufferedAmount has changed. */
+    public void onBufferedAmountChange(long previousAmount);
     /** The data channel state has changed. */
     public void onStateChange();
     /**

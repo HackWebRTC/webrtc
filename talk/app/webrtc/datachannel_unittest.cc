@@ -35,10 +35,16 @@ using webrtc::DataChannel;
 class FakeDataChannelObserver : public webrtc::DataChannelObserver {
  public:
   FakeDataChannelObserver()
-      : messages_received_(0), on_state_change_count_(0) {}
+      : messages_received_(0),
+        on_state_change_count_(0),
+        on_buffered_amount_change_count_(0) {}
 
   void OnStateChange() {
     ++on_state_change_count_;
+  }
+
+  void OnBufferedAmountChange(uint64 previous_amount) {
+    ++on_buffered_amount_change_count_;
   }
 
   void OnMessage(const webrtc::DataBuffer& buffer) {
@@ -53,13 +59,22 @@ class FakeDataChannelObserver : public webrtc::DataChannelObserver {
     on_state_change_count_ = 0;
   }
 
+  void ResetOnBufferedAmountChangeCount() {
+    on_buffered_amount_change_count_ = 0;
+  }
+
   size_t on_state_change_count() const {
     return on_state_change_count_;
+  }
+
+  size_t on_buffered_amount_change_count() const {
+    return on_buffered_amount_change_count_;
   }
 
  private:
   size_t messages_received_;
   size_t on_state_change_count_;
+  size_t on_buffered_amount_change_count_;
 };
 
 class SctpDataChannelTest : public testing::Test {
@@ -133,11 +148,13 @@ TEST_F(SctpDataChannelTest, StateTransition) {
 // Tests that DataChannel::buffered_amount() is correct after the channel is
 // blocked.
 TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
+  AddObserver();
   SetChannelReady();
   webrtc::DataBuffer buffer("abcd");
   EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
 
   EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(0U, observer_->on_buffered_amount_change_count());
 
   provider_.set_send_blocked(true);
 
@@ -147,37 +164,46 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
   }
   EXPECT_EQ(buffer.data.size() * number_of_packets,
             webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(number_of_packets, observer_->on_buffered_amount_change_count());
 }
 
 // Tests that the queued data are sent when the channel transitions from blocked
 // to unblocked.
 TEST_F(SctpDataChannelTest, QueuedDataSentWhenUnblocked) {
+  AddObserver();
   SetChannelReady();
   webrtc::DataBuffer buffer("abcd");
   provider_.set_send_blocked(true);
   EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
 
+  EXPECT_EQ(1U, observer_->on_buffered_amount_change_count());
+
   provider_.set_send_blocked(false);
   SetChannelReady();
   EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(2U, observer_->on_buffered_amount_change_count());
 }
 
 // Tests that no crash when the channel is blocked right away while trying to
 // send queued data.
 TEST_F(SctpDataChannelTest, BlockedWhenSendQueuedDataNoCrash) {
+  AddObserver();
   SetChannelReady();
   webrtc::DataBuffer buffer("abcd");
   provider_.set_send_blocked(true);
   EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  EXPECT_EQ(1U, observer_->on_buffered_amount_change_count());
 
   // Set channel ready while it is still blocked.
   SetChannelReady();
   EXPECT_EQ(buffer.size(), webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(1U, observer_->on_buffered_amount_change_count());
 
   // Unblock the channel to send queued data again, there should be no crash.
   provider_.set_send_blocked(false);
   SetChannelReady();
   EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(2U, observer_->on_buffered_amount_change_count());
 }
 
 // Tests that the queued control message is sent when channel is ready.

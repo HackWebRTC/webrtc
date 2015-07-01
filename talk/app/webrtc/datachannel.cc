@@ -476,6 +476,7 @@ void DataChannel::SendQueuedDataMessages() {
 
   ASSERT(state_ == kOpen || state_ == kClosing);
 
+  uint64 start_buffered_amount = buffered_amount();
   while (!queued_send_data_.Empty()) {
     DataBuffer* buffer = queued_send_data_.Front();
     if (!SendDataMessage(*buffer, false)) {
@@ -484,6 +485,10 @@ void DataChannel::SendQueuedDataMessages() {
     }
     queued_send_data_.Pop();
     delete buffer;
+  }
+
+  if (observer_ && buffered_amount() < start_buffered_amount) {
+    observer_->OnBufferedAmountChange(start_buffered_amount);
   }
 }
 
@@ -534,11 +539,17 @@ bool DataChannel::SendDataMessage(const DataBuffer& buffer,
 }
 
 bool DataChannel::QueueSendDataMessage(const DataBuffer& buffer) {
-  if (queued_send_data_.byte_count() >= kMaxQueuedSendDataBytes) {
+  size_t start_buffered_amount = buffered_amount();
+  if (start_buffered_amount >= kMaxQueuedSendDataBytes) {
     LOG(LS_ERROR) << "Can't buffer any more data for the data channel.";
     return false;
   }
   queued_send_data_.Push(new DataBuffer(buffer));
+
+  // The buffer can have length zero, in which case there is no change.
+  if (observer_ && buffered_amount() > start_buffered_amount) {
+    observer_->OnBufferedAmountChange(start_buffered_amount);
+  }
   return true;
 }
 

@@ -559,15 +559,23 @@ class DataChannelObserverWrapper : public DataChannelObserver {
       : j_observer_global_(jni, j_observer),
         j_observer_class_(jni, GetObjectClass(jni, j_observer)),
         j_buffer_class_(jni, FindClass(jni, "org/webrtc/DataChannel$Buffer")),
-        j_on_state_change_mid_(GetMethodID(jni, *j_observer_class_,
-                                           "onStateChange", "()V")),
+        j_on_buffered_amount_change_mid_(GetMethodID(
+            jni, *j_observer_class_, "onBufferedAmountChange", "(J)V")),
+        j_on_state_change_mid_(
+            GetMethodID(jni, *j_observer_class_, "onStateChange", "()V")),
         j_on_message_mid_(GetMethodID(jni, *j_observer_class_, "onMessage",
                                       "(Lorg/webrtc/DataChannel$Buffer;)V")),
-        j_buffer_ctor_(GetMethodID(jni, *j_buffer_class_,
-                                   "<init>", "(Ljava/nio/ByteBuffer;Z)V")) {
-  }
+        j_buffer_ctor_(GetMethodID(jni, *j_buffer_class_, "<init>",
+                                   "(Ljava/nio/ByteBuffer;Z)V")) {}
 
   virtual ~DataChannelObserverWrapper() {}
+
+  void OnBufferedAmountChange(uint64 previous_amount) override {
+    ScopedLocalRefFrame local_ref_frame(jni());
+    jni()->CallVoidMethod(*j_observer_global_, j_on_buffered_amount_change_mid_,
+                          previous_amount);
+    CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  }
 
   void OnStateChange() override {
     ScopedLocalRefFrame local_ref_frame(jni());
@@ -593,6 +601,7 @@ class DataChannelObserverWrapper : public DataChannelObserver {
   const ScopedGlobalRef<jobject> j_observer_global_;
   const ScopedGlobalRef<jclass> j_observer_class_;
   const ScopedGlobalRef<jclass> j_buffer_class_;
+  const jmethodID j_on_buffered_amount_change_mid_;
   const jmethodID j_on_state_change_mid_;
   const jmethodID j_on_message_mid_;
   const jmethodID j_buffer_ctor_;
