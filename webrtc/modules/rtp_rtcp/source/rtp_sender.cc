@@ -958,12 +958,12 @@ bool RTPSender::IsFecPacket(const uint8_t* buffer,
 }
 
 size_t RTPSender::TimeToSendPadding(size_t bytes) {
+  if (bytes == 0)
+    return 0;
   {
     CriticalSectionScoped cs(send_critsect_.get());
     if (!sending_media_) return 0;
   }
-  if (bytes == 0)
-    return 0;
   size_t bytes_sent = TrySendRedundantPayloads(bytes);
   if (bytes_sent < bytes)
     bytes_sent += TrySendPadData(bytes - bytes_sent);
