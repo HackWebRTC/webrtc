@@ -139,7 +139,7 @@ TEST_F(VideoCaptureInputTest, DoesNotRetainHandleNorCopyBuffer) {
 }
 
 TEST_F(VideoCaptureInputTest, TestNtpTimeStampSetIfRenderTimeSet) {
-  input_frames_.push_back(CreateVideoFrame(static_cast<uint8_t>(0)));
+  input_frames_.push_back(CreateVideoFrame(0));
   input_frames_[0]->set_render_time_ms(5);
   input_frames_[0]->set_ntp_time_ms(0);
 
@@ -150,7 +150,7 @@ TEST_F(VideoCaptureInputTest, TestNtpTimeStampSetIfRenderTimeSet) {
 }
 
 TEST_F(VideoCaptureInputTest, TestRtpTimeStampSet) {
-  input_frames_.push_back(CreateVideoFrame(static_cast<uint8_t>(0)));
+  input_frames_.push_back(CreateVideoFrame(0));
   input_frames_[0]->set_render_time_ms(0);
   input_frames_[0]->set_ntp_time_ms(1);
   input_frames_[0]->set_timestamp(0);
@@ -158,6 +158,32 @@ TEST_F(VideoCaptureInputTest, TestRtpTimeStampSet) {
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
   EXPECT_EQ(output_frames_[0]->timestamp(),
+            input_frames_[0]->ntp_time_ms() * 90);
+}
+
+TEST_F(VideoCaptureInputTest, DropsFramesWithSameOrOldNtpTimestamp) {
+  input_frames_.push_back(CreateVideoFrame(0));
+
+  input_frames_[0]->set_ntp_time_ms(17);
+  AddInputFrame(input_frames_[0]);
+  WaitOutputFrame();
+  EXPECT_EQ(output_frames_[0]->timestamp(),
+            input_frames_[0]->ntp_time_ms() * 90);
+
+  // Repeat frame with the same NTP timestamp should drop.
+  AddInputFrame(input_frames_[0]);
+  EXPECT_EQ(kEventTimeout, output_frame_event_->Wait(FRAME_TIMEOUT_MS));
+
+  // As should frames with a decreased NTP timestamp.
+  input_frames_[0]->set_ntp_time_ms(input_frames_[0]->ntp_time_ms() - 1);
+  AddInputFrame(input_frames_[0]);
+  EXPECT_EQ(kEventTimeout, output_frame_event_->Wait(FRAME_TIMEOUT_MS));
+
+  // But delivering with an increased NTP timestamp should succeed.
+  input_frames_[0]->set_ntp_time_ms(4711);
+  AddInputFrame(input_frames_[0]);
+  WaitOutputFrame();
+  EXPECT_EQ(output_frames_[1]->timestamp(),
             input_frames_[0]->ntp_time_ms() * 90);
 }
 
