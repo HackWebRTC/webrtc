@@ -715,9 +715,10 @@ int WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
     /* Save data for creation of multiple bit-streams. */
     /* If bit-stream too short then add garbage at the end. */
     if (garbageLen > 0) {
-      for (k = 0; k < garbageLen; k++) {
-        ptrGarbage[k] = (uint8_t)(rand() & 0xFF);
-      }
+      /* Overwrite the garbage area to avoid leaking possibly sensitive data
+         over the network. This also makes the output deterministic. */
+      memset(ptrGarbage, 0, garbageLen);
+
       /* For a correct length of the upper-band bit-stream together
        * with the garbage. Garbage is embeded in upper-band bit-stream.
        * That is the only way to preserve backward compatibility. */
