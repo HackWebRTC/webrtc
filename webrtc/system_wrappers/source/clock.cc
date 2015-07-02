@@ -155,9 +155,9 @@ class WindowsRealTimeClock : public RealTimeClock {
   }
 
   static ReferencePoint GetSystemReferencePoint() {
-    ReferencePoint ref = {0};
-    FILETIME ft0 = {0};
-    FILETIME ft1 = {0};
+    ReferencePoint ref = {};
+    FILETIME ft0 = {};
+    FILETIME ft1 = {};
     // Spin waiting for a change in system time. As soon as this change happens,
     // get the matching call for timeGetTime() as soon as possible. This is
     // assumed to be the most accurate offset that we can get between
