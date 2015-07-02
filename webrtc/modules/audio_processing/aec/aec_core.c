@@ -1452,12 +1452,12 @@ AecCore* WebRtcAec_CreateAec() {
     return NULL;
   }
 #ifdef WEBRTC_ANDROID
-  aec->reported_delay_enabled = 0;  // DA-AEC enabled by default.
+  aec->delay_agnostic_enabled = 1;  // DA-AEC enabled by default.
   // DA-AEC assumes the system is causal from the beginning and will self adjust
   // the lookahead when shifting is required.
   WebRtc_set_lookahead(aec->delay_estimator, 0);
 #else
-  aec->reported_delay_enabled = 1;
+  aec->delay_agnostic_enabled = 0;
   WebRtc_set_lookahead(aec->delay_estimator, kLookaheadBlocks);
 #endif
   aec->extended_filter_enabled = 0;
@@ -1786,7 +1786,7 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
       WebRtcAec_MoveFarReadPtr(aec, -(aec->mult + 1));
     }
 
-    if (aec->reported_delay_enabled) {
+    if (!aec->delay_agnostic_enabled) {
       // 2 a) Compensate for a possible change in the system delay.
 
       // TODO(bjornv): Investigate how we should round the delay difference;
@@ -1900,18 +1900,18 @@ void WebRtcAec_SetConfigCore(AecCore* self,
   }
   // Turn on delay logging if it is either set explicitly or if delay agnostic
   // AEC is enabled (which requires delay estimates).
-  self->delay_logging_enabled = delay_logging || !self->reported_delay_enabled;
+  self->delay_logging_enabled = delay_logging || self->delay_agnostic_enabled;
   if (self->delay_logging_enabled) {
     memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
   }
 }
 
-void WebRtcAec_enable_reported_delay(AecCore* self, int enable) {
-  self->reported_delay_enabled = enable;
+void WebRtcAec_enable_delay_agnostic(AecCore* self, int enable) {
+  self->delay_agnostic_enabled = enable;
 }
 
-int WebRtcAec_reported_delay_enabled(AecCore* self) {
-  return self->reported_delay_enabled;
+int WebRtcAec_delay_agnostic_enabled(AecCore* self) {
+  return self->delay_agnostic_enabled;
 }
 
 void WebRtcAec_enable_extended_filter(AecCore* self, int enable) {

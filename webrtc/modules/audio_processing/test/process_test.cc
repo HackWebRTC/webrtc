@@ -261,7 +261,10 @@ void void_main(int argc, char* argv[]) {
       config.Set<ExtendedFilter>(new ExtendedFilter(true));
 
     } else if (strcmp(argv[i], "--no_reported_delay") == 0) {
-      config.Set<ReportedDelay>(new ReportedDelay(false));
+      config.Set<DelayAgnostic>(new DelayAgnostic(true));
+
+    } else if (strcmp(argv[i], "--delay_agnostic") == 0) {
+      config.Set<DelayAgnostic>(new DelayAgnostic(true));
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));

@@ -103,10 +103,11 @@ void WebRtcAec_SetConfigCore(AecCore* self,
                              int delay_logging);
 
 // Non-zero enables, zero disables.
-void WebRtcAec_enable_reported_delay(AecCore* self, int enable);
+void WebRtcAec_enable_delay_agnostic(AecCore* self, int enable);
 
-// Returns non-zero if reported delay is enabled and zero if disabled.
-int WebRtcAec_reported_delay_enabled(AecCore* self);
+// Returns non-zero if delay agnostic (i.e., signal based delay estimation) is
+// enabled and zero if disabled.
+int WebRtcAec_delay_agnostic_enabled(AecCore* self);
 
 // Enables or disables extended filter mode. Non-zero enables, zero disables.
 void WebRtcAec_enable_extended_filter(AecCore* self, int enable);

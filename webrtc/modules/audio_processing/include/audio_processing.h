@@ -66,9 +66,17 @@ struct ExtendedFilter {
 // and not EchoControlMobile and is set with AudioProcessing::SetExtraOptions().
 // Note that by disabling reported system delays the EchoCancellation may
 // regress in performance.
+// TODO(henrik.lundin): Remove ReportedDelay once DelayAgnostic has
+// propagated through to all channels
+// (https://code.google.com/p/webrtc/issues/detail?id=4651).
 struct ReportedDelay {
   ReportedDelay() : enabled(true) {}
   explicit ReportedDelay(bool enabled) : enabled(enabled) {}
+  bool enabled;
+};
+struct DelayAgnostic {
+  DelayAgnostic() : enabled(false) {}
+  explicit DelayAgnostic(bool enabled) : enabled(enabled) {}
   bool enabled;
 };
 

@@ -238,7 +238,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
   // We skip the startup_phase completely (setting to 0) if DA-AEC is enabled,
   // but not extended_filter mode.
   aecpc->startup_phase = WebRtcAec_extended_filter_enabled(aecpc->aec) ||
-      WebRtcAec_reported_delay_enabled(aecpc->aec);
+      !WebRtcAec_delay_agnostic_enabled(aecpc->aec);
   aecpc->bufSizeStart = 0;
   aecpc->checkBufSizeCtr = 0;
   aecpc->msInSndCardBuf = 0;

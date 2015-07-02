@@ -844,8 +844,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   bool delay_agnostic_aec;
   if (delay_agnostic_aec_.Get(&delay_agnostic_aec)) {
     LOG(LS_INFO) << "Delay agnostic aec is enabled? " << delay_agnostic_aec;
-    config.Set<webrtc::ReportedDelay>(
-        new webrtc::ReportedDelay(!delay_agnostic_aec));
+    config.Set<webrtc::DelayAgnostic>(
+        new webrtc::DelayAgnostic(delay_agnostic_aec));
   }
 
   extended_filter_aec_.SetFrom(options.extended_filter_aec);

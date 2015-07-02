@@ -68,7 +68,7 @@ EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
       stream_has_echo_(false),
       delay_logging_enabled_(false),
       extended_filter_enabled_(false),
-      reported_delay_enabled_(true) {
+      delay_agnostic_enabled_(false) {
 }
 
 EchoCancellationImpl::~EchoCancellationImpl() {}
@@ -329,7 +329,8 @@ int EchoCancellationImpl::Initialize() {
 
 void EchoCancellationImpl::SetExtraOptions(const Config& config) {
   extended_filter_enabled_ = config.Get<ExtendedFilter>().enabled;
-  reported_delay_enabled_ = config.Get<ReportedDelay>().enabled;
+  delay_agnostic_enabled_ = config.Get<DelayAgnostic>().enabled ||
+                            !config.Get<ReportedDelay>().enabled;
   Configure();
 }
 
@@ -363,8 +364,9 @@ int EchoCancellationImpl::ConfigureHandle(void* handle) const {
   WebRtcAec_enable_extended_filter(
       WebRtcAec_aec_core(static_cast<Handle*>(handle)),
       extended_filter_enabled_ ? 1 : 0);
-  WebRtcAec_enable_reported_delay(WebRtcAec_aec_core(
-      static_cast<Handle*>(handle)), reported_delay_enabled_ ? 1 : 0);
+  WebRtcAec_enable_delay_agnostic(
+      WebRtcAec_aec_core(static_cast<Handle*>(handle)),
+      delay_agnostic_enabled_ ? 1 : 0);
   return WebRtcAec_set_config(static_cast<Handle*>(handle), config);
 }
 

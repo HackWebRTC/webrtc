@@ -48,7 +48,7 @@ TEST(EchoCancellationInternalTest, ExtendedFilter) {
   EXPECT_EQ(0, WebRtcAec_extended_filter_enabled(aec_core));
 }
 
-TEST(EchoCancellationInternalTest, ReportedDelay) {
+TEST(EchoCancellationInternalTest, DelayAgnostic) {
   rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
   EXPECT_TRUE(ap->echo_cancellation()->aec_core() == NULL);
 
@@ -58,24 +58,24 @@ TEST(EchoCancellationInternalTest, ReportedDelay) {
   AecCore* aec_core = ap->echo_cancellation()->aec_core();
   ASSERT_TRUE(aec_core != NULL);
   // Enabled by default.
-  EXPECT_EQ(1, WebRtcAec_reported_delay_enabled(aec_core));
+  EXPECT_EQ(0, WebRtcAec_delay_agnostic_enabled(aec_core));
 
   Config config;
-  config.Set<ReportedDelay>(new ReportedDelay(false));
+  config.Set<DelayAgnostic>(new DelayAgnostic(true));
   ap->SetExtraOptions(config);
-  EXPECT_EQ(0, WebRtcAec_reported_delay_enabled(aec_core));
+  EXPECT_EQ(1, WebRtcAec_delay_agnostic_enabled(aec_core));
 
   // Retains setting after initialization.
   EXPECT_EQ(ap->kNoError, ap->Initialize());
-  EXPECT_EQ(0, WebRtcAec_reported_delay_enabled(aec_core));
+  EXPECT_EQ(1, WebRtcAec_delay_agnostic_enabled(aec_core));
 
-  config.Set<ReportedDelay>(new ReportedDelay(true));
+  config.Set<DelayAgnostic>(new DelayAgnostic(false));
   ap->SetExtraOptions(config);
-  EXPECT_EQ(1, WebRtcAec_reported_delay_enabled(aec_core));
+  EXPECT_EQ(0, WebRtcAec_delay_agnostic_enabled(aec_core));
 
   // Retains setting after initialization.
   EXPECT_EQ(ap->kNoError, ap->Initialize());
-  EXPECT_EQ(1, WebRtcAec_reported_delay_enabled(aec_core));
+  EXPECT_EQ(0, WebRtcAec_delay_agnostic_enabled(aec_core));
 }
 
 }  // namespace webrtc

@@ -893,7 +893,7 @@ TEST_F(ApmTest, DISABLED_EchoCancellationReportsCorrectDelays) {
             apm_->echo_cancellation()->enable_delay_logging(true));
   EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
   Config config;
-  config.Set<ReportedDelay>(new ReportedDelay(true));
+  config.Set<DelayAgnostic>(new DelayAgnostic(false));
   apm_->SetExtraOptions(config);
 
   // Internally in the AEC the amount of lookahead the delay estimation can

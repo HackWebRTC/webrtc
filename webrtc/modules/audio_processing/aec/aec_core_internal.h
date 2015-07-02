@@ -144,9 +144,9 @@ struct AecCore {
   float delay_quality_threshold;
   int frame_count;
 
-  // 0 = reported delay mode disabled (signal based delay correction enabled).
-  // otherwise enabled
-  int reported_delay_enabled;
+  // 0 = delay agnostic mode (signal based delay correction) disabled.
+  // Otherwise enabled.
+  int delay_agnostic_enabled;
   // 1 = extended filter mode enabled, 0 = disabled.
   int extended_filter_enabled;
   // Runtime selection of number of filter partitions.
