@@ -222,7 +222,9 @@
           'conditions': [
             ['OS=="ios"', {
               'mac_bundle_resources': [
-                'examples/objc/AppRTCDemo/ios/resources/Default-568h.png',
+                'examples/objc/AppRTCDemo/ios/resources/iPhone5@2x.png',
+                'examples/objc/AppRTCDemo/ios/resources/iPhone6@2x.png',
+                'examples/objc/AppRTCDemo/ios/resources/iPhone6p@3x.png',
                 'examples/objc/AppRTCDemo/ios/resources/Roboto-Regular.ttf',
                 'examples/objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp.png',
                 'examples/objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp@2x.png',
