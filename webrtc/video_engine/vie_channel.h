@@ -265,8 +265,8 @@ class ViEChannel : public VCMFrameTypeCallback,
   int32_t StartSend();
   int32_t StopSend();
   bool Sending();
-  int32_t StartReceive();
-  int32_t StopReceive();
+  void StartReceive();
+  void StopReceive();
 
   int32_t ReceivedRTPPacket(const void* rtp_packet,
                             const size_t rtp_packet_length,
@@ -363,8 +363,8 @@ class ViEChannel : public VCMFrameTypeCallback,
   RtpRtcp::Configuration CreateRtpRtcpConfiguration();
   RtpRtcp* CreateRtpRtcpModule();
   // Assumed to be protected.
-  int32_t StartDecodeThread();
-  int32_t StopDecodeThread();
+  void StartDecodeThread();
+  void StopDecodeThread();
 
   int32_t ProcessNACKRequest(const bool enable);
   int32_t ProcessFECRequest(const bool enable,

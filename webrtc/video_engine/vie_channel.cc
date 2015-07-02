@@ -347,9 +347,7 @@ void ViEChannel::UpdateHistogramsAtStopSend() {
 
 int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
                                  bool new_stream) {
-  if (!sender_) {
-    return 0;
-  }
+  DCHECK(sender_);
   if (video_codec.codecType == kVideoCodecRED ||
       video_codec.codecType == kVideoCodecULPFEC) {
     LOG_F(LS_ERROR) << "Not a valid send codec " << video_codec.codecType;
@@ -571,6 +569,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
 }
 
 int32_t ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
+  DCHECK(!sender_);
   if (!vie_receiver_.SetReceiveCodec(video_codec)) {
     return -1;
   }
@@ -604,6 +603,7 @@ int32_t ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
                                             VideoDecoder* decoder,
                                             bool buffered_rendering,
                                             int32_t render_delay) {
+  DCHECK(!sender_);
   int32_t result;
   result = vcm_->RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
   if (result != VCM_OK) {
@@ -613,6 +613,7 @@ int32_t ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
 }
 
 int32_t ViEChannel::DeRegisterExternalDecoder(const uint8_t pl_type) {
+  DCHECK(!sender_);
   VideoCodec current_receive_codec;
   int32_t result = 0;
   result = vcm_->ReceiveCodec(&current_receive_codec);
@@ -1368,20 +1369,18 @@ bool ViEChannel::Sending() {
   return rtp_rtcp_->Sending();
 }
 
-int32_t ViEChannel::StartReceive() {
-  if (StartDecodeThread() != 0) {
-    vie_receiver_.StopReceive();
-    return -1;
-  }
+void ViEChannel::StartReceive() {
+  if (!sender_)
+    StartDecodeThread();
   vie_receiver_.StartReceive();
-  return 0;
 }
 
-int32_t ViEChannel::StopReceive() {
+void ViEChannel::StopReceive() {
   vie_receiver_.StopReceive();
-  StopDecodeThread();
-  vcm_->ResetDecoder();
-  return 0;
+  if (!sender_) {
+    StopDecodeThread();
+    vcm_->ResetDecoder();
+  }
 }
 
 int32_t ViEChannel::ReceivedRTPPacket(const void* rtp_packet,
@@ -1530,8 +1529,6 @@ bool ViEChannel::ChannelDecodeThreadFunction(void* obj) {
 }
 
 bool ViEChannel::ChannelDecodeProcess() {
-  // TODO(pbos): Make sure the decoder thread doesn't run for send-only
-  // channels.
   vcm_->Decode(kMaxDecodeWaitTimeMs);
   return true;
 }
@@ -1628,30 +1625,25 @@ RtpRtcp* ViEChannel::CreateRtpRtcpModule() {
   return RtpRtcp::CreateRtpRtcp(CreateRtpRtcpConfiguration());
 }
 
-int32_t ViEChannel::StartDecodeThread() {
+void ViEChannel::StartDecodeThread() {
+  DCHECK(!sender_);
   // Start the decode thread
-  if (decode_thread_) {
-    // Already started.
-    return 0;
-  }
+  if (decode_thread_)
+    return;
   decode_thread_ = ThreadWrapper::CreateThread(ChannelDecodeThreadFunction,
                                                this, "DecodingThread");
   decode_thread_->Start();
   decode_thread_->SetPriority(kHighestPriority);
-  return 0;
 }
 
-int32_t ViEChannel::StopDecodeThread() {
-  if (!decode_thread_) {
-    return 0;
-  }
+void ViEChannel::StopDecodeThread() {
+  if (!decode_thread_)
+    return;
 
   vcm_->TriggerDecoderShutdown();
 
   decode_thread_->Stop();
   decode_thread_.reset();
-
-  return 0;
 }
 
 int32_t ViEChannel::SetVoiceChannel(int32_t ve_channel_id,
