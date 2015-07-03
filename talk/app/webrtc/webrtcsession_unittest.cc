@@ -26,6 +26,7 @@
  */
 
 #include "talk/app/webrtc/audiotrack.h"
+#include "talk/app/webrtc/fakemetricsobserver.h"
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
 #include "talk/app/webrtc/mediastreamsignaling.h"
@@ -81,6 +82,7 @@ using webrtc::CreateSessionDescriptionRequest;
 using webrtc::DTLSIdentityRequestObserver;
 using webrtc::DTLSIdentityServiceInterface;
 using webrtc::FakeConstraints;
+using webrtc::FakeMetricsObserver;
 using webrtc::IceCandidateCollection;
 using webrtc::JsepIceCandidate;
 using webrtc::JsepSessionDescription;
@@ -164,33 +166,6 @@ static void InjectAfter(const std::string& line,
   rtc::replace_substrs(line.c_str(), line.length(),
                              tmp.c_str(), tmp.length(), message);
 }
-
-class FakeMetricsObserver : public webrtc::MetricsObserverInterface {
- public:
-  FakeMetricsObserver() { Reset(); }
-  void Reset() {
-    memset(peer_connection_metrics_counters_, 0,
-           sizeof(peer_connection_metrics_counters_));
-    memset(peer_connection_metrics_name_, 0,
-           sizeof(peer_connection_metrics_name_));
-  }
-
-  void IncrementCounter(webrtc::PeerConnectionMetricsCounter type) override {
-    peer_connection_metrics_counters_[type]++;
-  }
-  void AddHistogramSample(webrtc::PeerConnectionMetricsName type,
-                          int value) override {
-    ASSERT(peer_connection_metrics_name_[type] == 0);
-    peer_connection_metrics_name_[type] = value;
-  }
-
-  int peer_connection_metrics_counters_
-      [webrtc::kPeerConnectionMetricsCounter_Max];
-  int peer_connection_metrics_name_[webrtc::kPeerConnectionMetricsCounter_Max];
-
-  int AddRef() override { return 1; }
-  int Release() override { return 1; }
-};
 
 class MockIceObserver : public webrtc::IceObserver {
  public:
@@ -360,7 +335,8 @@ class WebRtcSessionTest : public testing::Test {
       stun_server_(cricket::TestStunServer::Create(Thread::Current(),
                                                    stun_socket_addr_)),
       turn_server_(Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
-      mediastream_signaling_(channel_manager_.get()) {
+      mediastream_signaling_(channel_manager_.get()),
+      metrics_observer_(new rtc::RefCountedObject<FakeMetricsObserver>()) {
     tdesc_factory_->set_protocol(cricket::ICEPROTO_HYBRID);
 
     cricket::ServerAddresses stun_servers;
@@ -398,7 +374,7 @@ class WebRtcSessionTest : public testing::Test {
 
     EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
                                      identity_service, rtc_configuration));
-    session_->set_metrics_observer(&metrics_observer_);
+    session_->set_metrics_observer(metrics_observer_);
   }
 
   void Init() {
@@ -1022,20 +998,18 @@ class WebRtcSessionTest : public testing::Test {
     ExpectedBestConnection best_connection_after_initial_ice_converged_;
 
     void VerifyBestConnectionAfterIceConverge(
-        const FakeMetricsObserver& metrics_observer) const {
+        const rtc::scoped_refptr<FakeMetricsObserver> metrics_observer) const {
       Verify(metrics_observer, best_connection_after_initial_ice_converged_);
     }
 
    private:
-    void Verify(const FakeMetricsObserver& metrics_observer,
+    void Verify(const rtc::scoped_refptr<FakeMetricsObserver> metrics_observer,
                 const ExpectedBestConnection& expected) const {
       EXPECT_EQ(
-          metrics_observer
-              .peer_connection_metrics_counters_[webrtc::kBestConnections_IPv4],
+          metrics_observer->GetCounter(webrtc::kBestConnections_IPv4),
           expected.ipv4_count_);
       EXPECT_EQ(
-          metrics_observer
-              .peer_connection_metrics_counters_[webrtc::kBestConnections_IPv6],
+          metrics_observer->GetCounter(webrtc::kBestConnections_IPv6),
           expected.ipv6_count_);
     }
   };
@@ -1135,7 +1109,7 @@ class WebRtcSessionTest : public testing::Test {
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
 
-    metrics_observer_.Reset();
+    metrics_observer_->Reset();
 
     // Clearing the rules, session should move back to completed state.
     loopback_network_manager.ClearRules(fss_.get());
@@ -1280,7 +1254,7 @@ class WebRtcSessionTest : public testing::Test {
   MockIceObserver observer_;
   cricket::FakeVideoMediaChannel* video_channel_;
   cricket::FakeVoiceMediaChannel* voice_channel_;
-  FakeMetricsObserver metrics_observer_;
+  rtc::scoped_refptr<FakeMetricsObserver> metrics_observer_;
 };
 
 TEST_F(WebRtcSessionTest, TestInitializeWithDtls) {

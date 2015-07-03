@@ -127,6 +127,9 @@ class MetricsObserverInterface : public rtc::RefCountInterface {
   virtual void IncrementCounter(PeerConnectionMetricsCounter type) = 0;
   virtual void AddHistogramSample(PeerConnectionMetricsName type,
                                   int value) = 0;
+  // TODO(jbauch): Make method abstract when it is implemented by Chromium.
+  virtual void AddHistogramSample(PeerConnectionMetricsName type,
+                                  const std::string& value) {}
 
  protected:
   virtual ~MetricsObserverInterface() {}

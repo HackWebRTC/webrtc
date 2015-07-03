@@ -370,7 +370,9 @@ class WebRtcSession : public cricket::BaseSession,
 
   // Invoked when OnTransportCompleted is signaled to gather the usage
   // of IPv4/IPv6 as best connection.
-  void ReportBestConnectionState(cricket::Transport* transport);
+  void ReportBestConnectionState(const cricket::TransportStats& stats);
+
+  void ReportNegotiatedCiphers(const cricket::TransportStats& stats);
 
   rtc::scoped_ptr<cricket::VoiceChannel> voice_channel_;
   rtc::scoped_ptr<cricket::VideoChannel> video_channel_;

@@ -44,6 +44,7 @@
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
@@ -1392,7 +1393,11 @@ void WebRtcSession::OnTransportCompleted(cricket::Transport* transport) {
   SetIceConnectionState(PeerConnectionInterface::kIceConnectionCompleted);
   // Only report once when Ice connection is completed.
   if (old_state != PeerConnectionInterface::kIceConnectionCompleted) {
-    ReportBestConnectionState(transport);
+    cricket::TransportStats stats;
+    if (metrics_observer_ && transport->GetStats(&stats)) {
+      ReportBestConnectionState(stats);
+      ReportNegotiatedCiphers(stats);
+    }
   }
 }
 
@@ -1872,16 +1877,9 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
 
 // Walk through the ConnectionInfos to gather best connection usage
 // for IPv4 and IPv6.
-void WebRtcSession::ReportBestConnectionState(cricket::Transport* transport) {
-  if (!metrics_observer_) {
-    return;
-  }
-
-  cricket::TransportStats stats;
-  if (!transport->GetStats(&stats)) {
-    return;
-  }
-
+void WebRtcSession::ReportBestConnectionState(
+    const cricket::TransportStats& stats) {
+  DCHECK(metrics_observer_ != NULL);
   for (cricket::TransportChannelStatsList::const_iterator it =
          stats.channel_stats.begin();
        it != stats.channel_stats.end(); ++it) {
@@ -1897,10 +1895,47 @@ void WebRtcSession::ReportBestConnectionState(cricket::Transport* transport) {
                  AF_INET6) {
         metrics_observer_->IncrementCounter(kBestConnections_IPv6);
       } else {
-        ASSERT(false);
+        RTC_NOTREACHED();
       }
       return;
     }
+  }
+}
+
+void WebRtcSession::ReportNegotiatedCiphers(
+    const cricket::TransportStats& stats) {
+  DCHECK(metrics_observer_ != NULL);
+  if (!dtls_enabled_ || stats.channel_stats.empty()) {
+    return;
+  }
+
+  const std::string& srtp_cipher = stats.channel_stats[0].srtp_cipher;
+  const std::string& ssl_cipher = stats.channel_stats[0].ssl_cipher;
+  if (srtp_cipher.empty() && ssl_cipher.empty()) {
+    return;
+  }
+
+  PeerConnectionMetricsName srtp_name;
+  PeerConnectionMetricsName ssl_name;
+  if (stats.content_name == cricket::CN_AUDIO) {
+    srtp_name = kAudioSrtpCipher;
+    ssl_name = kAudioSslCipher;
+  } else if (stats.content_name == cricket::CN_VIDEO) {
+    srtp_name = kVideoSrtpCipher;
+    ssl_name = kVideoSslCipher;
+  } else if (stats.content_name == cricket::CN_DATA) {
+    srtp_name = kDataSrtpCipher;
+    ssl_name = kDataSslCipher;
+  } else {
+    RTC_NOTREACHED();
+    return;
+  }
+
+  if (!srtp_cipher.empty()) {
+    metrics_observer_->AddHistogramSample(srtp_name, srtp_cipher);
+  }
+  if (!ssl_cipher.empty()) {
+    metrics_observer_->AddHistogramSample(ssl_name, ssl_cipher);
   }
 }
 
