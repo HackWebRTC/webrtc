@@ -60,20 +60,11 @@ struct ExtendedFilter {
   bool enabled;
 };
 
-// Use to disable the reported system delays. By disabling the reported system
-// delays the echo cancellation algorithm assumes the process and reverse
-// streams to be aligned. This configuration only applies to EchoCancellation
-// and not EchoControlMobile and is set with AudioProcessing::SetExtraOptions().
-// Note that by disabling reported system delays the EchoCancellation may
-// regress in performance.
-// TODO(henrik.lundin): Remove ReportedDelay once DelayAgnostic has
-// propagated through to all channels
-// (https://code.google.com/p/webrtc/issues/detail?id=4651).
-struct ReportedDelay {
-  ReportedDelay() : enabled(true) {}
-  explicit ReportedDelay(bool enabled) : enabled(enabled) {}
-  bool enabled;
-};
+// Enables delay-agnostic echo cancellation. This feature relies on internally
+// estimated delays between the process and reverse streams, thus not relying
+// on reported system delays. This configuration only applies to
+// EchoCancellation and not EchoControlMobile. It can be set in the constructor
+// or using AudioProcessing::SetExtraOptions().
 struct DelayAgnostic {
   DelayAgnostic() : enabled(false) {}
   explicit DelayAgnostic(bool enabled) : enabled(enabled) {}
