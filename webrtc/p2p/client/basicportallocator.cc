@@ -152,7 +152,8 @@ BasicPortAllocator::BasicPortAllocator(
     rtc::NetworkManager* network_manager,
     rtc::PacketSocketFactory* socket_factory)
     : network_manager_(network_manager),
-      socket_factory_(socket_factory) {
+      socket_factory_(socket_factory),
+      stun_servers_() {
   ASSERT(socket_factory_ != NULL);
   Construct();
 }
@@ -160,7 +161,8 @@ BasicPortAllocator::BasicPortAllocator(
 BasicPortAllocator::BasicPortAllocator(
     rtc::NetworkManager* network_manager)
     : network_manager_(network_manager),
-      socket_factory_(NULL) {
+      socket_factory_(NULL),
+      stun_servers_() {
   Construct();
 }
 

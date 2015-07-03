@@ -103,7 +103,9 @@ struct ExperimentalNs {
 // Use to enable beamforming. Must be provided through the constructor. It will
 // have no impact if used with AudioProcessing::SetExtraOptions().
 struct Beamforming {
-  Beamforming() : enabled(false) {}
+  Beamforming()
+      : enabled(false),
+        array_geometry() {}
   Beamforming(bool enabled, const std::vector<Point>& array_geometry)
       : enabled(enabled),
         array_geometry(array_geometry) {}
