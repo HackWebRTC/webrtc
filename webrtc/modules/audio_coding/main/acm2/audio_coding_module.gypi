@@ -79,24 +79,12 @@
       ],
     },
     {
-      'target_name': 'acm_dump_proto',
-      'type': 'static_library',
-      'sources': ['dump.proto',],
-      'variables': {
-        'proto_in_dir': '.',
-        # Workaround to protect against gyp's pathname relativization when
-        # this file is included by modules.gyp.
-        'proto_out_protected': 'webrtc/audio_coding',
-        'proto_out_dir': '<(proto_out_protected)',
-      },
-      'includes': ['../../../../build/protoc.gypi',],
-    },
-    {
       'target_name': 'acm_dump',
       'type': 'static_library',
       'conditions': [
         ['enable_protobuf==1', {
           'defines': ['RTC_AUDIOCODING_DEBUG_DUMP'],
+          'dependencies': ['acm_dump_proto'],
           }
         ],
       ],
@@ -104,10 +92,26 @@
         'acm_dump.h',
         'acm_dump.cc'
       ],
-      'dependencies': ['acm_dump_proto'],
     },
   ],
   'conditions': [
+    ['enable_protobuf==1', {
+      'targets': [
+        {
+          'target_name': 'acm_dump_proto',
+          'type': 'static_library',
+          'sources': ['dump.proto',],
+          'variables': {
+            'proto_in_dir': '.',
+            # Workaround to protect against gyp's pathname relativization when
+            # this file is included by modules.gyp.
+            'proto_out_protected': 'webrtc/audio_coding',
+            'proto_out_dir': '<(proto_out_protected)',
+          },
+          'includes': ['../../../../build/protoc.gypi',],
+        },
+      ]
+    }],
     ['include_tests==1', {
       'targets': [
         {

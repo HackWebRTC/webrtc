@@ -18,11 +18,13 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 
+#ifdef RTC_AUDIOCODING_DEBUG_DUMP
 // Files generated at build-time by the protobuf compiler.
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/dump.pb.h"
 #else
 #include "webrtc/audio_coding/dump.pb.h"
+#endif
 #endif
 
 namespace webrtc {
@@ -213,13 +215,6 @@ void AcmDumpImpl::AddRecentEvent(const ACMDumpEvent& event) {
   }
 }
 
-#endif  // RTC_AUDIOCODING_DEBUG_DUMP
-
-// AcmDump member functions.
-rtc::scoped_ptr<AcmDump> AcmDump::Create() {
-  return rtc::scoped_ptr<AcmDump>(new AcmDumpImpl());
-}
-
 bool AcmDump::ParseAcmDump(const std::string& file_name,
                            ACMDumpEventStream* result) {
   char tmp_buffer[1024];
@@ -236,4 +231,10 @@ bool AcmDump::ParseAcmDump(const std::string& file_name,
   return result->ParseFromString(dump_buffer);
 }
 
+#endif  // RTC_AUDIOCODING_DEBUG_DUMP
+
+// AcmDump member functions.
+rtc::scoped_ptr<AcmDump> AcmDump::Create() {
+  return rtc::scoped_ptr<AcmDump>(new AcmDumpImpl());
+}
 }  // namespace webrtc
