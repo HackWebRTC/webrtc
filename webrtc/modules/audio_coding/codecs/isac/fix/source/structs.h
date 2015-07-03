@@ -20,6 +20,7 @@
 
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
 #include "webrtc/typedefs.h"
 
@@ -245,9 +246,7 @@ typedef struct {
      bwe will assume the connection is over broadband network */
   int16_t   highSpeedSend;
 
-
-
-
+  IsacBandwidthInfo external_bw_info;
 } BwEstimatorstr;
 
 

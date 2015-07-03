@@ -68,6 +68,10 @@ struct IsacFloat {
   static inline int16_t Free(instance_type* inst) {
     return WebRtcIsac_Free(inst);
   }
+  static inline void GetBandwidthInfo(instance_type* inst,
+                                      IsacBandwidthInfo* bwinfo) {
+    WebRtcIsac_GetBandwidthInfo(inst, bwinfo);
+  }
   static inline int16_t GetErrorCode(instance_type* inst) {
     return WebRtcIsac_GetErrorCode(inst);
   }
@@ -75,7 +79,10 @@ struct IsacFloat {
   static inline int16_t GetNewFrameLen(instance_type* inst) {
     return WebRtcIsac_GetNewFrameLen(inst);
   }
-
+  static inline void SetBandwidthInfo(instance_type* inst,
+                                      const IsacBandwidthInfo* bwinfo) {
+    WebRtcIsac_SetBandwidthInfo(inst, bwinfo);
+  }
   static inline int16_t SetDecSampRate(instance_type* inst,
                                        uint16_t sample_rate_hz) {
     return WebRtcIsac_SetDecSampRate(inst, sample_rate_hz);

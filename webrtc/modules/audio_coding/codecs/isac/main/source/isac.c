@@ -17,6 +17,7 @@
 
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,9 +114,8 @@ static void UpdateBottleneck(ISACMainStruct* instISAC) {
   if ((instISAC->codingMode == 0) &&
       (instISAC->instLB.ISACencLB_obj.buffer_index == 0) &&
       (instISAC->instLB.ISACencLB_obj.frame_nb == 0)) {
-    int32_t bottleneck;
-    WebRtcIsac_GetUplinkBandwidth(&(instISAC->bwestimator_obj),
-                                  &bottleneck);
+    int32_t bottleneck =
+        WebRtcIsac_GetUplinkBandwidth(&instISAC->bwestimator_obj);
 
     /* Adding hysteresis when increasing signal bandwidth. */
     if ((instISAC->bandwidthKHz == isac8kHz)
@@ -670,7 +670,7 @@ int WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
   }
 
   /* Add Garbage if required. */
-  WebRtcIsac_GetUplinkBandwidth(&instISAC->bwestimator_obj, &bottleneck);
+  bottleneck = WebRtcIsac_GetUplinkBandwidth(&instISAC->bwestimator_obj);
   if (instISAC->codingMode == 0) {
     int minBytes;
     int limit;
@@ -2383,4 +2383,19 @@ uint16_t WebRtcIsac_EncSampRate(ISACStruct* ISAC_main_inst) {
 uint16_t WebRtcIsac_DecSampRate(ISACStruct* ISAC_main_inst) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
   return instISAC->decoderSamplingRateKHz == kIsacWideband ? 16000 : 32000;
+}
+
+void WebRtcIsac_GetBandwidthInfo(ISACStruct* inst,
+                                 IsacBandwidthInfo* bwinfo) {
+  ISACMainStruct* instISAC = (ISACMainStruct*)inst;
+  assert(instISAC->initFlag & BIT_MASK_DEC_INIT);
+  WebRtcIsacBw_GetBandwidthInfo(&instISAC->bwestimator_obj,
+                                instISAC->decoderSamplingRateKHz, bwinfo);
+}
+
+void WebRtcIsac_SetBandwidthInfo(ISACStruct* inst,
+                                 const IsacBandwidthInfo* bwinfo) {
+  ISACMainStruct* instISAC = (ISACMainStruct*)inst;
+  assert(instISAC->initFlag & BIT_MASK_ENC_INIT);
+  WebRtcIsacBw_SetBandwidthInfo(&instISAC->bwestimator_obj, bwinfo);
 }

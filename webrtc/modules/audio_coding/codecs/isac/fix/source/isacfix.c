@@ -72,10 +72,12 @@ int16_t WebRtcIsacfix_AssignSize(int *sizeinbytes) {
 
 int16_t WebRtcIsacfix_Assign(ISACFIX_MainStruct **inst, void *ISACFIX_inst_Addr) {
   if (ISACFIX_inst_Addr!=NULL) {
-    *inst = (ISACFIX_MainStruct*)ISACFIX_inst_Addr;
-    (*(ISACFIX_SubStruct**)inst)->errorcode = 0;
-    (*(ISACFIX_SubStruct**)inst)->initflag = 0;
-    (*(ISACFIX_SubStruct**)inst)->ISACenc_obj.SaveEnc_ptr = NULL;
+    ISACFIX_SubStruct* self = ISACFIX_inst_Addr;
+    *inst = (ISACFIX_MainStruct*)self;
+    self->errorcode = 0;
+    self->initflag = 0;
+    self->ISACenc_obj.SaveEnc_ptr = NULL;
+    WebRtcIsacfix_InitBandwidthEstimator(&self->bwestimator_obj);
     return(0);
   } else {
     return(-1);
@@ -108,6 +110,7 @@ int16_t WebRtcIsacfix_Create(ISACFIX_MainStruct **ISAC_main_inst)
     (*(ISACFIX_SubStruct**)ISAC_main_inst)->initflag = 0;
     (*(ISACFIX_SubStruct**)ISAC_main_inst)->ISACenc_obj.SaveEnc_ptr = NULL;
     WebRtcSpl_Init();
+    WebRtcIsacfix_InitBandwidthEstimator(&tempo->bwestimator_obj);
     return(0);
   } else {
     return(-1);
@@ -293,8 +296,6 @@ int16_t WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   WebRtcIsacfix_InitPitchFilter(&ISAC_inst->ISACenc_obj.pitchfiltstr_obj);
   WebRtcIsacfix_InitPitchAnalysis(&ISAC_inst->ISACenc_obj.pitchanalysisstr_obj);
 
-
-  WebRtcIsacfix_InitBandwidthEstimator(&ISAC_inst->bwestimator_obj);
   WebRtcIsacfix_InitRateModel(&ISAC_inst->ISACenc_obj.rate_data_obj);
 
 
@@ -1525,4 +1526,18 @@ int16_t WebRtcIsacfix_SetMaxRate(ISACFIX_MainStruct *ISAC_main_inst,
 void WebRtcIsacfix_version(char *version)
 {
   strcpy(version, "3.6.0");
+}
+
+void WebRtcIsacfix_GetBandwidthInfo(ISACFIX_MainStruct* ISAC_main_inst,
+                                    IsacBandwidthInfo* bwinfo) {
+  ISACFIX_SubStruct* inst = (ISACFIX_SubStruct*)ISAC_main_inst;
+  assert(inst->initflag & 1);  // Decoder initialized.
+  WebRtcIsacfixBw_GetBandwidthInfo(&inst->bwestimator_obj, bwinfo);
+}
+
+void WebRtcIsacfix_SetBandwidthInfo(ISACFIX_MainStruct* ISAC_main_inst,
+                                    const IsacBandwidthInfo* bwinfo) {
+  ISACFIX_SubStruct* inst = (ISACFIX_SubStruct*)ISAC_main_inst;
+  assert(inst->initflag & 2);  // Encoder initialized.
+  WebRtcIsacfixBw_SetBandwidthInfo(&inst->bwestimator_obj, bwinfo);
 }

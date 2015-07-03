@@ -68,6 +68,10 @@ struct IsacFix {
   static inline int16_t Free(instance_type* inst) {
     return WebRtcIsacfix_Free(inst);
   }
+  static inline void GetBandwidthInfo(instance_type* inst,
+                                      IsacBandwidthInfo* bwinfo) {
+    WebRtcIsacfix_GetBandwidthInfo(inst, bwinfo);
+  }
   static inline int16_t GetErrorCode(instance_type* inst) {
     return WebRtcIsacfix_GetErrorCode(inst);
   }
@@ -75,7 +79,10 @@ struct IsacFix {
   static inline int16_t GetNewFrameLen(instance_type* inst) {
     return WebRtcIsacfix_GetNewFrameLen(inst);
   }
-
+  static inline void SetBandwidthInfo(instance_type* inst,
+                                      const IsacBandwidthInfo* bwinfo) {
+    WebRtcIsacfix_SetBandwidthInfo(inst, bwinfo);
+  }
   static inline int16_t SetDecSampRate(instance_type* inst,
                                        uint16_t sample_rate_hz) {
     DCHECK_EQ(sample_rate_hz, kFixSampleRate);

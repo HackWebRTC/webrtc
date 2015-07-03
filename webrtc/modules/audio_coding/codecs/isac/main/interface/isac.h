@@ -11,9 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_ISAC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_ISAC_H_
 
-/*
- * Define the fixed-point numeric formats
- */
+#include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
 #include "webrtc/typedefs.h"
 
 typedef struct WebRtcISACStruct    ISACStruct;
@@ -708,6 +706,12 @@ extern "C" {
       int16_t*        decoded,
       int16_t*        speechType);
 
+  /* Fills in an IsacBandwidthInfo struct. */
+  void WebRtcIsac_GetBandwidthInfo(ISACStruct* inst, IsacBandwidthInfo* bwinfo);
+
+  /* Uses the values from an IsacBandwidthInfo struct. */
+  void WebRtcIsac_SetBandwidthInfo(ISACStruct* inst,
+                                   const IsacBandwidthInfo* bwinfo);
 
 #if defined(__cplusplus)
 }

@@ -11,9 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INTERFACE_ISACFIX_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INTERFACE_ISACFIX_H_
 
-/*
- * Define the fixpoint numeric formats
- */
+#include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
 #include "webrtc/typedefs.h"
 
 typedef struct {
@@ -626,6 +624,13 @@ extern "C" {
 
   int16_t WebRtcIsacfix_GetNewFrameLen(ISACFIX_MainStruct *ISAC_main_inst);
 
+  /* Fills in an IsacBandwidthInfo struct. */
+  void WebRtcIsacfix_GetBandwidthInfo(ISACFIX_MainStruct* ISAC_main_inst,
+                                      IsacBandwidthInfo* bwinfo);
+
+  /* Uses the values from an IsacBandwidthInfo struct. */
+  void WebRtcIsacfix_SetBandwidthInfo(ISACFIX_MainStruct* ISAC_main_inst,
+                                      const IsacBandwidthInfo* bwinfo);
 
 #if defined(__cplusplus)
 }
