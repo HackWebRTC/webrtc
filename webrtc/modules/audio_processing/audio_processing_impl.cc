@@ -1000,7 +1000,7 @@ void AudioProcessingImpl::InitializeBeamformer() {
 }
 
 void AudioProcessingImpl::MaybeUpdateHistograms() {
-  static const int kMinDiffDelayMs = 50;
+  static const int kMinDiffDelayMs = 60;
 
   if (echo_cancellation()->is_enabled()) {
     // Detect a jump in platform reported system delay and log the difference.
@@ -1024,6 +1024,8 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
                            100);
     }
     last_aec_system_delay_ms_ = aec_system_delay_ms;
+    // TODO(bjornv): Consider also logging amount of jumps. This gives a better
+    // indication of how frequent jumps are.
   }
 }
 
