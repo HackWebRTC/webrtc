@@ -279,7 +279,7 @@ class ForwardErrorCorrection {
   void AttemptRecover(RecoveredPacketList* recovered_packet_list);
 
   // Initializes the packet recovery using the FEC packet.
-  static void InitRecovery(const FecPacket* fec_packet,
+  static bool InitRecovery(const FecPacket* fec_packet,
                            RecoveredPacket* recovered);
 
   // Performs XOR between |src_packet| and |dst_packet| and stores the result
@@ -287,10 +287,10 @@ class ForwardErrorCorrection {
   static void XorPackets(const Packet* src_packet, RecoveredPacket* dst_packet);
 
   // Finish up the recovery of a packet.
-  static void FinishRecovery(RecoveredPacket* recovered);
+  static bool FinishRecovery(RecoveredPacket* recovered);
 
   // Recover a missing packet.
-  void RecoverPacket(const FecPacket* fec_packet,
+  bool RecoverPacket(const FecPacket* fec_packet,
                      RecoveredPacket* rec_packet_to_insert);
 
   // Get the number of missing media packets which are covered by this

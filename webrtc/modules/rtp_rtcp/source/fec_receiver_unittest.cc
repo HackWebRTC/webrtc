@@ -18,6 +18,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 
@@ -82,6 +83,7 @@ class ReceiverFecTest : public ::testing::Test {
     delete red_packet;
   }
 
+  void InjectGarbagePacketLength(size_t fec_garbage_offset);
   static void SurvivesMaliciousPacket(const uint8_t* data,
                                       size_t length,
                                       uint8_t ulpfec_payload_type);
@@ -109,8 +111,7 @@ TEST_F(ReceiverFecTest, TwoMediaOneFec) {
 
   // Recovery
   std::list<RtpPacket*>::iterator it = media_rtp_packets.begin();
-  std::list<RtpPacket*>::iterator media_it = media_rtp_packets.begin();
-  BuildAndAddRedMediaPacket(*media_it);
+  BuildAndAddRedMediaPacket(*it);
   VerifyReconstructedMediaPacket(*it, 1);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
   // Drop one media packet.
@@ -126,6 +127,44 @@ TEST_F(ReceiverFecTest, TwoMediaOneFec) {
   EXPECT_EQ(1U, counter.num_recovered_packets);
 
   DeletePackets(&media_packets);
+}
+
+void ReceiverFecTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
+  EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
+      .WillRepeatedly(Return(true));
+
+  const unsigned int kNumFecPackets = 1u;
+  std::list<RtpPacket*> media_rtp_packets;
+  std::list<Packet*> media_packets;
+  GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
+  std::list<Packet*> fec_packets;
+  GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      &fec_packets.front()->data[fec_garbage_offset], 0x4711);
+
+  // Inject first media packet, then first FEC packet, skipping the second media
+  // packet to cause a recovery from the FEC packet.
+  BuildAndAddRedMediaPacket(media_rtp_packets.front());
+  BuildAndAddRedFecPacket(fec_packets.front());
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
+
+  FecPacketCounter counter = receiver_fec_->GetPacketCounter();
+  EXPECT_EQ(2u, counter.num_packets);
+  EXPECT_EQ(1u, counter.num_fec_packets);
+  EXPECT_EQ(0u, counter.num_recovered_packets);
+
+  DeletePackets(&media_packets);
+}
+
+TEST_F(ReceiverFecTest, InjectGarbageFecHeaderLengthRecovery) {
+  // Byte offset 8 is the 'length recovery' field of the FEC header.
+  InjectGarbagePacketLength(8);
+}
+
+TEST_F(ReceiverFecTest, InjectGarbageFecLevelHeaderProtectionLength) {
+  // Byte offset 10 is the 'protection length' field in the first FEC level
+  // header.
+  InjectGarbagePacketLength(10);
 }
 
 TEST_F(ReceiverFecTest, TwoMediaTwoFec) {

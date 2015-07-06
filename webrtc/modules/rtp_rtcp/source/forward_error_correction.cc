@@ -634,23 +634,35 @@ void ForwardErrorCorrection::InsertPackets(
   DiscardOldPackets(recovered_packet_list);
 }
 
-void ForwardErrorCorrection::InitRecovery(const FecPacket* fec_packet,
+bool ForwardErrorCorrection::InitRecovery(const FecPacket* fec_packet,
                                           RecoveredPacket* recovered) {
   // This is the first packet which we try to recover with.
   const uint16_t ulp_header_size =
       fec_packet->pkt->data[0] & 0x40 ? kUlpHeaderSizeLBitSet
                                       : kUlpHeaderSizeLBitClear;  // L bit set?
+  if (fec_packet->pkt->length <
+      static_cast<size_t>(kFecHeaderSize + ulp_header_size)) {
+    LOG(LS_WARNING)
+        << "Truncated FEC packet doesn't contain room for ULP header.";
+    return false;
+  }
   recovered->pkt = new Packet;
   memset(recovered->pkt->data, 0, IP_PACKET_SIZE);
   recovered->returned = false;
   recovered->was_recovered = true;
-  uint8_t protection_length[2];
-  // Copy the protection length from the ULP header.
-  memcpy(protection_length, &fec_packet->pkt->data[10], 2);
+  uint16_t protection_length =
+      ByteReader<uint16_t>::ReadBigEndian(&fec_packet->pkt->data[10]);
+  if (protection_length >
+      std::min(
+          sizeof(recovered->pkt->data) - kRtpHeaderSize,
+          sizeof(fec_packet->pkt->data) - kFecHeaderSize - ulp_header_size)) {
+    LOG(LS_WARNING) << "Incorrect FEC protection length, dropping.";
+    return false;
+  }
   // Copy FEC payload, skipping the ULP header.
   memcpy(&recovered->pkt->data[kRtpHeaderSize],
          &fec_packet->pkt->data[kFecHeaderSize + ulp_header_size],
-         ByteReader<uint16_t>::ReadBigEndian(protection_length));
+         protection_length);
   // Copy the length recovery field.
   memcpy(recovered->length_recovery, &fec_packet->pkt->data[8], 2);
   // Copy the first 2 bytes of the FEC header.
@@ -660,9 +672,10 @@ void ForwardErrorCorrection::InitRecovery(const FecPacket* fec_packet,
   // Set the SSRC field.
   ByteWriter<uint32_t>::WriteBigEndian(&recovered->pkt->data[8],
                                        fec_packet->ssrc);
+  return true;
 }
 
-void ForwardErrorCorrection::FinishRecovery(RecoveredPacket* recovered) {
+bool ForwardErrorCorrection::FinishRecovery(RecoveredPacket* recovered) {
   // Set the RTP version to 2.
   recovered->pkt->data[0] |= 0x80;  // Set the 1st bit.
   recovered->pkt->data[0] &= 0xbf;  // Clear the 2nd bit.
@@ -674,6 +687,10 @@ void ForwardErrorCorrection::FinishRecovery(RecoveredPacket* recovered) {
   recovered->pkt->length =
       ByteReader<uint16_t>::ReadBigEndian(recovered->length_recovery) +
       kRtpHeaderSize;
+  if (recovered->pkt->length > sizeof(recovered->pkt->data) - kRtpHeaderSize)
+    return false;
+
+  return true;
 }
 
 void ForwardErrorCorrection::XorPackets(const Packet* src_packet,
@@ -700,9 +717,11 @@ void ForwardErrorCorrection::XorPackets(const Packet* src_packet,
   }
 }
 
-void ForwardErrorCorrection::RecoverPacket(
-    const FecPacket* fec_packet, RecoveredPacket* rec_packet_to_insert) {
-  InitRecovery(fec_packet, rec_packet_to_insert);
+bool ForwardErrorCorrection::RecoverPacket(
+    const FecPacket* fec_packet,
+    RecoveredPacket* rec_packet_to_insert) {
+  if (!InitRecovery(fec_packet, rec_packet_to_insert))
+    return false;
   ProtectedPacketList::const_iterator protected_it =
       fec_packet->protected_pkt_list.begin();
   while (protected_it != fec_packet->protected_pkt_list.end()) {
@@ -714,7 +733,9 @@ void ForwardErrorCorrection::RecoverPacket(
     }
     ++protected_it;
   }
-  FinishRecovery(rec_packet_to_insert);
+  if (!FinishRecovery(rec_packet_to_insert))
+    return false;
+  return true;
 }
 
 void ForwardErrorCorrection::AttemptRecover(
@@ -729,7 +750,13 @@ void ForwardErrorCorrection::AttemptRecover(
       // Recovery possible.
       RecoveredPacket* packet_to_insert = new RecoveredPacket;
       packet_to_insert->pkt = NULL;
-      RecoverPacket(*fec_packet_list_it, packet_to_insert);
+      if (!RecoverPacket(*fec_packet_list_it, packet_to_insert)) {
+        // Can't recover using this packet, drop it.
+        DiscardFECPacket(*fec_packet_list_it);
+        fec_packet_list_it = fec_packet_list_.erase(fec_packet_list_it);
+        delete packet_to_insert;
+        continue;
+      }
 
       // Add recovered packet to the list of recovered packets and update any
       // FEC packets covering this packet with a pointer to the data.
