@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
 
 namespace webrtc {
@@ -20,10 +21,8 @@ class RemoteBitrateEstimatorSingleTest :
 
   RemoteBitrateEstimatorSingleTest() {}
   virtual void SetUp() {
-    bitrate_estimator_.reset(RemoteBitrateEstimatorFactory().Create(
-        bitrate_observer_.get(),
-        &clock_,
-        kMimdControl,
+    bitrate_estimator_.reset(new RemoteBitrateEstimatorSingleStream(
+        bitrate_observer_.get(), &clock_,
         kRemoteBitrateEstimatorMinBitrateBps));
   }
  protected:
@@ -39,35 +38,35 @@ TEST_F(RemoteBitrateEstimatorSingleTest, RateIncreaseReordering) {
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, RateIncreaseRtpTimestamps) {
-  RateIncreaseRtpTimestampsTestHelper(1621);
+  RateIncreaseRtpTimestampsTestHelper(1089);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropOneStream) {
-  CapacityDropTestHelper(1, false, 733);
+  CapacityDropTestHelper(1, false, 700);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropOneStreamWrap) {
-  CapacityDropTestHelper(1, true, 733);
+  CapacityDropTestHelper(1, true, 700);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropTwoStreamsWrap) {
-  CapacityDropTestHelper(2, true, 700);
+  CapacityDropTestHelper(2, true, 666);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropThreeStreamsWrap) {
-  CapacityDropTestHelper(3, true, 733);
+  CapacityDropTestHelper(3, true, 700);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropThirteenStreamsWrap) {
-  CapacityDropTestHelper(13, true, 733);
+  CapacityDropTestHelper(13, true, 700);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropNineteenStreamsWrap) {
-  CapacityDropTestHelper(19, true, 733);
+  CapacityDropTestHelper(19, true, 700);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropThirtyStreamsWrap) {
-  CapacityDropTestHelper(30, true, 733);
+  CapacityDropTestHelper(30, true, 700);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, TestTimestampGrouping) {

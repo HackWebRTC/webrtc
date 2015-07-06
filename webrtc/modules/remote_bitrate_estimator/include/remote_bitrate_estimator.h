@@ -25,11 +25,6 @@ namespace webrtc {
 
 class Clock;
 
-enum RateControlType {
-  kMimdControl,
-  kAimdControl
-};
-
 // RemoteBitrateObserver is used to signal changes in bitrate estimates for
 // the incoming streams.
 class RemoteBitrateObserver {
@@ -125,28 +120,6 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   static const int64_t kStreamTimeOutMs = 2000;
 };
 
-struct RemoteBitrateEstimatorFactory {
-  RemoteBitrateEstimatorFactory() {}
-  virtual ~RemoteBitrateEstimatorFactory() {}
-
-  virtual RemoteBitrateEstimator* Create(
-      RemoteBitrateObserver* observer,
-      Clock* clock,
-      RateControlType control_type,
-      uint32_t min_bitrate_bps) const;
-};
-
-struct AbsoluteSendTimeRemoteBitrateEstimatorFactory
-    : public RemoteBitrateEstimatorFactory {
-  AbsoluteSendTimeRemoteBitrateEstimatorFactory() {}
-  virtual ~AbsoluteSendTimeRemoteBitrateEstimatorFactory() {}
-
-  virtual RemoteBitrateEstimator* Create(
-      RemoteBitrateObserver* observer,
-      Clock* clock,
-      RateControlType control_type,
-      uint32_t min_bitrate_bps) const;
-};
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_

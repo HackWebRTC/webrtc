@@ -16,7 +16,8 @@
 #include "webrtc/experiments.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -43,13 +44,11 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
         clock_(clock),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
-        rbe_(RemoteBitrateEstimatorFactory().Create(observer_,
+        rbe_(new RemoteBitrateEstimatorSingleStream(observer_,
                                                     clock_,
-                                                    kAimdControl,
                                                     min_bitrate_bps_)),
         using_absolute_send_time_(false),
-        packets_since_absolute_send_time_(0) {
-  }
+        packets_since_absolute_send_time_(0) {}
 
   virtual ~WrappingBitrateEstimator() {}
 
@@ -122,11 +121,11 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   // Instantiate RBE for Time Offset or Absolute Send Time extensions.
   void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
     if (using_absolute_send_time_) {
-      rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
-          observer_, clock_, kAimdControl, min_bitrate_bps_));
+      rbe_.reset(new RemoteBitrateEstimatorAbsSendTime(observer_, clock_,
+                                                       min_bitrate_bps_));
     } else {
-      rbe_.reset(RemoteBitrateEstimatorFactory().Create(
-          observer_, clock_, kAimdControl, min_bitrate_bps_));
+      rbe_.reset(new RemoteBitrateEstimatorSingleStream(observer_, clock_,
+                                                        min_bitrate_bps_));
     }
   }
 

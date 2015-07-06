@@ -21,6 +21,7 @@ namespace webrtc {
 static const int64_t kDefaultRttMs = 200;
 static const int64_t kLogIntervalMs = 1000;
 static const double kWithinIncomingBitrateHysteresis = 1.05;
+static const int64_t kMaxFeedbackIntervalMs = 1000;
 
 AimdRateControl::AimdRateControl(uint32_t min_bitrate_bps)
     : min_configured_bitrate_bps_(min_bitrate_bps),
@@ -40,10 +41,6 @@ AimdRateControl::AimdRateControl(uint32_t min_bitrate_bps)
       beta_(0.9f),
       rtt_(kDefaultRttMs),
       time_of_last_log_(-1) {}
-
-RateControlType AimdRateControl::GetControlType() const {
-  return kAimdControl;
-}
 
 uint32_t AimdRateControl::GetMinBitrate() const {
   return min_configured_bitrate_bps_;

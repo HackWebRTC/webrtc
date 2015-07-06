@@ -11,6 +11,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/send_side.h"
 
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 
 namespace webrtc {
@@ -22,8 +23,9 @@ const int kFeedbackIntervalMs = 50;
 FullBweSender::FullBweSender(int kbps, BitrateObserver* observer, Clock* clock)
     : bitrate_controller_(
           BitrateController::CreateBitrateController(clock, observer)),
-      rbe_(AbsoluteSendTimeRemoteBitrateEstimatorFactory()
-               .Create(this, clock, kAimdControl, 1000 * kMinBitrateKbps)),
+      rbe_(new RemoteBitrateEstimatorAbsSendTime(this,
+                                                 clock,
+                                                 1000 * kMinBitrateKbps)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
       clock_(clock),
       send_time_history_(10000),

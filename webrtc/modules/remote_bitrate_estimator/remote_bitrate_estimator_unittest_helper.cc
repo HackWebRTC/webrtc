@@ -533,7 +533,7 @@ void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper() {
                                         kFrameIntervalAbsSendTime);
   }
   EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_NEAR(450000u, bitrate_observer_->latest_bitrate(), 20000u);
+  EXPECT_NEAR(470000u, bitrate_observer_->latest_bitrate(), 10000u);
 
   // Insert batches of frames which were sent very close in time. Also simulate
   // capacity over-use to see that we back off correctly.

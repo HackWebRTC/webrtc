@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
 
 namespace webrtc {
@@ -20,12 +21,9 @@ class RemoteBitrateEstimatorAbsSendTimeTest :
 
   RemoteBitrateEstimatorAbsSendTimeTest() {}
   virtual void SetUp() {
-    bitrate_estimator_.reset(
-        AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
-            bitrate_observer_.get(),
-            &clock_,
-            kAimdControl,
-            kRemoteBitrateEstimatorMinBitrateBps));
+    bitrate_estimator_.reset(new RemoteBitrateEstimatorAbsSendTime(
+        bitrate_observer_.get(), &clock_,
+        kRemoteBitrateEstimatorMinBitrateBps));
   }
  protected:
   DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorAbsSendTimeTest);

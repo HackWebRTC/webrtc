@@ -18,7 +18,7 @@
 // Note: This file has no directory. Lint warning must be ignored.
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
@@ -69,12 +69,10 @@ class RtcpReceiverTest : public ::testing::Test {
       : over_use_detector_options_(),
         system_clock_(1335900000),
         remote_bitrate_observer_(),
-        remote_bitrate_estimator_(
-            RemoteBitrateEstimatorFactory().Create(
-                &remote_bitrate_observer_,
-                &system_clock_,
-                kMimdControl,
-                kRemoteBitrateEstimatorMinBitrateBps)) {
+        remote_bitrate_estimator_(new RemoteBitrateEstimatorSingleStream(
+            &remote_bitrate_observer_,
+            &system_clock_,
+            kRemoteBitrateEstimatorMinBitrateBps)) {
     test_transport_ = new TestTransport();
 
     RtpRtcp::Configuration configuration;

@@ -13,7 +13,8 @@
 #include <stdio.h>
 #include <string>
 
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/test/rtp_file_reader.h"
@@ -51,16 +52,14 @@ bool ParseArgsAndSetupEstimator(int argc,
   if (estimator) {
     switch (extension) {
       case webrtc::kRtpExtensionAbsoluteSendTime: {
-          webrtc::AbsoluteSendTimeRemoteBitrateEstimatorFactory factory;
-          *estimator = factory.Create(observer, clock, webrtc::kAimdControl,
-                                      kMinBitrateBps);
+        *estimator = new webrtc::RemoteBitrateEstimatorAbsSendTime(
+            observer, clock, kMinBitrateBps);
           *estimator_used = "AbsoluteSendTimeRemoteBitrateEstimator";
           break;
         }
       case webrtc::kRtpExtensionTransmissionTimeOffset: {
-          webrtc::RemoteBitrateEstimatorFactory factory;
-          *estimator = factory.Create(observer, clock, webrtc::kAimdControl,
-                                      kMinBitrateBps);
+        *estimator = new webrtc::RemoteBitrateEstimatorSingleStream(
+            observer, clock, kMinBitrateBps);
           *estimator_used = "RemoteBitrateEstimator";
           break;
         }

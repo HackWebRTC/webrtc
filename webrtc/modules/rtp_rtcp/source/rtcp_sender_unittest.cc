@@ -18,7 +18,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
@@ -279,15 +279,13 @@ class RtcpSenderTest : public ::testing::Test {
   RtcpSenderTest()
       : over_use_detector_options_(),
         clock_(1335900000),
-        rtp_payload_registry_(new RTPPayloadRegistry(
-            RTPPayloadStrategy::CreateStrategy(false))),
+        rtp_payload_registry_(
+            new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false))),
         remote_bitrate_observer_(),
-        remote_bitrate_estimator_(
-            RemoteBitrateEstimatorFactory().Create(
-                &remote_bitrate_observer_,
-                &clock_,
-                kMimdControl,
-                kRemoteBitrateEstimatorMinBitrateBps)),
+        remote_bitrate_estimator_(new RemoteBitrateEstimatorSingleStream(
+            &remote_bitrate_observer_,
+            &clock_,
+            kRemoteBitrateEstimatorMinBitrateBps)),
         receive_statistics_(ReceiveStatistics::Create(&clock_)) {
     test_transport_ = new TestTransport();
 
