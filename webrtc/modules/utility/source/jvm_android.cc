@@ -58,7 +58,7 @@ void FreeClassReferences(JNIEnv* jni) {
 
 jclass LookUpClass(const char* name) {
   for (auto& c : loaded_classes) {
-    if (c.name == name)
+    if (strcmp(c.name, name) == 0)
       return c.clazz;
   }
   CHECK(false) << "Unable to find class in lookup table";
