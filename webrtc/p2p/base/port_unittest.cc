@@ -538,6 +538,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
 
   void TestCrossFamilyPorts(int type);
 
+  void ExpectPortsCanConnect(bool can_connect, Port* p1, Port* p2);
+
   // This does all the work and then deletes |port1| and |port2|.
   void TestConnectivity(const char* name1, Port* port1,
                         const char* name2, Port* port2,
@@ -1392,6 +1394,49 @@ TEST_F(PortTest, TestSkipCrossFamilyTcp) {
 
 TEST_F(PortTest, TestSkipCrossFamilyUdp) {
   TestCrossFamilyPorts(SOCK_DGRAM);
+}
+
+void PortTest::ExpectPortsCanConnect(bool can_connect, Port* p1, Port* p2) {
+  Connection* c = p1->CreateConnection(GetCandidate(p2),
+                                       Port::ORIGIN_MESSAGE);
+  if (can_connect) {
+    EXPECT_FALSE(NULL == c);
+    EXPECT_EQ(1U, p1->connections().size());
+  } else {
+    EXPECT_TRUE(NULL == c);
+    EXPECT_EQ(0U, p1->connections().size());
+  }
+}
+
+TEST_F(PortTest, TestUdpV6CrossTypePorts) {
+  FakePacketSocketFactory factory;
+  scoped_ptr<Port> ports[4];
+  SocketAddress addresses[4] = {SocketAddress("2001:db8::1", 0),
+                                SocketAddress("fe80::1", 0),
+                                SocketAddress("fe80::2", 0),
+                                SocketAddress("::1", 0)};
+  for (int i = 0; i < 4; i++) {
+    FakeAsyncPacketSocket *socket = new FakeAsyncPacketSocket();
+    factory.set_next_udp_socket(socket);
+    ports[i].reset(CreateUdpPort(addresses[i], &factory));
+    socket->set_state(AsyncPacketSocket::STATE_BINDING);
+    socket->SignalAddressReady(socket, addresses[i]);
+    ports[i]->PrepareAddress();
+  }
+
+  Port* standard = ports[0].get();
+  Port* link_local1 = ports[1].get();
+  Port* link_local2 = ports[2].get();
+  Port* localhost = ports[3].get();
+
+  ExpectPortsCanConnect(false, link_local1, standard);
+  ExpectPortsCanConnect(false, standard, link_local1);
+  ExpectPortsCanConnect(false, link_local1, localhost);
+  ExpectPortsCanConnect(false, localhost, link_local1);
+
+  ExpectPortsCanConnect(true, link_local1, link_local2);
+  ExpectPortsCanConnect(true, localhost, standard);
+  ExpectPortsCanConnect(true, standard, localhost);
 }
 
 // This test verifies DSCP value set through SetOption interface can be

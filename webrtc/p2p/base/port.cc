@@ -472,7 +472,8 @@ bool Port::IsCompatibleAddress(const rtc::SocketAddress& addr) {
     return false;
   }
   // Link-local IPv6 ports can only connect to other link-local IPv6 ports.
-  if (family == AF_INET6 && (IPIsPrivate(ip()) != IPIsPrivate(addr.ipaddr()))) {
+  if (family == AF_INET6 &&
+      (IPIsLinkLocal(ip()) != IPIsLinkLocal(addr.ipaddr()))) {
     return false;
   }
   return true;
