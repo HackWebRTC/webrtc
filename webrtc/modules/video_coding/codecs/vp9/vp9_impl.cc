@@ -42,6 +42,17 @@ static void WrappedI420BufferNoLongerUsedCb(
 
 namespace webrtc {
 
+// Only positive speeds, range for real-time coding currently is: 5 - 8.
+// Lower means slower/better quality, higher means fastest/lower quality.
+int GetCpuSpeed(int width, int height) {
+  // For smaller resolutions, use lower speed setting (get some coding gain at
+  // the cost of increased encoding complexity).
+  if (width * height <= 352 * 288)
+    return 5;
+  else
+    return 7;
+}
+
 VP9Encoder* VP9Encoder::Create() {
   return new VP9EncoderImpl();
 }
@@ -194,11 +205,11 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   } else {
     config_->kf_mode = VPX_KF_DISABLED;
   }
-
   // Determine number of threads based on the image size and #cores.
   config_->g_threads = NumberOfThreads(config_->g_w,
                                        config_->g_h,
                                        number_of_cores);
+  cpu_speed_ = GetCpuSpeed(config_->g_w, config_->g_h);
   return InitAndSetControlSettings(inst);
 }
 
@@ -221,11 +232,6 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   if (vpx_codec_enc_init(encoder_, vpx_codec_vp9_cx(), config_, 0)) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  // Only positive speeds, currently: 0 - 8.
-  // O means slowest/best quality, 8 means fastest/lower quality.
-  cpu_speed_ = 7;
-  // Note: some of these codec controls still use "VP8" in the control name.
-  // TODO(marpan): Update this in the next/future libvpx version.
   vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
   vpx_codec_control(encoder_, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                     rc_max_intra_target_);
