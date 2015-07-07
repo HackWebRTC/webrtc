@@ -152,6 +152,7 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB(StartDebugRecording, (const char filename[kMaxFilenameSize]));
   WEBRTC_STUB(StartDebugRecording, (FILE* handle));
   WEBRTC_STUB(StopDebugRecording, ());
+  WEBRTC_VOID_STUB(UpdateHistogramsOnCallEnd, ());
   webrtc::EchoCancellation* echo_cancellation() const override { return NULL; }
   webrtc::EchoControlMobile* echo_control_mobile() const override {
     return NULL;

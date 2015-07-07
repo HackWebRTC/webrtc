@@ -177,6 +177,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
       was_stream_delay_set_(false),
       last_stream_delay_ms_(0),
       last_aec_system_delay_ms_(0),
+      stream_delay_jumps_(-1),
+      aec_system_delay_jumps_(-1),
       output_will_be_muted_(false),
       key_pressed_(false),
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
@@ -1003,11 +1005,25 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
   static const int kMinDiffDelayMs = 60;
 
   if (echo_cancellation()->is_enabled()) {
+    // Activate delay_jumps_ counters if we know echo_cancellation is runnning.
+    // If a stream has echo we know that the echo_cancellation is in process.
+    if (stream_delay_jumps_ == -1 && echo_cancellation()->stream_has_echo()) {
+      stream_delay_jumps_ = 0;
+    }
+    if (aec_system_delay_jumps_ == -1 &&
+        echo_cancellation()->stream_has_echo()) {
+      aec_system_delay_jumps_ = 0;
+    }
+
     // Detect a jump in platform reported system delay and log the difference.
     const int diff_stream_delay_ms = stream_delay_ms_ - last_stream_delay_ms_;
     if (diff_stream_delay_ms > kMinDiffDelayMs && last_stream_delay_ms_ != 0) {
       RTC_HISTOGRAM_COUNTS("WebRTC.Audio.PlatformReportedStreamDelayJump",
                            diff_stream_delay_ms, kMinDiffDelayMs, 1000, 100);
+      if (stream_delay_jumps_ == -1) {
+        stream_delay_jumps_ = 0;  // Activate counter if needed.
+      }
+      stream_delay_jumps_++;
     }
     last_stream_delay_ms_ = stream_delay_ms_;
 
@@ -1022,11 +1038,31 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
       RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AecSystemDelayJump",
                            diff_aec_system_delay_ms, kMinDiffDelayMs, 1000,
                            100);
+      if (aec_system_delay_jumps_ == -1) {
+        aec_system_delay_jumps_ = 0;  // Activate counter if needed.
+      }
+      aec_system_delay_jumps_++;
     }
     last_aec_system_delay_ms_ = aec_system_delay_ms;
-    // TODO(bjornv): Consider also logging amount of jumps. This gives a better
-    // indication of how frequent jumps are.
   }
+}
+
+void AudioProcessingImpl::UpdateHistogramsOnCallEnd() {
+  CriticalSectionScoped crit_scoped(crit_);
+  if (stream_delay_jumps_ > -1) {
+    RTC_HISTOGRAM_ENUMERATION(
+        "WebRTC.Audio.NumOfPlatformReportedStreamDelayJumps",
+        stream_delay_jumps_, 51);
+  }
+  stream_delay_jumps_ = -1;
+  last_stream_delay_ms_ = 0;
+
+  if (aec_system_delay_jumps_ > -1) {
+    RTC_HISTOGRAM_ENUMERATION("WebRTC.Audio.NumOfAecSystemDelayJumps",
+                              aec_system_delay_jumps_, 51);
+  }
+  aec_system_delay_jumps_ = -1;
+  last_aec_system_delay_ms_ = 0;
 }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP

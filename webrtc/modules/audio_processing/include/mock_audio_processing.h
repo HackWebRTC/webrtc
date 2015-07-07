@@ -243,6 +243,7 @@ class MockAudioProcessing : public AudioProcessing {
       int(FILE* handle));
   MOCK_METHOD0(StopDebugRecording,
       int());
+  MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());
   virtual MockEchoCancellation* echo_cancellation() const {
     return echo_cancellation_.get();
   }

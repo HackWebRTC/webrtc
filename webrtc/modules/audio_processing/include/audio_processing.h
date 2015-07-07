@@ -378,6 +378,10 @@ class AudioProcessing {
   // cannot be resumed in the same file (without overwriting it).
   virtual int StopDebugRecording() = 0;
 
+  // Use to send UMA histograms at end of a call. Note that all histogram
+  // specific member variables are reset.
+  virtual void UpdateHistogramsOnCallEnd() = 0;
+
   // These provide access to the component interfaces and should never return
   // NULL. The pointers will be valid for the lifetime of the APM instance.
   // The memory for these objects is entirely managed internally.

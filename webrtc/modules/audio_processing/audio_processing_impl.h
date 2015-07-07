@@ -134,6 +134,7 @@ class AudioProcessingImpl : public AudioProcessing {
   int StartDebugRecording(FILE* handle) override;
   int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) override;
   int StopDebugRecording() override;
+  void UpdateHistogramsOnCallEnd() override;
   EchoCancellation* echo_cancellation() const override;
   EchoControlMobile* echo_control_mobile() const override;
   GainControl* gain_control() const override;
@@ -210,6 +211,8 @@ class AudioProcessingImpl : public AudioProcessing {
   bool was_stream_delay_set_;
   int last_stream_delay_ms_;
   int last_aec_system_delay_ms_;
+  int stream_delay_jumps_;
+  int aec_system_delay_jumps_;
 
   bool output_will_be_muted_ GUARDED_BY(crit_);
 
