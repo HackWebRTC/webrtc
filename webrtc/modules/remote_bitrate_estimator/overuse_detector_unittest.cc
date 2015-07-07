@@ -603,14 +603,17 @@ TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift2000Kbit30fps) {
 }
 
 class OveruseDetectorExperimentTest : public OveruseDetectorTest {
+ public:
+  OveruseDetectorExperimentTest()
+      : override_field_trials_(
+            "WebRTC-AdaptiveBweThreshold/Enabled-0.01,0.00018/") {}
+
  protected:
   void SetUp() override {
-    test::InitFieldTrialsFromString(
-        "WebRTC-AdaptiveBweThreshold/Enabled-0.01,0.00018/");
     overuse_detector_.reset(new OveruseDetector(options_));
   }
 
-  void TearDown() override { test::InitFieldTrialsFromString(""); }
+  test::ScopedFieldTrials override_field_trials_;
 };
 
 TEST_F(OveruseDetectorExperimentTest, ThresholdAdapts) {

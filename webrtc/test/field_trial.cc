@@ -45,12 +45,12 @@ namespace test {
 void InitFieldTrialsFromString(const std::string& trials_string) {
   static const char kPersistentStringSeparator = '/';
 
+  // Catch an error if this is called more than once.
+  assert(field_trials_initiated_ == false);
   field_trials_initiated_ = true;
 
-  if (trials_string.empty()) {
-    field_trials_.clear();
+  if (trials_string == "")
     return;
-  }
 
   size_t next_item = 0;
   while (next_item < trials_string.length()) {
@@ -83,5 +83,18 @@ void InitFieldTrialsFromString(const std::string& trials_string) {
   // Using abort so it crashs both in debug and release mode.
   abort();
 }
+
+ScopedFieldTrials::ScopedFieldTrials(const std::string& config)
+    : previous_field_trials_(field_trials_) {
+  assert(field_trials_initiated_);
+  field_trials_initiated_ = false;
+  field_trials_ = std::map<std::string, std::string>();
+  InitFieldTrialsFromString(config);
+}
+
+ScopedFieldTrials::~ScopedFieldTrials() {
+  field_trials_ = previous_field_trials_;
+}
+
 }  // namespace test
 }  // namespace webrtc
