@@ -252,7 +252,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
                        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = encoder_.get();
       send_config->encoder_settings.payload_name = "VP9";
-      send_config->encoder_settings.payload_type = VCM_VP9_PAYLOAD_TYPE;
+      send_config->encoder_settings.payload_type = 124;
       encoder_config->streams[0].min_bitrate_bps = 50000;
       encoder_config->streams[0].target_bitrate_bps =
           encoder_config->streams[0].max_bitrate_bps = 2000000;

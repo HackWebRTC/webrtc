@@ -31,6 +31,7 @@
 
 namespace {
 const size_t kDefaultPayloadSize = 1440;
+const uint8_t kDefaultPayloadType = 100;
 }
 
 namespace webrtc {
@@ -140,7 +141,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       strncpy(settings->plName, "VP8", 4);
       settings->codecType = kVideoCodecVP8;
       // 96 to 127 dynamic payload types for video codecs.
-      settings->plType = VCM_VP8_PAYLOAD_TYPE;
+      settings->plType = kDefaultPayloadType;
       settings->startBitrate = kDefaultStartBitrateKbps;
       settings->minBitrate = VCM_MIN_BITRATE;
       settings->maxBitrate = 0;
@@ -158,7 +159,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       strncpy(settings->plName, "VP9", 4);
       settings->codecType = kVideoCodecVP9;
       // 96 to 127 dynamic payload types for video codecs.
-      settings->plType = VCM_VP9_PAYLOAD_TYPE;
+      settings->plType = kDefaultPayloadType;
       settings->startBitrate = 100;
       settings->minBitrate = VCM_MIN_BITRATE;
       settings->maxBitrate = 0;
@@ -176,7 +177,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       strncpy(settings->plName, "H264", 5);
       settings->codecType = kVideoCodecH264;
       // 96 to 127 dynamic payload types for video codecs.
-      settings->plType = VCM_H264_PAYLOAD_TYPE;
+      settings->plType = kDefaultPayloadType;
       settings->startBitrate = kDefaultStartBitrateKbps;
       settings->minBitrate = VCM_MIN_BITRATE;
       settings->maxBitrate = 0;
@@ -194,7 +195,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       strncpy(settings->plName, "I420", 5);
       settings->codecType = kVideoCodecI420;
       // 96 to 127 dynamic payload types for video codecs.
-      settings->plType = VCM_I420_PAYLOAD_TYPE;
+      settings->plType = kDefaultPayloadType;
       // Bitrate needed for this size and framerate.
       settings->startBitrate = 3 * VCM_DEFAULT_CODEC_WIDTH *
                                VCM_DEFAULT_CODEC_HEIGHT * 8 *
