@@ -252,8 +252,6 @@ public:
     virtual void OnIncomingCSRCChanged( const int32_t id,
                                         const uint32_t CSRC,
                                         const bool added) = 0;
-
-    virtual void ResetStatistics(uint32_t ssrc) = 0;
 };
 
 class RtpAudioFeedback {
@@ -323,8 +321,6 @@ class NullRtpFeedback : public RtpFeedback {
   void OnIncomingCSRCChanged(const int32_t id,
                              const uint32_t CSRC,
                              const bool added) override {}
-
-  void ResetStatistics(uint32_t ssrc) override {}
 };
 
 // Null object version of RtpData.

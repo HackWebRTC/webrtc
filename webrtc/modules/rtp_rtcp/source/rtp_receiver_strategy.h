@@ -79,7 +79,6 @@ class RTPReceiverStrategy {
   // reset statistics and/or discard this packet.
   virtual void CheckPayloadChanged(int8_t payload_type,
                                    PayloadUnion* specific_payload,
-                                   bool* should_reset_statistics,
                                    bool* should_discard_changes);
 
   virtual int Energy(uint8_t array_of_energy[kRtpCsrcSize]) const;

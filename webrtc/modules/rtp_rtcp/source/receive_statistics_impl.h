@@ -36,7 +36,6 @@ class StreamStatisticianImpl : public StreamStatistician {
   void GetReceiveStreamDataCounters(
       StreamDataCounters* data_counters) const override;
   uint32_t BitrateReceived() const override;
-  void ResetStatistics() override;
   bool IsRetransmitOfOldPacket(const RTPHeader& header,
                                int64_t min_rtt) const override;
   bool IsPacketInOrder(uint16_t sequence_number) const override;
@@ -84,9 +83,6 @@ class StreamStatisticianImpl : public StreamStatistician {
   // Current counter values.
   size_t received_packet_overhead_;
   StreamDataCounters receive_counters_;
-
-  // Stored counter values. Includes sum of reset counter values for the stream.
-  StreamDataCounters stored_sum_receive_counters_;
 
   // Counter values when we sent the last report.
   uint32_t last_report_inorder_packets_;

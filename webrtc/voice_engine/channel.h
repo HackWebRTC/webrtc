@@ -368,7 +368,6 @@ public:
                                 uint32_t rate) override;
     void OnIncomingSSRCChanged(int32_t id, uint32_t ssrc) override;
     void OnIncomingCSRCChanged(int32_t id, uint32_t CSRC, bool added) override;
-    void ResetStatistics(uint32_t ssrc) override;
 
     // From RtpAudioFeedback in the RTP/RTCP module
     void OnPlayTelephoneEvent(int32_t id,

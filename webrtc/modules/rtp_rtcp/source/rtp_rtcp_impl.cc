@@ -540,12 +540,6 @@ int32_t ModuleRtpRtcpImpl::RTT(const uint32_t remote_ssrc,
   return ret;
 }
 
-// Reset RTP data counters for the sending side.
-int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
-  rtp_sender_.ResetDataCounters();
-  return 0;  // TODO(pwestin): change to void.
-}
-
 // Force a send of an RTCP packet.
 // Normal SR and RR are triggered via the process function.
 int32_t ModuleRtpRtcpImpl::SendRTCP(RTCPPacketType packet_type) {

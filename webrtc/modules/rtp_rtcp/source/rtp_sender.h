@@ -131,8 +131,6 @@ class RTPSender : public RTPSenderInterface {
   void GetDataCounters(StreamDataCounters* rtp_stats,
                        StreamDataCounters* rtx_stats) const;
 
-  void ResetDataCounters();
-
   uint32_t StartTimestamp() const;
   void SetStartTimestamp(uint32_t timestamp, bool force);
 

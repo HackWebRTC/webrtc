@@ -93,7 +93,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   // statistics. In addition we sometimes need to tweak the frequency.
   void CheckPayloadChanged(int8_t payload_type,
                            PayloadUnion* specific_payload,
-                           bool* should_reset_statistics,
                            bool* should_discard_changes) override;
 
   int Energy(uint8_t array_of_energy[kRtpCsrcSize]) const override;

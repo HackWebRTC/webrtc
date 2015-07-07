@@ -73,8 +73,7 @@ class RtpReceiverImpl : public RtpReceiver {
   int32_t CheckPayloadChanged(const RTPHeader& rtp_header,
                               const int8_t first_payload_byte,
                               bool& is_red,
-                              PayloadUnion* payload,
-                              bool* should_reset_statistics);
+                              PayloadUnion* payload);
 
   Clock* clock_;
   RTPPayloadRegistry* rtp_payload_registry_;

@@ -74,11 +74,6 @@ class StatisticsProxy : public RtcpStatisticsCallback {
 
   void CNameChanged(const char* cname, uint32_t ssrc) override {}
 
-  void ResetStatistics() {
-    CriticalSectionScoped cs(stats_lock_.get());
-    stats_ = ChannelStatistics();
-  }
-
   ChannelStatistics GetStats() {
     CriticalSectionScoped cs(stats_lock_.get());
     return stats_;
@@ -338,15 +333,6 @@ void Channel::OnIncomingCSRCChanged(int32_t id,
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnIncomingCSRCChanged(id=%d, CSRC=%d, added=%d)",
                  id, CSRC, added);
-}
-
-void Channel::ResetStatistics(uint32_t ssrc) {
-  StreamStatistician* statistician =
-      rtp_receive_statistics_->GetStatistician(ssrc);
-  if (statistician) {
-    statistician->ResetStatistics();
-  }
-  statistics_proxy_->ResetStatistics();
 }
 
 int32_t
@@ -1206,8 +1192,7 @@ Channel::StopSend()
 
     // Reset sending SSRC and sequence number and triggers direct transmission
     // of RTCP BYE
-    if (_rtpRtcpModule->SetSendingStatus(false) == -1 ||
-        _rtpRtcpModule->ResetSendDataCountersRTP() == -1)
+    if (_rtpRtcpModule->SetSendingStatus(false) == -1)
     {
         _engineStatisticsPtr->SetLastError(
             VE_RTP_RTCP_MODULE_ERROR, kTraceWarning,

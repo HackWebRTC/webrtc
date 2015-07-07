@@ -245,7 +245,6 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
     void GetReceiveStreamDataCounters(
         StreamDataCounters* data_counters) const override {}
     uint32_t BitrateReceived() const override { return 0; }
-    void ResetStatistics() override {}
     bool IsRetransmitOfOldPacket(const RTPHeader& header,
                                  int64_t min_rtt) const override {
       return false;

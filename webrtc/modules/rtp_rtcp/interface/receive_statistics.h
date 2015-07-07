@@ -35,9 +35,6 @@ class StreamStatistician {
 
   virtual uint32_t BitrateReceived() const = 0;
 
-  // Resets all statistics.
-  virtual void ResetStatistics() = 0;
-
   // Returns true if the packet with RTP header |header| is likely to be a
   // retransmitted packet, false otherwise.
   virtual bool IsRetransmitOfOldPacket(const RTPHeader& header,

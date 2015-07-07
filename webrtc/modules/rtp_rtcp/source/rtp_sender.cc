@@ -1101,26 +1101,6 @@ uint16_t RTPSender::AllocateSequenceNumber(uint16_t packets_to_send) {
   return first_allocated_sequence_number;
 }
 
-void RTPSender::ResetDataCounters() {
-  uint32_t ssrc;
-  uint32_t ssrc_rtx;
-  bool report_rtx;
-  {
-    CriticalSectionScoped ssrc_lock(send_critsect_.get());
-    ssrc = ssrc_;
-    ssrc_rtx = ssrc_rtx_;
-    report_rtx = rtx_ != kRtxOff;
-  }
-  CriticalSectionScoped lock(statistics_crit_.get());
-  rtp_stats_ = StreamDataCounters();
-  rtx_rtp_stats_ = StreamDataCounters();
-  if (rtp_stats_callback_) {
-    rtp_stats_callback_->DataCountersUpdated(rtp_stats_, ssrc);
-    if (report_rtx)
-      rtp_stats_callback_->DataCountersUpdated(rtx_rtp_stats_, ssrc_rtx);
-  }
-}
-
 void RTPSender::GetDataCounters(StreamDataCounters* rtp_stats,
                                 StreamDataCounters* rtx_stats) const {
   CriticalSectionScoped lock(statistics_crit_.get());

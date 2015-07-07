@@ -51,22 +51,6 @@ StreamStatisticianImpl::StreamStatisticianImpl(
       rtcp_callback_(rtcp_callback),
       rtp_callback_(rtp_callback) {}
 
-void StreamStatisticianImpl::ResetStatistics() {
-  CriticalSectionScoped cs(stream_lock_.get());
-  last_report_inorder_packets_ = 0;
-  last_report_old_packets_ = 0;
-  last_report_seq_max_ = 0;
-  last_reported_statistics_ = RtcpStatistics();
-  jitter_q4_ = 0;
-  cumulative_loss_ = 0;
-  jitter_q4_transmission_time_offset_ = 0;
-  received_seq_wraps_ = 0;
-  received_seq_max_ = 0;
-  received_seq_first_ = 0;
-  stored_sum_receive_counters_.Add(receive_counters_);
-  receive_counters_ = StreamDataCounters();
-}
-
 void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
                                             size_t packet_length,
                                             bool retransmitted) {
@@ -320,7 +304,6 @@ void StreamStatisticianImpl::GetReceiveStreamDataCounters(
     StreamDataCounters* data_counters) const {
   CriticalSectionScoped cs(stream_lock_.get());
   *data_counters = receive_counters_;
-  data_counters->Add(stored_sum_receive_counters_);
 }
 
 uint32_t StreamStatisticianImpl::BitrateReceived() const {

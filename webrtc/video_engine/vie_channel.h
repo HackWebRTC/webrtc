@@ -258,7 +258,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   virtual void OnIncomingCSRCChanged(const int32_t id,
                                      const uint32_t CSRC,
                                      const bool added);
-  virtual void ResetStatistics(uint32_t);
 
   int32_t SetRemoteSSRCType(const StreamType usage, const uint32_t SSRC);
 
@@ -375,7 +374,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void SetRtxSendStatus(bool enable);
 
   void UpdateHistograms();
-  void UpdateHistogramsAtStopSend();
 
   // ViEChannel exposes methods that allow to modify observers and callbacks
   // to be modified. Such an API-style is cumbersome to implement and maintain

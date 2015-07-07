@@ -162,8 +162,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   int32_t SendCompoundRTCP(
       const std::set<RTCPPacketType>& rtcpPacketTypes) override;
 
-  int32_t ResetSendDataCountersRTP() override;
-
   // Statistics of the amount of data sent and received.
   int32_t DataCountersRTP(size_t* bytes_sent,
                           uint32_t* packets_sent) const override;

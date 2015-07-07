@@ -161,8 +161,6 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(const uint64_t pictureID));
   MOCK_METHOD1(SendRTCPSliceLossIndication,
       int32_t(const uint8_t pictureID));
-  MOCK_METHOD0(ResetSendDataCountersRTP,
-      int32_t());
   MOCK_CONST_METHOD2(DataCountersRTP,
       int32_t(size_t *bytesSent, uint32_t *packetsSent));
   MOCK_CONST_METHOD2(GetSendStreamDataCounters,

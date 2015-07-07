@@ -228,10 +228,8 @@ RTPAliveType RTPReceiverAudio::ProcessDeadOrAlive(
 
 void RTPReceiverAudio::CheckPayloadChanged(int8_t payload_type,
                                            PayloadUnion* specific_payload,
-                                           bool* should_reset_statistics,
                                            bool* should_discard_changes) {
   *should_discard_changes = false;
-  *should_reset_statistics = false;
 
   if (TelephoneEventPayloadType(payload_type)) {
     // Don't do callbacks for DTMF packets.
@@ -243,8 +241,6 @@ void RTPReceiverAudio::CheckPayloadChanged(int8_t payload_type,
   bool is_cng_payload_type = CNGPayloadType(payload_type,
                                             &specific_payload->Audio.frequency,
                                             &cng_payload_type_has_changed);
-
-  *should_reset_statistics = cng_payload_type_has_changed;
 
   if (is_cng_payload_type) {
     // Don't do callbacks for DTMF packets.

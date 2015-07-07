@@ -415,13 +415,6 @@ class RtpRtcp : public Module {
     virtual int32_t SendRTCPSliceLossIndication(uint8_t pictureID) = 0;
 
     /*
-    *   Reset RTP data counters for the sending side
-    *
-    *   return -1 on failure else 0
-    */
-    virtual int32_t ResetSendDataCountersRTP() = 0;
-
-    /*
     *   Statistics of the amount of data sent
     *
     *   return -1 on failure else 0
