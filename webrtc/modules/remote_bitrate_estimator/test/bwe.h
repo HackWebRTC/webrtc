@@ -80,7 +80,7 @@ class LinkedSet {
   std::list<PacketIdentifierNode*> list_;
 };
 
-const int kMinBitrateKbps = 150;
+const int kMinBitrateKbps = 20;
 const int kMaxBitrateKbps = 3000;
 
 class BweSender : public Module {

@@ -264,6 +264,20 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest,
                         ::testing::Values(kRembEstimator,
                                           kFullSendSideEstimator));
 
+TEST_P(BweFeedbackTest, ConstantCapacity) {
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
+  PacedVideoSender sender(&uplink_, &source, GetParam());
+  ChokeFilter filter(&uplink_, 0);
+  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
+  const int kCapacityKbps = 1000;
+  filter.SetCapacity(kCapacityKbps);
+  filter.SetMaxDelay(500);
+  RunFor(180 * 1000);
+  PrintResults(kCapacityKbps, counter.GetBitrateStats(), 0,
+               receiver.GetDelayStats(), counter.GetBitrateStats());
+}
+
 TEST_P(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   PacedVideoSender sender(&uplink_, &source, GetParam());
@@ -338,7 +352,7 @@ TEST_P(BweFeedbackTest, PacedSelfFairness50msTest) {
 }
 
 TEST_P(BweFeedbackTest, PacedSelfFairness500msTest) {
-  RunFairnessTest(GetParam(), 4, 0, 300, 3000, 50);
+  RunFairnessTest(GetParam(), 4, 0, 300, 3000, 500);
 }
 
 TEST_P(BweFeedbackTest, PacedSelfFairness1000msTest) {

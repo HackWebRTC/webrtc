@@ -296,13 +296,13 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
     double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
     estimator_.Update(t_delta, ts_delta_ms, size_delta, detector_.State());
     detector_.Detect(estimator_.offset(), ts_delta_ms,
-                     estimator_.num_of_deltas(), now_ms);
+                     estimator_.num_of_deltas(), arrival_time_ms);
     UpdateStats(static_cast<int>(t_delta - ts_delta_ms), now_ms);
   }
   if (detector_.State() == kBwOverusing) {
-    unsigned int incoming_bitrate = incoming_bitrate_.Rate(now_ms);
+    uint32_t incoming_bitrate_bps = incoming_bitrate_.Rate(now_ms);
     if (prior_state != kBwOverusing ||
-        remote_rate_.TimeToReduceFurther(now_ms, incoming_bitrate)) {
+        remote_rate_.TimeToReduceFurther(now_ms, incoming_bitrate_bps)) {
       // The first overuse should immediately trigger a new estimate.
       // We also have to update the estimate immediately if we are overusing
       // and the target bitrate is too high compared to what we are receiving.
@@ -357,13 +357,12 @@ void RemoteBitrateEstimatorAbsSendTime::UpdateEstimate(int64_t now_ms) {
   const RateControlInput input(detector_.State(),
                                incoming_bitrate_.Rate(now_ms),
                                estimator_.var_noise());
-  const RateControlRegion region = remote_rate_.Update(&input, now_ms);
+  remote_rate_.Update(&input, now_ms);
   unsigned int target_bitrate = remote_rate_.UpdateBandwidthEstimate(now_ms);
   if (remote_rate_.ValidEstimate()) {
     process_interval_ms_ = remote_rate_.GetFeedbackInterval();
     observer_->OnReceiveBitrateChanged(Keys(ssrcs_), target_bitrate);
   }
-  detector_.SetRateControlRegion(region);
 }
 
 void RemoteBitrateEstimatorAbsSendTime::OnRttUpdate(int64_t rtt) {

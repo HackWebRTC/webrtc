@@ -254,7 +254,7 @@ void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
   std::vector<VideoSource*> sources;
   std::vector<PacketSender*> senders;
 
-  size_t i = 0;
+  size_t i = 1;
   for (int media_flow : media_flow_ids) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.

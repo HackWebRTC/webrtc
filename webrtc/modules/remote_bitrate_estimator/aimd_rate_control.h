@@ -40,7 +40,7 @@ class AimdRateControl {
   uint32_t LatestEstimate() const;
   uint32_t UpdateBandwidthEstimate(int64_t now_ms);
   void SetRtt(int64_t rtt);
-  RateControlRegion Update(const RateControlInput* input, int64_t now_ms);
+  void Update(const RateControlInput* input, int64_t now_ms);
   void SetEstimate(int bitrate_bps, int64_t now_ms);
 
  private:
@@ -71,7 +71,6 @@ class AimdRateControl {
   float avg_max_bitrate_kbps_;
   float var_max_bitrate_kbps_;
   RateControlState rate_control_state_;
-  RateControlState came_from_state_;
   RateControlRegion rate_control_region_;
   int64_t time_last_bitrate_change_;
   RateControlInput current_input_;
@@ -81,6 +80,7 @@ class AimdRateControl {
   float beta_;
   int64_t rtt_;
   int64_t time_of_last_log_;
+  bool in_experiment_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(AimdRateControl);
 };

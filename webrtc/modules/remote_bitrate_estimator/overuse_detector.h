@@ -20,10 +20,12 @@
 namespace webrtc {
 enum RateControlRegion;
 
+bool AdaptiveThresholdExperimentIsEnabled();
+
 class OveruseDetector {
  public:
   explicit OveruseDetector(const OverUseDetectorOptions& options);
-  ~OveruseDetector();
+  virtual ~OveruseDetector();
 
   // Update the detection state based on the estimated inter-arrival time delta
   // offset. |timestamp_delta| is the delta between the last timestamp which the
@@ -39,15 +41,19 @@ class OveruseDetector {
   // Returns the current detector state.
   BandwidthUsage State() const;
 
-  // Sets the current rate-control region as decided by RemoteRateControl. This
-  // affects the sensitivity of the detector.
-  void SetRateControlRegion(webrtc::RateControlRegion region);
-
  private:
+  void UpdateThreshold(double modified_offset, int64_t now_ms);
+  void InitializeExperiment();
+
+  const bool in_experiment_;
+  double k_up_;
+  double k_down_;
+  double overusing_time_threshold_;
   // Must be first member variable. Cannot be const because we need to be
   // copyable.
   webrtc::OverUseDetectorOptions options_;
   double threshold_;
+  int64_t last_update_ms_;
   double prev_offset_;
   double time_over_using_;
   int overuse_counter_;

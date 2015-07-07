@@ -116,7 +116,7 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
 }
 
 TEST_P(BweSimulation, PacerChoke1000kbps500kbps1000kbps) {
-  PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
@@ -142,7 +142,7 @@ TEST_P(BweSimulation, PacerChoke10000kbps) {
 }
 
 TEST_P(BweSimulation, PacerChoke200kbps30kbps200kbps) {
-  PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
@@ -234,15 +234,16 @@ TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
 }
 
 TEST_P(BweSimulation, SelfFairnessTest) {
-  const int kAllFlowIds[] = {0, 1, 2};
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  const int kAllFlowIds[] = {0, 1, 2, 3};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
-  rtc::scoped_ptr<AdaptiveVideoSource> sources[kNumFlows];
+  rtc::scoped_ptr<VideoSource> sources[kNumFlows];
   rtc::scoped_ptr<VideoSender> senders[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.
-    sources[i].reset(
-        new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0, i * 20000));
+    sources[i].reset(new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0,
+                                             i * (rand() % 40000)));
     senders[i].reset(new VideoSender(&uplink_, sources[i].get(), GetParam()));
   }
 
@@ -267,9 +268,14 @@ TEST_P(BweSimulation, SelfFairnessTest) {
   RunFor(30 * 60 * 1000);
 }
 
-TEST_P(BweSimulation, PacedSelfFairnessTest) {
+TEST_P(BweSimulation, PacedSelfFairness50msTest) {
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 50);
+}
+
+TEST_P(BweSimulation, PacedSelfFairness500msTest) {
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 500);
 }
 
 TEST_P(BweSimulation, PacedSelfFairness1000msTest) {

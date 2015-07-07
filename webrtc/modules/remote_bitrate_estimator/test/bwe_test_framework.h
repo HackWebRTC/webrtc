@@ -28,6 +28,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/random.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
@@ -140,26 +141,6 @@ template<typename T> class Stats {
   T variance_;
   T min_;
   T max_;
-};
-
-class Random {
- public:
-  explicit Random(uint32_t seed);
-
-  // Return pseudo random number in the interval [0.0, 1.0].
-  float Rand();
-
-  // Normal Distribution.
-  int Gaussian(int mean, int standard_deviation);
-
-  // TODO(solenberg): Random from histogram.
-  // template<typename T> int Distribution(const std::vector<T> histogram) {
-
- private:
-  uint32_t a_;
-  uint32_t b_;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Random);
 };
 
 bool IsTimeSorted(const Packets& packets);

@@ -190,8 +190,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
                               unsigned int max_bitrate,
                               unsigned int target_bitrate);
 
-
-  void TestTimestampGroupingTestHelper();
+  void TestTimestampGroupingTestHelper(uint32_t bitrate_bps);
 
   void TestGetStatsHelper();
 

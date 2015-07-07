@@ -175,6 +175,8 @@ class IntervalBudget {
 
   void set_target_rate_kbps(int target_rate_kbps) {
     target_rate_kbps_ = target_rate_kbps;
+    bytes_remaining_ =
+        std::max(-kWindowMs * target_rate_kbps_ / 8, bytes_remaining_);
   }
 
   void IncreaseBudget(int64_t delta_time_ms) {
@@ -190,7 +192,7 @@ class IntervalBudget {
 
   void UseBudget(size_t bytes) {
     bytes_remaining_ = std::max(bytes_remaining_ - static_cast<int>(bytes),
-                                -500 * target_rate_kbps_ / 8);
+                                -kWindowMs * target_rate_kbps_ / 8);
   }
 
   size_t bytes_remaining() const {
@@ -200,6 +202,8 @@ class IntervalBudget {
   int target_rate_kbps() const { return target_rate_kbps_; }
 
  private:
+  static const int kWindowMs = 500;
+
   int target_rate_kbps_;
   int bytes_remaining_;
 };

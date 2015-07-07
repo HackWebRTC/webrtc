@@ -513,7 +513,8 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
   EXPECT_EQ(0u, latest_bps);
 }
 
-void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper() {
+void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper(
+    uint32_t bitrate_bps) {
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
   const uint32_t kFrameIntervalAbsSendTime = AbsSendTime(1, kFramerate);
@@ -561,7 +562,7 @@ void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper() {
   }
   EXPECT_TRUE(bitrate_observer_->updated());
   // Should have reduced the estimate.
-  EXPECT_EQ(378720u, bitrate_observer_->latest_bitrate());
+  EXPECT_EQ(bitrate_bps, bitrate_observer_->latest_bitrate());
 }
 
 void RemoteBitrateEstimatorTest::TestGetStatsHelper() {

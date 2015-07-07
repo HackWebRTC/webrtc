@@ -763,8 +763,8 @@ struct OverUseDetectorOptions {
     initial_e[0][0] = 100;
     initial_e[1][1] = 1e-1;
     initial_e[0][1] = initial_e[1][0] = 0;
-    initial_process_noise[0] = 1e-10;
-    initial_process_noise[1] = 1e-2;
+    initial_process_noise[0] = 1e-13;
+    initial_process_noise[1] = 1e-3;
   }
   double initial_slope;
   double initial_offset;

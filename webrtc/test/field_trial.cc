@@ -45,11 +45,12 @@ namespace test {
 void InitFieldTrialsFromString(const std::string& trials_string) {
   static const char kPersistentStringSeparator = '/';
 
-  // Catch an error if this is called more than once.
-  assert(field_trials_initiated_ == false);
   field_trials_initiated_ = true;
 
-  if (trials_string.empty()) return;
+  if (trials_string.empty()) {
+    field_trials_.clear();
+    return;
+  }
 
   size_t next_item = 0;
   while (next_item < trials_string.length()) {
