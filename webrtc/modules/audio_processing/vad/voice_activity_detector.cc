@@ -28,8 +28,6 @@ const double kLowProbability = 0.01;
 
 VoiceActivityDetector::VoiceActivityDetector()
     : last_voice_probability_(kDefaultVoiceValue),
-      // Initialize to the most common resampling situation.
-      resampler_(kMaxLength, kLength10Ms, kNumChannels),
       standalone_vad_(StandaloneVad::Create()) {
 }
 
