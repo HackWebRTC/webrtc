@@ -886,6 +886,11 @@ void PeerConnection::OnIceComplete() {
   observer_->OnIceComplete();
 }
 
+void PeerConnection::OnIceConnectionReceivingChange(bool receiving) {
+  ASSERT(signaling_thread()->IsCurrent());
+  observer_->OnIceConnectionReceivingChange(receiving);
+}
+
 void PeerConnection::ChangeSignalingState(
     PeerConnectionInterface::SignalingState signaling_state) {
   signaling_state_ = signaling_state;

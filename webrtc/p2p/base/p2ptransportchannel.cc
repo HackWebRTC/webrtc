@@ -25,6 +25,7 @@ namespace {
 enum {
   MSG_SORT = 1,
   MSG_PING,
+  MSG_CHECK_RECEIVING
 };
 
 // When the socket is unwritable, we will use 10 Kbps (ignoring IP+UDP headers)
@@ -39,6 +40,8 @@ static const uint32 UNWRITABLE_DELAY = 1000 * PING_PACKET_SIZE / 10000;  // 50ms
 // If there is a current writable connection, then we will also try hard to
 // make sure it is pinged at this rate.
 static const uint32 MAX_CURRENT_WRITABLE_DELAY = 900;  // 2*WRITABLE_DELAY - bit
+
+static const int MIN_CHECK_RECEIVING_DELAY = 50;  // ms
 
 // The minimum improvement in RTT that justifies a switch.
 static const double kMinImprovement = 10;
@@ -193,7 +196,9 @@ P2PTransportChannel::P2PTransportChannel(const std::string& content_name,
     remote_ice_mode_(ICEMODE_FULL),
     ice_role_(ICEROLE_UNKNOWN),
     tiebreaker_(0),
-    remote_candidate_generation_(0) {
+    remote_candidate_generation_(0),
+    check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
+    receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50) {
 }
 
 P2PTransportChannel::~P2PTransportChannel() {
@@ -354,6 +359,12 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
   remote_ice_mode_ = mode;
 }
 
+void P2PTransportChannel::set_receiving_timeout(int receiving_timeout_ms) {
+  receiving_timeout_ = receiving_timeout_ms;
+  check_receiving_delay_ =
+      std::max(MIN_CHECK_RECEIVING_DELAY, receiving_timeout_ / 10);
+}
+
 // Go into the state of processing candidates, and running in general
 void P2PTransportChannel::Connect() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
@@ -369,6 +380,9 @@ void P2PTransportChannel::Connect() {
 
   // Start pinging as the ports come in.
   thread()->Post(this, MSG_PING);
+
+  thread()->PostDelayed(
+      check_receiving_delay_, this, MSG_CHECK_RECEIVING);
 }
 
 // A new port is available, attempt to make connections for it
@@ -1067,6 +1081,8 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
     LOG_J(LS_INFO, this) << "New best connection: "
                          << best_connection_->ToString();
     SignalRouteChange(this, best_connection_->remote_candidate());
+    // When it just switched to a best connection, set receiving to true.
+    set_receiving(true);
   } else {
     LOG_J(LS_INFO, this) << "No best connection";
   }
@@ -1148,6 +1164,9 @@ void P2PTransportChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_PING:
       OnPing();
       break;
+    case MSG_CHECK_RECEIVING:
+      OnCheckReceiving();
+      break;
     default:
       ASSERT(false);
       break;
@@ -1174,6 +1193,19 @@ void P2PTransportChannel::OnPing() {
   // Post ourselves a message to perform the next ping.
   uint32 delay = writable() ? WRITABLE_DELAY : UNWRITABLE_DELAY;
   thread()->PostDelayed(delay, this, MSG_PING);
+}
+
+void P2PTransportChannel::OnCheckReceiving() {
+  // Check receiving only if the best connection has received data packets
+  // because we want to detect not receiving any packets only after the media
+  // have started flowing.
+  if (best_connection_ && best_connection_->recv_total_bytes() > 0) {
+    bool receiving = rtc::Time() <=
+        best_connection_->last_received() + receiving_timeout_;
+    set_receiving(receiving);
+  }
+
+  thread()->PostDelayed(check_receiving_delay_, this, MSG_CHECK_RECEIVING);
 }
 
 // Is the connection in a state for us to even consider pinging the other side?

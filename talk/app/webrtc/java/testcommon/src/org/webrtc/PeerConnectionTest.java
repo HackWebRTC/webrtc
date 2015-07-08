@@ -175,6 +175,11 @@ public class PeerConnectionTest {
       assertEquals(expectedIceConnectionChanges.removeFirst(), newState);
     }
 
+    @Override
+    public synchronized void onIceConnectionReceivingChange(boolean receiving) {
+      System.out.println(name + "Got an ice connection receiving change " + receiving);
+    }
+
     public synchronized void expectIceGatheringChange(
         IceGatheringState newState) {
       expectedIceGatheringChanges.add(newState);

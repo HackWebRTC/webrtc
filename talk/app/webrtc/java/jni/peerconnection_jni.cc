@@ -250,6 +250,14 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
+  void OnIceConnectionReceivingChange(bool receiving) override {
+    ScopedLocalRefFrame local_ref_frame(jni());
+    jmethodID m = GetMethodID(
+        jni(), *j_observer_class_, "onIceConnectionReceivingChange", "(Z)V");
+    jni()->CallVoidMethod(*j_observer_global_, m, receiving);
+    CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  }
+
   void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) override {
     ScopedLocalRefFrame local_ref_frame(jni());

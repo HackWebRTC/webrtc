@@ -118,6 +118,8 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       &DtlsTransportChannelWrapper::OnRouteChange);
   channel_->SignalConnectionRemoved.connect(this,
       &DtlsTransportChannelWrapper::OnConnectionRemoved);
+  channel_->SignalReceivingState.connect(this,
+      &DtlsTransportChannelWrapper::OnReceivingState);
 }
 
 DtlsTransportChannelWrapper::~DtlsTransportChannelWrapper() {
@@ -453,6 +455,18 @@ void DtlsTransportChannelWrapper::OnWritableState(TransportChannel* channel) {
     case STATE_CLOSED:
       // Should not happen. Do nothing
       break;
+  }
+}
+
+void DtlsTransportChannelWrapper::OnReceivingState(TransportChannel* channel) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
+  ASSERT(channel == channel_);
+  LOG_J(LS_VERBOSE, this)
+      << "DTLSTransportChannelWrapper: channel receiving state changed to "
+      << channel_->receiving();
+  if (dtls_state_ == STATE_NONE || dtls_state_ == STATE_OPEN) {
+    // Note: SignalReceivingState fired by set_receiving.
+    set_receiving(channel_->receiving());
   }
 }
 

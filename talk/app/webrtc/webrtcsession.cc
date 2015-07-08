@@ -490,6 +490,7 @@ WebRtcSession::WebRtcSession(
       mediastream_signaling_(mediastream_signaling),
       ice_observer_(NULL),
       ice_connection_state_(PeerConnectionInterface::kIceConnectionNew),
+      ice_connection_receiving_(true),
       older_version_remote_peer_(false),
       dtls_enabled_(false),
       data_channel_type_(cricket::DCT_NONE),
@@ -1404,6 +1405,31 @@ void WebRtcSession::OnTransportCompleted(cricket::Transport* transport) {
 void WebRtcSession::OnTransportFailed(cricket::Transport* transport) {
   ASSERT(signaling_thread()->IsCurrent());
   SetIceConnectionState(PeerConnectionInterface::kIceConnectionFailed);
+}
+
+void WebRtcSession::OnTransportReceiving(cricket::Transport* transport) {
+  ASSERT(signaling_thread()->IsCurrent());
+  // The ice connection is considered receiving if at least one transport is
+  // receiving on any channels.
+  bool receiving = false;
+  for (const auto& kv : transport_proxies()) {
+    cricket::Transport* transport = kv.second->impl();
+    if (transport && transport->any_channel_receiving()) {
+      receiving = true;
+      break;
+    }
+  }
+  SetIceConnectionReceiving(receiving);
+}
+
+void WebRtcSession::SetIceConnectionReceiving(bool receiving) {
+  if (ice_connection_receiving_ == receiving) {
+    return;
+  }
+  ice_connection_receiving_ = receiving;
+  if (ice_observer_) {
+    ice_observer_->OnIceConnectionReceivingChange(receiving);
+  }
 }
 
 void WebRtcSession::OnTransportProxyCandidatesReady(

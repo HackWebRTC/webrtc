@@ -85,6 +85,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   const Connection* best_connection() const { return best_connection_; }
   void set_incoming_only(bool value) { incoming_only_ = value; }
 
+  // Sets the receiving timeout in milliseconds.
+  // This also sets the check_receiving_delay proportionally.
+  void set_receiving_timeout(int receiving_timeout_ms);
+
   // Note: This is only for testing purpose.
   // |ports_| should not be changed from outside.
   const std::vector<PortInterface*>& ports() { return ports_; }
@@ -150,6 +154,9 @@ class P2PTransportChannel : public TransportChannelImpl,
     return false;
   }
 
+  int receiving_timeout() const { return receiving_timeout_; }
+  int check_receiving_delay() const { return check_receiving_delay_; }
+
   // Helper method used only in unittest.
   rtc::DiffServCodePoint DefaultDscpValue() const;
 
@@ -213,6 +220,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   void OnSort();
   void OnPing();
 
+  void OnCheckReceiving();
+
   P2PTransport* transport_;
   PortAllocator *allocator_;
   rtc::Thread *worker_thread_;
@@ -240,6 +249,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   IceRole ice_role_;
   uint64 tiebreaker_;
   uint32 remote_candidate_generation_;
+
+  int check_receiving_delay_;
+  int receiving_timeout_;
 
   DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

@@ -368,6 +368,9 @@ class BaseSession : public sigslot::has_slots<>,
   virtual void OnTransportReadable(Transport* transport) {
   }
 
+  virtual void OnTransportReceiving(Transport* transport) {
+  }
+
   // Called when a transport has found its steady-state connections.
   virtual void OnTransportCompleted(Transport* transport) {
   }

@@ -46,7 +46,7 @@ class TransportChannel : public sigslot::has_slots<> {
   explicit TransportChannel(const std::string& content_name, int component)
       : content_name_(content_name),
         component_(component),
-        readable_(false), writable_(false) {}
+        readable_(false), writable_(false), receiving_(false) {}
   virtual ~TransportChannel() {}
 
   // TODO(guoweis) - Make this pure virtual once all subclasses of
@@ -67,10 +67,12 @@ class TransportChannel : public sigslot::has_slots<> {
   // TransportManager.
   bool readable() const { return readable_; }
   bool writable() const { return writable_; }
+  bool receiving() const { return receiving_; }
   sigslot::signal1<TransportChannel*> SignalReadableState;
   sigslot::signal1<TransportChannel*> SignalWritableState;
   // Emitted when the TransportChannel's ability to send has changed.
   sigslot::signal1<TransportChannel*> SignalReadyToSend;
+  sigslot::signal1<TransportChannel*> SignalReceivingState;
 
   // Attempts to send the given packet.  The return value is < 0 on failure.
   // TODO: Remove the default argument once channel code is updated.
@@ -142,6 +144,9 @@ class TransportChannel : public sigslot::has_slots<> {
   // Sets the writable state, signaling if necessary.
   void set_writable(bool writable);
 
+  // Sets the receiving state, signaling if necessary.
+  void set_receiving(bool receiving);
+
 
  private:
   // Used mostly for debugging.
@@ -149,6 +154,7 @@ class TransportChannel : public sigslot::has_slots<> {
   int component_;
   bool readable_;
   bool writable_;
+  bool receiving_;
 
   DISALLOW_COPY_AND_ASSIGN(TransportChannel);
 };

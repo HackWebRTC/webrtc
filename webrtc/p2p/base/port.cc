@@ -1004,7 +1004,6 @@ void Connection::OnReadPacket(
     if (read_state_ == STATE_READABLE) {
       // readable means data from this address is acceptable
       // Send it on!
-
       last_data_received_ = rtc::Time();
       recv_rate_tracker_.Update(size);
       SignalReadPacket(this, data, size, packet_time);
@@ -1443,6 +1442,11 @@ void Connection::OnMessage(rtc::Message *pmsg) {
   LOG_J(LS_INFO, this) << "Connection deleted due to read or write timeout";
   SignalDestroyed(this);
   delete this;
+}
+
+uint32 Connection::last_received() {
+  return std::max(last_data_received_,
+             std::max(last_ping_received_, last_ping_response_received_));
 }
 
 size_t Connection::recv_bytes_second() {

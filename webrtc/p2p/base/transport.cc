@@ -35,6 +35,7 @@ enum {
   MSG_ROLECONFLICT,
   MSG_COMPLETED,
   MSG_FAILED,
+  MSG_RECEIVINGSTATE,
 };
 
 struct ChannelParams : public rtc::MessageData {
@@ -128,6 +129,7 @@ Transport::Transport(rtc::Thread* signaling_thread,
     destroyed_(false),
     readable_(TRANSPORT_STATE_NONE),
     writable_(TRANSPORT_STATE_NONE),
+    receiving_(TRANSPORT_STATE_NONE),
     was_writable_(false),
     connect_requested_(false),
     ice_role_(ICEROLE_UNKNOWN),
@@ -242,6 +244,7 @@ TransportChannelImpl* Transport::CreateChannel_w(int component) {
 
   impl->SignalReadableState.connect(this, &Transport::OnChannelReadableState);
   impl->SignalWritableState.connect(this, &Transport::OnChannelWritableState);
+  impl->SignalReceivingState.connect(this, &Transport::OnChannelReceivingState);
   impl->SignalRequestSignaling.connect(
       this, &Transport::OnChannelRequestSignaling);
   impl->SignalCandidateReady.connect(this, &Transport::OnChannelCandidateReady);
@@ -501,7 +504,7 @@ void Transport::OnChannelReadableState(TransportChannel* channel) {
 
 void Transport::OnChannelReadableState_s() {
   ASSERT(signaling_thread()->IsCurrent());
-  TransportState readable = GetTransportState_s(true);
+  TransportState readable = GetTransportState_s(TRANSPORT_READABLE_STATE);
   if (readable_ != readable) {
     readable_ = readable;
     SignalReadableState(this);
@@ -517,7 +520,7 @@ void Transport::OnChannelWritableState(TransportChannel* channel) {
 
 void Transport::OnChannelWritableState_s() {
   ASSERT(signaling_thread()->IsCurrent());
-  TransportState writable = GetTransportState_s(false);
+  TransportState writable = GetTransportState_s(TRANSPORT_WRITABLE_STATE);
   if (writable_ != writable) {
     was_writable_ = (writable_ == TRANSPORT_STATE_ALL);
     writable_ = writable;
@@ -525,15 +528,41 @@ void Transport::OnChannelWritableState_s() {
   }
 }
 
-TransportState Transport::GetTransportState_s(bool read) {
+void Transport::OnChannelReceivingState(TransportChannel* channel) {
+  ASSERT(worker_thread()->IsCurrent());
+  signaling_thread()->Post(this, MSG_RECEIVINGSTATE);
+}
+
+void Transport::OnChannelReceivingState_s() {
+  ASSERT(signaling_thread()->IsCurrent());
+  TransportState receiving = GetTransportState_s(TRANSPORT_RECEIVING_STATE);
+  if (receiving_ != receiving) {
+    receiving_ = receiving;
+    SignalReceivingState(this);
+  }
+}
+
+TransportState Transport::GetTransportState_s(TransportStateType state_type) {
   ASSERT(signaling_thread()->IsCurrent());
 
   rtc::CritScope cs(&crit_);
   bool any = false;
   bool all = !channels_.empty();
   for (const auto iter : channels_) {
-    bool b = (read ? iter.second->readable() :
-                     iter.second->writable());
+    bool b = false;
+    switch (state_type) {
+      case TRANSPORT_READABLE_STATE:
+        b = iter.second->readable();
+        break;
+      case TRANSPORT_WRITABLE_STATE:
+        b = iter.second->writable();
+        break;
+      case TRANSPORT_RECEIVING_STATE:
+        b = iter.second->receiving();
+        break;
+      default:
+        ASSERT(false);
+    }
     any |= b;
     all &=  b;
   }
@@ -899,6 +928,9 @@ void Transport::OnMessage(rtc::Message* msg) {
       break;
     case MSG_WRITESTATE:
       OnChannelWritableState_s();
+      break;
+    case MSG_RECEIVINGSTATE:
+      OnChannelReceivingState_s();
       break;
     case MSG_REQUESTSIGNALING:
       OnChannelRequestSignaling_s();

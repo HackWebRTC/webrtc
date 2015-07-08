@@ -142,13 +142,14 @@ class PeerConnection : public PeerConnectionInterface,
                                uint32 ssrc) override;
   void OnRemoveLocalVideoTrack(MediaStreamInterface* stream,
                                VideoTrackInterface* video_track) override;
-  virtual void OnRemoveLocalStream(MediaStreamInterface* stream);
+  void OnRemoveLocalStream(MediaStreamInterface* stream) override;
 
   // Implements IceObserver
-  virtual void OnIceConnectionChange(IceConnectionState new_state);
-  virtual void OnIceGatheringChange(IceGatheringState new_state);
-  virtual void OnIceCandidate(const IceCandidateInterface* candidate);
-  virtual void OnIceComplete();
+  void OnIceConnectionChange(IceConnectionState new_state) override;
+  void OnIceGatheringChange(IceGatheringState new_state) override;
+  void OnIceCandidate(const IceCandidateInterface* candidate) override;
+  void OnIceComplete() override;
+  void OnIceConnectionReceivingChange(bool receiving) override;
 
   // Signals from WebRtcSession.
   void OnSessionStateChange(cricket::BaseSession* session,

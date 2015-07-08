@@ -898,6 +898,11 @@ public class PeerConnectionClient {
     }
 
     @Override
+    public void onIceConnectionReceivingChange(boolean receiving) {
+      Log.d(TAG, "IceConnectionReceiving changed to " + receiving);
+    }
+
+    @Override
     public void onAddStream(final MediaStream stream){
       executor.execute(new Runnable() {
         @Override

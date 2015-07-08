@@ -411,6 +411,9 @@ class PeerConnectionObserver {
   // All Ice candidates have been found.
   virtual void OnIceComplete() {}
 
+  // Called when the ICE connection receiving status changes.
+  virtual void OnIceConnectionReceivingChange(bool receiving) {}
+
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
   ~PeerConnectionObserver() {}

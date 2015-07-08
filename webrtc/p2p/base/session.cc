@@ -518,6 +518,8 @@ TransportProxy* BaseSession::GetOrCreateTransportProxy(
       this, &BaseSession::OnTransportConnecting);
   transport->SignalWritableState.connect(
       this, &BaseSession::OnTransportWritable);
+  transport->SignalReceivingState.connect(
+      this, &BaseSession::OnTransportReceiving);
   transport->SignalRequestSignaling.connect(
       this, &BaseSession::OnTransportRequestSignaling);
   transport->SignalRouteChange.connect(

@@ -31,6 +31,14 @@ void TransportChannel::set_readable(bool readable) {
   }
 }
 
+void TransportChannel::set_receiving(bool receiving) {
+  if (receiving_ == receiving) {
+    return;
+  }
+  receiving_ = receiving;
+  SignalReceivingState(this);
+}
+
 void TransportChannel::set_writable(bool writable) {
   if (writable_ != writable) {
     LOG_J(LS_VERBOSE, this) << "set_writable from:" << writable_ << " to "

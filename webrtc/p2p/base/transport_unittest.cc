@@ -321,3 +321,24 @@ TEST_F(TransportTest, TestGetStats) {
   ASSERT_EQ(1U, stats.channel_stats.size());
   EXPECT_EQ(1, stats.channel_stats[0].component);
 }
+
+TEST_F(TransportTest, TestReceivingStateChange) {
+  ASSERT_TRUE(SetupChannel());
+  channel_->SetConnectionCount(1);
+  transport_->ConnectChannels();
+  EXPECT_FALSE(transport_->any_channel_receiving());
+
+  channel_->SetReceiving(true);
+  EXPECT_TRUE_WAIT(transport_->any_channel_receiving(), 100);
+  FakeTransportChannel* channel2 = CreateChannel(2);
+  channel2->SetReceiving(true);
+  EXPECT_TRUE_WAIT(transport_->any_channel_receiving(), 100);
+
+  channel2->SetReceiving(false);
+  EXPECT_TRUE_WAIT(transport_->any_channel_receiving(), 100);
+
+  // After both channels become not receiving, the transport receiving state
+  // becomes TRANSPORT_STATE_NONE.
+  channel_->SetReceiving(false);
+  EXPECT_TRUE_WAIT(!transport_->any_channel_receiving(), 100);
+}

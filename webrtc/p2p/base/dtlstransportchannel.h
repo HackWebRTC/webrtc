@@ -213,6 +213,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
                     const rtc::PacketTime& packet_time, int flags);
   void OnReadyToSend(TransportChannel* channel);
+  void OnReceivingState(TransportChannel* channel);
   void OnDtlsEvent(rtc::StreamInterface* stream_, int sig, int err);
   bool SetupDtls();
   bool MaybeStartDtls();

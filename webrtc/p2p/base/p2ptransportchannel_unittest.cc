@@ -1861,3 +1861,26 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   ASSERT_TRUE(conn3 != nullptr);
   EXPECT_EQ(conn3->remote_candidate().priority(), prflx_priority);
 }
+
+TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  // Default receiving timeout and checking receiving delay should not be too
+  // small.
+  EXPECT_LE(1000, ch.receiving_timeout());
+  EXPECT_LE(200, ch.check_receiving_delay());
+  ch.set_receiving_timeout(500);
+  EXPECT_EQ(500, ch.receiving_timeout());
+  EXPECT_EQ(50, ch.check_receiving_delay());
+  ch.Connect();
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+
+  conn1->ReceivedPing();
+  conn1->OnReadPacket("ABC", 3, rtc::CreatePacketTime(0));
+  EXPECT_TRUE_WAIT(ch.best_connection() != nullptr, 1000)
+  EXPECT_TRUE_WAIT(ch.receiving(), 1000);
+  EXPECT_TRUE_WAIT(!ch.receiving(), 1000);
+}

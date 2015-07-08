@@ -66,6 +66,9 @@ public class PeerConnection {
     /** Triggered when the IceConnectionState changes. */
     public void onIceConnectionChange(IceConnectionState newState);
 
+    /** Triggered when the ICE connection receiving status changes. */
+    public void onIceConnectionReceivingChange(boolean receiving);
+
     /** Triggered when the IceGatheringState changes. */
     public void onIceGatheringChange(IceGatheringState newState);
 
