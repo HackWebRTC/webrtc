@@ -1174,11 +1174,18 @@ JOW(void, PeerConnectionFactory_nativeSetOptions)(
       jni->GetFieldID(options_class, "networkIgnoreMask", "I");
   int network_ignore_mask =
       jni->GetIntField(options, network_ignore_mask_field);
+
+  jfieldID disable_encryption_field =
+      jni->GetFieldID(options_class, "disableEncryption", "Z");
+  bool disable_encryption =
+      jni->GetBooleanField(options, disable_encryption_field);
+
   PeerConnectionFactoryInterface::Options options_to_set;
 
   // This doesn't necessarily match the c++ version of this struct; feel free
   // to add more parameters as necessary.
   options_to_set.network_ignore_mask = network_ignore_mask;
+  options_to_set.disable_encryption = disable_encryption;
   factory->SetOptions(options_to_set);
 }
 

@@ -51,6 +51,7 @@ public class PeerConnectionFactory {
     static final int ADAPTER_TYPE_LOOPBACK = 1 << 4;
 
     public int networkIgnoreMask;
+    public boolean disableEncryption;
   }
 
   // |context| is an android.content.Context object, but we keep it untyped here
