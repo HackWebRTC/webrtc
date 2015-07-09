@@ -133,6 +133,8 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
 
   void InternalCreateOffer(CreateSessionDescriptionRequest request);
   void InternalCreateAnswer(CreateSessionDescriptionRequest request);
+  // Posts failure notifications for all pending session description requests.
+  void FailPendingRequests(const std::string& reason);
   void PostCreateSessionDescriptionFailed(
       CreateSessionDescriptionObserver* observer,
       const std::string& error);
@@ -145,17 +147,16 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
 
   std::queue<CreateSessionDescriptionRequest>
       create_session_description_requests_;
-  rtc::Thread* signaling_thread_;
-  MediaStreamSignaling* mediastream_signaling_;
+  rtc::Thread* const signaling_thread_;
+  MediaStreamSignaling* const mediastream_signaling_;
   cricket::TransportDescriptionFactory transport_desc_factory_;
   cricket::MediaSessionDescriptionFactory session_desc_factory_;
   uint64 session_version_;
   rtc::scoped_ptr<DTLSIdentityServiceInterface> identity_service_;
-  rtc::scoped_refptr<WebRtcIdentityRequestObserver>
-      identity_request_observer_;
-  WebRtcSession* session_;
-  std::string session_id_;
-  cricket::DataChannelType data_channel_type_;
+  rtc::scoped_refptr<WebRtcIdentityRequestObserver> identity_request_observer_;
+  WebRtcSession* const session_;
+  const std::string session_id_;
+  const cricket::DataChannelType data_channel_type_;
   IdentityRequestState identity_request_state_;
 
   DISALLOW_COPY_AND_ASSIGN(WebRtcSessionDescriptionFactory);

@@ -499,6 +499,7 @@ WebRtcSession::WebRtcSession(
 }
 
 WebRtcSession::~WebRtcSession() {
+  ASSERT(signaling_thread()->IsCurrent());
   // Destroy video_channel_ first since it may have a pointer to the
   // voice_channel_.
   if (video_channel_) {

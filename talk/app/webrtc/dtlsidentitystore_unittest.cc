@@ -33,7 +33,6 @@
 #include "webrtc/base/ssladapter.h"
 
 using webrtc::DtlsIdentityStore;
-using webrtc::WebRtcSessionDescriptionFactory;
 
 static const int kTimeoutMs = 10000;
 

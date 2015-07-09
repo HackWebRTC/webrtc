@@ -338,6 +338,7 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
 }
 
 PeerConnection::~PeerConnection() {
+  ASSERT(signaling_thread()->IsCurrent());
   if (mediastream_signaling_)
     mediastream_signaling_->TearDown();
   if (stream_handler_container_)

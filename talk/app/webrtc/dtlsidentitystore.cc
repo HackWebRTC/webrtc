@@ -31,7 +31,6 @@
 #include "webrtc/base/logging.h"
 
 using webrtc::DTLSIdentityRequestObserver;
-using webrtc::WebRtcSessionDescriptionFactory;
 
 namespace webrtc {
 

@@ -3852,6 +3852,38 @@ TEST_F(WebRtcSessionTest, TestSetSocketOptionBeforeBundle) {
   EXPECT_EQ(8000, option_val);
 }
 
+// Test creating a session, request multiple offers, destroy the session
+// and make sure we got success/failure callbacks for all of the requests.
+// Background: crbug.com/507307
+TEST_F(WebRtcSessionTest, CreateOffersAndShutdown) {
+  Init();
+
+  rtc::scoped_refptr<WebRtcSessionCreateSDPObserverForTest> observers[100];
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio =
+      RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
+
+  for (auto& o : observers) {
+    o = new WebRtcSessionCreateSDPObserverForTest();
+    session_->CreateOffer(o, options);
+  }
+
+  session_.reset();
+
+  // Make sure we process pending messages on the current (signaling) thread
+  // before checking we we got our callbacks.  Quit() will do this and then
+  // immediately exit.  We won't need the queue after this point anyway.
+  rtc::Thread::Current()->Quit();
+
+  for (auto& o : observers) {
+    // We expect to have received a notification now even if the session was
+    // terminated.  The offer creation may or may not have succeeded, but we
+    // must have received a notification which, so the only invalid state
+    // is kInit.
+    EXPECT_NE(WebRtcSessionCreateSDPObserverForTest::kInit, o->state());
+  }
+}
+
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test
 // currently fails because upon disconnection and reconnection OnIceComplete is
 // called more than once without returning to IceGatheringGathering.

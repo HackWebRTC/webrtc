@@ -40,6 +40,8 @@ namespace webrtc {
 namespace {
 static const char kFailedDueToIdentityFailed[] =
     " failed because DTLS identity request failed";
+static const char kFailedDueToSessionShutdown[] =
+    " failed because the session was shut down";
 
 static const uint64 kInitSessionVersion = 2;
 
@@ -183,6 +185,18 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 }
 
 WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
+  ASSERT(signaling_thread_->IsCurrent());
+
+  // Fail any requests that were asked for before identity generation completed.
+  FailPendingRequests(kFailedDueToSessionShutdown);
+
+  // Process all pending notifications in the message queue.  If we don't do
+  // this, requests will linger and not know they succeeded or failed.
+  rtc::MessageList list;
+  signaling_thread_->Clear(this, rtc::MQID_ANY, &list);
+  for (auto& msg : list)
+    OnMessage(&msg);
+
   transport_desc_factory_.set_identity(NULL);
 }
 
@@ -400,6 +414,19 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   PostCreateSessionDescriptionSucceeded(request.observer, answer);
 }
 
+void WebRtcSessionDescriptionFactory::FailPendingRequests(
+    const std::string& reason) {
+  ASSERT(signaling_thread_->IsCurrent());
+  while (!create_session_description_requests_.empty()) {
+    const CreateSessionDescriptionRequest& request =
+        create_session_description_requests_.front();
+    PostCreateSessionDescriptionFailed(request.observer,
+        ((request.type == CreateSessionDescriptionRequest::kOffer) ?
+            "CreateOffer" : "CreateAnswer") + reason);
+    create_session_description_requests_.pop();
+  }
+}
+
 void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionFailed(
     CreateSessionDescriptionObserver* observer, const std::string& error) {
   CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
@@ -422,16 +449,7 @@ void WebRtcSessionDescriptionFactory::OnIdentityRequestFailed(int error) {
   LOG(LS_ERROR) << "Async identity request failed: error = " << error;
   identity_request_state_ = IDENTITY_FAILED;
 
-  std::string msg = kFailedDueToIdentityFailed;
-  while (!create_session_description_requests_.empty()) {
-    const CreateSessionDescriptionRequest& request =
-        create_session_description_requests_.front();
-    PostCreateSessionDescriptionFailed(
-        request.observer,
-        ((request.type == CreateSessionDescriptionRequest::kOffer) ?
-            "CreateOffer" : "CreateAnswer") + msg);
-    create_session_description_requests_.pop();
-  }
+  FailPendingRequests(kFailedDueToIdentityFailed);
 }
 
 void WebRtcSessionDescriptionFactory::SetIdentity(
