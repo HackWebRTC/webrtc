@@ -8,6 +8,7 @@
 
 {
   'variables': {
+    'include_examples%': 1,
     'include_tests%': 1,
     'webrtc_root_additional_dependencies': [],
   },
@@ -18,12 +19,12 @@
       'dependencies': [
         'webrtc/webrtc.gyp:*',
         'talk/libjingle.gyp:*',
-        'talk/libjingle_examples.gyp:*',
         '<@(webrtc_root_additional_dependencies)',
       ],
       'conditions': [
-        ['OS=="android"', {
+        ['include_examples==1', {
           'dependencies': [
+            'talk/libjingle_examples.gyp:*',
             'webrtc/webrtc_examples.gyp:*',
           ],
         }],
