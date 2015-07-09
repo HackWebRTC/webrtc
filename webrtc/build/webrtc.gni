@@ -106,9 +106,9 @@ declare_args() {
   }
 
   # Determines whether NEON code will be built.
-  rtc_build_with_neon = (current_cpu == "arm" &&
-                         (arm_use_neon == 1 || arm_optionally_use_neon == 1)) ||
-                        current_cpu == "arm64"
+  rtc_build_with_neon =
+      (current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon)) ||
+      current_cpu == "arm64"
 
   # Enable this to use HW H.264 encoder/decoder on iOS PeerConnections.
   # Enabling this may break interop with Android clients that support H264.
