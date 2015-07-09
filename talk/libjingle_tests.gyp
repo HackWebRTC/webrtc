@@ -156,7 +156,6 @@
         'session/media/channel_unittest.cc',
         'session/media/channelmanager_unittest.cc',
         'session/media/currentspeakermonitor_unittest.cc',
-        'session/media/mediarecorder_unittest.cc',
         'session/media/mediasession_unittest.cc',
         'session/media/rtcpmuxfilter_unittest.cc',
         'session/media/srtpfilter_unittest.cc',

@@ -35,7 +35,6 @@
 #include "talk/media/base/testutils.h"
 #include "webrtc/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"
-#include "talk/session/media/mediarecorder.h"
 #include "talk/session/media/typingmonitor.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
@@ -1558,67 +1557,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     channel1_->StopMediaMonitor();
   }
 
-  void TestMediaSinks() {
-    CreateChannels(0, 0);
-    EXPECT_TRUE(SendInitiate());
-    EXPECT_TRUE(SendAccept());
-    EXPECT_FALSE(channel1_->HasSendSinks(cricket::SINK_POST_CRYPTO));
-    EXPECT_FALSE(channel1_->HasRecvSinks(cricket::SINK_POST_CRYPTO));
-    EXPECT_FALSE(channel1_->HasSendSinks(cricket::SINK_PRE_CRYPTO));
-    EXPECT_FALSE(channel1_->HasRecvSinks(cricket::SINK_PRE_CRYPTO));
-
-    rtc::Pathname path;
-    EXPECT_TRUE(rtc::Filesystem::GetTemporaryFolder(path, true, NULL));
-    path.SetFilename("sink-test.rtpdump");
-    rtc::scoped_ptr<cricket::RtpDumpSink> sink(
-        new cricket::RtpDumpSink(Open(path.pathname())));
-    sink->set_packet_filter(cricket::PF_ALL);
-    EXPECT_TRUE(sink->Enable(true));
-    channel1_->RegisterSendSink(
-        sink.get(), &cricket::RtpDumpSink::OnPacket, cricket::SINK_POST_CRYPTO);
-    EXPECT_TRUE(channel1_->HasSendSinks(cricket::SINK_POST_CRYPTO));
-    EXPECT_FALSE(channel1_->HasRecvSinks(cricket::SINK_POST_CRYPTO));
-    EXPECT_FALSE(channel1_->HasSendSinks(cricket::SINK_PRE_CRYPTO));
-    EXPECT_FALSE(channel1_->HasRecvSinks(cricket::SINK_PRE_CRYPTO));
-
-    // The first packet is recorded with header + data.
-    EXPECT_TRUE(SendRtp1());
-    // The second packet is recorded with header only.
-    sink->set_packet_filter(cricket::PF_RTPHEADER);
-    EXPECT_TRUE(SendRtp1());
-    // The third packet is not recorded since sink is disabled.
-    EXPECT_TRUE(sink->Enable(false));
-    EXPECT_TRUE(SendRtp1());
-     // The fourth packet is not recorded since sink is unregistered.
-    EXPECT_TRUE(sink->Enable(true));
-    channel1_->UnregisterSendSink(sink.get(), cricket::SINK_POST_CRYPTO);
-    EXPECT_TRUE(SendRtp1());
-    sink.reset();  // This will close the file.
-
-    // Read the recorded file and verify two packets.
-    rtc::scoped_ptr<rtc::StreamInterface> stream(
-        rtc::Filesystem::OpenFile(path, "rb"));
-
-    cricket::RtpDumpReader reader(stream.get());
-    cricket::RtpDumpPacket packet;
-    EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
-    std::string read_packet(reinterpret_cast<const char*>(&packet.data[0]),
-        packet.data.size());
-    EXPECT_EQ(rtp_packet_, read_packet);
-
-    EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
-    size_t len = 0;
-    packet.GetRtpHeaderLen(&len);
-    EXPECT_EQ(len, packet.data.size());
-    EXPECT_EQ(0, memcmp(&packet.data[0], rtp_packet_.c_str(), len));
-
-    EXPECT_EQ(rtc::SR_EOS, reader.ReadPacket(&packet));
-
-    // Delete the file for media recording.
-    stream.reset();
-    EXPECT_TRUE(rtc::Filesystem::DeleteFile(path));
-  }
-
   void TestSetContentFailure() {
     CreateChannels(0, 0);
     typename T::Content content;
@@ -2316,10 +2254,6 @@ TEST_F(VoiceChannelTest, TestInsertDtmf) {
                               3, 7, 120, cricket::DF_PLAY | cricket::DF_SEND));
 }
 
-TEST_F(VoiceChannelTest, TestMediaSinks) {
-  Base::TestMediaSinks();
-}
-
 TEST_F(VoiceChannelTest, TestSetContentFailure) {
   Base::TestSetContentFailure();
 }
@@ -2675,10 +2609,6 @@ TEST_F(VideoChannelTest, SendWithWritabilityLoss) {
 
 TEST_F(VideoChannelTest, TestMediaMonitor) {
   Base::TestMediaMonitor();
-}
-
-TEST_F(VideoChannelTest, TestMediaSinks) {
-  Base::TestMediaSinks();
 }
 
 TEST_F(VideoChannelTest, TestSetContentFailure) {

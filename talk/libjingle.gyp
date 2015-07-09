@@ -676,8 +676,6 @@
         'session/media/currentspeakermonitor.h',
         'session/media/mediamonitor.cc',
         'session/media/mediamonitor.h',
-        'session/media/mediarecorder.cc',
-        'session/media/mediarecorder.h',
         'session/media/mediasession.cc',
         'session/media/mediasession.h',
         'session/media/mediasink.h',
