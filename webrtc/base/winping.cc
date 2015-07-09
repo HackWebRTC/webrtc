@@ -124,7 +124,6 @@ const char * const ICMP_CREATE_FUNC = "IcmpCreateFile";
 const char * const ICMP_CLOSE_FUNC = "IcmpCloseHandle";
 const char * const ICMP_SEND_FUNC = "IcmpSendEcho";
 const char * const ICMP6_CREATE_FUNC = "Icmp6CreateFile";
-const char * const ICMP6_CLOSE_FUNC = "Icmp6CloseHandle";
 const char * const ICMP6_SEND_FUNC = "Icmp6SendEcho2";
 
 inline uint32 ReplySize(uint32 data_size, int family) {
