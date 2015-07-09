@@ -97,7 +97,7 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
         inter_arrival_(),
         estimator_(OverUseDetectorOptions()),
         detector_(OverUseDetectorOptions()),
-        incoming_bitrate_(1000, 8000),
+        incoming_bitrate_(kBitrateWindowMs, 8000),
         remote_rate_(min_bitrate_bps),
         last_process_time_(-1),
         process_interval_ms_(kProcessIntervalMs),
@@ -188,7 +188,10 @@ void RemoteBitrateEstimatorAbsSendTime::ProcessClusters(int64_t now_ms) {
   if (best_it != clusters.end()) {
     int probe_bitrate_bps =
         std::min(best_it->GetSendBitrateBps(), best_it->GetRecvBitrateBps());
-    if (IsBitrateImproving(probe_bitrate_bps)) {
+    // Make sure that a probe sent on a lower bitrate than our estimate can't
+    // reduce the estimate.
+    if (IsBitrateImproving(probe_bitrate_bps) &&
+        probe_bitrate_bps > static_cast<int>(incoming_bitrate_.Rate(now_ms))) {
       LOG(LS_INFO) << "Probe successful, sent at "
                    << best_it->GetSendBitrateBps() << " bps, received at "
                    << best_it->GetRecvBitrateBps()

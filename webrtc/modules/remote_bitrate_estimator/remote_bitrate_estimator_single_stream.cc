@@ -47,7 +47,7 @@ struct RemoteBitrateEstimatorSingleStream::Detector {
       Clock* clock,
       uint32_t min_bitrate_bps)
       : clock_(clock),
-        incoming_bitrate_(1000, 8000),
+        incoming_bitrate_(kBitrateWindowMs, 8000),
         remote_rate_(new AimdRateControl(min_bitrate_bps)),
         observer_(observer),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),

@@ -17,6 +17,9 @@
 #define BWE_MIN(a,b) ((a)<(b)?(a):(b))
 
 namespace webrtc {
+
+static const int64_t kBitrateWindowMs = 1000;
+
 enum BandwidthUsage
 {
     kBwNormal = 0,

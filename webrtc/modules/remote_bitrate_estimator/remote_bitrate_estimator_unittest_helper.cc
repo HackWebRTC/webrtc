@@ -320,7 +320,7 @@ void RemoteBitrateEstimatorTest::InitialBehaviorTestHelper(
   EXPECT_FALSE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   clock_.AdvanceTimeMilliseconds(1000);
-  // Inserting a packet. Still no valid estimate. We need to wait 1 second.
+  // Inserting a packet. Still no valid estimate. We need to wait 5 seconds.
   IncomingPacket(kDefaultSsrc, kMtu, clock_.TimeInMilliseconds(), timestamp,
                  absolute_send_time, true);
   bitrate_estimator_->Process();
@@ -328,8 +328,8 @@ void RemoteBitrateEstimatorTest::InitialBehaviorTestHelper(
   EXPECT_EQ(0u, ssrcs.size());
   EXPECT_FALSE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
-  // Inserting packets for one second to get a valid estimate.
-  for (int i = 0; i < kFramerate; ++i) {
+  // Inserting packets for 5 seconds to get a valid estimate.
+  for (int i = 0; i < 5 * kFramerate + 1; ++i) {
     IncomingPacket(kDefaultSsrc, kMtu, clock_.TimeInMilliseconds(), timestamp,
                    absolute_send_time, true);
     clock_.AdvanceTimeMilliseconds(1000 / kFramerate);
@@ -363,7 +363,7 @@ void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper(
   bitrate_estimator_->Process();
   EXPECT_FALSE(bitrate_observer_->updated());  // No valid estimate.
   // Inserting packets for one second to get a valid estimate.
-  for (int i = 0; i < kFramerate; ++i) {
+  for (int i = 0; i < 5 * kFramerate + 1; ++i) {
     IncomingPacket(kDefaultSsrc, kMtu, clock_.TimeInMilliseconds(), timestamp,
                    absolute_send_time, true);
     clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
@@ -439,7 +439,7 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
     steady_state_time = 10;
     AddDefaultStream();
   } else {
-    steady_state_time = 8 * number_of_streams;
+    steady_state_time = 10 * number_of_streams;
     int bitrate_sum = 0;
     int kBitrateDenom = number_of_streams * (number_of_streams - 1);
     for (int i = 0; i < number_of_streams; i++) {
@@ -493,8 +493,8 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
     }
   }
 
-  EXPECT_EQ(expected_bitrate_drop_delta,
-            bitrate_drop_time - overuse_start_time);
+  EXPECT_NEAR(expected_bitrate_drop_delta,
+              bitrate_drop_time - overuse_start_time, 33);
 
   // Remove stream one by one.
   unsigned int latest_bps = 0;
@@ -513,8 +513,7 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
   EXPECT_EQ(0u, latest_bps);
 }
 
-void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper(
-    uint32_t bitrate_bps) {
+void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper() {
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
   const uint32_t kFrameIntervalAbsSendTime = AbsSendTime(1, kFramerate);
@@ -523,8 +522,9 @@ void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper(
   // during the test.
   uint32_t absolute_send_time =
       AddAbsSendTime((1 << 24), -int(50 * kFrameIntervalAbsSendTime));
-  // Initial set of frames to increase the bitrate.
-  for (int i = 0; i <= 100; ++i) {
+  // Initial set of frames to increase the bitrate. 6 seconds to have enough
+  // time for the first estimate to be generated and for Process() to be called.
+  for (int i = 0; i <= 6 * kFramerate; ++i) {
     IncomingPacket(kDefaultSsrc, 1000, clock_.TimeInMilliseconds(), timestamp,
                    absolute_send_time, true);
     bitrate_estimator_->Process();
@@ -534,7 +534,7 @@ void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper(
                                         kFrameIntervalAbsSendTime);
   }
   EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_NEAR(470000u, bitrate_observer_->latest_bitrate(), 10000u);
+  EXPECT_GE(bitrate_observer_->latest_bitrate(), 400000u);
 
   // Insert batches of frames which were sent very close in time. Also simulate
   // capacity over-use to see that we back off correctly.
@@ -562,7 +562,7 @@ void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper(
   }
   EXPECT_TRUE(bitrate_observer_->updated());
   // Should have reduced the estimate.
-  EXPECT_EQ(bitrate_bps, bitrate_observer_->latest_bitrate());
+  EXPECT_LT(bitrate_observer_->latest_bitrate(), 400000u);
 }
 
 void RemoteBitrateEstimatorTest::TestGetStatsHelper() {

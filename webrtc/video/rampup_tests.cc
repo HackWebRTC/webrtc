@@ -120,8 +120,8 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
   receive_stats_->IncomingPacket(header, length, false);
   payload_registry_->SetIncomingPayloadType(header);
   DCHECK(remote_bitrate_estimator_ != nullptr);
-  remote_bitrate_estimator_->IncomingPacket(clock_->TimeInMilliseconds(),
-                                            length - 12, header, true);
+  remote_bitrate_estimator_->IncomingPacket(
+      clock_->TimeInMilliseconds(), length - header.headerLength, header, true);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
     remote_bitrate_estimator_->Process();
   }
@@ -269,8 +269,8 @@ PacketReceiver::DeliveryStatus LowRateStreamObserver::DeliverPacket(
   RTPHeader header;
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
-  remote_bitrate_estimator_->IncomingPacket(clock_->TimeInMilliseconds(),
-                                            length - 12, header, true);
+  remote_bitrate_estimator_->IncomingPacket(
+      clock_->TimeInMilliseconds(), length - header.headerLength, header, true);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
     remote_bitrate_estimator_->Process();
   }
@@ -462,6 +462,7 @@ void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams,
       &receiver_transport, Clock::GetRealTimeClock(), number_of_streams, rtx);
 
   Call::Config call_config(&stream_observer);
+  call_config.bitrate_config.start_bitrate_bps = 60000;
   CreateSenderCall(call_config);
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -471,6 +472,7 @@ void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams,
   send_config_.rtp.extensions.push_back(RtpExtension(
       RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
   send_config_.suspend_below_min_bitrate = true;
+
   if (rtx) {
     send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
     send_config_.rtp.rtx.ssrcs = GenerateSsrcs(number_of_streams, 200);

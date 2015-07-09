@@ -128,6 +128,7 @@ class LowRateStreamObserver : public test::DirectTransport,
   const bool rtx_used_;
   const rtc::scoped_ptr<EventWrapper> test_done_;
   const rtc::scoped_ptr<RtpHeaderParser> rtp_parser_;
+  const rtc::scoped_ptr<RTPPayloadRegistry> payload_registry_;
   rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
   internal::TransportAdapter feedback_transport_;
   const rtc::scoped_ptr<ReceiveStatistics> receive_stats_;

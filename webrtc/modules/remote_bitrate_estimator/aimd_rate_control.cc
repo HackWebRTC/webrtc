@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cmath>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 
@@ -102,11 +103,13 @@ void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
   // Set the initial bit rate value to what we're receiving the first half
   // second.
   if (!bitrate_is_initialized_) {
+    const int64_t kInitializationTimeMs = 5000;
+    DCHECK_LE(kBitrateWindowMs, kInitializationTimeMs);
     if (time_first_incoming_estimate_ < 0) {
       if (input->_incomingBitRate > 0) {
         time_first_incoming_estimate_ = now_ms;
       }
-    } else if (now_ms - time_first_incoming_estimate_ > 500 &&
+    } else if (now_ms - time_first_incoming_estimate_ > kInitializationTimeMs &&
                input->_incomingBitRate > 0) {
       current_bitrate_bps_ = input->_incomingBitRate;
       bitrate_is_initialized_ = true;
@@ -136,6 +139,11 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
   if (!updated_) {
     return current_bitrate_bps_;
   }
+  // An over-use should always trigger us to reduce the bitrate, even though
+  // we have not yet established our first estimate. By acting on the over-use,
+  // we will end up with a valid estimate.
+  if (!bitrate_is_initialized_ && current_input_._bwState != kBwOverusing)
+    return current_bitrate_bps_;
   updated_ = false;
   ChangeState(current_input_, now_ms);
   // Calculated here because it's used in multiple places.
@@ -172,6 +180,7 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
       break;
 
     case kRcDecrease:
+      bitrate_is_initialized_ = true;
       if (incoming_bitrate_bps < min_configured_bitrate_bps_) {
         current_bitrate_bps = min_configured_bitrate_bps_;
       } else {
