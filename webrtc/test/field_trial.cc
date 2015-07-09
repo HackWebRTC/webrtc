@@ -49,7 +49,7 @@ void InitFieldTrialsFromString(const std::string& trials_string) {
   assert(field_trials_initiated_ == false);
   field_trials_initiated_ = true;
 
-  if (trials_string == "")
+  if (trials_string.empty())
     return;
 
   size_t next_item = 0;

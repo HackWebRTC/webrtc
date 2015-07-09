@@ -91,7 +91,7 @@ void RunAgc() {
   ASSERT_TRUE(out_file != NULL);
 
   int gain_map[256];
-  if (FLAGS_gain_file != "") {
+  if (!FLAGS_gain_file.empty()) {
     FILE* gain_file = fopen(FLAGS_gain_file.c_str(), "rt");
     ASSERT_TRUE(gain_file != NULL);
     ReadGainMapFromFile(gain_file, FLAGS_gain_offset, gain_map);

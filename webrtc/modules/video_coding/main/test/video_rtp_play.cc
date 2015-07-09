@@ -44,9 +44,8 @@ int RtpPlay(const CmdArgs& args) {
       kDefaultVp8PayloadType, "VP8", webrtc::kVideoCodecVP8));
 
   std::string output_file = args.outputFile;
-  if (output_file == "") {
+  if (output_file.empty())
     output_file = webrtc::test::OutputPath() + "RtpPlay_decoded.yuv";
-  }
 
   webrtc::SimulatedClock clock(0);
   webrtc::rtpplayer::VcmPayloadSinkFactory factory(output_file, &clock,

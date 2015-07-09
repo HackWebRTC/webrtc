@@ -64,12 +64,12 @@ int main(int argc, char* argv[]) {
   google::SetUsageMessage(kUsage);
   google::ParseCommandLineFlags(&argc, &argv, true);
 
-  if (!((FLAGS_i == "") ^ (FLAGS_dump == ""))) {
+  if (!((FLAGS_i.empty()) ^ (FLAGS_dump.empty()))) {
     fprintf(stderr,
             "An input file must be specified with either -i or -dump.\n");
     return 1;
   }
-  if (FLAGS_dump != "") {
+  if (!FLAGS_dump.empty()) {
     fprintf(stderr, "FIXME: the -dump option is not yet implemented.\n");
     return 1;
   }
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
   }
 
   rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
-  if (FLAGS_dump != "") {
+  if (!FLAGS_dump.empty()) {
     CHECK_EQ(kNoErr, ap->echo_cancellation()->Enable(FLAGS_aec || FLAGS_all));
   } else if (FLAGS_aec) {
     fprintf(stderr, "-aec requires a -dump file.\n");

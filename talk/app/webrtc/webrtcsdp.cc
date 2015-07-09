@@ -2192,7 +2192,7 @@ bool ParseMediaDescription(const std::string& message,
       for (size_t j = 3 ; j < fields.size(); ++j) {
         // TODO(wu): Remove when below bug is fixed.
         // https://bugzilla.mozilla.org/show_bug.cgi?id=996329
-        if (fields[j] == "" && j == fields.size() - 1) {
+        if (fields[j].empty() && j == fields.size() - 1) {
           continue;
         }
 

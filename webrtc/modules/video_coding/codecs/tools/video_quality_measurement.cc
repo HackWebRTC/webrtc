@@ -111,7 +111,7 @@ int Log(const char *format, ...) {
 // Returns 0 if everything is OK, otherwise an exit code.
 int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
   // Validate the mandatory flags:
-  if (FLAGS_input_filename == "" || FLAGS_width == -1 || FLAGS_height == -1) {
+  if (FLAGS_input_filename.empty() || FLAGS_width == -1 || FLAGS_height == -1) {
     printf("%s\n", google::ProgramUsage());
     return 1;
   }
@@ -140,7 +140,7 @@ int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
   config->output_dir = FLAGS_output_dir;
 
   // Manufacture an output filename if none was given.
-  if (FLAGS_output_filename == "") {
+  if (FLAGS_output_filename.empty()) {
     // Cut out the filename without extension from the given input file
     // (which may include a path)
     int startIndex = FLAGS_input_filename.find_last_of("/") + 1;

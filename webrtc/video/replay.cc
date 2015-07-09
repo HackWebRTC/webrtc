@@ -106,7 +106,7 @@ static const bool timestamp_offset_dummy =
 // Flag for rtpdump input file.
 bool ValidateInputFilenameNotEmpty(const char* flagname,
                                    const std::string& string) {
-  return string != "";
+  return !string.empty();
 }
 
 DEFINE_string(input_file, "", "input file");
@@ -156,7 +156,7 @@ class FileRenderPassthrough : public VideoRenderer {
                    int time_to_render_ms) override {
     if (renderer_ != nullptr)
       renderer_->RenderFrame(video_frame, time_to_render_ms);
-    if (basename_ == "")
+    if (basename_.empty())
       return;
     if (last_width_ != video_frame.width() ||
         last_height_ != video_frame.height()) {
@@ -241,13 +241,13 @@ void RtpReplay() {
   encoder_settings.payload_type = flags::PayloadType();
   VideoReceiveStream::Decoder decoder;
   rtc::scoped_ptr<DecoderBitstreamFileWriter> bitstream_writer;
-  if (flags::DecoderBitstreamFilename() != "") {
+  if (!flags::DecoderBitstreamFilename().empty()) {
     bitstream_writer.reset(new DecoderBitstreamFileWriter(
         flags::DecoderBitstreamFilename().c_str()));
     receive_config.pre_decode_callback = bitstream_writer.get();
   }
   decoder = test::CreateMatchingDecoder(encoder_settings);
-  if (flags::DecoderBitstreamFilename() != "") {
+  if (!flags::DecoderBitstreamFilename().empty()) {
     // Replace with a null decoder if we're writing the bitstream to a file
     // instead.
     delete decoder.decoder;

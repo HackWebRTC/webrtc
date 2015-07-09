@@ -2001,7 +2001,7 @@ TEST_F(EndToEndTest, GetStats) {
             stats.frame_counts.key_frames != 0 ||
             stats.frame_counts.delta_frames != 0;
 
-        receive_stats_filled_["CName"] |= stats.c_name != "";
+        receive_stats_filled_["CName"] |= !stats.c_name.empty();
 
         receive_stats_filled_["RtcpPacketTypeCount"] |=
             stats.rtcp_packet_type_counts.fir_packets != 0 ||

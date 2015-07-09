@@ -116,9 +116,9 @@ Logging::State::State(const std::string& tag, int64_t timestamp_ms,
 }
 
 void Logging::State::MergePrevious(const State& previous) {
-  if (tag == "") {
+  if (tag.empty()) {
     tag = previous.tag;
-  } else if (previous.tag != "") {
+  } else if (!previous.tag.empty()) {
     tag = previous.tag + "_" + tag;
   }
   timestamp_ms = std::max(previous.timestamp_ms, timestamp_ms);

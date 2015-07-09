@@ -269,7 +269,7 @@ std::string OutputFilePath(std::string name,
   ss << output_rate / 1000 << "_pcm";
 
   std::string filename = ss.str();
-  if (temp_filenames[filename] == "")
+  if (temp_filenames[filename].empty())
     temp_filenames[filename] = test::TempFilename(test::OutputPath(), filename);
   return temp_filenames[filename];
 }

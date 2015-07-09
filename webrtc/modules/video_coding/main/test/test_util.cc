@@ -73,7 +73,7 @@ FileOutputFrameReceiver::FileOutputFrameReceiver(
       count_(0) {
   std::string basename;
   std::string extension;
-  if (base_out_filename == "") {
+  if (base_out_filename.empty()) {
     basename = webrtc::test::OutputPath() + "rtp_decoded";
     extension = "yuv";
   } else {
