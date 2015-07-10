@@ -46,7 +46,7 @@ void InitFieldTrialsFromString(const std::string& trials_string) {
   static const char kPersistentStringSeparator = '/';
 
   // Catch an error if this is called more than once.
-  assert(field_trials_initiated_ == false);
+  assert(!field_trials_initiated_);
   field_trials_initiated_ = true;
 
   if (trials_string.empty())
@@ -77,10 +77,10 @@ void InitFieldTrialsFromString(const std::string& trials_string) {
     if (next_item == trials_string.length())
       return;
   }
-  // LOG does not prints when this is called early on main.
+  // Using fprintf as LOG does not print when this is called early in main.
   fprintf(stderr, "Invalid field trials string.\n");
 
-  // Using abort so it crashs both in debug and release mode.
+  // Using abort so it crashes in both debug and release mode.
   abort();
 }
 
@@ -88,11 +88,14 @@ ScopedFieldTrials::ScopedFieldTrials(const std::string& config)
     : previous_field_trials_(field_trials_) {
   assert(field_trials_initiated_);
   field_trials_initiated_ = false;
-  field_trials_ = std::map<std::string, std::string>();
+  field_trials_.clear();
   InitFieldTrialsFromString(config);
 }
 
 ScopedFieldTrials::~ScopedFieldTrials() {
+  // Should still be initialized, since InitFieldTrials is called from ctor.
+  // That's why we don't restore the flag.
+  assert(field_trials_initiated_);
   field_trials_ = previous_field_trials_;
 }
 
