@@ -14,36 +14,32 @@
 
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
 
+#include <math.h>
+#include <string.h>
 #include <algorithm>
-#include <cmath>
-#include <cstring>
 
 using std::complex;
+using std::min;
 
-namespace {
+namespace webrtc {
 
-// Return |current| changed towards |target|, with the change being at most
-// |limit|.
-inline float UpdateFactor(float target, float current, float limit) {
+namespace intelligibility {
+
+float UpdateFactor(float target, float current, float limit) {
   float delta = fabsf(target - current);
   float sign = copysign(1.0f, target - current);
   return current + sign * fminf(delta, limit);
 }
 
-// std::isfinite for complex numbers.
-inline bool cplxfinite(complex<float> c) {
+bool cplxfinite(complex<float> c) {
   return std::isfinite(c.real()) && std::isfinite(c.imag());
 }
 
-// std::isnormal for complex numbers.
-inline bool cplxnormal(complex<float> c) {
+bool cplxnormal(complex<float> c) {
   return std::isnormal(c.real()) && std::isnormal(c.imag());
 }
 
-// Apply a small fudge to degenerate complex values. The numbers in the array
-// were chosen randomly, so that even a series of all zeroes has some small
-// variability.
-inline complex<float> zerofudge(complex<float> c) {
+complex<float> zerofudge(complex<float> c) {
   const static complex<float> fudge[7] = {{0.001f, 0.002f},
                                           {0.008f, 0.001f},
                                           {0.003f, 0.008f},
@@ -59,25 +55,14 @@ inline complex<float> zerofudge(complex<float> c) {
   return c;
 }
 
-// Incremental mean computation. Return the mean of the series with the
-// mean |mean| with added |data|.
-inline complex<float> NewMean(complex<float> mean,
-                              complex<float> data,
-                              int count) {
+complex<float> NewMean(complex<float> mean, complex<float> data, int count) {
   return mean + (data - mean) / static_cast<float>(count);
 }
 
-inline void AddToMean(complex<float> data, int count, complex<float>* mean) {
+void AddToMean(complex<float> data, int count, complex<float>* mean) {
   (*mean) = NewMean(*mean, data, count);
 }
 
-}  // namespace
-
-using std::min;
-
-namespace webrtc {
-
-namespace intelligibility {
 
 static const int kWindowBlockSize = 10;
 
@@ -96,7 +81,8 @@ VarianceArray::VarianceArray(int freqs,
       decay_(decay),
       history_cursor_(0),
       count_(0),
-      array_mean_(0.0f) {
+      array_mean_(0.0f),
+      buffer_full_(false) {
   history_.reset(new rtc::scoped_ptr<complex<float>[]>[freqs_]());
   for (int i = 0; i < freqs_; ++i) {
     history_[i].reset(new complex<float>[window_size_]());
@@ -121,6 +107,9 @@ VarianceArray::VarianceArray(int freqs,
       break;
     case kStepBlocked:
       step_func_ = &VarianceArray::BlockedStep;
+      break;
+    case kStepBlockBasedMovingAverage:
+      step_func_ = &VarianceArray::BlockBasedMovingAverage;
       break;
   }
 }
@@ -223,7 +212,7 @@ void VarianceArray::WindowedStep(const complex<float>* data, bool /*dummy*/) {
 // history window and a new block is started. The variances for the window
 // are recomputed from scratch at each of these transitions.
 void VarianceArray::BlockedStep(const complex<float>* data, bool /*dummy*/) {
-  int blocks = min(window_size_, history_cursor_);
+  int blocks = min(window_size_, history_cursor_ + 1);
   for (int i = 0; i < freqs_; ++i) {
     AddToMean(data[i], count_ + 1, &sub_running_mean_[i]);
     AddToMean(data[i] * std::conj(data[i]), count_ + 1,
@@ -242,8 +231,8 @@ void VarianceArray::BlockedStep(const complex<float>* data, bool /*dummy*/) {
       running_mean_[i] = complex<float>(0.0f, 0.0f);
       running_mean_sq_[i] = complex<float>(0.0f, 0.0f);
       for (int j = 0; j < min(window_size_, history_cursor_); ++j) {
-        AddToMean(subhistory_[i][j], j, &running_mean_[i]);
-        AddToMean(subhistory_sq_[i][j], j, &running_mean_sq_[i]);
+        AddToMean(subhistory_[i][j], j + 1, &running_mean_[i]);
+        AddToMean(subhistory_sq_[i][j], j + 1, &running_mean_sq_[i]);
       }
       ++history_cursor_;
     }
@@ -251,6 +240,51 @@ void VarianceArray::BlockedStep(const complex<float>* data, bool /*dummy*/) {
   ++count_;
   if (count_ == kWindowBlockSize) {
     count_ = 0;
+  }
+}
+
+// Recomputes variances for each window from scratch based on previous window.
+void VarianceArray::BlockBasedMovingAverage(const std::complex<float>* data,
+                                            bool /*dummy*/) {
+  // TODO(ekmeyerson) To mitigate potential divergence, add counter so that
+  // after every so often sums are computed scratch by summing over all
+  // elements instead of subtracting oldest and adding newest.
+  for (int i = 0; i < freqs_; ++i) {
+    sub_running_mean_[i] += data[i];
+    sub_running_mean_sq_[i] += data[i] * std::conj(data[i]);
+  }
+  ++count_;
+
+  // TODO(ekmeyerson) Make kWindowBlockSize nonconstant to allow
+  // experimentation with different block size,window size pairs.
+  if (count_ >= kWindowBlockSize) {
+    count_ = 0;
+
+    for (int i = 0; i < freqs_; ++i) {
+      running_mean_[i] -= subhistory_[i][history_cursor_];
+      running_mean_sq_[i] -= subhistory_sq_[i][history_cursor_];
+
+      float scale = 1.f / kWindowBlockSize;
+      subhistory_[i][history_cursor_] = sub_running_mean_[i] * scale;
+      subhistory_sq_[i][history_cursor_] = sub_running_mean_sq_[i] * scale;
+
+      sub_running_mean_[i] = std::complex<float>(0.0f, 0.0f);
+      sub_running_mean_sq_[i] = std::complex<float>(0.0f, 0.0f);
+
+      running_mean_[i] += subhistory_[i][history_cursor_];
+      running_mean_sq_[i] += subhistory_sq_[i][history_cursor_];
+
+      scale = 1.f / (buffer_full_ ? window_size_ : history_cursor_ + 1);
+      variance_[i] = std::real(running_mean_sq_[i] * scale -
+                               running_mean_[i] * scale *
+                                   std::conj(running_mean_[i]) * scale);
+    }
+
+    ++history_cursor_;
+    if (history_cursor_ >= window_size_) {
+      buffer_full_ = true;
+      history_cursor_ = 0;
+    }
   }
 }
 

@@ -23,6 +23,30 @@ namespace webrtc {
 
 namespace intelligibility {
 
+// Return |current| changed towards |target|, with the change being at most
+// |limit|.
+float UpdateFactor(float target, float current, float limit);
+
+// std::isfinite for complex numbers.
+bool cplxfinite(std::complex<float> c);
+
+// std::isnormal for complex numbers.
+bool cplxnormal(std::complex<float> c);
+
+// Apply a small fudge to degenerate complex values. The numbers in the array
+// were chosen randomly, so that even a series of all zeroes has some small
+// variability.
+std::complex<float> zerofudge(std::complex<float> c);
+
+// Incremental mean computation. Return the mean of the series with the
+// mean |mean| with added |data|.
+std::complex<float> NewMean(std::complex<float> mean,
+                            std::complex<float> data,
+                            int count);
+
+// Updates |mean| with added |data|;
+void AddToMean(std::complex<float> data, int count, std::complex<float>* mean);
+
 // Internal helper for computing the variances of a stream of arrays.
 // The result is an array of variances per position: the i-th variance
 // is the variance of the stream of data on the i-th positions in the
@@ -43,7 +67,8 @@ class VarianceArray {
     kStepInfinite = 0,
     kStepDecaying,
     kStepWindowed,
-    kStepBlocked
+    kStepBlocked,
+    kStepBlockBasedMovingAverage
   };
 
   // Construct an instance for the given input array length (|freqs|) and
@@ -77,6 +102,7 @@ class VarianceArray {
   void DecayStep(const std::complex<float>* data, bool dummy);
   void WindowedStep(const std::complex<float>* data, bool dummy);
   void BlockedStep(const std::complex<float>* data, bool dummy);
+  void BlockBasedMovingAverage(const std::complex<float>* data, bool dummy);
 
   // TODO(ekmeyerson): Switch the following running means
   // and histories from rtc::scoped_ptr to std::vector.
@@ -105,6 +131,7 @@ class VarianceArray {
   int history_cursor_;
   int count_;
   float array_mean_;
+  bool buffer_full_;
   void (VarianceArray::*step_func_)(const std::complex<float>*, bool);
 };
 

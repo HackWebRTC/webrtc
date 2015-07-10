@@ -17,8 +17,8 @@
 
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 
-#include <cmath>
-#include <cstdlib>
+#include <math.h>
+#include <stdlib.h>
 
 #include <algorithm>
 #include <numeric>
@@ -27,26 +27,24 @@
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/common_audio/window_generator.h"
 
+namespace webrtc {
+
+namespace {
+
+const int kErbResolution = 2;
+const int kWindowSizeMs = 2;
+const int kChunkSizeMs = 10;  // Size provided by APM.
+const float kClipFreq = 200.0f;
+const float kConfigRho = 0.02f;  // Default production and interpretation SNR.
+const float kKbdAlpha = 1.5f;
+const float kLambdaBot = -1.0f;      // Extreme values in bisection
+const float kLambdaTop = -10e-18f;  // search for lamda.
+
+}  // namespace
+
 using std::complex;
 using std::max;
 using std::min;
-
-namespace webrtc {
-
-const int IntelligibilityEnhancer::kErbResolution = 2;
-const int IntelligibilityEnhancer::kWindowSizeMs = 2;
-const int IntelligibilityEnhancer::kChunkSizeMs = 10;  // Size provided by APM.
-const int IntelligibilityEnhancer::kAnalyzeRate = 800;
-const int IntelligibilityEnhancer::kVarianceRate = 2;
-const float IntelligibilityEnhancer::kClipFreq = 200.0f;
-const float IntelligibilityEnhancer::kConfigRho = 0.02f;
-const float IntelligibilityEnhancer::kKbdAlpha = 1.5f;
-
-// To disable gain update smoothing, set gain limit to be VERY high.
-// TODO(ekmeyerson): Add option to disable gain smoothing altogether
-// to avoid the extra computation.
-const float IntelligibilityEnhancer::kGainChangeLimit = 0.0125f;
-
 using VarianceType = intelligibility::VarianceArray::StepType;
 
 IntelligibilityEnhancer::TransformCallback::TransformCallback(
@@ -93,7 +91,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int erb_resolution,
       noise_variance_(freqs_, VarianceType::kStepInfinite, 475, 0.01f),
       filtered_clear_var_(new float[bank_size_]),
       filtered_noise_var_(new float[bank_size_]),
-      filter_bank_(nullptr),
+      filter_bank_(bank_size_),
       center_freqs_(new float[bank_size_]),
       rho_(new float[bank_size_]),
       gains_eq_(new float[bank_size_]),
@@ -149,7 +147,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int erb_resolution,
 IntelligibilityEnhancer::~IntelligibilityEnhancer() {
   WebRtcVad_Free(vad_low_);
   WebRtcVad_Free(vad_high_);
-  free(filter_bank_);
+  free(temp_out_buffer_);
 }
 
 void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio) {
@@ -203,8 +201,6 @@ void IntelligibilityEnhancer::DispatchAudio(
 
 void IntelligibilityEnhancer::ProcessClearBlock(const complex<float>* in_block,
                                                 complex<float>* out_block) {
-  float power_target;
-
   if (block_count_ < 2) {
     memset(out_block, 0, freqs_ * sizeof(*out_block));
     ++block_count_;
@@ -216,8 +212,8 @@ void IntelligibilityEnhancer::ProcessClearBlock(const complex<float>* in_block,
   // based on experiments with different cutoffs.
   if (has_voice_low_ || true) {
     clear_variance_.Step(in_block, false);
-    power_target = std::accumulate(clear_variance_.variance(),
-                                   clear_variance_.variance() + freqs_, 0.0f);
+    const float power_target = std::accumulate(
+        clear_variance_.variance(), clear_variance_.variance() + freqs_, 0.0f);
 
     if (block_count_ % analysis_rate_ == analysis_rate_ - 1) {
       AnalyzeClearBlock(power_target);
@@ -239,35 +235,46 @@ void IntelligibilityEnhancer::AnalyzeClearBlock(float power_target) {
   FilterVariance(clear_variance_.variance(), filtered_clear_var_.get());
   FilterVariance(noise_variance_.variance(), filtered_noise_var_.get());
 
-  // Bisection search for optimal |lambda|
-
-  float lambda_bot = -1.0f, lambda_top = -10e-18f, lambda;
-  float power_bot, power_top, power;
-  SolveForGainsGivenLambda(lambda_top, start_freq_, gains_eq_.get());
-  power_top =
+  SolveForGainsGivenLambda(kLambdaTop, start_freq_, gains_eq_.get());
+  const float power_top =
       DotProduct(gains_eq_.get(), filtered_clear_var_.get(), bank_size_);
-  SolveForGainsGivenLambda(lambda_bot, start_freq_, gains_eq_.get());
-  power_bot =
+  SolveForGainsGivenLambda(kLambdaBot, start_freq_, gains_eq_.get());
+  const float power_bot =
       DotProduct(gains_eq_.get(), filtered_clear_var_.get(), bank_size_);
-  DCHECK(power_target >= power_bot && power_target <= power_top);
+  if (power_target >= power_bot && power_target <= power_top) {
+    SolveForLambda(power_target, power_bot, power_top);
+    UpdateErbGains();
+  }  // Else experiencing variance underflow, so do nothing.
+}
 
-  float power_ratio = 2.0f;  // Ratio of achieved power to target power.
+void IntelligibilityEnhancer::SolveForLambda(float power_target,
+                                             float power_bot,
+                                             float power_top) {
   const float kConvergeThresh = 0.001f;  // TODO(ekmeyerson): Find best values
   const int kMaxIters = 100;             // for these, based on experiments.
+
+  const float reciprocal_power_target = 1.f / power_target;
+  float lambda_bot = kLambdaBot;
+  float lambda_top = kLambdaTop;
+  float power_ratio = 2.0f;  // Ratio of achieved power to target power.
   int iters = 0;
-  while (fabs(power_ratio - 1.0f) > kConvergeThresh && iters <= kMaxIters) {
-    lambda = lambda_bot + (lambda_top - lambda_bot) / 2.0f;
+  while (std::fabs(power_ratio - 1.0f) > kConvergeThresh &&
+         iters <= kMaxIters) {
+    const float lambda = lambda_bot + (lambda_top - lambda_bot) / 2.0f;
     SolveForGainsGivenLambda(lambda, start_freq_, gains_eq_.get());
-    power = DotProduct(gains_eq_.get(), filtered_clear_var_.get(), bank_size_);
+    const float power =
+        DotProduct(gains_eq_.get(), filtered_clear_var_.get(), bank_size_);
     if (power < power_target) {
       lambda_bot = lambda;
     } else {
       lambda_top = lambda;
     }
-    power_ratio = fabs(power / power_target);
+    power_ratio = std::fabs(power * reciprocal_power_target);
     ++iters;
   }
+}
 
+void IntelligibilityEnhancer::UpdateErbGains() {
   // (ERB gain) = filterbank' * (freq gain)
   float* gains = gain_applier_.target();
   for (int i = 0; i < freqs_; ++i) {
@@ -303,12 +310,8 @@ void IntelligibilityEnhancer::CreateErbBank() {
     center_freqs_[i] *= 0.5f * sample_rate_hz_ / last_center_freq;
   }
 
-  filter_bank_ = static_cast<float**>(
-      malloc(sizeof(*filter_bank_) * bank_size_ +
-             sizeof(**filter_bank_) * freqs_ * bank_size_));
   for (int i = 0; i < bank_size_; ++i) {
-    filter_bank_[i] =
-        reinterpret_cast<float*>(filter_bank_ + bank_size_) + freqs_ * i;
+    filter_bank_[i].resize(freqs_);
   }
 
   for (int i = 1; i <= bank_size_; ++i) {
@@ -388,7 +391,7 @@ void IntelligibilityEnhancer::SolveForGainsGivenLambda(float lambda,
 
 void IntelligibilityEnhancer::FilterVariance(const float* var, float* result) {
   for (int i = 0; i < bank_size_; ++i) {
-    result[i] = DotProduct(filter_bank_[i], var, freqs_);
+    result[i] = DotProduct(filter_bank_[i].data(), var, freqs_);
   }
 }
 

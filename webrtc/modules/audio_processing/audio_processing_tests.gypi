@@ -70,7 +70,7 @@
         '<(webrtc_root)/test/test.gyp:test_support',
       ],
       'sources': [
-        'intelligibility/intelligibility_proc.cc',
+        'intelligibility/test/intelligibility_proc.cc',
       ],
     }, # intelligibility_proc
   ],

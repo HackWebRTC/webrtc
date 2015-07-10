@@ -16,6 +16,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_ENHANCER_H_
 
 #include <complex>
+#include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/lapped_transform.h"
@@ -83,6 +84,8 @@ class IntelligibilityEnhancer {
     AudioSource source_;
   };
   friend class TransformCallback;
+  FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestErbCreation);
+  FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestSolveForGains);
 
   // Sends streams to ProcessClearBlock or ProcessNoiseBlock based on source.
   void DispatchAudio(AudioSource source,
@@ -96,6 +99,12 @@ class IntelligibilityEnhancer {
 
   // Computes and sets modified gains.
   void AnalyzeClearBlock(float power_target);
+
+  // Bisection search for optimal |lambda|.
+  void SolveForLambda(float power_target, float power_bot, float power_top);
+
+  // Transforms freq gains to ERB gains.
+  void UpdateErbGains();
 
   // Updates variance calculation for noise input with |in_block|.
   void ProcessNoiseBlock(const std::complex<float>* in_block,
@@ -118,16 +127,6 @@ class IntelligibilityEnhancer {
   // Returns dot product of vectors specified by size |length| arrays |a|,|b|.
   static float DotProduct(const float* a, const float* b, int length);
 
-  static const int kErbResolution;
-  static const int kWindowSizeMs;
-  static const int kChunkSizeMs;
-  static const int kAnalyzeRate;   // Default for |analysis_rate_|.
-  static const int kVarianceRate;  // Default for |variance_rate_|.
-  static const float kClipFreq;
-  static const float kConfigRho;  // Default production and interpretation SNR.
-  static const float kKbdAlpha;
-  static const float kGainChangeLimit;
-
   const int freqs_;         // Num frequencies in frequency domain.
   const int window_size_;   // Window size in samples; also the block size.
   const int chunk_length_;  // Chunk size in samples.
@@ -142,7 +141,7 @@ class IntelligibilityEnhancer {
   intelligibility::VarianceArray noise_variance_;
   rtc::scoped_ptr<float[]> filtered_clear_var_;
   rtc::scoped_ptr<float[]> filtered_noise_var_;
-  float** filter_bank_;  // TODO(ekmeyerson): Switch to using ChannelBuffer.
+  std::vector<std::vector<float>> filter_bank_;
   rtc::scoped_ptr<float[]> center_freqs_;
   int start_freq_;
   rtc::scoped_ptr<float[]> rho_;  // Production and interpretation SNR.

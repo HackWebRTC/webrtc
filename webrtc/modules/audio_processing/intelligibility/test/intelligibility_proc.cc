@@ -16,9 +16,9 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <string>
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
