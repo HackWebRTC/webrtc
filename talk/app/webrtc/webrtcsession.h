@@ -258,19 +258,6 @@ class WebRtcSession : public cricket::BaseSession,
     metrics_observer_ = metrics_observer;
   }
 
- protected:
-  // Don't fire a new description.  The only thing it's used for is to
-  // push new media descriptions to the BaseChannels.  But in
-  // WebRtcSession, we just push to the BaseChannels directly, so we
-  // don't need this (and it would cause the descriptions to be pushed
-  // down twice).
-  // TODO(pthatcher): Remove this method and signal completely from
-  // BaseSession once all the subclasses of BaseSession push to
-  // BaseChannels directly rather than relying on the signal, or once
-  // BaseChannel no longer listens to the event and requires
-  // descriptions to be pushed down.
-  virtual void SignalNewDescription() override {}
-
  private:
   // Indicates the type of SessionDescription in a call to SetLocalDescription
   // and SetRemoteDescription.

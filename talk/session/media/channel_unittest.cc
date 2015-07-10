@@ -1559,62 +1559,42 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   void TestSetContentFailure() {
     CreateChannels(0, 0);
-    typename T::Content content;
-    cricket::SessionDescription* sdesc_loc = new cricket::SessionDescription();
-    cricket::SessionDescription* sdesc_rem = new cricket::SessionDescription();
 
-    // Set up the session description.
-    CreateContent(0, kPcmuCodec, kH264Codec, &content);
-    sdesc_loc->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP,
-                          new cricket::AudioContentDescription());
-    sdesc_loc->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP,
-                          new cricket::VideoContentDescription());
-    session1_.set_local_description(sdesc_loc);
-    sdesc_rem->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP,
-                          new cricket::AudioContentDescription());
-    sdesc_rem->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP,
-                          new cricket::VideoContentDescription());
-    session1_.set_remote_description(sdesc_rem);
+    auto sdesc = cricket::SessionDescription();
+    sdesc.AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP,
+                     new cricket::AudioContentDescription());
+    sdesc.AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP,
+                     new cricket::VideoContentDescription());
 
-    // Test failures in SetLocalContent.
+    std::string err;
     media_channel1_->set_fail_set_recv_codecs(true);
-    session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::BaseSession::STATE_SENTINITIATE);
-    EXPECT_EQ(cricket::BaseSession::ERROR_CONTENT, session1_.error());
-    media_channel1_->set_fail_set_recv_codecs(true);
-    session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::BaseSession::STATE_SENTACCEPT);
-    EXPECT_EQ(cricket::BaseSession::ERROR_CONTENT, session1_.error());
+    EXPECT_FALSE(channel1_->PushdownLocalDescription(
+        &sdesc, cricket::CA_OFFER, &err));
+    EXPECT_FALSE(channel1_->PushdownLocalDescription(
+        &sdesc, cricket::CA_ANSWER, &err));
 
-    // Test failures in SetRemoteContent.
     media_channel1_->set_fail_set_send_codecs(true);
-    session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDINITIATE);
-    EXPECT_EQ(cricket::BaseSession::ERROR_CONTENT, session1_.error());
+    EXPECT_FALSE(channel1_->PushdownRemoteDescription(
+        &sdesc, cricket::CA_OFFER, &err));
     media_channel1_->set_fail_set_send_codecs(true);
-    session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDACCEPT);
-    EXPECT_EQ(cricket::BaseSession::ERROR_CONTENT, session1_.error());
+    EXPECT_FALSE(channel1_->PushdownRemoteDescription(
+        &sdesc, cricket::CA_ANSWER, &err));
   }
 
   void TestSendTwoOffers() {
     CreateChannels(0, 0);
 
-    // Set up the initial session description.
-    cricket::SessionDescription* sdesc = CreateSessionDescriptionWithStream(1);
-    session1_.set_local_description(sdesc);
-
-    session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::BaseSession::STATE_SENTINITIATE);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    std::string err;
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc1(
+        CreateSessionDescriptionWithStream(1));
+    EXPECT_TRUE(channel1_->PushdownLocalDescription(
+        sdesc1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
 
-    // Update the local description and set the state again.
-    sdesc = CreateSessionDescriptionWithStream(2);
-    session1_.set_local_description(sdesc);
-
-    session1_.SetState(cricket::BaseSession::STATE_SENTINITIATE);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc2(
+        CreateSessionDescriptionWithStream(2));
+    EXPECT_TRUE(channel1_->PushdownLocalDescription(
+        sdesc2.get(), cricket::CA_OFFER, &err));
     EXPECT_FALSE(media_channel1_->HasSendStream(1));
     EXPECT_TRUE(media_channel1_->HasSendStream(2));
   }
@@ -1622,19 +1602,17 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void TestReceiveTwoOffers() {
     CreateChannels(0, 0);
 
-    // Set up the initial session description.
-    cricket::SessionDescription* sdesc = CreateSessionDescriptionWithStream(1);
-    session1_.set_remote_description(sdesc);
-
-    session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDINITIATE);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    std::string err;
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc1(
+        CreateSessionDescriptionWithStream(1));
+    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
+        sdesc1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
-    sdesc = CreateSessionDescriptionWithStream(2);
-    session1_.set_remote_description(sdesc);
-    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDINITIATE);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc2(
+        CreateSessionDescriptionWithStream(2));
+    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
+        sdesc2.get(), cricket::CA_OFFER, &err));
     EXPECT_FALSE(media_channel1_->HasRecvStream(1));
     EXPECT_TRUE(media_channel1_->HasRecvStream(2));
   }
@@ -1642,30 +1620,27 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void TestSendPrAnswer() {
     CreateChannels(0, 0);
 
-    // Set up the initial session description.
-    cricket::SessionDescription* sdesc = CreateSessionDescriptionWithStream(1);
-    session1_.set_remote_description(sdesc);
-
-    session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDINITIATE);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    std::string err;
+    // Receive offer
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc1(
+        CreateSessionDescriptionWithStream(1));
+    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
+        sdesc1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
-    // Send PRANSWER
-    sdesc = CreateSessionDescriptionWithStream(2);
-    session1_.set_local_description(sdesc);
-
-    session1_.SetState(cricket::BaseSession::STATE_SENTPRACCEPT);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    // Send PR answer
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc2(
+        CreateSessionDescriptionWithStream(2));
+    EXPECT_TRUE(channel1_->PushdownLocalDescription(
+        sdesc2.get(), cricket::CA_PRANSWER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
     EXPECT_TRUE(media_channel1_->HasSendStream(2));
 
-    // Send ACCEPT
-    sdesc = CreateSessionDescriptionWithStream(3);
-    session1_.set_local_description(sdesc);
-
-    session1_.SetState(cricket::BaseSession::STATE_SENTACCEPT);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    // Send answer
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc3(
+        CreateSessionDescriptionWithStream(3));
+    EXPECT_TRUE(channel1_->PushdownLocalDescription(
+        sdesc3.get(), cricket::CA_ANSWER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
     EXPECT_FALSE(media_channel1_->HasSendStream(2));
     EXPECT_TRUE(media_channel1_->HasSendStream(3));
@@ -1674,30 +1649,27 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void TestReceivePrAnswer() {
     CreateChannels(0, 0);
 
-    // Set up the initial session description.
-    cricket::SessionDescription* sdesc = CreateSessionDescriptionWithStream(1);
-    session1_.set_local_description(sdesc);
-
-    session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::BaseSession::STATE_SENTINITIATE);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    std::string err;
+    // Send offer
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc1(
+        CreateSessionDescriptionWithStream(1));
+    EXPECT_TRUE(channel1_->PushdownLocalDescription(
+        sdesc1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
 
-    // Receive PRANSWER
-    sdesc = CreateSessionDescriptionWithStream(2);
-    session1_.set_remote_description(sdesc);
-
-    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDPRACCEPT);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    // Receive PR answer
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc2(
+        CreateSessionDescriptionWithStream(2));
+    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
+        sdesc2.get(), cricket::CA_PRANSWER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
     EXPECT_TRUE(media_channel1_->HasRecvStream(2));
 
-    // Receive ACCEPT
-    sdesc = CreateSessionDescriptionWithStream(3);
-    session1_.set_remote_description(sdesc);
-
-    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDACCEPT);
-    EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
+    // Receive answer
+    rtc::scoped_ptr<cricket::SessionDescription> sdesc3(
+        CreateSessionDescriptionWithStream(3));
+    EXPECT_TRUE(channel1_->PushdownRemoteDescription(
+        sdesc3.get(), cricket::CA_ANSWER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
     EXPECT_FALSE(media_channel1_->HasRecvStream(2));
     EXPECT_TRUE(media_channel1_->HasRecvStream(3));

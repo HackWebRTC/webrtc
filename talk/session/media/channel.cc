@@ -204,11 +204,6 @@ bool BaseChannel::Init() {
     return false;
   }
 
-  session_->SignalNewLocalDescription.connect(
-      this, &BaseChannel::OnNewLocalDescription);
-  session_->SignalNewRemoteDescription.connect(
-      this, &BaseChannel::OnNewRemoteDescription);
-
   // Both RTP and RTCP channels are set, we can call SetInterface on
   // media channel and it can set network options.
   media_channel_->SetInterface(this);
@@ -660,24 +655,6 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
     media_channel_->OnPacketReceived(packet, packet_time);
   } else {
     media_channel_->OnRtcpReceived(packet, packet_time);
-  }
-}
-
-void BaseChannel::OnNewLocalDescription(
-    BaseSession* session, ContentAction action) {
-  std::string error_desc;
-  if (!PushdownLocalDescription(
-          session->local_description(), action, &error_desc))  {
-    SetSessionError(session_, BaseSession::ERROR_CONTENT, error_desc);
-  }
-}
-
-void BaseChannel::OnNewRemoteDescription(
-    BaseSession* session, ContentAction action) {
-  std::string error_desc;
-  if (!PushdownRemoteDescription(
-          session->remote_description(), action, &error_desc))  {
-    SetSessionError(session_, BaseSession::ERROR_CONTENT, error_desc);
   }
 }
 

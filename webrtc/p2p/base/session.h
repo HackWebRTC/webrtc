@@ -412,8 +412,6 @@ class BaseSession : public sigslot::has_slots<>,
   Error error_;
   std::string error_desc_;
 
-  // Fires the new description signal according to the current state.
-  virtual void SignalNewDescription();
   // This method will delete the Transport and TransportChannelImpls
   // and replace those with the Transport object of the first
   // MediaContent in bundle_group.
@@ -438,9 +436,6 @@ class BaseSession : public sigslot::has_slots<>,
   static bool GetTransportDescription(const SessionDescription* description,
                                       const std::string& content_name,
                                       TransportDescription* info);
-
-  // Gets the ContentAction and ContentSource according to the session state.
-  bool GetContentAction(ContentAction* action, ContentSource* source);
 
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
