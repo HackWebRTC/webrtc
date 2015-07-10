@@ -758,13 +758,12 @@ struct OverUseDetectorOptions {
         initial_e(),
         initial_process_noise(),
         initial_avg_noise(0.0),
-        initial_var_noise(50),
-        initial_threshold(25.0) {
+        initial_var_noise(50) {
     initial_e[0][0] = 100;
     initial_e[1][1] = 1e-1;
     initial_e[0][1] = initial_e[1][0] = 0;
     initial_process_noise[0] = 1e-13;
-    initial_process_noise[1] = 1e-3;
+    initial_process_noise[1] = 1e-2;
   }
   double initial_slope;
   double initial_offset;
@@ -772,7 +771,6 @@ struct OverUseDetectorOptions {
   double initial_process_noise[2];
   double initial_avg_noise;
   double initial_var_noise;
-  double initial_threshold;
 };
 
 // This structure will have the information about when packet is actually

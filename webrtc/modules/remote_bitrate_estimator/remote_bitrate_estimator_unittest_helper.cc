@@ -473,7 +473,7 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
                                             kMinExpectedBitrate,
                                             kMaxExpectedBitrate,
                                             kInitialCapacityBps);
-  EXPECT_NEAR(kInitialCapacityBps, bitrate_bps, 100000u);
+  EXPECT_NEAR(kInitialCapacityBps, bitrate_bps, 110000u);
   bitrate_observer_->Reset();
 
   // Reduce the capacity and verify the decrease time.
