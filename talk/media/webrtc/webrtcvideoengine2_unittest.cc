@@ -57,9 +57,12 @@ static const cricket::VideoCodec kH264Codec(102, "H264", 640, 400, 30, 0);
 static const cricket::VideoCodec kRedCodec(116, "red", 0, 0, 0, 0);
 static const cricket::VideoCodec kUlpfecCodec(117, "ulpfec", 0, 0, 0, 0);
 
+static const uint8_t kRedRtxPayloadType = 125;
+
 static const uint32 kSsrcs1[] = {1};
 static const uint32 kSsrcs3[] = {1, 2, 3};
 static const uint32 kRtxSsrcs1[] = {4};
+static const uint32 kIncomingUnsignalledSsrc = 0xC0FFEE;
 static const char kUnsupportedExtensionName[] =
     "urn:ietf:params:rtp-hdrext:unsupported";
 
@@ -972,6 +975,8 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
 
   void TestCpuAdaptation(bool enable_overuse, bool is_screenshare);
   void TestReceiverLocalSsrcConfiguration(bool receiver_first);
+  void TestReceiveUnsignalledSsrcPacket(uint8_t payload_type,
+                                        bool expect_created_receive_stream);
 
   FakeVideoSendStream* SetDenoisingOption(bool enabled) {
     VideoOptions options;
@@ -2580,6 +2585,58 @@ TEST_F(WebRtcVideoChannel2Test, ReportsSsrcGroupsInStats) {
   EXPECT_NE(sender_sp.ssrc_groups, receiver_sp.ssrc_groups);
   EXPECT_EQ(sender_sp.ssrc_groups, info.senders[0].ssrc_groups);
   EXPECT_EQ(receiver_sp.ssrc_groups, info.receivers[0].ssrc_groups);
+}
+
+void WebRtcVideoChannel2Test::TestReceiveUnsignalledSsrcPacket(
+    uint8_t payload_type,
+    bool expect_created_receive_stream) {
+  std::vector<VideoCodec> codecs(engine_.codecs());
+  // Add a RED RTX codec.
+  VideoCodec red_rtx_codec =
+      VideoCodec::CreateRtxCodec(kRedRtxPayloadType, kDefaultRedPlType);
+  codecs.push_back(red_rtx_codec);
+  EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
+
+  ASSERT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
+  const size_t kDataLength = 12;
+  uint8_t data[kDataLength];
+  memset(data, 0, sizeof(data));
+
+  rtc::Set8(data, 1, payload_type);
+  rtc::SetBE32(&data[8], kIncomingUnsignalledSsrc);
+  rtc::Buffer packet(data, kDataLength);
+  rtc::PacketTime packet_time;
+  channel_->OnPacketReceived(&packet, packet_time);
+
+  if (expect_created_receive_stream) {
+    EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
+        << "Should have created a receive stream for payload type: "
+        << payload_type;
+  } else {
+    EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size())
+        << "Shouldn't have created a receive stream for payload type: "
+        << payload_type;
+  }
+}
+
+TEST_F(WebRtcVideoChannel2Test, Vp8PacketCreatesUnsignalledStream) {
+  TestReceiveUnsignalledSsrcPacket(kDefaultVp8PlType, true);
+}
+
+TEST_F(WebRtcVideoChannel2Test, Vp9PacketCreatesUnsignalledStream) {
+  TestReceiveUnsignalledSsrcPacket(kDefaultVp9PlType, true);
+}
+
+TEST_F(WebRtcVideoChannel2Test, RtxPacketDoesntCreateUnsignalledStream) {
+  TestReceiveUnsignalledSsrcPacket(kDefaultRtxVp8PlType, false);
+}
+
+TEST_F(WebRtcVideoChannel2Test, UlpfecPacketDoesntCreateUnsignalledStream) {
+  TestReceiveUnsignalledSsrcPacket(kDefaultUlpfecType, false);
+}
+
+TEST_F(WebRtcVideoChannel2Test, RedRtxPacketDoesntCreateUnsignalledStream) {
+  TestReceiveUnsignalledSsrcPacket(kRedRtxPayloadType, false);
 }
 
 void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(

@@ -1383,9 +1383,24 @@ void WebRtcVideoChannel2::OnPacketReceived(
     return;
   }
 
-  // TODO(pbos): Ignore unsignalled packets that don't use the video payload
-  // (prevent creating default receivers for RTX configured as if it would
-  // receive media payloads on those SSRCs).
+  int payload_type = 0;
+  if (!GetRtpPayloadType(packet->data(), packet->size(), &payload_type)) {
+    return;
+  }
+
+  // See if this payload_type is registered as one that usually gets its own
+  // SSRC (RTX) or at least is safe to drop either way (ULPFEC). If it is, and
+  // it wasn't handled above by DeliverPacket, that means we don't know what
+  // stream it associates with, and we shouldn't ever create an implicit channel
+  // for these.
+  for (auto& codec : recv_codecs_) {
+    if (payload_type == codec.rtx_payload_type ||
+        payload_type == codec.fec.red_rtx_payload_type ||
+        payload_type == codec.fec.ulpfec_payload_type) {
+      return;
+    }
+  }
+
   switch (unsignalled_ssrc_handler_->OnUnsignalledSsrc(this, ssrc)) {
     case UnsignalledSsrcHandler::kDropPacket:
       return;
