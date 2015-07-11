@@ -31,6 +31,8 @@
         'source/byte_io.h',
         'source/fec_receiver_impl.cc',
         'source/fec_receiver_impl.h',
+        'source/packet_loss_stats.cc',
+        'source/packet_loss_stats.h',
         'source/receive_statistics_impl.cc',
         'source/receive_statistics_impl.h',
         'source/remote_ntp_time_estimator.cc',

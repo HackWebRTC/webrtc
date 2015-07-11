@@ -35,6 +35,8 @@ source_set("rtp_rtcp") {
     "source/h264_sps_parser.cc",
     "source/h264_sps_parser.h",
     "source/mock/mock_rtp_payload_strategy.h",
+    "source/packet_loss_stats.cc",
+    "source/packet_loss_stats.h",
     "source/producer_fec.cc",
     "source/producer_fec.h",
     "source/receive_statistics_impl.cc",

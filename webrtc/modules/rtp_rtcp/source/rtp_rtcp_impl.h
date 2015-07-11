@@ -16,6 +16,7 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/source/packet_loss_stats.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
@@ -169,6 +170,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   void GetSendStreamDataCounters(
       StreamDataCounters* rtp_counters,
       StreamDataCounters* rtx_counters) const override;
+
+  void GetRtpPacketLossStats(
+      bool outgoing,
+      uint32_t ssrc,
+      struct RtpPacketLossStats* loss_stats) const override;
 
   // Get received RTCP report, sender info.
   int32_t RemoteRTCPStat(RTCPSenderInfo* sender_info) override;
@@ -373,6 +379,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   RemoteBitrateEstimator* remote_bitrate_;
 
   RtcpRttStats* rtt_stats_;
+
+  PacketLossStats send_loss_stats_;
+  PacketLossStats receive_loss_stats_;
 
   // The processed RTT from RtcpRttStats.
   rtc::scoped_ptr<CriticalSectionWrapper> critical_section_rtt_;

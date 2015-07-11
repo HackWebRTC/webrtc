@@ -604,6 +604,31 @@ void ModuleRtpRtcpImpl::GetSendStreamDataCounters(
   rtp_sender_.GetDataCounters(rtp_counters, rtx_counters);
 }
 
+void ModuleRtpRtcpImpl::GetRtpPacketLossStats(
+    bool outgoing,
+    uint32_t ssrc,
+    struct RtpPacketLossStats* loss_stats) const {
+  if (!loss_stats) return;
+  const PacketLossStats* stats_source = NULL;
+  if (outgoing) {
+    if (SSRC() == ssrc) {
+      stats_source = &send_loss_stats_;
+    }
+  } else {
+    if (rtcp_receiver_.RemoteSSRC() == ssrc) {
+      stats_source = &receive_loss_stats_;
+    }
+  }
+  if (stats_source) {
+    loss_stats->single_packet_loss_count =
+        stats_source->GetSingleLossCount();
+    loss_stats->multiple_packet_loss_event_count =
+        stats_source->GetMultipleLossEventCount();
+    loss_stats->multiple_packet_loss_packet_count =
+        stats_source->GetMultipleLossPacketCount();
+  }
+}
+
 int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(RTCPSenderInfo* sender_info) {
   return rtcp_receiver_.SenderInfoReceived(sender_info);
 }
@@ -677,6 +702,9 @@ int ModuleRtpRtcpImpl::SetSelectiveRetransmissions(uint8_t settings) {
 // Send a Negative acknowledgment packet.
 int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
                                     const uint16_t size) {
+  for (int i = 0; i < size; ++i) {
+    receive_loss_stats_.AddLostPacket(nack_list[i]);
+  }
   uint16_t nack_length = size;
   uint16_t start_id = 0;
   int64_t now = clock_->TimeInMilliseconds();
@@ -892,6 +920,9 @@ bool ModuleRtpRtcpImpl::SendTimeOfXrRrReport(
 
 void ModuleRtpRtcpImpl::OnReceivedNACK(
     const std::list<uint16_t>& nack_sequence_numbers) {
+  for (uint16_t nack_sequence_number : nack_sequence_numbers) {
+    send_loss_stats_.AddLostPacket(nack_sequence_number);
+  }
   if (!rtp_sender_.StorePackets() ||
       nack_sequence_numbers.size() == 0) {
     return;

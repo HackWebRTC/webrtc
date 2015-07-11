@@ -431,6 +431,14 @@ class RtpRtcp : public Module {
         StreamDataCounters* rtx_counters) const = 0;
 
     /*
+     *  Get packet loss statistics for the RTP stream.
+     */
+    virtual void GetRtpPacketLossStats(
+        bool outgoing,
+        uint32_t ssrc,
+        struct RtpPacketLossStats* loss_stats) const = 0;
+
+    /*
     *   Get received RTCP sender info
     *
     *   return -1 on failure else 0
