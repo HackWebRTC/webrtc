@@ -657,38 +657,12 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
 
  private:
   int64_t now_ms_;
-  uint16_t sequence_number_;
+  uint32_t sequence_number_;
   Packets output_packets_;
   std::vector<int64_t> send_times_us_;
 
   DISALLOW_COPY_AND_ASSIGN(BweTestFramework_ChokeFilterTest);
 };
-
-TEST_F(BweTestFramework_ChokeFilterTest, NoQueue) {
-  const int kCapacityKbps = 10;
-  const size_t kPacketSize = 125;
-  const int64_t kExpectedSendTimeUs = kPacketSize * 8 * 1000 / kCapacityKbps;
-  uint16_t sequence_number = 0;
-  int64_t send_time_us = 0;
-  ChokeFilter filter(NULL, 0);
-  filter.SetCapacity(10);
-  Packets packets;
-  RTPHeader header;
-  for (uint32_t i = 0; i < 2; ++i) {
-    header.sequenceNumber = sequence_number++;
-    // Payload is 1000 bits.
-    packets.push_back(new MediaPacket(0, send_time_us, 125, header));
-    send_time_us += kExpectedSendTimeUs + 1000;
-  }
-  ASSERT_TRUE(IsTimeSorted(packets));
-  filter.RunFor(2 * kExpectedSendTimeUs + 1000, &packets);
-  EXPECT_EQ(kExpectedSendTimeUs, packets.front()->send_time_us());
-  delete packets.front();
-  packets.pop_front();
-  EXPECT_EQ(2 * kExpectedSendTimeUs + 1000, packets.front()->send_time_us());
-  delete packets.front();
-  packets.pop_front();
-}
 
 TEST_F(BweTestFramework_ChokeFilterTest, Short) {
   // 100ms, 100 packets, 10 kbps choke -> 1 kbit of data should have propagated.
@@ -749,8 +723,8 @@ TEST_F(BweTestFramework_ChokeFilterTest, MaxDelay) {
 
   // 100 ms delay cap
   filter.SetMaxDelay(100);
-  // 10100ms, 50 more packets -> 1 packets or 1 kbit through.
-  TestChoke(&filter, 100, 50, 1);
+  // 10100ms, 50 more packets -> 2 packets or 2 kbit through.
+  TestChoke(&filter, 100, 50, 2);
   CheckMaxDelay(100);
   // 20000ms, no input, remaining packets in queue should have been dropped.
   TestChoke(&filter, 9900, 0, 0);
@@ -758,8 +732,8 @@ TEST_F(BweTestFramework_ChokeFilterTest, MaxDelay) {
   // Reset delay cap (0 is no cap) and verify no packets are dropped.
   filter.SetCapacity(10);
   filter.SetMaxDelay(0);
-  TestChoke(&filter, 100, 100, 1);
-  TestChoke(&filter, 9900, 0, 99);
+  TestChoke(&filter, 100, 100, 2);
+  TestChoke(&filter, 9900, 0, 98);
 }
 
 TEST_F(BweTestFramework_ChokeFilterTest, ShortTrace) {
