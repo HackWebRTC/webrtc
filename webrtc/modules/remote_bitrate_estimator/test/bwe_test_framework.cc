@@ -431,10 +431,9 @@ void ChokeFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
   for (PacketsIt it = in_out->begin(); it != in_out->end(); ) {
     int64_t earliest_send_time_us =
-        last_send_time_us_ +
+        std::max(last_send_time_us_, (*it)->send_time_us());
+    int64_t new_send_time_us = earliest_send_time_us +
         ((*it)->payload_size() * 8 * 1000 + kbps_ / 2) / kbps_;
-    int64_t new_send_time_us =
-        std::max((*it)->send_time_us(), earliest_send_time_us);
     if (delay_cap_helper_->ShouldSendPacket(new_send_time_us,
                                             (*it)->send_time_us())) {
       (*it)->set_send_time_us(new_send_time_us);
