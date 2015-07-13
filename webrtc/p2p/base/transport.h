@@ -200,6 +200,8 @@ class Transport : public rtc::MessageHandler,
   void SetIceTiebreaker(uint64 IceTiebreaker) { tiebreaker_ = IceTiebreaker; }
   uint64 IceTiebreaker() { return tiebreaker_; }
 
+  void SetChannelReceivingTimeout(int timeout_ms);
+
   // Must be called before applying local session description.
   void SetIdentity(rtc::SSLIdentity* identity);
 
@@ -438,6 +440,8 @@ class Transport : public rtc::MessageHandler,
   bool GetStats_w(TransportStats* infos);
   bool GetRemoteCertificate_w(rtc::SSLCertificate** cert);
 
+  void SetChannelReceivingTimeout_w(int timeout_ms);
+
   // Sends SignalCompleted if we are now in that state.
   void MaybeCompleted_w();
 
@@ -456,6 +460,7 @@ class Transport : public rtc::MessageHandler,
   uint64 tiebreaker_;
   TransportProtocol protocol_;
   IceMode remote_ice_mode_;
+  int channel_receiving_timeout_;
   rtc::scoped_ptr<TransportDescription> local_description_;
   rtc::scoped_ptr<TransportDescription> remote_description_;
 

@@ -359,10 +359,15 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
   remote_ice_mode_ = mode;
 }
 
-void P2PTransportChannel::set_receiving_timeout(int receiving_timeout_ms) {
+void P2PTransportChannel::SetReceivingTimeout(int receiving_timeout_ms) {
+  if (receiving_timeout_ms < 0) {
+    return;
+  }
   receiving_timeout_ = receiving_timeout_ms;
   check_receiving_delay_ =
       std::max(MIN_CHECK_RECEIVING_DELAY, receiving_timeout_ / 10);
+  LOG(LS_VERBOSE) << "Set ICE receiving timeout to " << receiving_timeout_
+                  << " milliseconds";
 }
 
 // Go into the state of processing candidates, and running in general

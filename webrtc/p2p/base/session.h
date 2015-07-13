@@ -319,6 +319,9 @@ class BaseSession : public sigslot::has_slots<>,
 
   rtc::SSLIdentity* identity() { return identity_; }
 
+  // Set the ice connection receiving timeout.
+  void SetIceConnectionReceivingTimeout(int timeout_ms);
+
  protected:
   // Specifies the identity to use in this session.
   bool SetIdentity(rtc::SSLIdentity* identity);
@@ -453,6 +456,10 @@ class BaseSession : public sigslot::has_slots<>,
   // will enable us to stop any role switch during the call.
   bool role_switch_;
   TransportMap transports_;
+
+  // Timeout value in milliseconds for which no ICE connection receives
+  // any packets.
+  int ice_receiving_timeout_;
 };
 
 }  // namespace cricket

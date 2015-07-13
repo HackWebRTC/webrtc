@@ -87,7 +87,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // Sets the receiving timeout in milliseconds.
   // This also sets the check_receiving_delay proportionally.
-  void set_receiving_timeout(int receiving_timeout_ms);
+  void SetReceivingTimeout(int receiving_timeout_ms) override;
 
   // Note: This is only for testing purpose.
   // |ports_| should not be changed from outside.

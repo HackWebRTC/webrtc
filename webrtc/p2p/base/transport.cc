@@ -121,21 +121,22 @@ Transport::Transport(rtc::Thread* signaling_thread,
                      const std::string& content_name,
                      const std::string& type,
                      PortAllocator* allocator)
-  : signaling_thread_(signaling_thread),
-    worker_thread_(worker_thread),
-    content_name_(content_name),
-    type_(type),
-    allocator_(allocator),
-    destroyed_(false),
-    readable_(TRANSPORT_STATE_NONE),
-    writable_(TRANSPORT_STATE_NONE),
-    receiving_(TRANSPORT_STATE_NONE),
-    was_writable_(false),
-    connect_requested_(false),
-    ice_role_(ICEROLE_UNKNOWN),
-    tiebreaker_(0),
-    protocol_(ICEPROTO_HYBRID),
-    remote_ice_mode_(ICEMODE_FULL) {
+    : signaling_thread_(signaling_thread),
+      worker_thread_(worker_thread),
+      content_name_(content_name),
+      type_(type),
+      allocator_(allocator),
+      destroyed_(false),
+      readable_(TRANSPORT_STATE_NONE),
+      writable_(TRANSPORT_STATE_NONE),
+      receiving_(TRANSPORT_STATE_NONE),
+      was_writable_(false),
+      connect_requested_(false),
+      ice_role_(ICEROLE_UNKNOWN),
+      tiebreaker_(0),
+      protocol_(ICEPROTO_HYBRID),
+      remote_ice_mode_(ICEMODE_FULL),
+      channel_receiving_timeout_(-1) {
 }
 
 Transport::~Transport() {
@@ -172,6 +173,19 @@ bool Transport::GetRemoteCertificate_w(rtc::SSLCertificate** cert) {
 
   ChannelMap::iterator iter = channels_.begin();
   return iter->second->GetRemoteCertificate(cert);
+}
+
+void Transport::SetChannelReceivingTimeout(int timeout_ms) {
+  worker_thread_->Invoke<void>(
+      Bind(&Transport::SetChannelReceivingTimeout_w, this, timeout_ms));
+}
+
+void Transport::SetChannelReceivingTimeout_w(int timeout_ms) {
+  ASSERT(worker_thread()->IsCurrent());
+  channel_receiving_timeout_ = timeout_ms;
+  for (const auto& kv : channels_) {
+    kv.second->SetReceivingTimeout(timeout_ms);
+  }
 }
 
 bool Transport::SetLocalTransportDescription(
@@ -233,6 +247,7 @@ TransportChannelImpl* Transport::CreateChannel_w(int component) {
   // Push down our transport state to the new channel.
   impl->SetIceRole(ice_role_);
   impl->SetIceTiebreaker(tiebreaker_);
+  impl->SetReceivingTimeout(channel_receiving_timeout_);
   // TODO(ronghuawu): Change CreateChannel_w to be able to return error since
   // below Apply**Description_w calls can fail.
   if (local_description_)

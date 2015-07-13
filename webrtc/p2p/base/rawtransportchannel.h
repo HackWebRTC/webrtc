@@ -156,6 +156,8 @@ class RawTransportChannel : public TransportChannelImpl,
     return false;
   }
 
+  void SetReceivingTimeout(int timeout) override {}
+
  private:
   RawTransport* raw_transport_;
   rtc::Thread *worker_thread_;

@@ -1486,6 +1486,13 @@ JOW(void, PeerConnection_setRemoteDescription)(
       observer, JavaSdpToNativeSdp(jni, j_sdp));
 }
 
+JOW(void, PeerConnection_setIceConnectionReceivingTimeout)(JNIEnv* jni,
+                                                           jobject j_pc,
+                                                           jint timeout_ms) {
+  return ExtractNativePC(jni, j_pc)
+      ->SetIceConnectionReceivingTimeout(timeout_ms);
+}
+
 JOW(jboolean, PeerConnection_updateIce)(
     JNIEnv* jni, jobject j_pc, jobject j_ice_servers, jobject j_constraints) {
   PeerConnectionInterface::IceServers ice_servers;

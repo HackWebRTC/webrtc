@@ -204,6 +204,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     channel_->OnCandidate(candidate);
   }
 
+  void SetReceivingTimeout(int receiving_timeout_ms) {
+    channel_->SetReceivingTimeout(receiving_timeout_ms);
+  }
+
   // Needed by DtlsTransport.
   TransportChannelImpl* channel() { return channel_; }
 

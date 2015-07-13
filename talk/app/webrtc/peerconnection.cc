@@ -650,6 +650,10 @@ void PeerConnection::PostSetSessionDescriptionFailure(
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_FAILED, msg);
 }
 
+void PeerConnection::SetIceConnectionReceivingTimeout(int timeout_ms) {
+  session_->SetIceConnectionReceivingTimeout(timeout_ms);
+}
+
 bool PeerConnection::UpdateIce(const IceServers& configuration,
                                const MediaConstraintsInterface* constraints) {
   return false;

@@ -335,6 +335,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // The |observer| callback will be called when done.
   virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                                     SessionDescriptionInterface* desc) = 0;
+  // Sets the ICE connection receiving timeout value in milliseconds.
+  virtual void SetIceConnectionReceivingTimeout(int timeout_ms) = 0;
   // Restarts or updates the ICE Agent process of gathering local candidates
   // and pinging remote candidates.
   virtual bool UpdateIce(const IceServers& configuration,

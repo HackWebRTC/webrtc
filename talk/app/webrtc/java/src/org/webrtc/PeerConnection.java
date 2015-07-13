@@ -180,6 +180,8 @@ public class PeerConnection {
   public native void setRemoteDescription(
       SdpObserver observer, SessionDescription sdp);
 
+  public native void setIceConnectionReceivingTimeout(int timeoutMs);
+
   public native boolean updateIce(
       List<IceServer> iceServers, MediaConstraints constraints);
 

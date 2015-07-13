@@ -1870,7 +1870,7 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   // small.
   EXPECT_LE(1000, ch.receiving_timeout());
   EXPECT_LE(200, ch.check_receiving_delay());
-  ch.set_receiving_timeout(500);
+  ch.SetReceivingTimeout(500);
   EXPECT_EQ(500, ch.receiving_timeout());
   EXPECT_EQ(50, ch.check_receiving_delay());
   ch.Connect();
