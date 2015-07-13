@@ -134,4 +134,10 @@ bool VideoEncoderSoftwareFallbackWrapper::SupportsNativeHandle() const {
   return encoder_->SupportsNativeHandle();
 }
 
+int VideoEncoderSoftwareFallbackWrapper::GetTargetFramerate() {
+  if (fallback_encoder_)
+    return fallback_encoder_->GetTargetFramerate();
+  return encoder_->GetTargetFramerate();
+}
+
 }  // namespace webrtc

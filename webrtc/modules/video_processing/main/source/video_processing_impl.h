@@ -48,6 +48,8 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
                               uint32_t height,
                               uint32_t frame_rate) override;
 
+  void SetTargetFramerate(int frame_rate) override;
+
   // Get decimated values: frame rate/dimension
   uint32_t Decimatedframe_rate() override;
   uint32_t DecimatedWidth() const override;

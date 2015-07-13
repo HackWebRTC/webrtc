@@ -363,6 +363,8 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
   for (size_t i = 0; i < _nextFrameTypes.size(); ++i) {
     _nextFrameTypes[i] = kVideoFrameDelta;  // Default frame type.
   }
+  if (qm_settings_callback_)
+    qm_settings_callback_->SetTargetFramerate(_encoder->GetTargetFramerate());
   return VCM_OK;
 }
 

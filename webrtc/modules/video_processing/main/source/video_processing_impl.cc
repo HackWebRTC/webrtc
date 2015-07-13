@@ -148,6 +148,11 @@ int32_t VideoProcessingModuleImpl::SetTargetResolution(uint32_t width,
   return frame_pre_processor_.SetTargetResolution(width, height, frame_rate);
 }
 
+void VideoProcessingModuleImpl::SetTargetFramerate(int frame_rate) {
+  CriticalSectionScoped cs(&mutex_);
+  frame_pre_processor_.SetTargetFramerate(frame_rate);
+}
+
 uint32_t VideoProcessingModuleImpl::Decimatedframe_rate() {
   CriticalSectionScoped cs(&mutex_);
   return  frame_pre_processor_.Decimatedframe_rate();

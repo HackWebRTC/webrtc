@@ -214,6 +214,10 @@ bool VCMGenericEncoder::SupportsNativeHandle() const {
   return encoder_->SupportsNativeHandle();
 }
 
+int VCMGenericEncoder::GetTargetFramerate() {
+  return encoder_->GetTargetFramerate();
+}
+
  /***************************
   * Callback Implementation
   ***************************/

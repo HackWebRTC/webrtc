@@ -140,6 +140,8 @@ public:
 
     bool SupportsNativeHandle() const;
 
+    int GetTargetFramerate();
+
 private:
     VideoEncoder* const encoder_;
     VideoEncoderRateObserver* const rate_observer_;

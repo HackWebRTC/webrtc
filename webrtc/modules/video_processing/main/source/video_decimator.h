@@ -25,7 +25,7 @@ class VPMVideoDecimator {
 
   void EnableTemporalDecimation(bool enable);
 
-  int32_t SetTargetFramerate(uint32_t frame_rate);
+  void SetTargetFramerate(int frame_rate);
 
   bool DropFrame();
 

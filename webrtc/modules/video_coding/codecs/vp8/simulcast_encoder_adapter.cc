@@ -504,4 +504,8 @@ void SimulcastEncoderAdapter::OnDroppedFrame() {
   streaminfos_[0].encoder->OnDroppedFrame();
 }
 
+int SimulcastEncoderAdapter::GetTargetFramerate() {
+  return streaminfos_[0].encoder->GetTargetFramerate();
+}
+
 }  // namespace webrtc

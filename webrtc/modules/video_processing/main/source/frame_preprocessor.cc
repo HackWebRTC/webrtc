@@ -38,7 +38,6 @@ void  VPMFramePreprocessor::Reset() {
   frame_cnt_ = 0;
 }
 
-
 void  VPMFramePreprocessor::EnableTemporalDecimation(bool enable) {
   vd_->EnableTemporalDecimation(enable);
 }
@@ -62,10 +61,17 @@ int32_t VPMFramePreprocessor::SetTargetResolution(
 
   if (ret_val < 0) return ret_val;
 
-  ret_val = vd_->SetTargetFramerate(frame_rate);
-  if (ret_val < 0) return ret_val;
-
+  vd_->SetTargetFramerate(frame_rate);
   return VPM_OK;
+}
+
+void VPMFramePreprocessor::SetTargetFramerate(int frame_rate) {
+  if (frame_rate == -1) {
+    vd_->EnableTemporalDecimation(false);
+  } else {
+    vd_->EnableTemporalDecimation(true);
+    vd_->SetTargetFramerate(frame_rate);
+  }
 }
 
 void VPMFramePreprocessor::UpdateIncomingframe_rate() {

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/modules/video_processing/main/source/video_decimator.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -36,11 +37,9 @@ void VPMVideoDecimator::EnableTemporalDecimation(bool enable) {
   enable_temporal_decimation_ = enable;
 }
 
-int32_t VPMVideoDecimator::SetTargetFramerate(uint32_t frame_rate) {
-  if (frame_rate == 0) return VPM_PARAMETER_ERROR;
-
+void VPMVideoDecimator::SetTargetFramerate(int frame_rate) {
+  DCHECK(frame_rate);
   target_frame_rate_ = frame_rate;
-  return VPM_OK;
 }
 
 bool VPMVideoDecimator::DropFrame() {

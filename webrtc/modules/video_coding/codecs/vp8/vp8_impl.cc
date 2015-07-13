@@ -580,7 +580,8 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   rps_.Init();
-  quality_scaler_.Init(codec_.qpMax / QualityScaler::kDefaultLowQpDenominator);
+  quality_scaler_.Init(codec_.qpMax / QualityScaler::kDefaultLowQpDenominator,
+                       false);
   quality_scaler_.ReportFramerate(codec_.maxFramerate);
 
   return InitAndSetControlSettings();
@@ -709,6 +710,8 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   const bool use_quality_scaler = encoders_.size() == 1 &&
                                   configurations_[0].rc_dropframe_thresh > 0 &&
                                   codec_.codecSpecific.VP8.automaticResizeOn;
+  if (use_quality_scaler)
+    quality_scaler_.OnEncodeFrame(frame);
   const VideoFrame& input_image =
       use_quality_scaler ? quality_scaler_.GetScaledFrame(frame) : frame;
 

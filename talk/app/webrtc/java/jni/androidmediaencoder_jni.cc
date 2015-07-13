@@ -100,6 +100,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
 
   void OnDroppedFrame() override;
 
+  int GetTargetFramerate() override;
+
  private:
   // CHECK-fail if not running on |codec_thread_|.
   void CheckOnCodecThread();
@@ -199,6 +201,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   scoped_ptr<webrtc::QualityScaler> quality_scaler_;
   // Dynamic resolution change, off by default.
   bool scale_;
+  int updated_framerate_;
 };
 
 MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
@@ -294,11 +297,12 @@ int32_t MediaCodecVideoEncoder::InitEncode(
 
   ALOGD("InitEncode request");
   scale_ = false;
-  if (codecType_ == kVideoCodecVP8) {
-    quality_scaler_->Init(kMaxQP / kLowQpThresholdDenominator);
+  if (scale_ && codecType_ == kVideoCodecVP8) {
+    quality_scaler_->Init(kMaxQP / kLowQpThresholdDenominator, true);
     quality_scaler_->SetMinResolution(kMinWidth, kMinHeight);
     quality_scaler_->ReportFramerate(codec_settings->maxFramerate);
   }
+  updated_framerate_ = codec_settings->maxFramerate;
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::InitEncodeOnCodecThread,
            this,
@@ -337,8 +341,11 @@ int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
 
 int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
                                          uint32_t frame_rate) {
-  if (codecType_ == kVideoCodecVP8)
+  if (scale_ && codecType_ == kVideoCodecVP8) {
     quality_scaler_->ReportFramerate(frame_rate);
+  } else {
+    updated_framerate_ = frame_rate;
+  }
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread,
            this,
@@ -493,9 +500,13 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   }
 
   CHECK(frame_types->size() == 1) << "Unexpected stream count";
-  const VideoFrame& input_frame = (scale_ && codecType_ == kVideoCodecVP8)
-                                      ? quality_scaler_->GetScaledFrame(frame)
-                                      : frame;
+  // Check framerate before spatial resolution change.
+  if (scale_ && codecType_ == kVideoCodecVP8) {
+    quality_scaler_->OnEncodeFrame(frame);
+    updated_framerate_ = quality_scaler_->GetTargetFramerate();
+  }
+  const VideoFrame& input_frame = (scale_ && codecType_ == kVideoCodecVP8) ?
+      quality_scaler_->GetScaledFrame(frame) : frame;
 
   if (input_frame.width() != width_ || input_frame.height() != height_) {
     ALOGD("Frame resolution change from %d x %d to %d x %d",
@@ -505,8 +516,6 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     ResetCodec();
     return WEBRTC_VIDEO_CODEC_OK;
   }
-
-  bool key_frame = frame_types->front() != webrtc::kDeltaFrame;
 
   // Check if we accumulated too many frames in encoder input buffers
   // or the encoder latency exceeds 70 ms and drop frame if so.
@@ -566,6 +575,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   render_times_ms_.push_back(input_frame.render_time_ms());
   frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
 
+  bool key_frame = frame_types->front() != webrtc::kDeltaFrame;
   bool encode_status = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
                                               j_encode_method_,
                                               key_frame,
@@ -712,7 +722,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         last_input_timestamp_ms_ - last_output_timestamp_ms_,
         frame_encoding_time_ms);
 
-    if (payload_size && codecType_ == kVideoCodecVP8)
+    if (payload_size && scale_ && codecType_ == kVideoCodecVP8)
       quality_scaler_->ReportQP(webrtc::vp8::GetQP(payload));
 
     // Calculate and print encoding statistics - every 3 seconds.
@@ -860,8 +870,12 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
 }
 
 void MediaCodecVideoEncoder::OnDroppedFrame() {
-  if (codecType_ == kVideoCodecVP8)
+  if (scale_ && codecType_ == kVideoCodecVP8)
     quality_scaler_->ReportDroppedFrame();
+}
+
+int MediaCodecVideoEncoder::GetTargetFramerate() {
+  return updated_framerate_;
 }
 
 MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {

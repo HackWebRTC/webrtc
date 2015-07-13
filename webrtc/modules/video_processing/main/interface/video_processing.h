@@ -214,6 +214,8 @@ class VideoProcessingModule : public Module {
                                       uint32_t height,
                                       uint32_t frame_rate) = 0;
 
+  virtual void SetTargetFramerate(int frame_rate) {}
+
   /**
   Get decimated(target) frame rate
   */

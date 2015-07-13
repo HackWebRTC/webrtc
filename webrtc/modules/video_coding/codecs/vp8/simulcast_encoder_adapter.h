@@ -57,6 +57,8 @@ class SimulcastEncoderAdapter : public VP8Encoder {
 
   void OnDroppedFrame() override;
 
+  int GetTargetFramerate() override;
+
  private:
   struct StreamInfo {
     StreamInfo()

@@ -41,6 +41,9 @@ class VPMFramePreprocessor {
   int32_t SetTargetResolution(uint32_t width, uint32_t height,
                               uint32_t frame_rate);
 
+  // Set target frame rate.
+  void SetTargetFramerate(int frame_rate);
+
   // Update incoming frame rate/dimension.
   void UpdateIncomingframe_rate();
 
