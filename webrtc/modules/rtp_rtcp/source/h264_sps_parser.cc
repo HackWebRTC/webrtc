@@ -36,7 +36,11 @@ bool H264SpsParser::Parse() {
   // section 7.3.1 of the H.264 standard.
   rtc::ByteBuffer rbsp_buffer;
   for (size_t i = 0; i < byte_length_;) {
-    if (i + 3 < byte_length_ && sps_[i] == 0 && sps_[i + 1] == 0 &&
+    // Be careful about over/underflow here. byte_length_ - 3 can underflow, and
+    // i + 3 can overflow, but byte_length_ - i can't, because i < byte_length_
+    // above, and that expression will produce the number of bytes left in
+    // the stream including the byte at i.
+    if (byte_length_ - i >= 3 && sps_[i] == 0 && sps_[i + 1] == 0 &&
         sps_[i + 2] == 3) {
       // Two rbsp bytes + the emulation byte.
       rbsp_buffer.WriteBytes(sps_bytes + i, 2);
