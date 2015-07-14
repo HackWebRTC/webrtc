@@ -166,9 +166,11 @@ TEST(BitBufferTest, SetOffsetValues) {
 
   // Disable death test on Android because it relies on fork() and doesn't play
   // nicely.
+#if defined(GTEST_HAS_DEATH_TEST)
 #if !defined(WEBRTC_ANDROID)
   // Passing a NULL out parameter is death.
   EXPECT_DEATH(buffer.GetCurrentOffset(&byte_offset, NULL), "");
+#endif
 #endif
 }
 

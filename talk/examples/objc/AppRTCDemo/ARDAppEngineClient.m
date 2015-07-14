@@ -28,6 +28,7 @@
 #import "ARDAppEngineClient.h"
 
 #import "ARDJoinResponse.h"
+#import "ARDLogging.h"
 #import "ARDMessageResponse.h"
 #import "ARDSignalingMessage.h"
 #import "ARDUtilities.h"
@@ -57,7 +58,7 @@ static NSInteger const kARDAppEngineClientErrorBadResponse = -1;
   NSString *urlString =
       [NSString stringWithFormat:kARDRoomServerJoinFormat, roomId];
   NSURL *roomURL = [NSURL URLWithString:urlString];
-  NSLog(@"Joining room:%@ on room server.", roomId);
+  ARDLog(@"Joining room:%@ on room server.", roomId);
   NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:roomURL];
   request.HTTPMethod = @"POST";
   __weak ARDAppEngineClient *weakSelf = self;
@@ -101,7 +102,7 @@ static NSInteger const kARDAppEngineClientErrorBadResponse = -1;
       [NSString stringWithFormat:
           kARDRoomServerMessageFormat, roomId, clientId];
   NSURL *url = [NSURL URLWithString:urlString];
-  NSLog(@"C->RS POST: %@", message);
+  ARDLog(@"C->RS POST: %@", message);
   NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
   request.HTTPMethod = @"POST";
   request.HTTPBody = data;
@@ -147,19 +148,19 @@ static NSInteger const kARDAppEngineClientErrorBadResponse = -1;
   NSError *error = nil;
   // We want a synchronous request so that we know that we've left the room on
   // room server before we do any further work.
-  NSLog(@"C->RS: BYE");
+  ARDLog(@"C->RS: BYE");
   [NSURLConnection sendSynchronousRequest:request
                         returningResponse:&response
                                     error:&error];
   if (error) {
-    NSLog(@"Error leaving room %@ on room server: %@",
+    ARDLog(@"Error leaving room %@ on room server: %@",
           roomId, error.localizedDescription);
     if (completionHandler) {
       completionHandler(error);
     }
     return;
   }
-  NSLog(@"Left room:%@ on room server.", roomId);
+  ARDLog(@"Left room:%@ on room server.", roomId);
   if (completionHandler) {
     completionHandler(nil);
   }

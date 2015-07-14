@@ -30,6 +30,7 @@
 #import "RTCAVFoundationVideoSource.h"
 
 #import "ARDAppClient.h"
+#import "ARDLogging.h"
 #import "ARDVideoCallView.h"
 
 @interface ARDVideoCallViewController () <ARDAppClientDelegate,
@@ -69,13 +70,13 @@
     didChangeState:(ARDAppClientState)state {
   switch (state) {
     case kARDAppClientStateConnected:
-      NSLog(@"Client connected.");
+      ARDLog(@"Client connected.");
       break;
     case kARDAppClientStateConnecting:
-      NSLog(@"Client connecting.");
+      ARDLog(@"Client connecting.");
       break;
     case kARDAppClientStateDisconnected:
-      NSLog(@"Client disconnected.");
+      ARDLog(@"Client disconnected.");
       [self hangup];
       break;
   }
@@ -83,7 +84,7 @@
 
 - (void)appClient:(ARDAppClient *)client
     didChangeConnectionState:(RTCICEConnectionState)state {
-  NSLog(@"ICE state changed: %d", state);
+  ARDLog(@"ICE state changed: %d", state);
   __weak ARDVideoCallViewController *weakSelf = self;
   dispatch_async(dispatch_get_main_queue(), ^{
     ARDVideoCallViewController *strongSelf = weakSelf;

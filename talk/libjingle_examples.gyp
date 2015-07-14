@@ -152,9 +152,36 @@
 
     ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.8")', {
       'targets': [
-        { 'target_name': 'apprtc_signaling',
+        {
+          'target_name': 'apprtc_common',
+          'type': 'static_library',
+          'sources': [
+            'examples/objc/AppRTCDemo/common/ARDLogging.h',
+            'examples/objc/AppRTCDemo/common/ARDLogging.mm',
+            'examples/objc/AppRTCDemo/common/ARDUtilities.h',
+            'examples/objc/AppRTCDemo/common/ARDUtilities.m',
+          ],
+          'include_dirs': [
+            'examples/objc/AppRTCDemo/common',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'examples/objc/AppRTCDemo/common',
+            ],
+          },
+          'conditions': [
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'MACOSX_DEPLOYMENT_TARGET' : '10.8',
+              },
+            }],
+          ],
+        },
+        {
+          'target_name': 'apprtc_signaling',
           'type': 'static_library',
           'dependencies': [
+            'apprtc_common',
             'libjingle.gyp:libjingle_peerconnection_objc',
             'socketrocket',
           ],
@@ -179,8 +206,6 @@
             'examples/objc/AppRTCDemo/ARDSignalingMessage.h',
             'examples/objc/AppRTCDemo/ARDSignalingMessage.m',
             'examples/objc/AppRTCDemo/ARDTURNClient.h',
-            'examples/objc/AppRTCDemo/ARDUtilities.h',
-            'examples/objc/AppRTCDemo/ARDUtilities.m',
             'examples/objc/AppRTCDemo/ARDWebSocketChannel.h',
             'examples/objc/AppRTCDemo/ARDWebSocketChannel.m',
             'examples/objc/AppRTCDemo/RTCICECandidate+JSON.h',
@@ -217,6 +242,7 @@
           'product_name': 'AppRTCDemo',
           'mac_bundle': 1,
           'dependencies': [
+            'apprtc_common',
             'apprtc_signaling',
           ],
           'conditions': [

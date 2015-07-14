@@ -49,6 +49,8 @@ config("nss_config") {
 
 config("ios_config") {
   libs = [
+    "CFNetwork.framework",
+
     #"Foundation.framework",  # Already included in //build/config:default_libs.
     "Security.framework",
     "SystemConfiguration.framework",

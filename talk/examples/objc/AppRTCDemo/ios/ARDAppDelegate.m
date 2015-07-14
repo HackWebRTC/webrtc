@@ -27,6 +27,7 @@
 
 #import "ARDAppDelegate.h"
 
+#import "ARDLogging.h"
 #import "ARDMainViewController.h"
 #import "RTCPeerConnectionFactory.h"
 
@@ -43,6 +44,7 @@
   [_window makeKeyAndVisible];
   ARDMainViewController *viewController = [[ARDMainViewController alloc] init];
   _window.rootViewController = viewController;
+  ARDLogInit();
   return YES;
 }
 

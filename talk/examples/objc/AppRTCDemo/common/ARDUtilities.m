@@ -25,6 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import "ARDLogging.h"
 #import "ARDUtilities.h"
 
 @implementation NSDictionary (ARDUtilites)
@@ -36,7 +37,7 @@
   NSDictionary *dict =
       [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
   if (error) {
-    NSLog(@"Error parsing JSON: %@", error.localizedDescription);
+    ARDLog(@"Error parsing JSON: %@", error.localizedDescription);
   }
   return dict;
 }
@@ -46,7 +47,7 @@
   NSDictionary *dict =
       [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
   if (error) {
-    NSLog(@"Error parsing JSON: %@", error.localizedDescription);
+    ARDLog(@"Error parsing JSON: %@", error.localizedDescription);
   }
   return dict;
 }
@@ -84,7 +85,7 @@
                                     NSData *data,
                                     NSError *error) {
     if (error) {
-      NSLog(@"Error posting data: %@", error.localizedDescription);
+      ARDLog(@"Error posting data: %@", error.localizedDescription);
       if (completionHandler) {
         completionHandler(NO, data);
       }
@@ -95,7 +96,7 @@
       NSString *serverResponse = data.length > 0 ?
           [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] :
           nil;
-      NSLog(@"Received bad response: %@", serverResponse);
+      ARDLog(@"Received bad response: %@", serverResponse);
       if (completionHandler) {
         completionHandler(NO, data);
       }

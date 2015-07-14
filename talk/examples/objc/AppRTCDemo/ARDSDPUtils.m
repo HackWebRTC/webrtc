@@ -27,6 +27,7 @@
 
 #import "ARDSDPUtils.h"
 
+#import "ARDLogging.h"
 #import "RTCSessionDescription.h"
 
 @implementation ARDSDPUtils
@@ -42,7 +43,7 @@
   NSMutableArray *lines =
       [NSMutableArray arrayWithArray:
           [sdpString componentsSeparatedByString:lineSeparator]];
-  int mLineIndex = -1;
+  NSInteger mLineIndex = -1;
   NSString *codecRtpMap = nil;
   // a=rtpmap:<payload type> <encoding name>/<clock rate>
   // [/<encoding parameters>]
@@ -70,11 +71,11 @@
     }
   }
   if (mLineIndex == -1) {
-    NSLog(@"No m=video line, so can't prefer %@", codec);
+    ARDLog(@"No m=video line, so can't prefer %@", codec);
     return description;
   }
   if (!codecRtpMap) {
-    NSLog(@"No rtpmap for %@", codec);
+    ARDLog(@"No rtpmap for %@", codec);
     return description;
   }
   NSArray *origMLineParts =
@@ -98,7 +99,7 @@
     [lines replaceObjectAtIndex:mLineIndex
                      withObject:newMLine];
   } else {
-    NSLog(@"Wrong SDP media description format: %@", lines[mLineIndex]);
+    ARDLog(@"Wrong SDP media description format: %@", lines[mLineIndex]);
   }
   NSString *mangledSdpString = [lines componentsJoinedByString:lineSeparator];
   return [[RTCSessionDescription alloc] initWithType:description.type

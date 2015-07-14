@@ -588,6 +588,7 @@
           'all_dependent_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [
+                '-framework CFNetwork',
                 '-framework Foundation',
                 '-framework Security',
                 '-framework SystemConfiguration',

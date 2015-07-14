@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2014 Google Inc.
+ * Copyright 2015 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,43 +25,44 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCICECandidate+JSON.h"
-
 #import "ARDLogging.h"
 
-static NSString const *kRTCICECandidateTypeKey = @"type";
-static NSString const *kRTCICECandidateTypeValue = @"candidate";
-static NSString const *kRTCICECandidateMidKey = @"id";
-static NSString const *kRTCICECandidateMLineIndexKey = @"label";
-static NSString const *kRTCICECandidateSdpKey = @"candidate";
+#include "webrtc/base/logging.h"
 
-@implementation RTCICECandidate (JSON)
-
-+ (RTCICECandidate *)candidateFromJSONDictionary:(NSDictionary *)dictionary {
-  NSString *mid = dictionary[kRTCICECandidateMidKey];
-  NSString *sdp = dictionary[kRTCICECandidateSdpKey];
-  NSNumber *num = dictionary[kRTCICECandidateMLineIndexKey];
-  NSInteger mLineIndex = [num integerValue];
-  return [[RTCICECandidate alloc] initWithMid:mid index:mLineIndex sdp:sdp];
+void ARDLogInit() {
+#ifndef _DEBUG
+  // In debug builds the default level is LS_INFO and in non-debug builds it is
+  // disabled. Continue to log to console in non-debug builds, but only
+  // warnings and errors.
+  rtc::LogMessage::LogToDebug(rtc::LS_WARNING);
+#endif
 }
 
-- (NSData *)JSONData {
-  NSDictionary *json = @{
-    kRTCICECandidateTypeKey : kRTCICECandidateTypeValue,
-    kRTCICECandidateMLineIndexKey : @(self.sdpMLineIndex),
-    kRTCICECandidateMidKey : self.sdpMid,
-    kRTCICECandidateSdpKey : self.sdp
-  };
-  NSError *error = nil;
-  NSData *data =
-      [NSJSONSerialization dataWithJSONObject:json
-                                      options:NSJSONWritingPrettyPrinted
-                                        error:&error];
-  if (error) {
-    ARDLog(@"Error serializing JSON: %@", error);
-    return nil;
+void ARDLogToWebRTCLogger(ARDLogSeverity severity, NSString *logString) {
+  if (logString.length) {
+    const char* utf8String = logString.UTF8String;
+    switch (severity) {
+      case kARDLogSeverityVerbose:
+        LOG(LS_VERBOSE) << utf8String;
+        break;
+      case kARDLogSeverityInfo:
+        LOG(LS_INFO) << utf8String;
+        break;
+      case kARDLogSeverityWarning:
+        LOG(LS_WARNING) << utf8String;
+        break;
+      case kARDLogSeverityError:
+        LOG(LS_ERROR) << utf8String;
+        break;
+    }
   }
-  return data;
 }
 
-@end
+NSString *ARDFileName(const char *filePath) {
+  NSString *nsFilePath =
+      [[NSString alloc] initWithBytesNoCopy:const_cast<char *>(filePath)
+                                     length:strlen(filePath)
+                                   encoding:NSUTF8StringEncoding
+                               freeWhenDone:NO];
+  return nsFilePath.lastPathComponent;
+}

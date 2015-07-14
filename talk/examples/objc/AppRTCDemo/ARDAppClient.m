@@ -30,6 +30,7 @@
 #if defined(WEBRTC_IOS)
 #import "RTCAVFoundationVideoSource.h"
 #endif
+#import "RTCFileLogger.h"
 #import "RTCICEServer.h"
 #import "RTCMediaConstraints.h"
 #import "RTCMediaStream.h"
@@ -41,6 +42,7 @@
 #import "ARDAppEngineClient.h"
 #import "ARDCEODTURNClient.h"
 #import "ARDJoinResponse.h"
+#import "ARDLogging.h"
 #import "ARDMessageResponse.h"
 #import "ARDSDPUtils.h"
 #import "ARDSignalingMessage.h"
@@ -65,7 +67,9 @@ static NSInteger const kARDAppClientErrorSetSDP = -4;
 static NSInteger const kARDAppClientErrorInvalidClient = -5;
 static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
-@implementation ARDAppClient
+@implementation ARDAppClient {
+  RTCFileLogger *_fileLogger;
+}
 
 @synthesize delegate = _delegate;
 @synthesize state = _state;
@@ -131,6 +135,8 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
   _factory = [[RTCPeerConnectionFactory alloc] init];
   _messageQueue = [NSMutableArray array];
   _iceServers = [NSMutableArray arrayWithObject:[self defaultSTUNServer]];
+  _fileLogger = [[RTCFileLogger alloc] init];
+  [_fileLogger start];
 }
 
 - (void)dealloc {
@@ -156,7 +162,7 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
   [_turnClient requestServersWithCompletionHandler:^(NSArray *turnServers,
                                                      NSError *error) {
     if (error) {
-      NSLog(@"Error retrieving TURN servers: %@", error);
+      ARDLog("Error retrieving TURN servers: %@", error.localizedDescription);
     }
     ARDAppClient *strongSelf = weakSelf;
     [strongSelf.iceServers addObjectsFromArray:turnServers];
@@ -175,12 +181,12 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
     NSError *joinError =
         [[strongSelf class] errorForJoinResultType:response.result];
     if (joinError) {
-      NSLog(@"Failed to join room:%@ on room server.", roomId);
+      ARDLog(@"Failed to join room:%@ on room server.", roomId);
       [strongSelf disconnect];
       [strongSelf.delegate appClient:strongSelf didError:joinError];
       return;
     }
-    NSLog(@"Joined room:%@ on room server.", roomId);
+    ARDLog(@"Joined room:%@ on room server.", roomId);
     strongSelf.roomId = response.roomId;
     strongSelf.clientId = response.clientId;
     strongSelf.isInitiator = response.isInitiator;
@@ -272,13 +278,13 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     signalingStateChanged:(RTCSignalingState)stateChanged {
-  NSLog(@"Signaling state changed: %d", stateChanged);
+  ARDLog(@"Signaling state changed: %d", stateChanged);
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
            addedStream:(RTCMediaStream *)stream {
   dispatch_async(dispatch_get_main_queue(), ^{
-    NSLog(@"Received %lu video tracks and %lu audio tracks",
+    ARDLog(@"Received %lu video tracks and %lu audio tracks",
         (unsigned long)stream.videoTracks.count,
         (unsigned long)stream.audioTracks.count);
     if (stream.videoTracks.count) {
@@ -290,17 +296,17 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
         removedStream:(RTCMediaStream *)stream {
-  NSLog(@"Stream was removed.");
+  ARDLog(@"Stream was removed.");
 }
 
 - (void)peerConnectionOnRenegotiationNeeded:
     (RTCPeerConnection *)peerConnection {
-  NSLog(@"WARNING: Renegotiation needed but unimplemented.");
+  ARDLog(@"WARNING: Renegotiation needed but unimplemented.");
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     iceConnectionChanged:(RTCICEConnectionState)newState {
-  NSLog(@"ICE state changed: %d", newState);
+  ARDLog(@"ICE state changed: %d", newState);
   dispatch_async(dispatch_get_main_queue(), ^{
     [_delegate appClient:self didChangeConnectionState:newState];
   });
@@ -308,7 +314,7 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     iceGatheringChanged:(RTCICEGatheringState)newState {
-  NSLog(@"ICE gathering state changed: %d", newState);
+  ARDLog(@"ICE gathering state changed: %d", newState);
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
@@ -333,7 +339,7 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
                           error:(NSError *)error {
   dispatch_async(dispatch_get_main_queue(), ^{
     if (error) {
-      NSLog(@"Failed to create session description. Error: %@", error);
+      ARDLog(@"Failed to create session description. Error: %@", error);
       [self disconnect];
       NSDictionary *userInfo = @{
         NSLocalizedDescriptionKey: @"Failed to create session description.",
@@ -362,7 +368,7 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
     didSetSessionDescriptionWithError:(NSError *)error {
   dispatch_async(dispatch_get_main_queue(), ^{
     if (error) {
-      NSLog(@"Failed to set session description. Error: %@", error);
+      ARDLog(@"Failed to set session description. Error: %@", error);
       [self disconnect];
       NSDictionary *userInfo = @{
         NSLocalizedDescriptionKey: @"Failed to set session description.",
