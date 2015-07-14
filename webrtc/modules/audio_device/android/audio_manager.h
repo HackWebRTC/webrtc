@@ -16,66 +16,13 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/utility/interface/helpers_android.h"
 #include "webrtc/modules/utility/interface/jvm_android.h"
 
 namespace webrtc {
-
-class AudioParameters {
- public:
-  enum { kBitsPerSample = 16 };
-  AudioParameters()
-      : sample_rate_(0),
-        channels_(0),
-        frames_per_buffer_(0),
-        frames_per_10ms_buffer_(0),
-        bits_per_sample_(kBitsPerSample) {}
-  AudioParameters(int sample_rate, int channels, int frames_per_buffer)
-      : sample_rate_(sample_rate),
-        channels_(channels),
-        frames_per_buffer_(frames_per_buffer),
-        frames_per_10ms_buffer_(sample_rate / 100),
-        bits_per_sample_(kBitsPerSample) {}
-  void reset(int sample_rate, int channels, int frames_per_buffer) {
-    sample_rate_ = sample_rate;
-    channels_ = channels;
-    frames_per_buffer_ = frames_per_buffer;
-    frames_per_10ms_buffer_ = (sample_rate / 100);
-  }
-  int sample_rate() const { return sample_rate_; }
-  int channels() const { return channels_; }
-  int frames_per_buffer() const { return frames_per_buffer_; }
-  int frames_per_10ms_buffer() const { return frames_per_10ms_buffer_; }
-  int bits_per_sample() const { return bits_per_sample_; }
-  bool is_valid() const {
-    return ((sample_rate_ > 0) && (channels_ > 0) && (frames_per_buffer_ > 0));
-  }
-  int GetBytesPerFrame() const { return channels_ * bits_per_sample_ / 8; }
-  int GetBytesPerBuffer() const {
-    return frames_per_buffer_ * GetBytesPerFrame();
-  }
-  int GetBytesPer10msBuffer() const {
-    return frames_per_10ms_buffer_ * GetBytesPerFrame();
-  }
-  float GetBufferSizeInMilliseconds() const {
-    if (sample_rate_ == 0)
-      return 0.0f;
-    return frames_per_buffer_ / (sample_rate_ / 1000.0f);
-  }
-
- private:
-  int sample_rate_;
-  int channels_;
-  // Lowest possible size of native audio buffer. Measured in number of frames.
-  // This size is injected into the OpenSL ES output (since it does not "talk
-  // Java") implementation but is currently not utilized by the Java
-  // implementation since it aquires the same value internally.
-  int frames_per_buffer_;
-  int frames_per_10ms_buffer_;
-  int bits_per_sample_;
-};
 
 // Implements support for functions in the WebRTC audio stack for Android that
 // relies on the AudioManager in android.media. It also populates an

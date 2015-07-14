@@ -130,8 +130,6 @@ int32_t AudioDeviceBuffer::InitRecording()
 
 int32_t AudioDeviceBuffer::SetRecordingSampleRate(uint32_t fsHz)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "AudioDeviceBuffer::SetRecordingSampleRate(fsHz=%u)", fsHz);
-
     CriticalSectionScoped lock(&_critSect);
     _recSampleRate = fsHz;
     return 0;
@@ -143,8 +141,6 @@ int32_t AudioDeviceBuffer::SetRecordingSampleRate(uint32_t fsHz)
 
 int32_t AudioDeviceBuffer::SetPlayoutSampleRate(uint32_t fsHz)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "AudioDeviceBuffer::SetPlayoutSampleRate(fsHz=%u)", fsHz);
-
     CriticalSectionScoped lock(&_critSect);
     _playSampleRate = fsHz;
     return 0;
@@ -174,8 +170,6 @@ int32_t AudioDeviceBuffer::PlayoutSampleRate() const
 
 int32_t AudioDeviceBuffer::SetRecordingChannels(uint8_t channels)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "AudioDeviceBuffer::SetRecordingChannels(channels=%u)", channels);
-
     CriticalSectionScoped lock(&_critSect);
     _recChannels = channels;
     _recBytesPerSample = 2*channels;  // 16 bits per sample in mono, 32 bits in stereo
@@ -188,8 +182,6 @@ int32_t AudioDeviceBuffer::SetRecordingChannels(uint8_t channels)
 
 int32_t AudioDeviceBuffer::SetPlayoutChannels(uint8_t channels)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "AudioDeviceBuffer::SetPlayoutChannels(channels=%u)", channels);
-
     CriticalSectionScoped lock(&_critSect);
     _playChannels = channels;
     // 16 bits per sample in mono, 32 bits in stereo

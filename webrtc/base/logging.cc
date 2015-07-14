@@ -37,6 +37,7 @@ static const int kMaxLogLineSize = 1024 - 60;
 #include <vector>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
@@ -111,10 +112,8 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
   }
 
   if (thread_) {
-#if defined(WEBRTC_WIN)
-    DWORD id = GetCurrentThreadId();
-    print_stream_ << "[" << std::hex << id << std::dec << "] ";
-#endif  // WEBRTC_WIN
+    PlatformThreadId id = CurrentThreadId();
+    print_stream_ << "[" << std::dec << id << "] ";
   }
 
   if (err_ctx != ERRCTX_NONE) {

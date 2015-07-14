@@ -325,7 +325,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     if (audioLayer == kPlatformDefaultAudio)
     {
         // Create iOS Audio Device implementation.
-        ptrAudioDevice = new AudioDeviceIOS(Id());
+      ptrAudioDevice = new AudioDeviceIOS();
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "iPhone Audio APIs will be utilized");
     }
     // END #if defined(WEBRTC_IOS)
@@ -1897,6 +1897,16 @@ bool AudioDeviceModuleImpl::BuiltInAECIsEnabled() const
 bool AudioDeviceModuleImpl::BuiltInAECIsAvailable() const {
   CHECK_INITIALIZED_BOOL();
   return _ptrAudioDevice->BuiltInAECIsAvailable();
+}
+
+int AudioDeviceModuleImpl::GetPlayoutAudioParameters(
+    AudioParameters* params) const {
+  return _ptrAudioDevice->GetPlayoutAudioParameters(params);
+}
+
+int AudioDeviceModuleImpl::GetRecordAudioParameters(
+    AudioParameters* params) const {
+  return _ptrAudioDevice->GetRecordAudioParameters(params);
 }
 
 // ============================================================================

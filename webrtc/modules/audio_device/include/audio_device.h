@@ -202,8 +202,17 @@ class AudioDeviceModule : public RefCountedModule {
   // Don't use.
   virtual bool BuiltInAECIsEnabled() const { return false; }
 
+  // Only supported on iOS.
+  // TODO(henrika): Make pure virtual after updating Chromium.
+  virtual int GetPlayoutAudioParameters(AudioParameters* params) const {
+    return -1;
+  }
+  virtual int GetRecordAudioParameters(AudioParameters* params) const {
+    return -1;
+  }
+
  protected:
-  virtual ~AudioDeviceModule() {};
+  virtual ~AudioDeviceModule() {}
 };
 
 AudioDeviceModule* CreateAudioDeviceModule(

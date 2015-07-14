@@ -65,7 +65,6 @@
             'bwe_simulator',
             'cng',
             'desktop_capture',
-            'isac',
             'isac_fix',
             'media_file',
             'neteq',
@@ -361,11 +360,15 @@
             ['OS=="ios"', {
               'sources': [
                 'video_coding/codecs/h264/h264_video_toolbox_nalu_unittest.cc',
+                'audio_device/ios/audio_device_unittest_ios.cc',
               ],
               'mac_bundle_resources': [
                 '<(DEPTH)/resources/audio_coding/speech_mono_16kHz.pcm',
                 '<(DEPTH)/resources/audio_coding/testfile32kHz.pcm',
                 '<(DEPTH)/resources/audio_coding/teststereo32kHz.pcm',
+                '<(DEPTH)/resources/audio_device/audio_short16.pcm',
+                '<(DEPTH)/resources/audio_device/audio_short44.pcm',
+                '<(DEPTH)/resources/audio_device/audio_short48.pcm',
                 '<(DEPTH)/resources/audio_processing/agc/agc_no_circular_buffer.dat',
                 '<(DEPTH)/resources/audio_processing/agc/agc_pitch_gain.dat',
                 '<(DEPTH)/resources/audio_processing/agc/agc_pitch_lag.dat',
