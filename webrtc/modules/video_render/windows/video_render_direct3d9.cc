@@ -602,9 +602,6 @@ int VideoRenderDirect3D9::UpdateRenderSurface()
         _pd3dDevice->SetStreamSource(0, _pVB, 0, sizeof(CUSTOMVERTEX));
         _pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 
-        D3DXMATRIX matWorld;
-        D3DXMATRIX matWorldTemp;
-
         //draw all the channels
         //get texture from the channels
         LPDIRECT3DTEXTURE9 textureFromChannel = NULL;
