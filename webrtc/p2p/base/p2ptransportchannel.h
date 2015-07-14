@@ -73,6 +73,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   virtual void Connect();
   virtual void OnSignalingReady();
   virtual void OnCandidate(const Candidate& candidate);
+  // Sets the receiving timeout in milliseconds.
+  // This also sets the check_receiving_delay proportionally.
+  virtual void SetReceivingTimeout(int receiving_timeout_ms);
 
   // From TransportChannel:
   virtual int SendPacket(const char *data, size_t len,
@@ -84,10 +87,6 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   const Connection* best_connection() const { return best_connection_; }
   void set_incoming_only(bool value) { incoming_only_ = value; }
-
-  // Sets the receiving timeout in milliseconds.
-  // This also sets the check_receiving_delay proportionally.
-  void SetReceivingTimeout(int receiving_timeout_ms) override;
 
   // Note: This is only for testing purpose.
   // |ports_| should not be changed from outside.
