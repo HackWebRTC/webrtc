@@ -124,6 +124,7 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
       clock_->TimeInMilliseconds(), length - header.headerLength, header, true);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
     remote_bitrate_estimator_->Process();
+    rtp_rtcp_->Process();
   }
   total_sent_ += length;
   padding_sent_ += header.paddingLength;
