@@ -46,6 +46,7 @@ typedef std::list<PacketIdentifierNode*>::iterator PacketNodeIt;
 class LinkedSet {
  public:
   explicit LinkedSet(int capacity) : capacity_(capacity) {}
+  ~LinkedSet();
 
   // If the arriving packet (identified by its sequence number) is already
   // in the LinkedSet, move its Node to the head of the list. Else, create

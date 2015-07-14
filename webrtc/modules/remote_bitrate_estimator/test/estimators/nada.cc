@@ -19,6 +19,7 @@
 #include <vector>
 #include <iostream>
 
+#include "webrtc/base/common.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/nada.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
@@ -27,10 +28,9 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
-const int NadaBweReceiver::kMedian;
-const int NadaBweSender::kMinRefRateKbps;
-const int NadaBweSender::kMaxRefRateKbps;
-const int64_t NadaBweReceiver::kReceivingRateTimeWindowMs;
+const int NadaBweSender::kMinRefRateKbps = 150;
+const int NadaBweSender::kMaxRefRateKbps = 1500;
+const int64_t NadaBweReceiver::kReceivingRateTimeWindowMs = 500;
 
 NadaBweReceiver::NadaBweReceiver(int flow_id)
     : BweReceiver(flow_id),
@@ -64,6 +64,7 @@ void NadaBweReceiver::ReceivePacket(int64_t arrival_time_ms,
     baseline_delay_ms_ = std::min(baseline_delay_ms_, delay_ms);
   }
   delay_signal_ms_ = delay_ms - baseline_delay_ms_;  // Refered as d_n.
+  const int kMedian = ARRAY_SIZE(last_delays_ms_);
   last_delays_ms_[(last_delays_index_++) % kMedian] = delay_signal_ms_;
   int size = std::min(last_delays_index_, kMedian);
   int64_t median_filtered_delay_ms_ = MedianFilter(last_delays_ms_, size);

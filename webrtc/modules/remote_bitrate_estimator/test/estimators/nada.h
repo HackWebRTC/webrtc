@@ -46,7 +46,7 @@ class NadaBweReceiver : public BweReceiver {
                                             int64_t last_smoothed_value,
                                             float alpha);
 
-  static const int64_t kReceivingRateTimeWindowMs = 500;
+  static const int64_t kReceivingRateTimeWindowMs;
 
  private:
   SimulatedClock clock_;
@@ -58,9 +58,7 @@ class NadaBweReceiver : public BweReceiver {
   int last_delays_index_;
   int64_t exp_smoothed_delay_ms_;        // Referred as d_hat_n.
   int64_t est_queuing_delay_signal_ms_;  // Referred as d_tilde_n.
-
-  static const int kMedian = 5;      // Used for k-points Median Filter.
-  int64_t last_delays_ms_[kMedian];  // Used for Median Filter.
+  int64_t last_delays_ms_[5];            // Used for Median Filter.
 };
 
 class NadaBweSender : public BweSender {
@@ -89,8 +87,8 @@ class NadaBweSender : public BweSender {
   }
   int64_t NowMs() const { return clock_->TimeInMilliseconds(); }
 
-  static const int kMinRefRateKbps = 150;   // Referred as R_min.
-  static const int kMaxRefRateKbps = 1500;  // Referred as R_max.
+  static const int kMinRefRateKbps;  // Referred as R_min.
+  static const int kMaxRefRateKbps;  // Referred as R_max.
 
  private:
   Clock* const clock_;

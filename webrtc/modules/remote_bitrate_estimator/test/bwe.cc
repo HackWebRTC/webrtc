@@ -157,6 +157,11 @@ float BweReceiver::RecentPacketLossRatio() {
   return static_cast<float>(gap - number_packets_received) / gap;
 }
 
+LinkedSet::~LinkedSet() {
+  while (!empty())
+    RemoveTail();
+}
+
 void LinkedSet::Insert(uint16_t sequence_number,
                        int64_t send_time_ms,
                        int64_t arrival_time_ms,
@@ -181,6 +186,7 @@ void LinkedSet::Insert(uint16_t sequence_number,
 }
 void LinkedSet::RemoveTail() {
   map_.erase(list_.back()->sequence_number);
+  delete list_.back();
   list_.pop_back();
 }
 void LinkedSet::UpdateHead(PacketIdentifierNode* new_head) {
