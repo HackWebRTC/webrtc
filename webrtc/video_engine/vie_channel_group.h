@@ -46,6 +46,7 @@ class ChannelGroup : public BitrateObserver {
                          int engine_id,
                          Transport* transport,
                          int number_of_cores,
+                         size_t max_rtp_streams,
                          bool disable_default_encoder);
   bool CreateReceiveChannel(int channel_id,
                             int engine_id,
@@ -89,6 +90,7 @@ class ChannelGroup : public BitrateObserver {
                      Transport* transport,
                      int number_of_cores,
                      ViEEncoder* vie_encoder,
+                     size_t max_rtp_streams,
                      bool sender,
                      bool disable_default_encoder);
   ViEChannel* PopChannel(int channel_id);

@@ -193,7 +193,9 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
                                      int engine_id,
                                      Transport* transport,
                                      int number_of_cores,
+                                     size_t max_rtp_streams,
                                      bool disable_default_encoder) {
+  DCHECK_GT(max_rtp_streams, 0u);
   rtc::scoped_ptr<ViEEncoder> vie_encoder(
       new ViEEncoder(channel_id, number_of_cores, *config_.get(),
                      *process_thread_, pacer_.get(), bitrate_allocator_.get(),
@@ -203,7 +205,8 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   }
   ViEEncoder* encoder = vie_encoder.get();
   if (!CreateChannel(channel_id, engine_id, transport, number_of_cores,
-                     vie_encoder.release(), true, disable_default_encoder)) {
+                     vie_encoder.release(), max_rtp_streams, true,
+                     disable_default_encoder)) {
     return false;
   }
   ViEChannel* channel = channel_map_[channel_id];
@@ -230,7 +233,7 @@ bool ChannelGroup::CreateReceiveChannel(int channel_id,
                                         bool disable_default_encoder) {
   ViEEncoder* encoder = GetEncoder(base_channel_id);
   return CreateChannel(channel_id, engine_id, transport, number_of_cores,
-                       encoder, false, disable_default_encoder);
+                       encoder, 1, false, disable_default_encoder);
 }
 
 bool ChannelGroup::CreateChannel(int channel_id,
@@ -238,16 +241,18 @@ bool ChannelGroup::CreateChannel(int channel_id,
                                  Transport* transport,
                                  int number_of_cores,
                                  ViEEncoder* vie_encoder,
+                                 size_t max_rtp_streams,
                                  bool sender,
                                  bool disable_default_encoder) {
   DCHECK(vie_encoder);
 
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
       channel_id, engine_id, number_of_cores, *config_.get(), transport,
-      *process_thread_, encoder_state_feedback_->GetRtcpIntraFrameObserver(),
+      process_thread_, encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(),
       remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
-      pacer_.get(), packet_router_.get(), sender, disable_default_encoder));
+      pacer_.get(), packet_router_.get(), max_rtp_streams, sender,
+      disable_default_encoder));
   if (channel->Init() != 0) {
     return false;
   }

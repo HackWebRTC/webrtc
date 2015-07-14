@@ -355,10 +355,8 @@ int RTPSender::SendPayloadFrequency() const {
 int32_t RTPSender::SetMaxPayloadLength(size_t max_payload_length,
                                        uint16_t packet_over_head) {
   // Sanity check.
-  if (max_payload_length < 100 || max_payload_length > IP_PACKET_SIZE) {
-    LOG(LS_ERROR) << "Invalid max payload length: " << max_payload_length;
-    return -1;
-  }
+  DCHECK(max_payload_length >= 100 && max_payload_length <= IP_PACKET_SIZE)
+      << "Invalid max payload length: " << max_payload_length;
   CriticalSectionScoped cs(send_critsect_.get());
   max_payload_length_ = max_payload_length;
   packet_over_head_ = packet_over_head;
@@ -504,7 +502,7 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
     return -1;
   }
 
-  uint32_t ret_val;
+  int32_t ret_val;
   if (audio_configured_) {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", capture_timestamp,
                             "Send", "type", FrameTypeToString(frame_type));

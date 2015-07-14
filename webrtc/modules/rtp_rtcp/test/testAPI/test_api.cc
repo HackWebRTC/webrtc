@@ -125,8 +125,6 @@ TEST_F(RtpRtcpAPITest, Basic) {
 }
 
 TEST_F(RtpRtcpAPITest, MTU) {
-  EXPECT_EQ(-1, module_->SetMaxTransferUnit(10));
-  EXPECT_EQ(-1, module_->SetMaxTransferUnit(IP_PACKET_SIZE + 1));
   EXPECT_EQ(0, module_->SetMaxTransferUnit(1234));
   EXPECT_EQ(1234 - 20 - 8, module_->MaxPayloadLength());
 

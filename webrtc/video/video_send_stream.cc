@@ -119,12 +119,12 @@ VideoSendStream::VideoSendStream(
       channel_id_(channel_id),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
+  DCHECK(!config_.rtp.ssrcs.empty());
   CHECK(channel_group->CreateSendChannel(channel_id_, 0, &transport_adapter_,
-                                         num_cpu_cores, true));
+                                         num_cpu_cores,
+                                         config_.rtp.ssrcs.size(), true));
   vie_channel_ = channel_group_->GetChannel(channel_id_);
   vie_encoder_ = channel_group_->GetEncoder(channel_id_);
-
-  DCHECK(!config_.rtp.ssrcs.empty());
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;

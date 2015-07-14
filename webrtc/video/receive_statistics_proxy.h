@@ -62,7 +62,6 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
                      int jitter_buffer_ms,
                      int min_playout_delay_ms,
                      int render_delay_ms) override;
-  void RequestNewKeyFrame(const int video_channel) override {}
 
   // Overrides RtcpStatisticsCallback.
   void StatisticsUpdated(const webrtc::RtcpStatistics& statistics,

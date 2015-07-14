@@ -472,10 +472,7 @@ int32_t ModuleRtpRtcpImpl::SetTransportOverhead(
 }
 
 int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(const uint16_t mtu) {
-  if (mtu > IP_PACKET_SIZE) {
-    LOG(LS_ERROR) << "Invalid mtu: " << mtu;
-    return -1;
-  }
+  DCHECK_LE(mtu, IP_PACKET_SIZE) << "Invalid mtu: " << mtu;
   return rtp_sender_.SetMaxPayloadLength(mtu - packet_overhead_,
                                          packet_overhead_);
 }
