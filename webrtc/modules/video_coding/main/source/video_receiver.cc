@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
@@ -187,15 +188,9 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
   // By default, do not decode with errors.
   _receiver.SetDecodeErrorMode(kNoErrors);
   switch (videoProtection) {
-    case kProtectionNack:
-    case kProtectionNackReceiver: {
-      CriticalSectionScoped cs(_receiveCritSect);
-      if (enable) {
-        // Enable NACK and always wait for retransmits.
-        _receiver.SetNackMode(kNack, -1, -1);
-      } else {
-        _receiver.SetNackMode(kNoNack, -1, -1);
-      }
+    case kProtectionNack: {
+      DCHECK(enable);
+      _receiver.SetNackMode(kNack, -1, -1);
       break;
     }
 
@@ -226,25 +221,17 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
 
     case kProtectionNackFEC: {
       CriticalSectionScoped cs(_receiveCritSect);
-      if (enable) {
-        // Enable hybrid NACK/FEC. Always wait for retransmissions
-        // and don't add extra delay when RTT is above
-        // kLowRttNackMs.
-        _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
-        _receiver.SetDecodeErrorMode(kNoErrors);
-        _receiver.SetDecodeErrorMode(kNoErrors);
-      } else {
-        _receiver.SetNackMode(kNoNack, -1, -1);
-      }
+      DCHECK(enable);
+      _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
+      _receiver.SetDecodeErrorMode(kNoErrors);
       break;
     }
-    case kProtectionNackSender:
     case kProtectionFEC:
-      // Ignore encoder modes.
-      return VCM_OK;
     case kProtectionNone:
-      // TODO(pbos): Implement like sender and remove enable parameter. Ignored
-      // for now.
+      // No receiver-side protection.
+      DCHECK(enable);
+      _receiver.SetNackMode(kNoNack, -1, -1);
+      _receiver.SetDecodeErrorMode(kWithErrors);
       break;
   }
   return VCM_OK;

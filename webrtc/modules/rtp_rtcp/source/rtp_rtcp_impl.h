@@ -280,13 +280,13 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   void SetTargetSendBitrate(uint32_t bitrate_bps) override;
 
-  int32_t SetGenericFECStatus(bool enable,
-                              uint8_t payload_type_red,
-                              uint8_t payload_type_fec) override;
+  void SetGenericFECStatus(bool enable,
+                           uint8_t payload_type_red,
+                           uint8_t payload_type_fec) override;
 
-  int32_t GenericFECStatus(bool& enable,
-                           uint8_t& payload_type_red,
-                           uint8_t& payload_type_fec) override;
+  void GenericFECStatus(bool& enable,
+                        uint8_t& payload_type_red,
+                        uint8_t& payload_type_fec) override;
 
   int32_t SetFecParameters(const FecProtectionParams* delta_params,
                            const FecProtectionParams* key_params) override;

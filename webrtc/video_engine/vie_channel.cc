@@ -496,54 +496,54 @@ int ViEChannel::ReceiveDelay() const {
   return vcm_->Delay();
 }
 
-int32_t ViEChannel::SetSignalPacketLossStatus(bool enable,
-                                              bool only_key_frames) {
-  if (enable) {
-    if (only_key_frames) {
-      vcm_->SetVideoProtection(kProtectionKeyOnLoss, false);
-      if (vcm_->SetVideoProtection(kProtectionKeyOnKeyLoss, true) != VCM_OK) {
-        return -1;
-      }
-    } else {
-      vcm_->SetVideoProtection(kProtectionKeyOnKeyLoss, false);
-      if (vcm_->SetVideoProtection(kProtectionKeyOnLoss, true) != VCM_OK) {
-        return -1;
-      }
-    }
-  } else {
-    vcm_->SetVideoProtection(kProtectionKeyOnLoss, false);
-    vcm_->SetVideoProtection(kProtectionKeyOnKeyLoss, false);
-  }
-  return 0;
-}
-
 void ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     rtp_rtcp->SetRTCPStatus(rtcp_mode);
 }
 
-int32_t ViEChannel::SetNACKStatus(const bool enable) {
-  // Update the decoding VCM.
-  if (vcm_->SetVideoProtection(kProtectionNack, enable) != VCM_OK) {
-    return -1;
+void ViEChannel::SetProtectionMode(bool enable_nack,
+                                   bool enable_fec,
+                                   int payload_type_red,
+                                   int payload_type_fec) {
+  // Validate payload types.
+  if (enable_fec) {
+    DCHECK_GE(payload_type_red, 0);
+    DCHECK_GE(payload_type_fec, 0);
+    DCHECK_LE(payload_type_red, 127);
+    DCHECK_LE(payload_type_fec, 127);
+  } else {
+    DCHECK_EQ(payload_type_red, -1);
+    DCHECK_EQ(payload_type_fec, -1);
+    // Set to valid uint8_ts to be castable later without signed overflows.
+    payload_type_red = 0;
+    payload_type_fec = 0;
   }
-  if (enable) {
-    // Disable possible FEC.
-    SetFECStatus(false, 0, 0);
+
+  VCMVideoProtection protection_method;
+  if (enable_nack) {
+    protection_method = enable_fec ? kProtectionNackFEC : kProtectionNack;
+  } else {
+    protection_method = kProtectionNone;
   }
-  // Update the decoding VCM.
-  if (vcm_->SetVideoProtection(kProtectionNack, enable) != VCM_OK) {
-    return -1;
+
+  vcm_->SetVideoProtection(protection_method, true);
+
+  // Set NACK.
+  ProcessNACKRequest(enable_nack);
+
+  // Set FEC.
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    rtp_rtcp->SetGenericFECStatus(enable_fec,
+                                  static_cast<uint8_t>(payload_type_red),
+                                  static_cast<uint8_t>(payload_type_fec));
   }
-  return ProcessNACKRequest(enable);
 }
 
-int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
+void ViEChannel::ProcessNACKRequest(const bool enable) {
   if (enable) {
     // Turn on NACK.
-    if (rtp_rtcp_modules_[0]->RTCP() == kRtcpOff) {
-      return -1;
-    }
+    if (rtp_rtcp_modules_[0]->RTCP() == kRtcpOff)
+      return;
     vie_receiver_.SetNackStatus(true, max_nack_reordering_threshold_);
 
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
@@ -563,18 +563,6 @@ int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
     // will freeze, and will only recover with a complete key frame.
     vcm_->SetDecodeErrorMode(kWithErrors);
   }
-  return 0;
-}
-
-int32_t ViEChannel::SetFECStatus(const bool enable,
-                                       const unsigned char payload_typeRED,
-                                       const unsigned char payload_typeFEC) {
-  // Disable possible NACK.
-  if (enable) {
-    SetNACKStatus(false);
-  }
-
-  return ProcessFECRequest(enable, payload_typeRED, payload_typeFEC);
 }
 
 bool ViEChannel::IsSendingFecEnabled() {
@@ -588,31 +576,6 @@ bool ViEChannel::IsSendingFecEnabled() {
       return true;
   }
   return false;
-}
-
-int32_t ViEChannel::ProcessFECRequest(
-    const bool enable,
-    const unsigned char payload_typeRED,
-    const unsigned char payload_typeFEC) {
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->SetGenericFECStatus(enable, payload_typeRED, payload_typeFEC);
-  return 0;
-}
-
-int32_t ViEChannel::SetHybridNACKFECStatus(
-    const bool enable,
-    const unsigned char payload_typeRED,
-    const unsigned char payload_typeFEC) {
-  if (vcm_->SetVideoProtection(kProtectionNackFEC, enable) != VCM_OK) {
-    return -1;
-  }
-
-  int32_t ret_val = 0;
-  ret_val = ProcessNACKRequest(enable);
-  if (ret_val < 0) {
-    return ret_val;
-  }
-  return ProcessFECRequest(enable, payload_typeRED, payload_typeFEC);
 }
 
 int ViEChannel::SetSenderBufferingMode(int target_delay_ms) {

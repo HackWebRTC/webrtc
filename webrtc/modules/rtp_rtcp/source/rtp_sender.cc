@@ -1736,24 +1736,18 @@ int32_t RTPSender::SendRTPIntraRequest() {
   return video_->SendRTPIntraRequest();
 }
 
-int32_t RTPSender::SetGenericFECStatus(bool enable,
-                                       uint8_t payload_type_red,
-                                       uint8_t payload_type_fec) {
-  if (audio_configured_) {
-    return -1;
-  }
+void RTPSender::SetGenericFECStatus(bool enable,
+                                    uint8_t payload_type_red,
+                                    uint8_t payload_type_fec) {
+  DCHECK(!audio_configured_);
   video_->SetGenericFECStatus(enable, payload_type_red, payload_type_fec);
-  return 0;
 }
 
-int32_t RTPSender::GenericFECStatus(bool* enable,
+void RTPSender::GenericFECStatus(bool* enable,
                                     uint8_t* payload_type_red,
                                     uint8_t* payload_type_fec) const {
-  if (audio_configured_) {
-    return -1;
-  }
+  DCHECK(!audio_configured_);
   video_->GenericFECStatus(*enable, *payload_type_red, *payload_type_fec);
-  return 0;
 }
 
 int32_t RTPSender::SetFecParameters(

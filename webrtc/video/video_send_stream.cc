@@ -147,28 +147,14 @@ VideoSendStream::VideoSendStream(
   channel_group_->SetChannelRembStatus(true, false, vie_channel_);
 
   // Enable NACK, FEC or both.
-  bool enable_protection_nack = false;
-  bool enable_protection_fec = false;
-  if (config_.rtp.fec.red_payload_type != -1) {
-    enable_protection_fec = true;
-    DCHECK(config_.rtp.fec.ulpfec_payload_type != -1);
-    if (config_.rtp.nack.rtp_history_ms > 0) {
-      enable_protection_nack = true;
-      vie_channel_->SetHybridNACKFECStatus(
-          true, static_cast<unsigned char>(config_.rtp.fec.red_payload_type),
-          static_cast<unsigned char>(config_.rtp.fec.ulpfec_payload_type));
-    } else {
-      vie_channel_->SetFECStatus(
-          true, static_cast<unsigned char>(config_.rtp.fec.red_payload_type),
-          static_cast<unsigned char>(config_.rtp.fec.ulpfec_payload_type));
-    }
-    // TODO(changbin): Should set RTX for RED mapping in RTP sender in future.
-  } else {
-    enable_protection_nack = config_.rtp.nack.rtp_history_ms > 0;
-    vie_channel_->SetNACKStatus(config_.rtp.nack.rtp_history_ms > 0);
-  }
+  const bool enable_protection_nack = config_.rtp.nack.rtp_history_ms > 0;
+  const bool enable_protection_fec = config_.rtp.fec.red_payload_type != -1;
+  // TODO(changbin): Should set RTX for RED mapping in RTP sender in future.
+  vie_channel_->SetProtectionMode(enable_protection_nack, enable_protection_fec,
+                                  config_.rtp.fec.red_payload_type,
+                                  config_.rtp.fec.ulpfec_payload_type);
   vie_encoder_->UpdateProtectionMethod(enable_protection_nack,
-                                      enable_protection_fec);
+                                       enable_protection_fec);
 
   ConfigureSsrcs();
 

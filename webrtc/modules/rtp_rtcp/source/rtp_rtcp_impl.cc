@@ -834,20 +834,17 @@ int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
       GetFeedbackState(), kRtcpSli, 0, 0, false, picture_id);
 }
 
-int32_t ModuleRtpRtcpImpl::SetGenericFECStatus(
+void ModuleRtpRtcpImpl::SetGenericFECStatus(
     const bool enable,
     const uint8_t payload_type_red,
     const uint8_t payload_type_fec) {
-  return rtp_sender_.SetGenericFECStatus(enable,
-                                         payload_type_red,
-                                         payload_type_fec);
+  rtp_sender_.SetGenericFECStatus(enable, payload_type_red, payload_type_fec);
 }
 
-int32_t ModuleRtpRtcpImpl::GenericFECStatus(
-    bool& enable,
-    uint8_t& payload_type_red,
-    uint8_t& payload_type_fec) {
-  return rtp_sender_.GenericFECStatus(&enable, &payload_type_red,
+void ModuleRtpRtcpImpl::GenericFECStatus(bool& enable,
+                                         uint8_t& payload_type_red,
+                                         uint8_t& payload_type_fec) {
+  rtp_sender_.GenericFECStatus(&enable, &payload_type_red,
                                       &payload_type_fec);
 }
 

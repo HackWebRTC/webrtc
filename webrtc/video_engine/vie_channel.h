@@ -136,19 +136,11 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Returns the estimated delay in milliseconds.
   int ReceiveDelay() const;
 
-  // If enabled, a key frame request will be sent as soon as there are lost
-  // packets. If |only_key_frames| are set, requests are only sent for loss in
-  // key frames.
-  int32_t SetSignalPacketLossStatus(bool enable, bool only_key_frames);
-
   void SetRTCPMode(const RTCPMethod rtcp_mode);
-  int32_t SetNACKStatus(const bool enable);
-  int32_t SetFECStatus(const bool enable,
-                       const unsigned char payload_typeRED,
-                       const unsigned char payload_typeFEC);
-  int32_t SetHybridNACKFECStatus(const bool enable,
-                                 const unsigned char payload_typeRED,
-                                 const unsigned char payload_typeFEC);
+  void SetProtectionMode(bool enable_nack,
+                         bool enable_fec,
+                         int payload_type_red,
+                         int payload_type_fec);
   bool IsSendingFecEnabled();
   int SetSenderBufferingMode(int target_delay_ms);
   int SetReceiverBufferingMode(int target_delay_ms);
@@ -354,10 +346,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   void StartDecodeThread();
   void StopDecodeThread();
 
-  int32_t ProcessNACKRequest(const bool enable);
-  int32_t ProcessFECRequest(const bool enable,
-                            const unsigned char payload_typeRED,
-                            const unsigned char payload_typeFEC);
+  void ProcessNACKRequest(const bool enable);
   // Compute NACK list parameters for the buffering mode.
   int GetRequiredNackListSize(int target_delay_ms);
   void SetRtxSendStatus(bool enable);

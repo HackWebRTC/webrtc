@@ -519,7 +519,6 @@ VCMFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     return true;
 }
 VCMLossProtectionLogic::VCMLossProtectionLogic(int64_t nowMs):
-_selectedMethod(NULL),
 _currentParameters(),
 _rtt(0),
 _lossPr(0.0f),
@@ -548,25 +547,21 @@ VCMLossProtectionLogic::~VCMLossProtectionLogic()
 
 void VCMLossProtectionLogic::SetMethod(
     enum VCMProtectionMethodEnum newMethodType) {
-  if (_selectedMethod != nullptr) {
-    if (_selectedMethod->Type() == newMethodType)
-      return;
-    // Remove old method.
-    delete _selectedMethod;
-  }
+  if (_selectedMethod && _selectedMethod->Type() == newMethodType)
+    return;
 
   switch(newMethodType) {
     case kNack:
-      _selectedMethod = new VCMNackMethod();
+      _selectedMethod.reset(new VCMNackMethod());
       break;
     case kFec:
-      _selectedMethod = new VCMFecMethod();
+      _selectedMethod.reset(new VCMFecMethod());
       break;
     case kNackFec:
-      _selectedMethod = new VCMNackFecMethod(kLowRttNackMs, -1);
+      _selectedMethod.reset(new VCMNackFecMethod(kLowRttNackMs, -1));
       break;
     case kNone:
-      _selectedMethod = nullptr;
+      _selectedMethod.reset();
       break;
   }
   UpdateMethod();
@@ -726,10 +721,8 @@ void VCMLossProtectionLogic::UpdateNumLayers(int numLayers) {
 bool
 VCMLossProtectionLogic::UpdateMethod()
 {
-    if (_selectedMethod == NULL)
-    {
-        return false;
-    }
+    if (!_selectedMethod)
+      return false;
     _currentParameters.rtt = _rtt;
     _currentParameters.lossPr = _lossPr;
     _currentParameters.bitRate = _bitRate;
@@ -748,11 +741,11 @@ VCMLossProtectionLogic::UpdateMethod()
 VCMProtectionMethod*
 VCMLossProtectionLogic::SelectedMethod() const
 {
-    return _selectedMethod;
+    return _selectedMethod.get();
 }
 
 VCMProtectionMethodEnum VCMLossProtectionLogic::SelectedType() const {
-  return _selectedMethod == nullptr ? kNone : _selectedMethod->Type();
+  return _selectedMethod ? _selectedMethod->Type() : kNone;
 }
 
 void
@@ -773,11 +766,8 @@ VCMLossProtectionLogic::Reset(int64_t nowMs)
     Release();
 }
 
-void
-VCMLossProtectionLogic::Release()
-{
-    delete _selectedMethod;
-    _selectedMethod = NULL;
+void VCMLossProtectionLogic::Release() {
+  _selectedMethod.reset();
 }
 
 }  // namespace media_optimization

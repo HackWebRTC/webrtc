@@ -144,7 +144,8 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   vie_channel_ = channel_group_->GetChannel(channel_id_);
 
   // TODO(pbos): This is not fine grained enough...
-  vie_channel_->SetNACKStatus(config_.rtp.nack.rtp_history_ms > 0);
+  vie_channel_->SetProtectionMode(config_.rtp.nack.rtp_history_ms > 0, false,
+                                  -1, -1);
   vie_channel_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
   SetRtcpMode(config_.rtp.rtcp_mode);
 

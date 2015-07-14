@@ -62,7 +62,7 @@ class MediaOptimization {
                           VCMProtectionCallback* protection_callback,
                           VCMQMSettingsCallback* qmsettings_callback);
 
-  void EnableProtectionMethod(bool enable, VCMProtectionMethodEnum method);
+  void SetProtectionMethod(VCMProtectionMethodEnum method);
   void EnableQM(bool enable);
   void EnableFrameDropper(bool enable);
 

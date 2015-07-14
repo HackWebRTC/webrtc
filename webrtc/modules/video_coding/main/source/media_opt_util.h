@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 #include "webrtc/base/exp_filter.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/modules/video_coding/main/source/qm_select.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -335,7 +336,7 @@ private:
     // Sets the available loss protection methods.
     void UpdateMaxLossHistory(uint8_t lossPr255, int64_t now);
     uint8_t MaxFilteredLossPr(int64_t nowMs) const;
-    VCMProtectionMethod* _selectedMethod;
+    rtc::scoped_ptr<VCMProtectionMethod> _selectedMethod;
     VCMProtectionParameters _currentParameters;
     int64_t _rtt;
     float _lossPr;

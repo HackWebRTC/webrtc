@@ -98,7 +98,7 @@ class VideoSender {
   int32_t RegisterTransportCallback(VCMPacketizationCallback* transport);
   int32_t RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
   int32_t RegisterProtectionCallback(VCMProtectionCallback* protection);
-  void SetVideoProtection(bool enable, VCMVideoProtection videoProtection);
+  void SetVideoProtection(VCMVideoProtection videoProtection);
 
   int32_t AddVideoFrame(const VideoFrame& videoFrame,
                         const VideoContentMetrics* _contentMetrics,

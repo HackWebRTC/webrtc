@@ -608,19 +608,15 @@ class RtpRtcp : public Module {
 
     /*
     *   Turn on/off generic FEC
-    *
-    *   return -1 on failure else 0
     */
-    virtual int32_t SetGenericFECStatus(bool enable,
-                                        uint8_t payloadTypeRED,
-                                        uint8_t payloadTypeFEC) = 0;
+    virtual void SetGenericFECStatus(bool enable,
+                                     uint8_t payload_type_red,
+                                     uint8_t payload_type_fec) = 0;
 
     /*
     *   Get generic FEC setting
-    *
-    *   return -1 on failure else 0
     */
-    virtual int32_t GenericFECStatus(bool& enable,
+    virtual void GenericFECStatus(bool& enable,
                                      uint8_t& payloadTypeRED,
                                      uint8_t& payloadTypeFEC) = 0;
 

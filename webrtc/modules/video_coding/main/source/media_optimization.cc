@@ -317,13 +317,8 @@ uint32_t MediaOptimization::SetTargetRates(
   return target_bit_rate_;
 }
 
-void MediaOptimization::EnableProtectionMethod(bool enable,
-                                               VCMProtectionMethodEnum method) {
+void MediaOptimization::SetProtectionMethod(VCMProtectionMethodEnum method) {
   CriticalSectionScoped lock(crit_sect_.get());
-  if (!enable && loss_prot_logic_->SelectedType() != method)
-    return;
-  if (!enable)
-    method = kNone;
   loss_prot_logic_->SetMethod(method);
 }
 

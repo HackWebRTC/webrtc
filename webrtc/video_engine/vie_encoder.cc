@@ -612,13 +612,14 @@ int32_t ViEEncoder::UpdateProtectionMethod(bool nack, bool fec) {
   nack_enabled_ = nack;
 
   // Set Video Protection for VCM.
-  if (fec_enabled_ && nack_enabled_) {
-    vcm_->SetVideoProtection(webrtc::kProtectionNackFEC, true);
+  VCMVideoProtection protection_mode;
+  if (fec_enabled_) {
+    protection_mode =
+        nack_enabled_ ? webrtc::kProtectionNackFEC : kProtectionFEC;
   } else {
-    vcm_->SetVideoProtection(webrtc::kProtectionFEC, fec_enabled_);
-    vcm_->SetVideoProtection(webrtc::kProtectionNackSender, nack_enabled_);
-    vcm_->SetVideoProtection(webrtc::kProtectionNackFEC, false);
+    protection_mode = nack_enabled_ ? kProtectionNack : kProtectionNone;
   }
+  vcm_->SetVideoProtection(protection_mode, true);
 
   if (fec_enabled_ || nack_enabled_) {
     // The send codec must be registered to set correct MTU.
