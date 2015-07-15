@@ -145,10 +145,10 @@ class VideoReceiveStream {
     // Only valid if 'renderer' is set.
     int render_delay_ms = 10;
 
-    // Audio channel corresponding to this video stream, used for audio/video
-    // synchronization. 'audio_channel_id' is ignored if no VoiceEngine is set
-    // when creating the VideoEngine instance. '-1' disables a/v sync.
-    int audio_channel_id = -1;
+    // Identifier for an A/V synchronization group. Empty string to disable.
+    // TODO(pbos): Synchronize streams in a sync group, not just video streams
+    // to one of the audio streams.
+    std::string sync_group;
 
     // Called for each incoming video frame, i.e. in encoded state. E.g. used
     // when

@@ -1155,15 +1155,8 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   webrtc::VideoReceiveStream::Config config;
   ConfigureReceiverRtp(&config, sp);
 
-  // Set up A/V sync if there is a VoiceChannel.
-  // TODO(pbos): The A/V is synched by the receiving channel. So we need to know
-  // the SSRC of the remote audio channel in order to sync the correct webrtc
-  // VoiceEngine channel. For now sync the first channel in non-conference to
-  // match existing behavior in WebRtcVideoEngine.
-  if (voice_channel_id_ != -1 && receive_streams_.empty() &&
-      !options_.conference_mode.GetWithDefaultIfUnset(false)) {
-    config.audio_channel_id = voice_channel_id_;
-  }
+  // Set up A/V sync group based on sync label.
+  config.sync_group = sp.sync_label;
 
   config.rtp.remb = false;
   VideoCodecSettings send_codec;

@@ -67,6 +67,13 @@ int ViESyncModule::ConfigureSync(int voe_channel_id,
                                  RtpRtcp* video_rtcp_module,
                                  RtpReceiver* video_receiver) {
   CriticalSectionScoped cs(data_cs_.get());
+  // Prevent expensive no-ops.
+  if (voe_channel_id_ == voe_channel_id &&
+      voe_sync_interface_ == voe_sync_interface &&
+      video_receiver_ == video_receiver &&
+      video_rtp_rtcp_ == video_rtcp_module) {
+    return 0;
+  }
   voe_channel_id_ = voe_channel_id;
   voe_sync_interface_ = voe_sync_interface;
   video_receiver_ = video_receiver;

@@ -44,7 +44,7 @@ namespace webrtc {
 
 class CallPerfTest : public test::CallTest {
  protected:
-  void TestAudioVideoSync(bool fec);
+  void TestAudioVideoSync(bool fec, bool create_audio_first);
 
   void TestCpuOveruse(LoadObserver::Load tested_load, int encode_delay_ms);
 
@@ -189,7 +189,8 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
   int64_t first_time_in_sync_;
 };
 
-void CallPerfTest::TestAudioVideoSync(bool fec) {
+void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
+  const char* kSyncGroup = "av_sync";
   class AudioPacketReceiver : public PacketReceiver {
    public:
     AudioPacketReceiver(int channel, VoENetwork* voe_network)
@@ -269,9 +270,23 @@ void CallPerfTest::TestAudioVideoSync(bool fec) {
   }
   receive_configs_[0].rtp.nack.rtp_history_ms = 1000;
   receive_configs_[0].renderer = &observer;
-  receive_configs_[0].audio_channel_id = channel;
+  receive_configs_[0].sync_group = kSyncGroup;
 
-  CreateStreams();
+  AudioReceiveStream::Config audio_config;
+  audio_config.voe_channel_id = channel;
+  audio_config.sync_group = kSyncGroup;
+
+  AudioReceiveStream* audio_receive_stream = nullptr;
+
+  if (create_audio_first) {
+    audio_receive_stream =
+        receiver_call_->CreateAudioReceiveStream(audio_config);
+    CreateStreams();
+  } else {
+    CreateStreams();
+    audio_receive_stream =
+        receiver_call_->CreateAudioReceiveStream(audio_config);
+  }
 
   CreateFrameGeneratorCapturer();
 
@@ -302,15 +317,21 @@ void CallPerfTest::TestAudioVideoSync(bool fec) {
 
   DestroyStreams();
 
+  receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
+
   VoiceEngine::Delete(voice_engine);
 }
 
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
-  TestAudioVideoSync(false);
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioCreatedFirst) {
+  TestAudioVideoSync(false, true);
+}
+
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoCreatedFirst) {
+  TestAudioVideoSync(false, false);
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithFec) {
-  TestAudioVideoSync(true);
+  TestAudioVideoSync(true, false);
 }
 
 void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,

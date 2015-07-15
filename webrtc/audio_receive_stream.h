@@ -43,6 +43,16 @@ class AudioReceiveStream {
       std::vector<RtpExtension> extensions;
     } rtp;
 
+    // Underlying VoiceEngine handle, used to map AudioReceiveStream to
+    // lower-level components. Temporarily used while VoiceEngine channels are
+    // created outside of Call.
+    int voe_channel_id = -1;
+
+    // Identifier for an A/V synchronization group. Empty string to disable.
+    // TODO(pbos): Synchronize streams in a sync group, not just one video
+    // stream to one audio stream. Tracked by issue webrtc:4762.
+    std::string sync_group;
+
     // Decoders for every payload that we can receive. Call owns the
     // AudioDecoder instances once the Config is submitted to
     // Call::CreateReceiveStream().

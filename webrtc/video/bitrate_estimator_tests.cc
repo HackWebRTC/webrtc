@@ -204,6 +204,10 @@ class BitrateEstimatorTest : public test::CallTest {
       if (receive_audio) {
         AudioReceiveStream::Config receive_config;
         receive_config.rtp.remote_ssrc = test_->send_config_.rtp.ssrcs[0];
+        // Bogus non-default id to prevent hitting a DCHECK when creating the
+        // AudioReceiveStream. Every receive stream has to correspond to an
+        // underlying channel id.
+        receive_config.voe_channel_id = 0;
         receive_config.rtp.extensions.push_back(
             RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
         audio_receive_stream_ = test_->receiver_call_->CreateAudioReceiveStream(

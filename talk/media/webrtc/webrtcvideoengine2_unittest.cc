@@ -168,46 +168,6 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   std::map<int, int> default_apt_rtx_types_;
 };
 
-class WebRtcVideoEngine2VoiceTest : public WebRtcVideoEngine2Test {
- public:
-  WebRtcVideoEngine2VoiceTest() : WebRtcVideoEngine2Test(&voice_engine_) {}
-};
-
-TEST_F(WebRtcVideoEngine2VoiceTest, ConfiguresAvSyncForFirstReceiveChannel) {
-  FakeCallFactory call_factory;
-  engine_.SetCallFactory(&call_factory);
-  voice_engine_.Init(rtc::Thread::Current());
-  engine_.Init();
-
-  rtc::scoped_ptr<VoiceMediaChannel> voice_channel(
-      voice_engine_.CreateChannel(cricket::AudioOptions()));
-  ASSERT_TRUE(voice_channel.get() != nullptr);
-  WebRtcVoiceMediaChannel* webrtc_voice_channel =
-      static_cast<WebRtcVoiceMediaChannel*>(voice_channel.get());
-  ASSERT_NE(webrtc_voice_channel->voe_channel(), -1);
-  rtc::scoped_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(cricket::VideoOptions(), voice_channel.get()));
-
-  FakeCall* fake_call = call_factory.GetCall();
-  ASSERT_TRUE(fake_call != nullptr);
-
-  webrtc::Call::Config call_config = fake_call->GetConfig();
-
-  ASSERT_TRUE(voice_engine_.voe()->engine() != nullptr);
-  ASSERT_EQ(voice_engine_.voe()->engine(), call_config.voice_engine);
-
-  EXPECT_TRUE(channel->AddRecvStream(StreamParams::CreateLegacy(kSsrc)));
-  EXPECT_TRUE(channel->AddRecvStream(StreamParams::CreateLegacy(kSsrc + 1)));
-  std::vector<FakeVideoReceiveStream*> receive_streams =
-      fake_call->GetVideoReceiveStreams();
-
-  ASSERT_EQ(2u, receive_streams.size());
-  EXPECT_EQ(webrtc_voice_channel->voe_channel(),
-            receive_streams[0]->GetConfig().audio_channel_id);
-  EXPECT_EQ(-1, receive_streams[1]->GetConfig().audio_channel_id)
-      << "AV sync should only be set up for the first receive channel.";
-}
-
 TEST_F(WebRtcVideoEngine2Test, FindCodec) {
   const std::vector<cricket::VideoCodec>& c = engine_.codecs();
   EXPECT_EQ(cricket::DefaultVideoCodecList().size(), c.size());
@@ -1002,6 +962,20 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
   rtc::scoped_ptr<VideoMediaChannel> channel_;
   uint32 last_ssrc_;
 };
+
+TEST_F(WebRtcVideoChannel2Test, SetsSyncGroupFromSyncLabel) {
+  const uint32 kVideoSsrc = 123;
+  const std::string kSyncLabel = "AvSyncLabel";
+
+  cricket::StreamParams sp = cricket::StreamParams::CreateLegacy(kVideoSsrc);
+  sp.sync_label = kSyncLabel;
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+
+  EXPECT_EQ(1, fake_call_->GetVideoReceiveStreams().size());
+  EXPECT_EQ(kSyncLabel,
+            fake_call_->GetVideoReceiveStreams()[0]->GetConfig().sync_group)
+      << "SyncGroup should be set based on sync_label";
+}
 
 TEST_F(WebRtcVideoChannel2Test, RecvStreamWithSimAndRtx) {
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));

@@ -444,10 +444,10 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   // case it will only be there if a non-zero default_receive_ssrc_ is set.
   ChannelMap receive_channels_;  // for multiple sources
   std::map<uint32, webrtc::AudioReceiveStream*> receive_streams_;
+  std::map<uint32, StreamParams> receive_stream_params_;
   // receive_channels_ can be read from WebRtc callback thread.  Access from
   // the WebRtc thread must be synchronized with edits on the worker thread.
   // Reads on the worker thread are ok.
-  //
   std::vector<RtpHeaderExtension> receive_extensions_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
 

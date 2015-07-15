@@ -34,6 +34,9 @@ std::string AudioReceiveStream::Config::Rtp::ToString() const {
 std::string AudioReceiveStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{rtp: " << rtp.ToString();
+  ss << ", voe_channel_id: " << voe_channel_id;
+  if (!sync_group.empty())
+    ss << ", sync_group: " << sync_group;
   ss << '}';
   return ss.str();
 }
@@ -45,6 +48,7 @@ AudioReceiveStream::AudioReceiveStream(
     : remote_bitrate_estimator_(remote_bitrate_estimator),
       config_(config),
       rtp_header_parser_(RtpHeaderParser::Create()) {
+  DCHECK(config.voe_channel_id != -1);
   DCHECK(remote_bitrate_estimator_ != nullptr);
   DCHECK(rtp_header_parser_ != nullptr);
   for (const auto& ext : config.rtp.extensions) {

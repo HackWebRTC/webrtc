@@ -37,6 +37,7 @@ namespace cricket {
 FakeAudioReceiveStream::FakeAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config)
     : config_(config), received_packets_(0) {
+  DCHECK(config.voe_channel_id != -1);
 }
 
 webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {

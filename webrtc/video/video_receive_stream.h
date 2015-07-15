@@ -57,10 +57,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   int RenderFrame(const uint32_t /*stream_id*/,
                   const VideoFrame& video_frame) override;
 
+  const Config& config() const { return config_; }
+
   void SignalNetworkState(Call::NetworkState state);
 
   bool DeliverRtcp(const uint8_t* packet, size_t length);
   bool DeliverRtp(const uint8_t* packet, size_t length);
+
+  void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id);
 
  private:
   void SetRtcpMode(newapi::RtcpMode mode);
@@ -75,8 +79,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   ViEChannel* vie_channel_;
   rtc::scoped_ptr<IncomingVideoStream> incoming_video_stream_;
-
-  VoEVideoSync* voe_sync_interface_;
 
   rtc::scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
 };
