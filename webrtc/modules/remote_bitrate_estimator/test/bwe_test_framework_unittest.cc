@@ -379,7 +379,7 @@ class BweTestFramework_DelayFilterTest : public ::testing::Test {
 
  private:
   int64_t now_ms_;
-  uint32_t sequence_number_;
+  uint16_t sequence_number_;
 
   DISALLOW_COPY_AND_ASSIGN(BweTestFramework_DelayFilterTest);
 };
@@ -532,14 +532,14 @@ TEST(BweTestFramework_JitterFilterTest, Jitter1031) {
   TestJitterFilter(1031);
 }
 
-static void TestReorderFilter(uint32_t reorder_percent, uint32_t near_value) {
-  const uint32_t kPacketCount = 10000;
+static void TestReorderFilter(uint16_t reorder_percent, uint16_t near_value) {
+  const uint16_t kPacketCount = 10000;
 
   // Generate packets with 10 ms interval.
   Packets packets;
   int64_t now_ms = 0;
-  uint32_t sequence_number = 1;
-  for (uint32_t i = 0; i < kPacketCount; ++i, now_ms += 10) {
+  uint16_t sequence_number = 1;
+  for (uint16_t i = 0; i < kPacketCount; ++i, now_ms += 10) {
     packets.push_back(new MediaPacket(now_ms * 1000, sequence_number++));
   }
   ASSERT_TRUE(IsTimeSorted(packets));
@@ -553,11 +553,11 @@ static void TestReorderFilter(uint32_t reorder_percent, uint32_t near_value) {
 
   // We measure the amount of reordering by summing the distance by which out-
   // of-order packets have been moved in the stream.
-  uint32_t distance = 0;
-  uint32_t last_sequence_number = 0;
+  uint16_t distance = 0;
+  uint16_t last_sequence_number = 0;
   for (auto* packet : packets) {
     const MediaPacket* media_packet = static_cast<const MediaPacket*>(packet);
-    uint32_t sequence_number = media_packet->header().sequenceNumber;
+    uint16_t sequence_number = media_packet->header().sequenceNumber;
     if (sequence_number < last_sequence_number) {
       distance += last_sequence_number - sequence_number;
     }

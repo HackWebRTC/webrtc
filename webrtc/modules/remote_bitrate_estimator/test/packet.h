@@ -69,7 +69,7 @@ class MediaPacket : public Packet {
               int64_t send_time_us,
               size_t payload_size,
               const RTPHeader& header);
-  MediaPacket(int64_t send_time_us, uint32_t sequence_number);
+  MediaPacket(int64_t send_time_us, uint16_t sequence_number);
 
   virtual ~MediaPacket() {}
 

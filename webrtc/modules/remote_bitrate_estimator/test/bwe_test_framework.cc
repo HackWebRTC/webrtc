@@ -175,7 +175,7 @@ MediaPacket::MediaPacket(int flow_id,
     : Packet(flow_id, send_time_us, payload_size), header_(header) {
 }
 
-MediaPacket::MediaPacket(int64_t send_time_us, uint32_t sequence_number)
+MediaPacket::MediaPacket(int64_t send_time_us, uint16_t sequence_number)
     : Packet(0, send_time_us, 0) {
   header_ = RTPHeader();
   header_.sequenceNumber = sequence_number;
