@@ -63,8 +63,8 @@ const char kMediaProtocolAvpf[] = "RTP/AVPF";
 // RFC5124
 const char kMediaProtocolDtlsSavpf[] = "UDP/TLS/RTP/SAVPF";
 
-// This should be replaced by "UDP/TLS/RTP/SAVPF", but we need to support it for
-// now to be compatible with previous Chrome versions.
+// We always generate offers with "UDP/TLS/RTP/SAVPF" when using DTLS-SRTP,
+// but we tolerate "RTP/SAVPF" in offers we receive, for compatibility.
 const char kMediaProtocolSavpf[] = "RTP/SAVPF";
 
 const char kMediaProtocolRtpPrefix[] = "RTP/";
@@ -614,8 +614,8 @@ static bool IsRtpContent(SessionDescription* sdesc,
       return false;
     }
     is_rtp = media_desc->protocol().empty() ||
-             rtc::starts_with(media_desc->protocol().data(),
-                                    kMediaProtocolRtpPrefix);
+             (media_desc->protocol().find(cricket::kMediaProtocolRtpPrefix) !=
+              std::string::npos);
   }
   return is_rtp;
 }
@@ -1047,8 +1047,10 @@ static bool IsMediaProtocolSupported(MediaType type,
 
 static void SetMediaProtocol(bool secure_transport,
                              MediaContentDescription* desc) {
-  if (!desc->cryptos().empty() || secure_transport)
+  if (!desc->cryptos().empty())
     desc->set_protocol(kMediaProtocolSavpf);
+  else if (secure_transport)
+    desc->set_protocol(kMediaProtocolDtlsSavpf);
   else
     desc->set_protocol(kMediaProtocolAvpf);
 }
