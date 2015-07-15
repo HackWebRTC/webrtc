@@ -457,12 +457,12 @@ TEST_F(BweTestFramework_DelayFilterTest, IncreasingDelay) {
   ASSERT_TRUE(IsSequenceNumberSorted(accumulated_packets_));
 }
 
-static void TestJitterFilter(int64_t stddev_jitter_ms) {
+static void TestJitterFilter(int64_t max_jitter_ms) {
   JitterFilter filter(NULL, 0);
-  filter.SetJitter(stddev_jitter_ms);
+  filter.SetMaxJitter(max_jitter_ms);
 
   int64_t now_ms = 0;
-  uint32_t sequence_number = 0;
+  uint16_t sequence_number = 0;
 
   // Generate packets, add jitter to them, accumulate the altered packets.
   Packets original;
@@ -473,9 +473,9 @@ static void TestJitterFilter(int64_t stddev_jitter_ms) {
       packets.push_back(new MediaPacket(now_ms * 1000, sequence_number));
       original.push_back(new MediaPacket(now_ms * 1000, sequence_number));
       ++sequence_number;
-      now_ms += 5 * stddev_jitter_ms;
+      now_ms += 5 * max_jitter_ms;
     }
-    filter.RunFor(stddev_jitter_ms, &packets);
+    filter.RunFor(max_jitter_ms, &packets);
     jittered.splice(jittered.end(), packets);
   }
 
@@ -490,17 +490,22 @@ static void TestJitterFilter(int64_t stddev_jitter_ms) {
   // difference (jitter) in stats, then check that mean jitter is close to zero
   // and standard deviation of jitter is what we set it to.
   Stats<double> jitter_us;
+  int64_t max_jitter_obtained_us = 0;
   for (PacketsIt it1 = original.begin(), it2 = jittered.begin();
        it1 != original.end() && it2 != jittered.end(); ++it1, ++it2) {
     const MediaPacket* packet1 = static_cast<const MediaPacket*>(*it1);
     const MediaPacket* packet2 = static_cast<const MediaPacket*>(*it2);
     EXPECT_EQ(packet1->header().sequenceNumber,
               packet2->header().sequenceNumber);
-    jitter_us.Push(packet1->send_time_us() - packet2->send_time_us());
+    max_jitter_obtained_us =
+        std::max(max_jitter_obtained_us,
+                 packet2->send_time_us() - packet1->send_time_us());
+    jitter_us.Push(packet2->send_time_us() - packet1->send_time_us());
   }
-  EXPECT_NEAR(0.0, jitter_us.GetMean(), stddev_jitter_ms * 1000.0 * 0.008);
-  EXPECT_NEAR(stddev_jitter_ms * 1000.0, jitter_us.GetStdDev(),
-              stddev_jitter_ms * 1000.0 * 0.02);
+  EXPECT_NEAR(filter.MeanUs(), jitter_us.GetMean(),
+              max_jitter_ms * 1000.0 * 0.01);
+  EXPECT_NEAR(max_jitter_ms * 1000.0, max_jitter_obtained_us,
+              max_jitter_ms * 1000.0 * 0.01);
   for (auto* packet : original)
     delete packet;
   for (auto* packet : jittered)

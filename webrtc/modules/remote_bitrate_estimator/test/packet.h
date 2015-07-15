@@ -36,6 +36,7 @@ class Packet {
   virtual int flow_id() const { return flow_id_; }
   virtual void set_send_time_us(int64_t send_time_us);
   virtual int64_t send_time_us() const { return send_time_us_; }
+  virtual int64_t sender_timestamp_us() const { return sender_timestamp_us_; }
   virtual size_t payload_size() const { return payload_size_; }
   virtual Packet::Type GetPacketType() const = 0;
   virtual void set_sender_timestamp_us(int64_t sender_timestamp_us) {

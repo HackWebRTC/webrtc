@@ -314,13 +314,16 @@ class JitterFilter : public PacketProcessor {
   JitterFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~JitterFilter() {}
 
-  void SetJitter(int64_t stddev_jitter_ms);
+  void SetMaxJitter(int64_t stddev_jitter_ms);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
+  void set_reorderdering(bool reordering) { reordering_ = reordering; }
+  int64_t MeanUs();
 
  private:
   Random random_;
   int64_t stddev_jitter_us_;
   int64_t last_send_time_us_;
+  bool reordering_;  // False by default.
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(JitterFilter);
 };

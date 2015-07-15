@@ -389,7 +389,8 @@ JitterFilter::JitterFilter(PacketProcessorListener* listener, int flow_id)
     : PacketProcessor(listener, flow_id, kRegular),
       random_(0x89674523),
       stddev_jitter_us_(0),
-      last_send_time_us_(0) {
+      last_send_time_us_(0),
+      reordering_(false) {
 }
 
 JitterFilter::JitterFilter(PacketProcessorListener* listener,
@@ -397,25 +398,60 @@ JitterFilter::JitterFilter(PacketProcessorListener* listener,
     : PacketProcessor(listener, flow_ids, kRegular),
       random_(0x89674523),
       stddev_jitter_us_(0),
-      last_send_time_us_(0) {
+      last_send_time_us_(0),
+      reordering_(false) {
 }
 
-void JitterFilter::SetJitter(int64_t stddev_jitter_ms) {
+const int kN = 3;  // Truncated N sigma gaussian.
+
+void JitterFilter::SetMaxJitter(int64_t max_jitter_ms) {
   BWE_TEST_LOGGING_ENABLE(false);
-  BWE_TEST_LOGGING_LOG1("Jitter", "%d ms",
-                        static_cast<int>(stddev_jitter_ms));
-  assert(stddev_jitter_ms >= 0);
-  stddev_jitter_us_ = stddev_jitter_ms * 1000;
+  BWE_TEST_LOGGING_LOG1("Max Jitter", "%d ms", static_cast<int>(max_jitter_ms));
+  assert(max_jitter_ms >= 0);
+  // Truncated gaussian, Max jitter = kN*sigma.
+  stddev_jitter_us_ = (max_jitter_ms * 1000 + kN / 2) / kN;
+}
+
+namespace {
+inline int64_t TruncatedNSigmaGaussian(Random* const random,
+                                       int64_t mean,
+                                       int64_t std_dev) {
+  int64_t gaussian_random = random->Gaussian(mean, std_dev);
+  return std::max(std::min(gaussian_random, kN * std_dev), -kN * std_dev);
+}
 }
 
 void JitterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
   for (Packet* packet : *in_out) {
-    int64_t new_send_time_us = packet->send_time_us();
-    new_send_time_us += random_.Gaussian(0, stddev_jitter_us_);
-    last_send_time_us_ = std::max(last_send_time_us_, new_send_time_us);
-    packet->set_send_time_us(last_send_time_us_);
+    int64_t jitter_us =
+        std::abs(TruncatedNSigmaGaussian(&random_, 0, stddev_jitter_us_));
+    int64_t new_send_time_us = packet->send_time_us() + jitter_us;
+
+    if (!reordering_) {
+      new_send_time_us = std::max(last_send_time_us_, new_send_time_us);
+    }
+
+    // Receiver timestamp cannot be lower than sender timestamp.
+    assert(new_send_time_us >= packet->sender_timestamp_us());
+
+    packet->set_send_time_us(new_send_time_us);
+    last_send_time_us_ = new_send_time_us;
   }
+}
+
+// Computes the expected value for a right sided (abs) truncated gaussian.
+// Does not take into account  possible reoerdering updates.
+int64_t JitterFilter::MeanUs() {
+  const double kPi = 3.1415926535897932;
+  double max_jitter_us = static_cast<double>(kN * stddev_jitter_us_);
+  double right_sided_mean_us =
+      static_cast<double>(stddev_jitter_us_) / sqrt(kPi / 2.0);
+  double truncated_mean_us =
+      right_sided_mean_us *
+          (1.0 - exp(-pow(static_cast<double>(kN), 2.0) / 2.0)) +
+      max_jitter_us * erfc(static_cast<double>(kN));
+  return static_cast<int64_t>(truncated_mean_us + 0.5);
 }
 
 ReorderFilter::ReorderFilter(PacketProcessorListener* listener, int flow_id)

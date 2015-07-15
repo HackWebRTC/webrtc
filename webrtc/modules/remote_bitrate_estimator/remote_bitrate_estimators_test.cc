@@ -124,7 +124,7 @@ TEST_P(DefaultBweTest, SteadyJitter) {
   JitterFilter jitter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
-  jitter.SetJitter(20);
+  jitter.SetMaxJitter(20);
   RunFor(2 * 60 * 1000);
 }
 
@@ -134,7 +134,7 @@ TEST_P(DefaultBweTest, IncreasingJitter1) {
   JitterFilter jitter(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 0; i < 2 * 60 * 2; ++i) {
-    jitter.SetJitter(i);
+    jitter.SetMaxJitter(i);
     RunFor(10 * 1000);
   }
   RunFor(10 * 60 * 1000);
@@ -147,10 +147,10 @@ TEST_P(DefaultBweTest, IncreasingJitter2) {
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(30 * 1000);
   for (int i = 1; i < 51; ++i) {
-    jitter.SetJitter(10.0f * i);
+    jitter.SetMaxJitter(10.0f * i);
     RunFor(10 * 1000);
   }
-  jitter.SetJitter(0.0f);
+  jitter.SetMaxJitter(0.0f);
   RunFor(10 * 60 * 1000);
 }
 
@@ -232,7 +232,7 @@ TEST_P(DefaultBweTest, Multi2) {
   RateCounterFilter counter(&uplink_, 0, "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   choke.set_capacity_kbps(2000);
-  jitter.SetJitter(120);
+  jitter.SetMaxJitter(120);
   RunFor(5 * 60 * 1000);
 }
 
