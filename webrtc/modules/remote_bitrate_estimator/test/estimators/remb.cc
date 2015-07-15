@@ -101,9 +101,8 @@ void RembReceiver::ReceivePacket(int64_t arrival_time_ms,
   clock_.AdvanceTimeMilliseconds(arrival_time_ms - clock_.TimeInMilliseconds());
   ASSERT_TRUE(arrival_time_ms == clock_.TimeInMilliseconds());
 
-  received_packets_.Insert(media_packet.sequence_number(),
-                           media_packet.send_time_ms(), arrival_time_ms,
-                           media_packet.payload_size());
+  // Log received packet information.
+  BweReceiver::ReceivePacket(arrival_time_ms, media_packet);
 }
 
 FeedbackPacket* RembReceiver::GetFeedback(int64_t now_ms) {

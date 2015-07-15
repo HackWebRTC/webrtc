@@ -40,7 +40,6 @@ class NadaBweReceiver : public BweReceiver {
                      const MediaPacket& media_packet) override;
   FeedbackPacket* GetFeedback(int64_t now_ms) override;
 
-  size_t RecentReceivingRate();
   static int64_t MedianFilter(int64_t* v, int size);
   static int64_t ExponentialSmoothingFilter(int64_t new_value,
                                             int64_t last_smoothed_value,
@@ -87,16 +86,12 @@ class NadaBweSender : public BweSender {
   }
   int64_t NowMs() const { return clock_->TimeInMilliseconds(); }
 
-  static const int kMinRefRateKbps;  // Referred as R_min.
-  static const int kMaxRefRateKbps;  // Referred as R_max.
-
  private:
   Clock* const clock_;
   BitrateObserver* const observer_;
   // Used as an upper bound for calling AcceleratedRampDown.
-  const float kMaxCongestionSignalMs = 40.0f + kMinRefRateKbps / 15;
+  const float kMaxCongestionSignalMs = 40.0f + kMinBitrateKbps / 15;
   // Referred as R_min, default initialization for bitrate R_n.
-  int bitrate_kbps_;  // Referred as "Reference Rate" = R_n.
   int64_t last_feedback_ms_ = 0;
   // Referred as delta_0, initialized as an upper bound.
   int64_t min_feedback_delay_ms_ = 200;

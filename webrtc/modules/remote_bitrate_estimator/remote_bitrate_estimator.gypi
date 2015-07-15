@@ -72,6 +72,8 @@
             'test/bwe_test_framework.h',
             'test/bwe_test_logging.cc',
             'test/bwe_test_logging.h',
+            'test/metric_recorder.cc',
+            'test/metric_recorder.h',
             'test/packet_receiver.cc',
             'test/packet_receiver.h',
             'test/packet_sender.cc',

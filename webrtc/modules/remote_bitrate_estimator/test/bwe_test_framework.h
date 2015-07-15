@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/common.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -40,10 +41,39 @@ namespace testing {
 namespace bwe {
 
 class DelayCapHelper;
-class RateCounter;
+
+class RateCounter {
+ public:
+  RateCounter(int64_t window_size_ms)
+      : window_size_us_(1000 * window_size_ms),
+        recently_received_packets_(0),
+        recently_received_bytes_(0),
+        last_accumulated_us_(0),
+        window_() {}
+
+  RateCounter() : RateCounter(1000) {}
+
+  void UpdateRates(int64_t send_time_us, uint32_t payload_size);
+
+  int64_t window_size_ms() const { return (window_size_us_ + 500) / 1000; }
+  uint32_t packets_per_second() const;
+  uint32_t bits_per_second() const;
+
+  double BitrateWindowS() const;
+
+ private:
+  typedef std::pair<int64_t, uint32_t> TimeSizePair;
+
+  int64_t window_size_us_;
+  uint32_t recently_received_packets_;
+  uint32_t recently_received_bytes_;
+  int64_t last_accumulated_us_;
+  std::list<TimeSizePair> window_;
+};
 
 typedef std::set<int> FlowIds;
 const FlowIds CreateFlowIds(const int *flow_ids_array, size_t num_flow_ids);
+const FlowIds CreateFlowIdRange(int initial_value, int last_value);
 
 template <typename T>
 bool DereferencingComparator(const T* const& a, const T* const& b) {
@@ -143,6 +173,32 @@ template<typename T> class Stats {
   T max_;
 };
 
+class Random {
+ public:
+  explicit Random(uint32_t seed);
+
+  // Return pseudo random number in the interval [0.0, 1.0].
+  float Rand();
+
+  // Return pseudo rounded random number in interval [low, high].
+  int Rand(int low, int high);
+
+  // Normal Distribution.
+  int Gaussian(int mean, int standard_deviation);
+
+  // Exponential Distribution.
+  int Exponential(float lambda);
+
+  // TODO(solenberg): Random from histogram.
+  // template<typename T> int Distribution(const std::vector<T> histogram) {
+
+ private:
+  uint32_t a_;
+  uint32_t b_;
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Random);
+};
+
 bool IsTimeSorted(const Packets& packets);
 
 class PacketProcessor;
@@ -179,6 +235,12 @@ class PacketProcessor {
 
   const FlowIds& flow_ids() const { return flow_ids_; }
 
+  uint32_t packets_per_second() const;
+  uint32_t bits_per_second() const;
+
+ protected:
+  RateCounter rate_counter_;
+
  private:
   PacketProcessorListener* listener_;
   const FlowIds flow_ids_;
@@ -194,10 +256,11 @@ class RateCounterFilter : public PacketProcessor {
   RateCounterFilter(PacketProcessorListener* listener,
                     const FlowIds& flow_ids,
                     const char* name);
+  RateCounterFilter(PacketProcessorListener* listener,
+                    const FlowIds& flow_ids,
+                    const char* name,
+                    int64_t start_plotting_time_ms);
   virtual ~RateCounterFilter();
-
-  uint32_t packets_per_second() const;
-  uint32_t bits_per_second() const;
 
   void LogStats();
   Stats<double> GetBitrateStats() const;
@@ -205,10 +268,10 @@ class RateCounterFilter : public PacketProcessor {
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
-  rtc::scoped_ptr<RateCounter> rate_counter_;
   Stats<double> packets_per_second_stats_;
   Stats<double> kbps_stats_;
   std::string name_;
+  int64_t start_plotting_time_ms_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RateCounterFilter);
 };
@@ -235,11 +298,11 @@ class DelayFilter : public PacketProcessor {
   DelayFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~DelayFilter() {}
 
-  void SetDelayMs(int64_t delay_ms);
+  void SetOneWayDelayMs(int64_t one_way_delay_ms);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
-  int64_t delay_us_;
+  int64_t one_way_delay_us_;
   int64_t last_send_time_us_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DelayFilter);
@@ -286,16 +349,20 @@ class ChokeFilter : public PacketProcessor {
   ChokeFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~ChokeFilter();
 
-  void SetCapacity(uint32_t kbps);
-  void SetMaxDelay(int max_delay_ms);
+  void set_capacity_kbps(uint32_t kbps);
+  void set_max_delay_ms(int64_t max_queueing_delay_ms);
+
+  uint32_t capacity_kbps();
+
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
   Stats<double> GetDelayStats() const;
 
  private:
-  uint32_t kbps_;
+  uint32_t capacity_kbps_;
   int64_t last_send_time_us_;
   rtc::scoped_ptr<DelayCapHelper> delay_cap_helper_;
+  int64_t max_delay_us_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(ChokeFilter);
 };
@@ -317,7 +384,7 @@ class TraceBasedDeliveryFilter : public PacketProcessor {
   virtual void Plot(int64_t timestamp_ms);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
-  void SetMaxDelay(int max_delay_ms);
+  void set_max_delay_ms(int64_t max_delay_ms);
   Stats<double> GetDelayStats() const;
   Stats<double> GetBitrateStats() const;
 
@@ -353,7 +420,7 @@ class VideoSource {
   virtual void SetBitrateBps(int bitrate_bps) {}
   uint32_t bits_per_second() const { return bits_per_second_; }
   uint32_t max_payload_size_bytes() const { return kMaxPayloadSizeBytes; }
-  int64_t GetTimeUntilNextFrameMs() const { return next_frame_ms_ - now_ms_; }
+  int64_t GetTimeUntilNextFrameMs() const;
 
  protected:
   virtual uint32_t NextFrameSize();
@@ -369,8 +436,11 @@ class VideoSource {
  private:
   const int flow_id_;
   int64_t next_frame_ms_;
+  int64_t next_frame_rand_ms_;
   int64_t now_ms_;
   RTPHeader prototype_header_;
+  int64_t start_plotting_ms_;
+  uint32_t previous_bitrate_bps_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(VideoSource);
 };

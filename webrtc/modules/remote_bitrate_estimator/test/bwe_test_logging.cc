@@ -91,13 +91,103 @@ void Logging::Log(const char format[], ...) {
 }
 
 void Logging::Plot(int figure, double value) {
+  Plot(figure, value, "");
+}
+
+void Logging::Plot(int figure, double value, const std::string& alg_name) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  assert(it != thread_map_.end());
+  const State& state = it->second.stack.top();
+  std::string label = state.tag + '@' + alg_name;
+  std::string prefix("Available");
+  if (alg_name.compare(0, prefix.length(), prefix) == 0) {
+    std::string receiver("Receiver");
+    size_t start_pos = label.find(receiver);
+    if (start_pos != std::string::npos) {
+      label.replace(start_pos, receiver.length(), "Sender");
+    }
+  }
+  if (state.enabled) {
+    printf("PLOT\t%d\t%s\t%f\t%f\n", figure, label.c_str(),
+           state.timestamp_ms * 0.001, value);
+  }
+}
+
+void Logging::PlotBar(int figure,
+                      const std::string& name,
+                      double value,
+                      int flow_id) {
   CriticalSectionScoped cs(crit_sect_.get());
   ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   if (state.enabled) {
-    printf("PLOT\t%d\t%s\t%f\t%f\n", figure, state.tag.c_str(),
-           state.timestamp_ms * 0.001, value);
+    printf("BAR\t%d\t%s_%d\t%f\n", figure, name.c_str(), flow_id, value);
+  }
+}
+
+void Logging::PlotBaselineBar(int figure,
+                              const std::string& name,
+                              double value,
+                              int flow_id) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  assert(it != thread_map_.end());
+  const State& state = it->second.stack.top();
+  if (state.enabled) {
+    printf("BASELINE\t%d\t%s_%d\t%f\n", figure, name.c_str(), flow_id, value);
+  }
+}
+
+void Logging::PlotErrorBar(int figure,
+                           const std::string& name,
+                           double value,
+                           double ylow,
+                           double yhigh,
+                           const std::string& error_title,
+                           int flow_id) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  assert(it != thread_map_.end());
+  const State& state = it->second.stack.top();
+  if (state.enabled) {
+    printf("ERRORBAR\t%d\t%s_%d\t%f\t%f\t%f\t%s\n", figure, name.c_str(),
+           flow_id, value, ylow, yhigh, error_title.c_str());
+  }
+}
+
+void Logging::PlotLimitErrorBar(int figure,
+                                const std::string& name,
+                                double value,
+                                double ylow,
+                                double yhigh,
+                                const std::string& error_title,
+                                double ymax,
+                                const std::string& limit_title,
+                                int flow_id) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  assert(it != thread_map_.end());
+  const State& state = it->second.stack.top();
+  if (state.enabled) {
+    printf("LIMITERRORBAR\t%d\t%s_%d\t%f\t%f\t%f\t%s\t%f\t%s\n", figure,
+           name.c_str(), flow_id, value, ylow, yhigh, error_title.c_str(), ymax,
+           limit_title.c_str());
+  }
+}
+
+void Logging::PlotLabel(int figure,
+                        const std::string& title,
+                        const std::string& y_label,
+                        int num_flows) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  assert(it != thread_map_.end());
+  const State& state = it->second.stack.top();
+  if (state.enabled) {
+    printf("LABEL\t%d\t%s\t%s\t%d\n", figure, title.c_str(), y_label.c_str(),
+           num_flows);
   }
 }
 

@@ -14,6 +14,7 @@
 #include <numeric>
 
 #include "webrtc/base/common.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -112,11 +113,12 @@ class NadaSenderSideTest : public ::testing::Test {
 };
 
 class NadaReceiverSideTest : public ::testing::Test {
- protected:
+ public:
   NadaReceiverSideTest() : nada_receiver_(kFlowId) {}
   ~NadaReceiverSideTest() {}
 
-  const int kFlowId = 0;
+ protected:
+  const int kFlowId = 1;  // Arbitrary.
   NadaBweReceiver nada_receiver_;
 };
 
@@ -165,9 +167,9 @@ class NadaFbGenerator {
 
 // Verify if AcceleratedRampUp is called and that bitrate increases.
 TEST_F(NadaSenderSideTest, AcceleratedRampUp) {
-  const int64_t kRefSignalMs = 3;
+  const int64_t kRefSignalMs = 1;
   const int64_t kOneWayDelayMs = 50;
-  int original_bitrate = 2 * NadaBweSender::kMinRefRateKbps;
+  int original_bitrate = 2 * kMinBitrateKbps;
   size_t receiving_rate = static_cast<size_t>(original_bitrate);
   int64_t send_time_ms = nada_sender_.NowMs() - kOneWayDelayMs;
 
@@ -199,7 +201,7 @@ TEST_F(NadaSenderSideTest, AcceleratedRampUp) {
 // Verify if AcceleratedRampDown is called and if bitrate decreases.
 TEST_F(NadaSenderSideTest, AcceleratedRampDown) {
   const int64_t kOneWayDelayMs = 50;
-  int original_bitrate = 3 * NadaBweSender::kMinRefRateKbps;
+  int original_bitrate = 3 * kMinBitrateKbps;
   size_t receiving_rate = static_cast<size_t>(original_bitrate);
   int64_t send_time_ms = nada_sender_.NowMs() - kOneWayDelayMs;
 
@@ -216,8 +218,7 @@ TEST_F(NadaSenderSideTest, AcceleratedRampDown) {
   // Updates the bitrate according to the receiving rate and other constant
   // parameters.
   nada_sender_.AcceleratedRampDown(congested_fb);
-  int bitrate_2_kbps =
-      std::max(nada_sender_.bitrate_kbps(), NadaBweSender::kMinRefRateKbps);
+  int bitrate_2_kbps = std::max(nada_sender_.bitrate_kbps(), kMinBitrateKbps);
   EXPECT_EQ(bitrate_2_kbps, bitrate_1_kbps);
 }
 
@@ -225,7 +226,7 @@ TEST_F(NadaSenderSideTest, GradualRateUpdate) {
   const int64_t kDeltaSMs = 20;
   const int64_t kRefSignalMs = 20;
   const int64_t kOneWayDelayMs = 50;
-  int original_bitrate = 2 * NadaBweSender::kMinRefRateKbps;
+  int original_bitrate = 2 * kMinBitrateKbps;
   size_t receiving_rate = static_cast<size_t>(original_bitrate);
   int64_t send_time_ms = nada_sender_.NowMs() - kOneWayDelayMs;
 
@@ -251,8 +252,8 @@ TEST_F(NadaSenderSideTest, GradualRateUpdate) {
 // Sending bitrate should decrease and reach its Min bound.
 TEST_F(NadaSenderSideTest, VeryLowBandwith) {
   const int64_t kOneWayDelayMs = 50;
-  const int kMin = NadaBweSender::kMinRefRateKbps;
-  size_t receiving_rate = static_cast<size_t>(kMin);
+
+  size_t receiving_rate = static_cast<size_t>(kMinBitrateKbps);
   int64_t send_time_ms = nada_sender_.NowMs() - kOneWayDelayMs;
 
   NadaFeedback extremely_congested_fb =
@@ -260,7 +261,7 @@ TEST_F(NadaSenderSideTest, VeryLowBandwith) {
   NadaFeedback congested_fb =
       NadaFbGenerator::CongestedFb(receiving_rate, send_time_ms);
 
-  nada_sender_.set_bitrate_kbps(5 * kMin);
+  nada_sender_.set_bitrate_kbps(5 * kMinBitrateKbps);
   nada_sender_.set_original_operating_mode(true);
   for (int i = 0; i < 100; ++i) {
     // Trigger GradualRateUpdate mode.
@@ -268,26 +269,25 @@ TEST_F(NadaSenderSideTest, VeryLowBandwith) {
   }
   // The original implementation doesn't allow the bitrate to stay at kMin,
   // even if the congestion signal is very high.
-  EXPECT_GE(nada_sender_.bitrate_kbps(), kMin);
+  EXPECT_GE(nada_sender_.bitrate_kbps(), kMinBitrateKbps);
 
   nada_sender_.set_original_operating_mode(false);
-  nada_sender_.set_bitrate_kbps(5 * kMin);
+  nada_sender_.set_bitrate_kbps(5 * kMinBitrateKbps);
 
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     int previous_bitrate = nada_sender_.bitrate_kbps();
     // Trigger AcceleratedRampDown mode.
     nada_sender_.GiveFeedback(congested_fb);
     EXPECT_LE(nada_sender_.bitrate_kbps(), previous_bitrate);
   }
-  EXPECT_EQ(nada_sender_.bitrate_kbps(), kMin);
+  EXPECT_EQ(nada_sender_.bitrate_kbps(), kMinBitrateKbps);
 }
 
 // Sending bitrate should increase and reach its Max bound.
 TEST_F(NadaSenderSideTest, VeryHighBandwith) {
   const int64_t kOneWayDelayMs = 50;
-  const int kMax = NadaBweSender::kMaxRefRateKbps;
-  const size_t kRecentReceivingRate = static_cast<size_t>(kMax);
-  const int64_t kRefSignalMs = 5;
+  const size_t kRecentReceivingRate = static_cast<size_t>(kMaxBitrateKbps);
+  const int64_t kRefSignalMs = 1;
   int64_t send_time_ms = nada_sender_.NowMs() - kOneWayDelayMs;
 
   NadaFeedback not_congested_fb = NadaFbGenerator::NotCongestedFb(
@@ -299,280 +299,164 @@ TEST_F(NadaSenderSideTest, VeryHighBandwith) {
     nada_sender_.GiveFeedback(not_congested_fb);
     EXPECT_GE(nada_sender_.bitrate_kbps(), previous_bitrate);
   }
-  EXPECT_EQ(nada_sender_.bitrate_kbps(), kMax);
+  EXPECT_EQ(nada_sender_.bitrate_kbps(), kMaxBitrateKbps);
 
   nada_sender_.set_original_operating_mode(false);
-  nada_sender_.set_bitrate_kbps(NadaBweSender::kMinRefRateKbps);
+  nada_sender_.set_bitrate_kbps(kMinBitrateKbps);
 
   for (int i = 0; i < 100; ++i) {
     int previous_bitrate = nada_sender_.bitrate_kbps();
     nada_sender_.GiveFeedback(not_congested_fb);
     EXPECT_GE(nada_sender_.bitrate_kbps(), previous_bitrate);
   }
-  EXPECT_EQ(nada_sender_.bitrate_kbps(), kMax);
+  EXPECT_EQ(nada_sender_.bitrate_kbps(), kMaxBitrateKbps);
 }
 
-TEST_F(NadaReceiverSideTest, ReceivingRateNoPackets) {
-  EXPECT_EQ(nada_receiver_.RecentReceivingRate(), static_cast<size_t>(0));
+TEST_F(NadaReceiverSideTest, FeedbackInitialCases) {
+  rtc::scoped_ptr<NadaFeedback> nada_feedback(
+      static_cast<NadaFeedback*>(nada_receiver_.GetFeedback(0)));
+  EXPECT_EQ(nada_feedback, nullptr);
+
+  nada_feedback.reset(
+      static_cast<NadaFeedback*>(nada_receiver_.GetFeedback(100)));
+  EXPECT_EQ(nada_feedback->exp_smoothed_delay_ms(), -1);
+  EXPECT_EQ(nada_feedback->est_queuing_delay_signal_ms(), 0L);
+  EXPECT_EQ(nada_feedback->congestion_signal(), 0L);
+  EXPECT_EQ(nada_feedback->derivative(), 0.0f);
+  EXPECT_EQ(nada_feedback->receiving_rate(), 0.0f);
 }
 
-TEST_F(NadaReceiverSideTest, ReceivingRateSinglePacket) {
-  const size_t kPayloadSizeBytes = 500 * 1000;
-  const int64_t kSendTimeUs = 300 * 1000;
-  const int64_t kArrivalTimeMs = kSendTimeUs / 1000 + 100;
-  const uint16_t kSequenceNumber = 1;
-  const int64_t kTimeWindowMs = NadaBweReceiver::kReceivingRateTimeWindowMs;
-
-  const MediaPacket media_packet(kFlowId, kSendTimeUs, kPayloadSizeBytes,
-                                 kSequenceNumber);
-  nada_receiver_.ReceivePacket(kArrivalTimeMs, media_packet);
-
-  const size_t kReceivingRateKbps = 8 * kPayloadSizeBytes / kTimeWindowMs;
-
-  EXPECT_EQ(nada_receiver_.RecentReceivingRate(), kReceivingRateKbps);
-}
-
-TEST_F(NadaReceiverSideTest, ReceivingRateLargePackets) {
-  const size_t kPayloadSizeBytes = 3000 * 1000;
-  const int64_t kTimeGapMs = 3000;  // Between each packet.
-  const int64_t kOneWayDelayMs = 1000;
-
-  for (int i = 1; i < 5; ++i) {
-    int64_t send_time_us = i * kTimeGapMs * 1000;
-    int64_t arrival_time_ms = send_time_us / 1000 + kOneWayDelayMs;
-    uint16_t sequence_number = i;
-    const MediaPacket media_packet(kFlowId, send_time_us, kPayloadSizeBytes,
-                                   sequence_number);
-    nada_receiver_.ReceivePacket(arrival_time_ms, media_packet);
-  }
-
-  const size_t kReceivingRateKbps = 8 * kPayloadSizeBytes / kTimeGapMs;
-  EXPECT_EQ(nada_receiver_.RecentReceivingRate(), kReceivingRateKbps);
-}
-
-TEST_F(NadaReceiverSideTest, ReceivingRateSmallPackets) {
-  const size_t kPayloadSizeBytes = 100 * 1000;
+TEST_F(NadaReceiverSideTest, FeedbackEmptyQueues) {
   const int64_t kTimeGapMs = 50;  // Between each packet.
   const int64_t kOneWayDelayMs = 50;
 
-  for (int i = 1; i < 50; ++i) {
+  // No added latency, delay = kOneWayDelayMs.
+  for (int i = 1; i < 10; ++i) {
     int64_t send_time_us = i * kTimeGapMs * 1000;
     int64_t arrival_time_ms = send_time_us / 1000 + kOneWayDelayMs;
-    uint16_t sequence_number = i;
-    const MediaPacket media_packet(kFlowId, send_time_us, kPayloadSizeBytes,
-                                   sequence_number);
+    uint16_t sequence_number = static_cast<uint16_t>(i);
+    // Payload sizes are not important here.
+    const MediaPacket media_packet(kFlowId, send_time_us, 0, sequence_number);
     nada_receiver_.ReceivePacket(arrival_time_ms, media_packet);
   }
 
-  const size_t kReceivingRateKbps = 8 * kPayloadSizeBytes / kTimeGapMs;
-  EXPECT_EQ(nada_receiver_.RecentReceivingRate(), kReceivingRateKbps);
+  // Baseline delay will be equal kOneWayDelayMs.
+  rtc::scoped_ptr<NadaFeedback> nada_feedback(
+      static_cast<NadaFeedback*>(nada_receiver_.GetFeedback(500)));
+  EXPECT_EQ(nada_feedback->exp_smoothed_delay_ms(), 0L);
+  EXPECT_EQ(nada_feedback->est_queuing_delay_signal_ms(), 0L);
+  EXPECT_EQ(nada_feedback->congestion_signal(), 0L);
+  EXPECT_EQ(nada_feedback->derivative(), 0.0f);
 }
 
-TEST_F(NadaReceiverSideTest, ReceivingRateIntermittentPackets) {
-  const size_t kPayloadSizeBytes = 100 * 1000;
-  const int64_t kTimeGapMs = 50;  // Between each packet.
-  const int64_t kFirstSendTimeMs = 0;
-  const int64_t kOneWayDelayMs = 50;
+TEST_F(NadaReceiverSideTest, FeedbackIncreasingDelay) {
+  // Since packets are 100ms apart, each one corresponds to a feedback.
+  const int64_t kTimeGapMs = 100;  // Between each packet.
 
-  // Gap between first and other packets
-  const MediaPacket media_packet(kFlowId, kFirstSendTimeMs, kPayloadSizeBytes,
-                                 1);
-  nada_receiver_.ReceivePacket(kFirstSendTimeMs + kOneWayDelayMs, media_packet);
+  // Raw delays are = [10 20 30 40 50 60 70 80] ms.
+  // Baseline delay will be 50 ms.
+  // Delay signals should be: [0 10 20 30 40 50 60 70] ms.
+  const int64_t kMedianFilteredDelaysMs[] = {0, 10, 10, 20, 20, 30, 40, 50};
+  const int kNumPackets = ARRAY_SIZE(kMedianFilteredDelaysMs);
+  const float kAlpha = 0.1f;  // Used for exponential smoothing.
 
-  const int64_t kDelayAfterFirstPacketMs = 1000;
-  const int kNumPackets = 5;  // Small enough so that all packets are covered.
-  EXPECT_LT((kNumPackets - 2) * kTimeGapMs,
-            NadaBweReceiver::kReceivingRateTimeWindowMs);
-  const int64_t kTimeWindowMs =
-      kDelayAfterFirstPacketMs + (kNumPackets - 2) * kTimeGapMs;
+  int64_t exp_smoothed_delays_ms[kNumPackets];
+  exp_smoothed_delays_ms[0] = kMedianFilteredDelaysMs[0];
 
-  for (int i = 2; i <= kNumPackets; ++i) {
-    int64_t send_time_us =
-        ((i - 2) * kTimeGapMs + kFirstSendTimeMs + kDelayAfterFirstPacketMs) *
-        1000;
-    int64_t arrival_time_ms = send_time_us / 1000 + kOneWayDelayMs;
-    uint16_t sequence_number = i;
-    const MediaPacket media_packet(kFlowId, send_time_us, kPayloadSizeBytes,
-                                   sequence_number);
+  for (int i = 1; i < kNumPackets; ++i) {
+    exp_smoothed_delays_ms[i] = static_cast<int64_t>(
+        kAlpha * kMedianFilteredDelaysMs[i] +
+        (1.0f - kAlpha) * exp_smoothed_delays_ms[i - 1] + 0.5f);
+  }
+
+  for (int i = 0; i < kNumPackets; ++i) {
+    int64_t send_time_us = (i + 1) * kTimeGapMs * 1000;
+    int64_t arrival_time_ms = send_time_us / 1000 + 10 * (i + 1);
+    uint16_t sequence_number = static_cast<uint16_t>(i + 1);
+    // Payload sizes are not important here.
+    const MediaPacket media_packet(kFlowId, send_time_us, 0, sequence_number);
     nada_receiver_.ReceivePacket(arrival_time_ms, media_packet);
-  }
 
-  const size_t kTotalReceivedKb = 8 * kNumPackets * kPayloadSizeBytes;
-  const int64_t kCorrectedTimeWindowMs =
-      (kTimeWindowMs * kNumPackets) / (kNumPackets - 1);
-  EXPECT_EQ(nada_receiver_.RecentReceivingRate(),
-            kTotalReceivedKb / kCorrectedTimeWindowMs);
-}
-
-TEST_F(NadaReceiverSideTest, ReceivingRateDuplicatedPackets) {
-  const size_t kPayloadSizeBytes = 500 * 1000;
-  const int64_t kSendTimeUs = 300 * 1000;
-  const int64_t kArrivalTimeMs = kSendTimeUs / 1000 + 100;
-  const uint16_t kSequenceNumber = 1;
-  const int64_t kTimeWindowMs = NadaBweReceiver::kReceivingRateTimeWindowMs;
-
-  // Insert the same packet twice.
-  for (int i = 0; i < 2; ++i) {
-    const MediaPacket media_packet(kFlowId, kSendTimeUs + 50 * i,
-                                   kPayloadSizeBytes, kSequenceNumber);
-    nada_receiver_.ReceivePacket(kArrivalTimeMs + 50 * i, media_packet);
-  }
-  // Should be counted only once.
-  const size_t kReceivingRateKbps = 8 * kPayloadSizeBytes / kTimeWindowMs;
-
-  EXPECT_EQ(nada_receiver_.RecentReceivingRate(), kReceivingRateKbps);
-}
-
-TEST_F(NadaReceiverSideTest, PacketLossNoPackets) {
-  EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
-}
-
-TEST_F(NadaReceiverSideTest, PacketLossSinglePacket) {
-  const MediaPacket media_packet(kFlowId, 0, 0, 0);
-  nada_receiver_.ReceivePacket(0, media_packet);
-  EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
-}
-
-TEST_F(NadaReceiverSideTest, PacketLossContiguousPackets) {
-  const int64_t kTimeWindowMs = NadaBweReceiver::kPacketLossTimeWindowMs;
-  size_t set_capacity = nada_receiver_.GetSetCapacity();
-
-  for (int i = 0; i < 10; ++i) {
-    uint16_t sequence_number = static_cast<uint16_t>(i);
-    // Sequence_number and flow_id are the only members that matter here.
-    const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
-    // Arrival time = 0, all packets will be considered.
-    nada_receiver_.ReceivePacket(0, media_packet);
-  }
-  EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
-
-  for (int i = 30; i > 20; i--) {
-    uint16_t sequence_number = static_cast<uint16_t>(i);
-    // Sequence_number and flow_id are the only members that matter here.
-    const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
-    // Only the packets sent in this for loop will be considered.
-    nada_receiver_.ReceivePacket(2 * kTimeWindowMs, media_packet);
-  }
-  EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
-
-  // Should handle uint16_t overflow.
-  for (int i = 0xFFFF - 10; i < 0xFFFF + 10; ++i) {
-    uint16_t sequence_number = static_cast<uint16_t>(i);
-    const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
-    // Only the packets sent in this for loop will be considered.
-    nada_receiver_.ReceivePacket(4 * kTimeWindowMs, media_packet);
-  }
-  EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
-
-  // Should handle set overflow.
-  for (int i = 0; i < set_capacity * 1.5; ++i) {
-    uint16_t sequence_number = static_cast<uint16_t>(i);
-    const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
-    // Only the packets sent in this for loop will be considered.
-    nada_receiver_.ReceivePacket(6 * kTimeWindowMs, media_packet);
-  }
-  EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
-}
-
-// Should handle duplicates.
-TEST_F(NadaReceiverSideTest, PacketLossDuplicatedPackets) {
-  const int64_t kTimeWindowMs = NadaBweReceiver::kPacketLossTimeWindowMs;
-
-  for (int i = 0; i < 10; ++i) {
-    const MediaPacket media_packet(kFlowId, 0, 0, 0);
-    // Arrival time = 0, all packets will be considered.
-    nada_receiver_.ReceivePacket(0, media_packet);
-  }
-  EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
-
-  // Missing the element 5.
-  const uint16_t kSequenceNumbers[] = {1, 2, 3, 4, 6, 7, 8};
-  const int kNumPackets = ARRAY_SIZE(kSequenceNumbers);
-
-  // Insert each sequence number twice.
-  for (int i = 0; i < 2; ++i) {
-    for (int j = 0; j < kNumPackets; j++) {
-      const MediaPacket media_packet(kFlowId, 0, 0, kSequenceNumbers[j]);
-      // Only the packets sent in this for loop will be considered.
-      nada_receiver_.ReceivePacket(2 * kTimeWindowMs, media_packet);
+    rtc::scoped_ptr<NadaFeedback> nada_feedback(static_cast<NadaFeedback*>(
+        nada_receiver_.GetFeedback(arrival_time_ms)));
+    EXPECT_EQ(nada_feedback->exp_smoothed_delay_ms(),
+              exp_smoothed_delays_ms[i]);
+    // Since delay signals are lower than 50ms, they will not be non-linearly
+    // warped.
+    EXPECT_EQ(nada_feedback->est_queuing_delay_signal_ms(),
+              exp_smoothed_delays_ms[i]);
+    // Zero loss, congestion signal = queuing_delay
+    EXPECT_EQ(nada_feedback->congestion_signal(), exp_smoothed_delays_ms[i]);
+    if (i == 0) {
+      EXPECT_NEAR(nada_feedback->derivative(),
+                  static_cast<float>(exp_smoothed_delays_ms[i]) / kTimeGapMs,
+                  0.005f);
+    } else {
+      EXPECT_NEAR(nada_feedback->derivative(),
+                  static_cast<float>(exp_smoothed_delays_ms[i] -
+                                     exp_smoothed_delays_ms[i - 1]) /
+                      kTimeGapMs,
+                  0.005f);
     }
   }
-
-  EXPECT_NEAR(nada_receiver_.RecentPacketLossRatio(), 1.0f / (kNumPackets + 1),
-              0.1f / (kNumPackets + 1));
 }
 
-TEST_F(NadaReceiverSideTest, PacketLossLakingPackets) {
-  size_t set_capacity = nada_receiver_.GetSetCapacity();
-  EXPECT_LT(set_capacity, static_cast<size_t>(0xFFFF));
-
-  // Missing every other packet.
-  for (size_t i = 0; i < set_capacity; ++i) {
-    if ((i & 1) == 0) {  // Only even sequence numbers.
-      uint16_t sequence_number = static_cast<uint16_t>(i);
-      const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
-      // Arrival time = 0, all packets will be considered.
-      nada_receiver_.ReceivePacket(0, media_packet);
-    }
+int64_t Warp(int64_t input) {
+  const int64_t kMinThreshold = 50;   // Referred as d_th.
+  const int64_t kMaxThreshold = 400;  // Referred as d_max.
+  if (input < kMinThreshold) {
+    return input;
+  } else if (input < kMaxThreshold) {
+    return static_cast<int64_t>(
+        pow((static_cast<double>(kMaxThreshold - input)) /
+                (kMaxThreshold - kMinThreshold),
+            4.0) *
+        kMinThreshold);
+  } else {
+    return 0L;
   }
-  EXPECT_NEAR(nada_receiver_.RecentPacketLossRatio(), 0.5f, 0.01f);
 }
 
-TEST_F(NadaReceiverSideTest, PacketLossLakingFewPackets) {
-  size_t set_capacity = nada_receiver_.GetSetCapacity();
-  EXPECT_LT(set_capacity, static_cast<size_t>(0xFFFF));
+TEST_F(NadaReceiverSideTest, FeedbackWarpedDelay) {
+  // Since packets are 100ms apart, each one corresponds to a feedback.
+  const int64_t kTimeGapMs = 100;  // Between each packet.
 
-  const int kPeriod = 100;
-  // Missing one for each kPeriod packets.
-  for (size_t i = 0; i < set_capacity; ++i) {
-    if ((i % kPeriod) != 0) {
-      uint16_t sequence_number = static_cast<uint16_t>(i);
-      const MediaPacket media_packet(kFlowId, 0, 0, sequence_number);
-      // Arrival time = 0, all packets will be considered.
-      nada_receiver_.ReceivePacket(0, media_packet);
-    }
-  }
-  EXPECT_NEAR(nada_receiver_.RecentPacketLossRatio(), 1.0f / kPeriod,
-              0.1f / kPeriod);
-}
+  // Raw delays are = [50 250 450 650 850 1050 1250 1450] ms.
+  // Baseline delay will be 50 ms.
+  // Delay signals should be: [0 200 400 600 800 1000 1200 1400] ms.
+  const int64_t kMedianFilteredDelaysMs[] = {
+      0, 200, 200, 400, 400, 600, 800, 1000};
+  const int kNumPackets = ARRAY_SIZE(kMedianFilteredDelaysMs);
+  const float kAlpha = 0.1f;  // Used for exponential smoothing.
 
-// Packet's sequence numbers greatly apart, expect high loss.
-TEST_F(NadaReceiverSideTest, PacketLossWideGap) {
-  const int64_t kTimeWindowMs = NadaBweReceiver::kPacketLossTimeWindowMs;
+  int64_t exp_smoothed_delays_ms[kNumPackets];
+  exp_smoothed_delays_ms[0] = kMedianFilteredDelaysMs[0];
 
-  const MediaPacket media_packet1(0, 0, 0, 1);
-  const MediaPacket media_packet2(0, 0, 0, 1000);
-  // Only these two packets will be considered.
-  nada_receiver_.ReceivePacket(0, media_packet1);
-  nada_receiver_.ReceivePacket(0, media_packet2);
-  EXPECT_NEAR(nada_receiver_.RecentPacketLossRatio(), 0.998f, 0.0001f);
-
-  const MediaPacket media_packet3(0, 0, 0, 0);
-  const MediaPacket media_packet4(0, 0, 0, 0x8000);
-  // Only these two packets will be considered.
-  nada_receiver_.ReceivePacket(2 * kTimeWindowMs, media_packet3);
-  nada_receiver_.ReceivePacket(2 * kTimeWindowMs, media_packet4);
-  EXPECT_NEAR(nada_receiver_.RecentPacketLossRatio(), 0.99994f, 0.00001f);
-}
-
-// Packets arriving unordered should not be counted as losted.
-TEST_F(NadaReceiverSideTest, PacketLossUnorderedPackets) {
-  size_t num_packets = nada_receiver_.GetSetCapacity() / 2;
-  std::vector<uint16_t> sequence_numbers;
-
-  for (size_t i = 0; i < num_packets; ++i) {
-    sequence_numbers.push_back(static_cast<uint16_t>(i + 1));
+  for (int i = 1; i < kNumPackets; ++i) {
+    exp_smoothed_delays_ms[i] = static_cast<int64_t>(
+        kAlpha * kMedianFilteredDelaysMs[i] +
+        (1.0f - kAlpha) * exp_smoothed_delays_ms[i - 1] + 0.5f);
   }
 
-  random_shuffle(sequence_numbers.begin(), sequence_numbers.end());
+  for (int i = 0; i < kNumPackets; ++i) {
+    int64_t send_time_us = (i + 1) * kTimeGapMs * 1000;
+    int64_t arrival_time_ms = send_time_us / 1000 + 50 + 200 * i;
+    uint16_t sequence_number = static_cast<uint16_t>(i + 1);
+    // Payload sizes are not important here.
+    const MediaPacket media_packet(kFlowId, send_time_us, 0, sequence_number);
+    nada_receiver_.ReceivePacket(arrival_time_ms, media_packet);
 
-  for (size_t i = 0; i < num_packets; ++i) {
-    const MediaPacket media_packet(kFlowId, 0, 0, sequence_numbers[i]);
-    // Arrival time = 0, all packets will be considered.
-    nada_receiver_.ReceivePacket(0, media_packet);
+    rtc::scoped_ptr<NadaFeedback> nada_feedback(static_cast<NadaFeedback*>(
+        nada_receiver_.GetFeedback(arrival_time_ms)));
+    EXPECT_EQ(nada_feedback->exp_smoothed_delay_ms(),
+              exp_smoothed_delays_ms[i]);
+    // Delays can be non-linearly warped.
+    EXPECT_EQ(nada_feedback->est_queuing_delay_signal_ms(),
+              Warp(exp_smoothed_delays_ms[i]));
+    // Zero loss, congestion signal = queuing_delay
+    EXPECT_EQ(nada_feedback->congestion_signal(),
+              Warp(exp_smoothed_delays_ms[i]));
   }
-
-  EXPECT_EQ(nada_receiver_.RecentPacketLossRatio(), 0.0f);
 }
 
 TEST_F(FilterTest, MedianConstantArray) {

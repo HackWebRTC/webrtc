@@ -34,15 +34,20 @@ class Packet {
   virtual bool operator<(const Packet& rhs) const;
 
   virtual int flow_id() const { return flow_id_; }
-  virtual int64_t creation_time_us() const { return creation_time_us_; }
   virtual void set_send_time_us(int64_t send_time_us);
   virtual int64_t send_time_us() const { return send_time_us_; }
   virtual size_t payload_size() const { return payload_size_; }
   virtual Packet::Type GetPacketType() const = 0;
-  void set_sender_timestamp_us(int64_t sender_timestamp_us) {
+  virtual void set_sender_timestamp_us(int64_t sender_timestamp_us) {
     sender_timestamp_us_ = sender_timestamp_us;
   }
-  int64_t sender_timestamp_us() const { return sender_timestamp_us_; }
+  virtual int64_t creation_time_ms() const {
+    return (creation_time_us_ + 500) / 1000;
+  }
+  virtual int64_t sender_timestamp_ms() const {
+    return (sender_timestamp_us_ + 500) / 1000;
+  }
+  virtual int64_t send_time_ms() const { return (send_time_us_ + 500) / 1000; }
 
  protected:
   int flow_id_;
@@ -64,6 +69,7 @@ class MediaPacket : public Packet {
               size_t payload_size,
               const RTPHeader& header);
   MediaPacket(int64_t send_time_us, uint32_t sequence_number);
+
   virtual ~MediaPacket() {}
 
   int64_t GetAbsSendTimeInMs() const {
@@ -75,7 +81,6 @@ class MediaPacket : public Packet {
   const RTPHeader& header() const { return header_; }
   virtual Packet::Type GetPacketType() const { return kMedia; }
   uint16_t sequence_number() const { return header_.sequenceNumber; }
-  int64_t send_time_ms() const { return send_time_us_ / 1000; }
 
  private:
   static const int kAbsSendTimeFraction = 18;
@@ -99,7 +104,7 @@ class FeedbackPacket : public Packet {
   int64_t latest_send_time_ms() const { return latest_send_time_ms_; }
 
  private:
-  int64_t latest_send_time_ms_;  // Time stamp for the latest sent packet.
+  int64_t latest_send_time_ms_;  // Time stamp for the latest sent FbPacket.
 };
 
 class RembFeedback : public FeedbackPacket {

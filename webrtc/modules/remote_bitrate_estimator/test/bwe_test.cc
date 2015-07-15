@@ -48,7 +48,7 @@ void PacketProcessorRunner::RunFor(int64_t time_ms,
   processor_->RunFor(time_ms, &to_process);
   QueuePackets(&to_process, time_now_ms * 1000);
   if (!to_process.empty()) {
-    processor_->Plot((to_process.back()->send_time_us() + 500) / 1000);
+    processor_->Plot(to_process.back()->send_time_ms());
   }
   in_out->merge(to_process, DereferencingComparator<Packet>);
 }
@@ -269,11 +269,11 @@ void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
     senders.push_back(new TcpSender(&uplink_, tcp_flow, kTcpStartOffsetMs));
 
   ChokeFilter choke(&uplink_, all_flow_ids);
-  choke.SetCapacity(capacity_kbps);
-  choke.SetMaxDelay(max_delay_ms);
+  choke.set_capacity_kbps(capacity_kbps);
+  choke.set_max_delay_ms(max_delay_ms);
 
   DelayFilter delay_uplink(&uplink_, all_flow_ids);
-  delay_uplink.SetDelayMs(25);
+  delay_uplink.SetOneWayDelayMs(25);
 
   std::vector<RateCounterFilter*> rate_counters;
   for (int flow : all_flow_ids) {
@@ -296,7 +296,7 @@ void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
   }
 
   DelayFilter delay_downlink(&downlink_, all_flow_ids);
-  delay_downlink.SetDelayMs(25);
+  delay_downlink.SetOneWayDelayMs(25);
 
   RunFor(run_time_seconds * 1000);
 
