@@ -379,7 +379,8 @@ extern "C" {
                                 int16_t rate,
                                 int framesize);
 
-
+  void WebRtcIsacfix_SetInitialBweBottleneck(ISACFIX_MainStruct* ISAC_main_inst,
+                                             int bottleneck_bits_per_second);
 
   /****************************************************************************
    * WebRtcIsacfix_ControlBwe(...)

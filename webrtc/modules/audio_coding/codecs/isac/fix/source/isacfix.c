@@ -1110,6 +1110,13 @@ int16_t WebRtcIsacfix_Control(ISACFIX_MainStruct *ISAC_main_inst,
   return 0;
 }
 
+void WebRtcIsacfix_SetInitialBweBottleneck(ISACFIX_MainStruct* ISAC_main_inst,
+                                           int bottleneck_bits_per_second) {
+  ISACFIX_SubStruct* inst = (ISACFIX_SubStruct*)ISAC_main_inst;
+  assert(bottleneck_bits_per_second >= 10000 &&
+         bottleneck_bits_per_second <= 32000);
+  inst->bwestimator_obj.sendBwAvg = ((uint32_t)bottleneck_bits_per_second) << 7;
+}
 
 /****************************************************************************
  * WebRtcIsacfix_ControlBwe(...)

@@ -91,6 +91,15 @@ struct IsacFloat {
                                        uint16_t sample_rate_hz) {
     return WebRtcIsac_SetEncSampRate(inst, sample_rate_hz);
   }
+  static inline void SetEncSampRateInDecoder(instance_type* inst,
+                                                uint16_t sample_rate_hz) {
+    WebRtcIsac_SetEncSampRateInDecoder(inst, sample_rate_hz);
+  }
+  static inline void SetInitialBweBottleneck(
+      instance_type* inst,
+      int bottleneck_bits_per_second) {
+    WebRtcIsac_SetInitialBweBottleneck(inst, bottleneck_bits_per_second);
+  }
   static inline int16_t UpdateBwEstimate(instance_type* inst,
                                          const uint8_t* encoded,
                                          int32_t packet_size,

@@ -93,6 +93,15 @@ struct IsacFix {
     DCHECK_EQ(sample_rate_hz, kFixSampleRate);
     return 0;
   }
+  static inline void SetEncSampRateInDecoder(instance_type* inst,
+                                             uint16_t sample_rate_hz) {
+    DCHECK_EQ(sample_rate_hz, kFixSampleRate);
+  }
+  static inline void SetInitialBweBottleneck(
+      instance_type* inst,
+      int bottleneck_bits_per_second) {
+    WebRtcIsacfix_SetInitialBweBottleneck(inst, bottleneck_bits_per_second);
+  }
   static inline int16_t UpdateBwEstimate(instance_type* inst,
                                          const uint8_t* encoded,
                                          int32_t packet_size,

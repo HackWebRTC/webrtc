@@ -269,6 +269,8 @@ extern "C" {
       int32_t rate,
       int framesize);
 
+  void WebRtcIsac_SetInitialBweBottleneck(ISACStruct* ISAC_main_inst,
+                                          int bottleneck_bits_per_second);
 
   /******************************************************************************
    * WebRtcIsac_ControlBwe(...)
@@ -706,12 +708,17 @@ extern "C" {
       int16_t*        decoded,
       int16_t*        speechType);
 
-  /* Fills in an IsacBandwidthInfo struct. */
+  /* Fills in an IsacBandwidthInfo struct. |inst| should be a decoder. */
   void WebRtcIsac_GetBandwidthInfo(ISACStruct* inst, IsacBandwidthInfo* bwinfo);
 
-  /* Uses the values from an IsacBandwidthInfo struct. */
+  /* Uses the values from an IsacBandwidthInfo struct. |inst| should be an
+     encoder. */
   void WebRtcIsac_SetBandwidthInfo(ISACStruct* inst,
                                    const IsacBandwidthInfo* bwinfo);
+
+  /* If |inst| is a decoder but not an encoder: tell it what sample rate the
+     encoder is using, for bandwidth estimation purposes. */
+  void WebRtcIsac_SetEncSampRateInDecoder(ISACStruct* inst, int sample_rate_hz);
 
 #if defined(__cplusplus)
 }

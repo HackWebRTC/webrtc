@@ -1578,6 +1578,13 @@ int16_t WebRtcIsac_Control(ISACStruct* ISAC_main_inst,
   return 0;
 }
 
+void WebRtcIsac_SetInitialBweBottleneck(ISACStruct* ISAC_main_inst,
+                                        int bottleneck_bits_per_second) {
+  ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
+  assert(bottleneck_bits_per_second >= 10000 &&
+         bottleneck_bits_per_second <= 32000);
+  instISAC->bwestimator_obj.send_bw_avg = (float)bottleneck_bits_per_second;
+}
 
 /****************************************************************************
  * WebRtcIsac_ControlBwe(...)
@@ -2398,4 +2405,13 @@ void WebRtcIsac_SetBandwidthInfo(ISACStruct* inst,
   ISACMainStruct* instISAC = (ISACMainStruct*)inst;
   assert(instISAC->initFlag & BIT_MASK_ENC_INIT);
   WebRtcIsacBw_SetBandwidthInfo(&instISAC->bwestimator_obj, bwinfo);
+}
+
+void WebRtcIsac_SetEncSampRateInDecoder(ISACStruct* inst,
+                                        int sample_rate_hz) {
+  ISACMainStruct* instISAC = (ISACMainStruct*)inst;
+  assert(instISAC->initFlag & BIT_MASK_DEC_INIT);
+  assert(!(instISAC->initFlag & BIT_MASK_ENC_INIT));
+  assert(sample_rate_hz == 16000 || sample_rate_hz == 32000);
+  instISAC->encoderSamplingRateKHz = sample_rate_hz / 1000;
 }
