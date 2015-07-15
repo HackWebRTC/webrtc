@@ -397,9 +397,10 @@ int32_t ViEEncoder::ScaleInputImage(bool enable) {
   return 0;
 }
 
-int ViEEncoder::GetPaddingNeededBps(int bitrate_bps) const {
+int ViEEncoder::GetPaddingNeededBps() const {
   int64_t time_of_last_frame_activity_ms;
   int min_transmit_bitrate_bps;
+  int bitrate_bps;
   {
     CriticalSectionScoped cs(data_cs_.get());
     bool send_padding =
@@ -408,15 +409,12 @@ int ViEEncoder::GetPaddingNeededBps(int bitrate_bps) const {
       return 0;
     time_of_last_frame_activity_ms = time_of_last_frame_activity_ms_;
     min_transmit_bitrate_bps = 1000 * min_transmit_bitrate_kbps_;
+    bitrate_bps = last_observed_bitrate_bps_;
   }
 
   VideoCodec send_codec;
   if (vcm_->SendCodec(&send_codec) != 0)
     return 0;
-  SimulcastStream* stream_configs = send_codec.simulcastStream;
-  // Allocate the bandwidth between the streams.
-  std::vector<uint32_t> stream_bitrates = AllocateStreamBitrates(
-      bitrate_bps, stream_configs, send_codec.numberOfSimulcastStreams);
 
   bool video_is_suspended = vcm_->VideoSuspended();
 
@@ -427,6 +425,7 @@ int ViEEncoder::GetPaddingNeededBps(int bitrate_bps) const {
   if (send_codec.numberOfSimulcastStreams == 0) {
     pad_up_to_bitrate_bps = send_codec.minBitrate * 1000;
   } else {
+    SimulcastStream* stream_configs = send_codec.simulcastStream;
     pad_up_to_bitrate_bps =
         stream_configs[send_codec.numberOfSimulcastStreams - 1].minBitrate *
         1000;

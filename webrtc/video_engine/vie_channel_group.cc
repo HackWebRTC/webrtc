@@ -479,10 +479,8 @@ void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
   int pad_up_to_bitrate_bps = 0;
   {
     CriticalSectionScoped lock(encoder_map_cs_.get());
-    for (const auto& encoder : send_encoders_) {
-      pad_up_to_bitrate_bps +=
-          encoder.second->GetPaddingNeededBps(target_bitrate_bps);
-    }
+    for (const auto& encoder : send_encoders_)
+      pad_up_to_bitrate_bps += encoder.second->GetPaddingNeededBps();
   }
   pacer_->UpdateBitrate(
       target_bitrate_bps / 1000,

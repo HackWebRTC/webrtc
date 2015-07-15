@@ -177,7 +177,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   int channel_id() const { return channel_id_; }
 
-  int GetPaddingNeededBps(int bitrate_bps) const;
+  int GetPaddingNeededBps() const;
 
  protected:
   // Called by BitrateObserver.
