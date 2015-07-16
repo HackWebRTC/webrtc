@@ -265,7 +265,7 @@ bool WebRtcVideoCapturer::SetApplyRotation(bool enable) {
   // calls, can't take lock.
   DCHECK(module_);
 
-  const std::string& group_name =
+  const std::string group_name =
       webrtc::field_trial::FindFullName("WebRTC-CVO");
 
   if (group_name == "Disabled") {
