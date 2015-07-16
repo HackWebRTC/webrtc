@@ -119,10 +119,12 @@ class CroppingWindowCapturerWin : public CroppingWindowCapturer {
   // The region from GetWindowRgn in the desktop coordinate if the region is
   // rectangular, or the rect from GetWindowRect if the region is not set.
   DesktopRect window_region_rect_;
+
+  AeroChecker aero_checker_;
 };
 
 bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
-  if (!rtc::IsWindows8OrLater())
+  if (!rtc::IsWindows8OrLater() && aero_checker_.IsAeroEnabled())
     return false;
 
   // Check if the window is a translucent layered window.

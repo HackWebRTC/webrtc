@@ -43,4 +43,27 @@ GetCroppedWindowRect(HWND window,
   return true;
 }
 
+AeroChecker::AeroChecker() : dwmapi_library_(nullptr), func_(nullptr) {
+  // Try to load dwmapi.dll dynamically since it is not available on XP.
+  dwmapi_library_ = LoadLibrary(L"dwmapi.dll");
+  if (dwmapi_library_) {
+    func_ = reinterpret_cast<DwmIsCompositionEnabledFunc>(
+        GetProcAddress(dwmapi_library_, "DwmIsCompositionEnabled"));
+  }
+}
+
+AeroChecker::~AeroChecker() {
+  if (dwmapi_library_) {
+    FreeLibrary(dwmapi_library_);
+  }
+}
+
+bool AeroChecker::IsAeroEnabled() {
+  BOOL result = FALSE;
+  if (func_) {
+    func_(&result);
+  }
+  return result != FALSE;
+}
+
 }  // namespace webrtc

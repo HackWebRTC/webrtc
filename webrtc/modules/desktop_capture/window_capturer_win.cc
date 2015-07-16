@@ -22,8 +22,6 @@ namespace webrtc {
 
 namespace {
 
-typedef HRESULT (WINAPI *DwmIsCompositionEnabledFunc)(BOOL* enabled);
-
 BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
   WindowCapturer::WindowList* list =
       reinterpret_cast<WindowCapturer::WindowList*>(param);
@@ -81,19 +79,15 @@ class WindowCapturerWin : public WindowCapturer {
   void Capture(const DesktopRegion& region) override;
 
  private:
-  bool IsAeroEnabled();
-
   Callback* callback_;
 
   // HWND and HDC for the currently selected window or NULL if window is not
   // selected.
   HWND window_;
 
-  // dwmapi.dll is used to determine if desktop compositing is enabled.
-  HMODULE dwmapi_library_;
-  DwmIsCompositionEnabledFunc is_composition_enabled_func_;
-
   DesktopSize previous_size_;
+
+  AeroChecker aero_checker_;
 
   DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
 };
@@ -101,28 +95,9 @@ class WindowCapturerWin : public WindowCapturer {
 WindowCapturerWin::WindowCapturerWin()
     : callback_(NULL),
       window_(NULL) {
-  // Try to load dwmapi.dll dynamically since it is not available on XP.
-  dwmapi_library_ = LoadLibrary(L"dwmapi.dll");
-  if (dwmapi_library_) {
-    is_composition_enabled_func_ =
-        reinterpret_cast<DwmIsCompositionEnabledFunc>(
-            GetProcAddress(dwmapi_library_, "DwmIsCompositionEnabled"));
-    assert(is_composition_enabled_func_);
-  } else {
-    is_composition_enabled_func_ = NULL;
-  }
 }
 
 WindowCapturerWin::~WindowCapturerWin() {
-  if (dwmapi_library_)
-    FreeLibrary(dwmapi_library_);
-}
-
-bool WindowCapturerWin::IsAeroEnabled() {
-  BOOL result = FALSE;
-  if (is_composition_enabled_func_)
-    is_composition_enabled_func_(&result);
-  return result != FALSE;
 }
 
 bool WindowCapturerWin::GetWindowList(WindowList* windows) {
@@ -228,7 +203,7 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   // capturing - it somehow affects what we get from BitBlt() on the subsequent
   // captures.
 
-  if (!IsAeroEnabled() || !previous_size_.equals(frame->size())) {
+  if (!aero_checker_.IsAeroEnabled() || !previous_size_.equals(frame->size())) {
     result = PrintWindow(window_, mem_dc, 0);
   }
 
