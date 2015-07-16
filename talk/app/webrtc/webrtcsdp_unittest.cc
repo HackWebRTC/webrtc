@@ -778,9 +778,6 @@ class WebRtcSdpTest : public testing::Test {
       EXPECT_EQ(ext1.uri, ext2.uri);
       EXPECT_EQ(ext1.id, ext2.id);
     }
-
-    // buffered mode latency
-    EXPECT_EQ(cd1->buffered_mode_latency(), cd2->buffered_mode_latency());
   }
 
 
@@ -1721,22 +1718,6 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithExtmap) {
   EXPECT_EQ(sdp_with_extmap, message);
 }
 
-TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBufferLatency) {
-  VideoContentDescription* vcd = static_cast<VideoContentDescription*>(
-      GetFirstVideoContent(&desc_)->description);
-  vcd->set_buffered_mode_latency(128);
-
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(),
-                                jdesc_.session_id(),
-                                jdesc_.session_version()));
-  std::string message = webrtc::SdpSerialize(jdesc_);
-  std::string sdp_with_buffer_latency = kSdpFullString;
-  InjectAfter("a=rtpmap:120 VP8/90000\r\n",
-              "a=x-google-buffer-latency:128\r\n",
-              &sdp_with_buffer_latency);
-  EXPECT_EQ(sdp_with_buffer_latency, message);
-}
-
 TEST_F(WebRtcSdpTest, SerializeCandidates) {
   std::string message = webrtc::SdpSerializeCandidate(*jcandidate_);
   EXPECT_EQ(std::string(kRawCandidate), message);
@@ -1960,24 +1941,6 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithUfragPwd) {
       "session+level+iceufrag", "session+level+icepwd"));
   EXPECT_TRUE(SdpDeserialize(sdp_with_ufrag_pwd, &jdesc_with_ufrag_pwd));
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_ufrag_pwd));
-}
-
-TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithBufferLatency) {
-  JsepSessionDescription jdesc_with_buffer_latency(kDummyString);
-  std::string sdp_with_buffer_latency = kSdpFullString;
-  InjectAfter("a=rtpmap:120 VP8/90000\r\n",
-              "a=x-google-buffer-latency:128\r\n",
-              &sdp_with_buffer_latency);
-
-  EXPECT_TRUE(
-      SdpDeserialize(sdp_with_buffer_latency, &jdesc_with_buffer_latency));
-  VideoContentDescription* vcd = static_cast<VideoContentDescription*>(
-      GetFirstVideoContent(&desc_)->description);
-  vcd->set_buffered_mode_latency(128);
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(),
-                                jdesc_.session_id(),
-                                jdesc_.session_version()));
-  EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_buffer_latency));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithRecvOnlyContent) {
@@ -2438,10 +2401,6 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithInvalidAttributeValue) {
   ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
                                  "a=extmap:badvalue http://example.com\r\n",
                                  "a=extmap:badvalue http://example.com");
-  // x-google-buffer-latency
-  ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
-                                 "a=x-google-buffer-latency:badvalue\r\n",
-                                 "a=x-google-buffer-latency:badvalue");
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithReorderedPltypes) {

@@ -164,8 +164,6 @@ static const char kAttributeSctpPort[] = "sctp-port";
 // Experimental flags
 static const char kAttributeXGoogleFlag[] = "x-google-flag";
 static const char kValueConference[] = "conference";
-static const char kAttributeXGoogleBufferLatency[] =
-    "x-google-buffer-latency";
 
 // Candidate
 static const char kCandidateHost[] = "host";
@@ -1427,15 +1425,6 @@ void BuildRtpContentAttributes(
   // [/<encodingparameters>]
   BuildRtpMap(media_desc, media_type, message);
 
-  // Specify latency for buffered mode.
-  // a=x-google-buffer-latency:<value>
-  if (media_desc->buffered_mode_latency() != cricket::kBufferedModeDisabled) {
-    std::ostringstream os;
-    InitAttrLine(kAttributeXGoogleBufferLatency, &os);
-    os << kSdpDelimiterColon << media_desc->buffered_mode_latency();
-    AddLine(os.str(), message);
-  }
-
   for (StreamParamsVec::const_iterator track = media_desc->streams().begin();
        track != media_desc->streams().end(); ++track) {
     // Require that the track belongs to a media stream,
@@ -2631,22 +2620,6 @@ bool ParseContent(const std::string& message,
         }
         if (flag_value.compare(kValueConference) == 0)
           media_desc->set_conference_mode(true);
-      } else if (HasAttribute(line, kAttributeXGoogleBufferLatency)) {
-        // Experimental attribute.
-        // TODO: expose API to set this directly.
-        std::string flag_value;
-        if (!GetValue(line, kAttributeXGoogleBufferLatency, &flag_value,
-                      error)) {
-          return false;
-        }
-        int buffer_latency = 0;
-        if (!GetValueFromString(line, flag_value, &buffer_latency, error)) {
-          return false;
-        }
-        if (buffer_latency < 0) {
-          return ParseFailed(line, "Buffer latency less than 0.", error);
-        }
-        media_desc->set_buffered_mode_latency(buffer_latency);
       }
     } else {
       // Only parse lines that we are interested of.

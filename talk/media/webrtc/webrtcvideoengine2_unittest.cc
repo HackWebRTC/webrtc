@@ -2156,6 +2156,8 @@ TEST_F(WebRtcVideoChannel2Test, TestSetDscpOptions) {
       new cricket::FakeNetworkInterface);
   channel_->SetInterface(network_interface.get());
   cricket::VideoOptions options;
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_EQ(rtc::DSCP_NO_CHANGE, network_interface->dscp());
   options.dscp.Set(true);
   EXPECT_TRUE(channel_->SetOptions(options));
   EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());

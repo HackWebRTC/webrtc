@@ -327,7 +327,6 @@ struct VideoOptions {
         change.system_low_adaptation_threshhold);
     system_high_adaptation_threshhold.SetFrom(
         change.system_high_adaptation_threshhold);
-    buffered_mode_latency.SetFrom(change.buffered_mode_latency);
     dscp.SetFrom(change.dscp);
     suspend_below_min_bitrate.SetFrom(change.suspend_below_min_bitrate);
     unsignalled_recv_stream_limit.SetFrom(change.unsignalled_recv_stream_limit);
@@ -356,7 +355,7 @@ struct VideoOptions {
                o.system_low_adaptation_threshhold &&
            system_high_adaptation_threshhold ==
                o.system_high_adaptation_threshhold &&
-           buffered_mode_latency == o.buffered_mode_latency && dscp == o.dscp &&
+           dscp == o.dscp &&
            suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
            unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
            use_simulcast_adapter == o.use_simulcast_adapter &&
@@ -385,7 +384,6 @@ struct VideoOptions {
     ost << ToStringIfSet("process", process_adaptation_threshhold);
     ost << ToStringIfSet("low", system_low_adaptation_threshhold);
     ost << ToStringIfSet("high", system_high_adaptation_threshhold);
-    ost << ToStringIfSet("buffered mode latency", buffered_mode_latency);
     ost << ToStringIfSet("dscp", dscp);
     ost << ToStringIfSet("suspend below min bitrate",
                          suspend_below_min_bitrate);
@@ -439,8 +437,6 @@ struct VideoOptions {
   Settable<float> system_low_adaptation_threshhold;
   // High threshhold for cpu adaptation.  (Adapt down)
   Settable<float> system_high_adaptation_threshhold;
-  // Specify buffered mode latency in milliseconds.
-  Settable<int> buffered_mode_latency;
   // Set DSCP value for packet sent from video channel.
   Settable<bool> dscp;
   // Enable WebRTC suspension of video. No video frames will be sent when the
