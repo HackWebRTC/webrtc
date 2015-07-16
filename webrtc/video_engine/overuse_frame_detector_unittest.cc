@@ -288,59 +288,6 @@ TEST_F(OveruseFrameDetectorTest, MinFrameSamplesBeforeUpdatingCaptureJitter) {
   EXPECT_EQ(InitialJitter(), CaptureJitterMs());
 }
 
-TEST_F(OveruseFrameDetectorTest, NoCaptureQueueDelay) {
-  EXPECT_EQ(overuse_detector_->CaptureQueueDelayMsPerS(), 0);
-  overuse_detector_->FrameCaptured(
-      kWidth, kHeight, clock_->TimeInMilliseconds());
-  overuse_detector_->FrameProcessingStarted();
-  EXPECT_EQ(overuse_detector_->CaptureQueueDelayMsPerS(), 0);
-}
-
-TEST_F(OveruseFrameDetectorTest, CaptureQueueDelay) {
-  overuse_detector_->FrameCaptured(
-      kWidth, kHeight, clock_->TimeInMilliseconds());
-  clock_->AdvanceTimeMilliseconds(100);
-  overuse_detector_->FrameProcessingStarted();
-  EXPECT_EQ(overuse_detector_->CaptureQueueDelayMsPerS(), 100);
-}
-
-TEST_F(OveruseFrameDetectorTest, CaptureQueueDelayMultipleFrames) {
-  overuse_detector_->FrameCaptured(
-      kWidth, kHeight, clock_->TimeInMilliseconds());
-  clock_->AdvanceTimeMilliseconds(10);
-  overuse_detector_->FrameCaptured(
-      kWidth, kHeight, clock_->TimeInMilliseconds());
-  clock_->AdvanceTimeMilliseconds(20);
-
-  overuse_detector_->FrameProcessingStarted();
-  EXPECT_EQ(overuse_detector_->CaptureQueueDelayMsPerS(), 30);
-  overuse_detector_->FrameProcessingStarted();
-  EXPECT_EQ(overuse_detector_->CaptureQueueDelayMsPerS(), 20);
-}
-
-TEST_F(OveruseFrameDetectorTest, CaptureQueueDelayResetAtResolutionSwitch) {
-  overuse_detector_->FrameCaptured(
-      kWidth, kHeight, clock_->TimeInMilliseconds());
-  clock_->AdvanceTimeMilliseconds(10);
-  overuse_detector_->FrameCaptured(
-      kWidth, kHeight + 1, clock_->TimeInMilliseconds());
-  clock_->AdvanceTimeMilliseconds(20);
-
-  overuse_detector_->FrameProcessingStarted();
-  EXPECT_EQ(overuse_detector_->CaptureQueueDelayMsPerS(), 20);
-}
-
-TEST_F(OveruseFrameDetectorTest, CaptureQueueDelayNoMatchingCapturedFrame) {
-  overuse_detector_->FrameCaptured(
-      kWidth, kHeight, clock_->TimeInMilliseconds());
-  clock_->AdvanceTimeMilliseconds(100);
-  overuse_detector_->FrameProcessingStarted();
-  EXPECT_EQ(overuse_detector_->CaptureQueueDelayMsPerS(), 100);
-  // No new captured frame. The last delay should be reported.
-  overuse_detector_->FrameProcessingStarted();
-  EXPECT_EQ(overuse_detector_->CaptureQueueDelayMsPerS(), 100);
-}
-
 TEST_F(OveruseFrameDetectorTest, FrameDelay_OneFrameDisabled) {
   options_.enable_extended_processing_usage = false;
   ReinitializeOveruseDetector();

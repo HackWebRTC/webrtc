@@ -131,7 +131,6 @@ bool VideoCaptureInput::CaptureProcess() {
     if (rtc::AtomicOps::Load(&stop_))
       return false;
 
-    overuse_detector_->FrameProcessingStarted();
     int64_t encode_start_time = -1;
     VideoFrame deliver_frame;
     {

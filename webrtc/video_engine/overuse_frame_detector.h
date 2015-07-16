@@ -106,18 +106,13 @@ struct CpuOveruseMetrics {
   CpuOveruseMetrics()
       : capture_jitter_ms(-1),
         avg_encode_time_ms(-1),
-        encode_usage_percent(-1),
-        capture_queue_delay_ms_per_s(-1) {}
+        encode_usage_percent(-1) {}
 
   int capture_jitter_ms;  // The current estimated jitter in ms based on
                           // incoming captured frames.
   int avg_encode_time_ms;   // The average encode time in ms.
   int encode_usage_percent; // The average encode time divided by the average
                             // time difference between incoming captured frames.
-  int capture_queue_delay_ms_per_s;  // The current time delay between an
-                                     // incoming captured frame until the frame
-                                     // is being processed. The delay is
-                                     // expressed in ms delay per second.
 };
 
 class CpuOveruseMetricsObserver {
@@ -161,9 +156,6 @@ class OveruseFrameDetector : public Module {
   // Called for each captured frame.
   void FrameCaptured(int width, int height, int64_t capture_time_ms);
 
-  // Called when the processing of a captured frame is started.
-  void FrameProcessingStarted();
-
   // Called for each encoded frame.
   void FrameEncoded(int encode_time_ms);
 
@@ -171,7 +163,6 @@ class OveruseFrameDetector : public Module {
   void FrameSent(int64_t capture_time_ms);
 
   // Only public for testing.
-  int CaptureQueueDelayMsPerS() const;
   int LastProcessingTimeMs() const;
   int FramesInQueue() const;
 
@@ -182,7 +173,6 @@ class OveruseFrameDetector : public Module {
  private:
   class EncodeTimeAvg;
   class SendProcessingUsage;
-  class CaptureQueueDelay;
   class FrameQueue;
 
   void UpdateCpuOveruseMetrics() EXCLUSIVE_LOCKS_REQUIRED(crit_);
@@ -246,9 +236,6 @@ class OveruseFrameDetector : public Module {
   const rtc::scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
 
   int64_t last_sample_time_ms_;  // Only accessed by one thread.
-
-  const rtc::scoped_ptr<CaptureQueueDelay> capture_queue_delay_
-      GUARDED_BY(crit_);
 
   rtc::ThreadChecker processing_thread_;
 

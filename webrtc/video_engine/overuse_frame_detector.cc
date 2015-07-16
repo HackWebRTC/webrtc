@@ -253,63 +253,6 @@ class OveruseFrameDetector::FrameQueue {
   int last_processing_time_ms_;
 };
 
-// TODO(asapersson): Remove this class. Not used.
-// Class for calculating the capture queue delay change.
-class OveruseFrameDetector::CaptureQueueDelay {
- public:
-  CaptureQueueDelay()
-      : kWeightFactor(0.5f),
-        delay_ms_(0),
-        filtered_delay_ms_per_s_(new rtc::ExpFilter(kWeightFactor)) {
-    filtered_delay_ms_per_s_->Apply(1.0f, 0.0f);
-  }
-  ~CaptureQueueDelay() {}
-
-  void FrameCaptured(int64_t now) {
-    const size_t kMaxSize = 200;
-    if (frames_.size() > kMaxSize) {
-      frames_.pop_front();
-    }
-    frames_.push_back(now);
-  }
-
-  void FrameProcessingStarted(int64_t now) {
-    if (frames_.empty()) {
-      return;
-    }
-    delay_ms_ = now - frames_.front();
-    frames_.pop_front();
-  }
-
-  void CalculateDelayChange(int64_t diff_last_sample_ms) {
-    if (diff_last_sample_ms <= 0) {
-      return;
-    }
-    float exp = static_cast<float>(diff_last_sample_ms) / kProcessIntervalMs;
-    exp = std::min(exp, kMaxExp);
-    filtered_delay_ms_per_s_->Apply(exp,
-                                    delay_ms_ * 1000.0f / diff_last_sample_ms);
-    ClearFrames();
-  }
-
-  void ClearFrames() {
-    frames_.clear();
-  }
-
-  int delay_ms() const {
-    return delay_ms_;
-  }
-
-  int Value() const {
-    return static_cast<int>(filtered_delay_ms_per_s_->filtered() + 0.5);
-  }
-
- private:
-  const float kWeightFactor;
-  std::list<int64_t> frames_;
-  int delay_ms_;
-  rtc::scoped_ptr<rtc::ExpFilter> filtered_delay_ms_per_s_;
-};
 
 OveruseFrameDetector::OveruseFrameDetector(
     Clock* clock,
@@ -335,8 +278,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       encode_time_(new EncodeTimeAvg()),
       usage_(new SendProcessingUsage(options)),
       frame_queue_(new FrameQueue()),
-      last_sample_time_ms_(0),
-      capture_queue_delay_(new CaptureQueueDelay()) {
+      last_sample_time_ms_(0) {
   DCHECK(metrics_observer != nullptr);
   // Make sure stats are initially up-to-date. This simplifies unit testing
   // since we don't have to trigger an update using one of the methods which
@@ -346,11 +288,6 @@ OveruseFrameDetector::OveruseFrameDetector(
 }
 
 OveruseFrameDetector::~OveruseFrameDetector() {
-}
-
-int OveruseFrameDetector::CaptureQueueDelayMsPerS() const {
-  rtc::CritScope cs(&crit_);
-  return capture_queue_delay_->delay_ms();
 }
 
 int OveruseFrameDetector::LastProcessingTimeMs() const {
@@ -367,7 +304,6 @@ void OveruseFrameDetector::UpdateCpuOveruseMetrics() {
   metrics_.capture_jitter_ms = static_cast<int>(capture_deltas_.StdDev() + 0.5);
   metrics_.avg_encode_time_ms = encode_time_->Value();
   metrics_.encode_usage_percent = usage_->Value();
-  metrics_.capture_queue_delay_ms_per_s = capture_queue_delay_->Value();
 
   metrics_observer_->CpuOveruseMetricsUpdated(metrics_);
 }
@@ -396,7 +332,6 @@ void OveruseFrameDetector::ResetAll(int num_pixels) {
   capture_deltas_.Reset();
   usage_->Reset();
   frame_queue_->Reset();
-  capture_queue_delay_->ClearFrames();
   last_capture_time_ = 0;
   num_process_times_ = 0;
   UpdateCpuOveruseMetrics();
@@ -418,17 +353,10 @@ void OveruseFrameDetector::FrameCaptured(int width,
   }
   last_capture_time_ = now;
 
-  capture_queue_delay_->FrameCaptured(now);
-
   if (options_.enable_extended_processing_usage) {
     frame_queue_->Start(capture_time_ms, now);
   }
   UpdateCpuOveruseMetrics();
-}
-
-void OveruseFrameDetector::FrameProcessingStarted() {
-  rtc::CritScope cs(&crit_);
-  capture_queue_delay_->FrameProcessingStarted(clock_->TimeInMilliseconds());
 }
 
 void OveruseFrameDetector::FrameEncoded(int encode_time_ms) {
@@ -477,14 +405,10 @@ int32_t OveruseFrameDetector::Process() {
   if (now < next_process_time_)
     return 0;
 
-  int64_t diff_ms = now - next_process_time_ + kProcessIntervalMs;
   next_process_time_ = now + kProcessIntervalMs;
 
   rtc::CritScope cs(&crit_);
   ++num_process_times_;
-
-  capture_queue_delay_->CalculateDelayChange(diff_ms);
-  UpdateCpuOveruseMetrics();
 
   if (num_process_times_ <= options_.min_process_count) {
     return 0;
