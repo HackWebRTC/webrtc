@@ -302,10 +302,12 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       LOG(WARNING) << "Can't parse received session description message.";
       return;
     }
+    webrtc::SdpParseError error;
     webrtc::SessionDescriptionInterface* session_description(
-        webrtc::CreateSessionDescription(type, sdp));
+        webrtc::CreateSessionDescription(type, sdp, &error));
     if (!session_description) {
-      LOG(WARNING) << "Can't parse received session description message.";
+      LOG(WARNING) << "Can't parse received session description message. "
+          << "SdpParseError was: " << error.description;
       return;
     }
     LOG(INFO) << " Received session description :" << message;
@@ -328,10 +330,12 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       LOG(WARNING) << "Can't parse received message.";
       return;
     }
+    webrtc::SdpParseError error;
     rtc::scoped_ptr<webrtc::IceCandidateInterface> candidate(
-        webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp));
+        webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, &error));
     if (!candidate.get()) {
-      LOG(WARNING) << "Can't parse received candidate message.";
+      LOG(WARNING) << "Can't parse received candidate message. "
+          << "SdpParseError was: " << error.description;
       return;
     }
     if (!peer_connection_->AddIceCandidate(candidate.get())) {
@@ -536,7 +540,7 @@ void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
   if (loopback_) {
     // Replace message type from "offer" to "answer"
     webrtc::SessionDescriptionInterface* session_description(
-        webrtc::CreateSessionDescription("answer", sdp));
+        webrtc::CreateSessionDescription("answer", sdp, nullptr));
     peer_connection_->SetRemoteDescription(
         DummySetSessionDescriptionObserver::Create(), session_description);
     return;

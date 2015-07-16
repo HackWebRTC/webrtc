@@ -303,25 +303,6 @@ inline const StreamParams* GetStream(const StreamParamsVec& streams,
       [&selector](const StreamParams& sp) { return selector.Matches(sp); });
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Deprecated methods that will be removed one of these days.
-// Please use the methods with the same name above.
-bool GetStream(const StreamParamsVec& streams,
-               const StreamSelector& selector,
-               StreamParams* stream_out);
-inline bool GetStreamBySsrc(const StreamParamsVec& streams, uint32 ssrc,
-                            StreamParams* stream_out) {
-  return GetStream(streams, StreamSelector(ssrc), stream_out);
-}
-inline bool GetStreamByIds(const StreamParamsVec& streams,
-                           const std::string& groupid,
-                           const std::string& id,
-                           StreamParams* stream_out) {
-  return GetStream(streams, StreamSelector(groupid, id), stream_out);
-}
-// End deprecated methods.
-////////////////////////////////////////////////////////////////////////////////
-
 template <class Condition>
 bool RemoveStream(StreamParamsVec* streams, Condition condition) {
   auto iter(std::remove_if(streams->begin(), streams->end(), condition));

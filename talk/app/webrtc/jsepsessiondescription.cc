@@ -76,11 +76,6 @@ const int JsepSessionDescription::kMaxVideoCodecHeight = 1080;
 const int JsepSessionDescription::kDefaultVideoCodecPreference = 1;
 
 SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
-                                                      const std::string& sdp) {
-  return CreateSessionDescription(type, sdp, NULL);
-}
-
-SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
                                                       const std::string& sdp,
                                                       SdpParseError* error) {
   if (!IsTypeSupported(type)) {

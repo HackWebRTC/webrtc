@@ -1085,7 +1085,8 @@ class WebRtcSessionTest : public testing::Test {
     std::string sdp;
     offer->ToString(&sdp);
     SessionDescriptionInterface* desc =
-        webrtc::CreateSessionDescription(JsepSessionDescription::kAnswer, sdp);
+        webrtc::CreateSessionDescription(
+            JsepSessionDescription::kAnswer, sdp, nullptr);
     ASSERT_TRUE(desc != NULL);
     SetRemoteDescriptionWithoutError(desc);
 

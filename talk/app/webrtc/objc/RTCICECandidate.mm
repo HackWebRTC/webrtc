@@ -80,7 +80,8 @@
 
 - (const webrtc::IceCandidateInterface*)candidate {
   return webrtc::CreateIceCandidate(
-      [self.sdpMid UTF8String], self.sdpMLineIndex, [self.sdp UTF8String]);
+      [self.sdpMid UTF8String], self.sdpMLineIndex, [self.sdp UTF8String],
+      nullptr);
 }
 
 @end

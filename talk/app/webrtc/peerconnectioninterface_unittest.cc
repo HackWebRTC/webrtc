@@ -1101,7 +1101,7 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
   AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
   SessionDescriptionInterface* desc =
       webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                       webrtc::kFireFoxSdpOffer);
+                                       webrtc::kFireFoxSdpOffer, nullptr);
   EXPECT_TRUE(DoSetSessionDescription(desc, false));
   CreateAnswerAsLocalDescription();
   ASSERT_TRUE(pc_->local_description() != NULL);
@@ -1134,12 +1134,13 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveUpdatedAudioOfferWithBadCodecs) {
 
   SessionDescriptionInterface* answer =
       webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                       webrtc::kAudioSdp);
+                                       webrtc::kAudioSdp, nullptr);
   EXPECT_TRUE(DoSetSessionDescription(answer, false));
 
   SessionDescriptionInterface* updated_offer =
       webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                       webrtc::kAudioSdpWithUnsupportedCodecs);
+                                       webrtc::kAudioSdpWithUnsupportedCodecs,
+                                       nullptr);
   EXPECT_TRUE(DoSetSessionDescription(updated_offer, false));
   CreateAnswerAsLocalDescription();
 }
