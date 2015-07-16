@@ -112,6 +112,11 @@ int FakeVideoSendStream::GetLastHeight() const {
   return last_frame_.height();
 }
 
+int64_t FakeVideoSendStream::GetLastTimestamp() const {
+  DCHECK(last_frame_.ntp_time_ms() == 0);
+  return last_frame_.render_time_ms();
+}
+
 void FakeVideoSendStream::IncomingCapturedFrame(
     const webrtc::VideoFrame& frame) {
   ++num_swapped_frames_;

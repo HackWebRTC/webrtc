@@ -419,6 +419,70 @@ TEST_F(WebRtcVideoEngine2Test, CanConstructDecoderForVp9EncoderFactory) {
       channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
 }
 
+TEST_F(WebRtcVideoEngine2Test, PropagatesInputFrameTimestamp) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+
+  FakeCallFactory factory;
+  engine_.SetCallFactory(&factory);
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+
+  EXPECT_TRUE(
+      channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+
+  FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel->SetCapturer(kSsrc, &capturer));
+  capturer.Start(cricket::VideoFormat(1280, 720,
+                                      cricket::VideoFormat::FpsToInterval(60),
+                                      cricket::FOURCC_I420));
+  channel->SetSend(true);
+
+  FakeCall* call = factory.GetCall();
+  std::vector<FakeVideoSendStream*> streams = call->GetVideoSendStreams();
+  FakeVideoSendStream* stream = streams[0];
+
+  int64_t timestamp;
+  int64_t last_timestamp;
+
+  EXPECT_TRUE(capturer.CaptureFrame());
+  last_timestamp = stream->GetLastTimestamp();
+  for (int i = 0; i < 10; i++) {
+    EXPECT_TRUE(capturer.CaptureFrame());
+    timestamp = stream->GetLastTimestamp();
+    int64_t interval = timestamp - last_timestamp;
+
+    // Precision changes from nanosecond to millisecond.
+    // Allow error to be no more than 1.
+    EXPECT_NEAR(cricket::VideoFormat::FpsToInterval(60) / 1E6, interval, 1);
+
+    last_timestamp = timestamp;
+  }
+
+  capturer.Start(cricket::VideoFormat(1280, 720,
+                                      cricket::VideoFormat::FpsToInterval(30),
+                                      cricket::FOURCC_I420));
+
+  EXPECT_TRUE(capturer.CaptureFrame());
+  last_timestamp = stream->GetLastTimestamp();
+  for (int i = 0; i < 10; i++) {
+    EXPECT_TRUE(capturer.CaptureFrame());
+    timestamp = stream->GetLastTimestamp();
+    int64_t interval = timestamp - last_timestamp;
+
+    // Precision changes from nanosecond to millisecond.
+    // Allow error to be no more than 1.
+    EXPECT_NEAR(cricket::VideoFormat::FpsToInterval(30) / 1E6, interval, 1);
+
+    last_timestamp = timestamp;
+  }
+
+  // Remove stream previously added to free the external encoder instance.
+  EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
+}
+
 VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalEncoderFactory(
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     const std::vector<VideoCodec>& codecs) {

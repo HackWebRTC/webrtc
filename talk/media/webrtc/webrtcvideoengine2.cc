@@ -42,6 +42,7 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
@@ -1670,7 +1671,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       capturer_(NULL),
       sending_(false),
       muted_(false),
-      old_adapt_changes_(0) {
+      old_adapt_changes_(0),
+      first_frame_timestamp_ms_(0),
+      last_frame_timestamp_ms_(0) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
 
   sp.GetPrimarySsrcs(&parameters_.config.rtp.ssrcs);
@@ -1734,6 +1737,15 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
                      static_cast<int>(frame->GetWidth()),
                      static_cast<int>(frame->GetHeight()));
   }
+
+  int64_t frame_delta_ms = frame->GetTimeStamp() / rtc::kNumNanosecsPerMillisec;
+  // frame->GetTimeStamp() is essentially a delta, align to webrtc time
+  if (first_frame_timestamp_ms_ == 0) {
+    first_frame_timestamp_ms_ = rtc::Time() - frame_delta_ms;
+  }
+
+  last_frame_timestamp_ms_ = first_frame_timestamp_ms_ + frame_delta_ms;
+  video_frame.set_render_time_ms(last_frame_timestamp_ms_);
   // Reconfigure codec if necessary.
   SetDimensions(
       video_frame.width(), video_frame.height(), capturer->IsScreencast());
@@ -1762,6 +1774,15 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
 
         CreateBlackFrame(&black_frame, last_dimensions_.width,
                          last_dimensions_.height);
+
+        // Force this black frame not to be dropped due to timestamp order
+        // check. As IncomingCapturedFrame will drop the frame if this frame's
+        // timestamp is less than or equal to last frame's timestamp, it is
+        // necessary to give this black frame a larger timestamp than the
+        // previous one.
+        last_frame_timestamp_ms_ +=
+            format_.interval / rtc::kNumNanosecsPerMillisec;
+        black_frame.set_render_time_ms(last_frame_timestamp_ms_);
         stream_->Input()->IncomingCapturedFrame(black_frame);
       }
 

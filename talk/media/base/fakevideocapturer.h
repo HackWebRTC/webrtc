@@ -64,6 +64,8 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
         cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
     formats.push_back(cricket::VideoFormat(160, 120,
         cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+    formats.push_back(cricket::VideoFormat(1280, 720,
+        cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_I420));
     ResetSupportedFormats(formats);
   }
   ~FakeVideoCapturer() {
@@ -79,9 +81,17 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     }
     return CaptureCustomFrame(GetCaptureFormat()->width,
                               GetCaptureFormat()->height,
+                              GetCaptureFormat()->interval,
                               GetCaptureFormat()->fourcc);
   }
   bool CaptureCustomFrame(int width, int height, uint32 fourcc) {
+    // default to 30fps
+    return CaptureCustomFrame(width, height, 33333333, fourcc);
+  }
+  bool CaptureCustomFrame(int width,
+                          int height,
+                          int64_t timestamp_interval,
+                          uint32 fourcc) {
     if (!running_) {
       return false;
     }
@@ -106,7 +116,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     frame.data_size = size;
     frame.elapsed_time = next_timestamp_;
     frame.time_stamp = initial_unix_timestamp_ + next_timestamp_;
-    next_timestamp_ += 33333333;  // 30 fps
+    next_timestamp_ += timestamp_interval;
 
     rtc::scoped_ptr<char[]> data(new char[size]);
     frame.data = data.get();

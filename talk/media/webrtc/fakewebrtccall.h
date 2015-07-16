@@ -82,6 +82,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
   int GetNumberOfSwappedFrames() const;
   int GetLastWidth() const;
   int GetLastHeight() const;
+  int64_t GetLastTimestamp() const;
   void SetStats(const webrtc::VideoSendStream::Stats& stats);
 
  private:

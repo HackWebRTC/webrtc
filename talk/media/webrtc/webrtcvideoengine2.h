@@ -393,6 +393,14 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     bool muted_ GUARDED_BY(lock_);
     VideoFormat format_ GUARDED_BY(lock_);
     int old_adapt_changes_ GUARDED_BY(lock_);
+
+    // The timestamp of the first frame received
+    // Used to generate the timestamps of subsequent frames
+    int64_t first_frame_timestamp_ms_ GUARDED_BY(lock_);
+
+    // The timestamp of the last frame received
+    // Used to generate timestamp for the black frame when capturer is removed
+    int64_t last_frame_timestamp_ms_ GUARDED_BY(lock_);
   };
 
   // Wrapper for the receiver part, contains configs etc. that are needed to
