@@ -220,7 +220,8 @@ struct PortConfiguration : public rtc::MessageData {
                     const std::string& username,
                     const std::string& password);
 
-  // TODO(jiayl): remove when |stun_address| is removed.
+  // Returns addresses of both the explicitly configured STUN servers,
+  // and TURN servers that should be used as STUN servers.
   ServerAddresses StunServers();
 
   // Adds another relay server, with the given ports and modifier, to the list.

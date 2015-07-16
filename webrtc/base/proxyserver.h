@@ -64,6 +64,9 @@ class ProxyServer : public sigslot::has_slots<> {
               SocketFactory* ext_factory, const SocketAddress& ext_ip);
   ~ProxyServer() override;
 
+  // Returns the address to which the proxy server is bound
+  SocketAddress GetServerAddress();
+
  protected:
   void OnAcceptEvent(AsyncSocket* socket);
   virtual AsyncProxyServerSocket* WrapSocket(AsyncSocket* socket) = 0;

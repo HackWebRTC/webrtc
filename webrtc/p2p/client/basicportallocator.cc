@@ -208,7 +208,7 @@ void BasicPortAllocator::Construct() {
 BasicPortAllocator::~BasicPortAllocator() {
 }
 
-PortAllocatorSession *BasicPortAllocator::CreateSessionInternal(
+PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     const std::string& content_name, int component,
     const std::string& ice_ufrag, const std::string& ice_pwd) {
   return new BasicPortAllocatorSession(
@@ -927,18 +927,10 @@ void AllocationSequence::CreateUDPPorts() {
 
       // If STUN is not disabled, setting stun server address to port.
       if (!IsFlagSet(PORTALLOCATOR_DISABLE_STUN)) {
-        // If config has stun_servers, use it to get server reflexive candidate
-        // otherwise use first TURN server which supports UDP.
         if (config_ && !config_->StunServers().empty()) {
           LOG(LS_INFO) << "AllocationSequence: UDPPort will be handling the "
                        <<  "STUN candidate generation.";
           port->set_server_addresses(config_->StunServers());
-        } else if (config_ &&
-                   config_->SupportsProtocol(RELAY_TURN, PROTO_UDP)) {
-          port->set_server_addresses(config_->GetRelayServerAddresses(
-              RELAY_TURN, PROTO_UDP));
-          LOG(LS_INFO) << "AllocationSequence: TURN Server address will be "
-                       << " used for generating STUN candidate.";
         }
       }
     }
@@ -1170,6 +1162,13 @@ ServerAddresses PortConfiguration::StunServers() {
   if (!stun_address.IsNil() &&
       stun_servers.find(stun_address) == stun_servers.end()) {
     stun_servers.insert(stun_address);
+  }
+  // Every UDP TURN server should also be used as a STUN server.
+  ServerAddresses turn_servers = GetRelayServerAddresses(RELAY_TURN, PROTO_UDP);
+  for (const rtc::SocketAddress& turn_server : turn_servers) {
+    if (stun_servers.find(turn_server) == stun_servers.end()) {
+      stun_servers.insert(turn_server);
+    }
   }
   return stun_servers;
 }

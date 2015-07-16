@@ -179,8 +179,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
 
       // Decode the wire packet into the actual results.
       SocketAddress real_remote_addr;
-      size_t addrlength =
-          UnpackAddressFromNAT(buf_, result, &real_remote_addr);
+      size_t addrlength = UnpackAddressFromNAT(buf_, result, &real_remote_addr);
       memcpy(data, buf_ + addrlength, result - addrlength);
 
       // Make sure this packet should be delivered before returning it.
@@ -230,7 +229,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
   }
 
   void OnConnectEvent(AsyncSocket* socket) {
-    // If we're NATed, we need to send a request with the real addr to use.
+    // If we're NATed, we need to send a message with the real addr to use.
     ASSERT(socket == socket_);
     if (server_addr_.IsNil()) {
       connected_ = true;
@@ -269,7 +268,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
 
   // Sends the destination address to the server to tell it to connect.
   void SendConnectRequest() {
-    char buf[256];
+    char buf[kNATEncodedIPv6AddressSize];
     size_t length = PackAddressForNAT(buf, ARRAY_SIZE(buf), remote_addr_);
     socket_->Send(buf, length);
   }
@@ -279,6 +278,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
     char code;
     socket_->Recv(&code, sizeof(code));
     if (code == 0) {
+      connected_ = true;
       SignalConnectEvent(this);
     } else {
       Close();
@@ -299,8 +299,10 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
 
 // NATSocketFactory
 NATSocketFactory::NATSocketFactory(SocketFactory* factory,
-                                   const SocketAddress& nat_addr)
-    : factory_(factory), nat_addr_(nat_addr) {
+                                   const SocketAddress& nat_udp_addr,
+                                   const SocketAddress& nat_tcp_addr)
+    : factory_(factory), nat_udp_addr_(nat_udp_addr),
+      nat_tcp_addr_(nat_tcp_addr) {
 }
 
 Socket* NATSocketFactory::CreateSocket(int type) {
@@ -321,7 +323,11 @@ AsyncSocket* NATSocketFactory::CreateAsyncSocket(int family, int type) {
 
 AsyncSocket* NATSocketFactory::CreateInternalSocket(int family, int type,
     const SocketAddress& local_addr, SocketAddress* nat_addr) {
-  *nat_addr = nat_addr_;
+  if (type == SOCK_STREAM) {
+    *nat_addr = nat_tcp_addr_;
+  } else {
+    *nat_addr = nat_udp_addr_;
+  }
   return factory_->CreateAsyncSocket(family, type);
 }
 
@@ -385,7 +391,7 @@ AsyncSocket* NATSocketServer::CreateInternalSocket(int family, int type,
   if (nat) {
     socket = nat->internal_factory()->CreateAsyncSocket(family, type);
     *nat_addr = (type == SOCK_STREAM) ?
-        nat->internal_tcp_address() : nat->internal_address();
+        nat->internal_tcp_address() : nat->internal_udp_address();
   } else {
     socket = server_->CreateAsyncSocket(family, type);
   }
@@ -403,7 +409,7 @@ NATSocketServer::Translator::Translator(
   VirtualSocketServer* internal_server = new VirtualSocketServer(server_);
   internal_server->SetMessageQueue(server_->queue());
   internal_factory_.reset(internal_server);
-  nat_server_.reset(new NATServer(type, internal_server, int_ip,
+  nat_server_.reset(new NATServer(type, internal_server, int_ip, int_ip,
                                   ext_factory, ext_ip));
 }
 

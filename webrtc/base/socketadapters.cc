@@ -81,10 +81,18 @@ int BufferedReadAdapter::Recv(void *pv, size_t cb) {
   // FIX: If cb == 0, we won't generate another read event
 
   int res = AsyncSocketAdapter::Recv(pv, cb);
-  if (res < 0)
-    return res;
+  if (res >= 0) {
+    // Read from socket and possibly buffer; return combined length
+    return res + static_cast<int>(read);
+  }
 
-  return res + static_cast<int>(read);
+  if (read > 0) {
+    // Failed to read from socket, but still read something from buffer
+    return static_cast<int>(read);
+  }
+
+  // Didn't read anything; return error from socket
+  return res;
 }
 
 void BufferedReadAdapter::BufferInput(bool on) {

@@ -47,8 +47,8 @@ using namespace cricket;
 static const int kTimeout = 1000;
 static const SocketAddress kLocalAddr1("192.168.1.2", 0);
 static const SocketAddress kLocalAddr2("192.168.1.3", 0);
-static const SocketAddress kNatAddr1("77.77.77.77", rtc::NAT_SERVER_PORT);
-static const SocketAddress kNatAddr2("88.88.88.88", rtc::NAT_SERVER_PORT);
+static const SocketAddress kNatAddr1("77.77.77.77", rtc::NAT_SERVER_UDP_PORT);
+static const SocketAddress kNatAddr2("88.88.88.88", rtc::NAT_SERVER_UDP_PORT);
 static const SocketAddress kStunAddr("99.99.99.1", STUN_SERVER_PORT);
 static const SocketAddress kRelayUdpIntAddr("99.99.99.2", 5000);
 static const SocketAddress kRelayUdpExtAddr("99.99.99.3", 5001);
@@ -343,8 +343,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
         ss_scope_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
-        nat_factory1_(ss_.get(), kNatAddr1),
-        nat_factory2_(ss_.get(), kNatAddr2),
+        nat_factory1_(ss_.get(), kNatAddr1, SocketAddress()),
+        nat_factory2_(ss_.get(), kNatAddr2, SocketAddress()),
         nat_socket_factory1_(&nat_factory1_),
         nat_socket_factory2_(&nat_factory2_),
         stun_server_(TestStunServer::Create(main_, kStunAddr)),
@@ -507,7 +507,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   rtc::NATServer* CreateNatServer(const SocketAddress& addr,
                                         rtc::NATType type) {
-    return new rtc::NATServer(type, ss_.get(), addr, ss_.get(), addr);
+    return new rtc::NATServer(type, ss_.get(), addr, addr, ss_.get(), addr);
   }
   static const char* StunName(NATType type) {
     switch (type) {
