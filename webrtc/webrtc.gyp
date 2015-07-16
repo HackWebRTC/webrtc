@@ -61,15 +61,16 @@
       ],
     },
     {
-      # TODO(pbos): This is intended to contain audio parts as well as soon as
-      #             VoiceEngine moves to the same new API format.
       'target_name': 'webrtc',
       'type': 'static_library',
       'sources': [
+        'audio_receive_stream.h',
+        'audio_send_stream.h',
         'call.h',
         'config.h',
         'experiments.h',
         'frame_callback.h',
+        'stream.h',
         'transport.h',
         'video_receive_stream.h',
         'video_renderer.h',

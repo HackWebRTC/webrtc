@@ -68,10 +68,6 @@ class LoadObserver {
 // etc.
 class Call {
  public:
-  enum NetworkState {
-    kNetworkUp,
-    kNetworkDown,
-  };
   struct Config {
     Config() = delete;
     explicit Config(newapi::Transport* send_transport)
@@ -153,6 +149,7 @@ class Call {
 
   virtual ~Call() {}
 };
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_CALL_H_

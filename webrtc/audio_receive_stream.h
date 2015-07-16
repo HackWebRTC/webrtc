@@ -16,13 +16,14 @@
 #include <vector>
 
 #include "webrtc/config.h"
+#include "webrtc/stream.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class AudioDecoder;
 
-class AudioReceiveStream {
+class AudioReceiveStream : public ReceiveStream {
  public:
   struct Stats {};
 
@@ -61,9 +62,6 @@ class AudioReceiveStream {
   };
 
   virtual Stats GetStats() const = 0;
-
- protected:
-  virtual ~AudioReceiveStream() {}
 };
 }  // namespace webrtc
 

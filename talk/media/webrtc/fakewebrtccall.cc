@@ -195,7 +195,7 @@ void FakeVideoReceiveStream::SetStats(
 
 FakeCall::FakeCall(const webrtc::Call::Config& config)
     : config_(config),
-      network_state_(kNetworkUp),
+      network_state_(webrtc::kNetworkUp),
       num_created_send_streams_(0),
       num_created_receive_streams_(0) {
 }
@@ -231,7 +231,7 @@ const FakeAudioReceiveStream* FakeCall::GetAudioReceiveStream(uint32_t ssrc) {
   return nullptr;
 }
 
-webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
+webrtc::NetworkState FakeCall::GetNetworkState() const {
   return network_state_;
 }
 
@@ -357,7 +357,7 @@ void FakeCall::SetBitrateConfig(
   config_.bitrate_config = bitrate_config;
 }
 
-void FakeCall::SignalNetworkState(webrtc::Call::NetworkState state) {
+void FakeCall::SignalNetworkState(webrtc::NetworkState state) {
   network_state_ = state;
 }
 }  // namespace cricket

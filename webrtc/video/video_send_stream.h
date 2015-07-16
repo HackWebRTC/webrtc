@@ -47,23 +47,21 @@ class VideoSendStream : public webrtc::VideoSendStream {
                   const VideoEncoderConfig& encoder_config,
                   const std::map<uint32_t, RtpState>& suspended_ssrcs);
 
-  virtual ~VideoSendStream();
+  ~VideoSendStream() override;
 
-  VideoCaptureInput* Input() override;
-
+  // webrtc::SendStream implementation.
   void Start() override;
   void Stop() override;
+  void SignalNetworkState(NetworkState state) override;
+  bool DeliverRtcp(const uint8_t* packet, size_t length) override;
 
+  // webrtc::VideoSendStream implementation.
+  VideoCaptureInput* Input() override;
   bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) override;
-
   Stats GetStats() override;
-
-  bool DeliverRtcp(const uint8_t* packet, size_t length);
 
   typedef std::map<uint32_t, RtpState> RtpStateMap;
   RtpStateMap GetRtpStates() const;
-
-  void SignalNetworkState(Call::NetworkState state);
 
   int64_t GetRtt() const;
 

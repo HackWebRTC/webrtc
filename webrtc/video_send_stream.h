@@ -17,6 +17,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/stream.h"
 #include "webrtc/video_renderer.h"
 
 namespace webrtc {
@@ -35,7 +36,7 @@ class VideoCaptureInput {
   virtual ~VideoCaptureInput() {}
 };
 
-class VideoSendStream {
+class VideoSendStream : public SendStream {
  public:
   struct StreamStats {
     FrameCounts frame_counts;
@@ -140,18 +141,12 @@ class VideoSendStream {
   // VideoSendStream is valid.
   virtual VideoCaptureInput* Input() = 0;
 
-  virtual void Start() = 0;
-  virtual void Stop() = 0;
-
   // Set which streams to send. Must have at least as many SSRCs as configured
   // in the config. Encoder settings are passed on to the encoder instance along
   // with the VideoStream settings.
   virtual bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
 
   virtual Stats GetStats() = 0;
-
- protected:
-  virtual ~VideoSendStream() {}
 };
 
 }  // namespace webrtc

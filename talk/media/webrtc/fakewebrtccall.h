@@ -42,6 +42,7 @@ class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
   explicit FakeAudioReceiveStream(
       const webrtc::AudioReceiveStream::Config& config);
 
+  // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
 
   const webrtc::AudioReceiveStream::Config& GetConfig() const;
@@ -50,6 +51,17 @@ class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
   void IncrementReceivedPackets();
 
  private:
+  // webrtc::ReceiveStream implementation.
+  void Start() override {}
+  void Stop() override {}
+  void SignalNetworkState(webrtc::NetworkState state) override {}
+  bool DeliverRtcp(const uint8_t* packet, size_t length) override {
+    return true;
+  }
+  bool DeliverRtp(const uint8_t* packet, size_t length) override {
+    return true;
+  }
+
   webrtc::AudioReceiveStream::Config config_;
   int received_packets_;
 };
@@ -74,15 +86,20 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
 
  private:
   void IncomingCapturedFrame(const webrtc::VideoFrame& frame) override;
-  webrtc::VideoSendStream::Stats GetStats() override;
 
-  bool ReconfigureVideoEncoder(
-      const webrtc::VideoEncoderConfig& config) override;
-
-  webrtc::VideoCaptureInput* Input() override;
-
+  // webrtc::SendStream implementation.
   void Start() override;
   void Stop() override;
+  void SignalNetworkState(webrtc::NetworkState state) override {}
+  bool DeliverRtcp(const uint8_t* packet, size_t length) override {
+    return true;
+  }
+
+  // webrtc::VideoSendStream implementation.
+  webrtc::VideoSendStream::Stats GetStats() override;
+  bool ReconfigureVideoEncoder(
+      const webrtc::VideoEncoderConfig& config) override;
+  webrtc::VideoCaptureInput* Input() override;
 
   bool sending_;
   webrtc::VideoSendStream::Config config_;
@@ -111,10 +128,19 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
   void SetStats(const webrtc::VideoReceiveStream::Stats& stats);
 
  private:
-  webrtc::VideoReceiveStream::Stats GetStats() const override;
-
+  // webrtc::ReceiveStream implementation.
   void Start() override;
   void Stop() override;
+  void SignalNetworkState(webrtc::NetworkState state) override {}
+  bool DeliverRtcp(const uint8_t* packet, size_t length) override {
+    return true;
+  }
+  bool DeliverRtp(const uint8_t* packet, size_t length) override {
+    return true;
+  }
+
+  // webrtc::VideoReceiveStream implementation.
+  webrtc::VideoReceiveStream::Stats GetStats() const override;
 
   webrtc::VideoReceiveStream::Config config_;
   bool receiving_;
@@ -124,7 +150,7 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
 class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
  public:
   explicit FakeCall(const webrtc::Call::Config& config);
-  ~FakeCall();
+  ~FakeCall() override;
 
   webrtc::Call::Config GetConfig() const;
   const std::vector<FakeVideoSendStream*>& GetVideoSendStreams();
@@ -133,7 +159,7 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   const std::vector<FakeAudioReceiveStream*>& GetAudioReceiveStreams();
   const FakeAudioReceiveStream* GetAudioReceiveStream(uint32_t ssrc);
 
-  webrtc::Call::NetworkState GetNetworkState() const;
+  webrtc::NetworkState GetNetworkState() const;
   int GetNumCreatedSendStreams() const;
   int GetNumCreatedReceiveStreams() const;
   void SetStats(const webrtc::Call::Stats& stats);
@@ -166,10 +192,10 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
 
   void SetBitrateConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
-  void SignalNetworkState(webrtc::Call::NetworkState state) override;
+  void SignalNetworkState(webrtc::NetworkState state) override;
 
   webrtc::Call::Config config_;
-  webrtc::Call::NetworkState network_state_;
+  webrtc::NetworkState network_state_;
   webrtc::Call::Stats stats_;
   std::vector<FakeVideoSendStream*> video_send_streams_;
   std::vector<FakeVideoReceiveStream*> video_receive_streams_;

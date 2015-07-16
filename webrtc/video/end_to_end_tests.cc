@@ -2509,7 +2509,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
           FakeEncoder(Clock::GetRealTimeClock()),
           encoded_frames_(EventWrapper::Create()),
           packet_event_(EventWrapper::Create()),
-          sender_state_(Call::kNetworkUp),
+          sender_state_(kNetworkUp),
           sender_rtp_(0),
           sender_rtcp_(0),
           receiver_rtcp_(0),
@@ -2559,17 +2559,17 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       WaitForPacketsOrSilence(false, false);
 
       // Sender-side network down.
-      sender_call_->SignalNetworkState(Call::kNetworkDown);
+      sender_call_->SignalNetworkState(kNetworkDown);
       {
         rtc::CritScope lock(&test_crit_);
         // After network goes down we shouldn't be encoding more frames.
-        sender_state_ = Call::kNetworkDown;
+        sender_state_ = kNetworkDown;
       }
       // Wait for receiver-packets and no sender packets.
       WaitForPacketsOrSilence(true, false);
 
       // Receiver-side network down.
-      receiver_call_->SignalNetworkState(Call::kNetworkDown);
+      receiver_call_->SignalNetworkState(kNetworkDown);
       WaitForPacketsOrSilence(true, true);
 
       // Network back up again for both.
@@ -2577,10 +2577,10 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
         rtc::CritScope lock(&test_crit_);
         // It's OK to encode frames again, as we're about to bring up the
         // network.
-        sender_state_ = Call::kNetworkUp;
+        sender_state_ = kNetworkUp;
       }
-      sender_call_->SignalNetworkState(Call::kNetworkUp);
-      receiver_call_->SignalNetworkState(Call::kNetworkUp);
+      sender_call_->SignalNetworkState(kNetworkUp);
+      receiver_call_->SignalNetworkState(kNetworkUp);
       WaitForPacketsOrSilence(false, false);
     }
 
@@ -2589,7 +2589,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
                    const std::vector<VideoFrameType>* frame_types) override {
       {
         rtc::CritScope lock(&test_crit_);
-        if (sender_state_ == Call::kNetworkDown) {
+        if (sender_state_ == kNetworkDown) {
           ++down_frames_;
           EXPECT_LE(down_frames_, 1)
               << "Encoding more than one frame while network is down.";
@@ -2655,7 +2655,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     const rtc::scoped_ptr<EventWrapper> packet_event_;
     Call* sender_call_;
     Call* receiver_call_;
-    Call::NetworkState sender_state_ GUARDED_BY(test_crit_);
+    NetworkState sender_state_ GUARDED_BY(test_crit_);
     int sender_rtp_ GUARDED_BY(test_crit_);
     int sender_rtcp_ GUARDED_BY(test_crit_);
     int receiver_rtcp_ GUARDED_BY(test_crit_);
@@ -2720,7 +2720,7 @@ TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
 
   UnusedTransport transport;
   CreateSenderCall(Call::Config(&transport));
-  sender_call_->SignalNetworkState(Call::kNetworkDown);
+  sender_call_->SignalNetworkState(kNetworkDown);
 
   CreateSendConfig(1);
   UnusedEncoder unused_encoder;
@@ -2742,7 +2742,7 @@ TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
   CreateReceiverCall(Call::Config(&transport));
   sender_transport.SetReceiver(receiver_call_->Receiver());
 
-  receiver_call_->SignalNetworkState(Call::kNetworkDown);
+  receiver_call_->SignalNetworkState(kNetworkDown);
 
   CreateSendConfig(1);
   CreateMatchingReceiveConfigs();

@@ -18,6 +18,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/stream.h"
 #include "webrtc/transport.h"
 #include "webrtc/video_renderer.h"
 
@@ -31,7 +32,7 @@ enum RtcpMode { kRtcpCompound, kRtcpReducedSize };
 
 class VideoDecoder;
 
-class VideoReceiveStream {
+class VideoReceiveStream : public ReceiveStream {
  public:
   // TODO(mflodman) Move all these settings to VideoDecoder and move the
   // declaration to common_types.h.
@@ -165,14 +166,8 @@ class VideoReceiveStream {
     int target_delay_ms = 0;
   };
 
-  virtual void Start() = 0;
-  virtual void Stop() = 0;
-
   // TODO(pbos): Add info on currently-received codec to Stats.
   virtual Stats GetStats() const = 0;
-
- protected:
-  virtual ~VideoReceiveStream() {}
 };
 
 }  // namespace webrtc

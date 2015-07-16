@@ -323,10 +323,10 @@ int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
   return 0;
 }
 
-void VideoReceiveStream::SignalNetworkState(Call::NetworkState state) {
-  if (state == Call::kNetworkUp)
+void VideoReceiveStream::SignalNetworkState(NetworkState state) {
+  if (state == kNetworkUp)
     SetRtcpMode(config_.rtp.rtcp_mode);
-  if (state == Call::kNetworkDown)
+  if (state == kNetworkDown)
     vie_channel_->SetRTCPMode(kRtcpOff);
 }
 

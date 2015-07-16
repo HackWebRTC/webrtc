@@ -71,6 +71,15 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   return webrtc::AudioReceiveStream::Stats();
 }
 
+void AudioReceiveStream::Start() {
+}
+
+void AudioReceiveStream::Stop() {
+}
+
+void AudioReceiveStream::SignalNetworkState(NetworkState state) {
+}
+
 bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return false;
 }

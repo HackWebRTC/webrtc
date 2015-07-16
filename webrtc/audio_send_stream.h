@@ -17,11 +17,12 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/stream.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class AudioSendStream {
+class AudioSendStream : public SendStream {
  public:
   struct Stats {};
 
@@ -45,9 +46,6 @@ class AudioSendStream {
   };
 
   virtual Stats GetStats() const = 0;
-
- protected:
-  virtual ~AudioSendStream() {}
 };
 }  // namespace webrtc
 

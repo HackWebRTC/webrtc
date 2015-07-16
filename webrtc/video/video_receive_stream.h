@@ -44,11 +44,17 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      const VideoReceiveStream::Config& config,
                      newapi::Transport* transport,
                      webrtc::VoiceEngine* voice_engine);
-  virtual ~VideoReceiveStream();
+  ~VideoReceiveStream() override;
 
+  // webrtc::ReceiveStream implementation.
   void Start() override;
   void Stop() override;
-  Stats GetStats() const override;
+  void SignalNetworkState(NetworkState state) override;
+  bool DeliverRtcp(const uint8_t* packet, size_t length) override;
+  bool DeliverRtp(const uint8_t* packet, size_t length) override;
+
+  // webrtc::VideoReceiveStream implementation.
+  webrtc::VideoReceiveStream::Stats GetStats() const override;
 
   // Overrides I420FrameCallback.
   void FrameCallback(VideoFrame* video_frame) override;
@@ -58,11 +64,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                   const VideoFrame& video_frame) override;
 
   const Config& config() const { return config_; }
-
-  void SignalNetworkState(Call::NetworkState state);
-
-  bool DeliverRtcp(const uint8_t* packet, size_t length);
-  bool DeliverRtp(const uint8_t* packet, size_t length);
 
   void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id);
 
