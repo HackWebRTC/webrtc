@@ -154,7 +154,7 @@ bool CodecIsInternallySupported(const std::string& codec_name) {
     return true;
   }
   if (CodecNamesEq(codec_name, kVp9CodecName)) {
-    const std::string group_name =
+    const std::string& group_name =
         webrtc::field_trial::FindFullName("WebRTC-SupportVP9");
     return group_name == "Enabled" || group_name == "EnabledByFlag";
   }

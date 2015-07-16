@@ -130,7 +130,7 @@ bool JsepSessionDescription::AddCandidate(
   }
   if (mediasection_index >= number_of_mediasections())
     return false;
-  const std::string content_name =
+  const std::string& content_name =
       description_->contents()[mediasection_index].name;
   const cricket::TransportInfo* transport_info =
       description_->GetTransportInfoByName(content_name);

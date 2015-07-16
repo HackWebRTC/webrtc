@@ -716,7 +716,7 @@ static void GetDefaultDestination(
 // Update |mline|'s default destination and append a c line after it.
 static void UpdateMediaDefaultDestination(
     const std::vector<Candidate>& candidates,
-    const std::string mline,
+    const std::string& mline,
     std::string* message) {
   std::string new_lines;
   AddLine(mline, &new_lines);
@@ -808,9 +808,9 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   // <unicast-address>
   std::ostringstream os;
   InitLine(kLineTypeOrigin, kSessionOriginUsername, &os);
-  const std::string session_id = jdesc.session_id().empty() ?
+  const std::string& session_id = jdesc.session_id().empty() ?
       kSessionOriginSessionId : jdesc.session_id();
-  const std::string session_version = jdesc.session_version().empty() ?
+  const std::string& session_version = jdesc.session_version().empty() ?
       kSessionOriginSessionVersion : jdesc.session_version();
   os << " " << session_id << " " << session_version << " "
      << kSessionOriginNettype << " " << kSessionOriginAddrtype << " "
@@ -1001,18 +1001,18 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
       (fields[6] != kAttributeCandidateTyp)) {
     return ParseFailedExpectMinFieldNum(first_line, expected_min_fields, error);
   }
-  std::string foundation = fields[0];
+  const std::string& foundation = fields[0];
 
   int component_id = 0;
   if (!GetValueFromString(first_line, fields[1], &component_id, error)) {
     return false;
   }
-  const std::string transport = fields[2];
+  const std::string& transport = fields[2];
   uint32 priority = 0;
   if (!GetValueFromString(first_line, fields[3], &priority, error)) {
     return false;
   }
-  const std::string connection_address = fields[4];
+  const std::string& connection_address = fields[4];
   int port = 0;
   if (!GetValueFromString(first_line, fields[5], &port, error)) {
     return false;
@@ -1025,7 +1025,7 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   }
 
   std::string candidate_type;
-  const std::string type = fields[7];
+  const std::string& type = fields[7];
   if (type == kCandidateHost) {
     candidate_type = cricket::LOCAL_PORT_TYPE;
   } else if (type == kCandidateSrflx) {
@@ -1260,7 +1260,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
   // RFC 3264
   // To reject an offered stream, the port number in the corresponding stream in
   // the answer MUST be set to zero.
-  const std::string port = content_info->rejected ?
+  const std::string& port = content_info->rejected ?
       kMediaPortRejected : kDummyPort;
 
   rtc::SSLFingerprint* fp = (transport_info) ?
@@ -2845,8 +2845,8 @@ bool ParseCryptoAttribute(const std::string& line,
   if (!GetValueFromString(line, tag_value, &tag, error)) {
     return false;
   }
-  const std::string crypto_suite = fields[1];
-  const std::string key_params = fields[2];
+  const std::string& crypto_suite = fields[1];
+  const std::string& key_params = fields[2];
   std::string session_params;
   if (fields.size() > 3) {
     session_params = fields[3];
@@ -2926,7 +2926,7 @@ bool ParseRtpmapAttribute(const std::string& line,
                     << "<fmt> of the m-line: " << line;
     return true;
   }
-  const std::string encoder = fields[1];
+  const std::string& encoder = fields[1];
   std::vector<std::string> codec_params;
   rtc::split(encoder, '/', &codec_params);
   // <encoding name>/<clock rate>[/<encodingparameters>]
@@ -2937,7 +2937,7 @@ bool ParseRtpmapAttribute(const std::string& line,
                        "[/<encodingparameters>]\".",
                        error);
   }
-  const std::string encoding_name = codec_params[0];
+  const std::string& encoding_name = codec_params[0];
   int clock_rate = 0;
   if (!GetValueFromString(line, codec_params[1], &clock_rate, error)) {
     return false;
