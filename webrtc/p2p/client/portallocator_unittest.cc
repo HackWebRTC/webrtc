@@ -20,6 +20,7 @@
 #include "webrtc/base/firewallsocketserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
+#include "webrtc/base/ipaddress.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/natsocketfactory.h"
@@ -1158,4 +1159,35 @@ TEST_F(PortAllocatorTest, TestDestroyPortsNonSharedSockets) {
   for (; it != ports_.end(); ++it) {
     (reinterpret_cast<cricket::Port*>(*it))->Destroy();
   }
+}
+
+class AllocationSequenceForTest : public cricket::AllocationSequence {
+ public:
+  AllocationSequenceForTest(cricket::BasicPortAllocatorSession* session,
+                            rtc::Network* network,
+                            cricket::PortConfiguration* config,
+                            uint32 flags)
+      : cricket::AllocationSequence(session, network, config, flags) {}
+  using cricket::AllocationSequence::CreateTurnPort;
+};
+
+TEST_F(PortAllocatorTest, TestCreateTurnPortWithNullSocket) {
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+
+  cricket::ServerAddresses stun_servers;
+  stun_servers.insert(kStunAddr);
+  cricket::PortConfiguration config(stun_servers, kIceUfrag0, kIcePwd0);
+  rtc::Network network1("test_eth0", "Test Network Adapter 1",
+                        rtc::IPAddress(0x12345600U), 24);
+  uint32 flag = cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET;
+  AllocationSequenceForTest alloc_sequence(
+      static_cast<cricket::BasicPortAllocatorSession*>(session_.get()),
+      &network1, &config, flag);
+  // This simply tests it will not crash if udp_socket_ in the
+  // AllocationSequence is null, which is chosen in the constructor.
+  cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+  relay_server.ports.push_back(
+      cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
+  alloc_sequence.CreateTurnPort(relay_server);
 }
