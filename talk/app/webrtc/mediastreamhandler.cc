@@ -90,7 +90,7 @@ LocalAudioTrackHandler::LocalAudioTrackHandler(
       audio_track_(track),
       provider_(provider),
       sink_adapter_(new LocalAudioSinkAdapter()) {
-  OnEnabledChanged();
+  Start();
   track->AddSink(sink_adapter_.get());
 }
 
@@ -99,6 +99,10 @@ LocalAudioTrackHandler::~LocalAudioTrackHandler() {
 
 void LocalAudioTrackHandler::OnStateChanged() {
   // TODO(perkj): What should happen when the state change?
+}
+
+void LocalAudioTrackHandler::Start() {
+  OnEnabledChanged();
 }
 
 void LocalAudioTrackHandler::Stop() {
@@ -132,11 +136,17 @@ RemoteAudioTrackHandler::RemoteAudioTrackHandler(
       audio_track_(track),
       provider_(provider) {
   track->GetSource()->RegisterAudioObserver(this);
-  OnEnabledChanged();
+  Start();
 }
 
 RemoteAudioTrackHandler::~RemoteAudioTrackHandler() {
   audio_track_->GetSource()->UnregisterAudioObserver(this);
+}
+
+void RemoteAudioTrackHandler::Start() {
+  // TODO(deadbeef) - Should we remember the audio playout volume last set,
+  // and set it again in case the audio channel was destroyed and recreated?
+  OnEnabledChanged();
 }
 
 void RemoteAudioTrackHandler::Stop() {
@@ -166,16 +176,20 @@ LocalVideoTrackHandler::LocalVideoTrackHandler(
     : TrackHandler(track, ssrc),
       local_video_track_(track),
       provider_(provider) {
-  VideoSourceInterface* source = local_video_track_->GetSource();
-  if (source)
-    provider_->SetCaptureDevice(ssrc, source->GetVideoCapturer());
-  OnEnabledChanged();
+  Start();
 }
 
 LocalVideoTrackHandler::~LocalVideoTrackHandler() {
 }
 
 void LocalVideoTrackHandler::OnStateChanged() {
+}
+
+void LocalVideoTrackHandler::Start() {
+  VideoSourceInterface* source = local_video_track_->GetSource();
+  if (source)
+    provider_->SetCaptureDevice(ssrc(), source->GetVideoCapturer());
+  OnEnabledChanged();
 }
 
 void LocalVideoTrackHandler::Stop() {
@@ -199,12 +213,16 @@ RemoteVideoTrackHandler::RemoteVideoTrackHandler(
     : TrackHandler(track, ssrc),
       remote_video_track_(track),
       provider_(provider) {
-  OnEnabledChanged();
-  provider_->SetVideoPlayout(ssrc, true,
-                             remote_video_track_->GetSource()->FrameInput());
+  Start();
 }
 
 RemoteVideoTrackHandler::~RemoteVideoTrackHandler() {
+}
+
+void RemoteVideoTrackHandler::Start() {
+  OnEnabledChanged();
+  provider_->SetVideoPlayout(ssrc(), true,
+                             remote_video_track_->GetSource()->FrameInput());
 }
 
 void RemoteVideoTrackHandler::Stop() {
@@ -301,6 +319,12 @@ void LocalMediaStreamHandler::AddVideoTrack(VideoTrackInterface* video_track,
   track_handlers_.push_back(handler);
 }
 
+void LocalMediaStreamHandler::RestartAllTracks() {
+  for (auto it : track_handlers_) {
+    it->Start();
+  }
+}
+
 RemoteMediaStreamHandler::RemoteMediaStreamHandler(
     MediaStreamInterface* stream,
     AudioProviderInterface* audio_provider,
@@ -325,6 +349,12 @@ void RemoteMediaStreamHandler::AddVideoTrack(VideoTrackInterface* video_track,
   TrackHandler* handler(
       new RemoteVideoTrackHandler(video_track, ssrc, video_provider_));
   track_handlers_.push_back(handler);
+}
+
+void RemoteMediaStreamHandler::RestartAllTracks() {
+  for (auto it : track_handlers_) {
+    it->Start();
+  }
 }
 
 MediaStreamHandlerContainer::MediaStreamHandlerContainer(
@@ -396,6 +426,12 @@ void MediaStreamHandlerContainer::RemoveRemoteTrack(
   handler->RemoveTrack(track);
 }
 
+void MediaStreamHandlerContainer::RestartAllRemoteTracks() {
+  for (auto it : remote_streams_handlers_) {
+    it->RestartAllTracks();
+  }
+}
+
 void MediaStreamHandlerContainer::RemoveLocalStream(
     MediaStreamInterface* stream) {
   DeleteStreamHandler(&local_streams_handlers_, stream);
@@ -436,6 +472,12 @@ void MediaStreamHandlerContainer::RemoveLocalTrack(
     return;
   }
   handler->RemoveTrack(track);
+}
+
+void MediaStreamHandlerContainer::RestartAllLocalTracks() {
+  for (auto it : local_streams_handlers_) {
+    it->RestartAllTracks();
+  }
 }
 
 MediaStreamHandler* MediaStreamHandlerContainer::CreateRemoteStreamHandler(

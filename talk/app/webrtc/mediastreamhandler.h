@@ -51,6 +51,8 @@ class TrackHandler : public ObserverInterface {
   TrackHandler(MediaStreamTrackInterface* track, uint32 ssrc);
   virtual ~TrackHandler();
   virtual void OnChanged();
+  // Associate |track_| with |ssrc_|. Can be called multiple times.
+  virtual void Start() = 0;
   // Stop using |track_| on this PeerConnection.
   virtual void Stop() = 0;
 
@@ -101,7 +103,7 @@ class LocalAudioTrackHandler : public TrackHandler {
                          uint32 ssrc,
                          AudioProviderInterface* provider);
   virtual ~LocalAudioTrackHandler();
-
+  void Start() override;
   void Stop() override;
 
  protected:
@@ -127,6 +129,7 @@ class RemoteAudioTrackHandler : public AudioSourceInterface::AudioObserver,
                           uint32 ssrc,
                           AudioProviderInterface* provider);
   virtual ~RemoteAudioTrackHandler();
+  void Start() override;
   void Stop() override;
 
  protected:
@@ -150,6 +153,7 @@ class LocalVideoTrackHandler : public TrackHandler {
                          uint32 ssrc,
                          VideoProviderInterface* provider);
   virtual ~LocalVideoTrackHandler();
+  void Start() override;
   void Stop() override;
 
  protected:
@@ -170,6 +174,7 @@ class RemoteVideoTrackHandler : public TrackHandler {
                           uint32 ssrc,
                           VideoProviderInterface* provider);
   virtual ~RemoteVideoTrackHandler();
+  void Start() override;
   void Stop() override;
 
  protected:
@@ -192,6 +197,7 @@ class MediaStreamHandler : public ObserverInterface {
 
   virtual void AddAudioTrack(AudioTrackInterface* audio_track, uint32 ssrc) = 0;
   virtual void AddVideoTrack(VideoTrackInterface* video_track, uint32 ssrc) = 0;
+  virtual void RestartAllTracks() = 0;
 
   virtual void RemoveTrack(MediaStreamTrackInterface* track);
   void OnChanged() override;
@@ -214,6 +220,7 @@ class LocalMediaStreamHandler : public MediaStreamHandler {
 
   void AddAudioTrack(AudioTrackInterface* audio_track, uint32 ssrc) override;
   void AddVideoTrack(VideoTrackInterface* video_track, uint32 ssrc) override;
+  void RestartAllTracks() override;
 };
 
 class RemoteMediaStreamHandler : public MediaStreamHandler {
@@ -224,6 +231,7 @@ class RemoteMediaStreamHandler : public MediaStreamHandler {
   ~RemoteMediaStreamHandler();
   void AddAudioTrack(AudioTrackInterface* audio_track, uint32 ssrc) override;
   void AddVideoTrack(VideoTrackInterface* video_track, uint32 ssrc) override;
+  void RestartAllTracks() override;
 };
 
 // Container for MediaStreamHandlers of currently known local and remote
@@ -256,6 +264,10 @@ class MediaStreamHandlerContainer {
   void RemoveRemoteTrack(MediaStreamInterface* stream,
                          MediaStreamTrackInterface* track);
 
+  // Make all remote track handlers reassociate their corresponding tracks
+  // with their corresponding SSRCs.
+  void RestartAllRemoteTracks();
+
   // Remove all TrackHandlers for tracks in |stream| and make sure
   // the audio_provider and video_provider is notified that the tracks has been
   // removed.
@@ -272,6 +284,10 @@ class MediaStreamHandlerContainer {
   // Remove the TrackHandler for |track|.
   void RemoveLocalTrack(MediaStreamInterface* stream,
                         MediaStreamTrackInterface* track);
+
+  // Make all local track handlers reassociate their corresponding tracks
+  // with their corresponding SSRCs.
+  void RestartAllLocalTracks();
 
  private:
   typedef std::list<MediaStreamHandler*> StreamHandlerList;

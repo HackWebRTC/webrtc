@@ -615,6 +615,14 @@ void PeerConnection::SetLocalDescription(
     PostSetSessionDescriptionFailure(observer, error);
     return;
   }
+
+  // This is necessary because an audio/video channel may have been previously
+  // destroyed by removing it from the remote description, which would NOT
+  // destroy the local handler. So upon receiving a new local description,
+  // we may need to tell that local track handler to connect the capturer
+  // to the now re-created audio/video channel.
+  stream_handler_container_->RestartAllLocalTracks();
+
   SetSessionDescriptionMsg* msg =  new SetSessionDescriptionMsg(observer);
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 }
@@ -638,6 +646,14 @@ void PeerConnection::SetRemoteDescription(
     PostSetSessionDescriptionFailure(observer, error);
     return;
   }
+
+  // This is necessary because an audio/video channel may have been previously
+  // destroyed by removing it from the local description, which would NOT
+  // destroy the remote handler. So upon receiving a new remote description,
+  // we may need to tell that remote track handler to connect the renderer
+  // to the now re-created audio/video channel.
+  stream_handler_container_->RestartAllRemoteTracks();
+
   SetSessionDescriptionMsg* msg  = new SetSessionDescriptionMsg(observer);
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 }
