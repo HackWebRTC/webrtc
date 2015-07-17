@@ -19,17 +19,6 @@
 #include "webrtc/test/rtp_file_reader.h"
 
 int main(int argc, char** argv) {
-  if (argc < 4) {
-    fprintf(stderr, "Usage: rtp_to_text <extension type> <extension id>"
-           " <input_file.rtp> [-t]\n");
-    fprintf(stderr, "<extension type> can either be:\n"
-           "  abs for absolute send time or\n"
-           "  tsoffset for timestamp offset.\n"
-           "<extension id> is the id associated with the extension.\n"
-           "  -t is an optional flag, if set only packet arrival time will be"
-           " output.\n");
-    return -1;
-  }
   webrtc::test::RtpFileReader* reader;
   webrtc::RtpHeaderParser* parser;
   if (!ParseArgsAndSetupEstimator(argc, argv, NULL, NULL, &reader, &parser,

@@ -105,6 +105,7 @@
           'target_name': 'bwe_tools_util',
           'type': 'static_library',
           'dependencies': [
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
             'rtp_rtcp',
           ],
