@@ -15,7 +15,6 @@
 
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/common_audio/channel_buffer.h"
-#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 #include "webrtc/modules/audio_processing/beamformer/beamformer.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
 
