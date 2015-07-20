@@ -180,8 +180,9 @@ Call::Call(const Call::Config& config)
 
   // TODO(pbos): Remove base channel when CreateReceiveChannel no longer
   // requires one.
-  CHECK(channel_group_->CreateSendChannel(
-      base_channel_id_, 0, &transport_adapter_, num_cpu_cores_, 1, true));
+  CHECK(channel_group_->CreateSendChannel(base_channel_id_, 0,
+                                          &transport_adapter_, num_cpu_cores_,
+                                          std::vector<uint32_t>(), true));
 
   if (config.overuse_callback) {
     overuse_observer_proxy_.reset(

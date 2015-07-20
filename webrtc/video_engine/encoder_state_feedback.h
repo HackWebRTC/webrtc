@@ -35,11 +35,8 @@ class EncoderStateFeedback {
   EncoderStateFeedback();
   ~EncoderStateFeedback();
 
-  // Update SSRCs for an encoder.
-  void UpdateSsrcs(const std::vector<uint32_t>& ssrc, ViEEncoder* encoder);
-
-  // Adds an encoder to receive feedback for a unique ssrc.
-  bool AddEncoder(uint32_t ssrc, ViEEncoder* encoder);
+  // Adds an encoder to receive feedback for a set of SSRCs.
+  void AddEncoder(const std::vector<uint32_t>& ssrc, ViEEncoder* encoder);
 
   // Removes a registered ViEEncoder.
   void RemoveEncoder(const ViEEncoder* encoder);

@@ -20,7 +20,6 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video/video_capture_input.h"
-#include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -121,8 +120,8 @@ VideoSendStream::VideoSendStream(
       stats_proxy_(Clock::GetRealTimeClock(), config) {
   DCHECK(!config_.rtp.ssrcs.empty());
   CHECK(channel_group->CreateSendChannel(channel_id_, 0, &transport_adapter_,
-                                         num_cpu_cores,
-                                         config_.rtp.ssrcs.size(), true));
+                                         num_cpu_cores, config_.rtp.ssrcs,
+                                         true));
   vie_channel_ = channel_group_->GetChannel(channel_id_);
   vie_encoder_ = channel_group_->GetEncoder(channel_id_);
 
@@ -495,9 +494,6 @@ bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {
 
   // Update used SSRCs.
   vie_encoder_->SetSsrcs(used_ssrcs);
-  EncoderStateFeedback* encoder_state_feedback =
-      channel_group_->GetEncoderStateFeedback();
-  encoder_state_feedback->UpdateSsrcs(used_ssrcs, vie_encoder_);
 
   // Update the protection mode, we might be switching NACK/FEC.
   vie_encoder_->UpdateProtectionMethod(vie_encoder_->nack_enabled(),

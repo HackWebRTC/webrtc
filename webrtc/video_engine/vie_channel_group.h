@@ -46,7 +46,7 @@ class ChannelGroup : public BitrateObserver {
                          int engine_id,
                          Transport* transport,
                          int number_of_cores,
-                         size_t max_rtp_streams,
+                         const std::vector<uint32_t>& ssrcs,
                          bool disable_default_encoder);
   bool CreateReceiveChannel(int channel_id,
                             int engine_id,
