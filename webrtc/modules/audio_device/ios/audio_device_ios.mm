@@ -28,18 +28,6 @@ namespace webrtc {
 
 using ios::CheckAndLogError;
 
-#if !defined(NDEBUG)
-static void LogDeviceInfo() {
-  LOG(LS_INFO) << "LogDeviceInfo";
-  @autoreleasepool {
-    LOG(LS_INFO) << " system name: " << ios::GetSystemName();
-    LOG(LS_INFO) << " system version: " << ios::GetSystemVersion();
-    LOG(LS_INFO) << " device type: " << ios::GetDeviceType();
-    LOG(LS_INFO) << " device name: " << ios::GetDeviceName();
-  }
-}
-#endif
-
 static void ActivateAudioSession(AVAudioSession* session, bool activate) {
   LOG(LS_INFO) << "ActivateAudioSession(" << activate << ")";
   @autoreleasepool {
@@ -120,6 +108,18 @@ static void GetHardwareAudioParameters(AudioParameters* playout_parameters,
     // and check setting when audio is started. Probably better.
   }
 }
+
+#if !defined(NDEBUG)
+static void LogDeviceInfo() {
+  LOG(LS_INFO) << "LogDeviceInfo";
+  @autoreleasepool {
+    LOG(LS_INFO) << " system name: " << ios::GetSystemName();
+    LOG(LS_INFO) << " system version: " << ios::GetSystemVersion();
+    LOG(LS_INFO) << " device type: " << ios::GetDeviceType();
+    LOG(LS_INFO) << " device name: " << ios::GetDeviceName();
+  }
+}
+#endif
 
 AudioDeviceIOS::AudioDeviceIOS()
     : audio_device_buffer_(nullptr),
@@ -249,7 +249,7 @@ int32_t AudioDeviceIOS::InitPlayout() {
 }
 
 int32_t AudioDeviceIOS::InitRecording() {
-  LOGI() << "InitPlayout";
+  LOGI() << "InitRecording";
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(_initialized);
   DCHECK(!_recIsInitialized);
@@ -666,9 +666,6 @@ int32_t AudioDeviceIOS::InitPlayOrRecord() {
   // files.
   _audioInterruptionObserver = (__bridge_retained void*)observer;
 
-  // Deactivate the audio session.
-  ActivateAudioSession(session, false);
-
   return 0;
 }
 
@@ -698,6 +695,10 @@ int32_t AudioDeviceIOS::ShutdownPlayOrRecord() {
     _auVoiceProcessing = nullptr;
   }
 
+  // All I/O should be stopped or paused prior to deactivating the audio
+  // session, hence we deactivate as last action.
+  AVAudioSession* session = [AVAudioSession sharedInstance];
+  ActivateAudioSession(session, false);
   return 0;
 }
 
