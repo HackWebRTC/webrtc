@@ -891,7 +891,6 @@ int32_t AudioDeviceLinuxPulse::MicrophoneVolumeStepSize(
 
 int16_t AudioDeviceLinuxPulse::PlayoutDevices()
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
     PaLock();
 
     pa_operation* paOperation = NULL;
@@ -1029,7 +1028,6 @@ int32_t AudioDeviceLinuxPulse::RecordingDeviceName(
 
 int16_t AudioDeviceLinuxPulse::RecordingDevices()
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
     PaLock();
 
     pa_operation* paOperation = NULL;
