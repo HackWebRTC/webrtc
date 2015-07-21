@@ -16,7 +16,7 @@ import os
 import subprocess
 import sys
 
-IGNORE_PATTERNS = ['do_not_use', 'protoc']
+IGNORE_PATTERNS = ['do_not_use', 'protoc', 'genperf']
 
 def FindFiles(path, pattern):
   """Finds files matching |pattern| under |path|.
