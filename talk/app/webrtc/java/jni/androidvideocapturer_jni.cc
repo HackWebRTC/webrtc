@@ -174,12 +174,14 @@ void AndroidVideoCapturerJni::OnCapturerStarted(bool success) {
 
 void AndroidVideoCapturerJni::OnIncomingFrame(void* video_frame,
                                               int length,
+                                              int width,
+                                              int height,
                                               int rotation,
                                               int64 time_stamp) {
   invoker_.AsyncInvoke<void>(
       thread_,
-      rtc::Bind(&AndroidVideoCapturerJni::OnIncomingFrame_w,
-                this, video_frame, length, rotation, time_stamp));
+      rtc::Bind(&AndroidVideoCapturerJni::OnIncomingFrame_w, this, video_frame,
+                length, width, height, rotation, time_stamp));
 }
 
 void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,
@@ -202,11 +204,14 @@ void AndroidVideoCapturerJni::OnCapturerStarted_w(bool success) {
 
 void AndroidVideoCapturerJni::OnIncomingFrame_w(void* video_frame,
                                                 int length,
+                                                int width,
+                                                int height,
                                                 int rotation,
                                                 int64 time_stamp) {
   CHECK(thread_checker_.CalledOnValidThread());
   if (capturer_) {
-    capturer_->OnIncomingFrame(video_frame, length, rotation, time_stamp);
+    capturer_->OnIncomingFrame(video_frame, length, width, height, rotation,
+                               time_stamp);
   } else {
     LOG(LS_INFO) <<
         "Frame arrived after camera has been stopped: " << time_stamp <<
@@ -230,13 +235,13 @@ JNIEnv* AndroidVideoCapturerJni::jni() { return AttachCurrentThreadIfNeeded(); }
 
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnFrameCaptured)
     (JNIEnv* jni, jclass, jlong j_capturer, jbyteArray j_frame, jint length,
-        jint rotation, jlong ts) {
+        jint width, jint height, jint rotation, jlong ts) {
   jboolean is_copy = true;
   jbyte* bytes = jni->GetByteArrayElements(j_frame, &is_copy);
   if (!is_copy) {
-    reinterpret_cast<AndroidVideoCapturerJni*>(
-        j_capturer)->OnIncomingFrame(bytes, length, rotation, ts);
-  }  else {
+    reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)
+        ->OnIncomingFrame(bytes, length, width, height, rotation, ts);
+  } else {
     // If this is a copy of the original frame, it means that the memory
     // is not direct memory and thus VideoCapturerAndroid does not guarantee
     // that the memory is valid when we have released |j_frame|.
