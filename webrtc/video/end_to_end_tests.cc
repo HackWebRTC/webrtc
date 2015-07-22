@@ -1634,10 +1634,32 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.ReceivedPacketsLostInPercent"));
 
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.InputWidthInPixels"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.InputHeightInPixels"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SentWidthInPixels"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SentHeightInPixels"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.ReceivedWidthInPixels"));
+  EXPECT_EQ(1,
+            test::NumHistogramSamples("WebRTC.Video.ReceivedHeightInPixels"));
+
+  EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].width),
+            test::LastHistogramSample("WebRTC.Video.InputWidthInPixels"));
+  EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].height),
+            test::LastHistogramSample("WebRTC.Video.InputHeightInPixels"));
+  EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].width),
+            test::LastHistogramSample("WebRTC.Video.SentWidthInPixels"));
+  EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].height),
+            test::LastHistogramSample("WebRTC.Video.SentHeightInPixels"));
+  EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].width),
+            test::LastHistogramSample("WebRTC.Video.ReceivedWidthInPixels"));
+  EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].height),
+            test::LastHistogramSample("WebRTC.Video.ReceivedHeightInPixels"));
+
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.InputFramesPerSecond"));
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SentFramesPerSecond"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.DecodedFramesPerSecond"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.RenderFramesPerSecond"));
 
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.BitrateSentInKbps"));

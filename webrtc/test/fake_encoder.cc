@@ -97,6 +97,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     encoded._timeStamp = input_image.timestamp();
     encoded.capture_time_ms_ = input_image.render_time_ms();
     encoded._frameType = (*frame_types)[i];
+    encoded._encodedWidth = config_.simulcastStream[i].width;
+    encoded._encodedHeight = config_.simulcastStream[i].height;
     // Always encode something on the first frame.
     if (min_stream_bits > bits_available && i > 0) {
       encoded._length = 0;

@@ -14,6 +14,7 @@
 #include <string>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/ratetracker.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/frame_callback.h"
@@ -42,9 +43,9 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
   VideoReceiveStream::Stats GetStats() const;
 
   void OnDecodedFrame();
-  void OnRenderedFrame();
+  void OnRenderedFrame(int width, int height);
 
-  // Overrides VCMReceiveStatisticsCallback
+  // Overrides VCMReceiveStatisticsCallback.
   void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) override;
   void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
   void OnDiscardedPacketsUpdated(int discarded_packets) override;
@@ -68,7 +69,7 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
                          uint32_t ssrc) override;
   void CNameChanged(const char* cname, uint32_t ssrc) override;
 
-  // Overrides RtcpPacketTypeCounterObserver
+  // Overrides RtcpPacketTypeCounterObserver.
   void RtcpPacketTypesCounterUpdated(
       uint32_t ssrc,
       const RtcpPacketTypeCounter& packet_counter) override;
@@ -77,13 +78,27 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
                            uint32_t ssrc) override;
 
  private:
-  void UpdateHistograms() const;
+  struct SampleCounter {
+    SampleCounter() : sum(0), num_samples(0) {}
+    void Add(int sample);
+    int Avg(int min_required_samples) const;
+
+   private:
+    int sum;
+    int num_samples;
+  };
+
+  void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   Clock* const clock_;
 
   mutable rtc::CriticalSection crit_;
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);
   RateStatistics decode_fps_estimator_ GUARDED_BY(crit_);
   RateStatistics renders_fps_estimator_ GUARDED_BY(crit_);
+  rtc::RateTracker render_fps_tracker_total_ GUARDED_BY(crit_);
+  SampleCounter render_width_counter_ GUARDED_BY(crit_);
+  SampleCounter render_height_counter_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
 };
 

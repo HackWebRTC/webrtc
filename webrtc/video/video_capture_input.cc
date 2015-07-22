@@ -78,7 +78,7 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   if (local_renderer_)
     local_renderer_->RenderFrame(video_frame, 0);
 
-  stats_proxy_->OnIncomingFrame();
+  stats_proxy_->OnIncomingFrame(video_frame.width(), video_frame.height());
 
   VideoFrame incoming_frame = video_frame;
 

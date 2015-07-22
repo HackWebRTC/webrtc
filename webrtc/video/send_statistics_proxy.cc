@@ -10,6 +10,7 @@
 
 #include "webrtc/video/send_statistics_proxy.h"
 
+#include <algorithm>
 #include <map>
 
 #include "webrtc/base/checks.h"
@@ -24,7 +25,11 @@ const int SendStatisticsProxy::kStatsTimeoutMs = 5000;
 
 SendStatisticsProxy::SendStatisticsProxy(Clock* clock,
                                          const VideoSendStream::Config& config)
-    : clock_(clock), config_(config), last_sent_frame_timestamp_(0) {
+    : clock_(clock),
+      config_(config),
+      last_sent_frame_timestamp_(0),
+      max_sent_width_per_timestamp_(0),
+      max_sent_height_per_timestamp_(0) {
 }
 
 SendStatisticsProxy::~SendStatisticsProxy() {
@@ -34,13 +39,26 @@ SendStatisticsProxy::~SendStatisticsProxy() {
 void SendStatisticsProxy::UpdateHistograms() {
   int input_fps =
       static_cast<int>(input_frame_rate_tracker_total_.units_second());
-  int sent_fps =
-      static_cast<int>(sent_frame_rate_tracker_total_.units_second());
-
   if (input_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.InputFramesPerSecond", input_fps);
+  int sent_fps =
+      static_cast<int>(sent_frame_rate_tracker_total_.units_second());
   if (sent_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.SentFramesPerSecond", sent_fps);
+
+  const int kMinRequiredSamples = 100;
+  int in_width = input_width_counter_.Avg(kMinRequiredSamples);
+  int in_height = input_height_counter_.Avg(kMinRequiredSamples);
+  if (in_width != -1) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InputWidthInPixels", in_width);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InputHeightInPixels", in_height);
+  }
+  int sent_width = sent_width_counter_.Avg(kMinRequiredSamples);
+  int sent_height = sent_height_counter_.Avg(kMinRequiredSamples);
+  if (sent_width != -1) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SentWidthInPixels", sent_width);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SentHeightInPixels", sent_height);
+  }
 }
 
 void SendStatisticsProxy::OutgoingRate(const int video_channel,
@@ -139,16 +157,33 @@ void SendStatisticsProxy::OnSendEncodedImage(
   stats->width = encoded_image._encodedWidth;
   stats->height = encoded_image._encodedHeight;
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
-  if (encoded_image._timeStamp != last_sent_frame_timestamp_) {
-    last_sent_frame_timestamp_ = encoded_image._timeStamp;
+
+  // TODO(asapersson): This is incorrect if simulcast layers are encoded on
+  // different threads and there is no guarantee that one frame of all layers
+  // are encoded before the next start.
+  if (last_sent_frame_timestamp_ > 0 &&
+      encoded_image._timeStamp != last_sent_frame_timestamp_) {
     sent_frame_rate_tracker_total_.Update(1);
+    sent_width_counter_.Add(max_sent_width_per_timestamp_);
+    sent_height_counter_.Add(max_sent_height_per_timestamp_);
+    max_sent_width_per_timestamp_ = 0;
+    max_sent_height_per_timestamp_ = 0;
   }
+  last_sent_frame_timestamp_ = encoded_image._timeStamp;
+  max_sent_width_per_timestamp_ =
+      std::max(max_sent_width_per_timestamp_,
+               static_cast<int>(encoded_image._encodedWidth));
+  max_sent_height_per_timestamp_ =
+      std::max(max_sent_height_per_timestamp_,
+               static_cast<int>(encoded_image._encodedHeight));
 }
 
-void SendStatisticsProxy::OnIncomingFrame() {
+void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   rtc::CritScope lock(&crit_);
   input_frame_rate_tracker_.Update(1);
   input_frame_rate_tracker_total_.Update(1);
+  input_width_counter_.Add(width);
+  input_height_counter_.Add(height);
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
@@ -217,6 +252,17 @@ void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
     return;
   stats->avg_delay_ms = avg_delay_ms;
   stats->max_delay_ms = max_delay_ms;
+}
+
+void SendStatisticsProxy::SampleCounter::Add(int sample) {
+  sum += sample;
+  ++num_samples;
+}
+
+int SendStatisticsProxy::SampleCounter::Avg(int min_required_samples) const {
+  if (num_samples < min_required_samples || num_samples == 0)
+    return -1;
+  return sum / num_samples;
 }
 
 }  // namespace webrtc

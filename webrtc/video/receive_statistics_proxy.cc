@@ -28,15 +28,23 @@ ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
   UpdateHistograms();
 }
 
-void ReceiveStatisticsProxy::UpdateHistograms() const {
-  int fraction_lost;
-  {
-    rtc::CritScope lock(&crit_);
-    fraction_lost = report_block_stats_.FractionLostInPercent();
-  }
+void ReceiveStatisticsProxy::UpdateHistograms() {
+  int fraction_lost = report_block_stats_.FractionLostInPercent();
   if (fraction_lost != -1) {
     RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
         fraction_lost);
+  }
+
+  int render_fps = static_cast<int>(render_fps_tracker_total_.units_second());
+  if (render_fps > 0)
+    RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.RenderFramesPerSecond", render_fps);
+
+  const int kMinRequiredSamples = 100;
+  int width = render_width_counter_.Avg(kMinRequiredSamples);
+  int height = render_height_counter_.Avg(kMinRequiredSamples);
+  if (width != -1) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedWidthInPixels", width);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedHeightInPixels", height);
   }
 }
 
@@ -117,12 +125,15 @@ void ReceiveStatisticsProxy::OnDecodedFrame() {
   stats_.decode_frame_rate = decode_fps_estimator_.Rate(now);
 }
 
-void ReceiveStatisticsProxy::OnRenderedFrame() {
+void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
   uint64_t now = clock_->TimeInMilliseconds();
 
   rtc::CritScope lock(&crit_);
   renders_fps_estimator_.Update(1, now);
   stats_.render_frame_rate = renders_fps_estimator_.Rate(now);
+  render_width_counter_.Add(width);
+  render_height_counter_.Add(height);
+  render_fps_tracker_total_.Update(1);
 }
 
 void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,
@@ -138,6 +149,17 @@ void ReceiveStatisticsProxy::OnFrameCountsUpdated(
 void ReceiveStatisticsProxy::OnDiscardedPacketsUpdated(int discarded_packets) {
   rtc::CritScope lock(&crit_);
   stats_.discarded_packets = discarded_packets;
+}
+
+void ReceiveStatisticsProxy::SampleCounter::Add(int sample) {
+  sum += sample;
+  ++num_samples;
+}
+
+int ReceiveStatisticsProxy::SampleCounter::Avg(int min_required_samples) const {
+  if (num_samples < min_required_samples || num_samples == 0)
+    return -1;
+  return sum / num_samples;
 }
 
 }  // namespace webrtc
