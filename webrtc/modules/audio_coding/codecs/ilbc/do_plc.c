@@ -70,7 +70,8 @@ void WebRtcIlbcfix_DoThePlc(
 
       /* Maximum 60 samples are correlated, preserve as high accuracy
          as possible without getting overflow */
-      max = WebRtcSpl_MaxAbsValueW16((*iLBCdec_inst).prevResidual, (int16_t)iLBCdec_inst->blockl);
+      max = WebRtcSpl_MaxAbsValueW16((*iLBCdec_inst).prevResidual,
+                                     (int16_t)iLBCdec_inst->blockl);
       scale3 = (WebRtcSpl_GetSizeInBits(max)<<1) - 25;
       if (scale3 < 0) {
         scale3 = 0;

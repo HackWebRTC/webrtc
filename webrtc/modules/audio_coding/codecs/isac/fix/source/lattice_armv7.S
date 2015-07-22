@@ -38,7 +38,7 @@ DEFINE_FUNCTION WebRtcIsacfix_FilterArLoop
   mov     r4, #HALF_SUBFRAMELEN
   sub     r4, #1                 @ Outer loop counter = HALF_SUBFRAMELEN - 1
 
-HALF_SUBFRAME_LOOP:  @ for(n = 0; n < HALF_SUBFRAMELEN - 1; n++)
+HALF_SUBFRAME_LOOP:  @ for (n = 0; n < HALF_SUBFRAMELEN - 1; n++)
 
   ldr     r9, [sp, #32]          @ Restore the inner loop counter to order_coef
   ldrh    r5, [r1]               @ tmpAR = ar_f_Q0[n+1]
@@ -46,7 +46,7 @@ HALF_SUBFRAME_LOOP:  @ for(n = 0; n < HALF_SUBFRAMELEN - 1; n++)
   add     r2, r9, asl #1         @ Restore r2 to &cth_Q15[order_coef]
   add     r3, r9, asl #1         @ Restore r3 to &sth_Q15[order_coef]
 
-ORDER_COEF_LOOP:  @ for(k = order_coef ; k > 0; k--)
+ORDER_COEF_LOOP:  @ for (k = order_coef; k > 0; k--)
 
   ldrh    r7, [r3, #-2]!         @ sth_Q15[k - 1]
   ldrh    r6, [r2, #-2]!         @ cth_Q15[k - 1]

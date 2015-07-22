@@ -117,7 +117,7 @@ void DspHelper::PeakDetection(int16_t* data, int data_length,
     peak_index[i] = WebRtcSpl_MaxIndexW16(data, data_length - 1);
 
     if (i != num_peaks - 1) {
-      min_index = std::max(0, peak_index[i] - 2);
+      min_index = (peak_index[i] > 2) ? (peak_index[i] - 2) : 0;
       max_index = std::min(data_length - 1, peak_index[i] + 2);
     }
 
@@ -238,7 +238,7 @@ void DspHelper::ParabolicFit(int16_t* signal_points, int fs_mult,
 int DspHelper::MinDistortion(const int16_t* signal, int min_lag,
                              int max_lag, int length,
                              int32_t* distortion_value) {
-  int best_index = -1;
+  int best_index = 0;
   int32_t min_distortion = WEBRTC_SPL_WORD32_MAX;
   for (int i = min_lag; i <= max_lag; i++) {
     int32_t sum_diff = 0;

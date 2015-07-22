@@ -73,11 +73,11 @@ class IntelligibilityEnhancer {
 
     // All in frequency domain, receives input |in_block|, applies
     // intelligibility enhancement, and writes result to |out_block|.
-    virtual void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                                   int in_channels,
-                                   int frames,
-                                   int out_channels,
-                                   std::complex<float>* const* out_block);
+    void ProcessAudioBlock(const std::complex<float>* const* in_block,
+                           int in_channels,
+                           int frames,
+                           int out_channels,
+                           std::complex<float>* const* out_block) override;
 
    private:
     IntelligibilityEnhancer* parent_;

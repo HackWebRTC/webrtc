@@ -350,6 +350,11 @@ int main(int argc, char* argv[]) {
       }
 
       rcuStreamLen = WebRtcIsac_GetRedPayload(ISAC_main_inst, payloadRCU);
+      if (rcuStreamLen < 0) {
+        fprintf(stderr, "\nError getting RED payload\n");
+        getc(stdin);
+        exit(EXIT_FAILURE);
+      }
 
       get_arrival_time(cur_framesmpls, stream_len, bottleneck, &packetData,
                        sampFreqKHz * 1000, sampFreqKHz * 1000);

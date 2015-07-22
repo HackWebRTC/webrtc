@@ -115,7 +115,7 @@ size_t AudioEncoderOpus::MaxEncodedBytes() const {
   // Calculate the number of bytes we expect the encoder to produce,
   // then multiply by two to give a wide margin for error.
   size_t bytes_per_millisecond =
-       static_cast<size_t>(bitrate_bps_ / (1000 * 8) + 1);
+      static_cast<size_t>(bitrate_bps_ / (1000 * 8) + 1);
   size_t approx_encoded_bytes =
       num_10ms_frames_per_packet_ * 10 * bytes_per_millisecond;
   return 2 * approx_encoded_bytes;

@@ -41,7 +41,7 @@ TEST_F(VadTest, vad_sp) {
   // Construct a speech signal that will trigger the VAD in all modes. It is
   // known that (i * i) will wrap around, but that doesn't matter in this case.
   for (int16_t i = 0; i < kMaxFrameLenSp; ++i) {
-    data_in[i] = (i * i);
+    data_in[i] = static_cast<int16_t>(i * i);
   }
   // Input values all zeros, expect all zeros out.
   WebRtcVad_Downsampling(zeros, data_out, state, kMaxFrameLenSp);

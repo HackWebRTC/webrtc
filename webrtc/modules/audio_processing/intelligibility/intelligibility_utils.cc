@@ -137,9 +137,9 @@ void VarianceArray::InfiniteStep(const complex<float>* data, bool skip_fudge) {
               .real();
       variance_[i] =
           conj_sum_[i] / (count_ - 1);  // + fudge[fudge_index].real();
-      if (skip_fudge && false) {
-        // variance_[i] -= fudge[fudge_index].real();
-      }
+      // if (skip_fudge) {
+      //   variance_[i] -= fudge[fudge_index].real();
+      // }
     }
     array_mean_ += (variance_[i] - array_mean_) / (i + 1);
   }

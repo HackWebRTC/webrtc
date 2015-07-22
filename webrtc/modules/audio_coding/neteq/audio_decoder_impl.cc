@@ -256,16 +256,14 @@ int AudioDecoderG722Stereo::DecodeInternal(const uint8_t* encoded,
                             static_cast<int16_t>(encoded_len / 2),
                             &decoded[decoded_len], &temp_type);
     if (ret == decoded_len) {
-      decoded_len += ret;
+      ret += decoded_len;  // Return total number of samples.
       // Interleave output.
-      for (int k = decoded_len / 2; k < decoded_len; k++) {
+      for (int k = ret / 2; k < ret; k++) {
           int16_t temp = decoded[k];
-          memmove(&decoded[2 * k - decoded_len + 2],
-                  &decoded[2 * k - decoded_len + 1],
-                  (decoded_len - k - 1) * sizeof(int16_t));
-          decoded[2 * k - decoded_len + 1] = temp;
+          memmove(&decoded[2 * k - ret + 2], &decoded[2 * k - ret + 1],
+                  (ret - k - 1) * sizeof(int16_t));
+          decoded[2 * k - ret + 1] = temp;
       }
-      ret = decoded_len;  // Return total number of samples.
     }
   }
   *speech_type = ConvertSpeechType(temp_type);

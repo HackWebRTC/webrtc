@@ -624,8 +624,8 @@ int main(int argc, char* argv[])
         errtype=WebRtcIsacfix_GetErrorCode(ISAC_main_inst);
         printf("\nError in encoder: %d.\n", errtype);
       } else {
-        if (fwrite(streamdata, sizeof(char),
-                   stream_len, outbits) != (size_t)stream_len) {
+        if (fwrite(streamdata, sizeof(char), stream_len, outbits) !=
+            (size_t)stream_len) {
           return -1;
         }
       }
@@ -731,12 +731,12 @@ int main(int argc, char* argv[])
       /* iSAC decoding */
       if( lostFrame && framecnt >  0) {
         if (nbTest !=2) {
-          declen = WebRtcIsacfix_DecodePlc(ISAC_main_inst,
-                                           decoded, prevFrameSize );
+          declen =
+              WebRtcIsacfix_DecodePlc(ISAC_main_inst, decoded, prevFrameSize);
         } else {
 #ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
-          declen = WebRtcIsacfix_DecodePlcNb(ISAC_main_inst, decoded,
-                                             prevFrameSize );
+          declen = WebRtcIsacfix_DecodePlcNb(
+              ISAC_main_inst, decoded, prevFrameSize);
 #else
           declen = -1;
 #endif
@@ -755,7 +755,7 @@ int main(int argc, char* argv[])
               decoded,
               speechType);
           /* Error check */
-          if (err<0 || declen<0 || FL!=declen) {
+          if (err < 0 || declen < 0 || FL != declen) {
             errtype=WebRtcIsacfix_GetErrorCode(ISAC_main_inst);
             printf("\nError in decode_B/or getFrameLen: %d.\n", errtype);
           }

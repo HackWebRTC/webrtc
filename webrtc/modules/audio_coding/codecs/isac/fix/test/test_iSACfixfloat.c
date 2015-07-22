@@ -556,12 +556,13 @@ int main(int argc, char* argv[]) {
           else
             declen = WebRtcIsacfix_DecodePlcNb(ISACFIX_main_inst, decoded, 1);
         } else {
-          if (nbTest != 2)
+          if (nbTest != 2) {
             declen = WebRtcIsacfix_Decode(ISACFIX_main_inst, streamdata,
                                           stream_len, decoded, speechType);
-          else
+          } else {
             declen = WebRtcIsacfix_DecodeNb(ISACFIX_main_inst, streamdata,
                                             stream_len, decoded, speechType);
+          }
         }
         if (declen <= 0) {
           /* exit if returned with error */
@@ -582,7 +583,7 @@ int main(int argc, char* argv[]) {
 
     totalsmpls += declen;
     totalbits += 8 * stream_len;
-    kbps = ((double)FS) / ((double)cur_framesmpls) * 8.0 * stream_len / 1000.0;
+    kbps = (double)FS / (double)cur_framesmpls * 8.0 * stream_len / 1000.0;
     fy = fopen("bit_rate.dat", "a");
     fprintf(fy, "Frame %i = %0.14f\n", framecnt, kbps);
     fclose(fy);

@@ -66,7 +66,7 @@ TEST_F(VadTest, ApiTest) {
   // known that (i * i) will wrap around, but that doesn't matter in this case.
   int16_t speech[kMaxFrameLength];
   for (int16_t i = 0; i < kMaxFrameLength; i++) {
-    speech[i] = (i * i);
+    speech[i] = static_cast<int16_t>(i * i);
   }
 
   // nullptr instance tests

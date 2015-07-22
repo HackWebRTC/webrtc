@@ -750,7 +750,8 @@ int WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
                       streamLenUB + garbageLen, &crc);
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
     for (k = 0; k < LEN_CHECK_SUM_WORD8; k++) {
-      encoded[streamLen - LEN_CHECK_SUM_WORD8 + k] = crc >> (24 - k * 8);
+      encoded[streamLen - LEN_CHECK_SUM_WORD8 + k] =
+          (uint8_t)(crc >> (24 - k * 8));
     }
 #else
     memcpy(&encoded[streamLenLB + streamLenUB + 1], &crc, LEN_CHECK_SUM_WORD8);

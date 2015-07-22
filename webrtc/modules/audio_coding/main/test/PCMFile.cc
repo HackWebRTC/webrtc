@@ -150,8 +150,7 @@ void PCMFile::Write10MsData(AudioFrame& audio_frame) {
       }
     } else {
       int16_t* stereo_audio = new int16_t[2 * audio_frame.samples_per_channel_];
-      int k;
-      for (k = 0; k < audio_frame.samples_per_channel_; k++) {
+      for (int k = 0; k < audio_frame.samples_per_channel_; k++) {
         stereo_audio[k << 1] = audio_frame.data_[k];
         stereo_audio[(k << 1) + 1] = audio_frame.data_[k];
       }

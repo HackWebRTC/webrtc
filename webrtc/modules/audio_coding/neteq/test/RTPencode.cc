@@ -454,7 +454,7 @@ int main(int argc, char* argv[]) {
      printf("Packet size %d must be positive", packet_size);
      return -1;
   }
-  printf("Packet size: %i\n", packet_size);
+  printf("Packet size: %d\n", packet_size);
 
   // check for stereo
   if (argv[4][strlen(argv[4]) - 1] == '*') {
@@ -1572,29 +1572,31 @@ int NetEQTest_encode(int coder,
   if (useVAD) {
     *vad = 0;
 
+    int sampleRate_10 = 10 * sampleRate / 1000;
+    int sampleRate_20 = 20 * sampleRate / 1000;
+    int sampleRate_30 = 30 * sampleRate / 1000;
     for (int k = 0; k < numChannels; k++) {
       tempLen = frameLen;
       tempdata = &indata[k * frameLen];
       int localVad = 0;
       /* Partition the signal and test each chunk for VAD.
       All chunks must be VAD=0 to produce a total VAD=0. */
-      while (tempLen >= 10 * sampleRate / 1000) {
-        if ((tempLen % 30 * sampleRate / 1000) ==
-            0) {  // tempLen is multiple of 30ms
+      while (tempLen >= sampleRate_10) {
+        if ((tempLen % sampleRate_30) == 0) {  // tempLen is multiple of 30ms
           localVad |= WebRtcVad_Process(VAD_inst[k], sampleRate, tempdata,
-                                        30 * sampleRate / 1000);
-          tempdata += 30 * sampleRate / 1000;
-          tempLen -= 30 * sampleRate / 1000;
-        } else if (tempLen >= 20 * sampleRate / 1000) {  // tempLen >= 20ms
+                                        sampleRate_30);
+          tempdata += sampleRate_30;
+          tempLen -= sampleRate_30;
+        } else if (tempLen >= sampleRate_20) {  // tempLen >= 20ms
           localVad |= WebRtcVad_Process(VAD_inst[k], sampleRate, tempdata,
-                                        20 * sampleRate / 1000);
-          tempdata += 20 * sampleRate / 1000;
-          tempLen -= 20 * sampleRate / 1000;
+                                        sampleRate_20);
+          tempdata += sampleRate_20;
+          tempLen -= sampleRate_20;
         } else {  // use 10ms
           localVad |= WebRtcVad_Process(VAD_inst[k], sampleRate, tempdata,
-                                        10 * sampleRate / 1000);
-          tempdata += 10 * sampleRate / 1000;
-          tempLen -= 10 * sampleRate / 1000;
+                                        sampleRate_10);
+          tempdata += sampleRate_10;
+          tempLen -= sampleRate_10;
         }
       }
 

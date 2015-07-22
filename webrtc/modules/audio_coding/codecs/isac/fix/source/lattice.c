@@ -218,7 +218,7 @@ void WebRtcIsacfix_NormLatticeFilterAr(int16_t orderCoef,
                                        int16_t lo_hi,
                                        int16_t *lat_outQ0)
 {
-  int ii,n,k,i,u;
+  int ii, n, k, i, u;
   int16_t sthQ15[MAX_AR_MODEL_ORDER];
   int16_t cthQ15[MAX_AR_MODEL_ORDER];
   int32_t tmp32;

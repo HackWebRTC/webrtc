@@ -350,7 +350,7 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
   }
 
   int IndexToMilliseconds(double index) const {
-    return 10.0 * (index / frames_per_buffer_) + 0.5;
+    return static_cast<int>(10.0 * (index / frames_per_buffer_) + 0.5);
   }
 
  private:

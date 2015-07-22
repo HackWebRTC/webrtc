@@ -777,7 +777,7 @@ int WebRtcIsacfix_Decode(ISACFIX_MainStruct* ISAC_main_inst,
   ISACFIX_SubStruct *ISAC_inst;
   /* number of samples (480 or 960), output from decoder */
   /* that were actually used in the encoder/decoder (determined on the fly) */
-  int16_t     number_of_samples;
+  int16_t number_of_samples;
   int declen = 0;
 
   /* typecast pointer to real structure */
@@ -807,8 +807,8 @@ int WebRtcIsacfix_Decode(ISACFIX_MainStruct* ISAC_main_inst,
   /* added for NetEq purposes (VAD/DTX related) */
   *speechType=1;
 
-  declen = WebRtcIsacfix_DecodeImpl(decoded,&ISAC_inst->ISACdec_obj, &number_of_samples);
-
+  declen = WebRtcIsacfix_DecodeImpl(decoded, &ISAC_inst->ISACdec_obj,
+                                    &number_of_samples);
   if (declen < 0) {
     /* Some error inside the decoder */
     ISAC_inst->errorcode = -(int16_t)declen;
@@ -818,14 +818,18 @@ int WebRtcIsacfix_Decode(ISACFIX_MainStruct* ISAC_main_inst,
 
   /* error check */
 
-  if (declen & 0x0001) {
-    if (len != declen && len != declen + (((ISAC_inst->ISACdec_obj.bitstr_obj).stream[declen>>1]) & 0x00FF) ) {
+  if (declen & 1) {
+    if (len != declen &&
+        len != declen +
+            ((ISAC_inst->ISACdec_obj.bitstr_obj.stream[declen >> 1]) & 0xFF)) {
       ISAC_inst->errorcode = ISAC_LENGTH_MISMATCH;
       memset(decoded, 0, sizeof(int16_t) * number_of_samples);
       return -1;
     }
   } else {
-    if (len != declen && len != declen + (((ISAC_inst->ISACdec_obj.bitstr_obj).stream[declen>>1]) >> 8) ) {
+    if (len != declen &&
+        len != declen +
+            ((ISAC_inst->ISACdec_obj.bitstr_obj.stream[declen >> 1]) >> 8)) {
       ISAC_inst->errorcode = ISAC_LENGTH_MISMATCH;
       memset(decoded, 0, sizeof(int16_t) * number_of_samples);
       return -1;
@@ -870,7 +874,7 @@ int WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
   ISACFIX_SubStruct *ISAC_inst;
   /* twice the number of samples (480 or 960), output from decoder */
   /* that were actually used in the encoder/decoder (determined on the fly) */
-  int16_t     number_of_samples;
+  int16_t number_of_samples;
   int declen = 0;
   int16_t dummy[FRAMESAMPLES/2];
 
@@ -901,8 +905,8 @@ int WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
   /* added for NetEq purposes (VAD/DTX related) */
   *speechType=1;
 
-  declen = WebRtcIsacfix_DecodeImpl(decoded,&ISAC_inst->ISACdec_obj, &number_of_samples);
-
+  declen = WebRtcIsacfix_DecodeImpl(decoded, &ISAC_inst->ISACdec_obj,
+                                    &number_of_samples);
   if (declen < 0) {
     /* Some error inside the decoder */
     ISAC_inst->errorcode = -(int16_t)declen;
@@ -912,14 +916,18 @@ int WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
 
   /* error check */
 
-  if (declen & 0x0001) {
-    if (len != declen && len != declen + (((ISAC_inst->ISACdec_obj.bitstr_obj).stream[declen>>1]) & 0x00FF) ) {
+  if (declen & 1) {
+    if (len != declen &&
+        len != declen +
+            ((ISAC_inst->ISACdec_obj.bitstr_obj.stream[declen >> 1]) & 0xFF)) {
       ISAC_inst->errorcode = ISAC_LENGTH_MISMATCH;
       memset(decoded, 0, sizeof(int16_t) * number_of_samples);
       return -1;
     }
   } else {
-    if (len != declen && len != declen + (((ISAC_inst->ISACdec_obj.bitstr_obj).stream[declen>>1]) >> 8) ) {
+    if (len != declen &&
+        len != declen +
+            ((ISAC_inst->ISACdec_obj.bitstr_obj.stream[declen >>1]) >> 8)) {
       ISAC_inst->errorcode = ISAC_LENGTH_MISMATCH;
       memset(decoded, 0, sizeof(int16_t) * number_of_samples);
       return -1;
@@ -1319,7 +1327,8 @@ int16_t WebRtcIsacfix_ReadBwIndex(const uint8_t* encoded,
   read_be16(encoded, kRequiredEncodedLenBytes, streamdata.stream);
 
   /* decode frame length, needed to get to the rateIndex in the bitstream */
-  err = WebRtcIsacfix_DecodeFrameLen(&streamdata, rateIndex);
+  int16_t frameLength;
+  err = WebRtcIsacfix_DecodeFrameLen(&streamdata, &frameLength);
   if (err<0)  // error check
     return err;
 

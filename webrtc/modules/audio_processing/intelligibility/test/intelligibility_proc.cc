@@ -33,9 +33,11 @@
 using std::complex;
 
 namespace webrtc {
+namespace {
 
-using webrtc::RealFourier;
-using webrtc::IntelligibilityEnhancer;
+bool ValidateClearWindow(const char* flagname, int32_t value) {
+  return value > 0;
+}
 
 DEFINE_int32(clear_type,
              webrtc::intelligibility::VarianceArray::kStepInfinite,
@@ -44,6 +46,8 @@ DEFINE_double(clear_alpha, 0.9, "Variance decay factor for clear data.");
 DEFINE_int32(clear_window,
              475,
              "Window size for windowed variance for clear data.");
+const bool clear_window_dummy =
+    google::RegisterFlagValidator(&FLAGS_clear_window, &ValidateClearWindow);
 DEFINE_int32(sample_rate,
              16000,
              "Audio sample rate used in the input and output files.");
@@ -137,6 +141,7 @@ void void_main(int argc, char* argv[]) {
   }
 }
 
+}  // namespace
 }  // namespace webrtc
 
 int main(int argc, char* argv[]) {

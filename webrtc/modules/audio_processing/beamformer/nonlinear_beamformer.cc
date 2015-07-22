@@ -120,7 +120,7 @@ complex<float> ConjugateDotProduct(const ComplexMatrix<float>& lhs,
 
 // Works for positive numbers only.
 int Round(float x) {
-  return std::floor(x + 0.5f);
+  return static_cast<int>(std::floor(x + 0.5f));
 }
 
 // Calculates the sum of absolute values of a complex matrix.
@@ -464,9 +464,9 @@ void NonlinearBeamformer::ApplyMaskFrequencySmoothing() {
     final_mask_[i] = kMaskFrequencySmoothAlpha * final_mask_[i] +
                      (1 - kMaskFrequencySmoothAlpha) * final_mask_[i - 1];
   }
-  for (int i = high_mean_end_bin_; i >= 0; --i) {
-    final_mask_[i] = kMaskFrequencySmoothAlpha * final_mask_[i] +
-                     (1 - kMaskFrequencySmoothAlpha) * final_mask_[i + 1];
+  for (int i = high_mean_end_bin_ + 1; i > 0; --i) {
+    final_mask_[i - 1] = kMaskFrequencySmoothAlpha * final_mask_[i - 1] +
+                         (1 - kMaskFrequencySmoothAlpha) * final_mask_[i];
   }
 }
 

@@ -255,7 +255,7 @@ int PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
         continue;
       }
       int duration =
-        decoder->PacketDuration(packet->payload, packet->payload_length);
+          decoder->PacketDuration(packet->payload, packet->payload_length);
       if (duration >= 0) {
         last_duration = duration;  // Save the most up-to-date (valid) duration.
       }

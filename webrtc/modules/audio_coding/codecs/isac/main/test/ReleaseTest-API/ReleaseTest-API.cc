@@ -662,8 +662,9 @@ int main(int argc, char* argv[]) {
       if (stream_len < 0) {
         /* exit if returned with error */
         errtype = WebRtcIsac_GetErrorCode(ISAC_main_inst);
-        printf("\n\nError in encoder: %d.\n\n", errtype);
+        fprintf(stderr, "Error in encoder: %d.\n", errtype);
         cout << flush;
+        exit(0);
       }
       cur_framesmpls += samplesIn10Ms;
       /* exit encoder loop if the encoder returned a bitstream */

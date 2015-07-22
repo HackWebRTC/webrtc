@@ -441,8 +441,8 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
         &audio_history[signal_length - correlation_length - start_index
                        - correlation_lags],
                        correlation_length + start_index + correlation_lags - 1);
-    correlation_scale = ((31 - WebRtcSpl_NormW32(signal_max * signal_max))
-        + (31 - WebRtcSpl_NormW32(correlation_length))) - 31;
+    correlation_scale = (31 - WebRtcSpl_NormW32(signal_max * signal_max)) +
+        (31 - WebRtcSpl_NormW32(correlation_length)) - 31;
     correlation_scale = std::max(0, correlation_scale);
 
     // Calculate the correlation, store in |correlation_vector2|.

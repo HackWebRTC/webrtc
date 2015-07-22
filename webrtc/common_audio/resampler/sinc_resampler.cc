@@ -97,6 +97,7 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+
 namespace {
 
 double SincScaleFactor(double io_ratio) {

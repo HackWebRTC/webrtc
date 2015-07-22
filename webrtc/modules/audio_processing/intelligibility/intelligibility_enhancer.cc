@@ -31,7 +31,6 @@ namespace webrtc {
 
 namespace {
 
-const int kErbResolution = 2;
 const int kWindowSizeMs = 2;
 const int kChunkSizeMs = 10;  // Size provided by APM.
 const float kClipFreq = 200.0f;
@@ -132,7 +131,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int erb_resolution,
   float freqs_khz = kClipFreq / 1000.0f;
   int erb_index = static_cast<int>(ceilf(
       11.17f * logf((freqs_khz + 0.312f) / (freqs_khz + 14.6575f)) + 43.0f));
-  start_freq_ = max(1, erb_index * kErbResolution);
+  start_freq_ = std::max(1, erb_index * erb_resolution);
 
   WindowGenerator::KaiserBesselDerived(kKbdAlpha, window_size_,
                                        kbd_window_.get());
