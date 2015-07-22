@@ -14,9 +14,9 @@
 # In Eclipse, that amounts to creating a Run Configuration which starts
 # "/bin/bash" with the arguments "-c [trunk_path]/out/Debug/modules_unittests
 # --gtest_filter=*BweTest* | [trunk_path]/webrtc/modules/
-# remote_bitrate_estimator/bwe_plot.
+# remote_bitrate_estimator/test/plot_dynamics.sh
 
-# bwe_plot.sh supports multiple figures (windows), the figure is specified as an
+# This script supports multiple figures (windows), the figure is specified as an
 # identifier at the first argument after the PLOT command. Each figure has a
 # single y axis and a dual y axis mode. If any line specifies an axis by ending
 # with "#<axis number (1 or 2)>" two y axis will be used, the first will be
@@ -25,6 +25,7 @@
 
 log=$(</dev/stdin)
 
+# Plot dynamics.
 function gen_gnuplot_input {
   colors=(a7001f 0a60c2 b2582b 21a66c d6604d 4393c3 f4a582 92c5de edcbb7 b1c5d0)
   plots=$(echo "$log" | grep "^PLOT")
@@ -34,14 +35,14 @@ function gen_gnuplot_input {
     data_sets=$(echo "$plots" | grep "^PLOT.$figure" | cut -f 3 | sort | uniq)
     linetypes=($(echo "$data_sets" | grep "#" | cut -d '#' -f 2 | \
       cut -d ' ' -f 1))
-    echo -n "reset; "
-    echo -n "set terminal wxt $figure size 1440,900 font \"Arial,9\"; "
-    echo -n "set xlabel \"Seconds\"; "
+    echo "reset; "
+    echo "set terminal wxt $figure size 1440,900 font \"Arial,9\"; "
+    echo "set xlabel \"Seconds\"; "
     if (( "${#linetypes[@]}" > "0" )); then
-      echo -n "set ylabel 'bitrate (kbps)';"
-      echo -n "set ytics nomirror;"
-      echo -n "set y2label 'time delta (ms)';"
-      echo -n "set y2tics nomirror;"
+      echo "set ylabel 'bitrate (kbps)';"
+      echo "set ytics nomirror;"
+      echo "set y2label 'time delta (ms)';"
+      echo "set y2tics nomirror;"
     fi
     echo -n "plot "
     i=0
@@ -69,5 +70,4 @@ function gen_gnuplot_input {
     done
   done
 }
-
 gen_gnuplot_input | gnuplot -persist
