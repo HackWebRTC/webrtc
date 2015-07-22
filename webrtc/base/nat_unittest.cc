@@ -356,7 +356,7 @@ class NatTcpTest : public testing::Test, public sigslot::has_slots<> {
   rtc::scoped_ptr<AsyncSocket> accepted_;
 };
 
-TEST_F(NatTcpTest, TestConnectOut) {
+TEST_F(NatTcpTest, DISABLED_TestConnectOut) {
   server_.reset(ext_vss_->CreateAsyncSocket(SOCK_STREAM));
   server_->Bind(ext_addr_);
   server_->Listen(5);
