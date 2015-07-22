@@ -356,7 +356,7 @@ TEST_F(NadaReceiverSideTest, FeedbackIncreasingDelay) {
   // Raw delays are = [10 20 30 40 50 60 70 80] ms.
   // Baseline delay will be 50 ms.
   // Delay signals should be: [0 10 20 30 40 50 60 70] ms.
-  const int64_t kMedianFilteredDelaysMs[] = {0, 10, 10, 20, 20, 30, 40, 50};
+  const int64_t kMedianFilteredDelaysMs[] = {0, 5, 10, 15, 20, 30, 40, 50};
   const int kNumPackets = ARRAY_SIZE(kMedianFilteredDelaysMs);
   const float kAlpha = 0.1f;  // Used for exponential smoothing.
 
@@ -425,7 +425,7 @@ TEST_F(NadaReceiverSideTest, FeedbackWarpedDelay) {
   // Baseline delay will be 50 ms.
   // Delay signals should be: [0 200 400 600 800 1000 1200 1400] ms.
   const int64_t kMedianFilteredDelaysMs[] = {
-      0, 200, 200, 400, 400, 600, 800, 1000};
+      0, 100, 200, 300, 400, 600, 800, 1000};
   const int kNumPackets = ARRAY_SIZE(kMedianFilteredDelaysMs);
   const float kAlpha = 0.1f;  // Used for exponential smoothing.
 

@@ -124,12 +124,20 @@ FeedbackPacket* NadaBweReceiver::GetFeedback(int64_t now_ms) {
                           derivative, RecentKbps(), corrected_send_time_ms);
 }
 
+// If size is even, the median is the average of the two middlemost numbers.
 int64_t NadaBweReceiver::MedianFilter(int64_t* last_delays_ms, int size) {
-  // Typically, size = 5.
   std::vector<int64_t> array_copy(last_delays_ms, last_delays_ms + size);
   std::nth_element(array_copy.begin(), array_copy.begin() + size / 2,
                    array_copy.end());
-  return array_copy.at(size / 2);
+  if (size % 2 == 1) {
+    // Typically, size = 5. For odd size values, right and left are equal.
+    return array_copy.at(size / 2);
+  }
+  int64_t right = array_copy.at(size / 2);
+  std::nth_element(array_copy.begin(), array_copy.begin() + (size - 1) / 2,
+                   array_copy.end());
+  int64_t left = array_copy.at((size - 1) / 2);
+  return (left + right + 1) / 2;
 }
 
 int64_t NadaBweReceiver::ExponentialSmoothingFilter(int64_t new_value,
