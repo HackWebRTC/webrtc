@@ -63,7 +63,7 @@ VideoCaptureInput::~VideoCaptureInput() {
   module_process_thread_->DeRegisterModule(overuse_detector_.get());
 
   // Stop the thread.
-  rtc::AtomicOps::Increment(&stop_);
+  rtc::AtomicOps::ReleaseStore(&stop_, 1);
   capture_event_.Set();
 
   // Stop the camera input.
@@ -128,7 +128,7 @@ bool VideoCaptureInput::CaptureProcess() {
   static const int kThreadWaitTimeMs = 100;
   int64_t capture_time = -1;
   if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
-    if (rtc::AtomicOps::Load(&stop_))
+    if (rtc::AtomicOps::AcquireLoad(&stop_))
       return false;
 
     int64_t encode_start_time = -1;

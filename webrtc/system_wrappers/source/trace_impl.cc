@@ -542,12 +542,12 @@ int32_t Trace::TraceFile(char file_name[FileWrapper::kMaxFileNameSize]) {
 
 // static
 void Trace::set_level_filter(int filter) {
-  rtc::AtomicOps::Store(&level_filter_, filter);
+  rtc::AtomicOps::ReleaseStore(&level_filter_, filter);
 }
 
 // static
 int Trace::level_filter() {
-  return rtc::AtomicOps::Load(&level_filter_);
+  return rtc::AtomicOps::AcquireLoad(&level_filter_);
 }
 
 // static

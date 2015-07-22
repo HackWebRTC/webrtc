@@ -96,11 +96,11 @@ class RefCountedObject : public T {
   }
 
   virtual int AddRef() {
-    return rtc::AtomicOps::Increment(&ref_count_);
+    return AtomicOps::Increment(&ref_count_);
   }
 
   virtual int Release() {
-    int count = rtc::AtomicOps::Decrement(&ref_count_);
+    int count = AtomicOps::Decrement(&ref_count_);
     if (!count) {
       delete this;
     }
@@ -114,7 +114,7 @@ class RefCountedObject : public T {
   // barrier needed for the owning thread to act on the object, knowing that it
   // has exclusive access to the object.
   virtual bool HasOneRef() const {
-    return rtc::AtomicOps::Load(&ref_count_) == 1;
+    return AtomicOps::AcquireLoad(&ref_count_) == 1;
   }
 
  protected:

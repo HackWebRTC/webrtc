@@ -31,10 +31,10 @@ class AtomicOps {
   static int Decrement(volatile int* i) {
     return ::InterlockedDecrement(reinterpret_cast<volatile LONG*>(i));
   }
-  static int Load(volatile const int* i) {
+  static int AcquireLoad(volatile const int* i) {
     return *i;
   }
-  static void Store(volatile int* i, int value) {
+  static void ReleaseStore(volatile int* i, int value) {
     *i = value;
   }
   static int CompareAndSwap(volatile int* i, int old_value, int new_value) {
@@ -49,13 +49,11 @@ class AtomicOps {
   static int Decrement(volatile int* i) {
     return __sync_sub_and_fetch(i, 1);
   }
-  static int Load(volatile const int* i) {
-    // Adding 0 is a no-op, so const_cast is fine.
-    return __sync_add_and_fetch(const_cast<volatile int*>(i), 0);
+  static int AcquireLoad(volatile const int* i) {
+    return __atomic_load_n(i, __ATOMIC_ACQUIRE);
   }
-  static void Store(volatile int* i, int value) {
-    __sync_synchronize();
-    *i = value;
+  static void ReleaseStore(volatile int* i, int value) {
+    __atomic_store_n(i, value, __ATOMIC_RELEASE);
   }
   static int CompareAndSwap(volatile int* i, int old_value, int new_value) {
     return __sync_val_compare_and_swap(i, old_value, new_value);
