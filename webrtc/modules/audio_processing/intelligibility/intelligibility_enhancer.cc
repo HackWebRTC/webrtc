@@ -390,8 +390,9 @@ void IntelligibilityEnhancer::SolveForGainsGivenLambda(float lambda,
 }
 
 void IntelligibilityEnhancer::FilterVariance(const float* var, float* result) {
+  DCHECK_GT(freqs_, 0);
   for (int i = 0; i < bank_size_; ++i) {
-    result[i] = DotProduct(filter_bank_[i].data(), var, freqs_);
+    result[i] = DotProduct(&filter_bank_[i][0], var, freqs_);
   }
 }
 
