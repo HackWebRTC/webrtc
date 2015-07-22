@@ -64,6 +64,7 @@
           'event_tracer_unittest.cc',
           'event_unittest.cc',
           'exp_filter_unittest.cc',
+          'filerotatingstream_unittest.cc',
           'fileutils_unittest.cc',
           'helpers_unittest.cc',
           'httpbase_unittest.cc',
