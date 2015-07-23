@@ -23,39 +23,13 @@ const int kSamplesPer16kHzChannel = 160;
 const int kSamplesPer32kHzChannel = 320;
 const int kSamplesPer48kHzChannel = 480;
 
-bool HasKeyboardChannel(AudioProcessing::ChannelLayout layout) {
-  switch (layout) {
-    case AudioProcessing::kMono:
-    case AudioProcessing::kStereo:
-      return false;
-    case AudioProcessing::kMonoAndKeyboard:
-    case AudioProcessing::kStereoAndKeyboard:
-      return true;
+int KeyboardChannelIndex(const StreamConfig& stream_config) {
+  if (!stream_config.has_keyboard()) {
+    assert(false);
+    return -1;
   }
-  assert(false);
-  return false;
-}
 
-int KeyboardChannelIndex(AudioProcessing::ChannelLayout layout) {
-  switch (layout) {
-    case AudioProcessing::kMono:
-    case AudioProcessing::kStereo:
-      assert(false);
-      return -1;
-    case AudioProcessing::kMonoAndKeyboard:
-      return 1;
-    case AudioProcessing::kStereoAndKeyboard:
-      return 2;
-  }
-  assert(false);
-  return -1;
-}
-
-template <typename T>
-void StereoToMono(const T* left, const T* right, T* out,
-                  int num_frames) {
-  for (int i = 0; i < num_frames; ++i)
-    out[i] = (left[i] + right[i]) / 2;
+  return stream_config.num_channels();
 }
 
 int NumBandsFromSamplesPerChannel(int num_frames) {
@@ -91,7 +65,7 @@ AudioBuffer::AudioBuffer(int input_num_frames,
   assert(input_num_frames_ > 0);
   assert(proc_num_frames_ > 0);
   assert(output_num_frames_ > 0);
-  assert(num_input_channels_ > 0 && num_input_channels_ <= 2);
+  assert(num_input_channels_ > 0);
   assert(num_proc_channels_ > 0 && num_proc_channels_ <= num_input_channels_);
 
   if (input_num_frames_ != proc_num_frames_ ||
@@ -130,29 +104,28 @@ AudioBuffer::AudioBuffer(int input_num_frames,
 AudioBuffer::~AudioBuffer() {}
 
 void AudioBuffer::CopyFrom(const float* const* data,
-                           int num_frames,
-                           AudioProcessing::ChannelLayout layout) {
-  assert(num_frames == input_num_frames_);
-  assert(ChannelsFromLayout(layout) == num_input_channels_);
+                           const StreamConfig& stream_config) {
+  assert(stream_config.num_frames() == input_num_frames_);
+  assert(stream_config.num_channels() == num_input_channels_);
   InitForNewData();
   // Initialized lazily because there's a different condition in
   // DeinterleaveFrom.
-  if ((num_input_channels_ == 2 && num_proc_channels_ == 1) && !input_buffer_) {
+  const bool need_to_downmix =
+      num_input_channels_ > 1 && num_proc_channels_ == 1;
+  if (need_to_downmix && !input_buffer_) {
     input_buffer_.reset(
         new IFChannelBuffer(input_num_frames_, num_proc_channels_));
   }
 
-  if (HasKeyboardChannel(layout)) {
-    keyboard_data_ = data[KeyboardChannelIndex(layout)];
+  if (stream_config.has_keyboard()) {
+    keyboard_data_ = data[KeyboardChannelIndex(stream_config)];
   }
 
   // Downmix.
   const float* const* data_ptr = data;
-  if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
-    StereoToMono(data[0],
-                 data[1],
-                 input_buffer_->fbuf()->channels()[0],
-                 input_num_frames_);
+  if (need_to_downmix) {
+    DownmixToMono<float, float>(data, input_num_frames_, num_input_channels_,
+                                input_buffer_->fbuf()->channels()[0]);
     data_ptr = input_buffer_->fbuf_const()->channels();
   }
 
@@ -175,11 +148,10 @@ void AudioBuffer::CopyFrom(const float* const* data,
   }
 }
 
-void AudioBuffer::CopyTo(int num_frames,
-                         AudioProcessing::ChannelLayout layout,
+void AudioBuffer::CopyTo(const StreamConfig& stream_config,
                          float* const* data) {
-  assert(num_frames == output_num_frames_);
-  assert(ChannelsFromLayout(layout) == num_channels_);
+  assert(stream_config.num_frames() == output_num_frames_);
+  assert(stream_config.num_channels() == num_channels_);
 
   // Convert to the float range.
   float* const* data_ptr = data;
@@ -327,9 +299,6 @@ const ChannelBuffer<float>* AudioBuffer::split_data_f() const {
 }
 
 const int16_t* AudioBuffer::mixed_low_pass_data() {
-  // Currently only mixing stereo to mono is supported.
-  assert(num_proc_channels_ == 1 || num_proc_channels_ == 2);
-
   if (num_proc_channels_ == 1) {
     return split_bands_const(0)[kBand0To8kHz];
   }
@@ -339,10 +308,10 @@ const int16_t* AudioBuffer::mixed_low_pass_data() {
       mixed_low_pass_channels_.reset(
           new ChannelBuffer<int16_t>(num_split_frames_, 1));
     }
-    StereoToMono(split_bands_const(0)[kBand0To8kHz],
-                 split_bands_const(1)[kBand0To8kHz],
-                 mixed_low_pass_channels_->channels()[0],
-                 num_split_frames_);
+
+    DownmixToMono<int16_t, int32_t>(split_channels_const(kBand0To8kHz),
+                                    num_split_frames_, num_channels_,
+                                    mixed_low_pass_channels_->channels()[0]);
     mixed_low_pass_valid_ = true;
   }
   return mixed_low_pass_channels_->channels()[0];
@@ -411,11 +380,10 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   } else {
     deinterleaved = input_buffer_->ibuf()->channels();
   }
-  if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
-    // Downmix directly; no explicit deinterleaving needed.
-    for (int i = 0; i < input_num_frames_; ++i) {
-      deinterleaved[0][i] = (frame->data_[i * 2] + frame->data_[i * 2 + 1]) / 2;
-    }
+  if (num_proc_channels_ == 1) {
+    // Downmix and deinterleave simultaneously.
+    DownmixInterleavedToMono(frame->data_, input_num_frames_,
+                             num_input_channels_, deinterleaved[0]);
   } else {
     assert(num_proc_channels_ == num_input_channels_);
     Deinterleave(frame->data_,

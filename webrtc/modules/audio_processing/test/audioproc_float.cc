@@ -127,6 +127,13 @@ int main(int argc, char* argv[]) {
   TickTime processing_start_time;
   TickInterval accumulated_time;
   int num_chunks = 0;
+
+  const StreamConfig input_config = {
+      in_file.sample_rate(), in_buf.num_channels(),
+  };
+  const StreamConfig output_config = {
+      out_file.sample_rate(), out_buf.num_channels(),
+  };
   while (in_file.ReadSamples(in_interleaved.size(),
                              &in_interleaved[0]) == in_interleaved.size()) {
     // Have logs display the file time rather than wallclock time.
@@ -139,14 +146,8 @@ int main(int argc, char* argv[]) {
     if (FLAGS_perf) {
       processing_start_time = TickTime::Now();
     }
-    CHECK_EQ(kNoErr,
-        ap->ProcessStream(in_buf.channels(),
-                          in_buf.num_frames(),
-                          in_file.sample_rate(),
-                          LayoutFromChannels(in_buf.num_channels()),
-                          out_file.sample_rate(),
-                          LayoutFromChannels(out_buf.num_channels()),
-                          out_buf.channels()));
+    CHECK_EQ(kNoErr, ap->ProcessStream(in_buf.channels(), input_config,
+                                       output_config, out_buf.channels()));
     if (FLAGS_perf) {
       accumulated_time += TickTime::Now() - processing_start_time;
     }
