@@ -27,7 +27,7 @@
 
 #import "ARDSDPUtils.h"
 
-#import "ARDLogging.h"
+#import "RTCLogging.h"
 #import "RTCSessionDescription.h"
 
 @implementation ARDSDPUtils
@@ -71,11 +71,11 @@
     }
   }
   if (mLineIndex == -1) {
-    ARDLog(@"No m=video line, so can't prefer %@", codec);
+    RTCLog(@"No m=video line, so can't prefer %@", codec);
     return description;
   }
   if (!codecRtpMap) {
-    ARDLog(@"No rtpmap for %@", codec);
+    RTCLog(@"No rtpmap for %@", codec);
     return description;
   }
   NSArray *origMLineParts =
@@ -99,7 +99,7 @@
     [lines replaceObjectAtIndex:mLineIndex
                      withObject:newMLine];
   } else {
-    ARDLog(@"Wrong SDP media description format: %@", lines[mLineIndex]);
+    RTCLogWarning(@"Wrong SDP media description format: %@", lines[mLineIndex]);
   }
   NSString *mangledSdpString = [lines componentsJoinedByString:lineSeparator];
   return [[RTCSessionDescription alloc] initWithType:description.type

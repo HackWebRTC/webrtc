@@ -27,62 +27,66 @@
 
 #import <Foundation/Foundation.h>
 
-// We route all logging through the WebRTC logger. By doing this we will get
-// both app and WebRTC logs in the same place, which we can then route to a
-// file if we need to. A side effect of this is that we get severity for free.
-typedef NS_ENUM(NSInteger, ARDLogSeverity) {
-  kARDLogSeverityVerbose,
-  kARDLogSeverityInfo,
-  kARDLogSeverityWarning,
-  kARDLogSeverityError,
+// Subset of rtc::LoggingSeverity.
+typedef NS_ENUM(NSInteger, RTCLoggingSeverity) {
+  kRTCLoggingSeverityVerbose,
+  kRTCLoggingSeverityInfo,
+  kRTCLoggingSeverityWarning,
+  kRTCLoggingSeverityError,
 };
 
 #if defined(__cplusplus)
-extern "C" void ARDLogToWebRTCLogger(ARDLogSeverity severity,
-                                     NSString *logString);
-extern "C" NSString *ARDFileName(const char *filePath);
-extern "C" void ARDLogInit();
+extern "C" void RTCLogEx(RTCLoggingSeverity severity, NSString* logString);
+extern "C" void RTCSetMinDebugLogLevel(RTCLoggingSeverity severity);
+extern "C" NSString* RTCFileName(const char* filePath);
 #else
-// Logs |logString| to the WebRTC logger at the given severity.
-extern void ARDLogToWebRTCLogger(ARDLogSeverity severity, NSString *logString);
+
+// Wrapper for C++ LOG(sev) macros.
+// Logs the log string to the webrtc logstream for the given severity.
+extern void RTCLogEx(RTCLoggingSeverity severity, NSString* logString);
+
+// Wrapper for rtc::LogMessage::LogToDebug.
+// Sets the minimum severity to be logged to console.
+extern void RTCSetMinDebugLogLevel(RTCLoggingSeverity severity);
+
 // Returns the filename with the path prefix removed.
-extern NSString *ARDFileName(const char *filePath);
-// Initializes the correct logging levels. This should be called once on app
-// startup.
-extern void ARDLogInit();
+extern NSString* RTCFileName(const char* filePath);
+
 #endif
 
-#define ARDLogString(format, ...)                    \
+// Some convenience macros.
+
+#define RTCLogString(format, ...)                    \
   [NSString stringWithFormat:@"(%@:%d %s): " format, \
-      ARDFileName(__FILE__),                         \
+      RTCFileName(__FILE__),                         \
       __LINE__,                                      \
       __FUNCTION__,                                  \
       ##__VA_ARGS__]
 
-#define ARDLogEx(severity, format, ...)                        \
+#define RTCLogFormat(severity, format, ...)                    \
   do {                                                         \
-    NSString *logString = ARDLogString(format, ##__VA_ARGS__); \
-    ARDLogToWebRTCLogger(severity, logString);                 \
+    NSString *logString = RTCLogString(format, ##__VA_ARGS__); \
+    RTCLogEx(severity, logString);                             \
   } while (false)
 
-#define ARDLogVerbose(format, ...)                        \
-  ARDLogEx(kARDLogSeverityVerbose, format, ##__VA_ARGS__) \
+#define RTCLogVerbose(format, ...)                                \
+  RTCLogFormat(kRTCLoggingSeverityVerbose, format, ##__VA_ARGS__) \
 
-#define ARDLogInfo(format, ...)                           \
-  ARDLogEx(kARDLogSeverityInfo, format, ##__VA_ARGS__)    \
+#define RTCLogInfo(format, ...)                                   \
+  RTCLogFormat(kRTCLoggingSeverityInfo, format, ##__VA_ARGS__)    \
 
-#define ARDLogWarning(format, ...)                        \
-  ARDLogEx(kARDLogSeverityWarning, format, ##__VA_ARGS__) \
+#define RTCLogWarning(format, ...)                                \
+  RTCLogFormat(kRTCLoggingSeverityWarning, format, ##__VA_ARGS__) \
 
-#define ARDLogError(format, ...)                          \
-  ARDLogEx(kARDLogSeverityError, format, ##__VA_ARGS__)   \
+#define RTCLogError(format, ...)                                  \
+  RTCLogFormat(kRTCLoggingSeverityError, format, ##__VA_ARGS__)   \
 
 #ifdef _DEBUG
-#define ARDLogDebug(format, ...) ARDLogInfo(format, ##__VA_ARGS__)
+#define RTCLogDebug(format, ...) RTCLogInfo(format, ##__VA_ARGS__)
 #else
-#define ARDLogDebug(format, ...) \
+#define RTCLogDebug(format, ...) \
   do {                           \
   } while (false)
 #endif
 
-#define ARDLog(format, ...) ARDLogInfo(format, ##__VA_ARGS__)
+#define RTCLog(format, ...) RTCLogInfo(format, ##__VA_ARGS__)

@@ -155,9 +155,10 @@
         {
           'target_name': 'apprtc_common',
           'type': 'static_library',
+          'dependencies': [
+            'libjingle.gyp:libjingle_peerconnection_objc',
+          ],
           'sources': [
-            'examples/objc/AppRTCDemo/common/ARDLogging.h',
-            'examples/objc/AppRTCDemo/common/ARDLogging.mm',
             'examples/objc/AppRTCDemo/common/ARDUtilities.h',
             'examples/objc/AppRTCDemo/common/ARDUtilities.m',
           ],

@@ -27,7 +27,7 @@
 
 #import "RTCICECandidate+JSON.h"
 
-#import "ARDLogging.h"
+#import "RTCLogging.h"
 
 static NSString const *kRTCICECandidateTypeKey = @"type";
 static NSString const *kRTCICECandidateTypeValue = @"candidate";
@@ -58,7 +58,7 @@ static NSString const *kRTCICECandidateSdpKey = @"candidate";
                                       options:NSJSONWritingPrettyPrinted
                                         error:&error];
   if (error) {
-    ARDLog(@"Error serializing JSON: %@", error);
+    RTCLogError(@"Error serializing JSON: %@", error);
     return nil;
   }
   return data;

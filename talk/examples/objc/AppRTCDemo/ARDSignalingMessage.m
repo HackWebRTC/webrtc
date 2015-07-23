@@ -27,7 +27,8 @@
 
 #import "ARDSignalingMessage.h"
 
-#import "ARDLogging.h"
+#import "RTCLogging.h"
+
 #import "ARDUtilities.h"
 #import "RTCICECandidate+JSON.h"
 #import "RTCSessionDescription+JSON.h"
@@ -53,7 +54,7 @@ static NSString const *kARDSignalingMessageTypeKey = @"type";
 + (ARDSignalingMessage *)messageFromJSONString:(NSString *)jsonString {
   NSDictionary *values = [NSDictionary dictionaryWithJSONString:jsonString];
   if (!values) {
-    ARDLog(@"Error parsing signaling message JSON.");
+    RTCLogError(@"Error parsing signaling message JSON.");
     return nil;
   }
 
@@ -72,7 +73,7 @@ static NSString const *kARDSignalingMessageTypeKey = @"type";
   } else if ([typeString isEqualToString:@"bye"]) {
     message = [[ARDByeMessage alloc] init];
   } else {
-    ARDLog(@"Unexpected type: %@", typeString);
+    RTCLogError(@"Unexpected type: %@", typeString);
   }
   return message;
 }

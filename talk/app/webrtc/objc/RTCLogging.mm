@@ -25,44 +25,40 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDLogging.h"
+#import "RTCLogging.h"
 
 #include "webrtc/base/logging.h"
 
-void ARDLogInit() {
-#ifndef _DEBUG
-  // In debug builds the default level is LS_INFO and in non-debug builds it is
-  // disabled. Continue to log to console in non-debug builds, but only
-  // warnings and errors.
-  rtc::LogMessage::LogToDebug(rtc::LS_WARNING);
-#endif
-}
-
-void ARDLogToWebRTCLogger(ARDLogSeverity severity, NSString *logString) {
-  if (logString.length) {
-    const char* utf8String = logString.UTF8String;
-    switch (severity) {
-      case kARDLogSeverityVerbose:
-        LOG(LS_VERBOSE) << utf8String;
-        break;
-      case kARDLogSeverityInfo:
-        LOG(LS_INFO) << utf8String;
-        break;
-      case kARDLogSeverityWarning:
-        LOG(LS_WARNING) << utf8String;
-        break;
-      case kARDLogSeverityError:
-        LOG(LS_ERROR) << utf8String;
-        break;
-    }
+rtc::LoggingSeverity RTCGetNativeLoggingSeverity(RTCLoggingSeverity severity) {
+  switch (severity) {
+      case kRTCLoggingSeverityVerbose:
+        return rtc::LS_VERBOSE;
+      case kRTCLoggingSeverityInfo:
+        return rtc::LS_INFO;
+      case kRTCLoggingSeverityWarning:
+        return rtc::LS_WARNING;
+      case kRTCLoggingSeverityError:
+        return rtc::LS_ERROR;
   }
 }
 
-NSString *ARDFileName(const char *filePath) {
-  NSString *nsFilePath =
-      [[NSString alloc] initWithBytesNoCopy:const_cast<char *>(filePath)
+void RTCLogEx(RTCLoggingSeverity severity, NSString* logString) {
+  if (logString.length) {
+    const char* utf8String = logString.UTF8String;
+    LOG_V(RTCGetNativeLoggingSeverity(severity)) << utf8String;
+  }
+}
+
+void RTCSetMinDebugLogLevel(RTCLoggingSeverity severity) {
+  rtc::LogMessage::LogToDebug(RTCGetNativeLoggingSeverity(severity));
+}
+
+NSString* RTCFileName(const char* filePath) {
+  NSString* nsFilePath =
+      [[NSString alloc] initWithBytesNoCopy:const_cast<char*>(filePath)
                                      length:strlen(filePath)
                                    encoding:NSUTF8StringEncoding
                                freeWhenDone:NO];
   return nsFilePath.lastPathComponent;
 }
+
