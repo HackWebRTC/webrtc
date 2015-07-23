@@ -48,20 +48,12 @@ TEST(IntelligibilityUtilsTest, TestUpdateFactor) {
   EXPECT_EQ(3, intelligibility::UpdateFactor(2, 4, 1));
 }
 
-// Tests cplxfinite, cplxnormal, and zerofudge.
+// Tests zerofudge.
 TEST(IntelligibilityUtilsTest, TestCplx) {
   complex<float> t0(1.f, 0.f);
-  EXPECT_TRUE(intelligibility::cplxfinite(t0));
-  EXPECT_FALSE(intelligibility::cplxnormal(t0));
   t0 = intelligibility::zerofudge(t0);
   EXPECT_NE(t0.imag(), 0.f);
   EXPECT_NE(t0.real(), 0.f);
-  const complex<float> t1(1.f, std::sqrt(-1.f));
-  EXPECT_FALSE(intelligibility::cplxfinite(t1));
-  EXPECT_FALSE(intelligibility::cplxnormal(t1));
-  const complex<float> t2(1.f, 1.f);
-  EXPECT_TRUE(intelligibility::cplxfinite(t2));
-  EXPECT_TRUE(intelligibility::cplxnormal(t2));
 }
 
 // Tests NewMean and AddToMean.

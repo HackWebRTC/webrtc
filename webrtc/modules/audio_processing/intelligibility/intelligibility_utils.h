@@ -27,12 +27,6 @@ namespace intelligibility {
 // |limit|.
 float UpdateFactor(float target, float current, float limit);
 
-// std::isfinite for complex numbers.
-bool cplxfinite(std::complex<float> c);
-
-// std::isnormal for complex numbers.
-bool cplxnormal(std::complex<float> c);
-
 // Apply a small fudge to degenerate complex values. The numbers in the array
 // were chosen randomly, so that even a series of all zeroes has some small
 // variability.

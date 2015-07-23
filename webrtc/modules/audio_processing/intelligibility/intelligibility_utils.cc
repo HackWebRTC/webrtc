@@ -15,6 +15,7 @@
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
 
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 #include <algorithm>
 
@@ -31,28 +32,12 @@ float UpdateFactor(float target, float current, float limit) {
   return current + sign * fminf(delta, limit);
 }
 
-bool cplxfinite(complex<float> c) {
-  return std::isfinite(c.real()) && std::isfinite(c.imag());
-}
-
-bool cplxnormal(complex<float> c) {
-  return std::isnormal(c.real()) && std::isnormal(c.imag());
+float AddDitherIfZero(float value) {
+  return value == 0.f ? std::rand() * 0.01f / RAND_MAX : value;
 }
 
 complex<float> zerofudge(complex<float> c) {
-  const static complex<float> fudge[7] = {{0.001f, 0.002f},
-                                          {0.008f, 0.001f},
-                                          {0.003f, 0.008f},
-                                          {0.0006f, 0.0009f},
-                                          {0.001f, 0.004f},
-                                          {0.003f, 0.004f},
-                                          {0.002f, 0.009f}};
-  static int fudge_index = 0;
-  if (cplxfinite(c) && !cplxnormal(c)) {
-    fudge_index = (fudge_index + 1) % 7;
-    return c + fudge[fudge_index];
-  }
-  return c;
+  return complex<float>(AddDitherIfZero(c.real()), AddDitherIfZero(c.imag()));
 }
 
 complex<float> NewMean(complex<float> mean, complex<float> data, int count) {
@@ -136,10 +121,7 @@ void VarianceArray::InfiniteStep(const complex<float>* data, bool skip_fudge) {
           (old_sum + std::conj(sample - old_mean) * (sample - running_mean_[i]))
               .real();
       variance_[i] =
-          conj_sum_[i] / (count_ - 1);  // + fudge[fudge_index].real();
-      // if (skip_fudge) {
-      //   variance_[i] -= fudge[fudge_index].real();
-      // }
+          conj_sum_[i] / (count_ - 1);
     }
     array_mean_ += (variance_[i] - array_mean_) / (i + 1);
   }
@@ -164,9 +146,6 @@ void VarianceArray::DecayStep(const complex<float>* data, bool /*dummy*/) {
       running_mean_[i] = decay_ * prev + (1.0f - decay_) * sample;
       running_mean_sq_[i] =
           decay_ * prev2 + (1.0f - decay_) * sample * std::conj(sample);
-      // variance_[i] = decay_ * variance_[i] + (1.0f - decay_) * (
-      //  (sample - running_mean_[i]) * std::conj(sample -
-      //  running_mean_[i])).real();
       variance_[i] = (running_mean_sq_[i] -
                       running_mean_[i] * std::conj(running_mean_[i])).real();
     }
