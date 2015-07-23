@@ -16,7 +16,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
-using std::string;
 
 namespace webrtc {
 namespace testing {
@@ -27,7 +26,8 @@ namespace bwe {
 class BweSimulation : public BweTest,
                       public ::testing::TestWithParam<BandwidthEstimatorType> {
  public:
-  BweSimulation() : BweTest() {}
+  BweSimulation()
+      : BweTest(), random_(Clock::GetRealTimeClock()->TimeInMicroseconds()) {}
   virtual ~BweSimulation() {}
 
  protected:
@@ -35,6 +35,8 @@ class BweSimulation : public BweTest,
     BweTest::SetUp();
     VerboseLogging(true);
   }
+
+  Random random_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(BweSimulation);
@@ -269,36 +271,173 @@ TEST_P(BweSimulation, SelfFairnessTest) {
 }
 
 TEST_P(BweSimulation, PacedSelfFairness50msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 50);
+  const int64_t kAverageOffsetMs = 20 * 1000;
+  const int kNumRmcatFlows = 4;
+  int64_t offsets_ms[kNumRmcatFlows];
+  offsets_ms[0] = random_.Rand(0, 2 * kAverageOffsetMs);
+  for (int i = 1; i < kNumRmcatFlows; ++i) {
+    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(0, 2 * kAverageOffsetMs);
+  }
+  RunFairnessTest(GetParam(), kNumRmcatFlows, 0, 1000, 3000, 50, 50, 0,
+                  offsets_ms);
 }
 
 TEST_P(BweSimulation, PacedSelfFairness500msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 500);
+  const int64_t kAverageOffsetMs = 20 * 1000;
+  const int kNumRmcatFlows = 4;
+  int64_t offsets_ms[kNumRmcatFlows];
+  offsets_ms[0] = random_.Rand(0, 2 * kAverageOffsetMs);
+  for (int i = 1; i < kNumRmcatFlows; ++i) {
+    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(0, 2 * kAverageOffsetMs);
+  }
+  RunFairnessTest(GetParam(), kNumRmcatFlows, 0, 1000, 3000, 500, 50, 0,
+                  offsets_ms);
 }
 
 TEST_P(BweSimulation, PacedSelfFairness1000msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 1000);
+  const int64_t kAverageOffsetMs = 20 * 1000;
+  const int kNumRmcatFlows = 4;
+  int64_t offsets_ms[kNumRmcatFlows];
+  offsets_ms[0] = random_.Rand(0, 2 * kAverageOffsetMs);
+  for (int i = 1; i < kNumRmcatFlows; ++i) {
+    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(0, 2 * kAverageOffsetMs);
+  }
+  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 1000, 50, 0, offsets_ms);
 }
 
 TEST_P(BweSimulation, TcpFairness50msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 50);
+  const int64_t kAverageOffsetMs = 20 * 1000;
+  int64_t offset_ms[] = {random_.Rand(0, 2 * kAverageOffsetMs), 0};
+  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 50, 50, 0, offset_ms);
 }
 
 TEST_P(BweSimulation, TcpFairness500msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 500);
+  const int64_t kAverageOffsetMs = 20 * 1000;
+  int64_t offset_ms[] = {random_.Rand(0, 2 * kAverageOffsetMs), 0};
+  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 500, 50, 0, offset_ms);
 }
 
 TEST_P(BweSimulation, TcpFairness1000msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 1000);
+  const int kAverageOffsetMs = 20 * 1000;
+  int64_t offset_ms[] = {random_.Rand(0, 2 * kAverageOffsetMs), 0};
+  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 1000, 50, 0, offset_ms);
+}
+
+// The following test cases begin with "Evaluation" as a referrence to the
+// Internet draft https://tools.ietf.org/html/draft-ietf-rmcat-eval-test-01.
+
+TEST_P(BweSimulation, Evaluation1) {
+  RunVariableCapacity1SingleFlow(GetParam());
+}
+
+TEST_P(BweSimulation, Evaluation2) {
+  const size_t kNumFlows = 2;
+  RunVariableCapacity2MultipleFlows(GetParam(), kNumFlows);
+}
+
+TEST_P(BweSimulation, Evaluation3) {
+  RunBidirectionalFlow(GetParam());
+}
+
+TEST_P(BweSimulation, Evaluation4) {
+  RunSelfFairness(GetParam());
+}
+
+TEST_P(BweSimulation, Evaluation5) {
+  RunRoundTripTimeFairness(GetParam());
+}
+
+TEST_P(BweSimulation, Evaluation6) {
+  RunLongTcpFairness(GetParam());
+}
+
+// Different calls to the Evaluation7 will create the same FileSizes
+// and StartingTimes as long as the seeds remain unchanged. This is essential
+// when calling it with multiple estimators for comparison purposes.
+TEST_P(BweSimulation, Evaluation7) {
+  const int kNumTcpFiles = 10;
+  RunMultipleShortTcpFairness(GetParam(),
+                              BweTest::GetFileSizesBytes(kNumTcpFiles),
+                              BweTest::GetStartingTimesMs(kNumTcpFiles));
+}
+
+TEST_P(BweSimulation, Evaluation8) {
+  RunPauseResumeFlows(GetParam());
+}
+
+// Following test cases begin with "GccComparison" run the
+// evaluation test cases for both GCC and other calling RMCAT.
+
+TEST_P(BweSimulation, GccComparison1) {
+  RunVariableCapacity1SingleFlow(GetParam());
+  BweTest gcc_test(false);
+  gcc_test.RunVariableCapacity1SingleFlow(kFullSendSideEstimator);
+}
+
+TEST_P(BweSimulation, GccComparison2) {
+  const size_t kNumFlows = 2;
+  RunVariableCapacity2MultipleFlows(GetParam(), kNumFlows);
+  BweTest gcc_test(false);
+  gcc_test.RunVariableCapacity2MultipleFlows(kFullSendSideEstimator, kNumFlows);
+}
+
+TEST_P(BweSimulation, GccComparison3) {
+  RunBidirectionalFlow(GetParam());
+  BweTest gcc_test(false);
+  gcc_test.RunBidirectionalFlow(kFullSendSideEstimator);
+}
+
+TEST_P(BweSimulation, GccComparison4) {
+  RunSelfFairness(GetParam());
+  BweTest gcc_test(false);
+  gcc_test.RunSelfFairness(GetParam());
+}
+
+TEST_P(BweSimulation, GccComparison5) {
+  RunRoundTripTimeFairness(GetParam());
+  BweTest gcc_test(false);
+  gcc_test.RunRoundTripTimeFairness(kFullSendSideEstimator);
+}
+
+TEST_P(BweSimulation, GccComparison6) {
+  RunLongTcpFairness(GetParam());
+  BweTest gcc_test(false);
+  gcc_test.RunLongTcpFairness(kFullSendSideEstimator);
+}
+
+TEST_P(BweSimulation, GccComparison7) {
+  const int kNumTcpFiles = 10;
+
+  std::vector<int> tcp_file_sizes_bytes =
+      BweTest::GetFileSizesBytes(kNumTcpFiles);
+  std::vector<int64_t> tcp_starting_times_ms =
+      BweTest::GetStartingTimesMs(kNumTcpFiles);
+
+  RunMultipleShortTcpFairness(GetParam(), tcp_file_sizes_bytes,
+                              tcp_starting_times_ms);
+
+  BweTest gcc_test(false);
+  gcc_test.RunMultipleShortTcpFairness(
+      kFullSendSideEstimator, tcp_file_sizes_bytes, tcp_starting_times_ms);
+}
+
+TEST_P(BweSimulation, GccComparison8) {
+  RunPauseResumeFlows(GetParam());
+  BweTest gcc_test(false);
+  gcc_test.RunPauseResumeFlows(kFullSendSideEstimator);
+}
+
+TEST_P(BweSimulation, GccComparisonChoke) {
+  int array[] = {1000, 500, 1000};
+  std::vector<int> capacities_kbps(array, array + 3);
+  RunChoke(GetParam(), capacities_kbps);
+
+  BweTest gcc_test(false);
+  gcc_test.RunChoke(kFullSendSideEstimator, capacities_kbps);
 }
 
 #endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc
+

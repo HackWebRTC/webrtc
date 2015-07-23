@@ -348,27 +348,84 @@ TEST_P(BweFeedbackTest, GoogleWifiTrace3Mbps) {
 }
 
 TEST_P(BweFeedbackTest, PacedSelfFairness50msTest) {
-  RunFairnessTest(GetParam(), 4, 0, 300, 3000, 50);
+  int64_t kRttMs = 100;
+  int64_t kMaxJitterMs = 15;
+
+  const int kNumRmcatFlows = 4;
+  int64_t offset_ms[kNumRmcatFlows];
+  for (int i = 0; i < kNumRmcatFlows; ++i) {
+    offset_ms[i] = std::max(0, 5000 * i + rand() % 2001 - 1000);
+  }
+
+  RunFairnessTest(GetParam(), kNumRmcatFlows, 0, 300, 3000, 50, kRttMs,
+                  kMaxJitterMs, offset_ms);
 }
 
 TEST_P(BweFeedbackTest, PacedSelfFairness500msTest) {
-  RunFairnessTest(GetParam(), 4, 0, 300, 3000, 500);
+  int64_t kRttMs = 100;
+  int64_t kMaxJitterMs = 15;
+
+  const int kNumRmcatFlows = 4;
+  int64_t offset_ms[kNumRmcatFlows];
+  for (int i = 0; i < kNumRmcatFlows; ++i) {
+    offset_ms[i] = std::max(0, 5000 * i + rand() % 2001 - 1000);
+  }
+
+  RunFairnessTest(GetParam(), kNumRmcatFlows, 0, 300, 3000, 500, kRttMs,
+                  kMaxJitterMs, offset_ms);
 }
 
 TEST_P(BweFeedbackTest, PacedSelfFairness1000msTest) {
-  RunFairnessTest(GetParam(), 4, 0, 300, 3000, 1000);
+  int64_t kRttMs = 100;
+  int64_t kMaxJitterMs = 15;
+
+  const int kNumRmcatFlows = 4;
+  int64_t offset_ms[kNumRmcatFlows];
+  for (int i = 0; i < kNumRmcatFlows; ++i) {
+    offset_ms[i] = std::max(0, 5000 * i + rand() % 2001 - 1000);
+  }
+
+  RunFairnessTest(GetParam(), kNumRmcatFlows, 0, 300, 3000, 1000, kRttMs,
+                  kMaxJitterMs, offset_ms);
 }
 
 TEST_P(BweFeedbackTest, TcpFairness50msTest) {
-  RunFairnessTest(GetParam(), 1, 1, 300, 2000, 50);
+  int64_t kRttMs = 100;
+  int64_t kMaxJitterMs = 15;
+
+  int64_t offset_ms[2];  // One TCP, one RMCAT flow.
+  for (int i = 0; i < 2; ++i) {
+    offset_ms[i] = std::max(0, 5000 * i + rand() % 2001 - 1000);
+  }
+
+  RunFairnessTest(GetParam(), 1, 1, 300, 2000, 50, kRttMs, kMaxJitterMs,
+                  offset_ms);
 }
 
 TEST_P(BweFeedbackTest, TcpFairness500msTest) {
-  RunFairnessTest(GetParam(), 1, 1, 300, 2000, 500);
+  int64_t kRttMs = 100;
+  int64_t kMaxJitterMs = 15;
+
+  int64_t offset_ms[2];  // One TCP, one RMCAT flow.
+  for (int i = 0; i < 2; ++i) {
+    offset_ms[i] = std::max(0, 5000 * i + rand() % 2001 - 1000);
+  }
+
+  RunFairnessTest(GetParam(), 1, 1, 300, 2000, 500, kRttMs, kMaxJitterMs,
+                  offset_ms);
 }
 
 TEST_P(BweFeedbackTest, TcpFairness1000msTest) {
-  RunFairnessTest(GetParam(), 1, 1, 300, 2000, 1000);
+  int64_t kRttMs = 100;
+  int64_t kMaxJitterMs = 15;
+
+  int64_t offset_ms[2];  // One TCP, one RMCAT flow.
+  for (int i = 0; i < 2; ++i) {
+    offset_ms[i] = std::max(0, 5000 * i + rand() % 2001 - 1000);
+  }
+
+  RunFairnessTest(GetParam(), 1, 1, 300, 2000, 1000, kRttMs, kMaxJitterMs,
+                  offset_ms);
 }
 }  // namespace bwe
 }  // namespace testing

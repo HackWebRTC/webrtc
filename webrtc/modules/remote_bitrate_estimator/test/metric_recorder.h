@@ -84,28 +84,28 @@ class MetricRecorder {
 
   void PlotThroughputHistogram(const std::string& title,
                                const std::string& bwe_name,
-                               int num_flows,
+                               size_t num_flows,
                                int64_t extra_offset_ms,
                                const std::string optimum_id);
 
   void PlotThroughputHistogram(const std::string& title,
                                const std::string& bwe_name,
-                               int num_flows,
+                               size_t num_flows,
                                int64_t extra_offset_ms);
 
   void PlotDelayHistogram(const std::string& title,
                           const std::string& bwe_name,
-                          int num_flows,
+                          size_t num_flows,
                           int64_t one_way_path_delay_ms);
 
   void PlotLossHistogram(const std::string& title,
                          const std::string& bwe_name,
-                         int num_flows,
+                         size_t num_flows,
                          float global_loss_ratio);
 
   void PlotObjectiveHistogram(const std::string& title,
                               const std::string& bwe_name,
-                              int num_flows);
+                              size_t num_flows);
 
   void set_start_computing_metrics_ms(int64_t start_computing_metrics_ms) {
     start_computing_metrics_ms_ = start_computing_metrics_ms;

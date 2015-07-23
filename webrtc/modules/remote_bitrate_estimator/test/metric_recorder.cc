@@ -302,7 +302,7 @@ double MetricRecorder::ObjectiveFunction() {
 
 void MetricRecorder::PlotThroughputHistogram(const std::string& title,
                                              const std::string& bwe_name,
-                                             int num_flows,
+                                             size_t num_flows,
                                              int64_t extra_offset_ms,
                                              const std::string optimum_id) {
   size_t num_packets_received = delays_ms_.size();
@@ -347,14 +347,14 @@ void MetricRecorder::PlotThroughputHistogram(const std::string& title,
 
 void MetricRecorder::PlotThroughputHistogram(const std::string& title,
                                              const std::string& bwe_name,
-                                             int num_flows,
+                                             size_t num_flows,
                                              int64_t extra_offset_ms) {
   PlotThroughputHistogram(title, bwe_name, num_flows, extra_offset_ms, "");
 }
 
 void MetricRecorder::PlotDelayHistogram(const std::string& title,
                                         const std::string& bwe_name,
-                                        int num_flows,
+                                        size_t num_flows,
                                         int64_t one_way_path_delay_ms) {
   size_t num_packets_received = delays_ms_.size();
   double average_delay_ms = Average(delays_ms_, num_packets_received);
@@ -395,7 +395,7 @@ void MetricRecorder::PlotDelayHistogram(const std::string& title,
 
 void MetricRecorder::PlotLossHistogram(const std::string& title,
                                        const std::string& bwe_name,
-                                       int num_flows,
+                                       size_t num_flows,
                                        float global_loss_ratio) {
   BWE_TEST_LOGGING_LABEL(6, title, "packet_loss_ratio_(%)", num_flows)
   BWE_TEST_LOGGING_BAR(6, bwe_name, 100.0f * global_loss_ratio, flow_id_);
@@ -406,7 +406,7 @@ void MetricRecorder::PlotLossHistogram(const std::string& title,
 
 void MetricRecorder::PlotObjectiveHistogram(const std::string& title,
                                             const std::string& bwe_name,
-                                            int num_flows) {
+                                            size_t num_flows) {
   BWE_TEST_LOGGING_LABEL(7, title, "objective_function", num_flows)
   BWE_TEST_LOGGING_BAR(7, bwe_name, ObjectiveFunction(), flow_id_);
 }
