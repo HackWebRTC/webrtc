@@ -29,9 +29,6 @@ class AudioFrame;
 template<typename T>
 class Beamformer;
 
-class StreamConfig;
-class ProcessingConfig;
-
 class EchoCancellation;
 class EchoControlMobile;
 class GainControl;
@@ -87,7 +84,7 @@ static const int kAgcStartupMinVolume = 0;
 #endif  // defined(WEBRTC_CHROMIUM_BUILD)
 struct ExperimentalAgc {
   ExperimentalAgc() : enabled(true), startup_min_volume(kAgcStartupMinVolume) {}
-  explicit ExperimentalAgc(bool enabled)
+  ExperimentalAgc(bool enabled)
       : enabled(enabled), startup_min_volume(kAgcStartupMinVolume) {}
   ExperimentalAgc(bool enabled, int startup_min_volume)
       : enabled(enabled), startup_min_volume(startup_min_volume) {}
@@ -202,7 +199,6 @@ static const int kAudioProcMaxNativeSampleRateHz = 32000;
 //
 class AudioProcessing {
  public:
-  // TODO(mgraczyk): Remove once all methods that use ChannelLayout are gone.
   enum ChannelLayout {
     kMono,
     // Left, right.
@@ -240,17 +236,10 @@ class AudioProcessing {
   // The int16 interfaces require:
   //   - only |NativeRate|s be used
   //   - that the input, output and reverse rates must match
-  //   - that |processing_config.output_stream()| matches
-  //     |processing_config.input_stream()|.
+  //   - that |output_layout| matches |input_layout|
   //
-  // The float interfaces accept arbitrary rates and support differing input and
-  // output layouts, but the output must have either one channel or the same
-  // number of channels as the input.
-  virtual int Initialize(const ProcessingConfig& processing_config) = 0;
-
-  // Initialize with unpacked parameters. See Initialize() above for details.
-  //
-  // TODO(mgraczyk): Remove once clients are updated to use the new interface.
+  // The float interfaces accept arbitrary rates and support differing input
+  // and output layouts, but the output may only remove channels, not add.
   virtual int Initialize(int input_sample_rate_hz,
                          int output_sample_rate_hz,
                          int reverse_sample_rate_hz,
@@ -303,28 +292,14 @@ class AudioProcessing {
   // |input_layout|. At output, the channels will be arranged according to
   // |output_layout| at |output_sample_rate_hz| in |dest|.
   //
-  // The output layout must have one channel or as many channels as the input.
-  // |src| and |dest| may use the same memory, if desired.
-  //
-  // TODO(mgraczyk): Remove once clients are updated to use the new interface.
+  // The output layout may only remove channels, not add. |src| and |dest|
+  // may use the same memory, if desired.
   virtual int ProcessStream(const float* const* src,
                             int samples_per_channel,
                             int input_sample_rate_hz,
                             ChannelLayout input_layout,
                             int output_sample_rate_hz,
                             ChannelLayout output_layout,
-                            float* const* dest) = 0;
-
-  // Accepts deinterleaved float audio with the range [-1, 1]. Each element of
-  // |src| points to a channel buffer, arranged according to |input_stream|. At
-  // output, the channels will be arranged according to |output_stream| in
-  // |dest|.
-  //
-  // The output must have one channel or as many channels as the input. |src|
-  // and |dest| may use the same memory, if desired.
-  virtual int ProcessStream(const float* const* src,
-                            const StreamConfig& input_config,
-                            const StreamConfig& output_config,
                             float* const* dest) = 0;
 
   // Analyzes a 10 ms |frame| of the reverse direction audio stream. The frame
@@ -346,17 +321,10 @@ class AudioProcessing {
 
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element
   // of |data| points to a channel buffer, arranged according to |layout|.
-  //
-  // TODO(mgraczyk): Remove once clients are updated to use the new interface.
   virtual int AnalyzeReverseStream(const float* const* data,
                                    int samples_per_channel,
                                    int sample_rate_hz,
                                    ChannelLayout layout) = 0;
-
-  // Accepts deinterleaved float audio with the range [-1, 1]. Each element of
-  // |data| points to a channel buffer, arranged according to |reverse_config|.
-  virtual int AnalyzeReverseStream(const float* const* data,
-                                   const StreamConfig& reverse_config) = 0;
 
   // This must be called if and only if echo processing is enabled.
   //
@@ -462,102 +430,6 @@ class AudioProcessing {
   };
 
   static const int kChunkSizeMs = 10;
-};
-
-class StreamConfig {
- public:
-  // sample_rate_hz: The sampling rate of the stream.
-  //
-  // num_channels: The number of audio channels in the stream, excluding the
-  //               keyboard channel if it is present. When passing a
-  //               StreamConfig with an array of arrays T*[N],
-  //
-  //                N == {num_channels + 1  if  has_keyboard
-  //                     {num_channels      if  !has_keyboard
-  //
-  // has_keyboard: True if the stream has a keyboard channel. When has_keyboard
-  //               is true, the last channel in any corresponding list of
-  //               channels is the keyboard channel.
-  StreamConfig(int sample_rate_hz = 0,
-               int num_channels = 0,
-               bool has_keyboard = false)
-      : sample_rate_hz_(sample_rate_hz),
-        num_channels_(num_channels),
-        has_keyboard_(has_keyboard),
-        num_frames_(calculate_frames(sample_rate_hz)) {}
-
-  void set_sample_rate_hz(int value) {
-    sample_rate_hz_ = value;
-    num_frames_ = calculate_frames(value);
-  }
-  void set_num_channels(int value) { num_channels_ = value; }
-  void set_has_keyboard(bool value) { has_keyboard_ = value; }
-
-  int sample_rate_hz() const { return sample_rate_hz_; }
-
-  // The number of channels in the stream, not including the keyboard channel if
-  // present.
-  int num_channels() const { return num_channels_; }
-
-  bool has_keyboard() const { return has_keyboard_; }
-  int num_frames() const { return num_frames_; }
-
-  bool operator==(const StreamConfig& other) const {
-    return sample_rate_hz_ == other.sample_rate_hz_ &&
-           num_channels_ == other.num_channels_ &&
-           has_keyboard_ == other.has_keyboard_;
-  }
-
-  bool operator!=(const StreamConfig& other) const { return !(*this == other); }
-
- private:
-  static int calculate_frames(int sample_rate_hz) {
-    return AudioProcessing::kChunkSizeMs * sample_rate_hz / 1000;
-  }
-
-  int sample_rate_hz_;
-  int num_channels_;
-  bool has_keyboard_;
-  int num_frames_;
-};
-
-class ProcessingConfig {
- public:
-  enum StreamName {
-    kInputStream,
-    kOutputStream,
-    kReverseStream,
-    kNumStreamNames,
-  };
-
-  const StreamConfig& input_stream() const {
-    return streams[StreamName::kInputStream];
-  }
-  const StreamConfig& output_stream() const {
-    return streams[StreamName::kOutputStream];
-  }
-  const StreamConfig& reverse_stream() const {
-    return streams[StreamName::kReverseStream];
-  }
-
-  StreamConfig& input_stream() { return streams[StreamName::kInputStream]; }
-  StreamConfig& output_stream() { return streams[StreamName::kOutputStream]; }
-  StreamConfig& reverse_stream() { return streams[StreamName::kReverseStream]; }
-
-  bool operator==(const ProcessingConfig& other) const {
-    for (int i = 0; i < StreamName::kNumStreamNames; ++i) {
-      if (this->streams[i] != other.streams[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool operator!=(const ProcessingConfig& other) const {
-    return !(*this == other);
-  }
-
-  StreamConfig streams[StreamName::kNumStreamNames];
 };
 
 // The acoustic echo cancellation (AEC) component provides better performance

@@ -12,9 +12,7 @@
 #define WEBRTC_COMMON_AUDIO_INCLUDE_AUDIO_UTIL_H_
 
 #include <limits>
-#include <cstring>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
@@ -28,10 +26,10 @@ typedef std::numeric_limits<int16_t> limits_int16;
 // FloatS16: float   [-32768.0, 32767.0]
 static inline int16_t FloatToS16(float v) {
   if (v > 0)
-    return v >= 1 ? limits_int16::max()
-                  : static_cast<int16_t>(v * limits_int16::max() + 0.5f);
-  return v <= -1 ? limits_int16::min()
-                 : static_cast<int16_t>(-v * limits_int16::min() - 0.5f);
+    return v >= 1 ? limits_int16::max() :
+                    static_cast<int16_t>(v * limits_int16::max() + 0.5f);
+  return v <= -1 ? limits_int16::min() :
+                   static_cast<int16_t>(-v * limits_int16::min() - 0.5f);
 }
 
 static inline float S16ToFloat(int16_t v) {
@@ -44,9 +42,10 @@ static inline int16_t FloatS16ToS16(float v) {
   static const float kMaxRound = limits_int16::max() - 0.5f;
   static const float kMinRound = limits_int16::min() + 0.5f;
   if (v > 0)
-    return v >= kMaxRound ? limits_int16::max()
-                          : static_cast<int16_t>(v + 0.5f);
-  return v <= kMinRound ? limits_int16::min() : static_cast<int16_t>(v - 0.5f);
+    return v >= kMaxRound ? limits_int16::max() :
+                            static_cast<int16_t>(v + 0.5f);
+  return v <= kMinRound ? limits_int16::min() :
+                          static_cast<int16_t>(v - 0.5f);
 }
 
 static inline float FloatToFloatS16(float v) {
@@ -70,10 +69,8 @@ void FloatS16ToFloat(const float* src, size_t size, float* dest);
 // |deinterleaved| buffers (|num_channel| buffers with |samples_per_channel|
 // per buffer).
 template <typename T>
-void Deinterleave(const T* interleaved,
-                  int samples_per_channel,
-                  int num_channels,
-                  T* const* deinterleaved) {
+void Deinterleave(const T* interleaved, int samples_per_channel,
+                  int num_channels, T* const* deinterleaved) {
   for (int i = 0; i < num_channels; ++i) {
     T* channel = deinterleaved[i];
     int interleaved_idx = i;
@@ -88,10 +85,8 @@ void Deinterleave(const T* interleaved,
 // |interleaved|. There must be sufficient space allocated in |interleaved|
 // (|samples_per_channel| * |num_channels|).
 template <typename T>
-void Interleave(const T* const* deinterleaved,
-                int samples_per_channel,
-                int num_channels,
-                T* interleaved) {
+void Interleave(const T* const* deinterleaved, int samples_per_channel,
+                int num_channels, T* interleaved) {
   for (int i = 0; i < num_channels; ++i) {
     const T* channel = deinterleaved[i];
     int interleaved_idx = i;
@@ -101,56 +96,6 @@ void Interleave(const T* const* deinterleaved,
     }
   }
 }
-
-template <typename T, typename Intermediate>
-void DownmixToMono(const T* const* input_channels,
-                   int num_frames,
-                   int num_channels,
-                   T* out) {
-  for (int i = 0; i < num_frames; ++i) {
-    Intermediate value = input_channels[0][i];
-    for (int j = 1; j < num_channels; ++j) {
-      value += input_channels[j][i];
-    }
-    out[i] = value / num_channels;
-  }
-}
-
-// Downmixes an interleaved multichannel signal to a single channel by averaging
-// all channels.
-template <typename T, typename Intermediate>
-void DownmixInterleavedToMonoImpl(const T* interleaved,
-                                  int num_frames,
-                                  int num_channels,
-                                  T* deinterleaved) {
-  DCHECK_GT(num_channels, 0);
-  DCHECK_GT(num_frames, 0);
-
-  const T* const end = interleaved + num_frames * num_channels;
-
-  while (interleaved < end) {
-    const T* const frame_end = interleaved + num_channels;
-
-    Intermediate value = *interleaved++;
-    while (interleaved < frame_end) {
-      value += *interleaved++;
-    }
-
-    *deinterleaved++ = value / num_channels;
-  }
-}
-
-template <typename T>
-void DownmixInterleavedToMono(const T* interleaved,
-                              int num_frames,
-                              int num_channels,
-                              T* deinterleaved);
-
-template <>
-void DownmixInterleavedToMono<int16_t>(const int16_t* interleaved,
-                                       int num_frames,
-                                       int num_channels,
-                                       int16_t* deinterleaved);
 
 }  // namespace webrtc
 

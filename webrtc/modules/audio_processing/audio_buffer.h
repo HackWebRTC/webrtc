@@ -112,8 +112,12 @@ class AudioBuffer {
   void InterleaveTo(AudioFrame* frame, bool data_changed) const;
 
   // Use for float deinterleaved data.
-  void CopyFrom(const float* const* data, const StreamConfig& stream_config);
-  void CopyTo(const StreamConfig& stream_config, float* const* data);
+  void CopyFrom(const float* const* data,
+                int num_frames,
+                AudioProcessing::ChannelLayout layout);
+  void CopyTo(int num_frames,
+              AudioProcessing::ChannelLayout layout,
+              float* const* data);
   void CopyLowPassToReference();
 
   // Splits the signal into different bands.

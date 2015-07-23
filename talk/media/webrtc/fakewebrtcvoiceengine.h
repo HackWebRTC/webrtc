@@ -112,8 +112,6 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
       webrtc::AudioProcessing::ChannelLayout input_layout,
       webrtc::AudioProcessing::ChannelLayout output_layout,
       webrtc::AudioProcessing::ChannelLayout reverse_layout));
-  WEBRTC_STUB(Initialize, (
-      const webrtc::ProcessingConfig& processing_config));
 
   WEBRTC_VOID_FUNC(SetExtraOptions, (const webrtc::Config& config)) {
     experimental_ns_enabled_ = config.Get<webrtc::ExperimentalNs>().enabled;
@@ -138,20 +136,12 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
       int output_sample_rate_hz,
       webrtc::AudioProcessing::ChannelLayout output_layout,
       float* const* dest));
-  WEBRTC_STUB(ProcessStream,
-              (const float* const* src,
-               const webrtc::StreamConfig& input_config,
-               const webrtc::StreamConfig& output_config,
-               float* const* dest));
   WEBRTC_STUB(AnalyzeReverseStream, (webrtc::AudioFrame* frame));
   WEBRTC_STUB(AnalyzeReverseStream, (
       const float* const* data,
       int samples_per_channel,
       int sample_rate_hz,
       webrtc::AudioProcessing::ChannelLayout layout));
-  WEBRTC_STUB(AnalyzeReverseStream, (
-      const float* const* data,
-      const webrtc::StreamConfig& reverse_config));
   WEBRTC_STUB(set_stream_delay_ms, (int delay));
   WEBRTC_STUB_CONST(stream_delay_ms, ());
   WEBRTC_BOOL_STUB_CONST(was_stream_delay_set, ());

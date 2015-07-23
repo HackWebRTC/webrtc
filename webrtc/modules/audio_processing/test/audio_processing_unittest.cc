@@ -354,14 +354,8 @@ class ApmTest : public ::testing::Test {
   void ProcessWithDefaultStreamParameters(AudioFrame* frame);
   void ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
                                     int delay_min, int delay_max);
-  void TestChangingChannelsInt16Interface(
-      int num_channels,
-      AudioProcessing::Error expected_return);
-  void TestChangingForwardChannels(int num_in_channels,
-                                   int num_out_channels,
-                                   AudioProcessing::Error expected_return);
-  void TestChangingReverseChannels(int num_rev_channels,
-                                   AudioProcessing::Error expected_return);
+  void TestChangingChannels(int num_channels,
+                            AudioProcessing::Error expected_return);
   void RunQuantizedVolumeDoesNotGetStuckTest(int sample_rate);
   void RunManualVolumeChangeIsPossibleTest(int sample_rate);
   void StreamParametersTest(Format format);
@@ -455,10 +449,12 @@ void ApmTest::TearDown() {
 
 void ApmTest::Init(AudioProcessing* ap) {
   ASSERT_EQ(kNoErr,
-            ap->Initialize(
-                {{{frame_->sample_rate_hz_, frame_->num_channels_},
-                  {output_sample_rate_hz_, num_output_channels_},
-                  {revframe_->sample_rate_hz_, revframe_->num_channels_}}}));
+            ap->Initialize(frame_->sample_rate_hz_,
+                           output_sample_rate_hz_,
+                           revframe_->sample_rate_hz_,
+                           LayoutFromChannels(frame_->num_channels_),
+                           LayoutFromChannels(num_output_channels_),
+                           LayoutFromChannels(revframe_->num_channels_)));
 }
 
 void ApmTest::Init(int sample_rate_hz,
@@ -795,76 +791,23 @@ TEST_F(ApmTest, DelayOffsetWithLimitsIsSetProperly) {
   EXPECT_EQ(50, apm_->stream_delay_ms());
 }
 
-void ApmTest::TestChangingChannelsInt16Interface(
-    int num_channels,
-    AudioProcessing::Error expected_return) {
+void ApmTest::TestChangingChannels(int num_channels,
+                                   AudioProcessing::Error expected_return) {
   frame_->num_channels_ = num_channels;
   EXPECT_EQ(expected_return, apm_->ProcessStream(frame_));
   EXPECT_EQ(expected_return, apm_->AnalyzeReverseStream(frame_));
 }
 
-void ApmTest::TestChangingForwardChannels(
-    int num_in_channels,
-    int num_out_channels,
-    AudioProcessing::Error expected_return) {
-  const StreamConfig input_stream = {frame_->sample_rate_hz_, num_in_channels};
-  const StreamConfig output_stream = {output_sample_rate_hz_, num_out_channels};
-
-  EXPECT_EQ(expected_return,
-            apm_->ProcessStream(float_cb_->channels(), input_stream,
-                                output_stream, float_cb_->channels()));
-}
-
-void ApmTest::TestChangingReverseChannels(
-    int num_rev_channels,
-    AudioProcessing::Error expected_return) {
-  const ProcessingConfig processing_config = {
-      {{ frame_->sample_rate_hz_, apm_->num_input_channels() },
-       { output_sample_rate_hz_, apm_->num_output_channels() },
-       { frame_->sample_rate_hz_, num_rev_channels }}};
-
-  EXPECT_EQ(expected_return,
-            apm_->AnalyzeReverseStream(float_cb_->channels(),
-                                       processing_config.reverse_stream()));
-}
-
-TEST_F(ApmTest, ChannelsInt16Interface) {
-  // Testing number of invalid and valid channels.
-  Init(16000, 16000, 16000, 4, 4, 4, false);
-
-  TestChangingChannelsInt16Interface(0, apm_->kBadNumberChannelsError);
-
-  for (int i = 1; i < 4; i++) {
-    TestChangingChannelsInt16Interface(i, kNoErr);
+TEST_F(ApmTest, Channels) {
+  // Testing number of invalid channels.
+  TestChangingChannels(0, apm_->kBadNumberChannelsError);
+  TestChangingChannels(3, apm_->kBadNumberChannelsError);
+  // Testing number of valid channels.
+  for (int i = 1; i < 3; i++) {
+    TestChangingChannels(i, kNoErr);
     EXPECT_EQ(i, apm_->num_input_channels());
     // We always force the number of reverse channels used for processing to 1.
     EXPECT_EQ(1, apm_->num_reverse_channels());
-  }
-}
-
-TEST_F(ApmTest, Channels) {
-  // Testing number of invalid and valid channels.
-  Init(16000, 16000, 16000, 4, 4, 4, false);
-
-  TestChangingForwardChannels(0, 1, apm_->kBadNumberChannelsError);
-  TestChangingReverseChannels(0, apm_->kBadNumberChannelsError);
-
-  for (int i = 1; i < 4; ++i) {
-    for (int j = 0; j < 1; ++j) {
-      // Output channels much be one or match input channels.
-      if (j == 1 || i == j) {
-        TestChangingForwardChannels(i, j, kNoErr);
-        TestChangingReverseChannels(i, kNoErr);
-
-        EXPECT_EQ(i, apm_->num_input_channels());
-        EXPECT_EQ(j, apm_->num_output_channels());
-        // The number of reverse channels used for processing to is always 1.
-        EXPECT_EQ(1, apm_->num_reverse_channels());
-      } else {
-        TestChangingForwardChannels(i, j,
-                                    AudioProcessing::kBadNumberChannelsError);
-      }
-    }
   }
 }
 
@@ -2351,9 +2294,12 @@ class AudioProcessingTest
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
     rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
     EnableAllAPComponents(ap.get());
-    ap->Initialize({{{input_rate, num_input_channels},
-                     {output_rate, num_output_channels},
-                     {reverse_rate, num_reverse_channels}}});
+    ap->Initialize(input_rate,
+                   output_rate,
+                   reverse_rate,
+                   LayoutFromChannels(num_input_channels),
+                   LayoutFromChannels(num_output_channels),
+                   LayoutFromChannels(num_reverse_channels));
 
     FILE* far_file = fopen(ResourceFilePath("far", reverse_rate).c_str(), "rb");
     FILE* near_file = fopen(ResourceFilePath("near", input_rate).c_str(), "rb");
