@@ -323,10 +323,9 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
                             const std::string& track_id,
                             cricket::MediaType media_type);
 
-  // Set the MediaStreamTrackInterface::TrackState to |state| on all remote
+  // Set the MediaStreamTrackInterface::TrackState to |kEnded| on all remote
   // tracks of type |media_type|.
-  void SetRemoteTracksState(cricket::MediaType media_type,
-                            MediaStreamTrackInterface::TrackState state);
+  void RejectRemoteTracks(cricket::MediaType media_type);
 
   // Finds remote MediaStreams without any tracks and removes them from
   // |remote_streams_| and notifies the observer that the MediaStream no longer
