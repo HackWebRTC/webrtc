@@ -38,7 +38,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public VideoRenderCallback {
  public:
   VideoReceiveStream(int num_cpu_cores,
-                     int base_channel_id,
                      ChannelGroup* channel_group,
                      int channel_id,
                      const VideoReceiveStream::Config& config,

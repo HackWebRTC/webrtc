@@ -125,7 +125,6 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 }  // namespace
 
 VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
-                                       int base_channel_id,
                                        ChannelGroup* channel_group,
                                        int channel_id,
                                        const VideoReceiveStream::Config& config,
@@ -137,9 +136,8 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       clock_(Clock::GetRealTimeClock()),
       channel_group_(channel_group),
       channel_id_(channel_id) {
-  CHECK(channel_group_->CreateReceiveChannel(channel_id_, 0, base_channel_id,
-                                             &transport_adapter_, num_cpu_cores,
-                                             true));
+  CHECK(channel_group_->CreateReceiveChannel(
+      channel_id_, 0, &transport_adapter_, num_cpu_cores));
 
   vie_channel_ = channel_group_->GetChannel(channel_id_);
 

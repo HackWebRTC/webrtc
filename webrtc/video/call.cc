@@ -115,7 +115,6 @@ class Call : public webrtc::Call, public PacketReceiver {
   const int num_cpu_cores_;
   const rtc::scoped_ptr<ProcessThread> module_process_thread_;
   const rtc::scoped_ptr<ChannelGroup> channel_group_;
-  const int base_channel_id_;
   volatile int next_channel_id_;
   Call::Config config_;
 
@@ -158,8 +157,7 @@ Call::Call(const Call::Config& config)
     : num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create()),
       channel_group_(new ChannelGroup(module_process_thread_.get())),
-      base_channel_id_(0),
-      next_channel_id_(base_channel_id_ + 1),
+      next_channel_id_(0),
       config_(config),
       network_enabled_(true),
       transport_adapter_(nullptr),
@@ -178,12 +176,6 @@ Call::Call(const Call::Config& config)
   Trace::CreateTrace();
   module_process_thread_->Start();
 
-  // TODO(pbos): Remove base channel when CreateReceiveChannel no longer
-  // requires one.
-  CHECK(channel_group_->CreateSendChannel(base_channel_id_, 0,
-                                          &transport_adapter_, num_cpu_cores_,
-                                          std::vector<uint32_t>(), true));
-
   if (config.overuse_callback) {
     overuse_observer_proxy_.reset(
         new CpuOveruseObserverProxy(config.overuse_callback));
@@ -199,7 +191,6 @@ Call::~Call() {
   CHECK_EQ(0u, video_receive_ssrcs_.size());
   CHECK_EQ(0u, video_receive_streams_.size());
 
-  channel_group_->DeleteChannel(base_channel_id_);
   module_process_thread_->Stop();
   Trace::ReturnTrace();
 }
@@ -320,7 +311,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   LOG(LS_INFO) << "CreateVideoReceiveStream: " << config.ToString();
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      num_cpu_cores_, base_channel_id_, channel_group_.get(),
+      num_cpu_cores_, channel_group_.get(),
       rtc::AtomicOps::Increment(&next_channel_id_), config,
       config_.send_transport, config_.voice_engine);
 

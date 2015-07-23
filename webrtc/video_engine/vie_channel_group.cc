@@ -153,7 +153,6 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
                              PacedSender::kDefaultPaceMultiplier *
                                  BitrateController::kDefaultStartBitrateKbps,
                              0)),
-      encoder_map_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       config_(new Config),
       process_thread_(process_thread),
       pacer_thread_(ProcessThread::Create()),
@@ -182,19 +181,16 @@ ChannelGroup::~ChannelGroup() {
   process_thread_->DeRegisterModule(call_stats_.get());
   process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
-  DCHECK(channels_.empty());
   DCHECK(channel_map_.empty());
   DCHECK(!remb_->InUse());
   DCHECK(vie_encoder_map_.empty());
-  DCHECK(send_encoders_.empty());
 }
 
 bool ChannelGroup::CreateSendChannel(int channel_id,
                                      int engine_id,
                                      Transport* transport,
                                      int number_of_cores,
-                                     const std::vector<uint32_t>& ssrcs,
-                                     bool disable_default_encoder) {
+                                     const std::vector<uint32_t>& ssrcs) {
   // TODO(pbos): Remove checks for empty ssrcs and add this check when there's
   // no base channel.
   // DCHECK(!ssrcs.empty());
@@ -208,7 +204,7 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   ViEEncoder* encoder = vie_encoder.get();
   if (!CreateChannel(channel_id, engine_id, transport, number_of_cores,
                      vie_encoder.release(), ssrcs.empty() ? 1 : ssrcs.size(),
-                     true, disable_default_encoder)) {
+                     true)) {
     return false;
   }
   ViEChannel* channel = channel_map_[channel_id];
@@ -226,13 +222,10 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
 
 bool ChannelGroup::CreateReceiveChannel(int channel_id,
                                         int engine_id,
-                                        int base_channel_id,
                                         Transport* transport,
-                                        int number_of_cores,
-                                        bool disable_default_encoder) {
-  ViEEncoder* encoder = GetEncoder(base_channel_id);
+                                        int number_of_cores) {
   return CreateChannel(channel_id, engine_id, transport, number_of_cores,
-                       encoder, 1, false, disable_default_encoder);
+                       nullptr, 1, false);
 }
 
 bool ChannelGroup::CreateChannel(int channel_id,
@@ -241,28 +234,15 @@ bool ChannelGroup::CreateChannel(int channel_id,
                                  int number_of_cores,
                                  ViEEncoder* vie_encoder,
                                  size_t max_rtp_streams,
-                                 bool sender,
-                                 bool disable_default_encoder) {
-  DCHECK(vie_encoder);
-
+                                 bool sender) {
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
       channel_id, engine_id, number_of_cores, *config_.get(), transport,
       process_thread_, encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(),
       remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
-      pacer_.get(), packet_router_.get(), max_rtp_streams, sender,
-      disable_default_encoder));
+      pacer_.get(), packet_router_.get(), max_rtp_streams, sender));
   if (channel->Init() != 0) {
     return false;
-  }
-  if (!disable_default_encoder) {
-    VideoCodec encoder;
-    if (vie_encoder->GetEncoder(&encoder) != 0) {
-      return false;
-    }
-    if (sender && channel->SetSendCodec(encoder) != 0) {
-      return false;
-    }
   }
 
   // Register the channel to receive stats updates.
@@ -270,11 +250,9 @@ bool ChannelGroup::CreateChannel(int channel_id,
 
   // Store the channel, add it to the channel group and save the vie_encoder.
   channel_map_[channel_id] = channel.release();
-  {
-    CriticalSectionScoped lock(encoder_map_cs_.get());
+  if (vie_encoder) {
+    rtc::CritScope lock(&encoder_map_crit_);
     vie_encoder_map_[channel_id] = vie_encoder;
-    if (sender)
-      send_encoders_[channel_id] = vie_encoder;
   }
 
   return true;
@@ -284,61 +262,33 @@ void ChannelGroup::DeleteChannel(int channel_id) {
   ViEChannel* vie_channel = PopChannel(channel_id);
 
   ViEEncoder* vie_encoder = GetEncoder(channel_id);
-  DCHECK(vie_encoder != NULL);
 
   call_stats_->DeregisterStatsObserver(vie_channel->GetStatsObserver());
   SetChannelRembStatus(false, false, vie_channel);
 
-  // If we're owning the encoder, remove the feedback and stop all encoding
-  // threads and processing. This must be done before deleting the channel.
-  if (vie_encoder->channel_id() == channel_id) {
+  // If we're a sender, remove the feedback and stop all encoding threads and
+  // processing. This must be done before deleting the channel.
+  if (vie_encoder) {
     encoder_state_feedback_->RemoveEncoder(vie_encoder);
     vie_encoder->StopThreadsAndRemoveSharedMembers();
   }
 
   unsigned int remote_ssrc = 0;
   vie_channel->GetRemoteSSRC(&remote_ssrc);
-  RemoveChannel(channel_id);
+  channel_map_.erase(channel_id);
   remote_bitrate_estimator_->RemoveStream(remote_ssrc);
 
-  // Check if other channels are using the same encoder.
-  if (OtherChannelsUsingEncoder(channel_id)) {
-    vie_encoder = NULL;
-  } else {
-    // Delete later when we've released the critsect.
-  }
-
-  // We can't erase the item before we've checked for other channels using
-  // same ViEEncoder.
-  PopEncoder(channel_id);
-
   delete vie_channel;
-  // Leave the write critsect before deleting the objects.
-  // Deleting a channel can cause other objects, such as renderers, to be
-  // deleted, which might take time.
-  // If statment just to show that this object is not always deleted.
+
   if (vie_encoder) {
-    LOG(LS_VERBOSE) << "ViEEncoder deleted for channel " << channel_id;
+    {
+      rtc::CritScope lock(&encoder_map_crit_);
+      vie_encoder_map_.erase(vie_encoder_map_.find(channel_id));
+    }
     delete vie_encoder;
   }
 
   LOG(LS_VERBOSE) << "Channel deleted " << channel_id;
-}
-
-void ChannelGroup::AddChannel(int channel_id) {
-  channels_.insert(channel_id);
-}
-
-void ChannelGroup::RemoveChannel(int channel_id) {
-  channels_.erase(channel_id);
-}
-
-bool ChannelGroup::HasChannel(int channel_id) const {
-  return channels_.find(channel_id) != channels_.end();
-}
-
-bool ChannelGroup::Empty() const {
-  return channels_.empty();
 }
 
 ViEChannel* ChannelGroup::GetChannel(int channel_id) const {
@@ -351,11 +301,10 @@ ViEChannel* ChannelGroup::GetChannel(int channel_id) const {
 }
 
 ViEEncoder* ChannelGroup::GetEncoder(int channel_id) const {
-  CriticalSectionScoped lock(encoder_map_cs_.get());
+  rtc::CritScope lock(&encoder_map_crit_);
   EncoderMap::const_iterator it = vie_encoder_map_.find(channel_id);
-  if (it == vie_encoder_map_.end()) {
-    return NULL;
-  }
+  if (it == vie_encoder_map_.end())
+    return nullptr;
   return it->second;
 }
 
@@ -368,68 +317,9 @@ ViEChannel* ChannelGroup::PopChannel(int channel_id) {
   return channel;
 }
 
-ViEEncoder* ChannelGroup::PopEncoder(int channel_id) {
-  CriticalSectionScoped lock(encoder_map_cs_.get());
-  auto it = vie_encoder_map_.find(channel_id);
-  DCHECK(it != vie_encoder_map_.end());
-  ViEEncoder* encoder = it->second;
-  vie_encoder_map_.erase(it);
-
-  it = send_encoders_.find(channel_id);
-  if (it != send_encoders_.end())
-    send_encoders_.erase(it);
-
-  return encoder;
-}
-
-std::vector<int> ChannelGroup::GetChannelIds() const {
-  std::vector<int> ids;
-  for (auto channel : channel_map_)
-    ids.push_back(channel.first);
-  return ids;
-}
-
-bool ChannelGroup::OtherChannelsUsingEncoder(int channel_id) const {
-  CriticalSectionScoped lock(encoder_map_cs_.get());
-  EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
-  if (orig_it == vie_encoder_map_.end()) {
-    // No ViEEncoder for this channel.
-    return false;
-  }
-
-  // Loop through all other channels to see if anyone points at the same
-  // ViEEncoder.
-  for (EncoderMap::const_iterator comp_it = vie_encoder_map_.begin();
-       comp_it != vie_encoder_map_.end(); ++comp_it) {
-    // Make sure we're not comparing the same channel with itself.
-    if (comp_it->first != channel_id) {
-      if (comp_it->second == orig_it->second) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 void ChannelGroup::SetSyncInterface(VoEVideoSync* sync_interface) {
-  for (auto channel : channel_map_) {
+  for (auto channel : channel_map_)
     channel.second->SetVoiceChannel(-1, sync_interface);
-  }
-}
-
-void ChannelGroup::GetChannelsUsingEncoder(int channel_id,
-                                           ChannelList* channels) const {
-  CriticalSectionScoped lock(encoder_map_cs_.get());
-  EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
-
-  for (ChannelMap::const_iterator c_it = channel_map_.begin();
-       c_it != channel_map_.end(); ++c_it) {
-    EncoderMap::const_iterator comp_it = vie_encoder_map_.find(c_it->first);
-    DCHECK(comp_it != vie_encoder_map_.end());
-    if (comp_it->second == orig_it->second) {
-      channels->push_back(c_it->second);
-    }
-  }
 }
 
 BitrateController* ChannelGroup::GetBitrateController() const {
@@ -477,8 +367,8 @@ void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt);
   int pad_up_to_bitrate_bps = 0;
   {
-    CriticalSectionScoped lock(encoder_map_cs_.get());
-    for (const auto& encoder : send_encoders_)
+    rtc::CritScope lock(&encoder_map_crit_);
+    for (const auto& encoder : vie_encoder_map_)
       pad_up_to_bitrate_bps += encoder.second->GetPaddingNeededBps();
   }
   pacer_->UpdateBitrate(

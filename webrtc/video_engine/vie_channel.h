@@ -109,8 +109,7 @@ class ViEChannel : public VCMFrameTypeCallback,
              PacedSender* paced_sender,
              PacketRouter* packet_router,
              size_t max_rtp_streams,
-             bool sender,
-             bool disable_default_encoder);
+             bool sender);
   ~ViEChannel();
 
   int32_t Init();
@@ -477,9 +476,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Current receive codec used for codec change callback.
   VideoCodec receive_codec_ GUARDED_BY(crit_);
   rtc::scoped_ptr<ThreadWrapper> decode_thread_;
-
-  // Used to skip default encoder in the new API.
-  const bool disable_default_encoder_;
 
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;
