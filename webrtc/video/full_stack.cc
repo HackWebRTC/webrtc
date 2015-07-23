@@ -704,7 +704,10 @@ TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   RunTest(foreman_cif);
 }
 
-TEST_F(FullStackTest, ScreenshareSlides) {
+// Temporarily disabled on Android due to low test timeouts.
+// https://code.google.com/p/chromium/issues/detail?id=513170
+#include "webrtc/test/testsupport/gtest_disable.h"
+TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlides)) {
   FullStackTestParams screenshare_params = {
       "screenshare_slides",
       {"screenshare_slides", 1850, 1110, 5},
