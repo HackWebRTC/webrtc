@@ -49,24 +49,22 @@ typedef NS_ENUM(NSUInteger, RTCFileLoggerSeverity) {
 // The severity level to capture. The default is kRTCFileLoggerSeverityInfo.
 @property(nonatomic, assign) RTCFileLoggerSeverity severity;
 
-// Default constructor provides default settings for file path and file size.
+// Default constructor provides default settings for dir path and file size.
 - (instancetype)init;
 
-- (instancetype)initWithFilePath:(NSString *)filePath
-                     maxFileSize:(NSUInteger)maxFileSize
+- (instancetype)initWithDirPath:(NSString *)dirPath
+                    maxFileSize:(NSUInteger)maxFileSize
     NS_DESIGNATED_INITIALIZER;
 
-// Starts writing WebRTC logs to file if not already started. Overwrites any
-// existing file.
+// Starts writing WebRTC logs to disk if not already started. Overwrites any
+// existing file(s).
 - (void)start;
 
-// Stops writing WebRTC logs to file. Rewrites the log file as required to
-// reorder logs because logs may be disordered due to use of
-// rtc::CircularFileStream. This method is also called on dealloc.
+// Stops writing WebRTC logs to disk. This method is also called on dealloc.
 - (void)stop;
 
-// Returns the current contents of the log file. Returns nil if start has been
-// called without a stop, or if there is no data.
+// Returns the current contents of the logs, or nil if start has been called
+// without a stop.
 - (NSData *)logData;
 
 @end

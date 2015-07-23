@@ -39,6 +39,9 @@ class FileRotatingLogSink : public LogSink {
   // Deletes any existing files in the directory and creates a new log file.
   virtual bool Init();
 
+  // Disables buffering on the underlying stream.
+  bool DisableBuffering();
+
  protected:
   explicit FileRotatingLogSink(FileRotatingStream* stream);
 
@@ -57,8 +60,6 @@ class CallSessionFileRotatingLogSink : public FileRotatingLogSink {
   ~CallSessionFileRotatingLogSink() override;
 
  private:
-  scoped_ptr<CallSessionFileRotatingStream> stream_;
-
   DISALLOW_COPY_AND_ASSIGN(CallSessionFileRotatingLogSink);
 };
 

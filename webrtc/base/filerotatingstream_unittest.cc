@@ -60,11 +60,15 @@ class FileRotatingStreamTest : public ::testing::Test {
     scoped_ptr<FileRotatingStream> stream;
     stream.reset(new FileRotatingStream(dir_path, file_prefix));
     ASSERT_TRUE(stream->Open());
+    size_t read = 0;
+    size_t stream_size = 0;
+    EXPECT_TRUE(stream->GetSize(&stream_size));
     scoped_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
     EXPECT_EQ(SR_SUCCESS,
-              stream->ReadAll(buffer.get(), expected_length, nullptr, nullptr));
+              stream->ReadAll(buffer.get(), expected_length, &read, nullptr));
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
     EXPECT_EQ(SR_EOS, stream->ReadAll(buffer.get(), 1, nullptr, nullptr));
+    EXPECT_EQ(stream_size, read);
   }
 
   void VerifyFileContents(const char* expected_contents,
@@ -214,11 +218,15 @@ class CallSessionFileRotatingStreamTest : public ::testing::Test {
     scoped_ptr<CallSessionFileRotatingStream> stream(
         new CallSessionFileRotatingStream(dir_path));
     ASSERT_TRUE(stream->Open());
+    size_t read = 0;
+    size_t stream_size = 0;
+    EXPECT_TRUE(stream->GetSize(&stream_size));
     scoped_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
     EXPECT_EQ(SR_SUCCESS,
-              stream->ReadAll(buffer.get(), expected_length, nullptr, nullptr));
+              stream->ReadAll(buffer.get(), expected_length, &read, nullptr));
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
     EXPECT_EQ(SR_EOS, stream->ReadAll(buffer.get(), 1, nullptr, nullptr));
+    EXPECT_EQ(stream_size, read);
   }
 
   scoped_ptr<CallSessionFileRotatingStream> stream_;

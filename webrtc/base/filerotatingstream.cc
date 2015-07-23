@@ -177,6 +177,26 @@ bool FileRotatingStream::Flush() {
   return file_stream_->Flush();
 }
 
+bool FileRotatingStream::GetSize(size_t* size) const {
+  if (mode_ != kRead) {
+    // Not possible to get accurate size on disk when writing because of
+    // potential buffering.
+    return false;
+  }
+  DCHECK(size);
+  *size = 0;
+  size_t total_size = 0;
+  for (auto file_name : file_names_) {
+    Pathname pathname(file_name);
+    size_t file_size = 0;
+    if (Filesystem::GetFileSize(file_name, &file_size)) {
+      total_size += file_size;
+    }
+  }
+  *size = total_size;
+  return true;
+}
+
 void FileRotatingStream::Close() {
   CloseCurrentFile();
 }

@@ -10,7 +10,10 @@
 
 #include "webrtc/base/logsinks.h"
 
+#include <iostream>
 #include <string>
+
+#include "webrtc/base/checks.h"
 
 namespace rtc {
 
@@ -26,14 +29,15 @@ FileRotatingLogSink::FileRotatingLogSink(const std::string& log_dir_path,
 
 FileRotatingLogSink::FileRotatingLogSink(FileRotatingStream* stream)
     : stream_(stream) {
+  DCHECK(stream);
 }
 
 FileRotatingLogSink::~FileRotatingLogSink() {
 }
 
 void FileRotatingLogSink::OnLogMessage(const std::string& message) {
-  if (!stream_ || stream_->GetState() != SS_OPEN) {
-    LOG(LS_WARNING) << "Init() must be called before adding this sink.";
+  if (stream_->GetState() != SS_OPEN) {
+    std::cerr << "Init() must be called before adding this sink." << std::endl;
     return;
   }
   stream_->WriteAll(message.c_str(), message.size(), nullptr, nullptr);
@@ -41,6 +45,10 @@ void FileRotatingLogSink::OnLogMessage(const std::string& message) {
 
 bool FileRotatingLogSink::Init() {
   return stream_->Open();
+}
+
+bool FileRotatingLogSink::DisableBuffering() {
+  return stream_->DisableBuffering();
 }
 
 CallSessionFileRotatingLogSink::CallSessionFileRotatingLogSink(
