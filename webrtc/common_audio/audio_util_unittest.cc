@@ -8,11 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+namespace {
+
+using ::testing::ElementsAreArray;
 
 void ExpectArraysEq(const int16_t* ref, const int16_t* test, int length) {
   for (int i = 0; i < length; ++i) {
@@ -28,11 +32,17 @@ void ExpectArraysEq(const float* ref, const float* test, int length) {
 
 TEST(AudioUtilTest, FloatToS16) {
   const int kSize = 9;
-  const float kInput[kSize] = {
-      0.f, 0.4f / 32767.f, 0.6f / 32767.f, -0.4f / 32768.f, -0.6f / 32768.f,
-      1.f, -1.f, 1.1f, -1.1f};
-  const int16_t kReference[kSize] = {
-    0, 0, 1, 0, -1, 32767, -32768, 32767, -32768};
+  const float kInput[kSize] = {0.f,
+                               0.4f / 32767.f,
+                               0.6f / 32767.f,
+                               -0.4f / 32768.f,
+                               -0.6f / 32768.f,
+                               1.f,
+                               -1.f,
+                               1.1f,
+                               -1.1f};
+  const int16_t kReference[kSize] = {0,     0,      1,     0,     -1,
+                                     32767, -32768, 32767, -32768};
   int16_t output[kSize];
   FloatToS16(kInput, kSize, output);
   ExpectArraysEq(kReference, output, kSize);
@@ -50,8 +60,8 @@ TEST(AudioUtilTest, S16ToFloat) {
 
 TEST(AudioUtilTest, FloatS16ToS16) {
   const int kSize = 7;
-  const float kInput[kSize] = {
-      0.f, 0.4f, 0.5f, -0.4f, -0.5f, 32768.f, -32769.f};
+  const float kInput[kSize] = {0.f,   0.4f,    0.5f,    -0.4f,
+                               -0.5f, 32768.f, -32769.f};
   const int16_t kReference[kSize] = {0, 0, 1, 0, -1, 32767, -32768};
   int16_t output[kSize];
   FloatS16ToS16(kInput, kSize, output);
@@ -60,11 +70,17 @@ TEST(AudioUtilTest, FloatS16ToS16) {
 
 TEST(AudioUtilTest, FloatToFloatS16) {
   const int kSize = 9;
-  const float kInput[kSize] = {
-      0.f, 0.4f / 32767.f, 0.6f / 32767.f, -0.4f / 32768.f, -0.6f / 32768.f,
-      1.f, -1.f, 1.1f, -1.1f};
-  const float kReference[kSize] = {
-    0.f, 0.4f, 0.6f, -0.4f, -0.6f, 32767.f, -32768.f, 36043.7f, -36044.8f};
+  const float kInput[kSize] = {0.f,
+                               0.4f / 32767.f,
+                               0.6f / 32767.f,
+                               -0.4f / 32768.f,
+                               -0.6f / 32768.f,
+                               1.f,
+                               -1.f,
+                               1.1f,
+                               -1.1f};
+  const float kReference[kSize] = {0.f,     0.4f,     0.6f,     -0.4f,    -0.6f,
+                                   32767.f, -32768.f, 36043.7f, -36044.8f};
   float output[kSize];
   FloatToFloatS16(kInput, kSize, output);
   ExpectArraysEq(kReference, output, kSize);
@@ -72,11 +88,17 @@ TEST(AudioUtilTest, FloatToFloatS16) {
 
 TEST(AudioUtilTest, FloatS16ToFloat) {
   const int kSize = 9;
-  const float kInput[kSize] = {
-    0.f, 0.4f, 0.6f, -0.4f, -0.6f, 32767.f, -32768.f, 36043.7f, -36044.8f};
-  const float kReference[kSize] = {
-      0.f, 0.4f / 32767.f, 0.6f / 32767.f, -0.4f / 32768.f, -0.6f / 32768.f,
-      1.f, -1.f, 1.1f, -1.1f};
+  const float kInput[kSize] = {0.f,     0.4f,     0.6f,     -0.4f,    -0.6f,
+                               32767.f, -32768.f, 36043.7f, -36044.8f};
+  const float kReference[kSize] = {0.f,
+                                   0.4f / 32767.f,
+                                   0.6f / 32767.f,
+                                   -0.4f / 32768.f,
+                                   -0.6f / 32768.f,
+                                   1.f,
+                                   -1.f,
+                                   1.1f,
+                                   -1.1f};
   float output[kSize];
   FloatS16ToFloat(kInput, kSize, output);
   ExpectArraysEq(kReference, output, kSize);
@@ -114,4 +136,96 @@ TEST(AudioUtilTest, InterleavingMonoIsIdentical) {
   ExpectArraysEq(mono, interleaved, kSamplesPerChannel);
 }
 
+TEST(AudioUtilTest, DownmixInterleavedToMono) {
+  {
+    const int kNumFrames = 4;
+    const int kNumChannels = 1;
+    const int16_t interleaved[kNumChannels * kNumFrames] = {1, 2, -1, -3};
+    int16_t deinterleaved[kNumFrames];
+
+    DownmixInterleavedToMono(interleaved, kNumFrames, kNumChannels,
+                             deinterleaved);
+
+    EXPECT_THAT(deinterleaved, ElementsAreArray(interleaved));
+  }
+  {
+    const int kNumFrames = 2;
+    const int kNumChannels = 2;
+    const int16_t interleaved[kNumChannels * kNumFrames] = {10, 20, -10, -30};
+    int16_t deinterleaved[kNumFrames];
+
+    DownmixInterleavedToMono(interleaved, kNumFrames, kNumChannels,
+                             deinterleaved);
+    const int16_t expected[kNumFrames] = {15, -20};
+
+    EXPECT_THAT(deinterleaved, ElementsAreArray(expected));
+  }
+  {
+    const int kNumFrames = 3;
+    const int kNumChannels = 3;
+    const int16_t interleaved[kNumChannels * kNumFrames] = {
+        30000, 30000, 24001, -5, -10, -20, -30000, -30999, -30000};
+    int16_t deinterleaved[kNumFrames];
+
+    DownmixInterleavedToMono(interleaved, kNumFrames, kNumChannels,
+                             deinterleaved);
+    const int16_t expected[kNumFrames] = {28000, -11, -30333};
+
+    EXPECT_THAT(deinterleaved, ElementsAreArray(expected));
+  }
+}
+
+TEST(AudioUtilTest, DownmixToMonoTest) {
+  {
+    const int kNumFrames = 4;
+    const int kNumChannels = 1;
+    const float input_data[kNumChannels][kNumFrames] = {{1.f, 2.f, -1.f, -3.f}};
+    const float* input[kNumChannels];
+    for (int i = 0; i < kNumChannels; ++i) {
+      input[i] = input_data[i];
+    }
+
+    float downmixed[kNumFrames];
+
+    DownmixToMono<float, float>(input, kNumFrames, kNumChannels, downmixed);
+
+    EXPECT_THAT(downmixed, ElementsAreArray(input_data[0]));
+  }
+  {
+    const int kNumFrames = 3;
+    const int kNumChannels = 2;
+    const float input_data[kNumChannels][kNumFrames] = {{1.f, 2.f, -1.f},
+                                                        {3.f, 0.f, 1.f}};
+    const float* input[kNumChannels];
+    for (int i = 0; i < kNumChannels; ++i) {
+      input[i] = input_data[i];
+    }
+
+    float downmixed[kNumFrames];
+    const float expected[kNumFrames] = {2.f, 1.f, 0.f};
+
+    DownmixToMono<float, float>(input, kNumFrames, kNumChannels, downmixed);
+
+    EXPECT_THAT(downmixed, ElementsAreArray(expected));
+  }
+  {
+    const int kNumFrames = 3;
+    const int kNumChannels = 3;
+    const int16_t input_data[kNumChannels][kNumFrames] = {
+        {30000, -5, -30000}, {30000, -10, -30999}, {24001, -20, -30000}};
+    const int16_t* input[kNumChannels];
+    for (int i = 0; i < kNumChannels; ++i) {
+      input[i] = input_data[i];
+    }
+
+    int16_t downmixed[kNumFrames];
+    const int16_t expected[kNumFrames] = {28000, -11, -30333};
+
+    DownmixToMono<int16_t, int32_t>(input, kNumFrames, kNumChannels, downmixed);
+
+    EXPECT_THAT(downmixed, ElementsAreArray(expected));
+  }
+}
+
+}  // namespace
 }  // namespace webrtc

@@ -123,11 +123,6 @@ void WavWriter::WriteSamples(const int16_t* samples, size_t num_samples) {
   num_samples_ += static_cast<uint32_t>(written);
   CHECK(written <= std::numeric_limits<uint32_t>::max() ||
         num_samples_ >= written);  // detect uint32_t overflow
-  CHECK(CheckWavParameters(num_channels_,
-                           sample_rate_,
-                           kWavFormat,
-                           kBytesPerSample,
-                           num_samples_));
 }
 
 void WavWriter::WriteSamples(const float* samples, size_t num_samples) {
