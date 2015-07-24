@@ -90,7 +90,6 @@ struct RTCPSender::RtcpContext {
         buffer_size(buffer_size),
         ntp_sec(0),
         ntp_frac(0),
-        jitter_transmission_offset(0),
         position(0) {}
 
   uint8_t* AllocateData(uint32_t bytes) {
@@ -109,7 +108,6 @@ struct RTCPSender::RtcpContext {
   uint32_t buffer_size;
   uint32_t ntp_sec;
   uint32_t ntp_frac;
-  uint32_t jitter_transmission_offset;
   uint32_t position;
 };
 
@@ -146,7 +144,6 @@ RTCPSender::RTCPSender(
       using_nack_(false),
       sending_(false),
       remb_enabled_(false),
-      extended_jitter_report_enabled_(false),
       next_time_to_send_rtcp_(0),
       start_timestamp_(0),
       last_rtp_timestamp_(0),
@@ -176,8 +173,6 @@ RTCPSender::RTCPSender(
   builders_[kRtcpSr] = &RTCPSender::BuildSR;
   builders_[kRtcpRr] = &RTCPSender::BuildRR;
   builders_[kRtcpSdes] = &RTCPSender::BuildSDES;
-  builders_[kRtcpTransmissionTimeOffset] =
-      &RTCPSender::BuildExtendedJitterReport;
   builders_[kRtcpPli] = &RTCPSender::BuildPLI;
   builders_[kRtcpFir] = &RTCPSender::BuildFIR;
   builders_[kRtcpSli] = &RTCPSender::BuildSLI;
@@ -278,16 +273,6 @@ void RTCPSender::SetTMMBRStatus(bool enable) {
   } else {
     ConsumeFlag(RTCPPacketType::kRtcpTmmbr, true);
   }
-}
-
-bool RTCPSender::IJ() const {
-  CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-  return extended_jitter_report_enabled_;
-}
-
-void RTCPSender::SetIJStatus(bool enable) {
-  CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-  extended_jitter_report_enabled_ = enable;
 }
 
 void RTCPSender::SetStartTimestamp(uint32_t start_timestamp) {
@@ -560,45 +545,6 @@ RTCPSender::BuildResult RTCPSender::BuildRR(RtcpContext* ctx) {
 
   report_blocks_.clear();
 
-  return BuildResult::kSuccess;
-}
-
-// From RFC 5450: Transmission Time Offsets in RTP Streams.
-//        0                   1                   2                   3
-//        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   hdr |V=2|P|    RC   |   PT=IJ=195   |             length            |
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//       |                      inter-arrival jitter                     |
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//       .                                                               .
-//       .                                                               .
-//       .                                                               .
-//       |                      inter-arrival jitter                     |
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//
-//  If present, this RTCP packet must be placed after a receiver report
-//  (inside a compound RTCP packet), and MUST have the same value for RC
-//  (reception report count) as the receiver report.
-
-RTCPSender::BuildResult RTCPSender::BuildExtendedJitterReport(
-    RtcpContext* ctx) {
-  // sanity
-  if (ctx->position + 8 >= IP_PACKET_SIZE)
-    return BuildResult::kTruncated;
-
-  // add picture loss indicator
-  uint8_t RC = 1;
-  *ctx->AllocateData(1) = 0x80 + RC;
-  *ctx->AllocateData(1) = 195;
-
-  // Used fixed length of 2
-  *ctx->AllocateData(1) = 0;
-  *ctx->AllocateData(1) = 1;
-
-  // Add inter-arrival jitter
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4),
-                                       ctx->jitter_transmission_offset);
   return BuildResult::kSuccess;
 }
 
@@ -1386,8 +1332,6 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
           AddReportBlock(report_block);
         }
       }
-      if (extended_jitter_report_enabled_)
-        SetFlag(kRtcpTransmissionTimeOffset, true);
     }
   }
 

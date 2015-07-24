@@ -295,7 +295,7 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
             HandleSenderReceiverReport(*rtcpParser, rtcpPacketInformation);
             break;
           case RTCPPacketTypes::kSdes:
-            HandleSDES(*rtcpParser);
+            HandleSDES(*rtcpParser, rtcpPacketInformation);
             break;
           case RTCPPacketTypes::kXrHeader:
             HandleXrHeader(*rtcpParser, rtcpPacketInformation);
@@ -754,12 +754,14 @@ int32_t RTCPReceiver::BoundingSet(bool &tmmbrOwner, TMMBRSet* boundingSetRec) {
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void RTCPReceiver::HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser) {
+void RTCPReceiver::HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser,
+                              RTCPPacketInformation& rtcpPacketInformation) {
   RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
   while (pktType == RTCPPacketTypes::kSdesChunk) {
     HandleSDESChunk(rtcpParser);
     pktType = rtcpParser.Iterate();
   }
+  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpSdes;
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver

@@ -131,7 +131,8 @@ protected:
         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
         uint32_t remoteSSRC);
 
-    void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser);
+    void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser,
+                    RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
     void HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser);
 

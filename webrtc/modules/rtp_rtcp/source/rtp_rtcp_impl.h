@@ -191,11 +191,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   void SetREMBData(uint32_t bitrate,
                    const std::vector<uint32_t>& ssrcs) override;
 
-  // (IJ) Extended jitter report.
-  bool IJ() const override;
-
-  void SetIJStatus(bool enable) override;
-
   // (TMMBR) Temporary Max Media Bit Rate.
   bool TMMBR() const override;
 

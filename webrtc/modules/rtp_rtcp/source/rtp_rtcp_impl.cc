@@ -650,15 +650,6 @@ void ModuleRtpRtcpImpl::SetREMBData(const uint32_t bitrate,
   rtcp_sender_.SetREMBData(bitrate, ssrcs);
 }
 
-// (IJ) Extended jitter report.
-bool ModuleRtpRtcpImpl::IJ() const {
-  return rtcp_sender_.IJ();
-}
-
-void ModuleRtpRtcpImpl::SetIJStatus(const bool enable) {
-  rtcp_sender_.SetIJStatus(enable);
-}
-
 int32_t ModuleRtpRtcpImpl::RegisterSendRtpHeaderExtension(
     const RTPExtensionType type,
     const uint8_t id) {

@@ -185,9 +185,6 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD2(SetREMBData,
                void(const uint32_t bitrate,
                     const std::vector<uint32_t>& ssrcs));
-  MOCK_CONST_METHOD0(IJ,
-      bool());
-  MOCK_METHOD1(SetIJStatus, void(const bool));
   MOCK_CONST_METHOD0(TMMBR,
       bool());
   MOCK_METHOD1(SetTMMBRStatus, void(const bool enable));

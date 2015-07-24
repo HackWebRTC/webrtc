@@ -488,13 +488,6 @@ class RtpRtcp : public Module {
                              const std::vector<uint32_t>& ssrcs) = 0;
 
     /*
-    *   (IJ) Extended jitter report.
-    */
-    virtual bool IJ() const = 0;
-
-    virtual void SetIJStatus(bool enable) = 0;
-
-    /*
     *   (TMMBR) Temporary Max Media Bit Rate
     */
     virtual bool TMMBR() const = 0;

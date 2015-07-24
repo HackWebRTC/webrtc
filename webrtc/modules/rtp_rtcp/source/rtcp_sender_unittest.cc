@@ -272,10 +272,14 @@ class TestTransport : public Transport,
   RTCPHelp::RTCPPacketInformation rtcp_packet_info_;
 };
 
+namespace {
+  static const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
+  static const int kMaxPacketLength = 1500;
+  static const uint32_t kMainSsrc = 0x11111111;
+}
+
 class RtcpSenderTest : public ::testing::Test {
  protected:
-  static const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
-
   RtcpSenderTest()
       : over_use_detector_options_(),
         clock_(1335900000),
@@ -298,15 +302,25 @@ class RtcpSenderTest : public ::testing::Test {
 
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
     rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
-        0, &clock_, test_transport_, NULL, rtp_payload_registry_.get()));
+        configuration.id, &clock_, test_transport_, NULL,
+        rtp_payload_registry_.get()));
     rtcp_sender_ =
-        new RTCPSender(0, false, &clock_, receive_statistics_.get(), NULL);
+        new RTCPSender(configuration.id, false, &clock_,
+            receive_statistics_.get(), NULL);
+    rtcp_sender_->SetSSRC(kMainSsrc);
     rtcp_receiver_ =
-        new RTCPReceiver(0, &clock_, false, NULL, NULL, NULL, rtp_rtcp_impl_);
+        new RTCPReceiver(configuration.id, &clock_, false, NULL, NULL, NULL,
+            rtp_rtcp_impl_);
+    rtcp_receiver_->SetRemoteSSRC(kMainSsrc);
+
+    std::set<uint32_t> registered_ssrcs;
+    registered_ssrcs.insert(kMainSsrc);
+    rtcp_receiver_->SetSsrcs(kMainSsrc, registered_ssrcs);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
     // Initialize
     EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(test_transport_));
   }
+
   ~RtcpSenderTest() {
     delete rtcp_sender_;
     delete rtcp_receiver_;
@@ -332,7 +346,6 @@ class RtcpSenderTest : public ::testing::Test {
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
 
-  enum {kMaxPacketLength = 1500};
   uint8_t packet_[kMaxPacketLength];
 };
 
@@ -342,21 +355,14 @@ TEST_F(RtcpSenderTest, RtcpOff) {
   EXPECT_EQ(-1, rtcp_sender_->SendRTCP(feedback_state, kRtcpSr));
 }
 
-TEST_F(RtcpSenderTest, IJStatus) {
-  ASSERT_FALSE(rtcp_sender_->IJ());
-  rtcp_sender_->SetIJStatus(true);
-  EXPECT_TRUE(rtcp_sender_->IJ());
-}
-
 TEST_F(RtcpSenderTest, TestCompound) {
   const bool marker_bit = false;
   const uint8_t payload_type = 100;
   const uint16_t seq_num = 11111;
   const uint32_t timestamp = 1234567;
-  const uint32_t ssrc = 0x11111111;
   size_t packet_length = 0;
-  CreateRtpPacket(marker_bit, payload_type, seq_num, timestamp, ssrc, packet_,
-      &packet_length);
+  CreateRtpPacket(marker_bit, payload_type, seq_num, timestamp, kMainSsrc,
+                  packet_, &packet_length);
   EXPECT_EQ(25u, packet_length);
 
   VideoCodec codec_inst;
@@ -380,25 +386,27 @@ TEST_F(RtcpSenderTest, TestCompound) {
   EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, packet_, packet_length,
                                                payload_specific, true));
 
-  rtcp_sender_->SetIJStatus(true);
+  rtcp_sender_->SetCNAME("Foo");
   rtcp_sender_->SetRTCPStatus(kRtcpCompound);
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpRr));
 
-  // Transmission time offset packet should be received.
+  // Sdes packet should be received, along with report blocks.
   ASSERT_TRUE(test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags &
-      kRtcpTransmissionTimeOffset);
+              kRtcpSdes);
+  EXPECT_GT(test_transport_->rtcp_packet_info_.report_blocks.size(), 0u);
 }
 
 TEST_F(RtcpSenderTest, TestCompound_NoRtpReceived) {
-  rtcp_sender_->SetIJStatus(true);
+  rtcp_sender_->SetCNAME("Foo");
   rtcp_sender_->SetRTCPStatus(kRtcpCompound);
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpRr));
 
-  // Transmission time offset packet should not be received.
-  ASSERT_FALSE(test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags &
-      kRtcpTransmissionTimeOffset);
+  // Sdes should be received, but no report blocks.
+  ASSERT_TRUE(test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags &
+              kRtcpSdes);
+  EXPECT_EQ(0u, test_transport_->rtcp_packet_info_.report_blocks.size());
 }
 
 TEST_F(RtcpSenderTest, TestXrReceiverReferenceTime) {
@@ -477,7 +485,7 @@ TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
   EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 3));
   ASSERT_EQ(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state,kRtcpSr));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpSr));
   // We now expect the packet to show up in the rtcp_packet_info_ of
   // test_transport_.
   ASSERT_NE(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
@@ -512,4 +520,5 @@ TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndValid) {
       &incoming_set));
   EXPECT_EQ(kSourceSsrc, incoming_set.Ssrc(0));
 }
+
 }  // namespace webrtc
