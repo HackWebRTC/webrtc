@@ -86,13 +86,15 @@ bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
 
 bool AudioReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
   RTPHeader header;
+
   if (!rtp_header_parser_->Parse(packet, length, &header)) {
     return false;
   }
 
-  // Only forward if the parsed header has absolute sender time. RTP time stamps
+  // Only forward if the parsed header has absolute sender time. RTP timestamps
   // may have different rates for audio and video and shouldn't be mixed.
-  if (header.extension.hasAbsoluteSendTime) {
+  if (config_.combined_audio_video_bwe &&
+      header.extension.hasAbsoluteSendTime) {
     int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
     size_t payload_size = length - header.headerLength;
     remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,

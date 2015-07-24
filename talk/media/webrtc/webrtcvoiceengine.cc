@@ -3637,9 +3637,9 @@ void WebRtcVoiceMediaChannel::TryAddAudioRecvStream(uint32 ssrc) {
   webrtc::AudioReceiveStream::Config config;
   config.rtp.remote_ssrc = ssrc;
   // Only add RTP extensions if we support combined A/V BWE.
-  if (options_.combined_audio_video_bwe.GetWithDefaultIfUnset(false)) {
-    config.rtp.extensions = recv_rtp_extensions_;
-  }
+  config.rtp.extensions = recv_rtp_extensions_;
+  config.combined_audio_video_bwe =
+      options_.combined_audio_video_bwe.GetWithDefaultIfUnset(false);
   config.voe_channel_id = channel->channel();
   config.sync_group = receive_stream_params_[ssrc].sync_label;
   webrtc::AudioReceiveStream* s = call_->CreateAudioReceiveStream(config);

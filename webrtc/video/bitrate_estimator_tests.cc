@@ -210,6 +210,7 @@ class BitrateEstimatorTest : public test::CallTest {
         receive_config.voe_channel_id = 0;
         receive_config.rtp.extensions.push_back(
             RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
+        receive_config.combined_audio_video_bwe = true;
         audio_receive_stream_ = test_->receiver_call_->CreateAudioReceiveStream(
             receive_config);
       } else {
