@@ -301,8 +301,10 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     quality_scaler_->Init(kMaxQP / kLowQpThresholdDenominator, true);
     quality_scaler_->SetMinResolution(kMinWidth, kMinHeight);
     quality_scaler_->ReportFramerate(codec_settings->maxFramerate);
+    updated_framerate_ = codec_settings->maxFramerate;
+  } else {
+    updated_framerate_ = -1;
   }
-  updated_framerate_ = codec_settings->maxFramerate;
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::InitEncodeOnCodecThread,
            this,
@@ -343,8 +345,6 @@ int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
                                          uint32_t frame_rate) {
   if (scale_ && codecType_ == kVideoCodecVP8) {
     quality_scaler_->ReportFramerate(frame_rate);
-  } else {
-    updated_framerate_ = frame_rate;
   }
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread,
