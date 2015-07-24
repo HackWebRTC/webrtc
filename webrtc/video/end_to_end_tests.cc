@@ -1661,6 +1661,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
       "WebRTC.Video.DecodedFramesPerSecond"));
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.RenderFramesPerSecond"));
 
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.EncodeTimeInMs"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.DecodeTimeInMs"));
+
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.BitrateSentInKbps"));
   EXPECT_EQ(1, test::NumHistogramSamples(

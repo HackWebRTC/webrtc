@@ -46,7 +46,7 @@ void SendStatisticsProxy::UpdateHistograms() {
   if (sent_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.SentFramesPerSecond", sent_fps);
 
-  const int kMinRequiredSamples = 100;
+  const int kMinRequiredSamples = 200;
   int in_width = input_width_counter_.Avg(kMinRequiredSamples);
   int in_height = input_height_counter_.Avg(kMinRequiredSamples);
   if (in_width != -1) {
@@ -59,6 +59,9 @@ void SendStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SentWidthInPixels", sent_width);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SentHeightInPixels", sent_height);
   }
+  int encode_ms = encode_time_counter_.Avg(kMinRequiredSamples);
+  if (encode_ms != -1)
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.EncodeTimeInMs", encode_ms);
 }
 
 void SendStatisticsProxy::OutgoingRate(const int video_channel,
@@ -72,6 +75,7 @@ void SendStatisticsProxy::OutgoingRate(const int video_channel,
 void SendStatisticsProxy::CpuOveruseMetricsUpdated(
     const CpuOveruseMetrics& metrics) {
   rtc::CritScope lock(&crit_);
+  // TODO(asapersson): Change to use OnEncodedFrame() for avg_encode_time_ms.
   stats_.avg_encode_time_ms = metrics.avg_encode_time_ms;
   stats_.encode_usage_percent = metrics.encode_usage_percent;
 }
@@ -184,6 +188,11 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   input_frame_rate_tracker_total_.Update(1);
   input_width_counter_.Add(width);
   input_height_counter_.Add(height);
+}
+
+void SendStatisticsProxy::OnEncodedFrame(int encode_time_ms) {
+  rtc::CritScope lock(&crit_);
+  encode_time_counter_.Add(encode_time_ms);
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(

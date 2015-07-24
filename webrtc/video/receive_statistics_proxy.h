@@ -99,6 +99,7 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
   rtc::RateTracker render_fps_tracker_total_ GUARDED_BY(crit_);
   SampleCounter render_width_counter_ GUARDED_BY(crit_);
   SampleCounter render_height_counter_ GUARDED_BY(crit_);
+  SampleCounter decode_time_counter_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
 };
 

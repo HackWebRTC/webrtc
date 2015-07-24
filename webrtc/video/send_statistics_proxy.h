@@ -49,6 +49,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
 
+  // Used to update encode time of frames.
+  void OnEncodedFrame(int encode_time_ms);
+
   // From VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
@@ -125,6 +128,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   SampleCounter input_height_counter_ GUARDED_BY(crit_);
   SampleCounter sent_width_counter_ GUARDED_BY(crit_);
   SampleCounter sent_height_counter_ GUARDED_BY(crit_);
+  SampleCounter encode_time_counter_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

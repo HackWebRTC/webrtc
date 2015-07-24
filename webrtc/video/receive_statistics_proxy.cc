@@ -39,13 +39,19 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (render_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.RenderFramesPerSecond", render_fps);
 
-  const int kMinRequiredSamples = 100;
+  const int kMinRequiredSamples = 200;
   int width = render_width_counter_.Avg(kMinRequiredSamples);
   int height = render_height_counter_.Avg(kMinRequiredSamples);
   if (width != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedWidthInPixels", width);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedHeightInPixels", height);
   }
+  // TODO(asapersson): DecoderTiming() is call periodically (each 1000ms) and
+  // not per frame. Change decode time to include every frame.
+  const int kMinRequiredDecodeSamples = 5;
+  int decode_ms = decode_time_counter_.Avg(kMinRequiredDecodeSamples);
+  if (decode_ms != -1)
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.DecodeTimeInMs", decode_ms);
 }
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
@@ -76,6 +82,7 @@ void ReceiveStatisticsProxy::DecoderTiming(int decode_ms,
   stats_.jitter_buffer_ms = jitter_buffer_ms;
   stats_.min_playout_delay_ms = min_playout_delay_ms;
   stats_.render_delay_ms = render_delay_ms;
+  decode_time_counter_.Add(decode_ms);
 }
 
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
