@@ -41,11 +41,11 @@ void FloatS16ToFloat(const float* src, size_t size, float* dest) {
 
 template <>
 void DownmixInterleavedToMono<int16_t>(const int16_t* interleaved,
-                                       int num_multichannel_frames,
+                                       int num_frames,
                                        int num_channels,
                                        int16_t* deinterleaved) {
-  DownmixInterleavedToMonoImpl<int16_t, int32_t>(
-      interleaved, num_multichannel_frames, num_channels, deinterleaved);
+  DownmixInterleavedToMonoImpl<int16_t, int32_t>(interleaved, num_frames,
+                                                 num_channels, deinterleaved);
 }
 
 }  // namespace webrtc
