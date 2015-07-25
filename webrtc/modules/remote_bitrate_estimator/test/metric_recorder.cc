@@ -130,7 +130,9 @@ MetricRecorder::MetricRecorder(const std::string algorithm_name,
 }
 
 void MetricRecorder::SetPlotInformation(
-    const std::vector<std::string>& prefixes) {
+    const std::vector<std::string>& prefixes,
+    bool plot_delay,
+    bool plot_loss) {
   assert(prefixes.size() == kNumMetrics);
   for (size_t i = 0; i < kNumMetrics; ++i) {
     plot_information_[i].prefix = prefixes[i];
@@ -144,10 +146,19 @@ void MetricRecorder::SetPlotInformation(
 
   for (int i = kThroughput; i < kNumMetrics; ++i) {
     plot_information_[i].last_plot_ms = 0;
-    if (i == kObjective || i == kAvailablePerFlow) {
-      plot_information_[i].plot = false;
-    } else {
-      plot_information_[i].plot = true;
+    switch (i) {
+      case kAvailablePerFlow:
+      case kObjective:
+        plot_information_[i].plot = false;
+        break;
+      case kLoss:
+        plot_information_[i].plot = plot_loss;
+        break;
+      case kDelay:
+        plot_information_[i].plot = plot_delay;
+        break;
+      default:
+        plot_information_[i].plot = true;
     }
   }
 }

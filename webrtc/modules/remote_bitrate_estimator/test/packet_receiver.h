@@ -56,7 +56,12 @@ class PacketReceiver : public PacketProcessor {
   rtc::scoped_ptr<BweReceiver> bwe_receiver_;
 
  private:
+  void PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms);
   MetricRecorder* metric_recorder_;
+  bool plot_delay_;  // Used in case there isn't a metric recorder.
+  int64_t last_delay_plot_ms_;
+  std::string delay_prefix_;
+  BandwidthEstimatorType bwe_type_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);
 };

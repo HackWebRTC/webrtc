@@ -91,7 +91,7 @@ TEST_P(DefaultBweTest, IncreasingDelay2) {
   VideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
-  RateCounterFilter counter(&uplink_, 0, "");
+  RateCounterFilter counter(&uplink_, 0, "", "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(1 * 60 * 1000);
   for (int i = 1; i < 51; ++i) {
@@ -122,7 +122,7 @@ TEST_P(DefaultBweTest, SteadyJitter) {
   VideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   JitterFilter jitter(&uplink_, 0);
-  RateCounterFilter counter(&uplink_, 0, "");
+  RateCounterFilter counter(&uplink_, 0, "", "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   jitter.SetMaxJitter(20);
   RunFor(2 * 60 * 1000);
@@ -211,7 +211,7 @@ TEST_P(DefaultBweTest, Multi1) {
   VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   ChokeFilter choke(&uplink_, 0);
-  RateCounterFilter counter(&uplink_, 0, "");
+  RateCounterFilter counter(&uplink_, 0, "", "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   choke.set_capacity_kbps(1000);
   RunFor(1 * 60 * 1000);
@@ -229,7 +229,7 @@ TEST_P(DefaultBweTest, Multi2) {
   VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   JitterFilter jitter(&uplink_, 0);
-  RateCounterFilter counter(&uplink_, 0, "");
+  RateCounterFilter counter(&uplink_, 0, "", "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   choke.set_capacity_kbps(2000);
   jitter.SetMaxJitter(120);
@@ -268,7 +268,7 @@ TEST_P(BweFeedbackTest, ConstantCapacity) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
-  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  RateCounterFilter counter(&uplink_, 0, "Receiver", bwe_names[GetParam()]);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   const int kCapacityKbps = 1000;
   filter.set_capacity_kbps(kCapacityKbps);
@@ -282,7 +282,7 @@ TEST_P(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
-  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  RateCounterFilter counter(&uplink_, 0, "Receiver", bwe_names[GetParam()]);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   const int kHighCapacityKbps = 1000;
   const int kLowCapacityKbps = 500;
@@ -302,7 +302,7 @@ TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
-  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  RateCounterFilter counter(&uplink_, 0, "Receiver", bwe_names[GetParam()]);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   const int kHighCapacityKbps = 200;
   const int kLowCapacityKbps = 30;
@@ -322,9 +322,10 @@ TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
 TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
-  RateCounterFilter counter1(&uplink_, 0, "sender_output");
+  RateCounterFilter counter1(&uplink_, 0, "sender_output",
+                             bwe_names[GetParam()]);
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
-  RateCounterFilter counter2(&uplink_, 0, "receiver_input");
+  RateCounterFilter counter2(&uplink_, 0, "Receiver", bwe_names[GetParam()]);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   ASSERT_TRUE(filter.Init(test::ResourcePath("verizon4g-downlink", "rx")));
   RunFor(22 * 60 * 1000);
@@ -336,10 +337,11 @@ TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
 TEST_P(BweFeedbackTest, GoogleWifiTrace3Mbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
-  RateCounterFilter counter1(&uplink_, 0, "sender_output");
+  RateCounterFilter counter1(&uplink_, 0, "sender_output",
+                             bwe_names[GetParam()]);
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
   filter.set_max_delay_ms(500);
-  RateCounterFilter counter2(&uplink_, 0, "receiver_input");
+  RateCounterFilter counter2(&uplink_, 0, "Receiver", bwe_names[GetParam()]);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   ASSERT_TRUE(filter.Init(test::ResourcePath("google-wifi-3mbps", "rx")));
   RunFor(300 * 1000);

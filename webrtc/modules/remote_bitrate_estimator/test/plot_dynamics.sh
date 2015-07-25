@@ -29,35 +29,49 @@ log=$(</dev/stdin)
 function gen_gnuplot_input {
   colors=(a7001f 0a60c2 b2582b 21a66c d6604d 4393c3 f4a582 92c5de edcbb7 b1c5d0)
   plots=$(echo "$log" | grep "^PLOT")
+  # Each figure corresponds to a separate plot window.
   figures=($(echo "$plots" | cut -f 2 | sort | uniq))
 
   for figure in "${figures[@]}" ; do
+    # Each data set corresponds to a plot line.
     data_sets=$(echo "$plots" | grep "^PLOT.$figure" | cut -f 3 | sort | uniq)
+    # Lines can be scaled on the left (1) or right (2) axis.
     linetypes=($(echo "$data_sets" | grep "#" | cut -d '#' -f 2 | \
-      cut -d ' ' -f 1))
+                 cut -d '@' -f 1 | uniq))
+
+    # Set plot configurations.
     echo "reset; "
     echo "set terminal wxt $figure size 1440,900 font \"Arial,9\"; "
     echo "set xlabel \"Seconds\"; "
-    if (( "${#linetypes[@]}" > "0" )); then
-      echo "set ylabel 'bitrate (kbps)';"
+    if (( "${#linetypes[@]}" > "1" )); then
+      echo "set ylabel 'Bitrate (kbps)';"  # Left side.
       echo "set ytics nomirror;"
-      echo "set y2label 'time delta (ms)';"
+      echo "set y2label 'Time delta (ms)';"  # Right side.
       echo "set y2tics nomirror;"
+    else
+      # Single axis (left side), set its label according to data.
+      y_label=$(echo "$data_sets" | grep "#" | cut -d '#' -f 1  | \
+          cut -d ' ' -f 1 | cut -d '/' -f 3 | sed 's/[0-9]/#/g' | \
+          cut -d '#' -f 3 | head -n 1 | sed 's/_/ /g')
+      echo "set ylabel \"$y_label\";"
     fi
-    echo -n "plot "
+
     i=0
+    echo -n "plot "
     for set in $data_sets ; do
       (( i++ )) && echo -n ","
       echo -n "'-' with "
       echo -n "linespoints "
       echo -n "ps 0.5 "
       echo -n "lc rgbcolor \"#${colors[$(($i % 10))]}\" "
-      if (( "${#linetypes[@]}" > "0" )); then
-        if (( "$i" <= "${#linetypes[@]}" )); then
-          echo -n "axes x1y${linetypes[$i - 1]} "
+      if (( "${#linetypes[@]}" > "1" )); then
+        # Multiple sets can have a same line plot.
+        linetype=$(echo "$set" | grep "#" | cut -d '#' -f 2 | cut -d '@' -f 1)
+        if (( "${#linetype}" > "0")); then
+          echo -n "axes x1y$linetype "
         else
           # If no line type is specified, but line types are used, we will
-          # default to the bitrate axis.
+          # default to scale on the left axis.
           echo -n "axes x1y1 "
         fi
       fi

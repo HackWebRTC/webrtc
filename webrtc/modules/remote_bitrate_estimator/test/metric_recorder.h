@@ -65,7 +65,9 @@ class MetricRecorder {
                  PacketSender* packet_sender,
                  LinkShare* link_share);
 
-  void SetPlotInformation(const std::vector<std::string>& prefixes);
+  void SetPlotInformation(const std::vector<std::string>& prefixes,
+                          bool plot_delay,
+                          bool plot_loss);
 
   template <typename T>
   void PlotLine(int windows_id,

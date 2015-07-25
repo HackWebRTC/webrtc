@@ -91,7 +91,7 @@ void Logging::Log(const char format[], ...) {
 }
 
 void Logging::Plot(int figure, double value) {
-  Plot(figure, value, "");
+  Plot(figure, value, "-");
 }
 
 void Logging::Plot(int figure, double value, const std::string& alg_name) {

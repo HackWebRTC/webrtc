@@ -252,14 +252,17 @@ class RateCounterFilter : public PacketProcessor {
  public:
   RateCounterFilter(PacketProcessorListener* listener,
                     int flow_id,
-                    const char* name);
-  RateCounterFilter(PacketProcessorListener* listener,
-                    const FlowIds& flow_ids,
-                    const char* name);
+                    const char* name,
+                    const std::string& plot_name);
   RateCounterFilter(PacketProcessorListener* listener,
                     const FlowIds& flow_ids,
                     const char* name,
-                    int64_t start_plotting_time_ms);
+                    const std::string& plot_name);
+  RateCounterFilter(PacketProcessorListener* listener,
+                    const FlowIds& flow_ids,
+                    const char* name,
+                    int64_t start_plotting_time_ms,
+                    const std::string& plot_name);
   virtual ~RateCounterFilter();
 
   void LogStats();
@@ -272,6 +275,8 @@ class RateCounterFilter : public PacketProcessor {
   Stats<double> kbps_stats_;
   std::string name_;
   int64_t start_plotting_time_ms_;
+  // Algorithm name if single flow, Total link utilization if all flows.
+  std::string plot_name_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RateCounterFilter);
 };

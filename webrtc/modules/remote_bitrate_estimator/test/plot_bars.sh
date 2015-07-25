@@ -34,7 +34,7 @@ function gen_gnuplot_bar_input {
   labels=$(echo "$log" | grep "^LABEL")
   figures=($(echo "$bars" | cut -f 2 | sort | uniq))
 
-  echo "reset"
+  echo "reset"  # Clears previous settings.
 
   echo "set title font 'Verdana,22'"
   echo "set xtics font 'Verdana,24'"
@@ -45,12 +45,13 @@ function gen_gnuplot_bar_input {
   echo "set style fill solid 0.5"
   echo "set style fill solid border -1"
 
-  ydist=11  # Used to correctly offset the y label.
+  declare -a ydist=(11.5 10.5 10.5)  # Used to correctly offset the y label.
+  i=0
   for figure in "${figures[@]}" ; do
 
     echo "set terminal wxt $figure size 440,440 dashed"
-    echo "set ylabel offset $ydist, -3"
-    ((ydist--))
+    echo "set ylabel offset ${ydist[$i]}, -3"
+    (( i++ ))
 
     title=$(echo "$labels" | grep "^LABEL.$figure" | cut -f 3 | \
                                          head -n 1 | sed 's/_/ /g')
@@ -107,47 +108,51 @@ function gen_gnuplot_bar_input {
 
     y_max=0  # Used to scale the plot properly.
 
-    # Since only the optimal bitrate for the first flow is being ploted,
-    # consider only this one for scalling purposes.
-    data_sets=$(echo "$bars" | grep "LIMITERRORBAR.$figure" | cut -f 3 | \
-                                   sed 's/_/\t/g' | cut -f 1 | sort | uniq)
-
-    if (( ${#data_sets} > "0" )); then
-      for set in $data_sets ; do
-        y=$(echo "$bars" | grep "LIMITERRORBAR.$figure.$set" | cut -f 8 | \
-                                                                head -n 1)
-        if (( $(bc <<< "$y > $y_max") == 1 )); then
-          y_max=$y
-        fi
-      done
-    fi
-
-    data_sets=$(echo "$bars" | grep "ERRORBAR.$figure" | cut -f 3 | sort | uniq)
-    if (( ${#data_sets} > "0" )); then
-      for set in $data_sets ; do
-        y=$(echo "$bars" | grep "ERRORBAR.$figure.$set" | cut -f 6 | head -n 1)
-        if (( $(bc <<< "$y > $y_max") == 1 )) ; then
-          y_max=$y
-        fi
-      done
-    fi
-
-    data_sets=$(echo "$bars" | grep "BAR.$figure" | cut -f 3 | sort | uniq)
-
-    for set in $data_sets ; do
-      y=$(echo "$bars" | grep "BAR.$figure.$set" | cut -f 4 | head -n 1)
-      if (( $(bc <<< "$y > $y_max") == 1 )) ; then
-        y_max=$y
-      fi
-    done
-
-    y_max=$(echo $y_max*1.1 | bc)
-
     # Scale all latency plots with the same vertical scale.
     delay_figure=5
     if (( $figure==$delay_figure )) ; then
       y_max=250
+    else  # Take y_max = 1.1 * highest plot value.
+
+      # Since only the optimal bitrate for the first flow is being ploted,
+      # consider only this one for scalling purposes.
+      data_sets=$(echo "$bars" | grep "LIMITERRORBAR.$figure" | cut -f 3 | \
+                                     sed 's/_/\t/g' | cut -f 1 | sort | uniq)
+
+      if (( ${#data_sets[@]} > "0" )); then
+        for set in $data_sets ; do
+          y=$(echo "$bars" | grep "LIMITERRORBAR.$figure.$set" | cut -f 8 | \
+                                                                  head -n 1)
+          if (( $(bc <<< "$y > $y_max") == 1 )); then
+            y_max=$y
+          fi
+        done
+      fi
+
+      data_sets=$(echo "$bars" | grep "ERRORBAR.$figure" | cut -f 3 | \
+                                                               sort | uniq)
+      if (( ${#data_sets[@]} > "0" )); then
+        for set in $data_sets ; do
+          y=$(echo "$bars" | grep "ERRORBAR.$figure.$set" | cut -f 6 | \
+                                                                 head -n 1)
+          if (( $(bc <<< "$y > $y_max") == 1 )) ; then
+            y_max=$y
+          fi
+        done
+      fi
+
+      data_sets=$(echo "$bars" | grep "BAR.$figure" | cut -f 3 | sort | uniq)
+
+      for set in $data_sets ; do
+        y=$(echo "$bars" | grep "BAR.$figure.$set" | cut -f 4 | head -n 1)
+        if (( $(bc <<< "$y > $y_max") == 1 )) ; then
+          y_max=$y
+        fi
+      done
+
+      y_max=$(echo $y_max*1.1 | bc)
     fi
+
 
     echo "set ylabel \"$y_label\""
     echo "set yrange[0:$y_max]"
@@ -193,29 +198,31 @@ function gen_gnuplot_bar_input {
     # Plot Baseline bars, e.g. one-way path delay on latency plots.
     data_sets=$(echo "$log" | grep "BASELINE.$figure" | cut -f 3 | sort | uniq)
 
-    echo "set xtics $x_labels"
-    echo "plot '-' using 1:4:2 with boxes lc variable notitle"
+    if (( ${#data_sets} > "0" )); then
+      echo "set xtics $x_labels"
+      echo "plot '-' using 1:4:2 with boxes lc variable notitle"
 
-    echo
+      echo
 
-    color=18  # Gray.
-    x_bar=$(echo $x_start + 0.5 + 0.5*$box_width | bc)
-    for set in $data_sets ; do
-      echo -n "$x_bar  $color  "
-      echo "$log" | grep "BASELINE.$figure.$set" | cut -f 3,4
+      color=18  # Gray.
+      x_bar=$(echo $x_start + 0.5 + 0.5*$box_width | bc)
+      for set in $data_sets ; do
+        echo -n "$x_bar  $color  "
+        echo "$log" | grep "BASELINE.$figure.$set" | cut -f 3,4
 
-      # Add extra space if TCP flows are being plotted.
-      if $tcp_flow && \
-          (( $(bc <<< "$x_bar < $x_start + 1.5 - 0.5*$tcp_space") == 1 )) && \
-          (( $(bc <<< "$x_bar + $box_width > $x_start + 1.5 + 0.5*$tcp_space") \
-           == 1 )); then
-          x_bar=$(echo $x_bar + $tcp_space | bc)
-      fi
+        # Add extra space if TCP flows are being plotted.
+        if $tcp_flow && \
+            (( $(bc <<< "$x_bar < $x_start + 1.5 - 0.5*$tcp_space") == 1 )) && \
+            (( $(bc <<< "$x_bar + $box_width > $x_start + 1.5 \
+            + 0.5*$tcp_space") == 1 )); then
+            x_bar=$(echo $x_bar + $tcp_space | bc)
+        fi
 
-      x_bar=$(echo $x_bar + $box_width | bc)
+        x_bar=$(echo $x_bar + $box_width | bc)
 
-    done
-    echo "e"
+      done
+      echo "e"
+    fi
 
     # Plot vertical error lines, e.g. y +- sigma.
     data_sets=$(echo "$bars" | grep "ERRORBAR.$figure" | cut -f 3 | sort | uniq)
@@ -275,4 +282,5 @@ function gen_gnuplot_bar_input {
     echo "unset multiplot"
   done
 }
+
 gen_gnuplot_bar_input | gnuplot -persist

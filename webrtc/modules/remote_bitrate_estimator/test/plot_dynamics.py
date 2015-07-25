@@ -48,9 +48,13 @@ class Variable:
 
 
   def addSample(self, line):
-    groups = re.search(r'/\d_(\w+)#\d@(\w*)', line)
+    groups = re.search(r'_(((\d)+((,(\d)+)*))_(\D+))#\d@(\S+)', line)
+
+    # Each variable will be plotted in a separated box.
     var_name = groups.group(1)
-    alg_name = groups.group(2)
+    alg_name = groups.group(8)
+
+    alg_name = alg_name.replace('_', ' ')
 
     if alg_name not in self._samples.keys():
       self._samples[alg_name] = {}
@@ -59,6 +63,7 @@ class Variable:
       self._samples[alg_name][var_name] = []
 
     sample = re.search(r'(\d+\.\d+)\t([-]?\d+\.\d+)', line)
+
     s = (sample.group(1),sample.group(2))
     self._samples[alg_name][var_name].append(s)
 
@@ -86,19 +91,16 @@ def plotVar(v, ax, show_legend, show_x_label):
                   'NADA2':'#A0A0FF',
                   'NADA3':'#0000FF',
                   'NADA4':'#C0A0FF',
-                  'NADA5':'#9060B0',
-                  'TCP1':'#AAAAAA',
-                  'TCP2':'#AAAAAA',
-                  'TCP3':'#AAAAAA',
-                  'TCP4':'#AAAAAA',
-                  'TCP5':'#AAAAAA',
-                  'TCP6':'#AAAAAA',
-                  'TCP7':'#AAAAAA',
-                  'TCP8':'#AAAAAA',
-                  'TCP9':'#AAAAAA',
-                  'TCP10':'#AAAAAA',}
+                  'NADA5':'#9060B0',}
 
-      plt.setp(line, color=colormap[alg + str(i)])
+      key = alg + str(i)
+      if key in colormap:
+        plt.setp(line, color=colormap[key])
+      elif alg == 'TCP':
+        plt.setp(line, color='#AAAAAA')
+      else:
+        plt.setp(line, color='#654321')
+
       if alg.startswith('Available'):
         plt.setp(line, linestyle='--')
       plt.grid(True)
@@ -110,8 +112,8 @@ def plotVar(v, ax, show_legend, show_x_label):
       i += 1
 
     if show_legend:
-      legend = plt.legend(loc='upper right', shadow=True,
-                          fontsize='large', ncol=len(v._samples))
+      legend = plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.40),
+                          shadow=True, fontsize='medium', ncol=len(v._samples))
 
 if __name__ == '__main__':
 

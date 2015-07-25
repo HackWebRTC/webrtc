@@ -181,7 +181,8 @@ TEST(BweTestFramework_StatsTest, MinMax) {
 
 class BweTestFramework_RateCounterFilterTest : public ::testing::Test {
  public:
-  BweTestFramework_RateCounterFilterTest() : filter_(NULL, 0, ""), now_ms_(0) {}
+  BweTestFramework_RateCounterFilterTest()
+      : filter_(NULL, 0, "", ""), now_ms_(0) {}
   virtual ~BweTestFramework_RateCounterFilterTest() {}
 
  protected:

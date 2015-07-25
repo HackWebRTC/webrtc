@@ -251,12 +251,13 @@ uint32_t PacketProcessor::bits_per_second() const {
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      int flow_id,
-                                     const char* name)
+                                     const char* name,
+                                     const std::string& plot_name)
     : PacketProcessor(listener, flow_id, kRegular),
       packets_per_second_stats_(),
       kbps_stats_(),
-      name_(),
-      start_plotting_time_ms_(0) {
+      start_plotting_time_ms_(0),
+      plot_name_(plot_name) {
   std::stringstream ss;
   ss << name << "_" << flow_id;
   name_ = ss.str();
@@ -264,16 +265,19 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      const FlowIds& flow_ids,
-                                     const char* name)
+                                     const char* name,
+                                     const std::string& plot_name)
     : PacketProcessor(listener, flow_ids, kRegular),
       packets_per_second_stats_(),
       kbps_stats_(),
-      name_(),
-      start_plotting_time_ms_(0) {
+      start_plotting_time_ms_(0),
+      plot_name_(plot_name) {
   std::stringstream ss;
-  ss << name << "_";
+  ss << name;
+  char delimiter = '_';
   for (int flow_id : flow_ids) {
-    ss << flow_id << ",";
+    ss << delimiter << flow_id;
+    delimiter = ',';
   }
   name_ = ss.str();
 }
@@ -281,8 +285,9 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      const FlowIds& flow_ids,
                                      const char* name,
-                                     int64_t start_plotting_time_ms)
-    : RateCounterFilter(listener, flow_ids, name) {
+                                     int64_t start_plotting_time_ms,
+                                     const std::string& plot_name)
+    : RateCounterFilter(listener, flow_ids, name, plot_name) {
   start_plotting_time_ms_ = start_plotting_time_ms;
 }
 
@@ -307,7 +312,13 @@ void RateCounterFilter::Plot(int64_t timestamp_ms) {
     plot_kbps = rate_counter_.bits_per_second() / 1000.0;
   }
   BWE_TEST_LOGGING_CONTEXT(name_.c_str());
-  BWE_TEST_LOGGING_PLOT(0, "Throughput_#1", timestamp_ms, plot_kbps);
+  if (plot_name_.empty()) {
+    BWE_TEST_LOGGING_PLOT(0, "Throughput_kbps#1", timestamp_ms, plot_kbps);
+  } else {
+    BWE_TEST_LOGGING_PLOT_WITH_NAME(0, "Throughput_kbps#1", timestamp_ms,
+                                    plot_kbps, plot_name_);
+  }
+
   RTC_UNUSED(plot_kbps);
 }
 
