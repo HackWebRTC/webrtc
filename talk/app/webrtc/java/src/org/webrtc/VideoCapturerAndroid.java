@@ -805,7 +805,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       throw new RuntimeException("Unexpected camera in callback!");
     }
 
-    final long captureTimeNs = SystemClock.elapsedRealtimeNanos();
+    final long captureTimeNs =
+        TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
 
     captureBuffersCount += videoBuffers.numCaptureBuffersAvailable();
     int rotation = getDeviceOrientation();
