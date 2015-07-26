@@ -100,6 +100,10 @@ public final class EglBase {
 
   // Create dummy 1x1 pixel buffer surface so the context can be made current.
   public void createDummyPbufferSurface() {
+    createPbufferSurface(1, 1);
+  }
+
+  public void createPbufferSurface(int width, int height) {
     checkIsNotReleased();
     if (configType != ConfigType.PIXEL_BUFFER) {
       throw new RuntimeException(
@@ -108,7 +112,7 @@ public final class EglBase {
     if (eglSurface != EGL14.EGL_NO_SURFACE) {
       throw new RuntimeException("Already has an EGLSurface");
     }
-    int[] surfaceAttribs = {EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE};
+    int[] surfaceAttribs = {EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT, height, EGL14.EGL_NONE};
     eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, eglConfig, surfaceAttribs, 0);
     if (eglSurface == EGL14.EGL_NO_SURFACE) {
       throw new RuntimeException("Failed to create pixel buffer surface");
