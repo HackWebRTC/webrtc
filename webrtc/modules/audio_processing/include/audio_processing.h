@@ -116,15 +116,6 @@ struct Beamforming {
   const std::vector<Point> array_geometry;
 };
 
-// Use to enable 48kHz support in audio processing. Must be provided through the
-// constructor. It will have no impact if used with
-// AudioProcessing::SetExtraOptions().
-struct AudioProcessing48kHzSupport {
-  AudioProcessing48kHzSupport() : enabled(true) {}
-  explicit AudioProcessing48kHzSupport(bool enabled) : enabled(enabled) {}
-  bool enabled;
-};
-
 static const int kAudioProcMaxNativeSampleRateHz = 32000;
 
 // The Audio Processing Module (APM) provides a collection of voice processing

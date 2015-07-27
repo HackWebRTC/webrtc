@@ -210,8 +210,7 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
 #endif
       beamformer_enabled_(config.Get<Beamforming>().enabled),
       beamformer_(beamformer),
-      array_geometry_(config.Get<Beamforming>().array_geometry),
-      supports_48kHz_(config.Get<AudioProcessing48kHzSupport>().enabled) {
+      array_geometry_(config.Get<Beamforming>().array_geometry) {
   echo_cancellation_ = new EchoCancellationImpl(this, crit_);
   component_list_.push_back(echo_cancellation_);
 
@@ -375,7 +374,7 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
       std::min(api_format_.input_stream().sample_rate_hz(),
                api_format_.output_stream().sample_rate_hz());
   int fwd_proc_rate;
-  if (supports_48kHz_ && min_proc_rate > kSampleRate32kHz) {
+  if (min_proc_rate > kSampleRate32kHz) {
     fwd_proc_rate = kSampleRate48kHz;
   } else if (min_proc_rate > kSampleRate16kHz) {
     fwd_proc_rate = kSampleRate32kHz;

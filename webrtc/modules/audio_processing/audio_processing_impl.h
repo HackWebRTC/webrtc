@@ -191,8 +191,6 @@ class AudioProcessingImpl : public AudioProcessing {
   const bool beamformer_enabled_;
   rtc::scoped_ptr<Beamformer<float>> beamformer_;
   const std::vector<Point> array_geometry_;
-
-  const bool supports_48kHz_;
 };
 
 }  // namespace webrtc
