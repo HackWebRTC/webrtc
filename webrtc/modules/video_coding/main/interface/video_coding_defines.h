@@ -40,11 +40,9 @@ enum { kDefaultStartBitrateKbps = 300 };
 
 enum VCMVideoProtection {
   kProtectionNone,
-  kProtectionNack,                // Both send-side and receive-side
+  kProtectionNack,
   kProtectionFEC,
   kProtectionNackFEC,
-  kProtectionKeyOnLoss,
-  kProtectionKeyOnKeyLoss,
 };
 
 enum VCMTemporalDecimation {

@@ -206,14 +206,6 @@ class VideoReceiver {
   int32_t RequestSliceLossIndication(const uint64_t pictureID) const;
 
  private:
-  enum VCMKeyRequestMode {
-    kKeyOnError,    // Normal mode, request key frames on decoder error
-    kKeyOnKeyLoss,  // Request key frames on decoder error and on packet loss
-                    // in key frames.
-    kKeyOnLoss,     // Request key frames on decoder error and on packet loss
-                    // in any frame
-  };
-
   Clock* const clock_;
   rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _receiveCritSect;
@@ -234,7 +226,6 @@ class VideoReceiver {
   FILE* _bitStreamBeforeDecoder;
 #endif
   VCMFrameBuffer _frameFromFile;
-  VCMKeyRequestMode _keyRequestMode;
   bool _scheduleKeyRequest GUARDED_BY(process_crit_sect_);
   size_t max_nack_list_size_ GUARDED_BY(process_crit_sect_);
   EncodedImageCallback* pre_decode_image_callback_ GUARDED_BY(_receiveCritSect);

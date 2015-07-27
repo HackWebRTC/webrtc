@@ -42,7 +42,6 @@ VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
       _bitStreamBeforeDecoder(NULL),
 #endif
       _frameFromFile(),
-      _keyRequestMode(kKeyOnError),
       _scheduleKeyRequest(false),
       max_nack_list_size_(0),
       pre_decode_image_callback_(NULL),
@@ -191,31 +190,6 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
     case kProtectionNack: {
       DCHECK(enable);
       _receiver.SetNackMode(kNack, -1, -1);
-      break;
-    }
-
-    case kProtectionKeyOnLoss: {
-      CriticalSectionScoped cs(_receiveCritSect);
-      if (enable) {
-        _keyRequestMode = kKeyOnLoss;
-        _receiver.SetDecodeErrorMode(kWithErrors);
-      } else if (_keyRequestMode == kKeyOnLoss) {
-        _keyRequestMode = kKeyOnError;  // default mode
-      } else {
-        return VCM_PARAMETER_ERROR;
-      }
-      break;
-    }
-
-    case kProtectionKeyOnKeyLoss: {
-      CriticalSectionScoped cs(_receiveCritSect);
-      if (enable) {
-        _keyRequestMode = kKeyOnKeyLoss;
-      } else if (_keyRequestMode == kKeyOnKeyLoss) {
-        _keyRequestMode = kKeyOnError;  // default mode
-      } else {
-        return VCM_PARAMETER_ERROR;
-      }
       break;
     }
 
@@ -419,22 +393,8 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
         _decodedFrameCallback.LastReceivedPictureID() + 1);
   }
   if (!frame.Complete() || frame.MissingFrame()) {
-    switch (_keyRequestMode) {
-      case kKeyOnKeyLoss: {
-        if (frame.FrameType() == kVideoFrameKey) {
-          request_key_frame = true;
-          ret = VCM_OK;
-        }
-        break;
-      }
-      case kKeyOnLoss: {
-        request_key_frame = true;
-        ret = VCM_OK;
-        break;
-      }
-      default:
-        break;
-    }
+    request_key_frame = true;
+    ret = VCM_OK;
   }
   if (request_key_frame) {
     CriticalSectionScoped cs(process_crit_sect_.get());
@@ -552,16 +512,10 @@ int VideoReceiver::SetReceiverRobustnessMode(
   switch (robustnessMode) {
     case VideoCodingModule::kNone:
       _receiver.SetNackMode(kNoNack, -1, -1);
-      if (decode_error_mode == kNoErrors) {
-        _keyRequestMode = kKeyOnLoss;
-      } else {
-        _keyRequestMode = kKeyOnError;
-      }
       break;
     case VideoCodingModule::kHardNack:
       // Always wait for retransmissions (except when decoding with errors).
       _receiver.SetNackMode(kNack, -1, -1);
-      _keyRequestMode = kKeyOnError;  // TODO(hlundin): On long NACK list?
       break;
     case VideoCodingModule::kSoftNack:
 #if 1
@@ -571,7 +525,6 @@ int VideoReceiver::SetReceiverRobustnessMode(
       // Enable hybrid NACK/FEC. Always wait for retransmissions and don't add
       // extra delay when RTT is above kLowRttNackMs.
       _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
-      _keyRequestMode = kKeyOnError;
       break;
 #endif
     case VideoCodingModule::kReferenceSelection:

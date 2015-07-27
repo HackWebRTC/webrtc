@@ -311,10 +311,6 @@ void VideoSender::SetVideoProtection(VCMVideoProtection videoProtection) {
     case kProtectionFEC:
       _mediaOpt.SetProtectionMethod(media_optimization::kFec);
       break;
-    case kProtectionKeyOnLoss:
-    case kProtectionKeyOnKeyLoss:
-      // Ignore receiver modes.
-      return;
   }
 }
 // Add one raw video frame to the encoder, blocking.

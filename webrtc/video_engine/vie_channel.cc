@@ -156,9 +156,6 @@ int32_t ViEChannel::Init() {
     send_payload_router_->SetSendingRtpModules(send_rtp_modules);
     DCHECK(!send_payload_router_->active());
   }
-  if (vcm_->SetVideoProtection(kProtectionKeyOnLoss, true)) {
-    return -1;
-  }
   if (vcm_->RegisterReceiveCallback(this) != 0) {
     return -1;
   }
