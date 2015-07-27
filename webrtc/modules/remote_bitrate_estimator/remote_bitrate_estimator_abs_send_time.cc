@@ -16,6 +16,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/pacing/bitrate_prober.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -268,7 +269,10 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
   uint32_t ts_delta = 0;
   int64_t t_delta = 0;
   int size_delta = 0;
-  // For now only try to detect probes while we don't have a valid estimate.
+  // For now only try to detect probes while we don't have a valid estimate, and
+  // make sure the packet was paced. We currently assume that only packets
+  // larger than 200 bytes are paced by the sender.
+  was_paced = was_paced && payload_size > BitrateProber::kMinProbePacketSize;
   if (was_paced &&
       (!remote_rate_.ValidEstimate() ||
        now_ms - first_packet_time_ms_ < kInitialProbingIntervalMs)) {

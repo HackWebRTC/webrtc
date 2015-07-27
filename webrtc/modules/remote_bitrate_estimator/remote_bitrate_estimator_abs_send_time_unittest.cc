@@ -38,7 +38,7 @@ TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, RateIncreaseReordering) {
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, RateIncreaseRtpTimestamps) {
-  RateIncreaseRtpTimestampsTestHelper(1089);
+  RateIncreaseRtpTimestampsTestHelper(1240);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropOneStream) {
@@ -258,5 +258,37 @@ TEST_F(RemoteBitrateEstimatorAbsSendTimeTest,
   EXPECT_EQ(0, bitrate_estimator_->Process());
   EXPECT_TRUE(bitrate_observer_->updated());
   EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 4000000u, 10000);
+}
+
+TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, ProbingIgnoresSmallPackets) {
+  const int kProbeLength = 5;
+  int64_t now_ms = clock_.TimeInMilliseconds();
+  // Probing with 200 bytes every 10 ms, should be ignored by the probe
+  // detection.
+  for (int i = 0; i < kProbeLength; ++i) {
+    clock_.AdvanceTimeMilliseconds(10);
+    now_ms = clock_.TimeInMilliseconds();
+    IncomingPacket(0, 200, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000),
+                   true);
+  }
+
+  EXPECT_EQ(0, bitrate_estimator_->Process());
+  EXPECT_FALSE(bitrate_observer_->updated());
+
+  // Followed by a probe with 1000 bytes packets, should be detected as a
+  // probe.
+  for (int i = 0; i < kProbeLength; ++i) {
+    clock_.AdvanceTimeMilliseconds(10);
+    now_ms = clock_.TimeInMilliseconds();
+    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000),
+                   true);
+  }
+
+  // Wait long enough so that we can call Process again.
+  clock_.AdvanceTimeMilliseconds(1000);
+
+  EXPECT_EQ(0, bitrate_estimator_->Process());
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 800000u, 10000);
 }
 }  // namespace webrtc
