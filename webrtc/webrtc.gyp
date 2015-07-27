@@ -68,7 +68,6 @@
         'audio_send_stream.h',
         'call.h',
         'config.h',
-        'experiments.h',
         'frame_callback.h',
         'stream.h',
         'transport.h',

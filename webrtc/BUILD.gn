@@ -171,7 +171,6 @@ source_set("webrtc") {
   sources = [
     "call.h",
     "config.h",
-    "experiments.h",
     "frame_callback.h",
     "transport.h",
   ]

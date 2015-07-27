@@ -17,7 +17,6 @@
 #include "webrtc/common.h"
 #include "webrtc/common_video/interface/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/experiments.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
@@ -81,7 +80,6 @@ class ViEChannelProtectionCallback : public VCMProtectionCallback {
 ViEChannel::ViEChannel(int32_t channel_id,
                        int32_t engine_id,
                        uint32_t number_of_cores,
-                       const Config& config,
                        Transport* transport,
                        ProcessThread* module_process_thread,
                        RtcpIntraFrameObserver* intra_frame_observer,

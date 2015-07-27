@@ -13,7 +13,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common.h"
-#include "webrtc/experiments.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
@@ -34,16 +33,15 @@ namespace webrtc {
 namespace {
 
 static const uint32_t kTimeOffsetSwitchThreshold = 30;
+static const uint32_t kMinBitrateBps = 30000;
 
 class WrappingBitrateEstimator : public RemoteBitrateEstimator {
  public:
-  WrappingBitrateEstimator(RemoteBitrateObserver* observer,
-                           Clock* clock,
-                           const Config& config)
+  WrappingBitrateEstimator(RemoteBitrateObserver* observer, Clock* clock)
       : observer_(observer),
         clock_(clock),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-        min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
+        min_bitrate_bps_(kMinBitrateBps),
         rbe_(new RemoteBitrateEstimatorSingleStream(observer_,
                                                     clock_,
                                                     min_bitrate_bps_)),
@@ -153,7 +151,6 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
                              PacedSender::kDefaultPaceMultiplier *
                                  BitrateController::kDefaultStartBitrateKbps,
                              0)),
-      config_(new Config),
       process_thread_(process_thread),
       pacer_thread_(ProcessThread::Create()),
       // Constructed last as this object calls the provided callback on
@@ -162,7 +159,7 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
           BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
                                                      this)) {
   remote_bitrate_estimator_.reset(new WrappingBitrateEstimator(
-      remb_.get(), Clock::GetRealTimeClock(), *config_.get()));
+      remb_.get(), Clock::GetRealTimeClock()));
 
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
 
@@ -194,10 +191,9 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   // TODO(pbos): Remove checks for empty ssrcs and add this check when there's
   // no base channel.
   // DCHECK(!ssrcs.empty());
-  rtc::scoped_ptr<ViEEncoder> vie_encoder(
-      new ViEEncoder(channel_id, number_of_cores, *config_.get(),
-                     *process_thread_, pacer_.get(), bitrate_allocator_.get(),
-                     bitrate_controller_.get(), false));
+  rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
+      channel_id, number_of_cores, *process_thread_, pacer_.get(),
+      bitrate_allocator_.get(), bitrate_controller_.get(), false));
   if (!vie_encoder->Init()) {
     return false;
   }
@@ -236,8 +232,8 @@ bool ChannelGroup::CreateChannel(int channel_id,
                                  size_t max_rtp_streams,
                                  bool sender) {
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
-      channel_id, engine_id, number_of_cores, *config_.get(), transport,
-      process_thread_, encoder_state_feedback_->GetRtcpIntraFrameObserver(),
+      channel_id, engine_id, number_of_cores, transport, process_thread_,
+      encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(),
       remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
       pacer_.get(), packet_router_.get(), max_rtp_streams, sender));

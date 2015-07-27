@@ -95,8 +95,6 @@ class ChannelGroup : public BitrateObserver {
   mutable rtc::CriticalSection encoder_map_crit_;
   EncoderMap vie_encoder_map_ GUARDED_BY(encoder_map_crit_);
 
-  const rtc::scoped_ptr<Config> config_;
-
   // Registered at construct time and assumed to outlive this class.
   ProcessThread* process_thread_;
   rtc::scoped_ptr<ProcessThread> pacer_thread_;

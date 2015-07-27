@@ -103,7 +103,6 @@ class ViEBitrateObserver : public BitrateObserver {
 
 ViEEncoder::ViEEncoder(int32_t channel_id,
                        uint32_t number_of_cores,
-                       const Config& config,
                        ProcessThread& module_process_thread,
                        PacedSender* pacer,
                        BitrateAllocator* bitrate_allocator,
