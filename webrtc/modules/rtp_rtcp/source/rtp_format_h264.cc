@@ -40,6 +40,23 @@ enum NalDefs { kFBit = 0x80, kNriMask = 0x60, kTypeMask = 0x1F };
 // Bit masks for FU (A and B) headers.
 enum FuDefs { kSBit = 0x80, kEBit = 0x40, kRBit = 0x20 };
 
+// TODO(pbos): Avoid parsing this here as well as inside the jitter buffer.
+bool VerifyStapANaluLengths(const uint8_t* nalu_ptr, size_t length_remaining) {
+  while (length_remaining > 0) {
+    // Buffer doesn't contain room for additional nalu length.
+    if (length_remaining < sizeof(uint16_t))
+      return false;
+    uint16_t nalu_size = nalu_ptr[0] << 8 | nalu_ptr[1];
+    nalu_ptr += sizeof(uint16_t);
+    length_remaining -= sizeof(uint16_t);
+    if (nalu_size > length_remaining)
+      return false;
+    nalu_ptr += nalu_size;
+    length_remaining -= nalu_size;
+  }
+  return true;
+}
+
 bool ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
                      const uint8_t* payload_data,
                      size_t payload_data_length) {
@@ -59,6 +76,11 @@ bool ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
       LOG(LS_ERROR) << "StapA header truncated.";
       return false;
     }
+    if (!VerifyStapANaluLengths(nalu_start, nalu_length)) {
+      LOG(LS_ERROR) << "StapA packet with incorrect NALU packet lengths.";
+      return false;
+    }
+
     nal_type = payload_data[kStapAHeaderSize] & kTypeMask;
     nalu_start += kStapAHeaderSize;
     nalu_length -= kStapAHeaderSize;

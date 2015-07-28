@@ -133,6 +133,8 @@ size_t VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
 
   // We handle H.264 STAP-A packets in a special way as we need to remove the
   // two length bytes between each NAL unit, and potentially add start codes.
+  // TODO(pbos): Remove H264 parsing from this step and use a fragmentation
+  // header supplied by the H264 depacketizer.
   const size_t kH264NALHeaderLengthInBytes = 1;
   const size_t kLengthFieldLength = 2;
   if (packet.codecSpecificHeader.codec == kRtpVideoH264 &&

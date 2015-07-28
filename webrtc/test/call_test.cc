@@ -132,6 +132,7 @@ void CallTest::CreateFrameGeneratorCapturer() {
                                            stream.max_framerate,
                                            clock_));
 }
+
 void CallTest::CreateStreams() {
   assert(send_stream_ == NULL);
   assert(receive_streams_.empty());

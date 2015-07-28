@@ -149,6 +149,7 @@
         'tools/agc/agc_manager_unittest.cc',
         'video/bitrate_estimator_tests.cc',
         'video/end_to_end_tests.cc',
+        'video/packet_injection_tests.cc',
         'video/send_statistics_proxy_unittest.cc',
         'video/video_capture_input_unittest.cc',
         'video/video_decoder_unittest.cc',
