@@ -119,10 +119,10 @@ Blocker::Blocker(int chunk_size,
       shift_amount_(shift_amount),
       callback_(callback) {
   CHECK_LE(num_output_channels_, num_input_channels_);
-  CHECK(window);
+  CHECK_LE(shift_amount_, block_size_);
 
   memcpy(window_.get(), window, block_size_ * sizeof(*window_.get()));
-  input_buffer_.MoveReadPosition(-initial_delay_);
+  input_buffer_.MoveReadPositionBackward(initial_delay_);
 }
 
 // When block_size < chunk_size the input and output buffers look like this:
@@ -180,7 +180,7 @@ void Blocker::ProcessChunk(const float* const* input,
   while (first_frame_in_block < chunk_size_) {
     input_buffer_.Read(input_block_.channels(), num_input_channels,
                        block_size_);
-    input_buffer_.MoveReadPosition(-block_size_ + shift_amount_);
+    input_buffer_.MoveReadPositionBackward(block_size_ - shift_amount_);
 
     ApplyWindow(window_.get(),
                 block_size_,
