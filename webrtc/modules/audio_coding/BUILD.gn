@@ -611,16 +611,11 @@ if (rtc_build_with_neon) {
   source_set("isac_neon") {
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
+      "codecs/isac/fix/source/filterbanks_neon.c",
       "codecs/isac/fix/source/filters_neon.c",
       "codecs/isac/fix/source/lattice_neon.c",
       "codecs/isac/fix/source/transform_neon.c",
     ]
-    if (current_cpu != "arm64" || !is_clang) {
-      # Disable AllpassFilter2FixDec16Neon function due to a clang bug.
-      # For more details refer to:
-      # https://code.google.com/p/webrtc/issues/detail?id=4567
-      sources += [ "codecs/isac/fix/source/filterbanks_neon.c" ]
-    }
 
     if (current_cpu != "arm64") {
       # Enable compilation for the NEON instruction set. This is needed

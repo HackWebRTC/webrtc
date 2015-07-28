@@ -137,17 +137,10 @@
           ],
           'sources': [
             'fix/source/entropy_coding_neon.c',
+            'fix/source/filterbanks_neon.c',
             'fix/source/filters_neon.c',
             'fix/source/lattice_neon.c',
             'fix/source/transform_neon.c',
-          ],
-          'conditions': [
-            # Disable AllpassFilter2FixDec16Neon function due to a clang bug.
-            # For more details refer to:
-            # https://code.google.com/p/webrtc/issues/detail?id=4567
-            ['target_arch!="arm64" or clang==0', {
-              'sources': ['fix/source/filterbanks_neon.c',],
-            }]
           ],
         },
       ],

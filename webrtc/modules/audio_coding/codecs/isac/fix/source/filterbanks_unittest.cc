@@ -64,18 +64,12 @@ class FilterBanksTest : public testing::Test {
 
 TEST_F(FilterBanksTest, AllpassFilter2FixDec16Test) {
   CalculateResidualEnergyTester(WebRtcIsacfix_AllpassFilter2FixDec16C);
-
-// Disable AllpassFilter2FixDec16Neon function due to a clang bug.
-// Refer more details at:
-// https://code.google.com/p/webrtc/issues/detail?id=4567
-#if !(defined __clang__) || !defined(WEBRTC_ARCH_ARM64)
 #ifdef WEBRTC_DETECT_NEON
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
     CalculateResidualEnergyTester(WebRtcIsacfix_AllpassFilter2FixDec16Neon);
   }
 #elif defined(WEBRTC_HAS_NEON)
   CalculateResidualEnergyTester(WebRtcIsacfix_AllpassFilter2FixDec16Neon);
-#endif
 #endif
 }
 
