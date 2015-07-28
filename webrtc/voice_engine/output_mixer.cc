@@ -35,29 +35,6 @@ OutputMixer::NewMixedAudio(int32_t id,
     _audioFrame.id_ = id;
 }
 
-void OutputMixer::MixedParticipants(
-    int32_t id,
-    const ParticipantStatistics* participantStatistics,
-    uint32_t size)
-{
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
-                 "OutputMixer::MixedParticipants(id=%d, size=%u)", id, size);
-}
-
-void OutputMixer::VADPositiveParticipants(int32_t id,
-    const ParticipantStatistics* participantStatistics, uint32_t size)
-{
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
-                 "OutputMixer::VADPositiveParticipants(id=%d, size=%u)",
-                 id, size);
-}
-
-void OutputMixer::MixedAudioLevel(int32_t id, uint32_t level)
-{
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
-                 "OutputMixer::MixedAudioLevel(id=%d, level=%u)", id, level);
-}
-
 void OutputMixer::PlayNotification(int32_t id, uint32_t durationMs)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
@@ -131,8 +108,7 @@ OutputMixer::OutputMixer(uint32_t instanceId) :
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::OutputMixer() - ctor");
 
-    if ((_mixerModule.RegisterMixedStreamCallback(*this) == -1) ||
-        (_mixerModule.RegisterMixerStatusCallback(*this, 100) == -1))
+    if (_mixerModule.RegisterMixedStreamCallback(*this) == -1)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
                      "OutputMixer::OutputMixer() failed to register mixer"
@@ -170,7 +146,6 @@ OutputMixer::~OutputMixer()
             _outputFileRecorderPtr = NULL;
         }
     }
-    _mixerModule.UnRegisterMixerStatusCallback();
     _mixerModule.UnRegisterMixedStreamCallback();
     delete &_mixerModule;
     delete &_callbackCritSect;

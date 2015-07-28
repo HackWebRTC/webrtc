@@ -32,7 +32,6 @@ namespace voe {
 class Statistics;
 
 class OutputMixer : public AudioMixerOutputReceiver,
-                    public AudioMixerStatusReceiver,
                     public FileCallback
 {
 public:
@@ -92,19 +91,6 @@ public:
         const AudioFrame& generalAudioFrame,
         const AudioFrame** uniqueAudioFrames,
         uint32_t size);
-
-    // from AudioMixerStatusReceiver
-    virtual void MixedParticipants(
-        int32_t id,
-        const ParticipantStatistics* participantStatistics,
-        uint32_t size);
-
-    virtual void VADPositiveParticipants(
-        int32_t id,
-        const ParticipantStatistics* participantStatistics,
-        uint32_t size);
-
-    virtual void MixedAudioLevel(int32_t id, uint32_t level);
 
     // For file recording
     void PlayNotification(int32_t id, uint32_t durationMs);

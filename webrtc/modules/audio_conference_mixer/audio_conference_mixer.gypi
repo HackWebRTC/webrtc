@@ -21,8 +21,6 @@
         'interface/audio_conference_mixer_defines.h',
         'source/audio_frame_manipulator.cc',
         'source/audio_frame_manipulator.h',
-        'source/level_indicator.cc',
-        'source/level_indicator.h',
         'source/memory_pool.h',
         'source/memory_pool_posix.h',
         'source/memory_pool_win.h',

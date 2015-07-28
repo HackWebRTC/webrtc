@@ -17,7 +17,6 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer.h"
-#include "webrtc/modules/audio_conference_mixer/source/level_indicator.h"
 #include "webrtc/modules/audio_conference_mixer/source/memory_pool.h"
 #include "webrtc/modules/audio_conference_mixer/source/time_scheduler.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -71,10 +70,6 @@ public:
     int32_t RegisterMixedStreamCallback(
         AudioMixerOutputReceiver& mixReceiver) override;
     int32_t UnRegisterMixedStreamCallback() override;
-    int32_t RegisterMixerStatusCallback(
-        AudioMixerStatusReceiver& mixerStatusCallback,
-        const uint32_t amountOf10MsBetweenCallbacks) override;
-    int32_t UnRegisterMixerStatusCallback() override;
     int32_t SetMixabilityStatus(MixerParticipant& participant,
                                 bool mixable) override;
     int32_t MixabilityStatus(MixerParticipant& participant,
@@ -93,8 +88,7 @@ private:
     Frequency OutputFrequency() const;
 
     // Fills mixList with the AudioFrames pointers that should be used when
-    // mixing. Fills mixParticipantList with ParticipantStatistics for the
-    // participants who's AudioFrames are inside mixList.
+    // mixing.
     // maxAudioFrameCounter both input and output specifies how many more
     // AudioFrames that are allowed to be mixed.
     // rampOutList contain AudioFrames corresponding to an audio stream that
@@ -154,16 +148,6 @@ private:
 
     bool LimitMixedAudio(AudioFrame& mixedAudio);
 
-    // Scratch memory
-    // Note that the scratch memory may only be touched in the scope of
-    // Process().
-    size_t         _scratchParticipantsToMixAmount;
-    ParticipantStatistics  _scratchMixedParticipants[
-        kMaximumAmountOfMixedParticipants];
-    uint32_t         _scratchVadPositiveParticipantsAmount;
-    ParticipantStatistics  _scratchVadPositiveParticipants[
-        kMaximumAmountOfMixedParticipants];
-
     rtc::scoped_ptr<CriticalSectionWrapper> _crit;
     rtc::scoped_ptr<CriticalSectionWrapper> _cbCrit;
 
@@ -173,11 +157,6 @@ private:
 
     // Mix result callback
     AudioMixerOutputReceiver* _mixReceiver;
-
-    AudioMixerStatusReceiver* _mixerStatusCallback;
-    uint32_t _amountOf10MsBetweenCallbacks;
-    uint32_t _amountOf10MsUntilNextCallback;
-    bool _mixerStatusCb;
 
     // The current sample frequency and sample size when mixing.
     Frequency _outputFrequency;
@@ -200,9 +179,6 @@ private:
 
     // Metronome class.
     TimeScheduler _timeScheduler;
-
-    // Smooth level indicator.
-    LevelIndicator _mixedAudioLevel;
 
     // Counter keeping track of concurrent calls to process.
     // Note: should never be higher than 1 or lower than 0.

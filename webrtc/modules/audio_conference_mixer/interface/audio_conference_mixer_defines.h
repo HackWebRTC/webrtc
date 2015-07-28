@@ -40,38 +40,6 @@ protected:
     virtual ~MixerParticipant();
 };
 
-// Container struct for participant statistics.
-struct ParticipantStatistics
-{
-    int32_t participant;
-    int32_t level;
-};
-
-class AudioMixerStatusReceiver
-{
-public:
-    // Callback function that provides an array of ParticipantStatistics for the
-    // participants that were mixed last mix iteration.
-    virtual void MixedParticipants(
-        const int32_t id,
-        const ParticipantStatistics* participantStatistics,
-        const uint32_t size) = 0;
-    // Callback function that provides an array of the ParticipantStatistics for
-    // the participants that had a positiv VAD last mix iteration.
-    virtual void VADPositiveParticipants(
-        const int32_t id,
-        const ParticipantStatistics* participantStatistics,
-        const uint32_t size) = 0;
-    // Callback function that provides the audio level of the mixed audio frame
-    // from the last mix iteration.
-    virtual void MixedAudioLevel(
-        const int32_t  id,
-        const uint32_t level) = 0;
-protected:
-    AudioMixerStatusReceiver() {}
-    virtual ~AudioMixerStatusReceiver() {}
-};
-
 class AudioMixerOutputReceiver
 {
 public:

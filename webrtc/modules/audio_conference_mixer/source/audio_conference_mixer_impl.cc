@@ -60,12 +60,6 @@ int MaxNumChannels(const AudioFrameList* list) {
   return max_num_channels;
 }
 
-void SetParticipantStatistics(ParticipantStatistics* stats,
-                              const AudioFrame& frame) {
-    stats->participant = frame.id_;
-    stats->level = 0;  // TODO(andrew): to what should this be set?
-}
-
 }  // namespace
 
 MixerParticipant::MixerParticipant()
@@ -117,17 +111,9 @@ AudioConferenceMixer* AudioConferenceMixer::Create(int id) {
 }
 
 AudioConferenceMixerImpl::AudioConferenceMixerImpl(int id)
-    : _scratchParticipantsToMixAmount(0),
-      _scratchMixedParticipants(),
-      _scratchVadPositiveParticipantsAmount(0),
-      _scratchVadPositiveParticipants(),
-      _id(id),
+    : _id(id),
       _minimumMixingFreq(kLowestPossible),
       _mixReceiver(NULL),
-      _mixerStatusCallback(NULL),
-      _amountOf10MsBetweenCallbacks(1),
-      _amountOf10MsUntilNextCallback(0),
-      _mixerStatusCb(false),
       _outputFrequency(kDefaultFrequency),
       _sampleSize(0),
       _audioFramePool(NULL),
@@ -137,7 +123,6 @@ AudioConferenceMixerImpl::AudioConferenceMixerImpl(int id)
       use_limiter_(true),
       _timeStamp(0),
       _timeScheduler(kProcessPeriodicityInMs),
-      _mixedAudioLevel(),
       _processCalls(0) {}
 
 bool AudioConferenceMixerImpl::Init() {
@@ -275,7 +260,6 @@ int32_t AudioConferenceMixerImpl::Process() {
 
         GetAdditionalAudio(&additionalFramesList);
         UpdateMixedStatus(mixedParticipantsMap);
-        _scratchParticipantsToMixAmount = mixedParticipantsMap.size();
     }
 
     // Get an AudioFrame for mixing from the memory pool.
@@ -287,9 +271,7 @@ int32_t AudioConferenceMixerImpl::Process() {
         return -1;
     }
 
-    bool timeForMixerCallback = false;
     int retval = 0;
-    int32_t audioLevel = 0;
     {
         CriticalSectionScoped cs(_crit.get());
 
@@ -325,18 +307,6 @@ int32_t AudioConferenceMixerImpl::Process() {
             if(!LimitMixedAudio(*mixedAudio))
                 retval = -1;
         }
-
-        _mixedAudioLevel.ComputeLevel(mixedAudio->data_,_sampleSize);
-        audioLevel = _mixedAudioLevel.GetLevel();
-
-        if(_mixerStatusCb) {
-            _scratchVadPositiveParticipantsAmount = 0;
-            UpdateVADPositiveParticipants(&mixList);
-            if(_amountOf10MsUntilNextCallback-- == 0) {
-                _amountOf10MsUntilNextCallback = _amountOf10MsBetweenCallbacks;
-                timeForMixerCallback = true;
-            }
-        }
     }
 
     {
@@ -348,20 +318,6 @@ int32_t AudioConferenceMixerImpl::Process() {
                 *mixedAudio,
                 dummy,
                 0);
-        }
-
-        if((_mixerStatusCallback != NULL) &&
-            timeForMixerCallback) {
-            _mixerStatusCallback->MixedParticipants(
-                _id,
-                _scratchMixedParticipants,
-                static_cast<uint32_t>(_scratchParticipantsToMixAmount));
-
-            _mixerStatusCallback->VADPositiveParticipants(
-                _id,
-                _scratchVadPositiveParticipants,
-                _scratchVadPositiveParticipantsAmount);
-            _mixerStatusCallback->MixedAudioLevel(_id,audioLevel);
         }
     }
 
@@ -410,53 +366,6 @@ AudioConferenceMixer::Frequency
 AudioConferenceMixerImpl::OutputFrequency() const {
     CriticalSectionScoped cs(_crit.get());
     return _outputFrequency;
-}
-
-int32_t AudioConferenceMixerImpl::RegisterMixerStatusCallback(
-    AudioMixerStatusReceiver& mixerStatusCallback,
-    const uint32_t amountOf10MsBetweenCallbacks) {
-    if(amountOf10MsBetweenCallbacks == 0) {
-        WEBRTC_TRACE(
-            kTraceWarning,
-            kTraceAudioMixerServer,
-            _id,
-            "amountOf10MsBetweenCallbacks(%d) needs to be larger than 0");
-        return -1;
-    }
-    {
-        CriticalSectionScoped cs(_cbCrit.get());
-        if(_mixerStatusCallback != NULL) {
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, _id,
-                         "Mixer status callback already registered");
-            return -1;
-        }
-        _mixerStatusCallback = &mixerStatusCallback;
-    }
-    {
-        CriticalSectionScoped cs(_crit.get());
-        _amountOf10MsBetweenCallbacks  = amountOf10MsBetweenCallbacks;
-        _amountOf10MsUntilNextCallback = 0;
-        _mixerStatusCb                 = true;
-    }
-    return 0;
-}
-
-int32_t AudioConferenceMixerImpl::UnRegisterMixerStatusCallback() {
-    {
-        CriticalSectionScoped cs(_crit.get());
-        if(!_mixerStatusCb)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, _id,
-                         "Mixer status callback not registered");
-            return -1;
-        }
-        _mixerStatusCb = false;
-    }
-    {
-        CriticalSectionScoped cs(_cbCrit.get());
-        _mixerStatusCallback = NULL;
-    }
-    return 0;
 }
 
 int32_t AudioConferenceMixerImpl::SetMixabilityStatus(
@@ -886,15 +795,6 @@ void AudioConferenceMixerImpl::UpdateVADPositiveParticipants(
          iter != mixList->end();
          ++iter) {
         CalculateEnergy(**iter);
-        if((*iter)->vad_activity_ == AudioFrame::kVadActive) {
-            _scratchVadPositiveParticipants[
-                _scratchVadPositiveParticipantsAmount].participant =
-                (*iter)->id_;
-            // TODO(andrew): to what should this be set?
-            _scratchVadPositiveParticipants[
-                _scratchVadPositiveParticipantsAmount].level = 0;
-            _scratchVadPositiveParticipantsAmount++;
-        }
     }
 }
 
@@ -976,9 +876,6 @@ int32_t AudioConferenceMixerImpl::MixFromList(
             position = 0;
         }
         MixFrames(&mixedAudio, (*iter), use_limiter_);
-
-        SetParticipantStatistics(&_scratchMixedParticipants[position],
-                                 **iter);
 
         position++;
     }
