@@ -402,7 +402,12 @@ void TraceImpl::WriteToFile(const char* msg, uint16_t length) {
       row_count_text_++;
     }
   }
-  trace_file_->Write(msg, length);
+
+  char trace_message[WEBRTC_TRACE_MAX_MESSAGE_SIZE];
+  memcpy(trace_message, msg, length);
+  trace_message[length] = 0;
+  trace_message[length - 1] = '\n';
+  trace_file_->Write(trace_message, length);
   row_count_text_++;
 }
 
