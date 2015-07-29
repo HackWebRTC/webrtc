@@ -15,7 +15,6 @@
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/base/checks.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/frame_generator_capturer.h"
@@ -28,34 +27,17 @@
 namespace webrtc {
 namespace flags {
 
-DEFINE_int32(width, 1850, "Video width (crops source).");
+// Fixed for prerecorded screenshare content.
 size_t Width() {
-  return static_cast<size_t>(FLAGS_width);
+  return 1850;
 }
-
-DEFINE_int32(height, 1110, "Video height (crops source).");
 size_t Height() {
-  return static_cast<size_t>(FLAGS_height);
+  return 1110;
 }
 
 DEFINE_int32(fps, 5, "Frames per second.");
 int Fps() {
   return static_cast<int>(FLAGS_fps);
-}
-
-DEFINE_int32(slide_change_interval,
-             10,
-             "Interval (in seconds) between simulated slide changes.");
-int SlideChangeInterval() {
-  return static_cast<int>(FLAGS_slide_change_interval);
-}
-
-DEFINE_int32(
-    scroll_duration,
-    0,
-    "Duration (in seconds) during which a slide will be scrolled into place.");
-int ScrollDuration() {
-  return static_cast<int>(FLAGS_scroll_duration);
 }
 
 DEFINE_int32(min_bitrate, 50, "Minimum video bitrate.");
@@ -156,21 +138,9 @@ class ScreenshareLoopback : public test::Loopback {
     slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
     slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
 
-    // Fixed for input resolution for prerecorded screenshare content.
-    const size_t kWidth = 1850;
-    const size_t kHeight = 1110;
-    CHECK_LE(flags::Width(), kWidth);
-    CHECK_LE(flags::Height(), kHeight);
-    CHECK_GT(flags::SlideChangeInterval(), 0);
-    const int kPauseDurationMs =
-        (flags::SlideChangeInterval() - flags::ScrollDuration()) * 1000;
-    CHECK_LE(flags::ScrollDuration(), flags::SlideChangeInterval());
-
     test::FrameGenerator* frame_generator =
-        test::FrameGenerator::CreateScrollingInputFromYuvFiles(
-            Clock::GetRealTimeClock(), slides, kWidth, kHeight, flags::Width(),
-            flags::Height(), flags::ScrollDuration() * 1000, kPauseDurationMs);
-
+        test::FrameGenerator::CreateFromYuvFile(
+            slides, flags::Width(), flags::Height(), 10 * flags::Fps());
     test::FrameGeneratorCapturer* capturer(new test::FrameGeneratorCapturer(
         clock_, send_stream->Input(), frame_generator, flags::Fps()));
     EXPECT_TRUE(capturer->Init());
