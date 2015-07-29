@@ -42,6 +42,8 @@
         'source/rtp_rtcp_impl.h',
         'source/rtcp_packet.cc',
         'source/rtcp_packet.h',
+        'source/rtcp_packet/transport_feedback.cc',
+        'source/rtcp_packet/transport_feedback.h',
         'source/rtcp_receiver.cc',
         'source/rtcp_receiver.h',
         'source/rtcp_receiver_help.cc',

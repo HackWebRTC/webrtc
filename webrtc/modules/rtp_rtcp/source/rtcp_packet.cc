@@ -92,34 +92,6 @@ void ComputeMantissaAnd6bitBase2Exponent(uint32_t input_base10,
   *mantissa = (input_base10 >> exponent);
 }
 
-size_t BlockToHeaderLength(size_t length_in_bytes) {
-  // Length in 32-bit words minus 1.
-  assert(length_in_bytes > 0);
-  assert(length_in_bytes % 4 == 0);
-  return (length_in_bytes / 4) - 1;
-}
-
-// From RFC 3550, RTP: A Transport Protocol for Real-Time Applications.
-//
-// RTP header format.
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |V=2|P| RC/FMT  |      PT       |             length            |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateHeader(uint8_t count_or_format,  // Depends on packet type.
-                  uint8_t packet_type,
-                  size_t length,
-                  uint8_t* buffer,
-                  size_t* pos) {
-  assert(length <= 0xffff);
-  const uint8_t kVersion = 2;
-  AssignUWord8(buffer, pos, (kVersion << 6) + count_or_format);
-  AssignUWord8(buffer, pos, packet_type);
-  AssignUWord16(buffer, pos, length);
-}
-
 //  Sender report (SR) (RFC 3550).
 //   0                   1                   2                   3
 //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -140,10 +112,8 @@ void CreateHeader(uint8_t count_or_format,  // Depends on packet type.
 //  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
 void CreateSenderReport(const RTCPPacketSR& sr,
-                        size_t length,
                         uint8_t* buffer,
                         size_t* pos) {
-  CreateHeader(sr.NumberOfReportBlocks, PT_SR, length, buffer, pos);
   AssignUWord32(buffer, pos, sr.SenderSSRC);
   AssignUWord32(buffer, pos, sr.NTPMostSignificant);
   AssignUWord32(buffer, pos, sr.NTPLeastSignificant);
@@ -162,10 +132,8 @@ void CreateSenderReport(const RTCPPacketSR& sr,
 //  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
 void CreateReceiverReport(const RTCPPacketRR& rr,
-                          size_t length,
                           uint8_t* buffer,
                           size_t* pos) {
-  CreateHeader(rr.NumberOfReportBlocks, PT_RR, length, buffer, pos);
   AssignUWord32(buffer, pos, rr.SenderSSRC);
 }
 
@@ -219,12 +187,8 @@ void CreateReportBlocks(const std::vector<RTCPPacketReportBlockItem>& blocks,
 void CreateIj(const std::vector<uint32_t>& ij_items,
               uint8_t* buffer,
               size_t* pos) {
-  size_t length = ij_items.size();
-  CreateHeader(length, PT_IJ, length, buffer, pos);
-  for (std::vector<uint32_t>::const_iterator it = ij_items.begin();
-       it != ij_items.end(); ++it) {
-    AssignUWord32(buffer, pos, *it);
-  }
+  for (uint32_t item : ij_items)
+    AssignUWord32(buffer, pos, item);
 }
 
 // Source Description (SDES) (RFC 3550).
@@ -254,10 +218,8 @@ void CreateIj(const std::vector<uint32_t>& ij_items,
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 void CreateSdes(const std::vector<Sdes::Chunk>& chunks,
-                size_t length,
                 uint8_t* buffer,
                 size_t* pos) {
-  CreateHeader(chunks.size(), PT_SDES, length, buffer, pos);
   const uint8_t kSdesItemType = 1;
   for (std::vector<Sdes::Chunk>::const_iterator it = chunks.begin();
        it != chunks.end(); ++it) {
@@ -286,10 +248,8 @@ void CreateSdes(const std::vector<Sdes::Chunk>& chunks,
 
 void CreateBye(const RTCPPacketBYE& bye,
                const std::vector<uint32_t>& csrcs,
-               size_t length,
                uint8_t* buffer,
                size_t* pos) {
-  CreateHeader(length, PT_BYE, length, buffer, pos);
   AssignUWord32(buffer, pos, bye.SenderSSRC);
   for (uint32_t csrc : csrcs)
     AssignUWord32(buffer, pos, csrc);
@@ -311,10 +271,8 @@ void CreateBye(const RTCPPacketBYE& bye,
 
 void CreateApp(const RTCPPacketAPP& app,
                uint32_t ssrc,
-               size_t length,
                uint8_t* buffer,
                size_t* pos) {
-  CreateHeader(app.SubType, PT_APP, length, buffer, pos);
   AssignUWord32(buffer, pos, ssrc);
   AssignUWord32(buffer, pos, app.Name);
   memcpy(buffer + *pos, app.Data, app.Size);
@@ -343,11 +301,8 @@ void CreateApp(const RTCPPacketAPP& app,
 // FCI: no feedback control information.
 
 void CreatePli(const RTCPPacketPSFBPLI& pli,
-               size_t length,
                uint8_t* buffer,
                size_t* pos) {
-  const uint8_t kFmt = 1;
-  CreateHeader(kFmt, PT_PSFB, length, buffer, pos);
   AssignUWord32(buffer, pos, pli.SenderSSRC);
   AssignUWord32(buffer, pos, pli.MediaSSRC);
 }
@@ -364,11 +319,8 @@ void CreatePli(const RTCPPacketPSFBPLI& pli,
 
 void CreateSli(const RTCPPacketPSFBSLI& sli,
                const RTCPPacketPSFBSLIItem& sli_item,
-               size_t length,
                uint8_t* buffer,
                size_t* pos) {
-  const uint8_t kFmt = 2;
-  CreateHeader(kFmt, PT_PSFB, length, buffer, pos);
   AssignUWord32(buffer, pos, sli.SenderSSRC);
   AssignUWord32(buffer, pos, sli.MediaSSRC);
 
@@ -393,11 +345,8 @@ void CreateNack(const RTCPPacketRTPFBNACK& nack,
                 const std::vector<RTCPPacketRTPFBNACKItem>& nack_fields,
                 size_t start_index,
                 size_t end_index,
-                size_t length,
                 uint8_t* buffer,
                 size_t* pos) {
-  const uint8_t kFmt = 1;
-  CreateHeader(kFmt, PT_RTPFB, length, buffer, pos);
   AssignUWord32(buffer, pos, nack.SenderSSRC);
   AssignUWord32(buffer, pos, nack.MediaSSRC);
   for (size_t i = start_index; i < end_index; ++i) {
@@ -421,13 +370,10 @@ void CreateNack(const RTCPPacketRTPFBNACK& nack,
 
 void CreateRpsi(const RTCPPacketPSFBRPSI& rpsi,
                 uint8_t padding_bytes,
-                size_t length,
                 uint8_t* buffer,
                 size_t* pos) {
   // Native bit string should be a multiple of 8 bits.
   assert(rpsi.NumberOfValidBits % 8 == 0);
-  const uint8_t kFmt = 3;
-  CreateHeader(kFmt, PT_PSFB, length, buffer, pos);
   AssignUWord32(buffer, pos, rpsi.SenderSSRC);
   AssignUWord32(buffer, pos, rpsi.MediaSSRC);
   AssignUWord8(buffer, pos, padding_bytes * 8);
@@ -452,11 +398,8 @@ void CreateRpsi(const RTCPPacketPSFBRPSI& rpsi,
 
 void CreateFir(const RTCPPacketPSFBFIR& fir,
                const RTCPPacketPSFBFIRItem& fir_item,
-               size_t length,
                uint8_t* buffer,
                size_t* pos) {
-  const uint8_t kFmt = 4;
-  CreateHeader(kFmt, PT_PSFB, length, buffer, pos);
   AssignUWord32(buffer, pos, fir.SenderSSRC);
   AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
   AssignUWord32(buffer, pos, fir_item.SSRC);
@@ -494,11 +437,8 @@ void CreateTmmbrItem(const RTCPPacketRTPFBTMMBRItem& tmmbr_item,
 
 void CreateTmmbr(const RTCPPacketRTPFBTMMBR& tmmbr,
                  const RTCPPacketRTPFBTMMBRItem& tmmbr_item,
-                 size_t length,
                  uint8_t* buffer,
                  size_t* pos) {
-  const uint8_t kFmt = 3;
-  CreateHeader(kFmt, PT_RTPFB, length, buffer, pos);
   AssignUWord32(buffer, pos, tmmbr.SenderSSRC);
   AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
   CreateTmmbrItem(tmmbr_item, buffer, pos);
@@ -518,11 +458,8 @@ void CreateTmmbr(const RTCPPacketRTPFBTMMBR& tmmbr,
 
 void CreateTmmbn(const RTCPPacketRTPFBTMMBN& tmmbn,
                  const std::vector<RTCPPacketRTPFBTMMBRItem>& tmmbn_items,
-                 size_t length,
                  uint8_t* buffer,
                  size_t* pos) {
-  const uint8_t kFmt = 4;
-  CreateHeader(kFmt, PT_RTPFB, length, buffer, pos);
   AssignUWord32(buffer, pos, tmmbn.SenderSSRC);
   AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
   for (uint8_t i = 0; i < tmmbn_items.size(); ++i) {
@@ -551,15 +488,12 @@ void CreateTmmbn(const RTCPPacketRTPFBTMMBN& tmmbn,
 
 void CreateRemb(const RTCPPacketPSFBAPP& remb,
                 const RTCPPacketPSFBREMBItem& remb_item,
-                size_t length,
                 uint8_t* buffer,
                 size_t* pos) {
   uint32_t mantissa = 0;
   uint8_t exp = 0;
   ComputeMantissaAnd6bitBase2Exponent(remb_item.BitRate, 18, &mantissa, &exp);
 
-  const uint8_t kFmt = 15;
-  CreateHeader(kFmt, PT_PSFB, length, buffer, pos);
   AssignUWord32(buffer, pos, remb.SenderSSRC);
   AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
   AssignUWord8(buffer, pos, 'R');
@@ -590,10 +524,8 @@ void CreateRemb(const RTCPPacketPSFBAPP& remb,
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 void CreateXrHeader(const RTCPPacketXR& header,
-                    size_t length,
                     uint8_t* buffer,
                     size_t* pos) {
-  CreateHeader(0U, PT_XR, length, buffer, pos);
   AssignUWord32(buffer, pos, header.OriginatorSSRC);
 }
 
@@ -790,11 +722,44 @@ bool RtcpPacket::OnBufferFull(uint8_t* packet,
   return true;
 }
 
+size_t RtcpPacket::HeaderLength() const {
+  size_t length_in_bytes = BlockLength();
+  // Length in 32-bit words minus 1.
+  assert(length_in_bytes > 0);
+  return ((length_in_bytes + 3) / 4) - 1;
+}
+
+// From RFC 3550, RTP: A Transport Protocol for Real-Time Applications.
+//
+// RTP header format.
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |V=2|P| RC/FMT  |      PT       |             length            |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+void RtcpPacket::CreateHeader(
+    uint8_t count_or_format,  // Depends on packet type.
+    uint8_t packet_type,
+    size_t length,
+    uint8_t* buffer,
+    size_t* pos) const {
+  assert(length <= 0xffff);
+  const uint8_t kVersion = 2;
+  AssignUWord8(buffer, pos, (kVersion << 6) + count_or_format);
+  AssignUWord8(buffer, pos, packet_type);
+  AssignUWord16(buffer, pos, length);
+}
+
 bool Empty::Create(uint8_t* packet,
                    size_t* index,
                    size_t max_length,
                    RtcpPacket::PacketReadyCallback* callback) const {
   return true;
+}
+
+size_t Empty::BlockLength() const {
+  return 0;
 }
 
 bool SenderReport::Create(uint8_t* packet,
@@ -805,7 +770,8 @@ bool SenderReport::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateSenderReport(sr_, BlockToHeaderLength(BlockLength()), packet, index);
+  CreateHeader(sr_.NumberOfReportBlocks, PT_SR, HeaderLength(), packet, index);
+  CreateSenderReport(sr_, packet, index);
   CreateReportBlocks(report_blocks_, packet, index);
   return true;
 }
@@ -828,7 +794,8 @@ bool ReceiverReport::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateReceiverReport(rr_, BlockToHeaderLength(BlockLength()), packet, index);
+  CreateHeader(rr_.NumberOfReportBlocks, PT_RR, HeaderLength(), packet, index);
+  CreateReceiverReport(rr_, packet, index);
   CreateReportBlocks(report_blocks_, packet, index);
   return true;
 }
@@ -851,6 +818,8 @@ bool Ij::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
+  size_t length = ij_items_.size();
+  CreateHeader(length, PT_IJ, length, packet, index);
   CreateIj(ij_items_, packet, index);
   return true;
 }
@@ -873,7 +842,8 @@ bool Sdes::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateSdes(chunks_, BlockToHeaderLength(BlockLength()), packet, index);
+  CreateHeader(chunks_.size(), PT_SDES, HeaderLength(), packet, index);
+  CreateSdes(chunks_, packet, index);
   return true;
 }
 
@@ -914,7 +884,9 @@ bool Bye::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateBye(bye_, csrcs_, BlockToHeaderLength(BlockLength()), packet, index);
+  size_t length = HeaderLength();
+  CreateHeader(length, PT_BYE, length, packet, index);
+  CreateBye(bye_, csrcs_, packet, index);
   return true;
 }
 
@@ -935,7 +907,8 @@ bool App::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateApp(app_, ssrc_, BlockToHeaderLength(BlockLength()), packet, index);
+  CreateHeader(app_.SubType, PT_APP, HeaderLength(), packet, index);
+  CreateApp(app_, ssrc_, packet, index);
   return true;
 }
 
@@ -947,7 +920,9 @@ bool Pli::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreatePli(pli_, BlockToHeaderLength(BlockLength()), packet, index);
+  const uint8_t kFmt = 1;
+  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
+  CreatePli(pli_, packet, index);
   return true;
 }
 
@@ -959,7 +934,9 @@ bool Sli::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateSli(sli_, sli_item_, BlockToHeaderLength(BlockLength()), packet, index);
+  const uint8_t kFmt = 2;
+  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
+  CreateSli(sli_, sli_item_, packet, index);
   return true;
 }
 
@@ -981,14 +958,21 @@ bool Nack::Create(uint8_t* packet,
         std::min((bytes_left_in_buffer - kCommonFbFmtLength) / 4,
                  nack_fields_.size() - nack_index);
 
+    const uint8_t kFmt = 1;
+    size_t size_bytes = (num_nack_fields * 4) + kCommonFbFmtLength;
+    size_t header_length = ((size_bytes + 3) / 4) - 1;  // As 32bit words - 1
+    CreateHeader(kFmt, PT_RTPFB, header_length, packet, index);
     CreateNack(nack_, nack_fields_, nack_index, nack_index + num_nack_fields,
-               BlockToHeaderLength((num_nack_fields * 4) + kCommonFbFmtLength),
                packet, index);
 
     nack_index += num_nack_fields;
   } while (nack_index < nack_fields_.size());
 
   return true;
+}
+
+size_t Nack::BlockLength() const {
+  return (nack_fields_.size() * 4) + kCommonFbFmtLength;
 }
 
 void Nack::WithList(const uint16_t* nack_list, int length) {
@@ -1024,8 +1008,9 @@ bool Rpsi::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateRpsi(rpsi_, padding_bytes_, BlockToHeaderLength(BlockLength()), packet,
-             index);
+  const uint8_t kFmt = 3;
+  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
+  CreateRpsi(rpsi_, padding_bytes_, packet, index);
   return true;
 }
 
@@ -1064,7 +1049,9 @@ bool Fir::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateFir(fir_, fir_item_, BlockToHeaderLength(BlockLength()), packet, index);
+  const uint8_t kFmt = 4;
+  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
+  CreateFir(fir_, fir_item_, packet, index);
   return true;
 }
 
@@ -1076,8 +1063,9 @@ bool Remb::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateRemb(remb_, remb_item_, BlockToHeaderLength(BlockLength()), packet,
-             index);
+  const uint8_t kFmt = 15;
+  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
+  CreateRemb(remb_, remb_item_, packet, index);
   return true;
 }
 
@@ -1097,8 +1085,9 @@ bool Tmmbr::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateTmmbr(tmmbr_, tmmbr_item_, BlockToHeaderLength(BlockLength()), packet,
-              index);
+  const uint8_t kFmt = 3;
+  CreateHeader(kFmt, PT_RTPFB, HeaderLength(), packet, index);
+  CreateTmmbr(tmmbr_, tmmbr_item_, packet, index);
   return true;
 }
 
@@ -1124,8 +1113,9 @@ bool Tmmbn::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateTmmbn(tmmbn_, tmmbn_items_, BlockToHeaderLength(BlockLength()), packet,
-              index);
+  const uint8_t kFmt = 4;
+  CreateHeader(kFmt, PT_RTPFB, HeaderLength(), packet, index);
+  CreateTmmbn(tmmbn_, tmmbn_items_, packet, index);
   return true;
 }
 
@@ -1137,7 +1127,8 @@ bool Xr::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateXrHeader(xr_header_, BlockToHeaderLength(BlockLength()), packet, index);
+  CreateHeader(0U, PT_XR, HeaderLength(), packet, index);
+  CreateXrHeader(xr_header_, packet, index);
   CreateRrtr(rrtr_blocks_, packet, index);
   CreateDlrr(dlrr_blocks_, packet, index);
   CreateVoipMetric(voip_metric_blocks_, packet, index);

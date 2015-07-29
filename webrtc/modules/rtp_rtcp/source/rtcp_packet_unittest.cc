@@ -1084,4 +1084,5 @@ TEST(RtcpPacketTest, XrWithTooManyBlocks) {
     EXPECT_TRUE(xr.WithVoipMetric(&voip_metric));
   EXPECT_FALSE(xr.WithVoipMetric(&voip_metric));
 }
+
 }  // namespace webrtc

@@ -92,18 +92,27 @@ class RtcpPacket {
                            PacketReadyCallback* callback) const;
 
  protected:
-  RtcpPacket() : kHeaderLength(4) {}
+  RtcpPacket() {}
 
   virtual bool Create(uint8_t* packet,
                       size_t* index,
                       size_t max_length,
                       PacketReadyCallback* callback) const = 0;
 
+  void CreateHeader(uint8_t count_or_format,
+                    uint8_t packet_type,
+                    size_t length,
+                    uint8_t* buffer,
+                    size_t* pos) const;
+
   bool OnBufferFull(uint8_t* packet,
                     size_t* index,
                     RtcpPacket::PacketReadyCallback* callback) const;
 
-  const size_t kHeaderLength;
+  virtual size_t BlockLength() const = 0;
+  size_t HeaderLength() const;
+
+  static const size_t kHeaderLength = 4;
 
  private:
   bool CreateAndAddAppended(uint8_t* packet,
@@ -113,6 +122,8 @@ class RtcpPacket {
 
   std::vector<RtcpPacket*> appended_packets_;
 };
+
+// TODO(sprang): Move RtcpPacket subclasses out to separate files.
 
 class Empty : public RtcpPacket {
  public:
@@ -125,6 +136,8 @@ class Empty : public RtcpPacket {
               size_t* index,
               size_t max_length,
               RtcpPacket::PacketReadyCallback* callback) const override;
+
+  size_t BlockLength() const override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Empty);
@@ -650,6 +663,8 @@ class Nack : public RtcpPacket {
               size_t* index,
               size_t max_length,
               RtcpPacket::PacketReadyCallback* callback) const override;
+
+  size_t BlockLength() const override;
 
  private:
 
