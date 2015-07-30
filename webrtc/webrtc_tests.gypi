@@ -177,6 +177,18 @@
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
         }],
+        ['enable_protobuf==1', {
+          'defines': [
+            'ENABLE_RTC_EVENT_LOG',
+          ],
+          'dependencies': [
+            'webrtc.gyp:rtc_event_log',
+            'webrtc.gyp:rtc_event_log_proto',
+          ],
+          'sources': [
+            'video/rtc_event_log_unittest.cc',
+          ],
+        }],
       ],
     },
     {

@@ -16,6 +16,21 @@
         'webrtc_tests.gypi',
       ],
     }],
+    ['enable_protobuf==1', {
+      'targets': [
+        {
+          # This target should only be built if enable_protobuf is defined
+          'target_name': 'rtc_event_log_proto',
+          'type': 'static_library',
+          'sources': ['video/rtc_event_log.proto',],
+          'variables': {
+            'proto_in_dir': 'video',
+            'proto_out_dir': 'webrtc/video',
+          },
+        'includes': ['build/protoc.gypi'],
+        },
+      ],
+    }],
   ],
   'includes': [
     'build/common.gypi',
@@ -80,6 +95,7 @@
       'dependencies': [
         'common.gyp:*',
         '<@(webrtc_video_dependencies)',
+        'rtc_event_log',
       ],
       'conditions': [
         # TODO(andresp): Chromium libpeerconnection should link directly with
@@ -92,5 +108,26 @@
         }],
       ],
     },
+    {
+      'target_name': 'rtc_event_log',
+      'type': 'static_library',
+      'sources': [
+        'video/rtc_event_log.cc',
+        'video/rtc_event_log.h',
+      ],
+      'conditions': [
+        # If enable_protobuf is defined, we want to compile the protobuf
+        # and add rtc_event_log.pb.h and rtc_event_log.pb.cc to the sources.
+        ['enable_protobuf==1', {
+          'dependencies': [
+            'rtc_event_log_proto',
+          ],
+          'defines': [
+            'ENABLE_RTC_EVENT_LOG',
+          ],
+        }],
+      ],
+    },
+
   ],
 }

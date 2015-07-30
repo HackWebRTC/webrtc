@@ -7,7 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("//build/config/arm.gni")
-import("//third_party/protobuf/proto_library.gni")
 import("../../build/webrtc.gni")
 
 config("audio_coding_config") {
@@ -77,35 +76,6 @@ source_set("audio_coding") {
   if (rtc_include_opus) {
     defines += [ "WEBRTC_CODEC_OPUS" ]
     deps += [ ":webrtc_opus" ]
-  }
-}
-
-proto_library("acm_dump_proto") {
-  sources = [
-    "main/acm2/dump.proto",
-  ]
-  proto_out_dir = "webrtc/audio_coding"
-}
-
-source_set("acm_dump") {
-  sources = [
-    "main/acm2/acm_dump.cc",
-    "main/acm2/acm_dump.h",
-  ]
-
-  defines = []
-
-  configs += [ "../..:common_config" ]
-
-  public_configs = [ "../..:common_inherited_config" ]
-
-  deps = [
-    ":acm_dump_proto",
-    "../..:webrtc_common",
-  ]
-
-  if (rtc_enable_protobuf) {
-    defines += [ "RTC_AUDIOCODING_DEBUG_DUMP" ]
   }
 }
 
