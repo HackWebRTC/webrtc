@@ -18,7 +18,7 @@
     'codecs/isac/isacfix.gypi',
     'codecs/pcm16b/pcm16b.gypi',
     'codecs/red/red.gypi',
-    'main/acm2/audio_coding_module.gypi',
+    'main/audio_coding_module.gypi',
     'neteq/neteq.gypi',
   ],
   'conditions': [
