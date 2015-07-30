@@ -1,0 +1,169 @@
+syntax = "proto2";
+option optimize_for = LITE_RUNTIME;
+package webrtc;
+
+// This is the main message to dump to a file, it can contain multiple event
+// messages, but it is possible to append multiple EventStreams (each with a
+// single event) to a file.
+// This has the benefit that there's no need to keep all data in memory.
+message ACMDumpEventStream {
+  repeated ACMDumpEvent stream = 1;
+}
+
+
+message ACMDumpEvent {
+  // required - Elapsed wallclock time in us since the start of the log.
+  optional int64 timestamp_us = 1;
+
+  // The different types of events that can occur, the UNKNOWN_EVENT entry
+  // is added in case future EventTypes are added, in that case old code will
+  // receive the new events as UNKNOWN_EVENT.
+  enum EventType {
+    UNKNOWN_EVENT = 0;
+    RTP_EVENT = 1;
+    DEBUG_EVENT = 2;
+    CONFIG_EVENT = 3;
+  }
+
+  // required - Indicates the type of this event
+  optional EventType type = 2;
+
+  // optional - but required if type == RTP_EVENT
+  optional ACMDumpRTPPacket packet = 3;
+
+  // optional - but required if type == DEBUG_EVENT
+  optional ACMDumpDebugEvent debug_event = 4;
+
+  // optional - but required if type == CONFIG_EVENT
+  optional ACMDumpConfigEvent config = 5;
+}
+
+
+message ACMDumpRTPPacket {
+  // Indicates if the packet is incoming or outgoing with respect to the user
+  // that is logging the data.
+  enum Direction {
+    UNKNOWN_DIRECTION = 0;
+    OUTGOING = 1;
+    INCOMING = 2;
+  }
+  enum PayloadType {
+    UNKNOWN_TYPE = 0;
+    AUDIO = 1;
+    VIDEO = 2;
+    RTX = 3;
+  }
+
+  // required
+  optional Direction direction = 1;
+
+  // required
+  optional PayloadType type = 2;
+
+  // required - Contains the whole RTP packet (header+payload).
+  optional bytes RTP_data = 3;
+}
+
+
+message ACMDumpDebugEvent {
+  // Indicates the type of the debug event.
+  // LOG_START and LOG_END indicate the start and end of the log respectively.
+  // AUDIO_PLAYOUT indicates a call to the PlayoutData10Ms() function in ACM.
+  enum EventType {
+    UNKNOWN_EVENT = 0;
+    LOG_START = 1;
+    LOG_END = 2;
+    AUDIO_PLAYOUT = 3;
+  }
+
+  // required
+  optional EventType type = 1;
+
+  // An optional message that can be used to store additional information about
+  // the debug event.
+  optional string message = 2;
+}
+
+
+// TODO(terelius): Video and audio streams could in principle share SSRC,
+// so identifying a stream based only on SSRC might not work.
+// It might be better to use a combination of SSRC and media type
+// or SSRC and port number, but for now we will rely on SSRC only.
+message ACMDumpConfigEvent {
+  // Synchronization source (stream identifier) to be received.
+  optional uint32 remote_ssrc = 1;
+
+  // RTX settings for incoming video payloads that may be received. RTX is
+  // disabled if there's no config present.
+  optional RtcpConfig rtcp_config = 3;
+
+  // Map from video RTP payload type -> RTX config.
+  repeated RtxMap rtx_map = 4;
+
+  // RTP header extensions used for the received stream.
+  repeated RtpHeaderExtension header_extensions = 5;
+
+  // List of decoders associated with the stream.
+  repeated DecoderConfig decoders = 6;
+}
+
+
+// Maps decoder names to payload types.
+message DecoderConfig {
+  // required
+  optional string name = 1;
+
+  // required
+  optional sint32 payload_type = 2;
+}
+
+
+// Maps RTP header extension names to numerical ids.
+message RtpHeaderExtension {
+  // required
+  optional string name = 1;
+
+  // required
+  optional sint32 id = 2;
+}
+
+
+// RTX settings for incoming video payloads that may be received.
+// RTX is disabled if there's no config present.
+message RtxConfig {
+  // required - SSRCs to use for the RTX streams.
+  optional uint32 ssrc = 1;
+
+  // required - Payload type to use for the RTX stream.
+  optional sint32 payload_type = 2;
+}
+
+
+message RtxMap {
+  // required
+  optional sint32 payload_type = 1;
+
+  // required
+  optional RtxConfig config = 2;
+}
+
+
+// Configuration information for RTCP.
+// For bandwidth estimation purposes it is more interesting to log the
+// RTCP messages that the sender receives, but we will support logging
+// at the receiver side too.
+message RtcpConfig {
+  // Sender SSRC used for sending RTCP (such as receiver reports).
+  optional uint32 local_ssrc = 1;
+
+  // RTCP mode to use. Compound mode is described by RFC 4585 and reduced-size
+  // RTCP mode is described by RFC 5506.
+  enum RtcpMode {RTCP_COMPOUND = 1; RTCP_REDUCEDSIZE = 2;}
+  optional RtcpMode rtcp_mode = 2;
+
+  // Extended RTCP settings.
+  optional bool receiver_reference_time_report = 3;
+
+  // Receiver estimated maximum bandwidth.
+  optional bool remb = 4;
+}

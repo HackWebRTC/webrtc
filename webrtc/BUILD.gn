@@ -11,7 +11,6 @@
 import("//build/config/crypto.gni")
 import("//build/config/linux/pkg_config.gni")
 import("build/webrtc.gni")
-import("//third_party/protobuf/proto_library.gni")
 
 # Contains the defines and includes in common.gypi that are duplicated both as
 # target_defaults and direct_dependent_settings.
@@ -176,7 +175,6 @@ source_set("webrtc") {
     "transport.h",
   ]
 
-  defines = []
   configs += [ ":common_config" ]
   public_configs = [ ":common_inherited_config" ]
 
@@ -207,11 +205,6 @@ source_set("webrtc") {
       "modules/video_capture",
       "modules/video_render",
     ]
-  }
-
-  if (rtc_enable_protobuf) {
-    defines += [ "ENABLE_RTC_EVENT_LOG" ]
-    deps += [ ":rtc_event_log_proto" ]
   }
 }
 
@@ -245,38 +238,4 @@ source_set("gtest_prod") {
   sources = [
     "test/testsupport/gtest_prod_util.h",
   ]
-}
-
-if (rtc_enable_protobuf) {
-  proto_library("rtc_event_log_proto") {
-    sources = [
-      "video/rtc_event_log.proto",
-    ]
-    proto_out_dir = "webrtc/video"
-  }
-}
-
-source_set("rtc_event_log") {
-  sources = [
-    "video/rtc_event_log.cc",
-    "video/rtc_event_log.h",
-  ]
-
-  defines = []
-  configs += [ ":common_config" ]
-  public_configs = [ ":common_inherited_config" ]
-
-  deps = [
-    ":webrtc_common",
-  ]
-
-  if (rtc_enable_protobuf) {
-    defines += [ "ENABLE_RTC_EVENT_LOG" ]
-    deps += [ ":rtc_event_log_proto" ]
-  }
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
