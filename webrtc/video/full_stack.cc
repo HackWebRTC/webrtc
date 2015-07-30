@@ -54,6 +54,7 @@ struct FullStackTestParams {
   double avg_psnr_threshold;
   double avg_ssim_threshold;
   int test_durations_secs;
+  std::string codec;
   FakeNetworkPipe::Config link;
 };
 
@@ -499,11 +500,23 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
 
   CreateSendConfig(1);
 
-  rtc::scoped_ptr<VideoEncoder> encoder(
-      VideoEncoder::Create(VideoEncoder::kVp8));
-  send_config_.encoder_settings.encoder = encoder.get();
-  send_config_.encoder_settings.payload_name = "VP8";
+  rtc::scoped_ptr<VideoEncoder> encoder;
+  if (params.codec == "VP8") {
+    encoder =
+        rtc::scoped_ptr<VideoEncoder>(VideoEncoder::Create(VideoEncoder::kVp8));
+    send_config_.encoder_settings.encoder = encoder.get();
+    send_config_.encoder_settings.payload_name = "VP8";
+  } else if (params.codec == "VP9") {
+    encoder =
+        rtc::scoped_ptr<VideoEncoder>(VideoEncoder::Create(VideoEncoder::kVp9));
+    send_config_.encoder_settings.encoder = encoder.get();
+    send_config_.encoder_settings.payload_name = "VP9";
+  } else {
+    RTC_NOTREACHED() << "Codec not supported!";
+    return;
+  }
   send_config_.encoder_settings.payload_type = 124;
+
   send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
   send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
@@ -516,14 +529,24 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
   stream->max_bitrate_bps = params.max_bitrate_bps;
   stream->max_framerate = params.clip.fps;
 
+  VideoCodecVP8 vp8_settings;
+  VideoCodecVP9 vp9_settings;
   if (params.screenshare) {
     encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
     encoder_config_.min_transmit_bitrate_bps = 400 * 1000;
-    VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
-    vp8_settings.denoisingOn = false;
-    vp8_settings.frameDroppingOn = false;
-    vp8_settings.numberOfTemporalLayers = 2;
-    encoder_config_.encoder_specific_settings = &vp8_settings;
+    if (params.codec == "VP8") {
+      vp8_settings = VideoEncoder::GetDefaultVp8Settings();
+      vp8_settings.denoisingOn = false;
+      vp8_settings.frameDroppingOn = false;
+      vp8_settings.numberOfTemporalLayers = 2;
+      encoder_config_.encoder_specific_settings = &vp8_settings;
+    } else if (params.codec == "VP9") {
+      vp9_settings = VideoEncoder::GetDefaultVp9Settings();
+      vp9_settings.denoisingOn = false;
+      vp9_settings.frameDroppingOn = false;
+      vp9_settings.numberOfTemporalLayers = 2;
+      encoder_config_.encoder_specific_settings = &vp9_settings;
+    }
 
     stream->temporal_layer_thresholds_bps.clear();
     stream->temporal_layer_thresholds_bps.push_back(stream->target_bitrate_bps);
@@ -591,7 +614,8 @@ TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
                                     300000,
                                     36.0,
                                     0.96,
-                                    kFullStackTestDurationSecs};
+                                    kFullStackTestDurationSecs,
+                                    "VP8"};
   RunTest(paris_qcif);
 }
 
@@ -605,7 +629,8 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
                                      700000,
                                      0.0,
                                      0.0,
-                                     kFullStackTestDurationSecs};
+                                     kFullStackTestDurationSecs,
+                                     "VP8"};
   RunTest(foreman_cif);
 }
 
@@ -618,7 +643,8 @@ TEST_F(FullStackTest, ForemanCifPlr5) {
                                      2000000,
                                      0.0,
                                      0.0,
-                                     kFullStackTestDurationSecs};
+                                     kFullStackTestDurationSecs,
+                                     "VP8"};
   foreman_cif.link.loss_percent = 5;
   foreman_cif.link.queue_delay_ms = 50;
   RunTest(foreman_cif);
@@ -633,7 +659,8 @@ TEST_F(FullStackTest, ForemanCif500kbps) {
                                      2000000,
                                      0.0,
                                      0.0,
-                                     kFullStackTestDurationSecs};
+                                     kFullStackTestDurationSecs,
+                                     "VP8"};
   foreman_cif.link.queue_length_packets = 0;
   foreman_cif.link.queue_delay_ms = 0;
   foreman_cif.link.link_capacity_kbps = 500;
@@ -649,7 +676,8 @@ TEST_F(FullStackTest, ForemanCif500kbpsLimitedQueue) {
                                      2000000,
                                      0.0,
                                      0.0,
-                                     kFullStackTestDurationSecs};
+                                     kFullStackTestDurationSecs,
+                                     "VP8"};
   foreman_cif.link.queue_length_packets = 32;
   foreman_cif.link.queue_delay_ms = 0;
   foreman_cif.link.link_capacity_kbps = 500;
@@ -665,7 +693,8 @@ TEST_F(FullStackTest, ForemanCif500kbps100ms) {
                                      2000000,
                                      0.0,
                                      0.0,
-                                     kFullStackTestDurationSecs};
+                                     kFullStackTestDurationSecs,
+                                     "VP8"};
   foreman_cif.link.queue_length_packets = 0;
   foreman_cif.link.queue_delay_ms = 100;
   foreman_cif.link.link_capacity_kbps = 500;
@@ -681,7 +710,8 @@ TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
                                      2000000,
                                      0.0,
                                      0.0,
-                                     kFullStackTestDurationSecs};
+                                     kFullStackTestDurationSecs,
+                                     "VP8"};
   foreman_cif.link.queue_length_packets = 32;
   foreman_cif.link.queue_delay_ms = 100;
   foreman_cif.link.link_capacity_kbps = 500;
@@ -697,7 +727,8 @@ TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
                                      2000000,
                                      0.0,
                                      0.0,
-                                     kFullStackTestDurationSecs};
+                                     kFullStackTestDurationSecs,
+                                     "VP8"};
   foreman_cif.link.queue_length_packets = 32;
   foreman_cif.link.queue_delay_ms = 100;
   foreman_cif.link.link_capacity_kbps = 1000;
@@ -707,7 +738,7 @@ TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
 // Temporarily disabled on Android due to low test timeouts.
 // https://code.google.com/p/chromium/issues/detail?id=513170
 #include "webrtc/test/testsupport/gtest_disable.h"
-TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlides)) {
+TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP8_2TL)) {
   FullStackTestParams screenshare_params = {
       "screenshare_slides",
       {"screenshare_slides", 1850, 1110, 5},
@@ -717,7 +748,24 @@ TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlides)) {
       2000000,
       0.0,
       0.0,
-      kFullStackTestDurationSecs};
+      kFullStackTestDurationSecs,
+      "VP8"};
+  RunTest(screenshare_params);
+}
+
+// Disabled on Android along with VP8 screenshare above.
+TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP9_2TL)) {
+  FullStackTestParams screenshare_params = {
+      "screenshare_slides_vp9_2tl",
+      {"screenshare_slides", 1850, 1110, 5},
+      true,
+      50000,
+      200000,
+      2000000,
+      0.0,
+      0.0,
+      kFullStackTestDurationSecs,
+      "VP9"};
   RunTest(screenshare_params);
 }
 }  // namespace webrtc

@@ -132,6 +132,11 @@ class ScreenshareLoopback : public test::Loopback {
     vp8_settings_.denoisingOn = false;
     vp8_settings_.frameDroppingOn = false;
     vp8_settings_.numberOfTemporalLayers = 2;
+
+    vp9_settings_ = VideoEncoder::GetDefaultVp9Settings();
+    vp9_settings_.denoisingOn = false;
+    vp9_settings_.frameDroppingOn = false;
+    vp9_settings_.numberOfTemporalLayers = 2;
   }
   virtual ~ScreenshareLoopback() {}
 
@@ -141,7 +146,14 @@ class ScreenshareLoopback : public test::Loopback {
     VideoStream* stream = &encoder_config.streams[0];
     encoder_config.content_type = VideoEncoderConfig::ContentType::kScreen;
     encoder_config.min_transmit_bitrate_bps = flags::MinTransmitBitrate();
-    encoder_config.encoder_specific_settings = &vp8_settings_;
+    if (config_.codec == "VP8") {
+      encoder_config.encoder_specific_settings = &vp8_settings_;
+    } else if (config_.codec == "VP9") {
+      encoder_config.encoder_specific_settings = &vp9_settings_;
+    } else {
+      RTC_NOTREACHED() << "Codec not supported!";
+      abort();
+    }
     stream->temporal_layer_thresholds_bps.clear();
     stream->target_bitrate_bps =
         static_cast<int>(config_.start_bitrate_kbps) * 1000;
@@ -178,6 +190,7 @@ class ScreenshareLoopback : public test::Loopback {
   }
 
   VideoCodecVP8 vp8_settings_;
+  VideoCodecVP9 vp9_settings_;
 };
 
 void Loopback() {
