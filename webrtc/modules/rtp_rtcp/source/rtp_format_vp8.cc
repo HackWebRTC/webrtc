@@ -234,16 +234,16 @@ ProtectionType RtpPacketizerVp8::GetProtectionType() {
 }
 
 StorageType RtpPacketizerVp8::GetStorageType(uint32_t retransmission_settings) {
-  StorageType storage = kAllowRetransmission;
   if (hdr_info_.temporalIdx == 0 &&
       !(retransmission_settings & kRetransmitBaseLayer)) {
-    storage = kDontRetransmit;
-  } else if (hdr_info_.temporalIdx != kNoTemporalIdx &&
+    return kDontRetransmit;
+  }
+  if (hdr_info_.temporalIdx != kNoTemporalIdx &&
              hdr_info_.temporalIdx > 0 &&
              !(retransmission_settings & kRetransmitHigherLayers)) {
-    storage = kDontRetransmit;
+    return kDontRetransmit;
   }
-  return storage;
+  return kAllowRetransmission;
 }
 
 std::string RtpPacketizerVp8::ToString() {

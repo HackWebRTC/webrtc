@@ -332,8 +332,7 @@ void RtpPacketizerH264::NextFragmentPacket(uint8_t* buffer,
 }
 
 ProtectionType RtpPacketizerH264::GetProtectionType() {
-  return (frame_type_ == kVideoFrameKey) ? kProtectedPacket
-                                         : kUnprotectedPacket;
+  return kProtectedPacket;
 }
 
 StorageType RtpPacketizerH264::GetStorageType(
