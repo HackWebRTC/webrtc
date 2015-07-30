@@ -111,7 +111,7 @@ function gen_gnuplot_bar_input {
     # Scale all latency plots with the same vertical scale.
     delay_figure=5
     if (( $figure==$delay_figure )) ; then
-      y_max=250
+      y_max=400
     else  # Take y_max = 1.1 * highest plot value.
 
       # Since only the optimal bitrate for the first flow is being ploted,
