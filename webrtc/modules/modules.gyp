@@ -322,15 +322,12 @@
             ['enable_protobuf==1', {
               'defines': [
                 'WEBRTC_AUDIOPROC_DEBUG_DUMP',
-                'RTC_AUDIOCODING_DEBUG_DUMP',
               ],
               'dependencies': [
-                'acm_dump',
                 'audioproc_protobuf_utils',
                 'audioproc_unittest_proto',
               ],
               'sources': [
-                'audio_coding/main/acm2/acm_dump_unittest.cc',
                 'audio_processing/audio_processing_impl_unittest.cc',
                 'audio_processing/test/audio_processing_unittest.cc',
                 'audio_processing/test/test_utils.h',

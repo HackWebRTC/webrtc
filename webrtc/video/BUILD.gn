@@ -66,6 +66,7 @@ source_set("video") {
   }
 
   deps = [
+    "..:rtc_event_log",
     "..:webrtc_common",
     "../common_video",
     "../modules/bitrate_controller",
