@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
 
+#include <math.h>
 #include <algorithm>
 #include <vector>
 
@@ -46,7 +47,7 @@ TEST_F(MetricRecorderTest, RegularPackets) {
 
   for (int i = 0; i < kNumPackets; ++i) {
     int64_t arrival_time_ms = kInterpacketGapMs * i + kDelayMs;
-    metric_recorder_.UpdateTime(arrival_time_ms);
+    metric_recorder_.UpdateTimeMs(arrival_time_ms);
     metric_recorder_.PushDelayMs(kDelayMs, arrival_time_ms);
     metric_recorder_.PushThroughputBytes(kPayloadSizeBytes, arrival_time_ms);
   }
@@ -80,7 +81,7 @@ TEST_F(MetricRecorderTest, VariableDelayPackets) {
   for (int i = 0; i < kNumPackets; ++i) {
     int64_t arrival_time_ms = kInterpacketGapMs * i + delays_ms[i];
     last_received_ms = std::max(last_received_ms, arrival_time_ms);
-    metric_recorder_.UpdateTime(arrival_time_ms);
+    metric_recorder_.UpdateTimeMs(arrival_time_ms);
     metric_recorder_.PushDelayMs(delays_ms[i], arrival_time_ms);
     metric_recorder_.PushThroughputBytes(kPayloadSizeBytes, arrival_time_ms);
   }

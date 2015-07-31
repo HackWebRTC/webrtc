@@ -25,14 +25,18 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
+class MetricRecorder;
+
 class PacketSender : public PacketProcessor {
  public:
   PacketSender(PacketProcessorListener* listener, int flow_id)
       : PacketProcessor(listener, flow_id, kSender),
+        running_(true),
         // For Packet::send_time_us() to be comparable with timestamps from
         // clock_, the clock of the PacketSender and the Source must be aligned.
         // We assume that both start at time 0.
-        clock_(0) {}
+        clock_(0),
+        metric_recorder_(nullptr) {}
   virtual ~PacketSender() {}
   // Call GiveFeedback() with the returned interval in milliseconds, provided
   // there is a new estimate available.
@@ -44,8 +48,18 @@ class PacketSender : public PacketProcessor {
 
   virtual uint32_t TargetBitrateKbps() { return 0; }
 
+  virtual void Pause();
+  virtual void Resume(int64_t paused_time_ms);
+
+  void set_metric_recorder(MetricRecorder* metric_recorder);
+  virtual void RecordBitrate();
+
  protected:
+  bool running_;  // Initialized by default as true.
   SimulatedClock clock_;
+
+ private:
+  MetricRecorder* metric_recorder_;
 };
 
 class VideoSender : public PacketSender, public BitrateObserver {
@@ -67,15 +81,14 @@ class VideoSender : public PacketSender, public BitrateObserver {
                         uint8_t fraction_lost,
                         int64_t rtt) override;
 
-  void Pause();
-  void Resume();
+  void Pause() override;
+  void Resume(int64_t paused_time_ms) override;
 
  protected:
   void ProcessFeedbackAndGeneratePackets(int64_t time_ms,
                                          std::list<FeedbackPacket*>* feedbacks,
                                          Packets* generated);
 
-  bool running_;
   VideoSource* source_;
   rtc::scoped_ptr<BweSender> bwe_;
   int64_t start_of_run_ms_;
@@ -171,7 +184,6 @@ class TcpSender : public PacketSender {
   int64_t last_rtt_ms_;
   int total_sent_bytes_;
   int send_limit_bytes_;  // Initialized by default as kNoLimit.
-  bool running_;          // Initialized by default as true.
   int64_t last_generated_packets_ms_;
   size_t num_recent_sent_packets_;
   uint32_t bitrate_kbps_;

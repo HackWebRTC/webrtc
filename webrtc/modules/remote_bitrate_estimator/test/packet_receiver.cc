@@ -44,10 +44,11 @@ PacketReceiver::PacketReceiver(PacketProcessorListener* listener,
 
     // Metric recorder plots them in separated figures,
     // alignment will take place with the #1 left axis.
-    prefixes.push_back("Throughput_kbps#1");      // Throughput.
-    prefixes.push_back("Delay_ms_#1");            // Delay.
-    prefixes.push_back("Packet_Loss_#1");         // Loss.
-    prefixes.push_back("Objective_function_#1");  // Objective.
+    prefixes.push_back("Throughput_kbps#1");
+    prefixes.push_back("Sending_Estimate_kbps#1");
+    prefixes.push_back("Delay_ms_#1");
+    prefixes.push_back("Packet_Loss_#1");
+    prefixes.push_back("Objective_function_#1");
 
     // Plot Total/PerFlow Available capacity together with throughputs.
     prefixes.push_back("Throughput_kbps#1");  // Total Available.
@@ -93,7 +94,7 @@ void PacketReceiver::RunFor(int64_t time_ms, Packets* in_out) {
       delay_stats_.Push(arrival_time_ms - send_time_ms);
 
       if (metric_recorder_ != nullptr) {
-        metric_recorder_->UpdateTime(arrival_time_ms);
+        metric_recorder_->UpdateTimeMs(arrival_time_ms);
         UpdateMetrics(arrival_time_ms, send_time_ms,
                       media_packet->payload_size());
         metric_recorder_->PlotAllDynamics();
@@ -119,7 +120,7 @@ void PacketReceiver::UpdateMetrics(int64_t arrival_time_ms,
                                    int64_t send_time_ms,
                                    size_t payload_size) {
   metric_recorder_->UpdateThroughput(bwe_receiver_->RecentKbps(), payload_size);
-  metric_recorder_->UpdateDelay(arrival_time_ms - send_time_ms);
+  metric_recorder_->UpdateDelayMs(arrival_time_ms - send_time_ms);
   metric_recorder_->UpdateLoss(bwe_receiver_->RecentPacketLossRatio());
   metric_recorder_->UpdateObjective();
 }

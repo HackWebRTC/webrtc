@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
 
+#include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
+
 #include <algorithm>
 
 namespace webrtc {
@@ -57,7 +59,6 @@ MetricRecorder::MetricRecorder(const std::string algorithm_name,
                                LinkShare* link_share)
     : algorithm_name_(algorithm_name),
       flow_id_(flow_id),
-      packet_sender_(packet_sender),
       link_share_(link_share),
       now_ms_(0),
       sum_delays_ms_(0),
@@ -71,6 +72,8 @@ MetricRecorder::MetricRecorder(const std::string algorithm_name,
       started_computing_metrics_(false),
       num_packets_received_(0) {
   std::fill_n(sum_lp_weighted_estimate_error_, 2, 0);
+  if (packet_sender != nullptr)
+    packet_sender->set_metric_recorder(this);
 }
 
 void MetricRecorder::SetPlotInformation(
@@ -82,6 +85,7 @@ void MetricRecorder::SetPlotInformation(
     plot_information_[i].prefix = prefixes[i];
   }
   plot_information_[kThroughput].plot_interval_ms = 100;
+  plot_information_[kSendingEstimate].plot_interval_ms = 100;
   plot_information_[kDelay].plot_interval_ms = 100;
   plot_information_[kLoss].plot_interval_ms = 500;
   plot_information_[kObjective].plot_interval_ms = 1000;
@@ -91,8 +95,9 @@ void MetricRecorder::SetPlotInformation(
   for (int i = kThroughput; i < kNumMetrics; ++i) {
     plot_information_[i].last_plot_ms = 0;
     switch (i) {
-      case kAvailablePerFlow:
+      case kSendingEstimate:
       case kObjective:
+      case kAvailablePerFlow:
         plot_information_[i].plot = false;
         break;
       case kLoss:
@@ -143,7 +148,7 @@ void MetricRecorder::PlotLine(int windows_id,
                                   static_cast<double>(y), algorithm_name_);
 }
 
-void MetricRecorder::UpdateTime(int64_t time_ms) {
+void MetricRecorder::UpdateTimeMs(int64_t time_ms) {
   now_ms_ = std::max(now_ms_, time_ms);
 }
 
@@ -154,7 +159,11 @@ void MetricRecorder::UpdateThroughput(int64_t bitrate_kbps,
   plot_information_[kThroughput].Update(now_ms_, bitrate_kbps);
 }
 
-void MetricRecorder::UpdateDelay(int64_t delay_ms) {
+void MetricRecorder::UpdateSendingEstimateKbps(int64_t bitrate_kbps) {
+  plot_information_[kSendingEstimate].Update(now_ms_, bitrate_kbps);
+}
+
+void MetricRecorder::UpdateDelayMs(int64_t delay_ms) {
   PushDelayMs(delay_ms, now_ms_);
   plot_information_[kDelay].Update(now_ms_, delay_ms);
 }
@@ -180,9 +189,7 @@ uint32_t MetricRecorder::GetAvailablePerFlowKbps() {
 }
 
 uint32_t MetricRecorder::GetSendingEstimateKbps() {
-  if (packet_sender_ == nullptr)
-    return 0;
-  return packet_sender_->TargetBitrateKbps();
+  return static_cast<uint32_t>(plot_information_[kSendingEstimate].value);
 }
 
 void MetricRecorder::PushDelayMs(int64_t delay_ms, int64_t arrival_time_ms) {
@@ -361,7 +368,7 @@ void MetricRecorder::PauseFlow() {
 }
 
 void MetricRecorder::ResumeFlow(int64_t paused_time_ms) {
-  UpdateTime(now_ms_ + paused_time_ms);
+  UpdateTimeMs(now_ms_ + paused_time_ms);
   PlotZero();
   link_share_->ResumeFlow(flow_id_);
 }

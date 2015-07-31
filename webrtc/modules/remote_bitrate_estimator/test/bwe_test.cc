@@ -914,13 +914,9 @@ void BweTest::RunPauseResumeFlows(BandwidthEstimatorType bwe_type) {
   filter.choke.set_capacity_kbps(3500);
 
   RunFor(40 * 1000);  // 0-40s.
-
   senders[0].get()->Pause();
-  metric_recorders[0].get()->PauseFlow();
   RunFor(20 * 1000);  // 40-60s.
-
-  senders[0].get()->Resume();
-  metric_recorders[0].get()->ResumeFlow(20 * 1000);
+  senders[0].get()->Resume(20 * 1000);
   RunFor(60 * 1000);  // 60-120s.
 
   int64_t paused[] = {20 * 1000, 0, 0};
