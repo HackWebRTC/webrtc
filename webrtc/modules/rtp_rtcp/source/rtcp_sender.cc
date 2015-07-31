@@ -120,6 +120,11 @@ class RTCPSender::PacketBuiltCallback
   void OnPacketReady(uint8_t* data, size_t length) override {
     context_->position += length;
   }
+  bool BuildPacket(const rtcp::RtcpPacket& packet) {
+    return packet.BuildExternalBuffer(
+        &context_->buffer[context_->position],
+        context_->buffer_size - context_->position, this);
+  }
 
  private:
   RtcpContext* const context_;
@@ -501,11 +506,8 @@ RTCPSender::BuildResult RTCPSender::BuildSR(RtcpContext* ctx) {
     report.WithReportBlock(it.second);
 
   PacketBuiltCallback callback(ctx);
-  if (!report.BuildExternalBuffer(&ctx->buffer[ctx->position],
-                                  ctx->buffer_size - ctx->position,
-                                  &callback)) {
+  if (!callback.BuildPacket(report))
     return BuildResult::kTruncated;
-  }
 
   report_blocks_.clear();
   return BuildResult::kSuccess;
@@ -522,10 +524,8 @@ RTCPSender::BuildResult RTCPSender::BuildSDES(RtcpContext* ctx) {
     sdes.WithCName(it.first, it.second);
 
   PacketBuiltCallback callback(ctx);
-  if (!sdes.BuildExternalBuffer(&ctx->buffer[ctx->position],
-                                ctx->buffer_size - ctx->position, &callback)) {
+  if (!callback.BuildPacket(sdes))
     return BuildResult::kTruncated;
-  }
 
   return BuildResult::kSuccess;
 }
@@ -537,11 +537,8 @@ RTCPSender::BuildResult RTCPSender::BuildRR(RtcpContext* ctx) {
     report.WithReportBlock(it.second);
 
   PacketBuiltCallback callback(ctx);
-  if (!report.BuildExternalBuffer(&ctx->buffer[ctx->position],
-                                  ctx->buffer_size - ctx->position,
-                                  &callback)) {
+  if (!callback.BuildPacket(report))
     return BuildResult::kTruncated;
-  }
 
   report_blocks_.clear();
 
@@ -549,24 +546,13 @@ RTCPSender::BuildResult RTCPSender::BuildRR(RtcpContext* ctx) {
 }
 
 RTCPSender::BuildResult RTCPSender::BuildPLI(RtcpContext* ctx) {
-  // sanity
-  if (ctx->position + 12 >= IP_PACKET_SIZE)
+  rtcp::Pli pli;
+  pli.From(ssrc_);
+  pli.To(remote_ssrc_);
+
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(pli))
     return BuildResult::kTruncated;
-
-  // add picture loss indicator
-  uint8_t FMT = 1;
-  *ctx->AllocateData(1) = 0x80 + FMT;
-  *ctx->AllocateData(1) = 206;
-
-  // Used fixed length of 2
-  *ctx->AllocateData(1) = 0;
-  *ctx->AllocateData(1) = 2;
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // Add the remote SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), remote_ssrc_);
 
   TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "RTCPSender::PLI");
