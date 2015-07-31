@@ -27,8 +27,7 @@ void VerifyHeader(const RTPVideoHeaderVP9& expected,
   EXPECT_EQ(expected.ss_data_available, actual.ss_data_available);
   EXPECT_EQ(expected.picture_id, actual.picture_id);
   EXPECT_EQ(expected.max_picture_id, actual.max_picture_id);
-  EXPECT_EQ(expected.temporal_idx == kNoTemporalIdx ? 0 : expected.temporal_idx,
-      actual.temporal_idx);
+  EXPECT_EQ(expected.temporal_idx, actual.temporal_idx);
   EXPECT_EQ(expected.spatial_idx == kNoSpatialIdx ? 0 : expected.spatial_idx,
       actual.spatial_idx);
   EXPECT_EQ(expected.gof_idx, actual.gof_idx);
@@ -128,9 +127,6 @@ class RtpPacketizerVp9Test : public ::testing::Test {
   RtpPacketizerVp9Test() {}
   virtual void SetUp() {
     expected_.InitRTPVideoHeaderVP9();
-    // Always input one layer frame at a time.
-    expected_.beginning_of_frame = true;
-    expected_.end_of_frame = true;
   }
 
   rtc::scoped_ptr<uint8_t[]> packet_;

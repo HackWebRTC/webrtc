@@ -643,8 +643,8 @@ bool RtpPacketizerVp9::WriteHeader(const PacketInfo& packet_info,
   bool p_bit = hdr_.inter_pic_predicted;
   bool l_bit = LayerInfoPresent(hdr_);
   bool f_bit = hdr_.flexible_mode;
-  bool b_bit = hdr_.beginning_of_frame && packet_info.layer_begin;
-  bool e_bit = hdr_.end_of_frame && packet_info.layer_end;
+  bool b_bit = packet_info.layer_begin;
+  bool e_bit = packet_info.layer_end;
   bool v_bit = hdr_.ss_data_available && b_bit;
 
   rtc::BitBufferWriter writer(buffer, max_payload_length_);
@@ -720,7 +720,6 @@ bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
   vp9->beginning_of_frame = b_bit ? true : false;
   vp9->end_of_frame = e_bit ? true : false;
   vp9->ss_data_available = v_bit ? true : false;
-  vp9->temporal_idx = 0;
   vp9->spatial_idx = 0;
 
   // Parse fields that are present.

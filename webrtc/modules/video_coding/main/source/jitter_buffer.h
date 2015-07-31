@@ -307,6 +307,10 @@ class VCMJitterBuffer {
   FrameList incomplete_frames_ GUARDED_BY(crit_sect_);
   VCMDecodingState last_decoded_state_ GUARDED_BY(crit_sect_);
   bool first_packet_since_reset_;
+  // Contains last received frame's temporal information for non-flexible mode.
+  GofInfoVP9 last_gof_;
+  uint32_t last_gof_timestamp_;
+  bool last_gof_valid_;
 
   // Statistics.
   VCMReceiveStatisticsCallback* stats_callback_ GUARDED_BY(crit_sect_);

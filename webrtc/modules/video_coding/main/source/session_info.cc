@@ -59,31 +59,52 @@ int VCMSessionInfo::HighSequenceNumber() const {
 }
 
 int VCMSessionInfo::PictureId() const {
-  if (packets_.empty() ||
-      packets_.front().codecSpecificHeader.codec != kRtpVideoVp8)
+  if (packets_.empty())
     return kNoPictureId;
-  return packets_.front().codecSpecificHeader.codecHeader.VP8.pictureId;
+  if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp8) {
+    return packets_.front().codecSpecificHeader.codecHeader.VP8.pictureId;
+  } else if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp9) {
+    return packets_.front().codecSpecificHeader.codecHeader.VP9.picture_id;
+  } else {
+    return kNoPictureId;
+  }
 }
 
 int VCMSessionInfo::TemporalId() const {
-  if (packets_.empty() ||
-      packets_.front().codecSpecificHeader.codec != kRtpVideoVp8)
+  if (packets_.empty())
     return kNoTemporalIdx;
-  return packets_.front().codecSpecificHeader.codecHeader.VP8.temporalIdx;
+  if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp8) {
+    return packets_.front().codecSpecificHeader.codecHeader.VP8.temporalIdx;
+  } else if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp9) {
+    return packets_.front().codecSpecificHeader.codecHeader.VP9.temporal_idx;
+  } else {
+    return kNoTemporalIdx;
+  }
 }
 
 bool VCMSessionInfo::LayerSync() const {
-  if (packets_.empty() ||
-        packets_.front().codecSpecificHeader.codec != kRtpVideoVp8)
+  if (packets_.empty())
     return false;
-  return packets_.front().codecSpecificHeader.codecHeader.VP8.layerSync;
+  if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp8) {
+    return packets_.front().codecSpecificHeader.codecHeader.VP8.layerSync;
+  } else if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp9) {
+    return
+        packets_.front().codecSpecificHeader.codecHeader.VP9.temporal_up_switch;
+  } else {
+    return false;
+  }
 }
 
 int VCMSessionInfo::Tl0PicId() const {
-  if (packets_.empty() ||
-      packets_.front().codecSpecificHeader.codec != kRtpVideoVp8)
+  if (packets_.empty())
     return kNoTl0PicIdx;
-  return packets_.front().codecSpecificHeader.codecHeader.VP8.tl0PicIdx;
+  if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp8) {
+    return packets_.front().codecSpecificHeader.codecHeader.VP8.tl0PicIdx;
+  } else if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp9) {
+    return packets_.front().codecSpecificHeader.codecHeader.VP9.tl0_pic_idx;
+  } else {
+    return kNoTl0PicIdx;
+  }
 }
 
 bool VCMSessionInfo::NonReference() const {

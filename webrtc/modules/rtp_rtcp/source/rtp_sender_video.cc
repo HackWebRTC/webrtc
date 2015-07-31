@@ -21,6 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
@@ -76,6 +77,8 @@ RtpUtility::Payload* RTPSenderVideo::CreateVideoPayload(
   RtpVideoCodecTypes videoType = kRtpVideoGeneric;
   if (RtpUtility::StringCompare(payloadName, "VP8", 3)) {
     videoType = kRtpVideoVp8;
+  } else if (RtpUtility::StringCompare(payloadName, "VP9", 3)) {
+    videoType = kRtpVideoVp9;
   } else if (RtpUtility::StringCompare(payloadName, "H264", 4)) {
     videoType = kRtpVideoH264;
   } else if (RtpUtility::StringCompare(payloadName, "I420", 4)) {

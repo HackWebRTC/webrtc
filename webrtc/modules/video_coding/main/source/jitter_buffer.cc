@@ -125,6 +125,8 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       incomplete_frames_(),
       last_decoded_state_(),
       first_packet_since_reset_(true),
+      last_gof_timestamp_(0),
+      last_gof_valid_(false),
       stats_callback_(NULL),
       incoming_frame_rate_(0),
       incoming_frame_count_(0),
@@ -220,6 +222,7 @@ void VCMJitterBuffer::Start() {
   first_packet_since_reset_ = true;
   rtt_ms_ = kDefaultRtt;
   last_decoded_state_.Reset();
+  last_gof_valid_ = false;
 }
 
 void VCMJitterBuffer::Stop() {
@@ -227,6 +230,8 @@ void VCMJitterBuffer::Stop() {
   UpdateHistograms();
   running_ = false;
   last_decoded_state_.Reset();
+  last_gof_valid_ = false;
+
   // Make sure all frames are free and reset.
   for (FrameList::iterator it = decodable_frames_.begin();
        it != decodable_frames_.end(); ++it) {
@@ -257,6 +262,7 @@ void VCMJitterBuffer::Flush() {
   decodable_frames_.Reset(&free_frames_);
   incomplete_frames_.Reset(&free_frames_);
   last_decoded_state_.Reset();  // TODO(mikhal): sync reset.
+  last_gof_valid_ = false;
   num_consecutive_old_packets_ = 0;
   // Also reset the jitter and delay estimates
   jitter_estimate_.Reset();
@@ -584,6 +590,38 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
       return kFlushIndicator;
     }
     return kOldPacket;
+  }
+
+  if (packet.codec == kVideoCodecVP9) {
+    // TODO(asapersson): Move this code to appropriate place.
+    // TODO(asapersson): Handle out of order GOF.
+    if (packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
+      // TODO(asapersson): Add support for flexible mode.
+      return kGeneralError;
+    }
+    if (packet.codecSpecificHeader.codecHeader.VP9.ss_data_available) {
+      if (!last_gof_valid_ ||
+          IsNewerTimestamp(packet.timestamp, last_gof_timestamp_)) {
+        last_gof_.CopyGofInfoVP9(
+            packet.codecSpecificHeader.codecHeader.VP9.gof);
+        last_gof_timestamp_ = packet.timestamp;
+        last_gof_valid_ = true;
+      }
+    }
+    if (last_gof_valid_ &&
+        !packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
+      uint8_t gof_idx = packet.codecSpecificHeader.codecHeader.VP9.gof_idx;
+      if (gof_idx != kNoGofIdx) {
+        if (gof_idx >= last_gof_.num_frames_in_gof) {
+          LOG(LS_WARNING) << "Incorrect gof_idx: " << gof_idx;
+          return kGeneralError;
+        }
+        RTPVideoTypeHeader* hdr = const_cast<RTPVideoTypeHeader*>(
+            &packet.codecSpecificHeader.codecHeader);
+        hdr->VP9.temporal_idx = last_gof_.temporal_idx[gof_idx];
+        hdr->VP9.temporal_up_switch = last_gof_.temporal_up_switch[gof_idx];
+      }
+    }
   }
 
   num_consecutive_old_packets_ = 0;
