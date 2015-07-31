@@ -2580,6 +2580,63 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
   EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
 }
 
+// Test that if the remote description indicates the peer requested ICE restart
+// (via a new ufrag or pwd), the old ICE candidates are not copied,
+// and vice versa.
+TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionWithIceRestart) {
+  Init();
+  scoped_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
+
+  // Create the first offer.
+  std::string sdp;
+  ModifyIceUfragPwdLines(offer.get(), "0123456789012345",
+                         "abcdefghijklmnopqrstuvwx", &sdp);
+  SessionDescriptionInterface* offer1 =
+      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  cricket::Candidate candidate1(1, "udp", rtc::SocketAddress("1.1.1.1", 5000),
+                                0, "", "", "relay", 0, "");
+  JsepIceCandidate ice_candidate1(kMediaContentName0, kMediaContentIndex0,
+                                  candidate1);
+  EXPECT_TRUE(offer1->AddCandidate(&ice_candidate1));
+  SetRemoteDescriptionWithoutError(offer1);
+  EXPECT_EQ(1, session_->remote_description()->candidates(0)->count());
+
+  // The second offer has the same ufrag and pwd but different address.
+  sdp.clear();
+  ModifyIceUfragPwdLines(offer.get(), "0123456789012345",
+                         "abcdefghijklmnopqrstuvwx", &sdp);
+  SessionDescriptionInterface* offer2 =
+      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 6000));
+  JsepIceCandidate ice_candidate2(kMediaContentName0, kMediaContentIndex0,
+                                  candidate1);
+  EXPECT_TRUE(offer2->AddCandidate(&ice_candidate2));
+  SetRemoteDescriptionWithoutError(offer2);
+  EXPECT_EQ(2, session_->remote_description()->candidates(0)->count());
+
+  // The third offer has a different ufrag and different address.
+  sdp.clear();
+  ModifyIceUfragPwdLines(offer.get(), "0123456789012333",
+                         "abcdefghijklmnopqrstuvwx", &sdp);
+  SessionDescriptionInterface* offer3 =
+      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 7000));
+  JsepIceCandidate ice_candidate3(kMediaContentName0, kMediaContentIndex0,
+                                  candidate1);
+  EXPECT_TRUE(offer3->AddCandidate(&ice_candidate3));
+  SetRemoteDescriptionWithoutError(offer3);
+  EXPECT_EQ(1, session_->remote_description()->candidates(0)->count());
+
+  // The fourth offer has no candidate but a different ufrag/pwd.
+  sdp.clear();
+  ModifyIceUfragPwdLines(offer.get(), "0123456789012444",
+                         "abcdefghijklmnopqrstuvyz", &sdp);
+  SessionDescriptionInterface* offer4 =
+      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  SetRemoteDescriptionWithoutError(offer4);
+  EXPECT_EQ(0, session_->remote_description()->candidates(0)->count());
+}
+
 // Test that candidates sent to the "video" transport do not get pushed down to
 // the "audio" transport channel when bundling using TransportProxy.
 TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {

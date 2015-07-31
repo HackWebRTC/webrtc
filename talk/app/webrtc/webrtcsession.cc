@@ -432,11 +432,10 @@ class IceRestartAnswerLatch {
     }
   }
 
-  void CheckForRemoteIceRestart(
-      const SessionDescriptionInterface* old_desc,
-      const SessionDescriptionInterface* new_desc) {
+  bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
+                                const SessionDescriptionInterface* new_desc) {
     if (!old_desc || new_desc->type() != SessionDescriptionInterface::kOffer) {
-      return;
+      return false;
     }
     const SessionDescription* new_sd = new_desc->description();
     const SessionDescription* old_sd = old_desc->description();
@@ -462,9 +461,10 @@ class IceRestartAnswerLatch {
                                          new_transport_desc->ice_pwd)) {
         LOG(LS_INFO) << "Remote peer request ice restart.";
         ice_restart_ = true;
-        break;
+        return true;
       }
     }
+    return false;
   }
 
  private:
@@ -838,13 +838,19 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
 
   // Copy all saved candidates.
   CopySavedCandidates(desc);
-  // We retain all received candidates.
-  WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
-      remote_desc_.get(), desc);
+
   // Check if this new SessionDescription contains new ice ufrag and password
   // that indicates the remote peer requests ice restart.
-  ice_restart_latch_->CheckForRemoteIceRestart(remote_desc_.get(),
-                                               desc);
+  bool ice_restart =
+      ice_restart_latch_->CheckForRemoteIceRestart(remote_desc_.get(), desc);
+  // We retain all received candidates only if ICE is not restarted.
+  // When ICE is restarted, all previous candidates belong to an old generation
+  // and should not be kept.
+  if (!ice_restart) {
+    WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
+        remote_desc_.get(), desc);
+  }
+
   remote_desc_.reset(desc_temp.release());
 
   rtc::SSLRole role;
@@ -1522,7 +1528,6 @@ bool WebRtcSession::UseCandidatesInSessionDescription(
         }
         continue;
       }
-
       ret = UseCandidate(candidate);
       if (!ret)
         break;

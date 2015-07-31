@@ -666,6 +666,17 @@ void P2PTransportChannel::OnUseCandidate(Connection* conn) {
 void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
+  uint32 generation = candidate.generation();
+  // Network may not guarantee the order of the candidate delivery. If a
+  // remote candidate with an older generation arrives, drop it.
+  if (generation != 0 && generation < remote_candidate_generation_) {
+    LOG(LS_WARNING) << "Dropping a remote candidate because its generation "
+                    << generation
+                    << " is lower than the current remote generation "
+                    << remote_candidate_generation_;
+    return;
+  }
+
   // Create connections to this remote candidate.
   CreateConnections(candidate, NULL, false);
 
