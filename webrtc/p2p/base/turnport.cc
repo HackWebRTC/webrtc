@@ -172,8 +172,12 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const RelayCredentials& credentials,
                    int server_priority,
                    const std::string& origin)
-    : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
-           username, password),
+    : Port(thread,
+           factory,
+           network,
+           socket->GetLocalAddress().ipaddr(),
+           username,
+           password),
       server_address_(server_address),
       credentials_(credentials),
       socket_(socket),
@@ -181,7 +185,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       error_(0),
       request_manager_(thread),
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
-      connected_(false),
+      state_(STATE_CONNECTING),
       server_priority_(server_priority),
       allocate_mismatch_retries_(0) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
@@ -200,8 +204,15 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const RelayCredentials& credentials,
                    int server_priority,
                    const std::string& origin)
-    : Port(thread, RELAY_PORT_TYPE, factory, network, ip, min_port, max_port,
-           username, password),
+    : Port(thread,
+           RELAY_PORT_TYPE,
+           factory,
+           network,
+           ip,
+           min_port,
+           max_port,
+           username,
+           password),
       server_address_(server_address),
       credentials_(credentials),
       socket_(NULL),
@@ -209,7 +220,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       error_(0),
       request_manager_(thread),
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
-      connected_(false),
+      state_(STATE_CONNECTING),
       server_priority_(server_priority),
       allocate_mismatch_retries_(0) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
@@ -221,7 +232,7 @@ TurnPort::~TurnPort() {
 
   // release the allocation by sending a refresh with
   // lifetime 0.
-  if (connected_) {
+  if (ready()) {
     TurnRefreshRequest bye(this);
     bye.set_lifetime(0);
     SendRequest(&bye, 0);
@@ -261,8 +272,9 @@ void TurnPort::PrepareAddress() {
   } else {
     // If protocol family of server address doesn't match with local, return.
     if (!IsCompatibleAddress(server_address_.address)) {
-      LOG(LS_ERROR) << "Server IP address family does not match with "
-                    << "local host address family type";
+      LOG(LS_ERROR) << "IP address family does not match: "
+                    << "server: " << server_address_.address.family()
+                    << "local: " << ip().family();
       OnAllocateError();
       return;
     }
@@ -274,8 +286,11 @@ void TurnPort::PrepareAddress() {
                          << ProtoToString(server_address_.proto) << " @ "
                          << server_address_.address.ToSensitiveString();
     if (!CreateTurnClientSocket()) {
+      LOG(LS_ERROR) << "Failed to create TURN client socket";
       OnAllocateError();
-    } else if (server_address_.proto == PROTO_UDP) {
+      return;
+    }
+    if (server_address_.proto == PROTO_UDP) {
       // If its UDP, send AllocateRequest now.
       // For TCP and TLS AllcateRequest will be sent by OnSocketConnect.
       SendRequest(new TurnAllocateRequest(this), 0);
@@ -319,9 +334,13 @@ bool TurnPort::CreateTurnClientSocket() {
 
   socket_->SignalReadyToSend.connect(this, &TurnPort::OnReadyToSend);
 
+  // TCP port is ready to send stun requests after the socket is connected,
+  // while UDP port is ready to do so once the socket is created.
   if (server_address_.proto == PROTO_TCP) {
     socket_->SignalConnect.connect(this, &TurnPort::OnSocketConnect);
     socket_->SignalClose.connect(this, &TurnPort::OnSocketClose);
+  } else {
+    state_ = STATE_CONNECTED;
   }
   return true;
 }
@@ -360,6 +379,7 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
     }
   }
 
+  state_ = STATE_CONNECTED;  // It is ready to send stun requests.
   if (server_address_.address.IsUnresolved()) {
     server_address_.address = socket_->GetRemoteAddress();
   }
@@ -372,10 +392,11 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
 void TurnPort::OnSocketClose(rtc::AsyncPacketSocket* socket, int error) {
   LOG_J(LS_WARNING, this) << "Connection with server failed, error=" << error;
   ASSERT(socket == socket_);
-  if (!connected_) {
+  if (!ready()) {
     OnAllocateError();
   }
-  connected_ = false;
+  request_manager_.Clear();
+  state_ = STATE_DISCONNECTED;
 }
 
 void TurnPort::OnAllocateMismatch() {
@@ -409,6 +430,10 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
   }
 
   if (!IsCompatibleAddress(address.address())) {
+    return NULL;
+  }
+
+  if (state_ == STATE_DISCONNECTED) {
     return NULL;
   }
 
@@ -462,12 +487,12 @@ int TurnPort::SendTo(const void* data, size_t size,
                      bool payload) {
   // Try to find an entry for this specific address; we should have one.
   TurnEntry* entry = FindEntry(addr);
-  ASSERT(entry != NULL);
   if (!entry) {
+    LOG(LS_ERROR) << "Did not find the TurnEntry for address " << addr;
     return 0;
   }
 
-  if (!connected()) {
+  if (!ready()) {
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
@@ -536,7 +561,7 @@ void TurnPort::OnReadPacket(
 }
 
 void TurnPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
-  if (connected_) {
+  if (ready()) {
     Port::OnReadyToSend();
   }
 }
@@ -616,6 +641,7 @@ void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
 
 void TurnPort::OnSendStunPacket(const void* data, size_t size,
                                 StunRequest* request) {
+  ASSERT(connected());
   rtc::PacketOptions options(DefaultDscpValue());
   if (Send(data, size, options) < 0) {
     LOG_J(LS_ERROR, this) << "Failed to send TURN message, err="
@@ -635,7 +661,7 @@ void TurnPort::OnStunAddress(const rtc::SocketAddress& address) {
 
 void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
                                  const rtc::SocketAddress& stun_address) {
-  connected_ = true;
+  state_ = STATE_READY;
 
   rtc::SocketAddress related_address = stun_address;
     if (!(candidate_filter() & CF_REFLEXIVE)) {

@@ -127,10 +127,11 @@ void AsyncTCPSocketBase::SetError(int error) {
 int AsyncTCPSocketBase::SendTo(const void *pv, size_t cb,
                                const SocketAddress& addr,
                                const rtc::PacketOptions& options) {
-  if (addr == GetRemoteAddress())
+  const SocketAddress& remote_address = GetRemoteAddress();
+  if (addr == remote_address)
     return Send(pv, cb, options);
-
-  ASSERT(false);
+  // Remote address may be empty if there is a sudden network change.
+  ASSERT(remote_address.IsNil());
   socket_->SetError(ENOTCONN);
   return -1;
 }

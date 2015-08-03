@@ -33,6 +33,12 @@ class TurnEntry;
 
 class TurnPort : public Port {
  public:
+  enum PortState {
+    STATE_CONNECTING,    // Initial state, cannot send any packets.
+    STATE_CONNECTED,     // Socket connected, ready to send stun requests.
+    STATE_READY,         // Received allocate success, can send any packets.
+    STATE_DISCONNECTED,  // TCP connection died, cannot send any packets.
+  };
   static TurnPort* Create(rtc::Thread* thread,
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
@@ -70,7 +76,10 @@ class TurnPort : public Port {
   // Returns an empty address if the local address has not been assigned.
   rtc::SocketAddress GetLocalAddress() const;
 
-  bool connected() const { return connected_; }
+  bool ready() const { return state_ == STATE_READY; }
+  bool connected() const {
+    return state_ == STATE_READY || state_ == STATE_CONNECTED;
+  }
   const RelayCredentials& credentials() const { return credentials_; }
 
   virtual void PrepareAddress();
@@ -225,7 +234,7 @@ class TurnPort : public Port {
   int next_channel_number_;
   EntryList entries_;
 
-  bool connected_;
+  PortState state_;
   // By default the value will be set to 0. This value will be used in
   // calculating the candidate priority.
   int server_priority_;
