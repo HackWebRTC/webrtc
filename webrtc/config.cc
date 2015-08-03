@@ -35,16 +35,20 @@ const char* RtpExtension::kAbsSendTime =
 const char* RtpExtension::kVideoRotation = "urn:3gpp:video-orientation";
 const char* RtpExtension::kAudioLevel =
     "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
+const char* RtpExtension::kTransportSequenceNumber =
+    "http://www.webrtc.org/experiments/rtp-hdrext/transport-sequence-number";
 
 bool RtpExtension::IsSupportedForAudio(const std::string& name) {
   return name == webrtc::RtpExtension::kAbsSendTime ||
-         name == webrtc::RtpExtension::kAudioLevel;
+         name == webrtc::RtpExtension::kAudioLevel ||
+         name == webrtc::RtpExtension::kTransportSequenceNumber;
 }
 
 bool RtpExtension::IsSupportedForVideo(const std::string& name) {
   return name == webrtc::RtpExtension::kTOffset ||
          name == webrtc::RtpExtension::kAbsSendTime ||
-         name == webrtc::RtpExtension::kVideoRotation;
+         name == webrtc::RtpExtension::kVideoRotation ||
+         name == webrtc::RtpExtension::kTransportSequenceNumber;
 }
 
 VideoStream::VideoStream()

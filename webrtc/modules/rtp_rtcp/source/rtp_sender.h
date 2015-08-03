@@ -18,6 +18,7 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
+#include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -91,6 +92,8 @@ class RTPSender : public RTPSenderInterface {
             Transport* transport,
             RtpAudioFeedback* audio_feedback,
             PacedSender* paced_sender,
+            PacketRouter* packet_router,
+            SendTimeObserver* send_time_observer,
             BitrateStatisticsObserver* bitrate_callback,
             FrameCountObserver* frame_count_observer,
             SendSideDelayObserver* send_side_delay_observer);
@@ -171,7 +174,27 @@ class RTPSender : public RTPSenderInterface {
   uint8_t BuildAudioLevelExtension(uint8_t* data_buffer) const;
   uint8_t BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const;
   uint8_t BuildVideoRotationExtension(uint8_t* data_buffer) const;
-  uint8_t BuildTransportSequenceNumberExtension(uint8_t* data_buffer) const;
+  uint8_t BuildTransportSequenceNumberExtension(uint8_t* data_buffer,
+                                                uint16_t sequence_number) const;
+
+  // Verifies that the specified extension is registered, and that it is
+  // present in rtp packet. If extension is not registered kNotRegistered is
+  // returned. If extension cannot be found in the rtp header, or if it is
+  // malformed, kError is returned. Otherwise *extension_offset is set to the
+  // offset of the extension from the beginning of the rtp packet and kOk is
+  // returned.
+  enum class ExtensionStatus {
+    kNotRegistered,
+    kOk,
+    kError,
+  };
+  ExtensionStatus VerifyExtension(RTPExtensionType extension_type,
+                                  uint8_t* rtp_packet,
+                                  size_t rtp_packet_length,
+                                  const RTPHeader& rtp_header,
+                                  size_t extension_length_bytes,
+                                  size_t* extension_offset) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_.get());
 
   bool UpdateAudioLevel(uint8_t* rtp_packet,
                         size_t rtp_packet_length,
@@ -345,6 +368,12 @@ class RTPSender : public RTPSenderInterface {
                               size_t rtp_packet_length,
                               const RTPHeader& rtp_header,
                               int64_t now_ms) const;
+  // Update the transport sequence number of the packet using a new sequence
+  // number allocated by PacketRouter. Returns the assigned sequence number,
+  // or 0 if extension could not be updated.
+  uint16_t UpdateTransportSequenceNumber(uint8_t* rtp_packet,
+                                         size_t rtp_packet_length,
+                                         const RTPHeader& rtp_header) const;
 
   void UpdateRtpStats(const uint8_t* buffer,
                       size_t packet_length,
@@ -365,7 +394,9 @@ class RTPSender : public RTPSenderInterface {
   rtc::scoped_ptr<RTPSenderAudio> audio_;
   rtc::scoped_ptr<RTPSenderVideo> video_;
 
-  PacedSender *paced_sender_;
+  PacedSender* const paced_sender_;
+  PacketRouter* const packet_router_;
+  SendTimeObserver* const send_time_observer_;
   int64_t last_capture_time_ms_sent_;
   rtc::scoped_ptr<CriticalSectionWrapper> send_critsect_;
 

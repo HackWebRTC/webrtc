@@ -10,8 +10,10 @@ source_set("remote_bitrate_estimator") {
   sources = [
     "include/bwe_defines.h",
     "include/remote_bitrate_estimator.h",
+    "include/send_time_history.h",
     "rate_statistics.cc",
     "rate_statistics.h",
+    "send_time_history.cc",
   ]
 
   configs += [ "../../:common_inherited_config" ]

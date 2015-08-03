@@ -23,6 +23,7 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
+struct PacketInfo;
 
 class BitrateObserver {
   // Observer class for bitrate changes announced due to change in bandwidth

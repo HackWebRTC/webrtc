@@ -84,6 +84,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
                        ProcessThread* module_process_thread,
                        RtcpIntraFrameObserver* intra_frame_observer,
                        RtcpBandwidthObserver* bandwidth_observer,
+                       SendTimeObserver* send_time_observer,
                        RemoteBitrateEstimator* remote_bitrate_estimator,
                        RtcpRttStats* rtt_stats,
                        PacedSender* paced_sender,
@@ -112,6 +113,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       paced_sender_(paced_sender),
       packet_router_(packet_router),
       bandwidth_observer_(bandwidth_observer),
+      send_time_observer_(send_time_observer),
       decoder_reset_(true),
       nack_history_size_sender_(kSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
@@ -124,10 +126,12 @@ ViEChannel::ViEChannel(int32_t channel_id,
                                transport,
                                sender ? intra_frame_observer_ : nullptr,
                                sender ? bandwidth_observer_.get() : nullptr,
+                               sender ? send_time_observer_ : nullptr,
                                rtt_stats_,
                                &rtcp_packet_type_counter_observer_,
                                remote_bitrate_estimator,
                                paced_sender_,
+                               sender_ ? packet_router_ : nullptr,
                                &send_bitrate_observer_,
                                &send_frame_count_observer_,
                                &send_side_delay_observer_,
@@ -176,8 +180,11 @@ ViEChannel::~ViEChannel() {
   module_process_thread_->DeRegisterModule(vcm_);
   module_process_thread_->DeRegisterModule(&vie_sync_);
   send_payload_router_->SetSendingRtpModules(std::list<RtpRtcp*>());
+  if (sender_ && packet_router_) {
+    for (size_t i = 0; i < num_active_rtp_rtcp_modules_; ++i)
+      packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i]);
+  }
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    packet_router_->RemoveRtpModule(rtp_rtcp);
     module_process_thread_->DeRegisterModule(rtp_rtcp);
     delete rtp_rtcp;
   }
@@ -334,8 +341,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   bool router_was_active = send_payload_router_->active();
   send_payload_router_->set_active(false);
   send_payload_router_->SetSendingRtpModules(std::list<RtpRtcp*>());
-  for (RtpRtcp* module : rtp_rtcp_modules_)
-    packet_router_->RemoveRtpModule(module);
 
   std::vector<RtpRtcp*> registered_modules;
   std::vector<RtpRtcp*> deregistered_modules;
@@ -376,22 +381,28 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   vie_receiver_.RegisterRtpRtcpModules(registered_modules);
 
   // Update the packet and payload routers with the sending RtpRtcp modules.
-  std::list<RtpRtcp*> active_send_modules;
-  for (RtpRtcp* rtp_rtcp : registered_modules) {
-    packet_router_->AddRtpModule(rtp_rtcp);
-    active_send_modules.push_back(rtp_rtcp);
+  if (sender_) {
+    std::list<RtpRtcp*> active_send_modules;
+    for (RtpRtcp* rtp_rtcp : registered_modules)
+      active_send_modules.push_back(rtp_rtcp);
+    send_payload_router_->SetSendingRtpModules(active_send_modules);
   }
-  send_payload_router_->SetSendingRtpModules(active_send_modules);
 
   if (router_was_active)
     send_payload_router_->set_active(true);
 
   // Deregister previously registered modules.
-  for (size_t i = num_active_modules; i < num_prev_active_modules; ++i)
+  for (size_t i = num_active_modules; i < num_prev_active_modules; ++i) {
     module_process_thread_->DeRegisterModule(rtp_rtcp_modules_[i]);
+    if (sender_ && packet_router_)
+      packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i]);
+  }
   // Register new active modules.
-  for (size_t i = num_prev_active_modules; i < num_active_modules; ++i)
+  for (size_t i = num_prev_active_modules; i < num_active_modules; ++i) {
     module_process_thread_->RegisterModule(rtp_rtcp_modules_[i]);
+    if (sender_ && packet_router_)
+      packet_router_->AddRtpModule(rtp_rtcp_modules_[i]);
+  }
   return 0;
 }
 
@@ -673,6 +684,27 @@ int ViEChannel::SetSendVideoRotationStatus(bool enable, int id) {
 
 int ViEChannel::SetReceiveVideoRotationStatus(bool enable, int id) {
   return vie_receiver_.SetReceiveVideoRotationStatus(enable, id) ? 0 : -1;
+}
+
+int ViEChannel::SetSendTransportSequenceNumber(bool enable, int id) {
+  // Disable any previous registrations of this extension to avoid errors.
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    rtp_rtcp->DeregisterSendRtpHeaderExtension(
+        kRtpExtensionTransportSequenceNumber);
+  }
+  if (!enable)
+    return 0;
+  // Enable the extension.
+  int error = 0;
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    error |= rtp_rtcp->RegisterSendRtpHeaderExtension(
+        kRtpExtensionTransportSequenceNumber, id);
+  }
+  return error;
+}
+
+int ViEChannel::SetReceiveTransportSequenceNumber(bool enable, int id) {
+  return vie_receiver_.SetReceiveTransportSequenceNumber(enable, id) ? 0 : -1;
 }
 
 void ViEChannel::SetRtcpXrRrtrStatus(bool enable) {
@@ -1121,10 +1153,12 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
     Transport* outgoing_transport,
     RtcpIntraFrameObserver* intra_frame_callback,
     RtcpBandwidthObserver* bandwidth_callback,
+    SendTimeObserver* send_time_callback,
     RtcpRttStats* rtt_stats,
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
     RemoteBitrateEstimator* remote_bitrate_estimator,
     PacedSender* paced_sender,
+    PacketRouter* packet_router,
     BitrateStatisticsObserver* send_bitrate_observer,
     FrameCountObserver* send_frame_count_observer,
     SendSideDelayObserver* send_side_delay_observer,
@@ -1142,10 +1176,12 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
   configuration.rtcp_packet_type_counter_observer =
       rtcp_packet_type_counter_observer;
   configuration.paced_sender = paced_sender;
+  configuration.packet_router = packet_router;
   configuration.send_bitrate_observer = send_bitrate_observer;
   configuration.send_frame_count_observer = send_frame_count_observer;
   configuration.send_side_delay_observer = send_side_delay_observer;
   configuration.bandwidth_callback = bandwidth_callback;
+  configuration.send_time_callback = send_time_callback;
 
   std::vector<RtpRtcp*> modules;
   for (size_t i = 0; i < num_modules; ++i) {

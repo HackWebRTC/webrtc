@@ -58,6 +58,7 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
       restored_packet_in_use_(false),
       receiving_ast_enabled_(false),
       receiving_cvo_enabled_(false),
+      receiving_tsn_enabled_(false),
       last_packet_log_ms_(-1) {
   assert(remote_bitrate_estimator);
 }
@@ -196,6 +197,22 @@ bool ViEReceiver::SetReceiveVideoRotationStatus(bool enable, int id) {
     receiving_cvo_enabled_ = false;
     return rtp_header_parser_->DeregisterRtpHeaderExtension(
         kRtpExtensionVideoRotation);
+  }
+}
+
+bool ViEReceiver::SetReceiveTransportSequenceNumber(bool enable, int id) {
+  if (enable) {
+    if (rtp_header_parser_->RegisterRtpHeaderExtension(
+            kRtpExtensionTransportSequenceNumber, id)) {
+      receiving_tsn_enabled_ = true;
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    receiving_tsn_enabled_ = false;
+    return rtp_header_parser_->DeregisterRtpHeaderExtension(
+        kRtpExtensionTransportSequenceNumber);
   }
 }
 

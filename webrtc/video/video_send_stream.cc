@@ -17,6 +17,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video/video_capture_input.h"
@@ -136,6 +137,8 @@ VideoSendStream::VideoSendStream(
       CHECK_EQ(0, vie_channel_->SetSendAbsoluteSendTimeStatus(true, id));
     } else if (extension == RtpExtension::kVideoRotation) {
       CHECK_EQ(0, vie_channel_->SetSendVideoRotationStatus(true, id));
+    } else if (extension == RtpExtension::kTransportSequenceNumber) {
+      CHECK_EQ(0, vie_channel_->SetSendTransportSequenceNumber(true, id));
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";
     }

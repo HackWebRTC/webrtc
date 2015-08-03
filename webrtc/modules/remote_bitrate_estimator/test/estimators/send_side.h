@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/modules/bitrate_controller/send_time_history.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 
 namespace webrtc {

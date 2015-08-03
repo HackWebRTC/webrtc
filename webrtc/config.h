@@ -60,6 +60,7 @@ struct RtpExtension {
   static const char* kAbsSendTime;
   static const char* kVideoRotation;
   static const char* kAudioLevel;
+  static const char* kTransportSequenceNumber;
   std::string name;
   int id;
 };

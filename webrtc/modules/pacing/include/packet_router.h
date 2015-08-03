@@ -14,6 +14,7 @@
 #include <list>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
@@ -21,10 +22,7 @@
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
-class RTPFragmentationHeader;
 class RtpRtcp;
-struct RTPVideoHeader;
 
 // PacketRouter routes outgoing data to the correct sending RTP module, based
 // on the simulcast layer in RTPVideoHeader.
@@ -44,14 +42,15 @@ class PacketRouter : public PacedSender::Callback {
 
   size_t TimeToSendPadding(size_t bytes) override;
 
- private:
-  // TODO(holmer): When the new video API has launched, remove crit_ and
-  // assume rtp_modules_ will never change during a call. We should then also
-  // switch rtp_modules_ to a map from ssrc to rtp module.
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  void SetTransportWideSequenceNumber(uint16_t sequence_number);
+  uint16_t AllocateSequenceNumber();
 
+ private:
+  rtc::CriticalSection modules_lock_;
   // Map from ssrc to sending rtp module.
-  std::list<RtpRtcp*> rtp_modules_ GUARDED_BY(crit_.get());
+  std::list<RtpRtcp*> rtp_modules_ GUARDED_BY(modules_lock_);
+
+  volatile int transport_seq_;
 
   DISALLOW_COPY_AND_ASSIGN(PacketRouter);
 };

@@ -179,6 +179,8 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       CHECK_EQ(0, vie_channel_->SetReceiveAbsoluteSendTimeStatus(true, id));
     } else if (extension == RtpExtension::kVideoRotation) {
       CHECK_EQ(0, vie_channel_->SetReceiveVideoRotationStatus(true, id));
+    } else if (extension == RtpExtension::kTransportSequenceNumber) {
+      CHECK_EQ(0, vie_channel_->SetReceiveTransportSequenceNumber(true, id));
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }

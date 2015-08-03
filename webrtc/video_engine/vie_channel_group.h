@@ -22,6 +22,7 @@
 
 namespace webrtc {
 
+class AdaptedSendTimeHistory;
 class BitrateAllocator;
 class CallStats;
 class Config;
@@ -100,6 +101,7 @@ class ChannelGroup : public BitrateObserver {
   rtc::scoped_ptr<ProcessThread> pacer_thread_;
 
   rtc::scoped_ptr<BitrateController> bitrate_controller_;
+  rtc::scoped_ptr<AdaptedSendTimeHistory> send_time_history_;
 };
 
 }  // namespace webrtc

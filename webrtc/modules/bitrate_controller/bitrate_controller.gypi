@@ -22,8 +22,6 @@
         'include/bitrate_allocator.h',
         'send_side_bandwidth_estimation.cc',
         'send_side_bandwidth_estimation.h',
-        'send_time_history.cc',
-        'send_time_history.h',
       ],
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],

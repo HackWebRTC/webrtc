@@ -15,6 +15,7 @@
 #include "webrtc/common.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -137,7 +138,20 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(WrappingBitrateEstimator);
 };
+
+static const int64_t kSendTimeHistoryWindowMs = 2000;
+
 }  // namespace
+
+class AdaptedSendTimeHistory : public SendTimeHistory, public SendTimeObserver {
+ public:
+  AdaptedSendTimeHistory() : SendTimeHistory(kSendTimeHistoryWindowMs) {}
+  virtual ~AdaptedSendTimeHistory() {}
+
+  void OnPacketSent(uint16_t sequence_number, int64_t send_time) override {
+    SendTimeHistory::AddAndRemoveOldSendTimes(sequence_number, send_time);
+  }
+};
 
 ChannelGroup::ChannelGroup(ProcessThread* process_thread)
     : remb_(new VieRemb()),
@@ -157,7 +171,8 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
       // construction.
       bitrate_controller_(
           BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                     this)) {
+                                                     this)),
+      send_time_history_(new AdaptedSendTimeHistory()) {
   remote_bitrate_estimator_.reset(new WrappingBitrateEstimator(
       remb_.get(), Clock::GetRealTimeClock()));
 
@@ -235,8 +250,9 @@ bool ChannelGroup::CreateChannel(int channel_id,
       channel_id, engine_id, number_of_cores, transport, process_thread_,
       encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(),
-      remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
-      pacer_.get(), packet_router_.get(), max_rtp_streams, sender));
+      send_time_history_.get(), remote_bitrate_estimator_.get(),
+      call_stats_->rtcp_rtt_stats(), pacer_.get(), packet_router_.get(),
+      max_rtp_streams, sender));
   if (channel->Init() != 0) {
     return false;
   }

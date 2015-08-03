@@ -528,6 +528,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
   static const int kMinAcceptableTransmitBitrate = 130;
   static const int kMaxAcceptableTransmitBitrate = 170;
   static const int kNumBitrateObservationsInRange = 100;
+  static const int kAcceptableBitrateErrorMargin = 15;  // +- 7
   class BitrateObserver : public test::EndToEndTest, public PacketReceiver {
    public:
     explicit BitrateObserver(bool using_min_transmit_bitrate)
@@ -567,8 +568,10 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
             }
           } else {
             // Expect bitrate stats to roughly match the max encode bitrate.
-            if (bitrate_kbps > kMaxEncodeBitrateKbps - 5 &&
-                bitrate_kbps < kMaxEncodeBitrateKbps + 5) {
+            if (bitrate_kbps > (kMaxEncodeBitrateKbps -
+                                kAcceptableBitrateErrorMargin / 2) &&
+                bitrate_kbps < (kMaxEncodeBitrateKbps +
+                                kAcceptableBitrateErrorMargin / 2)) {
               ++num_bitrate_observations_in_range_;
             }
           }
@@ -629,7 +632,9 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           time_to_reconfigure_(webrtc::EventWrapper::Create()),
-          encoder_inits_(0) {}
+          encoder_inits_(0),
+          last_set_bitrate_(0),
+          send_stream_(nullptr) {}
 
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,

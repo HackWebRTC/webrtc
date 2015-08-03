@@ -45,6 +45,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   void Start() override;
   void Stop() override;
+  void ForceFrame();
 
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 

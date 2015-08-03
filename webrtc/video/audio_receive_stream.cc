@@ -61,6 +61,9 @@ AudioReceiveStream::AudioReceiveStream(
     } else if (ext.name == RtpExtension::kAbsSendTime) {
       CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAbsoluteSendTime, ext.id));
+    } else if (ext.name == RtpExtension::kTransportSequenceNumber) {
+      CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionTransportSequenceNumber, ext.id));
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }

@@ -129,5 +129,9 @@ void FrameGeneratorCapturer::Stop() {
   rtc::CritScope cs(&lock_);
   sending_ = false;
 }
+
+void FrameGeneratorCapturer::ForceFrame() {
+  tick_->Set();
+}
 }  // test
 }  // webrtc

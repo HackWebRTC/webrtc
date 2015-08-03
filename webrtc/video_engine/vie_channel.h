@@ -103,6 +103,7 @@ class ViEChannel : public VCMFrameTypeCallback,
              ProcessThread* module_process_thread,
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,
+             SendTimeObserver* send_time_observer,
              RemoteBitrateEstimator* remote_bitrate_estimator,
              RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
@@ -150,6 +151,8 @@ class ViEChannel : public VCMFrameTypeCallback,
   int SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
   int SetSendVideoRotationStatus(bool enable, int id);
   int SetReceiveVideoRotationStatus(bool enable, int id);
+  int SetSendTransportSequenceNumber(bool enable, int id);
+  int SetReceiveTransportSequenceNumber(bool enable, int id);
   void SetRtcpXrRrtrStatus(bool enable);
   void SetTransmissionSmoothingStatus(bool enable);
   void EnableTMMBR(bool enable);
@@ -331,10 +334,12 @@ class ViEChannel : public VCMFrameTypeCallback,
       Transport* outgoing_transport,
       RtcpIntraFrameObserver* intra_frame_callback,
       RtcpBandwidthObserver* bandwidth_callback,
+      SendTimeObserver* send_time_observer,
       RtcpRttStats* rtt_stats,
       RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
       RemoteBitrateEstimator* remote_bitrate_estimator,
       PacedSender* paced_sender,
+      PacketRouter* packet_router,
       BitrateStatisticsObserver* send_bitrate_observer,
       FrameCountObserver* send_frame_count_observer,
       SendSideDelayObserver* send_side_delay_observer,
@@ -470,6 +475,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   PacketRouter* const packet_router_;
 
   const rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+  SendTimeObserver* const send_time_observer_;
 
   bool decoder_reset_ GUARDED_BY(crit_);
   // Current receive codec used for codec change callback.

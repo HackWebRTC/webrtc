@@ -293,6 +293,17 @@ class RtcpBandwidthObserver {
   virtual ~RtcpBandwidthObserver() {}
 };
 
+class SendTimeObserver {
+ public:
+  SendTimeObserver() {}
+  virtual ~SendTimeObserver() {}
+
+  // Transport-wide sequence number and timestamp (system time in milliseconds),
+  // of when the packet was put on the wire.
+  virtual void OnPacketSent(uint16_t transport_sequence_number,
+                            int64_t send_time) = 0;
+};
+
 class RtcpRttStats {
  public:
   virtual void OnRttUpdate(int64_t rtt) = 0;

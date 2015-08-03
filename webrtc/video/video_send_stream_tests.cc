@@ -205,6 +205,49 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
+  static const uint8_t kExtensionId = 13;
+  class TransportWideSequenceNumberObserver : public test::SendTest {
+   public:
+    TransportWideSequenceNumberObserver()
+        : SendTest(kDefaultTimeoutMs), encoder_(Clock::GetRealTimeClock()) {
+      EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionTransportSequenceNumber, kExtensionId));
+    }
+
+   private:
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+
+      EXPECT_TRUE(header.extension.hasTransportSequenceNumber);
+      EXPECT_FALSE(header.extension.hasTransmissionTimeOffset);
+      EXPECT_FALSE(header.extension.hasAbsoluteSendTime);
+
+      observation_complete_->Set();
+
+      return SEND_PACKET;
+    }
+
+    void ModifyConfigs(VideoSendStream::Config* send_config,
+                       std::vector<VideoReceiveStream::Config>* receive_configs,
+                       VideoEncoderConfig* encoder_config) override {
+      send_config->encoder_settings.encoder = &encoder_;
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+    }
+
+    void PerformTest() override {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for a single RTP packet.";
+    }
+
+    test::FakeEncoder encoder_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 class FakeReceiveStatistics : public NullReceiveStatistics {
  public:
   FakeReceiveStatistics(uint32_t send_ssrc,
