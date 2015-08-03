@@ -12,6 +12,7 @@
 
 #include <assert.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
 
 namespace webrtc {
@@ -88,6 +89,7 @@ int PayloadSplitter::SplitRed(PacketList* packet_list) {
         // The block lengths in the RED headers do not match the overall packet
         // length. Something is corrupt. Discard this and the remaining
         // payloads from this packet.
+        LOG(LS_WARNING) << "SplitRed length mismatch";
         while (new_it != new_packets.end()) {
           // Payload should not have been allocated yet.
           assert(!(*new_it)->payload);
@@ -130,6 +132,7 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
     const DecoderDatabase::DecoderInfo* info =
         decoder_database->GetDecoderInfo(payload_type);
     if (!info) {
+      LOG(LS_WARNING) << "SplitFec unknown payload type";
       return kUnknownPayloadType;
     }
     // No splitting for a sync-packet.
@@ -171,6 +174,7 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
         break;
       }
       default: {
+        LOG(LS_WARNING) << "SplitFec wrong payload type";
         return kFecSplitError;
       }
     }
@@ -222,6 +226,7 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
     const DecoderDatabase::DecoderInfo* info =
         decoder_database.GetDecoderInfo(packet->header.payloadType);
     if (!info) {
+      LOG(LS_WARNING) << "SplitAudio unknown payload type";
       return kUnknownPayloadType;
     }
     // No splitting for a sync-packet.
@@ -297,6 +302,7 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
         size_t bytes_per_frame;
         int timestamps_per_frame;
         if (packet->payload_length >= 950) {
+          LOG(LS_WARNING) << "SplitAudio too large iLBC payload";
           return kTooLargePayload;
         }
         if (packet->payload_length % 38 == 0) {
@@ -308,6 +314,7 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
           bytes_per_frame = 50;
           timestamps_per_frame = 240;
         } else {
+          LOG(LS_WARNING) << "SplitAudio invalid iLBC payload";
           return kFrameSplitError;
         }
         int ret = SplitByFrames(packet, bytes_per_frame, timestamps_per_frame,
@@ -402,6 +409,7 @@ int PayloadSplitter::SplitByFrames(const Packet* packet,
                                    uint32_t timestamps_per_frame,
                                    PacketList* new_packets) {
   if (packet->payload_length % bytes_per_frame != 0) {
+    LOG(LS_WARNING) << "SplitByFrames length mismatch";
     return kFrameSplitError;
   }
 

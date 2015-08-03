@@ -12,6 +12,7 @@
 
 #include <assert.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
@@ -44,6 +45,7 @@ int ComfortNoise::UpdateParameters(Packet* packet) {
   delete packet;
   if (ret < 0) {
     internal_error_code_ = WebRtcCng_GetErrorCodeDec(cng_inst);
+    LOG(LS_ERROR) << "WebRtcCng_UpdateSid produced " << internal_error_code_;
     return kInternalError;
   }
   return kOK;
@@ -56,6 +58,7 @@ int ComfortNoise::Generate(size_t requested_length,
          fs_hz_ == 48000);
   // Not adapted for multi-channel yet.
   if (output->Channels() != 1) {
+    LOG(LS_ERROR) << "No multi-channel support";
     return kMultiChannelNotSupported;
   }
 
@@ -70,6 +73,7 @@ int ComfortNoise::Generate(size_t requested_length,
   // Get the decoder from the database.
   AudioDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
   if (!cng_decoder) {
+    LOG(LS_ERROR) << "Unknwown payload type";
     return kUnknownPayloadType;
   }
   CNG_dec_inst* cng_inst = cng_decoder->CngDecoderInstance();
@@ -81,6 +85,7 @@ int ComfortNoise::Generate(size_t requested_length,
     // Error returned.
     output->Zeros(requested_length);
     internal_error_code_ = WebRtcCng_GetErrorCodeDec(cng_inst);
+    LOG(LS_ERROR) << "WebRtcCng_Generate produced " << internal_error_code_;
     return kInternalError;
   }
 

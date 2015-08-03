@@ -16,6 +16,7 @@
 
 #include <algorithm>  // find_if()
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
 
@@ -58,6 +59,7 @@ int PacketBuffer::InsertPacket(Packet* packet) {
     if (packet) {
       delete packet;
     }
+    LOG(LS_WARNING) << "InsertPacket invalid packet";
     return kInvalidPacket;
   }
 
@@ -66,6 +68,7 @@ int PacketBuffer::InsertPacket(Packet* packet) {
   if (buffer_.size() >= max_number_of_packets_) {
     // Buffer is full. Flush it.
     Flush();
+    LOG(LS_WARNING) << "Packet buffer flushed";
     return_val = kFlushed;
   }
 

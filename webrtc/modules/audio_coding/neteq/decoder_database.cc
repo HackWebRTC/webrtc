@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <utility>  // pair
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 
 namespace webrtc {
@@ -249,6 +250,8 @@ int DecoderDatabase::CheckPayloadTypes(const PacketList& packet_list) const {
   for (it = packet_list.begin(); it != packet_list.end(); ++it) {
     if (decoders_.find((*it)->header.payloadType) == decoders_.end()) {
       // Payload type is not found.
+      LOG(LS_WARNING) << "CheckPayloadTypes: unknown RTP payload type "
+                      << static_cast<int>((*it)->header.payloadType);
       return kDecoderNotFound;
     }
   }
