@@ -38,6 +38,8 @@ import android.os.Bundle;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
 // This class is an implementation detail of the Java PeerConnection API.
@@ -70,6 +72,13 @@ public class MediaCodecVideoEncoder {
   // List of supported HW H.264 codecs.
   private static final String[] supportedH264HwCodecPrefixes =
     {"OMX.qcom." };
+  // List of devices with poor H.264 encoder quality.
+  private static final String[] H264_HW_EXCEPTION_MODELS = new String[] {
+    // HW H.264 encoder on Galaxy S4 generates 2 times lower bitrate comparing
+    // to target.
+    "SAMSUNG-SGH-I337",
+  };
+
   // Bitrate modes - should be in sync with OMX_VIDEO_CONTROLRATETYPE defined
   // in OMX_Video.h
   private static final int VIDEO_ControlRateVariable = 1;
@@ -105,8 +114,21 @@ public class MediaCodecVideoEncoder {
 
   private static EncoderProperties findHwEncoder(
       String mime, String[] supportedHwCodecPrefixes) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
-      return null; // MediaCodec.setParameters is missing.
+    // MediaCodec.setParameters is missing for JB and below, so bitrate
+    // can not be adjusted dynamically.
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+      return null;
+    }
+
+    // Check if device is in H.264 exception list.
+    if (mime.equals(H264_MIME_TYPE)) {
+      List<String> exceptionModels = Arrays.asList(H264_HW_EXCEPTION_MODELS);
+      if (exceptionModels.contains(Build.MODEL)) {
+        Log.w(TAG, "Model: " + Build.MODEL +
+            " has black listed H.264 encoder.");
+        return null;
+      }
+    }
 
     for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
       MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
@@ -196,13 +218,16 @@ public class MediaCodecVideoEncoder {
     EncoderProperties properties = null;
     String mime = null;
     int keyFrameIntervalSec = 0;
+    int bitrateMode = 0;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
       properties = findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes);
       keyFrameIntervalSec = 100;
+      bitrateMode = VIDEO_ControlRateConstant;
     } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
       mime = H264_MIME_TYPE;
       properties = findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes);
+      bitrateMode = VIDEO_ControlRateVariable;
       keyFrameIntervalSec = 20;
     }
     if (properties == null) {
@@ -212,7 +237,7 @@ public class MediaCodecVideoEncoder {
     try {
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
       format.setInteger(MediaFormat.KEY_BIT_RATE, 1000 * kbps);
-      format.setInteger("bitrate-mode", VIDEO_ControlRateConstant);
+      format.setInteger("bitrate-mode", bitrateMode);
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       format.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
