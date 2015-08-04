@@ -1342,6 +1342,9 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
     virtual ~RtpExtensionHeaderObserver() {}
 
     bool SendRtp(const uint8_t* data, size_t length) override {
+      if (IsDone())
+        return false;
+
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(data, length, &header));
       if (header.extension.hasTransportSequenceNumber) {
@@ -1361,12 +1364,15 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
           streams_observed_.insert(header.ssrc);
         }
 
-        if (streams_observed_.size() == MultiStreamTest::kNumStreams &&
-            padding_observed_ && rtx_padding_observed_) {
+        if (IsDone())
           done_->Set();
-        }
       }
       return test::DirectTransport::SendRtp(data, length);
+    }
+
+    bool IsDone() {
+      return streams_observed_.size() == MultiStreamTest::kNumStreams &&
+             padding_observed_ && rtx_padding_observed_;
     }
 
     EventTypeWrapper Wait() { return done_->Wait(kDefaultTimeoutMs); }
