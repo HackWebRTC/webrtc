@@ -564,36 +564,17 @@ RTCPSender::BuildResult RTCPSender::BuildPLI(RtcpContext* ctx) {
 }
 
 RTCPSender::BuildResult RTCPSender::BuildFIR(RtcpContext* ctx) {
-  // sanity
-  if (ctx->position + 20 >= IP_PACKET_SIZE)
-    return BuildResult::kTruncated;
-
   if (!ctx->repeat)
-    sequence_number_fir_++;  // do not increase if repetition
+    ++sequence_number_fir_;  // Do not increase if repetition.
 
-  // add full intra request indicator
-  uint8_t FMT = 4;
-  *ctx->AllocateData(1) = 0x80 + FMT;
-  *ctx->AllocateData(1) = 206;
+  rtcp::Fir fir;
+  fir.From(ssrc_);
+  fir.To(remote_ssrc_);
+  fir.WithCommandSeqNum(sequence_number_fir_);
 
-  //Length of 4
-  *ctx->AllocateData(1) = 0;
-  *ctx->AllocateData(1) = 4;
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // RFC 5104     4.3.1.2.  Semantics
-  // SSRC of media source
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), 0);
-
-  // Additional Feedback Control Information (FCI)
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), remote_ssrc_);
-
-  *ctx->AllocateData(1) = sequence_number_fir_;
-  *ctx->AllocateData(1) = 0;
-  *ctx->AllocateData(1) = 0;
-  *ctx->AllocateData(1) = 0;
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(fir))
+    return BuildResult::kTruncated;
 
   TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "RTCPSender::FIR");
