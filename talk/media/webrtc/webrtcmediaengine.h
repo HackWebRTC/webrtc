@@ -32,7 +32,6 @@
 
 namespace webrtc {
 class AudioDeviceModule;
-class VideoCaptureModule;
 }
 namespace cricket {
 class WebRtcVideoDecoderFactory;
@@ -43,7 +42,6 @@ namespace cricket {
 
 class WebRtcMediaEngineFactory {
  public:
-  static MediaEngineInterface* Create();
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
       WebRtcVideoEncoderFactory* encoder_factory,
