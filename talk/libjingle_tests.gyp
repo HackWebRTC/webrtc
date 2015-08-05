@@ -380,11 +380,11 @@
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
-            'libjingle_examples.gyp:apprtc_signaling',
+            '<(webrtc_root)/libjingle_examples.gyp:apprtc_signaling',
           ],
           'sources': [
             'app/webrtc/objctests/mac/main.mm',
-            'examples/objc/AppRTCDemo/tests/ARDAppClientTest.mm',
+            '<(webrtc_root)/examples/objc/AppRTCDemo/tests/ARDAppClientTest.mm',
           ],
           'conditions': [
             ['OS=="mac"', {
