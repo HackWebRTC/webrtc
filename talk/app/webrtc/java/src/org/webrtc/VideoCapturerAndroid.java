@@ -910,7 +910,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         // Frames might be posted to |onPreviewFrame| with the previous format while changing
         // capture format in |startPreviewOnCameraThread|. Drop these old frames.
         Log.w(TAG, "Received callback buffer from previous configuration with length: "
-            + data.length);
+            + (data == null ? "null" : data.length));
         return false;
       }
       if (buffer.capacity() != frameSize) {
