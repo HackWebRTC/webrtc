@@ -76,8 +76,7 @@ class BaseChannel
       public MediaChannel::NetworkInterface,
       public ConnectionStatsGetter {
  public:
-  BaseChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
-              MediaChannel* channel, BaseSession* session,
+  BaseChannel(rtc::Thread* thread, MediaChannel* channel, BaseSession* session,
               const std::string& content_name, bool rtcp);
   virtual ~BaseChannel();
   bool Init();
@@ -174,7 +173,6 @@ class BaseChannel
   virtual int SetOption(SocketType type, rtc::Socket::Option o, int val);
 
  protected:
-  MediaEngineInterface* media_engine() const { return media_engine_; }
   virtual MediaChannel* media_channel() const { return media_channel_; }
   // Sets the transport_channel_ and rtcp_transport_channel_.  If
   // |rtcp| is false, set rtcp_transport_channel_ is set to NULL.  Get
@@ -312,7 +310,6 @@ class BaseChannel
 
  private:
   rtc::Thread* worker_thread_;
-  MediaEngineInterface* media_engine_;
   BaseSession* session_;
   MediaChannel* media_channel_;
   std::vector<StreamParams> local_streams_;
@@ -444,6 +441,7 @@ class VoiceChannel : public BaseChannel {
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
 
   static const int kEarlyMediaTimeout = 1000;
+  MediaEngineInterface* media_engine_;
   bool received_media_;
   rtc::scoped_ptr<VoiceMediaMonitor> media_monitor_;
   rtc::scoped_ptr<AudioMonitor> audio_monitor_;
@@ -453,9 +451,9 @@ class VoiceChannel : public BaseChannel {
 // VideoChannel is a specialization for video.
 class VideoChannel : public BaseChannel {
  public:
-  VideoChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
-               VideoMediaChannel* channel, BaseSession* session,
-               const std::string& content_name, bool rtcp);
+  VideoChannel(rtc::Thread* thread, VideoMediaChannel* channel,
+               BaseSession* session, const std::string& content_name,
+               bool rtcp);
   ~VideoChannel();
   bool Init();
 

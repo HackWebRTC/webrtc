@@ -151,11 +151,9 @@ static const MediaContentDescription* GetContentDescription(
 }
 
 BaseChannel::BaseChannel(rtc::Thread* thread,
-                         MediaEngineInterface* media_engine,
                          MediaChannel* media_channel, BaseSession* session,
                          const std::string& content_name, bool rtcp)
     : worker_thread_(thread),
-      media_engine_(media_engine),
       session_(session),
       media_channel_(media_channel),
       content_name_(content_name),
@@ -1295,8 +1293,9 @@ VoiceChannel::VoiceChannel(rtc::Thread* thread,
                            BaseSession* session,
                            const std::string& content_name,
                            bool rtcp)
-    : BaseChannel(thread, media_engine, media_channel, session, content_name,
+    : BaseChannel(thread, media_channel, session, content_name,
                   rtcp),
+      media_engine_(media_engine),
       received_media_(false) {
 }
 
@@ -1439,7 +1438,7 @@ bool VoiceChannel::MuteStream_w(uint32 ssrc, bool mute) {
 }
 
 int VoiceChannel::GetInputLevel_w() {
-  return media_engine()->GetInputLevel();
+  return media_engine_->GetInputLevel();
 }
 
 int VoiceChannel::GetOutputLevel_w() {
@@ -1685,12 +1684,11 @@ void VoiceChannel::GetSrtpCiphers(std::vector<std::string>* ciphers) const {
 }
 
 VideoChannel::VideoChannel(rtc::Thread* thread,
-                           MediaEngineInterface* media_engine,
                            VideoMediaChannel* media_channel,
                            BaseSession* session,
                            const std::string& content_name,
                            bool rtcp)
-    : BaseChannel(thread, media_engine, media_channel, session, content_name,
+    : BaseChannel(thread, media_channel, session, content_name,
                   rtcp),
       renderer_(NULL),
       previous_we_(rtc::WE_CLOSE) {
@@ -2128,8 +2126,7 @@ DataChannel::DataChannel(rtc::Thread* thread,
                          BaseSession* session,
                          const std::string& content_name,
                          bool rtcp)
-    // MediaEngine is NULL
-    : BaseChannel(thread, NULL, media_channel, session, content_name, rtcp),
+    : BaseChannel(thread, media_channel, session, content_name, rtcp),
       data_channel_type_(cricket::DCT_NONE),
       ready_to_send_data_(false) {
 }
