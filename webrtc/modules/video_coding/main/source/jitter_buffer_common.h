@@ -26,11 +26,13 @@ enum { kPacketsPerFrameMultiplier = 5 };
 enum { kFastConvergeThreshold = 5};
 
 enum VCMJitterBufferEnum {
-  kMaxConsecutiveOldFrames        = 60,
-  kMaxConsecutiveOldPackets       = 300,
-  kMaxPacketsInSession            = 800,
-  kBufferIncStepSizeBytes         = 30000,   // >20 packets.
-  kMaxJBFrameSizeBytes            = 4000000  // sanity don't go above 4Mbyte.
+  kMaxConsecutiveOldFrames = 60,
+  kMaxConsecutiveOldPackets = 300,
+  // TODO(sprang): Reduce this limit once codecs don't sometimes wildly
+  // overshoot bitrate target.
+  kMaxPacketsInSession = 1400,      // Allows ~2MB frames.
+  kBufferIncStepSizeBytes = 30000,  // >20 packets.
+  kMaxJBFrameSizeBytes = 4000000    // sanity don't go above 4Mbyte.
 };
 
 enum VCMFrameBufferEnum {
