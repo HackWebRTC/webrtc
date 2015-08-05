@@ -22,6 +22,8 @@
 
 namespace rtc {
 
+enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
+
 // Forward declaration due to circular dependency with SSLCertificate.
 class SSLCertChain;
 

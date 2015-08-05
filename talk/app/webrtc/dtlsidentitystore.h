@@ -31,16 +31,63 @@
 #include <queue>
 #include <string>
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/sslidentity.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
-class DTLSIdentityRequestObserver;
 class SSLIdentity;
 class Thread;
+
+// Used to receive callbacks of DTLS identity requests.
+class DTLSIdentityRequestObserver : public rtc::RefCountInterface {
+ public:
+  virtual void OnFailure(int error) = 0;
+  // TODO(jiayl): Unify the OnSuccess method once Chrome code is updated.
+  virtual void OnSuccess(const std::string& der_cert,
+                         const std::string& der_private_key) = 0;
+  // |identity| is a scoped_ptr because rtc::SSLIdentity is not copyable and the
+  // client has to get the ownership of the object to make use of it.
+  virtual void OnSuccessWithIdentityObj(
+      rtc::scoped_ptr<rtc::SSLIdentity> identity) = 0;
+
+ protected:
+  virtual ~DTLSIdentityRequestObserver() {}
+};
+
+// TODO(hbos): To replace DTLSIdentityRequestObserver.
+// Used to receive callbacks of DTLS identity requests.
+class DtlsIdentityRequestObserver : public rtc::RefCountInterface {
+ public:
+  virtual void OnFailure(int error) = 0;
+  // TODO(hbos): Unify the OnSuccess method once Chrome code is updated.
+  virtual void OnSuccess(const std::string& der_cert,
+                         const std::string& der_private_key) = 0;
+  // |identity| is a scoped_ptr because rtc::SSLIdentity is not copyable and the
+  // client has to get the ownership of the object to make use of it.
+  virtual void OnSuccess(rtc::scoped_ptr<rtc::SSLIdentity> identity) = 0;
+
+ protected:
+  virtual ~DtlsIdentityRequestObserver() {}
+};
+
+// TODO(hbos): To be implemented.
+// This interface defines an in-memory DTLS identity store, which generates DTLS
+// identities.
+// APIs calls must be made on the signaling thread and the callbacks are also
+// called on the signaling thread.
+class DtlsIdentityStoreInterface {
+ public:
+  virtual ~DtlsIdentityStoreInterface() { }
+
+  virtual void RequestIdentity(
+      rtc::KeyType key_type,
+      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) = 0;
+};
 
 // This class implements an in-memory DTLS identity store, which generates the
 // DTLS identity on the worker thread.

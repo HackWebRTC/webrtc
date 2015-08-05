@@ -72,6 +72,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/datachannelinterface.h"
+#include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/dtmfsenderinterface.h"
 #include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
@@ -466,22 +467,6 @@ class PortAllocatorFactoryInterface : public rtc::RefCountInterface {
   ~PortAllocatorFactoryInterface() {}
 };
 
-// Used to receive callbacks of DTLS identity requests.
-class DTLSIdentityRequestObserver : public rtc::RefCountInterface {
- public:
-  virtual void OnFailure(int error) = 0;
-  // TODO(jiayl): Unify the OnSuccess method once Chrome code is updated.
-  virtual void OnSuccess(const std::string& der_cert,
-                         const std::string& der_private_key) = 0;
-  // |identity| is a scoped_ptr because rtc::SSLIdentity is not copyable and the
-  // client has to get the ownership of the object to make use of it.
-  virtual void OnSuccessWithIdentityObj(
-      rtc::scoped_ptr<rtc::SSLIdentity> identity) = 0;
-
- protected:
-  virtual ~DTLSIdentityRequestObserver() {}
-};
-
 class DTLSIdentityServiceInterface {
  public:
   // Asynchronously request a DTLS identity, including a self-signed certificate
@@ -547,6 +532,20 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   };
 
   virtual void SetOptions(const Options& options) = 0;
+
+  // TODO(hbos): Temporary CreatePeerConnection function while we transition
+  // from DTLSIdentityServiceInterface to DtlsIdentityStoreInterface.
+  rtc::scoped_refptr<PeerConnectionInterface>
+      CreatePeerConnection(
+          const PeerConnectionInterface::RTCConfiguration& configuration,
+          const MediaConstraintsInterface* constraints,
+          PortAllocatorFactoryInterface* allocator_factory,
+          DTLSIdentityServiceInterface* dtls_identity_service,
+          rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+          PeerConnectionObserver* observer) {
+    return CreatePeerConnection(configuration, constraints, allocator_factory,
+                                dtls_identity_service, observer);
+  }
 
   // This method takes the ownership of |dtls_identity_service|.
   virtual rtc::scoped_refptr<PeerConnectionInterface>
