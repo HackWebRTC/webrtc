@@ -112,15 +112,16 @@ TEST_F(ScreenshareLayerTest, 1Layer) {
   CodecSpecificInfoVP8 vp8_info;
   // One layer screenshare should not use the frame dropper as all frames will
   // belong to the base layer.
+  const int kSingleLayerFlags = 0;
   flags = layers_->EncodeFlags(timestamp);
-  EXPECT_EQ(0, flags);
+  EXPECT_EQ(kSingleLayerFlags, flags);
   layers_->PopulateCodecSpecific(false, &vp8_info, timestamp);
   EXPECT_EQ(static_cast<uint8_t>(kNoTemporalIdx), vp8_info.temporalIdx);
   EXPECT_FALSE(vp8_info.layerSync);
   EXPECT_EQ(kNoTl0PicIdx, vp8_info.tl0PicIdx);
   layers_->FrameEncoded(frame_size_, timestamp, kDefaultQp);
   flags = layers_->EncodeFlags(timestamp);
-  EXPECT_EQ(0, flags);
+  EXPECT_EQ(kSingleLayerFlags, flags);
   timestamp += kTimestampDelta5Fps;
   layers_->PopulateCodecSpecific(false, &vp8_info, timestamp);
   EXPECT_EQ(static_cast<uint8_t>(kNoTemporalIdx), vp8_info.temporalIdx);

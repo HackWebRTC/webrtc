@@ -132,13 +132,17 @@ bool ScreenshareLayers::ConfigureBitrates(int bitrate_kbps,
   int target_bitrate_kbps = bitrate_kbps;
 
   if (cfg != nullptr) {
-    // Calculate a codec target bitrate. This may be higher than TL0, gaining
-    // quality at the expense of frame rate at TL0. Constraints:
-    // - TL0 frame rate should not be less than framerate / kMaxTL0FpsReduction.
-    // - Target rate * kAcceptableTargetOvershoot should not exceed TL1 rate.
-    target_bitrate_kbps =
-        std::min(bitrate_kbps * kMaxTL0FpsReduction,
-                 max_bitrate_kbps / kAcceptableTargetOvershoot);
+    if (number_of_temporal_layers_ > 1) {
+      // Calculate a codec target bitrate. This may be higher than TL0, gaining
+      // quality at the expense of frame rate at TL0. Constraints:
+      // - TL0 frame rate no less than framerate / kMaxTL0FpsReduction.
+      // - Target rate * kAcceptableTargetOvershoot should not exceed TL1 rate.
+      target_bitrate_kbps =
+          std::min(bitrate_kbps * kMaxTL0FpsReduction,
+                   max_bitrate_kbps / kAcceptableTargetOvershoot);
+
+      cfg->rc_target_bitrate = std::max(bitrate_kbps, target_bitrate_kbps);
+    }
 
     // Don't reconfigure qp limits during quality boost frames.
     if (layers_[active_layer_].state != TemporalLayer::State::kQualityBoost) {
@@ -152,8 +156,6 @@ bool ScreenshareLayers::ConfigureBitrates(int bitrate_kbps,
       layers_[0].enhanced_max_qp = min_qp_ + (((max_qp_ - min_qp_) * 80) / 100);
       layers_[1].enhanced_max_qp = min_qp_ + (((max_qp_ - min_qp_) * 85) / 100);
     }
-
-    cfg->rc_target_bitrate = std::max(bitrate_kbps, target_bitrate_kbps);
   }
 
   int avg_frame_size = (target_bitrate_kbps * 1000) / (8 * framerate);
@@ -169,6 +171,7 @@ void ScreenshareLayers::FrameEncoded(unsigned int size,
     layers_[active_layer_].state = TemporalLayer::State::kDropped;
     return;
   }
+
   if (layers_[active_layer_].state == TemporalLayer::State::kDropped) {
     layers_[active_layer_].state = TemporalLayer::State::kQualityBoost;
   }
@@ -241,7 +244,7 @@ bool ScreenshareLayers::TimeToSync(int64_t timestamp) const {
 }
 
 bool ScreenshareLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
-  if (max_qp_ == -1)
+  if (max_qp_ == -1 || number_of_temporal_layers_ <= 1)
     return false;
 
   // If layer is in the quality boost state (following a dropped frame), update

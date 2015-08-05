@@ -73,6 +73,11 @@ size_t MaxBitrate() {
   return static_cast<size_t>(FLAGS_tl1_bitrate);
 }
 
+DEFINE_int32(num_temporal_layers, 2, "Number of temporal layers to use.");
+int NumTemporalLayers() {
+  return static_cast<int>(FLAGS_num_temporal_layers);
+}
+
 DEFINE_int32(min_transmit_bitrate, 400, "Min transmit bitrate incl. padding.");
 int MinTransmitBitrate() {
   return FLAGS_min_transmit_bitrate;
@@ -128,15 +133,20 @@ DEFINE_string(
 class ScreenshareLoopback : public test::Loopback {
  public:
   explicit ScreenshareLoopback(const Config& config) : Loopback(config) {
+    CHECK_GE(config.num_temporal_layers, 1u);
+    CHECK_LE(config.num_temporal_layers, 2u);
+
     vp8_settings_ = VideoEncoder::GetDefaultVp8Settings();
     vp8_settings_.denoisingOn = false;
     vp8_settings_.frameDroppingOn = false;
-    vp8_settings_.numberOfTemporalLayers = 2;
+    vp8_settings_.numberOfTemporalLayers =
+        static_cast<unsigned char>(config.num_temporal_layers);
 
     vp9_settings_ = VideoEncoder::GetDefaultVp9Settings();
     vp9_settings_.denoisingOn = false;
     vp9_settings_.frameDroppingOn = false;
-    vp9_settings_.numberOfTemporalLayers = 2;
+    vp9_settings_.numberOfTemporalLayers =
+        static_cast<unsigned char>(config.num_temporal_layers);
   }
   virtual ~ScreenshareLoopback() {}
 
@@ -146,10 +156,13 @@ class ScreenshareLoopback : public test::Loopback {
     VideoStream* stream = &encoder_config.streams[0];
     encoder_config.content_type = VideoEncoderConfig::ContentType::kScreen;
     encoder_config.min_transmit_bitrate_bps = flags::MinTransmitBitrate();
+    int num_temporal_layers;
     if (config_.codec == "VP8") {
       encoder_config.encoder_specific_settings = &vp8_settings_;
+      num_temporal_layers = vp8_settings_.numberOfTemporalLayers;
     } else if (config_.codec == "VP9") {
       encoder_config.encoder_specific_settings = &vp9_settings_;
+      num_temporal_layers = vp9_settings_.numberOfTemporalLayers;
     } else {
       RTC_NOTREACHED() << "Codec not supported!";
       abort();
@@ -157,7 +170,10 @@ class ScreenshareLoopback : public test::Loopback {
     stream->temporal_layer_thresholds_bps.clear();
     stream->target_bitrate_bps =
         static_cast<int>(config_.start_bitrate_kbps) * 1000;
-    stream->temporal_layer_thresholds_bps.push_back(stream->target_bitrate_bps);
+    if (num_temporal_layers == 2) {
+      stream->temporal_layer_thresholds_bps.push_back(
+          stream->target_bitrate_bps);
+    }
     return encoder_config;
   }
 
@@ -202,7 +218,7 @@ void Loopback() {
                                 flags::MaxBitrate(),
                                 flags::MinTransmitBitrate(),
                                 flags::Codec(),
-                                0,  // Default number of temporal layers.
+                                flags::NumTemporalLayers(),
                                 flags::LossPercent(),
                                 flags::LinkCapacity(),
                                 flags::QueueSize(),
