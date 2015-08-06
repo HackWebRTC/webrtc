@@ -74,7 +74,7 @@ public class MediaCodecVideoDecoder {
     {"OMX.qcom.", "OMX.Nvidia.", "OMX.Exynos.", "OMX.Intel." };
   // List of supported HW H.264 decoders.
   private static final String[] supportedH264HwCodecPrefixes =
-    {"OMX.qcom." };
+    {"OMX.qcom.", "OMX.Intel." };
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
   private static final int
