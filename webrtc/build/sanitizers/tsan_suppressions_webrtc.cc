@@ -80,6 +80,9 @@ char kTSanDefaultSuppressions[] =
 // https://code.google.com/p/webrtc/issues/detail?id=2497
 "race:*trace_event_unique_catstatic*\n"
 
+// https://code.google.com/p/webrtc/issues/detail?id=4719
+"race:webrtc::voe::TransmitMixer::PrepareDemux\n"
+"race:webrtc::voe::TransmitMixer::EnableStereoChannelSwapping\n"
 // End of suppressions.
 ;  // Please keep this semicolon.
 
