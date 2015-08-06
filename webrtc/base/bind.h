@@ -579,9 +579,8 @@ Bind(FP_T(function),
 }
 
 #undef FP_T
-template <class ObjectT,
-          class MethodT,
-          class R,
+
+template <class ObjectT, class MethodT, class R,
           class P1,
           class P2,
           class P3,
@@ -590,26 +589,22 @@ template <class ObjectT,
           class P6>
 class MethodFunctor6 {
  public:
-  MethodFunctor6(MethodT method,
-                 ObjectT* object,
+  MethodFunctor6(MethodT method, ObjectT* object,
                  P1 p1,
                  P2 p2,
                  P3 p3,
                  P4 p4,
                  P5 p5,
                  P6 p6)
-      : method_(method),
-        object_(object),
-        p1_(p1),
-        p2_(p2),
-        p3_(p3),
-        p4_(p4),
-        p5_(p5),
-        p6_(p6) {}
+      : method_(method), object_(object),
+      p1_(p1),
+      p2_(p2),
+      p3_(p3),
+      p4_(p4),
+      p5_(p5),
+      p6_(p6) {}
   R operator()() const {
-    return (object_->*method_)(p1_, p2_, p3_, p4_, p5_, p6_);
-  }
-
+    return (object_->*method_)(p1_, p2_, p3_, p4_, p5_, p6_); }
  private:
   MethodT method_;
   ObjectT* object_;
@@ -621,8 +616,7 @@ class MethodFunctor6 {
   P6 p6_;
 };
 
-template <class FunctorT,
-          class R,
+template <class FunctorT, class R,
           class P1,
           class P2,
           class P3,
@@ -633,14 +627,14 @@ class Functor6 {
  public:
   Functor6(const FunctorT& functor, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6)
       : functor_(functor),
-        p1_(p1),
-        p2_(p2),
-        p3_(p3),
-        p4_(p4),
-        p5_(p5),
-        p6_(p6) {}
-  R operator()() const { return functor_(p1_, p2_, p3_, p4_, p5_, p6_); }
-
+      p1_(p1),
+      p2_(p2),
+      p3_(p3),
+      p4_(p4),
+      p5_(p5),
+      p6_(p6) {}
+  R operator()() const {
+    return functor_(p1_, p2_, p3_, p4_, p5_, p6_); }
  private:
   FunctorT functor_;
   P1 p1_;
@@ -651,25 +645,24 @@ class Functor6 {
   P6 p6_;
 };
 
+
 #define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6)
 
-template <class ObjectT,
-          class R,
+template <class ObjectT, class R,
           class P1,
           class P2,
           class P3,
           class P4,
           class P5,
           class P6>
-MethodFunctor6<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6> Bind(
-    FP_T(method),
-    ObjectT* object,
-    typename detail::identity<P1>::type p1,
-    typename detail::identity<P2>::type p2,
-    typename detail::identity<P3>::type p3,
-    typename detail::identity<P4>::type p4,
-    typename detail::identity<P5>::type p5,
-    typename detail::identity<P6>::type p6) {
+MethodFunctor6<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>
+Bind(FP_T(method), ObjectT* object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5,
+     typename detail::identity<P6>::type p6) {
   return MethodFunctor6<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>(
       method, object, p1, p2, p3, p4, p5, p6);
 }
@@ -677,23 +670,21 @@ MethodFunctor6<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6> Bind(
 #undef FP_T
 #define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6) const
 
-template <class ObjectT,
-          class R,
+template <class ObjectT, class R,
           class P1,
           class P2,
           class P3,
           class P4,
           class P5,
           class P6>
-MethodFunctor6<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6> Bind(
-    FP_T(method),
-    const ObjectT* object,
-    typename detail::identity<P1>::type p1,
-    typename detail::identity<P2>::type p2,
-    typename detail::identity<P3>::type p3,
-    typename detail::identity<P4>::type p4,
-    typename detail::identity<P5>::type p5,
-    typename detail::identity<P6>::type p6) {
+MethodFunctor6<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>
+Bind(FP_T(method), const ObjectT* object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5,
+     typename detail::identity<P6>::type p6) {
   return MethodFunctor6<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>(
       method, object, p1, p2, p3, p4, p5, p6);
 }
@@ -701,17 +692,23 @@ MethodFunctor6<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6> Bind(
 #undef FP_T
 #define FP_T(x) R (*x)(P1, P2, P3, P4, P5, P6)
 
-template <class R, class P1, class P2, class P3, class P4, class P5, class P6>
-Functor6<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6> Bind(
-    FP_T(function),
-    typename detail::identity<P1>::type p1,
-    typename detail::identity<P2>::type p2,
-    typename detail::identity<P3>::type p3,
-    typename detail::identity<P4>::type p4,
-    typename detail::identity<P5>::type p5,
-    typename detail::identity<P5>::type p6) {
-  return Functor6<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>(function, p1, p2, p3,
-                                                           p4, p5, p6);
+template <class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6>
+Functor6<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>
+Bind(FP_T(function),
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5,
+     typename detail::identity<P6>::type p6) {
+  return Functor6<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>(
+      function, p1, p2, p3, p4, p5, p6);
 }
 
 #undef FP_T

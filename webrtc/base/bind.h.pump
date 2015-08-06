@@ -51,7 +51,7 @@ namespace detail {
 template <class T> struct identity { typedef T type; };
 }  // namespace detail
 
-$var n = 5
+$var n = 6
 $range i 0..n
 $for i [[
 $range j 1..i
