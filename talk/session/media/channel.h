@@ -189,6 +189,9 @@ class BaseChannel
   void set_remote_content_direction(MediaContentDirection direction) {
     remote_content_direction_ = direction;
   }
+  void set_secure_required(bool secure_required) {
+    secure_required_ = secure_required;
+  }
   bool IsReadyToReceive() const;
   bool IsReadyToSend() const;
   rtc::Thread* signaling_thread() { return session_->signaling_thread(); }
@@ -255,30 +258,21 @@ class BaseChannel
   bool UpdateRemoteStreams_w(const std::vector<StreamParams>& streams,
                              ContentAction action,
                              std::string* error_desc);
-  bool SetBaseLocalContent_w(const MediaContentDescription* content,
-                             ContentAction action,
-                             std::string* error_desc);
   virtual bool SetLocalContent_w(const MediaContentDescription* content,
                                  ContentAction action,
                                  std::string* error_desc) = 0;
-  bool SetBaseRemoteContent_w(const MediaContentDescription* content,
-                              ContentAction action,
-                              std::string* error_desc);
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
                                   ContentAction action,
                                   std::string* error_desc) = 0;
+  bool SetRtpTransportParameters_w(const MediaContentDescription* content,
+                                   ContentAction action,
+                                   ContentSource src,
+                                   std::string* error_desc);
 
   // Helper method to get RTP Absoulute SendTime extension header id if
   // present in remote supported extensions list.
   void MaybeCacheRtpAbsSendTimeHeaderExtension(
     const std::vector<RtpHeaderExtension>& extensions);
-
-  bool SetRecvRtpHeaderExtensions_w(const MediaContentDescription* content,
-                                    MediaChannel* media_channel,
-                                    std::string* error_desc);
-  bool SetSendRtpHeaderExtensions_w(const MediaContentDescription* content,
-                                    MediaChannel* media_channel,
-                                    std::string* error_desc);
 
   bool CheckSrtpConfig(const std::vector<CryptoParams>& cryptos,
                        bool* dtls,
@@ -446,6 +440,13 @@ class VoiceChannel : public BaseChannel {
   rtc::scoped_ptr<VoiceMediaMonitor> media_monitor_;
   rtc::scoped_ptr<AudioMonitor> audio_monitor_;
   rtc::scoped_ptr<TypingMonitor> typing_monitor_;
+
+  // Last AudioSendParameters sent down to the media_channel() via
+  // SetSendParameters.
+  AudioSendParameters last_send_params_;
+  // Last AudioRecvParameters sent down to the media_channel() via
+  // SetRecvParameters.
+  AudioRecvParameters last_recv_params_;
 };
 
 // VideoChannel is a specialization for video.
@@ -536,6 +537,13 @@ class VideoChannel : public BaseChannel {
   rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;
 
   rtc::WindowEvent previous_we_;
+
+  // Last VideoSendParameters sent down to the media_channel() via
+  // SetSendParameters.
+  VideoSendParameters last_send_params_;
+  // Last VideoRecvParameters sent down to the media_channel() via
+  // SetRecvParameters.
+  VideoRecvParameters last_recv_params_;
 };
 
 // DataChannel is a specialization for data.
@@ -654,6 +662,13 @@ class DataChannel : public BaseChannel {
   // RtpDataChannel instead of using this.
   DataChannelType data_channel_type_;
   bool ready_to_send_data_;
+
+  // Last DataSendParameters sent down to the media_channel() via
+  // SetSendParameters.
+  DataSendParameters last_send_params_;
+  // Last DataRecvParameters sent down to the media_channel() via
+  // SetRecvParameters.
+  DataRecvParameters last_recv_params_;
 };
 
 }  // namespace cricket

@@ -187,6 +187,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
   // VideoMediaChannel implementation
   void DetachVoiceChannel() override;
+  bool SetSendParameters(const VideoSendParameters& params) override;
+  bool SetRecvParameters(const VideoRecvParameters& params) override;
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) override;
   bool SetSendCodecs(const std::vector<VideoCodec>& codecs) override;
   bool GetSendCodec(VideoCodec* send_codec) override;

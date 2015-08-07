@@ -1743,6 +1743,24 @@ WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
   DeleteChannel(voe_channel());
 }
 
+bool WebRtcVoiceMediaChannel::SetSendParameters(
+    const AudioSendParameters& params) {
+  // TODO(pthatcher): Refactor this to be more clean now that we have
+  // all the information at once.
+  return (SetSendCodecs(params.codecs) &&
+          SetSendRtpHeaderExtensions(params.extensions) &&
+          SetMaxSendBandwidth(params.max_bandwidth_bps) &&
+          SetOptions(params.options));
+}
+
+bool WebRtcVoiceMediaChannel::SetRecvParameters(
+    const AudioRecvParameters& params) {
+  // TODO(pthatcher): Refactor this to be more clean now that we have
+  // all the information at once.
+  return (SetRecvCodecs(params.codecs) &&
+          SetRecvRtpHeaderExtensions(params.extensions));
+}
+
 bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
   LOG(LS_INFO) << "Setting voice channel options: "
                << options.ToString();

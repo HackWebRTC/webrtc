@@ -856,6 +856,22 @@ WebRtcVideoChannel2::FilterSupportedCodecs(
   return supported_codecs;
 }
 
+bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
+  // TODO(pbos): Refactor this to only recreate the send streams once
+  // instead of 4 times.
+  return (SetSendCodecs(params.codecs) &&
+          SetSendRtpHeaderExtensions(params.extensions) &&
+          SetMaxSendBandwidth(params.max_bandwidth_bps) &&
+          SetOptions(params.options));
+}
+
+bool WebRtcVideoChannel2::SetRecvParameters(const VideoRecvParameters& params) {
+  // TODO(pbos): Refactor this to only recreate the recv streams once
+  // instead of twice.
+  return (SetRecvCodecs(params.codecs) &&
+          SetRecvRtpHeaderExtensions(params.extensions));
+}
+
 bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRecvCodecs");
   LOG(LS_INFO) << "SetRecvCodecs: " << CodecVectorToString(codecs);

@@ -286,6 +286,8 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   int voe_channel() const { return voe_channel_; }
   bool valid() const { return voe_channel_ != -1; }
 
+  bool SetSendParameters(const AudioSendParameters& params) override;
+  bool SetRecvParameters(const AudioRecvParameters& params) override;
   bool SetOptions(const AudioOptions& options) override;
   bool GetOptions(AudioOptions* options) const override {
     *options = options_;

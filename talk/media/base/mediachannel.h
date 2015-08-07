@@ -138,6 +138,20 @@ static std::string ToStringIfSet(const char* key, const Settable<T>& val) {
   return str;
 }
 
+template <class T>
+static std::string VectorToString(const std::vector<T>& vals) {
+    std::ostringstream ost;
+    ost << "[";
+    for (size_t i = 0; i < vals.size(); ++i) {
+      if (i > 0) {
+        ost << ", ";
+      }
+      ost << vals[i].ToString();
+    }
+    ost << "]";
+    return ost.str();
+}
+
 // Options that can be applied to a VoiceMediaChannel or a VoiceMediaEngine.
 // Used to be flags, but that makes it hard to selectively apply options.
 // We are moving all of the setting of options to structs like this,
@@ -453,9 +467,6 @@ struct VideoOptions {
 struct RtpHeaderExtension {
   RtpHeaderExtension() : id(0) {}
   RtpHeaderExtension(const std::string& u, int i) : uri(u), id(i) {}
-  std::string uri;
-  int id;
-  // TODO(juberti): SendRecv direction;
 
   bool operator==(const RtpHeaderExtension& ext) const {
     // id is a reserved word in objective-c. Therefore the id attribute has to
@@ -463,6 +474,19 @@ struct RtpHeaderExtension {
     return this->id == ext.id &&
         uri == ext.uri;
   }
+
+  std::string ToString() const {
+    std::ostringstream ost;
+    ost << "{";
+    ost << "id: , " << id;
+    ost << "uri: " << uri;
+    ost << "}";
+    return ost.str();
+  }
+
+  std::string uri;
+  int id;
+  // TODO(juberti): SendRecv direction;
 };
 
 // Returns the named header extension if found among all extensions, NULL
@@ -985,6 +1009,45 @@ struct DataMediaInfo {
   std::vector<DataReceiverInfo> receivers;
 };
 
+template <class Codec>
+struct RtpParameters {
+  virtual std::string ToString() {
+    std::ostringstream ost;
+    ost << "{";
+    ost << "codecs: " << VectorToString(codecs) << ", ";
+    ost << "extensions: " << VectorToString(extensions);
+    ost << "}";
+    return ost.str();
+  }
+
+  std::vector<Codec> codecs;
+  std::vector<RtpHeaderExtension> extensions;
+  // TODO(pthatcher): Add streams.
+};
+
+template <class Codec, class Options>
+struct RtpSendParameters : RtpParameters<Codec> {
+  std::string ToString() override {
+    std::ostringstream ost;
+    ost << "{";
+    ost << "codecs: " << VectorToString(this->codecs) << ", ";
+    ost << "extensions: " << VectorToString(this->extensions) << ", ";
+    ost << "max_bandiwidth_bps: " << max_bandwidth_bps << ", ";
+    ost << "options: " << options.ToString();
+    ost << "}";
+    return ost.str();
+  }
+
+  int max_bandwidth_bps = -1;
+  Options options;
+};
+
+struct AudioSendParameters : RtpSendParameters<AudioCodec, AudioOptions> {
+};
+
+struct AudioRecvParameters : RtpParameters<AudioCodec> {
+};
+
 class VoiceMediaChannel : public MediaChannel {
  public:
   enum Error {
@@ -1010,6 +1073,22 @@ class VoiceMediaChannel : public MediaChannel {
 
   VoiceMediaChannel() {}
   virtual ~VoiceMediaChannel() {}
+  // TODO(pthatcher): Remove SetSendCodecs,
+  // SetSendRtpHeaderExtensions, SetMaxSendBandwidth, and SetOptions
+  // once all implementations implement SetSendParameters.
+  virtual bool SetSendParameters(const AudioSendParameters& params) {
+    return (SetSendCodecs(params.codecs) &&
+            SetSendRtpHeaderExtensions(params.extensions) &&
+            SetMaxSendBandwidth(params.max_bandwidth_bps) &&
+            SetOptions(params.options));
+  }
+  // TODO(pthatcher): Remove SetRecvCodecs and
+  // SetRecvRtpHeaderExtensions once all implementations implement
+  // SetRecvParameters.
+  virtual bool SetRecvParameters(const AudioRecvParameters& params) {
+    return (SetRecvCodecs(params.codecs) &&
+            SetRecvRtpHeaderExtensions(params.extensions));
+  }
   // Sets the codecs/payload types to be used for incoming media.
   virtual bool SetRecvCodecs(const std::vector<AudioCodec>& codecs) = 0;
   // Sets the codecs/payload types to be used for outgoing media.
@@ -1065,6 +1144,12 @@ class VoiceMediaChannel : public MediaChannel {
   sigslot::signal2<uint32, VoiceMediaChannel::Error> SignalMediaError;
 };
 
+struct VideoSendParameters : RtpSendParameters<VideoCodec, VideoOptions> {
+};
+
+struct VideoRecvParameters : RtpParameters<VideoCodec> {
+};
+
 class VideoMediaChannel : public MediaChannel {
  public:
   enum Error {
@@ -1086,6 +1171,22 @@ class VideoMediaChannel : public MediaChannel {
   virtual ~VideoMediaChannel() {}
   // Allow video channel to unhook itself from an associated voice channel.
   virtual void DetachVoiceChannel() = 0;
+  // TODO(pthatcher): Remove SetSendCodecs,
+  // SetSendRtpHeaderExtensions, SetMaxSendBandwidth, and SetOptions
+  // once all implementations implement SetSendParameters.
+  virtual bool SetSendParameters(const VideoSendParameters& params) {
+    return (SetSendCodecs(params.codecs) &&
+            SetSendRtpHeaderExtensions(params.extensions) &&
+            SetMaxSendBandwidth(params.max_bandwidth_bps) &&
+            SetOptions(params.options));
+  }
+  // TODO(pthatcher): Remove SetRecvCodecs and
+  // SetRecvRtpHeaderExtensions once all implementations implement
+  // SetRecvParameters.
+  virtual bool SetRecvParameters(const VideoRecvParameters& params) {
+    return (SetRecvCodecs(params.codecs) &&
+            SetRecvRtpHeaderExtensions(params.extensions));
+  }
   // Sets the codecs/payload types to be used for incoming media.
   virtual bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) = 0;
   // Sets the codecs/payload types to be used for outgoing media.
@@ -1189,6 +1290,27 @@ struct SendDataParams {
 
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
 
+struct DataOptions {
+  std::string ToString() {
+    return "{}";
+  }
+};
+
+struct DataSendParameters : RtpSendParameters<DataCodec, DataOptions> {
+  std::string ToString() {
+    std::ostringstream ost;
+    // Options and extensions aren't used.
+    ost << "{";
+    ost << "codecs: " << VectorToString(codecs) << ", ";
+    ost << "max_bandiwidth_bps: " << max_bandwidth_bps;
+    ost << "}";
+    return ost.str();
+  }
+};
+
+struct DataRecvParameters : RtpParameters<DataCodec> {
+};
+
 class DataMediaChannel : public MediaChannel {
  public:
   enum Error {
@@ -1203,6 +1325,19 @@ class DataMediaChannel : public MediaChannel {
 
   virtual ~DataMediaChannel() {}
 
+  // TODO(pthatcher): Remove SetSendCodecs,
+  // SetSendRtpHeaderExtensions, SetMaxSendBandwidth, and SetOptions
+  // once all implementations implement SetSendParameters.
+  virtual bool SetSendParameters(const DataSendParameters& params) {
+    return (SetSendCodecs(params.codecs) &&
+            SetMaxSendBandwidth(params.max_bandwidth_bps));
+  }
+  // TODO(pthatcher): Remove SetRecvCodecs and
+  // SetRecvRtpHeaderExtensions once all implementations implement
+  // SetRecvParameters.
+  virtual bool SetRecvParameters(const DataRecvParameters& params) {
+    return SetRecvCodecs(params.codecs);
+  }
   virtual bool SetSendCodecs(const std::vector<DataCodec>& codecs) = 0;
   virtual bool SetRecvCodecs(const std::vector<DataCodec>& codecs) = 0;
 

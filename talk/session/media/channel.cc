@@ -150,6 +150,31 @@ static const MediaContentDescription* GetContentDescription(
   return static_cast<const MediaContentDescription*>(cinfo->description);
 }
 
+template <class Codec>
+void RtpParametersFromMediaDescription(
+    const MediaContentDescriptionImpl<Codec>* desc,
+    RtpParameters<Codec>* params) {
+  // TODO(pthatcher): Remove this once we're sure no one will give us
+  // a description without codecs (currently a CA_UPDATE with just
+  // streams can).
+  if (desc->has_codecs()) {
+    params->codecs = desc->codecs();
+  }
+  // TODO(pthatcher): See if we really need
+  // rtp_header_extensions_set() and remove it if we don't.
+  if (desc->rtp_header_extensions_set()) {
+    params->extensions = desc->rtp_header_extensions();
+  }
+}
+
+template <class Codec, class Options>
+void RtpSendParametersFromMediaDescription(
+    const MediaContentDescriptionImpl<Codec>* desc,
+    RtpSendParameters<Codec, Options>* send_params) {
+  RtpParametersFromMediaDescription(desc, send_params);
+  send_params->max_bandwidth_bps = desc->bandwidth();
+}
+
 BaseChannel::BaseChannel(rtc::Thread* thread,
                          MediaChannel* media_channel, BaseSession* session,
                          const std::string& content_name, bool rtcp)
@@ -897,6 +922,32 @@ void BaseChannel::ChannelNotWritable_w() {
   ChangeState();
 }
 
+bool BaseChannel::SetRtpTransportParameters_w(
+    const MediaContentDescription* content,
+    ContentAction action,
+    ContentSource src,
+    std::string* error_desc) {
+  if (action == CA_UPDATE) {
+    // These parameters never get changed by a CA_UDPATE.
+    return true;
+  }
+
+  // Cache secure_required_ for belt and suspenders check on SendPacket
+  if (src == CS_LOCAL) {
+    set_secure_required(content->crypto_required() != CT_NONE);
+  }
+
+  if (!SetSrtp_w(content->cryptos(), action, src, error_desc)) {
+    return false;
+  }
+
+  if (!SetRtcpMux_w(content->rtcp_mux(), action, src, error_desc)) {
+    return false;
+  }
+
+  return true;
+}
+
 // |dtls| will be set to true if DTLS is active for transport channel and
 // crypto is empty.
 bool BaseChannel::CheckSrtpConfig(const std::vector<CryptoParams>& cryptos,
@@ -907,42 +958,6 @@ bool BaseChannel::CheckSrtpConfig(const std::vector<CryptoParams>& cryptos,
     SafeSetError("Cryptos must be empty when DTLS is active.",
                  error_desc);
     return false;
-  }
-  return true;
-}
-
-bool BaseChannel::SetRecvRtpHeaderExtensions_w(
-    const MediaContentDescription* content,
-    MediaChannel* media_channel,
-    std::string* error_desc) {
-  if (content->rtp_header_extensions_set()) {
-    if (!media_channel->SetRecvRtpHeaderExtensions(
-            content->rtp_header_extensions())) {
-      std::ostringstream desc;
-      desc << "Failed to set receive rtp header extensions for "
-           << MediaTypeToString(content->type()) << " content.";
-      SafeSetError(desc.str(), error_desc);
-      return false;
-    }
-  }
-  return true;
-}
-
-bool BaseChannel::SetSendRtpHeaderExtensions_w(
-    const MediaContentDescription* content,
-    MediaChannel* media_channel,
-    std::string* error_desc) {
-  if (content->rtp_header_extensions_set()) {
-    if (!media_channel->SetSendRtpHeaderExtensions(
-            content->rtp_header_extensions())) {
-      std::ostringstream desc;
-      desc << "Failed to set send rtp header extensions for "
-           << MediaTypeToString(content->type()) << " content.";
-      SafeSetError(desc.str(), error_desc);
-      return false;
-    } else {
-      MaybeCacheRtpAbsSendTimeHeaderExtension(content->rtp_header_extensions());
-    }
   }
   return true;
 }
@@ -1208,49 +1223,6 @@ bool BaseChannel::UpdateRemoteStreams_w(
   return ret;
 }
 
-bool BaseChannel::SetBaseLocalContent_w(const MediaContentDescription* content,
-                                        ContentAction action,
-                                        std::string* error_desc) {
-  // Cache secure_required_ for belt and suspenders check on SendPacket
-  secure_required_ = content->crypto_required() != CT_NONE;
-  // Set local RTP header extensions.
-  bool ret = SetRecvRtpHeaderExtensions_w(content, media_channel(), error_desc);
-  // Set local SRTP parameters (what we will encrypt with).
-  ret &= SetSrtp_w(content->cryptos(), action, CS_LOCAL, error_desc);
-  // Set local RTCP mux parameters.
-  ret &= SetRtcpMux_w(content->rtcp_mux(), action, CS_LOCAL, error_desc);
-
-  // Call UpdateLocalStreams_w last to make sure as many settings as possible
-  // are already set when creating streams.
-  ret &= UpdateLocalStreams_w(content->streams(), action, error_desc);
-  set_local_content_direction(content->direction());
-  return ret;
-}
-
-bool BaseChannel::SetBaseRemoteContent_w(const MediaContentDescription* content,
-                                         ContentAction action,
-                                         std::string* error_desc) {
-  // Set remote RTP header extensions.
-  bool ret = SetSendRtpHeaderExtensions_w(content, media_channel(), error_desc);
-  // Set remote SRTP parameters (what the other side will encrypt with).
-  ret &= SetSrtp_w(content->cryptos(), action, CS_REMOTE, error_desc);
-  // Set remote RTCP mux parameters.
-  ret &= SetRtcpMux_w(content->rtcp_mux(), action, CS_REMOTE, error_desc);
-  if (!media_channel()->SetMaxSendBandwidth(content->bandwidth())) {
-    std::ostringstream desc;
-    desc << "Failed to set max send bandwidth for "
-         << MediaTypeToString(content->type()) << " content.";
-    SafeSetError(desc.str(), error_desc);
-    ret = false;
-  }
-
-  // Call UpdateRemoteStreams_w last to make sure as many settings as possible
-  // are already set when creating streams.
-  ret &= UpdateRemoteStreams_w(content->streams(), action, error_desc);
-  set_remote_content_direction(content->direction());
-  return ret;
-}
-
 void BaseChannel::MaybeCacheRtpAbsSendTimeHeaderExtension(
     const std::vector<RtpHeaderExtension>& extensions) {
   const RtpHeaderExtension* send_time_extension =
@@ -1501,28 +1473,34 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  bool ret = SetBaseLocalContent_w(content, action, error_desc);
-  // Set local audio codecs (what we want to receive).
-  // TODO(whyuan): Change action != CA_UPDATE to !audio->partial() when partial
-  // is set properly.
-  if (action != CA_UPDATE || audio->has_codecs()) {
-    if (!media_channel()->SetRecvCodecs(audio->codecs())) {
-      SafeSetError("Failed to set audio receive codecs.", error_desc);
-      ret = false;
-    }
+  if (!SetRtpTransportParameters_w(content, action, CS_LOCAL, error_desc)) {
+    return false;
   }
 
-  // If everything worked, see if we can start receiving.
-  if (ret) {
-    std::vector<AudioCodec>::const_iterator it = audio->codecs().begin();
-    for (; it != audio->codecs().end(); ++it) {
-      bundle_filter()->AddPayloadType(it->id);
-    }
-    ChangeState();
-  } else {
-    LOG(LS_WARNING) << "Failed to set local voice description";
+  AudioRecvParameters recv_params = last_recv_params_;
+  RtpParametersFromMediaDescription(audio, &recv_params);
+  if (!media_channel()->SetRecvParameters(recv_params)) {
+    SafeSetError("Failed to set local video description recv parameters.",
+                 error_desc);
+    return false;
   }
-  return ret;
+  for (const AudioCodec& codec : audio->codecs()) {
+    bundle_filter()->AddPayloadType(codec.id);
+  }
+  last_recv_params_ = recv_params;
+
+  // TODO(pthatcher): Move local streams into AudioSendParameters, and
+  // only give it to the media channel once we have a remote
+  // description too (without a remote description, we won't be able
+  // to send them anyway).
+  if (!UpdateLocalStreams_w(audio->streams(), action, error_desc)) {
+    SafeSetError("Failed to set local audio description streams.", error_desc);
+    return false;
+  }
+
+  set_local_content_direction(content->direction());
+  ChangeState();
+  return true;
 }
 
 bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
@@ -1539,43 +1517,37 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  bool ret = true;
-  // Set remote video codecs (what the other side wants to receive).
-  if (action != CA_UPDATE || audio->has_codecs()) {
-    if (!media_channel()->SetSendCodecs(audio->codecs())) {
-      SafeSetError("Failed to set audio send codecs.", error_desc);
-      ret = false;
-    }
+  if (!SetRtpTransportParameters_w(content, action, CS_REMOTE, error_desc)) {
+    return false;
   }
 
-  ret &= SetBaseRemoteContent_w(content, action, error_desc);
+  AudioSendParameters send_params = last_send_params_;
+  RtpSendParametersFromMediaDescription(audio, &send_params);
+  if (audio->conference_mode()) {
+    send_params.options.conference_mode.Set(true);
+  }
+  if (audio->agc_minus_10db()) {
+    send_params.options.adjust_agc_delta.Set(kAgcMinus10db);
+  }
+  if (!media_channel()->SetSendParameters(send_params)) {
+    SafeSetError("Failed to set remote audio description send parameters.",
+                 error_desc);
+    return false;
+  }
+  last_send_params_ = send_params;
 
-  if (action != CA_UPDATE) {
-    // Tweak our audio processing settings, if needed.
-    AudioOptions audio_options;
-    if (!media_channel()->GetOptions(&audio_options)) {
-      LOG(LS_WARNING) << "Can not set audio options from on remote content.";
-    } else {
-      if (audio->conference_mode()) {
-        audio_options.conference_mode.Set(true);
-      }
-      if (audio->agc_minus_10db()) {
-        audio_options.adjust_agc_delta.Set(kAgcMinus10db);
-      }
-      if (!media_channel()->SetOptions(audio_options)) {
-        // Log an error on failure, but don't abort the call.
-        LOG(LS_ERROR) << "Failed to set voice channel options";
-      }
-    }
+  // TODO(pthatcher): Move remote streams into AudioRecvParameters,
+  // and only give it to the media channel once we have a local
+  // description too (without a local description, we won't be able to
+  // recv them anyway).
+  if (!UpdateRemoteStreams_w(audio->streams(), action, error_desc)) {
+    SafeSetError("Failed to set remote audio description streams.", error_desc);
+    return false;
   }
 
-  // If everything worked, see if we can start sending.
-  if (ret) {
-    ChangeState();
-  } else {
-    LOG(LS_WARNING) << "Failed to set remote voice description";
-  }
-  return ret;
+  set_remote_content_direction(content->direction());
+  ChangeState();
+  return true;
 }
 
 bool VoiceChannel::SetRingbackTone_w(const void* buf, int len) {
@@ -1844,35 +1816,34 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  bool ret = SetBaseLocalContent_w(content, action, error_desc);
-  // Set local video codecs (what we want to receive).
-  if (action != CA_UPDATE || video->has_codecs()) {
-    if (!media_channel()->SetRecvCodecs(video->codecs())) {
-      SafeSetError("Failed to set video receive codecs.", error_desc);
-      ret = false;
-    }
+  if (!SetRtpTransportParameters_w(content, action, CS_LOCAL, error_desc)) {
+    return false;
   }
 
-  if (action != CA_UPDATE) {
-    VideoOptions video_options;
-    media_channel()->GetOptions(&video_options);
-    if (!media_channel()->SetOptions(video_options)) {
-      // Log an error on failure, but don't abort the call.
-      LOG(LS_ERROR) << "Failed to set video channel options";
-    }
+  VideoRecvParameters recv_params = last_recv_params_;
+  RtpParametersFromMediaDescription(video, &recv_params);
+  if (!media_channel()->SetRecvParameters(recv_params)) {
+    SafeSetError("Failed to set local video description recv parameters.",
+                 error_desc);
+    return false;
+  }
+  for (const VideoCodec& codec : video->codecs()) {
+    bundle_filter()->AddPayloadType(codec.id);
+  }
+  last_recv_params_ = recv_params;
+
+  // TODO(pthatcher): Move local streams into VideoSendParameters, and
+  // only give it to the media channel once we have a remote
+  // description too (without a remote description, we won't be able
+  // to send them anyway).
+  if (!UpdateLocalStreams_w(video->streams(), action, error_desc)) {
+    SafeSetError("Failed to set local video description streams.", error_desc);
+    return false;
   }
 
-  // If everything worked, see if we can start receiving.
-  if (ret) {
-    std::vector<VideoCodec>::const_iterator it = video->codecs().begin();
-    for (; it != video->codecs().end(); ++it) {
-      bundle_filter()->AddPayloadType(it->id);
-    }
-    ChangeState();
-  } else {
-    LOG(LS_WARNING) << "Failed to set local video description";
-  }
-  return ret;
+  set_local_content_direction(content->direction());
+  ChangeState();
+  return true;
 }
 
 bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
@@ -1889,38 +1860,39 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  bool ret = true;
-  // Set remote video codecs (what the other side wants to receive).
-  if (action != CA_UPDATE || video->has_codecs()) {
-    if (!media_channel()->SetSendCodecs(video->codecs())) {
-      SafeSetError("Failed to set video send codecs.", error_desc);
-      ret = false;
-    }
+
+  if (!SetRtpTransportParameters_w(content, action, CS_REMOTE, error_desc)) {
+    return false;
   }
 
-  ret &= SetBaseRemoteContent_w(content, action, error_desc);
+  VideoSendParameters send_params = last_send_params_;
+  RtpSendParametersFromMediaDescription(video, &send_params);
+  if (video->conference_mode()) {
+    send_params.options.conference_mode.Set(true);
+  }
+  if (!media_channel()->SetSendParameters(send_params)) {
+    SafeSetError("Failed to set remote video description send parameters.",
+                 error_desc);
+    return false;
+  }
+  last_send_params_ = send_params;
 
-  if (action != CA_UPDATE) {
-    // Tweak our video processing settings, if needed.
-    VideoOptions video_options;
-    media_channel()->GetOptions(&video_options);
-    if (video->conference_mode()) {
-      video_options.conference_mode.Set(true);
-    }
-
-    if (!media_channel()->SetOptions(video_options)) {
-      // Log an error on failure, but don't abort the call.
-      LOG(LS_ERROR) << "Failed to set video channel options";
-    }
+  // TODO(pthatcher): Move remote streams into VideoRecvParameters,
+  // and only give it to the media channel once we have a local
+  // description too (without a local description, we won't be able to
+  // recv them anyway).
+  if (!UpdateRemoteStreams_w(video->streams(), action, error_desc)) {
+    SafeSetError("Failed to set remote video description streams.", error_desc);
+    return false;
   }
 
-  // If everything worked, see if we can start sending.
-  if (ret) {
-    ChangeState();
-  } else {
-    LOG(LS_WARNING) << "Failed to set remote video description";
+  if (video->rtp_header_extensions_set()) {
+    MaybeCacheRtpAbsSendTimeHeaderExtension(video->rtp_header_extensions());
   }
-  return ret;
+
+  set_remote_content_direction(content->direction());
+  ChangeState();
+  return true;
 }
 
 bool VideoChannel::ApplyViewRequest_w(const ViewRequest& request) {
@@ -2224,44 +2196,45 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  bool ret = false;
   if (!SetDataChannelTypeFromContent(data, error_desc)) {
     return false;
   }
 
-  if (data_channel_type_ == DCT_SCTP) {
-    // SCTP data channels don't need the rest of the stuff.
-    ret = UpdateLocalStreams_w(data->streams(), action, error_desc);
-    if (ret) {
-      set_local_content_direction(content->direction());
-      // As in SetRemoteContent_w, make sure we set the local SCTP port
-      // number as specified in our DataContentDescription.
-      if (!media_channel()->SetRecvCodecs(data->codecs())) {
-        SafeSetError("Failed to set data receive codecs.", error_desc);
-        ret = false;
-      }
-    }
-  } else {
-    ret = SetBaseLocalContent_w(content, action, error_desc);
-    if (action != CA_UPDATE || data->has_codecs()) {
-      if (!media_channel()->SetRecvCodecs(data->codecs())) {
-        SafeSetError("Failed to set data receive codecs.", error_desc);
-        ret = false;
-      }
+  if (data_channel_type_ == DCT_RTP) {
+    if (!SetRtpTransportParameters_w(content, action, CS_LOCAL, error_desc)) {
+      return false;
     }
   }
 
-  // If everything worked, see if we can start receiving.
-  if (ret) {
-    std::vector<DataCodec>::const_iterator it = data->codecs().begin();
-    for (; it != data->codecs().end(); ++it) {
-      bundle_filter()->AddPayloadType(it->id);
-    }
-    ChangeState();
-  } else {
-    LOG(LS_WARNING) << "Failed to set local data description";
+  // FYI: We send the SCTP port number (not to be confused with the
+  // underlying UDP port number) as a codec parameter.  So even SCTP
+  // data channels need codecs.
+  DataRecvParameters recv_params = last_recv_params_;
+  RtpParametersFromMediaDescription(data, &recv_params);
+  if (!media_channel()->SetRecvParameters(recv_params)) {
+    SafeSetError("Failed to set remote data description recv parameters.",
+                 error_desc);
+    return false;
   }
-  return ret;
+  if (data_channel_type_ == DCT_RTP) {
+    for (const DataCodec& codec : data->codecs()) {
+      bundle_filter()->AddPayloadType(codec.id);
+    }
+  }
+  last_recv_params_ = recv_params;
+
+  // TODO(pthatcher): Move local streams into DataSendParameters, and
+  // only give it to the media channel once we have a remote
+  // description too (without a remote description, we won't be able
+  // to send them anyway).
+  if (!UpdateLocalStreams_w(data->streams(), action, error_desc)) {
+    SafeSetError("Failed to set local data description streams.", error_desc);
+    return false;
+  }
+
+  set_local_content_direction(content->direction());
+  ChangeState();
+  return true;
 }
 
 bool DataChannel::SetRemoteContent_w(const MediaContentDescription* content,
@@ -2277,62 +2250,45 @@ bool DataChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  bool ret = true;
+  // If the remote data doesn't have codecs and isn't an update, it
+  // must be empty, so ignore it.
+  if (!data->has_codecs() && action != CA_UPDATE) {
+    return true;
+  }
+
   if (!SetDataChannelTypeFromContent(data, error_desc)) {
     return false;
   }
 
-  if (data_channel_type_ == DCT_SCTP) {
-    LOG(LS_INFO) << "Setting SCTP remote data description";
-    // SCTP data channels don't need the rest of the stuff.
-    ret = UpdateRemoteStreams_w(content->streams(), action, error_desc);
-    if (ret) {
-      set_remote_content_direction(content->direction());
-      // We send the SCTP port number (not to be confused with the underlying
-      // UDP port number) as a codec parameter.  Make sure it gets there.
-      if (!media_channel()->SetSendCodecs(data->codecs())) {
-        SafeSetError("Failed to set data send codecs.", error_desc);
-        ret = false;
-      }
-    }
-  } else {
-    // If the remote data doesn't have codecs and isn't an update, it
-    // must be empty, so ignore it.
-    if (action != CA_UPDATE && !data->has_codecs()) {
-      return true;
-    }
-    LOG(LS_INFO) << "Setting remote data description";
-
-    // Set remote video codecs (what the other side wants to receive).
-    if (action != CA_UPDATE || data->has_codecs()) {
-      if (!media_channel()->SetSendCodecs(data->codecs())) {
-        SafeSetError("Failed to set data send codecs.", error_desc);
-        ret = false;
-      }
-    }
-
-    if (ret) {
-      ret &= SetBaseRemoteContent_w(content, action, error_desc);
-    }
-
-    if (action != CA_UPDATE) {
-      int bandwidth_bps = data->bandwidth();
-      if (!media_channel()->SetMaxSendBandwidth(bandwidth_bps)) {
-        std::ostringstream desc;
-        desc << "Failed to set max send bandwidth for data content.";
-        SafeSetError(desc.str(), error_desc);
-        ret = false;
-      }
-    }
+  LOG(LS_INFO) << "Setting remote data description";
+  if (data_channel_type_ == DCT_RTP &&
+      !SetRtpTransportParameters_w(content, action, CS_REMOTE, error_desc)) {
+    return false;
   }
 
-  // If everything worked, see if we can start sending.
-  if (ret) {
-    ChangeState();
-  } else {
-    LOG(LS_WARNING) << "Failed to set remote data description";
+
+  DataSendParameters send_params = last_send_params_;
+  RtpSendParametersFromMediaDescription<DataCodec>(data, &send_params);
+  if (!media_channel()->SetSendParameters(send_params)) {
+    SafeSetError("Failed to set remote data description send parameters.",
+                 error_desc);
+    return false;
   }
-  return ret;
+  last_send_params_ = send_params;
+
+  // TODO(pthatcher): Move remote streams into DataRecvParameters,
+  // and only give it to the media channel once we have a local
+  // description too (without a local description, we won't be able to
+  // recv them anyway).
+  if (!UpdateRemoteStreams_w(data->streams(), action, error_desc)) {
+    SafeSetError("Failed to set remote data description streams.",
+                 error_desc);
+    return false;
+  }
+
+  set_remote_content_direction(content->direction());
+  ChangeState();
+  return true;
 }
 
 void DataChannel::ChangeState() {
