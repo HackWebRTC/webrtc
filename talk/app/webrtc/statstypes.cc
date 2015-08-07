@@ -720,23 +720,28 @@ StatsCollection::StatsCollection() {
 }
 
 StatsCollection::~StatsCollection() {
+  DCHECK(thread_checker_.CalledOnValidThread());
   for (auto* r : list_)
     delete r;
 }
 
 StatsCollection::const_iterator StatsCollection::begin() const {
+  DCHECK(thread_checker_.CalledOnValidThread());
   return list_.begin();
 }
 
 StatsCollection::const_iterator StatsCollection::end() const {
+  DCHECK(thread_checker_.CalledOnValidThread());
   return list_.end();
 }
 
 size_t StatsCollection::size() const {
+  DCHECK(thread_checker_.CalledOnValidThread());
   return list_.size();
 }
 
 StatsReport* StatsCollection::InsertNew(const StatsReport::Id& id) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(Find(id) == nullptr);
   StatsReport* report = new StatsReport(id);
   list_.push_back(report);
@@ -744,11 +749,13 @@ StatsReport* StatsCollection::InsertNew(const StatsReport::Id& id) {
 }
 
 StatsReport* StatsCollection::FindOrAddNew(const StatsReport::Id& id) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   StatsReport* ret = Find(id);
   return ret ? ret : InsertNew(id);
 }
 
 StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(id.get());
   Container::iterator it = std::find_if(list_.begin(), list_.end(),
       [&id](const StatsReport* r)->bool { return r->id()->Equals(id); });
@@ -764,6 +771,7 @@ StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
 // Looks for a report with the given |id|.  If one is not found, NULL
 // will be returned.
 StatsReport* StatsCollection::Find(const StatsReport::Id& id) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   Container::iterator it = std::find_if(list_.begin(), list_.end(),
       [&id](const StatsReport* r)->bool { return r->id()->Equals(id); });
   return it == list_.end() ? nullptr : *it;
