@@ -318,7 +318,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   static bool ChannelDecodeThreadFunction(void* obj);
   bool ChannelDecodeProcess();
 
-  void OnRttUpdate(int64_t rtt);
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms);
 
   int ProtectionRequest(const FecProtectionParams* delta_fec_params,
                         const FecProtectionParams* key_fec_params,
@@ -487,6 +487,10 @@ class ViEChannel : public VCMFrameTypeCallback,
   I420FrameCallback* pre_render_callback_ GUARDED_BY(crit_);
 
   const rtc::scoped_ptr<ReportBlockStats> report_block_stats_sender_;
+
+  int64_t time_of_first_rtt_ms_ GUARDED_BY(crit_);
+  int64_t rtt_sum_ms_ GUARDED_BY(crit_);
+  size_t num_rtts_ GUARDED_BY(crit_);
 
   // RtpRtcp modules, declared last as they use other members on construction.
   const std::vector<RtpRtcp*> rtp_rtcp_modules_;

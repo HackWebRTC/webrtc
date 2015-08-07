@@ -49,8 +49,8 @@ class ChannelStatsObserver : public CallStatsObserver {
   virtual ~ChannelStatsObserver() {}
 
   // Implements StatsObserver.
-  virtual void OnRttUpdate(int64_t rtt) {
-    owner_->OnRttUpdate(rtt);
+  virtual void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
+    owner_->OnRttUpdate(avg_rtt_ms, max_rtt_ms);
   }
 
  private:
@@ -119,6 +119,9 @@ ViEChannel::ViEChannel(int32_t channel_id,
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
       report_block_stats_sender_(new ReportBlockStats()),
+      time_of_first_rtt_ms_(-1),
+      rtt_sum_ms_(0),
+      num_rtts_(0),
       rtp_rtcp_modules_(
           CreateRtpRtcpModules(ViEModuleId(engine_id_, channel_id_),
                                !sender,
@@ -197,6 +200,17 @@ ViEChannel::~ViEChannel() {
 
 void ViEChannel::UpdateHistograms() {
   int64_t now = Clock::GetRealTimeClock()->TimeInMilliseconds();
+
+  {
+    CriticalSectionScoped cs(crit_.get());
+    int64_t elapsed_sec = (now - time_of_first_rtt_ms_) / 1000;
+    if (time_of_first_rtt_ms_ != -1 && num_rtts_ > 0 &&
+        elapsed_sec > metrics::kMinRunTimeInSeconds) {
+      int64_t avg_rtt_ms = (rtt_sum_ms_ + num_rtts_ / 2) / num_rtts_;
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Video.AverageRoundTripTimeInMilliseconds", avg_rtt_ms);
+    }
+  }
 
   if (sender_) {
     RtcpPacketTypeCounter rtcp_counter;
@@ -1119,8 +1133,14 @@ bool ViEChannel::ChannelDecodeProcess() {
   return true;
 }
 
-void ViEChannel::OnRttUpdate(int64_t rtt) {
-  vcm_->SetReceiveChannelParameters(rtt);
+void ViEChannel::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
+  vcm_->SetReceiveChannelParameters(max_rtt_ms);
+
+  CriticalSectionScoped cs(crit_.get());
+  if (time_of_first_rtt_ms_ == -1)
+    time_of_first_rtt_ms_ = Clock::GetRealTimeClock()->TimeInMilliseconds();
+  rtt_sum_ms_ += avg_rtt_ms;
+  ++num_rtts_;
 }
 
 int ViEChannel::ProtectionRequest(const FecProtectionParams* delta_fec_params,

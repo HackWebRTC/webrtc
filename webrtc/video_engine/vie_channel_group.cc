@@ -70,9 +70,9 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     return rbe_->TimeUntilNextProcess();
   }
 
-  void OnRttUpdate(int64_t rtt) override {
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override {
     CriticalSectionScoped cs(crit_sect_.get());
-    rbe_->OnRttUpdate(rtt);
+    rbe_->OnRttUpdate(avg_rtt_ms, max_rtt_ms);
   }
 
   void RemoveStream(unsigned int ssrc) override {

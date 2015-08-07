@@ -61,7 +61,7 @@ void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
 
   int64_t rtt_ms =
       clock_->TimeInMilliseconds() - feedback.latest_send_time_ms();
-  rbe_->OnRttUpdate(rtt_ms);
+  rbe_->OnRttUpdate(rtt_ms, rtt_ms);
   BWE_TEST_LOGGING_PLOT(1, "RTT", clock_->TimeInMilliseconds(), rtt_ms);
 
   rbe_->IncomingPacketFeedbackVector(packet_feedback_vector);

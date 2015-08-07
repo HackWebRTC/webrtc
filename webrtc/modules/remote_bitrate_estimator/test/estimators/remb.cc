@@ -77,7 +77,7 @@ RembReceiver::RembReceiver(int flow_id, bool plot)
   ss << "Estimate_" << flow_id_ << "#1";
   estimate_log_prefix_ = ss.str();
   // Default RTT in RemoteRateControl is 200 ms ; 50 ms is more realistic.
-  estimator_->OnRttUpdate(50);
+  estimator_->OnRttUpdate(50, 50);
 }
 
 RembReceiver::~RembReceiver() {

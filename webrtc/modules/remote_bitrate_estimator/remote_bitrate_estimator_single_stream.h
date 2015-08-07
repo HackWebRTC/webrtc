@@ -34,7 +34,7 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
                       bool was_paced) override;
   int32_t Process() override;
   int64_t TimeUntilNextProcess() override;
-  void OnRttUpdate(int64_t rtt) override;
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
   void RemoveStream(unsigned int ssrc) override;
   bool LatestEstimate(std::vector<unsigned int>* ssrcs,
                       unsigned int* bitrate_bps) const override;

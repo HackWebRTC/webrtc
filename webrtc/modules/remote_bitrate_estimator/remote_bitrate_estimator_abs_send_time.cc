@@ -372,9 +372,10 @@ void RemoteBitrateEstimatorAbsSendTime::UpdateEstimate(int64_t now_ms) {
   }
 }
 
-void RemoteBitrateEstimatorAbsSendTime::OnRttUpdate(int64_t rtt) {
+void RemoteBitrateEstimatorAbsSendTime::OnRttUpdate(int64_t avg_rtt_ms,
+                                                    int64_t max_rtt_ms) {
   CriticalSectionScoped cs(crit_sect_.get());
-  remote_rate_.SetRtt(rtt);
+  remote_rate_.SetRtt(avg_rtt_ms);
 }
 
 void RemoteBitrateEstimatorAbsSendTime::RemoveStream(unsigned int ssrc) {

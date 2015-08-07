@@ -440,7 +440,7 @@ struct FecProtectionParams {
 // CallStats object using RegisterStatsObserver.
 class CallStatsObserver {
  public:
-  virtual void OnRttUpdate(int64_t rtt_ms) = 0;
+  virtual void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) = 0;
 
   virtual ~CallStatsObserver() {}
 };
