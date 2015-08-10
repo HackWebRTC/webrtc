@@ -320,6 +320,7 @@ TEST_F(RtpSenderTest, BuildRTPPacket) {
   EXPECT_FALSE(rtp_header.extension.hasAudioLevel);
   EXPECT_EQ(0, rtp_header.extension.transmissionTimeOffset);
   EXPECT_EQ(0u, rtp_header.extension.absoluteSendTime);
+  EXPECT_FALSE(rtp_header.extension.voiceActivity);
   EXPECT_EQ(0u, rtp_header.extension.audioLevel);
   EXPECT_EQ(0u, rtp_header.extension.videoRotation);
 }
@@ -504,9 +505,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithAudioLevelExtension) {
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
   EXPECT_TRUE(rtp_header.extension.hasAudioLevel);
-  // Expect kAudioLevel + 0x80 because we set "voiced" to true in the call to
-  // UpdateAudioLevel(), above.
-  EXPECT_EQ(kAudioLevel + 0x80u, rtp_header.extension.audioLevel);
+  EXPECT_TRUE(rtp_header.extension.voiceActivity);
+  EXPECT_EQ(kAudioLevel, rtp_header.extension.audioLevel);
 
   // Parse without map extension
   webrtc::RTPHeader rtp_header2;
@@ -516,6 +516,7 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithAudioLevelExtension) {
   VerifyRTPHeaderCommon(rtp_header2);
   EXPECT_EQ(length, rtp_header2.headerLength);
   EXPECT_FALSE(rtp_header2.extension.hasAudioLevel);
+  EXPECT_FALSE(rtp_header2.extension.voiceActivity);
   EXPECT_EQ(0u, rtp_header2.extension.audioLevel);
 }
 
@@ -566,7 +567,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
   EXPECT_TRUE(rtp_header.extension.hasTransportSequenceNumber);
   EXPECT_EQ(kTimeOffset, rtp_header.extension.transmissionTimeOffset);
   EXPECT_EQ(kAbsoluteSendTime, rtp_header.extension.absoluteSendTime);
-  EXPECT_EQ(kAudioLevel + 0x80u, rtp_header.extension.audioLevel);
+  EXPECT_TRUE(rtp_header.extension.voiceActivity);
+  EXPECT_EQ(kAudioLevel, rtp_header.extension.audioLevel);
   EXPECT_EQ(kTransportSequenceNumber,
             rtp_header.extension.transportSequenceNumber);
 
@@ -584,6 +586,7 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
 
   EXPECT_EQ(0, rtp_header2.extension.transmissionTimeOffset);
   EXPECT_EQ(0u, rtp_header2.extension.absoluteSendTime);
+  EXPECT_FALSE(rtp_header2.extension.voiceActivity);
   EXPECT_EQ(0u, rtp_header2.extension.audioLevel);
   EXPECT_EQ(0u, rtp_header2.extension.transportSequenceNumber);
 }

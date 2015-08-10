@@ -312,6 +312,7 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
 
   // May not be present in packet.
   header.extension.hasAudioLevel = false;
+  header.extension.voiceActivity = false;
   header.extension.audioLevel = 0;
 
   // May not be present in packet.
@@ -423,14 +424,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           // |  ID   | len=0 |V|   level     |
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           //
-
-          // Parse out the fields but only use it for debugging for now.
-          // const uint8_t V = (*ptr & 0x80) >> 7;
-          // const uint8_t level = (*ptr & 0x7f);
-          // DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u,
-          // level=%u", ID, len, V, level);
-
-          header.extension.audioLevel = ptr[0];
+          header.extension.audioLevel = ptr[0] & 0x7f;
+          header.extension.voiceActivity = (ptr[0] & 0x80) != 0;
           header.extension.hasAudioLevel = true;
           break;
         }

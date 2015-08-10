@@ -123,11 +123,10 @@ int main(int argc, char* argv[]) {
             packet->header().markerBit,
             packet->header().ssrc);
     if (print_audio_level && packet->header().extension.hasAudioLevel) {
-      // |audioLevel| consists of one bit for "V" and then 7 bits level.
       fprintf(out_file,
               " %5u (%1i)",
-              packet->header().extension.audioLevel & 0x7F,
-              (packet->header().extension.audioLevel & 0x80) == 0 ? 0 : 1);
+              packet->header().extension.audioLevel,
+              packet->header().extension.voiceActivity);
     }
     if (print_abs_send_time && packet->header().extension.hasAbsoluteSendTime) {
       if (cycles == -1) {
