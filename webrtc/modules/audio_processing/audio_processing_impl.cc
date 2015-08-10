@@ -489,6 +489,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
                                        int output_sample_rate_hz,
                                        ChannelLayout output_layout,
                                        float* const* dest) {
+  CriticalSectionScoped crit_scoped(crit_);
   StreamConfig input_stream = api_format_.input_stream();
   input_stream.set_sample_rate_hz(input_sample_rate_hz);
   input_stream.set_num_channels(ChannelsFromLayout(input_layout));
