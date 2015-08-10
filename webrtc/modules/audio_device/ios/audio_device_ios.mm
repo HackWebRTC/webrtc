@@ -917,7 +917,7 @@ void AudioDeviceIOS::UpdatePlayoutDelay() {
     totalDelaySeconds += f64;
 
     // To ms
-    _playoutDelay = static_cast<uint32_t>(totalDelaySeconds / 1000);
+    _playoutDelay = static_cast<uint32_t>(totalDelaySeconds * 1000);
 
     // Reset counter
     _playoutDelayMeasurementCounter = 0;
