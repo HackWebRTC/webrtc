@@ -30,47 +30,52 @@
 #include "talk/app/webrtc/webrtcsessiondescriptionfactory.h"
 #include "webrtc/base/logging.h"
 
-using webrtc::DTLSIdentityRequestObserver;
+using webrtc::DtlsIdentityRequestObserver;
 
 namespace webrtc {
+
+// Passed to SSLIdentity::Generate, "WebRTC". Used for the certificates'
+// subject and issuer name.
+static const char kIdentityName[] = "WebRTC";
 
 namespace {
 
 enum {
   MSG_DESTROY,
   MSG_GENERATE_IDENTITY,
-  MSG_GENERATE_IDENTITY_RESULT,
-  MSG_RETURN_FREE_IDENTITY
+  MSG_GENERATE_IDENTITY_RESULT
 };
-
-typedef rtc::ScopedMessageData<rtc::SSLIdentity> IdentityResultMessageData;
 
 }  // namespace
 
 // This class runs on the worker thread to generate the identity. It's necessary
 // to separate this class from DtlsIdentityStore so that it can live on the
 // worker thread after DtlsIdentityStore is destroyed.
-class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
-                                      public rtc::MessageHandler {
+class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
+                                          public rtc::MessageHandler {
  public:
-  explicit WorkerTask(DtlsIdentityStore* store)
-      : signaling_thread_(rtc::Thread::Current()), store_(store) {
+  WorkerTask(DtlsIdentityStoreImpl* store, rtc::KeyType key_type)
+      : signaling_thread_(rtc::Thread::Current()),
+        store_(store),
+        key_type_(key_type) {
     store_->SignalDestroyed.connect(this, &WorkerTask::OnStoreDestroyed);
   }
 
-  virtual ~WorkerTask() { DCHECK(rtc::Thread::Current() == signaling_thread_); }
+  virtual ~WorkerTask() { DCHECK(signaling_thread_->IsCurrent()); }
 
  private:
   void GenerateIdentity_w() {
+    // TODO(hbos): Use key_type_ when torbjorng's CL has landed.
+    LOG(LS_INFO) << "Generating identity. Key type (TODO(hbos): should use): "
+                 << key_type_;
     rtc::scoped_ptr<rtc::SSLIdentity> identity(
-        rtc::SSLIdentity::Generate(DtlsIdentityStore::kIdentityName));
+        rtc::SSLIdentity::Generate(kIdentityName));
 
-    {
-      rtc::CritScope cs(&cs_);
-      if (store_) {
-        store_->PostGenerateIdentityResult_w(identity.Pass());
-      }
-    }
+    // Posting to |this| avoids touching |store_| on threads other than
+    // |signaling_thread_| and thus avoids having to use locks.
+    IdentityResultMessageData* msg = new IdentityResultMessageData(
+        new IdentityResult(key_type_, identity.Pass()));
+    signaling_thread_->Post(this, MSG_GENERATE_IDENTITY_RESULT, msg);
   }
 
   void OnMessage(rtc::Message* msg) override {
@@ -83,8 +88,19 @@ class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
         // avoid races on disconnecting the signal.
         signaling_thread_->Post(this, MSG_DESTROY, msg->pdata);
         break;
+      case MSG_GENERATE_IDENTITY_RESULT:
+        DCHECK(signaling_thread_->IsCurrent());
+        {
+          rtc::scoped_ptr<IdentityResultMessageData> pdata(
+              static_cast<IdentityResultMessageData*>(msg->pdata));
+          if (store_) {
+            store_->OnIdentityGenerated(pdata->data()->key_type_,
+                                        pdata->data()->identity_.Pass());
+          }
+        }
+        break;
       case MSG_DESTROY:
-        DCHECK(rtc::Thread::Current() == signaling_thread_);
+        DCHECK(signaling_thread_->IsCurrent());
         delete msg->pdata;
         // |this| has now been deleted. Don't touch member variables.
         break;
@@ -94,141 +110,141 @@ class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
   }
 
   void OnStoreDestroyed() {
-    rtc::CritScope cs(&cs_);
-    store_ = NULL;
+    DCHECK(signaling_thread_->IsCurrent());
+    store_ = nullptr;
   }
 
   rtc::Thread* const signaling_thread_;
-  rtc::CriticalSection cs_;
-  DtlsIdentityStore* store_;
+  DtlsIdentityStoreImpl* store_;  // Only touched on |signaling_thread_|.
+  const rtc::KeyType key_type_;
 };
 
-// Arbitrary constant used as common name for the identity.
-// Chosen to make the certificates more readable.
-const char DtlsIdentityStore::kIdentityName[] = "WebRTC";
-
-DtlsIdentityStore::DtlsIdentityStore(rtc::Thread* signaling_thread,
-                                     rtc::Thread* worker_thread)
+DtlsIdentityStoreImpl::DtlsIdentityStoreImpl(rtc::Thread* signaling_thread,
+                                             rtc::Thread* worker_thread)
     : signaling_thread_(signaling_thread),
       worker_thread_(worker_thread),
-      pending_jobs_(0) {}
+      request_info_() {
+  DCHECK(signaling_thread_->IsCurrent());
+  // Preemptively generate identities unless the worker thread and signaling
+  // thread are the same (only do preemptive work in the background).
+  if (worker_thread_ != signaling_thread_) {
+    // Only necessary for RSA.
+    GenerateIdentity(rtc::KT_RSA, nullptr);
+  }
+}
 
-DtlsIdentityStore::~DtlsIdentityStore() {
+DtlsIdentityStoreImpl::~DtlsIdentityStoreImpl() {
+  DCHECK(signaling_thread_->IsCurrent());
   SignalDestroyed();
 }
 
-void DtlsIdentityStore::Initialize() {
-  DCHECK(rtc::Thread::Current() == signaling_thread_);
-  // Do not aggressively generate the free identity if the worker thread and the
-  // signaling thread are the same.
-  if (worker_thread_ != signaling_thread_) {
-    GenerateIdentity();
-  }
-}
-
-void DtlsIdentityStore::RequestIdentity(DTLSIdentityRequestObserver* observer) {
-  DCHECK(rtc::Thread::Current() == signaling_thread_);
+void DtlsIdentityStoreImpl::RequestIdentity(
+    rtc::KeyType key_type,
+    const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>& observer) {
+  DCHECK(signaling_thread_->IsCurrent());
   DCHECK(observer);
 
-  // Must return the free identity async.
-  if (free_identity_.get()) {
-    IdentityResultMessageData* msg =
-        new IdentityResultMessageData(free_identity_.release());
-    signaling_thread_->Post(this, MSG_RETURN_FREE_IDENTITY, msg);
-  }
-
-  pending_observers_.push(observer);
-  GenerateIdentity();
+  GenerateIdentity(key_type, observer);
 }
 
-void DtlsIdentityStore::OnMessage(rtc::Message* msg) {
-  DCHECK(rtc::Thread::Current() == signaling_thread_);
+void DtlsIdentityStoreImpl::OnMessage(rtc::Message* msg) {
+  DCHECK(signaling_thread_->IsCurrent());
   switch (msg->message_id) {
     case MSG_GENERATE_IDENTITY_RESULT: {
       rtc::scoped_ptr<IdentityResultMessageData> pdata(
           static_cast<IdentityResultMessageData*>(msg->pdata));
-      OnIdentityGenerated(pdata->data().Pass());
-      break;
-    }
-    case MSG_RETURN_FREE_IDENTITY: {
-      rtc::scoped_ptr<IdentityResultMessageData> pdata(
-          static_cast<IdentityResultMessageData*>(msg->pdata));
-      ReturnIdentity(pdata->data().Pass());
+      OnIdentityGenerated(pdata->data()->key_type_,
+                          pdata->data()->identity_.Pass());
       break;
     }
   }
 }
 
-bool DtlsIdentityStore::HasFreeIdentityForTesting() const {
-  DCHECK(rtc::Thread::Current() == signaling_thread_);
-  return free_identity_.get() != nullptr;
+bool DtlsIdentityStoreImpl::HasFreeIdentityForTesting(
+    rtc::KeyType key_type) const {
+  DCHECK(signaling_thread_->IsCurrent());
+  return request_info_[key_type].free_identity_.get() != nullptr;
 }
 
-void DtlsIdentityStore::GenerateIdentity() {
-  DCHECK(rtc::Thread::Current() == signaling_thread_);
-  pending_jobs_++;
-  LOG(LS_VERBOSE) << "New DTLS identity generation is posted, "
-                  << "pending_identities=" << pending_jobs_;
+void DtlsIdentityStoreImpl::GenerateIdentity(
+    rtc::KeyType key_type,
+    const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>& observer) {
+  DCHECK(signaling_thread_->IsCurrent());
 
-  WorkerTask* task = new WorkerTask(this);
+  // Enqueue observer to be informed when generation of |key_type| is completed.
+  if (observer.get()) {
+    request_info_[key_type].request_observers_.push(observer);
+
+    // Already have a free identity generated?
+    if (request_info_[key_type].free_identity_.get()) {
+      // Return identity async - post even though we are on |signaling_thread_|.
+      LOG(LS_VERBOSE) << "Using a free DTLS identity.";
+      ++request_info_[key_type].gen_in_progress_counts_;
+      IdentityResultMessageData* msg = new IdentityResultMessageData(
+          new IdentityResult(key_type,
+                             request_info_[key_type].free_identity_.Pass()));
+      signaling_thread_->Post(this, MSG_GENERATE_IDENTITY_RESULT, msg);
+      return;
+    }
+
+    // Free identity in the process of being generated?
+    if (request_info_[key_type].gen_in_progress_counts_ ==
+            request_info_[key_type].request_observers_.size()) {
+      // No need to do anything, the free identity will be returned to the
+      // observer in a MSG_GENERATE_IDENTITY_RESULT.
+      return;
+    }
+  }
+
+  // Enqueue/Post a worker task to do the generation.
+  ++request_info_[key_type].gen_in_progress_counts_;
+  WorkerTask* task = new WorkerTask(this, key_type);  // Post 1 task/request.
   // The WorkerTask is owned by the message data to make sure it will not be
   // leaked even if the task does not get run.
-  IdentityTaskMessageData* msg = new IdentityTaskMessageData(task);
+  WorkerTaskMessageData* msg = new WorkerTaskMessageData(task);
   worker_thread_->Post(task, MSG_GENERATE_IDENTITY, msg);
 }
 
-void DtlsIdentityStore::OnIdentityGenerated(
-    rtc::scoped_ptr<rtc::SSLIdentity> identity) {
-  DCHECK(rtc::Thread::Current() == signaling_thread_);
+void DtlsIdentityStoreImpl::OnIdentityGenerated(
+    rtc::KeyType key_type, rtc::scoped_ptr<rtc::SSLIdentity> identity) {
+  DCHECK(signaling_thread_->IsCurrent());
 
-  pending_jobs_--;
-  LOG(LS_VERBOSE) << "A DTLS identity generation job returned, "
-                  << "pending_identities=" << pending_jobs_;
+  DCHECK(request_info_[key_type].gen_in_progress_counts_);
+  --request_info_[key_type].gen_in_progress_counts_;
 
-  if (pending_observers_.empty()) {
-    if (!free_identity_.get()) {
-      free_identity_.reset(identity.release());
-      LOG(LS_VERBOSE) << "A free DTLS identity is saved";
-    }
-    return;
+  rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver> observer;
+  if (!request_info_[key_type].request_observers_.empty()) {
+    observer = request_info_[key_type].request_observers_.front();
+    request_info_[key_type].request_observers_.pop();
   }
-  ReturnIdentity(identity.Pass());
-}
 
-void DtlsIdentityStore::ReturnIdentity(
-    rtc::scoped_ptr<rtc::SSLIdentity> identity) {
-  DCHECK(rtc::Thread::Current() == signaling_thread_);
-  DCHECK(!free_identity_.get());
-  DCHECK(!pending_observers_.empty());
-
-  rtc::scoped_refptr<DTLSIdentityRequestObserver> observer =
-      pending_observers_.front();
-  pending_observers_.pop();
-
-  if (identity.get()) {
-    observer->OnSuccessWithIdentityObj(identity.Pass());
+  if (observer.get() == nullptr) {
+    // No observer - store result in |free_identities_|.
+    DCHECK(!request_info_[key_type].free_identity_.get());
+    request_info_[key_type].free_identity_.swap(identity);
+    if (request_info_[key_type].free_identity_.get())
+      LOG(LS_VERBOSE) << "A free DTLS identity was saved.";
+    else
+      LOG(LS_WARNING) << "Failed to generate DTLS identity (preemptively).";
   } else {
-    // Pass an arbitrary error code.
-    observer->OnFailure(0);
-    LOG(LS_WARNING) << "Failed to generate SSL identity";
-  }
+    // Return the result to the observer.
+    if (identity.get()) {
+      LOG(LS_VERBOSE) << "A DTLS identity is returned to an observer.";
+      observer->OnSuccess(identity.Pass());
+    } else {
+      LOG(LS_WARNING) << "Failed to generate DTLS identity.";
+      observer->OnFailure(0);
+    }
 
-  // Do not aggressively generate the free identity if the worker thread and the
-  // signaling thread are the same.
-  if (worker_thread_ != signaling_thread_ &&
-      pending_observers_.empty() &&
-      pending_jobs_ == 0) {
-    // Generate a free identity in the background.
-    GenerateIdentity();
+    // Preemptively generate another identity of the same type?
+    if (worker_thread_ != signaling_thread_ && // Only do in background thread.
+        key_type == rtc::KT_RSA &&             // Only necessary for RSA.
+        !request_info_[key_type].free_identity_.get() &&
+        request_info_[key_type].request_observers_.size() <=
+            request_info_[key_type].gen_in_progress_counts_) {
+      GenerateIdentity(key_type, nullptr);
+    }
   }
 }
 
-void DtlsIdentityStore::PostGenerateIdentityResult_w(
-    rtc::scoped_ptr<rtc::SSLIdentity> identity) {
-  DCHECK(rtc::Thread::Current() == worker_thread_);
-
-  IdentityResultMessageData* msg =
-      new IdentityResultMessageData(identity.release());
-  signaling_thread_->Post(this, MSG_GENERATE_IDENTITY_RESULT, msg);
-}
 }  // namespace webrtc

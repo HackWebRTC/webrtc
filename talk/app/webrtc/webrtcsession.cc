@@ -523,7 +523,7 @@ WebRtcSession::~WebRtcSession() {
 bool WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface*  constraints,
-    DTLSIdentityServiceInterface* dtls_identity_service,
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
   bundle_policy_ = rtc_configuration.bundle_policy;
   rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
@@ -537,8 +537,8 @@ bool WebRtcSession::Initialize(
   if (options.disable_encryption) {
     dtls_enabled_ = false;
   } else {
-    // Enable DTLS by default if |dtls_identity_service| is valid.
-    dtls_enabled_ = (dtls_identity_service != NULL);
+    // Enable DTLS by default if we have a |dtls_identity_store|.
+    dtls_enabled_ = (dtls_identity_store != nullptr);
     // |constraints| can override the default |dtls_enabled_| value.
     if (FindConstraint(
           constraints,
@@ -664,7 +664,7 @@ bool WebRtcSession::Initialize(
       signaling_thread(),
       channel_manager_,
       mediastream_signaling_,
-      dtls_identity_service,
+      dtls_identity_store.Pass(),
       this,
       id(),
       data_channel_type_,

@@ -28,6 +28,9 @@
 #ifndef TALK_APP_WEBRTC_TEST_FAKEDTLSIDENTITYSERVICE_H_
 #define TALK_APP_WEBRTC_TEST_FAKEDTLSIDENTITYSERVICE_H_
 
+#include <string>
+
+#include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 
 static const char kRSA_PRIVATE_KEY_PEM[] =
@@ -61,38 +64,28 @@ static const char kCERT_PEM[] =
     "UD0A8qfhfDM+LK6rPAnCsVN0NRDY3jvd6rzix9M=\n"
     "-----END CERTIFICATE-----\n";
 
-using webrtc::DTLSIdentityRequestObserver;
-
-class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
-                            public rtc::MessageHandler {
+class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
+                              public rtc::MessageHandler {
  public:
-  struct Request {
-    Request(const std::string& common_name,
-            DTLSIdentityRequestObserver* observer)
-        : common_name(common_name), observer(observer) {}
+  typedef rtc::TypedMessageData<rtc::scoped_refptr<
+      webrtc::DtlsIdentityRequestObserver> > MessageData;
 
-    std::string common_name;
-    rtc::scoped_refptr<DTLSIdentityRequestObserver> observer;
-  };
-  typedef rtc::TypedMessageData<Request> MessageData;
-
-  FakeIdentityService() : should_fail_(false) {}
+  FakeDtlsIdentityStore() : should_fail_(false) {}
 
   void set_should_fail(bool should_fail) {
     should_fail_ = should_fail;
   }
 
-  // DTLSIdentityServiceInterface implemenation.
-  virtual bool RequestIdentity(const std::string& identity_name,
-                               const std::string& common_name,
-                               DTLSIdentityRequestObserver* observer) {
-    MessageData* msg = new MessageData(Request(common_name, observer));
-    if (should_fail_) {
-      rtc::Thread::Current()->Post(this, MSG_FAILURE, msg);
-    } else {
-      rtc::Thread::Current()->Post(this, MSG_SUCCESS, msg);
-    }
-    return true;
+  void RequestIdentity(
+      rtc::KeyType key_type,
+      const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>&
+          observer) override {
+    // TODO(hbos): Should be able to generate KT_ECDSA too.
+    DCHECK(key_type == rtc::KT_RSA || should_fail_);
+    MessageData* msg = new MessageData(
+        rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>(observer));
+    rtc::Thread::Current()->Post(
+        this, should_fail_ ? MSG_FAILURE : MSG_SUCCESS, msg);
   }
 
  private:
@@ -103,13 +96,16 @@ class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
 
   // rtc::MessageHandler implementation.
   void OnMessage(rtc::Message* msg) {
-    FakeIdentityService::MessageData* message_data =
-        static_cast<FakeIdentityService::MessageData*>(msg->pdata);
-    DTLSIdentityRequestObserver* observer = message_data->data().observer.get();
+    MessageData* message_data = static_cast<MessageData*>(msg->pdata);
+    rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver> observer =
+        message_data->data();
     switch (msg->message_id) {
       case MSG_SUCCESS: {
-        std::string cert, key;
-        GenerateIdentity(message_data->data().common_name, &cert, &key);
+        std::string cert;
+        std::string key;
+        rtc::SSLIdentity::PemToDer("CERTIFICATE", kCERT_PEM, &cert);
+        rtc::SSLIdentity::PemToDer("RSA PRIVATE KEY", kRSA_PRIVATE_KEY_PEM,
+                                   &key);
         observer->OnSuccess(cert, key);
         break;
       }
@@ -118,16 +114,6 @@ class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
         break;
     }
     delete message_data;
-  }
-
-  void GenerateIdentity(
-      const std::string& common_name,
-      std::string* der_cert,
-      std::string* der_key) {
-    rtc::SSLIdentity::PemToDer("CERTIFICATE", kCERT_PEM, der_cert);
-    rtc::SSLIdentity::PemToDer("RSA PRIVATE KEY",
-                                     kRSA_PRIVATE_KEY_PEM,
-                                     der_key);
   }
 
   bool should_fail_;

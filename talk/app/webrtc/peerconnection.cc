@@ -349,7 +349,7 @@ bool PeerConnection::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     const MediaConstraintsInterface* constraints,
     PortAllocatorFactoryInterface* allocator_factory,
-    DTLSIdentityServiceInterface* dtls_identity_service,
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
   ASSERT(observer != NULL);
   if (!observer)
@@ -404,7 +404,7 @@ bool PeerConnection::Initialize(
 
   // Initialize the WebRtcSession. It creates transport channels etc.
   if (!session_->Initialize(factory_->options(), constraints,
-                            dtls_identity_service, configuration))
+                            dtls_identity_store.Pass(), configuration))
     return false;
 
   // Register PeerConnection as receiver of local ice candidates.

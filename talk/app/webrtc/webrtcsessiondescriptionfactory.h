@@ -28,9 +28,10 @@
 #ifndef TALK_APP_WEBRTC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 #define TALK_APP_WEBRTC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 
+#include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "webrtc/p2p/base/transportdescriptionfactory.h"
 #include "talk/session/media/mediasession.h"
+#include "webrtc/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/base/messagehandler.h"
 
 namespace cricket {
@@ -46,15 +47,14 @@ class SessionDescriptionInterface;
 class WebRtcSession;
 
 // DTLS identity request callback class.
-class WebRtcIdentityRequestObserver : public DTLSIdentityRequestObserver,
+class WebRtcIdentityRequestObserver : public DtlsIdentityRequestObserver,
                                       public sigslot::has_slots<> {
  public:
-  // DTLSIdentityRequestObserver overrides.
+  // DtlsIdentityRequestObserver overrides.
   void OnFailure(int error) override;
   void OnSuccess(const std::string& der_cert,
                  const std::string& der_private_key) override;
-  void OnSuccessWithIdentityObj(
-      rtc::scoped_ptr<rtc::SSLIdentity> identity) override;
+  void OnSuccess(rtc::scoped_ptr<rtc::SSLIdentity> identity) override;
 
   sigslot::signal1<int> SignalRequestFailed;
   sigslot::signal1<rtc::SSLIdentity*> SignalIdentityReady;
@@ -85,14 +85,14 @@ struct CreateSessionDescriptionRequest {
 // request has completed, i.e. when OnIdentityRequestFailed or OnIdentityReady
 // is called.
 class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
-                                        public sigslot::has_slots<>  {
+                                        public sigslot::has_slots<> {
  public:
   WebRtcSessionDescriptionFactory(
       rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
       MediaStreamSignaling* mediastream_signaling,
-      DTLSIdentityServiceInterface* dtls_identity_service,
-      // TODO(jiayl): remove the dependency on session once b/10226852 is fixed.
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      // TODO(jiayl): remove the dependency on session once bug 2264 is fixed.
       WebRtcSession* session,
       const std::string& session_id,
       cricket::DataChannelType dct,
@@ -152,7 +152,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   cricket::TransportDescriptionFactory transport_desc_factory_;
   cricket::MediaSessionDescriptionFactory session_desc_factory_;
   uint64 session_version_;
-  rtc::scoped_ptr<DTLSIdentityServiceInterface> identity_service_;
+  rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store_;
   rtc::scoped_refptr<WebRtcIdentityRequestObserver> identity_request_observer_;
   WebRtcSession* const session_;
   const std::string session_id_;

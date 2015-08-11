@@ -84,57 +84,78 @@ class DtlsIdentityStoreInterface {
  public:
   virtual ~DtlsIdentityStoreInterface() { }
 
+  // The |observer| will be called when the requested identity is ready, or when
+  // identity generation fails.
   virtual void RequestIdentity(
       rtc::KeyType key_type,
       const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) = 0;
 };
 
-// This class implements an in-memory DTLS identity store, which generates the
-// DTLS identity on the worker thread.
-// APIs calls must be made on the signaling thread and the callbacks are also
-// called on the signaling thread.
-class DtlsIdentityStore : public rtc::MessageHandler {
+// The WebRTC default implementation of DtlsIdentityStoreInterface.
+// Identity generation is performed on the worker thread.
+class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
+                              public rtc::MessageHandler {
  public:
-  static const char kIdentityName[];
+  // This will start to preemptively generating an RSA identity in the
+  // background if the worker thread is not the same as the signaling thread.
+  DtlsIdentityStoreImpl(rtc::Thread* signaling_thread,
+                        rtc::Thread* worker_thread);
+  ~DtlsIdentityStoreImpl() override;
 
-  DtlsIdentityStore(rtc::Thread* signaling_thread,
-                    rtc::Thread* worker_thread);
-  virtual ~DtlsIdentityStore();
-
-  // Initialize will start generating the free identity in the background.
-  void Initialize();
-
-  // The |observer| will be called when the requested identity is ready, or when
-  // identity generation fails.
-  void RequestIdentity(webrtc::DTLSIdentityRequestObserver* observer);
+  // DtlsIdentityStoreInterface override;
+  void RequestIdentity(
+      rtc::KeyType key_type,
+      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) override;
 
   // rtc::MessageHandler override;
   void OnMessage(rtc::Message* msg) override;
 
-  // Returns true if there is a free identity, used for unit tests.
-  bool HasFreeIdentityForTesting() const;
+  // Returns true if there is a free RSA identity, used for unit tests.
+  bool HasFreeIdentityForTesting(rtc::KeyType key_type) const;
 
  private:
-  sigslot::signal0<> SignalDestroyed;
+  void GenerateIdentity(
+      rtc::KeyType key_type,
+      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer);
+  void OnIdentityGenerated(rtc::KeyType key_type,
+                           rtc::scoped_ptr<rtc::SSLIdentity> identity);
+
   class WorkerTask;
-  typedef rtc::ScopedMessageData<DtlsIdentityStore::WorkerTask>
-      IdentityTaskMessageData;
+  typedef rtc::ScopedMessageData<DtlsIdentityStoreImpl::WorkerTask>
+      WorkerTaskMessageData;
 
-  void GenerateIdentity();
-  void OnIdentityGenerated(rtc::scoped_ptr<rtc::SSLIdentity> identity);
-  void ReturnIdentity(rtc::scoped_ptr<rtc::SSLIdentity> identity);
+  // A key type-identity pair.
+  struct IdentityResult {
+    IdentityResult(rtc::KeyType key_type,
+                   rtc::scoped_ptr<rtc::SSLIdentity> identity)
+        : key_type_(key_type), identity_(identity.Pass()) {}
 
-  void PostGenerateIdentityResult_w(rtc::scoped_ptr<rtc::SSLIdentity> identity);
+    rtc::KeyType key_type_;
+    rtc::scoped_ptr<rtc::SSLIdentity> identity_;
+  };
+
+  typedef rtc::ScopedMessageData<IdentityResult> IdentityResultMessageData;
+
+  sigslot::signal0<> SignalDestroyed;
 
   rtc::Thread* const signaling_thread_;
+  // TODO(hbos): RSA generation is slow and would be VERY slow if we switch over
+  // to 2048, DtlsIdentityStore should use a new thread and not the "general
+  // purpose" worker thread.
   rtc::Thread* const worker_thread_;
 
-  // These members should be accessed on the signaling thread only.
-  int pending_jobs_;
-  rtc::scoped_ptr<rtc::SSLIdentity> free_identity_;
-  typedef std::queue<rtc::scoped_refptr<webrtc::DTLSIdentityRequestObserver>>
-      ObserverList;
-  ObserverList pending_observers_;
+  struct RequestInfo {
+    RequestInfo()
+        : request_observers_(), gen_in_progress_counts_(0), free_identity_() {}
+
+    std::queue<rtc::scoped_refptr<DtlsIdentityRequestObserver>>
+        request_observers_;
+    size_t gen_in_progress_counts_;
+    rtc::scoped_ptr<rtc::SSLIdentity> free_identity_;
+  };
+
+  // One RequestInfo per KeyType. Only touch on the |signaling_thread_|.
+  RequestInfo request_info_[rtc::KT_LAST];
 };
 
 }  // namespace webrtc

@@ -22,8 +22,6 @@
 
 namespace rtc {
 
-enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
-
 // Forward declaration due to circular dependency with SSLCertificate.
 class SSLCertChain;
 
@@ -108,6 +106,8 @@ class SSLCertChain {
 
   DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };
+
+enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
 
 // Parameters for generating an identity for testing. If common_name is
 // non-empty, it will be used for the certificate's subject and issuer name,

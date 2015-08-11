@@ -39,6 +39,7 @@
 #include "webrtc/p2p/base/session.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/sigslot.h"
+#include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"
 
 namespace cricket {
@@ -125,7 +126,7 @@ class WebRtcSession : public cricket::BaseSession,
   bool Initialize(
       const PeerConnectionFactoryInterface::Options& options,
       const MediaConstraintsInterface* constraints,
-      DTLSIdentityServiceInterface* dtls_identity_service,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       const PeerConnectionInterface::RTCConfiguration& rtc_configuration);
   // Deletes the voice, video and data channel and changes the session state
   // to STATE_RECEIVEDTERMINATE.

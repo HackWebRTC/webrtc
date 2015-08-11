@@ -32,12 +32,12 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
 
-using webrtc::DtlsIdentityStore;
+using webrtc::DtlsIdentityStoreImpl;
 
 static const int kTimeoutMs = 10000;
 
 class MockDtlsIdentityRequestObserver :
-    public webrtc::DTLSIdentityRequestObserver {
+    public webrtc::DtlsIdentityRequestObserver {
  public:
   MockDtlsIdentityRequestObserver()
       : call_back_called_(false), last_request_success_(false) {}
@@ -47,12 +47,11 @@ class MockDtlsIdentityRequestObserver :
     last_request_success_ = false;
   }
   void OnSuccess(const std::string& der_cert,
-                 const std::string& der_private_key) {
+                 const std::string& der_private_key) override {
     LOG(LS_WARNING) << "The string version of OnSuccess is called unexpectedly";
     EXPECT_TRUE(false);
   }
-  void OnSuccessWithIdentityObj(
-      rtc::scoped_ptr<rtc::SSLIdentity> identity) override {
+  void OnSuccess(rtc::scoped_ptr<rtc::SSLIdentity> identity) override {
     EXPECT_FALSE(call_back_called_);
     call_back_called_ = true;
     last_request_success_ = true;
@@ -80,12 +79,11 @@ class DtlsIdentityStoreTest : public testing::Test {
  protected:
   DtlsIdentityStoreTest()
       : worker_thread_(new rtc::Thread()),
-        store_(new DtlsIdentityStore(rtc::Thread::Current(),
-                                     worker_thread_.get())),
+        store_(new DtlsIdentityStoreImpl(rtc::Thread::Current(),
+                                         worker_thread_.get())),
         observer_(
             new rtc::RefCountedObject<MockDtlsIdentityRequestObserver>()) {
     CHECK(worker_thread_->Start());
-    store_->Initialize();
   }
   ~DtlsIdentityStoreTest() {}
 
@@ -97,30 +95,55 @@ class DtlsIdentityStoreTest : public testing::Test {
   }
 
   rtc::scoped_ptr<rtc::Thread> worker_thread_;
-  rtc::scoped_ptr<DtlsIdentityStore> store_;
+  rtc::scoped_ptr<DtlsIdentityStoreImpl> store_;
   rtc::scoped_refptr<MockDtlsIdentityRequestObserver> observer_;
 };
 
-TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccess) {
-  EXPECT_TRUE_WAIT(store_->HasFreeIdentityForTesting(), kTimeoutMs);
+TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessRSA) {
+  EXPECT_TRUE_WAIT(store_->HasFreeIdentityForTesting(rtc::KT_RSA), kTimeoutMs);
 
-  store_->RequestIdentity(observer_.get());
+  store_->RequestIdentity(rtc::KT_RSA, observer_.get());
   EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
 
-  EXPECT_TRUE_WAIT(store_->HasFreeIdentityForTesting(), kTimeoutMs);
+  EXPECT_TRUE_WAIT(store_->HasFreeIdentityForTesting(rtc::KT_RSA), kTimeoutMs);
 
   observer_->Reset();
 
   // Verifies that the callback is async when a free identity is ready.
-  store_->RequestIdentity(observer_.get());
+  store_->RequestIdentity(rtc::KT_RSA, observer_.get());
   EXPECT_FALSE(observer_->call_back_called());
   EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
 }
 
-TEST_F(DtlsIdentityStoreTest, DeleteStoreEarlyNoCrash) {
-  EXPECT_FALSE(store_->HasFreeIdentityForTesting());
+TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessECDSA) {
+  // Since store currently does not preemptively generate free ECDSA identities
+  // we do not invoke HasFreeIdentityForTesting between requests.
 
-  store_->RequestIdentity(observer_.get());
+  store_->RequestIdentity(rtc::KT_ECDSA, observer_.get());
+  EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
+
+  observer_->Reset();
+
+  // Verifies that the callback is async when a free identity is ready.
+  store_->RequestIdentity(rtc::KT_ECDSA, observer_.get());
+  EXPECT_FALSE(observer_->call_back_called());
+  EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
+}
+
+TEST_F(DtlsIdentityStoreTest, DeleteStoreEarlyNoCrashRSA) {
+  EXPECT_FALSE(store_->HasFreeIdentityForTesting(rtc::KT_RSA));
+
+  store_->RequestIdentity(rtc::KT_RSA, observer_.get());
+  store_.reset();
+
+  worker_thread_->Stop();
+  EXPECT_FALSE(observer_->call_back_called());
+}
+
+TEST_F(DtlsIdentityStoreTest, DeleteStoreEarlyNoCrashECDSA) {
+  EXPECT_FALSE(store_->HasFreeIdentityForTesting(rtc::KT_ECDSA));
+
+  store_->RequestIdentity(rtc::KT_ECDSA, observer_.get());
   store_.reset();
 
   worker_thread_->Stop();

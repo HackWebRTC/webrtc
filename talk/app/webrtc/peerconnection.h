@@ -30,6 +30,7 @@
 
 #include <string>
 
+#include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
@@ -61,7 +62,7 @@ class PeerConnection : public PeerConnectionInterface,
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
       PortAllocatorFactoryInterface* allocator_factory,
-      DTLSIdentityServiceInterface* dtls_identity_service,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer);
   virtual rtc::scoped_refptr<StreamCollectionInterface> local_streams();
   virtual rtc::scoped_refptr<StreamCollectionInterface> remote_streams();
@@ -156,14 +157,6 @@ class PeerConnection : public PeerConnectionInterface,
   void OnSessionStateChange(cricket::BaseSession* session,
                             cricket::BaseSession::State state);
   void ChangeSignalingState(SignalingState signaling_state);
-
-  bool DoInitialize(IceTransportsType type,
-                    const StunConfigurations& stun_config,
-                    const TurnConfigurations& turn_config,
-                    const MediaConstraintsInterface* constraints,
-                    PortAllocatorFactoryInterface* allocator_factory,
-                    DTLSIdentityServiceInterface* dtls_identity_service,
-                    PeerConnectionObserver* observer);
 
   rtc::Thread* signaling_thread() const {
     return factory_->signaling_thread();

@@ -74,6 +74,7 @@
 #include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/dtmfsenderinterface.h"
+#include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/statstypes.h"
@@ -467,6 +468,7 @@ class PortAllocatorFactoryInterface : public rtc::RefCountInterface {
   ~PortAllocatorFactoryInterface() {}
 };
 
+// TODO(hbos): Remove once cr/1176383004 lands.
 class DTLSIdentityServiceInterface {
  public:
   // Asynchronously request a DTLS identity, including a self-signed certificate
@@ -535,6 +537,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 
   // TODO(hbos): Temporary CreatePeerConnection function while we transition
   // from DTLSIdentityServiceInterface to DtlsIdentityStoreInterface.
+  // This method takes the ownership of |dtls_identity_service|.
   rtc::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
           const PeerConnectionInterface::RTCConfiguration& configuration,
@@ -543,21 +546,23 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
           DTLSIdentityServiceInterface* dtls_identity_service,
           rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
           PeerConnectionObserver* observer) {
+    if (dtls_identity_service) {
+      // Store used instead of service, our ownership responsibility to delete.
+      delete dtls_identity_service;
+    }
     return CreatePeerConnection(configuration, constraints, allocator_factory,
-                                dtls_identity_service, observer);
+                                dtls_identity_store.Pass(), observer);
   }
 
-  // This method takes the ownership of |dtls_identity_service|.
   virtual rtc::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
           const PeerConnectionInterface::RTCConfiguration& configuration,
           const MediaConstraintsInterface* constraints,
           PortAllocatorFactoryInterface* allocator_factory,
-          DTLSIdentityServiceInterface* dtls_identity_service,
+          rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
           PeerConnectionObserver* observer) = 0;
 
-  // TODO(mallinath) : Remove below versions after clients are updated
-  // to above method.
+  // TODO(hbos): Remove below version after clients are updated to above method.
   // In latest W3C WebRTC draft, PC constructor will take RTCConfiguration,
   // and not IceServers. RTCConfiguration is made up of ice servers and
   // ice transport type.
@@ -567,12 +572,12 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
           const PeerConnectionInterface::IceServers& servers,
           const MediaConstraintsInterface* constraints,
           PortAllocatorFactoryInterface* allocator_factory,
-          DTLSIdentityServiceInterface* dtls_identity_service,
+          rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
           PeerConnectionObserver* observer) {
       PeerConnectionInterface::RTCConfiguration rtc_config;
       rtc_config.servers = servers;
       return CreatePeerConnection(rtc_config, constraints, allocator_factory,
-                                  dtls_identity_service, observer);
+                                  dtls_identity_store.Pass(), observer);
   }
 
   virtual rtc::scoped_refptr<MediaStreamInterface>

@@ -32,7 +32,7 @@
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
-#include "talk/app/webrtc/test/fakedtlsidentityservice.h"
+#include "talk/app/webrtc/test/fakedtlsidentitystore.h"
 #include "talk/app/webrtc/test/fakemediastreamsignaling.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/app/webrtc/webrtcsession.h"
@@ -55,6 +55,7 @@
 #include "webrtc/base/network.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ssladapter.h"
+#include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
@@ -77,8 +78,7 @@ using rtc::Thread;
 using webrtc::CreateSessionDescription;
 using webrtc::CreateSessionDescriptionObserver;
 using webrtc::CreateSessionDescriptionRequest;
-using webrtc::DTLSIdentityRequestObserver;
-using webrtc::DTLSIdentityServiceInterface;
+using webrtc::DtlsIdentityStoreInterface;
 using webrtc::FakeConstraints;
 using webrtc::FakeMetricsObserver;
 using webrtc::IceCandidateCollection;
@@ -353,7 +353,7 @@ class WebRtcSessionTest : public testing::Test {
   }
 
   void Init(
-      DTLSIdentityServiceInterface* identity_service,
+      rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store,
       const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
     ASSERT_TRUE(session_.get() == NULL);
     session_.reset(new WebRtcSessionForTest(
@@ -367,42 +367,44 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_EQ(PeerConnectionInterface::kIceGatheringNew,
         observer_.ice_gathering_state_);
 
-    EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
-                                     identity_service, rtc_configuration));
+    EXPECT_TRUE(session_->Initialize(
+        options_, constraints_.get(), dtls_identity_store.Pass(),
+        rtc_configuration));
     session_->set_metrics_observer(metrics_observer_);
   }
 
   void Init() {
     PeerConnectionInterface::RTCConfiguration configuration;
-    Init(NULL, configuration);
+    Init(nullptr, configuration);
   }
 
   void InitWithIceTransport(
       PeerConnectionInterface::IceTransportsType ice_transport_type) {
     PeerConnectionInterface::RTCConfiguration configuration;
     configuration.type = ice_transport_type;
-    Init(NULL, configuration);
+    Init(nullptr, configuration);
   }
 
   void InitWithBundlePolicy(
       PeerConnectionInterface::BundlePolicy bundle_policy) {
     PeerConnectionInterface::RTCConfiguration configuration;
     configuration.bundle_policy = bundle_policy;
-    Init(NULL, configuration);
+    Init(nullptr, configuration);
   }
 
   void InitWithRtcpMuxPolicy(
       PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
     PeerConnectionInterface::RTCConfiguration configuration;
     configuration.rtcp_mux_policy = rtcp_mux_policy;
-    Init(NULL, configuration);
+    Init(nullptr, configuration);
   }
 
   void InitWithDtls(bool identity_request_should_fail = false) {
-    FakeIdentityService* identity_service = new FakeIdentityService();
-    identity_service->set_should_fail(identity_request_should_fail);
+    rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store(
+        new FakeDtlsIdentityStore());
+    dtls_identity_store->set_should_fail(identity_request_should_fail);
     PeerConnectionInterface::RTCConfiguration configuration;
-    Init(identity_service, configuration);
+    Init(dtls_identity_store.Pass(), configuration);
   }
 
   void InitWithDtmfCodec() {

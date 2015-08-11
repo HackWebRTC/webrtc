@@ -708,8 +708,6 @@
         'app/webrtc/datachannel.cc',
         'app/webrtc/datachannel.h',
         'app/webrtc/datachannelinterface.h',
-        'app/webrtc/dtlsidentityservice.cc',
-        'app/webrtc/dtlsidentityservice.h',
         'app/webrtc/dtlsidentitystore.cc',
         'app/webrtc/dtlsidentitystore.h',
         'app/webrtc/dtmfsender.cc',

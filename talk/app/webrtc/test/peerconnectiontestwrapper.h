@@ -36,6 +36,7 @@
 #include "webrtc/base/thread.h"
 
 namespace webrtc {
+class DtlsIdentityStoreInterface;
 class PortAllocatorFactoryInterface;
 }
 
