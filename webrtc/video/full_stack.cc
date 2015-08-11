@@ -753,9 +753,8 @@ TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP8_2TL)) {
   RunTest(screenshare_params);
 }
 
-// Temporarilty disabled.
-// https://code.google.com/p/webrtc/issues/detail?id=4889
-TEST_F(FullStackTest, DISABLED_ScreenshareSlidesVP9_2TL) {
+// Disabled on Android along with VP8 screenshare above.
+TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP9_2TL)) {
   FullStackTestParams screenshare_params = {
       "screenshare_slides_vp9_2tl",
       {"screenshare_slides", 1850, 1110, 5},
