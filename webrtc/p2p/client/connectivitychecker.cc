@@ -115,6 +115,9 @@ bool ConnectivityChecker::Initialize() {
   socket_factory_.reset(CreateSocketFactory(worker_));
   port_allocator_.reset(CreatePortAllocator(network_manager_.get(),
                                             user_agent_, relay_token_));
+  uint32 new_allocator_flags = port_allocator_->flags();
+  new_allocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG;
+  port_allocator_->set_flags(new_allocator_flags);
   return true;
 }
 

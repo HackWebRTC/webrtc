@@ -148,6 +148,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
       session_id_(session_id),
       data_channel_type_(dct),
       identity_request_state_(IDENTITY_NOT_NEEDED) {
+  transport_desc_factory_.set_protocol(cricket::ICEPROTO_RFC5245);
   session_desc_factory_.set_add_legacy_streams(false);
   // SRTP-SDES is disabled if DTLS is on.
   SetSdesPolicy(dtls_enabled ? cricket::SEC_DISABLED : cricket::SEC_REQUIRED);

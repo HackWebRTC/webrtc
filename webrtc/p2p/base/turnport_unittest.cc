@@ -201,7 +201,11 @@ class TurnPortTest : public testing::Test,
                                  kIceUfrag1, kIcePwd1,
                                  server_address, credentials, 0,
                                  std::string()));
+    // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
+    // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
+    // messages.
     // This TURN port will be the controlling.
+    turn_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
     turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
     ConnectSignals();
   }
@@ -219,7 +223,11 @@ class TurnPortTest : public testing::Test,
                                  kIceUfrag1, kIcePwd1,
                                  server_address, credentials, 0,
                                  origin));
+    // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
+    // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
+    // messages.
     // This TURN port will be the controlling.
+    turn_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
     turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
     ConnectSignals();
   }
@@ -241,7 +249,11 @@ class TurnPortTest : public testing::Test,
     turn_port_.reset(cricket::TurnPort::Create(
         main_, &socket_factory_, &network_, socket_.get(),
         kIceUfrag1, kIcePwd1, server_address, credentials, 0, std::string()));
+    // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
+    // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
+    // messages.
     // This TURN port will be the controlling.
+    turn_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
     turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
     ConnectSignals();
   }
@@ -261,7 +273,9 @@ class TurnPortTest : public testing::Test,
                                     kLocalAddr2.ipaddr(), 0, 0,
                                     kIceUfrag2, kIcePwd2,
                                     std::string()));
+    // Set protocol type to RFC5245, as turn port is also in same mode.
     // UDP port will be controlled.
+    udp_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
     udp_port_->SetIceRole(cricket::ICEROLE_CONTROLLED);
     udp_port_->SignalPortComplete.connect(
         this, &TurnPortTest::OnUdpPortComplete);

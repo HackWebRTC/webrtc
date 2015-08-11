@@ -141,6 +141,7 @@ class Transport : public rtc::MessageHandler,
   Transport(rtc::Thread* signaling_thread,
             rtc::Thread* worker_thread,
             const std::string& content_name,
+            const std::string& type,
             PortAllocator* allocator);
   virtual ~Transport();
 
@@ -151,6 +152,8 @@ class Transport : public rtc::MessageHandler,
 
   // Returns the content_name of this transport.
   const std::string& content_name() const { return content_name_; }
+  // Returns the type of this transport.
+  const std::string& type() const { return type_; }
 
   // Returns the port allocator object for this transport.
   PortAllocator* port_allocator() { return allocator_; }
@@ -207,6 +210,8 @@ class Transport : public rtc::MessageHandler,
 
   // Get a copy of the remote certificate in use by the specified channel.
   bool GetRemoteCertificate(rtc::SSLCertificate** cert);
+
+  TransportProtocol protocol() const { return protocol_; }
 
   // Create, destroy, and lookup the channels of this type by their components.
   TransportChannelImpl* CreateChannel(int component);
@@ -317,7 +322,7 @@ class Transport : public rtc::MessageHandler,
                                                  std::string* error_desc);
 
   // Negotiates the transport parameters based on the current local and remote
-  // transport description, such as the ICE role to use, and whether DTLS
+  // transport description, such at the version of ICE to use, and whether DTLS
   // should be activated.
   // Derived classes can negotiate their specific parameters here, but must call
   // the base as well.
@@ -443,6 +448,7 @@ class Transport : public rtc::MessageHandler,
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   const std::string content_name_;
+  const std::string type_;
   PortAllocator* const allocator_;
   bool destroyed_;
   TransportState readable_;
@@ -452,6 +458,7 @@ class Transport : public rtc::MessageHandler,
   bool connect_requested_;
   IceRole ice_role_;
   uint64 tiebreaker_;
+  TransportProtocol protocol_;
   IceMode remote_ice_mode_;
   int channel_receiving_timeout_;
   rtc::scoped_ptr<TransportDescription> local_description_;
@@ -468,6 +475,9 @@ class Transport : public rtc::MessageHandler,
   DISALLOW_COPY_AND_ASSIGN(Transport);
 };
 
+// Extract a TransportProtocol from a TransportDescription.
+TransportProtocol TransportProtocolFromDescription(
+    const TransportDescription* desc);
 
 }  // namespace cricket
 

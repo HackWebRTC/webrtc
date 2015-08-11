@@ -43,6 +43,9 @@ class PortInterface {
   virtual const std::string& Type() const = 0;
   virtual rtc::Network* Network() const = 0;
 
+  virtual void SetIceProtocolType(IceProtocolType protocol) = 0;
+  virtual IceProtocolType IceProtocol() const = 0;
+
   // Methods to set/get ICE role and tiebreaker values.
   virtual void SetIceRole(IceRole role) = 0;
   virtual IceRole GetIceRole() const = 0;
