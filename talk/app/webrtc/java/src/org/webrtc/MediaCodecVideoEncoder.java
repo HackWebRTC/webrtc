@@ -218,16 +218,13 @@ public class MediaCodecVideoEncoder {
     EncoderProperties properties = null;
     String mime = null;
     int keyFrameIntervalSec = 0;
-    int bitrateMode = 0;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
       properties = findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes);
       keyFrameIntervalSec = 100;
-      bitrateMode = VIDEO_ControlRateConstant;
     } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
       mime = H264_MIME_TYPE;
       properties = findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes);
-      bitrateMode = VIDEO_ControlRateVariable;
       keyFrameIntervalSec = 20;
     }
     if (properties == null) {
@@ -237,7 +234,7 @@ public class MediaCodecVideoEncoder {
     try {
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
       format.setInteger(MediaFormat.KEY_BIT_RATE, 1000 * kbps);
-      format.setInteger("bitrate-mode", bitrateMode);
+      format.setInteger("bitrate-mode", VIDEO_ControlRateConstant);
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       format.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
