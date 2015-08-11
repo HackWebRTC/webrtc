@@ -593,30 +593,17 @@ RTCPSender::BuildResult RTCPSender::BuildFIR(RtcpContext* ctx) {
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 RTCPSender::BuildResult RTCPSender::BuildSLI(RtcpContext* ctx) {
-  // sanity
-  if (ctx->position + 16 >= IP_PACKET_SIZE)
+  rtcp::Sli sli;
+  sli.From(ssrc_);
+  sli.To(remote_ssrc_);
+  // Crop picture id to 6 least significant bits.
+  sli.WithPictureId(ctx->picture_id & 0x3F);
+  sli.WithFirstMb(0);
+  sli.WithNumberOfMb(0x1FFF);  // 13 bits, only ones for now.
+
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(sli))
     return BuildResult::kTruncated;
-
-  // add slice loss indicator
-  uint8_t FMT = 2;
-  *ctx->AllocateData(1) = 0x80 + FMT;
-  *ctx->AllocateData(1) = 206;
-
-  // Used fixed length of 3
-  *ctx->AllocateData(1) = 0;
-  *ctx->AllocateData(1) = 3;
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // Add the remote SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), remote_ssrc_);
-
-  // Add first, number & picture ID 6 bits
-  // first  = 0, 13 - bits
-  // number = 0x1fff, 13 - bits only ones for now
-  uint32_t sliField = (0x1fff << 6) + (0x3f & ctx->picture_id);
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), sliField);
 
   return BuildResult::kSuccess;
 }
