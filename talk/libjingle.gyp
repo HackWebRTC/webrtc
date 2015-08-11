@@ -144,6 +144,8 @@
                   'app/webrtc/java/android/org/webrtc/GlRectDrawer.java',
                   'app/webrtc/java/android/org/webrtc/GlShader.java',
                   'app/webrtc/java/android/org/webrtc/GlUtil.java',
+                  'app/webrtc/java/android/org/webrtc/RendererCommon.java',
+                  'app/webrtc/java/android/org/webrtc/SurfaceViewRenderer.java',
                   'app/webrtc/java/android/org/webrtc/VideoRendererGui.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoEncoder.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoDecoder.java',

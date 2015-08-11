@@ -42,10 +42,12 @@ public class VideoRenderer {
     public final int width;
     public final int height;
     public final int[] yuvStrides;
-    public final ByteBuffer[] yuvPlanes;
+    public ByteBuffer[] yuvPlanes;
     public final boolean yuvFrame;
     public Object textureObject;
     public int textureId;
+    // If |nativeFramePointer| is non-zero, the memory is allocated on the C++ side.
+    private long nativeFramePointer;
 
     // rotationDegree is the degree that the frame must be rotated clockwisely
     // to be rendered correctly.
@@ -58,7 +60,7 @@ public class VideoRenderer {
      */
     public I420Frame(
         int width, int height, int rotationDegree,
-        int[] yuvStrides, ByteBuffer[] yuvPlanes) {
+        int[] yuvStrides, ByteBuffer[] yuvPlanes, long nativeFramePointer) {
       this.width = width;
       this.height = height;
       this.yuvStrides = yuvStrides;
@@ -71,6 +73,7 @@ public class VideoRenderer {
       this.yuvPlanes = yuvPlanes;
       this.yuvFrame = true;
       this.rotationDegree = rotationDegree;
+      this.nativeFramePointer = nativeFramePointer;
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
@@ -81,7 +84,7 @@ public class VideoRenderer {
      */
     public I420Frame(
         int width, int height, int rotationDegree,
-        Object textureObject, int textureId) {
+        Object textureObject, int textureId, long nativeFramePointer) {
       this.width = width;
       this.height = height;
       this.yuvStrides = null;
@@ -90,6 +93,7 @@ public class VideoRenderer {
       this.textureId = textureId;
       this.yuvFrame = false;
       this.rotationDegree = rotationDegree;
+      this.nativeFramePointer = nativeFramePointer;
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
@@ -164,16 +168,31 @@ public class VideoRenderer {
   }
 
   // Helper native function to do a video frame plane copying.
-  private static native void nativeCopyPlane(ByteBuffer src, int width,
+  public static native void nativeCopyPlane(ByteBuffer src, int width,
       int height, int srcStride, ByteBuffer dst, int dstStride);
 
   /** The real meat of VideoRendererInterface. */
   public static interface Callbacks {
     // |frame| might have pending rotation and implementation of Callbacks
-    // should handle that by applying rotation during rendering.
+    // should handle that by applying rotation during rendering. The callee
+    // is responsible for signaling when it is done with |frame| by calling
+    // renderFrameDone(frame).
     public void renderFrame(I420Frame frame);
     // TODO(guoweis): Remove this once chrome code base is updated.
     public boolean canApplyRotation();
+  }
+
+  /**
+   * This must be called after every renderFrame() to release the frame.
+   */
+  public static void renderFrameDone(I420Frame frame) {
+    frame.yuvPlanes = null;
+    frame.textureObject = null;
+    frame.textureId = 0;
+    if (frame.nativeFramePointer != 0) {
+      releaseNativeFrame(frame.nativeFramePointer);
+      frame.nativeFramePointer = 0;
+    }
   }
 
   // |this| either wraps a native (GUI) renderer or a client-supplied Callbacks
@@ -212,4 +231,6 @@ public class VideoRenderer {
 
   private static native void freeGuiVideoRenderer(long nativeVideoRenderer);
   private static native void freeWrappedVideoRenderer(long nativeVideoRenderer);
+
+  private static native void releaseNativeFrame(long nativeFramePointer);
 }

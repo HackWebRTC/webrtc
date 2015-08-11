@@ -136,6 +136,7 @@ public class PeerConnectionTest {
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
       setSize(frame.width, frame.height);
       --expectedFramesDelivered;
+      VideoRenderer.renderFrameDone(frame);
     }
 
     // TODO(guoweis): Remove this once chrome code base is updated.
@@ -453,6 +454,7 @@ public class PeerConnectionTest {
     @Override
     public void renderFrame(VideoRenderer.I420Frame frame) {
       ++numFramesDelivered;
+      VideoRenderer.renderFrameDone(frame);
     }
 
     // TODO(guoweis): Remove this once chrome code base is updated.
