@@ -546,6 +546,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       onSurfaceCreatedCalled = true;
     }
     GlUtil.checkNoGLES2Error("onSurfaceCreated done");
+    GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
     GLES20.glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
 
     // Fire EGL context ready event.
