@@ -48,7 +48,6 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
         ++framesRendered;
         frameLock.notify();
       }
-      VideoRenderer.renderFrameDone(frame);
     }
 
     // TODO(guoweis): Remove this once chrome code base is updated.

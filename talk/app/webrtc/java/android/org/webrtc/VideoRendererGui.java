@@ -42,6 +42,7 @@ import android.opengl.EGL14;
 import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import org.webrtc.VideoRenderer.I420Frame;
@@ -69,6 +70,20 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   // List of yuv renderers.
   private ArrayList<YuvImageRenderer> yuvImageRenderers;
   private GlRectDrawer drawer;
+  // The minimum fraction of the frame content that will be shown for |SCALE_ASPECT_BALANCED|.
+  // This limits excessive cropping when adjusting display size.
+  private static float BALANCED_VISIBLE_FRACTION = 0.56f;
+  // Types of video scaling:
+  // SCALE_ASPECT_FIT - video frame is scaled to fit the size of the view by
+  //    maintaining the aspect ratio (black borders may be displayed).
+  // SCALE_ASPECT_FILL - video frame is scaled to fill the size of the view by
+  //    maintaining the aspect ratio. Some portion of the video frame may be
+  //    clipped.
+  // SCALE_ASPECT_BALANCED - Compromise between FIT and FILL. Video frame will fill as much as
+  // possible of the view while maintaining aspect ratio, under the constraint that at least
+  // |BALANCED_VISIBLE_FRACTION| of the frame content will be shown.
+  public static enum ScalingType
+      { SCALE_ASPECT_FIT, SCALE_ASPECT_FILL, SCALE_ASPECT_BALANCED }
   private static final int EGL14_SDK_VERSION =
       android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
   // Current SDK version.
@@ -108,7 +123,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // Type of video frame used for recent frame rendering.
     private static enum RendererType { RENDERER_YUV, RENDERER_TEXTURE };
     private RendererType rendererType;
-    private RendererCommon.ScalingType scalingType;
+    private ScalingType scalingType;
     private boolean mirror;
     // Flag if renderFrame() was ever called.
     boolean seenFrame;
@@ -151,7 +166,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private YuvImageRenderer(
         GLSurfaceView surface, int id,
         int x, int y, int width, int height,
-        RendererCommon.ScalingType scalingType, boolean mirror) {
+        ScalingType scalingType, boolean mirror) {
       Log.d(TAG, "YuvImageRenderer.Create id: " + id);
       this.surface = surface;
       this.id = id;
@@ -184,6 +199,33 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       GlUtil.checkNoGLES2Error("y/u/v glGenTextures");
     }
 
+    private static float convertScalingTypeToVisibleFraction(ScalingType scalingType) {
+      switch (scalingType) {
+        case SCALE_ASPECT_FIT:
+          return 1.0f;
+        case SCALE_ASPECT_FILL:
+          return 0.0f;
+        case SCALE_ASPECT_BALANCED:
+          return BALANCED_VISIBLE_FRACTION;
+        default:
+          throw new IllegalArgumentException();
+      }
+    }
+
+    private static Point getDisplaySize(float minVisibleFraction, float videoAspectRatio,
+        int maxDisplayWidth, int maxDisplayHeight) {
+      // If there is no constraint on the amount of cropping, fill the allowed display area.
+      if (minVisibleFraction == 0) {
+        return new Point(maxDisplayWidth, maxDisplayHeight);
+      }
+      // Each dimension is constrained on max display size and how much we are allowed to crop.
+      final int width = Math.min(maxDisplayWidth,
+          (int) (maxDisplayHeight / minVisibleFraction * videoAspectRatio));
+      final int height = Math.min(maxDisplayHeight,
+          (int) (maxDisplayWidth / minVisibleFraction / videoAspectRatio));
+      return new Point(width, height);
+    }
+
     private void checkAdjustTextureCoords() {
       synchronized(updateTextureLock) {
         if (!updateTextureProperties) {
@@ -203,14 +245,38 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             ? (float) videoWidth / videoHeight
             : (float) videoHeight / videoWidth;
         // Adjust display size based on |scalingType|.
-        final Point displaySize = RendererCommon.getDisplaySize(scalingType,
-            videoAspectRatio, displayLayout.width(), displayLayout.height());
+        final float minVisibleFraction = convertScalingTypeToVisibleFraction(scalingType);
+        final Point displaySize = getDisplaySize(minVisibleFraction, videoAspectRatio,
+            displayLayout.width(), displayLayout.height());
         displayLayout.inset((displayLayout.width() - displaySize.x) / 2,
                             (displayLayout.height() - displaySize.y) / 2);
         Log.d(TAG, "  Adjusted display size: " + displayLayout.width() + " x "
             + displayLayout.height());
-        RendererCommon.getTextureMatrix(texMatrix, rotationDegree, mirror, videoAspectRatio,
-            (float) displayLayout.width() / displayLayout.height());
+        // The matrix stack is using post-multiplication, which means that matrix operations:
+        // A; B; C; will end up as A * B * C. When you apply this to a vertex, it will result in:
+        // v' = A * B * C * v, i.e. the last matrix operation is the first thing that affects the
+        // vertex. This is the opposite of what you might expect.
+        Matrix.setIdentityM(texMatrix, 0);
+        // Move coordinates back to [0,1]x[0,1].
+        Matrix.translateM(texMatrix, 0, 0.5f, 0.5f, 0.0f);
+        // Rotate frame clockwise in the XY-plane (around the Z-axis).
+        Matrix.rotateM(texMatrix, 0, -rotationDegree, 0, 0, 1);
+        // Scale one dimension until video and display size have same aspect ratio.
+        final float displayAspectRatio = (float) displayLayout.width() / displayLayout.height();
+        if (displayAspectRatio > videoAspectRatio) {
+            Matrix.scaleM(texMatrix, 0, 1, videoAspectRatio / displayAspectRatio, 1);
+        } else {
+            Matrix.scaleM(texMatrix, 0, displayAspectRatio / videoAspectRatio, 1, 1);
+        }
+        // TODO(magjed): We currently ignore the texture transform matrix from the SurfaceTexture.
+        // It contains a vertical flip that is hardcoded here instead.
+        Matrix.scaleM(texMatrix, 0, 1, -1, 1);
+        // Apply optional horizontal flip.
+        if (mirror) {
+          Matrix.scaleM(texMatrix, 0, -1, 1, 1);
+        }
+        // Center coordinates around origin.
+        Matrix.translateM(texMatrix, 0, -0.5f, -0.5f, 0.0f);
         updateTextureProperties = false;
         Log.d(TAG, "  AdjustTextureCoords done");
       }
@@ -309,7 +375,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
 
     public void setPosition(int x, int y, int width, int height,
-        RendererCommon.ScalingType scalingType, boolean mirror) {
+        ScalingType scalingType, boolean mirror) {
       final Rect layoutInPercentage =
           new Rect(x, y, Math.min(100, x + width), Math.min(100, y + height));
       synchronized(updateTextureLock) {
@@ -349,9 +415,9 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         frameToRenderQueue.poll();
         // Re-allocate / allocate the frame.
         yuvFrameToRender = new I420Frame(videoWidth, videoHeight, rotationDegree,
-                                         strides, null, 0);
+                                         strides, null);
         textureFrameToRender = new I420Frame(videoWidth, videoHeight, rotationDegree,
-                                             null, -1, 0);
+                                             null, -1);
         updateTextureProperties = true;
         Log.d(TAG, "  YuvImageRenderer.setSize done.");
       }
@@ -365,7 +431,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       // Skip rendering of this frame if setSize() was not called.
       if (yuvFrameToRender == null || textureFrameToRender == null) {
         framesDropped++;
-        VideoRenderer.renderFrameDone(frame);
         return;
       }
       // Check input frame parameters.
@@ -375,7 +440,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             frame.yuvStrides[2] < frame.width / 2) {
           Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
               frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
-          VideoRenderer.renderFrameDone(frame);
           return;
         }
         // Check incoming frame dimensions.
@@ -389,7 +453,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       if (frameToRenderQueue.size() > 0) {
         // Skip rendering of this frame if previous frame was not rendered yet.
         framesDropped++;
-        VideoRenderer.renderFrameDone(frame);
         return;
       }
 
@@ -405,7 +468,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
       copyTimeNs += (System.nanoTime() - now);
       seenFrame = true;
-      VideoRenderer.renderFrameDone(frame);
 
       // Request rendering.
       surface.requestRender();
@@ -435,7 +497,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
    * (width, height). All parameters are in percentage of screen resolution.
    */
   public static VideoRenderer createGui(int x, int y, int width, int height,
-      RendererCommon.ScalingType scalingType, boolean mirror) throws Exception {
+      ScalingType scalingType, boolean mirror) throws Exception {
     YuvImageRenderer javaGuiRenderer = create(
         x, y, width, height, scalingType, mirror);
     return new VideoRenderer(javaGuiRenderer);
@@ -443,7 +505,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   public static VideoRenderer.Callbacks createGuiRenderer(
       int x, int y, int width, int height,
-      RendererCommon.ScalingType scalingType, boolean mirror) {
+      ScalingType scalingType, boolean mirror) {
     return create(x, y, width, height, scalingType, mirror);
   }
 
@@ -453,7 +515,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
    * screen resolution.
    */
   public static YuvImageRenderer create(int x, int y, int width, int height,
-      RendererCommon.ScalingType scalingType, boolean mirror) {
+      ScalingType scalingType, boolean mirror) {
     // Check display region parameters.
     if (x < 0 || x > 100 || y < 0 || y > 100 ||
         width < 0 || width > 100 || height < 0 || height > 100 ||
@@ -497,7 +559,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   public static void update(
       VideoRenderer.Callbacks renderer,
-      int x, int y, int width, int height, RendererCommon.ScalingType scalingType, boolean mirror) {
+      int x, int y, int width, int height, ScalingType scalingType, boolean mirror) {
     Log.d(TAG, "VideoRendererGui.update");
     if (instance == null) {
       throw new RuntimeException(

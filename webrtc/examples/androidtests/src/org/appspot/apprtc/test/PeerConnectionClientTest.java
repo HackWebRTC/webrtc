@@ -100,7 +100,6 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       }
       renderFrameCalled = true;
       doneRendering.countDown();
-      VideoRenderer.renderFrameDone(frame);
     }
 
 

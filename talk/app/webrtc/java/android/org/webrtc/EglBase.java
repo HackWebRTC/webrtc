@@ -127,18 +127,6 @@ public final class EglBase {
     return eglSurface != EGL14.EGL_NO_SURFACE;
   }
 
-  public int surfaceWidth() {
-    final int widthArray[] = new int[1];
-    EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL14.EGL_WIDTH, widthArray, 0);
-    return widthArray[0];
-  }
-
-  public int surfaceHeight() {
-    final int heightArray[] = new int[1];
-    EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL14.EGL_HEIGHT, heightArray, 0);
-    return heightArray[0];
-  }
-
   public void releaseSurface() {
     if (eglSurface != EGL14.EGL_NO_SURFACE) {
       EGL14.eglDestroySurface(eglDisplay, eglSurface);
