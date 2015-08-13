@@ -274,11 +274,10 @@ public:
     // VoEVideoSync
     bool GetDelayEstimate(int* jitter_buffer_delay_ms,
                           int* playout_buffer_delay_ms) const;
-    int least_required_delay_ms() const { return least_required_delay_ms_; }
+    int LeastRequiredDelayMs() const;
     int SetInitialPlayoutDelay(int delay_ms);
     int SetMinimumPlayoutDelay(int delayMs);
     int GetPlayoutTimestamp(unsigned int& timestamp);
-    void UpdatePlayoutTimestamp(bool rtcp);
     int SetInitTimestamp(unsigned int timestamp);
     int SetInitSequenceNumber(short sequenceNumber);
 
@@ -464,6 +463,7 @@ private:
     int32_t MixOrReplaceAudioWithFile(int mixingFrequency);
     int32_t MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency);
     int32_t SendPacketRaw(const void *data, size_t len, bool RTCP);
+    void UpdatePlayoutTimestamp(bool rtcp);
     void UpdatePacketDelay(uint32_t timestamp,
                            uint16_t sequenceNumber);
     void RegisterReceiveCodecsToRTPModule();
@@ -516,9 +516,9 @@ private:
 
     // Timestamp of the audio pulled from NetEq.
     uint32_t jitter_buffer_playout_timestamp_;
-    uint32_t playout_timestamp_rtp_;
+    uint32_t playout_timestamp_rtp_ GUARDED_BY(video_sync_lock_);
     uint32_t playout_timestamp_rtcp_;
-    uint32_t playout_delay_ms_;
+    uint32_t playout_delay_ms_ GUARDED_BY(video_sync_lock_);
     uint32_t _numberOfDiscardedPackets;
     uint16_t send_sequence_number_;
     uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
@@ -564,10 +564,10 @@ private:
     // VoENetwork
     AudioFrame::SpeechType _outputSpeechType;
     // VoEVideoSync
-    uint32_t _average_jitter_buffer_delay_us;
-    int least_required_delay_ms_;
+    rtc::scoped_ptr<CriticalSectionWrapper> video_sync_lock_;
+    uint32_t _average_jitter_buffer_delay_us GUARDED_BY(video_sync_lock_);
     uint32_t _previousTimestamp;
-    uint16_t _recPacketDelayMs;
+    uint16_t _recPacketDelayMs GUARDED_BY(video_sync_lock_);
     // VoEAudioProcessing
     bool _RxVadDetection;
     bool _rxAgcIsEnabled;

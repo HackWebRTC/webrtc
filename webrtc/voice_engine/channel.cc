@@ -780,8 +780,8 @@ Channel::Channel(int32_t channelId,
     _lastPayloadType(0),
     _includeAudioLevelIndication(false),
     _outputSpeechType(AudioFrame::kNormalSpeech),
+    video_sync_lock_(CriticalSectionWrapper::CreateCriticalSection()),
     _average_jitter_buffer_delay_us(0),
-    least_required_delay_ms_(0),
     _previousTimestamp(0),
     _recPacketDelayMs(20),
     _RxVadDetection(false),
@@ -3561,6 +3561,7 @@ void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
 
 bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
                                int* playout_buffer_delay_ms) const {
+  CriticalSectionScoped cs(video_sync_lock_.get());
   if (_average_jitter_buffer_delay_us == 0) {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetDelayEstimate() no valid estimate.");
@@ -3572,6 +3573,10 @@ bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::GetDelayEstimate()");
   return true;
+}
+
+int Channel::LeastRequiredDelayMs() const {
+  return audio_coding_->LeastRequiredDelayMs();
 }
 
 int Channel::SetInitialPlayoutDelay(int delay_ms)
@@ -3620,53 +3625,21 @@ Channel::SetMinimumPlayoutDelay(int delayMs)
     return 0;
 }
 
-void Channel::UpdatePlayoutTimestamp(bool rtcp) {
-  uint32_t playout_timestamp = 0;
-
-  if (audio_coding_->PlayoutTimestamp(&playout_timestamp) == -1)  {
-    // This can happen if this channel has not been received any RTP packet. In
-    // this case, NetEq is not capable of computing playout timestamp.
-    return;
-  }
-
-  uint16_t delay_ms = 0;
-  if (_audioDeviceModulePtr->PlayoutDelay(&delay_ms) == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::UpdatePlayoutTimestamp() failed to read playout"
-                 " delay from the ADM");
-    _engineStatisticsPtr->SetLastError(
-        VE_CANNOT_RETRIEVE_VALUE, kTraceError,
-        "UpdatePlayoutTimestamp() failed to retrieve playout delay");
-    return;
-  }
-
-  jitter_buffer_playout_timestamp_ = playout_timestamp;
-
-  // Remove the playout delay.
-  playout_timestamp -= (delay_ms * (GetPlayoutFrequency() / 1000));
-
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-               "Channel::UpdatePlayoutTimestamp() => playoutTimestamp = %lu",
-               playout_timestamp);
-
-  if (rtcp) {
-    playout_timestamp_rtcp_ = playout_timestamp;
-  } else {
-    playout_timestamp_rtp_ = playout_timestamp;
-  }
-  playout_delay_ms_ = delay_ms;
-}
-
 int Channel::GetPlayoutTimestamp(unsigned int& timestamp) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::GetPlayoutTimestamp()");
-  if (playout_timestamp_rtp_ == 0)  {
+  uint32_t playout_timestamp_rtp = 0;
+  {
+    CriticalSectionScoped cs(video_sync_lock_.get());
+    playout_timestamp_rtp = playout_timestamp_rtp_;
+  }
+  if (playout_timestamp_rtp == 0)  {
     _engineStatisticsPtr->SetLastError(
         VE_CANNOT_RETRIEVE_VALUE, kTraceError,
         "GetPlayoutTimestamp() failed to retrieve timestamp");
     return -1;
   }
-  timestamp = playout_timestamp_rtp_;
+  timestamp = playout_timestamp_rtp;
   WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                VoEId(_instanceId,_channelId),
                "GetPlayoutTimestamp() => timestamp=%u", timestamp);
@@ -3922,6 +3895,46 @@ Channel::SendPacketRaw(const void *data, size_t len, bool RTCP)
     }
 }
 
+void Channel::UpdatePlayoutTimestamp(bool rtcp) {
+  uint32_t playout_timestamp = 0;
+
+  if (audio_coding_->PlayoutTimestamp(&playout_timestamp) == -1)  {
+    // This can happen if this channel has not been received any RTP packet. In
+    // this case, NetEq is not capable of computing playout timestamp.
+    return;
+  }
+
+  uint16_t delay_ms = 0;
+  if (_audioDeviceModulePtr->PlayoutDelay(&delay_ms) == -1) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::UpdatePlayoutTimestamp() failed to read playout"
+                 " delay from the ADM");
+    _engineStatisticsPtr->SetLastError(
+        VE_CANNOT_RETRIEVE_VALUE, kTraceError,
+        "UpdatePlayoutTimestamp() failed to retrieve playout delay");
+    return;
+  }
+
+  jitter_buffer_playout_timestamp_ = playout_timestamp;
+
+  // Remove the playout delay.
+  playout_timestamp -= (delay_ms * (GetPlayoutFrequency() / 1000));
+
+  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
+               "Channel::UpdatePlayoutTimestamp() => playoutTimestamp = %lu",
+               playout_timestamp);
+
+  {
+    CriticalSectionScoped cs(video_sync_lock_.get());
+    if (rtcp) {
+      playout_timestamp_rtcp_ = playout_timestamp;
+    } else {
+      playout_timestamp_rtp_ = playout_timestamp;
+    }
+    playout_delay_ms_ = delay_ms;
+  }
+}
+
 // Called for incoming RTP packets after successful RTP header parsing.
 void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
                                 uint16_t sequence_number) {
@@ -3931,9 +3944,6 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
 
   // Get frequency of last received payload
   int rtp_receive_frequency = GetPlayoutFrequency();
-
-  // Update the least required delay.
-  least_required_delay_ms_ = audio_coding_->LeastRequiredDelayMs();
 
   // |jitter_buffer_playout_timestamp_| updated in UpdatePlayoutTimestamp for
   // every incoming packet.
@@ -3955,21 +3965,25 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
 
   if (timestamp_diff_ms == 0) return;
 
-  if (packet_delay_ms >= 10 && packet_delay_ms <= 60) {
-    _recPacketDelayMs = packet_delay_ms;
-  }
+  {
+    CriticalSectionScoped cs(video_sync_lock_.get());
 
-  if (_average_jitter_buffer_delay_us == 0) {
-    _average_jitter_buffer_delay_us = timestamp_diff_ms * 1000;
-    return;
-  }
+    if (packet_delay_ms >= 10 && packet_delay_ms <= 60) {
+      _recPacketDelayMs = packet_delay_ms;
+    }
 
-  // Filter average delay value using exponential filter (alpha is
-  // 7/8). We derive 1000 *_average_jitter_buffer_delay_us here (reduces
-  // risk of rounding error) and compensate for it in GetDelayEstimate()
-  // later.
-  _average_jitter_buffer_delay_us = (_average_jitter_buffer_delay_us * 7 +
-      1000 * timestamp_diff_ms + 500) / 8;
+    if (_average_jitter_buffer_delay_us == 0) {
+      _average_jitter_buffer_delay_us = timestamp_diff_ms * 1000;
+      return;
+    }
+
+    // Filter average delay value using exponential filter (alpha is
+    // 7/8). We derive 1000 *_average_jitter_buffer_delay_us here (reduces
+    // risk of rounding error) and compensate for it in GetDelayEstimate()
+    // later.
+    _average_jitter_buffer_delay_us = (_average_jitter_buffer_delay_us * 7 +
+        1000 * timestamp_diff_ms + 500) / 8;
+  }
 }
 
 void

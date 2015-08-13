@@ -218,7 +218,7 @@ int VoEVideoSyncImpl::GetLeastRequiredDelayMs(int channel) const {
                           "GetLeastRequiredDelayMs() failed to locate channel");
     return -1;
   }
-  return channel_ptr->least_required_delay_ms();
+  return channel_ptr->LeastRequiredDelayMs();
 }
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
