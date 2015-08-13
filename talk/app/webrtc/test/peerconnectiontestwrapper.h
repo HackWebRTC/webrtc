@@ -33,7 +33,6 @@
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
 #include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
 
 namespace webrtc {
 class DtlsIdentityStoreInterface;

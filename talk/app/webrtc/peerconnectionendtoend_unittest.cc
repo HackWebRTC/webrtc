@@ -268,17 +268,7 @@ class PeerConnectionEndToEndTest
   DataChannelList callee_signaled_data_channels_;
 };
 
-// Disable for TSan v2, see
-// https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
-#if !defined(THREAD_SANITIZER)
-
-// Flaky on Windows. Disabled per issue 4464.
-#ifdef WEBRTC_WIN
-#define MAYBE_Call DISABLED_Call
-#else
-#define MAYBE_Call Call
-#endif
-TEST_F(PeerConnectionEndToEndTest, MAYBE_Call) {
+TEST_F(PeerConnectionEndToEndTest, Call) {
   CreatePcs();
   GetAndAddUserMedia();
   Negotiate();
@@ -427,4 +417,3 @@ TEST_F(PeerConnectionEndToEndTest,
   EXPECT_EQ(1U, dc_1_observer->received_message_count());
   EXPECT_EQ(1U, dc_2_observer->received_message_count());
 }
-#endif // if !defined(THREAD_SANITIZER)

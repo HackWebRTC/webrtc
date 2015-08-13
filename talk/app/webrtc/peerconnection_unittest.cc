@@ -518,8 +518,7 @@ class PeerConnectionTestClientBase
     if (!allocator_factory_) {
       return false;
     }
-    fake_audio_capture_module_ = FakeAudioCaptureModule::Create(
-        rtc::Thread::Current());
+    fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
 
     if (fake_audio_capture_module_ == NULL) {
       return false;

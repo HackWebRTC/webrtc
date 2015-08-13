@@ -54,13 +54,11 @@ static const uint32_t kMaxVolume = 14392;
 enum {
   MSG_START_PROCESS,
   MSG_RUN_PROCESS,
-  MSG_STOP_PROCESS,
 };
 
-FakeAudioCaptureModule::FakeAudioCaptureModule(
-    rtc::Thread* process_thread)
+FakeAudioCaptureModule::FakeAudioCaptureModule()
     : last_process_time_ms_(0),
-      audio_callback_(NULL),
+      audio_callback_(nullptr),
       recording_(false),
       playing_(false),
       play_is_initialized_(false),
@@ -68,23 +66,20 @@ FakeAudioCaptureModule::FakeAudioCaptureModule(
       current_mic_level_(kMaxVolume),
       started_(false),
       next_frame_time_(0),
-      process_thread_(process_thread),
       frames_received_(0) {
 }
 
 FakeAudioCaptureModule::~FakeAudioCaptureModule() {
-  // Ensure that thread stops calling ProcessFrame().
-  process_thread_->Send(this, MSG_STOP_PROCESS);
+  if (process_thread_) {
+    process_thread_->Stop();
+  }
 }
 
-rtc::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create(
-    rtc::Thread* process_thread) {
-  if (process_thread == NULL) return NULL;
-
+rtc::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create() {
   rtc::scoped_refptr<FakeAudioCaptureModule> capture_module(
-      new rtc::RefCountedObject<FakeAudioCaptureModule>(process_thread));
+      new rtc::RefCountedObject<FakeAudioCaptureModule>());
   if (!capture_module->Initialize()) {
-    return NULL;
+    return nullptr;
   }
   return capture_module;
 }
@@ -601,9 +596,6 @@ void FakeAudioCaptureModule::OnMessage(rtc::Message* msg) {
     case MSG_RUN_PROCESS:
       ProcessFrameP();
       break;
-    case MSG_STOP_PROCESS:
-      StopProcessP();
-      break;
     default:
       // All existing messages should be caught. Getting here should never
       // happen.
@@ -650,14 +642,22 @@ bool FakeAudioCaptureModule::ShouldStartProcessing() {
 
 void FakeAudioCaptureModule::UpdateProcessing(bool start) {
   if (start) {
+    if (!process_thread_) {
+      process_thread_.reset(new rtc::Thread());
+      process_thread_->Start();
+    }
     process_thread_->Post(this, MSG_START_PROCESS);
   } else {
-    process_thread_->Send(this, MSG_STOP_PROCESS);
+    if (process_thread_) {
+      process_thread_->Stop();
+      process_thread_.reset(nullptr);
+    }
+    started_ = false;
   }
 }
 
 void FakeAudioCaptureModule::StartProcessP() {
-  ASSERT(rtc::Thread::Current() == process_thread_);
+  ASSERT(process_thread_->IsCurrent());
   if (started_) {
     // Already started.
     return;
@@ -666,26 +666,21 @@ void FakeAudioCaptureModule::StartProcessP() {
 }
 
 void FakeAudioCaptureModule::ProcessFrameP() {
-  ASSERT(rtc::Thread::Current() == process_thread_);
+  ASSERT(process_thread_->IsCurrent());
   if (!started_) {
     next_frame_time_ = rtc::Time();
     started_ = true;
   }
 
-  bool playing;
-  bool recording;
   {
     rtc::CritScope cs(&crit_);
-    playing = playing_;
-    recording = recording_;
-  }
-
-  // Receive and send frames every kTimePerFrameMs.
-  if (playing) {
-    ReceiveFrameP();
-  }
-  if (recording) {
-    SendFrameP();
+    // Receive and send frames every kTimePerFrameMs.
+    if (playing_) {
+      ReceiveFrameP();
+    }
+    if (recording_) {
+      SendFrameP();
+    }
   }
 
   next_frame_time_ += kTimePerFrameMs;
@@ -696,7 +691,7 @@ void FakeAudioCaptureModule::ProcessFrameP() {
 }
 
 void FakeAudioCaptureModule::ReceiveFrameP() {
-  ASSERT(rtc::Thread::Current() == process_thread_);
+  ASSERT(process_thread_->IsCurrent());
   {
     rtc::CritScope cs(&crit_callback_);
     if (!audio_callback_) {
@@ -727,7 +722,7 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
 }
 
 void FakeAudioCaptureModule::SendFrameP() {
-  ASSERT(rtc::Thread::Current() == process_thread_);
+  ASSERT(process_thread_->IsCurrent());
   rtc::CritScope cs(&crit_callback_);
   if (!audio_callback_) {
     return;
@@ -747,8 +742,3 @@ void FakeAudioCaptureModule::SendFrameP() {
   SetMicrophoneVolume(current_mic_level);
 }
 
-void FakeAudioCaptureModule::StopProcessP() {
-  ASSERT(rtc::Thread::Current() == process_thread_);
-  started_ = false;
-  process_thread_->Clear(this);
-}
