@@ -44,23 +44,6 @@ class SSLIdentity;
 class Thread;
 
 // Used to receive callbacks of DTLS identity requests.
-class DTLSIdentityRequestObserver : public rtc::RefCountInterface {
- public:
-  virtual void OnFailure(int error) = 0;
-  // TODO(jiayl): Unify the OnSuccess method once Chrome code is updated.
-  virtual void OnSuccess(const std::string& der_cert,
-                         const std::string& der_private_key) = 0;
-  // |identity| is a scoped_ptr because rtc::SSLIdentity is not copyable and the
-  // client has to get the ownership of the object to make use of it.
-  virtual void OnSuccessWithIdentityObj(
-      rtc::scoped_ptr<rtc::SSLIdentity> identity) = 0;
-
- protected:
-  virtual ~DTLSIdentityRequestObserver() {}
-};
-
-// TODO(hbos): To replace DTLSIdentityRequestObserver.
-// Used to receive callbacks of DTLS identity requests.
 class DtlsIdentityRequestObserver : public rtc::RefCountInterface {
  public:
   virtual void OnFailure(int error) = 0;
@@ -75,7 +58,6 @@ class DtlsIdentityRequestObserver : public rtc::RefCountInterface {
   virtual ~DtlsIdentityRequestObserver() {}
 };
 
-// TODO(hbos): To be implemented.
 // This interface defines an in-memory DTLS identity store, which generates DTLS
 // identities.
 // APIs calls must be made on the signaling thread and the callbacks are also

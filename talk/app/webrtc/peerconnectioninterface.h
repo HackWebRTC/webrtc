@@ -468,38 +468,6 @@ class PortAllocatorFactoryInterface : public rtc::RefCountInterface {
   ~PortAllocatorFactoryInterface() {}
 };
 
-// TODO(hbos): Remove once cr/1176383004 lands.
-class DTLSIdentityServiceInterface {
- public:
-  // Asynchronously request a DTLS identity, including a self-signed certificate
-  // and the private key used to sign the certificate, from the identity store
-  // for the given identity name.
-  // DTLSIdentityRequestObserver::OnSuccess will be called with the identity if
-  // the request succeeded; DTLSIdentityRequestObserver::OnFailure will be
-  // called with an error code if the request failed.
-  //
-  // Only one request can be made at a time. If a second request is called
-  // before the first one completes, RequestIdentity will abort and return
-  // false.
-  //
-  // |identity_name| is an internal name selected by the client to identify an
-  // identity within an origin. E.g. an web site may cache the certificates used
-  // to communicate with differnent peers under different identity names.
-  //
-  // |common_name| is the common name used to generate the certificate. If the
-  // certificate already exists in the store, |common_name| is ignored.
-  //
-  // |observer| is the object to receive success or failure callbacks.
-  //
-  // Returns true if either OnFailure or OnSuccess will be called.
-  virtual bool RequestIdentity(
-      const std::string& identity_name,
-      const std::string& common_name,
-      DTLSIdentityRequestObserver* observer) = 0;
-
-  virtual ~DTLSIdentityServiceInterface() {}
-};
-
 // PeerConnectionFactoryInterface is the factory interface use for creating
 // PeerConnection, MediaStream and media tracks.
 // PeerConnectionFactoryInterface will create required libjingle threads,
@@ -534,25 +502,6 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   };
 
   virtual void SetOptions(const Options& options) = 0;
-
-  // TODO(hbos): Temporary CreatePeerConnection function while we transition
-  // from DTLSIdentityServiceInterface to DtlsIdentityStoreInterface.
-  // This method takes the ownership of |dtls_identity_service|.
-  rtc::scoped_refptr<PeerConnectionInterface>
-      CreatePeerConnection(
-          const PeerConnectionInterface::RTCConfiguration& configuration,
-          const MediaConstraintsInterface* constraints,
-          PortAllocatorFactoryInterface* allocator_factory,
-          DTLSIdentityServiceInterface* dtls_identity_service,
-          rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-          PeerConnectionObserver* observer) {
-    if (dtls_identity_service) {
-      // Store used instead of service, our ownership responsibility to delete.
-      delete dtls_identity_service;
-    }
-    return CreatePeerConnection(configuration, constraints, allocator_factory,
-                                dtls_identity_store.Pass(), observer);
-  }
 
   virtual rtc::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
