@@ -624,60 +624,15 @@ RTCPSender::BuildResult RTCPSender::BuildRPSI(RtcpContext* ctx) {
   if (ctx->feedback_state.send_payload_type == 0xFF)
     return BuildResult::kError;
 
-  // sanity
-  if (ctx->position + 24 >= IP_PACKET_SIZE)
+  rtcp::Rpsi rpsi;
+  rpsi.From(ssrc_);
+  rpsi.To(remote_ssrc_);
+  rpsi.WithPayloadType(ctx->feedback_state.send_payload_type);
+  rpsi.WithPictureId(ctx->picture_id);
+
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(rpsi))
     return BuildResult::kTruncated;
-
-  // add Reference Picture Selection Indication
-  uint8_t FMT = 3;
-  *ctx->AllocateData(1) = 0x80 + FMT;
-  *ctx->AllocateData(1) = 206;
-
-  // calc length
-  uint32_t bitsRequired = 7;
-  uint8_t bytesRequired = 1;
-  while ((ctx->picture_id >> bitsRequired) > 0) {
-    bitsRequired += 7;
-    bytesRequired++;
-  }
-
-  uint8_t size = 3;
-  if (bytesRequired > 6) {
-    size = 5;
-  } else if (bytesRequired > 2) {
-    size = 4;
-  }
-  *ctx->AllocateData(1) = 0;
-  *ctx->AllocateData(1) = size;
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // Add the remote SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), remote_ssrc_);
-
-  // calc padding length
-  uint8_t paddingBytes = 4 - ((2 + bytesRequired) % 4);
-  if (paddingBytes == 4)
-    paddingBytes = 0;
-  // add padding length in bits
-  *ctx->AllocateData(1) = paddingBytes * 8;  // padding can be 0, 8, 16 or 24
-
-  // add payload type
-  *ctx->AllocateData(1) = ctx->feedback_state.send_payload_type;
-
-  // add picture ID
-  for (int i = bytesRequired - 1; i > 0; --i) {
-    *ctx->AllocateData(1) =
-        0x80 | static_cast<uint8_t>(ctx->picture_id >> (i * 7));
-  }
-  // add last byte of picture ID
-  *ctx->AllocateData(1) = static_cast<uint8_t>(ctx->picture_id & 0x7f);
-
-  // add padding
-  for (int j = 0; j < paddingBytes; j++) {
-    *ctx->AllocateData(1) = 0;
-  }
 
   return BuildResult::kSuccess;
 }
