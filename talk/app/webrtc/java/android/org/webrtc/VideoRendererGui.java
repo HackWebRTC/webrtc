@@ -148,6 +148,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private RendererType rendererType;
     private ScalingType scalingType;
     private boolean mirror;
+    private RendererEvents rendererEvents;
     // Flag if renderFrame() was ever called.
     boolean seenFrame;
     // Total number of video frames received in renderFrame() call.
@@ -430,6 +431,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           && rotation == rotationDegree) {
         return;
       }
+      if (rendererEvents != null) {
+        Log.d(TAG, "ID: " + id +
+            ". Reporting frame resolution changed to " + videoWidth + " x " + videoHeight);
+        rendererEvents.onFrameResolutionChanged(videoWidth, videoHeight, rotation);
+      }
 
       // Frame re-allocation need to be synchronized with copying
       // frame to textures in draw() function to avoid re-allocating
@@ -460,6 +466,10 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       if (surface == null) {
         // This object has been released.
         return;
+      }
+      if (!seenFrame && rendererEvents != null) {
+        Log.d(TAG, "ID: " + id + ". Reporting first rendered frame.");
+        rendererEvents.onFirstFrameRendered();
       }
       setSize(frame.width, frame.height, frame.rotationDegree);
       long now = System.nanoTime();
@@ -516,6 +526,19 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     public boolean canApplyRotation() {
       return true;
     }
+  }
+
+  /** Interface for reporting rendering events. */
+  public static interface RendererEvents {
+    /**
+     * Callback fired once first frame is rendered.
+     */
+    public void onFirstFrameRendered();
+
+    /**
+     * Callback fired when rendered frame resolution or rotation has changed.
+     */
+    public void onFrameResolutionChanged(int videoWidth, int videoHeight, int rotation);
   }
 
   /** Passes GLSurfaceView to video renderer. */
@@ -607,6 +630,22 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
         if (yuvImageRenderer == renderer) {
           yuvImageRenderer.setPosition(x, y, width, height, scalingType, mirror);
+        }
+      }
+    }
+  }
+
+  public static synchronized void setRendererEvents(
+      VideoRenderer.Callbacks renderer, RendererEvents rendererEvents) {
+    Log.d(TAG, "VideoRendererGui.setRendererEvents");
+    if (instance == null) {
+      throw new RuntimeException(
+          "Attempt to set renderer events before setting GLSurfaceView");
+    }
+    synchronized (instance.yuvImageRenderers) {
+      for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
+        if (yuvImageRenderer == renderer) {
+          yuvImageRenderer.rendererEvents = rendererEvents;
         }
       }
     }
