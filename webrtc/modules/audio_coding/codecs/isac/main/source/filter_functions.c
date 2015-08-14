@@ -245,8 +245,6 @@ void WebRtcIsac_DecimateAllpass(const double *in,
  * HP_a = [1, -2*real(p), abs(p)^2]; */
 static const double a_coef[2] = { 1.86864659625574, -0.88360000000000};
 static const double b_coef[2] = {-1.99524591718270,  0.99600400000000};
-static const float a_coef_float[2] = { 1.86864659625574f, -0.88360000000000f};
-static const float b_coef_float[2] = {-1.99524591718270f,  0.99600400000000f};
 
 /* second order high-pass filter */
 void WebRtcIsac_Highpass(const double *in, double *out, double *state, int N)
@@ -257,16 +255,5 @@ void WebRtcIsac_Highpass(const double *in, double *out, double *state, int N)
     *out = *in + state[1];
     state[1] = state[0] + b_coef[0] * *in + a_coef[0] * *out;
     state[0] = b_coef[1] * *in++ + a_coef[1] * *out++;
-  }
-}
-
-void WebRtcIsac_Highpass_float(const float *in, double *out, double *state, int N)
-{
-  int k;
-
-  for (k=0; k<N; k++) {
-    *out = (double)*in + state[1];
-    state[1] = state[0] + b_coef_float[0] * *in + a_coef_float[0] * *out;
-    state[0] = b_coef_float[1] * (double)*in++ + a_coef_float[1] * *out++;
   }
 }
