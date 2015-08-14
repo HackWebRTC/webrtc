@@ -19,6 +19,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -27,7 +28,7 @@
 #include "webrtc/voice_engine/include/voe_file.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-
+#include "webrtc/voice_engine/test/auto_test/fakes/loudest_filter.h"
 
 static const size_t kMaxPacketSizeByte = 1500;
 
@@ -57,9 +58,13 @@ class ConferenceTransport: public webrtc::Transport {
   /* AddStream()
    * Adds a stream in the conference.
    *
+   * Input:
+   *   file_name : name of the file to be added as microphone input.
+   *   format    : format of the input file.
+   *
    * Returns stream id.
    */
-  unsigned int AddStream();
+  unsigned int AddStream(std::string file_name, webrtc::FileFormats format);
 
   /* RemoveStream()
    * Removes a stream with specified ID from the conference.
@@ -123,7 +128,7 @@ class ConferenceTransport: public webrtc::Transport {
   int GetReceiverChannelForSsrc(unsigned int sender_ssrc) const;
   void StorePacket(Packet::Type type, int channel, const void* data,
                    size_t len);
-  void SendPacket(const Packet& packet) const;
+  void SendPacket(const Packet& packet);
   bool DispatchPackets();
 
   const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> pq_crit_;
@@ -152,6 +157,10 @@ class ConferenceTransport: public webrtc::Transport {
   webrtc::VoERTP_RTCP* remote_rtp_rtcp_;
   webrtc::VoENetwork* remote_network_;
   webrtc::VoEFile* remote_file_;
+
+  LoudestFilter loudest_filter_;
+
+  const rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_header_parser_;
 };
 }  // namespace voetest
 

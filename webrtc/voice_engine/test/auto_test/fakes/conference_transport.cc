@@ -14,7 +14,6 @@
 
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 
 namespace {
@@ -23,9 +22,10 @@ namespace {
   static const unsigned int kFirstRemoteSsrc = 0x0002;
   static const webrtc::CodecInst kCodecInst =
       {120, "opus", 48000, 960, 2, 64000};
+  static const int kAudioLevelHeaderId = 1;
 
-  static unsigned int ParseSsrc(const void* data, size_t len, bool rtcp) {
-    const size_t ssrc_pos = (!rtcp) ? 8 : 4;
+  static unsigned int ParseRtcpSsrc(const void* data, size_t len) {
+    const size_t ssrc_pos = 4;
     unsigned int ssrc = 0;
     if (len >= (ssrc_pos + sizeof(ssrc))) {
       ssrc = rtc::GetBE32(static_cast<const char*>(data) + ssrc_pos);
@@ -44,7 +44,12 @@ ConferenceTransport::ConferenceTransport()
                                                   this,
                                                   "ConferenceTransport")),
       rtt_ms_(0),
-      stream_count_(0) {
+      stream_count_(0),
+      rtp_header_parser_(webrtc::RtpHeaderParser::Create()) {
+  rtp_header_parser_->
+      RegisterRtpHeaderExtension(webrtc::kRtpExtensionAudioLevel,
+                                 kAudioLevelHeaderId);
+
   local_voe_ = webrtc::VoiceEngine::Create();
   local_base_ = webrtc::VoEBase::GetInterface(local_voe_);
   local_network_ = webrtc::VoENetwork::GetInterface(local_voe_);
@@ -63,6 +68,10 @@ ConferenceTransport::ConferenceTransport()
   local_sender_ = local_base_->CreateChannel();
   EXPECT_EQ(0, local_network_->RegisterExternalTransport(local_sender_, *this));
   EXPECT_EQ(0, local_rtp_rtcp_->SetLocalSSRC(local_sender_, kLocalSsrc));
+  EXPECT_EQ(0, local_rtp_rtcp_->
+      SetSendAudioLevelIndicationStatus(local_sender_, true,
+                                        kAudioLevelHeaderId));
+
   EXPECT_EQ(0, local_base_->StartSend(local_sender_));
 
   EXPECT_EQ(0, remote_base_->Init());
@@ -133,26 +142,30 @@ void ConferenceTransport::StorePacket(Packet::Type type, int channel,
 // a packet is first sent to the reflector, and then forwarded to the receiver
 // are simplified, in this particular case, to a direct link between the sender
 // and the receiver.
-void ConferenceTransport::SendPacket(const Packet& packet) const {
-  unsigned int sender_ssrc;
+void ConferenceTransport::SendPacket(const Packet& packet) {
   int destination = -1;
+
   switch (packet.type_) {
-    case Packet::Rtp:
-      sender_ssrc = ParseSsrc(packet.data_, packet.len_, false);
-      if (sender_ssrc == kLocalSsrc) {
+    case Packet::Rtp: {
+      webrtc::RTPHeader rtp_header;
+      rtp_header_parser_->Parse(packet.data_, packet.len_, &rtp_header);
+      if (rtp_header.ssrc == kLocalSsrc) {
         remote_network_->ReceivedRTPPacket(reflector_, packet.data_,
                                            packet.len_, webrtc::PacketTime());
       } else {
-        destination = GetReceiverChannelForSsrc(sender_ssrc);
-        if (destination != -1) {
-          local_network_->ReceivedRTPPacket(destination, packet.data_,
-                                            packet.len_,
-                                            webrtc::PacketTime());
+        if (loudest_filter_.ForwardThisPacket(rtp_header)) {
+          destination = GetReceiverChannelForSsrc(rtp_header.ssrc);
+          if (destination != -1) {
+            local_network_->ReceivedRTPPacket(destination, packet.data_,
+                                              packet.len_,
+                                              webrtc::PacketTime());
+          }
         }
       }
       break;
-    case Packet::Rtcp:
-      sender_ssrc = ParseSsrc(packet.data_, packet.len_, true);
+    }
+    case Packet::Rtcp: {
+      unsigned int sender_ssrc = ParseRtcpSsrc(packet.data_, packet.len_);
       if (sender_ssrc == kLocalSsrc) {
         remote_network_->ReceivedRTCPPacket(reflector_, packet.data_,
                                             packet.len_);
@@ -167,6 +180,7 @@ void ConferenceTransport::SendPacket(const Packet& packet) const {
         }
       }
       break;
+    }
   }
 }
 
@@ -207,21 +221,20 @@ void ConferenceTransport::SetRtt(unsigned int rtt_ms) {
   rtt_ms_ = rtt_ms;
 }
 
-unsigned int ConferenceTransport::AddStream() {
-  const std::string kInputFileName =
-      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
-
+unsigned int ConferenceTransport::AddStream(std::string file_name,
+                                            webrtc::FileFormats format) {
   const int new_sender = remote_base_->CreateChannel();
   EXPECT_EQ(0, remote_network_->RegisterExternalTransport(new_sender, *this));
 
   const unsigned int remote_ssrc = kFirstRemoteSsrc + stream_count_++;
   EXPECT_EQ(0, remote_rtp_rtcp_->SetLocalSSRC(new_sender, remote_ssrc));
+  EXPECT_EQ(0, remote_rtp_rtcp_->
+      SetSendAudioLevelIndicationStatus(new_sender, true, kAudioLevelHeaderId));
 
   EXPECT_EQ(0, remote_codec_->SetSendCodec(new_sender, kCodecInst));
   EXPECT_EQ(0, remote_base_->StartSend(new_sender));
   EXPECT_EQ(0, remote_file_->StartPlayingFileAsMicrophone(
-      new_sender, kInputFileName.c_str(), true, false,
-      webrtc::kFileFormatPcm32kHzFile, 1.0));
+      new_sender, file_name.c_str(), true, false, format, 1.0));
 
   const int new_receiver = local_base_->CreateChannel();
   EXPECT_EQ(0, local_base_->AssociateSendChannel(new_receiver, local_sender_));

@@ -162,6 +162,8 @@
             'test/auto_test/fakes/conference_transport.h',
             'test/auto_test/fakes/fake_external_transport.cc',
             'test/auto_test/fakes/fake_external_transport.h',
+            'test/auto_test/fakes/loudest_filter.cc',
+            'test/auto_test/fakes/loudest_filter.h',
             'test/auto_test/fixtures/after_initialization_fixture.cc',
             'test/auto_test/fixtures/after_initialization_fixture.h',
             'test/auto_test/fixtures/after_streaming_fixture.cc',

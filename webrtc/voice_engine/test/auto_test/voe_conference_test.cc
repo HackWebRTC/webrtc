@@ -14,15 +14,27 @@
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/fakes/conference_transport.h"
 
 namespace {
-  static const int kRttMs = 25;
+const int kRttMs = 25;
 
-  static bool IsNear(int ref, int comp, int error) {
-    return (ref - comp <= error) && (comp - ref >= -error);
-  }
+bool IsNear(int ref, int comp, int error) {
+  return (ref - comp <= error) && (comp - ref >= -error);
 }
+
+void CreateSilenceFile(const std::string& silence_file, int sample_rate_hz) {
+  FILE* fid = fopen(silence_file.c_str(), "wb");
+  int16_t zero = 0;
+  for (int i = 0; i < sample_rate_hz; ++i) {
+    // Write 1 second, but it does not matter since the file will be looped.
+    fwrite(&zero, sizeof(int16_t), 1, fid);
+  }
+  fclose(fid);
+}
+
+}  // namespace
 
 namespace voetest {
 
@@ -38,12 +50,16 @@ TEST(VoeConferenceTest, RttAndStartNtpTime) {
     int64_t ntp_delay_;
   };
 
+  const std::string input_file =
+      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+  const webrtc::FileFormats kInputFormat = webrtc::kFileFormatPcm32kHzFile;
+
   const int kDelayMs = 987;
   ConferenceTransport trans;
   trans.SetRtt(kRttMs);
 
-  unsigned int id_1 = trans.AddStream();
-  unsigned int id_2 = trans.AddStream();
+  unsigned int id_1 = trans.AddStream(input_file, kInputFormat);
+  unsigned int id_2 = trans.AddStream(input_file, kInputFormat);
 
   EXPECT_TRUE(trans.StartPlayout(id_1));
   // Start NTP time is the time when a stream is played out, rather than
@@ -105,4 +121,56 @@ TEST(VoeConferenceTest, RttAndStartNtpTime) {
     }
   }
 }
+
+
+TEST(VoeConferenceTest, ReceivedPackets) {
+  const int kPackets = 50;
+  const int kPacketDurationMs = 20;  // Correspond to Opus.
+
+  const std::string input_file =
+      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+  const webrtc::FileFormats kInputFormat = webrtc::kFileFormatPcm32kHzFile;
+
+  const std::string silence_file =
+      webrtc::test::TempFilename(webrtc::test::OutputPath(), "silence");
+  CreateSilenceFile(silence_file, 32000);
+
+  {
+    ConferenceTransport trans;
+    // Add silence to stream 0, so that it will be filtered out.
+    unsigned int id_0 = trans.AddStream(silence_file, kInputFormat);
+    unsigned int id_1 = trans.AddStream(input_file, kInputFormat);
+    unsigned int id_2 = trans.AddStream(input_file, kInputFormat);
+    unsigned int id_3 = trans.AddStream(input_file, kInputFormat);
+
+    EXPECT_TRUE(trans.StartPlayout(id_0));
+    EXPECT_TRUE(trans.StartPlayout(id_1));
+    EXPECT_TRUE(trans.StartPlayout(id_2));
+    EXPECT_TRUE(trans.StartPlayout(id_3));
+
+    webrtc::SleepMs(kPacketDurationMs * kPackets);
+
+    webrtc::CallStatistics stats_0;
+    webrtc::CallStatistics stats_1;
+    webrtc::CallStatistics stats_2;
+    webrtc::CallStatistics stats_3;
+    EXPECT_TRUE(trans.GetReceiverStatistics(id_0, &stats_0));
+    EXPECT_TRUE(trans.GetReceiverStatistics(id_1, &stats_1));
+    EXPECT_TRUE(trans.GetReceiverStatistics(id_2, &stats_2));
+    EXPECT_TRUE(trans.GetReceiverStatistics(id_3, &stats_3));
+
+    // We expect stream 0 to be filtered out totally, but since it may join the
+    // call earlier than other streams and the beginning packets might have got
+    // through. So we only expect |packetsReceived| to be close to zero.
+    EXPECT_NEAR(stats_0.packetsReceived, 0, 2);
+    // We expect |packetsReceived| to match |kPackets|, but the actual value
+    // depends on the sleep timer. So we allow a small off from |kPackets|.
+    EXPECT_NEAR(stats_1.packetsReceived, kPackets, 2);
+    EXPECT_NEAR(stats_2.packetsReceived, kPackets, 2);
+    EXPECT_NEAR(stats_3.packetsReceived, kPackets, 2);
+  }
+
+  remove(silence_file.c_str());
+}
+
 }  // namespace voetest
