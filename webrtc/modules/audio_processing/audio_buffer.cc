@@ -403,21 +403,37 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   }
 }
 
-void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
-  assert(proc_num_frames_ == output_num_frames_);
-  assert(num_channels_ == num_input_channels_);
-  assert(frame->num_channels_ == num_channels_);
-  assert(frame->samples_per_channel_ == proc_num_frames_);
+void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) {
   frame->vad_activity_ = activity_;
-
   if (!data_changed) {
     return;
   }
 
-  Interleave(data_->ibuf()->channels(),
-             proc_num_frames_,
-             num_channels_,
-             frame->data_);
+  assert(frame->num_channels_ == num_channels_ || num_channels_ == 1);
+  assert(frame->samples_per_channel_ == output_num_frames_);
+
+  // Resample if necessary.
+  IFChannelBuffer* data_ptr = data_.get();
+  if (proc_num_frames_ != output_num_frames_) {
+    if (!output_buffer_) {
+      output_buffer_.reset(
+          new IFChannelBuffer(output_num_frames_, num_channels_));
+    }
+    for (int i = 0; i < num_channels_; ++i) {
+      output_resamplers_[i]->Resample(
+          data_->fbuf()->channels()[i], proc_num_frames_,
+          output_buffer_->fbuf()->channels()[i], output_num_frames_);
+    }
+    data_ptr = output_buffer_.get();
+  }
+
+  if (frame->num_channels_ == num_channels_) {
+    Interleave(data_ptr->ibuf()->channels(), proc_num_frames_, num_channels_,
+               frame->data_);
+  } else {
+    UpmixMonoToInterleaved(data_ptr->ibuf()->channels()[0], proc_num_frames_,
+                           frame->num_channels_, frame->data_);
+  }
 }
 
 void AudioBuffer::CopyLowPassToReference() {

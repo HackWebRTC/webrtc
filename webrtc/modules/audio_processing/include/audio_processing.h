@@ -116,6 +116,18 @@ struct Beamforming {
   const std::vector<Point> array_geometry;
 };
 
+// Use to enable intelligibility enhancer in audio processing. Must be provided
+// though the constructor. It will have no impact if used with
+// AudioProcessing::SetExtraOptions().
+//
+// Note: If enabled and the reverse stream has more than one output channel,
+// the reverse stream will become an upmixed mono signal.
+struct Intelligibility {
+  Intelligibility() : enabled(false) {}
+  explicit Intelligibility(bool enabled) : enabled(enabled) {}
+  bool enabled;
+};
+
 static const int kAudioProcMaxNativeSampleRateHz = 32000;
 
 // The Audio Processing Module (APM) provides a collection of voice processing
@@ -333,21 +345,28 @@ class AudioProcessing {
   // |input_sample_rate_hz()|
   //
   // TODO(ajm): add const to input; requires an implementation fix.
+  // DEPRECATED: Use |ProcessReverseStream| instead.
+  // TODO(ekm): Remove once all users have updated to |ProcessReverseStream|.
   virtual int AnalyzeReverseStream(AudioFrame* frame) = 0;
+
+  // Same as |AnalyzeReverseStream|, but may modify |frame| if intelligibility
+  // is enabled.
+  virtual int ProcessReverseStream(AudioFrame* frame) = 0;
 
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element
   // of |data| points to a channel buffer, arranged according to |layout|.
-  //
   // TODO(mgraczyk): Remove once clients are updated to use the new interface.
   virtual int AnalyzeReverseStream(const float* const* data,
                                    int samples_per_channel,
-                                   int sample_rate_hz,
+                                   int rev_sample_rate_hz,
                                    ChannelLayout layout) = 0;
 
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element of
   // |data| points to a channel buffer, arranged according to |reverse_config|.
-  virtual int AnalyzeReverseStream(const float* const* data,
-                                   const StreamConfig& reverse_config) = 0;
+  virtual int ProcessReverseStream(const float* const* src,
+                                   const StreamConfig& reverse_input_config,
+                                   const StreamConfig& reverse_output_config,
+                                   float* const* dest) = 0;
 
   // This must be called if and only if echo processing is enabled.
   //
@@ -492,6 +511,7 @@ class StreamConfig {
 
   bool has_keyboard() const { return has_keyboard_; }
   int num_frames() const { return num_frames_; }
+  int num_samples() const { return num_channels_ * num_frames_; }
 
   bool operator==(const StreamConfig& other) const {
     return sample_rate_hz_ == other.sample_rate_hz_ &&
@@ -517,7 +537,8 @@ class ProcessingConfig {
   enum StreamName {
     kInputStream,
     kOutputStream,
-    kReverseStream,
+    kReverseInputStream,
+    kReverseOutputStream,
     kNumStreamNames,
   };
 
@@ -527,13 +548,21 @@ class ProcessingConfig {
   const StreamConfig& output_stream() const {
     return streams[StreamName::kOutputStream];
   }
-  const StreamConfig& reverse_stream() const {
-    return streams[StreamName::kReverseStream];
+  const StreamConfig& reverse_input_stream() const {
+    return streams[StreamName::kReverseInputStream];
+  }
+  const StreamConfig& reverse_output_stream() const {
+    return streams[StreamName::kReverseOutputStream];
   }
 
   StreamConfig& input_stream() { return streams[StreamName::kInputStream]; }
   StreamConfig& output_stream() { return streams[StreamName::kOutputStream]; }
-  StreamConfig& reverse_stream() { return streams[StreamName::kReverseStream]; }
+  StreamConfig& reverse_input_stream() {
+    return streams[StreamName::kReverseInputStream];
+  }
+  StreamConfig& reverse_output_stream() {
+    return streams[StreamName::kReverseOutputStream];
+  }
 
   bool operator==(const ProcessingConfig& other) const {
     for (int i = 0; i < StreamName::kNumStreamNames; ++i) {

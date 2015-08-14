@@ -19,6 +19,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 
@@ -74,15 +75,9 @@ const float kMaxTestError = 0.005f;
 
 // Enhancer initialization parameters.
 const int kSamples = 2000;
-const int kErbResolution = 2;
 const int kSampleRate = 1000;
-const int kFragmentSize = kSampleRate / 100;
 const int kNumChannels = 1;
-const float kDecayRate = 0.9f;
-const int kWindowSize = 800;
-const int kAnalyzeRate = 800;
-const int kVarianceRate = 2;
-const float kGainLimit = 0.1f;
+const int kFragmentSize = kSampleRate / 100;
 
 }  // namespace
 
@@ -92,28 +87,20 @@ using intelligibility::VarianceArray;
 class IntelligibilityEnhancerTest : public ::testing::Test {
  protected:
   IntelligibilityEnhancerTest()
-      : enh_(kErbResolution,
-             kSampleRate,
-             kNumChannels,
-             VarianceArray::kStepInfinite,
-             kDecayRate,
-             kWindowSize,
-             kAnalyzeRate,
-             kVarianceRate,
-             kGainLimit),
-        clear_data_(kSamples),
-        noise_data_(kSamples),
-        orig_data_(kSamples) {}
+      : clear_data_(kSamples), noise_data_(kSamples), orig_data_(kSamples) {
+    config_.sample_rate_hz = kSampleRate;
+    enh_.reset(new IntelligibilityEnhancer(config_));
+  }
 
   bool CheckUpdate(VarianceArray::StepType step_type) {
-    IntelligibilityEnhancer enh(kErbResolution, kSampleRate, kNumChannels,
-                                step_type, kDecayRate, kWindowSize,
-                                kAnalyzeRate, kVarianceRate, kGainLimit);
+    config_.sample_rate_hz = kSampleRate;
+    config_.var_type = step_type;
+    enh_.reset(new IntelligibilityEnhancer(config_));
     float* clear_cursor = &clear_data_[0];
     float* noise_cursor = &noise_data_[0];
     for (int i = 0; i < kSamples; i += kFragmentSize) {
-      enh.ProcessCaptureAudio(&noise_cursor);
-      enh.ProcessRenderAudio(&clear_cursor);
+      enh_->AnalyzeCaptureAudio(&noise_cursor, kSampleRate, kNumChannels);
+      enh_->ProcessRenderAudio(&clear_cursor, kSampleRate, kNumChannels);
       clear_cursor += kFragmentSize;
       noise_cursor += kFragmentSize;
     }
@@ -125,7 +112,8 @@ class IntelligibilityEnhancerTest : public ::testing::Test {
     return false;
   }
 
-  IntelligibilityEnhancer enh_;
+  IntelligibilityEnhancer::Config config_;
+  rtc::scoped_ptr<IntelligibilityEnhancer> enh_;
   vector<float> clear_data_;
   vector<float> noise_data_;
   vector<float> orig_data_;
@@ -161,12 +149,12 @@ TEST_F(IntelligibilityEnhancerTest, TestRenderUpdate) {
 
 // Tests ERB bank creation, comparing against matlab output.
 TEST_F(IntelligibilityEnhancerTest, TestErbCreation) {
-  ASSERT_EQ(static_cast<int>(arraysize(kTestCenterFreqs)), enh_.bank_size_);
-  for (int i = 0; i < enh_.bank_size_; ++i) {
-    EXPECT_NEAR(kTestCenterFreqs[i], enh_.center_freqs_[i], kMaxTestError);
-    ASSERT_EQ(static_cast<int>(arraysize(kTestFilterBank[0])), enh_.freqs_);
-    for (int j = 0; j < enh_.freqs_; ++j) {
-      EXPECT_NEAR(kTestFilterBank[i][j], enh_.filter_bank_[i][j],
+  ASSERT_EQ(static_cast<int>(arraysize(kTestCenterFreqs)), enh_->bank_size_);
+  for (int i = 0; i < enh_->bank_size_; ++i) {
+    EXPECT_NEAR(kTestCenterFreqs[i], enh_->center_freqs_[i], kMaxTestError);
+    ASSERT_EQ(static_cast<int>(arraysize(kTestFilterBank[0])), enh_->freqs_);
+    for (int j = 0; j < enh_->freqs_; ++j) {
+      EXPECT_NEAR(kTestFilterBank[i][j], enh_->filter_bank_[i][j],
                   kMaxTestError);
     }
   }
@@ -175,29 +163,29 @@ TEST_F(IntelligibilityEnhancerTest, TestErbCreation) {
 // Tests analytic solution for optimal gains, comparing
 // against matlab output.
 TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
-  ASSERT_EQ(kTestStartFreq, enh_.start_freq_);
-  vector<float> sols(enh_.bank_size_);
+  ASSERT_EQ(kTestStartFreq, enh_->start_freq_);
+  vector<float> sols(enh_->bank_size_);
   float lambda = -0.001f;
-  for (int i = 0; i < enh_.bank_size_; i++) {
-    enh_.filtered_clear_var_[i] = 0.0f;
-    enh_.filtered_noise_var_[i] = 0.0f;
-    enh_.rho_[i] = 0.02f;
+  for (int i = 0; i < enh_->bank_size_; i++) {
+    enh_->filtered_clear_var_[i] = 0.0f;
+    enh_->filtered_noise_var_[i] = 0.0f;
+    enh_->rho_[i] = 0.02f;
   }
-  enh_.SolveForGainsGivenLambda(lambda, enh_.start_freq_, &sols[0]);
-  for (int i = 0; i < enh_.bank_size_; i++) {
+  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
+  for (int i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestZeroVar[i], sols[i], kMaxTestError);
   }
-  for (int i = 0; i < enh_.bank_size_; i++) {
-    enh_.filtered_clear_var_[i] = static_cast<float>(i + 1);
-    enh_.filtered_noise_var_[i] = static_cast<float>(enh_.bank_size_ - i);
+  for (int i = 0; i < enh_->bank_size_; i++) {
+    enh_->filtered_clear_var_[i] = static_cast<float>(i + 1);
+    enh_->filtered_noise_var_[i] = static_cast<float>(enh_->bank_size_ - i);
   }
-  enh_.SolveForGainsGivenLambda(lambda, enh_.start_freq_, &sols[0]);
-  for (int i = 0; i < enh_.bank_size_; i++) {
+  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
+  for (int i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestNonZeroVarLambdaTop[i], sols[i], kMaxTestError);
   }
   lambda = -1.0;
-  enh_.SolveForGainsGivenLambda(lambda, enh_.start_freq_, &sols[0]);
-  for (int i = 0; i < enh_.bank_size_; i++) {
+  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
+  for (int i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestZeroVar[i], sols[i], kMaxTestError);
   }
 }

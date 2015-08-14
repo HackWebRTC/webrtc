@@ -19,18 +19,18 @@
 
 #include <math.h>
 #include <stdlib.h>
-
 #include <algorithm>
 #include <numeric>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/common_audio/vad/include/webrtc_vad.h"
+#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/window_generator.h"
 
 namespace webrtc {
 
 namespace {
 
+const int kErbResolution = 2;
 const int kWindowSizeMs = 2;
 const int kChunkSizeMs = 10;  // Size provided by APM.
 const float kClipFreq = 200.0f;
@@ -64,124 +64,93 @@ void IntelligibilityEnhancer::TransformCallback::ProcessAudioBlock(
   }
 }
 
-IntelligibilityEnhancer::IntelligibilityEnhancer(int erb_resolution,
-                                                 int sample_rate_hz,
-                                                 int channels,
-                                                 int cv_type,
-                                                 float cv_alpha,
-                                                 int cv_win,
-                                                 int analysis_rate,
-                                                 int variance_rate,
-                                                 float gain_limit)
+IntelligibilityEnhancer::IntelligibilityEnhancer()
+    : IntelligibilityEnhancer(IntelligibilityEnhancer::Config()) {
+}
+
+IntelligibilityEnhancer::IntelligibilityEnhancer(const Config& config)
     : freqs_(RealFourier::ComplexLength(
-          RealFourier::FftOrder(sample_rate_hz * kWindowSizeMs / 1000))),
+          RealFourier::FftOrder(config.sample_rate_hz * kWindowSizeMs / 1000))),
       window_size_(1 << RealFourier::FftOrder(freqs_)),
-      chunk_length_(sample_rate_hz * kChunkSizeMs / 1000),
-      bank_size_(GetBankSize(sample_rate_hz, erb_resolution)),
-      sample_rate_hz_(sample_rate_hz),
-      erb_resolution_(erb_resolution),
-      channels_(channels),
-      analysis_rate_(analysis_rate),
-      variance_rate_(variance_rate),
+      chunk_length_(config.sample_rate_hz * kChunkSizeMs / 1000),
+      bank_size_(GetBankSize(config.sample_rate_hz, kErbResolution)),
+      sample_rate_hz_(config.sample_rate_hz),
+      erb_resolution_(kErbResolution),
+      num_capture_channels_(config.num_capture_channels),
+      num_render_channels_(config.num_render_channels),
+      analysis_rate_(config.analysis_rate),
+      active_(true),
       clear_variance_(freqs_,
-                      static_cast<VarianceType>(cv_type),
-                      cv_win,
-                      cv_alpha),
-      noise_variance_(freqs_, VarianceType::kStepInfinite, 475, 0.01f),
+                      config.var_type,
+                      config.var_window_size,
+                      config.var_decay_rate),
+      noise_variance_(freqs_,
+                      config.var_type,
+                      config.var_window_size,
+                      config.var_decay_rate),
       filtered_clear_var_(new float[bank_size_]),
       filtered_noise_var_(new float[bank_size_]),
       filter_bank_(bank_size_),
       center_freqs_(new float[bank_size_]),
       rho_(new float[bank_size_]),
       gains_eq_(new float[bank_size_]),
-      gain_applier_(freqs_, gain_limit),
-      temp_out_buffer_(nullptr),
-      input_audio_(new float* [channels]),
+      gain_applier_(freqs_, config.gain_change_limit),
+      temp_render_out_buffer_(chunk_length_, num_render_channels_),
+      temp_capture_out_buffer_(chunk_length_, num_capture_channels_),
       kbd_window_(new float[window_size_]),
       render_callback_(this, AudioSource::kRenderStream),
       capture_callback_(this, AudioSource::kCaptureStream),
       block_count_(0),
-      analysis_step_(0),
-      vad_high_(WebRtcVad_Create()),
-      vad_low_(WebRtcVad_Create()),
-      vad_tmp_buffer_(new int16_t[chunk_length_]) {
-  DCHECK_LE(kConfigRho, 1.0f);
+      analysis_step_(0) {
+  DCHECK_LE(config.rho, 1.0f);
 
   CreateErbBank();
 
-  WebRtcVad_Init(vad_high_);
-  WebRtcVad_set_mode(vad_high_, 0);  // High likelihood of speech.
-  WebRtcVad_Init(vad_low_);
-  WebRtcVad_set_mode(vad_low_, 3);  // Low likelihood of speech.
-
-  temp_out_buffer_ = static_cast<float**>(
-      malloc(sizeof(*temp_out_buffer_) * channels_ +
-             sizeof(**temp_out_buffer_) * chunk_length_ * channels_));
-  for (int i = 0; i < channels_; ++i) {
-    temp_out_buffer_[i] =
-        reinterpret_cast<float*>(temp_out_buffer_ + channels_) +
-        chunk_length_ * i;
-  }
-
   // Assumes all rho equal.
   for (int i = 0; i < bank_size_; ++i) {
-    rho_[i] = kConfigRho * kConfigRho;
+    rho_[i] = config.rho * config.rho;
   }
 
   float freqs_khz = kClipFreq / 1000.0f;
   int erb_index = static_cast<int>(ceilf(
       11.17f * logf((freqs_khz + 0.312f) / (freqs_khz + 14.6575f)) + 43.0f));
-  start_freq_ = std::max(1, erb_index * erb_resolution);
+  start_freq_ = max(1, erb_index * erb_resolution_);
 
   WindowGenerator::KaiserBesselDerived(kKbdAlpha, window_size_,
                                        kbd_window_.get());
   render_mangler_.reset(new LappedTransform(
-      channels_, channels_, chunk_length_, kbd_window_.get(), window_size_,
-      window_size_ / 2, &render_callback_));
+      num_render_channels_, num_render_channels_, chunk_length_,
+      kbd_window_.get(), window_size_, window_size_ / 2, &render_callback_));
   capture_mangler_.reset(new LappedTransform(
-      channels_, channels_, chunk_length_, kbd_window_.get(), window_size_,
-      window_size_ / 2, &capture_callback_));
+      num_capture_channels_, num_capture_channels_, chunk_length_,
+      kbd_window_.get(), window_size_, window_size_ / 2, &capture_callback_));
 }
 
-IntelligibilityEnhancer::~IntelligibilityEnhancer() {
-  WebRtcVad_Free(vad_low_);
-  WebRtcVad_Free(vad_high_);
-  free(temp_out_buffer_);
-}
+void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
+                                                 int sample_rate_hz,
+                                                 int num_channels) {
+  CHECK_EQ(sample_rate_hz_, sample_rate_hz);
+  CHECK_EQ(num_render_channels_, num_channels);
 
-void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio) {
-  for (int i = 0; i < chunk_length_; ++i) {
-    vad_tmp_buffer_[i] = (int16_t)audio[0][i];
+  if (active_) {
+    render_mangler_->ProcessChunk(audio, temp_render_out_buffer_.channels());
   }
-  has_voice_low_ = WebRtcVad_Process(vad_low_, sample_rate_hz_,
-                                     vad_tmp_buffer_.get(), chunk_length_) == 1;
 
-  // Process and enhance chunk of |audio|
-  render_mangler_->ProcessChunk(audio, temp_out_buffer_);
-
-  for (int i = 0; i < channels_; ++i) {
-    memcpy(audio[i], temp_out_buffer_[i],
-           chunk_length_ * sizeof(**temp_out_buffer_));
-  }
-}
-
-void IntelligibilityEnhancer::ProcessCaptureAudio(float* const* audio) {
-  for (int i = 0; i < chunk_length_; ++i) {
-    vad_tmp_buffer_[i] = (int16_t)audio[0][i];
-  }
-  // TODO(bercic): The VAD was always detecting voice in the noise stream,
-  // no matter what the aggressiveness, so it was temporarily disabled here.
-
-  #if 0
-    if (WebRtcVad_Process(vad_high_, sample_rate_hz_, vad_tmp_buffer_.get(),
-      chunk_length_) == 1) {
-      printf("capture HAS speech\n");
-      return;
+  if (active_) {
+    for (int i = 0; i < num_render_channels_; ++i) {
+      memcpy(audio[i], temp_render_out_buffer_.channels()[i],
+             chunk_length_ * sizeof(**audio));
     }
-    printf("capture NO speech\n");
-  #endif
+  }
+}
 
-  capture_mangler_->ProcessChunk(audio, temp_out_buffer_);
+void IntelligibilityEnhancer::AnalyzeCaptureAudio(float* const* audio,
+                                                  int sample_rate_hz,
+                                                  int num_channels) {
+  CHECK_EQ(sample_rate_hz_, sample_rate_hz);
+  CHECK_EQ(num_capture_channels_, num_channels);
+
+  capture_mangler_->ProcessChunk(audio, temp_capture_out_buffer_.channels());
 }
 
 void IntelligibilityEnhancer::DispatchAudio(
@@ -206,28 +175,21 @@ void IntelligibilityEnhancer::ProcessClearBlock(const complex<float>* in_block,
     return;
   }
 
-  // For now, always assumes enhancement is necessary.
-  // TODO(ekmeyerson): Change to only enhance if necessary,
-  // based on experiments with different cutoffs.
-  if (has_voice_low_ || true) {
+  // TODO(ekm): Use VAD to |Step| and |AnalyzeClearBlock| only if necessary.
+  if (true) {
     clear_variance_.Step(in_block, false);
-    const float power_target = std::accumulate(
-        clear_variance_.variance(), clear_variance_.variance() + freqs_, 0.0f);
-
     if (block_count_ % analysis_rate_ == analysis_rate_ - 1) {
+      const float power_target = std::accumulate(
+          clear_variance_.variance(), clear_variance_.variance() + freqs_, 0.f);
       AnalyzeClearBlock(power_target);
       ++analysis_step_;
-      if (analysis_step_ == variance_rate_) {
-        analysis_step_ = 0;
-        clear_variance_.Clear();
-        noise_variance_.Clear();
-      }
     }
     ++block_count_;
   }
 
-  /* efidata(n,:) = sqrt(b(n)) * fidata(n,:) */
-  gain_applier_.Apply(in_block, out_block);
+  if (active_) {
+    gain_applier_.Apply(in_block, out_block);
+  }
 }
 
 void IntelligibilityEnhancer::AnalyzeClearBlock(float power_target) {
@@ -404,6 +366,10 @@ float IntelligibilityEnhancer::DotProduct(const float* a,
     ret = fmaf(a[i], b[i], ret);
   }
   return ret;
+}
+
+bool IntelligibilityEnhancer::active() const {
+  return active_;
 }
 
 }  // namespace webrtc

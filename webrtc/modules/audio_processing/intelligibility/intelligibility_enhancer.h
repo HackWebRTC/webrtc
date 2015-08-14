@@ -20,10 +20,8 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/lapped_transform.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
-
-struct WebRtcVadInst;
-typedef struct WebRtcVadInst VadInst;
 
 namespace webrtc {
 
@@ -33,32 +31,45 @@ namespace webrtc {
 // Note: assumes speech and noise streams are already separated.
 class IntelligibilityEnhancer {
  public:
-  // Construct a new instance with the given filter bank resolution,
-  // sampling rate, number of channels and analysis rates.
-  // |analysis_rate| sets the number of input blocks (containing speech!)
-  // to elapse before a new gain computation is made. |variance_rate| specifies
-  // the number of gain recomputations after which the variances are reset.
-  // |cv_*| are parameters for the VarianceArray constructor for the
-  // clear speech stream.
-  // TODO(bercic): the |cv_*|, |*_rate| and |gain_limit| parameters should
-  // probably go away once fine tuning is done. They override the internal
-  // constants in the class (kGainChangeLimit, kAnalyzeRate, kVarianceRate).
-  IntelligibilityEnhancer(int erb_resolution,
-                          int sample_rate_hz,
-                          int channels,
-                          int cv_type,
-                          float cv_alpha,
-                          int cv_win,
-                          int analysis_rate,
-                          int variance_rate,
-                          float gain_limit);
-  ~IntelligibilityEnhancer();
+  struct Config {
+    // |var_*| are parameters for the VarianceArray constructor for the
+    // clear speech stream.
+    // TODO(bercic): the |var_*|, |*_rate| and |gain_limit| parameters should
+    // probably go away once fine tuning is done.
+    Config()
+        : sample_rate_hz(16000),
+          num_capture_channels(1),
+          num_render_channels(1),
+          var_type(intelligibility::VarianceArray::kStepDecaying),
+          var_decay_rate(0.9f),
+          var_window_size(10),
+          analysis_rate(800),
+          gain_change_limit(0.1f),
+          rho(0.02f) {}
+    int sample_rate_hz;
+    int num_capture_channels;
+    int num_render_channels;
+    intelligibility::VarianceArray::StepType var_type;
+    float var_decay_rate;
+    int var_window_size;
+    int analysis_rate;
+    float gain_change_limit;
+    float rho;
+  };
+
+  explicit IntelligibilityEnhancer(const Config& config);
+  IntelligibilityEnhancer();  // Initialize with default config.
 
   // Reads and processes chunk of noise stream in time domain.
-  void ProcessCaptureAudio(float* const* audio);
+  void AnalyzeCaptureAudio(float* const* audio,
+                           int sample_rate_hz,
+                           int num_channels);
 
   // Reads chunk of speech in time domain and updates with modified signal.
-  void ProcessRenderAudio(float* const* audio);
+  void ProcessRenderAudio(float* const* audio,
+                          int sample_rate_hz,
+                          int num_channels);
+  bool active() const;
 
  private:
   enum AudioSource {
@@ -133,9 +144,12 @@ class IntelligibilityEnhancer {
   const int bank_size_;     // Num ERB filters.
   const int sample_rate_hz_;
   const int erb_resolution_;
-  const int channels_;       // Num channels.
+  const int num_capture_channels_;
+  const int num_render_channels_;
   const int analysis_rate_;  // Num blocks before gains recalculated.
-  const int variance_rate_;  // Num recalculations before history is cleared.
+
+  const bool active_;  // Whether render gains are being updated.
+                       // TODO(ekm): Add logic for updating |active_|.
 
   intelligibility::VarianceArray clear_variance_;
   intelligibility::VarianceArray noise_variance_;
@@ -149,12 +163,11 @@ class IntelligibilityEnhancer {
   rtc::scoped_ptr<float[]> gains_eq_;  // Pre-filter modified gains.
   intelligibility::GainApplier gain_applier_;
 
-  // Destination buffer used to reassemble blocked chunks before overwriting
+  // Destination buffers used to reassemble blocked chunks before overwriting
   // the original input array with modifications.
-  // TODO(ekmeyerson): Switch to using ChannelBuffer.
-  float** temp_out_buffer_;
+  ChannelBuffer<float> temp_render_out_buffer_;
+  ChannelBuffer<float> temp_capture_out_buffer_;
 
-  rtc::scoped_ptr<float* []> input_audio_;
   rtc::scoped_ptr<float[]> kbd_window_;
   TransformCallback render_callback_;
   TransformCallback capture_callback_;
@@ -162,14 +175,6 @@ class IntelligibilityEnhancer {
   rtc::scoped_ptr<LappedTransform> capture_mangler_;
   int block_count_;
   int analysis_step_;
-
-  // TODO(bercic): Quick stopgap measure for voice detection in the clear
-  // and noise streams.
-  // Note: VAD currently does not affect anything in IntelligibilityEnhancer.
-  VadInst* vad_high_;
-  VadInst* vad_low_;
-  rtc::scoped_ptr<int16_t[]> vad_tmp_buffer_;
-  bool has_voice_low_;  // Whether voice detected in speech stream.
 };
 
 }  // namespace webrtc

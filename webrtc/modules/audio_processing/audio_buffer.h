@@ -109,7 +109,7 @@ class AudioBuffer {
   void DeinterleaveFrom(AudioFrame* audioFrame);
   // If |data_changed| is false, only the non-audio data members will be copied
   // to |frame|.
-  void InterleaveTo(AudioFrame* frame, bool data_changed) const;
+  void InterleaveTo(AudioFrame* frame, bool data_changed);
 
   // Use for float deinterleaved data.
   void CopyFrom(const float* const* data, const StreamConfig& stream_config);
@@ -152,6 +152,7 @@ class AudioBuffer {
   rtc::scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
   rtc::scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;
   rtc::scoped_ptr<IFChannelBuffer> input_buffer_;
+  rtc::scoped_ptr<IFChannelBuffer> output_buffer_;
   rtc::scoped_ptr<ChannelBuffer<float> > process_buffer_;
   ScopedVector<PushSincResampler> input_resamplers_;
   ScopedVector<PushSincResampler> output_resamplers_;

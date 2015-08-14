@@ -227,11 +227,15 @@ class MockAudioProcessing : public AudioProcessing {
                    float* const* dest));
   MOCK_METHOD1(AnalyzeReverseStream,
       int(AudioFrame* frame));
+  MOCK_METHOD1(ProcessReverseStream, int(AudioFrame* frame));
   MOCK_METHOD4(AnalyzeReverseStream,
       int(const float* const* data, int frames, int sample_rate_hz,
           ChannelLayout input_layout));
-  MOCK_METHOD2(AnalyzeReverseStream,
-      int(const float* const* data, const StreamConfig& reverse_config));
+  MOCK_METHOD4(ProcessReverseStream,
+               int(const float* const* src,
+                   const StreamConfig& input_config,
+                   const StreamConfig& output_config,
+                   float* const* dest));
   MOCK_METHOD1(set_stream_delay_ms,
       int(int delay));
   MOCK_CONST_METHOD0(stream_delay_ms,

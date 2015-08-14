@@ -40,6 +40,9 @@
 namespace webrtc {
 namespace {
 
+// TODO(ekmeyerson): Switch to using StreamConfig and ProcessingConfig where
+// applicable.
+
 // TODO(bjornv): This is not feasible until the functionality has been
 // re-implemented; see comment at the bottom of this file. For now, the user has
 // to hard code the |write_ref_data| value.
@@ -61,6 +64,8 @@ const int kProcessSampleRates[] = {8000, 16000, 32000, 48000};
 #endif
 const size_t kProcessSampleRatesSize = sizeof(kProcessSampleRates) /
     sizeof(*kProcessSampleRates);
+
+enum StreamDirection { kForward = 0, kReverse };
 
 void ConvertToFloat(const int16_t* int_data, ChannelBuffer<float>* cb) {
   ChannelBuffer<int16_t> cb_int(cb->num_frames(),
@@ -252,13 +257,16 @@ std::map<std::string, std::string> temp_filenames;
 std::string OutputFilePath(std::string name,
                            int input_rate,
                            int output_rate,
-                           int reverse_rate,
+                           int reverse_input_rate,
+                           int reverse_output_rate,
                            int num_input_channels,
                            int num_output_channels,
-                           int num_reverse_channels) {
+                           int num_reverse_input_channels,
+                           int num_reverse_output_channels,
+                           StreamDirection file_direction) {
   std::ostringstream ss;
-  ss << name << "_i" << num_input_channels << "_" << input_rate / 1000
-     << "_r" << num_reverse_channels << "_" << reverse_rate  / 1000 << "_";
+  ss << name << "_i" << num_input_channels << "_" << input_rate / 1000 << "_ir"
+     << num_reverse_input_channels << "_" << reverse_input_rate / 1000 << "_";
   if (num_output_channels == 1) {
     ss << "mono";
   } else if (num_output_channels == 2) {
@@ -266,7 +274,16 @@ std::string OutputFilePath(std::string name,
   } else {
     assert(false);
   }
-  ss << output_rate / 1000 << "_pcm";
+  ss << output_rate / 1000;
+  if (num_reverse_output_channels == 1) {
+    ss << "_rmono";
+  } else if (num_reverse_output_channels == 2) {
+    ss << "_rstereo";
+  } else {
+    assert(false);
+  }
+  ss << reverse_output_rate / 1000;
+  ss << "_d" << file_direction << "_pcm";
 
   std::string filename = ss.str();
   if (temp_filenames[filename].empty())
@@ -340,9 +357,9 @@ class ApmTest : public ::testing::Test {
   void Init(int sample_rate_hz,
             int output_sample_rate_hz,
             int reverse_sample_rate_hz,
-            int num_reverse_channels,
             int num_input_channels,
             int num_output_channels,
+            int num_reverse_channels,
             bool open_output_file);
   void Init(AudioProcessing* ap);
   void EnableAllComponents();
@@ -458,6 +475,7 @@ void ApmTest::Init(AudioProcessing* ap) {
             ap->Initialize(
                 {{{frame_->sample_rate_hz_, frame_->num_channels_},
                   {output_sample_rate_hz_, num_output_channels_},
+                  {revframe_->sample_rate_hz_, revframe_->num_channels_},
                   {revframe_->sample_rate_hz_, revframe_->num_channels_}}}));
 }
 
@@ -496,13 +514,10 @@ void ApmTest::Init(int sample_rate_hz,
     if (out_file_) {
       ASSERT_EQ(0, fclose(out_file_));
     }
-    filename = OutputFilePath("out",
-                              sample_rate_hz,
-                              output_sample_rate_hz,
-                              reverse_sample_rate_hz,
-                              num_input_channels,
-                              num_output_channels,
-                              num_reverse_channels);
+    filename = OutputFilePath(
+        "out", sample_rate_hz, output_sample_rate_hz, reverse_sample_rate_hz,
+        reverse_sample_rate_hz, num_input_channels, num_output_channels,
+        num_reverse_channels, num_reverse_channels, kForward);
     out_file_ = fopen(filename.c_str(), "wb");
     ASSERT_TRUE(out_file_ != NULL) << "Could not open file " <<
           filename << "\n";
@@ -819,13 +834,16 @@ void ApmTest::TestChangingReverseChannels(
     int num_rev_channels,
     AudioProcessing::Error expected_return) {
   const ProcessingConfig processing_config = {
-      {{ frame_->sample_rate_hz_, apm_->num_input_channels() },
-       { output_sample_rate_hz_, apm_->num_output_channels() },
-       { frame_->sample_rate_hz_, num_rev_channels }}};
+      {{frame_->sample_rate_hz_, apm_->num_input_channels()},
+       {output_sample_rate_hz_, apm_->num_output_channels()},
+       {frame_->sample_rate_hz_, num_rev_channels},
+       {frame_->sample_rate_hz_, num_rev_channels}}};
 
-  EXPECT_EQ(expected_return,
-            apm_->AnalyzeReverseStream(float_cb_->channels(),
-                                       processing_config.reverse_stream()));
+  EXPECT_EQ(
+      expected_return,
+      apm_->ProcessReverseStream(
+          float_cb_->channels(), processing_config.reverse_input_stream(),
+          processing_config.reverse_output_stream(), float_cb_->channels()));
 }
 
 TEST_F(ApmTest, ChannelsInt16Interface) {
@@ -1531,6 +1549,8 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
     for (int j = 0; j < 1000; j++) {
       EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
       EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
+      EXPECT_EQ(apm_->kNoError, apm_->ProcessReverseStream(frame_));
+      EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
     }
   }
 }
@@ -1554,6 +1574,19 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
 
   for (size_t i = 0; i < kSamples; ++i) {
     EXPECT_EQ(src[i], dest[i]);
+  }
+
+  // Same for ProcessReverseStream.
+  float rev_dest[kSamples] = {};
+  auto rev_dest_channels = &rev_dest[0];
+
+  StreamConfig input_stream = {sample_rate, 1};
+  StreamConfig output_stream = {sample_rate, 1};
+  EXPECT_NOERR(apm_->ProcessReverseStream(&src_channels, input_stream,
+                                          output_stream, &rev_dest_channels));
+
+  for (size_t i = 0; i < kSamples; ++i) {
+    EXPECT_EQ(src[i], rev_dest[i]);
   }
 }
 
@@ -2299,15 +2332,18 @@ void UpdateBestSNR(const float* ref,
 // Due to the resampling distortion, we don't expect identical results, but
 // enforce SNR thresholds which vary depending on the format. 0 is a special
 // case SNR which corresponds to inf, or zero error.
-typedef std::tr1::tuple<int, int, int, double> AudioProcessingTestData;
+typedef std::tr1::tuple<int, int, int, int, double, double>
+    AudioProcessingTestData;
 class AudioProcessingTest
     : public testing::TestWithParam<AudioProcessingTestData> {
  public:
   AudioProcessingTest()
       : input_rate_(std::tr1::get<0>(GetParam())),
         output_rate_(std::tr1::get<1>(GetParam())),
-        reverse_rate_(std::tr1::get<2>(GetParam())),
-        expected_snr_(std::tr1::get<3>(GetParam())) {}
+        reverse_input_rate_(std::tr1::get<2>(GetParam())),
+        reverse_output_rate_(std::tr1::get<3>(GetParam())),
+        expected_snr_(std::tr1::get<4>(GetParam())),
+        expected_reverse_snr_(std::tr1::get<5>(GetParam())) {}
 
   virtual ~AudioProcessingTest() {}
 
@@ -2323,13 +2359,9 @@ class AudioProcessingTest
       for (size_t j = 0; j < kNumChannelsSize; ++j) {
         for (size_t k = 0; k < kNumChannelsSize; ++k) {
           // The reference files always have matching input and output channels.
-          ProcessFormat(kNativeRates[i],
-                        kNativeRates[i],
-                        kNativeRates[i],
-                        kNumChannels[j],
-                        kNumChannels[j],
-                        kNumChannels[k],
-                        "ref");
+          ProcessFormat(kNativeRates[i], kNativeRates[i], kNativeRates[i],
+                        kNativeRates[i], kNumChannels[j], kNumChannels[j],
+                        kNumChannels[k], kNumChannels[k], "ref");
         }
       }
     }
@@ -2338,59 +2370,75 @@ class AudioProcessingTest
   static void TearDownTestCase() {
     ClearTempFiles();
   }
+
   // Runs a process pass on files with the given parameters and dumps the output
-  // to a file specified with |output_file_prefix|.
+  // to a file specified with |output_file_prefix|. Both forward and reverse
+  // output streams are dumped.
   static void ProcessFormat(int input_rate,
                             int output_rate,
-                            int reverse_rate,
+                            int reverse_input_rate,
+                            int reverse_output_rate,
                             int num_input_channels,
                             int num_output_channels,
-                            int num_reverse_channels,
+                            int num_reverse_input_channels,
+                            int num_reverse_output_channels,
                             std::string output_file_prefix) {
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
     rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
     EnableAllAPComponents(ap.get());
-    ap->Initialize({{{input_rate, num_input_channels},
-                     {output_rate, num_output_channels},
-                     {reverse_rate, num_reverse_channels}}});
 
-    FILE* far_file = fopen(ResourceFilePath("far", reverse_rate).c_str(), "rb");
+    ProcessingConfig processing_config = {
+        {{input_rate, num_input_channels},
+         {output_rate, num_output_channels},
+         {reverse_input_rate, num_reverse_input_channels},
+         {reverse_output_rate, num_reverse_output_channels}}};
+    ap->Initialize(processing_config);
+
+    FILE* far_file =
+        fopen(ResourceFilePath("far", reverse_input_rate).c_str(), "rb");
     FILE* near_file = fopen(ResourceFilePath("near", input_rate).c_str(), "rb");
-    FILE* out_file = fopen(OutputFilePath(output_file_prefix,
-                                          input_rate,
-                                          output_rate,
-                                          reverse_rate,
-                                          num_input_channels,
-                                          num_output_channels,
-                                          num_reverse_channels).c_str(), "wb");
+    FILE* out_file =
+        fopen(OutputFilePath(output_file_prefix, input_rate, output_rate,
+                             reverse_input_rate, reverse_output_rate,
+                             num_input_channels, num_output_channels,
+                             num_reverse_input_channels,
+                             num_reverse_output_channels, kForward).c_str(),
+              "wb");
+    FILE* rev_out_file =
+        fopen(OutputFilePath(output_file_prefix, input_rate, output_rate,
+                             reverse_input_rate, reverse_output_rate,
+                             num_input_channels, num_output_channels,
+                             num_reverse_input_channels,
+                             num_reverse_output_channels, kReverse).c_str(),
+              "wb");
     ASSERT_TRUE(far_file != NULL);
     ASSERT_TRUE(near_file != NULL);
     ASSERT_TRUE(out_file != NULL);
+    ASSERT_TRUE(rev_out_file != NULL);
 
     ChannelBuffer<float> fwd_cb(SamplesFromRate(input_rate),
                                 num_input_channels);
-    ChannelBuffer<float> rev_cb(SamplesFromRate(reverse_rate),
-                                num_reverse_channels);
+    ChannelBuffer<float> rev_cb(SamplesFromRate(reverse_input_rate),
+                                num_reverse_input_channels);
     ChannelBuffer<float> out_cb(SamplesFromRate(output_rate),
                                 num_output_channels);
+    ChannelBuffer<float> rev_out_cb(SamplesFromRate(reverse_output_rate),
+                                    num_reverse_output_channels);
 
     // Temporary buffers.
     const int max_length =
-        2 * std::max(out_cb.num_frames(),
-                     std::max(fwd_cb.num_frames(),
-                              rev_cb.num_frames()));
+        2 * std::max(std::max(out_cb.num_frames(), rev_out_cb.num_frames()),
+                     std::max(fwd_cb.num_frames(), rev_cb.num_frames()));
     rtc::scoped_ptr<float[]> float_data(new float[max_length]);
     rtc::scoped_ptr<int16_t[]> int_data(new int16_t[max_length]);
 
     int analog_level = 127;
     while (ReadChunk(far_file, int_data.get(), float_data.get(), &rev_cb) &&
            ReadChunk(near_file, int_data.get(), float_data.get(), &fwd_cb)) {
-      EXPECT_NOERR(ap->AnalyzeReverseStream(
-          rev_cb.channels(),
-          rev_cb.num_frames(),
-          reverse_rate,
-          LayoutFromChannels(num_reverse_channels)));
+      EXPECT_NOERR(ap->ProcessReverseStream(
+          rev_cb.channels(), processing_config.reverse_input_stream(),
+          processing_config.reverse_output_stream(), rev_out_cb.channels()));
 
       EXPECT_NOERR(ap->set_stream_delay_ms(0));
       ap->echo_cancellation()->set_stream_drift_samples(0);
@@ -2405,274 +2453,293 @@ class AudioProcessingTest
           LayoutFromChannels(num_output_channels),
           out_cb.channels()));
 
-      Interleave(out_cb.channels(),
-                 out_cb.num_frames(),
-                 out_cb.num_channels(),
+      // Dump forward output to file.
+      Interleave(out_cb.channels(), out_cb.num_frames(), out_cb.num_channels(),
                  float_data.get());
-      // Dump output to file.
       int out_length = out_cb.num_channels() * out_cb.num_frames();
+
       ASSERT_EQ(static_cast<size_t>(out_length),
                 fwrite(float_data.get(), sizeof(float_data[0]),
                        out_length, out_file));
+
+      // Dump reverse output to file.
+      Interleave(rev_out_cb.channels(), rev_out_cb.num_frames(),
+                 rev_out_cb.num_channels(), float_data.get());
+      int rev_out_length = rev_out_cb.num_channels() * rev_out_cb.num_frames();
+
+      ASSERT_EQ(static_cast<size_t>(rev_out_length),
+                fwrite(float_data.get(), sizeof(float_data[0]), rev_out_length,
+                       rev_out_file));
 
       analog_level = ap->gain_control()->stream_analog_level();
     }
     fclose(far_file);
     fclose(near_file);
     fclose(out_file);
+    fclose(rev_out_file);
   }
 
  protected:
   int input_rate_;
   int output_rate_;
-  int reverse_rate_;
+  int reverse_input_rate_;
+  int reverse_output_rate_;
   double expected_snr_;
+  double expected_reverse_snr_;
 };
 
 TEST_P(AudioProcessingTest, Formats) {
   struct ChannelFormat {
     int num_input;
     int num_output;
-    int num_reverse;
+    int num_reverse_input;
+    int num_reverse_output;
   };
   ChannelFormat cf[] = {
-    {1, 1, 1},
-    {1, 1, 2},
-    {2, 1, 1},
-    {2, 1, 2},
-    {2, 2, 1},
-    {2, 2, 2},
+      {1, 1, 1, 1},
+      {1, 1, 2, 1},
+      {2, 1, 1, 1},
+      {2, 1, 2, 1},
+      {2, 2, 1, 1},
+      {2, 2, 2, 2},
   };
   size_t channel_format_size = sizeof(cf) / sizeof(*cf);
 
   for (size_t i = 0; i < channel_format_size; ++i) {
-    ProcessFormat(input_rate_,
-                  output_rate_,
-                  reverse_rate_,
-                  cf[i].num_input,
-                  cf[i].num_output,
-                  cf[i].num_reverse,
-                  "out");
-    int min_ref_rate = std::min(input_rate_, output_rate_);
-    int ref_rate;
+    ProcessFormat(input_rate_, output_rate_, reverse_input_rate_,
+                  reverse_output_rate_, cf[i].num_input, cf[i].num_output,
+                  cf[i].num_reverse_input, cf[i].num_reverse_output, "out");
 
-    if (min_ref_rate > 32000) {
-      ref_rate = 48000;
-    } else if (min_ref_rate > 16000) {
-      ref_rate = 32000;
-    } else if (min_ref_rate > 8000) {
-      ref_rate = 16000;
-    } else {
-      ref_rate = 8000;
-    }
+    // Verify output for both directions.
+    std::vector<StreamDirection> stream_directions;
+    stream_directions.push_back(kForward);
+    stream_directions.push_back(kReverse);
+    for (StreamDirection file_direction : stream_directions) {
+      const int in_rate = file_direction ? reverse_input_rate_ : input_rate_;
+      const int out_rate = file_direction ? reverse_output_rate_ : output_rate_;
+      const int out_num =
+          file_direction ? cf[i].num_reverse_output : cf[i].num_output;
+      const double expected_snr =
+          file_direction ? expected_reverse_snr_ : expected_snr_;
+
+      const int min_ref_rate = std::min(in_rate, out_rate);
+      int ref_rate;
+
+      if (min_ref_rate > 32000) {
+        ref_rate = 48000;
+      } else if (min_ref_rate > 16000) {
+        ref_rate = 32000;
+      } else if (min_ref_rate > 8000) {
+        ref_rate = 16000;
+      } else {
+        ref_rate = 8000;
+      }
 #ifdef WEBRTC_AUDIOPROC_FIXED_PROFILE
-    ref_rate = std::min(ref_rate, 16000);
+      if (file_direction == kForward) {
+        ref_rate = std::min(ref_rate, 16000);
+      }
 #endif
+      FILE* out_file = fopen(
+          OutputFilePath("out", input_rate_, output_rate_, reverse_input_rate_,
+                         reverse_output_rate_, cf[i].num_input,
+                         cf[i].num_output, cf[i].num_reverse_input,
+                         cf[i].num_reverse_output, file_direction).c_str(),
+          "rb");
+      // The reference files always have matching input and output channels.
+      FILE* ref_file = fopen(
+          OutputFilePath("ref", ref_rate, ref_rate, ref_rate, ref_rate,
+                         cf[i].num_output, cf[i].num_output,
+                         cf[i].num_reverse_output, cf[i].num_reverse_output,
+                         file_direction).c_str(),
+          "rb");
+      ASSERT_TRUE(out_file != NULL);
+      ASSERT_TRUE(ref_file != NULL);
 
-    FILE* out_file = fopen(OutputFilePath("out",
-                                          input_rate_,
-                                          output_rate_,
-                                          reverse_rate_,
-                                          cf[i].num_input,
-                                          cf[i].num_output,
-                                          cf[i].num_reverse).c_str(), "rb");
-    // The reference files always have matching input and output channels.
-    FILE* ref_file = fopen(OutputFilePath("ref",
-                                          ref_rate,
-                                          ref_rate,
-                                          ref_rate,
-                                          cf[i].num_output,
-                                          cf[i].num_output,
-                                          cf[i].num_reverse).c_str(), "rb");
-    ASSERT_TRUE(out_file != NULL);
-    ASSERT_TRUE(ref_file != NULL);
+      const int ref_length = SamplesFromRate(ref_rate) * out_num;
+      const int out_length = SamplesFromRate(out_rate) * out_num;
+      // Data from the reference file.
+      rtc::scoped_ptr<float[]> ref_data(new float[ref_length]);
+      // Data from the output file.
+      rtc::scoped_ptr<float[]> out_data(new float[out_length]);
+      // Data from the resampled output, in case the reference and output rates
+      // don't match.
+      rtc::scoped_ptr<float[]> cmp_data(new float[ref_length]);
 
-    const int ref_length = SamplesFromRate(ref_rate) * cf[i].num_output;
-    const int out_length = SamplesFromRate(output_rate_) * cf[i].num_output;
-    // Data from the reference file.
-    rtc::scoped_ptr<float[]> ref_data(new float[ref_length]);
-    // Data from the output file.
-    rtc::scoped_ptr<float[]> out_data(new float[out_length]);
-    // Data from the resampled output, in case the reference and output rates
-    // don't match.
-    rtc::scoped_ptr<float[]> cmp_data(new float[ref_length]);
+      PushResampler<float> resampler;
+      resampler.InitializeIfNeeded(out_rate, ref_rate, out_num);
 
-    PushResampler<float> resampler;
-    resampler.InitializeIfNeeded(output_rate_, ref_rate, cf[i].num_output);
+      // Compute the resampling delay of the output relative to the reference,
+      // to find the region over which we should search for the best SNR.
+      float expected_delay_sec = 0;
+      if (in_rate != ref_rate) {
+        // Input resampling delay.
+        expected_delay_sec +=
+            PushSincResampler::AlgorithmicDelaySeconds(in_rate);
+      }
+      if (out_rate != ref_rate) {
+        // Output resampling delay.
+        expected_delay_sec +=
+            PushSincResampler::AlgorithmicDelaySeconds(ref_rate);
+        // Delay of converting the output back to its processing rate for
+        // testing.
+        expected_delay_sec +=
+            PushSincResampler::AlgorithmicDelaySeconds(out_rate);
+      }
+      int expected_delay =
+          floor(expected_delay_sec * ref_rate + 0.5f) * out_num;
 
-    // Compute the resampling delay of the output relative to the reference,
-    // to find the region over which we should search for the best SNR.
-    float expected_delay_sec = 0;
-    if (input_rate_ != ref_rate) {
-      // Input resampling delay.
-      expected_delay_sec +=
-          PushSincResampler::AlgorithmicDelaySeconds(input_rate_);
-    }
-    if (output_rate_ != ref_rate) {
-      // Output resampling delay.
-      expected_delay_sec +=
-          PushSincResampler::AlgorithmicDelaySeconds(ref_rate);
-      // Delay of converting the output back to its processing rate for testing.
-      expected_delay_sec +=
-          PushSincResampler::AlgorithmicDelaySeconds(output_rate_);
-    }
-    int expected_delay = floor(expected_delay_sec * ref_rate + 0.5f) *
-                         cf[i].num_output;
+      double variance = 0;
+      double sq_error = 0;
+      while (fread(out_data.get(), sizeof(out_data[0]), out_length, out_file) &&
+             fread(ref_data.get(), sizeof(ref_data[0]), ref_length, ref_file)) {
+        float* out_ptr = out_data.get();
+        if (out_rate != ref_rate) {
+          // Resample the output back to its internal processing rate if
+          // necssary.
+          ASSERT_EQ(ref_length, resampler.Resample(out_ptr, out_length,
+                                                   cmp_data.get(), ref_length));
+          out_ptr = cmp_data.get();
+        }
 
-    double variance = 0;
-    double sq_error = 0;
-    while (fread(out_data.get(), sizeof(out_data[0]), out_length, out_file) &&
-           fread(ref_data.get(), sizeof(ref_data[0]), ref_length, ref_file)) {
-      float* out_ptr = out_data.get();
-      if (output_rate_ != ref_rate) {
-        // Resample the output back to its internal processing rate if necssary.
-        ASSERT_EQ(ref_length, resampler.Resample(out_ptr,
-                                                 out_length,
-                                                 cmp_data.get(),
-                                                 ref_length));
-        out_ptr = cmp_data.get();
+        // Update the |sq_error| and |variance| accumulators with the highest
+        // SNR of reference vs output.
+        UpdateBestSNR(ref_data.get(), out_ptr, ref_length, expected_delay,
+                      &variance, &sq_error);
       }
 
-      // Update the |sq_error| and |variance| accumulators with the highest SNR
-      // of reference vs output.
-      UpdateBestSNR(ref_data.get(),
-                    out_ptr,
-                    ref_length,
-                    expected_delay,
-                    &variance,
-                    &sq_error);
-    }
+      std::cout << "(" << input_rate_ << ", " << output_rate_ << ", "
+                << reverse_input_rate_ << ", " << reverse_output_rate_ << ", "
+                << cf[i].num_input << ", " << cf[i].num_output << ", "
+                << cf[i].num_reverse_input << ", " << cf[i].num_reverse_output
+                << ", " << file_direction << "): ";
+      if (sq_error > 0) {
+        double snr = 10 * log10(variance / sq_error);
+        EXPECT_GE(snr, expected_snr);
+        EXPECT_NE(0, expected_snr);
+        std::cout << "SNR=" << snr << " dB" << std::endl;
+      } else {
+        EXPECT_EQ(expected_snr, 0);
+        std::cout << "SNR="
+                  << "inf dB" << std::endl;
+      }
 
-    std::cout << "(" << input_rate_ << ", "
-                     << output_rate_ << ", "
-                     << reverse_rate_ << ", "
-                     << cf[i].num_input << ", "
-                     << cf[i].num_output << ", "
-                     << cf[i].num_reverse << "): ";
-    if (sq_error > 0) {
-      double snr = 10 * log10(variance / sq_error);
-      EXPECT_GE(snr, expected_snr_);
-      EXPECT_NE(0, expected_snr_);
-      std::cout << "SNR=" << snr << " dB" << std::endl;
-    } else {
-      EXPECT_EQ(expected_snr_, 0);
-      std::cout << "SNR=" << "inf dB" << std::endl;
+      fclose(out_file);
+      fclose(ref_file);
     }
-
-    fclose(out_file);
-    fclose(ref_file);
   }
 }
 
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
 INSTANTIATE_TEST_CASE_P(
-    CommonFormats, AudioProcessingTest, testing::Values(
-        std::tr1::make_tuple(48000, 48000, 48000, 0),
-        std::tr1::make_tuple(48000, 48000, 32000, 40),
-        std::tr1::make_tuple(48000, 48000, 16000, 40),
-        std::tr1::make_tuple(48000, 44100, 48000, 20),
-        std::tr1::make_tuple(48000, 44100, 32000, 20),
-        std::tr1::make_tuple(48000, 44100, 16000, 20),
-        std::tr1::make_tuple(48000, 32000, 48000, 30),
-        std::tr1::make_tuple(48000, 32000, 32000, 30),
-        std::tr1::make_tuple(48000, 32000, 16000, 30),
-        std::tr1::make_tuple(48000, 16000, 48000, 25),
-        std::tr1::make_tuple(48000, 16000, 32000, 25),
-        std::tr1::make_tuple(48000, 16000, 16000, 25),
+    CommonFormats,
+    AudioProcessingTest,
+    testing::Values(std::tr1::make_tuple(48000, 48000, 48000, 48000, 0, 0),
+                    std::tr1::make_tuple(48000, 48000, 32000, 48000, 40, 30),
+                    std::tr1::make_tuple(48000, 48000, 16000, 48000, 40, 20),
+                    std::tr1::make_tuple(48000, 44100, 48000, 44100, 20, 20),
+                    std::tr1::make_tuple(48000, 44100, 32000, 44100, 20, 15),
+                    std::tr1::make_tuple(48000, 44100, 16000, 44100, 20, 15),
+                    std::tr1::make_tuple(48000, 32000, 48000, 32000, 30, 35),
+                    std::tr1::make_tuple(48000, 32000, 32000, 32000, 30, 0),
+                    std::tr1::make_tuple(48000, 32000, 16000, 32000, 30, 20),
+                    std::tr1::make_tuple(48000, 16000, 48000, 16000, 25, 20),
+                    std::tr1::make_tuple(48000, 16000, 32000, 16000, 25, 20),
+                    std::tr1::make_tuple(48000, 16000, 16000, 16000, 25, 0),
 
-        std::tr1::make_tuple(44100, 48000, 48000, 30),
-        std::tr1::make_tuple(44100, 48000, 32000, 30),
-        std::tr1::make_tuple(44100, 48000, 16000, 30),
-        std::tr1::make_tuple(44100, 44100, 48000, 20),
-        std::tr1::make_tuple(44100, 44100, 32000, 20),
-        std::tr1::make_tuple(44100, 44100, 16000, 20),
-        std::tr1::make_tuple(44100, 32000, 48000, 30),
-        std::tr1::make_tuple(44100, 32000, 32000, 30),
-        std::tr1::make_tuple(44100, 32000, 16000, 30),
-        std::tr1::make_tuple(44100, 16000, 48000, 25),
-        std::tr1::make_tuple(44100, 16000, 32000, 25),
-        std::tr1::make_tuple(44100, 16000, 16000, 25),
+                    std::tr1::make_tuple(44100, 48000, 48000, 48000, 30, 0),
+                    std::tr1::make_tuple(44100, 48000, 32000, 48000, 30, 30),
+                    std::tr1::make_tuple(44100, 48000, 16000, 48000, 30, 20),
+                    std::tr1::make_tuple(44100, 44100, 48000, 44100, 20, 20),
+                    std::tr1::make_tuple(44100, 44100, 32000, 44100, 20, 15),
+                    std::tr1::make_tuple(44100, 44100, 16000, 44100, 20, 15),
+                    std::tr1::make_tuple(44100, 32000, 48000, 32000, 30, 35),
+                    std::tr1::make_tuple(44100, 32000, 32000, 32000, 30, 0),
+                    std::tr1::make_tuple(44100, 32000, 16000, 32000, 30, 20),
+                    std::tr1::make_tuple(44100, 16000, 48000, 16000, 25, 20),
+                    std::tr1::make_tuple(44100, 16000, 32000, 16000, 25, 20),
+                    std::tr1::make_tuple(44100, 16000, 16000, 16000, 25, 0),
 
-        std::tr1::make_tuple(32000, 48000, 48000, 30),
-        std::tr1::make_tuple(32000, 48000, 32000, 35),
-        std::tr1::make_tuple(32000, 48000, 16000, 30),
-        std::tr1::make_tuple(32000, 44100, 48000, 20),
-        std::tr1::make_tuple(32000, 44100, 32000, 20),
-        std::tr1::make_tuple(32000, 44100, 16000, 20),
-        std::tr1::make_tuple(32000, 32000, 48000, 40),
-        std::tr1::make_tuple(32000, 32000, 32000, 0),
-        std::tr1::make_tuple(32000, 32000, 16000, 40),
-        std::tr1::make_tuple(32000, 16000, 48000, 25),
-        std::tr1::make_tuple(32000, 16000, 32000, 25),
-        std::tr1::make_tuple(32000, 16000, 16000, 25),
+                    std::tr1::make_tuple(32000, 48000, 48000, 48000, 30, 0),
+                    std::tr1::make_tuple(32000, 48000, 32000, 48000, 35, 30),
+                    std::tr1::make_tuple(32000, 48000, 16000, 48000, 30, 20),
+                    std::tr1::make_tuple(32000, 44100, 48000, 44100, 20, 20),
+                    std::tr1::make_tuple(32000, 44100, 32000, 44100, 20, 15),
+                    std::tr1::make_tuple(32000, 44100, 16000, 44100, 20, 15),
+                    std::tr1::make_tuple(32000, 32000, 48000, 32000, 40, 35),
+                    std::tr1::make_tuple(32000, 32000, 32000, 32000, 0, 0),
+                    std::tr1::make_tuple(32000, 32000, 16000, 32000, 40, 20),
+                    std::tr1::make_tuple(32000, 16000, 48000, 16000, 25, 20),
+                    std::tr1::make_tuple(32000, 16000, 32000, 16000, 25, 20),
+                    std::tr1::make_tuple(32000, 16000, 16000, 16000, 25, 0),
 
-        std::tr1::make_tuple(16000, 48000, 48000, 25),
-        std::tr1::make_tuple(16000, 48000, 32000, 25),
-        std::tr1::make_tuple(16000, 48000, 16000, 25),
-        std::tr1::make_tuple(16000, 44100, 48000, 15),
-        std::tr1::make_tuple(16000, 44100, 32000, 15),
-        std::tr1::make_tuple(16000, 44100, 16000, 15),
-        std::tr1::make_tuple(16000, 32000, 48000, 25),
-        std::tr1::make_tuple(16000, 32000, 32000, 25),
-        std::tr1::make_tuple(16000, 32000, 16000, 25),
-        std::tr1::make_tuple(16000, 16000, 48000, 40),
-        std::tr1::make_tuple(16000, 16000, 32000, 50),
-        std::tr1::make_tuple(16000, 16000, 16000, 0)));
+                    std::tr1::make_tuple(16000, 48000, 48000, 48000, 25, 0),
+                    std::tr1::make_tuple(16000, 48000, 32000, 48000, 25, 30),
+                    std::tr1::make_tuple(16000, 48000, 16000, 48000, 25, 20),
+                    std::tr1::make_tuple(16000, 44100, 48000, 44100, 15, 20),
+                    std::tr1::make_tuple(16000, 44100, 32000, 44100, 15, 15),
+                    std::tr1::make_tuple(16000, 44100, 16000, 44100, 15, 15),
+                    std::tr1::make_tuple(16000, 32000, 48000, 32000, 25, 35),
+                    std::tr1::make_tuple(16000, 32000, 32000, 32000, 25, 0),
+                    std::tr1::make_tuple(16000, 32000, 16000, 32000, 25, 20),
+                    std::tr1::make_tuple(16000, 16000, 48000, 16000, 40, 20),
+                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 50, 20),
+                    std::tr1::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 
 #elif defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
 INSTANTIATE_TEST_CASE_P(
-    CommonFormats, AudioProcessingTest, testing::Values(
-        std::tr1::make_tuple(48000, 48000, 48000, 20),
-        std::tr1::make_tuple(48000, 48000, 32000, 20),
-        std::tr1::make_tuple(48000, 48000, 16000, 20),
-        std::tr1::make_tuple(48000, 44100, 48000, 15),
-        std::tr1::make_tuple(48000, 44100, 32000, 15),
-        std::tr1::make_tuple(48000, 44100, 16000, 15),
-        std::tr1::make_tuple(48000, 32000, 48000, 20),
-        std::tr1::make_tuple(48000, 32000, 32000, 20),
-        std::tr1::make_tuple(48000, 32000, 16000, 20),
-        std::tr1::make_tuple(48000, 16000, 48000, 20),
-        std::tr1::make_tuple(48000, 16000, 32000, 20),
-        std::tr1::make_tuple(48000, 16000, 16000, 20),
+    CommonFormats,
+    AudioProcessingTest,
+    testing::Values(std::tr1::make_tuple(48000, 48000, 48000, 48000, 20, 0),
+                    std::tr1::make_tuple(48000, 48000, 32000, 48000, 20, 30),
+                    std::tr1::make_tuple(48000, 48000, 16000, 48000, 20, 20),
+                    std::tr1::make_tuple(48000, 44100, 48000, 44100, 15, 20),
+                    std::tr1::make_tuple(48000, 44100, 32000, 44100, 15, 15),
+                    std::tr1::make_tuple(48000, 44100, 16000, 44100, 15, 15),
+                    std::tr1::make_tuple(48000, 32000, 48000, 32000, 20, 35),
+                    std::tr1::make_tuple(48000, 32000, 32000, 32000, 20, 0),
+                    std::tr1::make_tuple(48000, 32000, 16000, 32000, 20, 20),
+                    std::tr1::make_tuple(48000, 16000, 48000, 16000, 20, 20),
+                    std::tr1::make_tuple(48000, 16000, 32000, 16000, 20, 20),
+                    std::tr1::make_tuple(48000, 16000, 16000, 16000, 20, 0),
 
-        std::tr1::make_tuple(44100, 48000, 48000, 20),
-        std::tr1::make_tuple(44100, 48000, 32000, 20),
-        std::tr1::make_tuple(44100, 48000, 16000, 20),
-        std::tr1::make_tuple(44100, 44100, 48000, 15),
-        std::tr1::make_tuple(44100, 44100, 32000, 15),
-        std::tr1::make_tuple(44100, 44100, 16000, 15),
-        std::tr1::make_tuple(44100, 32000, 48000, 20),
-        std::tr1::make_tuple(44100, 32000, 32000, 20),
-        std::tr1::make_tuple(44100, 32000, 16000, 20),
-        std::tr1::make_tuple(44100, 16000, 48000, 20),
-        std::tr1::make_tuple(44100, 16000, 32000, 20),
-        std::tr1::make_tuple(44100, 16000, 16000, 20),
+                    std::tr1::make_tuple(44100, 48000, 48000, 48000, 20, 0),
+                    std::tr1::make_tuple(44100, 48000, 32000, 48000, 20, 30),
+                    std::tr1::make_tuple(44100, 48000, 16000, 48000, 20, 20),
+                    std::tr1::make_tuple(44100, 44100, 48000, 44100, 15, 20),
+                    std::tr1::make_tuple(44100, 44100, 32000, 44100, 15, 15),
+                    std::tr1::make_tuple(44100, 44100, 16000, 44100, 15, 15),
+                    std::tr1::make_tuple(44100, 32000, 48000, 32000, 20, 35),
+                    std::tr1::make_tuple(44100, 32000, 32000, 32000, 20, 0),
+                    std::tr1::make_tuple(44100, 32000, 16000, 32000, 20, 20),
+                    std::tr1::make_tuple(44100, 16000, 48000, 16000, 20, 20),
+                    std::tr1::make_tuple(44100, 16000, 32000, 16000, 20, 20),
+                    std::tr1::make_tuple(44100, 16000, 16000, 16000, 20, 0),
 
-        std::tr1::make_tuple(32000, 48000, 48000, 20),
-        std::tr1::make_tuple(32000, 48000, 32000, 20),
-        std::tr1::make_tuple(32000, 48000, 16000, 20),
-        std::tr1::make_tuple(32000, 44100, 48000, 15),
-        std::tr1::make_tuple(32000, 44100, 32000, 15),
-        std::tr1::make_tuple(32000, 44100, 16000, 15),
-        std::tr1::make_tuple(32000, 32000, 48000, 20),
-        std::tr1::make_tuple(32000, 32000, 32000, 20),
-        std::tr1::make_tuple(32000, 32000, 16000, 20),
-        std::tr1::make_tuple(32000, 16000, 48000, 20),
-        std::tr1::make_tuple(32000, 16000, 32000, 20),
-        std::tr1::make_tuple(32000, 16000, 16000, 20),
+                    std::tr1::make_tuple(32000, 48000, 48000, 48000, 20, 0),
+                    std::tr1::make_tuple(32000, 48000, 32000, 48000, 20, 30),
+                    std::tr1::make_tuple(32000, 48000, 16000, 48000, 20, 20),
+                    std::tr1::make_tuple(32000, 44100, 48000, 44100, 15, 20),
+                    std::tr1::make_tuple(32000, 44100, 32000, 44100, 15, 15),
+                    std::tr1::make_tuple(32000, 44100, 16000, 44100, 15, 15),
+                    std::tr1::make_tuple(32000, 32000, 48000, 32000, 20, 35),
+                    std::tr1::make_tuple(32000, 32000, 32000, 32000, 20, 0),
+                    std::tr1::make_tuple(32000, 32000, 16000, 32000, 20, 20),
+                    std::tr1::make_tuple(32000, 16000, 48000, 16000, 20, 20),
+                    std::tr1::make_tuple(32000, 16000, 32000, 16000, 20, 20),
+                    std::tr1::make_tuple(32000, 16000, 16000, 16000, 20, 0),
 
-        std::tr1::make_tuple(16000, 48000, 48000, 25),
-        std::tr1::make_tuple(16000, 48000, 32000, 25),
-        std::tr1::make_tuple(16000, 48000, 16000, 25),
-        std::tr1::make_tuple(16000, 44100, 48000, 15),
-        std::tr1::make_tuple(16000, 44100, 32000, 15),
-        std::tr1::make_tuple(16000, 44100, 16000, 15),
-        std::tr1::make_tuple(16000, 32000, 48000, 25),
-        std::tr1::make_tuple(16000, 32000, 32000, 25),
-        std::tr1::make_tuple(16000, 32000, 16000, 25),
-        std::tr1::make_tuple(16000, 16000, 48000, 35),
-        std::tr1::make_tuple(16000, 16000, 32000, 40),
-        std::tr1::make_tuple(16000, 16000, 16000, 0)));
+                    std::tr1::make_tuple(16000, 48000, 48000, 48000, 25, 0),
+                    std::tr1::make_tuple(16000, 48000, 32000, 48000, 25, 30),
+                    std::tr1::make_tuple(16000, 48000, 16000, 48000, 25, 20),
+                    std::tr1::make_tuple(16000, 44100, 48000, 44100, 15, 20),
+                    std::tr1::make_tuple(16000, 44100, 32000, 44100, 15, 15),
+                    std::tr1::make_tuple(16000, 44100, 16000, 44100, 15, 15),
+                    std::tr1::make_tuple(16000, 32000, 48000, 32000, 25, 35),
+                    std::tr1::make_tuple(16000, 32000, 32000, 32000, 25, 0),
+                    std::tr1::make_tuple(16000, 32000, 16000, 32000, 25, 20),
+                    std::tr1::make_tuple(16000, 16000, 48000, 16000, 35, 20),
+                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 40, 20),
+                    std::tr1::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 #endif
 
 // TODO(henrike): re-implement functionality lost when removing the old main

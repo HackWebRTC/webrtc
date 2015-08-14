@@ -23,6 +23,7 @@ namespace webrtc {
 
 class AgcManagerDirect;
 class AudioBuffer;
+class AudioConverter;
 
 template<typename T>
 class Beamformer;
@@ -39,6 +40,7 @@ class NoiseSuppressionImpl;
 class ProcessingComponent;
 class TransientSuppressor;
 class VoiceDetectionImpl;
+class IntelligibilityEnhancer;
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
 namespace audioproc {
@@ -89,12 +91,15 @@ class AudioProcessingImpl : public AudioProcessing {
                     const StreamConfig& output_config,
                     float* const* dest) override;
   int AnalyzeReverseStream(AudioFrame* frame) override;
+  int ProcessReverseStream(AudioFrame* frame) override;
   int AnalyzeReverseStream(const float* const* data,
                            int samples_per_channel,
                            int sample_rate_hz,
                            ChannelLayout layout) override;
-  int AnalyzeReverseStream(const float* const* data,
-                           const StreamConfig& reverse_config) override;
+  int ProcessReverseStream(const float* const* src,
+                           const StreamConfig& reverse_input_config,
+                           const StreamConfig& reverse_output_config,
+                           float* const* dest) override;
   int set_stream_delay_ms(int delay) override;
   int stream_delay_ms() const override;
   bool was_stream_delay_set() const override;
@@ -124,16 +129,23 @@ class AudioProcessingImpl : public AudioProcessing {
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
   int MaybeInitializeLocked(const ProcessingConfig& config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // TODO(ekm): Remove once all clients updated to new interface.
+  int AnalyzeReverseStream(const float* const* src,
+                           const StreamConfig& input_config,
+                           const StreamConfig& output_config);
   int ProcessStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  int AnalyzeReverseStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  int ProcessReverseStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   bool is_data_processed() const;
   bool output_copy_needed(bool is_data_processed) const;
   bool synthesis_needed(bool is_data_processed) const;
   bool analysis_needed(bool is_data_processed) const;
+  bool is_rev_processed() const;
+  bool rev_conversion_needed() const;
   void InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void InitializeBeamformer() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void InitializeIntelligibility() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void MaybeUpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   EchoCancellationImpl* echo_cancellation_;
@@ -149,6 +161,7 @@ class AudioProcessingImpl : public AudioProcessing {
   CriticalSectionWrapper* crit_;
   rtc::scoped_ptr<AudioBuffer> render_audio_;
   rtc::scoped_ptr<AudioBuffer> capture_audio_;
+  rtc::scoped_ptr<AudioConverter> render_converter_;
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // TODO(andrew): make this more graceful. Ideally we would split this stuff
   // out into a separate class with an "enabled" and "disabled" implementation.
@@ -191,6 +204,9 @@ class AudioProcessingImpl : public AudioProcessing {
   const bool beamformer_enabled_;
   rtc::scoped_ptr<Beamformer<float>> beamformer_;
   const std::vector<Point> array_geometry_;
+
+  bool intelligibility_enabled_;
+  rtc::scoped_ptr<IntelligibilityEnhancer> intelligibility_enhancer_;
 };
 
 }  // namespace webrtc

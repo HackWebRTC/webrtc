@@ -102,7 +102,7 @@ public:
 
 private:
     OutputMixer(uint32_t instanceId);
-    void APMAnalyzeReverseStream();
+    void APMProcessReverseStream();
     int InsertInbandDtmfTone();
 
     // uses

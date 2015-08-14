@@ -119,7 +119,7 @@ class VarianceArray {
   rtc::scoped_ptr<float[]> variance_;
   rtc::scoped_ptr<float[]> conj_sum_;
 
-  const int freqs_;
+  const int num_freqs_;
   const int window_size_;
   const float decay_;
   int history_cursor_;
@@ -145,7 +145,7 @@ class GainApplier {
   float* target() const { return target_.get(); }
 
  private:
-  const int freqs_;
+  const int num_freqs_;
   const float change_limit_;
   rtc::scoped_ptr<float[]> target_;
   rtc::scoped_ptr<float[]> current_;

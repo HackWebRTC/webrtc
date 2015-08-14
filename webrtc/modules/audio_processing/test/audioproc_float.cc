@@ -25,7 +25,11 @@
 
 DEFINE_string(dump, "", "The name of the debug dump file to read from.");
 DEFINE_string(i, "", "The name of the input file to read from.");
+DEFINE_string(i_rev, "", "The name of the reverse input file to read from.");
 DEFINE_string(o, "out.wav", "Name of the output file to write to.");
+DEFINE_string(o_rev,
+              "out_rev.wav",
+              "Name of the reverse output file to write to.");
 DEFINE_int32(out_channels, 0, "Number of output channels. Defaults to input.");
 DEFINE_int32(out_sample_rate, 0,
              "Output sample rate in Hz. Defaults to input.");
@@ -40,6 +44,7 @@ DEFINE_bool(hpf, false, "Enable high-pass filtering.");
 DEFINE_bool(ns, false, "Enable noise suppression.");
 DEFINE_bool(ts, false, "Enable transient suppression.");
 DEFINE_bool(bf, false, "Enable beamforming.");
+DEFINE_bool(ie, false, "Enable intelligibility enhancer.");
 DEFINE_bool(all, false, "Enable all components.");
 
 DEFINE_int32(ns_level, -1, "Noise suppression level [0 - 3].");
@@ -85,6 +90,7 @@ int main(int argc, char* argv[]) {
 
   Config config;
   config.Set<ExperimentalNs>(new ExperimentalNs(FLAGS_ts || FLAGS_all));
+  config.Set<Intelligibility>(new Intelligibility(FLAGS_ie || FLAGS_all));
 
   if (FLAGS_bf || FLAGS_all) {
     const size_t num_mics = in_file.num_channels();
@@ -102,6 +108,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "-aec requires a -dump file.\n");
     return -1;
   }
+  bool process_reverse = !FLAGS_i_rev.empty();
   CHECK_EQ(kNoErr, ap->gain_control()->Enable(FLAGS_agc || FLAGS_all));
   CHECK_EQ(kNoErr, ap->gain_control()->set_mode(GainControl::kFixedDigital));
   CHECK_EQ(kNoErr, ap->high_pass_filter()->Enable(FLAGS_hpf || FLAGS_all));
@@ -124,6 +131,33 @@ int main(int argc, char* argv[]) {
 
   std::vector<float> in_interleaved(in_buf.size());
   std::vector<float> out_interleaved(out_buf.size());
+
+  rtc::scoped_ptr<WavReader> in_rev_file;
+  rtc::scoped_ptr<WavWriter> out_rev_file;
+  rtc::scoped_ptr<ChannelBuffer<float>> in_rev_buf;
+  rtc::scoped_ptr<ChannelBuffer<float>> out_rev_buf;
+  std::vector<float> in_rev_interleaved;
+  std::vector<float> out_rev_interleaved;
+  if (process_reverse) {
+    in_rev_file.reset(new WavReader(FLAGS_i_rev));
+    out_rev_file.reset(new WavWriter(FLAGS_o_rev, in_rev_file->sample_rate(),
+                                     in_rev_file->num_channels()));
+    printf("In rev file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
+           FLAGS_i_rev.c_str(), in_rev_file->num_channels(),
+           in_rev_file->sample_rate());
+    printf("Out rev file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
+           FLAGS_o_rev.c_str(), out_rev_file->num_channels(),
+           out_rev_file->sample_rate());
+    in_rev_buf.reset(new ChannelBuffer<float>(
+        rtc::CheckedDivExact(in_rev_file->sample_rate(), kChunksPerSecond),
+        in_rev_file->num_channels()));
+    in_rev_interleaved.resize(in_rev_buf->size());
+    out_rev_buf.reset(new ChannelBuffer<float>(
+        rtc::CheckedDivExact(out_rev_file->sample_rate(), kChunksPerSecond),
+        out_rev_file->num_channels()));
+    out_rev_interleaved.resize(out_rev_buf->size());
+  }
+
   TickTime processing_start_time;
   TickInterval accumulated_time;
   int num_chunks = 0;
@@ -134,6 +168,12 @@ int main(int argc, char* argv[]) {
   const StreamConfig output_config = {
       out_file.sample_rate(), out_buf.num_channels(),
   };
+  const StreamConfig reverse_input_config = {
+      in_rev_file->sample_rate(), in_rev_file->num_channels(),
+  };
+  const StreamConfig reverse_output_config = {
+      out_rev_file->sample_rate(), out_rev_file->num_channels(),
+  };
   while (in_file.ReadSamples(in_interleaved.size(),
                              &in_interleaved[0]) == in_interleaved.size()) {
     // Have logs display the file time rather than wallclock time.
@@ -142,12 +182,25 @@ int main(int argc, char* argv[]) {
                     &in_interleaved[0]);
     Deinterleave(&in_interleaved[0], in_buf.num_frames(),
                  in_buf.num_channels(), in_buf.channels());
+    if (process_reverse) {
+      in_rev_file->ReadSamples(in_rev_interleaved.size(),
+                               in_rev_interleaved.data());
+      FloatS16ToFloat(in_rev_interleaved.data(), in_rev_interleaved.size(),
+                      in_rev_interleaved.data());
+      Deinterleave(in_rev_interleaved.data(), in_rev_buf->num_frames(),
+                   in_rev_buf->num_channels(), in_rev_buf->channels());
+    }
 
     if (FLAGS_perf) {
       processing_start_time = TickTime::Now();
     }
     CHECK_EQ(kNoErr, ap->ProcessStream(in_buf.channels(), input_config,
                                        output_config, out_buf.channels()));
+    if (process_reverse) {
+      CHECK_EQ(kNoErr, ap->ProcessReverseStream(
+                           in_rev_buf->channels(), reverse_input_config,
+                           reverse_output_config, out_rev_buf->channels()));
+    }
     if (FLAGS_perf) {
       accumulated_time += TickTime::Now() - processing_start_time;
     }
@@ -157,6 +210,14 @@ int main(int argc, char* argv[]) {
     FloatToFloatS16(&out_interleaved[0], out_interleaved.size(),
                     &out_interleaved[0]);
     out_file.WriteSamples(&out_interleaved[0], out_interleaved.size());
+    if (process_reverse) {
+      Interleave(out_rev_buf->channels(), out_rev_buf->num_frames(),
+                 out_rev_buf->num_channels(), out_rev_interleaved.data());
+      FloatToFloatS16(out_rev_interleaved.data(), out_rev_interleaved.size(),
+                      out_rev_interleaved.data());
+      out_rev_file->WriteSamples(out_rev_interleaved.data(),
+                                 out_rev_interleaved.size());
+    }
     num_chunks++;
   }
   if (FLAGS_perf) {
