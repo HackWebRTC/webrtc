@@ -33,3 +33,6 @@
                                      NSData *data))completionHandler;
 
 @end
+
+NSInteger ARDGetCpuUsagePercentage();
+

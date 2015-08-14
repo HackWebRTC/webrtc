@@ -12,6 +12,8 @@
 
 #import "RTCEAGLVideoView.h"
 
+#import "ARDStatsView.h"
+
 @class ARDVideoCallView;
 @protocol ARDVideoCallViewDelegate <NSObject>
 
@@ -20,6 +22,9 @@
 
 // Called when the hangup button is pressed.
 - (void)videoCallViewDidHangup:(ARDVideoCallView *)view;
+
+// Called when stats are enabled by triple tapping.
+- (void)videoCallViewDidEnableStats:(ARDVideoCallView *)view;
 
 @end
 
@@ -30,6 +35,7 @@
 @property(nonatomic, readonly) UILabel *statusLabel;
 @property(nonatomic, readonly) RTCEAGLVideoView *localVideoView;
 @property(nonatomic, readonly) RTCEAGLVideoView *remoteVideoView;
+@property(nonatomic, readonly) ARDStatsView *statsView;
 @property(nonatomic, weak) id<ARDVideoCallViewDelegate> delegate;
 
 @end

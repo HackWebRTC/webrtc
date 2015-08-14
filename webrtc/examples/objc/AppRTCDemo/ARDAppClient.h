@@ -41,12 +41,18 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 - (void)appClient:(ARDAppClient *)client
          didError:(NSError *)error;
 
+- (void)appClient:(ARDAppClient *)client
+      didGetStats:(NSArray *)stats;
+
 @end
 
 // Handles connections to the AppRTC server for a given room. Methods on this
 // class should only be called from the main queue.
 @interface ARDAppClient : NSObject
 
+// If |shouldGetStats| is true, stats will be reported in 1s intervals through
+// the delegate.
+@property(nonatomic, assign) BOOL shouldGetStats;
 @property(nonatomic, readonly) ARDAppClientState state;
 @property(nonatomic, weak) id<ARDAppClientDelegate> delegate;
 

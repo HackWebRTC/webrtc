@@ -17,6 +17,7 @@ static CGFloat const kButtonPadding = 16;
 static CGFloat const kButtonSize = 48;
 static CGFloat const kLocalVideoViewSize = 120;
 static CGFloat const kLocalVideoViewPadding = 8;
+static CGFloat const kStatusBarHeight = 20;
 
 @interface ARDVideoCallView () <RTCEAGLVideoViewDelegate>
 @end
@@ -32,6 +33,7 @@ static CGFloat const kLocalVideoViewPadding = 8;
 @synthesize statusLabel = _statusLabel;
 @synthesize localVideoView = _localVideoView;
 @synthesize remoteVideoView = _remoteVideoView;
+@synthesize statsView = _statsView;
 @synthesize delegate = _delegate;
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -45,6 +47,10 @@ static CGFloat const kLocalVideoViewPadding = 8;
     _localVideoView = [[RTCEAGLVideoView alloc] initWithFrame:CGRectZero];
     _localVideoView.delegate = self;
     [self addSubview:_localVideoView];
+
+    _statsView = [[ARDStatsView alloc] initWithFrame:CGRectZero];
+    _statsView.hidden = YES;
+    [self addSubview:_statsView];
 
     // TODO(tkchin): don't display this if we can't actually do camera switch.
     _cameraSwitchButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -74,6 +80,13 @@ static CGFloat const kLocalVideoViewPadding = 8;
     _statusLabel.font = [UIFont fontWithName:@"Roboto" size:16];
     _statusLabel.textColor = [UIColor whiteColor];
     [self addSubview:_statusLabel];
+
+    UITapGestureRecognizer *tapRecognizer =
+        [[UITapGestureRecognizer alloc]
+            initWithTarget:self
+                    action:@selector(didTripleTap:)];
+    tapRecognizer.numberOfTapsRequired = 3;
+    [self addGestureRecognizer:tapRecognizer];
   }
   return self;
 }
@@ -118,6 +131,12 @@ static CGFloat const kLocalVideoViewPadding = 8;
     _localVideoView.frame = bounds;
   }
 
+  // Place stats at the top.
+  CGSize statsSize = [_statsView sizeThatFits:bounds.size];
+  _statsView.frame = CGRectMake(CGRectGetMinX(bounds),
+                                CGRectGetMinY(bounds) + kStatusBarHeight,
+                                statsSize.width, statsSize.height);
+
   // Place hangup button in the bottom left.
   _hangupButton.frame =
       CGRectMake(CGRectGetMinX(bounds) + kButtonPadding,
@@ -157,6 +176,10 @@ static CGFloat const kLocalVideoViewPadding = 8;
 
 - (void)onHangup:(id)sender {
   [_delegate videoCallViewDidHangup:self];
+}
+
+- (void)didTripleTap:(UITapGestureRecognizer *)recognizer {
+  [_delegate videoCallViewDidEnableStats:self];
 }
 
 @end

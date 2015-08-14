@@ -88,6 +88,12 @@
 }
 
 - (void)appClient:(ARDAppClient *)client
+      didGetStats:(NSArray *)stats {
+  _videoCallView.statsView.stats = stats;
+  [_videoCallView setNeedsLayout];
+}
+
+- (void)appClient:(ARDAppClient *)client
          didError:(NSError *)error {
   NSString *message =
       [NSString stringWithFormat:@"%@", error.localizedDescription];
@@ -105,6 +111,11 @@
   // TODO(tkchin): Rate limit this so you can't tap continously on it.
   // Probably through an animation.
   [self switchCamera];
+}
+
+- (void)videoCallViewDidEnableStats:(ARDVideoCallView *)view {
+  _client.shouldGetStats = YES;
+  _videoCallView.statsView.hidden = NO;
 }
 
 #pragma mark - Private

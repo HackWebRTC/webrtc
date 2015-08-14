@@ -33,7 +33,6 @@
 #import "RTCICECandidate+JSON.h"
 #import "RTCSessionDescription+JSON.h"
 
-
 static NSString * const kARDDefaultSTUNServerUrl =
     @"stun:stun.l.google.com:19302";
 // TODO(tkchin): figure out a better username for CEOD statistics.
@@ -49,12 +48,55 @@ static NSInteger const kARDAppClientErrorSetSDP = -4;
 static NSInteger const kARDAppClientErrorInvalidClient = -5;
 static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
-@implementation ARDAppClient {
-  RTCFileLogger *_fileLogger;
+// We need a proxy to NSTimer because it causes a strong retain cycle. When
+// using the proxy, |invalidate| must be called before it properly deallocs.
+@interface ARDTimerProxy : NSObject
+
+- (instancetype)initWithInterval:(NSTimeInterval)interval
+                         repeats:(BOOL)repeats
+                    timerHandler:(void (^)(void))timerHandler;
+- (void)invalidate;
+
+@end
+
+@implementation ARDTimerProxy {
+  NSTimer *_timer;
+  void (^_timerHandler)(void);
 }
 
-@synthesize delegate = _delegate;
+- (instancetype)initWithInterval:(NSTimeInterval)interval
+                         repeats:(BOOL)repeats
+                    timerHandler:(void (^)(void))timerHandler {
+  NSParameterAssert(timerHandler);
+  if (self = [super init]) {
+    _timerHandler = timerHandler;
+    _timer = [NSTimer scheduledTimerWithTimeInterval:interval
+                                              target:self
+                                            selector:@selector(timerDidFire:)
+                                            userInfo:nil
+                                             repeats:repeats];
+  }
+  return self;
+}
+
+- (void)invalidate {
+  [_timer invalidate];
+}
+
+- (void)timerDidFire:(NSTimer *)timer {
+  _timerHandler();
+}
+
+@end
+
+@implementation ARDAppClient {
+  RTCFileLogger *_fileLogger;
+  ARDTimerProxy *_statsTimer;
+}
+
+@synthesize shouldGetStats = _shouldGetStats;
 @synthesize state = _state;
+@synthesize delegate = _delegate;
 @synthesize roomServerClient = _roomServerClient;
 @synthesize channel = _channel;
 @synthesize turnClient = _turnClient;
@@ -122,7 +164,29 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 }
 
 - (void)dealloc {
+  self.shouldGetStats = NO;
   [self disconnect];
+}
+
+- (void)setShouldGetStats:(BOOL)shouldGetStats {
+  if (_shouldGetStats == shouldGetStats) {
+    return;
+  }
+  if (shouldGetStats) {
+    __weak ARDAppClient *weakSelf = self;
+    _statsTimer = [[ARDTimerProxy alloc] initWithInterval:1
+                                                  repeats:YES
+                                             timerHandler:^{
+      ARDAppClient *strongSelf = weakSelf;
+      [strongSelf.peerConnection getStatsWithDelegate:strongSelf
+                                     mediaStreamTrack:nil
+                                     statsOutputLevel:RTCStatsOutputLevelDebug];
+    }];
+  } else {
+    [_statsTimer invalidate];
+    _statsTimer = nil;
+  }
+  _shouldGetStats = shouldGetStats;
 }
 
 - (void)setState:(ARDAppClientState)state {
@@ -309,8 +373,17 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
   });
 }
 
-- (void)peerConnection:(RTCPeerConnection*)peerConnection
-    didOpenDataChannel:(RTCDataChannel*)dataChannel {
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+    didOpenDataChannel:(RTCDataChannel *)dataChannel {
+}
+
+#pragma mark - RTCStatsDelegate
+
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+           didGetStats:(NSArray *)stats {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [_delegate appClient:self didGetStats:stats];
+  });
 }
 
 #pragma mark - RTCSessionDescriptionDelegate

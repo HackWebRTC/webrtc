@@ -160,6 +160,13 @@
               },
             }],
           ],
+          'link_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                '-framework QuartzCore',
+              ],
+            },
+          },
         },
         {
           'target_name': 'apprtc_signaling',
@@ -175,6 +182,8 @@
             'examples/objc/AppRTCDemo/ARDAppClient+Internal.h',
             'examples/objc/AppRTCDemo/ARDAppEngineClient.h',
             'examples/objc/AppRTCDemo/ARDAppEngineClient.m',
+            'examples/objc/AppRTCDemo/ARDBitrateTracker.h',
+            'examples/objc/AppRTCDemo/ARDBitrateTracker.m',
             'examples/objc/AppRTCDemo/ARDCEODTURNClient.h',
             'examples/objc/AppRTCDemo/ARDCEODTURNClient.m',
             'examples/objc/AppRTCDemo/ARDJoinResponse.h',
@@ -189,6 +198,8 @@
             'examples/objc/AppRTCDemo/ARDSignalingChannel.h',
             'examples/objc/AppRTCDemo/ARDSignalingMessage.h',
             'examples/objc/AppRTCDemo/ARDSignalingMessage.m',
+            'examples/objc/AppRTCDemo/ARDStatsBuilder.h',
+            'examples/objc/AppRTCDemo/ARDStatsBuilder.m',
             'examples/objc/AppRTCDemo/ARDTURNClient.h',
             'examples/objc/AppRTCDemo/ARDWebSocketChannel.h',
             'examples/objc/AppRTCDemo/ARDWebSocketChannel.m',
@@ -251,6 +262,8 @@
                 'examples/objc/AppRTCDemo/ios/ARDMainView.m',
                 'examples/objc/AppRTCDemo/ios/ARDMainViewController.h',
                 'examples/objc/AppRTCDemo/ios/ARDMainViewController.m',
+                'examples/objc/AppRTCDemo/ios/ARDStatsView.h',
+                'examples/objc/AppRTCDemo/ios/ARDStatsView.m',
                 'examples/objc/AppRTCDemo/ios/ARDVideoCallView.h',
                 'examples/objc/AppRTCDemo/ios/ARDVideoCallView.m',
                 'examples/objc/AppRTCDemo/ios/ARDVideoCallViewController.h',

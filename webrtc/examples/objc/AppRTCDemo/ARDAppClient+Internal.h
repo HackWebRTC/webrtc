@@ -17,9 +17,10 @@
 #import "RTCPeerConnectionDelegate.h"
 #import "RTCPeerConnectionFactory.h"
 #import "RTCSessionDescriptionDelegate.h"
+#import "RTCStatsDelegate.h"
 
 @interface ARDAppClient () <ARDSignalingChannelDelegate,
-    RTCPeerConnectionDelegate, RTCSessionDescriptionDelegate>
+  RTCPeerConnectionDelegate, RTCSessionDescriptionDelegate, RTCStatsDelegate>
 
 // All properties should only be mutated from the main queue.
 @property(nonatomic, strong) id<ARDRoomServerClient> roomServerClient;

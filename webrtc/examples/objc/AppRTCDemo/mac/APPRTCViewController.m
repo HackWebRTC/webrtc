@@ -270,6 +270,10 @@ static NSUInteger const kLogViewHeight = 280;
   [self disconnect];
 }
 
+- (void)appClient:(ARDAppClient *)client
+      didGetStats:(NSArray *)stats {
+}
+
 #pragma mark - APPRTCMainViewDelegate
 
 - (void)appRTCMainView:(APPRTCMainView*)mainView
