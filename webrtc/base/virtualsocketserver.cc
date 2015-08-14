@@ -17,6 +17,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
@@ -661,7 +662,22 @@ VirtualSocket* VirtualSocketServer::LookupBinding(const SocketAddress& addr) {
   SocketAddress normalized(addr.ipaddr().Normalized(),
                            addr.port());
   AddressMap::iterator it = bindings_->find(normalized);
-  return (bindings_->end() != it) ? it->second : NULL;
+  if (it != bindings_->end()) {
+    return it->second;
+  }
+
+  IPAddress default_ip = GetDefaultRoute(addr.ipaddr().family());
+  if (!IPIsUnspec(default_ip) && addr.ipaddr() == default_ip) {
+    // If we can't find a binding for the packet which is sent to the interface
+    // corresponding to the default route, it should match a binding with the
+    // correct port to the any address.
+    SocketAddress sock_addr =
+        EmptySocketAddressWithFamily(addr.ipaddr().family());
+    sock_addr.SetPort(addr.port());
+    return LookupBinding(sock_addr);
+  }
+
+  return nullptr;
 }
 
 int VirtualSocketServer::Unbind(const SocketAddress& addr,
@@ -866,8 +882,18 @@ void VirtualSocketServer::AddPacketToNetwork(VirtualSocket* sender,
   // Find the delay for crossing the many virtual hops of the network.
   uint32 transit_delay = GetRandomTransitDelay();
 
+  // When the incoming packet is from a binding of the any address, translate it
+  // to the default route here such that the recipient will see the default
+  // route.
+  SocketAddress sender_addr = sender->local_addr_;
+  IPAddress default_ip = GetDefaultRoute(sender_addr.ipaddr().family());
+  if (sender_addr.IsAnyIP() && !IPIsUnspec(default_ip)) {
+    sender_addr.SetIP(default_ip);
+  }
+
   // Post the packet as a message to be delivered (on our own thread)
-  Packet* p = new Packet(data, data_size, sender->local_addr_);
+  Packet* p = new Packet(data, data_size, sender_addr);
+
   uint32 ts = TimeAfter(send_delay + transit_delay);
   if (ordered) {
     // Ensure that new packets arrive after previous ones
@@ -1078,6 +1104,24 @@ bool VirtualSocketServer::CanInteractWith(VirtualSocket* local,
   }
 
   return false;
+}
+
+IPAddress VirtualSocketServer::GetDefaultRoute(int family) {
+  if (family == AF_INET) {
+    return default_route_v4_;
+  }
+  if (family == AF_INET6) {
+    return default_route_v6_;
+  }
+  return IPAddress();
+}
+void VirtualSocketServer::SetDefaultRoute(const IPAddress& from_addr) {
+  DCHECK(!IPIsAny(from_addr));
+  if (from_addr.family() == AF_INET) {
+    default_route_v4_ = from_addr;
+  } else if (from_addr.family() == AF_INET6) {
+    default_route_v6_ = from_addr;
+  }
 }
 
 }  // namespace rtc

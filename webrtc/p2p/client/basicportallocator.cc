@@ -21,6 +21,7 @@
 #include "webrtc/p2p/base/tcpport.h"
 #include "webrtc/p2p/base/turnport.h"
 #include "webrtc/p2p/base/udpport.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -440,26 +441,32 @@ void BasicPortAllocatorSession::OnCandidateReady(
   if (data->complete())
     return;
 
-  // Send candidates whose protocol is enabled.
-  std::vector<Candidate> candidates;
   ProtocolType pvalue;
-  bool candidate_allowed_to_send = CheckCandidateFilter(c);
-  if (StringToProto(c.protocol().c_str(), &pvalue) &&
-      data->sequence()->ProtocolEnabled(pvalue) &&
-      candidate_allowed_to_send) {
-    candidates.push_back(c);
-  }
+  bool candidate_signalable = CheckCandidateFilter(c);
+  bool candidate_pairable =
+      candidate_signalable ||
+      (c.address().IsAnyIP() &&
+       (port->SharedSocket() || c.protocol() == TCP_PROTOCOL_NAME));
+  bool candidate_protocol_enabled =
+      StringToProto(c.protocol().c_str(), &pvalue) &&
+      data->sequence()->ProtocolEnabled(pvalue);
 
-  if (!candidates.empty()) {
+  if (candidate_signalable && candidate_protocol_enabled) {
+    std::vector<Candidate> candidates;
+    candidates.push_back(c);
     SignalCandidatesReady(this, candidates);
   }
 
-  // Moving to READY state as we have atleast one candidate from the port.
-  // Since this port has atleast one candidate we should forward this port
-  // to listners, to allow connections from this port.
-  // Also we should make sure that candidate gathered from this port is allowed
-  // to send outside.
-  if (!data->ready() && candidate_allowed_to_send) {
+  // Port has been made ready. Nothing to do here.
+  if (data->ready()) {
+    return;
+  }
+
+  // Move the port to the READY state, either because we have a usable candidate
+  // from the port, or simply because the port is bound to the any address and
+  // therefore has no host candidate. This will trigger the port to start
+  // creating candidate pairs (connections) and issue connectivity checks.
+  if (candidate_pairable) {
     data->set_ready();
     SignalPortReady(this, port);
   }
@@ -508,9 +515,10 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
       if (!CheckCandidateFilter(potentials[i]))
         continue;
       ProtocolType pvalue;
-      if (!StringToProto(potentials[i].protocol().c_str(), &pvalue))
-        continue;
-      if (pvalue == proto) {
+      bool candidate_protocol_enabled =
+          StringToProto(potentials[i].protocol().c_str(), &pvalue) &&
+          pvalue == proto;
+      if (candidate_protocol_enabled) {
         candidates.push_back(potentials[i]);
       }
     }
