@@ -55,6 +55,8 @@ import org.webrtc.VideoRenderer.I420Frame;
  * Only one instance of the class can be created.
  */
 public class VideoRendererGui implements GLSurfaceView.Renderer {
+  // |instance|, |instance.surface|, |eglContext|, and |eglContextReady| are synchronized on
+  // |VideoRendererGui.class|.
   private static VideoRendererGui instance = null;
   private static Runnable eglContextReady = null;
   private static final String TAG = "VideoRendererGui";
@@ -68,7 +70,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   private int screenWidth;
   private int screenHeight;
   // List of yuv renderers.
-  private ArrayList<YuvImageRenderer> yuvImageRenderers;
+  private final ArrayList<YuvImageRenderer> yuvImageRenderers;
+  // |drawer| is synchronized on |yuvImageRenderers|.
   private GlRectDrawer drawer;
   // The minimum fraction of the frame content that will be shown for |SCALE_ASPECT_BALANCED|.
   // This limits excessive cropping when adjusting display size.
@@ -101,12 +104,32 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     yuvImageRenderers = new ArrayList<YuvImageRenderer>();
   }
 
+  public static synchronized void dispose() {
+    if (instance == null){
+      return;
+    }
+    synchronized (instance.yuvImageRenderers) {
+      for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
+        yuvImageRenderer.release();
+      }
+      instance.yuvImageRenderers.clear();
+      if (instance.drawer != null) {
+        instance.drawer.release();
+      }
+    }
+    instance.surface = null;
+    instance.eglContext = null;
+    instance.eglContextReady = null;
+    instance = null;
+  }
+
   /**
    * Class used to display stream of YUV420 frames at particular location
    * on a screen. New video frames are sent to display using renderFrame()
    * call.
    */
   private static class YuvImageRenderer implements VideoRenderer.Callbacks {
+    // |surface| is synchronized on |this|.
     private GLSurfaceView surface;
     private int id;
     private int[] yuvTextures = { -1, -1, -1 };
@@ -116,8 +139,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // an offer (writing I420Frame to render) and early-returns (recording
     // a dropped frame) if that queue is full. draw() call does a peek(),
     // copies frame to texture and then removes it from a queue using poll().
-    LinkedBlockingQueue<I420Frame> frameToRenderQueue;
-    // Local copy of incoming video frame.
+    private final LinkedBlockingQueue<I420Frame> frameToRenderQueue;
+    // Local copy of incoming video frame. Synchronized on |frameToRenderQueue|.
     private I420Frame yuvFrameToRender;
     private I420Frame textureFrameToRender;
     // Type of video frame used for recent frame rendering.
@@ -176,6 +199,15 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       layoutInPercentage = new Rect(x, y, Math.min(100, x + width), Math.min(100, y + height));
       updateTextureProperties = false;
       rotationDegree = 0;
+    }
+
+    private synchronized void release() {
+      surface = null;
+      synchronized (frameToRenderQueue) {
+        frameToRenderQueue.clear();
+        yuvFrameToRender = null;
+        textureFrameToRender = null;
+      }
     }
 
     private void createTextures() {
@@ -425,46 +457,52 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
     @Override
     public synchronized void renderFrame(I420Frame frame) {
+      if (surface == null) {
+        // This object has been released.
+        return;
+      }
       setSize(frame.width, frame.height, frame.rotationDegree);
       long now = System.nanoTime();
       framesReceived++;
-      // Skip rendering of this frame if setSize() was not called.
-      if (yuvFrameToRender == null || textureFrameToRender == null) {
-        framesDropped++;
-        return;
-      }
-      // Check input frame parameters.
-      if (frame.yuvFrame) {
-        if (frame.yuvStrides[0] < frame.width ||
-            frame.yuvStrides[1] < frame.width / 2 ||
-            frame.yuvStrides[2] < frame.width / 2) {
-          Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
-              frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
+      synchronized (frameToRenderQueue) {
+        // Skip rendering of this frame if setSize() was not called.
+        if (yuvFrameToRender == null || textureFrameToRender == null) {
+          framesDropped++;
           return;
         }
-        // Check incoming frame dimensions.
-        if (frame.width != yuvFrameToRender.width ||
-            frame.height != yuvFrameToRender.height) {
-          throw new RuntimeException("Wrong frame size " +
-              frame.width + " x " + frame.height);
+        // Check input frame parameters.
+        if (frame.yuvFrame) {
+          if (frame.yuvStrides[0] < frame.width ||
+              frame.yuvStrides[1] < frame.width / 2 ||
+              frame.yuvStrides[2] < frame.width / 2) {
+            Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
+                frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
+            return;
+          }
+          // Check incoming frame dimensions.
+          if (frame.width != yuvFrameToRender.width ||
+              frame.height != yuvFrameToRender.height) {
+            throw new RuntimeException("Wrong frame size " +
+                frame.width + " x " + frame.height);
+          }
         }
-      }
 
-      if (frameToRenderQueue.size() > 0) {
-        // Skip rendering of this frame if previous frame was not rendered yet.
-        framesDropped++;
-        return;
-      }
+        if (frameToRenderQueue.size() > 0) {
+          // Skip rendering of this frame if previous frame was not rendered yet.
+          framesDropped++;
+          return;
+        }
 
-      // Create a local copy of the frame.
-      if (frame.yuvFrame) {
-        yuvFrameToRender.copyFrom(frame);
-        rendererType = RendererType.RENDERER_YUV;
-        frameToRenderQueue.offer(yuvFrameToRender);
-      } else {
-        textureFrameToRender.copyFrom(frame);
-        rendererType = RendererType.RENDERER_TEXTURE;
-        frameToRenderQueue.offer(textureFrameToRender);
+        // Create a local copy of the frame.
+        if (frame.yuvFrame) {
+          yuvFrameToRender.copyFrom(frame);
+          rendererType = RendererType.RENDERER_YUV;
+          frameToRenderQueue.offer(yuvFrameToRender);
+        } else {
+          textureFrameToRender.copyFrom(frame);
+          rendererType = RendererType.RENDERER_TEXTURE;
+          frameToRenderQueue.offer(textureFrameToRender);
+        }
       }
       copyTimeNs += (System.nanoTime() - now);
       seenFrame = true;
@@ -481,14 +519,14 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   }
 
   /** Passes GLSurfaceView to video renderer. */
-  public static void setView(GLSurfaceView surface,
+  public static synchronized void setView(GLSurfaceView surface,
       Runnable eglContextReadyCallback) {
     Log.d(TAG, "VideoRendererGui.setView");
     instance = new VideoRendererGui(surface);
     eglContextReady = eglContextReadyCallback;
   }
 
-  public static EGLContext getEGLContext() {
+  public static synchronized EGLContext getEGLContext() {
     return eglContext;
   }
 
@@ -514,7 +552,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
    * resolution (width, height). All parameters are in percentage of
    * screen resolution.
    */
-  public static YuvImageRenderer create(int x, int y, int width, int height,
+  public static synchronized YuvImageRenderer create(int x, int y, int width, int height,
       ScalingType scalingType, boolean mirror) {
     // Check display region parameters.
     if (x < 0 || x > 100 || y < 0 || y > 100 ||
@@ -557,7 +595,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     return yuvImageRenderer;
   }
 
-  public static void update(
+  public static synchronized void update(
       VideoRenderer.Callbacks renderer,
       int x, int y, int width, int height, ScalingType scalingType, boolean mirror) {
     Log.d(TAG, "VideoRendererGui.update");
@@ -574,15 +612,18 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
   }
 
-  public static void remove(VideoRenderer.Callbacks renderer) {
+  public static synchronized void remove(VideoRenderer.Callbacks renderer) {
     Log.d(TAG, "VideoRendererGui.remove");
     if (instance == null) {
       throw new RuntimeException(
           "Attempt to remove yuv renderer before setting GLSurfaceView");
     }
     synchronized (instance.yuvImageRenderers) {
-      if (!instance.yuvImageRenderers.remove(renderer)) {
+      final int index = instance.yuvImageRenderers.indexOf(renderer);
+      if (index == -1) {
         Log.w(TAG, "Couldn't remove renderer (not present in current list)");
+      } else {
+        instance.yuvImageRenderers.remove(index).release();
       }
     }
   }
@@ -593,14 +634,15 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     Log.d(TAG, "VideoRendererGui.onSurfaceCreated");
     // Store render EGL context.
     if (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION) {
-      eglContext = EGL14.eglGetCurrentContext();
-      Log.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
+      synchronized (VideoRendererGui.class) {
+        eglContext = EGL14.eglGetCurrentContext();
+        Log.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
+      }
     }
 
-    // Create drawer for YUV/OES frames.
-    drawer = new GlRectDrawer();
-
     synchronized (yuvImageRenderers) {
+      // Create drawer for YUV/OES frames.
+      drawer = new GlRectDrawer();
       // Create textures for all images.
       for (YuvImageRenderer yuvImageRenderer : yuvImageRenderers) {
         yuvImageRenderer.createTextures();
@@ -612,8 +654,10 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     GLES20.glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
 
     // Fire EGL context ready event.
-    if (eglContextReady != null) {
-      eglContextReady.run();
+    synchronized (VideoRendererGui.class) {
+      if (eglContextReady != null) {
+        eglContextReady.run();
+      }
     }
   }
 

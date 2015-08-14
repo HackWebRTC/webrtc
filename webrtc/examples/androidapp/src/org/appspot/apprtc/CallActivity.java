@@ -279,6 +279,7 @@ public class CallActivity extends Activity
       logToast.cancel();
     }
     activityRunning = false;
+    VideoRendererGui.dispose();
   }
 
   // CallFragment.OnCallEvents interface implementation.
