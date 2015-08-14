@@ -898,6 +898,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
     void stopReturnBuffersToCamera() {
       this.camera = null;
+      queuedBuffers.clear();
+      // Frames in |pendingBuffers| need to be kept alive until they are returned.
       Log.d(TAG, "stopReturnBuffersToCamera called."
             + (pendingBuffers.isEmpty() ?
                    " All buffers have been returned."
