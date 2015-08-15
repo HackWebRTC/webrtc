@@ -544,6 +544,19 @@ TEST(IPAddressTest, TestIsPrivate) {
   EXPECT_TRUE(IPIsPrivate(IPAddress(kIPv6LinkLocalAddr)));
 }
 
+TEST(IPAddressTest, TestIsNil) {
+  IPAddress addr;
+  EXPECT_TRUE(IPAddress().IsNil());
+
+  EXPECT_TRUE(IPFromString(kIPv6AnyAddrString, &addr));
+  EXPECT_FALSE(addr.IsNil());
+
+  EXPECT_TRUE(IPFromString(kIPv4AnyAddrString, &addr));
+  EXPECT_FALSE(addr.IsNil());
+
+  EXPECT_FALSE(IPAddress(kIPv4PublicAddr).IsNil());
+}
+
 TEST(IPAddressTest, TestIsLoopback) {
   EXPECT_FALSE(IPIsLoopback(IPAddress(INADDR_ANY)));
   EXPECT_FALSE(IPIsLoopback(IPAddress(kIPv4PublicAddr)));

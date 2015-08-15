@@ -109,6 +109,9 @@ class IPAddress {
   // For socketaddress' benefit. Returns the IP in host byte order.
   uint32 v4AddressAsHostOrderInteger() const;
 
+  // Whether this is an unspecified IP address.
+  bool IsNil() const;
+
   static void set_strip_sensitive(bool enable);
 
  private:

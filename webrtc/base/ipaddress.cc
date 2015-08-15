@@ -54,6 +54,10 @@ uint32 IPAddress::v4AddressAsHostOrderInteger() const {
   }
 }
 
+bool IPAddress::IsNil() const {
+  return IPIsUnspec(*this);
+}
+
 size_t IPAddress::Size() const {
   switch (family_) {
     case AF_INET:
