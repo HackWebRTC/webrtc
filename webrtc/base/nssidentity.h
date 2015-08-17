@@ -56,9 +56,9 @@ class NSSKeyPair {
   SSLKEAType ssl_kea_type() const { return ssl_kea_type_; }
 
  private:
-  SSLKEAType ssl_kea_type_;
   SECKEYPrivateKey* privkey_;
   SECKEYPublicKey* pubkey_;
+  SSLKEAType ssl_kea_type_;
 
   DISALLOW_COPY_AND_ASSIGN(NSSKeyPair);
 };
