@@ -31,6 +31,7 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/nssstreamadapter.h"
 #include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/stringutils.h"
 
 namespace rtc {
 
@@ -47,43 +48,69 @@ NSSKeyPair::~NSSKeyPair() {
     SECKEY_DestroyPublicKey(pubkey_);
 }
 
-NSSKeyPair *NSSKeyPair::Generate() {
-  SECKEYPrivateKey *privkey = NULL;
-  SECKEYPublicKey *pubkey = NULL;
-  PK11RSAGenParams rsaparams;
-  rsaparams.keySizeInBits = 1024;
-  rsaparams.pe = 0x010001;  // 65537 -- a common RSA public exponent.
+NSSKeyPair* NSSKeyPair::Generate(KeyType key_type) {
+  SECKEYPrivateKey* privkey = nullptr;
+  SECKEYPublicKey* pubkey = nullptr;
+  SSLKEAType ssl_kea_type;
+  if (key_type == KT_RSA) {
+    PK11RSAGenParams rsa_params;
+    rsa_params.keySizeInBits = 1024;
+    rsa_params.pe = 0x010001;  // 65537 -- a common RSA public exponent.
 
-  privkey = PK11_GenerateKeyPair(NSSContext::GetSlot(),
-                                 CKM_RSA_PKCS_KEY_PAIR_GEN,
-                                 &rsaparams, &pubkey, PR_FALSE /*permanent*/,
-                                 PR_FALSE /*sensitive*/, NULL);
-  if (!privkey) {
-    LOG(LS_ERROR) << "Couldn't generate key pair";
-    return NULL;
+    privkey = PK11_GenerateKeyPair(
+        NSSContext::GetSlot(), CKM_RSA_PKCS_KEY_PAIR_GEN, &rsa_params, &pubkey,
+        PR_FALSE /*permanent*/, PR_FALSE /*sensitive*/, nullptr);
+
+    ssl_kea_type = ssl_kea_rsa;
+  } else if (key_type == KT_ECDSA) {
+    unsigned char param_buf[12];  // OIDs are small
+    SECItem ecdsa_params = {siBuffer, param_buf, sizeof(param_buf)};
+    SECOidData* oid_data = SECOID_FindOIDByTag(SEC_OID_SECG_EC_SECP256R1);
+    if (!oid_data || oid_data->oid.len > sizeof(param_buf) - 2) {
+      LOG(LS_ERROR) << "oid_data incorrect: " << oid_data->oid.len;
+      return nullptr;
+    }
+    ecdsa_params.data[0] = SEC_ASN1_OBJECT_ID;
+    ecdsa_params.data[1] = oid_data->oid.len;
+    memcpy(ecdsa_params.data + 2, oid_data->oid.data, oid_data->oid.len);
+    ecdsa_params.len = oid_data->oid.len + 2;
+
+    privkey = PK11_GenerateKeyPair(
+        NSSContext::GetSlot(), CKM_EC_KEY_PAIR_GEN, &ecdsa_params, &pubkey,
+        PR_FALSE /*permanent*/, PR_FALSE /*sensitive*/, nullptr);
+
+    ssl_kea_type = ssl_kea_ecdh;
+  } else {
+    LOG(LS_ERROR) << "Key type requested not understood";
+    return nullptr;
   }
 
-  return new NSSKeyPair(privkey, pubkey);
+  if (!privkey) {
+    LOG(LS_ERROR) << "Couldn't generate key pair: " << PORT_GetError();
+    return nullptr;
+  }
+
+  return new NSSKeyPair(privkey, pubkey, ssl_kea_type);
 }
 
 // Just make a copy.
-NSSKeyPair *NSSKeyPair::GetReference() {
-  SECKEYPrivateKey *privkey = SECKEY_CopyPrivateKey(privkey_);
+NSSKeyPair* NSSKeyPair::GetReference() {
+  SECKEYPrivateKey* privkey = SECKEY_CopyPrivateKey(privkey_);
   if (!privkey)
-    return NULL;
+    return nullptr;
 
-  SECKEYPublicKey *pubkey = SECKEY_CopyPublicKey(pubkey_);
+  SECKEYPublicKey* pubkey = SECKEY_CopyPublicKey(pubkey_);
   if (!pubkey) {
     SECKEY_DestroyPrivateKey(privkey);
-    return NULL;
+    return nullptr;
   }
 
-  return new NSSKeyPair(privkey, pubkey);
+  return new NSSKeyPair(privkey, pubkey, ssl_kea_type_);
 }
 
 NSSCertificate::NSSCertificate(CERTCertificate* cert)
     : certificate_(CERT_DupCertificate(cert)) {
-  ASSERT(certificate_ != NULL);
+  ASSERT(certificate_ != nullptr);
 }
 
 static void DeleteCert(SSLCertificate* cert) {
@@ -112,7 +139,7 @@ NSSCertificate::NSSCertificate(CERTCertList* cert_list) {
 
 NSSCertificate::NSSCertificate(CERTCertificate* cert, SSLCertChain* chain)
     : certificate_(CERT_DupCertificate(cert)) {
-  ASSERT(certificate_ != NULL);
+  ASSERT(certificate_ != nullptr);
   if (chain)
     chain_.reset(chain->Copy());
 }
@@ -122,27 +149,27 @@ NSSCertificate::~NSSCertificate() {
     CERT_DestroyCertificate(certificate_);
 }
 
-NSSCertificate *NSSCertificate::FromPEMString(const std::string &pem_string) {
+NSSCertificate* NSSCertificate::FromPEMString(const std::string& pem_string) {
   std::string der;
   if (!SSLIdentity::PemToDer(kPemTypeCertificate, pem_string, &der))
-    return NULL;
+    return nullptr;
 
   SECItem der_cert;
   der_cert.data = reinterpret_cast<unsigned char *>(const_cast<char *>(
       der.data()));
   der_cert.len = checked_cast<unsigned int>(der.size());
-  CERTCertificate *cert = CERT_NewTempCertificate(CERT_GetDefaultCertDB(),
-      &der_cert, NULL, PR_FALSE, PR_TRUE);
+  CERTCertificate* cert = CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &der_cert, nullptr, PR_FALSE, PR_TRUE);
 
   if (!cert)
-    return NULL;
+    return nullptr;
 
   NSSCertificate* ret = new NSSCertificate(cert);
   CERT_DestroyCertificate(cert);
   return ret;
 }
 
-NSSCertificate *NSSCertificate::GetReference() const {
+NSSCertificate* NSSCertificate::GetReference() const {
   return new NSSCertificate(certificate_, chain_.get());
 }
 
@@ -180,8 +207,8 @@ static bool Certifies(CERTCertificate* parent, CERTCertificate* child) {
 
   // Check that the parent's privkey was actually used to generate the child's
   // signature.
-  SECStatus verified = CERT_VerifySignedDataWithPublicKey(
-      &child->signatureWrap, parent_key, NULL);
+  SECStatus verified = CERT_VerifySignedDataWithPublicKey(&child->signatureWrap,
+                                                          parent_key, nullptr);
   SECKEY_DestroyPublicKey(parent_key);
   return verified == SECSuccess;
 }
@@ -199,7 +226,7 @@ bool NSSCertificate::IsValidChain(const CERTCertList* cert_list) {
 
 bool NSSCertificate::GetDigestLength(const std::string& algorithm,
                                      size_t* length) {
-  const SECHashObject *ho;
+  const SECHashObject* ho = nullptr;
 
   if (!GetDigestObject(algorithm, &ho))
     return false;
@@ -261,7 +288,7 @@ bool NSSCertificate::ComputeDigest(const std::string& algorithm,
                                    unsigned char* digest,
                                    size_t size,
                                    size_t* length) const {
-  const SECHashObject *ho;
+  const SECHashObject* ho = nullptr;
 
   if (!GetDigestObject(algorithm, &ho))
     return false;
@@ -288,7 +315,7 @@ bool NSSCertificate::GetChain(SSLCertChain** chain) const {
   return true;
 }
 
-bool NSSCertificate::Equals(const NSSCertificate *tocompare) const {
+bool NSSCertificate::Equals(const NSSCertificate* tocompare) const {
   if (!certificate_->derCert.len)
     return false;
   if (!tocompare->certificate_->derCert.len)
@@ -302,10 +329,9 @@ bool NSSCertificate::Equals(const NSSCertificate *tocompare) const {
                 certificate_->derCert.len) == 0;
 }
 
-
-bool NSSCertificate::GetDigestObject(const std::string &algorithm,
-                                     const SECHashObject **hop) {
-  const SECHashObject *ho;
+bool NSSCertificate::GetDigestObject(const std::string& algorithm,
+                                     const SECHashObject** hop) {
+  const SECHashObject* ho;
   HASH_HashType hash_type;
 
   if (algorithm == DIGEST_SHA_1) {
@@ -339,14 +365,14 @@ NSSIdentity::NSSIdentity(NSSKeyPair* keypair, NSSCertificate* cert)
 
 NSSIdentity* NSSIdentity::GenerateInternal(const SSLIdentityParams& params) {
   std::string subject_name_string = "CN=" + params.common_name;
-  CERTName *subject_name = CERT_AsciiToName(
-      const_cast<char *>(subject_name_string.c_str()));
-  NSSIdentity *identity = NULL;
-  CERTSubjectPublicKeyInfo *spki = NULL;
-  CERTCertificateRequest *certreq = NULL;
-  CERTValidity *validity = NULL;
-  CERTCertificate *certificate = NULL;
-  NSSKeyPair *keypair = NSSKeyPair::Generate();
+  CERTName* subject_name =
+      CERT_AsciiToName(const_cast<char*>(subject_name_string.c_str()));
+  NSSIdentity* identity = nullptr;
+  CERTSubjectPublicKeyInfo* spki = nullptr;
+  CERTCertificateRequest* certreq = nullptr;
+  CERTValidity* validity = nullptr;
+  CERTCertificate* certificate = nullptr;
+  NSSKeyPair* keypair = NSSKeyPair::Generate(params.key_type);
   SECItem inner_der;
   SECStatus rv;
   PLArenaPool* arena;
@@ -358,7 +384,7 @@ NSSIdentity* NSSIdentity::GenerateInternal(const SSLIdentityParams& params) {
       now + static_cast<PRTime>(params.not_after) * PR_USEC_PER_SEC;
 
   inner_der.len = 0;
-  inner_der.data = NULL;
+  inner_der.data = nullptr;
 
   if (!keypair) {
     LOG(LS_ERROR) << "Couldn't generate key pair";
@@ -376,7 +402,7 @@ NSSIdentity* NSSIdentity::GenerateInternal(const SSLIdentityParams& params) {
     goto fail;
   }
 
-  certreq = CERT_CreateCertificateRequest(subject_name, spki, NULL);
+  certreq = CERT_CreateCertificateRequest(subject_name, spki, nullptr);
   if (!certreq) {
     LOG(LS_ERROR) << "Couldn't create certificate signing request";
     goto fail;
@@ -405,22 +431,36 @@ NSSIdentity* NSSIdentity::GenerateInternal(const SSLIdentityParams& params) {
 
   arena = certificate->arena;
 
-  rv = SECOID_SetAlgorithmID(arena, &certificate->signature,
-                             SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION, NULL);
-  if (rv != SECSuccess)
+  SECOidTag sec_oid;
+  if (params.key_type == KT_RSA) {
+    sec_oid = SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION;
+  } else if (params.key_type == KT_ECDSA) {
+    sec_oid = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
+  } else {
+    // We should not arrive here since NSSKeyPair::Generate would have failed.
+    // Play it safe in order to accomodate code changes.
+    LOG(LS_ERROR) << "Key type requested not understood";
     goto fail;
+  }
+
+  rv = SECOID_SetAlgorithmID(arena, &certificate->signature, sec_oid, nullptr);
+  if (rv != SECSuccess) {
+    LOG(LS_ERROR) << "Couldn't set hashing algorithm";
+    goto fail;
+  }
 
   // Set version to X509v3.
   *(certificate->version.data) = 2;
   certificate->version.len = 1;
 
   if (!SEC_ASN1EncodeItem(arena, &inner_der, certificate,
-                          SEC_ASN1_GET(CERT_CertificateTemplate)))
+                          SEC_ASN1_GET(CERT_CertificateTemplate))) {
+    LOG(LS_ERROR) << "Couldn't encode certificate";
     goto fail;
+  }
 
   rv = SEC_DerSignData(arena, &signed_cert, inner_der.data, inner_der.len,
-                       keypair->privkey(),
-                       SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION);
+                       keypair->privkey(), sec_oid);
   if (rv != SECSuccess) {
     LOG(LS_ERROR) << "Couldn't sign certificate";
     goto fail;
@@ -443,11 +483,13 @@ NSSIdentity* NSSIdentity::GenerateInternal(const SSLIdentityParams& params) {
   return identity;
 }
 
-NSSIdentity* NSSIdentity::Generate(const std::string &common_name) {
+NSSIdentity* NSSIdentity::Generate(const std::string& common_name,
+                                   KeyType key_type) {
   SSLIdentityParams params;
   params.common_name = common_name;
   params.not_before = CERTIFICATE_WINDOW;
   params.not_after = CERTIFICATE_LIFETIME;
+  params.key_type = key_type;
   return GenerateInternal(params);
 }
 
@@ -460,7 +502,7 @@ SSLIdentity* NSSIdentity::FromPEMStrings(const std::string& private_key,
   std::string private_key_der;
   if (!SSLIdentity::PemToDer(
       kPemTypeRsaPrivateKey, private_key, &private_key_der))
-    return NULL;
+    return nullptr;
 
   SECItem private_key_item;
   private_key_item.data = reinterpret_cast<unsigned char *>(
@@ -470,35 +512,43 @@ SSLIdentity* NSSIdentity::FromPEMStrings(const std::string& private_key,
   const unsigned int key_usage = KU_KEY_ENCIPHERMENT | KU_DATA_ENCIPHERMENT |
       KU_DIGITAL_SIGNATURE;
 
-  SECKEYPrivateKey* privkey = NULL;
-  SECStatus rv =
-      PK11_ImportDERPrivateKeyInfoAndReturnKey(NSSContext::GetSlot(),
-                                               &private_key_item,
-                                               NULL, NULL, PR_FALSE, PR_FALSE,
-                                               key_usage, &privkey, NULL);
+  SECKEYPrivateKey* privkey = nullptr;
+  SECStatus rv = PK11_ImportDERPrivateKeyInfoAndReturnKey(
+      NSSContext::GetSlot(), &private_key_item, nullptr, nullptr, PR_FALSE,
+      PR_FALSE, key_usage, &privkey, nullptr);
   if (rv != SECSuccess) {
     LOG(LS_ERROR) << "Couldn't import private key";
-    return NULL;
+    return nullptr;
   }
 
-  SECKEYPublicKey *pubkey = SECKEY_ConvertToPublicKey(privkey);
+  SECKEYPublicKey* pubkey = SECKEY_ConvertToPublicKey(privkey);
   if (rv != SECSuccess) {
     SECKEY_DestroyPrivateKey(privkey);
     LOG(LS_ERROR) << "Couldn't convert private key to public key";
-    return NULL;
+    return nullptr;
+  }
+
+  SSLKEAType ssl_kea_type;
+  if (rtc::starts_with(private_key.c_str(),
+                       "-----BEGIN RSA PRIVATE KEY-----")) {
+    ssl_kea_type = ssl_kea_rsa;
+  } else {
+    // We might want to check more key types here.  But since we're moving to
+    // Open/BoringSSL, don't bother.  Besides, this will likely be correct for
+    // any future key type, causing a test to do more harm than good.
+    ssl_kea_type = ssl_kea_ecdh;
   }
 
   // Assign to a scoped_ptr so we don't leak on error.
-  scoped_ptr<NSSKeyPair> keypair(new NSSKeyPair(privkey, pubkey));
+  scoped_ptr<NSSKeyPair> keypair(new NSSKeyPair(privkey, pubkey, ssl_kea_type));
 
   scoped_ptr<NSSCertificate> cert(NSSCertificate::FromPEMString(certificate));
   if (!cert) {
     LOG(LS_ERROR) << "Couldn't parse certificate";
-    return NULL;
+    return nullptr;
   }
 
   // TODO(ekr@rtfm.com): Check the public key against the certificate.
-
   return new NSSIdentity(keypair.release(), cert.release());
 }
 
@@ -506,15 +556,15 @@ NSSIdentity::~NSSIdentity() {
   LOG(LS_INFO) << "Destroying NSS identity";
 }
 
-NSSIdentity *NSSIdentity::GetReference() const {
-  NSSKeyPair *keypair = keypair_->GetReference();
+NSSIdentity* NSSIdentity::GetReference() const {
+  NSSKeyPair* keypair = keypair_->GetReference();
   if (!keypair)
-    return NULL;
+    return nullptr;
 
-  NSSCertificate *certificate = certificate_->GetReference();
+  NSSCertificate* certificate = certificate_->GetReference();
   if (!certificate) {
     delete keypair;
-    return NULL;
+    return nullptr;
   }
 
   return new NSSIdentity(keypair, certificate);
@@ -529,4 +579,3 @@ NSSCertificate &NSSIdentity::certificate() const {
 }  // rtc namespace
 
 #endif  // HAVE_NSS_SSL_H
-

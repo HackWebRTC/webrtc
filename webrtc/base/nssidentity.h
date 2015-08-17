@@ -24,6 +24,12 @@
 #include "hasht.h"
 #include "keythi.h"
 
+#ifdef NSS_SSL_RELATIVE_PATH
+#include "ssl.h"
+#else
+#include "net/third_party/nss/ssl/ssl.h"
+#endif
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -33,18 +39,24 @@ namespace rtc {
 
 class NSSKeyPair {
  public:
-  NSSKeyPair(SECKEYPrivateKey* privkey, SECKEYPublicKey* pubkey) :
-      privkey_(privkey), pubkey_(pubkey) {}
+  NSSKeyPair(SECKEYPrivateKey* privkey, SECKEYPublicKey* pubkey)
+      : privkey_(privkey), pubkey_(pubkey), ssl_kea_type_(ssl_kea_null) {}
+  NSSKeyPair(SECKEYPrivateKey* privkey,
+             SECKEYPublicKey* pubkey,
+             SSLKEAType ssl_kea_type)
+      : privkey_(privkey), pubkey_(pubkey), ssl_kea_type_(ssl_kea_type) {}
   ~NSSKeyPair();
 
   // Generate a 1024-bit RSA key pair.
-  static NSSKeyPair* Generate();
+  static NSSKeyPair* Generate(KeyType key_type);
   NSSKeyPair* GetReference();
 
   SECKEYPrivateKey* privkey() const { return privkey_; }
   SECKEYPublicKey * pubkey() const { return pubkey_; }
+  SSLKEAType ssl_kea_type() const { return ssl_kea_type_; }
 
  private:
+  SSLKEAType ssl_kea_type_;
   SECKEYPrivateKey* privkey_;
   SECKEYPublicKey* pubkey_;
 
@@ -103,7 +115,8 @@ class NSSCertificate : public SSLCertificate {
 // Represents a SSL key pair and certificate for NSS.
 class NSSIdentity : public SSLIdentity {
  public:
-  static NSSIdentity* Generate(const std::string& common_name);
+  static NSSIdentity* Generate(const std::string& common_name,
+                               KeyType key_type);
   static NSSIdentity* GenerateForTest(const SSLIdentityParams& params);
   static SSLIdentity* FromPEMStrings(const std::string& private_key,
                                      const std::string& certificate);

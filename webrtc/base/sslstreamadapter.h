@@ -167,7 +167,9 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
   // Returns the default Ssl cipher used between streams of this class
   // for the given protocol version. This is used by the unit tests.
-  static std::string GetDefaultSslCipher(SSLProtocolVersion version);
+  // TODO(torbjorng@webrtc.org): Fix callers to avoid default parameter.
+  static std::string GetDefaultSslCipher(SSLProtocolVersion version,
+                                         KeyType key_type = KT_DEFAULT);
 
  private:
   // If true, the server certificate need not match the configured

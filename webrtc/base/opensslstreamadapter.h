@@ -110,7 +110,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
-  static std::string GetDefaultSslCipher(SSLProtocolVersion version);
+  static std::string GetDefaultSslCipher(SSLProtocolVersion version,
+                                         KeyType key_type);
 
  protected:
   void OnEvent(StreamInterface* stream, int events, int err) override;

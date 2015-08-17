@@ -37,6 +37,7 @@ namespace rtc {
 
 const char kPemTypeCertificate[] = "CERTIFICATE";
 const char kPemTypeRsaPrivateKey[] = "RSA PRIVATE KEY";
+const char kPemTypeEcPrivateKey[] = "EC PRIVATE KEY";
 
 bool SSLIdentity::PemToDer(const std::string& pem_type,
                            const std::string& pem_string,
@@ -108,7 +109,8 @@ SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
   return NULL;
 }
 
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
+SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
+                                   KeyType key_type) {
   return NULL;
 }
 
@@ -127,8 +129,9 @@ SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
   return OpenSSLCertificate::FromPEMString(pem_string);
 }
 
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
-  return OpenSSLIdentity::Generate(common_name);
+SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
+                                   KeyType key_type) {
+  return OpenSSLIdentity::Generate(common_name, key_type);
 }
 
 SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
@@ -146,8 +149,9 @@ SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
   return NSSCertificate::FromPEMString(pem_string);
 }
 
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
-  return NSSIdentity::Generate(common_name);
+SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
+                                   KeyType key_type) {
+  return NSSIdentity::Generate(common_name, key_type);
 }
 
 SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {

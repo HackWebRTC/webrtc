@@ -91,7 +91,8 @@ class NSSStreamAdapter : public SSLStreamAdapterHelper {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
-  static std::string GetDefaultSslCipher(SSLProtocolVersion version);
+  static std::string GetDefaultSslCipher(SSLProtocolVersion version,
+                                         KeyType key_type);
 
  protected:
   // Override SSLStreamAdapter

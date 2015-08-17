@@ -23,6 +23,11 @@
 #include "webrtc/base/stream.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
+using ::testing::WithParamInterface;
+using ::testing::Values;
+using ::testing::Combine;
+using ::testing::tuple;
+
 static const int kBlockSize = 4096;
 static const char kAES_CM_HMAC_SHA1_80[] = "AES_CM_128_HMAC_SHA1_80";
 static const char kAES_CM_HMAC_SHA1_32[] = "AES_CM_128_HMAC_SHA1_32";
@@ -158,18 +163,27 @@ class SSLStreamAdapterTestBase : public testing::Test,
  public:
   SSLStreamAdapterTestBase(const std::string& client_cert_pem,
                            const std::string& client_private_key_pem,
-                           bool dtls) :
-      client_buffer_(kFifoBufferSize), server_buffer_(kFifoBufferSize),
-      client_stream_(
-          new SSLDummyStream(this, "c2s", &client_buffer_, &server_buffer_)),
-      server_stream_(
-          new SSLDummyStream(this, "s2c", &server_buffer_, &client_buffer_)),
-      client_ssl_(rtc::SSLStreamAdapter::Create(client_stream_)),
-      server_ssl_(rtc::SSLStreamAdapter::Create(server_stream_)),
-      client_identity_(NULL), server_identity_(NULL),
-      delay_(0), mtu_(1460), loss_(0), lose_first_packet_(false),
-      damage_(false), dtls_(dtls),
-      handshake_wait_(5000), identities_set_(false) {
+                           bool dtls,
+                           rtc::KeyType client_key_type = rtc::KT_DEFAULT,
+                           rtc::KeyType server_key_type = rtc::KT_DEFAULT)
+      : client_buffer_(kFifoBufferSize),
+        server_buffer_(kFifoBufferSize),
+        client_stream_(
+            new SSLDummyStream(this, "c2s", &client_buffer_, &server_buffer_)),
+        server_stream_(
+            new SSLDummyStream(this, "s2c", &server_buffer_, &client_buffer_)),
+        client_ssl_(rtc::SSLStreamAdapter::Create(client_stream_)),
+        server_ssl_(rtc::SSLStreamAdapter::Create(server_stream_)),
+        client_identity_(NULL),
+        server_identity_(NULL),
+        delay_(0),
+        mtu_(1460),
+        loss_(0),
+        lose_first_packet_(false),
+        damage_(false),
+        dtls_(dtls),
+        handshake_wait_(5000),
+        identities_set_(false) {
     // Set use of the test RNG to get predictable loss patterns.
     rtc::SetRandomTestMode(true);
 
@@ -181,9 +195,9 @@ class SSLStreamAdapterTestBase : public testing::Test,
       client_identity_ = rtc::SSLIdentity::FromPEMStrings(
           client_private_key_pem, client_cert_pem);
     } else {
-      client_identity_ = rtc::SSLIdentity::Generate("client");
+      client_identity_ = rtc::SSLIdentity::Generate("client", client_key_type);
     }
-    server_identity_ = rtc::SSLIdentity::Generate("server");
+    server_identity_ = rtc::SSLIdentity::Generate("server", server_key_type);
 
     client_ssl_->SetIdentity(client_identity_);
     server_ssl_->SetIdentity(server_identity_);
@@ -213,12 +227,14 @@ class SSLStreamAdapterTestBase : public testing::Test,
     client_params.common_name = "client";
     client_params.not_before = not_before;
     client_params.not_after = not_after;
+    client_params.key_type = rtc::KT_DEFAULT;
     client_identity_ = rtc::SSLIdentity::GenerateForTest(client_params);
 
     rtc::SSLIdentityParams server_params;
     server_params.common_name = "server";
     server_params.not_before = not_before;
     server_params.not_after = not_after;
+    server_params.key_type = rtc::KT_DEFAULT;
     server_identity_ = rtc::SSLIdentity::GenerateForTest(server_params);
 
     client_ssl_->SetIdentity(client_identity_);
@@ -444,11 +460,16 @@ class SSLStreamAdapterTestBase : public testing::Test,
   bool identities_set_;
 };
 
-class SSLStreamAdapterTestTLS : public SSLStreamAdapterTestBase {
+class SSLStreamAdapterTestTLS
+    : public SSLStreamAdapterTestBase,
+      public WithParamInterface<tuple<rtc::KeyType, rtc::KeyType>> {
  public:
-  SSLStreamAdapterTestTLS() :
-      SSLStreamAdapterTestBase("", "", false) {
-  };
+  SSLStreamAdapterTestTLS()
+      : SSLStreamAdapterTestBase("",
+                                 "",
+                                 false,
+                                 ::testing::get<0>(GetParam()),
+                                 ::testing::get<1>(GetParam())){};
 
   // Test data transfer for TLS
   virtual void TestTransfer(int size) {
@@ -547,12 +568,19 @@ class SSLStreamAdapterTestTLS : public SSLStreamAdapterTestBase {
   rtc::MemoryStream recv_stream_;
 };
 
-class SSLStreamAdapterTestDTLS : public SSLStreamAdapterTestBase {
+class SSLStreamAdapterTestDTLS
+    : public SSLStreamAdapterTestBase,
+      public WithParamInterface<tuple<rtc::KeyType, rtc::KeyType>> {
  public:
-  SSLStreamAdapterTestDTLS() :
-      SSLStreamAdapterTestBase("", "", true),
-      packet_size_(1000), count_(0), sent_(0) {
-  }
+  SSLStreamAdapterTestDTLS()
+      : SSLStreamAdapterTestBase("",
+                                 "",
+                                 true,
+                                 ::testing::get<0>(GetParam()),
+                                 ::testing::get<1>(GetParam())),
+        packet_size_(1000),
+        count_(0),
+        sent_(0) {}
 
   SSLStreamAdapterTestDTLS(const std::string& cert_pem,
                            const std::string& private_key_pem) :
@@ -677,7 +705,7 @@ class SSLStreamAdapterTestDTLSFromPEMStrings : public SSLStreamAdapterTestDTLS {
 // This test only applies to NSS because OpenSSL has passthrough
 // semantics for I/O before the handshake is started.
 #if SSL_USE_NSS
-TEST_F(SSLStreamAdapterTestTLS, TestNoReadWriteBeforeConnect) {
+TEST_P(SSLStreamAdapterTestTLS, TestNoReadWriteBeforeConnect) {
   rtc::StreamResult rv;
   char block[kBlockSize];
   size_t dummy;
@@ -692,25 +720,25 @@ TEST_F(SSLStreamAdapterTestTLS, TestNoReadWriteBeforeConnect) {
 
 
 // Test that we can make a handshake work
-TEST_F(SSLStreamAdapterTestTLS, TestTLSConnect) {
+TEST_P(SSLStreamAdapterTestTLS, TestTLSConnect) {
   TestHandshake();
 };
 
 // Test that closing the connection on one side updates the other side.
-TEST_F(SSLStreamAdapterTestTLS, TestTLSClose) {
+TEST_P(SSLStreamAdapterTestTLS, TestTLSClose) {
   TestHandshake();
   client_ssl_->Close();
   EXPECT_EQ_WAIT(rtc::SS_CLOSED, server_ssl_->GetState(), handshake_wait_);
 };
 
 // Test transfer -- trivial
-TEST_F(SSLStreamAdapterTestTLS, TestTLSTransfer) {
+TEST_P(SSLStreamAdapterTestTLS, TestTLSTransfer) {
   TestHandshake();
   TestTransfer(100000);
 };
 
 // Test read-write after close.
-TEST_F(SSLStreamAdapterTestTLS, ReadWriteAfterClose) {
+TEST_P(SSLStreamAdapterTestTLS, ReadWriteAfterClose) {
   TestHandshake();
   TestTransfer(100000);
   client_ssl_->Close();
@@ -729,7 +757,7 @@ TEST_F(SSLStreamAdapterTestTLS, ReadWriteAfterClose) {
 };
 
 // Test a handshake with a bogus peer digest
-TEST_F(SSLStreamAdapterTestTLS, TestTLSBogusDigest) {
+TEST_P(SSLStreamAdapterTestTLS, TestTLSBogusDigest) {
   SetPeerIdentitiesByDigest(false);
   TestHandshake(false);
 };
@@ -738,7 +766,7 @@ TEST_F(SSLStreamAdapterTestTLS, TestTLSBogusDigest) {
 
 // Basic tests: DTLS
 // Test that we can make a handshake work
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSConnect) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSConnect) {
   MAYBE_SKIP_TEST(HaveDtls);
   TestHandshake();
 };
@@ -746,15 +774,14 @@ TEST_F(SSLStreamAdapterTestDTLS, TestDTLSConnect) {
 // Test that we can make a handshake work if the first packet in
 // each direction is lost. This gives us predictable loss
 // rather than having to tune random
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSConnectWithLostFirstPacket) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSConnectWithLostFirstPacket) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetLoseFirstPacket(true);
   TestHandshake();
 };
 
 // Test a handshake with loss and delay
-TEST_F(SSLStreamAdapterTestDTLS,
-       TestDTLSConnectWithLostFirstPacketDelay2s) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSConnectWithLostFirstPacketDelay2s) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetLoseFirstPacket(true);
   SetDelay(2000);
@@ -764,7 +791,7 @@ TEST_F(SSLStreamAdapterTestDTLS,
 
 // Test a handshake with small MTU
 // Disabled due to https://code.google.com/p/webrtc/issues/detail?id=3910
-TEST_F(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSConnectWithSmallMtu) {
+TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSConnectWithSmallMtu) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetMtu(700);
   SetHandshakeWait(20000);
@@ -772,20 +799,20 @@ TEST_F(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSConnectWithSmallMtu) {
 };
 
 // Test transfer -- trivial
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSTransfer) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransfer) {
   MAYBE_SKIP_TEST(HaveDtls);
   TestHandshake();
   TestTransfer(100);
 };
 
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSTransferWithLoss) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransferWithLoss) {
   MAYBE_SKIP_TEST(HaveDtls);
   TestHandshake();
   SetLoss(10);
   TestTransfer(100);
 };
 
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSTransferWithDamage) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransferWithDamage) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetDamage();  // Must be called first because first packet
                 // write happens at end of handshake.
@@ -794,7 +821,7 @@ TEST_F(SSLStreamAdapterTestDTLS, TestDTLSTransferWithDamage) {
 };
 
 // Test DTLS-SRTP with all high ciphers
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSSrtpHigh) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHigh) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   std::vector<std::string> high;
   high.push_back(kAES_CM_HMAC_SHA1_80);
@@ -812,7 +839,7 @@ TEST_F(SSLStreamAdapterTestDTLS, TestDTLSSrtpHigh) {
 };
 
 // Test DTLS-SRTP with all low ciphers
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   std::vector<std::string> low;
   low.push_back(kAES_CM_HMAC_SHA1_32);
@@ -831,7 +858,7 @@ TEST_F(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
 
 
 // Test DTLS-SRTP with a mismatch -- should not converge
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   std::vector<std::string> high;
   high.push_back(kAES_CM_HMAC_SHA1_80);
@@ -848,7 +875,7 @@ TEST_F(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
 };
 
 // Test DTLS-SRTP with each side being mixed -- should select high
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   std::vector<std::string> mixed;
   mixed.push_back(kAES_CM_HMAC_SHA1_80);
@@ -867,7 +894,7 @@ TEST_F(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
 };
 
 // Test an exporter
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSExporter) {
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSExporter) {
   MAYBE_SKIP_TEST(HaveExporter);
   TestHandshake();
   unsigned char client_out[20];
@@ -890,7 +917,7 @@ TEST_F(SSLStreamAdapterTestDTLS, TestDTLSExporter) {
 }
 
 // Test not yet valid certificates are not rejected.
-TEST_F(SSLStreamAdapterTestDTLS, TestCertNotYetValid) {
+TEST_P(SSLStreamAdapterTestDTLS, TestCertNotYetValid) {
   MAYBE_SKIP_TEST(HaveDtls);
   long one_day = 60 * 60 * 24;
   // Make the certificates not valid until one day later.
@@ -899,7 +926,7 @@ TEST_F(SSLStreamAdapterTestDTLS, TestCertNotYetValid) {
 }
 
 // Test expired certificates are not rejected.
-TEST_F(SSLStreamAdapterTestDTLS, TestCertExpired) {
+TEST_P(SSLStreamAdapterTestDTLS, TestCertExpired) {
   MAYBE_SKIP_TEST(HaveDtls);
   long one_day = 60 * 60 * 24;
   // Make the certificates already expired.
@@ -908,14 +935,14 @@ TEST_F(SSLStreamAdapterTestDTLS, TestCertExpired) {
 }
 
 // Test data transfer using certs created from strings.
-TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestTransfer) {
+TEST_P(SSLStreamAdapterTestDTLSFromPEMStrings, TestTransfer) {
   MAYBE_SKIP_TEST(HaveDtls);
   TestHandshake();
   TestTransfer(100);
 }
 
 // Test getting the remote certificate.
-TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
+TEST_P(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
   MAYBE_SKIP_TEST(HaveDtls);
 
   // Peer certificates haven't been received yet.
@@ -955,7 +982,7 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
 
 // Test getting the used DTLS ciphers.
 // DTLS 1.2 enabled for neither client nor server -> DTLS 1.0 will be used.
-TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipher) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipher) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
@@ -966,14 +993,14 @@ TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipher) {
   ASSERT_TRUE(GetSslCipher(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      client_cipher);
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
+                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
+            server_cipher);
 }
 
 // Test getting the used DTLS 1.2 ciphers.
 // DTLS 1.2 enabled for client and server -> DTLS 1.2 will be used.
-TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Both) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Both) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
@@ -984,13 +1011,13 @@ TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Both) {
   ASSERT_TRUE(GetSslCipher(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_12),
-      client_cipher);
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
+                rtc::SSL_PROTOCOL_DTLS_12, ::testing::get<1>(GetParam())),
+            server_cipher);
 }
 
 // DTLS 1.2 enabled for client only -> DTLS 1.0 will be used.
-TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Client) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Client) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
@@ -1001,13 +1028,13 @@ TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Client) {
   ASSERT_TRUE(GetSslCipher(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      client_cipher);
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
+                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
+            server_cipher);
 }
 
 // DTLS 1.2 enabled for server only -> DTLS 1.0 will be used.
-TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Server) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Server) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
@@ -1018,7 +1045,16 @@ TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Server) {
   ASSERT_TRUE(GetSslCipher(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      client_cipher);
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
+                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
+            server_cipher);
 }
+
+INSTANTIATE_TEST_CASE_P(SSLStreamAdapterTestsTLS,
+                        SSLStreamAdapterTestTLS,
+                        Combine(Values(rtc::KT_RSA, rtc::KT_ECDSA),
+                                Values(rtc::KT_RSA, rtc::KT_ECDSA)));
+INSTANTIATE_TEST_CASE_P(SSLStreamAdapterTestsDTLS,
+                        SSLStreamAdapterTestDTLS,
+                        Combine(Values(rtc::KT_RSA, rtc::KT_ECDSA),
+                                Values(rtc::KT_RSA, rtc::KT_ECDSA)));

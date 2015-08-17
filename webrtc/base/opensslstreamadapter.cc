@@ -143,18 +143,26 @@ static const SslCipherMapEntry kSslCipherMap[] = {
 // This needs to be updated when the default of the SSL library changes.
 static const char kDefaultSslCipher10[] =
     "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
+static const char kDefaultSslEcCipher10[] =
+    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA";
 
 #ifdef OPENSSL_IS_BORINGSSL
 static const char kDefaultSslCipher12[] =
     "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
+static const char kDefaultSslEcCipher12[] =
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256";
 // Fallback cipher for DTLS 1.2 if hardware-accelerated AES-GCM is unavailable.
 static const char kDefaultSslCipher12NoAesGcm[] =
     "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256";
+static const char kDefaultSslEcCipher12NoAesGcm[] =
+    "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256";
 #else  // !OPENSSL_IS_BORINGSSL
 // OpenSSL sorts differently than BoringSSL, so the default cipher doesn't
 // change between TLS 1.0 and TLS 1.2 with the current setup.
 static const char kDefaultSslCipher12[] =
     "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
+static const char kDefaultSslEcCipher12[] =
+    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA";
 #endif
 
 //////////////////////////////////////////////////////////////////////
@@ -1118,22 +1126,44 @@ bool OpenSSLStreamAdapter::HaveExporter() {
 }
 
 std::string OpenSSLStreamAdapter::GetDefaultSslCipher(
-    SSLProtocolVersion version) {
-  switch (version) {
-    case SSL_PROTOCOL_TLS_10:
-    case SSL_PROTOCOL_TLS_11:
-      return kDefaultSslCipher10;
-    case SSL_PROTOCOL_TLS_12:
-    default:
+    SSLProtocolVersion version,
+    KeyType key_type) {
+  if (key_type == KT_RSA) {
+    switch (version) {
+      case SSL_PROTOCOL_TLS_10:
+      case SSL_PROTOCOL_TLS_11:
+        return kDefaultSslCipher10;
+      case SSL_PROTOCOL_TLS_12:
+      default:
 #ifdef OPENSSL_IS_BORINGSSL
-      if (EVP_has_aes_hardware()) {
-        return kDefaultSslCipher12;
-      } else {
-        return kDefaultSslCipher12NoAesGcm;
-      }
+        if (EVP_has_aes_hardware()) {
+          return kDefaultSslCipher12;
+        } else {
+          return kDefaultSslCipher12NoAesGcm;
+        }
 #else  // !OPENSSL_IS_BORINGSSL
-      return kDefaultSslCipher12;
+        return kDefaultSslCipher12;
 #endif
+    }
+  } else if (key_type == KT_ECDSA) {
+    switch (version) {
+      case SSL_PROTOCOL_TLS_10:
+      case SSL_PROTOCOL_TLS_11:
+        return kDefaultSslEcCipher10;
+      case SSL_PROTOCOL_TLS_12:
+      default:
+#ifdef OPENSSL_IS_BORINGSSL
+        if (EVP_has_aes_hardware()) {
+          return kDefaultSslEcCipher12;
+        } else {
+          return kDefaultSslEcCipher12NoAesGcm;
+        }
+#else  // !OPENSSL_IS_BORINGSSL
+        return kDefaultSslEcCipher12;
+#endif
+    }
+  } else {
+    return std::string();
   }
 }
 

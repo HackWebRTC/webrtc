@@ -540,7 +540,8 @@ class WebRtcSessionTest : public testing::Test {
     desc_factory_->set_secure(cricket::SEC_DISABLED);
     std::string identity_name = "WebRTC" +
         rtc::ToString(rtc::CreateRandomId());
-    identity_.reset(rtc::SSLIdentity::Generate(identity_name));
+    // Confirmed to work with KT_RSA and KT_ECDSA.
+    identity_.reset(rtc::SSLIdentity::Generate(identity_name, rtc::KT_DEFAULT));
     tdesc_factory_->set_identity(identity_.get());
     tdesc_factory_->set_secure(cricket::SEC_REQUIRED);
   }

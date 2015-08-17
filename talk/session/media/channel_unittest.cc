@@ -195,11 +195,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CopyContent(local_media_content2_, &remote_media_content2_);
 
     if (flags1 & DTLS) {
-      identity1_.reset(rtc::SSLIdentity::Generate("session1"));
+      // Confirmed to work with KT_RSA and KT_ECDSA.
+      identity1_.reset(rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT));
       session1_.set_ssl_identity(identity1_.get());
     }
     if (flags2 & DTLS) {
-      identity2_.reset(rtc::SSLIdentity::Generate("session2"));
+      // Confirmed to work with KT_RSA and KT_ECDSA.
+      identity2_.reset(rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT));
       session2_.set_ssl_identity(identity2_.get());
     }
 

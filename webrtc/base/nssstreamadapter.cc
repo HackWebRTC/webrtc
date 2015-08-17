@@ -68,9 +68,10 @@ static const SrtpCipherMapEntry kSrtpCipherMap[] = {
 
 // Ciphers to enable to get ECDHE encryption with endpoints that support it.
 static const uint32_t kEnabledCiphers[] = {
-  TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-  TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-};
+    TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+    TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+    TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+    TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256};
 
 // Default cipher used between NSS stream adapters.
 // This needs to be updated when the default of the SSL library changes.
@@ -78,7 +79,10 @@ static const char kDefaultSslCipher10[] =
     "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA";
 static const char kDefaultSslCipher12[] =
     "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
-
+static const char kDefaultSslEcCipher10[] =
+    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA";
+static const char kDefaultSslEcCipher12[] =
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256";
 
 // Implementation of NSPR methods
 static PRStatus StreamClose(PRFileDesc *socket) {
@@ -495,7 +499,7 @@ int NSSStreamAdapter::BeginSSL() {
     }
     rv = SSL_ConfigSecureServer(ssl_fd_, identity->certificate().certificate(),
                                 identity->keypair()->privkey(),
-                                kt_rsa);
+                                identity->keypair()->ssl_kea_type());
     if (rv != SECSuccess) {
       Error("BeginSSL", -1, false);
       return -1;
@@ -1093,14 +1097,28 @@ bool NSSStreamAdapter::HaveExporter() {
   return true;
 }
 
-std::string NSSStreamAdapter::GetDefaultSslCipher(SSLProtocolVersion version) {
-  switch (version) {
-    case SSL_PROTOCOL_TLS_10:
-    case SSL_PROTOCOL_TLS_11:
-      return kDefaultSslCipher10;
-    case SSL_PROTOCOL_TLS_12:
-    default:
-      return kDefaultSslCipher12;
+std::string NSSStreamAdapter::GetDefaultSslCipher(SSLProtocolVersion version,
+                                                  KeyType key_type) {
+  if (key_type == KT_RSA) {
+    switch (version) {
+      case SSL_PROTOCOL_TLS_10:
+      case SSL_PROTOCOL_TLS_11:
+        return kDefaultSslCipher10;
+      case SSL_PROTOCOL_TLS_12:
+      default:
+        return kDefaultSslCipher12;
+    }
+  } else if (key_type == KT_ECDSA) {
+    switch (version) {
+      case SSL_PROTOCOL_TLS_10:
+      case SSL_PROTOCOL_TLS_11:
+        return kDefaultSslEcCipher10;
+      case SSL_PROTOCOL_TLS_12:
+      default:
+        return kDefaultSslEcCipher12;
+    }
+  } else {
+    return std::string();
   }
 }
 

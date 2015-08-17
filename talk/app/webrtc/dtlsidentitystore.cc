@@ -65,11 +65,9 @@ class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
 
  private:
   void GenerateIdentity_w() {
-    // TODO(hbos): Use key_type_ when torbjorng's CL has landed.
-    LOG(LS_INFO) << "Generating identity. Key type (TODO(hbos): should use): "
-                 << key_type_;
+    LOG(LS_INFO) << "Generating identity, using keytype " << key_type_;
     rtc::scoped_ptr<rtc::SSLIdentity> identity(
-        rtc::SSLIdentity::Generate(kIdentityName));
+        rtc::SSLIdentity::Generate(kIdentityName, key_type_));
 
     // Posting to |this| avoids touching |store_| on threads other than
     // |signaling_thread_| and thus avoids having to use locks.
