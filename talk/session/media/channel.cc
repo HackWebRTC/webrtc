@@ -60,11 +60,6 @@ static const char kDtlsSrtpExporterLabel[] = "EXTRACTOR-dtls_srtp";
 
 static const int kAgcMinus10db = -10;
 
-static void SetSessionError(BaseSession* session, BaseSession::Error error,
-                            const std::string& error_desc) {
-  session->SetError(error, error_desc);
-}
-
 static void SafeSetError(const std::string& message, std::string* error_desc) {
   if (error_desc) {
     *error_desc = message;
