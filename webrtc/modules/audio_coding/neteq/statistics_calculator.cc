@@ -15,6 +15,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/decision_logic.h"
 #include "webrtc/modules/audio_coding/neteq/delay_manager.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 
 namespace webrtc {
 
@@ -94,6 +95,12 @@ void StatisticsCalculator::IncreaseCounter(int num_samples, int fs_hz) {
 
 void StatisticsCalculator::SecondaryDecodedSamples(int num_samples) {
   secondary_decoded_samples_ += num_samples;
+}
+
+void StatisticsCalculator::LogDelayedPacketOutageEvent(int outage_duration_ms) {
+  RTC_HISTOGRAM_COUNTS("WebRTC.Audio.DelayedPacketOutageEventMs",
+                       outage_duration_ms, 1 /* min */, 2000 /* max */,
+                       100 /* bucket count */);
 }
 
 void StatisticsCalculator::StoreWaitingTime(int waiting_time_ms) {

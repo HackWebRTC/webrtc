@@ -16,10 +16,12 @@
 #include <algorithm>  // min, max
 #include <limits>  // numeric_limits<T>
 
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/dsp_helper.h"
 #include "webrtc/modules/audio_coding/neteq/random_vector.h"
+#include "webrtc/modules/audio_coding/neteq/statistics_calculator.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 
 namespace webrtc {
@@ -27,6 +29,7 @@ namespace webrtc {
 Expand::Expand(BackgroundNoise* background_noise,
                SyncBuffer* sync_buffer,
                RandomVector* random_vector,
+               StatisticsCalculator* statistics,
                int fs,
                size_t num_channels)
     : random_vector_(random_vector),
@@ -36,10 +39,12 @@ Expand::Expand(BackgroundNoise* background_noise,
       num_channels_(num_channels),
       consecutive_expands_(0),
       background_noise_(background_noise),
+      statistics_(statistics),
       overlap_length_(5 * fs / 8000),
       lag_index_direction_(0),
       current_lag_index_(0),
       stop_muting_(false),
+      expand_duration_samples_(0),
       channel_parameters_(new ChannelParameters[num_channels_]) {
   assert(fs == 8000 || fs == 16000 || fs == 32000 || fs == 48000);
   assert(fs <= kMaxSampleRate);  // Should not be possible.
@@ -78,6 +83,7 @@ int Expand::Process(AudioMultiVector* output) {
     // Perform initial setup if this is the first expansion since last reset.
     AnalyzeSignal(random_vector);
     first_expand_ = false;
+    expand_duration_samples_ = 0;
   } else {
     // This is not the first expansion, parameters are already estimated.
     // Extract a noise segment.
@@ -298,6 +304,10 @@ int Expand::Process(AudioMultiVector* output) {
   // Increase call number and cap it.
   consecutive_expands_ = consecutive_expands_ >= kMaxConsecutiveExpands ?
       kMaxConsecutiveExpands : consecutive_expands_ + 1;
+  expand_duration_samples_ += output->Size();
+  // Clamp the duration counter at 2 seconds.
+  expand_duration_samples_ =
+      std::min(expand_duration_samples_, rtc::checked_cast<size_t>(fs_hz_ * 2));
   return 0;
 }
 
@@ -305,6 +315,8 @@ void Expand::SetParametersForNormalAfterExpand() {
   current_lag_index_ = 0;
   lag_index_direction_ = 0;
   stop_muting_ = true;  // Do not mute signal any more.
+  statistics_->LogDelayedPacketOutageEvent(
+      rtc::checked_cast<int>(expand_duration_samples_) / (fs_hz_ / 1000));
 }
 
 void Expand::SetParametersForMergeAfterExpand() {
@@ -833,10 +845,11 @@ void Expand::UpdateLagIndex() {
 Expand* ExpandFactory::Create(BackgroundNoise* background_noise,
                               SyncBuffer* sync_buffer,
                               RandomVector* random_vector,
+                              StatisticsCalculator* statistics,
                               int fs,
                               size_t num_channels) const {
-  return new Expand(background_noise, sync_buffer, random_vector, fs,
-                    num_channels);
+  return new Expand(background_noise, sync_buffer, random_vector, statistics,
+                    fs, num_channels);
 }
 
 // TODO(turajs): This can be moved to BackgroundNoise class.

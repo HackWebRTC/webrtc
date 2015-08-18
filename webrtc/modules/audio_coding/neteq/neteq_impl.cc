@@ -1874,7 +1874,7 @@ void NetEqImpl::UpdatePlcComponents(int fs_hz, size_t channels) {
   // Delete objects and create new ones.
   expand_.reset(expand_factory_->Create(background_noise_.get(),
                                         sync_buffer_.get(), &random_vector_,
-                                        fs_hz, channels));
+                                        &stats_, fs_hz, channels));
   merge_.reset(new Merge(fs_hz, channels, expand_.get(), sync_buffer_.get()));
 }
 
