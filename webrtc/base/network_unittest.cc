@@ -177,11 +177,14 @@ TEST_F(NetworkTest, DISABLED_TestCreateNetworks) {
   }
 }
 
-// Test that UpdateNetworks succeeds.
+// Test StartUpdating() and StopUpdating(). network_permission_state starts with
+// ALLOWED.
 TEST_F(NetworkTest, TestUpdateNetworks) {
   BasicNetworkManager manager;
   manager.SignalNetworksChanged.connect(
       static_cast<NetworkTest*>(this), &NetworkTest::OnNetworksChanged);
+  EXPECT_EQ(manager.enumeration_permission(),
+            NetworkManager::kEnumerationAllowed);
   manager.StartUpdating();
   Thread::Current()->ProcessMessages(0);
   EXPECT_TRUE(callback_called_);
@@ -195,6 +198,8 @@ TEST_F(NetworkTest, TestUpdateNetworks) {
   manager.StopUpdating();
   EXPECT_TRUE(manager.started());
   manager.StopUpdating();
+  EXPECT_EQ(manager.enumeration_permission(),
+            NetworkManager::kEnumerationAllowed);
   EXPECT_FALSE(manager.started());
   manager.StopUpdating();
   EXPECT_FALSE(manager.started());

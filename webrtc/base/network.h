@@ -56,6 +56,16 @@ class NetworkManager {
  public:
   typedef std::vector<Network*> NetworkList;
 
+  // This enum indicates whether adapter enumeration is allowed.
+  enum EnumerationPermission {
+    kEnumerationAllowed,     // Adapter enumeration is allowed. Getting 0
+                             // network from GetNetworks means that there is no
+                             // network available.
+    kEnumerationDisallowed,  // Adapter enumeration is
+                             // disabled. GetAnyAddressNetworks() should be used
+                             // instead.
+  };
+
   NetworkManager();
   virtual ~NetworkManager();
 
@@ -73,11 +83,14 @@ class NetworkManager {
   virtual void StopUpdating() = 0;
 
   // Returns the current list of networks available on this machine.
-  // UpdateNetworks() must be called before this method is called.
+  // StartUpdating() must be called before this method is called.
   // It makes sure that repeated calls return the same object for a
   // given network, so that quality is tracked appropriately. Does not
   // include ignored networks.
   virtual void GetNetworks(NetworkList* networks) const = 0;
+
+  // return the current permission state of GetNetworks()
+  virtual EnumerationPermission enumeration_permission() const = 0;
 
   // "AnyAddressNetwork" is a network which only contains single "any address"
   // IP address.  (i.e. INADDR_ANY for IPv4 or in6addr_any for IPv6). This is
@@ -113,6 +126,8 @@ class NetworkManagerBase : public NetworkManager {
   void set_max_ipv6_networks(int networks) { max_ipv6_networks_ = networks; }
   int max_ipv6_networks() { return max_ipv6_networks_; }
 
+  EnumerationPermission enumeration_permission() const override;
+
  protected:
   typedef std::map<std::string, Network*> NetworkMap;
   // Updates |networks_| with the networks listed in |list|. If
@@ -127,9 +142,15 @@ class NetworkManagerBase : public NetworkManager {
                         bool* changed,
                         NetworkManager::Stats* stats);
 
+  void set_enumeration_permission(EnumerationPermission state) {
+    enumeration_permission_ = state;
+  }
+
  private:
   friend class NetworkTest;
   void DoUpdateNetworks();
+
+  EnumerationPermission enumeration_permission_;
 
   NetworkList networks_;
   int max_ipv6_networks_;

@@ -1165,6 +1165,32 @@ TEST_F(PortAllocatorTest, TestSharedSocketNoUdpAllowed) {
   EXPECT_EQ(1U, candidates_.size());
 }
 
+// Test that when the NetworkManager doesn't have permission to enumerate
+// adapters, the PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION is specified
+// automatically.
+TEST_F(PortAllocatorTest, TestNetworkPermissionBlocked) {
+  AddInterface(kClientAddr);
+  network_manager_.set_enumeration_permission(
+      rtc::NetworkManager::kEnumerationDisallowed);
+  allocator().set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  EXPECT_EQ(
+      allocator_->flags() & cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION,
+      0U);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  EXPECT_EQ(
+      session_->flags() & cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION,
+      0U);
+  session_->StartGettingPorts();
+  EXPECT_EQ_WAIT(1U, ports_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(0U, candidates_.size());
+  EXPECT_TRUE((session_->flags() &
+               cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) != 0);
+}
+
 // This test verifies allocator can use IPv6 addresses along with IPv4.
 TEST_F(PortAllocatorTest, TestEnableIPv6Addresses) {
   allocator().set_flags(allocator().flags() |

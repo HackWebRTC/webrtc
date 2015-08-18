@@ -304,6 +304,13 @@ void BasicPortAllocatorSession::DoAllocate() {
   bool done_signal_needed = false;
   std::vector<rtc::Network*> networks;
 
+  // If the network permission state is BLOCKED, we just act as if the flag has
+  // been passed in.
+  if (allocator_->network_manager()->enumeration_permission() ==
+      rtc::NetworkManager::kEnumerationDisallowed) {
+    set_flags(flags() | PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
+  }
+
   // If the adapter enumeration is disabled, we'll just bind to any address
   // instead of specific NIC. This is to ensure the same routing for http
   // traffic by OS is also used here to avoid any local or public IP leakage
