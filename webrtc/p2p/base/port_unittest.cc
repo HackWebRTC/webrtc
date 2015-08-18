@@ -433,7 +433,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                          PacketSocketFactory* socket_factory) {
     UDPPort* port = UDPPort::Create(main_, socket_factory, &network_,
                                     addr.ipaddr(), 0, 0, username_, password_,
-                                    std::string());
+                                    std::string(), false);
     port->SetIceProtocolType(ice_protocol_);
     return port;
   }

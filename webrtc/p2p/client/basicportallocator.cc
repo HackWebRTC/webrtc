@@ -555,6 +555,13 @@ bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
       return true;
     }
 
+    // If it's loopback address, we should allow it as it's for demo page
+    // connectivity when no TURN/STUN specified.
+    if (c.address().IsLoopbackIP()) {
+      ASSERT((flags() & PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE) != 0);
+      return true;
+    }
+
     // This is just to prevent the case when binding to any address (all 0s), if
     // somehow the host candidate address is not all 0s. Either because local
     // installed proxy changes the address or a packet has been sent for any
@@ -825,20 +832,19 @@ void AllocationSequence::CreateUDPPorts() {
   // TODO(mallinath) - Remove UDPPort creating socket after shared socket
   // is enabled completely.
   UDPPort* port = NULL;
+  bool emit_localhost_for_anyaddress =
+    IsFlagSet(PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) && udp_socket_) {
-    port = UDPPort::Create(session_->network_thread(),
-                           session_->socket_factory(), network_,
-                           udp_socket_.get(),
-                           session_->username(), session_->password(),
-                           session_->allocator()->origin());
+    port = UDPPort::Create(
+        session_->network_thread(), session_->socket_factory(), network_,
+        udp_socket_.get(), session_->username(), session_->password(),
+        session_->allocator()->origin(), emit_localhost_for_anyaddress);
   } else {
-    port = UDPPort::Create(session_->network_thread(),
-                           session_->socket_factory(),
-                           network_, ip_,
-                           session_->allocator()->min_port(),
-                           session_->allocator()->max_port(),
-                           session_->username(), session_->password(),
-                           session_->allocator()->origin());
+    port = UDPPort::Create(
+        session_->network_thread(), session_->socket_factory(), network_, ip_,
+        session_->allocator()->min_port(), session_->allocator()->max_port(),
+        session_->username(), session_->password(),
+        session_->allocator()->origin(), emit_localhost_for_anyaddress);
   }
 
   if (port) {

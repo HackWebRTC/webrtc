@@ -223,6 +223,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // TODO(pthatcher): Rename this ice_servers, but update Chromium
     // at the same time.
     IceServers servers;
+    // A localhost candidate is signaled whenever a candidate with the any
+    // address is allocated.
+    bool enable_localhost_ice_candidate;
     BundlePolicy bundle_policy;
     RtcpMuxPolicy rtcp_mux_policy;
     TcpCandidatePolicy tcp_candidate_policy;
@@ -231,6 +234,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
     RTCConfiguration()
         : type(kAll),
+          enable_localhost_ice_candidate(false),
           bundle_policy(kBundlePolicyBalanced),
           rtcp_mux_policy(kRtcpMuxPolicyNegotiate),
           tcp_candidate_policy(kTcpCandidatePolicyEnabled),
