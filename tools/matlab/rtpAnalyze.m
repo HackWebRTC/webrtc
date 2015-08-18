@@ -17,6 +17,18 @@ function rtpAnalyze( input_file )
 
 [SeqNo,TimeStamp,ArrTime,Size,PT,M,SSRC] = importfile(input_file);
 
+%% Filter out RTCP packets.
+% These appear as RTP packets having payload types 72 through 76.
+ix = not(ismember(PT, 72:76));
+fprintf('Removing %i RTCP packets\n', length(SeqNo) - sum(ix));
+SeqNo = SeqNo(ix);
+TimeStamp = TimeStamp(ix);
+ArrTime = ArrTime(ix);
+Size = Size(ix);
+PT = PT(ix);
+M = M(ix);
+SSRC = SSRC(ix);
+
 %% Find streams.
 [uSSRC, ~, uix] = unique(SSRC);
 
