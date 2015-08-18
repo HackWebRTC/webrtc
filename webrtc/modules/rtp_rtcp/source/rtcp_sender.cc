@@ -638,15 +638,47 @@ RTCPSender::BuildResult RTCPSender::BuildRPSI(RtcpContext* ctx) {
 }
 
 RTCPSender::BuildResult RTCPSender::BuildREMB(RtcpContext* ctx) {
-  rtcp::Remb remb;
-  remb.From(ssrc_);
-  for (uint32_t ssrc : remb_ssrcs_)
-    remb.AppliesTo(ssrc);
-  remb.WithBitrateBps(remb_bitrate_);
-
-  PacketBuiltCallback callback(ctx);
-  if (!callback.BuildPacket(remb))
+  // sanity
+  if (ctx->position + 20 + 4 * remb_ssrcs_.size() >= IP_PACKET_SIZE)
     return BuildResult::kTruncated;
+
+  // add application layer feedback
+  uint8_t FMT = 15;
+  *ctx->AllocateData(1) = 0x80 + FMT;
+  *ctx->AllocateData(1) = 206;
+
+  *ctx->AllocateData(1) = 0;
+  *ctx->AllocateData(1) = static_cast<uint8_t>(remb_ssrcs_.size() + 4);
+
+  // Add our own SSRC
+  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
+
+  // Remote SSRC must be 0
+  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), 0);
+
+  *ctx->AllocateData(1) = 'R';
+  *ctx->AllocateData(1) = 'E';
+  *ctx->AllocateData(1) = 'M';
+  *ctx->AllocateData(1) = 'B';
+
+  *ctx->AllocateData(1) = remb_ssrcs_.size();
+  // 6 bit Exp
+  // 18 bit mantissa
+  uint8_t brExp = 0;
+  for (uint32_t i = 0; i < 64; i++) {
+    if (remb_bitrate_ <= (0x3FFFFu << i)) {
+      brExp = i;
+      break;
+    }
+  }
+  const uint32_t brMantissa = (remb_bitrate_ >> brExp);
+  *ctx->AllocateData(1) =
+      static_cast<uint8_t>((brExp << 2) + ((brMantissa >> 16) & 0x03));
+  *ctx->AllocateData(1) = static_cast<uint8_t>(brMantissa >> 8);
+  *ctx->AllocateData(1) = static_cast<uint8_t>(brMantissa);
+
+  for (size_t i = 0; i < remb_ssrcs_.size(); i++)
+    ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), remb_ssrcs_[i]);
 
   TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "RTCPSender::REMB");
