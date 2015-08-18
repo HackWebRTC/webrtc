@@ -140,8 +140,6 @@
         'callback.h',
         'common.cc',
         'common.h',
-        'cpumonitor.cc',
-        'cpumonitor.h',
         'crc32.cc',
         'crc32.h',
         'cryptstring.cc',
