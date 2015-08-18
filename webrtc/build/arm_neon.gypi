@@ -30,9 +30,9 @@
         '-mfpu=neon',
        ],
     }],
-    # Disable LTO on NEON targets due to compiler bug.
+    # Disable GCC LTO on NEON targets due to compiler bug.
     # TODO(fdegans): Enable this. See crbug.com/408997.
-    ['use_lto==1', {
+    ['clang==0 and use_lto==1', {
       'cflags!': [
         '-flto',
         '-ffat-lto-objects',
