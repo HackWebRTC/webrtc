@@ -675,11 +675,11 @@ void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
              address,          // Base address.
              related_address,  // Related address.
              UDP_PROTOCOL_NAME,
+             ProtoToString(server_address_.proto),  // The first hop protocol.
              "",  // TCP canddiate type, empty for turn candidates.
              RELAY_PORT_TYPE,
              GetRelayPreference(server_address_.proto, server_address_.secure),
-             server_priority_,
-             true);
+             server_priority_, true);
 }
 
 void TurnPort::OnAllocateError() {

@@ -250,6 +250,7 @@ TEST_F(StunPortTest, TestNoDuplicatedAddressWithTwoStunServers) {
   PrepareAddress();
   EXPECT_TRUE_WAIT(done(), kTimeoutMs);
   EXPECT_EQ(1U, port()->Candidates().size());
+  EXPECT_EQ(port()->Candidates()[0].relay_protocol(), "");
 }
 
 // Test that candidates can be allocated for multiple STUN servers, one of which
@@ -281,4 +282,6 @@ TEST_F(StunPortTest, TestTwoCandidatesWithTwoStunServersAcrossNat) {
   PrepareAddress();
   EXPECT_TRUE_WAIT(done(), kTimeoutMs);
   EXPECT_EQ(2U, port()->Candidates().size());
+  EXPECT_EQ(port()->Candidates()[0].relay_protocol(), "");
+  EXPECT_EQ(port()->Candidates()[1].relay_protocol(), "");
 }

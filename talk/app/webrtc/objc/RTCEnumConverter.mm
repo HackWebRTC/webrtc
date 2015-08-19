@@ -48,6 +48,9 @@
       return RTCICEConnectionDisconnected;
     case webrtc::PeerConnectionInterface::kIceConnectionClosed:
       return RTCICEConnectionClosed;
+    case webrtc::PeerConnectionInterface::kIceConnectionMax:
+      NSAssert(NO, @"kIceConnectionMax not allowed");
+      return RTCICEConnectionMax;
   }
 }
 

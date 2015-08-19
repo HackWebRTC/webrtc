@@ -171,17 +171,16 @@ void TCPPort::PrepareAddress() {
     if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND ||
         socket_->GetState() == rtc::AsyncPacketSocket::STATE_CLOSED)
       AddAddress(socket_->GetLocalAddress(), socket_->GetLocalAddress(),
-                 rtc::SocketAddress(),
-                 TCP_PROTOCOL_NAME, TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE,
+                 rtc::SocketAddress(), TCP_PROTOCOL_NAME, "",
+                 TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE,
                  ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
   } else {
     LOG_J(LS_INFO, this) << "Not listening due to firewall restrictions.";
     // Note: We still add the address, since otherwise the remote side won't
     // recognize our incoming TCP connections.
-    AddAddress(rtc::SocketAddress(ip(), 0),
-               rtc::SocketAddress(ip(), 0), rtc::SocketAddress(),
-               TCP_PROTOCOL_NAME, TCPTYPE_ACTIVE_STR, LOCAL_PORT_TYPE,
-               ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
+    AddAddress(rtc::SocketAddress(ip(), 0), rtc::SocketAddress(ip(), 0),
+               rtc::SocketAddress(), TCP_PROTOCOL_NAME, "", TCPTYPE_ACTIVE_STR,
+               LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
   }
 }
 
@@ -285,9 +284,9 @@ void TCPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
 
 void TCPPort::OnAddressReady(rtc::AsyncPacketSocket* socket,
                              const rtc::SocketAddress& address) {
-  AddAddress(address, address, rtc::SocketAddress(),
-             TCP_PROTOCOL_NAME, TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE,
-             ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
+  AddAddress(address, address, rtc::SocketAddress(), TCP_PROTOCOL_NAME, "",
+             TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP,
+             0, true);
 }
 
 TCPConnection::TCPConnection(TCPPort* port,

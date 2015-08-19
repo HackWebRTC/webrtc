@@ -1009,11 +1009,19 @@ class WebRtcSessionTest : public testing::Test {
     void Verify(const rtc::scoped_refptr<FakeMetricsObserver> metrics_observer,
                 const ExpectedBestConnection& expected) const {
       EXPECT_EQ(
-          metrics_observer->GetCounter(webrtc::kBestConnections_IPv4),
+          metrics_observer->GetEnumCounter(webrtc::kEnumCounterAddressFamily,
+                                           webrtc::kBestConnections_IPv4),
           expected.ipv4_count_);
       EXPECT_EQ(
-          metrics_observer->GetCounter(webrtc::kBestConnections_IPv6),
+          metrics_observer->GetEnumCounter(webrtc::kEnumCounterAddressFamily,
+                                           webrtc::kBestConnections_IPv6),
           expected.ipv6_count_);
+      // This is used in the loopback call so there is only single host to host
+      // candidate pair.
+      EXPECT_EQ(metrics_observer->GetEnumCounter(
+                    webrtc::kEnumCounterIceCandidatePairTypeUdp,
+                    webrtc::kIceCandidatePairHostHost),
+                1);
     }
   };
 

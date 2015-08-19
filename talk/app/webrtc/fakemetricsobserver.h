@@ -41,14 +41,16 @@ class FakeMetricsObserver : public MetricsObserverInterface {
   FakeMetricsObserver();
   void Reset();
 
-  void IncrementCounter(PeerConnectionMetricsCounter type) override;
+  void IncrementEnumCounter(PeerConnectionEnumCounterType,
+                            int counter,
+                            int counter_max) override;
   void AddHistogramSample(PeerConnectionMetricsName type,
                           int value) override;
   void AddHistogramSample(PeerConnectionMetricsName type,
                           const std::string& value) override;
 
   // Accessors to be used by the tests.
-  int GetCounter(PeerConnectionMetricsCounter type) const;
+  int GetEnumCounter(PeerConnectionEnumCounterType type, int counter) const;
   int GetIntHistogramSample(PeerConnectionMetricsName type) const;
   const std::string& GetStringHistogramSample(
       PeerConnectionMetricsName type) const;
@@ -58,8 +60,10 @@ class FakeMetricsObserver : public MetricsObserverInterface {
 
  private:
   rtc::ThreadChecker thread_checker_;
-  int counters_[kPeerConnectionMetricsCounter_Max];
-  int int_histogram_samples_[kPeerConnectionMetricsCounter_Max];
+  // This is a 2 dimension array. The first index is the enum counter type. The
+  // 2nd index is the counter of that particular enum counter type.
+  std::vector<std::vector<int>> counters_;
+  int int_histogram_samples_[kPeerConnectionMetricsName_Max];
   std::string string_histogram_samples_[kPeerConnectionMetricsName_Max];
 };
 

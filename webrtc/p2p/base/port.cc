@@ -249,6 +249,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                       const rtc::SocketAddress& base_address,
                       const rtc::SocketAddress& related_address,
                       const std::string& protocol,
+                      const std::string& relay_protocol,
                       const std::string& tcptype,
                       const std::string& type,
                       uint32 type_preference,
@@ -263,6 +264,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   c.set_component(component_);
   c.set_type(type);
   c.set_protocol(protocol);
+  c.set_relay_protocol(relay_protocol);
   c.set_tcptype(tcptype);
   c.set_address(address);
   c.set_priority(c.GetPriority(type_preference, network_->preference(),

@@ -126,7 +126,20 @@ class StatsObserver : public rtc::RefCountInterface {
 
 class MetricsObserverInterface : public rtc::RefCountInterface {
  public:
-  virtual void IncrementCounter(PeerConnectionMetricsCounter type) = 0;
+  // TODO(guoweis): Remove this function once IncrementEnumCounter gets into
+  // chromium. IncrementCounter only deals with one type of enumeration counter,
+  // i.e. PeerConnectionAddressFamilyCounter. Instead of creating a function for
+  // each enum type, IncrementEnumCounter is generalized with the enum type
+  // parameter.
+  virtual void IncrementCounter(PeerConnectionAddressFamilyCounter type) {}
+
+  // |type| is the type of the enum counter to be incremented. |counter|
+  // is the particular counter in that type. |counter_max| is the next sequence
+  // number after the highest counter.
+  virtual void IncrementEnumCounter(PeerConnectionEnumCounterType type,
+                                    int counter,
+                                    int counter_max) {}
+
   virtual void AddHistogramSample(PeerConnectionMetricsName type,
                                   int value) = 0;
   // TODO(jbauch): Make method abstract when it is implemented by Chromium.
@@ -178,6 +191,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kIceConnectionFailed,
     kIceConnectionDisconnected,
     kIceConnectionClosed,
+    kIceConnectionMax,
   };
 
   struct IceServer {

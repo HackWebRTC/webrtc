@@ -36,16 +36,26 @@ FakeMetricsObserver::FakeMetricsObserver() {
 
 void FakeMetricsObserver::Reset() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  memset(counters_, 0, sizeof(counters_));
+  counters_ = std::vector<std::vector<int>>();
   memset(int_histogram_samples_, 0, sizeof(int_histogram_samples_));
   for (std::string& type : string_histogram_samples_) {
     type.clear();
   }
 }
 
-void FakeMetricsObserver::IncrementCounter(PeerConnectionMetricsCounter type) {
+void FakeMetricsObserver::IncrementEnumCounter(
+    PeerConnectionEnumCounterType type,
+    int counter,
+    int counter_max) {
   DCHECK(thread_checker_.CalledOnValidThread());
-  ++counters_[type];
+  if (counters_.size() <= static_cast<size_t>(type)) {
+    counters_.resize(type + 1);
+  }
+  auto& counters = counters_[type];
+  if (counters.size() < static_cast<size_t>(counter_max)) {
+    counters.resize(counter_max);
+  }
+  ++counters[counter];
 }
 
 void FakeMetricsObserver::AddHistogramSample(PeerConnectionMetricsName type,
@@ -61,9 +71,12 @@ void FakeMetricsObserver::AddHistogramSample(PeerConnectionMetricsName type,
   string_histogram_samples_[type].assign(value);
 }
 
-int FakeMetricsObserver::GetCounter(PeerConnectionMetricsCounter type) const {
+int FakeMetricsObserver::GetEnumCounter(PeerConnectionEnumCounterType type,
+                                        int counter) const {
   DCHECK(thread_checker_.CalledOnValidThread());
-  return counters_[type];
+  CHECK(counters_.size() > static_cast<size_t>(type) &&
+        counters_[type].size() > static_cast<size_t>(counter));
+  return counters_[type][counter];
 }
 
 int FakeMetricsObserver::GetIntHistogramSample(

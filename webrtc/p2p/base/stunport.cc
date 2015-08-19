@@ -280,9 +280,8 @@ int UDPPort::GetError() {
 
 void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                                   const rtc::SocketAddress& address) {
-  AddAddress(address, address, rtc::SocketAddress(),
-             UDP_PROTOCOL_NAME, "", LOCAL_PORT_TYPE,
-             ICE_TYPE_PREFERENCE_HOST, 0, false);
+  AddAddress(address, address, rtc::SocketAddress(), UDP_PROTOCOL_NAME, "", "",
+             LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST, 0, false);
   MaybePrepareStunCandidate();
 }
 
@@ -396,9 +395,9 @@ void UDPPort::OnStunBindingRequestSucceeded(
           related_address.family());
     }
 
-    AddAddress(stun_reflected_addr, socket_->GetLocalAddress(),
-               related_address, UDP_PROTOCOL_NAME, "",
-               STUN_PORT_TYPE, ICE_TYPE_PREFERENCE_SRFLX, 0, false);
+    AddAddress(stun_reflected_addr, socket_->GetLocalAddress(), related_address,
+               UDP_PROTOCOL_NAME, "", "", STUN_PORT_TYPE,
+               ICE_TYPE_PREFERENCE_SRFLX, 0, false);
   }
   MaybeSetPortCompleteOrError();
 }

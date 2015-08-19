@@ -57,6 +57,11 @@ using cricket::MediaContentDescription;
 using cricket::SessionDescription;
 using cricket::TransportInfo;
 
+using cricket::LOCAL_PORT_TYPE;
+using cricket::STUN_PORT_TYPE;
+using cricket::RELAY_PORT_TYPE;
+using cricket::PRFLX_PORT_TYPE;
+
 namespace webrtc {
 
 // Error messages
@@ -82,6 +87,48 @@ const char kDtlsSetupFailureRtp[] =
 const char kDtlsSetupFailureRtcp[] =
     "Couldn't set up DTLS-SRTP on RTCP channel.";
 const int kMaxUnsignalledRecvStreams = 20;
+
+IceCandidatePairType GetIceCandidatePairCounter(
+    const cricket::Candidate& local,
+    const cricket::Candidate& remote) {
+  const auto& l = local.type();
+  const auto& r = remote.type();
+  const auto& host = LOCAL_PORT_TYPE;
+  const auto& srflx = STUN_PORT_TYPE;
+  const auto& relay = RELAY_PORT_TYPE;
+  const auto& prflx = PRFLX_PORT_TYPE;
+  if (l == host && r == host)
+    return kIceCandidatePairHostHost;
+  if (l == host && r == srflx)
+    return kIceCandidatePairHostSrflx;
+  if (l == host && r == relay)
+    return kIceCandidatePairHostRelay;
+  if (l == host && r == prflx)
+    return kIceCandidatePairHostPrflx;
+  if (l == srflx && r == host)
+    return kIceCandidatePairSrflxHost;
+  if (l == srflx && r == srflx)
+    return kIceCandidatePairSrflxSrflx;
+  if (l == srflx && r == relay)
+    return kIceCandidatePairSrflxRelay;
+  if (l == srflx && r == prflx)
+    return kIceCandidatePairSrflxPrflx;
+  if (l == relay && r == host)
+    return kIceCandidatePairRelayHost;
+  if (l == relay && r == srflx)
+    return kIceCandidatePairRelaySrflx;
+  if (l == relay && r == relay)
+    return kIceCandidatePairRelayRelay;
+  if (l == relay && r == prflx)
+    return kIceCandidatePairRelayPrflx;
+  if (l == prflx && r == host)
+    return kIceCandidatePairPrflxHost;
+  if (l == prflx && r == srflx)
+    return kIceCandidatePairPrflxSrflx;
+  if (l == prflx && r == relay)
+    return kIceCandidatePairPrflxRelay;
+  return kIceCandidatePairMax;
+}
 
 // Compares |answer| against |offer|. Comparision is done
 // for number of m-lines in answer against offer. If matches true will be
@@ -1921,14 +1968,46 @@ void WebRtcSession::ReportBestConnectionState(
       if (!it_info->best_connection) {
         continue;
       }
-      if (it_info->local_candidate.address().family() == AF_INET) {
-        metrics_observer_->IncrementCounter(kBestConnections_IPv4);
-      } else if (it_info->local_candidate.address().family() ==
-                 AF_INET6) {
-        metrics_observer_->IncrementCounter(kBestConnections_IPv6);
+
+      PeerConnectionEnumCounterType type = kPeerConnectionEnumCounterMax;
+      const cricket::Candidate& local = it_info->local_candidate;
+      const cricket::Candidate& remote = it_info->remote_candidate;
+
+      // Increment the counter for IceCandidatePairType.
+      if (local.protocol() == cricket::TCP_PROTOCOL_NAME ||
+          (local.type() == RELAY_PORT_TYPE &&
+           local.relay_protocol() == cricket::TCP_PROTOCOL_NAME)) {
+        type = kEnumCounterIceCandidatePairTypeTcp;
+      } else if (local.protocol() == cricket::UDP_PROTOCOL_NAME) {
+        type = kEnumCounterIceCandidatePairTypeUdp;
       } else {
-        RTC_NOTREACHED();
+        CHECK(0);
       }
+      metrics_observer_->IncrementEnumCounter(
+          type, GetIceCandidatePairCounter(local, remote),
+          kIceCandidatePairMax);
+
+      // Increment the counter for IP type.
+      if (local.address().family() == AF_INET) {
+        // TODO(guoweis): Remove this next line once IncrementEnumCounter
+        // implemented for PeerConnectionMetrics.
+        metrics_observer_->IncrementCounter(kBestConnections_IPv4);
+
+        metrics_observer_->IncrementEnumCounter(
+            kEnumCounterAddressFamily, kBestConnections_IPv4,
+            kPeerConnectionAddressFamilyCounter_Max);
+
+      } else if (local.address().family() == AF_INET6) {
+        // TODO(guoweis): Remove this next line.
+        metrics_observer_->IncrementCounter(kBestConnections_IPv6);
+
+        metrics_observer_->IncrementEnumCounter(
+            kEnumCounterAddressFamily, kBestConnections_IPv6,
+            kPeerConnectionAddressFamilyCounter_Max);
+      } else {
+        CHECK(0);
+      }
+
       return;
     }
   }

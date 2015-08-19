@@ -70,6 +70,12 @@ class Candidate {
   const std::string & protocol() const { return protocol_; }
   void set_protocol(const std::string & protocol) { protocol_ = protocol; }
 
+  // The protocol used to talk to relay.
+  const std::string& relay_protocol() const { return relay_protocol_; }
+  void set_relay_protocol(const std::string& protocol) {
+    relay_protocol_ = protocol;
+  }
+
   const rtc::SocketAddress & address() const { return address_; }
   void set_address(const rtc::SocketAddress & address) {
     address_ = address;
@@ -214,6 +220,7 @@ class Candidate {
   std::string id_;
   int component_;
   std::string protocol_;
+  std::string relay_protocol_;
   rtc::SocketAddress address_;
   uint32 priority_;
   std::string username_;

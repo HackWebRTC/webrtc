@@ -135,13 +135,13 @@ class TestPort : public Port {
 
   virtual void PrepareAddress() {
     rtc::SocketAddress addr(ip(), min_port());
-    AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", Type(),
+    AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", "", Type(),
                ICE_TYPE_PREFERENCE_HOST, 0, true);
   }
 
   // Exposed for testing candidate building.
   void AddCandidateAddress(const rtc::SocketAddress& addr) {
-    AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", Type(),
+    AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", "", Type(),
                type_preference_, 0, false);
   }
   void AddCandidateAddress(const rtc::SocketAddress& addr,
@@ -149,7 +149,7 @@ class TestPort : public Port {
                            const std::string& type,
                            int type_preference,
                            bool final) {
-    AddAddress(addr, base_address, rtc::SocketAddress(), "udp", "", type,
+    AddAddress(addr, base_address, rtc::SocketAddress(), "udp", "", "", type,
                type_preference, 0, final);
   }
 

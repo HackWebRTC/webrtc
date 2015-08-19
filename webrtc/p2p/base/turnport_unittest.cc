@@ -734,6 +734,8 @@ TEST_F(TurnPortTest, TestTurnSendDataTurnUdpToUdp) {
   // Create ports and prepare addresses.
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   TestTurnSendData();
+  EXPECT_EQ(turn_port_->Candidates()[0].relay_protocol(),
+            cricket::UDP_PROTOCOL_NAME);
 }
 
 // Do a TURN allocation, establish a TCP connection, and send some data.
@@ -742,6 +744,8 @@ TEST_F(TurnPortTest, TestTurnSendDataTurnTcpToUdp) {
   // Create ports and prepare addresses.
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   TestTurnSendData();
+  EXPECT_EQ(turn_port_->Candidates()[0].relay_protocol(),
+            cricket::TCP_PROTOCOL_NAME);
 }
 
 // Test TURN fails to make a connection from IPv6 address to a server which has

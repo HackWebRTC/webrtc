@@ -313,9 +313,13 @@ class Port : public PortInterface, public rtc::MessageHandler,
   void AddAddress(const rtc::SocketAddress& address,
                   const rtc::SocketAddress& base_address,
                   const rtc::SocketAddress& related_address,
-                  const std::string& protocol, const std::string& tcptype,
-                  const std::string& type, uint32 type_preference,
-                  uint32 relay_preference, bool final);
+                  const std::string& protocol,
+                  const std::string& relay_protocol,
+                  const std::string& tcptype,
+                  const std::string& type,
+                  uint32 type_preference,
+                  uint32 relay_preference,
+                  bool final);
 
   // Adds the given connection to the list.  (Deleting removes them.)
   void AddConnection(Connection* conn);
