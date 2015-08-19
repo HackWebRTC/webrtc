@@ -90,9 +90,7 @@ class NetworkManager {
   virtual void GetNetworks(NetworkList* networks) const = 0;
 
   // return the current permission state of GetNetworks()
-  virtual EnumerationPermission enumeration_permission() const {
-    return kEnumerationAllowed;
-  }
+  virtual EnumerationPermission enumeration_permission() const;
 
   // "AnyAddressNetwork" is a network which only contains single "any address"
   // IP address.  (i.e. INADDR_ANY for IPv4 or in6addr_any for IPv6). This is
