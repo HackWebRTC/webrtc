@@ -15,7 +15,6 @@
         'unittest_main.cc',
         # Also use this as a convenient dumping ground for misc files that are
         # included by multiple targets below.
-        'fakecpumonitor.h',
         'fakenetwork.h',
         'fakesslidentity.h',
         'faketaskrunner.h',
@@ -58,7 +57,6 @@
           'bytebuffer_unittest.cc',
           'byteorder_unittest.cc',
           'callback_unittest.cc',
-          'cpumonitor_unittest.cc',
           'crc32_unittest.cc',
           'criticalsection_unittest.cc',
           'event_tracer_unittest.cc',

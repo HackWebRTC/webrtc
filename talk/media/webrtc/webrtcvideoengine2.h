@@ -36,7 +36,6 @@
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
-#include "webrtc/base/cpumonitor.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -54,7 +53,6 @@ class VideoEncoder;
 }
 
 namespace rtc {
-class CpuMonitor;
 class Thread;
 }  // namespace rtc
 
