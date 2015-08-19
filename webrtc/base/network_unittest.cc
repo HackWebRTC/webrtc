@@ -558,7 +558,13 @@ TEST_F(NetworkTest, TestDumpNetworks) {
 }
 
 // Test that we can toggle IPv6 on and off.
-TEST_F(NetworkTest, TestIPv6Toggle) {
+// Crashes on Linux. See webrtc:4923.
+#if defined(WEBRTC_LINUX)
+#define MAYBE_TestIPv6Toggle DISABLED_TestIPv6Toggle
+#else
+#define MAYBE_TestIPv6Toggle TestIPv6Toggle
+#endif
+TEST_F(NetworkTest, MAYBE_TestIPv6Toggle) {
   BasicNetworkManager manager;
   bool ipv6_found = false;
   NetworkManager::NetworkList list;
