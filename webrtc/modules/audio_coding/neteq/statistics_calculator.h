@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
 
+#include <string>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
@@ -64,7 +65,8 @@ class StatisticsCalculator {
   void LostSamples(int num_samples);
 
   // Increases the report interval counter with |num_samples| at a sample rate
-  // of |fs_hz|.
+  // of |fs_hz|. This is how the StatisticsCalculator gets notified that current
+  // time is increasing.
   void IncreaseCounter(int num_samples, int fs_hz);
 
   // Stores new packet waiting time in waiting time statistics.
@@ -95,6 +97,58 @@ class StatisticsCalculator {
   static const int kMaxReportPeriod = 60;  // Seconds before auto-reset.
   static const int kLenWaitingTimes = 100;
 
+  class PeriodicUmaLogger {
+   public:
+    PeriodicUmaLogger(const std::string& uma_name,
+                      int report_interval_ms,
+                      int max_value);
+    virtual ~PeriodicUmaLogger();
+    void AdvanceClock(int step_ms);
+
+   protected:
+    void LogToUma(int value) const;
+    virtual int Metric() const = 0;
+    virtual void Reset() = 0;
+
+    const std::string uma_name_;
+    const int report_interval_ms_;
+    const int max_value_;
+    int timer_ = 0;
+  };
+
+  class PeriodicUmaCount final : public PeriodicUmaLogger {
+   public:
+    PeriodicUmaCount(const std::string& uma_name,
+                     int report_interval_ms,
+                     int max_value);
+    ~PeriodicUmaCount() override;
+    void RegisterSample();
+
+   protected:
+    int Metric() const override;
+    void Reset() override;
+
+   private:
+    int counter_ = 0;
+  };
+
+  class PeriodicUmaAverage final : public PeriodicUmaLogger {
+   public:
+    PeriodicUmaAverage(const std::string& uma_name,
+                       int report_interval_ms,
+                       int max_value);
+    ~PeriodicUmaAverage() override;
+    void RegisterSample(int value);
+
+   protected:
+    int Metric() const override;
+    void Reset() override;
+
+   private:
+    double sum_ = 0.0;
+    int counter_ = 0;
+  };
+
   // Calculates numerator / denominator, and returns the value in Q14.
   static uint16_t CalculateQ14Ratio(uint32_t numerator, uint32_t denominator);
 
@@ -110,6 +164,8 @@ class StatisticsCalculator {
   int len_waiting_times_;
   int next_waiting_time_index_;
   uint32_t secondary_decoded_samples_;
+  PeriodicUmaCount delayed_packet_outage_counter_;
+  PeriodicUmaAverage excess_buffer_delay_;
 
   DISALLOW_COPY_AND_ASSIGN(StatisticsCalculator);
 };
