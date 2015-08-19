@@ -53,8 +53,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
                                            0,
                                            username(),
                                            password(),
-                                           std::string(),
-                                           false));
+                                           std::string()));
       AddPort(port_.get());
     }
     ++port_config_count_;

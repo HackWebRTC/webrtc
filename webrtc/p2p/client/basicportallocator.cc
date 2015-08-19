@@ -304,13 +304,6 @@ void BasicPortAllocatorSession::DoAllocate() {
   bool done_signal_needed = false;
   std::vector<rtc::Network*> networks;
 
-  // If the network permission state is BLOCKED, we just act as if the flag has
-  // been passed in.
-  if (allocator_->network_manager()->enumeration_permission() ==
-      rtc::NetworkManager::kEnumerationDisallowed) {
-    set_flags(flags() | PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
-  }
-
   // If the adapter enumeration is disabled, we'll just bind to any address
   // instead of specific NIC. This is to ensure the same routing for http
   // traffic by OS is also used here to avoid any local or public IP leakage
@@ -559,13 +552,6 @@ bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
       // candidate (i.e. when the host candidate is a public IP), filtering to
       // only server-reflexive candidates won't work right when the host
       // candidates have public IPs.
-      return true;
-    }
-
-    // If it's loopback address, we should allow it as it's for demo page
-    // connectivity when no TURN/STUN specified.
-    if (c.address().IsLoopbackIP()) {
-      ASSERT((flags() & PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE) != 0);
       return true;
     }
 
@@ -839,19 +825,20 @@ void AllocationSequence::CreateUDPPorts() {
   // TODO(mallinath) - Remove UDPPort creating socket after shared socket
   // is enabled completely.
   UDPPort* port = NULL;
-  bool emit_localhost_for_anyaddress =
-    IsFlagSet(PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) && udp_socket_) {
-    port = UDPPort::Create(
-        session_->network_thread(), session_->socket_factory(), network_,
-        udp_socket_.get(), session_->username(), session_->password(),
-        session_->allocator()->origin(), emit_localhost_for_anyaddress);
+    port = UDPPort::Create(session_->network_thread(),
+                           session_->socket_factory(), network_,
+                           udp_socket_.get(),
+                           session_->username(), session_->password(),
+                           session_->allocator()->origin());
   } else {
-    port = UDPPort::Create(
-        session_->network_thread(), session_->socket_factory(), network_, ip_,
-        session_->allocator()->min_port(), session_->allocator()->max_port(),
-        session_->username(), session_->password(),
-        session_->allocator()->origin(), emit_localhost_for_anyaddress);
+    port = UDPPort::Create(session_->network_thread(),
+                           session_->socket_factory(),
+                           network_, ip_,
+                           session_->allocator()->min_port(),
+                           session_->allocator()->max_port(),
+                           session_->username(), session_->password(),
+                           session_->allocator()->origin());
   }
 
   if (port) {
