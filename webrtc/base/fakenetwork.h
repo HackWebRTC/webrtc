@@ -78,6 +78,8 @@ class FakeNetworkManager : public NetworkManagerBase,
     DoUpdateNetworks();
   }
 
+  using NetworkManagerBase::set_enumeration_permission;
+
  private:
   void DoUpdateNetworks() {
     if (!started_)
