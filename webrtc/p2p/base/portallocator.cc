@@ -21,11 +21,8 @@ PortAllocatorSession::PortAllocatorSession(const std::string& content_name,
       component_(component),
       flags_(flags),
       generation_(0),
-      // If PORTALLOCATOR_ENABLE_SHARED_UFRAG flag is not enabled, ignore the
-      // incoming ufrag and pwd, which will cause each Port to generate one
-      // by itself.
-      username_(flags_ & PORTALLOCATOR_ENABLE_SHARED_UFRAG ? ice_ufrag : ""),
-      password_(flags_ & PORTALLOCATOR_ENABLE_SHARED_UFRAG ? ice_pwd : "") {
+      username_(ice_ufrag),
+      password_(ice_pwd) {
 }
 
 PortAllocatorSession* PortAllocator::CreateSession(

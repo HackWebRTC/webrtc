@@ -55,7 +55,6 @@ using cricket::ICE_CANDIDATE_COMPONENT_RTP;
 using cricket::kFecSsrcGroupSemantics;
 using cricket::LOCAL_PORT_TYPE;
 using cricket::NS_JINGLE_DRAFT_SCTP;
-using cricket::NS_JINGLE_ICE_UDP;
 using cricket::NS_JINGLE_RTP;
 using cricket::RtpHeaderExtension;
 using cricket::RELAY_PORT_TYPE;
@@ -580,13 +579,11 @@ class WebRtcSdpTest : public testing::Test {
     // TransportInfo
     EXPECT_TRUE(desc_.AddTransportInfo(
         TransportInfo(kAudioContentName,
-                      TransportDescription(NS_JINGLE_ICE_UDP,
-                                           kCandidateUfragVoice,
+                      TransportDescription(kCandidateUfragVoice,
                                            kCandidatePwdVoice))));
     EXPECT_TRUE(desc_.AddTransportInfo(
         TransportInfo(kVideoContentName,
-                      TransportDescription(NS_JINGLE_ICE_UDP,
-                                           kCandidateUfragVideo,
+                      TransportDescription(kCandidateUfragVideo,
                                            kCandidatePwdVideo))));
 
     // v4 host
@@ -863,8 +860,6 @@ class WebRtcSdpTest : public testing::Test {
       const cricket::TransportInfo transport1 = transports1.at(i);
       const cricket::TransportInfo transport2 = transports2.at(i);
       EXPECT_EQ(transport1.content_name, transport2.content_name);
-      EXPECT_EQ(transport1.description.transport_type,
-                transport2.description.transport_type);
       EXPECT_EQ(transport1.description.ice_ufrag,
                 transport2.description.ice_ufrag);
       EXPECT_EQ(transport1.description.ice_pwd,
@@ -945,8 +940,7 @@ class WebRtcSdpTest : public testing::Test {
       ASSERT(false);
     }
     TransportInfo transport_info(
-        content_name, TransportDescription(NS_JINGLE_ICE_UDP,
-                                           ufrag, pwd));
+        content_name, TransportDescription(ufrag, pwd));
     SessionDescription* desc =
         const_cast<SessionDescription*>(jdesc->description());
     desc->RemoveTransportInfoByName(content_name);
@@ -983,8 +977,7 @@ class WebRtcSdpTest : public testing::Test {
                                           sizeof(kIdentityDigest));
     EXPECT_TRUE(desc_.AddTransportInfo(
         TransportInfo(kAudioContentName,
-                      TransportDescription(NS_JINGLE_ICE_UDP,
-                                           std::vector<std::string>(),
+                      TransportDescription(std::vector<std::string>(),
                                            kCandidateUfragVoice,
                                            kCandidatePwdVoice,
                                            cricket::ICEMODE_FULL,
@@ -992,8 +985,7 @@ class WebRtcSdpTest : public testing::Test {
                                            &fingerprint, Candidates()))));
     EXPECT_TRUE(desc_.AddTransportInfo(
         TransportInfo(kVideoContentName,
-                      TransportDescription(NS_JINGLE_ICE_UDP,
-                                           std::vector<std::string>(),
+                      TransportDescription(std::vector<std::string>(),
                                            kCandidateUfragVideo,
                                            kCandidatePwdVideo,
                                            cricket::ICEMODE_FULL,
@@ -1073,8 +1065,7 @@ class WebRtcSdpTest : public testing::Test {
     desc_.AddContent(kDataContentName, NS_JINGLE_DRAFT_SCTP, data.release());
     EXPECT_TRUE(desc_.AddTransportInfo(
            TransportInfo(kDataContentName,
-                         TransportDescription(NS_JINGLE_ICE_UDP,
-                                              kCandidateUfragData,
+                         TransportDescription(kCandidateUfragData,
                                               kCandidatePwdData))));
   }
 
@@ -1097,8 +1088,7 @@ class WebRtcSdpTest : public testing::Test {
     desc_.AddContent(kDataContentName, NS_JINGLE_RTP, data.release());
     EXPECT_TRUE(desc_.AddTransportInfo(
            TransportInfo(kDataContentName,
-                         TransportDescription(NS_JINGLE_ICE_UDP,
-                                              kCandidateUfragData,
+                         TransportDescription(kCandidateUfragData,
                                               kCandidatePwdData))));
   }
 

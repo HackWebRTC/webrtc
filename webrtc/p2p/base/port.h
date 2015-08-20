@@ -127,16 +127,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
   virtual const std::string& Type() const { return type_; }
   virtual rtc::Network* Network() const { return network_; }
 
-  // This method will set the flag which enables standard ICE/STUN procedures
-  // in STUN connectivity checks. Currently this method does
-  // 1. Add / Verify MI attribute in STUN binding requests.
-  // 2. Username attribute in STUN binding request will be RFRAF:LFRAG,
-  // as opposed to RFRAGLFRAG.
-  virtual void SetIceProtocolType(IceProtocolType protocol) {
-    ice_protocol_ = protocol;
-  }
-  virtual IceProtocolType IceProtocol() const { return ice_protocol_; }
-
   // Methods to set/get ICE role and tiebreaker values.
   IceRole GetIceRole() const { return ice_role_; }
   void SetIceRole(IceRole role) { ice_role_ = role; }
@@ -273,8 +263,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // stun username attribute if present.
   bool ParseStunUsername(const StunMessage* stun_msg,
                          std::string* local_username,
-                         std::string* remote_username,
-                         IceProtocolType* remote_protocol_type) const;
+                         std::string* remote_username) const;
   void CreateStunUsername(const std::string& remote_username,
                           std::string* stun_username_attr_str) const;
 
@@ -288,15 +277,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // Called when the Connection discovers a local peer reflexive candidate.
   // Returns the index of the new local candidate.
   size_t AddPrflxCandidate(const Candidate& local);
-
-  // Returns if RFC 5245 ICE protocol is used.
-  bool IsStandardIce() const;
-
-  // Returns if Google ICE protocol is used.
-  bool IsGoogleIce() const;
-
-  // Returns if Hybrid ICE protocol is used.
-  bool IsHybridIce() const;
 
   void set_candidate_filter(uint32 candidate_filter) {
     candidate_filter_ = candidate_filter;
@@ -384,7 +364,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
   AddressMap connections_;
   int timeout_delay_;
   bool enable_port_packets_;
-  IceProtocolType ice_protocol_;
   IceRole ice_role_;
   uint64 tiebreaker_;
   bool shared_socket_;
