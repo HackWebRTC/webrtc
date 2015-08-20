@@ -488,6 +488,9 @@ class Connection : public rtc::MessageHandler,
   bool use_candidate_attr() const { return use_candidate_attr_; }
   void set_use_candidate_attr(bool enable);
 
+  bool nominated() const { return nominated_; }
+  void set_nominated(bool nominated) { nominated_ = nominated; }
+
   void set_remote_ice_mode(IceMode mode) {
     remote_ice_mode_ = mode;
   }
@@ -519,10 +522,9 @@ class Connection : public rtc::MessageHandler,
   bool reported() const { return reported_; }
   void set_reported(bool reported) { reported_ = reported;}
 
-  // This flag will be set if this connection is the chosen one for media
-  // transmission. This connection will send STUN ping with USE-CANDIDATE
-  // attribute.
-  sigslot::signal1<Connection*> SignalUseCandidate;
+  // This signal will be fired if this connection is nominated by the
+  // controlling side.
+  sigslot::signal1<Connection*> SignalNominated;
 
   // Invoked when Connection receives STUN error response with 487 code.
   void HandleRoleConflictFromPeer();
@@ -581,10 +583,13 @@ class Connection : public rtc::MessageHandler,
   bool connected_;
   bool pruned_;
   // By default |use_candidate_attr_| flag will be true,
-  // as we will be using agrressive nomination.
+  // as we will be using aggressive nomination.
   // But when peer is ice-lite, this flag "must" be initialized to false and
   // turn on when connection becomes "best connection".
   bool use_candidate_attr_;
+  // Whether this connection has been nominated by the controlling side via
+  // the use_candidate attribute.
+  bool nominated_;
   IceMode remote_ice_mode_;
   StunRequestManager requests_;
   uint32 rtt_;

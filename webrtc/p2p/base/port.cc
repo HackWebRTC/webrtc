@@ -787,6 +787,7 @@ Connection::Connection(Port* port,
       connected_(true),
       pruned_(false),
       use_candidate_attr_(false),
+      nominated_(false),
       remote_ice_mode_(ICEMODE_FULL),
       requests_(port->thread()),
       rtt_(DEFAULT_RTT),
@@ -954,8 +955,10 @@ void Connection::OnReadPacket(
           if (port_->GetIceRole() == ICEROLE_CONTROLLED) {
             const StunByteStringAttribute* use_candidate_attr =
                 msg->GetByteString(STUN_ATTR_USE_CANDIDATE);
-            if (use_candidate_attr)
-              SignalUseCandidate(this);
+            if (use_candidate_attr) {
+              set_nominated(true);
+              SignalNominated(this);
+            }
           }
         } else {
           // The packet had the right local username, but the remote username

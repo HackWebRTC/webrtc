@@ -211,13 +211,16 @@ class P2PTransportChannel : public TransportChannelImpl,
   void OnReadyToSend(Connection* connection);
   void OnConnectionDestroyed(Connection *connection);
 
-  void OnUseCandidate(Connection* conn);
+  void OnNominated(Connection* conn);
 
   virtual void OnMessage(rtc::Message *pmsg);
   void OnSort();
   void OnPing();
 
   void OnCheckReceiving();
+
+  void PruneConnections();
+  Connection* best_nominated_connection() const;
 
   P2PTransport* transport_;
   PortAllocator *allocator_;

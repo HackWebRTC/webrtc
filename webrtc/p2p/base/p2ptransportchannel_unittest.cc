@@ -1764,3 +1764,181 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   EXPECT_TRUE_WAIT(ch.receiving(), 1000);
   EXPECT_TRUE_WAIT(!ch.receiving(), 1000);
 }
+
+// The controlled side will select a connection as the "best connection" based
+// on priority until the controlling side nominates a connection, at which
+// point the controlled side will select that connection as the
+// "best connection".
+TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
+  ch.Connect();
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(conn1, ch.best_connection());
+
+  // When a higher priority candidate comes in, the new connection is chosen
+  // as the best connection.
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 10));
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(conn2, ch.best_connection());
+
+  // If a stun request with use-candidate attribute arrives, the receiving
+  // connection will be set as the best connection, even though
+  // its priority is lower.
+  ch.OnCandidate(CreateCandidate("3.3.3.3", 3, 1));
+  cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
+  ASSERT_TRUE(conn3 != nullptr);
+  // Because it has a lower priority, the best connection is still conn2.
+  EXPECT_EQ(conn2, ch.best_connection());
+  conn3->ReceivedPingResponse();  // Become writable.
+  // But if it is nominated via use_candidate, it is chosen as the best
+  // connection.
+  conn3->set_nominated(true);
+  conn3->SignalNominated(conn3);
+  EXPECT_EQ(conn3, ch.best_connection());
+
+  // Even if another higher priority candidate arrives,
+  // it will not be set as the best connection because the best connection
+  // is nominated by the controlling side.
+  ch.OnCandidate(CreateCandidate("4.4.4.4", 4, 100));
+  cricket::Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
+  ASSERT_TRUE(conn4 != nullptr);
+  EXPECT_EQ(conn3, ch.best_connection());
+  // But if it is nominated via use_candidate and writable, it will be set as
+  // the best connection.
+  conn4->set_nominated(true);
+  conn4->SignalNominated(conn4);
+  // Not switched yet because conn4 is not writable.
+  EXPECT_EQ(conn3, ch.best_connection());
+  // The best connection switches after conn4 becomes writable.
+  conn4->ReceivedPingResponse();
+  EXPECT_EQ(conn4, ch.best_connection());
+}
+
+// The controlled side will select a connection as the "best connection" based
+// on requests from an unknown address before the controlling side nominates
+// a connection, and will nominate a connection from an unknown address if the
+// request contains the use_candidate attribute.
+TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
+  ch.Connect();
+  // A minimal STUN message with prflx priority.
+  cricket::IceMessage request;
+  request.SetType(cricket::STUN_BINDING_REQUEST);
+  request.AddAttribute(new cricket::StunByteStringAttribute(
+      cricket::STUN_ATTR_USERNAME, kIceUfrag[1]));
+  uint32 prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
+  request.AddAttribute(new cricket::StunUInt32Attribute(
+      cricket::STUN_ATTR_PRIORITY, prflx_priority));
+  cricket::Port* port = GetPort(&ch);
+  port->SignalUnknownAddress(port, rtc::SocketAddress("1.1.1.1", 1),
+                             cricket::PROTO_UDP, &request, kIceUfrag[1], false);
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(conn1, ch.best_connection());
+  conn1->ReceivedPingResponse();
+  EXPECT_EQ(conn1, ch.best_connection());
+
+  // Another connection is nominated via use_candidate.
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn2 != nullptr);
+  // Because it has a lower priority, the best connection is still conn1.
+  EXPECT_EQ(conn1, ch.best_connection());
+  // When it is nominated via use_candidate and writable, it is chosen as the
+  // best connection.
+  conn2->ReceivedPingResponse();  // Become writable.
+  conn2->set_nominated(true);
+  conn2->SignalNominated(conn2);
+  EXPECT_EQ(conn2, ch.best_connection());
+
+  // Another request with unknown address, it will not be set as the best
+  // connection because the best connection was nominated by the controlling
+  // side.
+  port->SignalUnknownAddress(port, rtc::SocketAddress("3.3.3.3", 3),
+                             cricket::PROTO_UDP, &request, kIceUfrag[1], false);
+  cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
+  ASSERT_TRUE(conn3 != nullptr);
+  conn3->ReceivedPingResponse();  // Become writable.
+  EXPECT_EQ(conn2, ch.best_connection());
+
+  // However if the request contains use_candidate attribute, it will be
+  // selected as the best connection.
+  request.AddAttribute(
+      new cricket::StunByteStringAttribute(cricket::STUN_ATTR_USE_CANDIDATE));
+  port->SignalUnknownAddress(port, rtc::SocketAddress("4.4.4.4", 4),
+                             cricket::PROTO_UDP, &request, kIceUfrag[1], false);
+  cricket::Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
+  ASSERT_TRUE(conn4 != nullptr);
+  // conn4 is not the best connection yet because it is not writable.
+  EXPECT_EQ(conn2, ch.best_connection());
+  conn4->ReceivedPingResponse();  // Become writable.
+  EXPECT_EQ(conn4, ch.best_connection());
+}
+
+// The controlled side will select a connection as the "best connection"
+// based on media received until the controlling side nominates a connection,
+// at which point the controlled side will select that connection as
+// the "best connection".
+TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
+  ch.Connect();
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 10));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(conn1, ch.best_connection());
+
+  // If a data packet is received on conn2, the best connection should
+  // switch to conn2 because the controlled side must mirror the media path
+  // chosen by the controlling side.
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn2 != nullptr);
+  conn2->ReceivedPing();  // Become readable.
+  // Do not switch because it is not writable.
+  conn2->OnReadPacket("ABC", 3, rtc::CreatePacketTime(0));
+  EXPECT_EQ(conn1, ch.best_connection());
+
+  conn2->ReceivedPingResponse();  // Become writable.
+  // Switch because it is writable.
+  conn2->OnReadPacket("DEF", 3, rtc::CreatePacketTime(0));
+  EXPECT_EQ(conn2, ch.best_connection());
+
+  // Now another STUN message with an unknown address and use_candidate will
+  // nominate the best connection.
+  cricket::IceMessage request;
+  request.SetType(cricket::STUN_BINDING_REQUEST);
+  request.AddAttribute(new cricket::StunByteStringAttribute(
+      cricket::STUN_ATTR_USERNAME, kIceUfrag[1]));
+  uint32 prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
+  request.AddAttribute(new cricket::StunUInt32Attribute(
+      cricket::STUN_ATTR_PRIORITY, prflx_priority));
+  request.AddAttribute(
+      new cricket::StunByteStringAttribute(cricket::STUN_ATTR_USE_CANDIDATE));
+  cricket::Port* port = GetPort(&ch);
+  port->SignalUnknownAddress(port, rtc::SocketAddress("3.3.3.3", 3),
+                             cricket::PROTO_UDP, &request, kIceUfrag[1], false);
+  cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
+  ASSERT_TRUE(conn3 != nullptr);
+  EXPECT_EQ(conn2, ch.best_connection());  // Not writable yet.
+  conn3->ReceivedPingResponse();           // Become writable.
+  EXPECT_EQ(conn3, ch.best_connection());
+
+  // Now another data packet will not switch the best connection because the
+  // best connection was nominated by the controlling side.
+  conn2->ReceivedPing();
+  conn2->ReceivedPingResponse();
+  conn2->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
+  EXPECT_EQ(conn3, ch.best_connection());
+}
