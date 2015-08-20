@@ -16,12 +16,13 @@
 // /home/build/google3/third_party/gtest/scripts/pump.py bind.h.pump
 
 // Bind() is an overloaded function that converts method calls into function
-// objects (aka functors). It captures any arguments to the method by value
-// when Bind is called, producing a stateful, nullary function object. Care
-// should be taken about the lifetime of objects captured by Bind(); the
-// returned functor knows nothing about the lifetime of the method's object or
-// any arguments passed by pointer, and calling the functor with a destroyed
-// object will surely do bad things.
+// objects (aka functors). The method object is captured as a scoped_refptr<> if
+// possible, and as a raw pointer otherwise. Any arguments to the method are
+// captured by value. The return value of Bind is a stateful, nullary function
+// object. Care should be taken about the lifetime of objects captured by
+// Bind(); the returned functor knows nothing about the lifetime of a non
+// ref-counted method object or any arguments passed by pointer, and calling the
+// functor with a destroyed object will surely do bad things.
 //
 // Example usage:
 //   struct Foo {
@@ -38,9 +39,32 @@
 //     cout << rtc::Bind(&Foo::Test3, &foo, 3)() << endl;
 //     cout << rtc::Bind(&Foo::Test4, &foo, 7, 8.5f)() << endl;
 //   }
+//
+// Example usage of ref counted objects:
+//   struct Bar {
+//     int AddRef();
+//     int Release();
+//
+//     void Test() {}
+//     void BindThis() {
+//       // The functor passed to AsyncInvoke() will keep this object alive.
+//       invoker.AsyncInvoke(rtc::Bind(&Bar::Test, this));
+//     }
+//   };
+//
+//   int main() {
+//     rtc::scoped_refptr<Bar> bar = new rtc::RefCountedObject<Bar>();
+//     auto functor = rtc::Bind(&Bar::Test, bar);
+//     bar = nullptr;
+//     // The functor stores an internal scoped_refptr<Bar>, so this is safe.
+//     functor();
+//   }
+//
 
 #ifndef WEBRTC_BASE_BIND_H_
 #define WEBRTC_BASE_BIND_H_
+
+#include "webrtc/base/scoped_ref_ptr.h"
 
 #define NONAME
 
@@ -53,6 +77,57 @@ namespace detail {
 // references stripped. This trick allows the compiler to dictate the Bind
 // parameter types rather than deduce them.
 template <class T> struct identity { typedef T type; };
+
+// IsRefCounted<T>::value will be true for types that can be used in
+// rtc::scoped_refptr<T>, i.e. types that implements nullary functions AddRef()
+// and Release(), regardless of their return types. AddRef() and Release() can
+// be defined in T or any superclass of T.
+template <typename T>
+class IsRefCounted {
+  // This is a complex implementation detail done with SFINAE.
+
+  // Define types such that sizeof(Yes) != sizeof(No).
+  struct Yes { char dummy[1]; };
+  struct No { char dummy[2]; };
+  // Define two overloaded template functions with return types of different
+  // size. This way, we can use sizeof() on the return type to determine which
+  // function the compiler would have chosen. One function will be preferred
+  // over the other if it is possible to create it without compiler errors,
+  // otherwise the compiler will simply remove it, and default to the less
+  // preferred function.
+  template <typename R>
+  static Yes test(R* r, decltype(r->AddRef(), r->Release(), 42));
+  template <typename C> static No test(...);
+
+public:
+  // Trick the compiler to tell if it's possible to call AddRef() and Release().
+  static const bool value = sizeof(test<T>((T*)nullptr, 42)) == sizeof(Yes);
+};
+
+// TernaryTypeOperator is a helper class to select a type based on a static bool
+// value.
+template <bool condition, typename IfTrueT, typename IfFalseT>
+struct TernaryTypeOperator {};
+
+template <typename IfTrueT, typename IfFalseT>
+struct TernaryTypeOperator<true, IfTrueT, IfFalseT> {
+  typedef IfTrueT type;
+};
+
+template <typename IfTrueT, typename IfFalseT>
+struct TernaryTypeOperator<false, IfTrueT, IfFalseT> {
+  typedef IfFalseT type;
+};
+
+// PointerType<T>::type will be scoped_refptr<T> for ref counted types, and T*
+// otherwise.
+template <class T>
+struct PointerType {
+  typedef typename TernaryTypeOperator<IsRefCounted<T>::value,
+                                       scoped_refptr<T>,
+                                       T*>::type type;
+};
+
 }  // namespace detail
 
 template <class ObjectT, class MethodT, class R>
@@ -64,7 +139,7 @@ class MethodFunctor0 {
     return (object_->*method_)(); }
  private:
   MethodT method_;
-  ObjectT* object_;
+  typename detail::PointerType<ObjectT>::type object_;
 };
 
 template <class FunctorT, class R>
@@ -99,6 +174,16 @@ Bind(FP_T(method), const ObjectT* object) {
 }
 
 #undef FP_T
+#define FP_T(x) R (ObjectT::*x)()
+
+template <class ObjectT, class R>
+MethodFunctor0<ObjectT, FP_T(NONAME), R>
+Bind(FP_T(method), const scoped_refptr<ObjectT>& object) {
+  return MethodFunctor0<ObjectT, FP_T(NONAME), R>(
+      method, object.get());
+}
+
+#undef FP_T
 #define FP_T(x) R (*x)()
 
 template <class R>
@@ -122,7 +207,7 @@ class MethodFunctor1 {
     return (object_->*method_)(p1_); }
  private:
   MethodT method_;
-  ObjectT* object_;
+  typename detail::PointerType<ObjectT>::type object_;
   P1 p1_;
 };
 
@@ -165,6 +250,18 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1)
+
+template <class ObjectT, class R,
+          class P1>
+MethodFunctor1<ObjectT, FP_T(NONAME), R, P1>
+Bind(FP_T(method), const scoped_refptr<ObjectT>& object,
+     typename detail::identity<P1>::type p1) {
+  return MethodFunctor1<ObjectT, FP_T(NONAME), R, P1>(
+      method, object.get(), p1);
+}
+
+#undef FP_T
 #define FP_T(x) R (*x)(P1)
 
 template <class R,
@@ -193,7 +290,7 @@ class MethodFunctor2 {
     return (object_->*method_)(p1_, p2_); }
  private:
   MethodT method_;
-  ObjectT* object_;
+  typename detail::PointerType<ObjectT>::type object_;
   P1 p1_;
   P2 p2_;
 };
@@ -244,6 +341,20 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2)
+
+template <class ObjectT, class R,
+          class P1,
+          class P2>
+MethodFunctor2<ObjectT, FP_T(NONAME), R, P1, P2>
+Bind(FP_T(method), const scoped_refptr<ObjectT>& object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2) {
+  return MethodFunctor2<ObjectT, FP_T(NONAME), R, P1, P2>(
+      method, object.get(), p1, p2);
+}
+
+#undef FP_T
 #define FP_T(x) R (*x)(P1, P2)
 
 template <class R,
@@ -277,7 +388,7 @@ class MethodFunctor3 {
     return (object_->*method_)(p1_, p2_, p3_); }
  private:
   MethodT method_;
-  ObjectT* object_;
+  typename detail::PointerType<ObjectT>::type object_;
   P1 p1_;
   P2 p2_;
   P3 p3_;
@@ -336,6 +447,22 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3)
+
+template <class ObjectT, class R,
+          class P1,
+          class P2,
+          class P3>
+MethodFunctor3<ObjectT, FP_T(NONAME), R, P1, P2, P3>
+Bind(FP_T(method), const scoped_refptr<ObjectT>& object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3) {
+  return MethodFunctor3<ObjectT, FP_T(NONAME), R, P1, P2, P3>(
+      method, object.get(), p1, p2, p3);
+}
+
+#undef FP_T
 #define FP_T(x) R (*x)(P1, P2, P3)
 
 template <class R,
@@ -374,7 +501,7 @@ class MethodFunctor4 {
     return (object_->*method_)(p1_, p2_, p3_, p4_); }
  private:
   MethodT method_;
-  ObjectT* object_;
+  typename detail::PointerType<ObjectT>::type object_;
   P1 p1_;
   P2 p2_;
   P3 p3_;
@@ -441,6 +568,24 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4)
+
+template <class ObjectT, class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4>
+MethodFunctor4<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4>
+Bind(FP_T(method), const scoped_refptr<ObjectT>& object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4) {
+  return MethodFunctor4<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4>(
+      method, object.get(), p1, p2, p3, p4);
+}
+
+#undef FP_T
 #define FP_T(x) R (*x)(P1, P2, P3, P4)
 
 template <class R,
@@ -484,7 +629,7 @@ class MethodFunctor5 {
     return (object_->*method_)(p1_, p2_, p3_, p4_, p5_); }
  private:
   MethodT method_;
-  ObjectT* object_;
+  typename detail::PointerType<ObjectT>::type object_;
   P1 p1_;
   P2 p2_;
   P3 p3_;
@@ -559,6 +704,26 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5)
+
+template <class ObjectT, class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5>
+MethodFunctor5<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5>
+Bind(FP_T(method), const scoped_refptr<ObjectT>& object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5) {
+  return MethodFunctor5<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5>(
+      method, object.get(), p1, p2, p3, p4, p5);
+}
+
+#undef FP_T
 #define FP_T(x) R (*x)(P1, P2, P3, P4, P5)
 
 template <class R,
@@ -607,7 +772,7 @@ class MethodFunctor6 {
     return (object_->*method_)(p1_, p2_, p3_, p4_, p5_, p6_); }
  private:
   MethodT method_;
-  ObjectT* object_;
+  typename detail::PointerType<ObjectT>::type object_;
   P1 p1_;
   P2 p2_;
   P3 p3_;
@@ -687,6 +852,28 @@ Bind(FP_T(method), const ObjectT* object,
      typename detail::identity<P6>::type p6) {
   return MethodFunctor6<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>(
       method, object, p1, p2, p3, p4, p5, p6);
+}
+
+#undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6)
+
+template <class ObjectT, class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6>
+MethodFunctor6<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>
+Bind(FP_T(method), const scoped_refptr<ObjectT>& object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5,
+     typename detail::identity<P6>::type p6) {
+  return MethodFunctor6<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>(
+      method, object.get(), p1, p2, p3, p4, p5, p6);
 }
 
 #undef FP_T
