@@ -25,12 +25,9 @@ const int64_t kCallProcessImmediately = -1;
 
 int64_t GetNextCallbackTime(Module* module, int64_t time_now) {
   int64_t interval = module->TimeUntilNextProcess();
-  // Currently some implementations erroneously return error codes from
-  // TimeUntilNextProcess(). So, as is, we correct that and log an error.
   if (interval < 0) {
-    LOG(LS_ERROR) << "TimeUntilNextProcess returned an invalid value "
-                  << interval;
-    interval = 0;
+    // Falling behind, we should call the callback now.
+    return time_now;
   }
   return time_now + interval;
 }
