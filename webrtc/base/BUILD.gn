@@ -272,6 +272,8 @@ static_library("rtc_base") {
     "ratelimiter.h",
     "ratetracker.cc",
     "ratetracker.h",
+    "rtccertificate.cc",
+    "rtccertificate.h",
     "scoped_autorelease_pool.h",
     "scoped_autorelease_pool.mm",
     "sha1.cc",

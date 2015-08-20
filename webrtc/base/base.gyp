@@ -248,6 +248,8 @@
         'refcount.h',
         'referencecountedsingletonfactory.h',
         'rollingaccumulator.h',
+        'rtccertificate.cc',
+        'rtccertificate.h',
         'schanneladapter.cc',
         'schanneladapter.h',
         'scoped_autorelease_pool.h',
