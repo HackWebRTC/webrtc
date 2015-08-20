@@ -33,9 +33,9 @@ import android.widget.Toast;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
+import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
-import org.webrtc.VideoRendererGui.ScalingType;
 
 /**
  * Activity for peer connection call setup, call waiting

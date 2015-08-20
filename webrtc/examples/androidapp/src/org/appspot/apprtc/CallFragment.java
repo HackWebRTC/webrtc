@@ -19,7 +19,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import org.webrtc.VideoRendererGui.ScalingType;
+import org.webrtc.RendererCommon.ScalingType;
 
 /**
  * Fragment for call control.
