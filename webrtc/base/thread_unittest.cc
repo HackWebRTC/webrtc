@@ -518,6 +518,182 @@ TEST_F(AsyncInvokeTest, FlushWithIds) {
   EXPECT_TRUE(flag2);
 }
 
+class GuardedAsyncInvokeTest : public testing::Test {
+ public:
+  void IntCallback(int value) {
+    EXPECT_EQ(expected_thread_, Thread::Current());
+    int_value_ = value;
+  }
+  void AsyncInvokeIntCallback(GuardedAsyncInvoker* invoker, Thread* thread) {
+    expected_thread_ = thread;
+    invoker->AsyncInvoke(FunctorC(), &GuardedAsyncInvokeTest::IntCallback,
+                         static_cast<GuardedAsyncInvokeTest*>(this));
+    invoke_started_.Set();
+  }
+  void SetExpectedThreadForIntCallback(Thread* thread) {
+    expected_thread_ = thread;
+  }
+
+ protected:
+  const static int kWaitTimeout = 1000;
+  GuardedAsyncInvokeTest()
+      : int_value_(0),
+        invoke_started_(true, false),
+        expected_thread_(nullptr) {}
+
+  int int_value_;
+  Event invoke_started_;
+  Thread* expected_thread_;
+};
+
+// Functor for creating an invoker.
+struct CreateInvoker {
+  CreateInvoker(scoped_ptr<GuardedAsyncInvoker>* invoker) : invoker_(invoker) {}
+  void operator()() { invoker_->reset(new GuardedAsyncInvoker()); }
+  scoped_ptr<GuardedAsyncInvoker>* invoker_;
+};
+
+// Test that we can call AsyncInvoke<void>() after the thread died.
+TEST_F(GuardedAsyncInvokeTest, KillThreadFireAndForget) {
+  // Create and start the thread.
+  scoped_ptr<Thread> thread(new Thread());
+  thread->Start();
+  scoped_ptr<GuardedAsyncInvoker> invoker;
+  // Create the invoker on |thread|.
+  thread->Invoke<void>(CreateInvoker(&invoker));
+  // Kill |thread|.
+  thread = nullptr;
+  // Try calling functor.
+  bool called = false;
+  EXPECT_FALSE(invoker->AsyncInvoke<void>(FunctorB(&called)));
+  // With thread gone, nothing should happen.
+  WAIT(called, kWaitTimeout);
+  EXPECT_FALSE(called);
+}
+
+// Test that we can call AsyncInvoke with callback after the thread died.
+TEST_F(GuardedAsyncInvokeTest, KillThreadWithCallback) {
+  // Create and start the thread.
+  scoped_ptr<Thread> thread(new Thread());
+  thread->Start();
+  scoped_ptr<GuardedAsyncInvoker> invoker;
+  // Create the invoker on |thread|.
+  thread->Invoke<void>(CreateInvoker(&invoker));
+  // Kill |thread|.
+  thread = nullptr;
+  // Try calling functor.
+  EXPECT_FALSE(
+      invoker->AsyncInvoke(FunctorC(), &GuardedAsyncInvokeTest::IntCallback,
+                           static_cast<GuardedAsyncInvokeTest*>(this)));
+  // With thread gone, callback should be cancelled.
+  Thread::Current()->ProcessMessages(kWaitTimeout);
+  EXPECT_EQ(0, int_value_);
+}
+
+// The remaining tests check that GuardedAsyncInvoker behaves as AsyncInvoker
+// when Thread is still alive.
+TEST_F(GuardedAsyncInvokeTest, FireAndForget) {
+  GuardedAsyncInvoker invoker;
+  // Try calling functor.
+  bool called = false;
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&called)));
+  EXPECT_TRUE_WAIT(called, kWaitTimeout);
+}
+
+TEST_F(GuardedAsyncInvokeTest, WithCallback) {
+  GuardedAsyncInvoker invoker;
+  // Try calling functor.
+  SetExpectedThreadForIntCallback(Thread::Current());
+  EXPECT_TRUE(invoker.AsyncInvoke(FunctorA(),
+                                  &GuardedAsyncInvokeTest::IntCallback,
+                                  static_cast<GuardedAsyncInvokeTest*>(this)));
+  EXPECT_EQ_WAIT(42, int_value_, kWaitTimeout);
+}
+
+TEST_F(GuardedAsyncInvokeTest, CancelInvoker) {
+  // Try destroying invoker during call.
+  {
+    GuardedAsyncInvoker invoker;
+    EXPECT_TRUE(
+        invoker.AsyncInvoke(FunctorC(), &GuardedAsyncInvokeTest::IntCallback,
+                            static_cast<GuardedAsyncInvokeTest*>(this)));
+  }
+  // With invoker gone, callback should be cancelled.
+  Thread::Current()->ProcessMessages(kWaitTimeout);
+  EXPECT_EQ(0, int_value_);
+}
+
+TEST_F(GuardedAsyncInvokeTest, CancelCallingThread) {
+  GuardedAsyncInvoker invoker;
+  // Try destroying calling thread during call.
+  {
+    Thread thread;
+    thread.Start();
+    // Try calling functor.
+    thread.Invoke<void>(Bind(&GuardedAsyncInvokeTest::AsyncInvokeIntCallback,
+                             static_cast<GuardedAsyncInvokeTest*>(this),
+                             &invoker, Thread::Current()));
+    // Wait for the call to begin.
+    ASSERT_TRUE(invoke_started_.Wait(kWaitTimeout));
+  }
+  // Calling thread is gone. Return message shouldn't happen.
+  Thread::Current()->ProcessMessages(kWaitTimeout);
+  EXPECT_EQ(0, int_value_);
+}
+
+TEST_F(GuardedAsyncInvokeTest, KillInvokerBeforeExecute) {
+  Thread thread;
+  thread.Start();
+  {
+    GuardedAsyncInvoker invoker;
+    // Try calling functor.
+    thread.Invoke<void>(Bind(&GuardedAsyncInvokeTest::AsyncInvokeIntCallback,
+                             static_cast<GuardedAsyncInvokeTest*>(this),
+                             &invoker, Thread::Current()));
+    // Wait for the call to begin.
+    ASSERT_TRUE(invoke_started_.Wait(kWaitTimeout));
+  }
+  // Invoker is destroyed. Function should not execute.
+  Thread::Current()->ProcessMessages(kWaitTimeout);
+  EXPECT_EQ(0, int_value_);
+}
+
+TEST_F(GuardedAsyncInvokeTest, Flush) {
+  GuardedAsyncInvoker invoker;
+  bool flag1 = false;
+  bool flag2 = false;
+  // Queue two async calls to the current thread.
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&flag1)));
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&flag2)));
+  // Because we haven't pumped messages, these should not have run yet.
+  EXPECT_FALSE(flag1);
+  EXPECT_FALSE(flag2);
+  // Force them to run now.
+  EXPECT_TRUE(invoker.Flush());
+  EXPECT_TRUE(flag1);
+  EXPECT_TRUE(flag2);
+}
+
+TEST_F(GuardedAsyncInvokeTest, FlushWithIds) {
+  GuardedAsyncInvoker invoker;
+  bool flag1 = false;
+  bool flag2 = false;
+  // Queue two async calls to the current thread, one with a message id.
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&flag1), 5));
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&flag2)));
+  // Because we haven't pumped messages, these should not have run yet.
+  EXPECT_FALSE(flag1);
+  EXPECT_FALSE(flag2);
+  // Execute pending calls with id == 5.
+  EXPECT_TRUE(invoker.Flush(5));
+  EXPECT_TRUE(flag1);
+  EXPECT_FALSE(flag2);
+  flag1 = false;
+  // Execute all pending calls. The id == 5 call should not execute again.
+  EXPECT_TRUE(invoker.Flush());
+  EXPECT_FALSE(flag1);
+  EXPECT_TRUE(flag2);
+}
 
 #if defined(WEBRTC_WIN)
 class ComThreadTest : public testing::Test, public MessageHandler {
