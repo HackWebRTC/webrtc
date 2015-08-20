@@ -36,6 +36,7 @@ using rtc::SocketAddress;
 using rtc::Thread;
 
 static const SocketAddress kClientAddr("11.11.11.11", 0);
+static const SocketAddress kLoopbackAddr("127.0.0.1", 0);
 static const SocketAddress kPrivateAddr("192.168.1.11", 0);
 static const SocketAddress kPrivateAddr2("192.168.1.12", 0);
 static const SocketAddress kClientIPv6Addr(
@@ -243,39 +244,51 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   // it should be ignore.
   void CheckDisableAdapterEnumeration(
       uint32 total_ports,
+      const rtc::IPAddress& host_candidate_addr,
       const rtc::IPAddress& stun_candidate_addr,
       const rtc::IPAddress& relay_candidate_udp_transport_addr,
       const rtc::IPAddress& relay_candidate_tcp_transport_addr) {
-    EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
-    session_->set_flags(cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION |
+    if (!session_) {
+      EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+    }
+    session_->set_flags(session_->flags() |
+                        cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
     allocator().set_allow_tcp_listen(false);
     session_->StartGettingPorts();
     EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
 
     uint32 total_candidates = 0;
-    if (!stun_candidate_addr.IsNil()) {
+    if (!host_candidate_addr.IsNil()) {
+      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
+                   cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+                   rtc::SocketAddress(host_candidate_addr, 0));
       ++total_candidates;
-      EXPECT_PRED5(CheckCandidate, candidates_[0],
+    }
+    if (!stun_candidate_addr.IsNil()) {
+      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
                    cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
                    rtc::SocketAddress(stun_candidate_addr, 0));
-      EXPECT_EQ(
-          rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()),
-          candidates_[0].related_address());
+      EXPECT_EQ(rtc::EmptySocketAddressWithFamily(
+                    candidates_[total_candidates].address().family()),
+                candidates_[total_candidates].related_address());
+      ++total_candidates;
     }
     if (!relay_candidate_udp_transport_addr.IsNil()) {
-      ++total_candidates;
-      EXPECT_PRED5(CheckCandidate, candidates_[1],
+      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
                    cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
                    rtc::SocketAddress(relay_candidate_udp_transport_addr, 0));
-      EXPECT_EQ(stun_candidate_addr, candidates_[1].related_address().ipaddr());
+      EXPECT_EQ(stun_candidate_addr,
+                candidates_[total_candidates].related_address().ipaddr());
+      ++total_candidates;
     }
     if (!relay_candidate_tcp_transport_addr.IsNil()) {
-      ++total_candidates;
-      EXPECT_PRED5(CheckCandidate, candidates_[2],
+      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
                    cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
                    rtc::SocketAddress(relay_candidate_tcp_transport_addr, 0));
-      EXPECT_EQ(stun_candidate_addr, candidates_[2].related_address().ipaddr());
+      EXPECT_EQ(stun_candidate_addr,
+                candidates_[total_candidates].related_address().ipaddr());
+      ++total_candidates;
     }
 
     EXPECT_EQ(total_candidates, candidates_.size());
@@ -380,6 +393,18 @@ TEST_F(PortAllocatorTest, TestNoNetworkInterface) {
   rtc::Thread::Current()->ProcessMessages(1000);
   EXPECT_TRUE(candidate_allocation_done_);
   EXPECT_EQ(0U, candidates_.size());
+}
+
+// Test that we could use loopback interface as host candidate.
+TEST_F(PortAllocatorTest, TestLoopbackNetworkInterface) {
+  AddInterface(kLoopbackAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_DISABLE_RELAY |
+                      cricket::PORTALLOCATOR_DISABLE_TCP);
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(1U, candidates_.size());
 }
 
 // Tests that we can get all the desired addresses successfully.
@@ -508,7 +533,7 @@ TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationBehindNat) {
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
   // Expect to see 3 ports: STUN, TURN/UDP and TCP ports, and both STUN and
   // TURN/UDP candidates.
-  CheckDisableAdapterEnumeration(3U, kNatUdpAddr.ipaddr(),
+  CheckDisableAdapterEnumeration(3U, rtc::IPAddress(), kNatUdpAddr.ipaddr(),
                                  kTurnUdpExtAddr.ipaddr(), rtc::IPAddress());
 }
 
@@ -522,7 +547,7 @@ TEST_F(PortAllocatorTest,
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
   // Expect to see 3 ports: STUN, TURN/UDP and TCP ports, and both STUN and
   // TURN/UDP candidates.
-  CheckDisableAdapterEnumeration(3U, kNatUdpAddr.ipaddr(),
+  CheckDisableAdapterEnumeration(3U, rtc::IPAddress(), kNatUdpAddr.ipaddr(),
                                  kTurnUdpExtAddr.ipaddr(), rtc::IPAddress());
 }
 
@@ -536,7 +561,7 @@ TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationBehindNatWithTcp) {
   AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
   // Expect to see 4 ports - STUN, TURN/UDP, TURN/TCP and TCP port. STUN,
   // TURN/UDP, and TURN/TCP candidates.
-  CheckDisableAdapterEnumeration(4U, kNatUdpAddr.ipaddr(),
+  CheckDisableAdapterEnumeration(4U, rtc::IPAddress(), kNatUdpAddr.ipaddr(),
                                  kTurnUdpExtAddr.ipaddr(),
                                  kTurnUdpExtAddr.ipaddr());
 }
@@ -551,7 +576,7 @@ TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationWithoutNat) {
   // Expect to see 3 ports: STUN, TURN/UDP and TCP ports, but only both STUN and
   // TURN candidates. The STUN candidate should have kClientAddr as srflx
   // address, and TURN candidate with kClientAddr as the related address.
-  CheckDisableAdapterEnumeration(3U, kClientAddr.ipaddr(),
+  CheckDisableAdapterEnumeration(3U, rtc::IPAddress(), kClientAddr.ipaddr(),
                                  kTurnUdpExtAddr.ipaddr(), rtc::IPAddress());
 }
 
@@ -562,6 +587,22 @@ TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationWithoutNatOrServers) {
   ResetWithNoServersOrNat();
   // Expect to see 2 ports: STUN and TCP ports, but no candidate.
   CheckDisableAdapterEnumeration(2U, rtc::IPAddress(), rtc::IPAddress(),
+                                 rtc::IPAddress(), rtc::IPAddress());
+}
+
+// Test that when adapter enumeration is disabled, with
+// PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE specified, for endpoints not behind
+// a NAT, there are a localhost candidate in addition to a STUN candidate.
+TEST_F(PortAllocatorTest,
+       TestDisableAdapterEnumerationWithoutNatLocalhostCandidateRequested) {
+  AddInterfaceAsDefaultRoute(kClientAddr);
+  ResetWithStunServerNoNat(kStunAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
+  // Expect to see 2 ports: STUN and TCP ports, localhost candidate and STUN
+  // candidate.
+  CheckDisableAdapterEnumeration(2U, rtc::GetLoopbackIP(AF_INET),
+                                 kClientAddr.ipaddr(), rtc::IPAddress(),
                                  rtc::IPAddress());
 }
 

@@ -179,6 +179,8 @@ int IPAddressPrecedence(const IPAddress& ip);
 // Returns 'ip' truncated to be 'length' bits long.
 IPAddress TruncateIP(const IPAddress& ip, int length);
 
+IPAddress GetLoopbackIP(int family);
+
 // Returns the number of contiguously set bits, counting from the MSB in network
 // byte order, in this IPAddress. Bits after the first 0 encountered are not
 // counted.

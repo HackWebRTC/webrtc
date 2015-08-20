@@ -82,7 +82,7 @@ class StunPortTest : public testing::Test,
         rtc::Thread::Current(), &socket_factory_,
         &network_, socket_.get(),
         rtc::CreateRandomString(16), rtc::CreateRandomString(22),
-        std::string()));
+        std::string(), false));
     ASSERT_TRUE(stun_port_ != NULL);
     ServerAddresses stun_servers;
     stun_servers.insert(server_addr);

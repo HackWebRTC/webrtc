@@ -15,6 +15,7 @@
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
+#include "webrtc/base/ipaddress.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
 
@@ -164,14 +165,16 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  rtc::AsyncPacketSocket* socket,
                  const std::string& username,
                  const std::string& password,
-                 const std::string& origin)
+                 const std::string& origin,
+                 bool emit_localhost_for_anyaddress)
     : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
            username, password),
       requests_(thread),
       socket_(socket),
       error_(0),
       ready_(false),
-      stun_keepalive_delay_(KEEPALIVE_DELAY) {
+      stun_keepalive_delay_(KEEPALIVE_DELAY),
+      emit_localhost_for_anyaddress_(emit_localhost_for_anyaddress) {
   requests_.set_origin(origin);
 }
 
@@ -183,14 +186,16 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  uint16 max_port,
                  const std::string& username,
                  const std::string& password,
-                 const std::string& origin)
+                 const std::string& origin,
+                 bool emit_localhost_for_anyaddress)
     : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
            username, password),
       requests_(thread),
       socket_(NULL),
       error_(0),
       ready_(false),
-      stun_keepalive_delay_(KEEPALIVE_DELAY) {
+      stun_keepalive_delay_(KEEPALIVE_DELAY),
+      emit_localhost_for_anyaddress_(emit_localhost_for_anyaddress) {
   requests_.set_origin(origin);
 }
 
@@ -280,7 +285,16 @@ int UDPPort::GetError() {
 
 void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                                   const rtc::SocketAddress& address) {
-  AddAddress(address, address, rtc::SocketAddress(), UDP_PROTOCOL_NAME, "", "",
+  // When adapter enumeration is disabled and binding to the any address, the
+  // loopback address will be issued as a candidate instead if
+  // |emit_localhost_for_anyaddress| is true. This is to allow connectivity on
+  // demo pages without STUN/TURN to work.
+  rtc::SocketAddress addr = address;
+  if (addr.IsAnyIP() && emit_localhost_for_anyaddress_) {
+    addr.SetIP(rtc::GetLoopbackIP(addr.family()));
+  }
+
+  AddAddress(addr, addr, rtc::SocketAddress(), UDP_PROTOCOL_NAME, "", "",
              LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST, 0, false);
   MaybePrepareStunCandidate();
 }
