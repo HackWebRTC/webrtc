@@ -21,7 +21,6 @@ class CpuInfo {
 
  private:
   CpuInfo() {}
-  static uint32_t number_of_cores_;
 };
 
 }  // namespace webrtc
