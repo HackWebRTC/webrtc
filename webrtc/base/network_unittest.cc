@@ -183,8 +183,8 @@ TEST_F(NetworkTest, TestUpdateNetworks) {
   BasicNetworkManager manager;
   manager.SignalNetworksChanged.connect(
       static_cast<NetworkTest*>(this), &NetworkTest::OnNetworksChanged);
-  EXPECT_EQ(manager.enumeration_permission(),
-            NetworkManager::kEnumerationAllowed);
+  EXPECT_EQ(NetworkManager::ENUMERATION_ALLOWED,
+            manager.enumeration_permission());
   manager.StartUpdating();
   Thread::Current()->ProcessMessages(0);
   EXPECT_TRUE(callback_called_);
@@ -198,8 +198,8 @@ TEST_F(NetworkTest, TestUpdateNetworks) {
   manager.StopUpdating();
   EXPECT_TRUE(manager.started());
   manager.StopUpdating();
-  EXPECT_EQ(manager.enumeration_permission(),
-            NetworkManager::kEnumerationAllowed);
+  EXPECT_EQ(NetworkManager::ENUMERATION_ALLOWED,
+            manager.enumeration_permission());
   EXPECT_FALSE(manager.started());
   manager.StopUpdating();
   EXPECT_FALSE(manager.started());

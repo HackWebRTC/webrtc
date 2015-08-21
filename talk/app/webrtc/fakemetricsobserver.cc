@@ -36,7 +36,7 @@ FakeMetricsObserver::FakeMetricsObserver() {
 
 void FakeMetricsObserver::Reset() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  counters_ = std::vector<std::vector<int>>();
+  counters_.clear();
   memset(int_histogram_samples_, 0, sizeof(int_histogram_samples_));
   for (std::string& type : string_histogram_samples_) {
     type.clear();

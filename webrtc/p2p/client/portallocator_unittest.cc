@@ -1184,19 +1184,17 @@ TEST_F(PortAllocatorTest, TestSharedSocketNoUdpAllowed) {
 TEST_F(PortAllocatorTest, TestNetworkPermissionBlocked) {
   AddInterface(kClientAddr);
   network_manager_.set_enumeration_permission(
-      rtc::NetworkManager::kEnumerationDisallowed);
+      rtc::NetworkManager::ENUMERATION_BLOCKED);
   allocator().set_flags(allocator().flags() |
                         cricket::PORTALLOCATOR_DISABLE_RELAY |
                         cricket::PORTALLOCATOR_DISABLE_TCP |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
-  EXPECT_EQ(
-      allocator_->flags() & cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION,
-      0U);
+  EXPECT_EQ(0U, allocator_->flags() &
+                    cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  EXPECT_EQ(
-      session_->flags() & cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION,
-      0U);
+  EXPECT_EQ(0U, session_->flags() &
+                    cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
   session_->StartGettingPorts();
   EXPECT_EQ_WAIT(1U, ports_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(0U, candidates_.size());

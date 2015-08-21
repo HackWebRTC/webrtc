@@ -165,11 +165,11 @@ NetworkManager::~NetworkManager() {
 
 NetworkManager::EnumerationPermission NetworkManager::enumeration_permission()
     const {
-  return kEnumerationAllowed;
+  return ENUMERATION_ALLOWED;
 }
 
 NetworkManagerBase::NetworkManagerBase()
-    : enumeration_permission_(NetworkManager::kEnumerationAllowed),
+    : enumeration_permission_(NetworkManager::ENUMERATION_ALLOWED),
       max_ipv6_networks_(kMaxIPv6Networks),
       ipv6_enabled_(true) {
 }

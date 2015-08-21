@@ -307,7 +307,7 @@ void BasicPortAllocatorSession::DoAllocate() {
   // If the network permission state is BLOCKED, we just act as if the flag has
   // been passed in.
   if (allocator_->network_manager()->enumeration_permission() ==
-      rtc::NetworkManager::kEnumerationDisallowed) {
+      rtc::NetworkManager::ENUMERATION_BLOCKED) {
     set_flags(flags() | PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
   }
 

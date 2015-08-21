@@ -58,12 +58,11 @@ class NetworkManager {
 
   // This enum indicates whether adapter enumeration is allowed.
   enum EnumerationPermission {
-    kEnumerationAllowed,     // Adapter enumeration is allowed. Getting 0
-                             // network from GetNetworks means that there is no
-                             // network available.
-    kEnumerationDisallowed,  // Adapter enumeration is
-                             // disabled. GetAnyAddressNetworks() should be used
-                             // instead.
+    ENUMERATION_ALLOWED,  // Adapter enumeration is allowed. Getting 0 network
+                          // from GetNetworks means that there is no network
+                          // available.
+    ENUMERATION_BLOCKED,  // Adapter enumeration is disabled.
+                          // GetAnyAddressNetworks() should be used instead.
   };
 
   NetworkManager();
