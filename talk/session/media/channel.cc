@@ -1475,7 +1475,7 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
   AudioRecvParameters recv_params = last_recv_params_;
   RtpParametersFromMediaDescription(audio, &recv_params);
   if (!media_channel()->SetRecvParameters(recv_params)) {
-    SafeSetError("Failed to set local video description recv parameters.",
+    SafeSetError("Failed to set local audio description recv parameters.",
                  error_desc);
     return false;
   }
@@ -1538,6 +1538,10 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   if (!UpdateRemoteStreams_w(audio->streams(), action, error_desc)) {
     SafeSetError("Failed to set remote audio description streams.", error_desc);
     return false;
+  }
+
+  if (audio->rtp_header_extensions_set()) {
+    MaybeCacheRtpAbsSendTimeHeaderExtension(audio->rtp_header_extensions());
   }
 
   set_remote_content_direction(content->direction());
