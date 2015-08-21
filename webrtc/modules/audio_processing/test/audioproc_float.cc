@@ -172,10 +172,10 @@ int main(int argc, char* argv[]) {
   StreamConfig reverse_input_config = {};
   StreamConfig reverse_output_config = {};
   if (process_reverse) {
-    StreamConfig reverse_input_config = {in_rev_file->sample_rate(),
-                                         in_rev_file->num_channels()};
-    StreamConfig reverse_output_config = {out_rev_file->sample_rate(),
-                                          out_rev_file->num_channels()};
+    reverse_input_config = {in_rev_file->sample_rate(),
+                            in_rev_file->num_channels()};
+    reverse_output_config = {out_rev_file->sample_rate(),
+                             out_rev_file->num_channels()};
   }
   while (in_file.ReadSamples(in_interleaved.size(),
                              &in_interleaved[0]) == in_interleaved.size()) {
