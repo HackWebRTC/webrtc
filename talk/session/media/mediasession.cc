@@ -907,20 +907,41 @@ static bool FindByUri(const RtpHeaderExtensions& extensions,
   return false;
 }
 
-static void FindAndSetRtpHdrExtUsed(
-  const RtpHeaderExtensions& reference_extensions,
-  RtpHeaderExtensions* offered_extensions,
-  const RtpHeaderExtensions& other_extensions,
-  UsedRtpHeaderExtensionIds* used_extensions) {
-  for (RtpHeaderExtensions::const_iterator it = reference_extensions.begin();
-      it != reference_extensions.end(); ++it) {
-    if (!FindByUri(*offered_extensions, *it, NULL)) {
-      RtpHeaderExtension ext;
-      if (!FindByUri(other_extensions, *it, &ext)) {
-        ext = *it;
-        used_extensions->FindAndSetIdUsed(&ext);
+// Iterates through |offered_extensions|, adding each one to |all_extensions|
+// and |used_ids|, and resolving ID conflicts. If an offered extension has the
+// same URI as one in |all_extensions|, it will re-use the same ID and won't be
+// treated as a conflict.
+static void FindAndSetRtpHdrExtUsed(RtpHeaderExtensions* offered_extensions,
+                                    RtpHeaderExtensions* all_extensions,
+                                    UsedRtpHeaderExtensionIds* used_ids) {
+  for (auto& extension : *offered_extensions) {
+    RtpHeaderExtension existing;
+    if (FindByUri(*all_extensions, extension, &existing)) {
+      extension.id = existing.id;
+    } else {
+      used_ids->FindAndSetIdUsed(&extension);
+      all_extensions->push_back(extension);
+    }
+  }
+}
+
+// Adds |reference_extensions| to |offered_extensions|, while updating
+// |all_extensions| and |used_ids|.
+static void FindRtpHdrExtsToOffer(
+    const RtpHeaderExtensions& reference_extensions,
+    RtpHeaderExtensions* offered_extensions,
+    RtpHeaderExtensions* all_extensions,
+    UsedRtpHeaderExtensionIds* used_ids) {
+  for (auto reference_extension : reference_extensions) {
+    if (!FindByUri(*offered_extensions, reference_extension, NULL)) {
+      RtpHeaderExtension existing;
+      if (FindByUri(*all_extensions, reference_extension, &existing)) {
+        offered_extensions->push_back(existing);
+      } else {
+        used_ids->FindAndSetIdUsed(&reference_extension);
+        all_extensions->push_back(reference_extension);
+        offered_extensions->push_back(reference_extension);
       }
-      offered_extensions->push_back(ext);
     }
   }
 }
@@ -1398,6 +1419,7 @@ void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
   // All header extensions allocated from the same range to avoid potential
   // issues when using BUNDLE.
   UsedRtpHeaderExtensionIds used_ids;
+  RtpHeaderExtensions all_extensions;
   audio_extensions->clear();
   video_extensions->clear();
 
@@ -1410,22 +1432,22 @@ void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
         GetFirstAudioContentDescription(current_description);
     if (audio) {
       *audio_extensions = audio->rtp_header_extensions();
-      used_ids.FindAndSetIdUsed(audio_extensions);
+      FindAndSetRtpHdrExtUsed(audio_extensions, &all_extensions, &used_ids);
     }
     const VideoContentDescription* video =
         GetFirstVideoContentDescription(current_description);
     if (video) {
       *video_extensions = video->rtp_header_extensions();
-      used_ids.FindAndSetIdUsed(video_extensions);
+      FindAndSetRtpHdrExtUsed(video_extensions, &all_extensions, &used_ids);
     }
   }
 
   // Add our default RTP header extensions that are not in
   // |current_description|.
-  FindAndSetRtpHdrExtUsed(audio_rtp_header_extensions(), audio_extensions,
-                          *video_extensions, &used_ids);
-  FindAndSetRtpHdrExtUsed(video_rtp_header_extensions(), video_extensions,
-                          *audio_extensions, &used_ids);
+  FindRtpHdrExtsToOffer(audio_rtp_header_extensions(), audio_extensions,
+                        &all_extensions, &used_ids);
+  FindRtpHdrExtsToOffer(video_rtp_header_extensions(), video_extensions,
+                        &all_extensions, &used_ids);
 }
 
 bool MediaSessionDescriptionFactory::AddTransportOffer(

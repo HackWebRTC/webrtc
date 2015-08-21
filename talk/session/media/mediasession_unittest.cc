@@ -147,6 +147,11 @@ static const RtpHeaderExtension kAudioRtpExtension2[] = {
   RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 7),
 };
 
+static const RtpHeaderExtension kAudioRtpExtension3[] = {
+  RtpHeaderExtension("http://google.com/testing/audio_something", 2),
+  RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 3),
+};
+
 static const RtpHeaderExtension kAudioRtpExtensionAnswer[] = {
   RtpHeaderExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8),
 };
@@ -160,6 +165,11 @@ static const RtpHeaderExtension kVideoRtpExtension2[] = {
   RtpHeaderExtension("urn:ietf:params:rtp-hdrext:toffset", 2),
   RtpHeaderExtension("http://google.com/testing/video_something_else", 14),
   RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 7),
+};
+
+static const RtpHeaderExtension kVideoRtpExtension3[] = {
+  RtpHeaderExtension("http://google.com/testing/video_something", 4),
+  RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 5),
 };
 
 static const RtpHeaderExtension kVideoRtpExtensionAnswer[] = {
@@ -1861,6 +1871,46 @@ TEST_F(MediaSessionDescriptionFactoryTest,
       GetFirstVideoContentDescription(updated_offer.get());
   EXPECT_EQ(MAKE_VECTOR(kUpdatedVideoRtpExtensions),
             updated_vcd->rtp_header_extensions());
+}
+
+// Verify that if the same RTP extension URI is used for audio and video, the
+// same ID is used. Also verify that the ID isn't changed when creating an
+// updated offer (this was previously a bug).
+TEST_F(MediaSessionDescriptionFactoryTest,
+       RtpHeaderExtensionIdReused) {
+  MediaSessionOptions opts;
+  opts.recv_audio = true;
+  opts.recv_video = true;
+
+  f1_.set_audio_rtp_header_extensions(MAKE_VECTOR(kAudioRtpExtension3));
+  f1_.set_video_rtp_header_extensions(MAKE_VECTOR(kVideoRtpExtension3));
+
+  rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+
+  // Since the audio extensions used ID 3 for "both_audio_and_video", so should
+  // the video extensions.
+  const RtpHeaderExtension kExpectedVideoRtpExtension[] = {
+    kVideoRtpExtension3[0],
+    kAudioRtpExtension3[1],
+  };
+
+  EXPECT_EQ(MAKE_VECTOR(kAudioRtpExtension3),
+            GetFirstAudioContentDescription(
+                offer.get())->rtp_header_extensions());
+  EXPECT_EQ(MAKE_VECTOR(kExpectedVideoRtpExtension),
+            GetFirstVideoContentDescription(
+                offer.get())->rtp_header_extensions());
+
+  // Nothing should change when creating a new offer
+  rtc::scoped_ptr<SessionDescription> updated_offer(
+      f1_.CreateOffer(opts, offer.get()));
+
+  EXPECT_EQ(MAKE_VECTOR(kAudioRtpExtension3),
+            GetFirstAudioContentDescription(
+                updated_offer.get())->rtp_header_extensions());
+  EXPECT_EQ(MAKE_VECTOR(kExpectedVideoRtpExtension),
+            GetFirstVideoContentDescription(
+                updated_offer.get())->rtp_header_extensions());
 }
 
 TEST(MediaSessionDescription, CopySessionDescription) {
