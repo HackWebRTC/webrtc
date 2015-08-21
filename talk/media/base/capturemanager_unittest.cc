@@ -63,7 +63,6 @@ class CaptureManagerTest : public ::testing::Test, public sigslot::has_slots<> {
     }
     video_capturer_.ResetSupportedFormats(formats);
   }
-  int NumFramesProcessed() { return media_processor_.video_frame_count(); }
   int NumFramesRendered() { return video_renderer_.num_rendered_frames(); }
   bool WasRenderedResolution(cricket::VideoFormat format) {
     return format.width == video_renderer_.width() &&
@@ -95,8 +94,6 @@ TEST_F(CaptureManagerTest, InvalidCallOrder) {
   // Capturer must be registered before any of these calls.
   EXPECT_FALSE(capture_manager_.AddVideoRenderer(&video_capturer_,
                                                  &video_renderer_));
-  EXPECT_FALSE(capture_manager_.AddVideoProcessor(&video_capturer_,
-                                                  &media_processor_));
 }
 
 TEST_F(CaptureManagerTest, InvalidAddingRemoving) {
@@ -109,36 +106,10 @@ TEST_F(CaptureManagerTest, InvalidAddingRemoving) {
   EXPECT_FALSE(capture_manager_.AddVideoRenderer(&video_capturer_, NULL));
   EXPECT_FALSE(capture_manager_.RemoveVideoRenderer(&video_capturer_,
                                                     &video_renderer_));
-  EXPECT_FALSE(capture_manager_.AddVideoProcessor(&video_capturer_,
-                                                  NULL));
-  EXPECT_FALSE(capture_manager_.RemoveVideoProcessor(&video_capturer_,
-                                                     &media_processor_));
   EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_, format_vga_));
 }
 
 // Valid use cases
-TEST_F(CaptureManagerTest, ProcessorTest) {
-  EXPECT_TRUE(capture_manager_.StartVideoCapture(&video_capturer_,
-                                                 format_vga_));
-  EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
-  EXPECT_EQ(1, callback_count());
-  EXPECT_TRUE(capture_manager_.AddVideoRenderer(&video_capturer_,
-                                                &video_renderer_));
-  EXPECT_TRUE(capture_manager_.AddVideoProcessor(&video_capturer_,
-                                                 &media_processor_));
-  EXPECT_TRUE(video_capturer_.CaptureFrame());
-  EXPECT_EQ(1, NumFramesProcessed());
-  EXPECT_EQ(1, NumFramesRendered());
-  EXPECT_TRUE(capture_manager_.RemoveVideoProcessor(&video_capturer_,
-                                                    &media_processor_));
-  // Processor has been removed so no more frames should be processed.
-  EXPECT_TRUE(video_capturer_.CaptureFrame());
-  EXPECT_EQ(1, NumFramesProcessed());
-  EXPECT_EQ(2, NumFramesRendered());
-  EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_, format_vga_));
-  EXPECT_EQ(2, callback_count());
-}
-
 TEST_F(CaptureManagerTest, KeepFirstResolutionHigh) {
   EXPECT_TRUE(capture_manager_.StartVideoCapture(&video_capturer_,
                                                  format_vga_));

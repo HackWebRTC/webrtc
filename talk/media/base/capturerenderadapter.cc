@@ -28,7 +28,6 @@
 #include "talk/media/base/capturerenderadapter.h"
 
 #include "talk/media/base/videocapturer.h"
-#include "talk/media/base/videoprocessor.h"
 #include "talk/media/base/videorenderer.h"
 #include "webrtc/base/logging.h"
 

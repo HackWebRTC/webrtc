@@ -768,34 +768,6 @@ void ChannelManager::GetSupportedFormats_w(
     *out_formats = *formats;
 }
 
-// TODO(janahan): For now pass this request through the mediaengine to the
-// voice and video engines to do the real work. Once the capturer refactoring
-// is done, we will access the capturer using the ssrc (similar to how the
-// renderer is accessed today) and register with it directly.
-bool ChannelManager::RegisterVideoProcessor(VideoCapturer* capturer,
-                                            VideoProcessor* processor) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&ChannelManager::RegisterVideoProcessor_w, this,
-           capturer, processor));
-}
-
-bool ChannelManager::RegisterVideoProcessor_w(VideoCapturer* capturer,
-                                              VideoProcessor* processor) {
-  return capture_manager_->AddVideoProcessor(capturer, processor);
-}
-
-bool ChannelManager::UnregisterVideoProcessor(VideoCapturer* capturer,
-                                              VideoProcessor* processor) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&ChannelManager::UnregisterVideoProcessor_w, this,
-           capturer, processor));
-}
-
-bool ChannelManager::UnregisterVideoProcessor_w(VideoCapturer* capturer,
-                                                VideoProcessor* processor) {
-  return capture_manager_->RemoveVideoProcessor(capturer, processor);
-}
-
 bool ChannelManager::RegisterVoiceProcessor(
     uint32 ssrc,
     VoiceProcessor* processor,

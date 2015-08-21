@@ -33,7 +33,6 @@
 
 #include "libyuv/scale_argb.h"
 #include "talk/media/base/videoframefactory.h"
-#include "talk/media/base/videoprocessor.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/systeminfo.h"
@@ -107,7 +106,6 @@ webrtc::VideoRotation CapturedFrame::GetRotation() const {
 VideoCapturer::VideoCapturer()
     : thread_(rtc::Thread::Current()),
       adapt_frame_drops_data_(kMaxAccumulatorSize),
-      effect_frame_drops_data_(kMaxAccumulatorSize),
       frame_time_data_(kMaxAccumulatorSize),
       apply_rotation_(true) {
   Construct();
@@ -116,7 +114,6 @@ VideoCapturer::VideoCapturer()
 VideoCapturer::VideoCapturer(rtc::Thread* thread)
     : thread_(thread),
       adapt_frame_drops_data_(kMaxAccumulatorSize),
-      effect_frame_drops_data_(kMaxAccumulatorSize),
       frame_time_data_(kMaxAccumulatorSize),
       apply_rotation_(true) {
   Construct();
@@ -135,7 +132,6 @@ void VideoCapturer::Construct() {
   black_frame_count_down_ = kNumBlackFramesOnMute;
   enable_video_adapter_ = true;
   adapt_frame_drops_ = 0;
-  effect_frame_drops_ = 0;
   previous_frame_time_ = 0.0;
 #ifdef HAVE_WEBRTC_VIDEO
   // There are lots of video capturers out there that don't call
@@ -309,24 +305,6 @@ bool VideoCapturer::GetBestCaptureFormat(const VideoFormat& format,
   return true;
 }
 
-void VideoCapturer::AddVideoProcessor(VideoProcessor* video_processor) {
-  rtc::CritScope cs(&crit_);
-  ASSERT(std::find(video_processors_.begin(), video_processors_.end(),
-                   video_processor) == video_processors_.end());
-  video_processors_.push_back(video_processor);
-}
-
-bool VideoCapturer::RemoveVideoProcessor(VideoProcessor* video_processor) {
-  rtc::CritScope cs(&crit_);
-  VideoProcessors::iterator found = std::find(
-      video_processors_.begin(), video_processors_.end(), video_processor);
-  if (found == video_processors_.end()) {
-    return false;
-  }
-  video_processors_.erase(found);
-  return true;
-}
-
 void VideoCapturer::ConstrainSupportedFormats(const VideoFormat& max_format) {
   max_format_.reset(new VideoFormat(max_format));
   LOG(LS_VERBOSE) << " ConstrainSupportedFormats " << max_format.ToString();
@@ -363,12 +341,10 @@ void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,
                              VideoFormat* last_captured_frame_format) {
   rtc::CritScope cs(&frame_stats_crit_);
   GetVariableSnapshot(adapt_frame_drops_data_, adapt_drops_stats);
-  GetVariableSnapshot(effect_frame_drops_data_, effect_drops_stats);
   GetVariableSnapshot(frame_time_data_, frame_time_stats);
   *last_captured_frame_format = last_captured_frame_format_;
 
   adapt_frame_drops_data_.Reset();
-  effect_frame_drops_data_.Reset();
   frame_time_data_.Reset();
 }
 
@@ -567,11 +543,6 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  if (!muted_ && !ApplyProcessors(adapted_frame.get())) {
-    // Processor dropped the frame.
-    ++effect_frame_drops_;
-    return;
-  }
   if (muted_) {
     // TODO(pthatcher): Use frame_factory_->CreateBlackFrame() instead.
     adapted_frame->SetToBlack();
@@ -709,19 +680,6 @@ int64 VideoCapturer::GetFormatDistance(const VideoFormat& desired,
   return distance;
 }
 
-bool VideoCapturer::ApplyProcessors(VideoFrame* video_frame) {
-  bool drop_frame = false;
-  rtc::CritScope cs(&crit_);
-  for (VideoProcessors::iterator iter = video_processors_.begin();
-       iter != video_processors_.end(); ++iter) {
-    (*iter)->OnFrame(kDummyVideoSsrc, video_frame, &drop_frame);
-    if (drop_frame) {
-      return false;
-    }
-  }
-  return true;
-}
-
 void VideoCapturer::UpdateFilteredSupportedFormats() {
   filtered_supported_formats_.clear();
   filtered_supported_formats_ = supported_formats_;
@@ -765,11 +723,9 @@ void VideoCapturer::UpdateStats(const CapturedFrame* captured_frame) {
   double time_now = frame_length_time_reporter_.TimerNow();
   if (previous_frame_time_ != 0.0) {
     adapt_frame_drops_data_.AddSample(adapt_frame_drops_);
-    effect_frame_drops_data_.AddSample(effect_frame_drops_);
     frame_time_data_.AddSample(time_now - previous_frame_time_);
   }
   previous_frame_time_ = time_now;
-  effect_frame_drops_ = 0;
   adapt_frame_drops_ = 0;
 }
 

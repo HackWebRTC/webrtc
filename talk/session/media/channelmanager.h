@@ -44,7 +44,6 @@ namespace cricket {
 
 const int kDefaultAudioDelayOffset = 0;
 
-class VideoProcessor;
 class VoiceChannel;
 class VoiceProcessor;
 
@@ -175,14 +174,7 @@ class ChannelManager : public rtc::MessageHandler,
   // Gets capturer's supported formats in a thread safe manner
   std::vector<cricket::VideoFormat> GetSupportedFormats(
       VideoCapturer* capturer) const;
-  // The channel manager handles the Tx side for Video processing,
-  // as well as Tx and Rx side for Voice processing.
-  // (The Rx Video processing will go throug the simplerenderingmanager,
-  //  to be implemented).
-  bool RegisterVideoProcessor(VideoCapturer* capturer,
-                              VideoProcessor* processor);
-  bool UnregisterVideoProcessor(VideoCapturer* capturer,
-                                VideoProcessor* processor);
+  // The channel manager handles the Tx and Rx side for Voice processing.
   bool RegisterVoiceProcessor(uint32 ssrc,
                               VoiceProcessor* processor,
                               MediaProcessorDirection direction);
@@ -279,10 +271,6 @@ class ChannelManager : public rtc::MessageHandler,
   void GetSupportedFormats_w(
       VideoCapturer* capturer,
       std::vector<cricket::VideoFormat>* out_formats) const;
-  bool RegisterVideoProcessor_w(VideoCapturer* capturer,
-                                VideoProcessor* processor);
-  bool UnregisterVideoProcessor_w(VideoCapturer* capturer,
-                                  VideoProcessor* processor);
   bool IsScreencastRunning_w() const;
   virtual void OnMessage(rtc::Message *message);
 

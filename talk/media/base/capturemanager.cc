@@ -30,7 +30,6 @@
 #include <algorithm>
 
 #include "talk/media/base/videocapturer.h"
-#include "talk/media/base/videoprocessor.h"
 #include "talk/media/base/videorenderer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -312,31 +311,6 @@ bool CaptureManager::RemoveVideoRenderer(VideoCapturer* video_capturer,
     return false;
   }
   return adapter->RemoveRenderer(video_renderer);
-}
-
-bool CaptureManager::AddVideoProcessor(VideoCapturer* video_capturer,
-                                       VideoProcessor* video_processor) {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  if (!video_capturer || !video_processor) {
-    return false;
-  }
-  if (!IsCapturerRegistered(video_capturer)) {
-    return false;
-  }
-  video_capturer->AddVideoProcessor(video_processor);
-  return true;
-}
-
-bool CaptureManager::RemoveVideoProcessor(VideoCapturer* video_capturer,
-                                          VideoProcessor* video_processor) {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  if (!video_capturer || !video_processor) {
-    return false;
-  }
-  if (!IsCapturerRegistered(video_capturer)) {
-    return false;
-  }
-  return video_capturer->RemoveVideoProcessor(video_processor);
 }
 
 bool CaptureManager::IsCapturerRegistered(VideoCapturer* video_capturer) const {

@@ -51,8 +51,6 @@
 
 namespace cricket {
 
-class VideoProcessor;
-
 // Current state of the capturer.
 // TODO(hellner): CS_NO_DEVICE is an error code not a capture state. Separate
 //                error codes and states.
@@ -115,8 +113,8 @@ struct CapturedFrame {
 //
 // The captured frames may need to be adapted (for example, cropping).
 // Video adaptation is built into and enabled by default. After a frame has
-// been captured from the device, it is sent to the video adapter, then video
-// processors, then out to the encoder.
+// been captured from the device, it is sent to the video adapter, then out to
+// the encoder.
 //
 // Programming model:
 //   Create an object of a subclass of VideoCapturer
@@ -139,8 +137,6 @@ class VideoCapturer
     : public sigslot::has_slots<>,
       public rtc::MessageHandler {
  public:
-  typedef std::vector<VideoProcessor*> VideoProcessors;
-
   // All signals are marshalled to |thread| or the creating thread if
   // none is provided.
   VideoCapturer();
@@ -233,14 +229,6 @@ class VideoCapturer
   virtual bool SetApplyRotation(bool enable);
   virtual bool GetApplyRotation() { return apply_rotation_; }
 
-  // Adds a video processor that will be applied on VideoFrames returned by
-  // |SignalVideoFrame|. Multiple video processors can be added. The video
-  // processors will be applied in the order they were added.
-  void AddVideoProcessor(VideoProcessor* video_processor);
-  // Removes the |video_processor| from the list of video processors or
-  // returns false.
-  bool RemoveVideoProcessor(VideoProcessor* video_processor);
-
   // Returns true if the capturer is screencasting. This can be used to
   // implement screencast specific behavior.
   virtual bool IsScreencast() const = 0;
@@ -281,8 +269,6 @@ class VideoCapturer
   // such as the encoder.
   sigslot::signal2<VideoCapturer*, const VideoFrame*,
                    sigslot::multi_threaded_local> SignalVideoFrame;
-
-  const VideoProcessors& video_processors() const { return video_processors_; }
 
   // If 'screencast_max_pixels' is set greater than zero, screencasts will be
   // scaled to be no larger than this value.
@@ -361,11 +347,6 @@ class VideoCapturer
   // Convert captured frame to readable string for LOG messages.
   std::string ToString(const CapturedFrame* frame) const;
 
-  // Applies all registered processors. If any of the processors signal that
-  // the frame should be dropped the return value will be false. Note that
-  // this frame should be dropped as it has not applied all processors.
-  bool ApplyProcessors(VideoFrame* video_frame);
-
   // Updates filtered_supported_formats_ so that it contains the formats in
   // supported_formats_ that fulfill all applied restrictions.
   void UpdateFilteredSupportedFormats();
@@ -408,15 +389,10 @@ class VideoCapturer
 
   int adapt_frame_drops_;
   rtc::RollingAccumulator<int> adapt_frame_drops_data_;
-  int effect_frame_drops_;
-  rtc::RollingAccumulator<int> effect_frame_drops_data_;
   double previous_frame_time_;
   rtc::RollingAccumulator<double> frame_time_data_;
   // The captured frame format before potential adapation.
   VideoFormat last_captured_frame_format_;
-
-  rtc::CriticalSection crit_;
-  VideoProcessors video_processors_;
 
   // Whether capturer should apply rotation to the frame before signaling it.
   bool apply_rotation_;

@@ -469,7 +469,6 @@
         'media/base/videoframe.h',
         'media/base/videoframefactory.cc',
         'media/base/videoframefactory.h',
-        'media/base/videoprocessor.h',
         'media/base/videorenderer.h',
         'media/base/voiceprocessor.h',
         'media/base/yuvframegenerator.cc',

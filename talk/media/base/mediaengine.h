@@ -42,7 +42,6 @@
 #include "talk/media/base/mediacommon.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
-#include "talk/media/base/videoprocessor.h"
 #include "talk/media/base/voiceprocessor.h"
 #include "talk/media/devices/devicemanager.h"
 #include "webrtc/base/fileutils.h"
