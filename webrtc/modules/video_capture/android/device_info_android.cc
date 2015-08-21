@@ -14,8 +14,8 @@
 #include <sstream>
 #include <vector>
 
-#include "json/json.h"
 #include "unicode/unistr.h"
+#include "webrtc/base/json.h"
 #include "webrtc/modules/video_capture/android/video_capture_android.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
