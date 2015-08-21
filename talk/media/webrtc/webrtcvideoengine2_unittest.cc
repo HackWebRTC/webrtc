@@ -2183,6 +2183,26 @@ TEST_F(WebRtcVideoChannel2Test,
   EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
 }
 
+// Test that setting the same codecs but with a different order and preference
+// doesn't result in the stream being recreated.
+TEST_F(WebRtcVideoChannel2Test,
+       SetRecvCodecsDifferentOrderAndPreferenceDoesntRecreateStream) {
+  std::vector<VideoCodec> codecs1;
+  codecs1.push_back(kVp8Codec);
+  codecs1.push_back(kRedCodec);
+  EXPECT_TRUE(channel_->SetRecvCodecs(codecs1));
+
+  AddRecvStream(cricket::StreamParams::CreateLegacy(123));
+  EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
+
+  std::vector<VideoCodec> codecs2;
+  codecs2.push_back(kRedCodec);
+  codecs2.push_back(kVp8Codec);
+  codecs2[1].preference += 1;
+  EXPECT_TRUE(channel_->SetRecvCodecs(codecs2));
+  EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
+}
+
 TEST_F(WebRtcVideoChannel2Test, SendStreamNotSendingByDefault) {
   EXPECT_FALSE(AddSendStream()->IsSending());
 }

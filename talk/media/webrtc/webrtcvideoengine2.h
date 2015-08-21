@@ -259,6 +259,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     int rtx_payload_type;
   };
 
+  static std::string CodecSettingsVectorToString(
+      const std::vector<VideoCodecSettings>& codecs);
+
   // Wrapper for the sender part, this is where the capturer is connected and
   // frames are then converted from cricket frames to webrtc frames.
   class WebRtcVideoSendStream : public sigslot::has_slots<> {
@@ -492,6 +495,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       const std::vector<VideoCodec>& codecs);
   std::vector<VideoCodecSettings> FilterSupportedCodecs(
       const std::vector<VideoCodecSettings>& mapped_codecs) const;
+  static bool ReceiveCodecsHaveChanged(std::vector<VideoCodecSettings> before,
+                                       std::vector<VideoCodecSettings> after);
 
   void FillSenderStats(VideoMediaInfo* info);
   void FillReceiverStats(VideoMediaInfo* info);
