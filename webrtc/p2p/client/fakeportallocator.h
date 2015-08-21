@@ -33,7 +33,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
                            const std::string& ice_ufrag,
                            const std::string& ice_pwd)
       : PortAllocatorSession(content_name, component, ice_ufrag, ice_pwd,
-                             cricket::kDefaultPortAllocatorFlags),
+                             cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG),
         worker_thread_(worker_thread),
         factory_(factory),
         network_("network", "unittest",

@@ -168,10 +168,12 @@ void HttpPortAllocatorSessionBase::TryCreateRelaySession() {
 
 std::string HttpPortAllocatorSessionBase::GetSessionRequestUrl() {
   std::string url = std::string(HttpPortAllocator::kCreateSessionURL);
-  ASSERT(!username().empty());
-  ASSERT(!password().empty());
-  url = url + "?username=" + rtc::s_url_encode(username()) +
-      "&password=" + rtc::s_url_encode(password());
+  if (allocator()->flags() & PORTALLOCATOR_ENABLE_SHARED_UFRAG) {
+    ASSERT(!username().empty());
+    ASSERT(!password().empty());
+    url = url + "?username=" + rtc::s_url_encode(username()) +
+        "&password=" + rtc::s_url_encode(password());
+  }
   return url;
 }
 

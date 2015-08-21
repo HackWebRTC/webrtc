@@ -30,10 +30,11 @@ class TransportDescriptionFactoryTest : public testing::Test {
         id2_(new rtc::FakeSSLIdentity("User2")) {
   }
 
-  void CheckDesc(const TransportDescription* desc,
+  void CheckDesc(const TransportDescription* desc, const std::string& type,
                  const std::string& opt, const std::string& ice_ufrag,
                  const std::string& ice_pwd, const std::string& dtls_alg) {
     ASSERT_TRUE(desc != NULL);
+    EXPECT_EQ(type, desc->transport_type);
     EXPECT_EQ(!opt.empty(), desc->HasOption(opt));
     if (ice_ufrag.empty() && ice_pwd.empty()) {
       EXPECT_EQ(static_cast<size_t>(cricket::ICE_UFRAG_LENGTH),
@@ -117,37 +118,61 @@ class TransportDescriptionFactoryTest : public testing::Test {
   scoped_ptr<rtc::SSLIdentity> id2_;
 };
 
-TEST_F(TransportDescriptionFactoryTest, TestOfferDefault) {
+// Test that in the default case, we generate the expected G-ICE offer.
+TEST_F(TransportDescriptionFactoryTest, TestOfferGice) {
+  f1_.set_protocol(cricket::ICEPROTO_GOOGLE);
   scoped_ptr<TransportDescription> desc(f1_.CreateOffer(
       TransportOptions(), NULL));
-  CheckDesc(desc.get(), "", "", "", "");
+  CheckDesc(desc.get(), cricket::NS_GINGLE_P2P, "", "", "", "");
 }
 
-TEST_F(TransportDescriptionFactoryTest, TestOfferDtls) {
+// Test generating a hybrid offer.
+TEST_F(TransportDescriptionFactoryTest, TestOfferHybrid) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
+  scoped_ptr<TransportDescription> desc(f1_.CreateOffer(
+      TransportOptions(), NULL));
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "google-ice", "", "", "");
+}
+
+// Test generating an ICE-only offer.
+TEST_F(TransportDescriptionFactoryTest, TestOfferIce) {
+  f1_.set_protocol(cricket::ICEPROTO_RFC5245);
+  scoped_ptr<TransportDescription> desc(f1_.CreateOffer(
+      TransportOptions(), NULL));
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", "");
+}
+
+// Test generating a hybrid offer with DTLS.
+TEST_F(TransportDescriptionFactoryTest, TestOfferHybridDtls) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
   f1_.set_secure(cricket::SEC_ENABLED);
   f1_.set_identity(id1_.get());
   std::string digest_alg;
   ASSERT_TRUE(id1_->certificate().GetSignatureDigestAlgorithm(&digest_alg));
   scoped_ptr<TransportDescription> desc(f1_.CreateOffer(
       TransportOptions(), NULL));
-  CheckDesc(desc.get(), "", "", "", digest_alg);
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "google-ice", "", "",
+            digest_alg);
   // Ensure it also works with SEC_REQUIRED.
   f1_.set_secure(cricket::SEC_REQUIRED);
   desc.reset(f1_.CreateOffer(TransportOptions(), NULL));
-  CheckDesc(desc.get(), "", "", "", digest_alg);
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "google-ice", "", "",
+            digest_alg);
 }
 
-// Test generating an offer with DTLS fails with no identity.
-TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsWithNoIdentity) {
+// Test generating a hybrid offer with DTLS fails with no identity.
+TEST_F(TransportDescriptionFactoryTest, TestOfferHybridDtlsWithNoIdentity) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
   f1_.set_secure(cricket::SEC_ENABLED);
   scoped_ptr<TransportDescription> desc(f1_.CreateOffer(
       TransportOptions(), NULL));
   ASSERT_TRUE(desc.get() == NULL);
 }
 
-// Test updating an offer with DTLS to pick ICE.
+// Test updating a hybrid offer with DTLS to pick ICE.
 // The ICE credentials should stay the same in the new offer.
-TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsReofferDtls) {
+TEST_F(TransportDescriptionFactoryTest, TestOfferHybridDtlsReofferIceDtls) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
   f1_.set_secure(cricket::SEC_ENABLED);
   f1_.set_identity(id1_.get());
   std::string digest_alg;
@@ -155,26 +180,104 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsReofferDtls) {
   scoped_ptr<TransportDescription> old_desc(f1_.CreateOffer(
       TransportOptions(), NULL));
   ASSERT_TRUE(old_desc.get() != NULL);
+  f1_.set_protocol(cricket::ICEPROTO_RFC5245);
   scoped_ptr<TransportDescription> desc(
       f1_.CreateOffer(TransportOptions(), old_desc.get()));
-  CheckDesc(desc.get(), "",
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "",
             old_desc->ice_ufrag, old_desc->ice_pwd, digest_alg);
 }
 
-TEST_F(TransportDescriptionFactoryTest, TestAnswerDefault) {
+// Test that we can answer a GICE offer with GICE.
+TEST_F(TransportDescriptionFactoryTest, TestAnswerGiceToGice) {
+  f1_.set_protocol(cricket::ICEPROTO_GOOGLE);
+  f2_.set_protocol(cricket::ICEPROTO_GOOGLE);
   scoped_ptr<TransportDescription> offer(f1_.CreateOffer(
       TransportOptions(), NULL));
   ASSERT_TRUE(offer.get() != NULL);
   scoped_ptr<TransportDescription> desc(f2_.CreateAnswer(
       offer.get(), TransportOptions(), NULL));
-  CheckDesc(desc.get(), "", "", "", "");
+  CheckDesc(desc.get(), cricket::NS_GINGLE_P2P, "", "", "", "");
+  // Should get the same result when answering as hybrid.
+  f2_.set_protocol(cricket::ICEPROTO_HYBRID);
   desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(),
                               NULL));
-  CheckDesc(desc.get(), "", "", "", "");
+  CheckDesc(desc.get(), cricket::NS_GINGLE_P2P, "", "", "", "");
+}
+
+// Test that we can answer a hybrid offer with GICE.
+TEST_F(TransportDescriptionFactoryTest, TestAnswerGiceToHybrid) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
+  f2_.set_protocol(cricket::ICEPROTO_GOOGLE);
+  scoped_ptr<TransportDescription> offer(f1_.CreateOffer(
+      TransportOptions(), NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  scoped_ptr<TransportDescription> desc(
+      f2_.CreateAnswer(offer.get(), TransportOptions(), NULL));
+  CheckDesc(desc.get(), cricket::NS_GINGLE_P2P, "", "", "", "");
+}
+
+// Test that we can answer a hybrid offer with ICE.
+TEST_F(TransportDescriptionFactoryTest, TestAnswerIceToHybrid) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
+  f2_.set_protocol(cricket::ICEPROTO_RFC5245);
+  scoped_ptr<TransportDescription> offer(f1_.CreateOffer(
+      TransportOptions(), NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  scoped_ptr<TransportDescription> desc(
+      f2_.CreateAnswer(offer.get(), TransportOptions(), NULL));
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", "");
+  // Should get the same result when answering as hybrid.
+  f2_.set_protocol(cricket::ICEPROTO_HYBRID);
+  desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(),
+                              NULL));
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", "");
+}
+
+// Test that we can answer an ICE offer with ICE.
+TEST_F(TransportDescriptionFactoryTest, TestAnswerIceToIce) {
+  f1_.set_protocol(cricket::ICEPROTO_RFC5245);
+  f2_.set_protocol(cricket::ICEPROTO_RFC5245);
+  scoped_ptr<TransportDescription> offer(f1_.CreateOffer(
+      TransportOptions(), NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  scoped_ptr<TransportDescription> desc(f2_.CreateAnswer(
+      offer.get(), TransportOptions(), NULL));
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", "");
+  // Should get the same result when answering as hybrid.
+  f2_.set_protocol(cricket::ICEPROTO_HYBRID);
+  desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(),
+                              NULL));
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", "");
+}
+
+// Test that we can't answer a GICE offer with ICE.
+TEST_F(TransportDescriptionFactoryTest, TestAnswerIceToGice) {
+  f1_.set_protocol(cricket::ICEPROTO_GOOGLE);
+  f2_.set_protocol(cricket::ICEPROTO_RFC5245);
+  scoped_ptr<TransportDescription> offer(
+      f1_.CreateOffer(TransportOptions(), NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  scoped_ptr<TransportDescription> desc(
+      f2_.CreateAnswer(offer.get(), TransportOptions(), NULL));
+  ASSERT_TRUE(desc.get() == NULL);
+}
+
+// Test that we can't answer an ICE offer with GICE.
+TEST_F(TransportDescriptionFactoryTest, TestAnswerGiceToIce) {
+  f1_.set_protocol(cricket::ICEPROTO_RFC5245);
+  f2_.set_protocol(cricket::ICEPROTO_GOOGLE);
+  scoped_ptr<TransportDescription> offer(
+      f1_.CreateOffer(TransportOptions(), NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  scoped_ptr<TransportDescription> desc(f2_.CreateAnswer(
+      offer.get(), TransportOptions(), NULL));
+  ASSERT_TRUE(desc.get() == NULL);
 }
 
 // Test that we can update an answer properly; ICE credentials shouldn't change.
-TEST_F(TransportDescriptionFactoryTest, TestReanswer) {
+TEST_F(TransportDescriptionFactoryTest, TestAnswerIceToIceReanswer) {
+  f1_.set_protocol(cricket::ICEPROTO_RFC5245);
+  f2_.set_protocol(cricket::ICEPROTO_RFC5245);
   scoped_ptr<TransportDescription> offer(
       f1_.CreateOffer(TransportOptions(), NULL));
   ASSERT_TRUE(offer.get() != NULL);
@@ -185,25 +288,29 @@ TEST_F(TransportDescriptionFactoryTest, TestReanswer) {
       f2_.CreateAnswer(offer.get(), TransportOptions(),
                        old_desc.get()));
   ASSERT_TRUE(desc.get() != NULL);
-  CheckDesc(desc.get(), "",
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "",
             old_desc->ice_ufrag, old_desc->ice_pwd, "");
 }
 
 // Test that we handle answering an offer with DTLS with no DTLS.
-TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToNoDtls) {
+TEST_F(TransportDescriptionFactoryTest, TestAnswerHybridToHybridDtls) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
   f1_.set_secure(cricket::SEC_ENABLED);
   f1_.set_identity(id1_.get());
+  f2_.set_protocol(cricket::ICEPROTO_HYBRID);
   scoped_ptr<TransportDescription> offer(
       f1_.CreateOffer(TransportOptions(), NULL));
   ASSERT_TRUE(offer.get() != NULL);
   scoped_ptr<TransportDescription> desc(
       f2_.CreateAnswer(offer.get(), TransportOptions(), NULL));
-  CheckDesc(desc.get(), "", "", "", "");
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", "");
 }
 
 // Test that we handle answering an offer without DTLS if we have DTLS enabled,
 // but fail if we require DTLS.
-TEST_F(TransportDescriptionFactoryTest, TestAnswerNoDtlsToDtls) {
+TEST_F(TransportDescriptionFactoryTest, TestAnswerHybridDtlsToHybrid) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
+  f2_.set_protocol(cricket::ICEPROTO_HYBRID);
   f2_.set_secure(cricket::SEC_ENABLED);
   f2_.set_identity(id2_.get());
   scoped_ptr<TransportDescription> offer(
@@ -211,7 +318,7 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerNoDtlsToDtls) {
   ASSERT_TRUE(offer.get() != NULL);
   scoped_ptr<TransportDescription> desc(
       f2_.CreateAnswer(offer.get(), TransportOptions(), NULL));
-  CheckDesc(desc.get(), "", "", "", "");
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", "");
   f2_.set_secure(cricket::SEC_REQUIRED);
   desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(),
                               NULL));
@@ -220,10 +327,12 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerNoDtlsToDtls) {
 
 // Test that we handle answering an DTLS offer with DTLS, both if we have
 // DTLS enabled and required.
-TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToDtls) {
+TEST_F(TransportDescriptionFactoryTest, TestAnswerHybridDtlsToHybridDtls) {
+  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
   f1_.set_secure(cricket::SEC_ENABLED);
   f1_.set_identity(id1_.get());
 
+  f2_.set_protocol(cricket::ICEPROTO_HYBRID);
   f2_.set_secure(cricket::SEC_ENABLED);
   f2_.set_identity(id2_.get());
   // f2_ produces the answer that is being checked in this test, so the
@@ -236,11 +345,11 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToDtls) {
   ASSERT_TRUE(offer.get() != NULL);
   scoped_ptr<TransportDescription> desc(
       f2_.CreateAnswer(offer.get(), TransportOptions(), NULL));
-  CheckDesc(desc.get(), "", "", "", digest_alg2);
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", digest_alg2);
   f2_.set_secure(cricket::SEC_REQUIRED);
   desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(),
                               NULL));
-  CheckDesc(desc.get(), "", "", "", digest_alg2);
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", digest_alg2);
 }
 
 // Test that ice ufrag and password is changed in an updated offer and answer

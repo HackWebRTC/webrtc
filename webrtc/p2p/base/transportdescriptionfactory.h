@@ -36,6 +36,8 @@ class TransportDescriptionFactory {
   // The identity to use when setting up DTLS.
   rtc::SSLIdentity* identity() const { return identity_; }
 
+  // Specifies the transport protocol to be use.
+  void set_protocol(TransportProtocol protocol) { protocol_ = protocol; }
   // Specifies the transport security policy to use.
   void set_secure(SecurePolicy s) { secure_ = s; }
   // Specifies the identity to use (only used when secure is not SEC_DISABLED).
@@ -54,6 +56,7 @@ class TransportDescriptionFactory {
   bool SetSecurityInfo(TransportDescription* description,
                        ConnectionRole role) const;
 
+  TransportProtocol protocol_;
   SecurePolicy secure_;
   rtc::SSLIdentity* identity_;
 };
