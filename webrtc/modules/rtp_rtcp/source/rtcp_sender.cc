@@ -706,46 +706,15 @@ RTCPSender::BuildResult RTCPSender::BuildTMMBR(RtcpContext* ctx) {
   }
 
   if (tmmbr_send_) {
-    // sanity
-    if (ctx->position + 20 >= IP_PACKET_SIZE)
+    rtcp::Tmmbr tmmbr;
+    tmmbr.From(ssrc_);
+    tmmbr.To(remote_ssrc_);
+    tmmbr.WithBitrateKbps(tmmbr_send_);
+    tmmbr.WithOverhead(packet_oh_send_);
+
+    PacketBuiltCallback callback(ctx);
+    if (!callback.BuildPacket(tmmbr))
       return BuildResult::kTruncated;
-
-    // add TMMBR indicator
-    uint8_t FMT = 3;
-    *ctx->AllocateData(1) = 0x80 + FMT;
-    *ctx->AllocateData(1) = 205;
-
-    // Length of 4
-    *ctx->AllocateData(1) = 0;
-    *ctx->AllocateData(1) = 4;
-
-    // Add our own SSRC
-    ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-    // RFC 5104     4.2.1.2.  Semantics
-
-    // SSRC of media source
-    ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), 0);
-
-    // Additional Feedback Control Information (FCI)
-    ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), remote_ssrc_);
-
-    uint32_t bitRate = tmmbr_send_ * 1000;
-    uint32_t mmbrExp = 0;
-    for (uint32_t i = 0; i < 64; i++) {
-      if (bitRate <= (0x1FFFFu << i)) {
-        mmbrExp = i;
-        break;
-      }
-    }
-    uint32_t mmbrMantissa = (bitRate >> mmbrExp);
-
-    *ctx->AllocateData(1) =
-        static_cast<uint8_t>((mmbrExp << 2) + ((mmbrMantissa >> 15) & 0x03));
-    *ctx->AllocateData(1) = static_cast<uint8_t>(mmbrMantissa >> 7);
-    *ctx->AllocateData(1) = static_cast<uint8_t>(
-        (mmbrMantissa << 1) + ((packet_oh_send_ >> 8) & 0x01));
-    *ctx->AllocateData(1) = static_cast<uint8_t>(packet_oh_send_);
   }
   return BuildResult::kSuccess;
 }
