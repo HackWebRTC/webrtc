@@ -71,8 +71,6 @@ using cricket::BaseSession;
 using cricket::DF_PLAY;
 using cricket::DF_SEND;
 using cricket::FakeVoiceMediaChannel;
-using cricket::NS_GINGLE_P2P;
-using cricket::NS_JINGLE_ICE_UDP;
 using cricket::TransportInfo;
 using rtc::SocketAddress;
 using rtc::scoped_ptr;
@@ -337,8 +335,6 @@ class WebRtcSessionTest : public testing::Test {
       turn_server_(Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
       mediastream_signaling_(channel_manager_.get()),
       metrics_observer_(new rtc::RefCountedObject<FakeMetricsObserver>()) {
-    tdesc_factory_->set_protocol(cricket::ICEPROTO_HYBRID);
-
     cricket::ServerAddresses stun_servers;
     stun_servers.insert(stun_socket_addr_);
     allocator_.reset(new cricket::BasicPortAllocator(
@@ -346,8 +342,7 @@ class WebRtcSessionTest : public testing::Test {
         stun_servers,
         SocketAddress(), SocketAddress(), SocketAddress()));
     allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-                         cricket::PORTALLOCATOR_DISABLE_RELAY |
-                         cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
+                          cricket::PORTALLOCATOR_DISABLE_RELAY);
     EXPECT_TRUE(channel_manager_->Init());
     desc_factory_->set_add_legacy_streams(false);
     allocator_->set_step_delay(cricket::kMinimumStepDelay);
@@ -1151,13 +1146,6 @@ class WebRtcSessionTest : public testing::Test {
     TestLoopbackCall(config);
   }
 
-  void VerifyTransportType(const std::string& content_name,
-                           cricket::TransportProtocol protocol) {
-    const cricket::Transport* transport = session_->GetTransport(content_name);
-    ASSERT_TRUE(transport != NULL);
-    EXPECT_EQ(protocol, transport->protocol());
-  }
-
   // Adds CN codecs to FakeMediaEngine and MediaDescriptionFactory.
   void AddCNCodecs() {
     const cricket::AudioCodec kCNCodec1(102, "CN", 8000, 0, 1, 0);
@@ -1239,8 +1227,7 @@ class WebRtcSessionTest : public testing::Test {
         kTurnUdpIntAddr, cricket::PROTO_UDP, false));
     allocator_->AddRelay(relay_server);
     allocator_->set_step_delay(cricket::kMinimumStepDelay);
-    allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-                          cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
+    allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP);
   }
 
   cricket::FakeMediaEngine* media_engine_;
@@ -2546,7 +2533,6 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionWithoutIce) {
 // too short ice ufrag and pwd strings.
 TEST_F(WebRtcSessionTest, TestSetLocalDescriptionInvalidIceCredentials) {
   Init();
-  tdesc_factory_->set_protocol(cricket::ICEPROTO_RFC5245);
   mediastream_signaling_.SendAudioVideoStream1();
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
 
@@ -2572,7 +2558,6 @@ TEST_F(WebRtcSessionTest, TestSetLocalDescriptionInvalidIceCredentials) {
 // too short ice ufrag and pwd strings.
 TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
   Init();
-  tdesc_factory_->set_protocol(cricket::ICEPROTO_RFC5245);
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
   std::string sdp;
   // Modifying ice ufrag and pwd in remote offer with strings smaller than the
@@ -3146,55 +3131,6 @@ TEST_F(WebRtcSessionTest, TestInitiatorFlagAsReceiver) {
   EXPECT_FALSE(session_->initiator());
 }
 
-// This test verifies the ice protocol type at initiator of the call
-// if |a=ice-options:google-ice| is present in answer.
-TEST_F(WebRtcSessionTest, TestInitiatorGIceInAnswer) {
-  Init();
-  mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer();
-  rtc::scoped_ptr<SessionDescriptionInterface> answer(
-      CreateRemoteAnswer(offer));
-  SetLocalDescriptionWithoutError(offer);
-  std::string sdp;
-  EXPECT_TRUE(answer->ToString(&sdp));
-  // Adding ice-options to the session level.
-  InjectAfter("t=0 0\r\n",
-              "a=ice-options:google-ice\r\n",
-              &sdp);
-  SessionDescriptionInterface* answer_with_gice =
-      CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL);
-  // Default offer is ICEPROTO_RFC5245, so we expect responder with
-  // only gice to fail.
-  SetRemoteDescriptionAnswerExpectError(kPushDownTDFailed, answer_with_gice);
-}
-
-// This test verifies the ice protocol type at initiator of the call
-// if ICE RFC5245 is supported in answer.
-TEST_F(WebRtcSessionTest, TestInitiatorIceInAnswer) {
-  Init();
-  mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer();
-  SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
-  SetLocalDescriptionWithoutError(offer);
-
-  SetRemoteDescriptionWithoutError(answer);
-  VerifyTransportType("audio", cricket::ICEPROTO_RFC5245);
-  VerifyTransportType("video", cricket::ICEPROTO_RFC5245);
-}
-
-// This test verifies the ice protocol type at receiver side of the call if
-// receiver decides to use ice RFC 5245.
-TEST_F(WebRtcSessionTest, TestReceiverIceInOffer) {
-  Init();
-  mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer();
-  SetRemoteDescriptionWithoutError(offer);
-  SessionDescriptionInterface* answer = CreateAnswer(NULL);
-  SetLocalDescriptionWithoutError(answer);
-  VerifyTransportType("audio", cricket::ICEPROTO_RFC5245);
-  VerifyTransportType("video", cricket::ICEPROTO_RFC5245);
-}
-
 // Verifing local offer and remote answer have matching m-lines as per RFC 3264.
 TEST_F(WebRtcSessionTest, TestIncorrectMLinesInRemoteAnswer) {
   Init();
@@ -3415,16 +3351,14 @@ TEST_F(WebRtcSessionTest, TestSessionContentError) {
 // Runs the loopback call test with BUNDLE and STUN disabled.
 TEST_F(WebRtcSessionTest, TestIceStatesBasic) {
   // Lets try with only UDP ports.
-  allocator_->set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                        cricket::PORTALLOCATOR_DISABLE_TCP |
+  allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                         cricket::PORTALLOCATOR_DISABLE_STUN |
                         cricket::PORTALLOCATOR_DISABLE_RELAY);
   TestLoopbackCall();
 }
 
 TEST_F(WebRtcSessionTest, TestIceStatesBasicIPv6) {
-  allocator_->set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                        cricket::PORTALLOCATOR_DISABLE_TCP |
+  allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                         cricket::PORTALLOCATOR_DISABLE_STUN |
                         cricket::PORTALLOCATOR_ENABLE_IPV6 |
                         cricket::PORTALLOCATOR_DISABLE_RELAY);
@@ -3440,9 +3374,8 @@ TEST_F(WebRtcSessionTest, TestIceStatesBasicIPv6) {
 
 // Runs the loopback call test with BUNDLE and STUN enabled.
 TEST_F(WebRtcSessionTest, TestIceStatesBundle) {
-  allocator_->set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                       cricket::PORTALLOCATOR_DISABLE_TCP |
-                       cricket::PORTALLOCATOR_DISABLE_RELAY);
+  allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY);
   TestLoopbackCall();
 }
 

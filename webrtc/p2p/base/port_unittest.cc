@@ -64,12 +64,6 @@ static const RelayCredentials kRelayCredentials("test", "test");
 // Magic value of 30 is from RFC3484, for IPv4 addresses.
 static const uint32 kDefaultPrflxPriority = ICE_TYPE_PREFERENCE_PRFLX << 24 |
              30 << 8 | (256 - ICE_CANDIDATE_COMPONENT_DEFAULT);
-static const int STUN_ERROR_BAD_REQUEST_AS_GICE =
-    STUN_ERROR_BAD_REQUEST / 256 * 100 + STUN_ERROR_BAD_REQUEST % 256;
-static const int STUN_ERROR_UNAUTHORIZED_AS_GICE =
-    STUN_ERROR_UNAUTHORIZED / 256 * 100 + STUN_ERROR_UNAUTHORIZED % 256;
-static const int STUN_ERROR_SERVER_ERROR_AS_GICE =
-    STUN_ERROR_SERVER_ERROR / 256 * 100 + STUN_ERROR_SERVER_ERROR % 256;
 
 static const int kTiebreaker1 = 11111;
 static const int kTiebreaker2 = 22222;
@@ -77,7 +71,7 @@ static const int kTiebreaker2 = 22222;
 static const char* data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 
 static Candidate GetCandidate(Port* port) {
-  assert(port->Candidates().size() == 1);
+  assert(port->Candidates().size() >= 1);
   return port->Candidates()[0];
 }
 
@@ -280,23 +274,15 @@ class TestChannel : public sigslot::has_slots<> {
     if (!remote_address_.IsNil()) {
       ASSERT_EQ(remote_address_, addr);
     }
-    // MI and PRIORITY attribute should be present in ping requests when port
-    // is in ICEPROTO_RFC5245 mode.
     const cricket::StunUInt32Attribute* priority_attr =
         msg->GetUInt32(STUN_ATTR_PRIORITY);
     const cricket::StunByteStringAttribute* mi_attr =
         msg->GetByteString(STUN_ATTR_MESSAGE_INTEGRITY);
     const cricket::StunUInt32Attribute* fingerprint_attr =
         msg->GetUInt32(STUN_ATTR_FINGERPRINT);
-    if (src_->IceProtocol() == cricket::ICEPROTO_RFC5245) {
-      EXPECT_TRUE(priority_attr != NULL);
-      EXPECT_TRUE(mi_attr != NULL);
-      EXPECT_TRUE(fingerprint_attr != NULL);
-    } else {
-      EXPECT_TRUE(priority_attr == NULL);
-      EXPECT_TRUE(mi_attr == NULL);
-      EXPECT_TRUE(fingerprint_attr == NULL);
-    }
+    EXPECT_TRUE(priority_attr != NULL);
+    EXPECT_TRUE(mi_attr != NULL);
+    EXPECT_TRUE(fingerprint_attr != NULL);
     remote_address_ = addr;
     remote_request_.reset(CopyStunMessage(msg));
     remote_frag_ = rf;
@@ -358,7 +344,6 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                       kRelaySslTcpExtAddr),
         username_(rtc::CreateRandomString(ICE_UFRAG_LENGTH)),
         password_(rtc::CreateRandomString(ICE_PWD_LENGTH)),
-        ice_protocol_(cricket::ICEPROTO_GOOGLE),
         role_conflict_(false),
         destroyed_(false) {
     network_.AddIP(rtc::IPAddress(INADDR_ANY));
@@ -367,35 +352,45 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
  protected:
   void TestLocalToLocal() {
     Port* port1 = CreateUdpPort(kLocalAddr1);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     Port* port2 = CreateUdpPort(kLocalAddr2);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity("udp", port1, "udp", port2, true, true, true, true);
   }
   void TestLocalToStun(NATType ntype) {
     Port* port1 = CreateUdpPort(kLocalAddr1);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     nat_server2_.reset(CreateNatServer(kNatAddr2, ntype));
     Port* port2 = CreateStunPort(kLocalAddr2, &nat_socket_factory2_);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity("udp", port1, StunName(ntype), port2,
                      ntype == NAT_OPEN_CONE, true,
                      ntype != NAT_SYMMETRIC, true);
   }
   void TestLocalToRelay(RelayType rtype, ProtocolType proto) {
     Port* port1 = CreateUdpPort(kLocalAddr1);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     Port* port2 = CreateRelayPort(kLocalAddr2, rtype, proto, PROTO_UDP);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity("udp", port1, RelayName(rtype, proto), port2,
                      rtype == RELAY_GTURN, true, true, true);
   }
   void TestStunToLocal(NATType ntype) {
     nat_server1_.reset(CreateNatServer(kNatAddr1, ntype));
     Port* port1 = CreateStunPort(kLocalAddr1, &nat_socket_factory1_);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     Port* port2 = CreateUdpPort(kLocalAddr2);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity(StunName(ntype), port1, "udp", port2,
                      true, ntype != NAT_SYMMETRIC, true, true);
   }
   void TestStunToStun(NATType ntype1, NATType ntype2) {
     nat_server1_.reset(CreateNatServer(kNatAddr1, ntype1));
     Port* port1 = CreateStunPort(kLocalAddr1, &nat_socket_factory1_);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     nat_server2_.reset(CreateNatServer(kNatAddr2, ntype2));
     Port* port2 = CreateStunPort(kLocalAddr2, &nat_socket_factory2_);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity(StunName(ntype1), port1, StunName(ntype2), port2,
                      ntype2 == NAT_OPEN_CONE,
                      ntype1 != NAT_SYMMETRIC, ntype2 != NAT_SYMMETRIC,
@@ -404,24 +399,32 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   void TestStunToRelay(NATType ntype, RelayType rtype, ProtocolType proto) {
     nat_server1_.reset(CreateNatServer(kNatAddr1, ntype));
     Port* port1 = CreateStunPort(kLocalAddr1, &nat_socket_factory1_);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     Port* port2 = CreateRelayPort(kLocalAddr2, rtype, proto, PROTO_UDP);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity(StunName(ntype), port1, RelayName(rtype, proto), port2,
                      rtype == RELAY_GTURN, ntype != NAT_SYMMETRIC, true, true);
   }
   void TestTcpToTcp() {
     Port* port1 = CreateTcpPort(kLocalAddr1);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     Port* port2 = CreateTcpPort(kLocalAddr2);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity("tcp", port1, "tcp", port2, true, false, true, true);
   }
   void TestTcpToRelay(RelayType rtype, ProtocolType proto) {
     Port* port1 = CreateTcpPort(kLocalAddr1);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     Port* port2 = CreateRelayPort(kLocalAddr2, rtype, proto, PROTO_TCP);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity("tcp", port1, RelayName(rtype, proto), port2,
                      rtype == RELAY_GTURN, false, true, true);
   }
   void TestSslTcpToRelay(RelayType rtype, ProtocolType proto) {
     Port* port1 = CreateTcpPort(kLocalAddr1);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     Port* port2 = CreateRelayPort(kLocalAddr2, rtype, proto, PROTO_SSLTCP);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
     TestConnectivity("ssltcp", port1, RelayName(rtype, proto), port2,
                      rtype == RELAY_GTURN, false, true, true);
   }
@@ -431,35 +434,27 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   UDPPort* CreateUdpPort(const SocketAddress& addr,
                          PacketSocketFactory* socket_factory) {
-    UDPPort* port = UDPPort::Create(main_, socket_factory, &network_,
-                                    addr.ipaddr(), 0, 0, username_, password_,
-                                    std::string(), false);
-    port->SetIceProtocolType(ice_protocol_);
-    return port;
+    return UDPPort::Create(main_, socket_factory, &network_,
+                           addr.ipaddr(), 0, 0, username_, password_,
+                           std::string(), false);
   }
   TCPPort* CreateTcpPort(const SocketAddress& addr) {
-    TCPPort* port = CreateTcpPort(addr, &socket_factory_);
-    port->SetIceProtocolType(ice_protocol_);
-    return port;
+    return CreateTcpPort(addr, &socket_factory_);
   }
   TCPPort* CreateTcpPort(const SocketAddress& addr,
                         PacketSocketFactory* socket_factory) {
-    TCPPort* port = TCPPort::Create(main_, socket_factory, &network_,
-                                    addr.ipaddr(), 0, 0, username_, password_,
-                                    true);
-    port->SetIceProtocolType(ice_protocol_);
-    return port;
+    return TCPPort::Create(main_, socket_factory, &network_,
+                           addr.ipaddr(), 0, 0, username_, password_,
+                           true);
   }
   StunPort* CreateStunPort(const SocketAddress& addr,
                            rtc::PacketSocketFactory* factory) {
     ServerAddresses stun_servers;
     stun_servers.insert(kStunAddr);
-    StunPort* port = StunPort::Create(main_, factory, &network_,
-                                      addr.ipaddr(), 0, 0,
-                                      username_, password_, stun_servers,
-                                      std::string());
-    port->SetIceProtocolType(ice_protocol_);
-    return port;
+    return StunPort::Create(main_, factory, &network_,
+                            addr.ipaddr(), 0, 0,
+                            username_, password_, stun_servers,
+                            std::string());
   }
   Port* CreateRelayPort(const SocketAddress& addr, RelayType rtype,
                         ProtocolType int_proto, ProtocolType ext_proto) {
@@ -479,14 +474,12 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                            PacketSocketFactory* socket_factory,
                            ProtocolType int_proto, ProtocolType ext_proto,
                            const rtc::SocketAddress& server_addr) {
-    TurnPort* port = TurnPort::Create(main_, socket_factory, &network_,
-                                      addr.ipaddr(), 0, 0,
-                                      username_, password_, ProtocolAddress(
-                                         server_addr, PROTO_UDP),
-                                      kRelayCredentials, 0,
-                                      std::string());
-    port->SetIceProtocolType(ice_protocol_);
-    return port;
+    return TurnPort::Create(main_, socket_factory, &network_,
+                            addr.ipaddr(), 0, 0,
+                            username_, password_, ProtocolAddress(
+                                server_addr, PROTO_UDP),
+                            kRelayCredentials, 0,
+                            std::string());
   }
   RelayPort* CreateGturnPort(const SocketAddress& addr,
                              ProtocolType int_proto, ProtocolType ext_proto) {
@@ -497,13 +490,12 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     return port;
   }
   RelayPort* CreateGturnPort(const SocketAddress& addr) {
-    RelayPort* port = RelayPort::Create(main_, &socket_factory_, &network_,
-                                        addr.ipaddr(), 0, 0,
-                                        username_, password_);
+    // TODO(pthatcher):  Remove GTURN.
+    return RelayPort::Create(main_, &socket_factory_, &network_,
+                             addr.ipaddr(), 0, 0,
+                             username_, password_);
     // TODO: Add an external address for ext_proto, so that the
     // other side can connect to this port using a non-UDP protocol.
-    port->SetIceProtocolType(ice_protocol_);
-    return port;
   }
   rtc::NATServer* CreateNatServer(const SocketAddress& addr,
                                         rtc::NATType type) {
@@ -597,7 +589,9 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   void TestTcpReconnect(bool ping_after_disconnected,
                         bool send_after_disconnected) {
     Port* port1 = CreateTcpPort(kLocalAddr1);
+    port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
     Port* port2 = CreateTcpPort(kLocalAddr2);
+    port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
 
     port1->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
     port2->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
@@ -658,10 +652,6 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE_WAIT(ch2.conn() == NULL, kTimeout);
   }
 
-  void SetIceProtocolType(cricket::IceProtocolType protocol) {
-    ice_protocol_ = protocol;
-  }
-
   IceMessage* CreateStunMessage(int type) {
     IceMessage* msg = new IceMessage();
     msg->SetType(type);
@@ -686,11 +676,9 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   TestPort* CreateTestPort(const rtc::SocketAddress& addr,
                            const std::string& username,
                            const std::string& password,
-                           cricket::IceProtocolType type,
                            cricket::IceRole role,
                            int tiebreaker) {
     TestPort* port = CreateTestPort(addr, username, password);
-    port->SetIceProtocolType(type);
     port->SetIceRole(role);
     port->SetIceTiebreaker(tiebreaker);
     return port;
@@ -732,7 +720,6 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   TestRelayServer relay_server_;
   std::string username_;
   std::string password_;
-  cricket::IceProtocolType ice_protocol_;
   bool role_conflict_;
   bool destroyed_;
 };
@@ -1180,16 +1167,13 @@ TEST_F(PortTest, TestSslTcpToSslTcpRelay) {
 // This test case verifies standard ICE features in STUN messages. Currently it
 // verifies Message Integrity attribute in STUN messages and username in STUN
 // binding request will have colon (":") between remote and local username.
-TEST_F(PortTest, TestLocalToLocalAsIce) {
-  SetIceProtocolType(cricket::ICEPROTO_RFC5245);
+TEST_F(PortTest, TestLocalToLocalStandard) {
   UDPPort* port1 = CreateUdpPort(kLocalAddr1);
   port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
   port1->SetIceTiebreaker(kTiebreaker1);
-  ASSERT_EQ(cricket::ICEPROTO_RFC5245, port1->IceProtocol());
   UDPPort* port2 = CreateUdpPort(kLocalAddr2);
   port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
   port2->SetIceTiebreaker(kTiebreaker2);
-  ASSERT_EQ(cricket::ICEPROTO_RFC5245, port2->IceProtocol());
   // Same parameters as TestLocalToLocal above.
   TestConnectivity("udp", port1, "udp", port2, true, true, true, true);
 }
@@ -1198,10 +1182,9 @@ TEST_F(PortTest, TestLocalToLocalAsIce) {
 // loopback test when protocol is RFC5245. For success IceTiebreaker, username
 // should remain equal to the request generated by the port and role of port
 // must be in controlling.
-TEST_F(PortTest, TestLoopbackCallAsIce) {
+TEST_F(PortTest, TestLoopbackCal) {
   rtc::scoped_ptr<TestPort> lport(
       CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
-  lport->SetIceProtocolType(ICEPROTO_RFC5245);
   lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
   lport->SetIceTiebreaker(kTiebreaker1);
   lport->PrepareAddress();
@@ -1262,12 +1245,10 @@ TEST_F(PortTest, TestLoopbackCallAsIce) {
 TEST_F(PortTest, TestIceRoleConflict) {
   rtc::scoped_ptr<TestPort> lport(
       CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
-  lport->SetIceProtocolType(ICEPROTO_RFC5245);
   lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
   lport->SetIceTiebreaker(kTiebreaker1);
   rtc::scoped_ptr<TestPort> rport(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  rport->SetIceProtocolType(ICEPROTO_RFC5245);
   rport->SetIceRole(cricket::ICEROLE_CONTROLLING);
   rport->SetIceTiebreaker(kTiebreaker2);
 
@@ -1296,6 +1277,7 @@ TEST_F(PortTest, TestIceRoleConflict) {
 
 TEST_F(PortTest, TestTcpNoDelay) {
   TCPPort* port1 = CreateTcpPort(kLocalAddr1);
+  port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
   int option_value = -1;
   int success = port1->GetOption(rtc::Socket::OPT_NODELAY,
                                  &option_value);
@@ -1475,93 +1457,14 @@ TEST_F(PortTest, TestDefaultDscpValue) {
   EXPECT_EQ(rtc::DSCP_CS6, dscp);
 }
 
-// Test sending STUN messages in GICE format.
-TEST_F(PortTest, TestSendStunMessageAsGice) {
+// Test sending STUN messages.
+TEST_F(PortTest, TestSendStunMessage) {
   rtc::scoped_ptr<TestPort> lport(
       CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
   rtc::scoped_ptr<TestPort> rport(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  lport->SetIceProtocolType(ICEPROTO_GOOGLE);
-  rport->SetIceProtocolType(ICEPROTO_GOOGLE);
-
-  // Send a fake ping from lport to rport.
-  lport->PrepareAddress();
-  rport->PrepareAddress();
-  ASSERT_FALSE(rport->Candidates().empty());
-  Connection* conn = lport->CreateConnection(rport->Candidates()[0],
-      Port::ORIGIN_MESSAGE);
-  rport->CreateConnection(lport->Candidates()[0], Port::ORIGIN_MESSAGE);
-  conn->Ping(0);
-
-  // Check that it's a proper BINDING-REQUEST.
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
-  IceMessage* msg = lport->last_stun_msg();
-  EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
-  EXPECT_FALSE(msg->IsLegacy());
-  const StunByteStringAttribute* username_attr = msg->GetByteString(
-      STUN_ATTR_USERNAME);
-  ASSERT_TRUE(username_attr != NULL);
-  EXPECT_EQ("rfraglfrag", username_attr->GetString());
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_MESSAGE_INTEGRITY) == NULL);
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == NULL);
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_FINGERPRINT) == NULL);
-
-  // Save a copy of the BINDING-REQUEST for use below.
-  rtc::scoped_ptr<IceMessage> request(CopyStunMessage(msg));
-
-  // Respond with a BINDING-RESPONSE.
-  rport->SendBindingResponse(request.get(), lport->Candidates()[0].address());
-  msg = rport->last_stun_msg();
-  ASSERT_TRUE(msg != NULL);
-  EXPECT_EQ(STUN_BINDING_RESPONSE, msg->type());
-  EXPECT_FALSE(msg->IsLegacy());
-  username_attr = msg->GetByteString(STUN_ATTR_USERNAME);
-  ASSERT_TRUE(username_attr != NULL);  // GICE has a username in the response.
-  EXPECT_EQ("rfraglfrag", username_attr->GetString());
-  const StunAddressAttribute* addr_attr = msg->GetAddress(
-      STUN_ATTR_MAPPED_ADDRESS);
-  ASSERT_TRUE(addr_attr != NULL);
-  EXPECT_EQ(lport->Candidates()[0].address(), addr_attr->GetAddress());
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_XOR_MAPPED_ADDRESS) == NULL);
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_MESSAGE_INTEGRITY) == NULL);
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == NULL);
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_FINGERPRINT) == NULL);
-
-  // Respond with a BINDING-ERROR-RESPONSE. This wouldn't happen in real life,
-  // but we can do it here.
-  rport->SendBindingErrorResponse(request.get(),
-                                  rport->Candidates()[0].address(),
-                                  STUN_ERROR_SERVER_ERROR,
-                                  STUN_ERROR_REASON_SERVER_ERROR);
-  msg = rport->last_stun_msg();
-  ASSERT_TRUE(msg != NULL);
-  EXPECT_EQ(STUN_BINDING_ERROR_RESPONSE, msg->type());
-  EXPECT_FALSE(msg->IsLegacy());
-  username_attr = msg->GetByteString(STUN_ATTR_USERNAME);
-  ASSERT_TRUE(username_attr != NULL);  // GICE has a username in the response.
-  EXPECT_EQ("rfraglfrag", username_attr->GetString());
-  const StunErrorCodeAttribute* error_attr = msg->GetErrorCode();
-  ASSERT_TRUE(error_attr != NULL);
-  // The GICE wire format for error codes is incorrect.
-  EXPECT_EQ(STUN_ERROR_SERVER_ERROR_AS_GICE, error_attr->code());
-  EXPECT_EQ(STUN_ERROR_SERVER_ERROR / 256, error_attr->eclass());
-  EXPECT_EQ(STUN_ERROR_SERVER_ERROR % 256, error_attr->number());
-  EXPECT_EQ(std::string(STUN_ERROR_REASON_SERVER_ERROR), error_attr->reason());
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == NULL);
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_MESSAGE_INTEGRITY) == NULL);
-  EXPECT_TRUE(msg->GetByteString(STUN_ATTR_FINGERPRINT) == NULL);
-}
-
-// Test sending STUN messages in ICE format.
-TEST_F(PortTest, TestSendStunMessageAsIce) {
-  rtc::scoped_ptr<TestPort> lport(
-      CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
-  rtc::scoped_ptr<TestPort> rport(
-      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  lport->SetIceProtocolType(ICEPROTO_RFC5245);
   lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
   lport->SetIceTiebreaker(kTiebreaker1);
-  rport->SetIceProtocolType(ICEPROTO_RFC5245);
   rport->SetIceRole(cricket::ICEROLE_CONTROLLED);
   rport->SetIceTiebreaker(kTiebreaker2);
 
@@ -1700,10 +1603,8 @@ TEST_F(PortTest, TestUseCandidateAttribute) {
       CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
   rtc::scoped_ptr<TestPort> rport(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  lport->SetIceProtocolType(ICEPROTO_RFC5245);
   lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
   lport->SetIceTiebreaker(kTiebreaker1);
-  rport->SetIceProtocolType(ICEPROTO_RFC5245);
   rport->SetIceRole(cricket::ICEROLE_CONTROLLED);
   rport->SetIceTiebreaker(kTiebreaker2);
 
@@ -1724,79 +1625,11 @@ TEST_F(PortTest, TestUseCandidateAttribute) {
   ASSERT_TRUE(use_candidate_attr != NULL);
 }
 
-// Test handling STUN messages in GICE format.
-TEST_F(PortTest, TestHandleStunMessageAsGice) {
+// Test handling STUN messages.
+TEST_F(PortTest, TestHandleStunMessage) {
   // Our port will act as the "remote" port.
   rtc::scoped_ptr<TestPort> port(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_GOOGLE);
-
-  rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
-  rtc::SocketAddress addr(kLocalAddr1);
-  std::string username;
-
-  // BINDING-REQUEST from local to remote with valid GICE username and no M-I.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
-                                             "rfraglfrag"));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() != NULL);  // Succeeds, since this is GICE.
-  EXPECT_EQ("lfrag", username);
-
-  // Add M-I; should be ignored and rest of message parsed normally.
-  in_msg->AddMessageIntegrity("password");
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() != NULL);
-  EXPECT_EQ("lfrag", username);
-
-  // BINDING-RESPONSE with username, as done in GICE. Should succeed.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_RESPONSE,
-                                             "rfraglfrag"));
-  in_msg->AddAttribute(
-      new StunAddressAttribute(STUN_ATTR_MAPPED_ADDRESS, kLocalAddr2));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() != NULL);
-  EXPECT_EQ("", username);
-
-  // BINDING-RESPONSE without username. Should be tolerated as well.
-  in_msg.reset(CreateStunMessage(STUN_BINDING_RESPONSE));
-  in_msg->AddAttribute(
-      new StunAddressAttribute(STUN_ATTR_MAPPED_ADDRESS, kLocalAddr2));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() != NULL);
-  EXPECT_EQ("", username);
-
-  // BINDING-ERROR-RESPONSE with username and error code.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_ERROR_RESPONSE,
-                                             "rfraglfrag"));
-  in_msg->AddAttribute(new StunErrorCodeAttribute(STUN_ATTR_ERROR_CODE,
-      STUN_ERROR_SERVER_ERROR_AS_GICE, STUN_ERROR_REASON_SERVER_ERROR));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  ASSERT_TRUE(out_msg.get() != NULL);
-  EXPECT_EQ("", username);
-  ASSERT_TRUE(out_msg->GetErrorCode() != NULL);
-  // GetStunMessage doesn't unmunge the GICE error code (happens downstream).
-  EXPECT_EQ(STUN_ERROR_SERVER_ERROR_AS_GICE, out_msg->GetErrorCode()->code());
-  EXPECT_EQ(std::string(STUN_ERROR_REASON_SERVER_ERROR),
-      out_msg->GetErrorCode()->reason());
-}
-
-// Test handling STUN messages in ICE format.
-TEST_F(PortTest, TestHandleStunMessageAsIce) {
-  // Our port will act as the "remote" port.
-  rtc::scoped_ptr<TestPort> port(
-      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_RFC5245);
 
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
   rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
@@ -1843,145 +1676,10 @@ TEST_F(PortTest, TestHandleStunMessageAsIce) {
       out_msg->GetErrorCode()->reason());
 }
 
-// This test verifies port can handle ICE messages in Hybrid mode and switches
-// ICEPROTO_RFC5245 mode after successfully handling the message.
-TEST_F(PortTest, TestHandleStunMessageAsIceInHybridMode) {
-  // Our port will act as the "remote" port.
-  rtc::scoped_ptr<TestPort> port(
-      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_HYBRID);
-
-  rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
-  rtc::SocketAddress addr(kLocalAddr1);
-  std::string username;
-
-  // BINDING-REQUEST from local to remote with valid ICE username,
-  // MESSAGE-INTEGRITY, and FINGERPRINT.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
-                                             "rfrag:lfrag"));
-  in_msg->AddMessageIntegrity("rpass");
-  in_msg->AddFingerprint();
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() != NULL);
-  EXPECT_EQ("lfrag", username);
-  EXPECT_EQ(ICEPROTO_RFC5245, port->IceProtocol());
-}
-
-// This test verifies port can handle GICE messages in Hybrid mode and switches
-// ICEPROTO_GOOGLE mode after successfully handling the message.
-TEST_F(PortTest, TestHandleStunMessageAsGiceInHybridMode) {
-  // Our port will act as the "remote" port.
-  rtc::scoped_ptr<TestPort> port(
-      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_HYBRID);
-
-  rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
-  rtc::SocketAddress addr(kLocalAddr1);
-  std::string username;
-
-  // BINDING-REQUEST from local to remote with valid GICE username and no M-I.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
-                                             "rfraglfrag"));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() != NULL);  // Succeeds, since this is GICE.
-  EXPECT_EQ("lfrag", username);
-  EXPECT_EQ(ICEPROTO_GOOGLE, port->IceProtocol());
-}
-
-// Verify port is not switched out of RFC5245 mode if GICE message is received
-// in that mode.
-TEST_F(PortTest, TestHandleStunMessageAsGiceInIceMode) {
-  // Our port will act as the "remote" port.
-  rtc::scoped_ptr<TestPort> port(
-      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_RFC5245);
-
-  rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
-  rtc::SocketAddress addr(kLocalAddr1);
-  std::string username;
-
-  // BINDING-REQUEST from local to remote with valid GICE username and no M-I.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
-                                             "rfraglfrag"));
-  WriteStunMessage(in_msg.get(), buf.get());
-  // Should fail as there is no MI and fingerprint.
-  EXPECT_FALSE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                    out_msg.accept(), &username));
-  EXPECT_EQ(ICEPROTO_RFC5245, port->IceProtocol());
-}
-
-
-// Tests handling of GICE binding requests with missing or incorrect usernames.
-TEST_F(PortTest, TestHandleStunMessageAsGiceBadUsername) {
-  rtc::scoped_ptr<TestPort> port(
-      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_GOOGLE);
-
-  rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
-  rtc::SocketAddress addr(kLocalAddr1);
-  std::string username;
-
-  // BINDING-REQUEST with no username.
-  in_msg.reset(CreateStunMessage(STUN_BINDING_REQUEST));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() == NULL);
-  EXPECT_EQ("", username);
-  EXPECT_EQ(STUN_ERROR_BAD_REQUEST_AS_GICE, port->last_stun_error_code());
-
-  // BINDING-REQUEST with empty username.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST, ""));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() == NULL);
-  EXPECT_EQ("", username);
-  EXPECT_EQ(STUN_ERROR_UNAUTHORIZED_AS_GICE, port->last_stun_error_code());
-
-  // BINDING-REQUEST with too-short username.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST, "lfra"));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() == NULL);
-  EXPECT_EQ("", username);
-  EXPECT_EQ(STUN_ERROR_UNAUTHORIZED_AS_GICE, port->last_stun_error_code());
-
-  // BINDING-REQUEST with reversed username.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
-                                             "lfragrfrag"));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() == NULL);
-  EXPECT_EQ("", username);
-  EXPECT_EQ(STUN_ERROR_UNAUTHORIZED_AS_GICE, port->last_stun_error_code());
-
-  // BINDING-REQUEST with garbage username.
-  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
-                                             "abcdefgh"));
-  WriteStunMessage(in_msg.get(), buf.get());
-  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
-                                   out_msg.accept(), &username));
-  EXPECT_TRUE(out_msg.get() == NULL);
-  EXPECT_EQ("", username);
-  EXPECT_EQ(STUN_ERROR_UNAUTHORIZED_AS_GICE, port->last_stun_error_code());
-}
-
 // Tests handling of ICE binding requests with missing or incorrect usernames.
-TEST_F(PortTest, TestHandleStunMessageAsIceBadUsername) {
+TEST_F(PortTest, TestHandleStunMessageBadUsername) {
   rtc::scoped_ptr<TestPort> port(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_RFC5245);
 
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
   rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
@@ -2046,12 +1744,11 @@ TEST_F(PortTest, TestHandleStunMessageAsIceBadUsername) {
   EXPECT_EQ(STUN_ERROR_UNAUTHORIZED, port->last_stun_error_code());
 }
 
-// Test handling STUN messages (as ICE) with missing or malformed M-I.
-TEST_F(PortTest, TestHandleStunMessageAsIceBadMessageIntegrity) {
+// Test handling STUN messages with missing or malformed M-I.
+TEST_F(PortTest, TestHandleStunMessageBadMessageIntegrity) {
   // Our port will act as the "remote" port.
   rtc::scoped_ptr<TestPort> port(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_RFC5245);
 
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
   rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
@@ -2088,12 +1785,11 @@ TEST_F(PortTest, TestHandleStunMessageAsIceBadMessageIntegrity) {
   // Change this test to pass in data via Connection::OnReadPacket instead.
 }
 
-// Test handling STUN messages (as ICE) with missing or malformed FINGERPRINT.
-TEST_F(PortTest, TestHandleStunMessageAsIceBadFingerprint) {
+// Test handling STUN messages with missing or malformed FINGERPRINT.
+TEST_F(PortTest, TestHandleStunMessageBadFingerprint) {
   // Our port will act as the "remote" port.
   rtc::scoped_ptr<TestPort> port(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  port->SetIceProtocolType(ICEPROTO_RFC5245);
 
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
   rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
@@ -2155,12 +1851,11 @@ TEST_F(PortTest, TestHandleStunMessageAsIceBadFingerprint) {
   EXPECT_EQ(0, port->last_stun_error_code());
 }
 
-// Test handling of STUN binding indication messages (as ICE). STUN binding
+// Test handling of STUN binding indication messages . STUN binding
 // indications are allowed only to the connection which is in read mode.
 TEST_F(PortTest, TestHandleStunBindingIndication) {
   rtc::scoped_ptr<TestPort> lport(
       CreateTestPort(kLocalAddr2, "lfrag", "lpass"));
-  lport->SetIceProtocolType(ICEPROTO_RFC5245);
   lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
   lport->SetIceTiebreaker(kTiebreaker1);
 
@@ -2183,7 +1878,6 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
   // last_ping_received.
   rtc::scoped_ptr<TestPort> rport(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  rport->SetIceProtocolType(ICEPROTO_RFC5245);
   rport->SetIceRole(cricket::ICEROLE_CONTROLLED);
   rport->SetIceTiebreaker(kTiebreaker2);
 
@@ -2386,12 +2080,12 @@ TEST_F(PortTest, TestCandidateRelatedAddress) {
 }
 
 // Test priority value overflow handling when preference is set to 3.
-TEST_F(PortTest, TestCandidatePreference) {
+TEST_F(PortTest, TestCandidatePriority) {
   cricket::Candidate cand1;
-  cand1.set_preference(3);
+  cand1.set_priority(3);
   cricket::Candidate cand2;
-  cand2.set_preference(1);
-  EXPECT_TRUE(cand1.preference() > cand2.preference());
+  cand2.set_priority(1);
+  EXPECT_TRUE(cand1.priority() > cand2.priority());
 }
 
 // Test the Connection priority is calculated correctly.
@@ -2435,7 +2129,9 @@ TEST_F(PortTest, TestConnectionPriority) {
 
 TEST_F(PortTest, TestWritableState) {
   UDPPort* port1 = CreateUdpPort(kLocalAddr1);
+  port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
   UDPPort* port2 = CreateUdpPort(kLocalAddr2);
+  port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
 
   // Set up channels.
   TestChannel ch1(port1, port2);
@@ -2504,7 +2200,9 @@ TEST_F(PortTest, TestWritableState) {
 
 TEST_F(PortTest, TestTimeoutForNeverWritable) {
   UDPPort* port1 = CreateUdpPort(kLocalAddr1);
+  port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
   UDPPort* port2 = CreateUdpPort(kLocalAddr2);
+  port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
 
   // Set up channels.
   TestChannel ch1(port1, port2);
@@ -2532,11 +2230,11 @@ TEST_F(PortTest, TestTimeoutForNeverWritable) {
 // port which responds to the ping message just like LITE client.
 TEST_F(PortTest, TestIceLiteConnectivity) {
   TestPort* ice_full_port = CreateTestPort(
-      kLocalAddr1, "lfrag", "lpass", cricket::ICEPROTO_RFC5245,
+      kLocalAddr1, "lfrag", "lpass",
       cricket::ICEROLE_CONTROLLING, kTiebreaker1);
 
   rtc::scoped_ptr<TestPort> ice_lite_port(CreateTestPort(
-      kLocalAddr2, "rfrag", "rpass", cricket::ICEPROTO_RFC5245,
+      kLocalAddr2, "rfrag", "rpass",
       cricket::ICEROLE_CONTROLLED, kTiebreaker2));
   // Setup TestChannel. This behaves like FULL mode client.
   TestChannel ch1(ice_full_port, ice_lite_port.get());
@@ -2595,7 +2293,6 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
 
 // This test case verifies that the CONTROLLING port does not time out.
 TEST_F(PortTest, TestControllingNoTimeout) {
-  SetIceProtocolType(cricket::ICEPROTO_RFC5245);
   UDPPort* port1 = CreateUdpPort(kLocalAddr1);
   ConnectToSignalDestroyed(port1);
   port1->set_timeout_delay(10);  // milliseconds
@@ -2621,7 +2318,6 @@ TEST_F(PortTest, TestControllingNoTimeout) {
 // This test case verifies that the CONTROLLED port does time out, but only
 // after connectivity is lost.
 TEST_F(PortTest, TestControlledTimeout) {
-  SetIceProtocolType(cricket::ICEPROTO_RFC5245);
   UDPPort* port1 = CreateUdpPort(kLocalAddr1);
   port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
   port1->SetIceTiebreaker(kTiebreaker1);
