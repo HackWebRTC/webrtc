@@ -60,15 +60,29 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   int32_t Init() override {
     DCHECK(thread_checker_.CalledOnValidThread());
     DCHECK(!initialized_);
-    initialized_ = audio_manager_->Init() || output_.Init() || input_.Init();
-    return initialized_ ? 0 : -1;
+    if (!audio_manager_->Init())
+      return -1;
+    if (output_.Init() != 0) {
+      audio_manager_->Close();
+      return -1;
+    }
+    if (input_.Init() != 0) {
+      output_.Terminate();
+      audio_manager_->Close();
+      return -1;
+    }
+    initialized_ = true;
+    return 0;
   }
 
   int32_t Terminate() override {
     DCHECK(thread_checker_.CalledOnValidThread());
-    initialized_ =
-        !(output_.Terminate() || input_.Terminate() || audio_manager_->Close());
-    return !initialized_ ? 0 : -1;
+    int32_t err = input_.Terminate();
+    err |= output_.Terminate();
+    err |= !audio_manager_->Close();
+    initialized_ = false;
+    DCHECK_EQ(err, 0);
+    return err;
   }
 
   bool Initialized() const override {
