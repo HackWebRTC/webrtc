@@ -226,6 +226,9 @@ class TestChannel : public sigslot::has_slots<> {
     conn_->SignalStateChange.connect(
         this, &TestChannel::OnConnectionStateChange);
     conn_->SignalDestroyed.connect(this, &TestChannel::OnDestroyed);
+    conn_->SignalReadyToSend.connect(this,
+                                     &TestChannel::OnConnectionReadyToSend);
+    connection_ready_to_send_ = false;
   }
   void OnConnectionStateChange(Connection* conn) {
     if (conn->write_state() == Connection::STATE_WRITABLE) {
@@ -307,7 +310,20 @@ class TestChannel : public sigslot::has_slots<> {
 
   bool nominated() const { return nominated_; }
 
+  void set_connection_ready_to_send(bool ready) {
+    connection_ready_to_send_ = ready;
+  }
+  bool connection_ready_to_send() const {
+    return connection_ready_to_send_;
+  }
+
  private:
+  // ReadyToSend will only issue after a Connection recovers from EWOULDBLOCK.
+  void OnConnectionReadyToSend(Connection* conn) {
+    ASSERT_EQ(conn, conn_);
+    connection_ready_to_send_ = true;
+  }
+
   IceMode ice_mode_;
   rtc::scoped_ptr<Port> src_;
   Port* dst_;
@@ -318,6 +334,7 @@ class TestChannel : public sigslot::has_slots<> {
   rtc::scoped_ptr<StunMessage> remote_request_;
   std::string remote_frag_;
   bool nominated_;
+  bool connection_ready_to_send_ = false;
 };
 
 class PortTest : public testing::Test, public sigslot::has_slots<> {
@@ -618,6 +635,9 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     static_cast<TCPConnection*>(ch2.conn())
         ->set_reconnection_timeout(kTcpReconnectTimeout);
 
+    EXPECT_FALSE(ch1.connection_ready_to_send());
+    EXPECT_FALSE(ch2.connection_ready_to_send());
+
     // Once connected, disconnect them.
     DisconnectTcpTestChannels(&ch1, &ch2);
 
@@ -638,11 +658,19 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
 
       // Verify that we could still connect channels.
       ConnectStartedChannels(&ch1, &ch2);
+      EXPECT_TRUE_WAIT(ch1.connection_ready_to_send(),
+                       kTcpReconnectTimeout);
+      // Channel2 is the passive one so a new connection is created during
+      // reconnect. This new connection should never have issued EWOULDBLOCK
+      // hence the connection_ready_to_send() should be false.
+      EXPECT_FALSE(ch2.connection_ready_to_send());
     } else {
       EXPECT_EQ(ch1.conn()->write_state(), Connection::STATE_WRITABLE);
       EXPECT_TRUE_WAIT(
           ch1.conn()->write_state() == Connection::STATE_WRITE_TIMEOUT,
           kTcpReconnectTimeout + kTimeout);
+      EXPECT_FALSE(ch1.connection_ready_to_send());
+      EXPECT_FALSE(ch2.connection_ready_to_send());
     }
 
     // Tear down and ensure that goes smoothly.

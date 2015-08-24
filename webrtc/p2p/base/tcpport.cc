@@ -354,10 +354,16 @@ int TCPConnection::GetError() {
 
 void TCPConnection::OnConnectionRequestResponse(ConnectionRequest* req,
                                                 StunMessage* response) {
-  // Once we receive a binding response, we are really writable, and not just
-  // pretending to be writable.
-  pretending_to_be_writable_ = false;
+  // Process the STUN response before we inform upper layer ready to send.
   Connection::OnConnectionRequestResponse(req, response);
+
+  // If we're in the state of pretending to be writeable, we should inform the
+  // upper layer it's ready to send again as previous EWOULDLBLOCK from socket
+  // would have stopped the outgoing stream.
+  if (pretending_to_be_writable_) {
+    Connection::OnReadyToSend();
+  }
+  pretending_to_be_writable_ = false;
   ASSERT(write_state() == STATE_WRITABLE);
 }
 
