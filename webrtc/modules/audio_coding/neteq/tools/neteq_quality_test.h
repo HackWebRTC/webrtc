@@ -76,8 +76,8 @@ class NetEqQualityTest : public ::testing::Test {
   // |block_size_samples| (samples per channel),
   // 2. save the bit stream to |payload| of |max_bytes| bytes in size,
   // 3. returns the length of the payload (in bytes),
-  virtual int EncodeBlock(int16_t* in_data, int block_size_samples,
-                          uint8_t* payload, int max_bytes) = 0;
+  virtual int EncodeBlock(int16_t* in_data, size_t block_size_samples,
+                          uint8_t* payload, size_t max_bytes) = 0;
 
   // PacketLost(...) determines weather a packet sent at an indicated time gets
   // lost or not.
@@ -111,13 +111,13 @@ class NetEqQualityTest : public ::testing::Test {
   const int out_sampling_khz_;
 
   // Number of samples per channel in a frame.
-  const int in_size_samples_;
+  const size_t in_size_samples_;
 
   // Expected output number of samples per channel in a frame.
-  const int out_size_samples_;
+  const size_t out_size_samples_;
 
   size_t payload_size_bytes_;
-  int max_payload_bytes_;
+  size_t max_payload_bytes_;
 
   rtc::scoped_ptr<InputAudioFile> in_file_;
   rtc::scoped_ptr<AudioSink> output_;

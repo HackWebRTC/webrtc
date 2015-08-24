@@ -30,19 +30,21 @@
  * interface for enhancer
  *---------------------------------------------------------------*/
 
-int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
+size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     int16_t *out,     /* (o) enhanced signal */
     int16_t *in,      /* (i) unenhanced signal */
     IlbcDecoder *iLBCdec_inst /* (i) buffers etc */
                                         ){
   int iblock;
-  int lag=20, tlag=20;
-  int inLen=iLBCdec_inst->blockl+120;
-  int16_t scale, scale1, plc_blockl;
+  size_t lag=20, tlag=20;
+  size_t inLen=iLBCdec_inst->blockl+120;
+  int16_t scale, scale1;
+  size_t plc_blockl;
   int16_t *enh_buf, *enh_period;
   int32_t tmp1, tmp2, max, new_blocks;
   int16_t *enh_bufPtr1;
-  int i, k;
+  size_t i;
+  int k;
   int16_t EnChange;
   int16_t SqrtEnChange;
   int16_t inc;
@@ -56,7 +58,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   int32_t ener;
   int16_t enerSh;
   int16_t corrSh;
-  int16_t ind, sh;
+  size_t ind;
+  int16_t sh;
   int16_t start, stop;
   /* Stack based */
   int16_t totsh[3];
@@ -168,7 +171,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       }
     }
 
-    lag = lagmax[ind] + 10;
+    lag = (size_t)(lagmax[ind] + 10);
 
     /* Store the estimated lag in the non-downsampled domain */
     enh_period[ENH_NBLOCKS_TOT - new_blocks + iblock] = (int16_t)(lag * 8);
@@ -224,7 +227,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
             (plc_blockl-lag));
       }
     } else {
-      int pos;
+      size_t pos;
 
       pos = plc_blockl;
 
@@ -280,8 +283,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
 
 
         /* Multiply first part of vector with 2*SqrtEnChange */
-        WebRtcSpl_ScaleVector(plc_pred, plc_pred, SqrtEnChange,
-                              (int16_t)(plc_blockl-16), 14);
+        WebRtcSpl_ScaleVector(plc_pred, plc_pred, SqrtEnChange, plc_blockl-16,
+                              14);
 
         /* Calculate increase parameter for window part (16 last samples) */
         /* (1-2*SqrtEnChange)/16 in Q15 */
@@ -343,7 +346,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
                             LPC_FILTERORDER);
       WebRtcIlbcfix_HpOutput(synt, (int16_t*)WebRtcIlbcfix_kHpOutCoefs,
                              iLBCdec_inst->hpimemy, iLBCdec_inst->hpimemx,
-                             (int16_t)lag);
+                             lag);
       WebRtcSpl_FilterARFastQ12(
           enh_bufPtr1, synt,
           &iLBCdec_inst->old_syntdenum[
@@ -354,7 +357,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
                             LPC_FILTERORDER);
       WebRtcIlbcfix_HpOutput(synt, (int16_t*)WebRtcIlbcfix_kHpOutCoefs,
                              iLBCdec_inst->hpimemy, iLBCdec_inst->hpimemx,
-                             (int16_t)lag);
+                             lag);
     }
   }
 

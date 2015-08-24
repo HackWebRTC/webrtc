@@ -32,9 +32,9 @@ class PreemptiveExpand : public TimeStretch {
   PreemptiveExpand(int sample_rate_hz,
                    size_t num_channels,
                    const BackgroundNoise& background_noise,
-                   int overlap_samples)
+                   size_t overlap_samples)
       : TimeStretch(sample_rate_hz, num_channels, background_noise),
-        old_data_length_per_channel_(-1),
+        old_data_length_per_channel_(0),
         overlap_samples_(overlap_samples) {
   }
 
@@ -44,17 +44,17 @@ class PreemptiveExpand : public TimeStretch {
   // is provided in the output |length_change_samples|. The method returns
   // the outcome of the operation as an enumerator value.
   ReturnCodes Process(const int16_t *pw16_decoded,
-                      int len,
-                      int old_data_len,
+                      size_t len,
+                      size_t old_data_len,
                       AudioMultiVector* output,
-                      int16_t* length_change_samples);
+                      size_t* length_change_samples);
 
  protected:
   // Sets the parameters |best_correlation| and |peak_index| to suitable
   // values when the signal contains no active speech.
   void SetParametersForPassiveSpeech(size_t input_length,
                                      int16_t* best_correlation,
-                                     int* peak_index) const override;
+                                     size_t* peak_index) const override;
 
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.
@@ -67,8 +67,8 @@ class PreemptiveExpand : public TimeStretch {
                                       AudioMultiVector* output) const override;
 
  private:
-  int old_data_length_per_channel_;
-  int overlap_samples_;
+  size_t old_data_length_per_channel_;
+  size_t overlap_samples_;
 
   DISALLOW_COPY_AND_ASSIGN(PreemptiveExpand);
 };
@@ -81,7 +81,7 @@ struct PreemptiveExpandFactory {
       int sample_rate_hz,
       size_t num_channels,
       const BackgroundNoise& background_noise,
-      int overlap_samples) const;
+      size_t overlap_samples) const;
 };
 
 }  // namespace webrtc

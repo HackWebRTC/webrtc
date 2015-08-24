@@ -65,7 +65,8 @@ void AudioCodecSpeedTest::SetUp() {
   memcpy(&in_data_[loop_length_samples_], &in_data_[0],
          input_length_sample_ * channels_ * sizeof(int16_t));
 
-  max_bytes_ = input_length_sample_ * channels_ * sizeof(int16_t);
+  max_bytes_ =
+      static_cast<size_t>(input_length_sample_ * channels_ * sizeof(int16_t));
   out_data_.reset(new int16_t[output_length_sample_ * channels_]);
   bit_stream_.reset(new uint8_t[max_bytes_]);
 

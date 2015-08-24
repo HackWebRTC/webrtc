@@ -58,7 +58,7 @@ static_assert(arraysize(kTestCenterFreqs) == arraysize(kTestFilterBank),
               "Test filterbank badly initialized.");
 
 // Target output for gain solving test. Generated with matlab.
-const int kTestStartFreq = 12;  // Lowest integral frequency for ERBs.
+const size_t kTestStartFreq = 12;  // Lowest integral frequency for ERBs.
 const float kTestZeroVar[] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f,
                               1.f, 1.f, 1.f, 0.f, 0.f, 0.f, 0.f, 0.f,
                               0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
@@ -149,11 +149,11 @@ TEST_F(IntelligibilityEnhancerTest, TestRenderUpdate) {
 
 // Tests ERB bank creation, comparing against matlab output.
 TEST_F(IntelligibilityEnhancerTest, TestErbCreation) {
-  ASSERT_EQ(static_cast<int>(arraysize(kTestCenterFreqs)), enh_->bank_size_);
-  for (int i = 0; i < enh_->bank_size_; ++i) {
+  ASSERT_EQ(arraysize(kTestCenterFreqs), enh_->bank_size_);
+  for (size_t i = 0; i < enh_->bank_size_; ++i) {
     EXPECT_NEAR(kTestCenterFreqs[i], enh_->center_freqs_[i], kMaxTestError);
-    ASSERT_EQ(static_cast<int>(arraysize(kTestFilterBank[0])), enh_->freqs_);
-    for (int j = 0; j < enh_->freqs_; ++j) {
+    ASSERT_EQ(arraysize(kTestFilterBank[0]), enh_->freqs_);
+    for (size_t j = 0; j < enh_->freqs_; ++j) {
       EXPECT_NEAR(kTestFilterBank[i][j], enh_->filter_bank_[i][j],
                   kMaxTestError);
     }
@@ -166,26 +166,26 @@ TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
   ASSERT_EQ(kTestStartFreq, enh_->start_freq_);
   vector<float> sols(enh_->bank_size_);
   float lambda = -0.001f;
-  for (int i = 0; i < enh_->bank_size_; i++) {
+  for (size_t i = 0; i < enh_->bank_size_; i++) {
     enh_->filtered_clear_var_[i] = 0.0f;
     enh_->filtered_noise_var_[i] = 0.0f;
     enh_->rho_[i] = 0.02f;
   }
   enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
-  for (int i = 0; i < enh_->bank_size_; i++) {
+  for (size_t i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestZeroVar[i], sols[i], kMaxTestError);
   }
-  for (int i = 0; i < enh_->bank_size_; i++) {
+  for (size_t i = 0; i < enh_->bank_size_; i++) {
     enh_->filtered_clear_var_[i] = static_cast<float>(i + 1);
     enh_->filtered_noise_var_[i] = static_cast<float>(enh_->bank_size_ - i);
   }
   enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
-  for (int i = 0; i < enh_->bank_size_; i++) {
+  for (size_t i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestNonZeroVarLambdaTop[i], sols[i], kMaxTestError);
   }
   lambda = -1.0;
   enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
-  for (int i = 0; i < enh_->bank_size_; i++) {
+  for (size_t i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestZeroVar[i], sols[i], kMaxTestError);
   }
 }

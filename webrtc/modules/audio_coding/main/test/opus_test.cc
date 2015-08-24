@@ -270,14 +270,14 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
 
     if (loop_encode > 0) {
       const int kMaxBytes = 1000;  // Maximum number of bytes for one packet.
-      int16_t bitstream_len_byte;
+      size_t bitstream_len_byte;
       uint8_t bitstream[kMaxBytes];
       for (int i = 0; i < loop_encode; i++) {
         int bitstream_len_byte_int = WebRtcOpus_Encode(
             (channels == 1) ? opus_mono_encoder_ : opus_stereo_encoder_,
             &audio[read_samples], frame_length, kMaxBytes, bitstream);
         ASSERT_GE(bitstream_len_byte_int, 0);
-        bitstream_len_byte = static_cast<int16_t>(bitstream_len_byte_int);
+        bitstream_len_byte = static_cast<size_t>(bitstream_len_byte_int);
 
         // Simulate packet loss by setting |packet_loss_| to "true" in
         // |percent_loss| percent of the loops.
@@ -341,7 +341,8 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
         audio_frame.samples_per_channel_ * audio_frame.num_channels_);
 
     // Write stand-alone speech to file.
-    out_file_standalone_.Write10MsData(out_audio, decoded_samples * channels);
+    out_file_standalone_.Write10MsData(
+        out_audio, static_cast<size_t>(decoded_samples) * channels);
 
     if (audio_frame.timestamp_ > start_time_stamp) {
       // Number of channels should be the same for both stand-alone and

@@ -130,7 +130,7 @@ class WebRtcVoiceEngine
   void Process(int channel,
                webrtc::ProcessingTypes type,
                int16_t audio10ms[],
-               int length,
+               size_t length,
                int sampling_freq,
                bool is_stereo) override;
 

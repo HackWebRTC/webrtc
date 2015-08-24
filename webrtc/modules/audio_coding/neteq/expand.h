@@ -64,7 +64,7 @@ class Expand {
 
   // Accessors and mutators.
   virtual size_t overlap_length() const;
-  int16_t max_lag() const { return max_lag_; }
+  size_t max_lag() const { return max_lag_; }
 
  protected:
   static const int kMaxConsecutiveExpands = 200;
@@ -96,11 +96,11 @@ class Expand {
   int consecutive_expands_;
 
  private:
-  static const int kUnvoicedLpcOrder = 6;
-  static const int kNumCorrelationCandidates = 3;
-  static const int kDistortionLength = 20;
-  static const int kLpcAnalysisLength = 160;
-  static const int kMaxSampleRate = 48000;
+  static const size_t kUnvoicedLpcOrder = 6;
+  static const size_t kNumCorrelationCandidates = 3;
+  static const size_t kDistortionLength = 20;
+  static const size_t kLpcAnalysisLength = 160;
+  static const size_t kMaxSampleRate = 48000;
   static const int kNumLags = 3;
 
   struct ChannelParameters {
@@ -132,7 +132,7 @@ class Expand {
   BackgroundNoise* const background_noise_;
   StatisticsCalculator* const statistics_;
   const size_t overlap_length_;
-  int16_t max_lag_;
+  size_t max_lag_;
   size_t expand_lags_[kNumLags];
   int lag_index_direction_;
   int current_lag_index_;

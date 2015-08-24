@@ -59,11 +59,11 @@ class NetEqIlbcQualityTest : public NetEqQualityTest {
   }
 
   int EncodeBlock(int16_t* in_data,
-                  int block_size_samples,
+                  size_t block_size_samples,
                   uint8_t* payload,
-                  int max_bytes) override {
-    const int kFrameSizeSamples = 80;  // Samples per 10 ms.
-    int encoded_samples = 0;
+                  size_t max_bytes) override {
+    const size_t kFrameSizeSamples = 80;  // Samples per 10 ms.
+    size_t encoded_samples = 0;
     uint32_t dummy_timestamp = 0;
     AudioEncoder::EncodedInfo info;
     do {

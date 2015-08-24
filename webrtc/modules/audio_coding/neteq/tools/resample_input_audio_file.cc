@@ -26,14 +26,11 @@ bool ResampleInputAudioFile::Read(size_t samples,
   if (!InputAudioFile::Read(samples_to_read, temp_destination.get()))
     return false;
   resampler_.ResetIfNeeded(file_rate_hz_, output_rate_hz, 1);
-  int output_length = 0;
-  CHECK_EQ(resampler_.Push(temp_destination.get(),
-                           static_cast<int>(samples_to_read),
-                           destination,
-                           static_cast<int>(samples),
-                           output_length),
+  size_t output_length = 0;
+  CHECK_EQ(resampler_.Push(temp_destination.get(), samples_to_read, destination,
+                           samples, output_length),
            0);
-  CHECK_EQ(static_cast<int>(samples), output_length);
+  CHECK_EQ(samples, output_length);
   return true;
 }
 

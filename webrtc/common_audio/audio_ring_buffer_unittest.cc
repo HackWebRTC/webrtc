@@ -34,27 +34,27 @@ void ReadAndWriteTest(const ChannelBuffer<float>& input,
   while (input_pos + buf.WriteFramesAvailable() < total_frames) {
     // Write until the buffer is as full as possible.
     while (buf.WriteFramesAvailable() >= num_write_chunk_frames) {
-      buf.Write(input.Slice(slice.get(), static_cast<int>(input_pos)),
-                num_channels, num_write_chunk_frames);
+      buf.Write(input.Slice(slice.get(), input_pos), num_channels,
+                num_write_chunk_frames);
       input_pos += num_write_chunk_frames;
     }
     // Read until the buffer is as empty as possible.
     while (buf.ReadFramesAvailable() >= num_read_chunk_frames) {
       EXPECT_LT(output_pos, total_frames);
-      buf.Read(output->Slice(slice.get(), static_cast<int>(output_pos)),
-               num_channels, num_read_chunk_frames);
+      buf.Read(output->Slice(slice.get(), output_pos), num_channels,
+               num_read_chunk_frames);
       output_pos += num_read_chunk_frames;
     }
   }
 
   // Write and read the last bit.
   if (input_pos < total_frames) {
-    buf.Write(input.Slice(slice.get(), static_cast<int>(input_pos)),
-              num_channels, total_frames - input_pos);
+    buf.Write(input.Slice(slice.get(), input_pos), num_channels,
+              total_frames - input_pos);
   }
   if (buf.ReadFramesAvailable()) {
-    buf.Read(output->Slice(slice.get(), static_cast<int>(output_pos)),
-             num_channels, buf.ReadFramesAvailable());
+    buf.Read(output->Slice(slice.get(), output_pos), num_channels,
+             buf.ReadFramesAvailable());
   }
   EXPECT_EQ(0u, buf.ReadFramesAvailable());
 }

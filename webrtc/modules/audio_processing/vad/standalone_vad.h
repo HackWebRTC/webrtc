@@ -41,10 +41,10 @@ class StandaloneVad {
   // classified as passive. In this way, when probabilities are combined, the
   // effect of the stand-alone VAD is neutral if the input is classified as
   // active.
-  int GetActivity(double* p, int length_p);
+  int GetActivity(double* p, size_t length_p);
 
   // Expecting 10 ms of 16 kHz audio to be pushed in.
-  int AddAudio(const int16_t* data, int length);
+  int AddAudio(const int16_t* data, size_t length);
 
   // Set aggressiveness of VAD, 0 is the least aggressive and 3 is the most
   // aggressive mode. Returns -1 if the input is less than 0 or larger than 3,
@@ -56,12 +56,12 @@ class StandaloneVad {
  private:
   explicit StandaloneVad(VadInst* vad);
 
-  static const int kMaxNum10msFrames = 3;
+  static const size_t kMaxNum10msFrames = 3;
 
   // TODO(turajs): Is there a way to use scoped-pointer here?
   VadInst* vad_;
   int16_t buffer_[kMaxNum10msFrames * kLength10Ms];
-  int index_;
+  size_t index_;
   int mode_;
 };
 

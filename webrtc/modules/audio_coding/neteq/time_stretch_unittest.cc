@@ -75,12 +75,12 @@ class TimeStretchTest : public ::testing::Test {
 
   // Returns the total length change (in samples) that the accelerate operation
   // resulted in during the run.
-  int TestAccelerate(int loops, bool fast_mode) {
+  size_t TestAccelerate(size_t loops, bool fast_mode) {
     Accelerate accelerate(sample_rate_hz_, kNumChannels, background_noise_);
-    int total_length_change = 0;
-    for (int i = 0; i < loops; ++i) {
+    size_t total_length_change = 0;
+    for (size_t i = 0; i < loops; ++i) {
       AudioMultiVector output(kNumChannels);
-      int16_t length_change;
+      size_t length_change;
       UpdateReturnStats(accelerate.Process(Next30Ms(), block_size_, fast_mode,
                                            &output, &length_change));
       total_length_change += length_change;
@@ -110,7 +110,7 @@ class TimeStretchTest : public ::testing::Test {
 
 TEST_F(TimeStretchTest, Accelerate) {
   // TestAccelerate returns the total length change in samples.
-  EXPECT_EQ(15268, TestAccelerate(100, false));
+  EXPECT_EQ(15268U, TestAccelerate(100, false));
   EXPECT_EQ(9, return_stats_[TimeStretch::kSuccess]);
   EXPECT_EQ(58, return_stats_[TimeStretch::kSuccessLowEnergy]);
   EXPECT_EQ(33, return_stats_[TimeStretch::kNoStretch]);
@@ -118,7 +118,7 @@ TEST_F(TimeStretchTest, Accelerate) {
 
 TEST_F(TimeStretchTest, AccelerateFastMode) {
   // TestAccelerate returns the total length change in samples.
-  EXPECT_EQ(21400, TestAccelerate(100, true));
+  EXPECT_EQ(21400U, TestAccelerate(100, true));
   EXPECT_EQ(31, return_stats_[TimeStretch::kSuccess]);
   EXPECT_EQ(58, return_stats_[TimeStretch::kSuccessLowEnergy]);
   EXPECT_EQ(11, return_stats_[TimeStretch::kNoStretch]);

@@ -43,7 +43,7 @@ struct TestParameters {
 class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
  protected:
   static const int kTimeStepMs = 10;
-  static const int kMaxBlockSize = 480;  // 10 ms @ 48 kHz.
+  static const size_t kMaxBlockSize = 480;  // 10 ms @ 48 kHz.
   static const uint8_t kPayloadTypeMono = 95;
   static const uint8_t kPayloadTypeMulti = 96;
 
@@ -52,7 +52,8 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
         sample_rate_hz_(GetParam().sample_rate),
         samples_per_ms_(sample_rate_hz_ / 1000),
         frame_size_ms_(GetParam().frame_size),
-        frame_size_samples_(frame_size_ms_ * samples_per_ms_),
+        frame_size_samples_(
+            static_cast<size_t>(frame_size_ms_ * samples_per_ms_)),
         output_size_samples_(10 * samples_per_ms_),
         rtp_generator_mono_(samples_per_ms_),
         rtp_generator_(samples_per_ms_),
@@ -212,7 +213,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
       }
       NetEqOutputType output_type;
       // Get audio from mono instance.
-      int samples_per_channel;
+      size_t samples_per_channel;
       int num_channels;
       EXPECT_EQ(NetEq::kOK,
                 neteq_mono_->GetAudio(kMaxBlockSize, output_,
@@ -242,8 +243,8 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
   const int sample_rate_hz_;
   const int samples_per_ms_;
   const int frame_size_ms_;
-  const int frame_size_samples_;
-  const int output_size_samples_;
+  const size_t frame_size_samples_;
+  const size_t output_size_samples_;
   NetEq* neteq_mono_;
   NetEq* neteq_;
   test::RtpGenerator rtp_generator_mono_;
@@ -256,8 +257,8 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
   int16_t* output_multi_channel_;
   WebRtcRTPHeader rtp_header_mono_;
   WebRtcRTPHeader rtp_header_;
-  int payload_size_bytes_;
-  int multi_payload_size_bytes_;
+  size_t payload_size_bytes_;
+  size_t multi_payload_size_bytes_;
   int last_send_time_;
   int last_arrival_time_;
   rtc::scoped_ptr<test::InputAudioFile> input_file_;

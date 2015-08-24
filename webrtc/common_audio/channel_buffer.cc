@@ -12,9 +12,9 @@
 
 namespace webrtc {
 
-IFChannelBuffer::IFChannelBuffer(int num_frames,
+IFChannelBuffer::IFChannelBuffer(size_t num_frames,
                                  int num_channels,
-                                 int num_bands)
+                                 size_t num_bands)
     : ivalid_(true),
       ibuf_(num_frames, num_channels, num_bands),
       fvalid_(true),
@@ -48,7 +48,7 @@ void IFChannelBuffer::RefreshF() const {
     const int16_t* const* int_channels = ibuf_.channels();
     float* const* float_channels = fbuf_.channels();
     for (int i = 0; i < ibuf_.num_channels(); ++i) {
-      for (int j = 0; j < ibuf_.num_frames(); ++j) {
+      for (size_t j = 0; j < ibuf_.num_frames(); ++j) {
         float_channels[i][j] = int_channels[i][j];
       }
     }

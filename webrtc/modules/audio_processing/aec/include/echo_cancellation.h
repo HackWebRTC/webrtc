@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_INCLUDE_ECHO_CANCELLATION_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_INCLUDE_ECHO_CANCELLATION_H_
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 // Errors
@@ -111,7 +113,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq);
  */
 int32_t WebRtcAec_BufferFarend(void* aecInst,
                                const float* farend,
-                               int16_t nrOfSamples);
+                               size_t nrOfSamples);
 
 /*
  * Runs the echo canceller on an 80 or 160 sample blocks of data.
@@ -138,9 +140,9 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
  */
 int32_t WebRtcAec_Process(void* aecInst,
                           const float* const* nearend,
-                          int num_bands,
+                          size_t num_bands,
                           float* const* out,
-                          int16_t nrOfSamples,
+                          size_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew);
 

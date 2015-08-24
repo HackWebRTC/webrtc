@@ -31,9 +31,9 @@ int WebRtcAec_GetSkew(void* resampInst, int rawSkew, float* skewEst);
 // Resamples input using linear interpolation.
 void WebRtcAec_ResampleLinear(void* resampInst,
                               const float* inspeech,
-                              int size,
+                              size_t size,
                               float skew,
                               float* outspeech,
-                              int* size_out);
+                              size_t* size_out);
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_RESAMPLER_H_

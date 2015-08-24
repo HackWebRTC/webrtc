@@ -24,8 +24,8 @@ class OpusSpeedTest : public AudioCodecSpeedTest {
   void SetUp() override;
   void TearDown() override;
   virtual float EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
-                             int max_bytes, int* encoded_bytes);
-  virtual float DecodeABlock(const uint8_t* bit_stream, int encoded_bytes,
+                             size_t max_bytes, size_t* encoded_bytes);
+  virtual float DecodeABlock(const uint8_t* bit_stream, size_t encoded_bytes,
                              int16_t* out_data);
   WebRtcOpusEncInst* opus_encoder_;
   WebRtcOpusDecInst* opus_decoder_;
@@ -58,19 +58,19 @@ void OpusSpeedTest::TearDown() {
 }
 
 float OpusSpeedTest::EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
-                                  int max_bytes, int* encoded_bytes) {
+                                  size_t max_bytes, size_t* encoded_bytes) {
   clock_t clocks = clock();
   int value = WebRtcOpus_Encode(opus_encoder_, in_data,
                                 input_length_sample_, max_bytes,
                                 bit_stream);
   clocks = clock() - clocks;
   EXPECT_GT(value, 0);
-  *encoded_bytes = value;
+  *encoded_bytes = static_cast<size_t>(value);
   return 1000.0 * clocks / CLOCKS_PER_SEC;
 }
 
 float OpusSpeedTest::DecodeABlock(const uint8_t* bit_stream,
-                                  int encoded_bytes, int16_t* out_data) {
+                                  size_t encoded_bytes, int16_t* out_data) {
   int value;
   int16_t audio_type;
   clock_t clocks = clock();

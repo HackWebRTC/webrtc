@@ -34,16 +34,6 @@ const int kDefaultComplexity = 9;
 // We always encode at 48 kHz.
 const int kSampleRateHz = 48000;
 
-int16_t ClampInt16(size_t x) {
-  return static_cast<int16_t>(
-      std::min(x, static_cast<size_t>(std::numeric_limits<int16_t>::max())));
-}
-
-int16_t CastInt16(size_t x) {
-  DCHECK_LE(x, static_cast<size_t>(std::numeric_limits<int16_t>::max()));
-  return static_cast<int16_t>(x);
-}
-
 }  // namespace
 
 AudioEncoderOpus::Config::Config()
@@ -72,13 +62,13 @@ bool AudioEncoderOpus::Config::IsOk() const {
 
 AudioEncoderOpus::AudioEncoderOpus(const Config& config)
     : num_10ms_frames_per_packet_(
-          rtc::CheckedDivExact(config.frame_size_ms, 10)),
+          static_cast<size_t>(rtc::CheckedDivExact(config.frame_size_ms, 10))),
       num_channels_(config.num_channels),
       payload_type_(config.payload_type),
       application_(config.application),
       dtx_enabled_(config.dtx_enabled),
-      samples_per_10ms_frame_(rtc::CheckedDivExact(kSampleRateHz, 100) *
-                              num_channels_),
+      samples_per_10ms_frame_(static_cast<size_t>(
+          rtc::CheckedDivExact(kSampleRateHz, 100) * num_channels_)),
       packet_loss_rate_(0.0) {
   CHECK(config.IsOk());
   input_buffer_.reserve(num_10ms_frames_per_packet_ * samples_per_10ms_frame_);
@@ -121,11 +111,11 @@ size_t AudioEncoderOpus::MaxEncodedBytes() const {
   return 2 * approx_encoded_bytes;
 }
 
-int AudioEncoderOpus::Num10MsFramesInNextPacket() const {
+size_t AudioEncoderOpus::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-int AudioEncoderOpus::Max10MsFramesInAPacket() const {
+size_t AudioEncoderOpus::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
@@ -195,18 +185,17 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
     first_timestamp_in_buffer_ = rtp_timestamp;
   input_buffer_.insert(input_buffer_.end(), audio,
                        audio + samples_per_10ms_frame_);
-  if (input_buffer_.size() < (static_cast<size_t>(num_10ms_frames_per_packet_) *
-                              samples_per_10ms_frame_)) {
+  if (input_buffer_.size() <
+      (num_10ms_frames_per_packet_ * samples_per_10ms_frame_)) {
     return EncodedInfo();
   }
   CHECK_EQ(input_buffer_.size(),
-           static_cast<size_t>(num_10ms_frames_per_packet_) *
-           samples_per_10ms_frame_);
+           num_10ms_frames_per_packet_ * samples_per_10ms_frame_);
   int status = WebRtcOpus_Encode(
       inst_, &input_buffer_[0],
-      rtc::CheckedDivExact(CastInt16(input_buffer_.size()),
-                           static_cast<int16_t>(num_channels_)),
-      ClampInt16(max_encoded_bytes), encoded);
+      rtc::CheckedDivExact(input_buffer_.size(),
+                           static_cast<size_t>(num_channels_)),
+      max_encoded_bytes, encoded);
   CHECK_GE(status, 0);  // Fails only if fed invalid data.
   input_buffer_.clear();
   EncodedInfo info;

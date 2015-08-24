@@ -31,7 +31,7 @@ void WebRtcIlbcfix_NearestNeighbor(
     int16_t *index, /* (o) index of array element closest to value */
     int16_t *array, /* (i) data array (Q2) */
     int16_t value, /* (i) value (Q2) */
-    int16_t arlength /* (i) dimension of data array (==8) */
+    size_t arlength /* (i) dimension of data array (==8) */
                                    );
 
 #endif

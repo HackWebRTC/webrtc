@@ -45,7 +45,7 @@ void PostDecodeVad::Init() {
   }
 }
 
-void PostDecodeVad::Update(int16_t* signal, int length,
+void PostDecodeVad::Update(int16_t* signal, size_t length,
                            AudioDecoder::SpeechType speech_type,
                            bool sid_frame,
                            int fs_hz) {
@@ -68,12 +68,13 @@ void PostDecodeVad::Update(int16_t* signal, int length,
   }
 
   if (length > 0 && running_) {
-    int vad_sample_index = 0;
+    size_t vad_sample_index = 0;
     active_speech_ = false;
     // Loop through frame sizes 30, 20, and 10 ms.
     for (int vad_frame_size_ms = 30; vad_frame_size_ms >= 10;
         vad_frame_size_ms -= 10) {
-      int vad_frame_size_samples = vad_frame_size_ms * fs_hz / 1000;
+      size_t vad_frame_size_samples =
+          static_cast<size_t>(vad_frame_size_ms * fs_hz / 1000);
       while (length - vad_sample_index >= vad_frame_size_samples) {
         int vad_return = WebRtcVad_Process(
             vad_instance_, fs_hz, &signal[vad_sample_index],

@@ -21,7 +21,7 @@ class MockAudioDeviceBuffer : public AudioDeviceBuffer {
   MockAudioDeviceBuffer() {}
   virtual ~MockAudioDeviceBuffer() {}
 
-  MOCK_METHOD1(RequestPlayoutData, int32_t(uint32_t nSamples));
+  MOCK_METHOD1(RequestPlayoutData, int32_t(size_t nSamples));
   MOCK_METHOD1(GetPlayoutData, int32_t(void* audioBuffer));
 };
 

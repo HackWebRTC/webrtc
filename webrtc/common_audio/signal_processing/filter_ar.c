@@ -17,21 +17,21 @@
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
-int WebRtcSpl_FilterAR(const int16_t* a,
-                       int a_length,
-                       const int16_t* x,
-                       int x_length,
-                       int16_t* state,
-                       int state_length,
-                       int16_t* state_low,
-                       int state_low_length,
-                       int16_t* filtered,
-                       int16_t* filtered_low,
-                       int filtered_low_length)
+size_t WebRtcSpl_FilterAR(const int16_t* a,
+                          size_t a_length,
+                          const int16_t* x,
+                          size_t x_length,
+                          int16_t* state,
+                          size_t state_length,
+                          int16_t* state_low,
+                          size_t state_low_length,
+                          int16_t* filtered,
+                          int16_t* filtered_low,
+                          size_t filtered_low_length)
 {
     int32_t o;
     int32_t oLOW;
-    int i, j, stop;
+    size_t i, j, stop;
     const int16_t* x_ptr = &x[0];
     int16_t* filteredFINAL_ptr = filtered;
     int16_t* filteredFINAL_LOW_ptr = filtered_low;

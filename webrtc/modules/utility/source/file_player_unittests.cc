@@ -62,12 +62,12 @@ class FilePlayerTest : public ::testing::Test {
     rtc::Md5Digest checksum;
     for (int i = 0; i < output_length_ms / 10; ++i) {
       int16_t out[10 * kSampleRateHz / 1000] = {0};
-      int num_samples;
+      size_t num_samples;
       EXPECT_EQ(0,
                 player_->Get10msAudioFromFile(out, num_samples, kSampleRateHz));
       checksum.Update(out, num_samples * sizeof(out[0]));
       if (FLAGS_file_player_output) {
-        ASSERT_EQ(static_cast<size_t>(num_samples),
+        ASSERT_EQ(num_samples,
                   fwrite(out, sizeof(out[0]), num_samples, output_file_));
       }
     }

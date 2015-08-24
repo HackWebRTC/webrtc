@@ -34,8 +34,8 @@ static const int16_t kIntrpCoef[PITCH_FRACS][PITCH_FRACORDER] = {
   { 271, -743,  1570, -3320, 12963,  7301, -2292,  953, -325}
 };
 
-static __inline int32_t CalcLrIntQ(int32_t fixVal,
-                                   int16_t qDomain) {
+static __inline size_t CalcLrIntQ(int16_t fixVal,
+                                  int16_t qDomain) {
   int32_t roundVal = 1 << (qDomain - 1);
 
   return (fixVal + roundVal) >> qDomain;
@@ -55,7 +55,7 @@ void WebRtcIsacfix_PitchFilter(int16_t* indatQQ, // Q10 if type is 1 or 4,
   const int16_t Gain = 21299;     // 1.3 in Q14
   int16_t oldLagQ7;
   int16_t oldGainQ12, lagdeltaQ7, curLagQ7, gaindeltaQ12, curGainQ12;
-  int indW32 = 0, frcQQ = 0;
+  size_t indW32 = 0, frcQQ = 0;
   const int16_t* fracoeffQQ = NULL;
 
   // Assumptions in ARM assembly for WebRtcIsacfix_PitchFilterCoreARM().
@@ -141,13 +141,15 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
                                     PitchFiltstr* pfp,
                                     int16_t* lagsQ7,
                                     int16_t* gainsQ12) {
-  int  k, n, m, ind, pos, pos3QQ;
+  int  k, n, m;
+  size_t ind, pos, pos3QQ;
 
   int16_t ubufQQ[PITCH_INTBUFFSIZE];
   int16_t oldLagQ7, lagdeltaQ7, curLagQ7;
   const int16_t* fracoeffQQ = NULL;
   int16_t scale;
-  int16_t cnt = 0, frcQQ, indW16 = 0, tmpW16;
+  int16_t cnt = 0, tmpW16;
+  size_t frcQQ, indW16 = 0;
   int32_t tmpW32, tmp2W32, csum1QQ, esumxQQ;
 
   // Set up buffer and states.
@@ -179,7 +181,7 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
     for (cnt = 0; cnt < kSegments; cnt++) {
       // Update parameters for each segment.
       curLagQ7 += lagdeltaQ7;
-      indW16 = (int16_t)CalcLrIntQ(curLagQ7, 7);
+      indW16 = CalcLrIntQ(curLagQ7, 7);
       frcQQ = ((indW16 << 7) + 64 - curLagQ7) >> 4;
 
       if (frcQQ == PITCH_FRACS) {
@@ -202,7 +204,7 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
 
         tmp2W32 = WEBRTC_SPL_MUL_16_32_RSFT14(indatQ0[ind], tmpW32);
         tmpW32 += 8192;
-        tmpW16 = (int16_t)(tmpW32 >> 14);
+        tmpW16 = tmpW32 >> 14;
         tmpW32 = tmpW16 * tmpW16;
 
         if ((tmp2W32 > 1073700000) || (csum1QQ > 1073700000) ||

@@ -32,7 +32,8 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
   int32_t logLrtTimeAvgKsumFX;
   int16_t indPriorFX16;
   int16_t tmp16, tmp16no1, tmp16no2, tmpIndFX, tableIndex, frac;
-  int i, normTmp, nShifts;
+  size_t i;
+  int normTmp, nShifts;
 
   int32_t r0, r1, r2, r3, r4, r5, r6, r7, r8, r9;
   int32_t const_max = 0x7fffffff;
@@ -331,7 +332,7 @@ void WebRtcNsx_AnalysisUpdate_mips(NoiseSuppressionFixedC* inst,
                                    int16_t* out,
                                    int16_t* new_speech) {
   int iters, after;
-  int anaLen = inst->anaLen;
+  int anaLen = (int)inst->anaLen;
   int *window = (int*)inst->window;
   int *anaBuf = (int*)inst->analysisBuffer;
   int *outBuf = (int*)out;
@@ -504,7 +505,7 @@ void WebRtcNsx_AnalysisUpdate_mips(NoiseSuppressionFixedC* inst,
 void WebRtcNsx_SynthesisUpdate_mips(NoiseSuppressionFixedC* inst,
                                     int16_t* out_frame,
                                     int16_t gain_factor) {
-  int iters = inst->blockLen10ms >> 2;
+  int iters = (int)inst->blockLen10ms >> 2;
   int after = inst->blockLen10ms & 3;
   int r0, r1, r2, r3, r4, r5, r6, r7;
   int16_t *window = (int16_t*)inst->window;
@@ -861,7 +862,7 @@ void WebRtcNsx_Denormalize_mips(NoiseSuppressionFixedC* inst,
                                 int16_t* in,
                                 int factor) {
   int32_t r0, r1, r2, r3, t0;
-  int len = inst->anaLen;
+  int len = (int)inst->anaLen;
   int16_t *out = &inst->real[0];
   int shift = factor - inst->normData;
 
@@ -951,7 +952,7 @@ void WebRtcNsx_NormalizeRealBuffer_mips(NoiseSuppressionFixedC* inst,
                                         const int16_t* in,
                                         int16_t* out) {
   int32_t r0, r1, r2, r3, t0;
-  int len = inst->anaLen;
+  int len = (int)inst->anaLen;
   int shift = inst->normData;
 
   __asm __volatile (

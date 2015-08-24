@@ -326,10 +326,10 @@ void CodecManager::RegisterEncoder(
   // Make up a CodecInst.
   send_codec_inst_.channels = external_speech_encoder->NumChannels();
   send_codec_inst_.plfreq = external_speech_encoder->SampleRateHz();
-  send_codec_inst_.pacsize =
-      rtc::CheckedDivExact(external_speech_encoder->Max10MsFramesInAPacket() *
-                               send_codec_inst_.plfreq,
-                           100);
+  send_codec_inst_.pacsize = rtc::CheckedDivExact(
+      static_cast<int>(external_speech_encoder->Max10MsFramesInAPacket() *
+                       send_codec_inst_.plfreq),
+      100);
   send_codec_inst_.pltype = -1;  // Not valid.
   send_codec_inst_.rate = -1;    // Not valid.
   static const char kName[] = "external";

@@ -21,7 +21,7 @@ namespace webrtc {
 // This class generates pseudo-random samples.
 class RandomVector {
  public:
-  static const int kRandomTableSize = 256;
+  static const size_t kRandomTableSize = 256;
   static const int16_t kRandomTable[kRandomTableSize];
 
   RandomVector()

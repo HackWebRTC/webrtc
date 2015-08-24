@@ -66,7 +66,7 @@ class MediaCallback : public VoEMediaProcess {
 
  protected:
   virtual void Process(const int channel, const ProcessingTypes type,
-                       int16_t audio[], const int samples_per_channel,
+                       int16_t audio[], const size_t samples_per_channel,
                        const int sample_rate_hz, const bool is_stereo) {
     CriticalSectionScoped cs(crit_);
     if (direct_->capture_muted()) {
@@ -81,7 +81,7 @@ class MediaCallback : public VoEMediaProcess {
     int16_t mono[kMaxSamplesPerChannel];
     int16_t* mono_ptr = audio;
     if (is_stereo) {
-      for (int n = 0; n < samples_per_channel; n++) {
+      for (size_t n = 0; n < samples_per_channel; n++) {
         mono[n] = audio[n * 2];
       }
       mono_ptr = mono;
@@ -94,7 +94,7 @@ class MediaCallback : public VoEMediaProcess {
     frame_.num_channels_ = is_stereo ? 2 : 1;
     frame_.samples_per_channel_ = samples_per_channel;
     frame_.sample_rate_hz_ = sample_rate_hz;
-    const int length_samples = frame_.num_channels_ * samples_per_channel;
+    const size_t length_samples = frame_.num_channels_ * samples_per_channel;
     memcpy(frame_.data_, audio, length_samples * sizeof(int16_t));
 
     // Apply compression to the audio.
@@ -122,7 +122,7 @@ class PreprocCallback : public VoEMediaProcess {
 
  protected:
   virtual void Process(const int channel, const ProcessingTypes type,
-                       int16_t audio[], const int samples_per_channel,
+                       int16_t audio[], const size_t samples_per_channel,
                        const int sample_rate_hz, const bool is_stereo) {
     CriticalSectionScoped cs(crit_);
     if (direct_->capture_muted()) {

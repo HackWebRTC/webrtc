@@ -24,15 +24,20 @@ const int kSampleRateHz = 8000;
 
 }  // namespace
 
+// static
+const size_t AudioEncoderIlbc::kMaxSamplesPerPacket;
+
 bool AudioEncoderIlbc::Config::IsOk() const {
   return (frame_size_ms == 20 || frame_size_ms == 30 || frame_size_ms == 40 ||
           frame_size_ms == 60) &&
-      (kSampleRateHz / 100 * (frame_size_ms / 10)) <= kMaxSamplesPerPacket;
+      static_cast<size_t>(kSampleRateHz / 100 * (frame_size_ms / 10)) <=
+          kMaxSamplesPerPacket;
 }
 
 AudioEncoderIlbc::AudioEncoderIlbc(const Config& config)
     : payload_type_(config.payload_type),
-      num_10ms_frames_per_packet_(config.frame_size_ms / 10),
+      num_10ms_frames_per_packet_(
+          static_cast<size_t>(config.frame_size_ms / 10)),
       num_10ms_frames_buffered_(0) {
   CHECK(config.IsOk());
   CHECK_EQ(0, WebRtcIlbcfix_EncoderCreate(&encoder_));
@@ -58,11 +63,11 @@ size_t AudioEncoderIlbc::MaxEncodedBytes() const {
   return RequiredOutputSizeBytes();
 }
 
-int AudioEncoderIlbc::Num10MsFramesInNextPacket() const {
+size_t AudioEncoderIlbc::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-int AudioEncoderIlbc::Max10MsFramesInAPacket() const {
+size_t AudioEncoderIlbc::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
@@ -111,7 +116,7 @@ AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
       encoded);
   CHECK_GE(output_len, 0);
   EncodedInfo info;
-  info.encoded_bytes = output_len;
+  info.encoded_bytes = static_cast<size_t>(output_len);
   DCHECK_EQ(info.encoded_bytes, RequiredOutputSizeBytes());
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;

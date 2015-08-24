@@ -29,9 +29,9 @@ typedef struct WebRtcG722EncInst    G722EncInst;
 typedef struct WebRtcG722DecInst    G722DecInst;
 
 /* function for reading audio data from PCM file */
-bool readframe(int16_t *data, FILE *inp, int length)
+bool readframe(int16_t *data, FILE *inp, size_t length)
 {
-    short rlen = (short)fread(data, sizeof(int16_t), length, inp);
+    size_t rlen = fread(data, sizeof(int16_t), length, inp);
     if (rlen >= length)
       return false;
     memset(data + rlen, 0, (length - rlen) * sizeof(int16_t));
@@ -45,17 +45,16 @@ int main(int argc, char* argv[])
 
     int framecnt;
     bool endfile;
-    int16_t framelength = 160;
+    size_t framelength = 160;
     G722EncInst *G722enc_inst;
     G722DecInst *G722dec_inst;
-    int err;
 
     /* Runtime statistics */
     double starttime;
     double runtime = 0;
     double length_file;
 
-    int16_t stream_len = 0;
+    size_t stream_len = 0;
     int16_t shortdata[960];
     int16_t decoded[960];
     uint8_t streamdata[80 * 6];
@@ -78,11 +77,12 @@ int main(int argc, char* argv[])
     }
 
     /* Get frame length */
-    framelength = atoi(argv[1]);
-    if (framelength < 0) {
-        printf("  G.722: Invalid framelength %d.\n", framelength);
+    int framelength_int = atoi(argv[1]);
+    if (framelength_int < 0) {
+        printf("  G.722: Invalid framelength %d.\n", framelength_int);
         exit(1);
     }
+    framelength = static_cast<size_t>(framelength_int);
 
     /* Get Input and Output files */
     sscanf(argv[2], "%s", inname);
@@ -124,26 +124,21 @@ int main(int argc, char* argv[])
 
         /* G.722 encoding + decoding */
         stream_len = WebRtcG722_Encode((G722EncInst *)G722enc_inst, shortdata, framelength, streamdata);
-        err = WebRtcG722_Decode(G722dec_inst, streamdata, stream_len, decoded,
-                                speechType);
+        WebRtcG722_Decode(G722dec_inst, streamdata, stream_len, decoded,
+                          speechType);
 
         /* Stop clock after call to encoder and decoder */
         runtime += (double)((clock()/(double)CLOCKS_PER_SEC_G722)-starttime);
 
-        if (stream_len < 0 || err < 0) {
-            /* exit if returned with error */
-            printf("Error in encoder/decoder\n");
-        } else {
-          /* Write coded bits to file */
-          if (fwrite(streamdata, sizeof(short), stream_len / 2, outbitp) !=
-              static_cast<size_t>(stream_len / 2)) {
-            return -1;
-          }
-          /* Write coded speech to file */
-          if (fwrite(decoded, sizeof(short), framelength, outp) !=
-              static_cast<size_t>(framelength)) {
-            return -1;
-          }
+        /* Write coded bits to file */
+        if (fwrite(streamdata, sizeof(short), stream_len / 2, outbitp) !=
+            stream_len / 2) {
+          return -1;
+        }
+        /* Write coded speech to file */
+        if (fwrite(decoded, sizeof(short), framelength, outp) !=
+            framelength) {
+          return -1;
         }
     }
 

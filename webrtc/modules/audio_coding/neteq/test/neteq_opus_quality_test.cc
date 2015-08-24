@@ -103,12 +103,12 @@ class NetEqOpusQualityTest : public NetEqQualityTest {
   NetEqOpusQualityTest();
   void SetUp() override;
   void TearDown() override;
-  virtual int EncodeBlock(int16_t* in_data, int block_size_samples,
-                          uint8_t* payload, int max_bytes);
+  virtual int EncodeBlock(int16_t* in_data, size_t block_size_samples,
+                          uint8_t* payload, size_t max_bytes);
  private:
   WebRtcOpusEncInst* opus_encoder_;
   OpusRepacketizer* repacketizer_;
-  int sub_block_size_samples_;
+  size_t sub_block_size_samples_;
   int bit_rate_kbps_;
   bool fec_;
   bool dtx_;
@@ -126,7 +126,8 @@ NetEqOpusQualityTest::NetEqOpusQualityTest()
                        kDecoderOpus),
       opus_encoder_(NULL),
       repacketizer_(NULL),
-      sub_block_size_samples_(kOpusBlockDurationMs * kOpusSamplingKhz),
+      sub_block_size_samples_(
+          static_cast<size_t>(kOpusBlockDurationMs * kOpusSamplingKhz)),
       bit_rate_kbps_(FLAGS_bit_rate_kbps),
       fec_(FLAGS_fec),
       dtx_(FLAGS_dtx),
@@ -173,8 +174,8 @@ void NetEqOpusQualityTest::TearDown() {
 }
 
 int NetEqOpusQualityTest::EncodeBlock(int16_t* in_data,
-                                      int block_size_samples,
-                                      uint8_t* payload, int max_bytes) {
+                                      size_t block_size_samples,
+                                      uint8_t* payload, size_t max_bytes) {
   EXPECT_EQ(block_size_samples, sub_block_size_samples_ * sub_packets_);
   int16_t* pointer = in_data;
   int value;
@@ -192,7 +193,8 @@ int NetEqOpusQualityTest::EncodeBlock(int16_t* in_data,
     }
     pointer += sub_block_size_samples_ * channels_;
   }
-  value = opus_repacketizer_out(repacketizer_, payload, max_bytes);
+  value = opus_repacketizer_out(repacketizer_, payload,
+                                static_cast<opus_int32>(max_bytes));
   EXPECT_GE(value, 0);
   return value;
 }

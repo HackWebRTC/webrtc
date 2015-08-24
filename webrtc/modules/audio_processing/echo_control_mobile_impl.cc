@@ -96,7 +96,7 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
       err = WebRtcAecm_BufferFarend(
           my_handle,
           audio->split_bands_const(j)[kBand0To8kHz],
-          static_cast<int16_t>(audio->num_frames_per_band()));
+          audio->num_frames_per_band());
 
       if (err != apm_->kNoError) {
         return GetHandleError(my_handle);  // TODO(ajm): warning possible?
@@ -141,7 +141,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
           noisy,
           clean,
           audio->split_bands(i)[kBand0To8kHz],
-          static_cast<int16_t>(audio->num_frames_per_band()),
+          audio->num_frames_per_band(),
           apm_->stream_delay_ms());
 
       if (err != apm_->kNoError) {

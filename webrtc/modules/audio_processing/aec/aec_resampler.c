@@ -64,17 +64,16 @@ void WebRtcAec_FreeResampler(void* resampInst) {
 
 void WebRtcAec_ResampleLinear(void* resampInst,
                               const float* inspeech,
-                              int size,
+                              size_t size,
                               float skew,
                               float* outspeech,
-                              int* size_out) {
+                              size_t* size_out) {
   AecResampler* obj = (AecResampler*)resampInst;
 
   float* y;
   float be, tnew;
-  int tn, mm;
+  size_t tn, mm;
 
-  assert(size >= 0);
   assert(size <= 2 * FRAME_LEN);
   assert(resampInst != NULL);
   assert(inspeech != NULL);
@@ -94,7 +93,7 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   y = &obj->buffer[FRAME_LEN];  // Point at current frame
 
   tnew = be * mm + obj->position;
-  tn = (int)tnew;
+  tn = (size_t)tnew;
 
   while (tn < size) {
 

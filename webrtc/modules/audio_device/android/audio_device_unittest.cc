@@ -19,6 +19,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
@@ -55,22 +56,22 @@ namespace webrtc {
 
 // Number of callbacks (input or output) the tests waits for before we set
 // an event indicating that the test was OK.
-static const int kNumCallbacks = 10;
+static const size_t kNumCallbacks = 10;
 // Max amount of time we wait for an event to be set while counting callbacks.
 static const int kTestTimeOutInMilliseconds = 10 * 1000;
 // Average number of audio callbacks per second assuming 10ms packet size.
-static const int kNumCallbacksPerSecond = 100;
+static const size_t kNumCallbacksPerSecond = 100;
 // Play out a test file during this time (unit is in seconds).
 static const int kFilePlayTimeInSec = 5;
-static const int kBitsPerSample = 16;
-static const int kBytesPerSample = kBitsPerSample / 8;
+static const size_t kBitsPerSample = 16;
+static const size_t kBytesPerSample = kBitsPerSample / 8;
 // Run the full-duplex test during this time (unit is in seconds).
 // Note that first |kNumIgnoreFirstCallbacks| are ignored.
 static const int kFullDuplexTimeInSec = 5;
 // Wait for the callback sequence to stabilize by ignoring this amount of the
 // initial callbacks (avoids initial FIFO access).
 // Only used in the RunPlayoutAndRecordingInFullDuplex test.
-static const int kNumIgnoreFirstCallbacks = 50;
+static const size_t kNumIgnoreFirstCallbacks = 50;
 // Sets the number of impulses per second in the latency test.
 static const int kImpulseFrequencyInHz = 1;
 // Length of round-trip latency measurements. Number of transmitted impulses
@@ -90,8 +91,8 @@ enum TransportType {
 // measurements.
 class AudioStreamInterface {
  public:
-  virtual void Write(const void* source, int num_frames) = 0;
-  virtual void Read(void* destination, int num_frames) = 0;
+  virtual void Write(const void* source, size_t num_frames) = 0;
+  virtual void Read(void* destination, size_t num_frames) = 0;
  protected:
   virtual ~AudioStreamInterface() {}
 };
@@ -101,7 +102,7 @@ class AudioStreamInterface {
 class FileAudioStream : public AudioStreamInterface {
  public:
   FileAudioStream(
-      int num_callbacks, const std::string& file_name, int sample_rate)
+      size_t num_callbacks, const std::string& file_name, int sample_rate)
       : file_size_in_bytes_(0),
         sample_rate_(sample_rate),
         file_pos_(0) {
@@ -109,23 +110,23 @@ class FileAudioStream : public AudioStreamInterface {
     sample_rate_ = sample_rate;
     EXPECT_GE(file_size_in_callbacks(), num_callbacks)
         << "Size of test file is not large enough to last during the test.";
-    const int num_16bit_samples =
+    const size_t num_16bit_samples =
         test::GetFileSize(file_name) / kBytesPerSample;
     file_.reset(new int16_t[num_16bit_samples]);
     FILE* audio_file = fopen(file_name.c_str(), "rb");
     EXPECT_NE(audio_file, nullptr);
-    int num_samples_read = fread(
+    size_t num_samples_read = fread(
         file_.get(), sizeof(int16_t), num_16bit_samples, audio_file);
     EXPECT_EQ(num_samples_read, num_16bit_samples);
     fclose(audio_file);
   }
 
   // AudioStreamInterface::Write() is not implemented.
-  void Write(const void* source, int num_frames) override {}
+  void Write(const void* source, size_t num_frames) override {}
 
   // Read samples from file stored in memory (at construction) and copy
   // |num_frames| (<=> 10ms) to the |destination| byte buffer.
-  void Read(void* destination, int num_frames) override {
+  void Read(void* destination, size_t num_frames) override {
     memcpy(destination,
            static_cast<int16_t*> (&file_[file_pos_]),
            num_frames * sizeof(int16_t));
@@ -133,17 +134,18 @@ class FileAudioStream : public AudioStreamInterface {
   }
 
   int file_size_in_seconds() const {
-    return (file_size_in_bytes_ / (kBytesPerSample * sample_rate_));
+    return static_cast<int>(
+        file_size_in_bytes_ / (kBytesPerSample * sample_rate_));
   }
-  int file_size_in_callbacks() const {
+  size_t file_size_in_callbacks() const {
     return file_size_in_seconds() * kNumCallbacksPerSecond;
   }
 
  private:
-  int file_size_in_bytes_;
+  size_t file_size_in_bytes_;
   int sample_rate_;
   rtc::scoped_ptr<int16_t[]> file_;
-  int file_pos_;
+  size_t file_pos_;
 };
 
 // Simple first in first out (FIFO) class that wraps a list of 16-bit audio
@@ -156,7 +158,7 @@ class FileAudioStream : public AudioStreamInterface {
 // since both sides (playout and recording) are driven by its own thread.
 class FifoAudioStream : public AudioStreamInterface {
  public:
-  explicit FifoAudioStream(int frames_per_buffer)
+  explicit FifoAudioStream(size_t frames_per_buffer)
       : frames_per_buffer_(frames_per_buffer),
         bytes_per_buffer_(frames_per_buffer_ * sizeof(int16_t)),
         fifo_(new AudioBufferList),
@@ -173,7 +175,7 @@ class FifoAudioStream : public AudioStreamInterface {
   // Allocate new memory, copy |num_frames| samples from |source| into memory
   // and add pointer to the memory location to end of the list.
   // Increases the size of the FIFO by one element.
-  void Write(const void* source, int num_frames) override {
+  void Write(const void* source, size_t num_frames) override {
     ASSERT_EQ(num_frames, frames_per_buffer_);
     PRINTD("+");
     if (write_count_++ < kNumIgnoreFirstCallbacks) {
@@ -185,10 +187,10 @@ class FifoAudioStream : public AudioStreamInterface {
            bytes_per_buffer_);
     rtc::CritScope lock(&lock_);
     fifo_->push_back(memory);
-    const int size = fifo_->size();
+    const size_t size = fifo_->size();
     if (size > largest_size_) {
       largest_size_ = size;
-      PRINTD("(%d)", largest_size_);
+      PRINTD("(%" PRIuS ")", largest_size_);
     }
     total_written_elements_ += size;
   }
@@ -196,7 +198,7 @@ class FifoAudioStream : public AudioStreamInterface {
   // Read pointer to data buffer from front of list, copy |num_frames| of stored
   // data into |destination| and delete the utilized memory allocation.
   // Decreases the size of the FIFO by one element.
-  void Read(void* destination, int num_frames) override {
+  void Read(void* destination, size_t num_frames) override {
     ASSERT_EQ(num_frames, frames_per_buffer_);
     PRINTD("-");
     rtc::CritScope lock(&lock_);
@@ -212,15 +214,15 @@ class FifoAudioStream : public AudioStreamInterface {
     }
   }
 
-  int size() const {
+  size_t size() const {
     return fifo_->size();
   }
 
-  int largest_size() const {
+  size_t largest_size() const {
     return largest_size_;
   }
 
-  int average_size() const {
+  size_t average_size() const {
     return (total_written_elements_ == 0) ? 0.0 : 0.5 + static_cast<float> (
       total_written_elements_) / (write_count_ - kNumIgnoreFirstCallbacks);
   }
@@ -235,12 +237,12 @@ class FifoAudioStream : public AudioStreamInterface {
 
   using AudioBufferList = std::list<int16_t*>;
   rtc::CriticalSection lock_;
-  const int frames_per_buffer_;
-  const int bytes_per_buffer_;
+  const size_t frames_per_buffer_;
+  const size_t bytes_per_buffer_;
   rtc::scoped_ptr<AudioBufferList> fifo_;
-  int largest_size_;
-  int total_written_elements_;
-  int write_count_;
+  size_t largest_size_;
+  size_t total_written_elements_;
+  size_t write_count_;
 };
 
 // Inserts periodic impulses and measures the latency between the time of
@@ -249,7 +251,7 @@ class FifoAudioStream : public AudioStreamInterface {
 // See http://source.android.com/devices/audio/loopback.html for details.
 class LatencyMeasuringAudioStream : public AudioStreamInterface {
  public:
-  explicit LatencyMeasuringAudioStream(int frames_per_buffer)
+  explicit LatencyMeasuringAudioStream(size_t frames_per_buffer)
       : clock_(Clock::GetRealTimeClock()),
         frames_per_buffer_(frames_per_buffer),
         bytes_per_buffer_(frames_per_buffer_ * sizeof(int16_t)),
@@ -259,7 +261,7 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
   }
 
   // Insert periodic impulses in first two samples of |destination|.
-  void Read(void* destination, int num_frames) override {
+  void Read(void* destination, size_t num_frames) override {
     ASSERT_EQ(num_frames, frames_per_buffer_);
     if (play_count_ == 0) {
       PRINT("[");
@@ -273,15 +275,15 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
       PRINT(".");
       const int16_t impulse = std::numeric_limits<int16_t>::max();
       int16_t* ptr16 = static_cast<int16_t*> (destination);
-      for (int i = 0; i < 2; ++i) {
-        *ptr16++ = impulse;
+      for (size_t i = 0; i < 2; ++i) {
+        ptr16[i] = impulse;
       }
     }
   }
 
   // Detect received impulses in |source|, derive time between transmission and
   // detection and add the calculated delay to list of latencies.
-  void Write(const void* source, int num_frames) override {
+  void Write(const void* source, size_t num_frames) override {
     ASSERT_EQ(num_frames, frames_per_buffer_);
     rec_count_++;
     if (pulse_time_ == 0) {
@@ -315,7 +317,7 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
     }
   }
 
-  int num_latency_values() const {
+  size_t num_latency_values() const {
     return latencies_.size();
   }
 
@@ -355,10 +357,10 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
 
  private:
   Clock* clock_;
-  const int frames_per_buffer_;
-  const int bytes_per_buffer_;
-  int play_count_;
-  int rec_count_;
+  const size_t frames_per_buffer_;
+  const size_t bytes_per_buffer_;
+  size_t play_count_;
+  size_t rec_count_;
   int64_t pulse_time_;
   std::vector<int> latencies_;
 };
@@ -379,8 +381,8 @@ class MockAudioTransport : public AudioTransport {
 
   MOCK_METHOD10(RecordedDataIsAvailable,
                 int32_t(const void* audioSamples,
-                        const uint32_t nSamples,
-                        const uint8_t nBytesPerSample,
+                        const size_t nSamples,
+                        const size_t nBytesPerSample,
                         const uint8_t nChannels,
                         const uint32_t samplesPerSec,
                         const uint32_t totalDelayMS,
@@ -389,12 +391,12 @@ class MockAudioTransport : public AudioTransport {
                         const bool keyPressed,
                         uint32_t& newMicLevel));
   MOCK_METHOD8(NeedMorePlayData,
-               int32_t(const uint32_t nSamples,
-                       const uint8_t nBytesPerSample,
+               int32_t(const size_t nSamples,
+                       const size_t nBytesPerSample,
                        const uint8_t nChannels,
                        const uint32_t samplesPerSec,
                        void* audioSamples,
-                       uint32_t& nSamplesOut,
+                       size_t& nSamplesOut,
                        int64_t* elapsed_time_ms,
                        int64_t* ntp_time_ms));
 
@@ -419,8 +421,8 @@ class MockAudioTransport : public AudioTransport {
   }
 
   int32_t RealRecordedDataIsAvailable(const void* audioSamples,
-                                      const uint32_t nSamples,
-                                      const uint8_t nBytesPerSample,
+                                      const size_t nSamples,
+                                      const size_t nBytesPerSample,
                                       const uint8_t nChannels,
                                       const uint32_t samplesPerSec,
                                       const uint32_t totalDelayMS,
@@ -441,12 +443,12 @@ class MockAudioTransport : public AudioTransport {
     return 0;
   }
 
-  int32_t RealNeedMorePlayData(const uint32_t nSamples,
-                               const uint8_t nBytesPerSample,
+  int32_t RealNeedMorePlayData(const size_t nSamples,
+                               const size_t nBytesPerSample,
                                const uint8_t nChannels,
                                const uint32_t samplesPerSec,
                                void* audioSamples,
-                               uint32_t& nSamplesOut,
+                               size_t& nSamplesOut,
                                int64_t* elapsed_time_ms,
                                int64_t* ntp_time_ms) {
     EXPECT_TRUE(play_mode()) << "No test is expecting these callbacks.";
@@ -484,10 +486,10 @@ class MockAudioTransport : public AudioTransport {
 
  private:
   EventWrapper* test_is_done_;
-  int num_callbacks_;
+  size_t num_callbacks_;
   int type_;
-  int play_count_;
-  int rec_count_;
+  size_t play_count_;
+  size_t rec_count_;
   AudioStreamInterface* audio_stream_;
   rtc::scoped_ptr<LatencyMeasuringAudioStream> latency_audio_stream_;
 };
@@ -525,10 +527,10 @@ class AudioDeviceTest : public ::testing::Test {
   int record_channels() const {
     return record_parameters_.channels();
   }
-  int playout_frames_per_10ms_buffer() const {
+  size_t playout_frames_per_10ms_buffer() const {
     return playout_parameters_.frames_per_10ms_buffer();
   }
-  int record_frames_per_10ms_buffer() const {
+  size_t record_frames_per_10ms_buffer() const {
     return record_parameters_.frames_per_10ms_buffer();
   }
 
@@ -576,12 +578,14 @@ class AudioDeviceTest : public ::testing::Test {
     EXPECT_TRUE(test::FileExists(file_name));
 #ifdef ENABLE_PRINTF
     PRINT("file name: %s\n", file_name.c_str());
-    const int bytes = test::GetFileSize(file_name);
-    PRINT("file size: %d [bytes]\n", bytes);
-    PRINT("file size: %d [samples]\n", bytes / kBytesPerSample);
-    const int seconds = bytes / (sample_rate * kBytesPerSample);
+    const size_t bytes = test::GetFileSize(file_name);
+    PRINT("file size: %" PRIuS " [bytes]\n", bytes);
+    PRINT("file size: %" PRIuS " [samples]\n", bytes / kBytesPerSample);
+    const int seconds =
+        static_cast<int>(bytes / (sample_rate * kBytesPerSample));
     PRINT("file size: %d [secs]\n", seconds);
-    PRINT("file size: %d [callbacks]\n", seconds * kNumCallbacksPerSecond);
+    PRINT("file size: %" PRIuS " [callbacks]\n",
+          seconds * kNumCallbacksPerSecond);
 #endif
     return file_name;
   }
@@ -961,8 +965,8 @@ TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
                                1000 * kFullDuplexTimeInSec));
   StopPlayout();
   StopRecording();
-  EXPECT_LE(fifo_audio_stream->average_size(), 10);
-  EXPECT_LE(fifo_audio_stream->largest_size(), 20);
+  EXPECT_LE(fifo_audio_stream->average_size(), 10u);
+  EXPECT_LE(fifo_audio_stream->largest_size(), 20u);
 }
 
 // Measures loopback latency and reports the min, max and average values for
@@ -994,7 +998,8 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   StopRecording();
   // Verify that the correct number of transmitted impulses are detected.
   EXPECT_EQ(latency_audio_stream->num_latency_values(),
-            kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1);
+            static_cast<size_t>(
+                kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1));
   latency_audio_stream->PrintResults();
 }
 

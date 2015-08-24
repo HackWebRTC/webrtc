@@ -76,7 +76,7 @@ void VadAudioProc::ResetBuffer() {
 }
 
 int VadAudioProc::ExtractFeatures(const int16_t* frame,
-                                  int length,
+                                  size_t length,
                                   AudioFeatures* features) {
   features->num_frames = 0;
   if (length != kNumSubframeSamples) {
@@ -100,7 +100,7 @@ int VadAudioProc::ExtractFeatures(const int16_t* frame,
   features->silence = false;
 
   Rms(features->rms, kMaxNumFrames);
-  for (int i = 0; i < kNum10msSubframes; ++i) {
+  for (size_t i = 0; i < kNum10msSubframes; ++i) {
     if (features->rms[i] < kSilenceRms) {
       // PitchAnalysis can cause NaNs in the pitch gain if it's fed silence.
       // Bail out here instead.
@@ -119,13 +119,13 @@ int VadAudioProc::ExtractFeatures(const int16_t* frame,
 
 // Computes |kLpcOrder + 1| correlation coefficients.
 void VadAudioProc::SubframeCorrelation(double* corr,
-                                       int length_corr,
-                                       int subframe_index) {
+                                       size_t length_corr,
+                                       size_t subframe_index) {
   assert(length_corr >= kLpcOrder + 1);
   double windowed_audio[kNumSubframeSamples + kNumPastSignalSamples];
-  int buffer_index = subframe_index * kNumSubframeSamples;
+  size_t buffer_index = subframe_index * kNumSubframeSamples;
 
-  for (int n = 0; n < kNumSubframeSamples + kNumPastSignalSamples; n++)
+  for (size_t n = 0; n < kNumSubframeSamples + kNumPastSignalSamples; n++)
     windowed_audio[n] = audio_buffer_[buffer_index++] * kLpcAnalWin[n];
 
   WebRtcIsac_AutoCorr(corr, windowed_audio,
@@ -136,16 +136,16 @@ void VadAudioProc::SubframeCorrelation(double* corr,
 // The analysis window is 15 ms long and it is centered on the first half of
 // each 10ms sub-frame. This is equivalent to computing LPC coefficients for the
 // first half of each 10 ms subframe.
-void VadAudioProc::GetLpcPolynomials(double* lpc, int length_lpc) {
+void VadAudioProc::GetLpcPolynomials(double* lpc, size_t length_lpc) {
   assert(length_lpc >= kNum10msSubframes * (kLpcOrder + 1));
   double corr[kLpcOrder + 1];
   double reflec_coeff[kLpcOrder];
-  for (int i = 0, offset_lpc = 0; i < kNum10msSubframes;
+  for (size_t i = 0, offset_lpc = 0; i < kNum10msSubframes;
        i++, offset_lpc += kLpcOrder + 1) {
     SubframeCorrelation(corr, kLpcOrder + 1, i);
     corr[0] *= 1.0001;
     // This makes Lev-Durb a bit more stable.
-    for (int k = 0; k < kLpcOrder + 1; k++) {
+    for (size_t k = 0; k < kLpcOrder + 1; k++) {
       corr[k] *= kCorrWeight[k];
     }
     WebRtcIsac_LevDurb(&lpc[offset_lpc], reflec_coeff, corr, kLpcOrder);
@@ -174,30 +174,31 @@ static float QuadraticInterpolation(float prev_val,
 // with the local minimum of A(z). It saves complexity, as we save one
 // inversion. Furthermore, we find the first local maximum of magnitude squared,
 // to save on one square root.
-void VadAudioProc::FindFirstSpectralPeaks(double* f_peak, int length_f_peak) {
+void VadAudioProc::FindFirstSpectralPeaks(double* f_peak,
+                                          size_t length_f_peak) {
   assert(length_f_peak >= kNum10msSubframes);
   double lpc[kNum10msSubframes * (kLpcOrder + 1)];
   // For all sub-frames.
   GetLpcPolynomials(lpc, kNum10msSubframes * (kLpcOrder + 1));
 
-  const int kNumDftCoefficients = kDftSize / 2 + 1;
+  const size_t kNumDftCoefficients = kDftSize / 2 + 1;
   float data[kDftSize];
 
-  for (int i = 0; i < kNum10msSubframes; i++) {
+  for (size_t i = 0; i < kNum10msSubframes; i++) {
     // Convert to float with zero pad.
     memset(data, 0, sizeof(data));
-    for (int n = 0; n < kLpcOrder + 1; n++) {
+    for (size_t n = 0; n < kLpcOrder + 1; n++) {
       data[n] = static_cast<float>(lpc[i * (kLpcOrder + 1) + n]);
     }
     // Transform to frequency domain.
     WebRtc_rdft(kDftSize, 1, data, ip_, w_fft_);
 
-    int index_peak = 0;
+    size_t index_peak = 0;
     float prev_magn_sqr = data[0] * data[0];
     float curr_magn_sqr = data[2] * data[2] + data[3] * data[3];
     float next_magn_sqr;
     bool found_peak = false;
-    for (int n = 2; n < kNumDftCoefficients - 1; n++) {
+    for (size_t n = 2; n < kNumDftCoefficients - 1; n++) {
       next_magn_sqr =
           data[2 * n] * data[2 * n] + data[2 * n + 1] * data[2 * n + 1];
       if (curr_magn_sqr < prev_magn_sqr && curr_magn_sqr < next_magn_sqr) {
@@ -228,7 +229,7 @@ void VadAudioProc::FindFirstSpectralPeaks(double* f_peak, int length_f_peak) {
 // Using iSAC functions to estimate pitch gains & lags.
 void VadAudioProc::PitchAnalysis(double* log_pitch_gains,
                                  double* pitch_lags_hz,
-                                 int length) {
+                                 size_t length) {
   // TODO(turajs): This can be "imported" from iSAC & and the next two
   // constants.
   assert(length >= kNum10msSubframes);
@@ -260,12 +261,12 @@ void VadAudioProc::PitchAnalysis(double* log_pitch_gains,
       &log_old_gain_, &old_lag_, log_pitch_gains, pitch_lags_hz);
 }
 
-void VadAudioProc::Rms(double* rms, int length_rms) {
+void VadAudioProc::Rms(double* rms, size_t length_rms) {
   assert(length_rms >= kNum10msSubframes);
-  int offset = kNumPastSignalSamples;
-  for (int i = 0; i < kNum10msSubframes; i++) {
+  size_t offset = kNumPastSignalSamples;
+  for (size_t i = 0; i < kNum10msSubframes; i++) {
     rms[i] = 0;
-    for (int n = 0; n < kNumSubframeSamples; n++, offset++)
+    for (size_t n = 0; n < kNumSubframeSamples; n++, offset++)
       rms[i] += audio_buffer_[offset] * audio_buffer_[offset];
     rms[i] = sqrt(rms[i] / kNumSubframeSamples);
   }

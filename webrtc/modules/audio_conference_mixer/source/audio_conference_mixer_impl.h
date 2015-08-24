@@ -160,7 +160,7 @@ private:
 
     // The current sample frequency and sample size when mixing.
     Frequency _outputFrequency;
-    uint16_t _sampleSize;
+    size_t _sampleSize;
 
     // Memory pool to avoid allocating/deallocating AudioFrames
     MemoryPool<AudioFrame>* _audioFramePool;

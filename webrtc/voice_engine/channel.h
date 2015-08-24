@@ -431,7 +431,7 @@ public:
     // does not go through transmit_mixer and APM.
     void Demultiplex(const int16_t* audio_data,
                      int sample_rate,
-                     int number_of_frames,
+                     size_t number_of_frames,
                      int number_of_channels);
     uint32_t PrepareEncodeAndSend(int mixingFrequency);
     uint32_t EncodeAndSend();

@@ -36,7 +36,7 @@ class PCMFile {
 
   int32_t Read10MsData(AudioFrame& audio_frame);
 
-  void Write10MsData(int16_t *playout_buffer, uint16_t length_smpls);
+  void Write10MsData(int16_t *playout_buffer, size_t length_smpls);
   void Write10MsData(AudioFrame& audio_frame);
 
   uint16_t PayloadLength10Ms() const;

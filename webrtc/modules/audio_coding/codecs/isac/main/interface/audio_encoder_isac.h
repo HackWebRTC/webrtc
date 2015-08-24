@@ -39,14 +39,14 @@ struct IsacFloat {
   }
   static inline int DecodeInternal(instance_type* inst,
                                    const uint8_t* encoded,
-                                   int16_t len,
+                                   size_t len,
                                    int16_t* decoded,
                                    int16_t* speech_type) {
     return WebRtcIsac_Decode(inst, encoded, len, decoded, speech_type);
   }
-  static inline int16_t DecodePlc(instance_type* inst,
-                                  int16_t* decoded,
-                                  int16_t num_lost_frames) {
+  static inline size_t DecodePlc(instance_type* inst,
+                                 int16_t* decoded,
+                                 size_t num_lost_frames) {
     return WebRtcIsac_DecodePlc(inst, decoded, num_lost_frames);
   }
 
@@ -102,7 +102,7 @@ struct IsacFloat {
   }
   static inline int16_t UpdateBwEstimate(instance_type* inst,
                                          const uint8_t* encoded,
-                                         int32_t packet_size,
+                                         size_t packet_size,
                                          uint16_t rtp_seq_number,
                                          uint32_t send_ts,
                                          uint32_t arr_ts) {

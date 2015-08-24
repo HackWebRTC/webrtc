@@ -141,7 +141,7 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
   const int16_t log2_const = 22713;
   const int16_t width_factor = 21845;
 
-  int i, s, offset;
+  size_t i, s, offset;
 
   tabind = inst->stages - inst->normData;
   assert(tabind < 9);

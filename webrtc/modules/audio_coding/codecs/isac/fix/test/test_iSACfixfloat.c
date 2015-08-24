@@ -21,6 +21,7 @@
 /* include API */
 #include "isac.h"
 #include "isacfix.h"
+#include "webrtc/base/format_macros.h"
 
 /* max number of samples per frame (= 60 ms frame) */
 #define MAX_FRAMESAMPLES 960
@@ -57,7 +58,7 @@ typedef struct {
 } BottleNeckModel;
 
 void get_arrival_time(int current_framesamples, /* samples */
-                      int packet_size,          /* bytes */
+                      size_t packet_size,       /* bytes */
                       int bottleneck,           /* excluding headers; bits/s */
                       BottleNeckModel* BN_data) {
   const int HeaderSize = 35;
@@ -98,7 +99,7 @@ int main(int argc, char* argv[]) {
   double runtime;
   double length_file;
 
-  int16_t stream_len = 0;
+  size_t stream_len = 0;
   int declen;
 
   int16_t shortdata[FRAMESAMPLES_10ms];
@@ -114,7 +115,7 @@ int main(int argc, char* argv[]) {
 #ifdef _DEBUG
   FILE* fy;
   double kbps;
-  int totalbits = 0;
+  size_t totalbits = 0;
   int totalsmpls = 0;
 #endif /* _DEBUG */
 
@@ -392,6 +393,8 @@ int main(int argc, char* argv[]) {
   while (endfile == 0) {
     cur_framesmpls = 0;
     while (1) {
+      int stream_len_int;
+
       /* Read 10 ms speech block */
       if (nbTest != 1)
         endfile = readframe(shortdata, inp, FRAMESAMPLES_10ms);
@@ -401,9 +404,9 @@ int main(int argc, char* argv[]) {
       /* iSAC encoding */
 
       if (mode == 0 || mode == 1) {
-        stream_len =
+        stream_len_int =
             WebRtcIsac_Encode(ISAC_main_inst, shortdata, (uint8_t*)streamdata);
-        if (stream_len < 0) {
+        if (stream_len_int < 0) {
           /* exit if returned with error */
           errtype = WebRtcIsac_GetErrorCode(ISAC_main_inst);
           printf("\n\nError in encoder: %d.\n\n", errtype);
@@ -412,20 +415,21 @@ int main(int argc, char* argv[]) {
       } else if (mode == 2 || mode == 3) {
         /* iSAC encoding */
         if (nbTest != 1) {
-          stream_len = WebRtcIsacfix_Encode(ISACFIX_main_inst, shortdata,
-                                            (uint8_t*)streamdata);
+          stream_len_int = WebRtcIsacfix_Encode(ISACFIX_main_inst, shortdata,
+                                                (uint8_t*)streamdata);
         } else {
-          stream_len =
+          stream_len_int =
               WebRtcIsacfix_EncodeNb(ISACFIX_main_inst, shortdata, streamdata);
         }
 
-        if (stream_len < 0) {
+        if (stream_len_int < 0) {
           /* exit if returned with error */
           errtype = WebRtcIsacfix_GetErrorCode(ISACFIX_main_inst);
           printf("\n\nError in encoder: %d.\n\n", errtype);
           // exit(EXIT_FAILURE);
         }
       }
+      stream_len = (size_t)stream_len_int;
 
       cur_framesmpls += FRAMESAMPLES_10ms;
 
@@ -494,10 +498,13 @@ int main(int argc, char* argv[]) {
 
         /* iSAC decoding */
         if (plc && (framecnt + 1) % 10 == 0) {
-          if (nbTest != 2)
-            declen = WebRtcIsacfix_DecodePlc(ISACFIX_main_inst, decoded, 1);
-          else
-            declen = WebRtcIsacfix_DecodePlcNb(ISACFIX_main_inst, decoded, 1);
+          if (nbTest != 2) {
+            declen =
+                (int)WebRtcIsacfix_DecodePlc(ISACFIX_main_inst, decoded, 1);
+          } else {
+            declen =
+                (int)WebRtcIsacfix_DecodePlcNb(ISACFIX_main_inst, decoded, 1);
+          }
         } else {
           if (nbTest != 2)
             declen = WebRtcIsacfix_Decode(ISACFIX_main_inst, streamdata,
@@ -551,10 +558,13 @@ int main(int argc, char* argv[]) {
         /* iSAC decoding */
 
         if (plc && (framecnt + 1) % 10 == 0) {
-          if (nbTest != 2)
-            declen = WebRtcIsacfix_DecodePlc(ISACFIX_main_inst, decoded, 1);
-          else
-            declen = WebRtcIsacfix_DecodePlcNb(ISACFIX_main_inst, decoded, 1);
+          if (nbTest != 2) {
+            declen =
+                (int)WebRtcIsacfix_DecodePlc(ISACFIX_main_inst, decoded, 1);
+          } else {
+            declen =
+                (int)WebRtcIsacfix_DecodePlcNb(ISACFIX_main_inst, decoded, 1);
+          }
         } else {
           if (nbTest != 2) {
             declen = WebRtcIsacfix_Decode(ISACFIX_main_inst, streamdata,
@@ -592,7 +602,7 @@ int main(int argc, char* argv[]) {
   }
 
 #ifdef _DEBUG
-  printf("\n\ntotal bits               = %d bits", totalbits);
+  printf("\n\ntotal bits               = %" PRIuS " bits", totalbits);
   printf("\nmeasured average bitrate = %0.3f kbits/s",
          (double)totalbits * (FS / 1000) / totalsmpls);
   printf("\n");

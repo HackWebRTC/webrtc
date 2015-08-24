@@ -31,9 +31,9 @@ void VerifyOutput(const float (&expected_output)[N], const float (&output)[N]) {
 
 TEST(SparseFIRFilterTest, FilterAsIdentity) {
   const float kCoeff = 1.f;
-  const int kNumCoeff = 1;
-  const int kSparsity = 3;
-  const int kOffset = 0;
+  const size_t kNumCoeff = 1;
+  const size_t kSparsity = 3;
+  const size_t kOffset = 0;
   float output[arraysize(kInput)];
   SparseFIRFilter filter(&kCoeff, kNumCoeff, kSparsity, kOffset);
   filter.Filter(kInput, arraysize(kInput), output);
@@ -42,10 +42,10 @@ TEST(SparseFIRFilterTest, FilterAsIdentity) {
 
 TEST(SparseFIRFilterTest, SameOutputForScalarCoefficientAndDifferentSparsity) {
   const float kCoeff = 2.f;
-  const int kNumCoeff = 1;
-  const int kLowSparsity = 1;
-  const int kHighSparsity = 7;
-  const int kOffset = 0;
+  const size_t kNumCoeff = 1;
+  const size_t kLowSparsity = 1;
+  const size_t kHighSparsity = 7;
+  const size_t kOffset = 0;
   float low_sparsity_output[arraysize(kInput)];
   float high_sparsity_output[arraysize(kInput)];
   SparseFIRFilter low_sparsity_filter(&kCoeff,
@@ -63,9 +63,9 @@ TEST(SparseFIRFilterTest, SameOutputForScalarCoefficientAndDifferentSparsity) {
 
 TEST(SparseFIRFilterTest, FilterUsedAsScalarMultiplication) {
   const float kCoeff = 5.f;
-  const int kNumCoeff = 1;
-  const int kSparsity = 5;
-  const int kOffset = 0;
+  const size_t kNumCoeff = 1;
+  const size_t kSparsity = 5;
+  const size_t kOffset = 0;
   float output[arraysize(kInput)];
   SparseFIRFilter filter(&kCoeff, kNumCoeff, kSparsity, kOffset);
   filter.Filter(kInput, arraysize(kInput), output);
@@ -77,9 +77,9 @@ TEST(SparseFIRFilterTest, FilterUsedAsScalarMultiplication) {
 
 TEST(SparseFIRFilterTest, FilterUsedAsInputShifting) {
   const float kCoeff = 1.f;
-  const int kNumCoeff = 1;
-  const int kSparsity = 1;
-  const int kOffset = 4;
+  const size_t kNumCoeff = 1;
+  const size_t kSparsity = 1;
+  const size_t kOffset = 4;
   float output[arraysize(kInput)];
   SparseFIRFilter filter(&kCoeff, kNumCoeff, kSparsity, kOffset);
   filter.Filter(kInput, arraysize(kInput), output);
@@ -91,8 +91,8 @@ TEST(SparseFIRFilterTest, FilterUsedAsInputShifting) {
 }
 
 TEST(SparseFIRFilterTest, FilterUsedAsArbitraryWeighting) {
-  const int kSparsity = 2;
-  const int kOffset = 1;
+  const size_t kSparsity = 2;
+  const size_t kOffset = 1;
   float output[arraysize(kInput)];
   SparseFIRFilter filter(kCoeffs, arraysize(kCoeffs), kSparsity, kOffset);
   filter.Filter(kInput, arraysize(kInput), output);
@@ -104,8 +104,8 @@ TEST(SparseFIRFilterTest, FilterUsedAsArbitraryWeighting) {
 }
 
 TEST(SparseFIRFilterTest, FilterInLengthLesserOrEqualToCoefficientsLength) {
-  const int kSparsity = 1;
-  const int kOffset = 0;
+  const size_t kSparsity = 1;
+  const size_t kOffset = 0;
   float output[arraysize(kInput)];
   SparseFIRFilter filter(kCoeffs, arraysize(kCoeffs), kSparsity, kOffset);
   filter.Filter(kInput, 2, output);
@@ -114,8 +114,8 @@ TEST(SparseFIRFilterTest, FilterInLengthLesserOrEqualToCoefficientsLength) {
 }
 
 TEST(SparseFIRFilterTest, MultipleFilterCalls) {
-  const int kSparsity = 1;
-  const int kOffset = 0;
+  const size_t kSparsity = 1;
+  const size_t kOffset = 0;
   float output[arraysize(kInput)];
   SparseFIRFilter filter(kCoeffs, arraysize(kCoeffs), kSparsity, kOffset);
   filter.Filter(kInput, 2, output);
@@ -141,8 +141,8 @@ TEST(SparseFIRFilterTest, MultipleFilterCalls) {
 }
 
 TEST(SparseFIRFilterTest, VerifySampleBasedVsBlockBasedFiltering) {
-  const int kSparsity = 3;
-  const int kOffset = 1;
+  const size_t kSparsity = 3;
+  const size_t kOffset = 1;
   float output_block_based[arraysize(kInput)];
   SparseFIRFilter filter_block(kCoeffs,
                                arraysize(kCoeffs),
@@ -160,8 +160,8 @@ TEST(SparseFIRFilterTest, VerifySampleBasedVsBlockBasedFiltering) {
 }
 
 TEST(SparseFIRFilterTest, SimpleHighPassFilter) {
-  const int kSparsity = 2;
-  const int kOffset = 2;
+  const size_t kSparsity = 2;
+  const size_t kOffset = 2;
   const float kHPCoeffs[] = {1.f, -1.f};
   const float kConstantInput[] =
       {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
@@ -177,8 +177,8 @@ TEST(SparseFIRFilterTest, SimpleHighPassFilter) {
 }
 
 TEST(SparseFIRFilterTest, SimpleLowPassFilter) {
-  const int kSparsity = 2;
-  const int kOffset = 2;
+  const size_t kSparsity = 2;
+  const size_t kOffset = 2;
   const float kLPCoeffs[] = {1.f, 1.f};
   const float kHighFrequencyInput[] =
       {1.f, 1.f, -1.f, -1.f, 1.f, 1.f, -1.f, -1.f, 1.f, 1.f};
@@ -194,8 +194,8 @@ TEST(SparseFIRFilterTest, SimpleLowPassFilter) {
 }
 
 TEST(SparseFIRFilterTest, SameOutputWhenSwappedCoefficientsAndInput) {
-  const int kSparsity = 1;
-  const int kOffset = 0;
+  const size_t kSparsity = 1;
+  const size_t kOffset = 0;
   float output[arraysize(kCoeffs)];
   float output_swapped[arraysize(kCoeffs)];
   SparseFIRFilter filter(kCoeffs, arraysize(kCoeffs), kSparsity, kOffset);
@@ -210,8 +210,8 @@ TEST(SparseFIRFilterTest, SameOutputWhenSwappedCoefficientsAndInput) {
 }
 
 TEST(SparseFIRFilterTest, SameOutputAsFIRFilterWhenSparsityOneAndOffsetZero) {
-  const int kSparsity = 1;
-  const int kOffset = 0;
+  const size_t kSparsity = 1;
+  const size_t kOffset = 0;
   float output[arraysize(kInput)];
   float sparse_output[arraysize(kInput)];
   rtc::scoped_ptr<FIRFilter> filter(FIRFilter::Create(kCoeffs,

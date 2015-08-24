@@ -92,5 +92,5 @@ int WebRtcIlbcfix_InitDecode(  /* (o) Number of decoded samples */
 
   iLBCdec_inst->prev_enh_pl = 0;
 
-  return (iLBCdec_inst->blockl);
+  return (int)(iLBCdec_inst->blockl);
 }

@@ -98,12 +98,12 @@ TEST_F(ResamplerTest, Mono) {
       SCOPED_TRACE(ss.str());
 
       if (ValidRates(kRates[i], kRates[j])) {
-        int in_length = kRates[i] / 100;
-        int out_length = 0;
+        size_t in_length = static_cast<size_t>(kRates[i] / 100);
+        size_t out_length = 0;
         EXPECT_EQ(0, rs_.Reset(kRates[i], kRates[j], kChannels));
         EXPECT_EQ(0, rs_.Push(data_in_, in_length, data_out_, kDataSize,
                               out_length));
-        EXPECT_EQ(kRates[j] / 100, out_length);
+        EXPECT_EQ(static_cast<size_t>(kRates[j] / 100), out_length);
       } else {
         EXPECT_EQ(-1, rs_.Reset(kRates[i], kRates[j], kChannels));
       }
@@ -120,13 +120,13 @@ TEST_F(ResamplerTest, Stereo) {
       SCOPED_TRACE(ss.str());
 
       if (ValidRates(kRates[i], kRates[j])) {
-        int in_length = kChannels * kRates[i] / 100;
-        int out_length = 0;
+        size_t in_length = static_cast<size_t>(kChannels * kRates[i] / 100);
+        size_t out_length = 0;
         EXPECT_EQ(0, rs_.Reset(kRates[i], kRates[j],
                                kChannels));
         EXPECT_EQ(0, rs_.Push(data_in_, in_length, data_out_, kDataSize,
                               out_length));
-        EXPECT_EQ(kChannels * kRates[j] / 100, out_length);
+        EXPECT_EQ(static_cast<size_t>(kChannels * kRates[j] / 100), out_length);
       } else {
         EXPECT_EQ(-1, rs_.Reset(kRates[i], kRates[j],
                                 kChannels));

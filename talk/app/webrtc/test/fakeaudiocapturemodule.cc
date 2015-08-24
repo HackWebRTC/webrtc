@@ -615,9 +615,9 @@ bool FakeAudioCaptureModule::Initialize() {
 
 void FakeAudioCaptureModule::SetSendBuffer(int value) {
   Sample* buffer_ptr = reinterpret_cast<Sample*>(send_buffer_);
-  const int buffer_size_in_samples =
+  const size_t buffer_size_in_samples =
       sizeof(send_buffer_) / kNumberBytesPerSample;
-  for (int i = 0; i < buffer_size_in_samples; ++i) {
+  for (size_t i = 0; i < buffer_size_in_samples; ++i) {
     buffer_ptr[i] = value;
   }
 }
@@ -628,9 +628,9 @@ void FakeAudioCaptureModule::ResetRecBuffer() {
 
 bool FakeAudioCaptureModule::CheckRecBuffer(int value) {
   const Sample* buffer_ptr = reinterpret_cast<const Sample*>(rec_buffer_);
-  const int buffer_size_in_samples =
+  const size_t buffer_size_in_samples =
       sizeof(rec_buffer_) / kNumberBytesPerSample;
-  for (int i = 0; i < buffer_size_in_samples; ++i) {
+  for (size_t i = 0; i < buffer_size_in_samples; ++i) {
     if (buffer_ptr[i] >= value) return true;
   }
   return false;
@@ -698,7 +698,7 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
       return;
     }
     ResetRecBuffer();
-    uint32_t nSamplesOut = 0;
+    size_t nSamplesOut = 0;
     int64_t elapsed_time_ms = 0;
     int64_t ntp_time_ms = 0;
     if (audio_callback_->NeedMorePlayData(kNumberSamples, kNumberBytesPerSample,

@@ -28,6 +28,8 @@
 #ifndef TALK_MEDIA_BASE_AUDIORENDERER_H_
 #define TALK_MEDIA_BASE_AUDIORENDERER_H_
 
+#include <cstddef>
+
 namespace cricket {
 
 // Abstract interface for rendering the audio data.
@@ -40,7 +42,7 @@ class AudioRenderer {
                         int bits_per_sample,
                         int sample_rate,
                         int number_of_channels,
-                        int number_of_frames) = 0;
+                        size_t number_of_frames) = 0;
 
     // Called when the AudioRenderer is going away.
     virtual void OnClose() = 0;

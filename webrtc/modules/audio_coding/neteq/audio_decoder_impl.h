@@ -122,7 +122,7 @@ class AudioDecoderPcm16B : public AudioDecoder {
 // of channels is derived from the type.
 class AudioDecoderPcm16BMultiCh : public AudioDecoderPcm16B {
  public:
-  explicit AudioDecoderPcm16BMultiCh(int num_channels);
+  explicit AudioDecoderPcm16BMultiCh(size_t num_channels);
   size_t Channels() const override;
 
  private:
@@ -137,7 +137,7 @@ class AudioDecoderIlbc : public AudioDecoder {
   AudioDecoderIlbc();
   ~AudioDecoderIlbc() override;
   bool HasDecodePlc() const override;
-  int DecodePlc(int num_frames, int16_t* decoded) override;
+  size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
   int Init() override;
   size_t Channels() const override;
 
@@ -209,7 +209,7 @@ class AudioDecoderG722Stereo : public AudioDecoder {
 #ifdef WEBRTC_CODEC_OPUS
 class AudioDecoderOpus : public AudioDecoder {
  public:
-  explicit AudioDecoderOpus(int num_channels);
+  explicit AudioDecoderOpus(size_t num_channels);
   ~AudioDecoderOpus() override;
 
   int Init() override;

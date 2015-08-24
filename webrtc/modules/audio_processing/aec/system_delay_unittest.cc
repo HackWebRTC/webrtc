@@ -33,7 +33,7 @@ class SystemDelayTest : public ::testing::Test {
   void RenderAndCapture(int device_buffer_ms);
 
   // Fills up the far-end buffer with respect to the default device buffer size.
-  int BufferFillUp();
+  size_t BufferFillUp();
 
   // Runs and verifies the behavior in a stable startup procedure.
   void RunStableStartup();
@@ -44,7 +44,7 @@ class SystemDelayTest : public ::testing::Test {
 
   void* handle_;
   Aec* self_;
-  int samples_per_frame_;
+  size_t samples_per_frame_;
   // Dummy input/output speech data.
   static const int kSamplesPerChunk = 160;
   float far_[kSamplesPerChunk];
@@ -102,7 +102,7 @@ void SystemDelayTest::Init(int sample_rate_hz) {
   EXPECT_EQ(0, WebRtcAec_system_delay(self_->aec));
 
   // One frame equals 10 ms of data.
-  samples_per_frame_ = sample_rate_hz / 100;
+  samples_per_frame_ = static_cast<size_t>(sample_rate_hz / 100);
 }
 
 void SystemDelayTest::RenderAndCapture(int device_buffer_ms) {
@@ -117,15 +117,16 @@ void SystemDelayTest::RenderAndCapture(int device_buffer_ms) {
                               0));
 }
 
-int SystemDelayTest::BufferFillUp() {
+size_t SystemDelayTest::BufferFillUp() {
   // To make sure we have a full buffer when we verify stability we first fill
   // up the far-end buffer with the same amount as we will report in through
   // Process().
-  int buffer_size = 0;
+  size_t buffer_size = 0;
   for (int i = 0; i < kDeviceBufMs / 10; i++) {
     EXPECT_EQ(0, WebRtcAec_BufferFarend(handle_, far_, samples_per_frame_));
     buffer_size += samples_per_frame_;
-    EXPECT_EQ(buffer_size, WebRtcAec_system_delay(self_->aec));
+    EXPECT_EQ(static_cast<int>(buffer_size),
+              WebRtcAec_system_delay(self_->aec));
   }
   return buffer_size;
 }
@@ -134,7 +135,7 @@ void SystemDelayTest::RunStableStartup() {
   // To make sure we have a full buffer when we verify stability we first fill
   // up the far-end buffer with the same amount as we will report in through
   // Process().
-  int buffer_size = BufferFillUp();
+  size_t buffer_size = BufferFillUp();
 
   if (WebRtcAec_delay_agnostic_enabled(self_->aec) == 1) {
     // In extended_filter mode we set the buffer size after the first processed
@@ -159,14 +160,16 @@ void SystemDelayTest::RunStableStartup() {
     EXPECT_GT(kStableConvergenceMs, process_time_ms);
   }
   // Verify that the buffer has been flushed.
-  EXPECT_GE(buffer_size, WebRtcAec_system_delay(self_->aec));
+  EXPECT_GE(static_cast<int>(buffer_size),
+            WebRtcAec_system_delay(self_->aec));
 }
 
   int SystemDelayTest::MapBufferSizeToSamples(int size_in_ms,
                                               bool extended_filter) {
   // If extended_filter is disabled we add an extra 10 ms for the unprocessed
   // frame. That is simply how the algorithm is constructed.
-  return (size_in_ms + (extended_filter ? 0 : 10)) * samples_per_frame_ / 10;
+  return static_cast<int>(
+      (size_in_ms + (extended_filter ? 0 : 10)) * samples_per_frame_ / 10);
 }
 
 // The tests should meet basic requirements and not be adjusted to what is
@@ -207,7 +210,8 @@ TEST_F(SystemDelayTest, CorrectIncreaseWhenBufferFarend) {
         for (int j = 1; j <= 5; j++) {
           EXPECT_EQ(0,
                     WebRtcAec_BufferFarend(handle_, far_, samples_per_frame_));
-          EXPECT_EQ(j * samples_per_frame_, WebRtcAec_system_delay(self_->aec));
+          EXPECT_EQ(static_cast<int>(j * samples_per_frame_),
+                    WebRtcAec_system_delay(self_->aec));
         }
       }
     }
@@ -236,7 +240,8 @@ TEST_F(SystemDelayTest, CorrectDelayAfterStableStartup) {
         // the average.
         // In extended_filter mode we target 50% and measure after one processed
         // 10 ms chunk.
-        int average_reported_delay = kDeviceBufMs * samples_per_frame_ / 10;
+        int average_reported_delay =
+            static_cast<int>(kDeviceBufMs * samples_per_frame_ / 10);
         EXPECT_GE(average_reported_delay, WebRtcAec_system_delay(self_->aec));
         int lower_bound = WebRtcAec_extended_filter_enabled(self_->aec)
                               ? average_reported_delay / 2 - samples_per_frame_
@@ -267,7 +272,7 @@ TEST_F(SystemDelayTest, CorrectDelayAfterUnstableStartup) {
     // To make sure we have a full buffer when we verify stability we first fill
     // up the far-end buffer with the same amount as we will report in on the
     // average through Process().
-    int buffer_size = BufferFillUp();
+    size_t buffer_size = BufferFillUp();
 
     int buffer_offset_ms = 25;
     int reported_delay_ms = 0;
@@ -285,14 +290,16 @@ TEST_F(SystemDelayTest, CorrectDelayAfterUnstableStartup) {
     // Verify convergence time.
     EXPECT_GE(kMaxConvergenceMs, process_time_ms);
     // Verify that the buffer has been flushed.
-    EXPECT_GE(buffer_size, WebRtcAec_system_delay(self_->aec));
+    EXPECT_GE(static_cast<int>(buffer_size),
+              WebRtcAec_system_delay(self_->aec));
 
     // Verify system delay with respect to requirements, i.e., the
     // |system_delay| is in the interval [60%, 100%] of what's last reported.
-    EXPECT_GE(reported_delay_ms * samples_per_frame_ / 10,
+    EXPECT_GE(static_cast<int>(reported_delay_ms * samples_per_frame_ / 10),
               WebRtcAec_system_delay(self_->aec));
-    EXPECT_LE(reported_delay_ms * samples_per_frame_ / 10 * 3 / 5,
-              WebRtcAec_system_delay(self_->aec));
+    EXPECT_LE(
+        static_cast<int>(reported_delay_ms * samples_per_frame_ / 10 * 3 / 5),
+        WebRtcAec_system_delay(self_->aec));
   }
 }
 
@@ -331,8 +338,8 @@ TEST_F(SystemDelayTest, CorrectDelayAfterStableBufferBuildUp) {
 
     // We now have established the required buffer size. Let us verify that we
     // fill up before leaving the startup phase for normal processing.
-    int buffer_size = 0;
-    int target_buffer_size = kDeviceBufMs * samples_per_frame_ / 10 * 3 / 4;
+    size_t buffer_size = 0;
+    size_t target_buffer_size = kDeviceBufMs * samples_per_frame_ / 10 * 3 / 4;
     process_time_ms = 0;
     for (; process_time_ms <= kMaxConvergenceMs; process_time_ms += 10) {
       RenderAndCapture(kDeviceBufMs);
@@ -345,7 +352,8 @@ TEST_F(SystemDelayTest, CorrectDelayAfterStableBufferBuildUp) {
     // Verify convergence time.
     EXPECT_GT(kMaxConvergenceMs, process_time_ms);
     // Verify that the buffer has reached the desired size.
-    EXPECT_LE(target_buffer_size, WebRtcAec_system_delay(self_->aec));
+    EXPECT_LE(static_cast<int>(target_buffer_size),
+              WebRtcAec_system_delay(self_->aec));
 
     // Verify normal behavior (system delay is kept constant) after startup by
     // running a couple of calls to BufferFarend() and Process().

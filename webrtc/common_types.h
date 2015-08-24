@@ -381,7 +381,7 @@ struct NetworkStatistics           // NETEQ statistics
     // max packet waiting time in the jitter buffer (ms)
     int maxWaitingTimeMs;
     // added samples in off mode due to packet loss
-    int addedSamples;
+    size_t addedSamples;
 };
 
 // Statistics for calls to AudioCodingModule::PlayoutData10Ms().

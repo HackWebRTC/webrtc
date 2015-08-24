@@ -11,6 +11,7 @@
 #include <math.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/voice_engine/utility.h"
@@ -53,7 +54,7 @@ void SetMonoFrame(AudioFrame* frame, float data, int sample_rate_hz) {
   frame->num_channels_ = 1;
   frame->sample_rate_hz_ = sample_rate_hz;
   frame->samples_per_channel_ = sample_rate_hz / 100;
-  for (int i = 0; i < frame->samples_per_channel_; i++) {
+  for (size_t i = 0; i < frame->samples_per_channel_; i++) {
     frame->data_[i] = static_cast<int16_t>(data * i);
   }
 }
@@ -71,7 +72,7 @@ void SetStereoFrame(AudioFrame* frame, float left, float right,
   frame->num_channels_ = 2;
   frame->sample_rate_hz_ = sample_rate_hz;
   frame->samples_per_channel_ = sample_rate_hz / 100;
-  for (int i = 0; i < frame->samples_per_channel_; i++) {
+  for (size_t i = 0; i < frame->samples_per_channel_; i++) {
     frame->data_[i * 2] = static_cast<int16_t>(left * i);
     frame->data_[i * 2 + 1] = static_cast<int16_t>(right * i);
   }
@@ -92,14 +93,14 @@ void VerifyParams(const AudioFrame& ref_frame, const AudioFrame& test_frame) {
 // |test_frame|. It allows for up to a |max_delay| in samples between the
 // signals to compensate for the resampling delay.
 float ComputeSNR(const AudioFrame& ref_frame, const AudioFrame& test_frame,
-                 int max_delay) {
+                 size_t max_delay) {
   VerifyParams(ref_frame, test_frame);
   float best_snr = 0;
-  int best_delay = 0;
-  for (int delay = 0; delay <= max_delay; delay++) {
+  size_t best_delay = 0;
+  for (size_t delay = 0; delay <= max_delay; delay++) {
     float mse = 0;
     float variance = 0;
-    for (int i = 0; i < ref_frame.samples_per_channel_ *
+    for (size_t i = 0; i < ref_frame.samples_per_channel_ *
         ref_frame.num_channels_ - delay; i++) {
       int error = ref_frame.data_[i] - test_frame.data_[i + delay];
       mse += error * error;
@@ -113,15 +114,15 @@ float ComputeSNR(const AudioFrame& ref_frame, const AudioFrame& test_frame,
       best_delay = delay;
     }
   }
-  printf("SNR=%.1f dB at delay=%d\n", best_snr, best_delay);
+  printf("SNR=%.1f dB at delay=%" PRIuS "\n", best_snr, best_delay);
   return best_snr;
 }
 
 void VerifyFramesAreEqual(const AudioFrame& ref_frame,
                           const AudioFrame& test_frame) {
   VerifyParams(ref_frame, test_frame);
-  for (int i = 0; i < ref_frame.samples_per_channel_ * ref_frame.num_channels_;
-      i++) {
+  for (size_t i = 0;
+       i < ref_frame.samples_per_channel_ * ref_frame.num_channels_; i++) {
     EXPECT_EQ(ref_frame.data_[i], test_frame.data_[i]);
   }
 }
@@ -161,9 +162,10 @@ void UtilityTest::RunResampleTest(int src_channels,
   // The sinc resampler has a known delay, which we compute here. Multiplying by
   // two gives us a crude maximum for any resampling, as the old resampler
   // typically (but not always) has lower delay.
-  static const int kInputKernelDelaySamples = 16;
-  const int max_delay = static_cast<double>(dst_sample_rate_hz)
-      / src_sample_rate_hz * kInputKernelDelaySamples * dst_channels * 2;
+  static const size_t kInputKernelDelaySamples = 16;
+  const size_t max_delay = static_cast<size_t>(
+      static_cast<double>(dst_sample_rate_hz) / src_sample_rate_hz *
+      kInputKernelDelaySamples * dst_channels * 2);
   printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
       src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
   if (function == TestRemixAndResample) {

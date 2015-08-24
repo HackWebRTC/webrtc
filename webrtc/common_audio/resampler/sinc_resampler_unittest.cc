@@ -36,7 +36,7 @@ static const double kKernelInterpolationFactor = 0.5;
 // Helper class to ensure ChunkedResample() functions properly.
 class MockSource : public SincResamplerCallback {
  public:
-  MOCK_METHOD2(Run, void(int frames, float* destination));
+  MOCK_METHOD2(Run, void(size_t frames, float* destination));
 };
 
 ACTION(ClearBuffer) {
@@ -61,7 +61,7 @@ TEST(SincResamplerTest, ChunkedResample) {
                           &mock_source);
 
   static const int kChunks = 2;
-  int max_chunk_size = resampler.ChunkSize() * kChunks;
+  size_t max_chunk_size = resampler.ChunkSize() * kChunks;
   rtc::scoped_ptr<float[]> resampled_destination(new float[max_chunk_size]);
 
   // Verify requesting ChunkSize() frames causes a single callback.
@@ -96,7 +96,7 @@ TEST(SincResamplerTest, Flush) {
   EXPECT_CALL(mock_source, Run(_, _))
       .Times(1).WillOnce(ClearBuffer());
   resampler.Resample(resampler.ChunkSize() / 2, resampled_destination.get());
-  for (int i = 0; i < resampler.ChunkSize() / 2; ++i)
+  for (size_t i = 0; i < resampler.ChunkSize() / 2; ++i)
     ASSERT_FLOAT_EQ(resampled_destination[i], 0);
 }
 
@@ -251,8 +251,10 @@ class SincResamplerTest
 TEST_P(SincResamplerTest, Resample) {
   // Make comparisons using one second of data.
   static const double kTestDurationSecs = 1;
-  const int input_samples = kTestDurationSecs * input_rate_;
-  const int output_samples = kTestDurationSecs * output_rate_;
+  const size_t input_samples =
+      static_cast<size_t>(kTestDurationSecs * input_rate_);
+  const size_t output_samples =
+      static_cast<size_t>(kTestDurationSecs * output_rate_);
 
   // Nyquist frequency for the input sampling rate.
   const double input_nyquist_freq = 0.5 * input_rate_;
@@ -302,7 +304,7 @@ TEST_P(SincResamplerTest, Resample) {
   int minimum_rate = std::min(input_rate_, output_rate_);
   double low_frequency_range = kLowFrequencyNyquistRange * 0.5 * minimum_rate;
   double high_frequency_range = kHighFrequencyNyquistRange * 0.5 * minimum_rate;
-  for (int i = 0; i < output_samples; ++i) {
+  for (size_t i = 0; i < output_samples; ++i) {
     double error = fabs(resampled_destination[i] - pure_destination[i]);
 
     if (pure_source.Frequency(i) < low_frequency_range) {

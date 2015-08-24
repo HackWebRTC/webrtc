@@ -41,7 +41,7 @@ void WebRtcNs_Analyze(NsHandle* NS_inst, const float* spframe) {
 
 void WebRtcNs_Process(NsHandle* NS_inst,
                       const float* const* spframe,
-                      int num_bands,
+                      size_t num_bands,
                       float* const* outframe) {
   WebRtcNs_ProcessCore((NoiseSuppressionC*)NS_inst, spframe, num_bands,
                        outframe);

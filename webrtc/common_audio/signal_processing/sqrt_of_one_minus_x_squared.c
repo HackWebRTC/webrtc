@@ -17,11 +17,11 @@
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
-void WebRtcSpl_SqrtOfOneMinusXSquared(int16_t *xQ15, int vector_length,
+void WebRtcSpl_SqrtOfOneMinusXSquared(int16_t *xQ15, size_t vector_length,
                                       int16_t *yQ15)
 {
     int32_t sq;
-    int m;
+    size_t m;
     int16_t tmp;
 
     for (m = 0; m < vector_length; m++)

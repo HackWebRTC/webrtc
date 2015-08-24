@@ -39,17 +39,17 @@ Agc::Agc()
 
 Agc::~Agc() {}
 
-float Agc::AnalyzePreproc(const int16_t* audio, int length) {
+float Agc::AnalyzePreproc(const int16_t* audio, size_t length) {
   assert(length > 0);
-  int num_clipped = 0;
-  for (int i = 0; i < length; ++i) {
+  size_t num_clipped = 0;
+  for (size_t i = 0; i < length; ++i) {
     if (audio[i] == 32767 || audio[i] == -32768)
       ++num_clipped;
   }
   return 1.0f * num_clipped / length;
 }
 
-int Agc::Process(const int16_t* audio, int length, int sample_rate_hz) {
+int Agc::Process(const int16_t* audio, size_t length, int sample_rate_hz) {
   vad_.ProcessChunk(audio, length, sample_rate_hz);
   const std::vector<double>& rms = vad_.chunkwise_rms();
   const std::vector<double>& probabilities =

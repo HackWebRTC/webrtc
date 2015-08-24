@@ -30,17 +30,17 @@ class SparseFIRFilter final {
   // B = [0 coeffs[0] 0 0 coeffs[1] 0 0 coeffs[2] ... ]
   // All initial state values will be zeros.
   SparseFIRFilter(const float* nonzero_coeffs,
-                  int num_nonzero_coeffs,
-                  int sparsity,
-                  int offset);
+                  size_t num_nonzero_coeffs,
+                  size_t sparsity,
+                  size_t offset);
 
   // Filters the |in| data supplied.
   // |out| must be previously allocated and it must be at least of |length|.
-  void Filter(const float* in, int length, float* out);
+  void Filter(const float* in, size_t length, float* out);
 
  private:
-  const int sparsity_;
-  const int offset_;
+  const size_t sparsity_;
+  const size_t offset_;
   const std::vector<float> nonzero_coeffs_;
   std::vector<float> state_;
 

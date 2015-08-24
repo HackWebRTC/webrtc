@@ -60,7 +60,7 @@ class NonlinearBeamformer
   // happens. Implements LappedTransform::Callback.
   void ProcessAudioBlock(const complex<float>* const* input,
                          int num_input_channels,
-                         int num_freq_bins,
+                         size_t num_freq_bins,
                          int num_output_channels,
                          complex<float>* const* output) override;
 
@@ -100,18 +100,18 @@ class NonlinearBeamformer
   void ApplyHighFrequencyCorrection();
 
   // Compute the means needed for the above frequency correction.
-  float MaskRangeMean(int start_bin, int end_bin);
+  float MaskRangeMean(size_t start_bin, size_t end_bin);
 
   // Applies both sets of masks to |input| and store in |output|.
   void ApplyMasks(const complex_f* const* input, complex_f* const* output);
 
   void EstimateTargetPresence();
 
-  static const int kFftSize = 256;
-  static const int kNumFreqBins = kFftSize / 2 + 1;
+  static const size_t kFftSize = 256;
+  static const size_t kNumFreqBins = kFftSize / 2 + 1;
 
   // Deals with the fft transform and blocking.
-  int chunk_length_;
+  size_t chunk_length_;
   rtc::scoped_ptr<LappedTransform> lapped_transform_;
   float window_[kFftSize];
 
@@ -122,10 +122,10 @@ class NonlinearBeamformer
   const std::vector<Point> array_geometry_;
 
   // Calculated based on user-input and constants in the .cc file.
-  int low_mean_start_bin_;
-  int low_mean_end_bin_;
-  int high_mean_start_bin_;
-  int high_mean_end_bin_;
+  size_t low_mean_start_bin_;
+  size_t low_mean_end_bin_;
+  size_t high_mean_start_bin_;
+  size_t high_mean_end_bin_;
 
   // Quickly varying mask updated every block.
   float new_mask_[kNumFreqBins];
@@ -167,9 +167,9 @@ class NonlinearBeamformer
   bool is_target_present_;
   // Number of blocks after which the data is considered interference if the
   // mask does not pass |kMaskSignalThreshold|.
-  int hold_target_blocks_;
+  size_t hold_target_blocks_;
   // Number of blocks since the last mask that passed |kMaskSignalThreshold|.
-  int interference_blocks_count_;
+  size_t interference_blocks_count_;
 };
 
 }  // namespace webrtc

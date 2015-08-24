@@ -33,7 +33,7 @@ namespace {
 
 const int kSampleRateHz = 32000;
 const int kNumChannels = 1;
-const int kSamplesPerChannel = kSampleRateHz / 100;
+const size_t kSamplesPerChannel = static_cast<size_t>(kSampleRateHz / 100);
 const float kAboveClippedThreshold = 0.2f;
 
 }  // namespace

@@ -42,9 +42,9 @@ class FakeVoEExternalMedia : public VoEExternalMedia {
   // Use this to trigger the Process() callback to a registered media processor.
   // If |audio| is NULL, a zero array of the correct length will be forwarded.
   void CallProcess(ProcessingTypes type, int16_t* audio,
-                   int samples_per_channel, int sample_rate_hz,
+                   size_t samples_per_channel, int sample_rate_hz,
                    int num_channels) {
-    const int length = samples_per_channel * num_channels;
+    const size_t length = samples_per_channel * num_channels;
     rtc::scoped_ptr<int16_t[]> data;
     if (!audio) {
       data.reset(new int16_t[length]);

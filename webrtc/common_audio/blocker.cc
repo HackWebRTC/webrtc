@@ -18,15 +18,15 @@ namespace {
 
 // Adds |a| and |b| frame by frame into |result| (basically matrix addition).
 void AddFrames(const float* const* a,
-               int a_start_index,
+               size_t a_start_index,
                const float* const* b,
                int b_start_index,
-               int num_frames,
+               size_t num_frames,
                int num_channels,
                float* const* result,
-               int result_start_index) {
+               size_t result_start_index) {
   for (int i = 0; i < num_channels; ++i) {
-    for (int j = 0; j < num_frames; ++j) {
+    for (size_t j = 0; j < num_frames; ++j) {
       result[i][j + result_start_index] =
           a[i][j + a_start_index] + b[i][j + b_start_index];
     }
@@ -35,11 +35,11 @@ void AddFrames(const float* const* a,
 
 // Copies |src| into |dst| channel by channel.
 void CopyFrames(const float* const* src,
-                int src_start_index,
-                int num_frames,
+                size_t src_start_index,
+                size_t num_frames,
                 int num_channels,
                 float* const* dst,
-                int dst_start_index) {
+                size_t dst_start_index) {
   for (int i = 0; i < num_channels; ++i) {
     memcpy(&dst[i][dst_start_index],
            &src[i][src_start_index],
@@ -49,11 +49,11 @@ void CopyFrames(const float* const* src,
 
 // Moves |src| into |dst| channel by channel.
 void MoveFrames(const float* const* src,
-                int src_start_index,
-                int num_frames,
+                size_t src_start_index,
+                size_t num_frames,
                 int num_channels,
                 float* const* dst,
-                int dst_start_index) {
+                size_t dst_start_index) {
   for (int i = 0; i < num_channels; ++i) {
     memmove(&dst[i][dst_start_index],
             &src[i][src_start_index],
@@ -62,8 +62,8 @@ void MoveFrames(const float* const* src,
 }
 
 void ZeroOut(float* const* buffer,
-             int starting_idx,
-             int num_frames,
+             size_t starting_idx,
+             size_t num_frames,
              int num_channels) {
   for (int i = 0; i < num_channels; ++i) {
     memset(&buffer[i][starting_idx], 0,
@@ -74,18 +74,18 @@ void ZeroOut(float* const* buffer,
 // Pointwise multiplies each channel of |frames| with |window|. Results are
 // stored in |frames|.
 void ApplyWindow(const float* window,
-                 int num_frames,
+                 size_t num_frames,
                  int num_channels,
                  float* const* frames) {
   for (int i = 0; i < num_channels; ++i) {
-    for (int j = 0; j < num_frames; ++j) {
+    for (size_t j = 0; j < num_frames; ++j) {
       frames[i][j] = frames[i][j] * window[j];
     }
   }
 }
 
-int gcd(int a, int b) {
-  int tmp;
+size_t gcd(size_t a, size_t b) {
+  size_t tmp;
   while (b) {
      tmp = a;
      a = b;
@@ -98,12 +98,12 @@ int gcd(int a, int b) {
 
 namespace webrtc {
 
-Blocker::Blocker(int chunk_size,
-                 int block_size,
+Blocker::Blocker(size_t chunk_size,
+                 size_t block_size,
                  int num_input_channels,
                  int num_output_channels,
                  const float* window,
-                 int shift_amount,
+                 size_t shift_amount,
                  BlockerCallback* callback)
     : chunk_size_(chunk_size),
       block_size_(block_size),
@@ -165,7 +165,7 @@ Blocker::Blocker(int chunk_size,
 //
 // TODO(claguna): Look at using ring buffers to eliminate some copies.
 void Blocker::ProcessChunk(const float* const* input,
-                           int chunk_size,
+                           size_t chunk_size,
                            int num_input_channels,
                            int num_output_channels,
                            float* const* output) {
@@ -174,7 +174,7 @@ void Blocker::ProcessChunk(const float* const* input,
   CHECK_EQ(num_output_channels, num_output_channels_);
 
   input_buffer_.Write(input, num_input_channels, chunk_size_);
-  int first_frame_in_block = frame_offset_;
+  size_t first_frame_in_block = frame_offset_;
 
   // Loop through blocks.
   while (first_frame_in_block < chunk_size_) {

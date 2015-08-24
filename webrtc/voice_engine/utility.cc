@@ -47,7 +47,7 @@ void RemixAndResample(const AudioFrame& src_frame,
     assert(false);
   }
 
-  const int src_length = src_frame.samples_per_channel_ *
+  const size_t src_length = src_frame.samples_per_channel_ *
                          audio_ptr_num_channels;
   int out_length = resampler->Resample(audio_ptr, src_length, dst_frame->data_,
                                        AudioFrame::kMaxDataSizeSamples);
@@ -55,7 +55,8 @@ void RemixAndResample(const AudioFrame& src_frame,
     LOG_FERR3(LS_ERROR, Resample, audio_ptr, src_length, dst_frame->data_);
     assert(false);
   }
-  dst_frame->samples_per_channel_ = out_length / audio_ptr_num_channels;
+  dst_frame->samples_per_channel_ =
+      static_cast<size_t>(out_length / audio_ptr_num_channels);
 
   // Upmix after resampling.
   if (src_frame.num_channels_ == 1 && dst_frame->num_channels_ == 2) {
@@ -71,7 +72,7 @@ void RemixAndResample(const AudioFrame& src_frame,
 }
 
 void DownConvertToCodecFormat(const int16_t* src_data,
-                              int samples_per_channel,
+                              size_t samples_per_channel,
                               int num_channels,
                               int sample_rate_hz,
                               int codec_num_channels,
@@ -107,7 +108,7 @@ void DownConvertToCodecFormat(const int16_t* src_data,
     assert(false);
   }
 
-  const int in_length = samples_per_channel * num_channels;
+  const size_t in_length = samples_per_channel * num_channels;
   int out_length = resampler->Resample(
       src_data, in_length, dst_af->data_, AudioFrame::kMaxDataSizeSamples);
   if (out_length == -1) {
@@ -115,7 +116,7 @@ void DownConvertToCodecFormat(const int16_t* src_data,
     assert(false);
   }
 
-  dst_af->samples_per_channel_ = out_length / num_channels;
+  dst_af->samples_per_channel_ = static_cast<size_t>(out_length / num_channels);
   dst_af->sample_rate_hz_ = destination_rate;
   dst_af->num_channels_ = num_channels;
 }
@@ -124,7 +125,7 @@ void MixWithSat(int16_t target[],
                 int target_channel,
                 const int16_t source[],
                 int source_channel,
-                int source_len) {
+                size_t source_len) {
   assert(target_channel == 1 || target_channel == 2);
   assert(source_channel == 1 || source_channel == 2);
 
@@ -132,7 +133,7 @@ void MixWithSat(int16_t target[],
     // Convert source from mono to stereo.
     int32_t left = 0;
     int32_t right = 0;
-    for (int i = 0; i < source_len; ++i) {
+    for (size_t i = 0; i < source_len; ++i) {
       left = source[i] + target[i * 2];
       right = source[i] + target[i * 2 + 1];
       target[i * 2] = WebRtcSpl_SatW32ToW16(left);
@@ -141,13 +142,13 @@ void MixWithSat(int16_t target[],
   } else if (target_channel == 1 && source_channel == 2) {
     // Convert source from stereo to mono.
     int32_t temp = 0;
-    for (int i = 0; i < source_len / 2; ++i) {
+    for (size_t i = 0; i < source_len / 2; ++i) {
       temp = ((source[i * 2] + source[i * 2 + 1]) >> 1) + target[i];
       target[i] = WebRtcSpl_SatW32ToW16(temp);
     }
   } else {
     int32_t temp = 0;
-    for (int i = 0; i < source_len; ++i) {
+    for (size_t i = 0; i < source_len; ++i) {
       temp = source[i] + target[i];
       target[i] = WebRtcSpl_SatW32ToW16(temp);
     }

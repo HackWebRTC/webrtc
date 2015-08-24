@@ -41,7 +41,7 @@ void FloatS16ToFloat(const float* src, size_t size, float* dest) {
 
 template <>
 void DownmixInterleavedToMono<int16_t>(const int16_t* interleaved,
-                                       int num_frames,
+                                       size_t num_frames,
                                        int num_channels,
                                        int16_t* deinterleaved) {
   DownmixInterleavedToMonoImpl<int16_t, int32_t>(interleaved, num_frames,

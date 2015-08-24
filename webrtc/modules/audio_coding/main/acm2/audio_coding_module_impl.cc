@@ -76,22 +76,24 @@ bool IsCodecCN(int index) {
 }
 
 // Stereo-to-mono can be used as in-place.
-int DownMix(const AudioFrame& frame, int length_out_buff, int16_t* out_buff) {
+int DownMix(const AudioFrame& frame,
+            size_t length_out_buff,
+            int16_t* out_buff) {
   if (length_out_buff < frame.samples_per_channel_) {
     return -1;
   }
-  for (int n = 0; n < frame.samples_per_channel_; ++n)
+  for (size_t n = 0; n < frame.samples_per_channel_; ++n)
     out_buff[n] = (frame.data_[2 * n] + frame.data_[2 * n + 1]) >> 1;
   return 0;
 }
 
 // Mono-to-stereo can be used as in-place.
-int UpMix(const AudioFrame& frame, int length_out_buff, int16_t* out_buff) {
+int UpMix(const AudioFrame& frame, size_t length_out_buff, int16_t* out_buff) {
   if (length_out_buff < frame.samples_per_channel_) {
     return -1;
   }
-  for (int n = frame.samples_per_channel_; n > 0; --n) {
-    int i = n - 1;
+  for (size_t n = frame.samples_per_channel_; n != 0; --n) {
+    size_t i = n - 1;
     int16_t sample = frame.data_[i];
     out_buff[2 * i + 1] = sample;
     out_buff[2 * i] = sample;
@@ -338,11 +340,10 @@ int AudioCodingModuleImpl::Add10MsData(const AudioFrame& audio_frame) {
 
 int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
                                                InputData* input_data) {
-  if (audio_frame.samples_per_channel_ <= 0) {
+  if (audio_frame.samples_per_channel_ == 0) {
     assert(false);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "Cannot Add 10 ms audio, payload length is negative or "
-                 "zero");
+                 "Cannot Add 10 ms audio, payload length is zero");
     return -1;
   }
 
@@ -354,7 +355,7 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
   }
 
   // If the length and frequency matches. We currently just support raw PCM.
-  if ((audio_frame.sample_rate_hz_ / 100) !=
+  if (static_cast<size_t>(audio_frame.sample_rate_hz_ / 100) !=
       audio_frame.samples_per_channel_) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "Cannot Add 10 ms audio, input frequency and length doesn't"
@@ -477,17 +478,19 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
     // The result of the resampler is written to output frame.
     dest_ptr_audio = preprocess_frame_.data_;
 
-    preprocess_frame_.samples_per_channel_ = resampler_.Resample10Msec(
+    int samples_per_channel = resampler_.Resample10Msec(
         src_ptr_audio, in_frame.sample_rate_hz_,
         codec_manager_.CurrentEncoder()->SampleRateHz(),
         preprocess_frame_.num_channels_, AudioFrame::kMaxDataSizeSamples,
         dest_ptr_audio);
 
-    if (preprocess_frame_.samples_per_channel_ < 0) {
+    if (samples_per_channel < 0) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "Cannot add 10 ms audio, resampling failed");
       return -1;
     }
+    preprocess_frame_.samples_per_channel_ =
+        static_cast<size_t>(samples_per_channel);
     preprocess_frame_.sample_rate_hz_ =
         codec_manager_.CurrentEncoder()->SampleRateHz();
   }

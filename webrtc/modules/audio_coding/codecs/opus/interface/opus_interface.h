@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_OPUS_INTERFACE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_OPUS_INTERFACE_H_
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 #ifdef __cplusplus
@@ -66,8 +68,8 @@ int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
  */
 int WebRtcOpus_Encode(OpusEncInst* inst,
                       const int16_t* audio_in,
-                      int16_t samples,
-                      int16_t length_encoded_buffer,
+                      size_t samples,
+                      size_t length_encoded_buffer,
                       uint8_t* encoded);
 
 /****************************************************************************
@@ -237,7 +239,7 @@ int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst);
  *                             -1 - Error
  */
 int WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
-                      int16_t encoded_bytes, int16_t* decoded,
+                      size_t encoded_bytes, int16_t* decoded,
                       int16_t* audio_type);
 
 /****************************************************************************
@@ -276,7 +278,7 @@ int WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
  *                             -1 - Error
  */
 int WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
-                         int16_t encoded_bytes, int16_t* decoded,
+                         size_t encoded_bytes, int16_t* decoded,
                          int16_t* audio_type);
 
 /****************************************************************************
@@ -293,7 +295,7 @@ int WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
  */
 int WebRtcOpus_DurationEst(OpusDecInst* inst,
                            const uint8_t* payload,
-                           int payload_length_bytes);
+                           size_t payload_length_bytes);
 
 /* TODO(minyue): Check whether it is needed to add a decoder context to the
  * arguments, like WebRtcOpus_DurationEst(...). In fact, the packet itself tells
@@ -313,7 +315,7 @@ int WebRtcOpus_DurationEst(OpusDecInst* inst,
  *                                  0 - No FEC data in the packet.
  */
 int WebRtcOpus_FecDurationEst(const uint8_t* payload,
-                              int payload_length_bytes);
+                              size_t payload_length_bytes);
 
 /****************************************************************************
  * WebRtcOpus_PacketHasFec(...)
@@ -327,7 +329,7 @@ int WebRtcOpus_FecDurationEst(const uint8_t* payload,
  *                                 1 - the packet contains FEC.
  */
 int WebRtcOpus_PacketHasFec(const uint8_t* payload,
-                            int payload_length_bytes);
+                            size_t payload_length_bytes);
 
 #ifdef __cplusplus
 }  // extern "C"

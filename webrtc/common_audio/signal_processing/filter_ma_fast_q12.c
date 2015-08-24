@@ -20,10 +20,10 @@
 void WebRtcSpl_FilterMAFastQ12(const int16_t* in_ptr,
                                int16_t* out_ptr,
                                const int16_t* B,
-                               int16_t B_length,
-                               int16_t length)
+                               size_t B_length,
+                               size_t length)
 {
-    int i, j;
+    size_t i, j;
     for (i = 0; i < length; i++)
     {
         int32_t o = 0;

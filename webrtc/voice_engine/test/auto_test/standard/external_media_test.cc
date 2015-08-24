@@ -83,7 +83,7 @@ TEST_F(ExternalMediaTest,
   ResumePlaying();
   EXPECT_EQ(0, voe_xmedia_->GetAudioFrame(channel_, 0, &frame));
   EXPECT_GT(frame.sample_rate_hz_, 0);
-  EXPECT_GT(frame.samples_per_channel_, 0);
+  EXPECT_GT(frame.samples_per_channel_, 0U);
   PausePlaying();
   EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, false));
   ResumePlaying();
@@ -101,7 +101,7 @@ TEST_F(ExternalMediaTest,
     EXPECT_EQ(0, voe_xmedia_->GetAudioFrame(channel_, f, &frame))
        << "Resampling succeeds for freq=" << f;
     EXPECT_EQ(f, frame.sample_rate_hz_);
-    EXPECT_EQ(f / 100, frame.samples_per_channel_);
+    EXPECT_EQ(static_cast<size_t>(f / 100), frame.samples_per_channel_);
   }
   PausePlaying();
   EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, false));

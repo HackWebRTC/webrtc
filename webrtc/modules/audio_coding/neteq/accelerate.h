@@ -45,14 +45,14 @@ class Accelerate : public TimeStretch {
                       size_t input_length,
                       bool fast_accelerate,
                       AudioMultiVector* output,
-                      int16_t* length_change_samples);
+                      size_t* length_change_samples);
 
  protected:
   // Sets the parameters |best_correlation| and |peak_index| to suitable
   // values when the signal contains no active speech.
   void SetParametersForPassiveSpeech(size_t len,
                                      int16_t* best_correlation,
-                                     int* peak_index) const override;
+                                     size_t* peak_index) const override;
 
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.

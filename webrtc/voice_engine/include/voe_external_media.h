@@ -31,7 +31,7 @@ class WEBRTC_DLLEXPORT VoEMediaProcess {
   virtual void Process(int channel,
                        ProcessingTypes type,
                        int16_t audio10ms[],
-                       int length,
+                       size_t length,
                        int samplingFreq,
                        bool isStereo) = 0;
 

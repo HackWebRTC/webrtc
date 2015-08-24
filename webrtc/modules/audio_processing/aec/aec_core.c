@@ -945,7 +945,8 @@ static void NonLinearProcessing(AecCore* aec,
   float fft[PART_LEN2];
   float scale, dtmp;
   float nlpGainHband;
-  int i, j;
+  int i;
+  size_t j;
 
   // Coherence and non-linear filter
   float cohde[PART_LEN1], cohxd[PART_LEN1];
@@ -1160,8 +1161,8 @@ static void NonLinearProcessing(AecCore* aec,
   memcpy(aec->eBuf, aec->eBuf + PART_LEN, sizeof(float) * PART_LEN);
 
   // Copy the current block to the old position for H band
-  for (i = 0; i < aec->num_bands - 1; ++i) {
-    memcpy(aec->dBufH[i], aec->dBufH[i] + PART_LEN, sizeof(float) * PART_LEN);
+  for (j = 0; j < aec->num_bands - 1; ++j) {
+    memcpy(aec->dBufH[j], aec->dBufH[j] + PART_LEN, sizeof(float) * PART_LEN);
   }
 
   memmove(aec->xfwBuf + PART_LEN1,
@@ -1170,7 +1171,7 @@ static void NonLinearProcessing(AecCore* aec,
 }
 
 static void ProcessBlock(AecCore* aec) {
-  int i;
+  size_t i;
   float y[PART_LEN], e[PART_LEN];
   float scale;
 
@@ -1557,7 +1558,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   } else {
     aec->normal_mu = 0.5f;
     aec->normal_error_threshold = 1.5e-6f;
-    aec->num_bands = sampFreq / 16000;
+    aec->num_bands = (size_t)(sampFreq / 16000);
   }
 
   WebRtc_InitBuffer(aec->nearFrBuf);
@@ -1731,11 +1732,11 @@ int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements) {
 
 void WebRtcAec_ProcessFrames(AecCore* aec,
                              const float* const* nearend,
-                             int num_bands,
-                             int num_samples,
+                             size_t num_bands,
+                             size_t num_samples,
                              int knownDelay,
                              float* const* out) {
-  int i, j;
+  size_t i, j;
   int out_elements = 0;
 
   aec->frame_count++;

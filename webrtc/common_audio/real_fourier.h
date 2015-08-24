@@ -39,14 +39,14 @@ class RealFourier {
 
   // Helper to compute the smallest FFT order (a power of 2) which will contain
   // the given input length.
-  static int FftOrder(int length);
+  static int FftOrder(size_t length);
 
   // Helper to compute the input length from the FFT order.
-  static int FftLength(int order);
+  static size_t FftLength(int order);
 
   // Helper to compute the exact length, in complex floats, of the transform
   // output (i.e. |2^order / 2 + 1|).
-  static int ComplexLength(int order);
+  static size_t ComplexLength(int order);
 
   // Buffer allocation helpers. The buffers are large enough to hold |count|
   // floats/complexes and suitably aligned for use by the implementation.

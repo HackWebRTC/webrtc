@@ -50,8 +50,8 @@ class AudioEncoderOpus final : public AudioEncoder {
   int SampleRateHz() const override;
   int NumChannels() const override;
   size_t MaxEncodedBytes() const override;
-  int Num10MsFramesInNextPacket() const override;
-  int Max10MsFramesInAPacket() const override;
+  size_t Num10MsFramesInNextPacket() const override;
+  size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   void SetTargetBitrate(int bits_per_second) override;
   void SetProjectedPacketLossRate(double fraction) override;
@@ -66,13 +66,13 @@ class AudioEncoderOpus final : public AudioEncoder {
                              uint8_t* encoded) override;
 
  private:
-  const int num_10ms_frames_per_packet_;
+  const size_t num_10ms_frames_per_packet_;
   const int num_channels_;
   const int payload_type_;
   const ApplicationMode application_;
   int bitrate_bps_;
   const bool dtx_enabled_;
-  const int samples_per_10ms_frame_;
+  const size_t samples_per_10ms_frame_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;
   uint32_t first_timestamp_in_buffer_;

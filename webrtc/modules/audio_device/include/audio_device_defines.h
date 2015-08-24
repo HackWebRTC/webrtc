@@ -11,6 +11,8 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DEFINES_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DEFINES_H
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -45,8 +47,8 @@ class AudioDeviceObserver {
 class AudioTransport {
  public:
   virtual int32_t RecordedDataIsAvailable(const void* audioSamples,
-                                          const uint32_t nSamples,
-                                          const uint8_t nBytesPerSample,
+                                          const size_t nSamples,
+                                          const size_t nBytesPerSample,
                                           const uint8_t nChannels,
                                           const uint32_t samplesPerSec,
                                           const uint32_t totalDelayMS,
@@ -55,12 +57,12 @@ class AudioTransport {
                                           const bool keyPressed,
                                           uint32_t& newMicLevel) = 0;
 
-  virtual int32_t NeedMorePlayData(const uint32_t nSamples,
-                                   const uint8_t nBytesPerSample,
+  virtual int32_t NeedMorePlayData(const size_t nSamples,
+                                   const size_t nBytesPerSample,
                                    const uint8_t nChannels,
                                    const uint32_t samplesPerSec,
                                    void* audioSamples,
-                                   uint32_t& nSamplesOut,
+                                   size_t& nSamplesOut,
                                    int64_t* elapsed_time_ms,
                                    int64_t* ntp_time_ms) = 0;
 
@@ -84,7 +86,7 @@ class AudioTransport {
                               const int16_t* audio_data,
                               int sample_rate,
                               int number_of_channels,
-                              int number_of_frames,
+                              size_t number_of_frames,
                               int audio_delay_milliseconds,
                               int current_volume,
                               bool key_pressed,
@@ -102,7 +104,7 @@ class AudioTransport {
                       int bits_per_sample,
                       int sample_rate,
                       int number_of_channels,
-                      int number_of_frames) {}
+                      size_t number_of_frames) {}
 
   // Method to push the captured audio data to the specific VoE channel.
   // The data will not undergo audio processing.
@@ -115,7 +117,7 @@ class AudioTransport {
                                int bits_per_sample,
                                int sample_rate,
                                int number_of_channels,
-                               int number_of_frames) {}
+                               size_t number_of_frames) {}
 
   // Method to pull mixed render audio data from all active VoE channels.
   // The data will not be passed as reference for audio processing internally.
@@ -124,7 +126,7 @@ class AudioTransport {
   virtual void PullRenderData(int bits_per_sample,
                               int sample_rate,
                               int number_of_channels,
-                              int number_of_frames,
+                              size_t number_of_frames,
                               void* audio_data,
                               int64_t* elapsed_time_ms,
                               int64_t* ntp_time_ms) {}
@@ -151,18 +153,18 @@ class AudioParameters {
       : sample_rate_(sample_rate),
         channels_(channels),
         frames_per_buffer_(frames_per_buffer),
-        frames_per_10ms_buffer_(sample_rate / 100) {}
+        frames_per_10ms_buffer_(static_cast<size_t>(sample_rate / 100)) {}
   void reset(int sample_rate, int channels, int frames_per_buffer) {
     sample_rate_ = sample_rate;
     channels_ = channels;
     frames_per_buffer_ = frames_per_buffer;
-    frames_per_10ms_buffer_ = (sample_rate / 100);
+    frames_per_10ms_buffer_ = static_cast<size_t>(sample_rate / 100);
   }
   int bits_per_sample() const { return kBitsPerSample; }
   int sample_rate() const { return sample_rate_; }
   int channels() const { return channels_; }
   int frames_per_buffer() const { return frames_per_buffer_; }
-  int frames_per_10ms_buffer() const { return frames_per_10ms_buffer_; }
+  size_t frames_per_10ms_buffer() const { return frames_per_10ms_buffer_; }
   bool is_valid() const {
     return ((sample_rate_ > 0) && (channels_ > 0) && (frames_per_buffer_ > 0));
   }
@@ -170,7 +172,7 @@ class AudioParameters {
   int GetBytesPerBuffer() const {
     return frames_per_buffer_ * GetBytesPerFrame();
   }
-  int GetBytesPer10msBuffer() const {
+  size_t GetBytesPer10msBuffer() const {
     return frames_per_10ms_buffer_ * GetBytesPerFrame();
   }
   float GetBufferSizeInMilliseconds() const {
@@ -183,7 +185,7 @@ class AudioParameters {
   int sample_rate_;
   int channels_;
   int frames_per_buffer_;
-  int frames_per_10ms_buffer_;
+  size_t frames_per_10ms_buffer_;
 };
 
 }  // namespace webrtc

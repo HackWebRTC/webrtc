@@ -42,8 +42,8 @@
 namespace webrtc {
 namespace {
 
-const int kNumBands = 3;
-const int kSparsity = 4;
+const size_t kNumBands = 3;
+const size_t kSparsity = 4;
 
 // Factors to take into account when choosing |kNumCoeffs|:
 //   1. Higher |kNumCoeffs|, means faster transition, which ensures less
@@ -53,7 +53,7 @@ const int kSparsity = 4;
 //      |kNumBands| * |kSparsity| * |kNumCoeffs| / 2, so it increases linearly
 //      with |kNumCoeffs|.
 //   3. The computation complexity also increases linearly with |kNumCoeffs|.
-const int kNumCoeffs = 4;
+const size_t kNumCoeffs = 4;
 
 // The Matlab code to generate these |kLowpassCoeffs| is:
 //
@@ -85,8 +85,11 @@ const float kLowpassCoeffs[kNumBands * kSparsity][kNumCoeffs] =
 // Downsamples |in| into |out|, taking one every |kNumbands| starting from
 // |offset|. |split_length| is the |out| length. |in| has to be at least
 // |kNumBands| * |split_length| long.
-void Downsample(const float* in, int split_length, int offset, float* out) {
-  for (int i = 0; i < split_length; ++i) {
+void Downsample(const float* in,
+                size_t split_length,
+                size_t offset,
+                float* out) {
+  for (size_t i = 0; i < split_length; ++i) {
     out[i] = in[kNumBands * i + offset];
   }
 }
@@ -94,8 +97,8 @@ void Downsample(const float* in, int split_length, int offset, float* out) {
 // Upsamples |in| into |out|, scaling by |kNumBands| and accumulating it every
 // |kNumBands| starting from |offset|. |split_length| is the |in| length. |out|
 // has to be at least |kNumBands| * |split_length| long.
-void Upsample(const float* in, int split_length, int offset, float* out) {
-  for (int i = 0; i < split_length; ++i) {
+void Upsample(const float* in, size_t split_length, size_t offset, float* out) {
+  for (size_t i = 0; i < split_length; ++i) {
     out[kNumBands * i + offset] += kNumBands * in[i];
   }
 }
@@ -105,11 +108,11 @@ void Upsample(const float* in, int split_length, int offset, float* out) {
 // Because the low-pass filter prototype has half bandwidth it is possible to
 // use a DCT to shift it in both directions at the same time, to the center
 // frequencies [1 / 12, 3 / 12, 5 / 12].
-ThreeBandFilterBank::ThreeBandFilterBank(int length)
+ThreeBandFilterBank::ThreeBandFilterBank(size_t length)
     : in_buffer_(rtc::CheckedDivExact(length, kNumBands)),
       out_buffer_(in_buffer_.size()) {
-  for (int i = 0; i < kSparsity; ++i) {
-    for (int j = 0; j < kNumBands; ++j) {
+  for (size_t i = 0; i < kSparsity; ++i) {
+    for (size_t j = 0; j < kNumBands; ++j) {
       analysis_filters_.push_back(new SparseFIRFilter(
           kLowpassCoeffs[i * kNumBands + j], kNumCoeffs, kSparsity, i));
       synthesis_filters_.push_back(new SparseFIRFilter(
@@ -119,7 +122,7 @@ ThreeBandFilterBank::ThreeBandFilterBank(int length)
   dct_modulation_.resize(kNumBands * kSparsity);
   for (size_t i = 0; i < dct_modulation_.size(); ++i) {
     dct_modulation_[i].resize(kNumBands);
-    for (int j = 0; j < kNumBands; ++j) {
+    for (size_t j = 0; j < kNumBands; ++j) {
       dct_modulation_[i][j] =
           2.f * cos(2.f * M_PI * i * (2.f * j + 1.f) / dct_modulation_.size());
     }
@@ -133,17 +136,16 @@ ThreeBandFilterBank::ThreeBandFilterBank(int length)
 //      of |kSparsity|.
 //   3. Modulating with cosines and accumulating to get the desired band.
 void ThreeBandFilterBank::Analysis(const float* in,
-                                   int length,
+                                   size_t length,
                                    float* const* out) {
-  CHECK_EQ(static_cast<int>(in_buffer_.size()),
-           rtc::CheckedDivExact(length, kNumBands));
-  for (int i = 0; i < kNumBands; ++i) {
+  CHECK_EQ(in_buffer_.size(), rtc::CheckedDivExact(length, kNumBands));
+  for (size_t i = 0; i < kNumBands; ++i) {
     memset(out[i], 0, in_buffer_.size() * sizeof(*out[i]));
   }
-  for (int i = 0; i < kNumBands; ++i) {
+  for (size_t i = 0; i < kNumBands; ++i) {
     Downsample(in, in_buffer_.size(), kNumBands - i - 1, &in_buffer_[0]);
-    for (int j = 0; j < kSparsity; ++j) {
-      const int offset = i + j * kNumBands;
+    for (size_t j = 0; j < kSparsity; ++j) {
+      const size_t offset = i + j * kNumBands;
       analysis_filters_[offset]->Filter(&in_buffer_[0],
                                         in_buffer_.size(),
                                         &out_buffer_[0]);
@@ -159,13 +161,13 @@ void ThreeBandFilterBank::Analysis(const float* in,
 //      |kSparsity| signals with different delays.
 //   3. Parallel to serial upsampling by a factor of |kNumBands|.
 void ThreeBandFilterBank::Synthesis(const float* const* in,
-                                    int split_length,
+                                    size_t split_length,
                                     float* out) {
-  CHECK_EQ(static_cast<int>(in_buffer_.size()), split_length);
+  CHECK_EQ(in_buffer_.size(), split_length);
   memset(out, 0, kNumBands * in_buffer_.size() * sizeof(*out));
-  for (int i = 0; i < kNumBands; ++i) {
-    for (int j = 0; j < kSparsity; ++j) {
-      const int offset = i + j * kNumBands;
+  for (size_t i = 0; i < kNumBands; ++i) {
+    for (size_t j = 0; j < kSparsity; ++j) {
+      const size_t offset = i + j * kNumBands;
       UpModulate(in, in_buffer_.size(), offset, &in_buffer_[0]);
       synthesis_filters_[offset]->Filter(&in_buffer_[0],
                                          in_buffer_.size(),
@@ -181,11 +183,11 @@ void ThreeBandFilterBank::Synthesis(const float* const* in,
 // cosines used for modulation. |split_length| is the length of |in| and each
 // band of |out|.
 void ThreeBandFilterBank::DownModulate(const float* in,
-                                       int split_length,
-                                       int offset,
+                                       size_t split_length,
+                                       size_t offset,
                                        float* const* out) {
-  for (int i = 0; i < kNumBands; ++i) {
-    for (int j = 0; j < split_length; ++j) {
+  for (size_t i = 0; i < kNumBands; ++i) {
+    for (size_t j = 0; j < split_length; ++j) {
       out[i][j] += dct_modulation_[offset][i] * in[j];
     }
   }
@@ -196,12 +198,12 @@ void ThreeBandFilterBank::DownModulate(const float* in,
 // |offset| is the index in the period of the cosines used for modulation.
 // |split_length| is the length of each band of |in| and |out|.
 void ThreeBandFilterBank::UpModulate(const float* const* in,
-                                     int split_length,
-                                     int offset,
+                                     size_t split_length,
+                                     size_t offset,
                                      float* out) {
   memset(out, 0, split_length * sizeof(*out));
-  for (int i = 0; i < kNumBands; ++i) {
-    for (int j = 0; j < split_length; ++j) {
+  for (size_t i = 0; i < kNumBands; ++i) {
+    for (size_t j = 0; j < split_length; ++j) {
       out[j] += dct_modulation_[offset][i] * in[i][j];
     }
   }

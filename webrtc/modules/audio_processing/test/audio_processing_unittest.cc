@@ -129,21 +129,23 @@ void VerifyChannelsAreEqual(int16_t* stereo, int samples_per_channel) {
 }
 
 void SetFrameTo(AudioFrame* frame, int16_t value) {
-  for (int i = 0; i < frame->samples_per_channel_ * frame->num_channels_; ++i) {
+  for (size_t i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
+       ++i) {
     frame->data_[i] = value;
   }
 }
 
 void SetFrameTo(AudioFrame* frame, int16_t left, int16_t right) {
   ASSERT_EQ(2, frame->num_channels_);
-  for (int i = 0; i < frame->samples_per_channel_ * 2; i += 2) {
+  for (size_t i = 0; i < frame->samples_per_channel_ * 2; i += 2) {
     frame->data_[i] = left;
     frame->data_[i + 1] = right;
   }
 }
 
 void ScaleFrame(AudioFrame* frame, float scale) {
-  for (int i = 0; i < frame->samples_per_channel_ * frame->num_channels_; ++i) {
+  for (size_t i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
+       ++i) {
     frame->data_[i] = FloatS16ToS16(frame->data_[i] * scale);
   }
 }
@@ -676,13 +678,18 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
   }
   // Calculate expected delay estimate and acceptable regions. Further,
   // limit them w.r.t. AEC delay estimation support.
-  const int samples_per_ms = std::min(16, frame_->samples_per_channel_ / 10);
+  const size_t samples_per_ms =
+      std::min(static_cast<size_t>(16), frame_->samples_per_channel_ / 10);
   int expected_median = std::min(std::max(delay_ms - system_delay_ms,
                                           delay_min), delay_max);
-  int expected_median_high = std::min(std::max(
-      expected_median + 96 / samples_per_ms, delay_min), delay_max);
-  int expected_median_low = std::min(std::max(
-      expected_median - 96 / samples_per_ms, delay_min), delay_max);
+  int expected_median_high = std::min(
+      std::max(expected_median + static_cast<int>(96 / samples_per_ms),
+               delay_min),
+      delay_max);
+  int expected_median_low = std::min(
+      std::max(expected_median - static_cast<int>(96 / samples_per_ms),
+               delay_min),
+      delay_max);
   // Verify delay metrics.
   int median;
   int std;
@@ -998,8 +1005,8 @@ TEST_F(ApmTest, DISABLED_EchoCancellationReportsCorrectDelays) {
          2,
          false);
     // Sampling frequency dependent variables.
-    const int num_ms_per_block = std::max(4,
-                                          640 / frame_->samples_per_channel_);
+    const int num_ms_per_block =
+        std::max(4, static_cast<int>(640 / frame_->samples_per_channel_));
     const int delay_min_ms = -kLookaheadBlocks * num_ms_per_block;
     const int delay_max_ms = (kMaxDelayBlocks - 1) * num_ms_per_block;
 

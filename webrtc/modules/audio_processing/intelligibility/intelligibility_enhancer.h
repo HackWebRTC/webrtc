@@ -51,7 +51,7 @@ class IntelligibilityEnhancer {
     int num_render_channels;
     intelligibility::VarianceArray::StepType var_type;
     float var_decay_rate;
-    int var_window_size;
+    size_t var_window_size;
     int analysis_rate;
     float gain_change_limit;
     float rho;
@@ -86,7 +86,7 @@ class IntelligibilityEnhancer {
     // intelligibility enhancement, and writes result to |out_block|.
     void ProcessAudioBlock(const std::complex<float>* const* in_block,
                            int in_channels,
-                           int frames,
+                           size_t frames,
                            int out_channels,
                            std::complex<float>* const* out_block) override;
 
@@ -122,34 +122,34 @@ class IntelligibilityEnhancer {
                          std::complex<float>* out_block);
 
   // Returns number of ERB filters.
-  static int GetBankSize(int sample_rate, int erb_resolution);
+  static size_t GetBankSize(int sample_rate, size_t erb_resolution);
 
   // Initializes ERB filterbank.
   void CreateErbBank();
 
   // Analytically solves quadratic for optimal gains given |lambda|.
   // Negative gains are set to 0. Stores the results in |sols|.
-  void SolveForGainsGivenLambda(float lambda, int start_freq, float* sols);
+  void SolveForGainsGivenLambda(float lambda, size_t start_freq, float* sols);
 
   // Computes variance across ERB filters from freq variance |var|.
   // Stores in |result|.
   void FilterVariance(const float* var, float* result);
 
   // Returns dot product of vectors specified by size |length| arrays |a|,|b|.
-  static float DotProduct(const float* a, const float* b, int length);
+  static float DotProduct(const float* a, const float* b, size_t length);
 
-  const int freqs_;         // Num frequencies in frequency domain.
-  const int window_size_;   // Window size in samples; also the block size.
-  const int chunk_length_;  // Chunk size in samples.
-  const int bank_size_;     // Num ERB filters.
+  const size_t freqs_;         // Num frequencies in frequency domain.
+  const size_t window_size_;   // Window size in samples; also the block size.
+  const size_t chunk_length_;  // Chunk size in samples.
+  const size_t bank_size_;     // Num ERB filters.
   const int sample_rate_hz_;
   const int erb_resolution_;
   const int num_capture_channels_;
   const int num_render_channels_;
-  const int analysis_rate_;  // Num blocks before gains recalculated.
+  const int analysis_rate_;    // Num blocks before gains recalculated.
 
-  const bool active_;  // Whether render gains are being updated.
-                       // TODO(ekm): Add logic for updating |active_|.
+  const bool active_;          // Whether render gains are being updated.
+                               // TODO(ekm): Add logic for updating |active_|.
 
   intelligibility::VarianceArray clear_variance_;
   intelligibility::VarianceArray noise_variance_;
@@ -157,7 +157,7 @@ class IntelligibilityEnhancer {
   rtc::scoped_ptr<float[]> filtered_noise_var_;
   std::vector<std::vector<float>> filter_bank_;
   rtc::scoped_ptr<float[]> center_freqs_;
-  int start_freq_;
+  size_t start_freq_;
   rtc::scoped_ptr<float[]> rho_;  // Production and interpretation SNR.
                                   // for each ERB band.
   rtc::scoped_ptr<float[]> gains_eq_;  // Pre-filter modified gains.

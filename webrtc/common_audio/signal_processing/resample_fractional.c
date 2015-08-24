@@ -41,7 +41,7 @@ static const int16_t kCoefficients44To32[4][9] = {
 // output: int32_t (shifted 15 positions to the left, + offset 16384) :: size 2 * K
 //      K: number of blocks
 
-void WebRtcSpl_Resample48khzTo32khz(const int32_t *In, int32_t *Out, int32_t K)
+void WebRtcSpl_Resample48khzTo32khz(const int32_t *In, int32_t *Out, size_t K)
 {
     /////////////////////////////////////////////////////////////
     // Filter operation:
@@ -49,7 +49,7 @@ void WebRtcSpl_Resample48khzTo32khz(const int32_t *In, int32_t *Out, int32_t K)
     // Perform resampling (3 input samples -> 2 output samples);
     // process in sub blocks of size 3 samples.
     int32_t tmp;
-    int32_t m;
+    size_t m;
 
     for (m = 0; m < K; m++)
     {
@@ -86,14 +86,14 @@ void WebRtcSpl_Resample48khzTo32khz(const int32_t *In, int32_t *Out, int32_t K)
 // output: int32_t (shifted 15 positions to the left, + offset 16384) :: size 3 * K
 //      K: number of blocks
 
-void WebRtcSpl_Resample32khzTo24khz(const int32_t *In, int32_t *Out, int32_t K)
+void WebRtcSpl_Resample32khzTo24khz(const int32_t *In, int32_t *Out, size_t K)
 {
     /////////////////////////////////////////////////////////////
     // Filter operation:
     //
     // Perform resampling (4 input samples -> 3 output samples);
     // process in sub blocks of size 4 samples.
-    int32_t m;
+    size_t m;
     int32_t tmp;
 
     for (m = 0; m < K; m++)
@@ -194,7 +194,7 @@ static void WebRtcSpl_ResampDotProduct(const int32_t *in1, const int32_t *in2,
 // output: int32_t (shifted 15 positions to the left, + offset 16384) :: size  8 * K
 //      K: number of blocks
 
-void WebRtcSpl_Resample44khzTo32khz(const int32_t *In, int32_t *Out, int32_t K)
+void WebRtcSpl_Resample44khzTo32khz(const int32_t *In, int32_t *Out, size_t K)
 {
     /////////////////////////////////////////////////////////////
     // Filter operation:
@@ -202,7 +202,7 @@ void WebRtcSpl_Resample44khzTo32khz(const int32_t *In, int32_t *Out, int32_t K)
     // Perform resampling (11 input samples -> 8 output samples);
     // process in sub blocks of size 11 samples.
     int32_t tmp;
-    int32_t m;
+    size_t m;
 
     for (m = 0; m < K; m++)
     {

@@ -31,9 +31,9 @@ class AudioEncoderPcm16B final : public AudioEncoderPcm {
       : AudioEncoderPcm(config, config.sample_rate_hz) {}
 
  protected:
-  int16_t EncodeCall(const int16_t* audio,
-                     size_t input_len,
-                     uint8_t* encoded) override;
+  size_t EncodeCall(const int16_t* audio,
+                    size_t input_len,
+                    uint8_t* encoded) override;
 
   int BytesPerSample() const override;
 };

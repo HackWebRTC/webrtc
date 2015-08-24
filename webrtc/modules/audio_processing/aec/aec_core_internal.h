@@ -101,7 +101,7 @@ struct AecCore {
 
   int mult;  // sampling frequency multiple
   int sampFreq;
-  int num_bands;
+  size_t num_bands;
   uint32_t seed;
 
   float normal_mu;               // stepsize

@@ -17,8 +17,8 @@
 namespace webrtc {
 
 SplittingFilter::SplittingFilter(int num_channels,
-                                 int num_bands,
-                                 int num_frames)
+                                 size_t num_bands,
+                                 size_t num_frames)
     : num_bands_(num_bands) {
   CHECK(num_bands_ == 2 || num_bands_ == 3);
   if (num_bands_ == 2) {

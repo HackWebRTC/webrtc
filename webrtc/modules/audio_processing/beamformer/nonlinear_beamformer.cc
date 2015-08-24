@@ -119,8 +119,8 @@ complex<float> ConjugateDotProduct(const ComplexMatrix<float>& lhs,
 }
 
 // Works for positive numbers only.
-int Round(float x) {
-  return static_cast<int>(std::floor(x + 0.5f));
+size_t Round(float x) {
+  return static_cast<size_t>(std::floor(x + 0.5f));
 }
 
 // Calculates the sum of absolute values of a complex matrix.
@@ -179,6 +179,9 @@ std::vector<Point> GetCenteredArray(std::vector<Point> array_geometry) {
 
 }  // namespace
 
+// static
+const size_t NonlinearBeamformer::kNumFreqBins;
+
 NonlinearBeamformer::NonlinearBeamformer(
     const std::vector<Point>& array_geometry)
   : num_input_channels_(array_geometry.size()),
@@ -187,7 +190,8 @@ NonlinearBeamformer::NonlinearBeamformer(
 }
 
 void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
-  chunk_length_ = sample_rate_hz / (1000.f / chunk_size_ms);
+  chunk_length_ =
+      static_cast<size_t>(sample_rate_hz / (1000.f / chunk_size_ms));
   sample_rate_hz_ = sample_rate_hz;
   low_mean_start_bin_ = Round(kLowMeanStartHz * kFftSize / sample_rate_hz_);
   low_mean_end_bin_ = Round(kLowMeanEndHz * kFftSize / sample_rate_hz_);
@@ -203,7 +207,7 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   //   constant               ^                        ^
   //             low_mean_end_bin_       high_mean_end_bin_
   //
-  DCHECK_GT(low_mean_start_bin_, 0);
+  DCHECK_GT(low_mean_start_bin_, 0U);
   DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
   DCHECK_LT(low_mean_end_bin_, high_mean_end_bin_);
   DCHECK_LT(high_mean_start_bin_, high_mean_end_bin_);
@@ -222,7 +226,7 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
                                               kFftSize,
                                               kFftSize / 2,
                                               this));
-  for (int i = 0; i < kNumFreqBins; ++i) {
+  for (size_t i = 0; i < kNumFreqBins; ++i) {
     time_smooth_mask_[i] = 1.f;
     final_mask_[i] = 1.f;
     float freq_hz = (static_cast<float>(i) / kFftSize) * sample_rate_hz_;
@@ -237,7 +241,7 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   InitTargetCovMats();
   InitInterfCovMats();
 
-  for (int i = 0; i < kNumFreqBins; ++i) {
+  for (size_t i = 0; i < kNumFreqBins; ++i) {
     rxiws_[i] = Norm(target_cov_mats_[i], delay_sum_masks_[i]);
     rpsiws_[i] = Norm(interf_cov_mats_[i], delay_sum_masks_[i]);
     reflected_rpsiws_[i] =
@@ -246,7 +250,7 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
 }
 
 void NonlinearBeamformer::InitDelaySumMasks() {
-  for (int f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
+  for (size_t f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
     delay_sum_masks_[f_ix].Resize(1, num_input_channels_);
     CovarianceMatrixGenerator::PhaseAlignmentMasks(f_ix,
                                                    kFftSize,
@@ -266,7 +270,7 @@ void NonlinearBeamformer::InitDelaySumMasks() {
 }
 
 void NonlinearBeamformer::InitTargetCovMats() {
-  for (int i = 0; i < kNumFreqBins; ++i) {
+  for (size_t i = 0; i < kNumFreqBins; ++i) {
     target_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
     TransposedConjugatedProduct(delay_sum_masks_[i], &target_cov_mats_[i]);
     complex_f normalization_factor = target_cov_mats_[i].Trace();
@@ -275,7 +279,7 @@ void NonlinearBeamformer::InitTargetCovMats() {
 }
 
 void NonlinearBeamformer::InitInterfCovMats() {
-  for (int i = 0; i < kNumFreqBins; ++i) {
+  for (size_t i = 0; i < kNumFreqBins; ++i) {
     interf_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
     ComplexMatrixF uniform_cov_mat(num_input_channels_, num_input_channels_);
     ComplexMatrixF angled_cov_mat(num_input_channels_, num_input_channels_);
@@ -320,9 +324,9 @@ void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
       input.num_frames_per_band();
   // Apply delay and sum and post-filter in the time domain. WARNING: only works
   // because delay-and-sum is not frequency dependent.
-  for (int i = 1; i < input.num_bands(); ++i) {
+  for (size_t i = 1; i < input.num_bands(); ++i) {
     float smoothed_mask = old_high_pass_mask;
-    for (int j = 0; j < input.num_frames_per_band(); ++j) {
+    for (size_t j = 0; j < input.num_frames_per_band(); ++j) {
       smoothed_mask += ramp_increment;
 
       // Applying the delay and sum (at zero degrees, this is equivalent to
@@ -345,7 +349,7 @@ bool NonlinearBeamformer::IsInBeam(const SphericalPointf& spherical_point) {
 
 void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
                                             int num_input_channels,
-                                            int num_freq_bins,
+                                            size_t num_freq_bins,
                                             int num_output_channels,
                                             complex_f* const* output) {
   CHECK_EQ(num_freq_bins, kNumFreqBins);
@@ -355,7 +359,7 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
   // Calculating the post-filter masks. Note that we need two for each
   // frequency bin to account for the positive and negative interferer
   // angle.
-  for (int i = low_mean_start_bin_; i <= high_mean_end_bin_; ++i) {
+  for (size_t i = low_mean_start_bin_; i <= high_mean_end_bin_; ++i) {
     eig_m_.CopyFromColumn(input, i, num_input_channels_);
     float eig_m_norm_factor = std::sqrt(SumSquares(eig_m_));
     if (eig_m_norm_factor != 0.f) {
@@ -420,7 +424,7 @@ float NonlinearBeamformer::CalculatePostfilterMask(
 void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
                                      complex_f* const* output) {
   complex_f* output_channel = output[0];
-  for (int f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
+  for (size_t f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
     output_channel[f_ix] = complex_f(0.f, 0.f);
 
     const complex_f* delay_sum_mask_els =
@@ -435,7 +439,7 @@ void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
 
 // Smooth new_mask_ into time_smooth_mask_.
 void NonlinearBeamformer::ApplyMaskTimeSmoothing() {
-  for (int i = low_mean_start_bin_; i <= high_mean_end_bin_; ++i) {
+  for (size_t i = low_mean_start_bin_; i <= high_mean_end_bin_; ++i) {
     time_smooth_mask_[i] = kMaskTimeSmoothAlpha * new_mask_[i] +
                            (1 - kMaskTimeSmoothAlpha) * time_smooth_mask_[i];
   }
@@ -460,11 +464,11 @@ void NonlinearBeamformer::ApplyMaskFrequencySmoothing() {
   // |------|------------|------|
   //  ^<------------------^
   std::copy(time_smooth_mask_, time_smooth_mask_ + kNumFreqBins, final_mask_);
-  for (int i = low_mean_start_bin_; i < kNumFreqBins; ++i) {
+  for (size_t i = low_mean_start_bin_; i < kNumFreqBins; ++i) {
     final_mask_[i] = kMaskFrequencySmoothAlpha * final_mask_[i] +
                      (1 - kMaskFrequencySmoothAlpha) * final_mask_[i - 1];
   }
-  for (int i = high_mean_end_bin_ + 1; i > 0; --i) {
+  for (size_t i = high_mean_end_bin_ + 1; i > 0; --i) {
     final_mask_[i - 1] = kMaskFrequencySmoothAlpha * final_mask_[i - 1] +
                          (1 - kMaskFrequencySmoothAlpha) * final_mask_[i];
   }
@@ -488,7 +492,7 @@ void NonlinearBeamformer::ApplyHighFrequencyCorrection() {
 }
 
 // Compute mean over the given range of time_smooth_mask_, [first, last).
-float NonlinearBeamformer::MaskRangeMean(int first, int last) {
+float NonlinearBeamformer::MaskRangeMean(size_t first, size_t last) {
   DCHECK_GT(last, first);
   const float sum = std::accumulate(time_smooth_mask_ + first,
                                     time_smooth_mask_ + last, 0.f);
@@ -496,9 +500,9 @@ float NonlinearBeamformer::MaskRangeMean(int first, int last) {
 }
 
 void NonlinearBeamformer::EstimateTargetPresence() {
-  const int quantile =
+  const size_t quantile = static_cast<size_t>(
       (high_mean_end_bin_ - low_mean_start_bin_) * kMaskQuantile +
-      low_mean_start_bin_;
+      low_mean_start_bin_);
   std::nth_element(new_mask_ + low_mean_start_bin_, new_mask_ + quantile,
                    new_mask_ + high_mean_end_bin_ + 1);
   if (new_mask_[quantile] > kMaskTargetThreshold) {

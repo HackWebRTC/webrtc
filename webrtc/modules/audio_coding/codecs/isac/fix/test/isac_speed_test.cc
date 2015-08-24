@@ -26,8 +26,8 @@ class IsacSpeedTest : public AudioCodecSpeedTest {
   void SetUp() override;
   void TearDown() override;
   virtual float EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
-                             int max_bytes, int* encoded_bytes);
-  virtual float DecodeABlock(const uint8_t* bit_stream, int encoded_bytes,
+                             size_t max_bytes, size_t* encoded_bytes);
+  virtual float DecodeABlock(const uint8_t* bit_stream, size_t encoded_bytes,
                              int16_t* out_data);
   ISACFIX_MainStruct *ISACFIX_main_inst_;
 };
@@ -43,7 +43,7 @@ void IsacSpeedTest::SetUp() {
   AudioCodecSpeedTest::SetUp();
 
   // Check whether the allocated buffer for the bit stream is large enough.
-  EXPECT_GE(max_bytes_, STREAM_MAXW16_60MS);
+  EXPECT_GE(max_bytes_, static_cast<size_t>(STREAM_MAXW16_60MS));
 
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcIsacfix_Create(&ISACFIX_main_inst_));
@@ -61,7 +61,7 @@ void IsacSpeedTest::TearDown() {
 }
 
 float IsacSpeedTest::EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
-                                  int max_bytes, int* encoded_bytes) {
+                                  size_t max_bytes, size_t* encoded_bytes) {
   // ISAC takes 10 ms everycall
   const int subblocks = block_duration_ms_ / 10;
   const int subblock_length = 10 * input_sampling_khz_;
@@ -78,13 +78,13 @@ float IsacSpeedTest::EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
       EXPECT_EQ(0, value);
   }
   clocks = clock() - clocks;
-  *encoded_bytes = value;
+  *encoded_bytes = static_cast<size_t>(value);
   assert(*encoded_bytes <= max_bytes);
   return 1000.0 * clocks / CLOCKS_PER_SEC;
 }
 
 float IsacSpeedTest::DecodeABlock(const uint8_t* bit_stream,
-                                  int encoded_bytes,
+                                  size_t encoded_bytes,
                                   int16_t* out_data) {
   int value;
   int16_t audio_type;

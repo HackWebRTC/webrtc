@@ -41,7 +41,7 @@ static const int16_t kOffset2[8] = {18432, 18379, 18290, 18177, 18052, 17920, 17
 
 static const int16_t kMuteGuardTimeMs = 8000;
 static const int16_t kInitCheck = 42;
-static const int16_t kNumSubframes = 10;
+static const size_t kNumSubframes = 10;
 
 /* Default settings if config is not used */
 #define AGC_DEFAULT_TARGET_LEVEL 3
@@ -112,13 +112,14 @@ static const int32_t kTargetLevelTable[64] = {134209536, 106606424, 84680493, 67
         6726, 5343, 4244, 3371, 2678, 2127, 1690, 1342, 1066, 847, 673, 534, 424, 337, 268,
         213, 169, 134, 107, 85, 67};
 
-int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, int16_t num_bands,
-                     int16_t samples)
+int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, size_t num_bands,
+                     size_t samples)
 {
     int32_t nrg, max_nrg, sample, tmp32;
     int32_t *ptr;
     uint16_t targetGainIdx, gain;
-    int16_t i, n, L, tmp16, tmp_speech[16];
+    size_t i;
+    int16_t n, L, tmp16, tmp_speech[16];
     LegacyAgc* stt;
     stt = (LegacyAgc*)state;
 
@@ -164,7 +165,7 @@ int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, int16_t num_bands,
 
         for (i = 0; i < samples; i++)
         {
-            int j;
+            size_t j;
             for (j = 0; j < num_bands; ++j)
             {
                 sample = (in_mic[j][i] * gain) >> 12;
@@ -249,7 +250,7 @@ int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, int16_t num_bands,
     return 0;
 }
 
-int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
+int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, size_t samples)
 {
   LegacyAgc* stt;
   stt = (LegacyAgc*)state;
@@ -280,16 +281,16 @@ int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
 }
 
 int WebRtcAgc_VirtualMic(void *agcInst, int16_t* const* in_near,
-                         int16_t num_bands, int16_t samples, int32_t micLevelIn,
+                         size_t num_bands, size_t samples, int32_t micLevelIn,
                          int32_t *micLevelOut)
 {
     int32_t tmpFlt, micLevelTmp, gainIdx;
     uint16_t gain;
-    int16_t ii, j;
+    size_t ii, j;
     LegacyAgc* stt;
 
     uint32_t nrg;
-    int16_t sampleCntr;
+    size_t sampleCntr;
     uint32_t frameNrg = 0;
     uint32_t frameNrgLimit = 5500;
     int16_t numZeroCrossing = 0;
@@ -1132,7 +1133,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 }
 
 int WebRtcAgc_Process(void *agcInst, const int16_t* const* in_near,
-                      int16_t num_bands, int16_t samples,
+                      size_t num_bands, size_t samples,
                       int16_t* const* out, int32_t inMicLevel,
                       int32_t *outMicLevel, int16_t echo,
                       uint8_t *saturationWarning)

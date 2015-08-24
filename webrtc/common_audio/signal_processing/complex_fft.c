@@ -157,7 +157,8 @@ int WebRtcSpl_ComplexFFT(int16_t frfi[], int stages, int mode)
 
 int WebRtcSpl_ComplexIFFT(int16_t frfi[], int stages, int mode)
 {
-    int i, j, l, k, istep, n, m, scale, shift;
+    size_t i, j, l, istep, n, m;
+    int k, scale, shift;
     int16_t wr, wi;
     int32_t tr32, ti32, qr32, qi32;
     int32_t tmp32, round2;

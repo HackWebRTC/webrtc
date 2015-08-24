@@ -113,13 +113,13 @@ TEST_F(AudioEncoderCopyRedTest, CheckNumChannelsPropagation) {
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckFrameSizePropagation) {
-  EXPECT_CALL(mock_encoder_, Num10MsFramesInNextPacket()).WillOnce(Return(17));
-  EXPECT_EQ(17, red_->Num10MsFramesInNextPacket());
+  EXPECT_CALL(mock_encoder_, Num10MsFramesInNextPacket()).WillOnce(Return(17U));
+  EXPECT_EQ(17U, red_->Num10MsFramesInNextPacket());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckMaxFrameSizePropagation) {
-  EXPECT_CALL(mock_encoder_, Max10MsFramesInAPacket()).WillOnce(Return(17));
-  EXPECT_EQ(17, red_->Max10MsFramesInAPacket());
+  EXPECT_CALL(mock_encoder_, Max10MsFramesInAPacket()).WillOnce(Return(17U));
+  EXPECT_EQ(17U, red_->Max10MsFramesInAPacket());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckSetBitratePropagation) {

@@ -95,7 +95,9 @@ class Matrix {
     memcpy(&data_[0], data, num_rows_ * num_columns_ * sizeof(data_[0]));
   }
 
-  Matrix& CopyFromColumn(const T* const* src, int column_index, int num_rows) {
+  Matrix& CopyFromColumn(const T* const* src,
+                         size_t column_index,
+                         int num_rows) {
     Resize(1, num_rows);
     for (int i = 0; i < num_columns_; ++i) {
       data_[i] = src[i][column_index];

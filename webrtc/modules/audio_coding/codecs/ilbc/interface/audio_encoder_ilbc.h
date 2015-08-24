@@ -36,8 +36,8 @@ class AudioEncoderIlbc final : public AudioEncoder {
   int SampleRateHz() const override;
   int NumChannels() const override;
   size_t MaxEncodedBytes() const override;
-  int Num10MsFramesInNextPacket() const override;
-  int Max10MsFramesInAPacket() const override;
+  size_t Num10MsFramesInNextPacket() const override;
+  size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
@@ -47,10 +47,10 @@ class AudioEncoderIlbc final : public AudioEncoder {
  private:
   size_t RequiredOutputSizeBytes() const;
 
-  static const int kMaxSamplesPerPacket = 480;
+  static const size_t kMaxSamplesPerPacket = 480;
   const int payload_type_;
-  const int num_10ms_frames_per_packet_;
-  int num_10ms_frames_buffered_;
+  const size_t num_10ms_frames_per_packet_;
+  size_t num_10ms_frames_buffered_;
   uint32_t first_timestamp_in_buffer_;
   int16_t input_buffer_[kMaxSamplesPerPacket];
   IlbcEncoderInstance* encoder_;

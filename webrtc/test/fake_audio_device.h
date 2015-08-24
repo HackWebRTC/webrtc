@@ -48,7 +48,7 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
   void CaptureAudio();
 
   static const uint32_t kFrequencyHz = 16000;
-  static const uint32_t kBufferSizeBytes = 2 * kFrequencyHz;
+  static const size_t kBufferSizeBytes = 2 * kFrequencyHz;
 
   AudioTransport* audio_callback_;
   bool capturing_;

@@ -248,7 +248,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   struct InputData {
     uint32_t input_timestamp;
     const int16_t* audio;
-    uint16_t length_per_channel;
+    size_t length_per_channel;
     uint8_t audio_channel;
     // If a re-mix is required (up or down), this buffer will store a re-mixed
     // version of the input.

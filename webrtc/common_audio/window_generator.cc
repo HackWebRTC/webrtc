@@ -46,20 +46,20 @@ void WindowGenerator::Hanning(int length, float* window) {
   }
 }
 
-void WindowGenerator::KaiserBesselDerived(float alpha, int length,
+void WindowGenerator::KaiserBesselDerived(float alpha, size_t length,
                                           float* window) {
-  CHECK_GT(length, 1);
+  CHECK_GT(length, 1U);
   CHECK(window != nullptr);
 
-  const int half = (length + 1) / 2;
+  const size_t half = (length + 1) / 2;
   float sum = 0.0f;
 
-  for (int i = 0; i <= half; ++i) {
+  for (size_t i = 0; i <= half; ++i) {
     complex<float> r = (4.0f * i) / length - 1.0f;
     sum += I0(static_cast<float>(M_PI) * alpha * sqrt(1.0f - r * r)).real();
     window[i] = sum;
   }
-  for (int i = length - 1; i >= half; --i) {
+  for (size_t i = length - 1; i >= half; --i) {
     window[length - i - 1] = sqrtf(window[length - i - 1] / sum);
     window[i] = window[length - i - 1];
   }

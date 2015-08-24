@@ -15,6 +15,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_H_
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 #define FRAME_LEN 80
@@ -65,8 +67,8 @@ void WebRtcAec_InitAec_neon(void);
 void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend);
 void WebRtcAec_ProcessFrames(AecCore* aec,
                              const float* const* nearend,
-                             int num_bands,
-                             int num_samples,
+                             size_t num_bands,
+                             size_t num_samples,
                              int knownDelay,
                              float* const* out);
 

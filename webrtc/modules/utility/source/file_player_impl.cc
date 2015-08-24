@@ -95,7 +95,7 @@ int32_t FilePlayerImpl::AudioCodec(CodecInst& audioCodec) const
 
 int32_t FilePlayerImpl::Get10msAudioFromFile(
     int16_t* outBuffer,
-    int& lengthInSamples,
+    size_t& lengthInSamples,
     int frequencyInHz)
 {
     if(_codec.plfreq == 0)
@@ -127,8 +127,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
             return 0;
         }
         // One sample is two bytes.
-        unresampledAudioFrame.samples_per_channel_ =
-            (uint16_t)lengthInBytes >> 1;
+        unresampledAudioFrame.samples_per_channel_ = lengthInBytes >> 1;
 
     } else {
         // Decode will generate 10 ms of audio data. PlayoutAudioData(..)
@@ -156,14 +155,14 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
         }
     }
 
-    int outLen = 0;
+    size_t outLen = 0;
     if(_resampler.ResetIfNeeded(unresampledAudioFrame.sample_rate_hz_,
                                 frequencyInHz, 1))
     {
         LOG(LS_WARNING) << "Get10msAudioFromFile() unexpected codec.";
 
         // New sampling frequency. Update state.
-        outLen = frequencyInHz / 100;
+        outLen = static_cast<size_t>(frequencyInHz / 100);
         memset(outBuffer, 0, outLen * sizeof(int16_t));
         return 0;
     }
@@ -177,7 +176,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
 
     if(_scaling != 1.0)
     {
-        for (int i = 0;i < outLen; i++)
+        for (size_t i = 0;i < outLen; i++)
         {
             outBuffer[i] = (int16_t)(outBuffer[i] * _scaling);
         }

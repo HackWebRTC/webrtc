@@ -169,7 +169,7 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
 class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
                                            public ::testing::Test {
  protected:
-  static const int kMaxBlockSize = 480;  // 10 ms @ 48 kHz.
+  static const size_t kMaxBlockSize = 480;  // 10 ms @ 48 kHz.
 
   NetEqExternalVsInternalDecoderTest()
       : NetEqExternalDecoderUnitTest(kDecoderPCM16Bswb32kHz,
@@ -188,7 +188,7 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
 
   void GetAndVerifyOutput() override {
     NetEqOutputType output_type;
-    int samples_per_channel;
+    size_t samples_per_channel;
     int num_channels;
     // Get audio from internal decoder instance.
     EXPECT_EQ(NetEq::kOK,
@@ -198,12 +198,13 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
                                         &num_channels,
                                         &output_type));
     EXPECT_EQ(1, num_channels);
-    EXPECT_EQ(kOutputLengthMs * sample_rate_hz_ / 1000, samples_per_channel);
+    EXPECT_EQ(static_cast<size_t>(kOutputLengthMs * sample_rate_hz_ / 1000),
+              samples_per_channel);
 
     // Get audio from external decoder instance.
     samples_per_channel = GetOutputAudio(kMaxBlockSize, output_, &output_type);
 
-    for (int i = 0; i < samples_per_channel; ++i) {
+    for (size_t i = 0; i < samples_per_channel; ++i) {
       ASSERT_EQ(output_[i], output_internal_[i]) <<
           "Diff in sample " << i << ".";
     }
@@ -240,7 +241,7 @@ TEST_F(NetEqExternalVsInternalDecoderTest, RunTest) {
 class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
                                public ::testing::Test {
  protected:
-  static const int kMaxBlockSize = 480;  // 10 ms @ 48 kHz.
+  static const size_t kMaxBlockSize = 480;  // 10 ms @ 48 kHz.
 
   enum TestStates {
     kInitialPhase,
@@ -293,7 +294,7 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
   }
 
   void GetAndVerifyOutput() override {
-    int num_samples;
+    size_t num_samples;
     NetEqOutputType output_type;
     num_samples = GetOutputAudio(kMaxBlockSize, output_, &output_type);
     UpdateState(output_type);
@@ -303,7 +304,7 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
       return;
     }
 
-    for (int i = 0; i < num_samples; ++i) {
+    for (size_t i = 0; i < num_samples; ++i) {
       if (output_[i] != 0)
         return;
     }

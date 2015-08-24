@@ -67,5 +67,5 @@ int WebRtcIlbcfix_InitEncode(  /* (o) Number of bytes encoded */
   iLBCenc_inst->section = 0;
 #endif
 
-  return (iLBCenc_inst->no_of_bytes);
+  return (int)(iLBCenc_inst->no_of_bytes);
 }

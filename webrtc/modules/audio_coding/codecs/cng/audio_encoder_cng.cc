@@ -38,7 +38,8 @@ bool AudioEncoderCng::Config::IsOk() const {
     return false;
   if (num_channels != speech_encoder->NumChannels())
     return false;
-  if (sid_frame_interval_ms < speech_encoder->Max10MsFramesInAPacket() * 10)
+  if (sid_frame_interval_ms <
+      static_cast<int>(speech_encoder->Max10MsFramesInAPacket() * 10))
     return false;
   if (num_cng_coefficients > WEBRTC_CNG_MAX_LPC_ORDER ||
       num_cng_coefficients <= 0)
@@ -89,11 +90,11 @@ size_t AudioEncoderCng::MaxEncodedBytes() const {
   return std::max(max_encoded_bytes_active, max_encoded_bytes_passive);
 }
 
-int AudioEncoderCng::Num10MsFramesInNextPacket() const {
+size_t AudioEncoderCng::Num10MsFramesInNextPacket() const {
   return speech_encoder_->Num10MsFramesInNextPacket();
 }
 
-int AudioEncoderCng::Max10MsFramesInAPacket() const {
+size_t AudioEncoderCng::Max10MsFramesInAPacket() const {
   return speech_encoder_->Max10MsFramesInAPacket();
 }
 
@@ -124,11 +125,11 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
   for (size_t i = 0; i < samples_per_10ms_frame; ++i) {
     speech_buffer_.push_back(audio[i]);
   }
-  const int frames_to_encode = speech_encoder_->Num10MsFramesInNextPacket();
-  if (rtp_timestamps_.size() < static_cast<size_t>(frames_to_encode)) {
+  const size_t frames_to_encode = speech_encoder_->Num10MsFramesInNextPacket();
+  if (rtp_timestamps_.size() < frames_to_encode) {
     return EncodedInfo();
   }
-  CHECK_LE(frames_to_encode * 10, kMaxFrameSizeMs)
+  CHECK_LE(static_cast<int>(frames_to_encode * 10), kMaxFrameSizeMs)
       << "Frame size cannot be larger than " << kMaxFrameSizeMs
       << " ms when using VAD/CNG.";
 
@@ -136,12 +137,12 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
   // following split sizes:
   // 10 ms = 10 + 0 ms; 20 ms = 20 + 0 ms; 30 ms = 30 + 0 ms;
   // 40 ms = 20 + 20 ms; 50 ms = 30 + 20 ms; 60 ms = 30 + 30 ms.
-  int blocks_in_first_vad_call =
+  size_t blocks_in_first_vad_call =
       (frames_to_encode > 3 ? 3 : frames_to_encode);
   if (frames_to_encode == 4)
     blocks_in_first_vad_call = 2;
   CHECK_GE(frames_to_encode, blocks_in_first_vad_call);
-  const int blocks_in_second_vad_call =
+  const size_t blocks_in_second_vad_call =
       frames_to_encode - blocks_in_first_vad_call;
 
   // Check if all of the buffer is passive speech. Start with checking the first
@@ -183,7 +184,7 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
 }
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
-    int frames_to_encode,
+    size_t frames_to_encode,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
   bool force_sid = last_frame_active_;
@@ -191,15 +192,19 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
   const size_t samples_per_10ms_frame = SamplesPer10msFrame();
   CHECK_GE(max_encoded_bytes, frames_to_encode * samples_per_10ms_frame);
   AudioEncoder::EncodedInfo info;
-  for (int i = 0; i < frames_to_encode; ++i) {
-    int16_t encoded_bytes_tmp = 0;
+  for (size_t i = 0; i < frames_to_encode; ++i) {
+    // It's important not to pass &info.encoded_bytes directly to
+    // WebRtcCng_Encode(), since later loop iterations may return zero in that
+    // value, in which case we don't want to overwrite any value from an earlier
+    // iteration.
+    size_t encoded_bytes_tmp = 0;
     CHECK_GE(WebRtcCng_Encode(cng_inst_.get(),
                               &speech_buffer_[i * samples_per_10ms_frame],
-                              static_cast<int16_t>(samples_per_10ms_frame),
+                              samples_per_10ms_frame,
                               encoded, &encoded_bytes_tmp, force_sid), 0);
     if (encoded_bytes_tmp > 0) {
       CHECK(!output_produced);
-      info.encoded_bytes = static_cast<size_t>(encoded_bytes_tmp);
+      info.encoded_bytes = encoded_bytes_tmp;
       output_produced = true;
       force_sid = false;
     }
@@ -212,12 +217,12 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
 }
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodeActive(
-    int frames_to_encode,
+    size_t frames_to_encode,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
   const size_t samples_per_10ms_frame = SamplesPer10msFrame();
   AudioEncoder::EncodedInfo info;
-  for (int i = 0; i < frames_to_encode; ++i) {
+  for (size_t i = 0; i < frames_to_encode; ++i) {
     info = speech_encoder_->Encode(
         rtp_timestamps_.front(), &speech_buffer_[i * samples_per_10ms_frame],
         samples_per_10ms_frame, max_encoded_bytes, encoded);

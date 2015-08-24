@@ -55,8 +55,8 @@ class AudioEncoderIsacT final : public AudioEncoder {
   int SampleRateHz() const override;
   int NumChannels() const override;
   size_t MaxEncodedBytes() const override;
-  int Num10MsFramesInNextPacket() const override;
-  int Max10MsFramesInAPacket() const override;
+  size_t Num10MsFramesInNextPacket() const override;
+  size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
@@ -94,7 +94,7 @@ class AudioDecoderIsacT final : public AudioDecoder {
   ~AudioDecoderIsacT() override;
 
   bool HasDecodePlc() const override;
-  int DecodePlc(int num_frames, int16_t* decoded) override;
+  size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
   int Init() override;
   int IncomingPacket(const uint8_t* payload,
                      size_t payload_len,

@@ -188,8 +188,8 @@ int WebRtc_g722_decode_release(G722DecoderState *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int WebRtc_g722_decode(G722DecoderState *s, int16_t amp[],
-                       const uint8_t g722_data[], int len)
+size_t WebRtc_g722_decode(G722DecoderState *s, int16_t amp[],
+                          const uint8_t g722_data[], size_t len)
 {
     static const int wl[8] = {-60, -30, 58, 172, 334, 538, 1198, 3042 };
     static const int rl42[16] = {0, 7, 6, 5, 4, 3, 2, 1,
@@ -258,9 +258,9 @@ int WebRtc_g722_decode(G722DecoderState *s, int16_t amp[],
     int wd2;
     int wd3;
     int code;
-    int outlen;
+    size_t outlen;
     int i;
-    int j;
+    size_t j;
 
     outlen = 0;
     rhigh = 0;

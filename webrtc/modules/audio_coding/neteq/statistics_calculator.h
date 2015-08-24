@@ -42,32 +42,32 @@ class StatisticsCalculator {
 
   // Reports that |num_samples| samples were produced through expansion, and
   // that the expansion produced other than just noise samples.
-  void ExpandedVoiceSamples(int num_samples);
+  void ExpandedVoiceSamples(size_t num_samples);
 
   // Reports that |num_samples| samples were produced through expansion, and
   // that the expansion produced only noise samples.
-  void ExpandedNoiseSamples(int num_samples);
+  void ExpandedNoiseSamples(size_t num_samples);
 
   // Reports that |num_samples| samples were produced through preemptive
   // expansion.
-  void PreemptiveExpandedSamples(int num_samples);
+  void PreemptiveExpandedSamples(size_t num_samples);
 
   // Reports that |num_samples| samples were removed through accelerate.
-  void AcceleratedSamples(int num_samples);
+  void AcceleratedSamples(size_t num_samples);
 
   // Reports that |num_samples| zeros were inserted into the output.
-  void AddZeros(int num_samples);
+  void AddZeros(size_t num_samples);
 
   // Reports that |num_packets| packets were discarded.
-  void PacketsDiscarded(int num_packets);
+  void PacketsDiscarded(size_t num_packets);
 
   // Reports that |num_samples| were lost.
-  void LostSamples(int num_samples);
+  void LostSamples(size_t num_samples);
 
   // Increases the report interval counter with |num_samples| at a sample rate
   // of |fs_hz|. This is how the StatisticsCalculator gets notified that current
   // time is increasing.
-  void IncreaseCounter(int num_samples, int fs_hz);
+  void IncreaseCounter(size_t num_samples, int fs_hz);
 
   // Stores new packet waiting time in waiting time statistics.
   void StoreWaitingTime(int waiting_time_ms);
@@ -85,8 +85,8 @@ class StatisticsCalculator {
   // yet to play out is |num_samples_in_buffers|, and the number of samples per
   // packet is |samples_per_packet|.
   void GetNetworkStatistics(int fs_hz,
-                            int num_samples_in_buffers,
-                            int samples_per_packet,
+                            size_t num_samples_in_buffers,
+                            size_t samples_per_packet,
                             const DelayManager& delay_manager,
                             const DecisionLogic& decision_logic,
                             NetEqNetworkStatistics *stats);
@@ -150,15 +150,15 @@ class StatisticsCalculator {
   };
 
   // Calculates numerator / denominator, and returns the value in Q14.
-  static uint16_t CalculateQ14Ratio(uint32_t numerator, uint32_t denominator);
+  static uint16_t CalculateQ14Ratio(size_t numerator, uint32_t denominator);
 
-  uint32_t preemptive_samples_;
-  uint32_t accelerate_samples_;
-  int added_zero_samples_;
-  uint32_t expanded_speech_samples_;
-  uint32_t expanded_noise_samples_;
-  int discarded_packets_;
-  uint32_t lost_timestamps_;
+  size_t preemptive_samples_;
+  size_t accelerate_samples_;
+  size_t added_zero_samples_;
+  size_t expanded_speech_samples_;
+  size_t expanded_noise_samples_;
+  size_t discarded_packets_;
+  size_t lost_timestamps_;
   uint32_t timestamps_since_last_report_;
   int waiting_times_[kLenWaitingTimes];  // Used as a circular buffer.
   int len_waiting_times_;

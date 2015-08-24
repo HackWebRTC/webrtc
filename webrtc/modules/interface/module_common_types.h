@@ -480,7 +480,7 @@ struct VideoContentMetrics {
 class AudioFrame {
  public:
   // Stereo, 32 kHz, 60 ms (2 * 32 * 60)
-  static const int kMaxDataSizeSamples = 3840;
+  static const size_t kMaxDataSizeSamples = 3840;
 
   enum VADActivity {
     kVadActive = 0,
@@ -504,7 +504,7 @@ class AudioFrame {
 
   // |interleaved_| is not changed by this method.
   void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
-                   int samples_per_channel, int sample_rate_hz,
+                   size_t samples_per_channel, int sample_rate_hz,
                    SpeechType speech_type, VADActivity vad_activity,
                    int num_channels = 1, uint32_t energy = -1);
 
@@ -528,7 +528,7 @@ class AudioFrame {
   // -1 represents an uninitialized value.
   int64_t ntp_time_ms_;
   int16_t data_[kMaxDataSizeSamples];
-  int samples_per_channel_;
+  size_t samples_per_channel_;
   int sample_rate_hz_;
   int num_channels_;
   SpeechType speech_type_;
@@ -568,7 +568,7 @@ inline void AudioFrame::Reset() {
 inline void AudioFrame::UpdateFrame(int id,
                                     uint32_t timestamp,
                                     const int16_t* data,
-                                    int samples_per_channel,
+                                    size_t samples_per_channel,
                                     int sample_rate_hz,
                                     SpeechType speech_type,
                                     VADActivity vad_activity,
@@ -584,7 +584,7 @@ inline void AudioFrame::UpdateFrame(int id,
   energy_ = energy;
 
   assert(num_channels >= 0);
-  const int length = samples_per_channel * num_channels;
+  const size_t length = samples_per_channel * num_channels;
   assert(length <= kMaxDataSizeSamples);
   if (data != NULL) {
     memcpy(data_, data, sizeof(int16_t) * length);
@@ -609,7 +609,7 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src) {
   interleaved_ = src.interleaved_;
 
   assert(num_channels_ >= 0);
-  const int length = samples_per_channel_ * num_channels_;
+  const size_t length = samples_per_channel_ * num_channels_;
   assert(length <= kMaxDataSizeSamples);
   memcpy(data_, src.data_, sizeof(int16_t) * length);
 }
@@ -622,7 +622,7 @@ inline AudioFrame& AudioFrame::operator>>=(const int rhs) {
   assert((num_channels_ > 0) && (num_channels_ < 3));
   if ((num_channels_ > 2) || (num_channels_ < 1)) return *this;
 
-  for (int i = 0; i < samples_per_channel_ * num_channels_; i++) {
+  for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
     data_[i] = static_cast<int16_t>(data_[i] >> rhs);
   }
   return *this;
@@ -644,8 +644,8 @@ inline AudioFrame& AudioFrame::Append(const AudioFrame& rhs) {
     speech_type_ = kUndefined;
   }
 
-  int offset = samples_per_channel_ * num_channels_;
-  for (int i = 0; i < rhs.samples_per_channel_ * rhs.num_channels_; i++) {
+  size_t offset = samples_per_channel_ * num_channels_;
+  for (size_t i = 0; i < rhs.samples_per_channel_ * rhs.num_channels_; i++) {
     data_[offset + i] = rhs.data_[i];
   }
   samples_per_channel_ += rhs.samples_per_channel_;
@@ -695,7 +695,7 @@ inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
            sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
   } else {
     // IMPROVEMENT this can be done very fast in assembly
-    for (int i = 0; i < samples_per_channel_ * num_channels_; i++) {
+    for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
       int32_t wrap_guard =
           static_cast<int32_t>(data_[i]) + static_cast<int32_t>(rhs.data_[i]);
       data_[i] = ClampToInt16(wrap_guard);
@@ -720,7 +720,7 @@ inline AudioFrame& AudioFrame::operator-=(const AudioFrame& rhs) {
   }
   speech_type_ = kUndefined;
 
-  for (int i = 0; i < samples_per_channel_ * num_channels_; i++) {
+  for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
     int32_t wrap_guard =
         static_cast<int32_t>(data_[i]) - static_cast<int32_t>(rhs.data_[i]);
     data_[i] = ClampToInt16(wrap_guard);

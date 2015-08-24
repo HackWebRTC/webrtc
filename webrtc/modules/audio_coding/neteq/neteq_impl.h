@@ -106,7 +106,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Returns kOK on success, or kFail in case of an error.
   int GetAudio(size_t max_length,
                int16_t* output_audio,
-               int* samples_per_channel,
+               size_t* samples_per_channel,
                int* num_channels,
                NetEqOutputType* type) override;
 
@@ -203,9 +203,9 @@ class NetEqImpl : public webrtc::NetEq {
 
  protected:
   static const int kOutputSizeMs = 10;
-  static const int kMaxFrameSize = 2880;  // 60 ms @ 48 kHz.
+  static const size_t kMaxFrameSize = 2880;  // 60 ms @ 48 kHz.
   // TODO(hlundin): Provide a better value for kSyncBufferSize.
-  static const int kSyncBufferSize = 2 * kMaxFrameSize;
+  static const size_t kSyncBufferSize = 2 * kMaxFrameSize;
 
   // Inserts a new packet into NetEq. This is used by the InsertPacket method
   // above. Returns 0 on success, otherwise an error code.
@@ -225,7 +225,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Returns 0 on success, otherwise an error code.
   int GetAudioInternal(size_t max_length,
                        int16_t* output,
-                       int* samples_per_channel,
+                       size_t* samples_per_channel,
                        int* num_channels) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Provides a decision to the GetAudioInternal method. The decision what to
@@ -318,7 +318,7 @@ class NetEqImpl : public webrtc::NetEq {
   // |required_samples| samples. The packets are inserted into |packet_list|.
   // Returns the number of samples that the packets in the list will produce, or
   // -1 in case of an error.
-  int ExtractPackets(int required_samples, PacketList* packet_list)
+  int ExtractPackets(size_t required_samples, PacketList* packet_list)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Resets various variables and objects to new values based on the sample rate
@@ -375,8 +375,8 @@ class NetEqImpl : public webrtc::NetEq {
   StatisticsCalculator stats_ GUARDED_BY(crit_sect_);
   int fs_hz_ GUARDED_BY(crit_sect_);
   int fs_mult_ GUARDED_BY(crit_sect_);
-  int output_size_samples_ GUARDED_BY(crit_sect_);
-  int decoder_frame_length_ GUARDED_BY(crit_sect_);
+  size_t output_size_samples_ GUARDED_BY(crit_sect_);
+  size_t decoder_frame_length_ GUARDED_BY(crit_sect_);
   Modes last_mode_ GUARDED_BY(crit_sect_);
   rtc::scoped_ptr<int16_t[]> mute_factor_array_ GUARDED_BY(crit_sect_);
   size_t decoded_buffer_length_ GUARDED_BY(crit_sect_);

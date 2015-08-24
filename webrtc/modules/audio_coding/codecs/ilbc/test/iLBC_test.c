@@ -47,12 +47,11 @@ int main(int argc, char* argv[])
   int16_t data[BLOCKL_MAX];
   uint8_t encoded_data[2 * ILBCNOOFWORDS_MAX];
   int16_t decoded_data[BLOCKL_MAX];
-  int len;
-  short pli, mode;
+  int len_int, mode;
+  short pli;
   int blockcount = 0;
   int packetlosscount = 0;
-  int frameLen;
-  size_t len_i16s;
+  size_t frameLen, len, len_i16s;
   int16_t speechType;
   IlbcEncoderInstance *Enc_Inst;
   IlbcDecoderInstance *Dec_Inst;
@@ -153,23 +152,23 @@ int main(int argc, char* argv[])
 
   WebRtcIlbcfix_EncoderInit(Enc_Inst, mode);
   WebRtcIlbcfix_DecoderInit(Dec_Inst, mode);
-  frameLen = mode*8;
+  frameLen = (size_t)(mode*8);
 
   /* loop over input blocks */
 
-  while (((int16_t)fread(data,sizeof(int16_t),frameLen,ifileid))==
-         frameLen) {
+  while (fread(data,sizeof(int16_t),frameLen,ifileid) == frameLen) {
 
     blockcount++;
 
     /* encoding */
 
     fprintf(stderr, "--- Encoding block %i --- ",blockcount);
-    len = WebRtcIlbcfix_Encode(Enc_Inst, data, (int16_t)frameLen, encoded_data);
-    if (len < 0) {
+    len_int = WebRtcIlbcfix_Encode(Enc_Inst, data, frameLen, encoded_data);
+    if (len_int < 0) {
       fprintf(stderr, "Error encoding\n");
       exit(0);
     }
+    len = (size_t)len_int;
     fprintf(stderr, "\r");
 
     /* write byte file */
@@ -204,12 +203,13 @@ int main(int argc, char* argv[])
 
     fprintf(stderr, "--- Decoding block %i --- ",blockcount);
     if (pli==1) {
-      len=WebRtcIlbcfix_Decode(Dec_Inst, encoded_data,
-                               (int16_t)len, decoded_data,&speechType);
-      if (len < 0) {
+      len_int=WebRtcIlbcfix_Decode(Dec_Inst, encoded_data,
+                                   len, decoded_data,&speechType);
+      if (len_int < 0) {
         fprintf(stderr, "Error decoding\n");
         exit(0);
       }
+      len = (size_t)len_int;
     } else {
       len=WebRtcIlbcfix_DecodePlc(Dec_Inst, decoded_data, 1);
     }
@@ -217,8 +217,7 @@ int main(int argc, char* argv[])
 
     /* write output file */
 
-    if (fwrite(decoded_data, sizeof(int16_t), len,
-               ofileid) != (size_t)len) {
+    if (fwrite(decoded_data, sizeof(int16_t), len, ofileid) != len) {
       return -1;
     }
   }

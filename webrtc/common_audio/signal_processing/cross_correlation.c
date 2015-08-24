@@ -14,11 +14,11 @@
 void WebRtcSpl_CrossCorrelationC(int32_t* cross_correlation,
                                  const int16_t* seq1,
                                  const int16_t* seq2,
-                                 int16_t dim_seq,
-                                 int16_t dim_cross_correlation,
+                                 size_t dim_seq,
+                                 size_t dim_cross_correlation,
                                  int right_shifts,
                                  int step_seq2) {
-  int i = 0, j = 0;
+  size_t i = 0, j = 0;
 
   for (i = 0; i < dim_cross_correlation; i++) {
     int32_t corr = 0;

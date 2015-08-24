@@ -172,7 +172,7 @@ int32_t FileAudioDevice::InitRecording() {
     return -1;
   }
 
-  _recordingFramesIn10MS = static_cast<uint32_t>(kRecordingFixedSampleRate/100);
+  _recordingFramesIn10MS = static_cast<size_t>(kRecordingFixedSampleRate / 100);
 
   if (_ptrAudioBuffer) {
     _ptrAudioBuffer->SetRecordingSampleRate(kRecordingFixedSampleRate);
@@ -190,7 +190,7 @@ int32_t FileAudioDevice::StartPlayout() {
       return 0;
   }
 
-  _playoutFramesIn10MS = static_cast<uint32_t>(kPlayoutFixedSampleRate/100);
+  _playoutFramesIn10MS = static_cast<size_t>(kPlayoutFixedSampleRate / 100);
   _playing = true;
   _playoutFramesLeft = 0;
 

@@ -75,7 +75,7 @@ int PitchBasedVad::VoicingProbability(const AudioFeatures& features,
   const double kLimLowSpectralPeak = 200;
   const double kLimHighSpectralPeak = 2000;
   const double kEps = 1e-12;
-  for (int n = 0; n < features.num_frames; n++) {
+  for (size_t n = 0; n < features.num_frames; n++) {
     gmm_features[0] = features.log_pitch_gain[n];
     gmm_features[1] = features.spectral_peak[n];
     gmm_features[2] = features.pitch_lag_hz[n];

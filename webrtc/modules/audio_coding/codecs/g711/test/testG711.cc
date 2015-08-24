@@ -24,8 +24,8 @@
 #define CLOCKS_PER_SEC_G711 1000
 
 /* function for reading audio data from PCM file */
-bool readframe(int16_t* data, FILE* inp, int length) {
-  short rlen = (short) fread(data, sizeof(int16_t), length, inp);
+bool readframe(int16_t* data, FILE* inp, size_t length) {
+  size_t rlen = fread(data, sizeof(int16_t), length, inp);
   if (rlen >= length)
     return false;
   memset(data + rlen, 0, (length - rlen) * sizeof(int16_t));
@@ -40,16 +40,14 @@ int main(int argc, char* argv[]) {
   int framecnt;
   bool endfile;
 
-  int16_t framelength = 80;
-
-  int err;
+  size_t framelength = 80;
 
   /* Runtime statistics */
   double starttime;
   double runtime;
   double length_file;
 
-  int16_t stream_len = 0;
+  size_t stream_len = 0;
   int16_t shortdata[480];
   int16_t decoded[480];
   uint8_t streamdata[1000];
@@ -80,11 +78,12 @@ int main(int argc, char* argv[]) {
   printf("-----------------------------------\n");
   printf("G.711 version: %s\n\n", versionNumber);
   /* Get frame length */
-  framelength = atoi(argv[1]);
-  if (framelength < 0) {
-    printf("  G.711: Invalid framelength %d.\n", framelength);
-    exit(1);
+  int framelength_int = atoi(argv[1]);
+  if (framelength_int < 0) {
+      printf("  G.722: Invalid framelength %d.\n", framelength_int);
+      exit(1);
   }
+  framelength = static_cast<size_t>(framelength_int);
 
   /* Get compression law */
   strcpy(law, argv[2]);
@@ -130,36 +129,29 @@ int main(int argc, char* argv[]) {
       if (argc == 6) {
         /* Write bits to file */
         if (fwrite(streamdata, sizeof(unsigned char), stream_len, bitp) !=
-            static_cast<size_t>(stream_len)) {
+            stream_len) {
           return -1;
         }
       }
-      err = WebRtcG711_DecodeA(streamdata, stream_len, decoded,
-                               speechType);
+      WebRtcG711_DecodeA(streamdata, stream_len, decoded, speechType);
     } else if (!strcmp(law, "u")) {
       /* u-law encoding */
       stream_len = WebRtcG711_EncodeU(shortdata, framelength, streamdata);
       if (argc == 6) {
         /* Write bits to file */
         if (fwrite(streamdata, sizeof(unsigned char), stream_len, bitp) !=
-            static_cast<size_t>(stream_len)) {
+            stream_len) {
           return -1;
         }
       }
-      err = WebRtcG711_DecodeU(streamdata, stream_len, decoded, speechType);
+      WebRtcG711_DecodeU(streamdata, stream_len, decoded, speechType);
     } else {
       printf("Wrong law mode\n");
       exit(1);
     }
-    if (stream_len < 0 || err < 0) {
-      /* exit if returned with error */
-      printf("Error in encoder/decoder\n");
-    } else {
-      /* Write coded speech to file */
-      if (fwrite(decoded, sizeof(short), framelength, outp) !=
-          static_cast<size_t>(framelength)) {
-        return -1;
-      }
+    /* Write coded speech to file */
+    if (fwrite(decoded, sizeof(short), framelength, outp) != framelength) {
+      return -1;
     }
   }
 

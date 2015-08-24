@@ -56,8 +56,8 @@ class FakeAdmTest : public testing::Test,
   // Callbacks inherited from webrtc::AudioTransport.
   // ADM is pushing data.
   int32_t RecordedDataIsAvailable(const void* audioSamples,
-                                  const uint32_t nSamples,
-                                  const uint8_t nBytesPerSample,
+                                  const size_t nSamples,
+                                  const size_t nBytesPerSample,
                                   const uint8_t nChannels,
                                   const uint32_t samplesPerSec,
                                   const uint32_t totalDelayMS,
@@ -80,18 +80,18 @@ class FakeAdmTest : public testing::Test,
   }
 
   // ADM is pulling data.
-  int32_t NeedMorePlayData(const uint32_t nSamples,
-                           const uint8_t nBytesPerSample,
+  int32_t NeedMorePlayData(const size_t nSamples,
+                           const size_t nBytesPerSample,
                            const uint8_t nChannels,
                            const uint32_t samplesPerSec,
                            void* audioSamples,
-                           uint32_t& nSamplesOut,
+                           size_t& nSamplesOut,
                            int64_t* elapsed_time_ms,
                            int64_t* ntp_time_ms) override {
     rtc::CritScope cs(&crit_);
     ++pull_iterations_;
-    const uint32_t audio_buffer_size = nSamples * nBytesPerSample;
-    const uint32_t bytes_out = RecordedDataReceived() ?
+    const size_t audio_buffer_size = nSamples * nBytesPerSample;
+    const size_t bytes_out = RecordedDataReceived() ?
         CopyFromRecBuffer(audioSamples, audio_buffer_size):
         GenerateZeroBuffer(audioSamples, audio_buffer_size);
     nSamplesOut = bytes_out / nBytesPerSample;
@@ -115,13 +115,13 @@ class FakeAdmTest : public testing::Test,
   bool RecordedDataReceived() const {
     return rec_buffer_bytes_ != 0;
   }
-  int32_t GenerateZeroBuffer(void* audio_buffer, uint32_t audio_buffer_size) {
+  size_t GenerateZeroBuffer(void* audio_buffer, size_t audio_buffer_size) {
     memset(audio_buffer, 0, audio_buffer_size);
     return audio_buffer_size;
   }
-  int32_t CopyFromRecBuffer(void* audio_buffer, uint32_t audio_buffer_size) {
+  size_t CopyFromRecBuffer(void* audio_buffer, size_t audio_buffer_size) {
     EXPECT_EQ(audio_buffer_size, rec_buffer_bytes_);
-    const uint32_t min_buffer_size = min(audio_buffer_size, rec_buffer_bytes_);
+    const size_t min_buffer_size = min(audio_buffer_size, rec_buffer_bytes_);
     memcpy(audio_buffer, rec_buffer_, min_buffer_size);
     return min_buffer_size;
   }
@@ -133,7 +133,7 @@ class FakeAdmTest : public testing::Test,
 
   char rec_buffer_[FakeAudioCaptureModule::kNumberSamples *
                    FakeAudioCaptureModule::kNumberBytesPerSample];
-  uint32_t rec_buffer_bytes_;
+  size_t rec_buffer_bytes_;
 };
 
 TEST_F(FakeAdmTest, TestProccess) {

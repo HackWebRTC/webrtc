@@ -23,7 +23,7 @@
  *  Classification of subframes to localize start state
  *---------------------------------------------------------------*/
 
-int16_t WebRtcIlbcfix_FrameClassify(
+size_t WebRtcIlbcfix_FrameClassify(
     /* (o) Index to the max-energy sub frame */
     IlbcEncoder *iLBCenc_inst,
     /* (i/o) the encoder state structure */
@@ -35,8 +35,8 @@ int16_t WebRtcIlbcfix_FrameClassify(
   int32_t *seqEnPtr;
   int32_t maxW32;
   int16_t scale1;
-  int16_t pos;
-  int n;
+  size_t pos;
+  size_t n;
 
   /*
     Calculate the energy of each of the 80 sample blocks
@@ -82,7 +82,7 @@ int16_t WebRtcIlbcfix_FrameClassify(
   }
 
   /* Extract the best choise of start state */
-  pos = WebRtcSpl_MaxIndexW32(ssqEn, iLBCenc_inst->nsub - 1) + 1;
+  pos = (size_t)WebRtcSpl_MaxIndexW32(ssqEn, iLBCenc_inst->nsub - 1) + 1;
 
   return(pos);
 }

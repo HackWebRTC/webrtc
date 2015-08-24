@@ -29,7 +29,7 @@ class BackgroundNoise {
  public:
   // TODO(hlundin): For 48 kHz support, increase kMaxLpcOrder to 10.
   // Will work anyway, but probably sound a little worse.
-  static const int kMaxLpcOrder = 8;  // 32000 / 8000 + 4.
+  static const size_t kMaxLpcOrder = 8;  // 32000 / 8000 + 4.
 
   explicit BackgroundNoise(size_t num_channels);
   virtual ~BackgroundNoise();
@@ -76,9 +76,9 @@ class BackgroundNoise {
 
  private:
   static const int kThresholdIncrement = 229;  // 0.0035 in Q16.
-  static const int kVecLen = 256;
+  static const size_t kVecLen = 256;
   static const int kLogVecLen = 8;  // log2(kVecLen).
-  static const int kResidualLength = 64;
+  static const size_t kResidualLength = 64;
   static const int16_t kLogResidualLength = 6;  // log2(kResidualLength)
 
   struct ChannelParameters {
@@ -112,7 +112,7 @@ class BackgroundNoise {
   };
 
   int32_t CalculateAutoCorrelation(const int16_t* signal,
-                                   int length,
+                                   size_t length,
                                    int32_t* auto_correlation) const;
 
   // Increments the energy threshold by a factor 1 + |kThresholdIncrement|.

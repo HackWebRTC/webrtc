@@ -141,7 +141,7 @@ class AudioDecoderTest : public ::testing::Test {
              input_len_samples);
     rtc::scoped_ptr<int16_t[]> interleaved_input(
         new int16_t[channels_ * samples_per_10ms]);
-    for (int i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
+    for (size_t i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
       EXPECT_EQ(0u, encoded_info_.encoded_bytes);
 
       // Duplicate the mono input signal to however many channels the test
@@ -348,7 +348,7 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
                                       output.get(), &speech_type);
     EXPECT_EQ(frame_size_, dec_len);
     // Simply call DecodePlc and verify that we get 0 as return value.
-    EXPECT_EQ(0, decoder_->DecodePlc(1, output.get()));
+    EXPECT_EQ(0U, decoder_->DecodePlc(1, output.get()));
   }
 };
 

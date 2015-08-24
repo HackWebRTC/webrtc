@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_ISAC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_ISAC_H_
 
+#include <stddef.h>
+
 #include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
 #include "webrtc/typedefs.h"
 
@@ -186,7 +188,7 @@ extern "C" {
   int16_t WebRtcIsac_UpdateBwEstimate(
       ISACStruct*         ISAC_main_inst,
       const uint8_t* encoded,
-      int32_t         packet_size,
+      size_t         packet_size,
       uint16_t        rtp_seq_number,
       uint32_t        send_ts,
       uint32_t        arr_ts);
@@ -215,7 +217,7 @@ extern "C" {
   int WebRtcIsac_Decode(
       ISACStruct*           ISAC_main_inst,
       const uint8_t* encoded,
-      int16_t         len,
+      size_t         len,
       int16_t*        decoded,
       int16_t*        speechType);
 
@@ -235,14 +237,13 @@ extern "C" {
    * Output:
    *        - decoded           : The decoded vector.
    *
-   * Return value               : >0 - number of samples in decoded PLC vector
-   *                              -1 - Error
+   * Return value               : Number of samples in decoded PLC vector
    */
 
-  int16_t WebRtcIsac_DecodePlc(
+  size_t WebRtcIsac_DecodePlc(
       ISACStruct*  ISAC_main_inst,
       int16_t* decoded,
-      int16_t  noOfLostFrames);
+      size_t  noOfLostFrames);
 
 
   /******************************************************************************
@@ -704,7 +705,7 @@ extern "C" {
   int WebRtcIsac_DecodeRcu(
       ISACStruct*           ISAC_main_inst,
       const uint8_t* encoded,
-      int16_t         len,
+      size_t         len,
       int16_t*        decoded,
       int16_t*        speechType);
 

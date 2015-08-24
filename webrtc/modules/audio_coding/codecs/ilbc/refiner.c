@@ -39,8 +39,9 @@ void WebRtcIlbcfix_Refiner(
                                            summed with earlier contributions */
     int16_t gain    /* (i) Gain to use for this sequence */
                            ){
-  int16_t estSegPosRounded,searchSegStartPos,searchSegEndPos,corrdim;
-  int16_t tloc,tloc2,i,st,en,fraction;
+  int16_t estSegPosRounded,searchSegStartPos,searchSegEndPos;
+  size_t corrdim,i;
+  int16_t tloc,tloc2,st,en,fraction;
 
   int32_t maxtemp, scalefact;
   int16_t *filtStatePtr, *polyPtr;
@@ -65,13 +66,13 @@ void WebRtcIlbcfix_Refiner(
   if(searchSegEndPos+ENH_BLOCKL >= idatal) {
     searchSegEndPos=idatal-ENH_BLOCKL-1;
   }
-  corrdim=searchSegEndPos-searchSegStartPos+1;
+  corrdim=(size_t)(searchSegEndPos-searchSegStartPos+1);
 
   /* compute upsampled correlation and find
      location of max */
 
   WebRtcIlbcfix_MyCorr(corrVecTemp,idata+searchSegStartPos,
-                       (int16_t)(corrdim+ENH_BLOCKL-1),idata+centerStartPos,ENH_BLOCKL);
+                       corrdim+ENH_BLOCKL-1,idata+centerStartPos,ENH_BLOCKL);
 
   /* Calculate the rescaling factor for the correlation in order to
      put the correlation in a int16_t vector instead */
@@ -110,7 +111,7 @@ void WebRtcIlbcfix_Refiner(
   /* initialize the vector to be filtered, stuff with zeros
      when data is outside idata buffer */
   if(st<0){
-    WebRtcSpl_MemSetW16(vect, 0, (int16_t)(-st));
+    WebRtcSpl_MemSetW16(vect, 0, (size_t)(-st));
     WEBRTC_SPL_MEMCPY_W16(&vect[-st], idata, (ENH_VECTL+st));
   }
   else{
@@ -120,7 +121,7 @@ void WebRtcIlbcfix_Refiner(
       WEBRTC_SPL_MEMCPY_W16(vect, &idata[st],
                             (ENH_VECTL-(en-idatal)));
       WebRtcSpl_MemSetW16(&vect[ENH_VECTL-(en-idatal)], 0,
-                          (int16_t)(en-idatal));
+                          (size_t)(en-idatal));
     }
     else {
       WEBRTC_SPL_MEMCPY_W16(vect, &idata[st], ENH_VECTL);

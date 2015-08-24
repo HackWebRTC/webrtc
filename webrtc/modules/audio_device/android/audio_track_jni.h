@@ -99,7 +99,7 @@ class AudioTrackJni {
   // the thread is 'AudioTrackThread'.
   static void JNICALL GetPlayoutData(
     JNIEnv* env, jobject obj, jint length, jlong nativeAudioTrack);
-  void OnGetPlayoutData(int length);
+  void OnGetPlayoutData(size_t length);
 
   // Stores thread ID in constructor.
   rtc::ThreadChecker thread_checker_;
@@ -129,13 +129,13 @@ class AudioTrackJni {
   void* direct_buffer_address_;
 
   // Number of bytes in the direct audio buffer owned by |j_audio_track_|.
-  int direct_buffer_capacity_in_bytes_;
+  size_t direct_buffer_capacity_in_bytes_;
 
   // Number of audio frames per audio buffer. Each audio frame corresponds to
   // one sample of PCM mono data at 16 bits per sample. Hence, each audio
   // frame contains 2 bytes (given that the Java layer only supports mono).
   // Example: 480 for 48000 Hz or 441 for 44100 Hz.
-  int frames_per_buffer_;
+  size_t frames_per_buffer_;
 
   bool initialized_;
 

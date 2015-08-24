@@ -159,13 +159,13 @@ void SpatialAudio::EncodeDecode(const double leftPanning,
 
   while (!_inFile.EndOfFile()) {
     _inFile.Read10MsData(audioFrame);
-    for (int n = 0; n < audioFrame.samples_per_channel_; n++) {
+    for (size_t n = 0; n < audioFrame.samples_per_channel_; n++) {
       audioFrame.data_[n] = (int16_t) floor(
           audioFrame.data_[n] * leftPanning + 0.5);
     }
     CHECK_ERROR(_acmLeft->Add10MsData(audioFrame));
 
-    for (int n = 0; n < audioFrame.samples_per_channel_; n++) {
+    for (size_t n = 0; n < audioFrame.samples_per_channel_; n++) {
       audioFrame.data_[n] = (int16_t) floor(
           audioFrame.data_[n] * rightToLeftRatio + 0.5);
     }

@@ -20,9 +20,9 @@
 #define SPL_LEVINSON_MAXORDER 20
 
 int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
-                                 int16_t order)
+                                 size_t order)
 {
-    int16_t i, j;
+    size_t i, j;
     // Auto-correlation coefficients in high precision
     int16_t R_hi[SPL_LEVINSON_MAXORDER + 1], R_low[SPL_LEVINSON_MAXORDER + 1];
     // LPC coefficients in high precision

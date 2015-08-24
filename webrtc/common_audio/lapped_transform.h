@@ -35,7 +35,7 @@ class LappedTransform {
     virtual ~Callback() {}
 
     virtual void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                                   int num_in_channels, int frames,
+                                   int num_in_channels, size_t frames,
                                    int num_out_channels,
                                    std::complex<float>* const* out_block) = 0;
   };
@@ -46,8 +46,12 @@ class LappedTransform {
   // |block_length| defines the length of a block, in samples.
   // |shift_amount| is in samples. |callback| is the caller-owned audio
   // processing function called for each block of the input chunk.
-  LappedTransform(int num_in_channels, int num_out_channels, int chunk_length,
-                  const float* window, int block_length, int shift_amount,
+  LappedTransform(int num_in_channels,
+                  int num_out_channels,
+                  size_t chunk_length,
+                  const float* window,
+                  size_t block_length,
+                  size_t shift_amount,
                   Callback* callback);
   ~LappedTransform() {}
 
@@ -63,7 +67,7 @@ class LappedTransform {
   // to ProcessChunk via the parameter in_chunk.
   //
   // Returns the same chunk_length passed to the LappedTransform constructor.
-  int chunk_length() const { return chunk_length_; }
+  size_t chunk_length() const { return chunk_length_; }
 
   // Get the number of input channels.
   //
@@ -89,7 +93,7 @@ class LappedTransform {
    public:
     explicit BlockThunk(LappedTransform* parent) : parent_(parent) {}
 
-    virtual void ProcessBlock(const float* const* input, int num_frames,
+    virtual void ProcessBlock(const float* const* input, size_t num_frames,
                               int num_input_channels, int num_output_channels,
                               float* const* output);
 
@@ -100,14 +104,14 @@ class LappedTransform {
   const int num_in_channels_;
   const int num_out_channels_;
 
-  const int block_length_;
-  const int chunk_length_;
+  const size_t block_length_;
+  const size_t chunk_length_;
 
   Callback* const block_processor_;
   Blocker blocker_;
 
   rtc::scoped_ptr<RealFourier> fft_;
-  const int cplx_length_;
+  const size_t cplx_length_;
   AlignedArray<float> real_buf_;
   AlignedArray<std::complex<float> > cplx_pre_;
   AlignedArray<std::complex<float> > cplx_post_;

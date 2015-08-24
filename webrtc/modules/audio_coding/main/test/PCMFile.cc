@@ -150,7 +150,7 @@ void PCMFile::Write10MsData(AudioFrame& audio_frame) {
       }
     } else {
       int16_t* stereo_audio = new int16_t[2 * audio_frame.samples_per_channel_];
-      for (int k = 0; k < audio_frame.samples_per_channel_; k++) {
+      for (size_t k = 0; k < audio_frame.samples_per_channel_; k++) {
         stereo_audio[k << 1] = audio_frame.data_[k];
         stereo_audio[(k << 1) + 1] = audio_frame.data_[k];
       }
@@ -172,7 +172,7 @@ void PCMFile::Write10MsData(AudioFrame& audio_frame) {
   }
 }
 
-void PCMFile::Write10MsData(int16_t* playout_buffer, uint16_t length_smpls) {
+void PCMFile::Write10MsData(int16_t* playout_buffer, size_t length_smpls) {
   if (fwrite(playout_buffer, sizeof(uint16_t), length_smpls, pcm_file_) !=
       length_smpls) {
     return;

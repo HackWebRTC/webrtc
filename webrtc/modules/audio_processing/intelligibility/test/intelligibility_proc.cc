@@ -111,7 +111,7 @@ void void_main(int argc, char* argv[]) {
   config.sample_rate_hz = FLAGS_sample_rate;
   config.var_type = static_cast<VarianceArray::StepType>(FLAGS_clear_type);
   config.var_decay_rate = static_cast<float>(FLAGS_clear_alpha);
-  config.var_window_size = FLAGS_clear_window;
+  config.var_window_size = static_cast<size_t>(FLAGS_clear_window);
   config.analysis_rate = FLAGS_ana_rate;
   config.gain_change_limit = FLAGS_gain_limit;
   IntelligibilityEnhancer enh(config);

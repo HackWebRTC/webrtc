@@ -87,7 +87,7 @@ int32_t WebRtcAecm_Init(void* aecmInst, int32_t sampFreq);
  */
 int32_t WebRtcAecm_BufferFarend(void* aecmInst,
                                 const int16_t* farend,
-                                int16_t nrOfSamples);
+                                size_t nrOfSamples);
 
 /*
  * Runs the AECM on an 80 or 160 sample blocks of data.
@@ -118,7 +118,7 @@ int32_t WebRtcAecm_Process(void* aecmInst,
                            const int16_t* nearendNoisy,
                            const int16_t* nearendClean,
                            int16_t* out,
-                           int16_t nrOfSamples,
+                           size_t nrOfSamples,
                            int16_t msInSndCardBuf);
 
 /*

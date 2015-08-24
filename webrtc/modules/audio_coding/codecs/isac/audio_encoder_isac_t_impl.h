@@ -123,14 +123,15 @@ size_t AudioEncoderIsacT<T>::MaxEncodedBytes() const {
 }
 
 template <typename T>
-int AudioEncoderIsacT<T>::Num10MsFramesInNextPacket() const {
+size_t AudioEncoderIsacT<T>::Num10MsFramesInNextPacket() const {
   const int samples_in_next_packet = T::GetNewFrameLen(isac_state_);
-  return rtc::CheckedDivExact(samples_in_next_packet,
-                              rtc::CheckedDivExact(SampleRateHz(), 100));
+  return static_cast<size_t>(
+      rtc::CheckedDivExact(samples_in_next_packet,
+                           rtc::CheckedDivExact(SampleRateHz(), 100)));
 }
 
 template <typename T>
-int AudioEncoderIsacT<T>::Max10MsFramesInAPacket() const {
+size_t AudioEncoderIsacT<T>::Max10MsFramesInAPacket() const {
   return 6;  // iSAC puts at most 60 ms in a packet.
 }
 
@@ -215,8 +216,7 @@ int AudioDecoderIsacT<T>::DecodeInternal(const uint8_t* encoded,
   }
   int16_t temp_type = 1;  // Default is speech.
   int ret =
-      T::DecodeInternal(isac_state_, encoded, static_cast<int16_t>(encoded_len),
-                        decoded, &temp_type);
+      T::DecodeInternal(isac_state_, encoded, encoded_len, decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }
@@ -227,7 +227,7 @@ bool AudioDecoderIsacT<T>::HasDecodePlc() const {
 }
 
 template <typename T>
-int AudioDecoderIsacT<T>::DecodePlc(int num_frames, int16_t* decoded) {
+size_t AudioDecoderIsacT<T>::DecodePlc(size_t num_frames, int16_t* decoded) {
   return T::DecodePlc(isac_state_, decoded, num_frames);
 }
 
@@ -243,7 +243,7 @@ int AudioDecoderIsacT<T>::IncomingPacket(const uint8_t* payload,
                                          uint32_t rtp_timestamp,
                                          uint32_t arrival_timestamp) {
   int ret = T::UpdateBwEstimate(
-      isac_state_, payload, static_cast<int32_t>(payload_len),
+      isac_state_, payload, payload_len,
       rtp_sequence_number, rtp_timestamp, arrival_timestamp);
   if (bwinfo_) {
     IsacBandwidthInfo bwinfo;

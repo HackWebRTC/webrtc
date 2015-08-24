@@ -589,7 +589,7 @@ OutputMixer::InsertInbandDtmfTone()
     } else
     {
         // stereo
-        for (int i = 0; i < _audioFrame.samples_per_channel_; i++)
+        for (size_t i = 0; i < _audioFrame.samples_per_channel_; i++)
         {
             _audioFrame.data_[2 * i] = toneBuffer[i];
             _audioFrame.data_[2 * i + 1] = 0;

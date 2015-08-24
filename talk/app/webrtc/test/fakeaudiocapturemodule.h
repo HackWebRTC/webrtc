@@ -57,8 +57,8 @@ class FakeAudioCaptureModule
 
   // The value for the following constants have been derived by running VoE
   // using a real ADM. The constants correspond to 10ms of mono audio at 44kHz.
-  static const int kNumberSamples = 440;
-  static const int kNumberBytesPerSample = sizeof(Sample);
+  static const size_t kNumberSamples = 440;
+  static const size_t kNumberBytesPerSample = sizeof(Sample);
 
   // Creates a FakeAudioCaptureModule or returns NULL on failure.
   static rtc::scoped_refptr<FakeAudioCaptureModule> Create();

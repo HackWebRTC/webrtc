@@ -33,7 +33,7 @@ class PushResampler {
 
   // Returns the total number of samples provided in destination (e.g. 32 kHz,
   // 2 channel audio gives 640 samples).
-  int Resample(const T* src, int src_length, T* dst, int dst_capacity);
+  int Resample(const T* src, size_t src_length, T* dst, size_t dst_capacity);
 
  private:
   rtc::scoped_ptr<PushSincResampler> sinc_resampler_;

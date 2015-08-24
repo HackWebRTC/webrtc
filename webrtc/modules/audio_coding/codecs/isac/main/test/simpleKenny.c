@@ -26,6 +26,7 @@
 /* include API */
 #include "isac.h"
 #include "utility.h"
+#include "webrtc/base/format_macros.h"
 //#include "commonDefs.h"
 
 /* max number of samples per frame (= 60 ms frame) */
@@ -57,7 +58,7 @@ int main(int argc, char* argv[]) {
   /* Runtime statistics */
   double rate;
   double rateRCU;
-  unsigned long totalbits = 0;
+  size_t totalbits = 0;
   unsigned long totalBitsRCU = 0;
   unsigned long totalsmpls = 0;
 
@@ -72,7 +73,7 @@ int main(int argc, char* argv[]) {
   int32_t rateLimit;
   ISACStruct* ISAC_main_inst;
 
-  int16_t stream_len = 0;
+  size_t stream_len = 0;
   int declen = 0;
   int16_t err;
   int cur_framesmpls;
@@ -94,7 +95,7 @@ int main(int argc, char* argv[]) {
   FILE* averageFile;
   int sampFreqKHz;
   int samplesIn10Ms;
-  int16_t maxStreamLen = 0;
+  size_t maxStreamLen = 0;
   char histFileName[500];
   char averageFileName[500];
   unsigned int hist[600];
@@ -310,22 +311,22 @@ int main(int argc, char* argv[]) {
 
     if (onlyDecode) {
       uint8_t auxUW8;
-      size_t auxSizet;
       if (fread(&auxUW8, sizeof(uint8_t), 1, inp) < 1) {
         break;
       }
-      stream_len = ((uint8_t)auxUW8) << 8;
+      stream_len = auxUW8 << 8;
       if (fread(&auxUW8, sizeof(uint8_t), 1, inp) < 1) {
         break;
       }
-      stream_len |= (uint16_t)auxUW8;
-      auxSizet = (size_t)stream_len;
-      if (fread(payload, 1, auxSizet, inp) < auxSizet) {
+      stream_len |= auxUW8;
+      if (fread(payload, 1, stream_len, inp) < stream_len) {
         printf("last payload is corrupted\n");
         break;
       }
     } else {
       while (stream_len == 0) {
+        int stream_len_int;
+
         // Read 10 ms speech block
         endfile = readframe(shortdata, inp, samplesIn10Ms);
         if (endfile) {
@@ -334,15 +335,16 @@ int main(int argc, char* argv[]) {
         cur_framesmpls += samplesIn10Ms;
 
         //-------- iSAC encoding ---------
-        stream_len = WebRtcIsac_Encode(ISAC_main_inst, shortdata, payload);
+        stream_len_int = WebRtcIsac_Encode(ISAC_main_inst, shortdata, payload);
 
-        if (stream_len < 0) {
+        if (stream_len_int < 0) {
           // exit if returned with error
           // errType=WebRtcIsac_GetErrorCode(ISAC_main_inst);
           fprintf(stderr, "\nError in encoder\n");
           getc(stdin);
           exit(EXIT_FAILURE);
         }
+        stream_len = (size_t)stream_len_int;
       }
       //===================================================================
       if (endfile) {
@@ -396,15 +398,16 @@ int main(int argc, char* argv[]) {
       if (fwrite(&auxUW8, sizeof(uint8_t), 1, outp) != 1) {
         return -1;
       }
-      if (fwrite(payload, 1, stream_len, outp) != (size_t)stream_len) {
+      if (fwrite(payload, 1, stream_len, outp) != stream_len) {
         return -1;
       }
     } else {
       //======================= iSAC decoding ===========================
 
       if ((rand() % 100) < packetLossPercent) {
-        declen = WebRtcIsac_DecodeRcu(ISAC_main_inst, payloadRCU, rcuStreamLen,
-                                      decoded, speechType);
+        declen = WebRtcIsac_DecodeRcu(ISAC_main_inst, payloadRCU,
+                                      (size_t)rcuStreamLen, decoded,
+                                      speechType);
         lostPacketCntr++;
       } else {
         declen = WebRtcIsac_Decode(ISAC_main_inst, payload, stream_len, decoded,
@@ -458,7 +461,7 @@ int main(int argc, char* argv[]) {
   printf("\n");
   printf("Measured bit-rate........... %0.3f kbps\n", rate);
   printf("Measured RCU bit-ratre...... %0.3f kbps\n", rateRCU);
-  printf("Maximum bit-rate/payloadsize %0.3f / %d\n",
+  printf("Maximum bit-rate/payloadsize %0.3f / %" PRIuS "\n",
          maxStreamLen * 8 / 0.03, maxStreamLen);
   printf("Measured packet-loss........ %0.1f%% \n",
          100.0f * (float)lostPacketCntr / (float)packetCntr);

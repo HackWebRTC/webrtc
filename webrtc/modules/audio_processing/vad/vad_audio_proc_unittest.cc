@@ -51,7 +51,7 @@ TEST(AudioProcessingTest, DISABLED_ComputingFirstSpectralPeak) {
       // Read reference values.
       const size_t num_frames = features.num_frames;
       ASSERT_EQ(num_frames, fread(sp, sizeof(sp[0]), num_frames, peak_file));
-      for (int n = 0; n < features.num_frames; n++)
+      for (size_t n = 0; n < features.num_frames; n++)
         EXPECT_NEAR(features.spectral_peak[n], sp[n], 3);
     }
   }

@@ -88,7 +88,7 @@ class PacketBuffer {
   // Subsequent packets with the same timestamp as the one extracted will be
   // discarded and properly deleted. The number of discarded packets will be
   // written to the output variable |discard_count|.
-  virtual Packet* GetNextPacket(int* discard_count);
+  virtual Packet* GetNextPacket(size_t* discard_count);
 
   // Discards the first packet in the buffer. The packet is deleted.
   // Returns PacketBuffer::kBufferEmpty if the buffer is empty,
@@ -109,12 +109,12 @@ class PacketBuffer {
 
   // Returns the number of packets in the buffer, including duplicates and
   // redundant packets.
-  virtual int NumPacketsInBuffer() const;
+  virtual size_t NumPacketsInBuffer() const;
 
   // Returns the number of samples in the buffer, including samples carried in
   // duplicate and redundant packets.
-  virtual int NumSamplesInBuffer(DecoderDatabase* decoder_database,
-                                 int last_decoded_length) const;
+  virtual size_t NumSamplesInBuffer(DecoderDatabase* decoder_database,
+                                    size_t last_decoded_length) const;
 
   // Increase the waiting time counter for every packet in the buffer by |inc|.
   // The default value for |inc| is 1.

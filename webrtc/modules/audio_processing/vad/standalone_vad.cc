@@ -42,7 +42,7 @@ StandaloneVad* StandaloneVad::Create() {
   return new StandaloneVad(vad);
 }
 
-int StandaloneVad::AddAudio(const int16_t* data, int length) {
+int StandaloneVad::AddAudio(const int16_t* data, size_t length) {
   if (length != kLength10Ms)
     return -1;
 
@@ -57,11 +57,11 @@ int StandaloneVad::AddAudio(const int16_t* data, int length) {
   return 0;
 }
 
-int StandaloneVad::GetActivity(double* p, int length_p) {
+int StandaloneVad::GetActivity(double* p, size_t length_p) {
   if (index_ == 0)
     return -1;
 
-  const int num_frames = index_ / kLength10Ms;
+  const size_t num_frames = index_ / kLength10Ms;
   if (num_frames > length_p)
     return -1;
   assert(WebRtcVad_ValidRateAndFrameLength(kSampleRateHz, index_) == 0);
@@ -73,7 +73,7 @@ int StandaloneVad::GetActivity(double* p, int length_p) {
     p[0] = 0.01;  // Arbitrary but small and non-zero.
   else
     p[0] = 0.5;  // 0.5 is neutral values when combinned by other probabilities.
-  for (int n = 1; n < num_frames; n++)
+  for (size_t n = 1; n < num_frames; n++)
     p[n] = p[0];
   // Reset the buffer to start from the beginning.
   index_ = 0;

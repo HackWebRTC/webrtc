@@ -74,11 +74,11 @@ class AudioEncoderMutableImpl : public P {
     CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->RtpTimestampRateHz();
   }
-  int Num10MsFramesInNextPacket() const override {
+  size_t Num10MsFramesInNextPacket() const override {
     CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->Num10MsFramesInNextPacket();
   }
-  int Max10MsFramesInAPacket() const override {
+  size_t Max10MsFramesInAPacket() const override {
     CriticalSectionScoped cs(encoder_lock_.get());
     return encoder_->Max10MsFramesInAPacket();
   }

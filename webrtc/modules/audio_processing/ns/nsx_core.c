@@ -68,7 +68,7 @@ static const int16_t WebRtcNsx_kLogTableFrac[256] = {
 #endif  // WEBRTC_DETECT_NEON || WEBRTC_HAS_NEON
 
 // Skip first frequency bins during estimation. (0 <= value < 64)
-static const int kStartBand = 5;
+static const size_t kStartBand = 5;
 
 // hybrib Hanning & flat window
 static const int16_t kBlocks80w128x[128] = {
@@ -306,7 +306,7 @@ static void UpdateNoiseEstimate(NoiseSuppressionFixedC* inst, int offset) {
   int16_t tmp16 = 0;
   const int16_t kExp2Const = 11819; // Q13
 
-  int i = 0;
+  size_t i = 0;
 
   tmp16 = WebRtcSpl_MaxValueW16(inst->noiseEstLogQuantile + offset,
                                    inst->magnLen);
@@ -341,7 +341,7 @@ static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
   const int16_t log2_const = 22713; // Q15
   const int16_t width_factor = 21845;
 
-  int i, s, offset;
+  size_t i, s, offset;
 
   tabind = inst->stages - inst->normData;
   assert(tabind < 9);
@@ -454,7 +454,7 @@ static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
 
 // Filter the data in the frequency domain, and create spectrum.
 static void PrepareSpectrumC(NoiseSuppressionFixedC* inst, int16_t* freq_buf) {
-  int i = 0, j = 0;
+  size_t i = 0, j = 0;
 
   for (i = 0; i < inst->magnLen; i++) {
     inst->real[i] = (int16_t)((inst->real[i] *
@@ -477,7 +477,7 @@ static void PrepareSpectrumC(NoiseSuppressionFixedC* inst, int16_t* freq_buf) {
 static void DenormalizeC(NoiseSuppressionFixedC* inst,
                          int16_t* in,
                          int factor) {
-  int i = 0;
+  size_t i = 0;
   int32_t tmp32 = 0;
   for (i = 0; i < inst->anaLen; i += 1) {
     tmp32 = WEBRTC_SPL_SHIFT_W32((int32_t)in[i],
@@ -491,7 +491,7 @@ static void DenormalizeC(NoiseSuppressionFixedC* inst,
 static void SynthesisUpdateC(NoiseSuppressionFixedC* inst,
                              int16_t* out_frame,
                              int16_t gain_factor) {
-  int i = 0;
+  size_t i = 0;
   int16_t tmp16a = 0;
   int16_t tmp16b = 0;
   int32_t tmp32 = 0;
@@ -523,7 +523,7 @@ static void SynthesisUpdateC(NoiseSuppressionFixedC* inst,
 static void AnalysisUpdateC(NoiseSuppressionFixedC* inst,
                             int16_t* out,
                             int16_t* new_speech) {
-  int i = 0;
+  size_t i = 0;
 
   // For lower band update analysis buffer.
   memcpy(inst->analysisBuffer, inst->analysisBuffer + inst->blockLen10ms,
@@ -542,7 +542,7 @@ static void AnalysisUpdateC(NoiseSuppressionFixedC* inst,
 static void NormalizeRealBufferC(NoiseSuppressionFixedC* inst,
                                  const int16_t* in,
                                  int16_t* out) {
-  int i = 0;
+  size_t i = 0;
   assert(inst->normData >= 0);
   for (i = 0; i < inst->anaLen; ++i) {
     out[i] = in[i] << inst->normData;  // Q(normData)
@@ -1026,7 +1026,7 @@ void WebRtcNsx_ComputeSpectralFlatness(NoiseSuppressionFixedC* inst,
 
   int16_t zeros, frac, intPart;
 
-  int i;
+  size_t i;
 
   // for flatness
   avgSpectralFlatnessNum = 0;
@@ -1099,7 +1099,8 @@ void WebRtcNsx_ComputeSpectralDifference(NoiseSuppressionFixedC* inst,
 
   int16_t tmp16no1;
 
-  int i, norm32, nShifts;
+  size_t i;
+  int norm32, nShifts;
 
   avgPauseFX = 0;
   maxPause = 0;
@@ -1198,7 +1199,7 @@ void WebRtcNsx_DataAnalysis(NoiseSuppressionFixedC* inst,
   int16_t   matrix_determinant = 0;
   int16_t   maxWinData;
 
-  int i, j;
+  size_t i, j;
   int zeros;
   int net_norm = 0;
   int right_shifts_in_magnU16 = 0;
@@ -1430,7 +1431,7 @@ void WebRtcNsx_DataSynthesis(NoiseSuppressionFixedC* inst, short* outFrame) {
   int16_t energyRatio;
   int16_t gainFactor, gainFactor1, gainFactor2;
 
-  int i;
+  size_t i;
   int outCIFFT;
   int scaleEnergyOut = 0;
 
@@ -1531,7 +1532,7 @@ void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
   int16_t avgProbSpeechHB, gainModHB, avgFilterGainHB, gainTimeDomainHB;
   int16_t pink_noise_exp_avg = 0;
 
-  int i, j;
+  size_t i, j;
   int nShifts, postShifts;
   int norm32no1, norm32no2;
   int flag, sign;
@@ -1559,11 +1560,11 @@ void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
 
   const short* const* speechFrameHB = NULL;
   short* const* outFrameHB = NULL;
-  int num_high_bands = 0;
+  size_t num_high_bands = 0;
   if (num_bands > 1) {
     speechFrameHB = &speechFrame[1];
     outFrameHB = &outFrame[1];
-    num_high_bands = num_bands - 1;
+    num_high_bands = (size_t)(num_bands - 1);
   }
 
   // Store speechFrame and transform to frequency domain

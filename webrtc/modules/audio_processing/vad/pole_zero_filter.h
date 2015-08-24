@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_POLE_ZERO_FILTER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_POLE_ZERO_FILTER_H_
 
+#include <cstddef>
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -20,17 +22,17 @@ class PoleZeroFilter {
   ~PoleZeroFilter() {}
 
   static PoleZeroFilter* Create(const float* numerator_coefficients,
-                                int order_numerator,
+                                size_t order_numerator,
                                 const float* denominator_coefficients,
-                                int order_denominator);
+                                size_t order_denominator);
 
-  int Filter(const int16_t* in, int num_input_samples, float* output);
+  int Filter(const int16_t* in, size_t num_input_samples, float* output);
 
  private:
   PoleZeroFilter(const float* numerator_coefficients,
-                 int order_numerator,
+                 size_t order_numerator,
                  const float* denominator_coefficients,
-                 int order_denominator);
+                 size_t order_denominator);
 
   static const int kMaxFilterOrder = 24;
 
@@ -40,9 +42,9 @@ class PoleZeroFilter {
   float numerator_coefficients_[kMaxFilterOrder + 1];
   float denominator_coefficients_[kMaxFilterOrder + 1];
 
-  int order_numerator_;
-  int order_denominator_;
-  int highest_order_;
+  size_t order_numerator_;
+  size_t order_denominator_;
+  size_t highest_order_;
 };
 
 }  // namespace webrtc

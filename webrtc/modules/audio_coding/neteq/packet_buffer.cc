@@ -181,7 +181,7 @@ const RTPHeader* PacketBuffer::NextRtpHeader() const {
   return const_cast<const RTPHeader*>(&(buffer_.front()->header));
 }
 
-Packet* PacketBuffer::GetNextPacket(int* discard_count) {
+Packet* PacketBuffer::GetNextPacket(size_t* discard_count) {
   if (Empty()) {
     // Buffer is empty.
     return NULL;
@@ -194,7 +194,7 @@ Packet* PacketBuffer::GetNextPacket(int* discard_count) {
 
   // Discard other packets with the same timestamp. These are duplicates or
   // redundant payloads that should not be used.
-  int discards = 0;
+  size_t discards = 0;
 
   while (!Empty() &&
       buffer_.front()->header.timestamp == packet->header.timestamp) {
@@ -240,15 +240,15 @@ int PacketBuffer::DiscardAllOldPackets(uint32_t timestamp_limit) {
   return DiscardOldPackets(timestamp_limit, 0);
 }
 
-int PacketBuffer::NumPacketsInBuffer() const {
-  return static_cast<int>(buffer_.size());
+size_t PacketBuffer::NumPacketsInBuffer() const {
+  return buffer_.size();
 }
 
-int PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
-                                     int last_decoded_length) const {
+size_t PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
+                                        size_t last_decoded_length) const {
   PacketList::const_iterator it;
-  int num_samples = 0;
-  int last_duration = last_decoded_length;
+  size_t num_samples = 0;
+  size_t last_duration = last_decoded_length;
   for (it = buffer_.begin(); it != buffer_.end(); ++it) {
     Packet* packet = (*it);
     AudioDecoder* decoder =

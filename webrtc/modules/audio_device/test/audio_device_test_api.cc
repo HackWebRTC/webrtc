@@ -83,8 +83,8 @@ class AudioTransportAPI: public AudioTransport {
   ~AudioTransportAPI() {}
 
   int32_t RecordedDataIsAvailable(const void* audioSamples,
-                                  const uint32_t nSamples,
-                                  const uint8_t nBytesPerSample,
+                                  const size_t nSamples,
+                                  const size_t nBytesPerSample,
                                   const uint8_t nChannels,
                                   const uint32_t sampleRate,
                                   const uint32_t totalDelay,
@@ -108,12 +108,12 @@ class AudioTransportAPI: public AudioTransport {
     return 0;
   }
 
-  int32_t NeedMorePlayData(const uint32_t nSamples,
-                           const uint8_t nBytesPerSample,
+  int32_t NeedMorePlayData(const size_t nSamples,
+                           const size_t nBytesPerSample,
                            const uint8_t nChannels,
                            const uint32_t sampleRate,
                            void* audioSamples,
-                           uint32_t& nSamplesOut,
+                           size_t& nSamplesOut,
                            int64_t* elapsed_time_ms,
                            int64_t* ntp_time_ms) override {
     play_count_++;
@@ -133,7 +133,7 @@ class AudioTransportAPI: public AudioTransport {
                       const int16_t* audio_data,
                       int sample_rate,
                       int number_of_channels,
-                      int number_of_frames,
+                      size_t number_of_frames,
                       int audio_delay_milliseconds,
                       int current_volume,
                       bool key_pressed,
@@ -144,10 +144,10 @@ class AudioTransportAPI: public AudioTransport {
   void PushCaptureData(int voe_channel, const void* audio_data,
                        int bits_per_sample, int sample_rate,
                        int number_of_channels,
-                       int number_of_frames) override {}
+                       size_t number_of_frames) override {}
 
   void PullRenderData(int bits_per_sample, int sample_rate,
-                      int number_of_channels, int number_of_frames,
+                      int number_of_channels, size_t number_of_frames,
                       void* audio_data,
                       int64_t* elapsed_time_ms,
                       int64_t* ntp_time_ms) override {}

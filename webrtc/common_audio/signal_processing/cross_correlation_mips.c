@@ -13,8 +13,8 @@
 void WebRtcSpl_CrossCorrelation_mips(int32_t* cross_correlation,
                                      const int16_t* seq1,
                                      const int16_t* seq2,
-                                     int16_t dim_seq,
-                                     int16_t dim_cross_correlation,
+                                     size_t dim_seq,
+                                     size_t dim_cross_correlation,
                                      int right_shifts,
                                      int step_seq2) {
 

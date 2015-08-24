@@ -19,12 +19,12 @@
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 // Maximum absolute value of word16 vector.
-int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, int length) {
+int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, size_t length) {
   int32_t totMax = 0;
   int32_t tmp32_0, tmp32_1, tmp32_2, tmp32_3;
-  int i, loop_size;
+  size_t i, loop_size;
 
-  if (vector == NULL || length <= 0) {
+  if (vector == NULL || length == 0) {
     return -1;
   }
 #if defined(MIPS_DSP_R1)
@@ -222,14 +222,14 @@ int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, int length) {
 
 #if defined(MIPS_DSP_R1_LE)
 // Maximum absolute value of word32 vector. Version for MIPS platform.
-int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, int length) {
+int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, size_t length) {
   // Use uint32_t for the local variables, to accommodate the return value
   // of abs(0x80000000), which is 0x80000000.
 
   uint32_t absolute = 0, maximum = 0;
   int tmp1 = 0, max_value = 0x7fffffff;
 
-  if (vector == NULL || length <= 0) {
+  if (vector == NULL || length == 0) {
     return -1;
   }
 
@@ -260,12 +260,12 @@ int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, int length) {
 #endif  // #if defined(MIPS_DSP_R1_LE)
 
 // Maximum value of word16 vector. Version for MIPS platform.
-int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, int length) {
+int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, size_t length) {
   int16_t maximum = WEBRTC_SPL_WORD16_MIN;
   int tmp1;
   int16_t value;
 
-  if (vector == NULL || length <= 0) {
+  if (vector == NULL || length == 0) {
     return maximum;
   }
 
@@ -291,11 +291,11 @@ int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, int length) {
 }
 
 // Maximum value of word32 vector. Version for MIPS platform.
-int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, int length) {
+int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, size_t length) {
   int32_t maximum = WEBRTC_SPL_WORD32_MIN;
   int tmp1, value;
 
-  if (vector == NULL || length <= 0) {
+  if (vector == NULL || length == 0) {
     return maximum;
   }
 
@@ -322,12 +322,12 @@ int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, int length) {
 }
 
 // Minimum value of word16 vector. Version for MIPS platform.
-int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, int length) {
+int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, size_t length) {
   int16_t minimum = WEBRTC_SPL_WORD16_MAX;
   int tmp1;
   int16_t value;
 
-  if (vector == NULL || length <= 0) {
+  if (vector == NULL || length == 0) {
     return minimum;
   }
 
@@ -354,11 +354,11 @@ int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, int length) {
 }
 
 // Minimum value of word32 vector. Version for MIPS platform.
-int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, int length) {
+int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, size_t length) {
   int32_t minimum = WEBRTC_SPL_WORD32_MAX;
   int tmp1, value;
 
-  if (vector == NULL || length <= 0) {
+  if (vector == NULL || length == 0) {
     return minimum;
   }
 

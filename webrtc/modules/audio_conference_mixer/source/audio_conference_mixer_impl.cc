@@ -287,7 +287,7 @@ int32_t AudioConferenceMixerImpl::Process() {
                                 AudioFrame::kNormalSpeech,
                                 AudioFrame::kVadPassive, num_mixed_channels);
 
-        _timeStamp += _sampleSize;
+        _timeStamp += static_cast<uint32_t>(_sampleSize);
 
         // We only use the limiter if it supports the output sample rate and
         // we're actually mixing multiple streams.
@@ -357,7 +357,8 @@ int32_t AudioConferenceMixerImpl::SetOutputFrequency(
     CriticalSectionScoped cs(_crit.get());
 
     _outputFrequency = frequency;
-    _sampleSize = (_outputFrequency*kProcessPeriodicityInMs) / 1000;
+    _sampleSize =
+        static_cast<size_t>((_outputFrequency*kProcessPeriodicityInMs) / 1000);
 
     return 0;
 }

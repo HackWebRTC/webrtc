@@ -132,7 +132,7 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB(ProcessStream, (webrtc::AudioFrame* frame));
   WEBRTC_STUB(ProcessStream, (
       const float* const* src,
-      int samples_per_channel,
+      size_t samples_per_channel,
       int input_sample_rate_hz,
       webrtc::AudioProcessing::ChannelLayout input_layout,
       int output_sample_rate_hz,
@@ -147,7 +147,7 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB(ProcessReverseStream, (webrtc::AudioFrame * frame));
   WEBRTC_STUB(AnalyzeReverseStream, (
       const float* const* data,
-      int samples_per_channel,
+      size_t samples_per_channel,
       int sample_rate_hz,
       webrtc::AudioProcessing::ChannelLayout layout));
   WEBRTC_STUB(ProcessReverseStream,

@@ -23,6 +23,7 @@
 
 #include "google/gflags.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
@@ -324,7 +325,7 @@ size_t ReplacePayload(webrtc::test::InputAudioFile* replacement_audio_file,
     // Encode it as PCM16.
     assert((*payload).get());
     payload_len = WebRtcPcm16b_Encode((*replacement_audio).get(),
-                                      static_cast<int16_t>(*frame_size_samples),
+                                      *frame_size_samples,
                                       (*payload).get());
     assert(payload_len == 2 * *frame_size_samples);
     // Change payload type to PCM16.
@@ -358,7 +359,7 @@ size_t ReplacePayload(webrtc::test::InputAudioFile* replacement_audio_file,
 
 int main(int argc, char* argv[]) {
   static const int kMaxChannels = 5;
-  static const int kMaxSamplesPerMs = 48000 / 1000;
+  static const size_t kMaxSamplesPerMs = 48000 / 1000;
   static const int kOutputBlockSizeMs = 10;
 
   std::string program_name = argv[0];
@@ -552,11 +553,11 @@ int main(int argc, char* argv[]) {
 
     // Check if it is time to get output audio.
     if (time_now_ms >= next_output_time_ms) {
-      static const int kOutDataLen =
+      static const size_t kOutDataLen =
           kOutputBlockSizeMs * kMaxSamplesPerMs * kMaxChannels;
       int16_t out_data[kOutDataLen];
       int num_channels;
-      int samples_per_channel;
+      size_t samples_per_channel;
       int error = neteq->GetAudio(kOutDataLen, out_data, &samples_per_channel,
                                    &num_channels, NULL);
       if (error != NetEq::kOK) {
@@ -564,7 +565,8 @@ int main(int argc, char* argv[]) {
             neteq->LastError() << std::endl;
       } else {
         // Calculate sample rate from output size.
-        sample_rate_hz = 1000 * samples_per_channel / kOutputBlockSizeMs;
+        sample_rate_hz = rtc::checked_cast<int>(
+            1000 * samples_per_channel / kOutputBlockSizeMs);
       }
 
       // Write to file.

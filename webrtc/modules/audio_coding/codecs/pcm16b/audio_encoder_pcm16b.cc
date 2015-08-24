@@ -23,10 +23,10 @@ bool AudioEncoderPcm16B::Config::IsOk() const {
   return AudioEncoderPcm::Config::IsOk();
 }
 
-int16_t AudioEncoderPcm16B::EncodeCall(const int16_t* audio,
-                                       size_t input_len,
-                                       uint8_t* encoded) {
-  return WebRtcPcm16b_Encode(audio, static_cast<int16_t>(input_len), encoded);
+size_t AudioEncoderPcm16B::EncodeCall(const int16_t* audio,
+                                      size_t input_len,
+                                      uint8_t* encoded) {
+  return WebRtcPcm16b_Encode(audio, input_len, encoded);
 }
 
 int AudioEncoderPcm16B::BytesPerSample() const {

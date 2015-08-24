@@ -34,16 +34,16 @@ TEST(AlignedArrayTest, CheckAlignment) {
 }
 
 TEST(AlignedArrayTest, CheckOverlap) {
-  AlignedArray<int> arr(10, 7, 128);
+  AlignedArray<size_t> arr(10, 7, 128);
 
   for (int i = 0; i < 10; ++i) {
-    for (int j = 0; j < 7; ++j) {
+    for (size_t j = 0; j < 7; ++j) {
       arr.At(i, j) = 20 * i + j;
     }
   }
 
   for (int i = 0; i < 10; ++i) {
-    for (int j = 0; j < 7; ++j) {
+    for (size_t j = 0; j < 7; ++j) {
       ASSERT_EQ(arr.At(i, j), 20 * i + j);
       ASSERT_EQ(arr.Row(i)[j], 20 * i + j);
       ASSERT_EQ(arr.Array()[i][j], 20 * i + j);
@@ -54,7 +54,7 @@ TEST(AlignedArrayTest, CheckOverlap) {
 TEST(AlignedArrayTest, CheckRowsCols) {
   AlignedArray<bool> arr(10, 7, 128);
   ASSERT_EQ(arr.rows(), 10);
-  ASSERT_EQ(arr.cols(), 7);
+  ASSERT_EQ(arr.cols(), 7u);
 }
 
 }  // namespace webrtc

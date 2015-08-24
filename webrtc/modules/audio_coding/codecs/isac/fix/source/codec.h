@@ -27,18 +27,18 @@ extern "C" {
 
 int WebRtcIsacfix_EstimateBandwidth(BwEstimatorstr* bwest_str,
                                     Bitstr_dec* streamdata,
-                                    int32_t packet_size,
+                                    size_t packet_size,
                                     uint16_t rtp_seq_number,
                                     uint32_t send_ts,
                                     uint32_t arr_ts);
 
 int WebRtcIsacfix_DecodeImpl(int16_t* signal_out16,
                              IsacFixDecoderInstance* ISACdec_obj,
-                             int16_t* current_framesamples);
+                             size_t* current_framesamples);
 
 void WebRtcIsacfix_DecodePlcImpl(int16_t* decoded,
                                  IsacFixDecoderInstance* ISACdec_obj,
-                                 int16_t* current_framesample );
+                                 size_t* current_framesample );
 
 int WebRtcIsacfix_EncodeImpl(int16_t* in,
                              IsacFixEncoderInstance* ISACenc_obj,
@@ -141,7 +141,7 @@ void WebRtcIsacfix_FilterAndCombine2(int16_t* tempin_ch1,
 
 /* normalized lattice filters */
 
-void WebRtcIsacfix_NormLatticeFilterMa(int16_t orderCoef,
+void WebRtcIsacfix_NormLatticeFilterMa(size_t orderCoef,
                                        int32_t* stateGQ15,
                                        int16_t* lat_inQ0,
                                        int16_t* filt_coefQ15,
@@ -149,7 +149,7 @@ void WebRtcIsacfix_NormLatticeFilterMa(int16_t orderCoef,
                                        int16_t lo_hi,
                                        int16_t* lat_outQ9);
 
-void WebRtcIsacfix_NormLatticeFilterAr(int16_t orderCoef,
+void WebRtcIsacfix_NormLatticeFilterAr(size_t orderCoef,
                                        int16_t* stateGQ0,
                                        int32_t* lat_inQ25,
                                        int16_t* filt_coefQ15,

@@ -15,24 +15,24 @@
 namespace webrtc {
 
 SparseFIRFilter::SparseFIRFilter(const float* nonzero_coeffs,
-                                 int num_nonzero_coeffs,
-                                 int sparsity,
-                                 int offset)
+                                 size_t num_nonzero_coeffs,
+                                 size_t sparsity,
+                                 size_t offset)
     : sparsity_(sparsity),
       offset_(offset),
       nonzero_coeffs_(nonzero_coeffs, nonzero_coeffs + num_nonzero_coeffs),
       state_(sparsity_ * (num_nonzero_coeffs - 1) + offset_, 0.f) {
-  CHECK_GE(num_nonzero_coeffs, 1);
-  CHECK_GE(sparsity, 1);
+  CHECK_GE(num_nonzero_coeffs, 1u);
+  CHECK_GE(sparsity, 1u);
 }
 
-void SparseFIRFilter::Filter(const float* in, int length, float* out) {
+void SparseFIRFilter::Filter(const float* in, size_t length, float* out) {
   // Convolves the input signal |in| with the filter kernel |nonzero_coeffs_|
   // taking into account the previous state.
-  for (int i = 0; i < length; ++i) {
+  for (size_t i = 0; i < length; ++i) {
     out[i] = 0.f;
     size_t j;
-    for (j = 0; i >= static_cast<int>(j) * sparsity_ + offset_ &&
+    for (j = 0; i >= j * sparsity_ + offset_ &&
                 j < nonzero_coeffs_.size(); ++j) {
       out[i] += in[i - j * sparsity_ - offset_] * nonzero_coeffs_[j];
     }
@@ -44,7 +44,7 @@ void SparseFIRFilter::Filter(const float* in, int length, float* out) {
 
   // Update current state.
   if (state_.size() > 0u) {
-    if (length >= static_cast<int>(state_.size())) {
+    if (length >= state_.size()) {
       std::memcpy(&state_[0],
                   &in[length - state_.size()],
                   state_.size() * sizeof(*in));

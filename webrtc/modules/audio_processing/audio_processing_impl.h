@@ -80,7 +80,7 @@ class AudioProcessingImpl : public AudioProcessing {
   bool output_will_be_muted() const override;
   int ProcessStream(AudioFrame* frame) override;
   int ProcessStream(const float* const* src,
-                    int samples_per_channel,
+                    size_t samples_per_channel,
                     int input_sample_rate_hz,
                     ChannelLayout input_layout,
                     int output_sample_rate_hz,
@@ -93,7 +93,7 @@ class AudioProcessingImpl : public AudioProcessing {
   int AnalyzeReverseStream(AudioFrame* frame) override;
   int ProcessReverseStream(AudioFrame* frame) override;
   int AnalyzeReverseStream(const float* const* data,
-                           int samples_per_channel,
+                           size_t samples_per_channel,
                            int sample_rate_hz,
                            ChannelLayout layout) override;
   int ProcessReverseStream(const float* const* src,

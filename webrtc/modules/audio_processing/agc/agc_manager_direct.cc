@@ -95,7 +95,7 @@ class DebugFile {
   ~DebugFile() {
     fclose(file_);
   }
-  void Write(const int16_t* data, int length_samples) {
+  void Write(const int16_t* data, size_t length_samples) {
     fwrite(data, 1, length_samples * sizeof(int16_t), file_);
   }
  private:
@@ -106,7 +106,7 @@ class DebugFile {
   }
   ~DebugFile() {
   }
-  void Write(const int16_t* data, int length_samples) {
+  void Write(const int16_t* data, size_t length_samples) {
   }
 #endif  // WEBRTC_AGC_DEBUG_DUMP
 };
@@ -188,8 +188,8 @@ int AgcManagerDirect::Initialize() {
 
 void AgcManagerDirect::AnalyzePreProcess(int16_t* audio,
                                          int num_channels,
-                                         int samples_per_channel) {
-  int length = num_channels * samples_per_channel;
+                                         size_t samples_per_channel) {
+  size_t length = num_channels * samples_per_channel;
   if (capture_muted_) {
     return;
   }
@@ -230,7 +230,7 @@ void AgcManagerDirect::AnalyzePreProcess(int16_t* audio,
 }
 
 void AgcManagerDirect::Process(const int16_t* audio,
-                               int length,
+                               size_t length,
                                int sample_rate_hz) {
   if (capture_muted_) {
     return;

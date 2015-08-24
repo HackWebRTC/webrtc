@@ -97,10 +97,12 @@ TEST_F(IsacTest, IsacUpdateBWE) {
   encoded_bytes =  WebRtcIsac_Encode(isac_codec_, speech_data_, bitstream_);
   EXPECT_EQ(0, encoded_bytes);
   encoded_bytes =  WebRtcIsac_Encode(isac_codec_, speech_data_, bitstream_);
+  EXPECT_GT(encoded_bytes, 0);
 
   // Call to update bandwidth estimator with real data.
   EXPECT_EQ(0, WebRtcIsac_UpdateBwEstimate(isac_codec_, bitstream_,
-                                           encoded_bytes, 1, 12345, 56789));
+                                           static_cast<size_t>(encoded_bytes),
+                                           1, 12345, 56789));
 
   // Free memory.
   EXPECT_EQ(0, WebRtcIsac_Free(isac_codec_));

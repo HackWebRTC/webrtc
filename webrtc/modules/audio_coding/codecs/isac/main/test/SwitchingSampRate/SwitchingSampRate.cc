@@ -51,9 +51,9 @@ int main(int argc, char* argv[])
 
   short clientCntr;
 
-  unsigned int lenEncodedInBytes[MAX_NUM_CLIENTS];
+  size_t lenEncodedInBytes[MAX_NUM_CLIENTS];
   unsigned int lenAudioIn10ms[MAX_NUM_CLIENTS];
-  unsigned int lenEncodedInBytesTmp[MAX_NUM_CLIENTS];
+  size_t lenEncodedInBytesTmp[MAX_NUM_CLIENTS];
   unsigned int lenAudioIn10msTmp[MAX_NUM_CLIENTS];
   BottleNeckModel* packetData[MAX_NUM_CLIENTS];
 
@@ -189,9 +189,9 @@ int main(int argc, char* argv[])
   }
 
 
-  short streamLen;
+  size_t streamLen;
   short numSamplesRead;
-  int lenDecodedAudio;
+  size_t lenDecodedAudio;
   short senderIdx;
   short receiverIdx;
 
@@ -282,11 +282,11 @@ int main(int argc, char* argv[])
       // Encode
 
 
-      streamLen = WebRtcIsac_Encode(codecInstance[senderIdx],
-                                    audioBuff10ms,
-                                    (uint8_t*)bitStream);
+      int streamLen_int = WebRtcIsac_Encode(codecInstance[senderIdx],
+                                            audioBuff10ms,
+                                            (uint8_t*)bitStream);
       int16_t ggg;
-      if (streamLen > 0) {
+      if (streamLen_int > 0) {
         if ((WebRtcIsac_ReadFrameLen(
                 codecInstance[receiverIdx],
                 reinterpret_cast<const uint8_t*>(bitStream),
@@ -295,11 +295,12 @@ int main(int argc, char* argv[])
       }
 
       // Sanity check
-      if(streamLen < 0)
+      if(streamLen_int < 0)
       {
         printf(" Encoder error in client %d \n", senderIdx + 1);
         return -1;
       }
+      streamLen = static_cast<size_t>(streamLen_int);
 
 
       if(streamLen > 0)
@@ -423,18 +424,18 @@ int main(int argc, char* argv[])
         }
         /**/
         // Decode
-        lenDecodedAudio = WebRtcIsac_Decode(
+        int lenDecodedAudio_int = WebRtcIsac_Decode(
             codecInstance[receiverIdx],
             reinterpret_cast<const uint8_t*>(bitStream),
             streamLen,
             audioBuff60ms,
             speechType);
-        if(lenDecodedAudio < 0)
+        if(lenDecodedAudio_int < 0)
         {
           printf(" Decoder error in client %d \n", receiverIdx + 1);
           return -1;
         }
-
+        lenDecodedAudio = static_cast<size_t>(lenDecodedAudio_int);
 
         if(encoderSampRate[senderIdx] == 16000)
         {
@@ -442,7 +443,7 @@ int main(int argc, char* argv[])
                                 resamplerState[receiverIdx]);
           if (fwrite(resampledAudio60ms, sizeof(short), lenDecodedAudio << 1,
                      outFile[receiverIdx]) !=
-              static_cast<size_t>(lenDecodedAudio << 1)) {
+              lenDecodedAudio << 1) {
             return -1;
           }
         }
@@ -450,7 +451,7 @@ int main(int argc, char* argv[])
         {
           if (fwrite(audioBuff60ms, sizeof(short), lenDecodedAudio,
                      outFile[receiverIdx]) !=
-              static_cast<size_t>(lenDecodedAudio)) {
+              lenDecodedAudio) {
             return -1;
           }
         }

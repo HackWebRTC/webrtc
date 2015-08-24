@@ -12,10 +12,10 @@
 
 int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
                                       const int16_t* vector2,
-                                      int length,
+                                      size_t length,
                                       int scaling) {
   int32_t sum = 0;
-  int i = 0;
+  size_t i = 0;
 
   /* Unroll the loop to improve performance. */
   for (i = 0; i + 3 < length; i += 4) {

@@ -42,8 +42,8 @@ class NetEqExternalDecoderTest {
 
   // Get 10 ms of audio data. The data is written to |output|, which can hold
   // (at least) |max_length| elements. Returns number of samples.
-  int GetOutputAudio(size_t max_length, int16_t* output,
-                     NetEqOutputType* output_type);
+  size_t GetOutputAudio(size_t max_length, int16_t* output,
+                        NetEqOutputType* output_type);
 
   NetEq* neteq() { return neteq_.get(); }
 

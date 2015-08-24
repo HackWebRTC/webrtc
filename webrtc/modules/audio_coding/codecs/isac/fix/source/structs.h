@@ -34,7 +34,7 @@ typedef struct Bitstreamstruct_dec {
   int16_t   full;             /* 0 - first byte in memory filled, second empty*/
   /* 1 - both bytes are empty (we just filled the previous memory */
 
-  int stream_size;  /* The size of stream. */
+  size_t stream_size;  /* The size of stream in bytes. */
 } Bitstr_dec;
 
 /* Bitstream struct for encoder */
@@ -178,8 +178,8 @@ typedef struct {
   int16_t pitchCycles;
   int16_t A;
   int16_t B;
-  int16_t pitchIndex;
-  int16_t stretchLag;
+  size_t pitchIndex;
+  size_t stretchLag;
   int16_t *prevPitchLP;                                  // [ FRAMESAMPLES/2 ]; saved 240
   int16_t seed;
 

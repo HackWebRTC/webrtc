@@ -45,12 +45,12 @@ int Normal::Process(const int16_t* input,
   output->PushBackInterleaved(input, length);
   int16_t* signal = &(*output)[0][0];
 
-  const unsigned fs_mult = fs_hz_ / 8000;
+  const int fs_mult = fs_hz_ / 8000;
   assert(fs_mult > 0);
   // fs_shift = log2(fs_mult), rounded down.
   // Note that |fs_shift| is not "exact" for 48 kHz.
   // TODO(hlundin): Investigate this further.
-  const int fs_shift = 30 - WebRtcSpl_NormW32(static_cast<int32_t>(fs_mult));
+  const int fs_shift = 30 - WebRtcSpl_NormW32(fs_mult);
 
   // Check if last RecOut call resulted in an Expand. If so, we have to take
   // care of some cross-fading and unmuting.
@@ -73,11 +73,11 @@ int Normal::Process(const int16_t* input,
       int16_t* signal = &(*output)[channel_ix][0];
       size_t length_per_channel = length / output->Channels();
       // Find largest absolute value in new data.
-      int16_t decoded_max = WebRtcSpl_MaxAbsValueW16(
-        signal,  static_cast<int>(length_per_channel));
+      int16_t decoded_max =
+          WebRtcSpl_MaxAbsValueW16(signal, length_per_channel);
       // Adjust muting factor if needed (to BGN level).
-      int energy_length = std::min(static_cast<int>(fs_mult * 64),
-                                   static_cast<int>(length_per_channel));
+      size_t energy_length =
+          std::min(static_cast<size_t>(fs_mult * 64), length_per_channel);
       int scaling = 6 + fs_shift
           - WebRtcSpl_NormW32(decoded_max * decoded_max);
       scaling = std::max(scaling, 0);  // |scaling| should always be >= 0.
@@ -111,7 +111,7 @@ int Normal::Process(const int16_t* input,
       }
 
       // If muted increase by 0.64 for every 20 ms (NB/WB 0.0040/0.0020 in Q14).
-      int increment = static_cast<int>(64 / fs_mult);
+      int increment = 64 / fs_mult;
       for (size_t i = 0; i < length_per_channel; i++) {
         // Scale with mute factor.
         assert(channel_ix < output->Channels());
@@ -131,7 +131,7 @@ int Normal::Process(const int16_t* input,
       assert(fs_shift < 3);  // Will always be 0, 1, or, 2.
       increment = 4 >> fs_shift;
       int fraction = increment;
-      for (size_t i = 0; i < 8 * fs_mult; i++) {
+      for (size_t i = 0; i < static_cast<size_t>(8 * fs_mult); i++) {
         // TODO(hlundin): Add 16 instead of 8 for correct rounding. Keeping 8
         // now for legacy bit-exactness.
         assert(channel_ix < output->Channels());
@@ -144,7 +144,7 @@ int Normal::Process(const int16_t* input,
     }
   } else if (last_mode == kModeRfc3389Cng) {
     assert(output->Channels() == 1);  // Not adapted for multi-channel yet.
-    static const int kCngLength = 32;
+    static const size_t kCngLength = 32;
     int16_t cng_output[kCngLength];
     // Reset mute factor and start up fresh.
     external_mute_factor_array[0] = 16384;
@@ -167,7 +167,7 @@ int Normal::Process(const int16_t* input,
     assert(fs_shift < 3);  // Will always be 0, 1, or, 2.
     int16_t increment = 4 >> fs_shift;
     int16_t fraction = increment;
-    for (size_t i = 0; i < 8 * fs_mult; i++) {
+    for (size_t i = 0; i < static_cast<size_t>(8 * fs_mult); i++) {
       // TODO(hlundin): Add 16 instead of 8 for correct rounding. Keeping 8 now
       // for legacy bit-exactness.
       signal[i] =
@@ -178,7 +178,7 @@ int Normal::Process(const int16_t* input,
     // Previous was neither of Expand, FadeToBGN or RFC3389_CNG, but we are
     // still ramping up from previous muting.
     // If muted increase by 0.64 for every 20 ms (NB/WB 0.0040/0.0020 in Q14).
-    int increment = static_cast<int>(64 / fs_mult);
+    int increment = 64 / fs_mult;
     size_t length_per_channel = length / output->Channels();
     for (size_t i = 0; i < length_per_channel; i++) {
       for (size_t channel_ix = 0; channel_ix < output->Channels();

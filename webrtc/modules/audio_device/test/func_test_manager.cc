@@ -192,8 +192,8 @@ void AudioTransportImpl::SetFullDuplex(bool enable)
 
 int32_t AudioTransportImpl::RecordedDataIsAvailable(
     const void* audioSamples,
-    const uint32_t nSamples,
-    const uint8_t nBytesPerSample,
+    const size_t nSamples,
+    const size_t nBytesPerSample,
     const uint8_t nChannels,
     const uint32_t samplesPerSec,
     const uint32_t totalDelayMS,
@@ -206,7 +206,7 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
     {
         AudioPacket* packet = new AudioPacket();
         memcpy(packet->dataBuffer, audioSamples, nSamples * nBytesPerSample);
-        packet->nSamples = (uint16_t) nSamples;
+        packet->nSamples = nSamples;
         packet->nBytesPerSample = nBytesPerSample;
         packet->nChannels = nChannels;
         packet->samplesPerSec = samplesPerSec;
@@ -337,12 +337,12 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
 
 
 int32_t AudioTransportImpl::NeedMorePlayData(
-    const uint32_t nSamples,
-    const uint8_t nBytesPerSample,
+    const size_t nSamples,
+    const size_t nBytesPerSample,
     const uint8_t nChannels,
     const uint32_t samplesPerSec,
     void* audioSamples,
-    uint32_t& nSamplesOut,
+    size_t& nSamplesOut,
     int64_t* elapsed_time_ms,
     int64_t* ntp_time_ms)
 {
@@ -359,15 +359,15 @@ int32_t AudioTransportImpl::NeedMorePlayData(
             if (packet)
             {
                 int ret(0);
-                int lenOut(0);
+                size_t lenOut(0);
                 int16_t tmpBuf_96kHz[80 * 12];
                 int16_t* ptr16In = NULL;
                 int16_t* ptr16Out = NULL;
 
-                const uint16_t nSamplesIn = packet->nSamples;
+                const size_t nSamplesIn = packet->nSamples;
                 const uint8_t nChannelsIn = packet->nChannels;
                 const uint32_t samplesPerSecIn = packet->samplesPerSec;
-                const uint16_t nBytesPerSampleIn = packet->nBytesPerSample;
+                const size_t nBytesPerSampleIn = packet->nBytesPerSample;
 
                 int32_t fsInHz(samplesPerSecIn);
                 int32_t fsOutHz(samplesPerSec);
@@ -401,7 +401,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                             ptr16Out = (int16_t*) audioSamples;
 
                             // do stereo -> mono
-                            for (unsigned int i = 0; i < nSamples; i++)
+                            for (size_t i = 0; i < nSamples; i++)
                             {
                                 *ptr16Out = *ptr16In; // use left channel
                                 ptr16Out++;
@@ -409,7 +409,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                                 ptr16In++;
                             }
                         }
-                        assert(2*nSamples == (uint32_t)lenOut);
+                        assert(2*nSamples == lenOut);
                     } else
                     {
                         if (_playCount % 100 == 0)
@@ -439,7 +439,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                             ptr16Out = (int16_t*) audioSamples;
 
                             // do mono -> stereo
-                            for (unsigned int i = 0; i < nSamples; i++)
+                            for (size_t i = 0; i < nSamples; i++)
                             {
                                 *ptr16Out = *ptr16In; // left
                                 ptr16Out++;
@@ -448,7 +448,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                                 ptr16In++;
                             }
                         }
-                        assert(nSamples == (uint32_t)lenOut);
+                        assert(nSamples == lenOut);
                     } else
                     {
                         if (_playCount % 100 == 0)
@@ -483,7 +483,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
             // mono sample from file is duplicated and sent to left and right
             // channels
             int16_t* audio16 = (int16_t*) audioSamples;
-            for (unsigned int i = 0; i < nSamples; i++)
+            for (size_t i = 0; i < nSamples; i++)
             {
                 (*audio16) = fileBuf[i]; // left
                 audio16++;
@@ -578,7 +578,7 @@ int AudioTransportImpl::OnDataAvailable(const int voe_channels[],
                                         const int16_t* audio_data,
                                         int sample_rate,
                                         int number_of_channels,
-                                        int number_of_frames,
+                                        size_t number_of_frames,
                                         int audio_delay_milliseconds,
                                         int current_volume,
                                         bool key_pressed,
@@ -590,11 +590,11 @@ void AudioTransportImpl::PushCaptureData(int voe_channel,
                                          const void* audio_data,
                                          int bits_per_sample, int sample_rate,
                                          int number_of_channels,
-                                         int number_of_frames) {}
+                                         size_t number_of_frames) {}
 
 void AudioTransportImpl::PullRenderData(int bits_per_sample, int sample_rate,
                                         int number_of_channels,
-                                        int number_of_frames,
+                                        size_t number_of_frames,
                                         void* audio_data,
                                         int64_t* elapsed_time_ms,
                                         int64_t* ntp_time_ms) {}

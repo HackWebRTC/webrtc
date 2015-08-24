@@ -93,7 +93,8 @@ void AcmReceiveTest::Run() {
       AudioFrame output_frame;
       EXPECT_TRUE(acm_->Get10MsAudio(&output_frame));
       EXPECT_EQ(output_freq_hz_, output_frame.sample_rate_hz_);
-      const int samples_per_block = output_freq_hz_ * 10 / 1000;
+      const size_t samples_per_block =
+          static_cast<size_t>(output_freq_hz_ * 10 / 1000);
       EXPECT_EQ(samples_per_block, output_frame.samples_per_channel_);
       if (expected_output_channels_ != kArbitraryChannels) {
         if (output_frame.speech_type_ == webrtc::AudioFrame::kPLC) {

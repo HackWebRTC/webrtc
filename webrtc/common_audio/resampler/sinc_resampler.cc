@@ -149,7 +149,7 @@ void SincResampler::InitializeCPUSpecificFeatures() {}
 #endif
 
 SincResampler::SincResampler(double io_sample_rate_ratio,
-                             int request_frames,
+                             size_t request_frames,
                              SincResamplerCallback* read_cb)
     : io_sample_rate_ratio_(io_sample_rate_ratio),
       read_cb_(read_cb),
@@ -215,14 +215,15 @@ void SincResampler::InitializeKernel() {
   // Generates a set of windowed sinc() kernels.
   // We generate a range of sub-sample offsets from 0.0 to 1.0.
   const double sinc_scale_factor = SincScaleFactor(io_sample_rate_ratio_);
-  for (int offset_idx = 0; offset_idx <= kKernelOffsetCount; ++offset_idx) {
+  for (size_t offset_idx = 0; offset_idx <= kKernelOffsetCount; ++offset_idx) {
     const float subsample_offset =
         static_cast<float>(offset_idx) / kKernelOffsetCount;
 
-    for (int i = 0; i < kKernelSize; ++i) {
-      const int idx = i + offset_idx * kKernelSize;
-      const float pre_sinc =
-          static_cast<float>(M_PI * (i - kKernelSize / 2 - subsample_offset));
+    for (size_t i = 0; i < kKernelSize; ++i) {
+      const size_t idx = i + offset_idx * kKernelSize;
+      const float pre_sinc = static_cast<float>(M_PI *
+          (static_cast<int>(i) - static_cast<int>(kKernelSize / 2) -
+           subsample_offset));
       kernel_pre_sinc_storage_[idx] = pre_sinc;
 
       // Compute Blackman window, matching the offset of the sinc().
@@ -252,9 +253,9 @@ void SincResampler::SetRatio(double io_sample_rate_ratio) {
   // Optimize reinitialization by reusing values which are independent of
   // |sinc_scale_factor|.  Provides a 3x speedup.
   const double sinc_scale_factor = SincScaleFactor(io_sample_rate_ratio_);
-  for (int offset_idx = 0; offset_idx <= kKernelOffsetCount; ++offset_idx) {
-    for (int i = 0; i < kKernelSize; ++i) {
-      const int idx = i + offset_idx * kKernelSize;
+  for (size_t offset_idx = 0; offset_idx <= kKernelOffsetCount; ++offset_idx) {
+    for (size_t i = 0; i < kKernelSize; ++i) {
+      const size_t idx = i + offset_idx * kKernelSize;
       const float window = kernel_window_storage_[idx];
       const float pre_sinc = kernel_pre_sinc_storage_[idx];
 
@@ -266,8 +267,8 @@ void SincResampler::SetRatio(double io_sample_rate_ratio) {
   }
 }
 
-void SincResampler::Resample(int frames, float* destination) {
-  int remaining_frames = frames;
+void SincResampler::Resample(size_t frames, float* destination) {
+  size_t remaining_frames = frames;
 
   // Step (1) -- Prime the input buffer at the start of the input stream.
   if (!buffer_primed_ && remaining_frames) {
@@ -343,8 +344,8 @@ void SincResampler::Resample(int frames, float* destination) {
 
 #undef CONVOLVE_FUNC
 
-int SincResampler::ChunkSize() const {
-  return static_cast<int>(block_size_ / io_sample_rate_ratio_);
+size_t SincResampler::ChunkSize() const {
+  return static_cast<size_t>(block_size_ / io_sample_rate_ratio_);
 }
 
 void SincResampler::Flush() {
@@ -363,7 +364,7 @@ float SincResampler::Convolve_C(const float* input_ptr, const float* k1,
 
   // Generate a single output sample.  Unrolling this loop hurt performance in
   // local testing.
-  int n = kKernelSize;
+  size_t n = kKernelSize;
   while (n--) {
     sum1 += *input_ptr * *k1++;
     sum2 += *input_ptr++ * *k2++;

@@ -1870,7 +1870,7 @@ const uint16_t kFrameLenInitIndex[1] = {1};
 
 
 int WebRtcIsacfix_DecodeFrameLen(Bitstr_dec *streamdata,
-                                 int16_t *framesamples)
+                                 size_t *framesamples)
 {
 
   int err;

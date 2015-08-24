@@ -34,9 +34,9 @@ typedef struct NoiseSuppressionFixedC_ {
   int16_t                 noiseEstCounter[SIMULT];
   int16_t                 noiseEstQuantile[HALF_ANAL_BLOCKL];
 
-  int                     anaLen;
-  int                     anaLen2;
-  int                     magnLen;
+  size_t                  anaLen;
+  size_t                  anaLen2;
+  size_t                  magnLen;
   int                     aggrMode;
   int                     stages;
   int                     initFlag;
@@ -98,7 +98,7 @@ typedef struct NoiseSuppressionFixedC_ {
   int                     qNoise;
   int                     prevQNoise;
   int                     prevQMagn;
-  int                     blockLen10ms;
+  size_t                  blockLen10ms;
 
   int16_t                 real[ANAL_BLOCKL_MAX];
   int16_t                 imag[ANAL_BLOCKL_MAX];

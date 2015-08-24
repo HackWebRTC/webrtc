@@ -25,7 +25,7 @@
 void WebRtcIsac_ResetBitstream(Bitstr* bit_stream);
 
 int WebRtcIsac_EstimateBandwidth(BwEstimatorstr* bwest_str, Bitstr* streamdata,
-                                 int32_t packet_size,
+                                 size_t packet_size,
                                  uint16_t rtp_seq_number,
                                  uint32_t send_ts, uint32_t arr_ts,
                                  enum IsacSamplingRate encoderSampRate,
@@ -195,14 +195,14 @@ void WebRtcIsac_Spec2time(const TransformTables* tables,
 
 /******************************* filter functions ****************************/
 
-void WebRtcIsac_AllPoleFilter(double* InOut, double* Coef, int lengthInOut,
+void WebRtcIsac_AllPoleFilter(double* InOut, double* Coef, size_t lengthInOut,
                               int orderCoef);
 
-void WebRtcIsac_AllZeroFilter(double* In, double* Coef, int lengthInOut,
+void WebRtcIsac_AllZeroFilter(double* In, double* Coef, size_t lengthInOut,
                               int orderCoef, double* Out);
 
 void WebRtcIsac_ZeroPoleFilter(double* In, double* ZeroCoef, double* PoleCoef,
-                               int lengthInOut, int orderCoef, double* Out);
+                               size_t lengthInOut, int orderCoef, double* Out);
 
 
 /***************************** filterbank functions **************************/
@@ -228,6 +228,6 @@ void WebRtcIsac_NormLatticeFilterAr(int orderCoef, float* stateF, float* stateG,
 
 void WebRtcIsac_Dir2Lat(double* a, int orderCoef, float* sth, float* cth);
 
-void WebRtcIsac_AutoCorr(double* r, const double* x, int N, int order);
+void WebRtcIsac_AutoCorr(double* r, const double* x, size_t N, size_t order);
 
 #endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_CODEC_H_ */

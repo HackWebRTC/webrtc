@@ -32,9 +32,9 @@ namespace webrtc {
 namespace {
 
 double FrameRms(AudioFrame& frame) {
-  int samples = frame.num_channels_ * frame.samples_per_channel_;
+  size_t samples = frame.num_channels_ * frame.samples_per_channel_;
   double rms = 0;
-  for (int n = 0; n < samples; ++n)
+  for (size_t n = 0; n < samples; ++n)
     rms += frame.data_[n] * frame.data_[n];
   rms /= samples;
   rms = sqrt(rms);
@@ -132,9 +132,9 @@ class InitialPlayoutDelayTest : public ::testing::Test {
     in_audio_frame.sample_rate_hz_ = codec.plfreq;
     in_audio_frame.num_channels_ = codec.channels;
     in_audio_frame.samples_per_channel_ = codec.plfreq / 100;  // 10 ms.
-    int samples = in_audio_frame.num_channels_ *
+    size_t samples = in_audio_frame.num_channels_ *
         in_audio_frame.samples_per_channel_;
-    for (int n = 0; n < samples; ++n) {
+    for (size_t n = 0; n < samples; ++n) {
       in_audio_frame.data_[n] = kAmp;
     }
 

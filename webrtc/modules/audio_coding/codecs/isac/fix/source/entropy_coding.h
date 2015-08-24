@@ -92,7 +92,7 @@ int WebRtcIsacfix_DecodePitchLag(Bitstr_dec *streamdata,
                                  int16_t *PitchLagQ7);
 
 int WebRtcIsacfix_DecodeFrameLen(Bitstr_dec *streamdata,
-                                 int16_t *framelength);
+                                 size_t *framelength);
 
 
 int WebRtcIsacfix_EncodeFrameLen(int16_t framelength,

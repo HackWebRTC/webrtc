@@ -23,6 +23,8 @@
 
 #include <assert.h>
 
+#include <algorithm>
+
 #include "webrtc/typedefs.h"
 // needed for NetEqDecoder
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
@@ -76,27 +78,27 @@
 void NetEQTest_GetCodec_and_PT(char* name,
                                webrtc::NetEqDecoder* codec,
                                int* PT,
-                               int frameLen,
+                               size_t frameLen,
                                int* fs,
                                int* bitrate,
                                int* useRed);
 int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
-                          int enc_frameSize,
+                          size_t enc_frameSize,
                           int bitrate,
                           int sampfreq,
                           int vad,
-                          int numChannels);
+                          size_t numChannels);
 void defineCodecs(webrtc::NetEqDecoder* usedCodec, int* noOfCodecs);
-int NetEQTest_free_coders(webrtc::NetEqDecoder coder, int numChannels);
-int NetEQTest_encode(int coder,
-                     int16_t* indata,
-                     int frameLen,
-                     unsigned char* encoded,
-                     int sampleRate,
-                     int* vad,
-                     int useVAD,
-                     int bitrate,
-                     int numChannels);
+int NetEQTest_free_coders(webrtc::NetEqDecoder coder, size_t numChannels);
+size_t NetEQTest_encode(int coder,
+                        int16_t* indata,
+                        size_t frameLen,
+                        unsigned char* encoded,
+                        int sampleRate,
+                        int* vad,
+                        int useVAD,
+                        int bitrate,
+                        size_t numChannels);
 void makeRTPheader(unsigned char* rtp_data,
                    int payloadType,
                    int seqNo,
@@ -109,13 +111,13 @@ int makeRedundantHeader(unsigned char* rtp_data,
                         uint16_t* blockLen,
                         int seqNo,
                         uint32_t ssrc);
-int makeDTMFpayload(unsigned char* payload_data,
-                    int Event,
-                    int End,
-                    int Volume,
-                    int Duration);
-void stereoDeInterleave(int16_t* audioSamples, int numSamples);
-void stereoInterleave(unsigned char* data, int dataLen, int stride);
+size_t makeDTMFpayload(unsigned char* payload_data,
+                       int Event,
+                       int End,
+                       int Volume,
+                       int Duration);
+void stereoDeInterleave(int16_t* audioSamples, size_t numSamples);
+void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride);
 
 /*********************/
 /* Codec definitions */
@@ -264,13 +266,14 @@ SPEEX_encinst_t* SPEEX16enc_inst[2];
 #endif
 
 int main(int argc, char* argv[]) {
-  int packet_size, fs;
+  size_t packet_size;
+  int fs;
   webrtc::NetEqDecoder usedCodec;
   int payloadType;
   int bitrate = 0;
   int useVAD, vad;
   int useRed = 0;
-  int len, enc_len;
+  size_t len, enc_len;
   int16_t org_data[4000];
   unsigned char rtp_data[8000];
   int16_t seqNo = 0xFFF;
@@ -282,14 +285,14 @@ int main(int argc, char* argv[]) {
   int red_PT[2] = {0};
   uint32_t red_TS[2] = {0};
   uint16_t red_len[2] = {0};
-  int RTPheaderLen = 12;
+  size_t RTPheaderLen = 12;
   uint8_t red_data[8000];
 #ifdef INSERT_OLD_PACKETS
   uint16_t old_length, old_plen;
-  int old_enc_len;
+  size_t old_enc_len;
   int first_old_packet = 1;
   unsigned char old_rtp_data[8000];
-  int packet_age = 0;
+  size_t packet_age = 0;
 #endif
 #ifdef INSERT_DTMF_PACKETS
   int NTone = 1;
@@ -298,8 +301,8 @@ int main(int argc, char* argv[]) {
   bool dtmfSent = false;
 #endif
   bool usingStereo = false;
-  int stereoMode = 0;
-  int numChannels = 1;
+  size_t stereoMode = 0;
+  size_t numChannels = 1;
 
   /* check number of parameters */
   if ((argc != 6) && (argc != 7)) {
@@ -449,12 +452,13 @@ int main(int argc, char* argv[]) {
   FILE* out_file = fopen(argv[2], "wb");
   CHECK_NOT_NULL(out_file);
   printf("Output file: %s\n\n", argv[2]);
-  packet_size = atoi(argv[3]);
-  if (packet_size <= 0) {
-     printf("Packet size %d must be positive", packet_size);
+  int packet_size_int = atoi(argv[3]);
+  if (packet_size_int <= 0) {
+     printf("Packet size %d must be positive", packet_size_int);
      return -1;
   }
-  printf("Packet size: %d\n", packet_size);
+  printf("Packet size: %d\n", packet_size_int);
+  packet_size = static_cast<size_t>(packet_size_int);
 
   // check for stereo
   if (argv[4][strlen(argv[4]) - 1] == '*') {
@@ -653,10 +657,6 @@ int main(int argc, char* argv[]) {
       enc_len =
           NetEQTest_encode(usedCodec, org_data, packet_size, &rtp_data[12], fs,
                            &vad, useVAD, bitrate, numChannels);
-      if (enc_len == -1) {
-        printf("Error encoding frame\n");
-        exit(0);
-      }
 
       if (usingStereo && stereoMode != STEREO_MODE_FRAME && vad == 1) {
         // interleave the encoded payload for sample-based codecs (not for CNG)
@@ -729,12 +729,12 @@ int main(int argc, char* argv[]) {
           return -1;
         }
 #ifdef RANDOM_DATA
-        for (int k = 0; k < 12 + enc_len; k++) {
+        for (size_t k = 0; k < 12 + enc_len; k++) {
           rtp_data[k] = rand() + rand();
         }
 #endif
 #ifdef RANDOM_PAYLOAD_DATA
-        for (int k = 12; k < 12 + enc_len; k++) {
+        for (size_t k = 12; k < 12 + enc_len; k++) {
           rtp_data[k] = rand() + rand();
         }
 #endif
@@ -822,7 +822,7 @@ int main(int argc, char* argv[]) {
 void NetEQTest_GetCodec_and_PT(char* name,
                                webrtc::NetEqDecoder* codec,
                                int* PT,
-                               int frameLen,
+                               size_t frameLen,
                                int* fs,
                                int* bitrate,
                                int* useRed) {
@@ -887,14 +887,14 @@ void NetEQTest_GetCodec_and_PT(char* name,
 }
 
 int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
-                          int enc_frameSize,
+                          size_t enc_frameSize,
                           int bitrate,
                           int sampfreq,
                           int vad,
-                          int numChannels) {
+                          size_t numChannels) {
   int ok = 0;
 
-  for (int k = 0; k < numChannels; k++) {
+  for (size_t k = 0; k < numChannels; k++) {
     VAD_inst[k] = WebRtcVad_Create();
     if (!VAD_inst[k]) {
       printf("Error: Couldn't allocate memory for VAD instance\n");
@@ -962,7 +962,7 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
           WebRtcG729_EncoderInit(G729enc_inst[k], vad);
           if ((vad == 1) && (enc_frameSize != 80)) {
             printf("\nError - This simulation only supports VAD for G729 at "
-                   "10ms packets (not %dms)\n", (enc_frameSize >> 3));
+                   "10ms packets (not %" PRIuS "ms)\n", (enc_frameSize >> 3));
           }
         } else {
           printf("\nError - g729 is only developed for 8kHz \n");
@@ -1018,7 +1018,7 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
           }
           if ((vad == 1) && (enc_frameSize != 160)) {
             printf("\nError - This simulation only supports VAD for Speex at "
-                   "20ms packets (not %dms)\n",
+                   "20ms packets (not %" PRIuS "ms)\n",
                 (enc_frameSize >> 3));
             vad = 0;
           }
@@ -1049,7 +1049,7 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
           }
           if ((vad == 1) && (enc_frameSize != 320)) {
             printf("\nError - This simulation only supports VAD for Speex at "
-                   "20ms packets (not %dms)\n",
+                   "20ms packets (not %" PRIuS "ms)\n",
                 (enc_frameSize >> 4));
             vad = 0;
           }
@@ -1238,8 +1238,7 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
                    "instance\n");
             exit(0);
           }
-          if (((enc_frameSize / 320) < 0) || ((enc_frameSize / 320) > 3) ||
-              ((enc_frameSize % 320) != 0)) {
+          if (((enc_frameSize / 320) > 3) || ((enc_frameSize % 320) != 0)) {
             printf("\nError - AMRwb must have frameSize of 20, 40 or 60ms\n");
             exit(0);
           }
@@ -1320,7 +1319,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
                 bitrate);
             exit(0);
           }
-          WebRtcIsac_Control(ISAC_inst[k], bitrate, enc_frameSize >> 4);
+          WebRtcIsac_Control(ISAC_inst[k], bitrate,
+                             static_cast<int>(enc_frameSize >> 4));
         } else {
           printf("\nError - iSAC only supports 480 or 960 enc_frameSize (30 or "
                  "60 ms)\n");
@@ -1379,7 +1379,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
                    "56000 bps (not %i)\n", bitrate);
             exit(0);
           }
-          WebRtcIsac_Control(ISACSWB_inst[k], bitrate, enc_frameSize >> 5);
+          WebRtcIsac_Control(ISACSWB_inst[k], bitrate,
+                             static_cast<int>(enc_frameSize >> 5));
         } else {
           printf("\nError - iSAC SWB only supports 960 enc_frameSize (30 "
                  "ms)\n");
@@ -1424,8 +1425,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
   return (0);
 }
 
-int NetEQTest_free_coders(webrtc::NetEqDecoder coder, int numChannels) {
-  for (int k = 0; k < numChannels; k++) {
+int NetEQTest_free_coders(webrtc::NetEqDecoder coder, size_t numChannels) {
+  for (size_t k = 0; k < numChannels; k++) {
     WebRtcVad_Free(VAD_inst[k]);
 #if (defined(CODEC_CNGCODEC8) || defined(CODEC_CNGCODEC16) || \
      defined(CODEC_CNGCODEC32) || defined(CODEC_CNGCODEC48))
@@ -1552,35 +1553,34 @@ int NetEQTest_free_coders(webrtc::NetEqDecoder coder, int numChannels) {
   return (0);
 }
 
-int NetEQTest_encode(int coder,
-                     int16_t* indata,
-                     int frameLen,
-                     unsigned char* encoded,
-                     int sampleRate,
-                     int* vad,
-                     int useVAD,
-                     int bitrate,
-                     int numChannels) {
-  int cdlen = 0;
+size_t NetEQTest_encode(int coder,
+                        int16_t* indata,
+                        size_t frameLen,
+                        unsigned char* encoded,
+                        int sampleRate,
+                        int* vad,
+                        int useVAD,
+                        int bitrate,
+                        size_t numChannels) {
+  size_t cdlen = 0;
   int16_t* tempdata;
   static int first_cng = 1;
-  int16_t tempLen;
-
+  size_t tempLen;
   *vad = 1;
 
   // check VAD first
   if (useVAD) {
     *vad = 0;
 
-    int sampleRate_10 = 10 * sampleRate / 1000;
-    int sampleRate_20 = 20 * sampleRate / 1000;
-    int sampleRate_30 = 30 * sampleRate / 1000;
-    for (int k = 0; k < numChannels; k++) {
+    size_t sampleRate_10 = static_cast<size_t>(10 * sampleRate / 1000);
+    size_t sampleRate_20 = static_cast<size_t>(20 * sampleRate / 1000);
+    size_t sampleRate_30 = static_cast<size_t>(30 * sampleRate / 1000);
+    for (size_t k = 0; k < numChannels; k++) {
       tempLen = frameLen;
       tempdata = &indata[k * frameLen];
       int localVad = 0;
       /* Partition the signal and test each chunk for VAD.
-      All chunks must be VAD=0 to produce a total VAD=0. */
+         All chunks must be VAD=0 to produce a total VAD=0. */
       while (tempLen >= sampleRate_10) {
         if ((tempLen % sampleRate_30) == 0) {  // tempLen is multiple of 30ms
           localVad |= WebRtcVad_Process(VAD_inst[k], sampleRate, tempdata,
@@ -1607,7 +1607,7 @@ int NetEQTest_encode(int coder,
     if (!*vad) {
       // all channels are silent
       cdlen = 0;
-      for (int k = 0; k < numChannels; k++) {
+      for (size_t k = 0; k < numChannels; k++) {
         WebRtcCng_Encode(CNGenc_inst[k], &indata[k * frameLen],
                          (frameLen <= 640 ? frameLen : 640) /* max 640 */,
                          encoded, &tempLen, first_cng);
@@ -1621,9 +1621,9 @@ int NetEQTest_encode(int coder,
   }
 
   // loop over all channels
-  int totalLen = 0;
+  size_t totalLen = 0;
 
-  for (int k = 0; k < numChannels; k++) {
+  for (size_t k = 0; k < numChannels; k++) {
     /* Encode with the selected coder type */
     if (coder == webrtc::kDecoderPCMu) { /*g711 u-law */
 #ifdef CODEC_G711
@@ -1652,7 +1652,8 @@ int NetEQTest_encode(int coder,
 #endif
 #ifdef CODEC_ILBC
     else if (coder == webrtc::kDecoderILBC) { /*iLBC */
-      cdlen = WebRtcIlbcfix_Encode(iLBCenc_inst[k], indata, frameLen, encoded);
+      cdlen = static_cast<size_t>(std::max(
+          WebRtcIlbcfix_Encode(iLBCenc_inst[k], indata, frameLen, encoded), 0));
     }
 #endif
 #if (defined(CODEC_ISAC) || \
@@ -1660,28 +1661,30 @@ int NetEQTest_encode(int coder,
                                               // NETEQ_ISACFIX_CODEC
     else if (coder == webrtc::kDecoderISAC) { /*iSAC */
       int noOfCalls = 0;
-      cdlen = 0;
-      while (cdlen <= 0) {
+      int res = 0;
+      while (res <= 0) {
 #ifdef CODEC_ISAC /* floating point */
-        cdlen =
+        res =
             WebRtcIsac_Encode(ISAC_inst[k], &indata[noOfCalls * 160], encoded);
 #else /* fixed point */
-        cdlen = WebRtcIsacfix_Encode(ISAC_inst[k], &indata[noOfCalls * 160],
-                                     encoded);
+        res = WebRtcIsacfix_Encode(ISAC_inst[k], &indata[noOfCalls * 160],
+                                   encoded);
 #endif
         noOfCalls++;
       }
+      cdlen = static_cast<size_t>(res);
     }
 #endif
 #ifdef CODEC_ISAC_SWB
     else if (coder == webrtc::kDecoderISACswb) { /* iSAC SWB */
       int noOfCalls = 0;
-      cdlen = 0;
-      while (cdlen <= 0) {
-        cdlen = WebRtcIsac_Encode(ISACSWB_inst[k], &indata[noOfCalls * 320],
-                                  encoded);
+      int res = 0;
+      while (res <= 0) {
+        res = WebRtcIsac_Encode(ISACSWB_inst[k], &indata[noOfCalls * 320],
+                                encoded);
         noOfCalls++;
       }
+      cdlen = static_cast<size_t>(res);
     }
 #endif
     indata += frameLen;
@@ -1757,11 +1760,11 @@ int makeRedundantHeader(unsigned char* rtp_data,
   return rtpPointer - rtp_data;  // length of header in bytes
 }
 
-int makeDTMFpayload(unsigned char* payload_data,
-                    int Event,
-                    int End,
-                    int Volume,
-                    int Duration) {
+size_t makeDTMFpayload(unsigned char* payload_data,
+                       int Event,
+                       int End,
+                       int Volume,
+                       int Duration) {
   unsigned char E, R, V;
   R = 0;
   V = (unsigned char)Volume;
@@ -1778,11 +1781,11 @@ int makeDTMFpayload(unsigned char* payload_data,
   return (4);
 }
 
-void stereoDeInterleave(int16_t* audioSamples, int numSamples) {
+void stereoDeInterleave(int16_t* audioSamples, size_t numSamples) {
   int16_t* tempVec;
   int16_t* readPtr, *writeL, *writeR;
 
-  if (numSamples <= 0)
+  if (numSamples == 0)
     return;
 
   tempVec = (int16_t*)malloc(sizeof(int16_t) * numSamples);
@@ -1797,7 +1800,7 @@ void stereoDeInterleave(int16_t* audioSamples, int numSamples) {
   writeR = &audioSamples[numSamples / 2];
   readPtr = tempVec;
 
-  for (int k = 0; k < numSamples; k += 2) {
+  for (size_t k = 0; k < numSamples; k += 2) {
     *writeL = *readPtr;
     readPtr++;
     *writeR = *readPtr;
@@ -1809,7 +1812,7 @@ void stereoDeInterleave(int16_t* audioSamples, int numSamples) {
   free(tempVec);
 }
 
-void stereoInterleave(unsigned char* data, int dataLen, int stride) {
+void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride) {
   unsigned char* ptrL, *ptrR;
   unsigned char temp[10];
 

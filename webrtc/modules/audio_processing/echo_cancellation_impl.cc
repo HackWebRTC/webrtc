@@ -91,7 +91,7 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
       err = WebRtcAec_BufferFarend(
           my_handle,
           audio->split_bands_const_f(j)[kBand0To8kHz],
-          static_cast<int16_t>(audio->num_frames_per_band()));
+          audio->num_frames_per_band());
 
       if (err != apm_->kNoError) {
         return GetHandleError(my_handle);  // TODO(ajm): warning possible?
@@ -133,7 +133,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
           audio->split_bands_const_f(i),
           audio->num_bands(),
           audio->split_bands_f(i),
-          static_cast<int16_t>(audio->num_frames_per_band()),
+          audio->num_frames_per_band(),
           apm_->stream_delay_ms(),
           stream_drift_samples_);
 

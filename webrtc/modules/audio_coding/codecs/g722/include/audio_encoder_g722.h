@@ -37,8 +37,8 @@ class AudioEncoderG722 final : public AudioEncoder {
   int NumChannels() const override;
   size_t MaxEncodedBytes() const override;
   int RtpTimestampRateHz() const override;
-  int Num10MsFramesInNextPacket() const override;
-  int Max10MsFramesInAPacket() const override;
+  size_t Num10MsFramesInNextPacket() const override;
+  size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
@@ -55,12 +55,12 @@ class AudioEncoderG722 final : public AudioEncoder {
     ~EncoderState();
   };
 
-  int SamplesPerChannel() const;
+  size_t SamplesPerChannel() const;
 
   const int num_channels_;
   const int payload_type_;
-  const int num_10ms_frames_per_packet_;
-  int num_10ms_frames_buffered_;
+  const size_t num_10ms_frames_per_packet_;
+  size_t num_10ms_frames_buffered_;
   uint32_t first_timestamp_in_buffer_;
   const rtc::scoped_ptr<EncoderState[]> encoders_;
   rtc::Buffer interleave_buffer_;

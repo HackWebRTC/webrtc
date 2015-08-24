@@ -14,6 +14,7 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 
 #define TAG "AudioRecordJni"
@@ -122,8 +123,8 @@ int32_t AudioRecordJni::InitRecording() {
     ALOGE("InitRecording failed!");
     return -1;
   }
-  frames_per_buffer_ = frames_per_buffer;
-  ALOGD("frames_per_buffer: %d", frames_per_buffer_);
+  frames_per_buffer_ = static_cast<size_t>(frames_per_buffer);
+  ALOGD("frames_per_buffer: %" PRIuS, frames_per_buffer_);
   CHECK_EQ(direct_buffer_capacity_in_bytes_,
            frames_per_buffer_ * kBytesPerFrame);
   CHECK_EQ(frames_per_buffer_, audio_parameters_.frames_per_10ms_buffer());
@@ -200,7 +201,7 @@ void AudioRecordJni::OnCacheDirectBufferAddress(
       env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
   ALOGD("direct buffer capacity: %lld", capacity);
-  direct_buffer_capacity_in_bytes_ = static_cast<int> (capacity);
+  direct_buffer_capacity_in_bytes_ = static_cast<size_t>(capacity);
 }
 
 void JNICALL AudioRecordJni::DataIsRecorded(

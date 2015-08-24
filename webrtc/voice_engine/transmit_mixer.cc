@@ -10,6 +10,7 @@
 
 #include "webrtc/voice_engine/transmit_mixer.h"
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/utility/interface/audio_frame_operations.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
@@ -311,7 +312,7 @@ void TransmitMixer::GetSendCodecInfo(int* max_sample_rate, int* max_channels) {
 
 int32_t
 TransmitMixer::PrepareDemux(const void* audioSamples,
-                            uint32_t nSamples,
+                            size_t nSamples,
                             uint8_t nChannels,
                             uint32_t samplesPerSec,
                             uint16_t totalDelayMS,
@@ -320,10 +321,11 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
                             bool keyPressed)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
-                 "TransmitMixer::PrepareDemux(nSamples=%u, nChannels=%u,"
-                 "samplesPerSec=%u, totalDelayMS=%u, clockDrift=%d,"
-                 "currentMicLevel=%u)", nSamples, nChannels, samplesPerSec,
-                 totalDelayMS, clockDrift, currentMicLevel);
+                 "TransmitMixer::PrepareDemux(nSamples=%" PRIuS ", "
+                 "nChannels=%u, samplesPerSec=%u, totalDelayMS=%u, "
+                 "clockDrift=%d, currentMicLevel=%u)",
+                 nSamples, nChannels, samplesPerSec, totalDelayMS, clockDrift,
+                 currentMicLevel);
 
     // --- Resample input audio and create/store the initial audio frame
     GenerateAudioFrame(static_cast<const int16_t*>(audioSamples),
@@ -1128,7 +1130,7 @@ bool TransmitMixer::IsRecordingMic()
 }
 
 void TransmitMixer::GenerateAudioFrame(const int16_t* audio,
-                                       int samples_per_channel,
+                                       size_t samples_per_channel,
                                        int num_channels,
                                        int sample_rate_hz) {
   int codec_rate;
@@ -1189,7 +1191,7 @@ int32_t TransmitMixer::MixOrReplaceAudioWithFile(
 {
   rtc::scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
 
-    int fileSamples(0);
+    size_t fileSamples(0);
     {
         CriticalSectionScoped cs(&_critSect);
         if (_filePlayerPtr == NULL)

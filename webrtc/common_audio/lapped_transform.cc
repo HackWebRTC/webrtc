@@ -20,7 +20,7 @@
 namespace webrtc {
 
 void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
-                                               int num_frames,
+                                               size_t num_frames,
                                                int num_input_channels,
                                                int num_output_channels,
                                                float* const* output) {
@@ -35,7 +35,7 @@ void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
                            parent_->cplx_pre_.Row(i));
   }
 
-  int block_length = RealFourier::ComplexLength(
+  size_t block_length = RealFourier::ComplexLength(
       RealFourier::FftOrder(num_frames));
   CHECK_EQ(parent_->cplx_length_, block_length);
   parent_->block_processor_->ProcessAudioBlock(parent_->cplx_pre_.Array(),
@@ -54,10 +54,10 @@ void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
 
 LappedTransform::LappedTransform(int num_in_channels,
                                  int num_out_channels,
-                                 int chunk_length,
+                                 size_t chunk_length,
                                  const float* window,
-                                 int block_length,
-                                 int shift_amount,
+                                 size_t block_length,
+                                 size_t shift_amount,
                                  Callback* callback)
     : blocker_callback_(this),
       num_in_channels_(num_in_channels),
@@ -84,12 +84,12 @@ LappedTransform::LappedTransform(int num_in_channels,
                  cplx_length_,
                  RealFourier::kFftBufferAlignment) {
   CHECK(num_in_channels_ > 0 && num_out_channels_ > 0);
-  CHECK_GT(block_length_, 0);
-  CHECK_GT(chunk_length_, 0);
+  CHECK_GT(block_length_, 0u);
+  CHECK_GT(chunk_length_, 0u);
   CHECK(block_processor_);
 
   // block_length_ power of 2?
-  CHECK_EQ(0, block_length_ & (block_length_ - 1));
+  CHECK_EQ(0u, block_length_ & (block_length_ - 1));
 }
 
 void LappedTransform::ProcessChunk(const float* const* in_chunk,

@@ -16,6 +16,8 @@
 #ifndef WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_  // NOLINT
 #define WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 typedef struct WebRtcVadInst VadInst;
@@ -66,7 +68,7 @@ int WebRtcVad_set_mode(VadInst* handle, int mode);
 //                        0 - (Non-active Voice),
 //                       -1 - (Error)
 int WebRtcVad_Process(VadInst* handle, int fs, const int16_t* audio_frame,
-                      int frame_length);
+                      size_t frame_length);
 
 // Checks for valid combinations of |rate| and |frame_length|. We support 10,
 // 20 and 30 ms frames and the rates 8000, 16000 and 32000 Hz.
@@ -75,7 +77,7 @@ int WebRtcVad_Process(VadInst* handle, int fs, const int16_t* audio_frame,
 // - frame_length [i] : Speech frame buffer length in number of samples.
 //
 // returns            : 0 - (valid combination), -1 - (invalid combination)
-int WebRtcVad_ValidRateAndFrameLength(int rate, int frame_length);
+int WebRtcVad_ValidRateAndFrameLength(int rate, size_t frame_length);
 
 #ifdef __cplusplus
 }

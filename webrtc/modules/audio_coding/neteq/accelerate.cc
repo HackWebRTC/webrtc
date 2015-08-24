@@ -18,11 +18,11 @@ Accelerate::ReturnCodes Accelerate::Process(const int16_t* input,
                                             size_t input_length,
                                             bool fast_accelerate,
                                             AudioMultiVector* output,
-                                            int16_t* length_change_samples) {
+                                            size_t* length_change_samples) {
   // Input length must be (almost) 30 ms.
-  static const int k15ms = 120;  // 15 ms = 120 samples at 8 kHz sample rate.
-  if (num_channels_ == 0 || static_cast<int>(input_length) / num_channels_ <
-      (2 * k15ms - 1) * fs_mult_) {
+  static const size_t k15ms = 120;  // 15 ms = 120 samples at 8 kHz sample rate.
+  if (num_channels_ == 0 ||
+      input_length / num_channels_ < (2 * k15ms - 1) * fs_mult_) {
     // Length of input data too short to do accelerate. Simply move all data
     // from input to output.
     output->PushBackInterleaved(input, input_length);
@@ -34,7 +34,7 @@ Accelerate::ReturnCodes Accelerate::Process(const int16_t* input,
 
 void Accelerate::SetParametersForPassiveSpeech(size_t /*len*/,
                                                int16_t* best_correlation,
-                                               int* /*peak_index*/) const {
+                                               size_t* /*peak_index*/) const {
   // When the signal does not contain any active speech, the correlation does
   // not matter. Simply set it to zero.
   *best_correlation = 0;

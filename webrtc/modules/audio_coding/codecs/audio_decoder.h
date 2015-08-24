@@ -62,7 +62,7 @@ class AudioDecoder {
 
   // Calls the packet-loss concealment of the decoder to update the state after
   // one or several lost packets.
-  virtual int DecodePlc(int num_frames, int16_t* decoded);
+  virtual size_t DecodePlc(size_t num_frames, int16_t* decoded);
 
   // Initializes the decoder.
   virtual int Init() = 0;

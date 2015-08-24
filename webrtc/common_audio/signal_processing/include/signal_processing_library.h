@@ -115,28 +115,28 @@ extern "C" {
 void WebRtcSpl_Init();
 
 int16_t WebRtcSpl_GetScalingSquare(int16_t* in_vector,
-                                   int in_vector_length,
-                                   int times);
+                                   size_t in_vector_length,
+                                   size_t times);
 
 // Copy and set operations. Implementation in copy_set_operations.c.
 // Descriptions at bottom of file.
 void WebRtcSpl_MemSetW16(int16_t* vector,
                          int16_t set_value,
-                         int vector_length);
+                         size_t vector_length);
 void WebRtcSpl_MemSetW32(int32_t* vector,
                          int32_t set_value,
-                         int vector_length);
+                         size_t vector_length);
 void WebRtcSpl_MemCpyReversedOrder(int16_t* out_vector,
                                    int16_t* in_vector,
-                                   int vector_length);
+                                   size_t vector_length);
 void WebRtcSpl_CopyFromEndW16(const int16_t* in_vector,
-                              int in_vector_length,
-                              int samples,
+                              size_t in_vector_length,
+                              size_t samples,
                               int16_t* out_vector);
 void WebRtcSpl_ZerosArrayW16(int16_t* vector,
-                             int vector_length);
+                             size_t vector_length);
 void WebRtcSpl_ZerosArrayW32(int32_t* vector,
-                             int vector_length);
+                             size_t vector_length);
 // End: Copy and set operations.
 
 
@@ -150,15 +150,15 @@ void WebRtcSpl_ZerosArrayW32(int32_t* vector,
 //      - length : Number of samples in vector.
 //
 // Return value  : Maximum absolute value in vector;
-//                 or -1, if (vector == NULL || length <= 0).
-typedef int16_t (*MaxAbsValueW16)(const int16_t* vector, int length);
+//                 or -1, if (vector == NULL || length == 0).
+typedef int16_t (*MaxAbsValueW16)(const int16_t* vector, size_t length);
 extern MaxAbsValueW16 WebRtcSpl_MaxAbsValueW16;
-int16_t WebRtcSpl_MaxAbsValueW16C(const int16_t* vector, int length);
+int16_t WebRtcSpl_MaxAbsValueW16C(const int16_t* vector, size_t length);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
-int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, int length);
+int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, size_t length);
 #endif
 #if defined(MIPS32_LE)
-int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, int length);
+int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, size_t length);
 #endif
 
 // Returns the largest absolute value in a signed 32-bit vector.
@@ -168,15 +168,15 @@ int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, int length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Maximum absolute value in vector;
-//                 or -1, if (vector == NULL || length <= 0).
-typedef int32_t (*MaxAbsValueW32)(const int32_t* vector, int length);
+//                 or -1, if (vector == NULL || length == 0).
+typedef int32_t (*MaxAbsValueW32)(const int32_t* vector, size_t length);
 extern MaxAbsValueW32 WebRtcSpl_MaxAbsValueW32;
-int32_t WebRtcSpl_MaxAbsValueW32C(const int32_t* vector, int length);
+int32_t WebRtcSpl_MaxAbsValueW32C(const int32_t* vector, size_t length);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
-int32_t WebRtcSpl_MaxAbsValueW32Neon(const int32_t* vector, int length);
+int32_t WebRtcSpl_MaxAbsValueW32Neon(const int32_t* vector, size_t length);
 #endif
 #if defined(MIPS_DSP_R1_LE)
-int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, int length);
+int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, size_t length);
 #endif
 
 // Returns the maximum value of a 16-bit vector.
@@ -186,17 +186,17 @@ int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, int length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Maximum sample value in |vector|.
-//                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD16_MIN
+//                 If (vector == NULL || length == 0) WEBRTC_SPL_WORD16_MIN
 //                 is returned. Note that WEBRTC_SPL_WORD16_MIN is a feasible
 //                 value and we can't catch errors purely based on it.
-typedef int16_t (*MaxValueW16)(const int16_t* vector, int length);
+typedef int16_t (*MaxValueW16)(const int16_t* vector, size_t length);
 extern MaxValueW16 WebRtcSpl_MaxValueW16;
-int16_t WebRtcSpl_MaxValueW16C(const int16_t* vector, int length);
+int16_t WebRtcSpl_MaxValueW16C(const int16_t* vector, size_t length);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
-int16_t WebRtcSpl_MaxValueW16Neon(const int16_t* vector, int length);
+int16_t WebRtcSpl_MaxValueW16Neon(const int16_t* vector, size_t length);
 #endif
 #if defined(MIPS32_LE)
-int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, int length);
+int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, size_t length);
 #endif
 
 // Returns the maximum value of a 32-bit vector.
@@ -206,17 +206,17 @@ int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, int length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Maximum sample value in |vector|.
-//                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD32_MIN
+//                 If (vector == NULL || length == 0) WEBRTC_SPL_WORD32_MIN
 //                 is returned. Note that WEBRTC_SPL_WORD32_MIN is a feasible
 //                 value and we can't catch errors purely based on it.
-typedef int32_t (*MaxValueW32)(const int32_t* vector, int length);
+typedef int32_t (*MaxValueW32)(const int32_t* vector, size_t length);
 extern MaxValueW32 WebRtcSpl_MaxValueW32;
-int32_t WebRtcSpl_MaxValueW32C(const int32_t* vector, int length);
+int32_t WebRtcSpl_MaxValueW32C(const int32_t* vector, size_t length);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
-int32_t WebRtcSpl_MaxValueW32Neon(const int32_t* vector, int length);
+int32_t WebRtcSpl_MaxValueW32Neon(const int32_t* vector, size_t length);
 #endif
 #if defined(MIPS32_LE)
-int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, int length);
+int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, size_t length);
 #endif
 
 // Returns the minimum value of a 16-bit vector.
@@ -226,17 +226,17 @@ int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, int length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Minimum sample value in |vector|.
-//                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD16_MAX
+//                 If (vector == NULL || length == 0) WEBRTC_SPL_WORD16_MAX
 //                 is returned. Note that WEBRTC_SPL_WORD16_MAX is a feasible
 //                 value and we can't catch errors purely based on it.
-typedef int16_t (*MinValueW16)(const int16_t* vector, int length);
+typedef int16_t (*MinValueW16)(const int16_t* vector, size_t length);
 extern MinValueW16 WebRtcSpl_MinValueW16;
-int16_t WebRtcSpl_MinValueW16C(const int16_t* vector, int length);
+int16_t WebRtcSpl_MinValueW16C(const int16_t* vector, size_t length);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
-int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, int length);
+int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, size_t length);
 #endif
 #if defined(MIPS32_LE)
-int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, int length);
+int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, size_t length);
 #endif
 
 // Returns the minimum value of a 32-bit vector.
@@ -246,17 +246,17 @@ int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, int length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Minimum sample value in |vector|.
-//                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD32_MAX
+//                 If (vector == NULL || length == 0) WEBRTC_SPL_WORD32_MAX
 //                 is returned. Note that WEBRTC_SPL_WORD32_MAX is a feasible
 //                 value and we can't catch errors purely based on it.
-typedef int32_t (*MinValueW32)(const int32_t* vector, int length);
+typedef int32_t (*MinValueW32)(const int32_t* vector, size_t length);
 extern MinValueW32 WebRtcSpl_MinValueW32;
-int32_t WebRtcSpl_MinValueW32C(const int32_t* vector, int length);
+int32_t WebRtcSpl_MinValueW32C(const int32_t* vector, size_t length);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
-int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, int length);
+int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, size_t length);
 #endif
 #if defined(MIPS32_LE)
-int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, int length);
+int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, size_t length);
 #endif
 
 // Returns the vector index to the largest absolute value of a 16-bit vector.
@@ -266,11 +266,11 @@ int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, int length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Index to the maximum absolute value in vector, or -1,
-//                 if (vector == NULL || length <= 0).
+//                 if (vector == NULL || length == 0).
 //                 If there are multiple equal maxima, return the index of the
 //                 first. -32768 will always have precedence over 32767 (despite
 //                 -32768 presenting an int16 absolute value of 32767);
-int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, int length);
+int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, size_t length);
 
 // Returns the vector index to the maximum sample value of a 16-bit vector.
 //
@@ -280,8 +280,8 @@ int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, int length);
 //
 // Return value  : Index to the maximum value in vector (if multiple
 //                 indexes have the maximum, return the first);
-//                 or -1, if (vector == NULL || length <= 0).
-int WebRtcSpl_MaxIndexW16(const int16_t* vector, int length);
+//                 or -1, if (vector == NULL || length == 0).
+int WebRtcSpl_MaxIndexW16(const int16_t* vector, size_t length);
 
 // Returns the vector index to the maximum sample value of a 32-bit vector.
 //
@@ -291,8 +291,8 @@ int WebRtcSpl_MaxIndexW16(const int16_t* vector, int length);
 //
 // Return value  : Index to the maximum value in vector (if multiple
 //                 indexes have the maximum, return the first);
-//                 or -1, if (vector == NULL || length <= 0).
-int WebRtcSpl_MaxIndexW32(const int32_t* vector, int length);
+//                 or -1, if (vector == NULL || length == 0).
+int WebRtcSpl_MaxIndexW32(const int32_t* vector, size_t length);
 
 // Returns the vector index to the minimum sample value of a 16-bit vector.
 //
@@ -302,8 +302,8 @@ int WebRtcSpl_MaxIndexW32(const int32_t* vector, int length);
 //
 // Return value  : Index to the mimimum value in vector  (if multiple
 //                 indexes have the minimum, return the first);
-//                 or -1, if (vector == NULL || length <= 0).
-int WebRtcSpl_MinIndexW16(const int16_t* vector, int length);
+//                 or -1, if (vector == NULL || length == 0).
+int WebRtcSpl_MinIndexW16(const int16_t* vector, size_t length);
 
 // Returns the vector index to the minimum sample value of a 32-bit vector.
 //
@@ -313,8 +313,8 @@ int WebRtcSpl_MinIndexW16(const int16_t* vector, int length);
 //
 // Return value  : Index to the mimimum value in vector  (if multiple
 //                 indexes have the minimum, return the first);
-//                 or -1, if (vector == NULL || length <= 0).
-int WebRtcSpl_MinIndexW32(const int32_t* vector, int length);
+//                 or -1, if (vector == NULL || length == 0).
+int WebRtcSpl_MinIndexW32(const int32_t* vector, size_t length);
 
 // End: Minimum and maximum operations.
 
@@ -322,33 +322,33 @@ int WebRtcSpl_MinIndexW32(const int32_t* vector, int length);
 // Vector scaling operations. Implementation in vector_scaling_operations.c.
 // Description at bottom of file.
 void WebRtcSpl_VectorBitShiftW16(int16_t* out_vector,
-                                 int16_t vector_length,
+                                 size_t vector_length,
                                  const int16_t* in_vector,
                                  int16_t right_shifts);
 void WebRtcSpl_VectorBitShiftW32(int32_t* out_vector,
-                                 int16_t vector_length,
+                                 size_t vector_length,
                                  const int32_t* in_vector,
                                  int16_t right_shifts);
 void WebRtcSpl_VectorBitShiftW32ToW16(int16_t* out_vector,
-                                      int vector_length,
+                                      size_t vector_length,
                                       const int32_t* in_vector,
                                       int right_shifts);
 void WebRtcSpl_ScaleVector(const int16_t* in_vector,
                            int16_t* out_vector,
                            int16_t gain,
-                           int16_t vector_length,
+                           size_t vector_length,
                            int16_t right_shifts);
 void WebRtcSpl_ScaleVectorWithSat(const int16_t* in_vector,
                                   int16_t* out_vector,
                                   int16_t gain,
-                                  int16_t vector_length,
+                                  size_t vector_length,
                                   int16_t right_shifts);
 void WebRtcSpl_ScaleAndAddVectors(const int16_t* in_vector1,
                                   int16_t gain1, int right_shifts1,
                                   const int16_t* in_vector2,
                                   int16_t gain2, int right_shifts2,
                                   int16_t* out_vector,
-                                  int vector_length);
+                                  size_t vector_length);
 
 // The functions (with related pointer) perform the vector operation:
 //   out_vector[k] = ((scale1 * in_vector1[k]) + (scale2 * in_vector2[k])
@@ -374,7 +374,7 @@ typedef int (*ScaleAndAddVectorsWithRound)(const int16_t* in_vector1,
                                            int16_t in_vector2_scale,
                                            int right_shifts,
                                            int16_t* out_vector,
-                                           int length);
+                                           size_t length);
 extern ScaleAndAddVectorsWithRound WebRtcSpl_ScaleAndAddVectorsWithRound;
 int WebRtcSpl_ScaleAndAddVectorsWithRoundC(const int16_t* in_vector1,
                                            int16_t in_vector1_scale,
@@ -382,7 +382,7 @@ int WebRtcSpl_ScaleAndAddVectorsWithRoundC(const int16_t* in_vector1,
                                            int16_t in_vector2_scale,
                                            int right_shifts,
                                            int16_t* out_vector,
-                                           int length);
+                                           size_t length);
 #if defined(MIPS_DSP_R1_LE)
 int WebRtcSpl_ScaleAndAddVectorsWithRound_mips(const int16_t* in_vector1,
                                                int16_t in_vector1_scale,
@@ -390,7 +390,7 @@ int WebRtcSpl_ScaleAndAddVectorsWithRound_mips(const int16_t* in_vector1,
                                                int16_t in_vector2_scale,
                                                int right_shifts,
                                                int16_t* out_vector,
-                                               int length);
+                                               size_t length);
 #endif
 // End: Vector scaling operations.
 
@@ -399,30 +399,30 @@ int WebRtcSpl_ScaleAndAddVectorsWithRound_mips(const int16_t* in_vector1,
 void WebRtcSpl_ReverseOrderMultArrayElements(int16_t* out_vector,
                                              const int16_t* in_vector,
                                              const int16_t* window,
-                                             int16_t vector_length,
+                                             size_t vector_length,
                                              int16_t right_shifts);
 void WebRtcSpl_ElementwiseVectorMult(int16_t* out_vector,
                                      const int16_t* in_vector,
                                      const int16_t* window,
-                                     int16_t vector_length,
+                                     size_t vector_length,
                                      int16_t right_shifts);
 void WebRtcSpl_AddVectorsAndShift(int16_t* out_vector,
                                   const int16_t* in_vector1,
                                   const int16_t* in_vector2,
-                                  int16_t vector_length,
+                                  size_t vector_length,
                                   int16_t right_shifts);
 void WebRtcSpl_AddAffineVectorToVector(int16_t* out_vector,
                                        int16_t* in_vector,
                                        int16_t gain,
                                        int32_t add_constant,
                                        int16_t right_shifts,
-                                       int vector_length);
+                                       size_t vector_length);
 void WebRtcSpl_AffineTransformVector(int16_t* out_vector,
                                      int16_t* in_vector,
                                      int16_t gain,
                                      int32_t add_constant,
                                      int16_t right_shifts,
-                                     int vector_length);
+                                     size_t vector_length);
 // End: iLBC specific functions.
 
 // Signal processing operations.
@@ -447,8 +447,8 @@ void WebRtcSpl_AffineTransformVector(int16_t* out_vector,
 //      - -1, if |order| > |in_vector_length|;
 //      - Number of samples in |result|, i.e. (order+1), otherwise.
 int WebRtcSpl_AutoCorrelation(const int16_t* in_vector,
-                              int in_vector_length,
-                              int order,
+                              size_t in_vector_length,
+                              size_t order,
                               int32_t* result,
                               int* scale);
 
@@ -467,7 +467,7 @@ int WebRtcSpl_AutoCorrelation(const int16_t* in_vector,
 int16_t WebRtcSpl_LevinsonDurbin(const int32_t* auto_corr,
                                  int16_t* lpc_coef,
                                  int16_t* refl_coef,
-                                 int16_t order);
+                                 size_t order);
 
 // Converts reflection coefficients |refl_coef| to LPC coefficients |lpc_coef|.
 // This version is a 16 bit operation.
@@ -540,24 +540,24 @@ void WebRtcSpl_AutoCorrToReflCoef(const int32_t* auto_corr,
 typedef void (*CrossCorrelation)(int32_t* cross_correlation,
                                  const int16_t* seq1,
                                  const int16_t* seq2,
-                                 int16_t dim_seq,
-                                 int16_t dim_cross_correlation,
+                                 size_t dim_seq,
+                                 size_t dim_cross_correlation,
                                  int right_shifts,
                                  int step_seq2);
 extern CrossCorrelation WebRtcSpl_CrossCorrelation;
 void WebRtcSpl_CrossCorrelationC(int32_t* cross_correlation,
                                  const int16_t* seq1,
                                  const int16_t* seq2,
-                                 int16_t dim_seq,
-                                 int16_t dim_cross_correlation,
+                                 size_t dim_seq,
+                                 size_t dim_cross_correlation,
                                  int right_shifts,
                                  int step_seq2);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 void WebRtcSpl_CrossCorrelationNeon(int32_t* cross_correlation,
                                     const int16_t* seq1,
                                     const int16_t* seq2,
-                                    int16_t dim_seq,
-                                    int16_t dim_cross_correlation,
+                                    size_t dim_seq,
+                                    size_t dim_cross_correlation,
                                     int right_shifts,
                                     int step_seq2);
 #endif
@@ -565,8 +565,8 @@ void WebRtcSpl_CrossCorrelationNeon(int32_t* cross_correlation,
 void WebRtcSpl_CrossCorrelation_mips(int32_t* cross_correlation,
                                      const int16_t* seq1,
                                      const int16_t* seq2,
-                                     int16_t dim_seq,
-                                     int16_t dim_cross_correlation,
+                                     size_t dim_seq,
+                                     size_t dim_cross_correlation,
                                      int right_shifts,
                                      int step_seq2);
 #endif
@@ -579,7 +579,7 @@ void WebRtcSpl_CrossCorrelation_mips(int32_t* cross_correlation,
 //
 // Output:
 //      - window    : Hanning vector in Q14.
-void WebRtcSpl_GetHanningWindow(int16_t* window, int16_t size);
+void WebRtcSpl_GetHanningWindow(int16_t* window, size_t size);
 
 // Calculates y[k] = sqrt(1 - x[k]^2) for each element of the input vector
 // |in_vector|. Input and output values are in Q15.
@@ -591,7 +591,7 @@ void WebRtcSpl_GetHanningWindow(int16_t* window, int16_t size);
 // Output:
 //      - out_vector    : Output values in Q15
 void WebRtcSpl_SqrtOfOneMinusXSquared(int16_t* in_vector,
-                                      int vector_length,
+                                      size_t vector_length,
                                       int16_t* out_vector);
 // End: Signal processing operations.
 
@@ -617,7 +617,9 @@ int32_t WebRtcSpl_DivResultInQ31(int32_t num, int32_t den);
 int32_t WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low);
 // End: Divisions.
 
-int32_t WebRtcSpl_Energy(int16_t* vector, int vector_length, int* scale_factor);
+int32_t WebRtcSpl_Energy(int16_t* vector,
+                         size_t vector_length,
+                         int* scale_factor);
 
 // Calculates the dot product between two (int16_t) vectors.
 //
@@ -632,21 +634,21 @@ int32_t WebRtcSpl_Energy(int16_t* vector, int vector_length, int* scale_factor);
 // Return value         : The dot product in Q(-scaling)
 int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
                                       const int16_t* vector2,
-                                      int length,
+                                      size_t length,
                                       int scaling);
 
 // Filter operations.
-int WebRtcSpl_FilterAR(const int16_t* ar_coef,
-                       int ar_coef_length,
-                       const int16_t* in_vector,
-                       int in_vector_length,
-                       int16_t* filter_state,
-                       int filter_state_length,
-                       int16_t* filter_state_low,
-                       int filter_state_low_length,
-                       int16_t* out_vector,
-                       int16_t* out_vector_low,
-                       int out_vector_low_length);
+size_t WebRtcSpl_FilterAR(const int16_t* ar_coef,
+                          size_t ar_coef_length,
+                          const int16_t* in_vector,
+                          size_t in_vector_length,
+                          int16_t* filter_state,
+                          size_t filter_state_length,
+                          int16_t* filter_state_low,
+                          size_t filter_state_low_length,
+                          int16_t* out_vector,
+                          int16_t* out_vector_low,
+                          size_t out_vector_low_length);
 
 // WebRtcSpl_FilterMAFastQ12(...)
 //
@@ -665,8 +667,8 @@ int WebRtcSpl_FilterAR(const int16_t* ar_coef,
 void WebRtcSpl_FilterMAFastQ12(const int16_t* in_vector,
                                int16_t* out_vector,
                                const int16_t* ma_coef,
-                               int16_t ma_coef_length,
-                               int16_t vector_length);
+                               size_t ma_coef_length,
+                               size_t vector_length);
 
 // Performs a AR filtering on a vector in Q12
 // Input:
@@ -681,8 +683,8 @@ void WebRtcSpl_FilterMAFastQ12(const int16_t* in_vector,
 void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
                                int16_t* data_out,
                                const int16_t* __restrict coefficients,
-                               int coefficients_length,
-                               int data_length);
+                               size_t coefficients_length,
+                               size_t data_length);
 
 // The functions (with related pointer) perform a MA down sampling filter
 // on a vector.
@@ -701,41 +703,41 @@ void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
 //      - data_out           : Filtered samples
 // Return value              : 0 if OK, -1 if |in_vector| is too short
 typedef int (*DownsampleFast)(const int16_t* data_in,
-                              int data_in_length,
+                              size_t data_in_length,
                               int16_t* data_out,
-                              int data_out_length,
+                              size_t data_out_length,
                               const int16_t* __restrict coefficients,
-                              int coefficients_length,
+                              size_t coefficients_length,
                               int factor,
-                              int delay);
+                              size_t delay);
 extern DownsampleFast WebRtcSpl_DownsampleFast;
 int WebRtcSpl_DownsampleFastC(const int16_t* data_in,
-                              int data_in_length,
+                              size_t data_in_length,
                               int16_t* data_out,
-                              int data_out_length,
+                              size_t data_out_length,
                               const int16_t* __restrict coefficients,
-                              int coefficients_length,
+                              size_t coefficients_length,
                               int factor,
-                              int delay);
+                              size_t delay);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 int WebRtcSpl_DownsampleFastNeon(const int16_t* data_in,
-                                 int data_in_length,
+                                 size_t data_in_length,
                                  int16_t* data_out,
-                                 int data_out_length,
+                                 size_t data_out_length,
                                  const int16_t* __restrict coefficients,
-                                 int coefficients_length,
+                                 size_t coefficients_length,
                                  int factor,
-                                 int delay);
+                                 size_t delay);
 #endif
 #if defined(MIPS32_LE)
 int WebRtcSpl_DownsampleFast_mips(const int16_t* data_in,
-                                  int data_in_length,
+                                  size_t data_in_length,
                                   int16_t* data_out,
-                                  int data_out_length,
+                                  size_t data_out_length,
                                   const int16_t* __restrict coefficients,
-                                  int coefficients_length,
+                                  size_t coefficients_length,
                                   int factor,
-                                  int delay);
+                                  size_t delay);
 #endif
 
 // End: Filter operations.
@@ -844,11 +846,11 @@ void WebRtcSpl_ResetResample8khzTo22khz(WebRtcSpl_State8khzTo22khz* state);
  *
  ******************************************************************/
 
-void WebRtcSpl_Resample48khzTo32khz(const int32_t* In, int32_t* Out, int32_t K);
+void WebRtcSpl_Resample48khzTo32khz(const int32_t* In, int32_t* Out, size_t K);
 
-void WebRtcSpl_Resample32khzTo24khz(const int32_t* In, int32_t* Out, int32_t K);
+void WebRtcSpl_Resample32khzTo24khz(const int32_t* In, int32_t* Out, size_t K);
 
-void WebRtcSpl_Resample44khzTo32khz(const int32_t* In, int32_t* Out, int32_t K);
+void WebRtcSpl_Resample44khzTo32khz(const int32_t* In, int32_t* Out, size_t K);
 
 /*******************************************************************
  * resample_48khz.c
@@ -918,24 +920,24 @@ void WebRtcSpl_ResetResample8khzTo48khz(WebRtcSpl_State8khzTo48khz* state);
  *
  ******************************************************************/
 
-void WebRtcSpl_DownsampleBy2(const int16_t* in, int len,
+void WebRtcSpl_DownsampleBy2(const int16_t* in, size_t len,
                              int16_t* out, int32_t* filtState);
 
-void WebRtcSpl_UpsampleBy2(const int16_t* in, int len,
+void WebRtcSpl_UpsampleBy2(const int16_t* in, size_t len,
                            int16_t* out, int32_t* filtState);
 
 /************************************************************
  * END OF RESAMPLING FUNCTIONS
  ************************************************************/
 void WebRtcSpl_AnalysisQMF(const int16_t* in_data,
-                           int in_data_length,
+                           size_t in_data_length,
                            int16_t* low_band,
                            int16_t* high_band,
                            int32_t* filter_state1,
                            int32_t* filter_state2);
 void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
                             const int16_t* high_band,
-                            int band_length,
+                            size_t band_length,
                             int16_t* out_data,
                             int32_t* filter_state1,
                             int32_t* filter_state2);

@@ -57,7 +57,7 @@ class VoiceDetectionImpl : public VoiceDetection,
   bool using_external_vad_;
   Likelihood likelihood_;
   int frame_size_ms_;
-  int frame_size_samples_;
+  size_t frame_size_samples_;
 };
 }  // namespace webrtc
 

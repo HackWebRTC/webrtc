@@ -17,11 +17,11 @@ void WebRtcIsacfix_FilterArLoop(int16_t* ar_g_Q0,     // Input samples
                                 int16_t* ar_f_Q0,     // Input samples
                                 int16_t* cth_Q15,     // Filter coefficients
                                 int16_t* sth_Q15,     // Filter coefficients
-                                int16_t order_coef) { // order of the filter
+                                size_t order_coef) { // order of the filter
   int n = 0;
 
   for (n = 0; n < HALF_SUBFRAMELEN - 1; n++) {
-    int count = order_coef - 1;
+    int count = (int)(order_coef - 1);
     int offset;
 #if !defined(MIPS_DSP_R1_LE)
     int16_t* tmp_cth;

@@ -174,9 +174,9 @@ class FileAudioDevice : public AudioDeviceGeneric {
   uint32_t _playoutFramesLeft;
   CriticalSectionWrapper& _critSect;
 
-  uint32_t _recordingBufferSizeIn10MS;
-  uint32_t _recordingFramesIn10MS;
-  uint32_t _playoutFramesIn10MS;
+  size_t _recordingBufferSizeIn10MS;
+  size_t _recordingFramesIn10MS;
+  size_t _playoutFramesIn10MS;
 
   rtc::scoped_ptr<ThreadWrapper> _ptrThreadRec;
   rtc::scoped_ptr<ThreadWrapper> _ptrThreadPlay;

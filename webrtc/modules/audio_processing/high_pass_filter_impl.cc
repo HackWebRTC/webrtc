@@ -47,7 +47,7 @@ int InitializeFilter(FilterState* hpf, int sample_rate_hz) {
   return AudioProcessing::kNoError;
 }
 
-int Filter(FilterState* hpf, int16_t* data, int length) {
+int Filter(FilterState* hpf, int16_t* data, size_t length) {
   assert(hpf != NULL);
 
   int32_t tmp_int32 = 0;
@@ -55,7 +55,7 @@ int Filter(FilterState* hpf, int16_t* data, int length) {
   int16_t* x = hpf->x;
   const int16_t* ba = hpf->ba;
 
-  for (int i = 0; i < length; i++) {
+  for (size_t i = 0; i < length; i++) {
     //  y[i] = b[0] * x[i] + b[1] * x[i-1] + b[2] * x[i-2]
     //         + -a[1] * y[i-1] + -a[2] * y[i-2];
 

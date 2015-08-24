@@ -41,15 +41,15 @@ int main(int argc, char* argv[])
 {
   FILE *ifileid,*efileid,*ofileid, *chfileid;
   short encoded_data[55], data[240], speechType;
-  int len;
-  short mode, pli;
-  size_t readlen;
+  int len_int, mode;
+  short pli;
+  size_t len, readlen;
   int blockcount = 0;
 
   IlbcEncoderInstance *Enc_Inst;
   IlbcDecoderInstance *Dec_Inst;
 #ifdef JUNK_DATA
-  int i;
+  size_t i;
   FILE *seedfile;
   unsigned int random_seed = (unsigned int) time(NULL);//1196764538
 #endif
@@ -136,11 +136,12 @@ int main(int argc, char* argv[])
 
     /* encoding */
     fprintf(stderr, "--- Encoding block %i --- ",blockcount);
-    len=WebRtcIlbcfix_Encode(Enc_Inst, data, (short)readlen, encoded_data);
-    if (len < 0) {
+    len_int=WebRtcIlbcfix_Encode(Enc_Inst, data, readlen, encoded_data);
+    if (len_int < 0) {
       fprintf(stderr, "Error encoding\n");
       exit(0);
     }
+    len = (size_t)len_int;
     fprintf(stderr, "\r");
 
 #ifdef JUNK_DATA
@@ -174,12 +175,13 @@ int main(int argc, char* argv[])
       /* decoding */
       fprintf(stderr, "--- Decoding block %i --- ",blockcount);
       if (pli==1) {
-        len=WebRtcIlbcfix_Decode(Dec_Inst, encoded_data, (int16_t)len, data,
-                                 &speechType);
-        if (len < 0) {
+        len_int = WebRtcIlbcfix_Decode(Dec_Inst, encoded_data, len, data,
+                                       &speechType);
+        if (len_int < 0) {
           fprintf(stderr, "Error decoding\n");
           exit(0);
         }
+        len = (size_t)len_int;
       } else {
         len=WebRtcIlbcfix_DecodePlc(Dec_Inst, data, 1);
       }

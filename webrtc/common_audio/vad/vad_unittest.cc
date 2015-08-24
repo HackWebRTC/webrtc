@@ -27,7 +27,7 @@ void VadTest::SetUp() {}
 void VadTest::TearDown() {}
 
 // Returns true if the rate and frame length combination is valid.
-bool VadTest::ValidRatesAndFrameLengths(int rate, int frame_length) {
+bool VadTest::ValidRatesAndFrameLengths(int rate, size_t frame_length) {
   if (rate == 8000) {
     if (frame_length == 80 || frame_length == 160 || frame_length == 240) {
       return true;
@@ -65,7 +65,7 @@ TEST_F(VadTest, ApiTest) {
   // Construct a speech signal that will trigger the VAD in all modes. It is
   // known that (i * i) will wrap around, but that doesn't matter in this case.
   int16_t speech[kMaxFrameLength];
-  for (int16_t i = 0; i < kMaxFrameLength; i++) {
+  for (size_t i = 0; i < kMaxFrameLength; i++) {
     speech[i] = static_cast<int16_t>(i * i);
   }
 
@@ -134,8 +134,8 @@ TEST_F(VadTest, ValidRatesFrameLengths) {
     -8000, -4000, 0, 4000, 8000, 8001, 15999, 16000, 32000, 48000, 48001, 96000
   };
 
-  const int kFrameLengths[] = {
-    -10, 0, 80, 81, 159, 160, 240, 320, 480, 640, 960, 1440, 2000
+  const size_t kFrameLengths[] = {
+    0, 80, 81, 159, 160, 240, 320, 480, 640, 960, 1440, 2000
   };
 
   for (size_t i = 0; i < arraysize(kRates); i++) {

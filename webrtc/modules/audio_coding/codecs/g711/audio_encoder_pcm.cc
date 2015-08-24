@@ -37,7 +37,8 @@ AudioEncoderPcm::AudioEncoderPcm(const Config& config, int sample_rate_hz)
     : sample_rate_hz_(sample_rate_hz),
       num_channels_(config.num_channels),
       payload_type_(config.payload_type),
-      num_10ms_frames_per_packet_(config.frame_size_ms / 10),
+      num_10ms_frames_per_packet_(
+          static_cast<size_t>(config.frame_size_ms / 10)),
       full_frame_samples_(NumSamplesPerFrame(config.num_channels,
                                              config.frame_size_ms,
                                              sample_rate_hz_)),
@@ -63,11 +64,11 @@ size_t AudioEncoderPcm::MaxEncodedBytes() const {
   return full_frame_samples_ * BytesPerSample();
 }
 
-int AudioEncoderPcm::Num10MsFramesInNextPacket() const {
+size_t AudioEncoderPcm::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-int AudioEncoderPcm::Max10MsFramesInAPacket() const {
+size_t AudioEncoderPcm::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
@@ -95,27 +96,26 @@ AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
   EncodedInfo info;
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;
-  int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
-  CHECK_GE(ret, 0);
-  info.encoded_bytes = static_cast<size_t>(ret);
+  info.encoded_bytes =
+      EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
   speech_buffer_.clear();
   return info;
 }
 
-int16_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,
-                                     size_t input_len,
-                                     uint8_t* encoded) {
-  return WebRtcG711_EncodeA(audio, static_cast<int16_t>(input_len), encoded);
+size_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,
+                                    size_t input_len,
+                                    uint8_t* encoded) {
+  return WebRtcG711_EncodeA(audio, input_len, encoded);
 }
 
 int AudioEncoderPcmA::BytesPerSample() const {
   return 1;
 }
 
-int16_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
-                                     size_t input_len,
-                                     uint8_t* encoded) {
-  return WebRtcG711_EncodeU(audio, static_cast<int16_t>(input_len), encoded);
+size_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
+                                    size_t input_len,
+                                    uint8_t* encoded) {
+  return WebRtcG711_EncodeU(audio, input_len, encoded);
 }
 
 int AudioEncoderPcmU::BytesPerSample() const {

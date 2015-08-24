@@ -23,13 +23,14 @@ void WebRtcIlbcfix_CbMemEnergyAugmentation(
     int16_t *interpSamples, /* (i) The interpolated samples */
     int16_t *CBmem,   /* (i) The CB memory */
     int scale,   /* (i) The scaling of all energy values */
-    int16_t base_size,  /* (i) Index to where energy values should be stored */
+    size_t base_size,  /* (i) Index to where energy values should be stored */
     int16_t *energyW16,  /* (o) Energy in the CB vectors */
     int16_t *energyShifts /* (o) Shift value of the energy */
                                            ){
   int32_t energy, tmp32;
   int16_t *ppe, *pp, *interpSamplesPtr;
-  int16_t *CBmemPtr, lagcount;
+  int16_t *CBmemPtr;
+  size_t lagcount;
   int16_t *enPtr=&energyW16[base_size-20];
   int16_t *enShPtr=&energyShifts[base_size-20];
   int32_t nrjRecursive;

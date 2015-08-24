@@ -34,26 +34,26 @@ namespace webrtc {
 // depending on the input signal after compensating for the delay.
 class ThreeBandFilterBank final {
  public:
-  explicit ThreeBandFilterBank(int length);
+  explicit ThreeBandFilterBank(size_t length);
 
   // Splits |in| into 3 downsampled frequency bands in |out|.
   // |length| is the |in| length. Each of the 3 bands of |out| has to have a
   // length of |length| / 3.
-  void Analysis(const float* in, int length, float* const* out);
+  void Analysis(const float* in, size_t length, float* const* out);
 
   // Merges the 3 downsampled frequency bands in |in| into |out|.
   // |split_length| is the length of each band of |in|. |out| has to have at
   // least a length of 3 * |split_length|.
-  void Synthesis(const float* const* in, int split_length, float* out);
+  void Synthesis(const float* const* in, size_t split_length, float* out);
 
  private:
   void DownModulate(const float* in,
-                    int split_length,
-                    int offset,
+                    size_t split_length,
+                    size_t offset,
                     float* const* out);
   void UpModulate(const float* const* in,
-                  int split_length,
-                  int offset,
+                  size_t split_length,
+                  size_t offset,
                   float* out);
 
   std::vector<float> in_buffer_;

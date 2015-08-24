@@ -38,9 +38,9 @@ extern "C" {
  *                             Always equal to len input parameter.
  */
 
-int16_t WebRtcG711_EncodeA(const int16_t* speechIn,
-                           int16_t len,
-                           uint8_t* encoded);
+size_t WebRtcG711_EncodeA(const int16_t* speechIn,
+                          size_t len,
+                          uint8_t* encoded);
 
 /****************************************************************************
  * WebRtcG711_EncodeU(...)
@@ -59,9 +59,9 @@ int16_t WebRtcG711_EncodeA(const int16_t* speechIn,
  *                             Always equal to len input parameter.
  */
 
-int16_t WebRtcG711_EncodeU(const int16_t* speechIn,
-                           int16_t len,
-                           uint8_t* encoded);
+size_t WebRtcG711_EncodeU(const int16_t* speechIn,
+                          size_t len,
+                          uint8_t* encoded);
 
 /****************************************************************************
  * WebRtcG711_DecodeA(...)
@@ -82,10 +82,10 @@ int16_t WebRtcG711_EncodeU(const int16_t* speechIn,
  *                             -1 - Error
  */
 
-int16_t WebRtcG711_DecodeA(const uint8_t* encoded,
-                           int16_t len,
-                           int16_t* decoded,
-                           int16_t* speechType);
+size_t WebRtcG711_DecodeA(const uint8_t* encoded,
+                          size_t len,
+                          int16_t* decoded,
+                          int16_t* speechType);
 
 /****************************************************************************
  * WebRtcG711_DecodeU(...)
@@ -106,10 +106,10 @@ int16_t WebRtcG711_DecodeA(const uint8_t* encoded,
  *                             -1 - Error
  */
 
-int16_t WebRtcG711_DecodeU(const uint8_t* encoded,
-                           int16_t len,
-                           int16_t* decoded,
-                           int16_t* speechType);
+size_t WebRtcG711_DecodeU(const uint8_t* encoded,
+                          size_t len,
+                          int16_t* decoded,
+                          int16_t* speechType);
 
 /**********************************************************************
 * WebRtcG711_Version(...)

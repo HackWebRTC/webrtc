@@ -15,6 +15,7 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 
 #define TAG "AudioTrackJni"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
@@ -217,21 +218,21 @@ void AudioTrackJni::OnCacheDirectBufferAddress(
       env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
   ALOGD("direct buffer capacity: %lld", capacity);
-  direct_buffer_capacity_in_bytes_ = static_cast<int> (capacity);
+  direct_buffer_capacity_in_bytes_ = static_cast<size_t>(capacity);
   frames_per_buffer_ = direct_buffer_capacity_in_bytes_ / kBytesPerFrame;
-  ALOGD("frames_per_buffer: %d", frames_per_buffer_);
+  ALOGD("frames_per_buffer: %" PRIuS, frames_per_buffer_);
 }
 
 void JNICALL AudioTrackJni::GetPlayoutData(
   JNIEnv* env, jobject obj, jint length, jlong nativeAudioTrack) {
   webrtc::AudioTrackJni* this_object =
       reinterpret_cast<webrtc::AudioTrackJni*> (nativeAudioTrack);
-  this_object->OnGetPlayoutData(length);
+  this_object->OnGetPlayoutData(static_cast<size_t>(length));
 }
 
 // This method is called on a high-priority thread from Java. The name of
 // the thread is 'AudioRecordTrack'.
-void AudioTrackJni::OnGetPlayoutData(int length) {
+void AudioTrackJni::OnGetPlayoutData(size_t length) {
   DCHECK(thread_checker_java_.CalledOnValidThread());
   DCHECK_EQ(frames_per_buffer_, length / kBytesPerFrame);
   if (!audio_device_buffer_) {
@@ -244,7 +245,7 @@ void AudioTrackJni::OnGetPlayoutData(int length) {
     ALOGE("AudioDeviceBuffer::RequestPlayoutData failed!");
     return;
   }
-  DCHECK_EQ(samples, frames_per_buffer_);
+  DCHECK_EQ(static_cast<size_t>(samples), frames_per_buffer_);
   // Copy decoded data into common byte buffer to ensure that it can be
   // written to the Java based audio track.
   samples = audio_device_buffer_->GetPlayoutData(direct_buffer_address_);

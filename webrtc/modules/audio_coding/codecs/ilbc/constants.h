@@ -61,8 +61,8 @@ extern const int16_t WebRtcIlbcfix_kFrgQuantMod[];
 
 /* Ranges for search and filters at different subframes */
 
-extern const int16_t WebRtcIlbcfix_kSearchRange[5][CB_NSTAGES];
-extern const int16_t WebRtcIlbcfix_kFilterRange[];
+extern const size_t WebRtcIlbcfix_kSearchRange[5][CB_NSTAGES];
+extern const size_t WebRtcIlbcfix_kFilterRange[];
 
 /* gain quantization tables */
 

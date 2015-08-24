@@ -26,7 +26,7 @@ class NoopCallback : public webrtc::LappedTransform::Callback {
 
   virtual void ProcessAudioBlock(const complex<float>* const* in_block,
                                  int in_channels,
-                                 int frames,
+                                 size_t frames,
                                  int out_channels,
                                  complex<float>* const* out_block) {
     CHECK_EQ(in_channels, out_channels);
@@ -50,19 +50,19 @@ class FftCheckerCallback : public webrtc::LappedTransform::Callback {
 
   virtual void ProcessAudioBlock(const complex<float>* const* in_block,
                                  int in_channels,
-                                 int frames,
+                                 size_t frames,
                                  int out_channels,
                                  complex<float>* const* out_block) {
     CHECK_EQ(in_channels, out_channels);
 
-    int full_length = (frames - 1) * 2;
+    size_t full_length = (frames - 1) * 2;
     ++block_num_;
 
     if (block_num_ > 0) {
       ASSERT_NEAR(in_block[0][0].real(), static_cast<float>(full_length),
                   1e-5f);
       ASSERT_NEAR(in_block[0][0].imag(), 0.0f, 1e-5f);
-      for (int i = 1; i < frames; ++i) {
+      for (size_t i = 1; i < frames; ++i) {
         ASSERT_NEAR(in_block[0][i].real(), 0.0f, 1e-5f);
         ASSERT_NEAR(in_block[0][i].imag(), 0.0f, 1e-5f);
       }
@@ -190,14 +190,14 @@ TEST(LappedTransformTest, chunk_length) {
   // Make sure that chunk_length returns the same value passed to the
   // LappedTransform constructor.
   {
-    const int kExpectedChunkLength = 512;
+    const size_t kExpectedChunkLength = 512;
     const LappedTransform trans(1, 1, kExpectedChunkLength, window,
                                 kBlockLength, kBlockLength, &call);
 
     EXPECT_EQ(kExpectedChunkLength, trans.chunk_length());
   }
   {
-    const int kExpectedChunkLength = 160;
+    const size_t kExpectedChunkLength = 160;
     const LappedTransform trans(1, 1, kExpectedChunkLength, window,
                                 kBlockLength, kBlockLength, &call);
 

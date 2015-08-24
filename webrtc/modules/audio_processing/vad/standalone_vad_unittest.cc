@@ -27,9 +27,9 @@ TEST(StandaloneVadTest, Api) {
   // Valid frame length (for 32 kHz rate), but not what the VAD is expecting.
   EXPECT_EQ(-1, vad->AddAudio(data, 320));
 
-  const int kMaxNumFrames = 3;
+  const size_t kMaxNumFrames = 3;
   double p[kMaxNumFrames];
-  for (int n = 0; n < kMaxNumFrames; n++)
+  for (size_t n = 0; n < kMaxNumFrames; n++)
     EXPECT_EQ(0, vad->AddAudio(data, kLength10Ms));
 
   // Pretend |p| is shorter that it should be.
@@ -41,7 +41,7 @@ TEST(StandaloneVadTest, Api) {
   EXPECT_EQ(-1, vad->GetActivity(p, kMaxNumFrames));
 
   // Should reset and result in one buffer.
-  for (int n = 0; n < kMaxNumFrames + 1; n++)
+  for (size_t n = 0; n < kMaxNumFrames + 1; n++)
     EXPECT_EQ(0, vad->AddAudio(data, kLength10Ms));
   EXPECT_EQ(0, vad->GetActivity(p, 1));
 

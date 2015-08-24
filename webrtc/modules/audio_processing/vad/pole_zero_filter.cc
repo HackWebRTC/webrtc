@@ -17,11 +17,10 @@
 namespace webrtc {
 
 PoleZeroFilter* PoleZeroFilter::Create(const float* numerator_coefficients,
-                                       int order_numerator,
+                                       size_t order_numerator,
                                        const float* denominator_coefficients,
-                                       int order_denominator) {
-  if (order_numerator < 0 || order_denominator < 0 ||
-      order_numerator > kMaxFilterOrder ||
+                                       size_t order_denominator) {
+  if (order_numerator > kMaxFilterOrder ||
       order_denominator > kMaxFilterOrder || denominator_coefficients[0] == 0 ||
       numerator_coefficients == NULL || denominator_coefficients == NULL)
     return NULL;
@@ -30,9 +29,9 @@ PoleZeroFilter* PoleZeroFilter::Create(const float* numerator_coefficients,
 }
 
 PoleZeroFilter::PoleZeroFilter(const float* numerator_coefficients,
-                               int order_numerator,
+                               size_t order_numerator,
                                const float* denominator_coefficients,
-                               int order_denominator)
+                               size_t order_denominator)
     : past_input_(),
       past_output_(),
       numerator_coefficients_(),
@@ -46,30 +45,31 @@ PoleZeroFilter::PoleZeroFilter(const float* numerator_coefficients,
          sizeof(denominator_coefficients_[0]) * (order_denominator_ + 1));
 
   if (denominator_coefficients_[0] != 1) {
-    for (int n = 0; n <= order_numerator_; n++)
+    for (size_t n = 0; n <= order_numerator_; n++)
       numerator_coefficients_[n] /= denominator_coefficients_[0];
-    for (int n = 0; n <= order_denominator_; n++)
+    for (size_t n = 0; n <= order_denominator_; n++)
       denominator_coefficients_[n] /= denominator_coefficients_[0];
   }
 }
 
 template <typename T>
-static float FilterArPast(const T* past, int order, const float* coefficients) {
+static float FilterArPast(const T* past, size_t order,
+                          const float* coefficients) {
   float sum = 0.0f;
-  int past_index = order - 1;
-  for (int k = 1; k <= order; k++, past_index--)
+  size_t past_index = order - 1;
+  for (size_t k = 1; k <= order; k++, past_index--)
     sum += coefficients[k] * past[past_index];
   return sum;
 }
 
 int PoleZeroFilter::Filter(const int16_t* in,
-                           int num_input_samples,
+                           size_t num_input_samples,
                            float* output) {
-  if (in == NULL || num_input_samples < 0 || output == NULL)
+  if (in == NULL || output == NULL)
     return -1;
   // This is the typical case, just a memcpy.
-  const int k = std::min(num_input_samples, highest_order_);
-  int n;
+  const size_t k = std::min(num_input_samples, highest_order_);
+  size_t n;
   for (n = 0; n < k; n++) {
     output[n] = in[n] * numerator_coefficients_[0];
     output[n] += FilterArPast(&past_input_[n], order_numerator_,
@@ -81,7 +81,7 @@ int PoleZeroFilter::Filter(const int16_t* in,
     past_output_[n + order_denominator_] = output[n];
   }
   if (highest_order_ < num_input_samples) {
-    for (int m = 0; n < num_input_samples; n++, m++) {
+    for (size_t m = 0; n < num_input_samples; n++, m++) {
       output[n] = in[n] * numerator_coefficients_[0];
       output[n] +=
           FilterArPast(&in[m], order_numerator_, numerator_coefficients_);

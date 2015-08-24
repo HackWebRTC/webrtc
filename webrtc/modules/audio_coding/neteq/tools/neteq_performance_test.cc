@@ -101,19 +101,19 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
 
     // Get output audio, but don't do anything with it.
     static const int kMaxChannels = 1;
-    static const int kMaxSamplesPerMs = 48000 / 1000;
+    static const size_t kMaxSamplesPerMs = 48000 / 1000;
     static const int kOutputBlockSizeMs = 10;
-    static const int kOutDataLen =
+    static const size_t kOutDataLen =
         kOutputBlockSizeMs * kMaxSamplesPerMs * kMaxChannels;
     int16_t out_data[kOutDataLen];
     int num_channels;
-    int samples_per_channel;
+    size_t samples_per_channel;
     int error = neteq->GetAudio(kOutDataLen, out_data, &samples_per_channel,
                                 &num_channels, NULL);
     if (error != NetEq::kOK)
       return -1;
 
-    assert(samples_per_channel == kSampRateHz * 10 / 1000);
+    assert(samples_per_channel == static_cast<size_t>(kSampRateHz * 10 / 1000));
 
     time_now_ms += kOutputBlockSizeMs;
     if (time_now_ms >= runtime_ms / 2 && !drift_flipped) {

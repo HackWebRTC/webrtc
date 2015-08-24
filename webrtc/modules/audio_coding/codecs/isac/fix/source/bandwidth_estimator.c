@@ -148,7 +148,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
                                          const int16_t  frameSize,
                                          const uint32_t sendTime,
                                          const uint32_t arrivalTime,
-                                         const int16_t  pksize,
+                                         const size_t   pksize,
                                          const uint16_t Index)
 {
   uint16_t  weight = 0;
@@ -379,7 +379,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
         /* compute inverse receiving rate for last packet, in Q19 */
         numBytesInv = (uint16_t) WebRtcSpl_DivW32W16(
-            524288 + ((pksize + HEADER_SIZE) >> 1),
+            (int32_t)(524288 + ((pksize + HEADER_SIZE) >> 1)),
             (int16_t)(pksize + HEADER_SIZE));
 
         /* 8389 is  ~ 1/128000 in Q30 */

@@ -12,15 +12,15 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_COMMON_H_
 
 static const int kSampleRateHz = 16000;
-static const int kLength10Ms = kSampleRateHz / 100;
-static const int kMaxNumFrames = 4;
+static const size_t kLength10Ms = kSampleRateHz / 100;
+static const size_t kMaxNumFrames = 4;
 
 struct AudioFeatures {
   double log_pitch_gain[kMaxNumFrames];
   double pitch_lag_hz[kMaxNumFrames];
   double spectral_peak[kMaxNumFrames];
   double rms[kMaxNumFrames];
-  int num_frames;
+  size_t num_frames;
   bool silence;
 };
 

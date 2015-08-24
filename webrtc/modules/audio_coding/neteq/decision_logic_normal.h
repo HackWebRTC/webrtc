@@ -23,7 +23,7 @@ class DecisionLogicNormal : public DecisionLogic {
  public:
   // Constructor.
   DecisionLogicNormal(int fs_hz,
-                      int output_size_samples,
+                      size_t output_size_samples,
                       NetEqPlayoutMode playout_mode,
                       DecoderDatabase* decoder_database,
                       const PacketBuffer& packet_buffer,
@@ -50,7 +50,7 @@ class DecisionLogicNormal : public DecisionLogic {
   // remain true if it was true before the call).
   Operations GetDecisionSpecialized(const SyncBuffer& sync_buffer,
                                     const Expand& expand,
-                                    int decoder_frame_length,
+                                    size_t decoder_frame_length,
                                     const RTPHeader* packet_header,
                                     Modes prev_mode,
                                     bool play_dtmf,
@@ -61,7 +61,7 @@ class DecisionLogicNormal : public DecisionLogic {
   virtual Operations FuturePacketAvailable(
       const SyncBuffer& sync_buffer,
       const Expand& expand,
-      int decoder_frame_length,
+      size_t decoder_frame_length,
       Modes prev_mode,
       uint32_t target_timestamp,
       uint32_t available_timestamp,

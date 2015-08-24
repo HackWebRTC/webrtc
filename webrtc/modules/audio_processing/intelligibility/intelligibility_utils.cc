@@ -40,20 +40,20 @@ complex<float> zerofudge(complex<float> c) {
   return complex<float>(AddDitherIfZero(c.real()), AddDitherIfZero(c.imag()));
 }
 
-complex<float> NewMean(complex<float> mean, complex<float> data, int count) {
+complex<float> NewMean(complex<float> mean, complex<float> data, size_t count) {
   return mean + (data - mean) / static_cast<float>(count);
 }
 
-void AddToMean(complex<float> data, int count, complex<float>* mean) {
+void AddToMean(complex<float> data, size_t count, complex<float>* mean) {
   (*mean) = NewMean(*mean, data, count);
 }
 
 
-static const int kWindowBlockSize = 10;
+static const size_t kWindowBlockSize = 10;
 
-VarianceArray::VarianceArray(int num_freqs,
+VarianceArray::VarianceArray(size_t num_freqs,
                              StepType type,
-                             int window_size,
+                             size_t window_size,
                              float decay)
     : running_mean_(new complex<float>[num_freqs]()),
       running_mean_sq_(new complex<float>[num_freqs]()),
@@ -69,15 +69,15 @@ VarianceArray::VarianceArray(int num_freqs,
       array_mean_(0.0f),
       buffer_full_(false) {
   history_.reset(new rtc::scoped_ptr<complex<float>[]>[num_freqs_]());
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     history_[i].reset(new complex<float>[window_size_]());
   }
   subhistory_.reset(new rtc::scoped_ptr<complex<float>[]>[num_freqs_]());
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     subhistory_[i].reset(new complex<float>[window_size_]());
   }
   subhistory_sq_.reset(new rtc::scoped_ptr<complex<float>[]>[num_freqs_]());
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     subhistory_sq_[i].reset(new complex<float>[window_size_]());
   }
   switch (type) {
@@ -104,7 +104,7 @@ VarianceArray::VarianceArray(int num_freqs,
 void VarianceArray::InfiniteStep(const complex<float>* data, bool skip_fudge) {
   array_mean_ = 0.0f;
   ++count_;
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     complex<float> sample = data[i];
     if (!skip_fudge) {
       sample = zerofudge(sample);
@@ -132,7 +132,7 @@ void VarianceArray::InfiniteStep(const complex<float>* data, bool skip_fudge) {
 void VarianceArray::DecayStep(const complex<float>* data, bool /*dummy*/) {
   array_mean_ = 0.0f;
   ++count_;
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     complex<float> sample = data[i];
     sample = zerofudge(sample);
 
@@ -157,9 +157,9 @@ void VarianceArray::DecayStep(const complex<float>* data, bool /*dummy*/) {
 // Windowed variance computation. On each step, the variances for the
 // window are recomputed from scratch, using Welford's algorithm.
 void VarianceArray::WindowedStep(const complex<float>* data, bool /*dummy*/) {
-  int num = min(count_ + 1, window_size_);
+  size_t num = min(count_ + 1, window_size_);
   array_mean_ = 0.0f;
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     complex<float> mean;
     float conj_sum = 0.0f;
 
@@ -167,7 +167,7 @@ void VarianceArray::WindowedStep(const complex<float>* data, bool /*dummy*/) {
 
     mean = history_[i][history_cursor_];
     variance_[i] = 0.0f;
-    for (int j = 1; j < num; ++j) {
+    for (size_t j = 1; j < num; ++j) {
       complex<float> sample =
           zerofudge(history_[i][(history_cursor_ + j) % window_size_]);
       sample = history_[i][(history_cursor_ + j) % window_size_];
@@ -191,8 +191,8 @@ void VarianceArray::WindowedStep(const complex<float>* data, bool /*dummy*/) {
 // history window and a new block is started. The variances for the window
 // are recomputed from scratch at each of these transitions.
 void VarianceArray::BlockedStep(const complex<float>* data, bool /*dummy*/) {
-  int blocks = min(window_size_, history_cursor_ + 1);
-  for (int i = 0; i < num_freqs_; ++i) {
+  size_t blocks = min(window_size_, history_cursor_ + 1);
+  for (size_t i = 0; i < num_freqs_; ++i) {
     AddToMean(data[i], count_ + 1, &sub_running_mean_[i]);
     AddToMean(data[i] * std::conj(data[i]), count_ + 1,
               &sub_running_mean_sq_[i]);
@@ -209,7 +209,7 @@ void VarianceArray::BlockedStep(const complex<float>* data, bool /*dummy*/) {
       sub_running_mean_sq_[i] = complex<float>(0.0f, 0.0f);
       running_mean_[i] = complex<float>(0.0f, 0.0f);
       running_mean_sq_[i] = complex<float>(0.0f, 0.0f);
-      for (int j = 0; j < min(window_size_, history_cursor_); ++j) {
+      for (size_t j = 0; j < min(window_size_, history_cursor_); ++j) {
         AddToMean(subhistory_[i][j], j + 1, &running_mean_[i]);
         AddToMean(subhistory_sq_[i][j], j + 1, &running_mean_sq_[i]);
       }
@@ -228,7 +228,7 @@ void VarianceArray::BlockBasedMovingAverage(const std::complex<float>* data,
   // TODO(ekmeyerson) To mitigate potential divergence, add counter so that
   // after every so often sums are computed scratch by summing over all
   // elements instead of subtracting oldest and adding newest.
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     sub_running_mean_[i] += data[i];
     sub_running_mean_sq_[i] += data[i] * std::conj(data[i]);
   }
@@ -239,7 +239,7 @@ void VarianceArray::BlockBasedMovingAverage(const std::complex<float>* data,
   if (count_ >= kWindowBlockSize) {
     count_ = 0;
 
-    for (int i = 0; i < num_freqs_; ++i) {
+    for (size_t i = 0; i < num_freqs_; ++i) {
       running_mean_[i] -= subhistory_[i][history_cursor_];
       running_mean_sq_[i] -= subhistory_sq_[i][history_cursor_];
 
@@ -280,18 +280,18 @@ void VarianceArray::Clear() {
 
 void VarianceArray::ApplyScale(float scale) {
   array_mean_ = 0.0f;
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     variance_[i] *= scale * scale;
     array_mean_ += (variance_[i] - array_mean_) / (i + 1);
   }
 }
 
-GainApplier::GainApplier(int freqs, float change_limit)
+GainApplier::GainApplier(size_t freqs, float change_limit)
     : num_freqs_(freqs),
       change_limit_(change_limit),
       target_(new float[freqs]()),
       current_(new float[freqs]()) {
-  for (int i = 0; i < freqs; ++i) {
+  for (size_t i = 0; i < freqs; ++i) {
     target_[i] = 1.0f;
     current_[i] = 1.0f;
   }
@@ -299,7 +299,7 @@ GainApplier::GainApplier(int freqs, float change_limit)
 
 void GainApplier::Apply(const complex<float>* in_block,
                         complex<float>* out_block) {
-  for (int i = 0; i < num_freqs_; ++i) {
+  for (size_t i = 0; i < num_freqs_; ++i) {
     float factor = sqrtf(fabsf(current_[i]));
     if (!std::isnormal(factor)) {
       factor = 1.0f;

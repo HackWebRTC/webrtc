@@ -45,7 +45,7 @@ struct NetEqNetworkStatistics {
                                     // decoding (in Q14).
   int32_t clockdrift_ppm;  // Average clock-drift in parts-per-million
                            // (positive or negative).
-  int added_zero_samples;  // Number of zero samples added in "off" mode.
+  size_t added_zero_samples;  // Number of zero samples added in "off" mode.
 };
 
 enum NetEqOutputType {
@@ -87,7 +87,7 @@ class NetEq {
 
     int sample_rate_hz;  // Initial value. Will change with input data.
     bool enable_audio_classifier;
-    int max_packets_in_buffer;
+    size_t max_packets_in_buffer;
     int max_delay_ms;
     BackgroundNoiseMode background_noise_mode;
     NetEqPlayoutMode playout_mode;
@@ -165,7 +165,7 @@ class NetEq {
   // The speech type is written to |type|, if |type| is not NULL.
   // Returns kOK on success, or kFail in case of an error.
   virtual int GetAudio(size_t max_length, int16_t* output_audio,
-                       int* samples_per_channel, int* num_channels,
+                       size_t* samples_per_channel, int* num_channels,
                        NetEqOutputType* type) = 0;
 
   // Associates |rtp_payload_type| with |codec| and stores the information in

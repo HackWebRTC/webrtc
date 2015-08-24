@@ -74,7 +74,7 @@ static const double kLpcAnalWin[] = {
     0.14408883, 0.13106918, 0.11802689, 0.10496421, 0.09188339, 0.07878670,
     0.06567639, 0.05255473, 0.03942400, 0.02628645, 0.01314436, 0.00000000};
 
-static const int kFilterOrder = 2;
+static const size_t kFilterOrder = 2;
 static const float kCoeffNumerator[kFilterOrder + 1] = {0.974827f,
                                                         -1.949650f,
                                                         0.974827f};

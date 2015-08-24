@@ -27,9 +27,9 @@ class AudioConverter {
   // Returns a new AudioConverter, which will use the supplied format for its
   // lifetime. Caller is responsible for the memory.
   static rtc::scoped_ptr<AudioConverter> Create(int src_channels,
-                                                int src_frames,
+                                                size_t src_frames,
                                                 int dst_channels,
-                                                int dst_frames);
+                                                size_t dst_frames);
   virtual ~AudioConverter() {};
 
   // Convert |src|, containing |src_size| samples, to |dst|, having a sample
@@ -40,23 +40,23 @@ class AudioConverter {
                        float* const* dst, size_t dst_capacity) = 0;
 
   int src_channels() const { return src_channels_; }
-  int src_frames() const { return src_frames_; }
+  size_t src_frames() const { return src_frames_; }
   int dst_channels() const { return dst_channels_; }
-  int dst_frames() const { return dst_frames_; }
+  size_t dst_frames() const { return dst_frames_; }
 
  protected:
   AudioConverter();
-  AudioConverter(int src_channels, int src_frames, int dst_channels,
-                 int dst_frames);
+  AudioConverter(int src_channels, size_t src_frames, int dst_channels,
+                 size_t dst_frames);
 
   // Helper to CHECK that inputs are correctly sized.
   void CheckSizes(size_t src_size, size_t dst_capacity) const;
 
  private:
   const int src_channels_;
-  const int src_frames_;
+  const size_t src_frames_;
   const int dst_channels_;
-  const int dst_frames_;
+  const size_t dst_frames_;
 
   DISALLOW_COPY_AND_ASSIGN(AudioConverter);
 };

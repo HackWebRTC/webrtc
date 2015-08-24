@@ -42,7 +42,7 @@ void RemixAndResample(const AudioFrame& src_frame,
 // TODO(ajm): For now, this still calls Reset() on |dst_af|. Remove this, as
 // it shouldn't be needed.
 void DownConvertToCodecFormat(const int16_t* src_data,
-                              int samples_per_channel,
+                              size_t samples_per_channel,
                               int num_channels,
                               int sample_rate_hz,
                               int codec_num_channels,
@@ -55,7 +55,7 @@ void MixWithSat(int16_t target[],
                 int target_channel,
                 const int16_t source[],
                 int source_channel,
-                int source_len);
+                size_t source_len);
 
 }  // namespace voe
 }  // namespace webrtc

@@ -3336,7 +3336,7 @@ Channel::Demultiplex(const AudioFrame& audioFrame)
 
 void Channel::Demultiplex(const int16_t* audio_data,
                           int sample_rate,
-                          int number_of_frames,
+                          size_t number_of_frames,
                           int number_of_channels) {
   CodecInst codec;
   GetSendCodec(codec);
@@ -3398,7 +3398,8 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
     InsertInbandDtmfTone();
 
     if (_includeAudioLevelIndication) {
-      int length = _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
+      size_t length =
+          _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
       if (is_muted) {
         rms_level_.ProcessMuted(length);
       } else {
@@ -3686,7 +3687,7 @@ int32_t
 Channel::MixOrReplaceAudioWithFile(int mixingFrequency)
 {
   rtc::scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
-    int fileSamples(0);
+    size_t fileSamples(0);
 
     {
         CriticalSectionScoped cs(&_fileCritSect);
@@ -3756,7 +3757,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
     assert(mixingFrequency <= 48000);
 
     rtc::scoped_ptr<int16_t[]> fileBuffer(new int16_t[960]);
-    int fileSamples(0);
+    size_t fileSamples(0);
 
     {
         CriticalSectionScoped cs(&_fileCritSect);
@@ -3794,8 +3795,8 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
     else
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
-            "Channel::MixAudioWithFile() samples_per_channel_(%d) != "
-            "fileSamples(%d)",
+            "Channel::MixAudioWithFile() samples_per_channel_(%" PRIuS ") != "
+            "fileSamples(%" PRIuS ")",
             audioFrame.samples_per_channel_, fileSamples);
         return -1;
     }
@@ -3855,7 +3856,7 @@ Channel::InsertInbandDtmfTone()
         }
 
         // Replace mixed audio with DTMF tone.
-        for (int sample = 0;
+        for (size_t sample = 0;
             sample < _audioFrame.samples_per_channel_;
             sample++)
         {
@@ -3863,7 +3864,8 @@ Channel::InsertInbandDtmfTone()
                 channel < _audioFrame.num_channels_;
                 channel++)
             {
-                const int index = sample * _audioFrame.num_channels_ + channel;
+                const size_t index =
+                    sample * _audioFrame.num_channels_ + channel;
                 _audioFrame.data_[index] = toneBuffer[sample];
             }
         }

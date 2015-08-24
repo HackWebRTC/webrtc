@@ -61,10 +61,10 @@ static void DitherSilence(AudioFrame* frame) {
   const double sum_squared_silence = kRmsSilence * kRmsSilence *
       frame->samples_per_channel_;
   double sum_squared = 0;
-  for (int n = 0; n < frame->samples_per_channel_; n++)
+  for (size_t n = 0; n < frame->samples_per_channel_; n++)
     sum_squared += frame->data_[n] * frame->data_[n];
   if (sum_squared <= sum_squared_silence) {
-    for (int n = 0; n < frame->samples_per_channel_; n++)
+    for (size_t n = 0; n < frame->samples_per_channel_; n++)
       frame->data_[n] = (rand() & 0xF) - 8;
   }
 }
@@ -79,7 +79,7 @@ class AgcStat {
         vad_(new PitchBasedVad()),
         standalone_vad_(StandaloneVad::Create()),
         audio_content_fid_(NULL) {
-    for (int n = 0; n < kMaxNumFrames; n++)
+    for (size_t n = 0; n < kMaxNumFrames; n++)
       video_vad_[n] = 0.5;
   }
 
@@ -116,7 +116,7 @@ class AgcStat {
       // TODO(turajs) combining and limiting are used in the source files as
       // well they can be moved to utility.
       // Combine Video and stand-alone VAD.
-      for (int n = 0; n < features.num_frames; n++) {
+      for (size_t n = 0; n < features.num_frames; n++) {
         double p_active = p[n] * video_vad_[n];
         double p_passive = (1 - p[n]) * (1 - video_vad_[n]);
         p[n]  = p_active / (p_active + p_passive);
@@ -125,7 +125,7 @@ class AgcStat {
       }
       if (vad_->VoicingProbability(features, p) < 0)
         return -1;
-      for (int n = 0; n < features.num_frames; n++) {
+      for (size_t n = 0; n < features.num_frames; n++) {
         audio_content_->Update(features.rms[n], p[n]);
         double ac = audio_content_->AudioContent();
         if (audio_content_fid_ != NULL) {
@@ -139,7 +139,7 @@ class AgcStat {
       }
       video_index_ = 0;
     }
-    return features.num_frames;
+    return static_cast<int>(features.num_frames);
   }
 
   void Reset() {
@@ -246,7 +246,7 @@ void void_main(int argc, char* argv[]) {
   bool onset = false;
   uint8_t previous_true_vad = 0;
   int num_not_adapted = 0;
-  int true_vad_index = 0;
+  size_t true_vad_index = 0;
   bool in_false_positive_region = false;
   int total_false_positive_duration = 0;
   bool video_adapted = false;
@@ -292,7 +292,7 @@ void void_main(int argc, char* argv[]) {
     ASSERT_GE(ret_val, 0);
 
     if (ret_val > 0) {
-      ASSERT_EQ(true_vad_index, ret_val);
+      ASSERT_EQ(true_vad_index, static_cast<size_t>(ret_val));
       for (int n = 0; n < ret_val; n++) {
         if (true_vad[n] == 1) {
           total_active++;

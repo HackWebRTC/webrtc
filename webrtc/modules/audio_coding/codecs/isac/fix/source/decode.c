@@ -29,7 +29,7 @@
 
 int WebRtcIsacfix_DecodeImpl(int16_t* signal_out16,
                              IsacFixDecoderInstance* ISACdec_obj,
-                             int16_t* current_framesamples)
+                             size_t* current_framesamples)
 {
   int k;
   int err;
@@ -58,9 +58,9 @@ int WebRtcIsacfix_DecodeImpl(int16_t* signal_out16,
   int16_t gainQ13;
 
 
-  int16_t frame_nb; /* counter */
-  int16_t frame_mode; /* 0 for 30ms, 1 for 60ms */
-  static const int16_t kProcessedSamples = 480; /* 480 (for both 30, 60 ms) */
+  size_t frame_nb; /* counter */
+  size_t frame_mode; /* 0 for 30ms, 1 for 60ms */
+  static const size_t kProcessedSamples = 480; /* 480 (for both 30, 60 ms) */
 
   /* PLC */
   int16_t overlapWin[ 240 ];

@@ -384,7 +384,7 @@ TEST_F(NetEqImplTest, InsertPacketsUntilBufferIsFull) {
             neteq_->RegisterPayloadType(kDecoderPCM16B, kPayloadType));
 
   // Insert packets. The buffer should not flush.
-  for (int i = 1; i <= config_.max_packets_in_buffer; ++i) {
+  for (size_t i = 1; i <= config_.max_packets_in_buffer; ++i) {
     EXPECT_EQ(NetEq::kOK,
               neteq_->InsertPacket(
                   rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
@@ -398,7 +398,7 @@ TEST_F(NetEqImplTest, InsertPacketsUntilBufferIsFull) {
   EXPECT_EQ(NetEq::kOK,
             neteq_->InsertPacket(
                 rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
-  EXPECT_EQ(1, packet_buffer_->NumPacketsInBuffer());
+  EXPECT_EQ(1u, packet_buffer_->NumPacketsInBuffer());
   const RTPHeader* test_header = packet_buffer_->NextRtpHeader();
   EXPECT_EQ(rtp_header.header.timestamp, test_header->timestamp);
   EXPECT_EQ(rtp_header.header.sequenceNumber, test_header->sequenceNumber);
@@ -413,7 +413,8 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
   const int kSampleRateHz = 8000;
-  const int kPayloadLengthSamples = 10 * kSampleRateHz / 1000;  // 10 ms.
+  const size_t kPayloadLengthSamples =
+      static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
   const size_t kPayloadLengthBytes = kPayloadLengthSamples;
   uint8_t payload[kPayloadLengthBytes] = {0};
   WebRtcRTPHeader rtp_header;
@@ -466,9 +467,9 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
                 rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
 
   // Pull audio once.
-  const int kMaxOutputSize = 10 * kSampleRateHz / 1000;
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   int16_t output[kMaxOutputSize];
-  int samples_per_channel;
+  size_t samples_per_channel;
   int num_channels;
   NetEqOutputType type;
   EXPECT_EQ(
@@ -480,7 +481,8 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   EXPECT_EQ(kOutputNormal, type);
 
   // Start with a simple check that the fake decoder is behaving as expected.
-  EXPECT_EQ(kPayloadLengthSamples, decoder_.next_value() - 1);
+  EXPECT_EQ(kPayloadLengthSamples,
+            static_cast<size_t>(decoder_.next_value() - 1));
 
   // The value of the last of the output samples is the same as the number of
   // samples played from the decoded packet. Thus, this number + the RTP
@@ -500,7 +502,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // Check that the number of samples still to play from the sync buffer add
   // up with what was already played out.
   EXPECT_EQ(kPayloadLengthSamples - output[samples_per_channel - 1],
-            static_cast<int>(sync_buffer->FutureLength()));
+            sync_buffer->FutureLength());
 }
 
 TEST_F(NetEqImplTest, ReorderedPacket) {
@@ -510,7 +512,8 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
   const int kSampleRateHz = 8000;
-  const int kPayloadLengthSamples = 10 * kSampleRateHz / 1000;  // 10 ms.
+  const size_t kPayloadLengthSamples =
+      static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
   const size_t kPayloadLengthBytes = kPayloadLengthSamples;
   uint8_t payload[kPayloadLengthBytes] = {0};
   WebRtcRTPHeader rtp_header;
@@ -544,9 +547,9 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
                 rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
 
   // Pull audio once.
-  const int kMaxOutputSize = 10 * kSampleRateHz / 1000;
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   int16_t output[kMaxOutputSize];
-  int samples_per_channel;
+  size_t samples_per_channel;
   int num_channels;
   NetEqOutputType type;
   EXPECT_EQ(
@@ -606,7 +609,8 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
   const int kSampleRateHz = 8000;
-  const int kPayloadLengthSamples = 10 * kSampleRateHz / 1000;  // 10 ms.
+  const size_t kPayloadLengthSamples =
+      static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
   const size_t kPayloadLengthBytes = kPayloadLengthSamples;
   uint8_t payload[kPayloadLengthBytes] = {0};
   WebRtcRTPHeader rtp_header;
@@ -623,9 +627,9 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
   EXPECT_EQ(NetEq::kUnknownRtpPayloadType, neteq_->LastError());
 
   // Pull audio once.
-  const int kMaxOutputSize = 10 * kSampleRateHz / 1000;
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   int16_t output[kMaxOutputSize];
-  int samples_per_channel;
+  size_t samples_per_channel;
   int num_channels;
   NetEqOutputType type;
   EXPECT_EQ(NetEq::kOK,
@@ -641,7 +645,7 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
             neteq_->RegisterPayloadType(kDecoderPCM16B, kPayloadType));
 
   // Insert 10 packets.
-  for (int i = 0; i < 10; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
     rtp_header.header.sequenceNumber++;
     rtp_header.header.timestamp += kPayloadLengthSamples;
     EXPECT_EQ(NetEq::kOK,
@@ -651,7 +655,7 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
   }
 
   // Pull audio repeatedly and make sure we get normal output, that is not PLC.
-  for (int i = 0; i < 3; ++i) {
+  for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(NetEq::kOK,
               neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
                                &num_channels, &type));
@@ -672,8 +676,9 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
   const int kSampleRateKhz = 48;
-  const int kPayloadLengthSamples = 20 * kSampleRateKhz;  // 20 ms.
-  const int kPayloadLengthBytes = 10;
+  const size_t kPayloadLengthSamples =
+      static_cast<size_t>(20 * kSampleRateKhz);  // 20 ms.
+  const size_t kPayloadLengthBytes = 10;
   uint8_t payload[kPayloadLengthBytes] = {0};
   int16_t dummy_output[kPayloadLengthSamples] = {0};
 
@@ -736,9 +741,9 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
             neteq_->InsertPacket(
                 rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
 
-  const int kMaxOutputSize = 10 * kSampleRateKhz;
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateKhz);
   int16_t output[kMaxOutputSize];
-  int samples_per_channel;
+  size_t samples_per_channel;
   int num_channels;
   uint32_t timestamp;
   uint32_t last_timestamp;
@@ -762,7 +767,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
                              &num_channels, &type));
   EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&last_timestamp));
 
-  for (int i = 1; i < 6; ++i) {
+  for (size_t i = 1; i < 6; ++i) {
     ASSERT_EQ(kMaxOutputSize, samples_per_channel);
     EXPECT_EQ(1, num_channels);
     EXPECT_EQ(expected_type[i - 1], type);
@@ -783,7 +788,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
             neteq_->InsertPacket(
                 rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
 
-  for (int i = 6; i < 8; ++i) {
+  for (size_t i = 6; i < 8; ++i) {
     ASSERT_EQ(kMaxOutputSize, samples_per_channel);
     EXPECT_EQ(1, num_channels);
     EXPECT_EQ(expected_type[i - 1], type);
@@ -811,7 +816,8 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
   const int kSampleRateHz = 8000;
 
-  const int kPayloadLengthSamples = 10 * kSampleRateHz / 1000;  // 10 ms.
+  const size_t kPayloadLengthSamples =
+      static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
   const size_t kPayloadLengthBytes = 1;
   uint8_t payload[kPayloadLengthBytes]= {0};
   int16_t dummy_output[kPayloadLengthSamples * kChannels] = {0};
@@ -852,7 +858,8 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
                                           dummy_output +
                                           kPayloadLengthSamples * kChannels),
                       SetArgPointee<4>(AudioDecoder::kSpeech),
-                      Return(kPayloadLengthSamples * kChannels)));
+                      Return(static_cast<int>(
+                          kPayloadLengthSamples * kChannels))));
 
   EXPECT_CALL(decoder_, PacketDuration(Pointee(kSecondPayloadValue),
                                        kPayloadLengthBytes))
@@ -879,9 +886,10 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
             neteq_->InsertPacket(
                 rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
 
-  const int kMaxOutputSize = 10 * kSampleRateHz / 1000 * kChannels;
+  const size_t kMaxOutputSize =
+      static_cast<size_t>(10 * kSampleRateHz / 1000 * kChannels);
   int16_t output[kMaxOutputSize];
-  int samples_per_channel;
+  size_t samples_per_channel;
   int num_channels;
   NetEqOutputType type;
 

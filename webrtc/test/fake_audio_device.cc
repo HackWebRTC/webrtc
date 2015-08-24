@@ -99,7 +99,8 @@ void FakeAudioDevice::CaptureAudio() {
           *input_stream_.get(), captured_audio_, kBufferSizeBytes);
       if (bytes_read <= 0)
         return;
-      int num_samples = bytes_read / 2;  // 2 bytes per sample.
+      // 2 bytes per sample.
+      size_t num_samples = static_cast<size_t>(bytes_read / 2);
       uint32_t new_mic_level;
       EXPECT_EQ(0,
                 audio_callback_->RecordedDataIsAvailable(captured_audio_,
@@ -112,14 +113,15 @@ void FakeAudioDevice::CaptureAudio() {
                                                          0,
                                                          false,
                                                          new_mic_level));
-      uint32_t samples_needed = kFrequencyHz / 100;
+      size_t samples_needed = kFrequencyHz / 100;
       int64_t now_ms = clock_->TimeInMilliseconds();
       uint32_t time_since_last_playout_ms = now_ms - last_playout_ms_;
       if (last_playout_ms_ > 0 && time_since_last_playout_ms > 0) {
-        samples_needed = std::min(kFrequencyHz / time_since_last_playout_ms,
-                                  kBufferSizeBytes / 2);
+        samples_needed = std::min(
+            static_cast<size_t>(kFrequencyHz / time_since_last_playout_ms),
+            kBufferSizeBytes / 2);
       }
-      uint32_t samples_out = 0;
+      size_t samples_out = 0;
       int64_t elapsed_time_ms = -1;
       int64_t ntp_time_ms = -1;
       EXPECT_EQ(0,

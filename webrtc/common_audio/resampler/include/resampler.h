@@ -16,6 +16,8 @@
 #ifndef WEBRTC_RESAMPLER_RESAMPLER_H_
 #define WEBRTC_RESAMPLER_RESAMPLER_H_
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -36,8 +38,8 @@ public:
     int ResetIfNeeded(int inFreq, int outFreq, int num_channels);
 
     // Resample samplesIn to samplesOut.
-    int Push(const int16_t* samplesIn, int lengthIn, int16_t* samplesOut,
-             int maxLen, int &outLen);
+    int Push(const int16_t* samplesIn, size_t lengthIn, int16_t* samplesOut,
+             size_t maxLen, size_t &outLen);
 
 private:
     enum ResamplerMode
@@ -73,10 +75,10 @@ private:
     // Storage if needed
     int16_t* in_buffer_;
     int16_t* out_buffer_;
-    int in_buffer_size_;
-    int out_buffer_size_;
-    int in_buffer_size_max_;
-    int out_buffer_size_max_;
+    size_t in_buffer_size_;
+    size_t out_buffer_size_;
+    size_t in_buffer_size_max_;
+    size_t out_buffer_size_max_;
 
     int my_in_frequency_khz_;
     int my_out_frequency_khz_;

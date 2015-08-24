@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/audio_converter.h"
 #include "webrtc/common_audio/channel_buffer.h"
@@ -43,20 +44,20 @@ void VerifyParams(const ChannelBuffer<float>& ref,
 // signals to compensate for the resampling delay.
 float ComputeSNR(const ChannelBuffer<float>& ref,
                  const ChannelBuffer<float>& test,
-                 int expected_delay) {
+                 size_t expected_delay) {
   VerifyParams(ref, test);
   float best_snr = 0;
-  int best_delay = 0;
+  size_t best_delay = 0;
 
   // Search within one sample of the expected delay.
-  for (int delay = std::max(expected_delay, 1) - 1;
+  for (size_t delay = std::max(expected_delay, static_cast<size_t>(1)) - 1;
        delay <= std::min(expected_delay + 1, ref.num_frames());
        ++delay) {
     float mse = 0;
     float variance = 0;
     float mean = 0;
     for (int i = 0; i < ref.num_channels(); ++i) {
-      for (int j = 0; j < ref.num_frames() - delay; ++j) {
+      for (size_t j = 0; j < ref.num_frames() - delay; ++j) {
         float error = ref.channels()[i][j] - test.channels()[i][j + delay];
         mse += error * error;
         variance += ref.channels()[i][j] * ref.channels()[i][j];
@@ -64,7 +65,7 @@ float ComputeSNR(const ChannelBuffer<float>& ref,
       }
     }
 
-    const int length = ref.num_channels() * (ref.num_frames() - delay);
+    const size_t length = ref.num_channels() * (ref.num_frames() - delay);
     mse /= length;
     variance /= length;
     mean /= length;
@@ -77,7 +78,7 @@ float ComputeSNR(const ChannelBuffer<float>& ref,
       best_delay = delay;
     }
   }
-  printf("SNR=%.1f dB at delay=%d\n", best_snr, best_delay);
+  printf("SNR=%.1f dB at delay=%" PRIuS "\n", best_snr, best_delay);
   return best_snr;
 }
 
@@ -122,9 +123,10 @@ void RunAudioConverterTest(int src_channels,
   ScopedBuffer ref_buffer = CreateBuffer(ref_data, dst_frames);
 
   // The sinc resampler has a known delay, which we compute here.
-  const int delay_frames = src_sample_rate_hz == dst_sample_rate_hz ? 0 :
-      PushSincResampler::AlgorithmicDelaySeconds(src_sample_rate_hz) *
-          dst_sample_rate_hz;
+  const size_t delay_frames = src_sample_rate_hz == dst_sample_rate_hz ? 0 :
+      static_cast<size_t>(
+          PushSincResampler::AlgorithmicDelaySeconds(src_sample_rate_hz) *
+          dst_sample_rate_hz);
   printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
       src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
 

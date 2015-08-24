@@ -31,7 +31,7 @@ void WebRtcIlbcfix_GetSyncSeq(
     int16_t centerStartPos, /* (i) where current block starts */
     int16_t *period,   /* (i) rough-pitch-period array       (Q-2) */
     int16_t *plocs,   /* (i) where periods of period array are taken (Q-2) */
-    int16_t periodl,   /* (i) dimension period array */
+    size_t periodl,   /* (i) dimension period array */
     int16_t hl,    /* (i) 2*hl+1 is the number of sequences */
     int16_t *surround  /* (i/o) The contribution from this sequence
                                 summed with earlier contributions */

@@ -25,11 +25,11 @@ using ::testing::Combine;
 // Maximum number of bytes in output bitstream.
 const size_t kMaxBytes = 1000;
 // Sample rate of Opus.
-const int kOpusRateKhz = 48;
+const size_t kOpusRateKhz = 48;
 // Number of samples-per-channel in a 20 ms frame, sampled at 48 kHz.
-const int kOpus20msFrameSamples = kOpusRateKhz * 20;
+const size_t kOpus20msFrameSamples = kOpusRateKhz * 20;
 // Number of samples-per-channel in a 10 ms frame, sampled at 48 kHz.
-const int kOpus10msFrameSamples = kOpusRateKhz * 10;
+const size_t kOpus10msFrameSamples = kOpusRateKhz * 10;
 
 class OpusTest : public TestWithParam<::testing::tuple<int, int>> {
  protected:
@@ -45,7 +45,7 @@ class OpusTest : public TestWithParam<::testing::tuple<int, int>> {
 
   int EncodeDecode(WebRtcOpusEncInst* encoder,
                    const int16_t* input_audio,
-                   int input_samples,
+                   size_t input_samples,
                    WebRtcOpusDecInst* decoder,
                    int16_t* output_audio,
                    int16_t* audio_type);
@@ -58,7 +58,7 @@ class OpusTest : public TestWithParam<::testing::tuple<int, int>> {
 
   AudioLoop speech_data_;
   uint8_t bitstream_[kMaxBytes];
-  int encoded_bytes_;
+  size_t encoded_bytes_;
   int channels_;
   int application_;
 };
@@ -97,15 +97,14 @@ void OpusTest::SetMaxPlaybackRate(WebRtcOpusEncInst* encoder,
 
 int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
                            const int16_t* input_audio,
-                           int input_samples,
+                           size_t input_samples,
                            WebRtcOpusDecInst* decoder,
                            int16_t* output_audio,
                            int16_t* audio_type) {
-  encoded_bytes_ = WebRtcOpus_Encode(encoder,
-                                    input_audio,
-                                    input_samples, kMaxBytes,
-                                    bitstream_);
-  EXPECT_GE(encoded_bytes_, 0);
+  int encoded_bytes_int = WebRtcOpus_Encode(encoder, input_audio, input_samples,
+                                            kMaxBytes, bitstream_);
+  EXPECT_GE(encoded_bytes_int, 0);
+  encoded_bytes_ = static_cast<size_t>(encoded_bytes_int);
   return WebRtcOpus_Decode(decoder, bitstream_,
                            encoded_bytes_, output_audio,
                            audio_type);
@@ -139,13 +138,14 @@ void OpusTest::TestDtxEffect(bool dtx) {
 
   for (int i = 0; i < 100; ++i) {
     EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
-                           kOpus20msFrameSamples, opus_decoder_,
-                           output_data_decode, &audio_type));
+              static_cast<size_t>(EncodeDecode(
+                  opus_encoder_, speech_data_.GetNextBlock(),
+                  kOpus20msFrameSamples, opus_decoder_, output_data_decode,
+                  &audio_type)));
     // If not DTX, it should never enter DTX mode. If DTX, we do not care since
     // whether it enters DTX depends on the signal type.
     if (!dtx) {
-      EXPECT_GT(encoded_bytes_, 1);
+      EXPECT_GT(encoded_bytes_, 1U);
       EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
       EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(0, audio_type);  // Speech.
@@ -156,11 +156,11 @@ void OpusTest::TestDtxEffect(bool dtx) {
   // However, DTX may happen after a while.
   for (int i = 0; i < 30; ++i) {
     EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_encoder_, silence,
-                           kOpus20msFrameSamples, opus_decoder_,
-                           output_data_decode, &audio_type));
+              static_cast<size_t>(EncodeDecode(
+                  opus_encoder_, silence, kOpus20msFrameSamples, opus_decoder_,
+                  output_data_decode, &audio_type)));
     if (!dtx) {
-      EXPECT_GT(encoded_bytes_, 1);
+      EXPECT_GT(encoded_bytes_, 1U);
       EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
       EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(0, audio_type);  // Speech.
@@ -180,17 +180,17 @@ void OpusTest::TestDtxEffect(bool dtx) {
     // DTX mode is maintained 19 frames.
     for (int i = 0; i < 19; ++i) {
       EXPECT_EQ(kOpus20msFrameSamples,
-                EncodeDecode(opus_encoder_, silence,
-                             kOpus20msFrameSamples, opus_decoder_,
-                             output_data_decode, &audio_type));
+                static_cast<size_t>(EncodeDecode(
+                    opus_encoder_, silence, kOpus20msFrameSamples,
+                    opus_decoder_, output_data_decode, &audio_type)));
       if (dtx) {
-        EXPECT_EQ(0, encoded_bytes_)  // Send 0 byte.
+        EXPECT_EQ(0U, encoded_bytes_)  // Send 0 byte.
             << "Opus should have entered DTX mode.";
         EXPECT_EQ(1, opus_encoder_->in_dtx_mode);
         EXPECT_EQ(1, opus_decoder_->in_dtx_mode);
         EXPECT_EQ(2, audio_type);  // Comfort noise.
       } else {
-        EXPECT_GT(encoded_bytes_, 1);
+        EXPECT_GT(encoded_bytes_, 1U);
         EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
         EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
         EXPECT_EQ(0, audio_type);  // Speech.
@@ -199,27 +199,27 @@ void OpusTest::TestDtxEffect(bool dtx) {
 
     // Quit DTX after 19 frames.
     EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_encoder_, silence,
-                           kOpus20msFrameSamples, opus_decoder_,
-                           output_data_decode, &audio_type));
+              static_cast<size_t>(EncodeDecode(
+                  opus_encoder_, silence, kOpus20msFrameSamples, opus_decoder_,
+                  output_data_decode, &audio_type)));
 
-    EXPECT_GT(encoded_bytes_, 1);
+    EXPECT_GT(encoded_bytes_, 1U);
     EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
     EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
     EXPECT_EQ(0, audio_type);  // Speech.
 
     // Enters DTX again immediately.
     EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_encoder_, silence,
-                           kOpus20msFrameSamples, opus_decoder_,
-                           output_data_decode, &audio_type));
+              static_cast<size_t>(EncodeDecode(
+                  opus_encoder_, silence, kOpus20msFrameSamples, opus_decoder_,
+                  output_data_decode, &audio_type)));
     if (dtx) {
-      EXPECT_EQ(1, encoded_bytes_);  // Send 1 byte.
+      EXPECT_EQ(1U, encoded_bytes_);  // Send 1 byte.
       EXPECT_EQ(1, opus_encoder_->in_dtx_mode);
       EXPECT_EQ(1, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(2, audio_type);  // Comfort noise.
     } else {
-      EXPECT_GT(encoded_bytes_, 1);
+      EXPECT_GT(encoded_bytes_, 1U);
       EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
       EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(0, audio_type);  // Speech.
@@ -230,10 +230,10 @@ void OpusTest::TestDtxEffect(bool dtx) {
   if (dtx) {
     // Verify that encoder/decoder can jump out from DTX mode.
     EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_encoder_, silence,
-                           kOpus20msFrameSamples, opus_decoder_,
-                           output_data_decode, &audio_type));
-    EXPECT_GT(encoded_bytes_, 1);
+              static_cast<size_t>(EncodeDecode(
+                  opus_encoder_, silence, kOpus20msFrameSamples, opus_decoder_,
+                  output_data_decode, &audio_type)));
+    EXPECT_GT(encoded_bytes_, 1U);
     EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
     EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
     EXPECT_EQ(0, audio_type);  // Speech.
@@ -311,9 +311,10 @@ TEST_P(OpusTest, OpusEncodeDecode) {
   int16_t audio_type;
   int16_t* output_data_decode = new int16_t[kOpus20msFrameSamples * channels_];
   EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
-                         kOpus20msFrameSamples, opus_decoder_,
-                         output_data_decode, &audio_type));
+            static_cast<size_t>(EncodeDecode(
+                opus_encoder_, speech_data_.GetNextBlock(),
+                kOpus20msFrameSamples, opus_decoder_, output_data_decode,
+                &audio_type)));
 
   // Free memory.
   delete[] output_data_decode;
@@ -370,16 +371,17 @@ TEST_P(OpusTest, OpusDecodeInit) {
   int16_t audio_type;
   int16_t* output_data_decode = new int16_t[kOpus20msFrameSamples * channels_];
   EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
-                         kOpus20msFrameSamples, opus_decoder_,
-                         output_data_decode, &audio_type));
+            static_cast<size_t>(EncodeDecode(
+                opus_encoder_, speech_data_.GetNextBlock(),
+                kOpus20msFrameSamples, opus_decoder_, output_data_decode,
+                &audio_type)));
 
   EXPECT_EQ(0, WebRtcOpus_DecoderInit(opus_decoder_));
 
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_Decode(opus_decoder_, bitstream_,
-                              encoded_bytes_, output_data_decode,
-                              &audio_type));
+            static_cast<size_t>(WebRtcOpus_Decode(
+                opus_decoder_, bitstream_, encoded_bytes_, output_data_decode,
+                &audio_type)));
 
   // Free memory.
   delete[] output_data_decode;
@@ -508,14 +510,16 @@ TEST_P(OpusTest, OpusDecodePlc) {
   int16_t audio_type;
   int16_t* output_data_decode = new int16_t[kOpus20msFrameSamples * channels_];
   EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
-                         kOpus20msFrameSamples, opus_decoder_,
-                         output_data_decode, &audio_type));
+            static_cast<size_t>(EncodeDecode(
+                opus_encoder_, speech_data_.GetNextBlock(),
+                kOpus20msFrameSamples, opus_decoder_, output_data_decode,
+                &audio_type)));
 
   // Call decoder PLC.
   int16_t* plc_buffer = new int16_t[kOpus20msFrameSamples * channels_];
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodePlc(opus_decoder_, plc_buffer, 1));
+            static_cast<size_t>(WebRtcOpus_DecodePlc(
+                opus_decoder_, plc_buffer, 1)));
 
   // Free memory.
   delete[] plc_buffer;
@@ -535,24 +539,26 @@ TEST_P(OpusTest, OpusDurationEstimation) {
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_decoder_, channels_));
 
   // 10 ms. We use only first 10 ms of a 20 ms block.
-  encoded_bytes_ = WebRtcOpus_Encode(opus_encoder_,
-                                     speech_data_.GetNextBlock(),
-                                     kOpus10msFrameSamples, kMaxBytes,
-                                     bitstream_);
-  EXPECT_GE(encoded_bytes_, 0);
+  int encoded_bytes_int = WebRtcOpus_Encode(opus_encoder_,
+                                            speech_data_.GetNextBlock(),
+                                            kOpus10msFrameSamples,
+                                            kMaxBytes, bitstream_);
+  EXPECT_GE(encoded_bytes_int, 0);
   EXPECT_EQ(kOpus10msFrameSamples,
-            WebRtcOpus_DurationEst(opus_decoder_, bitstream_,
-                                   encoded_bytes_));
+            static_cast<size_t>(WebRtcOpus_DurationEst(
+                opus_decoder_, bitstream_,
+                static_cast<size_t>(encoded_bytes_int))));
 
   // 20 ms
-  encoded_bytes_ = WebRtcOpus_Encode(opus_encoder_,
-                                     speech_data_.GetNextBlock(),
-                                     kOpus20msFrameSamples, kMaxBytes,
-                                     bitstream_);
-  EXPECT_GE(encoded_bytes_, 0);
+  encoded_bytes_int = WebRtcOpus_Encode(opus_encoder_,
+                                        speech_data_.GetNextBlock(),
+                                        kOpus20msFrameSamples,
+                                        kMaxBytes, bitstream_);
+  EXPECT_GE(encoded_bytes_int, 0);
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DurationEst(opus_decoder_, bitstream_,
-                                   encoded_bytes_));
+            static_cast<size_t>(WebRtcOpus_DurationEst(
+                opus_decoder_, bitstream_,
+                static_cast<size_t>(encoded_bytes_int))));
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
@@ -595,11 +601,13 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
   encoded_bytes_ = opus_repacketizer_out(rp, bitstream_, kMaxBytes);
 
   EXPECT_EQ(kOpus20msFrameSamples * kPackets,
-            WebRtcOpus_DurationEst(opus_decoder_, bitstream_, encoded_bytes_));
+            static_cast<size_t>(WebRtcOpus_DurationEst(
+                opus_decoder_, bitstream_, encoded_bytes_)));
 
   EXPECT_EQ(kOpus20msFrameSamples * kPackets,
-            WebRtcOpus_Decode(opus_decoder_, bitstream_, encoded_bytes_,
-                              output_data_decode.get(), &audio_type));
+            static_cast<size_t>(WebRtcOpus_Decode(
+                opus_decoder_, bitstream_, encoded_bytes_,
+                output_data_decode.get(), &audio_type)));
 
   // Free memory.
   opus_repacketizer_destroy(rp);

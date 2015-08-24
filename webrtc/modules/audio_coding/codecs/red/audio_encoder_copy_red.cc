@@ -41,11 +41,11 @@ size_t AudioEncoderCopyRed::MaxEncodedBytes() const {
   return 2 * speech_encoder_->MaxEncodedBytes();
 }
 
-int AudioEncoderCopyRed::Num10MsFramesInNextPacket() const {
+size_t AudioEncoderCopyRed::Num10MsFramesInNextPacket() const {
   return speech_encoder_->Num10MsFramesInNextPacket();
 }
 
-int AudioEncoderCopyRed::Max10MsFramesInAPacket() const {
+size_t AudioEncoderCopyRed::Max10MsFramesInAPacket() const {
   return speech_encoder_->Max10MsFramesInAPacket();
 }
 

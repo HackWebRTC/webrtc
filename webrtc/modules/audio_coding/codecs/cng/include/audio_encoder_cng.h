@@ -50,8 +50,8 @@ class AudioEncoderCng final : public AudioEncoder {
   int NumChannels() const override;
   size_t MaxEncodedBytes() const override;
   int RtpTimestampRateHz() const override;
-  int Num10MsFramesInNextPacket() const override;
-  int Max10MsFramesInAPacket() const override;
+  size_t Num10MsFramesInNextPacket() const override;
+  size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   void SetTargetBitrate(int bits_per_second) override;
   void SetProjectedPacketLossRate(double fraction) override;
@@ -67,10 +67,10 @@ class AudioEncoderCng final : public AudioEncoder {
     inline void operator()(CNG_enc_inst* ptr) const { WebRtcCng_FreeEnc(ptr); }
   };
 
-  EncodedInfo EncodePassive(int frames_to_encode,
+  EncodedInfo EncodePassive(size_t frames_to_encode,
                             size_t max_encoded_bytes,
                             uint8_t* encoded);
-  EncodedInfo EncodeActive(int frames_to_encode,
+  EncodedInfo EncodeActive(size_t frames_to_encode,
                            size_t max_encoded_bytes,
                            uint8_t* encoded);
   size_t SamplesPer10msFrame() const;

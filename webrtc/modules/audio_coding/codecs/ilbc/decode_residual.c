@@ -41,8 +41,8 @@ void WebRtcIlbcfix_DecodeResidual(
     int16_t *syntdenum   /* (i) the decoded synthesis filter
                                   coefficients */
                                   ) {
-  int16_t meml_gotten, diff, start_pos;
-  int16_t subcount, subframe;
+  size_t meml_gotten, diff, start_pos;
+  size_t subcount, subframe;
   int16_t *reverseDecresidual = iLBCdec_inst->enh_buf; /* Reversed decoded data, used for decoding backwards in time (reuse memory in state) */
   int16_t *memVec = iLBCdec_inst->prevResidual;  /* Memory for codebook and filter state (reuse memory in state) */
   int16_t *mem = &memVec[CB_HALFFILTERLEN];   /* Memory for codebook */
@@ -118,7 +118,7 @@ void WebRtcIlbcfix_DecodeResidual(
 
     /* loop over subframes to encode */
 
-    int16_t Nfor = iLBCdec_inst->nsub - iLBC_encbits->startIdx - 1;
+    size_t Nfor = iLBCdec_inst->nsub - iLBC_encbits->startIdx - 1;
     for (subframe=0; subframe<Nfor; subframe++) {
 
       /* construct decoded vector */
@@ -156,7 +156,7 @@ void WebRtcIlbcfix_DecodeResidual(
 
     /* loop over subframes to decode */
 
-    int16_t Nback = iLBC_encbits->startIdx - 1;
+    size_t Nback = iLBC_encbits->startIdx - 1;
     for (subframe=0; subframe<Nback; subframe++) {
 
       /* construct decoded vector */

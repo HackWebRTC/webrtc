@@ -95,7 +95,7 @@ extern "C" {
       const int32_t frame_length,
       const uint32_t send_ts,
       const uint32_t arr_ts,
-      const int32_t pksize);
+      const size_t pksize);
 
   /* Update receiving estimates. Used when we only receive BWE index, no iSAC data packet. */
   int16_t WebRtcIsac_UpdateUplinkBwImpl(

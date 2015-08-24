@@ -18,7 +18,9 @@
 namespace webrtc {
 
 SinusoidalLinearChirpSource::SinusoidalLinearChirpSource(int sample_rate,
-  int samples, double max_frequency, double delay_samples)
+                                                         size_t samples,
+                                                         double max_frequency,
+                                                         double delay_samples)
     : sample_rate_(sample_rate),
       total_samples_(samples),
       max_frequency_(max_frequency),
@@ -29,8 +31,8 @@ SinusoidalLinearChirpSource::SinusoidalLinearChirpSource(int sample_rate,
   k_ = (max_frequency_ - kMinFrequency) / duration;
 }
 
-void SinusoidalLinearChirpSource::Run(int frames, float* destination) {
-  for (int i = 0; i < frames; ++i, ++current_index_) {
+void SinusoidalLinearChirpSource::Run(size_t frames, float* destination) {
+  for (size_t i = 0; i < frames; ++i, ++current_index_) {
     // Filter out frequencies higher than Nyquist.
     if (Frequency(current_index_) > 0.5 * sample_rate_) {
       destination[i] = 0;
@@ -48,7 +50,7 @@ void SinusoidalLinearChirpSource::Run(int frames, float* destination) {
   }
 }
 
-double SinusoidalLinearChirpSource::Frequency(int position) {
+double SinusoidalLinearChirpSource::Frequency(size_t position) {
   return kMinFrequency + (position - delay_samples_) *
       (max_frequency_ - kMinFrequency) / total_samples_;
 }

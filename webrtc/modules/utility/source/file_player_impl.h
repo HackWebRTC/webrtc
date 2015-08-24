@@ -31,7 +31,7 @@ public:
 
     virtual int Get10msAudioFromFile(
         int16_t* outBuffer,
-        int& lengthInSamples,
+        size_t& lengthInSamples,
         int frequencyInHz);
     virtual int32_t RegisterModuleFileCallback(FileCallback* callback);
     virtual int32_t StartPlayingFile(

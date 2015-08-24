@@ -46,12 +46,12 @@ TEST(RealFourierStaticsTest, OrderComputation) {
 }
 
 TEST(RealFourierStaticsTest, ComplexLengthComputation) {
-  EXPECT_EQ(2, RealFourier::ComplexLength(1));
-  EXPECT_EQ(3, RealFourier::ComplexLength(2));
-  EXPECT_EQ(5, RealFourier::ComplexLength(3));
-  EXPECT_EQ(9, RealFourier::ComplexLength(4));
-  EXPECT_EQ(17, RealFourier::ComplexLength(5));
-  EXPECT_EQ(65, RealFourier::ComplexLength(7));
+  EXPECT_EQ(2U, RealFourier::ComplexLength(1));
+  EXPECT_EQ(3U, RealFourier::ComplexLength(2));
+  EXPECT_EQ(5U, RealFourier::ComplexLength(3));
+  EXPECT_EQ(9U, RealFourier::ComplexLength(4));
+  EXPECT_EQ(17U, RealFourier::ComplexLength(5));
+  EXPECT_EQ(65U, RealFourier::ComplexLength(7));
 }
 
 template <typename T>

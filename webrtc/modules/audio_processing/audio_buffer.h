@@ -33,19 +33,19 @@ enum Band {
 class AudioBuffer {
  public:
   // TODO(ajm): Switch to take ChannelLayouts.
-  AudioBuffer(int input_num_frames,
+  AudioBuffer(size_t input_num_frames,
               int num_input_channels,
-              int process_num_frames,
+              size_t process_num_frames,
               int num_process_channels,
-              int output_num_frames);
+              size_t output_num_frames);
   virtual ~AudioBuffer();
 
   int num_channels() const;
   void set_num_channels(int num_channels);
-  int num_frames() const;
-  int num_frames_per_band() const;
-  int num_keyboard_frames() const;
-  int num_bands() const;
+  size_t num_frames() const;
+  size_t num_frames_per_band() const;
+  size_t num_keyboard_frames() const;
+  size_t num_bands() const;
 
   // Returns a pointer array to the full-band channels.
   // Usage:
@@ -127,20 +127,20 @@ class AudioBuffer {
 
   // The audio is passed into DeinterleaveFrom() or CopyFrom() with input
   // format (samples per channel and number of channels).
-  const int input_num_frames_;
+  const size_t input_num_frames_;
   const int num_input_channels_;
   // The audio is stored by DeinterleaveFrom() or CopyFrom() with processing
   // format.
-  const int proc_num_frames_;
+  const size_t proc_num_frames_;
   const int num_proc_channels_;
   // The audio is returned by InterleaveTo() and CopyTo() with output samples
   // per channels and the current number of channels. This last one can be
   // changed at any time using set_num_channels().
-  const int output_num_frames_;
+  const size_t output_num_frames_;
   int num_channels_;
 
-  int num_bands_;
-  int num_split_frames_;
+  size_t num_bands_;
+  size_t num_split_frames_;
   bool mixed_low_pass_valid_;
   bool reference_copied_;
   AudioFrame::VADActivity activity_;

@@ -510,7 +510,7 @@ bool AudioProcessingImpl::output_will_be_muted() const {
 }
 
 int AudioProcessingImpl::ProcessStream(const float* const* src,
-                                       int samples_per_channel,
+                                       size_t samples_per_channel,
                                        int input_sample_rate_hz,
                                        ChannelLayout input_layout,
                                        int output_sample_rate_hz,
@@ -716,7 +716,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 }
 
 int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
-                                              int samples_per_channel,
+                                              size_t samples_per_channel,
                                               int rev_sample_rate_hz,
                                               ChannelLayout layout) {
   const StreamConfig reverse_config = {

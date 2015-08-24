@@ -38,7 +38,7 @@ public:
     // channel).
     virtual int Get10msAudioFromFile(
         int16_t* outBuffer,
-        int& lengthInSamples,
+        size_t& lengthInSamples,
         int frequencyInHz) = 0;
 
     // Register callback for receiving file playing notifications.

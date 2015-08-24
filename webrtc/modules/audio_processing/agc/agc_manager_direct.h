@@ -57,8 +57,8 @@ class AgcManagerDirect {
   int Initialize();
   void AnalyzePreProcess(int16_t* audio,
                          int num_channels,
-                         int samples_per_channel);
-  void Process(const int16_t* audio, int length, int sample_rate_hz);
+                         size_t samples_per_channel);
+  void Process(const int16_t* audio, size_t length, int sample_rate_hz);
 
   // Sets a new microphone level, after first checking that it hasn't been
   // updated by the user, in which case no action is taken.

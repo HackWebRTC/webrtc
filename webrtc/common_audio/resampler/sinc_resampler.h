@@ -28,7 +28,7 @@ namespace webrtc {
 class SincResamplerCallback {
  public:
   virtual ~SincResamplerCallback() {}
-  virtual void Run(int frames, float* destination) = 0;
+  virtual void Run(size_t frames, float* destination) = 0;
 };
 
 // SincResampler is a high-quality single-channel sample-rate converter.
@@ -37,17 +37,18 @@ class SincResampler {
   // The kernel size can be adjusted for quality (higher is better) at the
   // expense of performance.  Must be a multiple of 32.
   // TODO(dalecurtis): Test performance to see if we can jack this up to 64+.
-  static const int kKernelSize = 32;
+  static const size_t kKernelSize = 32;
 
   // Default request size.  Affects how often and for how much SincResampler
   // calls back for input.  Must be greater than kKernelSize.
-  static const int kDefaultRequestSize = 512;
+  static const size_t kDefaultRequestSize = 512;
 
   // The kernel offset count is used for interpolation and is the number of
   // sub-sample kernel shifts.  Can be adjusted for quality (higher is better)
   // at the expense of allocating more memory.
-  static const int kKernelOffsetCount = 32;
-  static const int kKernelStorageSize = kKernelSize * (kKernelOffsetCount + 1);
+  static const size_t kKernelOffsetCount = 32;
+  static const size_t kKernelStorageSize =
+      kKernelSize * (kKernelOffsetCount + 1);
 
   // Constructs a SincResampler with the specified |read_cb|, which is used to
   // acquire audio data for resampling.  |io_sample_rate_ratio| is the ratio
@@ -56,18 +57,18 @@ class SincResampler {
   // greater than kKernelSize.  Specify kDefaultRequestSize if there are no
   // request size constraints.
   SincResampler(double io_sample_rate_ratio,
-                int request_frames,
+                size_t request_frames,
                 SincResamplerCallback* read_cb);
   virtual ~SincResampler();
 
   // Resample |frames| of data from |read_cb_| into |destination|.
-  void Resample(int frames, float* destination);
+  void Resample(size_t frames, float* destination);
 
   // The maximum size in frames that guarantees Resample() will only make a
   // single call to |read_cb_| for more data.
-  int ChunkSize() const;
+  size_t ChunkSize() const;
 
-  int request_frames() const { return request_frames_; }
+  size_t request_frames() const { return request_frames_; }
 
   // Flush all buffered data and reset internal indices.  Not thread safe, do
   // not call while Resample() is in progress.
@@ -125,13 +126,13 @@ class SincResampler {
   SincResamplerCallback* read_cb_;
 
   // The size (in samples) to request from each |read_cb_| execution.
-  const int request_frames_;
+  const size_t request_frames_;
 
   // The number of source frames processed per pass.
-  int block_size_;
+  size_t block_size_;
 
   // The size (in samples) of the internal buffer used by the resampler.
-  const int input_buffer_size_;
+  const size_t input_buffer_size_;
 
   // Contains kKernelOffsetCount kernels back-to-back, each of size kKernelSize.
   // The kernel offsets are sub-sample shifts of a windowed sinc shifted from

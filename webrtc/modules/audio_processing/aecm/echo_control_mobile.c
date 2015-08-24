@@ -199,7 +199,7 @@ int32_t WebRtcAecm_Init(void *aecmInst, int32_t sampFreq)
 }
 
 int32_t WebRtcAecm_BufferFarend(void *aecmInst, const int16_t *farend,
-                                int16_t nrOfSamples)
+                                size_t nrOfSamples)
 {
   AecMobile* aecm = aecmInst;
     int32_t retVal = 0;
@@ -233,21 +233,21 @@ int32_t WebRtcAecm_BufferFarend(void *aecmInst, const int16_t *farend,
         WebRtcAecm_DelayComp(aecm);
     }
 
-    WebRtc_WriteBuffer(aecm->farendBuf, farend, (size_t) nrOfSamples);
+    WebRtc_WriteBuffer(aecm->farendBuf, farend, nrOfSamples);
 
     return retVal;
 }
 
 int32_t WebRtcAecm_Process(void *aecmInst, const int16_t *nearendNoisy,
                            const int16_t *nearendClean, int16_t *out,
-                           int16_t nrOfSamples, int16_t msInSndCardBuf)
+                           size_t nrOfSamples, int16_t msInSndCardBuf)
 {
   AecMobile* aecm = aecmInst;
     int32_t retVal = 0;
-    short i;
+    size_t i;
     short nmbrOfFilledBuffers;
-    short nBlocks10ms;
-    short nFrames;
+    size_t nBlocks10ms;
+    size_t nFrames;
 #ifdef AEC_DEBUG
     short msInAECBuf;
 #endif

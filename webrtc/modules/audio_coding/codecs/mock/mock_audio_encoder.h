@@ -24,8 +24,8 @@ class MockAudioEncoder : public AudioEncoder {
   MOCK_CONST_METHOD0(SampleRateHz, int());
   MOCK_CONST_METHOD0(NumChannels, int());
   MOCK_CONST_METHOD0(MaxEncodedBytes, size_t());
-  MOCK_CONST_METHOD0(Num10MsFramesInNextPacket, int());
-  MOCK_CONST_METHOD0(Max10MsFramesInAPacket, int());
+  MOCK_CONST_METHOD0(Num10MsFramesInNextPacket, size_t());
+  MOCK_CONST_METHOD0(Max10MsFramesInAPacket, size_t());
   MOCK_CONST_METHOD0(GetTargetBitrate, int());
   MOCK_METHOD1(SetTargetBitrate, void(int));
   MOCK_METHOD1(SetProjectedPacketLossRate, void(double));
@@ -42,8 +42,8 @@ class MockAudioEncoderMutable : public AudioEncoderMutable {
   MOCK_CONST_METHOD0(SampleRateHz, int());
   MOCK_CONST_METHOD0(NumChannels, int());
   MOCK_CONST_METHOD0(MaxEncodedBytes, size_t());
-  MOCK_CONST_METHOD0(Num10MsFramesInNextPacket, int());
-  MOCK_CONST_METHOD0(Max10MsFramesInAPacket, int());
+  MOCK_CONST_METHOD0(Num10MsFramesInNextPacket, size_t());
+  MOCK_CONST_METHOD0(Max10MsFramesInAPacket, size_t());
   MOCK_CONST_METHOD0(GetTargetBitrate, int());
   MOCK_METHOD1(SetTargetBitrate, void(int));
   MOCK_METHOD1(SetProjectedPacketLossRate, void(double));

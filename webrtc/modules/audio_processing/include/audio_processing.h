@@ -311,7 +311,7 @@ class AudioProcessing {
   //
   // TODO(mgraczyk): Remove once clients are updated to use the new interface.
   virtual int ProcessStream(const float* const* src,
-                            int samples_per_channel,
+                            size_t samples_per_channel,
                             int input_sample_rate_hz,
                             ChannelLayout input_layout,
                             int output_sample_rate_hz,
@@ -357,7 +357,7 @@ class AudioProcessing {
   // of |data| points to a channel buffer, arranged according to |layout|.
   // TODO(mgraczyk): Remove once clients are updated to use the new interface.
   virtual int AnalyzeReverseStream(const float* const* data,
-                                   int samples_per_channel,
+                                   size_t samples_per_channel,
                                    int rev_sample_rate_hz,
                                    ChannelLayout layout) = 0;
 
@@ -510,8 +510,8 @@ class StreamConfig {
   int num_channels() const { return num_channels_; }
 
   bool has_keyboard() const { return has_keyboard_; }
-  int num_frames() const { return num_frames_; }
-  int num_samples() const { return num_channels_ * num_frames_; }
+  size_t num_frames() const { return num_frames_; }
+  size_t num_samples() const { return num_channels_ * num_frames_; }
 
   bool operator==(const StreamConfig& other) const {
     return sample_rate_hz_ == other.sample_rate_hz_ &&
@@ -522,14 +522,15 @@ class StreamConfig {
   bool operator!=(const StreamConfig& other) const { return !(*this == other); }
 
  private:
-  static int calculate_frames(int sample_rate_hz) {
-    return AudioProcessing::kChunkSizeMs * sample_rate_hz / 1000;
+  static size_t calculate_frames(int sample_rate_hz) {
+    return static_cast<size_t>(
+        AudioProcessing::kChunkSizeMs * sample_rate_hz / 1000);
   }
 
   int sample_rate_hz_;
   int num_channels_;
   bool has_keyboard_;
-  int num_frames_;
+  size_t num_frames_;
 };
 
 class ProcessingConfig {

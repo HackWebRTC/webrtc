@@ -90,11 +90,11 @@ class AudioEncoder {
   // the encoder may vary the number of 10 ms frames from packet to packet, but
   // it must decide the length of the next packet no later than when outputting
   // the preceding packet.
-  virtual int Num10MsFramesInNextPacket() const = 0;
+  virtual size_t Num10MsFramesInNextPacket() const = 0;
 
   // Returns the maximum value that can be returned by
   // Num10MsFramesInNextPacket().
-  virtual int Max10MsFramesInAPacket() const = 0;
+  virtual size_t Max10MsFramesInAPacket() const = 0;
 
   // Returns the current target bitrate in bits/s. The value -1 means that the
   // codec adapts the target automatically, and a current target cannot be

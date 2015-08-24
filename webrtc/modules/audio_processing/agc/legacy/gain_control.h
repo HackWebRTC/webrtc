@@ -66,7 +66,7 @@ extern "C"
  */
 int WebRtcAgc_AddFarend(void* agcInst,
                         const int16_t* inFar,
-                        int16_t samples);
+                        size_t samples);
 
 /*
  * This function processes a 10 ms frame of microphone speech to determine
@@ -90,8 +90,8 @@ int WebRtcAgc_AddFarend(void* agcInst,
  */
 int WebRtcAgc_AddMic(void* agcInst,
                      int16_t* const* inMic,
-                     int16_t num_bands,
-                     int16_t samples);
+                     size_t num_bands,
+                     size_t samples);
 
 /*
  * This function replaces the analog microphone with a virtual one.
@@ -118,8 +118,8 @@ int WebRtcAgc_AddMic(void* agcInst,
  */
 int WebRtcAgc_VirtualMic(void* agcInst,
                          int16_t* const* inMic,
-                         int16_t num_bands,
-                         int16_t samples,
+                         size_t num_bands,
+                         size_t samples,
                          int32_t micLevelIn,
                          int32_t* micLevelOut);
 
@@ -159,8 +159,8 @@ int WebRtcAgc_VirtualMic(void* agcInst,
  */
 int WebRtcAgc_Process(void* agcInst,
                       const int16_t* const* inNear,
-                      int16_t num_bands,
-                      int16_t samples,
+                      size_t num_bands,
+                      size_t samples,
                       int16_t* const* out,
                       int32_t inMicLevel,
                       int32_t* outMicLevel,

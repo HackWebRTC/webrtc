@@ -26,7 +26,7 @@ class AudioFrameOperations {
   // operation, meaning src_audio and dst_audio must point to different
   // buffers. It is the caller's responsibility to ensure that |dst_audio| is
   // sufficiently large.
-  static void MonoToStereo(const int16_t* src_audio, int samples_per_channel,
+  static void MonoToStereo(const int16_t* src_audio, size_t samples_per_channel,
                            int16_t* dst_audio);
   // |frame.num_channels_| will be updated. This version checks for sufficient
   // buffer size and that |num_channels_| is mono.
@@ -35,7 +35,7 @@ class AudioFrameOperations {
   // Downmixes stereo |src_audio| to mono |dst_audio|. This is an in-place
   // operation, meaning |src_audio| and |dst_audio| may point to the same
   // buffer.
-  static void StereoToMono(const int16_t* src_audio, int samples_per_channel,
+  static void StereoToMono(const int16_t* src_audio, size_t samples_per_channel,
                            int16_t* dst_audio);
   // |frame.num_channels_| will be updated. This version checks that
   // |num_channels_| is stereo.

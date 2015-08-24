@@ -20,7 +20,7 @@ namespace webrtc {
 // aligned to the given byte alignment.
 template<typename T> class AlignedArray {
  public:
-  AlignedArray(int rows, int cols, int alignment)
+  AlignedArray(int rows, size_t cols, int alignment)
       : rows_(rows),
         cols_(cols),
         alignment_(alignment) {
@@ -58,12 +58,12 @@ template<typename T> class AlignedArray {
     return head_row_[row];
   }
 
-  T& At(int row, int col) {
+  T& At(int row, size_t col) {
     CHECK_LE(col, cols_);
     return Row(row)[col];
   }
 
-  const T& At(int row, int col) const {
+  const T& At(int row, size_t col) const {
     CHECK_LE(col, cols_);
     return Row(row)[col];
   }
@@ -72,13 +72,13 @@ template<typename T> class AlignedArray {
     return rows_;
   }
 
-  int cols() const {
+  size_t cols() const {
     return cols_;
   }
 
  private:
   int rows_;
-  int cols_;
+  size_t cols_;
   int alignment_;
   T** head_row_;
 };

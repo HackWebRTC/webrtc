@@ -21,6 +21,7 @@
 /* include API */
 #include "isac.h"
 #include "utility.h"
+#include "webrtc/base/format_macros.h"
 
 /* Defines */
 #define SEED_FILE "randseed.txt" /* Used when running decoder on garbage data */
@@ -42,7 +43,8 @@ int main(int argc, char* argv[]) {
   FILE* inp, *outp, * f_bn = NULL, * vadp = NULL, *bandwidthp;
   int framecnt, endfile;
 
-  int i, errtype, VADusage = 0, packetLossPercent = 0;
+  size_t i;
+  int errtype, VADusage = 0, packetLossPercent = 0;
   int16_t CodingMode;
   int32_t bottleneck = 0;
   int framesize = 30; /* ms */
@@ -51,7 +53,7 @@ int main(int argc, char* argv[]) {
   /* Runtime statistics */
   double starttime, runtime, length_file;
 
-  int16_t stream_len = 0;
+  size_t stream_len = 0;
   int declen = 0, declenTC = 0;
   bool lostFrame = false;
 
@@ -75,14 +77,14 @@ int main(int argc, char* argv[]) {
   FILE* fy;
   double kbps;
 #endif /* _DEBUG */
-  int totalbits = 0;
+  size_t totalbits = 0;
   int totalsmpls = 0;
 
   /* If use GNS file */
   FILE* fp_gns = NULL;
   char gns_file[100];
-  short maxStreamLen30 = 0;
-  short maxStreamLen60 = 0;
+  size_t maxStreamLen30 = 0;
+  size_t maxStreamLen60 = 0;
   short sampFreqKHz = 32;
   short samplesIn10Ms;
   short useAssign = 0;
@@ -90,10 +92,10 @@ int main(int argc, char* argv[]) {
   bool doTransCoding = false;
   int32_t rateTransCoding = 0;
   uint8_t streamDataTransCoding[1200];
-  int16_t streamLenTransCoding = 0;
+  size_t streamLenTransCoding = 0;
   FILE* transCodingFile = NULL;
   FILE* transcodingBitstream = NULL;
-  uint32_t numTransCodingBytes = 0;
+  size_t numTransCodingBytes = 0;
 
   /* only one structure used for ISAC encoder */
   ISACStruct* ISAC_main_inst = NULL;
@@ -185,7 +187,7 @@ int main(int argc, char* argv[]) {
   char transCodingFileName[500];
   int16_t totFileLoop = 0;
   int16_t numFileLoop = 0;
-  for (i = 1; i + 2 < argc; i++) {
+  for (i = 1; i + 2 < static_cast<size_t>(argc); i++) {
     if (!strcmp("-LOOP", argv[i])) {
       i++;
       totFileLoop = (int16_t)atol(argv[i]);
@@ -579,6 +581,8 @@ int main(int argc, char* argv[]) {
 
     cur_framesmpls = 0;
     while (1) {
+      int stream_len_int = 0;
+
       /* Read 10 ms speech block */
       endfile = readframe(shortdata, inp, samplesIn10Ms);
 
@@ -598,21 +602,21 @@ int main(int argc, char* argv[]) {
 
       /* iSAC encoding */
       if (!(testNum == 3 && framecnt == 0)) {
-        stream_len =
+        stream_len_int =
             WebRtcIsac_Encode(ISAC_main_inst, shortdata, (uint8_t*)streamdata);
-        if ((payloadSize != 0) && (stream_len > payloadSize)) {
+        if ((payloadSize != 0) && (stream_len_int > payloadSize)) {
           if (testNum == 0) {
             printf("\n\n");
           }
 
           printf("\nError: Streamsize out of range %d\n",
-                 stream_len - payloadSize);
+                 stream_len_int - payloadSize);
           cout << flush;
         }
 
         WebRtcIsac_GetUplinkBw(ISAC_main_inst, &sendBN);
 
-        if (stream_len > 0) {
+        if (stream_len_int > 0) {
           if (doTransCoding) {
             int16_t indexStream;
             uint8_t auxUW8;
@@ -620,13 +624,15 @@ int main(int argc, char* argv[]) {
             /******************** Main Transcoding stream ********************/
             WebRtcIsac_GetDownLinkBwIndex(ISAC_main_inst, &bnIdxTC,
                                           &jitterInfoTC);
-            streamLenTransCoding = WebRtcIsac_GetNewBitStream(
+            int streamLenTransCoding_int = WebRtcIsac_GetNewBitStream(
                 ISAC_main_inst, bnIdxTC, jitterInfoTC, rateTransCoding,
                 streamDataTransCoding, false);
-            if (streamLenTransCoding < 0) {
+            if (streamLenTransCoding_int < 0) {
               fprintf(stderr, "Error in trans-coding\n");
               exit(0);
             }
+            streamLenTransCoding =
+                static_cast<size_t>(streamLenTransCoding_int);
             auxUW8 = (uint8_t)(((streamLenTransCoding & 0xFF00) >> 8) & 0x00FF);
             if (fwrite(&auxUW8, sizeof(uint8_t), 1, transcodingBitstream) !=
                 1) {
@@ -641,7 +647,7 @@ int main(int argc, char* argv[]) {
 
             if (fwrite(streamDataTransCoding, sizeof(uint8_t),
                        streamLenTransCoding, transcodingBitstream) !=
-                static_cast<size_t>(streamLenTransCoding)) {
+                streamLenTransCoding) {
               return -1;
             }
 
@@ -659,13 +665,15 @@ int main(int argc, char* argv[]) {
         break;
       }
 
-      if (stream_len < 0) {
+      if (stream_len_int < 0) {
         /* exit if returned with error */
         errtype = WebRtcIsac_GetErrorCode(ISAC_main_inst);
         fprintf(stderr, "Error in encoder: %d.\n", errtype);
         cout << flush;
         exit(0);
       }
+      stream_len = static_cast<size_t>(stream_len_int);
+
       cur_framesmpls += samplesIn10Ms;
       /* exit encoder loop if the encoder returned a bitstream */
       if (stream_len != 0)
@@ -703,17 +711,24 @@ int main(int argc, char* argv[]) {
 
     // RED.
     if (lostFrame) {
-      stream_len = WebRtcIsac_GetRedPayload(
+      int stream_len_int = WebRtcIsac_GetRedPayload(
           ISAC_main_inst, reinterpret_cast<uint8_t*>(streamdata));
+      if (stream_len_int < 0) {
+        fprintf(stderr, "Error getting RED payload\n");
+        exit(0);
+      }
+      stream_len = static_cast<size_t>(stream_len_int);
 
       if (doTransCoding) {
-        streamLenTransCoding = WebRtcIsac_GetNewBitStream(
+        int streamLenTransCoding_int = WebRtcIsac_GetNewBitStream(
             ISAC_main_inst, bnIdxTC, jitterInfoTC, rateTransCoding,
             streamDataTransCoding, true);
-        if (streamLenTransCoding < 0) {
+        if (streamLenTransCoding_int < 0) {
           fprintf(stderr, "Error in RED trans-coding\n");
           exit(0);
         }
+        streamLenTransCoding =
+            static_cast<size_t>(streamLenTransCoding_int);
       }
     }
 
@@ -891,7 +906,7 @@ int main(int argc, char* argv[]) {
 #endif /* _DEBUG */
   }
   printf("\n");
-  printf("total bits               = %d bits\n", totalbits);
+  printf("total bits               = %" PRIuS " bits\n", totalbits);
   printf("measured average bitrate = %0.3f kbits/s\n",
          (double)totalbits * (sampFreqKHz) / totalsmpls);
   if (doTransCoding) {
@@ -910,11 +925,11 @@ int main(int argc, char* argv[]) {
          (100 * runtime / length_file));
 
   if (maxStreamLen30 != 0) {
-    printf("Maximum payload size 30ms Frames %d bytes (%0.3f kbps)\n",
+    printf("Maximum payload size 30ms Frames %" PRIuS " bytes (%0.3f kbps)\n",
            maxStreamLen30, maxStreamLen30 * 8 / 30.);
   }
   if (maxStreamLen60 != 0) {
-    printf("Maximum payload size 60ms Frames %d bytes (%0.3f kbps)\n",
+    printf("Maximum payload size 60ms Frames %" PRIuS " bytes (%0.3f kbps)\n",
            maxStreamLen60, maxStreamLen60 * 8 / 60.);
   }
   // fprintf(stderr, "\n");
@@ -923,12 +938,12 @@ int main(int argc, char* argv[]) {
   fprintf(stderr, "   %0.1f kbps",
           (double)totalbits * (sampFreqKHz) / totalsmpls);
   if (maxStreamLen30 != 0) {
-    fprintf(stderr, "   plmax-30ms %d bytes (%0.0f kbps)", maxStreamLen30,
-            maxStreamLen30 * 8 / 30.);
+    fprintf(stderr, "   plmax-30ms %" PRIuS " bytes (%0.0f kbps)",
+            maxStreamLen30, maxStreamLen30 * 8 / 30.);
   }
   if (maxStreamLen60 != 0) {
-    fprintf(stderr, "   plmax-60ms %d bytes (%0.0f kbps)", maxStreamLen60,
-            maxStreamLen60 * 8 / 60.);
+    fprintf(stderr, "   plmax-60ms %" PRIuS " bytes (%0.0f kbps)",
+            maxStreamLen60, maxStreamLen60 * 8 / 60.);
   }
   if (doTransCoding) {
     fprintf(stderr, "  transcoding rate %.0f kbps",

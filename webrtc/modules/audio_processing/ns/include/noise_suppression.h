@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NS_INCLUDE_NOISE_SUPPRESSION_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_NS_INCLUDE_NOISE_SUPPRESSION_H_
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 typedef struct NsHandleT NsHandle;
@@ -92,7 +94,7 @@ void WebRtcNs_Analyze(NsHandle* NS_inst, const float* spframe);
  */
 void WebRtcNs_Process(NsHandle* NS_inst,
                      const float* const* spframe,
-                     int num_bands,
+                     size_t num_bands,
                      float* const* outframe);
 
 /* Returns the internally used prior speech probability of the current frame.

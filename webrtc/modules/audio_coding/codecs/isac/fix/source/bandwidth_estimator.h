@@ -62,7 +62,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr       *bwest_str,
                                          const int16_t         frameSize,
                                          const uint32_t        send_ts,
                                          const uint32_t        arr_ts,
-                                         const int16_t         pksize,
+                                         const size_t          pksize,
                                          const uint16_t        Index);
 
 /* Update receiving estimates. Used when we only receive BWE index, no iSAC data packet. */

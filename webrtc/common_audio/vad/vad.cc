@@ -28,8 +28,7 @@ Vad::~Vad() {
 enum Vad::Activity Vad::VoiceActivity(const int16_t* audio,
                                       size_t num_samples,
                                       int sample_rate_hz) {
-  int ret = WebRtcVad_Process(
-      handle_, sample_rate_hz, audio, static_cast<int>(num_samples));
+  int ret = WebRtcVad_Process(handle_, sample_rate_hz, audio, num_samples);
   switch (ret) {
     case 0:
       return kPassive;

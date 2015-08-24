@@ -25,11 +25,11 @@ void WebRtcIsacfix_FilterArLoop(int16_t* ar_g_Q0,     // Input samples
                                 int16_t* ar_f_Q0,     // Input samples
                                 int16_t* cth_Q15,     // Filter coefficients
                                 int16_t* sth_Q15,     // Filter coefficients
-                                int16_t order_coef) { // order of the filter
+                                size_t order_coef) { // order of the filter
   int n = 0;
 
   for (n = 0; n < HALF_SUBFRAMELEN - 1; n++) {
-    int k = 0;
+    size_t k = 0;
     int16_t tmpAR = 0;
     int32_t tmp32 = 0;
     int32_t tmp32_2 = 0;

@@ -78,9 +78,9 @@ class DspHelper {
   // locations and values are written to the arrays |peak_index| and
   // |peak_value|, respectively. Both arrays must hold at least |num_peaks|
   // elements.
-  static void PeakDetection(int16_t* data, int data_length,
-                            int num_peaks, int fs_mult,
-                            int* peak_index, int16_t* peak_value);
+  static void PeakDetection(int16_t* data, size_t data_length,
+                            size_t num_peaks, int fs_mult,
+                            size_t* peak_index, int16_t* peak_value);
 
   // Estimates the height and location of a maximum. The three values in the
   // array |signal_points| are used as basis for a parabolic fit, which is then
@@ -89,14 +89,15 @@ class DspHelper {
   // |peak_index| and |peak_value| is given in the full sample rate, as
   // indicated by the sample rate multiplier |fs_mult|.
   static void ParabolicFit(int16_t* signal_points, int fs_mult,
-                           int* peak_index, int16_t* peak_value);
+                           size_t* peak_index, int16_t* peak_value);
 
   // Calculates the sum-abs-diff for |signal| when compared to a displaced
   // version of itself. Returns the displacement lag that results in the minimum
   // distortion. The resulting distortion is written to |distortion_value|.
   // The values of |min_lag| and |max_lag| are boundaries for the search.
-  static int MinDistortion(const int16_t* signal, int min_lag,
-                           int max_lag, int length, int32_t* distortion_value);
+  static size_t MinDistortion(const int16_t* signal, size_t min_lag,
+                           size_t max_lag, size_t length,
+                           int32_t* distortion_value);
 
   // Mixes |length| samples from |input1| and |input2| together and writes the
   // result to |output|. The gain for |input1| starts at |mix_factor| (Q14) and
@@ -122,7 +123,7 @@ class DspHelper {
   // filters if |compensate_delay| is true. Returns -1 if the input is too short
   // to produce |output_length| samples, otherwise 0.
   static int DownsampleTo4kHz(const int16_t* input, size_t input_length,
-                              int output_length, int input_rate_hz,
+                              size_t output_length, int input_rate_hz,
                               bool compensate_delay, int16_t* output);
 
  private:

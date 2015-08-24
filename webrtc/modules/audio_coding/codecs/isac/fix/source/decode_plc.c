@@ -177,11 +177,12 @@ static void MemshipValQ15( int16_t in, int16_t *A, int16_t *B )
 
 static void LinearResampler(int16_t* in,
                             int16_t* out,
-                            int16_t lenIn,
-                            int16_t lenOut)
+                            size_t lenIn,
+                            size_t lenOut)
 {
-  int32_t n = (lenIn - 1) * RESAMP_RES;
-  int16_t resOut, i, j, relativePos, diff; /* */
+  size_t n = (lenIn - 1) * RESAMP_RES;
+  int16_t resOut, relativePos, diff; /* */
+  size_t i, j;
   uint16_t udiff;
 
   if( lenIn == lenOut )
@@ -190,7 +191,7 @@ static void LinearResampler(int16_t* in,
     return;
   }
 
-  resOut = WebRtcSpl_DivW32W16ResW16( n, (int16_t)(lenOut-1) );
+  resOut = WebRtcSpl_DivW32W16ResW16( (int32_t)n, (int16_t)(lenOut-1) );
 
   out[0] = in[0];
   for( i = 1, j = 0, relativePos = 0; i < lenOut; i++ )
@@ -235,7 +236,7 @@ static void LinearResampler(int16_t* in,
 
 void WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
                                  IsacFixDecoderInstance *ISACdec_obj,
-                                 int16_t *current_framesamples )
+                                 size_t *current_framesamples )
 {
   int subframecnt;
 
@@ -260,12 +261,14 @@ void WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
   int16_t myDecayRate;
 
   /* ---------- PLC variables ------------ */
-  int16_t lag0, i, k, noiseIndex;
+  size_t lag0, i, k;
+  int16_t noiseIndex;
   int16_t stretchPitchLP[PITCH_MAX_LAG + 10], stretchPitchLP1[PITCH_MAX_LAG + 10];
 
   int32_t gain_lo_hiQ17[2*SUBFRAMES];
 
-  int16_t nLP, pLP, wNoisyLP, wPriodicLP, tmp16, minIdx;
+  int16_t nLP, pLP, wNoisyLP, wPriodicLP, tmp16;
+  size_t minIdx;
   int32_t nHP, pHP, wNoisyHP, wPriodicHP, corr, minCorr, maxCoeff;
   int16_t noise1, rshift;
 
@@ -300,7 +303,7 @@ void WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
 
 
 
-  lag0 = ((ISACdec_obj->plcstr_obj.lastPitchLag_Q7 + 64) >> 7) + 1;
+  lag0 = (size_t)(((ISACdec_obj->plcstr_obj.lastPitchLag_Q7 + 64) >> 7) + 1);
 
 
   if( (ISACdec_obj->plcstr_obj).used != PLC_WAS_USED )

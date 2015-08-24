@@ -31,8 +31,8 @@ ConstantPcmPacketSource::ConstantPcmPacketSource(size_t payload_len_samples,
       seq_number_(0),
       timestamp_(0),
       payload_ssrc_(0xABCD1234) {
-  int encoded_len = WebRtcPcm16b_Encode(&sample_value, 1, encoded_sample_);
-  CHECK_EQ(2, encoded_len);
+  size_t encoded_len = WebRtcPcm16b_Encode(&sample_value, 1, encoded_sample_);
+  CHECK_EQ(2U, encoded_len);
 }
 
 Packet* ConstantPcmPacketSource::NextPacket() {

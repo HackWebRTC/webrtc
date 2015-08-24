@@ -1569,7 +1569,7 @@ bool WebRtcVoiceEngine::UnregisterProcessor(
 void WebRtcVoiceEngine::Process(int channel,
                                 webrtc::ProcessingTypes type,
                                 int16_t audio10ms[],
-                                int length,
+                                size_t length,
                                 int sampling_freq,
                                 bool is_stereo) {
     rtc::CritScope cs(&signal_media_critical_);
@@ -1665,7 +1665,7 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
               int bits_per_sample,
               int sample_rate,
               int number_of_channels,
-              int number_of_frames) override {
+              size_t number_of_frames) override {
     voe_audio_transport_->OnData(channel_,
                                  audio_data,
                                  bits_per_sample,

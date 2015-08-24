@@ -156,7 +156,7 @@ int32_t FileRecorderImpl::RecordAudioToFile(
         tempAudioFrame.sample_rate_hz_ = incomingAudioFrame.sample_rate_hz_;
         tempAudioFrame.samples_per_channel_ =
           incomingAudioFrame.samples_per_channel_;
-        for (uint16_t i = 0;
+        for (size_t i = 0;
              i < (incomingAudioFrame.samples_per_channel_); i++)
         {
             // Sample value is the average of left and right buffer rounded to
@@ -174,7 +174,7 @@ int32_t FileRecorderImpl::RecordAudioToFile(
         tempAudioFrame.sample_rate_hz_ = incomingAudioFrame.sample_rate_hz_;
         tempAudioFrame.samples_per_channel_ =
           incomingAudioFrame.samples_per_channel_;
-        for (uint16_t i = 0;
+        for (size_t i = 0;
              i < (incomingAudioFrame.samples_per_channel_); i++)
         {
             // Duplicate sample to both channels
@@ -210,7 +210,7 @@ int32_t FileRecorderImpl::RecordAudioToFile(
             return -1;
         }
     } else {
-        int outLen = 0;
+        size_t outLen = 0;
         _audioResampler.ResetIfNeeded(ptrAudioFrame->sample_rate_hz_,
                                       codec_info_.plfreq,
                                       ptrAudioFrame->num_channels_);

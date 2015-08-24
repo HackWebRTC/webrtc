@@ -27,7 +27,7 @@ namespace webrtc {
 Operations DecisionLogicNormal::GetDecisionSpecialized(
     const SyncBuffer& sync_buffer,
     const Expand& expand,
-    int decoder_frame_length,
+    size_t decoder_frame_length,
     const RTPHeader* packet_header,
     Modes prev_mode,
     bool play_dtmf,
@@ -149,7 +149,7 @@ Operations DecisionLogicNormal::ExpectedPacketAvailable(Modes prev_mode,
 Operations DecisionLogicNormal::FuturePacketAvailable(
     const SyncBuffer& sync_buffer,
     const Expand& expand,
-    int decoder_frame_length,
+    size_t decoder_frame_length,
     Modes prev_mode,
     uint32_t target_timestamp,
     uint32_t available_timestamp,
@@ -172,9 +172,9 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
     }
   }
 
-  const int samples_left = static_cast<int>(sync_buffer.FutureLength() -
-      expand.overlap_length());
-  const int cur_size_samples = samples_left +
+  const size_t samples_left =
+      sync_buffer.FutureLength() - expand.overlap_length();
+  const size_t cur_size_samples = samples_left +
       packet_buffer_.NumPacketsInBuffer() * decoder_frame_length;
 
   // If previous was comfort noise, then no merge is needed.
@@ -205,7 +205,8 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
   // fs_mult_ * 8 = fs / 1000.)
   if (prev_mode == kModeExpand ||
       (decoder_frame_length < output_size_samples_ &&
-       cur_size_samples > kAllowMergeWithoutExpandMs * fs_mult_ * 8)) {
+       cur_size_samples >
+           static_cast<size_t>(kAllowMergeWithoutExpandMs * fs_mult_ * 8))) {
     return kMerge;
   } else if (play_dtmf) {
     // Play DTMF instead of expand.

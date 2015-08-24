@@ -105,16 +105,16 @@ static void EstBufDelayNormal(Aec* aecInst);
 static void EstBufDelayExtended(Aec* aecInst);
 static int ProcessNormal(Aec* self,
                          const float* const* near,
-                         int num_bands,
+                         size_t num_bands,
                          float* const* out,
-                         int16_t num_samples,
+                         size_t num_samples,
                          int16_t reported_delay_ms,
                          int32_t skew);
 static void ProcessExtended(Aec* self,
                             const float* const* near,
-                            int num_bands,
+                            size_t num_bands,
                             float* const* out,
-                            int16_t num_samples,
+                            size_t num_samples,
                             int16_t reported_delay_ms,
                             int32_t skew);
 
@@ -271,9 +271,9 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
 // only buffer L band for farend
 int32_t WebRtcAec_BufferFarend(void* aecInst,
                                const float* farend,
-                               int16_t nrOfSamples) {
+                               size_t nrOfSamples) {
   Aec* aecpc = aecInst;
-  int newNrOfSamples = nrOfSamples;
+  size_t newNrOfSamples = nrOfSamples;
   float new_farend[MAX_RESAMP_LEN];
   const float* farend_ptr = farend;
 
@@ -305,11 +305,11 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
   }
 
   aecpc->farend_started = 1;
-  WebRtcAec_SetSystemDelay(aecpc->aec,
-                           WebRtcAec_system_delay(aecpc->aec) + newNrOfSamples);
+  WebRtcAec_SetSystemDelay(
+      aecpc->aec, WebRtcAec_system_delay(aecpc->aec) + (int)newNrOfSamples);
 
   // Write the time-domain data to |far_pre_buf|.
-  WebRtc_WriteBuffer(aecpc->far_pre_buf, farend_ptr, (size_t)newNrOfSamples);
+  WebRtc_WriteBuffer(aecpc->far_pre_buf, farend_ptr, newNrOfSamples);
 
   // Transform to frequency domain if we have enough data.
   while (WebRtc_available_read(aecpc->far_pre_buf) >= PART_LEN2) {
@@ -334,9 +334,9 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
 
 int32_t WebRtcAec_Process(void* aecInst,
                           const float* const* nearend,
-                          int num_bands,
+                          size_t num_bands,
                           float* const* out,
-                          int16_t nrOfSamples,
+                          size_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew) {
   Aec* aecpc = aecInst;
@@ -592,14 +592,14 @@ AecCore* WebRtcAec_aec_core(void* handle) {
 
 static int ProcessNormal(Aec* aecpc,
                          const float* const* nearend,
-                         int num_bands,
+                         size_t num_bands,
                          float* const* out,
-                         int16_t nrOfSamples,
+                         size_t nrOfSamples,
                          int16_t msInSndCardBuf,
                          int32_t skew) {
   int retVal = 0;
-  short i;
-  short nBlocks10ms;
+  size_t i;
+  size_t nBlocks10ms;
   // Limit resampling to doubling/halving of signal
   const float minSkewEst = -0.5f;
   const float maxSkewEst = 1.0f;
@@ -740,12 +740,12 @@ static int ProcessNormal(Aec* aecpc,
 
 static void ProcessExtended(Aec* self,
                             const float* const* near,
-                            int num_bands,
+                            size_t num_bands,
                             float* const* out,
-                            int16_t num_samples,
+                            size_t num_samples,
                             int16_t reported_delay_ms,
                             int32_t skew) {
-  int i;
+  size_t i;
   const int delay_diff_offset = kDelayDiffOffsetSamples;
 #if defined(WEBRTC_UNTRUSTED_DELAY)
   reported_delay_ms = kFixedDelayMs;
