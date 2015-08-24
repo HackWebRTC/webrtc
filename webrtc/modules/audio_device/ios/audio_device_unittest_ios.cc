@@ -753,8 +753,8 @@ TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
       std::max(kTestTimeOutInMilliseconds, 1000 * kFullDuplexTimeInSec));
   StopPlayout();
   StopRecording();
-  EXPECT_LE(fifo_audio_stream->average_size(), 10);
-  EXPECT_LE(fifo_audio_stream->largest_size(), 20);
+  EXPECT_LE(fifo_audio_stream->average_size(), 10u);
+  EXPECT_LE(fifo_audio_stream->largest_size(), 20u);
 }
 
 // Measures loopback latency and reports the min, max and average values for
@@ -785,7 +785,8 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   StopRecording();
   // Verify that the correct number of transmitted impulses are detected.
   EXPECT_EQ(latency_audio_stream->num_latency_values(),
-            kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1);
+            static_cast<size_t>(
+                kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1));
   latency_audio_stream->PrintResults();
 }
 
