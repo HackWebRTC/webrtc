@@ -667,6 +667,29 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
                             codec_manager_.GetAudioDecoder(codec));
 }
 
+int AudioCodingModuleImpl::RegisterExternalReceiveCodec(
+    int rtp_payload_type,
+    AudioDecoder* external_decoder,
+    int sample_rate_hz,
+    int num_channels) {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  DCHECK(receiver_initialized_);
+  if (num_channels > 2 || num_channels < 0) {
+    LOG_F(LS_ERROR) << "Unsupported number of channels: " << num_channels;
+    return -1;
+  }
+
+  // Check if the payload-type is valid.
+  if (!ACMCodecDB::ValidPayloadType(rtp_payload_type)) {
+    LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
+                    << " for external decoder.";
+    return -1;
+  }
+
+  return receiver_.AddCodec(-1 /* external */, rtp_payload_type, num_channels,
+                            sample_rate_hz, external_decoder);
+}
+
 // Get current received codec.
 int AudioCodingModuleImpl::ReceiveCodec(CodecInst* current_codec) const {
   CriticalSectionScoped lock(acm_crit_sect_);

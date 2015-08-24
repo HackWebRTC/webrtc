@@ -143,6 +143,15 @@ void AcmReceiveTestOldApi::RegisterNetEqTestCodecs() {
   }
 }
 
+int AcmReceiveTestOldApi::RegisterExternalReceiveCodec(
+    int rtp_payload_type,
+    AudioDecoder* external_decoder,
+    int sample_rate_hz,
+    int num_channels) {
+  return acm_->RegisterExternalReceiveCodec(rtp_payload_type, external_decoder,
+                                            sample_rate_hz, num_channels);
+}
+
 void AcmReceiveTestOldApi::Run() {
   for (rtc::scoped_ptr<Packet> packet(packet_source_->NextPacket()); packet;
        packet.reset(packet_source_->NextPacket())) {

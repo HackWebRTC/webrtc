@@ -29,6 +29,7 @@ struct WebRtcRTPHeader;
 class AudioFrame;
 class RTPFragmentationHeader;
 class AudioEncoderMutable;
+class AudioDecoder;
 
 #define WEBRTC_10MS_PCM_AUDIO 960  // 16 bits super wideband 48 kHz
 
@@ -576,8 +577,12 @@ class AudioCodingModule {
   //   -1 if failed to register the codec
   //    0 if the codec registered successfully.
   //
-  virtual int32_t RegisterReceiveCodec(
-      const CodecInst& receive_codec) = 0;
+  virtual int RegisterReceiveCodec(const CodecInst& receive_codec) = 0;
+
+  virtual int RegisterExternalReceiveCodec(int rtp_payload_type,
+                                           AudioDecoder* external_decoder,
+                                           int sample_rate_hz,
+                                           int num_channels) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t UnregisterReceiveCodec()

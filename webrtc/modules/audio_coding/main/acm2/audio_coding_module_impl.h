@@ -137,6 +137,11 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // for codecs, CNG, DTMF, RED.
   int RegisterReceiveCodec(const CodecInst& receive_codec) override;
 
+  int RegisterExternalReceiveCodec(int rtp_payload_type,
+                                   AudioDecoder* external_decoder,
+                                   int sample_rate_hz,
+                                   int num_channels) override;
+
   // Get current received codec.
   int ReceiveCodec(CodecInst* current_codec) const override;
 

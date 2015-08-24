@@ -93,21 +93,24 @@ class AcmReceiver {
   // Adds a new codec to the NetEq codec database.
   //
   // Input:
-  //   - acm_codec_id        : ACM codec ID.
+  //   - acm_codec_id        : ACM codec ID; -1 means external decoder.
   //   - payload_type        : payload type.
   //   - sample_rate_hz      : sample rate.
-  //   - audio_decoder       : pointer to a decoder object. If it is NULL
-  //                           then NetEq will internally create the decoder
-  //                           object. Otherwise, NetEq will store this pointer
-  //                           as the decoder corresponding with the given
-  //                           payload type. NetEq won't acquire the ownership
-  //                           of this pointer. It is up to the client of this
-  //                           class (ACM) to delete it. By providing
-  //                           |audio_decoder| ACM will have control over the
-  //                           decoder instance of the codec. This is essential
-  //                           for a codec like iSAC which encoder/decoder
-  //                           encoder has to know about decoder (bandwidth
-  //                           estimator that is updated at decoding time).
+  //   - audio_decoder       : pointer to a decoder object. If it's null, then
+  //                           NetEq will internally create a decoder object
+  //                           based on the value of |acm_codec_id| (which
+  //                           mustn't be -1). Otherwise, NetEq will use the
+  //                           given decoder for the given payload type. NetEq
+  //                           won't take ownership of the decoder; it's up to
+  //                           the caller to delete it when it's no longer
+  //                           needed.
+  //
+  //                           Providing an existing decoder object here is
+  //                           necessary for external decoders, but may also be
+  //                           used for built-in decoders if NetEq doesn't have
+  //                           all the info it needs to construct them properly
+  //                           (e.g. iSAC, where the decoder needs to be paired
+  //                           with an encoder).
   //
   // Return value             : 0 if OK.
   //                           <0 if NetEq returned an error.

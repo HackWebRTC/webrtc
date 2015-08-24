@@ -476,8 +476,10 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               int channels,
                               int sample_rate_hz,
                               AudioDecoder* audio_decoder) {
-  assert(acm_codec_id >= 0);
-  NetEqDecoder neteq_decoder = ACMCodecDB::neteq_decoders_[acm_codec_id];
+  assert(acm_codec_id >= -1);  // -1 means external decoder
+  NetEqDecoder neteq_decoder = (acm_codec_id == -1)
+                                   ? kDecoderArbitrary
+                                   : ACMCodecDB::neteq_decoders_[acm_codec_id];
 
   // Make sure the right decoder is registered for Opus.
   if (neteq_decoder == kDecoderOpus && channels == 2) {
@@ -491,14 +493,15 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   auto it = decoders_.find(payload_type);
   if (it != decoders_.end()) {
     const Decoder& decoder = it->second;
-    if (decoder.acm_codec_id == acm_codec_id && decoder.channels == channels &&
+    if (acm_codec_id != -1 && decoder.acm_codec_id == acm_codec_id &&
+        decoder.channels == channels &&
         decoder.sample_rate_hz == sample_rate_hz) {
       // Re-registering the same codec. Do nothing and return.
       return 0;
     }
 
-    // Changing codec or number of channels. First unregister the old codec,
-    // then register the new one.
+    // Changing codec. First unregister the old codec, then register the new
+    // one.
     if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
       LOG(LERROR) << "Cannot remove payload " << static_cast<int>(payload_type);
       return -1;

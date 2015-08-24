@@ -23,6 +23,8 @@
 #include "webrtc/modules/audio_coding/main/acm2/acm_send_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "webrtc/modules/audio_coding/neteq/mock/mock_audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_checksum.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/neteq/tools/constant_pcm_packet_source.h"
@@ -873,7 +875,16 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
   }
 
  protected:
-  void Run(int output_freq_hz, const std::string& checksum_ref) {
+  struct ExternalDecoder {
+    int rtp_payload_type;
+    AudioDecoder* external_decoder;
+    int sample_rate_hz;
+    int num_channels;
+  };
+
+  void Run(int output_freq_hz,
+           const std::string& checksum_ref,
+           const std::vector<ExternalDecoder>& external_decoders) {
     const std::string input_file_name =
         webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
     rtc::scoped_ptr<test::RtpFileSource> packet_source(
@@ -901,6 +912,11 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
         output_freq_hz,
         test::AcmReceiveTestOldApi::kArbitraryChannels);
     ASSERT_NO_FATAL_FAILURE(test.RegisterNetEqTestCodecs());
+    for (const auto& ed : external_decoders) {
+      ASSERT_EQ(0, test.RegisterExternalReceiveCodec(
+                       ed.rtp_payload_type, ed.external_decoder,
+                       ed.sample_rate_hz, ed.num_channels));
+    }
     test.Run();
 
     std::string checksum_string = checksum.Finish();
@@ -915,10 +931,10 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 #define MAYBE_8kHzOutput 8kHzOutput
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
-  Run(8000,
-      PlatformChecksum("dcee98c623b147ebe1b40dd30efa896e",
-                       "adc92e173f908f93b96ba5844209815a",
-                       "908002dc01fc4eb1d2be24eb1d3f354b"));
+  Run(8000, PlatformChecksum("dcee98c623b147ebe1b40dd30efa896e",
+                             "adc92e173f908f93b96ba5844209815a",
+                             "908002dc01fc4eb1d2be24eb1d3f354b"),
+      std::vector<ExternalDecoder>());
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
@@ -928,10 +944,10 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
 #define MAYBE_16kHzOutput 16kHzOutput
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
-  Run(16000,
-      PlatformChecksum("f790e7a8cce4e2c8b7bb5e0e4c5dac0d",
-                       "8cffa6abcb3e18e33b9d857666dff66a",
-                       "a909560b5ca49fa472b17b7b277195e9"));
+  Run(16000, PlatformChecksum("f790e7a8cce4e2c8b7bb5e0e4c5dac0d",
+                              "8cffa6abcb3e18e33b9d857666dff66a",
+                              "a909560b5ca49fa472b17b7b277195e9"),
+      std::vector<ExternalDecoder>());
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
@@ -941,10 +957,10 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
 #define MAYBE_32kHzOutput 32kHzOutput
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
-  Run(32000,
-      PlatformChecksum("306e0d990ee6e92de3fbecc0123ece37",
-                       "3e126fe894720c3f85edadcc91964ba5",
-                       "441aab4b347fb3db4e9244337aca8d8e"));
+  Run(32000, PlatformChecksum("306e0d990ee6e92de3fbecc0123ece37",
+                              "3e126fe894720c3f85edadcc91964ba5",
+                              "441aab4b347fb3db4e9244337aca8d8e"),
+      std::vector<ExternalDecoder>());
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
@@ -954,10 +970,52 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
 #define MAYBE_48kHzOutput 48kHzOutput
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutput) {
-  Run(48000,
-      PlatformChecksum("aa7c232f63a67b2a72703593bdd172e0",
-                       "0155665e93067c4e89256b944dd11999",
-                       "4ee2730fa1daae755e8a8fd3abd779ec"));
+  Run(48000, PlatformChecksum("aa7c232f63a67b2a72703593bdd172e0",
+                              "0155665e93067c4e89256b944dd11999",
+                              "4ee2730fa1daae755e8a8fd3abd779ec"),
+      std::vector<ExternalDecoder>());
+}
+
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_48kHzOutputExternalDecoder DISABLED_48kHzOutputExternalDecoder
+#else
+#define MAYBE_48kHzOutputExternalDecoder 48kHzOutputExternalDecoder
+#endif
+TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutputExternalDecoder) {
+  AudioDecoderPcmU decoder;
+  MockAudioDecoder mock_decoder;
+  // Set expectations on the mock decoder and also delegate the calls to the
+  // real decoder.
+  EXPECT_CALL(mock_decoder, Init())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::Init));
+  EXPECT_CALL(mock_decoder, IncomingPacket(_, _, _, _, _))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::IncomingPacket));
+  EXPECT_CALL(mock_decoder, Channels())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::Channels));
+  EXPECT_CALL(mock_decoder, Decode(_, _, _, _, _, _))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::Decode));
+  EXPECT_CALL(mock_decoder, HasDecodePlc())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::HasDecodePlc));
+  ExternalDecoder ed;
+  ed.rtp_payload_type = 0;
+  ed.external_decoder = &mock_decoder;
+  ed.sample_rate_hz = 8000;
+  ed.num_channels = 1;
+  std::vector<ExternalDecoder> external_decoders;
+  external_decoders.push_back(ed);
+
+  Run(48000, PlatformChecksum("aa7c232f63a67b2a72703593bdd172e0",
+                              "0155665e93067c4e89256b944dd11999",
+                              "4ee2730fa1daae755e8a8fd3abd779ec"),
+      external_decoders);
+
+  EXPECT_CALL(mock_decoder, Die());
 }
 
 // This test verifies bit exactness for the send-side of ACM. The test setup is

@@ -17,6 +17,7 @@
 
 namespace webrtc {
 class AudioCodingModule;
+class AudioDecoder;
 struct CodecInst;
 
 namespace test {
@@ -43,6 +44,11 @@ class AcmReceiveTestOldApi {
   // Registers codecs with payload types matching the pre-encoded NetEq test
   // files.
   void RegisterNetEqTestCodecs();
+
+  int RegisterExternalReceiveCodec(int rtp_payload_type,
+                                   AudioDecoder* external_decoder,
+                                   int sample_rate_hz,
+                                   int num_channels);
 
   // Runs the test and returns true if successful.
   void Run();
