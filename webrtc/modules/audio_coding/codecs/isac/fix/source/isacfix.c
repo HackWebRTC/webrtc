@@ -241,6 +241,31 @@ static void WebRtcIsacfix_InitMIPS(void) {
 }
 #endif
 
+static void InitFunctionPointers(void) {
+  WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrC;
+  WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopC;
+  WebRtcIsacfix_CalculateResidualEnergy =
+      WebRtcIsacfix_CalculateResidualEnergyC;
+  WebRtcIsacfix_AllpassFilter2FixDec16 = WebRtcIsacfix_AllpassFilter2FixDec16C;
+  WebRtcIsacfix_HighpassFilterFixDec32 = WebRtcIsacfix_HighpassFilterFixDec32C;
+  WebRtcIsacfix_Time2Spec = WebRtcIsacfix_Time2SpecC;
+  WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeC;
+  WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1C;
+  WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2C;
+
+#ifdef WEBRTC_DETECT_NEON
+  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
+    WebRtcIsacfix_InitNeon();
+  }
+#elif defined(WEBRTC_HAS_NEON)
+  WebRtcIsacfix_InitNeon();
+#endif
+
+#if defined(MIPS32_LE)
+  WebRtcIsacfix_InitMIPS();
+#endif
+}
+
 /****************************************************************************
  * WebRtcIsacfix_EncoderInit(...)
  *
@@ -317,29 +342,7 @@ int16_t WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   WebRtcIsacfix_InitPostFilterbank(&ISAC_inst->ISACenc_obj.interpolatorstr_obj);
 #endif
 
-  // Initiaze function pointers.
-  WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrC;
-  WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopC;
-  WebRtcIsacfix_CalculateResidualEnergy =
-      WebRtcIsacfix_CalculateResidualEnergyC;
-  WebRtcIsacfix_AllpassFilter2FixDec16 = WebRtcIsacfix_AllpassFilter2FixDec16C;
-  WebRtcIsacfix_HighpassFilterFixDec32 = WebRtcIsacfix_HighpassFilterFixDec32C;
-  WebRtcIsacfix_Time2Spec = WebRtcIsacfix_Time2SpecC;
-  WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeC;
-  WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1C;
-  WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2C;
-
-#ifdef WEBRTC_DETECT_NEON
-  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
-    WebRtcIsacfix_InitNeon();
-  }
-#elif defined(WEBRTC_HAS_NEON)
-  WebRtcIsacfix_InitNeon();
-#endif
-
-#if defined(MIPS32_LE)
-  WebRtcIsacfix_InitMIPS();
-#endif
+  InitFunctionPointers();
 
   return statusInit;
 }
@@ -574,6 +577,8 @@ int16_t WebRtcIsacfix_GetNewBitStream(ISACFIX_MainStruct *ISAC_main_inst,
 int16_t WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
 {
   ISACFIX_SubStruct *ISAC_inst;
+
+  InitFunctionPointers();
 
   /* typecast pointer to real structure */
   ISAC_inst = (ISACFIX_SubStruct *)ISAC_main_inst;

@@ -17,13 +17,13 @@ namespace webrtc {
 
 namespace {
 
-void TestBadConfig(const AudioEncoderDecoderIsac::Config& config) {
+void TestBadConfig(const AudioEncoderIsac::Config& config) {
   EXPECT_FALSE(config.IsOk());
 }
 
-void TestGoodConfig(const AudioEncoderDecoderIsac::Config& config) {
+void TestGoodConfig(const AudioEncoderIsac::Config& config) {
   EXPECT_TRUE(config.IsOk());
-  AudioEncoderDecoderIsac ed(config);
+  AudioEncoderIsac aei(config);
 }
 
 // Wrap subroutine calls that test things in this, so that the error messages
@@ -34,7 +34,7 @@ void TestGoodConfig(const AudioEncoderDecoderIsac::Config& config) {
 }  // namespace
 
 TEST(AudioEncoderIsacTest, TestConfigBitrate) {
-  AudioEncoderDecoderIsac::Config config;
+  AudioEncoderIsac::Config config;
 
   // The default value is some real, positive value.
   EXPECT_GT(config.bit_rate, 1);

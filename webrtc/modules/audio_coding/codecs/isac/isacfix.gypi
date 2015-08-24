@@ -14,6 +14,7 @@
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        'isac_common',
       ],
       'include_dirs': [
         'fix/interface',
@@ -26,8 +27,6 @@
         ],
       },
       'sources': [
-        'audio_encoder_isac_t.h',
-        'audio_encoder_isac_t_impl.h',
         'fix/interface/audio_encoder_isacfix.h',
         'fix/interface/isacfix.h',
         'fix/source/arith_routines.c',

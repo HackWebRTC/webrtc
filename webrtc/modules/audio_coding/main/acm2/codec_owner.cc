@@ -75,55 +75,61 @@ bool IsG722(const CodecInst& codec) {
 }
 }  // namespace
 
-CodecOwner::CodecOwner()
-    : isac_is_encoder_(false), external_speech_encoder_(nullptr) {
+CodecOwner::CodecOwner() : external_speech_encoder_(nullptr) {
 }
 
 CodecOwner::~CodecOwner() = default;
 
 namespace {
-AudioEncoderDecoderMutableIsac* CreateIsacCodec(const CodecInst& speech_inst) {
+
+rtc::scoped_ptr<AudioDecoder> CreateIsacDecoder(
+    LockedIsacBandwidthInfo* bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
-  return new AudioEncoderDecoderMutableIsacFix(speech_inst);
+  return rtc_make_scoped_ptr(new AudioDecoderIsacFix(bwinfo));
 #elif defined(WEBRTC_CODEC_ISAC)
-  return new AudioEncoderDecoderMutableIsacFloat(speech_inst);
+  return rtc_make_scoped_ptr(new AudioDecoderIsac(bwinfo));
 #else
   FATAL() << "iSAC is not supported.";
-  return nullptr;
+  return rtc::scoped_ptr<AudioDecoder>();
 #endif
 }
 
-void CreateSpeechEncoder(
+rtc::scoped_ptr<AudioEncoderMutable> CreateIsacEncoder(
     const CodecInst& speech_inst,
-    rtc::scoped_ptr<AudioEncoderMutable>* speech_encoder,
-    rtc::scoped_ptr<AudioEncoderDecoderMutableIsac>* isac_codec,
-    bool* isac_is_encoder) {
+    LockedIsacBandwidthInfo* bwinfo) {
+#if defined(WEBRTC_CODEC_ISACFX)
+  return rtc_make_scoped_ptr(
+      new AudioEncoderMutableIsacFix(speech_inst, bwinfo));
+#elif defined(WEBRTC_CODEC_ISAC)
+  return rtc_make_scoped_ptr(
+      new AudioEncoderMutableIsacFloat(speech_inst, bwinfo));
+#else
+  FATAL() << "iSAC is not supported.";
+  return rtc::scoped_ptr<AudioEncoderMutable>();
+#endif
+}
+
+rtc::scoped_ptr<AudioEncoderMutable> CreateSpeechEncoder(
+    const CodecInst& speech_inst,
+    LockedIsacBandwidthInfo* bwinfo) {
   if (IsIsac(speech_inst)) {
-    if (*isac_codec) {
-      (*isac_codec)->UpdateSettings(speech_inst);
-    } else {
-      isac_codec->reset(CreateIsacCodec(speech_inst));
-    }
-    *isac_is_encoder = true;
-    speech_encoder->reset();
-    return;
-  }
-  if (IsOpus(speech_inst)) {
-    speech_encoder->reset(new AudioEncoderMutableOpus(speech_inst));
+    return CreateIsacEncoder(speech_inst, bwinfo);
+  } else if (IsOpus(speech_inst)) {
+    return rtc_make_scoped_ptr(new AudioEncoderMutableOpus(speech_inst));
   } else if (IsPcmU(speech_inst)) {
-    speech_encoder->reset(new AudioEncoderMutablePcmU(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderMutablePcmU(speech_inst));
   } else if (IsPcmA(speech_inst)) {
-    speech_encoder->reset(new AudioEncoderMutablePcmA(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderMutablePcmA(speech_inst));
   } else if (IsPcm16B(speech_inst)) {
-    speech_encoder->reset(new AudioEncoderMutablePcm16B(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderMutablePcm16B(speech_inst));
   } else if (IsIlbc(speech_inst)) {
-    speech_encoder->reset(new AudioEncoderMutableIlbc(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderMutableIlbc(speech_inst));
   } else if (IsG722(speech_inst)) {
-    speech_encoder->reset(new AudioEncoderMutableG722(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderMutableG722(speech_inst));
   } else {
     FATAL();
+    return rtc::scoped_ptr<AudioEncoderMutable>();
   }
-  *isac_is_encoder = false;
 }
 
 AudioEncoder* CreateRedEncoder(int red_payload_type,
@@ -176,8 +182,7 @@ void CodecOwner::SetEncoders(const CodecInst& speech_inst,
                              int cng_payload_type,
                              ACMVADMode vad_mode,
                              int red_payload_type) {
-  CreateSpeechEncoder(speech_inst, &speech_encoder_, &isac_codec_,
-                      &isac_is_encoder_);
+  speech_encoder_ = CreateSpeechEncoder(speech_inst, &isac_bandwidth_info_);
   external_speech_encoder_ = nullptr;
   ChangeCngAndRed(cng_payload_type, vad_mode, red_payload_type);
 }
@@ -188,7 +193,6 @@ void CodecOwner::SetEncoders(AudioEncoderMutable* external_speech_encoder,
                              int red_payload_type) {
   external_speech_encoder_ = external_speech_encoder;
   speech_encoder_.reset();
-  isac_is_encoder_ = false;
   ChangeCngAndRed(cng_payload_type, vad_mode, red_payload_type);
 }
 
@@ -204,24 +208,13 @@ void CodecOwner::ChangeCngAndRed(int cng_payload_type,
   AudioEncoder* encoder =
       CreateRedEncoder(red_payload_type, speech_encoder, &red_encoder_);
   CreateCngEncoder(cng_payload_type, vad_mode, encoder, &cng_encoder_);
-  int num_true =
-      !!speech_encoder_ + !!external_speech_encoder_ + isac_is_encoder_;
-  DCHECK_EQ(num_true, 1);
-  DCHECK(!isac_is_encoder_ || isac_codec_);
+  DCHECK_EQ(!!speech_encoder_ + !!external_speech_encoder_, 1);
 }
 
 AudioDecoder* CodecOwner::GetIsacDecoder() {
-  if (!isac_codec_) {
-    DCHECK(!isac_is_encoder_);
-    // None of the parameter values in |speech_inst| matter when the codec is
-    // used only as a decoder.
-    CodecInst speech_inst;
-    speech_inst.plfreq = 16000;
-    speech_inst.rate = -1;
-    speech_inst.pacsize = 480;
-    isac_codec_.reset(CreateIsacCodec(speech_inst));
-  }
-  return isac_codec_.get();
+  if (!isac_decoder_)
+    isac_decoder_ = CreateIsacDecoder(&isac_bandwidth_info_);
+  return isac_decoder_.get();
 }
 
 AudioEncoder* CodecOwner::Encoder() {
@@ -243,15 +236,9 @@ AudioEncoderMutable* CodecOwner::SpeechEncoder() {
 }
 
 const AudioEncoderMutable* CodecOwner::SpeechEncoder() const {
-  int num_true =
-      !!speech_encoder_ + !!external_speech_encoder_ + isac_is_encoder_;
-  DCHECK_GE(num_true, 0);
-  DCHECK_LE(num_true, 1);
-  if (external_speech_encoder_)
-    return external_speech_encoder_;
-  if (speech_encoder_)
-    return speech_encoder_.get();
-  return isac_is_encoder_ ? isac_codec_.get() : nullptr;
+  DCHECK(!speech_encoder_ || !external_speech_encoder_);
+  return external_speech_encoder_ ? external_speech_encoder_
+                                  : speech_encoder_.get();
 }
 
 }  // namespace acm2

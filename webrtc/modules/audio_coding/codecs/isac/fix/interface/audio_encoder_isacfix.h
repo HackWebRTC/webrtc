@@ -120,46 +120,18 @@ struct IsacFix {
   }
 };
 
-typedef AudioEncoderDecoderIsacT<IsacFix> AudioEncoderDecoderIsacFix;
+using AudioEncoderIsacFix = AudioEncoderIsacT<IsacFix>;
+using AudioDecoderIsacFix = AudioDecoderIsacT<IsacFix>;
 
 struct CodecInst;
 
-class AudioEncoderDecoderMutableIsacFix
-    : public AudioEncoderMutableImpl<AudioEncoderDecoderIsacFix,
-                                     AudioEncoderDecoderMutableIsac> {
+class AudioEncoderMutableIsacFix
+    : public AudioEncoderMutableImpl<AudioEncoderIsacFix> {
  public:
-  explicit AudioEncoderDecoderMutableIsacFix(const CodecInst& codec_inst);
-  void UpdateSettings(const CodecInst& codec_inst) override;
+  explicit AudioEncoderMutableIsacFix(const CodecInst& codec_inst,
+                                      LockedIsacBandwidthInfo* bwinfo);
   void SetMaxPayloadSize(int max_payload_size_bytes) override;
   void SetMaxRate(int max_rate_bps) override;
-
-  // From AudioDecoder.
-  int Decode(const uint8_t* encoded,
-             size_t encoded_len,
-             int sample_rate_hz,
-             size_t max_decoded_bytes,
-             int16_t* decoded,
-             SpeechType* speech_type) override;
-  int DecodeRedundant(const uint8_t* encoded,
-                      size_t encoded_len,
-                      int sample_rate_hz,
-                      size_t max_decoded_bytes,
-                      int16_t* decoded,
-                      SpeechType* speech_type) override;
-  bool HasDecodePlc() const override;
-  int DecodePlc(int num_frames, int16_t* decoded) override;
-  int Init() override;
-  int IncomingPacket(const uint8_t* payload,
-                     size_t payload_len,
-                     uint16_t rtp_sequence_number,
-                     uint32_t rtp_timestamp,
-                     uint32_t arrival_timestamp) override;
-  int ErrorCode() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
-  int PacketDurationRedundant(const uint8_t* encoded,
-                              size_t encoded_len) const override;
-  bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override;
-  size_t Channels() const override;
 };
 
 }  // namespace webrtc

@@ -15,6 +15,7 @@
     'codecs/g722/g722.gypi',
     'codecs/ilbc/ilbc.gypi',
     'codecs/isac/isac.gypi',
+    'codecs/isac/isac_common.gypi',
     'codecs/isac/isacfix.gypi',
     'codecs/pcm16b/pcm16b.gypi',
     'codecs/red/red.gypi',

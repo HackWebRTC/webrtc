@@ -358,17 +358,14 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    AudioEncoderDecoderIsac::Config config;
+    AudioEncoderIsac::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-
-    // We need to create separate AudioEncoderDecoderIsac objects for encoding
-    // and decoding, because the test class destructor destroys them both.
-    audio_encoder_.reset(new AudioEncoderDecoderIsac(config));
-    decoder_ = new AudioEncoderDecoderIsac(config);
+    audio_encoder_.reset(new AudioEncoderIsac(config));
+    decoder_ = new AudioDecoderIsac();
   }
 };
 
@@ -378,17 +375,14 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 32000;
     frame_size_ = 960;
     data_length_ = 10 * frame_size_;
-    AudioEncoderDecoderIsac::Config config;
+    AudioEncoderIsac::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-
-    // We need to create separate AudioEncoderDecoderIsac objects for encoding
-    // and decoding, because the test class destructor destroys them both.
-    audio_encoder_.reset(new AudioEncoderDecoderIsac(config));
-    decoder_ = new AudioEncoderDecoderIsac(config);
+    audio_encoder_.reset(new AudioEncoderIsac(config));
+    decoder_ = new AudioDecoderIsac();
   }
 };
 
@@ -398,18 +392,14 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    AudioEncoderDecoderIsacFix::Config config;
+    AudioEncoderIsacFix::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-
-    // We need to create separate AudioEncoderDecoderIsacFix objects for
-    // encoding and decoding, because the test class destructor destroys them
-    // both.
-    audio_encoder_.reset(new AudioEncoderDecoderIsacFix(config));
-    decoder_ = new AudioEncoderDecoderIsacFix(config);
+    audio_encoder_.reset(new AudioEncoderIsacFix(config));
+    decoder_ = new AudioDecoderIsacFix();
   }
 };
 

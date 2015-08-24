@@ -380,6 +380,15 @@ source_set("ilbc") {
   ]
 }
 
+source_set("isac_common") {
+  sources = [
+    "codecs/isac/audio_encoder_isac_t.h",
+    "codecs/isac/audio_encoder_isac_t_impl.h",
+    "codecs/isac/locked_bandwidth_info.cc",
+    "codecs/isac/locked_bandwidth_info.h",
+  ]
+}
+
 config("isac_config") {
   include_dirs = [
     "../../..",
@@ -389,8 +398,6 @@ config("isac_config") {
 
 source_set("isac") {
   sources = [
-    "codecs/isac/audio_encoder_isac_t.h",
-    "codecs/isac/audio_encoder_isac_t_impl.h",
     "codecs/isac/main/interface/audio_encoder_isac.h",
     "codecs/isac/main/interface/isac.h",
     "codecs/isac/main/source/arith_routines.c",
@@ -458,6 +465,7 @@ source_set("isac") {
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
+    ":isac_common",
     "../../common_audio",
   ]
 }
@@ -471,8 +479,6 @@ config("isac_fix_config") {
 
 source_set("isac_fix") {
   sources = [
-    "codecs/isac/audio_encoder_isac_t.h",
-    "codecs/isac/audio_encoder_isac_t_impl.h",
     "codecs/isac/fix/interface/audio_encoder_isacfix.h",
     "codecs/isac/fix/interface/isacfix.h",
     "codecs/isac/fix/source/arith_routines.c",
@@ -533,6 +539,7 @@ source_set("isac_fix") {
 
   deps = [
     ":audio_encoder_interface",
+    ":isac_common",
     "../../common_audio",
     "../../system_wrappers",
   ]

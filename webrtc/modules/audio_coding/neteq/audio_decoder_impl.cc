@@ -559,22 +559,13 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
       return new AudioDecoderIlbc;
 #endif
 #if defined(WEBRTC_CODEC_ISACFX)
-    case kDecoderISAC: {
-      AudioEncoderDecoderIsacFix::Config config;
-      return new AudioEncoderDecoderIsacFix(config);
-    }
+    case kDecoderISAC:
+      return new AudioDecoderIsacFix();
 #elif defined(WEBRTC_CODEC_ISAC)
-    case kDecoderISAC: {
-      AudioEncoderDecoderIsac::Config config;
-      config.sample_rate_hz = 16000;
-      return new AudioEncoderDecoderIsac(config);
-    }
+    case kDecoderISAC:
     case kDecoderISACswb:
-    case kDecoderISACfb: {
-      AudioEncoderDecoderIsac::Config config;
-      config.sample_rate_hz = 32000;
-      return new AudioEncoderDecoderIsac(config);
-    }
+    case kDecoderISACfb:
+      return new AudioDecoderIsac();
 #endif
 #ifdef WEBRTC_CODEC_PCM16
     case kDecoderPCM16B:

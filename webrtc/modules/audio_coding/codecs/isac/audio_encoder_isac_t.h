@@ -13,17 +13,14 @@
 
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
-
 template <typename T>
-class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
+class AudioEncoderIsacT final : public AudioEncoder {
  public:
   // Allowed combinations of sample rate, frame size, and bit rate are
   //  - 16000 Hz, 30 ms, 10000-32000 bps
@@ -33,6 +30,8 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   struct Config {
     Config();
     bool IsOk() const;
+
+    LockedIsacBandwidthInfo* bwinfo;
 
     int payload_type;
     int sample_rate_hz;
@@ -50,18 +49,50 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
     bool enforce_frame_size;
   };
 
-  explicit AudioEncoderDecoderIsacT(const Config& config);
-  ~AudioEncoderDecoderIsacT() override;
+  explicit AudioEncoderIsacT(const Config& config);
+  ~AudioEncoderIsacT() override;
 
-  // AudioEncoder public methods.
   int SampleRateHz() const override;
   int NumChannels() const override;
   size_t MaxEncodedBytes() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
+  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                             const int16_t* audio,
+                             size_t max_encoded_bytes,
+                             uint8_t* encoded) override;
 
-  // AudioDecoder methods.
+ private:
+  // This value is taken from STREAM_SIZE_MAX_60 for iSAC float (60 ms) and
+  // STREAM_MAXW16_60MS for iSAC fix (60 ms).
+  static const size_t kSufficientEncodeBufferSizeBytes = 400;
+
+  const int payload_type_;
+  typename T::instance_type* isac_state_;
+  LockedIsacBandwidthInfo* bwinfo_;
+
+  // Have we accepted input but not yet emitted it in a packet?
+  bool packet_in_progress_;
+
+  // Timestamp of the first input of the currently in-progress packet.
+  uint32_t packet_timestamp_;
+
+  // Timestamp of the previously encoded packet.
+  uint32_t last_encoded_timestamp_;
+
+  const int target_bitrate_bps_;
+
+  DISALLOW_COPY_AND_ASSIGN(AudioEncoderIsacT);
+};
+
+template <typename T>
+class AudioDecoderIsacT final : public AudioDecoder {
+ public:
+  AudioDecoderIsacT();
+  explicit AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo);
+  ~AudioDecoderIsacT() override;
+
   bool HasDecodePlc() const override;
   int DecodePlc(int num_frames, int16_t* decoded) override;
   int Init() override;
@@ -71,15 +102,7 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
                      uint32_t rtp_timestamp,
                      uint32_t arrival_timestamp) override;
   int ErrorCode() override;
-  size_t Channels() const override { return 1; }
-
-  // AudioEncoder protected method.
-  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             const int16_t* audio,
-                             size_t max_encoded_bytes,
-                             uint8_t* encoded) override;
-
-  // AudioDecoder protected method.
+  size_t Channels() const override;
   int DecodeInternal(const uint8_t* encoded,
                      size_t encoded_len,
                      int sample_rate_hz,
@@ -87,44 +110,11 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
                      SpeechType* speech_type) override;
 
  private:
-  // This value is taken from STREAM_SIZE_MAX_60 for iSAC float (60 ms) and
-  // STREAM_MAXW16_60MS for iSAC fix (60 ms).
-  static const size_t kSufficientEncodeBufferSizeBytes = 400;
+  typename T::instance_type* isac_state_;
+  LockedIsacBandwidthInfo* bwinfo_;
+  int decoder_sample_rate_hz_;
 
-  const int payload_type_;
-
-  // iSAC encoder/decoder state, guarded by a mutex to ensure that encode calls
-  // from one thread won't clash with decode calls from another thread.
-  // Note: PT_GUARDED_BY is disabled since it is not yet supported by clang.
-  const rtc::scoped_ptr<CriticalSectionWrapper> state_lock_;
-  typename T::instance_type* isac_state_
-      GUARDED_BY(state_lock_) /* PT_GUARDED_BY(lock_)*/;
-
-  int decoder_sample_rate_hz_ GUARDED_BY(state_lock_);
-
-  // Must be acquired before state_lock_.
-  const rtc::scoped_ptr<CriticalSectionWrapper> lock_;
-
-  // Have we accepted input but not yet emitted it in a packet?
-  bool packet_in_progress_ GUARDED_BY(lock_);
-
-  // Timestamp of the first input of the currently in-progress packet.
-  uint32_t packet_timestamp_ GUARDED_BY(lock_);
-
-  // Timestamp of the previously encoded packet.
-  uint32_t last_encoded_timestamp_ GUARDED_BY(lock_);
-
-  const int target_bitrate_bps_;
-
-  DISALLOW_COPY_AND_ASSIGN(AudioEncoderDecoderIsacT);
-};
-
-struct CodecInst;
-
-class AudioEncoderDecoderMutableIsac : public AudioEncoderMutable,
-                                       public AudioDecoder {
- public:
-  virtual void UpdateSettings(const CodecInst& codec_inst) = 0;
+  DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacT);
 };
 
 }  // namespace webrtc
