@@ -387,6 +387,7 @@ source_set("isac_common") {
     "codecs/isac/locked_bandwidth_info.cc",
     "codecs/isac/locked_bandwidth_info.h",
   ]
+  public_configs = [ "../..:common_inherited_config" ]
 }
 
 config("isac_config") {
