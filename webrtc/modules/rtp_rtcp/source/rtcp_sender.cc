@@ -885,25 +885,14 @@ RTCPSender::BuildResult RTCPSender::BuildNACK(RtcpContext* ctx) {
 }
 
 RTCPSender::BuildResult RTCPSender::BuildBYE(RtcpContext* ctx) {
-  // sanity
-  if (ctx->position + 8 >= IP_PACKET_SIZE)
+  rtcp::Bye bye;
+  bye.From(ssrc_);
+  for (uint32_t csrc : csrcs_)
+    bye.WithCsrc(csrc);
+
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(bye))
     return BuildResult::kTruncated;
-
-  // Add a bye packet
-  // Number of SSRC + CSRCs.
-  *ctx->AllocateData(1) = static_cast<uint8_t>(0x80 + 1 + csrcs_.size());
-  *ctx->AllocateData(1) = 203;
-
-  // length
-  *ctx->AllocateData(1) = 0;
-  *ctx->AllocateData(1) = static_cast<uint8_t>(1 + csrcs_.size());
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // add CSRCs
-  for (size_t i = 0; i < csrcs_.size(); i++)
-    ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), csrcs_[i]);
 
   return BuildResult::kSuccess;
 }
