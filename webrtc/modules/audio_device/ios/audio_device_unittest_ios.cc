@@ -371,8 +371,8 @@ class MockAudioTransport : public AudioTransport {
 
   MOCK_METHOD10(RecordedDataIsAvailable,
                 int32_t(const void* audioSamples,
-                        size_t uint32_t nSamples,
-                        size_t uint8_t nBytesPerSample,
+                        const size_t nSamples,
+                        const size_t nBytesPerSample,
                         const uint8_t nChannels,
                         const uint32_t samplesPerSec,
                         const uint32_t totalDelayMS,
@@ -381,8 +381,8 @@ class MockAudioTransport : public AudioTransport {
                         const bool keyPressed,
                         uint32_t& newMicLevel));
   MOCK_METHOD8(NeedMorePlayData,
-               int32_t(size_t uint32_t nSamples,
-                       size_t uint8_t nBytesPerSample,
+               int32_t(const size_t nSamples,
+                       const size_t nBytesPerSample,
                        const uint8_t nChannels,
                        const uint32_t samplesPerSec,
                        void* audioSamples,
@@ -411,8 +411,8 @@ class MockAudioTransport : public AudioTransport {
   }
 
   int32_t RealRecordedDataIsAvailable(const void* audioSamples,
-                                      size_t uint32_t nSamples,
-                                      size_t uint8_t nBytesPerSample,
+                                      const size_t nSamples,
+                                      const size_t nBytesPerSample,
                                       const uint8_t nChannels,
                                       const uint32_t samplesPerSec,
                                       const uint32_t totalDelayMS,
@@ -433,8 +433,8 @@ class MockAudioTransport : public AudioTransport {
     return 0;
   }
 
-  int32_t RealNeedMorePlayData(size_t uint32_t nSamples,
-                               size_t uint8_t nBytesPerSample,
+  int32_t RealNeedMorePlayData(const size_t nSamples,
+                               const size_t nBytesPerSample,
                                const uint8_t nChannels,
                                const uint32_t samplesPerSec,
                                void* audioSamples,
