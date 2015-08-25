@@ -34,6 +34,7 @@
 #include "talk/app/webrtc/androidvideocapturer.h"
 #include "talk/app/webrtc/java/jni/jni_helpers.h"
 #include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_checker.h"
 
 namespace webrtc_jni {
@@ -56,8 +57,6 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
              webrtc::AndroidVideoCapturer* capturer) override;
   void Stop() override;
 
-  void ReturnBuffer(int64 time_stamp) override;
-
   std::string GetSupportedFormats() override;
 
   // Called from VideoCapturerAndroid::NativeObserver on a Java thread.
@@ -75,34 +74,31 @@ protected:
 
 private:
   bool Init(jstring device_name);
-
-  void OnCapturerStarted_w(bool success);
-  void OnCapturerStopped_w();
-  void OnIncomingFrame_w(void* video_frame,
-                         int length,
-                         int width,
-                         int height,
-                         int rotation,
-                         int64 time_stamp);
-  void OnOutputFormatRequest_w(int width, int height, int fps);
-  void ReturnBuffer_w(int64 time_stamp);
-
+  void ReturnBuffer(int64 time_stamp);
   JNIEnv* jni();
+
+  // Helper function to make safe asynchronous calls to |capturer_|. The calls
+  // are not guaranteed to be delivered.
+  template <typename... Args>
+  void AsyncCapturerInvoke(
+      const char* method_name,
+      void (webrtc::AndroidVideoCapturer::*method)(Args...),
+      Args... args);
 
   const ScopedGlobalRef<jobject> j_capturer_global_;
   const ScopedGlobalRef<jclass> j_video_capturer_class_;
   const ScopedGlobalRef<jclass> j_observer_class_;
-  volatile bool valid_global_refs_;
-  jobject j_frame_observer_;
 
   rtc::ThreadChecker thread_checker_;
 
-  rtc::Thread* thread_;  // The thread where Start is called on.
   // |capturer| is a guaranteed to be a valid pointer between a call to
   // AndroidVideoCapturerDelegate::Start
   // until AndroidVideoCapturerDelegate::Stop.
-  webrtc::AndroidVideoCapturer* capturer_;
-  rtc::AsyncInvoker invoker_;
+  rtc::CriticalSection capturer_lock_;
+  webrtc::AndroidVideoCapturer* capturer_ GUARDED_BY(capturer_lock_);
+  // |invoker_| is used to communicate with |capturer_| on the thread Start() is
+  // called on.
+  rtc::scoped_ptr<rtc::GuardedAsyncInvoker> invoker_ GUARDED_BY(capturer_lock_);
 
   static jobject application_context_;
 

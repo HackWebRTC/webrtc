@@ -27,69 +27,50 @@
 #include "talk/app/webrtc/androidvideocapturer.h"
 
 #include "talk/media/webrtc/webrtcvideoframe.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/callback.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace webrtc {
 
-using cricket::WebRtcVideoFrame;
-using rtc::scoped_ptr;
-using rtc::scoped_refptr;
-
-// An implementation of cricket::VideoFrameFactory for frames that are not
-// guaranteed to outlive the created cricket::VideoFrame.
-// A frame is injected using UpdateCapturedFrame, and converted into a
-// cricket::VideoFrame with
-// CreateAliasedFrame. UpdateCapturedFrame should be called before
-// CreateAliasedFrame for every frame.
+// A hack for avoiding deep frame copies in
+// cricket::VideoCapturer.SignalFrameCaptured() using a custom FrameFactory.
+// A frame is injected using UpdateCapturedFrame(), and converted into a
+// cricket::VideoFrame with CreateAliasedFrame(). UpdateCapturedFrame() should
+// be called before CreateAliasedFrame() for every frame.
+// TODO(magjed): Add an interface cricket::VideoCapturer::OnFrameCaptured()
+// for ref counted I420 frames instead of this hack.
 class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
  public:
-  FrameFactory(int width,
-               int height,
-               const scoped_refptr<AndroidVideoCapturerDelegate>& delegate)
-      : start_time_(rtc::TimeNanos()), delegate_(delegate)  {
+  FrameFactory(const rtc::scoped_refptr<AndroidVideoCapturerDelegate>& delegate)
+      : start_time_(rtc::TimeNanos()), delegate_(delegate) {
     // Create a CapturedFrame that only contains header information, not the
     // actual pixel data.
-    captured_frame_.width = width;
-    captured_frame_.height = height;
     captured_frame_.pixel_height = 1;
     captured_frame_.pixel_width = 1;
-    captured_frame_.rotation = 0;
-    captured_frame_.data = NULL;
+    captured_frame_.data = nullptr;
     captured_frame_.data_size = cricket::CapturedFrame::kUnknownDataSize;
     captured_frame_.fourcc = static_cast<uint32>(cricket::FOURCC_ANY);
   }
 
-  void UpdateCapturedFrame(void* frame_data,
-                           int length,
-                           int width,
-                           int height,
-                           int rotation,
-                           int64 time_stamp_in_ns) {
-    // Make sure we don't overwrite the previous frame.
-    CHECK(captured_frame_.data == nullptr);
-    captured_frame_.fourcc = static_cast<uint32>(cricket::FOURCC_YV12);
-    captured_frame_.data = frame_data;
-    captured_frame_.width = width;
-    captured_frame_.height = height;
+  void UpdateCapturedFrame(
+      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+      int rotation,
+      int64 time_stamp_in_ns) {
+    buffer_ = buffer;
+    captured_frame_.width = buffer->width();
+    captured_frame_.height = buffer->height();
     captured_frame_.elapsed_time = rtc::TimeNanos() - start_time_;
     captured_frame_.time_stamp = time_stamp_in_ns;
     captured_frame_.rotation = rotation;
-    captured_frame_.data_size = length;
   }
 
-  void ClearCapturedFrame() const {
-    captured_frame_.data = nullptr;
+  void ClearCapturedFrame() {
+    buffer_ = nullptr;
     captured_frame_.width = 0;
     captured_frame_.height = 0;
     captured_frame_.elapsed_time = 0;
     captured_frame_.time_stamp = 0;
-    captured_frame_.data_size = 0;
   }
 
   const cricket::CapturedFrame* GetCapturedFrame() const {
@@ -100,64 +81,23 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
       const cricket::CapturedFrame* captured_frame,
       int dst_width,
       int dst_height) const override {
-    // This override of CreateAliasedFrame creates a copy of the frame since
-    // |captured_frame_.data| is only guaranteed to be valid during the scope
-    // of |AndroidVideoCapturer::OnIncomingFrame_w|.
     // Check that captured_frame is actually our frame.
     CHECK(captured_frame == &captured_frame_);
-    CHECK(captured_frame->data != nullptr);
-
-    if (!apply_rotation_ || captured_frame->rotation == kVideoRotation_0) {
-      CHECK(captured_frame->fourcc == cricket::FOURCC_YV12);
-      const uint8_t* y_plane = static_cast<uint8_t*>(captured_frame_.data);
-
-      // Android guarantees that the stride is a multiple of 16.
-      // http://developer.android.com/reference/android/hardware/Camera.Parameters.html#setPreviewFormat%28int%29
-      int y_stride;
-      int uv_stride;
-      webrtc::Calc16ByteAlignedStride(captured_frame->width, &y_stride,
-                                      &uv_stride);
-      const uint8_t* v_plane = y_plane + y_stride * captured_frame->height;
-      const uint8_t* u_plane =
-          v_plane + uv_stride * webrtc::AlignInt(captured_frame->height, 2) / 2;
-
-      // Create a WrappedI420Buffer and bind the |no_longer_used| callback
-      // to the static method ReturnFrame. The |delegate_| is bound as an
-      // argument which means that the callback will hold a reference to
-      // |delegate_|.
-      rtc::scoped_refptr<WrappedI420Buffer> buffer(
-          new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
-              dst_width, dst_height, captured_frame->width,
-              captured_frame->height, y_plane, y_stride, u_plane, uv_stride,
-              v_plane, uv_stride,
-              rtc::Bind(&AndroidVideoCapturer::FrameFactory::ReturnFrame,
-                        delegate_,
-                        captured_frame->time_stamp)));
-      cricket::VideoFrame* cricket_frame = new WebRtcVideoFrame(
-         buffer, captured_frame->elapsed_time,
-         captured_frame->time_stamp, captured_frame->GetRotation());
-      // |cricket_frame| is now responsible for returning the frame. Clear
-      // |captured_frame_| so the frame isn't returned twice.
-      ClearCapturedFrame();
-      return cricket_frame;
-    }
-
-    scoped_ptr<WebRtcVideoFrame> frame(new WebRtcVideoFrame());
-    frame->Init(captured_frame, dst_width, dst_height, apply_rotation_);
-    return frame.release();
-  }
-
-  static void ReturnFrame(scoped_refptr<AndroidVideoCapturerDelegate> delegate,
-                          int64 time_stamp) {
-    delegate->ReturnBuffer(time_stamp);
+    rtc::scoped_ptr<cricket::VideoFrame> frame(new cricket::WebRtcVideoFrame(
+        ShallowCenterCrop(buffer_, dst_width, dst_height),
+        captured_frame->elapsed_time, captured_frame->time_stamp,
+        captured_frame->GetRotation()));
+    // Caller takes ownership.
+    // TODO(magjed): Change CreateAliasedFrame() to return a rtc::scoped_ptr.
+    return apply_rotation_ ? frame->GetCopyWithRotationApplied()->Copy()
+                           : frame.release();
   }
 
  private:
   uint64 start_time_;
-  // |captured_frame_| is mutable as a hacky way to modify it inside
-  // CreateAliasedframe().
-  mutable cricket::CapturedFrame captured_frame_;
-  scoped_refptr<AndroidVideoCapturerDelegate> delegate_;
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer_;
+  cricket::CapturedFrame captured_frame_;
+  rtc::scoped_refptr<AndroidVideoCapturerDelegate> delegate_;
 };
 
 AndroidVideoCapturer::AndroidVideoCapturer(
@@ -202,8 +142,7 @@ cricket::CaptureState AndroidVideoCapturer::Start(
   CHECK(thread_checker_.CalledOnValidThread());
   CHECK(!running_);
 
-  frame_factory_ = new AndroidVideoCapturer::FrameFactory(
-      capture_format.width, capture_format.height, delegate_.get());
+  frame_factory_ = new AndroidVideoCapturer::FrameFactory(delegate_.get());
   set_frame_factory(frame_factory_);
 
   running_ = true;
@@ -252,24 +191,14 @@ void AndroidVideoCapturer::OnCapturerStarted(bool success) {
   SignalStateChange(this, new_state);
 }
 
-void AndroidVideoCapturer::OnIncomingFrame(void* frame_data,
-                                           int length,
-                                           int width,
-                                           int height,
-                                           int rotation,
-                                           int64 time_stamp) {
+void AndroidVideoCapturer::OnIncomingFrame(
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer,
+    int rotation,
+    int64 time_stamp) {
   CHECK(thread_checker_.CalledOnValidThread());
-  frame_factory_->UpdateCapturedFrame(frame_data, length, width, height,
-                                      rotation, time_stamp);
+  frame_factory_->UpdateCapturedFrame(buffer, rotation, time_stamp);
   SignalFrameCaptured(this, frame_factory_->GetCapturedFrame());
-  if (frame_factory_->GetCapturedFrame()->data == nullptr) {
-    // Ownership has been passed to a WrappedI420Buffer. Do nothing.
-  } else {
-    // |captured_frame_| has either been copied or dropped, return it
-    // immediately.
-    delegate_->ReturnBuffer(time_stamp);
-    frame_factory_->ClearCapturedFrame();
-  }
+  frame_factory_->ClearCapturedFrame();
 }
 
 void AndroidVideoCapturer::OnOutputFormatRequest(

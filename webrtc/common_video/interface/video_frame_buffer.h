@@ -109,9 +109,7 @@ class NativeHandleBuffer : public VideoFrameBuffer {
 
 class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
  public:
-  WrappedI420Buffer(int desired_width,
-                    int desired_height,
-                    int width,
+  WrappedI420Buffer(int width,
                     int height,
                     const uint8_t* y_plane,
                     int y_stride,
@@ -135,16 +133,23 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
   friend class rtc::RefCountedObject<WrappedI420Buffer>;
   ~WrappedI420Buffer() override;
 
-  int width_;
-  int height_;
-  const uint8_t* y_plane_;
-  const uint8_t* u_plane_;
-  const uint8_t* v_plane_;
+  const int width_;
+  const int height_;
+  const uint8_t* const y_plane_;
+  const uint8_t* const u_plane_;
+  const uint8_t* const v_plane_;
   const int y_stride_;
   const int u_stride_;
   const int v_stride_;
   rtc::Callback0<void> no_longer_used_cb_;
 };
+
+// Helper function to crop |buffer| without making a deep copy. May only be used
+// for non-native frames.
+rtc::scoped_refptr<VideoFrameBuffer> ShallowCenterCrop(
+    const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+    int cropped_width,
+    int cropped_height);
 
 }  // namespace webrtc
 

@@ -17,6 +17,12 @@
 static const int kBufferAlignment = 64;
 
 namespace webrtc {
+namespace {
+
+// Used in rtc::Bind to keep a buffer alive until destructor is called.
+static void NoLongerUsedCallback(rtc::scoped_refptr<VideoFrameBuffer> dummy) {}
+
+}  // anonymous namespace
 
 VideoFrameBuffer::~VideoFrameBuffer() {}
 
@@ -135,9 +141,7 @@ void* NativeHandleBuffer::native_handle() const {
   return native_handle_;
 }
 
-WrappedI420Buffer::WrappedI420Buffer(int desired_width,
-                                     int desired_height,
-                                     int width,
+WrappedI420Buffer::WrappedI420Buffer(int width,
                                      int height,
                                      const uint8_t* y_plane,
                                      int y_stride,
@@ -146,30 +150,20 @@ WrappedI420Buffer::WrappedI420Buffer(int desired_width,
                                      const uint8_t* v_plane,
                                      int v_stride,
                                      const rtc::Callback0<void>& no_longer_used)
-  :  width_(desired_width),
-     height_(desired_height),
-     y_plane_(y_plane),
-     u_plane_(u_plane),
-     v_plane_(v_plane),
-     y_stride_(y_stride),
-     u_stride_(u_stride),
-     v_stride_(v_stride),
-     no_longer_used_cb_(no_longer_used) {
-  CHECK(width >= desired_width && height >= desired_height);
-
-  // Center crop to |desired_width| x |desired_height|.
-  // Make sure offset is even so that u/v plane becomes aligned.
-  const int offset_x = ((width - desired_width) / 2) & ~1;
-  const int offset_y = ((height - desired_height) / 2) & ~1;
-  y_plane_ += y_stride_ * offset_y + offset_x;
-  u_plane_ += u_stride_ * (offset_y / 2) + (offset_x / 2);
-  v_plane_ += v_stride_ * (offset_y / 2) + (offset_x / 2);
+    : width_(width),
+      height_(height),
+      y_plane_(y_plane),
+      u_plane_(u_plane),
+      v_plane_(v_plane),
+      y_stride_(y_stride),
+      u_stride_(u_stride),
+      v_stride_(v_stride),
+      no_longer_used_cb_(no_longer_used) {
 }
 
 WrappedI420Buffer::~WrappedI420Buffer() {
   no_longer_used_cb_();
 }
-
 
 int WrappedI420Buffer::width() const {
   return width_;
@@ -219,6 +213,39 @@ void* WrappedI420Buffer::native_handle() const {
 rtc::scoped_refptr<VideoFrameBuffer> WrappedI420Buffer::NativeToI420Buffer() {
   RTC_NOTREACHED();
   return nullptr;
+}
+
+rtc::scoped_refptr<VideoFrameBuffer> ShallowCenterCrop(
+    const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+    int cropped_width,
+    int cropped_height) {
+  CHECK(buffer->native_handle() == nullptr);
+  CHECK_LE(cropped_width, buffer->width());
+  CHECK_LE(cropped_height, buffer->height());
+  if (buffer->width() == cropped_width && buffer->height() == cropped_height)
+    return buffer;
+
+  // Center crop to |cropped_width| x |cropped_height|.
+  // Make sure offset is even so that u/v plane becomes aligned.
+  const int uv_offset_x = (buffer->width() - cropped_width) / 4;
+  const int uv_offset_y = (buffer->height() - cropped_height) / 4;
+  const int offset_x = uv_offset_x * 2;
+  const int offset_y = uv_offset_y * 2;
+
+  // Const cast to call the correct const-version of data().
+  const VideoFrameBuffer* const_buffer(buffer.get());
+  const uint8_t* y_plane = const_buffer->data(kYPlane) +
+                           buffer->stride(kYPlane) * offset_y + offset_x;
+  const uint8_t* u_plane = const_buffer->data(kUPlane) +
+                           buffer->stride(kUPlane) * uv_offset_y + uv_offset_x;
+  const uint8_t* v_plane = const_buffer->data(kVPlane) +
+                           buffer->stride(kVPlane) * uv_offset_y + uv_offset_x;
+  return new rtc::RefCountedObject<WrappedI420Buffer>(
+      cropped_width, cropped_height,
+      y_plane, buffer->stride(kYPlane),
+      u_plane, buffer->stride(kUPlane),
+      v_plane, buffer->stride(kVPlane),
+      rtc::Bind(&NoLongerUsedCallback, buffer));
 }
 
 }  // namespace webrtc

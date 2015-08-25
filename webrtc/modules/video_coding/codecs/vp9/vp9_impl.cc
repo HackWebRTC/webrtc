@@ -740,7 +740,6 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
   rtc::scoped_refptr<WrappedI420Buffer> img_wrapped_buffer(
       new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
           img->d_w, img->d_h,
-          img->d_w, img->d_h,
           img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
           img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
           img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],

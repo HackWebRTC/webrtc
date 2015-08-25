@@ -720,17 +720,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     frameObserver.OnOutputFormatRequest(width, height, fps);
   }
 
-  synchronized void returnBuffer(final long timeStamp) {
-    if (cameraThreadHandler == null) {
-      // The camera has been stopped.
-      videoBuffers.returnBuffer(timeStamp);
-      return;
-    }
-    cameraThreadHandler.post(new Runnable() {
-      @Override public void run() {
-        videoBuffers.returnBuffer(timeStamp);
-      }
-    });
+  void returnBuffer(long timeStamp) {
+    videoBuffers.returnBuffer(timeStamp);
   }
 
   private int getDeviceOrientation() {
@@ -854,7 +845,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   // Class used for allocating and bookkeeping video frames. All buffers are
-  // direct allocated so that they can be directly used from native code.
+  // direct allocated so that they can be directly used from native code. This class is
+  // synchronized and can be called from multiple threads.
   private static class FramePool {
     // Arbitrary queue depth.  Higher number means more memory allocated & held,
     // lower number means more sensitivity to processing time in the client (and
@@ -869,12 +861,12 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     private int frameSize = 0;
     private Camera camera;
 
-    int numCaptureBuffersAvailable() {
+    synchronized int numCaptureBuffersAvailable() {
       return queuedBuffers.size();
     }
 
     // Discards previous queued buffers and adds new callback buffers to camera.
-    void queueCameraBuffers(int frameSize, Camera camera) {
+    synchronized void queueCameraBuffers(int frameSize, Camera camera) {
       this.camera = camera;
       this.frameSize = frameSize;
 
@@ -888,7 +880,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           + " buffers of size " + frameSize + ".");
     }
 
-    String pendingFramesTimeStamps() {
+    synchronized String pendingFramesTimeStamps() {
       List<Long> timeStampsMs = new ArrayList<Long>();
       for (Long timeStampNs : pendingBuffers.keySet()) {
         timeStampsMs.add(TimeUnit.NANOSECONDS.toMillis(timeStampNs));
@@ -896,7 +888,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       return timeStampsMs.toString();
     }
 
-    void stopReturnBuffersToCamera() {
+    synchronized void stopReturnBuffersToCamera() {
       this.camera = null;
       queuedBuffers.clear();
       // Frames in |pendingBuffers| need to be kept alive until they are returned.
@@ -906,7 +898,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
                    : " Pending buffers: " + pendingFramesTimeStamps() + "."));
     }
 
-    boolean reserveByteBuffer(byte[] data, long timeStamp) {
+    synchronized boolean reserveByteBuffer(byte[] data, long timeStamp) {
       final ByteBuffer buffer = queuedBuffers.remove(data);
       if (buffer == null) {
         // Frames might be posted to |onPreviewFrame| with the previous format while changing
@@ -930,7 +922,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       return true;
     }
 
-    void returnBuffer(long timeStamp) {
+    synchronized void returnBuffer(long timeStamp) {
       final ByteBuffer returnedFrame = pendingBuffers.remove(timeStamp);
       if (returnedFrame == null) {
         throw new RuntimeException("unknown data buffer with time stamp "
