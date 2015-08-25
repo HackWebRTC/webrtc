@@ -167,7 +167,6 @@
             'audio_processing/beamformer/complex_matrix_unittest.cc',
             'audio_processing/beamformer/covariance_matrix_generator_unittest.cc',
             'audio_processing/beamformer/matrix_unittest.cc',
-            'audio_processing/beamformer/mock_nonlinear_beamformer.cc',
             'audio_processing/beamformer/mock_nonlinear_beamformer.h',
             'audio_processing/echo_cancellation_impl_unittest.cc',
             'audio_processing/intelligibility/intelligibility_enhancer_unittest.cc',
