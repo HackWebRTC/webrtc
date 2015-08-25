@@ -31,7 +31,7 @@ namespace acm2 {
 
 class ACMDTMFDetection;
 
-class AudioCodingModuleImpl : public AudioCodingModule {
+class AudioCodingModuleImpl final : public AudioCodingModule {
  public:
   friend webrtc::AudioCodingImpl;
 
@@ -41,9 +41,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   /////////////////////////////////////////
   //   Sender
   //
-
-  // Reset send codec.
-  int ResetEncoder() override;
 
   // Can be called multiple times for Codec, CNG, RED.
   int RegisterSendCodec(const CodecInst& send_codec) override;
@@ -57,19 +54,10 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Get current send frequency.
   int SendFrequency() const override;
 
-  // Get encode bit-rate.
-  // Adaptive rate codecs return their current encode target rate, while other
-  // codecs return there long-term average or their fixed rate.
-  int SendBitrate() const override;
-
   // Sets the bitrate to the specified value in bits/sec. In case the codec does
   // not support the requested value it will choose an appropriate value
   // instead.
   void SetBitRate(int bitrate_bps) override;
-
-  // Set available bandwidth, inform the encoder about the
-  // estimated bandwidth received from the remote party.
-  int SetReceivedEstimatedBandwidth(int bw) override;
 
   // Register a transport callback which will be
   // called to deliver the encoded buffers.
@@ -124,9 +112,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Initialize receiver, resets codec database etc.
   int InitializeReceiver() override;
 
-  // Reset the decoder state.
-  int ResetDecoder() override;
-
   // Get current receive frequency.
   int ReceiveFrequency() const override;
 
@@ -180,11 +165,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Get Dtmf playout status.
   bool DtmfPlayoutStatus() const override;
 
-  // Estimate the Bandwidth based on the incoming stream, needed
-  // for one way audio where the RTCP send the BW estimate.
-  // This is also done in the RTP module .
-  int DecoderEstimatedBandwidth() const override;
-
   // Set playout mode voice, fax.
   int SetPlayoutMode(AudioPlayoutMode mode) override;
 
@@ -204,25 +184,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   int GetNetworkStatistics(NetworkStatistics* statistics) override;
 
-  // GET RED payload for iSAC. The method id called when 'this' ACM is
-  // the default ACM.
-  // TODO(henrik.lundin) Not used. Remove?
-  int REDPayloadISAC(int isac_rate,
-                     int isac_bw_estimate,
-                     uint8_t* payload,
-                     int16_t* length_bytes);
-
-  int ReplaceInternalDTXWithWebRtc(bool use_webrtc_dtx) override;
-
-  int IsInternalDTXReplacedWithWebRtc(bool* uses_webrtc_dtx) override;
-
   int SetISACMaxRate(int max_bit_per_sec) override;
 
   int SetISACMaxPayloadSize(int max_size_bytes) override;
-
-  int ConfigISACBandwidthEstimator(int frame_size_ms,
-                                   int rate_bit_per_sec,
-                                   bool enforce_frame_size = false) override;
 
   int SetOpusApplication(OpusApplicationMode application) override;
 

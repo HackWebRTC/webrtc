@@ -1129,7 +1129,6 @@ void APITest::ChangeCodec(char side) {
     myChannel = _channel_B2A;
   }
 
-  myACM->ResetEncoder();
   Wait(100);
 
   // Register the next codec

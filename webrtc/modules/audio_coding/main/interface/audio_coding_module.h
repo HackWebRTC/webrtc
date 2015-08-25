@@ -194,17 +194,6 @@ class AudioCodingModule {
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t ResetEncoder()
-  // This API resets the states of encoder. All the encoder settings, such as
-  // send-codec or VAD/DTX, will be preserved.
-  //
-  // Return value:
-  //   -1 if failed to initialize,
-  //    0 if succeeded.
-  //
-  virtual int32_t ResetEncoder() = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t RegisterSendCodec()
   // Registers a codec, specified by |send_codec|, as sending codec.
   // This API can be called multiple of times to register Codec. The last codec
@@ -262,38 +251,10 @@ class AudioCodingModule {
   virtual int32_t SendFrequency() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t Bitrate()
-  // Get encoding bit-rate in bits per second.
-  //
-  // Return value:
-  //   positive; encoding rate in bits/sec,
-  //   -1 if an error is happened.
-  //
-  virtual int32_t SendBitrate() const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // Sets the bitrate to the specified value in bits/sec. If the value is not
   // supported by the codec, it will choose another appropriate value.
   virtual void SetBitRate(int bitrate_bps) = 0;
 
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t SetReceivedEstimatedBandwidth()
-  // Set available bandwidth [bits/sec] of the up-link channel.
-  // This information is used for traffic shaping, and is currently only
-  // supported if iSAC is the send codec.
-  //
-  // Input:
-  //   -bw                 : bandwidth in bits/sec estimated for
-  //                         up-link.
-  // Return value
-  //   -1 if error occurred in setting the bandwidth,
-  //    0 bandwidth is set successfully.
-  //
-  // TODO(henrik.lundin) Unused. Remove?
-  virtual int32_t SetReceivedEstimatedBandwidth(
-      const int32_t bw) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t RegisterTransportCallback()
   // Register a transport callback which will be called to deliver
   // the encoded buffers whenever Process() is called and a
@@ -466,39 +427,6 @@ class AudioCodingModule {
                             ACMVADMode* vad_mode) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t ReplaceInternalDTXWithWebRtc()
-  // Used to replace codec internal DTX scheme with WebRtc.
-  //
-  // Input:
-  //   -use_webrtc_dtx     : if false (default) the codec built-in DTX/VAD
-  //                         scheme is used, otherwise the internal DTX is
-  //                         replaced with WebRtc DTX/VAD.
-  //
-  // Return value:
-  //   -1 if failed to replace codec internal DTX with WebRtc,
-  //    0 if succeeded.
-  //
-  virtual int32_t ReplaceInternalDTXWithWebRtc(
-      const bool use_webrtc_dtx = false) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t IsInternalDTXReplacedWithWebRtc()
-  // Get status if the codec internal DTX is replaced with WebRtc DTX.
-  // This should always be true if codec does not have an internal DTX.
-  //
-  // Output:
-  //   -uses_webrtc_dtx    : is set to true if the codec internal DTX is
-  //                         replaced with WebRtc DTX/VAD, otherwise it is set
-  //                         to false.
-  //
-  // Return value:
-  //   -1 if failed to determine if codec internal DTX is replaced with WebRtc,
-  //    0 if succeeded.
-  //
-  virtual int32_t IsInternalDTXReplacedWithWebRtc(
-      bool* uses_webrtc_dtx) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t RegisterVADCallback()
   // Call this method to register a callback function which is called
   // any time that ACM encounters an empty frame. That is a frame which is
@@ -532,17 +460,6 @@ class AudioCodingModule {
   //    0 if succeeded.
   //
   virtual int32_t InitializeReceiver() = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t ResetDecoder()
-  // This API resets the states of decoders. ACM will not lose any
-  // decoder-related settings, such as registered codecs.
-  //
-  // Return value:
-  //   -1 if failed to initialize,
-  //    0 if succeeded.
-  //
-  virtual int32_t ResetDecoder() = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t ReceiveFrequency()
@@ -739,19 +656,6 @@ class AudioCodingModule {
   virtual int32_t PlayoutTimestamp(uint32_t* timestamp) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t DecoderEstimatedBandwidth()
-  // Get the estimate of the Bandwidth, in bits/second, based on the incoming
-  // stream. This API is useful in one-way communication scenarios, where
-  // the bandwidth information is sent in an out-of-band fashion.
-  // Currently only supported if iSAC is registered as a receiver.
-  //
-  // Return value:
-  //   >0 bandwidth in bits/second.
-  //   -1 if failed to get a bandwidth estimate.
-  //
-  virtual int32_t DecoderEstimatedBandwidth() const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t SetPlayoutMode()
   // Call this API to set the playout mode. Playout mode could be optimized
   // for i) voice, ii) FAX or iii) streaming. In Voice mode, NetEQ is
@@ -848,35 +752,6 @@ class AudioCodingModule {
   //    0 if the given length is set successfully.
   //
   virtual int SetISACMaxPayloadSize(int max_payload_len_bytes) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t ConfigISACBandwidthEstimator()
-  // Call this function to configure the bandwidth estimator of ISAC.
-  // During the adaptation of bit-rate, iSAC automatically adjusts the
-  // frame-size (either 30 or 60 ms) to save on RTP header. The initial
-  // frame-size can be specified by the first argument. The configuration also
-  // regards the initial estimate of bandwidths. The estimator starts from
-  // this point and converges to the actual bottleneck. This is given by the
-  // second parameter. Furthermore, it is also possible to control the
-  // adaptation of frame-size. This is specified by the last parameter.
-  //
-  // Input:
-  //   -init_frame_size_ms : initial frame-size in milliseconds. For iSAC-wb
-  //                         30 ms and 60 ms (default) are acceptable values,
-  //                         and for iSAC-swb 30 ms is the only acceptable
-  //                         value. Zero indicates default value.
-  //   -init_rate_bps      : initial estimate of the bandwidth. Values
-  //                         between 10000 and 58000 are acceptable.
-  //   -enforce_srame_size : if true, the frame-size will not be adapted.
-  //
-  // Return value:
-  //   -1 if failed to configure the bandwidth estimator,
-  //    0 if the configuration was successfully applied.
-  //
-  virtual int32_t ConfigISACBandwidthEstimator(
-      int init_frame_size_ms,
-      int init_rate_bps,
-      bool enforce_frame_size = false) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int SetOpusApplication()

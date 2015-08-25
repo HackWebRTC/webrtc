@@ -88,7 +88,6 @@ class TestWebRtcVadDtx final : public TestVadDtx {
 
   bool vad_enabled_;
   bool dtx_enabled_;
-  bool use_webrtc_dtx_;
   int output_file_num_;
 };
 

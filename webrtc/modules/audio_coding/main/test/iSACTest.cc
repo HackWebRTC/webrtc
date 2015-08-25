@@ -75,13 +75,6 @@ int16_t SetISAConfig(ACMTestISACConfig& isacConfig, AudioCodingModule* acm,
     // Set max payload size.
     EXPECT_EQ(0, acm->SetISACMaxPayloadSize(isacConfig.maxPayloadSizeByte));
   }
-  if ((isacConfig.initFrameSizeInMsec != 0)
-      || (isacConfig.initRateBitPerSec != 0)) {
-    EXPECT_EQ(0, acm->ConfigISACBandwidthEstimator(
-        static_cast<uint8_t>(isacConfig.initFrameSizeInMsec),
-        static_cast<uint16_t>(isacConfig.initRateBitPerSec),
-        isacConfig.enforceFrameSize));
-  }
 
   return 0;
 }
@@ -215,8 +208,6 @@ void ISACTest::Perform() {
   testNr++;
   EncodeDecode(testNr, wbISACConfig, swbISACConfig);
 
-  _acmA->ResetEncoder();
-  _acmB->ResetEncoder();
   SetISACConfigDefault(wbISACConfig);
   SetISACConfigDefault(swbISACConfig);
 

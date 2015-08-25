@@ -137,7 +137,6 @@ void TestVadDtx::Run(std::string in_filename, int frequency, int channels,
 TestWebRtcVadDtx::TestWebRtcVadDtx()
     : vad_enabled_(false),
       dtx_enabled_(false),
-      use_webrtc_dtx_(false),
       output_file_num_(0) {
 }
 
@@ -191,7 +190,7 @@ void TestWebRtcVadDtx::RunTestCases() {
 
 // Set the expectation and run the test.
 void TestWebRtcVadDtx::Test(bool new_outfile) {
-  int expects[] = {-1, 1, use_webrtc_dtx_, 0, 0};
+  int expects[] = {-1, 1, dtx_enabled_, 0, 0};
   if (new_outfile) {
     output_file_num_++;
   }
@@ -219,17 +218,10 @@ void TestWebRtcVadDtx::SetVAD(bool enable_dtx, bool enable_vad,
 
   EXPECT_EQ(dtx_enabled_ , enable_dtx); // DTX should be set as expected.
 
-  bool replaced = false;
-  acm_send_->IsInternalDTXReplacedWithWebRtc(&replaced);
-
-  use_webrtc_dtx_ = dtx_enabled_ && replaced;
-
-  if (use_webrtc_dtx_) {
+  if (dtx_enabled_) {
     EXPECT_TRUE(vad_enabled_); // WebRTC DTX cannot run without WebRTC VAD.
-  }
-
-  if (!dtx_enabled_ || !use_webrtc_dtx_) {
-    // Using no DTX or codec Internal DTX should not affect setting of VAD.
+  } else {
+    // Using no DTX should not affect setting of VAD.
     EXPECT_EQ(enable_vad, vad_enabled_);
   }
 }

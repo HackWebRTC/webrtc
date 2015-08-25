@@ -237,15 +237,6 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
 //   Sender
 //
 
-// TODO(henrik.lundin): Remove this method; only used in tests.
-int AudioCodingModuleImpl::ResetEncoder() {
-  CriticalSectionScoped lock(acm_crit_sect_);
-  if (!HaveValidEncoder("ResetEncoder")) {
-    return -1;
-  }
-  return 0;
-}
-
 // Can be called multiple times for Codec, CNG, RED.
 int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
   CriticalSectionScoped lock(acm_crit_sect_);
@@ -279,46 +270,11 @@ int AudioCodingModuleImpl::SendFrequency() const {
   return codec_manager_.CurrentEncoder()->SampleRateHz();
 }
 
-// Get encode bitrate.
-// Adaptive rate codecs return their current encode target rate, while other
-// codecs return there longterm avarage or their fixed rate.
-// TODO(henrik.lundin): Remove; not used.
-int AudioCodingModuleImpl::SendBitrate() const {
-  FATAL() << "Deprecated";
-  // This return statement is required to workaround a bug in VS2013 Update 4
-  // when turning on the whole program optimizations. Without hit the linker
-  // will hang because it doesn't seem to find an exit path for this function.
-  // This is likely a bug in link.exe and would probably be fixed in VS2015.
-  return -1;
-  //  CriticalSectionScoped lock(acm_crit_sect_);
-  //
-  //  if (!codec_manager_.current_encoder()) {
-  //    WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
-  //                 "SendBitrate Failed, no codec is registered");
-  //    return -1;
-  //  }
-  //
-  //  WebRtcACMCodecParams encoder_param;
-  //  codec_manager_.current_encoder()->EncoderParams(&encoder_param);
-  //
-  //  return encoder_param.codec_inst.rate;
-}
-
 void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
   CriticalSectionScoped lock(acm_crit_sect_);
   if (codec_manager_.CurrentEncoder()) {
     codec_manager_.CurrentEncoder()->SetTargetBitrate(bitrate_bps);
   }
-}
-
-// Set available bandwidth, inform the encoder about the estimated bandwidth
-// received from the remote party.
-// TODO(henrik.lundin): Remove; not used.
-int AudioCodingModuleImpl::SetReceivedEstimatedBandwidth(int bw) {
-  CriticalSectionScoped lock(acm_crit_sect_);
-  FATAL() << "Dead code?";
-  return -1;
-//  return codecs_[current_send_codec_idx_]->SetEstimatedBandwidth(bw);
 }
 
 // Register a transport callback which will be called to deliver
@@ -608,15 +564,6 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
   return 0;
 }
 
-// TODO(turajs): If NetEq opens an API for reseting the state of decoders then
-// implement this method. Otherwise it should be removed. I might be that by
-// removing and registering a decoder we can achieve the effect of resetting.
-// Reset the decoder state.
-// TODO(henrik.lundin): Remove; only used in one test, and does nothing.
-int AudioCodingModuleImpl::ResetDecoder() {
-  return 0;
-}
-
 // Get current receive frequency.
 int AudioCodingModuleImpl::ReceiveFrequency() const {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
@@ -725,22 +672,6 @@ int AudioCodingModuleImpl::SetMaximumPlayoutDelay(int time_ms) {
   return receiver_.SetMaximumDelay(time_ms);
 }
 
-// Estimate the Bandwidth based on the incoming stream, needed for one way
-// audio where the RTCP send the BW estimate.
-// This is also done in the RTP module.
-int AudioCodingModuleImpl::DecoderEstimatedBandwidth() const {
-  // We can estimate far-end to near-end bandwidth if the iSAC are sent. Check
-  // if the last received packets were iSAC packet then retrieve the bandwidth.
-  int last_audio_codec_id = receiver_.last_audio_codec_id();
-  if (last_audio_codec_id >= 0 &&
-      STR_CASE_CMP("ISAC", ACMCodecDB::database_[last_audio_codec_id].plname)) {
-    CriticalSectionScoped lock(acm_crit_sect_);
-    FATAL() << "Dead code?";
-//    return codecs_[last_audio_codec_id]->GetEstimatedBandwidth();
-  }
-  return -1;
-}
-
 // Set playout mode for: voice, fax, streaming or off.
 int AudioCodingModuleImpl::SetPlayoutMode(AudioPlayoutMode mode) {
   receiver_.SetPlayoutMode(mode);
@@ -813,38 +744,6 @@ int AudioCodingModuleImpl::IncomingPayload(const uint8_t* incoming_payload,
   return 0;
 }
 
-int AudioCodingModuleImpl::ReplaceInternalDTXWithWebRtc(bool use_webrtc_dtx) {
-  CriticalSectionScoped lock(acm_crit_sect_);
-
-  if (!HaveValidEncoder("ReplaceInternalDTXWithWebRtc")) {
-    WEBRTC_TRACE(
-        webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-        "Cannot replace codec internal DTX when no send codec is registered.");
-    return -1;
-  }
-
-  FATAL() << "Dead code?";
-//  int res = codecs_[current_send_codec_idx_]->ReplaceInternalDTX(
-//      use_webrtc_dtx);
-  // Check if VAD is turned on, or if there is any error.
-//  if (res == 1) {
-//    vad_enabled_ = true;
-//  } else if (res < 0) {
-//    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-//                 "Failed to set ReplaceInternalDTXWithWebRtc(%d)",
-//                 use_webrtc_dtx);
-//    return res;
-//  }
-
-  return 0;
-}
-
-int AudioCodingModuleImpl::IsInternalDTXReplacedWithWebRtc(
-    bool* uses_webrtc_dtx) {
-  *uses_webrtc_dtx = true;
-  return 0;
-}
-
 // TODO(henrik.lundin): Remove? Only used in tests. Deprecated in VoiceEngine.
 int AudioCodingModuleImpl::SetISACMaxRate(int max_bit_per_sec) {
   CriticalSectionScoped lock(acm_crit_sect_);
@@ -867,23 +766,6 @@ int AudioCodingModuleImpl::SetISACMaxPayloadSize(int max_size_bytes) {
 
   codec_manager_.CurrentSpeechEncoder()->SetMaxPayloadSize(max_size_bytes);
   return 0;
-}
-
-// TODO(henrik.lundin): Remove? Only used in tests.
-int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
-    int frame_size_ms,
-    int rate_bit_per_sec,
-    bool enforce_frame_size) {
-  CriticalSectionScoped lock(acm_crit_sect_);
-
-  if (!HaveValidEncoder("ConfigISACBandwidthEstimator")) {
-    return -1;
-  }
-
-  FATAL() << "Dead code?";
-  return -1;
-//  return codecs_[current_send_codec_idx_]->ConfigISACBandwidthEstimator(
-//      frame_size_ms, rate_bit_per_sec, enforce_frame_size);
 }
 
 int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
@@ -948,26 +830,6 @@ bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
 
 int AudioCodingModuleImpl::UnregisterReceiveCodec(uint8_t payload_type) {
   return receiver_.RemoveCodec(payload_type);
-}
-
-// TODO(turajs): correct the type of |length_bytes| when it is corrected in
-// GenericCodec.
-int AudioCodingModuleImpl::REDPayloadISAC(int isac_rate,
-                                          int isac_bw_estimate,
-                                          uint8_t* payload,
-                                          int16_t* length_bytes) {
-  CriticalSectionScoped lock(acm_crit_sect_);
-  if (!HaveValidEncoder("EncodeData")) {
-    return -1;
-  }
-  FATAL() << "Dead code?";
-  return -1;
-//  int status;
-//  status = codecs_[current_send_codec_idx_]->REDPayloadISAC(isac_rate,
-//                                                            isac_bw_estimate,
-//                                                            payload,
-//                                                            length_bytes);
-//  return status;
 }
 
 int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
