@@ -14,7 +14,6 @@
 #include <string.h>  // Provide access to size_t.
 
 #include <string>
-#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
@@ -46,6 +45,12 @@ struct NetEqNetworkStatistics {
   int32_t clockdrift_ppm;  // Average clock-drift in parts-per-million
                            // (positive or negative).
   size_t added_zero_samples;  // Number of zero samples added in "off" mode.
+  // Statistics for packet waiting times, i.e., the time between a packet
+  // arrives until it is decoded.
+  int mean_waiting_time_ms;
+  int median_waiting_time_ms;
+  int min_waiting_time_ms;
+  int max_waiting_time_ms;
 };
 
 enum NetEqOutputType {
@@ -226,11 +231,6 @@ class NetEq {
   // Writes the current network statistics to |stats|. The statistics are reset
   // after the call.
   virtual int NetworkStatistics(NetEqNetworkStatistics* stats) = 0;
-
-  // Writes the last packet waiting times (in ms) to |waiting_times|. The number
-  // of values written is no more than 100, but may be smaller if the interface
-  // is polled again before 100 packets has arrived.
-  virtual void WaitingTimes(std::vector<int>* waiting_times) = 0;
 
   // Writes the current RTCP statistics to |stats|. The statistics are reset
   // and a new report period is started with the call.

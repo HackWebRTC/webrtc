@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_STATISTICS_CALCULATOR_H_
 
+#include <deque>
 #include <string>
-#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
@@ -29,16 +29,13 @@ class StatisticsCalculator {
  public:
   StatisticsCalculator();
 
-  virtual ~StatisticsCalculator() {}
+  virtual ~StatisticsCalculator();
 
   // Resets most of the counters.
   void Reset();
 
   // Resets the counters that are not handled by Reset().
   void ResetMcu();
-
-  // Resets the waiting time statistics.
-  void ResetWaitingTimeStatistics();
 
   // Reports that |num_samples| samples were produced through expansion, and
   // that the expansion produced other than just noise samples.
@@ -91,11 +88,9 @@ class StatisticsCalculator {
                             const DecisionLogic& decision_logic,
                             NetEqNetworkStatistics *stats);
 
-  void WaitingTimes(std::vector<int>* waiting_times);
-
  private:
   static const int kMaxReportPeriod = 60;  // Seconds before auto-reset.
-  static const int kLenWaitingTimes = 100;
+  static const size_t kLenWaitingTimes = 100;
 
   class PeriodicUmaLogger {
    public:
@@ -160,9 +155,7 @@ class StatisticsCalculator {
   size_t discarded_packets_;
   size_t lost_timestamps_;
   uint32_t timestamps_since_last_report_;
-  int waiting_times_[kLenWaitingTimes];  // Used as a circular buffer.
-  int len_waiting_times_;
-  int next_waiting_time_index_;
+  std::deque<int> waiting_times_;
   uint32_t secondary_decoded_samples_;
   PeriodicUmaCount delayed_packet_outage_counter_;
   PeriodicUmaAverage excess_buffer_delay_;

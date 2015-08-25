@@ -507,46 +507,23 @@ TEST_F(NetEqDecodingTestFaxMode, TestFrameWaitingTimeStatistics) {
     ASSERT_EQ(kBlockSize16kHz, out_len);
   }
 
-  std::vector<int> waiting_times;
-  neteq_->WaitingTimes(&waiting_times);
-  EXPECT_EQ(num_frames, waiting_times.size());
+  NetEqNetworkStatistics stats;
+  EXPECT_EQ(0, neteq_->NetworkStatistics(&stats));
   // Since all frames are dumped into NetEQ at once, but pulled out with 10 ms
   // spacing (per definition), we expect the delay to increase with 10 ms for
-  // each packet.
-  for (size_t i = 0; i < waiting_times.size(); ++i) {
-    EXPECT_EQ(static_cast<int>(i + 1) * 10, waiting_times[i]);
-  }
+  // each packet. Thus, we are calculating the statistics for a series from 10
+  // to 300, in steps of 10 ms.
+  EXPECT_EQ(155, stats.mean_waiting_time_ms);
+  EXPECT_EQ(155, stats.median_waiting_time_ms);
+  EXPECT_EQ(10, stats.min_waiting_time_ms);
+  EXPECT_EQ(300, stats.max_waiting_time_ms);
 
   // Check statistics again and make sure it's been reset.
-  neteq_->WaitingTimes(&waiting_times);
-  int len = waiting_times.size();
-  EXPECT_EQ(0, len);
-
-  // Process > 100 frames, and make sure that that we get statistics
-  // only for 100 frames. Note the new SSRC, causing NetEQ to reset.
-  num_frames = 110;
-  for (size_t i = 0; i < num_frames; ++i) {
-    uint16_t payload[kSamples] = {0};
-    WebRtcRTPHeader rtp_info;
-    rtp_info.header.sequenceNumber = i;
-    rtp_info.header.timestamp = i * kSamples;
-    rtp_info.header.ssrc = 0x1235;  // Just an arbitrary SSRC.
-    rtp_info.header.payloadType = 94;  // PCM16b WB codec.
-    rtp_info.header.markerBit = 0;
-    ASSERT_EQ(0, neteq_->InsertPacket(
-        rtp_info,
-        reinterpret_cast<uint8_t*>(payload),
-        kPayloadBytes, 0));
-    size_t out_len;
-    int num_channels;
-    NetEqOutputType type;
-    ASSERT_EQ(0, neteq_->GetAudio(kMaxBlockSize, out_data_, &out_len,
-                                  &num_channels, &type));
-    ASSERT_EQ(kBlockSize16kHz, out_len);
-  }
-
-  neteq_->WaitingTimes(&waiting_times);
-  EXPECT_EQ(100u, waiting_times.size());
+  EXPECT_EQ(0, neteq_->NetworkStatistics(&stats));
+  EXPECT_EQ(-1, stats.mean_waiting_time_ms);
+  EXPECT_EQ(-1, stats.median_waiting_time_ms);
+  EXPECT_EQ(-1, stats.min_waiting_time_ms);
+  EXPECT_EQ(-1, stats.max_waiting_time_ms);
 }
 
 TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimeNegative) {

@@ -15,6 +15,7 @@
 #include <algorithm>  // sort
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
@@ -652,31 +653,10 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   acm_stat->currentSecondaryDecodedRate = neteq_stat.secondary_decoded_rate;
   acm_stat->clockDriftPPM = neteq_stat.clockdrift_ppm;
   acm_stat->addedSamples = neteq_stat.added_zero_samples;
-
-  std::vector<int> waiting_times;
-  neteq_->WaitingTimes(&waiting_times);
-  size_t size = waiting_times.size();
-  if (size == 0) {
-    acm_stat->meanWaitingTimeMs = -1;
-    acm_stat->medianWaitingTimeMs = -1;
-    acm_stat->minWaitingTimeMs = -1;
-    acm_stat->maxWaitingTimeMs = -1;
-  } else {
-    std::sort(waiting_times.begin(), waiting_times.end());
-    if ((size & 0x1) == 0) {
-      acm_stat->medianWaitingTimeMs = (waiting_times[size / 2 - 1] +
-          waiting_times[size / 2]) / 2;
-    } else {
-      acm_stat->medianWaitingTimeMs = waiting_times[size / 2];
-    }
-    acm_stat->minWaitingTimeMs = waiting_times.front();
-    acm_stat->maxWaitingTimeMs = waiting_times.back();
-    double sum = 0;
-    for (size_t i = 0; i < size; ++i) {
-      sum += waiting_times[i];
-    }
-    acm_stat->meanWaitingTimeMs = static_cast<int>(sum / size);
-  }
+  acm_stat->meanWaitingTimeMs = neteq_stat.mean_waiting_time_ms;
+  acm_stat->medianWaitingTimeMs = neteq_stat.median_waiting_time_ms;
+  acm_stat->minWaitingTimeMs = neteq_stat.min_waiting_time_ms;
+  acm_stat->maxWaitingTimeMs = neteq_stat.max_waiting_time_ms;
 }
 
 int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,

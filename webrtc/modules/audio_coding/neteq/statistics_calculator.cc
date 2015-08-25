@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <string.h>  // memset
+#include <algorithm>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
@@ -20,6 +21,9 @@
 #include "webrtc/system_wrappers/interface/metrics.h"
 
 namespace webrtc {
+
+// Allocating the static const so that it can be passed by reference to DCHECK.
+const size_t StatisticsCalculator::kLenWaitingTimes;
 
 StatisticsCalculator::PeriodicUmaLogger::PeriodicUmaLogger(
     const std::string& uma_name,
@@ -107,8 +111,6 @@ StatisticsCalculator::StatisticsCalculator()
       discarded_packets_(0),
       lost_timestamps_(0),
       timestamps_since_last_report_(0),
-      len_waiting_times_(0),
-      next_waiting_time_index_(0),
       secondary_decoded_samples_(0),
       delayed_packet_outage_counter_(
           "WebRTC.Audio.DelayedPacketOutageEventsPerMinute",
@@ -117,8 +119,9 @@ StatisticsCalculator::StatisticsCalculator()
       excess_buffer_delay_("WebRTC.Audio.AverageExcessBufferDelayMs",
                            60000,  // 60 seconds report interval.
                            1000) {
-  memset(waiting_times_, 0, kLenWaitingTimes * sizeof(waiting_times_[0]));
 }
+
+StatisticsCalculator::~StatisticsCalculator() = default;
 
 void StatisticsCalculator::Reset() {
   preemptive_samples_ = 0;
@@ -127,18 +130,13 @@ void StatisticsCalculator::Reset() {
   expanded_speech_samples_ = 0;
   expanded_noise_samples_ = 0;
   secondary_decoded_samples_ = 0;
+  waiting_times_.clear();
 }
 
 void StatisticsCalculator::ResetMcu() {
   discarded_packets_ = 0;
   lost_timestamps_ = 0;
   timestamps_since_last_report_ = 0;
-}
-
-void StatisticsCalculator::ResetWaitingTimeStatistics() {
-  memset(waiting_times_, 0, kLenWaitingTimes * sizeof(waiting_times_[0]));
-  len_waiting_times_ = 0;
-  next_waiting_time_index_ = 0;
 }
 
 void StatisticsCalculator::ExpandedVoiceSamples(size_t num_samples) {
@@ -196,15 +194,12 @@ void StatisticsCalculator::LogDelayedPacketOutageEvent(int outage_duration_ms) {
 
 void StatisticsCalculator::StoreWaitingTime(int waiting_time_ms) {
   excess_buffer_delay_.RegisterSample(waiting_time_ms);
-  assert(next_waiting_time_index_ < kLenWaitingTimes);
-  waiting_times_[next_waiting_time_index_] = waiting_time_ms;
-  next_waiting_time_index_++;
-  if (next_waiting_time_index_ >= kLenWaitingTimes) {
-    next_waiting_time_index_ = 0;
+  DCHECK_LE(waiting_times_.size(), kLenWaitingTimes);
+  while (waiting_times_.size() >= kLenWaitingTimes) {
+    // Erase first value.
+    waiting_times_.pop_front();
   }
-  if (len_waiting_times_ < kLenWaitingTimes) {
-    len_waiting_times_++;
-  }
+  waiting_times_.push_back(waiting_time_ms);
 }
 
 void StatisticsCalculator::GetNetworkStatistics(
@@ -254,17 +249,33 @@ void StatisticsCalculator::GetNetworkStatistics(
       CalculateQ14Ratio(secondary_decoded_samples_,
                         timestamps_since_last_report_);
 
+  if (waiting_times_.size() == 0) {
+    stats->mean_waiting_time_ms = -1;
+    stats->median_waiting_time_ms = -1;
+    stats->min_waiting_time_ms = -1;
+    stats->max_waiting_time_ms = -1;
+  } else {
+    std::sort(waiting_times_.begin(), waiting_times_.end());
+    // Find mid-point elements. If the size is odd, the two values
+    // |middle_left| and |middle_right| will both be the one middle element; if
+    // the size is even, they will be the the two neighboring elements at the
+    // middle of the list.
+    const int middle_left = waiting_times_[(waiting_times_.size() - 1) / 2];
+    const int middle_right = waiting_times_[waiting_times_.size() / 2];
+    // Calculate the average of the two. (Works also for odd sizes.)
+    stats->median_waiting_time_ms = (middle_left + middle_right) / 2;
+    stats->min_waiting_time_ms = waiting_times_.front();
+    stats->max_waiting_time_ms = waiting_times_.back();
+    double sum = 0;
+    for (auto time : waiting_times_) {
+      sum += time;
+    }
+    stats->mean_waiting_time_ms = static_cast<int>(sum / waiting_times_.size());
+  }
+
   // Reset counters.
   ResetMcu();
   Reset();
-}
-
-void StatisticsCalculator::WaitingTimes(std::vector<int>* waiting_times) {
-  if (!waiting_times) {
-    return;
-  }
-  waiting_times->assign(waiting_times_, waiting_times_ + len_waiting_times_);
-  ResetWaitingTimeStatistics();
 }
 
 uint16_t StatisticsCalculator::CalculateQ14Ratio(size_t numerator,

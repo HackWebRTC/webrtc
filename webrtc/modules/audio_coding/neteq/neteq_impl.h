@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_NETEQ_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_NETEQ_IMPL_H_
 
-#include <vector>
-
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -153,11 +151,6 @@ class NetEqImpl : public webrtc::NetEq {
   // Writes the current network statistics to |stats|. The statistics are reset
   // after the call.
   int NetworkStatistics(NetEqNetworkStatistics* stats) override;
-
-  // Writes the last packet waiting times (in ms) to |waiting_times|. The number
-  // of values written is no more than 100, but may be smaller if the interface
-  // is polled again before 100 packets has arrived.
-  void WaitingTimes(std::vector<int>* waiting_times) override;
 
   // Writes the current RTCP statistics to |stats|. The statistics are reset
   // and a new report period is started with the call.

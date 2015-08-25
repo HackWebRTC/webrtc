@@ -318,11 +318,6 @@ int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
   return 0;
 }
 
-void NetEqImpl::WaitingTimes(std::vector<int>* waiting_times) {
-  CriticalSectionScoped lock(crit_sect_.get());
-  stats_.WaitingTimes(waiting_times);
-}
-
 void NetEqImpl::GetRtcpStatistics(RtcpStatistics* stats) {
   CriticalSectionScoped lock(crit_sect_.get());
   if (stats) {
