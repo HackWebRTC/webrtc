@@ -264,7 +264,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // to |index|.
   int UpdateUponReceivingCodec(int index);
 
-  CriticalSectionWrapper* acm_crit_sect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> acm_crit_sect_;
   int id_;  // TODO(henrik.lundin) Make const.
   uint32_t expected_codec_ts_ GUARDED_BY(acm_crit_sect_);
   uint32_t expected_in_ts_ GUARDED_BY(acm_crit_sect_);
@@ -282,7 +282,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // IMPORTANT: this variable is only used in IncomingPayload(), therefore,
   // no lock acquired when interacting with this variable. If it is going to
   // be used in other methods, locks need to be taken.
-  WebRtcRTPHeader* aux_rtp_header_;
+  rtc::scoped_ptr<WebRtcRTPHeader> aux_rtp_header_;
 
   bool receiver_initialized_ GUARDED_BY(acm_crit_sect_);
 
@@ -293,7 +293,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   uint32_t last_timestamp_ GUARDED_BY(acm_crit_sect_);
   uint32_t last_rtp_timestamp_ GUARDED_BY(acm_crit_sect_);
 
-  CriticalSectionWrapper* callback_crit_sect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> callback_crit_sect_;
   AudioPacketizationCallback* packetization_callback_
       GUARDED_BY(callback_crit_sect_);
   ACMVADCallback* vad_callback_ GUARDED_BY(callback_crit_sect_);
