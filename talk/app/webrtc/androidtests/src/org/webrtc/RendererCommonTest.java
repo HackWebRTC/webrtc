@@ -28,12 +28,14 @@
 package org.webrtc;
 
 import android.test.ActivityTestCase;
+import android.test.MoreAsserts;
 import android.test.suitebuilder.annotation.SmallTest;
 
 import android.graphics.Point;
 
 import static org.webrtc.RendererCommon.ScalingType.*;
 import static org.webrtc.RendererCommon.getDisplaySize;
+import static org.webrtc.RendererCommon.getTextureMatrix;
 
 public class RendererCommonTest extends ActivityTestCase {
   @SmallTest
@@ -86,5 +88,76 @@ public class RendererCommonTest extends ActivityTestCase {
     assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 4.0f / 3, 1280, 720), new Point(960, 720));
     assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 4.0f / 3, 1280, 720), new Point(1280, 720));
     assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 4.0f / 3, 1280, 720), new Point(1280, 720));
+  }
+
+  // Only keep 2 rounded decimals to make float comparison robust.
+  static private double[] round(float[] array) {
+    assertEquals(array.length, 16);
+    final double[] doubleArray = new double[16];
+    for (int i = 0; i < 16; ++i) {
+      doubleArray[i] = Math.round(100 * array[i]) / 100.0;
+    }
+    return doubleArray;
+  }
+
+  @SmallTest
+  static public void testTexMatrixDefault() {
+    final float texMatrix[] = new float[16];
+    getTextureMatrix(texMatrix, 0, false, 1.0f, 1.0f);
+    // TODO(magjed): Every tex matrix contains a vertical flip, because we ignore the texture
+    // transform matrix from the SurfaceTexture (which contains a vertical flip). Update tests when
+    // this is fixed.
+    // Assert:
+    // u' = u.
+    // v' = 1 - v.
+    MoreAsserts.assertEquals(round(texMatrix), new double[]
+        {1, 0, 0, 0,
+         0, -1, 0, 0,
+         0, 0, 1, 0,
+         0, 1, 0, 1});
+  }
+
+  @SmallTest
+  static public void testTexMatrixMirror() {
+    final float texMatrix[] = new float[16];
+    getTextureMatrix(texMatrix, 0, true, 1.0f, 1.0f);
+    // Assert:
+    // u' = 1 - u.
+    // v' = 1 - v.
+    MoreAsserts.assertEquals(round(texMatrix), new double[]
+        {-1, 0, 0, 0,
+         0, -1, 0, 0,
+         0, 0, 1, 0,
+         1, 1, 0, 1});
+  }
+
+  @SmallTest
+  static public void testTexMatrixRotation90Deg() {
+    final float texMatrix[] = new float[16];
+    getTextureMatrix(texMatrix, 90, false, 1.0f, 1.0f);
+    // Assert:
+    // u' = 1 - v.
+    // v' = 1 - u.
+    MoreAsserts.assertEquals(round(texMatrix), new double[]
+        {0, -1, 0, 0,
+         -1, 0, 0, 0,
+         0, 0, 1, 0,
+         1, 1, 0, 1});
+  }
+
+  @SmallTest
+  static public void testTexMatrixScale() {
+    final float texMatrix[] = new float[16];
+    // Video has aspect ratio 2, but layout is square. This will cause only the center part of the
+    // video to be visible, i.e. the u coordinate will go from 0.25 to 0.75 instead of from 0 to 1.
+    getTextureMatrix(texMatrix, 0, false, 2.0f, 1.0f);
+    // Assert:
+    // u' = 0.25 + 0.5 u.
+    // v' = 1 - v.
+    MoreAsserts.assertEquals(round(texMatrix), new double[]
+        {0.5, 0, 0, 0,
+         0, -1, 0, 0,
+         0, 0, 1, 0,
+         0.25, 1, 0, 1});
   }
 }
