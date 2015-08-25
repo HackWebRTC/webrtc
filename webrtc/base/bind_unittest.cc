@@ -17,6 +17,8 @@ namespace rtc {
 
 namespace {
 
+struct LifeTimeCheck;
+
 struct MethodBindTester {
   void NullaryVoid() { ++call_count; }
   int NullaryInt() { ++call_count; return 1; }
@@ -25,6 +27,10 @@ struct MethodBindTester {
   template <class T> T Identity(T value) { ++call_count; return value; }
   int UnaryByRef(int& value) const { ++call_count; return ++value; }  // NOLINT
   int Multiply(int a, int b) const { ++call_count; return a * b; }
+  void RefArgument(const scoped_refptr<LifeTimeCheck>& object) {
+    EXPECT_TRUE(object.get() != nullptr);
+  }
+
   mutable int call_count;
 };
 
@@ -42,19 +48,12 @@ struct F {
   void Release();
 };
 
-class LifeTimeCheck : public RefCountInterface {
- public:
-  LifeTimeCheck(bool* has_died) : has_died_(has_died), is_ok_to_die_(false) {}
-  ~LifeTimeCheck() {
-    EXPECT_TRUE(is_ok_to_die_);
-    *has_died_ = true;
-  }
-  void PrepareToDie() { is_ok_to_die_ = true; }
+struct LifeTimeCheck {
+  LifeTimeCheck() : ref_count_(0) {}
+  void AddRef() { ++ref_count_; }
+  void Release() { --ref_count_; }
   void NullaryVoid() {}
-
- private:
-  bool* const has_died_;
-  bool is_ok_to_die_;
+  int ref_count_;
 };
 
 int Return42() { return 42; }
@@ -65,6 +64,27 @@ int Multiply(int a, int b) { return a * b; }
 
 // Try to catch any problem with scoped_refptr type deduction in rtc::Bind at
 // compile time.
+static_assert(is_same<detail::RemoveScopedPtrRef<
+                          const scoped_refptr<RefCountInterface>&>::type,
+                      scoped_refptr<RefCountInterface>>::value,
+              "const scoped_refptr& should be captured by value");
+
+static_assert(is_same<detail::RemoveScopedPtrRef<const scoped_refptr<F>&>::type,
+                      scoped_refptr<F>>::value,
+              "const scoped_refptr& should be captured by value");
+
+static_assert(
+    is_same<detail::RemoveScopedPtrRef<const int&>::type, const int&>::value,
+    "const int& should be captured as const int&");
+
+static_assert(
+    is_same<detail::RemoveScopedPtrRef<const F&>::type, const F&>::value,
+    "const F& should be captured as const F&");
+
+static_assert(
+    is_same<detail::RemoveScopedPtrRef<F&>::type, F&>::value,
+    "F& should be captured as F&");
+
 #define EXPECT_IS_CAPTURED_AS_PTR(T)                              \
   static_assert(is_same<detail::PointerType<T>::type, T*>::value, \
                 "PointerType")
@@ -124,46 +144,78 @@ TEST(BindTest, BindToFunction) {
 // Test Bind where method object implements RefCountInterface and is passed as a
 // pointer.
 TEST(BindTest, CapturePointerAsScopedRefPtr) {
-  bool object_has_died = false;
-  scoped_refptr<LifeTimeCheck> object =
-      new RefCountedObject<LifeTimeCheck>(&object_has_died);
+  LifeTimeCheck object;
+  EXPECT_EQ(object.ref_count_, 0);
+  scoped_refptr<LifeTimeCheck> scoped_object(&object);
+  EXPECT_EQ(object.ref_count_, 1);
   {
-    auto functor = Bind(&LifeTimeCheck::PrepareToDie, object.get());
-    object = nullptr;
-    EXPECT_FALSE(object_has_died);
-    // Run prepare to die via functor.
-    functor();
+    auto functor = Bind(&LifeTimeCheck::NullaryVoid, &object);
+    EXPECT_EQ(object.ref_count_, 2);
+    scoped_object = nullptr;
+    EXPECT_EQ(object.ref_count_, 1);
   }
-  EXPECT_TRUE(object_has_died);
+  EXPECT_EQ(object.ref_count_, 0);
 }
 
 // Test Bind where method object implements RefCountInterface and is passed as a
 // scoped_refptr<>.
 TEST(BindTest, CaptureScopedRefPtrAsScopedRefPtr) {
-  bool object_has_died = false;
-  scoped_refptr<LifeTimeCheck> object =
-      new RefCountedObject<LifeTimeCheck>(&object_has_died);
+  LifeTimeCheck object;
+  EXPECT_EQ(object.ref_count_, 0);
+  scoped_refptr<LifeTimeCheck> scoped_object(&object);
+  EXPECT_EQ(object.ref_count_, 1);
   {
-    auto functor = Bind(&LifeTimeCheck::PrepareToDie, object);
-    object = nullptr;
-    EXPECT_FALSE(object_has_died);
-    // Run prepare to die via functor.
-    functor();
+    auto functor = Bind(&LifeTimeCheck::NullaryVoid, scoped_object);
+    EXPECT_EQ(object.ref_count_, 2);
+    scoped_object = nullptr;
+    EXPECT_EQ(object.ref_count_, 1);
   }
-  EXPECT_TRUE(object_has_died);
+  EXPECT_EQ(object.ref_count_, 0);
 }
 
 // Test Bind where method object is captured as scoped_refptr<> and the functor
 // dies while there are references left.
 TEST(BindTest, FunctorReleasesObjectOnDestruction) {
-  bool object_has_died = false;
-  scoped_refptr<LifeTimeCheck> object =
-      new RefCountedObject<LifeTimeCheck>(&object_has_died);
-  Bind(&LifeTimeCheck::NullaryVoid, object.get())();
-  EXPECT_FALSE(object_has_died);
-  object->PrepareToDie();
-  object = nullptr;
-  EXPECT_TRUE(object_has_died);
+  LifeTimeCheck object;
+  EXPECT_EQ(object.ref_count_, 0);
+  scoped_refptr<LifeTimeCheck> scoped_object(&object);
+  EXPECT_EQ(object.ref_count_, 1);
+  Bind(&LifeTimeCheck::NullaryVoid, &object)();
+  EXPECT_EQ(object.ref_count_, 1);
+  scoped_object = nullptr;
+  EXPECT_EQ(object.ref_count_, 0);
+}
+
+// Test Bind with scoped_refptr<> argument.
+TEST(BindTest, ScopedRefPointerArgument) {
+  LifeTimeCheck object;
+  EXPECT_EQ(object.ref_count_, 0);
+  scoped_refptr<LifeTimeCheck> scoped_object(&object);
+  EXPECT_EQ(object.ref_count_, 1);
+  {
+    MethodBindTester bind_tester;
+    auto functor =
+        Bind(&MethodBindTester::RefArgument, &bind_tester, scoped_object);
+    EXPECT_EQ(object.ref_count_, 2);
+  }
+  EXPECT_EQ(object.ref_count_, 1);
+  scoped_object = nullptr;
+  EXPECT_EQ(object.ref_count_, 0);
+}
+
+namespace {
+
+const int* Ref(const int& a) { return &a; }
+
+}  // anonymous namespace
+
+// Test Bind with non-scoped_refptr<> reference argument.
+TEST(BindTest, RefArgument) {
+  const int x = 42;
+  EXPECT_TRUE(Ref(x) == &x);
+  // Bind() should not make a copy of |x|, i.e. the pointers should be the same.
+  auto functor = Bind(&Ref, x);
+  EXPECT_TRUE(functor() == &x);
 }
 
 }  // namespace rtc

@@ -124,6 +124,18 @@ struct PointerType {
                                        T*>::type type;
 };
 
+// RemoveScopedPtrRef will capture scoped_refptr by-value instead of
+// by-reference.
+template <class T> struct RemoveScopedPtrRef { typedef T type; };
+template <class T>
+struct RemoveScopedPtrRef<const scoped_refptr<T>&> {
+  typedef scoped_refptr<T> type;
+};
+template <class T>
+struct RemoveScopedPtrRef<scoped_refptr<T>&> {
+  typedef scoped_refptr<T> type;
+};
+
 }  // namespace detail
 
 $var n = 6
@@ -145,7 +157,7 @@ class MethodFunctor$i {
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;$for j [[
 
-  P$j p$(j)_;]]
+  typename detail::RemoveScopedPtrRef<P$j>::type p$(j)_;]]
 
 };
 
@@ -162,7 +174,7 @@ Functor$i(const FunctorT& functor$for j [[, P$j p$j]])
  private:
   FunctorT functor_;$for j [[
 
-  P$j p$(j)_;]]
+  typename detail::RemoveScopedPtrRef<P$j>::type p$(j)_;]]
 
 };
 

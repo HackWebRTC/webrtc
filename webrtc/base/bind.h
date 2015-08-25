@@ -128,6 +128,18 @@ struct PointerType {
                                        T*>::type type;
 };
 
+// RemoveScopedPtrRef will capture scoped_refptr by-value instead of
+// by-reference.
+template <class T> struct RemoveScopedPtrRef { typedef T type; };
+template <class T>
+struct RemoveScopedPtrRef<const scoped_refptr<T>&> {
+  typedef scoped_refptr<T> type;
+};
+template <class T>
+struct RemoveScopedPtrRef<scoped_refptr<T>&> {
+  typedef scoped_refptr<T> type;
+};
+
 }  // namespace detail
 
 template <class ObjectT, class MethodT, class R>
@@ -208,7 +220,7 @@ class MethodFunctor1 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  P1 p1_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
 };
 
 template <class FunctorT, class R,
@@ -222,7 +234,7 @@ class Functor1 {
     return functor_(p1_); }
  private:
   FunctorT functor_;
-  P1 p1_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
 };
 
 
@@ -291,8 +303,8 @@ class MethodFunctor2 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  P1 p1_;
-  P2 p2_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
 };
 
 template <class FunctorT, class R,
@@ -308,8 +320,8 @@ class Functor2 {
     return functor_(p1_, p2_); }
  private:
   FunctorT functor_;
-  P1 p1_;
-  P2 p2_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
 };
 
 
@@ -389,9 +401,9 @@ class MethodFunctor3 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  P1 p1_;
-  P2 p2_;
-  P3 p3_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename detail::RemoveScopedPtrRef<P3>::type p3_;
 };
 
 template <class FunctorT, class R,
@@ -409,9 +421,9 @@ class Functor3 {
     return functor_(p1_, p2_, p3_); }
  private:
   FunctorT functor_;
-  P1 p1_;
-  P2 p2_;
-  P3 p3_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename detail::RemoveScopedPtrRef<P3>::type p3_;
 };
 
 
@@ -502,10 +514,10 @@ class MethodFunctor4 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  P1 p1_;
-  P2 p2_;
-  P3 p3_;
-  P4 p4_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename detail::RemoveScopedPtrRef<P3>::type p3_;
+  typename detail::RemoveScopedPtrRef<P4>::type p4_;
 };
 
 template <class FunctorT, class R,
@@ -525,10 +537,10 @@ class Functor4 {
     return functor_(p1_, p2_, p3_, p4_); }
  private:
   FunctorT functor_;
-  P1 p1_;
-  P2 p2_;
-  P3 p3_;
-  P4 p4_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename detail::RemoveScopedPtrRef<P3>::type p3_;
+  typename detail::RemoveScopedPtrRef<P4>::type p4_;
 };
 
 
@@ -630,11 +642,11 @@ class MethodFunctor5 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  P1 p1_;
-  P2 p2_;
-  P3 p3_;
-  P4 p4_;
-  P5 p5_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename detail::RemoveScopedPtrRef<P3>::type p3_;
+  typename detail::RemoveScopedPtrRef<P4>::type p4_;
+  typename detail::RemoveScopedPtrRef<P5>::type p5_;
 };
 
 template <class FunctorT, class R,
@@ -656,11 +668,11 @@ class Functor5 {
     return functor_(p1_, p2_, p3_, p4_, p5_); }
  private:
   FunctorT functor_;
-  P1 p1_;
-  P2 p2_;
-  P3 p3_;
-  P4 p4_;
-  P5 p5_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename detail::RemoveScopedPtrRef<P3>::type p3_;
+  typename detail::RemoveScopedPtrRef<P4>::type p4_;
+  typename detail::RemoveScopedPtrRef<P5>::type p5_;
 };
 
 
@@ -773,12 +785,12 @@ class MethodFunctor6 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  P1 p1_;
-  P2 p2_;
-  P3 p3_;
-  P4 p4_;
-  P5 p5_;
-  P6 p6_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename detail::RemoveScopedPtrRef<P3>::type p3_;
+  typename detail::RemoveScopedPtrRef<P4>::type p4_;
+  typename detail::RemoveScopedPtrRef<P5>::type p5_;
+  typename detail::RemoveScopedPtrRef<P6>::type p6_;
 };
 
 template <class FunctorT, class R,
@@ -802,12 +814,12 @@ class Functor6 {
     return functor_(p1_, p2_, p3_, p4_, p5_, p6_); }
  private:
   FunctorT functor_;
-  P1 p1_;
-  P2 p2_;
-  P3 p3_;
-  P4 p4_;
-  P5 p5_;
-  P6 p6_;
+  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename detail::RemoveScopedPtrRef<P3>::type p3_;
+  typename detail::RemoveScopedPtrRef<P4>::type p4_;
+  typename detail::RemoveScopedPtrRef<P5>::type p5_;
+  typename detail::RemoveScopedPtrRef<P6>::type p6_;
 };
 
 
