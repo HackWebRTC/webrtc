@@ -454,12 +454,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       // Request rendering.
       surface.requestRender();
     }
-
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    @Override
-    public boolean canApplyRotation() {
-      return true;
-    }
   }
 
   /** Passes GLSurfaceView to video renderer. */

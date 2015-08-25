@@ -83,19 +83,14 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       doneRendering = new CountDownLatch(expectedFrames);
     }
 
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    @Override
-    public boolean canApplyRotation() {
-      return false;
-    }
-
     @Override
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
       if (!renderFrameCalled) {
         if (rendererName != null) {
-          Log.d(TAG, rendererName + " render frame: " + frame.width + " x " + frame.height);
+          Log.d(TAG, rendererName + " render frame: "
+              + frame.rotatedWidth() + " x " + frame.rotatedHeight());
         } else {
-          Log.d(TAG, "Render frame: " + frame.width + " x " + frame.height);
+          Log.d(TAG, "Render frame: " + frame.rotatedWidth() + " x " + frame.rotatedHeight());
         }
       }
       renderFrameCalled = true;

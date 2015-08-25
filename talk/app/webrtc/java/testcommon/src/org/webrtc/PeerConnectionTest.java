@@ -134,14 +134,8 @@ public class PeerConnectionTest {
 
     @Override
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
-      setSize(frame.width, frame.height);
+      setSize(frame.rotatedWidth(), frame.rotatedHeight());
       --expectedFramesDelivered;
-    }
-
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    @Override
-    public boolean canApplyRotation() {
-      return false;
     }
 
     public synchronized void expectSignalingChange(SignalingState newState) {
@@ -437,30 +431,6 @@ public class PeerConnectionTest {
   }
 
   static int videoWindowsMapped = -1;
-
-  private static class TestRenderer implements VideoRenderer.Callbacks {
-    public int width = -1;
-    public int height = -1;
-    public int numFramesDelivered = 0;
-
-    private void setSize(int width, int height) {
-      assertEquals(this.width, -1);
-      assertEquals(this.height, -1);
-      this.width = width;
-      this.height = height;
-    }
-
-    @Override
-    public void renderFrame(VideoRenderer.I420Frame frame) {
-      ++numFramesDelivered;
-    }
-
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    @Override
-    public boolean canApplyRotation() {
-      return false;
-    }
-  }
 
   private static VideoRenderer createVideoRenderer(
       VideoRenderer.Callbacks videoCallbacks) {

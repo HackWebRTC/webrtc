@@ -172,8 +172,6 @@ public class VideoRenderer {
     // |frame| might have pending rotation and implementation of Callbacks
     // should handle that by applying rotation during rendering.
     public void renderFrame(I420Frame frame);
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    public boolean canApplyRotation();
   }
 
   // |this| either wraps a native (GUI) renderer or a client-supplied Callbacks
