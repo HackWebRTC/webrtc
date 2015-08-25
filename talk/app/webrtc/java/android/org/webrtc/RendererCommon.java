@@ -59,7 +59,7 @@ public class RendererCommon {
   public static enum ScalingType { SCALE_ASPECT_FIT, SCALE_ASPECT_FILL, SCALE_ASPECT_BALANCED }
   // The minimum fraction of the frame content that will be shown for |SCALE_ASPECT_BALANCED|.
   // This limits excessive cropping when adjusting display size.
-  private static float BALANCED_VISIBLE_FRACTION = 0.56f;
+  private static float BALANCED_VISIBLE_FRACTION = 0.5625f;
 
   /**
    * Calculates a texture transformation matrix based on rotation, mirror, and video vs display
