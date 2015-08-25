@@ -81,6 +81,7 @@
 #include "talk/app/webrtc/umametrics.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/network.h"
+#include "webrtc/base/rtccertificate.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/socketaddress.h"
 
@@ -230,6 +231,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kTcpCandidatePolicyDisabled
   };
 
+  // TODO(hbos): Change into class with private data and public getters.
   struct RTCConfiguration {
     // TODO(pthatcher): Rename this ice_transport_type, but update
     // Chromium at the same time.
@@ -245,6 +247,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     TcpCandidatePolicy tcp_candidate_policy;
     int audio_jitter_buffer_max_packets;
     bool audio_jitter_buffer_fast_accelerate;
+    std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
 
     RTCConfiguration()
         : type(kAll),

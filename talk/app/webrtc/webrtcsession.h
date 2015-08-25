@@ -252,7 +252,7 @@ class WebRtcSession : public cricket::BaseSession,
   void OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp);
 
   // For unit test.
-  bool waiting_for_identity() const;
+  bool waiting_for_identity_for_testing() const;
 
   void set_metrics_observer(
       webrtc::MetricsObserverInterface* metrics_observer) {

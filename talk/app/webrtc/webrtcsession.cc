@@ -576,6 +576,15 @@ bool WebRtcSession::Initialize(
   rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
   SetSslMaxProtocolVersion(options.ssl_max_version);
 
+  // Obtain a certificate from RTCConfiguration if any were provided (optional).
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate;
+  if (!rtc_configuration.certificates.empty()) {
+    // TODO(hbos,torbjorng): Decide on certificate-selection strategy instead of
+    // just picking the first one. The decision should be made based on the DTLS
+    // handshake. The DTLS negotiations need to know about all certificates.
+    certificate = rtc_configuration.certificates[0];
+  }
+
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
   // mandatory constraints can be fulfilled. Note that |constraints|
   // can be null.
@@ -584,13 +593,13 @@ bool WebRtcSession::Initialize(
   if (options.disable_encryption) {
     dtls_enabled_ = false;
   } else {
-    // Enable DTLS by default if we have a |dtls_identity_store|.
-    dtls_enabled_ = (dtls_identity_store != nullptr);
+    // Enable DTLS by default if we have an identity store or a certificate.
+    dtls_enabled_ = (dtls_identity_store || certificate);
     // |constraints| can override the default |dtls_enabled_| value.
     if (FindConstraint(
           constraints,
           MediaConstraintsInterface::kEnableDtlsSrtp,
-          &value, NULL)) {
+          &value, nullptr)) {
       dtls_enabled_ = value;
     }
   }
@@ -707,15 +716,40 @@ bool WebRtcSession::Initialize(
   channel_manager_->SetDefaultVideoEncoderConfig(
       cricket::VideoEncoderConfig(default_codec));
 
-  webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-      signaling_thread(),
-      channel_manager_,
-      mediastream_signaling_,
-      dtls_identity_store.Pass(),
-      this,
-      id(),
-      data_channel_type_,
-      dtls_enabled_));
+  if (!dtls_enabled_) {
+    // Construct with DTLS disabled.
+    webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
+        signaling_thread(),
+        channel_manager_,
+        mediastream_signaling_,
+        this,
+        id(),
+        data_channel_type_));
+  } else {
+    // Construct with DTLS enabled.
+    if (!certificate) {
+      // Use the |dtls_identity_store| to generate a certificate.
+      DCHECK(dtls_identity_store);
+      webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
+          signaling_thread(),
+          channel_manager_,
+          mediastream_signaling_,
+          dtls_identity_store.Pass(),
+          this,
+          id(),
+          data_channel_type_));
+    } else {
+      // Use the already generated certificate.
+      webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
+          signaling_thread(),
+          channel_manager_,
+          mediastream_signaling_,
+          certificate,
+          this,
+          id(),
+          data_channel_type_));
+    }
+  }
 
   webrtc_session_desc_factory_->SignalIdentityReady.connect(
       this, &WebRtcSession::OnIdentityReady);
@@ -1362,8 +1396,8 @@ void WebRtcSession::OnIdentityReady(rtc::SSLIdentity* identity) {
   SetIdentity(identity);
 }
 
-bool WebRtcSession::waiting_for_identity() const {
-  return webrtc_session_desc_factory_->waiting_for_identity();
+bool WebRtcSession::waiting_for_identity_for_testing() const {
+  return webrtc_session_desc_factory_->waiting_for_certificate_for_testing();
 }
 
 void WebRtcSession::SetIceConnectionState(

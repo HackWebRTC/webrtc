@@ -33,6 +33,7 @@
 #include "talk/session/media/mediasession.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/base/messagehandler.h"
+#include "webrtc/base/rtccertificate.h"
 
 namespace cricket {
 class ChannelManager;
@@ -87,16 +88,36 @@ struct CreateSessionDescriptionRequest {
 class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
                                         public sigslot::has_slots<> {
  public:
+  // Construct with DTLS disabled.
+  WebRtcSessionDescriptionFactory(
+      rtc::Thread* signaling_thread,
+      cricket::ChannelManager* channel_manager,
+      MediaStreamSignaling* mediastream_signaling,
+      WebRtcSession* session,
+      const std::string& session_id,
+      cricket::DataChannelType dct);
+
+  // Construct with DTLS enabled using the specified |dtls_identity_store| to
+  // generate a certificate.
   WebRtcSessionDescriptionFactory(
       rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
       MediaStreamSignaling* mediastream_signaling,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-      // TODO(jiayl): remove the dependency on session once bug 2264 is fixed.
       WebRtcSession* session,
       const std::string& session_id,
-      cricket::DataChannelType dct,
-      bool dtls_enabled);
+      cricket::DataChannelType dct);
+
+  // Construct with DTLS enabled using the specified (already generated)
+  // |certificate|.
+  WebRtcSessionDescriptionFactory(
+      rtc::Thread* signaling_thread,
+      cricket::ChannelManager* channel_manager,
+      MediaStreamSignaling* mediastream_signaling,
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
+      WebRtcSession* session,
+      const std::string& session_id,
+      cricket::DataChannelType dct);
   virtual ~WebRtcSessionDescriptionFactory();
 
   static void CopyCandidatesFromSessionDescription(
@@ -116,17 +137,29 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   sigslot::signal1<rtc::SSLIdentity*> SignalIdentityReady;
 
   // For testing.
-  bool waiting_for_identity() const {
-    return identity_request_state_ == IDENTITY_WAITING;
+  bool waiting_for_certificate_for_testing() const {
+    return certificate_request_state_ == CERTIFICATE_WAITING;
   }
 
  private:
-  enum IdentityRequestState {
-    IDENTITY_NOT_NEEDED,
-    IDENTITY_WAITING,
-    IDENTITY_SUCCEEDED,
-    IDENTITY_FAILED,
+  enum CertificateRequestState {
+    CERTIFICATE_NOT_NEEDED,
+    CERTIFICATE_WAITING,
+    CERTIFICATE_SUCCEEDED,
+    CERTIFICATE_FAILED,
   };
+
+  WebRtcSessionDescriptionFactory(
+      rtc::Thread* signaling_thread,
+      cricket::ChannelManager* channel_manager,
+      MediaStreamSignaling* mediastream_signaling,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      const rtc::scoped_refptr<WebRtcIdentityRequestObserver>&
+          identity_request_observer,
+      WebRtcSession* session,
+      const std::string& session_id,
+      cricket::DataChannelType dct,
+      bool dtls_enabled);
 
   // MessageHandler implementation.
   virtual void OnMessage(rtc::Message* msg);
@@ -152,12 +185,14 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   cricket::TransportDescriptionFactory transport_desc_factory_;
   cricket::MediaSessionDescriptionFactory session_desc_factory_;
   uint64 session_version_;
-  rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store_;
-  rtc::scoped_refptr<WebRtcIdentityRequestObserver> identity_request_observer_;
+  const rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store_;
+  const rtc::scoped_refptr<WebRtcIdentityRequestObserver>
+      identity_request_observer_;
+  // TODO(jiayl): remove the dependency on session once bug 2264 is fixed.
   WebRtcSession* const session_;
   const std::string session_id_;
   const cricket::DataChannelType data_channel_type_;
-  IdentityRequestState identity_request_state_;
+  CertificateRequestState certificate_request_state_;
 
   DISALLOW_COPY_AND_ASSIGN(WebRtcSessionDescriptionFactory);
 };

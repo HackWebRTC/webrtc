@@ -32,6 +32,7 @@
 
 #include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/base/rtccertificate.h"
 
 static const char kRSA_PRIVATE_KEY_PEM[] =
     "-----BEGIN RSA PRIVATE KEY-----\n"
@@ -86,6 +87,26 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
         rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>(observer));
     rtc::Thread::Current()->Post(
         this, should_fail_ ? MSG_FAILURE : MSG_SUCCESS, msg);
+  }
+
+  static rtc::scoped_refptr<rtc::RTCCertificate> GenerateCertificate() {
+    std::string cert;
+    std::string key;
+    rtc::SSLIdentity::PemToDer("CERTIFICATE", kCERT_PEM, &cert);
+    rtc::SSLIdentity::PemToDer("RSA PRIVATE KEY", kRSA_PRIVATE_KEY_PEM, &key);
+
+    std::string pem_cert = rtc::SSLIdentity::DerToPem(
+        rtc::kPemTypeCertificate,
+        reinterpret_cast<const unsigned char*>(cert.data()),
+        cert.length());
+    std::string pem_key = rtc::SSLIdentity::DerToPem(
+        rtc::kPemTypeRsaPrivateKey,
+        reinterpret_cast<const unsigned char*>(key.data()),
+        key.length());
+    rtc::scoped_ptr<rtc::SSLIdentity> identity(
+        rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert));
+
+    return rtc::RTCCertificate::Create(identity.Pass());
   }
 
  private:

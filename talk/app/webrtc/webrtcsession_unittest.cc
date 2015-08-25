@@ -156,13 +156,15 @@ static const char kSdpWithRtx[] =
     "a=rtpmap:96 rtx/90000\r\n"
     "a=fmtp:96 apt=0\r\n";
 
+enum RTCCertificateGenerationMethod { ALREADY_GENERATED, DTLS_IDENTITY_STORE };
+
 // Add some extra |newlines| to the |message| after |line|.
 static void InjectAfter(const std::string& line,
                         const std::string& newlines,
                         std::string* message) {
   const std::string tmp = line + newlines;
   rtc::replace_substrs(line.c_str(), line.length(),
-                             tmp.c_str(), tmp.length(), message);
+                       tmp.c_str(), tmp.length(), message);
 }
 
 class MockIceObserver : public webrtc::IceObserver {
@@ -310,7 +312,8 @@ class FakeAudioRenderer : public cricket::AudioRenderer {
   cricket::AudioRenderer::Sink* sink_;
 };
 
-class WebRtcSessionTest : public testing::Test {
+class WebRtcSessionTest
+    : public testing::TestWithParam<RTCCertificateGenerationMethod> {
  protected:
   // TODO Investigate why ChannelManager crashes, if it's created
   // after stun_server.
@@ -352,6 +355,11 @@ class WebRtcSessionTest : public testing::Test {
     network_manager_.AddInterface(addr);
   }
 
+  // If |dtls_identity_store| != null or |rtc_configuration| contains
+  // |certificates| then DTLS will be enabled unless explicitly disabled by
+  // |rtc_configuration| options. When DTLS is enabled a certificate will be
+  // used if provided, otherwise one will be generated using the
+  // |dtls_identity_store|.
   void Init(
       rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store,
       const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
@@ -399,10 +407,28 @@ class WebRtcSessionTest : public testing::Test {
     Init(nullptr, configuration);
   }
 
-  void InitWithDtls(bool identity_request_should_fail = false) {
+  // Successfully init with DTLS; with a certificate generated and supplied or
+  // with a store that generates it for us.
+  void InitWithDtls(RTCCertificateGenerationMethod cert_gen_method) {
+    rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store;
+    PeerConnectionInterface::RTCConfiguration configuration;
+    if (cert_gen_method == ALREADY_GENERATED) {
+      configuration.certificates.push_back(
+          FakeDtlsIdentityStore::GenerateCertificate());
+    } else if (cert_gen_method == DTLS_IDENTITY_STORE) {
+      dtls_identity_store.reset(new FakeDtlsIdentityStore());
+      dtls_identity_store->set_should_fail(false);
+    } else {
+      CHECK(false);
+    }
+    Init(dtls_identity_store.Pass(), configuration);
+  }
+
+  // Init with DTLS with a store that will fail to generate a certificate.
+  void InitWithDtlsIdentityGenFail() {
     rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store(
         new FakeDtlsIdentityStore());
-    dtls_identity_store->set_should_fail(identity_request_should_fail);
+    dtls_identity_store->set_should_fail(true);
     PeerConnectionInterface::RTCConfiguration configuration;
     Init(dtls_identity_store.Pass(), configuration);
   }
@@ -1181,8 +1207,21 @@ class WebRtcSessionTest : public testing::Test {
   }
 
   void VerifyMultipleAsyncCreateDescription(
+      RTCCertificateGenerationMethod cert_gen_method,
+      CreateSessionDescriptionRequest::Type type) {
+    InitWithDtls(cert_gen_method);
+    VerifyMultipleAsyncCreateDescriptionAfterInit(true, type);
+  }
+
+  void VerifyMultipleAsyncCreateDescriptionIdentityGenFailure(
+      CreateSessionDescriptionRequest::Type type) {
+    InitWithDtlsIdentityGenFail();
+    VerifyMultipleAsyncCreateDescriptionAfterInit(false, type);
+  }
+
+  void VerifyMultipleAsyncCreateDescriptionAfterInit(
       bool success, CreateSessionDescriptionRequest::Type type) {
-    InitWithDtls(!success);
+    CHECK(session_);
     SetFactoryDtlsSrtp();
     if (type == CreateSessionDescriptionRequest::kAnswer) {
       cricket::MediaSessionOptions options;
@@ -1256,8 +1295,8 @@ class WebRtcSessionTest : public testing::Test {
   rtc::scoped_refptr<FakeMetricsObserver> metrics_observer_;
 };
 
-TEST_F(WebRtcSessionTest, TestInitializeWithDtls) {
-  InitWithDtls();
+TEST_P(WebRtcSessionTest, TestInitializeWithDtls) {
+  InitWithDtls(GetParam());
   // SDES is disabled when DTLS is on.
   EXPECT_EQ(cricket::SEC_DISABLED, session_->SdesPolicy());
 }
@@ -1564,10 +1603,10 @@ TEST_F(WebRtcSessionTest, TestSetRemoteNonSdesAnswerWhenSdesOn) {
 
 // Test that we accept an offer with a DTLS fingerprint when DTLS is on
 // and that we return an answer with a DTLS fingerprint.
-TEST_F(WebRtcSessionTest, TestReceiveDtlsOfferCreateDtlsAnswer) {
+TEST_P(WebRtcSessionTest, TestReceiveDtlsOfferCreateDtlsAnswer) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   mediastream_signaling_.SendAudioVideoStream1();
-  InitWithDtls();
+  InitWithDtls(GetParam());
   SetFactoryDtlsSrtp();
   cricket::MediaSessionOptions options;
   options.recv_video = true;
@@ -1593,10 +1632,10 @@ TEST_F(WebRtcSessionTest, TestReceiveDtlsOfferCreateDtlsAnswer) {
 
 // Test that we set a local offer with a DTLS fingerprint when DTLS is on
 // and then we accept a remote answer with a DTLS fingerprint successfully.
-TEST_F(WebRtcSessionTest, TestCreateDtlsOfferReceiveDtlsAnswer) {
+TEST_P(WebRtcSessionTest, TestCreateDtlsOfferReceiveDtlsAnswer) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   mediastream_signaling_.SendAudioVideoStream1();
-  InitWithDtls();
+  InitWithDtls(GetParam());
   SetFactoryDtlsSrtp();
 
   // Verify that we get a crypto fingerprint in the answer.
@@ -1623,9 +1662,9 @@ TEST_F(WebRtcSessionTest, TestCreateDtlsOfferReceiveDtlsAnswer) {
 
 // Test that if we support DTLS and the other side didn't offer a fingerprint,
 // we will fail to set the remote description.
-TEST_F(WebRtcSessionTest, TestReceiveNonDtlsOfferWhenDtlsOn) {
+TEST_P(WebRtcSessionTest, TestReceiveNonDtlsOfferWhenDtlsOn) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls();
+  InitWithDtls(GetParam());
   cricket::MediaSessionOptions options;
   options.recv_video = true;
   options.bundle_enabled = true;
@@ -1647,9 +1686,9 @@ TEST_F(WebRtcSessionTest, TestReceiveNonDtlsOfferWhenDtlsOn) {
 
 // Test that we return a failure when applying a local answer that doesn't have
 // a DTLS fingerprint when DTLS is required.
-TEST_F(WebRtcSessionTest, TestSetLocalNonDtlsAnswerWhenDtlsOn) {
+TEST_P(WebRtcSessionTest, TestSetLocalNonDtlsAnswerWhenDtlsOn) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls();
+  InitWithDtls(GetParam());
   SessionDescriptionInterface* offer = NULL;
   SessionDescriptionInterface* answer = NULL;
   CreateDtlsOfferAndNonDtlsAnswer(&offer, &answer);
@@ -1663,11 +1702,11 @@ TEST_F(WebRtcSessionTest, TestSetLocalNonDtlsAnswerWhenDtlsOn) {
 
 // Test that we return a failure when applying a remote answer that doesn't have
 // a DTLS fingerprint when DTLS is required.
-TEST_F(WebRtcSessionTest, TestSetRemoteNonDtlsAnswerWhenDtlsOn) {
+TEST_P(WebRtcSessionTest, TestSetRemoteNonDtlsAnswerWhenDtlsOn) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   // Enable both SDES and DTLS, so that offer won't be outright rejected as a
   // result of using the "UDP/TLS/RTP/SAVPF" profile.
-  InitWithDtls();
+  InitWithDtls(GetParam());
   session_->SetSdesPolicy(cricket::SEC_ENABLED);
   SessionDescriptionInterface* offer = CreateOffer();
   cricket::MediaSessionOptions options;
@@ -1684,10 +1723,10 @@ TEST_F(WebRtcSessionTest, TestSetRemoteNonDtlsAnswerWhenDtlsOn) {
 
 // Test that we create a local offer without SDES or DTLS and accept a remote
 // answer without SDES or DTLS when encryption is disabled.
-TEST_F(WebRtcSessionTest, TestCreateOfferReceiveAnswerWithoutEncryption) {
+TEST_P(WebRtcSessionTest, TestCreateOfferReceiveAnswerWithoutEncryption) {
   mediastream_signaling_.SendAudioVideoStream1();
   options_.disable_encryption = true;
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
   // Verify that we get a crypto fingerprint in the answer.
   SessionDescriptionInterface* offer = CreateOffer();
@@ -1713,9 +1752,9 @@ TEST_F(WebRtcSessionTest, TestCreateOfferReceiveAnswerWithoutEncryption) {
 
 // Test that we create a local answer without SDES or DTLS and accept a remote
 // offer without SDES or DTLS when encryption is disabled.
-TEST_F(WebRtcSessionTest, TestCreateAnswerReceiveOfferWithoutEncryption) {
+TEST_P(WebRtcSessionTest, TestCreateAnswerReceiveOfferWithoutEncryption) {
   options_.disable_encryption = true;
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
   cricket::MediaSessionOptions options;
   options.recv_video = true;
@@ -3411,7 +3450,7 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannel) {
   EXPECT_EQ(cricket::DCT_RTP, data_engine_->last_channel_type());
 }
 
-TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
+TEST_P(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
 
   constraints_.reset(new FakeConstraints());
@@ -3419,26 +3458,26 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
       webrtc::MediaConstraintsInterface::kEnableRtpDataChannels, true);
   options_.disable_sctp_data_channels = false;
 
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_RTP, data_engine_->last_channel_type());
 }
 
-TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
+TEST_P(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
 
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   EXPECT_TRUE(offer->description()->GetContentByName("data") == NULL);
   EXPECT_TRUE(offer->description()->GetTransportInfoByName("data") == NULL);
 }
 
-TEST_F(WebRtcSessionTest, TestCreateAnswerWithSctpInOfferAndNoStreams) {
+TEST_P(WebRtcSessionTest, TestCreateAnswerWithSctpInOfferAndNoStreams) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   SetFactoryDtlsSrtp();
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
   // Create remote offer with SCTP.
   cricket::MediaSessionOptions options;
@@ -3454,40 +3493,40 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithSctpInOfferAndNoStreams) {
   EXPECT_TRUE(answer->description()->GetTransportInfoByName("data") != NULL);
 }
 
-TEST_F(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {
+TEST_P(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_NONE, data_engine_->last_channel_type());
 }
 
-TEST_F(WebRtcSessionTest, TestSctpDataChannelWithDtls) {
+TEST_P(WebRtcSessionTest, TestSctpDataChannelWithDtls) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
 
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_SCTP, data_engine_->last_channel_type());
 }
 
-TEST_F(WebRtcSessionTest, TestDisableSctpDataChannels) {
+TEST_P(WebRtcSessionTest, TestDisableSctpDataChannels) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   options_.disable_sctp_data_channels = true;
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_NONE, data_engine_->last_channel_type());
 }
 
-TEST_F(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
+TEST_P(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   const int new_send_port = 9998;
   const int new_recv_port = 7775;
 
-  InitWithDtls();
+  InitWithDtls(GetParam());
   SetFactoryDtlsSrtp();
 
   // By default, don't actually add the codecs to desc_factory_; they don't
@@ -3536,13 +3575,29 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   EXPECT_EQ(new_recv_port, portnum);
 }
 
-// Verifies that CreateOffer succeeds when CreateOffer is called before async
-// identity generation is finished.
-TEST_F(WebRtcSessionTest, TestCreateOfferBeforeIdentityRequestReturnSuccess) {
-  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls();
+// TODO(hbos): Add the following test once RTCCertificate is passed around
+// outside of WebRtcSessionDescriptionFactory code and there exists a
+// WebRtcSession::certificate().
+//TEST_F(WebRtcSessionTest, TestUsesProvidedCertificate) {
+//  rtc::scoped_refptr<rtc::RTCCertificate> certificate =
+//      FakeDtlsIdentityStore::GenerateCertificate();
+//
+//  PeerConnectionInterface::RTCConfiguration configuration;
+//  configuration.certificates.push_back(certificate);
+//  Init(nullptr, configuration);
+//  EXPECT_TRUE_WAIT(!session_->waiting_for_identity_for_testing(), 1000);
+//
+//  EXPECT_EQ(session_->certificate(), certificate);
+//}
 
-  EXPECT_TRUE(session_->waiting_for_identity());
+// Verifies that CreateOffer succeeds when CreateOffer is called before async
+// identity generation is finished (even if a certificate is provided this is
+// an async op).
+TEST_P(WebRtcSessionTest, TestCreateOfferBeforeIdentityRequestReturnSuccess) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+  InitWithDtls(GetParam());
+
+  EXPECT_TRUE(session_->waiting_for_identity_for_testing());
   mediastream_signaling_.SendAudioVideoStream1();
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
 
@@ -3552,10 +3607,11 @@ TEST_F(WebRtcSessionTest, TestCreateOfferBeforeIdentityRequestReturnSuccess) {
 }
 
 // Verifies that CreateAnswer succeeds when CreateOffer is called before async
-// identity generation is finished.
-TEST_F(WebRtcSessionTest, TestCreateAnswerBeforeIdentityRequestReturnSuccess) {
+// identity generation is finished (even if a certificate is provided this is
+// an async op).
+TEST_P(WebRtcSessionTest, TestCreateAnswerBeforeIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls();
+  InitWithDtls(GetParam());
   SetFactoryDtlsSrtp();
 
   cricket::MediaSessionOptions options;
@@ -3572,12 +3628,13 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerBeforeIdentityRequestReturnSuccess) {
 }
 
 // Verifies that CreateOffer succeeds when CreateOffer is called after async
-// identity generation is finished.
-TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnSuccess) {
+// identity generation is finished (even if a certificate is provided this is
+// an async op).
+TEST_P(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls();
+  InitWithDtls(GetParam());
 
-  EXPECT_TRUE_WAIT(!session_->waiting_for_identity(), 1000);
+  EXPECT_TRUE_WAIT(!session_->waiting_for_identity_for_testing(), 1000);
 
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   EXPECT_TRUE(offer != NULL);
@@ -3587,9 +3644,9 @@ TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnSuccess) {
 // identity generation fails.
 TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnFailure) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls(true);
+  InitWithDtlsIdentityGenFail();
 
-  EXPECT_TRUE_WAIT(!session_->waiting_for_identity(), 1000);
+  EXPECT_TRUE_WAIT(!session_->waiting_for_identity_for_testing(), 1000);
 
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   EXPECT_TRUE(offer == NULL);
@@ -3597,11 +3654,11 @@ TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnFailure) {
 
 // Verifies that CreateOffer succeeds when Multiple CreateOffer calls are made
 // before async identity generation is finished.
-TEST_F(WebRtcSessionTest,
+TEST_P(WebRtcSessionTest,
        TestMultipleCreateOfferBeforeIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   VerifyMultipleAsyncCreateDescription(
-      true, CreateSessionDescriptionRequest::kOffer);
+      GetParam(), CreateSessionDescriptionRequest::kOffer);
 }
 
 // Verifies that CreateOffer fails when Multiple CreateOffer calls are made
@@ -3609,17 +3666,17 @@ TEST_F(WebRtcSessionTest,
 TEST_F(WebRtcSessionTest,
        TestMultipleCreateOfferBeforeIdentityRequestReturnFailure) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  VerifyMultipleAsyncCreateDescription(
-      false, CreateSessionDescriptionRequest::kOffer);
+  VerifyMultipleAsyncCreateDescriptionIdentityGenFailure(
+      CreateSessionDescriptionRequest::kOffer);
 }
 
 // Verifies that CreateAnswer succeeds when Multiple CreateAnswer calls are made
 // before async identity generation is finished.
-TEST_F(WebRtcSessionTest,
+TEST_P(WebRtcSessionTest,
        TestMultipleCreateAnswerBeforeIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   VerifyMultipleAsyncCreateDescription(
-      true, CreateSessionDescriptionRequest::kAnswer);
+      GetParam(), CreateSessionDescriptionRequest::kAnswer);
 }
 
 // Verifies that CreateAnswer fails when Multiple CreateAnswer calls are made
@@ -3627,8 +3684,8 @@ TEST_F(WebRtcSessionTest,
 TEST_F(WebRtcSessionTest,
        TestMultipleCreateAnswerBeforeIdentityRequestReturnFailure) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  VerifyMultipleAsyncCreateDescription(
-      false, CreateSessionDescriptionRequest::kAnswer);
+  VerifyMultipleAsyncCreateDescriptionIdentityGenFailure(
+      CreateSessionDescriptionRequest::kAnswer);
 }
 
 // Verifies that setRemoteDescription fails when DTLS is disabled and the remote
@@ -3729,9 +3786,9 @@ TEST_F(WebRtcSessionTest, TestCombinedAudioVideoBweConstraint) {
 
 // Tests that we can renegotiate new media content with ICE candidates in the
 // new remote SDP.
-TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesInSdp) {
+TEST_P(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesInSdp) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls();
+  InitWithDtls(GetParam());
   SetFactoryDtlsSrtp();
 
   mediastream_signaling_.UseOptionsAudioOnly();
@@ -3759,9 +3816,9 @@ TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesInSdp) {
 
 // Tests that we can renegotiate new media content with ICE candidates separated
 // from the remote SDP.
-TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
+TEST_P(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls();
+  InitWithDtls(GetParam());
   SetFactoryDtlsSrtp();
 
   mediastream_signaling_.UseOptionsAudioOnly();
@@ -3875,11 +3932,6 @@ TEST_F(WebRtcSessionTest, CreateOffersAndShutdown) {
 
   session_.reset();
 
-  // Make sure we process pending messages on the current (signaling) thread
-  // before checking we we got our callbacks.  Quit() will do this and then
-  // immediately exit.  We won't need the queue after this point anyway.
-  rtc::Thread::Current()->Quit();
-
   for (auto& o : observers) {
     // We expect to have received a notification now even if the session was
     // terminated.  The offer creation may or may not have succeeded, but we
@@ -3892,3 +3944,7 @@ TEST_F(WebRtcSessionTest, CreateOffersAndShutdown) {
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test
 // currently fails because upon disconnection and reconnection OnIceComplete is
 // called more than once without returning to IceGatheringGathering.
+
+INSTANTIATE_TEST_CASE_P(
+    WebRtcSessionTests, WebRtcSessionTest,
+    testing::Values(ALREADY_GENERATED, DTLS_IDENTITY_STORE));

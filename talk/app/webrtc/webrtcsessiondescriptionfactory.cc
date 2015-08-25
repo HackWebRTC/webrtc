@@ -68,7 +68,8 @@ static bool ValidStreams(const MediaSessionOptions::Streams& streams) {
 
 enum {
   MSG_CREATE_SESSIONDESCRIPTION_SUCCESS,
-  MSG_CREATE_SESSIONDESCRIPTION_FAILED
+  MSG_CREATE_SESSIONDESCRIPTION_FAILED,
+  MSG_USE_CONSTRUCTOR_CERTIFICATE
 };
 
 struct CreateSessionDescriptionMsg : public rtc::MessageData {
@@ -126,11 +127,14 @@ void WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
   }
 }
 
+// Private constructor called by other constructors.
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
     MediaStreamSignaling* mediastream_signaling,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    const rtc::scoped_refptr<WebRtcIdentityRequestObserver>&
+        identity_request_observer,
     WebRtcSession* session,
     const std::string& session_id,
     cricket::DataChannelType dct,
@@ -144,31 +148,87 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
       // |kInitSessionVersion|.
       session_version_(kInitSessionVersion),
       dtls_identity_store_(dtls_identity_store.Pass()),
+      identity_request_observer_(identity_request_observer),
       session_(session),
       session_id_(session_id),
       data_channel_type_(dct),
-      identity_request_state_(IDENTITY_NOT_NEEDED) {
+      certificate_request_state_(CERTIFICATE_NOT_NEEDED) {
   session_desc_factory_.set_add_legacy_streams(false);
   // SRTP-SDES is disabled if DTLS is on.
   SetSdesPolicy(dtls_enabled ? cricket::SEC_DISABLED : cricket::SEC_REQUIRED);
+}
 
-  // If |dtls_enabled| we must have a |dtls_identity_store_|.
-  DCHECK(!dtls_enabled || dtls_identity_store_);
+WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
+    rtc::Thread* signaling_thread,
+    cricket::ChannelManager* channel_manager,
+    MediaStreamSignaling* mediastream_signaling,
+    WebRtcSession* session,
+    const std::string& session_id,
+    cricket::DataChannelType dct)
+    : WebRtcSessionDescriptionFactory(
+        signaling_thread, channel_manager, mediastream_signaling, nullptr,
+        nullptr, session, session_id, dct, false) {
+  LOG(LS_VERBOSE) << "DTLS-SRTP disabled.";
+}
 
-  if (dtls_enabled && dtls_identity_store_) {
-    identity_request_observer_ =
-      new rtc::RefCountedObject<WebRtcIdentityRequestObserver>();
+WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
+    rtc::Thread* signaling_thread,
+    cricket::ChannelManager* channel_manager,
+    MediaStreamSignaling* mediastream_signaling,
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    WebRtcSession* session,
+    const std::string& session_id,
+    cricket::DataChannelType dct)
+    : WebRtcSessionDescriptionFactory(
+        signaling_thread,
+        channel_manager,
+        mediastream_signaling,
+        dtls_identity_store.Pass(),
+        new rtc::RefCountedObject<WebRtcIdentityRequestObserver>(),
+        session,
+        session_id,
+        dct,
+        true) {
+  DCHECK(dtls_identity_store_);
 
-    identity_request_observer_->SignalRequestFailed.connect(
-        this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
-    identity_request_observer_->SignalIdentityReady.connect(
-        this, &WebRtcSessionDescriptionFactory::SetIdentity);
+  certificate_request_state_ = CERTIFICATE_WAITING;
 
-    LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sending DTLS identity request.";
-    identity_request_state_ = IDENTITY_WAITING;
-    dtls_identity_store_->RequestIdentity(rtc::KT_DEFAULT,
-                                          identity_request_observer_);
-  }
+  identity_request_observer_->SignalRequestFailed.connect(
+      this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
+  identity_request_observer_->SignalIdentityReady.connect(
+      this, &WebRtcSessionDescriptionFactory::SetIdentity);
+
+  rtc::KeyType key_type = rtc::KT_DEFAULT;
+  LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sending DTLS identity request (key "
+                  << "type: " << key_type << ").";
+
+  // Request identity. This happens asynchronously, so the caller will have a
+  // chance to connect to SignalIdentityReady.
+  dtls_identity_store_->RequestIdentity(key_type, identity_request_observer_);
+}
+
+WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
+    rtc::Thread* signaling_thread,
+    cricket::ChannelManager* channel_manager,
+    MediaStreamSignaling* mediastream_signaling,
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
+    WebRtcSession* session,
+    const std::string& session_id,
+    cricket::DataChannelType dct)
+    : WebRtcSessionDescriptionFactory(
+        signaling_thread, channel_manager, mediastream_signaling, nullptr,
+        nullptr, session, session_id, dct, true) {
+  DCHECK(certificate);
+
+  certificate_request_state_ = CERTIFICATE_WAITING;
+
+  LOG(LS_VERBOSE) << "DTLS-SRTP enabled; has certificate parameter.";
+  // We already have a certificate but we wait to do SetIdentity; if we do
+  // it in the constructor then the caller has not had a chance to connect to
+  // SignalIdentityReady.
+  signaling_thread_->Post(this, MSG_USE_CONSTRUCTOR_CERTIFICATE,
+                          new rtc::ScopedRefMessageData<rtc::RTCCertificate>(
+                              certificate));
 }
 
 WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
@@ -181,8 +241,19 @@ WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
   // this, requests will linger and not know they succeeded or failed.
   rtc::MessageList list;
   signaling_thread_->Clear(this, rtc::MQID_ANY, &list);
-  for (auto& msg : list)
-    OnMessage(&msg);
+  for (auto& msg : list) {
+    if (msg.message_id != MSG_USE_CONSTRUCTOR_CERTIFICATE) {
+      OnMessage(&msg);
+    } else {
+      // Skip MSG_USE_CONSTRUCTOR_CERTIFICATE because we don't want to trigger
+      // SetIdentity-related callbacks in the destructor. This can be a problem
+      // when WebRtcSession listens to the callback but it was the WebRtcSession
+      // destructor that caused WebRtcSessionDescriptionFactory's destruction.
+      // The callback is then ignored, leaking memory allocated by OnMessage for
+      // MSG_USE_CONSTRUCTOR_CERTIFICATE.
+      delete msg.pdata;
+    }
+  }
 
   transport_desc_factory_.set_identity(NULL);
 }
@@ -193,7 +264,7 @@ void WebRtcSessionDescriptionFactory::CreateOffer(
   cricket::MediaSessionOptions session_options;
 
   std::string error = "CreateOffer";
-  if (identity_request_state_ == IDENTITY_FAILED) {
+  if (certificate_request_state_ == CERTIFICATE_FAILED) {
     error += kFailedDueToIdentityFailed;
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
@@ -222,11 +293,11 @@ void WebRtcSessionDescriptionFactory::CreateOffer(
 
   CreateSessionDescriptionRequest request(
       CreateSessionDescriptionRequest::kOffer, observer, session_options);
-  if (identity_request_state_ == IDENTITY_WAITING) {
+  if (certificate_request_state_ == CERTIFICATE_WAITING) {
     create_session_description_requests_.push(request);
   } else {
-    ASSERT(identity_request_state_ == IDENTITY_SUCCEEDED ||
-           identity_request_state_ == IDENTITY_NOT_NEEDED);
+    ASSERT(certificate_request_state_ == CERTIFICATE_SUCCEEDED ||
+           certificate_request_state_ == CERTIFICATE_NOT_NEEDED);
     InternalCreateOffer(request);
   }
 }
@@ -235,7 +306,7 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
     CreateSessionDescriptionObserver* observer,
     const MediaConstraintsInterface* constraints) {
   std::string error = "CreateAnswer";
-  if (identity_request_state_ == IDENTITY_FAILED) {
+  if (certificate_request_state_ == CERTIFICATE_FAILED) {
     error += kFailedDueToIdentityFailed;
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
@@ -277,11 +348,11 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
 
   CreateSessionDescriptionRequest request(
       CreateSessionDescriptionRequest::kAnswer, observer, options);
-  if (identity_request_state_ == IDENTITY_WAITING) {
+  if (certificate_request_state_ == CERTIFICATE_WAITING) {
     create_session_description_requests_.push(request);
   } else {
-    ASSERT(identity_request_state_ == IDENTITY_SUCCEEDED ||
-           identity_request_state_ == IDENTITY_NOT_NEEDED);
+    ASSERT(certificate_request_state_ == CERTIFICATE_SUCCEEDED ||
+           certificate_request_state_ == CERTIFICATE_NOT_NEEDED);
     InternalCreateAnswer(request);
   }
 }
@@ -308,6 +379,17 @@ void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
       CreateSessionDescriptionMsg* param =
           static_cast<CreateSessionDescriptionMsg*>(msg->pdata);
       param->observer->OnFailure(param->error);
+      delete param;
+      break;
+    }
+    case MSG_USE_CONSTRUCTOR_CERTIFICATE: {
+      rtc::ScopedRefMessageData<rtc::RTCCertificate>* param =
+          static_cast<rtc::ScopedRefMessageData<rtc::RTCCertificate>*>(
+              msg->pdata);
+      LOG(LS_INFO) << "Using certificate supplied to the constructor.";
+      // TODO(hbos): Pass around scoped_refptr<RTCCertificate> instead of
+      // SSLIdentity* (then there will be no need to do GetReference here).
+      SetIdentity(param->data()->identity()->GetReference());
       delete param;
       break;
     }
@@ -429,7 +511,7 @@ void WebRtcSessionDescriptionFactory::OnIdentityRequestFailed(int error) {
   ASSERT(signaling_thread_->IsCurrent());
 
   LOG(LS_ERROR) << "Async identity request failed: error = " << error;
-  identity_request_state_ = IDENTITY_FAILED;
+  certificate_request_state_ = CERTIFICATE_FAILED;
 
   FailPendingRequests(kFailedDueToIdentityFailed);
 }
@@ -438,7 +520,7 @@ void WebRtcSessionDescriptionFactory::SetIdentity(
     rtc::SSLIdentity* identity) {
   LOG(LS_VERBOSE) << "Setting new identity";
 
-  identity_request_state_ = IDENTITY_SUCCEEDED;
+  certificate_request_state_ = CERTIFICATE_SUCCEEDED;
   SignalIdentityReady(identity);
 
   transport_desc_factory_.set_identity(identity);

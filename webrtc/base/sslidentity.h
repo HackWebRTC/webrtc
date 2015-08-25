@@ -145,6 +145,7 @@ class SSLIdentity {
   // Returns a new SSLIdentity object instance wrapping the same
   // identity information.
   // Caller is responsible for freeing the returned object.
+  // TODO(hbos,torbjorng): Rename to a less confusing name.
   virtual SSLIdentity* GetReference() const = 0;
 
   // Returns a temporary reference to the certificate.
