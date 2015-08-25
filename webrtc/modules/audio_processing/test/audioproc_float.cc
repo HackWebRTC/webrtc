@@ -63,6 +63,15 @@ const char kUsage[] =
     "All components are disabled by default. If any bi-directional components\n"
     "are enabled, only debug dump files are permitted.";
 
+// Returns a StreamConfig corresponding to wav_file if it's non-nullptr.
+// Otherwise returns a default initialized StreamConfig.
+StreamConfig MakeStreamConfig(const WavFile* wav_file) {
+  if (wav_file) {
+    return {wav_file->sample_rate(), wav_file->num_channels()};
+  }
+  return {};
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -162,21 +171,11 @@ int main(int argc, char* argv[]) {
   TickInterval accumulated_time;
   int num_chunks = 0;
 
-  const StreamConfig input_config = {
-      in_file.sample_rate(), in_buf.num_channels(),
-  };
-  const StreamConfig output_config = {
-      out_file.sample_rate(), out_buf.num_channels(),
-  };
+  const auto input_config = MakeStreamConfig(&in_file);
+  const auto output_config = MakeStreamConfig(&out_file);
+  const auto reverse_input_config = MakeStreamConfig(in_rev_file.get());
+  const auto reverse_output_config = MakeStreamConfig(out_rev_file.get());
 
-  StreamConfig reverse_input_config = {};
-  StreamConfig reverse_output_config = {};
-  if (process_reverse) {
-    reverse_input_config = {in_rev_file->sample_rate(),
-                            in_rev_file->num_channels()};
-    reverse_output_config = {out_rev_file->sample_rate(),
-                             out_rev_file->num_channels()};
-  }
   while (in_file.ReadSamples(in_interleaved.size(),
                              &in_interleaved[0]) == in_interleaved.size()) {
     // Have logs display the file time rather than wallclock time.

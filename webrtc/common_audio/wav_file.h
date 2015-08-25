@@ -17,11 +17,23 @@
 #include <cstddef>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
+
 namespace webrtc {
+
+// Interface to provide access to WAV file parameters.
+class WavFile {
+ public:
+  virtual ~WavFile() {}
+
+  virtual int sample_rate() const = 0;
+  virtual int num_channels() const = 0;
+  virtual uint32_t num_samples() const = 0;
+};
 
 // Simple C++ class for writing 16-bit PCM WAV files. All error handling is
 // by calls to CHECK(), making it unsuitable for anything but debug code.
-class WavWriter {
+class WavWriter final : public WavFile {
  public:
   // Open a new WAV file for writing.
   WavWriter(const std::string& filename, int sample_rate, int num_channels);
@@ -35,9 +47,9 @@ class WavWriter {
   void WriteSamples(const float* samples, size_t num_samples);
   void WriteSamples(const int16_t* samples, size_t num_samples);
 
-  int sample_rate() const { return sample_rate_; }
-  int num_channels() const { return num_channels_; }
-  uint32_t num_samples() const { return num_samples_; }
+  int sample_rate() const override { return sample_rate_; }
+  int num_channels() const override { return num_channels_; }
+  uint32_t num_samples() const override { return num_samples_; }
 
  private:
   void Close();
@@ -45,10 +57,12 @@ class WavWriter {
   const int num_channels_;
   uint32_t num_samples_;  // Total number of samples written to file.
   FILE* file_handle_;  // Output file, owned by this class
+
+  DISALLOW_COPY_AND_ASSIGN(WavWriter);
 };
 
 // Follows the conventions of WavWriter.
-class WavReader {
+class WavReader final : public WavFile {
  public:
   // Opens an existing WAV file for reading.
   explicit WavReader(const std::string& filename);
@@ -61,9 +75,9 @@ class WavReader {
   size_t ReadSamples(size_t num_samples, float* samples);
   size_t ReadSamples(size_t num_samples, int16_t* samples);
 
-  int sample_rate() const { return sample_rate_; }
-  int num_channels() const { return num_channels_; }
-  uint32_t num_samples() const { return num_samples_; }
+  int sample_rate() const override { return sample_rate_; }
+  int num_channels() const override { return num_channels_; }
+  uint32_t num_samples() const override { return num_samples_; }
 
  private:
   void Close();
@@ -72,6 +86,8 @@ class WavReader {
   uint32_t num_samples_;  // Total number of samples in the file.
   uint32_t num_samples_remaining_;
   FILE* file_handle_;  // Input file, owned by this class.
+
+  DISALLOW_COPY_AND_ASSIGN(WavReader);
 };
 
 }  // namespace webrtc
