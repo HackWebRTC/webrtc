@@ -13,20 +13,21 @@
 
 import matplotlib
 import matplotlib.pyplot as plt
-import math
 import numpy
 import re
 import sys
 
+# Change this to True to save the figure to a file. Look below for details.
+save_figure = False
 
-class Variable:
+class Variable(object):
   def __init__(self, variable):
     self._ID = variable[0]
     self._xlabel = variable[1]
     self._ylabel = variable[2]
     self._subplot = variable[3]
     self._y_max = variable[4]
-    self._samples = dict()
+    self.samples = dict()
 
   def getID(self):
     return self._ID
@@ -44,7 +45,7 @@ class Variable:
     return self._y_max
 
   def getNumberOfFlows(self):
-    return len(self._samples)
+    return len(self.samples)
 
 
   def addSample(self, line):
@@ -56,28 +57,28 @@ class Variable:
 
     alg_name = alg_name.replace('_', ' ')
 
-    if alg_name not in self._samples.keys():
-      self._samples[alg_name] = {}
+    if alg_name not in self.samples.keys():
+      self.samples[alg_name] = {}
 
-    if var_name not in self._samples[alg_name].keys():
-      self._samples[alg_name][var_name] = []
+    if var_name not in self.samples[alg_name].keys():
+      self.samples[alg_name][var_name] = []
 
     sample = re.search(r'(\d+\.\d+)\t([-]?\d+\.\d+)', line)
 
-    s = (sample.group(1),sample.group(2))
-    self._samples[alg_name][var_name].append(s)
+    s = (sample.group(1), sample.group(2))
+    self.samples[alg_name][var_name].append(s)
 
 def plotVar(v, ax, show_legend, show_x_label):
   if show_x_label:
     ax.set_xlabel(v.getXLabel(), fontsize='large')
   ax.set_ylabel(v.getYLabel(), fontsize='large')
 
-  for alg in v._samples.keys():
+  for alg in v.samples.keys():
 
-    for series in v._samples[alg].keys():
+    for series in v.samples[alg].keys():
 
-      x = [sample[0] for sample in v._samples[alg][series]]
-      y = [sample[1] for sample in v._samples[alg][series]]
+      x = [sample[0] for sample in v.samples[alg][series]]
+      y = [sample[1] for sample in v.samples[alg][series]]
       x = numpy.array(x)
       y = numpy.array(y)
 
@@ -110,22 +111,22 @@ def plotVar(v, ax, show_legend, show_x_label):
         plt.setp(line, linestyle='--')
       plt.grid(True)
 
-      x1, x2, y1, y2 = plt.axis()
+      # x1, x2, y1, y2
+      _, x2, _, y2 = plt.axis()
       if v.getYMax() >= 0:
         y2 = v.getYMax()
       plt.axis((0, x2, 0, y2))
 
     if show_legend:
-      legend = plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.40),
-                          shadow=True, fontsize='large', ncol=len(v._samples))
+      plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.40),
+                 shadow=True, fontsize='large', ncol=len(v.samples))
 
-if __name__ == '__main__':
-
+def main():
   variables = [
           ('Throughput_kbps', "Time (s)", "Throughput (kbps)", 1, 4000),
           ('Delay_ms', "Time (s)", "One-way Delay (ms)", 2, 500),
           ('Packet_Loss', "Time (s)", "Packet Loss Ratio", 3, 1.0),
-          # ('Sending_Estimate_kbps', "Time (s)", "Sending Estimate (kbps)", 
+          # ('Sending_Estimate_kbps', "Time (s)", "Sending Estimate (kbps)",
           #                                                        4, 4000),
           ]
 
@@ -138,7 +139,7 @@ if __name__ == '__main__':
   # Add samples to the objects.
   for line in sys.stdin:
     if line.startswith("[ RUN      ]"):
-        test_name = re.search('\.(\w+)', line).group(1)
+      test_name = re.search(r'\.(\w+)', line).group(1)
     if line.startswith("PLOT"):
       for v in var:
         if v.getID() in line:
@@ -157,6 +158,9 @@ if __name__ == '__main__':
     plotVar(v, ax, i == 0, i == n - 1)
     i += 1
 
-  #fig.savefig(test_name+".jpg")
+  if save_figure:
+    fig.savefig(test_name + ".png")
   plt.show()
-  
+
+if __name__ == '__main__':
+  main()
