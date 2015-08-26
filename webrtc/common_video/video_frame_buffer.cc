@@ -24,6 +24,11 @@ static void NoLongerUsedCallback(rtc::scoped_refptr<VideoFrameBuffer> dummy) {}
 
 }  // anonymous namespace
 
+uint8_t* VideoFrameBuffer::MutableData(PlaneType type) {
+  RTC_NOTREACHED();
+  return nullptr;
+}
+
 VideoFrameBuffer::~VideoFrameBuffer() {}
 
 I420Buffer::I420Buffer(int width, int height)
@@ -76,7 +81,7 @@ const uint8_t* I420Buffer::data(PlaneType type) const {
   }
 }
 
-uint8_t* I420Buffer::data(PlaneType type) {
+uint8_t* I420Buffer::MutableData(PlaneType type) {
   DCHECK(HasOneRef());
   return const_cast<uint8_t*>(
       static_cast<const VideoFrameBuffer*>(this)->data(type));
@@ -123,11 +128,6 @@ int NativeHandleBuffer::height() const {
 }
 
 const uint8_t* NativeHandleBuffer::data(PlaneType type) const {
-  RTC_NOTREACHED();  // Should not be called.
-  return nullptr;
-}
-
-uint8_t* NativeHandleBuffer::data(PlaneType type) {
   RTC_NOTREACHED();  // Should not be called.
   return nullptr;
 }
@@ -187,11 +187,6 @@ const uint8_t* WrappedI420Buffer::data(PlaneType type) const {
   }
 }
 
-uint8_t* WrappedI420Buffer::data(PlaneType type) {
-  RTC_NOTREACHED();
-  return nullptr;
-}
-
 int WrappedI420Buffer::stride(PlaneType type) const {
   switch (type) {
     case kYPlane:
@@ -232,13 +227,11 @@ rtc::scoped_refptr<VideoFrameBuffer> ShallowCenterCrop(
   const int offset_x = uv_offset_x * 2;
   const int offset_y = uv_offset_y * 2;
 
-  // Const cast to call the correct const-version of data().
-  const VideoFrameBuffer* const_buffer(buffer.get());
-  const uint8_t* y_plane = const_buffer->data(kYPlane) +
+  const uint8_t* y_plane = buffer->data(kYPlane) +
                            buffer->stride(kYPlane) * offset_y + offset_x;
-  const uint8_t* u_plane = const_buffer->data(kUPlane) +
+  const uint8_t* u_plane = buffer->data(kUPlane) +
                            buffer->stride(kUPlane) * uv_offset_y + uv_offset_x;
-  const uint8_t* v_plane = const_buffer->data(kVPlane) +
+  const uint8_t* v_plane = buffer->data(kVPlane) +
                            buffer->stride(kVPlane) * uv_offset_y + uv_offset_x;
   return new rtc::RefCountedObject<WrappedI420Buffer>(
       cropped_width, cropped_height,

@@ -34,9 +34,9 @@ class FakeNativeHandleBuffer : public NativeHandleBuffer {
         new rtc::RefCountedObject<I420Buffer>(width_, height_));
     int half_height = (height_ + 1) / 2;
     int half_width = (width_ + 1) / 2;
-    memset(buffer->data(kYPlane), 0, height_ * width_);
-    memset(buffer->data(kUPlane), 0, half_height * half_width);
-    memset(buffer->data(kVPlane), 0, half_height * half_width);
+    memset(buffer->MutableData(kYPlane), 0, height_ * width_);
+    memset(buffer->MutableData(kUPlane), 0, half_height * half_width);
+    memset(buffer->MutableData(kVPlane), 0, half_height * half_width);
     return buffer;
   }
 };

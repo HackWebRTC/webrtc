@@ -117,33 +117,30 @@ size_t WebRtcVideoFrame::GetHeight() const {
 }
 
 const uint8* WebRtcVideoFrame::GetYPlane() const {
-  // Const cast to call the correct const-version of data.
-  const webrtc::VideoFrameBuffer* const_ptr = video_frame_buffer_.get();
-  return const_ptr ? const_ptr->data(kYPlane) : nullptr;
-}
-
-const uint8* WebRtcVideoFrame::GetUPlane() const {
-  // Const cast to call the correct const-version of data.
-  const webrtc::VideoFrameBuffer* const_ptr = video_frame_buffer_.get();
-  return const_ptr ? const_ptr->data(kUPlane) : nullptr;
-}
-
-const uint8* WebRtcVideoFrame::GetVPlane() const {
-  // Const cast to call the correct const-version of data.
-  const webrtc::VideoFrameBuffer* const_ptr = video_frame_buffer_.get();
-  return const_ptr ? const_ptr->data(kVPlane) : nullptr;
-}
-
-uint8* WebRtcVideoFrame::GetYPlane() {
   return video_frame_buffer_ ? video_frame_buffer_->data(kYPlane) : nullptr;
 }
 
-uint8* WebRtcVideoFrame::GetUPlane() {
+const uint8* WebRtcVideoFrame::GetUPlane() const {
   return video_frame_buffer_ ? video_frame_buffer_->data(kUPlane) : nullptr;
 }
 
-uint8* WebRtcVideoFrame::GetVPlane() {
+const uint8* WebRtcVideoFrame::GetVPlane() const {
   return video_frame_buffer_ ? video_frame_buffer_->data(kVPlane) : nullptr;
+}
+
+uint8* WebRtcVideoFrame::GetYPlane() {
+  return video_frame_buffer_ ? video_frame_buffer_->MutableData(kYPlane)
+                             : nullptr;
+}
+
+uint8* WebRtcVideoFrame::GetUPlane() {
+  return video_frame_buffer_ ? video_frame_buffer_->MutableData(kUPlane)
+                             : nullptr;
+}
+
+uint8* WebRtcVideoFrame::GetVPlane() {
+  return video_frame_buffer_ ? video_frame_buffer_->MutableData(kVPlane)
+                             : nullptr;
 }
 
 int32 WebRtcVideoFrame::GetYPitch() const {
@@ -192,9 +189,10 @@ bool WebRtcVideoFrame::MakeExclusive() {
           video_frame_buffer_->stride(kUPlane),
           video_frame_buffer_->stride(kVPlane));
 
-  if (!CopyToPlanes(new_buffer->data(kYPlane), new_buffer->data(kUPlane),
-                    new_buffer->data(kVPlane), new_buffer->stride(kYPlane),
-                    new_buffer->stride(kUPlane), new_buffer->stride(kVPlane))) {
+  if (!CopyToPlanes(
+          new_buffer->MutableData(kYPlane), new_buffer->MutableData(kUPlane),
+          new_buffer->MutableData(kVPlane), new_buffer->stride(kYPlane),
+          new_buffer->stride(kUPlane), new_buffer->stride(kVPlane))) {
     return false;
   }
 

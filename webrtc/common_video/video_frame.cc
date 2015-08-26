@@ -152,13 +152,12 @@ void VideoFrame::Reset() {
 }
 
 uint8_t* VideoFrame::buffer(PlaneType type) {
-  return video_frame_buffer_ ? video_frame_buffer_->data(type) : nullptr;
+  return video_frame_buffer_ ? video_frame_buffer_->MutableData(type)
+                             : nullptr;
 }
 
 const uint8_t* VideoFrame::buffer(PlaneType type) const {
-  // Const cast to call the correct const-version of data.
-  const VideoFrameBuffer* const_buffer = video_frame_buffer_.get();
-  return const_buffer ? const_buffer->data(type) : nullptr;
+  return video_frame_buffer_ ? video_frame_buffer_->data(type) : nullptr;
 }
 
 int VideoFrame::allocated_size(PlaneType type) const {

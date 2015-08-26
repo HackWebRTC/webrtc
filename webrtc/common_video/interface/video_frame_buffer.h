@@ -42,8 +42,9 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
   // the VideoFrameBuffer object and must not be freed by the caller.
   virtual const uint8_t* data(PlaneType type) const = 0;
 
-  // Non-const data access is only allowed if |HasOneRef| is true.
-  virtual uint8_t* data(PlaneType type) = 0;
+  // Non-const data access is disallowed by default. You need to make sure you
+  // have exclusive access and a writable buffer before calling this function.
+  virtual uint8_t* MutableData(PlaneType type);
 
   // Returns the number of bytes between successive rows for a given plane.
   virtual int stride(PlaneType type) const = 0;
@@ -69,7 +70,9 @@ class I420Buffer : public VideoFrameBuffer {
   int width() const override;
   int height() const override;
   const uint8_t* data(PlaneType type) const override;
-  uint8_t* data(PlaneType type) override;
+  // Non-const data access is only allowed if HasOneRef() is true to protect
+  // against unexpected overwrites.
+  uint8_t* MutableData(PlaneType type) override;
   int stride(PlaneType type) const override;
   void* native_handle() const override;
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
@@ -97,7 +100,6 @@ class NativeHandleBuffer : public VideoFrameBuffer {
   int width() const override;
   int height() const override;
   const uint8_t* data(PlaneType type) const override;
-  uint8_t* data(PlaneType type) override;
   int stride(PlaneType type) const override;
   void* native_handle() const override;
 
@@ -122,7 +124,6 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
   int height() const override;
 
   const uint8_t* data(PlaneType type) const override;
-  uint8_t* data(PlaneType type) override;
 
   int stride(PlaneType type) const override;
   void* native_handle() const override;

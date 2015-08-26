@@ -64,9 +64,9 @@ rtc::scoped_refptr<webrtc::VideoFrameBuffer> VideoFrameBufferForPixelBuffer(
   int src_uv_stride = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 1);
   int ret = libyuv::NV12ToI420(
       src_y, src_y_stride, src_uv, src_uv_stride,
-      buffer->data(webrtc::kYPlane), buffer->stride(webrtc::kYPlane),
-      buffer->data(webrtc::kUPlane), buffer->stride(webrtc::kUPlane),
-      buffer->data(webrtc::kVPlane), buffer->stride(webrtc::kVPlane),
+      buffer->MutableData(webrtc::kYPlane), buffer->stride(webrtc::kYPlane),
+      buffer->MutableData(webrtc::kUPlane), buffer->stride(webrtc::kUPlane),
+      buffer->MutableData(webrtc::kVPlane), buffer->stride(webrtc::kVPlane),
       width, height);
   CVPixelBufferUnlockBaseAddress(pixel_buffer, kCVPixelBufferLock_ReadOnly);
   if (ret) {
