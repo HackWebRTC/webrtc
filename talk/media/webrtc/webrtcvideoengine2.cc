@@ -1824,10 +1824,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
   SetDimensions(
       video_frame.width(), video_frame.height(), capturer->IsScreencast());
 
-  LOG(LS_VERBOSE) << "IncomingCapturedFrame: " << video_frame.width() << "x"
-                  << video_frame.height() << " -> (codec) "
-                  << parameters_.encoder_config.streams.back().width << "x"
-                  << parameters_.encoder_config.streams.back().height;
   stream_->Input()->IncomingCapturedFrame(video_frame);
 }
 
