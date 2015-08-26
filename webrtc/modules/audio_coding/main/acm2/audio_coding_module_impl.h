@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
@@ -265,6 +266,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   int UpdateUponReceivingCodec(int index);
 
   const rtc::scoped_ptr<CriticalSectionWrapper> acm_crit_sect_;
+  rtc::Buffer encode_buffer_ GUARDED_BY(acm_crit_sect_);
   int id_;  // TODO(henrik.lundin) Make const.
   uint32_t expected_codec_ts_ GUARDED_BY(acm_crit_sect_);
   uint32_t expected_in_ts_ GUARDED_BY(acm_crit_sect_);

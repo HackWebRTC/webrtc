@@ -21,9 +21,6 @@
 
 namespace webrtc {
 
-// The maximum size of a payload, that is 60 ms of PCM-16 @ 32 kHz stereo
-#define MAX_PAYLOAD_SIZE_BYTE 7680
-
 // General codec specific defines
 const int kIsacWbDefaultRate = 32000;
 const int kIsacSwbDefaultRate = 56000;

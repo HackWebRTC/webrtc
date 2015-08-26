@@ -1619,6 +1619,10 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   EXPECT_CALL(mock_encoder, NumChannels())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&encoder, &AudioEncoderMutablePcmU::NumChannels));
+  EXPECT_CALL(mock_encoder, MaxEncodedBytes())
+      .Times(AtLeast(1))
+      .WillRepeatedly(
+          Invoke(&encoder, &AudioEncoderMutablePcmU::MaxEncodedBytes));
   EXPECT_CALL(mock_encoder, EncodeInternal(_, _, _, _))
       .Times(AtLeast(1))
       .WillRepeatedly(

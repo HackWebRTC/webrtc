@@ -157,7 +157,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
 AudioCodingModuleImpl::~AudioCodingModuleImpl() = default;
 
 int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
-  uint8_t stream[2 * MAX_PAYLOAD_SIZE_BYTE];  // Make room for 1 RED payload.
   AudioEncoder::EncodedInfo encoded_info;
   uint8_t previous_pltype;
 
@@ -179,11 +178,13 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   last_rtp_timestamp_ = rtp_timestamp;
   first_frame_ = false;
 
-  encoded_info = audio_encoder->Encode(rtp_timestamp, input_data.audio,
-                                       input_data.length_per_channel,
-                                       sizeof(stream), stream);
+  encode_buffer_.SetSize(audio_encoder->MaxEncodedBytes());
+  encoded_info = audio_encoder->Encode(
+      rtp_timestamp, input_data.audio, input_data.length_per_channel,
+      encode_buffer_.size(), encode_buffer_.data());
+  encode_buffer_.SetSize(encoded_info.encoded_bytes);
   bitrate_logger_.MaybeLog(audio_encoder->GetTargetBitrate() / 1000);
-  if (encoded_info.encoded_bytes == 0 && !encoded_info.send_even_if_empty) {
+  if (encode_buffer_.size() == 0 && !encoded_info.send_even_if_empty) {
     // Not enough data.
     return 0;
   }
@@ -192,11 +193,11 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   RTPFragmentationHeader my_fragmentation;
   ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
   FrameType frame_type;
-  if (encoded_info.encoded_bytes == 0 && encoded_info.send_even_if_empty) {
+  if (encode_buffer_.size() == 0 && encoded_info.send_even_if_empty) {
     frame_type = kFrameEmpty;
     encoded_info.payload_type = previous_pltype;
   } else {
-    DCHECK_GT(encoded_info.encoded_bytes, 0u);
+    DCHECK_GT(encode_buffer_.size(), 0u);
     frame_type = encoded_info.speech ? kAudioFrameSpeech : kAudioFrameCN;
   }
 
@@ -205,7 +206,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     if (packetization_callback_) {
       packetization_callback_->SendData(
           frame_type, encoded_info.payload_type, encoded_info.encoded_timestamp,
-          stream, encoded_info.encoded_bytes,
+          encode_buffer_.data(), encode_buffer_.size(),
           my_fragmentation.fragmentationVectorSize > 0 ? &my_fragmentation
                                                        : nullptr);
     }
@@ -216,7 +217,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     }
   }
   previous_pltype_ = encoded_info.payload_type;
-  return static_cast<int32_t>(encoded_info.encoded_bytes);
+  return static_cast<int32_t>(encode_buffer_.size());
 }
 
 /////////////////////////////////////////
