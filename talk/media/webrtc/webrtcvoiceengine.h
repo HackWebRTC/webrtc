@@ -160,7 +160,7 @@ class WebRtcVoiceEngine
   int CreateMediaVoiceChannel();
 
  private:
-  typedef std::vector<WebRtcVoiceMediaChannel *> ChannelList;
+  typedef std::vector<WebRtcVoiceMediaChannel*> ChannelList;
   typedef sigslot::
       signal3<uint32, MediaProcessorDirection, AudioFrame*> FrameSignal;
 
@@ -357,8 +357,8 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   void OnError(uint32 ssrc, int error);
 
   bool sending() const { return send_ != SEND_NOTHING; }
-  int GetReceiveChannelNum(uint32 ssrc);
-  int GetSendChannelNum(uint32 ssrc);
+  int GetReceiveChannelNum(uint32 ssrc) const;
+  int GetSendChannelNum(uint32 ssrc) const;
 
   void SetCall(webrtc::Call* call);
 
@@ -406,6 +406,7 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                           const RtpHeaderExtension* extension);
   void TryAddAudioRecvStream(uint32 ssrc);
   void TryRemoveAudioRecvStream(uint32 ssrc);
+  bool SetRecvCodecsInternal(const std::vector<AudioCodec>& new_codecs);
 
   bool SetChannelRecvRtpHeaderExtensions(
     int channel_id,
