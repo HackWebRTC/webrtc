@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
 #include "webrtc/typedefs.h"
 
