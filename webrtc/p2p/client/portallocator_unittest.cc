@@ -606,6 +606,36 @@ TEST_F(PortAllocatorTest,
                                  rtc::IPAddress());
 }
 
+// Test that we disable relay over UDP, and only TCP is used when connecting to
+// the relay server.
+TEST_F(PortAllocatorTest, TestDisableUdpTurn) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  AddInterface(kClientAddr);
+  ResetWithStunServerAndNat(kStunAddr);
+  AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_UDP_RELAY |
+                      cricket::PORTALLOCATOR_DISABLE_UDP |
+                      cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+
+  // Expect to see 2 ports and 2 candidates - TURN/TCP and TCP ports, TCP and
+  // TURN/TCP candidates.
+  EXPECT_EQ(2U, ports_.size());
+  EXPECT_EQ(2U, candidates_.size());
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+               kTurnUdpExtAddr);
+  // The TURN candidate should use TCP to contact the TURN server.
+  EXPECT_EQ(cricket::TCP_PROTOCOL_NAME, candidates_[0].relay_protocol());
+  EXPECT_PRED5(CheckCandidate, candidates_[1],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "tcp",
+               kClientAddr);
+}
+
 // Disable for asan, see
 // https://code.google.com/p/webrtc/issues/detail?id=4743 for details.
 #if !defined(ADDRESS_SANITIZER)

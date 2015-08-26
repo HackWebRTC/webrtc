@@ -983,6 +983,13 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
   for (relay_port = config.ports.begin();
        relay_port != config.ports.end(); ++relay_port) {
     TurnPort* port = NULL;
+
+    // Skip UDP connections to relay servers if it's disallowed.
+    if (IsFlagSet(PORTALLOCATOR_DISABLE_UDP_RELAY) &&
+        relay_port->proto == PROTO_UDP) {
+      continue;
+    }
+
     // Shared socket mode must be enabled only for UDP based ports. Hence
     // don't pass shared socket for ports which will create TCP sockets.
     // TODO(mallinath) - Enable shared socket mode for TURN ports. Disabled

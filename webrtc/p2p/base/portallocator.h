@@ -28,9 +28,13 @@ namespace cricket {
 // what kinds of ports are allocated.
 
 enum {
+  // Disable local UDP ports. This doesn't impact how we connect to relay
+  // servers.
   PORTALLOCATOR_DISABLE_UDP = 0x01,
   PORTALLOCATOR_DISABLE_STUN = 0x02,
   PORTALLOCATOR_DISABLE_RELAY = 0x04,
+  // Disable local TCP ports. This doesn't impact how we connect to relay
+  // servers.
   PORTALLOCATOR_DISABLE_TCP = 0x08,
   PORTALLOCATOR_ENABLE_SHAKER = 0x10,
   PORTALLOCATOR_ENABLE_IPV6 = 0x40,
@@ -46,6 +50,9 @@ enum {
   // When specified, a loopback candidate will be generated if
   // PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION is specified.
   PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE = 0x800,
+  // Disallow use of UDP when connecting to a relay server. Since proxy servers
+  // usually don't handle UDP, using UDP will leak the IP address.
+  PORTALLOCATOR_DISABLE_UDP_RELAY = 0x1000,
 };
 
 const uint32 kDefaultPortAllocatorFlags = 0;
