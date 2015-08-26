@@ -369,7 +369,10 @@ public class CallActivity extends Activity
   private void callConnected() {
     final long delta = System.currentTimeMillis() - callStartedTimeMs;
     Log.i(TAG, "Call connected: delay=" + delta + "ms");
-
+    if (peerConnectionClient == null || isError) {
+      Log.w(TAG, "Call is connected in closed or error state");
+      return;
+    }
     // Update video view.
     updateVideoView();
     // Enable statistics callback.

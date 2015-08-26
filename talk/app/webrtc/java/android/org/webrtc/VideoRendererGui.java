@@ -89,25 +89,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     yuvImageRenderers = new ArrayList<YuvImageRenderer>();
   }
 
-  public static synchronized void dispose() {
-    if (instance == null){
-      return;
-    }
-    synchronized (instance.yuvImageRenderers) {
-      for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
-        yuvImageRenderer.release();
-      }
-      instance.yuvImageRenderers.clear();
-      if (instance.drawer != null) {
-        instance.drawer.release();
-      }
-    }
-    instance.surface = null;
-    instance.eglContext = null;
-    instance.eglContextReady = null;
-    instance = null;
-  }
-
   /**
    * Class used to display stream of YUV420 frames at particular location
    * on a screen. New video frames are sent to display using renderFrame()
@@ -466,6 +447,27 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   public static synchronized EGLContext getEGLContext() {
     return eglContext;
+  }
+
+  /** Releases GLSurfaceView video renderer. */
+  public static synchronized void dispose() {
+    if (instance == null){
+      return;
+    }
+    Log.d(TAG, "VideoRendererGui.dispose");
+    synchronized (instance.yuvImageRenderers) {
+      for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
+        yuvImageRenderer.release();
+      }
+      instance.yuvImageRenderers.clear();
+      if (instance.drawer != null) {
+        instance.drawer.release();
+      }
+    }
+    instance.surface = null;
+    eglContext = null;
+    eglContextReady = null;
+    instance = null;
   }
 
   /**
