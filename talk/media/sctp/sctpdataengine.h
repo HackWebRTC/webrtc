@@ -64,6 +64,8 @@ const uint32 kMaxSctpSid = 1023;
 // usrsctp.h)
 const int kSctpDefaultPort = 5000;
 
+class SctpDataMediaChannel;
+
 // A DataEngine that interacts with usrsctp.
 //
 // From channel calls, data flows like this:
@@ -88,7 +90,7 @@ const int kSctpDefaultPort = 5000;
 //  14. SctpDataMediaChannel::SignalDataReceived(data)
 // [from the same thread, methods registered/connected to
 //  SctpDataMediaChannel are called with the recieved data]
-class SctpDataEngine : public DataEngineInterface {
+class SctpDataEngine : public DataEngineInterface, public sigslot::has_slots<> {
  public:
   SctpDataEngine();
   virtual ~SctpDataEngine();
@@ -97,9 +99,15 @@ class SctpDataEngine : public DataEngineInterface {
 
   virtual const std::vector<DataCodec>& data_codecs() { return codecs_; }
 
+  static int SendThresholdCallback(struct socket* sock, uint32_t sb_free);
+
  private:
+  static std::vector<SctpDataMediaChannel*> channels_;
   static int usrsctp_engines_count;
   std::vector<DataCodec> codecs_;
+
+  static SctpDataMediaChannel* GetChannelFromSocket(struct socket* sock);
+  void OnChannelDestroyed(SctpDataMediaChannel *channel);
 };
 
 // TODO(ldixon): Make into a special type of TypedMessageData.
@@ -188,6 +196,9 @@ class SctpDataMediaChannel : public DataMediaChannel,
     debug_name_ = debug_name;
   }
   const std::string& debug_name() const { return debug_name_; }
+  const struct socket* socket() { return sock_; }
+
+  sigslot::signal1<SctpDataMediaChannel*> SignalDestroyed;
 
  private:
   sockaddr_conn GetSctpSockAddr(int port);
