@@ -109,8 +109,6 @@ typedef rtc::ScopedMessageData<rtc::Buffer> OutboundPacketMessage;
 // take off 80 bytes for DTLS/TURN/TCP/IP overhead.
 static const size_t kSctpMtu = 1200;
 
-// The size of the SCTP association send buffer.  256kB, the usrsctp default.
-static const int kSendBufferSize = 262144;
 enum {
   MSG_SCTPINBOUNDPACKET = 1,   // MessageData is SctpInboundPacket
   MSG_SCTPOUTBOUNDPACKET = 2,  // MessageData is rtc:Buffer
@@ -179,11 +177,11 @@ static bool GetDataMediaType(
 }
 
 // Log the packet in text2pcap format, if log level is at LS_VERBOSE.
-static void VerboseLogPacket(void *data, size_t length, int direction) {
+static void VerboseLogPacket(void *addr, size_t length, int direction) {
   if (LOG_CHECK_LEVEL(LS_VERBOSE) && length > 0) {
     char *dump_buf;
     if ((dump_buf = usrsctp_dumppacket(
-             data, length, direction)) != NULL) {
+             addr, length, direction)) != NULL) {
       LOG(LS_VERBOSE) << dump_buf;
       usrsctp_freedumpbuffer(dump_buf);
     }
@@ -246,10 +244,6 @@ static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
 
 // Set the initial value of the static SCTP Data Engines reference count.
 int SctpDataEngine::usrsctp_engines_count = 0;
-// All the channels created by this engine, used for callbacks from
-// usrsctplib that only contain socket pointers.  Channels are removed when
-// SignalDestroyed is fired.
-std::vector<SctpDataMediaChannel*> SctpDataEngine::channels_;
 
 SctpDataEngine::SctpDataEngine() {
   if (usrsctp_engines_count == 0) {
@@ -263,11 +257,6 @@ SctpDataEngine::SctpDataEngine() {
 
     // TODO(ldixon): Consider turning this on/off.
     usrsctp_sysctl_set_sctp_ecn_enable(0);
-
-    int send_size = usrsctp_sysctl_get_sctp_sendspace();
-    if (send_size != kSendBufferSize) {
-      LOG(LS_ERROR) << "Got different send size than expected: " << send_size;
-    }
 
     // TODO(ldixon): Consider turning this on/off.
     // This is not needed right now (we don't do dynamic address changes):
@@ -323,47 +312,8 @@ DataMediaChannel* SctpDataEngine::CreateChannel(
   if (data_channel_type != DCT_SCTP) {
     return NULL;
   }
-  SctpDataMediaChannel *channel = new SctpDataMediaChannel(
-      rtc::Thread::Current());
-  channels_.push_back(channel);
-  channel->SignalDestroyed.connect(this, &SctpDataEngine::OnChannelDestroyed);
-  return channel;
+  return new SctpDataMediaChannel(rtc::Thread::Current());
 }
-
-// static
-SctpDataMediaChannel* SctpDataEngine::GetChannelFromSocket(
-    struct socket* sock) {
-  for (auto p:channels_) {
-    if (p->socket() == sock) {
-      return p;
-    }
-  }
-  return 0;
-}
-
-
-void SctpDataEngine::OnChannelDestroyed(SctpDataMediaChannel* channel) {
-  auto it = std::find(channels_.begin(), channels_.end(), channel);
-  if (it == channels_.end()) {
-    LOG(LS_ERROR) << "OnChannelDestroyed: the channel wasn't registered.";
-    return;
-  }
-  channels_.erase(it);
-}
-
-// static
-int SctpDataEngine::SendThresholdCallback(struct socket* sock,
-                                          uint32_t sb_free) {
-  SctpDataMediaChannel *channel = GetChannelFromSocket(sock);
-  if (!channel) {
-    LOG(LS_ERROR) << "SendThresholdCallback: Failed to get channel for socket "
-                  << sock;
-    return 0;
-  }
-  channel->SignalReadyToSend(true);
-  return 0;
-}
-
 
 SctpDataMediaChannel::SctpDataMediaChannel(rtc::Thread* thread)
     : worker_thread_(thread),
@@ -377,7 +327,6 @@ SctpDataMediaChannel::SctpDataMediaChannel(rtc::Thread* thread)
 
 SctpDataMediaChannel::~SctpDataMediaChannel() {
   CloseSctpSocket();
-  SignalDestroyed(this);
 }
 
 sockaddr_conn SctpDataMediaChannel::GetSctpSockAddr(int port) {
@@ -398,16 +347,8 @@ bool SctpDataMediaChannel::OpenSctpSocket() {
                     << "->Ignoring attempt to re-create existing socket.";
     return false;
   }
-
-  // If kSendBufferSize isn't reflective of reality, we log an error, but we
-  // still have to do something reasonable here.  Look up what the buffer's
-  // real size is and set our threshold to something reasonable.
-  const static int send_threshold = usrsctp_sysctl_get_sctp_sendspace() / 2;
-
   sock_ = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP,
-                         cricket::OnSctpInboundPacket,
-                         &SctpDataEngine::SendThresholdCallback,
-                         send_threshold, this);
+                         cricket::OnSctpInboundPacket, NULL, 0, this);
   if (!sock_) {
     LOG_ERRNO(LS_ERROR) << debug_name_ << "Failed to create SCTP socket.";
     return false;
@@ -452,8 +393,7 @@ bool SctpDataMediaChannel::OpenSctpSocket() {
   }
 
   // Disable MTU discovery
-  struct sctp_paddrparams params;
-  memset(&params, 0, sizeof(params));
+  struct sctp_paddrparams params = {{0}};
   params.spp_assoc_id = 0;
   params.spp_flags = SPP_PMTUD_DISABLE;
   params.spp_pathmtu = kSctpMtu;
@@ -964,17 +904,10 @@ bool SctpDataMediaChannel::SetRecvCodecs(const std::vector<DataCodec>& codecs) {
 
 void SctpDataMediaChannel::OnPacketFromSctpToNetwork(
     rtc::Buffer* buffer) {
-  // usrsctp seems to interpret the MTU we give it strangely -- it seems to
-  // give us back packets bigger than that MTU, if only by a fixed amount.
-  // This is that amount that we've observed.
-  const int kSctpOverhead = 76;
-  if (buffer->size() > (kSctpOverhead + kSctpMtu)) {
+  if (buffer->size() > kSctpMtu) {
     LOG(LS_ERROR) << debug_name_ << "->OnPacketFromSctpToNetwork(...): "
                   << "SCTP seems to have made a packet that is bigger "
-                  << "than its official MTU: " << buffer->size()
-                  << " vs max of " << kSctpMtu
-                  << " even after adding " << kSctpOverhead
-                  << " extra SCTP overhead";
+                     "than its official MTU.";
   }
   MediaChannel::SendPacket(buffer);
 }
