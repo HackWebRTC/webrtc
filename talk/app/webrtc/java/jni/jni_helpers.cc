@@ -273,17 +273,6 @@ void DeleteGlobalRef(JNIEnv* jni, jobject o) {
   CHECK_EXCEPTION(jni) << "error during DeleteGlobalRef";
 }
 
-WeakRef::WeakRef(JNIEnv* jni, jweak ref)
-      : jni_(jni), obj_(jni_->NewLocalRef(ref)) {
-    CHECK_EXCEPTION(jni) << "error during NewLocalRef";
-}
-WeakRef::~WeakRef() {
-  if (obj_) {
-    jni_->DeleteLocalRef(obj_);
-    CHECK_EXCEPTION(jni_) << "error during DeleteLocalRef";
-  }
-}
-
 // Scope Java local references to the lifetime of this object.  Use in all C++
 // callbacks (i.e. entry points that don't originate in a Java callstack
 // through a "native" method call).

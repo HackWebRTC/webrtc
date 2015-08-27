@@ -108,20 +108,6 @@ jobject NewGlobalRef(JNIEnv* jni, jobject o);
 
 void DeleteGlobalRef(JNIEnv* jni, jobject o);
 
-// Given a jweak reference, allocate a (strong) local reference scoped to the
-// lifetime of this object if the weak reference is still valid, or NULL
-// otherwise.
-class WeakRef {
- public:
-  WeakRef(JNIEnv* jni, jweak ref);
-  ~WeakRef();
-  jobject obj() { return obj_; }
-
- private:
-  JNIEnv* const jni_;
-  jobject const obj_;
-};
-
 // Scope Java local references to the lifetime of this object.  Use in all C++
 // callbacks (i.e. entry points that don't originate in a Java callstack
 // through a "native" method call).

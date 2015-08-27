@@ -911,11 +911,7 @@ public class PeerConnectionClient {
       executor.execute(new Runnable() {
         @Override
         public void run() {
-          if (peerConnection == null || isError) {
-            return;
-          }
           remoteVideoTrack = null;
-          stream.videoTracks.get(0).dispose();
         }
       });
     }
