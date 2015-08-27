@@ -169,7 +169,7 @@ int WebRtcCng_InitEnc(CNG_enc_inst* cng_inst, int fs, int16_t interval,
   return 0;
 }
 
-int16_t WebRtcCng_InitDec(CNG_dec_inst* cng_inst) {
+void WebRtcCng_InitDec(CNG_dec_inst* cng_inst) {
   int i;
 
   WebRtcCngDecoder* inst = (WebRtcCngDecoder*) cng_inst;
@@ -188,8 +188,6 @@ int16_t WebRtcCng_InitDec(CNG_dec_inst* cng_inst) {
   inst->dec_used_reflCoefs[0] = 0;
   inst->dec_used_energy = 0;
   inst->initflag = 1;
-
-  return 0;
 }
 
 /****************************************************************************

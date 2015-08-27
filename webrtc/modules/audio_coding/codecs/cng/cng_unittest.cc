@@ -194,7 +194,7 @@ TEST_F(CngTest, CngUpdateSid) {
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
                                  kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   // Run normal Encode and UpdateSid.
   EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
@@ -205,7 +205,7 @@ TEST_F(CngTest, CngUpdateSid) {
   // Reinit with new length.
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
                                  kCNGNumParamsHigh));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   // Expect 0 because of unstable parameters after switching length.
   EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 160, sid_data,
@@ -242,7 +242,7 @@ TEST_F(CngTest, CngUpdateSidErroneous) {
   EXPECT_EQ(6220, WebRtcCng_GetErrorCodeDec(cng_dec_inst_));
 
   // Initialize decoder.
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   // First run with valid parameters, then with too many CNG parameters.
   // The function will operate correctly by only reading the maximum number of
@@ -268,7 +268,7 @@ TEST_F(CngTest, CngGenerate) {
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
                                  kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   // Normal Encode.
   EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
@@ -301,7 +301,7 @@ TEST_F(CngTest, CngAutoSid) {
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
                                  kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   // Normal Encode, 100 msec, where no SID data should be generated.
   for (int i = 0; i < 10; i++) {
@@ -328,7 +328,7 @@ TEST_F(CngTest, CngAutoSidShort) {
   EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
   EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidShortIntervalUpdate,
                                  kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_InitDec(cng_dec_inst_));
+  WebRtcCng_InitDec(cng_dec_inst_);
 
   // First call will never generate SID, unless forced to.
   EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 160, sid_data,

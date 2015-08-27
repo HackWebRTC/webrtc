@@ -64,8 +64,8 @@ class AudioDecoder {
   // one or several lost packets.
   virtual size_t DecodePlc(size_t num_frames, int16_t* decoded);
 
-  // Initializes the decoder.
-  virtual int Init() = 0;
+  // Resets the decoder state (empty buffers etc.).
+  virtual void Reset() = 0;
 
   // Notifies the decoder of an incoming packet to NetEQ.
   virtual int IncomingPacket(const uint8_t* payload,

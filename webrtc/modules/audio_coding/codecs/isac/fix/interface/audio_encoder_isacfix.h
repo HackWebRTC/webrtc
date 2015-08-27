@@ -50,8 +50,8 @@ struct IsacFix {
                                  size_t num_lost_frames) {
     return WebRtcIsacfix_DecodePlc(inst, decoded, num_lost_frames);
   }
-  static inline int16_t DecoderInit(instance_type* inst) {
-    return WebRtcIsacfix_DecoderInit(inst);
+  static inline void DecoderInit(instance_type* inst) {
+    WebRtcIsacfix_DecoderInit(inst);
   }
   static inline int Encode(instance_type* inst,
                            const int16_t* speech_in,

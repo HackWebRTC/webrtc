@@ -444,10 +444,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
       return encoded_len;
     }
 
-    virtual int Init() {
-      next_value_ = 1;
-      return 0;
-    }
+    void Reset() override { next_value_ = 1; }
 
     size_t Channels() const override { return 1; }
 
@@ -524,7 +521,7 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
 
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
-  EXPECT_CALL(mock_decoder, Init()).WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
@@ -690,7 +687,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
 
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
-  EXPECT_CALL(mock_decoder, Init()).WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
@@ -829,9 +826,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
 
   class MockAudioDecoder : public AudioDecoder {
    public:
-    int Init() override {
-      return 0;
-    }
+    void Reset() override {}
     MOCK_CONST_METHOD2(PacketDuration, int(const uint8_t*, size_t));
     MOCK_METHOD5(DecodeInternal, int(const uint8_t*, size_t, int, int16_t*,
                                      SpeechType*));

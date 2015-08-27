@@ -37,7 +37,7 @@ namespace webrtc {
 class AudioDecoderPcmU : public AudioDecoder {
  public:
   AudioDecoderPcmU() {}
-  int Init() override;
+  void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   size_t Channels() const override;
 
@@ -55,7 +55,7 @@ class AudioDecoderPcmU : public AudioDecoder {
 class AudioDecoderPcmA : public AudioDecoder {
  public:
   AudioDecoderPcmA() {}
-  int Init() override;
+  void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   size_t Channels() const override;
 
@@ -102,7 +102,7 @@ class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
 class AudioDecoderPcm16B : public AudioDecoder {
  public:
   AudioDecoderPcm16B();
-  int Init() override;
+  void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   size_t Channels() const override;
 
@@ -138,7 +138,7 @@ class AudioDecoderIlbc : public AudioDecoder {
   ~AudioDecoderIlbc() override;
   bool HasDecodePlc() const override;
   size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
-  int Init() override;
+  void Reset() override;
   size_t Channels() const override;
 
  protected:
@@ -160,7 +160,7 @@ class AudioDecoderG722 : public AudioDecoder {
   AudioDecoderG722();
   ~AudioDecoderG722() override;
   bool HasDecodePlc() const override;
-  int Init() override;
+  void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   size_t Channels() const override;
 
@@ -180,7 +180,7 @@ class AudioDecoderG722Stereo : public AudioDecoder {
  public:
   AudioDecoderG722Stereo();
   ~AudioDecoderG722Stereo() override;
-  int Init() override;
+  void Reset() override;
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -212,7 +212,7 @@ class AudioDecoderOpus : public AudioDecoder {
   explicit AudioDecoderOpus(size_t num_channels);
   ~AudioDecoderOpus() override;
 
-  int Init() override;
+  void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   int PacketDurationRedundant(const uint8_t* encoded,
                               size_t encoded_len) const override;
@@ -248,7 +248,7 @@ class AudioDecoderCng : public AudioDecoder {
  public:
   explicit AudioDecoderCng();
   ~AudioDecoderCng() override;
-  int Init() override;
+  void Reset() override;
   int IncomingPacket(const uint8_t* payload,
                      size_t payload_len,
                      uint16_t rtp_sequence_number,

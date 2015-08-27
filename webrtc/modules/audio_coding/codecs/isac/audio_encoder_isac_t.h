@@ -95,7 +95,7 @@ class AudioDecoderIsacT final : public AudioDecoder {
 
   bool HasDecodePlc() const override;
   size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
-  int Init() override;
+  void Reset() override;
   int IncomingPacket(const uint8_t* payload,
                      size_t payload_len,
                      uint16_t rtp_sequence_number,

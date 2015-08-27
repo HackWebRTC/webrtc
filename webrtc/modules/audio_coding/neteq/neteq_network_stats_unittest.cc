@@ -33,7 +33,7 @@ class MockAudioDecoderOpus : public AudioDecoderOpus {
   virtual ~MockAudioDecoderOpus() { Die(); }
   MOCK_METHOD0(Die, void());
 
-  MOCK_METHOD0(Init, int());
+  MOCK_METHOD0(Reset, void());
 
   int PacketDuration(const uint8_t* encoded,
                      size_t encoded_len) const override {
@@ -271,7 +271,6 @@ struct NetEqNetworkStatsCheck {
 
 TEST(NetEqNetworkStatsTest, OpusDecodeFec) {
   MockAudioDecoderOpus decoder(1);
-  EXPECT_CALL(decoder, Init());
   NetEqNetworkStatsTest test(kDecoderOpus, &decoder);
   test.DecodeFecTest();
   EXPECT_CALL(decoder, Die()).Times(1);
@@ -279,7 +278,6 @@ TEST(NetEqNetworkStatsTest, OpusDecodeFec) {
 
 TEST(NetEqNetworkStatsTest, StereoOpusDecodeFec) {
   MockAudioDecoderOpus decoder(2);
-  EXPECT_CALL(decoder, Init());
   NetEqNetworkStatsTest test(kDecoderOpus, &decoder);
   test.DecodeFecTest();
   EXPECT_CALL(decoder, Die()).Times(1);
@@ -287,7 +285,6 @@ TEST(NetEqNetworkStatsTest, StereoOpusDecodeFec) {
 
 TEST(NetEqNetworkStatsTest, NoiseExpansionTest) {
   MockAudioDecoderOpus decoder(1);
-  EXPECT_CALL(decoder, Init());
   NetEqNetworkStatsTest test(kDecoderOpus, &decoder);
   test.NoiseExpansionTest();
   EXPECT_CALL(decoder, Die()).Times(1);

@@ -499,13 +499,8 @@ int main(int argc, char* argv[]) {
       return 0;
     }
   }
-  if (testNum != 2) {
-    if (WebRtcIsac_DecoderInit(ISAC_main_inst) < 0) {
-      printf("Error could not initialize the decoder \n");
-      cout << flush;
-      return 0;
-    }
-  }
+  if (testNum != 2)
+    WebRtcIsac_DecoderInit(ISAC_main_inst);
   if (CodingMode == 1) {
     err = WebRtcIsac_Control(ISAC_main_inst, bottleneck, framesize);
     if (err < 0) {
@@ -570,13 +565,7 @@ int main(int argc, char* argv[]) {
         cout << flush;
       }
 
-      err = WebRtcIsac_DecoderInit(ISAC_main_inst);
-      /* Error check */
-      if (err < 0) {
-        errtype = WebRtcIsac_GetErrorCode(ISAC_main_inst);
-        printf("\n\n Error in decoderinit: %d.\n\n", errtype);
-        cout << flush;
-      }
+      WebRtcIsac_DecoderInit(ISAC_main_inst);
     }
 
     cur_framesmpls = 0;

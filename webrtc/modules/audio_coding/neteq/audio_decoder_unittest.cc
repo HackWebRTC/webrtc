@@ -171,7 +171,6 @@ class AudioDecoderTest : public ::testing::Test {
     size_t processed_samples = 0u;
     encoded_bytes_ = 0u;
     InitEncoder();
-    EXPECT_EQ(0, decoder_->Init());
     std::vector<int16_t> input;
     std::vector<int16_t> decoded;
     while (processed_samples + frame_size_ <= data_length_) {
@@ -220,7 +219,7 @@ class AudioDecoderTest : public ::testing::Test {
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     size_t dec_len;
     AudioDecoder::SpeechType speech_type1, speech_type2;
-    EXPECT_EQ(0, decoder_->Init());
+    decoder_->Reset();
     rtc::scoped_ptr<int16_t[]> output1(new int16_t[frame_size_ * channels_]);
     dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                frame_size_ * channels_ * sizeof(int16_t),
@@ -228,7 +227,7 @@ class AudioDecoderTest : public ::testing::Test {
     ASSERT_LE(dec_len, frame_size_ * channels_);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
     // Re-init decoder and decode again.
-    EXPECT_EQ(0, decoder_->Init());
+    decoder_->Reset();
     rtc::scoped_ptr<int16_t[]> output2(new int16_t[frame_size_ * channels_]);
     dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                frame_size_ * channels_ * sizeof(int16_t),
@@ -249,7 +248,7 @@ class AudioDecoderTest : public ::testing::Test {
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     AudioDecoder::SpeechType speech_type;
-    EXPECT_EQ(0, decoder_->Init());
+    decoder_->Reset();
     rtc::scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
     size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                       frame_size_ * channels_ * sizeof(int16_t),
@@ -341,7 +340,7 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     AudioDecoder::SpeechType speech_type;
-    EXPECT_EQ(0, decoder_->Init());
+    decoder_->Reset();
     rtc::scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
     size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                       frame_size_ * channels_ * sizeof(int16_t),

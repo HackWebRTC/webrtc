@@ -39,8 +39,7 @@ namespace webrtc {
 
 // PCMu
 
-int AudioDecoderPcmU::Init() {
-  return 0;
+void AudioDecoderPcmU::Reset() {
 }
 size_t AudioDecoderPcmU::Channels() const {
   return 1;
@@ -70,8 +69,7 @@ size_t AudioDecoderPcmUMultiCh::Channels() const {
 
 // PCMa
 
-int AudioDecoderPcmA::Init() {
-  return 0;
+void AudioDecoderPcmA::Reset() {
 }
 size_t AudioDecoderPcmA::Channels() const {
   return 1;
@@ -103,8 +101,7 @@ size_t AudioDecoderPcmAMultiCh::Channels() const {
 #ifdef WEBRTC_CODEC_PCM16
 AudioDecoderPcm16B::AudioDecoderPcm16B() {}
 
-int AudioDecoderPcm16B::Init() {
-  return 0;
+void AudioDecoderPcm16B::Reset() {
 }
 size_t AudioDecoderPcm16B::Channels() const {
   return 1;
@@ -143,6 +140,7 @@ size_t AudioDecoderPcm16BMultiCh::Channels() const {
 #ifdef WEBRTC_CODEC_ILBC
 AudioDecoderIlbc::AudioDecoderIlbc() {
   WebRtcIlbcfix_DecoderCreate(&dec_state_);
+  WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
 }
 
 AudioDecoderIlbc::~AudioDecoderIlbc() {
@@ -170,8 +168,8 @@ size_t AudioDecoderIlbc::DecodePlc(size_t num_frames, int16_t* decoded) {
   return WebRtcIlbcfix_NetEqPlc(dec_state_, decoded, num_frames);
 }
 
-int AudioDecoderIlbc::Init() {
-  return WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
+void AudioDecoderIlbc::Reset() {
+  WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
 }
 
 size_t AudioDecoderIlbc::Channels() const {
@@ -183,6 +181,7 @@ size_t AudioDecoderIlbc::Channels() const {
 #ifdef WEBRTC_CODEC_G722
 AudioDecoderG722::AudioDecoderG722() {
   WebRtcG722_CreateDecoder(&dec_state_);
+  WebRtcG722_DecoderInit(dec_state_);
 }
 
 AudioDecoderG722::~AudioDecoderG722() {
@@ -206,8 +205,8 @@ int AudioDecoderG722::DecodeInternal(const uint8_t* encoded,
   return static_cast<int>(ret);
 }
 
-int AudioDecoderG722::Init() {
-  return WebRtcG722_DecoderInit(dec_state_);
+void AudioDecoderG722::Reset() {
+  WebRtcG722_DecoderInit(dec_state_);
 }
 
 int AudioDecoderG722::PacketDuration(const uint8_t* encoded,
@@ -223,6 +222,8 @@ size_t AudioDecoderG722::Channels() const {
 AudioDecoderG722Stereo::AudioDecoderG722Stereo() {
   WebRtcG722_CreateDecoder(&dec_state_left_);
   WebRtcG722_CreateDecoder(&dec_state_right_);
+  WebRtcG722_DecoderInit(dec_state_left_);
+  WebRtcG722_DecoderInit(dec_state_right_);
 }
 
 AudioDecoderG722Stereo::~AudioDecoderG722Stereo() {
@@ -265,11 +266,9 @@ size_t AudioDecoderG722Stereo::Channels() const {
   return 2;
 }
 
-int AudioDecoderG722Stereo::Init() {
-  int r = WebRtcG722_DecoderInit(dec_state_left_);
-  if (r != 0)
-    return r;
-  return WebRtcG722_DecoderInit(dec_state_right_);
+void AudioDecoderG722Stereo::Reset() {
+  WebRtcG722_DecoderInit(dec_state_left_);
+  WebRtcG722_DecoderInit(dec_state_right_);
 }
 
 // Split the stereo packet and place left and right channel after each other
@@ -306,6 +305,7 @@ AudioDecoderOpus::AudioDecoderOpus(size_t num_channels)
     : channels_(num_channels) {
   DCHECK(num_channels == 1 || num_channels == 2);
   WebRtcOpus_DecoderCreate(&dec_state_, static_cast<int>(channels_));
+  WebRtcOpus_DecoderInit(dec_state_);
 }
 
 AudioDecoderOpus::~AudioDecoderOpus() {
@@ -348,8 +348,8 @@ int AudioDecoderOpus::DecodeRedundantInternal(const uint8_t* encoded,
   return ret;
 }
 
-int AudioDecoderOpus::Init() {
-  return WebRtcOpus_DecoderInit(dec_state_);
+void AudioDecoderOpus::Reset() {
+  WebRtcOpus_DecoderInit(dec_state_);
 }
 
 int AudioDecoderOpus::PacketDuration(const uint8_t* encoded,
@@ -381,14 +381,15 @@ size_t AudioDecoderOpus::Channels() const {
 
 AudioDecoderCng::AudioDecoderCng() {
   CHECK_EQ(0, WebRtcCng_CreateDec(&dec_state_));
+  WebRtcCng_InitDec(dec_state_);
 }
 
 AudioDecoderCng::~AudioDecoderCng() {
   WebRtcCng_FreeDec(dec_state_);
 }
 
-int AudioDecoderCng::Init() {
-  return WebRtcCng_InitDec(dec_state_);
+void AudioDecoderCng::Reset() {
+  WebRtcCng_InitDec(dec_state_);
 }
 
 int AudioDecoderCng::IncomingPacket(const uint8_t* payload,

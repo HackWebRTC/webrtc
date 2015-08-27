@@ -988,9 +988,6 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutputExternalDecoder) {
   MockAudioDecoder mock_decoder;
   // Set expectations on the mock decoder and also delegate the calls to the
   // real decoder.
-  EXPECT_CALL(mock_decoder, Init())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::Init));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, _, _, _, _))
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::IncomingPacket));

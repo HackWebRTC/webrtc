@@ -185,7 +185,7 @@ template <typename T>
 AudioDecoderIsacT<T>::AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo)
     : bwinfo_(bwinfo), decoder_sample_rate_hz_(-1) {
   CHECK_EQ(0, T::Create(&isac_state_));
-  CHECK_EQ(0, T::DecoderInit(isac_state_));
+  T::DecoderInit(isac_state_);
   if (bwinfo_) {
     IsacBandwidthInfo bwinfo;
     T::GetBandwidthInfo(isac_state_, &bwinfo);
@@ -232,8 +232,8 @@ size_t AudioDecoderIsacT<T>::DecodePlc(size_t num_frames, int16_t* decoded) {
 }
 
 template <typename T>
-int AudioDecoderIsacT<T>::Init() {
-  return T::DecoderInit(isac_state_);
+void AudioDecoderIsacT<T>::Reset() {
+  T::DecoderInit(isac_state_);
 }
 
 template <typename T>

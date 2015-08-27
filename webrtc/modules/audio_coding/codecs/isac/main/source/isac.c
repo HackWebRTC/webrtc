@@ -924,12 +924,8 @@ int16_t WebRtcIsac_GetNewBitStream(ISACStruct*  ISAC_main_inst,
  *
  * Input:
  *        - ISAC_main_inst    : ISAC instance.
- *
- * Return value
- *                            :  0 - Ok
- *                              -1 - Error
  */
-static int16_t DecoderInitLb(ISACLBStruct* instISAC) {
+static void DecoderInitLb(ISACLBStruct* instISAC) {
   int i;
   /* Initialize stream vector to zero. */
   for (i = 0; i < STREAM_SIZE_MAX_60; i++) {
@@ -940,10 +936,9 @@ static int16_t DecoderInitLb(ISACLBStruct* instISAC) {
   WebRtcIsac_InitPostFilterbank(
     &instISAC->ISACdecLB_obj.postfiltbankstr_obj);
   WebRtcIsac_InitPitchFilter(&instISAC->ISACdecLB_obj.pitchfiltstr_obj);
-  return 0;
 }
 
-static int16_t DecoderInitUb(ISACUBStruct* instISAC) {
+static void DecoderInitUb(ISACUBStruct* instISAC) {
   int i;
   /* Init stream vector to zero */
   for (i = 0; i < STREAM_SIZE_MAX_60; i++) {
@@ -953,24 +948,18 @@ static int16_t DecoderInitUb(ISACUBStruct* instISAC) {
   WebRtcIsac_InitMasking(&instISAC->ISACdecUB_obj.maskfiltstr_obj);
   WebRtcIsac_InitPostFilterbank(
     &instISAC->ISACdecUB_obj.postfiltbankstr_obj);
-  return (0);
 }
 
-int16_t WebRtcIsac_DecoderInit(ISACStruct* ISAC_main_inst) {
+void WebRtcIsac_DecoderInit(ISACStruct* ISAC_main_inst) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
 
-  if (DecoderInitLb(&instISAC->instLB) < 0) {
-    return -1;
-  }
+  DecoderInitLb(&instISAC->instLB);
   if (instISAC->decoderSamplingRateKHz == kIsacSuperWideband) {
     memset(instISAC->synthesisFBState1, 0,
            FB_STATE_SIZE_WORD32 * sizeof(int32_t));
     memset(instISAC->synthesisFBState2, 0,
            FB_STATE_SIZE_WORD32 * sizeof(int32_t));
-
-    if (DecoderInitUb(&(instISAC->instUB)) < 0) {
-      return -1;
-    }
+    DecoderInitUb(&(instISAC->instUB));
   }
   if ((instISAC->initFlag & BIT_MASK_ENC_INIT) != BIT_MASK_ENC_INIT) {
     WebRtcIsac_InitBandwidthEstimator(&instISAC->bwestimator_obj,
@@ -979,7 +968,6 @@ int16_t WebRtcIsac_DecoderInit(ISACStruct* ISAC_main_inst) {
   }
   instISAC->initFlag |= BIT_MASK_DEC_INIT;
   instISAC->resetFlag_8kHz = 0;
-  return 0;
 }
 
 
@@ -2353,9 +2341,7 @@ int16_t WebRtcIsac_SetDecSampRate(ISACStruct* ISAC_main_inst,
       memset(instISAC->synthesisFBState2, 0,
              FB_STATE_SIZE_WORD32 * sizeof(int32_t));
 
-      if (DecoderInitUb(&(instISAC->instUB)) < 0) {
-        return -1;
-      }
+      DecoderInitUb(&instISAC->instUB);
   }
   instISAC->decoderSamplingRateKHz = decoder_operational_rate;
   return 0;

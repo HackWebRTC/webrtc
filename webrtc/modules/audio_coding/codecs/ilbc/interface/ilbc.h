@@ -159,8 +159,8 @@ extern "C" {
 
   int16_t WebRtcIlbcfix_DecoderInit(IlbcDecoderInstance *iLBCdec_inst,
                                     int16_t frameLen);
-  int16_t WebRtcIlbcfix_DecoderInit20Ms(IlbcDecoderInstance *iLBCdec_inst);
-  int16_t WebRtcIlbcfix_Decoderinit30Ms(IlbcDecoderInstance *iLBCdec_inst);
+  void WebRtcIlbcfix_DecoderInit20Ms(IlbcDecoderInstance* iLBCdec_inst);
+  void WebRtcIlbcfix_Decoderinit30Ms(IlbcDecoderInstance* iLBCdec_inst);
 
   /****************************************************************************
    * WebRtcIlbcfix_Decode(...)

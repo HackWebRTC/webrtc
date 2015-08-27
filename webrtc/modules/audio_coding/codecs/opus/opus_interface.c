@@ -250,13 +250,9 @@ int WebRtcOpus_DecoderChannels(OpusDecInst* inst) {
   return inst->channels;
 }
 
-int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst) {
-  int error = opus_decoder_ctl(inst->decoder, OPUS_RESET_STATE);
-  if (error == OPUS_OK) {
-    inst->in_dtx_mode = 0;
-    return 0;
-  }
-  return -1;
+void WebRtcOpus_DecoderInit(OpusDecInst* inst) {
+  opus_decoder_ctl(inst->decoder, OPUS_RESET_STATE);
+  inst->in_dtx_mode = 0;
 }
 
 /* For decoder to determine if it is to output speech or comfort noise. */

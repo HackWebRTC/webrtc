@@ -166,13 +166,7 @@ int main(int argc, char* argv[])
       return -1;
     }
 
-    // Initialize Decoder
-    if(WebRtcIsac_DecoderInit(codecInstance[clientCntr]) < 0)
-    {
-      printf("Could not initialize decoder of client %d\n",
-             clientCntr + 1);
-      return -1;
-    }
+    WebRtcIsac_DecoderInit(codecInstance[clientCntr]);
 
     // setup Rate if in Instantaneous mode
     if(codingMode != 0)

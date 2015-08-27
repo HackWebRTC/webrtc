@@ -28,7 +28,7 @@ using ::testing::Invoke;
 class ExternalPcm16B : public AudioDecoder {
  public:
   ExternalPcm16B() {}
-  virtual int Init() { return 0; }
+  void Reset() override {}
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -58,8 +58,8 @@ class MockExternalPcm16B : public ExternalPcm16B {
         .WillByDefault(Invoke(&real_, &ExternalPcm16B::HasDecodePlc));
     ON_CALL(*this, DecodePlc(_, _))
         .WillByDefault(Invoke(&real_, &ExternalPcm16B::DecodePlc));
-    ON_CALL(*this, Init())
-        .WillByDefault(Invoke(&real_, &ExternalPcm16B::Init));
+    ON_CALL(*this, Reset())
+        .WillByDefault(Invoke(&real_, &ExternalPcm16B::Reset));
     ON_CALL(*this, IncomingPacket(_, _, _, _, _))
         .WillByDefault(Invoke(&real_, &ExternalPcm16B::IncomingPacket));
     ON_CALL(*this, ErrorCode())
@@ -79,8 +79,7 @@ class MockExternalPcm16B : public ExternalPcm16B {
       bool());
   MOCK_METHOD2(DecodePlc,
       size_t(size_t num_frames, int16_t* decoded));
-  MOCK_METHOD0(Init,
-      int());
+  MOCK_METHOD0(Reset, void());
   MOCK_METHOD5(IncomingPacket,
       int(const uint8_t* payload, size_t payload_len,
           uint16_t rtp_sequence_number, uint32_t rtp_timestamp,

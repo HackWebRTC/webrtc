@@ -48,7 +48,7 @@ void IsacSpeedTest::SetUp() {
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcIsacfix_Create(&ISACFIX_main_inst_));
   EXPECT_EQ(0, WebRtcIsacfix_EncoderInit(ISACFIX_main_inst_, 1));
-  EXPECT_EQ(0, WebRtcIsacfix_DecoderInit(ISACFIX_main_inst_));
+  WebRtcIsacfix_DecoderInit(ISACFIX_main_inst_);
   // Set bitrate and block length.
   EXPECT_EQ(0, WebRtcIsacfix_Control(ISACFIX_main_inst_, bit_rate_,
                                      block_duration_ms_));

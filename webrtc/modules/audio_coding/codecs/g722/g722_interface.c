@@ -66,17 +66,10 @@ int16_t WebRtcG722_CreateDecoder(G722DecInst **G722dec_inst)
     }
 }
 
-int16_t WebRtcG722_DecoderInit(G722DecInst *G722dec_inst)
-{
-    // Create and/or reset the G.722 decoder
-    // Bitrate 64 kbps and wideband mode (2)
-    G722dec_inst = (G722DecInst *) WebRtc_g722_decode_init(
-        (G722DecoderState*) G722dec_inst, 64000, 2);
-    if (G722dec_inst == NULL) {
-        return -1;
-    } else {
-        return 0;
-    }
+void WebRtcG722_DecoderInit(G722DecInst* inst) {
+  // Create and/or reset the G.722 decoder
+  // Bitrate 64 kbps and wideband mode (2)
+  WebRtc_g722_decode_init((G722DecoderState*)inst, 64000, 2);
 }
 
 int WebRtcG722_FreeDecoder(G722DecInst *G722dec_inst)

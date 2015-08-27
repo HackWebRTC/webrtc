@@ -157,15 +157,9 @@ extern "C" {
    *
    * Input:
    *        - ISAC_main_inst    : ISAC instance.
-   *
-   * Return value
-   *                            : 0 - Ok
-   *                             -1 - Error
    */
 
-  int16_t WebRtcIsac_DecoderInit(
-      ISACStruct* ISAC_main_inst);
-
+  void WebRtcIsac_DecoderInit(ISACStruct* ISAC_main_inst);
 
   /******************************************************************************
    * WebRtcIsac_UpdateBwEstimate(...)

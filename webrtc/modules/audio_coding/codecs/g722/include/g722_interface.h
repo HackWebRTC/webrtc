@@ -113,22 +113,16 @@ size_t WebRtcG722_Encode(G722EncInst* G722enc_inst,
  */
 int16_t WebRtcG722_CreateDecoder(G722DecInst **G722dec_inst);
 
-
 /****************************************************************************
  * WebRtcG722_DecoderInit(...)
  *
- * This function initializes a G729 instance
+ * This function initializes a G722 instance
  *
  * Input:
- *     - G729_decinst_t    : G729 instance, i.e. the user that should receive
- *                           be initialized
- *
- * Return value            :  0 - Ok
- *                           -1 - Error
+ *     - inst      : G722 instance
  */
 
-int16_t WebRtcG722_DecoderInit(G722DecInst *G722dec_inst);
-
+void WebRtcG722_DecoderInit(G722DecInst* inst);
 
 /****************************************************************************
  * WebRtcG722_FreeDecoder(...)

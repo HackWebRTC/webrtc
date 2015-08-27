@@ -376,7 +376,7 @@ TEST_P(OpusTest, OpusDecodeInit) {
                 kOpus20msFrameSamples, opus_decoder_, output_data_decode,
                 &audio_type)));
 
-  EXPECT_EQ(0, WebRtcOpus_DecoderInit(opus_decoder_));
+  WebRtcOpus_DecoderInit(opus_decoder_);
 
   EXPECT_EQ(kOpus20msFrameSamples,
             static_cast<size_t>(WebRtcOpus_Decode(

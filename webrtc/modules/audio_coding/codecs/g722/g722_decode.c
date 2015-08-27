@@ -157,11 +157,7 @@ static void block4(G722DecoderState *s, int band, int d)
 G722DecoderState* WebRtc_g722_decode_init(G722DecoderState* s,
                                           int rate,
                                           int options) {
-    if (s == NULL)
-    {
-        if ((s = (G722DecoderState *) malloc(sizeof(*s))) == NULL)
-            return NULL;
-    }
+    s = s ? s : malloc(sizeof(*s));
     memset(s, 0, sizeof(*s));
     if (rate == 48000)
         s->bits_per_sample = 6;

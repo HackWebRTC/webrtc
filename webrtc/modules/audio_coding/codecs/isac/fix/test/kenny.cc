@@ -539,12 +539,7 @@ int main(int argc, char* argv[])
         printf("\n\n Error in encoderinit: %d.\n\n", errtype);
       }
 
-      err = WebRtcIsacfix_DecoderInit(ISAC_main_inst);
-      /* Error check */
-      if (err < 0) {
-        errtype=WebRtcIsacfix_GetErrorCode(ISAC_main_inst);
-        printf("\n\n Error in decoderinit: %d.\n\n", errtype);
-      }
+      WebRtcIsacfix_DecoderInit(ISAC_main_inst);
     }
 
 

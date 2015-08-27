@@ -212,11 +212,8 @@ int WebRtcOpus_DecoderChannels(OpusDecInst* inst);
  *
  * Input:
  *      - inst               : Decoder context
- *
- * Return value              :  0 - Success
- *                             -1 - Error
  */
-int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst);
+void WebRtcOpus_DecoderInit(OpusDecInst* inst);
 
 /****************************************************************************
  * WebRtcOpus_Decode(...)

@@ -40,8 +40,6 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
         payload_size_bytes_(0),
         last_send_time_(0),
         last_arrival_time_(0) {
-    // Init() will trigger external_decoder_->Init().
-    EXPECT_CALL(*external_decoder_, Init());
     // NetEq is not allowed to delete the external decoder (hence Times(0)).
     EXPECT_CALL(*external_decoder_, Die()).Times(0);
     Init();

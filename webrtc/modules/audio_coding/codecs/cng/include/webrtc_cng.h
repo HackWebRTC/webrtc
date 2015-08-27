@@ -70,7 +70,7 @@ int16_t WebRtcCng_CreateDec(CNG_dec_inst** cng_inst);
 
 int WebRtcCng_InitEnc(CNG_enc_inst* cng_inst, int fs, int16_t interval,
                       int16_t quality);
-int16_t WebRtcCng_InitDec(CNG_dec_inst* cng_inst);
+void WebRtcCng_InitDec(CNG_dec_inst* cng_inst);
 
 /****************************************************************************
  * WebRtcCng_FreeEnc/Dec(...)

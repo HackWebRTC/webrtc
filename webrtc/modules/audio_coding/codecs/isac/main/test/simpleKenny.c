@@ -253,10 +253,7 @@ int main(int argc, char* argv[]) {
     printf("cannot initialize encoder\n");
     return -1;
   }
-  if (WebRtcIsac_DecoderInit(ISAC_main_inst) < 0) {
-    printf("cannot initialize decoder\n");
-    return -1;
-  }
+  WebRtcIsac_DecoderInit(ISAC_main_inst);
 
   // {
   //   int32_t b1, b2;

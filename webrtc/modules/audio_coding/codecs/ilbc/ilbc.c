@@ -131,13 +131,11 @@ int16_t WebRtcIlbcfix_DecoderInit(IlbcDecoderInstance* iLBCdec_inst,
     return(-1);
   }
 }
-int16_t WebRtcIlbcfix_DecoderInit20Ms(IlbcDecoderInstance *iLBCdec_inst) {
+void WebRtcIlbcfix_DecoderInit20Ms(IlbcDecoderInstance* iLBCdec_inst) {
   WebRtcIlbcfix_InitDecode((IlbcDecoder*) iLBCdec_inst, 20, 1);
-  return(0);
 }
-int16_t WebRtcIlbcfix_Decoderinit30Ms(IlbcDecoderInstance *iLBCdec_inst) {
+void WebRtcIlbcfix_Decoderinit30Ms(IlbcDecoderInstance* iLBCdec_inst) {
   WebRtcIlbcfix_InitDecode((IlbcDecoder*) iLBCdec_inst, 30, 1);
-  return(0);
 }
 
 

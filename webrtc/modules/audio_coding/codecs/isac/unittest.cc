@@ -111,7 +111,7 @@ void TestGetSetBandwidthInfo(const int16_t* speech_data,
   typename T::instance_type* encdec;
   ASSERT_EQ(0, T::Create(&encdec));
   ASSERT_EQ(0, T::EncoderInit(encdec, adaptive ? 0 : 1));
-  ASSERT_EQ(0, T::DecoderInit(encdec));
+  T::DecoderInit(encdec);
   ASSERT_EQ(0, T::SetEncSampRate(encdec, sample_rate_hz));
   if (adaptive)
     ASSERT_EQ(0, T::ControlBwe(encdec, bit_rate, frame_size_ms, false));
@@ -129,7 +129,7 @@ void TestGetSetBandwidthInfo(const int16_t* speech_data,
     ASSERT_EQ(0, T::Control(enc, bit_rate, frame_size_ms));
   typename T::instance_type* dec;
   ASSERT_EQ(0, T::Create(&dec));
-  ASSERT_EQ(0, T::DecoderInit(dec));
+  T::DecoderInit(dec);
   T::SetInitialBweBottleneck(dec, bit_rate);
   T::SetEncSampRateInDecoder(dec, sample_rate_hz);
 

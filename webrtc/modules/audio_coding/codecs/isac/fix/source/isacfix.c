@@ -568,13 +568,9 @@ int16_t WebRtcIsacfix_GetNewBitStream(ISACFIX_MainStruct *ISAC_main_inst,
  *
  * Input:
  *      - ISAC_main_inst    : ISAC instance.
- *
- * Return value
- *                          :  0 - Ok
- *                            -1 - Error
  */
 
-int16_t WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
+void WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
 {
   ISACFIX_SubStruct *ISAC_inst;
 
@@ -597,8 +593,6 @@ int16_t WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
 #ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
   WebRtcIsacfix_InitPreFilterbank(&ISAC_inst->ISACdec_obj.decimatorstr_obj);
 #endif
-
-  return 0;
 }
 
 

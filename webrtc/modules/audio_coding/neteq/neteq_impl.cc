@@ -1178,15 +1178,14 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
 
   if (reset_decoder_) {
     // TODO(hlundin): Write test for this.
-    // Reset decoder.
-    if (decoder) {
-      decoder->Init();
-    }
+    if (decoder)
+      decoder->Reset();
+
     // Reset comfort noise decoder.
     AudioDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
-    if (cng_decoder) {
-      cng_decoder->Init();
-    }
+    if (cng_decoder)
+      cng_decoder->Reset();
+
     reset_decoder_ = false;
   }
 
@@ -1896,11 +1895,9 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
     mute_factor_array_[i] = 16384;  // 1.0 in Q14.
   }
 
-  // Reset comfort noise decoder, if there is one active.
   AudioDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
-  if (cng_decoder) {
-    cng_decoder->Init();
-  }
+  if (cng_decoder)
+    cng_decoder->Reset();
 
   // Reinit post-decode VAD with new sample rate.
   assert(vad_.get());  // Cannot be NULL here.

@@ -50,8 +50,8 @@ struct IsacFloat {
     return WebRtcIsac_DecodePlc(inst, decoded, num_lost_frames);
   }
 
-  static inline int16_t DecoderInit(instance_type* inst) {
-    return WebRtcIsac_DecoderInit(inst);
+  static inline void DecoderInit(instance_type* inst) {
+    WebRtcIsac_DecoderInit(inst);
   }
   static inline int Encode(instance_type* inst,
                            const int16_t* speech_in,
