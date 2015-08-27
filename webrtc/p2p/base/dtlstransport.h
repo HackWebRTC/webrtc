@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
 #define WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
 
+#include "webrtc/base/checks.h"
 #include "webrtc/p2p/base/dtlstransportchannel.h"
 #include "webrtc/p2p/base/transport.h"
 
@@ -23,6 +24,7 @@ namespace cricket {
 class PortAllocator;
 
 // Base should be a descendant of cricket::Transport
+// TODO(hbos): Add appropriate DCHECK thread checks to all methods.
 template<class Base>
 class DtlsTransport : public Base {
  public:
@@ -30,9 +32,9 @@ class DtlsTransport : public Base {
                 rtc::Thread* worker_thread,
                 const std::string& content_name,
                 PortAllocator* allocator,
-                rtc::SSLIdentity* identity)
+                const rtc::scoped_refptr<rtc::RTCCertificate>& certificate)
       : Base(signaling_thread, worker_thread, content_name, allocator),
-        identity_(identity),
+        certificate_(certificate),
         secure_role_(rtc::SSL_CLIENT),
         ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10) {
   }
@@ -40,33 +42,39 @@ class DtlsTransport : public Base {
   ~DtlsTransport() {
     Base::DestroyAllChannels();
   }
-  virtual void SetIdentity_w(rtc::SSLIdentity* identity) {
-    identity_ = identity;
+  void SetCertificate_w(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override {
+    DCHECK(Base::worker_thread()->IsCurrent());
+    certificate_ = certificate;
   }
-  virtual bool GetIdentity_w(rtc::SSLIdentity** identity) {
-    if (!identity_)
+  bool GetCertificate_w(
+      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) override {
+    DCHECK(Base::worker_thread()->IsCurrent());
+    if (!certificate_)
       return false;
 
-    *identity = identity_->GetReference();
+    *certificate = certificate_;
     return true;
   }
 
   virtual bool SetSslMaxProtocolVersion_w(rtc::SSLProtocolVersion version) {
+    DCHECK(Base::worker_thread()->IsCurrent());
     ssl_max_version_ = version;
     return true;
   }
 
   virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
                                                 std::string* error_desc) {
+    DCHECK(Base::worker_thread()->IsCurrent());
     rtc::SSLFingerprint* local_fp =
         Base::local_description()->identity_fingerprint.get();
 
     if (local_fp) {
       // Sanity check local fingerprint.
-      if (identity_) {
+      if (certificate_) {
         rtc::scoped_ptr<rtc::SSLFingerprint> local_fp_tmp(
             rtc::SSLFingerprint::Create(local_fp->algorithm,
-                                              identity_));
+                                        certificate_->identity()));
         ASSERT(local_fp_tmp.get() != NULL);
         if (!(*local_fp_tmp == *local_fp)) {
           std::ostringstream desc;
@@ -81,10 +89,12 @@ class DtlsTransport : public Base {
             error_desc);
       }
     } else {
-      identity_ = NULL;
+      certificate_ = nullptr;
     }
 
-    if (!channel->SetLocalIdentity(identity_)) {
+    // TODO(hbos): SetLocalCertificate
+    if (!channel->SetLocalIdentity(
+        certificate_ ? certificate_->identity() : nullptr)) {
       return BadTransportDescription("Failed to set local identity.",
                                      error_desc);
     }
@@ -95,6 +105,7 @@ class DtlsTransport : public Base {
 
   virtual bool NegotiateTransportDescription_w(ContentAction local_role,
                                                std::string* error_desc) {
+    DCHECK(Base::worker_thread()->IsCurrent());
     if (!Base::local_description() || !Base::remote_description()) {
       const std::string msg = "Local and Remote description must be set before "
                               "transport descriptions are negotiated";
@@ -211,6 +222,7 @@ class DtlsTransport : public Base {
   }
 
   virtual bool GetSslRole_w(rtc::SSLRole* ssl_role) const {
+    DCHECK(Base::worker_thread()->IsCurrent());
     ASSERT(ssl_role != NULL);
     *ssl_role = secure_role_;
     return true;
@@ -220,6 +232,7 @@ class DtlsTransport : public Base {
   virtual bool ApplyNegotiatedTransportDescription_w(
       TransportChannelImpl* channel,
       std::string* error_desc) {
+    DCHECK(Base::worker_thread()->IsCurrent());
     // Set ssl role. Role must be set before fingerprint is applied, which
     // initiates DTLS setup.
     if (!channel->SetSslRole(secure_role_)) {
@@ -237,7 +250,7 @@ class DtlsTransport : public Base {
     return Base::ApplyNegotiatedTransportDescription_w(channel, error_desc);
   }
 
-  rtc::SSLIdentity* identity_;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::SSLRole secure_role_;
   rtc::SSLProtocolVersion ssl_max_version_;
   rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint_;

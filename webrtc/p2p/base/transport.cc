@@ -126,15 +126,18 @@ void Transport::SetIceRole(IceRole role) {
   worker_thread_->Invoke<void>(Bind(&Transport::SetIceRole_w, this, role));
 }
 
-void Transport::SetIdentity(rtc::SSLIdentity* identity) {
-  worker_thread_->Invoke<void>(Bind(&Transport::SetIdentity_w, this, identity));
+void Transport::SetCertificate(
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+  worker_thread_->Invoke<void>(Bind(&Transport::SetCertificate_w, this,
+                                    certificate));
 }
 
-bool Transport::GetIdentity(rtc::SSLIdentity** identity) {
+bool Transport::GetCertificate(
+    rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
   // The identity is set on the worker thread, so for safety it must also be
   // acquired on the worker thread.
   return worker_thread_->Invoke<bool>(
-      Bind(&Transport::GetIdentity_w, this, identity));
+      Bind(&Transport::GetCertificate_w, this, certificate));
 }
 
 bool Transport::GetRemoteCertificate(rtc::SSLCertificate** cert) {

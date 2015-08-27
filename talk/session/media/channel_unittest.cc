@@ -196,13 +196,15 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     if (flags1 & DTLS) {
       // Confirmed to work with KT_RSA and KT_ECDSA.
-      identity1_.reset(rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT));
-      session1_.set_ssl_identity(identity1_.get());
+      session1_.set_ssl_rtccertificate(rtc::RTCCertificate::Create(
+          rtc::scoped_ptr<rtc::SSLIdentity>(rtc::SSLIdentity::Generate(
+              "session1", rtc::KT_DEFAULT)).Pass()));
     }
     if (flags2 & DTLS) {
       // Confirmed to work with KT_RSA and KT_ECDSA.
-      identity2_.reset(rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT));
-      session2_.set_ssl_identity(identity2_.get());
+      session2_.set_ssl_rtccertificate(rtc::RTCCertificate::Create(
+          rtc::scoped_ptr<rtc::SSLIdentity>(rtc::SSLIdentity::Generate(
+              "session2", rtc::KT_DEFAULT)).Pass()));
     }
 
     // Add stream information (SSRC) to the local content but not to the remote
@@ -1791,8 +1793,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   typename T::Content local_media_content2_;
   typename T::Content remote_media_content1_;
   typename T::Content remote_media_content2_;
-  rtc::scoped_ptr<rtc::SSLIdentity> identity1_;
-  rtc::scoped_ptr<rtc::SSLIdentity> identity2_;
   // The RTP and RTCP packets to send in the tests.
   std::string rtp_packet_;
   std::string rtcp_packet_;

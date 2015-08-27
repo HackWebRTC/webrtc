@@ -3575,20 +3575,17 @@ TEST_P(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   EXPECT_EQ(new_recv_port, portnum);
 }
 
-// TODO(hbos): Add the following test once RTCCertificate is passed around
-// outside of WebRtcSessionDescriptionFactory code and there exists a
-// WebRtcSession::certificate().
-//TEST_F(WebRtcSessionTest, TestUsesProvidedCertificate) {
-//  rtc::scoped_refptr<rtc::RTCCertificate> certificate =
-//      FakeDtlsIdentityStore::GenerateCertificate();
-//
-//  PeerConnectionInterface::RTCConfiguration configuration;
-//  configuration.certificates.push_back(certificate);
-//  Init(nullptr, configuration);
-//  EXPECT_TRUE_WAIT(!session_->waiting_for_identity_for_testing(), 1000);
-//
-//  EXPECT_EQ(session_->certificate(), certificate);
-//}
+TEST_F(WebRtcSessionTest, TestUsesProvidedCertificate) {
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate =
+      FakeDtlsIdentityStore::GenerateCertificate();
+
+  PeerConnectionInterface::RTCConfiguration configuration;
+  configuration.certificates.push_back(certificate);
+  Init(nullptr, configuration);
+  EXPECT_TRUE_WAIT(!session_->waiting_for_certificate_for_testing(), 1000);
+
+  EXPECT_EQ(session_->certificate_for_testing(), certificate);
+}
 
 // Verifies that CreateOffer succeeds when CreateOffer is called before async
 // identity generation is finished (even if a certificate is provided this is
@@ -3597,7 +3594,7 @@ TEST_P(WebRtcSessionTest, TestCreateOfferBeforeIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   InitWithDtls(GetParam());
 
-  EXPECT_TRUE(session_->waiting_for_identity_for_testing());
+  EXPECT_TRUE(session_->waiting_for_certificate_for_testing());
   mediastream_signaling_.SendAudioVideoStream1();
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
 
@@ -3634,7 +3631,7 @@ TEST_P(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   InitWithDtls(GetParam());
 
-  EXPECT_TRUE_WAIT(!session_->waiting_for_identity_for_testing(), 1000);
+  EXPECT_TRUE_WAIT(!session_->waiting_for_certificate_for_testing(), 1000);
 
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   EXPECT_TRUE(offer != NULL);
@@ -3646,7 +3643,7 @@ TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnFailure) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   InitWithDtlsIdentityGenFail();
 
-  EXPECT_TRUE_WAIT(!session_->waiting_for_identity_for_testing(), 1000);
+  EXPECT_TRUE_WAIT(!session_->waiting_for_certificate_for_testing(), 1000);
 
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   EXPECT_TRUE(offer == NULL);

@@ -246,13 +246,14 @@ class WebRtcSession : public cricket::BaseSession,
 
   void ResetIceRestartLatch();
 
-  // Called when an SSLIdentity is generated or retrieved by
+  // Called when an RTCCertificate is generated or retrieved by
   // WebRTCSessionDescriptionFactory. Should happen before setLocalDescription.
-  void OnIdentityReady(rtc::SSLIdentity* identity);
+  void OnCertificateReady(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   void OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp);
 
   // For unit test.
-  bool waiting_for_identity_for_testing() const;
+  bool waiting_for_certificate_for_testing() const;
 
   void set_metrics_observer(
       webrtc::MetricsObserverInterface* metrics_observer) {

@@ -58,12 +58,16 @@ class DtlsTestClient : public sigslot::has_slots<> {
       received_dtls_client_hello_(false),
       received_dtls_server_hello_(false) {
   }
-  void CreateIdentity(rtc::KeyType key_type) {
-    identity_.reset(rtc::SSLIdentity::Generate(name_, key_type));
+  void CreateCertificate(rtc::KeyType key_type) {
+    certificate_ = rtc::RTCCertificate::Create(
+        rtc::scoped_ptr<rtc::SSLIdentity>(
+            rtc::SSLIdentity::Generate(name_, key_type)).Pass());
   }
-  rtc::SSLIdentity* identity() { return identity_.get(); }
+  const rtc::scoped_refptr<rtc::RTCCertificate>& certificate() {
+    return certificate_;
+  }
   void SetupSrtp() {
-    ASSERT(identity_.get() != NULL);
+    ASSERT(certificate_);
     use_dtls_srtp_ = true;
   }
   void SetupMaxProtocolVersion(rtc::SSLProtocolVersion version) {
@@ -72,8 +76,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
   void SetupChannels(int count, cricket::IceRole role) {
     transport_.reset(new cricket::DtlsTransport<cricket::FakeTransport>(
-        signaling_thread_, worker_thread_, "dtls content name", NULL,
-        identity_.get()));
+        signaling_thread_, worker_thread_, "dtls content name", nullptr,
+        certificate_));
     transport_->SetAsync(true);
     transport_->SetIceRole(role);
     transport_->SetIceTiebreaker(
@@ -114,36 +118,36 @@ class DtlsTestClient : public sigslot::has_slots<> {
   void Negotiate(DtlsTestClient* peer, cricket::ContentAction action,
                  ConnectionRole local_role, ConnectionRole remote_role,
                  int flags) {
-    Negotiate(identity_.get(), (identity_) ? peer->identity_.get() : NULL,
+    Negotiate(certificate_, certificate_ ? peer->certificate_ : nullptr,
               action, local_role, remote_role, flags);
   }
 
   // Allow any DTLS configuration to be specified (including invalid ones).
-  void Negotiate(rtc::SSLIdentity* local_identity,
-                 rtc::SSLIdentity* remote_identity,
+  void Negotiate(const rtc::scoped_refptr<rtc::RTCCertificate>& local_cert,
+                 const rtc::scoped_refptr<rtc::RTCCertificate>& remote_cert,
                  cricket::ContentAction action,
                  ConnectionRole local_role,
                  ConnectionRole remote_role,
                  int flags) {
     rtc::scoped_ptr<rtc::SSLFingerprint> local_fingerprint;
     rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint;
-    if (local_identity) {
+    if (local_cert) {
       std::string digest_algorithm;
-      ASSERT_TRUE(local_identity->certificate().GetSignatureDigestAlgorithm(
+      ASSERT_TRUE(local_cert->ssl_certificate().GetSignatureDigestAlgorithm(
           &digest_algorithm));
       ASSERT_FALSE(digest_algorithm.empty());
       local_fingerprint.reset(rtc::SSLFingerprint::Create(
-          digest_algorithm, local_identity));
+          digest_algorithm, local_cert->identity()));
       ASSERT_TRUE(local_fingerprint.get() != NULL);
       EXPECT_EQ(rtc::DIGEST_SHA_256, digest_algorithm);
     }
-    if (remote_identity) {
+    if (remote_cert) {
       std::string digest_algorithm;
-      ASSERT_TRUE(remote_identity->certificate().GetSignatureDigestAlgorithm(
+      ASSERT_TRUE(remote_cert->ssl_certificate().GetSignatureDigestAlgorithm(
           &digest_algorithm));
       ASSERT_FALSE(digest_algorithm.empty());
       remote_fingerprint.reset(rtc::SSLFingerprint::Create(
-          digest_algorithm, remote_identity));
+          digest_algorithm, remote_cert->identity()));
       ASSERT_TRUE(remote_fingerprint.get() != NULL);
       EXPECT_EQ(rtc::DIGEST_SHA_256, digest_algorithm);
     }
@@ -163,7 +167,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
         cricket::ICEMODE_FULL, local_role,
          // If remote if the offerer and has no DTLS support, answer will be
         // without any fingerprint.
-        (action == cricket::CA_ANSWER && !remote_identity) ?
+        (action == cricket::CA_ANSWER && !remote_cert) ?
             NULL : local_fingerprint.get(),
         cricket::Candidates());
 
@@ -186,7 +190,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
       ASSERT_EQ(expect_success, transport_->SetLocalTransportDescription(
           local_desc, cricket::CA_ANSWER, NULL));
     }
-    negotiated_dtls_ = (local_identity && remote_identity);
+    negotiated_dtls_ = (local_cert && remote_cert);
   }
 
   bool Connect(DtlsTestClient* peer) {
@@ -252,7 +256,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
                          static_cast<uint32>(sent));
 
       // Only set the bypass flag if we've activated DTLS.
-      int flags = (identity_.get() && srtp) ? cricket::PF_SRTP_BYPASS : 0;
+      int flags = (certificate_ && srtp) ? cricket::PF_SRTP_BYPASS : 0;
       rtc::PacketOptions packet_options;
       int rv = channels_[channel]->SendPacket(
           packet.get(), size, packet_options, flags);
@@ -333,7 +337,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     ASSERT_TRUE(VerifyPacket(data, size, &packet_num));
     received_.insert(packet_num);
     // Only DTLS-SRTP packets should have the bypass flag set.
-    int expected_flags = (identity_.get() && IsRtpLeadByte(data[0])) ?
+    int expected_flags = (certificate_ && IsRtpLeadByte(data[0])) ?
         cricket::PF_SRTP_BYPASS : 0;
     ASSERT_EQ(expected_flags, flags);
   }
@@ -370,7 +374,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   std::string name_;
   rtc::Thread* signaling_thread_;
   rtc::Thread* worker_thread_;
-  rtc::scoped_ptr<rtc::SSLIdentity> identity_;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::scoped_ptr<cricket::FakeTransport> transport_;
   std::vector<cricket::DtlsTransportChannelWrapper*> channels_;
   size_t packet_size_;
@@ -407,10 +411,10 @@ class DtlsTransportChannelTest : public testing::Test {
   }
   void PrepareDtls(bool c1, bool c2, rtc::KeyType key_type) {
     if (c1) {
-      client1_.CreateIdentity(key_type);
+      client1_.CreateCertificate(key_type);
     }
     if (c2) {
-      client2_.CreateIdentity(key_type);
+      client2_.CreateCertificate(key_type);
     }
     if (c1 && c2)
       use_dtls_ = true;
@@ -826,17 +830,17 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   Negotiate();
 
-  rtc::scoped_ptr<rtc::SSLIdentity> identity1;
-  rtc::scoped_ptr<rtc::SSLIdentity> identity2;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate1;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate2;
   rtc::scoped_ptr<rtc::SSLCertificate> remote_cert1;
   rtc::scoped_ptr<rtc::SSLCertificate> remote_cert2;
 
   // After negotiation, each side has a distinct local certificate, but still no
   // remote certificate, because connection has not yet occurred.
-  ASSERT_TRUE(client1_.transport()->GetIdentity(identity1.accept()));
-  ASSERT_TRUE(client2_.transport()->GetIdentity(identity2.accept()));
-  ASSERT_NE(identity1->certificate().ToPEMString(),
-            identity2->certificate().ToPEMString());
+  ASSERT_TRUE(client1_.transport()->GetCertificate(&certificate1));
+  ASSERT_TRUE(client2_.transport()->GetCertificate(&certificate2));
+  ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
+            certificate2->ssl_certificate().ToPEMString());
   ASSERT_FALSE(
       client1_.transport()->GetRemoteCertificate(remote_cert1.accept()));
   ASSERT_FALSE(remote_cert1 != NULL);
@@ -851,24 +855,24 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
 
-  rtc::scoped_ptr<rtc::SSLIdentity> identity1;
-  rtc::scoped_ptr<rtc::SSLIdentity> identity2;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate1;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate2;
   rtc::scoped_ptr<rtc::SSLCertificate> remote_cert1;
   rtc::scoped_ptr<rtc::SSLCertificate> remote_cert2;
 
   // After connection, each side has a distinct local certificate.
-  ASSERT_TRUE(client1_.transport()->GetIdentity(identity1.accept()));
-  ASSERT_TRUE(client2_.transport()->GetIdentity(identity2.accept()));
-  ASSERT_NE(identity1->certificate().ToPEMString(),
-            identity2->certificate().ToPEMString());
+  ASSERT_TRUE(client1_.transport()->GetCertificate(&certificate1));
+  ASSERT_TRUE(client2_.transport()->GetCertificate(&certificate2));
+  ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
+            certificate2->ssl_certificate().ToPEMString());
 
   // Each side's remote certificate is the other side's local certificate.
   ASSERT_TRUE(
       client1_.transport()->GetRemoteCertificate(remote_cert1.accept()));
   ASSERT_EQ(remote_cert1->ToPEMString(),
-            identity2->certificate().ToPEMString());
+            certificate2->ssl_certificate().ToPEMString());
   ASSERT_TRUE(
       client2_.transport()->GetRemoteCertificate(remote_cert2.accept()));
   ASSERT_EQ(remote_cert2->ToPEMString(),
-            identity1->certificate().ToPEMString());
+            certificate1->ssl_certificate().ToPEMString());
 }

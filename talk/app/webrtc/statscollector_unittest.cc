@@ -656,7 +656,9 @@ class StatsCollectorTest : public testing::Test {
         transport_stats;
 
     // Fake certificates to report.
-    rtc::FakeSSLIdentity local_identity(local_cert);
+    rtc::scoped_refptr<rtc::RTCCertificate> local_certificate(
+        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::FakeSSLIdentity>(
+            new rtc::FakeSSLIdentity(local_cert)).Pass()));
     rtc::scoped_ptr<rtc::FakeSSLCertificate> remote_cert_copy(
         remote_cert.GetReference());
 
@@ -666,7 +668,7 @@ class StatsCollectorTest : public testing::Test {
             session_.signaling_thread(),
             session_.worker_thread(),
             transport_stats.content_name));
-    transport->SetIdentity(&local_identity);
+    transport->SetCertificate(local_certificate);
     cricket::FakeTransportChannel* channel =
         static_cast<cricket::FakeTransportChannel*>(
             transport->CreateChannel(channel_stats.component));

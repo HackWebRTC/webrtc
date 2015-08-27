@@ -38,6 +38,7 @@ struct PacketMessageData : public rtc::MessageData {
 // Fake transport channel class, which can be passed to anything that needs a
 // transport channel. Can be informed of another FakeTransportChannel via
 // SetDestination.
+// TODO(hbos): Move implementation to .cc file, this and other classes in file.
 class FakeTransportChannel : public TransportChannelImpl,
                              public rtc::MessageHandler {
  public:
@@ -332,12 +333,11 @@ class FakeTransport : public Transport {
   FakeTransport(rtc::Thread* signaling_thread,
                 rtc::Thread* worker_thread,
                 const std::string& content_name,
-                PortAllocator* alllocator = NULL)
+                PortAllocator* alllocator = nullptr)
       : Transport(signaling_thread, worker_thread,
-                  content_name, NULL),
-      dest_(NULL),
-      async_(false),
-      identity_(NULL) {
+                  content_name, nullptr),
+        dest_(nullptr),
+        async_(false) {
   }
   ~FakeTransport() {
     DestroyAllChannels();
@@ -350,7 +350,9 @@ class FakeTransport : public Transport {
     dest_ = dest;
     for (ChannelMap::iterator it = channels_.begin(); it != channels_.end();
          ++it) {
-      it->second->SetLocalIdentity(identity_);
+      // TODO(hbos): SetLocalCertificate
+      it->second->SetLocalIdentity(
+          certificate_ ? certificate_->identity() : nullptr);
       SetChannelDestination(it->first, it->second);
     }
   }
@@ -362,8 +364,9 @@ class FakeTransport : public Transport {
     }
   }
 
-  void set_identity(rtc::SSLIdentity* identity) {
-    identity_ = identity;
+  void set_certificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+    certificate_ = certificate;
   }
 
   using Transport::local_description;
@@ -385,14 +388,16 @@ class FakeTransport : public Transport {
     channels_.erase(channel->component());
     delete channel;
   }
-  virtual void SetIdentity_w(rtc::SSLIdentity* identity) {
-    identity_ = identity;
+  void SetCertificate_w(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override {
+    certificate_ = certificate;
   }
-  virtual bool GetIdentity_w(rtc::SSLIdentity** identity) {
-    if (!identity_)
+  bool GetCertificate_w(
+      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) override {
+    if (!certificate_)
       return false;
 
-    *identity = identity_->GetReference();
+    *certificate = certificate_;
     return true;
   }
 
@@ -407,7 +412,9 @@ class FakeTransport : public Transport {
     if (dest_) {
       dest_channel = dest_->GetFakeChannel(component);
       if (dest_channel) {
-        dest_channel->SetLocalIdentity(dest_->identity_);
+        // TODO(hbos): SetLocalCertificate
+        dest_channel->SetLocalIdentity(
+            dest_->certificate_ ? dest_->certificate_->identity() : nullptr);
       }
     }
     channel->SetDestination(dest_channel);
@@ -418,7 +425,7 @@ class FakeTransport : public Transport {
   ChannelMap channels_;
   FakeTransport* dest_;
   bool async_;
-  rtc::SSLIdentity* identity_;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
 };
 
 // Fake session class, which can be passed into a BaseChannel object for
@@ -474,13 +481,14 @@ class FakeSession : public BaseSession {
   }
 
   // TODO: Hoist this into Session when we re-work the Session code.
-  void set_ssl_identity(rtc::SSLIdentity* identity) {
+  void set_ssl_rtccertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
     for (TransportMap::const_iterator it = transport_proxies().begin();
         it != transport_proxies().end(); ++it) {
       // We know that we have a FakeTransport*
 
-      static_cast<FakeTransport*>(it->second->impl())->set_identity
-          (identity);
+      static_cast<FakeTransport*>(it->second->impl())->set_certificate
+          (certificate);
     }
   }
 

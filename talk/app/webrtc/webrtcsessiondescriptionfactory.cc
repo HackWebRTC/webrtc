@@ -98,14 +98,14 @@ void WebRtcIdentityRequestObserver::OnSuccess(
       rtc::kPemTypeRsaPrivateKey,
       reinterpret_cast<const unsigned char*>(der_private_key.data()),
       der_private_key.length());
-  rtc::SSLIdentity* identity =
-      rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert);
-  SignalIdentityReady(identity);
+  rtc::scoped_ptr<rtc::SSLIdentity> identity(
+      rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert));
+  SignalCertificateReady(rtc::RTCCertificate::Create(identity.Pass()));
 }
 
 void WebRtcIdentityRequestObserver::OnSuccess(
     rtc::scoped_ptr<rtc::SSLIdentity> identity) {
-  SignalIdentityReady(identity.release());
+  SignalCertificateReady(rtc::RTCCertificate::Create(identity.Pass()));
 }
 
 // static
@@ -195,8 +195,8 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 
   identity_request_observer_->SignalRequestFailed.connect(
       this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
-  identity_request_observer_->SignalIdentityReady.connect(
-      this, &WebRtcSessionDescriptionFactory::SetIdentity);
+  identity_request_observer_->SignalCertificateReady.connect(
+      this, &WebRtcSessionDescriptionFactory::SetCertificate);
 
   rtc::KeyType key_type = rtc::KT_DEFAULT;
   LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sending DTLS identity request (key "
@@ -387,9 +387,7 @@ void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
           static_cast<rtc::ScopedRefMessageData<rtc::RTCCertificate>*>(
               msg->pdata);
       LOG(LS_INFO) << "Using certificate supplied to the constructor.";
-      // TODO(hbos): Pass around scoped_refptr<RTCCertificate> instead of
-      // SSLIdentity* (then there will be no need to do GetReference here).
-      SetIdentity(param->data()->identity()->GetReference());
+      SetCertificate(param->data());
       delete param;
       break;
     }
@@ -516,14 +514,16 @@ void WebRtcSessionDescriptionFactory::OnIdentityRequestFailed(int error) {
   FailPendingRequests(kFailedDueToIdentityFailed);
 }
 
-void WebRtcSessionDescriptionFactory::SetIdentity(
-    rtc::SSLIdentity* identity) {
-  LOG(LS_VERBOSE) << "Setting new identity";
+void WebRtcSessionDescriptionFactory::SetCertificate(
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+  DCHECK(certificate);
+  LOG(LS_VERBOSE) << "Setting new certificate";
 
   certificate_request_state_ = CERTIFICATE_SUCCEEDED;
-  SignalIdentityReady(identity);
+  SignalCertificateReady(certificate);
 
-  transport_desc_factory_.set_identity(identity);
+  // TODO(hbos): set_certificate
+  transport_desc_factory_.set_identity(certificate->identity());
   transport_desc_factory_.set_secure(cricket::SEC_ENABLED);
 
   while (!create_session_description_requests_.empty()) {

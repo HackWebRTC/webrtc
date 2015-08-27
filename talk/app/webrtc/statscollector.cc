@@ -692,7 +692,7 @@ void StatsCollector::ExtractSessionInfo() {
     // expose them in stats reports.  All channels in a transport share the
     // same local and remote certificates.
     //
-    // Note that Transport::GetIdentity and Transport::GetRemoteCertificate
+    // Note that Transport::GetCertificate and Transport::GetRemoteCertificate
     // invoke method calls on the worker thread and block this thread, but
     // messages are still processed on this thread, which may blow way the
     // existing transports. So we cannot reuse |transport| after these calls.
@@ -700,9 +700,9 @@ void StatsCollector::ExtractSessionInfo() {
 
     cricket::Transport* transport =
         session_->GetTransport(transport_iter.second.content_name);
-    rtc::scoped_ptr<rtc::SSLIdentity> identity;
-    if (transport && transport->GetIdentity(identity.accept())) {
-      StatsReport* r = AddCertificateReports(&(identity->certificate()));
+    rtc::scoped_refptr<rtc::RTCCertificate> certificate;
+    if (transport && transport->GetCertificate(&certificate)) {
+      StatsReport* r = AddCertificateReports(&(certificate->ssl_certificate()));
       if (r)
         local_cert_report_id = r->id();
     }

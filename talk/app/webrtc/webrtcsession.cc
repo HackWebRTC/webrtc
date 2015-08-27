@@ -564,7 +564,6 @@ WebRtcSession::~WebRtcSession() {
   for (size_t i = 0; i < saved_candidates_.size(); ++i) {
     delete saved_candidates_[i];
   }
-  delete identity();
 }
 
 bool WebRtcSession::Initialize(
@@ -751,8 +750,8 @@ bool WebRtcSession::Initialize(
     }
   }
 
-  webrtc_session_desc_factory_->SignalIdentityReady.connect(
-      this, &WebRtcSession::OnIdentityReady);
+  webrtc_session_desc_factory_->SignalCertificateReady.connect(
+      this, &WebRtcSession::OnCertificateReady);
 
   if (options.disable_encryption) {
     webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
@@ -1392,11 +1391,12 @@ void WebRtcSession::ResetIceRestartLatch() {
   ice_restart_latch_->Reset();
 }
 
-void WebRtcSession::OnIdentityReady(rtc::SSLIdentity* identity) {
-  SetIdentity(identity);
+void WebRtcSession::OnCertificateReady(
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+  SetCertificate(certificate);
 }
 
-bool WebRtcSession::waiting_for_identity_for_testing() const {
+bool WebRtcSession::waiting_for_certificate_for_testing() const {
   return webrtc_session_desc_factory_->waiting_for_certificate_for_testing();
 }
 

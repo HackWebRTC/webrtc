@@ -58,7 +58,8 @@ class WebRtcIdentityRequestObserver : public DtlsIdentityRequestObserver,
   void OnSuccess(rtc::scoped_ptr<rtc::SSLIdentity> identity) override;
 
   sigslot::signal1<int> SignalRequestFailed;
-  sigslot::signal1<rtc::SSLIdentity*> SignalIdentityReady;
+  sigslot::signal1<const rtc::scoped_refptr<rtc::RTCCertificate>&>
+      SignalCertificateReady;
 };
 
 struct CreateSessionDescriptionRequest {
@@ -134,7 +135,8 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   void SetSdesPolicy(cricket::SecurePolicy secure_policy);
   cricket::SecurePolicy SdesPolicy() const;
 
-  sigslot::signal1<rtc::SSLIdentity*> SignalIdentityReady;
+  sigslot::signal1<const rtc::scoped_refptr<rtc::RTCCertificate>&>
+      SignalCertificateReady;
 
   // For testing.
   bool waiting_for_certificate_for_testing() const {
@@ -176,7 +178,8 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
       SessionDescriptionInterface* description);
 
   void OnIdentityRequestFailed(int error);
-  void SetIdentity(rtc::SSLIdentity* identity);
+  void SetCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
 
   std::queue<CreateSessionDescriptionRequest>
       create_session_description_requests_;

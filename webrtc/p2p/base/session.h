@@ -20,6 +20,7 @@
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/base/refcount.h"
+#include "webrtc/base/rtccertificate.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/socketaddress.h"
@@ -100,7 +101,8 @@ class TransportProxy : public sigslot::has_slots<> {
 
   // Simple functions that thunk down to the same functions on Transport.
   void SetIceRole(IceRole role);
-  void SetIdentity(rtc::SSLIdentity* identity);
+  void SetCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   bool SetLocalTransportDescription(const TransportDescription& description,
                                     ContentAction action,
                                     std::string* error_desc);
@@ -315,14 +317,19 @@ class BaseSession : public sigslot::has_slots<>,
   virtual void DestroyChannel(const std::string& content_name,
                               int component);
 
-  rtc::SSLIdentity* identity() { return identity_; }
-
   // Set the ice connection receiving timeout.
   void SetIceConnectionReceivingTimeout(int timeout_ms);
 
+  // For testing.
+  const rtc::scoped_refptr<rtc::RTCCertificate>&
+  certificate_for_testing() const {
+    return certificate_;
+  }
+
  protected:
   // Specifies the identity to use in this session.
-  bool SetIdentity(rtc::SSLIdentity* identity);
+  bool SetCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
 
   bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
 
@@ -444,7 +451,7 @@ class BaseSession : public sigslot::has_slots<>,
   const std::string sid_;
   const std::string content_type_;
   bool initiator_;
-  rtc::SSLIdentity* identity_;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::SSLProtocolVersion ssl_max_version_;
   rtc::scoped_ptr<const SessionDescription> local_description_;
   rtc::scoped_ptr<SessionDescription> remote_description_;

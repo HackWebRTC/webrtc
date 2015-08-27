@@ -38,6 +38,7 @@
 #include "webrtc/p2p/base/transportinfo.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/base/rtccertificate.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslstreamadapter.h"
 
@@ -145,9 +146,9 @@ class Transport : public rtc::MessageHandler,
   virtual ~Transport();
 
   // Returns the signaling thread. The app talks to Transport on this thread.
-  rtc::Thread* signaling_thread() { return signaling_thread_; }
+  rtc::Thread* signaling_thread() const { return signaling_thread_; }
   // Returns the worker thread. The actual networking is done on this thread.
-  rtc::Thread* worker_thread() { return worker_thread_; }
+  rtc::Thread* worker_thread() const { return worker_thread_; }
 
   // Returns the content_name of this transport.
   const std::string& content_name() const { return content_name_; }
@@ -200,10 +201,11 @@ class Transport : public rtc::MessageHandler,
   void SetChannelReceivingTimeout(int timeout_ms);
 
   // Must be called before applying local session description.
-  void SetIdentity(rtc::SSLIdentity* identity);
+  void SetCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
 
   // Get a copy of the local identity provided by SetIdentity.
-  bool GetIdentity(rtc::SSLIdentity** identity);
+  bool GetCertificate(rtc::scoped_refptr<rtc::RTCCertificate>* certificate);
 
   // Get a copy of the remote certificate in use by the specified channel.
   bool GetRemoteCertificate(rtc::SSLCertificate** cert);
@@ -299,9 +301,11 @@ class Transport : public rtc::MessageHandler,
     return remote_description_.get();
   }
 
-  virtual void SetIdentity_w(rtc::SSLIdentity* identity) {}
+  virtual void SetCertificate_w(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {}
 
-  virtual bool GetIdentity_w(rtc::SSLIdentity** identity) {
+  virtual bool GetCertificate_w(
+      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
     return false;
   }
 
