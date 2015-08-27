@@ -57,14 +57,14 @@ class DtlsTransport : public Base {
     return true;
   }
 
-  virtual bool SetSslMaxProtocolVersion_w(rtc::SSLProtocolVersion version) {
+  bool SetSslMaxProtocolVersion_w(rtc::SSLProtocolVersion version) override {
     DCHECK(Base::worker_thread()->IsCurrent());
     ssl_max_version_ = version;
     return true;
   }
 
-  virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
-                                                std::string* error_desc) {
+  bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
+                                        std::string* error_desc) override {
     DCHECK(Base::worker_thread()->IsCurrent());
     rtc::SSLFingerprint* local_fp =
         Base::local_description()->identity_fingerprint.get();
@@ -103,8 +103,8 @@ class DtlsTransport : public Base {
     return Base::ApplyLocalTransportDescription_w(channel, error_desc);
   }
 
-  virtual bool NegotiateTransportDescription_w(ContentAction local_role,
-                                               std::string* error_desc) {
+  bool NegotiateTransportDescription_w(ContentAction local_role,
+                                       std::string* error_desc) override {
     DCHECK(Base::worker_thread()->IsCurrent());
     if (!Base::local_description() || !Base::remote_description()) {
       const std::string msg = "Local and Remote description must be set before "
@@ -205,14 +205,14 @@ class DtlsTransport : public Base {
     return Base::NegotiateTransportDescription_w(local_role, error_desc);
   }
 
-  virtual DtlsTransportChannelWrapper* CreateTransportChannel(int component) {
+  DtlsTransportChannelWrapper* CreateTransportChannel(int component) override {
     DtlsTransportChannelWrapper* channel = new DtlsTransportChannelWrapper(
         this, Base::CreateTransportChannel(component));
     channel->SetSslMaxProtocolVersion(ssl_max_version_);
     return channel;
   }
 
-  virtual void DestroyTransportChannel(TransportChannelImpl* channel) {
+  void DestroyTransportChannel(TransportChannelImpl* channel) override {
     // Kind of ugly, but this lets us do the exact inverse of the create.
     DtlsTransportChannelWrapper* dtls_channel =
         static_cast<DtlsTransportChannelWrapper*>(channel);
@@ -221,7 +221,7 @@ class DtlsTransport : public Base {
     Base::DestroyTransportChannel(base_channel);
   }
 
-  virtual bool GetSslRole_w(rtc::SSLRole* ssl_role) const {
+  bool GetSslRole_w(rtc::SSLRole* ssl_role) const override {
     DCHECK(Base::worker_thread()->IsCurrent());
     ASSERT(ssl_role != NULL);
     *ssl_role = secure_role_;
@@ -229,9 +229,9 @@ class DtlsTransport : public Base {
   }
 
  private:
-  virtual bool ApplyNegotiatedTransportDescription_w(
+  bool ApplyNegotiatedTransportDescription_w(
       TransportChannelImpl* channel,
-      std::string* error_desc) {
+      std::string* error_desc) override {
     DCHECK(Base::worker_thread()->IsCurrent());
     // Set ssl role. Role must be set before fingerprint is applied, which
     // initiates DTLS setup.
