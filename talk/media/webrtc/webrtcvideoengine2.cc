@@ -303,6 +303,12 @@ static void MergeFecConfig(const webrtc::FecConfig& other,
     output->red_rtx_payload_type = other.red_rtx_payload_type;
   }
 }
+
+// Returns true if the given codec is disallowed from doing simulcast.
+bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
+  return CodecNamesEq(codec_name, kH264CodecName);
+}
+
 }  // namespace
 
 // Constants defined in talk/media/webrtc/constants.h
@@ -2095,9 +2101,17 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   clamped_codec.width = width;
   clamped_codec.height = height;
 
-  encoder_config.streams = CreateVideoStreams(
-      clamped_codec, parameters_.options, parameters_.max_bitrate_bps,
-      dimensions.is_screencast ? 1 : parameters_.config.rtp.ssrcs.size());
+  // By default, the stream count for the codec configuration should match the
+  // number of negotiated ssrcs. But if the codec is blacklisted for simulcast
+  // or a screencast, only configure a single stream.
+  size_t stream_count = parameters_.config.rtp.ssrcs.size();
+  if (IsCodecBlacklistedForSimulcast(codec.name) || dimensions.is_screencast) {
+    stream_count = 1;
+  }
+
+  encoder_config.streams =
+      CreateVideoStreams(clamped_codec, parameters_.options,
+                         parameters_.max_bitrate_bps, stream_count);
 
   // Conference mode screencast uses 2 temporal layers split at 100kbit.
   if (parameters_.options.conference_mode.GetWithDefaultIfUnset(false) &&

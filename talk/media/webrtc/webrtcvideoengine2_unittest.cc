@@ -644,6 +644,29 @@ TEST_F(WebRtcVideoEngine2Test,
   ASSERT_EQ(0u, encoder_factory.encoders().size());
 }
 
+TEST_F(WebRtcVideoEngine2Test, SimulcastDisabledForH264) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kH264Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+
+  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
+  EXPECT_TRUE(
+      channel->AddSendStream(cricket::CreateSimStreamParams("cname", ssrcs)));
+  // Set the stream to 720p. This should trigger a "real" encoder
+  // initialization.
+  cricket::VideoFormat format(
+      1280, 720, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420);
+  EXPECT_TRUE(channel->SetSendStreamFormat(ssrcs[0], format));
+  ASSERT_EQ(1u, encoder_factory.encoders().size());
+  FakeWebRtcVideoEncoder* encoder = encoder_factory.encoders()[0];
+  EXPECT_EQ(webrtc::kVideoCodecH264, encoder->GetCodecSettings().codecType);
+  EXPECT_EQ(1u, encoder->GetCodecSettings().numberOfSimulcastStreams);
+}
+
 // Test external codec with be added to the end of the supported codec list.
 TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecs) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
