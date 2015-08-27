@@ -187,9 +187,9 @@ AudioDecoderIsacT<T>::AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo)
   CHECK_EQ(0, T::Create(&isac_state_));
   T::DecoderInit(isac_state_);
   if (bwinfo_) {
-    IsacBandwidthInfo bwinfo;
-    T::GetBandwidthInfo(isac_state_, &bwinfo);
-    bwinfo_->Set(bwinfo);
+    IsacBandwidthInfo bi;
+    T::GetBandwidthInfo(isac_state_, &bi);
+    bwinfo_->Set(bi);
   }
 }
 
