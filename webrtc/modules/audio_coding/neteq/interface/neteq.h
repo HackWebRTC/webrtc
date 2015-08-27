@@ -215,8 +215,8 @@ class NetEq {
   // Not implemented.
   virtual int TargetDelay() = 0;
 
-  // Not implemented.
-  virtual int CurrentDelay() = 0;
+  // Returns the current total delay (packet buffer and sync buffer) in ms.
+  virtual int CurrentDelayMs() const = 0;
 
   // Sets the playout mode to |mode|.
   // Deprecated. Set the mode in the Config struct passed to the constructor.
