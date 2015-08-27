@@ -195,7 +195,7 @@ void StatisticsCalculator::LogDelayedPacketOutageEvent(int outage_duration_ms) {
 void StatisticsCalculator::StoreWaitingTime(int waiting_time_ms) {
   excess_buffer_delay_.RegisterSample(waiting_time_ms);
   DCHECK_LE(waiting_times_.size(), kLenWaitingTimes);
-  while (waiting_times_.size() >= kLenWaitingTimes) {
+  if (waiting_times_.size() == kLenWaitingTimes) {
     // Erase first value.
     waiting_times_.pop_front();
   }
