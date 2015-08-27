@@ -724,59 +724,18 @@ RTCPSender::BuildResult RTCPSender::BuildTMMBN(RtcpContext* ctx) {
   if (boundingSet == NULL)
     return BuildResult::kError;
 
-  // sanity
-  if (ctx->position + 12 + boundingSet->lengthOfSet() * 8 >= IP_PACKET_SIZE) {
-    LOG(LS_WARNING) << "Failed to build TMMBN.";
-    return BuildResult::kTruncated;
-  }
-
-  uint8_t FMT = 4;
-  // add TMMBN indicator
-  *ctx->AllocateData(1) = 0x80 + FMT;
-  *ctx->AllocateData(1) = 205;
-
-  // Add length later
-  int posLength = ctx->position;
-  ctx->AllocateData(2);
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // RFC 5104     4.2.2.2.  Semantics
-
-  // SSRC of media source
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), 0);
-
-  // Additional Feedback Control Information (FCI)
-  int numBoundingSet = 0;
-  for (uint32_t n = 0; n < boundingSet->lengthOfSet(); n++) {
-    if (boundingSet->Tmmbr(n) > 0) {
-      uint32_t tmmbrSSRC = boundingSet->Ssrc(n);
-      ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), tmmbrSSRC);
-
-      uint32_t bitRate = boundingSet->Tmmbr(n) * 1000;
-      uint32_t mmbrExp = 0;
-      for (int i = 0; i < 64; i++) {
-        if (bitRate <= (0x1FFFFu << i)) {
-          mmbrExp = i;
-          break;
-        }
-      }
-      uint32_t mmbrMantissa = (bitRate >> mmbrExp);
-      uint32_t measuredOH = boundingSet->PacketOH(n);
-
-      *ctx->AllocateData(1) =
-          static_cast<uint8_t>((mmbrExp << 2) + ((mmbrMantissa >> 15) & 0x03));
-      *ctx->AllocateData(1) = static_cast<uint8_t>(mmbrMantissa >> 7);
-      *ctx->AllocateData(1) = static_cast<uint8_t>((mmbrMantissa << 1) +
-                                                   ((measuredOH >> 8) & 0x01));
-      *ctx->AllocateData(1) = static_cast<uint8_t>(measuredOH);
-      numBoundingSet++;
+  rtcp::Tmmbn tmmbn;
+  tmmbn.From(ssrc_);
+  for (uint32_t i = 0; i < boundingSet->lengthOfSet(); i++) {
+    if (boundingSet->Tmmbr(i) > 0) {
+      tmmbn.WithTmmbr(boundingSet->Ssrc(i), boundingSet->Tmmbr(i),
+                      boundingSet->PacketOH(i));
     }
   }
-  uint16_t length = static_cast<uint16_t>(2 + 2 * numBoundingSet);
-  ctx->buffer[posLength++] = static_cast<uint8_t>(length >> 8);
-  ctx->buffer[posLength] = static_cast<uint8_t>(length);
+
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(tmmbn))
+    return BuildResult::kTruncated;
 
   return BuildResult::kSuccess;
 }
