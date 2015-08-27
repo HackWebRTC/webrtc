@@ -13,6 +13,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
 #include "webrtc/modules/audio_coding/neteq/expand.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_audio_decoder.h"
@@ -902,4 +903,43 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   EXPECT_EQ(kChannels, num_channels);
 }
 
+// This test inserts packets until the buffer is flushed. After that, it asks
+// NetEq for the network statistics. The purpose of the test is to make sure
+// that even though the buffer size increment is negative (which it becomes when
+// the packet causing a flush is inserted), the packet length stored in the
+// decision logic remains valid.
+TEST_F(NetEqImplTest, FloodBufferAndGetNetworkStats) {
+  UseNoMocks();
+  CreateInstance();
+
+  const size_t kPayloadLengthSamples = 80;
+  const size_t kPayloadLengthBytes = 2 * kPayloadLengthSamples;  // PCM 16-bit.
+  const uint8_t kPayloadType = 17;   // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
+  uint8_t payload[kPayloadLengthBytes] = {0};
+  WebRtcRTPHeader rtp_header;
+  rtp_header.header.payloadType = kPayloadType;
+  rtp_header.header.sequenceNumber = 0x1234;
+  rtp_header.header.timestamp = 0x12345678;
+  rtp_header.header.ssrc = 0x87654321;
+
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->RegisterPayloadType(kDecoderPCM16B, kPayloadType));
+
+  // Insert packets until the buffer flushes.
+  for (size_t i = 0; i <= config_.max_packets_in_buffer; ++i) {
+    EXPECT_EQ(i, packet_buffer_->NumPacketsInBuffer());
+    EXPECT_EQ(NetEq::kOK,
+              neteq_->InsertPacket(rtp_header, payload, kPayloadLengthBytes,
+                                   kReceiveTime));
+    rtp_header.header.timestamp +=
+        rtc::checked_cast<uint32_t>(kPayloadLengthSamples);
+    ++rtp_header.header.sequenceNumber;
+  }
+  EXPECT_EQ(1u, packet_buffer_->NumPacketsInBuffer());
+
+  // Ask for network statistics. This should not crash.
+  NetEqNetworkStatistics stats;
+  EXPECT_EQ(NetEq::kOK, neteq_->NetworkStatistics(&stats));
+}
 }  // namespace webrtc

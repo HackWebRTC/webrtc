@@ -612,7 +612,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   }
 
   // Insert packets in buffer.
-  size_t temp_bufsize = packet_buffer_->NumPacketsInBuffer();
+  const size_t buffer_length_before_insert =
+      packet_buffer_->NumPacketsInBuffer();
   ret = packet_buffer_->InsertPacketList(
       &packet_list,
       *decoder_database_,
@@ -668,14 +669,18 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   delay_manager_->LastDecoderType(dec_info->codec_type);
   if (delay_manager_->last_pack_cng_or_dtmf() == 0) {
     // Calculate the total speech length carried in each packet.
-    temp_bufsize = packet_buffer_->NumPacketsInBuffer() - temp_bufsize;
-    temp_bufsize *= decoder_frame_length_;
+    const size_t buffer_length_after_insert =
+        packet_buffer_->NumPacketsInBuffer();
 
-    if ((temp_bufsize > 0) &&
-        (temp_bufsize != decision_logic_->packet_length_samples())) {
-      decision_logic_->set_packet_length_samples(temp_bufsize);
-      delay_manager_->SetPacketAudioLength(
-          static_cast<int>((1000 * temp_bufsize) / fs_hz_));
+    if (buffer_length_after_insert > buffer_length_before_insert) {
+      const size_t packet_length_samples =
+          (buffer_length_after_insert - buffer_length_before_insert) *
+          decoder_frame_length_;
+      if (packet_length_samples != decision_logic_->packet_length_samples()) {
+        decision_logic_->set_packet_length_samples(packet_length_samples);
+        delay_manager_->SetPacketAudioLength(
+            rtc::checked_cast<int>((1000 * packet_length_samples) / fs_hz_));
+      }
     }
 
     // Update statistics.
