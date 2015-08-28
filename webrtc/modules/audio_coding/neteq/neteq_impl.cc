@@ -712,7 +712,6 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
   int return_value = GetDecision(&operation, &packet_list, &dtmf_event,
                                  &play_dtmf);
   if (return_value != 0) {
-    assert(false);
     last_mode_ = kModeError;
     return return_value;
   }
@@ -980,7 +979,6 @@ int NetEqImpl::GetDecision(Operations* operation,
     if (*play_dtmf && !header) {
       timestamp_ = dtmf_event->timestamp;
     } else {
-      assert(header);
       if (!header) {
         LOG(LS_ERROR) << "Packet missing where it shouldn't.";
         return -1;
