@@ -30,7 +30,7 @@ import android.hardware.Camera;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 
-import org.webrtc.VideoCapturerAndroid.CaptureFormat;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import org.webrtc.VideoRenderer.I420Frame;
 
 import java.util.ArrayList;
@@ -173,7 +173,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // to a Java video renderer using the front facing video capturer.
   // It tests both the Java and the C++ layer.
   public void testStartFrontFacingVideoCapturer() throws Exception {
-    starCapturerAndRender(VideoCapturerAndroid.getNameOfFrontFacingDevice());
+    starCapturerAndRender(CameraEnumerationAndroid.getNameOfFrontFacingDevice());
   }
 
   @SmallTest
@@ -184,7 +184,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     if (!HaveTwoCameras()) {
       return;
     }
-    starCapturerAndRender(VideoCapturerAndroid.getNameOfBackFacingDevice());
+    starCapturerAndRender(CameraEnumerationAndroid.getNameOfBackFacingDevice());
   }
 
   @SmallTest
@@ -246,14 +246,14 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   public void testStartStopWithDifferentResolutions() throws Exception {
     FakeCapturerObserver observer = new FakeCapturerObserver();
 
-    String deviceName = VideoCapturerAndroid.getDeviceName(0);
+    String deviceName = CameraEnumerationAndroid.getDeviceName(0);
     ArrayList<CaptureFormat> formats =
-        VideoCapturerAndroid.getSupportedFormats(0);
+        CameraEnumerationAndroid.getSupportedFormats(0);
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create(deviceName, null);
 
     for(int i = 0; i < 3 ; ++i) {
-      VideoCapturerAndroid.CaptureFormat format = formats.get(i);
+      CameraEnumerationAndroid.CaptureFormat format = formats.get(i);
       capturer.startCapture(format.width, format.height, format.maxFramerate,
           getInstrumentation().getContext(), observer);
       assertTrue(observer.WaitForCapturerToStart());
@@ -271,13 +271,13 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   public void testReturnBufferLate() throws Exception {
     FakeCapturerObserver observer = new FakeCapturerObserver();
 
-    String deviceName = VideoCapturerAndroid.getDeviceName(0);
+    String deviceName = CameraEnumerationAndroid.getDeviceName(0);
     ArrayList<CaptureFormat> formats =
-        VideoCapturerAndroid.getSupportedFormats(0);
+        CameraEnumerationAndroid.getSupportedFormats(0);
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create(deviceName, null);
 
-    VideoCapturerAndroid.CaptureFormat format = formats.get(0);
+    CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
     capturer.startCapture(format.width, format.height, format.maxFramerate,
         getInstrumentation().getContext(), observer);
     assertTrue(observer.WaitForCapturerToStart());

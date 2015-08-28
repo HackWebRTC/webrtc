@@ -140,15 +140,16 @@
                 # included here, or better yet, build a proper .jar in webrtc
                 # and include it here.
                 'android_java_files': [
+                  'app/webrtc/java/android/org/webrtc/CameraEnumerationAndroid.java',
                   'app/webrtc/java/android/org/webrtc/EglBase.java',
                   'app/webrtc/java/android/org/webrtc/GlRectDrawer.java',
                   'app/webrtc/java/android/org/webrtc/GlShader.java',
                   'app/webrtc/java/android/org/webrtc/GlUtil.java',
                   'app/webrtc/java/android/org/webrtc/RendererCommon.java',
+                  'app/webrtc/java/android/org/webrtc/VideoCapturerAndroid.java',
                   'app/webrtc/java/android/org/webrtc/VideoRendererGui.java',
-                  'app/webrtc/java/src/org/webrtc/MediaCodecVideoEncoder.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoDecoder.java',
-                  'app/webrtc/java/src/org/webrtc/VideoCapturerAndroid.java',
+                  'app/webrtc/java/src/org/webrtc/MediaCodecVideoEncoder.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViEAndroidGLES20.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViERenderer.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViESurfaceRenderer.java',

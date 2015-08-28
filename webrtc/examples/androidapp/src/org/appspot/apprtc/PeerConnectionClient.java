@@ -16,6 +16,7 @@ import android.util.Log;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.util.LooperExecutor;
+import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
@@ -329,7 +330,7 @@ public class PeerConnectionClient {
     }
 
     // Check if there is a camera on device and disable video call if not.
-    numberOfCameras = VideoCapturerAndroid.getDeviceCount();
+    numberOfCameras = CameraEnumerationAndroid.getDeviceCount();
     if (numberOfCameras == 0) {
       Log.w(TAG, "No camera on device. Switch to audio only call.");
       videoCallEnabled = false;
@@ -434,9 +435,9 @@ public class PeerConnectionClient {
 
     mediaStream = factory.createLocalMediaStream("ARDAMS");
     if (videoCallEnabled) {
-      String cameraDeviceName = VideoCapturerAndroid.getDeviceName(0);
+      String cameraDeviceName = CameraEnumerationAndroid.getDeviceName(0);
       String frontCameraDeviceName =
-          VideoCapturerAndroid.getNameOfFrontFacingDevice();
+          CameraEnumerationAndroid.getNameOfFrontFacingDevice();
       if (numberOfCameras > 1 && frontCameraDeviceName != null) {
         cameraDeviceName = frontCameraDeviceName;
       }
