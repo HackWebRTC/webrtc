@@ -460,9 +460,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         yuvImageRenderer.release();
       }
       instance.yuvImageRenderers.clear();
-      if (instance.drawer != null) {
-        instance.drawer.release();
-      }
     }
     instance.surface = null;
     eglContext = null;
