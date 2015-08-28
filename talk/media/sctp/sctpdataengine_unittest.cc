@@ -240,10 +240,16 @@ class SctpDataMediaChannelTest : public testing::Test,
     net2_.reset(new SctpFakeNetworkInterface(rtc::Thread::Current()));
     recv1_.reset(new SctpFakeDataReceiver());
     recv2_.reset(new SctpFakeDataReceiver());
+    chan1_ready_to_send_count_ = 0;
+    chan2_ready_to_send_count_ = 0;
     chan1_.reset(CreateChannel(net1_.get(), recv1_.get()));
     chan1_->set_debug_name("chan1/connector");
+    chan1_->SignalReadyToSend.connect(
+        this, &SctpDataMediaChannelTest::OnChan1ReadyToSend);
     chan2_.reset(CreateChannel(net2_.get(), recv2_.get()));
     chan2_->set_debug_name("chan2/listener");
+    chan2_->SignalReadyToSend.connect(
+        this, &SctpDataMediaChannelTest::OnChan2ReadyToSend);
     // Setup two connected channels ready to send and receive.
     net1_->SetDestination(chan2_.get());
     net2_->SetDestination(chan1_.get());
@@ -330,6 +336,8 @@ class SctpDataMediaChannelTest : public testing::Test,
   SctpFakeDataReceiver* receiver1() { return recv1_.get(); }
   SctpFakeDataReceiver* receiver2() { return recv2_.get(); }
 
+  int channel1_ready_to_send_count() { return chan1_ready_to_send_count_; }
+  int channel2_ready_to_send_count() { return chan2_ready_to_send_count_; }
  private:
   rtc::scoped_ptr<cricket::SctpDataEngine> engine_;
   rtc::scoped_ptr<SctpFakeNetworkInterface> net1_;
@@ -338,6 +346,18 @@ class SctpDataMediaChannelTest : public testing::Test,
   rtc::scoped_ptr<SctpFakeDataReceiver> recv2_;
   rtc::scoped_ptr<cricket::SctpDataMediaChannel> chan1_;
   rtc::scoped_ptr<cricket::SctpDataMediaChannel> chan2_;
+
+  int chan1_ready_to_send_count_;
+  int chan2_ready_to_send_count_;
+
+  void OnChan1ReadyToSend(bool send) {
+    if (send)
+      ++chan1_ready_to_send_count_;
+  }
+  void OnChan2ReadyToSend(bool send) {
+    if (send)
+      ++chan2_ready_to_send_count_;
+  }
 };
 
 // Verifies that SignalReadyToSend is fired.
@@ -484,6 +504,15 @@ TEST_F(SctpDataMediaChannelTest, ClosesStreamsOnBothSides) {
   EXPECT_TRUE_WAIT(chan_1_sig_receiver.WasStreamClosed(2), 1000);
   EXPECT_TRUE_WAIT(chan_1_sig_receiver.WasStreamClosed(3), 1000);
   EXPECT_TRUE_WAIT(chan_1_sig_receiver.WasStreamClosed(4), 1000);
+}
+
+TEST_F(SctpDataMediaChannelTest, EngineSignalsRightChannel) {
+  SetupConnectedChannels();
+  EXPECT_TRUE_WAIT(channel1()->socket() != NULL, 1000);
+  struct socket *sock = const_cast<struct socket*>(channel1()->socket());
+  int prior_count = channel1_ready_to_send_count();
+  cricket::SctpDataEngine::SendThresholdCallback(sock, 0);
+  EXPECT_GT(channel1_ready_to_send_count(), prior_count);
 }
 
 // Flaky on Linux and Windows. See webrtc:4453.
