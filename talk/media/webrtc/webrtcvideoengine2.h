@@ -458,6 +458,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         const VideoCodec& codec);
     void ClearDecoders(std::vector<AllocatedDecoder>* allocated_decoders);
 
+    std::string GetCodecNameFromPayloadType(int payload_type);
+
     webrtc::Call* const call_;
     const std::vector<uint32> ssrcs_;
     const std::vector<SsrcGroup> ssrc_groups_;

@@ -76,7 +76,7 @@ class VCMReceiveCallback {
     return -1;
   }
   // Called when the current receive codec changes.
-  virtual void IncomingCodecChanged(const VideoCodec& codec) {}
+  virtual void OnIncomingPayloadType(int payload_type) {}
 
  protected:
   virtual ~VCMReceiveCallback() {

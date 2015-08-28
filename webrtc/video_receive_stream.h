@@ -75,6 +75,8 @@ class VideoReceiveStream : public ReceiveStream {
     int min_playout_delay_ms = 0;
     int render_delay_ms = 10;
 
+    int current_payload_type = -1;
+
     int total_bitrate_bps = 0;
     int discarded_packets = 0;
 

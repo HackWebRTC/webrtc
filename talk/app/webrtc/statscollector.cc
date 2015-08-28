@@ -108,6 +108,11 @@ void ExtractCommonSendProperties(const cricket::MediaSenderInfo& info,
   report->AddInt64(StatsReport::kStatsValueNameRtt, info.rtt_ms);
 }
 
+void ExtractCommonReceiveProperties(const cricket::MediaReceiverInfo& info,
+                                    StatsReport* report) {
+  report->AddString(StatsReport::kStatsValueNameCodecName, info.codec_name);
+}
+
 void SetAudioProcessingStats(StatsReport* report, int signal_level,
     bool typing_noise_detected, int echo_return_loss,
     int echo_return_loss_enhancement, int echo_delay_median_ms,
@@ -131,6 +136,7 @@ void SetAudioProcessingStats(StatsReport* report, int signal_level,
 }
 
 void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
+  ExtractCommonReceiveProperties(info, report);
   const FloatForAdd floats[] = {
     { StatsReport::kStatsValueNameExpandRate, info.expand_rate },
     { StatsReport::kStatsValueNameSecondaryDecodedRate,
@@ -169,8 +175,6 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.bytes_rcvd);
   report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
                    info.capture_start_ntp_time_ms);
-
-  report->AddString(StatsReport::kStatsValueNameCodecName, info.codec_name);
 }
 
 void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
@@ -191,6 +195,7 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
 }
 
 void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
+  ExtractCommonReceiveProperties(info, report);
   report->AddInt64(StatsReport::kStatsValueNameBytesReceived,
                    info.bytes_rcvd);
   report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,

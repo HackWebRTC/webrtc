@@ -215,13 +215,11 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   stats_proxy_.reset(
       new ReceiveStatisticsProxy(config_.rtp.remote_ssrc, clock_));
 
+  vie_channel_->RegisterReceiveStatisticsProxy(stats_proxy_.get());
   vie_channel_->RegisterReceiveChannelRtcpStatisticsCallback(
       stats_proxy_.get());
   vie_channel_->RegisterReceiveChannelRtpStatisticsCallback(stats_proxy_.get());
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(stats_proxy_.get());
-  vie_channel_->RegisterCodecObserver(stats_proxy_.get());
-
-  vie_channel_->RegisterReceiveStatisticsProxy(stats_proxy_.get());
 
   DCHECK(!config_.decoders.empty());
   for (size_t i = 0; i < config_.decoders.size(); ++i) {
@@ -254,10 +252,6 @@ VideoReceiveStream::~VideoReceiveStream() {
   for (size_t i = 0; i < config_.decoders.size(); ++i)
     vie_channel_->DeRegisterExternalDecoder(config_.decoders[i].payload_type);
 
-  vie_channel_->RegisterCodecObserver(nullptr);
-  vie_channel_->RegisterReceiveChannelRtpStatisticsCallback(nullptr);
-  vie_channel_->RegisterReceiveChannelRtcpStatisticsCallback(nullptr);
-  vie_channel_->RegisterRtcpPacketTypeCounterObserver(nullptr);
   channel_group_->DeleteChannel(channel_id_);
 }
 

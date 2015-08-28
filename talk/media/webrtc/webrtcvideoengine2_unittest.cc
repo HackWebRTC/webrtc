@@ -2670,6 +2670,29 @@ TEST_F(WebRtcVideoChannel2Test, ReportsSsrcGroupsInStats) {
   EXPECT_EQ(receiver_sp.ssrc_groups, info.receivers[0].ssrc_groups);
 }
 
+TEST_F(WebRtcVideoChannel2Test, MapsReceivedPayloadTypeToCodecName) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  webrtc::VideoReceiveStream::Stats stats;
+  cricket::VideoMediaInfo info;
+
+  // Report no codec name before receiving.
+  stream->SetStats(stats);
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_STREQ("", info.receivers[0].codec_name.c_str());
+
+  // Report VP8 if we're receiving it.
+  stats.current_payload_type = kDefaultVp8PlType;
+  stream->SetStats(stats);
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_STREQ(kVp8CodecName, info.receivers[0].codec_name.c_str());
+
+  // Report no codec name for unknown playload types.
+  stats.current_payload_type = 3;
+  stream->SetStats(stats);
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_STREQ("", info.receivers[0].codec_name.c_str());
+}
+
 void WebRtcVideoChannel2Test::TestReceiveUnsignalledSsrcPacket(
     uint8_t payload_type,
     bool expect_created_receive_stream) {

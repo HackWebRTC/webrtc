@@ -31,8 +31,7 @@ class Clock;
 class ViECodec;
 class ViEDecoderObserver;
 
-class ReceiveStatisticsProxy : public ViEDecoderObserver,
-                               public VCMReceiveStatisticsCallback,
+class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                                public RtcpStatisticsCallback,
                                public RtcpPacketTypeCounterObserver,
                                public StreamDataCountersCallback {
@@ -44,25 +43,20 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
 
   void OnDecodedFrame();
   void OnRenderedFrame(int width, int height);
+  void OnIncomingPayloadType(int payload_type);
+  void OnIncomingRate(unsigned int framerate, unsigned int bitrate_bps);
+  void OnDecoderTiming(int decode_ms,
+                       int max_decode_ms,
+                       int current_delay_ms,
+                       int target_delay_ms,
+                       int jitter_buffer_ms,
+                       int min_playout_delay_ms,
+                       int render_delay_ms);
 
   // Overrides VCMReceiveStatisticsCallback.
   void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) override;
   void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
   void OnDiscardedPacketsUpdated(int discarded_packets) override;
-
-  // Overrides ViEDecoderObserver.
-  void IncomingCodecChanged(const int video_channel,
-                            const VideoCodec& video_codec) override {}
-  void IncomingRate(const int video_channel,
-                    const unsigned int framerate,
-                    const unsigned int bitrate_bps) override;
-  void DecoderTiming(int decode_ms,
-                     int max_decode_ms,
-                     int current_delay_ms,
-                     int target_delay_ms,
-                     int jitter_buffer_ms,
-                     int min_playout_delay_ms,
-                     int render_delay_ms) override;
 
   // Overrides RtcpStatisticsCallback.
   void StatisticsUpdated(const webrtc::RtcpStatistics& statistics,

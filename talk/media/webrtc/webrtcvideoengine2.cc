@@ -2583,6 +2583,17 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetSize(int width,
   last_height_ = height;
 }
 
+std::string
+WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetCodecNameFromPayloadType(
+    int payload_type) {
+  for (const webrtc::VideoReceiveStream::Decoder& decoder : config_.decoders) {
+    if (decoder.payload_type == payload_type) {
+      return decoder.payload_name;
+    }
+  }
+  return "";
+}
+
 VideoReceiverInfo
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   VideoReceiverInfo info;
@@ -2615,6 +2626,8 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   info.jitter_buffer_ms = stats.jitter_buffer_ms;
   info.min_playout_delay_ms = stats.min_playout_delay_ms;
   info.render_delay_ms = stats.render_delay_ms;
+
+  info.codec_name = GetCodecNameFromPayloadType(stats.current_payload_type);
 
   info.firs_sent = stats.rtcp_packet_type_counts.fir_packets;
   info.plis_sent = stats.rtcp_packet_type_counts.pli_packets;

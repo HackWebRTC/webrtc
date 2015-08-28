@@ -59,21 +59,25 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   return stats_;
 }
 
-void ReceiveStatisticsProxy::IncomingRate(const int video_channel,
-                                          const unsigned int framerate,
-                                          const unsigned int bitrate_bps) {
+void ReceiveStatisticsProxy::OnIncomingPayloadType(int payload_type) {
+  rtc::CritScope lock(&crit_);
+  stats_.current_payload_type = payload_type;
+}
+
+void ReceiveStatisticsProxy::OnIncomingRate(unsigned int framerate,
+                                            unsigned int bitrate_bps) {
   rtc::CritScope lock(&crit_);
   stats_.network_frame_rate = framerate;
   stats_.total_bitrate_bps = bitrate_bps;
 }
 
-void ReceiveStatisticsProxy::DecoderTiming(int decode_ms,
-                                           int max_decode_ms,
-                                           int current_delay_ms,
-                                           int target_delay_ms,
-                                           int jitter_buffer_ms,
-                                           int min_playout_delay_ms,
-                                           int render_delay_ms) {
+void ReceiveStatisticsProxy::OnDecoderTiming(int decode_ms,
+                                             int max_decode_ms,
+                                             int current_delay_ms,
+                                             int target_delay_ms,
+                                             int jitter_buffer_ms,
+                                             int min_playout_delay_ms,
+                                             int render_delay_ms) {
   rtc::CritScope lock(&crit_);
   stats_.decode_ms = decode_ms;
   stats_.max_decode_ms = max_decode_ms;

@@ -2216,6 +2216,11 @@ TEST_F(EndToEndTest, GetStats) {
             stats.rtcp_packet_type_counts.pli_packets != 0 ||
             stats.rtcp_packet_type_counts.nack_requests != 0 ||
             stats.rtcp_packet_type_counts.unique_nack_requests != 0;
+
+        assert(stats.current_payload_type == -1 ||
+               stats.current_payload_type == kFakeSendPayloadType);
+        receive_stats_filled_["IncomingPayloadType"] |=
+            stats.current_payload_type == kFakeSendPayloadType;
       }
 
       return AllStatsFilled(receive_stats_filled_);
