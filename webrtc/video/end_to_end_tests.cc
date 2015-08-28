@@ -82,11 +82,11 @@ class EndToEndTest : public test::CallTest {
 };
 
 TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
-  test::NullTransport transport;
-  CreateCalls(Call::Config(&transport), Call::Config(&transport));
+  CreateCalls(Call::Config(), Call::Config());
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  test::NullTransport transport;
+  CreateSendConfig(1, &transport);
+  CreateMatchingReceiveConfigs(&transport);
 
   CreateStreams();
 
@@ -97,11 +97,11 @@ TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
 }
 
 TEST_F(EndToEndTest, ReceiverCanBeStoppedTwice) {
-  test::NullTransport transport;
-  CreateCalls(Call::Config(&transport), Call::Config(&transport));
+  CreateCalls(Call::Config(), Call::Config());
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  test::NullTransport transport;
+  CreateSendConfig(1, &transport);
+  CreateMatchingReceiveConfigs(&transport);
 
   CreateStreams();
 
@@ -150,16 +150,14 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
     rtc::scoped_ptr<EventWrapper> event_;
   };
 
+  CreateCalls(Call::Config(), Call::Config());
+
   test::DirectTransport sender_transport, receiver_transport;
-
-  CreateCalls(Call::Config(&sender_transport),
-              Call::Config(&receiver_transport));
-
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  CreateSendConfig(1, &sender_transport);
+  CreateMatchingReceiveConfigs(&receiver_transport);
 
   TestFrameCallback pre_render_callback;
   receive_configs_[0].pre_render_callback = &pre_render_callback;
@@ -202,16 +200,14 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
     rtc::scoped_ptr<EventWrapper> event_;
   } renderer;
 
+  CreateCalls(Call::Config(), Call::Config());
+
   test::DirectTransport sender_transport, receiver_transport;
-
-  CreateCalls(Call::Config(&sender_transport),
-              Call::Config(&receiver_transport));
-
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  CreateSendConfig(1, &sender_transport);
+  CreateMatchingReceiveConfigs(&receiver_transport);
   receive_configs_[0].renderer = &renderer;
 
   CreateStreams();
@@ -641,7 +637,7 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
     // TODO(holmer): Investigate why we don't send FEC packets when the bitrate
     // is 10 kbps.
     Call::Config GetSenderCallConfig() override {
-      Call::Config config(SendTransport());
+      Call::Config config;
       const int kMinBitrateBps = 30000;
       config.bitrate_config.min_bitrate_bps = kMinBitrateBps;
       return config;
@@ -847,15 +843,13 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   TestFrameCallback pre_encode_callback(-1, 255);  // Changes luma to 255.
   TestFrameCallback pre_render_callback(255, 0);  // Changes luma from 255 to 0.
 
+  CreateCalls(Call::Config(), Call::Config());
+
   test::DirectTransport sender_transport, receiver_transport;
-
-  CreateCalls(Call::Config(&sender_transport),
-              Call::Config(&receiver_transport));
-
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1);
+  CreateSendConfig(1, &sender_transport);
   rtc::scoped_ptr<VideoEncoder> encoder(
       VideoEncoder::Create(VideoEncoder::kVp8));
   send_config_.encoder_settings.encoder = encoder.get();
@@ -865,7 +859,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   encoder_config_.streams[0].height = kHeight;
   send_config_.pre_encode_callback = &pre_encode_callback;
 
-  CreateMatchingReceiveConfigs();
+  CreateMatchingReceiveConfigs(&receiver_transport);
   receive_configs_[0].pre_render_callback = &pre_render_callback;
   receive_configs_[0].renderer = &renderer;
 
@@ -1016,16 +1010,15 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
     rtc::scoped_ptr<EventWrapper> delivered_packet_;
   };
 
+  CreateCalls(Call::Config(), Call::Config());
+
   test::DirectTransport send_transport, receive_transport;
-
-  CreateCalls(Call::Config(&send_transport), Call::Config(&receive_transport));
   PacketInputObserver input_observer(receiver_call_->Receiver());
-
   send_transport.SetReceiver(&input_observer);
   receive_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  CreateSendConfig(1, &send_transport);
+  CreateMatchingReceiveConfigs(&receive_transport);
 
   CreateStreams();
   CreateFrameGeneratorCapturer();
@@ -1157,10 +1150,8 @@ class MultiStreamTest {
     rtc::scoped_ptr<test::DirectTransport> receiver_transport(
         CreateReceiveTransport());
 
-    rtc::scoped_ptr<Call> sender_call(
-        Call::Create(Call::Config(sender_transport.get())));
-    rtc::scoped_ptr<Call> receiver_call(
-        Call::Create(Call::Config(receiver_transport.get())));
+    rtc::scoped_ptr<Call> sender_call(Call::Create(Call::Config()));
+    rtc::scoped_ptr<Call> receiver_call(Call::Create(Call::Config()));
     sender_transport->SetReceiver(receiver_call->Receiver());
     receiver_transport->SetReceiver(sender_call->Receiver());
 
@@ -1178,7 +1169,7 @@ class MultiStreamTest {
       int width = codec_settings[i].width;
       int height = codec_settings[i].height;
 
-      VideoSendStream::Config send_config;
+      VideoSendStream::Config send_config(sender_transport.get());
       send_config.rtp.ssrcs.push_back(ssrc);
       send_config.encoder_settings.encoder = encoders[i].get();
       send_config.encoder_settings.payload_name = "VP8";
@@ -1198,7 +1189,7 @@ class MultiStreamTest {
           sender_call->CreateVideoSendStream(send_config, encoder_config);
       send_streams[i]->Start();
 
-      VideoReceiveStream::Config receive_config;
+      VideoReceiveStream::Config receive_config(receiver_transport.get());
       receive_config.rtp.remote_ssrc = ssrc;
       receive_config.rtp.local_ssrc = test::CallTest::kReceiverLocalSsrc;
       VideoReceiveStream::Decoder decoder =
@@ -1477,16 +1468,14 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   EncodedFrameTestObserver post_encode_observer;
   EncodedFrameTestObserver pre_decode_observer;
 
+  CreateCalls(Call::Config(), Call::Config());
+
   test::DirectTransport sender_transport, receiver_transport;
-
-  CreateCalls(Call::Config(&sender_transport),
-              Call::Config(&receiver_transport));
-
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  CreateSendConfig(1, &sender_transport);
+  CreateMatchingReceiveConfigs(&receiver_transport);
   send_config_.post_encode_callback = &post_encode_observer;
   receive_configs_[0].pre_decode_callback = &pre_decode_observer;
 
@@ -2618,11 +2607,10 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     std::map<uint32_t, bool> ssrc_observed_ GUARDED_BY(crit_);
   } observer(use_rtx);
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
+  CreateCalls(Call::Config(), Call::Config());
   observer.SetReceivers(sender_call_->Receiver(), nullptr);
 
-  CreateSendConfig(kNumSsrcs);
+  CreateSendConfig(kNumSsrcs, observer.SendTransport());
 
   if (use_rtx) {
     for (size_t i = 0; i < kNumSsrcs; ++i) {
@@ -2651,7 +2639,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
         encoder_config_.streams[i].max_bitrate_bps;
   }
 
-  CreateMatchingReceiveConfigs();
+  CreateMatchingReceiveConfigs(observer.ReceiveTransport());
 
   CreateStreams();
   CreateFrameGeneratorCapturer();
@@ -2889,20 +2877,18 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
   static const int kSendDelayMs = 30;
   static const int kReceiveDelayMs = 70;
 
+  CreateCalls(Call::Config(), Call::Config());
+
   FakeNetworkPipe::Config config;
   config.queue_delay_ms = kSendDelayMs;
   test::DirectTransport sender_transport(config);
   config.queue_delay_ms = kReceiveDelayMs;
   test::DirectTransport receiver_transport(config);
-
-  CreateCalls(Call::Config(&sender_transport),
-              Call::Config(&receiver_transport));
-
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  CreateSendConfig(1, &sender_transport);
+  CreateMatchingReceiveConfigs(&receiver_transport);
 
   CreateStreams();
   CreateFrameGeneratorCapturer();
@@ -2938,11 +2924,11 @@ TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
     }
   };
 
-  UnusedTransport transport;
-  CreateSenderCall(Call::Config(&transport));
+  CreateSenderCall(Call::Config());
   sender_call_->SignalNetworkState(kNetworkDown);
 
-  CreateSendConfig(1);
+  UnusedTransport transport;
+  CreateSendConfig(1, &transport);
   UnusedEncoder unused_encoder;
   send_config_.encoder_settings.encoder = &unused_encoder;
   CreateStreams();
@@ -2956,16 +2942,14 @@ TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
 }
 
 TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
-  test::DirectTransport sender_transport;
-  CreateSenderCall(Call::Config(&sender_transport));
-  UnusedTransport transport;
-  CreateReceiverCall(Call::Config(&transport));
-  sender_transport.SetReceiver(receiver_call_->Receiver());
-
+  CreateCalls(Call::Config(), Call::Config());
   receiver_call_->SignalNetworkState(kNetworkDown);
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  test::DirectTransport sender_transport;
+  sender_transport.SetReceiver(receiver_call_->Receiver());
+  CreateSendConfig(1, &sender_transport);
+  UnusedTransport transport;
+  CreateMatchingReceiveConfigs(&transport);
   CreateStreams();
   CreateFrameGeneratorCapturer();
 
@@ -2982,11 +2966,11 @@ TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
 // a backend. This is to test that we hand channels back properly.
 TEST_F(EndToEndTest, CanCreateAndDestroyManyVideoStreams) {
   test::NullTransport transport;
-  rtc::scoped_ptr<Call> call(Call::Create(Call::Config(&transport)));
+  rtc::scoped_ptr<Call> call(Call::Create(Call::Config()));
   test::FakeDecoder fake_decoder;
   test::FakeEncoder fake_encoder(Clock::GetRealTimeClock());
   for (size_t i = 0; i < 100; ++i) {
-    VideoSendStream::Config send_config;
+    VideoSendStream::Config send_config(&transport);
     send_config.encoder_settings.encoder = &fake_encoder;
     send_config.encoder_settings.payload_name = "FAKE";
     send_config.encoder_settings.payload_type = 123;
@@ -2998,7 +2982,7 @@ TEST_F(EndToEndTest, CanCreateAndDestroyManyVideoStreams) {
         call->CreateVideoSendStream(send_config, encoder_config);
     call->DestroyVideoSendStream(send_stream);
 
-    VideoReceiveStream::Config receive_config;
+    VideoReceiveStream::Config receive_config(&transport);
     receive_config.rtp.remote_ssrc = 1;
     receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
     VideoReceiveStream::Decoder decoder;
@@ -3027,7 +3011,7 @@ void VerifyEmptyFecConfig(const FecConfig& config) {
 }
 
 TEST_F(EndToEndTest, VerifyDefaultSendConfigParameters) {
-  VideoSendStream::Config default_send_config;
+  VideoSendStream::Config default_send_config(nullptr);
   EXPECT_EQ(0, default_send_config.rtp.nack.rtp_history_ms)
       << "Enabling NACK require rtcp-fb: nack negotiation.";
   EXPECT_TRUE(default_send_config.rtp.rtx.ssrcs.empty())
@@ -3040,7 +3024,7 @@ TEST_F(EndToEndTest, VerifyDefaultSendConfigParameters) {
 }
 
 TEST_F(EndToEndTest, VerifyDefaultReceiveConfigParameters) {
-  VideoReceiveStream::Config default_receive_config;
+  VideoReceiveStream::Config default_receive_config(nullptr);
   EXPECT_EQ(newapi::kRtcpCompound, default_receive_config.rtp.rtcp_mode)
       << "Reduced-size RTCP require rtcp-rsize to be negotiated.";
   EXPECT_FALSE(default_receive_config.rtp.remb)

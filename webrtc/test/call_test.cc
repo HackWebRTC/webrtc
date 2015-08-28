@@ -19,6 +19,7 @@ const int kVideoRotationRtpExtensionId = 4;
 
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
+      send_config_(nullptr),
       send_stream_(NULL),
       fake_encoder_(clock_) {
 }
@@ -39,9 +40,9 @@ void CallTest::RunBaseTest(BaseTest* test) {
     test->SetReceivers(sender_call_->Receiver(), NULL);
   }
 
-  CreateSendConfig(test->GetNumStreams());
+  CreateSendConfig(test->GetNumStreams(), test->SendTransport());
   if (test->ShouldCreateReceivers()) {
-    CreateMatchingReceiveConfigs();
+    CreateMatchingReceiveConfigs(test->ReceiveTransport());
   }
   test->ModifyConfigs(&send_config_, &receive_configs_, &encoder_config_);
   CreateStreams();
@@ -88,9 +89,10 @@ void CallTest::CreateReceiverCall(const Call::Config& config) {
   receiver_call_.reset(Call::Create(config));
 }
 
-void CallTest::CreateSendConfig(size_t num_streams) {
+void CallTest::CreateSendConfig(size_t num_streams,
+                                newapi::Transport* send_transport) {
   assert(num_streams <= kNumSsrcs);
-  send_config_ = VideoSendStream::Config();
+  send_config_ = VideoSendStream::Config(send_transport);
   send_config_.encoder_settings.encoder = &fake_encoder_;
   send_config_.encoder_settings.payload_name = "FAKE";
   send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
@@ -103,11 +105,12 @@ void CallTest::CreateSendConfig(size_t num_streams) {
       RtpExtension(RtpExtension::kVideoRotation, kVideoRotationRtpExtensionId));
 }
 
-void CallTest::CreateMatchingReceiveConfigs() {
+void CallTest::CreateMatchingReceiveConfigs(
+    newapi::Transport* rtcp_send_transport) {
   assert(!send_config_.rtp.ssrcs.empty());
   assert(receive_configs_.empty());
   assert(allocated_decoders_.empty());
-  VideoReceiveStream::Config config;
+  VideoReceiveStream::Config config(rtcp_send_transport);
   config.rtp.remb = true;
   config.rtp.local_ssrc = kReceiverLocalSsrc;
   for (const RtpExtension& extension : send_config_.rtp.extensions)
@@ -183,11 +186,11 @@ BaseTest::~BaseTest() {
 }
 
 Call::Config BaseTest::GetSenderCallConfig() {
-  return Call::Config(SendTransport());
+  return Call::Config();
 }
 
 Call::Config BaseTest::GetReceiverCallConfig() {
-  return Call::Config(ReceiveTransport());
+  return Call::Config();
 }
 
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {

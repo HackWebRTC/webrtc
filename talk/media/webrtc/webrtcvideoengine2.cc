@@ -788,7 +788,7 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
   SetDefaultOptions();
   options_.SetAll(options);
   options_.cpu_overuse_detection.Get(&signal_cpu_adaptation_);
-  webrtc::Call::Config config(this);
+  webrtc::Call::Config config;
   config.overuse_callback = this;
   if (voice_engine != NULL) {
     config.voice_engine = voice_engine->voe()->engine();
@@ -1119,11 +1119,12 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
 
   WebRtcVideoSendStream* stream =
       new WebRtcVideoSendStream(call_.get(),
+                                sp,
+                                webrtc::VideoSendStream::Config(this),
                                 external_encoder_factory_,
                                 options_,
                                 bitrate_config_.max_bitrate_bps,
                                 send_codec_,
-                                sp,
                                 send_rtp_extensions_);
 
   uint32 ssrc = sp.first_ssrc();
@@ -1227,7 +1228,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   for (uint32 used_ssrc : sp.ssrcs)
     receive_ssrcs_.insert(used_ssrc);
 
-  webrtc::VideoReceiveStream::Config config;
+  webrtc::VideoReceiveStream::Config config(this);
   ConfigureReceiverRtp(&config, sp);
 
   // Set up A/V sync group based on sync label.
@@ -1240,7 +1241,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   }
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
-      call_.get(), sp, external_decoder_factory_, default_stream, config,
+      call_.get(), sp, config, external_decoder_factory_, default_stream,
       recv_codecs_);
 
   return true;
@@ -1732,21 +1733,19 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::AllocatedEncoder::AllocatedEncoder(
 
 WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     webrtc::Call* call,
+    const StreamParams& sp,
+    const webrtc::VideoSendStream::Config& config,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     const VideoOptions& options,
     int max_bitrate_bps,
     const Settable<VideoCodecSettings>& codec_settings,
-    const StreamParams& sp,
     const std::vector<webrtc::RtpExtension>& rtp_extensions)
     : ssrcs_(sp.ssrcs),
       ssrc_groups_(sp.ssrc_groups),
       call_(call),
       external_encoder_factory_(external_encoder_factory),
       stream_(NULL),
-      parameters_(webrtc::VideoSendStream::Config(),
-                  options,
-                  max_bitrate_bps,
-                  codec_settings),
+      parameters_(config, options, max_bitrate_bps, codec_settings),
       allocated_encoder_(NULL, webrtc::kVideoCodecUnknown, false),
       capturer_(NULL),
       sending_(false),
@@ -2335,9 +2334,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
     const StreamParams& sp,
+    const webrtc::VideoReceiveStream::Config& config,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
-    const webrtc::VideoReceiveStream::Config& config,
     const std::vector<VideoCodecSettings>& recv_codecs)
     : call_(call),
       ssrcs_(sp.ssrcs),

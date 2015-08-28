@@ -53,8 +53,8 @@ class CallTest : public ::testing::Test {
   void CreateSenderCall(const Call::Config& config);
   void CreateReceiverCall(const Call::Config& config);
 
-  void CreateSendConfig(size_t num_streams);
-  void CreateMatchingReceiveConfigs();
+  void CreateSendConfig(size_t num_streams, newapi::Transport* send_transport);
+  void CreateMatchingReceiveConfigs(newapi::Transport* rtcp_send_transport);
 
   void CreateFrameGeneratorCapturer();
 

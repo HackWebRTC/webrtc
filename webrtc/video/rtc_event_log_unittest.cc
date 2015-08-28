@@ -310,8 +310,8 @@ void LogSessionAndReadBack(size_t rtp_count, unsigned random_seed) {
   std::vector<uint8_t> incoming_rtcp_packet;
   std::vector<uint8_t> outgoing_rtcp_packet;
 
-  VideoReceiveStream::Config receiver_config;
-  VideoSendStream::Config sender_config;
+  VideoReceiveStream::Config receiver_config(nullptr);
+  VideoSendStream::Config sender_config(nullptr);
 
   srand(random_seed);
 

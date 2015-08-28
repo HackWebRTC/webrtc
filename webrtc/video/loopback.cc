@@ -61,15 +61,7 @@ void Loopback::Run() {
       test::VideoRenderer::Create("Loopback Video", config_.width,
                                   config_.height));
 
-  FakeNetworkPipe::Config pipe_config;
-  pipe_config.loss_percent = config_.loss_percent;
-  pipe_config.link_capacity_kbps = config_.link_capacity_kbps;
-  pipe_config.queue_length_packets = config_.queue_size;
-  pipe_config.queue_delay_ms = config_.avg_propagation_delay_ms;
-  pipe_config.delay_standard_deviation_ms = config_.std_propagation_delay_ms;
-  test::DirectTransport transport(pipe_config);
-  Call::Config call_config(&transport);
-
+  Call::Config call_config;
   call_config.bitrate_config.min_bitrate_bps =
       static_cast<int>(config_.min_bitrate_kbps) * 1000;
   call_config.bitrate_config.start_bitrate_bps =
@@ -78,10 +70,17 @@ void Loopback::Run() {
       static_cast<int>(config_.max_bitrate_kbps) * 1000;
   rtc::scoped_ptr<Call> call(Call::Create(call_config));
 
+  FakeNetworkPipe::Config pipe_config;
+  pipe_config.loss_percent = config_.loss_percent;
+  pipe_config.link_capacity_kbps = config_.link_capacity_kbps;
+  pipe_config.queue_length_packets = config_.queue_size;
+  pipe_config.queue_delay_ms = config_.avg_propagation_delay_ms;
+  pipe_config.delay_standard_deviation_ms = config_.std_propagation_delay_ms;
+  test::DirectTransport send_transport(pipe_config);
   // Loopback, call sends to itself.
-  transport.SetReceiver(call->Receiver());
+  send_transport.SetReceiver(call->Receiver());
 
-  VideoSendStream::Config send_config;
+  VideoSendStream::Config send_config(&send_transport);
   send_config.rtp.ssrcs.push_back(kSendSsrc);
   send_config.rtp.rtx.ssrcs.push_back(kSendRtxSsrc);
   send_config.rtp.rtx.payload_type = kRtxVideoPayloadType;
@@ -111,7 +110,7 @@ void Loopback::Run() {
 
   rtc::scoped_ptr<test::VideoCapturer> capturer(CreateCapturer(send_stream));
 
-  VideoReceiveStream::Config receive_config;
+  VideoReceiveStream::Config receive_config(&send_transport);
   receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.rtp.nack.rtp_history_ms = 1000;
@@ -143,7 +142,7 @@ void Loopback::Run() {
 
   delete decoder.decoder;
 
-  transport.StopSending();
+  send_transport.StopSending();
 }
 
 VideoEncoderConfig Loopback::CreateEncoderConfig() {

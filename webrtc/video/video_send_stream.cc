@@ -101,7 +101,6 @@ std::string VideoSendStream::Config::ToString() const {
 
 namespace internal {
 VideoSendStream::VideoSendStream(
-    newapi::Transport* transport,
     CpuOveruseObserver* overuse_observer,
     int num_cpu_cores,
     ProcessThread* module_process_thread,
@@ -110,7 +109,7 @@ VideoSendStream::VideoSendStream(
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs)
-    : transport_adapter_(transport),
+    : transport_adapter_(config.send_transport),
       encoded_frame_proxy_(config.post_encode_callback),
       config_(config),
       suspended_ssrcs_(suspended_ssrcs),

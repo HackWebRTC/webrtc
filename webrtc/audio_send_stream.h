@@ -18,6 +18,7 @@
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/stream.h"
+#include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -27,6 +28,10 @@ class AudioSendStream : public SendStream {
   struct Stats {};
 
   struct Config {
+    Config() = delete;
+    explicit Config(newapi::Transport* send_transport)
+        : send_transport(send_transport) {}
+
     std::string ToString() const;
 
     // Receive-stream specific RTP settings.
@@ -39,6 +44,9 @@ class AudioSendStream : public SendStream {
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
     } rtp;
+
+    // Transport for outgoing packets.
+    newapi::Transport* send_transport = nullptr;
 
     rtc::scoped_ptr<AudioEncoder> encoder;
     int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.

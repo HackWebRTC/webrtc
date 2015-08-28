@@ -41,7 +41,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      ChannelGroup* channel_group,
                      int channel_id,
                      const VideoReceiveStream::Config& config,
-                     newapi::Transport* transport,
                      webrtc::VoiceEngine* voice_engine);
   ~VideoReceiveStream() override;
 

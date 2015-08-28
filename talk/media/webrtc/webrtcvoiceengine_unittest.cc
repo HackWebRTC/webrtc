@@ -3354,7 +3354,7 @@ TEST(WebRtcVoiceEngineTest, CoInitialize) {
 #endif
 
 TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromSyncLabel) {
-  cricket::FakeCall call(webrtc::Call::Config(nullptr));
+  cricket::FakeCall call((webrtc::Call::Config()));
   const uint32 kAudioSsrc = 123;
   const std::string kSyncLabel = "AvSyncLabel";
 
@@ -3384,7 +3384,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromSyncLabel) {
 TEST_F(WebRtcVoiceEngineTestFake, CanChangeCombinedBweOption) {
   // Test that changing the combined_audio_video_bwe option results in the
   // expected state changes on an associated Call.
-  cricket::FakeCall call(webrtc::Call::Config(nullptr));
+  cricket::FakeCall call((webrtc::Call::Config()));
   const uint32 kAudioSsrc1 = 223;
   const uint32 kAudioSsrc2 = 224;
 
@@ -3437,8 +3437,8 @@ TEST_F(WebRtcVoiceEngineTestFake, CanChangeCombinedBweOption) {
 TEST_F(WebRtcVoiceEngineTestFake, SetCallConfiguresAudioReceiveChannels) {
   // Test that calling SetCall() on the voice media channel results in the
   // expected state changes in Call.
-  cricket::FakeCall call(webrtc::Call::Config(nullptr));
-  cricket::FakeCall call2(webrtc::Call::Config(nullptr));
+  cricket::FakeCall call((webrtc::Call::Config()));
+  cricket::FakeCall call2((webrtc::Call::Config()));
   const uint32 kAudioSsrc1 = 223;
   const uint32 kAudioSsrc2 = 224;
 
@@ -3474,7 +3474,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetCallConfiguresAudioReceiveChannels) {
 TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
   // Test that adding receive streams after enabling combined bandwidth
   // estimation will correctly configure each channel.
-  cricket::FakeCall call(webrtc::Call::Config(nullptr));
+  cricket::FakeCall call((webrtc::Call::Config()));
 
   EXPECT_TRUE(SetupEngine());
   cricket::WebRtcVoiceMediaChannel* media_channel =
@@ -3502,7 +3502,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
 TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   // Test that setting the header extensions results in the expected state
   // changes on an associated Call.
-  cricket::FakeCall call(webrtc::Call::Config(nullptr));
+  cricket::FakeCall call((webrtc::Call::Config()));
   std::vector<uint32> ssrcs;
   ssrcs.push_back(223);
   ssrcs.push_back(224);
@@ -3556,7 +3556,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
 
 TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   // Test that packets are forwarded to the Call when configured accordingly.
-  cricket::FakeCall call(webrtc::Call::Config(nullptr));
+  cricket::FakeCall call((webrtc::Call::Config()));
   const uint32 kAudioSsrc = 1;
   rtc::Buffer kPcmuPacket(kPcmuFrame, sizeof(kPcmuFrame));
   static const unsigned char kRtcp[] = {

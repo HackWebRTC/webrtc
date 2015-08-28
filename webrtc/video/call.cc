@@ -123,7 +123,6 @@ class Call : public webrtc::Call, public PacketReceiver {
   // and receivers.
   rtc::CriticalSection network_enabled_crit_;
   bool network_enabled_ GUARDED_BY(network_enabled_crit_);
-  TransportAdapter transport_adapter_;
 
   rtc::scoped_ptr<RWLockWrapper> receive_crit_;
   std::map<uint32_t, AudioReceiveStream*> audio_receive_ssrcs_
@@ -160,11 +159,8 @@ Call::Call(const Call::Config& config)
       next_channel_id_(0),
       config_(config),
       network_enabled_(true),
-      transport_adapter_(nullptr),
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()) {
-  DCHECK(config.send_transport != nullptr);
-
   DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   DCHECK_GE(config.bitrate_config.start_bitrate_bps,
             config.bitrate_config.min_bitrate_bps);
@@ -253,7 +249,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
   VideoSendStream* send_stream = new VideoSendStream(
-      config_.send_transport, overuse_observer_proxy_.get(), num_cpu_cores_,
+      overuse_observer_proxy_.get(), num_cpu_cores_,
       module_process_thread_.get(), channel_group_.get(),
       rtc::AtomicOps::Increment(&next_channel_id_), config, encoder_config,
       suspended_video_send_ssrcs_);
@@ -313,7 +309,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       num_cpu_cores_, channel_group_.get(),
       rtc::AtomicOps::Increment(&next_channel_id_), config,
-      config_.send_transport, config_.voice_engine);
+      config_.voice_engine);
 
   // This needs to be taken before receive_crit_ as both locks need to be held
   // while changing network state.

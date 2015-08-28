@@ -492,13 +492,13 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
                          params.avg_psnr_threshold, params.avg_ssim_threshold,
                          params.test_durations_secs * params.clip.fps);
 
-  CreateCalls(Call::Config(&analyzer), Call::Config(&recv_transport));
+  CreateCalls(Call::Config(), Call::Config());
 
   analyzer.SetReceiver(receiver_call_->Receiver());
   send_transport.SetReceiver(&analyzer);
   recv_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1);
+  CreateSendConfig(1, &analyzer);
 
   rtc::scoped_ptr<VideoEncoder> encoder;
   if (params.codec == "VP8") {
@@ -552,7 +552,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
     stream->temporal_layer_thresholds_bps.push_back(stream->target_bitrate_bps);
   }
 
-  CreateMatchingReceiveConfigs();
+  CreateMatchingReceiveConfigs(&recv_transport);
   receive_configs_[0].renderer = &analyzer;
   receive_configs_[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   receive_configs_[0].rtp.rtx[kSendRtxPayloadType].ssrc = kSendRtxSsrcs[0];

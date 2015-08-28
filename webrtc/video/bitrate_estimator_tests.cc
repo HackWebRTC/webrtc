@@ -121,7 +121,7 @@ class BitrateEstimatorTest : public test::CallTest {
         receive_transport_(),
         sender_call_(),
         receiver_call_(),
-        receive_config_(),
+        receive_config_(nullptr),
         streams_() {
   }
 
@@ -130,16 +130,13 @@ class BitrateEstimatorTest : public test::CallTest {
   }
 
   virtual void SetUp() {
-    Call::Config receiver_call_config(&receive_transport_);
-    receiver_call_.reset(Call::Create(receiver_call_config));
-
-    Call::Config sender_call_config(&send_transport_);
-    sender_call_.reset(Call::Create(sender_call_config));
+    receiver_call_.reset(Call::Create(Call::Config()));
+    sender_call_.reset(Call::Create(Call::Config()));
 
     send_transport_.SetReceiver(receiver_call_->Receiver());
     receive_transport_.SetReceiver(sender_call_->Receiver());
 
-    send_config_ = VideoSendStream::Config();
+    send_config_ = VideoSendStream::Config(&send_transport_);
     send_config_.rtp.ssrcs.push_back(kSendSsrcs[0]);
     // Encoders will be set separately per stream.
     send_config_.encoder_settings.encoder = nullptr;
@@ -147,7 +144,7 @@ class BitrateEstimatorTest : public test::CallTest {
     send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
     encoder_config_.streams = test::CreateVideoStreams(1);
 
-    receive_config_ = VideoReceiveStream::Config();
+    receive_config_ = VideoReceiveStream::Config(&receive_transport_);
     // receive_config_.decoders will be set by every stream separately.
     receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
     receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;

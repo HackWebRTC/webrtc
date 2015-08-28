@@ -69,15 +69,7 @@ class LoadObserver {
 class Call {
  public:
   struct Config {
-    Config() = delete;
-    explicit Config(newapi::Transport* send_transport)
-        : send_transport(send_transport) {}
-
     static const int kDefaultStartBitrateBps;
-
-    // TODO(solenberg): Need to add media type to the interface for outgoing
-    // packets too.
-    newapi::Transport* send_transport = nullptr;
 
     // VoiceEngine used for audio/video synchronization for this Call.
     VoiceEngine* voice_engine = nullptr;

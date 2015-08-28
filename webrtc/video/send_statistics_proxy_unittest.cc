@@ -22,19 +22,19 @@ namespace webrtc {
 class SendStatisticsProxyTest : public ::testing::Test {
  public:
   SendStatisticsProxyTest()
-      : fake_clock_(1234), avg_delay_ms_(0), max_delay_ms_(0) {}
+      : fake_clock_(1234), config_(GetTestConfig()), avg_delay_ms_(0),
+        max_delay_ms_(0) {}
   virtual ~SendStatisticsProxyTest() {}
 
  protected:
   virtual void SetUp() {
     statistics_proxy_.reset(
         new SendStatisticsProxy(&fake_clock_, GetTestConfig()));
-    config_ = GetTestConfig();
     expected_ = VideoSendStream::Stats();
   }
 
   VideoSendStream::Config GetTestConfig() {
-    VideoSendStream::Config config;
+    VideoSendStream::Config config(nullptr);
     config.rtp.ssrcs.push_back(17);
     config.rtp.ssrcs.push_back(42);
     config.rtp.rtx.ssrcs.push_back(18);

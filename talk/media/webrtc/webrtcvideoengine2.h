@@ -268,11 +268,12 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
    public:
     WebRtcVideoSendStream(
         webrtc::Call* call,
+        const StreamParams& sp,
+        const webrtc::VideoSendStream::Config& config,
         WebRtcVideoEncoderFactory* external_encoder_factory,
         const VideoOptions& options,
         int max_bitrate_bps,
         const Settable<VideoCodecSettings>& codec_settings,
-        const StreamParams& sp,
         const std::vector<webrtc::RtpExtension>& rtp_extensions);
     ~WebRtcVideoSendStream();
 
@@ -414,9 +415,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     WebRtcVideoReceiveStream(
         webrtc::Call* call,
         const StreamParams& sp,
+        const webrtc::VideoReceiveStream::Config& config,
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
-        const webrtc::VideoReceiveStream::Config& config,
         const std::vector<VideoCodecSettings>& recv_codecs);
     ~WebRtcVideoReceiveStream();
 

@@ -18,6 +18,7 @@
 #include "webrtc/config.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/stream.h"
+#include "webrtc/transport.h"
 #include "webrtc/video_renderer.h"
 
 namespace webrtc {
@@ -64,6 +65,10 @@ class VideoSendStream : public SendStream {
   };
 
   struct Config {
+    Config() = delete;
+    explicit Config(newapi::Transport* send_transport)
+        : send_transport(send_transport) {}
+
     std::string ToString() const;
 
     struct EncoderSettings {
@@ -109,6 +114,9 @@ class VideoSendStream : public SendStream {
       // RTCP CNAME, see RFC 3550.
       std::string c_name;
     } rtp;
+
+    // Transport for outgoing packets.
+    newapi::Transport* send_transport = nullptr;
 
     // Called for each I420 frame before encoding the frame. Can be used for
     // effects, snapshots etc. 'nullptr' disables the callback.

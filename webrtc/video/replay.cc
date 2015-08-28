@@ -214,13 +214,10 @@ void RtpReplay() {
   FileRenderPassthrough file_passthrough(flags::OutBase(),
                                          playback_video.get());
 
-  // TODO(pbos): Might be good to have a transport that prints keyframe requests
-  //             etc.
-  test::NullTransport transport;
-  Call::Config call_config(&transport);
-  rtc::scoped_ptr<Call> call(Call::Create(call_config));
+  rtc::scoped_ptr<Call> call(Call::Create(Call::Config()));
 
-  VideoReceiveStream::Config receive_config;
+  test::NullTransport transport;
+  VideoReceiveStream::Config receive_config(&transport);
   receive_config.rtp.remote_ssrc = flags::Ssrc();
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.rtp.fec.ulpfec_payload_type = flags::FecPayloadType();

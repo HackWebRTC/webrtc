@@ -36,12 +36,12 @@ void PacketInjectionTest::InjectIncorrectPacket(CodecType codec_type,
                                                 uint8_t payload_type,
                                                 const uint8_t* packet,
                                                 size_t length) {
-  test::NullTransport transport;
-  CreateSenderCall(Call::Config(&transport));
-  CreateReceiverCall(Call::Config(&transport));
+  CreateSenderCall(Call::Config());
+  CreateReceiverCall(Call::Config());
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  test::NullTransport null_transport;
+  CreateSendConfig(1, &null_transport);
+  CreateMatchingReceiveConfigs(&null_transport);
   receive_configs_[0].decoders[0].payload_type = payload_type;
   switch (codec_type) {
     case CodecType::kVp8:

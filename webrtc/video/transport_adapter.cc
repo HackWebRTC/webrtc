@@ -10,11 +10,15 @@
 
 #include "webrtc/video/transport_adapter.h"
 
+#include "webrtc/base/checks.h"
+
 namespace webrtc {
 namespace internal {
 
 TransportAdapter::TransportAdapter(newapi::Transport* transport)
-    : transport_(transport), enabled_(0) {}
+    : transport_(transport), enabled_(0) {
+  DCHECK(nullptr != transport);
+}
 
 int TransportAdapter::SendPacket(int /*channel*/,
                                  const void* packet,

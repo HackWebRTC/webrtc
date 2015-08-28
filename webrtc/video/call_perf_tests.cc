@@ -239,9 +239,9 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
                                     voe_sync,
                                     &audio_observer);
 
-  Call::Config receiver_config(observer.ReceiveTransport());
+  Call::Config receiver_config;
   receiver_config.voice_engine = voice_engine;
-  CreateCalls(Call::Config(observer.SendTransport()), receiver_config);
+  CreateCalls(Call::Config(), receiver_config);
 
   CodecInst isac = {103, "ISAC", 16000, 480, 1, 32000};
   EXPECT_EQ(0, voe_codec->SetSendCodec(channel, isac));
@@ -258,8 +258,8 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
 
   test::FakeDecoder fake_decoder;
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  CreateSendConfig(1, observer.SendTransport());
+  CreateMatchingReceiveConfigs(observer.ReceiveTransport());
 
   send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   if (fec) {
@@ -489,7 +489,7 @@ void CallPerfTest::TestCpuOveruse(LoadObserver::Load tested_load,
     }
 
     Call::Config GetSenderCallConfig() override {
-      Call::Config config(SendTransport());
+      Call::Config config;
       config.overuse_callback = this;
       return config;
     }
