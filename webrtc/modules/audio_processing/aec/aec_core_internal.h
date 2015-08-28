@@ -166,6 +166,7 @@ struct AecCore {
   rtc_WavWriter* nearFile;
   rtc_WavWriter* outFile;
   rtc_WavWriter* outLinearFile;
+  FILE* e_fft_file;
 #endif
 };
 

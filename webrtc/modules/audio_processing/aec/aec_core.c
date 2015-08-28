@@ -29,9 +29,11 @@
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+#include "webrtc/modules/audio_processing/logging/aec_logging.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
+
 
 // Buffer size (samples)
 static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.
@@ -1220,8 +1222,8 @@ static void ProcessBlock(AecCore* aec) {
     float farend[PART_LEN];
     float* farend_ptr = NULL;
     WebRtc_ReadBuffer(aec->far_time_buf, (void**)&farend_ptr, farend, 1);
-    rtc_WavWriteSamples(aec->farFile, farend_ptr, PART_LEN);
-    rtc_WavWriteSamples(aec->nearFile, nearend_ptr, PART_LEN);
+    RTC_AEC_DEBUG_WAV_WRITE(aec->farFile, farend_ptr, PART_LEN);
+    RTC_AEC_DEBUG_WAV_WRITE(aec->nearFile, nearend_ptr, PART_LEN);
   }
 #endif
 
@@ -1348,6 +1350,10 @@ static void ProcessBlock(AecCore* aec) {
     ef[1][i] = fft[2 * i + 1];
   }
 
+  RTC_AEC_DEBUG_RAW_WRITE(aec->e_fft_file,
+                          &ef[0][0],
+                          sizeof(ef[0][0]) * PART_LEN1 * 2);
+
   if (aec->metricsMode == 1) {
     // Note that the first PART_LEN samples in fft (before transformation) are
     // zero. Hence, the scaling by two in UpdateLevel() should not be
@@ -1374,10 +1380,8 @@ static void ProcessBlock(AecCore* aec) {
     WebRtc_WriteBuffer(aec->outFrBufH[i], outputH[i], PART_LEN);
   }
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  rtc_WavWriteSamples(aec->outLinearFile, e, PART_LEN);
-  rtc_WavWriteSamples(aec->outFile, output, PART_LEN);
-#endif
+  RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, e, PART_LEN);
+  RTC_AEC_DEBUG_WAV_WRITE(aec->outFile, output, PART_LEN);
 }
 
 AecCore* WebRtcAec_CreateAec() {
@@ -1512,39 +1516,18 @@ void WebRtcAec_FreeAec(AecCore* aec) {
   WebRtc_FreeBuffer(aec->far_buf_windowed);
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   WebRtc_FreeBuffer(aec->far_time_buf);
-  rtc_WavClose(aec->farFile);
-  rtc_WavClose(aec->nearFile);
-  rtc_WavClose(aec->outFile);
-  rtc_WavClose(aec->outLinearFile);
 #endif
+  RTC_AEC_DEBUG_WAV_CLOSE(aec->farFile);
+  RTC_AEC_DEBUG_WAV_CLOSE(aec->nearFile);
+  RTC_AEC_DEBUG_WAV_CLOSE(aec->outFile);
+  RTC_AEC_DEBUG_WAV_CLOSE(aec->outLinearFile);
+  RTC_AEC_DEBUG_RAW_CLOSE(aec->e_fft_file);
+
   WebRtc_FreeDelayEstimator(aec->delay_estimator);
   WebRtc_FreeDelayEstimatorFarend(aec->delay_estimator_farend);
 
   free(aec);
 }
-
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-// Open a new Wav file for writing. If it was already open with a different
-// sample frequency, close it first.
-static void ReopenWav(rtc_WavWriter** wav_file,
-                      const char* name,
-                      int seq1,
-                      int seq2,
-                      int sample_rate) {
-  int written ATTRIBUTE_UNUSED;
-  char filename[64];
-  if (*wav_file) {
-    if (rtc_WavSampleRate(*wav_file) == sample_rate)
-      return;
-    rtc_WavClose(*wav_file);
-  }
-  written = snprintf(filename, sizeof(filename), "%s%d-%d.wav",
-                     name, seq1, seq2);
-  assert(written >= 0);  // no output error
-  assert((size_t)written < sizeof(filename));  // buffer was large enough
-  *wav_file = rtc_WavOpen(filename, sample_rate, 1);
-}
-#endif  // WEBRTC_AEC_DEBUG_DUMP
 
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   int i;
@@ -1575,15 +1558,24 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   WebRtc_InitBuffer(aec->far_time_buf);
   {
     int process_rate = sampFreq > 16000 ? 16000 : sampFreq;
-    ReopenWav(&aec->farFile, "aec_far",
-              aec->instance_index, aec->debug_dump_count, process_rate);
-    ReopenWav(&aec->nearFile, "aec_near",
-              aec->instance_index, aec->debug_dump_count, process_rate);
-    ReopenWav(&aec->outFile, "aec_out",
-              aec->instance_index, aec->debug_dump_count, process_rate);
-    ReopenWav(&aec->outLinearFile, "aec_out_linear",
-              aec->instance_index, aec->debug_dump_count, process_rate);
+    RTC_AEC_DEBUG_WAV_REOPEN("aec_far", aec->instance_index,
+                             aec->debug_dump_count, process_rate,
+                             &aec->farFile );
+    RTC_AEC_DEBUG_WAV_REOPEN("aec_near", aec->instance_index,
+                             aec->debug_dump_count, process_rate,
+                             &aec->nearFile);
+    RTC_AEC_DEBUG_WAV_REOPEN("aec_out", aec->instance_index,
+                             aec->debug_dump_count, process_rate,
+                             &aec->outFile );
+    RTC_AEC_DEBUG_WAV_REOPEN("aec_out_linear", aec->instance_index,
+                             aec->debug_dump_count, process_rate,
+                             &aec->outLinearFile);
   }
+
+  RTC_AEC_DEBUG_RAW_OPEN("aec_e_fft",
+                         aec->debug_dump_count,
+                         &aec->e_fft_file);
+
   ++aec->debug_dump_count;
 #endif
   aec->system_delay = 0;
