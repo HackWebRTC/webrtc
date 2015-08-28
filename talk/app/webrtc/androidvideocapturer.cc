@@ -137,18 +137,17 @@ AndroidVideoCapturer::~AndroidVideoCapturer() {
 
 cricket::CaptureState AndroidVideoCapturer::Start(
     const cricket::VideoFormat& capture_format) {
-  LOG(LS_INFO) << " AndroidVideoCapturer::Start w = " << capture_format.width
-               << " h = " << capture_format.height;
   CHECK(thread_checker_.CalledOnValidThread());
   CHECK(!running_);
+  const int fps = cricket::VideoFormat::IntervalToFps(capture_format.interval);
+  LOG(LS_INFO) << " AndroidVideoCapturer::Start " << capture_format.width << "x"
+               << capture_format.height << "@" << fps;
 
   frame_factory_ = new AndroidVideoCapturer::FrameFactory(delegate_.get());
   set_frame_factory(frame_factory_);
 
   running_ = true;
-  delegate_->Start(
-      capture_format.width, capture_format.height,
-      cricket::VideoFormat::IntervalToFps(capture_format.interval), this);
+  delegate_->Start(capture_format.width, capture_format.height, fps, this);
   SetCaptureFormat(&capture_format);
   current_state_ = cricket::CS_STARTING;
   return current_state_;
@@ -208,6 +207,14 @@ void AndroidVideoCapturer::OnOutputFormatRequest(
   cricket::VideoFormat format(
       width, height, cricket::VideoFormat::FpsToInterval(fps), current.fourcc);
   video_adapter()->OnOutputFormatRequest(format);
+}
+
+bool AndroidVideoCapturer::GetBestCaptureFormat(
+    const cricket::VideoFormat& desired,
+    cricket::VideoFormat* best_format) {
+  // Delegate this choice to VideoCapturerAndroid.startCapture().
+  *best_format = desired;
+  return true;
 }
 
 }  // namespace webrtc

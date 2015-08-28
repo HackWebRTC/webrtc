@@ -76,6 +76,10 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
 
   AndroidVideoCapturerDelegate* delegate() { return delegate_.get(); }
 
+  // cricket::VideoCapturer implementation.
+  bool GetBestCaptureFormat(const cricket::VideoFormat& desired,
+                            cricket::VideoFormat* best_format) override;
+
  private:
   // cricket::VideoCapturer implementation.
   // Video frames will be delivered using
