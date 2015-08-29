@@ -16,6 +16,8 @@
  *
  */
 
+#include <assert.h>
+
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 // Maximum absolute value of word16 vector.
@@ -24,9 +26,8 @@ int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, size_t length) {
   int32_t tmp32_0, tmp32_1, tmp32_2, tmp32_3;
   size_t i, loop_size;
 
-  if (vector == NULL || length == 0) {
-    return -1;
-  }
+  assert(length > 0);
+
 #if defined(MIPS_DSP_R1)
   const int32_t* tmpvec32 = (int32_t*)vector;
   loop_size = length >> 4;
@@ -229,9 +230,7 @@ int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, size_t length) {
   uint32_t absolute = 0, maximum = 0;
   int tmp1 = 0, max_value = 0x7fffffff;
 
-  if (vector == NULL || length == 0) {
-    return -1;
-  }
+  assert(length > 0);
 
   __asm__ volatile (
     ".set push                                                        \n\t"
@@ -265,9 +264,7 @@ int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, size_t length) {
   int tmp1;
   int16_t value;
 
-  if (vector == NULL || length == 0) {
-    return maximum;
-  }
+  assert(length > 0);
 
   __asm__ volatile (
     ".set push                                                        \n\t"
@@ -295,9 +292,7 @@ int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, size_t length) {
   int32_t maximum = WEBRTC_SPL_WORD32_MIN;
   int tmp1, value;
 
-  if (vector == NULL || length == 0) {
-    return maximum;
-  }
+  assert(length > 0);
 
   __asm__ volatile (
     ".set push                                                        \n\t"
@@ -327,9 +322,7 @@ int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, size_t length) {
   int tmp1;
   int16_t value;
 
-  if (vector == NULL || length == 0) {
-    return minimum;
-  }
+  assert(length > 0);
 
   __asm__ volatile (
     ".set push                                                        \n\t"
@@ -358,9 +351,7 @@ int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, size_t length) {
   int32_t minimum = WEBRTC_SPL_WORD32_MAX;
   int tmp1, value;
 
-  if (vector == NULL || length == 0) {
-    return minimum;
-  }
+  assert(length > 0);
 
   __asm__ volatile (
     ".set push                                                        \n\t"

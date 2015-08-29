@@ -35,22 +35,24 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     int16_t *in,      /* (i) unenhanced signal */
     IlbcDecoder *iLBCdec_inst /* (i) buffers etc */
                                         ){
-  int iblock;
+  size_t iblock;
   size_t lag=20, tlag=20;
   size_t inLen=iLBCdec_inst->blockl+120;
   int16_t scale, scale1;
   size_t plc_blockl;
-  int16_t *enh_buf, *enh_period;
-  int32_t tmp1, tmp2, max, new_blocks;
+  int16_t *enh_buf;
+  size_t *enh_period;
+  int32_t tmp1, tmp2, max;
+  size_t new_blocks;
   int16_t *enh_bufPtr1;
   size_t i;
-  int k;
+  size_t k;
   int16_t EnChange;
   int16_t SqrtEnChange;
   int16_t inc;
   int16_t win;
   int16_t *tmpW16ptr;
-  int16_t startPos;
+  size_t startPos;
   int16_t *plc_pred;
   int16_t *target, *regressor;
   int16_t max16;
@@ -60,7 +62,7 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   int16_t corrSh;
   size_t ind;
   int16_t sh;
-  int16_t start, stop;
+  size_t start, stop;
   /* Stack based */
   int16_t totsh[3];
   int16_t downsampled[(BLOCKL_MAX+120)>>1]; /* length 180 */
@@ -68,7 +70,7 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   int32_t corrmax[3];
   int16_t corr16[3];
   int16_t en16[3];
-  int16_t lagmax[3];
+  size_t lagmax[3];
 
   plc_pred = downsampled; /* Reuse memory since plc_pred[ENH_BLOCKL] and
                               downsampled are non overlapping */
@@ -99,7 +101,7 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   memmove(enh_period, &enh_period[new_blocks],
           (ENH_NBLOCKS_TOT - new_blocks) * sizeof(*enh_period));
 
-  k = WebRtcSpl_DownsampleFast(
+  WebRtcSpl_DownsampleFast(
       enh_buf+ENH_BUFL-inLen,    /* Input samples */
       inLen + ENH_BUFL_FILTEROVERHEAD,
       downsampled,
@@ -131,11 +133,9 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     for (i=0;i<2;i++) {
       lagmax[i] = WebRtcSpl_MaxIndexW32(corr32, 50);
       corrmax[i] = corr32[lagmax[i]];
-      start = lagmax[i] - 2;
-      stop = lagmax[i] + 2;
-      start = WEBRTC_SPL_MAX(0,  start);
-      stop  = WEBRTC_SPL_MIN(49, stop);
-      for (k=start; k<=stop; k++) {
+      start = WEBRTC_SPL_MAX(2, lagmax[i]) - 2;
+      stop = WEBRTC_SPL_MIN(47, lagmax[i]) + 2;
+      for (k = start; k <= stop; k++) {
         corr32[k] = 0;
       }
     }
@@ -145,8 +145,8 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     /* Calculate normalized corr^2 and ener */
     for (i=0;i<3;i++) {
       corrSh = 15-WebRtcSpl_GetSizeInBits(corrmax[i]);
-      ener = WebRtcSpl_DotProductWithScale(&regressor[-lagmax[i]],
-                                           &regressor[-lagmax[i]],
+      ener = WebRtcSpl_DotProductWithScale(regressor - lagmax[i],
+                                           regressor - lagmax[i],
                                            ENH_BLOCKL_HALF, shifts);
       enerSh = 15-WebRtcSpl_GetSizeInBits(ener);
       corr16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(corrmax[i], corrSh);
@@ -171,10 +171,10 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       }
     }
 
-    lag = (size_t)(lagmax[ind] + 10);
+    lag = lagmax[ind] + 10;
 
     /* Store the estimated lag in the non-downsampled domain */
-    enh_period[ENH_NBLOCKS_TOT - new_blocks + iblock] = (int16_t)(lag * 8);
+    enh_period[ENH_NBLOCKS_TOT - new_blocks + iblock] = lag * 8;
 
     /* Store the estimated lag for backward PLC */
     if (iLBCdec_inst->prev_enh_pl==1) {
@@ -368,9 +368,9 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     WebRtcIlbcfix_Enhancer(out + iblock * ENH_BLOCKL,
                            enh_buf,
                            ENH_BUFL,
-                           (int16_t)(iblock * ENH_BLOCKL + startPos),
+                           iblock * ENH_BLOCKL + startPos,
                            enh_period,
-                           (int16_t*)WebRtcIlbcfix_kEnhPlocs, ENH_NBLOCKS_TOT);
+                           WebRtcIlbcfix_kEnhPlocs, ENH_NBLOCKS_TOT);
   }
 
   return (lag);

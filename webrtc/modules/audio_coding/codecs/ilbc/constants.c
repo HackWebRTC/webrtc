@@ -647,7 +647,7 @@ const int16_t WebRtcIlbcfix_kEnhWt[3] = {
   4800, 16384, 27968 /* Q16 */
 };
 
-const int16_t WebRtcIlbcfix_kEnhPlocs[ENH_NBLOCKS_TOT] = {
+const size_t WebRtcIlbcfix_kEnhPlocs[ENH_NBLOCKS_TOT] = {
   160, 480, 800, 1120, 1440, 1760, 2080, 2400  /* Q(-2) */
 };
 

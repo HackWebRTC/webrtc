@@ -86,8 +86,8 @@ static void GetHardwareAudioParameters(AudioParameters* playout_parameters,
     double io_buffer_duration = (double)session.IOBufferDuration;
     int output_channels = (int)session.outputNumberOfChannels;
     int input_channels = (int)session.inputNumberOfChannels;
-    int frames_per_buffer =
-        static_cast<int>(sample_rate * io_buffer_duration + 0.5);
+    size_t frames_per_buffer =
+        static_cast<size_t>(sample_rate * io_buffer_duration + 0.5);
     // Copy hardware parameters to output parameters.
     playout_parameters->reset(sample_rate, output_channels, frames_per_buffer);
     record_parameters->reset(sample_rate, input_channels, frames_per_buffer);

@@ -213,7 +213,7 @@ typedef struct IlbcDecoder_ {
   /* enhancer state information */
   int use_enhancer;
   int16_t enh_buf[ENH_BUFL+ENH_BUFL_FILTEROVERHEAD];
-  int16_t enh_period[ENH_NBLOCKS_TOT];
+  size_t enh_period[ENH_NBLOCKS_TOT];
 
 } IlbcDecoder;
 

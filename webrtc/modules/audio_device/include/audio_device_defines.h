@@ -143,33 +143,33 @@ class AudioTransport {
 class AudioParameters {
  public:
   // This implementation does only support 16-bit PCM samples.
-  enum { kBitsPerSample = 16 };
+  static const size_t kBitsPerSample = 16;
   AudioParameters()
       : sample_rate_(0),
         channels_(0),
         frames_per_buffer_(0),
         frames_per_10ms_buffer_(0) {}
-  AudioParameters(int sample_rate, int channels, int frames_per_buffer)
+  AudioParameters(int sample_rate, int channels, size_t frames_per_buffer)
       : sample_rate_(sample_rate),
         channels_(channels),
         frames_per_buffer_(frames_per_buffer),
         frames_per_10ms_buffer_(static_cast<size_t>(sample_rate / 100)) {}
-  void reset(int sample_rate, int channels, int frames_per_buffer) {
+  void reset(int sample_rate, int channels, size_t frames_per_buffer) {
     sample_rate_ = sample_rate;
     channels_ = channels;
     frames_per_buffer_ = frames_per_buffer;
     frames_per_10ms_buffer_ = static_cast<size_t>(sample_rate / 100);
   }
-  int bits_per_sample() const { return kBitsPerSample; }
+  size_t bits_per_sample() const { return kBitsPerSample; }
   int sample_rate() const { return sample_rate_; }
   int channels() const { return channels_; }
-  int frames_per_buffer() const { return frames_per_buffer_; }
+  size_t frames_per_buffer() const { return frames_per_buffer_; }
   size_t frames_per_10ms_buffer() const { return frames_per_10ms_buffer_; }
   bool is_valid() const {
     return ((sample_rate_ > 0) && (channels_ > 0) && (frames_per_buffer_ > 0));
   }
-  int GetBytesPerFrame() const { return channels_ * kBitsPerSample / 8; }
-  int GetBytesPerBuffer() const {
+  size_t GetBytesPerFrame() const { return channels_ * kBitsPerSample / 8; }
+  size_t GetBytesPerBuffer() const {
     return frames_per_buffer_ * GetBytesPerFrame();
   }
   size_t GetBytesPer10msBuffer() const {
@@ -184,7 +184,7 @@ class AudioParameters {
  private:
   int sample_rate_;
   int channels_;
-  int frames_per_buffer_;
+  size_t frames_per_buffer_;
   size_t frames_per_10ms_buffer_;
 };
 

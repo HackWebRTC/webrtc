@@ -103,7 +103,7 @@ void WebRtcIlbcfix_CbSearchCore(
   }
 
   /* Find the index of the best value */
-  *bestIndex = (size_t)WebRtcSpl_MaxIndexW32(Crit, range);
+  *bestIndex = WebRtcSpl_MaxIndexW32(Crit, range);
   *bestCrit = Crit[*bestIndex];
 
   /* Calculate total shifts of this criteria */

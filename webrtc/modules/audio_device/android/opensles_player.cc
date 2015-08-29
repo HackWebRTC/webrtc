@@ -14,6 +14,7 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/android/fine_audio_buffer.h"
 
@@ -182,9 +183,10 @@ void OpenSLESPlayer::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   AllocateDataBuffers();
 }
 
-SLDataFormat_PCM OpenSLESPlayer::CreatePCMConfiguration(int channels,
-                                                        int sample_rate,
-                                                        int bits_per_sample) {
+SLDataFormat_PCM OpenSLESPlayer::CreatePCMConfiguration(
+    int channels,
+    int sample_rate,
+    size_t bits_per_sample) {
   ALOGD("CreatePCMConfiguration");
   CHECK_EQ(bits_per_sample, SL_PCMSAMPLEFORMAT_FIXED_16);
   SLDataFormat_PCM format;
@@ -231,7 +233,7 @@ void OpenSLESPlayer::AllocateDataBuffers() {
   DCHECK(!simple_buffer_queue_);
   CHECK(audio_device_buffer_);
   bytes_per_buffer_ = audio_parameters_.GetBytesPerBuffer();
-  ALOGD("native buffer size: %d", bytes_per_buffer_);
+  ALOGD("native buffer size: %" PRIuS, bytes_per_buffer_);
   // Create a modified audio buffer class which allows us to ask for any number
   // of samples (and not only multiple of 10ms) to match the native OpenSL ES
   // buffer size.
@@ -240,8 +242,8 @@ void OpenSLESPlayer::AllocateDataBuffers() {
                                          audio_parameters_.sample_rate()));
   // Each buffer must be of this size to avoid unnecessary memcpy while caching
   // data between successive callbacks.
-  const int required_buffer_size = fine_buffer_->RequiredBufferSizeBytes();
-  ALOGD("required buffer size: %d", required_buffer_size);
+  const size_t required_buffer_size = fine_buffer_->RequiredBufferSizeBytes();
+  ALOGD("required buffer size: %" PRIuS, required_buffer_size);
   for (int i = 0; i < kNumOfOpenSLESBuffers; ++i) {
     audio_buffers_[i].reset(new SLint8[required_buffer_size]);
   }

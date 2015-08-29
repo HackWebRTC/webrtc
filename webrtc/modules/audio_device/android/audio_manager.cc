@@ -191,8 +191,10 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
   hardware_aec_ = hardware_aec;
   low_latency_playout_ = low_latency_output;
   // TODO(henrika): add support for stereo output.
-  playout_parameters_.reset(sample_rate, channels, output_buffer_size);
-  record_parameters_.reset(sample_rate, channels, input_buffer_size);
+  playout_parameters_.reset(sample_rate, channels,
+                            static_cast<size_t>(output_buffer_size));
+  record_parameters_.reset(sample_rate, channels,
+                           static_cast<size_t>(input_buffer_size));
 }
 
 const AudioParameters& AudioManager::GetPlayoutAudioParameters() {

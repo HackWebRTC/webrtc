@@ -82,7 +82,7 @@ size_t WebRtcIlbcfix_FrameClassify(
   }
 
   /* Extract the best choise of start state */
-  pos = (size_t)WebRtcSpl_MaxIndexW32(ssqEn, iLBCenc_inst->nsub - 1) + 1;
+  pos = WebRtcSpl_MaxIndexW32(ssqEn, iLBCenc_inst->nsub - 1) + 1;
 
   return(pos);
 }

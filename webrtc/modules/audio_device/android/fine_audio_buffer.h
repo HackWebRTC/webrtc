@@ -32,7 +32,7 @@ class FineAudioBuffer {
   // |device_buffer| delivers 10ms of data. Given the sample rate the number
   // of samples can be calculated.
   FineAudioBuffer(AudioDeviceBuffer* device_buffer,
-                  int desired_frame_size_bytes,
+                  size_t desired_frame_size_bytes,
                   int sample_rate);
   ~FineAudioBuffer();
 
@@ -40,7 +40,7 @@ class FineAudioBuffer {
   // buffer is smaller memory trampling will happen.
   // |desired_frame_size_bytes| and |samples_rate| are as described in the
   // constructor.
-  int RequiredBufferSizeBytes();
+  size_t RequiredBufferSizeBytes();
 
   // |buffer| must be of equal or greater size than what is returned by
   // RequiredBufferSize. This is to avoid unnecessary memcpy.
@@ -50,18 +50,18 @@ class FineAudioBuffer {
   // Device buffer that provides 10ms chunks of data.
   AudioDeviceBuffer* device_buffer_;
   // Number of bytes delivered per GetBufferData
-  int desired_frame_size_bytes_;
+  size_t desired_frame_size_bytes_;
   int sample_rate_;
-  int samples_per_10_ms_;
+  size_t samples_per_10_ms_;
   // Convenience parameter to avoid converting from samples
-  int bytes_per_10_ms_;
+  size_t bytes_per_10_ms_;
 
   // Storage for samples that are not yet asked for.
   rtc::scoped_ptr<int8_t[]> cache_buffer_;
   // Location of first unread sample.
-  int cached_buffer_start_;
+  size_t cached_buffer_start_;
   // Number of bytes stored in cache.
-  int cached_bytes_;
+  size_t cached_bytes_;
 };
 
 }  // namespace webrtc

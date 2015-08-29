@@ -149,8 +149,7 @@ void WebRtcSpl_ZerosArrayW32(int32_t* vector,
 //      - vector : 16-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Maximum absolute value in vector;
-//                 or -1, if (vector == NULL || length == 0).
+// Return value  : Maximum absolute value in vector.
 typedef int16_t (*MaxAbsValueW16)(const int16_t* vector, size_t length);
 extern MaxAbsValueW16 WebRtcSpl_MaxAbsValueW16;
 int16_t WebRtcSpl_MaxAbsValueW16C(const int16_t* vector, size_t length);
@@ -167,8 +166,7 @@ int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, size_t length);
 //      - vector : 32-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Maximum absolute value in vector;
-//                 or -1, if (vector == NULL || length == 0).
+// Return value  : Maximum absolute value in vector.
 typedef int32_t (*MaxAbsValueW32)(const int32_t* vector, size_t length);
 extern MaxAbsValueW32 WebRtcSpl_MaxAbsValueW32;
 int32_t WebRtcSpl_MaxAbsValueW32C(const int32_t* vector, size_t length);
@@ -186,9 +184,6 @@ int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, size_t length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Maximum sample value in |vector|.
-//                 If (vector == NULL || length == 0) WEBRTC_SPL_WORD16_MIN
-//                 is returned. Note that WEBRTC_SPL_WORD16_MIN is a feasible
-//                 value and we can't catch errors purely based on it.
 typedef int16_t (*MaxValueW16)(const int16_t* vector, size_t length);
 extern MaxValueW16 WebRtcSpl_MaxValueW16;
 int16_t WebRtcSpl_MaxValueW16C(const int16_t* vector, size_t length);
@@ -206,9 +201,6 @@ int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, size_t length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Maximum sample value in |vector|.
-//                 If (vector == NULL || length == 0) WEBRTC_SPL_WORD32_MIN
-//                 is returned. Note that WEBRTC_SPL_WORD32_MIN is a feasible
-//                 value and we can't catch errors purely based on it.
 typedef int32_t (*MaxValueW32)(const int32_t* vector, size_t length);
 extern MaxValueW32 WebRtcSpl_MaxValueW32;
 int32_t WebRtcSpl_MaxValueW32C(const int32_t* vector, size_t length);
@@ -226,9 +218,6 @@ int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, size_t length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Minimum sample value in |vector|.
-//                 If (vector == NULL || length == 0) WEBRTC_SPL_WORD16_MAX
-//                 is returned. Note that WEBRTC_SPL_WORD16_MAX is a feasible
-//                 value and we can't catch errors purely based on it.
 typedef int16_t (*MinValueW16)(const int16_t* vector, size_t length);
 extern MinValueW16 WebRtcSpl_MinValueW16;
 int16_t WebRtcSpl_MinValueW16C(const int16_t* vector, size_t length);
@@ -246,9 +235,6 @@ int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, size_t length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Minimum sample value in |vector|.
-//                 If (vector == NULL || length == 0) WEBRTC_SPL_WORD32_MAX
-//                 is returned. Note that WEBRTC_SPL_WORD32_MAX is a feasible
-//                 value and we can't catch errors purely based on it.
 typedef int32_t (*MinValueW32)(const int32_t* vector, size_t length);
 extern MinValueW32 WebRtcSpl_MinValueW32;
 int32_t WebRtcSpl_MinValueW32C(const int32_t* vector, size_t length);
@@ -265,12 +251,11 @@ int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, size_t length);
 //      - vector : 16-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Index to the maximum absolute value in vector, or -1,
-//                 if (vector == NULL || length == 0).
+// Return value  : Index to the maximum absolute value in vector.
 //                 If there are multiple equal maxima, return the index of the
 //                 first. -32768 will always have precedence over 32767 (despite
-//                 -32768 presenting an int16 absolute value of 32767);
-int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, size_t length);
+//                 -32768 presenting an int16 absolute value of 32767).
+size_t WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, size_t length);
 
 // Returns the vector index to the maximum sample value of a 16-bit vector.
 //
@@ -279,9 +264,8 @@ int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, size_t length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Index to the maximum value in vector (if multiple
-//                 indexes have the maximum, return the first);
-//                 or -1, if (vector == NULL || length == 0).
-int WebRtcSpl_MaxIndexW16(const int16_t* vector, size_t length);
+//                 indexes have the maximum, return the first).
+size_t WebRtcSpl_MaxIndexW16(const int16_t* vector, size_t length);
 
 // Returns the vector index to the maximum sample value of a 32-bit vector.
 //
@@ -290,9 +274,8 @@ int WebRtcSpl_MaxIndexW16(const int16_t* vector, size_t length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Index to the maximum value in vector (if multiple
-//                 indexes have the maximum, return the first);
-//                 or -1, if (vector == NULL || length == 0).
-int WebRtcSpl_MaxIndexW32(const int32_t* vector, size_t length);
+//                 indexes have the maximum, return the first).
+size_t WebRtcSpl_MaxIndexW32(const int32_t* vector, size_t length);
 
 // Returns the vector index to the minimum sample value of a 16-bit vector.
 //
@@ -301,9 +284,8 @@ int WebRtcSpl_MaxIndexW32(const int32_t* vector, size_t length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Index to the mimimum value in vector  (if multiple
-//                 indexes have the minimum, return the first);
-//                 or -1, if (vector == NULL || length == 0).
-int WebRtcSpl_MinIndexW16(const int16_t* vector, size_t length);
+//                 indexes have the minimum, return the first).
+size_t WebRtcSpl_MinIndexW16(const int16_t* vector, size_t length);
 
 // Returns the vector index to the minimum sample value of a 32-bit vector.
 //
@@ -312,9 +294,8 @@ int WebRtcSpl_MinIndexW16(const int16_t* vector, size_t length);
 //      - length : Number of samples in vector.
 //
 // Return value  : Index to the mimimum value in vector  (if multiple
-//                 indexes have the minimum, return the first);
-//                 or -1, if (vector == NULL || length == 0).
-int WebRtcSpl_MinIndexW32(const int32_t* vector, size_t length);
+//                 indexes have the minimum, return the first).
+size_t WebRtcSpl_MinIndexW32(const int32_t* vector, size_t length);
 
 // End: Minimum and maximum operations.
 
@@ -443,14 +424,12 @@ void WebRtcSpl_AffineTransformVector(int16_t* out_vector,
 //      - scale            : The number of left shifts required to obtain the
 //                           auto-correlation in Q0
 //
-// Return value            :
-//      - -1, if |order| > |in_vector_length|;
-//      - Number of samples in |result|, i.e. (order+1), otherwise.
-int WebRtcSpl_AutoCorrelation(const int16_t* in_vector,
-                              size_t in_vector_length,
-                              size_t order,
-                              int32_t* result,
-                              int* scale);
+// Return value            : Number of samples in |result|, i.e. (order+1)
+size_t WebRtcSpl_AutoCorrelation(const int16_t* in_vector,
+                                 size_t in_vector_length,
+                                 size_t order,
+                                 int32_t* result,
+                                 int* scale);
 
 // A 32-bit fix-point implementation of the Levinson-Durbin algorithm that
 // does NOT use the 64 bit class
