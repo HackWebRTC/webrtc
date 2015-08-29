@@ -48,12 +48,41 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
         ++framesRendered;
         frameLock.notify();
       }
+      VideoRenderer.renderFrameDone(frame);
     }
 
     public int WaitForNextFrameToRender() throws InterruptedException {
       synchronized (frameLock) {
         frameLock.wait();
         return framesRendered;
+      }
+    }
+  }
+
+  static class AsyncRenderer implements VideoRenderer.Callbacks {
+    private final List<I420Frame> pendingFrames = new ArrayList<I420Frame>();
+
+    @Override
+    public void renderFrame(I420Frame frame) {
+      synchronized (pendingFrames) {
+        pendingFrames.add(frame);
+        pendingFrames.notifyAll();
+      }
+    }
+
+    // Wait until at least one frame have been received, before returning them.
+    public List<I420Frame> WaitForFrames() {
+      synchronized (pendingFrames) {
+        while (pendingFrames.isEmpty()) {
+          try {
+            pendingFrames.wait();
+          } catch (InterruptedException e) {
+            // Ignore.
+          }
+        }
+        final List<I420Frame> frames = new ArrayList<I420Frame>(pendingFrames);
+        pendingFrames.clear();
+        return frames;
       }
     }
   }
@@ -305,5 +334,55 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     for (Long timeStamp : listOftimestamps) {
       capturer.returnBuffer(timeStamp);
     }
+  }
+
+  @SmallTest
+  // This test that we can capture frames, stop capturing, keep the frames for rendering, and then
+  // return the frames. It tests both the Java and the C++ layer.
+  public void testCaptureAndAsyncRender() {
+    final VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null);
+    // Helper class that sets everything up, captures at least one frame, and then shuts
+    // everything down.
+    class CaptureFramesRunnable implements Runnable {
+      public List<I420Frame> frames;
+
+      @Override
+      public void run() {
+        PeerConnectionFactory factory = new PeerConnectionFactory();
+        VideoSource source = factory.createVideoSource(capturer, new MediaConstraints());
+        VideoTrack track = factory.createVideoTrack("dummy", source);
+        AsyncRenderer renderer = new AsyncRenderer();
+        track.addRenderer(new VideoRenderer(renderer));
+
+        // Wait until we get at least one frame.
+        frames = renderer.WaitForFrames();
+
+        // Stop everything.
+        track.dispose();
+        source.dispose();
+        factory.dispose();
+      }
+    }
+
+    // Capture frames on a separate thread.
+    CaptureFramesRunnable captureFramesRunnable = new CaptureFramesRunnable();
+    Thread captureThread = new Thread(captureFramesRunnable);
+    captureThread.start();
+
+    // Wait until frames are captured, and then kill the thread.
+    try {
+      captureThread.join();
+    } catch (InterruptedException e) {
+      fail("Capture thread was interrupted");
+    }
+    captureThread = null;
+
+    // Assert that we have frames that have not been returned.
+    assertTrue(!captureFramesRunnable.frames.isEmpty());
+    // Return the frame(s).
+    for (I420Frame frame : captureFramesRunnable.frames) {
+      VideoRenderer.renderFrameDone(frame);
+    }
+    assertEquals(capturer.pendingFramesTimeStamps(), "[]");
   }
 }

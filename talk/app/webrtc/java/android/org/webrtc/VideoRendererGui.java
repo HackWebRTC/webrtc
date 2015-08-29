@@ -368,9 +368,9 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         frameToRenderQueue.poll();
         // Re-allocate / allocate the frame.
         yuvFrameToRender = new I420Frame(videoWidth, videoHeight, rotationDegree,
-                                         strides, null);
+                                         strides, null, 0);
         textureFrameToRender = new I420Frame(videoWidth, videoHeight, rotationDegree,
-                                             null, -1);
+                                             null, -1, 0);
         updateTextureProperties = true;
         Log.d(TAG, "  YuvImageRenderer.setSize done.");
       }
@@ -380,6 +380,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     public synchronized void renderFrame(I420Frame frame) {
       if (surface == null) {
         // This object has been released.
+        VideoRenderer.renderFrameDone(frame);
         return;
       }
       if (!seenFrame && rendererEvents != null) {
@@ -393,6 +394,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         // Skip rendering of this frame if setSize() was not called.
         if (yuvFrameToRender == null || textureFrameToRender == null) {
           framesDropped++;
+          VideoRenderer.renderFrameDone(frame);
           return;
         }
         // Check input frame parameters.
@@ -402,6 +404,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
               frame.yuvStrides[2] < frame.width / 2) {
             Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
                 frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
+            VideoRenderer.renderFrameDone(frame);
             return;
           }
           // Check incoming frame dimensions.
@@ -415,6 +418,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         if (frameToRenderQueue.size() > 0) {
           // Skip rendering of this frame if previous frame was not rendered yet.
           framesDropped++;
+          VideoRenderer.renderFrameDone(frame);
           return;
         }
 
@@ -431,6 +435,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
       copyTimeNs += (System.nanoTime() - now);
       seenFrame = true;
+      VideoRenderer.renderFrameDone(frame);
 
       // Request rendering.
       surface.requestRender();

@@ -763,10 +763,10 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
         j_frame_class_(jni,
                        FindClass(jni, "org/webrtc/VideoRenderer$I420Frame")),
         j_i420_frame_ctor_id_(GetMethodID(
-            jni, *j_frame_class_, "<init>", "(III[I[Ljava/nio/ByteBuffer;)V")),
+            jni, *j_frame_class_, "<init>", "(III[I[Ljava/nio/ByteBuffer;J)V")),
         j_texture_frame_ctor_id_(GetMethodID(
             jni, *j_frame_class_, "<init>",
-            "(IIILjava/lang/Object;I)V")),
+            "(IIILjava/lang/Object;IJ)V")),
         j_byte_buffer_class_(jni, FindClass(jni, "java/nio/ByteBuffer")) {
     CHECK_EXCEPTION(jni);
   }
@@ -775,6 +775,9 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
 
   void RenderFrame(const cricket::VideoFrame* video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
+    // Make a shallow copy. |j_callbacks_| is responsible for releasing the
+    // copy by calling VideoRenderer.renderFrameDone().
+    video_frame = video_frame->Copy();
     jobject j_frame = (video_frame->GetNativeHandle() != nullptr)
                           ? CricketToJavaTextureFrame(video_frame)
                           : CricketToJavaI420Frame(video_frame);
@@ -810,7 +813,7 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
         *j_frame_class_, j_i420_frame_ctor_id_,
         frame->GetWidth(), frame->GetHeight(),
         static_cast<int>(frame->GetVideoRotation()),
-        strides, planes);
+        strides, planes, frame);
   }
 
   // Return a VideoRenderer.I420Frame referring texture object in |frame|.
@@ -823,7 +826,7 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
         *j_frame_class_, j_texture_frame_ctor_id_,
         frame->GetWidth(), frame->GetHeight(),
         static_cast<int>(frame->GetVideoRotation()),
-        texture_object, texture_id);
+        texture_object, texture_id, frame);
   }
 
   JNIEnv* jni() {
@@ -942,6 +945,11 @@ JOW(void, VideoRenderer_freeGuiVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
 
 JOW(void, VideoRenderer_freeWrappedVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
   delete reinterpret_cast<JavaVideoRendererWrapper*>(j_p);
+}
+
+JOW(void, VideoRenderer_releaseNativeFrame)(
+    JNIEnv* jni, jclass, jlong j_frame_ptr) {
+  delete reinterpret_cast<const cricket::VideoFrame*>(j_frame_ptr);
 }
 
 JOW(void, MediaStreamTrack_free)(JNIEnv*, jclass, jlong j_p) {

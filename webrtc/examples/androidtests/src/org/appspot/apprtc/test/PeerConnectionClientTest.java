@@ -94,6 +94,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
         }
       }
       renderFrameCalled = true;
+      VideoRenderer.renderFrameDone(frame);
       doneRendering.countDown();
     }
 

@@ -223,6 +223,12 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     return CameraEnumerationAndroid.supportedFormats.get(id);
   }
 
+  // Return a list of timestamps for the frames that have been sent out, but not returned yet.
+  // Useful for logging and testing.
+  public String pendingFramesTimeStamps() {
+    return videoBuffers.pendingFramesTimeStamps();
+  }
+
   private VideoCapturerAndroid() {
     Log.d(TAG, "VideoCapturerAndroid");
   }

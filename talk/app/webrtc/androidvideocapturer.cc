@@ -129,6 +129,8 @@ AndroidVideoCapturer::AndroidVideoCapturer(
       formats.push_back(format);
   }
   SetSupportedFormats(formats);
+  // Do not apply frame rotation by default.
+  SetApplyRotation(false);
 }
 
 AndroidVideoCapturer::~AndroidVideoCapturer() {

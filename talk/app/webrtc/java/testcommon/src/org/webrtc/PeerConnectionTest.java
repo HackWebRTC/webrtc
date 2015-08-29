@@ -136,6 +136,7 @@ public class PeerConnectionTest {
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
       setSize(frame.rotatedWidth(), frame.rotatedHeight());
       --expectedFramesDelivered;
+      VideoRenderer.renderFrameDone(frame);
     }
 
     public synchronized void expectSignalingChange(SignalingState newState) {
