@@ -158,7 +158,7 @@ int VoEExternalMediaImpl::GetAudioFrame(int channel, int desired_sample_rate_hz,
   }
   frame->sample_rate_hz_ =
       desired_sample_rate_hz == 0 ? -1 : desired_sample_rate_hz;
-  return channelPtr->GetAudioFrame(channel, *frame);
+  return channelPtr->GetAudioFrame(channel, frame);
 }
 
 int VoEExternalMediaImpl::SetExternalMixing(int channel, bool enable) {

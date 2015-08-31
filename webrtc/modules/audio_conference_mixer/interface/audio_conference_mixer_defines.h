@@ -25,14 +25,15 @@ public:
     // audio every time it's called.
     //
     // If it returns -1, the frame will not be added to the mix.
-    virtual int32_t GetAudioFrame(const int32_t id, AudioFrame& audioFrame) = 0;
+    virtual int32_t GetAudioFrame(int32_t id,
+                                  AudioFrame* audioFrame) = 0;
 
-    // mixed will be set to true if the participant was mixed this mix iteration
-    int32_t IsMixed(bool& mixed) const;
+    // Returns true if the participant was mixed this mix iteration.
+    bool IsMixed() const;
 
     // This function specifies the sampling frequency needed for the AudioFrame
     // for future GetAudioFrame(..) calls.
-    virtual int32_t NeededFrequency(const int32_t id) = 0;
+    virtual int32_t NeededFrequency(int32_t id) const = 0;
 
     MixHistory* _mixHistory;
 protected:

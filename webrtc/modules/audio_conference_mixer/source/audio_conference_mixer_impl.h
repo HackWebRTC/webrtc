@@ -35,15 +35,15 @@ public:
     MixHistory();
     ~MixHistory();
 
-    // MixerParticipant function
-    int32_t IsMixed(bool& mixed) const;
+    // Returns true if the participant is being mixed.
+    bool IsMixed() const;
 
-    // Sets wasMixed to true if the participant was mixed previous mix
+    // Returns true if the participant was mixed previous mix
     // iteration.
-    int32_t WasMixed(bool& wasMixed) const;
+    bool WasMixed() const;
 
     // Updates the mixed status.
-    int32_t SetIsMixed(const bool mixed);
+    int32_t SetIsMixed(bool mixed);
 
     void ResetMixedStatus();
 private:
@@ -68,23 +68,22 @@ public:
 
     // AudioConferenceMixer functions
     int32_t RegisterMixedStreamCallback(
-        AudioMixerOutputReceiver& mixReceiver) override;
+        AudioMixerOutputReceiver* mixReceiver) override;
     int32_t UnRegisterMixedStreamCallback() override;
-    int32_t SetMixabilityStatus(MixerParticipant& participant,
+    int32_t SetMixabilityStatus(MixerParticipant* participant,
                                 bool mixable) override;
-    int32_t MixabilityStatus(MixerParticipant& participant,
-                             bool& mixable) override;
+    bool MixabilityStatus(const MixerParticipant& participant) const override;
     int32_t SetMinimumMixingFrequency(Frequency freq) override;
-    int32_t SetAnonymousMixabilityStatus(MixerParticipant& participant,
-                                         const bool mixable) override;
-    int32_t AnonymousMixabilityStatus(MixerParticipant& participant,
-                                      bool& mixable) override;
+    int32_t SetAnonymousMixabilityStatus(
+        MixerParticipant* participant, bool mixable) override;
+    bool AnonymousMixabilityStatus(
+        const MixerParticipant& participant) const override;
 
 private:
     enum{DEFAULT_AUDIO_FRAME_POOLSIZE = 50};
 
     // Set/get mix frequency
-    int32_t SetOutputFrequency(const Frequency frequency);
+    int32_t SetOutputFrequency(const Frequency& frequency);
     Frequency OutputFrequency() const;
 
     // Fills mixList with the AudioFrames pointers that should be used when
@@ -98,55 +97,54 @@ private:
         AudioFrameList* mixList,
         AudioFrameList* rampOutList,
         std::map<int, MixerParticipant*>* mixParticipantList,
-        size_t& maxAudioFrameCounter);
+        size_t* maxAudioFrameCounter) const;
 
     // Return the lowest mixing frequency that can be used without having to
     // downsample any audio.
-    int32_t GetLowestMixingFrequency();
-    int32_t GetLowestMixingFrequencyFromList(MixerParticipantList* mixList);
+    int32_t GetLowestMixingFrequency() const;
+    int32_t GetLowestMixingFrequencyFromList(
+        const MixerParticipantList& mixList) const;
 
     // Return the AudioFrames that should be mixed anonymously.
-    void GetAdditionalAudio(AudioFrameList* additionalFramesList);
+    void GetAdditionalAudio(AudioFrameList* additionalFramesList) const;
 
     // Update the MixHistory of all MixerParticipants. mixedParticipantsList
     // should contain a map of MixerParticipants that have been mixed.
     void UpdateMixedStatus(
-        std::map<int, MixerParticipant*>& mixedParticipantsList);
+        const std::map<int, MixerParticipant*>& mixedParticipantsList) const;
 
     // Clears audioFrameList and reclaims all memory associated with it.
-    void ClearAudioFrameList(AudioFrameList* audioFrameList);
+    void ClearAudioFrameList(AudioFrameList* audioFrameList) const;
 
     // Update the list of MixerParticipants who have a positive VAD. mixList
     // should be a list of AudioFrames
-    void UpdateVADPositiveParticipants(
-        AudioFrameList* mixList);
+    void UpdateVADPositiveParticipants(AudioFrameList* mixList) const;
 
     // This function returns true if it finds the MixerParticipant in the
     // specified list of MixerParticipants.
-    bool IsParticipantInList(
-        MixerParticipant& participant,
-        MixerParticipantList* participantList) const;
+    bool IsParticipantInList(const MixerParticipant& participant,
+                             const MixerParticipantList& participantList) const;
 
     // Add/remove the MixerParticipant to the specified
     // MixerParticipant list.
     bool AddParticipantToList(
-        MixerParticipant& participant,
-        MixerParticipantList* participantList);
+        MixerParticipant* participant,
+        MixerParticipantList* participantList) const;
     bool RemoveParticipantFromList(
-        MixerParticipant& removeParticipant,
-        MixerParticipantList* participantList);
+        MixerParticipant* removeParticipant,
+        MixerParticipantList* participantList) const;
 
     // Mix the AudioFrames stored in audioFrameList into mixedAudio.
-    int32_t MixFromList(
-        AudioFrame& mixedAudio,
-        const AudioFrameList* audioFrameList);
+    int32_t MixFromList(AudioFrame* mixedAudio,
+                        const AudioFrameList& audioFrameList) const;
+
     // Mix the AudioFrames stored in audioFrameList into mixedAudio. No
     // record will be kept of this mix (e.g. the corresponding MixerParticipants
     // will not be marked as IsMixed()
-    int32_t MixAnonomouslyFromList(AudioFrame& mixedAudio,
-                                   const AudioFrameList* audioFrameList);
+    int32_t MixAnonomouslyFromList(AudioFrame* mixedAudio,
+                                   const AudioFrameList& audioFrameList) const;
 
-    bool LimitMixedAudio(AudioFrame& mixedAudio);
+    bool LimitMixedAudio(AudioFrame* mixedAudio) const;
 
     rtc::scoped_ptr<CriticalSectionWrapper> _crit;
     rtc::scoped_ptr<CriticalSectionWrapper> _cbCrit;

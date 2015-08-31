@@ -379,8 +379,8 @@ public:
     int SendRTCPPacket(int /*channel*/, const void* data, size_t len) override;
 
     // From MixerParticipant
-    int32_t GetAudioFrame(int32_t id, AudioFrame& audioFrame) override;
-    int32_t NeededFrequency(int32_t id) override;
+    int32_t GetAudioFrame(int32_t id, AudioFrame* audioFrame) override;
+    int32_t NeededFrequency(int32_t id) const override;
 
     // From FileCallback
     void PlayNotification(int32_t id, uint32_t durationMs) override;

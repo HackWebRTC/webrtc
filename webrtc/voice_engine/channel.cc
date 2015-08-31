@@ -445,14 +445,14 @@ bool Channel::OnRecoveredPacket(const uint8_t* rtp_packet,
   return ReceivePacket(rtp_packet, rtp_packet_length, header, false);
 }
 
-int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
+int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetAudioFrame(id=%d)", id);
 
     // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
-    if (audio_coding_->PlayoutData10Ms(audioFrame.sample_rate_hz_,
-                                       &audioFrame) == -1)
+    if (audio_coding_->PlayoutData10Ms(audioFrame->sample_rate_hz_,
+                                       audioFrame) == -1)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -466,18 +466,18 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
 
     if (_RxVadDetection)
     {
-        UpdateRxVadDetection(audioFrame);
+        UpdateRxVadDetection(*audioFrame);
     }
 
     // Convert module ID to internal VoE channel ID
-    audioFrame.id_ = VoEChannelId(audioFrame.id_);
+    audioFrame->id_ = VoEChannelId(audioFrame->id_);
     // Store speech type for dead-or-alive detection
-    _outputSpeechType = audioFrame.speech_type_;
+    _outputSpeechType = audioFrame->speech_type_;
 
     ChannelState::State state = channel_state_.Get();
 
     if (state.rx_apm_is_enabled) {
-      int err = rx_audioproc_->ProcessStream(&audioFrame);
+      int err = rx_audioproc_->ProcessStream(audioFrame);
       if (err) {
         LOG(LS_ERROR) << "ProcessStream() error: " << err;
         assert(false);
@@ -497,7 +497,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
     // Output volume scaling
     if (output_gain < 0.99f || output_gain > 1.01f)
     {
-        AudioFrameOperations::ScaleWithSat(output_gain, audioFrame);
+        AudioFrameOperations::ScaleWithSat(output_gain, *audioFrame);
     }
 
     // Scale left and/or right channel(s) if stereo and master balance is
@@ -505,39 +505,39 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
 
     if (left_pan != 1.0f || right_pan != 1.0f)
     {
-        if (audioFrame.num_channels_ == 1)
+        if (audioFrame->num_channels_ == 1)
         {
             // Emulate stereo mode since panning is active.
             // The mono signal is copied to both left and right channels here.
-            AudioFrameOperations::MonoToStereo(&audioFrame);
+            AudioFrameOperations::MonoToStereo(audioFrame);
         }
         // For true stereo mode (when we are receiving a stereo signal), no
         // action is needed.
 
         // Do the panning operation (the audio frame contains stereo at this
         // stage)
-        AudioFrameOperations::Scale(left_pan, right_pan, audioFrame);
+        AudioFrameOperations::Scale(left_pan, right_pan, *audioFrame);
     }
 
     // Mix decoded PCM output with file if file mixing is enabled
     if (state.output_file_playing)
     {
-        MixAudioWithFile(audioFrame, audioFrame.sample_rate_hz_);
+        MixAudioWithFile(*audioFrame, audioFrame->sample_rate_hz_);
     }
 
     // External media
     if (_outputExternalMedia)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
-        const bool isStereo = (audioFrame.num_channels_ == 2);
+        const bool isStereo = (audioFrame->num_channels_ == 2);
         if (_outputExternalMediaCallbackPtr)
         {
             _outputExternalMediaCallbackPtr->Process(
                 _channelId,
                 kPlaybackPerChannel,
-                (int16_t*)audioFrame.data_,
-                audioFrame.samples_per_channel_,
-                audioFrame.sample_rate_hz_,
+                (int16_t*)audioFrame->data_,
+                audioFrame->samples_per_channel_,
+                audioFrame->sample_rate_hz_,
                 isStereo);
         }
     }
@@ -548,16 +548,16 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
 
         if (_outputFileRecording && _outputFileRecorderPtr)
         {
-            _outputFileRecorderPtr->RecordAudioToFile(audioFrame);
+            _outputFileRecorderPtr->RecordAudioToFile(*audioFrame);
         }
     }
 
     // Measure audio level (0-9)
-    _outputAudioLevel.ComputeLevel(audioFrame);
+    _outputAudioLevel.ComputeLevel(*audioFrame);
 
-    if (capture_start_rtp_time_stamp_ < 0 && audioFrame.timestamp_ != 0) {
+    if (capture_start_rtp_time_stamp_ < 0 && audioFrame->timestamp_ != 0) {
       // The first frame with a valid rtp timestamp.
-      capture_start_rtp_time_stamp_ = audioFrame.timestamp_;
+      capture_start_rtp_time_stamp_ = audioFrame->timestamp_;
     }
 
     if (capture_start_rtp_time_stamp_ >= 0) {
@@ -565,22 +565,22 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
 
       // Compute elapsed time.
       int64_t unwrap_timestamp =
-          rtp_ts_wraparound_handler_->Unwrap(audioFrame.timestamp_);
-      audioFrame.elapsed_time_ms_ =
+          rtp_ts_wraparound_handler_->Unwrap(audioFrame->timestamp_);
+      audioFrame->elapsed_time_ms_ =
           (unwrap_timestamp - capture_start_rtp_time_stamp_) /
           (GetPlayoutFrequency() / 1000);
 
       {
         CriticalSectionScoped lock(ts_stats_lock_.get());
         // Compute ntp time.
-        audioFrame.ntp_time_ms_ = ntp_estimator_.Estimate(
-            audioFrame.timestamp_);
+        audioFrame->ntp_time_ms_ = ntp_estimator_.Estimate(
+            audioFrame->timestamp_);
         // |ntp_time_ms_| won't be valid until at least 2 RTCP SRs are received.
-        if (audioFrame.ntp_time_ms_ > 0) {
+        if (audioFrame->ntp_time_ms_ > 0) {
           // Compute |capture_start_ntp_time_ms_| so that
           // |capture_start_ntp_time_ms_| + |elapsed_time_ms_| == |ntp_time_ms_|
           capture_start_ntp_time_ms_ =
-              audioFrame.ntp_time_ms_ - audioFrame.elapsed_time_ms_;
+              audioFrame->ntp_time_ms_ - audioFrame->elapsed_time_ms_;
         }
       }
     }
@@ -589,7 +589,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
 }
 
 int32_t
-Channel::NeededFrequency(int32_t id)
+Channel::NeededFrequency(int32_t id) const
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::NeededFrequency(id=%d)", id);

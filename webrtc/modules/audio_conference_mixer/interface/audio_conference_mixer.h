@@ -44,25 +44,25 @@ public:
 
     // Register/unregister a callback class for receiving the mixed audio.
     virtual int32_t RegisterMixedStreamCallback(
-        AudioMixerOutputReceiver& receiver) = 0;
+        AudioMixerOutputReceiver* receiver) = 0;
     virtual int32_t UnRegisterMixedStreamCallback() = 0;
 
     // Add/remove participants as candidates for mixing.
-    virtual int32_t SetMixabilityStatus(MixerParticipant& participant,
+    virtual int32_t SetMixabilityStatus(MixerParticipant* participant,
                                         bool mixable) = 0;
-    // mixable is set to true if a participant is a candidate for mixing.
-    virtual int32_t MixabilityStatus(MixerParticipant& participant,
-                                     bool& mixable) = 0;
+    // Returns true if a participant is a candidate for mixing.
+    virtual bool MixabilityStatus(
+        const MixerParticipant& participant) const = 0;
 
     // Inform the mixer that the participant should always be mixed and not
     // count toward the number of mixed participants. Note that a participant
     // must have been added to the mixer (by calling SetMixabilityStatus())
     // before this function can be successfully called.
-    virtual int32_t SetAnonymousMixabilityStatus(MixerParticipant& participant,
-                                                 const bool mixable) = 0;
-    // mixable is set to true if the participant is mixed anonymously.
-    virtual int32_t AnonymousMixabilityStatus(MixerParticipant& participant,
-                                              bool& mixable) = 0;
+    virtual int32_t SetAnonymousMixabilityStatus(
+        MixerParticipant* participant, bool mixable) = 0;
+    // Returns true if the participant is mixed anonymously.
+    virtual bool AnonymousMixabilityStatus(
+        const MixerParticipant& participant) const = 0;
 
     // Set the minimum sampling frequency at which to mix. The mixing algorithm
     // may still choose to mix at a higher samling frequency to avoid
