@@ -246,8 +246,7 @@ void BackgroundNoise::SaveParameters(size_t channel,
   if (norm_shift & 0x1) {
     norm_shift -= 1;  // Even number of shifts required.
   }
-  assert(norm_shift >= 0);  // Should always be positive.
-  residual_energy = residual_energy << norm_shift;
+  residual_energy = WEBRTC_SPL_SHIFT_W32(residual_energy, norm_shift);
 
   // Calculate scale and shift factor.
   parameters.scale = static_cast<int16_t>(WebRtcSpl_SqrtFloor(residual_energy));
