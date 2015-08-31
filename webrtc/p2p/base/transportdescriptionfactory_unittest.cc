@@ -26,8 +26,10 @@ using cricket::TransportOptions;
 class TransportDescriptionFactoryTest : public testing::Test {
  public:
   TransportDescriptionFactoryTest()
-      : id1_(new rtc::FakeSSLIdentity("User1")),
-        id2_(new rtc::FakeSSLIdentity("User2")) {
+      : cert1_(rtc::RTCCertificate::Create(scoped_ptr<rtc::SSLIdentity>(
+          new rtc::FakeSSLIdentity("User1")).Pass())),
+        cert2_(rtc::RTCCertificate::Create(scoped_ptr<rtc::SSLIdentity>(
+          new rtc::FakeSSLIdentity("User2")).Pass())) {
   }
 
   void CheckDesc(const TransportDescription* desc,
@@ -61,8 +63,8 @@ class TransportDescriptionFactoryTest : public testing::Test {
     if (dtls) {
       f1_.set_secure(cricket::SEC_ENABLED);
       f2_.set_secure(cricket::SEC_ENABLED);
-      f1_.set_identity(id1_.get());
-      f2_.set_identity(id2_.get());
+      f1_.set_certificate(cert1_);
+      f2_.set_certificate(cert2_);
     } else {
       f1_.set_secure(cricket::SEC_DISABLED);
       f2_.set_secure(cricket::SEC_DISABLED);
@@ -113,8 +115,9 @@ class TransportDescriptionFactoryTest : public testing::Test {
  protected:
   TransportDescriptionFactory f1_;
   TransportDescriptionFactory f2_;
-  scoped_ptr<rtc::SSLIdentity> id1_;
-  scoped_ptr<rtc::SSLIdentity> id2_;
+
+  rtc::scoped_refptr<rtc::RTCCertificate> cert1_;
+  rtc::scoped_refptr<rtc::RTCCertificate> cert2_;
 };
 
 TEST_F(TransportDescriptionFactoryTest, TestOfferDefault) {
@@ -125,9 +128,10 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferDefault) {
 
 TEST_F(TransportDescriptionFactoryTest, TestOfferDtls) {
   f1_.set_secure(cricket::SEC_ENABLED);
-  f1_.set_identity(id1_.get());
+  f1_.set_certificate(cert1_);
   std::string digest_alg;
-  ASSERT_TRUE(id1_->certificate().GetSignatureDigestAlgorithm(&digest_alg));
+  ASSERT_TRUE(cert1_->ssl_certificate().GetSignatureDigestAlgorithm(
+      &digest_alg));
   scoped_ptr<TransportDescription> desc(f1_.CreateOffer(
       TransportOptions(), NULL));
   CheckDesc(desc.get(), "", "", "", digest_alg);
@@ -149,9 +153,10 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsWithNoIdentity) {
 // The ICE credentials should stay the same in the new offer.
 TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsReofferDtls) {
   f1_.set_secure(cricket::SEC_ENABLED);
-  f1_.set_identity(id1_.get());
+  f1_.set_certificate(cert1_);
   std::string digest_alg;
-  ASSERT_TRUE(id1_->certificate().GetSignatureDigestAlgorithm(&digest_alg));
+  ASSERT_TRUE(cert1_->ssl_certificate().GetSignatureDigestAlgorithm(
+      &digest_alg));
   scoped_ptr<TransportDescription> old_desc(f1_.CreateOffer(
       TransportOptions(), NULL));
   ASSERT_TRUE(old_desc.get() != NULL);
@@ -192,7 +197,7 @@ TEST_F(TransportDescriptionFactoryTest, TestReanswer) {
 // Test that we handle answering an offer with DTLS with no DTLS.
 TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToNoDtls) {
   f1_.set_secure(cricket::SEC_ENABLED);
-  f1_.set_identity(id1_.get());
+  f1_.set_certificate(cert1_);
   scoped_ptr<TransportDescription> offer(
       f1_.CreateOffer(TransportOptions(), NULL));
   ASSERT_TRUE(offer.get() != NULL);
@@ -205,7 +210,7 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToNoDtls) {
 // but fail if we require DTLS.
 TEST_F(TransportDescriptionFactoryTest, TestAnswerNoDtlsToDtls) {
   f2_.set_secure(cricket::SEC_ENABLED);
-  f2_.set_identity(id2_.get());
+  f2_.set_certificate(cert2_);
   scoped_ptr<TransportDescription> offer(
       f1_.CreateOffer(TransportOptions(), NULL));
   ASSERT_TRUE(offer.get() != NULL);
@@ -222,14 +227,15 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerNoDtlsToDtls) {
 // DTLS enabled and required.
 TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToDtls) {
   f1_.set_secure(cricket::SEC_ENABLED);
-  f1_.set_identity(id1_.get());
+  f1_.set_certificate(cert1_);
 
   f2_.set_secure(cricket::SEC_ENABLED);
-  f2_.set_identity(id2_.get());
+  f2_.set_certificate(cert2_);
   // f2_ produces the answer that is being checked in this test, so the
-  // answer must contain fingerprint lines with id2_'s digest algorithm.
+  // answer must contain fingerprint lines with cert2_'s digest algorithm.
   std::string digest_alg2;
-  ASSERT_TRUE(id2_->certificate().GetSignatureDigestAlgorithm(&digest_alg2));
+  ASSERT_TRUE(cert2_->ssl_certificate().GetSignatureDigestAlgorithm(
+      &digest_alg2));
 
   scoped_ptr<TransportDescription> offer(
       f1_.CreateOffer(TransportOptions(), NULL));

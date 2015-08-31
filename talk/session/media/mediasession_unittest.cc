@@ -226,15 +226,20 @@ static std::vector<std::string> GetCodecNames(const std::vector<T>& codecs) {
 class MediaSessionDescriptionFactoryTest : public testing::Test {
  public:
   MediaSessionDescriptionFactoryTest()
-      : f1_(&tdf1_), f2_(&tdf2_), id1_("id1"), id2_("id2") {
+      : f1_(&tdf1_),
+        f2_(&tdf2_) {
     f1_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs1));
     f1_.set_video_codecs(MAKE_VECTOR(kVideoCodecs1));
     f1_.set_data_codecs(MAKE_VECTOR(kDataCodecs1));
     f2_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs2));
     f2_.set_video_codecs(MAKE_VECTOR(kVideoCodecs2));
     f2_.set_data_codecs(MAKE_VECTOR(kDataCodecs2));
-    tdf1_.set_identity(&id1_);
-    tdf2_.set_identity(&id2_);
+    tdf1_.set_certificate(rtc::RTCCertificate::Create(
+        rtc::scoped_ptr<rtc::SSLIdentity>(
+            new rtc::FakeSSLIdentity("id1")).Pass()));
+    tdf2_.set_certificate(rtc::RTCCertificate::Create(
+        rtc::scoped_ptr<rtc::SSLIdentity>(
+            new rtc::FakeSSLIdentity("id2")).Pass()));
   }
 
   // Create a video StreamParamsVec object with:
@@ -470,8 +475,6 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
   MediaSessionDescriptionFactory f2_;
   TransportDescriptionFactory tdf1_;
   TransportDescriptionFactory tdf2_;
-  rtc::FakeSSLIdentity id1_;
-  rtc::FakeSSLIdentity id2_;
 };
 
 // Create a typical audio offer, and ensure it matches what we expect.

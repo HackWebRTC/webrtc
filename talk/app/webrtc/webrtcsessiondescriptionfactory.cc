@@ -255,7 +255,7 @@ WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
     }
   }
 
-  transport_desc_factory_.set_identity(NULL);
+  transport_desc_factory_.set_certificate(nullptr);
 }
 
 void WebRtcSessionDescriptionFactory::CreateOffer(
@@ -522,8 +522,7 @@ void WebRtcSessionDescriptionFactory::SetCertificate(
   certificate_request_state_ = CERTIFICATE_SUCCEEDED;
   SignalCertificateReady(certificate);
 
-  // TODO(hbos): set_certificate
-  transport_desc_factory_.set_identity(certificate->identity());
+  transport_desc_factory_.set_certificate(certificate);
   transport_desc_factory_.set_secure(cricket::SEC_ENABLED);
 
   while (!create_session_description_requests_.empty()) {

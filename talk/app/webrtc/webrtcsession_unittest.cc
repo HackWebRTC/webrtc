@@ -562,8 +562,9 @@ class WebRtcSessionTest
     std::string identity_name = "WebRTC" +
         rtc::ToString(rtc::CreateRandomId());
     // Confirmed to work with KT_RSA and KT_ECDSA.
-    identity_.reset(rtc::SSLIdentity::Generate(identity_name, rtc::KT_DEFAULT));
-    tdesc_factory_->set_identity(identity_.get());
+    tdesc_factory_->set_certificate(rtc::RTCCertificate::Create(
+        rtc::scoped_ptr<rtc::SSLIdentity>(rtc::SSLIdentity::Generate(
+            identity_name, rtc::KT_DEFAULT)).Pass()));
     tdesc_factory_->set_secure(cricket::SEC_REQUIRED);
   }
 
@@ -1274,7 +1275,6 @@ class WebRtcSessionTest
   cricket::FakeDeviceManager* device_manager_;
   rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
   rtc::scoped_ptr<cricket::TransportDescriptionFactory> tdesc_factory_;
-  rtc::scoped_ptr<rtc::SSLIdentity> identity_;
   rtc::scoped_ptr<cricket::MediaSessionDescriptionFactory> desc_factory_;
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
   rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;

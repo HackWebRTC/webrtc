@@ -20,8 +20,7 @@
 namespace cricket {
 
 TransportDescriptionFactory::TransportDescriptionFactory()
-    : secure_(SEC_DISABLED),
-      identity_(NULL) {
+    : secure_(SEC_DISABLED) {
 }
 
 TransportDescription* TransportDescriptionFactory::CreateOffer(
@@ -97,8 +96,8 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
 
 bool TransportDescriptionFactory::SetSecurityInfo(
     TransportDescription* desc, ConnectionRole role) const {
-  if (!identity_) {
-    LOG(LS_ERROR) << "Cannot create identity digest with no identity";
+  if (!certificate_) {
+    LOG(LS_ERROR) << "Cannot create identity digest with no certificate";
     return false;
   }
 
@@ -106,13 +105,14 @@ bool TransportDescriptionFactory::SetSecurityInfo(
   // RFC 4572 Section 5 requires that those lines use the same hash function as
   // the certificate's signature.
   std::string digest_alg;
-  if (!identity_->certificate().GetSignatureDigestAlgorithm(&digest_alg)) {
+  if (!certificate_->ssl_certificate().GetSignatureDigestAlgorithm(
+          &digest_alg)) {
     LOG(LS_ERROR) << "Failed to retrieve the certificate's digest algorithm";
     return false;
   }
 
   desc->identity_fingerprint.reset(
-      rtc::SSLFingerprint::Create(digest_alg, identity_));
+      rtc::SSLFingerprint::Create(digest_alg, certificate_->identity()));
   if (!desc->identity_fingerprint.get()) {
     LOG(LS_ERROR) << "Failed to create identity fingerprint, alg="
                   << digest_alg;
