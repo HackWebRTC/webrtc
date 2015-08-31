@@ -25,11 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef WIN32
-#include "webrtc/base/win32.h"
-#include <objbase.h>
-#endif
-
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/gunit.h"
 #include "talk/media/base/constants.h"
@@ -3135,16 +3130,6 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 }
 
-TEST(WebRtcVoiceEngineTest, TestDefaultOptionsBeforeInit) {
-  cricket::WebRtcVoiceEngine engine;
-  cricket::AudioOptions options = engine.GetOptions();
-  // The default options should have at least a few things set. We purposefully
-  // don't check the option values here, though.
-  EXPECT_TRUE(options.echo_cancellation.IsSet());
-  EXPECT_TRUE(options.auto_gain_control.IsSet());
-  EXPECT_TRUE(options.noise_suppression.IsSet());
-}
-
 // Test that GetReceiveChannelNum returns the default channel for the first
 // recv stream in 1-1 calls.
 TEST_F(WebRtcVoiceEngineTestFake, TestGetReceiveChannelNumIn1To1Calls) {
@@ -3193,165 +3178,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputScaling) {
   EXPECT_DOUBLE_EQ(2, left);
   EXPECT_DOUBLE_EQ(1, right);
 }
-
-// Tests for the actual WebRtc VoE library.
-
-// Tests that the library initializes and shuts down properly.
-TEST(WebRtcVoiceEngineTest, StartupShutdown) {
-  cricket::WebRtcVoiceEngine engine;
-  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  cricket::VoiceMediaChannel* channel =
-      engine.CreateChannel(cricket::AudioOptions());
-  EXPECT_TRUE(channel != nullptr);
-  delete channel;
-  engine.Terminate();
-
-  // Reinit to catch regression where VoiceEngineObserver reference is lost
-  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  engine.Terminate();
-}
-
-// Tests that the library is configured with the codecs we want.
-TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
-  cricket::WebRtcVoiceEngine engine;
-  // Check codecs by name.
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "OPUS", 48000, 0, 2, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "ISAC", 16000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "ISAC", 32000, 0, 1, 0)));
-  // Check that name matching is case-insensitive.
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "ILBC", 8000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "iLBC", 8000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "PCMU", 8000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "PCMA", 8000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "G722", 8000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "red", 8000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "CN", 32000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "CN", 16000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "CN", 8000, 0, 1, 0)));
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "telephone-event", 8000, 0, 1, 0)));
-  // Check codecs with an id by id.
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(0, "", 8000, 0, 1, 0)));   // PCMU
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(8, "", 8000, 0, 1, 0)));   // PCMA
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(9, "", 8000, 0, 1, 0)));  // G722
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(13, "", 8000, 0, 1, 0)));  // CN
-  // Check sample/bitrate matching.
-  EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(0, "PCMU", 8000, 64000, 1, 0)));
-  // Check that bad codecs fail.
-  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(99, "ABCD", 0, 0, 1, 0)));
-  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(88, "", 0, 0, 1, 0)));
-  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(0, "", 0, 0, 2, 0)));
-  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(0, "", 5000, 0, 1, 0)));
-  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(0, "", 0, 5000, 1, 0)));
-  // Verify the payload id of common audio codecs, including CN, ISAC, and G722.
-  for (std::vector<cricket::AudioCodec>::const_iterator it =
-      engine.codecs().begin(); it != engine.codecs().end(); ++it) {
-    if (it->name == "CN" && it->clockrate == 16000) {
-      EXPECT_EQ(105, it->id);
-    } else if (it->name == "CN" && it->clockrate == 32000) {
-      EXPECT_EQ(106, it->id);
-    } else if (it->name == "ISAC" && it->clockrate == 16000) {
-      EXPECT_EQ(103, it->id);
-    } else if (it->name == "ISAC" && it->clockrate == 32000) {
-      EXPECT_EQ(104, it->id);
-    } else if (it->name == "G722" && it->clockrate == 8000) {
-      EXPECT_EQ(9, it->id);
-    } else if (it->name == "telephone-event") {
-      EXPECT_EQ(126, it->id);
-    } else if (it->name == "red") {
-      EXPECT_EQ(127, it->id);
-    } else if (it->name == "opus") {
-      EXPECT_EQ(111, it->id);
-      ASSERT_TRUE(it->params.find("minptime") != it->params.end());
-      EXPECT_EQ("10", it->params.find("minptime")->second);
-      ASSERT_TRUE(it->params.find("maxptime") != it->params.end());
-      EXPECT_EQ("60", it->params.find("maxptime")->second);
-      ASSERT_TRUE(it->params.find("useinbandfec") != it->params.end());
-      EXPECT_EQ("1", it->params.find("useinbandfec")->second);
-    }
-  }
-
-  engine.Terminate();
-}
-
-// Tests that VoE supports at least 32 channels
-TEST(WebRtcVoiceEngineTest, Has32Channels) {
-  cricket::WebRtcVoiceEngine engine;
-  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-
-  cricket::VoiceMediaChannel* channels[32];
-  int num_channels = 0;
-
-  while (num_channels < ARRAY_SIZE(channels)) {
-    cricket::VoiceMediaChannel* channel =
-        engine.CreateChannel(cricket::AudioOptions());
-    if (!channel)
-      break;
-
-    channels[num_channels++] = channel;
-  }
-
-  int expected = ARRAY_SIZE(channels);
-  EXPECT_EQ(expected, num_channels);
-
-  while (num_channels > 0) {
-    delete channels[--num_channels];
-  }
-
-  engine.Terminate();
-}
-
-// Test that we set our preferred codecs properly.
-TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
-  cricket::WebRtcVoiceEngine engine;
-  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  cricket::WebRtcVoiceMediaChannel channel(&engine);
-  EXPECT_TRUE(channel.SetRecvCodecs(engine.codecs()));
-}
-
-#ifdef WIN32
-// Test our workarounds to WebRtc VoE' munging of the coinit count
-TEST(WebRtcVoiceEngineTest, CoInitialize) {
-  cricket::WebRtcVoiceEngine* engine = new cricket::WebRtcVoiceEngine();
-
-  // Initial refcount should be 0.
-  EXPECT_EQ(S_OK, CoInitializeEx(NULL, COINIT_MULTITHREADED));
-
-  // Engine should start even with COM already inited.
-  EXPECT_TRUE(engine->Init(rtc::Thread::Current()));
-  engine->Terminate();
-  EXPECT_TRUE(engine->Init(rtc::Thread::Current()));
-  engine->Terminate();
-
-  // Refcount after terminate should be 1 (in reality 3); test if it is nonzero.
-  EXPECT_EQ(S_FALSE, CoInitializeEx(NULL, COINIT_MULTITHREADED));
-  // Decrement refcount to (hopefully) 0.
-  CoUninitialize();
-  CoUninitialize();
-  delete engine;
-
-  // Ensure refcount is 0.
-  EXPECT_EQ(S_OK, CoInitializeEx(NULL, COINIT_MULTITHREADED));
-  CoUninitialize();
-}
-#endif
 
 TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromSyncLabel) {
   cricket::FakeCall call((webrtc::Call::Config()));
@@ -3662,4 +3488,146 @@ TEST_F(WebRtcVoiceEngineTestFake, AssociateChannelResetUponDeleteChannnel) {
 
   EXPECT_TRUE(channel_->RemoveSendStream(2));
   EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), -1);
+}
+
+// Tests for the actual WebRtc VoE library.
+
+TEST(WebRtcVoiceEngineTest, TestDefaultOptionsBeforeInit) {
+  cricket::WebRtcVoiceEngine engine;
+  cricket::AudioOptions options = engine.GetOptions();
+  // The default options should have at least a few things set. We purposefully
+  // don't check the option values here, though.
+  EXPECT_TRUE(options.echo_cancellation.IsSet());
+  EXPECT_TRUE(options.auto_gain_control.IsSet());
+  EXPECT_TRUE(options.noise_suppression.IsSet());
+}
+
+// Tests that the library initializes and shuts down properly.
+TEST(WebRtcVoiceEngineTest, StartupShutdown) {
+  cricket::WebRtcVoiceEngine engine;
+  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
+  cricket::VoiceMediaChannel* channel =
+      engine.CreateChannel(cricket::AudioOptions());
+  EXPECT_TRUE(channel != nullptr);
+  delete channel;
+  engine.Terminate();
+
+  // Reinit to catch regression where VoiceEngineObserver reference is lost
+  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
+  engine.Terminate();
+}
+
+// Tests that the library is configured with the codecs we want.
+TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
+  cricket::WebRtcVoiceEngine engine;
+  // Check codecs by name.
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "OPUS", 48000, 0, 2, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "ISAC", 16000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "ISAC", 32000, 0, 1, 0)));
+  // Check that name matching is case-insensitive.
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "ILBC", 8000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "iLBC", 8000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "PCMU", 8000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "PCMA", 8000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "G722", 8000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "red", 8000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "CN", 32000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "CN", 16000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "CN", 8000, 0, 1, 0)));
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(96, "telephone-event", 8000, 0, 1, 0)));
+  // Check codecs with an id by id.
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(0, "", 8000, 0, 1, 0)));   // PCMU
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(8, "", 8000, 0, 1, 0)));   // PCMA
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(9, "", 8000, 0, 1, 0)));  // G722
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(13, "", 8000, 0, 1, 0)));  // CN
+  // Check sample/bitrate matching.
+  EXPECT_TRUE(engine.FindCodec(
+      cricket::AudioCodec(0, "PCMU", 8000, 64000, 1, 0)));
+  // Check that bad codecs fail.
+  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(99, "ABCD", 0, 0, 1, 0)));
+  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(88, "", 0, 0, 1, 0)));
+  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(0, "", 0, 0, 2, 0)));
+  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(0, "", 5000, 0, 1, 0)));
+  EXPECT_FALSE(engine.FindCodec(cricket::AudioCodec(0, "", 0, 5000, 1, 0)));
+  // Verify the payload id of common audio codecs, including CN, ISAC, and G722.
+  for (std::vector<cricket::AudioCodec>::const_iterator it =
+      engine.codecs().begin(); it != engine.codecs().end(); ++it) {
+    if (it->name == "CN" && it->clockrate == 16000) {
+      EXPECT_EQ(105, it->id);
+    } else if (it->name == "CN" && it->clockrate == 32000) {
+      EXPECT_EQ(106, it->id);
+    } else if (it->name == "ISAC" && it->clockrate == 16000) {
+      EXPECT_EQ(103, it->id);
+    } else if (it->name == "ISAC" && it->clockrate == 32000) {
+      EXPECT_EQ(104, it->id);
+    } else if (it->name == "G722" && it->clockrate == 8000) {
+      EXPECT_EQ(9, it->id);
+    } else if (it->name == "telephone-event") {
+      EXPECT_EQ(126, it->id);
+    } else if (it->name == "red") {
+      EXPECT_EQ(127, it->id);
+    } else if (it->name == "opus") {
+      EXPECT_EQ(111, it->id);
+      ASSERT_TRUE(it->params.find("minptime") != it->params.end());
+      EXPECT_EQ("10", it->params.find("minptime")->second);
+      ASSERT_TRUE(it->params.find("maxptime") != it->params.end());
+      EXPECT_EQ("60", it->params.find("maxptime")->second);
+      ASSERT_TRUE(it->params.find("useinbandfec") != it->params.end());
+      EXPECT_EQ("1", it->params.find("useinbandfec")->second);
+    }
+  }
+
+  engine.Terminate();
+}
+
+// Tests that VoE supports at least 32 channels
+TEST(WebRtcVoiceEngineTest, Has32Channels) {
+  cricket::WebRtcVoiceEngine engine;
+  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
+
+  cricket::VoiceMediaChannel* channels[32];
+  int num_channels = 0;
+
+  while (num_channels < ARRAY_SIZE(channels)) {
+    cricket::VoiceMediaChannel* channel =
+        engine.CreateChannel(cricket::AudioOptions());
+    if (!channel)
+      break;
+
+    channels[num_channels++] = channel;
+  }
+
+  int expected = ARRAY_SIZE(channels);
+  EXPECT_EQ(expected, num_channels);
+
+  while (num_channels > 0) {
+    delete channels[--num_channels];
+  }
+
+  engine.Terminate();
+}
+
+// Test that we set our preferred codecs properly.
+TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
+  cricket::WebRtcVoiceEngine engine;
+  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
+  cricket::WebRtcVoiceMediaChannel channel(&engine);
+  EXPECT_TRUE(channel.SetRecvCodecs(engine.codecs()));
 }
