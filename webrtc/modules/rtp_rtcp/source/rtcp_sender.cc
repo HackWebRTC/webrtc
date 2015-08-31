@@ -858,9 +858,6 @@ RTCPSender::BuildResult RTCPSender::BuildBYE(RtcpContext* ctx) {
 
 RTCPSender::BuildResult RTCPSender::BuildReceiverReferenceTime(
     RtcpContext* ctx) {
-  const int kRrTimeBlockLength = 20;
-  if (ctx->position + kRrTimeBlockLength >= IP_PACKET_SIZE)
-    return BuildResult::kTruncated;
 
   if (last_xr_rr_.size() >= RTCP_NUMBER_OF_SR)
     last_xr_rr_.erase(last_xr_rr_.begin());
@@ -868,146 +865,74 @@ RTCPSender::BuildResult RTCPSender::BuildReceiverReferenceTime(
       RTCPUtility::MidNtp(ctx->ntp_sec, ctx->ntp_frac),
       Clock::NtpToMs(ctx->ntp_sec, ctx->ntp_frac)));
 
-  // Add XR header.
-  *ctx->AllocateData(1) = 0x80;
-  *ctx->AllocateData(1) = 207;
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       4);  // XR packet length.
+  rtcp::Xr xr;
+  xr.From(ssrc_);
 
-  // Add our own SSRC.
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
+  rtcp::Rrtr rrtr;
+  rrtr.WithNtpSec(ctx->ntp_sec);
+  rrtr.WithNtpFrac(ctx->ntp_frac);
 
-  //    0                   1                   2                   3
-  //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-  //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  //   |     BT=4      |   reserved    |       block length = 2        |
-  //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  //   |              NTP timestamp, most significant word             |
-  //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  //   |             NTP timestamp, least significant word             |
-  //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  xr.WithRrtr(&rrtr);
 
-  // Add Receiver Reference Time Report block.
-  *ctx->AllocateData(1) = 4;  // BT.
-  *ctx->AllocateData(1) = 0;  // Reserved.
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       2);  // Block length.
+  // TODO(sprang): Merge XR report sending to contain all of RRTR, DLRR, VOIP?
 
-  // NTP timestamp.
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ctx->ntp_sec);
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ctx->ntp_frac);
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(xr))
+    return BuildResult::kTruncated;
 
   return BuildResult::kSuccess;
 }
 
 RTCPSender::BuildResult RTCPSender::BuildDlrr(RtcpContext* ctx) {
-  const int kDlrrBlockLength = 24;
-  if (ctx->position + kDlrrBlockLength >= IP_PACKET_SIZE)
-    return BuildResult::kTruncated;
+  rtcp::Xr xr;
+  xr.From(ssrc_);
 
-  // Add XR header.
-  *ctx->AllocateData(1) = 0x80;
-  *ctx->AllocateData(1) = 207;
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       5);  // XR packet length.
-
-  // Add our own SSRC.
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  //   0                   1                   2                   3
-  //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-  //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  //  |     BT=5      |   reserved    |         block length          |
-  //  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-  //  |                 SSRC_1 (SSRC of first receiver)               | sub-
-  //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
-  //  |                         last RR (LRR)                         |   1
-  //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  //  |                   delay since last RR (DLRR)                  |
-  //  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-  //  |                 SSRC_2 (SSRC of second receiver)              | sub-
-  //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
-  //  :                               ...                             :   2
-
-  // Add DLRR sub block.
-  *ctx->AllocateData(1) = 5;  // BT.
-  *ctx->AllocateData(1) = 0;  // Reserved.
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       3);  // Block length.
-
-  // NTP timestamp.
-
+  rtcp::Dlrr dlrr;
   const RtcpReceiveTimeInfo& info = ctx->feedback_state.last_xr_rr;
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), info.sourceSSRC);
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), info.lastRR);
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4),
-                                       info.delaySinceLastRR);
+  dlrr.WithDlrrItem(info.sourceSSRC, info.lastRR, info.delaySinceLastRR);
+
+  xr.WithDlrr(&dlrr);
+
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(xr))
+    return BuildResult::kTruncated;
 
   return BuildResult::kSuccess;
 }
 
 // TODO(sprang): Add a unit test for this, or remove if the code isn't used.
 RTCPSender::BuildResult RTCPSender::BuildVoIPMetric(RtcpContext* ctx) {
-  // sanity
-  if (ctx->position + 44 >= IP_PACKET_SIZE)
+  rtcp::Xr xr;
+  xr.From(ssrc_);
+
+  rtcp::VoipMetric voip;
+  voip.To(remote_ssrc_);
+  voip.LossRate(xr_voip_metric_.lossRate);
+  voip.DiscardRate(xr_voip_metric_.discardRate);
+  voip.BurstDensity(xr_voip_metric_.burstDensity);
+  voip.GapDensity(xr_voip_metric_.gapDensity);
+  voip.BurstDuration(xr_voip_metric_.burstDuration);
+  voip.GapDuration(xr_voip_metric_.gapDuration);
+  voip.RoundTripDelay(xr_voip_metric_.roundTripDelay);
+  voip.EndSystemDelay(xr_voip_metric_.endSystemDelay);
+  voip.SignalLevel(xr_voip_metric_.signalLevel);
+  voip.NoiseLevel(xr_voip_metric_.noiseLevel);
+  voip.Rerl(xr_voip_metric_.RERL);
+  voip.Gmin(xr_voip_metric_.Gmin);
+  voip.Rfactor(xr_voip_metric_.Rfactor);
+  voip.ExtRfactor(xr_voip_metric_.extRfactor);
+  voip.MosLq(xr_voip_metric_.MOSLQ);
+  voip.MosCq(xr_voip_metric_.MOSCQ);
+  voip.RxConfig(xr_voip_metric_.RXconfig);
+  voip.JbNominal(xr_voip_metric_.JBnominal);
+  voip.JbMax(xr_voip_metric_.JBmax);
+  voip.JbAbsMax(xr_voip_metric_.JBabsMax);
+
+  xr.WithVoipMetric(&voip);
+
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(xr))
     return BuildResult::kTruncated;
-
-  // Add XR header
-  *ctx->AllocateData(1) = 0x80;
-  *ctx->AllocateData(1) = 207;
-
-  uint32_t XRLengthPos = ctx->position;
-
-  // handle length later on
-  ctx->AllocateData(2);
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // Add a VoIP metrics block
-  *ctx->AllocateData(1) = 7;
-  *ctx->AllocateData(1) = 0;
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2), 8);
-
-  // Add the remote SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), remote_ssrc_);
-
-  *ctx->AllocateData(1) = xr_voip_metric_.lossRate;
-  *ctx->AllocateData(1) = xr_voip_metric_.discardRate;
-  *ctx->AllocateData(1) = xr_voip_metric_.burstDensity;
-  *ctx->AllocateData(1) = xr_voip_metric_.gapDensity;
-
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       xr_voip_metric_.burstDuration);
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       xr_voip_metric_.gapDuration);
-
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       xr_voip_metric_.roundTripDelay);
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       xr_voip_metric_.endSystemDelay);
-
-  *ctx->AllocateData(1) = xr_voip_metric_.signalLevel;
-  *ctx->AllocateData(1) = xr_voip_metric_.noiseLevel;
-  *ctx->AllocateData(1) = xr_voip_metric_.RERL;
-  *ctx->AllocateData(1) = xr_voip_metric_.Gmin;
-
-  *ctx->AllocateData(1) = xr_voip_metric_.Rfactor;
-  *ctx->AllocateData(1) = xr_voip_metric_.extRfactor;
-  *ctx->AllocateData(1) = xr_voip_metric_.MOSLQ;
-  *ctx->AllocateData(1) = xr_voip_metric_.MOSCQ;
-
-  *ctx->AllocateData(1) = xr_voip_metric_.RXconfig;
-  *ctx->AllocateData(1) = 0;  // reserved
-
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       xr_voip_metric_.JBnominal);
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       xr_voip_metric_.JBmax);
-  ByteWriter<uint16_t>::WriteBigEndian(ctx->AllocateData(2),
-                                       xr_voip_metric_.JBabsMax);
-
-  ByteWriter<uint16_t>::WriteBigEndian(&ctx->buffer[XRLengthPos], 10);
 
   return BuildResult::kSuccess;
 }
