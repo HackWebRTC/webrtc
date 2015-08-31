@@ -22,8 +22,12 @@ void EnsureInitialized() {}
 
 #include <pthread.h>
 
+// Note: this dependency is dangerous since it reaches into Chromium's
+// base. You can't include anything in this file that includes WebRTC's
+// base/checks.h, for instance, since it will clash with Chromium's
+// logging.h. Therefore, the CHECKs in this file will actually use
+// Chromium's checks rather than the WebRTC ones.
 #include "base/android/jni_android.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_capture/video_capture_internal.h"
 
 namespace webrtc {

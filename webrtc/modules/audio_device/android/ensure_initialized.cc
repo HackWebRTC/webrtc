@@ -12,9 +12,12 @@
 
 #include <pthread.h>
 
+// Note: this dependency is dangerous since it reaches into Chromium's
+// base. You can't include anything in this file that includes WebRTC's
+// base/checks.h, for instance, since it will clash with Chromium's
+// logging.h. Therefore, the CHECKs in this file will actually use
+// Chromium's checks rather than the WebRTC ones.
 #include "base/android/jni_android.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_device/android/audio_device_template.h"
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
 #include "webrtc/modules/utility/interface/jvm_android.h"
