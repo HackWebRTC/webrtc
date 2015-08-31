@@ -220,7 +220,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   public synchronized List<CaptureFormat> getSupportedFormats() {
-    return CameraEnumerationAndroid.supportedFormats.get(id);
+    return CameraEnumerationAndroid.getSupportedFormats(id);
   }
 
   // Return a list of timestamps for the frames that have been sent out, but not returned yet.
@@ -234,14 +234,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   // Called by native code.
-  // Enumerates resolution and frame rates for all cameras to be able to switch
-  // cameras. Initializes local variables for the camera named |deviceName| and
-  // starts a thread to be used for capturing.
-  // If deviceName is empty, the first available device is used in order to be
-  // compatible with the generic VideoCapturer class.
+  // Initializes local variables for the camera named |deviceName|. If |deviceName| is empty, the
+  // first available device is used in order to be compatible with the generic VideoCapturer class.
   synchronized boolean init(String deviceName) {
     Log.d(TAG, "init: " + deviceName);
-    if (deviceName == null || !CameraEnumerationAndroid.initStatics())
+    if (deviceName == null)
       return false;
 
     boolean foundDevice = false;

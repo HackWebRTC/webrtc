@@ -71,6 +71,8 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/IceCandidate");
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   LoadClass(jni, "android/graphics/SurfaceTexture");
+  LoadClass(jni, "org/webrtc/CameraEnumerator");
+  LoadClass(jni, "org/webrtc/CameraEnumerationAndroid");
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid");
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid$NativeObserver");
   LoadClass(jni, "org/webrtc/EglBase");

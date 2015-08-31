@@ -276,8 +276,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     FakeCapturerObserver observer = new FakeCapturerObserver();
 
     String deviceName = CameraEnumerationAndroid.getDeviceName(0);
-    ArrayList<CaptureFormat> formats =
-        CameraEnumerationAndroid.getSupportedFormats(0);
+    List<CaptureFormat> formats = CameraEnumerationAndroid.getSupportedFormats(0);
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create(deviceName, null);
 
@@ -301,8 +300,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     FakeCapturerObserver observer = new FakeCapturerObserver();
 
     String deviceName = CameraEnumerationAndroid.getDeviceName(0);
-    ArrayList<CaptureFormat> formats =
-        CameraEnumerationAndroid.getSupportedFormats(0);
+    List<CaptureFormat> formats = CameraEnumerationAndroid.getSupportedFormats(0);
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create(deviceName, null);
 

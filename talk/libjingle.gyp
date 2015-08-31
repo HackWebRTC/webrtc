@@ -141,6 +141,7 @@
                 # and include it here.
                 'android_java_files': [
                   'app/webrtc/java/android/org/webrtc/CameraEnumerationAndroid.java',
+                  'app/webrtc/java/android/org/webrtc/CameraEnumerator.java',
                   'app/webrtc/java/android/org/webrtc/EglBase.java',
                   'app/webrtc/java/android/org/webrtc/GlRectDrawer.java',
                   'app/webrtc/java/android/org/webrtc/GlShader.java',

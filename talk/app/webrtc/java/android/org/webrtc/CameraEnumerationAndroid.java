@@ -46,9 +46,23 @@ import java.util.List;
 @SuppressWarnings("deprecation")
 public class CameraEnumerationAndroid {
   private final static String TAG = "CameraEnumerationAndroid";
-  // List of formats supported by all cameras. This list is filled once in order
-  // to be able to switch cameras.
-  public static List<List<CaptureFormat>> supportedFormats;
+  // Synchronized on |CameraEnumerationAndroid.this|.
+  private static Enumerator enumerator = new CameraEnumerator();
+
+  public interface Enumerator {
+    /**
+     * Returns a list of supported CaptureFormats for the camera with index |cameraId|.
+     */
+    List<CaptureFormat> getSupportedFormats(int cameraId);
+  }
+
+  public static synchronized void setEnumerator(Enumerator enumerator) {
+    CameraEnumerationAndroid.enumerator = enumerator;
+  }
+
+  public static synchronized List<CaptureFormat> getSupportedFormats(int cameraId) {
+    return enumerator.getSupportedFormats(cameraId);
+  }
 
   public static class CaptureFormat {
     public final int width;
@@ -175,37 +189,8 @@ public class CameraEnumerationAndroid {
     return null;
   }
 
-  public static boolean initStatics() {
-    if (supportedFormats != null)
-      return true;
-    try {
-      Log.d(TAG, "Get supported formats.");
-      supportedFormats =
-          new ArrayList<List<CaptureFormat>>(Camera.getNumberOfCameras());
-      // Start requesting supported formats from camera with the highest index
-      // (back camera) first. If it fails then likely camera is in bad state.
-      for (int i = Camera.getNumberOfCameras() - 1; i >= 0; i--) {
-        ArrayList<CaptureFormat> supportedFormat = getSupportedFormats(i);
-        if (supportedFormat.size() == 0) {
-          Log.e(TAG, "Fail to get supported formats for camera " + i);
-          supportedFormats = null;
-          return false;
-        }
-        supportedFormats.add(supportedFormat);
-      }
-      // Reverse the list since it is filled in reverse order.
-      Collections.reverse(supportedFormats);
-      Log.d(TAG, "Get supported formats done.");
-      return true;
-    } catch (Exception e) {
-      supportedFormats = null;
-      Log.e(TAG, "InitStatics failed",e);
-    }
-    return false;
-  }
-
   public static String getSupportedFormatsAsJson(int id) throws JSONException {
-    List<CaptureFormat> formats = supportedFormats.get(id);
+    List<CaptureFormat> formats = getSupportedFormats(id);
     JSONArray json_formats = new JSONArray();
     for (CaptureFormat format : formats) {
       JSONObject json_format = new JSONObject();
@@ -217,42 +202,6 @@ public class CameraEnumerationAndroid {
     Log.d(TAG, "Supported formats for camera " + id + ": "
         +  json_formats.toString(2));
     return json_formats.toString();
-  }
-
-  // Returns a list of CaptureFormat for the camera with index id.
-  public static ArrayList<CaptureFormat> getSupportedFormats(int id) {
-    ArrayList<CaptureFormat> formatList = new ArrayList<CaptureFormat>();
-
-    Camera camera;
-    try {
-      Log.d(TAG, "Opening camera " + id);
-      camera = Camera.open(id);
-    } catch (Exception e) {
-      Log.e(TAG, "Open camera failed on id " + id, e);
-      return formatList;
-    }
-
-    try {
-      Camera.Parameters parameters;
-      parameters = camera.getParameters();
-      // getSupportedPreviewFpsRange returns a sorted list.
-      List<int[]> listFpsRange = parameters.getSupportedPreviewFpsRange();
-      int[] range = {0, 0};
-      if (listFpsRange != null)
-        range = listFpsRange.get(listFpsRange.size() -1);
-
-      List<Camera.Size> supportedSizes = parameters.getSupportedPreviewSizes();
-      for (Camera.Size size : supportedSizes) {
-        formatList.add(new CaptureFormat(size.width, size.height,
-            range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
-            range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
-      }
-    } catch (Exception e) {
-      Log.e(TAG, "getSupportedFormats failed on id " + id, e);
-    }
-    camera.release();
-    camera = null;
-    return formatList;
   }
 
   // Helper class for finding the closest supported format for the two functions below.
