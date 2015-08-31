@@ -222,6 +222,7 @@ class VideoAnalyzer : public PacketReceiver,
 
     int last_frames_processed = -1;
     EventTypeWrapper eventType;
+    int iteration = 0;
     while ((eventType = done_->Wait(FullStackTest::kDefaultTimeoutMs)) !=
            kEventSignaled) {
       int frames_processed;
@@ -229,6 +230,14 @@ class VideoAnalyzer : public PacketReceiver,
         rtc::CritScope crit(&comparison_lock_);
         frames_processed = frames_processed_;
       }
+
+      // Print some output so test infrastructure won't think we've crashed.
+      const char* kKeepAliveMessages[3] = {
+          "Uh, I'm-I'm not quite dead, sir.",
+          "Uh, I-I think uh, I could pull through, sir.",
+          "Actually, I think I'm all right to come with you--"};
+      printf("- %s\n", kKeepAliveMessages[iteration++ % 3]);
+
       if (last_frames_processed == -1) {
         last_frames_processed = frames_processed;
         continue;
@@ -237,6 +246,9 @@ class VideoAnalyzer : public PacketReceiver,
           << "Analyzer stalled while waiting for test to finish.";
       last_frames_processed = frames_processed;
     }
+
+    if (iteration > 0)
+      printf("- Farewell, sweet Concorde!\n");
 
     // Signal stats polling thread if that is still waiting and stop it now,
     // since it uses the send_stream_ reference that might be reclaimed after
