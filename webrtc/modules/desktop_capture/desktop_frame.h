@@ -98,7 +98,7 @@ class DesktopFrame {
 class BasicDesktopFrame : public DesktopFrame {
  public:
   explicit BasicDesktopFrame(DesktopSize size);
-  virtual ~BasicDesktopFrame();
+  ~BasicDesktopFrame() override;
 
   // Creates a BasicDesktopFrame that contains copy of |frame|.
   static DesktopFrame* CopyOf(const DesktopFrame& frame);
@@ -114,7 +114,7 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
   SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
                            SharedMemory* shared_memory);
-  virtual ~SharedMemoryDesktopFrame();
+  ~SharedMemoryDesktopFrame() override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(SharedMemoryDesktopFrame);

@@ -12,6 +12,20 @@ import("../../build/webrtc.gni")
 use_desktop_capture_differ_sse2 =
     !is_ios && (current_cpu == "x86" || current_cpu == "x64")
 
+source_set("primitives") {
+  sources = [
+    "desktop_capture_types.h",
+    "desktop_frame.cc",
+    "desktop_frame.h",
+    "desktop_geometry.cc",
+    "desktop_geometry.h",
+    "desktop_region.cc",
+    "desktop_region.h",
+  ]
+
+  public_configs = [ "../..:common_inherited_config" ]
+}
+
 source_set("desktop_capture") {
   sources = [
     "cropped_desktop_frame.cc",
@@ -23,17 +37,10 @@ source_set("desktop_capture") {
     "desktop_and_cursor_composer.h",
     "desktop_capture_options.cc",
     "desktop_capture_options.h",
-    "desktop_capture_types.h",
     "desktop_capturer.h",
     "desktop_capturer.h",
-    "desktop_frame.cc",
-    "desktop_frame.h",
     "desktop_frame_win.cc",
     "desktop_frame_win.h",
-    "desktop_geometry.cc",
-    "desktop_geometry.h",
-    "desktop_region.cc",
-    "desktop_region.h",
     "differ.cc",
     "differ.h",
     "differ_block.cc",
@@ -127,6 +134,7 @@ source_set("desktop_capture") {
   }
 
   deps = [
+    ":primitives",
     "../../base:rtc_base_approved",
     "../../system_wrappers",
   ]

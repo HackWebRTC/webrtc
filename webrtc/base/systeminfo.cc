@@ -179,7 +179,7 @@ int64 SystemInfo::GetMemorySize() {
   int error = sysctlbyname("hw.memsize", &memory, &len, NULL, 0);
   if (error || memory == 0)
     memory = -1;
-#else  // WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX)
   memory = static_cast<int64>(sysconf(_SC_PHYS_PAGES)) *
       static_cast<int64>(sysconf(_SC_PAGESIZE));
   if (memory < 0) {
