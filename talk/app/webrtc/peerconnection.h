@@ -100,7 +100,6 @@ class PeerConnection : public PeerConnectionInterface,
                                    SessionDescriptionInterface* desc);
   virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                                     SessionDescriptionInterface* desc);
-  virtual void SetIceConnectionReceivingTimeout(int timeout_ms);
   // TODO(mallinath) : Deprecated version, remove after all clients are updated.
   virtual bool UpdateIce(const IceServers& configuration,
                          const MediaConstraintsInterface* constraints);

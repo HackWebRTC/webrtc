@@ -584,6 +584,9 @@ bool WebRtcSession::Initialize(
     certificate = rtc_configuration.certificates[0];
   }
 
+  SetIceConnectionReceivingTimeout(
+      rtc_configuration.ice_connection_receiving_timeout);
+
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
   // mandatory constraints can be fulfilled. Note that |constraints|
   // can be null.

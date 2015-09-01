@@ -233,6 +233,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
   // TODO(hbos): Change into class with private data and public getters.
   struct RTCConfiguration {
+    static const int kUndefined = -1;
+    // Default maximum number of packets in the audio jitter buffer.
+    static const int kAudioJitterBufferMaxPackets = 50;
     // TODO(pthatcher): Rename this ice_transport_type, but update
     // Chromium at the same time.
     IceTransportsType type;
@@ -247,6 +250,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     TcpCandidatePolicy tcp_candidate_policy;
     int audio_jitter_buffer_max_packets;
     bool audio_jitter_buffer_fast_accelerate;
+    int ice_connection_receiving_timeout;
     std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
 
     RTCConfiguration()
@@ -255,8 +259,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
           bundle_policy(kBundlePolicyBalanced),
           rtcp_mux_policy(kRtcpMuxPolicyNegotiate),
           tcp_candidate_policy(kTcpCandidatePolicyEnabled),
-          audio_jitter_buffer_max_packets(50),
-          audio_jitter_buffer_fast_accelerate(false) {}
+          audio_jitter_buffer_max_packets(kAudioJitterBufferMaxPackets),
+          audio_jitter_buffer_fast_accelerate(false),
+          ice_connection_receiving_timeout(kUndefined) {}
   };
 
   struct RTCOfferAnswerOptions {
@@ -358,8 +363,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // The |observer| callback will be called when done.
   virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                                     SessionDescriptionInterface* desc) = 0;
-  // Sets the ICE connection receiving timeout value in milliseconds.
-  virtual void SetIceConnectionReceivingTimeout(int timeout_ms) {}
   // Restarts or updates the ICE Agent process of gathering local candidates
   // and pinging remote candidates.
   virtual bool UpdateIce(const IceServers& configuration,

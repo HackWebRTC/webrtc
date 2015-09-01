@@ -38,6 +38,7 @@
 @synthesize rtcpMuxPolicy = _rtcpMuxPolicy;
 @synthesize tcpCandidatePolicy = _tcpCandidatePolicy;
 @synthesize audioJitterBufferMaxPackets = _audioJitterBufferMaxPackets;
+@synthesize iceConnectionReceivingTimeout = _iceConnectionReceivingTimeout;
 
 - (instancetype)init {
   if (self = [super init]) {
@@ -49,6 +50,7 @@
     _tcpCandidatePolicy =
         [RTCEnumConverter tcpCandidatePolicyForNativeEnum:config.tcp_candidate_policy];
     _audioJitterBufferMaxPackets = config.audio_jitter_buffer_max_packets;
+    _iceConnectionReceivingTimeout = config.ice_connection_receiving_timeout;
   }
   return self;
 }
@@ -57,13 +59,15 @@
                              bundlePolicy:(RTCBundlePolicy)bundlePolicy
                             rtcpMuxPolicy:(RTCRtcpMuxPolicy)rtcpMuxPolicy
                        tcpCandidatePolicy:(RTCTcpCandidatePolicy)tcpCandidatePolicy
-              audioJitterBufferMaxPackets:(int)audioJitterBufferMaxPackets {
+              audioJitterBufferMaxPackets:(int)audioJitterBufferMaxPackets
+            iceConnectionReceivingTimeout:(int)iceConnectionReceivingTimeout {
   if (self = [super init]) {
     _iceTransportsType = iceTransportsType;
     _bundlePolicy = bundlePolicy;
     _rtcpMuxPolicy = rtcpMuxPolicy;
     _tcpCandidatePolicy = tcpCandidatePolicy;
     _audioJitterBufferMaxPackets = audioJitterBufferMaxPackets;
+    _iceConnectionReceivingTimeout = iceConnectionReceivingTimeout;
   }
   return self;
 }
@@ -81,6 +85,8 @@
   nativeConfig.tcp_candidate_policy =
       [RTCEnumConverter nativeEnumForTcpCandidatePolicy:_tcpCandidatePolicy];
   nativeConfig.audio_jitter_buffer_max_packets = _audioJitterBufferMaxPackets;
+  nativeConfig.ice_connection_receiving_timeout =
+      _iceConnectionReceivingTimeout;
   return nativeConfig;
 }
 

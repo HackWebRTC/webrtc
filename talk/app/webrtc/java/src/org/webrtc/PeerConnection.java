@@ -138,6 +138,7 @@ public class PeerConnection {
     public TcpCandidatePolicy tcpCandidatePolicy;
     public int audioJitterBufferMaxPackets;
     public boolean audioJitterBufferFastAccelerate;
+    public int iceConnectionReceivingTimeout;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
@@ -147,6 +148,7 @@ public class PeerConnection {
       this.iceServers = iceServers;
       audioJitterBufferMaxPackets = 50;
       audioJitterBufferFastAccelerate = false;
+      iceConnectionReceivingTimeout = -1;
     }
   };
 
@@ -179,8 +181,6 @@ public class PeerConnection {
 
   public native void setRemoteDescription(
       SdpObserver observer, SessionDescription sdp);
-
-  public native void setIceConnectionReceivingTimeout(int timeoutMs);
 
   public native boolean updateIce(
       List<IceServer> iceServers, MediaConstraints constraints);

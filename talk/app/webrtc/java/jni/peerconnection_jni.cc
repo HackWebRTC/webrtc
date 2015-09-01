@@ -1349,13 +1349,15 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
       "Ljava/util/List;");
   jobject j_ice_servers = GetObjectField(jni, j_rtc_config, j_ice_servers_id);
 
-  jfieldID j_audio_jitter_buffer_max_packets_id = GetFieldID(
-      jni, j_rtc_config_class, "audioJitterBufferMaxPackets",
-      "I");
+  jfieldID j_audio_jitter_buffer_max_packets_id =
+      GetFieldID(jni, j_rtc_config_class, "audioJitterBufferMaxPackets", "I");
   jfieldID j_audio_jitter_buffer_fast_accelerate_id = GetFieldID(
       jni, j_rtc_config_class, "audioJitterBufferFastAccelerate", "Z");
-  PeerConnectionInterface::RTCConfiguration rtc_config;
 
+  jfieldID j_ice_connection_receiving_timeout_id =
+      GetFieldID(jni, j_rtc_config_class, "iceConnectionReceivingTimeout", "I");
+
+  PeerConnectionInterface::RTCConfiguration rtc_config;
   rtc_config.type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
   rtc_config.bundle_policy = JavaBundlePolicyToNativeType(jni, j_bundle_policy);
@@ -1368,6 +1370,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
       GetIntField(jni, j_rtc_config, j_audio_jitter_buffer_max_packets_id);
   rtc_config.audio_jitter_buffer_fast_accelerate = GetBooleanField(
       jni, j_rtc_config, j_audio_jitter_buffer_fast_accelerate_id);
+  rtc_config.ice_connection_receiving_timeout =
+      GetIntField(jni, j_rtc_config, j_ice_connection_receiving_timeout_id);
 
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);
   observer->SetConstraints(new ConstraintsWrapper(jni, j_constraints));
@@ -1482,13 +1486,6 @@ JOW(void, PeerConnection_setRemoteDescription)(
           jni, j_observer, reinterpret_cast<ConstraintsWrapper*>(NULL)));
   ExtractNativePC(jni, j_pc)->SetRemoteDescription(
       observer, JavaSdpToNativeSdp(jni, j_sdp));
-}
-
-JOW(void, PeerConnection_setIceConnectionReceivingTimeout)(JNIEnv* jni,
-                                                           jobject j_pc,
-                                                           jint timeout_ms) {
-  return ExtractNativePC(jni, j_pc)
-      ->SetIceConnectionReceivingTimeout(timeout_ms);
 }
 
 JOW(jboolean, PeerConnection_updateIce)(
