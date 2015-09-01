@@ -36,7 +36,7 @@ namespace webrtc {
 
 // Passed to SSLIdentity::Generate, "WebRTC". Used for the certificates'
 // subject and issuer name.
-static const char kIdentityName[] = "WebRTC";
+const char kIdentityName[] = "WebRTC";
 
 namespace {
 

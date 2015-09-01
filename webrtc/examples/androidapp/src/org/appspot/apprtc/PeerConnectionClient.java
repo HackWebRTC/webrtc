@@ -421,6 +421,8 @@ public class PeerConnectionClient {
     rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
     rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
     rtcConfig.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
+    // Use ECDSA encryption.
+    rtcConfig.keyType = PeerConnection.KeyType.ECDSA;
 
     peerConnection = factory.createPeerConnection(
         rtcConfig, pcConstraints, pcObserver);

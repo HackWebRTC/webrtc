@@ -107,6 +107,9 @@ class SSLCertChain {
   DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };
 
+// TODO(hbos, torbjorng): Don't change KT_DEFAULT without first
+// updating PeerConnectionFactory_nativeCreatePeerConnection's certificate
+// generation code.
 enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
 
 // Parameters for generating an identity for testing. If common_name is

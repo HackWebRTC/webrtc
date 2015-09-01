@@ -40,6 +40,10 @@
 #include "webrtc/base/thread.h"
 
 namespace webrtc {
+
+// Passed to SSLIdentity::Generate.
+extern const char kIdentityName[];
+
 class SSLIdentity;
 class Thread;
 

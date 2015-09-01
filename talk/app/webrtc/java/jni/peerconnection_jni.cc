@@ -61,6 +61,7 @@
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
 #include "talk/app/webrtc/java/jni/jni_helpers.h"
 #include "talk/app/webrtc/java/jni/native_handle_impl.h"
+#include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/videosourceinterface.h"
@@ -1273,6 +1274,19 @@ JavaTcpCandidatePolicyToNativeType(
   return PeerConnectionInterface::kTcpCandidatePolicyEnabled;
 }
 
+static rtc::KeyType JavaKeyTypeToNativeType(JNIEnv* jni, jobject j_key_type) {
+  std::string enum_name = GetJavaEnumName(
+      jni, "org/webrtc/PeerConnection$KeyType", j_key_type);
+
+  if (enum_name == "RSA")
+    return rtc::KT_RSA;
+  if (enum_name == "ECDSA")
+    return rtc::KT_ECDSA;
+
+  CHECK(false) << "Unexpected KeyType enum_name " << enum_name;
+  return rtc::KT_ECDSA;
+}
+
 static void JavaIceServersToJsepIceServers(
     JNIEnv* jni, jobject j_ice_servers,
     PeerConnectionInterface::IceServers* ice_servers) {
@@ -1345,8 +1359,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
       jni, j_rtc_config, j_tcp_candidate_policy_id);
 
   jfieldID j_ice_servers_id = GetFieldID(
-      jni, j_rtc_config_class, "iceServers",
-      "Ljava/util/List;");
+      jni, j_rtc_config_class, "iceServers", "Ljava/util/List;");
   jobject j_ice_servers = GetObjectField(jni, j_rtc_config, j_ice_servers_id);
 
   jfieldID j_audio_jitter_buffer_max_packets_id =
@@ -1356,6 +1369,10 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
 
   jfieldID j_ice_connection_receiving_timeout_id =
       GetFieldID(jni, j_rtc_config_class, "iceConnectionReceivingTimeout", "I");
+
+  jfieldID j_key_type_id = GetFieldID(jni, j_rtc_config_class, "keyType",
+      "Lorg/webrtc/PeerConnection$KeyType;");
+  jobject j_key_type = GetObjectField(jni, j_rtc_config, j_key_type_id);
 
   PeerConnectionInterface::RTCConfiguration rtc_config;
   rtc_config.type =
@@ -1372,6 +1389,22 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
       jni, j_rtc_config, j_audio_jitter_buffer_fast_accelerate_id);
   rtc_config.ice_connection_receiving_timeout =
       GetIntField(jni, j_rtc_config, j_ice_connection_receiving_timeout_id);
+
+  // Create ECDSA certificate.
+  if (JavaKeyTypeToNativeType(jni, j_key_type) == rtc::KT_ECDSA) {
+    scoped_ptr<rtc::SSLIdentity> ssl_identity(
+        rtc::SSLIdentity::Generate(webrtc::kIdentityName, rtc::KT_ECDSA));
+    if (ssl_identity.get()) {
+      rtc_config.certificates.push_back(
+          rtc::RTCCertificate::Create(ssl_identity.Pass()));
+      LOG(LS_INFO) << "ECDSA certificate created.";
+    } else {
+      // Failing to create certificate should not abort peer connection
+      // creation. Instead default encryption (currently RSA) will be used.
+      LOG(LS_WARNING) <<
+          "Failed to generate SSLIdentity. Default encryption will be used.";
+    }
+  }
 
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);
   observer->SetConstraints(new ConstraintsWrapper(jni, j_constraints));
