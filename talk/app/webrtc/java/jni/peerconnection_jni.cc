@@ -90,6 +90,8 @@
 using webrtc::LogcatTraceContext;
 #endif
 
+using cricket::WebRtcVideoDecoderFactory;
+using cricket::WebRtcVideoEncoderFactory;
 using rtc::Bind;
 using rtc::Thread;
 using rtc::ThreadManager;
@@ -129,7 +131,7 @@ static char *field_trials_init_string = NULL;
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
-static bool vp8_hw_acceleration_enabled = true;
+static bool video_hw_acceleration_enabled = true;
 #endif
 
 extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
@@ -999,9 +1001,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
 JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
     JNIEnv* jni, jclass, jobject context,
     jboolean initialize_audio, jboolean initialize_video,
-    jboolean vp8_hw_acceleration, jobject render_egl_context) {
+    jboolean video_hw_acceleration) {
   bool failure = false;
-  vp8_hw_acceleration_enabled = vp8_hw_acceleration;
+  video_hw_acceleration_enabled = video_hw_acceleration;
   if (!factory_static_initialized) {
     if (initialize_video) {
       failure |= webrtc::SetRenderAndroidVM(GetJVM());
@@ -1010,10 +1012,6 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
     if (initialize_audio)
       failure |= webrtc::VoiceEngine::SetAndroidObjects(GetJVM(), context);
     factory_static_initialized = true;
-  }
-  if (initialize_video) {
-    failure |= MediaCodecVideoDecoderFactory::SetAndroidObjects(jni,
-        render_egl_context);
   }
   return !failure;
 }
@@ -1044,18 +1042,26 @@ class OwnedFactoryAndThreads {
  public:
   OwnedFactoryAndThreads(Thread* worker_thread,
                          Thread* signaling_thread,
+                         WebRtcVideoEncoderFactory* encoder_factory,
+                         WebRtcVideoDecoderFactory* decoder_factory,
                          PeerConnectionFactoryInterface* factory)
       : worker_thread_(worker_thread),
         signaling_thread_(signaling_thread),
+        encoder_factory_(encoder_factory),
+        decoder_factory_(decoder_factory),
         factory_(factory) {}
 
   ~OwnedFactoryAndThreads() { CHECK_RELEASE(factory_); }
 
   PeerConnectionFactoryInterface* factory() { return factory_; }
+  WebRtcVideoEncoderFactory* encoder_factory() { return encoder_factory_; }
+  WebRtcVideoDecoderFactory* decoder_factory() { return decoder_factory_; }
 
  private:
   const scoped_ptr<Thread> worker_thread_;
   const scoped_ptr<Thread> signaling_thread_;
+  WebRtcVideoEncoderFactory* encoder_factory_;
+  WebRtcVideoDecoderFactory* decoder_factory_;
   PeerConnectionFactoryInterface* factory_;  // Const after ctor except dtor.
 };
 
@@ -1074,22 +1080,24 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   signaling_thread->SetName("signaling_thread", NULL);
   CHECK(worker_thread->Start() && signaling_thread->Start())
       << "Failed to start threads";
-  scoped_ptr<cricket::WebRtcVideoEncoderFactory> encoder_factory;
-  scoped_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory;
+  WebRtcVideoEncoderFactory* encoder_factory = nullptr;
+  WebRtcVideoDecoderFactory* decoder_factory = nullptr;
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
-  if (vp8_hw_acceleration_enabled) {
-    encoder_factory.reset(new MediaCodecVideoEncoderFactory());
-    decoder_factory.reset(new MediaCodecVideoDecoderFactory());
+  if (video_hw_acceleration_enabled) {
+    encoder_factory = new MediaCodecVideoEncoderFactory();
+    decoder_factory = new MediaCodecVideoDecoderFactory();
   }
 #endif
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory(worker_thread,
                                           signaling_thread,
                                           NULL,
-                                          encoder_factory.release(),
-                                          decoder_factory.release()));
+                                          encoder_factory,
+                                          decoder_factory));
   OwnedFactoryAndThreads* owned_factory = new OwnedFactoryAndThreads(
-      worker_thread, signaling_thread, factory.release());
+      worker_thread, signaling_thread,
+      encoder_factory, decoder_factory,
+      factory.release());
   return jlongFromPointer(owned_factory);
 }
 
@@ -1187,6 +1195,22 @@ JOW(void, PeerConnectionFactory_nativeSetOptions)(
   options_to_set.disable_encryption = disable_encryption;
   factory->SetOptions(options_to_set);
 }
+
+JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
+    JNIEnv* jni, jclass, jlong native_factory, jobject render_egl_context) {
+#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
+  OwnedFactoryAndThreads* owned_factory =
+      reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
+  MediaCodecVideoDecoderFactory* decoder_factory =
+      static_cast<MediaCodecVideoDecoderFactory*>
+          (owned_factory->decoder_factory());
+  if (decoder_factory) {
+    LOG(LS_INFO) << "Set EGL context for HW acceleration.";
+    decoder_factory->SetEGLContext(jni, render_egl_context);
+  }
+#endif
+}
+
 
 static std::string
 GetJavaEnumName(JNIEnv* jni, const std::string& className, jobject j_enum) {

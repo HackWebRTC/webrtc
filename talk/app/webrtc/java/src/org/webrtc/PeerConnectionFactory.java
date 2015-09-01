@@ -64,7 +64,7 @@ public class PeerConnectionFactory {
   // decoding thread.
   public static native boolean initializeAndroidGlobals(
       Object context, boolean initializeAudio, boolean initializeVideo,
-      boolean vp8HwAcceleration, Object renderEGLContext);
+      boolean videoHwAcceleration);
 
   // Field trial initialization. Must be called before PeerConnectionFactory
   // is created.
@@ -131,11 +131,13 @@ public class PeerConnectionFactory {
     nativeSetOptions(nativeFactory, options);
   }
 
+  public void setVideoHwAccelerationOptions(Object renderEGLContext) {
+    nativeSetVideoHwAccelerationOptions(nativeFactory, renderEGLContext);
+  }
+
   public void dispose() {
     freeFactory(nativeFactory);
   }
-
-  public native void nativeSetOptions(long nativeFactory, Options options);
 
   private static native long nativeCreatePeerConnectionFactory();
 
@@ -161,6 +163,11 @@ public class PeerConnectionFactory {
 
   private static native long nativeCreateAudioTrack(
       long nativeFactory, String id, long nativeSource);
+
+  public native void nativeSetOptions(long nativeFactory, Options options);
+
+  private static native void nativeSetVideoHwAccelerationOptions(
+      long nativeFactory, Object renderEGLContext);
 
   private static native void freeFactory(long nativeFactory);
 }

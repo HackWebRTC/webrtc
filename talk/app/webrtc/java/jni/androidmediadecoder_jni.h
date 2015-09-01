@@ -40,17 +40,17 @@ class MediaCodecVideoDecoderFactory
  public:
   MediaCodecVideoDecoderFactory();
   virtual ~MediaCodecVideoDecoderFactory();
-  static int SetAndroidObjects(JNIEnv* jni, jobject render_egl_context);
+
+  void SetEGLContext(JNIEnv* jni, jobject render_egl_context);
 
   // WebRtcVideoDecoderFactory implementation.
   webrtc::VideoDecoder* CreateVideoDecoder(webrtc::VideoCodecType type)
       override;
 
   void DestroyVideoDecoder(webrtc::VideoDecoder* decoder) override;
-  // Render EGL context.
-  static jobject render_egl_context_;
 
  private:
+  jobject render_egl_context_; // Render EGL context.
   std::vector<webrtc::VideoCodecType> supported_codec_types_;
 };
 

@@ -238,10 +238,9 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     options.networkIgnoreMask = 0;
     client.setPeerConnectionFactoryOptions(options);
     client.createPeerConnectionFactory(
-        getInstrumentation().getContext(), null,
-        peerConnectionParameters, this);
+        getInstrumentation().getContext(), peerConnectionParameters, this);
     client.createPeerConnection(
-        localRenderer, remoteRenderer, signalingParameters);
+        null, localRenderer, remoteRenderer, signalingParameters);
     client.createOffer();
     return client;
   }

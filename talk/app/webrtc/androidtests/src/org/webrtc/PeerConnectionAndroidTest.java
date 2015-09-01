@@ -35,8 +35,7 @@ public class PeerConnectionAndroidTest extends ActivityTestCase {
   @Override
   protected void setUp() {
     assertTrue(PeerConnectionFactory.initializeAndroidGlobals(
-        getInstrumentation().getContext(), true,
-        true, true, null));
+        getInstrumentation().getContext(), true, true, true));
   }
 
   public void testCompleteSession() throws Exception {

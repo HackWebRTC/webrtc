@@ -171,8 +171,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   @Override
   protected void setUp() {
     assertTrue(PeerConnectionFactory.initializeAndroidGlobals(
-        getInstrumentation().getContext(), true,
-        true, true, null));
+        getInstrumentation().getContext(), true, true, true));
   }
 
   @SmallTest

@@ -394,8 +394,7 @@ public class CallActivity extends Activity
           Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
           peerConnectionClient = PeerConnectionClient.getInstance();
           peerConnectionClient.createPeerConnectionFactory(CallActivity.this,
-              VideoRendererGui.getEGLContext(), peerConnectionParameters,
-              CallActivity.this);
+              peerConnectionParameters, CallActivity.this);
         }
         if (signalingParameters != null) {
           Log.w(TAG, "EGL context is ready after room connection.");
@@ -481,7 +480,7 @@ public class CallActivity extends Activity
       return;
     }
     logAndToast("Creating peer connection, delay=" + delta + "ms");
-    peerConnectionClient.createPeerConnection(
+    peerConnectionClient.createPeerConnection(VideoRendererGui.getEGLContext(),
         localRender, remoteRender, signalingParameters);
 
     if (signalingParameters.initiator) {
