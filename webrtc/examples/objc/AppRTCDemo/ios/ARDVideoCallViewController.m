@@ -172,6 +172,7 @@
     case RTCICEConnectionFailed:
     case RTCICEConnectionDisconnected:
     case RTCICEConnectionClosed:
+    case RTCICEConnectionMax:
       return nil;
   }
 }
