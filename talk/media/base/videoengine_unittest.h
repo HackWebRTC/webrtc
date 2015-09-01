@@ -40,6 +40,10 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/timeutils.h"
 
+#ifdef WIN32
+#include <objbase.h>  // NOLINT
+#endif
+
 #define EXPECT_FRAME_WAIT(c, w, h, t) \
   EXPECT_EQ_WAIT((c), renderer_.num_rendered_frames(), (t)); \
   EXPECT_EQ((w), renderer_.width()); \
@@ -134,6 +138,28 @@ class VideoEngineTest : public testing::Test {
     delete channel;
     engine_.Terminate();
   }
+
+#ifdef WIN32
+  // Tests that the COM reference count is not munged by the engine.
+  // Test to make sure LMI does not munge the CoInitialize reference count.
+  void CheckCoInitialize() {
+    // Initial refcount should be 0.
+    EXPECT_EQ(S_OK, CoInitializeEx(NULL, COINIT_MULTITHREADED));
+
+    // Engine should start even with COM already inited.
+    EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
+    engine_.Terminate();
+    // Refcount after terminate should be 1; this tests if it is nonzero.
+    EXPECT_EQ(S_FALSE, CoInitializeEx(NULL, COINIT_MULTITHREADED));
+    // Decrement refcount to (hopefully) 0.
+    CoUninitialize();
+    CoUninitialize();
+
+    // Ensure refcount is 0.
+    EXPECT_EQ(S_OK, CoInitializeEx(NULL, COINIT_MULTITHREADED));
+    CoUninitialize();
+  }
+#endif
 
   void ConstrainNewCodecBody() {
     cricket::VideoCodec empty, in, out;

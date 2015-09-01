@@ -54,6 +54,10 @@
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
+#ifdef WIN32
+#include <objbase.h>  // NOLINT
+#endif
+
 namespace cricket {
 
 static const int kMaxNumPacketSize = 6;
