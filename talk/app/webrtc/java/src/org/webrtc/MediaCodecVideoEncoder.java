@@ -74,9 +74,10 @@ public class MediaCodecVideoEncoder {
     {"OMX.qcom." };
   // List of devices with poor H.264 encoder quality.
   private static final String[] H264_HW_EXCEPTION_MODELS = new String[] {
-    // HW H.264 encoder on Galaxy S4 generates 2 times lower bitrate comparing
-    // to target.
+    // HW H.264 encoder on below devices has poor bitrate control - actual
+    // bitrates deviates a lot from the target value.
     "SAMSUNG-SGH-I337",
+    "Nexus 7"
   };
 
   // Bitrate modes - should be in sync with OMX_VIDEO_CONTROLRATETYPE defined
