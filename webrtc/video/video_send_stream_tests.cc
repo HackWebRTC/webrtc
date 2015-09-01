@@ -22,6 +22,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -1795,4 +1796,100 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
 
   RunBaseTest(&test);
 }
+
+class VP9HeaderObeserver : public test::SendTest {
+ public:
+  VP9HeaderObeserver() : SendTest(VideoSendStreamTest::kDefaultTimeoutMs) {
+    vp9_settings_ = VideoEncoder::GetDefaultVp9Settings();
+  }
+  virtual void ModifyConfigsHook(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) {}
+
+  virtual void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) = 0;
+
+ private:
+  const int kVp9PayloadType = 105;
+
+  void ModifyConfigs(VideoSendStream::Config* send_config,
+                     std::vector<VideoReceiveStream::Config>* receive_configs,
+                     VideoEncoderConfig* encoder_config) override {
+    encoder_config->encoder_specific_settings = &vp9_settings_;
+    send_config->encoder_settings.payload_name = "VP9";
+    send_config->encoder_settings.payload_type = kVp9PayloadType;
+    ModifyConfigsHook(send_config, receive_configs, encoder_config);
+  }
+
+  void PerformTest() override {
+    EXPECT_EQ(kEventSignaled, Wait())
+        << "Test timed out waiting for VP9 packet";
+  }
+
+  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    RTPHeader header;
+    EXPECT_TRUE(parser_->Parse(packet, length, &header));
+
+    if (header.payloadType == kVp9PayloadType) {
+      RtpDepacketizerVp9 vp9depacketizer;
+      RtpDepacketizer::ParsedPayload vp9payload;
+      const uint8_t* vp9_packet = packet + header.headerLength;
+      size_t payload_length =
+          length - header.headerLength - header.paddingLength;
+
+      bool parse_vp9header_successful =
+          vp9depacketizer.Parse(&vp9payload, vp9_packet, payload_length);
+      bool is_vp9_codec_type =
+          vp9payload.type.Video.codec == RtpVideoCodecTypes::kRtpVideoVp9;
+      EXPECT_TRUE(parse_vp9header_successful);
+      EXPECT_TRUE(is_vp9_codec_type);
+
+      RTPVideoHeaderVP9* vp9videoHeader =
+          &vp9payload.type.Video.codecHeader.VP9;
+      if (parse_vp9header_successful && is_vp9_codec_type) {
+        InspectHeader(vp9videoHeader);
+      } else {
+        observation_complete_->Set();
+      }
+    }
+
+    return SEND_PACKET;
+  }
+
+protected:
+  VideoCodecVP9 vp9_settings_;
+};
+
+TEST_F(VideoSendStreamTest, VP9NoFlexMode) {
+  class NoFlexibleMode : public VP9HeaderObeserver {
+    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
+      EXPECT_FALSE(vp9videoHeader->flexible_mode);
+      observation_complete_->Set();
+    }
+  } test;
+
+  RunBaseTest(&test);
+}
+
+// TODO(philipel): Enable once flexible mode is implemeted.
+TEST_F(VideoSendStreamTest, DISABLED_VP9FlexMode) {
+  class FlexibleMode : public VP9HeaderObeserver {
+    void ModifyConfigsHook(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      vp9_settings_.flexibleMode = true;
+      encoder_config->encoder_specific_settings = &vp9_settings_;
+    }
+
+    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
+      EXPECT_TRUE(vp9videoHeader->flexible_mode);
+      observation_complete_->Set();
+    }
+
+  } test;
+
+  RunBaseTest(&test);
+}
+
 }  // namespace webrtc
