@@ -73,6 +73,7 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/logsinks.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringutils.h"
@@ -925,6 +926,20 @@ JOW(void, Logging_nativeEnableTracing)(
   }
 }
 
+JOW(void, Logging_nativeEnableLogThreads)(JNIEnv* jni, jclass) {
+  rtc::LogMessage::LogThreads(true);
+}
+
+JOW(void, Logging_nativeEnableLogTimeStamps)(JNIEnv* jni, jclass) {
+  rtc::LogMessage::LogTimestamps(true);
+}
+
+JOW(void, Logging_nativeLog)(
+    JNIEnv* jni, jclass, jint j_severity, jstring j_message) {
+  std::string message = JavaToStdString(jni, j_message);
+  LOG_V(static_cast<rtc::LoggingSeverity>(j_severity)) << message;
+}
+
 JOW(void, PeerConnection_freePeerConnection)(JNIEnv*, jclass, jlong j_p) {
   CHECK_RELEASE(reinterpret_cast<PeerConnectionInterface*>(j_p));
 }
@@ -1763,6 +1778,58 @@ JOW(void, VideoTrack_nativeRemoveRenderer)(
     jlong j_video_track_pointer, jlong j_renderer_pointer) {
   reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)->RemoveRenderer(
       reinterpret_cast<VideoRendererInterface*>(j_renderer_pointer));
+}
+
+JOW(jlong, CallSessionFileRotatingLogSink_nativeAddSink)(
+    JNIEnv* jni, jclass,
+    jstring j_dirPath, jint j_maxFileSize, jint j_severity) {
+  std::string dir_path = JavaToStdString(jni, j_dirPath);
+  rtc::CallSessionFileRotatingLogSink* sink =
+      new rtc::CallSessionFileRotatingLogSink(dir_path, j_maxFileSize);
+  if (!sink->Init()) {
+    LOG_V(rtc::LoggingSeverity::LS_WARNING) <<
+        "Failed to init CallSessionFileRotatingLogSink for path " << dir_path;
+    delete sink;
+    return 0;
+  }
+  rtc::LogMessage::AddLogToStream(
+      sink, static_cast<rtc::LoggingSeverity>(j_severity));
+  return (jlong) sink;
+}
+
+JOW(void, CallSessionFileRotatingLogSink_nativeDeleteSink)(
+    JNIEnv* jni, jclass, jlong j_sink) {
+  rtc::CallSessionFileRotatingLogSink* sink =
+      reinterpret_cast<rtc::CallSessionFileRotatingLogSink*>(j_sink);
+  rtc::LogMessage::RemoveLogToStream(sink);
+  delete sink;
+}
+
+JOW(jbyteArray, CallSessionFileRotatingLogSink_nativeGetLogData)(
+    JNIEnv* jni, jclass, jstring j_dirPath) {
+  std::string dir_path = JavaToStdString(jni, j_dirPath);
+  rtc::scoped_ptr<rtc::CallSessionFileRotatingStream> stream(
+      new rtc::CallSessionFileRotatingStream(dir_path));
+  if (!stream->Open()) {
+    LOG_V(rtc::LoggingSeverity::LS_WARNING) <<
+        "Failed to open CallSessionFileRotatingStream for path " << dir_path;
+    return jni->NewByteArray(0);
+  }
+  size_t log_size = 0;
+  if (!stream->GetSize(&log_size) || log_size == 0) {
+    LOG_V(rtc::LoggingSeverity::LS_WARNING) <<
+        "CallSessionFileRotatingStream returns 0 size for path " << dir_path;
+    return jni->NewByteArray(0);
+  }
+
+  size_t read = 0;
+  rtc::scoped_ptr<jbyte> buffer(static_cast<jbyte*>(malloc(log_size)));
+  stream->ReadAll(buffer.get(), log_size, &read, nullptr);
+
+  jbyteArray result = jni->NewByteArray(read);
+  jni->SetByteArrayRegion(result, 0, read, buffer.get());
+
+  return result;
 }
 
 }  // namespace webrtc_jni

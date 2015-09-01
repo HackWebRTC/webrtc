@@ -64,6 +64,13 @@ public class Logging {
     LS_SENSITIVE, LS_VERBOSE, LS_INFO, LS_WARNING, LS_ERROR,
   };
 
+  public static void enableLogThreads() {
+    nativeEnableLogThreads();
+  }
+
+  public static void enableLogTimeStamps() {
+    nativeEnableLogTimeStamps();
+  }
 
   // Enable tracing to |path| of messages of |levels| and |severity|.
   // On Android, use "logcat:" for |path| to send output there.
@@ -76,6 +83,13 @@ public class Logging {
     nativeEnableTracing(path, nativeLevel, severity.ordinal());
   }
 
+  public static void log(Severity severity, String tag, String message) {
+    nativeLog(severity.ordinal(), tag + ": " + message);
+  }
+
   private static native void nativeEnableTracing(
       String path, int nativeLevels, int nativeSeverity);
+  private static native void nativeEnableLogThreads();
+  private static native void nativeEnableLogTimeStamps();
+  private static native void nativeLog(int severity, String message);
 }
