@@ -389,6 +389,21 @@ TEST_F(RtcpSenderTest, SendApp) {
       parser()->app_item()->DataLength()));
 }
 
+TEST_F(RtcpSenderTest, SendEmptyApp) {
+  const uint8_t kSubType = 30;
+  const uint32_t kName = 0x6E616D65;
+
+  EXPECT_EQ(
+      0, rtcp_sender_->SetApplicationSpecificData(kSubType, kName, nullptr, 0));
+
+  rtcp_sender_->SetRTCPStatus(kRtcpNonCompound);
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpApp));
+  EXPECT_EQ(1, parser()->app()->num_packets());
+  EXPECT_EQ(kSubType, parser()->app()->SubType());
+  EXPECT_EQ(kName, parser()->app()->Name());
+  EXPECT_EQ(0, parser()->app_item()->num_packets());
+}
+
 TEST_F(RtcpSenderTest, SetInvalidApplicationSpecificData) {
   const uint8_t kData[] = {'t', 'e', 's', 't', 'd', 'a', 't'};
   const uint16_t kInvalidDataLength = sizeof(kData) / sizeof(kData[0]);

@@ -741,32 +741,15 @@ RTCPSender::BuildResult RTCPSender::BuildTMMBN(RtcpContext* ctx) {
 }
 
 RTCPSender::BuildResult RTCPSender::BuildAPP(RtcpContext* ctx) {
-  // sanity
-  if (app_data_ == NULL) {
-    LOG(LS_WARNING) << "Failed to build app specific.";
-    return BuildResult::kError;
-  }
-  if (ctx->position + 12 + app_length_ >= IP_PACKET_SIZE) {
-    LOG(LS_WARNING) << "Failed to build app specific.";
+  rtcp::App app;
+  app.From(ssrc_);
+  app.WithSubType(app_sub_type_);
+  app.WithName(app_name_);
+  app.WithData(app_data_.get(), app_length_);
+
+  PacketBuiltCallback callback(ctx);
+  if (!callback.BuildPacket(app))
     return BuildResult::kTruncated;
-  }
-  *ctx->AllocateData(1) = 0x80 + app_sub_type_;
-
-  // Add APP ID
-  *ctx->AllocateData(1) = 204;
-
-  uint16_t length = (app_length_ >> 2) + 2;  // include SSRC and name
-  *ctx->AllocateData(1) = static_cast<uint8_t>(length >> 8);
-  *ctx->AllocateData(1) = static_cast<uint8_t>(length);
-
-  // Add our own SSRC
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), ssrc_);
-
-  // Add our application name
-  ByteWriter<uint32_t>::WriteBigEndian(ctx->AllocateData(4), app_name_);
-
-  // Add the data
-  memcpy(ctx->AllocateData(app_length_), app_data_.get(), app_length_);
 
   return BuildResult::kSuccess;
 }
