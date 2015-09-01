@@ -834,6 +834,16 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
   LOG(LS_VERBOSE) << "Sync buffer (" << *num_channels << " channel(s)):" <<
       " insert " << algorithm_buffer_->Size() << " samples, extract " <<
       samples_from_sync << " samples";
+  if (sync_buffer_->FutureLength() < expand_->overlap_length()) {
+    // The sync buffer should always contain |overlap_length| samples, but now
+    // too many samples have been extracted. Reinstall the |overlap_length|
+    // lookahead by moving the index.
+    const size_t missing_lookahead_samples =
+        expand_->overlap_length() - sync_buffer_->FutureLength();
+    DCHECK_GE(sync_buffer_->next_index(), missing_lookahead_samples);
+    sync_buffer_->set_next_index(sync_buffer_->next_index() -
+                                 missing_lookahead_samples);
+  }
   if (samples_from_sync != output_size_samples_) {
     LOG(LS_ERROR) << "samples_from_sync (" << samples_from_sync
                   << ") != output_size_samples_ (" << output_size_samples_
@@ -846,7 +856,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
   *samples_per_channel = output_size_samples_;
 
   // Should always have overlap samples left in the |sync_buffer_|.
-  assert(sync_buffer_->FutureLength() >= expand_->overlap_length());
+  DCHECK_GE(sync_buffer_->FutureLength(), expand_->overlap_length());
 
   if (play_dtmf) {
     return_value = DtmfOverdub(dtmf_event, sync_buffer_->Channels(), output);

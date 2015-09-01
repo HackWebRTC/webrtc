@@ -942,4 +942,67 @@ TEST_F(NetEqImplTest, FloodBufferAndGetNetworkStats) {
   NetEqNetworkStatistics stats;
   EXPECT_EQ(NetEq::kOK, neteq_->NetworkStatistics(&stats));
 }
+
+TEST_F(NetEqImplTest, DecodedPayloadTooShort) {
+  UseNoMocks();
+  CreateInstance();
+
+  const uint8_t kPayloadType = 17;   // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
+  const int kSampleRateHz = 8000;
+  const size_t kPayloadLengthSamples =
+      static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
+  const size_t kPayloadLengthBytes = 2 * kPayloadLengthSamples;
+  uint8_t payload[kPayloadLengthBytes] = {0};
+  WebRtcRTPHeader rtp_header;
+  rtp_header.header.payloadType = kPayloadType;
+  rtp_header.header.sequenceNumber = 0x1234;
+  rtp_header.header.timestamp = 0x12345678;
+  rtp_header.header.ssrc = 0x87654321;
+
+  // Create a mock decoder object.
+  MockAudioDecoder mock_decoder;
+  EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
+  EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
+  EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
+      .WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, PacketDuration(_, _))
+      .WillRepeatedly(Return(kPayloadLengthSamples));
+  int16_t dummy_output[kPayloadLengthSamples] = {0};
+  // The below expectation will make the mock decoder write
+  // |kPayloadLengthSamples| - 5 zeros to the output array, and mark it as
+  // speech. That is, the decoded length is 5 samples shorter than the expected.
+  EXPECT_CALL(mock_decoder,
+              Decode(_, kPayloadLengthBytes, kSampleRateHz, _, _, _))
+      .WillOnce(
+          DoAll(SetArrayArgument<4>(dummy_output,
+                                    dummy_output + kPayloadLengthSamples - 5),
+                SetArgPointee<5>(AudioDecoder::kSpeech),
+                Return(kPayloadLengthSamples - 5)));
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->RegisterExternalDecoder(&mock_decoder, kDecoderPCM16B,
+                                            kPayloadType, kSampleRateHz));
+
+  // Insert one packet.
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(rtp_header, payload, kPayloadLengthBytes,
+                                 kReceiveTime));
+
+  EXPECT_EQ(5u, neteq_->sync_buffer_for_test()->FutureLength());
+
+  // Pull audio once.
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
+  int16_t output[kMaxOutputSize];
+  size_t samples_per_channel;
+  int num_channels;
+  NetEqOutputType type;
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  ASSERT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputNormal, type);
+
+  EXPECT_CALL(mock_decoder, Die());
+}
 }  // namespace webrtc

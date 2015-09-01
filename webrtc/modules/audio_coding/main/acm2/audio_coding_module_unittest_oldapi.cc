@@ -1000,6 +1000,9 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutputExternalDecoder) {
   EXPECT_CALL(mock_decoder, HasDecodePlc())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::HasDecodePlc));
+  EXPECT_CALL(mock_decoder, PacketDuration(_, _))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::PacketDuration));
   ExternalDecoder ed;
   ed.rtp_payload_type = 0;
   ed.external_decoder = &mock_decoder;
