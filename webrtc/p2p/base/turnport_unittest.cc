@@ -803,7 +803,7 @@ TEST_F(TurnPortTest, TestResolverShutdown) {
   // Need to supply unresolved address to kick off resolver.
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  cricket::ProtocolAddress(rtc::SocketAddress(
-                    "stun.l.google.com", 3478), cricket::PROTO_UDP));
+                    "www.google.invalid", 3478), cricket::PROTO_UDP));
   turn_port_->PrepareAddress();
   ASSERT_TRUE_WAIT(turn_error_, kTimeout);
   EXPECT_TRUE(turn_port_->Candidates().empty());
