@@ -81,7 +81,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private int id;
   private Camera.CameraInfo info;
   private SurfaceTexture cameraSurfaceTexture;
-  private int[] cameraGlTextures = null;
+  private int cameraGlTexture = 0;
   private final FramePool videoBuffers = new FramePool();
   // Remember the requested format in case we want to switch cameras.
   private int requestedWidth;
@@ -323,23 +323,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       // it over to Camera, but never listen for frame-ready callbacks,
       // and never call updateTexImage on it.
       try {
-        cameraSurfaceTexture = null;
-
-        cameraGlTextures = new int[1];
-        // Generate one texture pointer and bind it as an external texture.
-        GLES20.glGenTextures(1, cameraGlTextures, 0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            cameraGlTextures[0]);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-
-        cameraSurfaceTexture = new SurfaceTexture(cameraGlTextures[0]);
+        cameraGlTexture = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+        cameraSurfaceTexture = new SurfaceTexture(cameraGlTexture);
         cameraSurfaceTexture.setOnFrameAvailableListener(null);
 
         camera.setPreviewTexture(cameraSurfaceTexture);
@@ -473,11 +458,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
       camera.setPreviewTexture(null);
       cameraSurfaceTexture = null;
-      if (cameraGlTextures != null) {
-        GLES20.glDeleteTextures(1, cameraGlTextures, 0);
-        cameraGlTextures = null;
+      if (cameraGlTexture != 0) {
+        GLES20.glDeleteTextures(1, new int[] {cameraGlTexture}, 0);
+        cameraGlTexture = 0;
       }
-
       Log.d(TAG, "Release camera.");
       camera.release();
       camera = null;

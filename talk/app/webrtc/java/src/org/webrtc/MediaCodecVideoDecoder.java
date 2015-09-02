@@ -225,22 +225,7 @@ public class MediaCodecVideoDecoder {
         eglBase.makeCurrent();
 
         // Create output surface
-        int[] textures = new int[1];
-        GLES20.glGenTextures(1, textures, 0);
-        GlUtil.checkNoGLES2Error("glGenTextures");
-        textureID = textures[0];
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureID);
-        GlUtil.checkNoGLES2Error("glBindTexture mTextureID");
-
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GlUtil.checkNoGLES2Error("glTexParameter");
+        textureID = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
         Log.d(TAG, "Video decoder TextureID = " + textureID);
         surfaceTexture = new SurfaceTexture(textureID);
         surface = new Surface(surfaceTexture);
@@ -284,12 +269,10 @@ public class MediaCodecVideoDecoder {
     mediaCodecThread = null;
     if (useSurface) {
       surface.release();
-      if (textureID >= 0) {
-        int[] textures = new int[1];
-        textures[0] = textureID;
+      if (textureID != 0) {
         Log.d(TAG, "Delete video decoder TextureID " + textureID);
-        GLES20.glDeleteTextures(1, textures, 0);
-        GlUtil.checkNoGLES2Error("glDeleteTextures");
+        GLES20.glDeleteTextures(1, new int[] {textureID}, 0);
+        textureID = 0;
       }
       eglBase.release();
       eglBase = null;

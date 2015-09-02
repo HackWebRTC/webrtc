@@ -70,20 +70,9 @@ public class GlRectDrawerTest extends ActivityTestCase {
 
     // Generate 3 texture ids for Y/U/V.
     final int yuvTextures[] = new int[3];
-    GLES20.glGenTextures(3, yuvTextures, 0);
     for (int i = 0; i < 3; i++)  {
-      GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
-      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
-      GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-          GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-      GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-          GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-      GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-          GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-      GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-          GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+      yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
     }
-    GlUtil.checkNoGLES2Error("YUV glGenTextures");
 
     // Upload the YUV byte buffer data as textures.
     for (int i = 0; i < 3; ++i) {
