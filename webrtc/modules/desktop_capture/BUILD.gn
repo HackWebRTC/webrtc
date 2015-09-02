@@ -127,7 +127,7 @@ source_set("desktop_capture") {
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
-  if (is_clang) {
+  if (is_clang && !is_nacl) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]

@@ -274,7 +274,7 @@ source_set("rtc_event_log") {
     defines += [ "ENABLE_RTC_EVENT_LOG" ]
     deps += [ ":rtc_event_log_proto" ]
   }
-  if (is_clang) {
+  if (is_clang && !is_nacl) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
