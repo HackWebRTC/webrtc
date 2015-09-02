@@ -36,6 +36,8 @@ import org.webrtc.GlUtil;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  * Helper class to draw a quad that covers the entire viewport. Rotation, mirror, and cropping is
@@ -47,7 +49,7 @@ import java.util.Arrays;
 public class GlRectDrawer {
   // Simple vertex shader, used for both YUV and OES.
   private static final String VERTEX_SHADER_STRING =
-      "varying vec2 interp_tc;\n"
+        "varying vec2 interp_tc;\n"
       + "attribute vec4 in_pos;\n"
       + "attribute vec4 in_tc;\n"
       + "\n"
@@ -59,7 +61,7 @@ public class GlRectDrawer {
       + "}\n";
 
   private static final String YUV_FRAGMENT_SHADER_STRING =
-      "precision mediump float;\n"
+        "precision mediump float;\n"
       + "varying vec2 interp_tc;\n"
       + "\n"
       + "uniform sampler2D y_tex;\n"
@@ -76,8 +78,18 @@ public class GlRectDrawer {
       + "                      y + 1.77 * u, 1);\n"
       + "}\n";
 
+  private static final String RGB_FRAGMENT_SHADER_STRING =
+        "precision mediump float;\n"
+      + "varying vec2 interp_tc;\n"
+      + "\n"
+      + "uniform sampler2D rgb_tex;\n"
+      + "\n"
+      + "void main() {\n"
+      + "  gl_FragColor = texture2D(rgb_tex, interp_tc);\n"
+      + "}\n";
+
   private static final String OES_FRAGMENT_SHADER_STRING =
-      "#extension GL_OES_EGL_image_external : require\n"
+        "#extension GL_OES_EGL_image_external : require\n"
       + "precision mediump float;\n"
       + "varying vec2 interp_tc;\n"
       + "\n"
@@ -103,38 +115,18 @@ public class GlRectDrawer {
             1.0f, 1.0f   // Top right.
           });
 
-  private GlShader oesShader;
-  private GlShader yuvShader;
+  // The keys are one of the fragments shaders above.
+  private final Map<String, GlShader> shaders = new IdentityHashMap<String, GlShader>();
   private GlShader currentShader;
   private float[] currentTexMatrix;
   private int texMatrixLocation;
-
-  private void initGeometry(GlShader shader) {
-    shader.setVertexAttribArray("in_pos", 2, FULL_RECTANGLE_BUF);
-    shader.setVertexAttribArray("in_tc", 2, FULL_RECTANGLE_TEX_BUF);
-  }
 
   /**
    * Draw an OES texture frame with specified texture transformation matrix. Required resources are
    * allocated at the first call to this function.
    */
   public void drawOes(int oesTextureId, float[] texMatrix) {
-    // Lazy allocation.
-    if (oesShader == null) {
-      oesShader = new GlShader(VERTEX_SHADER_STRING, OES_FRAGMENT_SHADER_STRING);
-      oesShader.useProgram();
-      initGeometry(oesShader);
-    }
-
-    // Set GLES state to OES.
-    if (currentShader != oesShader) {
-      currentShader = oesShader;
-      oesShader.useProgram();
-      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-      currentTexMatrix = null;
-      texMatrixLocation = oesShader.getUniformLocation("texMatrix");
-    }
-
+    prepareShader(OES_FRAGMENT_SHADER_STRING);
     // updateTexImage() may be called from another thread in another EGL context, so we need to
     // bind/unbind the texture in each draw call so that GLES understads it's a new texture.
     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
@@ -143,39 +135,34 @@ public class GlRectDrawer {
   }
 
   /**
+   * Draw a RGB(A) texture frame with specified texture transformation matrix. Required resources
+   * are allocated at the first call to this function.
+   */
+  public void drawRgb(int textureId, float[] texMatrix) {
+    prepareShader(RGB_FRAGMENT_SHADER_STRING);
+    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
+    drawRectangle(texMatrix);
+    // Unbind the texture as a precaution.
+    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+  }
+
+  /**
    * Draw a YUV frame with specified texture transformation matrix. Required resources are
    * allocated at the first call to this function.
    */
   public void drawYuv(int width, int height, int[] yuvTextures, float[] texMatrix) {
-    // Lazy allocation.
-    if (yuvShader == null) {
-      yuvShader = new GlShader(VERTEX_SHADER_STRING, YUV_FRAGMENT_SHADER_STRING);
-      yuvShader.useProgram();
-
-      // Set texture samplers.
-      GLES20.glUniform1i(yuvShader.getUniformLocation("y_tex"), 0);
-      GLES20.glUniform1i(yuvShader.getUniformLocation("u_tex"), 1);
-      GLES20.glUniform1i(yuvShader.getUniformLocation("v_tex"), 2);
-      GlUtil.checkNoGLES2Error("y/u/v_tex glGetUniformLocation");
-
-      initGeometry(yuvShader);
-    }
-
-    // Set GLES state to YUV.
-    if (currentShader != yuvShader) {
-      currentShader = yuvShader;
-      yuvShader.useProgram();
-      currentTexMatrix = null;
-      texMatrixLocation = yuvShader.getUniformLocation("texMatrix");
-    }
-
+    prepareShader(YUV_FRAGMENT_SHADER_STRING);
     // Bind the textures.
     for (int i = 0; i < 3; ++i) {
       GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
       GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
     }
-
     drawRectangle(texMatrix);
+    // Unbind the textures as a precaution..
+    for (int i = 0; i < 3; ++i) {
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+    }
   }
 
   private void drawRectangle(float[] texMatrix) {
@@ -189,17 +176,48 @@ public class GlRectDrawer {
     GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
   }
 
+  private void prepareShader(String fragmentShader) {
+    // Lazy allocation.
+    if (!shaders.containsKey(fragmentShader)) {
+      final GlShader shader = new GlShader(VERTEX_SHADER_STRING, fragmentShader);
+      shaders.put(fragmentShader, shader);
+      shader.useProgram();
+      // Initialize fragment shader uniform values.
+      if (fragmentShader == YUV_FRAGMENT_SHADER_STRING) {
+        GLES20.glUniform1i(shader.getUniformLocation("y_tex"), 0);
+        GLES20.glUniform1i(shader.getUniformLocation("u_tex"), 1);
+        GLES20.glUniform1i(shader.getUniformLocation("v_tex"), 2);
+      } else if (fragmentShader == RGB_FRAGMENT_SHADER_STRING) {
+        GLES20.glUniform1i(shader.getUniformLocation("rgb_tex"), 0);
+      } else if (fragmentShader == OES_FRAGMENT_SHADER_STRING) {
+        GLES20.glUniform1i(shader.getUniformLocation("oes_tex"), 0);
+      } else {
+        throw new IllegalStateException("Unknown fragment shader: " + fragmentShader);
+      }
+      GlUtil.checkNoGLES2Error("Initialize fragment shader uniform values.");
+      // Initialize vertex shader attributes.
+      shader.setVertexAttribArray("in_pos", 2, FULL_RECTANGLE_BUF);
+      shader.setVertexAttribArray("in_tc", 2, FULL_RECTANGLE_TEX_BUF);
+    }
+
+    // Update GLES state if shader is not already current.
+    final GlShader shader = shaders.get(fragmentShader);
+    if (currentShader != shader) {
+      currentShader = shader;
+      shader.useProgram();
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+      currentTexMatrix = null;
+      texMatrixLocation = shader.getUniformLocation("texMatrix");
+    }
+  }
+
   /**
    * Release all GLES resources. This needs to be done manually, otherwise the resources are leaked.
    */
   public void release() {
-    if (oesShader != null) {
-      oesShader.release();
-      oesShader = null;
+    for (GlShader shader : shaders.values()) {
+      shader.release();
     }
-    if (yuvShader != null) {
-      yuvShader.release();
-      yuvShader = null;
-    }
+    shaders.clear();
   }
 }
