@@ -127,7 +127,7 @@ rtc::scoped_ptr<AudioEncoderMutable> CreateSpeechEncoder(
   } else if (IsG722(speech_inst)) {
     return rtc_make_scoped_ptr(new AudioEncoderMutableG722(speech_inst));
   } else {
-    FATAL();
+    FATAL() << "Could not create encoder of type " << speech_inst.plname;
     return rtc::scoped_ptr<AudioEncoderMutable>();
   }
 }
