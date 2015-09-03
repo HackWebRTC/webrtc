@@ -58,6 +58,7 @@
             'acm_receive_test',
             'acm_send_test',
             'audio_coding_module',
+            'audio_conference_mixer',
             'audio_device'  ,
             'audio_processing',
             'audioproc_test_utils',
@@ -158,6 +159,7 @@
             'audio_coding/neteq/mock/mock_payload_splitter.h',
             'audio_coding/neteq/tools/input_audio_file_unittest.cc',
             'audio_coding/neteq/tools/packet_unittest.cc',
+            'audio_conference_mixer/test/audio_conference_mixer_unittest.cc',
             'audio_processing/aec/echo_cancellation_unittest.cc',
             'audio_processing/aec/system_delay_unittest.cc',
             # TODO(ajm): Fix to match new interface.
