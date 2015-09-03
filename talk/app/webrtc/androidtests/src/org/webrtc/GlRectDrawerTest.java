@@ -86,7 +86,7 @@ public class GlRectDrawerTest extends ActivityTestCase {
     final GlRectDrawer drawer = new GlRectDrawer();
     final float[] texMatrix = new float[16];
     Matrix.setIdentityM(texMatrix, 0);
-    drawer.drawYuv(WIDTH, HEIGHT, yuvTextures, texMatrix);
+    drawer.drawYuv(yuvTextures, texMatrix);
 
     // Download the pixels in the pixel buffer as RGBA.
     final ByteBuffer data = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);

@@ -37,7 +37,7 @@ import java.nio.ByteBuffer;
  */
 public class VideoRenderer {
 
-  /** Java version of cricket::VideoFrame. */
+  /** Java version of cricket::VideoFrame. Frames are only constructed from native code. */
   public static class I420Frame {
     public final int width;
     public final int height;
@@ -46,7 +46,7 @@ public class VideoRenderer {
     public final boolean yuvFrame;
     public Object textureObject;
     public int textureId;
-    // If |nativeFramePointer| is non-zero, the memory is allocated on the C++ side.
+    // Frame pointer in C++.
     private long nativeFramePointer;
 
     // rotationDegree is the degree that the frame must be rotated clockwisely
@@ -54,22 +54,14 @@ public class VideoRenderer {
     public int rotationDegree;
 
     /**
-     * Construct a frame of the given dimensions with the specified planar
-     * data.  If |yuvPlanes| is null, new planes of the appropriate sizes are
-     * allocated.
+     * Construct a frame of the given dimensions with the specified planar data.
      */
-    public I420Frame(
+    private I420Frame(
         int width, int height, int rotationDegree,
         int[] yuvStrides, ByteBuffer[] yuvPlanes, long nativeFramePointer) {
       this.width = width;
       this.height = height;
       this.yuvStrides = yuvStrides;
-      if (yuvPlanes == null) {
-        yuvPlanes = new ByteBuffer[3];
-        yuvPlanes[0] = ByteBuffer.allocateDirect(yuvStrides[0] * height);
-        yuvPlanes[1] = ByteBuffer.allocateDirect(yuvStrides[1] * height / 2);
-        yuvPlanes[2] = ByteBuffer.allocateDirect(yuvStrides[2] * height / 2);
-      }
       this.yuvPlanes = yuvPlanes;
       this.yuvFrame = true;
       this.rotationDegree = rotationDegree;
@@ -82,7 +74,7 @@ public class VideoRenderer {
     /**
      * Construct a texture frame of the given dimensions with data in SurfaceTexture
      */
-    public I420Frame(
+    private I420Frame(
         int width, int height, int rotationDegree,
         Object textureObject, int textureId, long nativeFramePointer) {
       this.width = width;
@@ -107,66 +99,6 @@ public class VideoRenderer {
       return (rotationDegree % 180 == 0) ? height : width;
     }
 
-    /**
-     * Copy the planes out of |source| into |this| and return |this|.  Calling
-     * this with mismatched frame dimensions or frame type is a programming
-     * error and will likely crash.
-     */
-    public I420Frame copyFrom(I420Frame source) {
-      // |nativeFramePointer| is not copied from |source|, because resources in this object are
-      // still allocated in Java. After copyFrom() is done, this object should not hold any
-      // references to |source|. This is violated for texture frames however, because |textureId|
-      // is copied without making a deep copy.
-      if (this.nativeFramePointer != 0) {
-        throw new RuntimeException("Trying to overwrite a frame allocated in C++");
-      }
-      if (source.yuvFrame && yuvFrame) {
-        if (width != source.width || height != source.height) {
-          throw new RuntimeException("Mismatched dimensions!  Source: " +
-              source.toString() + ", destination: " + toString());
-        }
-        nativeCopyPlane(source.yuvPlanes[0], width, height,
-            source.yuvStrides[0], yuvPlanes[0], yuvStrides[0]);
-        nativeCopyPlane(source.yuvPlanes[1], width / 2, height / 2,
-            source.yuvStrides[1], yuvPlanes[1], yuvStrides[1]);
-        nativeCopyPlane(source.yuvPlanes[2], width / 2, height / 2,
-            source.yuvStrides[2], yuvPlanes[2], yuvStrides[2]);
-        rotationDegree = source.rotationDegree;
-        return this;
-      } else if (!source.yuvFrame && !yuvFrame) {
-        textureObject = source.textureObject;
-        textureId = source.textureId;
-        rotationDegree = source.rotationDegree;
-        return this;
-      } else {
-        throw new RuntimeException("Mismatched frame types!  Source: " +
-            source.toString() + ", destination: " + toString());
-      }
-    }
-
-    public I420Frame copyFrom(byte[] yuvData, int rotationDegree) {
-      if (yuvData.length < width * height * 3 / 2) {
-        throw new RuntimeException("Wrong arrays size: " + yuvData.length);
-      }
-      if (!yuvFrame) {
-        throw new RuntimeException("Can not feed yuv data to texture frame");
-      }
-      int planeSize = width * height;
-      ByteBuffer[] planes = new ByteBuffer[3];
-      planes[0] = ByteBuffer.wrap(yuvData, 0, planeSize);
-      planes[1] = ByteBuffer.wrap(yuvData, planeSize, planeSize / 4);
-      planes[2] = ByteBuffer.wrap(yuvData, planeSize + planeSize / 4,
-          planeSize / 4);
-      for (int i = 0; i < 3; i++) {
-        yuvPlanes[i].position(0);
-        yuvPlanes[i].put(planes[i]);
-        yuvPlanes[i].position(0);
-        yuvPlanes[i].limit(yuvPlanes[i].capacity());
-      }
-      this.rotationDegree = rotationDegree;
-      return this;
-    }
-
     @Override
     public String toString() {
       return width + "x" + height + ":" + yuvStrides[0] + ":" + yuvStrides[1] +
@@ -175,7 +107,7 @@ public class VideoRenderer {
   }
 
   // Helper native function to do a video frame plane copying.
-  private static native void nativeCopyPlane(ByteBuffer src, int width,
+  public static native void nativeCopyPlane(ByteBuffer src, int width,
       int height, int srcStride, ByteBuffer dst, int dstStride);
 
   /** The real meat of VideoRendererInterface. */

@@ -120,6 +120,51 @@ public class GlRectDrawer {
   private GlShader currentShader;
   private float[] currentTexMatrix;
   private int texMatrixLocation;
+  // Intermediate copy buffer for uploading yuv frames that are not packed, i.e. stride > width.
+  // TODO(magjed): Investigate when GL_UNPACK_ROW_LENGTH is available, or make a custom shader that
+  // handles stride and compare performance with intermediate copy.
+  private ByteBuffer copyBuffer;
+
+  /**
+   * Upload |planes| into |outputYuvTextures|, taking stride into consideration. |outputYuvTextures|
+   * must have been generated in advance.
+   */
+  public void uploadYuvData(
+      int[] outputYuvTextures, int width, int height, int[] strides, ByteBuffer[] planes) {
+    // Make a first pass to see if we need a temporary copy buffer.
+    int copyCapacityNeeded = 0;
+    for (int i = 0; i < 3; ++i) {
+      final int planeWidth = (i == 0) ? width : width / 2;
+      final int planeHeight = (i == 0) ? height : height / 2;
+      if (strides[i] > planeWidth) {
+        copyCapacityNeeded = Math.max(copyCapacityNeeded, planeWidth * planeHeight);
+      }
+    }
+    // Allocate copy buffer if necessary.
+    if (copyCapacityNeeded > 0
+        && (copyBuffer == null || copyBuffer.capacity() < copyCapacityNeeded)) {
+      copyBuffer = ByteBuffer.allocateDirect(copyCapacityNeeded);
+    }
+    // Upload each plane.
+    for (int i = 0; i < 3; ++i) {
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, outputYuvTextures[i]);
+      final int planeWidth = (i == 0) ? width : width / 2;
+      final int planeHeight = (i == 0) ? height : height / 2;
+      // GLES only accepts packed data, i.e. stride == planeWidth.
+      final ByteBuffer packedByteBuffer;
+      if (strides[i] == planeWidth) {
+        // Input is packed already.
+        packedByteBuffer = planes[i];
+      } else {
+        VideoRenderer.nativeCopyPlane(
+            planes[i], planeWidth, planeHeight, strides[i], copyBuffer, planeWidth);
+        packedByteBuffer = copyBuffer;
+      }
+      GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, planeWidth, planeHeight, 0,
+          GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, packedByteBuffer);
+    }
+  }
 
   /**
    * Draw an OES texture frame with specified texture transformation matrix. Required resources are
@@ -150,7 +195,7 @@ public class GlRectDrawer {
    * Draw a YUV frame with specified texture transformation matrix. Required resources are
    * allocated at the first call to this function.
    */
-  public void drawYuv(int width, int height, int[] yuvTextures, float[] texMatrix) {
+  public void drawYuv(int[] yuvTextures, float[] texMatrix) {
     prepareShader(YUV_FRAGMENT_SHADER_STRING);
     // Bind the textures.
     for (int i = 0; i < 3; ++i) {
@@ -219,5 +264,6 @@ public class GlRectDrawer {
       shader.release();
     }
     shaders.clear();
+    copyBuffer = null;
   }
 }

@@ -29,7 +29,6 @@ package org.webrtc;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -102,14 +101,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private int[] yuvTextures = { 0, 0, 0 };
     private int oesTexture = 0;
 
-    // Render frame queue - accessed by two threads. renderFrame() call does
-    // an offer (writing I420Frame to render) and early-returns (recording
-    // a dropped frame) if that queue is full. draw() call does a peek(),
-    // copies frame to texture and then removes it from a queue using poll().
-    private final LinkedBlockingQueue<I420Frame> frameToRenderQueue;
-    // Local copy of incoming video frame. Synchronized on |frameToRenderQueue|.
-    private I420Frame yuvFrameToRender;
-    private I420Frame textureFrameToRender;
+    // Pending frame to render. Serves as a queue with size 1. |pendingFrame| is accessed by two
+    // threads - frames are received in renderFrame() and consumed in draw(). Frames are dropped in
+    // renderFrame() if the previous frame has not been rendered yet.
+    private I420Frame pendingFrame;
+    private final Object pendingFrameLock = new Object();
     // Type of video frame used for recent frame rendering.
     private static enum RendererType { RENDERER_YUV, RENDERER_TEXTURE };
     private RendererType rendererType;
@@ -129,7 +125,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private long startTimeNs = -1;
     // Time in ns spent in draw() function.
     private long drawTimeNs;
-    // Time in ns spent in renderFrame() function - including copying frame
+    // Time in ns spent in draw() copying resources from |pendingFrame| - including uploading frame
     // data to rendering planes.
     private long copyTimeNs;
     // The allowed view area in percentage of screen size.
@@ -163,7 +159,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       this.id = id;
       this.scalingType = scalingType;
       this.mirror = mirror;
-      frameToRenderQueue = new LinkedBlockingQueue<I420Frame>(1);
       layoutInPercentage = new Rect(x, y, Math.min(100, x + width), Math.min(100, y + height));
       updateTextureProperties = false;
       rotationDegree = 0;
@@ -171,10 +166,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
     private synchronized void release() {
       surface = null;
-      synchronized (frameToRenderQueue) {
-        frameToRenderQueue.clear();
-        yuvFrameToRender = null;
-        textureFrameToRender = null;
+      synchronized (pendingFrameLock) {
+        if (pendingFrame != null) {
+          VideoRenderer.renderFrameDone(pendingFrame);
+          pendingFrame = null;
+        }
       }
     }
 
@@ -231,52 +227,47 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       GLES20.glViewport(displayLayout.left, screenHeight - displayLayout.bottom,
                         displayLayout.width(), displayLayout.height());
 
-      I420Frame frameFromQueue;
-      synchronized (frameToRenderQueue) {
+      final boolean isNewFrame;
+      synchronized (pendingFrameLock) {
         // Check if texture vertices/coordinates adjustment is required when
         // screen orientation changes or video frame size changes.
         checkAdjustTextureCoords();
 
-        frameFromQueue = frameToRenderQueue.peek();
-        if (frameFromQueue != null && startTimeNs == -1) {
+        isNewFrame = (pendingFrame != null);
+        if (isNewFrame && startTimeNs == -1) {
           startTimeNs = now;
         }
 
-        if (frameFromQueue != null) {
-          if (frameFromQueue.yuvFrame) {
-            // YUV textures rendering. Upload YUV data as textures.
-            for (int i = 0; i < 3; ++i) {
-              GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
-              GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
-              int w = (i == 0) ? frameFromQueue.width : frameFromQueue.width / 2;
-              int h = (i == 0) ? frameFromQueue.height : frameFromQueue.height / 2;
-              GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE,
-                  w, h, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE,
-                  frameFromQueue.yuvPlanes[i]);
-            }
+        if (isNewFrame) {
+          if (pendingFrame.yuvFrame) {
+            rendererType = RendererType.RENDERER_YUV;
+            drawer.uploadYuvData(yuvTextures, pendingFrame.width, pendingFrame.height,
+                pendingFrame.yuvStrides, pendingFrame.yuvPlanes);
           } else {
+            rendererType = RendererType.RENDERER_TEXTURE;
             // External texture rendering. Copy texture id and update texture image to latest.
             // TODO(magjed): We should not make an unmanaged copy of texture id. Also, this is not
             // the best place to call updateTexImage.
-            oesTexture = frameFromQueue.textureId;
-            if (frameFromQueue.textureObject instanceof SurfaceTexture) {
+            oesTexture = pendingFrame.textureId;
+            if (pendingFrame.textureObject instanceof SurfaceTexture) {
               SurfaceTexture surfaceTexture =
-                  (SurfaceTexture) frameFromQueue.textureObject;
+                  (SurfaceTexture) pendingFrame.textureObject;
               surfaceTexture.updateTexImage();
             }
           }
-
-          frameToRenderQueue.poll();
+          copyTimeNs += (System.nanoTime() - now);
+          VideoRenderer.renderFrameDone(pendingFrame);
+          pendingFrame = null;
         }
       }
 
       if (rendererType == RendererType.RENDERER_YUV) {
-        drawer.drawYuv(videoWidth, videoHeight, yuvTextures, texMatrix);
+        drawer.drawYuv(yuvTextures, texMatrix);
       } else {
         drawer.drawOes(oesTexture, texMatrix);
       }
 
-      if (frameFromQueue != null) {
+      if (isNewFrame) {
         framesRendered++;
         drawTimeNs += (System.nanoTime() - now);
         if ((framesRendered % 300) == 0) {
@@ -342,25 +333,13 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         rendererEvents.onFrameResolutionChanged(videoWidth, videoHeight, rotation);
       }
 
-      // Frame re-allocation need to be synchronized with copying
-      // frame to textures in draw() function to avoid re-allocating
-      // the frame while it is being copied.
-      synchronized (frameToRenderQueue) {
+      synchronized (updateTextureLock) {
         Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
             videoWidth + " x " + videoHeight + " rotation " + rotation);
 
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
         rotationDegree = rotation;
-        int[] strides = { videoWidth, videoWidth / 2, videoWidth / 2  };
-
-        // Clear rendering queue.
-        frameToRenderQueue.poll();
-        // Re-allocate / allocate the frame.
-        yuvFrameToRender = new I420Frame(videoWidth, videoHeight, rotationDegree,
-                                         strides, null, 0);
-        textureFrameToRender = new I420Frame(videoWidth, videoHeight, rotationDegree,
-                                             null, -1, 0);
         updateTextureProperties = true;
         Log.d(TAG, "  YuvImageRenderer.setSize done.");
       }
@@ -377,16 +356,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         Log.d(TAG, "ID: " + id + ". Reporting first rendered frame.");
         rendererEvents.onFirstFrameRendered();
       }
-      setSize(frame.width, frame.height, frame.rotationDegree);
-      long now = System.nanoTime();
       framesReceived++;
-      synchronized (frameToRenderQueue) {
-        // Skip rendering of this frame if setSize() was not called.
-        if (yuvFrameToRender == null || textureFrameToRender == null) {
-          framesDropped++;
-          VideoRenderer.renderFrameDone(frame);
-          return;
-        }
+      synchronized (pendingFrameLock) {
         // Check input frame parameters.
         if (frame.yuvFrame) {
           if (frame.yuvStrides[0] < frame.width ||
@@ -397,35 +368,18 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             VideoRenderer.renderFrameDone(frame);
             return;
           }
-          // Check incoming frame dimensions.
-          if (frame.width != yuvFrameToRender.width ||
-              frame.height != yuvFrameToRender.height) {
-            throw new RuntimeException("Wrong frame size " +
-                frame.width + " x " + frame.height);
-          }
         }
 
-        if (frameToRenderQueue.size() > 0) {
+        if (pendingFrame != null) {
           // Skip rendering of this frame if previous frame was not rendered yet.
           framesDropped++;
           VideoRenderer.renderFrameDone(frame);
           return;
         }
-
-        // Create a local copy of the frame.
-        if (frame.yuvFrame) {
-          yuvFrameToRender.copyFrom(frame);
-          rendererType = RendererType.RENDERER_YUV;
-          frameToRenderQueue.offer(yuvFrameToRender);
-        } else {
-          textureFrameToRender.copyFrom(frame);
-          rendererType = RendererType.RENDERER_TEXTURE;
-          frameToRenderQueue.offer(textureFrameToRender);
-        }
+        pendingFrame = frame;
       }
-      copyTimeNs += (System.nanoTime() - now);
+      setSize(frame.width, frame.height, frame.rotationDegree);
       seenFrame = true;
-      VideoRenderer.renderFrameDone(frame);
 
       // Request rendering.
       surface.requestRender();
