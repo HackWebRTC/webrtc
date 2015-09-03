@@ -753,16 +753,6 @@ class WebRtcVideoChannel2BaseTest
 #define WEBRTC_DISABLED_BASE_TEST(test) \
   TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_##test) { Base::test(); }
 
-// TODO(pbos): Fix WebRtcVideoEngine2BaseTest, where we want CheckCoInitialize.
-#if 0
-// TODO(juberti): Figure out why ViE is munging the COM refcount.
-#ifdef WIN32
-WEBRTC_DISABLED_BASE_TEST(CheckCoInitialize) {
-  Base::CheckCoInitialize();
-}
-#endif
-#endif
-
 WEBRTC_BASE_TEST(SetSend);
 WEBRTC_BASE_TEST(SetSendWithoutCodecs);
 WEBRTC_BASE_TEST(SetSendSetsTransportBufferSizes);
@@ -2785,6 +2775,151 @@ class WebRtcVideoEngine2SimulcastTest : public testing::Test {
   WebRtcVideoEngine2 engine_;
 };
 
+// Test that if we add a stream with RTX SSRC's, SSRC's get set correctly.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestStreamWithRtx) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that if we get too few ssrcs are given in AddSendStream(),
+// only supported sub-streams will be added.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TooFewSimulcastSsrcs) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that even more than enough ssrcs are given in AddSendStream(),
+// only supported sub-streams will be added.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_MoreThanEnoughSimulcastSscrs) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that SetSendStreamFormat works well with simulcast.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_SetSendStreamFormatWithSimulcast) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that simulcast send codec is reset on new video frame size.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_ResetSimulcastSendCodecOnNewFrameSize) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that simulcast send codec is reset on new portait mode video frame.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_ResetSimulcastSendCodecOnNewPortaitFrame) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_SetBandwidthInConferenceWithSimulcast) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that sending screencast frames in conference mode changes
+// bitrate.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_SetBandwidthScreencastInConference) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test AddSendStream with simulcast rejects bad StreamParams.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_AddSendStreamWithBadStreamParams) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test AddSendStream with simulcast sets ssrc and cname correctly.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_AddSendStreamWithSimulcast) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test RemoveSendStream with simulcast.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_RemoveSendStreamWithSimulcast) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test AddSendStream after send codec has already been set will reset
+// send codec with simulcast settings.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_AddSimulcastStreamAfterSetSendCodec) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_GetStatsWithMultipleSsrcs) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test receiving channel(s) local ssrc is set to the same as the first
+// simulcast sending ssrc.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_AddSimulcastStreamAfterCreatingRecvChannels) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test 1:1 call never turn on simulcast.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_NoSimulcastWith1on1) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test SetOptions with OPT_CONFERENCE flag.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_SetOptionsWithConferenceMode) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that two different streams can have different formats.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_MultipleSendStreamsDifferentFormats) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestAdaptToOutputFormat) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_TestAdaptWithCpuOveruseObserver) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that codec is not reset for every frame sent in non-conference and
+// non-screencast mode.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_DontResetCodecOnSendFrame) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_UseSimulcastAdapterOnVp8OnlyFactory) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_DontUseSimulcastAdapterOnNonVp8Factory) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
 class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
                                          public WebRtcCallFactory {
  public:
@@ -2966,151 +3101,6 @@ TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWithOddSizeInSimulcast) {
   codec.width += 1;
   codec.height += 1;
   VerifySimulcastSettings(codec, VideoOptions::NORMAL, 2, 2, SBM_NORMAL);
-}
-
-// Test that if we add a stream with RTX SSRC's, SSRC's get set correctly.
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestStreamWithRtx) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test that if we get too few ssrcs are given in AddSendStream(),
-// only supported sub-streams will be added.
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TooFewSimulcastSsrcs) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test that even more than enough ssrcs are given in AddSendStream(),
-// only supported sub-streams will be added.
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_MoreThanEnoughSimulcastSscrs) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test that SetSendStreamFormat works well with simulcast.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_SetSendStreamFormatWithSimulcast) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test that simulcast send codec is reset on new video frame size.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_ResetSimulcastSendCodecOnNewFrameSize) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test that simulcast send codec is reset on new portait mode video frame.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_ResetSimulcastSendCodecOnNewPortaitFrame) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_SetBandwidthInConferenceWithSimulcast) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test that sending screencast frames in conference mode changes
-// bitrate.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_SetBandwidthScreencastInConference) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test AddSendStream with simulcast rejects bad StreamParams.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_AddSendStreamWithBadStreamParams) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test AddSendStream with simulcast sets ssrc and cname correctly.
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_AddSendStreamWithSimulcast) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test RemoveSendStream with simulcast.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_RemoveSendStreamWithSimulcast) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test AddSendStream after send codec has already been set will reset
-// send codec with simulcast settings.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_AddSimulcastStreamAfterSetSendCodec) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_GetStatsWithMultipleSsrcs) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test receiving channel(s) local ssrc is set to the same as the first
-// simulcast sending ssrc.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_AddSimulcastStreamAfterCreatingRecvChannels) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test 1:1 call never turn on simulcast.
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_NoSimulcastWith1on1) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test SetOptions with OPT_CONFERENCE flag.
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_SetOptionsWithConferenceMode) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test that two different streams can have different formats.
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_MultipleSendStreamsDifferentFormats) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestAdaptToOutputFormat) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_TestAdaptWithCpuOveruseObserver) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test that codec is not reset for every frame sent in non-conference and
-// non-screencast mode.
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_DontResetCodecOnSendFrame) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_UseSimulcastAdapterOnVp8OnlyFactory) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_DontUseSimulcastAdapterOnNonVp8Factory) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
 }
 
 TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_1280x800) {
