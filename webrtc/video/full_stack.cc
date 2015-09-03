@@ -40,6 +40,12 @@ namespace webrtc {
 static const int kFullStackTestDurationSecs = 60;
 static const int kSendStatsPollingIntervalMs = 1000;
 
+enum class ContentMode {
+  kRealTimeVideo,
+  kScreensharingStaticImage,
+  kScreensharingScrollingImage,
+};
+
 struct FullStackTestParams {
   const char* test_label;
   struct {
@@ -47,7 +53,7 @@ struct FullStackTestParams {
     size_t width, height;
     int fps;
   } clip;
-  bool screenshare;
+  ContentMode mode;
   int min_bitrate_bps;
   int target_bitrate_bps;
   int max_bitrate_bps;
@@ -543,7 +549,8 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
 
   VideoCodecVP8 vp8_settings;
   VideoCodecVP9 vp9_settings;
-  if (params.screenshare) {
+  if (params.mode == ContentMode::kScreensharingStaticImage ||
+      params.mode == ContentMode::kScreensharingScrollingImage) {
     encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
     encoder_config_.min_transmit_bitrate_bps = 400 * 1000;
     if (params.codec == "VP8") {
@@ -577,33 +584,42 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
   analyzer.input_ = send_stream_->Input();
   analyzer.send_stream_ = send_stream_;
 
-  if (params.screenshare) {
-    std::vector<std::string> slides;
-    slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
+  std::vector<std::string> slides;
+  slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
+  slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
+  slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
+  slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
+  size_t kSlidesWidth = 1850;
+  size_t kSlidesHeight = 1110;
 
-    rtc::scoped_ptr<test::FrameGenerator> frame_generator(
-        test::FrameGenerator::CreateFromYuvFile(
-            slides, 1850, 1110,
-            10 * params.clip.fps)  // Cycle image every 10 seconds.
-        );
-    frame_generator_capturer_.reset(new test::FrameGeneratorCapturer(
-        Clock::GetRealTimeClock(), &analyzer, frame_generator.release(),
-        params.clip.fps));
-    ASSERT_TRUE(frame_generator_capturer_->Init());
-  } else {
-    frame_generator_capturer_.reset(
-        test::FrameGeneratorCapturer::CreateFromYuvFile(
-            &analyzer, test::ResourcePath(params.clip.name, "yuv"),
-            params.clip.width, params.clip.height, params.clip.fps,
-            Clock::GetRealTimeClock()));
+  Clock* clock = Clock::GetRealTimeClock();
+  rtc::scoped_ptr<test::FrameGenerator> frame_generator;
 
-    ASSERT_TRUE(frame_generator_capturer_.get() != nullptr)
-        << "Could not create capturer for " << params.clip.name
-        << ".yuv. Is this resource file present?";
+  switch (params.mode) {
+    case ContentMode::kRealTimeVideo:
+      frame_generator.reset(test::FrameGenerator::CreateFromYuvFile(
+          std::vector<std::string>(1,
+                                   test::ResourcePath(params.clip.name, "yuv")),
+          params.clip.width, params.clip.height, 1));
+      break;
+    case ContentMode::kScreensharingScrollingImage:
+      frame_generator.reset(
+          test::FrameGenerator::CreateScrollingInputFromYuvFiles(
+              clock, slides, kSlidesWidth, kSlidesHeight, params.clip.width,
+              params.clip.height, 2000,
+              8000));  // Scroll for 2 seconds, then pause for 8.
+      break;
+    case ContentMode::kScreensharingStaticImage:
+      frame_generator.reset(test::FrameGenerator::CreateFromYuvFile(
+          slides, kSlidesWidth, kSlidesHeight,
+          10 * params.clip.fps));  // Cycle image every 10 seconds.
+      break;
   }
+
+  ASSERT_TRUE(frame_generator.get() != nullptr);
+  frame_generator_capturer_.reset(new test::FrameGeneratorCapturer(
+      clock, &analyzer, frame_generator.release(), params.clip.fps));
+  ASSERT_TRUE(frame_generator_capturer_->Init());
 
   Start();
 
@@ -620,7 +636,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
 TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
   FullStackTestParams paris_qcif = {"net_delay_0_0_plr_0",
                                     {"paris_qcif", 176, 144, 30},
-                                    false,
+                                    ContentMode::kRealTimeVideo,
                                     300000,
                                     300000,
                                     300000,
@@ -635,7 +651,7 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
   // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
   FullStackTestParams foreman_cif = {"foreman_cif_net_delay_0_0_plr_0",
                                      {"foreman_cif", 352, 288, 30},
-                                     false,
+                                     ContentMode::kRealTimeVideo,
                                      700000,
                                      700000,
                                      700000,
@@ -649,7 +665,7 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
 TEST_F(FullStackTest, ForemanCifPlr5) {
   FullStackTestParams foreman_cif = {"foreman_cif_delay_50_0_plr_5",
                                      {"foreman_cif", 352, 288, 30},
-                                     false,
+                                     ContentMode::kRealTimeVideo,
                                      30000,
                                      500000,
                                      2000000,
@@ -665,7 +681,7 @@ TEST_F(FullStackTest, ForemanCifPlr5) {
 TEST_F(FullStackTest, ForemanCif500kbps) {
   FullStackTestParams foreman_cif = {"foreman_cif_500kbps",
                                      {"foreman_cif", 352, 288, 30},
-                                     false,
+                                     ContentMode::kRealTimeVideo,
                                      30000,
                                      500000,
                                      2000000,
@@ -682,7 +698,7 @@ TEST_F(FullStackTest, ForemanCif500kbps) {
 TEST_F(FullStackTest, ForemanCif500kbpsLimitedQueue) {
   FullStackTestParams foreman_cif = {"foreman_cif_500kbps_32pkts_queue",
                                      {"foreman_cif", 352, 288, 30},
-                                     false,
+                                     ContentMode::kRealTimeVideo,
                                      30000,
                                      500000,
                                      2000000,
@@ -699,7 +715,7 @@ TEST_F(FullStackTest, ForemanCif500kbpsLimitedQueue) {
 TEST_F(FullStackTest, ForemanCif500kbps100ms) {
   FullStackTestParams foreman_cif = {"foreman_cif_500kbps_100ms",
                                      {"foreman_cif", 352, 288, 30},
-                                     false,
+                                     ContentMode::kRealTimeVideo,
                                      30000,
                                      500000,
                                      2000000,
@@ -716,7 +732,7 @@ TEST_F(FullStackTest, ForemanCif500kbps100ms) {
 TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
   FullStackTestParams foreman_cif = {"foreman_cif_500kbps_100ms_32pkts_queue",
                                      {"foreman_cif", 352, 288, 30},
-                                     false,
+                                     ContentMode::kRealTimeVideo,
                                      30000,
                                      500000,
                                      2000000,
@@ -733,7 +749,7 @@ TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
 TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   FullStackTestParams foreman_cif = {"foreman_cif_1000kbps_100ms_32pkts_queue",
                                      {"foreman_cif", 352, 288, 30},
-                                     false,
+                                     ContentMode::kRealTimeVideo,
                                      30000,
                                      2000000,
                                      2000000,
@@ -754,7 +770,23 @@ TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP8_2TL)) {
   FullStackTestParams screenshare_params = {
       "screenshare_slides",
       {"screenshare_slides", 1850, 1110, 5},
-      true,
+      ContentMode::kScreensharingStaticImage,
+      50000,
+      200000,
+      2000000,
+      0.0,
+      0.0,
+      kFullStackTestDurationSecs,
+      "VP8"};
+  RunTest(screenshare_params);
+}
+
+TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP8_2TL_Scroll)) {
+  FullStackTestParams screenshare_params = {
+      "screenshare_slides_scrolling",
+      // Crop height by two, scrolling vertically only.
+      {"screenshare_slides_scrolling", 1850, 1110 / 2, 5},
+      ContentMode::kScreensharingScrollingImage,
       50000,
       200000,
       2000000,
@@ -770,7 +802,7 @@ TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP9_2TL)) {
   FullStackTestParams screenshare_params = {
       "screenshare_slides_vp9_2tl",
       {"screenshare_slides", 1850, 1110, 5},
-      true,
+      ContentMode::kScreensharingStaticImage,
       50000,
       200000,
       2000000,
