@@ -23,6 +23,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
+#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -1799,9 +1800,11 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
 
 class VP9HeaderObeserver : public test::SendTest {
  public:
-  VP9HeaderObeserver() : SendTest(VideoSendStreamTest::kDefaultTimeoutMs) {
-    vp9_settings_ = VideoEncoder::GetDefaultVp9Settings();
-  }
+  VP9HeaderObeserver()
+      : SendTest(VideoSendStreamTest::kDefaultTimeoutMs),
+        vp9_encoder_(VP9Encoder::Create()),
+        vp9_settings_(VideoEncoder::GetDefaultVp9Settings()) {}
+
   virtual void ModifyConfigsHook(
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -1816,6 +1819,7 @@ class VP9HeaderObeserver : public test::SendTest {
                      std::vector<VideoReceiveStream::Config>* receive_configs,
                      VideoEncoderConfig* encoder_config) override {
     encoder_config->encoder_specific_settings = &vp9_settings_;
+    send_config->encoder_settings.encoder = vp9_encoder_.get();
     send_config->encoder_settings.payload_name = "VP9";
     send_config->encoder_settings.payload_type = kVp9PayloadType;
     ModifyConfigsHook(send_config, receive_configs, encoder_config);
@@ -1856,7 +1860,8 @@ class VP9HeaderObeserver : public test::SendTest {
     return SEND_PACKET;
   }
 
-protected:
+ protected:
+  rtc::scoped_ptr<VP9Encoder> vp9_encoder_;
   VideoCodecVP9 vp9_settings_;
 };
 
@@ -1871,15 +1876,13 @@ TEST_F(VideoSendStreamTest, VP9NoFlexMode) {
   RunBaseTest(&test);
 }
 
-// TODO(philipel): Enable once flexible mode is implemeted.
-TEST_F(VideoSendStreamTest, DISABLED_VP9FlexMode) {
+TEST_F(VideoSendStreamTest, VP9FlexMode) {
   class FlexibleMode : public VP9HeaderObeserver {
     void ModifyConfigsHook(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       vp9_settings_.flexibleMode = true;
-      encoder_config->encoder_specific_settings = &vp9_settings_;
     }
 
     void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {

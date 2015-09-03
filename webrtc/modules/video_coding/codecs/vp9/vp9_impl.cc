@@ -485,8 +485,10 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   vp9_info->inter_pic_predicted =
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? false : true;
   vp9_info->flexible_mode = codec_.codecSpecific.VP9.flexibleMode;
-  vp9_info->ss_data_available =
-      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
+  vp9_info->ss_data_available = ((pkt.data.frame.flags & VPX_FRAME_IS_KEY) &&
+                                 !codec_.codecSpecific.VP9.flexibleMode)
+                                    ? true
+                                    : false;
   if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {
     gof_idx_ = 0;
   }
