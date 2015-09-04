@@ -2,3 +2,4 @@
 EndToEndTest.CanSwitchToUseAllSsrcs
 EndToEndTest.SendsAndReceivesVP9
 EndToEndTest.RestartingSendStreamPreservesRtpStatesWithRtx
+VideoSendStreamTest.VP9FlexMode
