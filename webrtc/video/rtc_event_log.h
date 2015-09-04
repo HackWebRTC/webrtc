@@ -54,12 +54,12 @@ class RtcEventLog {
   virtual void LogVideoSendStreamConfig(
       const webrtc::VideoSendStream::Config& config) = 0;
 
-  // Logs the header of an incoming or outgoing RTP packet.
+  // Logs the header of an incoming or outgoing RTP packet. packet_length
+  // is the total length of the packet, including both header and payload.
   virtual void LogRtpHeader(bool incoming,
                             MediaType media_type,
                             const uint8_t* header,
-                            size_t header_length,
-                            size_t total_length) = 0;
+                            size_t packet_length) = 0;
 
   // Logs an incoming or outgoing RTCP packet.
   virtual void LogRtcpPacket(bool incoming,

@@ -16,6 +16,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 
@@ -44,8 +45,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogRtpHeader(bool incoming,
                     MediaType media_type,
                     const uint8_t* header,
-                    size_t header_length,
-                    size_t total_length) override {}
+                    size_t packet_length) override {}
   void LogRtcpPacket(bool incoming,
                      MediaType media_type,
                      const uint8_t* packet,
@@ -67,8 +67,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogRtpHeader(bool incoming,
                     MediaType media_type,
                     const uint8_t* header,
-                    size_t header_length,
-                    size_t total_length) override;
+                    size_t packet_length) override;
   void LogRtcpPacket(bool incoming,
                      MediaType media_type,
                      const uint8_t* packet,
@@ -284,13 +283,26 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
   HandleEvent(&event);
 }
 
-// TODO(terelius): It is more convenient and less error prone to parse the
-// header length from the packet instead of relying on the caller to provide it.
 void RtcEventLogImpl::LogRtpHeader(bool incoming,
                                    MediaType media_type,
                                    const uint8_t* header,
-                                   size_t header_length,
-                                   size_t total_length) {
+                                   size_t packet_length) {
+  // Read header length (in bytes) from packet data.
+  if (packet_length < 12u) {
+    return;  // Don't read outside the packet.
+  }
+  const bool x = (header[0] & 0x10) != 0;
+  const uint8_t cc = header[0] & 0x0f;
+  size_t header_length = 12u + cc * 4u;
+
+  if (x) {
+    if (packet_length < 12u + cc * 4u + 4u) {
+      return;  // Don't read outside the packet.
+    }
+    size_t x_len = ByteReader<uint16_t>::ReadBigEndian(header + 14 + cc * 4);
+    header_length += (x_len + 1) * 4;
+  }
+
   rtc::CritScope lock(&crit_);
   rtclog::Event rtp_event;
   const int64_t timestamp = clock_->TimeInMicroseconds();
@@ -298,7 +310,7 @@ void RtcEventLogImpl::LogRtpHeader(bool incoming,
   rtp_event.set_type(rtclog::Event::RTP_EVENT);
   rtp_event.mutable_rtp_packet()->set_incoming(incoming);
   rtp_event.mutable_rtp_packet()->set_type(ConvertMediaType(media_type));
-  rtp_event.mutable_rtp_packet()->set_packet_length(total_length);
+  rtp_event.mutable_rtp_packet()->set_packet_length(packet_length);
   rtp_event.mutable_rtp_packet()->set_header(header, header_length);
   HandleEvent(&rtp_event);
 }
