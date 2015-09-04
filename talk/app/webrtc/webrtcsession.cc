@@ -2033,18 +2033,11 @@ void WebRtcSession::ReportBestConnectionState(
 
       // Increment the counter for IP type.
       if (local.address().family() == AF_INET) {
-        // TODO(guoweis): Remove this next line once IncrementEnumCounter
-        // implemented for PeerConnectionMetrics.
-        metrics_observer_->IncrementCounter(kBestConnections_IPv4);
-
         metrics_observer_->IncrementEnumCounter(
             kEnumCounterAddressFamily, kBestConnections_IPv4,
             kPeerConnectionAddressFamilyCounter_Max);
 
       } else if (local.address().family() == AF_INET6) {
-        // TODO(guoweis): Remove this next line.
-        metrics_observer_->IncrementCounter(kBestConnections_IPv6);
-
         metrics_observer_->IncrementEnumCounter(
             kEnumCounterAddressFamily, kBestConnections_IPv6,
             kPeerConnectionAddressFamilyCounter_Max);
