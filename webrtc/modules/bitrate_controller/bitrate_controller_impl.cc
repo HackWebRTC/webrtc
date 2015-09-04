@@ -132,7 +132,8 @@ void BitrateControllerImpl::SetReservedBitrate(uint32_t reserved_bitrate_bps) {
 void BitrateControllerImpl::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   {
     rtc::CritScope cs(&critsect_);
-    bandwidth_estimation_.UpdateReceiverEstimate(bitrate);
+    bandwidth_estimation_.UpdateReceiverEstimate(clock_->TimeInMilliseconds(),
+                                                 bitrate);
   }
   MaybeTriggerOnNetworkChanged();
 }

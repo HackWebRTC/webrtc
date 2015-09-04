@@ -27,6 +27,7 @@ const int kLimitNumPackets = 20;
 const int kAvgPacketSizeBytes = 1000;
 const int kDefaultMinBitrateBps = 10000;
 const int kDefaultMaxBitrateBps = 1000000000;
+const int64_t kLowBitrateLogPeriodMs = 10000;
 
 struct UmaRampUpMetric {
   const char* metric_name;
@@ -71,6 +72,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       bitrate_(0),
       min_bitrate_configured_(kDefaultMinBitrateBps),
       max_bitrate_configured_(kDefaultMaxBitrateBps),
+      last_low_bitrate_log_ms_(-1),
       time_last_receiver_block_ms_(0),
       last_fraction_loss_(0),
       last_round_trip_time_ms_(0),
@@ -118,9 +120,10 @@ void SendSideBandwidthEstimation::CurrentEstimate(int* bitrate,
   *rtt = last_round_trip_time_ms_;
 }
 
-void SendSideBandwidthEstimation::UpdateReceiverEstimate(uint32_t bandwidth) {
+void SendSideBandwidthEstimation::UpdateReceiverEstimate(
+    int64_t now_ms, uint32_t bandwidth) {
   bwe_incoming_ = bandwidth;
-  bitrate_ = CapBitrateToThresholds(bitrate_);
+  bitrate_ = CapBitrateToThresholds(now_ms, bitrate_);
 }
 
 void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
@@ -200,7 +203,7 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
   // packet loss reported, to allow startup bitrate probing.
   if (last_fraction_loss_ == 0 && IsInStartPhase(now_ms) &&
       bwe_incoming_ > bitrate_) {
-    bitrate_ = CapBitrateToThresholds(bwe_incoming_);
+    bitrate_ = CapBitrateToThresholds(now_ms, bwe_incoming_);
     min_bitrate_history_.clear();
     min_bitrate_history_.push_back(std::make_pair(now_ms, bitrate_));
     return;
@@ -251,7 +254,7 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
       }
     }
   }
-  bitrate_ = CapBitrateToThresholds(bitrate_);
+  bitrate_ = CapBitrateToThresholds(now_ms, bitrate_);
 }
 
 bool SendSideBandwidthEstimation::IsInStartPhase(int64_t now_ms) const {
@@ -279,7 +282,8 @@ void SendSideBandwidthEstimation::UpdateMinHistory(int64_t now_ms) {
   min_bitrate_history_.push_back(std::make_pair(now_ms, bitrate_));
 }
 
-uint32_t SendSideBandwidthEstimation::CapBitrateToThresholds(uint32_t bitrate) {
+uint32_t SendSideBandwidthEstimation::CapBitrateToThresholds(
+    int64_t now_ms, uint32_t bitrate) {
   if (bwe_incoming_ > 0 && bitrate > bwe_incoming_) {
     bitrate = bwe_incoming_;
   }
@@ -287,9 +291,13 @@ uint32_t SendSideBandwidthEstimation::CapBitrateToThresholds(uint32_t bitrate) {
     bitrate = max_bitrate_configured_;
   }
   if (bitrate < min_bitrate_configured_) {
-    LOG(LS_WARNING) << "Estimated available bandwidth " << bitrate / 1000
-                    << " kbps is below configured min bitrate "
-                    << min_bitrate_configured_ / 1000 << " kbps.";
+    if (last_low_bitrate_log_ms_ == -1 ||
+        now_ms - last_low_bitrate_log_ms_ > kLowBitrateLogPeriodMs) {
+      LOG(LS_WARNING) << "Estimated available bandwidth " << bitrate / 1000
+                      << " kbps is below configured min bitrate "
+                      << min_bitrate_configured_ / 1000 << " kbps.";
+      last_low_bitrate_log_ms_ = now_ms;
+    }
     bitrate = min_bitrate_configured_;
   }
   return bitrate;

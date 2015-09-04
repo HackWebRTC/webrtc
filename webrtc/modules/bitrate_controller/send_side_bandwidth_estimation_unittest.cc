@@ -28,7 +28,7 @@ TEST(SendSideBweTest, InitialRembWithProbing) {
   bwe.UpdateReceiverBlock(0, 50, 1, now_ms);
 
   // Initial REMB applies immediately.
-  bwe.UpdateReceiverEstimate(kRembBps);
+  bwe.UpdateReceiverEstimate(now_ms, kRembBps);
   bwe.UpdateEstimate(now_ms);
   int bitrate;
   uint8_t fraction_loss;
@@ -38,7 +38,7 @@ TEST(SendSideBweTest, InitialRembWithProbing) {
 
   // Second REMB doesn't apply immediately.
   now_ms += 2001;
-  bwe.UpdateReceiverEstimate(kSecondRembBps);
+  bwe.UpdateReceiverEstimate(now_ms, kSecondRembBps);
   bwe.UpdateEstimate(now_ms);
   bitrate = 0;
   bwe.CurrentEstimate(&bitrate, &fraction_loss, &rtt);

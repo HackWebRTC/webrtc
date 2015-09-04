@@ -30,7 +30,7 @@ class SendSideBandwidthEstimation {
   void UpdateEstimate(int64_t now_ms);
 
   // Call when we receive a RTCP message with TMMBR or REMB.
-  void UpdateReceiverEstimate(uint32_t bandwidth);
+  void UpdateReceiverEstimate(int64_t now_ms, uint32_t bandwidth);
 
   // Call when we receive a RTCP message with a ReceiveBlock.
   void UpdateReceiverBlock(uint8_t fraction_loss,
@@ -51,7 +51,7 @@ class SendSideBandwidthEstimation {
 
   // Returns the input bitrate capped to the thresholds defined by the max,
   // min and incoming bandwidth.
-  uint32_t CapBitrateToThresholds(uint32_t bitrate);
+  uint32_t CapBitrateToThresholds(int64_t now_ms, uint32_t bitrate);
 
   // Updates history of min bitrates.
   // After this method returns min_bitrate_history_.front().second contains the
@@ -67,6 +67,7 @@ class SendSideBandwidthEstimation {
   uint32_t bitrate_;
   uint32_t min_bitrate_configured_;
   uint32_t max_bitrate_configured_;
+  int64_t last_low_bitrate_log_ms_;
 
   int64_t time_last_receiver_block_ms_;
   uint8_t last_fraction_loss_;
