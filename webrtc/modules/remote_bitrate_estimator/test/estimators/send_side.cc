@@ -50,11 +50,9 @@ void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
       static_cast<const SendSideBweFeedback&>(feedback);
   if (fb.packet_feedback_vector().empty())
     return;
-  // TODO(sprang): Unconstify PacketInfo so we don't need temp copy?
   std::vector<PacketInfo> packet_feedback_vector(fb.packet_feedback_vector());
-  for (PacketInfo& packet : packet_feedback_vector) {
-    if (!send_time_history_.GetSendTime(packet.sequence_number,
-                                        &packet.send_time_ms, true)) {
+  for (PacketInfo& packet_info : packet_feedback_vector) {
+    if (!send_time_history_.GetInfo(&packet_info, true)) {
       LOG(LS_WARNING) << "Ack arrived too late.";
     }
   }
@@ -95,9 +93,10 @@ void FullBweSender::OnPacketsSent(const Packets& packets) {
   for (Packet* packet : packets) {
     if (packet->GetPacketType() == Packet::kMedia) {
       MediaPacket* media_packet = static_cast<MediaPacket*>(packet);
-      send_time_history_.AddAndRemoveOldSendTimes(
-          media_packet->header().sequenceNumber,
-          media_packet->GetAbsSendTimeInMs());
+      PacketInfo info(0, media_packet->sender_timestamp_ms(),
+                      media_packet->header().sequenceNumber,
+                      media_packet->payload_size(), packet->paced());
+      send_time_history_.AddAndRemoveOld(info);
     }
   }
 }

@@ -25,14 +25,23 @@ void SendTimeHistory::Clear() {
   history_.clear();
 }
 
-void SendTimeHistory::AddAndRemoveOldSendTimes(uint16_t sequence_number,
-                                               int64_t timestamp) {
-  EraseOld(timestamp - packet_age_limit_);
+void SendTimeHistory::AddAndRemoveOld(const PacketInfo& packet) {
+  EraseOld(packet.send_time_ms - packet_age_limit_);
 
   if (history_.empty())
-    oldest_sequence_number_ = sequence_number;
+    oldest_sequence_number_ = packet.sequence_number;
 
-  history_[sequence_number] = timestamp;
+  history_.insert(
+      std::pair<uint16_t, PacketInfo>(packet.sequence_number, packet));
+}
+
+bool SendTimeHistory::UpdateSendTime(uint16_t sequence_number,
+                                     int64_t send_time_ms) {
+  auto it = history_.find(sequence_number);
+  if (it == history_.end())
+    return false;
+  it->second.send_time_ms = send_time_ms;
+  return true;
 }
 
 void SendTimeHistory::EraseOld(int64_t limit) {
@@ -40,7 +49,7 @@ void SendTimeHistory::EraseOld(int64_t limit) {
     auto it = history_.find(oldest_sequence_number_);
     assert(it != history_.end());
 
-    if (it->second > limit)
+    if (it->second.send_time_ms > limit)
       return;  // Oldest packet within age limit, return.
 
     // TODO(sprang): Warn if erasing (too many) old items?
@@ -68,16 +77,16 @@ void SendTimeHistory::UpdateOldestSequenceNumber() {
   oldest_sequence_number_ = it->first;
 }
 
-bool SendTimeHistory::GetSendTime(uint16_t sequence_number,
-                                  int64_t* timestamp,
-                                  bool remove) {
-  auto it = history_.find(sequence_number);
+bool SendTimeHistory::GetInfo(PacketInfo* packet, bool remove) {
+  auto it = history_.find(packet->sequence_number);
   if (it == history_.end())
     return false;
-  *timestamp = it->second;
+  int64_t receive_time = packet->arrival_time_ms;
+  *packet = it->second;
+  packet->arrival_time_ms = receive_time;
   if (remove) {
     history_.erase(it);
-    if (sequence_number == oldest_sequence_number_)
+    if (packet->sequence_number == oldest_sequence_number_)
       UpdateOldestSequenceNumber();
   }
   return true;

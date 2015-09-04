@@ -149,7 +149,8 @@ class AdaptedSendTimeHistory : public SendTimeHistory, public SendTimeObserver {
   virtual ~AdaptedSendTimeHistory() {}
 
   void OnPacketSent(uint16_t sequence_number, int64_t send_time) override {
-    SendTimeHistory::AddAndRemoveOldSendTimes(sequence_number, send_time);
+    PacketInfo info(0, send_time, sequence_number, 0, false);
+    SendTimeHistory::AddAndRemoveOld(info);
   }
 };
 

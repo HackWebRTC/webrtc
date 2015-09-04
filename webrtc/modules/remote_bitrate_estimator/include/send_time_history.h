@@ -15,6 +15,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 
 namespace webrtc {
 
@@ -23,8 +24,12 @@ class SendTimeHistory {
   explicit SendTimeHistory(int64_t packet_age_limit);
   virtual ~SendTimeHistory();
 
-  void AddAndRemoveOldSendTimes(uint16_t sequence_number, int64_t timestamp);
-  bool GetSendTime(uint16_t sequence_number, int64_t* timestamp, bool remove);
+  void AddAndRemoveOld(const PacketInfo& packet);
+  bool UpdateSendTime(uint16_t sequence_number, int64_t timestamp);
+  // Look up PacketInfo for a sent packet, based on the sequence number, and
+  // populate all fields except for receive_time. The packet parameter must
+  // thus be non-null and have the sequence_number field set.
+  bool GetInfo(PacketInfo* packet, bool remove);
   void Clear();
 
  private:
@@ -33,7 +38,7 @@ class SendTimeHistory {
 
   const int64_t packet_age_limit_;
   uint16_t oldest_sequence_number_;  // Oldest may not be lowest.
-  std::map<uint16_t, int64_t> history_;
+  std::map<uint16_t, PacketInfo> history_;
 
   DISALLOW_COPY_AND_ASSIGN(SendTimeHistory);
 };

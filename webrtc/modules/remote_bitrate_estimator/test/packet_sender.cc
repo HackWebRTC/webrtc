@@ -271,6 +271,8 @@ void PacedVideoSender::QueuePackets(Packets* batch,
   }
   Packets to_transfer;
   to_transfer.splice(to_transfer.begin(), queue_, queue_.begin(), it);
+  for (Packet* packet : to_transfer)
+    packet->set_paced(true);
   bwe_->OnPacketsSent(to_transfer);
   batch->merge(to_transfer, DereferencingComparator<Packet>);
 }

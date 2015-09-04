@@ -10,10 +10,8 @@ source_set("remote_bitrate_estimator") {
   sources = [
     "include/bwe_defines.h",
     "include/remote_bitrate_estimator.h",
-    "include/send_time_history.h",
     "rate_statistics.cc",
     "rate_statistics.h",
-    "send_time_history.cc",
   ]
 
   configs += [ "../../:common_inherited_config" ]
@@ -29,6 +27,7 @@ source_set("rbe_components") {
   sources = [
     "aimd_rate_control.cc",
     "aimd_rate_control.h",
+    "include/send_time_history.h",
     "inter_arrival.cc",
     "inter_arrival.h",
     "overuse_detector.cc",
@@ -37,6 +36,7 @@ source_set("rbe_components") {
     "overuse_estimator.h",
     "remote_bitrate_estimator_abs_send_time.cc",
     "remote_bitrate_estimator_single_stream.cc",
+    "send_time_history.cc",
   ]
 
   configs += [ "../..:common_config" ]
