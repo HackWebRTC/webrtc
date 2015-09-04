@@ -95,6 +95,8 @@ typedef PeerConnectionMetricsName PeerConnectionUMAMetricsName;
 // type of candidate pair used when the PeerConnection first goes to a completed
 // state. When BUNDLE is enabled, only the first transport gets recorded.
 enum IceCandidatePairType {
+  // HostHost is deprecated. It was replaced with the set of types at the bottom
+  // to report private or public host IP address.
   kIceCandidatePairHostHost,
   kIceCandidatePairHostSrflx,
   kIceCandidatePairHostRelay,
@@ -110,6 +112,13 @@ enum IceCandidatePairType {
   kIceCandidatePairPrflxHost,
   kIceCandidatePairPrflxSrflx,
   kIceCandidatePairPrflxRelay,
+
+  // The following 4 types tell whether local and remote hosts have private or
+  // public IP addresses.
+  kIceCandidatePairHostPrivateHostPrivate,
+  kIceCandidatePairHostPrivateHostPublic,
+  kIceCandidatePairHostPublicHostPrivate,
+  kIceCandidatePairHostPublicHostPublic,
   kIceCandidatePairMax
 };
 

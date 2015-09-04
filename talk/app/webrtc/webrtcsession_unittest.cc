@@ -1043,6 +1043,10 @@ class WebRtcSessionTest
       EXPECT_EQ(metrics_observer->GetEnumCounter(
                     webrtc::kEnumCounterIceCandidatePairTypeUdp,
                     webrtc::kIceCandidatePairHostHost),
+                0);
+      EXPECT_EQ(metrics_observer->GetEnumCounter(
+                    webrtc::kEnumCounterIceCandidatePairTypeUdp,
+                    webrtc::kIceCandidatePairHostPublicHostPublic),
                 1);
     }
   };

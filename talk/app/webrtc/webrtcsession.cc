@@ -97,8 +97,23 @@ IceCandidatePairType GetIceCandidatePairCounter(
   const auto& srflx = STUN_PORT_TYPE;
   const auto& relay = RELAY_PORT_TYPE;
   const auto& prflx = PRFLX_PORT_TYPE;
-  if (l == host && r == host)
-    return kIceCandidatePairHostHost;
+  if (l == host && r == host) {
+    bool local_private = IPIsPrivate(local.address().ipaddr());
+    bool remote_private = IPIsPrivate(remote.address().ipaddr());
+    if (local_private) {
+      if (remote_private) {
+        return kIceCandidatePairHostPrivateHostPrivate;
+      } else {
+        return kIceCandidatePairHostPrivateHostPublic;
+      }
+    } else {
+      if (remote_private) {
+        return kIceCandidatePairHostPublicHostPrivate;
+      } else {
+        return kIceCandidatePairHostPublicHostPublic;
+      }
+    }
+  }
   if (l == host && r == srflx)
     return kIceCandidatePairHostSrflx;
   if (l == host && r == relay)
