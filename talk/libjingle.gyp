@@ -141,6 +141,7 @@
                 # included here, or better yet, build a proper .jar in webrtc
                 # and include it here.
                 'android_java_files': [
+                  'app/webrtc/java/android/org/webrtc/Camera2Enumerator.java',
                   'app/webrtc/java/android/org/webrtc/CameraEnumerationAndroid.java',
                   'app/webrtc/java/android/org/webrtc/CameraEnumerator.java',
                   'app/webrtc/java/android/org/webrtc/EglBase.java',

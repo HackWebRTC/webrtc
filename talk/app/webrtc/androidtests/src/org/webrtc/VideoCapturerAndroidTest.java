@@ -29,12 +29,15 @@ package org.webrtc;
 import android.hardware.Camera;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
+import android.util.Size;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import org.webrtc.VideoRenderer.I420Frame;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @SuppressWarnings("deprecation")
 public class VideoCapturerAndroidTest extends ActivityTestCase {
@@ -172,6 +175,37 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   protected void setUp() {
     assertTrue(PeerConnectionFactory.initializeAndroidGlobals(
         getInstrumentation().getContext(), true, true, true));
+  }
+
+  @SmallTest
+  // Test that enumerating formats using android.hardware.camera2 will give the same formats as
+  // android.hardware.camera in the range 320x240 to 1280x720. Often the camera2 API may contain
+  // some high resolutions that are not supported in camera1, but it may also be the other way
+  // around in some cases. Supported framerates may also differ, so don't compare those.
+  public void testCamera2Enumerator() {
+    if (!Camera2Enumerator.isSupported()) {
+      return;
+    }
+    final CameraEnumerationAndroid.Enumerator camera1Enumerator = new CameraEnumerator();
+    final CameraEnumerationAndroid.Enumerator camera2Enumerator =
+        new Camera2Enumerator(getInstrumentation().getContext());
+
+    for (int i = 0; i < CameraEnumerationAndroid.getDeviceCount(); ++i) {
+      final Set<Size> resolutions1 = new HashSet<Size>();
+      for (CaptureFormat format : camera1Enumerator.getSupportedFormats(i)) {
+        resolutions1.add(new Size(format.width, format.height));
+      }
+      final Set<Size> resolutions2 = new HashSet<Size>();
+      for (CaptureFormat format : camera2Enumerator.getSupportedFormats(i)) {
+        resolutions2.add(new Size(format.width, format.height));
+      }
+      for (Size size : resolutions1) {
+        if (size.getWidth() >= 320 && size.getHeight() >= 240
+            && size.getWidth() <= 1280 && size.getHeight() <= 720) {
+          assertTrue(resolutions2.contains(size));
+        }
+      }
+    }
   }
 
   @SmallTest
