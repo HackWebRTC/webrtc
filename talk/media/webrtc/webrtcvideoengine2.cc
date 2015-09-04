@@ -2025,6 +2025,11 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
   parameters_.config.encoder_settings.encoder = new_encoder.encoder;
   parameters_.config.encoder_settings.payload_name = codec_settings.codec.name;
   parameters_.config.encoder_settings.payload_type = codec_settings.codec.id;
+  if (new_encoder.external) {
+    webrtc::VideoCodecType type = CodecTypeFromName(codec_settings.codec.name);
+    parameters_.config.encoder_settings.internal_source =
+        external_encoder_factory_->EncoderTypeHasInternalSource(type);
+  }
   parameters_.config.rtp.fec = codec_settings.fec;
 
   // Set RTX payload type if RTX is enabled.

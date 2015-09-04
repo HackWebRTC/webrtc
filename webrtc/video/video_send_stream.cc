@@ -171,10 +171,10 @@ VideoSendStream::VideoSendStream(
   DCHECK(config.encoder_settings.encoder != nullptr);
   DCHECK_GE(config.encoder_settings.payload_type, 0);
   DCHECK_LE(config.encoder_settings.payload_type, 127);
-  // TODO(pbos): Wire up codec internal-source setting or remove setting.
   CHECK_EQ(0, vie_encoder_->RegisterExternalEncoder(
                   config.encoder_settings.encoder,
-                  config.encoder_settings.payload_type, false));
+                  config.encoder_settings.payload_type,
+                  config.encoder_settings.internal_source));
 
   CHECK(ReconfigureVideoEncoder(encoder_config));
 

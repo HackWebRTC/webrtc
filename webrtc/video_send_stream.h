@@ -77,6 +77,10 @@ class VideoSendStream : public SendStream {
       std::string payload_name;
       int payload_type = -1;
 
+      // TODO(sophiechang): Delete this field when no one is using internal
+      // sources anymore.
+      bool internal_source = false;
+
       // Uninitialized VideoEncoder instance to be used for encoding. Will be
       // initialized from inside the VideoSendStream.
       VideoEncoder* encoder = nullptr;
