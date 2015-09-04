@@ -389,6 +389,30 @@ TEST(RtcpPacketTest, TransportFeedback_Limits) {
       1, kMaxNegativeTimeDelta - TransportFeedback::kDeltaScaleFactor));
   EXPECT_TRUE(packet->WithReceivedPacket(1, kMaxNegativeTimeDelta));
 
+  // Base time at maximum value.
+  int64_t kMaxBaseTime =
+      static_cast<int64_t>(TransportFeedback::kDeltaScaleFactor) * (1L << 8) *
+      ((1L << 23) - 1);
+  packet.reset(new TransportFeedback());
+  packet->WithBase(0, kMaxBaseTime);
+  packet->WithReceivedPacket(0, kMaxBaseTime);
+  // Serialize and de-serialize (verify 24bit parsing).
+  rtc::scoped_ptr<rtcp::RawPacket> raw_packet = packet->Build();
+  packet =
+      TransportFeedback::ParseFrom(raw_packet->Buffer(), raw_packet->Length());
+  EXPECT_EQ(kMaxBaseTime, packet->GetBaseTimeUs());
+
+  // Base time above maximum value.
+  int64_t kTooLargeBaseTime =
+      kMaxBaseTime + (TransportFeedback::kDeltaScaleFactor * (1L << 8));
+  packet.reset(new TransportFeedback());
+  packet->WithBase(0, kTooLargeBaseTime);
+  packet->WithReceivedPacket(0, kTooLargeBaseTime);
+  raw_packet = packet->Build();
+  packet =
+      TransportFeedback::ParseFrom(raw_packet->Buffer(), raw_packet->Length());
+  EXPECT_NE(kTooLargeBaseTime, packet->GetBaseTimeUs());
+
   // TODO(sprang): Once we support max length lower than RTCP length limit,
   // add back test for max size in bytes.
 }

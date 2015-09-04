@@ -43,7 +43,6 @@ class TransportFeedback : public RtcpPacket {
   };
 
   uint16_t GetBaseSequence() const;
-  int32_t GetBaseTime() const;
   std::vector<TransportFeedback::StatusSymbol> GetStatusVector() const;
   std::vector<int16_t> GetReceiveDeltas() const;
 

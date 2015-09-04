@@ -526,12 +526,8 @@ uint16_t TransportFeedback::GetBaseSequence() const {
   return base_seq_;
 }
 
-int32_t TransportFeedback::GetBaseTime() const {
-  return static_cast<int32_t>(base_time_ & 0x00FFFFFF);
-}
-
 int64_t TransportFeedback::GetBaseTimeUs() const {
-  return GetBaseTime() * kBaseScaleFactor;
+  return base_time_ * kBaseScaleFactor;
 }
 
 std::vector<TransportFeedback::StatusSymbol>
@@ -591,7 +587,7 @@ bool TransportFeedback::Create(uint8_t* packet,
   *position += 2;
 
   ByteWriter<int32_t, 3>::WriteBigEndian(&packet[*position],
-                                         static_cast<int16_t>(base_time_));
+                                         static_cast<int32_t>(base_time_));
   *position += 3;
 
   packet[(*position)++] = feedback_seq_;
