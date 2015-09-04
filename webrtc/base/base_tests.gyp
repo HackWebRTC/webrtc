@@ -44,7 +44,6 @@
       'type': 'none',
       'direct_dependent_settings': {
         'sources': [
-          'asynchttprequest_unittest.cc',
           'atomicops_unittest.cc',
           'autodetectproxy_unittest.cc',
           'bandwidthsmoother_unittest.cc',

@@ -32,7 +32,6 @@
           'base/transport_unittest.cc',
           'base/transportdescriptionfactory_unittest.cc',
           'base/turnport_unittest.cc',
-          'client/connectivitychecker_unittest.cc',
           'client/fakeportallocator.h',
           'client/portallocator_unittest.cc',
           'stunprober/stunprober_unittest.cc',

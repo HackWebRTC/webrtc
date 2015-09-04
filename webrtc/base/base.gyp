@@ -117,8 +117,6 @@
         'arraysize.h',
         'asyncfile.cc',
         'asyncfile.h',
-        'asynchttprequest.cc',
-        'asynchttprequest.h',
         'asyncinvoker.cc',
         'asyncinvoker.h',
         'asyncinvoker-inl.h',

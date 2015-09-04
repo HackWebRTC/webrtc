@@ -197,8 +197,6 @@ static_library("rtc_base") {
     "arraysize.h",
     "asyncfile.cc",
     "asyncfile.h",
-    "asynchttprequest.cc",
-    "asynchttprequest.h",
     "asyncinvoker-inl.h",
     "asyncinvoker.cc",
     "asyncinvoker.h",
