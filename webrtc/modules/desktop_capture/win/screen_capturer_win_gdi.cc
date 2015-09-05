@@ -241,9 +241,10 @@ bool ScreenCapturerWinGdi::CaptureImage() {
         DesktopFrame::kBytesPerPixel;
     SharedMemory* shared_memory = callback_->CreateSharedMemory(buffer_size);
 
-    rtc::scoped_ptr<DesktopFrame> buffer;
-    buffer.reset(
+    rtc::scoped_ptr<DesktopFrame> buffer(
         DesktopFrameWin::Create(size, shared_memory, desktop_dc_));
+    if (!buffer.get())
+      return false;
     queue_.ReplaceCurrentFrame(buffer.release());
   }
 
