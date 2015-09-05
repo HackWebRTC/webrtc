@@ -338,11 +338,9 @@
             'xcode_settings': {
               'OTHER_LDFLAGS': [
                 '-framework CFNetwork',
+                '-licucore',
               ],
             },
-            'libraries': [
-              '$(SDKROOT)/usr/lib/libicucore.dylib',
-            ],
           }
         },  # target socketrocket
       ],  # targets
