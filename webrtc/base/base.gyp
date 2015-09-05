@@ -526,6 +526,51 @@
               ],
             }],
           ],
+        }, {
+          'sources': [
+            'nssidentity.cc',
+            'nssidentity.h',
+            'nssstreamadapter.cc',
+            'nssstreamadapter.h',
+          ],
+          'conditions': [
+            ['use_legacy_ssl_defaults!=1', {
+              'defines': [
+                'SSL_USE_NSS',
+                'HAVE_NSS_SSL_H',
+                'SSL_USE_NSS_RNG',
+              ],
+              'direct_dependent_settings': {
+                'defines': [
+                  'SSL_USE_NSS',
+                  'HAVE_NSS_SSL_H',
+                  'SSL_USE_NSS_RNG',
+                ],
+              },
+            }],
+            ['build_ssl==1', {
+              'conditions': [
+                # On some platforms, the rest of NSS is bundled. On others,
+                # it's pulled from the system.
+                ['OS == "mac" or OS == "ios"', {
+                  'dependencies': [
+                    '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
+                    '<(DEPTH)/third_party/nss/nss.gyp:nspr',
+                    '<(DEPTH)/third_party/nss/nss.gyp:nss',
+                  ],
+                }],
+                ['os_posix == 1 and OS != "mac" and OS != "ios" and OS != "android"', {
+                  'dependencies': [
+                    '<(DEPTH)/build/linux/system.gyp:ssl',
+                  ],
+                }],
+              ],
+            }, {
+              'include_dirs': [
+                '<(ssl_root)',
+              ],
+            }],
+          ],
         }],
         ['OS == "android"', {
           'link_settings': {

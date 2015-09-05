@@ -23,7 +23,7 @@ namespace rtc {
 
 // SSLStreamAdapterHelper : A stream adapter which implements much
 // of the logic that is common between the known implementations
-// (OpenSSL and previously NSS)
+// (NSS and OpenSSL)
 class SSLStreamAdapterHelper : public SSLStreamAdapter {
  public:
   explicit SSLStreamAdapterHelper(StreamInterface* stream);

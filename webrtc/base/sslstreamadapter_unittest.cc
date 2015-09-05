@@ -701,6 +701,24 @@ class SSLStreamAdapterTestDTLSFromPEMStrings : public SSLStreamAdapterTestDTLS {
 
 // Basic tests: TLS
 
+// Test that we cannot read/write if we have not yet handshaked.
+// This test only applies to NSS because OpenSSL has passthrough
+// semantics for I/O before the handshake is started.
+#if SSL_USE_NSS
+TEST_P(SSLStreamAdapterTestTLS, TestNoReadWriteBeforeConnect) {
+  rtc::StreamResult rv;
+  char block[kBlockSize];
+  size_t dummy;
+
+  rv = client_ssl_->Write(block, sizeof(block), &dummy, NULL);
+  ASSERT_EQ(rtc::SR_BLOCK, rv);
+
+  rv = client_ssl_->Read(block, sizeof(block), &dummy, NULL);
+  ASSERT_EQ(rtc::SR_BLOCK, rv);
+}
+#endif
+
+
 // Test that we can make a handshake work
 TEST_P(SSLStreamAdapterTestTLS, TestTLSConnect) {
   TestHandshake();

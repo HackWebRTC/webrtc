@@ -185,7 +185,11 @@ TEST_F(SSLIdentityTest, FixedDigestSHA1) {
 }
 
 // HASH_AlgSHA224 is not supported in the chromium linux build.
+#if SSL_USE_NSS
+TEST_F(SSLIdentityTest, DISABLED_FixedDigestSHA224) {
+#else
 TEST_F(SSLIdentityTest, FixedDigestSHA224) {
+#endif
   TestDigestForFixedCert(rtc::DIGEST_SHA_224, 28, kTestCertSha224);
 }
 
@@ -202,7 +206,11 @@ TEST_F(SSLIdentityTest, FixedDigestSHA512) {
 }
 
 // HASH_AlgSHA224 is not supported in the chromium linux build.
+#if SSL_USE_NSS
+TEST_F(SSLIdentityTest, DISABLED_DigestSHA224) {
+#else
 TEST_F(SSLIdentityTest, DigestSHA224) {
+#endif
   TestDigestForGeneratedCert(rtc::DIGEST_SHA_224, 28);
 }
 
@@ -256,6 +264,11 @@ TEST_F(SSLIdentityTest, FromPEMStringsRSA) {
   EXPECT_EQ(kCERT_PEM, identity->certificate().ToPEMString());
 }
 
+#if SSL_USE_OPENSSL
+// This will not work on NSS as PK11_ImportDERPrivateKeyInfoAndReturnKey is not
+// ready for EC keys.  Furthermore, NSSIdentity::FromPEMStrings is currently
+// hardwired for RSA (the header matching via kPemTypeRsaPrivateKey needs
+// trivial generalization).
 TEST_F(SSLIdentityTest, FromPEMStringsEC) {
   static const char kRSA_PRIVATE_KEY_PEM[] =
       "-----BEGIN EC PRIVATE KEY-----\n"
@@ -282,6 +295,7 @@ TEST_F(SSLIdentityTest, FromPEMStringsEC) {
   EXPECT_TRUE(identity);
   EXPECT_EQ(kCERT_PEM, identity->certificate().ToPEMString());
 }
+#endif
 
 TEST_F(SSLIdentityTest, PemDerConversion) {
   std::string der;
