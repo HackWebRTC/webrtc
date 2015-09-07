@@ -80,7 +80,7 @@ struct ConstantLabel { int value; const char * label; };
 #define TLABEL(x, y) { x, y }
 #define LASTLABEL { 0, 0 }
 
-const char * FindLabel(int value, const ConstantLabel entries[]);
+const char* FindLabel(int value, const ConstantLabel entries[]);
 std::string ErrorName(int err, const ConstantLabel* err_table);
 
 //////////////////////////////////////////////////////////////////////
@@ -163,6 +163,9 @@ class LogMessage {
   static void LogToDebug(LoggingSeverity min_sev);
   static LoggingSeverity GetLogToDebug() { return dbg_sev_; }
 
+  // Sets whether logs will be directed to stderr in debug mode.
+  static void SetLogToStderr(bool log_to_stderr);
+
   //  Stream: Any non-blocking stream interface.  LogMessage takes ownership of
   //   the stream. Multiple streams may be specified by using AddLogToStream.
   //   LogToStream is retained for backwards compatibility; when invoked, it
@@ -221,6 +224,9 @@ class LogMessage {
 
   // Flags for formatting options
   static bool thread_, timestamp_;
+
+  // Determines if logs will be directed to stderr in debug mode.
+  static bool log_to_stderr_;
 
   DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };

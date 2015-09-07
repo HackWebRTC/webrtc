@@ -32,7 +32,8 @@ TraceLevel WebRtcSeverity(LoggingSeverity sev) {
   }
 }
 
-const char* DescribeFile(const char* file) {
+// Return the filename portion of the string (that following the last slash).
+const char* FilenameFromPath(const char* file) {
   const char* end1 = ::strrchr(file, '/');
   const char* end2 = ::strrchr(file, '\\');
   if (!end1 && !end2)
@@ -45,7 +46,7 @@ const char* DescribeFile(const char* file) {
 
 LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev)
     : severity_(sev) {
-  print_stream_ << "(" << DescribeFile(file) << ":" << line << "): ";
+  print_stream_ << "(" << FilenameFromPath(file) << ":" << line << "): ";
 }
 
 bool LogMessage::Loggable(LoggingSeverity sev) {

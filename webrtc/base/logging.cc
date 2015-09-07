@@ -44,12 +44,25 @@ static const int kMaxLogLineSize = 1024 - 60;
 #include "webrtc/base/timeutils.h"
 
 namespace rtc {
+namespace {
+
+// Return the filename portion of the string (that following the last slash).
+const char* FilenameFromPath(const char* file) {
+  const char* end1 = ::strrchr(file, '/');
+  const char* end2 = ::strrchr(file, '\\');
+  if (!end1 && !end2)
+    return file;
+  else
+    return (end1 > end2) ? end1 + 1 : end2 + 1;
+}
+
+}  // namespace
 
 /////////////////////////////////////////////////////////////////////////////
 // Constant Labels
 /////////////////////////////////////////////////////////////////////////////
 
-const char * FindLabel(int value, const ConstantLabel entries[]) {
+const char* FindLabel(int value, const ConstantLabel entries[]) {
   for (int i = 0; entries[i].label; ++i) {
     if (value == entries[i].value) {
       return entries[i].label;
@@ -58,12 +71,12 @@ const char * FindLabel(int value, const ConstantLabel entries[]) {
   return 0;
 }
 
-std::string ErrorName(int err, const ConstantLabel * err_table) {
+std::string ErrorName(int err, const ConstantLabel* err_table) {
   if (err == 0)
     return "No error";
 
   if (err_table != 0) {
-    if (const char * value = FindLabel(err, err_table))
+    if (const char* value = FindLabel(err, err_table))
       return value;
   }
 
@@ -84,6 +97,7 @@ LoggingSeverity LogMessage::dbg_sev_ = LS_INFO;
 LoggingSeverity LogMessage::min_sev_ = LS_NONE;
 LoggingSeverity LogMessage::dbg_sev_ = LS_NONE;
 #endif  // !_DEBUG
+bool LogMessage::log_to_stderr_ = true;
 
 // Global lock for log subsystem, only needed to serialize access to streams_.
 CriticalSection LogMessage::crit_;
@@ -115,6 +129,8 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
     PlatformThreadId id = CurrentThreadId();
     print_stream_ << "[" << std::dec << id << "] ";
   }
+
+  print_stream_ << "(" << FilenameFromPath(file)  << ":" << line << "): ";
 
   if (err_ctx != ERRCTX_NONE) {
     std::ostringstream tmp;
@@ -212,6 +228,10 @@ void LogMessage::LogToDebug(LoggingSeverity min_sev) {
   dbg_sev_ = min_sev;
   CritScope cs(&crit_);
   UpdateMinLogSeverity();
+}
+
+void LogMessage::SetLogToStderr(bool log_to_stderr) {
+  log_to_stderr_ = log_to_stderr;
 }
 
 int LogMessage::GetLogToStream(LogSink* stream) {
@@ -314,7 +334,7 @@ void LogMessage::UpdateMinLogSeverity() EXCLUSIVE_LOCKS_REQUIRED(crit_) {
 
 void LogMessage::OutputToDebug(const std::string& str,
                                LoggingSeverity severity) {
-  bool log_to_stderr = true;
+  bool log_to_stderr = log_to_stderr_;
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && (!defined(DEBUG) || defined(NDEBUG))
   // On the Mac, all stderr output goes to the Console log and causes clutter.
   // So in opt builds, don't log to stderr unless the user specifically sets
