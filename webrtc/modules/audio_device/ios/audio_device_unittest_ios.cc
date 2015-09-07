@@ -507,7 +507,6 @@ class AudioDeviceTest : public ::testing::Test {
     rtc::LogMessage::LogToDebug(old_sev_);
   }
 
-  // TODO(henrika): don't use hardcoded values below.
   int playout_sample_rate() const { return playout_parameters_.sample_rate(); }
   int record_sample_rate() const { return record_parameters_.sample_rate(); }
   int playout_channels() const { return playout_parameters_.channels(); }
@@ -517,11 +516,6 @@ class AudioDeviceTest : public ::testing::Test {
   }
   size_t record_frames_per_10ms_buffer() const {
     return record_parameters_.frames_per_10ms_buffer();
-  }
-
-  int total_delay_ms() const {
-    // TODO(henrika): improve this part.
-    return 100;
   }
 
   rtc::scoped_refptr<AudioDeviceModule> audio_device() const {
@@ -609,7 +603,6 @@ TEST_F(AudioDeviceTest, ConstructDestruct) {
 TEST_F(AudioDeviceTest, InitTerminate) {
   // Initialization is part of the test fixture.
   EXPECT_TRUE(audio_device()->Initialized());
-  // webrtc::SleepMs(5 * 1000);
   EXPECT_EQ(0, audio_device()->Terminate());
   EXPECT_FALSE(audio_device()->Initialized());
 }

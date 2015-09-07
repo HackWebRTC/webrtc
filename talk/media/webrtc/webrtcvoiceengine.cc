@@ -645,6 +645,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   // On iOS, VPIO provides built-in EC and AGC.
   options.echo_cancellation.Set(false);
   options.auto_gain_control.Set(false);
+  LOG(LS_INFO) << "Always disable AEC and AGC on iOS. Use built-in instead.";
 #elif defined(ANDROID)
   ec_mode = webrtc::kEcAecm;
 #endif
@@ -702,8 +703,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       LOG_RTCERR2(SetEcStatus, echo_cancellation, ec_mode);
       return false;
     } else {
-      LOG(LS_VERBOSE) << "Echo control set to " << echo_cancellation
-                      << " with mode " << ec_mode;
+      LOG(LS_INFO) << "Echo control set to " << echo_cancellation
+                   << " with mode " << ec_mode;
     }
 #if !defined(ANDROID)
     // TODO(ajm): Remove the error return on Android from webrtc.
@@ -726,8 +727,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       LOG_RTCERR2(SetAgcStatus, auto_gain_control, agc_mode);
       return false;
     } else {
-      LOG(LS_VERBOSE) << "Auto gain set to " << auto_gain_control
-                      << " with mode " << agc_mode;
+      LOG(LS_INFO) << "Auto gain set to " << auto_gain_control << " with mode "
+                   << agc_mode;
     }
   }
 

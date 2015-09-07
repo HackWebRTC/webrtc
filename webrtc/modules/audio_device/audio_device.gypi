@@ -43,6 +43,8 @@
         'dummy/audio_device_dummy.h',
         'dummy/file_audio_device.cc',
         'dummy/file_audio_device.h',
+        'fine_audio_buffer.cc',
+        'fine_audio_buffer.h',
       ],
       'conditions': [
         ['OS=="linux"', {
@@ -93,8 +95,6 @@
             'android/audio_track_jni.h',
             'android/build_info.cc',
             'android/build_info.h',
-            'android/fine_audio_buffer.cc',
-            'android/fine_audio_buffer.h',
             'android/opensles_common.cc',
             'android/opensles_common.h',
             'android/opensles_player.cc',

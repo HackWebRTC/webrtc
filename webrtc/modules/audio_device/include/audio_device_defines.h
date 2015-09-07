@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DEFINES_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DEFINES_H
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DEFINES_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DEFINES_H_
 
 #include <stddef.h>
 
@@ -161,24 +161,41 @@ class AudioParameters {
     frames_per_10ms_buffer_ = static_cast<size_t>(sample_rate / 100);
   }
   size_t bits_per_sample() const { return kBitsPerSample; }
+  void reset(int sample_rate, int channels, double ms_per_buffer) {
+    reset(sample_rate, channels,
+          static_cast<size_t>(sample_rate * ms_per_buffer + 0.5));
+  }
+  void reset(int sample_rate, int channels) {
+    reset(sample_rate, channels, static_cast<size_t>(0));
+  }
   int sample_rate() const { return sample_rate_; }
   int channels() const { return channels_; }
   size_t frames_per_buffer() const { return frames_per_buffer_; }
   size_t frames_per_10ms_buffer() const { return frames_per_10ms_buffer_; }
-  bool is_valid() const {
-    return ((sample_rate_ > 0) && (channels_ > 0) && (frames_per_buffer_ > 0));
-  }
   size_t GetBytesPerFrame() const { return channels_ * kBitsPerSample / 8; }
   size_t GetBytesPerBuffer() const {
     return frames_per_buffer_ * GetBytesPerFrame();
   }
+  // The WebRTC audio device buffer (ADB) only requires that the sample rate
+  // and number of channels are configured. Hence, to be "valid", only these
+  // two attributes must be set.
+  bool is_valid() const { return ((sample_rate_ > 0) && (channels_ > 0)); }
+  // Most platforms also require that a native buffer size is defined.
+  // An audio parameter instance is considered to be "complete" if it is both
+  // "valid" (can be used by the ADB) and also has a native frame size.
+  bool is_complete() const { return (is_valid() && (frames_per_buffer_ > 0)); }
   size_t GetBytesPer10msBuffer() const {
     return frames_per_10ms_buffer_ * GetBytesPerFrame();
   }
-  float GetBufferSizeInMilliseconds() const {
+  double GetBufferSizeInMilliseconds() const {
     if (sample_rate_ == 0)
-      return 0.0f;
-    return frames_per_buffer_ / (sample_rate_ / 1000.0f);
+      return 0.0;
+    return frames_per_buffer_ / (sample_rate_ / 1000.0);
+  }
+  double GetBufferSizeInSeconds() const {
+    if (sample_rate_ == 0)
+      return 0.0;
+    return static_cast<double>(frames_per_buffer_) / (sample_rate_);
   }
 
  private:
@@ -190,4 +207,4 @@ class AudioParameters {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DEFINES_H
+#endif  // WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_DEFINES_H_

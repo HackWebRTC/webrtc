@@ -160,6 +160,7 @@
             'audio_coding/neteq/tools/input_audio_file_unittest.cc',
             'audio_coding/neteq/tools/packet_unittest.cc',
             'audio_conference_mixer/test/audio_conference_mixer_unittest.cc',
+            'audio_device/fine_audio_buffer_unittest.cc',
             'audio_processing/aec/echo_cancellation_unittest.cc',
             'audio_processing/aec/system_delay_unittest.cc',
             # TODO(ajm): Fix to match new interface.
@@ -356,7 +357,6 @@
                 'audio_device/android/audio_manager_unittest.cc',
                 'audio_device/android/ensure_initialized.cc',
                 'audio_device/android/ensure_initialized.h',
-                'audio_device/android/fine_audio_buffer_unittest.cc',
               ],
             }],
             ['OS=="ios"', {

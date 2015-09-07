@@ -15,6 +15,12 @@
 
 namespace webrtc {
 
+int32_t AudioDeviceIOS::PlayoutBuffer(AudioDeviceModule::BufferType& type,
+                                      uint16_t& sizeMS) const {
+  RTC_NOTREACHED() << "Not implemented";
+  return -1;
+}
+
 int32_t AudioDeviceIOS::ActiveAudioLayer(
     AudioDeviceModule::AudioLayer& audioLayer) const {
   audioLayer = AudioDeviceModule::kPlatformDefaultAudio;
