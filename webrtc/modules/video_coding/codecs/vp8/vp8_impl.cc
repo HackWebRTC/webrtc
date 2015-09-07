@@ -891,6 +891,11 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
 int VP8EncoderImpl::UpdateCodecFrameSize(const VideoFrame& input_image) {
   codec_.width = input_image.width();
   codec_.height = input_image.height();
+  if (codec_.numberOfSimulcastStreams <= 1) {
+    // For now scaling is only used for single-layer streams.
+    codec_.simulcastStream[0].width = input_image.width();
+    codec_.simulcastStream[0].height = input_image.height();
+  }
   // Update the cpu_speed setting for resolution change.
   vpx_codec_control(&(encoders_[0]),
                     VP8E_SET_CPUUSED,
