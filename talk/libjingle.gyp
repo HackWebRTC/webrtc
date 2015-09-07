@@ -563,8 +563,6 @@
           ],
           'libraries': [
             '-lrt',
-            '-lXext',
-            '-lX11',
           ],
         }],
         ['OS=="win"', {
