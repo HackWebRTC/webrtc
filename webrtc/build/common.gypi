@@ -372,7 +372,7 @@
           'WEBRTC_ANDROID',
          ],
          'conditions': [
-           ['clang!=1', {
+           ['clang==0', {
              # The Android NDK doesn't provide optimized versions of these
              # functions. Ensure they are disabled for all compilers.
              'cflags': [

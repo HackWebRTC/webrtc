@@ -153,10 +153,7 @@ config("common_config") {
     }
   }
 
-  # TODO(kjellander): Handle warnings on Windows where WebRTC differ from the
-  # default warnings set in build/config/compiler/BUILD.gn.
-
-  if (is_android && is_clang) {
+  if (is_android && !is_clang) {
     # The Android NDK doesn"t provide optimized versions of these
     # functions. Ensure they are disabled for all compilers.
     cflags += [
