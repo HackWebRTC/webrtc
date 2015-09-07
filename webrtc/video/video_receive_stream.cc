@@ -103,6 +103,8 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
   strcpy(codec.plName, decoder.payload_name.c_str());
   if (decoder.payload_name == "VP8") {
     codec.codecType = kVideoCodecVP8;
+  } else if (decoder.payload_name == "VP9") {
+    codec.codecType = kVideoCodecVP9;
   } else if (decoder.payload_name == "H264") {
     codec.codecType = kVideoCodecH264;
   } else {
@@ -111,6 +113,8 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 
   if (codec.codecType == kVideoCodecVP8) {
     codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
+  } else if (codec.codecType == kVideoCodecVP9) {
+    codec.codecSpecific.VP9 = VideoEncoder::GetDefaultVp9Settings();
   } else if (codec.codecType == kVideoCodecH264) {
     codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
   }

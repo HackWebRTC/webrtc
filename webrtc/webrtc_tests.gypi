@@ -45,6 +45,32 @@
       ],
     },
     {
+      'target_name': 'full_stack_quality_sampler',
+      'type': 'executable',
+      'sources': [
+        'test/mac/run_test.mm',
+        'test/run_test.cc',
+        'test/run_test.h',
+        'video/full_stack.cc',
+        'video/full_stack_quality_sampler.cc',
+      ],
+      'conditions': [
+        ['OS=="mac"', {
+          'sources!': [
+            'test/run_test.cc',
+          ],
+        }],
+      ],
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(webrtc_root)/modules/modules.gyp:video_capture',
+        'test/webrtc_test_common.gyp:webrtc_test_common',
+        'test/test.gyp:test_main',
+        'webrtc',
+      ],
+    },
+    {
       'target_name': 'loopback_base',
       'type': 'static_library',
       'sources': [

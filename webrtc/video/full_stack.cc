@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
@@ -25,8 +26,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
-#include "webrtc/test/call_test.h"
-#include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator.h"
@@ -34,40 +33,12 @@
 #include "webrtc/test/statistics.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video/full_stack.h"
 
 namespace webrtc {
 
 static const int kFullStackTestDurationSecs = 60;
 static const int kSendStatsPollingIntervalMs = 1000;
-
-enum class ContentMode {
-  kRealTimeVideo,
-  kScreensharingStaticImage,
-  kScreensharingScrollingImage,
-};
-
-struct FullStackTestParams {
-  const char* test_label;
-  struct {
-    const char* name;
-    size_t width, height;
-    int fps;
-  } clip;
-  ContentMode mode;
-  int min_bitrate_bps;
-  int target_bitrate_bps;
-  int max_bitrate_bps;
-  double avg_psnr_threshold;
-  double avg_ssim_threshold;
-  int test_durations_secs;
-  std::string codec;
-  FakeNetworkPipe::Config link;
-};
-
-class FullStackTest : public test::CallTest {
- protected:
-  void RunTest(const FullStackTestParams& params);
-};
 
 class VideoAnalyzer : public PacketReceiver,
                       public newapi::Transport,
@@ -80,12 +51,14 @@ class VideoAnalyzer : public PacketReceiver,
                 const char* test_label,
                 double avg_psnr_threshold,
                 double avg_ssim_threshold,
-                int duration_frames)
+                int duration_frames,
+                const std::string& graph_data_output_filename)
       : input_(input),
         transport_(transport),
         receiver_(nullptr),
         send_stream_(nullptr),
         test_label_(test_label),
+        graph_data_output_filename_(graph_data_output_filename),
         frames_to_process_(duration_frames),
         frames_recorded_(0),
         frames_processed_(0),
@@ -177,8 +150,11 @@ class VideoAnalyzer : public PacketReceiver,
             header.timestamp - first_send_frame_.timestamp();
         first_send_frame_.Reset();
       }
-      send_times_[header.timestamp - rtp_timestamp_delta_] =
+      uint32_t timestamp = header.timestamp - rtp_timestamp_delta_;
+      send_times_[timestamp] =
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
+      encoded_frame_sizes_[timestamp] +=
+          length - (header.headerLength + header.paddingLength);
     }
 
     return transport_->SendRtp(packet, length);
@@ -271,20 +247,26 @@ class VideoAnalyzer : public PacketReceiver,
  private:
   struct FrameComparison {
     FrameComparison()
-        : dropped(false), send_time_ms(0), recv_time_ms(0), render_time_ms(0) {}
+        : dropped(false),
+          send_time_ms(0),
+          recv_time_ms(0),
+          render_time_ms(0),
+          encoded_frame_size(0) {}
 
     FrameComparison(const VideoFrame& reference,
                     const VideoFrame& render,
                     bool dropped,
                     int64_t send_time_ms,
                     int64_t recv_time_ms,
-                    int64_t render_time_ms)
+                    int64_t render_time_ms,
+                    size_t encoded_frame_size)
         : reference(reference),
           render(render),
           dropped(dropped),
           send_time_ms(send_time_ms),
           recv_time_ms(recv_time_ms),
-          render_time_ms(render_time_ms) {}
+          render_time_ms(render_time_ms),
+          encoded_frame_size(encoded_frame_size) {}
 
     VideoFrame reference;
     VideoFrame render;
@@ -292,6 +274,35 @@ class VideoAnalyzer : public PacketReceiver,
     int64_t send_time_ms;
     int64_t recv_time_ms;
     int64_t render_time_ms;
+    size_t encoded_frame_size;
+  };
+
+  struct Sample {
+    Sample(double dropped,
+           double input_time_ms,
+           double send_time_ms,
+           double recv_time_ms,
+           double encoded_frame_size,
+           double psnr,
+           double ssim,
+           double render_time_ms)
+        : dropped(dropped),
+          input_time_ms(input_time_ms),
+          send_time_ms(send_time_ms),
+          recv_time_ms(recv_time_ms),
+          encoded_frame_size(encoded_frame_size),
+          psnr(psnr),
+          ssim(ssim),
+          render_time_ms(render_time_ms) {}
+
+    double dropped;
+    double input_time_ms;
+    double send_time_ms;
+    double recv_time_ms;
+    double encoded_frame_size;
+    double psnr;
+    double ssim;
+    double render_time_ms;
   };
 
   void AddFrameComparison(const VideoFrame& reference,
@@ -304,10 +315,18 @@ class VideoAnalyzer : public PacketReceiver,
     int64_t recv_time_ms = recv_times_[reference.timestamp()];
     recv_times_.erase(reference.timestamp());
 
+    size_t encoded_size = encoded_frame_sizes_[reference.timestamp()];
+    encoded_frame_sizes_.erase(reference.timestamp());
+
+    VideoFrame reference_copy;
+    VideoFrame render_copy;
+    reference_copy.CopyFrame(reference);
+    render_copy.CopyFrame(render);
+
     rtc::CritScope crit(&comparison_lock_);
-    comparisons_.push_back(FrameComparison(reference, render, dropped,
+    comparisons_.push_back(FrameComparison(reference_copy, render_copy, dropped,
                                            send_time_ms, recv_time_ms,
-                                           render_time_ms));
+                                           render_time_ms, encoded_size));
     comparison_available_event_->Set();
   }
 
@@ -365,6 +384,8 @@ class VideoAnalyzer : public PacketReceiver,
 
     if (FrameProcessed()) {
       PrintResults();
+      if (!graph_data_output_filename_.empty())
+        PrintSamplesToFile();
       done_->Set();
       comparison_available_event_->Set();
       return false;
@@ -437,9 +458,18 @@ class VideoAnalyzer : public PacketReceiver,
     double psnr = I420PSNR(&comparison.reference, &comparison.render);
     double ssim = I420SSIM(&comparison.reference, &comparison.render);
 
+    int64_t input_time_ms = comparison.reference.ntp_time_ms();
+
     rtc::CritScope crit(&comparison_lock_);
+    if (!graph_data_output_filename_.empty()) {
+      samples_.push_back(Sample(
+          comparison.dropped, input_time_ms, comparison.send_time_ms,
+          comparison.recv_time_ms, comparison.encoded_frame_size, psnr, ssim,
+          comparison.render_time_ms));
+    }
     psnr_.AddSample(psnr);
     ssim_.AddSample(ssim);
+
     if (comparison.dropped) {
       ++dropped_frames_;
       return;
@@ -448,11 +478,11 @@ class VideoAnalyzer : public PacketReceiver,
       rendered_delta_.AddSample(comparison.render_time_ms - last_render_time_);
     last_render_time_ = comparison.render_time_ms;
 
-    int64_t input_time_ms = comparison.reference.ntp_time_ms();
     sender_time_.AddSample(comparison.send_time_ms - input_time_ms);
     receiver_time_.AddSample(comparison.render_time_ms -
                              comparison.recv_time_ms);
     end_to_end_.AddSample(comparison.render_time_ms - input_time_ms);
+    encoded_frame_size_.AddSample(comparison.encoded_frame_size);
   }
 
   void PrintResult(const char* result_type,
@@ -466,7 +496,39 @@ class VideoAnalyzer : public PacketReceiver,
            unit);
   }
 
+  void PrintSamplesToFile(void) {
+    FILE* out = fopen(graph_data_output_filename_.c_str(), "w");
+    CHECK(out != nullptr)
+        << "Couldn't open file: " << graph_data_output_filename_;
+
+    rtc::CritScope crit(&comparison_lock_);
+    std::sort(samples_.begin(), samples_.end(),
+              [](const Sample& A, const Sample& B)
+                  -> bool { return A.input_time_ms < B.input_time_ms; });
+
+    fprintf(out, "%s\n", test_label_);
+    fprintf(out, "%" PRIuS "\n", samples_.size());
+    fprintf(out,
+            "dropped "
+            "input_time_ms "
+            "send_time_ms "
+            "recv_time_ms "
+            "encoded_frame_size "
+            "psnr "
+            "ssim "
+            "render_time_ms\n");
+    for (const Sample& sample : samples_) {
+      fprintf(out, "%lf %lf %lf %lf %lf %lf %lf %lf\n", sample.dropped,
+              sample.input_time_ms, sample.send_time_ms, sample.recv_time_ms,
+              sample.encoded_frame_size, sample.psnr, sample.ssim,
+              sample.render_time_ms);
+    }
+    fclose(out);
+  }
+
   const char* const test_label_;
+  std::string graph_data_output_filename_;
+  std::vector<Sample> samples_ GUARDED_BY(comparison_lock_);
   test::Statistics sender_time_ GUARDED_BY(comparison_lock_);
   test::Statistics receiver_time_ GUARDED_BY(comparison_lock_);
   test::Statistics psnr_ GUARDED_BY(comparison_lock_);
@@ -488,9 +550,11 @@ class VideoAnalyzer : public PacketReceiver,
 
   rtc::CriticalSection crit_;
   std::deque<VideoFrame> frames_ GUARDED_BY(crit_);
+  std::deque<VideoSendStream::Stats> send_stats_ GUARDED_BY(crit_);
   VideoFrame last_rendered_frame_ GUARDED_BY(crit_);
   std::map<uint32_t, int64_t> send_times_ GUARDED_BY(crit_);
   std::map<uint32_t, int64_t> recv_times_ GUARDED_BY(crit_);
+  std::map<uint32_t, size_t> encoded_frame_sizes_ GUARDED_BY(crit_);
   VideoFrame first_send_frame_ GUARDED_BY(crit_);
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
@@ -504,11 +568,16 @@ class VideoAnalyzer : public PacketReceiver,
 };
 
 void FullStackTest::RunTest(const FullStackTestParams& params) {
+  // TODO(ivica): Add num_temporal_layers as a param.
+  unsigned char num_temporal_layers =
+      params.graph_data_output_filename.empty() ? 2 : 1;
+
   test::DirectTransport send_transport(params.link);
   test::DirectTransport recv_transport(params.link);
   VideoAnalyzer analyzer(nullptr, &send_transport, params.test_label,
                          params.avg_psnr_threshold, params.avg_ssim_threshold,
-                         params.test_durations_secs * params.clip.fps);
+                         params.test_durations_secs * params.clip.fps,
+                         params.graph_data_output_filename);
 
   CreateCalls(Call::Config(), Call::Config());
 
@@ -557,18 +626,21 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
       vp8_settings = VideoEncoder::GetDefaultVp8Settings();
       vp8_settings.denoisingOn = false;
       vp8_settings.frameDroppingOn = false;
-      vp8_settings.numberOfTemporalLayers = 2;
+      vp8_settings.numberOfTemporalLayers = num_temporal_layers;
       encoder_config_.encoder_specific_settings = &vp8_settings;
     } else if (params.codec == "VP9") {
       vp9_settings = VideoEncoder::GetDefaultVp9Settings();
       vp9_settings.denoisingOn = false;
       vp9_settings.frameDroppingOn = false;
-      vp9_settings.numberOfTemporalLayers = 2;
+      vp9_settings.numberOfTemporalLayers = num_temporal_layers;
       encoder_config_.encoder_specific_settings = &vp9_settings;
     }
 
     stream->temporal_layer_thresholds_bps.clear();
-    stream->temporal_layer_thresholds_bps.push_back(stream->target_bitrate_bps);
+    if (num_temporal_layers > 1) {
+      stream->temporal_layer_thresholds_bps.push_back(
+          stream->target_bitrate_bps);
+    }
   }
 
   CreateMatchingReceiveConfigs(&recv_transport);
