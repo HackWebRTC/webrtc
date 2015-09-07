@@ -384,7 +384,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     }
     return false;
   }
-  virtual bool GetOutputScaling(uint32 ssrc, double* left, double* right) {
+  bool GetOutputScaling(uint32 ssrc, double* left, double* right) {
     if (output_scalings_.find(ssrc) == output_scalings_.end())
       return false;
     *left = output_scalings_[ssrc].left;

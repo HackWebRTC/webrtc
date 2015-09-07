@@ -320,7 +320,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                                     int penalty_decay,
                                     int type_event_delay) override;
   bool SetOutputScaling(uint32 ssrc, double left, double right) override;
-  bool GetOutputScaling(uint32 ssrc, double* left, double* right) override;
 
   bool SetRingbackTone(const char* buf, int len) override;
   bool PlayRingbackTone(uint32 ssrc, bool play, bool loop) override;

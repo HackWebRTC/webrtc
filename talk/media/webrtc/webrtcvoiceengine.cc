@@ -2841,40 +2841,6 @@ bool WebRtcVoiceMediaChannel::SetOutputScaling(
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::GetOutputScaling(
-    uint32 ssrc, double* left, double* right) {
-  if (!left || !right) return false;
-
-  rtc::CritScope lock(&receive_channels_cs_);
-  // Determine which channel based on ssrc.
-  int channel = (0 == ssrc) ? voe_channel() : GetReceiveChannelNum(ssrc);
-  if (channel == -1) {
-    LOG(LS_WARNING) << "Cannot find channel for ssrc:" << ssrc;
-    return false;
-  }
-
-  float scaling;
-  if (-1 == engine()->voe()->volume()->GetChannelOutputVolumeScaling(
-      channel, scaling)) {
-    LOG_RTCERR2(GetChannelOutputVolumeScaling, channel, scaling);
-    return false;
-  }
-
-  float left_pan;
-  float right_pan;
-  if (-1 == engine()->voe()->volume()->GetOutputVolumePan(
-      channel, left_pan, right_pan)) {
-    LOG_RTCERR3(GetOutputVolumePan, channel, left_pan, right_pan);
-    // If GetOutputVolumePan fails, we use the default left and right pan.
-    left_pan = 1.0f;
-    right_pan = 1.0f;
-  }
-
-  *left = scaling * left_pan;
-  *right = scaling * right_pan;
-  return true;
-}
-
 bool WebRtcVoiceMediaChannel::SetRingbackTone(const char *buf, int len) {
   ringback_tone_.reset(new WebRtcSoundclipStream(buf, len));
   return true;

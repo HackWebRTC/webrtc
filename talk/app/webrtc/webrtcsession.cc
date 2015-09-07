@@ -1206,8 +1206,9 @@ void WebRtcSession::SetAudioPlayoutVolume(uint32 ssrc, double volume) {
     return;
   }
 
-  if (!voice_channel_->SetOutputScaling(ssrc, volume, volume))
+  if (!voice_channel_->SetOutputScaling(ssrc, volume, volume)) {
     ASSERT(false);
+  }
 }
 
 bool WebRtcSession::SetCaptureDevice(uint32 ssrc,
