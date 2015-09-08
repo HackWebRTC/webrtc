@@ -12,3 +12,5 @@ EndToEndTest.SendsAndReceivesH264
 EndToEndTest.SendsAndReceivesVP9
 VideoSendStreamTest.CanReconfigureToUseStartBitrateAbovePreviousMax
 VideoSendStreamTest.ReconfigureBitratesSetsEncoderBitratesCorrectly
+# https://code.google.com/p/webrtc/issues/detail?id=4979
+EndToEndTest.AssignsTransportSequenceNumbers
