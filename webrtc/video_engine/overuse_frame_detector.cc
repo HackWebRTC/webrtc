@@ -24,15 +24,8 @@
 
 namespace webrtc {
 
-// TODO(mflodman) Test different values for all of these to trigger correctly,
-// avoid fluctuations etc.
 namespace {
 const int64_t kProcessIntervalMs = 5000;
-
-// Weight factor to apply to the standard deviation.
-const float kWeightFactor = 0.997f;
-// Weight factor to apply to the average.
-const float kWeightFactorMean = 0.98f;
 
 // Delay between consecutive rampups. (Used for quick recovery.)
 const int kQuickRampUpDelayMs = 10 * 1000;
@@ -50,63 +43,6 @@ const float kSampleDiffMs = 33.0f;
 const float kMaxExp = 7.0f;
 
 }  // namespace
-
-// TODO(asapersson): Remove this class. Not used.
-Statistics::Statistics(const CpuOveruseOptions& options)
-    : sum_(0.0),
-      count_(0),
-      options_(options),
-      filtered_samples_(new rtc::ExpFilter(kWeightFactorMean)),
-      filtered_variance_(new rtc::ExpFilter(kWeightFactor)) {
-  Reset();
-}
-
-void Statistics::Reset() {
-  sum_ =  0.0;
-  count_ = 0;
-  filtered_variance_->Reset(kWeightFactor);
-  filtered_variance_->Apply(1.0f, InitialVariance());
-}
-
-void Statistics::AddSample(float sample_ms) {
-  sum_ += sample_ms;
-  ++count_;
-
-  if (count_ < static_cast<uint32_t>(options_.min_frame_samples)) {
-    // Initialize filtered samples.
-    filtered_samples_->Reset(kWeightFactorMean);
-    filtered_samples_->Apply(1.0f, InitialMean());
-    return;
-  }
-
-  float exp = sample_ms / kSampleDiffMs;
-  exp = std::min(exp, kMaxExp);
-  filtered_samples_->Apply(exp, sample_ms);
-  filtered_variance_->Apply(exp, (sample_ms - filtered_samples_->filtered()) *
-                                 (sample_ms - filtered_samples_->filtered()));
-}
-
-float Statistics::InitialMean() const {
-  if (count_ == 0)
-    return 0.0;
-  return sum_ / count_;
-}
-
-float Statistics::InitialVariance() const {
-  // Start in between the underuse and overuse threshold.
-  float average_stddev = (options_.low_capture_jitter_threshold_ms +
-                          options_.high_capture_jitter_threshold_ms) / 2.0f;
-  return average_stddev * average_stddev;
-}
-
-float Statistics::Mean() const { return filtered_samples_->filtered(); }
-
-float Statistics::StdDev() const {
-  return sqrt(std::max(filtered_variance_->filtered(), 0.0f));
-}
-
-uint64_t Statistics::Count() const { return count_; }
-
 
 // Class for calculating the average encode time.
 class OveruseFrameDetector::EncodeTimeAvg {
@@ -265,7 +201,6 @@ OveruseFrameDetector::OveruseFrameDetector(
       clock_(clock),
       next_process_time_(clock_->TimeInMilliseconds()),
       num_process_times_(0),
-      capture_deltas_(options),
       last_capture_time_(0),
       last_overuse_time_(0),
       checks_above_threshold_(0),
@@ -301,7 +236,6 @@ int OveruseFrameDetector::FramesInQueue() const {
 }
 
 void OveruseFrameDetector::UpdateCpuOveruseMetrics() {
-  metrics_.capture_jitter_ms = static_cast<int>(capture_deltas_.StdDev() + 0.5);
   metrics_.avg_encode_time_ms = encode_time_->Value();
   metrics_.encode_usage_percent = usage_->Value();
 
@@ -329,7 +263,6 @@ bool OveruseFrameDetector::FrameTimeoutDetected(int64_t now) const {
 
 void OveruseFrameDetector::ResetAll(int num_pixels) {
   num_pixels_ = num_pixels;
-  capture_deltas_.Reset();
   usage_->Reset();
   frame_queue_->Reset();
   last_capture_time_ = 0;
@@ -347,16 +280,14 @@ void OveruseFrameDetector::FrameCaptured(int width,
     ResetAll(width * height);
   }
 
-  if (last_capture_time_ != 0) {
-    capture_deltas_.AddSample(now - last_capture_time_);
+  if (last_capture_time_ != 0)
     usage_->AddCaptureSample(now - last_capture_time_);
-  }
+
   last_capture_time_ = now;
 
   if (options_.enable_extended_processing_usage) {
     frame_queue_->Start(capture_time_ms, now);
   }
-  UpdateCpuOveruseMetrics();
 }
 
 void OveruseFrameDetector::FrameEncoded(int encode_time_ms) {
@@ -449,9 +380,7 @@ int32_t OveruseFrameDetector::Process() {
 
   int rampup_delay =
       in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_;
-  LOG(LS_VERBOSE) << " Frame stats: capture avg: " << capture_deltas_.Mean()
-                  << " capture stddev " << capture_deltas_.StdDev()
-                  << " encode usage " << usage_->Value()
+  LOG(LS_VERBOSE) << " Frame stats: encode usage: " << usage_->Value()
                   << " overuse detections " << num_overuse_detections_
                   << " rampup delay " << rampup_delay;
 
@@ -460,12 +389,8 @@ int32_t OveruseFrameDetector::Process() {
 
 bool OveruseFrameDetector::IsOverusing() {
   bool overusing = false;
-  if (options_.enable_capture_jitter_method) {
-    overusing = capture_deltas_.StdDev() >=
-        options_.high_capture_jitter_threshold_ms;
-  } else if (options_.enable_encode_usage_method) {
+  if (options_.enable_encode_usage_method)
     overusing = usage_->Value() >= options_.high_encode_usage_threshold_percent;
-  }
 
   if (overusing) {
     ++checks_above_threshold_;
@@ -481,12 +406,9 @@ bool OveruseFrameDetector::IsUnderusing(int64_t time_now) {
     return false;
 
   bool underusing = false;
-  if (options_.enable_capture_jitter_method) {
-    underusing = capture_deltas_.StdDev() <
-        options_.low_capture_jitter_threshold_ms;
-  } else if (options_.enable_encode_usage_method) {
+  if (options_.enable_encode_usage_method)
     underusing = usage_->Value() < options_.low_encode_usage_threshold_percent;
-  }
+
   return underusing;
 }
 }  // namespace webrtc

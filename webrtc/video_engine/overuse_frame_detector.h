@@ -38,35 +38,19 @@ class CpuOveruseObserver {
 
 struct CpuOveruseOptions {
   CpuOveruseOptions()
-      : enable_capture_jitter_method(false),
-        low_capture_jitter_threshold_ms(20.0f),
-        high_capture_jitter_threshold_ms(30.0f),
-        enable_encode_usage_method(true),
+      : enable_encode_usage_method(true),
         low_encode_usage_threshold_percent(55),
         high_encode_usage_threshold_percent(85),
-        low_encode_time_rsd_threshold(-1),
-        high_encode_time_rsd_threshold(-1),
         enable_extended_processing_usage(true),
         frame_timeout_interval_ms(1500),
         min_frame_samples(120),
         min_process_count(3),
         high_threshold_consecutive_count(2) {}
 
-  // Method based on inter-arrival jitter of captured frames.
-  bool enable_capture_jitter_method;
-  float low_capture_jitter_threshold_ms;  // Threshold for triggering underuse.
-  float high_capture_jitter_threshold_ms; // Threshold for triggering overuse.
   // Method based on encode time of frames.
   bool enable_encode_usage_method;
   int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
   int high_encode_usage_threshold_percent; // Threshold for triggering overuse.
-  // TODO(asapersson): Remove options, not used.
-  int low_encode_time_rsd_threshold;   // Additional threshold for triggering
-                                       // underuse (used in addition to
-                                       // threshold above if configured).
-  int high_encode_time_rsd_threshold;  // Additional threshold for triggering
-                                       // overuse (used in addition to
-                                       // threshold above if configured).
   bool enable_extended_processing_usage;  // Include a larger time span (in
                                           // addition to encode time) for
                                           // measuring the processing time of a
@@ -80,36 +64,13 @@ struct CpuOveruseOptions {
   int high_threshold_consecutive_count; // The number of consecutive checks
                                         // above the high threshold before
                                         // triggering an overuse.
-
-  bool Equals(const CpuOveruseOptions& o) const {
-    return enable_capture_jitter_method == o.enable_capture_jitter_method &&
-        low_capture_jitter_threshold_ms == o.low_capture_jitter_threshold_ms &&
-        high_capture_jitter_threshold_ms ==
-        o.high_capture_jitter_threshold_ms &&
-        enable_encode_usage_method == o.enable_encode_usage_method &&
-        low_encode_usage_threshold_percent ==
-        o.low_encode_usage_threshold_percent &&
-        high_encode_usage_threshold_percent ==
-        o.high_encode_usage_threshold_percent &&
-        low_encode_time_rsd_threshold == o.low_encode_time_rsd_threshold &&
-        high_encode_time_rsd_threshold == o.high_encode_time_rsd_threshold &&
-        enable_extended_processing_usage ==
-        o.enable_extended_processing_usage &&
-        frame_timeout_interval_ms == o.frame_timeout_interval_ms &&
-        min_frame_samples == o.min_frame_samples &&
-        min_process_count == o.min_process_count &&
-        high_threshold_consecutive_count == o.high_threshold_consecutive_count;
-  }
 };
 
 struct CpuOveruseMetrics {
   CpuOveruseMetrics()
-      : capture_jitter_ms(-1),
-        avg_encode_time_ms(-1),
+      : avg_encode_time_ms(-1),
         encode_usage_percent(-1) {}
 
-  int capture_jitter_ms;  // The current estimated jitter in ms based on
-                          // incoming captured frames.
   int avg_encode_time_ms;   // The average encode time in ms.
   int encode_usage_percent; // The average encode time divided by the average
                             // time difference between incoming captured frames.
@@ -121,30 +82,9 @@ class CpuOveruseMetricsObserver {
   virtual void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) = 0;
 };
 
-// TODO(pbos): Move this somewhere appropriate.
-class Statistics {
- public:
-  explicit Statistics(const CpuOveruseOptions& options);
 
-  void AddSample(float sample_ms);
-  void Reset();
-
-  float Mean() const;
-  float StdDev() const;
-  uint64_t Count() const;
-
- private:
-  float InitialMean() const;
-  float InitialVariance() const;
-
-  float sum_;
-  uint64_t count_;
-  const CpuOveruseOptions options_;
-  rtc::scoped_ptr<rtc::ExpFilter> filtered_samples_;
-  rtc::scoped_ptr<rtc::ExpFilter> filtered_variance_;
-};
-
-// Use to detect system overuse based on jitter in incoming frames.
+// Use to detect system overuse based on the send-side processing time of
+// incoming frames.
 class OveruseFrameDetector : public Module {
  public:
   OveruseFrameDetector(Clock* clock,
@@ -212,7 +152,6 @@ class OveruseFrameDetector : public Module {
   int64_t next_process_time_;  // Only accessed on the processing thread.
   int64_t num_process_times_ GUARDED_BY(crit_);
 
-  Statistics capture_deltas_ GUARDED_BY(crit_);
   int64_t last_capture_time_ GUARDED_BY(crit_);
 
   // These six members are only accessed on the processing thread.
