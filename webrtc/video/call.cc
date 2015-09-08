@@ -41,30 +41,6 @@ const int Call::Config::kDefaultStartBitrateBps = 300000;
 
 namespace internal {
 
-class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
- public:
-  explicit CpuOveruseObserverProxy(LoadObserver* overuse_callback)
-      : overuse_callback_(overuse_callback) {
-    DCHECK(overuse_callback != nullptr);
-  }
-
-  virtual ~CpuOveruseObserverProxy() {}
-
-  void OveruseDetected() override {
-    rtc::CritScope lock(&crit_);
-    overuse_callback_->OnLoadUpdate(LoadObserver::kOveruse);
-  }
-
-  void NormalUsage() override {
-    rtc::CritScope lock(&crit_);
-    overuse_callback_->OnLoadUpdate(LoadObserver::kUnderuse);
-  }
-
- private:
-  rtc::CriticalSection crit_;
-  LoadObserver* overuse_callback_ GUARDED_BY(crit_);
-};
-
 class Call : public webrtc::Call, public PacketReceiver {
  public:
   explicit Call(const Call::Config& config);
@@ -138,8 +114,6 @@ class Call : public webrtc::Call, public PacketReceiver {
   std::map<uint32_t, VideoSendStream*> video_send_ssrcs_ GUARDED_BY(send_crit_);
   std::set<VideoSendStream*> video_send_streams_ GUARDED_BY(send_crit_);
 
-  rtc::scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
-
   VideoSendStream::RtpStateMap suspended_video_send_ssrcs_;
 
   DISALLOW_COPY_AND_ASSIGN(Call);
@@ -171,11 +145,6 @@ Call::Call(const Call::Config& config)
 
   Trace::CreateTrace();
   module_process_thread_->Start();
-
-  if (config.overuse_callback) {
-    overuse_observer_proxy_.reset(
-        new CpuOveruseObserverProxy(config.overuse_callback));
-  }
 
   SetBitrateControllerConfig(config_.bitrate_config);
 }
@@ -248,8 +217,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
-  VideoSendStream* send_stream = new VideoSendStream(
-      overuse_observer_proxy_.get(), num_cpu_cores_,
+  VideoSendStream* send_stream = new VideoSendStream(num_cpu_cores_,
       module_process_thread_.get(), channel_group_.get(),
       rtc::AtomicOps::Increment(&next_channel_id_), config, encoder_config,
       suspended_video_send_ssrcs_);

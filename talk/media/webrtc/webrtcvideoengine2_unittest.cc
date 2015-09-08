@@ -1746,15 +1746,14 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   EXPECT_TRUE(channel_->SetSend(true));
 
   // Trigger overuse.
+  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
+  FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
   webrtc::LoadObserver* overuse_callback =
-      fake_call_->GetConfig().overuse_callback;
+      send_stream->GetConfig().overuse_callback;
   ASSERT_TRUE(overuse_callback != NULL);
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
 
   EXPECT_TRUE(capturer.CaptureFrame());
-  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
-  FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
-
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
 
   if (enable_overuse && !is_screenshare) {
@@ -2343,9 +2342,12 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   cricket::VideoOptions options;
   options.cpu_overuse_detection.Set(true);
   EXPECT_TRUE(channel_->SetOptions(options));
+
   // Trigger overuse.
+  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
   webrtc::LoadObserver* overuse_callback =
-      fake_call_->GetConfig().overuse_callback;
+      fake_call_->GetVideoSendStreams().front()->GetConfig().overuse_callback;
+  ASSERT_TRUE(overuse_callback != NULL);
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
 
   // Capture format VGA -> adapt (OnCpuResolutionRequest downgrade) -> VGA/2.

@@ -28,17 +28,16 @@
 namespace webrtc {
 
 class ChannelGroup;
-class CpuOveruseObserver;
 class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
 
 namespace internal {
 
-class VideoSendStream : public webrtc::VideoSendStream {
+class VideoSendStream : public webrtc::VideoSendStream,
+                        public webrtc::CpuOveruseObserver {
  public:
-  VideoSendStream(CpuOveruseObserver* overuse_observer,
-                  int num_cpu_cores,
+  VideoSendStream(int num_cpu_cores,
                   ProcessThread* module_process_thread,
                   ChannelGroup* channel_group,
                   int channel_id,
@@ -58,6 +57,10 @@ class VideoSendStream : public webrtc::VideoSendStream {
   VideoCaptureInput* Input() override;
   bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) override;
   Stats GetStats() override;
+
+  // webrtc::CpuOveruseObserver implementation.
+  void OveruseDetected() override;
+  void NormalUsage() override;
 
   typedef std::map<uint32_t, RtpState> RtpStateMap;
   RtpStateMap GetRtpStates() const;

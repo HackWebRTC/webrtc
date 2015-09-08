@@ -23,6 +23,7 @@
 
 namespace webrtc {
 
+class LoadObserver;
 class VideoEncoder;
 
 // Class to deliver captured frame to the video send stream.
@@ -121,6 +122,10 @@ class VideoSendStream : public SendStream {
 
     // Transport for outgoing packets.
     newapi::Transport* send_transport = nullptr;
+
+    // Callback for overuse and normal usage based on the jitter of incoming
+    // captured frames. 'nullptr' disables the callback.
+    LoadObserver* overuse_callback = nullptr;
 
     // Called for each I420 frame before encoding the frame. Can be used for
     // effects, snapshots etc. 'nullptr' disables the callback.

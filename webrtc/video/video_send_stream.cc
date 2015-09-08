@@ -101,7 +101,6 @@ std::string VideoSendStream::Config::ToString() const {
 
 namespace internal {
 VideoSendStream::VideoSendStream(
-    CpuOveruseObserver* overuse_observer,
     int num_cpu_cores,
     ProcessThread* module_process_thread,
     ChannelGroup* channel_group,
@@ -162,7 +161,7 @@ VideoSendStream::VideoSendStream(
 
   input_.reset(new internal::VideoCaptureInput(
       module_process_thread_, vie_encoder_, config_.local_renderer,
-      &stats_proxy_, overuse_observer));
+      &stats_proxy_, this));
 
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
   DCHECK_LE(config_.rtp.max_packet_size, static_cast<size_t>(0xFFFF - 28));
@@ -388,6 +387,16 @@ bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
 
 VideoSendStream::Stats VideoSendStream::GetStats() {
   return stats_proxy_.GetStats();
+}
+
+void VideoSendStream::OveruseDetected() {
+  if (config_.overuse_callback)
+    config_.overuse_callback->OnLoadUpdate(LoadObserver::kOveruse);
+}
+
+void VideoSendStream::NormalUsage() {
+  if (config_.overuse_callback)
+    config_.overuse_callback->OnLoadUpdate(LoadObserver::kUnderuse);
 }
 
 void VideoSendStream::ConfigureSsrcs() {

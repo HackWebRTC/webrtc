@@ -74,10 +74,6 @@ class Call {
     // VoiceEngine used for audio/video synchronization for this Call.
     VoiceEngine* voice_engine = nullptr;
 
-    // Callback for overuse and normal usage based on the jitter of incoming
-    // captured frames. 'nullptr' disables the callback.
-    LoadObserver* overuse_callback = nullptr;
-
     // Bitrate config used until valid bitrate estimates are calculated. Also
     // used to cap total bitrate used.
     struct BitrateConfig {

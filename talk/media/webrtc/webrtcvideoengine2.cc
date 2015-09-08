@@ -803,7 +803,6 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
   options_.SetAll(options);
   options_.cpu_overuse_detection.Get(&signal_cpu_adaptation_);
   webrtc::Call::Config config;
-  config.overuse_callback = this;
   if (voice_engine != NULL) {
     config.voice_engine = voice_engine->voe()->engine();
   }
@@ -1131,10 +1130,13 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   for (uint32 used_ssrc : sp.ssrcs)
     send_ssrcs_.insert(used_ssrc);
 
+  webrtc::VideoSendStream::Config config(this);
+  config.overuse_callback = this;
+
   WebRtcVideoSendStream* stream =
       new WebRtcVideoSendStream(call_.get(),
                                 sp,
-                                webrtc::VideoSendStream::Config(this),
+                                config,
                                 external_encoder_factory_,
                                 options_,
                                 bitrate_config_.max_bitrate_bps,

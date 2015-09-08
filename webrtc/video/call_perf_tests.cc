@@ -488,15 +488,10 @@ void CallPerfTest::TestCpuOveruse(LoadObserver::Load tested_load,
         observation_complete_->Set();
     }
 
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config;
-      config.overuse_callback = this;
-      return config;
-    }
-
     void ModifyConfigs(VideoSendStream::Config* send_config,
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
+      send_config->overuse_callback = this;
       send_config->encoder_settings.encoder = &encoder_;
     }
 
