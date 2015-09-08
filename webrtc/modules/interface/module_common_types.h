@@ -765,6 +765,46 @@ inline uint32_t LatestTimestamp(uint32_t timestamp1, uint32_t timestamp2) {
   return IsNewerTimestamp(timestamp1, timestamp2) ? timestamp1 : timestamp2;
 }
 
+// Utility class to unwrap a sequence number to a larger type, for easier
+// handling large ranges. Note that sequence numbers will never be unwrapped
+// to a negative value.
+class SequenceNumberUnwrapper {
+ public:
+  SequenceNumberUnwrapper() : last_seq_(-1) {}
+
+  // Get the unwrapped sequence, but don't update the internal state.
+  int64_t UnwrapWithoutUpdate(uint16_t sequence_number) {
+    if (last_seq_ == -1)
+      return sequence_number;
+
+    uint16_t cropped_last = static_cast<uint16_t>(last_seq_);
+    int64_t delta = sequence_number - cropped_last;
+    if (IsNewerSequenceNumber(sequence_number, cropped_last)) {
+      if (delta < 0)
+        delta += (1 << 16);  // Wrap forwards.
+    } else if (delta > 0 && (last_seq_ + delta - (1 << 16)) >= 0) {
+      // If sequence_number is older but delta is positive, this is a backwards
+      // wrap-around. However, don't wrap backwards past 0 (unwrapped).
+      delta -= (1 << 16);
+    }
+
+    return last_seq_ + delta;
+  }
+
+  // Only update the internal state to the specified last (unwrapped) sequence.
+  void UpdateLast(int64_t last_sequence) { last_seq_ = last_sequence; }
+
+  // Unwrap the sequence number and update the internal state.
+  int64_t Unwrap(uint16_t sequence_number) {
+    int64_t unwrapped = UnwrapWithoutUpdate(sequence_number);
+    UpdateLast(unwrapped);
+    return unwrapped;
+  }
+
+ private:
+  int64_t last_seq_;
+};
+
 }  // namespace webrtc
 
 #endif  // MODULE_COMMON_TYPES_H
