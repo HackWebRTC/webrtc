@@ -79,7 +79,7 @@ class TransportChannelProxy : public TransportChannel,
   void OnReadyToSend(TransportChannel* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
 
-  void OnMessage(rtc::Message* message);
+  void OnMessage(rtc::Message* message) override;
 
   typedef std::pair<rtc::Socket::Option, int> OptionPair;
   typedef std::vector<OptionPair> OptionList;

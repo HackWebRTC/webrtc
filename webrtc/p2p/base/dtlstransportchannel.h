@@ -199,7 +199,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     channel_->OnCandidate(candidate);
   }
 
-  void SetReceivingTimeout(int receiving_timeout_ms) {
+  void SetReceivingTimeout(int receiving_timeout_ms) override {
     channel_->SetReceivingTimeout(receiving_timeout_ms);
   }
 
