@@ -386,6 +386,14 @@ TEST_F(AudioEncoderCngTest, VerifySidFrameAfterSpeech) {
             encoded_info_.encoded_bytes);
 }
 
+// Resetting the CNG should reset both the VAD and the encoder.
+TEST_F(AudioEncoderCngTest, Reset) {
+  CreateCng();
+  EXPECT_CALL(mock_encoder_, Reset()).Times(1);
+  EXPECT_CALL(*mock_vad_, Reset()).Times(1);
+  cng_->Reset();
+}
+
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 // This test fixture tests various error conditions that makes the

@@ -14,28 +14,29 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder_mutable_impl.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 
 namespace webrtc {
 
+struct CodecInst;
+
 class AudioEncoderG722 final : public AudioEncoder {
  public:
   struct Config {
-    Config() : payload_type(9), frame_size_ms(20), num_channels(1) {}
     bool IsOk() const;
 
-    int payload_type;
-    int frame_size_ms;
-    int num_channels;
+    int payload_type = 9;
+    int frame_size_ms = 20;
+    int num_channels = 1;
   };
 
   explicit AudioEncoderG722(const Config& config);
+  explicit AudioEncoderG722(const CodecInst& codec_inst);
   ~AudioEncoderG722() override;
 
+  size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   int NumChannels() const override;
-  size_t MaxEncodedBytes() const override;
   int RtpTimestampRateHz() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
@@ -44,6 +45,7 @@ class AudioEncoderG722 final : public AudioEncoder {
                              const int16_t* audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
+  void Reset() override;
 
  private:
   // The encoder state for one channel.
@@ -64,14 +66,6 @@ class AudioEncoderG722 final : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
   const rtc::scoped_ptr<EncoderState[]> encoders_;
   rtc::Buffer interleave_buffer_;
-};
-
-struct CodecInst;
-
-class AudioEncoderMutableG722
-    : public AudioEncoderMutableImpl<AudioEncoderG722> {
- public:
-  explicit AudioEncoderMutableG722(const CodecInst& codec_inst);
 };
 
 }  // namespace webrtc

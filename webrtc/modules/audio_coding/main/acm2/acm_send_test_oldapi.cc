@@ -65,7 +65,7 @@ bool AcmSendTestOldApi::RegisterCodec(const char* payload_name,
 }
 
 bool AcmSendTestOldApi::RegisterExternalCodec(
-    AudioEncoderMutable* external_speech_encoder) {
+    AudioEncoder* external_speech_encoder) {
   acm_->RegisterExternalSendCodec(external_speech_encoder);
   input_frame_.num_channels_ = external_speech_encoder->NumChannels();
   assert(input_block_size_samples_ * input_frame_.num_channels_ <=

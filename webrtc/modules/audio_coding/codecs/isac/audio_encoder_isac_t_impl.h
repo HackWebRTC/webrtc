@@ -20,20 +20,20 @@
 
 namespace webrtc {
 
-const int kIsacPayloadType = 103;
-const int kDefaultBitRate = 32000;
-
 template <typename T>
-AudioEncoderIsacT<T>::Config::Config()
-    : bwinfo(nullptr),
-      payload_type(kIsacPayloadType),
-      sample_rate_hz(16000),
-      frame_size_ms(30),
-      bit_rate(kDefaultBitRate),
-      max_payload_size_bytes(-1),
-      max_bit_rate(-1),
-      adaptive_mode(false),
-      enforce_frame_size(false) {
+typename AudioEncoderIsacT<T>::Config CreateIsacConfig(
+    const CodecInst& codec_inst,
+    LockedIsacBandwidthInfo* bwinfo) {
+  typename AudioEncoderIsacT<T>::Config config;
+  config.bwinfo = bwinfo;
+  config.payload_type = codec_inst.pltype;
+  config.sample_rate_hz = codec_inst.plfreq;
+  config.frame_size_ms =
+      rtc::CheckedDivExact(1000 * codec_inst.pacsize, config.sample_rate_hz);
+  config.adaptive_mode = (codec_inst.rate == -1);
+  if (codec_inst.rate != -1)
+    config.bit_rate = codec_inst.rate;
+  return config;
 }
 
 template <typename T>
@@ -67,44 +67,23 @@ bool AudioEncoderIsacT<T>::Config::IsOk() const {
 }
 
 template <typename T>
-AudioEncoderIsacT<T>::AudioEncoderIsacT(const Config& config)
-    : payload_type_(config.payload_type),
-      bwinfo_(config.bwinfo),
-      packet_in_progress_(false),
-      target_bitrate_bps_(config.adaptive_mode ? -1 : (config.bit_rate == 0
-                                                           ? kDefaultBitRate
-                                                           : config.bit_rate)) {
-  CHECK(config.IsOk());
-  CHECK_EQ(0, T::Create(&isac_state_));
-  CHECK_EQ(0, T::EncoderInit(isac_state_, config.adaptive_mode ? 0 : 1));
-  CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
-  const int bit_rate = config.bit_rate == 0 ? kDefaultBitRate : config.bit_rate;
-  if (config.adaptive_mode) {
-    CHECK_EQ(0, T::ControlBwe(isac_state_, bit_rate, config.frame_size_ms,
-                              config.enforce_frame_size));
-  } else {
-    CHECK_EQ(0, T::Control(isac_state_, bit_rate, config.frame_size_ms));
-  }
-  if (config.max_payload_size_bytes != -1)
-    CHECK_EQ(0,
-             T::SetMaxPayloadSize(isac_state_, config.max_payload_size_bytes));
-  if (config.max_bit_rate != -1)
-    CHECK_EQ(0, T::SetMaxRate(isac_state_, config.max_bit_rate));
-
-  // When config.sample_rate_hz is set to 48000 Hz (iSAC-fb), the decoder is
-  // still set to 32000 Hz, since there is no full-band mode in the decoder.
-  const int decoder_sample_rate_hz = std::min(config.sample_rate_hz, 32000);
-
-  // Set the decoder sample rate even though we just use the encoder. This
-  // doesn't appear to be necessary to produce a valid encoding, but without it
-  // we get an encoding that isn't bit-for-bit identical with what a combined
-  // encoder+decoder object produces.
-  CHECK_EQ(0, T::SetDecSampRate(isac_state_, decoder_sample_rate_hz));
+AudioEncoderIsacT<T>::AudioEncoderIsacT(const Config& config) {
+  RecreateEncoderInstance(config);
 }
+
+template <typename T>
+AudioEncoderIsacT<T>::AudioEncoderIsacT(const CodecInst& codec_inst,
+                                        LockedIsacBandwidthInfo* bwinfo)
+    : AudioEncoderIsacT(CreateIsacConfig<T>(codec_inst, bwinfo)) {}
 
 template <typename T>
 AudioEncoderIsacT<T>::~AudioEncoderIsacT() {
   CHECK_EQ(0, T::Free(isac_state_));
+}
+
+template <typename T>
+size_t AudioEncoderIsacT<T>::MaxEncodedBytes() const {
+  return kSufficientEncodeBufferSizeBytes;
 }
 
 template <typename T>
@@ -115,11 +94,6 @@ int AudioEncoderIsacT<T>::SampleRateHz() const {
 template <typename T>
 int AudioEncoderIsacT<T>::NumChannels() const {
   return 1;
-}
-
-template <typename T>
-size_t AudioEncoderIsacT<T>::MaxEncodedBytes() const {
-  return kSufficientEncodeBufferSizeBytes;
 }
 
 template <typename T>
@@ -137,7 +111,9 @@ size_t AudioEncoderIsacT<T>::Max10MsFramesInAPacket() const {
 
 template <typename T>
 int AudioEncoderIsacT<T>::GetTargetBitrate() const {
-  return target_bitrate_bps_;
+  if (config_.adaptive_mode)
+    return -1;
+  return config_.bit_rate == 0 ? kDefaultBitRate : config_.bit_rate;
 }
 
 template <typename T>
@@ -172,14 +148,68 @@ AudioEncoder::EncodedInfo AudioEncoderIsacT<T>::EncodeInternal(
   EncodedInfo info;
   info.encoded_bytes = r;
   info.encoded_timestamp = packet_timestamp_;
-  info.payload_type = payload_type_;
+  info.payload_type = config_.payload_type;
   return info;
 }
 
 template <typename T>
-AudioDecoderIsacT<T>::AudioDecoderIsacT()
-    : AudioDecoderIsacT(nullptr) {
+void AudioEncoderIsacT<T>::Reset() {
+  RecreateEncoderInstance(config_);
 }
+
+template <typename T>
+void AudioEncoderIsacT<T>::SetMaxPayloadSize(int max_payload_size_bytes) {
+  auto conf = config_;
+  conf.max_payload_size_bytes = max_payload_size_bytes;
+  RecreateEncoderInstance(conf);
+}
+
+template <typename T>
+void AudioEncoderIsacT<T>::SetMaxBitrate(int max_rate_bps) {
+  auto conf = config_;
+  conf.max_bit_rate = max_rate_bps;
+  RecreateEncoderInstance(conf);
+}
+
+template <typename T>
+void AudioEncoderIsacT<T>::RecreateEncoderInstance(const Config& config) {
+  CHECK(config.IsOk());
+  packet_in_progress_ = false;
+  bwinfo_ = config.bwinfo;
+  if (isac_state_)
+    CHECK_EQ(0, T::Free(isac_state_));
+  CHECK_EQ(0, T::Create(&isac_state_));
+  CHECK_EQ(0, T::EncoderInit(isac_state_, config.adaptive_mode ? 0 : 1));
+  CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
+  const int bit_rate = config.bit_rate == 0 ? kDefaultBitRate : config.bit_rate;
+  if (config.adaptive_mode) {
+    CHECK_EQ(0, T::ControlBwe(isac_state_, bit_rate, config.frame_size_ms,
+                              config.enforce_frame_size));
+  } else {
+    CHECK_EQ(0, T::Control(isac_state_, bit_rate, config.frame_size_ms));
+  }
+  if (config.max_payload_size_bytes != -1)
+    CHECK_EQ(0,
+             T::SetMaxPayloadSize(isac_state_, config.max_payload_size_bytes));
+  if (config.max_bit_rate != -1)
+    CHECK_EQ(0, T::SetMaxRate(isac_state_, config.max_bit_rate));
+
+  // When config.sample_rate_hz is set to 48000 Hz (iSAC-fb), the decoder is
+  // still set to 32000 Hz, since there is no full-band mode in the decoder.
+  const int decoder_sample_rate_hz = std::min(config.sample_rate_hz, 32000);
+
+  // Set the decoder sample rate even though we just use the encoder. This
+  // doesn't appear to be necessary to produce a valid encoding, but without it
+  // we get an encoding that isn't bit-for-bit identical with what a combined
+  // encoder+decoder object produces.
+  CHECK_EQ(0, T::SetDecSampRate(isac_state_, decoder_sample_rate_hz));
+
+  config_ = config;
+}
+
+template <typename T>
+AudioDecoderIsacT<T>::AudioDecoderIsacT()
+    : AudioDecoderIsacT(nullptr) {}
 
 template <typename T>
 AudioDecoderIsacT<T>::AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo)

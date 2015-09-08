@@ -27,6 +27,7 @@ class MockVad : public Vad {
                enum Activity(const int16_t* audio,
                              size_t num_samples,
                              int sample_rate_hz));
+  MOCK_METHOD0(Reset, void());
 };
 
 }  // namespace webrtc

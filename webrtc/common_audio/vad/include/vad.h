@@ -37,8 +37,12 @@ class Vad {
                                  size_t num_samples,
                                  int sample_rate_hz);
 
+  // Reset VAD state.
+  virtual void Reset();
+
  private:
   VadInst* handle_;
+  Aggressiveness aggressiveness_;
 };
 
 }  // namespace webrtc

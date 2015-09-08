@@ -12,10 +12,11 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_PCM16B_INCLUDE_AUDIO_ENCODER_PCM16B_H_
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder_mutable_impl.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 
 namespace webrtc {
+
+struct CodecInst;
 
 class AudioEncoderPcm16B final : public AudioEncoderPcm {
  public:
@@ -29,6 +30,7 @@ class AudioEncoderPcm16B final : public AudioEncoderPcm {
 
   explicit AudioEncoderPcm16B(const Config& config)
       : AudioEncoderPcm(config, config.sample_rate_hz) {}
+  explicit AudioEncoderPcm16B(const CodecInst& codec_inst);
 
  protected:
   size_t EncodeCall(const int16_t* audio,
@@ -36,14 +38,6 @@ class AudioEncoderPcm16B final : public AudioEncoderPcm {
                     uint8_t* encoded) override;
 
   int BytesPerSample() const override;
-};
-
-struct CodecInst;
-
-class AudioEncoderMutablePcm16B
-    : public AudioEncoderMutableImpl<AudioEncoderPcm16B> {
- public:
-  explicit AudioEncoderMutablePcm16B(const CodecInst& codec_inst);
 };
 
 }  // namespace webrtc

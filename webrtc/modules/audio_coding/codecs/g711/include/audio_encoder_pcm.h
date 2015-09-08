@@ -15,7 +15,6 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder_mutable_impl.h"
 
 namespace webrtc {
 
@@ -36,9 +35,9 @@ class AudioEncoderPcm : public AudioEncoder {
 
   ~AudioEncoderPcm() override;
 
+  size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   int NumChannels() const override;
-  size_t MaxEncodedBytes() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
@@ -46,6 +45,7 @@ class AudioEncoderPcm : public AudioEncoder {
                              const int16_t* audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
+  void Reset() override;
 
  protected:
   AudioEncoderPcm(const Config& config, int sample_rate_hz);
@@ -66,6 +66,8 @@ class AudioEncoderPcm : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
 };
 
+struct CodecInst;
+
 class AudioEncoderPcmA final : public AudioEncoderPcm {
  public:
   struct Config : public AudioEncoderPcm::Config {
@@ -74,6 +76,7 @@ class AudioEncoderPcmA final : public AudioEncoderPcm {
 
   explicit AudioEncoderPcmA(const Config& config)
       : AudioEncoderPcm(config, kSampleRateHz) {}
+  explicit AudioEncoderPcmA(const CodecInst& codec_inst);
 
  protected:
   size_t EncodeCall(const int16_t* audio,
@@ -94,6 +97,7 @@ class AudioEncoderPcmU final : public AudioEncoderPcm {
 
   explicit AudioEncoderPcmU(const Config& config)
       : AudioEncoderPcm(config, kSampleRateHz) {}
+  explicit AudioEncoderPcmU(const CodecInst& codec_inst);
 
  protected:
   size_t EncodeCall(const int16_t* audio,
@@ -104,20 +108,6 @@ class AudioEncoderPcmU final : public AudioEncoderPcm {
 
  private:
   static const int kSampleRateHz = 8000;
-};
-
-struct CodecInst;
-
-class AudioEncoderMutablePcmU
-    : public AudioEncoderMutableImpl<AudioEncoderPcmU> {
- public:
-  explicit AudioEncoderMutablePcmU(const CodecInst& codec_inst);
-};
-
-class AudioEncoderMutablePcmA
-    : public AudioEncoderMutableImpl<AudioEncoderPcmA> {
- public:
-  explicit AudioEncoderMutablePcmA(const CodecInst& codec_inst);
 };
 
 }  // namespace webrtc

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+// TODO(kwiberg): Merge these tests into audio_encoder_opus_unittest.cc
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
@@ -26,14 +28,14 @@ class AudioEncoderMutableOpusTest : public ::testing::Test {
 
   void CreateCodec(int num_channels) {
     codec_inst_.channels = num_channels;
-    encoder_.reset(new AudioEncoderMutableOpus(codec_inst_));
+    encoder_.reset(new AudioEncoderOpus(codec_inst_));
     auto expected_app =
         num_channels == 1 ? AudioEncoderOpus::kVoip : AudioEncoderOpus::kAudio;
     EXPECT_EQ(expected_app, encoder_->application());
   }
 
   CodecInst codec_inst_;
-  rtc::scoped_ptr<AudioEncoderMutableOpus> encoder_;
+  rtc::scoped_ptr<AudioEncoderOpus> encoder_;
 };
 
 TEST_F(AudioEncoderMutableOpusTest, DefaultApplicationModeMono) {
@@ -46,8 +48,7 @@ TEST_F(AudioEncoderMutableOpusTest, DefaultApplicationModeStereo) {
 
 TEST_F(AudioEncoderMutableOpusTest, ChangeApplicationMode) {
   CreateCodec(2);
-  EXPECT_TRUE(
-      encoder_->SetApplication(AudioEncoderMutable::kApplicationSpeech));
+  EXPECT_TRUE(encoder_->SetApplication(AudioEncoder::Application::kSpeech));
   EXPECT_EQ(AudioEncoderOpus::kVoip, encoder_->application());
 }
 
@@ -60,8 +61,7 @@ TEST_F(AudioEncoderMutableOpusTest, ResetWontChangeApplicationMode) {
   EXPECT_EQ(AudioEncoderOpus::kAudio, encoder_->application());
 
   // Now change to kVoip.
-  EXPECT_TRUE(
-      encoder_->SetApplication(AudioEncoderMutable::kApplicationSpeech));
+  EXPECT_TRUE(encoder_->SetApplication(AudioEncoder::Application::kSpeech));
   EXPECT_EQ(AudioEncoderOpus::kVoip, encoder_->application());
 
   // Trigger a reset again.

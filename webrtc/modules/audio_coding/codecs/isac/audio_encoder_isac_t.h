@@ -19,6 +19,8 @@
 
 namespace webrtc {
 
+struct CodecInst;
+
 template <typename T>
 class AudioEncoderIsacT final : public AudioEncoder {
  public:
@@ -28,33 +30,35 @@ class AudioEncoderIsacT final : public AudioEncoder {
   //  - 32000 Hz, 30 ms, 10000-56000 bps (if T has super-wideband support)
   //  - 48000 Hz, 30 ms, 10000-56000 bps (if T has super-wideband support)
   struct Config {
-    Config();
     bool IsOk() const;
 
-    LockedIsacBandwidthInfo* bwinfo;
+    LockedIsacBandwidthInfo* bwinfo = nullptr;
 
-    int payload_type;
-    int sample_rate_hz;
-    int frame_size_ms;
-    int bit_rate;  // Limit on the short-term average bit rate, in bits/s.
-    int max_payload_size_bytes;
-    int max_bit_rate;
+    int payload_type = 103;
+    int sample_rate_hz = 16000;
+    int frame_size_ms = 30;
+    int bit_rate = kDefaultBitRate;  // Limit on the short-term average bit
+                                     // rate, in bits/s.
+    int max_payload_size_bytes = -1;
+    int max_bit_rate = -1;
 
     // If true, the encoder will dynamically adjust frame size and bit rate;
     // the configured values are then merely the starting point.
-    bool adaptive_mode;
+    bool adaptive_mode = false;
 
     // In adaptive mode, prevent adaptive changes to the frame size. (Not used
     // in nonadaptive mode.)
-    bool enforce_frame_size;
+    bool enforce_frame_size = false;
   };
 
   explicit AudioEncoderIsacT(const Config& config);
+  explicit AudioEncoderIsacT(const CodecInst& codec_inst,
+                             LockedIsacBandwidthInfo* bwinfo);
   ~AudioEncoderIsacT() override;
 
+  size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   int NumChannels() const override;
-  size_t MaxEncodedBytes() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
@@ -62,26 +66,32 @@ class AudioEncoderIsacT final : public AudioEncoder {
                              const int16_t* audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
+  void Reset() override;
+  void SetMaxPayloadSize(int max_payload_size_bytes) override;
+  void SetMaxBitrate(int max_rate_bps) override;
 
  private:
   // This value is taken from STREAM_SIZE_MAX_60 for iSAC float (60 ms) and
   // STREAM_MAXW16_60MS for iSAC fix (60 ms).
   static const size_t kSufficientEncodeBufferSizeBytes = 400;
 
-  const int payload_type_;
-  typename T::instance_type* isac_state_;
-  LockedIsacBandwidthInfo* bwinfo_;
+  static const int kDefaultBitRate = 32000;
+
+  // Recreate the iSAC encoder instance with the given settings, and save them.
+  void RecreateEncoderInstance(const Config& config);
+
+  Config config_;
+  typename T::instance_type* isac_state_ = nullptr;
+  LockedIsacBandwidthInfo* bwinfo_ = nullptr;
 
   // Have we accepted input but not yet emitted it in a packet?
-  bool packet_in_progress_;
+  bool packet_in_progress_ = false;
 
   // Timestamp of the first input of the currently in-progress packet.
   uint32_t packet_timestamp_;
 
   // Timestamp of the previously encoded packet.
   uint32_t last_encoded_timestamp_;
-
-  const int target_bitrate_bps_;
 
   DISALLOW_COPY_AND_ASSIGN(AudioEncoderIsacT);
 };

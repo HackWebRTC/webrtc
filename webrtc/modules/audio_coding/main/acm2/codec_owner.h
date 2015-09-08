@@ -34,7 +34,7 @@ class CodecOwner {
                    ACMVADMode vad_mode,
                    int red_payload_type);
 
-  void SetEncoders(AudioEncoderMutable* external_speech_encoder,
+  void SetEncoders(AudioEncoder* external_speech_encoder,
                    int cng_payload_type,
                    ACMVADMode vad_mode,
                    int red_payload_type);
@@ -49,13 +49,14 @@ class CodecOwner {
 
   AudioEncoder* Encoder();
   const AudioEncoder* Encoder() const;
-  AudioEncoderMutable* SpeechEncoder();
-  const AudioEncoderMutable* SpeechEncoder() const;
 
  private:
+  AudioEncoder* SpeechEncoder();
+  const AudioEncoder* SpeechEncoder() const;
+
   // At most one of these is non-null:
-  rtc::scoped_ptr<AudioEncoderMutable> speech_encoder_;
-  AudioEncoderMutable* external_speech_encoder_;
+  rtc::scoped_ptr<AudioEncoder> speech_encoder_;
+  AudioEncoder* external_speech_encoder_;
 
   // If we've created an iSAC decoder because someone called GetIsacDecoder,
   // store it here.

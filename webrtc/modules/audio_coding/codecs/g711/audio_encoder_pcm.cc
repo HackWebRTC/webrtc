@@ -19,6 +19,7 @@
 namespace webrtc {
 
 namespace {
+
 int16_t NumSamplesPerFrame(int num_channels,
                            int frame_size_ms,
                            int sample_rate_hz) {
@@ -27,6 +28,16 @@ int16_t NumSamplesPerFrame(int num_channels,
       << "Frame size too large.";
   return static_cast<int16_t>(samples_per_frame);
 }
+
+template <typename T>
+typename T::Config CreateConfig(const CodecInst& codec_inst) {
+  typename T::Config config;
+  config.frame_size_ms = codec_inst.pacsize / 8;
+  config.num_channels = codec_inst.channels;
+  config.payload_type = codec_inst.pltype;
+  return config;
+}
+
 }  // namespace
 
 bool AudioEncoderPcm::Config::IsOk() const {
@@ -49,7 +60,10 @@ AudioEncoderPcm::AudioEncoderPcm(const Config& config, int sample_rate_hz)
   speech_buffer_.reserve(full_frame_samples_);
 }
 
-AudioEncoderPcm::~AudioEncoderPcm() {
+AudioEncoderPcm::~AudioEncoderPcm() = default;
+
+size_t AudioEncoderPcm::MaxEncodedBytes() const {
+  return full_frame_samples_ * BytesPerSample();
 }
 
 int AudioEncoderPcm::SampleRateHz() const {
@@ -58,10 +72,6 @@ int AudioEncoderPcm::SampleRateHz() const {
 
 int AudioEncoderPcm::NumChannels() const {
   return num_channels_;
-}
-
-size_t AudioEncoderPcm::MaxEncodedBytes() const {
-  return full_frame_samples_ * BytesPerSample();
 }
 
 size_t AudioEncoderPcm::Num10MsFramesInNextPacket() const {
@@ -102,6 +112,13 @@ AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
   return info;
 }
 
+void AudioEncoderPcm::Reset() {
+  speech_buffer_.clear();
+}
+
+AudioEncoderPcmA::AudioEncoderPcmA(const CodecInst& codec_inst)
+    : AudioEncoderPcmA(CreateConfig<AudioEncoderPcmA>(codec_inst)) {}
+
 size_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,
                                     size_t input_len,
                                     uint8_t* encoded) {
@@ -112,6 +129,9 @@ int AudioEncoderPcmA::BytesPerSample() const {
   return 1;
 }
 
+AudioEncoderPcmU::AudioEncoderPcmU(const CodecInst& codec_inst)
+    : AudioEncoderPcmU(CreateConfig<AudioEncoderPcmU>(codec_inst)) {}
+
 size_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
                                     size_t input_len,
                                     uint8_t* encoded) {
@@ -120,27 +140,6 @@ size_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
 
 int AudioEncoderPcmU::BytesPerSample() const {
   return 1;
-}
-
-namespace {
-template <typename T>
-typename T::Config CreateConfig(const CodecInst& codec_inst) {
-  typename T::Config config;
-  config.frame_size_ms = codec_inst.pacsize / 8;
-  config.num_channels = codec_inst.channels;
-  config.payload_type = codec_inst.pltype;
-  return config;
-}
-}  // namespace
-
-AudioEncoderMutablePcmU::AudioEncoderMutablePcmU(const CodecInst& codec_inst)
-    : AudioEncoderMutableImpl<AudioEncoderPcmU>(
-          CreateConfig<AudioEncoderPcmU>(codec_inst)) {
-}
-
-AudioEncoderMutablePcmA::AudioEncoderMutablePcmA(const CodecInst& codec_inst)
-    : AudioEncoderMutableImpl<AudioEncoderPcmA>(
-          CreateConfig<AudioEncoderPcmA>(codec_inst)) {
 }
 
 }  // namespace webrtc

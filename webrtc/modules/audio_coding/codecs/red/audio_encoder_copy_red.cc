@@ -22,23 +22,22 @@ AudioEncoderCopyRed::AudioEncoderCopyRed(const Config& config)
   CHECK(speech_encoder_) << "Speech encoder not provided.";
 }
 
-AudioEncoderCopyRed::~AudioEncoderCopyRed() {
+AudioEncoderCopyRed::~AudioEncoderCopyRed() = default;
+
+size_t AudioEncoderCopyRed::MaxEncodedBytes() const {
+  return 2 * speech_encoder_->MaxEncodedBytes();
 }
 
 int AudioEncoderCopyRed::SampleRateHz() const {
   return speech_encoder_->SampleRateHz();
 }
 
-int AudioEncoderCopyRed::RtpTimestampRateHz() const {
-  return speech_encoder_->RtpTimestampRateHz();
-}
-
 int AudioEncoderCopyRed::NumChannels() const {
   return speech_encoder_->NumChannels();
 }
 
-size_t AudioEncoderCopyRed::MaxEncodedBytes() const {
-  return 2 * speech_encoder_->MaxEncodedBytes();
+int AudioEncoderCopyRed::RtpTimestampRateHz() const {
+  return speech_encoder_->RtpTimestampRateHz();
 }
 
 size_t AudioEncoderCopyRed::Num10MsFramesInNextPacket() const {
@@ -51,16 +50,6 @@ size_t AudioEncoderCopyRed::Max10MsFramesInAPacket() const {
 
 int AudioEncoderCopyRed::GetTargetBitrate() const {
   return speech_encoder_->GetTargetBitrate();
-}
-
-void AudioEncoderCopyRed::SetTargetBitrate(int bits_per_second) {
-  speech_encoder_->SetTargetBitrate(bits_per_second);
-}
-
-void AudioEncoderCopyRed::SetProjectedPacketLossRate(double fraction) {
-  DCHECK_GE(fraction, 0.0);
-  DCHECK_LE(fraction, 1.0);
-  speech_encoder_->SetProjectedPacketLossRate(fraction);
 }
 
 AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeInternal(
@@ -100,6 +89,44 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeInternal(
     info.encoded_bytes += it->encoded_bytes;
   }
   return info;
+}
+
+void AudioEncoderCopyRed::Reset() {
+  speech_encoder_->Reset();
+  secondary_encoded_.Clear();
+  secondary_info_.encoded_bytes = 0;
+}
+
+bool AudioEncoderCopyRed::SetFec(bool enable) {
+  return speech_encoder_->SetFec(enable);
+}
+
+bool AudioEncoderCopyRed::SetDtx(bool enable) {
+  return speech_encoder_->SetDtx(enable);
+}
+
+bool AudioEncoderCopyRed::SetApplication(Application application) {
+  return speech_encoder_->SetApplication(application);
+}
+
+bool AudioEncoderCopyRed::SetMaxPlaybackRate(int frequency_hz) {
+  return speech_encoder_->SetMaxPlaybackRate(frequency_hz);
+}
+
+void AudioEncoderCopyRed::SetProjectedPacketLossRate(double fraction) {
+  speech_encoder_->SetProjectedPacketLossRate(fraction);
+}
+
+void AudioEncoderCopyRed::SetTargetBitrate(int bits_per_second) {
+  speech_encoder_->SetTargetBitrate(bits_per_second);
+}
+
+void AudioEncoderCopyRed::SetMaxBitrate(int max_bps) {
+  speech_encoder_->SetMaxBitrate(max_bps);
+}
+
+void AudioEncoderCopyRed::SetMaxPayloadSize(int max_payload_size_bytes) {
+  speech_encoder_->SetMaxPayloadSize(max_payload_size_bytes);
 }
 
 }  // namespace webrtc

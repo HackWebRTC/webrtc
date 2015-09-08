@@ -99,7 +99,7 @@ TEST_F(CodecOwnerTest, VerifyCngFrames) {
 }
 
 TEST_F(CodecOwnerTest, ExternalEncoder) {
-  MockAudioEncoderMutable external_encoder;
+  MockAudioEncoder external_encoder;
   codec_owner_.SetEncoders(&external_encoder, -1, VADNormal, -1);
   const int kSampleRateHz = 8000;
   const int kPacketSizeSamples = kSampleRateHz / 100;

@@ -47,7 +47,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   int RegisterSendCodec(const CodecInst& send_codec) override;
 
   void RegisterExternalSendCodec(
-      AudioEncoderMutable* external_speech_encoder) override;
+      AudioEncoder* external_speech_encoder) override;
 
   // Get current send codec.
   int SendCodec(CodecInst* current_codec) const override;

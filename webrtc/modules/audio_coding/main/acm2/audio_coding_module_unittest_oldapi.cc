@@ -1074,7 +1074,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
                                      frame_size_samples);
   }
 
-  bool RegisterExternalSendCodec(AudioEncoderMutable* external_speech_encoder,
+  bool RegisterExternalSendCodec(AudioEncoder* external_speech_encoder,
                                  int payload_type) {
     payload_type_ = payload_type;
     frame_size_rtp_timestamps_ =
@@ -1176,7 +1176,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
                                   codec_frame_size_rtp_timestamps));
   }
 
-  void SetUpTestExternalEncoder(AudioEncoderMutable* external_speech_encoder,
+  void SetUpTestExternalEncoder(AudioEncoder* external_speech_encoder,
                                 int payload_type) {
     ASSERT_TRUE(SetUpSender());
     ASSERT_TRUE(
@@ -1601,36 +1601,36 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   codec_inst.channels = 1;
   codec_inst.pacsize = 160;
   codec_inst.pltype = 0;
-  AudioEncoderMutablePcmU encoder(codec_inst);
-  MockAudioEncoderMutable mock_encoder;
+  AudioEncoderPcmU encoder(codec_inst);
+  MockAudioEncoder mock_encoder;
   // Set expectations on the mock encoder and also delegate the calls to the
   // real encoder.
+  EXPECT_CALL(mock_encoder, MaxEncodedBytes())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::MaxEncodedBytes));
+  EXPECT_CALL(mock_encoder, SampleRateHz())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::SampleRateHz));
+  EXPECT_CALL(mock_encoder, NumChannels())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::NumChannels));
+  EXPECT_CALL(mock_encoder, RtpTimestampRateHz())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::RtpTimestampRateHz));
   EXPECT_CALL(mock_encoder, Num10MsFramesInNextPacket())
       .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(
-          &encoder, &AudioEncoderMutablePcmU::Num10MsFramesInNextPacket));
+      .WillRepeatedly(
+          Invoke(&encoder, &AudioEncoderPcmU::Num10MsFramesInNextPacket));
   EXPECT_CALL(mock_encoder, Max10MsFramesInAPacket())
       .Times(AtLeast(1))
       .WillRepeatedly(
-          Invoke(&encoder, &AudioEncoderMutablePcmU::Max10MsFramesInAPacket));
-  EXPECT_CALL(mock_encoder, SampleRateHz())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&encoder, &AudioEncoderMutablePcmU::SampleRateHz));
-  EXPECT_CALL(mock_encoder, NumChannels())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&encoder, &AudioEncoderMutablePcmU::NumChannels));
-  EXPECT_CALL(mock_encoder, MaxEncodedBytes())
-      .Times(AtLeast(1))
-      .WillRepeatedly(
-          Invoke(&encoder, &AudioEncoderMutablePcmU::MaxEncodedBytes));
-  EXPECT_CALL(mock_encoder, EncodeInternal(_, _, _, _))
-      .Times(AtLeast(1))
-      .WillRepeatedly(
-          Invoke(&encoder, &AudioEncoderMutablePcmU::EncodeInternal));
+          Invoke(&encoder, &AudioEncoderPcmU::Max10MsFramesInAPacket));
   EXPECT_CALL(mock_encoder, GetTargetBitrate())
       .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(
-          &encoder, &AudioEncoderMutablePcmU::GetTargetBitrate));
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::GetTargetBitrate));
+  EXPECT_CALL(mock_encoder, EncodeInternal(_, _, _, _))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::EncodeInternal));
   ASSERT_NO_FATAL_FAILURE(
       SetUpTestExternalEncoder(&mock_encoder, codec_inst.pltype));
   Run("81a9d4c0bb72e9becc43aef124c981e9", "8f9b8750bd80fe26b6cbf6659b89f0f9",

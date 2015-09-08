@@ -21,20 +21,19 @@ namespace {
 
 const size_t kSampleRateHz = 16000;
 
+AudioEncoderG722::Config CreateConfig(const CodecInst& codec_inst) {
+  AudioEncoderG722::Config config;
+  config.num_channels = codec_inst.channels;
+  config.frame_size_ms = codec_inst.pacsize / 16;
+  config.payload_type = codec_inst.pltype;
+  return config;
+}
+
 }  // namespace
 
 bool AudioEncoderG722::Config::IsOk() const {
   return (frame_size_ms > 0) && (frame_size_ms % 10 == 0) &&
       (num_channels >= 1);
-}
-
-AudioEncoderG722::EncoderState::EncoderState() {
-  CHECK_EQ(0, WebRtcG722_CreateEncoder(&encoder));
-  CHECK_EQ(0, WebRtcG722_EncoderInit(encoder));
-}
-
-AudioEncoderG722::EncoderState::~EncoderState() {
-  CHECK_EQ(0, WebRtcG722_FreeEncoder(encoder));
 }
 
 AudioEncoderG722::AudioEncoderG722(const Config& config)
@@ -53,26 +52,30 @@ AudioEncoderG722::AudioEncoderG722(const Config& config)
     encoders_[i].speech_buffer.reset(new int16_t[samples_per_channel]);
     encoders_[i].encoded_buffer.SetSize(samples_per_channel / 2);
   }
+  Reset();
 }
 
-AudioEncoderG722::~AudioEncoderG722() {}
+AudioEncoderG722::AudioEncoderG722(const CodecInst& codec_inst)
+    : AudioEncoderG722(CreateConfig(codec_inst)) {}
+
+AudioEncoderG722::~AudioEncoderG722() = default;
+
+size_t AudioEncoderG722::MaxEncodedBytes() const {
+  return SamplesPerChannel() / 2 * num_channels_;
+}
 
 int AudioEncoderG722::SampleRateHz() const {
   return kSampleRateHz;
-}
-
-int AudioEncoderG722::RtpTimestampRateHz() const {
-  // The RTP timestamp rate for G.722 is 8000 Hz, even though it is a 16 kHz
-  // codec.
-  return kSampleRateHz / 2;
 }
 
 int AudioEncoderG722::NumChannels() const {
   return num_channels_;
 }
 
-size_t AudioEncoderG722::MaxEncodedBytes() const {
-  return SamplesPerChannel() / 2 * num_channels_;
+int AudioEncoderG722::RtpTimestampRateHz() const {
+  // The RTP timestamp rate for G.722 is 8000 Hz, even though it is a 16 kHz
+  // codec.
+  return kSampleRateHz / 2;
 }
 
 size_t AudioEncoderG722::Num10MsFramesInNextPacket() const {
@@ -116,7 +119,7 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
   for (int i = 0; i < num_channels_; ++i) {
     const size_t encoded = WebRtcG722_Encode(
         encoders_[i].encoder, encoders_[i].speech_buffer.get(),
-        samples_per_channel, encoders_[i].encoded_buffer.data<uint8_t>());
+        samples_per_channel, encoders_[i].encoded_buffer.data());
     CHECK_EQ(encoded, samples_per_channel / 2);
   }
 
@@ -140,22 +143,22 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
   return info;
 }
 
+void AudioEncoderG722::Reset() {
+  num_10ms_frames_buffered_ = 0;
+  for (int i = 0; i < num_channels_; ++i)
+    CHECK_EQ(0, WebRtcG722_EncoderInit(encoders_[i].encoder));
+}
+
+AudioEncoderG722::EncoderState::EncoderState() {
+  CHECK_EQ(0, WebRtcG722_CreateEncoder(&encoder));
+}
+
+AudioEncoderG722::EncoderState::~EncoderState() {
+  CHECK_EQ(0, WebRtcG722_FreeEncoder(encoder));
+}
+
 size_t AudioEncoderG722::SamplesPerChannel() const {
   return kSampleRateHz / 100 * num_10ms_frames_per_packet_;
-}
-
-namespace {
-AudioEncoderG722::Config CreateConfig(const CodecInst& codec_inst) {
-  AudioEncoderG722::Config config;
-  config.num_channels = codec_inst.channels;
-  config.frame_size_ms = codec_inst.pacsize / 16;
-  config.payload_type = codec_inst.pltype;
-  return config;
-}
-}  // namespace
-
-AudioEncoderMutableG722::AudioEncoderMutableG722(const CodecInst& codec_inst)
-    : AudioEncoderMutableImpl<AudioEncoderG722>(CreateConfig(codec_inst)) {
 }
 
 }  // namespace webrtc

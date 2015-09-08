@@ -22,6 +22,13 @@ namespace {
 
 const int kSampleRateHz = 8000;
 
+AudioEncoderIlbc::Config CreateConfig(const CodecInst& codec_inst) {
+  AudioEncoderIlbc::Config config;
+  config.frame_size_ms = codec_inst.pacsize / 8;
+  config.payload_type = codec_inst.pltype;
+  return config;
+}
+
 }  // namespace
 
 // static
@@ -35,20 +42,22 @@ bool AudioEncoderIlbc::Config::IsOk() const {
 }
 
 AudioEncoderIlbc::AudioEncoderIlbc(const Config& config)
-    : payload_type_(config.payload_type),
+    : config_(config),
       num_10ms_frames_per_packet_(
           static_cast<size_t>(config.frame_size_ms / 10)),
-      num_10ms_frames_buffered_(0) {
-  CHECK(config.IsOk());
-  CHECK_EQ(0, WebRtcIlbcfix_EncoderCreate(&encoder_));
-  const int encoder_frame_size_ms = config.frame_size_ms > 30
-                                        ? config.frame_size_ms / 2
-                                        : config.frame_size_ms;
-  CHECK_EQ(0, WebRtcIlbcfix_EncoderInit(encoder_, encoder_frame_size_ms));
+      encoder_(nullptr) {
+  Reset();
 }
+
+AudioEncoderIlbc::AudioEncoderIlbc(const CodecInst& codec_inst)
+    : AudioEncoderIlbc(CreateConfig(codec_inst)) {}
 
 AudioEncoderIlbc::~AudioEncoderIlbc() {
   CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
+}
+
+size_t AudioEncoderIlbc::MaxEncodedBytes() const {
+  return RequiredOutputSizeBytes();
 }
 
 int AudioEncoderIlbc::SampleRateHz() const {
@@ -57,10 +66,6 @@ int AudioEncoderIlbc::SampleRateHz() const {
 
 int AudioEncoderIlbc::NumChannels() const {
   return 1;
-}
-
-size_t AudioEncoderIlbc::MaxEncodedBytes() const {
-  return RequiredOutputSizeBytes();
 }
 
 size_t AudioEncoderIlbc::Num10MsFramesInNextPacket() const {
@@ -119,8 +124,20 @@ AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
   info.encoded_bytes = static_cast<size_t>(output_len);
   DCHECK_EQ(info.encoded_bytes, RequiredOutputSizeBytes());
   info.encoded_timestamp = first_timestamp_in_buffer_;
-  info.payload_type = payload_type_;
+  info.payload_type = config_.payload_type;
   return info;
+}
+
+void AudioEncoderIlbc::Reset() {
+  if (encoder_)
+    CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
+  CHECK(config_.IsOk());
+  CHECK_EQ(0, WebRtcIlbcfix_EncoderCreate(&encoder_));
+  const int encoder_frame_size_ms = config_.frame_size_ms > 30
+                                        ? config_.frame_size_ms / 2
+                                        : config_.frame_size_ms;
+  CHECK_EQ(0, WebRtcIlbcfix_EncoderInit(encoder_, encoder_frame_size_ms));
+  num_10ms_frames_buffered_ = 0;
 }
 
 size_t AudioEncoderIlbc::RequiredOutputSizeBytes() const {
@@ -131,19 +148,6 @@ size_t AudioEncoderIlbc::RequiredOutputSizeBytes() const {
     case 6:   return 2 * 50;
     default:  FATAL();
   }
-}
-
-namespace {
-AudioEncoderIlbc::Config CreateConfig(const CodecInst& codec_inst) {
-  AudioEncoderIlbc::Config config;
-  config.frame_size_ms = codec_inst.pacsize / 8;
-  config.payload_type = codec_inst.pltype;
-  return config;
-}
-}  // namespace
-
-AudioEncoderMutableIlbc::AudioEncoderMutableIlbc(const CodecInst& codec_inst)
-    : AudioEncoderMutableImpl<AudioEncoderIlbc>(CreateConfig(codec_inst)) {
 }
 
 }  // namespace webrtc

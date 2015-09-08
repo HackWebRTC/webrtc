@@ -19,17 +19,18 @@ namespace {
 
 const int kMaxFrameSizeMs = 60;
 
-}  // namespace
-
-AudioEncoderCng::Config::Config()
-    : num_channels(1),
-      payload_type(13),
-      speech_encoder(NULL),
-      vad_mode(Vad::kVadNormal),
-      sid_frame_interval_ms(100),
-      num_cng_coefficients(8),
-      vad(NULL) {
+rtc::scoped_ptr<CNG_enc_inst, CngInstDeleter> CreateCngInst(
+    int sample_rate_hz,
+    int sid_frame_interval_ms,
+    int num_cng_coefficients) {
+  rtc::scoped_ptr<CNG_enc_inst, CngInstDeleter> cng_inst;
+  CHECK_EQ(0, WebRtcCng_CreateEnc(cng_inst.accept()));
+  CHECK_EQ(0, WebRtcCng_InitEnc(cng_inst.get(), sample_rate_hz,
+                                sid_frame_interval_ms, num_cng_coefficients));
+  return cng_inst;
 }
+
+}  // namespace
 
 bool AudioEncoderCng::Config::IsOk() const {
   if (num_channels != 1)
@@ -51,43 +52,33 @@ AudioEncoderCng::AudioEncoderCng(const Config& config)
     : speech_encoder_(config.speech_encoder),
       cng_payload_type_(config.payload_type),
       num_cng_coefficients_(config.num_cng_coefficients),
+      sid_frame_interval_ms_(config.sid_frame_interval_ms),
       last_frame_active_(true),
-      vad_(new Vad(config.vad_mode)) {
-  if (config.vad) {
-    // Replace default Vad object with user-provided one.
-    vad_.reset(config.vad);
-  }
+      vad_(config.vad ? config.vad : new Vad(config.vad_mode)) {
   CHECK(config.IsOk()) << "Invalid configuration.";
-  CNG_enc_inst* cng_inst;
-  CHECK_EQ(WebRtcCng_CreateEnc(&cng_inst), 0) << "WebRtcCng_CreateEnc failed.";
-  cng_inst_.reset(cng_inst);  // Transfer ownership to scoped_ptr.
-  CHECK_EQ(WebRtcCng_InitEnc(cng_inst_.get(), SampleRateHz(),
-                             config.sid_frame_interval_ms,
-                             config.num_cng_coefficients),
-           0)
-      << "WebRtcCng_InitEnc failed";
+  cng_inst_ = CreateCngInst(SampleRateHz(), sid_frame_interval_ms_,
+                            num_cng_coefficients_);
 }
 
-AudioEncoderCng::~AudioEncoderCng() {
-}
-
-int AudioEncoderCng::SampleRateHz() const {
-  return speech_encoder_->SampleRateHz();
-}
-
-int AudioEncoderCng::RtpTimestampRateHz() const {
-  return speech_encoder_->RtpTimestampRateHz();
-}
-
-int AudioEncoderCng::NumChannels() const {
-  return 1;
-}
+AudioEncoderCng::~AudioEncoderCng() = default;
 
 size_t AudioEncoderCng::MaxEncodedBytes() const {
   const size_t max_encoded_bytes_active = speech_encoder_->MaxEncodedBytes();
   const size_t max_encoded_bytes_passive =
       rtc::CheckedDivExact(kMaxFrameSizeMs, 10) * SamplesPer10msFrame();
   return std::max(max_encoded_bytes_active, max_encoded_bytes_passive);
+}
+
+int AudioEncoderCng::SampleRateHz() const {
+  return speech_encoder_->SampleRateHz();
+}
+
+int AudioEncoderCng::NumChannels() const {
+  return 1;
+}
+
+int AudioEncoderCng::RtpTimestampRateHz() const {
+  return speech_encoder_->RtpTimestampRateHz();
 }
 
 size_t AudioEncoderCng::Num10MsFramesInNextPacket() const {
@@ -100,16 +91,6 @@ size_t AudioEncoderCng::Max10MsFramesInAPacket() const {
 
 int AudioEncoderCng::GetTargetBitrate() const {
   return speech_encoder_->GetTargetBitrate();
-}
-
-void AudioEncoderCng::SetTargetBitrate(int bits_per_second) {
-  speech_encoder_->SetTargetBitrate(bits_per_second);
-}
-
-void AudioEncoderCng::SetProjectedPacketLossRate(double fraction) {
-  DCHECK_GE(fraction, 0.0);
-  DCHECK_LE(fraction, 1.0);
-  speech_encoder_->SetProjectedPacketLossRate(fraction);
 }
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
@@ -181,6 +162,48 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
   rtp_timestamps_.erase(rtp_timestamps_.begin(),
                         rtp_timestamps_.begin() + frames_to_encode);
   return info;
+}
+
+void AudioEncoderCng::Reset() {
+  speech_encoder_->Reset();
+  speech_buffer_.clear();
+  rtp_timestamps_.clear();
+  last_frame_active_ = true;
+  vad_->Reset();
+  cng_inst_ = CreateCngInst(SampleRateHz(), sid_frame_interval_ms_,
+                            num_cng_coefficients_);
+}
+
+bool AudioEncoderCng::SetFec(bool enable) {
+  return speech_encoder_->SetFec(enable);
+}
+
+bool AudioEncoderCng::SetDtx(bool enable) {
+  return speech_encoder_->SetDtx(enable);
+}
+
+bool AudioEncoderCng::SetApplication(Application application) {
+  return speech_encoder_->SetApplication(application);
+}
+
+bool AudioEncoderCng::SetMaxPlaybackRate(int frequency_hz) {
+  return speech_encoder_->SetMaxPlaybackRate(frequency_hz);
+}
+
+void AudioEncoderCng::SetProjectedPacketLossRate(double fraction) {
+  speech_encoder_->SetProjectedPacketLossRate(fraction);
+}
+
+void AudioEncoderCng::SetTargetBitrate(int bits_per_second) {
+  speech_encoder_->SetTargetBitrate(bits_per_second);
+}
+
+void AudioEncoderCng::SetMaxBitrate(int max_bps) {
+  speech_encoder_->SetMaxBitrate(max_bps);
+}
+
+void AudioEncoderCng::SetMaxPayloadSize(int max_payload_size_bytes) {
+  speech_encoder_->SetMaxPayloadSize(max_payload_size_bytes);
 }
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(

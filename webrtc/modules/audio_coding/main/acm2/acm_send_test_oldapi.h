@@ -20,7 +20,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
-class AudioEncoderMutable;
+class AudioEncoder;
 
 namespace test {
 class InputAudioFile;
@@ -42,7 +42,7 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
                      int frame_size_samples);
 
   // Registers an external send codec. Returns true on success, false otherwise.
-  bool RegisterExternalCodec(AudioEncoderMutable* external_speech_encoder);
+  bool RegisterExternalCodec(AudioEncoder* external_speech_encoder);
 
   // Returns the next encoded packet. Returns NULL if the test duration was
   // exceeded. Ownership of the packet is handed over to the caller.

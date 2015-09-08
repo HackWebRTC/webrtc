@@ -94,41 +94,39 @@ rtc::scoped_ptr<AudioDecoder> CreateIsacDecoder(
 #endif
 }
 
-rtc::scoped_ptr<AudioEncoderMutable> CreateIsacEncoder(
+rtc::scoped_ptr<AudioEncoder> CreateIsacEncoder(
     const CodecInst& speech_inst,
     LockedIsacBandwidthInfo* bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
-  return rtc_make_scoped_ptr(
-      new AudioEncoderMutableIsacFix(speech_inst, bwinfo));
+  return rtc_make_scoped_ptr(new AudioEncoderIsacFix(speech_inst, bwinfo));
 #elif defined(WEBRTC_CODEC_ISAC)
-  return rtc_make_scoped_ptr(
-      new AudioEncoderMutableIsacFloat(speech_inst, bwinfo));
+  return rtc_make_scoped_ptr(new AudioEncoderIsac(speech_inst, bwinfo));
 #else
   FATAL() << "iSAC is not supported.";
   return rtc::scoped_ptr<AudioEncoderMutable>();
 #endif
 }
 
-rtc::scoped_ptr<AudioEncoderMutable> CreateSpeechEncoder(
+rtc::scoped_ptr<AudioEncoder> CreateSpeechEncoder(
     const CodecInst& speech_inst,
     LockedIsacBandwidthInfo* bwinfo) {
   if (IsIsac(speech_inst)) {
     return CreateIsacEncoder(speech_inst, bwinfo);
   } else if (IsOpus(speech_inst)) {
-    return rtc_make_scoped_ptr(new AudioEncoderMutableOpus(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderOpus(speech_inst));
   } else if (IsPcmU(speech_inst)) {
-    return rtc_make_scoped_ptr(new AudioEncoderMutablePcmU(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderPcmU(speech_inst));
   } else if (IsPcmA(speech_inst)) {
-    return rtc_make_scoped_ptr(new AudioEncoderMutablePcmA(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderPcmA(speech_inst));
   } else if (IsPcm16B(speech_inst)) {
-    return rtc_make_scoped_ptr(new AudioEncoderMutablePcm16B(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderPcm16B(speech_inst));
   } else if (IsIlbc(speech_inst)) {
-    return rtc_make_scoped_ptr(new AudioEncoderMutableIlbc(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderIlbc(speech_inst));
   } else if (IsG722(speech_inst)) {
-    return rtc_make_scoped_ptr(new AudioEncoderMutableG722(speech_inst));
+    return rtc_make_scoped_ptr(new AudioEncoderG722(speech_inst));
   } else {
     FATAL() << "Could not create encoder of type " << speech_inst.plname;
-    return rtc::scoped_ptr<AudioEncoderMutable>();
+    return rtc::scoped_ptr<AudioEncoder>();
   }
 }
 
@@ -187,7 +185,7 @@ void CodecOwner::SetEncoders(const CodecInst& speech_inst,
   ChangeCngAndRed(cng_payload_type, vad_mode, red_payload_type);
 }
 
-void CodecOwner::SetEncoders(AudioEncoderMutable* external_speech_encoder,
+void CodecOwner::SetEncoders(AudioEncoder* external_speech_encoder,
                              int cng_payload_type,
                              ACMVADMode vad_mode,
                              int red_payload_type) {
@@ -199,7 +197,7 @@ void CodecOwner::SetEncoders(AudioEncoderMutable* external_speech_encoder,
 void CodecOwner::ChangeCngAndRed(int cng_payload_type,
                                  ACMVADMode vad_mode,
                                  int red_payload_type) {
-  AudioEncoderMutable* speech_encoder = SpeechEncoder();
+  AudioEncoder* speech_encoder = SpeechEncoder();
   if (cng_payload_type != -1 || red_payload_type != -1) {
     // The RED and CNG encoders need to be in sync with the speech encoder, so
     // reset the latter to ensure its buffer is empty.
@@ -230,12 +228,12 @@ const AudioEncoder* CodecOwner::Encoder() const {
   return SpeechEncoder();
 }
 
-AudioEncoderMutable* CodecOwner::SpeechEncoder() {
-  const auto& const_this = *this;
-  return const_cast<AudioEncoderMutable*>(const_this.SpeechEncoder());
+AudioEncoder* CodecOwner::SpeechEncoder() {
+  const auto* const_this = this;
+  return const_cast<AudioEncoder*>(const_this->SpeechEncoder());
 }
 
-const AudioEncoderMutable* CodecOwner::SpeechEncoder() const {
+const AudioEncoder* CodecOwner::SpeechEncoder() const {
   DCHECK(!speech_encoder_ || !external_speech_encoder_);
   return external_speech_encoder_ ? external_speech_encoder_
                                   : speech_encoder_.get();

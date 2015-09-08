@@ -16,13 +16,6 @@
 
 namespace webrtc {
 
-bool AudioEncoderPcm16B::Config::IsOk() const {
-  if ((sample_rate_hz != 8000) && (sample_rate_hz != 16000) &&
-      (sample_rate_hz != 32000) && (sample_rate_hz != 48000))
-    return false;
-  return AudioEncoderPcm::Config::IsOk();
-}
-
 size_t AudioEncoderPcm16B::EncodeCall(const int16_t* audio,
                                       size_t input_len,
                                       uint8_t* encoded) {
@@ -45,9 +38,14 @@ AudioEncoderPcm16B::Config CreateConfig(const CodecInst& codec_inst) {
 }
 }  // namespace
 
-AudioEncoderMutablePcm16B::AudioEncoderMutablePcm16B(
-    const CodecInst& codec_inst)
-    : AudioEncoderMutableImpl<AudioEncoderPcm16B>(CreateConfig(codec_inst)) {
+bool AudioEncoderPcm16B::Config::IsOk() const {
+  if ((sample_rate_hz != 8000) && (sample_rate_hz != 16000) &&
+      (sample_rate_hz != 32000) && (sample_rate_hz != 48000))
+    return false;
+  return AudioEncoderPcm::Config::IsOk();
 }
+
+AudioEncoderPcm16B::AudioEncoderPcm16B(const CodecInst& codec_inst)
+    : AudioEncoderPcm16B(CreateConfig(codec_inst)) {}
 
 }  // namespace webrtc

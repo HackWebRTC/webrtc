@@ -13,29 +13,30 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder_mutable_impl.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 
 namespace webrtc {
 
+struct CodecInst;
+
 class AudioEncoderIlbc final : public AudioEncoder {
  public:
   struct Config {
-    Config() : payload_type(102), frame_size_ms(30) {}
     bool IsOk() const;
 
-    int payload_type;
-    int frame_size_ms;  // Valid values are 20, 30, 40, and 60 ms.
+    int payload_type = 102;
+    int frame_size_ms = 30;  // Valid values are 20, 30, 40, and 60 ms.
     // Note that frame size 40 ms produces encodings with two 20 ms frames in
     // them, and frame size 60 ms consists of two 30 ms frames.
   };
 
   explicit AudioEncoderIlbc(const Config& config);
+  explicit AudioEncoderIlbc(const CodecInst& codec_inst);
   ~AudioEncoderIlbc() override;
 
+  size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   int NumChannels() const override;
-  size_t MaxEncodedBytes() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
@@ -43,25 +44,18 @@ class AudioEncoderIlbc final : public AudioEncoder {
                              const int16_t* audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
+  void Reset() override;
 
  private:
   size_t RequiredOutputSizeBytes() const;
 
   static const size_t kMaxSamplesPerPacket = 480;
-  const int payload_type_;
+  const Config config_;
   const size_t num_10ms_frames_per_packet_;
   size_t num_10ms_frames_buffered_;
   uint32_t first_timestamp_in_buffer_;
   int16_t input_buffer_[kMaxSamplesPerPacket];
   IlbcEncoderInstance* encoder_;
-};
-
-struct CodecInst;
-
-class AudioEncoderMutableIlbc
-    : public AudioEncoderMutableImpl<AudioEncoderIlbc> {
- public:
-  explicit AudioEncoderMutableIlbc(const CodecInst& codec_inst);
 };
 
 }  // namespace webrtc

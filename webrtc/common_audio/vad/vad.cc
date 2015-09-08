@@ -14,11 +14,8 @@
 
 namespace webrtc {
 
-Vad::Vad(enum Aggressiveness mode) {
-  handle_ = WebRtcVad_Create();
-  CHECK(handle_);
-  CHECK_EQ(WebRtcVad_Init(handle_), 0);
-  CHECK_EQ(WebRtcVad_set_mode(handle_, mode), 0);
+Vad::Vad(enum Aggressiveness mode) : handle_(nullptr), aggressiveness_(mode) {
+  Reset();
 }
 
 Vad::~Vad() {
@@ -38,6 +35,15 @@ enum Vad::Activity Vad::VoiceActivity(const int16_t* audio,
       DCHECK(false) << "WebRtcVad_Process returned an error.";
       return kError;
   }
+}
+
+void Vad::Reset() {
+  if (handle_)
+    WebRtcVad_Free(handle_);
+  handle_ = WebRtcVad_Create();
+  CHECK(handle_);
+  CHECK_EQ(WebRtcVad_Init(handle_), 0);
+  CHECK_EQ(WebRtcVad_set_mode(handle_, aggressiveness_), 0);
 }
 
 }  // namespace webrtc

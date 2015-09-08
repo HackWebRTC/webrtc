@@ -13,10 +13,12 @@
 
 namespace webrtc {
 
-AudioEncoder::EncodedInfo::EncodedInfo() : EncodedInfoLeaf() {
-}
+AudioEncoder::EncodedInfo::EncodedInfo() = default;
 
-AudioEncoder::EncodedInfo::~EncodedInfo() {
+AudioEncoder::EncodedInfo::~EncodedInfo() = default;
+
+int AudioEncoder::RtpTimestampRateHz() const {
+  return SampleRateHz();
 }
 
 AudioEncoder::EncodedInfo AudioEncoder::Encode(uint32_t rtp_timestamp,
@@ -32,8 +34,28 @@ AudioEncoder::EncodedInfo AudioEncoder::Encode(uint32_t rtp_timestamp,
   return info;
 }
 
-int AudioEncoder::RtpTimestampRateHz() const {
-  return SampleRateHz();
+bool AudioEncoder::SetFec(bool enable) {
+  return !enable;
 }
+
+bool AudioEncoder::SetDtx(bool enable) {
+  return !enable;
+}
+
+bool AudioEncoder::SetApplication(Application application) {
+  return false;
+}
+
+bool AudioEncoder::SetMaxPlaybackRate(int frequency_hz) {
+  return true;
+}
+
+void AudioEncoder::SetProjectedPacketLossRate(double fraction) {}
+
+void AudioEncoder::SetTargetBitrate(int target_bps) {}
+
+void AudioEncoder::SetMaxBitrate(int max_bps) {}
+
+void AudioEncoder::SetMaxPayloadSize(int max_payload_size_bytes) {}
 
 }  // namespace webrtc

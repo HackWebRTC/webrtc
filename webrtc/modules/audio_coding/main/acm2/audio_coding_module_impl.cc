@@ -231,7 +231,7 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
 }
 
 void AudioCodingModuleImpl::RegisterExternalSendCodec(
-    AudioEncoderMutable* external_speech_encoder) {
+    AudioEncoder* external_speech_encoder) {
   CriticalSectionScoped lock(acm_crit_sect_.get());
   codec_manager_.RegisterEncoder(external_speech_encoder);
 }
@@ -485,8 +485,8 @@ int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
 int AudioCodingModuleImpl::SetPacketLossRate(int loss_rate) {
   CriticalSectionScoped lock(acm_crit_sect_.get());
   if (HaveValidEncoder("SetPacketLossRate")) {
-    codec_manager_.CurrentSpeechEncoder()->SetProjectedPacketLossRate(
-        loss_rate / 100.0);
+    codec_manager_.CurrentEncoder()->SetProjectedPacketLossRate(loss_rate /
+                                                                100.0);
   }
   return 0;
 }
@@ -741,7 +741,7 @@ int AudioCodingModuleImpl::SetISACMaxRate(int max_bit_per_sec) {
     return -1;
   }
 
-  codec_manager_.CurrentSpeechEncoder()->SetMaxRate(max_bit_per_sec);
+  codec_manager_.CurrentEncoder()->SetMaxBitrate(max_bit_per_sec);
   return 0;
 }
 
@@ -753,7 +753,7 @@ int AudioCodingModuleImpl::SetISACMaxPayloadSize(int max_size_bytes) {
     return -1;
   }
 
-  codec_manager_.CurrentSpeechEncoder()->SetMaxPayloadSize(max_size_bytes);
+  codec_manager_.CurrentEncoder()->SetMaxPayloadSize(max_size_bytes);
   return 0;
 }
 
@@ -762,19 +762,21 @@ int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
   if (!HaveValidEncoder("SetOpusApplication")) {
     return -1;
   }
-  AudioEncoderMutable::Application app;
+  if (!codec_manager_.CurrentEncoderIsOpus())
+    return -1;
+  AudioEncoder::Application app;
   switch (application) {
     case kVoip:
-      app = AudioEncoderMutable::kApplicationSpeech;
+      app = AudioEncoder::Application::kSpeech;
       break;
     case kAudio:
-      app = AudioEncoderMutable::kApplicationAudio;
+      app = AudioEncoder::Application::kAudio;
       break;
     default:
       FATAL();
       return 0;
   }
-  return codec_manager_.CurrentSpeechEncoder()->SetApplication(app) ? 0 : -1;
+  return codec_manager_.CurrentEncoder()->SetApplication(app) ? 0 : -1;
 }
 
 // Informs Opus encoder of the maximum playback rate the receiver will render.
@@ -783,9 +785,10 @@ int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
   if (!HaveValidEncoder("SetOpusMaxPlaybackRate")) {
     return -1;
   }
-  return codec_manager_.CurrentSpeechEncoder()->SetMaxPlaybackRate(frequency_hz)
-             ? 0
-             : -1;
+  if (!codec_manager_.CurrentEncoderIsOpus())
+    return -1;
+  return codec_manager_.CurrentEncoder()->SetMaxPlaybackRate(frequency_hz) ? 0
+                                                                           : -1;
 }
 
 int AudioCodingModuleImpl::EnableOpusDtx() {
@@ -793,7 +796,9 @@ int AudioCodingModuleImpl::EnableOpusDtx() {
   if (!HaveValidEncoder("EnableOpusDtx")) {
     return -1;
   }
-  return codec_manager_.CurrentSpeechEncoder()->SetDtx(true) ? 0 : -1;
+  if (!codec_manager_.CurrentEncoderIsOpus())
+    return -1;
+  return codec_manager_.CurrentEncoder()->SetDtx(true) ? 0 : -1;
 }
 
 int AudioCodingModuleImpl::DisableOpusDtx() {
@@ -801,7 +806,9 @@ int AudioCodingModuleImpl::DisableOpusDtx() {
   if (!HaveValidEncoder("DisableOpusDtx")) {
     return -1;
   }
-  return codec_manager_.CurrentSpeechEncoder()->SetDtx(false) ? 0 : -1;
+  if (!codec_manager_.CurrentEncoderIsOpus())
+    return -1;
+  return codec_manager_.CurrentEncoder()->SetDtx(false) ? 0 : -1;
 }
 
 int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {

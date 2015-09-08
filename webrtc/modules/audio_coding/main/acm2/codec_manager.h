@@ -22,7 +22,6 @@ namespace webrtc {
 
 class AudioDecoder;
 class AudioEncoder;
-class AudioEncoderMutable;
 
 namespace acm2 {
 
@@ -33,7 +32,7 @@ class CodecManager final {
 
   int RegisterEncoder(const CodecInst& send_codec);
 
-  void RegisterEncoder(AudioEncoderMutable* external_speech_encoder);
+  void RegisterEncoder(AudioEncoder* external_speech_encoder);
 
   int GetCodecInst(CodecInst* current_codec) const;
 
@@ -58,11 +57,10 @@ class CodecManager final {
 
   bool codec_fec_enabled() const { return codec_fec_enabled_; }
 
-  AudioEncoderMutable* CurrentSpeechEncoder() {
-    return codec_owner_.SpeechEncoder();
-  }
   AudioEncoder* CurrentEncoder() { return codec_owner_.Encoder(); }
   const AudioEncoder* CurrentEncoder() const { return codec_owner_.Encoder(); }
+
+  bool CurrentEncoderIsOpus() const { return encoder_is_opus_; }
 
  private:
   int CngPayloadType(int sample_rate_hz) const;
@@ -82,6 +80,7 @@ class CodecManager final {
   bool red_enabled_;
   bool codec_fec_enabled_;
   CodecOwner codec_owner_;
+  bool encoder_is_opus_;
 
   DISALLOW_COPY_AND_ASSIGN(CodecManager);
 };

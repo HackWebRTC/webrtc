@@ -13,7 +13,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder_mutable_impl.h"
 #include "webrtc/modules/audio_coding/codecs/isac/audio_encoder_isac_t.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
 
@@ -120,17 +119,6 @@ struct IsacFloat {
 
 using AudioEncoderIsac = AudioEncoderIsacT<IsacFloat>;
 using AudioDecoderIsac = AudioDecoderIsacT<IsacFloat>;
-
-struct CodecInst;
-
-class AudioEncoderMutableIsacFloat
-    : public AudioEncoderMutableImpl<AudioEncoderIsac> {
- public:
-  AudioEncoderMutableIsacFloat(const CodecInst& codec_inst,
-                               LockedIsacBandwidthInfo* bwinfo);
-  void SetMaxPayloadSize(int max_payload_size_bytes) override;
-  void SetMaxRate(int max_rate_bps) override;
-};
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_AUDIO_ENCODER_ISAC_H_
