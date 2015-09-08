@@ -52,6 +52,8 @@ class TransportFeedback : public RtcpPacket {
   // is relative the base time.
   std::vector<int64_t> GetReceiveDeltasUs() const;
 
+  uint32_t GetPacketSenderSsrc() const;
+  uint32_t GetMediaSourceSsrc() const;
   static const int kDeltaScaleFactor = 250;  // Convert to multiples of 0.25ms.
   static const uint8_t kFeedbackMessageType = 15;  // TODO(sprang): IANA reg?
   static const uint8_t kPayloadType = 205;         // RTPFB, see RFC4585.

@@ -21,6 +21,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
@@ -1208,6 +1209,31 @@ bool RTCPSender::AllVolatileFlagsConsumed() const {
       return false;
   }
   return true;
+}
+
+bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
+  CriticalSectionScoped lock(critical_section_transport_.get());
+  if (!cbTransport_)
+    return false;
+
+  class Sender : public rtcp::RtcpPacket::PacketReadyCallback {
+   public:
+    Sender(Transport* transport, int32_t id)
+        : transport_(transport), id_(id), send_failure_(false) {}
+
+    void OnPacketReady(uint8_t* data, size_t length) override {
+      if (transport_->SendRTCPPacket(id_, data, length) <= 0)
+        send_failure_ = true;
+    }
+
+    Transport* const transport_;
+    int32_t id_;
+    bool send_failure_;
+  } sender(cbTransport_, id_);
+
+  uint8_t buffer[IP_PACKET_SIZE];
+  return packet.BuildExternalBuffer(buffer, IP_PACKET_SIZE, &sender) &&
+         !sender.send_failure_;
 }
 
 }  // namespace webrtc

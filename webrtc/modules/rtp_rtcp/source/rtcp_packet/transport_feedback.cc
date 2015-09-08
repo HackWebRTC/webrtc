@@ -304,6 +304,13 @@ void TransportFeedback::WithMediaSourceSsrc(uint32_t ssrc) {
   media_source_ssrc_ = ssrc;
 }
 
+uint32_t TransportFeedback::GetPacketSenderSsrc() const {
+  return packet_sender_ssrc_;
+}
+
+uint32_t TransportFeedback::GetMediaSourceSsrc() const {
+  return media_source_ssrc_;
+}
 void TransportFeedback::WithBase(uint16_t base_sequence,
                                  int64_t ref_timestamp_us) {
   DCHECK_EQ(-1, base_seq_);

@@ -19,6 +19,7 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 namespace webrtc {
 
@@ -44,6 +45,9 @@ class PacketRouter : public PacedSender::Callback {
 
   void SetTransportWideSequenceNumber(uint16_t sequence_number);
   uint16_t AllocateSequenceNumber();
+
+  // Send transport feedback packet to send-side.
+  virtual bool SendFeedback(rtcp::TransportFeedback* packet);
 
  private:
   rtc::CriticalSection modules_lock_;

@@ -223,6 +223,7 @@
             'remote_bitrate_estimator/remote_bitrate_estimator_single_stream_unittest.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h',
+            'remote_bitrate_estimator/remote_estimator_proxy_unittest.cc',
             'remote_bitrate_estimator/send_time_history_unittest.cc',
             'remote_bitrate_estimator/test/bwe_test_framework_unittest.cc',
             'remote_bitrate_estimator/test/bwe_unittest.cc',

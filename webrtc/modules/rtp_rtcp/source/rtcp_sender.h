@@ -33,6 +33,9 @@ namespace webrtc {
 class ModuleRtpRtcpImpl;
 class RTCPReceiver;
 
+namespace rtcp {
+class TransportFeedback;
+}
 class NACKStringBuilder {
  public:
   NACKStringBuilder();
@@ -147,6 +150,7 @@ public:
  void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
  void SetTargetBitrate(unsigned int target_bitrate);
+ bool SendFeedbackPacket(const rtcp::TransportFeedback& packet);
 
 private:
  struct RtcpContext;

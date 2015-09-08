@@ -25,6 +25,9 @@ class ReceiveStatistics;
 class RemoteBitrateEstimator;
 class RtpReceiver;
 class Transport;
+namespace rtcp {
+class TransportFeedback;
+}
 
 class RtpRtcp : public Module {
  public:
@@ -542,6 +545,8 @@ class RtpRtcp : public Module {
         RtcpStatisticsCallback* callback) = 0;
     virtual RtcpStatisticsCallback*
         GetRtcpStatisticsCallback() = 0;
+    // BWE feedback packets.
+    virtual bool SendFeedbackPacket(const rtcp::TransportFeedback& packet) = 0;
 
     /**************************************************************************
     *
