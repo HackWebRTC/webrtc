@@ -292,8 +292,12 @@ def _CommonChecks(input_api, output_api):
   # WebRTC can't use the presubmit_canned_checks.PanProjectChecks function since
   # we need to have different license checks in talk/ and webrtc/ directories.
   # Instead, hand-picked checks are included below.
+
+  # Skip long-lines check for DEPS, GN and GYP files.
+  long_lines_sources = lambda x: input_api.FilterSourceFile(x,
+      black_list=(r'.+\.gyp$', r'.+\.gypi$', r'.+\.gn$', r'.+\.gni$', 'DEPS'))
   results.extend(input_api.canned_checks.CheckLongLines(
-      input_api, output_api, maxlen=80))
+      input_api, output_api, maxlen=80, source_file_filter=long_lines_sources))
   results.extend(input_api.canned_checks.CheckChangeHasNoTabs(
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
