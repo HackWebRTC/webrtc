@@ -2949,8 +2949,12 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
 
   // If hooked up to a "Call", forward packet there too.
   if (call_) {
-    call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
-        reinterpret_cast<const uint8_t*>(packet->data()), packet->size());
+    const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
+                                                packet_time.not_before);
+    call_->Receiver()->DeliverPacket(
+        webrtc::MediaType::AUDIO,
+        reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
+        webrtc_packet_time);
   }
 
   // Pick which channel to send this packet to. If this packet doesn't match
@@ -2990,8 +2994,12 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
 
   // If hooked up to a "Call", forward packet there too.
   if (call_) {
-    call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
-        reinterpret_cast<const uint8_t*>(packet->data()), packet->size());
+    const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
+                                                packet_time.not_before);
+    call_->Receiver()->DeliverPacket(
+        webrtc::MediaType::AUDIO,
+        reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
+        webrtc_packet_time);
   }
 
   // Sending channels need all RTCP packets with feedback information.

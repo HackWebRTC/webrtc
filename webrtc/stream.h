@@ -42,7 +42,9 @@ class Stream {
 class ReceiveStream : public Stream {
  public:
   // Called when a RTP packet is received.
-  virtual bool DeliverRtp(const uint8_t* packet, size_t length) = 0;
+  virtual bool DeliverRtp(const uint8_t* packet,
+                          size_t length,
+                          const PacketTime& packet_time) = 0;
 };
 
 // Common base class for send streams.

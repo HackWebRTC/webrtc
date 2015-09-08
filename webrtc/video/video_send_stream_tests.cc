@@ -957,8 +957,10 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
     }
 
    private:
-    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
-                                 size_t length) override {
+    DeliveryStatus DeliverPacket(MediaType media_type,
+                                 const uint8_t* packet,
+                                 size_t length,
+                                 const PacketTime& packet_time) override {
       EXPECT_TRUE(media_type == MediaType::ANY ||
                   media_type == MediaType::VIDEO);
       if (RtpHeaderParser::IsRtcp(packet, length))

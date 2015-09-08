@@ -290,8 +290,10 @@ bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return vie_channel_->ReceivedRTCPPacket(packet, length) == 0;
 }
 
-bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
-  return vie_channel_->ReceivedRTPPacket(packet, length, PacketTime()) == 0;
+bool VideoReceiveStream::DeliverRtp(const uint8_t* packet,
+                                    size_t length,
+                                    const PacketTime& packet_time) {
+  return vie_channel_->ReceivedRTPPacket(packet, length, packet_time) == 0;
 }
 
 void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {

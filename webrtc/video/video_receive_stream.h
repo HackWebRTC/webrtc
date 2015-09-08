@@ -49,7 +49,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void Stop() override;
   void SignalNetworkState(NetworkState state) override;
   bool DeliverRtcp(const uint8_t* packet, size_t length) override;
-  bool DeliverRtp(const uint8_t* packet, size_t length) override;
+  bool DeliverRtp(const uint8_t* packet,
+                  size_t length,
+                  const PacketTime& packet_time) override;
 
   // webrtc::VideoReceiveStream implementation.
   webrtc::VideoReceiveStream::Stats GetStats() const override;

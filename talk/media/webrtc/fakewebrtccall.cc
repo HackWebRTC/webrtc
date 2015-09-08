@@ -314,9 +314,11 @@ webrtc::PacketReceiver* FakeCall::Receiver() {
   return this;
 }
 
-FakeCall::DeliveryStatus FakeCall::DeliverPacket(webrtc::MediaType media_type,
-                                                 const uint8_t* packet,
-                                                 size_t length) {
+FakeCall::DeliveryStatus FakeCall::DeliverPacket(
+    webrtc::MediaType media_type,
+    const uint8_t* packet,
+    size_t length,
+    const webrtc::PacketTime& packet_time) {
   EXPECT_GE(length, 12u);
   uint32_t ssrc;
   if (!GetRtpSsrc(packet, length, &ssrc))

@@ -45,7 +45,9 @@ class PacketReceiver {
 
   virtual DeliveryStatus DeliverPacket(MediaType media_type,
                                        const uint8_t* packet,
-                                       size_t length) = 0;
+                                       size_t length,
+                                       const PacketTime& packet_time) = 0;
+
  protected:
   virtual ~PacketReceiver() {}
 };

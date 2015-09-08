@@ -1451,9 +1451,13 @@ bool WebRtcVideoChannel2::RequestIntraFrame() {
 void WebRtcVideoChannel2::OnPacketReceived(
     rtc::Buffer* packet,
     const rtc::PacketTime& packet_time) {
+  const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
+                                              packet_time.not_before);
   const webrtc::PacketReceiver::DeliveryStatus delivery_result =
-      call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO,
-          reinterpret_cast<const uint8_t*>(packet->data()), packet->size());
+      call_->Receiver()->DeliverPacket(
+          webrtc::MediaType::VIDEO,
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
+          webrtc_packet_time);
   switch (delivery_result) {
     case webrtc::PacketReceiver::DELIVERY_OK:
       return;
@@ -1493,9 +1497,10 @@ void WebRtcVideoChannel2::OnPacketReceived(
       break;
   }
 
-  if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO,
-          reinterpret_cast<const uint8_t*>(packet->data()), packet->size()) !=
-      webrtc::PacketReceiver::DELIVERY_OK) {
+  if (call_->Receiver()->DeliverPacket(
+          webrtc::MediaType::VIDEO,
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
+          webrtc_packet_time) != webrtc::PacketReceiver::DELIVERY_OK) {
     LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
     return;
   }
@@ -1504,9 +1509,12 @@ void WebRtcVideoChannel2::OnPacketReceived(
 void WebRtcVideoChannel2::OnRtcpReceived(
     rtc::Buffer* packet,
     const rtc::PacketTime& packet_time) {
-  if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO,
-          reinterpret_cast<const uint8_t*>(packet->data()), packet->size()) !=
-      webrtc::PacketReceiver::DELIVERY_OK) {
+  const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
+                                              packet_time.not_before);
+  if (call_->Receiver()->DeliverPacket(
+          webrtc::MediaType::VIDEO,
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
+          webrtc_packet_time) != webrtc::PacketReceiver::DELIVERY_OK) {
     LOG(LS_WARNING) << "Failed to deliver RTCP packet.";
   }
 }

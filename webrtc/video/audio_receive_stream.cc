@@ -87,7 +87,9 @@ bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return false;
 }
 
-bool AudioReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
+bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
+                                    size_t length,
+                                    const PacketTime& packet_time) {
   RTPHeader header;
 
   if (!rtp_header_parser_->Parse(packet, length, &header)) {
@@ -99,6 +101,8 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
   if (config_.combined_audio_video_bwe &&
       header.extension.hasAbsoluteSendTime) {
     int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
+    if (packet_time.timestamp >= 0)
+      arrival_time_ms = packet_time.timestamp;
     size_t payload_size = length - header.headerLength;
     remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
                                               header, false);

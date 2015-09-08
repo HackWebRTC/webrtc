@@ -61,7 +61,7 @@ void PacketInjectionTest::InjectIncorrectPacket(CodecType codec_type,
   Start();
   EXPECT_EQ(PacketReceiver::DELIVERY_PACKET_ERROR,
             receiver_call_->Receiver()->DeliverPacket(MediaType::VIDEO, packet,
-                                                      length));
+                                                      length, PacketTime()));
   Stop();
 
   DestroyStreams();

@@ -102,8 +102,10 @@ class LowRateStreamObserver : public test::DirectTransport,
 
   bool SendRtp(const uint8_t* data, size_t length) override;
 
-  DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
-                               size_t length) override;
+  DeliveryStatus DeliverPacket(MediaType media_type,
+                               const uint8_t* packet,
+                               size_t length,
+                               const PacketTime& packet_time) override;
 
   bool SendRtcp(const uint8_t* packet, size_t length) override;
 

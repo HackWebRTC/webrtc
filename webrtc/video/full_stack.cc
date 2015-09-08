@@ -109,8 +109,10 @@ class VideoAnalyzer : public PacketReceiver,
 
   virtual void SetReceiver(PacketReceiver* receiver) { receiver_ = receiver; }
 
-  DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
-                               size_t length) override {
+  DeliveryStatus DeliverPacket(MediaType media_type,
+                               const uint8_t* packet,
+                               size_t length,
+                               const PacketTime& packet_time) override {
     rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     RTPHeader header;
     parser->Parse(packet, length, &header);
@@ -120,7 +122,7 @@ class VideoAnalyzer : public PacketReceiver,
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
     }
 
-    return receiver_->DeliverPacket(media_type, packet, length);
+    return receiver_->DeliverPacket(media_type, packet, length, packet_time);
   }
 
   void IncomingCapturedFrame(const VideoFrame& video_frame) override {

@@ -58,7 +58,9 @@ class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
   bool DeliverRtcp(const uint8_t* packet, size_t length) override {
     return true;
   }
-  bool DeliverRtp(const uint8_t* packet, size_t length) override {
+  bool DeliverRtp(const uint8_t* packet,
+                  size_t length,
+                  const webrtc::PacketTime& packet_time) override {
     return true;
   }
 
@@ -136,7 +138,9 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
   bool DeliverRtcp(const uint8_t* packet, size_t length) override {
     return true;
   }
-  bool DeliverRtp(const uint8_t* packet, size_t length) override {
+  bool DeliverRtp(const uint8_t* packet,
+                  size_t length,
+                  const webrtc::PacketTime& packet_time) override {
     return true;
   }
 
@@ -187,7 +191,9 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   webrtc::PacketReceiver* Receiver() override;
 
   DeliveryStatus DeliverPacket(webrtc::MediaType media_type,
-                               const uint8_t* packet, size_t length) override;
+                               const uint8_t* packet,
+                               size_t length,
+                               const webrtc::PacketTime& packet_time) override;
 
   webrtc::Call::Stats GetStats() const override;
 

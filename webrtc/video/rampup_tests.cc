@@ -265,7 +265,10 @@ bool LowRateStreamObserver::SendRtp(const uint8_t* data, size_t length) {
 }
 
 PacketReceiver::DeliveryStatus LowRateStreamObserver::DeliverPacket(
-    MediaType media_type, const uint8_t* packet, size_t length) {
+    MediaType media_type,
+    const uint8_t* packet,
+    size_t length,
+    const PacketTime& packet_time) {
   rtc::CritScope lock(&crit_);
   RTPHeader header;
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));

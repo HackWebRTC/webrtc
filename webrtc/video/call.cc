@@ -69,8 +69,10 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   Stats GetStats() const override;
 
-  DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
-                               size_t length) override;
+  DeliveryStatus DeliverPacket(MediaType media_type,
+                               const uint8_t* packet,
+                               size_t length,
+                               const PacketTime& packet_time) override;
 
   void SetBitrateConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
@@ -79,8 +81,10 @@ class Call : public webrtc::Call, public PacketReceiver {
  private:
   DeliveryStatus DeliverRtcp(MediaType media_type, const uint8_t* packet,
                              size_t length);
-  DeliveryStatus DeliverRtp(MediaType media_type, const uint8_t* packet,
-                            size_t length);
+  DeliveryStatus DeliverRtp(MediaType media_type,
+                            const uint8_t* packet,
+                            size_t length,
+                            const PacketTime& packet_time);
 
   void SetBitrateControllerConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config);
@@ -475,7 +479,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
 
 PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                                                 const uint8_t* packet,
-                                                size_t length) {
+                                                size_t length,
+                                                const PacketTime& packet_time) {
   // Minimum RTP header size.
   if (length < 12)
     return DELIVERY_PACKET_ERROR;
@@ -486,27 +491,31 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
   if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
     auto it = audio_receive_ssrcs_.find(ssrc);
     if (it != audio_receive_ssrcs_.end()) {
-      return it->second->DeliverRtp(packet, length) ? DELIVERY_OK
-                                                    : DELIVERY_PACKET_ERROR;
+      return it->second->DeliverRtp(packet, length, packet_time)
+                 ? DELIVERY_OK
+                 : DELIVERY_PACKET_ERROR;
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     auto it = video_receive_ssrcs_.find(ssrc);
     if (it != video_receive_ssrcs_.end()) {
-      return it->second->DeliverRtp(packet, length) ? DELIVERY_OK
-                                                    : DELIVERY_PACKET_ERROR;
+      return it->second->DeliverRtp(packet, length, packet_time)
+                 ? DELIVERY_OK
+                 : DELIVERY_PACKET_ERROR;
     }
   }
   return DELIVERY_UNKNOWN_SSRC;
 }
 
-PacketReceiver::DeliveryStatus Call::DeliverPacket(MediaType media_type,
-                                                   const uint8_t* packet,
-                                                   size_t length) {
+PacketReceiver::DeliveryStatus Call::DeliverPacket(
+    MediaType media_type,
+    const uint8_t* packet,
+    size_t length,
+    const PacketTime& packet_time) {
   if (RtpHeaderParser::IsRtcp(packet, length))
     return DeliverRtcp(media_type, packet, length);
 
-  return DeliverRtp(media_type, packet, length);
+  return DeliverRtp(media_type, packet, length, packet_time);
 }
 
 }  // namespace internal
