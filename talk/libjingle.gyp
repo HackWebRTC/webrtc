@@ -689,8 +689,6 @@
         'session/media/rtcpmuxfilter.h',
         'session/media/srtpfilter.cc',
         'session/media/srtpfilter.h',
-        'session/media/typingmonitor.cc',
-        'session/media/typingmonitor.h',
         'session/media/voicechannel.h',
       ],
     },  # target libjingle_p2p

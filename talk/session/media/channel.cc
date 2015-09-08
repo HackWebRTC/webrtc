@@ -31,7 +31,6 @@
 #include "talk/media/base/rtputils.h"
 #include "webrtc/p2p/base/transportchannel.h"
 #include "talk/session/media/channelmanager.h"
-#include "talk/session/media/typingmonitor.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"
@@ -1382,26 +1381,6 @@ void VoiceChannel::StopAudioMonitor() {
 
 bool VoiceChannel::IsAudioMonitorRunning() const {
   return (audio_monitor_.get() != NULL);
-}
-
-void VoiceChannel::StartTypingMonitor(const TypingMonitorOptions& settings) {
-  typing_monitor_.reset(new TypingMonitor(this, worker_thread(), settings));
-  SignalAutoMuted.repeat(typing_monitor_->SignalMuted);
-}
-
-void VoiceChannel::StopTypingMonitor() {
-  typing_monitor_.reset();
-}
-
-bool VoiceChannel::IsTypingMonitorRunning() const {
-  return typing_monitor_;
-}
-
-bool VoiceChannel::MuteStream_w(uint32 ssrc, bool mute) {
-  bool ret = BaseChannel::MuteStream_w(ssrc, mute);
-  if (typing_monitor_ && mute)
-    typing_monitor_->OnChannelMuted();
-  return ret;
 }
 
 int VoiceChannel::GetInputLevel_w() {

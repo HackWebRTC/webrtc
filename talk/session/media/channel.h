@@ -53,8 +53,6 @@ namespace cricket {
 
 struct CryptoParams;
 class MediaContentDescription;
-struct TypingMonitorOptions;
-class TypingMonitor;
 struct ViewRequest;
 
 enum SinkType {
@@ -163,9 +161,6 @@ class BaseChannel
   // Used for latency measurements.
   sigslot::signal1<BaseChannel*> SignalFirstPacketReceived;
 
-  // Used to alert UI when the muted status changes, perhaps autonomously.
-  sigslot::repeater2<BaseChannel*, bool> SignalAutoMuted;
-
   // Made public for easier testing.
   void SetReadyToSend(TransportChannel* channel, bool ready);
 
@@ -232,7 +227,7 @@ class BaseChannel
 
   void EnableMedia_w();
   void DisableMedia_w();
-  virtual bool MuteStream_w(uint32 ssrc, bool mute);
+  bool MuteStream_w(uint32 ssrc, bool mute);
   bool IsStreamMuted_w(uint32 ssrc);
   void ChannelWritable_w();
   void ChannelNotWritable_w();
@@ -383,13 +378,6 @@ class VoiceChannel : public BaseChannel {
   bool IsAudioMonitorRunning() const;
   sigslot::signal2<VoiceChannel*, const AudioInfo&> SignalAudioMonitor;
 
-  void StartTypingMonitor(const TypingMonitorOptions& settings);
-  void StopTypingMonitor();
-  bool IsTypingMonitorRunning() const;
-
-  // Overrides BaseChannel::MuteStream_w.
-  virtual bool MuteStream_w(uint32 ssrc, bool mute);
-
   int GetInputLevel_w();
   int GetOutputLevel_w();
   void GetActiveStreams_w(AudioInfo::StreamList* actives);
@@ -439,7 +427,6 @@ class VoiceChannel : public BaseChannel {
   bool received_media_;
   rtc::scoped_ptr<VoiceMediaMonitor> media_monitor_;
   rtc::scoped_ptr<AudioMonitor> audio_monitor_;
-  rtc::scoped_ptr<TypingMonitor> typing_monitor_;
 
   // Last AudioSendParameters sent down to the media_channel() via
   // SetSendParameters.
