@@ -189,22 +189,22 @@ bool TransportChannelProxy::GetSslCipher(std::string* cipher) {
   return impl_->GetSslCipher(cipher);
 }
 
-bool TransportChannelProxy::GetLocalIdentity(
-    rtc::SSLIdentity** identity) const {
+rtc::scoped_refptr<rtc::RTCCertificate>
+TransportChannelProxy::GetLocalCertificate() const {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
-    return false;
+    return nullptr;
   }
-  return impl_->GetLocalIdentity(identity);
+  return impl_->GetLocalCertificate();
 }
 
-bool TransportChannelProxy::GetRemoteCertificate(
+bool TransportChannelProxy::GetRemoteSSLCertificate(
     rtc::SSLCertificate** cert) const {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
-  return impl_->GetRemoteCertificate(cert);
+  return impl_->GetRemoteSSLCertificate(cert);
 }
 
 bool TransportChannelProxy::ExportKeyingMaterial(const std::string& label,

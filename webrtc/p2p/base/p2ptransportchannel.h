@@ -55,33 +55,33 @@ class P2PTransportChannel : public TransportChannelImpl,
                       int component,
                       P2PTransport* transport,
                       PortAllocator *allocator);
-  virtual ~P2PTransportChannel();
+  ~P2PTransportChannel() override;
 
   // From TransportChannelImpl:
-  virtual Transport* GetTransport() { return transport_; }
-  virtual TransportChannelState GetState() const;
-  virtual void SetIceRole(IceRole role);
-  virtual IceRole GetIceRole() const { return ice_role_; }
-  virtual void SetIceTiebreaker(uint64 tiebreaker);
-  virtual void SetIceCredentials(const std::string& ice_ufrag,
-                                 const std::string& ice_pwd);
-  virtual void SetRemoteIceCredentials(const std::string& ice_ufrag,
-                                       const std::string& ice_pwd);
-  virtual void SetRemoteIceMode(IceMode mode);
-  virtual void Connect();
-  virtual void OnSignalingReady();
-  virtual void OnCandidate(const Candidate& candidate);
+  Transport* GetTransport() override { return transport_; }
+  TransportChannelState GetState() const override;
+  void SetIceRole(IceRole role) override;
+  IceRole GetIceRole() const override { return ice_role_; }
+  void SetIceTiebreaker(uint64 tiebreaker) override;
+  void SetIceCredentials(const std::string& ice_ufrag,
+                         const std::string& ice_pwd) override;
+  void SetRemoteIceCredentials(const std::string& ice_ufrag,
+                               const std::string& ice_pwd) override;
+  void SetRemoteIceMode(IceMode mode) override;
+  void Connect() override;
+  void OnSignalingReady() override;
+  void OnCandidate(const Candidate& candidate) override;
   // Sets the receiving timeout in milliseconds.
   // This also sets the check_receiving_delay proportionally.
-  virtual void SetReceivingTimeout(int receiving_timeout_ms);
+  void SetReceivingTimeout(int receiving_timeout_ms) override;
 
   // From TransportChannel:
-  virtual int SendPacket(const char *data, size_t len,
-                         const rtc::PacketOptions& options, int flags);
-  virtual int SetOption(rtc::Socket::Option opt, int value);
-  virtual bool GetOption(rtc::Socket::Option opt, int* value);
-  virtual int GetError() { return error_; }
-  virtual bool GetStats(std::vector<ConnectionInfo>* stats);
+  int SendPacket(const char *data, size_t len,
+                 const rtc::PacketOptions& options, int flags) override;
+  int SetOption(rtc::Socket::Option opt, int value) override;
+  bool GetOption(rtc::Socket::Option opt, int* value) override;
+  int GetError() override { return error_; }
+  bool GetStats(std::vector<ConnectionInfo>* stats) override;
 
   const Connection* best_connection() const { return best_connection_; }
   void set_incoming_only(bool value) { incoming_only_ = value; }
@@ -93,61 +93,60 @@ class P2PTransportChannel : public TransportChannelImpl,
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
 
   // DTLS methods.
-  virtual bool IsDtlsActive() const { return false; }
+  bool IsDtlsActive() const override { return false; }
 
   // Default implementation.
-  virtual bool GetSslRole(rtc::SSLRole* role) const {
+  bool GetSslRole(rtc::SSLRole* role) const override {
     return false;
   }
 
-  virtual bool SetSslRole(rtc::SSLRole role) {
+  bool SetSslRole(rtc::SSLRole role) override {
     return false;
   }
 
   // Set up the ciphers to use for DTLS-SRTP.
-  virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers) {
+  bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override {
     return false;
   }
 
   // Find out which DTLS-SRTP cipher was negotiated.
-  virtual bool GetSrtpCipher(std::string* cipher) {
+  bool GetSrtpCipher(std::string* cipher) override {
     return false;
   }
 
   // Find out which DTLS cipher was negotiated.
-  virtual bool GetSslCipher(std::string* cipher) {
+  bool GetSslCipher(std::string* cipher) override {
     return false;
   }
 
-  // Returns false because the channel is not encrypted by default.
-  virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const {
-    return false;
+  // Returns null because the channel is not encrypted by default.
+  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {
+    return nullptr;
   }
 
-  virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const {
+  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const override {
     return false;
   }
 
   // Allows key material to be extracted for external encryption.
-  virtual bool ExportKeyingMaterial(
-      const std::string& label,
-      const uint8* context,
-      size_t context_len,
-      bool use_context,
-      uint8* result,
-      size_t result_len) {
+  bool ExportKeyingMaterial(const std::string& label,
+                            const uint8* context,
+                            size_t context_len,
+                            bool use_context,
+                            uint8* result,
+                            size_t result_len) override {
     return false;
   }
 
-  virtual bool SetLocalIdentity(rtc::SSLIdentity* identity) {
+  bool SetLocalCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override {
     return false;
   }
 
   // Set DTLS Remote fingerprint. Must be after local identity set.
-  virtual bool SetRemoteFingerprint(
-    const std::string& digest_alg,
-    const uint8* digest,
-    size_t digest_len) {
+  bool SetRemoteFingerprint(const std::string& digest_alg,
+                            const uint8* digest,
+                            size_t digest_len) override {
     return false;
   }
 
@@ -213,7 +212,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   void OnNominated(Connection* conn);
 
-  virtual void OnMessage(rtc::Message *pmsg);
+  void OnMessage(rtc::Message *pmsg) override;
   void OnSort();
   void OnPing();
 

@@ -140,20 +140,20 @@ bool Transport::GetCertificate(
       Bind(&Transport::GetCertificate_w, this, certificate));
 }
 
-bool Transport::GetRemoteCertificate(rtc::SSLCertificate** cert) {
+bool Transport::GetRemoteSSLCertificate(rtc::SSLCertificate** cert) {
   // Channels can be deleted on the worker thread, so for safety the remote
   // certificate is acquired on the worker thread.
   return worker_thread_->Invoke<bool>(
-      Bind(&Transport::GetRemoteCertificate_w, this, cert));
+      Bind(&Transport::GetRemoteSSLCertificate_w, this, cert));
 }
 
-bool Transport::GetRemoteCertificate_w(rtc::SSLCertificate** cert) {
+bool Transport::GetRemoteSSLCertificate_w(rtc::SSLCertificate** cert) {
   ASSERT(worker_thread()->IsCurrent());
   if (channels_.empty())
     return false;
 
   ChannelMap::iterator iter = channels_.begin();
-  return iter->second->GetRemoteCertificate(cert);
+  return iter->second->GetRemoteSSLCertificate(cert);
 }
 
 void Transport::SetChannelReceivingTimeout(int timeout_ms) {

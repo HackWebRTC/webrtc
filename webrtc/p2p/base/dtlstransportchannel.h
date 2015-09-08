@@ -33,12 +33,12 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
   bool OnPacketReceived(const char* data, size_t size);
 
   // Implementations of StreamInterface
-  virtual rtc::StreamState GetState() const { return state_; }
-  virtual void Close() { state_ = rtc::SS_CLOSED; }
-  virtual rtc::StreamResult Read(void* buffer, size_t buffer_len,
-                                       size_t* read, int* error);
-  virtual rtc::StreamResult Write(const void* data, size_t data_len,
-                                        size_t* written, int* error);
+  rtc::StreamState GetState() const override { return state_; }
+  void Close() override { state_ = rtc::SS_CLOSED; }
+  rtc::StreamResult Read(void* buffer, size_t buffer_len,
+                         size_t* read, int* error) override;
+  rtc::StreamResult Write(const void* data, size_t data_len,
+                          size_t* written, int* error) override;
 
  private:
   TransportChannel* channel_;  // owned by DtlsTransportChannelWrapper
@@ -91,41 +91,42 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   // channel -- the TransportChannel we are wrapping
   DtlsTransportChannelWrapper(Transport* transport,
                               TransportChannelImpl* channel);
-  virtual ~DtlsTransportChannelWrapper();
+  ~DtlsTransportChannelWrapper() override;
 
-  virtual void SetIceRole(IceRole role) {
+  void SetIceRole(IceRole role) override {
     channel_->SetIceRole(role);
   }
-  virtual IceRole GetIceRole() const {
+  IceRole GetIceRole() const override {
     return channel_->GetIceRole();
   }
-  virtual bool SetLocalIdentity(rtc::SSLIdentity *identity);
-  virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const;
+  bool SetLocalCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override;
+  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override;
 
-  virtual bool SetRemoteFingerprint(const std::string& digest_alg,
-                                    const uint8* digest,
-                                    size_t digest_len);
-  virtual bool IsDtlsActive() const { return dtls_state_ != STATE_NONE; }
+  bool SetRemoteFingerprint(const std::string& digest_alg,
+                            const uint8* digest,
+                            size_t digest_len) override;
+  bool IsDtlsActive() const override { return dtls_state_ != STATE_NONE; }
 
   // Called to send a packet (via DTLS, if turned on).
-  virtual int SendPacket(const char* data, size_t size,
-                         const rtc::PacketOptions& options,
-                         int flags);
+  int SendPacket(const char* data, size_t size,
+                 const rtc::PacketOptions& options,
+                 int flags) override;
 
   // TransportChannel calls that we forward to the wrapped transport.
-  virtual int SetOption(rtc::Socket::Option opt, int value) {
+  int SetOption(rtc::Socket::Option opt, int value) override {
     return channel_->SetOption(opt, value);
   }
-  virtual bool GetOption(rtc::Socket::Option opt, int* value) {
+  bool GetOption(rtc::Socket::Option opt, int* value) override {
     return channel_->GetOption(opt, value);
   }
-  virtual int GetError() {
+  int GetError() override {
     return channel_->GetError();
   }
-  virtual bool GetStats(ConnectionInfos* infos) {
+  bool GetStats(ConnectionInfos* infos) override {
     return channel_->GetStats(infos);
   }
-  virtual const std::string SessionId() const {
+  const std::string SessionId() const override {
     return channel_->SessionId();
   }
 
@@ -134,31 +135,31 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   // Set up the ciphers to use for DTLS-SRTP. If this method is not called
   // before DTLS starts, or |ciphers| is empty, SRTP keys won't be negotiated.
   // This method should be called before SetupDtls.
-  virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers);
+  bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override;
 
   // Find out which DTLS-SRTP cipher was negotiated
-  virtual bool GetSrtpCipher(std::string* cipher);
+  bool GetSrtpCipher(std::string* cipher) override;
 
-  virtual bool GetSslRole(rtc::SSLRole* role) const;
-  virtual bool SetSslRole(rtc::SSLRole role);
+  bool GetSslRole(rtc::SSLRole* role) const override;
+  bool SetSslRole(rtc::SSLRole role) override;
 
   // Find out which DTLS cipher was negotiated
-  virtual bool GetSslCipher(std::string* cipher);
+  bool GetSslCipher(std::string* cipher) override;
 
   // Once DTLS has been established, this method retrieves the certificate in
   // use by the remote peer, for use in external identity verification.
-  virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const;
+  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const override;
 
   // Once DTLS has established (i.e., this channel is writable), this method
   // extracts the keys negotiated during the DTLS handshake, for use in external
   // encryption. DTLS-SRTP uses this to extract the needed SRTP keys.
   // See the SSLStreamAdapter documentation for info on the specific parameters.
-  virtual bool ExportKeyingMaterial(const std::string& label,
-                                    const uint8* context,
-                                    size_t context_len,
-                                    bool use_context,
-                                    uint8* result,
-                                    size_t result_len) {
+  bool ExportKeyingMaterial(const std::string& label,
+                            const uint8* context,
+                            size_t context_len,
+                            bool use_context,
+                            uint8* result,
+                            size_t result_len) override {
     return (dtls_.get()) ? dtls_->ExportKeyingMaterial(label, context,
                                                        context_len,
                                                        use_context,
@@ -167,34 +168,34 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   }
 
   // TransportChannelImpl calls.
-  virtual Transport* GetTransport() {
+  Transport* GetTransport() override {
     return transport_;
   }
 
-  virtual TransportChannelState GetState() const {
+  TransportChannelState GetState() const override {
     return channel_->GetState();
   }
-  virtual void SetIceTiebreaker(uint64 tiebreaker) {
+  void SetIceTiebreaker(uint64 tiebreaker) override {
     channel_->SetIceTiebreaker(tiebreaker);
   }
-  virtual void SetIceCredentials(const std::string& ice_ufrag,
-                                 const std::string& ice_pwd) {
+  void SetIceCredentials(const std::string& ice_ufrag,
+                         const std::string& ice_pwd) override {
     channel_->SetIceCredentials(ice_ufrag, ice_pwd);
   }
-  virtual void SetRemoteIceCredentials(const std::string& ice_ufrag,
-                                       const std::string& ice_pwd) {
+  void SetRemoteIceCredentials(const std::string& ice_ufrag,
+                               const std::string& ice_pwd) override {
     channel_->SetRemoteIceCredentials(ice_ufrag, ice_pwd);
   }
-  virtual void SetRemoteIceMode(IceMode mode) {
+  void SetRemoteIceMode(IceMode mode) override {
     channel_->SetRemoteIceMode(mode);
   }
 
-  virtual void Connect();
+  void Connect() override;
 
-  virtual void OnSignalingReady() {
+  void OnSignalingReady() override {
     channel_->OnSignalingReady();
   }
-  virtual void OnCandidate(const Candidate& candidate) {
+  void OnCandidate(const Candidate& candidate) override {
     channel_->OnCandidate(candidate);
   }
 
@@ -230,7 +231,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   StreamInterfaceChannel* downward_;  // Wrapper for channel_, owned by dtls_.
   std::vector<std::string> srtp_ciphers_;  // SRTP ciphers to use with DTLS.
   State dtls_state_;
-  rtc::SSLIdentity* local_identity_;
+  rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   rtc::SSLRole ssl_role_;
   rtc::SSLProtocolVersion ssl_max_version_;
   rtc::Buffer remote_fingerprint_value_;

@@ -92,9 +92,7 @@ class DtlsTransport : public Base {
       certificate_ = nullptr;
     }
 
-    // TODO(hbos): SetLocalCertificate
-    if (!channel->SetLocalIdentity(
-        certificate_ ? certificate_->identity() : nullptr)) {
+    if (!channel->SetLocalCertificate(certificate_)) {
       return BadTransportDescription("Failed to set local identity.",
                                      error_desc);
     }

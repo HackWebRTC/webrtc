@@ -673,7 +673,7 @@ class StatsCollectorTest : public testing::Test {
         static_cast<cricket::FakeTransportChannel*>(
             transport->CreateChannel(channel_stats.component));
     EXPECT_FALSE(channel == NULL);
-    channel->SetRemoteCertificate(remote_cert_copy.get());
+    channel->SetRemoteSSLCertificate(remote_cert_copy.get());
 
     // Configure MockWebRtcSession
     EXPECT_CALL(session_, GetTransport(transport_stats.content_name))

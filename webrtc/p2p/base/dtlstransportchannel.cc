@@ -95,7 +95,6 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       channel_(channel),
       downward_(NULL),
       dtls_state_(STATE_NONE),
-      local_identity_(NULL),
       ssl_role_(rtc::SSL_CLIENT),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10) {
   channel_->SignalReadableState.connect(this,
@@ -133,10 +132,10 @@ void DtlsTransportChannelWrapper::Connect() {
   channel_->Connect();
 }
 
-bool DtlsTransportChannelWrapper::SetLocalIdentity(
-    rtc::SSLIdentity* identity) {
+bool DtlsTransportChannelWrapper::SetLocalCertificate(
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
   if (dtls_state_ != STATE_NONE) {
-    if (identity == local_identity_) {
+    if (certificate == local_certificate_) {
       // This may happen during renegotiation.
       LOG_J(LS_INFO, this) << "Ignoring identical DTLS identity";
       return true;
@@ -146,8 +145,8 @@ bool DtlsTransportChannelWrapper::SetLocalIdentity(
     }
   }
 
-  if (identity) {
-    local_identity_ = identity;
+  if (certificate) {
+    local_certificate_ = certificate;
     dtls_state_ = STATE_OFFERED;
   } else {
     LOG_J(LS_INFO, this) << "NULL DTLS identity supplied. Not doing DTLS";
@@ -156,13 +155,9 @@ bool DtlsTransportChannelWrapper::SetLocalIdentity(
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetLocalIdentity(
-    rtc::SSLIdentity** identity) const {
-  if (!local_identity_)
-    return false;
-
-  *identity = local_identity_->GetReference();
-  return true;
+rtc::scoped_refptr<rtc::RTCCertificate>
+DtlsTransportChannelWrapper::GetLocalCertificate() const {
+  return local_certificate_;
 }
 
 bool DtlsTransportChannelWrapper::SetSslMaxProtocolVersion(
@@ -245,7 +240,7 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetRemoteCertificate(
+bool DtlsTransportChannelWrapper::GetRemoteSSLCertificate(
     rtc::SSLCertificate** cert) const {
   if (!dtls_)
     return false;
@@ -265,7 +260,7 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
 
   downward_ = downward;
 
-  dtls_->SetIdentity(local_identity_->GetReference());
+  dtls_->SetIdentity(local_certificate_->identity()->GetReference());
   dtls_->SetMode(rtc::SSL_MODE_DTLS);
   dtls_->SetMaxProtocolVersion(ssl_max_version_);
   dtls_->SetServerRole(ssl_role_);

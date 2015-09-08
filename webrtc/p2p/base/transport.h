@@ -208,7 +208,7 @@ class Transport : public rtc::MessageHandler,
   bool GetCertificate(rtc::scoped_refptr<rtc::RTCCertificate>* certificate);
 
   // Get a copy of the remote certificate in use by the specified channel.
-  bool GetRemoteCertificate(rtc::SSLCertificate** cert);
+  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert);
 
   // Create, destroy, and lookup the channels of this type by their components.
   TransportChannelImpl* CreateChannel(int component);
@@ -437,7 +437,7 @@ class Transport : public rtc::MessageHandler,
                                        ContentAction action,
                                        std::string* error_desc);
   bool GetStats_w(TransportStats* infos);
-  bool GetRemoteCertificate_w(rtc::SSLCertificate** cert);
+  bool GetRemoteSSLCertificate_w(rtc::SSLCertificate** cert);
 
   void SetChannelReceivingTimeout_w(int timeout_ms);
 

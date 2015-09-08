@@ -842,10 +842,10 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
   ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
   ASSERT_FALSE(
-      client1_.transport()->GetRemoteCertificate(remote_cert1.accept()));
+      client1_.transport()->GetRemoteSSLCertificate(remote_cert1.accept()));
   ASSERT_FALSE(remote_cert1 != NULL);
   ASSERT_FALSE(
-      client2_.transport()->GetRemoteCertificate(remote_cert2.accept()));
+      client2_.transport()->GetRemoteSSLCertificate(remote_cert2.accept()));
   ASSERT_FALSE(remote_cert2 != NULL);
 }
 
@@ -868,11 +868,11 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
 
   // Each side's remote certificate is the other side's local certificate.
   ASSERT_TRUE(
-      client1_.transport()->GetRemoteCertificate(remote_cert1.accept()));
+      client1_.transport()->GetRemoteSSLCertificate(remote_cert1.accept()));
   ASSERT_EQ(remote_cert1->ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
   ASSERT_TRUE(
-      client2_.transport()->GetRemoteCertificate(remote_cert2.accept()));
+      client2_.transport()->GetRemoteSSLCertificate(remote_cert2.accept()));
   ASSERT_EQ(remote_cert2->ToPEMString(),
             certificate1->ssl_certificate().ToPEMString());
 }
