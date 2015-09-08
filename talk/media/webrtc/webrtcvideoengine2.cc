@@ -309,13 +309,25 @@ bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
   return CodecNamesEq(codec_name, kH264CodecName);
 }
 
+// The selected thresholds for QVGA and VGA corresponded to a QP around 10.
+// The change in QP declined above the selected bitrates.
+static int GetMaxDefaultVideoBitrateKbps(int width, int height) {
+  if (width * height <= 320 * 240) {
+    return 600;
+  } else if (width * height <= 640 * 480) {
+    return 1700;
+  } else if (width * height <= 960 * 540) {
+    return 2000;
+  } else {
+    return 2500;
+  }
+}
 }  // namespace
 
 // Constants defined in talk/media/webrtc/constants.h
 // TODO(pbos): Move these to a separate constants.cc file.
 const int kMinVideoBitrate = 30;
 const int kStartVideoBitrate = 300;
-const int kMaxVideoBitrate = 2000;
 
 const int kVideoMtu = 1200;
 const int kVideoRtpBufferSize = 65536;
@@ -449,8 +461,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoStreams(
   }
 
   // For unset max bitrates set default bitrate for non-simulcast.
-  if (max_bitrate_bps <= 0)
-    max_bitrate_bps = kMaxVideoBitrate * 1000;
+  if (max_bitrate_bps <= 0) {
+    max_bitrate_bps =
+        GetMaxDefaultVideoBitrateKbps(codec.width, codec.height) * 1000;
+  }
 
   webrtc::VideoStream stream;
   stream.width = codec.width;
