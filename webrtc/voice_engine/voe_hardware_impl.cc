@@ -357,21 +357,19 @@ int VoEHardwareImpl::SetRecordingDevice(int index,
 
   // Restore recording if it was enabled already when calling this function.
   if (isRecording) {
-    if (!_shared->ext_recording()) {
-      WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                   "SetRecordingDevice() recording is now being restored...");
-      if (_shared->audio_device()->InitRecording() != 0) {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_shared->instance_id(), -1),
-                     "SetRecordingDevice() failed to initialize recording");
-        return -1;
-      }
-      if (_shared->audio_device()->StartRecording() != 0) {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_shared->instance_id(), -1),
-                     "SetRecordingDevice() failed to start recording");
-        return -1;
-      }
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "SetRecordingDevice() recording is now being restored...");
+    if (_shared->audio_device()->InitRecording() != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVoice,
+                   VoEId(_shared->instance_id(), -1),
+                   "SetRecordingDevice() failed to initialize recording");
+      return -1;
+    }
+    if (_shared->audio_device()->StartRecording() != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVoice,
+                   VoEId(_shared->instance_id(), -1),
+                   "SetRecordingDevice() failed to start recording");
+      return -1;
     }
   }
 
@@ -445,21 +443,19 @@ int VoEHardwareImpl::SetPlayoutDevice(int index) {
 
   // Restore playout if it was enabled already when calling this function.
   if (isPlaying) {
-    if (!_shared->ext_playout()) {
-      WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                   "SetPlayoutDevice() playout is now being restored...");
-      if (_shared->audio_device()->InitPlayout() != 0) {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_shared->instance_id(), -1),
-                     "SetPlayoutDevice() failed to initialize playout");
-        return -1;
-      }
-      if (_shared->audio_device()->StartPlayout() != 0) {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_shared->instance_id(), -1),
-                     "SetPlayoutDevice() failed to start playout");
-        return -1;
-      }
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "SetPlayoutDevice() playout is now being restored...");
+    if (_shared->audio_device()->InitPlayout() != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVoice,
+                   VoEId(_shared->instance_id(), -1),
+                   "SetPlayoutDevice() failed to initialize playout");
+      return -1;
+    }
+    if (_shared->audio_device()->StartPlayout() != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVoice,
+                   VoEId(_shared->instance_id(), -1),
+                   "SetPlayoutDevice() failed to start playout");
+      return -1;
     }
   }
 

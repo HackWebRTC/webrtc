@@ -642,10 +642,7 @@ int32_t VoEBaseImpl::AddExternalTransportBuild(char* str) const {
 int VoEBaseImpl::LastError() { return (shared_->statistics().LastError()); }
 
 int32_t VoEBaseImpl::StartPlayout() {
-  if (shared_->audio_device()->Playing()) {
-    return 0;
-  }
-  if (!shared_->ext_playout()) {
+  if (!shared_->audio_device()->Playing()) {
     if (shared_->audio_device()->InitPlayout() != 0) {
       LOG_F(LS_ERROR) << "Failed to initialize playout";
       return -1;
@@ -671,10 +668,7 @@ int32_t VoEBaseImpl::StopPlayout() {
 }
 
 int32_t VoEBaseImpl::StartSend() {
-  if (shared_->audio_device()->Recording()) {
-    return 0;
-  }
-  if (!shared_->ext_recording()) {
+  if (!shared_->audio_device()->Recording()) {
     if (shared_->audio_device()->InitRecording() != 0) {
       LOG_F(LS_ERROR) << "Failed to initialize recording";
       return -1;
@@ -684,7 +678,6 @@ int32_t VoEBaseImpl::StartSend() {
       return -1;
     }
   }
-
   return 0;
 }
 
