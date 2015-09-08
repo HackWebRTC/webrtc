@@ -1876,7 +1876,7 @@ TEST_F(VideoSendStreamTest, VP9NoFlexMode) {
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, VP9FlexMode) {
+TEST_F(VideoSendStreamTest, DISABLED_VP9FlexMode) {
   class FlexibleMode : public VP9HeaderObeserver {
     void ModifyConfigsHook(
         VideoSendStream::Config* send_config,
