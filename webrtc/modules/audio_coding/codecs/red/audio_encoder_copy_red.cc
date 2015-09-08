@@ -88,8 +88,7 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeInternal(
       DCHECK_EQ(info.redundant.size(), 2u);
     }
     // Save primary to secondary.
-    secondary_encoded_.SetSize(info.encoded_bytes);
-    memcpy(secondary_encoded_.data(), encoded, info.encoded_bytes);
+    secondary_encoded_.SetData(encoded, info.encoded_bytes);
     secondary_info_ = info;
     DCHECK_EQ(info.speech, info.redundant[0].speech);
   }
