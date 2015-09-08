@@ -7,24 +7,42 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'conditions': [
+    ['enable_protobuf==1', {
+      'targets': [
+        {
+          'target_name': 'rtc_event_log_source',
+          'type': 'static_library',
+          'dependencies': [
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log_proto',
+          ],
+          'sources': [
+            'tools/rtc_event_log_source.h',
+            'tools/rtc_event_log_source.cc',
+          ],
+        },
+        {
+          'target_name': 'neteq_rtpplay',
+          'type': 'executable',
+          'dependencies': [
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+            'rtc_event_log_source',
+            'neteq',
+            'neteq_unittest_tools',
+            'pcm16b',
+          ],
+          'sources': [
+            'tools/neteq_rtpplay.cc',
+          ],
+          'defines': [
+          ],
+        }, # neteq_rtpplay
+      ],
+    }],
+  ],
   'targets': [
-    {
-      'target_name': 'neteq_rtpplay',
-      'type': 'executable',
-      'dependencies': [
-        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        '<(webrtc_root)/test/test.gyp:test_support_main',
-        'neteq',
-        'neteq_unittest_tools',
-        'pcm16b',
-      ],
-      'sources': [
-        'tools/neteq_rtpplay.cc',
-      ],
-      'defines': [
-      ],
-    }, # neteq_rtpplay
-
     {
       'target_name': 'RTPencode',
       'type': 'executable',
