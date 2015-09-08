@@ -116,6 +116,7 @@
 /third_party/libyuv
 /third_party/llvm
 /third_party/llvm-build
+/third_party/lss
 /third_party/mockito
 /third_party/modp_b64
 /third_party/nss
@@ -123,6 +124,7 @@
 /third_party/ocmock
 /third_party/openmax_dl
 /third_party/opus
+/third_party/proguard
 /third_party/protobuf
 /third_party/requests
 /third_party/robolectric
