@@ -32,6 +32,8 @@
         'fake_network_pipe.h',
         'frame_generator_capturer.cc',
         'frame_generator_capturer.h',
+        'layer_filtering_transport.cc',
+        'layer_filtering_transport.h',
         'mock_transport.h',
         'null_transport.cc',
         'null_transport.h',

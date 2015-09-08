@@ -258,6 +258,7 @@ TEST_F(RtpPacketizerVp9Test, TestLayerInfoWithNonFlexibleMode) {
   const size_t kPacketSize = 25;
 
   expected_.gof_idx = 3;
+  expected_.num_spatial_layers = 3;
   expected_.spatial_idx = 2;
   expected_.inter_layer_predicted = true;  // D
   expected_.tl0_pic_idx = 117;
@@ -281,6 +282,7 @@ TEST_F(RtpPacketizerVp9Test, TestLayerInfoWithFlexibleMode) {
   expected_.flexible_mode = true;
   expected_.temporal_idx = 3;
   expected_.temporal_up_switch = true;  // U
+  expected_.num_spatial_layers = 3;
   expected_.spatial_idx = 2;
   expected_.inter_layer_predicted = false;  // D
   Init(kFrameSize, kPacketSize);

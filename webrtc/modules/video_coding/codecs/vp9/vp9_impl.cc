@@ -212,8 +212,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (inst->codecSpecific.VP9.numberOfTemporalLayers > 3) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  // For now, only support one spatial layer.
-  if (inst->codecSpecific.VP9.numberOfSpatialLayers != 1) {
+  // libvpx currently supports only one or two spatial layers.
+  if (inst->codecSpecific.VP9.numberOfSpatialLayers > 2) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   int retVal = Release();
@@ -351,13 +351,8 @@ int VP9EncoderImpl::NumberOfThreads(int width,
 }
 
 int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
-
   config_->ss_number_layers = num_spatial_layers_;
 
-  if (num_spatial_layers_ > 1) {
-    config_->rc_min_quantizer = 0;
-    config_->rc_max_quantizer = 63;
-  }
   int scaling_factor_num = 256;
   for (int i = num_spatial_layers_ - 1; i >= 0; --i) {
     svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
@@ -549,8 +544,10 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
     vp9_info->tl0_pic_idx = tl0_pic_idx_;
   }
 
+  // Always populate this, so that the packetizer can properly set the marker
+  // bit.
+  vp9_info->num_spatial_layers = num_spatial_layers_;
   if (vp9_info->ss_data_available) {
-    vp9_info->num_spatial_layers = num_spatial_layers_;
     vp9_info->spatial_layer_resolution_present = true;
     for (size_t i = 0; i < vp9_info->num_spatial_layers; ++i) {
       vp9_info->width[i] = codec_.width *

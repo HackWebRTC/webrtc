@@ -33,6 +33,11 @@ class Loopback {
     int32_t min_transmit_bitrate_kbps;
     std::string codec;
     size_t num_temporal_layers;
+    size_t num_spatial_layers;
+    // Discard all temporal/spatial layers with id greater or equal the
+    // threshold. 0 to disable.
+    size_t tl_discard_threshold;
+    size_t sl_discard_threshold;
     int32_t loss_percent;
     int32_t link_capacity_kbps;
     int32_t queue_size;

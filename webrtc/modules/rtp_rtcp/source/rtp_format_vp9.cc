@@ -578,7 +578,9 @@ bool RtpPacketizerVp9::NextPacket(uint8_t* buffer,
   if (!WriteHeaderAndPayload(packet_info, buffer, bytes_to_send)) {
     return false;
   }
-  *last_packet = packets_.empty();
+  *last_packet =
+      packets_.empty() && (hdr_.spatial_idx == kNoSpatialIdx ||
+                           hdr_.spatial_idx == hdr_.num_spatial_layers - 1);
   return true;
 }
 

@@ -55,9 +55,11 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
           info->codecSpecific.VP9.inter_layer_predicted;
       rtp->codecHeader.VP9.gof_idx = info->codecSpecific.VP9.gof_idx;
 
+      // Packetizer needs to know the number of spatial layers to correctly set
+      // the marker bit, even when the number won't be written in the packet.
+      rtp->codecHeader.VP9.num_spatial_layers =
+          info->codecSpecific.VP9.num_spatial_layers;
       if (info->codecSpecific.VP9.ss_data_available) {
-        rtp->codecHeader.VP9.num_spatial_layers =
-            info->codecSpecific.VP9.num_spatial_layers;
         rtp->codecHeader.VP9.spatial_layer_resolution_present =
             info->codecSpecific.VP9.spatial_layer_resolution_present;
         if (info->codecSpecific.VP9.spatial_layer_resolution_present) {

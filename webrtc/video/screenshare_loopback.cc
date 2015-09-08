@@ -78,6 +78,27 @@ int NumTemporalLayers() {
   return static_cast<int>(FLAGS_num_temporal_layers);
 }
 
+DEFINE_int32(num_spatial_layers, 1, "Number of spatial layers to use.");
+int NumSpatialLayers() {
+  return static_cast<int>(FLAGS_num_spatial_layers);
+}
+
+DEFINE_int32(
+    tl_discard_threshold,
+    0,
+    "Discard TLs with id greater or equal the threshold. 0 to disable.");
+int TLDiscardThreshold() {
+  return static_cast<int>(FLAGS_tl_discard_threshold);
+}
+
+DEFINE_int32(
+    sl_discard_threshold,
+    0,
+    "Discard SLs with id greater or equal the threshold. 0 to disable.");
+int SLDiscardThreshold() {
+  return static_cast<int>(FLAGS_sl_discard_threshold);
+}
+
 DEFINE_int32(min_transmit_bitrate, 400, "Min transmit bitrate incl. padding.");
 int MinTransmitBitrate() {
   return FLAGS_min_transmit_bitrate;
@@ -135,6 +156,12 @@ class ScreenshareLoopback : public test::Loopback {
   explicit ScreenshareLoopback(const Config& config) : Loopback(config) {
     CHECK_GE(config.num_temporal_layers, 1u);
     CHECK_LE(config.num_temporal_layers, 2u);
+    CHECK_GE(config.num_spatial_layers, 1u);
+    CHECK_LE(config.num_spatial_layers, 5u);
+    CHECK(config.num_spatial_layers == 1 || config.codec == "VP9");
+    CHECK(config.num_spatial_layers == 1 || config.num_temporal_layers == 1);
+    CHECK_LT(config.tl_discard_threshold, config.num_temporal_layers);
+    CHECK_LT(config.sl_discard_threshold, config.num_spatial_layers);
 
     vp8_settings_ = VideoEncoder::GetDefaultVp8Settings();
     vp8_settings_.denoisingOn = false;
@@ -147,6 +174,8 @@ class ScreenshareLoopback : public test::Loopback {
     vp9_settings_.frameDroppingOn = false;
     vp9_settings_.numberOfTemporalLayers =
         static_cast<unsigned char>(config.num_temporal_layers);
+    vp9_settings_.numberOfSpatialLayers =
+        static_cast<unsigned char>(config.num_spatial_layers);
   }
   virtual ~ScreenshareLoopback() {}
 
@@ -219,6 +248,9 @@ void Loopback() {
                                 flags::MinTransmitBitrate(),
                                 flags::Codec(),
                                 flags::NumTemporalLayers(),
+                                flags::NumSpatialLayers(),
+                                flags::TLDiscardThreshold(),
+                                flags::SLDiscardThreshold(),
                                 flags::LossPercent(),
                                 flags::LinkCapacity(),
                                 flags::QueueSize(),

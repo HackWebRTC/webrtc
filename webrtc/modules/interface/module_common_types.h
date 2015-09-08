@@ -160,6 +160,7 @@ struct RTPVideoHeaderVP9 {
     inter_layer_predicted = false;
     gof_idx = kNoGofIdx;
     num_ref_pics = 0;
+    num_spatial_layers = 1;
   }
 
   bool inter_pic_predicted;  // This layer frame is dependent on previously
@@ -191,7 +192,7 @@ struct RTPVideoHeaderVP9 {
   int16_t ref_picture_id[kMaxVp9RefPics];  // PictureID of reference pictures.
 
   // SS data.
-  size_t num_spatial_layers;
+  size_t num_spatial_layers;  // Always populated.
   bool spatial_layer_resolution_present;
   uint16_t width[kMaxVp9NumberOfSpatialLayers];
   uint16_t height[kMaxVp9NumberOfSpatialLayers];

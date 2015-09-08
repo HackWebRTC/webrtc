@@ -19,11 +19,14 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
+#include "webrtc/test/layer_filtering_transport.h"
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 #include "webrtc/test/video_capturer.h"
@@ -40,7 +43,8 @@ static const uint32_t kSendRtxSsrc = 0x654322;
 static const uint32_t kReceiverLocalSsrc = 0x123456;
 
 static const uint8_t kRtxVideoPayloadType = 96;
-static const uint8_t kVideoPayloadType = 124;
+static const uint8_t kVideoPayloadTypeVP8 = 124;
+static const uint8_t kVideoPayloadTypeVP9 = 125;
 
 Loopback::Loopback(const Config& config)
     : config_(config), clock_(Clock::GetRealTimeClock()) {
@@ -76,7 +80,11 @@ void Loopback::Run() {
   pipe_config.queue_length_packets = config_.queue_size;
   pipe_config.queue_delay_ms = config_.avg_propagation_delay_ms;
   pipe_config.delay_standard_deviation_ms = config_.std_propagation_delay_ms;
-  test::DirectTransport send_transport(pipe_config);
+  LayerFilteringTransport send_transport(
+      pipe_config, kVideoPayloadTypeVP8, kVideoPayloadTypeVP9,
+      static_cast<uint8_t>(config_.tl_discard_threshold),
+      static_cast<uint8_t>(config_.sl_discard_threshold));
+
   // Loopback, call sends to itself.
   send_transport.SetReceiver(call->Receiver());
 
@@ -99,9 +107,11 @@ void Loopback::Run() {
     RTC_NOTREACHED() << "Codec not supported!";
     return;
   }
+  const int payload_type =
+      config_.codec == "VP8" ? kVideoPayloadTypeVP8 : kVideoPayloadTypeVP9;
   send_config.encoder_settings.encoder = encoder.get();
   send_config.encoder_settings.payload_name = config_.codec;
-  send_config.encoder_settings.payload_type = kVideoPayloadType;
+  send_config.encoder_settings.payload_type = payload_type;
 
   VideoEncoderConfig encoder_config(CreateEncoderConfig());
 
@@ -115,8 +125,8 @@ void Loopback::Run() {
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.rtp.nack.rtp_history_ms = 1000;
   receive_config.rtp.remb = true;
-  receive_config.rtp.rtx[kVideoPayloadType].ssrc = kSendRtxSsrc;
-  receive_config.rtp.rtx[kVideoPayloadType].payload_type = kRtxVideoPayloadType;
+  receive_config.rtp.rtx[payload_type].ssrc = kSendRtxSsrc;
+  receive_config.rtp.rtx[payload_type].payload_type = kRtxVideoPayloadType;
   receive_config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
   receive_config.renderer = loopback_video.get();
