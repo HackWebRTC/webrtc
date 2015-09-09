@@ -34,7 +34,7 @@ static const int kCngPayloadType = 18;
 class AudioEncoderCngTest : public ::testing::Test {
  protected:
   AudioEncoderCngTest()
-      : mock_vad_(new MockVad(Vad::kVadNormal)),
+      : mock_vad_(new MockVad),
         timestamp_(4711),
         num_audio_samples_10ms_(0),
         sample_rate_hz_(8000) {

@@ -14,36 +14,50 @@
 
 namespace webrtc {
 
-Vad::Vad(enum Aggressiveness mode) : handle_(nullptr), aggressiveness_(mode) {
-  Reset();
-}
+namespace {
 
-Vad::~Vad() {
-  WebRtcVad_Free(handle_);
-}
-
-enum Vad::Activity Vad::VoiceActivity(const int16_t* audio,
-                                      size_t num_samples,
-                                      int sample_rate_hz) {
-  int ret = WebRtcVad_Process(handle_, sample_rate_hz, audio, num_samples);
-  switch (ret) {
-    case 0:
-      return kPassive;
-    case 1:
-      return kActive;
-    default:
-      DCHECK(false) << "WebRtcVad_Process returned an error.";
-      return kError;
+class VadImpl final : public Vad {
+ public:
+  explicit VadImpl(Aggressiveness aggressiveness)
+      : handle_(nullptr), aggressiveness_(aggressiveness) {
+    Reset();
   }
-}
 
-void Vad::Reset() {
-  if (handle_)
-    WebRtcVad_Free(handle_);
-  handle_ = WebRtcVad_Create();
-  CHECK(handle_);
-  CHECK_EQ(WebRtcVad_Init(handle_), 0);
-  CHECK_EQ(WebRtcVad_set_mode(handle_, aggressiveness_), 0);
+  ~VadImpl() override { WebRtcVad_Free(handle_); }
+
+  Activity VoiceActivity(const int16_t* audio,
+                         size_t num_samples,
+                         int sample_rate_hz) override {
+    int ret = WebRtcVad_Process(handle_, sample_rate_hz, audio, num_samples);
+    switch (ret) {
+      case 0:
+        return kPassive;
+      case 1:
+        return kActive;
+      default:
+        DCHECK(false) << "WebRtcVad_Process returned an error.";
+        return kError;
+    }
+  }
+
+  void Reset() override {
+    if (handle_)
+      WebRtcVad_Free(handle_);
+    handle_ = WebRtcVad_Create();
+    CHECK(handle_);
+    CHECK_EQ(WebRtcVad_Init(handle_), 0);
+    CHECK_EQ(WebRtcVad_set_mode(handle_, aggressiveness_), 0);
+  }
+
+ private:
+  VadInst* handle_;
+  Aggressiveness aggressiveness_;
+};
+
+}  // namespace
+
+rtc::scoped_ptr<Vad> CreateVad(Vad::Aggressiveness aggressiveness) {
+  return rtc::scoped_ptr<Vad>(new VadImpl(aggressiveness));
 }
 
 }  // namespace webrtc

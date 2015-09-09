@@ -54,7 +54,8 @@ AudioEncoderCng::AudioEncoderCng(const Config& config)
       num_cng_coefficients_(config.num_cng_coefficients),
       sid_frame_interval_ms_(config.sid_frame_interval_ms),
       last_frame_active_(true),
-      vad_(config.vad ? config.vad : new Vad(config.vad_mode)) {
+      vad_(config.vad ? rtc_make_scoped_ptr(config.vad)
+                      : CreateVad(config.vad_mode)) {
   CHECK(config.IsOk()) << "Invalid configuration.";
   cng_inst_ = CreateCngInst(SampleRateHz(), sid_frame_interval_ms_,
                             num_cng_coefficients_);
