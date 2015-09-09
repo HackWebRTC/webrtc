@@ -187,8 +187,8 @@ bool AudioEncoderCng::SetApplication(Application application) {
   return speech_encoder_->SetApplication(application);
 }
 
-bool AudioEncoderCng::SetMaxPlaybackRate(int frequency_hz) {
-  return speech_encoder_->SetMaxPlaybackRate(frequency_hz);
+void AudioEncoderCng::SetMaxPlaybackRate(int frequency_hz) {
+  speech_encoder_->SetMaxPlaybackRate(frequency_hz);
 }
 
 void AudioEncoderCng::SetProjectedPacketLossRate(double fraction) {

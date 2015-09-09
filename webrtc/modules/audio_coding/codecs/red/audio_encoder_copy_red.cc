@@ -109,8 +109,8 @@ bool AudioEncoderCopyRed::SetApplication(Application application) {
   return speech_encoder_->SetApplication(application);
 }
 
-bool AudioEncoderCopyRed::SetMaxPlaybackRate(int frequency_hz) {
-  return speech_encoder_->SetMaxPlaybackRate(frequency_hz);
+void AudioEncoderCopyRed::SetMaxPlaybackRate(int frequency_hz) {
+  speech_encoder_->SetMaxPlaybackRate(frequency_hz);
 }
 
 void AudioEncoderCopyRed::SetProjectedPacketLossRate(double fraction) {

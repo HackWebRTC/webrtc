@@ -126,9 +126,7 @@ class AudioEncoder {
   // use when decoding the bitstream. The encoder would typically use this
   // information to adjust the quality of the encoding. The default
   // implementation just returns true.
-  // TODO(kwiberg): Change return value to void, since it doesn't matter
-  // whether the encoder approved of the max playback rate or not.
-  virtual bool SetMaxPlaybackRate(int frequency_hz);
+  virtual void SetMaxPlaybackRate(int frequency_hz);
 
   // Tells the encoder what the projected packet loss rate is. The rate is in
   // the range [0.0, 1.0]. The encoder would typically use this information to

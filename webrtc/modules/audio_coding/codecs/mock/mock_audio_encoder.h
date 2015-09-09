@@ -38,7 +38,7 @@ class MockAudioEncoder final : public AudioEncoder {
   MOCK_METHOD1(SetFec, bool(bool enable));
   MOCK_METHOD1(SetDtx, bool(bool enable));
   MOCK_METHOD1(SetApplication, bool(Application application));
-  MOCK_METHOD1(SetMaxPlaybackRate, bool(int frequency_hz));
+  MOCK_METHOD1(SetMaxPlaybackRate, void(int frequency_hz));
   MOCK_METHOD1(SetProjectedPacketLossRate, void(double fraction));
   MOCK_METHOD1(SetTargetBitrate, void(int target_bps));
   MOCK_METHOD1(SetMaxBitrate, void(int max_bps));

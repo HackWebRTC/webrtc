@@ -190,10 +190,10 @@ bool AudioEncoderOpus::SetApplication(Application application) {
   return RecreateEncoderInstance(conf);
 }
 
-bool AudioEncoderOpus::SetMaxPlaybackRate(int frequency_hz) {
+void AudioEncoderOpus::SetMaxPlaybackRate(int frequency_hz) {
   auto conf = config_;
   conf.max_playback_rate_hz = frequency_hz;
-  return RecreateEncoderInstance(conf);
+  CHECK(RecreateEncoderInstance(conf));
 }
 
 void AudioEncoderOpus::SetProjectedPacketLossRate(double fraction) {

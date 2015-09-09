@@ -787,8 +787,8 @@ int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
   }
   if (!codec_manager_.CurrentEncoderIsOpus())
     return -1;
-  return codec_manager_.CurrentEncoder()->SetMaxPlaybackRate(frequency_hz) ? 0
-                                                                           : -1;
+  codec_manager_.CurrentEncoder()->SetMaxPlaybackRate(frequency_hz);
+  return 0;
 }
 
 int AudioCodingModuleImpl::EnableOpusDtx() {

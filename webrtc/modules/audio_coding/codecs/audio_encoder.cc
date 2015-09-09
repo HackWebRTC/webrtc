@@ -46,9 +46,7 @@ bool AudioEncoder::SetApplication(Application application) {
   return false;
 }
 
-bool AudioEncoder::SetMaxPlaybackRate(int frequency_hz) {
-  return true;
-}
+void AudioEncoder::SetMaxPlaybackRate(int frequency_hz) {}
 
 void AudioEncoder::SetProjectedPacketLossRate(double fraction) {}
 

@@ -64,7 +64,7 @@ class AudioEncoderCng final : public AudioEncoder {
   bool SetFec(bool enable) override;
   bool SetDtx(bool enable) override;
   bool SetApplication(Application application) override;
-  bool SetMaxPlaybackRate(int frequency_hz) override;
+  void SetMaxPlaybackRate(int frequency_hz) override;
   void SetProjectedPacketLossRate(double fraction) override;
   void SetTargetBitrate(int target_bps) override;
   void SetMaxBitrate(int max_bps) override;
