@@ -39,6 +39,7 @@
       'dependencies': [
         '<@(audio_coding_dependencies)',
         '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/webrtc.gyp:rtc_event_log',
         'neteq',
       ],
       'include_dirs': [

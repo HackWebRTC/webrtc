@@ -58,6 +58,12 @@ source_set("audio_coding") {
     ]
   }
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [
     ":cng",
     ":g711",
@@ -68,6 +74,7 @@ source_set("audio_coding") {
     ":neteq",
     ":pcm16b",
     ":red",
+    "../..:rtc_event_log",
     "../..:webrtc_common",
     "../../common_audio",
     "../../system_wrappers",

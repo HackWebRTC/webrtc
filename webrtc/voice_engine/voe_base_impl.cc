@@ -424,7 +424,6 @@ int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner) {
         channel_owner->channel()->ChannelId());
     return -1;
   }
-
   return channel_owner->channel()->ChannelId();
 }
 

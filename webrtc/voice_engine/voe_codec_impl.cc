@@ -473,6 +473,10 @@ void VoECodecImpl::ExternalToACMCodecRepresentation(CodecInst& toInst,
   }
 }
 
+RtcEventLog* VoECodecImpl::GetEventLog() {
+  return _shared->channel_manager().GetEventLog();
+}
+
 #endif  // WEBRTC_VOICE_ENGINE_CODEC_API
 
 }  // namespace webrtc

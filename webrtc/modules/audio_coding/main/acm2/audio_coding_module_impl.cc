@@ -27,6 +27,7 @@
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video/rtc_event_log.h"
 
 namespace webrtc {
 
@@ -146,7 +147,8 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       first_frame_(true),
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       packetization_callback_(NULL),
-      vad_callback_(NULL) {
+      vad_callback_(NULL),
+      event_log_(config.event_log) {
   if (InitializeReceiverSafe() < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "Cannot initialize receiver");
@@ -679,6 +681,10 @@ int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "PlayoutData failed, RecOut Failed");
     return -1;
+  }
+  {
+    if (event_log_)
+      event_log_->LogDebugEvent(RtcEventLog::DebugEvent::kAudioPlayout);
   }
 
   audio_frame->id_ = id_;

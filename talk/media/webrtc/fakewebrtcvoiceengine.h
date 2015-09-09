@@ -536,6 +536,7 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->associate_send_channel = accociate_send_channel;
     return 0;
   }
+  webrtc::RtcEventLog* GetEventLog() { return nullptr; }
 
   // webrtc::VoECodec
   WEBRTC_FUNC(NumOfCodecs, ()) {

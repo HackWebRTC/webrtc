@@ -51,6 +51,7 @@ class FileWrapper;
 class ProcessThread;
 class ReceiveStatistics;
 class RemoteNtpTimeEstimator;
+class RtcEventLog;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class RTPReceiverAudio;
@@ -170,8 +171,12 @@ public:
     static int32_t CreateChannel(Channel*& channel,
                                  int32_t channelId,
                                  uint32_t instanceId,
+                                 RtcEventLog* const event_log,
                                  const Config& config);
-    Channel(int32_t channelId, uint32_t instanceId, const Config& config);
+    Channel(int32_t channelId,
+            uint32_t instanceId,
+            RtcEventLog* const event_log,
+            const Config& config);
     int32_t Init();
     int32_t SetEngineInformation(
         Statistics& engineStatistics,

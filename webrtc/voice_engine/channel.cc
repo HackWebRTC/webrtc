@@ -628,17 +628,16 @@ Channel::NeededFrequency(int32_t id) const
     return(highestNeeded);
 }
 
-int32_t
-Channel::CreateChannel(Channel*& channel,
-                       int32_t channelId,
-                       uint32_t instanceId,
-                       const Config& config)
-{
+int32_t Channel::CreateChannel(Channel*& channel,
+                               int32_t channelId,
+                               uint32_t instanceId,
+                               RtcEventLog* const event_log,
+                               const Config& config) {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId,channelId),
                  "Channel::CreateChannel(channelId=%d, instanceId=%d)",
         channelId, instanceId);
 
-    channel = new Channel(channelId, instanceId, config);
+    channel = new Channel(channelId, instanceId, event_log, config);
     if (channel == NULL)
     {
         WEBRTC_TRACE(kTraceMemory, kTraceVoice,
@@ -713,8 +712,9 @@ Channel::RecordFileEnded(int32_t id)
 
 Channel::Channel(int32_t channelId,
                  uint32_t instanceId,
-                 const Config& config) :
-    _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
+                 RtcEventLog* const event_log,
+                 const Config& config)
+  : _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     volume_settings_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
@@ -722,11 +722,15 @@ Channel::Channel(int32_t channelId,
     rtp_header_parser_(RtpHeaderParser::Create()),
     rtp_payload_registry_(
         new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(true))),
-    rtp_receive_statistics_(ReceiveStatistics::Create(
-        Clock::GetRealTimeClock())),
-    rtp_receiver_(RtpReceiver::CreateAudioReceiver(
-        VoEModuleId(instanceId, channelId), Clock::GetRealTimeClock(), this,
-        this, this, rtp_payload_registry_.get())),
+    rtp_receive_statistics_(
+        ReceiveStatistics::Create(Clock::GetRealTimeClock())),
+    rtp_receiver_(
+        RtpReceiver::CreateAudioReceiver(VoEModuleId(instanceId, channelId),
+                                         Clock::GetRealTimeClock(),
+                                         this,
+                                         this,
+                                         this,
+                                         rtp_payload_registry_.get())),
     telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
     _outputAudioLevel(),
     _externalTransport(false),
@@ -744,7 +748,8 @@ Channel::Channel(int32_t channelId,
     _outputExternalMedia(false),
     _inputExternalMediaCallbackPtr(NULL),
     _outputExternalMediaCallbackPtr(NULL),
-    _timeStamp(0), // This is just an offset, RTP module will add it's own random offset
+    _timeStamp(0),  // This is just an offset, RTP module will add it's own
+                    // random offset
     _sendTelephoneEventPayloadType(106),
     ntp_estimator_(Clock::GetRealTimeClock()),
     jitter_buffer_playout_timestamp_(0),
@@ -791,8 +796,7 @@ Channel::Channel(int32_t channelId,
     rtcp_observer_(new VoERtcpObserver(this)),
     network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
     assoc_send_channel_lock_(CriticalSectionWrapper::CreateCriticalSection()),
-    associate_send_channel_(ChannelOwner(nullptr))
-{
+    associate_send_channel_(ChannelOwner(nullptr)) {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Channel() - ctor");
     AudioCodingModule::Config acm_config;
@@ -805,6 +809,7 @@ Channel::Channel(int32_t channelId,
     }
     acm_config.neteq_config.enable_fast_accelerate =
         config.Get<NetEqFastAccelerate>().enabled;
+    acm_config.event_log = event_log;
     audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
     _inbandDtmfQueue.ResetDtmf();

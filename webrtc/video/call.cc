@@ -32,8 +32,10 @@
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video/audio_receive_stream.h"
+#include "webrtc/video/rtc_event_log.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
+#include "webrtc/voice_engine/include/voe_codec.h"
 
 namespace webrtc {
 
@@ -120,6 +122,8 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   VideoSendStream::RtpStateMap suspended_video_send_ssrcs_;
 
+  RtcEventLog* event_log_;
+
   DISALLOW_COPY_AND_ASSIGN(Call);
 };
 }  // namespace internal
@@ -138,13 +142,21 @@ Call::Call(const Call::Config& config)
       config_(config),
       network_enabled_(true),
       receive_crit_(RWLockWrapper::CreateRWLock()),
-      send_crit_(RWLockWrapper::CreateRWLock()) {
+      send_crit_(RWLockWrapper::CreateRWLock()),
+      event_log_(nullptr) {
   DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   DCHECK_GE(config.bitrate_config.start_bitrate_bps,
             config.bitrate_config.min_bitrate_bps);
   if (config.bitrate_config.max_bitrate_bps != -1) {
     DCHECK_GE(config.bitrate_config.max_bitrate_bps,
               config.bitrate_config.start_bitrate_bps);
+  }
+  if (config.voice_engine) {
+    VoECodec* voe_codec = VoECodec::GetInterface(config.voice_engine);
+    if (voe_codec) {
+      event_log_ = voe_codec->GetEventLog();
+      voe_codec->Release();
+    }
   }
 
   Trace::CreateTrace();
@@ -236,6 +248,9 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   }
   video_send_streams_.insert(send_stream);
 
+  if (event_log_)
+    event_log_->LogVideoSendStreamConfig(config);
+
   if (!network_enabled_)
     send_stream->SignalNetworkState(kNetworkDown);
   return send_stream;
@@ -301,6 +316,9 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
 
   if (!network_enabled_)
     receive_stream->SignalNetworkState(kNetworkDown);
+
+  if (event_log_)
+    event_log_->LogVideoReceiveStreamConfig(config);
 
   return receive_stream;
 }
@@ -463,15 +481,21 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     ReadLockScoped read_lock(*receive_crit_);
     for (VideoReceiveStream* stream : video_receive_streams_) {
-      if (stream->DeliverRtcp(packet, length))
+      if (stream->DeliverRtcp(packet, length)) {
         rtcp_delivered = true;
+        if (event_log_)
+          event_log_->LogRtcpPacket(true, media_type, packet, length);
+      }
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     ReadLockScoped read_lock(*send_crit_);
     for (VideoSendStream* stream : video_send_streams_) {
-      if (stream->DeliverRtcp(packet, length))
+      if (stream->DeliverRtcp(packet, length)) {
         rtcp_delivered = true;
+        if (event_log_)
+          event_log_->LogRtcpPacket(false, media_type, packet, length);
+      }
     }
   }
   return rtcp_delivered ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
@@ -491,17 +515,23 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
   if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
     auto it = audio_receive_ssrcs_.find(ssrc);
     if (it != audio_receive_ssrcs_.end()) {
-      return it->second->DeliverRtp(packet, length, packet_time)
-                 ? DELIVERY_OK
-                 : DELIVERY_PACKET_ERROR;
+      auto status = it->second->DeliverRtp(packet, length, packet_time)
+                        ? DELIVERY_OK
+                        : DELIVERY_PACKET_ERROR;
+      if (status == DELIVERY_OK && event_log_)
+        event_log_->LogRtpHeader(true, media_type, packet, length);
+      return status;
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     auto it = video_receive_ssrcs_.find(ssrc);
     if (it != video_receive_ssrcs_.end()) {
-      return it->second->DeliverRtp(packet, length, packet_time)
-                 ? DELIVERY_OK
-                 : DELIVERY_PACKET_ERROR;
+      auto status = it->second->DeliverRtp(packet, length, packet_time)
+                        ? DELIVERY_OK
+                        : DELIVERY_PACKET_ERROR;
+      if (status == DELIVERY_OK && event_log_)
+        event_log_->LogRtpHeader(true, media_type, packet, length);
+      return status;
     }
   }
   return DELIVERY_UNKNOWN_SSRC;

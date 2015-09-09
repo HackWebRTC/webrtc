@@ -49,7 +49,8 @@ ChannelManager::ChannelManager(uint32_t instance_id, const Config& config)
     : instance_id_(instance_id),
       last_channel_id_(-1),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      config_(config) {}
+      config_(config),
+      event_log_(RtcEventLog::Create()) {}
 
 ChannelOwner ChannelManager::CreateChannel() {
   return CreateChannelInternal(config_);
@@ -61,7 +62,8 @@ ChannelOwner ChannelManager::CreateChannel(const Config& external_config) {
 
 ChannelOwner ChannelManager::CreateChannelInternal(const Config& config) {
   Channel* channel;
-  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_, config);
+  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_,
+                         event_log_.get(), config);
   ChannelOwner channel_owner(channel);
 
   CriticalSectionScoped crit(lock_.get());
@@ -126,6 +128,10 @@ void ChannelManager::DestroyAllChannels() {
 size_t ChannelManager::NumOfChannels() const {
   CriticalSectionScoped crit(lock_.get());
   return channels_.size();
+}
+
+RtcEventLog* ChannelManager::GetEventLog() const {
+  return event_log_.get();
 }
 
 ChannelManager::Iterator::Iterator(ChannelManager* channel_manager)

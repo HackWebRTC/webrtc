@@ -35,6 +35,7 @@
 
 namespace webrtc {
 
+class RtcEventLog;
 class VoiceEngine;
 
 class WEBRTC_DLLEXPORT VoECodec {
@@ -130,6 +131,10 @@ class WEBRTC_DLLEXPORT VoECodec {
   // If send codec is Opus on a specified |channel|, set its DTX. Returns 0 if
   // success, and -1 if failed.
   virtual int SetOpusDtx(int channel, bool enable_dtx) = 0;
+
+  // Get a pointer to the event logging object associated with this Voice
+  // Engine. This pointer will remain valid until VoiceEngine is destroyed.
+  virtual RtcEventLog* GetEventLog() = 0;
 
  protected:
   VoECodec() {}

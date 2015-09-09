@@ -26,10 +26,11 @@ namespace webrtc {
 // forward declarations
 struct CodecInst;
 struct WebRtcRTPHeader;
-class AudioFrame;
-class RTPFragmentationHeader;
-class AudioEncoder;
 class AudioDecoder;
+class AudioEncoder;
+class AudioFrame;
+class RtcEventLog;
+class RTPFragmentationHeader;
 
 #define WEBRTC_10MS_PCM_AUDIO 960  // 16 bits super wideband 48 kHz
 
@@ -85,11 +86,13 @@ class AudioCodingModule {
     Config()
         : id(0),
           neteq_config(),
-          clock(Clock::GetRealTimeClock()) {}
+          clock(Clock::GetRealTimeClock()),
+          event_log(nullptr) {}
 
     int id;
     NetEq::Config neteq_config;
     Clock* clock;
+    RtcEventLog* event_log;
   };
 
   ///////////////////////////////////////////////////////////////////////////

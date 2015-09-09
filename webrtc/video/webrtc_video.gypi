@@ -20,6 +20,7 @@
       '<(webrtc_root)/modules/modules.gyp:webrtc_video_coding',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
+      '<(webrtc_root)/webrtc.gyp:rtc_event_log',
     ],
     'webrtc_video_sources': [
       'video/audio_receive_stream.cc',
