@@ -161,7 +161,7 @@ if (!build_with_chromium) {
 
       deps += [ "../..:webrtc_common" ]
 
-      cflags += [ "-fobjc-arc" ]  # CLANG_ENABLE_OBJC_ARC = YES.
+      cflags = [ "-fobjc-arc" ]  # CLANG_ENABLE_OBJC_ARC = YES.
     }
 
     all_dependent_configs = [ ":video_render_internal_impl_config" ]
