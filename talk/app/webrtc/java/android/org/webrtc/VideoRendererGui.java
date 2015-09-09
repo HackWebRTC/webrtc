@@ -41,6 +41,7 @@ import android.opengl.EGL14;
 import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import org.webrtc.VideoRenderer.I420Frame;
@@ -133,12 +134,15 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // The actual view area in pixels. It is a centered subrectangle of the rectangle defined by
     // |layoutInPercentage|.
     private final Rect displayLayout = new Rect();
-    // Cached texture transformation matrix, calculated from current layout parameters.
-    private final float[] texMatrix = new float[16];
-    // Flag if texture vertices or coordinates update is needed.
-    private boolean updateTextureProperties;
-    // Texture properties update lock.
-    private final Object updateTextureLock = new Object();
+    // Cached layout transformation matrix, calculated from current layout parameters.
+    private float[] layoutMatrix;
+    // Flag if layout transformation matrix update is needed.
+    private boolean updateLayoutProperties;
+    // Layout properties update lock. Guards |updateLayoutProperties|, |screenWidth|,
+    // |screenHeight|, |videoWidth|, |videoHeight|, |rotationDegree|, |scalingType|, and |mirror|.
+    private final Object updateLayoutLock = new Object();
+    // Texture sampling matrix.
+    private float[] samplingMatrix;
     // Viewport dimensions.
     private int screenWidth;
     private int screenHeight;
@@ -160,7 +164,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       this.scalingType = scalingType;
       this.mirror = mirror;
       layoutInPercentage = new Rect(x, y, Math.min(100, x + width), Math.min(100, y + height));
-      updateTextureProperties = false;
+      updateLayoutProperties = false;
       rotationDegree = 0;
     }
 
@@ -184,9 +188,9 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
     }
 
-    private void checkAdjustTextureCoords() {
-      synchronized(updateTextureLock) {
-        if (!updateTextureProperties) {
+    private void updateLayoutMatrix() {
+      synchronized(updateLayoutLock) {
+        if (!updateLayoutProperties) {
           return;
         }
         // Initialize to maximum allowed area. Round to integer coordinates inwards the layout
@@ -209,9 +213,9 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
                             (displayLayout.height() - displaySize.y) / 2);
         Log.d(TAG, "  Adjusted display size: " + displayLayout.width() + " x "
             + displayLayout.height());
-        RendererCommon.getTextureMatrix(texMatrix, rotationDegree, mirror, videoAspectRatio,
-            (float) displayLayout.width() / displayLayout.height());
-        updateTextureProperties = false;
+        layoutMatrix = RendererCommon.getLayoutMatrix(
+            mirror, videoAspectRatio, (float) displayLayout.width() / displayLayout.height());
+        updateLayoutProperties = false;
         Log.d(TAG, "  AdjustTextureCoords done");
       }
     }
@@ -229,10 +233,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
       final boolean isNewFrame;
       synchronized (pendingFrameLock) {
-        // Check if texture vertices/coordinates adjustment is required when
-        // screen orientation changes or video frame size changes.
-        checkAdjustTextureCoords();
-
         isNewFrame = (pendingFrame != null);
         if (isNewFrame && startTimeNs == -1) {
           startTimeNs = now;
@@ -255,12 +255,17 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
               surfaceTexture.updateTexImage();
             }
           }
+          samplingMatrix = RendererCommon.getSamplingMatrix(
+              (SurfaceTexture) pendingFrame.textureObject, pendingFrame.rotationDegree);
           copyTimeNs += (System.nanoTime() - now);
           VideoRenderer.renderFrameDone(pendingFrame);
           pendingFrame = null;
         }
       }
 
+      updateLayoutMatrix();
+      final float[] texMatrix = new float[16];
+      Matrix.multiplyMM(texMatrix, 0, samplingMatrix, 0, layoutMatrix, 0);
       if (rendererType == RendererType.RENDERER_YUV) {
         drawer.drawYuv(yuvTextures, texMatrix);
       } else {
@@ -291,7 +296,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
 
     public void setScreenSize(final int screenWidth, final int screenHeight) {
-      synchronized(updateTextureLock) {
+      synchronized(updateLayoutLock) {
         if (screenWidth == this.screenWidth && screenHeight == this.screenHeight) {
           return;
         }
@@ -299,7 +304,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             screenWidth + " x " + screenHeight);
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
-        updateTextureProperties = true;
+        updateLayoutProperties = true;
       }
     }
 
@@ -307,7 +312,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         RendererCommon.ScalingType scalingType, boolean mirror) {
       final Rect layoutInPercentage =
           new Rect(x, y, Math.min(100, x + width), Math.min(100, y + height));
-      synchronized(updateTextureLock) {
+      synchronized(updateLayoutLock) {
         if (layoutInPercentage.equals(this.layoutInPercentage) && scalingType == this.scalingType
             && mirror == this.mirror) {
           return;
@@ -318,7 +323,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         this.layoutInPercentage.set(layoutInPercentage);
         this.scalingType = scalingType;
         this.mirror = mirror;
-        updateTextureProperties = true;
+        updateLayoutProperties = true;
       }
     }
 
@@ -333,14 +338,14 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         rendererEvents.onFrameResolutionChanged(videoWidth, videoHeight, rotation);
       }
 
-      synchronized (updateTextureLock) {
+      synchronized (updateLayoutLock) {
         Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
             videoWidth + " x " + videoHeight + " rotation " + rotation);
 
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
         rotationDegree = rotation;
-        updateTextureProperties = true;
+        updateLayoutProperties = true;
         Log.d(TAG, "  YuvImageRenderer.setSize done.");
       }
     }
