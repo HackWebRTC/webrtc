@@ -67,8 +67,6 @@ class AudioEncoderCng final : public AudioEncoder {
   void SetMaxPlaybackRate(int frequency_hz) override;
   void SetProjectedPacketLossRate(double fraction) override;
   void SetTargetBitrate(int target_bps) override;
-  void SetMaxBitrate(int max_bps) override;
-  void SetMaxPayloadSize(int max_payload_size_bytes) override;
 
  private:
   EncodedInfo EncodePassive(size_t frames_to_encode,

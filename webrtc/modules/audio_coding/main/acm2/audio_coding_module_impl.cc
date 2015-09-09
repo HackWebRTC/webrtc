@@ -739,30 +739,6 @@ int AudioCodingModuleImpl::IncomingPayload(const uint8_t* incoming_payload,
   return 0;
 }
 
-// TODO(henrik.lundin): Remove? Only used in tests. Deprecated in VoiceEngine.
-int AudioCodingModuleImpl::SetISACMaxRate(int max_bit_per_sec) {
-  CriticalSectionScoped lock(acm_crit_sect_.get());
-
-  if (!HaveValidEncoder("SetISACMaxRate")) {
-    return -1;
-  }
-
-  codec_manager_.CurrentEncoder()->SetMaxBitrate(max_bit_per_sec);
-  return 0;
-}
-
-// TODO(henrik.lundin): Remove? Only used in tests. Deprecated in VoiceEngine.
-int AudioCodingModuleImpl::SetISACMaxPayloadSize(int max_size_bytes) {
-  CriticalSectionScoped lock(acm_crit_sect_.get());
-
-  if (!HaveValidEncoder("SetISACMaxPayloadSize")) {
-    return -1;
-  }
-
-  codec_manager_.CurrentEncoder()->SetMaxPayloadSize(max_size_bytes);
-  return 0;
-}
-
 int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
   CriticalSectionScoped lock(acm_crit_sect_.get());
   if (!HaveValidEncoder("SetOpusApplication")) {

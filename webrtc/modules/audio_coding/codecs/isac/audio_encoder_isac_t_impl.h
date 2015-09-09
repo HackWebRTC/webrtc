@@ -158,20 +158,6 @@ void AudioEncoderIsacT<T>::Reset() {
 }
 
 template <typename T>
-void AudioEncoderIsacT<T>::SetMaxPayloadSize(int max_payload_size_bytes) {
-  auto conf = config_;
-  conf.max_payload_size_bytes = max_payload_size_bytes;
-  RecreateEncoderInstance(conf);
-}
-
-template <typename T>
-void AudioEncoderIsacT<T>::SetMaxBitrate(int max_rate_bps) {
-  auto conf = config_;
-  conf.max_bit_rate = max_rate_bps;
-  RecreateEncoderInstance(conf);
-}
-
-template <typename T>
 void AudioEncoderIsacT<T>::RecreateEncoderInstance(const Config& config) {
   CHECK(config.IsOk());
   packet_in_progress_ = false;

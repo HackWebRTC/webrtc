@@ -67,8 +67,6 @@ class AudioEncoderIsacT final : public AudioEncoder {
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
   void Reset() override;
-  void SetMaxPayloadSize(int max_payload_size_bytes) override;
-  void SetMaxBitrate(int max_rate_bps) override;
 
  private:
   // This value is taken from STREAM_SIZE_MAX_60 for iSAC float (60 ms) and

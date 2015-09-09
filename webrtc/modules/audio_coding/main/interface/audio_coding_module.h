@@ -723,40 +723,6 @@ class AudioCodingModule {
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t SetISACMaxRate()
-  // Set the maximum instantaneous rate of iSAC. For a payload of B bits
-  // with a frame-size of T sec the instantaneous rate is B/T bits per
-  // second. Therefore, (B/T < |max_rate_bps|) and
-  // (B < |max_payload_len_bytes| * 8) are always satisfied for iSAC payloads,
-  // c.f SetISACMaxPayloadSize().
-  //
-  // Input:
-  //   -max_rate_bps       : maximum instantaneous bit-rate given in bits/sec.
-  //
-  // Return value:
-  //   -1 if failed to set the maximum rate.
-  //    0 if the maximum rate is set successfully.
-  //
-  virtual int SetISACMaxRate(int max_rate_bps) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t SetISACMaxPayloadSize()
-  // Set the maximum payload size of iSAC packets. No iSAC payload,
-  // regardless of its frame-size, may exceed the given limit. For
-  // an iSAC payload of size B bits and frame-size T seconds we have;
-  // (B < |max_payload_len_bytes| * 8) and (B/T < |max_rate_bps|), c.f.
-  // SetISACMaxRate().
-  //
-  // Input:
-  //   -max_payload_len_bytes : maximum payload size in bytes.
-  //
-  // Return value:
-  //   -1 if failed to set the maximum  payload-size.
-  //    0 if the given length is set successfully.
-  //
-  virtual int SetISACMaxPayloadSize(int max_payload_len_bytes) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int SetOpusApplication()
   // Sets the intended application if current send codec is Opus. Opus uses this
   // to optimize the encoding for applications like VOIP and music. Currently,

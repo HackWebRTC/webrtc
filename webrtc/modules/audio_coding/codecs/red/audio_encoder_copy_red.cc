@@ -121,12 +121,4 @@ void AudioEncoderCopyRed::SetTargetBitrate(int bits_per_second) {
   speech_encoder_->SetTargetBitrate(bits_per_second);
 }
 
-void AudioEncoderCopyRed::SetMaxBitrate(int max_bps) {
-  speech_encoder_->SetMaxBitrate(max_bps);
-}
-
-void AudioEncoderCopyRed::SetMaxPayloadSize(int max_payload_size_bytes) {
-  speech_encoder_->SetMaxPayloadSize(max_payload_size_bytes);
-}
-
 }  // namespace webrtc

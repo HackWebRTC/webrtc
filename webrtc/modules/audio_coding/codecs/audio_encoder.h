@@ -138,16 +138,6 @@ class AudioEncoder {
   // encoder is free to adjust or disregard the given bitrate (the default
   // implementation does the latter).
   virtual void SetTargetBitrate(int target_bps);
-
-  // Sets the maximum bitrate which must not be exceeded for any packet. The
-  // encoder is free to adjust or disregard this value (the default
-  // implementation does the latter).
-  virtual void SetMaxBitrate(int max_bps);
-
-  // Sets an upper limit on the size of packet payloads produced by the
-  // encoder. The encoder is free to adjust or disregard this value (the
-  // default implementation does the latter).
-  virtual void SetMaxPayloadSize(int max_payload_size_bytes);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_H_

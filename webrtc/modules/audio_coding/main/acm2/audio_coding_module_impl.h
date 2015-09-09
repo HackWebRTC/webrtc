@@ -185,10 +185,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   int GetNetworkStatistics(NetworkStatistics* statistics) override;
 
-  int SetISACMaxRate(int max_bit_per_sec) override;
-
-  int SetISACMaxPayloadSize(int max_size_bytes) override;
-
   int SetOpusApplication(OpusApplicationMode application) override;
 
   // If current send codec is Opus, informs it about the maximum playback rate

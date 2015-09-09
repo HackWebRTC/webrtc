@@ -29,8 +29,6 @@ namespace webrtc {
 struct ACMTestISACConfig {
   int32_t currentRateBitPerSec;
   int16_t currentFrameSizeMsec;
-  uint32_t maxRateBitPerSec;
-  int16_t maxPayloadSizeByte;
   int16_t encodingMode;
   uint32_t initRateBitPerSec;
   int16_t initFrameSizeInMsec;

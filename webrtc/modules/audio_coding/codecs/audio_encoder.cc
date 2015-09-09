@@ -52,8 +52,4 @@ void AudioEncoder::SetProjectedPacketLossRate(double fraction) {}
 
 void AudioEncoder::SetTargetBitrate(int target_bps) {}
 
-void AudioEncoder::SetMaxBitrate(int max_bps) {}
-
-void AudioEncoder::SetMaxPayloadSize(int max_payload_size_bytes) {}
-
 }  // namespace webrtc

@@ -199,14 +199,6 @@ void AudioEncoderCng::SetTargetBitrate(int bits_per_second) {
   speech_encoder_->SetTargetBitrate(bits_per_second);
 }
 
-void AudioEncoderCng::SetMaxBitrate(int max_bps) {
-  speech_encoder_->SetMaxBitrate(max_bps);
-}
-
-void AudioEncoderCng::SetMaxPayloadSize(int max_payload_size_bytes) {
-  speech_encoder_->SetMaxPayloadSize(max_payload_size_bytes);
-}
-
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
     size_t frames_to_encode,
     size_t max_encoded_bytes,
