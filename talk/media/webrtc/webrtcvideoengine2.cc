@@ -487,8 +487,9 @@ void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     const VideoCodec& codec,
     const VideoOptions& options,
     bool is_screencast) {
-  // No automatic resizing when using simulcast.
-  bool automatic_resize = !is_screencast && ssrcs_.size() == 1;
+  // No automatic resizing when using simulcast or screencast.
+  bool automatic_resize =
+      !is_screencast && parameters_.config.rtp.ssrcs.size() == 1;
   bool frame_dropping = !is_screencast;
   bool denoising;
   if (is_screencast) {

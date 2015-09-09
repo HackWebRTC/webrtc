@@ -1022,17 +1022,24 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
     return fake_call_->GetVideoSendStreams().back();
   }
 
-  FakeVideoSendStream* SetUpSimulcast(bool enabled) {
+  FakeVideoSendStream* SetUpSimulcast(bool enabled, bool with_rtx) {
+    const int kRtxSsrcOffset = 0xDEADBEEF;
     last_ssrc_ += 3;
-    if (enabled) {
-      std::vector<uint32_t> ssrcs;
-      ssrcs.push_back(last_ssrc_);
-      ssrcs.push_back(last_ssrc_ + 1);
-      ssrcs.push_back(last_ssrc_ + 2);
-      return AddSendStream(CreateSimStreamParams("cname", ssrcs));
-    } else {
-      return AddSendStream(StreamParams::CreateLegacy(last_ssrc_));
+    std::vector<uint32_t> ssrcs;
+    std::vector<uint32_t> rtx_ssrcs;
+    uint32_t num_streams = enabled ? 3 : 1;
+    for (uint32_t i = 0; i < num_streams; ++i) {
+      uint32_t ssrc = last_ssrc_ + i;
+      ssrcs.push_back(ssrc);
+      if (with_rtx) {
+        rtx_ssrcs.push_back(ssrc + kRtxSsrcOffset);
+      }
     }
+    if (with_rtx) {
+      return AddSendStream(
+          cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
+    }
+    return AddSendStream(CreateSimStreamParams("cname", ssrcs));
   }
 
   FakeCall* fake_call_;
@@ -1570,7 +1577,10 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   codecs.push_back(kVp8Codec720p);
   ASSERT_TRUE(channel_->SetSendCodecs(codecs));
 
-  FakeVideoSendStream* stream = SetUpSimulcast(false);
+  // Single-stream settings should apply with RTX as well (verifies that we
+  // check number of regular SSRCs and not StreamParams::ssrcs which contains
+  // both RTX and regular SSRCs).
+  FakeVideoSendStream* stream = SetUpSimulcast(false, true);
 
   cricket::FakeVideoCapturer capturer;
   capturer.SetScreencast(false);
@@ -1597,7 +1607,7 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   EXPECT_TRUE(vp8_settings.frameDroppingOn);
 
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
-  stream = SetUpSimulcast(true);
+  stream = SetUpSimulcast(true, false);
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
   channel_->SetSend(true);
   EXPECT_TRUE(capturer.CaptureFrame());
@@ -1658,7 +1668,7 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
   codecs.push_back(kVp9Codec);
   ASSERT_TRUE(channel_->SetSendCodecs(codecs));
 
-  FakeVideoSendStream* stream = SetUpSimulcast(false);
+  FakeVideoSendStream* stream = SetUpSimulcast(false, false);
 
   cricket::FakeVideoCapturer capturer;
   capturer.SetScreencast(false);
