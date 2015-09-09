@@ -58,7 +58,6 @@
         'media/base/fakertp.h',
         'media/base/fakevideocapturer.h',
         'media/base/fakevideorenderer.h',
-        'media/base/nullvideoframe.h',
         'media/base/testutils.cc',
         'media/base/testutils.h',
         'media/devices/fakedevicemanager.h',
