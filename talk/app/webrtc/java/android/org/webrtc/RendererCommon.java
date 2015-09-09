@@ -86,11 +86,11 @@ public class RendererCommon {
     }
     // Clockwise rotation matrix in the XY-plane (around the Z-axis).
     final float[] rotationMatrix = new float[16];
-    Matrix.setRotateM(rotationMatrix, 0, -rotationDegree, 0, 0, 1);
+    Matrix.setRotateM(rotationMatrix, 0, rotationDegree, 0, 0, 1);
     adjustOrigin(rotationMatrix);
     // Multiply matrices together.
     final float[] tmpMatrix = new float[16];
-    Matrix.multiplyMM(tmpMatrix, 0, rotationMatrix, 0, samplingMatrix, 0);
+    Matrix.multiplyMM(tmpMatrix, 0, samplingMatrix, 0, rotationMatrix, 0);
     return tmpMatrix;
   }
 
