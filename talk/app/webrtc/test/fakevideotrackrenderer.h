@@ -36,16 +36,7 @@ namespace webrtc {
 class FakeVideoTrackRenderer : public VideoRendererInterface {
  public:
   FakeVideoTrackRenderer(VideoTrackInterface* video_track)
-      : video_track_(video_track),
-        can_apply_rotation_(true),
-        last_frame_(NULL) {
-    video_track_->AddRenderer(this);
-  }
-  FakeVideoTrackRenderer(VideoTrackInterface* video_track,
-                         bool can_apply_rotation)
-      : video_track_(video_track),
-        can_apply_rotation_(can_apply_rotation),
-        last_frame_(NULL) {
+      : video_track_(video_track), last_frame_(NULL) {
     video_track_->AddRenderer(this);
   }
   ~FakeVideoTrackRenderer() {
@@ -54,20 +45,14 @@ class FakeVideoTrackRenderer : public VideoRendererInterface {
 
   virtual void RenderFrame(const cricket::VideoFrame* video_frame) override {
     last_frame_ = const_cast<cricket::VideoFrame*>(video_frame);
-
-    const cricket::VideoFrame* frame =
-        can_apply_rotation_ ? video_frame
-                            : video_frame->GetCopyWithRotationApplied();
-
-    if (!fake_renderer_.SetSize(static_cast<int>(frame->GetWidth()),
-                                static_cast<int>(frame->GetHeight()), 0)) {
+    if (!fake_renderer_.SetSize(static_cast<int>(video_frame->GetWidth()),
+                                static_cast<int>(video_frame->GetHeight()),
+                                0)) {
       return;
     }
 
-    fake_renderer_.RenderFrame(frame);
+    fake_renderer_.RenderFrame(video_frame);
   }
-
-  virtual bool CanApplyRotation() override { return can_apply_rotation_; }
 
   int errors() const { return fake_renderer_.errors(); }
   int width() const { return fake_renderer_.width(); }
@@ -80,7 +65,6 @@ class FakeVideoTrackRenderer : public VideoRendererInterface {
  private:
   cricket::FakeVideoRenderer fake_renderer_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
-  bool can_apply_rotation_;
 
   // Weak reference for frame pointer comparison only.
   cricket::VideoFrame* last_frame_;

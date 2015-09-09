@@ -745,9 +745,6 @@ class VideoRendererWrapper : public VideoRendererInterface {
     renderer_->RenderFrame(frame);
   }
 
-  // TODO(guoweis): Remove this once chrome code base is updated.
-  bool CanApplyRotation() override { return true; }
-
  private:
   explicit VideoRendererWrapper(cricket::VideoRenderer* renderer)
     : width_(0), height_(0), renderer_(renderer) {}
@@ -788,10 +785,6 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
     jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
     CHECK_EXCEPTION(jni());
   }
-
-  // TODO(guoweis): Report that rotation is supported as RenderFrame calls
-  // GetCopyWithRotationApplied.
-  virtual bool CanApplyRotation() override { return true; }
 
  private:
   // Return a VideoRenderer.I420Frame referring to the data in |frame|.

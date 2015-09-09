@@ -41,23 +41,12 @@ void VideoTrackRenderers::AddRenderer(VideoRendererInterface* renderer) {
     return;
   }
   rtc::CritScope cs(&critical_section_);
-  std::vector<RenderObserver>::iterator it =  renderers_.begin();
-  for (; it != renderers_.end(); ++it) {
-    if (it->renderer_ == renderer)
-      return;
-  }
-  renderers_.push_back(RenderObserver(renderer));
+  renderers_.insert(renderer);
 }
 
 void VideoTrackRenderers::RemoveRenderer(VideoRendererInterface* renderer) {
   rtc::CritScope cs(&critical_section_);
-  std::vector<RenderObserver>::iterator it =  renderers_.begin();
-  for (; it != renderers_.end(); ++it) {
-    if (it->renderer_ == renderer) {
-      renderers_.erase(it);
-      return;
-    }
-  }
+  renderers_.erase(renderer);
 }
 
 void VideoTrackRenderers::SetEnabled(bool enable) {
@@ -74,14 +63,8 @@ bool VideoTrackRenderers::RenderFrame(const cricket::VideoFrame* frame) {
   if (!enabled_) {
     return true;
   }
-
-  std::vector<RenderObserver>::iterator it = renderers_.begin();
-  for (; it != renderers_.end(); ++it) {
-    if (it->can_apply_rotation_) {
-      it->renderer_->RenderFrame(frame);
-    } else {
-      it->renderer_->RenderFrame(frame->GetCopyWithRotationApplied());
-    }
+  for (VideoRendererInterface* renderer : renderers_) {
+    renderer->RenderFrame(frame);
   }
   return true;
 }

@@ -28,7 +28,7 @@
 #ifndef TALK_APP_WEBRTC_VIDEOTRACKRENDERERS_H_
 #define TALK_APP_WEBRTC_VIDEOTRACKRENDERERS_H_
 
-#include <vector>
+#include <set>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/media/base/videorenderer.h"
@@ -56,16 +56,8 @@ class VideoTrackRenderers : public cricket::VideoRenderer {
   void SetEnabled(bool enable);
 
  private:
-  struct RenderObserver {
-    explicit RenderObserver(VideoRendererInterface* renderer)
-        : renderer_(renderer),
-          can_apply_rotation_(renderer->CanApplyRotation()) {}
-    VideoRendererInterface* renderer_;
-    bool can_apply_rotation_;
-  };
-
   bool enabled_;
-  std::vector<RenderObserver> renderers_;
+  std::set<VideoRendererInterface*> renderers_;
 
   rtc::CriticalSection critical_section_;  // Protects the above variables
 };
