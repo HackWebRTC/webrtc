@@ -410,10 +410,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     options_.SetAll(options);
     return true;
   }
-  virtual bool GetOptions(AudioOptions* options) const {
-    *options = options_;
-    return true;
-  }
 
  private:
   struct OutputScaling {
@@ -597,10 +593,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     options_ = options;
     return true;
   }
-  virtual bool GetOptions(VideoOptions* options) const {
-    *options = options_;
-    return true;
-  }
   virtual void UpdateAspectRatio(int ratio_w, int ratio_h) {}
   void set_sent_intra_frame(bool v) { sent_intra_frame_ = v; }
   bool sent_intra_frame() const { return sent_intra_frame_; }
@@ -751,9 +743,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
   bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
   int GetCapabilities() { return AUDIO_SEND | AUDIO_RECV; }
-  AudioOptions GetAudioOptions() const {
-    return options_;
-  }
   AudioOptions GetOptions() const {
     return options_;
   }
@@ -862,10 +851,6 @@ class FakeVideoEngine : public FakeBaseEngine {
     codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0, 0));
   }
   void Init() {}
-  bool GetOptions(VideoOptions* options) const {
-    *options = options_;
-    return true;
-  }
   bool SetOptions(const VideoOptions& options) {
     options_ = options;
     options_changed_ = true;

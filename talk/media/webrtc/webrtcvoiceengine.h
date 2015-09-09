@@ -285,14 +285,11 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
 
   int voe_channel() const { return voe_channel_; }
   bool valid() const { return voe_channel_ != -1; }
+  const AudioOptions& options() const { return options_; }
 
   bool SetSendParameters(const AudioSendParameters& params) override;
   bool SetRecvParameters(const AudioRecvParameters& params) override;
   bool SetOptions(const AudioOptions& options) override;
-  bool GetOptions(AudioOptions* options) const override {
-    *options = options_;
-    return true;
-  }
   bool SetRecvCodecs(const std::vector<AudioCodec>& codecs) override;
   bool SetSendCodecs(const std::vector<AudioCodec>& codecs) override;
   bool SetRecvRtpHeaderExtensions(

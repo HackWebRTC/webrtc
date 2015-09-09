@@ -1848,18 +1848,13 @@ class VoiceChannelTest
 
     channel1_->SetChannelOptions(options1);
     channel2_->SetChannelOptions(options1);
-    cricket::AudioOptions actual_options;
-    ASSERT_TRUE(media_channel1_->GetOptions(&actual_options));
-    EXPECT_EQ(options1, actual_options);
-    ASSERT_TRUE(media_channel2_->GetOptions(&actual_options));
-    EXPECT_EQ(options1, actual_options);
+    EXPECT_EQ(options1, media_channel1_->options());
+    EXPECT_EQ(options1, media_channel2_->options());
 
     channel1_->SetChannelOptions(options2);
     channel2_->SetChannelOptions(options2);
-    ASSERT_TRUE(media_channel1_->GetOptions(&actual_options));
-    EXPECT_EQ(options2, actual_options);
-    ASSERT_TRUE(media_channel2_->GetOptions(&actual_options));
-    EXPECT_EQ(options2, actual_options);
+    EXPECT_EQ(options2, media_channel1_->options());
+    EXPECT_EQ(options2, media_channel2_->options());
   }
 };
 
@@ -1931,23 +1926,19 @@ class VideoChannelTest
   void TestSetChannelOptions() {
     CreateChannels(0, 0);
 
-    cricket::VideoOptions o1, o2;
+    cricket::VideoOptions o1;
     o1.video_noise_reduction.Set(true);
 
     channel1_->SetChannelOptions(o1);
     channel2_->SetChannelOptions(o1);
-    EXPECT_TRUE(media_channel1_->GetOptions(&o2));
-    EXPECT_EQ(o1, o2);
-    EXPECT_TRUE(media_channel2_->GetOptions(&o2));
-    EXPECT_EQ(o1, o2);
+    EXPECT_EQ(o1, media_channel1_->options());
+    EXPECT_EQ(o1, media_channel2_->options());
 
     o1.video_start_bitrate.Set(123);
     channel1_->SetChannelOptions(o1);
     channel2_->SetChannelOptions(o1);
-    EXPECT_TRUE(media_channel1_->GetOptions(&o2));
-    EXPECT_EQ(o1, o2);
-    EXPECT_TRUE(media_channel2_->GetOptions(&o2));
-    EXPECT_EQ(o1, o2);
+    EXPECT_EQ(o1, media_channel1_->options());
+    EXPECT_EQ(o1, media_channel2_->options());
   }
 };
 

@@ -1135,7 +1135,6 @@ class VoiceMediaChannel : public MediaChannel {
   }
   // Sets the media options to use.
   virtual bool SetOptions(const AudioOptions& options) = 0;
-  virtual bool GetOptions(AudioOptions* options) const = 0;
 
   // Signal errors from MediaChannel.  Arguments are:
   //     ssrc(uint32), and error(VoiceMediaChannel::Error).
@@ -1211,7 +1210,6 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool RequestIntraFrame() = 0;
   // Sets the media options to use.
   virtual bool SetOptions(const VideoOptions& options) = 0;
-  virtual bool GetOptions(VideoOptions* options) const = 0;
   virtual void UpdateAspectRatio(int ratio_w, int ratio_h) = 0;
 
   // Signal errors from MediaChannel.  Arguments are:

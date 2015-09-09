@@ -220,10 +220,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       const std::vector<RtpHeaderExtension>& extensions) override;
   bool SetMaxSendBandwidth(int bps) override;
   bool SetOptions(const VideoOptions& options) override;
-  bool GetOptions(VideoOptions* options) const override {
-    *options = options_;
-    return true;
-  }
   void SetInterface(NetworkInterface* iface) override;
   void UpdateAspectRatio(int ratio_w, int ratio_h) override;
 

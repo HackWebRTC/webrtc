@@ -2992,10 +2992,12 @@ TEST_F(WebRtcVoiceEngineTestFake, InitDoesNotOverwriteDefaultAgcConfig) {
 
 TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(SetupEngine());
-  rtc::scoped_ptr<cricket::VoiceMediaChannel> channel1(
-      engine_.CreateChannel(cricket::AudioOptions()));
-  rtc::scoped_ptr<cricket::VoiceMediaChannel> channel2(
-      engine_.CreateChannel(cricket::AudioOptions()));
+  rtc::scoped_ptr<cricket::WebRtcVoiceMediaChannel> channel1(
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(
+          engine_.CreateChannel(cricket::AudioOptions())));
+  rtc::scoped_ptr<cricket::WebRtcVoiceMediaChannel> channel2(
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(
+          engine_.CreateChannel(cricket::AudioOptions())));
 
   // Have to add a stream to make SetSend work.
   cricket::StreamParams stream1;
@@ -3013,12 +3015,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
 
   ASSERT_TRUE(channel1->SetOptions(options_all));
   cricket::AudioOptions expected_options = options_all;
-  cricket::AudioOptions actual_options;
-  ASSERT_TRUE(channel1->GetOptions(&actual_options));
-  EXPECT_EQ(expected_options, actual_options);
+  EXPECT_EQ(expected_options, channel1->options());
   ASSERT_TRUE(channel2->SetOptions(options_all));
-  ASSERT_TRUE(channel2->GetOptions(&actual_options));
-  EXPECT_EQ(expected_options, actual_options);
+  EXPECT_EQ(expected_options, channel2->options());
 
   // unset NS
   cricket::AudioOptions options_no_ns;
@@ -3028,8 +3027,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   expected_options.echo_cancellation.Set(true);
   expected_options.auto_gain_control.Set(true);
   expected_options.noise_suppression.Set(false);
-  ASSERT_TRUE(channel1->GetOptions(&actual_options));
-  EXPECT_EQ(expected_options, actual_options);
+  EXPECT_EQ(expected_options, channel1->options());
 
   // unset AGC
   cricket::AudioOptions options_no_agc;
@@ -3039,8 +3037,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   expected_options.echo_cancellation.Set(true);
   expected_options.auto_gain_control.Set(false);
   expected_options.noise_suppression.Set(true);
-  ASSERT_TRUE(channel2->GetOptions(&actual_options));
-  EXPECT_EQ(expected_options, actual_options);
+  EXPECT_EQ(expected_options, channel2->options());
 
   ASSERT_TRUE(engine_.SetOptions(options_all));
   bool ec_enabled;
@@ -3099,8 +3096,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   expected_options.echo_cancellation.Set(true);
   expected_options.auto_gain_control.Set(false);
   expected_options.noise_suppression.Set(false);
-  ASSERT_TRUE(channel2->GetOptions(&actual_options));
-  EXPECT_EQ(expected_options, actual_options);
+  EXPECT_EQ(expected_options, channel2->options());
   voe_.GetEcStatus(ec_enabled, ec_mode);
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   voe_.GetNsStatus(ns_enabled, ns_mode);

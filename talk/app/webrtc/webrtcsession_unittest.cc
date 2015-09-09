@@ -623,8 +623,7 @@ class WebRtcSessionTest
     video_channel_ = media_engine_->GetVideoChannel(0);
 
     ASSERT_TRUE(video_channel_ != NULL);
-    cricket::VideoOptions video_options;
-    EXPECT_TRUE(video_channel_->GetOptions(&video_options));
+    const cricket::VideoOptions& video_options = video_channel_->options();
     EXPECT_EQ(value_expected,
         video_options.unsignalled_recv_stream_limit.GetWithDefaultIfUnset(-1));
   }
@@ -3726,10 +3725,8 @@ TEST_F(WebRtcSessionTest, TestDscpConstraint) {
 
   ASSERT_TRUE(video_channel_ != NULL);
   ASSERT_TRUE(voice_channel_ != NULL);
-  cricket::AudioOptions audio_options;
-  EXPECT_TRUE(voice_channel_->GetOptions(&audio_options));
-  cricket::VideoOptions video_options;
-  EXPECT_TRUE(video_channel_->GetOptions(&video_options));
+  const cricket::AudioOptions& audio_options = voice_channel_->options();
+  const cricket::VideoOptions& video_options = video_channel_->options();
   EXPECT_TRUE(audio_options.dscp.IsSet());
   EXPECT_TRUE(audio_options.dscp.GetWithDefaultIfUnset(false));
   EXPECT_TRUE(video_options.dscp.IsSet());
@@ -3750,8 +3747,7 @@ TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
   video_channel_ = media_engine_->GetVideoChannel(0);
 
   ASSERT_TRUE(video_channel_ != NULL);
-  cricket::VideoOptions video_options;
-  EXPECT_TRUE(video_channel_->GetOptions(&video_options));
+  const cricket::VideoOptions& video_options = video_channel_->options();
   EXPECT_TRUE(
       video_options.suspend_below_min_bitrate.GetWithDefaultIfUnset(false));
 }
@@ -3779,8 +3775,7 @@ TEST_F(WebRtcSessionTest, TestCombinedAudioVideoBweConstraint) {
   voice_channel_ = media_engine_->GetVoiceChannel(0);
 
   ASSERT_TRUE(voice_channel_ != NULL);
-  cricket::AudioOptions audio_options;
-  EXPECT_TRUE(voice_channel_->GetOptions(&audio_options));
+  const cricket::AudioOptions& audio_options = voice_channel_->options();
   EXPECT_TRUE(
       audio_options.combined_audio_video_bwe.GetWithDefaultIfUnset(false));
 }

@@ -171,7 +171,6 @@ class SctpDataMediaChannel : public DataMediaChannel,
 
   // TODO(ldixon): add a DataOptions class to mediachannel.h
   virtual bool SetOptions(int options) { return false; }
-  virtual int GetOptions() const { return 0; }
 
   // Many of these things are unused by SCTP, but are needed to fulfill
   // the MediaChannel interface.
