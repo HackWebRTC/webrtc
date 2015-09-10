@@ -367,7 +367,8 @@ bool PeerConnection::Initialize(
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
   int portallocator_flags = port_allocator_->flags();
-  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                          cricket::PORTALLOCATOR_ENABLE_IPV6;
   bool value;
   // If IPv6 flag was specified, we'll not override it by experiment.

@@ -77,6 +77,7 @@ static cricket::SessionDescription* CreateCricketSessionDescription() {
       cricket::TransportInfo(
                              cricket::CN_AUDIO,
                              cricket::TransportDescription(
+                                 cricket::NS_GINGLE_P2P,
                                  std::vector<std::string>(),
                                  kCandidateUfragVoice, kCandidatePwdVoice,
                                  cricket::ICEMODE_FULL,
@@ -85,6 +86,7 @@ static cricket::SessionDescription* CreateCricketSessionDescription() {
   EXPECT_TRUE(desc->AddTransportInfo(
       cricket::TransportInfo(cricket::CN_VIDEO,
                              cricket::TransportDescription(
+                                 cricket::NS_GINGLE_P2P,
                                  std::vector<std::string>(),
                                  kCandidateUfragVideo, kCandidatePwdVideo,
                                  cricket::ICEMODE_FULL,

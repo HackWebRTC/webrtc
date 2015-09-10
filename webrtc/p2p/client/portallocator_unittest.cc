@@ -253,6 +253,7 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     }
     session_->set_flags(session_->flags() |
                         cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
     allocator().set_allow_tcp_listen(false);
     session_->StartGettingPorts();
@@ -617,6 +618,7 @@ TEST_F(PortAllocatorTest, TestDisableUdpTurn) {
   session_->set_flags(cricket::PORTALLOCATOR_DISABLE_UDP_RELAY |
                       cricket::PORTALLOCATOR_DISABLE_UDP |
                       cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                       cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
 
   session_->StartGettingPorts();
@@ -806,7 +808,8 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithRelayOnly) {
 
 TEST_F(PortAllocatorTest, TestCandidateFilterWithHostOnly) {
   AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   allocator().set_candidate_filter(cricket::CF_HOST);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -823,7 +826,8 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
   AddInterface(kPrivateAddr);
   ResetWithStunServerAndNat(kStunAddr);
 
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   allocator().set_candidate_filter(cricket::CF_REFLEXIVE);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -843,7 +847,8 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
 // Host is not behind the NAT.
 TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   allocator().set_candidate_filter(cricket::CF_REFLEXIVE);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -856,8 +861,11 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   }
 }
 
-// Test that we get the same ufrag and pwd for all candidates.
+// Test that when the PORTALLOCATOR_ENABLE_SHARED_UFRAG is enabled we got same
+// ufrag and pwd for the collected candidates.
 TEST_F(PortAllocatorTest, TestEnableSharedUfrag) {
+  allocator().set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
   AddInterface(kClientAddr);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -877,6 +885,30 @@ TEST_F(PortAllocatorTest, TestEnableSharedUfrag) {
   EXPECT_TRUE(candidate_allocation_done_);
 }
 
+// Test that when the PORTALLOCATOR_ENABLE_SHARED_UFRAG isn't enabled we got
+// different ufrag and pwd for the collected candidates.
+TEST_F(PortAllocatorTest, TestDisableSharedUfrag) {
+  allocator().set_flags(allocator().flags() &
+                        ~cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
+  AddInterface(kClientAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
+  EXPECT_PRED5(CheckCandidate, candidates_[1],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp", kClientAddr);
+  EXPECT_EQ(4U, ports_.size());
+  // Port should generate random ufrag and pwd.
+  EXPECT_NE(kIceUfrag0, candidates_[0].username());
+  EXPECT_NE(kIceUfrag0, candidates_[1].username());
+  EXPECT_NE(candidates_[0].username(), candidates_[1].username());
+  EXPECT_NE(kIcePwd0, candidates_[0].password());
+  EXPECT_NE(kIcePwd0, candidates_[1].password());
+  EXPECT_NE(candidates_[0].password(), candidates_[1].password());
+  EXPECT_TRUE(candidate_allocation_done_);
+}
+
 // Test that when PORTALLOCATOR_ENABLE_SHARED_SOCKET is enabled only one port
 // is allocated for udp and stun. Also verify there is only one candidate
 // (local) if stun candidate is same as local candidate, which will be the case
@@ -884,6 +916,7 @@ TEST_F(PortAllocatorTest, TestEnableSharedUfrag) {
 TEST_F(PortAllocatorTest, TestSharedSocketWithoutNat) {
   AddInterface(kClientAddr);
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -902,6 +935,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNat) {
   ResetWithStunServerAndNat(kStunAddr);
 
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -926,6 +960,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
 
   allocator_->set_step_delay(cricket::kMinimumStepDelay);
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -963,6 +998,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
 
   allocator_->set_step_delay(cricket::kMinimumStepDelay);
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -982,6 +1018,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -1020,6 +1057,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
   // webrtc issue 3537.
   allocator_->set_step_delay(0);
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -1054,6 +1092,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnTcpOnly) {
   AddTurnServers(rtc::SocketAddress(), kTurnTcpIntAddr);
 
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -1086,6 +1125,7 @@ TEST_F(PortAllocatorTest, TestNonSharedSocketWithNatUsingTurnAsStun) {
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
@@ -1124,6 +1164,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnAndStun) {
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
 
@@ -1153,6 +1194,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketNoUdpAllowed) {
   allocator().set_flags(allocator().flags() |
                         cricket::PORTALLOCATOR_DISABLE_RELAY |
                         cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr);
   AddInterface(kClientAddr);
@@ -1177,6 +1219,7 @@ TEST_F(PortAllocatorTest, TestNetworkPermissionBlocked) {
   allocator().set_flags(allocator().flags() |
                         cricket::PORTALLOCATOR_DISABLE_RELAY |
                         cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   EXPECT_EQ(0U, allocator_->flags() &
                     cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
@@ -1195,6 +1238,7 @@ TEST_F(PortAllocatorTest, TestEnableIPv6Addresses) {
   allocator().set_flags(allocator().flags() |
                         cricket::PORTALLOCATOR_DISABLE_RELAY |
                         cricket::PORTALLOCATOR_ENABLE_IPV6 |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   AddInterface(kClientIPv6Addr);
   AddInterface(kClientAddr);

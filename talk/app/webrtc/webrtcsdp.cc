@@ -77,6 +77,7 @@ using cricket::kCodecParamMaxPlaybackRate;
 using cricket::kCodecParamAssociatedPayloadType;
 using cricket::MediaContentDescription;
 using cricket::MediaType;
+using cricket::NS_JINGLE_ICE_UDP;
 using cricket::RtpHeaderExtension;
 using cricket::SsrcGroup;
 using cricket::StreamParams;
@@ -891,7 +892,8 @@ bool SdpDeserialize(const std::string& message,
                     SdpParseError* error) {
   std::string session_id;
   std::string session_version;
-  TransportDescription session_td("", "");
+  TransportDescription session_td(NS_JINGLE_ICE_UDP,
+                                  std::string(), std::string());
   RtpHeaderExtensions session_extmaps;
   cricket::SessionDescription* desc = new cricket::SessionDescription();
   std::vector<JsepIceCandidate*> candidates;
@@ -2193,7 +2195,8 @@ bool ParseMediaDescription(const std::string& message,
 
     // Make a temporary TransportDescription based on |session_td|.
     // Some of this gets overwritten by ParseContent.
-    TransportDescription transport(session_td.transport_options,
+    TransportDescription transport(NS_JINGLE_ICE_UDP,
+                                   session_td.transport_options,
                                    session_td.ice_ufrag,
                                    session_td.ice_pwd,
                                    session_td.ice_mode,

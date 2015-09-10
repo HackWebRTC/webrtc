@@ -126,21 +126,6 @@
    ...
 }
 {
-   SignalsCloseAfterForcedCloseAll2
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsSsEEE8allocateEmPKv
-   fun:_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_EN3rtc5ilessESaIS2_EE11_M_get_nodeEv
-   fun:_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_EN3rtc5ilessESaIS2_EE14_M_create_nodeIJS2_EEEPSt13_Rb_tree_nodeIS2_EDpOT_
-   fun:_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_EN3rtc5ilessESaIS2_EE10_M_insert_IS2_EESt17_Rb_tree_iteratorIS2_EPKSt18_Rb_tree_node_baseSE_OT_
-   fun:_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_EN3rtc5ilessESaIS2_EE15_M_insert_equalIS2_EESt17_Rb_tree_iteratorIS2_EOT_
-   fun:_ZNSt8multimapISsSsN3rtc5ilessESaISt4pairIKSsSsEEE6insertIS4_vEESt17_Rb_tree_iteratorIS4_EOT_
-   fun:_ZN3rtc8HttpData12changeHeaderERKSsS2_NS0_13HeaderCombineE
-   fun:_ZN3rtc8HttpData9setHeaderERKSsS2_b
-   fun:_ZN3rtc8HttpData9setHeaderENS_10HttpHeaderERKSsb
-   ...
-}
-{
    DoNotDeleteTask2
    Memcheck:Leak
    fun:_Znw*

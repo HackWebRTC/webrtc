@@ -21,12 +21,6 @@ namespace cricket {
 
 class Candidate;
 
-// TODO(pthatcher): Remove this once it's no longer used in
-// remoting/protocol/libjingle_transport_factory.cc
-enum IceProtocolType {
-  ICEPROTO_RFC5245  // Standard RFC 5245 version of ICE.
-};
-
 // Base class for real implementations of TransportChannel.  This includes some
 // methods called only by Transport, which do not need to be exposed to the
 // client.
@@ -42,9 +36,9 @@ class TransportChannelImpl : public TransportChannel {
   virtual IceRole GetIceRole() const = 0;
   virtual void SetIceRole(IceRole role) = 0;
   virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
-  // TODO(pthatcher): Remove this once it's no longer called in
-  // remoting/protocol/libjingle_transport_factory.cc
-  virtual void SetIceProtocolType(IceProtocolType type) {}
+  // To toggle G-ICE/ICE.
+  virtual bool GetIceProtocolType(IceProtocolType* type) const = 0;
+  virtual void SetIceProtocolType(IceProtocolType type) = 0;
   // SetIceCredentials only need to be implemented by the ICE
   // transport channels. Non-ICE transport channels can just ignore.
   // The ufrag and pwd should be set before the Connect() is called.

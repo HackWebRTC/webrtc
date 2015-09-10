@@ -71,6 +71,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   void Connect() override;
   void OnSignalingReady() override;
   void OnCandidate(const Candidate& candidate) override;
+  bool GetIceProtocolType(IceProtocolType* type) const override;
+  void SetIceProtocolType(IceProtocolType type) override;
   // Sets the receiving timeout in milliseconds.
   // This also sets the check_receiving_delay proportionally.
   void SetReceivingTimeout(int receiving_timeout_ms) override;
@@ -243,6 +245,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   std::string ice_pwd_;
   std::string remote_ice_ufrag_;
   std::string remote_ice_pwd_;
+  IceProtocolType protocol_type_;
   IceMode remote_ice_mode_;
   IceRole ice_role_;
   uint64 tiebreaker_;

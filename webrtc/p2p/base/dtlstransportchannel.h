@@ -182,6 +182,12 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
                          const std::string& ice_pwd) override {
     channel_->SetIceCredentials(ice_ufrag, ice_pwd);
   }
+  bool GetIceProtocolType(IceProtocolType* type) const override {
+    return channel_->GetIceProtocolType(type);
+  }
+  void SetIceProtocolType(IceProtocolType type) override {
+    channel_->SetIceProtocolType(type);
+  }
   void SetRemoteIceCredentials(const std::string& ice_ufrag,
                                const std::string& ice_pwd) override {
     channel_->SetRemoteIceCredentials(ice_ufrag, ice_pwd);

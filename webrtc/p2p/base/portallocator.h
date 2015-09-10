@@ -38,11 +38,6 @@ enum {
   PORTALLOCATOR_DISABLE_TCP = 0x08,
   PORTALLOCATOR_ENABLE_SHAKER = 0x10,
   PORTALLOCATOR_ENABLE_IPV6 = 0x40,
-  // TODO(pthatcher): Remove this once it's no longer used in:
-  // remoting/client/plugin/pepper_port_allocator.cc
-  // remoting/protocol/chromium_port_allocator.cc
-  // remoting/test/fake_port_allocator.cc
-  // It's a no-op and is no longer needed.
   PORTALLOCATOR_ENABLE_SHARED_UFRAG = 0x80,
   PORTALLOCATOR_ENABLE_SHARED_SOCKET = 0x100,
   PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE = 0x200,

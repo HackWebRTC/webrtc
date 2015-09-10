@@ -37,6 +37,10 @@ TransportProxy::~TransportProxy() {
   }
 }
 
+const std::string& TransportProxy::type() const {
+  return transport_->get()->type();
+}
+
 TransportChannel* TransportProxy::GetChannel(int component) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   return GetChannelProxy(component);
@@ -335,6 +339,7 @@ BaseSession::BaseSession(rtc::Thread* signaling_thread,
       port_allocator_(port_allocator),
       sid_(sid),
       content_type_(content_type),
+      transport_type_(NS_GINGLE_P2P),
       initiator_(initiator),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10),
       ice_tiebreaker_(rtc::CreateRandomId64()),
@@ -575,6 +580,7 @@ void BaseSession::DestroyTransportProxy(
 }
 
 Transport* BaseSession::CreateTransport(const std::string& content_name) {
+  ASSERT(transport_type_ == NS_GINGLE_P2P);
   Transport* transport = new DtlsTransport<P2PTransport>(
       signaling_thread(), worker_thread(), content_name, port_allocator(),
       certificate_);
@@ -774,7 +780,8 @@ void BaseSession::LogState(State old_state, State new_state) {
   LOG(LS_INFO) << "Session:" << id()
                << " Old state:" << StateToString(old_state)
                << " New state:" << StateToString(new_state)
-               << " Type:" << content_type();
+               << " Type:" << content_type()
+               << " Transport:" << transport_type();
 }
 
 // static

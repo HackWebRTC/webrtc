@@ -39,6 +39,8 @@ class TransportDescriptionFactory {
     return certificate_;
   }
 
+  // Specifies the transport protocol to be use.
+  void set_protocol(TransportProtocol protocol) { protocol_ = protocol; }
   // Specifies the transport security policy to use.
   void set_secure(SecurePolicy s) { secure_ = s; }
   // Specifies the certificate to use (only used when secure != SEC_DISABLED).
@@ -60,6 +62,7 @@ class TransportDescriptionFactory {
   bool SetSecurityInfo(TransportDescription* description,
                        ConnectionRole role) const;
 
+  TransportProtocol protocol_;
   SecurePolicy secure_;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
 };
