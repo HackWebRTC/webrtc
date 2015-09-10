@@ -145,6 +145,10 @@ class  WebRtcAudioRecord {
       Loge("RECORD_AUDIO permission is missing");
       return -1;
     }
+    if (audioRecord != null) {
+      Loge("InitRecording() called twice without StopRecording()");
+      return -1;
+    }
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
@@ -164,11 +168,6 @@ class  WebRtcAudioRecord {
           AudioFormat.ENCODING_PCM_16BIT);
     Logd("AudioRecord.getMinBufferSize: " + minBufferSize);
 
-    if (aec != null) {
-      aec.release();
-      aec = null;
-    }
-    assertTrue(audioRecord == null);
 
     int bufferSizeInBytes = Math.max(byteBuffer.capacity(), minBufferSize);
     Logd("bufferSizeInBytes: " + bufferSizeInBytes);
@@ -180,10 +179,14 @@ class  WebRtcAudioRecord {
                                     bufferSizeInBytes);
 
     } catch (IllegalArgumentException e) {
-      Logd(e.getMessage());
+      Loge(e.getMessage());
       return -1;
     }
-    assertTrue(audioRecord.getState() == AudioRecord.STATE_INITIALIZED);
+    if (audioRecord == null ||
+        audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+      Loge("Failed to create a new AudioRecord instance");
+      return -1;
+    }
 
     Logd("AudioRecord " +
           "session ID: " + audioRecord.getAudioSessionId() + ", " +
