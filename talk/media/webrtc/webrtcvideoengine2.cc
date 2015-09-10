@@ -1095,6 +1095,20 @@ bool WebRtcVideoChannel2::SetSend(bool send) {
   return true;
 }
 
+bool WebRtcVideoChannel2::SetVideoSend(uint32 ssrc, bool mute,
+                                       const VideoOptions* options) {
+  // TODO(solenberg): The state change should be fully rolled back if any one of
+  //                  these calls fail.
+  if (!MuteStream(ssrc, mute)) {
+    return false;
+  }
+  if (!mute && options) {
+    return SetOptions(*options);
+  } else {
+    return true;
+  }
+}
+
 bool WebRtcVideoChannel2::ValidateSendSsrcAvailability(
     const StreamParams& sp) const {
   for (uint32_t ssrc: sp.ssrcs) {

@@ -61,7 +61,7 @@ enum SinkType {
 };
 
 // BaseChannel contains logic common to voice and video, including
-// enable/mute, marshaling calls to a worker thread, and
+// enable, marshaling calls to a worker thread, and
 // connection and media monitors.
 //
 // WARNING! SUBCLASSES MUST CALL Deinit() IN THEIR DESTRUCTORS!
@@ -103,7 +103,6 @@ class BaseChannel
   bool secure_required() const { return secure_required_; }
 
   bool writable() const { return writable_; }
-  bool IsStreamMuted(uint32 ssrc);
 
   // Activate RTCP mux, regardless of the state so far.  Once
   // activated, it can not be deactivated, and if the remote
@@ -125,9 +124,6 @@ class BaseChannel
                         std::string* error_desc);
 
   bool Enable(bool enable);
-  // Mute sending media on the stream with SSRC |ssrc|
-  // If there is only one sending stream SSRC 0 can be used.
-  bool MuteStream(uint32 ssrc, bool mute);
 
   // Multiplexing
   bool AddRecvStream(const StreamParams& sp);
@@ -227,8 +223,6 @@ class BaseChannel
 
   void EnableMedia_w();
   void DisableMedia_w();
-  bool MuteStream_w(uint32 ssrc, bool mute);
-  bool IsStreamMuted_w(uint32 ssrc);
   void ChannelWritable_w();
   void ChannelNotWritable_w();
   bool AddRecvStream_w(const StreamParams& sp);
@@ -319,7 +313,6 @@ class BaseChannel
   bool was_ever_writable_;
   MediaContentDirection local_content_direction_;
   MediaContentDirection remote_content_direction_;
-  std::set<uint32> muted_streams_;
   bool has_received_packet_;
   bool dtls_keyed_;
   bool secure_required_;
@@ -336,7 +329,11 @@ class VoiceChannel : public BaseChannel {
   ~VoiceChannel();
   bool Init();
   bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer);
-  bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer);
+
+  // Configure sending media on the stream with SSRC |ssrc|
+  // If there is only one sending stream SSRC 0 can be used.
+  bool SetAudioSend(uint32 ssrc, bool mute, const AudioOptions* options,
+                    AudioRenderer* renderer);
 
   // downcasts a MediaChannel
   virtual VoiceMediaChannel* media_channel() const {
@@ -386,9 +383,6 @@ class VoiceChannel : public BaseChannel {
   //     ssrc(uint32), and error(VoiceMediaChannel::Error).
   sigslot::signal3<VoiceChannel*, uint32, VoiceMediaChannel::Error>
       SignalMediaError;
-
-  // Configuration and setting.
-  bool SetChannelOptions(const AudioOptions& options);
 
  private:
   // overrides from BaseChannel
@@ -480,8 +474,9 @@ class VideoChannel : public BaseChannel {
   sigslot::signal3<VideoChannel*, uint32, VideoMediaChannel::Error>
       SignalMediaError;
 
-  // Configuration and setting.
-  bool SetChannelOptions(const VideoOptions& options);
+  // Configure sending media on the stream with SSRC |ssrc|
+  // If there is only one sending stream SSRC 0 can be used.
+  bool SetVideoSend(uint32 ssrc, bool mute, const VideoOptions* options);
 
  private:
   typedef std::map<uint32, VideoCapturer*> ScreencastMap;

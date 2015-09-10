@@ -1182,20 +1182,9 @@ void WebRtcSession::SetAudioSend(uint32 ssrc, bool enable,
     LOG(LS_ERROR) << "SetAudioSend: No audio channel exists.";
     return;
   }
-  if (!voice_channel_->SetLocalRenderer(ssrc, renderer)) {
-    // SetRenderer() can fail if the ssrc does not match any send channel.
+  if (!voice_channel_->SetAudioSend(ssrc, !enable, &options, renderer)) {
     LOG(LS_ERROR) << "SetAudioSend: ssrc is incorrect: " << ssrc;
-    return;
   }
-  if (!voice_channel_->MuteStream(ssrc, !enable)) {
-    // Allow that MuteStream fail if |enable| is false but assert otherwise.
-    // This in the normal case when the underlying media channel has already
-    // been deleted.
-    ASSERT(enable == false);
-    return;
-  }
-  if (enable)
-    voice_channel_->SetChannelOptions(options);
 }
 
 void WebRtcSession::SetAudioPlayoutVolume(uint32 ssrc, double volume) {
@@ -1254,15 +1243,12 @@ void WebRtcSession::SetVideoSend(uint32 ssrc, bool enable,
     LOG(LS_WARNING) << "SetVideoSend: No video channel exists.";
     return;
   }
-  if (!video_channel_->MuteStream(ssrc, !enable)) {
+  if (!video_channel_->SetVideoSend(ssrc, !enable, options)) {
     // Allow that MuteStream fail if |enable| is false but assert otherwise.
     // This in the normal case when the underlying media channel has already
     // been deleted.
     ASSERT(enable == false);
-    return;
   }
-  if (enable && options)
-    video_channel_->SetChannelOptions(*options);
 }
 
 bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {

@@ -137,15 +137,6 @@ template <class Base> class RtpHelper : public Base {
   virtual bool RemoveRecvStream(uint32 ssrc) {
     return RemoveStreamBySsrc(&receive_streams_, ssrc);
   }
-  virtual bool MuteStream(uint32 ssrc, bool on) {
-    if (!HasSendStream(ssrc) && ssrc != 0)
-      return false;
-    if (on)
-      muted_streams_.insert(ssrc);
-    else
-      muted_streams_.erase(ssrc);
-    return true;
-  }
   bool IsStreamMuted(uint32 ssrc) const {
     bool ret = muted_streams_.find(ssrc) != muted_streams_.end();
     // If |ssrc = 0| check if the first send stream is muted.
@@ -188,6 +179,15 @@ template <class Base> class RtpHelper : public Base {
   }
 
  protected:
+  bool MuteStream(uint32 ssrc, bool mute) {
+    if (!HasSendStream(ssrc) && ssrc != 0)
+      return false;
+    if (mute)
+      muted_streams_.insert(ssrc);
+    else
+      muted_streams_.erase(ssrc);
+    return true;
+  }
   bool set_sending(bool send) {
     sending_ = send;
     return true;
@@ -283,6 +283,20 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     }
     return set_sending(flag != SEND_NOTHING);
   }
+  virtual bool SetAudioSend(uint32 ssrc, bool mute,
+                            const AudioOptions* options,
+                            AudioRenderer* renderer) {
+    if (!SetLocalRenderer(ssrc, renderer)) {
+      return false;
+    }
+    if (!RtpHelper<VoiceMediaChannel>::MuteStream(ssrc, mute)) {
+      return false;
+    }
+    if (!mute && options) {
+      return SetOptions(*options);
+    }
+    return true;
+  }
   virtual bool SetMaxSendBandwidth(int bps) { return true; }
   virtual bool AddRecvStream(const StreamParams& sp) {
     if (!RtpHelper<VoiceMediaChannel>::AddRecvStream(sp))
@@ -310,26 +324,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
       if (it != remote_renderers_.end()) {
         it->second->RemoveChannel(0);
         remote_renderers_.erase(it);
-      } else {
-        return false;
-      }
-    }
-    return true;
-  }
-  virtual bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) {
-    std::map<uint32, VoiceChannelAudioSink*>::iterator it =
-        local_renderers_.find(ssrc);
-    if (renderer) {
-      if (it != local_renderers_.end()) {
-        ASSERT(it->second->renderer() == renderer);
-      } else {
-        local_renderers_.insert(std::make_pair(
-            ssrc, new VoiceChannelAudioSink(renderer)));
-      }
-    } else {
-      if (it != local_renderers_.end()) {
-        delete it->second;
-        local_renderers_.erase(it);
       } else {
         return false;
       }
@@ -442,6 +436,23 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     AudioRenderer* renderer_;
   };
 
+  bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) {
+    auto it = local_renderers_.find(ssrc);
+    if (renderer) {
+      if (it != local_renderers_.end()) {
+        ASSERT(it->second->renderer() == renderer);
+      } else {
+        local_renderers_.insert(std::make_pair(
+            ssrc, new VoiceChannelAudioSink(renderer)));
+      }
+    } else {
+      if (it != local_renderers_.end()) {
+        delete it->second;
+        local_renderers_.erase(it);
+      }
+    }
+    return true;
+  }
 
   FakeVoiceEngine* engine_;
   std::vector<AudioCodec> recv_codecs_;
@@ -556,6 +567,17 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   }
 
   virtual bool SetSend(bool send) { return set_sending(send); }
+  virtual bool SetVideoSend(uint32 ssrc, bool mute,
+                            const VideoOptions* options) {
+    if (!RtpHelper<VideoMediaChannel>::MuteStream(ssrc, mute)) {
+      return false;
+    }
+    if (!mute && options) {
+      return SetOptions(*options);
+    } else {
+      return true;
+    }
+  }
   virtual bool SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
     capturers_[ssrc] = capturer;
     return true;

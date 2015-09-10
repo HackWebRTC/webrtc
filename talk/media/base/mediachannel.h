@@ -566,9 +566,6 @@ class MediaChannel : public sigslot::has_slots<> {
   // multiple SSRCs.
   virtual bool RemoveRecvStream(uint32 ssrc) = 0;
 
-  // Mutes the channel.
-  virtual bool MuteStream(uint32 ssrc, bool on) = 0;
-
   // Sets the RTP extension headers and IDs to use when sending RTP.
   virtual bool SetRecvRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions) = 0;
@@ -1097,10 +1094,11 @@ class VoiceMediaChannel : public MediaChannel {
   virtual bool SetPlayout(bool playout) = 0;
   // Starts or stops sending (and potentially capture) of local audio.
   virtual bool SetSend(SendFlags flag) = 0;
+  // Configure stream for sending.
+  virtual bool SetAudioSend(uint32 ssrc, bool mute, const AudioOptions* options,
+                            AudioRenderer* renderer) = 0;
   // Sets the renderer object to be used for the specified remote audio stream.
   virtual bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) = 0;
-  // Sets the renderer object to be used for the specified local audio stream.
-  virtual bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) = 0;
   // Gets current energy levels for all incoming streams.
   virtual bool GetActiveStreams(AudioInfo::StreamList* actives) = 0;
   // Get the current energy level of the stream sent to the speaker.
@@ -1196,6 +1194,9 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool SetRender(bool render) = 0;
   // Starts or stops transmission (and potentially capture) of local video.
   virtual bool SetSend(bool send) = 0;
+  // Configure stream for sending.
+  virtual bool SetVideoSend(uint32 ssrc, bool mute,
+                            const VideoOptions* options) = 0;
   // Sets the renderer object to be used for the specified stream.
   // If SSRC is 0, the renderer is used for the 'default' stream.
   virtual bool SetRenderer(uint32 ssrc, VideoRenderer* renderer) = 0;
@@ -1337,7 +1338,6 @@ class DataMediaChannel : public MediaChannel {
   virtual bool SetSendCodecs(const std::vector<DataCodec>& codecs) = 0;
   virtual bool SetRecvCodecs(const std::vector<DataCodec>& codecs) = 0;
 
-  virtual bool MuteStream(uint32 ssrc, bool on) { return false; }
   // TODO(pthatcher): Implement this.
   virtual bool GetStats(DataMediaInfo* info) { return true; }
 

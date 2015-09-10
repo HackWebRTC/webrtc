@@ -193,7 +193,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   bool SetSendStreamFormat(uint32 ssrc, const VideoFormat& format) override;
   bool SetRender(bool render) override;
   bool SetSend(bool send) override;
-
+  bool SetVideoSend(uint32 ssrc, bool mute,
+                    const VideoOptions* options) override;
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32 ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
@@ -210,7 +211,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   void OnRtcpReceived(rtc::Buffer* packet,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override;
-  bool MuteStream(uint32 ssrc, bool mute) override;
 
   // Set send/receive RTP header extensions. This must be done before creating
   // streams as it only has effect on future streams.
@@ -233,6 +233,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   bool GetRenderer(uint32 ssrc, VideoRenderer** renderer);
 
  private:
+  bool MuteStream(uint32 ssrc, bool mute);
   class WebRtcVideoReceiveStream;
   void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
                             const StreamParams& sp) const;

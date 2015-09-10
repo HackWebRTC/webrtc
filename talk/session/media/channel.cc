@@ -322,14 +322,6 @@ bool BaseChannel::Enable(bool enable) {
   return true;
 }
 
-bool BaseChannel::MuteStream(uint32 ssrc, bool mute) {
-  return InvokeOnWorker(Bind(&BaseChannel::MuteStream_w, this, ssrc, mute));
-}
-
-bool BaseChannel::IsStreamMuted(uint32 ssrc) {
-  return InvokeOnWorker(Bind(&BaseChannel::IsStreamMuted_w, this, ssrc));
-}
-
 bool BaseChannel::AddRecvStream(const StreamParams& sp) {
   return InvokeOnWorker(Bind(&BaseChannel::AddRecvStream_w, this, sp));
 }
@@ -721,23 +713,6 @@ void BaseChannel::DisableMedia_w() {
   LOG(LS_INFO) << "Channel disabled";
   enabled_ = false;
   ChangeState();
-}
-
-bool BaseChannel::MuteStream_w(uint32 ssrc, bool mute) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  bool ret = media_channel()->MuteStream(ssrc, mute);
-  if (ret) {
-    if (mute)
-      muted_streams_.insert(ssrc);
-    else
-      muted_streams_.erase(ssrc);
-  }
-  return ret;
-}
-
-bool BaseChannel::IsStreamMuted_w(uint32 ssrc) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  return muted_streams_.find(ssrc) != muted_streams_.end();
 }
 
 void BaseChannel::ChannelWritable_w() {
@@ -1289,9 +1264,11 @@ bool VoiceChannel::SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) {
                              media_channel(), ssrc, renderer));
 }
 
-bool VoiceChannel::SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) {
-  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetLocalRenderer,
-                             media_channel(), ssrc, renderer));
+bool VoiceChannel::SetAudioSend(uint32 ssrc, bool mute,
+                                const AudioOptions* options,
+                                AudioRenderer* renderer) {
+  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetAudioSend,
+                             media_channel(), ssrc, mute, options, renderer));
 }
 
 bool VoiceChannel::SetRingbackTone(const void* buf, int len) {
@@ -1560,11 +1537,6 @@ bool VoiceChannel::InsertDtmf_w(uint32 ssrc, int event, int duration,
   return media_channel()->InsertDtmf(ssrc, event, duration, flags);
 }
 
-bool VoiceChannel::SetChannelOptions(const AudioOptions& options) {
-  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetOptions,
-                             media_channel(), options));
-}
-
 void VoiceChannel::OnMessage(rtc::Message *pmsg) {
   switch (pmsg->message_id) {
     case MSG_EARLYMEDIATIMEOUT:
@@ -1733,6 +1705,12 @@ bool VideoChannel::RequestIntraFrame() {
   worker_thread()->Invoke<void>(Bind(
       &VideoMediaChannel::RequestIntraFrame, media_channel()));
   return true;
+}
+
+bool VideoChannel::SetVideoSend(uint32 ssrc, bool mute,
+                                const VideoOptions* options) {
+  return InvokeOnWorker(Bind(&VideoMediaChannel::SetVideoSend,
+                             media_channel(), ssrc, mute, options));
 }
 
 void VideoChannel::ChangeState() {
@@ -1952,11 +1930,6 @@ void VideoChannel::OnScreencastWindowEvent_s(uint32 ssrc,
   SignalScreencastWindowEvent(ssrc, we);
 }
 
-bool VideoChannel::SetChannelOptions(const VideoOptions &options) {
-  return InvokeOnWorker(Bind(&VideoMediaChannel::SetOptions,
-                             media_channel(), options));
-}
-
 void VideoChannel::OnMessage(rtc::Message *pmsg) {
   switch (pmsg->message_id) {
     case MSG_SCREENCASTWINDOWEVENT: {
@@ -2065,7 +2038,6 @@ void VideoChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,
       break;
   }
 }
-
 
 void VideoChannel::GetSrtpCiphers(std::vector<std::string>* ciphers) const {
   GetSupportedVideoCryptoSuites(ciphers);

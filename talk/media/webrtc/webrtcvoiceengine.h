@@ -302,12 +302,13 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool SetSend(SendFlags send) override;
   bool PauseSend();
   bool ResumeSend();
+  bool SetAudioSend(uint32 ssrc, bool mute, const AudioOptions* options,
+                    AudioRenderer* renderer) override;
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32 ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool RemoveRecvStream(uint32 ssrc) override;
   bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) override;
-  bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) override;
   bool GetActiveStreams(AudioInfo::StreamList* actives) override;
   int GetOutputLevel() override;
   int GetTimeSinceLastTyping() override;
@@ -328,7 +329,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   void OnRtcpReceived(rtc::Buffer* packet,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override {}
-  bool MuteStream(uint32 ssrc, bool on) override;
   bool SetMaxSendBandwidth(int bps) override;
   bool GetStats(VoiceMediaInfo* info) override;
   // Gets last reported error from WebRtc voice engine.  This should be only
@@ -359,6 +359,8 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   void SetCall(webrtc::Call* call);
 
  private:
+  bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer);
+  bool MuteStream(uint32 ssrc, bool mute);
   WebRtcVoiceEngine* engine() { return engine_; }
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
   int GetOutputLevel(int channel);

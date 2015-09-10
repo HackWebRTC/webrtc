@@ -2374,6 +2374,23 @@ bool WebRtcVoiceMediaChannel::ChangeSend(int channel, SendFlags send) {
   return true;
 }
 
+bool WebRtcVoiceMediaChannel::SetAudioSend(uint32 ssrc, bool mute,
+                                           const AudioOptions* options,
+                                           AudioRenderer* renderer) {
+  // TODO(solenberg): The state change should be fully rolled back if any one of
+  //                  these calls fail.
+  if (!SetLocalRenderer(ssrc, renderer)) {
+    return false;
+  }
+  if (!MuteStream(ssrc, mute)) {
+    return false;
+  }
+  if (!mute && options) {
+    return SetOptions(*options);
+  }
+  return true;
+}
+
 // TODO(ronghuawu): Change this method to return bool.
 void WebRtcVoiceMediaChannel::ConfigureSendChannel(int channel) {
   if (engine()->voe()->network()->RegisterExternalTransport(
