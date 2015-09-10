@@ -719,8 +719,7 @@ VideoSource::VideoSource(int flow_id,
       next_frame_ms_(first_frame_offset_ms),
       next_frame_rand_ms_(0),
       now_ms_(0),
-      prototype_header_(),
-      start_plotting_ms_(first_frame_offset_ms) {
+      prototype_header_() {
   memset(&prototype_header_, 0, sizeof(prototype_header_));
   prototype_header_.ssrc = ssrc;
   prototype_header_.sequenceNumber = 0xf000u;

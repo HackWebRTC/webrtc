@@ -195,8 +195,7 @@ LogMessage::~LogMessage() {
   }
   uint32 delay = TimeSince(before);
   if (delay >= warn_slow_logs_delay_) {
-    LogMessage slow_log_warning =
-        rtc::LogMessage(__FILE__, __LINE__, LS_WARNING);
+    rtc::LogMessage slow_log_warning(__FILE__, __LINE__, LS_WARNING);
     // If our warning is slow, we don't want to warn about it, because
     // that would lead to inifinite recursion.  So, give a really big
     // number for the delay threshold.
