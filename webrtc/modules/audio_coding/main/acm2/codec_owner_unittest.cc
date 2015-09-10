@@ -115,19 +115,19 @@ TEST_F(CodecOwnerTest, ExternalEncoder) {
     EXPECT_CALL(external_encoder,
                 EncodeInternal(0, audio, arraysize(encoded), encoded))
         .WillOnce(Return(info));
-    EXPECT_CALL(external_encoder, Reset());
-    EXPECT_CALL(external_encoder, Reset());
+    EXPECT_CALL(external_encoder, Mark("A"));
+    EXPECT_CALL(external_encoder, Mark("B"));
     info.encoded_timestamp = 2;
     EXPECT_CALL(external_encoder,
                 EncodeInternal(2, audio, arraysize(encoded), encoded))
         .WillOnce(Return(info));
-    EXPECT_CALL(external_encoder, Reset());
+    EXPECT_CALL(external_encoder, Die());
   }
 
   info = codec_owner_.Encoder()->Encode(0, audio, arraysize(audio),
                                         arraysize(encoded), encoded);
   EXPECT_EQ(0u, info.encoded_timestamp);
-  external_encoder.Reset();  // Dummy call to mark the sequence of expectations.
+  external_encoder.Mark("A");
 
   // Change to internal encoder.
   CodecInst codec_inst = kDefaultCodecInst;
@@ -136,14 +136,13 @@ TEST_F(CodecOwnerTest, ExternalEncoder) {
   // Don't expect any more calls to the external encoder.
   info = codec_owner_.Encoder()->Encode(1, audio, arraysize(audio),
                                         arraysize(encoded), encoded);
-  external_encoder.Reset();  // Dummy call to mark the sequence of expectations.
+  external_encoder.Mark("B");
 
   // Change back to external encoder again.
   codec_owner_.SetEncoders(&external_encoder, -1, VADNormal, -1);
   info = codec_owner_.Encoder()->Encode(2, audio, arraysize(audio),
                                         arraysize(encoded), encoded);
   EXPECT_EQ(2u, info.encoded_timestamp);
-  external_encoder.Reset();  // Dummy call to mark the sequence of expectations.
 }
 
 }  // namespace acm2

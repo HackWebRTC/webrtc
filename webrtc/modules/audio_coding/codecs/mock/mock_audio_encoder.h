@@ -21,6 +21,7 @@ class MockAudioEncoder final : public AudioEncoder {
  public:
   ~MockAudioEncoder() override { Die(); }
   MOCK_METHOD0(Die, void());
+  MOCK_METHOD1(Mark, void(std::string desc));
   MOCK_CONST_METHOD0(MaxEncodedBytes, size_t());
   MOCK_CONST_METHOD0(SampleRateHz, int());
   MOCK_CONST_METHOD0(NumChannels, int());
