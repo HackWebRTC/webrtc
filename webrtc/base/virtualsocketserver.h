@@ -306,6 +306,7 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
   void SetLocalAddress(const SocketAddress& addr);
 
   VirtualSocketServer* server_;
+  int family_;
   int type_;
   bool async_;
   ConnState state_;

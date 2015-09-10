@@ -318,6 +318,8 @@ class FrameInputWrapper : public cricket::VideoRenderer {
 
  private:
   cricket::VideoCapturer* capturer_;
+  int width_;
+  int height_;
 
   DISALLOW_COPY_AND_ASSIGN(FrameInputWrapper);
 };

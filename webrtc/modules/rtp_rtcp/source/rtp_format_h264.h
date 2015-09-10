@@ -84,6 +84,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
   const size_t max_payload_len_;
   RTPFragmentationHeader fragmentation_;
   PacketQueue packets_;
+  FrameType frame_type_;
 
   DISALLOW_COPY_AND_ASSIGN(RtpPacketizerH264);
 };

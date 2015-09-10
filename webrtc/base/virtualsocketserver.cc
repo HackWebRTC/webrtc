@@ -98,6 +98,7 @@ VirtualSocket::VirtualSocket(VirtualSocketServer* server,
                              int type,
                              bool async)
     : server_(server),
+      family_(family),
       type_(type),
       async_(async),
       state_(CS_CLOSED),

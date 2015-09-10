@@ -153,7 +153,8 @@ RtpPacketizerH264::RtpPacketizerH264(FrameType frame_type,
                                      size_t max_payload_len)
     : payload_data_(NULL),
       payload_size_(0),
-      max_payload_len_(max_payload_len) {
+      max_payload_len_(max_payload_len),
+      frame_type_(frame_type) {
 }
 
 RtpPacketizerH264::~RtpPacketizerH264() {
