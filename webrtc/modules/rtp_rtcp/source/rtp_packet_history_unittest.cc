@@ -70,8 +70,8 @@ TEST_F(RtpPacketHistoryTest, NoStoreStatus) {
   size_t len = 0;
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                   capture_time_ms, kAllowRetransmission));
+  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
+                                   kAllowRetransmission));
   // Packet should not be stored.
   len = kMaxPacketLength;
   int64_t time;
@@ -84,8 +84,7 @@ TEST_F(RtpPacketHistoryTest, DontStore) {
   size_t len = 0;
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                   capture_time_ms, kDontStore));
+  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms, kDontStore));
 
   // Packet should not be stored.
   len = kMaxPacketLength;
@@ -97,11 +96,8 @@ TEST_F(RtpPacketHistoryTest, DontStore) {
 TEST_F(RtpPacketHistoryTest, PutRtpPacket_TooLargePacketLength) {
   hist_->SetStorePacketsStatus(true, 10);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-  EXPECT_EQ(-1, hist_->PutRTPPacket(packet_,
-                                    kMaxPacketLength + 1,
-                                    kMaxPacketLength,
-                                    capture_time_ms,
-                                    kAllowRetransmission));
+  EXPECT_EQ(-1, hist_->PutRTPPacket(packet_, kMaxPacketLength + 1,
+                                    capture_time_ms, kAllowRetransmission));
 }
 
 TEST_F(RtpPacketHistoryTest, GetRtpPacket_NotStored) {
@@ -119,8 +115,8 @@ TEST_F(RtpPacketHistoryTest, PutRtpPacket) {
 
   EXPECT_FALSE(hist_->HasRTPPacket(kSeqNum));
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                   capture_time_ms, kAllowRetransmission));
+  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
+                                   kAllowRetransmission));
   EXPECT_TRUE(hist_->HasRTPPacket(kSeqNum));
 }
 
@@ -129,8 +125,8 @@ TEST_F(RtpPacketHistoryTest, GetRtpPacket) {
   size_t len = 0;
   int64_t capture_time_ms = 1;
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                   capture_time_ms, kAllowRetransmission));
+  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
+                                   kAllowRetransmission));
 
   size_t len_out = kMaxPacketLength;
   int64_t time;
@@ -149,8 +145,7 @@ TEST_F(RtpPacketHistoryTest, NoCaptureTime) {
   fake_clock_.AdvanceTimeMilliseconds(1);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                   -1, kAllowRetransmission));
+  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, -1, kAllowRetransmission));
 
   size_t len_out = kMaxPacketLength;
   int64_t time;
@@ -168,8 +163,8 @@ TEST_F(RtpPacketHistoryTest, DontRetransmit) {
   size_t len = 0;
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                   capture_time_ms, kDontRetransmit));
+  EXPECT_EQ(
+      0, hist_->PutRTPPacket(packet_, len, capture_time_ms, kDontRetransmit));
 
   size_t len_out = kMaxPacketLength;
   int64_t time;
@@ -184,8 +179,8 @@ TEST_F(RtpPacketHistoryTest, MinResendTime) {
   size_t len = 0;
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                   capture_time_ms, kAllowRetransmission));
+  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
+                                   kAllowRetransmission));
 
   int64_t time;
   len = kMaxPacketLength;
@@ -215,8 +210,8 @@ TEST_F(RtpPacketHistoryTest, DynamicExpansion) {
   for (int i = 0; i < 4; ++i) {
     len = 0;
     CreateRtpPacket(kSeqNum + i, kSsrc, kPayload, kTimestamp, packet_, &len);
-    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                     capture_time_ms, kAllowRetransmission));
+    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
+                                     kAllowRetransmission));
   }
   for (int i = 0; i < 4; ++i) {
     len = kMaxPacketLength;
@@ -230,8 +225,8 @@ TEST_F(RtpPacketHistoryTest, DynamicExpansion) {
   for (int i = 4; i < 20; ++i) {
     len = 0;
     CreateRtpPacket(kSeqNum + i, kSsrc, kPayload, kTimestamp, packet_, &len);
-    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                     capture_time_ms, kAllowRetransmission));
+    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
+                                     kAllowRetransmission));
   }
   for (int i = 4; i < 20; ++i) {
     len = kMaxPacketLength;
@@ -257,8 +252,8 @@ TEST_F(RtpPacketHistoryTest, FullExpansion) {
   for (size_t i = 0; i < kMaxHistoryCapacity + 1; ++i) {
     len = 0;
     CreateRtpPacket(kSeqNum + i, kSsrc, kPayload, kTimestamp, packet_, &len);
-    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                     capture_time_ms, kAllowRetransmission));
+    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
+                                     kAllowRetransmission));
   }
 
   fake_clock_.AdvanceTimeMilliseconds(100);

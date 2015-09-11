@@ -1026,8 +1026,7 @@ int32_t RTPSender::SendToNetwork(
 
   // Used for NACK and to spread out the transmission of packets.
   if (packet_history_.PutRTPPacket(buffer, rtp_header_length + payload_length,
-                                   max_payload_length_, capture_time_ms,
-                                   storage) != 0) {
+                                   capture_time_ms, storage) != 0) {
     return -1;
   }
 

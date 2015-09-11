@@ -39,7 +39,6 @@ class RTPPacketHistory {
   // Stores RTP packet.
   int32_t PutRTPPacket(const uint8_t* packet,
                        size_t packet_length,
-                       size_t max_packet_length,
                        int64_t capture_time_ms,
                        StorageType type);
 
@@ -88,14 +87,18 @@ class RTPPacketHistory {
   rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
   bool store_ GUARDED_BY(critsect_);
   uint32_t prev_index_ GUARDED_BY(critsect_);
-  size_t max_packet_length_ GUARDED_BY(critsect_);
 
-  std::vector<std::vector<uint8_t> > stored_packets_ GUARDED_BY(critsect_);
-  std::vector<uint16_t> stored_seq_nums_ GUARDED_BY(critsect_);
-  std::vector<size_t> stored_lengths_ GUARDED_BY(critsect_);
-  std::vector<int64_t> stored_times_ GUARDED_BY(critsect_);
-  std::vector<int64_t> stored_send_times_ GUARDED_BY(critsect_);
-  std::vector<StorageType> stored_types_ GUARDED_BY(critsect_);
+  struct StoredPacket {
+    StoredPacket();
+    uint16_t sequence_number = 0;
+    int64_t time_ms = 0;
+    int64_t send_time = 0;
+    StorageType storage_type = kDontStore;
+
+    uint8_t data[IP_PACKET_SIZE];
+    size_t length = 0;
+  };
+  std::vector<StoredPacket> stored_packets_ GUARDED_BY(critsect_);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_RTP_PACKET_HISTORY_H_
