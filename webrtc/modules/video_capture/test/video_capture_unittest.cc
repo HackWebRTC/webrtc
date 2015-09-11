@@ -429,7 +429,7 @@ class VideoCaptureExternalTest : public testing::Test {
  public:
   void SetUp() {
     capture_module_ = VideoCaptureFactory::Create(0, capture_input_interface_);
-    process_module_ = webrtc::ProcessThread::Create();
+    process_module_ = webrtc::ProcessThread::Create("ProcessThread");
     process_module_->Start();
     process_module_->RegisterModule(capture_module_);
 

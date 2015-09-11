@@ -29,7 +29,7 @@ class ProcessThread {
  public:
   virtual ~ProcessThread();
 
-  static rtc::scoped_ptr<ProcessThread> Create();
+  static rtc::scoped_ptr<ProcessThread> Create(const char* thread_name);
 
   // Starts the worker thread.  Must be called from the construction thread.
   virtual void Start() = 0;

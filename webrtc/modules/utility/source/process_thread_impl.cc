@@ -36,13 +36,16 @@ int64_t GetNextCallbackTime(Module* module, int64_t time_now) {
 ProcessThread::~ProcessThread() {}
 
 // static
-rtc::scoped_ptr<ProcessThread> ProcessThread::Create() {
-  return rtc::scoped_ptr<ProcessThread>(new ProcessThreadImpl()).Pass();
+rtc::scoped_ptr<ProcessThread> ProcessThread::Create(
+    const char* thread_name) {
+  return rtc::scoped_ptr<ProcessThread>(new ProcessThreadImpl(thread_name))
+      .Pass();
 }
 
-ProcessThreadImpl::ProcessThreadImpl()
-    : wake_up_(EventWrapper::Create()), stop_(false) {
-}
+ProcessThreadImpl::ProcessThreadImpl(const char* thread_name)
+    : wake_up_(EventWrapper::Create()),
+      stop_(false),
+      thread_name_(thread_name) {}
 
 ProcessThreadImpl::~ProcessThreadImpl() {
   DCHECK(thread_checker_.CalledOnValidThread());
@@ -73,8 +76,8 @@ void ProcessThreadImpl::Start() {
       m.module->ProcessThreadAttached(this);
   }
 
-  thread_ = ThreadWrapper::CreateThread(
-      &ProcessThreadImpl::Run, this, "ProcessThread");
+  thread_ = ThreadWrapper::CreateThread(&ProcessThreadImpl::Run, this,
+                                        thread_name_.c_str());
   CHECK(thread_->Start());
 }
 

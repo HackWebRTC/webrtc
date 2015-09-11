@@ -23,14 +23,13 @@ namespace voe {
 
 static int32_t _gInstanceCounter = 0;
 
-SharedData::SharedData(const Config& config) :
-    _instanceId(++_gInstanceCounter),
-    _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
-    _channelManager(_gInstanceCounter, config),
-    _engineStatistics(_gInstanceCounter),
-    _audioDevicePtr(NULL),
-    _moduleProcessThreadPtr(ProcessThread::Create())
-{
+SharedData::SharedData(const Config& config)
+    : _instanceId(++_gInstanceCounter),
+      _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
+      _channelManager(_gInstanceCounter, config),
+      _engineStatistics(_gInstanceCounter),
+      _audioDevicePtr(NULL),
+      _moduleProcessThreadPtr(ProcessThread::Create("VoiceProcessThread")) {
     Trace::CreateTrace();
     if (OutputMixer::Create(_outputMixerPtr, _gInstanceCounter) == 0)
     {

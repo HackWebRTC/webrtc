@@ -136,7 +136,7 @@ namespace internal {
 
 Call::Call(const Call::Config& config)
     : num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
-      module_process_thread_(ProcessThread::Create()),
+      module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
       channel_group_(new ChannelGroup(module_process_thread_.get())),
       next_channel_id_(0),
       config_(config),

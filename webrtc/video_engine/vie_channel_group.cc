@@ -167,7 +167,7 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
                                  BitrateController::kDefaultStartBitrateKbps,
                              0)),
       process_thread_(process_thread),
-      pacer_thread_(ProcessThread::Create()),
+      pacer_thread_(ProcessThread::Create("PacerThread")),
       // Constructed last as this object calls the provided callback on
       // construction.
       bitrate_controller_(

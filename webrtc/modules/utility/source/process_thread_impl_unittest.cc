@@ -52,13 +52,13 @@ ACTION_P(SetTimestamp, ptr) {
 }
 
 TEST(ProcessThreadImpl, StartStop) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
   thread.Stop();
 }
 
 TEST(ProcessThreadImpl, MultipleStartStop) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   for (int i = 0; i < 5; ++i) {
     thread.Start();
     thread.Stop();
@@ -67,7 +67,7 @@ TEST(ProcessThreadImpl, MultipleStartStop) {
 
 // Verifies that we get at least call back to Process() on the worker thread.
 TEST(ProcessThreadImpl, ProcessCall) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
@@ -89,7 +89,7 @@ TEST(ProcessThreadImpl, ProcessCall) {
 // Same as ProcessCall except the module is registered before the
 // call to Start().
 TEST(ProcessThreadImpl, ProcessCall2) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
 
   MockModule module;
@@ -111,7 +111,7 @@ TEST(ProcessThreadImpl, ProcessCall2) {
 // Tests setting up a module for callbacks and then unregister that module.
 // After unregistration, we should not receive any further callbacks.
 TEST(ProcessThreadImpl, Deregister) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
 
   int process_count = 0;
@@ -146,7 +146,7 @@ TEST(ProcessThreadImpl, Deregister) {
 // time.  There's some variance of timing built into it to reduce chance of
 // flakiness on bots.
 void ProcessCallAfterAFewMs(int64_t milliseconds) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
@@ -211,7 +211,7 @@ TEST(ProcessThreadImpl, DISABLED_ProcessCallAfter200ms) {
 // build bots.
 // TODO(tommi): Fix.
 TEST(ProcessThreadImpl, DISABLED_Process50Times) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
@@ -244,7 +244,7 @@ TEST(ProcessThreadImpl, DISABLED_Process50Times) {
 // Tests that we can wake up the worker thread to give us a callback right
 // away when we know the thread is sleeping.
 TEST(ProcessThreadImpl, WakeUp) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
   rtc::scoped_ptr<EventWrapper> started(EventWrapper::Create());
@@ -292,7 +292,7 @@ TEST(ProcessThreadImpl, WakeUp) {
 // Tests that we can post a task that gets run straight away on the worker
 // thread.
 TEST(ProcessThreadImpl, PostTask) {
-  ProcessThreadImpl thread;
+  ProcessThreadImpl thread("ProcessThread");
   rtc::scoped_ptr<EventWrapper> task_ran(EventWrapper::Create());
   rtc::scoped_ptr<RaiseEventTask> task(new RaiseEventTask(task_ran.get()));
   thread.Start();
