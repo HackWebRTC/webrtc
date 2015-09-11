@@ -7,6 +7,7 @@ WebRtcVideoChannel2BaseTest.TwoStreamsReUseFirstStream
 # https://code.google.com/p/webrtc/issues/detail?id=4963
 WebRtcVideoChannel2BaseTest.AdaptResolution16x10
 WebRtcVideoChannel2BaseTest.AdaptResolution4x3
+WebRtcVideoChannel2BaseTest.AddRemoveCapturer
 WebRtcVideoChannel2BaseTest.AddRemoveSendStreams
 WebRtcVideoChannel2BaseTest.GetStatsMultipleRecvStreams
 WebRtcVideoChannel2BaseTest.GetStatsMultipleSendStreams
