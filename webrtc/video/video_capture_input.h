@@ -82,7 +82,6 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   rtc::scoped_ptr<ThreadWrapper> capture_thread_;
   // TODO(pbos): scoped_ptr
   EventWrapper& capture_event_;
-  EventWrapper& deliver_event_;
 
   volatile int stop_;
 

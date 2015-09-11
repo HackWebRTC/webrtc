@@ -44,7 +44,6 @@ VideoCaptureInput::VideoCaptureInput(ProcessThread* module_process_thread,
                                                   this,
                                                   "CaptureThread")),
       capture_event_(*EventWrapper::Create()),
-      deliver_event_(*EventWrapper::Create()),
       stop_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(
@@ -69,7 +68,6 @@ VideoCaptureInput::~VideoCaptureInput() {
   // Stop the camera input.
   capture_thread_->Stop();
   delete &capture_event_;
-  delete &deliver_event_;
 }
 
 void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
