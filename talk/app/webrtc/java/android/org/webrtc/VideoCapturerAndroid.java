@@ -168,9 +168,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     if (Camera.getNumberOfCameras() < 2 )
       return false;
 
-    if (cameraThread == null) {
-      Log.e(TAG, "Camera has not been started");
-      return false;
+    if (cameraThreadHandler == null) {
+        Log.e(TAG, "Calling switchCamera() for stopped camera.");
+        return false;
     }
     if (pendingCameraSwitch) {
       // Do not handle multiple camera switch request to avoid blocking
