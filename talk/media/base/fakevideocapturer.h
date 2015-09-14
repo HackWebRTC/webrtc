@@ -133,6 +133,10 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     return true;
   }
 
+  void SignalCapturedFrame(cricket::CapturedFrame* frame) {
+    SignalFrameCaptured(this, frame);
+  }
+
   sigslot::signal1<FakeVideoCapturer*> SignalDestroyed;
 
   virtual cricket::CaptureState Start(const cricket::VideoFormat& format) {

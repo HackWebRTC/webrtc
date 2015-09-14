@@ -440,18 +440,14 @@ TEST_F(WebRtcVideoEngine2Test, PropagatesInputFrameTimestamp) {
                                       cricket::FOURCC_I420));
   channel->SetSend(true);
 
-  FakeCall* call = factory.GetCall();
-  std::vector<FakeVideoSendStream*> streams = call->GetVideoSendStreams();
-  FakeVideoSendStream* stream = streams[0];
+  FakeVideoSendStream* stream = factory.GetCall()->GetVideoSendStreams()[0];
 
-  int64_t timestamp;
-  int64_t last_timestamp;
 
   EXPECT_TRUE(capturer.CaptureFrame());
-  last_timestamp = stream->GetLastTimestamp();
+  int64_t last_timestamp = stream->GetLastTimestamp();
   for (int i = 0; i < 10; i++) {
     EXPECT_TRUE(capturer.CaptureFrame());
-    timestamp = stream->GetLastTimestamp();
+    int64_t timestamp = stream->GetLastTimestamp();
     int64_t interval = timestamp - last_timestamp;
 
     // Precision changes from nanosecond to millisecond.
@@ -469,7 +465,7 @@ TEST_F(WebRtcVideoEngine2Test, PropagatesInputFrameTimestamp) {
   last_timestamp = stream->GetLastTimestamp();
   for (int i = 0; i < 10; i++) {
     EXPECT_TRUE(capturer.CaptureFrame());
-    timestamp = stream->GetLastTimestamp();
+    int64_t timestamp = stream->GetLastTimestamp();
     int64_t interval = timestamp - last_timestamp;
 
     // Precision changes from nanosecond to millisecond.
@@ -480,6 +476,64 @@ TEST_F(WebRtcVideoEngine2Test, PropagatesInputFrameTimestamp) {
   }
 
   // Remove stream previously added to free the external encoder instance.
+  EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
+}
+
+TEST_F(WebRtcVideoEngine2Test,
+       ProducesIncreasingTimestampsWithResetInputSources) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+
+  FakeCallFactory factory;
+  engine_.SetCallFactory(&factory);
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+
+  EXPECT_TRUE(
+      channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  channel->SetSend(true);
+  FakeVideoSendStream* stream = factory.GetCall()->GetVideoSendStreams()[0];
+
+  FakeVideoCapturer capturer1;
+  EXPECT_TRUE(channel->SetCapturer(kSsrc, &capturer1));
+
+  cricket::CapturedFrame frame;
+  frame.width = 1280;
+  frame.height = 720;
+  frame.fourcc = cricket::FOURCC_I420;
+  frame.data_size = static_cast<uint32>(
+      cricket::VideoFrame::SizeOf(frame.width, frame.height));
+  rtc::scoped_ptr<char[]> data(new char[frame.data_size]);
+  frame.data = data.get();
+  memset(frame.data, 1, frame.data_size);
+  frame.elapsed_time = 0;
+  const int kInitialTimestamp = 123456;
+  frame.time_stamp = kInitialTimestamp;
+
+  // Deliver initial frame.
+  capturer1.SignalCapturedFrame(&frame);
+  // Deliver next frame 1 second later.
+  frame.time_stamp += rtc::kNumNanosecsPerSec;
+  rtc::Thread::Current()->SleepMs(1000);
+  capturer1.SignalCapturedFrame(&frame);
+
+  int64_t capturer1_last_timestamp = stream->GetLastTimestamp();
+  // Reset input source, should still be continuous even though input-frame
+  // timestamp is less than before.
+  FakeVideoCapturer capturer2;
+  EXPECT_TRUE(channel->SetCapturer(kSsrc, &capturer2));
+
+  rtc::Thread::Current()->SleepMs(1);
+  // Deliver with a timestamp (10 seconds) before the previous initial one,
+  // these should not be related at all anymore and it should still work fine.
+  frame.time_stamp = kInitialTimestamp - 10000;
+  capturer2.SignalCapturedFrame(&frame);
+
+  // New timestamp should be at least 1ms in the future and not old.
+  EXPECT_GT(stream->GetLastTimestamp(), capturer1_last_timestamp);
+
   EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
 }
 

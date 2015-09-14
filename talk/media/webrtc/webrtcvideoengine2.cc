@@ -1881,6 +1881,10 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
   {
     rtc::CritScope cs(&lock_);
 
+    // Reset timestamps to realign new incoming frames to a webrtc timestamp. A
+    // new capturer may have a different timestamp delta than the previous one.
+    first_frame_timestamp_ms_ = 0;
+
     if (capturer == NULL) {
       if (stream_ != NULL) {
         LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
