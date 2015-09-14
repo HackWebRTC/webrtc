@@ -156,7 +156,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     return (Camera.getNumberOfCameras() >= 2);
   }
 
-  void starCapturerAndRender(String deviceName) throws InterruptedException {
+  void startCapturerAndRender(String deviceName) throws InterruptedException {
     PeerConnectionFactory factory = new PeerConnectionFactory();
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create(deviceName, null);
@@ -216,9 +216,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   }
 
   @SmallTest
-  public void testCreateNoneExistingCamera() throws Exception {
+  public void testCreateNonExistingCamera() throws Exception {
     VideoCapturerAndroid capturer = VideoCapturerAndroid.create(
-        "none existing camera", null);
+        "non-existing camera", null);
     assertNull(capturer);
   }
 
@@ -227,7 +227,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // to a Java video renderer using a "default" capturer.
   // It tests both the Java and the C++ layer.
   public void testStartVideoCapturer() throws Exception {
-    starCapturerAndRender("");
+    startCapturerAndRender("");
   }
 
   @SmallTest
@@ -235,7 +235,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // to a Java video renderer using the front facing video capturer.
   // It tests both the Java and the C++ layer.
   public void testStartFrontFacingVideoCapturer() throws Exception {
-    starCapturerAndRender(CameraEnumerationAndroid.getNameOfFrontFacingDevice());
+    startCapturerAndRender(CameraEnumerationAndroid.getNameOfFrontFacingDevice());
   }
 
   @SmallTest
@@ -246,7 +246,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     if (!HaveTwoCameras()) {
       return;
     }
-    starCapturerAndRender(CameraEnumerationAndroid.getNameOfBackFacingDevice());
+    startCapturerAndRender(CameraEnumerationAndroid.getNameOfBackFacingDevice());
   }
 
   @SmallTest

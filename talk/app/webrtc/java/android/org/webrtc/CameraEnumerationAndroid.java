@@ -160,33 +160,13 @@ public class CameraEnumerationAndroid {
   // Returns the name of the front facing camera. Returns null if the
   // camera can not be used or does not exist.
   public static String getNameOfFrontFacingDevice() {
-    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-      Camera.CameraInfo info = new Camera.CameraInfo();
-      try {
-        Camera.getCameraInfo(i, info);
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
-          return getDeviceName(i);
-      } catch (Exception e) {
-        Log.e(TAG, "getCameraInfo failed on index " + i, e);
-      }
-    }
-    return null;
+    return getNameOfDevice(Camera.CameraInfo.CAMERA_FACING_FRONT);
   }
 
   // Returns the name of the back facing camera. Returns null if the
   // camera can not be used or does not exist.
   public static String getNameOfBackFacingDevice() {
-    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-      Camera.CameraInfo info = new Camera.CameraInfo();
-      try {
-        Camera.getCameraInfo(i, info);
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK)
-          return getDeviceName(i);
-      } catch (Exception e) {
-        Log.e(TAG, "getCameraInfo failed on index " + i, e);
-      }
-    }
-    return null;
+    return getNameOfDevice(Camera.CameraInfo.CAMERA_FACING_BACK);
   }
 
   public static String getSupportedFormatsAsJson(int id) throws JSONException {
@@ -238,5 +218,20 @@ public class CameraEnumerationAndroid {
             return abs(requestedWidth - size.width) + abs(requestedHeight - size.height);
           }
      });
+  }
+
+  private static String getNameOfDevice(int facing) {
+    final Camera.CameraInfo info = new Camera.CameraInfo();
+    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+      try {
+        Camera.getCameraInfo(i, info);
+        if (info.facing == facing) {
+          return getDeviceName(i);
+        }
+      } catch (Exception e) {
+        Log.e(TAG, "getCameraInfo() failed on index " + i, e);
+      }
+    }
+    return null;
   }
 }
