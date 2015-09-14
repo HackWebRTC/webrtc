@@ -928,9 +928,10 @@ JOW(void, Logging_nativeEnableLogTimeStamps)(JNIEnv* jni, jclass) {
 }
 
 JOW(void, Logging_nativeLog)(
-    JNIEnv* jni, jclass, jint j_severity, jstring j_message) {
+    JNIEnv* jni, jclass, jint j_severity, jstring j_tag, jstring j_message) {
   std::string message = JavaToStdString(jni, j_message);
-  LOG_V(static_cast<rtc::LoggingSeverity>(j_severity)) << message;
+  std::string tag = JavaToStdString(jni, j_tag);
+  LOG_TAG(static_cast<rtc::LoggingSeverity>(j_severity), tag) << message;
 }
 
 JOW(void, PeerConnection_freePeerConnection)(JNIEnv*, jclass, jlong j_p) {

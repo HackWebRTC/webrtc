@@ -34,11 +34,11 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.os.SystemClock;
-import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+import org.webrtc.Logging;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,14 +69,14 @@ public class Camera2Enumerator implements CameraEnumerationAndroid.Enumerator {
       if (cachedSupportedFormats.containsKey(cameraId)) {
         return cachedSupportedFormats.get(cameraId);
       }
-      Log.d(TAG, "Get supported formats for camera index " + cameraId + ".");
+      Logging.d(TAG, "Get supported formats for camera index " + cameraId + ".");
       final long startTimeMs = SystemClock.elapsedRealtime();
 
       final CameraCharacteristics cameraCharacteristics;
       try {
         cameraCharacteristics = cameraManager.getCameraCharacteristics(Integer.toString(cameraId));
       } catch (Exception ex) {
-        Log.e(TAG, "getCameraCharacteristics(): " + ex);
+        Logging.e(TAG, "getCameraCharacteristics(): " + ex);
         return new ArrayList<CaptureFormat>();
       }
 
@@ -111,7 +111,7 @@ public class Camera2Enumerator implements CameraEnumerationAndroid.Enumerator {
       }
       cachedSupportedFormats.put(cameraId, formatList);
       final long endTimeMs = SystemClock.elapsedRealtime();
-      Log.d(TAG, "Get supported formats for camera index " + cameraId + " done."
+      Logging.d(TAG, "Get supported formats for camera index " + cameraId + " done."
           + " Time spent: " + (endTimeMs - startTimeMs) + " ms.");
       return formatList;
     }

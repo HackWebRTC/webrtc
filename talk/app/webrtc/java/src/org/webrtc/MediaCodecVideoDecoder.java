@@ -38,8 +38,9 @@ import android.opengl.EGLContext;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
-import android.util.Log;
 import android.view.Surface;
+
+import org.webrtc.Logging;
 
 import java.nio.ByteBuffer;
 
@@ -129,7 +130,7 @@ public class MediaCodecVideoDecoder {
       if (name == null) {
         continue;  // No HW support in this codec; try the next one.
       }
-      Log.v(TAG, "Found candidate decoder " + name);
+      Logging.v(TAG, "Found candidate decoder " + name);
 
       // Check if this is supported decoder.
       boolean supportedCodec = false;
@@ -147,13 +148,13 @@ public class MediaCodecVideoDecoder {
       CodecCapabilities capabilities =
           info.getCapabilitiesForType(mime);
       for (int colorFormat : capabilities.colorFormats) {
-        Log.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
+        Logging.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
       }
       for (int supportedColorFormat : supportedColorList) {
         for (int codecColorFormat : capabilities.colorFormats) {
           if (codecColorFormat == supportedColorFormat) {
             // Found supported HW decoder.
-            Log.d(TAG, "Found target decoder " + name +
+            Logging.d(TAG, "Found target decoder " + name +
                 ". Color: 0x" + Integer.toHexString(codecColorFormat));
             return new DecoderProperties(name, codecColorFormat);
           }
@@ -203,11 +204,11 @@ public class MediaCodecVideoDecoder {
     if (properties == null) {
       throw new RuntimeException("Cannot find HW decoder for " + type);
     }
-    Log.d(TAG, "Java initDecode: " + type + " : "+ width + " x " + height +
+    Logging.d(TAG, "Java initDecode: " + type + " : "+ width + " x " + height +
         ". Color: 0x" + Integer.toHexString(properties.colorFormat) +
         ". Use Surface: " + useSurface);
     if (sharedContext != null) {
-      Log.d(TAG, "Decoder shared EGL Context: " + sharedContext);
+      Logging.d(TAG, "Decoder shared EGL Context: " + sharedContext);
     }
     mediaCodecThread = Thread.currentThread();
     try {
@@ -226,7 +227,7 @@ public class MediaCodecVideoDecoder {
 
         // Create output surface
         textureID = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-        Log.d(TAG, "Video decoder TextureID = " + textureID);
+        Logging.d(TAG, "Video decoder TextureID = " + textureID);
         surfaceTexture = new SurfaceTexture(textureID);
         surface = new Surface(surfaceTexture);
         decodeSurface = surface;
@@ -236,7 +237,7 @@ public class MediaCodecVideoDecoder {
       if (!useSurface) {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       }
-      Log.d(TAG, "  Format: " + format);
+      Logging.d(TAG, "  Format: " + format);
       mediaCodec =
           MediaCodecVideoEncoder.createByCodecName(properties.codecName);
       if (mediaCodec == null) {
@@ -247,30 +248,30 @@ public class MediaCodecVideoDecoder {
       colorFormat = properties.colorFormat;
       outputBuffers = mediaCodec.getOutputBuffers();
       inputBuffers = mediaCodec.getInputBuffers();
-      Log.d(TAG, "Input buffers: " + inputBuffers.length +
+      Logging.d(TAG, "Input buffers: " + inputBuffers.length +
           ". Output buffers: " + outputBuffers.length);
       return true;
     } catch (IllegalStateException e) {
-      Log.e(TAG, "initDecode failed", e);
+      Logging.e(TAG, "initDecode failed", e);
       return false;
     }
   }
 
   private void release() {
-    Log.d(TAG, "Java releaseDecoder");
+    Logging.d(TAG, "Java releaseDecoder");
     checkOnMediaCodecThread();
     try {
       mediaCodec.stop();
       mediaCodec.release();
     } catch (IllegalStateException e) {
-      Log.e(TAG, "release failed", e);
+      Logging.e(TAG, "release failed", e);
     }
     mediaCodec = null;
     mediaCodecThread = null;
     if (useSurface) {
       surface.release();
       if (textureID != 0) {
-        Log.d(TAG, "Delete video decoder TextureID " + textureID);
+        Logging.d(TAG, "Delete video decoder TextureID " + textureID);
         GLES20.glDeleteTextures(1, new int[] {textureID}, 0);
         textureID = 0;
       }
@@ -286,7 +287,7 @@ public class MediaCodecVideoDecoder {
     try {
       return mediaCodec.dequeueInputBuffer(DEQUEUE_INPUT_TIMEOUT);
     } catch (IllegalStateException e) {
-      Log.e(TAG, "dequeueIntputBuffer failed", e);
+      Logging.e(TAG, "dequeueIntputBuffer failed", e);
       return -2;
     }
   }
@@ -301,7 +302,7 @@ public class MediaCodecVideoDecoder {
       return true;
     }
     catch (IllegalStateException e) {
-      Log.e(TAG, "decode failed", e);
+      Logging.e(TAG, "decode failed", e);
       return false;
     }
   }
@@ -333,15 +334,15 @@ public class MediaCodecVideoDecoder {
           result == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
         if (result == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
           outputBuffers = mediaCodec.getOutputBuffers();
-          Log.d(TAG, "Decoder output buffers changed: " + outputBuffers.length);
+          Logging.d(TAG, "Decoder output buffers changed: " + outputBuffers.length);
         } else if (result == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
           MediaFormat format = mediaCodec.getOutputFormat();
-          Log.d(TAG, "Decoder format changed: " + format.toString());
+          Logging.d(TAG, "Decoder format changed: " + format.toString());
           width = format.getInteger(MediaFormat.KEY_WIDTH);
           height = format.getInteger(MediaFormat.KEY_HEIGHT);
           if (!useSurface && format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
             colorFormat = format.getInteger(MediaFormat.KEY_COLOR_FORMAT);
-            Log.d(TAG, "Color: 0x" + Integer.toHexString(colorFormat));
+            Logging.d(TAG, "Color: 0x" + Integer.toHexString(colorFormat));
             // Check if new color space is supported.
             boolean validColorFormat = false;
             for (int supportedColorFormat : supportedColorList) {
@@ -351,7 +352,7 @@ public class MediaCodecVideoDecoder {
               }
             }
             if (!validColorFormat) {
-              Log.e(TAG, "Non supported color format");
+              Logging.e(TAG, "Non supported color format");
               return new DecoderOutputBufferInfo(-1, 0, 0, -1);
             }
           }
@@ -361,7 +362,7 @@ public class MediaCodecVideoDecoder {
           if (format.containsKey("slice-height")) {
             sliceHeight = format.getInteger("slice-height");
           }
-          Log.d(TAG, "Frame stride and slice height: "
+          Logging.d(TAG, "Frame stride and slice height: "
               + stride + " x " + sliceHeight);
           stride = Math.max(width, stride);
           sliceHeight = Math.max(height, sliceHeight);
@@ -374,7 +375,7 @@ public class MediaCodecVideoDecoder {
       }
       return null;
     } catch (IllegalStateException e) {
-      Log.e(TAG, "dequeueOutputBuffer failed", e);
+      Logging.e(TAG, "dequeueOutputBuffer failed", e);
       return new DecoderOutputBufferInfo(-1, 0, 0, -1);
     }
   }
@@ -390,7 +391,7 @@ public class MediaCodecVideoDecoder {
       mediaCodec.releaseOutputBuffer(index, render);
       return true;
     } catch (IllegalStateException e) {
-      Log.e(TAG, "releaseOutputBuffer failed", e);
+      Logging.e(TAG, "releaseOutputBuffer failed", e);
       return false;
     }
   }

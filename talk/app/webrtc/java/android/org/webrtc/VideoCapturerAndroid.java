@@ -36,13 +36,13 @@ import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
 
 import org.json.JSONException;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+import org.webrtc.Logging;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -106,7 +106,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       } else {
         errorMessage = "Camera error: " + error;
       }
-      Log.e(TAG, errorMessage);
+      Logging.e(TAG, errorMessage);
       if (errorHandler != null) {
         errorHandler.onCameraError(errorMessage);
       }
@@ -125,11 +125,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         averageCaptureBuffersCount =
             (double)captureBuffersCount / cameraFramesCount;
       }
-      Log.d(TAG, "Camera fps: " + cameraFps + ". CaptureBuffers: " +
+      Logging.d(TAG, "Camera fps: " + cameraFps + ". CaptureBuffers: " +
           String.format("%.1f", averageCaptureBuffersCount) +
           ". Pending buffers: " + videoBuffers.pendingFramesTimeStamps());
       if (cameraFramesCount == 0) {
-        Log.e(TAG, "Camera freezed.");
+        Logging.e(TAG, "Camera freezed.");
         if (errorHandler != null) {
           errorHandler.onCameraError("Camera failure.");
         }
@@ -169,13 +169,13 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       return false;
 
     if (cameraThreadHandler == null) {
-        Log.e(TAG, "Calling switchCamera() for stopped camera.");
+        Logging.e(TAG, "Calling switchCamera() for stopped camera.");
         return false;
     }
     if (pendingCameraSwitch) {
       // Do not handle multiple camera switch request to avoid blocking
       // camera thread by handling too many switch request from a queue.
-      Log.w(TAG, "Ignoring camera switch request.");
+      Logging.w(TAG, "Ignoring camera switch request.");
       return false;
     }
 
@@ -194,7 +194,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   public synchronized void onOutputFormatRequest(
       final int width, final int height, final int fps) {
     if (cameraThreadHandler == null) {
-      Log.e(TAG, "Calling onOutputFormatRequest() for already stopped camera.");
+      Logging.e(TAG, "Calling onOutputFormatRequest() for already stopped camera.");
       return;
     }
     cameraThreadHandler.post(new Runnable() {
@@ -209,7 +209,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   public synchronized void changeCaptureFormat(
       final int width, final int height, final int framerate) {
     if (cameraThreadHandler == null) {
-      Log.e(TAG, "Calling changeCaptureFormat() for already stopped camera.");
+      Logging.e(TAG, "Calling changeCaptureFormat() for already stopped camera.");
       return;
     }
     cameraThreadHandler.post(new Runnable() {
@@ -230,14 +230,14 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   private VideoCapturerAndroid() {
-    Log.d(TAG, "VideoCapturerAndroid");
+    Logging.d(TAG, "VideoCapturerAndroid");
   }
 
   // Called by native code.
   // Initializes local variables for the camera named |deviceName|. If |deviceName| is empty, the
   // first available device is used in order to be compatible with the generic VideoCapturer class.
   synchronized boolean init(String deviceName) {
-    Log.d(TAG, "init: " + deviceName);
+    Logging.d(TAG, "init: " + deviceName);
     if (deviceName == null)
       return false;
 
@@ -282,7 +282,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   synchronized void startCapture(
       final int width, final int height, final int framerate,
       final Context applicationContext, final CapturerObserver frameObserver) {
-    Log.d(TAG, "startCapture requested: " + width + "x" + height
+    Logging.d(TAG, "startCapture requested: " + width + "x" + height
         + "@" + framerate);
     if (applicationContext == null) {
       throw new RuntimeException("applicationContext not set.");
@@ -313,7 +313,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     this.applicationContext = applicationContext;
     this.frameObserver = frameObserver;
     try {
-      Log.d(TAG, "Opening camera " + id);
+      Logging.d(TAG, "Opening camera " + id);
       camera = Camera.open(id);
       info = new Camera.CameraInfo();
       Camera.getCameraInfo(id, info);
@@ -329,11 +329,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
         camera.setPreviewTexture(cameraSurfaceTexture);
       } catch (IOException e) {
-        Log.e(TAG, "setPreviewTexture failed", error);
+        Logging.e(TAG, "setPreviewTexture failed", error);
         throw new RuntimeException(e);
       }
 
-      Log.d(TAG, "Camera orientation: " + info.orientation +
+      Logging.d(TAG, "Camera orientation: " + info.orientation +
           " .Device orientation: " + getDeviceOrientation());
       camera.setErrorCallback(cameraErrorCallback);
       startPreviewOnCameraThread(width, height, framerate);
@@ -347,7 +347,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     } catch (RuntimeException e) {
       error = e;
     }
-    Log.e(TAG, "startCapture failed", error);
+    Logging.e(TAG, "startCapture failed", error);
     stopCaptureOnCameraThread();
     cameraThreadHandler = null;
     frameObserver.OnCapturerStarted(false);
@@ -359,9 +359,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // (Re)start preview with the closest supported format to |width| x |height| @ |framerate|.
   private void startPreviewOnCameraThread(int width, int height, int framerate) {
-    Log.d(TAG, "startPreviewOnCameraThread requested: " + width + "x" + height + "@" + framerate);
+    Logging.d(
+        TAG, "startPreviewOnCameraThread requested: " + width + "x" + height + "@" + framerate);
     if (camera == null) {
-      Log.e(TAG, "Calling startPreviewOnCameraThread on stopped camera.");
+      Logging.e(TAG, "Calling startPreviewOnCameraThread on stopped camera.");
       return;
     }
 
@@ -385,7 +386,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     // Update camera parameters.
-    Log.d(TAG, "isVideoStabilizationSupported: " +
+    Logging.d(TAG, "isVideoStabilizationSupported: " +
         parameters.isVideoStabilizationSupported());
     if (parameters.isVideoStabilizationSupported()) {
       parameters.setVideoStabilization(true);
@@ -412,7 +413,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     // (Re)start preview.
-    Log.d(TAG, "Start capturing: " + captureFormat);
+    Logging.d(TAG, "Start capturing: " + captureFormat);
     this.captureFormat = captureFormat;
     camera.setParameters(parameters);
     videoBuffers.queueCameraBuffers(captureFormat.frameSize(), camera);
@@ -423,10 +424,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // Called by native code.  Returns true when camera is known to be stopped.
   synchronized void stopCapture() throws InterruptedException {
     if (cameraThreadHandler == null) {
-      Log.e(TAG, "Calling stopCapture() for already stopped camera.");
+      Logging.e(TAG, "Calling stopCapture() for already stopped camera.");
       return;
     }
-    Log.d(TAG, "stopCapture");
+    Logging.d(TAG, "stopCapture");
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
           stopCaptureOnCameraThread();
@@ -434,7 +435,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     });
     cameraThread.join();
     cameraThreadHandler = null;
-    Log.d(TAG, "stopCapture done");
+    Logging.d(TAG, "stopCapture done");
   }
 
   private void stopCaptureOnCameraThread() {
@@ -444,13 +445,13 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   private void doStopCaptureOnCameraThread() {
-    Log.d(TAG, "stopCaptureOnCameraThread");
+    Logging.d(TAG, "stopCaptureOnCameraThread");
     if (camera == null) {
       return;
     }
     try {
       cameraThreadHandler.removeCallbacks(cameraObserver);
-      Log.d(TAG, "Stop preview.");
+      Logging.d(TAG, "Stop preview.");
       camera.stopPreview();
       camera.setPreviewCallbackWithBuffer(null);
       videoBuffers.stopReturnBuffersToCamera();
@@ -462,22 +463,22 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         GLES20.glDeleteTextures(1, new int[] {cameraGlTexture}, 0);
         cameraGlTexture = 0;
       }
-      Log.d(TAG, "Release camera.");
+      Logging.d(TAG, "Release camera.");
       camera.release();
       camera = null;
     } catch (IOException e) {
-      Log.e(TAG, "Failed to stop camera", e);
+      Logging.e(TAG, "Failed to stop camera", e);
     }
   }
 
   private void switchCameraOnCameraThread(Runnable switchDoneEvent) {
-    Log.d(TAG, "switchCameraOnCameraThread");
+    Logging.d(TAG, "switchCameraOnCameraThread");
 
     doStopCaptureOnCameraThread();
     startCaptureOnCameraThread(requestedWidth, requestedHeight, requestedFramerate, frameObserver,
         applicationContext);
     pendingCameraSwitch = false;
-    Log.d(TAG, "switchCameraOnCameraThread done");
+    Logging.d(TAG, "switchCameraOnCameraThread done");
     if (switchDoneEvent != null) {
       switchDoneEvent.run();
     }
@@ -488,7 +489,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     if (camera == null) {
       return;
     }
-    Log.d(TAG, "onOutputFormatRequestOnCameraThread: " + width + "x" + height +
+    Logging.d(TAG, "onOutputFormatRequestOnCameraThread: " + width + "x" + height +
         "@" + fps);
     frameObserver.OnOutputFormatRequest(width, height, fps);
   }
@@ -550,7 +551,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       frameObserver.OnFrameCaptured(data, videoBuffers.frameSize, captureFormat.width,
           captureFormat.height, rotation, captureTimeNs);
     } else {
-      Log.w(TAG, "reserveByteBuffer failed - dropping frame.");
+      Logging.w(TAG, "reserveByteBuffer failed - dropping frame.");
     }
   }
 
@@ -613,7 +614,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         camera.addCallbackBuffer(buffer.array());
         queuedBuffers.put(buffer.array(), buffer);
       }
-      Log.d(TAG, "queueCameraBuffers enqueued " + numCaptureBuffers
+      Logging.d(TAG, "queueCameraBuffers enqueued " + numCaptureBuffers
           + " buffers of size " + frameSize + ".");
     }
 
@@ -629,7 +630,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       this.camera = null;
       queuedBuffers.clear();
       // Frames in |pendingBuffers| need to be kept alive until they are returned.
-      Log.d(TAG, "stopReturnBuffersToCamera called."
+      Logging.d(TAG, "stopReturnBuffersToCamera called."
             + (pendingBuffers.isEmpty() ?
                    " All buffers have been returned."
                    : " Pending buffers: " + pendingFramesTimeStamps() + "."));
@@ -640,7 +641,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       if (buffer == null) {
         // Frames might be posted to |onPreviewFrame| with the previous format while changing
         // capture format in |startPreviewOnCameraThread|. Drop these old frames.
-        Log.w(TAG, "Received callback buffer from previous configuration with length: "
+        Logging.w(TAG, "Received callback buffer from previous configuration with length: "
             + (data == null ? "null" : data.length));
         return false;
       }
@@ -648,12 +649,12 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         throw new IllegalStateException("Callback buffer has unexpected frame size");
       }
       if (pendingBuffers.containsKey(timeStamp)) {
-        Log.e(TAG, "Timestamp already present in pending buffers - they need to be unique");
+        Logging.e(TAG, "Timestamp already present in pending buffers - they need to be unique");
         return false;
       }
       pendingBuffers.put(timeStamp, buffer);
       if (queuedBuffers.isEmpty()) {
-        Log.v(TAG, "Camera is running out of capture buffers."
+        Logging.v(TAG, "Camera is running out of capture buffers."
             + " Pending buffers: " + pendingFramesTimeStamps());
       }
       return true;
@@ -669,7 +670,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       if (camera != null && returnedFrame.capacity() == frameSize) {
         camera.addCallbackBuffer(returnedFrame.array());
         if (queuedBuffers.isEmpty()) {
-          Log.v(TAG, "Frame returned when camera is running out of capture"
+          Logging.v(TAG, "Frame returned when camera is running out of capture"
               + " buffers for TS " + TimeUnit.NANOSECONDS.toMillis(timeStamp));
         }
         queuedBuffers.put(returnedFrame.array(), returnedFrame);
@@ -677,7 +678,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       }
 
       if (returnedFrame.capacity() != frameSize) {
-        Log.d(TAG, "returnBuffer with time stamp "
+        Logging.d(TAG, "returnBuffer with time stamp "
             + TimeUnit.NANOSECONDS.toMillis(timeStamp)
             + " called with old frame size, " + returnedFrame.capacity() + ".");
         // Since this frame has the wrong size, don't requeue it. Frames with the correct size are
@@ -685,7 +686,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         return;
       }
 
-      Log.d(TAG, "returnBuffer with time stamp "
+      Logging.d(TAG, "returnBuffer with time stamp "
           + TimeUnit.NANOSECONDS.toMillis(timeStamp)
           + " called after camera has been stopped.");
     }

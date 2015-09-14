@@ -27,6 +27,9 @@
 
 package org.webrtc;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.util.EnumSet;
 
 /** Java wrapper for WebRTC & libjingle logging. */
@@ -84,12 +87,51 @@ public class Logging {
   }
 
   public static void log(Severity severity, String tag, String message) {
-    nativeLog(severity.ordinal(), tag + ": " + message);
+    nativeLog(severity.ordinal(), tag, message);
+  }
+
+  public static void d(String tag, String message) {
+    log(Severity.LS_INFO, tag, message);
+  }
+
+  public static void e(String tag, String message) {
+    log(Severity.LS_ERROR, tag, message);
+  }
+
+  public static void w(String tag, String message) {
+    log(Severity.LS_WARNING, tag, message);
+  }
+
+  public static void e(String tag, String message, Throwable e) {
+    log(Severity.LS_ERROR, tag, message);
+    log(Severity.LS_ERROR, tag, e.toString());
+    log(Severity.LS_ERROR, tag, getStackTraceString(e));
+  }
+
+  public static void w(String tag, String message, Throwable e) {
+    log(Severity.LS_WARNING, tag, message);
+    log(Severity.LS_WARNING, tag, e.toString());
+    log(Severity.LS_WARNING, tag, getStackTraceString(e));
+  }
+
+  public static void v(String tag, String message) {
+    log(Severity.LS_VERBOSE, tag, message);
+  }
+
+  private static String getStackTraceString(Throwable e) {
+    if (e == null) {
+      return "";
+    }
+
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    e.printStackTrace(pw);
+    return sw.toString();
   }
 
   private static native void nativeEnableTracing(
       String path, int nativeLevels, int nativeSeverity);
   private static native void nativeEnableLogThreads();
   private static native void nativeEnableLogTimeStamps();
-  private static native void nativeLog(int severity, String message);
+  private static native void nativeLog(int severity, String tag, String message);
 }

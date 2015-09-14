@@ -136,6 +136,12 @@ class LogMessage {
   LogMessage(const char* file, int line, LoggingSeverity sev,
              LogErrorContext err_ctx = ERRCTX_NONE, int err = 0,
              const char* module = NULL);
+
+  LogMessage(const char* file,
+             int line,
+             LoggingSeverity sev,
+             const std::string& tag);
+
   ~LogMessage();
 
   static inline bool Loggable(LoggingSeverity sev) { return (sev >= min_sev_); }
@@ -193,13 +199,18 @@ class LogMessage {
   static void UpdateMinLogSeverity() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // These write out the actual log messages.
-  static void OutputToDebug(const std::string& msg, LoggingSeverity severity_);
+  static void OutputToDebug(const std::string& msg,
+                            LoggingSeverity severity,
+                            const std::string& tag);
 
   // The ostream that buffers the formatted message before output
   std::ostringstream print_stream_;
 
   // The severity level of this message
   LoggingSeverity severity_;
+
+  // The Android debug output tag.
+  std::string tag_;
 
   // String data generated in the constructor, that should be appended to
   // the message before output.
@@ -340,6 +351,10 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 #define LAST_SYSTEM_ERROR \
   (errno)
 #endif  // WEBRTC_WIN
+
+#define LOG_TAG(sev, tag) \
+  LOG_SEVERITY_PRECONDITION(sev) \
+    rtc::LogMessage(__FILE__, __LINE__, sev, tag).stream()
 
 #define PLOG(sev, err) \
   LOG_ERR_EX(sev, err)
