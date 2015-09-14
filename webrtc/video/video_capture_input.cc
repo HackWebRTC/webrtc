@@ -101,7 +101,10 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   CriticalSectionScoped cs(capture_cs_.get());
   if (incoming_frame.ntp_time_ms() <= last_captured_timestamp_) {
     // We don't allow the same capture time for two frames, drop this one.
-    LOG(LS_WARNING) << "Same/old NTP timestamp for incoming frame. Dropping.";
+    LOG(LS_WARNING) << "Same/old NTP timestamp ("
+                    << incoming_frame.ntp_time_ms()
+                    << " <= " << last_captured_timestamp_
+                    << ") for incoming frame. Dropping.";
     return;
   }
 
