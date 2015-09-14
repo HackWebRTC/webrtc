@@ -820,8 +820,11 @@ static void UpdateDelayMetrics(AecCore* self) {
   // negative (anti-causal system) or larger than the AEC filter length.
   {
     int num_delays_out_of_bounds = self->num_delay_values;
+    const int histogram_length = sizeof(self->delay_histogram) /
+      sizeof(self->delay_histogram[0]);
     for (i = lookahead; i < lookahead + self->num_partitions; ++i) {
-      num_delays_out_of_bounds -= self->delay_histogram[i];
+      if (i < histogram_length)
+        num_delays_out_of_bounds -= self->delay_histogram[i];
     }
     self->fraction_poor_delays = (float)num_delays_out_of_bounds /
         self->num_delay_values;
