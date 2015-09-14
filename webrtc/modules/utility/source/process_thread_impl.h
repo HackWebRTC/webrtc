@@ -76,7 +76,7 @@ class ProcessThreadImpl : public ProcessThread {
   // TODO(tommi): Support delayed tasks.
   std::queue<ProcessTask*> queue_;
   bool stop_;
-  std::string thread_name_;
+  const char* thread_name_;
 };
 
 }  // namespace webrtc

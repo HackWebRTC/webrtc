@@ -77,7 +77,7 @@ void ProcessThreadImpl::Start() {
   }
 
   thread_ = ThreadWrapper::CreateThread(&ProcessThreadImpl::Run, this,
-                                        thread_name_.c_str());
+                                        thread_name_);
   CHECK(thread_->Start());
 }
 
