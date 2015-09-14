@@ -18,6 +18,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
+#include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -34,7 +35,6 @@ namespace webrtc {
 namespace {
 
 static const uint32_t kTimeOffsetSwitchThreshold = 30;
-static const uint32_t kMinBitrateBps = 30000;
 
 class WrappingBitrateEstimator : public RemoteBitrateEstimator {
  public:
@@ -42,7 +42,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
       : observer_(observer),
         clock_(clock),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-        min_bitrate_bps_(kMinBitrateBps),
+        min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
         rbe_(new RemoteBitrateEstimatorSingleStream(observer_,
                                                     clock_,
                                                     min_bitrate_bps_)),
@@ -139,20 +139,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   DISALLOW_IMPLICIT_CONSTRUCTORS(WrappingBitrateEstimator);
 };
 
-static const int64_t kSendTimeHistoryWindowMs = 2000;
-
 }  // namespace
-
-class AdaptedSendTimeHistory : public SendTimeHistory, public SendTimeObserver {
- public:
-  AdaptedSendTimeHistory() : SendTimeHistory(kSendTimeHistoryWindowMs) {}
-  virtual ~AdaptedSendTimeHistory() {}
-
-  void OnPacketSent(uint16_t sequence_number, int64_t send_time) override {
-    PacketInfo info(0, send_time, sequence_number, 0, false);
-    SendTimeHistory::AddAndRemoveOld(info);
-  }
-};
 
 ChannelGroup::ChannelGroup(ProcessThread* process_thread)
     : remb_(new VieRemb()),
@@ -172,8 +159,7 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
       // construction.
       bitrate_controller_(
           BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                     this)),
-      send_time_history_(new AdaptedSendTimeHistory()) {
+                                                     this)) {
   remote_bitrate_estimator_.reset(new WrappingBitrateEstimator(
       remb_.get(), Clock::GetRealTimeClock()));
 
@@ -250,10 +236,9 @@ bool ChannelGroup::CreateChannel(int channel_id,
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
       channel_id, engine_id, number_of_cores, transport, process_thread_,
       encoder_state_feedback_->GetRtcpIntraFrameObserver(),
-      bitrate_controller_->CreateRtcpBandwidthObserver(),
-      send_time_history_.get(), remote_bitrate_estimator_.get(),
-      call_stats_->rtcp_rtt_stats(), pacer_.get(), packet_router_.get(),
-      max_rtp_streams, sender));
+      bitrate_controller_->CreateRtcpBandwidthObserver(), nullptr,
+      remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
+      pacer_.get(), packet_router_.get(), max_rtp_streams, sender));
   if (channel->Init() != 0) {
     return false;
   }

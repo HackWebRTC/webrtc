@@ -93,7 +93,7 @@ class RTPSender : public RTPSenderInterface {
             RtpAudioFeedback* audio_feedback,
             PacedSender* paced_sender,
             PacketRouter* packet_router,
-            SendTimeObserver* send_time_observer,
+            TransportFeedbackObserver* transport_feedback_callback,
             BitrateStatisticsObserver* bitrate_callback,
             FrameCountObserver* frame_count_observer,
             SendSideDelayObserver* send_side_delay_observer);
@@ -396,7 +396,7 @@ class RTPSender : public RTPSenderInterface {
 
   PacedSender* const paced_sender_;
   PacketRouter* const packet_router_;
-  SendTimeObserver* const send_time_observer_;
+  TransportFeedbackObserver* const transport_feedback_observer_;
   int64_t last_capture_time_ms_sent_;
   rtc::scoped_ptr<CriticalSectionWrapper> send_critsect_;
 

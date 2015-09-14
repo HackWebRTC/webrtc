@@ -22,7 +22,6 @@
 
 namespace webrtc {
 
-class AdaptedSendTimeHistory;
 class BitrateAllocator;
 class CallStats;
 class Config;
@@ -97,11 +96,10 @@ class ChannelGroup : public BitrateObserver {
   EncoderMap vie_encoder_map_ GUARDED_BY(encoder_map_crit_);
 
   // Registered at construct time and assumed to outlive this class.
-  ProcessThread* process_thread_;
+  ProcessThread* const process_thread_;
   rtc::scoped_ptr<ProcessThread> pacer_thread_;
 
   rtc::scoped_ptr<BitrateController> bitrate_controller_;
-  rtc::scoped_ptr<AdaptedSendTimeHistory> send_time_history_;
 };
 
 }  // namespace webrtc

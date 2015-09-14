@@ -72,7 +72,7 @@ class ViEChannel : public VCMFrameTypeCallback,
              ProcessThread* module_process_thread,
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,
-             SendTimeObserver* send_time_observer,
+             TransportFeedbackObserver* transport_feedback_observer,
              RemoteBitrateEstimator* remote_bitrate_estimator,
              RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
@@ -302,7 +302,7 @@ class ViEChannel : public VCMFrameTypeCallback,
       Transport* outgoing_transport,
       RtcpIntraFrameObserver* intra_frame_callback,
       RtcpBandwidthObserver* bandwidth_callback,
-      SendTimeObserver* send_time_observer,
+      TransportFeedbackObserver* transport_feedback_callback,
       RtcpRttStats* rtt_stats,
       RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
       RemoteBitrateEstimator* remote_bitrate_estimator,
@@ -441,7 +441,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   PacketRouter* const packet_router_;
 
   const rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
-  SendTimeObserver* const send_time_observer_;
+  TransportFeedbackObserver* const transport_feedback_observer_;
 
   rtc::scoped_ptr<ThreadWrapper> decode_thread_;
 

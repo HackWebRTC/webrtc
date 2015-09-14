@@ -65,7 +65,7 @@ class RtpRtcp : public Module {
     Transport* outgoing_transport;
     RtcpIntraFrameObserver* intra_frame_callback;
     RtcpBandwidthObserver* bandwidth_callback;
-    SendTimeObserver* send_time_callback;
+    TransportFeedbackObserver* transport_feedback_callback;
     RtcpRttStats* rtt_stats;
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer;
     RtpAudioFeedback* audio_messages;

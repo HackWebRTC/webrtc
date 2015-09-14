@@ -104,7 +104,7 @@ RTPSender::RTPSender(int32_t id,
                      RtpAudioFeedback* audio_feedback,
                      PacedSender* paced_sender,
                      PacketRouter* packet_router,
-                     SendTimeObserver* send_time_observer,
+                     TransportFeedbackObserver* transport_feedback_observer,
                      BitrateStatisticsObserver* bitrate_callback,
                      FrameCountObserver* frame_count_observer,
                      SendSideDelayObserver* send_side_delay_observer)
@@ -122,7 +122,7 @@ RTPSender::RTPSender(int32_t id,
       video_(audio ? nullptr : new RTPSenderVideo(clock, this)),
       paced_sender_(paced_sender),
       packet_router_(packet_router),
-      send_time_observer_(send_time_observer),
+      transport_feedback_observer_(transport_feedback_observer),
       last_capture_time_ms_sent_(0),
       send_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       transport_(transport),
@@ -676,8 +676,10 @@ size_t RTPSender::SendPadData(uint32_t timestamp,
     if (!SendPacketToNetwork(padding_packet, length))
       break;
 
-    if (using_transport_seq)
-      send_time_observer_->OnPacketSent(transport_seq, now_ms);
+    if (using_transport_seq && transport_feedback_observer_) {
+      transport_feedback_observer_->OnPacketSent(
+          PacketInfo(0, now_ms, transport_seq, length, true));
+    }
 
     bytes_sent += padding_bytes_in_packet;
     UpdateRtpStats(padding_packet, length, rtp_header, over_rtx, false);
@@ -919,9 +921,10 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
   UpdateAbsoluteSendTime(buffer_to_send_ptr, length, rtp_header, now_ms);
 
   uint16_t transport_seq = 0;
+  // TODO(sprang): Potentially too much overhead in IsRegistered()?
   bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
                                  kRtpExtensionTransportSequenceNumber) &&
-                             packet_router_;
+                             packet_router_ && !is_retransmit;
   if (using_transport_seq) {
     transport_seq =
         UpdateTransportSequenceNumber(buffer_to_send_ptr, length, rtp_header);
@@ -932,8 +935,10 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
     CriticalSectionScoped lock(send_critsect_.get());
     media_has_been_sent_ = true;
   }
-  if (using_transport_seq)
-    send_time_observer_->OnPacketSent(transport_seq, now_ms);
+  if (using_transport_seq && transport_feedback_observer_) {
+    transport_feedback_observer_->OnPacketSent(
+        PacketInfo(0, now_ms, transport_seq, length, true));
+  }
   UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, send_over_rtx,
                  is_retransmit);
   return ret;

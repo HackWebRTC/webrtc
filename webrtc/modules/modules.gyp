@@ -228,6 +228,7 @@
             'remote_bitrate_estimator/test/bwe_unittest.cc',
             'remote_bitrate_estimator/test/metric_recorder_unittest.cc',
             'remote_bitrate_estimator/test/estimators/nada_unittest.cc',
+            'remote_bitrate_estimator/transport_feedback_adapter_unittest.cc',
             'rtp_rtcp/source/mock/mock_rtp_payload_strategy.h',
             'rtp_rtcp/source/byte_io_unittest.cc',
             'rtp_rtcp/source/fec_receiver_unittest.cc',

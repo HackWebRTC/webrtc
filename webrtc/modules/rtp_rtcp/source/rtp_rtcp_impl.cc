@@ -35,6 +35,7 @@ RtpRtcp::Configuration::Configuration()
       outgoing_transport(nullptr),
       intra_frame_callback(nullptr),
       bandwidth_callback(nullptr),
+      transport_feedback_callback(nullptr),
       rtt_stats(nullptr),
       rtcp_packet_type_counter_observer(nullptr),
       audio_messages(NullObjectRtpAudioFeedback()),
@@ -43,8 +44,7 @@ RtpRtcp::Configuration::Configuration()
       packet_router(nullptr),
       send_bitrate_observer(nullptr),
       send_frame_count_observer(nullptr),
-      send_side_delay_observer(nullptr) {
-}
+      send_side_delay_observer(nullptr) {}
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {
@@ -67,7 +67,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.audio_messages,
                   configuration.paced_sender,
                   configuration.packet_router,
-                  configuration.send_time_callback,
+                  configuration.transport_feedback_callback,
                   configuration.send_bitrate_observer,
                   configuration.send_frame_count_observer,
                   configuration.send_side_delay_observer),
