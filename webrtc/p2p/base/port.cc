@@ -897,6 +897,8 @@ Connection::Connection(Port* port,
       last_ping_received_(0),
       last_data_received_(0),
       last_ping_response_received_(0),
+      recv_rate_tracker_(100u, 10u),
+      send_rate_tracker_(100u, 10u),
       sent_packets_discarded_(0),
       sent_packets_total_(0),
       reported_(false),
@@ -1008,7 +1010,7 @@ void Connection::OnReadPacket(
       // readable means data from this address is acceptable
       // Send it on!
       last_data_received_ = rtc::Time();
-      recv_rate_tracker_.Update(size);
+      recv_rate_tracker_.AddSamples(size);
       SignalReadPacket(this, data, size, packet_time);
 
       // If timed out sending writability checks, start up again
@@ -1455,19 +1457,19 @@ uint32 Connection::last_received() {
 }
 
 size_t Connection::recv_bytes_second() {
-  return recv_rate_tracker_.units_second();
+  return recv_rate_tracker_.ComputeRate();
 }
 
 size_t Connection::recv_total_bytes() {
-  return recv_rate_tracker_.total_units();
+  return recv_rate_tracker_.TotalSampleCount();
 }
 
 size_t Connection::sent_bytes_second() {
-  return send_rate_tracker_.units_second();
+  return send_rate_tracker_.ComputeRate();
 }
 
 size_t Connection::sent_total_bytes() {
-  return send_rate_tracker_.total_units();
+  return send_rate_tracker_.TotalSampleCount();
 }
 
 size_t Connection::sent_discarded_packets() {
@@ -1562,7 +1564,7 @@ int ProxyConnection::Send(const void* data, size_t size,
     error_ = port_->GetError();
     sent_packets_discarded_++;
   } else {
-    send_rate_tracker_.Update(sent);
+    send_rate_tracker_.AddSamples(sent);
   }
   return sent;
 }

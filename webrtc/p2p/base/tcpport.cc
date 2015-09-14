@@ -343,7 +343,7 @@ int TCPConnection::Send(const void* data, size_t size,
     sent_packets_discarded_++;
     error_ = socket_->GetError();
   } else {
-    send_rate_tracker_.Update(sent);
+    send_rate_tracker_.AddSamples(sent);
   }
   return sent;
 }

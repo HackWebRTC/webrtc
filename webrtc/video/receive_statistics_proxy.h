@@ -90,7 +90,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);
   RateStatistics decode_fps_estimator_ GUARDED_BY(crit_);
   RateStatistics renders_fps_estimator_ GUARDED_BY(crit_);
-  rtc::RateTracker render_fps_tracker_total_ GUARDED_BY(crit_);
+  rtc::RateTracker render_fps_tracker_ GUARDED_BY(crit_);
   SampleCounter render_width_counter_ GUARDED_BY(crit_);
   SampleCounter render_height_counter_ GUARDED_BY(crit_);
   SampleCounter decode_time_counter_ GUARDED_BY(crit_);

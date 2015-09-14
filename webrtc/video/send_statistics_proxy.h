@@ -117,8 +117,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   mutable rtc::CriticalSection crit_;
   VideoSendStream::Stats stats_ GUARDED_BY(crit_);
   rtc::RateTracker input_frame_rate_tracker_ GUARDED_BY(crit_);
-  rtc::RateTracker input_frame_rate_tracker_total_ GUARDED_BY(crit_);
-  rtc::RateTracker sent_frame_rate_tracker_total_ GUARDED_BY(crit_);
+  rtc::RateTracker sent_frame_rate_tracker_ GUARDED_BY(crit_);
   uint32_t last_sent_frame_timestamp_ GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);
 

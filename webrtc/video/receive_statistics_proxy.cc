@@ -20,7 +20,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(uint32_t ssrc, Clock* clock)
     : clock_(clock),
       // 1000ms window, scale 1000 for ms to s.
       decode_fps_estimator_(1000, 1000),
-      renders_fps_estimator_(1000, 1000) {
+      renders_fps_estimator_(1000, 1000),
+      render_fps_tracker_(100u, 10u) {
   stats_.ssrc = ssrc;
 }
 
@@ -35,7 +36,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
         fraction_lost);
   }
 
-  int render_fps = static_cast<int>(render_fps_tracker_total_.units_second());
+  int render_fps = static_cast<int>(render_fps_tracker_.ComputeTotalRate());
   if (render_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.RenderFramesPerSecond", render_fps);
 
@@ -144,7 +145,7 @@ void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
   stats_.render_frame_rate = renders_fps_estimator_.Rate(now);
   render_width_counter_.Add(width);
   render_height_counter_.Add(height);
-  render_fps_tracker_total_.Update(1);
+  render_fps_tracker_.AddSamples(1);
 }
 
 void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,
