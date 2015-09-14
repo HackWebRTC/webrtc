@@ -743,7 +743,7 @@ void RtcpPacket::CreateHeader(
     uint8_t packet_type,
     size_t length,
     uint8_t* buffer,
-    size_t* pos) const {
+    size_t* pos) {
   assert(length <= 0xffff);
   const uint8_t kVersion = 2;
   AssignUWord8(buffer, pos, (kVersion << 6) + count_or_format);

@@ -99,11 +99,11 @@ class RtcpPacket {
                       size_t max_length,
                       PacketReadyCallback* callback) const = 0;
 
-  void CreateHeader(uint8_t count_or_format,
-                    uint8_t packet_type,
-                    size_t length,
-                    uint8_t* buffer,
-                    size_t* pos) const;
+  static void CreateHeader(uint8_t count_or_format,
+                           uint8_t packet_type,
+                           size_t block_length,  // Size in 32bit words - 1.
+                           uint8_t* buffer,
+                           size_t* pos);
 
   bool OnBufferFull(uint8_t* packet,
                     size_t* index,

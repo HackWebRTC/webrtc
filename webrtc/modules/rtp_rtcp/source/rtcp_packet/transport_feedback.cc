@@ -13,6 +13,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -662,52 +663,21 @@ rtc::scoped_ptr<TransportFeedback> TransportFeedback::ParseFrom(
     return nullptr;
   }
 
-  size_t packet_size_words =
-      ByteReader<uint16_t>::ReadBigEndian(&buffer[2]) + 1;
-  if (length < packet_size_words * 4) {
-    LOG(LS_WARNING) << "Buffer too small (" << length
-                    << " bytes) to fit a FeedbackPacket of "
-                    << packet_size_words << " 32bit words.";
+  RTCPUtility::RtcpCommonHeader header;
+  if (!RtcpParseCommonHeader(buffer, length, &header))
     return nullptr;
-  }
 
-  // TODO(sprang): Break this out and generalize when implementing parsing of
-  // other RtcpPacket subclasses.
-
-  const uint8_t kRtcpVersion = 2;
-  uint8_t version = buffer[0] >> 6;
-  if (version != kRtcpVersion) {
-    LOG(LS_WARNING) << "Invalid RTCP header: Version must be " << kRtcpVersion
-                    << " but was " << version;
-    return nullptr;
-  }
-
-  bool has_padding = (buffer[0] & 0x20) != 0;
-
-  uint8_t format = buffer[0] & 0x1F;
-  if (format != kFeedbackMessageType) {
+  if (header.count_or_format != kFeedbackMessageType) {
     LOG(LS_WARNING) << "Invalid RTCP header: FMT must be "
-                    << kFeedbackMessageType << " but was " << format;
+                    << kFeedbackMessageType << " but was "
+                    << header.count_or_format;
     return nullptr;
   }
 
-  uint8_t payload_type = buffer[1];
-  if (payload_type != kPayloadType) {
+  if (header.packet_type != kPayloadType) {
     LOG(LS_WARNING) << "Invalid RTCP header: PT must be " << kPayloadType
-                    << " but was " << payload_type;
+                    << " but was " << header.packet_type;
     return nullptr;
-  }
-
-  size_t payload_size = packet_size_words * 4;
-  if (has_padding) {
-    uint8_t padding_bytes = buffer[payload_size - 1];
-    if (payload_size < kMinSizeBytes + padding_bytes) {
-      LOG(LS_WARNING) << "Invalid RTCP header: Too many padding bytes ("
-                      << padding_bytes << ") for a packet size of "
-                      << payload_size << "bytes.";
-      return nullptr;
-    }
-    payload_size -= padding_bytes;
   }
 
   packet->packet_sender_ssrc_ = ByteReader<uint32_t>::ReadBigEndian(&buffer[4]);
@@ -717,6 +687,7 @@ rtc::scoped_ptr<TransportFeedback> TransportFeedback::ParseFrom(
   packet->base_time_ = ByteReader<int32_t, 3>::ReadBigEndian(&buffer[16]);
   packet->feedback_seq_ = buffer[19];
   size_t index = 20;
+  const size_t end_index = kHeaderLength + header.payload_size_bytes;
 
   if (num_packets == 0) {
     LOG(LS_WARNING) << "Empty feedback messages not allowed.";
@@ -726,7 +697,7 @@ rtc::scoped_ptr<TransportFeedback> TransportFeedback::ParseFrom(
 
   size_t packets_read = 0;
   while (packets_read < num_packets) {
-    if (index + 2 > payload_size) {
+    if (index + 2 > end_index) {
       LOG(LS_WARNING) << "Buffer overflow while parsing packet.";
       return nullptr;
     }
@@ -748,7 +719,7 @@ rtc::scoped_ptr<TransportFeedback> TransportFeedback::ParseFrom(
   for (StatusSymbol symbol : symbols) {
     switch (symbol) {
       case StatusSymbol::kReceivedSmallDelta:
-        if (index + 1 > payload_size) {
+        if (index + 1 > end_index) {
           LOG(LS_WARNING) << "Buffer overflow while parsing packet.";
           return nullptr;
         }
@@ -756,7 +727,7 @@ rtc::scoped_ptr<TransportFeedback> TransportFeedback::ParseFrom(
         ++index;
         break;
       case StatusSymbol::kReceivedLargeDelta:
-        if (index + 2 > payload_size) {
+        if (index + 2 > end_index) {
           LOG(LS_WARNING) << "Buffer overflow while parsing packet.";
           return nullptr;
         }
@@ -769,8 +740,8 @@ rtc::scoped_ptr<TransportFeedback> TransportFeedback::ParseFrom(
     }
   }
 
-  DCHECK_GE(index, payload_size - 3);
-  DCHECK_LE(index, payload_size);
+  DCHECK_GE(index, end_index - 3);
+  DCHECK_LE(index, end_index);
 
   return packet;
 }

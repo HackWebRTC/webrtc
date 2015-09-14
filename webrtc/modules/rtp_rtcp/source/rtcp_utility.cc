@@ -14,6 +14,10 @@
 #include <math.h>   // ceil
 #include <string.h> // memcpy
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+
 namespace webrtc {
 
 namespace RTCPUtility {
@@ -155,43 +159,40 @@ RTCPUtility::RTCPParserV2::IterateTopLevel()
 {
     for (;;)
     {
-        RTCPCommonHeader header;
+      RtcpCommonHeader header;
+      if (_ptrRTCPDataEnd <= _ptrRTCPData)
+        return;
 
-        const bool success = RTCPParseCommonHeader(_ptrRTCPData,
-                                                    _ptrRTCPDataEnd,
-                                                    header);
-
-        if (!success)
-        {
+      if (!RtcpParseCommonHeader(_ptrRTCPData, _ptrRTCPDataEnd - _ptrRTCPData,
+                                 &header)) {
             return;
         }
-        _ptrRTCPBlockEnd = _ptrRTCPData + header.LengthInOctets;
+        _ptrRTCPBlockEnd = _ptrRTCPData + header.BlockSize();
         if (_ptrRTCPBlockEnd > _ptrRTCPDataEnd)
         {
             // Bad block!
             return;
         }
 
-        switch (header.PT)
-        {
+        switch (header.packet_type) {
         case PT_SR:
         {
             // number of Report blocks
-            _numberOfBlocks = header.IC;
+            _numberOfBlocks = header.count_or_format;
             ParseSR();
             return;
         }
         case PT_RR:
         {
             // number of Report blocks
-            _numberOfBlocks = header.IC;
+            _numberOfBlocks = header.count_or_format;
             ParseRR();
             return;
         }
         case PT_SDES:
         {
             // number of SDES blocks
-            _numberOfBlocks = header.IC;
+            _numberOfBlocks = header.count_or_format;
             const bool ok = ParseSDES();
             if (!ok)
             {
@@ -202,7 +203,7 @@ RTCPUtility::RTCPParserV2::IterateTopLevel()
         }
         case PT_BYE:
         {
-            _numberOfBlocks = header.IC;
+          _numberOfBlocks = header.count_or_format;
             const bool ok = ParseBYE();
             if (!ok)
             {
@@ -214,7 +215,7 @@ RTCPUtility::RTCPParserV2::IterateTopLevel()
         case PT_IJ:
         {
             // number of Report blocks
-            _numberOfBlocks = header.IC;
+            _numberOfBlocks = header.count_or_format;
             ParseIJ();
             return;
         }
@@ -410,20 +411,16 @@ RTCPUtility::RTCPParserV2::IterateAppItem()
 void
 RTCPUtility::RTCPParserV2::Validate()
 {
-    if (_ptrRTCPData == NULL)
-    {
-        return; // NOT VALID
-    }
+  if (_ptrRTCPData == nullptr)
+    return;  // NOT VALID
 
-    RTCPCommonHeader header;
-    const bool success = RTCPParseCommonHeader(_ptrRTCPDataBegin,
-                                               _ptrRTCPDataEnd,
-                                               header);
+  RtcpCommonHeader header;
+  if (_ptrRTCPDataEnd <= _ptrRTCPDataBegin)
+    return;  // NOT VALID
 
-    if (!success)
-    {
-        return; // NOT VALID!
-    }
+  if (!RtcpParseCommonHeader(_ptrRTCPDataBegin,
+                             _ptrRTCPDataEnd - _ptrRTCPDataBegin, &header))
+    return;  // NOT VALID!
 
     // * if (!reducedSize) : first packet must be RR or SR.
     //
@@ -437,8 +434,7 @@ RTCPUtility::RTCPParserV2::Validate()
 
     if (!_RTCPReducedSizeEnable)
     {
-        if ((header.PT != PT_SR) && (header.PT != PT_RR))
-        {
+      if ((header.packet_type != PT_SR) && (header.packet_type != PT_RR)) {
             return; // NOT VALID
         }
     }
@@ -458,48 +454,74 @@ RTCPUtility::RTCPParserV2::EndCurrentBlock()
     _ptrRTCPData = _ptrRTCPBlockEnd;
 }
 
-bool
-RTCPUtility::RTCPParseCommonHeader( const uint8_t* ptrDataBegin,
-                                    const uint8_t* ptrDataEnd,
-                                    RTCPCommonHeader& parsedHeader)
-{
-    if (!ptrDataBegin || !ptrDataEnd)
-    {
-        return false;
+//  0                   1                   2                   3
+//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |V=2|P|    IC   |      PT       |             length            |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//
+// Common header for all RTCP packets, 4 octets.
+
+bool RTCPUtility::RtcpParseCommonHeader(const uint8_t* packet,
+                                        size_t size_bytes,
+                                        RtcpCommonHeader* parsed_header) {
+  DCHECK(parsed_header != nullptr);
+  if (size_bytes < RtcpCommonHeader::kHeaderSizeBytes) {
+    LOG(LS_WARNING) << "Too little data (" << size_bytes << " byte"
+                    << (size_bytes != 1 ? "s" : "")
+                    << ") remaining in buffer to parse RTCP header (4 bytes).";
+    return false;
+  }
+
+  const uint8_t kRtcpVersion = 2;
+  uint8_t version = packet[0] >> 6;
+  if (version != kRtcpVersion) {
+    LOG(LS_WARNING) << "Invalid RTCP header: Version must be "
+                    << static_cast<int>(kRtcpVersion) << " but was "
+                    << static_cast<int>(version);
+    return false;
+  }
+
+  bool has_padding = (packet[0] & 0x20) != 0;
+  uint8_t format = packet[0] & 0x1F;
+  uint8_t packet_type = packet[1];
+  size_t packet_size_words =
+      ByteReader<uint16_t>::ReadBigEndian(&packet[2]) + 1;
+
+  if (size_bytes < packet_size_words * 4) {
+    LOG(LS_WARNING) << "Buffer too small (" << size_bytes
+                    << " bytes) to fit an RtcpPacket of " << packet_size_words
+                    << " 32bit words.";
+    return false;
+  }
+
+  size_t payload_size = packet_size_words * 4;
+  size_t padding_bytes = 0;
+  if (has_padding) {
+    if (payload_size <= RtcpCommonHeader::kHeaderSizeBytes) {
+      LOG(LS_WARNING) << "Invalid RTCP header: Padding bit set but 0 payload "
+                         "size specified.";
+      return false;
     }
 
-    //  0                   1                   2                   3
-    //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // |V=2|P|    IC   |      PT       |             length            |
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    //
-    // Common header for all RTCP packets, 4 octets.
-
-    if ((ptrDataEnd - ptrDataBegin) < 4)
-    {
-        return false;
+    padding_bytes = packet[payload_size - 1];
+    if (RtcpCommonHeader::kHeaderSizeBytes + padding_bytes > payload_size) {
+      LOG(LS_WARNING) << "Invalid RTCP header: Too many padding bytes ("
+                      << padding_bytes << ") for a packet size of "
+                      << payload_size << "bytes.";
+      return false;
     }
+    payload_size -= padding_bytes;
+  }
+  payload_size -= RtcpCommonHeader::kHeaderSizeBytes;
 
-    parsedHeader.V              = ptrDataBegin[0] >> 6;
-    parsedHeader.P              = ((ptrDataBegin[0] & 0x20) == 0) ? false : true;
-    parsedHeader.IC             = ptrDataBegin[0] & 0x1f;
-    parsedHeader.PT             = ptrDataBegin[1];
+  parsed_header->version = kRtcpVersion;
+  parsed_header->count_or_format = format;
+  parsed_header->packet_type = packet_type;
+  parsed_header->payload_size_bytes = payload_size;
+  parsed_header->padding_bytes = padding_bytes;
 
-    parsedHeader.LengthInOctets = (ptrDataBegin[2] << 8) + ptrDataBegin[3] + 1;
-    parsedHeader.LengthInOctets *= 4;
-
-    if(parsedHeader.LengthInOctets == 0)
-    {
-        return false;
-    }
-    // Check if RTP version field == 2
-    if (parsedHeader.V != 2)
-    {
-        return false;
-    }
-
-    return true;
+  return true;
 }
 
 bool
@@ -1137,10 +1159,9 @@ bool RTCPUtility::RTCPParserV2::ParseXrUnsupportedBlockType(
   return false;
 }
 
-bool
-RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
-{
-    assert((header.PT == PT_RTPFB) || (header.PT == PT_PSFB)); // Parser logic check
+bool RTCPUtility::RTCPParserV2::ParseFBCommon(const RtcpCommonHeader& header) {
+  assert((header.packet_type == PT_RTPFB) ||
+         (header.packet_type == PT_PSFB));  // Parser logic check
 
     const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
@@ -1162,12 +1183,10 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
     mediaSSRC += *_ptrRTCPData++ << 8;
     mediaSSRC += *_ptrRTCPData++;
 
-    if (header.PT == PT_RTPFB)
-    {
+    if (header.packet_type == PT_RTPFB) {
         // Transport layer feedback
 
-        switch (header.IC)
-        {
+        switch (header.count_or_format) {
         case 1:
         {
             // NACK
@@ -1222,12 +1241,9 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
         }
         EndCurrentBlock();
         return false;
-    }
-    else if (header.PT == PT_PSFB)
-    {
+    } else if (header.packet_type == PT_PSFB) {
         // Payload specific feedback
-        switch (header.IC)
-        {
+        switch (header.count_or_format) {
         case 1:
             // PLI
           _packetType = RTCPPacketTypes::kPsfbPli;
@@ -1579,9 +1595,7 @@ RTCPUtility::RTCPParserV2::ParseFIRItem()
     return true;
 }
 
-bool
-RTCPUtility::RTCPParserV2::ParseAPP( const RTCPCommonHeader& header)
-{
+bool RTCPUtility::RTCPParserV2::ParseAPP(const RtcpCommonHeader& header) {
     ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 12) // 4 * 3, RFC 3550 6.7 APP: Application-Defined RTCP Packet
@@ -1606,7 +1620,7 @@ RTCPUtility::RTCPParserV2::ParseAPP( const RTCPCommonHeader& header)
 
     _packetType = RTCPPacketTypes::kApp;
 
-    _packet.APP.SubType = header.IC;
+    _packet.APP.SubType = header.count_or_format;
     _packet.APP.Name = name;
 
     _state = ParseState::State_AppItem;
@@ -1651,37 +1665,31 @@ RTCPUtility::RTCPPacketIterator::RTCPPacketIterator(uint8_t* rtcpData,
 RTCPUtility::RTCPPacketIterator::~RTCPPacketIterator() {
 }
 
-const RTCPUtility::RTCPCommonHeader*
-RTCPUtility::RTCPPacketIterator::Begin()
-{
+const RTCPUtility::RtcpCommonHeader* RTCPUtility::RTCPPacketIterator::Begin() {
     _ptrBlock = _ptrBegin;
 
     return Iterate();
 }
 
-const RTCPUtility::RTCPCommonHeader*
-RTCPUtility::RTCPPacketIterator::Iterate()
-{
-    const bool success = RTCPParseCommonHeader(_ptrBlock, _ptrEnd, _header);
-    if (!success)
-    {
-        _ptrBlock = NULL;
-        return NULL;
-    }
-    _ptrBlock += _header.LengthInOctets;
+const RTCPUtility::RtcpCommonHeader*
+RTCPUtility::RTCPPacketIterator::Iterate() {
+  if ((_ptrEnd <= _ptrBlock) ||
+      !RtcpParseCommonHeader(_ptrBlock, _ptrEnd - _ptrBlock, &_header)) {
+    _ptrBlock = nullptr;
+    return nullptr;
+  }
+  _ptrBlock += _header.BlockSize();
 
-    if (_ptrBlock > _ptrEnd)
-    {
-        _ptrBlock = NULL;
-        return  NULL;
-    }
+  if (_ptrBlock > _ptrEnd) {
+    _ptrBlock = nullptr;
+    return nullptr;
+  }
 
-    return &_header;
+  return &_header;
 }
 
-const RTCPUtility::RTCPCommonHeader*
-RTCPUtility::RTCPPacketIterator::Current()
-{
+const RTCPUtility::RtcpCommonHeader*
+RTCPUtility::RTCPPacketIterator::Current() {
     if (!_ptrBlock)
     {
         return NULL;
