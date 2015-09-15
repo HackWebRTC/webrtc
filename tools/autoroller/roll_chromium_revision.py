@@ -337,9 +337,9 @@ def _UploadCL(dry_run):
     _RunCommand(['git', 'cl', 'upload'], extra_env={'EDITOR': 'true'})
 
 
-def _LaunchTrybots(dry_run):
+def _LaunchTrybots(dry_run, skip_try):
   logging.info('Sending tryjobs...')
-  if not dry_run:
+  if not dry_run and not skip_try:
     _RunCommand(['git', 'cl', 'try'])
 
 
@@ -354,6 +354,8 @@ def main():
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
                        'tryjobs.'))
+  p.add_argument('-s', '--skip-try', action='store_true', default=False,
+                 help='Do everything except sending tryjobs.')
   p.add_argument('-v', '--verbose', action='store_true', default=False,
                  help='Be extra verbose in printing of log messages.')
   opts = p.parse_args()
@@ -397,7 +399,7 @@ def main():
   UpdateDeps(deps_filename, current_cr_rev, opts.revision)
   _LocalCommit(commit_msg, opts.dry_run)
   _UploadCL(opts.dry_run)
-  _LaunchTrybots(opts.dry_run)
+  _LaunchTrybots(opts.dry_run, opts.skip_try)
   return 0
 
 
