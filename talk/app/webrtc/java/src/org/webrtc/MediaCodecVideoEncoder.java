@@ -35,8 +35,7 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Bundle;
-
-import org.webrtc.Logging;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -126,7 +125,7 @@ public class MediaCodecVideoEncoder {
     if (mime.equals(H264_MIME_TYPE)) {
       List<String> exceptionModels = Arrays.asList(H264_HW_EXCEPTION_MODELS);
       if (exceptionModels.contains(Build.MODEL)) {
-        Logging.w(TAG, "Model: " + Build.MODEL +
+        Log.w(TAG, "Model: " + Build.MODEL +
             " has black listed H.264 encoder.");
         return null;
       }
@@ -147,7 +146,7 @@ public class MediaCodecVideoEncoder {
       if (name == null) {
         continue;  // No HW support in this codec; try the next one.
       }
-      Logging.v(TAG, "Found candidate encoder " + name);
+      Log.v(TAG, "Found candidate encoder " + name);
 
       // Check if this is supported HW encoder.
       boolean supportedCodec = false;
@@ -163,7 +162,7 @@ public class MediaCodecVideoEncoder {
 
       CodecCapabilities capabilities = info.getCapabilitiesForType(mime);
       for (int colorFormat : capabilities.colorFormats) {
-        Logging.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
+        Log.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
       }
 
       // Check if codec supports either yuv420 or nv12.
@@ -171,7 +170,7 @@ public class MediaCodecVideoEncoder {
         for (int codecColorFormat : capabilities.colorFormats) {
           if (codecColorFormat == supportedColorFormat) {
             // Found supported HW encoder.
-            Logging.d(TAG, "Found target encoder for mime " + mime + " : " + name +
+            Log.d(TAG, "Found target encoder for mime " + mime + " : " + name +
                 ". Color: 0x" + Integer.toHexString(codecColorFormat));
             return new EncoderProperties(name, codecColorFormat);
           }
@@ -210,7 +209,7 @@ public class MediaCodecVideoEncoder {
   // Return the array of input buffers, or null on failure.
   private ByteBuffer[] initEncode(
       VideoCodecType type, int width, int height, int kbps, int fps) {
-    Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
+    Log.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
         ". @ " + kbps + " kbps. Fps: " + fps +
         ". Color: 0x" + Integer.toHexString(colorFormat));
     if (mediaCodecThread != null) {
@@ -240,7 +239,7 @@ public class MediaCodecVideoEncoder {
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       format.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
-      Logging.d(TAG, "  Format: " + format);
+      Log.d(TAG, "  Format: " + format);
       mediaCodec = createByCodecName(properties.codecName);
       if (mediaCodec == null) {
         return null;
@@ -251,11 +250,11 @@ public class MediaCodecVideoEncoder {
       colorFormat = properties.colorFormat;
       outputBuffers = mediaCodec.getOutputBuffers();
       ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
-      Logging.d(TAG, "Input buffers: " + inputBuffers.length +
+      Log.d(TAG, "Input buffers: " + inputBuffers.length +
           ". Output buffers: " + outputBuffers.length);
       return inputBuffers;
     } catch (IllegalStateException e) {
-      Logging.e(TAG, "initEncode failed", e);
+      Log.e(TAG, "initEncode failed", e);
       return null;
     }
   }
@@ -270,7 +269,7 @@ public class MediaCodecVideoEncoder {
         // indicate this in queueInputBuffer() below and guarantee _this_ frame
         // be encoded as a key frame, but sadly that flag is ignored.  Instead,
         // we request a key frame "soon".
-        Logging.d(TAG, "Sync frame request");
+        Log.d(TAG, "Sync frame request");
         Bundle b = new Bundle();
         b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
         mediaCodec.setParameters(b);
@@ -280,19 +279,19 @@ public class MediaCodecVideoEncoder {
       return true;
     }
     catch (IllegalStateException e) {
-      Logging.e(TAG, "encode failed", e);
+      Log.e(TAG, "encode failed", e);
       return false;
     }
   }
 
   private void release() {
-    Logging.d(TAG, "Java releaseEncoder");
+    Log.d(TAG, "Java releaseEncoder");
     checkOnMediaCodecThread();
     try {
       mediaCodec.stop();
       mediaCodec.release();
     } catch (IllegalStateException e) {
-      Logging.e(TAG, "release failed", e);
+      Log.e(TAG, "release failed", e);
     }
     mediaCodec = null;
     mediaCodecThread = null;
@@ -302,14 +301,14 @@ public class MediaCodecVideoEncoder {
     // frameRate argument is ignored - HW encoder is supposed to use
     // video frame timestamps for bit allocation.
     checkOnMediaCodecThread();
-    Logging.v(TAG, "setRates: " + kbps + " kbps. Fps: " + frameRateIgnored);
+    Log.v(TAG, "setRates: " + kbps + " kbps. Fps: " + frameRateIgnored);
     try {
       Bundle params = new Bundle();
       params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, 1000 * kbps);
       mediaCodec.setParameters(params);
       return true;
     } catch (IllegalStateException e) {
-      Logging.e(TAG, "setRates failed", e);
+      Log.e(TAG, "setRates failed", e);
       return false;
     }
   }
@@ -321,7 +320,7 @@ public class MediaCodecVideoEncoder {
     try {
       return mediaCodec.dequeueInputBuffer(DEQUEUE_TIMEOUT);
     } catch (IllegalStateException e) {
-      Logging.e(TAG, "dequeueIntputBuffer failed", e);
+      Log.e(TAG, "dequeueIntputBuffer failed", e);
       return -2;
     }
   }
@@ -355,7 +354,7 @@ public class MediaCodecVideoEncoder {
         boolean isConfigFrame =
             (info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0;
         if (isConfigFrame) {
-          Logging.d(TAG, "Config frame generated. Offset: " + info.offset +
+          Log.d(TAG, "Config frame generated. Offset: " + info.offset +
               ". Size: " + info.size);
           configData = ByteBuffer.allocateDirect(info.size);
           outputBuffers[result].position(info.offset);
@@ -378,10 +377,10 @@ public class MediaCodecVideoEncoder {
         boolean isKeyFrame =
             (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
         if (isKeyFrame) {
-          Logging.d(TAG, "Sync frame generated");
+          Log.d(TAG, "Sync frame generated");
         }
         if (isKeyFrame && type == VideoCodecType.VIDEO_CODEC_H264) {
-          Logging.d(TAG, "Appending config frame of size " + configData.capacity() +
+          Log.d(TAG, "Appending config frame of size " + configData.capacity() +
               " to output buffer with offset " + info.offset + ", size " +
               info.size);
           // For H.264 key frame append SPS and PPS NALs at the start
@@ -407,7 +406,7 @@ public class MediaCodecVideoEncoder {
       }
       throw new RuntimeException("dequeueOutputBuffer: " + result);
     } catch (IllegalStateException e) {
-      Logging.e(TAG, "dequeueOutputBuffer failed", e);
+      Log.e(TAG, "dequeueOutputBuffer failed", e);
       return new OutputBufferInfo(-1, null, false, -1);
     }
   }
@@ -420,7 +419,7 @@ public class MediaCodecVideoEncoder {
       mediaCodec.releaseOutputBuffer(index, false);
       return true;
     } catch (IllegalStateException e) {
-      Logging.e(TAG, "releaseOutputBuffer failed", e);
+      Log.e(TAG, "releaseOutputBuffer failed", e);
       return false;
     }
   }

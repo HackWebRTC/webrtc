@@ -29,9 +29,9 @@ package org.webrtc;
 
 import android.hardware.Camera;
 import android.os.SystemClock;
+import android.util.Log;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.Logging;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,16 +58,16 @@ public class CameraEnumerator implements CameraEnumerationAndroid.Enumerator {
   }
 
   private List<CaptureFormat> enumerateFormats(int cameraId) {
-    Logging.d(TAG, "Get supported formats for camera index " + cameraId + ".");
+    Log.d(TAG, "Get supported formats for camera index " + cameraId + ".");
     final long startTimeMs = SystemClock.elapsedRealtime();
     final Camera.Parameters parameters;
     Camera camera = null;
     try {
-      Logging.d(TAG, "Opening camera with index " + cameraId);
+      Log.d(TAG, "Opening camera with index " + cameraId);
       camera = Camera.open(cameraId);
       parameters = camera.getParameters();
     } catch (RuntimeException e) {
-      Logging.e(TAG, "Open camera failed on camera index " + cameraId, e);
+      Log.e(TAG, "Open camera failed on camera index " + cameraId, e);
       return new ArrayList<CaptureFormat>();
     } finally {
       if (camera != null) {
@@ -91,11 +91,11 @@ public class CameraEnumerator implements CameraEnumerationAndroid.Enumerator {
         formatList.add(new CaptureFormat(size.width, size.height, minFps, maxFps));
       }
     } catch (Exception e) {
-      Logging.e(TAG, "getSupportedFormats() failed on camera index " + cameraId, e);
+      Log.e(TAG, "getSupportedFormats() failed on camera index " + cameraId, e);
     }
 
     final long endTimeMs = SystemClock.elapsedRealtime();
-    Logging.d(TAG, "Get supported formats for camera index " + cameraId + " done."
+    Log.d(TAG, "Get supported formats for camera index " + cameraId + " done."
         + " Time spent: " + (endTimeMs - startTimeMs) + " ms.");
     return formatList;
   }

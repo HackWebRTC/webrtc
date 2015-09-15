@@ -32,9 +32,8 @@ import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLSurface;
+import android.util.Log;
 import android.view.Surface;
-
-import org.webrtc.Logging;
 
 /**
  * Holds EGL state and utility methods for handling an EGLContext, an EGLDisplay, and an EGLSurface.
@@ -53,7 +52,7 @@ public final class EglBase {
   private EGLSurface eglSurface = EGL14.EGL_NO_SURFACE;
 
   public static boolean isEGL14Supported() {
-    Logging.d(TAG, "SDK version: " + CURRENT_SDK_VERSION);
+    Log.d(TAG, "SDK version: " + CURRENT_SDK_VERSION);
     return (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION);
   }
 
@@ -87,7 +86,7 @@ public final class EglBase {
   public void createSurface(Surface surface) {
     checkIsNotReleased();
     if (configType == ConfigType.PIXEL_BUFFER) {
-      Logging.w(TAG, "This EGL context is configured for PIXEL_BUFFER, but uses regular Surface");
+      Log.w(TAG, "This EGL context is configured for PIXEL_BUFFER, but uses regular Surface");
     }
     if (eglSurface != EGL14.EGL_NO_SURFACE) {
       throw new RuntimeException("Already has an EGLSurface");

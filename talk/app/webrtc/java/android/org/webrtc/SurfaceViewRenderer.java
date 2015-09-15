@@ -27,8 +27,6 @@
 
 package org.webrtc;
 
-import java.nio.ByteBuffer;
-
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
@@ -38,10 +36,9 @@ import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
-import org.webrtc.Logging;
 
 /**
  * Implements org.webrtc.VideoRenderer.Callbacks by displaying the video stream on a SurfaceView.
@@ -147,7 +144,7 @@ public class SurfaceViewRenderer extends SurfaceView
     if (renderThreadHandler != null) {
       throw new IllegalStateException("Already initialized");
     }
-    Logging.d(TAG, "Initializing");
+    Log.d(TAG, "Initializing");
     this.rendererEvents = rendererEvents;
     renderThread = new HandlerThread(TAG);
     renderThread.start();
@@ -164,7 +161,7 @@ public class SurfaceViewRenderer extends SurfaceView
   public void release() {
     synchronized (threadLock) {
       if (renderThreadHandler == null) {
-        Logging.d(TAG, "Already released");
+        Log.d(TAG, "Already released");
         return;
       }
       // Release EGL and GL resources on render thread.
@@ -224,7 +221,7 @@ public class SurfaceViewRenderer extends SurfaceView
     }
     synchronized (threadLock) {
       if (renderThreadHandler == null) {
-        Logging.d(TAG, "Dropping frame - SurfaceViewRenderer not initialized or already released.");
+        Log.d(TAG, "Dropping frame - SurfaceViewRenderer not initialized or already released.");
       } else {
         synchronized (frameLock) {
           if (pendingFrame == null) {
@@ -284,7 +281,7 @@ public class SurfaceViewRenderer extends SurfaceView
   // SurfaceHolder.Callback interface.
   @Override
   public void surfaceCreated(final SurfaceHolder holder) {
-    Logging.d(TAG, "Surface created");
+    Log.d(TAG, "Surface created");
     runOnRenderThread(new Runnable() {
       @Override public void run() {
         eglBase.createSurface(holder.getSurface());
@@ -297,7 +294,7 @@ public class SurfaceViewRenderer extends SurfaceView
 
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
-    Logging.d(TAG, "Surface destroyed");
+    Log.d(TAG, "Surface destroyed");
     synchronized (layoutLock) {
       surfaceWidth = 0;
       surfaceHeight = 0;
@@ -311,7 +308,7 @@ public class SurfaceViewRenderer extends SurfaceView
 
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    Logging.d(TAG, "Surface changed: " + width + "x" + height);
+    Log.d(TAG, "Surface changed: " + width + "x" + height);
     synchronized (layoutLock) {
       surfaceWidth = width;
       surfaceHeight = height;
@@ -338,7 +335,7 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (layoutLock) {
       final Point desiredLayoutSize = getDesiredLayoutSize();
       if (desiredLayoutSize.x != layoutWidth || desiredLayoutSize.y != layoutHeight) {
-        Logging.d(TAG, "Requesting new layout with size: "
+        Log.d(TAG, "Requesting new layout with size: "
             + desiredLayoutSize.x + "x" + desiredLayoutSize.y);
         // Request layout update on UI thread.
         post(new Runnable() {
@@ -359,7 +356,7 @@ public class SurfaceViewRenderer extends SurfaceView
    */
   private void renderFrameOnRenderThread() {
     if (eglBase == null || !eglBase.hasSurface()) {
-      Logging.d(TAG, "No surface to draw on");
+      Log.d(TAG, "No surface to draw on");
       return;
     }
     if (!checkConsistentLayout()) {
@@ -452,10 +449,10 @@ public class SurfaceViewRenderer extends SurfaceView
         if (rendererEvents != null) {
           final String id = getResources().getResourceEntryName(getId());
           if (frameWidth == 0 || frameHeight == 0) {
-            Logging.d(TAG, "ID: " + id + ". Reporting first rendered frame.");
+            Log.d(TAG, "ID: " + id + ". Reporting first rendered frame.");
             rendererEvents.onFirstFrameRendered();
           }
-          Logging.d(TAG, "ID: " + id + ". Reporting frame resolution changed to "
+          Log.d(TAG, "ID: " + id + ". Reporting frame resolution changed to "
               + frame.width + "x" + frame.height + " with rotation " + frame.rotationDegree);
           rendererEvents.onFrameResolutionChanged(frame.width, frame.height, frame.rotationDegree);
         }
@@ -468,13 +465,13 @@ public class SurfaceViewRenderer extends SurfaceView
 
   private void logStatistics() {
     synchronized (statisticsLock) {
-      Logging.d(TAG, "ID: " + getResources().getResourceEntryName(getId()) + ". Frames received: "
+      Log.d(TAG, "ID: " + getResources().getResourceEntryName(getId()) + ". Frames received: "
           + framesReceived + ". Dropped: " + framesDropped + ". Rendered: " + framesRendered);
       if (framesReceived > 0 && framesRendered > 0) {
         final long timeSinceFirstFrameNs = System.nanoTime() - firstFrameTimeNs;
-        Logging.d(TAG, "Duration: " + (int) (timeSinceFirstFrameNs / 1e6) +
+        Log.d(TAG, "Duration: " + (int) (timeSinceFirstFrameNs / 1e6) +
             " ms. FPS: " + (float) framesRendered * 1e9 / timeSinceFirstFrameNs);
-        Logging.d(TAG, "Average render time: "
+        Log.d(TAG, "Average render time: "
             + (int) (renderTimeNs / (1000 * framesRendered)) + " us.");
       }
     }
