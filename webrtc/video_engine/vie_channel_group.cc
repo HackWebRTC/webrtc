@@ -191,9 +191,9 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
                                      int number_of_cores,
                                      const std::vector<uint32_t>& ssrcs) {
   DCHECK(!ssrcs.empty());
-  rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
-      channel_id, number_of_cores, *process_thread_, pacer_.get(),
-      bitrate_allocator_.get(), bitrate_controller_.get()));
+  rtc::scoped_ptr<ViEEncoder> vie_encoder(
+      new ViEEncoder(channel_id, number_of_cores, *process_thread_,
+                     pacer_.get(), bitrate_allocator_.get()));
   if (!vie_encoder->Init()) {
     return false;
   }

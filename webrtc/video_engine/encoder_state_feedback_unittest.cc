@@ -17,6 +17,7 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
@@ -31,7 +32,7 @@ namespace webrtc {
 class MockVieEncoder : public ViEEncoder {
  public:
   explicit MockVieEncoder(ProcessThread* process_thread, PacedSender* pacer)
-      : ViEEncoder(1, 1, *process_thread, pacer, NULL, NULL) {}
+      : ViEEncoder(1, 1, *process_thread, pacer, NULL) {}
   ~MockVieEncoder() {}
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest,

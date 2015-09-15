@@ -37,15 +37,13 @@ class BitrateAllocator {
 
   // Set the start and max send bitrate used by the bandwidth management.
   //
-  // observer, updates bitrates if already in use.
-  // min_bitrate_bps = 0 equals no min bitrate.
-  // max_bitrate_bps = 0 equals no max bitrate.
-  // TODO(holmer): Remove start_bitrate_bps when old API is gone.
+  // |observer| updates bitrates if already in use.
+  // |min_bitrate_bps| = 0 equals no min bitrate.
+  // |max_bitrate_bps| = 0 equals no max bitrate.
+  // Returns bitrate allocated for the bitrate observer.
   int AddBitrateObserver(BitrateObserver* observer,
-                         uint32_t start_bitrate_bps,
                          uint32_t min_bitrate_bps,
-                         uint32_t max_bitrate_bps,
-                         int* new_observer_bitrate_bps);
+                         uint32_t max_bitrate_bps);
 
   void RemoveBitrateObserver(BitrateObserver* observer);
 
@@ -61,21 +59,16 @@ class BitrateAllocator {
 
  private:
   struct BitrateConfiguration {
-    BitrateConfiguration(uint32_t start_bitrate,
-                         uint32_t min_bitrate,
-                         uint32_t max_bitrate)
-        : start_bitrate_(start_bitrate),
-          min_bitrate_(min_bitrate),
-          max_bitrate_(max_bitrate) {}
-    uint32_t start_bitrate_;
-    uint32_t min_bitrate_;
-    uint32_t max_bitrate_;
+    BitrateConfiguration(uint32_t min_bitrate, uint32_t max_bitrate)
+        : min_bitrate(min_bitrate), max_bitrate(max_bitrate) {}
+    uint32_t min_bitrate;
+    uint32_t max_bitrate;
   };
   struct ObserverConfiguration {
     ObserverConfiguration(BitrateObserver* observer, uint32_t bitrate)
-        : observer_(observer), min_bitrate_(bitrate) {}
-    BitrateObserver* observer_;
-    uint32_t min_bitrate_;
+        : observer(observer), min_bitrate(bitrate) {}
+    BitrateObserver* const observer;
+    uint32_t min_bitrate;
   };
   typedef std::pair<BitrateObserver*, BitrateConfiguration>
       BitrateObserverConfiguration;

@@ -20,7 +20,6 @@
 #include "webrtc/common_types.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_allocator.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
@@ -75,8 +74,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
              uint32_t number_of_cores,
              ProcessThread& module_process_thread,
              PacedSender* pacer,
-             BitrateAllocator* bitrate_allocator,
-             BitrateController* bitrate_controller);
+             BitrateAllocator* bitrate_allocator);
   ~ViEEncoder();
 
   bool Init();
@@ -204,7 +202,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   PacedSender* const pacer_;
   BitrateAllocator* const bitrate_allocator_;
-  BitrateController* const bitrate_controller_;
 
   // The time we last received an input frame or encoded frame. This is used to
   // track when video is stopped long enough that we also want to stop sending

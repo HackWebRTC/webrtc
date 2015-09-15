@@ -18,6 +18,7 @@
 #include "webrtc/common_video/interface/video_image.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
@@ -105,8 +106,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
                        uint32_t number_of_cores,
                        ProcessThread& module_process_thread,
                        PacedSender* pacer,
-                       BitrateAllocator* bitrate_allocator,
-                       BitrateController* bitrate_controller)
+                       BitrateAllocator* bitrate_allocator)
     : channel_id_(channel_id),
       number_of_cores_(number_of_cores),
       vpm_(VideoProcessingModule::Create(ViEModuleId(-1, channel_id))),
@@ -119,7 +119,6 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       pacer_(pacer),
       bitrate_allocator_(bitrate_allocator),
-      bitrate_controller_(bitrate_controller),
       time_of_last_frame_activity_ms_(0),
       simulcast_enabled_(false),
       min_transmit_bitrate_kbps_(0),
@@ -269,30 +268,9 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
 
   // Add a bitrate observer to the allocator and update the start, max and
   // min bitrates of the bitrate controller as needed.
-  int allocated_bitrate_bps;
-  int new_bwe_candidate_bps = bitrate_allocator_->AddBitrateObserver(
-      bitrate_observer_.get(), video_codec.startBitrate * 1000,
-      video_codec.minBitrate * 1000, video_codec.maxBitrate * 1000,
-      &allocated_bitrate_bps);
-
-  // Only set the start/min/max bitrate of the bitrate controller if the start
-  // bitrate is greater than zero. The new API sets these via the channel group
-  // and passes a zero start bitrate to SetSendCodec.
-  // TODO(holmer): Remove this when the new API has been launched.
-  if (video_codec.startBitrate > 0) {
-    if (new_bwe_candidate_bps > 0) {
-      uint32_t current_bwe_bps = 0;
-      bitrate_controller_->AvailableBandwidth(&current_bwe_bps);
-      bitrate_controller_->SetStartBitrate(std::max(
-          static_cast<uint32_t>(new_bwe_candidate_bps), current_bwe_bps));
-    }
-
-    int new_bwe_min_bps = 0;
-    int new_bwe_max_bps = 0;
-    bitrate_allocator_->GetMinMaxBitrateSumBps(&new_bwe_min_bps,
-                                               &new_bwe_max_bps);
-    bitrate_controller_->SetMinMaxBitrate(new_bwe_min_bps, new_bwe_max_bps);
-  }
+  int allocated_bitrate_bps = bitrate_allocator_->AddBitrateObserver(
+      bitrate_observer_.get(), video_codec.minBitrate * 1000,
+      video_codec.maxBitrate * 1000);
 
   webrtc::VideoCodec modified_video_codec = video_codec;
   modified_video_codec.startBitrate = allocated_bitrate_bps / 1000;
