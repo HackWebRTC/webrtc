@@ -354,7 +354,7 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 
 #define LOG_TAG(sev, tag) \
   LOG_SEVERITY_PRECONDITION(sev) \
-    rtc::LogMessage(__FILE__, __LINE__, sev, tag).stream()
+    rtc::LogMessage(NULL, 0, sev, tag).stream()
 
 #define PLOG(sev, err) \
   LOG_ERR_EX(sev, err)

@@ -132,7 +132,8 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
     print_stream_ << "[" << std::dec << id << "] ";
   }
 
-  print_stream_ << "(" << FilenameFromPath(file)  << ":" << line << "): ";
+  if (file != NULL)
+    print_stream_ << "(" << FilenameFromPath(file)  << ":" << line << "): ";
 
   if (err_ctx != ERRCTX_NONE) {
     std::ostringstream tmp;
