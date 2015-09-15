@@ -157,9 +157,7 @@ public final class EglBase {
   public void release() {
     checkIsNotReleased();
     releaseSurface();
-    // Release our context.
-    EGL14.eglMakeCurrent(
-        eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+    detachCurrent();
     EGL14.eglDestroyContext(eglDisplay, eglContext);
     EGL14.eglReleaseThread();
     EGL14.eglTerminate(eglDisplay);
@@ -174,6 +172,14 @@ public final class EglBase {
       throw new RuntimeException("No EGLSurface - can't make current");
     }
     if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+      throw new RuntimeException("eglMakeCurrent failed");
+    }
+  }
+
+  // Detach the current EGL context, so that it can be made current on another thread.
+  public void detachCurrent() {
+    if (!EGL14.eglMakeCurrent(
+        eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)) {
       throw new RuntimeException("eglMakeCurrent failed");
     }
   }
