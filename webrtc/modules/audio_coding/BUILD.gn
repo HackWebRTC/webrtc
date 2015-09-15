@@ -662,7 +662,9 @@ config("opus_config") {
 
 source_set("webrtc_opus") {
   sources = [
+    "codecs/opus/audio_decoder_opus.cc",
     "codecs/opus/audio_encoder_opus.cc",
+    "codecs/opus/interface/audio_decoder_opus.h",
     "codecs/opus/interface/audio_encoder_opus.h",
     "codecs/opus/interface/opus_interface.h",
     "codecs/opus/opus_inst.h",

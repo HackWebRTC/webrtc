@@ -10,7 +10,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "webrtc/modules/audio_coding/codecs/opus/interface/audio_decoder_opus.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 

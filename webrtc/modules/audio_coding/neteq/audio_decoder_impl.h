@@ -27,9 +27,6 @@
 #ifdef WEBRTC_CODEC_ILBC
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 #endif
-#ifdef WEBRTC_CODEC_OPUS
-#include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
-#endif
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -203,38 +200,6 @@ class AudioDecoderG722Stereo : public AudioDecoder {
   G722DecInst* dec_state_right_;
 
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722Stereo);
-};
-#endif
-
-#ifdef WEBRTC_CODEC_OPUS
-class AudioDecoderOpus : public AudioDecoder {
- public:
-  explicit AudioDecoderOpus(size_t num_channels);
-  ~AudioDecoderOpus() override;
-
-  void Reset() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
-  int PacketDurationRedundant(const uint8_t* encoded,
-                              size_t encoded_len) const override;
-  bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override;
-  size_t Channels() const override;
-
- protected:
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-  int DecodeRedundantInternal(const uint8_t* encoded,
-                              size_t encoded_len,
-                              int sample_rate_hz,
-                              int16_t* decoded,
-                              SpeechType* speech_type) override;
-
- private:
-  OpusDecInst* dec_state_;
-  const size_t channels_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpus);
 };
 #endif
 

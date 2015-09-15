@@ -29,7 +29,7 @@
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-#include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/interface/audio_decoder_opus.h"
 #endif
 #ifdef WEBRTC_CODEC_PCM16
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
@@ -296,86 +296,6 @@ void AudioDecoderG722Stereo::SplitStereoPacket(const uint8_t* encoded,
             encoded_len - i - 2);
     encoded_deinterleaved[encoded_len - 1] = right_byte;
   }
-}
-#endif
-
-// Opus
-#ifdef WEBRTC_CODEC_OPUS
-AudioDecoderOpus::AudioDecoderOpus(size_t num_channels)
-    : channels_(num_channels) {
-  DCHECK(num_channels == 1 || num_channels == 2);
-  WebRtcOpus_DecoderCreate(&dec_state_, static_cast<int>(channels_));
-  WebRtcOpus_DecoderInit(dec_state_);
-}
-
-AudioDecoderOpus::~AudioDecoderOpus() {
-  WebRtcOpus_DecoderFree(dec_state_);
-}
-
-int AudioDecoderOpus::DecodeInternal(const uint8_t* encoded,
-                                     size_t encoded_len,
-                                     int sample_rate_hz,
-                                     int16_t* decoded,
-                                     SpeechType* speech_type) {
-  DCHECK_EQ(sample_rate_hz, 48000);
-  int16_t temp_type = 1;  // Default is speech.
-  int ret = WebRtcOpus_Decode(dec_state_, encoded, encoded_len, decoded,
-                              &temp_type);
-  if (ret > 0)
-    ret *= static_cast<int>(channels_);  // Return total number of samples.
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-int AudioDecoderOpus::DecodeRedundantInternal(const uint8_t* encoded,
-                                              size_t encoded_len,
-                                              int sample_rate_hz,
-                                              int16_t* decoded,
-                                              SpeechType* speech_type) {
-  if (!PacketHasFec(encoded, encoded_len)) {
-    // This packet is a RED packet.
-    return DecodeInternal(encoded, encoded_len, sample_rate_hz, decoded,
-                          speech_type);
-  }
-
-  DCHECK_EQ(sample_rate_hz, 48000);
-  int16_t temp_type = 1;  // Default is speech.
-  int ret = WebRtcOpus_DecodeFec(dec_state_, encoded, encoded_len, decoded,
-                                 &temp_type);
-  if (ret > 0)
-    ret *= static_cast<int>(channels_);  // Return total number of samples.
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-void AudioDecoderOpus::Reset() {
-  WebRtcOpus_DecoderInit(dec_state_);
-}
-
-int AudioDecoderOpus::PacketDuration(const uint8_t* encoded,
-                                     size_t encoded_len) const {
-  return WebRtcOpus_DurationEst(dec_state_, encoded, encoded_len);
-}
-
-int AudioDecoderOpus::PacketDurationRedundant(const uint8_t* encoded,
-                                              size_t encoded_len) const {
-  if (!PacketHasFec(encoded, encoded_len)) {
-    // This packet is a RED packet.
-    return PacketDuration(encoded, encoded_len);
-  }
-
-  return WebRtcOpus_FecDurationEst(encoded, encoded_len);
-}
-
-bool AudioDecoderOpus::PacketHasFec(const uint8_t* encoded,
-                                    size_t encoded_len) const {
-  int fec;
-  fec = WebRtcOpus_PacketHasFec(encoded, encoded_len);
-  return (fec == 1);
-}
-
-size_t AudioDecoderOpus::Channels() const {
-  return channels_;
 }
 #endif
 
