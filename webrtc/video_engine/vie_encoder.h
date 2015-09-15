@@ -76,8 +76,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
              ProcessThread& module_process_thread,
              PacedSender* pacer,
              BitrateAllocator* bitrate_allocator,
-             BitrateController* bitrate_controller,
-             bool disable_default_encoder);
+             BitrateController* bitrate_controller);
   ~ViEEncoder();
 
   bool Init();
@@ -193,7 +192,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   const int channel_id_;
   const uint32_t number_of_cores_;
-  const bool disable_default_encoder_;
 
   const rtc::scoped_ptr<VideoProcessingModule> vpm_;
   const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
@@ -212,7 +210,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   // track when video is stopped long enough that we also want to stop sending
   // padding.
   int64_t time_of_last_frame_activity_ms_ GUARDED_BY(data_cs_);
-  bool send_padding_ GUARDED_BY(data_cs_);
+  bool simulcast_enabled_ GUARDED_BY(data_cs_);
   int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
   int target_delay_ms_ GUARDED_BY(data_cs_);

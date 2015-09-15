@@ -190,19 +190,16 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
                                      Transport* transport,
                                      int number_of_cores,
                                      const std::vector<uint32_t>& ssrcs) {
-  // TODO(pbos): Remove checks for empty ssrcs and add this check when there's
-  // no base channel.
-  // DCHECK(!ssrcs.empty());
+  DCHECK(!ssrcs.empty());
   rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
       channel_id, number_of_cores, *process_thread_, pacer_.get(),
-      bitrate_allocator_.get(), bitrate_controller_.get(), false));
+      bitrate_allocator_.get(), bitrate_controller_.get()));
   if (!vie_encoder->Init()) {
     return false;
   }
   ViEEncoder* encoder = vie_encoder.get();
   if (!CreateChannel(channel_id, engine_id, transport, number_of_cores,
-                     vie_encoder.release(), ssrcs.empty() ? 1 : ssrcs.size(),
-                     true)) {
+                     vie_encoder.release(), ssrcs.size(), true)) {
     return false;
   }
   ViEChannel* channel = channel_map_[channel_id];
@@ -210,11 +207,9 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   encoder->StartThreadsAndSetSharedMembers(channel->send_payload_router(),
                                            channel->vcm_protection_callback());
 
-  if (!ssrcs.empty()) {
-    encoder_state_feedback_->AddEncoder(ssrcs, encoder);
-    std::vector<uint32_t> first_ssrc(1, ssrcs[0]);
-    encoder->SetSsrcs(first_ssrc);
-  }
+  encoder_state_feedback_->AddEncoder(ssrcs, encoder);
+  std::vector<uint32_t> first_ssrc(1, ssrcs[0]);
+  encoder->SetSsrcs(first_ssrc);
   return true;
 }
 
