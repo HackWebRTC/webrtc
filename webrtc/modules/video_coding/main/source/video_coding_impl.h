@@ -93,7 +93,6 @@ class VideoSender {
   int32_t SetChannelParameters(uint32_t target_bitrate,  // bits/s.
                                uint8_t lossRate,
                                int64_t rtt);
-  int32_t UpdateEncoderParameters();
 
   int32_t RegisterTransportCallback(VCMPacketizationCallback* transport);
   int32_t RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
@@ -114,17 +113,28 @@ class VideoSender {
   int32_t Process();
 
  private:
-  Clock* clock_;
+  struct EncoderParameters {
+    uint32_t target_bitrate;
+    uint8_t loss_rate;
+    int64_t rtt;
+    uint32_t input_frame_rate;
+    bool updated;
+  };
+
+  void SetEncoderParameters(EncoderParameters params)
+      EXCLUSIVE_LOCKS_REQUIRED(send_crit_);
+
+  Clock* const clock_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
-  CriticalSectionWrapper* _sendCritSect;
+  mutable rtc::CriticalSection send_crit_;
   VCMGenericEncoder* _encoder;
   VCMEncodedFrameCallback _encodedFrameCallback;
   std::vector<FrameType> _nextFrameTypes;
   media_optimization::MediaOptimization _mediaOpt;
-  VCMSendStatisticsCallback* _sendStatsCallback;
-  VCMCodecDataBase _codecDataBase;
-  bool frame_dropper_enabled_;
+  VCMSendStatisticsCallback* _sendStatsCallback GUARDED_BY(process_crit_sect_);
+  VCMCodecDataBase _codecDataBase GUARDED_BY(send_crit_);
+  bool frame_dropper_enabled_ GUARDED_BY(send_crit_);
   VCMProcessTimer _sendStatsTimer;
 
   // Must be accessed on the construction thread of VideoSender.
@@ -135,13 +145,7 @@ class VideoSender {
   VCMProtectionCallback* protection_callback_;
 
   rtc::CriticalSection params_lock_;
-  struct EncoderParameters {
-    uint32_t target_bitrate;
-    uint8_t loss_rate;
-    int64_t rtt;
-    uint32_t input_frame_rate;
-    bool updated;
-  } encoder_params_ GUARDED_BY(params_lock_);
+  EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
 };
 
 class VideoReceiver {

@@ -30,7 +30,6 @@ VideoSender::VideoSender(Clock* clock,
                          VCMQMSettingsCallback* qm_settings_callback)
     : clock_(clock),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _encoder(nullptr),
       _encodedFrameCallback(post_encode_callback),
       _nextFrameTypes(1, kVideoFrameDelta),
@@ -51,9 +50,7 @@ VideoSender::VideoSender(Clock* clock,
   main_thread_.DetachFromThread();
 }
 
-VideoSender::~VideoSender() {
-  delete _sendCritSect;
-}
+VideoSender::~VideoSender() {}
 
 int32_t VideoSender::Process() {
   int32_t returnValue = VCM_OK;
@@ -88,7 +85,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                                        uint32_t numberOfCores,
                                        uint32_t maxPayloadSize) {
   DCHECK(main_thread_.CalledOnValidThread());
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   if (sendCodec == nullptr) {
     return VCM_PARAMETER_ERROR;
   }
@@ -141,7 +138,7 @@ const VideoCodec& VideoSender::GetSendCodec() const {
 }
 
 int32_t VideoSender::SendCodecBlocking(VideoCodec* currentSendCodec) const {
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   if (currentSendCodec == nullptr) {
     return VCM_PARAMETER_ERROR;
   }
@@ -149,7 +146,7 @@ int32_t VideoSender::SendCodecBlocking(VideoCodec* currentSendCodec) const {
 }
 
 VideoCodecType VideoSender::SendCodecBlocking() const {
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   return _codecDataBase.SendCodec();
 }
 
@@ -160,7 +157,7 @@ int32_t VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                              bool internalSource /*= false*/) {
   DCHECK(main_thread_.CalledOnValidThread());
 
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
 
   if (externalEncoder == nullptr) {
     bool wasSendCodec = false;
@@ -180,7 +177,7 @@ int32_t VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
 // Get codec config parameters
 int32_t VideoSender::CodecConfigParameters(uint8_t* buffer,
                                            int32_t size) const {
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   if (_encoder != nullptr) {
     return _encoder->CodecConfigParameters(buffer, size);
   }
@@ -238,37 +235,24 @@ int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
   return VCM_OK;
 }
 
-int32_t VideoSender::UpdateEncoderParameters() {
-  EncoderParameters params;
-  {
-    rtc::CritScope cs(&params_lock_);
-    params = encoder_params_;
-    encoder_params_.updated = false;
-  }
-
+void VideoSender::SetEncoderParameters(EncoderParameters params) {
   if (!params.updated || params.target_bitrate == 0)
-    return VCM_OK;
-
-  CriticalSectionScoped sendCs(_sendCritSect);
-  int32_t ret = VCM_UNINITIALIZED;
-  static_assert(VCM_UNINITIALIZED < 0, "VCM_UNINITIALIZED must be negative.");
+    return;
 
   if (params.input_frame_rate == 0) {
     // No frame rate estimate available, use default.
     params.input_frame_rate = current_codec_.maxFramerate;
   }
   if (_encoder != nullptr) {
-    ret = _encoder->SetChannelParameters(params.loss_rate, params.rtt);
-    if (ret >= 0) {
-      ret = _encoder->SetRates(params.target_bitrate, params.input_frame_rate);
-    }
+    _encoder->SetChannelParameters(params.loss_rate, params.rtt);
+    _encoder->SetRates(params.target_bitrate, params.input_frame_rate);
   }
-  return ret;
+  return;
 }
 
 int32_t VideoSender::RegisterTransportCallback(
     VCMPacketizationCallback* transport) {
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   _encodedFrameCallback.SetMediaOpt(&_mediaOpt);
   _encodedFrameCallback.SetTransportCallback(transport);
   return VCM_OK;
@@ -297,7 +281,7 @@ int32_t VideoSender::RegisterProtectionCallback(
 
 // Enable or disable a video protection method.
 void VideoSender::SetVideoProtection(VCMVideoProtection videoProtection) {
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   switch (videoProtection) {
     case kProtectionNone:
       _mediaOpt.SetProtectionMethod(media_optimization::kNone);
@@ -317,8 +301,14 @@ void VideoSender::SetVideoProtection(VCMVideoProtection videoProtection) {
 int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
                                    const VideoContentMetrics* contentMetrics,
                                    const CodecSpecificInfo* codecSpecificInfo) {
-  UpdateEncoderParameters();
-  CriticalSectionScoped cs(_sendCritSect);
+  EncoderParameters encoder_params;
+  {
+    rtc::CritScope lock(&params_lock_);
+    encoder_params = encoder_params_;
+    encoder_params_.updated = false;
+  }
+  rtc::CritScope lock(&send_crit_);
+  SetEncoderParameters(encoder_params);
   if (_encoder == nullptr) {
     return VCM_UNINITIALIZED;
   }
@@ -362,7 +352,7 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
 }
 
 int32_t VideoSender::IntraFrameRequest(int stream_index) {
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   if (stream_index < 0 ||
       static_cast<unsigned int>(stream_index) >= _nextFrameTypes.size()) {
     return -1;
@@ -379,7 +369,7 @@ int32_t VideoSender::IntraFrameRequest(int stream_index) {
 }
 
 int32_t VideoSender::EnableFrameDropper(bool enable) {
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   frame_dropper_enabled_ = enable;
   _mediaOpt.EnableFrameDropper(enable);
   return VCM_OK;
@@ -400,7 +390,7 @@ void VideoSender::SuspendBelowMinBitrate() {
 }
 
 bool VideoSender::VideoSuspended() const {
-  CriticalSectionScoped cs(_sendCritSect);
+  rtc::CritScope lock(&send_crit_);
   return _mediaOpt.IsVideoSuspended();
 }
 }  // namespace vcm
