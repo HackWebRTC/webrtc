@@ -27,6 +27,7 @@
 
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/call.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakemediaprocessor.h"
@@ -122,7 +123,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   };
 
   WebRtcVoiceEngineTestFake()
-      : voe_(kAudioCodecs, ARRAY_SIZE(kAudioCodecs)),
+      : call_(webrtc::Call::Config()),
+        voe_(kAudioCodecs, ARRAY_SIZE(kAudioCodecs)),
         trace_wrapper_(new FakeVoETraceWrapper()),
         engine_(new FakeVoEWrapper(&voe_), trace_wrapper_),
         channel_(nullptr) {
@@ -133,7 +135,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     if (!engine_.Init(rtc::Thread::Current())) {
       return false;
     }
-    channel_ = engine_.CreateChannel(cricket::AudioOptions());
+    channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
     return (channel_ != nullptr);
   }
   bool SetupEngine() {
@@ -166,7 +168,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   void TestInsertDtmf(uint32 ssrc, bool caller) {
     EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-    channel_ = engine_.CreateChannel(cricket::AudioOptions());
+    channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
     EXPECT_TRUE(channel_ != nullptr);
     if (caller) {
       // if this is a caller, local description will be applied and add the
@@ -325,6 +327,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   }
 
  protected:
+  cricket::FakeCall call_;
   cricket::FakeWebRtcVoiceEngine voe_;
   FakeVoETraceWrapper* trace_wrapper_;
   cricket::WebRtcVoiceEngine engine_;
@@ -346,7 +349,7 @@ TEST_F(WebRtcVoiceEngineTestFake, StartupShutdown) {
 // Tests that we can create and destroy a channel.
 TEST_F(WebRtcVoiceEngineTestFake, CreateChannel) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 }
 
@@ -354,7 +357,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateChannel) {
 TEST_F(WebRtcVoiceEngineTestFake, CreateChannelFail) {
   voe_.set_fail_create_channel(true);
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ == nullptr);
 }
 
@@ -663,7 +666,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthFixedRateAsCaller) {
 
 TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthMultiRateAsCallee) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
 
@@ -1037,7 +1040,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCaller) {
 // Test that we can enable NACK with opus as callee.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCallee) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 
   int channel_num = voe_.GetLastChannel();
@@ -1617,7 +1620,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCaller) {
 // Test that we set VAD and DTMF types correctly as callee.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 
   int channel_num = voe_.GetLastChannel();
@@ -1734,7 +1737,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCaller) {
 // Test that we set up RED correctly as callee.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCallee) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 
   int channel_num = voe_.GetLastChannel();
@@ -2423,7 +2426,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrcWithMultipleStreams) {
 // receive channel is created before the send channel.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrcAfterCreatingReceiveChannel) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_->SetOptions(options_conference_));
 
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
@@ -2994,10 +2997,10 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(SetupEngine());
   rtc::scoped_ptr<cricket::WebRtcVoiceMediaChannel> channel1(
       static_cast<cricket::WebRtcVoiceMediaChannel*>(
-          engine_.CreateChannel(cricket::AudioOptions())));
+          engine_.CreateChannel(&call_, cricket::AudioOptions())));
   rtc::scoped_ptr<cricket::WebRtcVoiceMediaChannel> channel2(
       static_cast<cricket::WebRtcVoiceMediaChannel*>(
-          engine_.CreateChannel(cricket::AudioOptions())));
+          engine_.CreateChannel(&call_, cricket::AudioOptions())));
 
   // Have to add a stream to make SetSend work.
   cricket::StreamParams stream1;
@@ -3109,7 +3112,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
 TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   EXPECT_TRUE(SetupEngine());
   rtc::scoped_ptr<cricket::VoiceMediaChannel> channel(
-      engine_.CreateChannel(cricket::AudioOptions()));
+      engine_.CreateChannel(&call_, cricket::AudioOptions()));
   rtc::scoped_ptr<cricket::FakeNetworkInterface> network_interface(
       new cricket::FakeNetworkInterface);
   channel->SetInterface(network_interface.get());
@@ -3180,14 +3183,10 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputScaling) {
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromSyncLabel) {
-  cricket::FakeCall call((webrtc::Call::Config()));
   const uint32 kAudioSsrc = 123;
   const std::string kSyncLabel = "AvSyncLabel";
 
   EXPECT_TRUE(SetupEngine());
-  cricket::WebRtcVoiceMediaChannel* media_channel =
-      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  media_channel->SetCall(&call);
   cricket::StreamParams sp = cricket::StreamParams::CreateLegacy(kAudioSsrc);
   sp.sync_label = kSyncLabel;
   // Creating two channels to make sure that sync label is set properly for both
@@ -3196,116 +3195,66 @@ TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromSyncLabel) {
   sp.ssrcs[0] += 1;
   EXPECT_TRUE(channel_->AddRecvStream(sp));
 
-  ASSERT_EQ(2, call.GetAudioReceiveStreams().size());
+  ASSERT_EQ(2, call_.GetAudioReceiveStreams().size());
   EXPECT_EQ(kSyncLabel,
-            call.GetAudioReceiveStream(kAudioSsrc)->GetConfig().sync_group)
+            call_.GetAudioReceiveStream(kAudioSsrc)->GetConfig().sync_group)
       << "SyncGroup should be set based on sync_label";
   EXPECT_EQ(kSyncLabel,
-            call.GetAudioReceiveStream(kAudioSsrc + 1)->GetConfig().sync_group)
+            call_.GetAudioReceiveStream(kAudioSsrc + 1)->GetConfig().sync_group)
       << "SyncGroup should be set based on sync_label";
-
-  media_channel->SetCall(nullptr);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, CanChangeCombinedBweOption) {
   // Test that changing the combined_audio_video_bwe option results in the
   // expected state changes on an associated Call.
-  cricket::FakeCall call((webrtc::Call::Config()));
-  const uint32 kAudioSsrc1 = 223;
-  const uint32 kAudioSsrc2 = 224;
+  std::vector<uint32> ssrcs;
+  ssrcs.push_back(223);
+  ssrcs.push_back(224);
 
   EXPECT_TRUE(SetupEngine());
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  const auto& rtp_extensions = engine_.rtp_header_extensions();
-  media_channel->SetRecvRtpHeaderExtensions(rtp_extensions);
-  media_channel->SetCall(&call);
-  EXPECT_TRUE(media_channel->AddRecvStream(
-      cricket::StreamParams::CreateLegacy(kAudioSsrc1)));
-  EXPECT_TRUE(media_channel->AddRecvStream(
-      cricket::StreamParams::CreateLegacy(kAudioSsrc2)));
+  for (uint32 ssrc : ssrcs) {
+    EXPECT_TRUE(media_channel->AddRecvStream(
+        cricket::StreamParams::CreateLegacy(ssrc)));
+  }
+  EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
 
-  // Combined BWE should not be set up yet.
-  EXPECT_EQ(2, call.GetAudioReceiveStreams().size());
-  EXPECT_FALSE(call.GetAudioReceiveStream(kAudioSsrc1)
-                   ->GetConfig()
-                   .combined_audio_video_bwe);
-  EXPECT_FALSE(call.GetAudioReceiveStream(kAudioSsrc2)
-                   ->GetConfig()
-                   .combined_audio_video_bwe);
+  // Combined BWE should be disabled.
+  for (uint32 ssrc : ssrcs) {
+    const auto* s = call_.GetAudioReceiveStream(ssrc);
+    EXPECT_NE(nullptr, s);
+    EXPECT_EQ(false, s->GetConfig().combined_audio_video_bwe);
+  }
 
   // Enable combined BWE option - now it should be set up.
   cricket::AudioOptions options;
   options.combined_audio_video_bwe.Set(true);
   EXPECT_TRUE(media_channel->SetOptions(options));
-  EXPECT_EQ(2, call.GetAudioReceiveStreams().size());
-  EXPECT_TRUE(call.GetAudioReceiveStream(kAudioSsrc1)
-                  ->GetConfig()
-                  .combined_audio_video_bwe);
-  EXPECT_TRUE(call.GetAudioReceiveStream(kAudioSsrc2)
-                  ->GetConfig()
-                  .combined_audio_video_bwe);
+  for (uint32 ssrc : ssrcs) {
+    const auto* s = call_.GetAudioReceiveStream(ssrc);
+    EXPECT_NE(nullptr, s);
+    EXPECT_EQ(true, s->GetConfig().combined_audio_video_bwe);
+  }
 
   // Disable combined BWE option - should be disabled again.
   options.combined_audio_video_bwe.Set(false);
   EXPECT_TRUE(media_channel->SetOptions(options));
-  EXPECT_EQ(2, call.GetAudioReceiveStreams().size());
-  EXPECT_FALSE(call.GetAudioReceiveStream(kAudioSsrc1)
-                   ->GetConfig()
-                   .combined_audio_video_bwe);
-  EXPECT_FALSE(call.GetAudioReceiveStream(kAudioSsrc2)
-                   ->GetConfig()
-                   .combined_audio_video_bwe);
+  for (uint32 ssrc : ssrcs) {
+    const auto* s = call_.GetAudioReceiveStream(ssrc);
+    EXPECT_NE(nullptr, s);
+    EXPECT_EQ(false, s->GetConfig().combined_audio_video_bwe);
+  }
 
-  media_channel->SetCall(nullptr);
-}
-
-TEST_F(WebRtcVoiceEngineTestFake, SetCallConfiguresAudioReceiveChannels) {
-  // Test that calling SetCall() on the voice media channel results in the
-  // expected state changes in Call.
-  cricket::FakeCall call((webrtc::Call::Config()));
-  cricket::FakeCall call2((webrtc::Call::Config()));
-  const uint32 kAudioSsrc1 = 223;
-  const uint32 kAudioSsrc2 = 224;
-
-  EXPECT_TRUE(SetupEngine());
-  cricket::WebRtcVoiceMediaChannel* media_channel =
-      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  EXPECT_TRUE(media_channel->AddRecvStream(
-      cricket::StreamParams::CreateLegacy(kAudioSsrc1)));
-  EXPECT_TRUE(media_channel->AddRecvStream(
-      cricket::StreamParams::CreateLegacy(kAudioSsrc2)));
-
-  // Combined BWE should not be set up yet.
-  EXPECT_EQ(0, call.GetAudioReceiveStreams().size());
-
-  // Register - should be enabled.
-  media_channel->SetCall(&call);
-  EXPECT_EQ(2, call.GetAudioReceiveStreams().size());
-  EXPECT_NE(nullptr, call.GetAudioReceiveStream(kAudioSsrc1));
-  EXPECT_NE(nullptr, call.GetAudioReceiveStream(kAudioSsrc2));
-
-  // Re-register - should now be enabled on new call.
-  media_channel->SetCall(&call2);
-  EXPECT_EQ(0, call.GetAudioReceiveStreams().size());
-  EXPECT_EQ(2, call2.GetAudioReceiveStreams().size());
-  EXPECT_NE(nullptr, call2.GetAudioReceiveStream(kAudioSsrc1));
-  EXPECT_NE(nullptr, call2.GetAudioReceiveStream(kAudioSsrc2));
-
-  // Unregister - should be disabled again.
-  media_channel->SetCall(nullptr);
-  EXPECT_EQ(0, call.GetAudioReceiveStreams().size());
+  EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
   // Test that adding receive streams after enabling combined bandwidth
   // estimation will correctly configure each channel.
-  cricket::FakeCall call((webrtc::Call::Config()));
-
   EXPECT_TRUE(SetupEngine());
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  media_channel->SetCall(&call);
   cricket::AudioOptions options;
   options.combined_audio_video_bwe.Set(true);
   EXPECT_TRUE(media_channel->SetOptions(options));
@@ -3314,21 +3263,14 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
   for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs); ++i) {
     EXPECT_TRUE(media_channel->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrcs[i])));
-    EXPECT_NE(nullptr, call.GetAudioReceiveStream(kSsrcs[i]));
-    EXPECT_TRUE(call.GetAudioReceiveStream(kSsrcs[i])
-                    ->GetConfig()
-                    .combined_audio_video_bwe);
+    EXPECT_NE(nullptr, call_.GetAudioReceiveStream(kSsrcs[i]));
   }
-  EXPECT_EQ(ARRAY_SIZE(kSsrcs), call.GetAudioReceiveStreams().size());
-
-  media_channel->SetCall(nullptr);
-  EXPECT_EQ(0, call.GetAudioReceiveStreams().size());
+  EXPECT_EQ(ARRAY_SIZE(kSsrcs), call_.GetAudioReceiveStreams().size());
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   // Test that setting the header extensions results in the expected state
   // changes on an associated Call.
-  cricket::FakeCall call((webrtc::Call::Config()));
   std::vector<uint32> ssrcs;
   ssrcs.push_back(223);
   ssrcs.push_back(224);
@@ -3336,16 +3278,18 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   EXPECT_TRUE(SetupEngine());
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  media_channel->SetCall(&call);
+  cricket::AudioOptions options;
+  options.combined_audio_video_bwe.Set(true);
+  EXPECT_TRUE(media_channel->SetOptions(options));
   for (uint32 ssrc : ssrcs) {
     EXPECT_TRUE(media_channel->AddRecvStream(
         cricket::StreamParams::CreateLegacy(ssrc)));
   }
 
   // Combined BWE should be set up, but with no configured extensions.
-  EXPECT_EQ(2, call.GetAudioReceiveStreams().size());
+  EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
   for (uint32 ssrc : ssrcs) {
-    const auto* s = call.GetAudioReceiveStream(ssrc);
+    const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     EXPECT_EQ(0, s->GetConfig().rtp.extensions.size());
   }
@@ -3353,9 +3297,9 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   // Set up receive extensions.
   const auto& e_exts = engine_.rtp_header_extensions();
   channel_->SetRecvRtpHeaderExtensions(e_exts);
-  EXPECT_EQ(2, call.GetAudioReceiveStreams().size());
+  EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
   for (uint32 ssrc : ssrcs) {
-    const auto* s = call.GetAudioReceiveStream(ssrc);
+    const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     const auto& s_exts = s->GetConfig().rtp.extensions;
     EXPECT_EQ(e_exts.size(), s_exts.size());
@@ -3372,17 +3316,14 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   std::vector<cricket::RtpHeaderExtension> extensions;
   channel_->SetRecvRtpHeaderExtensions(extensions);
   for (uint32 ssrc : ssrcs) {
-    const auto* s = call.GetAudioReceiveStream(ssrc);
+    const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     EXPECT_EQ(0, s->GetConfig().rtp.extensions.size());
   }
-
-  media_channel->SetCall(nullptr);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   // Test that packets are forwarded to the Call when configured accordingly.
-  cricket::FakeCall call((webrtc::Call::Config()));
   const uint32 kAudioSsrc = 1;
   rtc::Buffer kPcmuPacket(kPcmuFrame, sizeof(kPcmuFrame));
   static const unsigned char kRtcp[] = {
@@ -3402,24 +3343,14 @@ TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   EXPECT_TRUE(media_channel->AddRecvStream(
       cricket::StreamParams::CreateLegacy(kAudioSsrc)));
 
-  // Call not set on media channel, so no packets can be forwarded.
-  EXPECT_EQ(0, call.GetAudioReceiveStreams().size());
-  channel_->OnPacketReceived(&kPcmuPacket, rtc::PacketTime());
-  channel_->OnRtcpReceived(&kRtcpPacket, rtc::PacketTime());
-  EXPECT_EQ(0, call.GetAudioReceiveStreams().size());
-
-  // Set Call, now there should be a receive stream which is forwarded packets.
-  media_channel->SetCall(&call);
-  EXPECT_EQ(1, call.GetAudioReceiveStreams().size());
+  EXPECT_EQ(1, call_.GetAudioReceiveStreams().size());
   const cricket::FakeAudioReceiveStream* s =
-      call.GetAudioReceiveStream(kAudioSsrc);
+      call_.GetAudioReceiveStream(kAudioSsrc);
   EXPECT_EQ(0, s->received_packets());
   channel_->OnPacketReceived(&kPcmuPacket, rtc::PacketTime());
   EXPECT_EQ(1, s->received_packets());
   channel_->OnRtcpReceived(&kRtcpPacket, rtc::PacketTime());
   EXPECT_EQ(2, s->received_packets());
-
-  media_channel->SetCall(nullptr);
 }
 
 // Associate channel should not set on 1:1 call, since the receive channel also
@@ -3506,8 +3437,10 @@ TEST(WebRtcVoiceEngineTest, TestDefaultOptionsBeforeInit) {
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   cricket::WebRtcVoiceEngine engine;
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
+  rtc::scoped_ptr<webrtc::Call> call(
+      webrtc::Call::Create(webrtc::Call::Config()));
   cricket::VoiceMediaChannel* channel =
-      engine.CreateChannel(cricket::AudioOptions());
+      engine.CreateChannel(call.get(), cricket::AudioOptions());
   EXPECT_TRUE(channel != nullptr);
   delete channel;
   engine.Terminate();
@@ -3601,16 +3534,16 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
   cricket::WebRtcVoiceEngine engine;
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
+  rtc::scoped_ptr<webrtc::Call> call(
+      webrtc::Call::Create(webrtc::Call::Config()));
 
   cricket::VoiceMediaChannel* channels[32];
   int num_channels = 0;
-
   while (num_channels < ARRAY_SIZE(channels)) {
     cricket::VoiceMediaChannel* channel =
-        engine.CreateChannel(cricket::AudioOptions());
+        engine.CreateChannel(call.get(), cricket::AudioOptions());
     if (!channel)
       break;
-
     channels[num_channels++] = channel;
   }
 
@@ -3628,6 +3561,8 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
 TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   cricket::WebRtcVoiceEngine engine;
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  cricket::WebRtcVoiceMediaChannel channel(&engine);
+  rtc::scoped_ptr<webrtc::Call> call(
+      webrtc::Call::Create(webrtc::Call::Config()));
+  cricket::WebRtcVoiceMediaChannel channel(&engine, call.get());
   EXPECT_TRUE(channel.SetRecvCodecs(engine.codecs()));
 }

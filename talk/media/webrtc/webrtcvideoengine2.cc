@@ -340,10 +340,6 @@ static const int kDefaultQpMax = 56;
 
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
-const int kMinBandwidthBps = 30000;
-const int kStartBandwidthBps = 300000;
-const int kMaxBandwidthBps = 2000000;
-
 std::vector<VideoCodec> DefaultVideoCodecList() {
   std::vector<VideoCodec> codecs;
   if (CodecIsInternallySupported(kVp9CodecName)) {
@@ -537,13 +533,6 @@ UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
   return kDeliverPacket;
 }
 
-WebRtcCallFactory::~WebRtcCallFactory() {
-}
-webrtc::Call* WebRtcCallFactory::CreateCall(
-    const webrtc::Call::Config& config) {
-  return webrtc::Call::Create(config);
-}
-
 VideoRenderer* DefaultUnsignalledSsrcHandler::GetDefaultRenderer() const {
   return default_renderer_;
 }
@@ -557,10 +546,8 @@ void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
   }
 }
 
-WebRtcVideoEngine2::WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine)
-    : voice_engine_(voice_engine),
-      initialized_(false),
-      call_factory_(&default_call_factory_),
+WebRtcVideoEngine2::WebRtcVideoEngine2()
+    : initialized_(false),
       external_decoder_factory_(NULL),
       external_encoder_factory_(NULL) {
   LOG(LS_INFO) << "WebRtcVideoEngine2::WebRtcVideoEngine2()";
@@ -578,11 +565,6 @@ WebRtcVideoEngine2::WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine)
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
   LOG(LS_INFO) << "WebRtcVideoEngine2::~WebRtcVideoEngine2";
-}
-
-void WebRtcVideoEngine2::SetCallFactory(WebRtcCallFactory* call_factory) {
-  DCHECK(!initialized_);
-  call_factory_ = call_factory;
 }
 
 void WebRtcVideoEngine2::Init() {
@@ -616,20 +598,12 @@ bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
 }
 
 WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
-    const VideoOptions& options,
-    VoiceMediaChannel* voice_channel) {
+    webrtc::Call* call,
+    const VideoOptions& options) {
   DCHECK(initialized_);
-  LOG(LS_INFO) << "CreateChannel: "
-               << (voice_channel != NULL ? "With" : "Without")
-               << " voice channel. Options: " << options.ToString();
-  WebRtcVideoChannel2* channel =
-      new WebRtcVideoChannel2(call_factory_, voice_engine_,
-          static_cast<WebRtcVoiceMediaChannel*>(voice_channel), options,
-          external_encoder_factory_, external_decoder_factory_);
-  if (!channel->Init()) {
-    delete channel;
-    return NULL;
-  }
+  LOG(LS_INFO) << "CreateChannel. Options: " << options.ToString();
+  WebRtcVideoChannel2* channel = new WebRtcVideoChannel2(call, options,
+      external_encoder_factory_, external_decoder_factory_);
   channel->SetRecvCodecs(video_codecs_);
   return channel;
 }
@@ -788,32 +762,18 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
 }
 
 WebRtcVideoChannel2::WebRtcVideoChannel2(
-    WebRtcCallFactory* call_factory,
-    WebRtcVoiceEngine* voice_engine,
-    WebRtcVoiceMediaChannel* voice_channel,
+    webrtc::Call* call,
     const VideoOptions& options,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     WebRtcVideoDecoderFactory* external_decoder_factory)
-    : unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
-      voice_channel_(voice_channel),
-      voice_channel_id_(voice_channel ? voice_channel->voe_channel() : -1),
+    : call_(call),
+      unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory) {
   DCHECK(thread_checker_.CalledOnValidThread());
   SetDefaultOptions();
   options_.SetAll(options);
   options_.cpu_overuse_detection.Get(&signal_cpu_adaptation_);
-  webrtc::Call::Config config;
-  if (voice_engine != NULL) {
-    config.voice_engine = voice_engine->voe()->engine();
-  }
-  config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
-  config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
-  config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
-  call_.reset(call_factory->CreateCall(config));
-  if (voice_channel_) {
-    voice_channel_->SetCall(call_.get());
-  }
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
   default_send_ssrc_ = 0;
@@ -828,21 +788,10 @@ void WebRtcVideoChannel2::SetDefaultOptions() {
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
-  DetachVoiceChannel();
   for (auto& kv : send_streams_)
     delete kv.second;
   for (auto& kv : receive_streams_)
     delete kv.second;
-}
-
-bool WebRtcVideoChannel2::Init() { return true; }
-
-void WebRtcVideoChannel2::DetachVoiceChannel() {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  if (voice_channel_) {
-    voice_channel_->SetCall(nullptr);
-    voice_channel_ = nullptr;
-  }
 }
 
 bool WebRtcVideoChannel2::CodecIsExternallySupported(
@@ -1149,7 +1098,7 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   config.overuse_callback = this;
 
   WebRtcVideoSendStream* stream =
-      new WebRtcVideoSendStream(call_.get(),
+      new WebRtcVideoSendStream(call_,
                                 sp,
                                 config,
                                 external_encoder_factory_,
@@ -1272,7 +1221,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   }
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
-      call_.get(), sp, config, external_decoder_factory_, default_stream,
+      call_, sp, config, external_decoder_factory_, default_stream,
       recv_codecs_);
 
   return true;

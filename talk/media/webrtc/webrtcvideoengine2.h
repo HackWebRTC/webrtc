@@ -103,22 +103,11 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
   VideoRenderer* default_renderer_;
 };
 
-// CallFactory, overridden for testing to verify that webrtc::Call is configured
-// properly.
-class WebRtcCallFactory {
- public:
-  virtual ~WebRtcCallFactory();
-  virtual webrtc::Call* CreateCall(const webrtc::Call::Config& config);
-};
-
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
-class WebRtcVideoEngine2 : public sigslot::has_slots<> {
+class WebRtcVideoEngine2 {
  public:
-  explicit WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine);
-  virtual ~WebRtcVideoEngine2();
-
-  // Used for testing to be able to check and use the webrtc::Call config.
-  void SetCallFactory(WebRtcCallFactory* call_factory);
+  WebRtcVideoEngine2();
+  ~WebRtcVideoEngine2();
 
   // Basic video engine implementation.
   void Init();
@@ -126,8 +115,8 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   int GetCapabilities();
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config);
 
-  WebRtcVideoChannel2* CreateChannel(const VideoOptions& options,
-                                     VoiceMediaChannel* voice_channel);
+  WebRtcVideoChannel2* CreateChannel(webrtc::Call* call,
+                                     const VideoOptions& options);
 
   const std::vector<VideoCodec>& codecs() const;
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
@@ -155,14 +144,10 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
  private:
   std::vector<VideoCodec> GetSupportedCodecs() const;
 
-  WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
 
   bool initialized_;
-
-  WebRtcCallFactory default_call_factory_;
-  WebRtcCallFactory* call_factory_;
 
   WebRtcVideoDecoderFactory* external_decoder_factory_;
   WebRtcVideoEncoderFactory* external_encoder_factory_;
@@ -174,17 +159,13 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
                             public webrtc::newapi::Transport,
                             public webrtc::LoadObserver {
  public:
-  WebRtcVideoChannel2(WebRtcCallFactory* call_factory,
-                      WebRtcVoiceEngine* voice_engine,
-                      WebRtcVoiceMediaChannel* voice_channel,
+  WebRtcVideoChannel2(webrtc::Call* call,
                       const VideoOptions& options,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
                       WebRtcVideoDecoderFactory* external_decoder_factory);
-  ~WebRtcVideoChannel2();
-  bool Init();
+  ~WebRtcVideoChannel2() override;
 
   // VideoMediaChannel implementation
-  void DetachVoiceChannel() override;
   bool SetSendParameters(const VideoSendParameters& params) override;
   bool SetRecvParameters(const VideoRecvParameters& params) override;
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) override;
@@ -507,8 +488,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;
-  rtc::scoped_ptr<webrtc::Call> call_;
-  WebRtcCallFactory* call_factory_;
+  webrtc::Call* const call_;
 
   uint32_t default_send_ssrc_;
 
@@ -534,8 +514,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   Settable<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
-  WebRtcVoiceMediaChannel* voice_channel_;
-  const int voice_channel_id_;
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;

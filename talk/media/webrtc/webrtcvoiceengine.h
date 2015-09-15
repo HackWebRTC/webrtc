@@ -100,7 +100,9 @@ class WebRtcVoiceEngine
   void Terminate();
 
   int GetCapabilities();
-  VoiceMediaChannel* CreateChannel(const AudioOptions& options);
+  webrtc::VoiceEngine* GetVoE() { return voe()->engine(); }
+  VoiceMediaChannel* CreateChannel(webrtc::Call* call,
+                                   const AudioOptions& options);
 
   AudioOptions GetOptions() const { return options_; }
   bool SetOptions(const AudioOptions& options);
@@ -280,7 +282,8 @@ class WebRtcVoiceEngine
 class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                                 public webrtc::Transport {
  public:
-  explicit WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine);
+  explicit WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
+                                   webrtc::Call* call);
   ~WebRtcVoiceMediaChannel() override;
 
   int voe_channel() const { return voe_channel_; }
@@ -356,8 +359,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   int GetReceiveChannelNum(uint32 ssrc) const;
   int GetSendChannelNum(uint32 ssrc) const;
 
-  void SetCall(webrtc::Call* call);
-
  private:
   bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer);
   bool MuteStream(uint32 ssrc, bool mute);
@@ -402,8 +403,9 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
 
   bool SetHeaderExtension(ExtensionSetterFunction setter, int channel_id,
                           const RtpHeaderExtension* extension);
-  void TryAddAudioRecvStream(uint32 ssrc);
-  void TryRemoveAudioRecvStream(uint32 ssrc);
+  void RecreateAudioReceiveStreams();
+  void AddAudioReceiveStream(uint32 ssrc);
+  void RemoveAudioReceiveStream(uint32 ssrc);
   bool SetRecvCodecsInternal(const std::vector<AudioCodec>& new_codecs);
 
   bool SetChannelRecvRtpHeaderExtensions(
@@ -415,7 +417,7 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
 
   rtc::ThreadChecker thread_checker_;
 
-  WebRtcVoiceEngine* engine_;
+  WebRtcVoiceEngine* const engine_;
   const int voe_channel_;
   rtc::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
@@ -432,7 +434,7 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool typing_noise_detected_;
   SendFlags desired_send_;
   SendFlags send_;
-  webrtc::Call* call_;
+  webrtc::Call* const call_;
 
   // send_channels_ contains the channels which are being used for sending.
   // When the default channel (voe_channel) is used for sending, it is

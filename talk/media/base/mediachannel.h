@@ -1164,8 +1164,6 @@ class VideoMediaChannel : public MediaChannel {
 
   VideoMediaChannel() : renderer_(NULL) {}
   virtual ~VideoMediaChannel() {}
-  // Allow video channel to unhook itself from an associated voice channel.
-  virtual void DetachVoiceChannel() = 0;
   // TODO(pthatcher): Remove SetSendCodecs,
   // SetSendRtpHeaderExtensions, SetMaxSendBandwidth, and SetOptions
   // once all implementations implement SetSendParameters.

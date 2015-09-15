@@ -523,7 +523,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     return RtpHelper<VideoMediaChannel>::RemoveSendStream(ssrc);
   }
 
-  void DetachVoiceChannel() override {}
   virtual bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
     if (fail_set_recv_codecs()) {
       // Fake the failure in SetRecvCodecs.
@@ -765,6 +764,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
   bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
   int GetCapabilities() { return AUDIO_SEND | AUDIO_RECV; }
+  webrtc::VoiceEngine* GetVoE() { return nullptr; }
   AudioOptions GetOptions() const {
     return options_;
   }
@@ -774,7 +774,8 @@ class FakeVoiceEngine : public FakeBaseEngine {
     return true;
   }
 
-  VoiceMediaChannel* CreateChannel(const AudioOptions& options) {
+  VoiceMediaChannel* CreateChannel(webrtc::Call* call,
+                                   const AudioOptions& options) {
     if (fail_create_channel_) {
       return nullptr;
     }
@@ -865,9 +866,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
 class FakeVideoEngine : public FakeBaseEngine {
  public:
-  FakeVideoEngine() : FakeVideoEngine(nullptr) {}
-  explicit FakeVideoEngine(FakeVoiceEngine* voice)
-      : capture_(false) {
+  FakeVideoEngine() : capture_(false) {
     // Add a fake video codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0, 0));
@@ -887,8 +886,8 @@ class FakeVideoEngine : public FakeBaseEngine {
     return default_encoder_config_;
   }
 
-  VideoMediaChannel* CreateChannel(const VideoOptions& options,
-                                   VoiceMediaChannel* channel) {
+  VideoMediaChannel* CreateChannel(webrtc::Call* call,
+                                   const VideoOptions& options) {
     if (fail_create_channel_) {
       return NULL;
     }

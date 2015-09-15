@@ -725,6 +725,8 @@
         'app/webrtc/localaudiosource.h',
         'app/webrtc/mediaconstraintsinterface.cc',
         'app/webrtc/mediaconstraintsinterface.h',
+        'app/webrtc/mediacontroller.cc',
+        'app/webrtc/mediacontroller.h',
         'app/webrtc/mediastream.cc',
         'app/webrtc/mediastream.h',
         'app/webrtc/mediastreamhandler.cc',

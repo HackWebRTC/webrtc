@@ -570,7 +570,7 @@ WebRtcSession::~WebRtcSession() {
   }
   if (voice_channel_) {
     SignalVoiceChannelDestroyed();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release(), nullptr);
+    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
   }
   if (data_channel_) {
     SignalDataChannelDestroyed();
@@ -782,6 +782,9 @@ bool WebRtcSession::Initialize(
         port_allocator()->flags() |
         cricket::PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
   }
+
+  media_controller_.reset(MediaControllerInterface::Create(
+      worker_thread(), channel_manager_->media_engine()->GetVoE()));
 
   return true;
 }
@@ -1690,8 +1693,7 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
     mediastream_signaling_->OnAudioChannelClose();
     SignalVoiceChannelDestroyed();
     const std::string content_name = voice_channel_->content_name();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release(),
-                                          video_channel_.get());
+    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
     DestroyTransportProxy(content_name);
   }
 
@@ -1706,7 +1708,7 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
   }
 }
 
-// TODO(mallinath) - Add a correct error code if the channels are not creatued
+// TODO(mallinath) - Add a correct error code if the channels are not created
 // due to BUNDLE is enabled but rtcp-mux is disabled.
 bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
   // Creating the media channels and transport proxies.
@@ -1766,7 +1768,7 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 
 bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
-      this, content->name, true, audio_options_));
+      media_controller_.get(), this, content->name, true, audio_options_));
   if (!voice_channel_) {
     return false;
   }
@@ -1778,7 +1780,7 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
 
 bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   video_channel_.reset(channel_manager_->CreateVideoChannel(
-      this, content->name, true, video_options_, voice_channel_.get()));
+      media_controller_.get(), this, content->name, true, video_options_));
   if (!video_channel_) {
     return false;
   }

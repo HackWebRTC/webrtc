@@ -32,6 +32,7 @@
 
 #include "talk/app/webrtc/datachannel.h"
 #include "talk/app/webrtc/dtmfsender.h"
+#include "talk/app/webrtc/mediacontroller.h"
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/statstypes.h"
@@ -194,7 +195,6 @@ class WebRtcSession : public cricket::BaseSession,
   // Get the id used as a media stream track's "id" field from ssrc.
   virtual bool GetLocalTrackIdBySsrc(uint32 ssrc, std::string* track_id);
   virtual bool GetRemoteTrackIdBySsrc(uint32 ssrc, std::string* track_id);
-
 
   // AudioMediaProviderInterface implementation.
   void SetAudioPlayout(uint32 ssrc,
@@ -370,6 +370,7 @@ class WebRtcSession : public cricket::BaseSession,
 
   void ReportNegotiatedCiphers(const cricket::TransportStats& stats);
 
+  rtc::scoped_ptr<MediaControllerInterface> media_controller_;
   rtc::scoped_ptr<cricket::VoiceChannel> voice_channel_;
   rtc::scoped_ptr<cricket::VideoChannel> video_channel_;
   rtc::scoped_ptr<cricket::DataChannel> data_channel_;

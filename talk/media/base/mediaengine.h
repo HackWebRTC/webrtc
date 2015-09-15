@@ -32,8 +32,6 @@
 #include <CoreAudio/CoreAudio.h>
 #endif
 
-#include <limits.h>
-
 #include <string>
 #include <vector>
 
@@ -50,6 +48,11 @@
 #if defined(GOOGLE_CHROME_BUILD) || defined(CHROMIUM_BUILD)
 #define DISABLE_MEDIA_ENGINE_FACTORY
 #endif
+
+namespace webrtc {
+class Call;
+class VoiceEngine;
+}
 
 namespace cricket {
 
@@ -73,15 +76,19 @@ class MediaEngineInterface {
   virtual void Terminate() = 0;
   // Returns what the engine is capable of, as a set of Capabilities, above.
   virtual int GetCapabilities() = 0;
+  // TODO(solenberg): Remove once VoE API refactoring is done.
+  virtual webrtc::VoiceEngine* GetVoE() = 0;
 
   // MediaChannel creation
   // Creates a voice media channel. Returns NULL on failure.
-  virtual VoiceMediaChannel* CreateChannel(const AudioOptions& options) = 0;
+  virtual VoiceMediaChannel* CreateChannel(
+      webrtc::Call* call,
+      const AudioOptions& options) = 0;
   // Creates a video media channel, paired with the specified voice channel.
   // Returns NULL on failure.
   virtual VideoMediaChannel* CreateVideoChannel(
-      const VideoOptions& options,
-      VoiceMediaChannel* voice_media_channel) = 0;
+      webrtc::Call* call,
+      const VideoOptions& options) = 0;
 
   // Configuration
   // Gets global audio options.
@@ -162,7 +169,6 @@ class MediaEngineFactory {
 template<class VOICE, class VIDEO>
 class CompositeMediaEngine : public MediaEngineInterface {
  public:
-  CompositeMediaEngine() : video_(&voice_) {}
   virtual ~CompositeMediaEngine() {}
   virtual bool Init(rtc::Thread* worker_thread) {
     if (!voice_.Init(worker_thread))
@@ -177,12 +183,16 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual int GetCapabilities() {
     return (voice_.GetCapabilities() | video_.GetCapabilities());
   }
-  virtual VoiceMediaChannel* CreateChannel(const AudioOptions& options) {
-    return voice_.CreateChannel(options);
+  virtual webrtc::VoiceEngine* GetVoE() {
+    return voice_.GetVoE();
   }
-  virtual VideoMediaChannel* CreateVideoChannel(const VideoOptions& options,
-                                                VoiceMediaChannel* channel) {
-    return video_.CreateChannel(options, channel);
+  virtual VoiceMediaChannel* CreateChannel(webrtc::Call* call,
+                                           const AudioOptions& options) {
+    return voice_.CreateChannel(call, options);
+  }
+  virtual VideoMediaChannel* CreateVideoChannel(webrtc::Call* call,
+                                                const VideoOptions& options) {
+    return video_.CreateChannel(call, options);
   }
 
   virtual AudioOptions GetAudioOptions() const {

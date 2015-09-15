@@ -25,5 +25,25 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// Place holder file to be able to update Chrome's libjingle.gyp before the real
-// implementation goes in.
+#ifndef TALK_APP_WEBRTC_MEDIACONTROLLER_H_
+#define TALK_APP_WEBRTC_MEDIACONTROLLER_H_
+
+#include "webrtc/base/thread.h"
+
+namespace webrtc {
+class Call;
+class VoiceEngine;
+
+// The MediaController currently owns shared state between media channels, but
+// in the future will create and own RtpSenders and RtpReceivers.
+class MediaControllerInterface {
+ public:
+  static MediaControllerInterface* Create(rtc::Thread* worker_thread,
+                                          webrtc::VoiceEngine* voice_engine);
+
+  virtual ~MediaControllerInterface() {}
+  virtual webrtc::Call* call_w() = 0;
+};
+}  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_MEDIACONTROLLER_H_

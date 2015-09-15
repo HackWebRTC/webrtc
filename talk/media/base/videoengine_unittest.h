@@ -36,9 +36,11 @@
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/streamparams.h"
+#include "talk/media/webrtc/fakewebrtccall.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/call.h"
 
 #define EXPECT_FRAME_WAIT(c, w, h, t) \
   EXPECT_EQ_WAIT((c), renderer_.num_rendered_frames(), (t)); \
@@ -96,7 +98,7 @@ inline int TimeBetweenSend(const cricket::VideoCodec& codec) {
 template<class T>
 class VideoEngineOverride : public T {
  public:
-  VideoEngineOverride() : T(nullptr) {
+  VideoEngineOverride() : T() {
   }
   virtual ~VideoEngineOverride() {
   }
@@ -448,6 +450,9 @@ template<class E, class C>
 class VideoMediaChannelTest : public testing::Test,
                               public sigslot::has_slots<> {
  protected:
+  VideoMediaChannelTest<E, C>()
+      : call_(webrtc::Call::Create(webrtc::Call::Config())) {}
+
   virtual cricket::VideoCodec DefaultCodec() = 0;
 
   virtual cricket::StreamParams DefaultSendStreamParams() {
@@ -457,7 +462,8 @@ class VideoMediaChannelTest : public testing::Test,
   virtual void SetUp() {
     cricket::Device device("test", "device");
     engine_.Init();
-    channel_.reset(engine_.CreateChannel(cricket::VideoOptions(), NULL));
+    channel_.reset(
+        engine_.CreateChannel(call_.get(), cricket::VideoOptions()));
     EXPECT_TRUE(channel_.get() != NULL);
     ConnectVideoChannelError();
     network_interface_.SetDestination(channel_.get());
@@ -1867,6 +1873,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc + 2));
   }
 
+  const rtc::scoped_ptr<webrtc::Call> call_;
   VideoEngineOverride<E> engine_;
   rtc::scoped_ptr<cricket::FakeVideoCapturer> video_capturer_;
   rtc::scoped_ptr<cricket::FakeVideoCapturer> video_capturer_2_;
