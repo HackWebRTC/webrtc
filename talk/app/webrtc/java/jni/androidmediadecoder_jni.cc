@@ -188,7 +188,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
   j_init_decode_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "initDecode",
       "(Lorg/webrtc/MediaCodecVideoDecoder$VideoCodecType;"
-      "IIZLandroid/opengl/EGLContext;)Z");
+      "IILandroid/opengl/EGLContext;)Z");
   j_release_method_ =
       GetMethodID(jni, *j_media_codec_video_decoder_class_, "release", "()V");
   j_dequeue_input_buffer_method_ = GetMethodID(
@@ -199,7 +199,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, *j_media_codec_video_decoder_class_, "dequeueOutputBuffer",
       "(I)Lorg/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo;");
   j_release_output_buffer_method_ = GetMethodID(
-      jni, *j_media_codec_video_decoder_class_, "releaseOutputBuffer", "(IZ)Z");
+      jni, *j_media_codec_video_decoder_class_, "releaseOutputBuffer", "(I)Z");
 
   j_input_buffers_field_ = GetFieldID(
       jni, *j_media_codec_video_decoder_class_,
@@ -235,7 +235,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, j_decoder_output_buffer_info_class, "presentationTimestampUs", "J");
 
   CHECK_EXCEPTION(jni) << "MediaCodecVideoDecoder ctor failed";
-  use_surface_ = (render_egl_context_ != NULL) ? true : false;
+  use_surface_ = (render_egl_context_ != NULL);
   ALOGD("MediaCodecVideoDecoder ctor. Use surface: %d", use_surface_);
   memset(&codec_, 0, sizeof(codec_));
   AllowBlockingCalls();
@@ -309,8 +309,7 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
       j_video_codec_enum,
       codec_.width,
       codec_.height,
-      use_surface_,
-      render_egl_context_);
+      use_surface_ ? render_egl_context_ : nullptr);
   if (CheckException(jni) || !success) {
     ALOGE("Codec initialization error - fallback to SW codec.");
     sw_fallback_required_ = true;
@@ -666,8 +665,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   bool success = jni->CallBooleanMethod(
       *j_media_codec_video_decoder_,
       j_release_output_buffer_method_,
-      output_buffer_index,
-      use_surface_);
+      output_buffer_index);
   if (CheckException(jni) || !success) {
     ALOGE("releaseOutputBuffer error");
     return false;

@@ -178,15 +178,12 @@ public class MediaCodecVideoDecoder {
     }
   }
 
-  private boolean initDecode(
-      VideoCodecType type, int width, int height,
-      boolean useSurface, EGLContext sharedContext) {
+  // Pass null in |sharedContext| to configure the codec for ByteBuffer output.
+  private boolean initDecode(VideoCodecType type, int width, int height, EGLContext sharedContext) {
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
     }
-    if (useSurface && sharedContext == null) {
-      throw new RuntimeException("No shared EGL context.");
-    }
+    useSurface = (sharedContext != null);
     String mime = null;
     String[] supportedCodecPrefixes = null;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
@@ -213,7 +210,6 @@ public class MediaCodecVideoDecoder {
       Surface decodeSurface = null;
       this.width = width;
       this.height = height;
-      this.useSurface = useSurface;
       stride = width;
       sliceHeight = height;
 
@@ -380,13 +376,10 @@ public class MediaCodecVideoDecoder {
 
   // Release a dequeued output buffer back to the codec for re-use.  Return
   // false if the codec is no longer operable.
-  private boolean releaseOutputBuffer(int index, boolean render) {
+  private boolean releaseOutputBuffer(int index) {
     checkOnMediaCodecThread();
     try {
-      if (!useSurface) {
-        render = false;
-      }
-      mediaCodec.releaseOutputBuffer(index, render);
+      mediaCodec.releaseOutputBuffer(index, useSurface);
       return true;
     } catch (IllegalStateException e) {
       Log.e(TAG, "releaseOutputBuffer failed", e);
