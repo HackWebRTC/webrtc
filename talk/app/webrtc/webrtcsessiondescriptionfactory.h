@@ -197,7 +197,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   const cricket::DataChannelType data_channel_type_;
   CertificateRequestState certificate_request_state_;
 
-  DISALLOW_COPY_AND_ASSIGN(WebRtcSessionDescriptionFactory);
+  RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcSessionDescriptionFactory);
 };
 }  // namespace webrtc
 

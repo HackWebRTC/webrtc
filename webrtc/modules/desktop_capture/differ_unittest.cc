@@ -204,7 +204,7 @@ class DifferTest : public testing::Test {
   rtc::scoped_ptr<uint8_t[]> curr_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(DifferTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DifferTest);
 };
 
 TEST_F(DifferTest, Setup) {

@@ -96,7 +96,7 @@ class Merge {
   int16_t input_downsampled_[kInputDownsampLength];
   AudioMultiVector expanded_;
 
-  DISALLOW_COPY_AND_ASSIGN(Merge);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Merge);
 };
 
 }  // namespace webrtc

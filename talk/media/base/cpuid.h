@@ -28,7 +28,7 @@
 #ifndef TALK_MEDIA_BASE_CPUID_H_
 #define TALK_MEDIA_BASE_CPUID_H_
 
-#include "webrtc/base/basictypes.h"  // For DISALLOW_IMPLICIT_CONSTRUCTORS
+#include "webrtc/base/basictypes.h"  // For RTC_DISALLOW_IMPLICIT_CONSTRUCTORS
 
 namespace cricket {
 
@@ -65,7 +65,7 @@ class CpuInfo {
   static void MaskCpuFlagsForTest(int enable_flags);
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(CpuInfo);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(CpuInfo);
 };
 
 // Detect an Intel Core I5 or better such as 4th generation Macbook Air.

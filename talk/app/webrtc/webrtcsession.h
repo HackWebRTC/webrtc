@@ -107,7 +107,7 @@ class IceObserver {
   ~IceObserver() {}
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(IceObserver);
+  RTC_DISALLOW_COPY_AND_ASSIGN(IceObserver);
 };
 
 class WebRtcSession : public cricket::BaseSession,
@@ -414,7 +414,7 @@ class WebRtcSession : public cricket::BaseSession,
   // Declares the RTCP mux policy for the WebRTCSession.
   PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy_;
 
-  DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
+  RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
 };
 }  // namespace webrtc
 

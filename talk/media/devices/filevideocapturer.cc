@@ -150,7 +150,7 @@ class FileVideoCapturer::FileReadThread
   mutable rtc::CriticalSection crit_;
   bool finished_;
 
-  DISALLOW_COPY_AND_ASSIGN(FileReadThread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FileReadThread);
 };
 
 /////////////////////////////////////////////////////////////////////

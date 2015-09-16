@@ -136,7 +136,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   bool using_absolute_send_time_;
   uint32_t packets_since_absolute_send_time_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(WrappingBitrateEstimator);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WrappingBitrateEstimator);
 };
 
 }  // namespace

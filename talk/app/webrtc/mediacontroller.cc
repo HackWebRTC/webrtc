@@ -74,7 +74,7 @@ class MediaController : public webrtc::MediaControllerInterface {
   rtc::Thread* worker_thread_;
   rtc::scoped_ptr<webrtc::Call> call_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(MediaController);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MediaController);
 };
 } // namespace {
 

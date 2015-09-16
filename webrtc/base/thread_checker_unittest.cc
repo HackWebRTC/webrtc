@@ -49,7 +49,7 @@ class ThreadCheckerClass : public ThreadChecker {
   static void DetachThenCallFromDifferentThreadImpl();
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(ThreadCheckerClass);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ThreadCheckerClass);
 };
 
 // Calls ThreadCheckerClass::DoStuff on another thread.
@@ -72,7 +72,7 @@ class CallDoStuffOnThread : public Thread {
  private:
   ThreadCheckerClass* thread_checker_class_;
 
-  DISALLOW_COPY_AND_ASSIGN(CallDoStuffOnThread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CallDoStuffOnThread);
 };
 
 // Deletes ThreadCheckerClass on a different thread.
@@ -96,7 +96,7 @@ class DeleteThreadCheckerClassOnThread : public Thread {
  private:
   scoped_ptr<ThreadCheckerClass> thread_checker_class_;
 
-  DISALLOW_COPY_AND_ASSIGN(DeleteThreadCheckerClassOnThread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DeleteThreadCheckerClassOnThread);
 };
 
 }  // namespace

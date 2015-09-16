@@ -114,7 +114,7 @@ class ByteBuffer {
 
   // There are sensible ways to define these, but they aren't needed in our code
   // base.
-  DISALLOW_COPY_AND_ASSIGN(ByteBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ByteBuffer);
 };
 
 }  // namespace rtc

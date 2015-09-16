@@ -73,7 +73,7 @@ class XWindowProperty {
   unsigned long size_;  // NOLINT: type required by XGetWindowProperty
   unsigned char* data_;
 
-  DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
+  RTC_DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
 };
 
 // Stupid X11.  It seems none of the synchronous returns codes from X11 calls
@@ -118,7 +118,7 @@ class XErrorSuppressor {
   Display* display_;
   XErrorHandler original_error_handler_;
 
-  DISALLOW_COPY_AND_ASSIGN(XErrorSuppressor);
+  RTC_DISALLOW_COPY_AND_ASSIGN(XErrorSuppressor);
 };
 
 // Hiding all X11 specifics inside its own class. This to avoid

@@ -104,7 +104,7 @@ class SSLCertChain {
 
   std::vector<SSLCertificate*> certs_;
 
-  DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };
 
 // TODO(hbos, torbjorng): Don't change KT_DEFAULT without first

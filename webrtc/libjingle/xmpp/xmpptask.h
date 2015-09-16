@@ -67,7 +67,7 @@ class XmppClientInterface {
   virtual void RemoveXmppTask(XmppTask* task) = 0;
   sigslot::signal0<> SignalDisconnected;
 
-  DISALLOW_COPY_AND_ASSIGN(XmppClientInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(XmppClientInterface);
 };
 
 // XmppTaskParentInterface is the interface require for any parent of
@@ -86,7 +86,7 @@ class XmppTaskParentInterface : public rtc::Task {
 
   virtual XmppClientInterface* GetClient() = 0;
 
-  DISALLOW_COPY_AND_ASSIGN(XmppTaskParentInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(XmppTaskParentInterface);
 };
 
 class XmppTaskBase : public XmppTaskParentInterface {
@@ -104,7 +104,7 @@ class XmppTaskBase : public XmppTaskParentInterface {
  protected:
   XmppTaskParentInterface* parent_;
 
-  DISALLOW_COPY_AND_ASSIGN(XmppTaskBase);
+  RTC_DISALLOW_COPY_AND_ASSIGN(XmppTaskBase);
 };
 
 class XmppTask : public XmppTaskBase,

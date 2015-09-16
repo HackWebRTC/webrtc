@@ -38,7 +38,7 @@ class AudioSink {
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioSink);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioSink);
 };
 
 // Forks the output audio to two AudioSink objects.
@@ -56,7 +56,7 @@ class AudioSinkFork : public AudioSink {
   AudioSink* left_sink_;
   AudioSink* right_sink_;
 
-  DISALLOW_COPY_AND_ASSIGN(AudioSinkFork);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioSinkFork);
 };
 }  // namespace test
 }  // namespace webrtc

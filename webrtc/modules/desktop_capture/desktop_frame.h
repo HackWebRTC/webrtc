@@ -91,7 +91,7 @@ class DesktopFrame {
   rtc::scoped_ptr<DesktopRegion> shape_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
 };
 
 // A DesktopFrame that stores data in the heap.
@@ -104,7 +104,7 @@ class BasicDesktopFrame : public DesktopFrame {
   static DesktopFrame* CopyOf(const DesktopFrame& frame);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(BasicDesktopFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BasicDesktopFrame);
 };
 
 // A DesktopFrame that stores data in shared memory.
@@ -117,7 +117,7 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
   ~SharedMemoryDesktopFrame() override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SharedMemoryDesktopFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SharedMemoryDesktopFrame);
 };
 
 }  // namespace webrtc

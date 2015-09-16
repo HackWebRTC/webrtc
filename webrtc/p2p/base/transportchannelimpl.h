@@ -98,7 +98,7 @@ class TransportChannelImpl : public TransportChannel {
   sigslot::signal1<TransportChannelImpl*> SignalConnectionRemoved;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(TransportChannelImpl);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannelImpl);
 };
 
 }  // namespace cricket

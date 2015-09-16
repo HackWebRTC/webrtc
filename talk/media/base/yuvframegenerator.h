@@ -97,7 +97,7 @@ class YuvFrameGenerator {
   int barcode_start_x_;
   int barcode_start_y_;
 
-  DISALLOW_COPY_AND_ASSIGN(YuvFrameGenerator);
+  RTC_DISALLOW_COPY_AND_ASSIGN(YuvFrameGenerator);
 };
 
 }  // namespace cricket

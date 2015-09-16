@@ -51,7 +51,7 @@ class AudioLoop {
   size_t block_length_samples_;
   rtc::scoped_ptr<int16_t[]> audio_array_;
 
-  DISALLOW_COPY_AND_ASSIGN(AudioLoop);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioLoop);
 };
 
 }  // namespace test

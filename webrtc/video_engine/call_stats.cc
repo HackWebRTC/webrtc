@@ -86,7 +86,7 @@ class RtcpObserver : public RtcpRttStats {
  private:
   CallStats* owner_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtcpObserver);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtcpObserver);
 };
 
 CallStats::CallStats()

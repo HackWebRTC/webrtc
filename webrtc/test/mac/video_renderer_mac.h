@@ -33,7 +33,7 @@ class MacRenderer : public GlRenderer {
  private:
   CocoaWindow* window_;
 
-  DISALLOW_COPY_AND_ASSIGN(MacRenderer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MacRenderer);
 };
 }  // test
 }  // webrtc

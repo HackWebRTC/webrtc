@@ -141,7 +141,7 @@ class AsyncInvoker : public MessageHandler {
                        uint32 id);
   bool destroying_;
 
-  DISALLOW_COPY_AND_ASSIGN(AsyncInvoker);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncInvoker);
 };
 
 // Similar to AsyncInvoker, but guards against the Thread being destroyed while

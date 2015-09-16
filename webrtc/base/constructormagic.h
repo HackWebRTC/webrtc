@@ -11,19 +11,14 @@
 #ifndef WEBRTC_BASE_CONSTRUCTORMAGIC_H_
 #define WEBRTC_BASE_CONSTRUCTORMAGIC_H_
 
-// Undefine macros first, just in case. Some third-party includes have their own
-// version.
-
-#undef DISALLOW_ASSIGN
-#define DISALLOW_ASSIGN(TypeName) \
+#define RTC_DISALLOW_ASSIGN(TypeName) \
   void operator=(const TypeName&)
 
 // A macro to disallow the evil copy constructor and operator= functions
 // This should be used in the private: declarations for a class.
-#undef DISALLOW_COPY_AND_ASSIGN
-#define DISALLOW_COPY_AND_ASSIGN(TypeName)    \
-  TypeName(const TypeName&);                    \
-  DISALLOW_ASSIGN(TypeName)
+#define RTC_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(const TypeName&);                   \
+  RTC_DISALLOW_ASSIGN(TypeName)
 
 // A macro to disallow all the implicit constructors, namely the
 // default constructor, copy constructor and operator= functions.
@@ -31,10 +26,8 @@
 // This should be used in the private: declarations for a class
 // that wants to prevent anyone from instantiating it. This is
 // especially useful for classes containing only static methods.
-#undef DISALLOW_IMPLICIT_CONSTRUCTORS
-#define DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
-  TypeName();                                    \
-  DISALLOW_COPY_AND_ASSIGN(TypeName)
-
+#define RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
+  TypeName();                                        \
+  RTC_DISALLOW_COPY_AND_ASSIGN(TypeName)
 
 #endif  // WEBRTC_BASE_CONSTRUCTORMAGIC_H_

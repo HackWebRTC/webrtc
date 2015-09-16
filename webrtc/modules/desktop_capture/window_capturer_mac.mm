@@ -66,7 +66,7 @@ class WindowCapturerMac : public WindowCapturer {
   rtc::scoped_refptr<FullScreenChromeWindowDetector>
       full_screen_chrome_window_detector_;
 
-  DISALLOW_COPY_AND_ASSIGN(WindowCapturerMac);
+  RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerMac);
 };
 
 WindowCapturerMac::WindowCapturerMac(rtc::scoped_refptr<

@@ -61,7 +61,7 @@ class RtcEventLogSource : public PacketSource {
   rtc::scoped_ptr<rtclog::EventStream> event_log_;
   rtc::scoped_ptr<RtpHeaderParser> parser_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtcEventLogSource);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtcEventLogSource);
 };
 
 }  // namespace test

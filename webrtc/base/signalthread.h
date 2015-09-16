@@ -112,7 +112,7 @@ class SignalThread
    private:
     SignalThread* parent_;
 
-    DISALLOW_IMPLICIT_CONSTRUCTORS(Worker);
+    RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Worker);
   };
 
   class SCOPED_LOCKABLE EnterExit {
@@ -135,7 +135,7 @@ class SignalThread
    private:
     SignalThread* t_;
 
-    DISALLOW_IMPLICIT_CONSTRUCTORS(EnterExit);
+    RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EnterExit);
   };
 
   void Run();
@@ -147,7 +147,7 @@ class SignalThread
   State state_;
   int refcount_;
 
-  DISALLOW_COPY_AND_ASSIGN(SignalThread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SignalThread);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

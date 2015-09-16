@@ -46,7 +46,7 @@ class AudioDecoderPcmU : public AudioDecoder {
                      SpeechType* speech_type) override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmU);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmU);
 };
 
 class AudioDecoderPcmA : public AudioDecoder {
@@ -64,7 +64,7 @@ class AudioDecoderPcmA : public AudioDecoder {
                      SpeechType* speech_type) override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmA);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmA);
 };
 
 class AudioDecoderPcmUMultiCh : public AudioDecoderPcmU {
@@ -77,7 +77,7 @@ class AudioDecoderPcmUMultiCh : public AudioDecoderPcmU {
 
  private:
   const size_t channels_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmUMultiCh);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmUMultiCh);
 };
 
 class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
@@ -90,7 +90,7 @@ class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
 
  private:
   const size_t channels_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmAMultiCh);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmAMultiCh);
 };
 
 #ifdef WEBRTC_CODEC_PCM16
@@ -111,7 +111,7 @@ class AudioDecoderPcm16B : public AudioDecoder {
                      SpeechType* speech_type) override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16B);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16B);
 };
 
 // This class handles all four types (i.e., sample rates) of PCM16B codecs.
@@ -124,7 +124,7 @@ class AudioDecoderPcm16BMultiCh : public AudioDecoderPcm16B {
 
  private:
   const size_t channels_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16BMultiCh);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16BMultiCh);
 };
 #endif
 
@@ -147,7 +147,7 @@ class AudioDecoderIlbc : public AudioDecoder {
 
  private:
   IlbcDecoderInstance* dec_state_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderIlbc);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderIlbc);
 };
 #endif
 
@@ -170,7 +170,7 @@ class AudioDecoderG722 : public AudioDecoder {
 
  private:
   G722DecInst* dec_state_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722);
 };
 
 class AudioDecoderG722Stereo : public AudioDecoder {
@@ -199,7 +199,7 @@ class AudioDecoderG722Stereo : public AudioDecoder {
   G722DecInst* dec_state_left_;
   G722DecInst* dec_state_right_;
 
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722Stereo);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722Stereo);
 };
 #endif
 
@@ -232,7 +232,7 @@ class AudioDecoderCng : public AudioDecoder {
 
  private:
   CNG_dec_inst* dec_state_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderCng);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderCng);
 };
 
 enum NetEqDecoder {

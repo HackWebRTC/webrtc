@@ -82,7 +82,7 @@ class XWindowProperty {
   unsigned long size_;  // NOLINT: type required by XGetWindowProperty
   unsigned char* data_;
 
-  DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
+  RTC_DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
 };
 
 class WindowCapturerLinux : public WindowCapturer,
@@ -129,7 +129,7 @@ class WindowCapturerLinux : public WindowCapturer,
   ::Window selected_window_;
   XServerPixelBuffer x_server_pixel_buffer_;
 
-  DISALLOW_COPY_AND_ASSIGN(WindowCapturerLinux);
+  RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerLinux);
 };
 
 WindowCapturerLinux::WindowCapturerLinux(const DesktopCaptureOptions& options)

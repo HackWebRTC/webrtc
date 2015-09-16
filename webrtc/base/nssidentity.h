@@ -60,7 +60,7 @@ class NSSKeyPair {
   SECKEYPublicKey* pubkey_;
   SSLKEAType ssl_kea_type_;
 
-  DISALLOW_COPY_AND_ASSIGN(NSSKeyPair);
+  RTC_DISALLOW_COPY_AND_ASSIGN(NSSKeyPair);
 };
 
 
@@ -109,7 +109,7 @@ class NSSCertificate : public SSLCertificate {
   CERTCertificate* certificate_;
   scoped_ptr<SSLCertChain> chain_;
 
-  DISALLOW_COPY_AND_ASSIGN(NSSCertificate);
+  RTC_DISALLOW_COPY_AND_ASSIGN(NSSCertificate);
 };
 
 // Represents a SSL key pair and certificate for NSS.
@@ -135,7 +135,7 @@ class NSSIdentity : public SSLIdentity {
   rtc::scoped_ptr<NSSKeyPair> keypair_;
   rtc::scoped_ptr<NSSCertificate> certificate_;
 
-  DISALLOW_COPY_AND_ASSIGN(NSSIdentity);
+  RTC_DISALLOW_COPY_AND_ASSIGN(NSSIdentity);
 };
 
 }  // namespace rtc

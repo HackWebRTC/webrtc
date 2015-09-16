@@ -48,7 +48,7 @@ class DtmfToneGenerator {
   int16_t sample_history1_[2];  // Last 2 samples for the 1st oscillator.
   int16_t sample_history2_[2];  // Last 2 samples for the 2nd oscillator.
 
-  DISALLOW_COPY_AND_ASSIGN(DtmfToneGenerator);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DtmfToneGenerator);
 };
 
 }  // namespace webrtc

@@ -55,7 +55,7 @@ class RtpFileSource : public PacketSource {
   rtc::scoped_ptr<RtpFileReader> rtp_reader_;
   rtc::scoped_ptr<RtpHeaderParser> parser_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtpFileSource);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpFileSource);
 };
 
 }  // namespace test

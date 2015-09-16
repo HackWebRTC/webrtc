@@ -321,7 +321,7 @@ class FrameInputWrapper : public cricket::VideoRenderer {
   int width_;
   int height_;
 
-  DISALLOW_COPY_AND_ASSIGN(FrameInputWrapper);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FrameInputWrapper);
 };
 
 }  // anonymous namespace

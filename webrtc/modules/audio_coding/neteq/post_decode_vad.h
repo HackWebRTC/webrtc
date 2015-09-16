@@ -65,7 +65,7 @@ class PostDecodeVad {
   int sid_interval_counter_;
   ::VadInst* vad_instance_;
 
-  DISALLOW_COPY_AND_ASSIGN(PostDecodeVad);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PostDecodeVad);
 };
 
 }  // namespace webrtc

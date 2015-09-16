@@ -130,7 +130,7 @@ class DspHelper {
   // Table of constants used in method DspHelper::ParabolicFit().
   static const int16_t kParabolaCoefficients[17][3];
 
-  DISALLOW_COPY_AND_ASSIGN(DspHelper);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DspHelper);
 };
 
 }  // namespace webrtc

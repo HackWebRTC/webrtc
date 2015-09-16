@@ -53,7 +53,7 @@ class DecisionLogicFax : public DecisionLogic {
                                     bool* reset_decoder) override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(DecisionLogicFax);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DecisionLogicFax);
 };
 
 }  // namespace webrtc

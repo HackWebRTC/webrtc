@@ -70,7 +70,7 @@ class PreemptiveExpand : public TimeStretch {
   size_t old_data_length_per_channel_;
   size_t overlap_samples_;
 
-  DISALLOW_COPY_AND_ASSIGN(PreemptiveExpand);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PreemptiveExpand);
 };
 
 struct PreemptiveExpandFactory {

@@ -33,7 +33,7 @@ class Random {
   uint32_t a_;
   uint32_t b_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Random);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Random);
 };
 }  // namespace webrtc
 

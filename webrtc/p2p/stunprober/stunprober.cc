@@ -102,7 +102,7 @@ class StunProber::Requester : public sigslot::has_slots<> {
 
   rtc::ThreadChecker& thread_checker_;
 
-  DISALLOW_COPY_AND_ASSIGN(Requester);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Requester);
 };
 
 StunProber::Requester::Requester(

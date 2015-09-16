@@ -66,7 +66,7 @@ class RawRtpPacket {
   uint32_t ssrc_;
   uint16_t seq_num_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RawRtpPacket);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RawRtpPacket);
 };
 
 class LostPackets {
@@ -182,7 +182,7 @@ class LostPackets {
   Clock* clock_;
   int64_t rtt_ms_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LostPackets);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(LostPackets);
 };
 
 class SsrcHandlers {
@@ -305,7 +305,7 @@ class SsrcHandlers {
     const PayloadTypes& payload_types_;
     LostPackets* lost_packets_;
 
-    DISALLOW_COPY_AND_ASSIGN(Handler);
+    RTC_DISALLOW_COPY_AND_ASSIGN(Handler);
   };
 
   typedef std::map<uint32_t, Handler*> HandlerMap;
@@ -315,7 +315,7 @@ class SsrcHandlers {
   PayloadTypes payload_types_;
   HandlerMap handlers_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SsrcHandlers);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SsrcHandlers);
 };
 
 class RtpPlayerImpl : public RtpPlayerInterface {
@@ -467,7 +467,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
   bool reordering_;
   rtc::scoped_ptr<RawRtpPacket> reorder_buffer_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RtpPlayerImpl);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtpPlayerImpl);
 };
 
 RtpPlayerInterface* Create(const std::string& input_filename,

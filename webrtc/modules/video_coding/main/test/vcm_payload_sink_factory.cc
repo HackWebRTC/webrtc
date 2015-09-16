@@ -95,7 +95,7 @@ class VcmPayloadSinkFactory::VcmPayloadSink
   rtc::scoped_ptr<VideoCodingModule> vcm_;
   rtc::scoped_ptr<FileOutputFrameReceiver> frame_receiver_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(VcmPayloadSink);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(VcmPayloadSink);
 };
 
 VcmPayloadSinkFactory::VcmPayloadSinkFactory(

@@ -245,7 +245,7 @@ class SrtpSession {
   static bool inited_;
   static rtc::GlobalLockPod lock_;
   int last_send_seq_num_;
-  DISALLOW_COPY_AND_ASSIGN(SrtpSession);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SrtpSession);
 };
 
 // Class that collects failures of SRTP.
@@ -320,7 +320,7 @@ class SrtpStat {
   // Threshold in ms to silent the signaling errors.
   uint32 signal_silent_time_;
 
-  DISALLOW_COPY_AND_ASSIGN(SrtpStat);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SrtpStat);
 };
 
 }  // namespace cricket

@@ -44,7 +44,7 @@ class DelayCapHelper {
   int64_t max_delay_us_;
   Stats<double> delay_stats_;
 
-  DISALLOW_COPY_AND_ASSIGN(DelayCapHelper);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DelayCapHelper);
 };
 
 const FlowIds CreateFlowIds(const int *flow_ids_array, size_t num_flow_ids) {

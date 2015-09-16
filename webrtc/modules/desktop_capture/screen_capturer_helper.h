@@ -80,7 +80,7 @@ class ScreenCapturerHelper {
   // If the value is <= 0, then the invalid region is not expanded to a grid.
   int log_grid_size_;
 
-  DISALLOW_COPY_AND_ASSIGN(ScreenCapturerHelper);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerHelper);
 };
 
 }  // namespace webrtc

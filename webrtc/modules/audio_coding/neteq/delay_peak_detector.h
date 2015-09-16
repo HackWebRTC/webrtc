@@ -69,7 +69,7 @@ class DelayPeakDetector {
   int peak_detection_threshold_;
   int peak_period_counter_ms_;
 
-  DISALLOW_COPY_AND_ASSIGN(DelayPeakDetector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DelayPeakDetector);
 };
 
 }  // namespace webrtc

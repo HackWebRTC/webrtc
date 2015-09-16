@@ -90,7 +90,7 @@ class MacAsyncSocket : public AsyncSocket, public sigslot::has_slots<> {
   ConnState state_;
   AsyncResolver* resolver_;
 
-  DISALLOW_COPY_AND_ASSIGN(MacAsyncSocket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MacAsyncSocket);
 };
 
 }  // namespace rtc

@@ -43,7 +43,7 @@ class ExternalPcm16B : public AudioDecoder {
   size_t Channels() const override { return 1; }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(ExternalPcm16B);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ExternalPcm16B);
 };
 
 // Create a mock of ExternalPcm16B which delegates all calls to the real object.

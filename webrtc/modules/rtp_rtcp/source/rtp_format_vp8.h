@@ -212,7 +212,7 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   InfoQueue packets_;
   bool packets_calculated_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtpPacketizerVp8);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerVp8);
 };
 
 // Depacketizer for VP8.

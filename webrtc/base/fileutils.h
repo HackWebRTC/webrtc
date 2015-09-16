@@ -407,7 +407,7 @@ class Filesystem {
   static FilesystemInterface* default_filesystem_;
 
   static FilesystemInterface *EnsureDefaultFilesystem();
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Filesystem);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Filesystem);
 };
 
 class FilesystemScope{
@@ -420,7 +420,7 @@ class FilesystemScope{
   }
  private:
   FilesystemInterface* old_fs_;
-  DISALLOW_IMPLICIT_CONSTRUCTORS(FilesystemScope);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FilesystemScope);
 };
 
 // Generates a unique filename based on the input path.  If no path component

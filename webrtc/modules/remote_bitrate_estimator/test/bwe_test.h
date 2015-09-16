@@ -143,7 +143,7 @@ class BweTest {
   Packets packets_;
   bool plot_total_available_capacity_;
 
-  DISALLOW_COPY_AND_ASSIGN(BweTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BweTest);
 };
 
 // Default Evaluation parameters:

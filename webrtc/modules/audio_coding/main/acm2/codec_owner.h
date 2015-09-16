@@ -70,7 +70,7 @@ class CodecOwner {
   rtc::scoped_ptr<AudioEncoder> cng_encoder_;
   rtc::scoped_ptr<AudioEncoder> red_encoder_;
 
-  DISALLOW_COPY_AND_ASSIGN(CodecOwner);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CodecOwner);
 };
 
 }  // namespace acm2

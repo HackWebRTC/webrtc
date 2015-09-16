@@ -88,7 +88,7 @@ class TransportChannelProxy : public TransportChannel,
   OptionList options_;
   std::vector<std::string> pending_srtp_ciphers_;
 
-  DISALLOW_COPY_AND_ASSIGN(TransportChannelProxy);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannelProxy);
 };
 
 }  // namespace cricket

@@ -321,7 +321,7 @@ class StatsReport {
     } value_;
 
    private:
-    DISALLOW_COPY_AND_ASSIGN(Value);
+    RTC_DISALLOW_COPY_AND_ASSIGN(Value);
   };
 
   // TODO(tommi): Consider using a similar approach to how we store Ids using
@@ -371,7 +371,7 @@ class StatsReport {
   double timestamp_;  // Time since 1970-01-01T00:00:00Z in milliseconds.
   Values values_;
 
-  DISALLOW_COPY_AND_ASSIGN(StatsReport);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StatsReport);
 };
 
 // Typedef for an array of const StatsReport pointers.

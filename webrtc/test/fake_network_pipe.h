@@ -91,7 +91,7 @@ class FakeNetworkPipe {
 
   int64_t next_process_time_;
 
-  DISALLOW_COPY_AND_ASSIGN(FakeNetworkPipe);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FakeNetworkPipe);
 };
 
 }  // namespace webrtc

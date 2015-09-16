@@ -42,7 +42,7 @@ class BufferQueue {
   std::vector<Buffer*> free_list_;
   mutable CriticalSection crit_;  // object lock
 
-  DISALLOW_COPY_AND_ASSIGN(BufferQueue);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BufferQueue);
 };
 
 }  // namespace rtc

@@ -43,7 +43,7 @@ class RandomVector {
   uint32_t seed_;
   int16_t seed_increment_;
 
-  DISALLOW_COPY_AND_ASSIGN(RandomVector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RandomVector);
 };
 
 }  // namespace webrtc

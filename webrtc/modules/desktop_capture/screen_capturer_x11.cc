@@ -121,7 +121,7 @@ class ScreenCapturerLinux : public ScreenCapturer,
   // |Differ| for use when polling for changes.
   rtc::scoped_ptr<Differ> differ_;
 
-  DISALLOW_COPY_AND_ASSIGN(ScreenCapturerLinux);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerLinux);
 };
 
 ScreenCapturerLinux::ScreenCapturerLinux()

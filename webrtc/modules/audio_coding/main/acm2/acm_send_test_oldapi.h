@@ -83,7 +83,7 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   std::vector<uint8_t> last_payload_vec_;
   bool data_to_send_;
 
-  DISALLOW_COPY_AND_ASSIGN(AcmSendTestOldApi);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AcmSendTestOldApi);
 };
 
 }  // namespace test

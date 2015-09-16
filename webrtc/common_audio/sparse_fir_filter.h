@@ -44,7 +44,7 @@ class SparseFIRFilter final {
   const std::vector<float> nonzero_coeffs_;
   std::vector<float> state_;
 
-  DISALLOW_COPY_AND_ASSIGN(SparseFIRFilter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SparseFIRFilter);
 };
 
 }  // namespace webrtc

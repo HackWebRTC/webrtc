@@ -116,7 +116,7 @@ class DtmfSender
   int duration_;
   int inter_tone_gap_;
 
-  DISALLOW_COPY_AND_ASSIGN(DtmfSender);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DtmfSender);
 };
 
 // Define proxy for DtmfSenderInterface.

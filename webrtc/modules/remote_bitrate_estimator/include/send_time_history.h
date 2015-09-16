@@ -40,7 +40,7 @@ class SendTimeHistory {
   uint16_t oldest_sequence_number_;  // Oldest may not be lowest.
   std::map<uint16_t, PacketInfo> history_;
 
-  DISALLOW_COPY_AND_ASSIGN(SendTimeHistory);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SendTimeHistory);
 };
 
 }  // namespace webrtc

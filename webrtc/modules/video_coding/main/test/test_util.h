@@ -68,7 +68,7 @@ class FileOutputFrameReceiver : public webrtc::VCMReceiveCallback {
   int height_;
   int count_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(FileOutputFrameReceiver);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FileOutputFrameReceiver);
 };
 
 class CmdArgs {

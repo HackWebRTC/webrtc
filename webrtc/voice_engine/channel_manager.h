@@ -91,7 +91,7 @@ class ChannelManager {
     size_t iterator_pos_;
     std::vector<ChannelOwner> channels_;
 
-    DISALLOW_COPY_AND_ASSIGN(Iterator);
+    RTC_DISALLOW_COPY_AND_ASSIGN(Iterator);
   };
 
   // CreateChannel will always return a valid ChannelOwner instance. The channel
@@ -129,7 +129,7 @@ class ChannelManager {
   const Config& config_;
   rtc::scoped_ptr<RtcEventLog> event_log_;
 
-  DISALLOW_COPY_AND_ASSIGN(ChannelManager);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ChannelManager);
 };
 }  // namespace voe
 }  // namespace webrtc

@@ -98,7 +98,7 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   bool GetMediasectionIndex(const IceCandidateInterface* candidate,
                             size_t* index);
 
-  DISALLOW_COPY_AND_ASSIGN(JsepSessionDescription);
+  RTC_DISALLOW_COPY_AND_ASSIGN(JsepSessionDescription);
 };
 
 }  // namespace webrtc

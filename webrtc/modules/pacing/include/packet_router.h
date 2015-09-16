@@ -56,7 +56,7 @@ class PacketRouter : public PacedSender::Callback {
 
   volatile int transport_seq_;
 
-  DISALLOW_COPY_AND_ASSIGN(PacketRouter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PacketRouter);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_PACING_INCLUDE_PACKET_ROUTER_H_

@@ -58,7 +58,7 @@ class DesktopConfigurationMonitor {
   MacDesktopConfiguration desktop_configuration_;
   rtc::scoped_ptr<EventWrapper> display_configuration_capture_event_;
 
-  DISALLOW_COPY_AND_ASSIGN(DesktopConfigurationMonitor);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DesktopConfigurationMonitor);
 };
 
 }  // namespace webrtc

@@ -9,7 +9,7 @@
  */
 
 // This file overrides the inclusion of webrtc/base/constructormagic.h
-// We do this because constructor magic defines DISALLOW_COPY_AND_ASSIGN,
+// We do this because constructor magic defines RTC_DISALLOW_COPY_AND_ASSIGN,
 // but we want to use the version from Chromium.
 
 #ifndef OVERRIDES_WEBRTC_BASE_CONSTRUCTORMAGIC_H__

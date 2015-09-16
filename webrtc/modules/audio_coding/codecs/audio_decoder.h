@@ -115,7 +115,7 @@ class AudioDecoder {
                                       SpeechType* speech_type);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoder);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoder);
 };
 
 }  // namespace webrtc

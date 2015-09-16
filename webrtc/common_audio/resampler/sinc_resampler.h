@@ -162,7 +162,7 @@ class SincResampler {
   float* r3_;
   float* r4_;
 
-  DISALLOW_COPY_AND_ASSIGN(SincResampler);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SincResampler);
 };
 
 }  // namespace webrtc

@@ -63,7 +63,7 @@ class PacketReceiver : public PacketProcessor {
   std::string delay_prefix_;
   BandwidthEstimatorType bwe_type_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);
 };
 }  // namespace bwe
 }  // namespace testing

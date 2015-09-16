@@ -132,7 +132,7 @@ class AudioMultiVector {
   size_t num_channels_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioMultiVector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioMultiVector);
 };
 
 }  // namespace webrtc

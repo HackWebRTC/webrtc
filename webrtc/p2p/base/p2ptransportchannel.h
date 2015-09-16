@@ -254,7 +254,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   int check_receiving_delay_;
   int receiving_timeout_;
 
-  DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
+  RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };
 
 }  // namespace cricket

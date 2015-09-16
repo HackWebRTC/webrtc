@@ -80,7 +80,7 @@ class BitrateControllerImpl : public BitrateController {
   int64_t last_rtt_ms_ GUARDED_BY(critsect_);
   uint32_t last_reserved_bitrate_bps_ GUARDED_BY(critsect_);
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(BitrateControllerImpl);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(BitrateControllerImpl);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_BITRATE_CONTROLLER_IMPL_H_

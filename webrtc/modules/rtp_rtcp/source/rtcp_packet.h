@@ -140,7 +140,7 @@ class Empty : public RtcpPacket {
   size_t BlockLength() const override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Empty);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Empty);
 };
 
 // From RFC 3550, RTP: A Transport Protocol for Real-Time Applications.
@@ -268,7 +268,7 @@ class SenderReport : public RtcpPacket {
   RTCPUtility::RTCPPacketSR sr_;
   std::vector<RTCPUtility::RTCPPacketReportBlockItem> report_blocks_;
 
-  DISALLOW_COPY_AND_ASSIGN(SenderReport);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SenderReport);
 };
 
 //
@@ -314,7 +314,7 @@ class ReceiverReport : public RtcpPacket {
   RTCPUtility::RTCPPacketRR rr_;
   std::vector<RTCPUtility::RTCPPacketReportBlockItem> report_blocks_;
 
-  DISALLOW_COPY_AND_ASSIGN(ReceiverReport);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ReceiverReport);
 };
 
 // Transmission Time Offsets in RTP Streams (RFC 5450).
@@ -359,7 +359,7 @@ class Ij : public RtcpPacket {
 
   std::vector<uint32_t> ij_items_;
 
-  DISALLOW_COPY_AND_ASSIGN(Ij);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Ij);
 };
 
 // Source Description (SDES) (RFC 3550).
@@ -415,7 +415,7 @@ class Sdes : public RtcpPacket {
 
   std::vector<Chunk> chunks_;
 
-  DISALLOW_COPY_AND_ASSIGN(Sdes);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Sdes);
 };
 
 //
@@ -465,7 +465,7 @@ class Bye : public RtcpPacket {
   RTCPUtility::RTCPPacketBYE bye_;
   std::vector<uint32_t> csrcs_;
 
-  DISALLOW_COPY_AND_ASSIGN(Bye);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Bye);
 };
 
 // Application-Defined packet (APP) (RFC 3550).
@@ -524,7 +524,7 @@ class App : public RtcpPacket {
   uint32_t ssrc_;
   RTCPUtility::RTCPPacketAPP app_;
 
-  DISALLOW_COPY_AND_ASSIGN(App);
+  RTC_DISALLOW_COPY_AND_ASSIGN(App);
 };
 
 // RFC 4585: Feedback format.
@@ -575,7 +575,7 @@ class Pli : public RtcpPacket {
 
   RTCPUtility::RTCPPacketPSFBPLI pli_;
 
-  DISALLOW_COPY_AND_ASSIGN(Pli);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Pli);
 };
 
 // Slice loss indication (SLI) (RFC 4585).
@@ -630,7 +630,7 @@ class Sli : public RtcpPacket {
   RTCPUtility::RTCPPacketPSFBSLI sli_;
   RTCPUtility::RTCPPacketPSFBSLIItem sli_item_;
 
-  DISALLOW_COPY_AND_ASSIGN(Sli);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Sli);
 };
 
 // Generic NACK (RFC 4585).
@@ -671,7 +671,7 @@ class Nack : public RtcpPacket {
   RTCPUtility::RTCPPacketRTPFBNACK nack_;
   std::vector<RTCPUtility::RTCPPacketRTPFBNACKItem> nack_fields_;
 
-  DISALLOW_COPY_AND_ASSIGN(Nack);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Nack);
 };
 
 // Reference picture selection indication (RPSI) (RFC 4585).
@@ -723,7 +723,7 @@ class Rpsi : public RtcpPacket {
   uint8_t padding_bytes_;
   RTCPUtility::RTCPPacketPSFBRPSI rpsi_;
 
-  DISALLOW_COPY_AND_ASSIGN(Rpsi);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Rpsi);
 };
 
 // Full intra request (FIR) (RFC 5104).
@@ -823,7 +823,7 @@ class Tmmbr : public RtcpPacket {
   RTCPUtility::RTCPPacketRTPFBTMMBR tmmbr_;
   RTCPUtility::RTCPPacketRTPFBTMMBRItem tmmbr_item_;
 
-  DISALLOW_COPY_AND_ASSIGN(Tmmbr);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Tmmbr);
 };
 
 // Temporary Maximum Media Stream Bit Rate Notification (TMMBN) (RFC 5104).
@@ -869,7 +869,7 @@ class Tmmbn : public RtcpPacket {
   RTCPUtility::RTCPPacketRTPFBTMMBN tmmbn_;
   std::vector<RTCPUtility::RTCPPacketRTPFBTMMBRItem> tmmbn_items_;
 
-  DISALLOW_COPY_AND_ASSIGN(Tmmbn);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Tmmbn);
 };
 
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
@@ -925,7 +925,7 @@ class Remb : public RtcpPacket {
   RTCPUtility::RTCPPacketPSFBAPP remb_;
   RTCPUtility::RTCPPacketPSFBREMBItem remb_item_;
 
-  DISALLOW_COPY_AND_ASSIGN(Remb);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Remb);
 };
 
 // From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
@@ -993,7 +993,7 @@ class Xr : public RtcpPacket {
   std::vector<DlrrBlock> dlrr_blocks_;
   std::vector<RTCPUtility::RTCPPacketXRVOIPMetricItem> voip_metric_blocks_;
 
-  DISALLOW_COPY_AND_ASSIGN(Xr);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Xr);
 };
 
 // Receiver Reference Time Report Block (RFC 3611).
@@ -1026,7 +1026,7 @@ class Rrtr {
   friend class Xr;
   RTCPUtility::RTCPPacketXRReceiverReferenceTimeItem rrtr_block_;
 
-  DISALLOW_COPY_AND_ASSIGN(Rrtr);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Rrtr);
 };
 
 // DLRR Report Block (RFC 3611).
@@ -1060,7 +1060,7 @@ class Dlrr {
 
   std::vector<RTCPUtility::RTCPPacketXRDLRRReportBlockItem> dlrr_block_;
 
-  DISALLOW_COPY_AND_ASSIGN(Dlrr);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Dlrr);
 };
 
 // VoIP Metrics Report Block (RFC 3611).
@@ -1130,7 +1130,7 @@ class VoipMetric {
   friend class Xr;
   RTCPUtility::RTCPPacketXRVOIPMetricItem metric_;
 
-  DISALLOW_COPY_AND_ASSIGN(VoipMetric);
+  RTC_DISALLOW_COPY_AND_ASSIGN(VoipMetric);
 };
 
 // Class holding a RTCP packet.

@@ -51,7 +51,7 @@ class Rtcp {
   uint32_t jitter_;  // Current jitter value.
   int32_t transit_;  // Clock difference for previous packet.
 
-  DISALLOW_COPY_AND_ASSIGN(Rtcp);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Rtcp);
 };
 
 }  // namespace webrtc

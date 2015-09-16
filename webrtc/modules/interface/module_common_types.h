@@ -392,7 +392,7 @@ class RTPFragmentationHeader {
   uint8_t* fragmentationPlType;      // Payload type of each fragmentation
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(RTPFragmentationHeader);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RTPFragmentationHeader);
 };
 
 struct RTCPVoIPMetric {
@@ -542,7 +542,7 @@ class AudioFrame {
   bool interleaved_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(AudioFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioFrame);
 };
 
 inline AudioFrame::AudioFrame()

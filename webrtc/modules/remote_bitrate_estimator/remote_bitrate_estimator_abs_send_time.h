@@ -146,7 +146,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   size_t total_probes_received_;
   int64_t first_packet_time_ms_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorAbsSendTime);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorAbsSendTime);
 };
 
 }  // namespace webrtc

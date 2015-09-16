@@ -57,7 +57,7 @@ class VcmPayloadSinkFactory : public PayloadSinkFactoryInterface {
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   Sinks sinks_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(VcmPayloadSinkFactory);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(VcmPayloadSinkFactory);
 };
 }  // namespace rtpplayer
 }  // namespace webrtc

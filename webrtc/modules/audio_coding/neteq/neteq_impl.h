@@ -399,7 +399,7 @@ class NetEqImpl : public webrtc::NetEq {
   uint32_t decoded_packet_timestamp_ GUARDED_BY(crit_sect_);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(NetEqImpl);
+  RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);
 };
 
 }  // namespace webrtc

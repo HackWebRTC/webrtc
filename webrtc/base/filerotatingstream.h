@@ -123,7 +123,7 @@ class FileRotatingStream : public StreamInterface {
   size_t current_bytes_written_;
   bool disable_buffering_;
 
-  DISALLOW_COPY_AND_ASSIGN(FileRotatingStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FileRotatingStream);
 };
 
 // CallSessionFileRotatingStream is meant to be used in situations where we will
@@ -164,7 +164,7 @@ class CallSessionFileRotatingStream : public FileRotatingStream {
   const size_t max_total_log_size_;
   size_t num_rotations_;
 
-  DISALLOW_COPY_AND_ASSIGN(CallSessionFileRotatingStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CallSessionFileRotatingStream);
 };
 
 }  // namespace rtc

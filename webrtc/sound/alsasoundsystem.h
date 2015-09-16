@@ -95,7 +95,7 @@ class AlsaSoundSystem : public SoundSystemInterface {
   bool initialized_;
   AlsaSymbolTable symbol_table_;
 
-  DISALLOW_COPY_AND_ASSIGN(AlsaSoundSystem);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AlsaSoundSystem);
 };
 
 }  // namespace rtc

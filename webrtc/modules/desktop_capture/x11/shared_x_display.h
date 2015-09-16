@@ -76,7 +76,7 @@ class SharedXDisplay {
 
   EventHandlersMap event_handlers_;
 
-  DISALLOW_COPY_AND_ASSIGN(SharedXDisplay);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SharedXDisplay);
 };
 
 }  // namespace webrtc

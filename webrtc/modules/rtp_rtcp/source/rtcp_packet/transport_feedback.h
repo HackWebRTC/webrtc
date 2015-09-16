@@ -97,7 +97,7 @@ class TransportFeedback : public RtcpPacket {
   bool vec_needs_two_bit_symbols_;
   uint32_t size_bytes_;
 
-  DISALLOW_COPY_AND_ASSIGN(TransportFeedback);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportFeedback);
 };
 
 }  // namespace rtcp

@@ -77,7 +77,7 @@ class PayloadRouter {
 
   Atomic32 ref_count_;
 
-  DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
 };
 
 }  // namespace webrtc

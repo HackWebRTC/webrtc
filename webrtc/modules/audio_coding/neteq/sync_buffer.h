@@ -92,7 +92,7 @@ class SyncBuffer : public AudioMultiVector {
   uint32_t end_timestamp_;  // The timestamp of the last sample in the buffer.
   size_t dtmf_index_;  // Index to the first non-DTMF sample in the buffer.
 
-  DISALLOW_COPY_AND_ASSIGN(SyncBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SyncBuffer);
 };
 
 }  // namespace webrtc

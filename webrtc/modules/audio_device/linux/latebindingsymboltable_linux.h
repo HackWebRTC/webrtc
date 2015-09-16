@@ -119,7 +119,7 @@ class LateBindingSymbolTable {
   bool undefined_symbols_;
   void *symbols_[SYMBOL_TABLE_SIZE];
 
-  DISALLOW_COPY_AND_ASSIGN(LateBindingSymbolTable);
+  RTC_DISALLOW_COPY_AND_ASSIGN(LateBindingSymbolTable);
 };
 
 // This macro must be invoked in a header to declare a symbol table class.

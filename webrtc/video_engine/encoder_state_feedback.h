@@ -63,7 +63,7 @@ class EncoderStateFeedback {
   // Maps a unique ssrc to the given encoder.
   SsrcEncoderMap encoders_;
 
-  DISALLOW_COPY_AND_ASSIGN(EncoderStateFeedback);
+  RTC_DISALLOW_COPY_AND_ASSIGN(EncoderStateFeedback);
 };
 
 }  // namespace webrtc

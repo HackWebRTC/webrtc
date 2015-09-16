@@ -81,7 +81,7 @@ class BitBuffer {
   // The current offset, in bits, into the current byte.
   size_t bit_offset_;
 
-  DISALLOW_COPY_AND_ASSIGN(BitBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BitBuffer);
 };
 
 // A BitBuffer API for write operations. Supports symmetric write APIs to the
@@ -110,7 +110,7 @@ class BitBufferWriter : public BitBuffer {
   // The buffer, as a writable array.
   uint8_t* const writable_bytes_;
 
-  DISALLOW_COPY_AND_ASSIGN(BitBufferWriter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BitBufferWriter);
 };
 
 }  // namespace rtc

@@ -102,7 +102,7 @@ private:
 
   static jobject application_context_;
 
-  DISALLOW_COPY_AND_ASSIGN(AndroidVideoCapturerJni);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AndroidVideoCapturerJni);
 };
 
 }  // namespace webrtc_jni

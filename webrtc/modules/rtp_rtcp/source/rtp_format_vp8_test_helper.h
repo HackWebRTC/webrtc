@@ -65,7 +65,7 @@ class RtpFormatVp8TestHelper {
   bool sloppy_partitioning_;
   bool inited_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtpFormatVp8TestHelper);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpFormatVp8TestHelper);
 };
 
 }  // namespace test

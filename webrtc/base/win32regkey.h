@@ -329,7 +329,7 @@ class RegKey {
   // for unittest
   friend void RegKeyHelperFunctionsTest();
 
-  DISALLOW_COPY_AND_ASSIGN(RegKey);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RegKey);
 };
 
 }  // namespace rtc

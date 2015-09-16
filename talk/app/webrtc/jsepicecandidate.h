@@ -63,7 +63,7 @@ class JsepIceCandidate : public IceCandidateInterface {
   int sdp_mline_index_;
   cricket::Candidate candidate_;
 
-  DISALLOW_COPY_AND_ASSIGN(JsepIceCandidate);
+  RTC_DISALLOW_COPY_AND_ASSIGN(JsepIceCandidate);
 };
 
 // Implementation of IceCandidateCollection.

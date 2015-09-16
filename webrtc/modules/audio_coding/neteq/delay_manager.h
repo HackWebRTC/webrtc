@@ -157,7 +157,7 @@ class DelayManager {
   DelayPeakDetector& peak_detector_;
   int last_pack_cng_or_dtmf_;
 
-  DISALLOW_COPY_AND_ASSIGN(DelayManager);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DelayManager);
 };
 
 }  // namespace webrtc

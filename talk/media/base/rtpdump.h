@@ -133,7 +133,7 @@ class RtpDumpReader {
   uint32 start_time_ms_;
   uint32 ssrc_override_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtpDumpReader);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpDumpReader);
 };
 
 // RtpDumpLoopReader reads RTP dump packets from the input stream and rewinds
@@ -181,7 +181,7 @@ class RtpDumpLoopReader : public RtpDumpReader {
   int prev_rtp_seq_num_;
   uint32 prev_rtp_timestamp_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtpDumpLoopReader);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpDumpLoopReader);
 };
 
 class RtpDumpWriter {
@@ -225,7 +225,7 @@ class RtpDumpWriter {
   uint32 start_time_ms_;  // Time when the record starts.
   // If writing to the stream takes longer than this many ms, log a warning.
   uint32 warn_slow_writes_delay_;
-  DISALLOW_COPY_AND_ASSIGN(RtpDumpWriter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpDumpWriter);
 };
 
 }  // namespace cricket

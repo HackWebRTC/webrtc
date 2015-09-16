@@ -31,7 +31,7 @@ class XErrorTrap {
   XErrorHandler original_error_handler_;
   bool enabled_;
 
-  DISALLOW_COPY_AND_ASSIGN(XErrorTrap);
+  RTC_DISALLOW_COPY_AND_ASSIGN(XErrorTrap);
 };
 
 }  // namespace webrtc

@@ -298,7 +298,7 @@ class scoped_ptr_impl {
 
   Data data_;
 
-  DISALLOW_COPY_AND_ASSIGN(scoped_ptr_impl);
+  RTC_DISALLOW_COPY_AND_ASSIGN(scoped_ptr_impl);
 };
 
 }  // namespace internal

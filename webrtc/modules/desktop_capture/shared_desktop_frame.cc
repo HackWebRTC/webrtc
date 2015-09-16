@@ -41,7 +41,7 @@ class SharedDesktopFrame::Core {
   Atomic32 ref_count_;
   rtc::scoped_ptr<DesktopFrame> frame_;
 
-  DISALLOW_COPY_AND_ASSIGN(Core);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Core);
 };
 
 SharedDesktopFrame::~SharedDesktopFrame() {}

@@ -82,7 +82,7 @@ class AimdRateControl {
   int64_t time_of_last_log_;
   bool in_experiment_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(AimdRateControl);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AimdRateControl);
 };
 }  // namespace webrtc
 

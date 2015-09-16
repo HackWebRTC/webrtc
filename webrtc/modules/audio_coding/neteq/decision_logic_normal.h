@@ -99,7 +99,7 @@ class DecisionLogicNormal : public DecisionLogic {
   // Checks if num_consecutive_expands_ >= kMaxWaitForPacket.
   bool MaxWaitForPacket() const;
 
-  DISALLOW_COPY_AND_ASSIGN(DecisionLogicNormal);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DecisionLogicNormal);
 };
 
 }  // namespace webrtc

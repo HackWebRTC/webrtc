@@ -88,7 +88,7 @@ class YuvFramesCapturer::YuvFramesThread
   mutable rtc::CriticalSection crit_;
   bool finished_;
 
-  DISALLOW_COPY_AND_ASSIGN(YuvFramesThread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(YuvFramesThread);
 };
 
 /////////////////////////////////////////////////////////////////////

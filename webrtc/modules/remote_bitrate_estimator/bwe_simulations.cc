@@ -39,7 +39,7 @@ class BweSimulation : public BweTest,
   Random random_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(BweSimulation);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BweSimulation);
 };
 
 INSTANTIATE_TEST_CASE_P(VideoSendersTest,

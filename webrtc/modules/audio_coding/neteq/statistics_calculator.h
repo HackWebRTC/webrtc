@@ -160,7 +160,7 @@ class StatisticsCalculator {
   PeriodicUmaCount delayed_packet_outage_counter_;
   PeriodicUmaAverage excess_buffer_delay_;
 
-  DISALLOW_COPY_AND_ASSIGN(StatisticsCalculator);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StatisticsCalculator);
 };
 
 }  // namespace webrtc

@@ -178,7 +178,7 @@ class OveruseFrameDetector : public Module {
 
   rtc::ThreadChecker processing_thread_;
 
-  DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };
 
 }  // namespace webrtc

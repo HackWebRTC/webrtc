@@ -50,7 +50,7 @@ class InputAudioFile {
 
  private:
   FILE* fp_;
-  DISALLOW_COPY_AND_ASSIGN(InputAudioFile);
+  RTC_DISALLOW_COPY_AND_ASSIGN(InputAudioFile);
 };
 
 }  // namespace test

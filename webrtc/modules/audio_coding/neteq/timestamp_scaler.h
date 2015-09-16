@@ -61,7 +61,7 @@ class TimestampScaler {
   uint32_t internal_ref_;
   const DecoderDatabase& decoder_database_;
 
-  DISALLOW_COPY_AND_ASSIGN(TimestampScaler);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TimestampScaler);
 };
 
 }  // namespace webrtc

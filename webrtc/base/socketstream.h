@@ -51,7 +51,7 @@ class SocketStream : public StreamInterface, public sigslot::has_slots<> {
 
   AsyncSocket* socket_;
 
-  DISALLOW_COPY_AND_ASSIGN(SocketStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SocketStream);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

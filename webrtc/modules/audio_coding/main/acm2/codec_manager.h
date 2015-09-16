@@ -82,7 +82,7 @@ class CodecManager final {
   CodecOwner codec_owner_;
   bool encoder_is_opus_;
 
-  DISALLOW_COPY_AND_ASSIGN(CodecManager);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CodecManager);
 };
 
 }  // namespace acm2

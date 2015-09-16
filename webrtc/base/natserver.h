@@ -116,7 +116,7 @@ class NATServer : public sigslot::has_slots<> {
   ProxyServer* tcp_proxy_server_;
   InternalMap* int_map_;
   ExternalMap* ext_map_;
-  DISALLOW_COPY_AND_ASSIGN(NATServer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(NATServer);
 };
 
 }  // namespace rtc

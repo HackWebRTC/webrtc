@@ -40,7 +40,7 @@ class RawFile final {
  private:
   FILE* file_handle_;
 
-  DISALLOW_COPY_AND_ASSIGN(RawFile);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RawFile);
 };
 
 void WriteIntData(const int16_t* data,

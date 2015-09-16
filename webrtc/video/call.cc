@@ -124,7 +124,7 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   RtcEventLog* event_log_;
 
-  DISALLOW_COPY_AND_ASSIGN(Call);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
 }  // namespace internal
 

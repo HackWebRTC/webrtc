@@ -134,7 +134,7 @@ class Profiler {
   EventMap events_;
   mutable SharedExclusiveLock lock_;
 
-  DISALLOW_COPY_AND_ASSIGN(Profiler);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Profiler);
 };
 
 // Starts an event on construction and stops it on destruction.
@@ -151,7 +151,7 @@ class ProfilerScope {
  private:
   std::string event_name_;
 
-  DISALLOW_COPY_AND_ASSIGN(ProfilerScope);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ProfilerScope);
 };
 
 std::ostream& operator<<(std::ostream& stream,

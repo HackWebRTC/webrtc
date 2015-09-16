@@ -35,7 +35,7 @@ class ResourceFileReader {
  private:
   explicit ResourceFileReader(FILE* file) : file_(file) {}
   FILE* file_;
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ResourceFileReader);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ResourceFileReader);
 };
 
 class OutputFileWriter {
@@ -50,7 +50,7 @@ class OutputFileWriter {
  private:
   explicit OutputFileWriter(FILE* file) : file_(file) {}
   FILE* file_;
-  DISALLOW_IMPLICIT_CONSTRUCTORS(OutputFileWriter);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(OutputFileWriter);
 };
 }  // namespace bwe
 }  // namespace testing

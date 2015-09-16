@@ -81,7 +81,7 @@ class Differ {
   int diff_info_height_;
   int diff_info_size_;
 
-  DISALLOW_COPY_AND_ASSIGN(Differ);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Differ);
 };
 
 }  // namespace webrtc

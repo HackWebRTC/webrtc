@@ -86,7 +86,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
   PacketQueue packets_;
   FrameType frame_type_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtpPacketizerH264);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerH264);
 };
 
 // Depacketizer for H264.

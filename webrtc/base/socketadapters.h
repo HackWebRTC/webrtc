@@ -50,7 +50,7 @@ class BufferedReadAdapter : public AsyncSocketAdapter {
   char * buffer_;
   size_t buffer_size_, data_len_;
   bool buffering_;
-  DISALLOW_COPY_AND_ASSIGN(BufferedReadAdapter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BufferedReadAdapter);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ class AsyncSSLSocket : public BufferedReadAdapter {
  protected:
   void OnConnectEvent(AsyncSocket* socket) override;
   void ProcessInput(char* data, size_t* len) override;
-  DISALLOW_COPY_AND_ASSIGN(AsyncSSLSocket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncSSLSocket);
 };
 
 // Implements a socket adapter that performs the server side of a
@@ -89,7 +89,7 @@ class AsyncSSLServerSocket : public BufferedReadAdapter {
 
  protected:
   void ProcessInput(char* data, size_t* len) override;
-  DISALLOW_COPY_AND_ASSIGN(AsyncSSLServerSocket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncSSLServerSocket);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -137,7 +137,7 @@ class AsyncHttpsProxySocket : public BufferedReadAdapter {
   } state_;
   HttpAuthContext * context_;
   std::string unknown_mechanisms_;
-  DISALLOW_COPY_AND_ASSIGN(AsyncHttpsProxySocket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncHttpsProxySocket);
 };
 
 /* TODO: Implement this.
@@ -148,7 +148,7 @@ class AsyncHttpsProxyServerSocket : public AsyncProxyServerSocket {
  private:
   virtual void ProcessInput(char * data, size_t& len);
   void Error(int error);
-  DISALLOW_COPY_AND_ASSIGN(AsyncHttpsProxyServerSocket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncHttpsProxyServerSocket);
 };
 */
 
@@ -183,7 +183,7 @@ class AsyncSocksProxySocket : public BufferedReadAdapter {
   SocketAddress proxy_, dest_;
   std::string user_;
   CryptString pass_;
-  DISALLOW_COPY_AND_ASSIGN(AsyncSocksProxySocket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncSocksProxySocket);
 };
 
 // Implements a proxy server socket for the SOCKS protocol.
@@ -209,7 +209,7 @@ class AsyncSocksProxyServerSocket : public AsyncProxyServerSocket {
     SS_HELLO, SS_AUTH, SS_CONNECT, SS_CONNECT_PENDING, SS_TUNNEL, SS_ERROR
   };
   State state_;
-  DISALLOW_COPY_AND_ASSIGN(AsyncSocksProxyServerSocket);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncSocksProxyServerSocket);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -235,7 +235,7 @@ class LoggingSocketAdapter : public AsyncSocketAdapter {
   std::string label_;
   bool hex_mode_;
   LogMultilineState lms_;
-  DISALLOW_COPY_AND_ASSIGN(LoggingSocketAdapter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(LoggingSocketAdapter);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

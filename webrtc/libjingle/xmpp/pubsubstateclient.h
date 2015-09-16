@@ -263,7 +263,7 @@ class PubSubStateClient : public sigslot::has_slots<> {
   // itemid => StateItemInfo
   std::map<std::string, StateItemInfo> info_by_itemid_;
 
-  DISALLOW_COPY_AND_ASSIGN(PubSubStateClient);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PubSubStateClient);
 };
 }  // namespace buzz
 

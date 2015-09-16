@@ -161,7 +161,7 @@ class DecisionLogic {
   const NetEqPlayoutMode playout_mode_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(DecisionLogic);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DecisionLogic);
 };
 
 }  // namespace webrtc

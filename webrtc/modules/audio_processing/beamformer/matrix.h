@@ -360,7 +360,7 @@ class Matrix {
     return *this;
   }
 
-  DISALLOW_COPY_AND_ASSIGN(Matrix);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Matrix);
 };
 
 }  // namespace webrtc

@@ -72,7 +72,7 @@ class SCOPED_LOCKABLE CritScope {
   ~CritScope() UNLOCK_FUNCTION();
  private:
   CriticalSection* const cs_;
-  DISALLOW_COPY_AND_ASSIGN(CritScope);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CritScope);
 };
 
 // Tries to lock a critical section on construction via
@@ -95,7 +95,7 @@ class TryCritScope {
   CriticalSection* const cs_;
   const bool locked_;
   CS_DEBUG_CODE(mutable bool lock_was_called_);
-  DISALLOW_COPY_AND_ASSIGN(TryCritScope);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TryCritScope);
 };
 
 // A POD lock used to protect global variables. Do NOT use for other purposes.
@@ -121,7 +121,7 @@ class SCOPED_LOCKABLE GlobalLockScope {
   ~GlobalLockScope() UNLOCK_FUNCTION();
  private:
   GlobalLockPod* const lock_;
-  DISALLOW_COPY_AND_ASSIGN(GlobalLockScope);
+  RTC_DISALLOW_COPY_AND_ASSIGN(GlobalLockScope);
 };
 
 } // namespace rtc

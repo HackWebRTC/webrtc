@@ -44,7 +44,7 @@ class LifeCycleObject {
 
   Observer* observer_;
 
-  DISALLOW_COPY_AND_ASSIGN(LifeCycleObject);
+  RTC_DISALLOW_COPY_AND_ASSIGN(LifeCycleObject);
 };
 
 // The life cycle states we care about for the purposes of testing ScopedVector
@@ -107,7 +107,7 @@ class LifeCycleWatcher : public LifeCycleObject::Observer {
   LifeCycleState life_cycle_state_;
   rtc::scoped_ptr<LifeCycleObject> constructed_life_cycle_object_;
 
-  DISALLOW_COPY_AND_ASSIGN(LifeCycleWatcher);
+  RTC_DISALLOW_COPY_AND_ASSIGN(LifeCycleWatcher);
 };
 
 TEST(ScopedVectorTest, LifeCycleWatcher) {
@@ -266,7 +266,7 @@ class DeleteCounter {
  private:
   int* const deletes_;
 
-  DISALLOW_COPY_AND_ASSIGN(DeleteCounter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DeleteCounter);
 };
 
 // This class is used in place of Chromium's base::Callback.

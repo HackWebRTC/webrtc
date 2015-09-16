@@ -360,7 +360,7 @@ class VCMJitterBuffer {
   // average_packets_per_frame converges fast if we have fewer than this many
   // frames.
   int frame_counter_;
-  DISALLOW_COPY_AND_ASSIGN(VCMJitterBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(VCMJitterBuffer);
 };
 }  // namespace webrtc
 

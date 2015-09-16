@@ -223,7 +223,7 @@ class AlsaStream {
   int flags_;
   int freq_;
 
-  DISALLOW_COPY_AND_ASSIGN(AlsaStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AlsaStream);
 };
 
 // Implementation of an input stream. See soundinputstreaminterface.h regarding
@@ -329,7 +329,7 @@ class AlsaInputStream :
   rtc::scoped_ptr<char[]> buffer_;
   size_t buffer_size_;
 
-  DISALLOW_COPY_AND_ASSIGN(AlsaInputStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AlsaInputStream);
 };
 
 // Implementation of an output stream. See soundoutputstreaminterface.h
@@ -434,7 +434,7 @@ class AlsaOutputStream :
 
   AlsaStream stream_;
 
-  DISALLOW_COPY_AND_ASSIGN(AlsaOutputStream);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AlsaOutputStream);
 };
 
 AlsaSoundSystem::AlsaSoundSystem() : initialized_(false) {}

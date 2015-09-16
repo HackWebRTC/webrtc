@@ -57,7 +57,7 @@ class RemoteVideoCapturer : public cricket::VideoCapturer {
   bool IsScreencast() const override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(RemoteVideoCapturer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RemoteVideoCapturer);
 };
 
 }  // namespace webrtc

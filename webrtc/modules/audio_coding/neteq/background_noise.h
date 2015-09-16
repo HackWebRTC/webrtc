@@ -130,7 +130,7 @@ class BackgroundNoise {
   bool initialized_;
   NetEq::BackgroundNoiseMode mode_;
 
-  DISALLOW_COPY_AND_ASSIGN(BackgroundNoise);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BackgroundNoise);
 };
 
 }  // namespace webrtc

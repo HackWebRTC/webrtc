@@ -87,7 +87,7 @@ class RtpDumpWriter : public RtpFileWriter {
 
   FILE* file_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtpDumpWriter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpDumpWriter);
 };
 
 RtpFileWriter* RtpFileWriter::Create(FileFormat format,

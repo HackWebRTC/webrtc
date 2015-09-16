@@ -45,7 +45,7 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
   rtc::StreamState state_;
   rtc::BufferQueue packets_;
 
-  DISALLOW_COPY_AND_ASSIGN(StreamInterfaceChannel);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamInterfaceChannel);
 };
 
 
@@ -243,7 +243,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   rtc::Buffer remote_fingerprint_value_;
   std::string remote_fingerprint_algorithm_;
 
-  DISALLOW_COPY_AND_ASSIGN(DtlsTransportChannelWrapper);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DtlsTransportChannelWrapper);
 };
 
 }  // namespace cricket

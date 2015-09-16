@@ -90,7 +90,7 @@ class YuvFramesCapturer : public VideoCapturer {
   int32 barcode_interval_;
   int32 GetBarcodeValue();
 
-  DISALLOW_COPY_AND_ASSIGN(YuvFramesCapturer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(YuvFramesCapturer);
 };
 
 }  // namespace cricket

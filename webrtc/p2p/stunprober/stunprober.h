@@ -190,7 +190,7 @@ class StunProber : public sigslot::has_slots<> {
 
   rtc::NetworkManager::NetworkList networks_;
 
-  DISALLOW_COPY_AND_ASSIGN(StunProber);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StunProber);
 };
 
 }  // namespace stunprober

@@ -56,7 +56,7 @@ class Atomic32 {
     return (reinterpret_cast<ptrdiff_t>(&value_) & 3) == 0;
   }
 
-  DISALLOW_COPY_AND_ASSIGN(Atomic32);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Atomic32);
 
   int32_t value_;
 };

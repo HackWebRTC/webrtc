@@ -61,7 +61,7 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   int64_t last_process_time_;
   int64_t process_interval_ms_ GUARDED_BY(crit_sect_.get());
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorSingleStream);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorSingleStream);
 };
 
 }  // namespace webrtc

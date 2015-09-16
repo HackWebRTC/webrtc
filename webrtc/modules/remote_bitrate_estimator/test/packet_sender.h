@@ -96,7 +96,7 @@ class VideoSender : public PacketSender, public BitrateObserver {
 
  private:
   uint32_t previous_sending_bitrate_;
-  DISALLOW_COPY_AND_ASSIGN(VideoSender);
+  RTC_DISALLOW_COPY_AND_ASSIGN(VideoSender);
 };
 
 class PacedVideoSender : public VideoSender, public PacedSender::Callback {
@@ -129,7 +129,7 @@ class PacedVideoSender : public VideoSender, public PacedSender::Callback {
   Packets queue_;
   Packets pacer_queue_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(PacedVideoSender);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(PacedVideoSender);
 };
 
 class TcpSender : public PacketSender {

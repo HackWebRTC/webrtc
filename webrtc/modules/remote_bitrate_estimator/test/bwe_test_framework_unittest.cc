@@ -208,7 +208,7 @@ class BweTestFramework_RateCounterFilterTest : public ::testing::Test {
   RateCounterFilter filter_;
   int64_t now_ms_;
 
-  DISALLOW_COPY_AND_ASSIGN(BweTestFramework_RateCounterFilterTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BweTestFramework_RateCounterFilterTest);
 };
 
 TEST_F(BweTestFramework_RateCounterFilterTest, Short) {
@@ -382,7 +382,7 @@ class BweTestFramework_DelayFilterTest : public ::testing::Test {
   int64_t now_ms_;
   uint16_t sequence_number_;
 
-  DISALLOW_COPY_AND_ASSIGN(BweTestFramework_DelayFilterTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BweTestFramework_DelayFilterTest);
 };
 
 TEST_F(BweTestFramework_DelayFilterTest, Delay0) {
@@ -667,7 +667,7 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
   Packets output_packets_;
   std::vector<int64_t> send_times_us_;
 
-  DISALLOW_COPY_AND_ASSIGN(BweTestFramework_ChokeFilterTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BweTestFramework_ChokeFilterTest);
 };
 
 TEST_F(BweTestFramework_ChokeFilterTest, NoQueue) {

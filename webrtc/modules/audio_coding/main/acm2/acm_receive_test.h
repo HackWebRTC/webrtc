@@ -56,7 +56,7 @@ class AcmReceiveTest {
   const int output_freq_hz_;
   NumOutputChannels expected_output_channels_;
 
-  DISALLOW_COPY_AND_ASSIGN(AcmReceiveTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AcmReceiveTest);
 };
 
 }  // namespace test

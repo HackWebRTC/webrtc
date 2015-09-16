@@ -43,7 +43,7 @@ class AudioDecoderOpus : public AudioDecoder {
  private:
   OpusDecInst* dec_state_;
   const size_t channels_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpus);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpus);
 };
 
 }  // namespace webrtc

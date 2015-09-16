@@ -24,7 +24,7 @@ class WindowGenerator {
   static void KaiserBesselDerived(float alpha, size_t length, float* window);
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(WindowGenerator);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WindowGenerator);
 };
 
 }  // namespace webrtc

@@ -239,7 +239,7 @@ class LogMessage {
   // Determines if logs will be directed to stderr in debug mode.
   static bool log_to_stderr_;
 
-  DISALLOW_COPY_AND_ASSIGN(LogMessage);
+  RTC_DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
 
 //////////////////////////////////////////////////////////////////////

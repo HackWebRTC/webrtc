@@ -107,7 +107,7 @@ class DtmfBuffer {
 
   DtmfList buffer_;
 
-  DISALLOW_COPY_AND_ASSIGN(DtmfBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DtmfBuffer);
 };
 
 }  // namespace webrtc

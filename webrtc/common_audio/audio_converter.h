@@ -58,7 +58,7 @@ class AudioConverter {
   const int dst_channels_;
   const size_t dst_frames_;
 
-  DISALLOW_COPY_AND_ASSIGN(AudioConverter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioConverter);
 };
 
 }  // namespace webrtc

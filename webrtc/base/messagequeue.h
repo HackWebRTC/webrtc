@@ -248,7 +248,7 @@ class MessageQueue {
   mutable CriticalSection crit_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(MessageQueue);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MessageQueue);
 };
 
 }  // namespace rtc

@@ -797,7 +797,7 @@ class SrtpStatTest
   cricket::SrtpFilter::Error error_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SrtpStatTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SrtpStatTest);
 };
 
 TEST_F(SrtpStatTest, TestProtectRtpError) {

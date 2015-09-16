@@ -104,7 +104,7 @@ struct CapturedFrame {
                         // memory or points to an existing memory.
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(CapturedFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CapturedFrame);
 };
 
 // VideoCapturer is an abstract class that defines the interfaces for video
@@ -397,7 +397,7 @@ class VideoCapturer
   // Whether capturer should apply rotation to the frame before signaling it.
   bool apply_rotation_;
 
-  DISALLOW_COPY_AND_ASSIGN(VideoCapturer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(VideoCapturer);
 };
 
 }  // namespace cricket

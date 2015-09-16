@@ -280,7 +280,7 @@ class ScreenCapturerMac : public ScreenCapturer {
 
   CGWindowID excluded_window_;
 
-  DISALLOW_COPY_AND_ASSIGN(ScreenCapturerMac);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerMac);
 };
 
 // DesktopFrame wrapper that flips wrapped frame upside down by inverting
@@ -303,7 +303,7 @@ class InvertedDesktopFrame : public DesktopFrame {
  private:
   rtc::scoped_ptr<DesktopFrame> original_frame_;
 
-  DISALLOW_COPY_AND_ASSIGN(InvertedDesktopFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(InvertedDesktopFrame);
 };
 
 ScreenCapturerMac::ScreenCapturerMac(

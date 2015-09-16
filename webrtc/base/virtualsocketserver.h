@@ -243,7 +243,7 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   CriticalSection delay_crit_;
 
   double drop_prob_;
-  DISALLOW_COPY_AND_ASSIGN(VirtualSocketServer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(VirtualSocketServer);
 };
 
 // Implements the socket interface using the virtual network.  Packets are

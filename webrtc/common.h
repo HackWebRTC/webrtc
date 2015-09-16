@@ -95,7 +95,7 @@ class Config {
   typedef std::map<OptionIdentifier, BaseOption*> OptionMap;
   OptionMap options_;
 
-  // DISALLOW_COPY_AND_ASSIGN
+  // RTC_DISALLOW_COPY_AND_ASSIGN
   Config(const Config&);
   void operator=(const Config&);
 };

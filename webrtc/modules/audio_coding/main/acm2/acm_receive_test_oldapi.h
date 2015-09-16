@@ -64,7 +64,7 @@ class AcmReceiveTestOldApi {
   int output_freq_hz_;
   NumOutputChannels exptected_output_channels_;
 
-  DISALLOW_COPY_AND_ASSIGN(AcmReceiveTestOldApi);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AcmReceiveTestOldApi);
 };
 
 // This test toggles the output frequency every |toggle_period_ms|. The test

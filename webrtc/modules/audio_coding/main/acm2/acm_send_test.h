@@ -74,7 +74,7 @@ class AcmSendTest : public AudioPacketizationCallback, public PacketSource {
   uint16_t sequence_number_;
   std::vector<uint8_t> last_payload_vec_;
 
-  DISALLOW_COPY_AND_ASSIGN(AcmSendTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AcmSendTest);
 };
 
 }  // namespace test

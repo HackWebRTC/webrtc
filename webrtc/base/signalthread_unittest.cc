@@ -57,7 +57,7 @@ class SignalThreadTest : public testing::Test, public sigslot::has_slots<> {
 
    private:
     SignalThreadTest* harness_;
-    DISALLOW_COPY_AND_ASSIGN(SlowSignalThread);
+    RTC_DISALLOW_COPY_AND_ASSIGN(SlowSignalThread);
   };
 
   void OnWorkComplete(rtc::SignalThread* thread) {
@@ -128,7 +128,7 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
  private:
   SignalThreadTest* harness_;
   bool has_run_;
-  DISALLOW_COPY_AND_ASSIGN(OwnerThread);
+  RTC_DISALLOW_COPY_AND_ASSIGN(OwnerThread);
 };
 
 // Test for when the main thread goes away while the

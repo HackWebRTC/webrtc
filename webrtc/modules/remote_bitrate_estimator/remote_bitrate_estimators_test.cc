@@ -256,7 +256,7 @@ class BweFeedbackTest
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(BweFeedbackTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BweFeedbackTest);
 };
 
 INSTANTIATE_TEST_CASE_P(VideoSendersTest,

@@ -47,7 +47,7 @@ class SinusoidalLinearChirpSource : public SincResamplerCallback {
   size_t current_index_;
   double delay_samples_;
 
-  DISALLOW_COPY_AND_ASSIGN(SinusoidalLinearChirpSource);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SinusoidalLinearChirpSource);
 };
 
 }  // namespace webrtc

@@ -89,7 +89,7 @@ class WindowCapturerWin : public WindowCapturer {
 
   AeroChecker aero_checker_;
 
-  DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
+  RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
 };
 
 WindowCapturerWin::WindowCapturerWin()

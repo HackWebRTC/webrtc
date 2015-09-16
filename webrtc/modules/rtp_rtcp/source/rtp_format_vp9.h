@@ -91,7 +91,7 @@ class RtpPacketizerVp9 : public RtpPacketizer {
   size_t payload_size_;              // The size in bytes of the payload data.
   PacketInfoQueue packets_;
 
-  DISALLOW_COPY_AND_ASSIGN(RtpPacketizerVp9);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerVp9);
 };
 
 

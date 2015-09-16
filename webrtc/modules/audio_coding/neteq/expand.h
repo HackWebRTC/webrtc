@@ -140,7 +140,7 @@ class Expand {
   size_t expand_duration_samples_;
   rtc::scoped_ptr<ChannelParameters[]> channel_parameters_;
 
-  DISALLOW_COPY_AND_ASSIGN(Expand);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Expand);
 };
 
 struct ExpandFactory {

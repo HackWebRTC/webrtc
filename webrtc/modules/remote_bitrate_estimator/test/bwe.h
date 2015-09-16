@@ -122,7 +122,7 @@ class BweSender : public Module {
   int bitrate_kbps_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(BweSender);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BweSender);
 };
 
 class BweReceiver {

@@ -109,7 +109,7 @@ class TimeStretch {
   bool SpeechDetection(int32_t vec1_energy, int32_t vec2_energy,
                        size_t peak_index, int scaling) const;
 
-  DISALLOW_COPY_AND_ASSIGN(TimeStretch);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TimeStretch);
 };
 
 }  // namespace webrtc

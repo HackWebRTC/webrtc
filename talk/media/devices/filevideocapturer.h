@@ -71,7 +71,7 @@ class VideoRecorder {
   rtc::FileStream video_file_;
   bool write_header_;
 
-  DISALLOW_COPY_AND_ASSIGN(VideoRecorder);
+  RTC_DISALLOW_COPY_AND_ASSIGN(VideoRecorder);
 };
 
 // Simulated video capturer that periodically reads frames from a file.
@@ -153,7 +153,7 @@ class FileVideoCapturer : public VideoCapturer {
   int64 last_frame_timestamp_ns_;  // Timestamp of last read frame.
   bool ignore_framerate_;
 
-  DISALLOW_COPY_AND_ASSIGN(FileVideoCapturer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FileVideoCapturer);
 };
 
 }  // namespace cricket

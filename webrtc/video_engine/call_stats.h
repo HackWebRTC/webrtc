@@ -73,7 +73,7 @@ class CallStats : public Module {
   // Observers getting stats reports.
   std::list<CallStatsObserver*> observers_;
 
-  DISALLOW_COPY_AND_ASSIGN(CallStats);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CallStats);
 };
 
 }  // namespace webrtc

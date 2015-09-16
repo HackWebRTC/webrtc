@@ -26,7 +26,7 @@ class RemoteBitrateEstimatorAbsSendTimeTest :
         kRemoteBitrateEstimatorMinBitrateBps));
   }
  protected:
-  DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorAbsSendTimeTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorAbsSendTimeTest);
 };
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, InitialBehavior) {

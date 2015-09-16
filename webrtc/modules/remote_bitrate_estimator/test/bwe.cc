@@ -70,7 +70,7 @@ class NullBweSender : public BweSender {
   int Process() override { return 0; }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(NullBweSender);
+  RTC_DISALLOW_COPY_AND_ASSIGN(NullBweSender);
 };
 
 int64_t GetAbsSendTimeInMs(uint32_t abs_send_time) {

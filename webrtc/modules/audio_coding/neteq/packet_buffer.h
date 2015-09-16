@@ -148,7 +148,7 @@ class PacketBuffer {
  private:
   size_t max_number_of_packets_;
   PacketList buffer_;
-  DISALLOW_COPY_AND_ASSIGN(PacketBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PacketBuffer);
 };
 
 }  // namespace webrtc

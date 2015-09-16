@@ -68,7 +68,7 @@ class PushSincResampler : public SincResamplerCallback {
   // Used to assert we are only requested for as much data as is available.
   size_t source_available_;
 
-  DISALLOW_COPY_AND_ASSIGN(PushSincResampler);
+  RTC_DISALLOW_COPY_AND_ASSIGN(PushSincResampler);
 };
 
 }  // namespace webrtc

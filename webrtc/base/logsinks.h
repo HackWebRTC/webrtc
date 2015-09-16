@@ -48,7 +48,7 @@ class FileRotatingLogSink : public LogSink {
  private:
   scoped_ptr<FileRotatingStream> stream_;
 
-  DISALLOW_COPY_AND_ASSIGN(FileRotatingLogSink);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FileRotatingLogSink);
 };
 
 // Log sink that uses a CallSessionFileRotatingStream to write to disk.
@@ -60,7 +60,7 @@ class CallSessionFileRotatingLogSink : public FileRotatingLogSink {
   ~CallSessionFileRotatingLogSink() override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(CallSessionFileRotatingLogSink);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CallSessionFileRotatingLogSink);
 };
 
 }  // namespace rtc

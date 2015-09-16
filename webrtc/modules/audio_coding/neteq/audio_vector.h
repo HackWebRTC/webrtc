@@ -105,7 +105,7 @@ class AudioVector {
                           // Note that this index may point outside of array_.
   size_t capacity_;  // Allocated number of samples in the array.
 
-  DISALLOW_COPY_AND_ASSIGN(AudioVector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioVector);
 };
 
 }  // namespace webrtc

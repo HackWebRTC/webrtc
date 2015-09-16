@@ -61,7 +61,7 @@ class FullScreenChromeWindowDetector {
   WindowCapturer::WindowList previous_window_list_;
   TickTime last_udpate_time_;
 
-  DISALLOW_COPY_AND_ASSIGN(FullScreenChromeWindowDetector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FullScreenChromeWindowDetector);
 };
 
 }  // namespace webrtc

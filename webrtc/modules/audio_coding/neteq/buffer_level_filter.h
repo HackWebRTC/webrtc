@@ -42,7 +42,7 @@ class BufferLevelFilter {
   int level_factor_;  // Filter factor for the buffer level filter in Q8.
   int filtered_current_level_;  // Filtered current buffer level in Q8.
 
-  DISALLOW_COPY_AND_ASSIGN(BufferLevelFilter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BufferLevelFilter);
 };
 
 }  // namespace webrtc

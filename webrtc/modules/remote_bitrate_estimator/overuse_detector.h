@@ -59,7 +59,7 @@ class OveruseDetector {
   int overuse_counter_;
   BandwidthUsage hypothesis_;
 
-  DISALLOW_COPY_AND_ASSIGN(OveruseDetector);
+  RTC_DISALLOW_COPY_AND_ASSIGN(OveruseDetector);
 };
 }  // namespace webrtc
 

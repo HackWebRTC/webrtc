@@ -65,7 +65,7 @@ class Accelerate : public TimeStretch {
                                       AudioMultiVector* output) const override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Accelerate);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Accelerate);
 };
 
 struct AccelerateFactory {

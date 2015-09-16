@@ -91,7 +91,7 @@ class AudioEncoderIsacT final : public AudioEncoder {
   // Timestamp of the previously encoded packet.
   uint32_t last_encoded_timestamp_;
 
-  DISALLOW_COPY_AND_ASSIGN(AudioEncoderIsacT);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderIsacT);
 };
 
 template <typename T>
@@ -122,7 +122,7 @@ class AudioDecoderIsacT final : public AudioDecoder {
   LockedIsacBandwidthInfo* bwinfo_;
   int decoder_sample_rate_hz_;
 
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacT);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacT);
 };
 
 }  // namespace webrtc

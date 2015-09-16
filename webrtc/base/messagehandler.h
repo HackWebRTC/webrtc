@@ -29,7 +29,7 @@ class MessageHandler {
   MessageHandler() {}
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(MessageHandler);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MessageHandler);
 };
 
 // Helper class to facilitate executing a functor on a thread.

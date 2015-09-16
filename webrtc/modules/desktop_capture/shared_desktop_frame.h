@@ -41,7 +41,7 @@ class SharedDesktopFrame : public DesktopFrame {
 
   rtc::scoped_refptr<Core> core_;
 
-  DISALLOW_COPY_AND_ASSIGN(SharedDesktopFrame);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SharedDesktopFrame);
 };
 
 }  // namespace webrtc

@@ -145,7 +145,7 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   // successfully. Reset at the beginning of each CaptureImage call.
   bool magnifier_capture_succeeded_;
 
-  DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinMagnifier);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinMagnifier);
 };
 
 }  // namespace webrtc

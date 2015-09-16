@@ -85,7 +85,7 @@ public:
     RTCPVoIPMetric*  VoIPMetric;
 
 private:
-    DISALLOW_COPY_AND_ASSIGN(RTCPPacketInformation);
+    RTC_DISALLOW_COPY_AND_ASSIGN(RTCPPacketInformation);
 };
 
 class RTCPReceiveInformation

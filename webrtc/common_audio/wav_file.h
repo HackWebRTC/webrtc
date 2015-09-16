@@ -58,7 +58,7 @@ class WavWriter final : public WavFile {
   uint32_t num_samples_;  // Total number of samples written to file.
   FILE* file_handle_;  // Output file, owned by this class
 
-  DISALLOW_COPY_AND_ASSIGN(WavWriter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(WavWriter);
 };
 
 // Follows the conventions of WavWriter.
@@ -87,7 +87,7 @@ class WavReader final : public WavFile {
   uint32_t num_samples_remaining_;
   FILE* file_handle_;  // Input file, owned by this class.
 
-  DISALLOW_COPY_AND_ASSIGN(WavReader);
+  RTC_DISALLOW_COPY_AND_ASSIGN(WavReader);
 };
 
 }  // namespace webrtc

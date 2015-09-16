@@ -349,7 +349,7 @@ class ViEChannel : public VCMFrameTypeCallback,
     T* callback_ GUARDED_BY(critsect_);
 
    private:
-    DISALLOW_COPY_AND_ASSIGN(RegisterableCallback);
+    RTC_DISALLOW_COPY_AND_ASSIGN(RegisterableCallback);
   };
 
   class RegisterableBitrateStatisticsObserver:

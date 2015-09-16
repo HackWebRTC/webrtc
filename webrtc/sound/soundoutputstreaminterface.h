@@ -64,7 +64,7 @@ class SoundOutputStreamInterface {
   SoundOutputStreamInterface() {}
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SoundOutputStreamInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(SoundOutputStreamInterface);
 };
 
 }  // namespace rtc

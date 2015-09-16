@@ -147,7 +147,7 @@ class DecoderDatabase {
   int active_decoder_;
   int active_cng_decoder_;
 
-  DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
 };
 
 }  // namespace webrtc

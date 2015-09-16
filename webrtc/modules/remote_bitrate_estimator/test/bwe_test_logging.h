@@ -248,7 +248,7 @@ class Logging {
     Context(const char* name, int64_t timestamp_ms, bool enabled);
     ~Context();
    private:
-    DISALLOW_IMPLICIT_CONSTRUCTORS(Context);
+    RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Context);
   };
 
   static Logging* GetInstance();
@@ -313,7 +313,7 @@ class Logging {
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   ThreadMap thread_map_;
 
-  DISALLOW_COPY_AND_ASSIGN(Logging);
+  RTC_DISALLOW_COPY_AND_ASSIGN(Logging);
 };
 }  // namespace bwe
 }  // namespace testing

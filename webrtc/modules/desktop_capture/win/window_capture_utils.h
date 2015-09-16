@@ -34,7 +34,7 @@ class AeroChecker {
   HMODULE dwmapi_library_;
   DwmIsCompositionEnabledFunc func_;
 
-  DISALLOW_COPY_AND_ASSIGN(AeroChecker);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AeroChecker);
 };
 
 }  // namespace webrtc

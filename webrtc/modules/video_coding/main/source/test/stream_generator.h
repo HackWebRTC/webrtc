@@ -64,7 +64,7 @@ class StreamGenerator {
   int64_t start_time_;
   uint8_t packet_buffer_[kMaxPacketSize];
 
-  DISALLOW_COPY_AND_ASSIGN(StreamGenerator);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamGenerator);
 };
 
 }  // namespace webrtc
