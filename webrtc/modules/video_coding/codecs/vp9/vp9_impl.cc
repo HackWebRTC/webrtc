@@ -402,10 +402,9 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   if (codec_.mode == kScreensharing) {
     // Adjust internal parameters to screen content.
     vpx_codec_control(encoder_, VP9E_SET_TUNE_CONTENT, 1);
-    // Let the encoder skip the encoding of very flat/low content blocks.
-    vpx_codec_control(encoder_, VP8E_SET_STATIC_THRESHOLD, 1);
   }
-
+  // Enable encoder skip of static/low content blocks.
+  vpx_codec_control(encoder_, VP8E_SET_STATIC_THRESHOLD, 1);
   inited_ = true;
   return WEBRTC_VIDEO_CODEC_OK;
 }
