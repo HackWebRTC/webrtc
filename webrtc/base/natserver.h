@@ -109,7 +109,6 @@ class NATServer : public sigslot::has_slots<> {
   bool ShouldFilterOut(TransEntry* entry, const SocketAddress& ext_addr);
 
   NAT* nat_;
-  SocketFactory* internal_;
   SocketFactory* external_;
   SocketAddress external_ip_;
   AsyncUDPSocket* udp_server_socket_;

@@ -26,6 +26,7 @@
 #endif
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/socketaddress.h"
 
 // Rather than converting errors into a private namespace,

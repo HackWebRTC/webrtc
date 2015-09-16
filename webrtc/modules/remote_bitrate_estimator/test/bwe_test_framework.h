@@ -370,7 +370,6 @@ class ChokeFilter : public PacketProcessor {
   uint32_t capacity_kbps_;
   int64_t last_send_time_us_;
   rtc::scoped_ptr<DelayCapHelper> delay_cap_helper_;
-  int64_t max_delay_us_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ChokeFilter);
 };
@@ -447,8 +446,6 @@ class VideoSource {
   int64_t next_frame_rand_ms_;
   int64_t now_ms_;
   RTPHeader prototype_header_;
-  int64_t start_plotting_ms_;
-  uint32_t previous_bitrate_bps_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(VideoSource);
 };
