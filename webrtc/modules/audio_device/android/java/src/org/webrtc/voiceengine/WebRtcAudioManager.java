@@ -17,7 +17,8 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.os.Build;
-import android.util.Log;
+
+import org.webrtc.Logging;
 
 import java.lang.Math;
 
@@ -244,11 +245,11 @@ class WebRtcAudioManager {
   }
 
   private static void Logd(String msg) {
-    Log.d(TAG, msg);
+    Logging.d(TAG, msg);
   }
 
   private static void Loge(String msg) {
-    Log.e(TAG, msg);
+    Logging.e(TAG, msg);
   }
 
   private native void nativeCacheAudioParameters(

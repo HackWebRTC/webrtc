@@ -111,8 +111,12 @@
           'type': 'none',
           'actions': [
             {
+              # TODO(jiayl): extract peerconnection_java_files and android_java_files into a webrtc
+              # gyp var that can be included here, or better yet, build a proper .jar in webrtc
+              # and include it here.
               'variables': {
                 'java_src_dir': 'app/webrtc/java/src',
+                'webrtc_base_dir': '<(webrtc_root)/base',
                 'webrtc_modules_dir': '<(webrtc_root)/modules',
                 'build_jar_log': '<(INTERMEDIATE_DIR)/build_jar.log',
                 'peerconnection_java_files': [
@@ -121,7 +125,6 @@
                   'app/webrtc/java/src/org/webrtc/CallSessionFileRotatingLogSink.java',
                   'app/webrtc/java/src/org/webrtc/DataChannel.java',
                   'app/webrtc/java/src/org/webrtc/IceCandidate.java',
-                  'app/webrtc/java/src/org/webrtc/Logging.java',
                   'app/webrtc/java/src/org/webrtc/MediaConstraints.java',
                   'app/webrtc/java/src/org/webrtc/MediaSource.java',
                   'app/webrtc/java/src/org/webrtc/MediaStream.java',
@@ -136,10 +139,8 @@
                   'app/webrtc/java/src/org/webrtc/VideoRenderer.java',
                   'app/webrtc/java/src/org/webrtc/VideoSource.java',
                   'app/webrtc/java/src/org/webrtc/VideoTrack.java',
+                  '<(webrtc_base_dir)/java/src/org/webrtc/Logging.java',
                 ],
-                # TODO(fischman): extract this into a webrtc gyp var that can be
-                # included here, or better yet, build a proper .jar in webrtc
-                # and include it here.
                 'android_java_files': [
                   'app/webrtc/java/android/org/webrtc/Camera2Enumerator.java',
                   'app/webrtc/java/android/org/webrtc/CameraEnumerationAndroid.java',
@@ -219,9 +220,11 @@
           ],
           'variables': {
             'java_in_dir': 'app/webrtc/java',
+            'webrtc_base_dir': '<(webrtc_root)/base',
             'webrtc_modules_dir': '<(webrtc_root)/modules',
             'additional_src_dirs' : [
               'app/webrtc/java/android',
+              '<(webrtc_base_dir)/java/src',
               '<(webrtc_modules_dir)/audio_device/android/java/src',
               '<(webrtc_modules_dir)/video_capture/android/java/src',
               '<(webrtc_modules_dir)/video_render/android/java/src',

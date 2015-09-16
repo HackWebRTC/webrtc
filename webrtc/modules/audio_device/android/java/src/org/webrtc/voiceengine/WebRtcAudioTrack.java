@@ -18,7 +18,8 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Process;
-import android.util.Log;
+
+import org.webrtc.Logging;
 
 class WebRtcAudioTrack {
   private static final boolean DEBUG = true;
@@ -248,11 +249,11 @@ class WebRtcAudioTrack {
   }
 
   private static void Logd(String msg) {
-    Log.d(TAG, msg);
+    Logging.d(TAG, msg);
   }
 
   private static void Loge(String msg) {
-    Log.e(TAG, msg);
+    Logging.e(TAG, msg);
   }
 
   private native void nativeCacheDirectBufferAddress(

@@ -21,10 +21,11 @@ import java.nio.ByteBuffer;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.SurfaceHolder.Callback;
+
+import org.webrtc.Logging;
 
 public class ViESurfaceRenderer implements Callback {
 
@@ -58,11 +59,11 @@ public class ViESurfaceRenderer implements Callback {
 
     public void surfaceChanged(SurfaceHolder holder, int format,
             int in_width, int in_height) {
-        Log.d(TAG, "ViESurfaceRender::surfaceChanged");
+        Logging.d(TAG, "ViESurfaceRender::surfaceChanged");
 
         changeDestRect(in_width, in_height);
 
-        Log.d(TAG, "ViESurfaceRender::surfaceChanged" +
+        Logging.d(TAG, "ViESurfaceRender::surfaceChanged" +
                 " in_width:" + in_width + " in_height:" + in_height +
                 " srcRect.left:" + srcRect.left +
                 " srcRect.top:" + srcRect.top +
@@ -80,7 +81,7 @@ public class ViESurfaceRenderer implements Callback {
             Rect dst = surfaceHolder.getSurfaceFrame();
             if(dst != null) {
                 changeDestRect(dst.right - dst.left, dst.bottom - dst.top);
-                Log.d(TAG, "ViESurfaceRender::surfaceCreated" +
+                Logging.d(TAG, "ViESurfaceRender::surfaceCreated" +
                         " dst.left:" + dst.left +
                         " dst.top:" + dst.top +
                         " dst.right:" + dst.right +
@@ -99,13 +100,13 @@ public class ViESurfaceRenderer implements Callback {
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
-        Log.d(TAG, "ViESurfaceRenderer::surfaceDestroyed");
+        Logging.d(TAG, "ViESurfaceRenderer::surfaceDestroyed");
         bitmap = null;
         byteBuffer = null;
     }
 
     public Bitmap CreateBitmap(int width, int height) {
-        Log.d(TAG, "CreateByteBitmap " + width + ":" + height);
+        Logging.d(TAG, "CreateByteBitmap " + width + ":" + height);
         if (bitmap == null) {
             try {
                 android.os.Process.setThreadPriority(
@@ -123,7 +124,7 @@ public class ViESurfaceRenderer implements Callback {
     }
 
     public ByteBuffer CreateByteBuffer(int width, int height) {
-        Log.d(TAG, "CreateByteBuffer " + width + ":" + height);
+        Logging.d(TAG, "CreateByteBuffer " + width + ":" + height);
         if (bitmap == null) {
             bitmap = CreateBitmap(width, height);
             byteBuffer = ByteBuffer.allocateDirect(width * height * 2);
@@ -133,7 +134,7 @@ public class ViESurfaceRenderer implements Callback {
 
     public void SetCoordinates(float left, float top,
             float right, float bottom) {
-        Log.d(TAG, "SetCoordinates " + left + "," + top + ":" +
+        Logging.d(TAG, "SetCoordinates " + left + "," + top + ":" +
                 right + "," + bottom);
         dstLeftScale = left;
         dstTopScale = top;

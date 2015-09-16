@@ -18,7 +18,8 @@ import android.media.audiofx.AudioEffect.Descriptor;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Process;
-import android.util.Log;
+
+import org.webrtc.Logging;
 
 import java.lang.Thread;
 
@@ -109,7 +110,7 @@ public final class WebRtcAudioUtils {
 
   // Information about the current build, taken from system properties.
   public static void logDeviceInfo(String tag) {
-    Log.d(tag, "Android SDK: " + Build.VERSION.SDK_INT + ", "
+    Logging.d(tag, "Android SDK: " + Build.VERSION.SDK_INT + ", "
         + "Release: " + Build.VERSION.RELEASE + ", "
         + "Brand: " + Build.BRAND + ", "
         + "Device: " + Build.DEVICE + ", "

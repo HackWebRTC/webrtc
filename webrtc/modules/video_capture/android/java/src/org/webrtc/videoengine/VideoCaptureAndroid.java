@@ -25,11 +25,12 @@ import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
+
+import org.webrtc.Logging;
 
 // Wrapper for android Camera, with support for direct local preview rendering.
 // Threading notes: this class is called from ViE C++ code, and from Camera &
@@ -102,7 +103,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private synchronized boolean startCapture(
       final int width, final int height,
       final int min_mfps, final int max_mfps) {
-    Log.d(TAG, "startCapture: " + width + "x" + height + "@" +
+    Logging.d(TAG, "startCapture: " + width + "x" + height + "@" +
         min_mfps + ":" + max_mfps);
     if (cameraThread != null || cameraThreadHandler != null) {
       throw new RuntimeException("Camera thread already started!");
@@ -164,10 +165,10 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         }
       }
 
-      Log.d(TAG, "Camera orientation: " + info.orientation +
+      Logging.d(TAG, "Camera orientation: " + info.orientation +
           " .Device orientation: " + getDeviceOrientation());
       Camera.Parameters parameters = camera.getParameters();
-      Log.d(TAG, "isVideoStabilizationSupported: " +
+      Logging.d(TAG, "isVideoStabilizationSupported: " +
           parameters.isVideoStabilizationSupported());
       if (parameters.isVideoStabilizationSupported()) {
         parameters.setVideoStabilization(true);
@@ -193,17 +194,17 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         }
       }
       if (frameDropRatio == Integer.MAX_VALUE) {
-        Log.e(TAG, "Can not find camera fps range");
+        Logging.e(TAG, "Can not find camera fps range");
         error = new RuntimeException("Can not find camera fps range");
         exchange(result, false);
         return;
       }
       if (frameDropRatio > 1) {
-        Log.d(TAG, "Frame dropper is enabled. Ratio: " + frameDropRatio);
+        Logging.d(TAG, "Frame dropper is enabled. Ratio: " + frameDropRatio);
       }
       min_mfps *= frameDropRatio;
       max_mfps *= frameDropRatio;
-      Log.d(TAG, "Camera preview mfps range: " + min_mfps + " - " + max_mfps);
+      Logging.d(TAG, "Camera preview mfps range: " + min_mfps + " - " + max_mfps);
       parameters.setPreviewFpsRange(min_mfps, max_mfps);
 
       int format = ImageFormat.NV21;
@@ -224,7 +225,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     } catch (RuntimeException e) {
       error = e;
     }
-    Log.e(TAG, "startCapture failed", error);
+    Logging.e(TAG, "startCapture failed", error);
     if (camera != null) {
       Exchanger<Boolean> resultDropper = new Exchanger<Boolean>();
       stopCaptureOnCameraThread(resultDropper);
@@ -236,7 +237,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
 
   // Called by native code.  Returns true when camera is known to be stopped.
   private synchronized boolean stopCapture() {
-    Log.d(TAG, "stopCapture");
+    Logging.d(TAG, "stopCapture");
     final Exchanger<Boolean> result = new Exchanger<Boolean>();
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
@@ -251,7 +252,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     }
     cameraThreadHandler = null;
     cameraThread = null;
-    Log.d(TAG, "stopCapture done");
+    Logging.d(TAG, "stopCapture done");
     return status;
   }
 
@@ -285,7 +286,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     } catch (RuntimeException e) {
       error = e;
     }
-    Log.e(TAG, "Failed to stop camera", error);
+    Logging.e(TAG, "Failed to stop camera", error);
     exchange(result, false);
     Looper.myLooper().quit();
     return;
@@ -341,7 +342,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       double durationMs = captureTimeMs - lastCaptureTimeMs;
       averageDurationMs = 0.9 * averageDurationMs + 0.1 * durationMs;
       if ((frameCount % 30) == 0) {
-        Log.d(TAG, "Camera TS " + captureTimeMs +
+        Logging.d(TAG, "Camera TS " + captureTimeMs +
             ". Duration: " + (int)durationMs + " ms. FPS: " +
             (int) (1000 / averageDurationMs + 0.5));
       }
@@ -380,7 +381,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
 
   private void setPreviewRotationOnCameraThread(
       int rotation, Exchanger<IOException> result) {
-    Log.v(TAG, "setPreviewRotation:" + rotation);
+    Logging.v(TAG, "setPreviewRotation:" + rotation);
 
     int resultRotation = 0;
     if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -398,13 +399,13 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   @Override
   public synchronized void surfaceChanged(
       SurfaceHolder holder, int format, int width, int height) {
-    Log.d(TAG, "VideoCaptureAndroid::surfaceChanged ignored: " +
+    Logging.d(TAG, "VideoCaptureAndroid::surfaceChanged ignored: " +
         format + ": " + width + "x" + height);
   }
 
   @Override
   public synchronized void surfaceCreated(final SurfaceHolder holder) {
-    Log.d(TAG, "VideoCaptureAndroid::surfaceCreated");
+    Logging.d(TAG, "VideoCaptureAndroid::surfaceCreated");
     if (camera == null || cameraThreadHandler == null) {
       return;
     }
@@ -422,7 +423,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
 
   @Override
   public synchronized void surfaceDestroyed(SurfaceHolder holder) {
-    Log.d(TAG, "VideoCaptureAndroid::surfaceDestroyed");
+    Logging.d(TAG, "VideoCaptureAndroid::surfaceDestroyed");
     if (camera == null || cameraThreadHandler == null) {
       return;
     }

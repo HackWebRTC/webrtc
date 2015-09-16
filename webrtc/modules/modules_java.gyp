@@ -13,7 +13,9 @@
       'type': 'none',
       'variables': {
         'java_in_dir': 'audio_device/android/java',
+        'additional_src_dirs': [ '../base/java/src', ],
       },
+
       'includes': [ '../../build/java.gypi' ],
     }, # audio_device_module_java
     {
@@ -24,6 +26,7 @@
       ],
       'variables': {
         'java_in_dir': 'video_capture/android/java',
+        'additional_src_dirs': [ '../base/java/src', ],
       },
       'includes': [ '../../build/java.gypi' ],
     }, # video_capture_module_java
@@ -32,6 +35,7 @@
       'type': 'none',
       'variables': {
         'java_in_dir': 'video_render/android/java',
+        'additional_src_dirs': [ '../base/java/src', ],
       },
       'includes': [ '../../build/java.gypi' ],
     }, # video_render_module_java

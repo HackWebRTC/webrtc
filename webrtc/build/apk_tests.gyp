@@ -239,6 +239,7 @@
       'type': 'none',
       'variables': {
         'java_in_dir': '<(webrtc_root)/modules/video_capture/android/java',
+        'additional_src_dirs': [ '<(webrtc_root)/base/java/src', ],
       },
       'includes': [
         '../../build/java.gypi',
@@ -249,6 +250,7 @@
       'type': 'none',
       'variables': {
         'java_in_dir': '<(webrtc_root)/modules/audio_device/android/java',
+        'additional_src_dirs': [ '<(webrtc_root)/base/java/src', ],
         'never_lint': 1,
       },
       'includes': [

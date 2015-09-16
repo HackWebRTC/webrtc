@@ -23,7 +23,8 @@ import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
-import android.util.Log;
+
+import org.webrtc.Logging;
 
 public class ViEAndroidGLES20 extends GLSurfaceView
         implements GLSurfaceView.Renderer {
@@ -85,7 +86,7 @@ public class ViEAndroidGLES20 extends GLSurfaceView
     private static class ContextFactory implements GLSurfaceView.EGLContextFactory {
         private static int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
         public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
-            Log.w(TAG, "creating OpenGL ES 2.0 context");
+            Logging.w(TAG, "creating OpenGL ES 2.0 context");
             checkEglError("Before eglCreateContext", egl);
             int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE };
             EGLContext context = egl.eglCreateContext(display, eglConfig,
@@ -102,7 +103,7 @@ public class ViEAndroidGLES20 extends GLSurfaceView
     private static void checkEglError(String prompt, EGL10 egl) {
         int error;
         while ((error = egl.eglGetError()) != EGL10.EGL_SUCCESS) {
-            Log.e(TAG, String.format("%s: EGL error: 0x%x", prompt, error));
+            Logging.e(TAG, String.format("%s: EGL error: 0x%x", prompt, error));
         }
     }
 
@@ -193,9 +194,9 @@ public class ViEAndroidGLES20 extends GLSurfaceView
         private void printConfigs(EGL10 egl, EGLDisplay display,
             EGLConfig[] configs) {
             int numConfigs = configs.length;
-            Log.w(TAG, String.format("%d configurations", numConfigs));
+            Logging.w(TAG, String.format("%d configurations", numConfigs));
             for (int i = 0; i < numConfigs; i++) {
-                Log.w(TAG, String.format("Configuration %d:\n", i));
+                Logging.w(TAG, String.format("Configuration %d:\n", i));
                 printConfig(egl, display, configs[i]);
             }
         }
@@ -277,9 +278,9 @@ public class ViEAndroidGLES20 extends GLSurfaceView
                 int attribute = attributes[i];
                 String name = names[i];
                 if (egl.eglGetConfigAttrib(display, config, attribute, value)) {
-                    Log.w(TAG, String.format("  %s: %d\n", name, value[0]));
+                    Logging.w(TAG, String.format("  %s: %d\n", name, value[0]));
                 } else {
-                    // Log.w(TAG, String.format("  %s: failed\n", name));
+                    // Logging.w(TAG, String.format("  %s: failed\n", name));
                     while (egl.eglGetError() != EGL10.EGL_SUCCESS);
                 }
             }

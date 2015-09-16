@@ -16,11 +16,12 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 import android.hardware.Camera;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import org.webrtc.Logging;
 
 public class VideoCaptureDeviceInfoAndroid {
   private final static String TAG = "WEBRTC-JC";
@@ -57,9 +58,9 @@ public class VideoCaptureDeviceInfoAndroid {
           Parameters parameters = camera.getParameters();
           supportedSizes = parameters.getSupportedPreviewSizes();
           supportedFpsRanges = parameters.getSupportedPreviewFpsRange();
-          Log.d(TAG, uniqueName);
+          Logging.d(TAG, uniqueName);
         } catch (RuntimeException e) {
-          Log.e(TAG, "Failed to open " + uniqueName + ", skipping", e);
+          Logging.e(TAG, "Failed to open " + uniqueName + ", skipping", e);
           continue;
         } finally {
           if (camera != null) {
@@ -91,7 +92,7 @@ public class VideoCaptureDeviceInfoAndroid {
           }
         }
         if (is30fpsRange && !is15fpsRange) {
-          Log.d(TAG, "Adding 15 fps support");
+          Logging.d(TAG, "Adding 15 fps support");
           int[] newRange = new int [Parameters.PREVIEW_FPS_MAX_INDEX + 1];
           newRange[Parameters.PREVIEW_FPS_MIN_INDEX] = 15000;
           newRange[Parameters.PREVIEW_FPS_MAX_INDEX] = 15000;
@@ -123,7 +124,7 @@ public class VideoCaptureDeviceInfoAndroid {
             .put("mfpsRanges", mfpsRanges);
       }
       String ret = devices.toString(2);
-      Log.d(TAG, ret);
+      Logging.d(TAG, ret);
       return ret;
     } catch (JSONException e) {
       throw new RuntimeException(e);
