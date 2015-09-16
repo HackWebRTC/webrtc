@@ -99,6 +99,7 @@
 /third_party/google-visualization-python
 /third_party/icu
 /third_party/instrumented_libraries
+/third_party/ijar
 /third_party/jsoncpp
 /third_party/jsr-305
 /third_party/junit
@@ -132,6 +133,7 @@
 /third_party/syzygy
 /third_party/usrsctp
 /third_party/valgrind
+/third_party/WebKit
 /third_party/winsdk_samples/src
 /third_party/yasm
 /third_party/zlib

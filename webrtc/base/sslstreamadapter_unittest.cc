@@ -799,20 +799,23 @@ TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSConnectWithSmallMtu) {
 };
 
 // Test transfer -- trivial
-TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransfer) {
+// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=5005
+TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSTransfer) {
   MAYBE_SKIP_TEST(HaveDtls);
   TestHandshake();
   TestTransfer(100);
 };
 
-TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransferWithLoss) {
+// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=5005
+TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSTransferWithLoss) {
   MAYBE_SKIP_TEST(HaveDtls);
   TestHandshake();
   SetLoss(10);
   TestTransfer(100);
 };
 
-TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransferWithDamage) {
+// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=5005
+TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSTransferWithDamage) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetDamage();  // Must be called first because first packet
                 // write happens at end of handshake.

@@ -42,5 +42,6 @@ exec_script_whitelist = [
   "//build/toolchain/win/BUILD.gn",
   "//third_party/boringssl/BUILD.gn",
   "//third_party/opus/BUILD.gn",
+  "//third_party/WebKit/Source/config.gni",
   "//webrtc/modules/video_render/BUILD.gn",
 ]
