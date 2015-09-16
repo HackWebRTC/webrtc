@@ -28,7 +28,8 @@
 package org.webrtc;
 
 import android.opengl.GLES20;
-import android.util.Log;
+
+import org.webrtc.Logging;
 
 import java.nio.FloatBuffer;
 
@@ -45,7 +46,7 @@ public class GlShader {
     GLES20.glCompileShader(shader);
     GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, result, 0);
     if (result[0] != GLES20.GL_TRUE) {
-      Log.e(TAG, "Could not compile shader " + shaderType + ":" +
+      Logging.e(TAG, "Could not compile shader " + shaderType + ":" +
           GLES20.glGetShaderInfoLog(shader));
       throw new RuntimeException(GLES20.glGetShaderInfoLog(shader));
     }
@@ -72,7 +73,7 @@ public class GlShader {
     };
     GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
     if (linkStatus[0] != GLES20.GL_TRUE) {
-      Log.e(TAG, "Could not link program: " +
+      Logging.e(TAG, "Could not link program: " +
           GLES20.glGetProgramInfoLog(program));
       throw new RuntimeException(GLES20.glGetProgramInfoLog(program));
     }
@@ -124,7 +125,7 @@ public class GlShader {
   }
 
   public void release() {
-    Log.d(TAG, "Deleting shader.");
+    Logging.d(TAG, "Deleting shader.");
     // Flag shaders for deletion (does not delete until no longer attached to a program).
     if (vertexShader != -1) {
       GLES20.glDeleteShader(vertexShader);

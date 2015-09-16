@@ -30,12 +30,13 @@ package org.webrtc;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import android.hardware.Camera;
-import android.util.Log;
 import android.graphics.ImageFormat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import org.webrtc.Logging;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -145,7 +146,7 @@ public class CameraEnumerationAndroid {
     try {
       Camera.getCameraInfo(index, info);
     } catch (Exception e) {
-      Log.e(TAG, "getCameraInfo failed on index " + index,e);
+      Logging.e(TAG, "getCameraInfo failed on index " + index,e);
       return null;
     }
 
@@ -177,7 +178,7 @@ public class CameraEnumerationAndroid {
       json_format.put("framerate", (format.maxFramerate + 999) / 1000);
       json_formats.put(json_format);
     }
-    Log.d(TAG, "Supported formats for camera " + id + ": "
+    Logging.d(TAG, "Supported formats for camera " + id + ": "
         +  json_formats.toString(2));
     return json_formats.toString();
   }
@@ -196,7 +197,7 @@ public class CameraEnumerationAndroid {
   public static int[] getFramerateRange(Camera.Parameters parameters, final int framerate) {
     List<int[]> listFpsRange = parameters.getSupportedPreviewFpsRange();
     if (listFpsRange.isEmpty()) {
-      Log.w(TAG, "No supported preview fps range");
+      Logging.w(TAG, "No supported preview fps range");
       return new int[]{0, 0};
     }
     return Collections.min(listFpsRange,
@@ -227,7 +228,7 @@ public class CameraEnumerationAndroid {
           return getDeviceName(i);
         }
       } catch (Exception e) {
-        Log.e(TAG, "getCameraInfo() failed on index " + i, e);
+        Logging.e(TAG, "getCameraInfo() failed on index " + i, e);
       }
     }
     return null;

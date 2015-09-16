@@ -44,6 +44,7 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
 
+import org.webrtc.Logging;
 import org.webrtc.VideoRenderer.I420Frame;
 
 /**
@@ -158,7 +159,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         GLSurfaceView surface, int id,
         int x, int y, int width, int height,
         RendererCommon.ScalingType scalingType, boolean mirror) {
-      Log.d(TAG, "YuvImageRenderer.Create id: " + id);
+      Logging.d(TAG, "YuvImageRenderer.Create id: " + id);
       this.surface = surface;
       this.id = id;
       this.scalingType = scalingType;
@@ -179,7 +180,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
 
     private void createTextures() {
-      Log.d(TAG, "  YuvImageRenderer.createTextures " + id + " on GL thread:" +
+      Logging.d(TAG, "  YuvImageRenderer.createTextures " + id + " on GL thread:" +
           Thread.currentThread().getId());
 
       // Generate 3 texture ids for Y/U/V and place them into |yuvTextures|.
@@ -200,7 +201,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             (screenHeight * layoutInPercentage.top + 99) / 100,
             (screenWidth * layoutInPercentage.right) / 100,
             (screenHeight * layoutInPercentage.bottom) / 100);
-        Log.d(TAG, "ID: "  + id + ". AdjustTextureCoords. Allowed display size: "
+        Logging.d(TAG, "ID: "  + id + ". AdjustTextureCoords. Allowed display size: "
             + displayLayout.width() + " x " + displayLayout.height() + ". Video: " + videoWidth
             + " x " + videoHeight + ". Rotation: " + rotationDegree + ". Mirror: " + mirror);
         final float videoAspectRatio = (rotationDegree % 180 == 0)
@@ -211,12 +212,12 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             videoAspectRatio, displayLayout.width(), displayLayout.height());
         displayLayout.inset((displayLayout.width() - displaySize.x) / 2,
                             (displayLayout.height() - displaySize.y) / 2);
-        Log.d(TAG, "  Adjusted display size: " + displayLayout.width() + " x "
+        Logging.d(TAG, "  Adjusted display size: " + displayLayout.width() + " x "
             + displayLayout.height());
         layoutMatrix = RendererCommon.getLayoutMatrix(
             mirror, videoAspectRatio, (float) displayLayout.width() / displayLayout.height());
         updateLayoutProperties = false;
-        Log.d(TAG, "  AdjustTextureCoords done");
+        Logging.d(TAG, "  AdjustTextureCoords done");
       }
     }
 
@@ -283,13 +284,13 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
     private void logStatistics() {
       long timeSinceFirstFrameNs = System.nanoTime() - startTimeNs;
-      Log.d(TAG, "ID: " + id + ". Type: " + rendererType +
+      Logging.d(TAG, "ID: " + id + ". Type: " + rendererType +
           ". Frames received: " + framesReceived +
           ". Dropped: " + framesDropped + ". Rendered: " + framesRendered);
       if (framesReceived > 0 && framesRendered > 0) {
-        Log.d(TAG, "Duration: " + (int)(timeSinceFirstFrameNs / 1e6) +
+        Logging.d(TAG, "Duration: " + (int)(timeSinceFirstFrameNs / 1e6) +
             " ms. FPS: " + (float)framesRendered * 1e9 / timeSinceFirstFrameNs);
-        Log.d(TAG, "Draw time: " +
+        Logging.d(TAG, "Draw time: " +
             (int) (drawTimeNs / (1000 * framesRendered)) + " us. Copy time: " +
             (int) (copyTimeNs / (1000 * framesReceived)) + " us");
       }
@@ -300,7 +301,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         if (screenWidth == this.screenWidth && screenHeight == this.screenHeight) {
           return;
         }
-        Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setScreenSize: " +
+        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setScreenSize: " +
             screenWidth + " x " + screenHeight);
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
@@ -317,7 +318,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             && mirror == this.mirror) {
           return;
         }
-        Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setPosition: (" + x + ", " + y +
+        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setPosition: (" + x + ", " + y +
             ") " +  width + " x " + height + ". Scaling: " + scalingType +
             ". Mirror: " + mirror);
         this.layoutInPercentage.set(layoutInPercentage);
@@ -333,20 +334,20 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         return;
       }
       if (rendererEvents != null) {
-        Log.d(TAG, "ID: " + id +
+        Logging.d(TAG, "ID: " + id +
             ". Reporting frame resolution changed to " + videoWidth + " x " + videoHeight);
         rendererEvents.onFrameResolutionChanged(videoWidth, videoHeight, rotation);
       }
 
       synchronized (updateLayoutLock) {
-        Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
+        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
             videoWidth + " x " + videoHeight + " rotation " + rotation);
 
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
         rotationDegree = rotation;
         updateLayoutProperties = true;
-        Log.d(TAG, "  YuvImageRenderer.setSize done.");
+        Logging.d(TAG, "  YuvImageRenderer.setSize done.");
       }
     }
 
@@ -358,7 +359,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         return;
       }
       if (!seenFrame && rendererEvents != null) {
-        Log.d(TAG, "ID: " + id + ". Reporting first rendered frame.");
+        Logging.d(TAG, "ID: " + id + ". Reporting first rendered frame.");
         rendererEvents.onFirstFrameRendered();
       }
       framesReceived++;
@@ -368,7 +369,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           if (frame.yuvStrides[0] < frame.width ||
               frame.yuvStrides[1] < frame.width / 2 ||
               frame.yuvStrides[2] < frame.width / 2) {
-            Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
+            Logging.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
                 frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
             VideoRenderer.renderFrameDone(frame);
             return;
@@ -394,7 +395,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   /** Passes GLSurfaceView to video renderer. */
   public static synchronized void setView(GLSurfaceView surface,
       Runnable eglContextReadyCallback) {
-    Log.d(TAG, "VideoRendererGui.setView");
+    Logging.d(TAG, "VideoRendererGui.setView");
     instance = new VideoRendererGui(surface);
     eglContextReady = eglContextReadyCallback;
   }
@@ -408,7 +409,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     if (instance == null){
       return;
     }
-    Log.d(TAG, "VideoRendererGui.dispose");
+    Logging.d(TAG, "VideoRendererGui.dispose");
     synchronized (instance.yuvImageRenderers) {
       for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
         yuvImageRenderer.release();
@@ -489,7 +490,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   public static synchronized void update(
       VideoRenderer.Callbacks renderer, int x, int y, int width, int height,
       RendererCommon.ScalingType scalingType, boolean mirror) {
-    Log.d(TAG, "VideoRendererGui.update");
+    Logging.d(TAG, "VideoRendererGui.update");
     if (instance == null) {
       throw new RuntimeException(
           "Attempt to update yuv renderer before setting GLSurfaceView");
@@ -505,7 +506,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   public static synchronized void setRendererEvents(
       VideoRenderer.Callbacks renderer, RendererCommon.RendererEvents rendererEvents) {
-    Log.d(TAG, "VideoRendererGui.setRendererEvents");
+    Logging.d(TAG, "VideoRendererGui.setRendererEvents");
     if (instance == null) {
       throw new RuntimeException(
           "Attempt to set renderer events before setting GLSurfaceView");
@@ -520,7 +521,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   }
 
   public static synchronized void remove(VideoRenderer.Callbacks renderer) {
-    Log.d(TAG, "VideoRendererGui.remove");
+    Logging.d(TAG, "VideoRendererGui.remove");
     if (instance == null) {
       throw new RuntimeException(
           "Attempt to remove yuv renderer before setting GLSurfaceView");
@@ -528,7 +529,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     synchronized (instance.yuvImageRenderers) {
       final int index = instance.yuvImageRenderers.indexOf(renderer);
       if (index == -1) {
-        Log.w(TAG, "Couldn't remove renderer (not present in current list)");
+        Logging.w(TAG, "Couldn't remove renderer (not present in current list)");
       } else {
         instance.yuvImageRenderers.remove(index).release();
       }
@@ -538,12 +539,12 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   @SuppressLint("NewApi")
   @Override
   public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-    Log.d(TAG, "VideoRendererGui.onSurfaceCreated");
+    Logging.d(TAG, "VideoRendererGui.onSurfaceCreated");
     // Store render EGL context.
     if (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION) {
       synchronized (VideoRendererGui.class) {
         eglContext = EGL14.eglGetCurrentContext();
-        Log.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
+        Logging.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
       }
     }
 
@@ -570,7 +571,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   @Override
   public void onSurfaceChanged(GL10 unused, int width, int height) {
-    Log.d(TAG, "VideoRendererGui.onSurfaceChanged: " +
+    Logging.d(TAG, "VideoRendererGui.onSurfaceChanged: " +
         width + " x " + height + "  ");
     screenWidth = width;
     screenHeight = height;
