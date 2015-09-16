@@ -35,9 +35,6 @@
 // (which are mandatory and don't have any defines).
 #define WEBRTC_CODEC_AVT
 
-// PCM16 is useful for testing and incurs only a small binary size cost.
-#define WEBRTC_CODEC_PCM16
-
 // iLBC and Redundancy coding are excluded from Chromium and Mozilla
 // builds to reduce binary size.
 #if !defined(WEBRTC_CHROMIUM_BUILD) && !defined(WEBRTC_MOZILLA_BUILD)

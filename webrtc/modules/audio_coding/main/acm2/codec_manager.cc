@@ -122,11 +122,7 @@ bool IsPcmA(const CodecInst& codec) {
 }
 
 bool IsPcm16B(const CodecInst& codec) {
-  return
-#ifdef WEBRTC_CODEC_PCM16
-      !STR_CASE_CMP(codec.plname, "l16") ||
-#endif
-      false;
+  return !STR_CASE_CMP(codec.plname, "l16");
 }
 
 bool IsIlbc(const CodecInst& codec) {

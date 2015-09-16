@@ -223,7 +223,6 @@ void TestAllCodecs::Perform() {
   Run(channel_a_to_b_);
   outfile_b_.Close();
 #endif
-#ifdef WEBRTC_CODEC_PCM16
   if (test_mode_ != 0) {
     printf("===============================================================\n");
   }
@@ -263,7 +262,6 @@ void TestAllCodecs::Perform() {
   RegisterSendCodec('A', codec_l16, 32000, 512000, 640, 0);
   Run(channel_a_to_b_);
   outfile_b_.Close();
-#endif
   if (test_mode_ != 0) {
     printf("===============================================================\n");
   }
@@ -338,9 +336,6 @@ void TestAllCodecs::Perform() {
 #endif
 #ifndef WEBRTC_CODEC_ISACFX
     printf("   ISAC fix\n");
-#endif
-#ifndef WEBRTC_CODEC_PCM16
-    printf("   PCM16\n");
 #endif
 
     printf("\nTo complete the test, listen to the %d number of output files.\n",

@@ -132,7 +132,6 @@
             'WEBRTC_CODEC_ILBC',
             'WEBRTC_CODEC_ISACFX',
             'WEBRTC_CODEC_ISAC',
-            'WEBRTC_CODEC_PCM16',
             '<@(neteq_defines)',
           ],
           'sources': [

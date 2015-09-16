@@ -93,7 +93,6 @@ class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmAMultiCh);
 };
 
-#ifdef WEBRTC_CODEC_PCM16
 // This class handles all four types (i.e., sample rates) of PCM16B codecs.
 // The type is specified in the constructor parameter |type|.
 class AudioDecoderPcm16B : public AudioDecoder {
@@ -126,7 +125,6 @@ class AudioDecoderPcm16BMultiCh : public AudioDecoderPcm16B {
   const size_t channels_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16BMultiCh);
 };
-#endif
 
 #ifdef WEBRTC_CODEC_ILBC
 class AudioDecoderIlbc : public AudioDecoder {

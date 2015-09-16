@@ -82,10 +82,6 @@ void TestRedFec::Perform() {
   _acmA->RegisterTransportCallback(_channelA2B);
   _channelA2B->RegisterReceiverACM(_acmB.get());
 
-#ifndef WEBRTC_CODEC_PCM16
-  EXPECT_TRUE(false) << "PCM16 needs to be activated to run this test\n");
-  return;
-#endif
   EXPECT_EQ(0, RegisterSendCodec('A', kNameL16, 8000));
   EXPECT_EQ(0, RegisterSendCodec('A', kNameCN, 8000));
   EXPECT_EQ(0, RegisterSendCodec('A', kNameRED));

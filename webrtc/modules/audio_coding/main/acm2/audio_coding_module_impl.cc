@@ -1015,7 +1015,6 @@ bool AudioCodingImpl::MapCodecTypeToParameters(int codec_type,
                                                int* sample_rate_hz,
                                                int* channels) {
   switch (codec_type) {
-#ifdef WEBRTC_CODEC_PCM16
     case acm2::ACMCodecDB::kPCM16B:
       *codec_name = "L16";
       *sample_rate_hz = 8000;
@@ -1046,7 +1045,6 @@ bool AudioCodingImpl::MapCodecTypeToParameters(int codec_type,
       *sample_rate_hz = 32000;
       *channels = 2;
       break;
-#endif
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
     case acm2::ACMCodecDB::kISAC:
       *codec_name = "ISAC";

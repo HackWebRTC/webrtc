@@ -38,7 +38,6 @@ class ACMCodecDB {
     , kISACFB
 # endif
 #endif
-#ifdef WEBRTC_CODEC_PCM16
     // Mono
     , kPCM16B
     , kPCM16Bwb
@@ -47,7 +46,6 @@ class ACMCodecDB {
     , kPCM16B_2ch
     , kPCM16Bwb_2ch
     , kPCM16Bswb32kHz_2ch
-#endif
     // Mono
     , kPCMU
     , kPCMA
@@ -89,16 +87,6 @@ class ACMCodecDB {
 # ifndef WEBRTC_CODEC_ISACFX
   enum {kISAC = -1};
 # endif
-#endif
-#ifndef WEBRTC_CODEC_PCM16
-  // Mono
-  enum {kPCM16B = -1};
-  enum {kPCM16Bwb = -1};
-  enum {kPCM16Bswb32kHz = -1};
-  // Stereo
-  enum {kPCM16B_2ch = -1};
-  enum {kPCM16Bwb_2ch = -1};
-  enum {kPCM16Bswb32kHz_2ch = -1};
 #endif
   // 48 kHz not supported, always set to -1.
   enum {kPCM16Bswb48kHz = -1};

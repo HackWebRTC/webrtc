@@ -100,11 +100,9 @@ class TestStereo : public ACMTest {
 #ifdef WEBRTC_CODEC_G722
   int g722_pltype_;
 #endif
-#ifdef WEBRTC_CODEC_PCM16
   int l16_8khz_pltype_;
   int l16_16khz_pltype_;
   int l16_32khz_pltype_;
-#endif
 #ifdef PCMA_AND_PCMU
   int pcma_pltype_;
   int pcmu_pltype_;

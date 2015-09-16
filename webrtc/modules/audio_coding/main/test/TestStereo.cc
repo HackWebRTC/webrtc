@@ -118,11 +118,9 @@ TestStereo::TestStereo(int test_mode)
 #ifdef WEBRTC_CODEC_G722
       , g722_pltype_(0)
 #endif
-#ifdef WEBRTC_CODEC_PCM16
       , l16_8khz_pltype_(-1)
       , l16_16khz_pltype_(-1)
       , l16_32khz_pltype_(-1)
-#endif
 #ifdef PCMA_AND_PCMU
       , pcma_pltype_(-1)
       , pcmu_pltype_(-1)
@@ -247,7 +245,6 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
-#ifdef WEBRTC_CODEC_PCM16
   if (test_mode_ != 0) {
     printf("===========================================================\n");
     printf("Test number: %d\n", test_cntr_ + 1);
@@ -306,7 +303,6 @@ void TestStereo::Perform() {
       l16_32khz_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
-#endif
 #ifdef PCMA_AND_PCMU
   if (test_mode_ != 0) {
     printf("===========================================================\n");
@@ -435,7 +431,6 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
-#ifdef WEBRTC_CODEC_PCM16
   if (test_mode_ != 0) {
     printf("===============================================================\n");
     printf("Test number: %d\n", test_cntr_ + 1);
@@ -470,7 +465,6 @@ void TestStereo::Perform() {
       l16_32khz_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
-#endif
 #ifdef PCMA_AND_PCMU
   if (test_mode_ != 0) {
     printf("===============================================================\n");
@@ -538,7 +532,6 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
-#ifdef WEBRTC_CODEC_PCM16
   if (test_mode_ != 0) {
     printf("===============================================================\n");
     printf("Test number: %d\n", test_cntr_ + 1);
@@ -572,7 +565,6 @@ void TestStereo::Perform() {
       l16_32khz_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
-#endif
 #ifdef PCMA_AND_PCMU
   if (test_mode_ != 0) {
     printf("===============================================================\n");
@@ -662,9 +654,7 @@ void TestStereo::Perform() {
 #ifdef WEBRTC_CODEC_G722
     printf("   G.722\n");
 #endif
-#ifdef WEBRTC_CODEC_PCM16
     printf("   PCM16\n");
-#endif
     printf("   G.711\n");
 #ifdef WEBRTC_CODEC_OPUS
     printf("   Opus\n");
