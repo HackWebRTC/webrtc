@@ -499,8 +499,6 @@
         'media/webrtc/webrtcmediaengine.cc',
         'media/webrtc/webrtcmediaengine.h',
         'media/webrtc/webrtcmediaengine.cc',
-        'media/webrtc/webrtcpassthroughrender.cc',
-        'media/webrtc/webrtcpassthroughrender.h',
         'media/webrtc/webrtcvideocapturer.cc',
         'media/webrtc/webrtcvideocapturer.h',
         'media/webrtc/webrtcvideocapturerfactory.h',

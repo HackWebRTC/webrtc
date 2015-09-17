@@ -162,8 +162,6 @@
             'test/auto_test/extended/ec_metrics_test.cc',
             'test/auto_test/fakes/conference_transport.cc',
             'test/auto_test/fakes/conference_transport.h',
-            'test/auto_test/fakes/fake_external_transport.cc',
-            'test/auto_test/fakes/fake_external_transport.h',
             'test/auto_test/fakes/loudest_filter.cc',
             'test/auto_test/fakes/loudest_filter.h',
             'test/auto_test/fixtures/after_initialization_fixture.cc',
