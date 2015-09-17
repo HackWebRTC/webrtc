@@ -42,8 +42,11 @@ class WebRtcAudioManager {
   // Guaranteed to be supported by all devices.
   private static final int BITS_PER_SAMPLE = 16;
 
-   // Use 44.1kHz as the default sampling rate.
-  private static final int SAMPLE_RATE_HZ = 44100;
+  // Use 16kHz as the default sample rate. A higher sample rate might prevent
+  // us from supporting communication mode on some older (e.g. ICS) devices.
+  private static final int DEFAULT_SAMPLE_RATE_HZ = 16000;
+
+  private static final int DEFAULT_FRAME_PER_BUFFER = 256;
 
   // TODO(henrika): add stereo support for playout.
   private static final int CHANNELS = 1;
@@ -55,8 +58,6 @@ class WebRtcAudioManager {
       "MODE_IN_CALL",
       "MODE_IN_COMMUNICATION",
   };
-
-  private static final int DEFAULT_FRAME_PER_BUFFER = 256;
 
   private final long nativeAudioManager;
   private final Context context;
@@ -166,12 +167,12 @@ class WebRtcAudioManager {
       return 8000;
     }
     if (!WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {
-      return SAMPLE_RATE_HZ;
+      return DEFAULT_SAMPLE_RATE_HZ;
     }
     String sampleRateString = audioManager.getProperty(
         AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
     return (sampleRateString == null) ?
-        SAMPLE_RATE_HZ : Integer.parseInt(sampleRateString);
+        DEFAULT_SAMPLE_RATE_HZ : Integer.parseInt(sampleRateString);
   }
 
   // Returns the native output buffer size for low-latency output streams.
