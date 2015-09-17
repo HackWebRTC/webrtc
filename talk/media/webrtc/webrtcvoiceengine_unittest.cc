@@ -97,7 +97,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
    public:
     explicit ChannelErrorListener(cricket::VoiceMediaChannel* channel)
         : ssrc_(0), error_(cricket::VoiceMediaChannel::ERROR_NONE) {
-      DCHECK(channel != NULL);
+      RTC_DCHECK(channel != NULL);
       channel->SignalMediaError.connect(
           this, &ChannelErrorListener::OnVoiceChannelError);
     }

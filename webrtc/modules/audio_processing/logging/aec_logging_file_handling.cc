@@ -34,9 +34,9 @@ void WebRtcAec_ReopenWav(const char* name,
                               instance_index, process_rate);
 
   // Ensure there was no buffer output error.
-  DCHECK_GE(written, 0);
+  RTC_DCHECK_GE(written, 0);
   // Ensure that the buffer size was sufficient.
-  DCHECK_LT(static_cast<size_t>(written), sizeof(filename));
+  RTC_DCHECK_LT(static_cast<size_t>(written), sizeof(filename));
 
   *wav_file = rtc_WavOpen(filename, sample_rate, 1);
 }
@@ -47,9 +47,9 @@ void WebRtcAec_RawFileOpen(const char* name, int instance_index, FILE** file) {
                               instance_index);
 
   // Ensure there was no buffer output error.
-  DCHECK_GE(written, 0);
+  RTC_DCHECK_GE(written, 0);
   // Ensure that the buffer size was sufficient.
-  DCHECK_LT(static_cast<size_t>(written), sizeof(filename));
+  RTC_DCHECK_LT(static_cast<size_t>(written), sizeof(filename));
 
   *file = fopen(filename, "wb");
 }

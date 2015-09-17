@@ -106,8 +106,8 @@ size_t RefIndicesLength(const RTPVideoHeaderVP9& hdr) {
   if (!hdr.inter_pic_predicted || !hdr.flexible_mode)
     return 0;
 
-  DCHECK_GT(hdr.num_ref_pics, 0U);
-  DCHECK_LE(hdr.num_ref_pics, kMaxVp9RefPics);
+  RTC_DCHECK_GT(hdr.num_ref_pics, 0U);
+  RTC_DCHECK_LE(hdr.num_ref_pics, kMaxVp9RefPics);
   size_t length = 0;
   for (size_t i = 0; i < hdr.num_ref_pics; ++i) {
     length += hdr.pid_diff[i] > 0x3F ? 2 : 1;   // P_DIFF > 6 bits => extended
@@ -137,10 +137,10 @@ size_t SsDataLength(const RTPVideoHeaderVP9& hdr) {
   if (!hdr.ss_data_available)
     return 0;
 
-  DCHECK_GT(hdr.num_spatial_layers, 0U);
-  DCHECK_LE(hdr.num_spatial_layers, kMaxVp9NumberOfSpatialLayers);
-  DCHECK_GT(hdr.gof.num_frames_in_gof, 0U);
-  DCHECK_LE(hdr.gof.num_frames_in_gof, kMaxVp9FramesInGof);
+  RTC_DCHECK_GT(hdr.num_spatial_layers, 0U);
+  RTC_DCHECK_LE(hdr.num_spatial_layers, kMaxVp9NumberOfSpatialLayers);
+  RTC_DCHECK_GT(hdr.gof.num_frames_in_gof, 0U);
+  RTC_DCHECK_LE(hdr.gof.num_frames_in_gof, kMaxVp9FramesInGof);
   size_t length = 1;                           // V
   if (hdr.spatial_layer_resolution_present) {
     length += 4 * hdr.num_spatial_layers;      // Y
@@ -148,7 +148,7 @@ size_t SsDataLength(const RTPVideoHeaderVP9& hdr) {
   // N_G
   length += hdr.gof.num_frames_in_gof;  // T, U, R
   for (size_t i = 0; i < hdr.gof.num_frames_in_gof; ++i) {
-    DCHECK_LE(hdr.gof.num_ref_pics[i], kMaxVp9RefPics);
+    RTC_DCHECK_LE(hdr.gof.num_ref_pics[i], kMaxVp9RefPics);
     length += hdr.gof.num_ref_pics[i];  // R times
   }
   return length;
@@ -286,10 +286,10 @@ bool WriteRefIndices(const RTPVideoHeaderVP9& vp9,
 //      +-+-+-+-+-+-+-+-+              -|           -|
 //
 bool WriteSsData(const RTPVideoHeaderVP9& vp9, rtc::BitBufferWriter* writer) {
-  DCHECK_GT(vp9.num_spatial_layers, 0U);
-  DCHECK_LE(vp9.num_spatial_layers, kMaxVp9NumberOfSpatialLayers);
-  DCHECK_GT(vp9.gof.num_frames_in_gof, 0U);
-  DCHECK_LE(vp9.gof.num_frames_in_gof, kMaxVp9FramesInGof);
+  RTC_DCHECK_GT(vp9.num_spatial_layers, 0U);
+  RTC_DCHECK_LE(vp9.num_spatial_layers, kMaxVp9NumberOfSpatialLayers);
+  RTC_DCHECK_GT(vp9.gof.num_frames_in_gof, 0U);
+  RTC_DCHECK_LE(vp9.gof.num_frames_in_gof, kMaxVp9FramesInGof);
 
   RETURN_FALSE_ON_ERROR(writer->WriteBits(vp9.num_spatial_layers - 1, 3));
   RETURN_FALSE_ON_ERROR(

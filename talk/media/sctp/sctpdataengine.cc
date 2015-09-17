@@ -377,7 +377,7 @@ SctpDataMediaChannel::~SctpDataMediaChannel() {
 }
 
 void SctpDataMediaChannel::OnSendThresholdCallback() {
-  DCHECK(rtc::Thread::Current() == worker_thread_);
+  RTC_DCHECK(rtc::Thread::Current() == worker_thread_);
   SignalReadyToSend(true);
 }
 
@@ -658,7 +658,7 @@ bool SctpDataMediaChannel::SendData(
 // Called by network interface when a packet has been received.
 void SctpDataMediaChannel::OnPacketReceived(
     rtc::Buffer* packet, const rtc::PacketTime& packet_time) {
-  DCHECK(rtc::Thread::Current() == worker_thread_);
+  RTC_DCHECK(rtc::Thread::Current() == worker_thread_);
   LOG(LS_VERBOSE) << debug_name_ << "->OnPacketReceived(...): "
                   << " length=" << packet->size() << ", sending: " << sending_;
   // Only give receiving packets to usrsctp after if connected. This enables two

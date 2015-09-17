@@ -220,14 +220,14 @@ bool ScreenshareLayers::TimeToSync(int64_t timestamp) const {
     RTC_NOTREACHED();
     return false;
   }
-  DCHECK_NE(-1, layers_[0].last_qp);
+  RTC_DCHECK_NE(-1, layers_[0].last_qp);
   if (layers_[1].last_qp == -1) {
     // First frame in TL1 should only depend on TL0 since there are no
     // previous frames in TL1.
     return true;
   }
 
-  DCHECK_NE(-1, last_sync_timestamp_);
+  RTC_DCHECK_NE(-1, last_sync_timestamp_);
   int64_t timestamp_diff = timestamp - last_sync_timestamp_;
   if (timestamp_diff > kMaxTimeBetweenSyncs) {
     // After a certain time, force a sync frame.

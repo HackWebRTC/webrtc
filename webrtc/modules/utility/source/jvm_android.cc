@@ -41,10 +41,10 @@ void LoadClasses(JNIEnv* jni) {
   for (auto& c : loaded_classes) {
     jclass localRef = FindClass(jni, c.name);
     CHECK_EXCEPTION(jni) << "Error during FindClass: " << c.name;
-    CHECK(localRef) << c.name;
+    RTC_CHECK(localRef) << c.name;
     jclass globalRef = reinterpret_cast<jclass>(jni->NewGlobalRef(localRef));
     CHECK_EXCEPTION(jni) << "Error during NewGlobalRef: " << c.name;
-    CHECK(globalRef) << c.name;
+    RTC_CHECK(globalRef) << c.name;
     c.clazz = globalRef;
   }
 }
@@ -61,7 +61,7 @@ jclass LookUpClass(const char* name) {
     if (strcmp(c.name, name) == 0)
       return c.clazz;
   }
-  CHECK(false) << "Unable to find class in lookup table";
+  RTC_CHECK(false) << "Unable to find class in lookup table";
   return 0;
 }
 
@@ -70,7 +70,7 @@ AttachCurrentThreadIfNeeded::AttachCurrentThreadIfNeeded()
     : attached_(false) {
   ALOGD("AttachCurrentThreadIfNeeded::ctor%s", GetThreadInfo().c_str());
   JavaVM* jvm = JVM::GetInstance()->jvm();
-  CHECK(jvm);
+  RTC_CHECK(jvm);
   JNIEnv* jni = GetEnv(jvm);
   if (!jni) {
     ALOGD("Attaching thread to JVM");
@@ -82,11 +82,11 @@ AttachCurrentThreadIfNeeded::AttachCurrentThreadIfNeeded()
 
 AttachCurrentThreadIfNeeded::~AttachCurrentThreadIfNeeded() {
   ALOGD("AttachCurrentThreadIfNeeded::dtor%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (attached_) {
     ALOGD("Detaching thread from JVM");
     jint res = JVM::GetInstance()->jvm()->DetachCurrentThread();
-    CHECK(res == JNI_OK) << "DetachCurrentThread failed: " << res;
+    RTC_CHECK(res == JNI_OK) << "DetachCurrentThread failed: " << res;
   }
 }
 
@@ -178,13 +178,13 @@ JNIEnvironment::JNIEnvironment(JNIEnv* jni) : jni_(jni) {
 
 JNIEnvironment::~JNIEnvironment() {
   ALOGD("JNIEnvironment::dtor%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
 }
 
 rtc::scoped_ptr<NativeRegistration> JNIEnvironment::RegisterNatives(
     const char* name, const JNINativeMethod *methods, int num_methods) {
   ALOGD("JNIEnvironment::RegisterNatives(%s)", name);
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   jclass clazz = LookUpClass(name);
   jni_->RegisterNatives(clazz, methods, num_methods);
   CHECK_EXCEPTION(jni_) << "Error during RegisterNatives";
@@ -193,7 +193,7 @@ rtc::scoped_ptr<NativeRegistration> JNIEnvironment::RegisterNatives(
 }
 
 std::string JNIEnvironment::JavaToStdString(const jstring& j_string) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   const char* jchars = jni_->GetStringUTFChars(j_string, nullptr);
   CHECK_EXCEPTION(jni_);
   const int size = jni_->GetStringUTFLength(j_string);
@@ -207,35 +207,35 @@ std::string JNIEnvironment::JavaToStdString(const jstring& j_string) {
 // static
 void JVM::Initialize(JavaVM* jvm, jobject context) {
   ALOGD("JVM::Initialize%s", GetThreadInfo().c_str());
-  CHECK(!g_jvm);
+  RTC_CHECK(!g_jvm);
   g_jvm = new JVM(jvm, context);
 }
 
 // static
 void JVM::Uninitialize() {
   ALOGD("JVM::Uninitialize%s", GetThreadInfo().c_str());
-  DCHECK(g_jvm);
+  RTC_DCHECK(g_jvm);
   delete g_jvm;
   g_jvm = nullptr;
 }
 
 // static
 JVM* JVM::GetInstance() {
-  DCHECK(g_jvm);
+  RTC_DCHECK(g_jvm);
   return g_jvm;
 }
 
 JVM::JVM(JavaVM* jvm, jobject context)
     : jvm_(jvm) {
   ALOGD("JVM::JVM%s", GetThreadInfo().c_str());
-  CHECK(jni()) << "AttachCurrentThread() must be called on this thread.";
+  RTC_CHECK(jni()) << "AttachCurrentThread() must be called on this thread.";
   context_ = NewGlobalRef(jni(), context);
   LoadClasses(jni());
 }
 
 JVM::~JVM() {
   ALOGD("JVM::~JVM%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   FreeClassReferences(jni());
   DeleteGlobalRef(jni(), context_);
 }
@@ -257,7 +257,7 @@ rtc::scoped_ptr<JNIEnvironment> JVM::environment() {
 
 JavaClass JVM::GetClass(const char* name) {
   ALOGD("JVM::GetClass(%s)%s", name, GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return JavaClass(jni(), LookUpClass(name));
 }
 

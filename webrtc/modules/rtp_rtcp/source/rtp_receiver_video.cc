@@ -61,7 +61,7 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                rtp_header->header.timestamp);
   rtp_header->type.Video.codec = specific_payload.Video.videoCodecType;
 
-  DCHECK_GE(payload_length, rtp_header->header.paddingLength);
+  RTC_DCHECK_GE(payload_length, rtp_header->header.paddingLength);
   const size_t payload_data_length =
       payload_length - rtp_header->header.paddingLength;
 

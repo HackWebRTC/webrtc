@@ -465,7 +465,7 @@ RTCPUtility::RTCPParserV2::EndCurrentBlock()
 bool RTCPUtility::RtcpParseCommonHeader(const uint8_t* packet,
                                         size_t size_bytes,
                                         RtcpCommonHeader* parsed_header) {
-  DCHECK(parsed_header != nullptr);
+  RTC_DCHECK(parsed_header != nullptr);
   if (size_bytes < RtcpCommonHeader::kHeaderSizeBytes) {
     LOG(LS_WARNING) << "Too little data (" << size_bytes << " byte"
                     << (size_bytes != 1 ? "s" : "")

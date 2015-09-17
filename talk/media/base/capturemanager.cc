@@ -51,16 +51,16 @@ class VideoCapturerState {
   int IncCaptureStartRef();
   int DecCaptureStartRef();
   CaptureRenderAdapter* adapter() {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return adapter_.get();
   }
   VideoCapturer* GetVideoCapturer() {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return adapter()->video_capturer();
   }
 
   int start_count() const {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return start_count_;
   }
 
@@ -98,7 +98,7 @@ VideoCapturerState* VideoCapturerState::Create(VideoCapturer* video_capturer) {
 
 void VideoCapturerState::AddCaptureResolution(
     const VideoFormat& desired_format) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   for (CaptureFormats::iterator iter = capture_formats_.begin();
        iter != capture_formats_.end(); ++iter) {
     if (desired_format == iter->video_format) {
@@ -111,7 +111,7 @@ void VideoCapturerState::AddCaptureResolution(
 }
 
 bool VideoCapturerState::RemoveCaptureResolution(const VideoFormat& format) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   for (CaptureFormats::iterator iter = capture_formats_.begin();
        iter != capture_formats_.end(); ++iter) {
     if (format == iter->video_format) {
@@ -127,7 +127,7 @@ bool VideoCapturerState::RemoveCaptureResolution(const VideoFormat& format) {
 
 VideoFormat VideoCapturerState::GetHighestFormat(
     VideoCapturer* video_capturer) const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   VideoFormat highest_format(0, 0, VideoFormat::FpsToInterval(1), FOURCC_ANY);
   if (capture_formats_.empty()) {
     VideoFormat default_format(kDefaultCaptureFormat);
@@ -149,12 +149,12 @@ VideoFormat VideoCapturerState::GetHighestFormat(
 }
 
 int VideoCapturerState::IncCaptureStartRef() {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return ++start_count_;
 }
 
 int VideoCapturerState::DecCaptureStartRef() {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (start_count_ > 0) {
     // Start count may be 0 if a capturer was added but never started.
     --start_count_;
@@ -169,20 +169,20 @@ CaptureManager::CaptureManager() {
 }
 
 CaptureManager::~CaptureManager() {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   // Since we don't own any of the capturers, all capturers should have been
   // cleaned up before we get here. In fact, in the normal shutdown sequence,
   // all capturers *will* be shut down by now, so trying to stop them here
   // will crash. If we're still tracking any, it's a dangling pointer.
-  // TODO(hbos): DCHECK instead of CHECK until we figure out why capture_states_
-  // is not always empty here.
-  DCHECK(capture_states_.empty());
+  // TODO(hbos): RTC_DCHECK instead of RTC_CHECK until we figure out why
+  // capture_states_ is not always empty here.
+  RTC_DCHECK(capture_states_.empty());
 }
 
 bool CaptureManager::StartVideoCapture(VideoCapturer* video_capturer,
                                        const VideoFormat& desired_format) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (desired_format.width == 0 || desired_format.height == 0) {
     return false;
   }
@@ -215,7 +215,7 @@ bool CaptureManager::StartVideoCapture(VideoCapturer* video_capturer,
 
 bool CaptureManager::StopVideoCapture(VideoCapturer* video_capturer,
                                       const VideoFormat& format) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   VideoCapturerState* capture_state = GetCaptureState(video_capturer);
   if (!capture_state) {
     return false;
@@ -236,7 +236,7 @@ bool CaptureManager::RestartVideoCapture(
     const VideoFormat& previous_format,
     const VideoFormat& desired_format,
     CaptureManager::RestartOptions options) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!IsCapturerRegistered(video_capturer)) {
     LOG(LS_ERROR) << "RestartVideoCapture: video_capturer is not registered.";
     return false;
@@ -289,7 +289,7 @@ bool CaptureManager::RestartVideoCapture(
 
 bool CaptureManager::AddVideoRenderer(VideoCapturer* video_capturer,
                                       VideoRenderer* video_renderer) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!video_capturer || !video_renderer) {
     return false;
   }
@@ -302,7 +302,7 @@ bool CaptureManager::AddVideoRenderer(VideoCapturer* video_capturer,
 
 bool CaptureManager::RemoveVideoRenderer(VideoCapturer* video_capturer,
                                          VideoRenderer* video_renderer) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!video_capturer || !video_renderer) {
     return false;
   }
@@ -314,12 +314,12 @@ bool CaptureManager::RemoveVideoRenderer(VideoCapturer* video_capturer,
 }
 
 bool CaptureManager::IsCapturerRegistered(VideoCapturer* video_capturer) const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return GetCaptureState(video_capturer) != NULL;
 }
 
 bool CaptureManager::RegisterVideoCapturer(VideoCapturer* video_capturer) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   VideoCapturerState* capture_state =
       VideoCapturerState::Create(video_capturer);
   if (!capture_state) {
@@ -332,7 +332,7 @@ bool CaptureManager::RegisterVideoCapturer(VideoCapturer* video_capturer) {
 
 void CaptureManager::UnregisterVideoCapturer(
     VideoCapturerState* capture_state) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   VideoCapturer* video_capturer = capture_state->GetVideoCapturer();
   capture_states_.erase(video_capturer);
   delete capture_state;
@@ -357,7 +357,7 @@ void CaptureManager::UnregisterVideoCapturer(
 
 bool CaptureManager::StartWithBestCaptureFormat(
     VideoCapturerState* capture_state, VideoCapturer* video_capturer) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   VideoFormat highest_asked_format =
       capture_state->GetHighestFormat(video_capturer);
   VideoFormat capture_format;
@@ -384,7 +384,7 @@ bool CaptureManager::StartWithBestCaptureFormat(
 
 VideoCapturerState* CaptureManager::GetCaptureState(
     VideoCapturer* video_capturer) const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   CaptureStates::const_iterator iter = capture_states_.find(video_capturer);
   if (iter == capture_states_.end()) {
     return NULL;
@@ -394,7 +394,7 @@ VideoCapturerState* CaptureManager::GetCaptureState(
 
 CaptureRenderAdapter* CaptureManager::GetAdapter(
     VideoCapturer* video_capturer) const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   VideoCapturerState* capture_state = GetCaptureState(video_capturer);
   if (!capture_state) {
     return NULL;

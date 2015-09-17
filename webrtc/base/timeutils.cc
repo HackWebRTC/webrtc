@@ -42,7 +42,7 @@ uint64 TimeNanos() {
     // Get the timebase if this is the first time we run.
     // Recommended by Apple's QA1398.
     if (mach_timebase_info(&timebase) != KERN_SUCCESS) {
-      DCHECK(false);
+      RTC_DCHECK(false);
     }
   }
   // Use timebase to convert absolute time tick units into nanoseconds.
@@ -136,8 +136,8 @@ void CurrentTmTime(struct tm *tm, int *microseconds) {
 }
 
 uint32 TimeAfter(int32 elapsed) {
-  DCHECK_GE(elapsed, 0);
-  DCHECK_LT(static_cast<uint32>(elapsed), HALF);
+  RTC_DCHECK_GE(elapsed, 0);
+  RTC_DCHECK_LT(static_cast<uint32>(elapsed), HALF);
   return Time() + elapsed;
 }
 

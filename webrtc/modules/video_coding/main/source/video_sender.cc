@@ -84,7 +84,7 @@ int64_t VideoSender::TimeUntilNextProcess() {
 int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                                        uint32_t numberOfCores,
                                        uint32_t maxPayloadSize) {
-  DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
   rtc::CritScope lock(&send_crit_);
   if (sendCodec == nullptr) {
     return VCM_PARAMETER_ERROR;
@@ -133,7 +133,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
 }
 
 const VideoCodec& VideoSender::GetSendCodec() const {
-  DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
   return current_codec_;
 }
 
@@ -155,7 +155,7 @@ VideoCodecType VideoSender::SendCodecBlocking() const {
 int32_t VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                              uint8_t payloadType,
                                              bool internalSource /*= false*/) {
-  DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
 
   rtc::CritScope lock(&send_crit_);
 
@@ -193,7 +193,7 @@ int32_t VideoSender::SentFrameCount(VCMFrameCount* frameCount) {
 
 // Get encode bitrate
 int VideoSender::Bitrate(unsigned int* bitrate) const {
-  DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
   // Since we're running on the thread that's the only thread known to modify
   // the value of _encoder, we don't need to grab the lock here.
 
@@ -207,7 +207,7 @@ int VideoSender::Bitrate(unsigned int* bitrate) const {
 
 // Get encode frame rate
 int VideoSender::FrameRate(unsigned int* framerate) const {
-  DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
   // Since we're running on the thread that's the only thread known to modify
   // the value of _encoder, we don't need to grab the lock here.
 
@@ -274,7 +274,7 @@ int32_t VideoSender::RegisterSendStatisticsCallback(
 // used in this class.
 int32_t VideoSender::RegisterProtectionCallback(
     VCMProtectionCallback* protection_callback) {
-  DCHECK(protection_callback == nullptr || protection_callback_ == nullptr);
+  RTC_DCHECK(protection_callback == nullptr || protection_callback_ == nullptr);
   protection_callback_ = protection_callback;
   return VCM_OK;
 }
@@ -334,7 +334,7 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
     // This module only supports software encoding.
     // TODO(pbos): Offload conversion from the encoder thread.
     converted_frame = converted_frame.ConvertNativeToI420Frame();
-    CHECK(!converted_frame.IsZeroSize())
+    RTC_CHECK(!converted_frame.IsZeroSize())
         << "Frame conversion failed, won't be able to encode frame.";
   }
   int32_t ret =
@@ -376,7 +376,7 @@ int32_t VideoSender::EnableFrameDropper(bool enable) {
 }
 
 void VideoSender::SuspendBelowMinBitrate() {
-  DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
   int threshold_bps;
   if (current_codec_.numberOfSimulcastStreams == 0) {
     threshold_bps = current_codec_.minBitrate * 1000;

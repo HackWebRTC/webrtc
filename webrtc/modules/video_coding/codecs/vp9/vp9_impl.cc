@@ -441,8 +441,8 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (frame_types && frame_types->size() > 0) {
     frame_type = (*frame_types)[0];
   }
-  DCHECK_EQ(input_image.width(), static_cast<int>(raw_->d_w));
-  DCHECK_EQ(input_image.height(), static_cast<int>(raw_->d_h));
+  RTC_DCHECK_EQ(input_image.width(), static_cast<int>(raw_->d_w));
+  RTC_DCHECK_EQ(input_image.height(), static_cast<int>(raw_->d_h));
 
   // Set input image for use in the callback.
   // This was necessary since you need some information from input_image.

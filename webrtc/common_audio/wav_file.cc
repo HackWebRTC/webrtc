@@ -39,16 +39,16 @@ class ReadableWavFile : public ReadableWav {
 
 WavReader::WavReader(const std::string& filename)
     : file_handle_(fopen(filename.c_str(), "rb")) {
-  CHECK(file_handle_ && "Could not open wav file for reading.");
+  RTC_CHECK(file_handle_ && "Could not open wav file for reading.");
 
   ReadableWavFile readable(file_handle_);
   WavFormat format;
   int bytes_per_sample;
-  CHECK(ReadWavHeader(&readable, &num_channels_, &sample_rate_, &format,
-                      &bytes_per_sample, &num_samples_));
+  RTC_CHECK(ReadWavHeader(&readable, &num_channels_, &sample_rate_, &format,
+                          &bytes_per_sample, &num_samples_));
   num_samples_remaining_ = num_samples_;
-  CHECK_EQ(kWavFormat, format);
-  CHECK_EQ(kBytesPerSample, bytes_per_sample);
+  RTC_CHECK_EQ(kWavFormat, format);
+  RTC_CHECK_EQ(kBytesPerSample, bytes_per_sample);
 }
 
 WavReader::~WavReader() {
@@ -65,8 +65,8 @@ size_t WavReader::ReadSamples(size_t num_samples, int16_t* samples) {
   const size_t read =
       fread(samples, sizeof(*samples), num_samples, file_handle_);
   // If we didn't read what was requested, ensure we've reached the EOF.
-  CHECK(read == num_samples || feof(file_handle_));
-  CHECK_LE(read, num_samples_remaining_);
+  RTC_CHECK(read == num_samples || feof(file_handle_));
+  RTC_CHECK_LE(read, num_samples_remaining_);
   num_samples_remaining_ -= rtc::checked_cast<uint32_t>(read);
   return read;
 }
@@ -86,7 +86,7 @@ size_t WavReader::ReadSamples(size_t num_samples, float* samples) {
 }
 
 void WavReader::Close() {
-  CHECK_EQ(0, fclose(file_handle_));
+  RTC_CHECK_EQ(0, fclose(file_handle_));
   file_handle_ = NULL;
 }
 
@@ -96,17 +96,14 @@ WavWriter::WavWriter(const std::string& filename, int sample_rate,
       num_channels_(num_channels),
       num_samples_(0),
       file_handle_(fopen(filename.c_str(), "wb")) {
-  CHECK(file_handle_ && "Could not open wav file for writing.");
-  CHECK(CheckWavParameters(num_channels_,
-                           sample_rate_,
-                           kWavFormat,
-                           kBytesPerSample,
-                           num_samples_));
+  RTC_CHECK(file_handle_ && "Could not open wav file for writing.");
+  RTC_CHECK(CheckWavParameters(num_channels_, sample_rate_, kWavFormat,
+                               kBytesPerSample, num_samples_));
 
   // Write a blank placeholder header, since we need to know the total number
   // of samples before we can fill in the real data.
   static const uint8_t blank_header[kWavHeaderSize] = {0};
-  CHECK_EQ(1u, fwrite(blank_header, kWavHeaderSize, 1, file_handle_));
+  RTC_CHECK_EQ(1u, fwrite(blank_header, kWavHeaderSize, 1, file_handle_));
 }
 
 WavWriter::~WavWriter() {
@@ -119,10 +116,10 @@ void WavWriter::WriteSamples(const int16_t* samples, size_t num_samples) {
 #endif
   const size_t written =
       fwrite(samples, sizeof(*samples), num_samples, file_handle_);
-  CHECK_EQ(num_samples, written);
+  RTC_CHECK_EQ(num_samples, written);
   num_samples_ += static_cast<uint32_t>(written);
-  CHECK(written <= std::numeric_limits<uint32_t>::max() ||
-        num_samples_ >= written);  // detect uint32_t overflow
+  RTC_CHECK(written <= std::numeric_limits<uint32_t>::max() ||
+            num_samples_ >= written);  // detect uint32_t overflow
 }
 
 void WavWriter::WriteSamples(const float* samples, size_t num_samples) {
@@ -136,12 +133,12 @@ void WavWriter::WriteSamples(const float* samples, size_t num_samples) {
 }
 
 void WavWriter::Close() {
-  CHECK_EQ(0, fseek(file_handle_, 0, SEEK_SET));
+  RTC_CHECK_EQ(0, fseek(file_handle_, 0, SEEK_SET));
   uint8_t header[kWavHeaderSize];
   WriteWavHeader(header, num_channels_, sample_rate_, kWavFormat,
                  kBytesPerSample, num_samples_);
-  CHECK_EQ(1u, fwrite(header, kWavHeaderSize, 1, file_handle_));
-  CHECK_EQ(0, fclose(file_handle_));
+  RTC_CHECK_EQ(1u, fwrite(header, kWavHeaderSize, 1, file_handle_));
+  RTC_CHECK_EQ(0, fclose(file_handle_));
   file_handle_ = NULL;
 }
 

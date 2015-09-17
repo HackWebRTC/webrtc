@@ -146,13 +146,13 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
         current_frame_num_(num_frames_ - 1),
         current_source_frame_(nullptr),
         file_generator_(files, source_width, source_height, 1) {
-    DCHECK(clock_ != nullptr);
-    DCHECK_GT(num_frames_, 0u);
-    DCHECK_GE(source_height, target_height);
-    DCHECK_GE(source_width, target_width);
-    DCHECK_GE(scroll_time_ms, 0);
-    DCHECK_GE(pause_time_ms, 0);
-    DCHECK_GT(scroll_time_ms + pause_time_ms, 0);
+    RTC_DCHECK(clock_ != nullptr);
+    RTC_DCHECK_GT(num_frames_, 0u);
+    RTC_DCHECK_GE(source_height, target_height);
+    RTC_DCHECK_GE(source_width, target_width);
+    RTC_DCHECK_GE(scroll_time_ms, 0);
+    RTC_DCHECK_GE(pause_time_ms, 0);
+    RTC_DCHECK_GT(scroll_time_ms + pause_time_ms, 0);
     current_frame_.CreateEmptyFrame(static_cast<int>(target_width),
                                     static_cast<int>(target_height),
                                     static_cast<int>(target_width),
@@ -187,7 +187,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
       current_source_frame_ = file_generator_.NextFrame();
       current_frame_num_ = (current_frame_num_ + 1) % num_frames_;
     }
-    DCHECK(current_source_frame_ != nullptr);
+    RTC_DCHECK(current_source_frame_ != nullptr);
   }
 
   void CropSourceToScrolledImage(double scroll_factor) {
@@ -247,7 +247,7 @@ FrameGenerator* FrameGenerator::CreateFromYuvFile(
   std::vector<FILE*> files;
   for (const std::string& filename : filenames) {
     FILE* file = fopen(filename.c_str(), "rb");
-    DCHECK(file != nullptr);
+    RTC_DCHECK(file != nullptr);
     files.push_back(file);
   }
 
@@ -267,7 +267,7 @@ FrameGenerator* FrameGenerator::CreateScrollingInputFromYuvFiles(
   std::vector<FILE*> files;
   for (const std::string& filename : filenames) {
     FILE* file = fopen(filename.c_str(), "rb");
-    DCHECK(file != nullptr);
+    RTC_DCHECK(file != nullptr);
     files.push_back(file);
   }
 

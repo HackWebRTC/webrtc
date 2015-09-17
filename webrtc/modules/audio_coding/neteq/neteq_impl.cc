@@ -840,7 +840,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
     // lookahead by moving the index.
     const size_t missing_lookahead_samples =
         expand_->overlap_length() - sync_buffer_->FutureLength();
-    DCHECK_GE(sync_buffer_->next_index(), missing_lookahead_samples);
+    RTC_DCHECK_GE(sync_buffer_->next_index(), missing_lookahead_samples);
     sync_buffer_->set_next_index(sync_buffer_->next_index() -
                                  missing_lookahead_samples);
   }
@@ -856,7 +856,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
   *samples_per_channel = output_size_samples_;
 
   // Should always have overlap samples left in the |sync_buffer_|.
-  DCHECK_GE(sync_buffer_->FutureLength(), expand_->overlap_length());
+  RTC_DCHECK_GE(sync_buffer_->FutureLength(), expand_->overlap_length());
 
   if (play_dtmf) {
     return_value = DtmfOverdub(dtmf_event, sync_buffer_->Channels(), output);

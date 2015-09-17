@@ -32,7 +32,7 @@ class PooledI420Buffer : public webrtc::VideoFrameBuffer {
   uint8_t* MutableData(webrtc::PlaneType type) override {
     // Make the HasOneRef() check here instead of in |buffer_|, because the pool
     // also has a reference to |buffer_|.
-    DCHECK(HasOneRef());
+    RTC_DCHECK(HasOneRef());
     return const_cast<uint8_t*>(buffer_->data(type));
   }
   int stride(webrtc::PlaneType type) const override {
@@ -64,7 +64,7 @@ void I420BufferPool::Release() {
 
 rtc::scoped_refptr<VideoFrameBuffer> I420BufferPool::CreateBuffer(int width,
                                                                   int height) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   // Release buffers with wrong resolution.
   for (auto it = buffers_.begin(); it != buffers_.end();) {
     if ((*it)->width() != width || (*it)->height() != height)

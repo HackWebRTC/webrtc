@@ -199,7 +199,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     frame_type = kFrameEmpty;
     encoded_info.payload_type = previous_pltype;
   } else {
-    DCHECK_GT(encode_buffer_.size(), 0u);
+    RTC_DCHECK_GT(encode_buffer_.size(), 0u);
     frame_type = encoded_info.speech ? kAudioFrameSpeech : kAudioFrameCN;
   }
 
@@ -500,7 +500,7 @@ int AudioCodingModuleImpl::SetVAD(bool enable_dtx,
                                   bool enable_vad,
                                   ACMVADMode mode) {
   // Note: |enable_vad| is not used; VAD is enabled based on the DTX setting.
-  DCHECK_EQ(enable_dtx, enable_vad);
+  RTC_DCHECK_EQ(enable_dtx, enable_vad);
   CriticalSectionScoped lock(acm_crit_sect_.get());
   return codec_manager_.SetVAD(enable_dtx, mode);
 }
@@ -580,7 +580,7 @@ int AudioCodingModuleImpl::PlayoutFrequency() const {
 // for codecs, CNG (NB, WB and SWB), DTMF, RED.
 int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   CriticalSectionScoped lock(acm_crit_sect_.get());
-  DCHECK(receiver_initialized_);
+  RTC_DCHECK(receiver_initialized_);
   if (codec.channels > 2 || codec.channels < 0) {
     LOG_F(LS_ERROR) << "Unsupported number of channels: " << codec.channels;
     return -1;
@@ -612,7 +612,7 @@ int AudioCodingModuleImpl::RegisterExternalReceiveCodec(
     int sample_rate_hz,
     int num_channels) {
   CriticalSectionScoped lock(acm_crit_sect_.get());
-  DCHECK(receiver_initialized_);
+  RTC_DCHECK(receiver_initialized_);
   if (num_channels > 2 || num_channels < 0) {
     LOG_F(LS_ERROR) << "Unsupported number of channels: " << num_channels;
     return -1;

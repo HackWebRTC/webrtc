@@ -28,8 +28,8 @@ int AudioDecoderPcm16B::DecodeInternal(const uint8_t* encoded,
                                        int sample_rate_hz,
                                        int16_t* decoded,
                                        SpeechType* speech_type) {
-  DCHECK(sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
-         sample_rate_hz == 32000 || sample_rate_hz == 48000)
+  RTC_DCHECK(sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
+             sample_rate_hz == 32000 || sample_rate_hz == 48000)
       << "Unsupported sample rate " << sample_rate_hz;
   size_t ret = WebRtcPcm16b_Decode(encoded, encoded_len, decoded);
   *speech_type = ConvertSpeechType(1);
@@ -44,7 +44,7 @@ int AudioDecoderPcm16B::PacketDuration(const uint8_t* encoded,
 
 AudioDecoderPcm16BMultiCh::AudioDecoderPcm16BMultiCh(size_t num_channels)
     : channels_(num_channels) {
-  DCHECK(num_channels > 0);
+  RTC_DCHECK(num_channels > 0);
 }
 
 size_t AudioDecoderPcm16BMultiCh::Channels() const {

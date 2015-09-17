@@ -75,8 +75,8 @@ int64_t TickTime::QueryOsForTicks() {
     // Recommended by Apple's QA1398.
     kern_return_t retval = mach_timebase_info(&timebase);
     if (retval != KERN_SUCCESS) {
-      // TODO(wu): Implement CHECK similar to chrome for all the platforms.
-      // Then replace this with a CHECK(retval == KERN_SUCCESS);
+      // TODO(wu): Implement RTC_CHECK for all the platforms. Then replace this
+      // with a RTC_CHECK_EQ(retval, KERN_SUCCESS);
 #ifndef WEBRTC_IOS
       asm("int3");
 #else

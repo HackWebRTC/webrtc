@@ -27,7 +27,7 @@ class VideoFrame {
              VideoRotation rotation);
 
   // TODO(pbos): Make all create/copy functions void, they should not be able to
-  // fail (which should be DCHECK/CHECKed instead).
+  // fail (which should be RTC_DCHECK/CHECKed instead).
 
   // CreateEmptyFrame: Sets frame dimensions and allocates buffers based
   // on set dimensions - height and plane stride.

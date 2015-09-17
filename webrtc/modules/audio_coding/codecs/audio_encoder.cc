@@ -26,11 +26,11 @@ AudioEncoder::EncodedInfo AudioEncoder::Encode(uint32_t rtp_timestamp,
                                                size_t num_samples_per_channel,
                                                size_t max_encoded_bytes,
                                                uint8_t* encoded) {
-  CHECK_EQ(num_samples_per_channel,
-           static_cast<size_t>(SampleRateHz() / 100));
+  RTC_CHECK_EQ(num_samples_per_channel,
+               static_cast<size_t>(SampleRateHz() / 100));
   EncodedInfo info =
       EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded);
-  CHECK_LE(info.encoded_bytes, max_encoded_bytes);
+  RTC_CHECK_LE(info.encoded_bytes, max_encoded_bytes);
   return info;
 }
 

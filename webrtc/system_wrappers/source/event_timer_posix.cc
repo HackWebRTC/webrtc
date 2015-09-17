@@ -60,7 +60,7 @@ EventTimerPosix::~EventTimerPosix() {
 
 // TODO(pbos): Make this void.
 bool EventTimerPosix::Set() {
-  CHECK_EQ(0, pthread_mutex_lock(&mutex_));
+  RTC_CHECK_EQ(0, pthread_mutex_lock(&mutex_));
   event_set_ = true;
   pthread_cond_signal(&cond_);
   pthread_mutex_unlock(&mutex_);
@@ -69,7 +69,7 @@ bool EventTimerPosix::Set() {
 
 EventTypeWrapper EventTimerPosix::Wait(unsigned long timeout) {
   int ret_val = 0;
-  CHECK_EQ(0, pthread_mutex_lock(&mutex_));
+  RTC_CHECK_EQ(0, pthread_mutex_lock(&mutex_));
 
   if (!event_set_) {
     if (WEBRTC_EVENT_INFINITE != timeout) {
@@ -103,7 +103,7 @@ EventTypeWrapper EventTimerPosix::Wait(unsigned long timeout) {
     }
   }
 
-  DCHECK(ret_val == 0 || ret_val == ETIMEDOUT);
+  RTC_DCHECK(ret_val == 0 || ret_val == ETIMEDOUT);
 
   // Reset and signal if set, regardless of why the thread woke up.
   if (event_set_) {
@@ -117,12 +117,12 @@ EventTypeWrapper EventTimerPosix::Wait(unsigned long timeout) {
 
 EventTypeWrapper EventTimerPosix::Wait(timespec* end_at) {
   int ret_val = 0;
-  CHECK_EQ(0, pthread_mutex_lock(&mutex_));
+  RTC_CHECK_EQ(0, pthread_mutex_lock(&mutex_));
 
   while (ret_val == 0 && !event_set_)
     ret_val = pthread_cond_timedwait(&cond_, &mutex_, end_at);
 
-  DCHECK(ret_val == 0 || ret_val == ETIMEDOUT);
+  RTC_DCHECK(ret_val == 0 || ret_val == ETIMEDOUT);
 
   // Reset and signal if set, regardless of why the thread woke up.
   if (event_set_) {

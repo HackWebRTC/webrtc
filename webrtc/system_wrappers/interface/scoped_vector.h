@@ -84,7 +84,7 @@ class ScopedVector {
   void push_back(T* elem) { v_.push_back(elem); }
 
   void pop_back() {
-    DCHECK(!empty());
+    RTC_DCHECK(!empty());
     delete v_.back();
     v_.pop_back();
   }

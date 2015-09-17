@@ -22,7 +22,7 @@ scoped_refptr<RTCCertificate> RTCCertificate::Create(
 
 RTCCertificate::RTCCertificate(SSLIdentity* identity)
     : identity_(identity) {
-  DCHECK(identity_);
+  RTC_DCHECK(identity_);
 }
 
 RTCCertificate::~RTCCertificate() {

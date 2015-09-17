@@ -33,7 +33,7 @@ int AudioDecoderIlbc::DecodeInternal(const uint8_t* encoded,
                                      int sample_rate_hz,
                                      int16_t* decoded,
                                      SpeechType* speech_type) {
-  DCHECK_EQ(sample_rate_hz, 8000);
+  RTC_DCHECK_EQ(sample_rate_hz, 8000);
   int16_t temp_type = 1;  // Default is speech.
   int ret = WebRtcIlbcfix_Decode(dec_state_, encoded, encoded_len, decoded,
                                  &temp_type);

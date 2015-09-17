@@ -93,11 +93,11 @@ AndroidVideoCapturerJni::~AndroidVideoCapturerJni() {
 void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
                                     webrtc::AndroidVideoCapturer* capturer) {
   LOG(LS_INFO) << "AndroidVideoCapturerJni start";
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   {
     rtc::CritScope cs(&capturer_lock_);
-    CHECK(capturer_ == nullptr);
-    CHECK(invoker_.get() == nullptr);
+    RTC_CHECK(capturer_ == nullptr);
+    RTC_CHECK(invoker_.get() == nullptr);
     capturer_ = capturer;
     invoker_.reset(new rtc::GuardedAsyncInvoker());
   }
@@ -121,7 +121,7 @@ void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
 
 void AndroidVideoCapturerJni::Stop() {
   LOG(LS_INFO) << "AndroidVideoCapturerJni stop";
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   {
     rtc::CritScope cs(&capturer_lock_);
     // Destroying |invoker_| will cancel all pending calls to |capturer_|.
@@ -220,7 +220,8 @@ JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnFrameCaptured)
   // that the memory is valid when we have released |j_frame|.
   // TODO(magjed): Move ReleaseByteArrayElements() into ReturnBuffer() and
   // remove this check.
-  CHECK(!is_copy) << "NativeObserver_nativeOnFrameCaptured: frame is a copy";
+  RTC_CHECK(!is_copy)
+      << "NativeObserver_nativeOnFrameCaptured: frame is a copy";
   reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)
       ->OnIncomingFrame(bytes, length, width, height, rotation, ts);
   jni->ReleaseByteArrayElements(j_frame, bytes, JNI_ABORT);

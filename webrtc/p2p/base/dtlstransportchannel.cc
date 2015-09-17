@@ -79,7 +79,7 @@ rtc::StreamResult StreamInterfaceChannel::Write(const void* data,
 bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
   // We force a read event here to ensure that we don't overflow our queue.
   bool ret = packets_.WriteBack(data, size, NULL);
-  CHECK(ret) << "Failed to write packet to queue.";
+  RTC_CHECK(ret) << "Failed to write packet to queue.";
   if (ret) {
     SignalEvent(this, rtc::SE_READ, 0);
   }

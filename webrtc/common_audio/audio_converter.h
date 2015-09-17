@@ -49,7 +49,7 @@ class AudioConverter {
   AudioConverter(int src_channels, size_t src_frames, int dst_channels,
                  size_t dst_frames);
 
-  // Helper to CHECK that inputs are correctly sized.
+  // Helper to RTC_CHECK that inputs are correctly sized.
   void CheckSizes(size_t src_size, size_t dst_capacity) const;
 
  private:

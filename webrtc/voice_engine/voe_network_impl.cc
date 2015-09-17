@@ -37,7 +37,7 @@ VoENetworkImpl::~VoENetworkImpl() = default;
 
 int VoENetworkImpl::RegisterExternalTransport(int channel,
                                               Transport& transport) {
-  DCHECK(_shared->statistics().Initialized());
+  RTC_DCHECK(_shared->statistics().Initialized());
   voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (!channelPtr) {
@@ -48,7 +48,7 @@ int VoENetworkImpl::RegisterExternalTransport(int channel,
 }
 
 int VoENetworkImpl::DeRegisterExternalTransport(int channel) {
-  CHECK(_shared->statistics().Initialized());
+  RTC_CHECK(_shared->statistics().Initialized());
   voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
   voe::Channel* channelPtr = ch.channel();
   if (!channelPtr) {
@@ -68,8 +68,8 @@ int VoENetworkImpl::ReceivedRTPPacket(int channel,
                                       const void* data,
                                       size_t length,
                                       const PacketTime& packet_time) {
-  CHECK(_shared->statistics().Initialized());
-  CHECK(data);
+  RTC_CHECK(_shared->statistics().Initialized());
+  RTC_CHECK(data);
   // L16 at 32 kHz, stereo, 10 ms frames (+12 byte RTP header) -> 1292 bytes
   if ((length < 12) || (length > 1292)) {
     LOG_F(LS_ERROR) << "Invalid packet length: " << length;
@@ -92,8 +92,8 @@ int VoENetworkImpl::ReceivedRTPPacket(int channel,
 int VoENetworkImpl::ReceivedRTCPPacket(int channel,
                                        const void* data,
                                        size_t length) {
-  CHECK(_shared->statistics().Initialized());
-  CHECK(data);
+  RTC_CHECK(_shared->statistics().Initialized());
+  RTC_CHECK(data);
   if (length < 4) {
     LOG_F(LS_ERROR) << "Invalid packet length: " << length;
     return -1;

@@ -139,7 +139,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       clock_(Clock::GetRealTimeClock()),
       channel_group_(channel_group),
       channel_id_(channel_id) {
-  CHECK(channel_group_->CreateReceiveChannel(
+  RTC_CHECK(channel_group_->CreateReceiveChannel(
       channel_id_, 0, &transport_adapter_, num_cpu_cores));
 
   vie_channel_ = channel_group_->GetChannel(channel_id_);
@@ -150,17 +150,17 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   vie_channel_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
   SetRtcpMode(config_.rtp.rtcp_mode);
 
-  DCHECK(config_.rtp.remote_ssrc != 0);
+  RTC_DCHECK(config_.rtp.remote_ssrc != 0);
   // TODO(pbos): What's an appropriate local_ssrc for receive-only streams?
-  DCHECK(config_.rtp.local_ssrc != 0);
-  DCHECK(config_.rtp.remote_ssrc != config_.rtp.local_ssrc);
+  RTC_DCHECK(config_.rtp.local_ssrc != 0);
+  RTC_DCHECK(config_.rtp.remote_ssrc != config_.rtp.local_ssrc);
 
   vie_channel_->SetSSRC(config_.rtp.local_ssrc, kViEStreamTypeNormal, 0);
   // TODO(pbos): Support multiple RTX, per video payload.
   Config::Rtp::RtxMap::const_iterator it = config_.rtp.rtx.begin();
   for (; it != config_.rtp.rtx.end(); ++it) {
-    DCHECK(it->second.ssrc != 0);
-    DCHECK(it->second.payload_type != 0);
+    RTC_DCHECK(it->second.ssrc != 0);
+    RTC_DCHECK(it->second.payload_type != 0);
 
     vie_channel_->SetRemoteSSRCType(kViEStreamTypeRtx, it->second.ssrc);
     vie_channel_->SetRtxReceivePayloadType(it->second.payload_type, it->first);
@@ -174,16 +174,17 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
     const std::string& extension = config_.rtp.extensions[i].name;
     int id = config_.rtp.extensions[i].id;
     // One-byte-extension local identifiers are in the range 1-14 inclusive.
-    DCHECK_GE(id, 1);
-    DCHECK_LE(id, 14);
+    RTC_DCHECK_GE(id, 1);
+    RTC_DCHECK_LE(id, 14);
     if (extension == RtpExtension::kTOffset) {
-      CHECK_EQ(0, vie_channel_->SetReceiveTimestampOffsetStatus(true, id));
+      RTC_CHECK_EQ(0, vie_channel_->SetReceiveTimestampOffsetStatus(true, id));
     } else if (extension == RtpExtension::kAbsSendTime) {
-      CHECK_EQ(0, vie_channel_->SetReceiveAbsoluteSendTimeStatus(true, id));
+      RTC_CHECK_EQ(0, vie_channel_->SetReceiveAbsoluteSendTimeStatus(true, id));
     } else if (extension == RtpExtension::kVideoRotation) {
-      CHECK_EQ(0, vie_channel_->SetReceiveVideoRotationStatus(true, id));
+      RTC_CHECK_EQ(0, vie_channel_->SetReceiveVideoRotationStatus(true, id));
     } else if (extension == RtpExtension::kTransportSequenceNumber) {
-      CHECK_EQ(0, vie_channel_->SetReceiveTransportSequenceNumber(true, id));
+      RTC_CHECK_EQ(0,
+                   vie_channel_->SetReceiveTransportSequenceNumber(true, id));
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }
@@ -191,13 +192,13 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
 
   if (config_.rtp.fec.ulpfec_payload_type != -1) {
     // ULPFEC without RED doesn't make sense.
-    DCHECK(config_.rtp.fec.red_payload_type != -1);
+    RTC_DCHECK(config_.rtp.fec.red_payload_type != -1);
     VideoCodec codec;
     memset(&codec, 0, sizeof(codec));
     codec.codecType = kVideoCodecULPFEC;
     strcpy(codec.plName, "ulpfec");
     codec.plType = config_.rtp.fec.ulpfec_payload_type;
-    CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
+    RTC_CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
   if (config_.rtp.fec.red_payload_type != -1) {
     VideoCodec codec;
@@ -205,7 +206,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
     codec.codecType = kVideoCodecRED;
     strcpy(codec.plName, "red");
     codec.plType = config_.rtp.fec.red_payload_type;
-    CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
+    RTC_CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
     if (config_.rtp.fec.red_rtx_payload_type != -1) {
       vie_channel_->SetRtxReceivePayloadType(
           config_.rtp.fec.red_rtx_payload_type,
@@ -225,17 +226,18 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   vie_channel_->RegisterReceiveChannelRtpStatisticsCallback(stats_proxy_.get());
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(stats_proxy_.get());
 
-  DCHECK(!config_.decoders.empty());
+  RTC_DCHECK(!config_.decoders.empty());
   for (size_t i = 0; i < config_.decoders.size(); ++i) {
     const Decoder& decoder = config_.decoders[i];
-    CHECK_EQ(0, vie_channel_->RegisterExternalDecoder(
-                    decoder.payload_type, decoder.decoder, decoder.is_renderer,
-                    decoder.is_renderer ? decoder.expected_delay_ms
-                                        : config.render_delay_ms));
+    RTC_CHECK_EQ(0,
+                 vie_channel_->RegisterExternalDecoder(
+                     decoder.payload_type, decoder.decoder, decoder.is_renderer,
+                     decoder.is_renderer ? decoder.expected_delay_ms
+                                         : config.render_delay_ms));
 
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
 
-    CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
+    RTC_CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
 
   incoming_video_stream_.reset(new IncomingVideoStream(0));

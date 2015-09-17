@@ -16,8 +16,8 @@
 
 // Abort the process if |jni| has a Java exception pending.
 // TODO(henrika): merge with CHECK_JNI_EXCEPTION() in jni_helpers.h.
-#define CHECK_EXCEPTION(jni)    \
-  CHECK(!jni->ExceptionCheck()) \
+#define CHECK_EXCEPTION(jni)        \
+  RTC_CHECK(!jni->ExceptionCheck()) \
       << (jni->ExceptionDescribe(), jni->ExceptionClear(), "")
 
 namespace webrtc {
@@ -31,8 +31,8 @@ JNIEnv* GetEnv(JavaVM* jvm);
 jlong PointerTojlong(void* ptr);
 
 // JNIEnv-helper methods that wraps the API which uses the JNI interface
-// pointer (JNIEnv*). It allows us to CHECK success and that no Java exception
-// is thrown while calling the method.
+// pointer (JNIEnv*). It allows us to RTC_CHECK success and that no Java
+// exception is thrown while calling the method.
 jmethodID GetMethodID(
     JNIEnv* jni, jclass c, const char* name, const char* signature);
 

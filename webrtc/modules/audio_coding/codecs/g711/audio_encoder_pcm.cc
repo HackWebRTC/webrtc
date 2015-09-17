@@ -24,7 +24,7 @@ int16_t NumSamplesPerFrame(int num_channels,
                            int frame_size_ms,
                            int sample_rate_hz) {
   int samples_per_frame = num_channels * frame_size_ms * sample_rate_hz / 1000;
-  CHECK_LE(samples_per_frame, std::numeric_limits<int16_t>::max())
+  RTC_CHECK_LE(samples_per_frame, std::numeric_limits<int16_t>::max())
       << "Frame size too large.";
   return static_cast<int16_t>(samples_per_frame);
 }
@@ -54,8 +54,8 @@ AudioEncoderPcm::AudioEncoderPcm(const Config& config, int sample_rate_hz)
                                              config.frame_size_ms,
                                              sample_rate_hz_)),
       first_timestamp_in_buffer_(0) {
-  CHECK_GT(sample_rate_hz, 0) << "Sample rate must be larger than 0 Hz";
-  CHECK_EQ(config.frame_size_ms % 10, 0)
+  RTC_CHECK_GT(sample_rate_hz, 0) << "Sample rate must be larger than 0 Hz";
+  RTC_CHECK_EQ(config.frame_size_ms % 10, 0)
       << "Frame size must be an integer multiple of 10 ms.";
   speech_buffer_.reserve(full_frame_samples_);
 }
@@ -101,8 +101,8 @@ AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
   if (speech_buffer_.size() < full_frame_samples_) {
     return EncodedInfo();
   }
-  CHECK_EQ(speech_buffer_.size(), full_frame_samples_);
-  CHECK_GE(max_encoded_bytes, full_frame_samples_);
+  RTC_CHECK_EQ(speech_buffer_.size(), full_frame_samples_);
+  RTC_CHECK_GE(max_encoded_bytes, full_frame_samples_);
   EncodedInfo info;
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;

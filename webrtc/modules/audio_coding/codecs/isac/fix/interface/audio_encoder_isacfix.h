@@ -84,17 +84,17 @@ struct IsacFix {
   }
   static inline int16_t SetDecSampRate(instance_type* inst,
                                        uint16_t sample_rate_hz) {
-    DCHECK_EQ(sample_rate_hz, kFixSampleRate);
+    RTC_DCHECK_EQ(sample_rate_hz, kFixSampleRate);
     return 0;
   }
   static inline int16_t SetEncSampRate(instance_type* inst,
                                        uint16_t sample_rate_hz) {
-    DCHECK_EQ(sample_rate_hz, kFixSampleRate);
+    RTC_DCHECK_EQ(sample_rate_hz, kFixSampleRate);
     return 0;
   }
   static inline void SetEncSampRateInDecoder(instance_type* inst,
                                              uint16_t sample_rate_hz) {
-    DCHECK_EQ(sample_rate_hz, kFixSampleRate);
+    RTC_DCHECK_EQ(sample_rate_hz, kFixSampleRate);
   }
   static inline void SetInitialBweBottleneck(
       instance_type* inst,

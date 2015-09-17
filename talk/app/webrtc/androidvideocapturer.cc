@@ -82,7 +82,7 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
       int dst_width,
       int dst_height) const override {
     // Check that captured_frame is actually our frame.
-    CHECK(captured_frame == &captured_frame_);
+    RTC_CHECK(captured_frame == &captured_frame_);
     rtc::scoped_ptr<cricket::VideoFrame> frame(new cricket::WebRtcVideoFrame(
         ShallowCenterCrop(buffer_, dst_width, dst_height),
         captured_frame->elapsed_time, captured_frame->time_stamp,
@@ -119,8 +119,9 @@ AndroidVideoCapturer::AndroidVideoCapturer(
   std::vector<cricket::VideoFormat> formats;
   for (Json::ArrayIndex i = 0; i < json_values.size(); ++i) {
       const Json::Value& json_value = json_values[i];
-      CHECK(!json_value["width"].isNull() && !json_value["height"].isNull() &&
-             !json_value["framerate"].isNull());
+      RTC_CHECK(!json_value["width"].isNull() &&
+                !json_value["height"].isNull() &&
+                !json_value["framerate"].isNull());
       cricket::VideoFormat format(
           json_value["width"].asInt(),
           json_value["height"].asInt(),
@@ -134,13 +135,13 @@ AndroidVideoCapturer::AndroidVideoCapturer(
 }
 
 AndroidVideoCapturer::~AndroidVideoCapturer() {
-  CHECK(!running_);
+  RTC_CHECK(!running_);
 }
 
 cricket::CaptureState AndroidVideoCapturer::Start(
     const cricket::VideoFormat& capture_format) {
-  CHECK(thread_checker_.CalledOnValidThread());
-  CHECK(!running_);
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(!running_);
   const int fps = cricket::VideoFormat::IntervalToFps(capture_format.interval);
   LOG(LS_INFO) << " AndroidVideoCapturer::Start " << capture_format.width << "x"
                << capture_format.height << "@" << fps;
@@ -157,8 +158,8 @@ cricket::CaptureState AndroidVideoCapturer::Start(
 
 void AndroidVideoCapturer::Stop() {
   LOG(LS_INFO) << " AndroidVideoCapturer::Stop ";
-  CHECK(thread_checker_.CalledOnValidThread());
-  CHECK(running_);
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(running_);
   running_ = false;
   SetCaptureFormat(NULL);
 
@@ -168,18 +169,18 @@ void AndroidVideoCapturer::Stop() {
 }
 
 bool AndroidVideoCapturer::IsRunning() {
-  CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
   return running_;
 }
 
 bool AndroidVideoCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
-  CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
   fourccs->push_back(cricket::FOURCC_YV12);
   return true;
 }
 
 void AndroidVideoCapturer::OnCapturerStarted(bool success) {
-  CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
   cricket::CaptureState new_state =
       success ? cricket::CS_RUNNING : cricket::CS_FAILED;
   if (new_state == current_state_)
@@ -196,7 +197,7 @@ void AndroidVideoCapturer::OnIncomingFrame(
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer,
     int rotation,
     int64 time_stamp) {
-  CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
   frame_factory_->UpdateCapturedFrame(buffer, rotation, time_stamp);
   SignalFrameCaptured(this, frame_factory_->GetCapturedFrame());
   frame_factory_->ClearCapturedFrame();
@@ -204,7 +205,7 @@ void AndroidVideoCapturer::OnIncomingFrame(
 
 void AndroidVideoCapturer::OnOutputFormatRequest(
     int width, int height, int fps) {
-  CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
   const cricket::VideoFormat& current = video_adapter()->output_format();
   cricket::VideoFormat format(
       width, height, cricket::VideoFormat::FpsToInterval(fps), current.fourcc);

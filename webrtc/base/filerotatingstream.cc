@@ -37,8 +37,8 @@ FileRotatingStream::FileRotatingStream(const std::string& dir_path,
                          max_file_size,
                          num_files,
                          kWrite) {
-  DCHECK_GT(max_file_size, 0u);
-  DCHECK_GT(num_files, 1u);
+  RTC_DCHECK_GT(max_file_size, 0u);
+  RTC_DCHECK_GT(num_files, 1u);
 }
 
 FileRotatingStream::FileRotatingStream(const std::string& dir_path,
@@ -55,7 +55,7 @@ FileRotatingStream::FileRotatingStream(const std::string& dir_path,
       rotation_index_(0),
       current_bytes_written_(0),
       disable_buffering_(false) {
-  DCHECK(Filesystem::IsFolder(dir_path));
+  RTC_DCHECK(Filesystem::IsFolder(dir_path));
   switch (mode) {
     case kWrite: {
       file_names_.clear();
@@ -94,7 +94,7 @@ StreamResult FileRotatingStream::Read(void* buffer,
                                       size_t buffer_len,
                                       size_t* read,
                                       int* error) {
-  DCHECK(buffer);
+  RTC_DCHECK(buffer);
   if (mode_ != kRead) {
     return SR_EOS;
   }
@@ -152,7 +152,7 @@ StreamResult FileRotatingStream::Write(const void* data,
     return SR_ERROR;
   }
   // Write as much as will fit in to the current file.
-  DCHECK_LT(current_bytes_written_, max_file_size_);
+  RTC_DCHECK_LT(current_bytes_written_, max_file_size_);
   size_t remaining_bytes = max_file_size_ - current_bytes_written_;
   size_t write_length = std::min(data_len, remaining_bytes);
   size_t local_written = 0;
@@ -164,7 +164,7 @@ StreamResult FileRotatingStream::Write(const void* data,
 
   // If we're done with this file, rotate it out.
   if (current_bytes_written_ >= max_file_size_) {
-    DCHECK_EQ(current_bytes_written_, max_file_size_);
+    RTC_DCHECK_EQ(current_bytes_written_, max_file_size_);
     RotateFiles();
   }
   return result;
@@ -183,7 +183,7 @@ bool FileRotatingStream::GetSize(size_t* size) const {
     // potential buffering.
     return false;
   }
-  DCHECK(size);
+  RTC_DCHECK(size);
   *size = 0;
   size_t total_size = 0;
   for (auto file_name : file_names_) {
@@ -232,7 +232,7 @@ bool FileRotatingStream::DisableBuffering() {
 }
 
 std::string FileRotatingStream::GetFilePath(size_t index) const {
-  DCHECK_LT(index, file_names_.size());
+  RTC_DCHECK_LT(index, file_names_.size());
   return file_names_[index];
 }
 
@@ -240,7 +240,7 @@ bool FileRotatingStream::OpenCurrentFile() {
   CloseCurrentFile();
 
   // Opens the appropriate file in the appropriate mode.
-  DCHECK_LT(current_file_index_, file_names_.size());
+  RTC_DCHECK_LT(current_file_index_, file_names_.size());
   std::string file_path = file_names_[current_file_index_];
   file_stream_.reset(new FileStream());
   const char* mode = nullptr;
@@ -248,7 +248,7 @@ bool FileRotatingStream::OpenCurrentFile() {
     case kWrite:
       mode = "w+";
       // We should always we writing to the zero-th file.
-      DCHECK_EQ(current_file_index_, 0u);
+      RTC_DCHECK_EQ(current_file_index_, 0u);
       break;
     case kRead:
       mode = "r";
@@ -276,12 +276,12 @@ void FileRotatingStream::CloseCurrentFile() {
 }
 
 void FileRotatingStream::RotateFiles() {
-  DCHECK_EQ(mode_, kWrite);
+  RTC_DCHECK_EQ(mode_, kWrite);
   CloseCurrentFile();
   // Rotates the files by deleting the file at |rotation_index_|, which is the
   // oldest file and then renaming the newer files to have an incremented index.
   // See header file comments for example.
-  DCHECK_LE(rotation_index_, file_names_.size());
+  RTC_DCHECK_LE(rotation_index_, file_names_.size());
   std::string file_to_delete = file_names_[rotation_index_];
   if (Filesystem::IsFile(file_to_delete)) {
     if (!Filesystem::DeleteFile(file_to_delete)) {
@@ -325,13 +325,13 @@ std::vector<std::string> FileRotatingStream::GetFilesWithPrefix() const {
 
 std::string FileRotatingStream::GetFilePath(size_t index,
                                             size_t num_files) const {
-  DCHECK_LT(index, num_files);
+  RTC_DCHECK_LT(index, num_files);
   std::ostringstream file_name;
   // The format will be "_%<num_digits>zu". We want to zero pad the index so
   // that it will sort nicely.
   size_t max_digits = ((num_files - 1) / 10) + 1;
   size_t num_digits = (index / 10) + 1;
-  DCHECK_LE(num_digits, max_digits);
+  RTC_DCHECK_LE(num_digits, max_digits);
   size_t padding = max_digits - num_digits;
 
   file_name << file_prefix_ << "_";
@@ -360,7 +360,7 @@ CallSessionFileRotatingStream::CallSessionFileRotatingStream(
                          GetNumRotatingLogFiles(max_total_log_size) + 1),
       max_total_log_size_(max_total_log_size),
       num_rotations_(0) {
-  DCHECK_GE(max_total_log_size, 4u);
+  RTC_DCHECK_GE(max_total_log_size, 4u);
 }
 
 const char* CallSessionFileRotatingStream::kLogPrefix = "webrtc_log";

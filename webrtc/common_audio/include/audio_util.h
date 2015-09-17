@@ -154,8 +154,8 @@ void DownmixInterleavedToMonoImpl(const T* interleaved,
                                   size_t num_frames,
                                   int num_channels,
                                   T* deinterleaved) {
-  DCHECK_GT(num_channels, 0);
-  DCHECK_GT(num_frames, 0u);
+  RTC_DCHECK_GT(num_channels, 0);
+  RTC_DCHECK_GT(num_frames, 0u);
 
   const T* const end = interleaved + num_frames * num_channels;
 

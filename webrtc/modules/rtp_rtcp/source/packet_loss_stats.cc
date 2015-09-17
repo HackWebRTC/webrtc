@@ -69,7 +69,7 @@ void PacketLossStats::ComputeLossCounts(
   *out_multiple_loss_event_count = multiple_loss_historic_event_count_;
   *out_multiple_loss_packet_count = multiple_loss_historic_packet_count_;
   if (lost_packets_buffer_.empty()) {
-    DCHECK(lost_packets_wrapped_buffer_.empty());
+    RTC_DCHECK(lost_packets_wrapped_buffer_.empty());
     return;
   }
   uint16_t last_num = 0;

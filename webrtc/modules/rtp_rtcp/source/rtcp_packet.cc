@@ -670,7 +670,7 @@ rtc::scoped_ptr<RawPacket> RtcpPacket::Build() const {
         : called_(false), packet_(packet) {}
     virtual ~PacketVerifier() {}
     void OnPacketReady(uint8_t* data, size_t length) override {
-      CHECK(!called_) << "Fragmentation not supported.";
+      RTC_CHECK(!called_) << "Fragmentation not supported.";
       called_ = true;
       packet_->SetLength(length);
     }

@@ -140,8 +140,8 @@ class AudioDecoderTest : public ::testing::Test {
                           uint8_t* output) {
     encoded_info_.encoded_bytes = 0;
     const size_t samples_per_10ms = audio_encoder_->SampleRateHz() / 100;
-    CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
-             input_len_samples);
+    RTC_CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
+                 input_len_samples);
     rtc::scoped_ptr<int16_t[]> interleaved_input(
         new int16_t[channels_ * samples_per_10ms]);
     for (size_t i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {

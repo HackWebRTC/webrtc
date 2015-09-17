@@ -32,7 +32,7 @@ class WavFile {
 };
 
 // Simple C++ class for writing 16-bit PCM WAV files. All error handling is
-// by calls to CHECK(), making it unsuitable for anything but debug code.
+// by calls to RTC_CHECK(), making it unsuitable for anything but debug code.
 class WavWriter final : public WavFile {
  public:
   // Open a new WAV file for writing.

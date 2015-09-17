@@ -88,7 +88,7 @@ void TransportFeedbackAdapter::OnTransportFeedback(
     int64_t offset_us = 0;
     for (auto symbol : feedback.GetStatusVector()) {
       if (symbol != rtcp::TransportFeedback::StatusSymbol::kNotReceived) {
-        DCHECK(delta_it != delta_vec.end());
+        RTC_DCHECK(delta_it != delta_vec.end());
         offset_us += *(delta_it++);
         int64_t timestamp_ms = current_offset_ms_ + (offset_us / 1000);
         PacketInfo info = {timestamp_ms, 0, sequence_number, 0, false};
@@ -100,14 +100,14 @@ void TransportFeedbackAdapter::OnTransportFeedback(
       }
       ++sequence_number;
     }
-    DCHECK(delta_it == delta_vec.end());
+    RTC_DCHECK(delta_it == delta_vec.end());
     if (failed_lookups > 0) {
       LOG(LS_WARNING) << "Failed to lookup send time for " << failed_lookups
                       << " packet" << (failed_lookups > 1 ? "s" : "")
                       << ". Send time history too small?";
     }
   }
-  DCHECK(bitrate_estimator_.get() != nullptr);
+  RTC_DCHECK(bitrate_estimator_.get() != nullptr);
   bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector);
 }
 
@@ -119,7 +119,7 @@ void TransportFeedbackAdapter::OnReceiveBitrateChanged(
 
 void TransportFeedbackAdapter::OnRttUpdate(int64_t avg_rtt_ms,
                                            int64_t max_rtt_ms) {
-  DCHECK(bitrate_estimator_.get() != nullptr);
+  RTC_DCHECK(bitrate_estimator_.get() != nullptr);
   bitrate_estimator_->OnRttUpdate(avg_rtt_ms, max_rtt_ms);
 }
 

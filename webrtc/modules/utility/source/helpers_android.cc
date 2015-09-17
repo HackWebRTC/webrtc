@@ -25,8 +25,8 @@ namespace webrtc {
 JNIEnv* GetEnv(JavaVM* jvm) {
   void* env = NULL;
   jint status = jvm->GetEnv(&env, JNI_VERSION_1_6);
-  CHECK(((env != NULL) && (status == JNI_OK)) ||
-        ((env == NULL) && (status == JNI_EDETACHED)))
+  RTC_CHECK(((env != NULL) && (status == JNI_OK)) ||
+            ((env == NULL) && (status == JNI_EDETACHED)))
       << "Unexpected GetEnv return: " << status << ":" << env;
   return reinterpret_cast<JNIEnv*>(env);
 }
@@ -41,7 +41,7 @@ jlong PointerTojlong(void* ptr) {
   // conversion from pointer to integral type.  intptr_t to jlong is a standard
   // widening by the static_assert above.
   jlong ret = reinterpret_cast<intptr_t>(ptr);
-  DCHECK(reinterpret_cast<void*>(ret) == ptr);
+  RTC_DCHECK(reinterpret_cast<void*>(ret) == ptr);
   return ret;
 }
 
@@ -50,7 +50,7 @@ jmethodID GetMethodID (
   jmethodID m = jni->GetMethodID(c, name, signature);
   CHECK_EXCEPTION(jni) << "Error during GetMethodID: " << name << ", "
                        << signature;
-  CHECK(m) << name << ", " << signature;
+  RTC_CHECK(m) << name << ", " << signature;
   return m;
 }
 
@@ -59,21 +59,21 @@ jmethodID GetStaticMethodID (
   jmethodID m = jni->GetStaticMethodID(c, name, signature);
   CHECK_EXCEPTION(jni) << "Error during GetStaticMethodID: " << name << ", "
                        << signature;
-  CHECK(m) << name << ", " << signature;
+  RTC_CHECK(m) << name << ", " << signature;
   return m;
 }
 
 jclass FindClass(JNIEnv* jni, const char* name) {
   jclass c = jni->FindClass(name);
   CHECK_EXCEPTION(jni) << "Error during FindClass: " << name;
-  CHECK(c) << name;
+  RTC_CHECK(c) << name;
   return c;
 }
 
 jobject NewGlobalRef(JNIEnv* jni, jobject o) {
   jobject ret = jni->NewGlobalRef(o);
   CHECK_EXCEPTION(jni) << "Error during NewGlobalRef";
-  CHECK(ret);
+  RTC_CHECK(ret);
   return ret;
 }
 
@@ -85,8 +85,9 @@ void DeleteGlobalRef(JNIEnv* jni, jobject o) {
 std::string GetThreadId() {
   char buf[21];  // Big enough to hold a kuint64max plus terminating NULL.
   int thread_id = gettid();
-  CHECK_LT(snprintf(buf, sizeof(buf), "%i", thread_id),
-      static_cast<int>(sizeof(buf))) << "Thread id is bigger than uint64??";
+  RTC_CHECK_LT(snprintf(buf, sizeof(buf), "%i", thread_id),
+               static_cast<int>(sizeof(buf)))
+      << "Thread id is bigger than uint64??";
   return std::string(buf);
 }
 
@@ -104,7 +105,7 @@ AttachThreadScoped::AttachThreadScoped(JavaVM* jvm)
     ALOGD("Attaching thread to JVM%s", GetThreadInfo().c_str());
     jint res = jvm->AttachCurrentThread(&env_, NULL);
     attached_ = (res == JNI_OK);
-    CHECK(attached_) << "AttachCurrentThread failed: " << res;
+    RTC_CHECK(attached_) << "AttachCurrentThread failed: " << res;
   }
 }
 
@@ -112,8 +113,8 @@ AttachThreadScoped::~AttachThreadScoped() {
   if (attached_) {
     ALOGD("Detaching thread from JVM%s", GetThreadInfo().c_str());
     jint res = jvm_->DetachCurrentThread();
-    CHECK(res == JNI_OK) << "DetachCurrentThread failed: " << res;
-    CHECK(!GetEnv(jvm_));
+    RTC_CHECK(res == JNI_OK) << "DetachCurrentThread failed: " << res;
+    RTC_CHECK(!GetEnv(jvm_));
   }
 }
 

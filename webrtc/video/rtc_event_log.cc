@@ -352,11 +352,11 @@ void RtcEventLogImpl::StopLoggingLocked() {
     auto debug_event = event.mutable_debug_event();
     debug_event->set_type(ConvertDebugEvent(DebugEvent::kLogEnd));
     // Store the event and close the file
-    DCHECK(file_->Open());
+    RTC_DCHECK(file_->Open());
     StoreToFile(&event);
     file_->CloseFile();
   }
-  DCHECK(!file_->Open());
+  RTC_DCHECK(!file_->Open());
   stream_.Clear();
 }
 
@@ -376,7 +376,7 @@ void RtcEventLogImpl::StoreToFile(rtclog::Event* event) {
   if (stream_.stream_size() < 1) {
     stream_.add_stream();
   }
-  DCHECK_EQ(stream_.stream_size(), 1);
+  RTC_DCHECK_EQ(stream_.stream_size(), 1);
   stream_.mutable_stream(0)->Swap(event);
   // TODO(terelius): Doesn't this create a new EventStream per event?
   // Is this guaranteed to work e.g. in future versions of protobuf?

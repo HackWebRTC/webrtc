@@ -154,7 +154,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
     // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
     // (HEVC)).
     if (packet.markerBit) {
-      DCHECK(!_rotation_set);
+      RTC_DCHECK(!_rotation_set);
       _rotation = packet.codecSpecificHeader.rotation;
       _rotation_set = true;
     }

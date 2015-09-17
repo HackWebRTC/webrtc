@@ -96,7 +96,7 @@ bool GuardedAsyncInvoker::Flush(uint32 id) {
 void GuardedAsyncInvoker::ThreadDestroyed() {
   rtc::CritScope cs(&crit_);
   // We should never get more than one notification about the thread dying.
-  DCHECK(thread_ != nullptr);
+  RTC_DCHECK(thread_ != nullptr);
   thread_ = nullptr;
 }
 

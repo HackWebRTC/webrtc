@@ -28,7 +28,7 @@ class ScopedSLObject {
   ~ScopedSLObject() { Reset(); }
 
   SLType* Receive() {
-    DCHECK(!obj_);
+    RTC_DCHECK(!obj_);
     return &obj_;
   }
 

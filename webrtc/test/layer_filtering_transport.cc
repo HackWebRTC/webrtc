@@ -47,9 +47,9 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet, size_t length) {
   if (header.payloadType == vp8_video_payload_type_ ||
       header.payloadType == vp9_video_payload_type_) {
     const uint8_t* payload = packet + header.headerLength;
-    DCHECK_GT(length, header.headerLength);
+    RTC_DCHECK_GT(length, header.headerLength);
     const size_t payload_length = length - header.headerLength;
-    DCHECK_GT(payload_length, header.paddingLength);
+    RTC_DCHECK_GT(payload_length, header.paddingLength);
     const size_t payload_data_length = payload_length - header.paddingLength;
 
     const bool is_vp8 = header.payloadType == vp8_video_payload_type_;

@@ -24,7 +24,7 @@ namespace cricket {
 class PortAllocator;
 
 // Base should be a descendant of cricket::Transport
-// TODO(hbos): Add appropriate DCHECK thread checks to all methods.
+// TODO(hbos): Add appropriate RTC_DCHECK thread checks to all methods.
 template<class Base>
 class DtlsTransport : public Base {
  public:
@@ -44,12 +44,12 @@ class DtlsTransport : public Base {
   }
   void SetCertificate_w(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override {
-    DCHECK(Base::worker_thread()->IsCurrent());
+    RTC_DCHECK(Base::worker_thread()->IsCurrent());
     certificate_ = certificate;
   }
   bool GetCertificate_w(
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate) override {
-    DCHECK(Base::worker_thread()->IsCurrent());
+    RTC_DCHECK(Base::worker_thread()->IsCurrent());
     if (!certificate_)
       return false;
 
@@ -58,14 +58,14 @@ class DtlsTransport : public Base {
   }
 
   bool SetSslMaxProtocolVersion_w(rtc::SSLProtocolVersion version) override {
-    DCHECK(Base::worker_thread()->IsCurrent());
+    RTC_DCHECK(Base::worker_thread()->IsCurrent());
     ssl_max_version_ = version;
     return true;
   }
 
   bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
                                         std::string* error_desc) override {
-    DCHECK(Base::worker_thread()->IsCurrent());
+    RTC_DCHECK(Base::worker_thread()->IsCurrent());
     rtc::SSLFingerprint* local_fp =
         Base::local_description()->identity_fingerprint.get();
 
@@ -103,7 +103,7 @@ class DtlsTransport : public Base {
 
   bool NegotiateTransportDescription_w(ContentAction local_role,
                                        std::string* error_desc) override {
-    DCHECK(Base::worker_thread()->IsCurrent());
+    RTC_DCHECK(Base::worker_thread()->IsCurrent());
     if (!Base::local_description() || !Base::remote_description()) {
       const std::string msg = "Local and Remote description must be set before "
                               "transport descriptions are negotiated";
@@ -220,7 +220,7 @@ class DtlsTransport : public Base {
   }
 
   bool GetSslRole_w(rtc::SSLRole* ssl_role) const override {
-    DCHECK(Base::worker_thread()->IsCurrent());
+    RTC_DCHECK(Base::worker_thread()->IsCurrent());
     ASSERT(ssl_role != NULL);
     *ssl_role = secure_role_;
     return true;
@@ -230,7 +230,7 @@ class DtlsTransport : public Base {
   bool ApplyNegotiatedTransportDescription_w(
       TransportChannelImpl* channel,
       std::string* error_desc) override {
-    DCHECK(Base::worker_thread()->IsCurrent());
+    RTC_DCHECK(Base::worker_thread()->IsCurrent());
     // Set ssl role. Role must be set before fingerprint is applied, which
     // initiates DTLS setup.
     if (!channel->SetSslRole(secure_role_)) {

@@ -49,7 +49,7 @@ static pthread_key_t g_jni_ptr;
 using icu::UnicodeString;
 
 JavaVM *GetJVM() {
-  CHECK(g_jvm) << "JNI_OnLoad failed to run?";
+  RTC_CHECK(g_jvm) << "JNI_OnLoad failed to run?";
   return g_jvm;
 }
 
@@ -57,8 +57,8 @@ JavaVM *GetJVM() {
 JNIEnv* GetEnv() {
   void* env = NULL;
   jint status = g_jvm->GetEnv(&env, JNI_VERSION_1_6);
-  CHECK(((env != NULL) && (status == JNI_OK)) ||
-        ((env == NULL) && (status == JNI_EDETACHED)))
+  RTC_CHECK(((env != NULL) && (status == JNI_OK)) ||
+            ((env == NULL) && (status == JNI_EDETACHED)))
       << "Unexpected GetEnv return: " << status << ":" << env;
   return reinterpret_cast<JNIEnv*>(env);
 }
@@ -74,24 +74,24 @@ static void ThreadDestructor(void* prev_jni_ptr) {
   if (!GetEnv())
     return;
 
-  CHECK(GetEnv() == prev_jni_ptr)
+  RTC_CHECK(GetEnv() == prev_jni_ptr)
       << "Detaching from another thread: " << prev_jni_ptr << ":" << GetEnv();
   jint status = g_jvm->DetachCurrentThread();
-  CHECK(status == JNI_OK) << "Failed to detach thread: " << status;
-  CHECK(!GetEnv()) << "Detaching was a successful no-op???";
+  RTC_CHECK(status == JNI_OK) << "Failed to detach thread: " << status;
+  RTC_CHECK(!GetEnv()) << "Detaching was a successful no-op???";
 }
 
 static void CreateJNIPtrKey() {
-  CHECK(!pthread_key_create(&g_jni_ptr, &ThreadDestructor))
+  RTC_CHECK(!pthread_key_create(&g_jni_ptr, &ThreadDestructor))
       << "pthread_key_create";
 }
 
 jint InitGlobalJniVariables(JavaVM *jvm) {
-  CHECK(!g_jvm) << "InitGlobalJniVariables!";
+  RTC_CHECK(!g_jvm) << "InitGlobalJniVariables!";
   g_jvm = jvm;
-  CHECK(g_jvm) << "InitGlobalJniVariables handed NULL?";
+  RTC_CHECK(g_jvm) << "InitGlobalJniVariables handed NULL?";
 
-  CHECK(!pthread_once(&g_jni_ptr_once, &CreateJNIPtrKey)) << "pthread_once";
+  RTC_CHECK(!pthread_once(&g_jni_ptr_once, &CreateJNIPtrKey)) << "pthread_once";
 
   JNIEnv* jni = nullptr;
   if (jvm->GetEnv(reinterpret_cast<void**>(&jni), JNI_VERSION_1_6) != JNI_OK)
@@ -103,9 +103,9 @@ jint InitGlobalJniVariables(JavaVM *jvm) {
 // Return thread ID as a string.
 static std::string GetThreadId() {
   char buf[21];  // Big enough to hold a kuint64max plus terminating NULL.
-  CHECK_LT(snprintf(buf, sizeof(buf), "%ld",
-           static_cast<long>(syscall(__NR_gettid))),
-           sizeof(buf))
+  RTC_CHECK_LT(snprintf(buf, sizeof(buf), "%ld",
+                        static_cast<long>(syscall(__NR_gettid))),
+               sizeof(buf))
       << "Thread id is bigger than uint64??";
   return std::string(buf);
 }
@@ -123,7 +123,7 @@ JNIEnv* AttachCurrentThreadIfNeeded() {
   JNIEnv* jni = GetEnv();
   if (jni)
     return jni;
-  CHECK(!pthread_getspecific(g_jni_ptr))
+  RTC_CHECK(!pthread_getspecific(g_jni_ptr))
       << "TLS has a JNIEnv* but not attached?";
 
   std::string name(GetThreadName() + " - " + GetThreadId());
@@ -137,10 +137,11 @@ JNIEnv* AttachCurrentThreadIfNeeded() {
 #else
   JNIEnv* env = NULL;
 #endif
-  CHECK(!g_jvm->AttachCurrentThread(&env, &args)) << "Failed to attach thread";
-  CHECK(env) << "AttachCurrentThread handed back NULL!";
+  RTC_CHECK(!g_jvm->AttachCurrentThread(&env, &args))
+      << "Failed to attach thread";
+  RTC_CHECK(env) << "AttachCurrentThread handed back NULL!";
   jni = reinterpret_cast<JNIEnv*>(env);
-  CHECK(!pthread_setspecific(g_jni_ptr, jni)) << "pthread_setspecific";
+  RTC_CHECK(!pthread_setspecific(g_jni_ptr, jni)) << "pthread_setspecific";
   return jni;
 }
 
@@ -154,18 +155,18 @@ jlong jlongFromPointer(void* ptr) {
   // conversion from pointer to integral type.  intptr_t to jlong is a standard
   // widening by the static_assert above.
   jlong ret = reinterpret_cast<intptr_t>(ptr);
-  DCHECK(reinterpret_cast<void*>(ret) == ptr);
+  RTC_DCHECK(reinterpret_cast<void*>(ret) == ptr);
   return ret;
 }
 
-// JNIEnv-helper methods that CHECK success: no Java exception thrown and found
-// object/class/method/field is non-null.
+// JNIEnv-helper methods that RTC_CHECK success: no Java exception thrown and
+// found object/class/method/field is non-null.
 jmethodID GetMethodID(
     JNIEnv* jni, jclass c, const std::string& name, const char* signature) {
   jmethodID m = jni->GetMethodID(c, name.c_str(), signature);
   CHECK_EXCEPTION(jni) << "error during GetMethodID: " << name << ", "
                        << signature;
-  CHECK(m) << name << ", " << signature;
+  RTC_CHECK(m) << name << ", " << signature;
   return m;
 }
 
@@ -174,7 +175,7 @@ jmethodID GetStaticMethodID(
   jmethodID m = jni->GetStaticMethodID(c, name, signature);
   CHECK_EXCEPTION(jni) << "error during GetStaticMethodID: " << name << ", "
                        << signature;
-  CHECK(m) << name << ", " << signature;
+  RTC_CHECK(m) << name << ", " << signature;
   return m;
 }
 
@@ -182,21 +183,21 @@ jfieldID GetFieldID(
     JNIEnv* jni, jclass c, const char* name, const char* signature) {
   jfieldID f = jni->GetFieldID(c, name, signature);
   CHECK_EXCEPTION(jni) << "error during GetFieldID";
-  CHECK(f) << name << ", " << signature;
+  RTC_CHECK(f) << name << ", " << signature;
   return f;
 }
 
 jclass GetObjectClass(JNIEnv* jni, jobject object) {
   jclass c = jni->GetObjectClass(object);
   CHECK_EXCEPTION(jni) << "error during GetObjectClass";
-  CHECK(c) << "GetObjectClass returned NULL";
+  RTC_CHECK(c) << "GetObjectClass returned NULL";
   return c;
 }
 
 jobject GetObjectField(JNIEnv* jni, jobject object, jfieldID id) {
   jobject o = jni->GetObjectField(object, id);
   CHECK_EXCEPTION(jni) << "error during GetObjectField";
-  CHECK(o) << "GetObjectField returned NULL";
+  RTC_CHECK(o) << "GetObjectField returned NULL";
   return o;
 }
 
@@ -265,7 +266,7 @@ jobject JavaEnumFromIndex(JNIEnv* jni, jclass state_class,
 jobject NewGlobalRef(JNIEnv* jni, jobject o) {
   jobject ret = jni->NewGlobalRef(o);
   CHECK_EXCEPTION(jni) << "error during NewGlobalRef";
-  CHECK(ret);
+  RTC_CHECK(ret);
   return ret;
 }
 
@@ -278,7 +279,7 @@ void DeleteGlobalRef(JNIEnv* jni, jobject o) {
 // callbacks (i.e. entry points that don't originate in a Java callstack
 // through a "native" method call).
 ScopedLocalRefFrame::ScopedLocalRefFrame(JNIEnv* jni) : jni_(jni) {
-  CHECK(!jni_->PushLocalFrame(0)) << "Failed to PushLocalFrame";
+  RTC_CHECK(!jni_->PushLocalFrame(0)) << "Failed to PushLocalFrame";
 }
 ScopedLocalRefFrame::~ScopedLocalRefFrame() {
   jni_->PopLocalFrame(NULL);

@@ -143,7 +143,7 @@ void OveruseDetector::UpdateThreshold(double modified_offset, int64_t now_ms) {
 }
 
 void OveruseDetector::InitializeExperiment() {
-  DCHECK(in_experiment_);
+  RTC_DCHECK(in_experiment_);
   double k_up = 0.0;
   double k_down = 0.0;
   overusing_time_threshold_ = kOverUsingTimeThreshold;

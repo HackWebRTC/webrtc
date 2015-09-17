@@ -20,7 +20,7 @@ namespace webrtc {
 VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
   switch (codec_type) {
     case kH264:
-      DCHECK(H264Encoder::IsSupported());
+      RTC_DCHECK(H264Encoder::IsSupported());
       return H264Encoder::Create();
     case kVp8:
       return VP8Encoder::Create();

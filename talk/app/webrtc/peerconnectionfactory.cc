@@ -55,7 +55,7 @@ class DtlsIdentityStoreWrapper : public DtlsIdentityStoreInterface {
   DtlsIdentityStoreWrapper(
       const rtc::scoped_refptr<RefCountedDtlsIdentityStore>& store)
       : store_(store) {
-    DCHECK(store_);
+    RTC_DCHECK(store_);
   }
 
   void RequestIdentity(
@@ -151,7 +151,7 @@ PeerConnectionFactory::PeerConnectionFactory(
 }
 
 PeerConnectionFactory::~PeerConnectionFactory() {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   channel_manager_.reset(nullptr);
   default_allocator_factory_ = nullptr;
 
@@ -167,7 +167,7 @@ PeerConnectionFactory::~PeerConnectionFactory() {
 }
 
 bool PeerConnectionFactory::Initialize() {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::InitRandom(rtc::Time());
 
   default_allocator_factory_ = PortAllocatorFactory::Create(worker_thread_);
@@ -200,7 +200,7 @@ bool PeerConnectionFactory::Initialize() {
 rtc::scoped_refptr<AudioSourceInterface>
 PeerConnectionFactory::CreateAudioSource(
     const MediaConstraintsInterface* constraints) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<LocalAudioSource> source(
       LocalAudioSource::Create(options_, constraints));
   return source;
@@ -210,14 +210,14 @@ rtc::scoped_refptr<VideoSourceInterface>
 PeerConnectionFactory::CreateVideoSource(
     cricket::VideoCapturer* capturer,
     const MediaConstraintsInterface* constraints) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoSource> source(
       VideoSource::Create(channel_manager_.get(), capturer, constraints));
   return VideoSourceProxy::Create(signaling_thread_, source);
 }
 
 bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   return channel_manager_->StartAecDump(file);
 }
 
@@ -228,8 +228,8 @@ PeerConnectionFactory::CreatePeerConnection(
     PortAllocatorFactoryInterface* allocator_factory,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
-  DCHECK(signaling_thread_->IsCurrent());
-  DCHECK(allocator_factory || default_allocator_factory_);
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(allocator_factory || default_allocator_factory_);
 
   if (!dtls_identity_store.get()) {
     // Because |pc|->Initialize takes ownership of the store we need a new
@@ -258,7 +258,7 @@ PeerConnectionFactory::CreatePeerConnection(
 
 rtc::scoped_refptr<MediaStreamInterface>
 PeerConnectionFactory::CreateLocalMediaStream(const std::string& label) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   return MediaStreamProxy::Create(signaling_thread_,
                                   MediaStream::Create(label));
 }
@@ -267,7 +267,7 @@ rtc::scoped_refptr<VideoTrackInterface>
 PeerConnectionFactory::CreateVideoTrack(
     const std::string& id,
     VideoSourceInterface* source) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoTrackInterface> track(
       VideoTrack::Create(id, source));
   return VideoTrackProxy::Create(signaling_thread_, track);
@@ -276,14 +276,14 @@ PeerConnectionFactory::CreateVideoTrack(
 rtc::scoped_refptr<AudioTrackInterface>
 PeerConnectionFactory::CreateAudioTrack(const std::string& id,
                                         AudioSourceInterface* source) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<AudioTrackInterface> track(
       AudioTrack::Create(id, source));
   return AudioTrackProxy::Create(signaling_thread_, track);
 }
 
 cricket::ChannelManager* PeerConnectionFactory::channel_manager() {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   return channel_manager_.get();
 }
 
@@ -294,7 +294,7 @@ rtc::Thread* PeerConnectionFactory::signaling_thread() {
 }
 
 rtc::Thread* PeerConnectionFactory::worker_thread() {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   return worker_thread_;
 }
 

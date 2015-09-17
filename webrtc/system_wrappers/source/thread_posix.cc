@@ -39,7 +39,7 @@ struct ThreadAttributes {
 
 int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
                             int max_prio) {
-  DCHECK(max_prio - min_prio > 2);
+  RTC_DCHECK(max_prio - min_prio > 2);
   const int top_prio = max_prio - 1;
   const int low_prio = min_prio + 1;
 
@@ -57,7 +57,7 @@ int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
     case kRealtimePriority:
       return top_prio;
   }
-  DCHECK(false);
+  RTC_DCHECK(false);
   return low_prio;
 }
 
@@ -74,7 +74,7 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, void* obj,
       stop_event_(false, false),
       name_(thread_name ? thread_name : "webrtc"),
       thread_(0) {
-  DCHECK(name_.length() < 64);
+  RTC_DCHECK(name_.length() < 64);
 }
 
 uint32_t ThreadWrapper::GetThreadId() {
@@ -82,36 +82,36 @@ uint32_t ThreadWrapper::GetThreadId() {
 }
 
 ThreadPosix::~ThreadPosix() {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
 }
 
 // TODO(pbos): Make Start void, calling code really doesn't support failures
 // here.
 bool ThreadPosix::Start() {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!thread_) << "Thread already started?";
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!thread_) << "Thread already started?";
 
   ThreadAttributes attr;
   // Set the stack stack size to 1M.
   pthread_attr_setstacksize(&attr, 1024 * 1024);
-  CHECK_EQ(0, pthread_create(&thread_, &attr, &StartThread, this));
+  RTC_CHECK_EQ(0, pthread_create(&thread_, &attr, &StartThread, this));
   return true;
 }
 
 bool ThreadPosix::Stop() {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!thread_)
     return true;
 
   stop_event_.Set();
-  CHECK_EQ(0, pthread_join(thread_, nullptr));
+  RTC_CHECK_EQ(0, pthread_join(thread_, nullptr));
   thread_ = 0;
 
   return true;
 }
 
 bool ThreadPosix::SetPriority(ThreadPriority priority) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!thread_)
     return false;
 #if defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)

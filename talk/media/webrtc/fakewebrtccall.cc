@@ -37,7 +37,7 @@ namespace cricket {
 FakeAudioReceiveStream::FakeAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config)
     : config_(config), received_packets_(0) {
-  DCHECK(config.voe_channel_id != -1);
+  RTC_DCHECK(config.voe_channel_id != -1);
 }
 
 webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
@@ -60,7 +60,7 @@ FakeVideoSendStream::FakeVideoSendStream(
       config_(config),
       codec_settings_set_(false),
       num_swapped_frames_(0) {
-  DCHECK(config.encoder_settings.encoder != NULL);
+  RTC_DCHECK(config.encoder_settings.encoder != NULL);
   ReconfigureVideoEncoder(encoder_config);
 }
 
@@ -113,7 +113,7 @@ int FakeVideoSendStream::GetLastHeight() const {
 }
 
 int64_t FakeVideoSendStream::GetLastTimestamp() const {
-  DCHECK(last_frame_.ntp_time_ms() == 0);
+  RTC_DCHECK(last_frame_.ntp_time_ms() == 0);
   return last_frame_.render_time_ms();
 }
 

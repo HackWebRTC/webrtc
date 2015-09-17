@@ -30,19 +30,19 @@ AudioRingBuffer::~AudioRingBuffer() {
 
 void AudioRingBuffer::Write(const float* const* data, size_t channels,
                             size_t frames) {
-  DCHECK_EQ(buffers_.size(), channels);
+  RTC_DCHECK_EQ(buffers_.size(), channels);
   for (size_t i = 0; i < channels; ++i) {
     const size_t written = WebRtc_WriteBuffer(buffers_[i], data[i], frames);
-    CHECK_EQ(written, frames);
+    RTC_CHECK_EQ(written, frames);
   }
 }
 
 void AudioRingBuffer::Read(float* const* data, size_t channels, size_t frames) {
-  DCHECK_EQ(buffers_.size(), channels);
+  RTC_DCHECK_EQ(buffers_.size(), channels);
   for (size_t i = 0; i < channels; ++i) {
     const size_t read =
         WebRtc_ReadBuffer(buffers_[i], nullptr, data[i], frames);
-    CHECK_EQ(read, frames);
+    RTC_CHECK_EQ(read, frames);
   }
 }
 
@@ -60,7 +60,7 @@ void AudioRingBuffer::MoveReadPositionForward(size_t frames) {
   for (auto buf : buffers_) {
     const size_t moved =
         static_cast<size_t>(WebRtc_MoveReadPtr(buf, static_cast<int>(frames)));
-    CHECK_EQ(moved, frames);
+    RTC_CHECK_EQ(moved, frames);
   }
 }
 
@@ -68,7 +68,7 @@ void AudioRingBuffer::MoveReadPositionBackward(size_t frames) {
   for (auto buf : buffers_) {
     const size_t moved = static_cast<size_t>(
         -WebRtc_MoveReadPtr(buf, -static_cast<int>(frames)));
-    CHECK_EQ(moved, frames);
+    RTC_CHECK_EQ(moved, frames);
   }
 }
 

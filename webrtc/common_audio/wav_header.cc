@@ -151,8 +151,8 @@ void WriteWavHeader(uint8_t* buf,
                     WavFormat format,
                     int bytes_per_sample,
                     uint32_t num_samples) {
-  CHECK(CheckWavParameters(num_channels, sample_rate, format,
-                           bytes_per_sample, num_samples));
+  RTC_CHECK(CheckWavParameters(num_channels, sample_rate, format,
+                               bytes_per_sample, num_samples));
 
   WavHeader header;
   const uint32_t bytes_in_payload = bytes_per_sample * num_samples;

@@ -1386,7 +1386,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
 
    protected:
     void Wait() override {
-      DCHECK(observer_ != nullptr);
+      RTC_DCHECK(observer_ != nullptr);
       EXPECT_EQ(EventTypeWrapper::kEventSignaled, observer_->Wait());
     }
 
@@ -2234,7 +2234,7 @@ TEST_F(EndToEndTest, GetStats) {
     }
 
     bool CheckSendStats() {
-      DCHECK(send_stream_ != nullptr);
+      RTC_DCHECK(send_stream_ != nullptr);
       VideoSendStream::Stats stats = send_stream_->GetStats();
 
       send_stats_filled_["NumStreams"] |=

@@ -35,7 +35,7 @@ inline CFDictionaryRef CreateCFDictionary(CFTypeRef* keys,
 
 // Copies characters from a CFStringRef into a std::string.
 std::string CFStringToString(const CFStringRef cf_string) {
-  DCHECK(cf_string);
+  RTC_DCHECK(cf_string);
   std::string std_string;
   // Get the size needed for UTF8 plus terminating character.
   size_t buffer_size =
@@ -123,13 +123,13 @@ struct FrameEncodeParams {
 // TODO(tkchin): See if encoder will accept i420 frames and compare performance.
 bool CopyVideoFrameToPixelBuffer(const webrtc::VideoFrame& frame,
                                  CVPixelBufferRef pixel_buffer) {
-  DCHECK(pixel_buffer);
-  DCHECK(CVPixelBufferGetPixelFormatType(pixel_buffer) ==
-         kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
-  DCHECK(CVPixelBufferGetHeightOfPlane(pixel_buffer, 0) ==
-         static_cast<size_t>(frame.height()));
-  DCHECK(CVPixelBufferGetWidthOfPlane(pixel_buffer, 0) ==
-         static_cast<size_t>(frame.width()));
+  RTC_DCHECK(pixel_buffer);
+  RTC_DCHECK(CVPixelBufferGetPixelFormatType(pixel_buffer) ==
+             kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
+  RTC_DCHECK(CVPixelBufferGetHeightOfPlane(pixel_buffer, 0) ==
+             static_cast<size_t>(frame.height()));
+  RTC_DCHECK(CVPixelBufferGetWidthOfPlane(pixel_buffer, 0) ==
+             static_cast<size_t>(frame.width()));
 
   CVReturn cvRet = CVPixelBufferLockBaseAddress(pixel_buffer, 0);
   if (cvRet != kCVReturnSuccess) {
@@ -224,8 +224,8 @@ H264VideoToolboxEncoder::~H264VideoToolboxEncoder() {
 int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
                                         int number_of_cores,
                                         size_t max_payload_size) {
-  DCHECK(codec_settings);
-  DCHECK_EQ(codec_settings->codecType, kVideoCodecH264);
+  RTC_DCHECK(codec_settings);
+  RTC_DCHECK_EQ(codec_settings->codecType, kVideoCodecH264);
   // TODO(tkchin): We may need to enforce width/height dimension restrictions
   // to match what the encoder supports.
   width_ = codec_settings->width;
@@ -266,7 +266,7 @@ int H264VideoToolboxEncoder::Encode(
     // that the pool is empty.
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
-  DCHECK(pixel_buffer);
+  RTC_DCHECK(pixel_buffer);
   if (!internal::CopyVideoFrameToPixelBuffer(input_image, pixel_buffer)) {
     LOG(LS_ERROR) << "Failed to copy frame data.";
     CVBufferRelease(pixel_buffer);
@@ -397,7 +397,7 @@ int H264VideoToolboxEncoder::ResetCompressionSession() {
 }
 
 void H264VideoToolboxEncoder::ConfigureCompressionSession() {
-  DCHECK(compression_session_);
+  RTC_DCHECK(compression_session_);
   internal::SetVTSessionProperty(compression_session_,
                                  kVTCompressionPropertyKey_RealTime, true);
   internal::SetVTSessionProperty(compression_session_,

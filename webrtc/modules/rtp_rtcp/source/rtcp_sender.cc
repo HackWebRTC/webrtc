@@ -94,7 +94,7 @@ struct RTCPSender::RtcpContext {
         position(0) {}
 
   uint8_t* AllocateData(uint32_t bytes) {
-    DCHECK_LE(position + bytes, buffer_size);
+    RTC_DCHECK_LE(position + bytes, buffer_size);
     uint8_t* ptr = &buffer[position];
     position += bytes;
     return ptr;
@@ -319,7 +319,7 @@ int32_t RTCPSender::SetCNAME(const char* c_name) {
   if (!c_name)
     return -1;
 
-  DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
+  RTC_DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
   cname_ = c_name;
   return 0;
@@ -327,7 +327,7 @@ int32_t RTCPSender::SetCNAME(const char* c_name) {
 
 int32_t RTCPSender::AddMixedCNAME(uint32_t SSRC, const char* c_name) {
   assert(c_name);
-  DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
+  RTC_DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
   if (csrc_cnames_.size() >= kRtpCsrcSize)
     return -1;
@@ -516,7 +516,7 @@ RTCPSender::BuildResult RTCPSender::BuildSR(RtcpContext* ctx) {
 
 RTCPSender::BuildResult RTCPSender::BuildSDES(RtcpContext* ctx) {
   size_t length_cname = cname_.length();
-  CHECK_LT(length_cname, static_cast<size_t>(RTCP_CNAME_SIZE));
+  RTC_CHECK_LT(length_cname, static_cast<size_t>(RTCP_CNAME_SIZE));
 
   rtcp::Sdes sdes;
   sdes.WithCName(ssrc_, cname_);
@@ -982,7 +982,7 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
   if (IsFlagPresent(kRtcpSr) || IsFlagPresent(kRtcpRr)) {
     // Report type already explicitly set, don't automatically populate.
     generate_report = true;
-    DCHECK(ConsumeFlag(kRtcpReport) == false);
+    RTC_DCHECK(ConsumeFlag(kRtcpReport) == false);
   } else {
     generate_report =
         (ConsumeFlag(kRtcpReport) && method_ == kRtcpNonCompound) ||
@@ -1041,7 +1041,7 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
   auto it = report_flags_.begin();
   while (it != report_flags_.end()) {
     auto builder = builders_.find(it->type);
-    DCHECK(builder != builders_.end());
+    RTC_DCHECK(builder != builders_.end());
     if (it->is_volatile) {
       report_flags_.erase(it++);
     } else {
@@ -1070,7 +1070,7 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
         remote_ssrc_, packet_type_counter_);
   }
 
-  DCHECK(AllVolatileFlagsConsumed());
+  RTC_DCHECK(AllVolatileFlagsConsumed());
 
   return context.position;
 }

@@ -76,7 +76,7 @@ TEST_F(VadTest, ApiTest) {
             WebRtcVad_Process(nullptr, kRates[0], speech, kFrameLengths[0]));
 
   // WebRtcVad_Create()
-  CHECK(handle);
+  RTC_CHECK(handle);
 
   // Not initialized tests
   EXPECT_EQ(-1, WebRtcVad_Process(handle, kRates[0], speech, kFrameLengths[0]));

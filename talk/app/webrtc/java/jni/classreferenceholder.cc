@@ -51,7 +51,7 @@ class ClassReferenceHolder {
 static ClassReferenceHolder* g_class_reference_holder = nullptr;
 
 void LoadGlobalClassReferenceHolder() {
-  CHECK(g_class_reference_holder == nullptr);
+  RTC_CHECK(g_class_reference_holder == nullptr);
   g_class_reference_holder = new ClassReferenceHolder(GetEnv());
 }
 
@@ -114,7 +114,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
 }
 
 ClassReferenceHolder::~ClassReferenceHolder() {
-  CHECK(classes_.empty()) << "Must call FreeReferences() before dtor!";
+  RTC_CHECK(classes_.empty()) << "Must call FreeReferences() before dtor!";
 }
 
 void ClassReferenceHolder::FreeReferences(JNIEnv* jni) {
@@ -127,19 +127,19 @@ void ClassReferenceHolder::FreeReferences(JNIEnv* jni) {
 
 jclass ClassReferenceHolder::GetClass(const std::string& name) {
   std::map<std::string, jclass>::iterator it = classes_.find(name);
-  CHECK(it != classes_.end()) << "Unexpected GetClass() call for: " << name;
+  RTC_CHECK(it != classes_.end()) << "Unexpected GetClass() call for: " << name;
   return it->second;
 }
 
 void ClassReferenceHolder::LoadClass(JNIEnv* jni, const std::string& name) {
   jclass localRef = jni->FindClass(name.c_str());
   CHECK_EXCEPTION(jni) << "error during FindClass: " << name;
-  CHECK(localRef) << name;
+  RTC_CHECK(localRef) << name;
   jclass globalRef = reinterpret_cast<jclass>(jni->NewGlobalRef(localRef));
   CHECK_EXCEPTION(jni) << "error during NewGlobalRef: " << name;
-  CHECK(globalRef) << name;
+  RTC_CHECK(globalRef) << name;
   bool inserted = classes_.insert(std::make_pair(name, globalRef)).second;
-  CHECK(inserted) << "Duplicate class name: " << name;
+  RTC_CHECK(inserted) << "Duplicate class name: " << name;
 }
 
 // Returns a global reference guaranteed to be valid for the lifetime of the

@@ -28,8 +28,8 @@ class FineAudioBuffer;
 //
 // An instance must be created and destroyed on one and the same thread.
 // All supported public methods must also be called on the same thread.
-// A thread checker will DCHECK if any supported method is called on an invalid
-// thread.
+// A thread checker will RTC_DCHECK if any supported method is called on an
+// invalid thread.
 //
 // Recorded audio will be delivered on a real-time internal I/O thread in the
 // audio unit. The audio unit will also ask for audio data to play out on this
@@ -218,7 +218,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // audio session is activated and we verify that the preferred parameters
   // were granted by the OS. At this stage it is also possible to add a third
   // component to the parameters; the native I/O buffer duration.
-  // A CHECK will be hit if we for some reason fail to open an audio session
+  // A RTC_CHECK will be hit if we for some reason fail to open an audio session
   // using the specified parameters.
   AudioParameters _playoutParameters;
   AudioParameters _recordParameters;

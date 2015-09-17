@@ -177,7 +177,7 @@ VideoFrame* WebRtcVideoFrame::Copy() const {
 }
 
 bool WebRtcVideoFrame::MakeExclusive() {
-  DCHECK(video_frame_buffer_->native_handle() == nullptr);
+  RTC_DCHECK(video_frame_buffer_->native_handle() == nullptr);
   if (IsExclusive())
     return true;
 
@@ -202,8 +202,8 @@ bool WebRtcVideoFrame::MakeExclusive() {
 
 size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
                                             size_t size, int stride_rgb) const {
-  CHECK(video_frame_buffer_);
-  CHECK(video_frame_buffer_->native_handle() == nullptr);
+  RTC_CHECK(video_frame_buffer_);
+  RTC_CHECK(video_frame_buffer_->native_handle() == nullptr);
   return VideoFrame::ConvertToRgbBuffer(to_fourcc, buffer, size, stride_rgb);
 }
 
@@ -296,7 +296,7 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
   // If the video frame is backed up by a native handle, it resides in the GPU
   // memory which we can't rotate here. The assumption is that the renderers
   // which uses GPU to render should be able to rotate themselves.
-  DCHECK(!GetNativeHandle());
+  RTC_DCHECK(!GetNativeHandle());
 
   if (rotated_frame_) {
     return rotated_frame_.get();

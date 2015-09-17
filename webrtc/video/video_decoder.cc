@@ -20,7 +20,7 @@ namespace webrtc {
 VideoDecoder* VideoDecoder::Create(VideoDecoder::DecoderType codec_type) {
   switch (codec_type) {
     case kH264:
-      DCHECK(H264Decoder::IsSupported());
+      RTC_DCHECK(H264Decoder::IsSupported());
       return H264Decoder::Create();
     case kVp8:
       return VP8Decoder::Create();
@@ -64,7 +64,7 @@ int32_t VideoDecoderSoftwareFallbackWrapper::InitDecode(
 }
 
 bool VideoDecoderSoftwareFallbackWrapper::InitFallbackDecoder() {
-  CHECK(decoder_type_ != kUnsupportedCodec)
+  RTC_CHECK(decoder_type_ != kUnsupportedCodec)
       << "Decoder requesting fallback to codec not supported in software.";
   LOG(LS_WARNING) << "Decoder falling back to software decoding.";
   fallback_decoder_.reset(VideoDecoder::Create(decoder_type_));

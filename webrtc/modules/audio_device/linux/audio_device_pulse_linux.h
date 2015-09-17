@@ -304,7 +304,7 @@ private:
     // Stores thread ID in constructor.
     // We can then use ThreadChecker::CalledOnValidThread() to ensure that
     // other methods are called from the same thread.
-    // Currently only does DCHECK(thread_checker_.CalledOnValidThread()).
+    // Currently only does RTC_DCHECK(thread_checker_.CalledOnValidThread()).
     rtc::ThreadChecker thread_checker_;
 
     bool _initialized;

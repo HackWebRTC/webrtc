@@ -188,7 +188,7 @@ class BitrateEstimatorTest : public test::CallTest {
       test_->send_config_.encoder_settings.encoder = &fake_encoder_;
       send_stream_ = test_->sender_call_->CreateVideoSendStream(
           test_->send_config_, test_->encoder_config_);
-      DCHECK_EQ(1u, test_->encoder_config_.streams.size());
+      RTC_DCHECK_EQ(1u, test_->encoder_config_.streams.size());
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
           send_stream_->Input(),
           test_->encoder_config_.streams[0].width,
@@ -201,9 +201,9 @@ class BitrateEstimatorTest : public test::CallTest {
       if (receive_audio) {
         AudioReceiveStream::Config receive_config;
         receive_config.rtp.remote_ssrc = test_->send_config_.rtp.ssrcs[0];
-        // Bogus non-default id to prevent hitting a DCHECK when creating the
-        // AudioReceiveStream. Every receive stream has to correspond to an
-        // underlying channel id.
+        // Bogus non-default id to prevent hitting a RTC_DCHECK when creating
+        // the AudioReceiveStream. Every receive stream has to correspond to
+        // an underlying channel id.
         receive_config.voe_channel_id = 0;
         receive_config.rtp.extensions.push_back(
             RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));

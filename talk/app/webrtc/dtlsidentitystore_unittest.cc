@@ -83,7 +83,7 @@ class DtlsIdentityStoreTest : public testing::Test {
                                          worker_thread_.get())),
         observer_(
             new rtc::RefCountedObject<MockDtlsIdentityRequestObserver>()) {
-    CHECK(worker_thread_->Start());
+    RTC_CHECK(worker_thread_->Start());
   }
   ~DtlsIdentityStoreTest() {}
 

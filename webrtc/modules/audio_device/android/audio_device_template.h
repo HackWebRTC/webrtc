@@ -27,12 +27,12 @@ namespace webrtc {
 // InputType/OutputType can be any class that implements the capturing/rendering
 // part of the AudioDeviceGeneric API.
 // Construction and destruction must be done on one and the same thread. Each
-// internal implementation of InputType and OutputType will DCHECK if that is
-// not the case. All implemented methods must also be called on the same thread.
-// See comments in each InputType/OutputType class for more
+// internal implementation of InputType and OutputType will RTC_DCHECK if that
+// is not the case. All implemented methods must also be called on the same
+// thread. See comments in each InputType/OutputType class for more info.
 // It is possible to call the two static methods (SetAndroidAudioDeviceObjects
 // and ClearAndroidAudioDeviceObjects) from a different thread but both will
-// CHECK that the calling thread is attached to a Java VM.
+// RTC_CHECK that the calling thread is attached to a Java VM.
 
 template <class InputType, class OutputType>
 class AudioDeviceTemplate : public AudioDeviceGeneric {
@@ -44,7 +44,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
         output_(audio_manager_),
         input_(audio_manager_),
         initialized_(false) {
-    CHECK(audio_manager);
+    RTC_CHECK(audio_manager);
     audio_manager_->SetActiveAudioLayer(audio_layer);
   }
 
@@ -58,8 +58,8 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t Init() override {
-    DCHECK(thread_checker_.CalledOnValidThread());
-    DCHECK(!initialized_);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(!initialized_);
     if (!audio_manager_->Init())
       return -1;
     if (output_.Init() != 0) {
@@ -76,17 +76,17 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t Terminate() override {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     int32_t err = input_.Terminate();
     err |= output_.Terminate();
     err |= !audio_manager_->Close();
     initialized_ = false;
-    DCHECK_EQ(err, 0);
+    RTC_DCHECK_EQ(err, 0);
     return err;
   }
 
   bool Initialized() const override {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     return initialized_;
   }
 
@@ -388,14 +388,14 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   int32_t PlayoutDelay(uint16_t& delay_ms) const override {
     // Best guess we can do is to use half of the estimated total delay.
     delay_ms = audio_manager_->GetDelayEstimateInMilliseconds() / 2;
-    DCHECK_GT(delay_ms, 0);
+    RTC_DCHECK_GT(delay_ms, 0);
     return 0;
   }
 
   int32_t RecordingDelay(uint16_t& delay_ms) const override {
     // Best guess we can do is to use half of the estimated total delay.
     delay_ms = audio_manager_->GetDelayEstimateInMilliseconds() / 2;
-    DCHECK_GT(delay_ms, 0);
+    RTC_DCHECK_GT(delay_ms, 0);
     return 0;
   }
 
@@ -456,7 +456,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t EnableBuiltInAEC(bool enable) override {
-    CHECK(BuiltInAECIsAvailable()) << "HW AEC is not available";
+    RTC_CHECK(BuiltInAECIsAvailable()) << "HW AEC is not available";
     return input_.EnableBuiltInAEC(enable);
   }
 

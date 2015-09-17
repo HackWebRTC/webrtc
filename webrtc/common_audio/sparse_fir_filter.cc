@@ -22,8 +22,8 @@ SparseFIRFilter::SparseFIRFilter(const float* nonzero_coeffs,
       offset_(offset),
       nonzero_coeffs_(nonzero_coeffs, nonzero_coeffs + num_nonzero_coeffs),
       state_(sparsity_ * (num_nonzero_coeffs - 1) + offset_, 0.f) {
-  CHECK_GE(num_nonzero_coeffs, 1u);
-  CHECK_GE(sparsity, 1u);
+  RTC_CHECK_GE(num_nonzero_coeffs, 1u);
+  RTC_CHECK_GE(sparsity, 1u);
 }
 
 void SparseFIRFilter::Filter(const float* in, size_t length, float* out) {

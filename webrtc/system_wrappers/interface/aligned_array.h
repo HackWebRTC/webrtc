@@ -24,7 +24,7 @@ template<typename T> class AlignedArray {
       : rows_(rows),
         cols_(cols),
         alignment_(alignment) {
-    CHECK_GT(alignment_, 0);
+    RTC_CHECK_GT(alignment_, 0);
     head_row_ = static_cast<T**>(AlignedMalloc(rows_ * sizeof(*head_row_),
                                                alignment_));
     for (int i = 0; i < rows_; ++i) {
@@ -49,22 +49,22 @@ template<typename T> class AlignedArray {
   }
 
   T* Row(int row) {
-    CHECK_LE(row, rows_);
+    RTC_CHECK_LE(row, rows_);
     return head_row_[row];
   }
 
   const T* Row(int row) const {
-    CHECK_LE(row, rows_);
+    RTC_CHECK_LE(row, rows_);
     return head_row_[row];
   }
 
   T& At(int row, size_t col) {
-    CHECK_LE(col, cols_);
+    RTC_CHECK_LE(col, cols_);
     return Row(row)[col];
   }
 
   const T& At(int row, size_t col) const {
-    CHECK_LE(col, cols_);
+    RTC_CHECK_LE(col, cols_);
     return Row(row)[col];
   }
 

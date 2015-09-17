@@ -29,7 +29,7 @@ class NoopCallback : public webrtc::LappedTransform::Callback {
                                  size_t frames,
                                  int out_channels,
                                  complex<float>* const* out_block) {
-    CHECK_EQ(in_channels, out_channels);
+    RTC_CHECK_EQ(in_channels, out_channels);
     for (int i = 0; i < out_channels; ++i) {
       memcpy(out_block[i], in_block[i], sizeof(**in_block) * frames);
     }
@@ -53,7 +53,7 @@ class FftCheckerCallback : public webrtc::LappedTransform::Callback {
                                  size_t frames,
                                  int out_channels,
                                  complex<float>* const* out_block) {
-    CHECK_EQ(in_channels, out_channels);
+    RTC_CHECK_EQ(in_channels, out_channels);
 
     size_t full_length = (frames - 1) * 2;
     ++block_num_;

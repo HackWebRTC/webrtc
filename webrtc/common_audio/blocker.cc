@@ -118,8 +118,8 @@ Blocker::Blocker(size_t chunk_size,
       window_(new float[block_size_]),
       shift_amount_(shift_amount),
       callback_(callback) {
-  CHECK_LE(num_output_channels_, num_input_channels_);
-  CHECK_LE(shift_amount_, block_size_);
+  RTC_CHECK_LE(num_output_channels_, num_input_channels_);
+  RTC_CHECK_LE(shift_amount_, block_size_);
 
   memcpy(window_.get(), window, block_size_ * sizeof(*window_.get()));
   input_buffer_.MoveReadPositionBackward(initial_delay_);
@@ -169,9 +169,9 @@ void Blocker::ProcessChunk(const float* const* input,
                            int num_input_channels,
                            int num_output_channels,
                            float* const* output) {
-  CHECK_EQ(chunk_size, chunk_size_);
-  CHECK_EQ(num_input_channels, num_input_channels_);
-  CHECK_EQ(num_output_channels, num_output_channels_);
+  RTC_CHECK_EQ(chunk_size, chunk_size_);
+  RTC_CHECK_EQ(num_input_channels, num_input_channels_);
+  RTC_CHECK_EQ(num_output_channels, num_output_channels_);
 
   input_buffer_.Write(input, num_input_channels, chunk_size_);
   size_t first_frame_in_block = frame_offset_;

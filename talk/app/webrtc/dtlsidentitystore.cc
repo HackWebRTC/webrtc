@@ -61,7 +61,7 @@ class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
     store_->SignalDestroyed.connect(this, &WorkerTask::OnStoreDestroyed);
   }
 
-  virtual ~WorkerTask() { DCHECK(signaling_thread_->IsCurrent()); }
+  virtual ~WorkerTask() { RTC_DCHECK(signaling_thread_->IsCurrent()); }
 
  private:
   void GenerateIdentity_w() {
@@ -87,7 +87,7 @@ class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
         signaling_thread_->Post(this, MSG_DESTROY, msg->pdata);
         break;
       case MSG_GENERATE_IDENTITY_RESULT:
-        DCHECK(signaling_thread_->IsCurrent());
+        RTC_DCHECK(signaling_thread_->IsCurrent());
         {
           rtc::scoped_ptr<IdentityResultMessageData> pdata(
               static_cast<IdentityResultMessageData*>(msg->pdata));
@@ -98,17 +98,17 @@ class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
         }
         break;
       case MSG_DESTROY:
-        DCHECK(signaling_thread_->IsCurrent());
+        RTC_DCHECK(signaling_thread_->IsCurrent());
         delete msg->pdata;
         // |this| has now been deleted. Don't touch member variables.
         break;
       default:
-        CHECK(false) << "Unexpected message type";
+        RTC_CHECK(false) << "Unexpected message type";
     }
   }
 
   void OnStoreDestroyed() {
-    DCHECK(signaling_thread_->IsCurrent());
+    RTC_DCHECK(signaling_thread_->IsCurrent());
     store_ = nullptr;
   }
 
@@ -122,7 +122,7 @@ DtlsIdentityStoreImpl::DtlsIdentityStoreImpl(rtc::Thread* signaling_thread,
     : signaling_thread_(signaling_thread),
       worker_thread_(worker_thread),
       request_info_() {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   // Preemptively generate identities unless the worker thread and signaling
   // thread are the same (only do preemptive work in the background).
   if (worker_thread_ != signaling_thread_) {
@@ -132,21 +132,21 @@ DtlsIdentityStoreImpl::DtlsIdentityStoreImpl(rtc::Thread* signaling_thread,
 }
 
 DtlsIdentityStoreImpl::~DtlsIdentityStoreImpl() {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   SignalDestroyed();
 }
 
 void DtlsIdentityStoreImpl::RequestIdentity(
     rtc::KeyType key_type,
     const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>& observer) {
-  DCHECK(signaling_thread_->IsCurrent());
-  DCHECK(observer);
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(observer);
 
   GenerateIdentity(key_type, observer);
 }
 
 void DtlsIdentityStoreImpl::OnMessage(rtc::Message* msg) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   switch (msg->message_id) {
     case MSG_GENERATE_IDENTITY_RESULT: {
       rtc::scoped_ptr<IdentityResultMessageData> pdata(
@@ -160,14 +160,14 @@ void DtlsIdentityStoreImpl::OnMessage(rtc::Message* msg) {
 
 bool DtlsIdentityStoreImpl::HasFreeIdentityForTesting(
     rtc::KeyType key_type) const {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   return request_info_[key_type].free_identity_.get() != nullptr;
 }
 
 void DtlsIdentityStoreImpl::GenerateIdentity(
     rtc::KeyType key_type,
     const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>& observer) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
 
   // Enqueue observer to be informed when generation of |key_type| is completed.
   if (observer.get()) {
@@ -205,9 +205,9 @@ void DtlsIdentityStoreImpl::GenerateIdentity(
 
 void DtlsIdentityStoreImpl::OnIdentityGenerated(
     rtc::KeyType key_type, rtc::scoped_ptr<rtc::SSLIdentity> identity) {
-  DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
 
-  DCHECK(request_info_[key_type].gen_in_progress_counts_);
+  RTC_DCHECK(request_info_[key_type].gen_in_progress_counts_);
   --request_info_[key_type].gen_in_progress_counts_;
 
   rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver> observer;
@@ -218,7 +218,7 @@ void DtlsIdentityStoreImpl::OnIdentityGenerated(
 
   if (observer.get() == nullptr) {
     // No observer - store result in |free_identities_|.
-    DCHECK(!request_info_[key_type].free_identity_.get());
+    RTC_DCHECK(!request_info_[key_type].free_identity_.get());
     request_info_[key_type].free_identity_.swap(identity);
     if (request_info_[key_type].free_identity_.get())
       LOG(LS_VERBOSE) << "A free DTLS identity was saved.";

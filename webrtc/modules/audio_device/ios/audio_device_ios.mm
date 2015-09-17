@@ -55,7 +55,7 @@ const double kPreferredIOBufferDuration = 0.01;
 // mono natively for built-in microphones and for BT headsets but not for
 // wired headsets. Wired headsets only support stereo as native channel format
 // but it is a low cost operation to do a format conversion to mono in the
-// audio unit. Hence, we will not hit a CHECK in
+// audio unit. Hence, we will not hit a RTC_CHECK in
 // VerifyAudioParametersForActiveAudioSession() for a mismatch between the
 // preferred number of channels and the actual number of channels.
 const int kPreferredNumberOfChannels = 1;
@@ -80,7 +80,7 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
     // Deactivate the audio session and return if |activate| is false.
     if (!activate) {
       success = [session setActive:NO error:&error];
-      DCHECK(CheckAndLogError(success, error));
+      RTC_DCHECK(CheckAndLogError(success, error));
       return;
     }
     // Use a category which supports simultaneous recording and playback.
@@ -91,13 +91,13 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
       error = nil;
       success = [session setCategory:AVAudioSessionCategoryPlayAndRecord
                                error:&error];
-      DCHECK(CheckAndLogError(success, error));
+      RTC_DCHECK(CheckAndLogError(success, error));
     }
     // Specify mode for two-way voice communication (e.g. VoIP).
     if (session.mode != AVAudioSessionModeVoiceChat) {
       error = nil;
       success = [session setMode:AVAudioSessionModeVoiceChat error:&error];
-      DCHECK(CheckAndLogError(success, error));
+      RTC_DCHECK(CheckAndLogError(success, error));
     }
     // Set the session's sample rate or the hardware sample rate.
     // It is essential that we use the same sample rate as stream format
@@ -105,13 +105,13 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
     error = nil;
     success =
         [session setPreferredSampleRate:kPreferredSampleRate error:&error];
-    DCHECK(CheckAndLogError(success, error));
+    RTC_DCHECK(CheckAndLogError(success, error));
     // Set the preferred audio I/O buffer duration, in seconds.
     // TODO(henrika): add more comments here.
     error = nil;
     success = [session setPreferredIOBufferDuration:kPreferredIOBufferDuration
                                               error:&error];
-    DCHECK(CheckAndLogError(success, error));
+    RTC_DCHECK(CheckAndLogError(success, error));
 
     // TODO(henrika): add observers here...
 
@@ -119,12 +119,12 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
     // session (e.g. phone call) has higher priority than ours.
     error = nil;
     success = [session setActive:YES error:&error];
-    DCHECK(CheckAndLogError(success, error));
-    CHECK(session.isInputAvailable) << "No input path is available!";
+    RTC_DCHECK(CheckAndLogError(success, error));
+    RTC_CHECK(session.isInputAvailable) << "No input path is available!";
     // Ensure that category and mode are actually activated.
-    DCHECK(
+    RTC_DCHECK(
         [session.category isEqualToString:AVAudioSessionCategoryPlayAndRecord]);
-    DCHECK([session.mode isEqualToString:AVAudioSessionModeVoiceChat]);
+    RTC_DCHECK([session.mode isEqualToString:AVAudioSessionModeVoiceChat]);
     // Try to set the preferred number of hardware audio channels. These calls
     // must be done after setting the audio session’s category and mode and
     // activating the session.
@@ -136,12 +136,12 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
     success =
         [session setPreferredInputNumberOfChannels:kPreferredNumberOfChannels
                                              error:&error];
-    DCHECK(CheckAndLogError(success, error));
+    RTC_DCHECK(CheckAndLogError(success, error));
     error = nil;
     success =
         [session setPreferredOutputNumberOfChannels:kPreferredNumberOfChannels
                                               error:&error];
-    DCHECK(CheckAndLogError(success, error));
+    RTC_DCHECK(CheckAndLogError(success, error));
   }
 }
 
@@ -190,20 +190,20 @@ AudioDeviceIOS::AudioDeviceIOS()
 
 AudioDeviceIOS::~AudioDeviceIOS() {
   LOGI() << "~dtor";
-  DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
   Terminate();
 }
 
 void AudioDeviceIOS::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   LOGI() << "AttachAudioBuffer";
-  DCHECK(audioBuffer);
-  DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(audioBuffer);
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
   _audioDeviceBuffer = audioBuffer;
 }
 
 int32_t AudioDeviceIOS::Init() {
   LOGI() << "Init";
-  DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
   if (_initialized) {
     return 0;
   }
@@ -227,7 +227,7 @@ int32_t AudioDeviceIOS::Init() {
 
 int32_t AudioDeviceIOS::Terminate() {
   LOGI() << "Terminate";
-  DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
   if (!_initialized) {
     return 0;
   }
@@ -238,10 +238,10 @@ int32_t AudioDeviceIOS::Terminate() {
 
 int32_t AudioDeviceIOS::InitPlayout() {
   LOGI() << "InitPlayout";
-  DCHECK(_threadChecker.CalledOnValidThread());
-  DCHECK(_initialized);
-  DCHECK(!_playIsInitialized);
-  DCHECK(!_playing);
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_initialized);
+  RTC_DCHECK(!_playIsInitialized);
+  RTC_DCHECK(!_playing);
   if (!_recIsInitialized) {
     if (!InitPlayOrRecord()) {
       LOG_F(LS_ERROR) << "InitPlayOrRecord failed!";
@@ -254,10 +254,10 @@ int32_t AudioDeviceIOS::InitPlayout() {
 
 int32_t AudioDeviceIOS::InitRecording() {
   LOGI() << "InitRecording";
-  DCHECK(_threadChecker.CalledOnValidThread());
-  DCHECK(_initialized);
-  DCHECK(!_recIsInitialized);
-  DCHECK(!_recording);
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_initialized);
+  RTC_DCHECK(!_recIsInitialized);
+  RTC_DCHECK(!_recording);
   if (!_playIsInitialized) {
     if (!InitPlayOrRecord()) {
       LOG_F(LS_ERROR) << "InitPlayOrRecord failed!";
@@ -270,9 +270,9 @@ int32_t AudioDeviceIOS::InitRecording() {
 
 int32_t AudioDeviceIOS::StartPlayout() {
   LOGI() << "StartPlayout";
-  DCHECK(_threadChecker.CalledOnValidThread());
-  DCHECK(_playIsInitialized);
-  DCHECK(!_playing);
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_playIsInitialized);
+  RTC_DCHECK(!_playing);
   _fineAudioBuffer->ResetPlayout();
   if (!_recording) {
     OSStatus result = AudioOutputUnitStart(_vpioUnit);
@@ -287,7 +287,7 @@ int32_t AudioDeviceIOS::StartPlayout() {
 
 int32_t AudioDeviceIOS::StopPlayout() {
   LOGI() << "StopPlayout";
-  DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
   if (!_playIsInitialized || !_playing) {
     return 0;
   }
@@ -301,9 +301,9 @@ int32_t AudioDeviceIOS::StopPlayout() {
 
 int32_t AudioDeviceIOS::StartRecording() {
   LOGI() << "StartRecording";
-  DCHECK(_threadChecker.CalledOnValidThread());
-  DCHECK(_recIsInitialized);
-  DCHECK(!_recording);
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_recIsInitialized);
+  RTC_DCHECK(!_recording);
   _fineAudioBuffer->ResetRecord();
   if (!_playing) {
     OSStatus result = AudioOutputUnitStart(_vpioUnit);
@@ -318,7 +318,7 @@ int32_t AudioDeviceIOS::StartRecording() {
 
 int32_t AudioDeviceIOS::StopRecording() {
   LOGI() << "StopRecording";
-  DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
   if (!_recIsInitialized || !_recording) {
     return 0;
   }
@@ -377,16 +377,16 @@ int32_t AudioDeviceIOS::RecordingDelay(uint16_t& delayMS) const {
 
 int AudioDeviceIOS::GetPlayoutAudioParameters(AudioParameters* params) const {
   LOGI() << "GetPlayoutAudioParameters";
-  DCHECK(_playoutParameters.is_valid());
-  DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_playoutParameters.is_valid());
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
   *params = _playoutParameters;
   return 0;
 }
 
 int AudioDeviceIOS::GetRecordAudioParameters(AudioParameters* params) const {
   LOGI() << "GetRecordAudioParameters";
-  DCHECK(_recordParameters.is_valid());
-  DCHECK(_threadChecker.CalledOnValidThread());
+  RTC_DCHECK(_recordParameters.is_valid());
+  RTC_DCHECK(_threadChecker.CalledOnValidThread());
   *params = _recordParameters;
   return 0;
 }
@@ -395,7 +395,7 @@ void AudioDeviceIOS::UpdateAudioDeviceBuffer() {
   LOGI() << "UpdateAudioDevicebuffer";
   // AttachAudioBuffer() is called at construction by the main class but check
   // just in case.
-  DCHECK(_audioDeviceBuffer) << "AttachAudioBuffer must be called first";
+  RTC_DCHECK(_audioDeviceBuffer) << "AttachAudioBuffer must be called first";
   // Inform the audio device buffer (ADB) about the new audio format.
   _audioDeviceBuffer->SetPlayoutSampleRate(_playoutParameters.sample_rate());
   _audioDeviceBuffer->SetPlayoutChannels(_playoutParameters.channels());
@@ -428,16 +428,16 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   // Hence, 128 is the size we expect to see in upcoming render callbacks.
   _playoutParameters.reset(session.sampleRate, _playoutParameters.channels(),
                            session.IOBufferDuration);
-  DCHECK(_playoutParameters.is_complete());
+  RTC_DCHECK(_playoutParameters.is_complete());
   _recordParameters.reset(session.sampleRate, _recordParameters.channels(),
                           session.IOBufferDuration);
-  DCHECK(_recordParameters.is_complete());
+  RTC_DCHECK(_recordParameters.is_complete());
   LOG(LS_INFO) << " frames per I/O buffer: "
                << _playoutParameters.frames_per_buffer();
   LOG(LS_INFO) << " bytes per I/O buffer: "
                << _playoutParameters.GetBytesPerBuffer();
-  DCHECK_EQ(_playoutParameters.GetBytesPerBuffer(),
-            _recordParameters.GetBytesPerBuffer());
+  RTC_DCHECK_EQ(_playoutParameters.GetBytesPerBuffer(),
+                _recordParameters.GetBytesPerBuffer());
 
   // Update the ADB parameters since the sample rate might have changed.
   UpdateAudioDeviceBuffer();
@@ -445,7 +445,7 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   // Create a modified audio buffer class which allows us to ask for,
   // or deliver, any number of samples (and not only multiple of 10ms) to match
   // the native audio unit buffer size.
-  DCHECK(_audioDeviceBuffer);
+  RTC_DCHECK(_audioDeviceBuffer);
   _fineAudioBuffer.reset(new FineAudioBuffer(
       _audioDeviceBuffer, _playoutParameters.GetBytesPerBuffer(),
       _playoutParameters.sample_rate()));
@@ -474,7 +474,7 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
 
 bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
   LOGI() << "SetupAndInitializeVoiceProcessingAudioUnit";
-  DCHECK(!_vpioUnit);
+  RTC_DCHECK(!_vpioUnit);
   // Create an audio component description to identify the Voice-Processing
   // I/O audio unit.
   AudioComponentDescription vpioUnitDescription;
@@ -519,8 +519,9 @@ bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
   // - no need to specify interleaving since only mono is supported
   AudioStreamBasicDescription applicationFormat = {0};
   UInt32 size = sizeof(applicationFormat);
-  DCHECK_EQ(_playoutParameters.sample_rate(), _recordParameters.sample_rate());
-  DCHECK_EQ(1, kPreferredNumberOfChannels);
+  RTC_DCHECK_EQ(_playoutParameters.sample_rate(),
+                _recordParameters.sample_rate());
+  RTC_DCHECK_EQ(1, kPreferredNumberOfChannels);
   applicationFormat.mSampleRate = _playoutParameters.sample_rate();
   applicationFormat.mFormatID = kAudioFormatLinearPCM;
   applicationFormat.mFormatFlags =
@@ -680,8 +681,8 @@ OSStatus AudioDeviceIOS::RecordedDataIsAvailable(
     UInt32 inBusNumber,
     UInt32 inNumberFrames,
     AudioBufferList* ioData) {
-  DCHECK_EQ(1u, inBusNumber);
-  DCHECK(!ioData);  // no buffer should be allocated for input at this stage
+  RTC_DCHECK_EQ(1u, inBusNumber);
+  RTC_DCHECK(!ioData);  // no buffer should be allocated for input at this stage
   AudioDeviceIOS* audio_device_ios = static_cast<AudioDeviceIOS*>(inRefCon);
   return audio_device_ios->OnRecordedDataIsAvailable(
       ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames);
@@ -692,7 +693,7 @@ OSStatus AudioDeviceIOS::OnRecordedDataIsAvailable(
     const AudioTimeStamp* inTimeStamp,
     UInt32 inBusNumber,
     UInt32 inNumberFrames) {
-  DCHECK_EQ(_recordParameters.frames_per_buffer(), inNumberFrames);
+  RTC_DCHECK_EQ(_recordParameters.frames_per_buffer(), inNumberFrames);
   OSStatus result = noErr;
   // Simply return if recording is not enabled.
   if (!rtc::AtomicOps::AcquireLoad(&_recording))
@@ -712,7 +713,7 @@ OSStatus AudioDeviceIOS::OnRecordedDataIsAvailable(
   // Use the FineAudioBuffer instance to convert between native buffer size
   // and the 10ms buffer size used by WebRTC.
   const UInt32 dataSizeInBytes = ioData->mBuffers[0].mDataByteSize;
-  CHECK_EQ(dataSizeInBytes / kBytesPerSample, inNumberFrames);
+  RTC_CHECK_EQ(dataSizeInBytes / kBytesPerSample, inNumberFrames);
   SInt8* data = static_cast<SInt8*>(ioData->mBuffers[0].mData);
   _fineAudioBuffer->DeliverRecordedData(data, dataSizeInBytes,
                                         kFixedPlayoutDelayEstimate,
@@ -727,8 +728,8 @@ OSStatus AudioDeviceIOS::GetPlayoutData(
     UInt32 inBusNumber,
     UInt32 inNumberFrames,
     AudioBufferList* ioData) {
-  DCHECK_EQ(0u, inBusNumber);
-  DCHECK(ioData);
+  RTC_DCHECK_EQ(0u, inBusNumber);
+  RTC_DCHECK(ioData);
   AudioDeviceIOS* audio_device_ios = static_cast<AudioDeviceIOS*>(inRefCon);
   return audio_device_ios->OnGetPlayoutData(ioActionFlags, inNumberFrames,
                                             ioData);
@@ -739,12 +740,12 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(
     UInt32 inNumberFrames,
     AudioBufferList* ioData) {
   // Verify 16-bit, noninterleaved mono PCM signal format.
-  DCHECK_EQ(1u, ioData->mNumberBuffers);
-  DCHECK_EQ(1u, ioData->mBuffers[0].mNumberChannels);
+  RTC_DCHECK_EQ(1u, ioData->mNumberBuffers);
+  RTC_DCHECK_EQ(1u, ioData->mBuffers[0].mNumberChannels);
   // Get pointer to internal audio buffer to which new audio data shall be
   // written.
   const UInt32 dataSizeInBytes = ioData->mBuffers[0].mDataByteSize;
-  CHECK_EQ(dataSizeInBytes / kBytesPerSample, inNumberFrames);
+  RTC_CHECK_EQ(dataSizeInBytes / kBytesPerSample, inNumberFrames);
   SInt8* destination = static_cast<SInt8*>(ioData->mBuffers[0].mData);
   // Produce silence and give audio unit a hint about it if playout is not
   // activated.

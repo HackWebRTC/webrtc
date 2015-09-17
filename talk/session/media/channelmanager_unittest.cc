@@ -54,7 +54,7 @@ static const VideoCodec kVideoCodecs[] = {
 class FakeMediaController : public webrtc::MediaControllerInterface {
  public:
   explicit FakeMediaController(webrtc::Call* call) : call_(call) {
-    DCHECK(nullptr != call);
+    RTC_DCHECK(nullptr != call);
   }
   ~FakeMediaController() override {}
   webrtc::Call* call_w() override { return call_; }

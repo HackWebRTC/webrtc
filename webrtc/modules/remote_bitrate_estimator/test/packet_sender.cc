@@ -402,7 +402,7 @@ void TcpSender::SendPackets(Packets* in_out) {
 
 void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
   const TcpFeedback* tcp_fb = static_cast<const TcpFeedback*>(fb);
-  DCHECK(!tcp_fb->acked_packets().empty());
+  RTC_DCHECK(!tcp_fb->acked_packets().empty());
   ack_received_ = true;
 
   uint16_t expected = tcp_fb->acked_packets().back() - last_acked_seq_num_;

@@ -46,12 +46,12 @@ struct Cluster {
         num_above_min_delta(0) {}
 
   int GetSendBitrateBps() const {
-    CHECK_GT(send_mean_ms, 0.0f);
+    RTC_CHECK_GT(send_mean_ms, 0.0f);
     return mean_size * 8 * 1000 / send_mean_ms;
   }
 
   int GetRecvBitrateBps() const {
-    CHECK_GT(recv_mean_ms, 0.0f);
+    RTC_CHECK_GT(recv_mean_ms, 0.0f);
     return mean_size * 8 * 1000 / recv_mean_ms;
   }
 

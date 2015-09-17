@@ -58,7 +58,8 @@ class FineAudioBuffer {
   // They can be fixed values on most platforms and they are ignored if an
   // external (hardware/built-in) AEC is used.
   // The size of |buffer| is given by |size_in_bytes| and must be equal to
-  // |desired_frame_size_bytes_|. A CHECK will be hit if this is not the case.
+  // |desired_frame_size_bytes_|. A RTC_CHECK will be hit if this is not the
+  // case.
   // Example: buffer size is 5ms => call #1 stores 5ms of data, call #2 stores
   // 5ms of data and sends a total of 10ms to WebRTC and clears the intenal
   // cache. Call #3 restarts the scheme above.

@@ -160,7 +160,7 @@ bool ViEEncoder::Init() {
 void ViEEncoder::StartThreadsAndSetSharedMembers(
     rtc::scoped_refptr<PayloadRouter> send_payload_router,
     VCMProtectionCallback* vcm_protection_callback) {
-  DCHECK(send_payload_router_ == NULL);
+  RTC_DCHECK(send_payload_router_ == NULL);
 
   send_payload_router_ = send_payload_router;
   vcm_->RegisterProtectionCallback(vcm_protection_callback);
@@ -254,7 +254,7 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
 }
 
 int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
-  DCHECK(send_payload_router_ != NULL);
+  RTC_DCHECK(send_payload_router_ != NULL);
   // Setting target width and height for VPM.
   if (vpm_->SetTargetResolution(video_codec.width, video_codec.height,
                                 video_codec.maxFramerate) != VPM_OK) {
@@ -414,7 +414,7 @@ void ViEEncoder::TraceFrameDropEnd() {
 }
 
 void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
-  DCHECK(send_payload_router_ != NULL);
+  RTC_DCHECK(send_payload_router_ != NULL);
   if (!send_payload_router_->active()) {
     // We've paused or we have no channels attached, don't waste resources on
     // encoding.
@@ -519,7 +519,7 @@ int ViEEncoder::CodecTargetBitrate(uint32_t* bitrate) const {
 }
 
 int32_t ViEEncoder::UpdateProtectionMethod(bool nack, bool fec) {
-  DCHECK(send_payload_router_ != NULL);
+  RTC_DCHECK(send_payload_router_ != NULL);
 
   if (fec_enabled_ == fec && nack_enabled_ == nack) {
     // No change needed, we're already in correct state.
@@ -587,7 +587,7 @@ int32_t ViEEncoder::SendData(
     const EncodedImage& encoded_image,
     const webrtc::RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) {
-  DCHECK(send_payload_router_ != NULL);
+  RTC_DCHECK(send_payload_router_ != NULL);
 
   {
     CriticalSectionScoped cs(data_cs_.get());
@@ -723,7 +723,7 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
   LOG(LS_VERBOSE) << "OnNetworkChanged, bitrate" << bitrate_bps
                   << " packet loss " << static_cast<int>(fraction_lost)
                   << " rtt " << round_trip_time_ms;
-  DCHECK(send_payload_router_ != NULL);
+  RTC_DCHECK(send_payload_router_ != NULL);
   vcm_->SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
   bool video_is_suspended = vcm_->VideoSuspended();
 

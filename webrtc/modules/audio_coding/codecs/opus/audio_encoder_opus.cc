@@ -41,10 +41,10 @@ AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
 // a loss rate from below, a higher threshold is used than jumping to the same
 // level from above.
 double OptimizePacketLossRate(double new_loss_rate, double old_loss_rate) {
-  DCHECK_GE(new_loss_rate, 0.0);
-  DCHECK_LE(new_loss_rate, 1.0);
-  DCHECK_GE(old_loss_rate, 0.0);
-  DCHECK_LE(old_loss_rate, 1.0);
+  RTC_DCHECK_GE(new_loss_rate, 0.0);
+  RTC_DCHECK_LE(new_loss_rate, 1.0);
+  RTC_DCHECK_GE(old_loss_rate, 0.0);
+  RTC_DCHECK_LE(old_loss_rate, 1.0);
   const double kPacketLossRate20 = 0.20;
   const double kPacketLossRate10 = 0.10;
   const double kPacketLossRate5 = 0.05;
@@ -90,14 +90,14 @@ bool AudioEncoderOpus::Config::IsOk() const {
 
 AudioEncoderOpus::AudioEncoderOpus(const Config& config)
     : packet_loss_rate_(0.0), inst_(nullptr) {
-  CHECK(RecreateEncoderInstance(config));
+  RTC_CHECK(RecreateEncoderInstance(config));
 }
 
 AudioEncoderOpus::AudioEncoderOpus(const CodecInst& codec_inst)
     : AudioEncoderOpus(CreateConfig(codec_inst)) {}
 
 AudioEncoderOpus::~AudioEncoderOpus() {
-  CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
+  RTC_CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
 }
 
 size_t AudioEncoderOpus::MaxEncodedBytes() const {
@@ -143,14 +143,15 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
       (static_cast<size_t>(Num10msFramesPerPacket()) * SamplesPer10msFrame())) {
     return EncodedInfo();
   }
-  CHECK_EQ(input_buffer_.size(), static_cast<size_t>(Num10msFramesPerPacket()) *
-                                     SamplesPer10msFrame());
+  RTC_CHECK_EQ(
+      input_buffer_.size(),
+      static_cast<size_t>(Num10msFramesPerPacket()) * SamplesPer10msFrame());
   int status = WebRtcOpus_Encode(
       inst_, &input_buffer_[0],
       rtc::CheckedDivExact(input_buffer_.size(),
                            static_cast<size_t>(config_.num_channels)),
       rtc::saturated_cast<int16_t>(max_encoded_bytes), encoded);
-  CHECK_GE(status, 0);  // Fails only if fed invalid data.
+  RTC_CHECK_GE(status, 0);  // Fails only if fed invalid data.
   input_buffer_.clear();
   EncodedInfo info;
   info.encoded_bytes = static_cast<size_t>(status);
@@ -162,7 +163,7 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
 }
 
 void AudioEncoderOpus::Reset() {
-  CHECK(RecreateEncoderInstance(config_));
+  RTC_CHECK(RecreateEncoderInstance(config_));
 }
 
 bool AudioEncoderOpus::SetFec(bool enable) {
@@ -193,23 +194,24 @@ bool AudioEncoderOpus::SetApplication(Application application) {
 void AudioEncoderOpus::SetMaxPlaybackRate(int frequency_hz) {
   auto conf = config_;
   conf.max_playback_rate_hz = frequency_hz;
-  CHECK(RecreateEncoderInstance(conf));
+  RTC_CHECK(RecreateEncoderInstance(conf));
 }
 
 void AudioEncoderOpus::SetProjectedPacketLossRate(double fraction) {
   double opt_loss_rate = OptimizePacketLossRate(fraction, packet_loss_rate_);
   if (packet_loss_rate_ != opt_loss_rate) {
     packet_loss_rate_ = opt_loss_rate;
-    CHECK_EQ(0, WebRtcOpus_SetPacketLossRate(
-                    inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
+    RTC_CHECK_EQ(
+        0, WebRtcOpus_SetPacketLossRate(
+               inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
   }
 }
 
 void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
   config_.bitrate_bps =
       std::max(std::min(bits_per_second, kMaxBitrateBps), kMinBitrateBps);
-  DCHECK(config_.IsOk());
-  CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.bitrate_bps));
+  RTC_DCHECK(config_.IsOk());
+  RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.bitrate_bps));
 }
 
 int AudioEncoderOpus::Num10msFramesPerPacket() const {
@@ -227,27 +229,28 @@ bool AudioEncoderOpus::RecreateEncoderInstance(const Config& config) {
   if (!config.IsOk())
     return false;
   if (inst_)
-    CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
+    RTC_CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
   input_buffer_.clear();
   input_buffer_.reserve(Num10msFramesPerPacket() * SamplesPer10msFrame());
-  CHECK_EQ(0, WebRtcOpus_EncoderCreate(&inst_, config.num_channels,
-                                       config.application));
-  CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config.bitrate_bps));
+  RTC_CHECK_EQ(0, WebRtcOpus_EncoderCreate(&inst_, config.num_channels,
+                                           config.application));
+  RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config.bitrate_bps));
   if (config.fec_enabled) {
-    CHECK_EQ(0, WebRtcOpus_EnableFec(inst_));
+    RTC_CHECK_EQ(0, WebRtcOpus_EnableFec(inst_));
   } else {
-    CHECK_EQ(0, WebRtcOpus_DisableFec(inst_));
+    RTC_CHECK_EQ(0, WebRtcOpus_DisableFec(inst_));
   }
-  CHECK_EQ(0,
-           WebRtcOpus_SetMaxPlaybackRate(inst_, config.max_playback_rate_hz));
-  CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, config.complexity));
+  RTC_CHECK_EQ(
+      0, WebRtcOpus_SetMaxPlaybackRate(inst_, config.max_playback_rate_hz));
+  RTC_CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, config.complexity));
   if (config.dtx_enabled) {
-    CHECK_EQ(0, WebRtcOpus_EnableDtx(inst_));
+    RTC_CHECK_EQ(0, WebRtcOpus_EnableDtx(inst_));
   } else {
-    CHECK_EQ(0, WebRtcOpus_DisableDtx(inst_));
+    RTC_CHECK_EQ(0, WebRtcOpus_DisableDtx(inst_));
   }
-  CHECK_EQ(0, WebRtcOpus_SetPacketLossRate(
-                  inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
+  RTC_CHECK_EQ(0,
+               WebRtcOpus_SetPacketLossRate(
+                   inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
   config_ = config;
   return true;
 }

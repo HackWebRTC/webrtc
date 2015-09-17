@@ -75,7 +75,7 @@ class ChannelBuffer {
   // 0 <= channel < |num_channels_|
   // 0 <= sample < |num_frames_per_band_|
   const T* const* channels(size_t band) const {
-    DCHECK_LT(band, num_bands_);
+    RTC_DCHECK_LT(band, num_bands_);
     return &channels_[band * num_channels_];
   }
   T* const* channels(size_t band) {
@@ -91,8 +91,8 @@ class ChannelBuffer {
   // 0 <= band < |num_bands_|
   // 0 <= sample < |num_frames_per_band_|
   const T* const* bands(int channel) const {
-    DCHECK_LT(channel, num_channels_);
-    DCHECK_GE(channel, 0);
+    RTC_DCHECK_LT(channel, num_channels_);
+    RTC_DCHECK_GE(channel, 0);
     return &bands_[channel * num_bands_];
   }
   T* const* bands(int channel) {
@@ -103,7 +103,7 @@ class ChannelBuffer {
   // Sets the |slice| pointers to the |start_frame| position for each channel.
   // Returns |slice| for convenience.
   const T* const* Slice(T** slice, size_t start_frame) const {
-    DCHECK_LT(start_frame, num_frames_);
+    RTC_DCHECK_LT(start_frame, num_frames_);
     for (int i = 0; i < num_channels_; ++i)
       slice[i] = &channels_[i][start_frame];
     return slice;
@@ -120,7 +120,7 @@ class ChannelBuffer {
   size_t size() const {return num_frames_ * num_channels_; }
 
   void SetDataForTesting(const T* data, size_t size) {
-    CHECK_EQ(size, this->size());
+    RTC_CHECK_EQ(size, this->size());
     memcpy(data_.get(), data, size * sizeof(*data));
   }
 

@@ -30,12 +30,12 @@ rtc::scoped_ptr<RealFourier> RealFourier::Create(int fft_order) {
 }
 
 int RealFourier::FftOrder(size_t length) {
-  CHECK_GT(length, 0U);
+  RTC_CHECK_GT(length, 0U);
   return WebRtcSpl_GetSizeInBits(static_cast<uint32_t>(length - 1));
 }
 
 size_t RealFourier::FftLength(int order) {
-  CHECK_GE(order, 0);
+  RTC_CHECK_GE(order, 0);
   return static_cast<size_t>(1 << order);
 }
 

@@ -29,8 +29,8 @@ bool H264CMSampleBufferToAnnexBBuffer(
     bool is_keyframe,
     rtc::Buffer* annexb_buffer,
     webrtc::RTPFragmentationHeader** out_header) {
-  DCHECK(avcc_sample_buffer);
-  DCHECK(out_header);
+  RTC_DCHECK(avcc_sample_buffer);
+  RTC_DCHECK(out_header);
   *out_header = nullptr;
 
   // Get format description from the sample buffer.
@@ -51,8 +51,8 @@ bool H264CMSampleBufferToAnnexBBuffer(
     return false;
   }
   // TODO(tkchin): handle other potential sizes.
-  DCHECK_EQ(nalu_header_size, 4);
-  DCHECK_EQ(param_set_count, 2u);
+  RTC_DCHECK_EQ(nalu_header_size, 4);
+  RTC_DCHECK_EQ(param_set_count, 2u);
 
   // Truncate any previous data in the buffer without changing its capacity.
   annexb_buffer->SetSize(0);
@@ -122,7 +122,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
     // The size type here must match |nalu_header_size|, we expect 4 bytes.
     // Read the length of the next packet of data. Must convert from big endian
     // to host endian.
-    DCHECK_GE(bytes_remaining, (size_t)nalu_header_size);
+    RTC_DCHECK_GE(bytes_remaining, (size_t)nalu_header_size);
     uint32_t* uint32_data_ptr = reinterpret_cast<uint32*>(data_ptr);
     uint32_t packet_size = CFSwapInt32BigToHost(*uint32_data_ptr);
     // Update buffer.
@@ -137,12 +137,12 @@ bool H264CMSampleBufferToAnnexBBuffer(
     bytes_remaining -= bytes_written;
     data_ptr += bytes_written;
   }
-  DCHECK_EQ(bytes_remaining, (size_t)0);
+  RTC_DCHECK_EQ(bytes_remaining, (size_t)0);
 
   rtc::scoped_ptr<webrtc::RTPFragmentationHeader> header;
   header.reset(new webrtc::RTPFragmentationHeader());
   header->VerifyAndAllocateFragmentationHeader(frag_offsets.size());
-  DCHECK_EQ(frag_lengths.size(), frag_offsets.size());
+  RTC_DCHECK_EQ(frag_lengths.size(), frag_offsets.size());
   for (size_t i = 0; i < frag_offsets.size(); ++i) {
     header->fragmentationOffset[i] = frag_offsets[i];
     header->fragmentationLength[i] = frag_lengths[i];
@@ -159,8 +159,8 @@ bool H264AnnexBBufferToCMSampleBuffer(
     size_t annexb_buffer_size,
     CMVideoFormatDescriptionRef video_format,
     CMSampleBufferRef* out_sample_buffer) {
-  DCHECK(annexb_buffer);
-  DCHECK(out_sample_buffer);
+  RTC_DCHECK(annexb_buffer);
+  RTC_DCHECK(out_sample_buffer);
   *out_sample_buffer = nullptr;
 
   // The buffer we receive via RTP has 00 00 00 01 start code artifically
@@ -193,7 +193,7 @@ bool H264AnnexBBufferToCMSampleBuffer(
       return false;
     }
   } else {
-    DCHECK(video_format);
+    RTC_DCHECK(video_format);
     description = video_format;
     // We don't need to retain, but it makes logic easier since we are creating
     // in the other block.
@@ -241,7 +241,7 @@ bool H264AnnexBBufferToCMSampleBuffer(
     CFRelease(contiguous_buffer);
     return false;
   }
-  DCHECK(block_buffer_size == reader.BytesRemaining());
+  RTC_DCHECK(block_buffer_size == reader.BytesRemaining());
 
   // Write Avcc NALUs into block buffer memory.
   AvccBufferWriter writer(reinterpret_cast<uint8_t*>(data_ptr),
@@ -272,7 +272,7 @@ bool H264AnnexBBufferToCMSampleBuffer(
 AnnexBBufferReader::AnnexBBufferReader(const uint8_t* annexb_buffer,
                                        size_t length)
     : start_(annexb_buffer), offset_(0), next_offset_(0), length_(length) {
-  DCHECK(annexb_buffer);
+  RTC_DCHECK(annexb_buffer);
   offset_ = FindNextNaluHeader(start_, length_, 0);
   next_offset_ =
       FindNextNaluHeader(start_, length_, offset_ + sizeof(kAnnexBHeaderBytes));
@@ -280,8 +280,8 @@ AnnexBBufferReader::AnnexBBufferReader(const uint8_t* annexb_buffer,
 
 bool AnnexBBufferReader::ReadNalu(const uint8_t** out_nalu,
                                   size_t* out_length) {
-  DCHECK(out_nalu);
-  DCHECK(out_length);
+  RTC_DCHECK(out_nalu);
+  RTC_DCHECK(out_length);
   *out_nalu = nullptr;
   *out_length = 0;
 
@@ -304,7 +304,7 @@ size_t AnnexBBufferReader::BytesRemaining() const {
 size_t AnnexBBufferReader::FindNextNaluHeader(const uint8_t* start,
                                               size_t length,
                                               size_t offset) const {
-  DCHECK(start);
+  RTC_DCHECK(start);
   if (offset + sizeof(kAnnexBHeaderBytes) > length) {
     return length;
   }
@@ -329,7 +329,7 @@ size_t AnnexBBufferReader::FindNextNaluHeader(const uint8_t* start,
 
 AvccBufferWriter::AvccBufferWriter(uint8_t* const avcc_buffer, size_t length)
     : start_(avcc_buffer), offset_(0), length_(length) {
-  DCHECK(avcc_buffer);
+  RTC_DCHECK(avcc_buffer);
 }
 
 bool AvccBufferWriter::WriteNalu(const uint8_t* data, size_t data_size) {

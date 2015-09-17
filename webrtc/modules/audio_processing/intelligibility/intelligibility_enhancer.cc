@@ -58,7 +58,7 @@ void IntelligibilityEnhancer::TransformCallback::ProcessAudioBlock(
     size_t frames,
     int /* out_channels */,
     complex<float>* const* out_block) {
-  DCHECK_EQ(parent_->freqs_, frames);
+  RTC_DCHECK_EQ(parent_->freqs_, frames);
   for (int i = 0; i < in_channels; ++i) {
     parent_->DispatchAudio(source_, in_block[i], out_block[i]);
   }
@@ -103,7 +103,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(const Config& config)
       capture_callback_(this, AudioSource::kCaptureStream),
       block_count_(0),
       analysis_step_(0) {
-  DCHECK_LE(config.rho, 1.0f);
+  RTC_DCHECK_LE(config.rho, 1.0f);
 
   CreateErbBank();
 
@@ -130,8 +130,8 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(const Config& config)
 void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
                                                  int sample_rate_hz,
                                                  int num_channels) {
-  CHECK_EQ(sample_rate_hz_, sample_rate_hz);
-  CHECK_EQ(num_render_channels_, num_channels);
+  RTC_CHECK_EQ(sample_rate_hz_, sample_rate_hz);
+  RTC_CHECK_EQ(num_render_channels_, num_channels);
 
   if (active_) {
     render_mangler_->ProcessChunk(audio, temp_render_out_buffer_.channels());
@@ -148,8 +148,8 @@ void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
 void IntelligibilityEnhancer::AnalyzeCaptureAudio(float* const* audio,
                                                   int sample_rate_hz,
                                                   int num_channels) {
-  CHECK_EQ(sample_rate_hz_, sample_rate_hz);
-  CHECK_EQ(num_capture_channels_, num_channels);
+  RTC_CHECK_EQ(sample_rate_hz_, sample_rate_hz);
+  RTC_CHECK_EQ(num_capture_channels_, num_channels);
 
   capture_mangler_->ProcessChunk(audio, temp_capture_out_buffer_.channels());
 }
@@ -357,7 +357,7 @@ void IntelligibilityEnhancer::SolveForGainsGivenLambda(float lambda,
 }
 
 void IntelligibilityEnhancer::FilterVariance(const float* var, float* result) {
-  DCHECK_GT(freqs_, 0u);
+  RTC_DCHECK_GT(freqs_, 0u);
   for (size_t i = 0; i < bank_size_; ++i) {
     result[i] = DotProduct(&filter_bank_[i][0], var, freqs_);
   }

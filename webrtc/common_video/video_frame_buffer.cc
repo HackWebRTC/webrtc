@@ -48,11 +48,11 @@ I420Buffer::I420Buffer(int width,
       data_(static_cast<uint8_t*>(AlignedMalloc(
           stride_y * height + (stride_u + stride_v) * ((height + 1) / 2),
           kBufferAlignment))) {
-  DCHECK_GT(width, 0);
-  DCHECK_GT(height, 0);
-  DCHECK_GE(stride_y, width);
-  DCHECK_GE(stride_u, (width + 1) / 2);
-  DCHECK_GE(stride_v, (width + 1) / 2);
+  RTC_DCHECK_GT(width, 0);
+  RTC_DCHECK_GT(height, 0);
+  RTC_DCHECK_GE(stride_y, width);
+  RTC_DCHECK_GE(stride_u, (width + 1) / 2);
+  RTC_DCHECK_GE(stride_v, (width + 1) / 2);
 }
 
 I420Buffer::~I420Buffer() {
@@ -82,7 +82,7 @@ const uint8_t* I420Buffer::data(PlaneType type) const {
 }
 
 uint8_t* I420Buffer::MutableData(PlaneType type) {
-  DCHECK(HasOneRef());
+  RTC_DCHECK(HasOneRef());
   return const_cast<uint8_t*>(
       static_cast<const VideoFrameBuffer*>(this)->data(type));
 }
@@ -114,9 +114,9 @@ NativeHandleBuffer::NativeHandleBuffer(void* native_handle,
                                        int width,
                                        int height)
     : native_handle_(native_handle), width_(width), height_(height) {
-  DCHECK(native_handle != nullptr);
-  DCHECK_GT(width, 0);
-  DCHECK_GT(height, 0);
+  RTC_DCHECK(native_handle != nullptr);
+  RTC_DCHECK_GT(width, 0);
+  RTC_DCHECK_GT(height, 0);
 }
 
 int NativeHandleBuffer::width() const {
@@ -214,9 +214,9 @@ rtc::scoped_refptr<VideoFrameBuffer> ShallowCenterCrop(
     const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
     int cropped_width,
     int cropped_height) {
-  CHECK(buffer->native_handle() == nullptr);
-  CHECK_LE(cropped_width, buffer->width());
-  CHECK_LE(cropped_height, buffer->height());
+  RTC_CHECK(buffer->native_handle() == nullptr);
+  RTC_CHECK_LE(cropped_width, buffer->width());
+  RTC_CHECK_LE(cropped_height, buffer->height());
   if (buffer->width() == cropped_width && buffer->height() == cropped_height)
     return buffer;
 

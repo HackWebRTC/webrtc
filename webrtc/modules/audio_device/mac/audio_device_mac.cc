@@ -91,8 +91,8 @@ void AudioDeviceMac::logCAMsg(const TraceLevel level,
                               const int32_t id, const char *msg,
                               const char *err)
 {
-    DCHECK(msg != NULL);
-    DCHECK(err != NULL);
+  RTC_DCHECK(msg != NULL);
+  RTC_DCHECK(err != NULL);
 
 #ifdef WEBRTC_ARCH_BIG_ENDIAN
     WEBRTC_TRACE(level, module, id, "%s: %.4s", msg, err);
@@ -154,8 +154,8 @@ AudioDeviceMac::AudioDeviceMac(const int32_t id) :
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,
                  "%s created", __FUNCTION__);
 
-    DCHECK(&_stopEvent != NULL);
-    DCHECK(&_stopEventRec != NULL);
+    RTC_DCHECK(&_stopEvent != NULL);
+    RTC_DCHECK(&_stopEventRec != NULL);
 
     memset(_renderConvertData, 0, sizeof(_renderConvertData));
     memset(&_outStreamFormat, 0, sizeof(AudioStreamBasicDescription));
@@ -175,8 +175,8 @@ AudioDeviceMac::~AudioDeviceMac()
         Terminate();
     }
 
-    DCHECK(!capture_worker_thread_.get());
-    DCHECK(!render_worker_thread_.get());
+    RTC_DCHECK(!capture_worker_thread_.get());
+    RTC_DCHECK(!render_worker_thread_.get());
 
     if (_paRenderBuffer)
     {
@@ -1664,10 +1664,10 @@ int32_t AudioDeviceMac::StartRecording()
         return -1;
     }
 
-    DCHECK(!capture_worker_thread_.get());
+    RTC_DCHECK(!capture_worker_thread_.get());
     capture_worker_thread_ =
         ThreadWrapper::CreateThread(RunCapture, this, "CaptureWorkerThread");
-    DCHECK(capture_worker_thread_.get());
+    RTC_DCHECK(capture_worker_thread_.get());
     capture_worker_thread_->Start();
     capture_worker_thread_->SetPriority(kRealtimePriority);
 
@@ -1819,7 +1819,7 @@ int32_t AudioDeviceMac::StartPlayout()
         return 0;
     }
 
-    DCHECK(!render_worker_thread_.get());
+    RTC_DCHECK(!render_worker_thread_.get());
     render_worker_thread_ =
         ThreadWrapper::CreateThread(RunRender, this, "RenderWorkerThread");
     render_worker_thread_->Start();
@@ -2466,7 +2466,7 @@ OSStatus AudioDeviceMac::objectListenerProc(
     void* clientData)
 {
     AudioDeviceMac *ptrThis = (AudioDeviceMac *) clientData;
-    DCHECK(ptrThis != NULL);
+    RTC_DCHECK(ptrThis != NULL);
 
     ptrThis->implObjectListenerProc(objectId, numberAddresses, addresses);
 
@@ -2752,7 +2752,7 @@ OSStatus AudioDeviceMac::deviceIOProc(AudioDeviceID, const AudioTimeStamp*,
                                       void *clientData)
 {
     AudioDeviceMac *ptrThis = (AudioDeviceMac *) clientData;
-    DCHECK(ptrThis != NULL);
+    RTC_DCHECK(ptrThis != NULL);
 
     ptrThis->implDeviceIOProc(inputData, inputTime, outputData, outputTime);
 
@@ -2767,7 +2767,7 @@ OSStatus AudioDeviceMac::outConverterProc(AudioConverterRef,
                                           void *userData)
 {
     AudioDeviceMac *ptrThis = (AudioDeviceMac *) userData;
-    DCHECK(ptrThis != NULL);
+    RTC_DCHECK(ptrThis != NULL);
 
     return ptrThis->implOutConverterProc(numberDataPackets, data);
 }
@@ -2779,7 +2779,7 @@ OSStatus AudioDeviceMac::inDeviceIOProc(AudioDeviceID, const AudioTimeStamp*,
                                         const AudioTimeStamp*, void* clientData)
 {
     AudioDeviceMac *ptrThis = (AudioDeviceMac *) clientData;
-    DCHECK(ptrThis != NULL);
+    RTC_DCHECK(ptrThis != NULL);
 
     ptrThis->implInDeviceIOProc(inputData, inputTime);
 
@@ -2795,7 +2795,7 @@ OSStatus AudioDeviceMac::inConverterProc(
     void *userData)
 {
     AudioDeviceMac *ptrThis = static_cast<AudioDeviceMac*> (userData);
-    DCHECK(ptrThis != NULL);
+    RTC_DCHECK(ptrThis != NULL);
 
     return ptrThis->implInConverterProc(numberDataPackets, data);
 }
@@ -2852,7 +2852,7 @@ OSStatus AudioDeviceMac::implDeviceIOProc(const AudioBufferList *inputData,
         return 0;
     }
 
-    DCHECK(_outStreamFormat.mBytesPerFrame != 0);
+    RTC_DCHECK(_outStreamFormat.mBytesPerFrame != 0);
     UInt32 size = outputData->mBuffers->mDataByteSize
         / _outStreamFormat.mBytesPerFrame;
 
@@ -2893,7 +2893,7 @@ OSStatus AudioDeviceMac::implDeviceIOProc(const AudioBufferList *inputData,
 OSStatus AudioDeviceMac::implOutConverterProc(UInt32 *numberDataPackets,
                                               AudioBufferList *data)
 {
-    DCHECK(data->mNumberBuffers == 1);
+  RTC_DCHECK(data->mNumberBuffers == 1);
     PaRingBufferSize numSamples = *numberDataPackets
         * _outDesiredFormat.mChannelsPerFrame;
 
@@ -2967,7 +2967,7 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
 
     AtomicSet32(&_captureDelayUs, captureDelayUs);
 
-    DCHECK(inputData->mNumberBuffers == 1);
+    RTC_DCHECK(inputData->mNumberBuffers == 1);
     PaRingBufferSize numSamples = inputData->mBuffers->mDataByteSize
         * _inStreamFormat.mChannelsPerFrame / _inStreamFormat.mBytesPerPacket;
     PaUtil_WriteRingBuffer(_paCaptureBuffer, inputData->mBuffers->mData,
@@ -2986,7 +2986,7 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
 OSStatus AudioDeviceMac::implInConverterProc(UInt32 *numberDataPackets,
                                              AudioBufferList *data)
 {
-    DCHECK(data->mNumberBuffers == 1);
+  RTC_DCHECK(data->mNumberBuffers == 1);
     PaRingBufferSize numSamples = *numberDataPackets
         * _inStreamFormat.mChannelsPerFrame;
 

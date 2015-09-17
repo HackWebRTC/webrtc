@@ -89,7 +89,7 @@ static const webrtc::NetworkStatistics kNetStats = {
   if (channels_.find(channel) == channels_.end()) return -1;
 
 #define WEBRTC_ASSERT_CHANNEL(channel) \
-  DCHECK(channels_.find(channel) != channels_.end());
+  RTC_DCHECK(channels_.find(channel) != channels_.end());
 
 // Verify the header extension ID, if enabled, is within the bounds specified in
 // [RFC5285]: 1-14 inclusive.
@@ -383,7 +383,7 @@ class FakeWebRtcVoiceEngine
     return channels_[channel]->packets.empty();
   }
   void TriggerCallbackOnError(int channel_num, int err_code) {
-    DCHECK(observer_ != NULL);
+    RTC_DCHECK(observer_ != NULL);
     observer_->CallbackOnError(channel_num, err_code);
   }
   void set_playout_fail_channel(int channel) {

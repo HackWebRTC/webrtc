@@ -196,7 +196,7 @@ class DecoderBitstreamFileWriter : public EncodedFrameObserver {
  public:
   explicit DecoderBitstreamFileWriter(const char* filename)
       : file_(fopen(filename, "wb")) {
-    DCHECK(file_ != nullptr);
+    RTC_DCHECK(file_ != nullptr);
   }
   ~DecoderBitstreamFileWriter() { fclose(file_); }
 

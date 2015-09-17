@@ -48,7 +48,7 @@ int AudioDecoderPcmU::DecodeInternal(const uint8_t* encoded,
                                      int sample_rate_hz,
                                      int16_t* decoded,
                                      SpeechType* speech_type) {
-  DCHECK_EQ(sample_rate_hz, 8000);
+  RTC_DCHECK_EQ(sample_rate_hz, 8000);
   int16_t temp_type = 1;  // Default is speech.
   size_t ret = WebRtcG711_DecodeU(encoded, encoded_len, decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
@@ -78,7 +78,7 @@ int AudioDecoderPcmA::DecodeInternal(const uint8_t* encoded,
                                      int sample_rate_hz,
                                      int16_t* decoded,
                                      SpeechType* speech_type) {
-  DCHECK_EQ(sample_rate_hz, 8000);
+  RTC_DCHECK_EQ(sample_rate_hz, 8000);
   int16_t temp_type = 1;  // Default is speech.
   size_t ret = WebRtcG711_DecodeA(encoded, encoded_len, decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
@@ -115,7 +115,7 @@ int AudioDecoderG722::DecodeInternal(const uint8_t* encoded,
                                      int sample_rate_hz,
                                      int16_t* decoded,
                                      SpeechType* speech_type) {
-  DCHECK_EQ(sample_rate_hz, 16000);
+  RTC_DCHECK_EQ(sample_rate_hz, 16000);
   int16_t temp_type = 1;  // Default is speech.
   size_t ret =
       WebRtcG722_Decode(dec_state_, encoded, encoded_len, decoded, &temp_type);
@@ -154,7 +154,7 @@ int AudioDecoderG722Stereo::DecodeInternal(const uint8_t* encoded,
                                            int sample_rate_hz,
                                            int16_t* decoded,
                                            SpeechType* speech_type) {
-  DCHECK_EQ(sample_rate_hz, 16000);
+  RTC_DCHECK_EQ(sample_rate_hz, 16000);
   int16_t temp_type = 1;  // Default is speech.
   // De-interleave the bit-stream into two separate payloads.
   uint8_t* encoded_deinterleaved = new uint8_t[encoded_len];
@@ -218,7 +218,7 @@ void AudioDecoderG722Stereo::SplitStereoPacket(const uint8_t* encoded,
 #endif
 
 AudioDecoderCng::AudioDecoderCng() {
-  CHECK_EQ(0, WebRtcCng_CreateDec(&dec_state_));
+  RTC_CHECK_EQ(0, WebRtcCng_CreateDec(&dec_state_));
   WebRtcCng_InitDec(dec_state_);
 }
 

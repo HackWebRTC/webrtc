@@ -50,9 +50,9 @@ class LOCKABLE CriticalSection {
   bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true);
   void Leave() UNLOCK_FUNCTION();
 
-  // Use only for DCHECKing.
+  // Use only for RTC_DCHECKing.
   bool CurrentThreadIsOwner() const;
-  // Use only for DCHECKing.
+  // Use only for RTC_DCHECKing.
   bool IsLocked() const;
 
  private:

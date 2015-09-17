@@ -152,7 +152,7 @@ WebRtcVideoCapturer::~WebRtcVideoCapturer() {
 }
 
 bool WebRtcVideoCapturer::Init(const Device& device) {
-  DCHECK(!start_thread_);
+  RTC_DCHECK(!start_thread_);
   if (module_) {
     LOG(LS_ERROR) << "The capturer is already initialized";
     return false;
@@ -226,7 +226,7 @@ bool WebRtcVideoCapturer::Init(const Device& device) {
 }
 
 bool WebRtcVideoCapturer::Init(webrtc::VideoCaptureModule* module) {
-  DCHECK(!start_thread_);
+  RTC_DCHECK(!start_thread_);
   if (module_) {
     LOG(LS_ERROR) << "The capturer is already initialized";
     return false;
@@ -263,7 +263,7 @@ bool WebRtcVideoCapturer::SetApplyRotation(bool enable) {
   // Can't take lock here as this will cause deadlock with
   // OnIncomingCapturedFrame. In fact, the whole method, including methods it
   // calls, can't take lock.
-  DCHECK(module_);
+  RTC_DCHECK(module_);
 
   const std::string group_name =
       webrtc::field_trial::FindFullName("WebRTC-CVO");
@@ -285,13 +285,13 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
   }
   if (start_thread_) {
     LOG(LS_ERROR) << "The capturer is already running";
-    DCHECK(start_thread_->IsCurrent())
+    RTC_DCHECK(start_thread_->IsCurrent())
         << "Trying to start capturer on different threads";
     return CS_FAILED;
   }
 
   start_thread_ = rtc::Thread::Current();
-  DCHECK(!async_invoker_);
+  RTC_DCHECK(!async_invoker_);
   async_invoker_.reset(new rtc::AsyncInvoker());
   captured_frames_ = 0;
 
@@ -327,9 +327,9 @@ void WebRtcVideoCapturer::Stop() {
     LOG(LS_ERROR) << "The capturer is already stopped";
     return;
   }
-  DCHECK(start_thread_);
-  DCHECK(start_thread_->IsCurrent());
-  DCHECK(async_invoker_);
+  RTC_DCHECK(start_thread_);
+  RTC_DCHECK(start_thread_->IsCurrent());
+  RTC_DCHECK(async_invoker_);
   if (IsRunning()) {
     // The module is responsible for OnIncomingCapturedFrame being called, if
     // we stop it we will get no further callbacks.
@@ -372,8 +372,8 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(
     const int32_t id,
     const webrtc::VideoFrame& sample) {
   // This can only happen between Start() and Stop().
-  DCHECK(start_thread_);
-  DCHECK(async_invoker_);
+  RTC_DCHECK(start_thread_);
+  RTC_DCHECK(async_invoker_);
   if (start_thread_->IsCurrent()) {
     SignalFrameCapturedOnStartThread(sample);
   } else {
@@ -398,9 +398,9 @@ void WebRtcVideoCapturer::OnCaptureDelayChanged(const int32_t id,
 void WebRtcVideoCapturer::SignalFrameCapturedOnStartThread(
     const webrtc::VideoFrame frame) {
   // This can only happen between Start() and Stop().
-  DCHECK(start_thread_);
-  DCHECK(start_thread_->IsCurrent());
-  DCHECK(async_invoker_);
+  RTC_DCHECK(start_thread_);
+  RTC_DCHECK(start_thread_->IsCurrent());
+  RTC_DCHECK(async_invoker_);
 
   ++captured_frames_;
   // Log the size and pixel aspect ratio of the first captured frame.

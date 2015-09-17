@@ -38,7 +38,7 @@ void VPMVideoDecimator::EnableTemporalDecimation(bool enable) {
 }
 
 void VPMVideoDecimator::SetTargetFramerate(int frame_rate) {
-  DCHECK(frame_rate);
+  RTC_DCHECK(frame_rate);
   target_frame_rate_ = frame_rate;
 }
 

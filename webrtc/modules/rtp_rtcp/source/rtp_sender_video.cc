@@ -142,7 +142,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
       fec_packets = producer_fec_.GetFecPackets(
           _payloadTypeRED, _payloadTypeFEC, next_fec_sequence_number,
           rtp_header_length);
-      DCHECK_EQ(num_fec_packets, fec_packets.size());
+      RTC_DCHECK_EQ(num_fec_packets, fec_packets.size());
       if (_retransmissionSettings & kRetransmitFECPackets)
         fec_storage = kAllowRetransmission;
     }
@@ -236,8 +236,8 @@ size_t RTPSenderVideo::FECPacketOverhead() const {
 void RTPSenderVideo::SetFecParameters(const FecProtectionParams* delta_params,
                                       const FecProtectionParams* key_params) {
   CriticalSectionScoped cs(crit_.get());
-  DCHECK(delta_params);
-  DCHECK(key_params);
+  RTC_DCHECK(delta_params);
+  RTC_DCHECK(key_params);
   delta_fec_params_ = *delta_params;
   key_fec_params_ = *key_params;
 }
@@ -313,7 +313,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     // value sent.
     // Here we are adding it to every packet of every frame at this point.
     if (!rtpHdr) {
-      DCHECK(!_rtpSender.IsRtpHeaderExtensionRegistered(
+      RTC_DCHECK(!_rtpSender.IsRtpHeaderExtensionRegistered(
           kRtpExtensionVideoRotation));
     } else if (cvo_mode == RTPSenderInterface::kCVOActivated) {
       // Checking whether CVO header extension is registered will require taking

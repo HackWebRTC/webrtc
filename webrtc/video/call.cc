@@ -144,12 +144,12 @@ Call::Call(const Call::Config& config)
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
       event_log_(nullptr) {
-  DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
-  DCHECK_GE(config.bitrate_config.start_bitrate_bps,
-            config.bitrate_config.min_bitrate_bps);
+  RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
+  RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
+                config.bitrate_config.min_bitrate_bps);
   if (config.bitrate_config.max_bitrate_bps != -1) {
-    DCHECK_GE(config.bitrate_config.max_bitrate_bps,
-              config.bitrate_config.start_bitrate_bps);
+    RTC_DCHECK_GE(config.bitrate_config.max_bitrate_bps,
+                  config.bitrate_config.start_bitrate_bps);
   }
   if (config.voice_engine) {
     VoECodec* voe_codec = VoECodec::GetInterface(config.voice_engine);
@@ -166,11 +166,11 @@ Call::Call(const Call::Config& config)
 }
 
 Call::~Call() {
-  CHECK_EQ(0u, video_send_ssrcs_.size());
-  CHECK_EQ(0u, video_send_streams_.size());
-  CHECK_EQ(0u, audio_receive_ssrcs_.size());
-  CHECK_EQ(0u, video_receive_ssrcs_.size());
-  CHECK_EQ(0u, video_receive_streams_.size());
+  RTC_CHECK_EQ(0u, video_send_ssrcs_.size());
+  RTC_CHECK_EQ(0u, video_send_streams_.size());
+  RTC_CHECK_EQ(0u, audio_receive_ssrcs_.size());
+  RTC_CHECK_EQ(0u, video_receive_ssrcs_.size());
+  RTC_CHECK_EQ(0u, video_receive_streams_.size());
 
   module_process_thread_->Stop();
   Trace::ReturnTrace();
@@ -194,8 +194,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
       channel_group_->GetRemoteBitrateEstimator(), config);
   {
     WriteLockScoped write_lock(*receive_crit_);
-    DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
-        audio_receive_ssrcs_.end());
+    RTC_DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
+               audio_receive_ssrcs_.end());
     audio_receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
     ConfigureSync(config.sync_group);
   }
@@ -205,14 +205,14 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
 void Call::DestroyAudioReceiveStream(
     webrtc::AudioReceiveStream* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyAudioReceiveStream");
-  DCHECK(receive_stream != nullptr);
+  RTC_DCHECK(receive_stream != nullptr);
   AudioReceiveStream* audio_receive_stream =
       static_cast<AudioReceiveStream*>(receive_stream);
   {
     WriteLockScoped write_lock(*receive_crit_);
     size_t num_deleted = audio_receive_ssrcs_.erase(
         audio_receive_stream->config().rtp.remote_ssrc);
-    DCHECK(num_deleted == 1);
+    RTC_DCHECK(num_deleted == 1);
     const std::string& sync_group = audio_receive_stream->config().sync_group;
     const auto it = sync_stream_mapping_.find(sync_group);
     if (it != sync_stream_mapping_.end() &&
@@ -229,7 +229,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
     const VideoEncoderConfig& encoder_config) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
   LOG(LS_INFO) << "CreateVideoSendStream: " << config.ToString();
-  DCHECK(!config.rtp.ssrcs.empty());
+  RTC_DCHECK(!config.rtp.ssrcs.empty());
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
@@ -243,7 +243,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   rtc::CritScope lock(&network_enabled_crit_);
   WriteLockScoped write_lock(*send_crit_);
   for (uint32_t ssrc : config.rtp.ssrcs) {
-    DCHECK(video_send_ssrcs_.find(ssrc) == video_send_ssrcs_.end());
+    RTC_DCHECK(video_send_ssrcs_.find(ssrc) == video_send_ssrcs_.end());
     video_send_ssrcs_[ssrc] = send_stream;
   }
   video_send_streams_.insert(send_stream);
@@ -258,7 +258,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
 
 void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyVideoSendStream");
-  DCHECK(send_stream != nullptr);
+  RTC_DCHECK(send_stream != nullptr);
 
   send_stream->Stop();
 
@@ -276,7 +276,7 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
     }
     video_send_streams_.erase(send_stream_impl);
   }
-  CHECK(send_stream_impl != nullptr);
+  RTC_CHECK(send_stream_impl != nullptr);
 
   VideoSendStream::RtpStateMap rtp_state = send_stream_impl->GetRtpStates();
 
@@ -302,8 +302,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   // while changing network state.
   rtc::CritScope lock(&network_enabled_crit_);
   WriteLockScoped write_lock(*receive_crit_);
-  DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
-      video_receive_ssrcs_.end());
+  RTC_DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
+             video_receive_ssrcs_.end());
   video_receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
   // TODO(pbos): Configure different RTX payloads per receive payload.
   VideoReceiveStream::Config::Rtp::RtxMap::const_iterator it =
@@ -326,7 +326,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
 void Call::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyVideoReceiveStream");
-  DCHECK(receive_stream != nullptr);
+  RTC_DCHECK(receive_stream != nullptr);
   VideoReceiveStream* receive_stream_impl = nullptr;
   {
     WriteLockScoped write_lock(*receive_crit_);
@@ -336,7 +336,7 @@ void Call::DestroyVideoReceiveStream(
     while (it != video_receive_ssrcs_.end()) {
       if (it->second == static_cast<VideoReceiveStream*>(receive_stream)) {
         if (receive_stream_impl != nullptr)
-          DCHECK(receive_stream_impl == it->second);
+          RTC_DCHECK(receive_stream_impl == it->second);
         receive_stream_impl = it->second;
         video_receive_ssrcs_.erase(it++);
       } else {
@@ -344,7 +344,7 @@ void Call::DestroyVideoReceiveStream(
       }
     }
     video_receive_streams_.erase(receive_stream_impl);
-    CHECK(receive_stream_impl != nullptr);
+    RTC_CHECK(receive_stream_impl != nullptr);
     ConfigureSync(receive_stream_impl->config().sync_group);
   }
   delete receive_stream_impl;
@@ -376,9 +376,9 @@ Call::Stats Call::GetStats() const {
 void Call::SetBitrateConfig(
     const webrtc::Call::Config::BitrateConfig& bitrate_config) {
   TRACE_EVENT0("webrtc", "Call::SetBitrateConfig");
-  DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
+  RTC_DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
   if (bitrate_config.max_bitrate_bps != -1)
-    DCHECK_GT(bitrate_config.max_bitrate_bps, 0);
+    RTC_DCHECK_GT(bitrate_config.max_bitrate_bps, 0);
   if (config_.bitrate_config.min_bitrate_bps ==
           bitrate_config.min_bitrate_bps &&
       (bitrate_config.start_bitrate_bps <= 0 ||

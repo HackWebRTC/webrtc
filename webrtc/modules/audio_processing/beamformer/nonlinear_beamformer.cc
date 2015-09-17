@@ -80,9 +80,9 @@ const float kHoldTargetSeconds = 0.25f;
 // The returned norm is clamped to be non-negative.
 float Norm(const ComplexMatrix<float>& mat,
            const ComplexMatrix<float>& norm_mat) {
-  CHECK_EQ(norm_mat.num_rows(), 1);
-  CHECK_EQ(norm_mat.num_columns(), mat.num_rows());
-  CHECK_EQ(norm_mat.num_columns(), mat.num_columns());
+  RTC_CHECK_EQ(norm_mat.num_rows(), 1);
+  RTC_CHECK_EQ(norm_mat.num_columns(), mat.num_rows());
+  RTC_CHECK_EQ(norm_mat.num_columns(), mat.num_columns());
 
   complex<float> first_product = complex<float>(0.f, 0.f);
   complex<float> second_product = complex<float>(0.f, 0.f);
@@ -103,9 +103,9 @@ float Norm(const ComplexMatrix<float>& mat,
 // Does conjugate(|lhs|) * |rhs| for row vectors |lhs| and |rhs|.
 complex<float> ConjugateDotProduct(const ComplexMatrix<float>& lhs,
                                    const ComplexMatrix<float>& rhs) {
-  CHECK_EQ(lhs.num_rows(), 1);
-  CHECK_EQ(rhs.num_rows(), 1);
-  CHECK_EQ(lhs.num_columns(), rhs.num_columns());
+  RTC_CHECK_EQ(lhs.num_rows(), 1);
+  RTC_CHECK_EQ(rhs.num_rows(), 1);
+  RTC_CHECK_EQ(lhs.num_columns(), rhs.num_columns());
 
   const complex<float>* const* lhs_elements = lhs.elements();
   const complex<float>* const* rhs_elements = rhs.elements();
@@ -151,9 +151,9 @@ float SumSquares(const ComplexMatrix<float>& mat) {
 // Does |out| = |in|.' * conj(|in|) for row vector |in|.
 void TransposedConjugatedProduct(const ComplexMatrix<float>& in,
                                  ComplexMatrix<float>* out) {
-  CHECK_EQ(in.num_rows(), 1);
-  CHECK_EQ(out->num_rows(), in.num_columns());
-  CHECK_EQ(out->num_columns(), in.num_columns());
+  RTC_CHECK_EQ(in.num_rows(), 1);
+  RTC_CHECK_EQ(out->num_rows(), in.num_columns());
+  RTC_CHECK_EQ(out->num_columns(), in.num_columns());
   const complex<float>* in_elements = in.elements()[0];
   complex<float>* const* out_elements = out->elements();
   for (int i = 0; i < out->num_rows(); ++i) {
@@ -207,11 +207,11 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   //   constant               ^                        ^
   //             low_mean_end_bin_       high_mean_end_bin_
   //
-  DCHECK_GT(low_mean_start_bin_, 0U);
-  DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
-  DCHECK_LT(low_mean_end_bin_, high_mean_end_bin_);
-  DCHECK_LT(high_mean_start_bin_, high_mean_end_bin_);
-  DCHECK_LT(high_mean_end_bin_, kNumFreqBins - 1);
+  RTC_DCHECK_GT(low_mean_start_bin_, 0U);
+  RTC_DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
+  RTC_DCHECK_LT(low_mean_end_bin_, high_mean_end_bin_);
+  RTC_DCHECK_LT(high_mean_start_bin_, high_mean_end_bin_);
+  RTC_DCHECK_LT(high_mean_end_bin_, kNumFreqBins - 1);
 
   high_pass_postfilter_mask_ = 1.f;
   is_target_present_ = false;
@@ -312,8 +312,8 @@ void NonlinearBeamformer::InitInterfCovMats() {
 
 void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
                                        ChannelBuffer<float>* output) {
-  DCHECK_EQ(input.num_channels(), num_input_channels_);
-  DCHECK_EQ(input.num_frames_per_band(), chunk_length_);
+  RTC_DCHECK_EQ(input.num_channels(), num_input_channels_);
+  RTC_DCHECK_EQ(input.num_frames_per_band(), chunk_length_);
 
   float old_high_pass_mask = high_pass_postfilter_mask_;
   lapped_transform_->ProcessChunk(input.channels(0), output->channels(0));
@@ -352,9 +352,9 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
                                             size_t num_freq_bins,
                                             int num_output_channels,
                                             complex_f* const* output) {
-  CHECK_EQ(num_freq_bins, kNumFreqBins);
-  CHECK_EQ(num_input_channels, num_input_channels_);
-  CHECK_EQ(num_output_channels, 1);
+  RTC_CHECK_EQ(num_freq_bins, kNumFreqBins);
+  RTC_CHECK_EQ(num_input_channels, num_input_channels_);
+  RTC_CHECK_EQ(num_output_channels, 1);
 
   // Calculating the post-filter masks. Note that we need two for each
   // frequency bin to account for the positive and negative interferer
@@ -493,7 +493,7 @@ void NonlinearBeamformer::ApplyHighFrequencyCorrection() {
 
 // Compute mean over the given range of time_smooth_mask_, [first, last).
 float NonlinearBeamformer::MaskRangeMean(size_t first, size_t last) {
-  DCHECK_GT(last, first);
+  RTC_DCHECK_GT(last, first);
   const float sum = std::accumulate(time_smooth_mask_ + first,
                                     time_smooth_mask_ + last, 0.f);
   return sum / (last - first);

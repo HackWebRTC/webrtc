@@ -70,8 +70,8 @@ void FineAudioBuffer::GetPlayoutData(int8_t* buffer) {
            desired_frame_size_bytes_);
     playout_cached_buffer_start_ += desired_frame_size_bytes_;
     playout_cached_bytes_ -= desired_frame_size_bytes_;
-    CHECK_LT(playout_cached_buffer_start_ + playout_cached_bytes_,
-             bytes_per_10_ms_);
+    RTC_CHECK_LT(playout_cached_buffer_start_ + playout_cached_bytes_,
+                 bytes_per_10_ms_);
     return;
   }
   memcpy(buffer, &playout_cache_buffer_.get()[playout_cached_buffer_start_],
@@ -88,15 +88,15 @@ void FineAudioBuffer::GetPlayoutData(int8_t* buffer) {
     device_buffer_->RequestPlayoutData(samples_per_10_ms_);
     int num_out = device_buffer_->GetPlayoutData(unwritten_buffer);
     if (static_cast<size_t>(num_out) != samples_per_10_ms_) {
-      CHECK_EQ(num_out, 0);
+      RTC_CHECK_EQ(num_out, 0);
       playout_cached_bytes_ = 0;
       return;
     }
     unwritten_buffer += bytes_per_10_ms_;
-    CHECK_GE(bytes_left, 0);
+    RTC_CHECK_GE(bytes_left, 0);
     bytes_left -= static_cast<int>(bytes_per_10_ms_);
   }
-  CHECK_LE(bytes_left, 0);
+  RTC_CHECK_LE(bytes_left, 0);
   // Put the samples that were written to |buffer| but are not used in the
   // cache.
   size_t cache_location = desired_frame_size_bytes_;
@@ -105,8 +105,8 @@ void FineAudioBuffer::GetPlayoutData(int8_t* buffer) {
                           (desired_frame_size_bytes_ - playout_cached_bytes_);
   // If playout_cached_bytes_ is larger than the cache buffer, uninitialized
   // memory will be read.
-  CHECK_LE(playout_cached_bytes_, bytes_per_10_ms_);
-  CHECK_EQ(static_cast<size_t>(-bytes_left), playout_cached_bytes_);
+  RTC_CHECK_LE(playout_cached_bytes_, bytes_per_10_ms_);
+  RTC_CHECK_EQ(static_cast<size_t>(-bytes_left), playout_cached_bytes_);
   playout_cached_buffer_start_ = 0;
   memcpy(playout_cache_buffer_.get(), cache_ptr, playout_cached_bytes_);
 }
@@ -115,7 +115,7 @@ void FineAudioBuffer::DeliverRecordedData(const int8_t* buffer,
                                           size_t size_in_bytes,
                                           int playout_delay_ms,
                                           int record_delay_ms) {
-  CHECK_EQ(size_in_bytes, desired_frame_size_bytes_);
+  RTC_CHECK_EQ(size_in_bytes, desired_frame_size_bytes_);
   // Check if the temporary buffer can store the incoming buffer. If not,
   // move the remaining (old) bytes to the beginning of the temporary buffer
   // and start adding new samples after the old samples.

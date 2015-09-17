@@ -105,26 +105,29 @@ int main(int argc, char* argv[]) {
     const size_t num_mics = in_file.num_channels();
     const std::vector<Point> array_geometry =
         ParseArrayGeometry(FLAGS_mic_positions, num_mics);
-    CHECK_EQ(array_geometry.size(), num_mics);
+    RTC_CHECK_EQ(array_geometry.size(), num_mics);
 
     config.Set<Beamforming>(new Beamforming(true, array_geometry));
   }
 
   rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
   if (!FLAGS_dump.empty()) {
-    CHECK_EQ(kNoErr, ap->echo_cancellation()->Enable(FLAGS_aec || FLAGS_all));
+    RTC_CHECK_EQ(kNoErr,
+                 ap->echo_cancellation()->Enable(FLAGS_aec || FLAGS_all));
   } else if (FLAGS_aec) {
     fprintf(stderr, "-aec requires a -dump file.\n");
     return -1;
   }
   bool process_reverse = !FLAGS_i_rev.empty();
-  CHECK_EQ(kNoErr, ap->gain_control()->Enable(FLAGS_agc || FLAGS_all));
-  CHECK_EQ(kNoErr, ap->gain_control()->set_mode(GainControl::kFixedDigital));
-  CHECK_EQ(kNoErr, ap->high_pass_filter()->Enable(FLAGS_hpf || FLAGS_all));
-  CHECK_EQ(kNoErr, ap->noise_suppression()->Enable(FLAGS_ns || FLAGS_all));
+  RTC_CHECK_EQ(kNoErr, ap->gain_control()->Enable(FLAGS_agc || FLAGS_all));
+  RTC_CHECK_EQ(kNoErr,
+               ap->gain_control()->set_mode(GainControl::kFixedDigital));
+  RTC_CHECK_EQ(kNoErr, ap->high_pass_filter()->Enable(FLAGS_hpf || FLAGS_all));
+  RTC_CHECK_EQ(kNoErr, ap->noise_suppression()->Enable(FLAGS_ns || FLAGS_all));
   if (FLAGS_ns_level != -1)
-    CHECK_EQ(kNoErr, ap->noise_suppression()->set_level(
-        static_cast<NoiseSuppression::Level>(FLAGS_ns_level)));
+    RTC_CHECK_EQ(kNoErr,
+                 ap->noise_suppression()->set_level(
+                     static_cast<NoiseSuppression::Level>(FLAGS_ns_level)));
 
   printf("Input file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
          FLAGS_i.c_str(), in_file.num_channels(), in_file.sample_rate());
@@ -196,12 +199,12 @@ int main(int argc, char* argv[]) {
     if (FLAGS_perf) {
       processing_start_time = TickTime::Now();
     }
-    CHECK_EQ(kNoErr, ap->ProcessStream(in_buf.channels(), input_config,
-                                       output_config, out_buf.channels()));
+    RTC_CHECK_EQ(kNoErr, ap->ProcessStream(in_buf.channels(), input_config,
+                                           output_config, out_buf.channels()));
     if (process_reverse) {
-      CHECK_EQ(kNoErr, ap->ProcessReverseStream(
-                           in_rev_buf->channels(), reverse_input_config,
-                           reverse_output_config, out_rev_buf->channels()));
+      RTC_CHECK_EQ(kNoErr, ap->ProcessReverseStream(
+                               in_rev_buf->channels(), reverse_input_config,
+                               reverse_output_config, out_rev_buf->channels()));
     }
     if (FLAGS_perf) {
       accumulated_time += TickTime::Now() - processing_start_time;

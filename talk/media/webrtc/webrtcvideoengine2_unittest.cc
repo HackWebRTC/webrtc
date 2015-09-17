@@ -113,7 +113,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
       : call_(webrtc::Call::Create(webrtc::Call::Config())),
         engine_() {
     std::vector<VideoCodec> engine_codecs = engine_.codecs();
-    DCHECK(!engine_codecs.empty());
+    RTC_DCHECK(!engine_codecs.empty());
     bool codec_set = false;
     for (size_t i = 0; i < engine_codecs.size(); ++i) {
       if (engine_codecs[i].name == "red") {
@@ -132,7 +132,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
       }
     }
 
-    DCHECK(codec_set);
+    RTC_DCHECK(codec_set);
   }
 
  protected:
@@ -2982,7 +2982,7 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
     ASSERT_TRUE(channel_->SetSendCodecs(codecs));
 
     std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
-    DCHECK(num_configured_streams <= ssrcs.size());
+    RTC_DCHECK(num_configured_streams <= ssrcs.size());
     ssrcs.resize(num_configured_streams);
 
     FakeVideoSendStream* stream =

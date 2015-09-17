@@ -163,8 +163,8 @@ TEST(SincResamplerTest, Convolve) {
 #endif
 
 // Benchmark for the various Convolve() methods.  Make sure to build with
-// branding=Chrome so that DCHECKs are compiled out when benchmarking.  Original
-// benchmarks were run with --convolve-iterations=50000000.
+// branding=Chrome so that RTC_DCHECKs are compiled out when benchmarking.
+// Original benchmarks were run with --convolve-iterations=50000000.
 TEST(SincResamplerTest, ConvolveBenchmark) {
   // Initialize a dummy resampler.
   MockSource mock_source;

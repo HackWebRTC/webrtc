@@ -35,7 +35,7 @@ class VadImpl final : public Vad {
       case 1:
         return kActive;
       default:
-        DCHECK(false) << "WebRtcVad_Process returned an error.";
+        RTC_DCHECK(false) << "WebRtcVad_Process returned an error.";
         return kError;
     }
   }
@@ -44,9 +44,9 @@ class VadImpl final : public Vad {
     if (handle_)
       WebRtcVad_Free(handle_);
     handle_ = WebRtcVad_Create();
-    CHECK(handle_);
-    CHECK_EQ(WebRtcVad_Init(handle_), 0);
-    CHECK_EQ(WebRtcVad_set_mode(handle_, aggressiveness_), 0);
+    RTC_CHECK(handle_);
+    RTC_CHECK_EQ(WebRtcVad_Init(handle_), 0);
+    RTC_CHECK_EQ(WebRtcVad_set_mode(handle_, aggressiveness_), 0);
   }
 
  private:

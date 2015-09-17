@@ -78,7 +78,7 @@ AudioEncoderIsacT<T>::AudioEncoderIsacT(const CodecInst& codec_inst,
 
 template <typename T>
 AudioEncoderIsacT<T>::~AudioEncoderIsacT() {
-  CHECK_EQ(0, T::Free(isac_state_));
+  RTC_CHECK_EQ(0, T::Free(isac_state_));
 }
 
 template <typename T>
@@ -132,12 +132,12 @@ AudioEncoder::EncodedInfo AudioEncoderIsacT<T>::EncodeInternal(
     T::SetBandwidthInfo(isac_state_, &bwinfo);
   }
   int r = T::Encode(isac_state_, audio, encoded);
-  CHECK_GE(r, 0) << "Encode failed (error code " << T::GetErrorCode(isac_state_)
-                 << ")";
+  RTC_CHECK_GE(r, 0) << "Encode failed (error code "
+                     << T::GetErrorCode(isac_state_) << ")";
 
   // T::Encode doesn't allow us to tell it the size of the output
   // buffer. All we can do is check for an overrun after the fact.
-  CHECK_LE(static_cast<size_t>(r), max_encoded_bytes);
+  RTC_CHECK_LE(static_cast<size_t>(r), max_encoded_bytes);
 
   if (r == 0)
     return EncodedInfo();
@@ -159,26 +159,26 @@ void AudioEncoderIsacT<T>::Reset() {
 
 template <typename T>
 void AudioEncoderIsacT<T>::RecreateEncoderInstance(const Config& config) {
-  CHECK(config.IsOk());
+  RTC_CHECK(config.IsOk());
   packet_in_progress_ = false;
   bwinfo_ = config.bwinfo;
   if (isac_state_)
-    CHECK_EQ(0, T::Free(isac_state_));
-  CHECK_EQ(0, T::Create(&isac_state_));
-  CHECK_EQ(0, T::EncoderInit(isac_state_, config.adaptive_mode ? 0 : 1));
-  CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
+    RTC_CHECK_EQ(0, T::Free(isac_state_));
+  RTC_CHECK_EQ(0, T::Create(&isac_state_));
+  RTC_CHECK_EQ(0, T::EncoderInit(isac_state_, config.adaptive_mode ? 0 : 1));
+  RTC_CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
   const int bit_rate = config.bit_rate == 0 ? kDefaultBitRate : config.bit_rate;
   if (config.adaptive_mode) {
-    CHECK_EQ(0, T::ControlBwe(isac_state_, bit_rate, config.frame_size_ms,
-                              config.enforce_frame_size));
+    RTC_CHECK_EQ(0, T::ControlBwe(isac_state_, bit_rate, config.frame_size_ms,
+                                  config.enforce_frame_size));
   } else {
-    CHECK_EQ(0, T::Control(isac_state_, bit_rate, config.frame_size_ms));
+    RTC_CHECK_EQ(0, T::Control(isac_state_, bit_rate, config.frame_size_ms));
   }
   if (config.max_payload_size_bytes != -1)
-    CHECK_EQ(0,
-             T::SetMaxPayloadSize(isac_state_, config.max_payload_size_bytes));
+    RTC_CHECK_EQ(
+        0, T::SetMaxPayloadSize(isac_state_, config.max_payload_size_bytes));
   if (config.max_bit_rate != -1)
-    CHECK_EQ(0, T::SetMaxRate(isac_state_, config.max_bit_rate));
+    RTC_CHECK_EQ(0, T::SetMaxRate(isac_state_, config.max_bit_rate));
 
   // When config.sample_rate_hz is set to 48000 Hz (iSAC-fb), the decoder is
   // still set to 32000 Hz, since there is no full-band mode in the decoder.
@@ -188,7 +188,7 @@ void AudioEncoderIsacT<T>::RecreateEncoderInstance(const Config& config) {
   // doesn't appear to be necessary to produce a valid encoding, but without it
   // we get an encoding that isn't bit-for-bit identical with what a combined
   // encoder+decoder object produces.
-  CHECK_EQ(0, T::SetDecSampRate(isac_state_, decoder_sample_rate_hz));
+  RTC_CHECK_EQ(0, T::SetDecSampRate(isac_state_, decoder_sample_rate_hz));
 
   config_ = config;
 }
@@ -200,7 +200,7 @@ AudioDecoderIsacT<T>::AudioDecoderIsacT()
 template <typename T>
 AudioDecoderIsacT<T>::AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo)
     : bwinfo_(bwinfo), decoder_sample_rate_hz_(-1) {
-  CHECK_EQ(0, T::Create(&isac_state_));
+  RTC_CHECK_EQ(0, T::Create(&isac_state_));
   T::DecoderInit(isac_state_);
   if (bwinfo_) {
     IsacBandwidthInfo bi;
@@ -211,7 +211,7 @@ AudioDecoderIsacT<T>::AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo)
 
 template <typename T>
 AudioDecoderIsacT<T>::~AudioDecoderIsacT() {
-  CHECK_EQ(0, T::Free(isac_state_));
+  RTC_CHECK_EQ(0, T::Free(isac_state_));
 }
 
 template <typename T>
@@ -224,10 +224,10 @@ int AudioDecoderIsacT<T>::DecodeInternal(const uint8_t* encoded,
   // in fact it outputs 32000 Hz. This is the iSAC fullband mode.
   if (sample_rate_hz == 48000)
     sample_rate_hz = 32000;
-  CHECK(sample_rate_hz == 16000 || sample_rate_hz == 32000)
+  RTC_CHECK(sample_rate_hz == 16000 || sample_rate_hz == 32000)
       << "Unsupported sample rate " << sample_rate_hz;
   if (sample_rate_hz != decoder_sample_rate_hz_) {
-    CHECK_EQ(0, T::SetDecSampRate(isac_state_, sample_rate_hz));
+    RTC_CHECK_EQ(0, T::SetDecSampRate(isac_state_, sample_rate_hz));
     decoder_sample_rate_hz_ = sample_rate_hz;
   }
   int16_t temp_type = 1;  // Default is speech.

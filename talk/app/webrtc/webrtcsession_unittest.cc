@@ -424,7 +424,7 @@ class WebRtcSessionTest
       dtls_identity_store.reset(new FakeDtlsIdentityStore());
       dtls_identity_store->set_should_fail(false);
     } else {
-      CHECK(false);
+      RTC_CHECK(false);
     }
     Init(dtls_identity_store.Pass(), configuration);
   }
@@ -1237,7 +1237,7 @@ class WebRtcSessionTest
 
   void VerifyMultipleAsyncCreateDescriptionAfterInit(
       bool success, CreateSessionDescriptionRequest::Type type) {
-    CHECK(session_);
+    RTC_CHECK(session_);
     SetFactoryDtlsSrtp();
     if (type == CreateSessionDescriptionRequest::kAnswer) {
       cricket::MediaSessionOptions options;

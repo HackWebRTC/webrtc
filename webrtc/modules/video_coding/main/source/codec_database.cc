@@ -241,15 +241,15 @@ bool VCMCodecDataBase::SetSendCodec(
     int number_of_cores,
     size_t max_payload_size,
     VCMEncodedFrameCallback* encoded_frame_callback) {
-  DCHECK(send_codec);
+  RTC_DCHECK(send_codec);
   if (max_payload_size == 0) {
     max_payload_size = kDefaultPayloadSize;
   }
-  DCHECK_GE(number_of_cores, 1);
-  DCHECK_GE(send_codec->plType, 1);
+  RTC_DCHECK_GE(number_of_cores, 1);
+  RTC_DCHECK_GE(send_codec->plType, 1);
   // Make sure the start bit rate is sane...
-  DCHECK_LE(send_codec->startBitrate, 1000000u);
-  DCHECK(send_codec->codecType != kVideoCodecUnknown);
+  RTC_DCHECK_LE(send_codec->startBitrate, 1000000u);
+  RTC_DCHECK(send_codec->codecType != kVideoCodecUnknown);
   bool reset_required = pending_encoder_reset_;
   if (number_of_cores_ != number_of_cores) {
     number_of_cores_ = number_of_cores;

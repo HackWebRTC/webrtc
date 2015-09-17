@@ -120,7 +120,7 @@ class DataChannelInterface : public rtc::RefCountInterface {
       case kClosed:
         return "closed";
     }
-    CHECK(false) << "Unknown DataChannel state: " << state;
+    RTC_CHECK(false) << "Unknown DataChannel state: " << state;
     return "";
   }
 

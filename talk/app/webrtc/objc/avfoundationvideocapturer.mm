@@ -336,7 +336,7 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
 
   // Keep track of which thread capture started on. This is the thread that
   // frames need to be sent to.
-  DCHECK(!_startThread);
+  RTC_DCHECK(!_startThread);
   _startThread = rtc::Thread::Current();
 
   SetCaptureFormat(&format);
@@ -412,7 +412,8 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
   // Sanity check assumption that planar bytes are contiguous.
   uint8_t* uvPlaneAddress =
       (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(imageBuffer, kUVPlaneIndex);
-  DCHECK(uvPlaneAddress == yPlaneAddress + yPlaneHeight * yPlaneBytesPerRow);
+  RTC_DCHECK(
+      uvPlaneAddress == yPlaneAddress + yPlaneHeight * yPlaneBytesPerRow);
 
   // Stuff data into a cricket::CapturedFrame.
   int64 currentTime = rtc::TimeNanos();
@@ -439,7 +440,7 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
 
 void AVFoundationVideoCapturer::SignalFrameCapturedOnStartThread(
     const cricket::CapturedFrame* frame) {
-  DCHECK(_startThread->IsCurrent());
+  RTC_DCHECK(_startThread->IsCurrent());
   // This will call a superclass method that will perform the frame conversion
   // to I420.
   SignalFrameCaptured(this, frame);

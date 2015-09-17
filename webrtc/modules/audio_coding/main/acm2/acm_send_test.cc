@@ -71,7 +71,8 @@ Packet* AcmSendTest::NextPacket() {
   // Insert audio and process until one packet is produced.
   while (clock_.TimeInMilliseconds() < test_duration_ms_) {
     clock_.AdvanceTimeMilliseconds(kBlockSizeMs);
-    CHECK(audio_source_->Read(input_block_size_samples_, input_frame_.data_));
+    RTC_CHECK(
+        audio_source_->Read(input_block_size_samples_, input_frame_.data_));
     if (input_frame_.num_channels_ > 1) {
       InputAudioFile::DuplicateInterleaved(input_frame_.data_,
                                            input_block_size_samples_,

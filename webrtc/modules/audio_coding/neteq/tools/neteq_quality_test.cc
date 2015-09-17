@@ -232,7 +232,7 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
   const std::string out_filename = FLAGS_out_filename;
   const std::string log_filename = out_filename + ".log";
   log_file_.open(log_filename.c_str(), std::ofstream::out);
-  CHECK(log_file_.is_open());
+  RTC_CHECK(log_file_.is_open());
 
   if (out_filename.size() >= 4 &&
       out_filename.substr(out_filename.size() - 4) == ".wav") {
@@ -402,7 +402,7 @@ int NetEqQualityTest::DecodeBlock() {
   } else {
     assert(channels == channels_);
     assert(samples == static_cast<size_t>(kOutputSizeMs * out_sampling_khz_));
-    CHECK(output_->WriteArray(out_data_.get(), samples * channels));
+    RTC_CHECK(output_->WriteArray(out_data_.get(), samples * channels));
     return static_cast<int>(samples);
   }
 }

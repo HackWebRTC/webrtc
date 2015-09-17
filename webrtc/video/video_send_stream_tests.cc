@@ -511,7 +511,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           current_size_frame_(static_cast<int32_t>(start_size)) {
       // Fragmentation required, this test doesn't make sense without it.
       encoder_.SetFrameSize(start_size);
-      DCHECK_GT(stop_size, max_packet_size);
+      RTC_DCHECK_GT(stop_size, max_packet_size);
       transport_adapter_.Enable();
     }
 
@@ -969,7 +969,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       RTPHeader header;
       if (!parser_->Parse(packet, length, &header))
         return DELIVERY_PACKET_ERROR;
-      DCHECK(stream_ != nullptr);
+      RTC_DCHECK(stream_ != nullptr);
       VideoSendStream::Stats stats = stream_->GetStats();
       if (!stats.substreams.empty()) {
         EXPECT_EQ(1u, stats.substreams.size());
@@ -1754,7 +1754,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
         encoded._frameType = (*frame_types)[i];
         encoded._encodedWidth = kEncodedResolution[i].width;
         encoded._encodedHeight = kEncodedResolution[i].height;
-        DCHECK(callback_ != nullptr);
+        RTC_DCHECK(callback_ != nullptr);
         if (callback_->Encoded(encoded, &specifics, nullptr) != 0)
           return -1;
       }

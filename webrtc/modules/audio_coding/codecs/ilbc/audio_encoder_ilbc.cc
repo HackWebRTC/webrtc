@@ -53,7 +53,7 @@ AudioEncoderIlbc::AudioEncoderIlbc(const CodecInst& codec_inst)
     : AudioEncoderIlbc(CreateConfig(codec_inst)) {}
 
 AudioEncoderIlbc::~AudioEncoderIlbc() {
-  CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
+  RTC_CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
 }
 
 size_t AudioEncoderIlbc::MaxEncodedBytes() const {
@@ -94,7 +94,7 @@ AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
     const int16_t* audio,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
-  DCHECK_GE(max_encoded_bytes, RequiredOutputSizeBytes());
+  RTC_DCHECK_GE(max_encoded_bytes, RequiredOutputSizeBytes());
 
   // Save timestamp if starting a new packet.
   if (num_10ms_frames_buffered_ == 0)
@@ -112,17 +112,17 @@ AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
   }
 
   // Encode buffered input.
-  DCHECK_EQ(num_10ms_frames_buffered_, num_10ms_frames_per_packet_);
+  RTC_DCHECK_EQ(num_10ms_frames_buffered_, num_10ms_frames_per_packet_);
   num_10ms_frames_buffered_ = 0;
   const int output_len = WebRtcIlbcfix_Encode(
       encoder_,
       input_buffer_,
       kSampleRateHz / 100 * num_10ms_frames_per_packet_,
       encoded);
-  CHECK_GE(output_len, 0);
+  RTC_CHECK_GE(output_len, 0);
   EncodedInfo info;
   info.encoded_bytes = static_cast<size_t>(output_len);
-  DCHECK_EQ(info.encoded_bytes, RequiredOutputSizeBytes());
+  RTC_DCHECK_EQ(info.encoded_bytes, RequiredOutputSizeBytes());
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = config_.payload_type;
   return info;
@@ -130,13 +130,13 @@ AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
 
 void AudioEncoderIlbc::Reset() {
   if (encoder_)
-    CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
-  CHECK(config_.IsOk());
-  CHECK_EQ(0, WebRtcIlbcfix_EncoderCreate(&encoder_));
+    RTC_CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
+  RTC_CHECK(config_.IsOk());
+  RTC_CHECK_EQ(0, WebRtcIlbcfix_EncoderCreate(&encoder_));
   const int encoder_frame_size_ms = config_.frame_size_ms > 30
                                         ? config_.frame_size_ms / 2
                                         : config_.frame_size_ms;
-  CHECK_EQ(0, WebRtcIlbcfix_EncoderInit(encoder_, encoder_frame_size_ms));
+  RTC_CHECK_EQ(0, WebRtcIlbcfix_EncoderInit(encoder_, encoder_frame_size_ms));
   num_10ms_frames_buffered_ = 0;
 }
 

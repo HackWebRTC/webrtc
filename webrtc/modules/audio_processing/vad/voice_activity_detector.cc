@@ -37,23 +37,23 @@ VoiceActivityDetector::VoiceActivityDetector()
 void VoiceActivityDetector::ProcessChunk(const int16_t* audio,
                                          size_t length,
                                          int sample_rate_hz) {
-  DCHECK_EQ(static_cast<int>(length), sample_rate_hz / 100);
-  DCHECK_LE(length, kMaxLength);
+  RTC_DCHECK_EQ(static_cast<int>(length), sample_rate_hz / 100);
+  RTC_DCHECK_LE(length, kMaxLength);
   // Resample to the required rate.
   const int16_t* resampled_ptr = audio;
   if (sample_rate_hz != kSampleRateHz) {
-    CHECK_EQ(
+    RTC_CHECK_EQ(
         resampler_.ResetIfNeeded(sample_rate_hz, kSampleRateHz, kNumChannels),
         0);
     resampler_.Push(audio, length, resampled_, kLength10Ms, length);
     resampled_ptr = resampled_;
   }
-  DCHECK_EQ(length, kLength10Ms);
+  RTC_DCHECK_EQ(length, kLength10Ms);
 
   // Each chunk needs to be passed into |standalone_vad_|, because internally it
   // buffers the audio and processes it all at once when GetActivity() is
   // called.
-  CHECK_EQ(standalone_vad_->AddAudio(resampled_ptr, length), 0);
+  RTC_CHECK_EQ(standalone_vad_->AddAudio(resampled_ptr, length), 0);
 
   audio_processing_.ExtractFeatures(resampled_ptr, length, &features_);
 
@@ -70,13 +70,13 @@ void VoiceActivityDetector::ProcessChunk(const int16_t* audio,
     } else {
       std::fill(chunkwise_voice_probabilities_.begin(),
                 chunkwise_voice_probabilities_.end(), kNeutralProbability);
-      CHECK_GE(
+      RTC_CHECK_GE(
           standalone_vad_->GetActivity(&chunkwise_voice_probabilities_[0],
                                        chunkwise_voice_probabilities_.size()),
           0);
-      CHECK_GE(pitch_based_vad_.VoicingProbability(
-                   features_, &chunkwise_voice_probabilities_[0]),
-               0);
+      RTC_CHECK_GE(pitch_based_vad_.VoicingProbability(
+                       features_, &chunkwise_voice_probabilities_[0]),
+                   0);
     }
     last_voice_probability_ = chunkwise_voice_probabilities_.back();
   }

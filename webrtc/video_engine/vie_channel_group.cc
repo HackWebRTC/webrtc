@@ -180,9 +180,9 @@ ChannelGroup::~ChannelGroup() {
   process_thread_->DeRegisterModule(call_stats_.get());
   process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
-  DCHECK(channel_map_.empty());
-  DCHECK(!remb_->InUse());
-  DCHECK(vie_encoder_map_.empty());
+  RTC_DCHECK(channel_map_.empty());
+  RTC_DCHECK(!remb_->InUse());
+  RTC_DCHECK(vie_encoder_map_.empty());
 }
 
 bool ChannelGroup::CreateSendChannel(int channel_id,
@@ -190,7 +190,7 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
                                      Transport* transport,
                                      int number_of_cores,
                                      const std::vector<uint32_t>& ssrcs) {
-  DCHECK(!ssrcs.empty());
+  RTC_DCHECK(!ssrcs.empty());
   rtc::scoped_ptr<ViEEncoder> vie_encoder(
       new ViEEncoder(channel_id, number_of_cores, *process_thread_,
                      pacer_.get(), bitrate_allocator_.get()));
@@ -303,7 +303,7 @@ ViEEncoder* ChannelGroup::GetEncoder(int channel_id) const {
 
 ViEChannel* ChannelGroup::PopChannel(int channel_id) {
   ChannelMap::iterator c_it = channel_map_.find(channel_id);
-  DCHECK(c_it != channel_map_.end());
+  RTC_DCHECK(c_it != channel_map_.end());
   ViEChannel* channel = c_it->second;
   channel_map_.erase(c_it);
 

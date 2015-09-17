@@ -138,7 +138,7 @@ ThreeBandFilterBank::ThreeBandFilterBank(size_t length)
 void ThreeBandFilterBank::Analysis(const float* in,
                                    size_t length,
                                    float* const* out) {
-  CHECK_EQ(in_buffer_.size(), rtc::CheckedDivExact(length, kNumBands));
+  RTC_CHECK_EQ(in_buffer_.size(), rtc::CheckedDivExact(length, kNumBands));
   for (size_t i = 0; i < kNumBands; ++i) {
     memset(out[i], 0, in_buffer_.size() * sizeof(*out[i]));
   }
@@ -163,7 +163,7 @@ void ThreeBandFilterBank::Analysis(const float* in,
 void ThreeBandFilterBank::Synthesis(const float* const* in,
                                     size_t split_length,
                                     float* out) {
-  CHECK_EQ(in_buffer_.size(), split_length);
+  RTC_CHECK_EQ(in_buffer_.size(), split_length);
   memset(out, 0, kNumBands * in_buffer_.size() * sizeof(*out));
   for (size_t i = 0; i < kNumBands; ++i) {
     for (size_t j = 0; j < kSparsity; ++j) {

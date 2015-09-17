@@ -21,7 +21,7 @@ namespace {
 // Map information from info into rtp. If no relevant information is found
 // in info, rtp is set to NULL.
 void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
-  DCHECK(info);
+  RTC_DCHECK(info);
   switch (info->codecType) {
     case kVideoCodecVP8: {
       rtp->codec = kRtpVideoVp8;

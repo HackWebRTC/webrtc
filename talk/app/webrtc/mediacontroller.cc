@@ -42,7 +42,7 @@ class MediaController : public webrtc::MediaControllerInterface {
   MediaController(rtc::Thread* worker_thread,
                   webrtc::VoiceEngine* voice_engine)
       : worker_thread_(worker_thread) {
-    DCHECK(nullptr != worker_thread);
+    RTC_DCHECK(nullptr != worker_thread);
     worker_thread_->Invoke<void>(
         rtc::Bind(&MediaController::Construct_w, this, voice_engine));
   }
@@ -52,13 +52,13 @@ class MediaController : public webrtc::MediaControllerInterface {
   }
 
   webrtc::Call* call_w() override {
-    DCHECK(worker_thread_->IsCurrent());
+    RTC_DCHECK(worker_thread_->IsCurrent());
     return call_.get();
   }
 
  private:
   void Construct_w(webrtc::VoiceEngine* voice_engine)  {
-    DCHECK(worker_thread_->IsCurrent());
+    RTC_DCHECK(worker_thread_->IsCurrent());
     webrtc::Call::Config config;
     config.voice_engine = voice_engine;
     config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
@@ -67,7 +67,7 @@ class MediaController : public webrtc::MediaControllerInterface {
     call_.reset(webrtc::Call::Create(config));
   }
   void Destruct_w() {
-    DCHECK(worker_thread_->IsCurrent());
+    RTC_DCHECK(worker_thread_->IsCurrent());
     call_.reset(nullptr);
   }
 

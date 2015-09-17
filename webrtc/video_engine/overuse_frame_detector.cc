@@ -214,7 +214,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       usage_(new SendProcessingUsage(options)),
       frame_queue_(new FrameQueue()),
       last_sample_time_ms_(0) {
-  DCHECK(metrics_observer != nullptr);
+  RTC_DCHECK(metrics_observer != nullptr);
   // Make sure stats are initially up-to-date. This simplifies unit testing
   // since we don't have to trigger an update using one of the methods which
   // would also alter the overuse state.
@@ -243,7 +243,7 @@ void OveruseFrameDetector::UpdateCpuOveruseMetrics() {
 }
 
 int64_t OveruseFrameDetector::TimeUntilNextProcess() {
-  DCHECK(processing_thread_.CalledOnValidThread());
+  RTC_DCHECK(processing_thread_.CalledOnValidThread());
   return next_process_time_ - clock_->TimeInMilliseconds();
 }
 
@@ -328,7 +328,7 @@ void OveruseFrameDetector::AddProcessingTime(int elapsed_ms) {
 }
 
 int32_t OveruseFrameDetector::Process() {
-  DCHECK(processing_thread_.CalledOnValidThread());
+  RTC_DCHECK(processing_thread_.CalledOnValidThread());
 
   int64_t now = clock_->TimeInMilliseconds();
 

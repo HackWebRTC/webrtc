@@ -176,7 +176,7 @@ bool tokenize_first(const std::string& source,
 
 template <class T>
 static bool ToString(const T &t, std::string* s) {
-  DCHECK(s);
+  RTC_DCHECK(s);
   std::ostringstream oss;
   oss << std::boolalpha << t;
   *s = oss.str();
@@ -185,7 +185,7 @@ static bool ToString(const T &t, std::string* s) {
 
 template <class T>
 static bool FromString(const std::string& s, T* t) {
-  DCHECK(t);
+  RTC_DCHECK(t);
   std::istringstream iss(s);
   iss >> std::boolalpha >> *t;
   return !iss.fail();

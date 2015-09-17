@@ -66,7 +66,7 @@ class JniNativeHandleBuffer : public webrtc::NativeHandleBuffer {
  private:
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {
     // TODO(pbos): Implement before using this in the encoder pipeline (or
-    // remove the CHECK() in VideoCapture).
+    // remove the RTC_CHECK() in VideoCapture).
     RTC_NOTREACHED();
     return nullptr;
   }

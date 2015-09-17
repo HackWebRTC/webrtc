@@ -37,7 +37,7 @@ PlatformThreadId CurrentThreadId() {
   ret = reinterpret_cast<pid_t>(pthread_self());
 #endif
 #endif  // defined(WEBRTC_POSIX)
-  DCHECK(ret);
+  RTC_DCHECK(ret);
   return ret;
 }
 
@@ -58,7 +58,7 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
 }
 
 void SetCurrentThreadName(const char* name) {
-  DCHECK(strlen(name) < 64);
+  RTC_DCHECK(strlen(name) < 64);
 #if defined(WEBRTC_WIN)
   struct {
     DWORD dwType;

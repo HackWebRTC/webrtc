@@ -29,7 +29,7 @@ FileRotatingLogSink::FileRotatingLogSink(const std::string& log_dir_path,
 
 FileRotatingLogSink::FileRotatingLogSink(FileRotatingStream* stream)
     : stream_(stream) {
-  DCHECK(stream);
+  RTC_DCHECK(stream);
 }
 
 FileRotatingLogSink::~FileRotatingLogSink() {

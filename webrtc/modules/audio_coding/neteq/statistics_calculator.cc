@@ -22,7 +22,8 @@
 
 namespace webrtc {
 
-// Allocating the static const so that it can be passed by reference to DCHECK.
+// Allocating the static const so that it can be passed by reference to
+// RTC_DCHECK.
 const size_t StatisticsCalculator::kLenWaitingTimes;
 
 StatisticsCalculator::PeriodicUmaLogger::PeriodicUmaLogger(
@@ -45,7 +46,7 @@ void StatisticsCalculator::PeriodicUmaLogger::AdvanceClock(int step_ms) {
   LogToUma(Metric());
   Reset();
   timer_ -= report_interval_ms_;
-  DCHECK_GE(timer_, 0);
+  RTC_DCHECK_GE(timer_, 0);
 }
 
 void StatisticsCalculator::PeriodicUmaLogger::LogToUma(int value) const {
@@ -194,7 +195,7 @@ void StatisticsCalculator::LogDelayedPacketOutageEvent(int outage_duration_ms) {
 
 void StatisticsCalculator::StoreWaitingTime(int waiting_time_ms) {
   excess_buffer_delay_.RegisterSample(waiting_time_ms);
-  DCHECK_LE(waiting_times_.size(), kLenWaitingTimes);
+  RTC_DCHECK_LE(waiting_times_.size(), kLenWaitingTimes);
   if (waiting_times_.size() == kLenWaitingTimes) {
     // Erase first value.
     waiting_times_.pop_front();

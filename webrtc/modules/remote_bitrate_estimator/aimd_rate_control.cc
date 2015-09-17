@@ -104,7 +104,7 @@ void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
   // second.
   if (!bitrate_is_initialized_) {
     const int64_t kInitializationTimeMs = 5000;
-    DCHECK_LE(kBitrateWindowMs, kInitializationTimeMs);
+    RTC_DCHECK_LE(kBitrateWindowMs, kInitializationTimeMs);
     if (time_first_incoming_estimate_ < 0) {
       if (input->_incomingBitRate > 0) {
         time_first_incoming_estimate_ = now_ms;

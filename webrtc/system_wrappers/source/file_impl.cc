@@ -271,7 +271,7 @@ int FileWrapperImpl::FlushImpl() {
 }
 
 int FileWrapper::Rewind() {
-  DCHECK(false);
+  RTC_DCHECK(false);
   return -1;
 }
 

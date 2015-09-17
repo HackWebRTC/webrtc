@@ -22,20 +22,20 @@ PacketRouter::PacketRouter() : transport_seq_(0) {
 }
 
 PacketRouter::~PacketRouter() {
-  DCHECK(rtp_modules_.empty());
+  RTC_DCHECK(rtp_modules_.empty());
 }
 
 void PacketRouter::AddRtpModule(RtpRtcp* rtp_module) {
   rtc::CritScope cs(&modules_lock_);
-  DCHECK(std::find(rtp_modules_.begin(), rtp_modules_.end(), rtp_module) ==
-         rtp_modules_.end());
+  RTC_DCHECK(std::find(rtp_modules_.begin(), rtp_modules_.end(), rtp_module) ==
+             rtp_modules_.end());
   rtp_modules_.push_back(rtp_module);
 }
 
 void PacketRouter::RemoveRtpModule(RtpRtcp* rtp_module) {
   rtc::CritScope cs(&modules_lock_);
   auto it = std::find(rtp_modules_.begin(), rtp_modules_.end(), rtp_module);
-  DCHECK(it != rtp_modules_.end());
+  RTC_DCHECK(it != rtp_modules_.end());
   rtp_modules_.erase(it);
 }
 

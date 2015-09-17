@@ -32,7 +32,7 @@
 #include "webrtc/base/checks.h"
 
 // TODO(tommi): Could we have a static map of value name -> expected type
-// and use this to DCHECK on correct usage (somewhat strongly typed values)?
+// and use this to RTC_DCHECK on correct usage (somewhat strongly typed values)?
 // Alternatively, we could define the names+type in a separate document and
 // generate strongly typed inline C++ code that forces the correct type to be
 // used for a given name at compile time.
@@ -74,7 +74,7 @@ const char* InternalTypeToString(StatsReport::StatsType type) {
     case StatsReport::kStatsReportTypeDataChannel:
       return "datachannel";
   }
-  DCHECK(false);
+  RTC_DCHECK(false);
   return nullptr;
 }
 
@@ -231,7 +231,7 @@ bool StatsReport::IdBase::Equals(const IdBase& other) const {
 
 StatsReport::Value::Value(StatsValueName name, int64 value, Type int_type)
     : name(name), type_(int_type) {
-  DCHECK(type_ == kInt || type_ == kInt64);
+  RTC_DCHECK(type_ == kInt || type_ == kInt64);
   type_ == kInt ? value_.int_ = static_cast<int>(value) : value_.int64_ = value;
 }
 
@@ -283,7 +283,7 @@ bool StatsReport::Value::Equals(const Value& other) const {
 
   // There's a 1:1 relation between a name and a type, so we don't have to
   // check that.
-  DCHECK_EQ(type_, other.type_);
+  RTC_DCHECK_EQ(type_, other.type_);
 
   switch (type_) {
     case kInt:
@@ -295,7 +295,8 @@ bool StatsReport::Value::Equals(const Value& other) const {
     case kStaticString: {
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
       if (value_.static_string_ != other.value_.static_string_) {
-        DCHECK(strcmp(value_.static_string_, other.value_.static_string_) != 0)
+        RTC_DCHECK(strcmp(value_.static_string_, other.value_.static_string_) !=
+                   0)
             << "Duplicate global?";
       }
 #endif
@@ -324,7 +325,8 @@ bool StatsReport::Value::operator==(const char* value) const {
     return false;
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
   if (value_.static_string_ != value)
-    DCHECK(strcmp(value_.static_string_, value) != 0) << "Duplicate global?";
+    RTC_DCHECK(strcmp(value_.static_string_, value) != 0)
+        << "Duplicate global?";
 #endif
   return value == value_.static_string_;
 }
@@ -347,32 +349,32 @@ bool StatsReport::Value::operator==(const Id& value) const {
 }
 
 int StatsReport::Value::int_val() const {
-  DCHECK(type_ == kInt);
+  RTC_DCHECK(type_ == kInt);
   return value_.int_;
 }
 
 int64 StatsReport::Value::int64_val() const {
-  DCHECK(type_ == kInt64);
+  RTC_DCHECK(type_ == kInt64);
   return value_.int64_;
 }
 
 float StatsReport::Value::float_val() const {
-  DCHECK(type_ == kFloat);
+  RTC_DCHECK(type_ == kFloat);
   return value_.float_;
 }
 
 const char* StatsReport::Value::static_string_val() const {
-  DCHECK(type_ == kStaticString);
+  RTC_DCHECK(type_ == kStaticString);
   return value_.static_string_;
 }
 
 const std::string& StatsReport::Value::string_val() const {
-  DCHECK(type_ == kString);
+  RTC_DCHECK(type_ == kString);
   return *value_.string_;
 }
 
 bool StatsReport::Value::bool_val() const {
-  DCHECK(type_ == kBool);
+  RTC_DCHECK(type_ == kBool);
   return value_.bool_;
 }
 
@@ -591,7 +593,7 @@ const char* StatsReport::Value::display_name() const {
     case kStatsValueNameWritable:
       return "googWritable";
     default:
-      DCHECK(false);
+      RTC_DCHECK(false);
       break;
   }
 
@@ -620,7 +622,7 @@ std::string StatsReport::Value::ToString() const {
 }
 
 StatsReport::StatsReport(const Id& id) : id_(id), timestamp_(0.0) {
-  DCHECK(id_.get());
+  RTC_DCHECK(id_.get());
 }
 
 // static
@@ -720,43 +722,43 @@ StatsCollection::StatsCollection() {
 }
 
 StatsCollection::~StatsCollection() {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   for (auto* r : list_)
     delete r;
 }
 
 StatsCollection::const_iterator StatsCollection::begin() const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return list_.begin();
 }
 
 StatsCollection::const_iterator StatsCollection::end() const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return list_.end();
 }
 
 size_t StatsCollection::size() const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return list_.size();
 }
 
 StatsReport* StatsCollection::InsertNew(const StatsReport::Id& id) {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(Find(id) == nullptr);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(Find(id) == nullptr);
   StatsReport* report = new StatsReport(id);
   list_.push_back(report);
   return report;
 }
 
 StatsReport* StatsCollection::FindOrAddNew(const StatsReport::Id& id) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   StatsReport* ret = Find(id);
   return ret ? ret : InsertNew(id);
 }
 
 StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(id.get());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(id.get());
   Container::iterator it = std::find_if(list_.begin(), list_.end(),
       [&id](const StatsReport* r)->bool { return r->id()->Equals(id); });
   if (it != end()) {
@@ -771,7 +773,7 @@ StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
 // Looks for a report with the given |id|.  If one is not found, NULL
 // will be returned.
 StatsReport* StatsCollection::Find(const StatsReport::Id& id) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   Container::iterator it = std::find_if(list_.begin(), list_.end(),
       [&id](const StatsReport* r)->bool { return r->id()->Equals(id); });
   return it == list_.end() ? nullptr : *it;

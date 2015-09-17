@@ -188,14 +188,14 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
   _receiver.SetDecodeErrorMode(kNoErrors);
   switch (videoProtection) {
     case kProtectionNack: {
-      DCHECK(enable);
+      RTC_DCHECK(enable);
       _receiver.SetNackMode(kNack, -1, -1);
       break;
     }
 
     case kProtectionNackFEC: {
       CriticalSectionScoped cs(_receiveCritSect);
-      DCHECK(enable);
+      RTC_DCHECK(enable);
       _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
       _receiver.SetDecodeErrorMode(kNoErrors);
       break;
@@ -203,7 +203,7 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
     case kProtectionFEC:
     case kProtectionNone:
       // No receiver-side protection.
-      DCHECK(enable);
+      RTC_DCHECK(enable);
       _receiver.SetNackMode(kNoNack, -1, -1);
       _receiver.SetDecodeErrorMode(kWithErrors);
       break;

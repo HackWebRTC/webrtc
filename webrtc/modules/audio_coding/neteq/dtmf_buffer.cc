@@ -70,8 +70,8 @@ int DtmfBuffer::ParseEvent(uint32_t rtp_timestamp,
                            const uint8_t* payload,
                            size_t payload_length_bytes,
                            DtmfEvent* event) {
-  CHECK(payload);
-  CHECK(event);
+  RTC_CHECK(payload);
+  RTC_CHECK(event);
   if (payload_length_bytes < 4) {
     LOG(LS_WARNING) << "ParseEvent payload too short";
     return kPayloadTooShort;

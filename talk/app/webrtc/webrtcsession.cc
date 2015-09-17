@@ -746,7 +746,7 @@ bool WebRtcSession::Initialize(
     // Construct with DTLS enabled.
     if (!certificate) {
       // Use the |dtls_identity_store| to generate a certificate.
-      DCHECK(dtls_identity_store);
+      RTC_DCHECK(dtls_identity_store);
       webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
           signaling_thread(),
           channel_manager_,
@@ -2006,7 +2006,7 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
 // for IPv4 and IPv6.
 void WebRtcSession::ReportBestConnectionState(
     const cricket::TransportStats& stats) {
-  DCHECK(metrics_observer_ != NULL);
+  RTC_DCHECK(metrics_observer_ != NULL);
   for (cricket::TransportChannelStatsList::const_iterator it =
          stats.channel_stats.begin();
        it != stats.channel_stats.end(); ++it) {
@@ -2029,7 +2029,7 @@ void WebRtcSession::ReportBestConnectionState(
       } else if (local.protocol() == cricket::UDP_PROTOCOL_NAME) {
         type = kEnumCounterIceCandidatePairTypeUdp;
       } else {
-        CHECK(0);
+        RTC_CHECK(0);
       }
       metrics_observer_->IncrementEnumCounter(
           type, GetIceCandidatePairCounter(local, remote),
@@ -2046,7 +2046,7 @@ void WebRtcSession::ReportBestConnectionState(
             kEnumCounterAddressFamily, kBestConnections_IPv6,
             kPeerConnectionAddressFamilyCounter_Max);
       } else {
-        CHECK(0);
+        RTC_CHECK(0);
       }
 
       return;
@@ -2056,7 +2056,7 @@ void WebRtcSession::ReportBestConnectionState(
 
 void WebRtcSession::ReportNegotiatedCiphers(
     const cricket::TransportStats& stats) {
-  DCHECK(metrics_observer_ != NULL);
+  RTC_DCHECK(metrics_observer_ != NULL);
   if (!dtls_enabled_ || stats.channel_stats.empty()) {
     return;
   }

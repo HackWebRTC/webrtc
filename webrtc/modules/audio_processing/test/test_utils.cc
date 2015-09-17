@@ -100,8 +100,8 @@ AudioProcessing::ChannelLayout LayoutFromChannels(int num_channels) {
 std::vector<Point> ParseArrayGeometry(const std::string& mic_positions,
                                       size_t num_mics) {
   const std::vector<float> values = ParseList<float>(mic_positions);
-  CHECK_EQ(values.size(), 3 * num_mics) <<
-      "Could not parse mic_positions or incorrect number of points.";
+  RTC_CHECK_EQ(values.size(), 3 * num_mics)
+      << "Could not parse mic_positions or incorrect number of points.";
 
   std::vector<Point> result;
   result.reserve(num_mics);

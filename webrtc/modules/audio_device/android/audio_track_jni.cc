@@ -76,8 +76,8 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
       playing_(false),
       audio_device_buffer_(nullptr) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
-  DCHECK(audio_parameters_.is_valid());
-  CHECK(j_environment_);
+  RTC_DCHECK(audio_parameters_.is_valid());
+  RTC_CHECK(j_environment_);
   JNINativeMethod native_methods[] = {
       {"nativeCacheDirectBufferAddress", "(Ljava/nio/ByteBuffer;J)V",
       reinterpret_cast<void*>(
@@ -99,28 +99,28 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
 
 AudioTrackJni::~AudioTrackJni() {
   ALOGD("~dtor%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   Terminate();
 }
 
 int32_t AudioTrackJni::Init() {
   ALOGD("Init%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return 0;
 }
 
 int32_t AudioTrackJni::Terminate() {
   ALOGD("Terminate%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   StopPlayout();
   return 0;
 }
 
 int32_t AudioTrackJni::InitPlayout() {
   ALOGD("InitPlayout%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!initialized_);
-  DCHECK(!playing_);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!initialized_);
+  RTC_DCHECK(!playing_);
   j_audio_track_->InitPlayout(
       audio_parameters_.sample_rate(), audio_parameters_.channels());
   initialized_ = true;
@@ -129,9 +129,9 @@ int32_t AudioTrackJni::InitPlayout() {
 
 int32_t AudioTrackJni::StartPlayout() {
   ALOGD("StartPlayout%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(initialized_);
-  DCHECK(!playing_);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(initialized_);
+  RTC_DCHECK(!playing_);
   if (!j_audio_track_->StartPlayout()) {
     ALOGE("StartPlayout failed!");
     return -1;
@@ -142,7 +142,7 @@ int32_t AudioTrackJni::StartPlayout() {
 
 int32_t AudioTrackJni::StopPlayout() {
   ALOGD("StopPlayout%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!initialized_ || !playing_) {
     return 0;
   }
@@ -150,8 +150,9 @@ int32_t AudioTrackJni::StopPlayout() {
     ALOGE("StopPlayout failed!");
     return -1;
   }
-  // If we don't detach here, we will hit a DCHECK in OnDataIsRecorded() next
-  // time StartRecording() is called since it will create a new Java thread.
+  // If we don't detach here, we will hit a RTC_DCHECK in OnDataIsRecorded()
+  // next time StartRecording() is called since it will create a new Java
+  // thread.
   thread_checker_java_.DetachFromThread();
   initialized_ = false;
   playing_ = false;
@@ -165,27 +166,27 @@ int AudioTrackJni::SpeakerVolumeIsAvailable(bool& available) {
 
 int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
   ALOGD("SetSpeakerVolume(%d)%s", volume, GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return j_audio_track_->SetStreamVolume(volume) ? 0 : -1;
 }
 
 int AudioTrackJni::MaxSpeakerVolume(uint32_t& max_volume) const {
   ALOGD("MaxSpeakerVolume%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   max_volume = j_audio_track_->GetStreamMaxVolume();
   return 0;
 }
 
 int AudioTrackJni::MinSpeakerVolume(uint32_t& min_volume) const {
   ALOGD("MaxSpeakerVolume%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   min_volume = 0;
   return 0;
 }
 
 int AudioTrackJni::SpeakerVolume(uint32_t& volume) const {
   ALOGD("SpeakerVolume%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   volume = j_audio_track_->GetStreamVolume();
   return 0;
 }
@@ -193,7 +194,7 @@ int AudioTrackJni::SpeakerVolume(uint32_t& volume) const {
 // TODO(henrika): possibly add stereo support.
 void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   ALOGD("AttachAudioBuffer%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   audio_device_buffer_ = audioBuffer;
   const int sample_rate_hz = audio_parameters_.sample_rate();
   ALOGD("SetPlayoutSampleRate(%d)", sample_rate_hz);
@@ -213,7 +214,7 @@ void JNICALL AudioTrackJni::CacheDirectBufferAddress(
 void AudioTrackJni::OnCacheDirectBufferAddress(
     JNIEnv* env, jobject byte_buffer) {
   ALOGD("OnCacheDirectBufferAddress");
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   direct_buffer_address_ =
       env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
@@ -233,8 +234,8 @@ void JNICALL AudioTrackJni::GetPlayoutData(
 // This method is called on a high-priority thread from Java. The name of
 // the thread is 'AudioRecordTrack'.
 void AudioTrackJni::OnGetPlayoutData(size_t length) {
-  DCHECK(thread_checker_java_.CalledOnValidThread());
-  DCHECK_EQ(frames_per_buffer_, length / kBytesPerFrame);
+  RTC_DCHECK(thread_checker_java_.CalledOnValidThread());
+  RTC_DCHECK_EQ(frames_per_buffer_, length / kBytesPerFrame);
   if (!audio_device_buffer_) {
     ALOGE("AttachAudioBuffer has not been called!");
     return;
@@ -245,11 +246,11 @@ void AudioTrackJni::OnGetPlayoutData(size_t length) {
     ALOGE("AudioDeviceBuffer::RequestPlayoutData failed!");
     return;
   }
-  DCHECK_EQ(static_cast<size_t>(samples), frames_per_buffer_);
+  RTC_DCHECK_EQ(static_cast<size_t>(samples), frames_per_buffer_);
   // Copy decoded data into common byte buffer to ensure that it can be
   // written to the Java based audio track.
   samples = audio_device_buffer_->GetPlayoutData(direct_buffer_address_);
-  DCHECK_EQ(length, kBytesPerFrame * samples);
+  RTC_DCHECK_EQ(length, kBytesPerFrame * samples);
 }
 
 }  // namespace webrtc

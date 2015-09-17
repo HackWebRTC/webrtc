@@ -106,7 +106,7 @@ class CompositionConverter : public AudioConverter {
  public:
   CompositionConverter(ScopedVector<AudioConverter> converters)
       : converters_(converters.Pass()) {
-    CHECK_GE(converters_.size(), 2u);
+    RTC_CHECK_GE(converters_.size(), 2u);
     // We need an intermediate buffer after every converter.
     for (auto it = converters_.begin(); it != converters_.end() - 1; ++it)
       buffers_.push_back(new ChannelBuffer<float>((*it)->dst_frames(),
@@ -188,12 +188,13 @@ AudioConverter::AudioConverter(int src_channels, size_t src_frames,
       src_frames_(src_frames),
       dst_channels_(dst_channels),
       dst_frames_(dst_frames) {
-  CHECK(dst_channels == src_channels || dst_channels == 1 || src_channels == 1);
+  RTC_CHECK(dst_channels == src_channels || dst_channels == 1 ||
+            src_channels == 1);
 }
 
 void AudioConverter::CheckSizes(size_t src_size, size_t dst_capacity) const {
-  CHECK_EQ(src_size, src_channels() * src_frames());
-  CHECK_GE(dst_capacity, dst_channels() * dst_frames());
+  RTC_CHECK_EQ(src_size, src_channels() * src_frames());
+  RTC_CHECK_GE(dst_capacity, dst_channels() * dst_frames());
 }
 
 }  // namespace webrtc

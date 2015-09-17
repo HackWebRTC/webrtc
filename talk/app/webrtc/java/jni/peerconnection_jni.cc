@@ -140,7 +140,7 @@ extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
   if (ret < 0)
     return -1;
 
-  CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
+  RTC_CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
   LoadGlobalClassReferenceHolder();
 
   return ret;
@@ -148,7 +148,7 @@ extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 
 extern "C" void JNIEXPORT JNICALL JNI_OnUnLoad(JavaVM *jvm, void *reserved) {
   FreeGlobalClassReferenceHolder();
-  CHECK(rtc::CleanupSSL()) << "Failed to CleanupSSL()";
+  RTC_CHECK(rtc::CleanupSSL()) << "Failed to CleanupSSL()";
 }
 
 // Return the (singleton) Java Enum object corresponding to |index|;
@@ -219,7 +219,7 @@ class PCOJava : public PeerConnectionObserver {
   void OnIceCandidate(const IceCandidateInterface* candidate) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     std::string sdp;
-    CHECK(candidate->ToString(&sdp)) << "got so far: " << sdp;
+    RTC_CHECK(candidate->ToString(&sdp)) << "got so far: " << sdp;
     jclass candidate_class = FindClass(jni(), "org/webrtc/IceCandidate");
     jmethodID ctor = GetMethodID(jni(), candidate_class,
         "<init>", "(Ljava/lang/String;ILjava/lang/String;)V");
@@ -308,7 +308,7 @@ class PCOJava : public PeerConnectionObserver {
                                   "(Ljava/lang/Object;)Z");
       jboolean added = jni()->CallBooleanMethod(audio_tracks, add, j_track);
       CHECK_EXCEPTION(jni()) << "error during CallBooleanMethod";
-      CHECK(added);
+      RTC_CHECK(added);
     }
 
     for (const auto& track : stream->GetVideoTracks()) {
@@ -331,7 +331,7 @@ class PCOJava : public PeerConnectionObserver {
                                   "(Ljava/lang/Object;)Z");
       jboolean added = jni()->CallBooleanMethod(video_tracks, add, j_track);
       CHECK_EXCEPTION(jni()) << "error during CallBooleanMethod";
-      CHECK(added);
+      RTC_CHECK(added);
     }
     remote_streams_[stream] = NewGlobalRef(jni(), j_stream);
 
@@ -344,8 +344,8 @@ class PCOJava : public PeerConnectionObserver {
   void OnRemoveStream(MediaStreamInterface* stream) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     NativeToJavaStreamsMap::iterator it = remote_streams_.find(stream);
-    CHECK(it != remote_streams_.end()) << "unexpected stream: " << std::hex
-                                       << stream;
+    RTC_CHECK(it != remote_streams_.end()) << "unexpected stream: " << std::hex
+                                           << stream;
     jobject j_stream = it->second;
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onRemoveStream",
                               "(Lorg/webrtc/MediaStream;)V");
@@ -369,7 +369,7 @@ class PCOJava : public PeerConnectionObserver {
     // CallVoidMethod above as Java code might call back into native code and be
     // surprised to see a refcount of 2.
     int bumped_count = channel->AddRef();
-    CHECK(bumped_count == 2) << "Unexpected refcount OnDataChannel";
+    RTC_CHECK(bumped_count == 2) << "Unexpected refcount OnDataChannel";
 
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
@@ -383,7 +383,7 @@ class PCOJava : public PeerConnectionObserver {
   }
 
   void SetConstraints(ConstraintsWrapper* constraints) {
-    CHECK(!constraints_.get()) << "constraints already set!";
+    RTC_CHECK(!constraints_.get()) << "constraints already set!";
     constraints_.reset(constraints);
   }
 
@@ -482,7 +482,7 @@ class ConstraintsWrapper : public MediaConstraintsInterface {
 static jobject JavaSdpFromNativeSdp(
     JNIEnv* jni, const SessionDescriptionInterface* desc) {
   std::string sdp;
-  CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
+  RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
   jstring j_description = JavaStringFromStdString(jni, sdp);
 
   jclass j_type_class = FindClass(
@@ -871,7 +871,7 @@ JOW(jobject, DataChannel_state)(JNIEnv* jni, jobject j_dc) {
 
 JOW(jlong, DataChannel_bufferedAmount)(JNIEnv* jni, jobject j_dc) {
   uint64 buffered_amount = ExtractNativeDC(jni, j_dc)->buffered_amount();
-  CHECK_LE(buffered_amount, std::numeric_limits<int64>::max())
+  RTC_CHECK_LE(buffered_amount, std::numeric_limits<int64>::max())
       << "buffered_amount overflowed jlong!";
   return static_cast<jlong>(buffered_amount);
 }
@@ -903,7 +903,7 @@ JOW(void, Logging_nativeEnableTracing)(
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     if (path != "logcat:") {
 #endif
-      CHECK_EQ(0, webrtc::Trace::SetTraceFile(path.c_str(), false))
+      RTC_CHECK_EQ(0, webrtc::Trace::SetTraceFile(path.c_str(), false))
           << "SetTraceFile failed";
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     } else {
@@ -1087,7 +1087,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   worker_thread->SetName("worker_thread", NULL);
   Thread* signaling_thread = new Thread();
   signaling_thread->SetName("signaling_thread", NULL);
-  CHECK(worker_thread->Start() && signaling_thread->Start())
+  RTC_CHECK(worker_thread->Start() && signaling_thread->Start())
       << "Failed to start threads";
   WebRtcVideoEncoderFactory* encoder_factory = nullptr;
   WebRtcVideoDecoderFactory* decoder_factory = nullptr;
@@ -1251,7 +1251,7 @@ JavaIceTransportsTypeToNativeType(JNIEnv* jni, jobject j_ice_transports_type) {
   if (enum_name == "NONE")
     return PeerConnectionInterface::kNone;
 
-  CHECK(false) << "Unexpected IceTransportsType enum_name " << enum_name;
+  RTC_CHECK(false) << "Unexpected IceTransportsType enum_name " << enum_name;
   return PeerConnectionInterface::kAll;
 }
 
@@ -1270,7 +1270,7 @@ JavaBundlePolicyToNativeType(JNIEnv* jni, jobject j_bundle_policy) {
   if (enum_name == "MAXCOMPAT")
     return PeerConnectionInterface::kBundlePolicyMaxCompat;
 
-  CHECK(false) << "Unexpected BundlePolicy enum_name " << enum_name;
+  RTC_CHECK(false) << "Unexpected BundlePolicy enum_name " << enum_name;
   return PeerConnectionInterface::kBundlePolicyBalanced;
 }
 
@@ -1286,7 +1286,7 @@ JavaRtcpMuxPolicyToNativeType(JNIEnv* jni, jobject j_rtcp_mux_policy) {
   if (enum_name == "REQUIRE")
     return PeerConnectionInterface::kRtcpMuxPolicyRequire;
 
-  CHECK(false) << "Unexpected RtcpMuxPolicy enum_name " << enum_name;
+  RTC_CHECK(false) << "Unexpected RtcpMuxPolicy enum_name " << enum_name;
   return PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
 }
 
@@ -1303,7 +1303,7 @@ JavaTcpCandidatePolicyToNativeType(
   if (enum_name == "DISABLED")
     return PeerConnectionInterface::kTcpCandidatePolicyDisabled;
 
-  CHECK(false) << "Unexpected TcpCandidatePolicy enum_name " << enum_name;
+  RTC_CHECK(false) << "Unexpected TcpCandidatePolicy enum_name " << enum_name;
   return PeerConnectionInterface::kTcpCandidatePolicyEnabled;
 }
 
@@ -1316,7 +1316,7 @@ static rtc::KeyType JavaKeyTypeToNativeType(JNIEnv* jni, jobject j_key_type) {
   if (enum_name == "ECDSA")
     return rtc::KT_ECDSA;
 
-  CHECK(false) << "Unexpected KeyType enum_name " << enum_name;
+  RTC_CHECK(false) << "Unexpected KeyType enum_name " << enum_name;
   return rtc::KT_ECDSA;
 }
 
@@ -1477,7 +1477,7 @@ JOW(jobject, PeerConnection_createDataChannel)(
   // vararg parameter as 64-bit and reading memory that doesn't belong to the
   // 32-bit parameter.
   jlong nativeChannelPtr = jlongFromPointer(channel.get());
-  CHECK(nativeChannelPtr) << "Failed to create DataChannel";
+  RTC_CHECK(nativeChannelPtr) << "Failed to create DataChannel";
   jclass j_data_channel_class = FindClass(jni, "org/webrtc/DataChannel");
   jmethodID j_data_channel_ctor = GetMethodID(
       jni, j_data_channel_class, "<init>", "(J)V");
@@ -1486,7 +1486,7 @@ JOW(jobject, PeerConnection_createDataChannel)(
   CHECK_EXCEPTION(jni) << "error during NewObject";
   // Channel is now owned by Java object, and will be freed from there.
   int bumped_count = channel->AddRef();
-  CHECK(bumped_count == 2) << "Unexpected refcount";
+  RTC_CHECK(bumped_count == 2) << "Unexpected refcount";
   return j_channel;
 }
 
@@ -1648,7 +1648,7 @@ JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
   std::string device_name = JavaToStdString(jni, j_device_name);
   scoped_ptr<cricket::DeviceManagerInterface> device_manager(
       cricket::DeviceManagerFactory::Create());
-  CHECK(device_manager->Init()) << "DeviceManager::Init() failed";
+  RTC_CHECK(device_manager->Init()) << "DeviceManager::Init() failed";
   cricket::Device device;
   if (!device_manager->GetVideoCaptureDevice(device_name, &device)) {
     LOG(LS_ERROR) << "GetVideoCaptureDevice failed for " << device_name;
@@ -1695,11 +1695,11 @@ JOW(void, VideoRenderer_nativeCopyPlane)(
     jint src_stride, jobject j_dst_buffer, jint dst_stride) {
   size_t src_size = jni->GetDirectBufferCapacity(j_src_buffer);
   size_t dst_size = jni->GetDirectBufferCapacity(j_dst_buffer);
-  CHECK(src_stride >= width) << "Wrong source stride " << src_stride;
-  CHECK(dst_stride >= width) << "Wrong destination stride " << dst_stride;
-  CHECK(src_size >= src_stride * height)
+  RTC_CHECK(src_stride >= width) << "Wrong source stride " << src_stride;
+  RTC_CHECK(dst_stride >= width) << "Wrong destination stride " << dst_stride;
+  RTC_CHECK(src_size >= src_stride * height)
       << "Insufficient source buffer capacity " << src_size;
-  CHECK(dst_size >= dst_stride * height)
+  RTC_CHECK(dst_size >= dst_stride * height)
       << "Isufficient destination buffer capacity " << dst_size;
   uint8_t *src =
       reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_src_buffer));

@@ -45,7 +45,7 @@ void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
                                           size_t payload_size,
                                           const RTPHeader& header,
                                           bool was_paced) {
-  DCHECK(header.extension.hasTransportSequenceNumber);
+  RTC_DCHECK(header.extension.hasTransportSequenceNumber);
   rtc::CritScope cs(&lock_);
   media_ssrc_ = header.ssrc;
   OnPacketArrival(header.extension.transportSequenceNumber, arrival_time_ms);
@@ -87,7 +87,7 @@ int32_t RemoteEstimatorProxy::Process() {
   while (more_to_build) {
     rtcp::TransportFeedback feedback_packet;
     if (BuildFeedbackPacket(&feedback_packet)) {
-      DCHECK(packet_router_ != nullptr);
+      RTC_DCHECK(packet_router_ != nullptr);
       packet_router_->SendFeedback(&feedback_packet);
     } else {
       more_to_build = false;
@@ -115,7 +115,7 @@ void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
     window_start_seq_ = seq;
   }
 
-  DCHECK(packet_arrival_times_.end() == packet_arrival_times_.find(seq));
+  RTC_DCHECK(packet_arrival_times_.end() == packet_arrival_times_.find(seq));
   packet_arrival_times_[seq] = arrival_time;
 }
 
@@ -129,7 +129,7 @@ bool RemoteEstimatorProxy::BuildFeedbackPacket(
   // feedback packet. Some older may still be in the map, in case a reordering
   // happens and we need to retransmit them.
   auto it = packet_arrival_times_.find(window_start_seq_);
-  DCHECK(it != packet_arrival_times_.end());
+  RTC_DCHECK(it != packet_arrival_times_.end());
 
   // TODO(sprang): Measure receive times in microseconds and remove the
   // conversions below.
@@ -142,7 +142,7 @@ bool RemoteEstimatorProxy::BuildFeedbackPacket(
             static_cast<uint16_t>(it->first & 0xFFFF), it->second * 1000)) {
       // If we can't even add the first seq to the feedback packet, we won't be
       // able to build it at all.
-      CHECK_NE(window_start_seq_, it->first);
+      RTC_CHECK_NE(window_start_seq_, it->first);
 
       // Could not add timestamp, feedback packet might be full. Return and
       // try again with a fresh packet.

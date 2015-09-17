@@ -71,7 +71,7 @@ AudioManager::AudioManager()
       low_latency_playout_(false),
       delay_estimate_in_milliseconds_(0) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
-  CHECK(j_environment_);
+  RTC_CHECK(j_environment_);
   JNINativeMethod native_methods[] = {
       {"nativeCacheAudioParameters",
        "(IIZZIIJ)V",
@@ -88,15 +88,15 @@ AudioManager::AudioManager()
 
 AudioManager::~AudioManager() {
   ALOGD("~dtor%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   Close();
 }
 
 void AudioManager::SetActiveAudioLayer(
     AudioDeviceModule::AudioLayer audio_layer) {
   ALOGD("SetActiveAudioLayer(%d)%s", audio_layer, GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!initialized_);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!initialized_);
   // Store the currenttly utilized audio layer.
   audio_layer_ = audio_layer;
   // The delay estimate can take one of two fixed values depending on if the
@@ -112,9 +112,9 @@ void AudioManager::SetActiveAudioLayer(
 
 bool AudioManager::Init() {
   ALOGD("Init%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!initialized_);
-  DCHECK_NE(audio_layer_, AudioDeviceModule::kPlatformDefaultAudio);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!initialized_);
+  RTC_DCHECK_NE(audio_layer_, AudioDeviceModule::kPlatformDefaultAudio);
   if (!j_audio_manager_->Init()) {
     ALOGE("init failed!");
     return false;
@@ -125,7 +125,7 @@ bool AudioManager::Init() {
 
 bool AudioManager::Close() {
   ALOGD("Close%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!initialized_)
     return true;
   j_audio_manager_->Close();
@@ -135,17 +135,17 @@ bool AudioManager::Close() {
 
 bool AudioManager::IsCommunicationModeEnabled() const {
   ALOGD("IsCommunicationModeEnabled()");
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return j_audio_manager_->IsCommunicationModeEnabled();
 }
 
 bool AudioManager::IsAcousticEchoCancelerSupported() const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return hardware_aec_;
 }
 
 bool AudioManager::IsLowLatencyPlayoutSupported() const {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   ALOGD("IsLowLatencyPlayoutSupported()");
   // Some devices are blacklisted for usage of OpenSL ES even if they report
   // that low-latency playout is supported. See b/21485703 for details.
@@ -187,7 +187,7 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
   ALOGD("channels: %d", channels);
   ALOGD("output_buffer_size: %d", output_buffer_size);
   ALOGD("input_buffer_size: %d", input_buffer_size);
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   hardware_aec_ = hardware_aec;
   low_latency_playout_ = low_latency_output;
   // TODO(henrika): add support for stereo output.
@@ -198,14 +198,14 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
 }
 
 const AudioParameters& AudioManager::GetPlayoutAudioParameters() {
-  CHECK(playout_parameters_.is_valid());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(playout_parameters_.is_valid());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return playout_parameters_;
 }
 
 const AudioParameters& AudioManager::GetRecordAudioParameters() {
-  CHECK(record_parameters_.is_valid());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(record_parameters_.is_valid());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return record_parameters_;
 }
 

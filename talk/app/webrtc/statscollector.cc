@@ -71,7 +71,7 @@ typedef TypeForAdd<int> IntForAdd;
 
 StatsReport::Id GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
                                         const std::string& proxy) {
-  DCHECK(!proxy.empty());
+  RTC_DCHECK(!proxy.empty());
   cricket::ProxyTransportMap::const_iterator found = map.find(proxy);
   if (found == map.end())
     return StatsReport::Id();
@@ -96,7 +96,7 @@ void CreateTrackReports(const TrackVector& tracks, StatsCollection* reports,
   for (const auto& track : tracks) {
     const std::string& track_id = track->id();
     StatsReport* report = AddTrackReport(reports, track_id);
-    DCHECK(report != nullptr);
+    RTC_DCHECK(report != nullptr);
     track_ids[track_id] = report;
   }
 }
@@ -261,7 +261,7 @@ void ExtractStats(const cricket::BandwidthEstimationInfo& info,
                   double stats_gathering_started,
                   PeerConnectionInterface::StatsOutputLevel level,
                   StatsReport* report) {
-  DCHECK(report->type() == StatsReport::kStatsReportTypeBwe);
+  RTC_DCHECK(report->type() == StatsReport::kStatsReportTypeBwe);
 
   report->set_timestamp(stats_gathering_started);
   const IntForAdd ints[] = {
@@ -332,7 +332,7 @@ const char* IceCandidateTypeToStatsType(const std::string& candidate_type) {
   if (candidate_type == cricket::RELAY_PORT_TYPE) {
     return STATSREPORT_RELAY_PORT_TYPE;
   }
-  DCHECK(false);
+  RTC_DCHECK(false);
   return "unknown";
 }
 
@@ -351,7 +351,7 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
     case rtc::ADAPTER_TYPE_LOOPBACK:
       return STATSREPORT_ADAPTER_TYPE_LOOPBACK;
     default:
-      DCHECK(false);
+      RTC_DCHECK(false);
       return "";
   }
 }
@@ -359,11 +359,11 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
 StatsCollector::StatsCollector(WebRtcSession* session)
     : session_(session),
       stats_gathering_started_(0) {
-  DCHECK(session_);
+  RTC_DCHECK(session_);
 }
 
 StatsCollector::~StatsCollector() {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
 }
 
 double StatsCollector::GetTimeNow() {
@@ -373,8 +373,8 @@ double StatsCollector::GetTimeNow() {
 // Adds a MediaStream with tracks that can be used as a |selector| in a call
 // to GetStats.
 void StatsCollector::AddStream(MediaStreamInterface* stream) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
-  DCHECK(stream != NULL);
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(stream != NULL);
 
   CreateTrackReports<AudioTrackVector>(stream->GetAudioTracks(),
                                        &reports_, track_ids_);
@@ -384,11 +384,11 @@ void StatsCollector::AddStream(MediaStreamInterface* stream) {
 
 void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
                                         uint32 ssrc) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
-  DCHECK(audio_track != NULL);
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(audio_track != NULL);
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
   for (const auto& track : local_audio_tracks_)
-    DCHECK(track.first != audio_track || track.second != ssrc);
+    RTC_DCHECK(track.first != audio_track || track.second != ssrc);
 #endif
 
   local_audio_tracks_.push_back(std::make_pair(audio_track, ssrc));
@@ -406,7 +406,7 @@ void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
 
 void StatsCollector::RemoveLocalAudioTrack(AudioTrackInterface* audio_track,
                                            uint32 ssrc) {
-  DCHECK(audio_track != NULL);
+  RTC_DCHECK(audio_track != NULL);
   local_audio_tracks_.erase(std::remove_if(local_audio_tracks_.begin(),
       local_audio_tracks_.end(),
       [audio_track, ssrc](const LocalAudioTrackVector::value_type& track) {
@@ -416,9 +416,9 @@ void StatsCollector::RemoveLocalAudioTrack(AudioTrackInterface* audio_track,
 
 void StatsCollector::GetStats(MediaStreamTrackInterface* track,
                               StatsReports* reports) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
-  DCHECK(reports != NULL);
-  DCHECK(reports->empty());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(reports != NULL);
+  RTC_DCHECK(reports->empty());
 
   rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
@@ -456,7 +456,7 @@ void StatsCollector::GetStats(MediaStreamTrackInterface* track,
 
 void
 StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
   double time_now = GetTimeNow();
   // Calls to UpdateStats() that occur less than kMinGatherStatsPeriod number of
   // ms apart will be ignored.
@@ -487,7 +487,7 @@ StatsReport* StatsCollector::PrepareReport(
     uint32 ssrc,
     const StatsReport::Id& transport_id,
     StatsReport::Direction direction) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
   StatsReport::Id id(StatsReport::NewIdWithDirection(
       local ? StatsReport::kStatsReportTypeSsrc :
               StatsReport::kStatsReportTypeRemoteSsrc,
@@ -526,7 +526,7 @@ StatsReport* StatsCollector::PrepareReport(
 
 StatsReport* StatsCollector::AddOneCertificateReport(
     const rtc::SSLCertificate* cert, const StatsReport* issuer) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
 
   // TODO(bemasc): Move this computation to a helper class that caches these
   // values to reduce CPU use in GetStats.  This will require adding a fast
@@ -569,13 +569,13 @@ StatsReport* StatsCollector::AddOneCertificateReport(
 
 StatsReport* StatsCollector::AddCertificateReports(
     const rtc::SSLCertificate* cert) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
   // Produces a chain of StatsReports representing this certificate and the rest
   // of its chain, and adds those reports to |reports_|.  The return value is
   // the id of the leaf report.  The provided cert must be non-null, so at least
   // one report will always be provided and the returned string will never be
   // empty.
-  DCHECK(cert != NULL);
+  RTC_DCHECK(cert != NULL);
 
   StatsReport* issuer = nullptr;
   rtc::scoped_ptr<rtc::SSLCertChain> chain;
@@ -669,7 +669,7 @@ StatsReport* StatsCollector::AddCandidateReport(
 }
 
 void StatsCollector::ExtractSessionInfo() {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
 
   // Extract information from the base session.
   StatsReport::Id id(StatsReport::NewTypedId(
@@ -763,7 +763,7 @@ void StatsCollector::ExtractSessionInfo() {
 }
 
 void StatsCollector::ExtractVoiceInfo() {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
 
   if (!session_->voice_channel()) {
     return;
@@ -796,7 +796,7 @@ void StatsCollector::ExtractVoiceInfo() {
 
 void StatsCollector::ExtractVideoInfo(
     PeerConnectionInterface::StatsOutputLevel level) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
 
   if (!session_->video_channel())
     return;
@@ -833,7 +833,7 @@ void StatsCollector::ExtractVideoInfo(
 }
 
 void StatsCollector::ExtractDataInfo() {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
 
   rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
@@ -854,14 +854,14 @@ void StatsCollector::ExtractDataInfo() {
 StatsReport* StatsCollector::GetReport(const StatsReport::StatsType& type,
                                        const std::string& id,
                                        StatsReport::Direction direction) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
-  DCHECK(type == StatsReport::kStatsReportTypeSsrc ||
-         type == StatsReport::kStatsReportTypeRemoteSsrc);
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(type == StatsReport::kStatsReportTypeSsrc ||
+             type == StatsReport::kStatsReportTypeRemoteSsrc);
   return reports_.Find(StatsReport::NewIdWithDirection(type, id, direction));
 }
 
 void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
   // Loop through the existing local audio tracks.
   for (const auto& it : local_audio_tracks_) {
     AudioTrackInterface* track = it.first;
@@ -889,8 +889,8 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
 
 void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
                                                 StatsReport* report) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
-  DCHECK(track != NULL);
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(track != NULL);
 
   int signal_level = 0;
   if (!track->GetSignalLevel(&signal_level))
@@ -911,7 +911,7 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
 
 bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
                                       StatsReport::Direction direction) {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
   if (direction == StatsReport::kSend) {
     if (!session_->GetLocalTrackIdBySsrc(ssrc, track_id)) {
       LOG(LS_WARNING) << "The SSRC " << ssrc
@@ -919,7 +919,7 @@ bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
       return false;
     }
   } else {
-    DCHECK(direction == StatsReport::kReceive);
+    RTC_DCHECK(direction == StatsReport::kReceive);
     if (!session_->GetRemoteTrackIdBySsrc(ssrc, track_id)) {
       LOG(LS_WARNING) << "The SSRC " << ssrc
                       << " is not associated with a receiving track";
@@ -931,7 +931,7 @@ bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
 }
 
 void StatsCollector::UpdateTrackReports() {
-  DCHECK(session_->signaling_thread()->IsCurrent());
+  RTC_DCHECK(session_->signaling_thread()->IsCurrent());
 
   rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 

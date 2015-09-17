@@ -833,7 +833,8 @@ TEST_F(AudioDeviceTest, StartStopPlayout) {
 
 // Verify that calling StopPlayout() will leave us in an uninitialized state
 // which will require a new call to InitPlayout(). This test does not call
-// StartPlayout() while being uninitialized since doing so will hit a DCHECK.
+// StartPlayout() while being uninitialized since doing so will hit a
+// RTC_DCHECK.
 TEST_F(AudioDeviceTest, StopPlayoutRequiresInitToRestart) {
   EXPECT_EQ(0, audio_device()->InitPlayout());
   EXPECT_EQ(0, audio_device()->StartPlayout());

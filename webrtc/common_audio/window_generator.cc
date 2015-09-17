@@ -38,8 +38,8 @@ complex<float> I0(complex<float> x) {
 namespace webrtc {
 
 void WindowGenerator::Hanning(int length, float* window) {
-  CHECK_GT(length, 1);
-  CHECK(window != nullptr);
+  RTC_CHECK_GT(length, 1);
+  RTC_CHECK(window != nullptr);
   for (int i = 0; i < length; ++i) {
     window[i] = 0.5f * (1 - cosf(2 * static_cast<float>(M_PI) * i /
                                  (length - 1)));
@@ -48,8 +48,8 @@ void WindowGenerator::Hanning(int length, float* window) {
 
 void WindowGenerator::KaiserBesselDerived(float alpha, size_t length,
                                           float* window) {
-  CHECK_GT(length, 1U);
-  CHECK(window != nullptr);
+  RTC_CHECK_GT(length, 1U);
+  RTC_CHECK(window != nullptr);
 
   const size_t half = (length + 1) / 2;
   float sum = 0.0f;

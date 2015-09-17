@@ -56,10 +56,10 @@ EncoderStateFeedback::~EncoderStateFeedback() {
 
 void EncoderStateFeedback::AddEncoder(const std::vector<uint32_t>& ssrcs,
                                       ViEEncoder* encoder) {
-  DCHECK(!ssrcs.empty());
+  RTC_DCHECK(!ssrcs.empty());
   CriticalSectionScoped lock(crit_.get());
   for (uint32_t ssrc : ssrcs) {
-    DCHECK(encoders_.find(ssrc) == encoders_.end());
+    RTC_DCHECK(encoders_.find(ssrc) == encoders_.end());
     encoders_[ssrc] = encoder;
   }
 }

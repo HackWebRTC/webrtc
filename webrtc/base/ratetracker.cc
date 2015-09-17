@@ -26,8 +26,8 @@ RateTracker::RateTracker(
     sample_buckets_(new size_t[bucket_count + 1]),
     total_sample_count_(0u),
     bucket_start_time_milliseconds_(~0u) {
-  CHECK(bucket_milliseconds > 0u);
-  CHECK(bucket_count > 0u);
+  RTC_CHECK(bucket_milliseconds > 0u);
+  RTC_CHECK(bucket_count > 0u);
 }
 
 RateTracker::~RateTracker() {

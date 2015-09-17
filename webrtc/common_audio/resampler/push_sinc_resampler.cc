@@ -50,8 +50,8 @@ size_t PushSincResampler::Resample(const float* source,
                                    size_t source_length,
                                    float* destination,
                                    size_t destination_capacity) {
-  CHECK_EQ(source_length, resampler_->request_frames());
-  CHECK_GE(destination_capacity, destination_frames_);
+  RTC_CHECK_EQ(source_length, resampler_->request_frames());
+  RTC_CHECK_GE(destination_capacity, destination_frames_);
   // Cache the source pointer. Calling Resample() will immediately trigger
   // the Run() callback whereupon we provide the cached value.
   source_ptr_ = source;
@@ -81,7 +81,7 @@ size_t PushSincResampler::Resample(const float* source,
 void PushSincResampler::Run(size_t frames, float* destination) {
   // Ensure we are only asked for the available samples. This would fail if
   // Run() was triggered more than once per Resample() call.
-  CHECK_EQ(source_available_, frames);
+  RTC_CHECK_EQ(source_available_, frames);
 
   if (first_pass_) {
     // Provide dummy input on the first pass, the output of which will be

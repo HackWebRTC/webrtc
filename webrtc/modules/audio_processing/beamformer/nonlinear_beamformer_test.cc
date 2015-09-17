@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
   const size_t num_mics = in_file.num_channels();
   const std::vector<Point> array_geometry =
       ParseArrayGeometry(FLAGS_mic_positions, num_mics);
-  CHECK_EQ(array_geometry.size(), num_mics);
+  RTC_CHECK_EQ(array_geometry.size(), num_mics);
 
   NonlinearBeamformer bf(array_geometry);
   bf.Initialize(kChunkSizeMs, in_file.sample_rate());

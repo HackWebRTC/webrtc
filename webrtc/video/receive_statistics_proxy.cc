@@ -103,7 +103,7 @@ void ReceiveStatisticsProxy::StatisticsUpdated(
     const webrtc::RtcpStatistics& statistics,
     uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
-  // TODO(pbos): Handle both local and remote ssrcs here and DCHECK that we
+  // TODO(pbos): Handle both local and remote ssrcs here and RTC_DCHECK that we
   // receive stats from one of them.
   if (stats_.ssrc != ssrc)
     return;
@@ -113,7 +113,7 @@ void ReceiveStatisticsProxy::StatisticsUpdated(
 
 void ReceiveStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
-  // TODO(pbos): Handle both local and remote ssrcs here and DCHECK that we
+  // TODO(pbos): Handle both local and remote ssrcs here and RTC_DCHECK that we
   // receive stats from one of them.
   if (stats_.ssrc != ssrc)
     return;

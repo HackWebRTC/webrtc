@@ -77,7 +77,7 @@ class VideoAnalyzer : public PacketReceiver,
     // spare cores.
 
     uint32_t num_cores = CpuInfo::DetectNumberOfCores();
-    DCHECK_GE(num_cores, 1u);
+    RTC_DCHECK_GE(num_cores, 1u);
     static const uint32_t kMinCoresLeft = 4;
     static const uint32_t kMaxComparisonThreads = 8;
 
@@ -500,8 +500,8 @@ class VideoAnalyzer : public PacketReceiver,
 
   void PrintSamplesToFile(void) {
     FILE* out = fopen(graph_data_output_filename_.c_str(), "w");
-    CHECK(out != nullptr)
-        << "Couldn't open file: " << graph_data_output_filename_;
+    RTC_CHECK(out != nullptr) << "Couldn't open file: "
+                              << graph_data_output_filename_;
 
     rtc::CritScope crit(&comparison_lock_);
     std::sort(samples_.begin(), samples_.end(),

@@ -225,8 +225,8 @@ void SendStatisticsProxy::DataCountersUpdated(
     uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  DCHECK(stats != nullptr) << "DataCountersUpdated reported for unknown ssrc: "
-                           << ssrc;
+  RTC_DCHECK(stats != nullptr)
+      << "DataCountersUpdated reported for unknown ssrc: " << ssrc;
 
   stats->rtp_stats = counters;
 }

@@ -37,9 +37,7 @@ class ThreadCheckerClass : public ThreadChecker {
   ThreadCheckerClass() {}
 
   // Verifies that it was called on the same thread as the constructor.
-  void DoStuff() {
-    DCHECK(CalledOnValidThread());
-  }
+  void DoStuff() { RTC_DCHECK(CalledOnValidThread()); }
 
   void DetachFromThread() {
     ThreadChecker::DetachFromThread();

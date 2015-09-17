@@ -42,7 +42,7 @@ RealFourierOoura::RealFourierOoura(int fft_order)
       // arrays on the first call.
       work_ip_(new size_t[ComputeWorkIpSize(length_)]()),
       work_w_(new float[complex_length_]()) {
-  CHECK_GE(fft_order, 1);
+  RTC_CHECK_GE(fft_order, 1);
 }
 
 void RealFourierOoura::Forward(const float* src, complex<float>* dest) const {

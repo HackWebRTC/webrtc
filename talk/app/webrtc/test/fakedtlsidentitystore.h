@@ -82,7 +82,7 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
       const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>&
           observer) override {
     // TODO(hbos): Should be able to generate KT_ECDSA too.
-    DCHECK(key_type == rtc::KT_RSA || should_fail_);
+    RTC_DCHECK(key_type == rtc::KT_RSA || should_fail_);
     MessageData* msg = new MessageData(
         rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>(observer));
     rtc::Thread::Current()->Post(

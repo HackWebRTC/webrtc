@@ -88,7 +88,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
 
 void SendSideBandwidthEstimation::SetSendBitrate(int bitrate) {
-  DCHECK_GT(bitrate, 0);
+  RTC_DCHECK_GT(bitrate, 0);
   bitrate_ = bitrate;
 
   // Clear last sent bitrate history so the new value can be used directly
@@ -98,7 +98,7 @@ void SendSideBandwidthEstimation::SetSendBitrate(int bitrate) {
 
 void SendSideBandwidthEstimation::SetMinMaxBitrate(int min_bitrate,
                                                    int max_bitrate) {
-  DCHECK_GE(min_bitrate, 0);
+  RTC_DCHECK_GE(min_bitrate, 0);
   min_bitrate_configured_ = std::max(min_bitrate, kDefaultMinBitrateBps);
   if (max_bitrate > 0) {
     max_bitrate_configured_ =

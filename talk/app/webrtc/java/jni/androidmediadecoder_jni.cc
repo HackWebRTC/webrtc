@@ -183,7 +183,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
                               "()V"))) {
   ScopedLocalRefFrame local_ref_frame(jni);
   codec_thread_->SetName("MediaCodecVideoDecoder", NULL);
-  CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoDecoder";
+  RTC_CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoDecoder";
 
   j_init_decode_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "initDecode",
@@ -262,8 +262,8 @@ int32_t MediaCodecVideoDecoder::InitDecode(const VideoCodec* inst,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // Factory should guard against other codecs being used with us.
-  CHECK(inst->codecType == codecType_) << "Unsupported codec " <<
-      inst->codecType << " for " << codecType_;
+  RTC_CHECK(inst->codecType == codecType_)
+      << "Unsupported codec " << inst->codecType << " for " << codecType_;
 
   if (sw_fallback_required_) {
     ALOGE("InitDecode() - fallback to SW decoder");
@@ -394,7 +394,7 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
 }
 
 void MediaCodecVideoDecoder::CheckOnCodecThread() {
-  CHECK(codec_thread_ == ThreadManager::Instance()->CurrentThread())
+  RTC_CHECK(codec_thread_ == ThreadManager::Instance()->CurrentThread())
       << "Running on wrong thread!";
 }
 
@@ -514,7 +514,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   jobject j_input_buffer = input_buffers_[j_input_buffer_index];
   uint8* buffer =
       reinterpret_cast<uint8*>(jni->GetDirectBufferAddress(j_input_buffer));
-  CHECK(buffer) << "Indirect buffer??";
+  RTC_CHECK(buffer) << "Indirect buffer??";
   int64 buffer_capacity = jni->GetDirectBufferCapacity(j_input_buffer);
   if (CheckException(jni) || buffer_capacity < inputImage._length) {
     ALOGE("Input frame size %d is bigger than buffer size %d.",
@@ -731,8 +731,8 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
   }
   // We only ever send one message to |this| directly (not through a Bind()'d
   // functor), so expect no ID/data.
-  CHECK(!msg->message_id) << "Unexpected message!";
-  CHECK(!msg->pdata) << "Unexpected message!";
+  RTC_CHECK(!msg->message_id) << "Unexpected message!";
+  RTC_CHECK(!msg->pdata) << "Unexpected message!";
   CheckOnCodecThread();
 
   if (!DeliverPendingOutputs(jni, 0)) {

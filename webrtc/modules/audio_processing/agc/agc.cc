@@ -54,7 +54,7 @@ int Agc::Process(const int16_t* audio, size_t length, int sample_rate_hz) {
   const std::vector<double>& rms = vad_.chunkwise_rms();
   const std::vector<double>& probabilities =
       vad_.chunkwise_voice_probabilities();
-  DCHECK_EQ(rms.size(), probabilities.size());
+  RTC_DCHECK_EQ(rms.size(), probabilities.size());
   for (size_t i = 0; i < rms.size(); ++i) {
     histogram_->Update(rms[i], probabilities[i]);
   }

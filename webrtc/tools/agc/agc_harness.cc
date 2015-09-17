@@ -107,7 +107,7 @@ class AgcVoiceEngine {
       webrtc::Config config;
       config.Set<ExperimentalAgc>(new ExperimentalAgc(!legacy_agc));
       AudioProcessing* audioproc = AudioProcessing::Create(config);
-      CHECK_EQ(0, base_->Init(nullptr, audioproc));
+      RTC_CHECK_EQ(0, base_->Init(nullptr, audioproc));
       // Set this stuff after Init, to override the default voice engine
       // settings.
       audioproc->gain_control()->Enable(true);
@@ -116,27 +116,28 @@ class AgcVoiceEngine {
       audioproc->echo_cancellation()->Enable(FLAGS_aec);
     }
     channel_ = base_->CreateChannel();
-    CHECK_NE(-1, channel_);
+    RTC_CHECK_NE(-1, channel_);
 
     channel_transport_.reset(
         new test::VoiceChannelTransport(network, channel_));
-    CHECK_EQ(0, channel_transport_->SetSendDestination("127.0.0.1", tx_port));
-    CHECK_EQ(0, channel_transport_->SetLocalReceiver(rx_port));
+    RTC_CHECK_EQ(0,
+                 channel_transport_->SetSendDestination("127.0.0.1", tx_port));
+    RTC_CHECK_EQ(0, channel_transport_->SetLocalReceiver(rx_port));
 
-    CHECK_EQ(0, hardware_->SetRecordingDevice(capture_idx_));
-    CHECK_EQ(0, hardware_->SetPlayoutDevice(render_idx_));
+    RTC_CHECK_EQ(0, hardware_->SetRecordingDevice(capture_idx_));
+    RTC_CHECK_EQ(0, hardware_->SetPlayoutDevice(render_idx_));
 
     CodecInst codec_params = {};
     bool codec_found = false;
     for (int i = 0; i < codec_->NumOfCodecs(); i++) {
-      CHECK_EQ(0, codec_->GetCodec(i, codec_params));
+      RTC_CHECK_EQ(0, codec_->GetCodec(i, codec_params));
       if (FLAGS_pt == codec_params.pltype) {
         codec_found = true;
         break;
       }
     }
-    CHECK(codec_found);
-    CHECK_EQ(0, codec_->SetSendCodec(channel_, codec_params));
+    RTC_CHECK(codec_found);
+    RTC_CHECK_EQ(0, codec_->SetSendCodec(channel_, codec_params));
 
     audio->Release();
     network->Release();
@@ -145,28 +146,28 @@ class AgcVoiceEngine {
   void TearDown() {
     Stop();
     channel_transport_.reset(nullptr);
-    CHECK_EQ(0, base_->DeleteChannel(channel_));
-    CHECK_EQ(0, base_->Terminate());
+    RTC_CHECK_EQ(0, base_->DeleteChannel(channel_));
+    RTC_CHECK_EQ(0, base_->Terminate());
     hardware_->Release();
     base_->Release();
     codec_->Release();
-    CHECK(VoiceEngine::Delete(voe_));
+    RTC_CHECK(VoiceEngine::Delete(voe_));
   }
 
   void PrintDevices() {
     int num_devices = 0;
     char device_name[128] = {0};
     char guid[128] = {0};
-    CHECK_EQ(0, hardware_->GetNumOfRecordingDevices(num_devices));
+    RTC_CHECK_EQ(0, hardware_->GetNumOfRecordingDevices(num_devices));
     printf("Capture devices:\n");
     for (int i = 0; i < num_devices; i++) {
-      CHECK_EQ(0, hardware_->GetRecordingDeviceName(i, device_name, guid));
+      RTC_CHECK_EQ(0, hardware_->GetRecordingDeviceName(i, device_name, guid));
       printf("%d: %s\n", i, device_name);
     }
-    CHECK_EQ(0, hardware_->GetNumOfPlayoutDevices(num_devices));
+    RTC_CHECK_EQ(0, hardware_->GetNumOfPlayoutDevices(num_devices));
     printf("Render devices:\n");
     for (int i = 0; i < num_devices; i++) {
-      CHECK_EQ(0, hardware_->GetPlayoutDeviceName(i, device_name, guid));
+      RTC_CHECK_EQ(0, hardware_->GetPlayoutDeviceName(i, device_name, guid));
       printf("%d: %s\n", i, device_name);
     }
   }
@@ -175,13 +176,13 @@ class AgcVoiceEngine {
     CodecInst params = {0};
     printf("Codecs:\n");
     for (int i = 0; i < codec_->NumOfCodecs(); i++) {
-      CHECK_EQ(0, codec_->GetCodec(i, params));
+      RTC_CHECK_EQ(0, codec_->GetCodec(i, params));
       printf("%d %s/%d/%d\n", params.pltype, params.plname, params.plfreq,
              params.channels);
     }
   }
 
-  void StartSending() { CHECK_EQ(0, base_->StartSend(channel_)); }
+  void StartSending() { RTC_CHECK_EQ(0, base_->StartSend(channel_)); }
 
   void StartPlaying(Pan pan, const std::string& filename) {
     VoEVolumeControl* volume = VoEVolumeControl::GetInterface(voe_);
@@ -193,19 +194,19 @@ class AgcVoiceEngine {
     }
     if (filename != "") {
       printf("playing file\n");
-      CHECK_EQ(
+      RTC_CHECK_EQ(
           0, file->StartPlayingFileLocally(channel_, filename.c_str(), true,
                                            kFileFormatPcm16kHzFile, 1.0, 0, 0));
     }
-    CHECK_EQ(0, base_->StartReceive(channel_));
-    CHECK_EQ(0, base_->StartPlayout(channel_));
+    RTC_CHECK_EQ(0, base_->StartReceive(channel_));
+    RTC_CHECK_EQ(0, base_->StartPlayout(channel_));
     volume->Release();
     file->Release();
   }
 
   void Stop() {
-    CHECK_EQ(0, base_->StopSend(channel_));
-    CHECK_EQ(0, base_->StopPlayout(channel_));
+    RTC_CHECK_EQ(0, base_->StopSend(channel_));
+    RTC_CHECK_EQ(0, base_->StopPlayout(channel_));
   }
 
  private:

@@ -154,14 +154,15 @@ DEFINE_string(
 class ScreenshareLoopback : public test::Loopback {
  public:
   explicit ScreenshareLoopback(const Config& config) : Loopback(config) {
-    CHECK_GE(config.num_temporal_layers, 1u);
-    CHECK_LE(config.num_temporal_layers, 2u);
-    CHECK_GE(config.num_spatial_layers, 1u);
-    CHECK_LE(config.num_spatial_layers, 5u);
-    CHECK(config.num_spatial_layers == 1 || config.codec == "VP9");
-    CHECK(config.num_spatial_layers == 1 || config.num_temporal_layers == 1);
-    CHECK_LT(config.tl_discard_threshold, config.num_temporal_layers);
-    CHECK_LT(config.sl_discard_threshold, config.num_spatial_layers);
+    RTC_CHECK_GE(config.num_temporal_layers, 1u);
+    RTC_CHECK_LE(config.num_temporal_layers, 2u);
+    RTC_CHECK_GE(config.num_spatial_layers, 1u);
+    RTC_CHECK_LE(config.num_spatial_layers, 5u);
+    RTC_CHECK(config.num_spatial_layers == 1 || config.codec == "VP9");
+    RTC_CHECK(config.num_spatial_layers == 1 ||
+              config.num_temporal_layers == 1);
+    RTC_CHECK_LT(config.tl_discard_threshold, config.num_temporal_layers);
+    RTC_CHECK_LT(config.sl_discard_threshold, config.num_spatial_layers);
 
     vp8_settings_ = VideoEncoder::GetDefaultVp8Settings();
     vp8_settings_.denoisingOn = false;
@@ -216,12 +217,12 @@ class ScreenshareLoopback : public test::Loopback {
     // Fixed for input resolution for prerecorded screenshare content.
     const size_t kWidth = 1850;
     const size_t kHeight = 1110;
-    CHECK_LE(flags::Width(), kWidth);
-    CHECK_LE(flags::Height(), kHeight);
-    CHECK_GT(flags::SlideChangeInterval(), 0);
+    RTC_CHECK_LE(flags::Width(), kWidth);
+    RTC_CHECK_LE(flags::Height(), kHeight);
+    RTC_CHECK_GT(flags::SlideChangeInterval(), 0);
     const int kPauseDurationMs =
         (flags::SlideChangeInterval() - flags::ScrollDuration()) * 1000;
-    CHECK_LE(flags::ScrollDuration(), flags::SlideChangeInterval());
+    RTC_CHECK_LE(flags::ScrollDuration(), flags::SlideChangeInterval());
 
     test::FrameGenerator* frame_generator =
         test::FrameGenerator::CreateScrollingInputFromYuvFiles(

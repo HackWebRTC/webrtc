@@ -22,12 +22,10 @@ void EnsureInitialized() {}
 
 #include <pthread.h>
 
-// Note: this dependency is dangerous since it reaches into Chromium's
-// base. You can't include anything in this file that includes WebRTC's
-// base/checks.h, for instance, since it will clash with Chromium's
-// logging.h. Therefore, the CHECKs in this file will actually use
-// Chromium's checks rather than the WebRTC ones.
+// Note: this dependency is dangerous since it reaches into Chromium's base.
+// There's a risk of e.g. macro clashes. This file may only be used in tests.
 #include "base/android/jni_android.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_capture/video_capture_internal.h"
 
 namespace webrtc {
@@ -39,12 +37,12 @@ void EnsureInitializedOnce() {
   JNIEnv* jni = ::base::android::AttachCurrentThread();
   jobject context = ::base::android::GetApplicationContext();
   JavaVM* jvm = NULL;
-  CHECK_EQ(0, jni->GetJavaVM(&jvm));
-  CHECK_EQ(0, webrtc::SetCaptureAndroidVM(jvm, context));
+  RTC_CHECK_EQ(0, jni->GetJavaVM(&jvm));
+  RTC_CHECK_EQ(0, webrtc::SetCaptureAndroidVM(jvm, context));
 }
 
 void EnsureInitialized() {
-  CHECK_EQ(0, pthread_once(&g_initialize_once, &EnsureInitializedOnce));
+  RTC_CHECK_EQ(0, pthread_once(&g_initialize_once, &EnsureInitializedOnce));
 }
 
 }  // namespace videocapturemodule

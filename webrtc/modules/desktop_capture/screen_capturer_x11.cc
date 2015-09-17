@@ -30,9 +30,12 @@
 
 // TODO(sergeyu): Move this to a header where it can be shared.
 #if defined(NDEBUG)
-#define DCHECK(condition) (void)(condition)
+#define RTC_DCHECK(condition) (void)(condition)
 #else  // NDEBUG
-#define DCHECK(condition) if (!(condition)) {abort();}
+#define RTC_DCHECK(condition) \
+  if (!(condition)) {         \
+    abort();                  \
+  }
 #endif
 
 namespace webrtc {
@@ -233,8 +236,8 @@ void ScreenCapturerLinux::InitXDamage() {
 }
 
 void ScreenCapturerLinux::Start(Callback* callback) {
-  DCHECK(!callback_);
-  DCHECK(callback);
+  RTC_DCHECK(!callback_);
+  RTC_DCHECK(callback);
 
   callback_ = callback;
 }
@@ -285,7 +288,7 @@ void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
 }
 
 bool ScreenCapturerLinux::GetScreenList(ScreenList* screens) {
-  DCHECK(screens->size() == 0);
+  RTC_DCHECK(screens->size() == 0);
   // TODO(jiayl): implement screen enumeration.
   Screen default_screen;
   default_screen.id = 0;
@@ -304,7 +307,7 @@ bool ScreenCapturerLinux::HandleXEvent(const XEvent& event) {
         reinterpret_cast<const XDamageNotifyEvent*>(&event);
     if (damage_event->damage != damage_handle_)
       return false;
-    DCHECK(damage_event->level == XDamageReportNonEmpty);
+    RTC_DCHECK(damage_event->level == XDamageReportNonEmpty);
     return true;
   } else if (event.type == ConfigureNotify) {
     ScreenConfigurationChanged();
@@ -367,8 +370,8 @@ DesktopFrame* ScreenCapturerLinux::CaptureScreen() {
     if (queue_.previous_frame()) {
       // Full-screen polling, so calculate the invalid rects here, based on the
       // changed pixels between current and previous buffers.
-      DCHECK(differ_.get() != NULL);
-      DCHECK(queue_.previous_frame()->data());
+      RTC_DCHECK(differ_.get() != NULL);
+      RTC_DCHECK(queue_.previous_frame()->data());
       differ_->CalcDirtyRegion(queue_.previous_frame()->data(),
                                frame->data(), updated_region);
     } else {
@@ -403,11 +406,11 @@ void ScreenCapturerLinux::SynchronizeFrame() {
   // TODO(hclam): We can reduce the amount of copying here by subtracting
   // |capturer_helper_|s region from |last_invalid_region_|.
   // http://crbug.com/92354
-  DCHECK(queue_.previous_frame());
+  RTC_DCHECK(queue_.previous_frame());
 
   DesktopFrame* current = queue_.current_frame();
   DesktopFrame* last = queue_.previous_frame();
-  DCHECK(current != last);
+  RTC_DCHECK(current != last);
   for (DesktopRegion::Iterator it(last_invalid_region_);
        !it.IsAtEnd(); it.Advance()) {
     current->CopyPixelsFrom(*last, it.rect().top_left(), it.rect());

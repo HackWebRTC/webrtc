@@ -725,8 +725,8 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   // |raw_images_[0]|, the resolution of these frames must match. Note that
   // |input_image| might be scaled from |frame|. In that case, the resolution of
   // |raw_images_[0]| should have been updated in UpdateCodecFrameSize.
-  DCHECK_EQ(input_image.width(), static_cast<int>(raw_images_[0].d_w));
-  DCHECK_EQ(input_image.height(), static_cast<int>(raw_images_[0].d_h));
+  RTC_DCHECK_EQ(input_image.width(), static_cast<int>(raw_images_[0].d_w));
+  RTC_DCHECK_EQ(input_image.height(), static_cast<int>(raw_images_[0].d_h));
 
   // Image in vpx_image_t format.
   // Input image is const. VP8's raw image is not defined as const.

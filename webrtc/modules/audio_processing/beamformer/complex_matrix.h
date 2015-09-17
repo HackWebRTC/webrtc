@@ -59,8 +59,8 @@ class ComplexMatrix : public Matrix<complex<T> > {
   }
 
   ComplexMatrix& ConjugateTranspose(const ComplexMatrix& operand) {
-    CHECK_EQ(operand.num_rows(), this->num_columns());
-    CHECK_EQ(operand.num_columns(), this->num_rows());
+    RTC_CHECK_EQ(operand.num_rows(), this->num_columns());
+    RTC_CHECK_EQ(operand.num_columns(), this->num_rows());
     return ConjugateTranspose(operand.elements());
   }
 

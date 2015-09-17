@@ -202,7 +202,7 @@ void CodecOwner::ChangeCngAndRed(int cng_payload_type,
   AudioEncoder* encoder =
       CreateRedEncoder(red_payload_type, speech_encoder, &red_encoder_);
   CreateCngEncoder(cng_payload_type, vad_mode, encoder, &cng_encoder_);
-  DCHECK_EQ(!!speech_encoder_ + !!external_speech_encoder_, 1);
+  RTC_DCHECK_EQ(!!speech_encoder_ + !!external_speech_encoder_, 1);
 }
 
 AudioDecoder* CodecOwner::GetIsacDecoder() {
@@ -230,7 +230,7 @@ AudioEncoder* CodecOwner::SpeechEncoder() {
 }
 
 const AudioEncoder* CodecOwner::SpeechEncoder() const {
-  DCHECK(!speech_encoder_ || !external_speech_encoder_);
+  RTC_DCHECK(!speech_encoder_ || !external_speech_encoder_);
   return external_speech_encoder_ ? external_speech_encoder_
                                   : speech_encoder_.get();
 }

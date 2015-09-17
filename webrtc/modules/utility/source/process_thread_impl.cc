@@ -48,9 +48,9 @@ ProcessThreadImpl::ProcessThreadImpl(const char* thread_name)
       thread_name_(thread_name) {}
 
 ProcessThreadImpl::~ProcessThreadImpl() {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!thread_.get());
-  DCHECK(!stop_);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!thread_.get());
+  RTC_DCHECK(!stop_);
 
   while (!queue_.empty()) {
     delete queue_.front();
@@ -59,12 +59,12 @@ ProcessThreadImpl::~ProcessThreadImpl() {
 }
 
 void ProcessThreadImpl::Start() {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!thread_.get());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!thread_.get());
   if (thread_.get())
     return;
 
-  DCHECK(!stop_);
+  RTC_DCHECK(!stop_);
 
   {
     // TODO(tommi): Since DeRegisterModule is currently being called from
@@ -78,11 +78,11 @@ void ProcessThreadImpl::Start() {
 
   thread_ = ThreadWrapper::CreateThread(&ProcessThreadImpl::Run, this,
                                         thread_name_);
-  CHECK(thread_->Start());
+  RTC_CHECK(thread_->Start());
 }
 
 void ProcessThreadImpl::Stop() {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if(!thread_.get())
     return;
 
@@ -93,7 +93,7 @@ void ProcessThreadImpl::Stop() {
 
   wake_up_->Set();
 
-  CHECK(thread_->Stop());
+  RTC_CHECK(thread_->Stop());
   stop_ = false;
 
   // TODO(tommi): Since DeRegisterModule is currently being called from
@@ -130,15 +130,15 @@ void ProcessThreadImpl::PostTask(rtc::scoped_ptr<ProcessTask> task) {
 }
 
 void ProcessThreadImpl::RegisterModule(Module* module) {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(module);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(module);
 
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
   {
     // Catch programmer error.
     rtc::CritScope lock(&lock_);
     for (const ModuleCallback& mc : modules_)
-      DCHECK(mc.module != module);
+      RTC_DCHECK(mc.module != module);
   }
 #endif
 
@@ -162,7 +162,7 @@ void ProcessThreadImpl::RegisterModule(Module* module) {
 void ProcessThreadImpl::DeRegisterModule(Module* module) {
   // Allowed to be called on any thread.
   // TODO(tommi): Disallow this ^^^
-  DCHECK(module);
+  RTC_DCHECK(module);
 
   {
     rtc::CritScope lock(&lock_);

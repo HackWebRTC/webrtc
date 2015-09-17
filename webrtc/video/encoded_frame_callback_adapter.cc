@@ -26,7 +26,7 @@ int32_t EncodedFrameCallbackAdapter::Encoded(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
-  DCHECK(observer_ != nullptr);
+  RTC_DCHECK(observer_ != nullptr);
   FrameType frame_type =
         VCMEncodedFrame::ConvertFrameType(encodedImage._frameType);
   const EncodedFrame frame(encodedImage._buffer,

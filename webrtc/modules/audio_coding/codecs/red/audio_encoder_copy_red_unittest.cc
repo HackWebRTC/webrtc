@@ -87,8 +87,8 @@ class MockEncodeHelper {
                                    size_t max_encoded_bytes,
                                    uint8_t* encoded) {
     if (write_payload_) {
-      CHECK(encoded);
-      CHECK_LE(info_.encoded_bytes, max_encoded_bytes);
+      RTC_CHECK(encoded);
+      RTC_CHECK_LE(info_.encoded_bytes, max_encoded_bytes);
       memcpy(encoded, payload_, info_.encoded_bytes);
     }
     return info_;

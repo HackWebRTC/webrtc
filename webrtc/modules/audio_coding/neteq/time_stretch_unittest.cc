@@ -69,7 +69,7 @@ class TimeStretchTest : public ::testing::Test {
   }
 
   const int16_t* Next30Ms() {
-    CHECK(input_file_->Read(block_size_, audio_.get()));
+    RTC_CHECK(input_file_->Read(block_size_, audio_.get()));
     return audio_.get();
   }
 

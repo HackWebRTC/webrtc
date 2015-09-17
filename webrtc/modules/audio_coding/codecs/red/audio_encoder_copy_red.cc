@@ -19,7 +19,7 @@ namespace webrtc {
 AudioEncoderCopyRed::AudioEncoderCopyRed(const Config& config)
     : speech_encoder_(config.speech_encoder),
       red_payload_type_(config.payload_type) {
-  CHECK(speech_encoder_) << "Speech encoder not provided.";
+  RTC_CHECK(speech_encoder_) << "Speech encoder not provided.";
 }
 
 AudioEncoderCopyRed::~AudioEncoderCopyRed() = default;
@@ -60,26 +60,26 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeInternal(
   EncodedInfo info = speech_encoder_->Encode(
       rtp_timestamp, audio, static_cast<size_t>(SampleRateHz() / 100),
       max_encoded_bytes, encoded);
-  CHECK_GE(max_encoded_bytes,
-           info.encoded_bytes + secondary_info_.encoded_bytes);
-  CHECK(info.redundant.empty()) << "Cannot use nested redundant encoders.";
+  RTC_CHECK_GE(max_encoded_bytes,
+               info.encoded_bytes + secondary_info_.encoded_bytes);
+  RTC_CHECK(info.redundant.empty()) << "Cannot use nested redundant encoders.";
 
   if (info.encoded_bytes > 0) {
     // |info| will be implicitly cast to an EncodedInfoLeaf struct, effectively
     // discarding the (empty) vector of redundant information. This is
     // intentional.
     info.redundant.push_back(info);
-    DCHECK_EQ(info.redundant.size(), 1u);
+    RTC_DCHECK_EQ(info.redundant.size(), 1u);
     if (secondary_info_.encoded_bytes > 0) {
       memcpy(&encoded[info.encoded_bytes], secondary_encoded_.data(),
              secondary_info_.encoded_bytes);
       info.redundant.push_back(secondary_info_);
-      DCHECK_EQ(info.redundant.size(), 2u);
+      RTC_DCHECK_EQ(info.redundant.size(), 2u);
     }
     // Save primary to secondary.
     secondary_encoded_.SetData(encoded, info.encoded_bytes);
     secondary_info_ = info;
-    DCHECK_EQ(info.speech, info.redundant[0].speech);
+    RTC_DCHECK_EQ(info.speech, info.redundant[0].speech);
   }
   // Update main EncodedInfo.
   info.payload_type = red_payload_type_;

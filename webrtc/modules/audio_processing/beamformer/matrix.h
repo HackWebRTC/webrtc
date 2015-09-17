@@ -121,7 +121,7 @@ class Matrix {
   const T* const* elements() const { return &elements_[0]; }
 
   T Trace() {
-    CHECK_EQ(num_rows_, num_columns_);
+    RTC_CHECK_EQ(num_rows_, num_columns_);
 
     T trace = 0;
     for (int i = 0; i < num_rows_; ++i) {
@@ -138,8 +138,8 @@ class Matrix {
   }
 
   Matrix& Transpose(const Matrix& operand) {
-    CHECK_EQ(operand.num_rows_, num_columns_);
-    CHECK_EQ(operand.num_columns_, num_rows_);
+    RTC_CHECK_EQ(operand.num_rows_, num_columns_);
+    RTC_CHECK_EQ(operand.num_columns_, num_rows_);
 
     return Transpose(operand.elements());
   }
@@ -160,8 +160,8 @@ class Matrix {
   }
 
   Matrix& Add(const Matrix& operand) {
-    CHECK_EQ(num_rows_, operand.num_rows_);
-    CHECK_EQ(num_columns_, operand.num_columns_);
+    RTC_CHECK_EQ(num_rows_, operand.num_rows_);
+    RTC_CHECK_EQ(num_columns_, operand.num_columns_);
 
     for (size_t i = 0; i < data_.size(); ++i) {
       data_[i] += operand.data_[i];
@@ -176,8 +176,8 @@ class Matrix {
   }
 
   Matrix& Subtract(const Matrix& operand) {
-    CHECK_EQ(num_rows_, operand.num_rows_);
-    CHECK_EQ(num_columns_, operand.num_columns_);
+    RTC_CHECK_EQ(num_rows_, operand.num_rows_);
+    RTC_CHECK_EQ(num_columns_, operand.num_columns_);
 
     for (size_t i = 0; i < data_.size(); ++i) {
       data_[i] -= operand.data_[i];
@@ -192,8 +192,8 @@ class Matrix {
   }
 
   Matrix& PointwiseMultiply(const Matrix& operand) {
-    CHECK_EQ(num_rows_, operand.num_rows_);
-    CHECK_EQ(num_columns_, operand.num_columns_);
+    RTC_CHECK_EQ(num_rows_, operand.num_rows_);
+    RTC_CHECK_EQ(num_columns_, operand.num_columns_);
 
     for (size_t i = 0; i < data_.size(); ++i) {
       data_[i] *= operand.data_[i];
@@ -208,8 +208,8 @@ class Matrix {
   }
 
   Matrix& PointwiseDivide(const Matrix& operand) {
-    CHECK_EQ(num_rows_, operand.num_rows_);
-    CHECK_EQ(num_columns_, operand.num_columns_);
+    RTC_CHECK_EQ(num_rows_, operand.num_rows_);
+    RTC_CHECK_EQ(num_columns_, operand.num_columns_);
 
     for (size_t i = 0; i < data_.size(); ++i) {
       data_[i] /= operand.data_[i];
@@ -263,15 +263,15 @@ class Matrix {
   }
 
   Matrix& Multiply(const Matrix& lhs, const Matrix& rhs) {
-    CHECK_EQ(lhs.num_columns_, rhs.num_rows_);
-    CHECK_EQ(num_rows_, lhs.num_rows_);
-    CHECK_EQ(num_columns_, rhs.num_columns_);
+    RTC_CHECK_EQ(lhs.num_columns_, rhs.num_rows_);
+    RTC_CHECK_EQ(num_rows_, lhs.num_rows_);
+    RTC_CHECK_EQ(num_columns_, rhs.num_columns_);
 
     return Multiply(lhs.elements(), rhs.num_rows_, rhs.elements());
   }
 
   Matrix& Multiply(const Matrix& rhs) {
-    CHECK_EQ(num_columns_, rhs.num_rows_);
+    RTC_CHECK_EQ(num_columns_, rhs.num_rows_);
 
     CopyDataToScratch();
     Resize(num_rows_, rhs.num_columns_);

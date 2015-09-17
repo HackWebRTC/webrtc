@@ -63,7 +63,7 @@ const rtclog::DebugEvent* GetAudioOutputEvent(const rtclog::Event& event) {
 
 RtcEventLogSource* RtcEventLogSource::Create(const std::string& file_name) {
   RtcEventLogSource* source = new RtcEventLogSource();
-  CHECK(source->OpenFile(file_name));
+  RTC_CHECK(source->OpenFile(file_name));
   return source;
 }
 
@@ -71,7 +71,7 @@ RtcEventLogSource::~RtcEventLogSource() {}
 
 bool RtcEventLogSource::RegisterRtpHeaderExtension(RTPExtensionType type,
                                                    uint8_t id) {
-  CHECK(parser_.get());
+  RTC_CHECK(parser_.get());
   return parser_->RegisterRtpHeaderExtension(type, id);
 }
 

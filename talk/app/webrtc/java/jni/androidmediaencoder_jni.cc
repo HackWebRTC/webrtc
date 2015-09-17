@@ -236,7 +236,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
   // in the bug, we have a problem.  For now work around that with a dedicated
   // thread.
   codec_thread_->SetName("MediaCodecVideoEncoder", NULL);
-  CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoEncoder";
+  RTC_CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoEncoder";
 
   jclass j_output_buffer_info_class =
       FindClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
@@ -292,8 +292,9 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // Factory should guard against other codecs being used with us.
-  CHECK(codec_settings->codecType == codecType_) << "Unsupported codec " <<
-      codec_settings->codecType << " for " << codecType_;
+  RTC_CHECK(codec_settings->codecType == codecType_)
+      << "Unsupported codec " << codec_settings->codecType << " for "
+      << codecType_;
 
   ALOGD("InitEncode request");
   scale_ = false;
@@ -359,8 +360,8 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
 
   // We only ever send one message to |this| directly (not through a Bind()'d
   // functor), so expect no ID/data.
-  CHECK(!msg->message_id) << "Unexpected message!";
-  CHECK(!msg->pdata) << "Unexpected message!";
+  RTC_CHECK(!msg->message_id) << "Unexpected message!";
+  RTC_CHECK(!msg->pdata) << "Unexpected message!";
   CheckOnCodecThread();
   if (!inited_) {
     return;
@@ -374,7 +375,7 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
 }
 
 void MediaCodecVideoEncoder::CheckOnCodecThread() {
-  CHECK(codec_thread_ == ThreadManager::Instance()->CurrentThread())
+  RTC_CHECK(codec_thread_ == ThreadManager::Instance()->CurrentThread())
       << "Running on wrong thread!";
 }
 
@@ -460,7 +461,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
       return WEBRTC_VIDEO_CODEC_ERROR;
   }
   size_t num_input_buffers = jni->GetArrayLength(input_buffers);
-  CHECK(input_buffers_.empty())
+  RTC_CHECK(input_buffers_.empty())
       << "Unexpected double InitEncode without Release";
   input_buffers_.resize(num_input_buffers);
   for (size_t i = 0; i < num_input_buffers; ++i) {
@@ -469,7 +470,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
     int64 yuv_buffer_capacity =
         jni->GetDirectBufferCapacity(input_buffers_[i]);
     CHECK_EXCEPTION(jni);
-    CHECK(yuv_buffer_capacity >= yuv_size_) << "Insufficient capacity";
+    RTC_CHECK(yuv_buffer_capacity >= yuv_size_) << "Insufficient capacity";
   }
   CHECK_EXCEPTION(jni);
 
@@ -499,7 +500,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
-  CHECK(frame_types->size() == 1) << "Unexpected stream count";
+  RTC_CHECK(frame_types->size() == 1) << "Unexpected stream count";
   // Check framerate before spatial resolution change.
   if (scale_ && codecType_ == kVideoCodecVP8) {
     quality_scaler_->OnEncodeFrame(frame);
@@ -555,17 +556,12 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   uint8* yuv_buffer =
       reinterpret_cast<uint8*>(jni->GetDirectBufferAddress(j_input_buffer));
   CHECK_EXCEPTION(jni);
-  CHECK(yuv_buffer) << "Indirect buffer??";
-  CHECK(!libyuv::ConvertFromI420(
-          input_frame.buffer(webrtc::kYPlane),
-          input_frame.stride(webrtc::kYPlane),
-          input_frame.buffer(webrtc::kUPlane),
-          input_frame.stride(webrtc::kUPlane),
-          input_frame.buffer(webrtc::kVPlane),
-          input_frame.stride(webrtc::kVPlane),
-          yuv_buffer, width_,
-          width_, height_,
-          encoder_fourcc_))
+  RTC_CHECK(yuv_buffer) << "Indirect buffer??";
+  RTC_CHECK(!libyuv::ConvertFromI420(
+      input_frame.buffer(webrtc::kYPlane), input_frame.stride(webrtc::kYPlane),
+      input_frame.buffer(webrtc::kUPlane), input_frame.stride(webrtc::kUPlane),
+      input_frame.buffer(webrtc::kVPlane), input_frame.stride(webrtc::kVPlane),
+      yuv_buffer, width_, width_, height_, encoder_fourcc_))
       << "ConvertFromI420 failed";
   last_input_timestamp_ms_ = current_timestamp_us_ / 1000;
   frames_in_queue_++;

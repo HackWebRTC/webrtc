@@ -31,7 +31,7 @@ namespace webrtc {
 //
 // An instance must be created and destroyed on one and the same thread.
 // All public methods must also be called on the same thread. A thread checker
-// will DCHECK if any method is called on an invalid thread.
+// will RTC_DCHECK if any method is called on an invalid thread.
 //
 // This class uses AttachCurrentThreadIfNeeded to attach to a Java VM if needed
 // and detach when the object goes out of scope. Additional thread checking

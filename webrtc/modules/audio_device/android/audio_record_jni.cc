@@ -72,8 +72,8 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
       recording_(false),
       audio_device_buffer_(nullptr) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
-  DCHECK(audio_parameters_.is_valid());
-  CHECK(j_environment_);
+  RTC_DCHECK(audio_parameters_.is_valid());
+  RTC_CHECK(j_environment_);
   JNINativeMethod native_methods[] = {
       {"nativeCacheDirectBufferAddress", "(Ljava/nio/ByteBuffer;J)V",
       reinterpret_cast<void*>(
@@ -95,28 +95,28 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
 
 AudioRecordJni::~AudioRecordJni() {
   ALOGD("~dtor%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   Terminate();
 }
 
 int32_t AudioRecordJni::Init() {
   ALOGD("Init%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return 0;
 }
 
 int32_t AudioRecordJni::Terminate() {
   ALOGD("Terminate%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   StopRecording();
   return 0;
 }
 
 int32_t AudioRecordJni::InitRecording() {
   ALOGD("InitRecording%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!initialized_);
-  DCHECK(!recording_);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!initialized_);
+  RTC_DCHECK(!recording_);
   int frames_per_buffer = j_audio_record_->InitRecording(
       audio_parameters_.sample_rate(), audio_parameters_.channels());
   if (frames_per_buffer < 0) {
@@ -125,18 +125,18 @@ int32_t AudioRecordJni::InitRecording() {
   }
   frames_per_buffer_ = static_cast<size_t>(frames_per_buffer);
   ALOGD("frames_per_buffer: %" PRIuS, frames_per_buffer_);
-  CHECK_EQ(direct_buffer_capacity_in_bytes_,
-           frames_per_buffer_ * kBytesPerFrame);
-  CHECK_EQ(frames_per_buffer_, audio_parameters_.frames_per_10ms_buffer());
+  RTC_CHECK_EQ(direct_buffer_capacity_in_bytes_,
+               frames_per_buffer_ * kBytesPerFrame);
+  RTC_CHECK_EQ(frames_per_buffer_, audio_parameters_.frames_per_10ms_buffer());
   initialized_ = true;
   return 0;
 }
 
 int32_t AudioRecordJni::StartRecording() {
   ALOGD("StartRecording%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(initialized_);
-  DCHECK(!recording_);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(initialized_);
+  RTC_DCHECK(!recording_);
   if (!j_audio_record_->StartRecording()) {
     ALOGE("StartRecording failed!");
     return -1;
@@ -147,7 +147,7 @@ int32_t AudioRecordJni::StartRecording() {
 
 int32_t AudioRecordJni::StopRecording() {
   ALOGD("StopRecording%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!initialized_ || !recording_) {
     return 0;
   }
@@ -155,8 +155,9 @@ int32_t AudioRecordJni::StopRecording() {
     ALOGE("StopRecording failed!");
     return -1;
   }
-  // If we don't detach here, we will hit a DCHECK in OnDataIsRecorded() next
-  // time StartRecording() is called since it will create a new Java thread.
+  // If we don't detach here, we will hit a RTC_DCHECK in OnDataIsRecorded()
+  // next time StartRecording() is called since it will create a new Java
+  // thread.
   thread_checker_java_.DetachFromThread();
   initialized_ = false;
   recording_ = false;
@@ -165,7 +166,7 @@ int32_t AudioRecordJni::StopRecording() {
 
 void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   ALOGD("AttachAudioBuffer");
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   audio_device_buffer_ = audioBuffer;
   const int sample_rate_hz = audio_parameters_.sample_rate();
   ALOGD("SetRecordingSampleRate(%d)", sample_rate_hz);
@@ -175,13 +176,13 @@ void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   audio_device_buffer_->SetRecordingChannels(channels);
   total_delay_in_milliseconds_ =
       audio_manager_->GetDelayEstimateInMilliseconds();
-  DCHECK_GT(total_delay_in_milliseconds_, 0);
+  RTC_DCHECK_GT(total_delay_in_milliseconds_, 0);
   ALOGD("total_delay_in_milliseconds: %d", total_delay_in_milliseconds_);
 }
 
 int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
   ALOGD("EnableBuiltInAEC%s", GetThreadInfo().c_str());
-  DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return j_audio_record_->EnableBuiltInAEC(enable) ? 0 : -1;
 }
 
@@ -195,8 +196,8 @@ void JNICALL AudioRecordJni::CacheDirectBufferAddress(
 void AudioRecordJni::OnCacheDirectBufferAddress(
     JNIEnv* env, jobject byte_buffer) {
   ALOGD("OnCacheDirectBufferAddress");
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!direct_buffer_address_);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!direct_buffer_address_);
   direct_buffer_address_ =
       env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
@@ -214,7 +215,7 @@ void JNICALL AudioRecordJni::DataIsRecorded(
 // This method is called on a high-priority thread from Java. The name of
 // the thread is 'AudioRecordThread'.
 void AudioRecordJni::OnDataIsRecorded(int length) {
-  DCHECK(thread_checker_java_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_java_.CalledOnValidThread());
   if (!audio_device_buffer_) {
     ALOGE("AttachAudioBuffer has not been called!");
     return;

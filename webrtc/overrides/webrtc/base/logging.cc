@@ -35,9 +35,9 @@
 // ~DiagnosticLogMessage. Note that the second parameter to the LAZY_STREAM
 // macro is true since the filter check has already been done for
 // DIAGNOSTIC_LOG.
-#define LOG_LAZY_STREAM_DIRECT(file_name, line_number, sev) \
-  LAZY_STREAM(logging::LogMessage(file_name, line_number, \
-                                  sev).stream(), true)
+#define LOG_LAZY_STREAM_DIRECT(file_name, line_number, sev)                  \
+  LAZY_STREAM(logging::LogMessage(file_name, line_number, sev).stream(), \
+                  true)
 
 namespace rtc {
 

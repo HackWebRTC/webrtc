@@ -359,7 +359,7 @@ int RTPSender::SendPayloadFrequency() const {
 int32_t RTPSender::SetMaxPayloadLength(size_t max_payload_length,
                                        uint16_t packet_over_head) {
   // Sanity check.
-  DCHECK(max_payload_length >= 100 && max_payload_length <= IP_PACKET_SIZE)
+  RTC_DCHECK(max_payload_length >= 100 && max_payload_length <= IP_PACKET_SIZE)
       << "Invalid max payload length: " << max_payload_length;
   CriticalSectionScoped cs(send_critsect_.get());
   max_payload_length_ = max_payload_length;
@@ -411,8 +411,8 @@ uint32_t RTPSender::RtxSsrc() const {
 void RTPSender::SetRtxPayloadType(int payload_type,
                                   int associated_payload_type) {
   CriticalSectionScoped cs(send_critsect_.get());
-  DCHECK_LE(payload_type, 127);
-  DCHECK_LE(associated_payload_type, 127);
+  RTC_DCHECK_LE(payload_type, 127);
+  RTC_DCHECK_LE(associated_payload_type, 127);
   if (payload_type < 0) {
     LOG(LS_ERROR) << "Invalid RTX payload type: " << payload_type;
     return;
@@ -1792,14 +1792,14 @@ int32_t RTPSender::SendRTPIntraRequest() {
 void RTPSender::SetGenericFECStatus(bool enable,
                                     uint8_t payload_type_red,
                                     uint8_t payload_type_fec) {
-  DCHECK(!audio_configured_);
+  RTC_DCHECK(!audio_configured_);
   video_->SetGenericFECStatus(enable, payload_type_red, payload_type_fec);
 }
 
 void RTPSender::GenericFECStatus(bool* enable,
                                     uint8_t* payload_type_red,
                                     uint8_t* payload_type_fec) const {
-  DCHECK(!audio_configured_);
+  RTC_DCHECK(!audio_configured_);
   video_->GenericFECStatus(*enable, *payload_type_red, *payload_type_fec);
 }
 

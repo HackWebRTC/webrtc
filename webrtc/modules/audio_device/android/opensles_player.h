@@ -33,7 +33,7 @@ class FineAudioBuffer;
 //
 // An instance must be created and destroyed on one and the same thread.
 // All public methods must also be called on the same thread. A thread checker
-// will DCHECK if any method is called on an invalid thread. Decoded audio
+// will RTC_DCHECK if any method is called on an invalid thread. Decoded audio
 // buffers are requested on a dedicated internal thread managed by the OpenSL
 // ES layer.
 //

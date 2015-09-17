@@ -92,7 +92,7 @@ void StreamObserver::set_start_bitrate_bps(unsigned int start_bitrate_bps) {
 void StreamObserver::OnReceiveBitrateChanged(
     const std::vector<unsigned int>& ssrcs, unsigned int bitrate) {
   rtc::CritScope lock(&crit_);
-  DCHECK_GT(expected_bitrate_bps_, 0u);
+  RTC_DCHECK_GT(expected_bitrate_bps_, 0u);
   if (start_bitrate_bps_ != 0) {
     // For tests with an explicitly set start bitrate, verify the first
     // bitrate estimate is close to the start bitrate and lower than the
@@ -119,7 +119,7 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
   payload_registry_->SetIncomingPayloadType(header);
-  DCHECK(remote_bitrate_estimator_ != nullptr);
+  RTC_DCHECK(remote_bitrate_estimator_ != nullptr);
   remote_bitrate_estimator_->IncomingPacket(
       clock_->TimeInMilliseconds(), length - header.headerLength, header, true);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
@@ -303,7 +303,7 @@ std::string LowRateStreamObserver::GetModifierString() {
 void LowRateStreamObserver::EvolveTestState(unsigned int bitrate_bps) {
   int64_t now = clock_->TimeInMilliseconds();
   rtc::CritScope lock(&crit_);
-  DCHECK(send_stream_ != nullptr);
+  RTC_DCHECK(send_stream_ != nullptr);
   switch (test_state_) {
     case kFirstRampup: {
       EXPECT_FALSE(suspended_in_stats_);

@@ -190,7 +190,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
         session_id,
         dct,
         true) {
-  DCHECK(dtls_identity_store_);
+  RTC_DCHECK(dtls_identity_store_);
 
   certificate_request_state_ = CERTIFICATE_WAITING;
 
@@ -219,7 +219,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     : WebRtcSessionDescriptionFactory(
         signaling_thread, channel_manager, mediastream_signaling, nullptr,
         nullptr, session, session_id, dct, true) {
-  DCHECK(certificate);
+  RTC_DCHECK(certificate);
 
   certificate_request_state_ = CERTIFICATE_WAITING;
 
@@ -517,7 +517,7 @@ void WebRtcSessionDescriptionFactory::OnIdentityRequestFailed(int error) {
 
 void WebRtcSessionDescriptionFactory::SetCertificate(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
-  DCHECK(certificate);
+  RTC_DCHECK(certificate);
   LOG(LS_VERBOSE) << "Setting new certificate";
 
   certificate_request_state_ = CERTIFICATE_SUCCEEDED;

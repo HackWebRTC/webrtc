@@ -45,7 +45,7 @@ AudioEncoderG722::AudioEncoderG722(const Config& config)
       first_timestamp_in_buffer_(0),
       encoders_(new EncoderState[num_channels_]),
       interleave_buffer_(2 * num_channels_) {
-  CHECK(config.IsOk());
+  RTC_CHECK(config.IsOk());
   const size_t samples_per_channel =
       kSampleRateHz / 100 * num_10ms_frames_per_packet_;
   for (int i = 0; i < num_channels_; ++i) {
@@ -96,7 +96,7 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
     const int16_t* audio,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
-  CHECK_GE(max_encoded_bytes, MaxEncodedBytes());
+  RTC_CHECK_GE(max_encoded_bytes, MaxEncodedBytes());
 
   if (num_10ms_frames_buffered_ == 0)
     first_timestamp_in_buffer_ = rtp_timestamp;
@@ -113,14 +113,14 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
   }
 
   // Encode each channel separately.
-  CHECK_EQ(num_10ms_frames_buffered_, num_10ms_frames_per_packet_);
+  RTC_CHECK_EQ(num_10ms_frames_buffered_, num_10ms_frames_per_packet_);
   num_10ms_frames_buffered_ = 0;
   const size_t samples_per_channel = SamplesPerChannel();
   for (int i = 0; i < num_channels_; ++i) {
     const size_t encoded = WebRtcG722_Encode(
         encoders_[i].encoder, encoders_[i].speech_buffer.get(),
         samples_per_channel, encoders_[i].encoded_buffer.data());
-    CHECK_EQ(encoded, samples_per_channel / 2);
+    RTC_CHECK_EQ(encoded, samples_per_channel / 2);
   }
 
   // Interleave the encoded bytes of the different channels. Each separate
@@ -146,15 +146,15 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
 void AudioEncoderG722::Reset() {
   num_10ms_frames_buffered_ = 0;
   for (int i = 0; i < num_channels_; ++i)
-    CHECK_EQ(0, WebRtcG722_EncoderInit(encoders_[i].encoder));
+    RTC_CHECK_EQ(0, WebRtcG722_EncoderInit(encoders_[i].encoder));
 }
 
 AudioEncoderG722::EncoderState::EncoderState() {
-  CHECK_EQ(0, WebRtcG722_CreateEncoder(&encoder));
+  RTC_CHECK_EQ(0, WebRtcG722_CreateEncoder(&encoder));
 }
 
 AudioEncoderG722::EncoderState::~EncoderState() {
-  CHECK_EQ(0, WebRtcG722_FreeEncoder(encoder));
+  RTC_CHECK_EQ(0, WebRtcG722_FreeEncoder(encoder));
 }
 
 size_t AudioEncoderG722::SamplesPerChannel() const {

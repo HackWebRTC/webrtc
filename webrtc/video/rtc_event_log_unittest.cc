@@ -290,7 +290,7 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
                          uint32_t csrcs_count,
                          uint8_t* packet,
                          size_t packet_size) {
-  CHECK_GE(packet_size, 16 + 4 * csrcs_count + 4 * kNumExtensions);
+  RTC_CHECK_GE(packet_size, 16 + 4 * csrcs_count + 4 * kNumExtensions);
   Clock* clock = Clock::GetRealTimeClock();
 
   RTPSender rtp_sender(0,         // int32_t id

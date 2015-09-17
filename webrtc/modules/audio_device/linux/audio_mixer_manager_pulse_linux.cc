@@ -63,7 +63,7 @@ AudioMixerManagerLinuxPulse::AudioMixerManagerLinuxPulse(const int32_t id) :
 
 AudioMixerManagerLinuxPulse::~AudioMixerManagerLinuxPulse()
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id,
                  "%s destructed", __FUNCTION__);
 
@@ -78,7 +78,7 @@ int32_t AudioMixerManagerLinuxPulse::SetPulseAudioObjects(
     pa_threaded_mainloop* mainloop,
     pa_context* context)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
@@ -101,7 +101,7 @@ int32_t AudioMixerManagerLinuxPulse::SetPulseAudioObjects(
 
 int32_t AudioMixerManagerLinuxPulse::Close()
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
@@ -118,7 +118,7 @@ int32_t AudioMixerManagerLinuxPulse::Close()
 
 int32_t AudioMixerManagerLinuxPulse::CloseSpeaker()
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
@@ -131,7 +131,7 @@ int32_t AudioMixerManagerLinuxPulse::CloseSpeaker()
 
 int32_t AudioMixerManagerLinuxPulse::CloseMicrophone()
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
@@ -144,7 +144,7 @@ int32_t AudioMixerManagerLinuxPulse::CloseMicrophone()
 
 int32_t AudioMixerManagerLinuxPulse::SetPlayStream(pa_stream* playStream)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::SetPlayStream(playStream)");
 
@@ -154,7 +154,7 @@ int32_t AudioMixerManagerLinuxPulse::SetPlayStream(pa_stream* playStream)
 
 int32_t AudioMixerManagerLinuxPulse::SetRecStream(pa_stream* recStream)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::SetRecStream(recStream)");
 
@@ -165,7 +165,7 @@ int32_t AudioMixerManagerLinuxPulse::SetRecStream(pa_stream* recStream)
 int32_t AudioMixerManagerLinuxPulse::OpenSpeaker(
     uint16_t deviceIndex)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::OpenSpeaker(deviceIndex=%d)",
                  deviceIndex);
@@ -192,7 +192,7 @@ int32_t AudioMixerManagerLinuxPulse::OpenSpeaker(
 int32_t AudioMixerManagerLinuxPulse::OpenMicrophone(
     uint16_t deviceIndex)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::OpenMicrophone"
                  "(deviceIndex=%d)", deviceIndex);
@@ -218,7 +218,7 @@ int32_t AudioMixerManagerLinuxPulse::OpenMicrophone(
 
 bool AudioMixerManagerLinuxPulse::SpeakerIsInitialized() const
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
@@ -227,7 +227,7 @@ bool AudioMixerManagerLinuxPulse::SpeakerIsInitialized() const
 
 bool AudioMixerManagerLinuxPulse::MicrophoneIsInitialized() const
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
@@ -237,7 +237,7 @@ bool AudioMixerManagerLinuxPulse::MicrophoneIsInitialized() const
 int32_t AudioMixerManagerLinuxPulse::SetSpeakerVolume(
     uint32_t volume)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::SetSpeakerVolume(volume=%u)",
                  volume);
@@ -372,7 +372,7 @@ AudioMixerManagerLinuxPulse::MinSpeakerVolume(uint32_t& minVolume) const
 int32_t
 AudioMixerManagerLinuxPulse::SpeakerVolumeStepSize(uint16_t& stepSize) const
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paOutputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -394,7 +394,7 @@ AudioMixerManagerLinuxPulse::SpeakerVolumeStepSize(uint16_t& stepSize) const
 int32_t
 AudioMixerManagerLinuxPulse::SpeakerVolumeIsAvailable(bool& available)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paOutputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -411,7 +411,7 @@ AudioMixerManagerLinuxPulse::SpeakerVolumeIsAvailable(bool& available)
 int32_t
 AudioMixerManagerLinuxPulse::SpeakerMuteIsAvailable(bool& available)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paOutputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -427,7 +427,7 @@ AudioMixerManagerLinuxPulse::SpeakerMuteIsAvailable(bool& available)
 
 int32_t AudioMixerManagerLinuxPulse::SetSpeakerMute(bool enable)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::SetSpeakerMute(enable=%u)",
                  enable);
@@ -512,7 +512,7 @@ int32_t AudioMixerManagerLinuxPulse::SpeakerMute(bool& enabled) const
 int32_t
 AudioMixerManagerLinuxPulse::StereoPlayoutIsAvailable(bool& available)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paOutputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -546,7 +546,7 @@ AudioMixerManagerLinuxPulse::StereoPlayoutIsAvailable(bool& available)
 int32_t
 AudioMixerManagerLinuxPulse::StereoRecordingIsAvailable(bool& available)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paInputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -590,7 +590,7 @@ AudioMixerManagerLinuxPulse::StereoRecordingIsAvailable(bool& available)
 int32_t AudioMixerManagerLinuxPulse::MicrophoneMuteIsAvailable(
     bool& available)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paInputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -606,7 +606,7 @@ int32_t AudioMixerManagerLinuxPulse::MicrophoneMuteIsAvailable(
 
 int32_t AudioMixerManagerLinuxPulse::SetMicrophoneMute(bool enable)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::SetMicrophoneMute(enable=%u)",
                  enable);
@@ -661,7 +661,7 @@ int32_t AudioMixerManagerLinuxPulse::SetMicrophoneMute(bool enable)
 
 int32_t AudioMixerManagerLinuxPulse::MicrophoneMute(bool& enabled) const
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paInputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -698,7 +698,7 @@ int32_t AudioMixerManagerLinuxPulse::MicrophoneMute(bool& enabled) const
 int32_t
 AudioMixerManagerLinuxPulse::MicrophoneBoostIsAvailable(bool& available)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paInputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -716,7 +716,7 @@ AudioMixerManagerLinuxPulse::MicrophoneBoostIsAvailable(bool& available)
 
 int32_t AudioMixerManagerLinuxPulse::SetMicrophoneBoost(bool enable)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::SetMicrophoneBoost(enable=%u)",
                  enable);
@@ -745,7 +745,7 @@ int32_t AudioMixerManagerLinuxPulse::SetMicrophoneBoost(bool enable)
 
 int32_t AudioMixerManagerLinuxPulse::MicrophoneBoost(bool& enabled) const
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paInputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -762,7 +762,7 @@ int32_t AudioMixerManagerLinuxPulse::MicrophoneBoost(bool& enabled) const
 int32_t AudioMixerManagerLinuxPulse::MicrophoneVolumeIsAvailable(
     bool& available)
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paInputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -931,7 +931,7 @@ AudioMixerManagerLinuxPulse::MinMicrophoneVolume(uint32_t& minVolume) const
 int32_t AudioMixerManagerLinuxPulse::MicrophoneVolumeStepSize(
     uint16_t& stepSize) const
 {
-    DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     if (_paInputDeviceIndex == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,

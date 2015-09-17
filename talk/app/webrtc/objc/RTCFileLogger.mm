@@ -109,7 +109,7 @@ NSUInteger const kDefaultMaxFileSize = 10 * 1024 * 1024; // 10MB.
   if (!_hasStarted) {
     return;
   }
-  DCHECK(_logSink);
+  RTC_DCHECK(_logSink);
   rtc::LogMessage::RemoveLogToStream(_logSink.get());
   _hasStarted = NO;
   _logSink.reset();

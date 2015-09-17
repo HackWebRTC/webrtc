@@ -417,7 +417,7 @@ int main(int argc, char* argv[]) {
   // Check if an SSRC value was provided.
   if (!FLAGS_ssrc.empty()) {
     uint32_t ssrc;
-    CHECK(ParseSsrc(FLAGS_ssrc, &ssrc)) << "Flag verification has failed.";
+    RTC_CHECK(ParseSsrc(FLAGS_ssrc, &ssrc)) << "Flag verification has failed.";
     file_source->SelectSsrc(ssrc);
   }
 

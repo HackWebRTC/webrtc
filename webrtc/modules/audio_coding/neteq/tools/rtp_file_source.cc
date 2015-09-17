@@ -28,7 +28,7 @@ namespace test {
 
 RtpFileSource* RtpFileSource::Create(const std::string& file_name) {
   RtpFileSource* source = new RtpFileSource();
-  CHECK(source->OpenFile(file_name));
+  RTC_CHECK(source->OpenFile(file_name));
   return source;
 }
 
