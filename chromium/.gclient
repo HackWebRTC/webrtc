@@ -17,6 +17,7 @@ solutions = [{
     'src/third_party/skia': None,
     'src/third_party/trace-viewer': None,
     'src/third_party/webrtc': None,
+    'src/third_party/WebKit': None,
   },
   'safesync_url': ''
 }]

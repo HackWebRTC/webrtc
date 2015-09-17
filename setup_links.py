@@ -62,7 +62,6 @@ DIRECTORIES = [
   'third_party/sqlite',
   'third_party/syzygy',
   'third_party/usrsctp',
-  'third_party/WebKit',
   'third_party/yasm',
   'third_party/zlib',
   'tools/clang',
