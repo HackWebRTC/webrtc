@@ -627,6 +627,7 @@ struct VideoCodecVP9 {
   bool                 frameDroppingOn;
   int                  keyFrameInterval;
   bool                 adaptiveQpMode;
+  bool                 automaticResizeOn;
   unsigned char        numberOfSpatialLayers;
   bool                 flexibleMode;
 };

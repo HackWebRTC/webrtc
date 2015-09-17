@@ -146,6 +146,9 @@ class VideoProcessor {
   // encoder are regarded as zero size.
   virtual size_t EncodedFrameSize() = 0;
 
+  // Return the encoded frame type (key or delta).
+  virtual VideoFrameType EncodedFrameType() = 0;
+
   // Return the number of dropped frames.
   virtual int NumberDroppedFrames() = 0;
 
@@ -179,6 +182,8 @@ class VideoProcessorImpl : public VideoProcessor {
   void SetRates(int bit_rate, int frame_rate) override;
   // Return the size of the encoded frame in bytes.
   size_t EncodedFrameSize() override;
+  // Return the encoded frame type (key or delta).
+  VideoFrameType EncodedFrameType() override;
   // Return the number of dropped frames.
   int NumberDroppedFrames() override;
   // Return the number of spatial resizes.
@@ -207,6 +212,7 @@ class VideoProcessorImpl : public VideoProcessor {
   // If Init() has executed successfully.
   bool initialized_;
   size_t encoded_frame_size_;
+  VideoFrameType encoded_frame_type_;
   int prev_time_stamp_;
   int num_dropped_frames_;
   int num_spatial_resizes_;

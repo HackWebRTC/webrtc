@@ -59,6 +59,7 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       last_frame_missing_(false),
       initialized_(false),
       encoded_frame_size_(0),
+      encoded_frame_type_(kKeyFrame),
       prev_time_stamp_(0),
       num_dropped_frames_(0),
       num_spatial_resizes_(0),
@@ -161,6 +162,10 @@ size_t VideoProcessorImpl::EncodedFrameSize() {
   return encoded_frame_size_;
 }
 
+VideoFrameType VideoProcessorImpl::EncodedFrameType() {
+  return encoded_frame_type_;
+}
+
 int VideoProcessorImpl::NumberDroppedFrames() {
   return num_dropped_frames_;
 }
@@ -202,6 +207,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
 
     // For dropped frames, we regard them as zero size encoded frames.
     encoded_frame_size_ = 0;
+    encoded_frame_type_ = kDeltaFrame;
 
     int32_t encode_result = encoder_->Encode(source_frame_, NULL, &frame_types);
 
@@ -232,6 +238,8 @@ void VideoProcessorImpl::FrameEncoded(const EncodedImage& encoded_image) {
   // Frame is not dropped, so update the encoded frame size
   // (encoder callback is only called for non-zero length frames).
   encoded_frame_size_ = encoded_image._length;
+
+  encoded_frame_type_ = encoded_image._frameType;
 
   TickTime encode_stop = TickTime::Now();
   int frame_number = encoded_image._timeStamp;

@@ -78,6 +78,7 @@ struct RateControlMetrics {
   int max_encoding_rate_mismatch;
   int max_time_hit_target;
   int num_spatial_resizes;
+  int num_key_frames;
 };
 
 
@@ -208,6 +209,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
            num_temporal_layers_;
        config_.codec_settings->codecSpecific.VP9.frameDroppingOn =
            frame_dropper_on_;
+       config_.codec_settings->codecSpecific.VP9.automaticResizeOn =
+           spatial_resize_on_;
        config_.codec_settings->codecSpecific.VP9.keyFrameInterval =
            kBaseKeyFrameInterval;
        break;
@@ -307,7 +310,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
                          int max_encoding_rate_mismatch,
                          int max_time_hit_target,
                          int max_num_dropped_frames,
-                         int num_spatial_resizes) {
+                         int num_spatial_resizes,
+                         int num_key_frames) {
     int num_dropped_frames = processor_->NumberDroppedFrames();
     int num_resize_actions = processor_->NumberSpatialResizes();
     printf("For update #: %d,\n "
@@ -354,6 +358,7 @@ class VideoProcessorIntegrationTest: public testing::Test {
     EXPECT_LE(num_frames_to_hit_target_, max_time_hit_target);
     EXPECT_LE(num_dropped_frames, max_num_dropped_frames);
     EXPECT_EQ(num_resize_actions, num_spatial_resizes);
+    EXPECT_EQ(num_key_frames_, num_key_frames);
   }
 
   // Layer index corresponding to frame number, for up to 3 layers.
@@ -406,15 +411,6 @@ class VideoProcessorIntegrationTest: public testing::Test {
     }
   }
 
-  VideoFrameType FrameType(int frame_number) {
-    if (frame_number == 0 || ((frame_number) % key_frame_interval_ == 0 &&
-        key_frame_interval_ > 0)) {
-      return kKeyFrame;
-    } else {
-      return kDeltaFrame;
-    }
-  }
-
   void TearDown() {
     delete processor_;
     delete packet_manipulator_;
@@ -459,7 +455,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
         frame_number < num_frames) {
       // Get the layer index for the frame |frame_number|.
       LayerIndexForFrame(frame_number);
-      frame_type = FrameType(frame_number);
+      // Get the frame_type.
+      frame_type = processor_->EncodedFrameType();
       // Counter for whole sequence run.
       ++frame_number;
       // Counters for each rate update.
@@ -477,7 +474,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
             rc_metrics[update_index].max_encoding_rate_mismatch,
             rc_metrics[update_index].max_time_hit_target,
             rc_metrics[update_index].max_num_dropped_frames,
-            rc_metrics[update_index].num_spatial_resizes);
+            rc_metrics[update_index].num_spatial_resizes,
+            rc_metrics[update_index].num_key_frames);
         // Update layer rates and the codec with new rates.
         ++update_index;
         bit_rate_ =  rate_profile.target_bit_rate[update_index];
@@ -495,7 +493,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
         rc_metrics[update_index].max_encoding_rate_mismatch,
         rc_metrics[update_index].max_time_hit_target,
         rc_metrics[update_index].max_num_dropped_frames,
-        rc_metrics[update_index].num_spatial_resizes);
+        rc_metrics[update_index].num_spatial_resizes,
+        rc_metrics[update_index].num_key_frames);
     EXPECT_EQ(num_frames, frame_number);
     EXPECT_EQ(num_frames + 1, static_cast<int>(stats_.stats_.size()));
 
@@ -576,7 +575,8 @@ void SetRateControlMetrics(RateControlMetrics* rc_metrics,
                            int max_delta_frame_size_mismatch,
                            int max_encoding_rate_mismatch,
                            int max_time_hit_target,
-                           int num_spatial_resizes) {
+                           int num_spatial_resizes,
+                           int num_key_frames) {
   rc_metrics[update_index].max_num_dropped_frames = max_num_dropped_frames;
   rc_metrics[update_index].max_key_frame_size_mismatch =
       max_key_frame_size_mismatch;
@@ -586,6 +586,7 @@ void SetRateControlMetrics(RateControlMetrics* rc_metrics,
       max_encoding_rate_mismatch;
   rc_metrics[update_index].max_time_hit_target = max_time_hit_target;
   rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
+  rc_metrics[update_index].num_key_frames = num_key_frames;
 }
 
 // VP9: Run with no packet loss and fixed bitrate. Quality should be very high.
@@ -606,7 +607,7 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
   SetQualityMetrics(&quality_metrics, 37.0, 36.0, 0.93, 0.92);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -630,7 +631,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
   SetQualityMetrics(&quality_metrics, 17.0, 14.0, 0.45, 0.36);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -659,9 +660,9 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   SetQualityMetrics(&quality_metrics, 35.9, 30.0, 0.90, 0.85);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 0, 30, 20, 20, 30, 0);
-  SetRateControlMetrics(rc_metrics, 1, 2, 0, 20, 20, 60, 0);
-  SetRateControlMetrics(rc_metrics, 2, 0, 0, 25, 20, 40, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 30, 20, 20, 30, 0, 1);
+  SetRateControlMetrics(rc_metrics, 1, 2, 0, 20, 20, 60, 0, 0);
+  SetRateControlMetrics(rc_metrics, 2, 0, 0, 25, 20, 40, 0, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -694,9 +695,9 @@ TEST_F(VideoProcessorIntegrationTest,
   SetQualityMetrics(&quality_metrics, 31.5, 18.0, 0.80, 0.44);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 35, 50, 70, 15, 45, 0);
-  SetRateControlMetrics(rc_metrics, 1, 10, 0, 40, 10, 30, 0);
-  SetRateControlMetrics(rc_metrics, 2, 5, 0, 30, 5, 20, 0);
+  SetRateControlMetrics(rc_metrics, 0, 35, 50, 70, 15, 45, 0, 1);
+  SetRateControlMetrics(rc_metrics, 1, 10, 0, 40, 10, 30, 0, 0);
+  SetRateControlMetrics(rc_metrics, 2, 5, 0, 30, 5, 20, 0, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -719,7 +720,33 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
   SetQualityMetrics(&quality_metrics, 36.8, 35.8, 0.92, 0.91);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0, 1);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
+}
+
+// Run with no packet loss, at low bitrate.
+// spatial_resize is on, so expect one resize during the sequence,
+// resize happens on delta frame. Expect only one key frame (first frame).
+TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
+  config_.networking_config.packet_loss_probability = 0;
+  // Bitrate and frame rate profile.
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 50, 30, 0);
+  rate_profile.frame_index_rate_update[1] = kNbrFramesLong + 1;
+  rate_profile.num_frames = kNbrFramesLong;
+  // Codec/network settings.
+  CodecConfigPars process_settings;
+  SetCodecParameters(&process_settings, kVideoCodecVP9, 0.0f, -1,
+                     1, false, false, true, true);
+  // Metrics for expected quality.
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 25.0, 13.0, 0.70, 0.40);
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[1];
+  SetRateControlMetrics(rc_metrics, 0, 160, 70, 120, 10, 80, 1, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -747,7 +774,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   SetQualityMetrics(&quality_metrics, 34.95, 33.0, 0.90, 0.89);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -771,7 +798,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   SetQualityMetrics(&quality_metrics, 20.0, 16.0, 0.60, 0.40);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -795,7 +822,7 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   SetQualityMetrics(&quality_metrics, 19.0, 16.0, 0.50, 0.35);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -833,9 +860,9 @@ TEST_F(VideoProcessorIntegrationTest,
   SetQualityMetrics(&quality_metrics, 34.0, 32.0, 0.85, 0.80);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 0, 45, 20, 10, 15, 0);
-  SetRateControlMetrics(rc_metrics, 1, 0, 0, 25, 20, 10, 0);
-  SetRateControlMetrics(rc_metrics, 2, 0, 0, 25, 15, 10, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 45, 20, 10, 15, 0, 1);
+  SetRateControlMetrics(rc_metrics, 1, 0, 0, 25, 20, 10, 0, 0);
+  SetRateControlMetrics(rc_metrics, 2, 0, 0, 25, 15, 10, 0, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -868,9 +895,9 @@ TEST_F(VideoProcessorIntegrationTest,
   SetQualityMetrics(&quality_metrics, 31.0, 22.0, 0.80, 0.65);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 40, 20, 75, 15, 60, 0);
-  SetRateControlMetrics(rc_metrics, 1, 10, 0, 25, 10, 35, 0);
-  SetRateControlMetrics(rc_metrics, 2, 0, 0, 20, 10, 15, 0);
+  SetRateControlMetrics(rc_metrics, 0, 40, 20, 75, 15, 60, 0, 1);
+  SetRateControlMetrics(rc_metrics, 1, 10, 0, 25, 10, 35, 0, 0);
+  SetRateControlMetrics(rc_metrics, 2, 0, 0, 20, 10, 15, 0, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -878,7 +905,7 @@ TEST_F(VideoProcessorIntegrationTest,
 }
 
 // Run with no packet loss, at low bitrate. During this time we should've
-// resized once.
+// resized once. Expect 2 key frames generated (first and one for resize).
 TEST_F(VideoProcessorIntegrationTest,
        DISABLED_ON_ANDROID(ProcessNoLossSpatialResizeFrameDropVP8)) {
   config_.networking_config.packet_loss_probability = 0;
@@ -889,14 +916,14 @@ TEST_F(VideoProcessorIntegrationTest,
   rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, 0.0f, kNbrFramesLong,
+  SetCodecParameters(&process_settings, kVideoCodecVP8, 0.0f, -1,
                      1, false, true, true, true);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 25.0, 15.0, 0.70, 0.40);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 160, 60, 120, 20, 70, 1);
+  SetRateControlMetrics(rc_metrics, 0, 160, 60, 120, 20, 70, 1, 2);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -926,8 +953,8 @@ TEST_F(VideoProcessorIntegrationTest,
   SetQualityMetrics(&quality_metrics, 32.5, 30.0, 0.85, 0.80);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[2];
-  SetRateControlMetrics(rc_metrics, 0, 0, 20, 30, 10, 10, 0);
-  SetRateControlMetrics(rc_metrics, 1, 0, 0, 30, 15, 10, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 20, 30, 10, 10, 0, 1);
+  SetRateControlMetrics(rc_metrics, 1, 0, 0, 30, 15, 10, 0, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,

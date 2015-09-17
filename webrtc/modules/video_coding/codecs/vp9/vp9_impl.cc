@@ -283,6 +283,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   } else {
     config_->kf_mode = VPX_KF_DISABLED;
   }
+  config_->rc_resize_allowed = inst->codecSpecific.VP9.automaticResizeOn ?
+      1 : 0;
   // Determine number of threads based on the image size and #cores.
   config_->g_threads = NumberOfThreads(config_->g_w,
                                        config_->g_h,
