@@ -38,15 +38,25 @@
 
 #if defined(LOGGING_INSIDE_WEBRTC)
 
-#define WEBRTC_VLOG_IS_ON(sev) VLOG_IS_ON(rtc::WebRtcVerbosityLevel(sev))
+namespace rtc {
+
+// Note that |N| is the size *with* the null terminator.
+bool CheckVlogIsOnHelper(LoggingSeverity severity,
+                         const char* file, size_t N);
+
+template <size_t N>
+bool CheckVlogIsOn(LoggingSeverity severity, const char (&file)[N]) {
+  return CheckVlogIsOnHelper(severity, file, N);
+}
+
+}  // namespace rtc
 
 #define DIAGNOSTIC_LOG(sev, ctx, err, ...) \
   rtc::DiagnosticLogMessage( \
-      __FILE__, __LINE__, sev, WEBRTC_VLOG_IS_ON(sev), \
-      rtc::ERRCTX_ ## ctx, err, ##__VA_ARGS__).stream()
+      __FILE__, __LINE__, sev, rtc::ERRCTX_ ## ctx, err, ##__VA_ARGS__).stream()
 
-#define LOG_CHECK_LEVEL(sev) WEBRTC_VLOG_IS_ON(rtc::sev)
-#define LOG_CHECK_LEVEL_V(sev) WEBRTC_VLOG_IS_ON(sev)
+#define LOG_CHECK_LEVEL(sev) CheckVlogIsOn(rtc::sev, __FILE__)
+#define LOG_CHECK_LEVEL_V(sev) CheckVlogIsOn(sev, __FILE__)
 
 #define LOG_V(sev) DIAGNOSTIC_LOG(sev, NONE, 0)
 #undef LOG

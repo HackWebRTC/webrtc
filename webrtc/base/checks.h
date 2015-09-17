@@ -14,13 +14,6 @@
 #include <sstream>
 #include <string>
 
-#ifdef WEBRTC_CHROMIUM_BUILD
-// Include logging.h in a Chromium build to enable the overrides mechanism for
-// using Chromium's macros. Otherwise, don't depend on logging.h.
-// TODO(ajm): Ideally, checks.h would be combined with logging.h, but
-// consolidation with system_wrappers/logging.h should happen first.
-#include "webrtc/base/logging.h"
-#endif
 #include "webrtc/typedefs.h"
 
 // The macros here print a message to stderr and abort under various
@@ -59,6 +52,9 @@
 //   RTC_DCHECK.
 //
 // - FATAL() aborts unconditionally.
+//
+// TODO(ajm): Ideally, checks.h would be combined with logging.h, but
+// consolidation with system_wrappers/logging.h should happen first.
 
 namespace rtc {
 

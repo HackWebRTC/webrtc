@@ -9,9 +9,9 @@
  */
 
 // IMPORTANT
-// Since this file includes Chromium source files, it must not include
-// logging.h since logging.h defines some of the same macros as Chrome does
-// and we'll run into conflict.
+// Since this file includes Chromium headers, it must not include
+// third_party/webrtc/base/logging.h since it defines some of the same macros as
+// Chromium does and we'll run into conflicts.
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <CoreServices/CoreServices.h>
@@ -21,6 +21,7 @@
 #include <iomanip>
 
 #include "base/atomicops.h"
+#include "base/logging.h"
 #include "base/strings/string_util.h"
 #include "base/threading/platform_thread.h"
 #include "third_party/webrtc/base/ipaddress.h"
@@ -79,6 +80,40 @@ std::string ErrorName(int err, const ConstantLabel* err_table) {
 // Log helper functions
 /////////////////////////////////////////////////////////////////////////////
 
+inline int WebRtcSevToChromeSev(LoggingSeverity sev) {
+  switch (sev) {
+    case LS_ERROR:
+      return ::logging::LOG_ERROR;
+    case LS_WARNING:
+      return ::logging::LOG_WARNING;
+    case LS_INFO:
+      return ::logging::LOG_INFO;
+    case LS_VERBOSE:
+    case LS_SENSITIVE:
+      return ::logging::LOG_VERBOSE;
+    default:
+      NOTREACHED();
+      return ::logging::LOG_FATAL;
+  }
+}
+
+inline int WebRtcVerbosityLevel(LoggingSeverity sev) {
+  switch (sev) {
+    case LS_ERROR:
+      return -2;
+    case LS_WARNING:
+      return -1;
+    case LS_INFO:  // We treat 'info' and 'verbose' as the same verbosity level.
+    case LS_VERBOSE:
+      return 1;
+    case LS_SENSITIVE:
+      return 2;
+    default:
+      NOTREACHED();
+      return 0;
+  }
+}
+
 // Generates extra information for LOG_E.
 static std::string GenerateExtra(LogErrorContext err_ctx,
                                  int err,
@@ -135,27 +170,25 @@ static std::string GenerateExtra(LogErrorContext err_ctx,
 DiagnosticLogMessage::DiagnosticLogMessage(const char* file,
                                            int line,
                                            LoggingSeverity severity,
-                                           bool log_to_chrome,
                                            LogErrorContext err_ctx,
                                            int err)
     : file_name_(file),
       line_(line),
       severity_(severity),
-      log_to_chrome_(log_to_chrome) {
+      log_to_chrome_(CheckVlogIsOnHelper(severity, file, strlen(file) + 1)) {
   extra_ = GenerateExtra(err_ctx, err, NULL);
 }
 
 DiagnosticLogMessage::DiagnosticLogMessage(const char* file,
                                            int line,
                                            LoggingSeverity severity,
-                                           bool log_to_chrome,
                                            LogErrorContext err_ctx,
                                            int err,
                                            const char* module)
     : file_name_(file),
       line_(line),
       severity_(severity),
-      log_to_chrome_(log_to_chrome) {
+      log_to_chrome_(CheckVlogIsOnHelper(severity, file, strlen(file) + 1)) {
   extra_ = GenerateExtra(err_ctx, err, module);
 }
 
@@ -186,6 +219,9 @@ void LogMessage::LogToDebug(int min_sev) {
 void LogMultiline(LoggingSeverity level, const char* label, bool input,
                   const void* data, size_t len, bool hex_mode,
                   LogMultilineState* state) {
+  // TODO(grunell): This will not do the expected verbosity level checking. We
+  // need a macro for the multiline logging.
+  // https://code.google.com/p/webrtc/issues/detail?id=5011
   if (!LOG_CHECK_LEVEL_V(level))
     return;
 
@@ -331,6 +367,12 @@ void SetExtraLoggingInit(
   CHECK(function);
   CHECK(!g_extra_logging_init_function);
   g_extra_logging_init_function = function;
+}
+
+bool CheckVlogIsOnHelper(
+    rtc::LoggingSeverity severity, const char* file, size_t N) {
+  return rtc::WebRtcVerbosityLevel(severity) <=
+         ::logging::GetVlogLevelHelper(file, N);
 }
 
 }  // namespace rtc

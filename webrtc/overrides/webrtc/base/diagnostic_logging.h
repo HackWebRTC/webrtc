@@ -14,7 +14,7 @@
 #include <sstream>
 #include <string>
 
-#include "base/logging.h"
+#include "third_party/webrtc/base/checks.h"
 #include "third_party/webrtc/base/scoped_ref_ptr.h"
 
 namespace rtc {
@@ -72,40 +72,6 @@ enum LoggingSeverity { LS_ERROR = 1,
                        WARNING = LS_WARNING,
                        LERROR = LS_ERROR };
 
-inline int WebRtcSevToChromeSev(LoggingSeverity sev) {
-  switch (sev) {
-    case LS_ERROR:
-      return ::logging::LOG_ERROR;
-    case LS_WARNING:
-      return ::logging::LOG_WARNING;
-    case LS_INFO:
-      return ::logging::LOG_INFO;
-    case LS_VERBOSE:
-    case LS_SENSITIVE:
-      return ::logging::LOG_VERBOSE;
-    default:
-      NOTREACHED();
-      return ::logging::LOG_FATAL;
-  }
-}
-
-inline int WebRtcVerbosityLevel(LoggingSeverity sev) {
-  switch (sev) {
-    case LS_ERROR:
-      return -2;
-    case LS_WARNING:
-      return -1;
-    case LS_INFO:  // We treat 'info' and 'verbose' as the same verbosity level.
-    case LS_VERBOSE:
-      return 1;
-    case LS_SENSITIVE:
-      return 2;
-    default:
-      NOTREACHED();
-      return 0;
-  }
-}
-
 // LogErrorContext assists in interpreting the meaning of an error value.
 enum LogErrorContext {
   ERRCTX_NONE,
@@ -124,10 +90,9 @@ enum LogErrorContext {
 class DiagnosticLogMessage {
  public:
   DiagnosticLogMessage(const char* file, int line, LoggingSeverity severity,
-                       bool log_to_chrome, LogErrorContext err_ctx, int err);
+                       LogErrorContext err_ctx, int err);
   DiagnosticLogMessage(const char* file, int line, LoggingSeverity severity,
-                       bool log_to_chrome, LogErrorContext err_ctx, int err,
-                       const char* module);
+                       LogErrorContext err_ctx, int err, const char* module);
   ~DiagnosticLogMessage();
 
   void CreateTimestamp();
