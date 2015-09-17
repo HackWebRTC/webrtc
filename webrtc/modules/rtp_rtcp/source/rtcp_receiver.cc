@@ -30,7 +30,6 @@ using namespace RTCPHelp;
 const int kRrTimeoutIntervals = 3;
 
 RTCPReceiver::RTCPReceiver(
-    int32_t id,
     Clock* clock,
     bool receiver_only,
     RtcpPacketTypeCounterObserver* packet_type_counter_observer,

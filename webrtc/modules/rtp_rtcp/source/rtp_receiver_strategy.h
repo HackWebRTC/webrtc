@@ -28,7 +28,7 @@ class RTPReceiverStrategy {
  public:
   static RTPReceiverStrategy* CreateVideoStrategy(RtpData* data_callback);
   static RTPReceiverStrategy* CreateAudioStrategy(
-      int32_t id, RtpData* data_callback,
+      RtpData* data_callback,
       RtpAudioFeedback* incoming_messages_callback);
 
   virtual ~RTPReceiverStrategy() {}
@@ -70,7 +70,6 @@ class RTPReceiverStrategy {
   // Invokes the OnInitializeDecoder callback in a media-specific way.
   virtual int32_t InvokeOnInitializeDecoder(
       RtpFeedback* callback,
-      int32_t id,
       int8_t payload_type,
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const PayloadUnion& specific_payload) const = 0;

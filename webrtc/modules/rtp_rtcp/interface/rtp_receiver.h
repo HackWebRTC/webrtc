@@ -37,14 +37,14 @@ class RtpReceiver {
  public:
   // Creates a video-enabled RTP receiver.
   static RtpReceiver* CreateVideoReceiver(
-      int id, Clock* clock,
+      Clock* clock,
       RtpData* incoming_payload_callback,
       RtpFeedback* incoming_messages_callback,
       RTPPayloadRegistry* rtp_payload_registry);
 
   // Creates an audio-enabled RTP receiver.
   static RtpReceiver* CreateAudioReceiver(
-      int id, Clock* clock,
+      Clock* clock,
       RtpAudioFeedback* incoming_audio_feedback,
       RtpData* incoming_payload_callback,
       RtpFeedback* incoming_messages_callback,

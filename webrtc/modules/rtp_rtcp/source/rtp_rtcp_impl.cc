@@ -27,8 +27,7 @@
 namespace webrtc {
 
 RtpRtcp::Configuration::Configuration()
-    : id(-1),
-      audio(false),
+    : audio(false),
       receiver_only(false),
       clock(nullptr),
       receive_statistics(NullObjectReceiveStatistics()),
@@ -60,8 +59,7 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 }
 
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
-    : rtp_sender_(configuration.id,
-                  configuration.audio,
+    : rtp_sender_(configuration.audio,
                   configuration.clock,
                   configuration.outgoing_transport,
                   configuration.audio_messages,
@@ -71,20 +69,17 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.send_bitrate_observer,
                   configuration.send_frame_count_observer,
                   configuration.send_side_delay_observer),
-      rtcp_sender_(configuration.id,
-                   configuration.audio,
+      rtcp_sender_(configuration.audio,
                    configuration.clock,
                    configuration.receive_statistics,
                    configuration.rtcp_packet_type_counter_observer),
-      rtcp_receiver_(configuration.id,
-                     configuration.clock,
+      rtcp_receiver_(configuration.clock,
                      configuration.receiver_only,
                      configuration.rtcp_packet_type_counter_observer,
                      configuration.bandwidth_callback,
                      configuration.intra_frame_callback,
                      this),
       clock_(configuration.clock),
-      id_(configuration.id),
       audio_(configuration.audio),
       collision_detected_(false),
       last_process_time_(configuration.clock->TimeInMilliseconds()),

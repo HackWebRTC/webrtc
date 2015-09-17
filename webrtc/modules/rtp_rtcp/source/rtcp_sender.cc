@@ -132,13 +132,11 @@ class RTCPSender::PacketBuiltCallback
 };
 
 RTCPSender::RTCPSender(
-    int32_t id,
     bool audio,
     Clock* clock,
     ReceiveStatistics* receive_statistics,
     RtcpPacketTypeCounterObserver* packet_type_counter_observer)
-    : id_(id),
-      audio_(audio),
+    : audio_(audio),
       clock_(clock),
       method_(kRtcpOff),
       critical_section_transport_(
@@ -1119,7 +1117,7 @@ bool RTCPSender::PrepareReport(const FeedbackState& feedback_state,
 int32_t RTCPSender::SendToNetwork(const uint8_t* dataBuffer, size_t length) {
   CriticalSectionScoped lock(critical_section_transport_.get());
   if (cbTransport_) {
-    if (cbTransport_->SendRTCPPacket(id_, dataBuffer, length) > 0)
+    if (cbTransport_->SendRTCPPacket(dataBuffer, length) > 0)
       return 0;
   }
   return -1;
@@ -1218,18 +1216,17 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
 
   class Sender : public rtcp::RtcpPacket::PacketReadyCallback {
    public:
-    Sender(Transport* transport, int32_t id)
-        : transport_(transport), id_(id), send_failure_(false) {}
+    Sender(Transport* transport)
+        : transport_(transport), send_failure_(false) {}
 
     void OnPacketReady(uint8_t* data, size_t length) override {
-      if (transport_->SendRTCPPacket(id_, data, length) <= 0)
+      if (transport_->SendRTCPPacket(data, length) <= 0)
         send_failure_ = true;
     }
 
     Transport* const transport_;
-    int32_t id_;
     bool send_failure_;
-  } sender(cbTransport_, id_);
+  } sender(cbTransport_);
 
   uint8_t buffer[IP_PACKET_SIZE];
   return packet.BuildExternalBuffer(buffer, IP_PACKET_SIZE, &sender) &&

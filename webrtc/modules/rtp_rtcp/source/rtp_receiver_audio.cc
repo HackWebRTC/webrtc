@@ -20,17 +20,15 @@
 
 namespace webrtc {
 RTPReceiverStrategy* RTPReceiverStrategy::CreateAudioStrategy(
-    int32_t id, RtpData* data_callback,
+    RtpData* data_callback,
     RtpAudioFeedback* incoming_messages_callback) {
-  return new RTPReceiverAudio(id, data_callback, incoming_messages_callback);
+  return new RTPReceiverAudio(data_callback, incoming_messages_callback);
 }
 
-RTPReceiverAudio::RTPReceiverAudio(const int32_t id,
-                                   RtpData* data_callback,
+RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback,
                                    RtpAudioFeedback* incoming_messages_callback)
     : RTPReceiverStrategy(data_callback),
       TelephoneEventHandler(),
-      id_(id),
       last_received_frequency_(8000),
       telephone_event_forward_to_decoder_(false),
       telephone_event_payload_type_(-1),
@@ -263,16 +261,13 @@ int RTPReceiverAudio::Energy(uint8_t array_of_energy[kRtpCsrcSize]) const {
 
 int32_t RTPReceiverAudio::InvokeOnInitializeDecoder(
     RtpFeedback* callback,
-    int32_t id,
     int8_t payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const PayloadUnion& specific_payload) const {
-  if (-1 == callback->OnInitializeDecoder(id,
-                                          payload_type,
-                                          payload_name,
-                                          specific_payload.Audio.frequency,
-                                          specific_payload.Audio.channels,
-                                          specific_payload.Audio.rate)) {
+  if (-1 ==
+      callback->OnInitializeDecoder(
+          payload_type, payload_name, specific_payload.Audio.frequency,
+          specific_payload.Audio.channels, specific_payload.Audio.rate)) {
     LOG(LS_ERROR) << "Failed to create decoder for payload type: "
                   << payload_name << "/" << static_cast<int>(payload_type);
     return -1;

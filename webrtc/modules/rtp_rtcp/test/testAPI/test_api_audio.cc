@@ -61,8 +61,7 @@ class VerifyingAudioReceiver : public NullRtpData {
 
 class RTPCallback : public NullRtpFeedback {
  public:
-  int32_t OnInitializeDecoder(const int32_t id,
-                              const int8_t payloadType,
+  int32_t OnInitializeDecoder(const int8_t payloadType,
                               const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                               const int frequency,
                               const uint8_t channels,
@@ -80,7 +79,6 @@ class RtpRtcpAudioTest : public ::testing::Test {
   RtpRtcpAudioTest() : fake_clock(123456) {
     test_CSRC[0] = 1234;
     test_CSRC[2] = 2345;
-    test_id = 123;
     test_ssrc = 3456;
     test_timestamp = 4567;
     test_sequence_number = 2345;
@@ -104,7 +102,6 @@ class RtpRtcpAudioTest : public ::testing::Test {
         RTPPayloadStrategy::CreateStrategy(true)));
 
     RtpRtcp::Configuration configuration;
-    configuration.id = test_id;
     configuration.audio = true;
     configuration.clock = &fake_clock;
     configuration.receive_statistics = receive_statistics1_.get();
@@ -113,18 +110,17 @@ class RtpRtcpAudioTest : public ::testing::Test {
 
     module1 = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_receiver1_.reset(RtpReceiver::CreateAudioReceiver(
-        test_id, &fake_clock, audioFeedback, data_receiver1, NULL,
+        &fake_clock, audioFeedback, data_receiver1, NULL,
         rtp_payload_registry1_.get()));
 
-    configuration.id = test_id + 1;
     configuration.receive_statistics = receive_statistics2_.get();
     configuration.outgoing_transport = transport2;
     configuration.audio_messages = audioFeedback;
 
     module2 = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_receiver2_.reset(RtpReceiver::CreateAudioReceiver(
-            test_id + 1, &fake_clock, audioFeedback, data_receiver2, NULL,
-            rtp_payload_registry2_.get()));
+        &fake_clock, audioFeedback, data_receiver2, NULL,
+        rtp_payload_registry2_.get()));
 
     transport1->SetSendModule(module2, rtp_payload_registry2_.get(),
                               rtp_receiver2_.get(), receive_statistics2_.get());
@@ -143,7 +139,6 @@ class RtpRtcpAudioTest : public ::testing::Test {
     delete rtp_callback;
   }
 
-  int test_id;
   RtpRtcp* module1;
   RtpRtcp* module2;
   rtc::scoped_ptr<ReceiveStatistics> receive_statistics1_;

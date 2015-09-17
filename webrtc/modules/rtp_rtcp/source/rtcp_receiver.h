@@ -29,8 +29,7 @@ class ModuleRtpRtcpImpl;
 class RTCPReceiver : public TMMBRHelp
 {
 public:
- RTCPReceiver(int32_t id,
-              Clock* clock,
+ RTCPReceiver(Clock* clock,
               bool receiver_only,
               RtcpPacketTypeCounterObserver* packet_type_counter_observer,
               RtcpBandwidthObserver* rtcp_bandwidth_observer,

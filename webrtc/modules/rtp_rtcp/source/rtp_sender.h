@@ -86,8 +86,7 @@ class RTPSenderInterface {
 
 class RTPSender : public RTPSenderInterface {
  public:
-  RTPSender(int32_t id,
-            bool audio,
+  RTPSender(bool audio,
             Clock* clock,
             Transport* transport,
             RtpAudioFeedback* audio_feedback,
@@ -387,8 +386,6 @@ class RTPSender : public RTPSenderInterface {
 
   rtc::scoped_ptr<BitrateAggregator> bitrates_;
   Bitrate total_bitrate_sent_;
-
-  int32_t id_;
 
   const bool audio_configured_;
   rtc::scoped_ptr<RTPSenderAudio> audio_;

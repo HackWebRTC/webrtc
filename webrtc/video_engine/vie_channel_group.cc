@@ -186,7 +186,6 @@ ChannelGroup::~ChannelGroup() {
 }
 
 bool ChannelGroup::CreateSendChannel(int channel_id,
-                                     int engine_id,
                                      Transport* transport,
                                      int number_of_cores,
                                      const std::vector<uint32_t>& ssrcs) {
@@ -198,7 +197,7 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
     return false;
   }
   ViEEncoder* encoder = vie_encoder.get();
-  if (!CreateChannel(channel_id, engine_id, transport, number_of_cores,
+  if (!CreateChannel(channel_id, transport, number_of_cores,
                      vie_encoder.release(), ssrcs.size(), true)) {
     return false;
   }
@@ -214,22 +213,20 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
 }
 
 bool ChannelGroup::CreateReceiveChannel(int channel_id,
-                                        int engine_id,
                                         Transport* transport,
                                         int number_of_cores) {
-  return CreateChannel(channel_id, engine_id, transport, number_of_cores,
+  return CreateChannel(channel_id, transport, number_of_cores,
                        nullptr, 1, false);
 }
 
 bool ChannelGroup::CreateChannel(int channel_id,
-                                 int engine_id,
                                  Transport* transport,
                                  int number_of_cores,
                                  ViEEncoder* vie_encoder,
                                  size_t max_rtp_streams,
                                  bool sender) {
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
-      channel_id, engine_id, number_of_cores, transport, process_thread_,
+      number_of_cores, transport, process_thread_,
       encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(), nullptr,
       remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),

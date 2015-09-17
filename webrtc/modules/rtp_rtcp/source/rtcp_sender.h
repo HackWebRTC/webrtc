@@ -73,8 +73,7 @@ public:
    ModuleRtpRtcpImpl* module;
  };
 
- RTCPSender(int32_t id,
-            bool audio,
+ RTCPSender(bool audio,
             Clock* clock,
             ReceiveStatistics* receive_statistics,
             RtcpPacketTypeCounterObserver* packet_type_counter_observer);
@@ -227,7 +226,6 @@ private:
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
 private:
- const int32_t id_;
  const bool audio_;
  Clock* const clock_;
  RTCPMethod method_ GUARDED_BY(critical_section_rtcp_sender_);

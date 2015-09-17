@@ -26,7 +26,6 @@
 using namespace webrtc;
 
 const int kVideoNackListSize = 30;
-const int kTestId = 123;
 const uint32_t kTestSsrc = 3456;
 const uint16_t kTestSequenceNumber = 2345;
 const uint32_t kTestNumberOfPackets = 1350;
@@ -57,7 +56,7 @@ class TestRtpFeedback : public NullRtpFeedback {
   TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
   virtual ~TestRtpFeedback() {}
 
-  void OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) override {
+  void OnIncomingSSRCChanged(const uint32_t ssrc) override {
     rtp_rtcp_->SetRemoteSSRC(ssrc);
   }
 
@@ -96,7 +95,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     packet_loss_ = 0;
   }
 
-  int SendPacket(int channel, const void* data, size_t len) override {
+  int SendPacket(const void* data, size_t len) override {
     count_++;
     const unsigned char* ptr = static_cast<const unsigned  char*>(data);
     uint32_t ssrc = (ptr[8] << 24) + (ptr[9] << 16) + (ptr[10] << 8) + ptr[11];
@@ -155,7 +154,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     return static_cast<int>(len);
   }
 
-  int SendRTCPPacket(int channel, const void* data, size_t len) override {
+  int SendRTCPPacket(const void* data, size_t len) override {
     if (module_->IncomingRtcpPacket((const uint8_t*)data, len) == 0) {
       return static_cast<int>(len);
     }
@@ -186,7 +185,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
   void SetUp() override {
     RtpRtcp::Configuration configuration;
-    configuration.id = kTestId;
     configuration.audio = false;
     configuration.clock = &fake_clock;
     receive_statistics_.reset(ReceiveStatistics::Create(&fake_clock));
@@ -197,7 +195,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     rtp_feedback_.reset(new TestRtpFeedback(rtp_rtcp_module_));
 
     rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
-        kTestId, &fake_clock, &receiver_, rtp_feedback_.get(),
+        &fake_clock, &receiver_, rtp_feedback_.get(),
         &rtp_payload_registry_));
 
     rtp_rtcp_module_->SetSSRC(kTestSsrc);

@@ -199,10 +199,10 @@ class TestTransport : public Transport,
  public:
   TestTransport() {}
 
-  int SendPacket(int /*ch*/, const void* /*data*/, size_t /*len*/) override {
+  int SendPacket(const void* /*data*/, size_t /*len*/) override {
     return -1;
   }
-  int SendRTCPPacket(int /*ch*/, const void* data, size_t len) override {
+  int SendRTCPPacket(const void* data, size_t len) override {
     parser_.Parse(static_cast<const uint8_t*>(data), len);
     return static_cast<int>(len);
   }
@@ -225,14 +225,13 @@ class RtcpSenderTest : public ::testing::Test {
       : clock_(1335900000),
         receive_statistics_(ReceiveStatistics::Create(&clock_)) {
     RtpRtcp::Configuration configuration;
-    configuration.id = 0;
     configuration.audio = false;
     configuration.clock = &clock_;
     configuration.outgoing_transport = &test_transport_;
 
     rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
-    rtcp_sender_.reset(new RTCPSender(configuration.id, false, &clock_,
-                                      receive_statistics_.get(), nullptr));
+    rtcp_sender_.reset(
+        new RTCPSender(false, &clock_, receive_statistics_.get(), nullptr));
     rtcp_sender_->SetSSRC(kSenderSsrc);
     rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
     EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(&test_transport_));
@@ -669,7 +668,7 @@ TEST_F(RtcpSenderTest, TestSendTimeOfXrRrtr) {
 TEST_F(RtcpSenderTest, TestRegisterRtcpPacketTypeObserver) {
   RtcpPacketTypeCounterObserverImpl observer;
   rtcp_sender_.reset(
-      new RTCPSender(0, false, &clock_, receive_statistics_.get(), &observer));
+      new RTCPSender(false, &clock_, receive_statistics_.get(), &observer));
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
   EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(&test_transport_));
   rtcp_sender_->SetRTCPStatus(kRtcpNonCompound);

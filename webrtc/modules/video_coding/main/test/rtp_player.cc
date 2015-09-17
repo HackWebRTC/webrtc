@@ -217,11 +217,10 @@ class SsrcHandlers {
 
     RtpRtcp::Configuration configuration;
     configuration.clock = clock;
-    configuration.id = 1;
     configuration.audio = false;
     handler->rtp_module_.reset(RtpReceiver::CreateVideoReceiver(
-        configuration.id, configuration.clock, handler->payload_sink_.get(),
-        NULL, handler->rtp_payload_registry_.get()));
+        configuration.clock, handler->payload_sink_.get(), NULL,
+        handler->rtp_payload_registry_.get()));
     if (handler->rtp_module_.get() == NULL) {
       return -1;
     }

@@ -140,7 +140,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       channel_group_(channel_group),
       channel_id_(channel_id) {
   RTC_CHECK(channel_group_->CreateReceiveChannel(
-      channel_id_, 0, &transport_adapter_, num_cpu_cores));
+      channel_id_, &transport_adapter_, num_cpu_cores));
 
   vie_channel_ = channel_group_->GetChannel(channel_id_);
 

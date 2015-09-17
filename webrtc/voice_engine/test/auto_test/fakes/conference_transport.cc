@@ -108,14 +108,13 @@ ConferenceTransport::~ConferenceTransport() {
   EXPECT_TRUE(webrtc::VoiceEngine::Delete(local_voe_));
 }
 
-int ConferenceTransport::SendPacket(int channel, const void* data, size_t len) {
-  StorePacket(Packet::Rtp, channel, data, len);
+int ConferenceTransport::SendPacket(const void* data, size_t len) {
+  StorePacket(Packet::Rtp, data, len);
   return static_cast<int>(len);
 }
 
-int ConferenceTransport::SendRTCPPacket(int channel, const void* data,
-                                        size_t len) {
-  StorePacket(Packet::Rtcp, channel, data, len);
+int ConferenceTransport::SendRTCPPacket(const void* data, size_t len) {
+  StorePacket(Packet::Rtcp, data, len);
   return static_cast<int>(len);
 }
 
@@ -129,11 +128,12 @@ int ConferenceTransport::GetReceiverChannelForSsrc(unsigned int sender_ssrc)
   return -1;
 }
 
-void ConferenceTransport::StorePacket(Packet::Type type, int channel,
-                                      const void* data, size_t len) {
+void ConferenceTransport::StorePacket(Packet::Type type,
+                                      const void* data,
+                                      size_t len) {
   {
     webrtc::CriticalSectionScoped lock(pq_crit_.get());
-    packet_queue_.push_back(Packet(type, channel, data, len, rtc::Time()));
+    packet_queue_.push_back(Packet(type, data, len, rtc::Time()));
   }
   packet_event_->Set();
 }

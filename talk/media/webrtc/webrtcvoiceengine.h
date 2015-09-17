@@ -333,13 +333,13 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                          VoiceMediaChannel::Error* error) override;
 
   // implements Transport interface
-  int SendPacket(int channel, const void* data, size_t len) override {
+  int SendPacket(const void* data, size_t len) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
     return VoiceMediaChannel::SendPacket(&packet) ? static_cast<int>(len) : -1;
   }
 
-  int SendRTCPPacket(int channel, const void* data, size_t len) override {
+  int SendRTCPPacket(const void* data, size_t len) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
     return VoiceMediaChannel::SendRtcp(&packet) ? static_cast<int>(len) : -1;

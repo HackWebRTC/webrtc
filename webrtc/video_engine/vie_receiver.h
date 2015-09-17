@@ -36,7 +36,7 @@ struct ReceiveBandwidthEstimatorStats;
 
 class ViEReceiver : public RtpData {
  public:
-  ViEReceiver(const int32_t channel_id, VideoCodingModule* module_vcm,
+  ViEReceiver(VideoCodingModule* module_vcm,
               RemoteBitrateEstimator* remote_bitrate_estimator,
               RtpFeedback* rtp_feedback);
   ~ViEReceiver();

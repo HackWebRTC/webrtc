@@ -57,7 +57,6 @@ class RtpRtcp : public Module {
     *  paced_sender             - Spread any bursts of packets into smaller
     *                             bursts to minimize packet loss.
     */
-    int32_t id;
     bool audio;
     bool receiver_only;
     Clock* clock;

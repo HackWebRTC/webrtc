@@ -30,7 +30,7 @@ void LoopBackTransport::DropEveryNthPacket(int n) {
   packet_loss_ = n;
 }
 
-int LoopBackTransport::SendPacket(int channel, const void* data, size_t len) {
+int LoopBackTransport::SendPacket(const void* data, size_t len) {
   count_++;
   if (packet_loss_ > 0) {
     if ((count_ % packet_loss_) == 0) {
@@ -56,9 +56,7 @@ int LoopBackTransport::SendPacket(int channel, const void* data, size_t len) {
   return len;
 }
 
-int LoopBackTransport::SendRTCPPacket(int channel,
-                                      const void* data,
-                                      size_t len) {
+int LoopBackTransport::SendRTCPPacket(const void* data, size_t len) {
   if (rtp_rtcp_module_->IncomingRtcpPacket((const uint8_t*)data, len) < 0) {
     return -1;
   }
@@ -82,7 +80,6 @@ class RtpRtcpAPITest : public ::testing::Test {
   RtpRtcpAPITest() : fake_clock_(123456) {
     test_csrcs_.push_back(1234);
     test_csrcs_.push_back(2345);
-    test_id = 123;
     test_ssrc_ = 3456;
     test_timestamp_ = 4567;
     test_sequence_number_ = 2345;
@@ -91,17 +88,15 @@ class RtpRtcpAPITest : public ::testing::Test {
 
   void SetUp() override {
     RtpRtcp::Configuration configuration;
-    configuration.id = test_id;
     configuration.audio = true;
     configuration.clock = &fake_clock_;
     module_.reset(RtpRtcp::CreateRtpRtcp(configuration));
     rtp_payload_registry_.reset(new RTPPayloadRegistry(
             RTPPayloadStrategy::CreateStrategy(true)));
     rtp_receiver_.reset(RtpReceiver::CreateAudioReceiver(
-        test_id, &fake_clock_, NULL, NULL, NULL, rtp_payload_registry_.get()));
+        &fake_clock_, NULL, NULL, NULL, rtp_payload_registry_.get()));
   }
 
-  int test_id;
   rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
   rtc::scoped_ptr<RtpRtcp> module_;

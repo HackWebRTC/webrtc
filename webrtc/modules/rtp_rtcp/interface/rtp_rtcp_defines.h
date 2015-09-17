@@ -242,28 +242,24 @@ public:
     *   channels    - number of channels in codec (1 = mono, 2 = stereo)
     */
     virtual int32_t OnInitializeDecoder(
-        const int32_t id,
         const int8_t payloadType,
         const char payloadName[RTP_PAYLOAD_NAME_SIZE],
         const int frequency,
         const uint8_t channels,
         const uint32_t rate) = 0;
 
-    virtual void OnIncomingSSRCChanged( const int32_t id,
-                                        const uint32_t ssrc) = 0;
+    virtual void OnIncomingSSRCChanged(const uint32_t ssrc) = 0;
 
-    virtual void OnIncomingCSRCChanged( const int32_t id,
-                                        const uint32_t CSRC,
-                                        const bool added) = 0;
+    virtual void OnIncomingCSRCChanged(const uint32_t CSRC,
+                                       const bool added) = 0;
 };
 
 class RtpAudioFeedback {
  public:
-
-  virtual void OnPlayTelephoneEvent(const int32_t id,
-                                    const uint8_t event,
+  virtual void OnPlayTelephoneEvent(const uint8_t event,
                                     const uint16_t lengthMs,
                                     const uint8_t volume) = 0;
+
  protected:
   virtual ~RtpAudioFeedback() {}
 };
@@ -348,8 +344,7 @@ class NullRtpFeedback : public RtpFeedback {
  public:
   virtual ~NullRtpFeedback() {}
 
-  int32_t OnInitializeDecoder(const int32_t id,
-                              const int8_t payloadType,
+  int32_t OnInitializeDecoder(const int8_t payloadType,
                               const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                               const int frequency,
                               const uint8_t channels,
@@ -357,11 +352,8 @@ class NullRtpFeedback : public RtpFeedback {
     return 0;
   }
 
-  void OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) override {}
-
-  void OnIncomingCSRCChanged(const int32_t id,
-                             const uint32_t CSRC,
-                             const bool added) override {}
+  void OnIncomingSSRCChanged(const uint32_t ssrc) override {}
+  void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override {}
 };
 
 // Null object version of RtpData.
@@ -385,8 +377,7 @@ class NullRtpAudioFeedback : public RtpAudioFeedback {
  public:
   virtual ~NullRtpAudioFeedback() {}
 
-  void OnPlayTelephoneEvent(const int32_t id,
-                            const uint8_t event,
+  void OnPlayTelephoneEvent(const uint8_t event,
                             const uint16_t lengthMs,
                             const uint8_t volume) override {}
 };

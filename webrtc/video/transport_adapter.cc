@@ -20,9 +20,7 @@ TransportAdapter::TransportAdapter(newapi::Transport* transport)
   RTC_DCHECK(nullptr != transport);
 }
 
-int TransportAdapter::SendPacket(int /*channel*/,
-                                 const void* packet,
-                                 size_t length) {
+int TransportAdapter::SendPacket(const void* packet, size_t length) {
   if (enabled_.Value() == 0)
     return false;
 
@@ -31,9 +29,7 @@ int TransportAdapter::SendPacket(int /*channel*/,
   return success ? static_cast<int>(length) : -1;
 }
 
-int TransportAdapter::SendRTCPPacket(int /*channel*/,
-                                     const void* packet,
-                                     size_t length) {
+int TransportAdapter::SendRTCPPacket(const void* packet, size_t length) {
   if (enabled_.Value() == 0)
     return false;
 

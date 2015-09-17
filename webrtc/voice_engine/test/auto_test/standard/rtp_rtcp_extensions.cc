@@ -28,7 +28,7 @@ class ExtensionVerifyTransport : public webrtc::Transport {
         audio_level_id_(-1),
         absolute_sender_time_id_(-1) {}
 
-  int SendPacket(int channel, const void* data, size_t len) override {
+  int SendPacket(const void* data, size_t len) override {
     webrtc::RTPHeader header;
     if (parser_->Parse(reinterpret_cast<const uint8_t*>(data), len, &header)) {
       bool ok = true;
@@ -51,7 +51,7 @@ class ExtensionVerifyTransport : public webrtc::Transport {
     return static_cast<int>(len);
   }
 
-  int SendRTCPPacket(int channel, const void* data, size_t len) override {
+  int SendRTCPPacket(const void* data, size_t len) override {
     return static_cast<int>(len);
   }
 

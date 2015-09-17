@@ -33,8 +33,7 @@ namespace webrtc {
 
 static const int kPacketLogIntervalMs = 10000;
 
-ViEReceiver::ViEReceiver(const int32_t channel_id,
-                         VideoCodingModule* module_vcm,
+ViEReceiver::ViEReceiver(VideoCodingModule* module_vcm,
                          RemoteBitrateEstimator* remote_bitrate_estimator,
                          RtpFeedback* rtp_feedback)
     : receive_cs_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -43,8 +42,7 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
       rtp_payload_registry_(
           new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false))),
       rtp_receiver_(
-          RtpReceiver::CreateVideoReceiver(channel_id,
-                                           clock_,
+          RtpReceiver::CreateVideoReceiver(clock_,
                                            this,
                                            rtp_feedback,
                                            rtp_payload_registry_.get())),

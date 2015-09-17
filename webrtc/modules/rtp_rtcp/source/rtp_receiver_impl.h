@@ -25,8 +25,7 @@ class RtpReceiverImpl : public RtpReceiver {
   // Callbacks passed in here may not be NULL (use Null Object callbacks if you
   // want callbacks to do nothing). This class takes ownership of the media
   // receiver but nothing else.
-  RtpReceiverImpl(int32_t id,
-                  Clock* clock,
+  RtpReceiverImpl(Clock* clock,
                   RtpAudioFeedback* incoming_audio_messages_callback,
                   RtpFeedback* incoming_messages_callback,
                   RTPPayloadRegistry* rtp_payload_registry,
@@ -78,8 +77,6 @@ class RtpReceiverImpl : public RtpReceiver {
   Clock* clock_;
   RTPPayloadRegistry* rtp_payload_registry_;
   rtc::scoped_ptr<RTPReceiverStrategy> rtp_media_receiver_;
-
-  int32_t id_;
 
   RtpFeedback* cb_rtp_feedback_;
 

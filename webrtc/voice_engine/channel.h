@@ -364,24 +364,22 @@ public:
                            size_t packet_length) override;
 
     // From RtpFeedback in the RTP/RTCP module
-    int32_t OnInitializeDecoder(int32_t id,
-                                int8_t payloadType,
+    int32_t OnInitializeDecoder(int8_t payloadType,
                                 const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                                 int frequency,
                                 uint8_t channels,
                                 uint32_t rate) override;
-    void OnIncomingSSRCChanged(int32_t id, uint32_t ssrc) override;
-    void OnIncomingCSRCChanged(int32_t id, uint32_t CSRC, bool added) override;
+    void OnIncomingSSRCChanged(uint32_t ssrc) override;
+    void OnIncomingCSRCChanged(uint32_t CSRC, bool added) override;
 
     // From RtpAudioFeedback in the RTP/RTCP module
-    void OnPlayTelephoneEvent(int32_t id,
-                              uint8_t event,
+    void OnPlayTelephoneEvent(uint8_t event,
                               uint16_t lengthMs,
                               uint8_t volume) override;
 
     // From Transport (called by the RTP/RTCP module)
-    int SendPacket(int /*channel*/, const void* data, size_t len) override;
-    int SendRTCPPacket(int /*channel*/, const void* data, size_t len) override;
+    int SendPacket(const void* data, size_t len) override;
+    int SendRTCPPacket(const void* data, size_t len) override;
 
     // From MixerParticipant
     int32_t GetAudioFrame(int32_t id, AudioFrame* audioFrame) override;

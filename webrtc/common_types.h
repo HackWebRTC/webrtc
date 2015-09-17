@@ -166,15 +166,14 @@ enum FrameType
 };
 
 // External transport callback interface
-class Transport
-{
-public:
-    virtual int SendPacket(int channel, const void *data, size_t len) = 0;
-    virtual int SendRTCPPacket(int channel, const void *data, size_t len) = 0;
+class Transport {
+ public:
+  virtual int SendPacket(const void* data, size_t len) = 0;
+  virtual int SendRTCPPacket(const void* data, size_t len) = 0;
 
-protected:
-    virtual ~Transport() {}
-    Transport() {}
+ protected:
+  virtual ~Transport() {}
+  Transport() {}
 };
 
 // Statistics for an RTCP channel

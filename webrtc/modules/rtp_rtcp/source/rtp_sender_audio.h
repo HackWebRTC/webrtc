@@ -22,10 +22,9 @@ namespace webrtc {
 class RTPSenderAudio: public DTMFqueue
 {
 public:
-    RTPSenderAudio(const int32_t id,
-                   Clock* clock,
-                   RTPSender* rtpSender,
-                   RtpAudioFeedback* audio_feedback);
+ RTPSenderAudio(Clock* clock,
+                RTPSender* rtpSender,
+                RtpAudioFeedback* audio_feedback);
     virtual ~RTPSenderAudio();
 
     int32_t RegisterAudioPayload(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
@@ -73,7 +72,6 @@ protected:
                    const int8_t payloadType);
 
 private:
- const int32_t _id;
  Clock* const _clock;
  RTPSender* const _rtpSender;
  RtpAudioFeedback* const _audioFeedback;

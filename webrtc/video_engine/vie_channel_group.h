@@ -44,12 +44,10 @@ class ChannelGroup : public BitrateObserver {
   explicit ChannelGroup(ProcessThread* process_thread);
   ~ChannelGroup();
   bool CreateSendChannel(int channel_id,
-                         int engine_id,
                          Transport* transport,
                          int number_of_cores,
                          const std::vector<uint32_t>& ssrcs);
   bool CreateReceiveChannel(int channel_id,
-                            int engine_id,
                             Transport* transport,
                             int number_of_cores);
   void DeleteChannel(int channel_id);
@@ -75,7 +73,6 @@ class ChannelGroup : public BitrateObserver {
   typedef std::map<int, ViEEncoder*> EncoderMap;
 
   bool CreateChannel(int channel_id,
-                     int engine_id,
                      Transport* transport,
                      int number_of_cores,
                      ViEEncoder* vie_encoder,

@@ -65,9 +65,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   friend class ChannelStatsObserver;
   friend class ViEChannelProtectionCallback;
 
-  ViEChannel(int32_t channel_id,
-             int32_t engine_id,
-             uint32_t number_of_cores,
+  ViEChannel(uint32_t number_of_cores,
              Transport* transport,
              ProcessThread* module_process_thread,
              RtcpIntraFrameObserver* intra_frame_observer,
@@ -192,18 +190,13 @@ class ViEChannel : public VCMFrameTypeCallback,
   void RegisterSendBitrateObserver(BitrateStatisticsObserver* observer);
 
   // Implements RtpFeedback.
-  virtual int32_t OnInitializeDecoder(
-      const int32_t id,
-      const int8_t payload_type,
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const int frequency,
-      const uint8_t channels,
-      const uint32_t rate);
-  virtual void OnIncomingSSRCChanged(const int32_t id,
-                                     const uint32_t ssrc);
-  virtual void OnIncomingCSRCChanged(const int32_t id,
-                                     const uint32_t CSRC,
-                                     const bool added);
+  int32_t OnInitializeDecoder(const int8_t payload_type,
+                              const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+                              const int frequency,
+                              const uint8_t channels,
+                              const uint32_t rate) override;
+  void OnIncomingSSRCChanged(const uint32_t ssrc) override;
+  void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override;
 
   int32_t SetRemoteSSRCType(const StreamType usage, const uint32_t SSRC);
 
@@ -296,7 +289,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
  private:
   static std::vector<RtpRtcp*> CreateRtpRtcpModules(
-      int32_t id,
       bool receiver_only,
       ReceiveStatistics* receive_statistics,
       Transport* outgoing_transport,
@@ -410,8 +402,6 @@ class ViEChannel : public VCMFrameTypeCallback,
         GUARDED_BY(critsect_);
   } rtcp_packet_type_counter_observer_;
 
-  const int32_t channel_id_;
-  const int32_t engine_id_;
   const uint32_t number_of_cores_;
   const bool sender_;
 

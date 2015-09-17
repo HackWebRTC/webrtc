@@ -118,8 +118,8 @@ VideoSendStream::VideoSendStream(
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
   RTC_DCHECK(!config_.rtp.ssrcs.empty());
-  RTC_CHECK(channel_group->CreateSendChannel(
-      channel_id_, 0, &transport_adapter_, num_cpu_cores, config_.rtp.ssrcs));
+  RTC_CHECK(channel_group->CreateSendChannel(channel_id_, &transport_adapter_,
+                                             num_cpu_cores, config_.rtp.ssrcs));
   vie_channel_ = channel_group_->GetChannel(channel_id_);
   vie_encoder_ = channel_group_->GetEncoder(channel_id_);
 

@@ -218,14 +218,10 @@ Channel::OnRxVadDetected(int vadDecision)
 }
 
 int
-Channel::SendPacket(int channel, const void *data, size_t len)
+Channel::SendPacket(const void *data, size_t len)
 {
-    channel = VoEChannelId(channel);
-    assert(channel == _channelId);
-
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::SendPacket(channel=%d, len=%" PRIuS ")", channel,
-                 len);
+                 "Channel::SendPacket(channel=%d, len=%" PRIuS ")", len);
 
     CriticalSectionScoped cs(&_callbackCritSect);
 
@@ -240,8 +236,7 @@ Channel::SendPacket(int channel, const void *data, size_t len)
     uint8_t* bufferToSendPtr = (uint8_t*)data;
     size_t bufferLength = len;
 
-    int n = _transportPtr->SendPacket(channel, bufferToSendPtr,
-                                      bufferLength);
+    int n = _transportPtr->SendPacket(bufferToSendPtr, bufferLength);
     if (n < 0) {
       std::string transport_name =
           _externalTransport ? "external transport" : "WebRtc sockets";
@@ -255,14 +250,10 @@ Channel::SendPacket(int channel, const void *data, size_t len)
 }
 
 int
-Channel::SendRTCPPacket(int channel, const void *data, size_t len)
+Channel::SendRTCPPacket(const void *data, size_t len)
 {
-    channel = VoEChannelId(channel);
-    assert(channel == _channelId);
-
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::SendRTCPPacket(channel=%d, len=%" PRIuS ")", channel,
-                 len);
+                 "Channel::SendRTCPPacket(len=%" PRIuS ")", len);
 
     CriticalSectionScoped cs(&_callbackCritSect);
     if (_transportPtr == NULL)
@@ -277,9 +268,7 @@ Channel::SendRTCPPacket(int channel, const void *data, size_t len)
     uint8_t* bufferToSendPtr = (uint8_t*)data;
     size_t bufferLength = len;
 
-    int n = _transportPtr->SendRTCPPacket(channel,
-                                          bufferToSendPtr,
-                                          bufferLength);
+    int n = _transportPtr->SendRTCPPacket(bufferToSendPtr, bufferLength);
     if (n < 0) {
       std::string transport_name =
           _externalTransport ? "external transport" : "WebRtc sockets";
@@ -292,15 +281,12 @@ Channel::SendRTCPPacket(int channel, const void *data, size_t len)
     return n;
 }
 
-void
-Channel::OnPlayTelephoneEvent(int32_t id,
-                              uint8_t event,
-                              uint16_t lengthMs,
-                              uint8_t volume)
-{
+void Channel::OnPlayTelephoneEvent(uint8_t event,
+                                   uint16_t lengthMs,
+                                   uint8_t volume) {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::OnPlayTelephoneEvent(id=%d, event=%u, lengthMs=%u,"
-                 " volume=%u)", id, event, lengthMs, volume);
+                 "Channel::OnPlayTelephoneEvent(event=%u, lengthMs=%u,"
+                 " volume=%u)", event, lengthMs, volume);
 
     if (!_playOutbandDtmfEvent || (event > 15))
     {
@@ -317,40 +303,31 @@ Channel::OnPlayTelephoneEvent(int32_t id,
 }
 
 void
-Channel::OnIncomingSSRCChanged(int32_t id, uint32_t ssrc)
+Channel::OnIncomingSSRCChanged(uint32_t ssrc)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::OnIncomingSSRCChanged(id=%d, SSRC=%d)",
-                 id, ssrc);
+                 "Channel::OnIncomingSSRCChanged(SSRC=%d)", ssrc);
 
     // Update ssrc so that NTP for AV sync can be updated.
     _rtpRtcpModule->SetRemoteSSRC(ssrc);
 }
 
-void Channel::OnIncomingCSRCChanged(int32_t id,
-                                    uint32_t CSRC,
-                                    bool added)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::OnIncomingCSRCChanged(id=%d, CSRC=%d, added=%d)",
-                 id, CSRC, added);
+void Channel::OnIncomingCSRCChanged(uint32_t CSRC, bool added) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::OnIncomingCSRCChanged(CSRC=%d, added=%d)", CSRC,
+               added);
 }
 
-int32_t
-Channel::OnInitializeDecoder(
-    int32_t id,
+int32_t Channel::OnInitializeDecoder(
     int8_t payloadType,
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     int frequency,
     uint8_t channels,
-    uint32_t rate)
-{
+    uint32_t rate) {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::OnInitializeDecoder(id=%d, payloadType=%d, "
+                 "Channel::OnInitializeDecoder(payloadType=%d, "
                  "payloadName=%s, frequency=%u, channels=%u, rate=%u)",
-                 id, payloadType, payloadName, frequency, channels, rate);
-
-    assert(VoEChannelId(id) == _channelId);
+                 payloadType, payloadName, frequency, channels, rate);
 
     CodecInst receiveCodec = {0};
     CodecInst dummyCodec = {0};
@@ -732,8 +709,7 @@ Channel::Channel(int32_t channelId,
     rtp_receive_statistics_(
         ReceiveStatistics::Create(Clock::GetRealTimeClock())),
     rtp_receiver_(
-        RtpReceiver::CreateAudioReceiver(VoEModuleId(instanceId, channelId),
-                                         Clock::GetRealTimeClock(),
+        RtpReceiver::CreateAudioReceiver(Clock::GetRealTimeClock(),
                                          this,
                                          this,
                                          this,
@@ -823,7 +799,6 @@ Channel::Channel(int32_t channelId,
     _outputAudioLevel.Clear();
 
     RtpRtcp::Configuration configuration;
-    configuration.id = VoEModuleId(instanceId, channelId);
     configuration.audio = true;
     configuration.outgoing_transport = this;
     configuration.audio_messages = this;
@@ -3896,11 +3871,11 @@ Channel::SendPacketRaw(const void *data, size_t len, bool RTCP)
     }
     if (!RTCP)
     {
-        return _transportPtr->SendPacket(_channelId, data, len);
+        return _transportPtr->SendPacket(data, len);
     }
     else
     {
-        return _transportPtr->SendRTCPPacket(_channelId, data, len);
+        return _transportPtr->SendRTCPPacket(data, len);
     }
 }
 

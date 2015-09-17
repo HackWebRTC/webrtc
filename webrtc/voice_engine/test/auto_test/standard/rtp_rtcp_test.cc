@@ -63,7 +63,7 @@ class RtpRtcpTest : public AfterStreamingFixture {
     second_channel_ = voe_base_->CreateChannel();
     EXPECT_GE(second_channel_, 0);
 
-    transport_ = new LoopBackTransport(voe_network_);
+    transport_ = new LoopBackTransport(voe_network_, second_channel_);
     EXPECT_EQ(0, voe_network_->RegisterExternalTransport(second_channel_,
                                                          *transport_));
 

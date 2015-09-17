@@ -97,8 +97,7 @@ class BitrateAggregator {
   uint32_t ssrc_;
 };
 
-RTPSender::RTPSender(int32_t id,
-                     bool audio,
+RTPSender::RTPSender(bool audio,
                      Clock* clock,
                      Transport* transport,
                      RtpAudioFeedback* audio_feedback,
@@ -115,10 +114,8 @@ RTPSender::RTPSender(int32_t id,
                       TickTime::MillisecondTimestamp()),
       bitrates_(new BitrateAggregator(bitrate_callback)),
       total_bitrate_sent_(clock, bitrates_->total_bitrate_observer()),
-      id_(id),
       audio_configured_(audio),
-      audio_(audio ? new RTPSenderAudio(id, clock, this, audio_feedback)
-                   : nullptr),
+      audio_(audio ? new RTPSenderAudio(clock, this, audio_feedback) : nullptr),
       video_(audio ? nullptr : new RTPSenderVideo(clock, this)),
       paced_sender_(paced_sender),
       packet_router_(packet_router),
@@ -740,7 +737,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
 bool RTPSender::SendPacketToNetwork(const uint8_t *packet, size_t size) {
   int bytes_sent = -1;
   if (transport_) {
-    bytes_sent = transport_->SendPacket(id_, packet, size);
+    bytes_sent = transport_->SendPacket(packet, size);
   }
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "RTPSender::SendPacketToNetwork", "size", size, "sent",

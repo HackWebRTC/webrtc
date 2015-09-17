@@ -77,9 +77,7 @@ class ViEChannelProtectionCallback : public VCMProtectionCallback {
   ViEChannel* owner_;
 };
 
-ViEChannel::ViEChannel(int32_t channel_id,
-                       int32_t engine_id,
-                       uint32_t number_of_cores,
+ViEChannel::ViEChannel(uint32_t number_of_cores,
                        Transport* transport,
                        ProcessThread* module_process_thread,
                        RtcpIntraFrameObserver* intra_frame_observer,
@@ -91,9 +89,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
                        PacketRouter* packet_router,
                        size_t max_rtp_streams,
                        bool sender)
-    : channel_id_(channel_id),
-      engine_id_(engine_id),
-      number_of_cores_(number_of_cores),
+    : number_of_cores_(number_of_cores),
       sender_(sender),
       module_process_thread_(module_process_thread),
       crit_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -102,7 +98,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       vcm_(VideoCodingModule::Create(Clock::GetRealTimeClock(),
                                      nullptr,
                                      nullptr)),
-      vie_receiver_(channel_id, vcm_, remote_bitrate_estimator, this),
+      vie_receiver_(vcm_, remote_bitrate_estimator, this),
       vie_sync_(vcm_),
       stats_observer_(new ChannelStatsObserver(this)),
       receive_stats_callback_(nullptr),
@@ -121,8 +117,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       rtt_sum_ms_(0),
       num_rtts_(0),
       rtp_rtcp_modules_(
-          CreateRtpRtcpModules(ViEModuleId(engine_id_, channel_id_),
-                               !sender,
+          CreateRtpRtcpModules(!sender,
                                vie_receiver_.GetReceiveStatistics(),
                                transport,
                                sender ? intra_frame_observer_ : nullptr,
@@ -1023,11 +1018,11 @@ CallStatsObserver* ViEChannel::GetStatsObserver() {
 int32_t ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
   CriticalSectionScoped cs(crit_.get());
 
-
   if (pre_render_callback_ != NULL)
     pre_render_callback_->FrameCallback(&video_frame);
 
-  incoming_video_stream_->RenderFrame(channel_id_, video_frame);
+  // TODO(pbos): Remove stream id argument.
+  incoming_video_stream_->RenderFrame(0xFFFFFFFF, video_frame);
   return 0;
 }
 
@@ -1134,7 +1129,6 @@ int ViEChannel::ProtectionRequest(const FecProtectionParams* delta_fec_params,
 }
 
 std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
-    int32_t id,
     bool receiver_only,
     ReceiveStatistics* receive_statistics,
     Transport* outgoing_transport,
@@ -1153,7 +1147,6 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
   RTC_DCHECK_GT(num_modules, 0u);
   RtpRtcp::Configuration configuration;
   ReceiveStatistics* null_receive_statistics = configuration.receive_statistics;
-  configuration.id = id;
   configuration.audio = false;
   configuration.receiver_only = receiver_only;
   configuration.receive_statistics = receive_statistics;
@@ -1231,7 +1224,6 @@ void ViEChannel::RegisterPreDecodeImageCallback(
 // TODO(pbos): Remove OnInitializeDecoder which is called from the RTP module,
 // any decoder resetting should be handled internally within the VCM.
 int32_t ViEChannel::OnInitializeDecoder(
-    const int32_t id,
     const int8_t payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int frequency,
@@ -1244,17 +1236,11 @@ int32_t ViEChannel::OnInitializeDecoder(
   return 0;
 }
 
-void ViEChannel::OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) {
-  RTC_DCHECK_EQ(channel_id_, ChannelId(id));
+void ViEChannel::OnIncomingSSRCChanged(const uint32_t ssrc) {
   rtp_rtcp_modules_[0]->SetRemoteSSRC(ssrc);
 }
 
-void ViEChannel::OnIncomingCSRCChanged(const int32_t id,
-                                       const uint32_t CSRC,
-                                       const bool added) {
-  RTC_DCHECK_EQ(channel_id_, ChannelId(id));
-  CriticalSectionScoped cs(crit_.get());
-}
+void ViEChannel::OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) {}
 
 void ViEChannel::RegisterSendFrameCountObserver(
     FrameCountObserver* observer) {

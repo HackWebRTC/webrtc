@@ -353,7 +353,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   bool TimeToSendFullNackList(int64_t now) const;
 
-  int32_t id_;
   const bool audio_;
   bool collision_detected_;
   int64_t last_process_time_;

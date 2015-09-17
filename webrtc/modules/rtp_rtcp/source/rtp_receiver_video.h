@@ -49,7 +49,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
 
   int32_t InvokeOnInitializeDecoder(
       RtpFeedback* callback,
-      int32_t id,
       int8_t payload_type,
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const PayloadUnion& specific_payload) const override;

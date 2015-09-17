@@ -35,8 +35,8 @@ class LoopBackTransport : public webrtc::Transport {
                      RtpReceiver* receiver,
                      ReceiveStatistics* receive_statistics);
   void DropEveryNthPacket(int n);
-  int SendPacket(int channel, const void* data, size_t len) override;
-  int SendRTCPPacket(int channel, const void* data, size_t len) override;
+  int SendPacket(const void* data, size_t len) override;
+  int SendRTCPPacket(const void* data, size_t len) override;
 
  private:
   int count_;

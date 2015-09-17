@@ -28,8 +28,7 @@ class CriticalSectionWrapper;
 class RTPReceiverAudio : public RTPReceiverStrategy,
                          public TelephoneEventHandler {
  public:
-  RTPReceiverAudio(const int32_t id,
-                   RtpData* data_callback,
+  RTPReceiverAudio(RtpData* data_callback,
                    RtpAudioFeedback* incoming_messages_callback);
   virtual ~RTPReceiverAudio() {}
 
@@ -74,7 +73,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
 
   int32_t InvokeOnInitializeDecoder(
       RtpFeedback* callback,
-      int32_t id,
       int8_t payload_type,
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const PayloadUnion& specific_payload) const override;
@@ -105,8 +103,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
       size_t payload_length,
       const AudioPayload& audio_specific,
       bool is_red);
-
-  int32_t id_;
 
   uint32_t last_received_frequency_;
 

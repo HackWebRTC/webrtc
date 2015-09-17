@@ -39,15 +39,12 @@ class TestTransport : public Transport,
   void SetRTCPReceiver(RTCPReceiver* rtcp_receiver) {
     rtcp_receiver_ = rtcp_receiver;
   }
-  int SendPacket(int /*ch*/, const void* /*data*/, size_t /*len*/) override {
+  int SendPacket(const void* /*data*/, size_t /*len*/) override {
     ADD_FAILURE();  // FAIL() gives a compile error.
     return -1;
   }
 
-  // Injects an RTCP packet into the receiver.
-  int SendRTCPPacket(int /* ch */,
-                     const void* packet,
-                     size_t packet_len) override {
+  int SendRTCPPacket(const void* packet, size_t packet_len) override {
     ADD_FAILURE();
     return 0;
   }
@@ -76,14 +73,13 @@ class RtcpReceiverTest : public ::testing::Test {
     test_transport_ = new TestTransport();
 
     RtpRtcp::Configuration configuration;
-    configuration.id = 0;
     configuration.audio = false;
     configuration.clock = &system_clock_;
     configuration.outgoing_transport = test_transport_;
     configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
-    rtcp_receiver_ = new RTCPReceiver(0, &system_clock_, false, NULL, NULL,
-                                      NULL, rtp_rtcp_impl_);
+    rtcp_receiver_ = new RTCPReceiver(&system_clock_, false, NULL, NULL, NULL,
+                                      rtp_rtcp_impl_);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
   }
   ~RtcpReceiverTest() {

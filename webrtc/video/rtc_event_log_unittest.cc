@@ -295,8 +295,7 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
   RTC_CHECK_GE(packet_size, 16 + 4 * csrcs_count + 4 * kNumExtensions);
   Clock* clock = Clock::GetRealTimeClock();
 
-  RTPSender rtp_sender(0,         // int32_t id
-                       false,     // bool audio
+  RTPSender rtp_sender(false,     // bool audio
                        clock,     // Clock* clock
                        nullptr,   // Transport*
                        nullptr,   // RtpAudioFeedback*

@@ -1931,10 +1931,7 @@ int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
     return -1;
 }
 
-int UdpTransportImpl::SendPacket(int /*channel*/,
-                                 const void* data,
-                                 size_t length)
-{
+int UdpTransportImpl::SendPacket(const void* data, size_t length) {
     WEBRTC_TRACE(kTraceStream, kTraceTransport, _id, "%s", __FUNCTION__);
 
     CriticalSectionScoped cs(_crit);
@@ -2000,10 +1997,7 @@ int UdpTransportImpl::SendPacket(int /*channel*/,
     return -1;
 }
 
-int UdpTransportImpl::SendRTCPPacket(int /*channel*/, const void* data,
-                                     size_t length)
-{
-
+int UdpTransportImpl::SendRTCPPacket(const void* data, size_t length) {
     CriticalSectionScoped cs(_crit);
     if(_destIP[0] == 0)
     {
