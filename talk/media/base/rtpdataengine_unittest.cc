@@ -176,22 +176,29 @@ TEST_F(RtpDataMediaChannelTest, SetUnknownCodecs) {
   unknown_codec.id = 104;
   unknown_codec.name = "unknown-data";
 
-  std::vector<cricket::DataCodec> known_codecs;
-  known_codecs.push_back(known_codec);
+  cricket::DataSendParameters send_parameters_known;
+  send_parameters_known.codecs.push_back(known_codec);
+  cricket::DataRecvParameters recv_parameters_known;
+  recv_parameters_known.codecs.push_back(known_codec);
 
-  std::vector<cricket::DataCodec> unknown_codecs;
-  unknown_codecs.push_back(unknown_codec);
+  cricket::DataSendParameters send_parameters_unknown;
+  send_parameters_unknown.codecs.push_back(unknown_codec);
+  cricket::DataRecvParameters recv_parameters_unknown;
+  recv_parameters_unknown.codecs.push_back(unknown_codec);
 
-  std::vector<cricket::DataCodec> mixed_codecs;
-  mixed_codecs.push_back(known_codec);
-  mixed_codecs.push_back(unknown_codec);
+  cricket::DataSendParameters send_parameters_mixed;
+  send_parameters_mixed.codecs.push_back(known_codec);
+  send_parameters_mixed.codecs.push_back(unknown_codec);
+  cricket::DataRecvParameters recv_parameters_mixed;
+  recv_parameters_mixed.codecs.push_back(known_codec);
+  recv_parameters_mixed.codecs.push_back(unknown_codec);
 
-  EXPECT_TRUE(dmc->SetSendCodecs(known_codecs));
-  EXPECT_FALSE(dmc->SetSendCodecs(unknown_codecs));
-  EXPECT_TRUE(dmc->SetSendCodecs(mixed_codecs));
-  EXPECT_TRUE(dmc->SetRecvCodecs(known_codecs));
-  EXPECT_FALSE(dmc->SetRecvCodecs(unknown_codecs));
-  EXPECT_FALSE(dmc->SetRecvCodecs(mixed_codecs));
+  EXPECT_TRUE(dmc->SetSendParameters(send_parameters_known));
+  EXPECT_FALSE(dmc->SetSendParameters(send_parameters_unknown));
+  EXPECT_TRUE(dmc->SetSendParameters(send_parameters_mixed));
+  EXPECT_TRUE(dmc->SetRecvParameters(recv_parameters_known));
+  EXPECT_FALSE(dmc->SetRecvParameters(recv_parameters_unknown));
+  EXPECT_FALSE(dmc->SetRecvParameters(recv_parameters_mixed));
 }
 
 TEST_F(RtpDataMediaChannelTest, AddRemoveSendStream) {
@@ -260,9 +267,9 @@ TEST_F(RtpDataMediaChannelTest, SendData) {
   cricket::DataCodec codec;
   codec.id = 103;
   codec.name = cricket::kGoogleRtpDataCodecName;
-  std::vector<cricket::DataCodec> codecs;
-  codecs.push_back(codec);
-  ASSERT_TRUE(dmc->SetSendCodecs(codecs));
+  cricket::DataSendParameters parameters;
+  parameters.codecs.push_back(codec);
+  ASSERT_TRUE(dmc->SetSendParameters(parameters));
 
   // Length too large;
   std::string x10000(10000, 'x');
@@ -324,10 +331,10 @@ TEST_F(RtpDataMediaChannelTest, SendDataMultipleClocks) {
   cricket::DataCodec codec;
   codec.id = 103;
   codec.name = cricket::kGoogleRtpDataCodecName;
-  std::vector<cricket::DataCodec> codecs;
-  codecs.push_back(codec);
-  ASSERT_TRUE(dmc1->SetSendCodecs(codecs));
-  ASSERT_TRUE(dmc2->SetSendCodecs(codecs));
+  cricket::DataSendParameters parameters;
+  parameters.codecs.push_back(codec);
+  ASSERT_TRUE(dmc1->SetSendParameters(parameters));
+  ASSERT_TRUE(dmc2->SetSendParameters(parameters));
 
   cricket::SendDataParams params1;
   params1.ssrc = 41;
@@ -371,9 +378,9 @@ TEST_F(RtpDataMediaChannelTest, SendDataRate) {
   cricket::DataCodec codec;
   codec.id = 103;
   codec.name = cricket::kGoogleRtpDataCodecName;
-  std::vector<cricket::DataCodec> codecs;
-  codecs.push_back(codec);
-  ASSERT_TRUE(dmc->SetSendCodecs(codecs));
+  cricket::DataSendParameters parameters;
+  parameters.codecs.push_back(codec);
+  ASSERT_TRUE(dmc->SetSendParameters(parameters));
 
   cricket::StreamParams stream;
   stream.add_ssrc(42);
@@ -388,7 +395,8 @@ TEST_F(RtpDataMediaChannelTest, SendDataRate) {
   // With rtp overhead of 32 bytes, each one of our packets is 36
   // bytes, or 288 bits.  So, a limit of 872bps will allow 3 packets,
   // but not four.
-  dmc->SetMaxSendBandwidth(872);
+  parameters.max_bandwidth_bps = 872;
+  ASSERT_TRUE(dmc->SetSendParameters(parameters));
 
   EXPECT_TRUE(dmc->SendData(params, payload, &result));
   EXPECT_TRUE(dmc->SendData(params, payload, &result));
@@ -436,9 +444,9 @@ TEST_F(RtpDataMediaChannelTest, ReceiveData) {
   cricket::DataCodec codec;
   codec.id = 103;
   codec.name = cricket::kGoogleRtpDataCodecName;
-  std::vector<cricket::DataCodec> codecs;
-  codecs.push_back(codec);
-  ASSERT_TRUE(dmc->SetRecvCodecs(codecs));
+  cricket::DataRecvParameters parameters;
+  parameters.codecs.push_back(codec);
+  ASSERT_TRUE(dmc->SetRecvParameters(parameters));
 
   // Unknown stream
   dmc->OnPacketReceived(&packet, rtc::PacketTime());

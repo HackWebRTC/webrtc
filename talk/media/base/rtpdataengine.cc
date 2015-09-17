@@ -155,6 +155,15 @@ bool RtpDataMediaChannel::SetSendCodecs(const std::vector<DataCodec>& codecs) {
   return true;
 }
 
+bool RtpDataMediaChannel::SetSendParameters(const DataSendParameters& params) {
+  return (SetSendCodecs(params.codecs) &&
+          SetMaxSendBandwidth(params.max_bandwidth_bps));
+}
+
+bool RtpDataMediaChannel::SetRecvParameters(const DataRecvParameters& params) {
+  return SetRecvCodecs(params.codecs);
+}
+
 bool RtpDataMediaChannel::AddSendStream(const StreamParams& stream) {
   if (!stream.has_ssrcs()) {
     return false;

@@ -602,10 +602,8 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
     const VideoOptions& options) {
   RTC_DCHECK(initialized_);
   LOG(LS_INFO) << "CreateChannel. Options: " << options.ToString();
-  WebRtcVideoChannel2* channel = new WebRtcVideoChannel2(call, options,
+  return new WebRtcVideoChannel2(call, options, video_codecs_,
       external_encoder_factory_, external_decoder_factory_);
-  channel->SetRecvCodecs(video_codecs_);
-  return channel;
 }
 
 const std::vector<VideoCodec>& WebRtcVideoEngine2::codecs() const {
@@ -764,6 +762,7 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
 WebRtcVideoChannel2::WebRtcVideoChannel2(
     webrtc::Call* call,
     const VideoOptions& options,
+    const std::vector<VideoCodec>& recv_codecs,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     WebRtcVideoDecoderFactory* external_decoder_factory)
     : call_(call),
@@ -777,6 +776,7 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
   default_send_ssrc_ = 0;
+  SetRecvCodecs(recv_codecs);
 }
 
 void WebRtcVideoChannel2::SetDefaultOptions() {
@@ -1574,7 +1574,11 @@ bool WebRtcVideoChannel2::SetMaxSendBandwidth(int max_bitrate_bps) {
   if (max_bitrate_bps == bitrate_config_.max_bitrate_bps)
     return true;
 
-  if (max_bitrate_bps <= 0) {
+  if (max_bitrate_bps < 0) {
+    // Option not set.
+    return true;
+  }
+  if (max_bitrate_bps == 0) {
     // Unsetting max bitrate.
     max_bitrate_bps = -1;
   }

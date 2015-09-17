@@ -77,7 +77,8 @@ template<class ChannelT,
          class MediaChannelT,
          class ContentT,
          class CodecT,
-         class MediaInfoT>
+         class MediaInfoT,
+         class OptionsT>
 class Traits {
  public:
   typedef ChannelT Channel;
@@ -85,6 +86,7 @@ class Traits {
   typedef ContentT Content;
   typedef CodecT Codec;
   typedef MediaInfoT MediaInfo;
+  typedef OptionsT Options;
 };
 
 // Controls how long we wait for a session to send messages that we
@@ -95,21 +97,24 @@ class VoiceTraits : public Traits<cricket::VoiceChannel,
                                   cricket::FakeVoiceMediaChannel,
                                   cricket::AudioContentDescription,
                                   cricket::AudioCodec,
-                                  cricket::VoiceMediaInfo> {
+                                  cricket::VoiceMediaInfo,
+                                  cricket::AudioOptions> {
 };
 
 class VideoTraits : public Traits<cricket::VideoChannel,
                                   cricket::FakeVideoMediaChannel,
                                   cricket::VideoContentDescription,
                                   cricket::VideoCodec,
-                                  cricket::VideoMediaInfo> {
+                                  cricket::VideoMediaInfo,
+                                  cricket::VideoOptions> {
 };
 
 class DataTraits : public Traits<cricket::DataChannel,
                                  cricket::FakeDataMediaChannel,
                                  cricket::DataContentDescription,
                                  cricket::DataCodec,
-                                 cricket::DataMediaInfo> {
+                                 cricket::DataMediaInfo,
+                                 cricket::DataOptions> {
 };
 
 
@@ -140,26 +145,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   void CreateChannels(int flags1, int flags2) {
-    CreateChannels(new typename T::MediaChannel(NULL),
-                   new typename T::MediaChannel(NULL),
+    CreateChannels(new typename T::MediaChannel(NULL, typename T::Options()),
+                   new typename T::MediaChannel(NULL, typename T::Options()),
                    flags1, flags2, rtc::Thread::Current());
-  }
-  void CreateChannels(int flags) {
-     CreateChannels(new typename T::MediaChannel(NULL),
-                    new typename T::MediaChannel(NULL),
-                    flags, rtc::Thread::Current());
-  }
-  void CreateChannels(int flags1, int flags2,
-                      rtc::Thread* thread) {
-    CreateChannels(new typename T::MediaChannel(NULL),
-                   new typename T::MediaChannel(NULL),
-                   flags1, flags2, thread);
-  }
-  void CreateChannels(int flags,
-                      rtc::Thread* thread) {
-    CreateChannels(new typename T::MediaChannel(NULL),
-                   new typename T::MediaChannel(NULL),
-                   flags, thread);
   }
   void CreateChannels(
       typename T::MediaChannel* ch1, typename T::MediaChannel* ch2,
@@ -216,42 +204,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       AddLegacyStreamInContent(kSsrc2, flags2, &remote_media_content2_);
     }
   }
-
-  void CreateChannels(
-      typename T::MediaChannel* ch1, typename T::MediaChannel* ch2,
-      int flags, rtc::Thread* thread) {
-    media_channel1_ = ch1;
-    media_channel2_ = ch2;
-
-    channel1_.reset(CreateChannel(thread, &media_engine_, ch1, &session1_,
-                                  (flags & RTCP) != 0));
-    channel2_.reset(CreateChannel(thread, &media_engine_, ch2, &session1_,
-                                  (flags & RTCP) != 0));
-    channel1_->SignalMediaMonitor.connect(
-        this, &ChannelTest<T>::OnMediaMonitor);
-    channel2_->SignalMediaMonitor.connect(
-        this, &ChannelTest<T>::OnMediaMonitor);
-    channel2_->SignalMediaError.connect(
-        this, &ChannelTest<T>::OnMediaChannelError);
-    CreateContent(flags, kPcmuCodec, kH264Codec,
-                  &local_media_content1_);
-    CreateContent(flags, kPcmuCodec, kH264Codec,
-                  &local_media_content2_);
-    CopyContent(local_media_content1_, &remote_media_content1_);
-    CopyContent(local_media_content2_, &remote_media_content2_);
-    // Add stream information (SSRC) to the local content but not to the remote
-    // content. This means that we per default know the SSRC of what we send but
-    // not what we receive.
-    AddLegacyStreamInContent(kSsrc1, flags, &local_media_content1_);
-    AddLegacyStreamInContent(kSsrc2, flags, &local_media_content2_);
-
-    // If SSRC_MUX is used we also need to know the SSRC of the incoming stream.
-    if (flags & SSRC_MUX) {
-      AddLegacyStreamInContent(kSsrc1, flags, &remote_media_content1_);
-      AddLegacyStreamInContent(kSsrc2, flags, &remote_media_content2_);
-    }
-  }
-
   typename T::Channel* CreateChannel(rtc::Thread* thread,
                                      cricket::MediaEngineInterface* engine,
                                      typename T::MediaChannel* ch,
@@ -967,7 +919,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void TestCallTeardownRtcpMux() {
     class LastWordMediaChannel : public T::MediaChannel {
      public:
-      LastWordMediaChannel() : T::MediaChannel(NULL) {}
+      LastWordMediaChannel() : T::MediaChannel(NULL, typename T::Options()) {}
       ~LastWordMediaChannel() {
         T::MediaChannel::SendRtp(kPcmuFrame, sizeof(kPcmuFrame));
         T::MediaChannel::SendRtcp(kRtcpReport, sizeof(kRtcpReport));

@@ -94,16 +94,15 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
 
 class MockVideoMediaChannel : public cricket::FakeVideoMediaChannel {
  public:
-  MockVideoMediaChannel() : cricket::FakeVideoMediaChannel(NULL) {}
-
-  // MOCK_METHOD0(transport_channel, cricket::TransportChannel*());
+  MockVideoMediaChannel() :
+      cricket::FakeVideoMediaChannel(NULL, cricket::VideoOptions()) {}
   MOCK_METHOD1(GetStats, bool(cricket::VideoMediaInfo*));
 };
 
 class MockVoiceMediaChannel : public cricket::FakeVoiceMediaChannel {
  public:
-  MockVoiceMediaChannel() : cricket::FakeVoiceMediaChannel(NULL) {
-  }
+  MockVoiceMediaChannel() :
+      cricket::FakeVoiceMediaChannel(NULL, cricket::AudioOptions()) {}
   MOCK_METHOD1(GetStats, bool(cricket::VoiceMediaInfo*));
 };
 

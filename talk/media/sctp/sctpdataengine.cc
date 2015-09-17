@@ -563,6 +563,14 @@ bool SctpDataMediaChannel::SetReceive(bool receive) {
   return true;
 }
 
+bool SctpDataMediaChannel::SetSendParameters(const DataSendParameters& params) {
+  return SetSendCodecs(params.codecs);
+}
+
+bool SctpDataMediaChannel::SetRecvParameters(const DataRecvParameters& params) {
+  return SetRecvCodecs(params.codecs);
+}
+
 bool SctpDataMediaChannel::AddSendStream(const StreamParams& stream) {
   return AddStream(stream);
 }

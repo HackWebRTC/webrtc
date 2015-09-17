@@ -96,13 +96,8 @@ class RtpDataMediaChannel : public DataMediaChannel {
     timing_ = timing;
   }
 
-  virtual bool SetMaxSendBandwidth(int bps);
-  virtual bool SetRecvRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) { return true; }
-  virtual bool SetSendRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) { return true; }
-  virtual bool SetSendCodecs(const std::vector<DataCodec>& codecs);
-  virtual bool SetRecvCodecs(const std::vector<DataCodec>& codecs);
+  virtual bool SetSendParameters(const DataSendParameters& params);
+  virtual bool SetRecvParameters(const DataRecvParameters& params);
   virtual bool AddSendStream(const StreamParams& sp);
   virtual bool RemoveSendStream(uint32 ssrc);
   virtual bool AddRecvStream(const StreamParams& sp);
@@ -127,6 +122,9 @@ class RtpDataMediaChannel : public DataMediaChannel {
 
  private:
   void Construct(rtc::Timing* timing);
+  bool SetMaxSendBandwidth(int bps);
+  bool SetSendCodecs(const std::vector<DataCodec>& codecs);
+  bool SetRecvCodecs(const std::vector<DataCodec>& codecs);
 
   bool sending_;
   bool receiving_;

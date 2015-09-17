@@ -161,6 +161,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
  public:
   WebRtcVideoChannel2(webrtc::Call* call,
                       const VideoOptions& options,
+                      const std::vector<VideoCodec>& recv_codecs,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
                       WebRtcVideoDecoderFactory* external_decoder_factory);
   ~WebRtcVideoChannel2() override;
@@ -168,8 +169,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   // VideoMediaChannel implementation
   bool SetSendParameters(const VideoSendParameters& params) override;
   bool SetRecvParameters(const VideoRecvParameters& params) override;
-  bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) override;
-  bool SetSendCodecs(const std::vector<VideoCodec>& codecs) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
   bool SetSendStreamFormat(uint32 ssrc, const VideoFormat& format) override;
   bool SetRender(bool render) override;
@@ -192,15 +191,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   void OnRtcpReceived(rtc::Buffer* packet,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override;
-
-  // Set send/receive RTP header extensions. This must be done before creating
-  // streams as it only has effect on future streams.
-  bool SetRecvRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) override;
-  bool SetSendRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) override;
-  bool SetMaxSendBandwidth(int bps) override;
-  bool SetOptions(const VideoOptions& options) override;
   void SetInterface(NetworkInterface* iface) override;
   void UpdateAspectRatio(int ratio_w, int ratio_h) override;
 
@@ -216,6 +206,16 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
  private:
   bool MuteStream(uint32 ssrc, bool mute);
   class WebRtcVideoReceiveStream;
+
+  bool SetSendCodecs(const std::vector<VideoCodec>& codecs);
+  bool SetSendRtpHeaderExtensions(
+      const std::vector<RtpHeaderExtension>& extensions);
+  bool SetMaxSendBandwidth(int bps);
+  bool SetOptions(const VideoOptions& options);
+  bool SetRecvCodecs(const std::vector<VideoCodec>& codecs);
+  bool SetRecvRtpHeaderExtensions(
+      const std::vector<RtpHeaderExtension>& extensions);
+
   void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
                             const StreamParams& sp) const;
   bool CodecIsExternallySupported(const std::string& name) const;

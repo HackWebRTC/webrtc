@@ -148,6 +148,8 @@ class SctpDataMediaChannel : public DataMediaChannel,
   // Unless SetReceive(true) is called, received packets will be discarded.
   virtual bool SetReceive(bool receive);
 
+  virtual bool SetSendParameters(const DataSendParameters& params);
+  virtual bool SetRecvParameters(const DataRecvParameters& params);
   virtual bool AddSendStream(const StreamParams& sp);
   virtual bool RemoveSendStream(uint32 ssrc);
   virtual bool AddRecvStream(const StreamParams& sp);
@@ -169,21 +171,8 @@ class SctpDataMediaChannel : public DataMediaChannel,
   // Exposed to allow Post call from c-callbacks.
   rtc::Thread* worker_thread() const { return worker_thread_; }
 
-  // TODO(ldixon): add a DataOptions class to mediachannel.h
-  virtual bool SetOptions(int options) { return false; }
-
   // Many of these things are unused by SCTP, but are needed to fulfill
   // the MediaChannel interface.
-  // TODO(pthatcher): Cleanup MediaChannel interface, or at least
-  // don't try calling these and return false.  Right now, things
-  // don't work if we return false.
-  virtual bool SetMaxSendBandwidth(int bps) { return true; }
-  virtual bool SetRecvRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) { return true; }
-  virtual bool SetSendRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) { return true; }
-  virtual bool SetSendCodecs(const std::vector<DataCodec>& codecs);
-  virtual bool SetRecvCodecs(const std::vector<DataCodec>& codecs);
   virtual void OnRtcpReceived(rtc::Buffer* packet,
                               const rtc::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
@@ -197,6 +186,9 @@ class SctpDataMediaChannel : public DataMediaChannel,
   const struct socket* socket() const { return sock_; }
  private:
   sockaddr_conn GetSctpSockAddr(int port);
+
+  bool SetSendCodecs(const std::vector<DataCodec>& codecs);
+  bool SetRecvCodecs(const std::vector<DataCodec>& codecs);
 
   // Creates the socket and connects. Sets sending_ to true.
   bool Connect();

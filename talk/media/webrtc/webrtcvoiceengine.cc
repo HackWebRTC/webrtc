@@ -581,13 +581,11 @@ int WebRtcVoiceEngine::GetCapabilities() {
 
 VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(webrtc::Call* call,
     const AudioOptions& options) {
-  WebRtcVoiceMediaChannel* ch = new WebRtcVoiceMediaChannel(this, call);
+  WebRtcVoiceMediaChannel* ch =
+      new WebRtcVoiceMediaChannel(this, options, call);
   if (!ch->valid()) {
     delete ch;
     return nullptr;
-  }
-  if (!ch->SetOptions(options)) {
-    LOG(LS_WARNING) << "Failed to set options while creating channel.";
   }
   return ch;
 }
@@ -1690,6 +1688,7 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
 
 // WebRtcVoiceMediaChannel
 WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
+                                                 const AudioOptions& options,
                                                  webrtc::Call* call)
     : engine_(engine),
       voe_channel_(engine->CreateMediaVoiceChannel()),
@@ -1710,6 +1709,7 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
                   << voe_channel();
   RTC_DCHECK(nullptr != call);
   ConfigureSendChannel(voe_channel());
+  SetOptions(options);
 }
 
 WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
