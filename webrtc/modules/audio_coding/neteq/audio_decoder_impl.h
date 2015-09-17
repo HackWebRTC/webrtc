@@ -90,39 +90,6 @@ class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmAMultiCh);
 };
 
-// This class handles all four types (i.e., sample rates) of PCM16B codecs.
-// The type is specified in the constructor parameter |type|.
-class AudioDecoderPcm16B : public AudioDecoder {
- public:
-  AudioDecoderPcm16B();
-  void Reset() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
-  size_t Channels() const override;
-
- protected:
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16B);
-};
-
-// This class handles all four types (i.e., sample rates) of PCM16B codecs.
-// The type is specified in the constructor parameter |type|, and the number
-// of channels is derived from the type.
-class AudioDecoderPcm16BMultiCh : public AudioDecoderPcm16B {
- public:
-  explicit AudioDecoderPcm16BMultiCh(size_t num_channels);
-  size_t Channels() const override;
-
- private:
-  const size_t channels_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16BMultiCh);
-};
-
 #ifdef WEBRTC_CODEC_G722
 class AudioDecoderG722 : public AudioDecoder {
  public:

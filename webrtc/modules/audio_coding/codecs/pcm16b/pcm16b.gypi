@@ -26,8 +26,10 @@
         ],
       },
       'sources': [
+        'include/audio_decoder_pcm16b.h',
         'include/audio_encoder_pcm16b.h',
         'include/pcm16b.h',
+        'audio_decoder_pcm16b.cc',
         'audio_encoder_pcm16b.cc',
         'pcm16b.c',
       ],
