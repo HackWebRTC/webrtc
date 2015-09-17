@@ -45,44 +45,25 @@
       ],
     },
     {
-      'target_name': 'full_stack_quality_sampler',
-      'type': 'executable',
-      'sources': [
-        'test/mac/run_test.mm',
-        'test/run_test.cc',
-        'test/run_test.h',
-        'video/full_stack.cc',
-        'video/full_stack_quality_sampler.cc',
-      ],
-      'conditions': [
-        ['OS=="mac"', {
-          'sources!': [
-            'test/run_test.cc',
-          ],
-        }],
-      ],
-      'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        '<(webrtc_root)/modules/modules.gyp:video_capture',
-        'test/webrtc_test_common.gyp:webrtc_test_common',
-        'test/test.gyp:test_main',
-        'webrtc',
-      ],
-    },
-    {
-      'target_name': 'loopback_base',
+      'target_name': 'video_quality_test',
       'type': 'static_library',
       'sources': [
-        'video/loopback.cc',
-        'video/loopback.h',
+        'video/video_quality_test.cc',
+        'video/video_quality_test.h',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
         '<(webrtc_root)/modules/modules.gyp:video_render',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         'webrtc',
+      ],
+      'conditions': [
+        ['OS=="android"', {
+          'dependencies!': [
+            '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
+          ],
+        }],
       ],
     },
     {
@@ -102,7 +83,7 @@
         }],
       ],
       'dependencies': [
-        'loopback_base',
+        'video_quality_test',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'test/webrtc_test_common.gyp:webrtc_test_common',
@@ -128,7 +109,7 @@
         }],
       ],
       'dependencies': [
-        'loopback_base',
+        'video_quality_test',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'test/webrtc_test_common.gyp:webrtc_test_common',
@@ -236,11 +217,13 @@
         '<(webrtc_root)/modules/modules.gyp:video_capture',
         '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
+        'video_quality_test',
         'modules/modules.gyp:neteq_test_support',
         'modules/modules.gyp:bwe_simulator',
         'modules/modules.gyp:rtp_rtcp',
         'test/test.gyp:test_main',
         'test/webrtc_test_common.gyp:webrtc_test_common',
+        'test/webrtc_test_common.gyp:webrtc_test_renderer',
         'tools/tools.gyp:agc_manager',
         'webrtc',
       ],
