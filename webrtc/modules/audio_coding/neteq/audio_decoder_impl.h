@@ -90,58 +90,6 @@ class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmAMultiCh);
 };
 
-#ifdef WEBRTC_CODEC_G722
-class AudioDecoderG722 : public AudioDecoder {
- public:
-  AudioDecoderG722();
-  ~AudioDecoderG722() override;
-  bool HasDecodePlc() const override;
-  void Reset() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
-  size_t Channels() const override;
-
- protected:
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-
- private:
-  G722DecInst* dec_state_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722);
-};
-
-class AudioDecoderG722Stereo : public AudioDecoder {
- public:
-  AudioDecoderG722Stereo();
-  ~AudioDecoderG722Stereo() override;
-  void Reset() override;
-
- protected:
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-  size_t Channels() const override;
-
- private:
-  // Splits the stereo-interleaved payload in |encoded| into separate payloads
-  // for left and right channels. The separated payloads are written to
-  // |encoded_deinterleaved|, which must hold at least |encoded_len| samples.
-  // The left channel starts at offset 0, while the right channel starts at
-  // offset encoded_len / 2 into |encoded_deinterleaved|.
-  void SplitStereoPacket(const uint8_t* encoded, size_t encoded_len,
-                         uint8_t* encoded_deinterleaved);
-
-  G722DecInst* dec_state_left_;
-  G722DecInst* dec_state_right_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722Stereo);
-};
-#endif
-
 // AudioDecoderCng is a special type of AudioDecoder. It inherits from
 // AudioDecoder just to fit in the DecoderDatabase. None of the class methods
 // should be used, except constructor, destructor, and accessors.

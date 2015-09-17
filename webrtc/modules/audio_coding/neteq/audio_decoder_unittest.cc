@@ -19,6 +19,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
+#include "webrtc/modules/audio_coding/codecs/g722/include/audio_decoder_g722.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_decoder_ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"

@@ -201,11 +201,13 @@ config("g722_config") {
 
 source_set("g722") {
   sources = [
+    "codecs/g722/audio_decoder_g722.cc",
     "codecs/g722/audio_encoder_g722.cc",
     "codecs/g722/g722_decode.c",
     "codecs/g722/g722_enc_dec.h",
     "codecs/g722/g722_encode.c",
     "codecs/g722/g722_interface.c",
+    "codecs/g722/include/audio_decoder_g722.h",
     "codecs/g722/include/audio_encoder_g722.h",
     "codecs/g722/include/g722_interface.h",
   ]
