@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common.h"
@@ -450,6 +451,11 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetAudioFrame(id=%d)", id);
 
+    if (event_log_) {
+      unsigned int ssrc;
+      RTC_CHECK_EQ(GetLocalSSRC(ssrc), 0);
+      event_log_->LogAudioPlayout(ssrc);
+    }
     // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
     if (audio_coding_->PlayoutData10Ms(audioFrame->sample_rate_hz_,
                                        audioFrame) == -1)
@@ -719,6 +725,7 @@ Channel::Channel(int32_t channelId,
     volume_settings_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
     _channelId(channelId),
+    event_log_(event_log),
     rtp_header_parser_(RtpHeaderParser::Create()),
     rtp_payload_registry_(
         new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(true))),
@@ -809,7 +816,6 @@ Channel::Channel(int32_t channelId,
     }
     acm_config.neteq_config.enable_fast_accelerate =
         config.Get<NetEqFastAccelerate>().enabled;
-    acm_config.event_log = event_log;
     audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
     _inbandDtmfQueue.ResetDtmf();

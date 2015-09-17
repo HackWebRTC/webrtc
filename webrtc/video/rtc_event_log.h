@@ -31,9 +31,6 @@ enum class MediaType;
 
 class RtcEventLog {
  public:
-  // The types of debug events that are currently supported for logging.
-  enum class DebugEvent { kLogStart, kLogEnd, kAudioPlayout };
-
   virtual ~RtcEventLog() {}
 
   static rtc::scoped_ptr<RtcEventLog> Create();
@@ -67,8 +64,8 @@ class RtcEventLog {
                              const uint8_t* packet,
                              size_t length) = 0;
 
-  // Logs a debug event.
-  virtual void LogDebugEvent(DebugEvent event_type) = 0;
+  // Logs an audio playout event
+  virtual void LogAudioPlayout(uint32_t ssrc) = 0;
 
   // Reads an RtcEventLog file and returns true when reading was successful.
   // The result is stored in the given EventStream object.

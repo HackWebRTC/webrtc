@@ -265,12 +265,14 @@ void VerifyRtcpEvent(const rtclog::Event& event,
   }
 }
 
-void VerifyPlayoutEvent(const rtclog::Event& event) {
+void VerifyPlayoutEvent(const rtclog::Event& event, uint32_t ssrc) {
   ASSERT_TRUE(IsValidBasicEvent(event));
   ASSERT_EQ(rtclog::Event::DEBUG_EVENT, event.type());
   const rtclog::DebugEvent& debug_event = event.debug_event();
   ASSERT_TRUE(debug_event.has_type());
   EXPECT_EQ(rtclog::DebugEvent::AUDIO_PLAYOUT, debug_event.type());
+  ASSERT_TRUE(debug_event.has_local_ssrc());
+  EXPECT_EQ(ssrc, debug_event.local_ssrc());
 }
 
 void VerifyLogStartEvent(const rtclog::Event& event) {
@@ -407,6 +409,7 @@ void LogSessionAndReadBack(size_t rtp_count,
   std::vector<rtc::Buffer> rtp_packets;
   std::vector<rtc::Buffer> rtcp_packets;
   std::vector<size_t> rtp_header_sizes;
+  std::vector<uint32_t> playout_ssrcs;
 
   VideoReceiveStream::Config receiver_config(nullptr);
   VideoSendStream::Config sender_config(nullptr);
@@ -426,6 +429,10 @@ void LogSessionAndReadBack(size_t rtp_count,
     size_t packet_size = 1000 + rand() % 64;
     rtcp_packets.push_back(rtc::Buffer(packet_size));
     GenerateRtcpPacket(rtcp_packets[i].data(), packet_size);
+  }
+  // Create debug_count random SSRCs to use when logging AudioPlayout events.
+  for (size_t i = 0; i < debug_count; i++) {
+    playout_ssrcs.push_back(static_cast<uint32_t>(rand()));
   }
   // Create configurations for the video streams.
   GenerateVideoReceiveConfig(extensions_bitvector, &receiver_config);
@@ -459,7 +466,7 @@ void LogSessionAndReadBack(size_t rtp_count,
         rtcp_index++;
       }
       if (i * debug_count >= debug_index * rtp_count) {
-        log_dumper->LogDebugEvent(RtcEventLog::DebugEvent::kAudioPlayout);
+        log_dumper->LogAudioPlayout(playout_ssrcs[debug_index - 1]);
         debug_index++;
       }
       if (i == rtp_count / 2) {
@@ -497,7 +504,8 @@ void LogSessionAndReadBack(size_t rtp_count,
       rtcp_index++;
     }
     if (i * debug_count >= debug_index * rtp_count) {
-      VerifyPlayoutEvent(parsed_stream.stream(event_index));
+      VerifyPlayoutEvent(parsed_stream.stream(event_index),
+                         playout_ssrcs[debug_index - 1]);
       event_index++;
       debug_index++;
     }

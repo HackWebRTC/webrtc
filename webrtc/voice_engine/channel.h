@@ -488,6 +488,8 @@ private:
 
     ChannelState channel_state_;
 
+    RtcEventLog* const event_log_;
+
     rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
     rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
     rtc::scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;

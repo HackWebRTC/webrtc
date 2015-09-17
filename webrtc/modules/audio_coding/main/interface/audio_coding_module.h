@@ -29,7 +29,6 @@ struct WebRtcRTPHeader;
 class AudioDecoder;
 class AudioEncoder;
 class AudioFrame;
-class RtcEventLog;
 class RTPFragmentationHeader;
 
 #define WEBRTC_10MS_PCM_AUDIO 960  // 16 bits super wideband 48 kHz
@@ -83,16 +82,11 @@ class AudioCodingModule {
 
  public:
   struct Config {
-    Config()
-        : id(0),
-          neteq_config(),
-          clock(Clock::GetRealTimeClock()),
-          event_log(nullptr) {}
+    Config() : id(0), neteq_config(), clock(Clock::GetRealTimeClock()) {}
 
     int id;
     NetEq::Config neteq_config;
     Clock* clock;
-    RtcEventLog* event_log;
   };
 
   ///////////////////////////////////////////////////////////////////////////

@@ -50,7 +50,7 @@ class RtcEventLogImpl final : public RtcEventLog {
                      MediaType media_type,
                      const uint8_t* packet,
                      size_t length) override {}
-  void LogDebugEvent(DebugEvent event_type) override {}
+  void LogAudioPlayout(uint32_t ssrc) override {}
 };
 
 #else  // ENABLE_RTC_EVENT_LOG is defined
@@ -72,7 +72,7 @@ class RtcEventLogImpl final : public RtcEventLog {
                      MediaType media_type,
                      const uint8_t* packet,
                      size_t length) override;
-  void LogDebugEvent(DebugEvent event_type) override;
+  void LogAudioPlayout(uint32_t ssrc) override;
 
  private:
   // Stops logging and clears the stored data and buffers.
@@ -110,20 +110,6 @@ namespace {
 // Do not add default return values to the conversion functions in this
 // unnamed namespace. The intention is to make the compiler warn if anyone
 // adds unhandled new events/modes/etc.
-
-rtclog::DebugEvent_EventType ConvertDebugEvent(
-    RtcEventLog::DebugEvent event_type) {
-  switch (event_type) {
-    case RtcEventLog::DebugEvent::kLogStart:
-      return rtclog::DebugEvent::LOG_START;
-    case RtcEventLog::DebugEvent::kLogEnd:
-      return rtclog::DebugEvent::LOG_END;
-    case RtcEventLog::DebugEvent::kAudioPlayout:
-      return rtclog::DebugEvent::AUDIO_PLAYOUT;
-  }
-  RTC_NOTREACHED();
-  return rtclog::DebugEvent::UNKNOWN_EVENT;
-}
 
 rtclog::VideoReceiveConfig_RtcpMode ConvertRtcpMode(
     newapi::RtcpMode rtcp_mode) {
@@ -188,7 +174,7 @@ void RtcEventLogImpl::StartLogging(const std::string& file_name,
   start_event.set_timestamp_us(start_time_us_);
   start_event.set_type(rtclog::Event::DEBUG_EVENT);
   auto debug_event = start_event.mutable_debug_event();
-  debug_event->set_type(ConvertDebugEvent(DebugEvent::kLogStart));
+  debug_event->set_type(rtclog::DebugEvent_EventType_LOG_START);
   StoreToFile(&start_event);
 }
 
@@ -330,14 +316,15 @@ void RtcEventLogImpl::LogRtcpPacket(bool incoming,
   HandleEvent(&rtcp_event);
 }
 
-void RtcEventLogImpl::LogDebugEvent(DebugEvent event_type) {
+void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   rtclog::Event event;
   const int64_t timestamp = clock_->TimeInMicroseconds();
   event.set_timestamp_us(timestamp);
   event.set_type(rtclog::Event::DEBUG_EVENT);
   auto debug_event = event.mutable_debug_event();
-  debug_event->set_type(ConvertDebugEvent(event_type));
+  debug_event->set_type(rtclog::DebugEvent_EventType_AUDIO_PLAYOUT);
+  debug_event->set_local_ssrc(ssrc);
   HandleEvent(&event);
 }
 
@@ -350,7 +337,7 @@ void RtcEventLogImpl::StopLoggingLocked() {
     event.set_timestamp_us(timestamp);
     event.set_type(rtclog::Event::DEBUG_EVENT);
     auto debug_event = event.mutable_debug_event();
-    debug_event->set_type(ConvertDebugEvent(DebugEvent::kLogEnd));
+    debug_event->set_type(rtclog::DebugEvent_EventType_LOG_END);
     // Store the event and close the file
     RTC_DCHECK(file_->Open());
     StoreToFile(&event);

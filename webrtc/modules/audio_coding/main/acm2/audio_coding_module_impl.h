@@ -295,8 +295,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   AudioPacketizationCallback* packetization_callback_
       GUARDED_BY(callback_crit_sect_);
   ACMVADCallback* vad_callback_ GUARDED_BY(callback_crit_sect_);
-
-  RtcEventLog* const event_log_;
 };
 
 }  // namespace acm2
