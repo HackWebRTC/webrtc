@@ -20,7 +20,7 @@
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-#include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_decoder_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
@@ -131,47 +131,6 @@ AudioDecoderPcm16BMultiCh::AudioDecoderPcm16BMultiCh(size_t num_channels)
 size_t AudioDecoderPcm16BMultiCh::Channels() const {
   return channels_;
 }
-
-// iLBC
-#ifdef WEBRTC_CODEC_ILBC
-AudioDecoderIlbc::AudioDecoderIlbc() {
-  WebRtcIlbcfix_DecoderCreate(&dec_state_);
-  WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
-}
-
-AudioDecoderIlbc::~AudioDecoderIlbc() {
-  WebRtcIlbcfix_DecoderFree(dec_state_);
-}
-
-bool AudioDecoderIlbc::HasDecodePlc() const {
-  return true;
-}
-
-int AudioDecoderIlbc::DecodeInternal(const uint8_t* encoded,
-                                     size_t encoded_len,
-                                     int sample_rate_hz,
-                                     int16_t* decoded,
-                                     SpeechType* speech_type) {
-  DCHECK_EQ(sample_rate_hz, 8000);
-  int16_t temp_type = 1;  // Default is speech.
-  int ret = WebRtcIlbcfix_Decode(dec_state_, encoded, encoded_len, decoded,
-                                 &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-size_t AudioDecoderIlbc::DecodePlc(size_t num_frames, int16_t* decoded) {
-  return WebRtcIlbcfix_NetEqPlc(dec_state_, decoded, num_frames);
-}
-
-void AudioDecoderIlbc::Reset() {
-  WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
-}
-
-size_t AudioDecoderIlbc::Channels() const {
-  return 1;
-}
-#endif
 
 // G.722
 #ifdef WEBRTC_CODEC_G722

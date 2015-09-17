@@ -24,9 +24,6 @@
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 #endif
-#ifdef WEBRTC_CODEC_ILBC
-#include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
-#endif
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -125,29 +122,6 @@ class AudioDecoderPcm16BMultiCh : public AudioDecoderPcm16B {
   const size_t channels_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16BMultiCh);
 };
-
-#ifdef WEBRTC_CODEC_ILBC
-class AudioDecoderIlbc : public AudioDecoder {
- public:
-  AudioDecoderIlbc();
-  ~AudioDecoderIlbc() override;
-  bool HasDecodePlc() const override;
-  size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
-  void Reset() override;
-  size_t Channels() const override;
-
- protected:
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-
- private:
-  IlbcDecoderInstance* dec_state_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderIlbc);
-};
-#endif
 
 #ifdef WEBRTC_CODEC_G722
 class AudioDecoderG722 : public AudioDecoder {

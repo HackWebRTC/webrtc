@@ -26,10 +26,12 @@
         ],
       },
       'sources': [
+        'interface/audio_decoder_ilbc.h',
         'interface/audio_encoder_ilbc.h',
         'interface/ilbc.h',
         'abs_quant.c',
         'abs_quant_loop.c',
+        'audio_decoder_ilbc.cc',
         'audio_encoder_ilbc.cc',
         'augmented_cb_corr.c',
         'bw_expand.c',
