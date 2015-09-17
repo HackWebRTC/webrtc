@@ -1103,8 +1103,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
                                           NULL,
                                           encoder_factory,
                                           decoder_factory));
-  CHECK(factory) << "Failed to create the peer connection factory; "
-                 << "WebRTC/libjingle init likely failed on this device";
+  RTC_CHECK(factory) << "Failed to create the peer connection factory; "
+                     << "WebRTC/libjingle init likely failed on this device";
   OwnedFactoryAndThreads* owned_factory = new OwnedFactoryAndThreads(
       worker_thread, signaling_thread,
       encoder_factory, decoder_factory,
