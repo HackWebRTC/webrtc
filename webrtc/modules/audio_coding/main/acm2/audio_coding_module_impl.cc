@@ -1130,13 +1130,11 @@ bool AudioCodingImpl::MapCodecTypeToParameters(int codec_type,
       *sample_rate_hz = 8000;
       *channels = 1;
       break;
-#ifdef WEBRTC_CODEC_AVT
     case acm2::ACMCodecDB::kAVT:
       *codec_name = "telephone-event";
       *sample_rate_hz = 8000;
       *channels = 1;
       break;
-#endif
     default:
       FATAL() << "Codec type " << codec_type << " not supported.";
   }

@@ -932,12 +932,8 @@ Channel::Init()
     // --- ACM initialization
 
     if ((audio_coding_->InitializeReceiver() == -1)
-#ifdef WEBRTC_CODEC_AVT
         // out-of-band Dtmf tones are played out by default
-        || (audio_coding_->SetDtmfPlayoutStatus(true) == -1)
-#endif
-       )
-    {
+        || (audio_coding_->SetDtmfPlayoutStatus(true) == -1)) {
         _engineStatisticsPtr->SetLastError(
             VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
             "Channel::Init() unable to initialize the ACM - 1");

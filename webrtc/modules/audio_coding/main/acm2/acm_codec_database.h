@@ -71,9 +71,7 @@ class ACMCodecDB {
 #ifdef ENABLE_48000_HZ
     , kCNFB
 #endif
-#ifdef WEBRTC_CODEC_AVT
     , kAVT
-#endif
 #ifdef WEBRTC_CODEC_RED
     , kRED
 #endif
@@ -102,9 +100,6 @@ class ACMCodecDB {
 #ifndef WEBRTC_CODEC_OPUS
   // Mono and stereo
   enum {kOpus = -1};
-#endif
-#ifndef WEBRTC_CODEC_AVT
-  enum {kAVT = -1};
 #endif
 #ifndef WEBRTC_CODEC_RED
   enum {kRED = -1};

@@ -31,10 +31,6 @@
 #define WEBRTC_CODEC_G722
 #endif  // !WEBRTC_MOZILLA_BUILD
 
-// AVT is included in all builds, along with G.711, NetEQ and CNG
-// (which are mandatory and don't have any defines).
-#define WEBRTC_CODEC_AVT
-
 // iLBC and Redundancy coding are excluded from Chromium and Mozilla
 // builds to reduce binary size.
 #if !defined(WEBRTC_CHROMIUM_BUILD) && !defined(WEBRTC_MOZILLA_BUILD)

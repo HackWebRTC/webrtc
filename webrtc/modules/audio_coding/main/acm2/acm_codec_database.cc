@@ -75,9 +75,7 @@ const CodecInst ACMCodecDB::database_[] = {
 #ifdef ENABLE_48000_HZ
   {100, "CN", 48000, 1440, 1, 0},
 #endif
-#ifdef WEBRTC_CODEC_AVT
   {106, "telephone-event", 8000, 240, 1, 0},
-#endif
 #ifdef WEBRTC_CODEC_RED
   {127, "red", 8000, 0, 1, 0},
 #endif
@@ -134,9 +132,7 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #ifdef ENABLE_48000_HZ
     {1, {1440}, 1440, 1, false},
 #endif
-#ifdef WEBRTC_CODEC_AVT
     {1, {240}, 240, 1, false},
-#endif
 #ifdef WEBRTC_CODEC_RED
     {1, {0}, 0, 1, false},
 #endif
@@ -188,9 +184,7 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
 #ifdef ENABLE_48000_HZ
     , kDecoderCNGswb48kHz
 #endif
-#ifdef WEBRTC_CODEC_AVT
     , kDecoderAVT
-#endif
 #ifdef WEBRTC_CODEC_RED
     , kDecoderRED
 #endif
