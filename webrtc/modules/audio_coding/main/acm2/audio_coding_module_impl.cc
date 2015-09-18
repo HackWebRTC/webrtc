@@ -814,14 +814,6 @@ int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
   return receiver_.SetInitialDelay(delay_ms);
 }
 
-int AudioCodingModuleImpl::SetDtmfPlayoutStatus(bool enable) {
-  return 0;
-}
-
-bool AudioCodingModuleImpl::DtmfPlayoutStatus() const {
-  return true;
-}
-
 int AudioCodingModuleImpl::EnableNack(size_t max_nack_list_size) {
   return receiver_.EnableNack(max_nack_list_size);
 }
@@ -851,7 +843,6 @@ AudioCodingImpl::AudioCodingImpl(const Config& config) {
   acm_old_.reset(new acm2::AudioCodingModuleImpl(config_old));
   acm_old_->RegisterTransportCallback(config.transport);
   acm_old_->RegisterVADCallback(config.vad_callback);
-  acm_old_->SetDtmfPlayoutStatus(config.play_dtmf);
   if (config.initial_playout_delay_ms > 0) {
     acm_old_->SetInitialPlayoutDelay(config.initial_playout_delay_ms);
   }

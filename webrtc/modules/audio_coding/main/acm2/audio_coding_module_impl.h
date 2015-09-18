@@ -30,8 +30,6 @@ class AudioCodingImpl;
 
 namespace acm2 {
 
-class ACMDTMFDetection;
-
 class AudioCodingModuleImpl final : public AudioCodingModule {
  public:
   friend webrtc::AudioCodingImpl;
@@ -155,16 +153,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Impose an initial delay on playout. ACM plays silence until |delay_ms|
   // audio is accumulated in NetEq buffer, then starts decoding payloads.
   int SetInitialPlayoutDelay(int delay_ms) override;
-
-  // TODO(turajs): DTMF playout is always activated in NetEq these APIs should
-  // be removed, as well as all VoE related APIs and methods.
-  //
-  // Configure Dtmf playout status i.e on/off playout the incoming outband Dtmf
-  // tone.
-  int SetDtmfPlayoutStatus(bool enable) override;
-
-  // Get Dtmf playout status.
-  bool DtmfPlayoutStatus() const override;
 
   // Set playout mode voice, fax.
   int SetPlayoutMode(AudioPlayoutMode mode) override;

@@ -612,31 +612,6 @@ class AudioCodingModule {
   virtual int LeastRequiredDelayMs() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t SetDtmfPlayoutStatus()
-  // Configure DTMF playout, i.e. whether out-of-band
-  // DTMF tones are played or not.
-  //
-  // Input:
-  //   -enable             : if true to enable playout out-of-band DTMF tones,
-  //                         false to disable.
-  //
-  // Return value:
-  //   -1 if the method fails, e.g. DTMF playout is not supported.
-  //    0 if the status is set successfully.
-  //
-  virtual int32_t SetDtmfPlayoutStatus(const bool enable) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // bool DtmfPlayoutStatus()
-  // Get Dtmf playout status.
-  //
-  // Return value:
-  //   true if out-of-band Dtmf tones are played,
-  //   false if playout of Dtmf tones is disabled.
-  //
-  virtual bool DtmfPlayoutStatus() const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t PlayoutTimestamp()
   // The send timestamp of an RTP packet is associated with the decoded
   // audio of the packet in question. This function returns the timestamp of
@@ -857,7 +832,6 @@ class AudioCoding {
     Clock* clock;
     AudioPacketizationCallback* transport;
     ACMVADCallback* vad_callback;
-    bool play_dtmf;
     int initial_playout_delay_ms;
     int playout_channels;
     int playout_frequency_hz;
