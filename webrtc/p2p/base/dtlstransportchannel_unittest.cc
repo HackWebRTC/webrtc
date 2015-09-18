@@ -51,7 +51,6 @@ class DtlsTestClient : public sigslot::has_slots<> {
       name_(name),
       signaling_thread_(signaling_thread),
       worker_thread_(worker_thread),
-      protocol_(cricket::ICEPROTO_GOOGLE),
       packet_size_(0),
       use_dtls_srtp_(false),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10),
@@ -66,9 +65,6 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate() {
     return certificate_;
-  }
-  void SetIceProtocol(cricket::TransportProtocol proto) {
-    protocol_ = proto;
   }
   void SetupSrtp() {
     ASSERT(certificate_);
@@ -166,10 +162,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
       }
     }
 
-    std::string transport_type = (protocol_ == cricket::ICEPROTO_GOOGLE) ?
-        cricket::NS_GINGLE_P2P : cricket::NS_JINGLE_ICE_UDP;
     cricket::TransportDescription local_desc(
-        transport_type, std::vector<std::string>(), kIceUfrag1, kIcePwd1,
+        std::vector<std::string>(), kIceUfrag1, kIcePwd1,
         cricket::ICEMODE_FULL, local_role,
          // If remote if the offerer and has no DTLS support, answer will be
         // without any fingerprint.
@@ -178,7 +172,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
         cricket::Candidates());
 
     cricket::TransportDescription remote_desc(
-        transport_type, std::vector<std::string>(), kIceUfrag1, kIcePwd1,
+        std::vector<std::string>(), kIceUfrag1, kIcePwd1,
         cricket::ICEMODE_FULL, remote_role, remote_fingerprint.get(),
         cricket::Candidates());
 
@@ -380,10 +374,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   std::string name_;
   rtc::Thread* signaling_thread_;
   rtc::Thread* worker_thread_;
-
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
-  cricket::TransportProtocol protocol_;
-
   rtc::scoped_ptr<cricket::FakeTransport> transport_;
   std::vector<cricket::DtlsTransportChannelWrapper*> channels_;
   size_t packet_size_;
@@ -555,8 +546,6 @@ class DtlsTransportChannelTest : public testing::Test {
 
 // Test that transport negotiation of ICE, no DTLS works properly.
 TEST_F(DtlsTransportChannelTest, TestChannelSetupIce) {
-  client1_.SetIceProtocol(cricket::ICEPROTO_RFC5245);
-  client2_.SetIceProtocol(cricket::ICEPROTO_RFC5245);
   Negotiate();
   cricket::FakeTransportChannel* channel1 = client1_.GetFakeChannel(0);
   cricket::FakeTransportChannel* channel2 = client2_.GetFakeChannel(0);
@@ -564,31 +553,10 @@ TEST_F(DtlsTransportChannelTest, TestChannelSetupIce) {
   ASSERT_TRUE(channel2 != NULL);
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel1->GetIceRole());
   EXPECT_EQ(1U, channel1->IceTiebreaker());
-  EXPECT_EQ(cricket::ICEPROTO_RFC5245, channel1->protocol());
   EXPECT_EQ(kIceUfrag1, channel1->ice_ufrag());
   EXPECT_EQ(kIcePwd1, channel1->ice_pwd());
   EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel2->GetIceRole());
   EXPECT_EQ(2U, channel2->IceTiebreaker());
-  EXPECT_EQ(cricket::ICEPROTO_RFC5245, channel2->protocol());
-}
-
-// Test that transport negotiation of GICE, no DTLS works properly.
-TEST_F(DtlsTransportChannelTest, TestChannelSetupGice) {
-  client1_.SetIceProtocol(cricket::ICEPROTO_GOOGLE);
-  client2_.SetIceProtocol(cricket::ICEPROTO_GOOGLE);
-  Negotiate();
-  cricket::FakeTransportChannel* channel1 = client1_.GetFakeChannel(0);
-  cricket::FakeTransportChannel* channel2 = client2_.GetFakeChannel(0);
-  ASSERT_TRUE(channel1 != NULL);
-  ASSERT_TRUE(channel2 != NULL);
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel1->GetIceRole());
-  EXPECT_EQ(1U, channel1->IceTiebreaker());
-  EXPECT_EQ(cricket::ICEPROTO_GOOGLE, channel1->protocol());
-  EXPECT_EQ(kIceUfrag1, channel1->ice_ufrag());
-  EXPECT_EQ(kIcePwd1, channel1->ice_pwd());
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel2->GetIceRole());
-  EXPECT_EQ(2U, channel2->IceTiebreaker());
-  EXPECT_EQ(cricket::ICEPROTO_GOOGLE, channel2->protocol());
 }
 
 // Connect without DTLS, and transfer some data.

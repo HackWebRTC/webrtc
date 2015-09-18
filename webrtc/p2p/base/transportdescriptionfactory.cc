@@ -19,27 +19,14 @@
 
 namespace cricket {
 
-static TransportProtocol kDefaultProtocol = ICEPROTO_RFC5245;
-
 TransportDescriptionFactory::TransportDescriptionFactory()
-    : protocol_(kDefaultProtocol),
-    secure_(SEC_DISABLED) {
+    : secure_(SEC_DISABLED) {
 }
 
 TransportDescription* TransportDescriptionFactory::CreateOffer(
     const TransportOptions& options,
     const TransportDescription* current_description) const {
   rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
-
-  // Set the transport type depending on the selected protocol.
-  if (protocol_ == ICEPROTO_RFC5245) {
-    desc->transport_type = NS_JINGLE_ICE_UDP;
-  } else if (protocol_ == ICEPROTO_HYBRID) {
-    desc->transport_type = NS_JINGLE_ICE_UDP;
-    desc->AddOption(ICE_OPTION_GICE);
-  } else if (protocol_ == ICEPROTO_GOOGLE) {
-    desc->transport_type = NS_GINGLE_P2P;
-  }
 
   // Generate the ICE credentials if we don't already have them.
   if (!current_description || options.ice_restart) {
@@ -66,33 +53,14 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
     const TransportDescription* offer,
     const TransportOptions& options,
     const TransportDescription* current_description) const {
-  // A NULL offer is treated as a GICE transport description.
   // TODO(juberti): Figure out why we get NULL offers, and fix this upstream.
-  rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
-
-  // Figure out which ICE variant to negotiate; prefer RFC 5245 ICE, but fall
-  // back to G-ICE if needed. Note that we never create a hybrid answer, since
-  // we know what the other side can support already.
-  if (offer && offer->transport_type == NS_JINGLE_ICE_UDP &&
-      (protocol_ == ICEPROTO_RFC5245 || protocol_ == ICEPROTO_HYBRID)) {
-    // Offer is ICE or hybrid, we support ICE or hybrid: use ICE.
-    desc->transport_type = NS_JINGLE_ICE_UDP;
-  } else if (offer && offer->transport_type == NS_JINGLE_ICE_UDP &&
-             offer->HasOption(ICE_OPTION_GICE) &&
-             protocol_ == ICEPROTO_GOOGLE) {
-    desc->transport_type = NS_GINGLE_P2P;
-    // Offer is hybrid, we support GICE: use GICE.
-  } else if ((!offer || offer->transport_type == NS_GINGLE_P2P) &&
-             (protocol_ == ICEPROTO_HYBRID || protocol_ == ICEPROTO_GOOGLE)) {
-    // Offer is GICE, we support hybrid or GICE: use GICE.
-    desc->transport_type = NS_GINGLE_P2P;
-  } else {
-    // Mismatch.
-    LOG(LS_WARNING) << "Failed to create TransportDescription answer "
-                       "because of incompatible transport types";
+  if (!offer) {
+    LOG(LS_WARNING) << "Failed to create TransportDescription answer " <<
+        "because offer is NULL";
     return NULL;
   }
 
+  rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
   // Generate the ICE credentials if we don't already have them or ice is
   // being restarted.
   if (!current_description || options.ice_restart) {
@@ -157,4 +125,3 @@ bool TransportDescriptionFactory::SetSecurityInfo(
 }
 
 }  // namespace cricket
-

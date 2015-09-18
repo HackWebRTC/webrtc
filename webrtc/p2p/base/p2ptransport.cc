@@ -25,7 +25,7 @@ P2PTransport::P2PTransport(rtc::Thread* signaling_thread,
                            const std::string& content_name,
                            PortAllocator* allocator)
     : Transport(signaling_thread, worker_thread,
-                content_name, NS_GINGLE_P2P, allocator) {
+                content_name, allocator) {
 }
 
 P2PTransport::~P2PTransport() {

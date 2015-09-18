@@ -692,14 +692,6 @@ AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
 }
 
 bool AllocationSequence::Init() {
-  if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
-      !IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_UFRAG)) {
-    LOG(LS_ERROR) << "Shared socket option can't be set without "
-                  << "shared ufrag.";
-    ASSERT(false);
-    return false;
-  }
-
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
     udp_socket_.reset(session_->socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(ip_, 0), session_->allocator()->min_port(),
