@@ -28,7 +28,7 @@
 #ifndef TALK_MEDIA_BASE_CPUID_H_
 #define TALK_MEDIA_BASE_CPUID_H_
 
-#include "webrtc/base/basictypes.h"  // For RTC_DISALLOW_IMPLICIT_CONSTRUCTORS
+#include "webrtc/base/constructormagic.h"
 
 namespace cricket {
 

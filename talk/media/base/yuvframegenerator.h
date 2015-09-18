@@ -40,6 +40,7 @@
 #define TALK_MEDIA_BASE_YUVFRAMEGENERATOR_H_
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace cricket {
 

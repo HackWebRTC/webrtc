@@ -29,8 +29,6 @@
       'target_name': 'rtc_base_approved',
       'type': 'static_library',
       'sources': [
-        '../overrides/webrtc/base/basictypes.h',
-        '../overrides/webrtc/base/constructormagic.h',
         'atomicops.h',
         'basictypes.h',
         'bitbuffer.cc',
@@ -93,11 +91,6 @@
             'constructormagic.h',
             'logging.cc',
             'logging.h',
-          ],
-        }, {
-          'sources!': [
-            '../overrides/webrtc/base/basictypes.h',
-            '../overrides/webrtc/base/constructormagic.h',
           ],
         }],
       ],

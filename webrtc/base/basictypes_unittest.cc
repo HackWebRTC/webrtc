@@ -26,9 +26,9 @@ static_assert(sizeof(uint64) == 8, "Unexpected size");
 TEST(BasicTypesTest, Endian) {
   uint16 v16 = 0x1234u;
   uint8 first_byte = *reinterpret_cast<uint8*>(&v16);
-#if defined(ARCH_CPU_LITTLE_ENDIAN)
+#if defined(RTC_ARCH_CPU_LITTLE_ENDIAN)
   EXPECT_EQ(0x34u, first_byte);
-#elif defined(ARCH_CPU_BIG_ENDIAN)
+#elif defined(RTC_ARCH_CPU_BIG_ENDIAN)
   EXPECT_EQ(0x12u, first_byte);
 #endif
 }
@@ -74,9 +74,9 @@ TEST(BasicTypesTest, SizeOfConstants) {
 #if !defined(CPU_X86) && (defined(WEBRTC_WIN) || defined(WEBRTC_MAC) && !defined(WEBRTC_IOS))
 #error expected CPU_X86 to be defined.
 #endif
-#if !defined(ARCH_CPU_LITTLE_ENDIAN) && \
+#if !defined(RTC_ARCH_CPU_LITTLE_ENDIAN) && \
   (defined(WEBRTC_WIN) || defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) || defined(CPU_X86))
-#error expected ARCH_CPU_LITTLE_ENDIAN to be defined.
+#error expected RTC_ARCH_CPU_LITTLE_ENDIAN to be defined.
 #endif
 
 // TODO(fbarchard): Test all macros in basictypes.h

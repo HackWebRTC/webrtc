@@ -158,12 +158,7 @@ static_library("rtc_base_approved") {
     "trace_event.h",
   ]
 
-  if (build_with_chromium) {
-    sources += [
-      "../overrides/webrtc/base/basictypes.h",
-      "../overrides/webrtc/base/constructormagic.h",
-    ]
-  } else {
+  if (!build_with_chromium) {
     sources += [
       "basictypes.h",
       "constructormagic.h",

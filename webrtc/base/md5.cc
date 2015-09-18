@@ -23,13 +23,13 @@
 // TODO: Avoid memcmpy - hash directly from memory.
 #include <string.h>  // for memcpy().
 
-#include "webrtc/base/byteorder.h"  // for ARCH_CPU_LITTLE_ENDIAN.
+#include "webrtc/base/byteorder.h"  // for RTC_ARCH_CPU_LITTLE_ENDIAN.
 
 namespace rtc {
 
-#ifdef ARCH_CPU_LITTLE_ENDIAN
+#ifdef RTC_ARCH_CPU_LITTLE_ENDIAN
 #define ByteReverse(buf, len)  // Nothing.
-#else  // ARCH_CPU_BIG_ENDIAN
+#else  // RTC_ARCH_CPU_BIG_ENDIAN
 static void ByteReverse(uint32* buf, int len) {
   for (int i = 0; i < len; ++i) {
     buf[i] = rtc::GetLE32(&buf[i]);
