@@ -79,7 +79,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private Context applicationContext;
   private int id;
   private Camera.CameraInfo info;
-  private SurfaceTexture cameraSurfaceTexture;
   private int cameraGlTexture = 0;
   private final FramePool videoBuffers = new FramePool();
   // Remember the requested format in case we want to switch cameras.
@@ -276,8 +275,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // Called by native code.  Returns true if capturer is started.
   //
   // Note that this actually opens the camera, and Camera callbacks run on the
-  // thread that calls open(), so this is done on the CameraThread.  Since the
-  // API needs a synchronous success return value we wait for the result.
+  // thread that calls open(), so this is done on the CameraThread.
   synchronized void startCapture(
       final int width, final int height, final int framerate,
       final Context applicationContext, final CapturerObserver frameObserver) {
@@ -323,7 +321,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       // and never call updateTexImage on it.
       try {
         cameraGlTexture = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-        cameraSurfaceTexture = new SurfaceTexture(cameraGlTexture);
+        SurfaceTexture cameraSurfaceTexture = new SurfaceTexture(cameraGlTexture);
         cameraSurfaceTexture.setOnFrameAvailableListener(null);
 
         camera.setPreviewTexture(cameraSurfaceTexture);
@@ -448,26 +446,21 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     if (camera == null) {
       return;
     }
-    try {
-      cameraThreadHandler.removeCallbacks(cameraObserver);
-      Logging.d(TAG, "Stop preview.");
-      camera.stopPreview();
-      camera.setPreviewCallbackWithBuffer(null);
-      videoBuffers.stopReturnBuffersToCamera();
-      captureFormat = null;
 
-      camera.setPreviewTexture(null);
-      cameraSurfaceTexture = null;
-      if (cameraGlTexture != 0) {
-        GLES20.glDeleteTextures(1, new int[] {cameraGlTexture}, 0);
-        cameraGlTexture = 0;
-      }
-      Logging.d(TAG, "Release camera.");
-      camera.release();
-      camera = null;
-    } catch (IOException e) {
-      Logging.e(TAG, "Failed to stop camera", e);
+    cameraThreadHandler.removeCallbacks(cameraObserver);
+    Logging.d(TAG, "Stop preview.");
+    camera.stopPreview();
+    camera.setPreviewCallbackWithBuffer(null);
+    videoBuffers.stopReturnBuffersToCamera();
+    captureFormat = null;
+
+    if (cameraGlTexture != 0) {
+      GLES20.glDeleteTextures(1, new int[] {cameraGlTexture}, 0);
+      cameraGlTexture = 0;
     }
+    Logging.d(TAG, "Release camera.");
+    camera.release();
+    camera = null;
   }
 
   private void switchCameraOnCameraThread(Runnable switchDoneEvent) {
