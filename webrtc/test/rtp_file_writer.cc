@@ -40,7 +40,6 @@ class RtpDumpWriter : public RtpFileWriter {
 
   bool WritePacket(const RtpPacket* packet) override {
     uint16_t len = static_cast<uint16_t>(packet->length + kPacketHeaderSize);
-    RTC_CHECK_GE(packet->original_length, packet->length);
     uint16_t plen = static_cast<uint16_t>(packet->original_length);
     uint32_t offset = packet->time_ms;
     RTC_CHECK(WriteUint16(len));
