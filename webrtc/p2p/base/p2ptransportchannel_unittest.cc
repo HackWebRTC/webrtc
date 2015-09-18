@@ -297,8 +297,10 @@ class P2PTransportChannelTestBase : public testing::Test,
       const std::string& remote_ice_pwd) {
     cricket::P2PTransportChannel* channel = new cricket::P2PTransportChannel(
         "test content name", component, NULL, GetAllocator(endpoint));
-    channel->SignalCandidateGathered.connect(
-        this, &P2PTransportChannelTestBase::OnCandidate);
+    channel->SignalRequestSignaling.connect(
+        this, &P2PTransportChannelTestBase::OnChannelRequestSignaling);
+    channel->SignalCandidateReady.connect(this,
+        &P2PTransportChannelTestBase::OnCandidate);
     channel->SignalReadPacket.connect(
         this, &P2PTransportChannelTestBase::OnReadPacket);
     channel->SignalRoleConflict.connect(
@@ -387,9 +389,10 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   bool IsLocalToPrflxOrTheReverse(const Result& expected) {
-    return (
-        (expected.local_type == "local" && expected.remote_type == "prflx") ||
-        (expected.local_type == "prflx" && expected.remote_type == "local"));
+    return ((expected.local_type == "local" &&
+             expected.remote_type == "prflx") ||
+            (expected.local_type == "prflx" &&
+             expected.remote_type == "local"));
   }
 
   // Return true if the approprite parts of the expected Result, based
@@ -509,8 +512,8 @@ class P2PTransportChannelTestBase : public testing::Test,
         ep2_ch1()->best_connection()) {
       int32 converge_start = rtc::Time(), converge_time;
       int converge_wait = 2000;
-      EXPECT_TRUE_WAIT_MARGIN(CheckCandidate1(expected), converge_wait,
-                              converge_wait);
+      EXPECT_TRUE_WAIT_MARGIN(CheckCandidate1(expected),
+                              converge_wait, converge_wait);
       // Also do EXPECT_EQ on each part so that failures are more verbose.
       ExpectCandidate1(expected);
 
@@ -623,6 +626,9 @@ class P2PTransportChannelTestBase : public testing::Test,
     TestSendRecv(1);
   }
 
+  void OnChannelRequestSignaling(cricket::TransportChannelImpl* channel) {
+    channel->OnSignalingReady();
+  }
   // We pass the candidates directly to the other side.
   void OnCandidate(cricket::TransportChannelImpl* ch,
                    const cricket::Candidate& c) {
@@ -663,7 +669,7 @@ class P2PTransportChannelTestBase : public testing::Test,
         }
         LOG(LS_INFO) << "Candidate(" << data->channel->component() << "->"
                      << rch->component() << "): " << c.ToString();
-        rch->AddRemoteCandidate(c);
+        rch->OnCandidate(c);
         break;
       }
     }
@@ -798,10 +804,8 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
   static const Result* kMatrixSharedUfrag[NUM_CONFIGS][NUM_CONFIGS];
   static const Result* kMatrixSharedSocketAsGice[NUM_CONFIGS][NUM_CONFIGS];
   static const Result* kMatrixSharedSocketAsIce[NUM_CONFIGS][NUM_CONFIGS];
-  void ConfigureEndpoints(Config config1,
-                          Config config2,
-                          int allocator_flags1,
-                          int allocator_flags2) {
+  void ConfigureEndpoints(Config config1, Config config2,
+                          int allocator_flags1, int allocator_flags2) {
     ServerAddresses stun_servers;
     stun_servers.insert(kStunAddr);
     GetEndpoint(0)->allocator_.reset(
@@ -817,8 +821,8 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
 
     cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
     relay_server.credentials = kRelayCredentials;
-    relay_server.ports.push_back(
-        cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
+    relay_server.ports.push_back(cricket::ProtocolAddress(
+        kTurnUdpIntAddr, cricket::PROTO_UDP, false));
     GetEndpoint(0)->allocator_->AddRelay(relay_server);
     GetEndpoint(1)->allocator_->AddRelay(relay_server);
 
@@ -1022,14 +1026,15 @@ const P2PTransportChannelTest::Result*
 
 // The actual tests that exercise all the various configurations.
 // Test names are of the form P2PTransportChannelTest_TestOPENToNAT_FULL_CONE
-#define P2P_TEST_DECLARATION(x, y, z)                            \
-  TEST_F(P2PTransportChannelTest, z##Test##x##To##y) {           \
-    ConfigureEndpoints(x, y, PORTALLOCATOR_ENABLE_SHARED_SOCKET, \
-                       PORTALLOCATOR_ENABLE_SHARED_SOCKET);      \
-    if (kMatrixSharedSocketAsIce[x][y] != NULL)                  \
-      Test(*kMatrixSharedSocketAsIce[x][y]);                     \
-    else                                                         \
-      LOG(LS_WARNING) << "Not yet implemented";                  \
+#define P2P_TEST_DECLARATION(x, y, z) \
+  TEST_F(P2PTransportChannelTest, z##Test##x##To##y) { \
+    ConfigureEndpoints(x, y, \
+                       PORTALLOCATOR_ENABLE_SHARED_SOCKET, \
+                       PORTALLOCATOR_ENABLE_SHARED_SOCKET);  \
+    if (kMatrixSharedSocketAsIce[x][y] != NULL) \
+      Test(*kMatrixSharedSocketAsIce[x][y]); \
+    else \
+    LOG(LS_WARNING) << "Not yet implemented"; \
   }
 
 #define P2P_TEST(x, y) \
@@ -1084,7 +1089,8 @@ P2P_TEST_SET(PROXY_SOCKS)
 // Test that we restart candidate allocation when local ufrag&pwd changed.
 // Standard Ice protocol is used.
 TEST_F(P2PTransportChannelTest, HandleUfragPwdChange) {
-  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+  ConfigureEndpoints(OPEN, OPEN,
+                     kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   CreateChannels(1);
   TestHandleIceUfragPasswordChanged();
@@ -1093,7 +1099,8 @@ TEST_F(P2PTransportChannelTest, HandleUfragPwdChange) {
 
 // Test the operation of GetStats.
 TEST_F(P2PTransportChannelTest, GetStats) {
-  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+  ConfigureEndpoints(OPEN, OPEN,
+                     kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   CreateChannels(1);
   EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->readable() && ep1_ch1()->writable() &&
@@ -1119,7 +1126,8 @@ TEST_F(P2PTransportChannelTest, GetStats) {
 // Test that we properly create a connection on a STUN ping from unknown address
 // when the signaling is slow.
 TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
-  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+  ConfigureEndpoints(OPEN, OPEN,
+                     kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   // Emulate no remote credentials coming in.
   set_clear_remote_candidates_ufrag_pwd(false);
@@ -1163,7 +1171,8 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
 // Test that we properly create a connection on a STUN ping from unknown address
 // when the signaling is slow and the end points are behind NAT.
 TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
-  ConfigureEndpoints(OPEN, NAT_SYMMETRIC, kDefaultPortAllocatorFlags,
+  ConfigureEndpoints(OPEN, NAT_SYMMETRIC,
+                     kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   // Emulate no remote credentials coming in.
   set_clear_remote_candidates_ufrag_pwd(false);
@@ -1205,7 +1214,8 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
 // Test that if remote candidates don't have ufrag and pwd, we still work.
 TEST_F(P2PTransportChannelTest, RemoteCandidatesWithoutUfragPwd) {
   set_clear_remote_candidates_ufrag_pwd(true);
-  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+  ConfigureEndpoints(OPEN, OPEN,
+                     kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   CreateChannels(1);
   const cricket::Connection* best_connection = NULL;
@@ -1220,7 +1230,8 @@ TEST_F(P2PTransportChannelTest, RemoteCandidatesWithoutUfragPwd) {
 // Test that a host behind NAT cannot be reached when incoming_only
 // is set to true.
 TEST_F(P2PTransportChannelTest, IncomingOnlyBlocked) {
-  ConfigureEndpoints(NAT_FULL_CONE, OPEN, kDefaultPortAllocatorFlags,
+  ConfigureEndpoints(NAT_FULL_CONE, OPEN,
+                     kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
 
   SetAllocatorFlags(0, kOnlyLocalPorts);
@@ -1241,7 +1252,8 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyBlocked) {
 // Test that a peer behind NAT can connect to a peer that has
 // incoming_only flag set.
 TEST_F(P2PTransportChannelTest, IncomingOnlyOpen) {
-  ConfigureEndpoints(OPEN, NAT_FULL_CONE, kDefaultPortAllocatorFlags,
+  ConfigureEndpoints(OPEN, NAT_FULL_CONE,
+                     kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
 
   SetAllocatorFlags(0, kOnlyLocalPorts);
@@ -1402,10 +1414,11 @@ TEST_F(P2PTransportChannelTest, TestIPv6Connections) {
 
 // Testing forceful TURN connections.
 TEST_F(P2PTransportChannelTest, TestForceTurn) {
-  ConfigureEndpoints(
-      NAT_PORT_RESTRICTED, NAT_SYMMETRIC,
-      kDefaultPortAllocatorFlags | cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET,
-      kDefaultPortAllocatorFlags | cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  ConfigureEndpoints(NAT_PORT_RESTRICTED, NAT_SYMMETRIC,
+                     kDefaultPortAllocatorFlags |
+                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET,
+                     kDefaultPortAllocatorFlags |
+                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   set_force_relay(true);
 
   SetAllocationStepDelay(0, kMinimumStepDelay);
@@ -1413,8 +1426,10 @@ TEST_F(P2PTransportChannelTest, TestForceTurn) {
 
   CreateChannels(1);
 
-  EXPECT_TRUE_WAIT(ep1_ch1()->readable() && ep1_ch1()->writable() &&
-                       ep2_ch1()->readable() && ep2_ch1()->writable(),
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() &&
+                   ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() &&
+                   ep2_ch1()->writable(),
                    2000);
 
   EXPECT_TRUE(ep1_ch1()->best_connection() &&
@@ -1460,7 +1475,8 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
 TEST_F(P2PTransportChannelSameNatTest, TestConesBehindSameCone) {
   ConfigureEndpoints(NAT_FULL_CONE, NAT_FULL_CONE, NAT_FULL_CONE);
   Test(P2PTransportChannelTestBase::Result(
-      "prflx", "udp", "stun", "udp", "stun", "udp", "prflx", "udp", 1000));
+      "prflx", "udp", "stun", "udp",
+      "stun", "udp", "prflx", "udp", 1000));
 }
 
 // Test what happens when we have multiple available pathways.
@@ -1577,9 +1593,15 @@ class P2PTransportChannelPingTest : public testing::Test,
 
  protected:
   void PrepareChannel(cricket::P2PTransportChannel* ch) {
+    ch->SignalRequestSignaling.connect(
+        this, &P2PTransportChannelPingTest::OnChannelRequestSignaling);
     ch->SetIceRole(cricket::ICEROLE_CONTROLLING);
     ch->SetIceCredentials(kIceUfrag[0], kIcePwd[0]);
     ch->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  }
+
+  void OnChannelRequestSignaling(cricket::TransportChannelImpl* channel) {
+    channel->OnSignalingReady();
   }
 
   cricket::Candidate CreateCandidate(const std::string& ip,
@@ -1628,8 +1650,8 @@ TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
   cricket::P2PTransportChannel ch("trigger checks", 1, nullptr, &pa);
   PrepareChannel(&ch);
   ch.Connect();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 2));
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 2));
 
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
@@ -1652,8 +1674,8 @@ TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
   cricket::P2PTransportChannel ch("trigger checks", 1, nullptr, &pa);
   PrepareChannel(&ch);
   ch.Connect();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 2));
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 2));
 
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
@@ -1678,14 +1700,14 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   ch.Connect();
 
   // Create conn1 and keep track of original candidate priority.
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   uint32 remote_priority = conn1->remote_candidate().priority();
 
   // Create a higher priority candidate and make the connection
   // readable/writable. This will prune conn1.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 2));
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 2));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();
@@ -1732,7 +1754,7 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   EXPECT_EQ(500, ch.receiving_timeout());
   EXPECT_EQ(50, ch.check_receiving_delay());
   ch.Connect();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
 
@@ -1753,14 +1775,14 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   PrepareChannel(&ch);
   ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
   ch.Connect();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
 
   // When a higher priority candidate comes in, the new connection is chosen
   // as the best connection.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 10));
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 10));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn2, ch.best_connection());
@@ -1768,7 +1790,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // If a stun request with use-candidate attribute arrives, the receiving
   // connection will be set as the best connection, even though
   // its priority is lower.
-  ch.AddRemoteCandidate(CreateCandidate("3.3.3.3", 3, 1));
+  ch.OnCandidate(CreateCandidate("3.3.3.3", 3, 1));
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   // Because it has a lower priority, the best connection is still conn2.
@@ -1783,7 +1805,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // Even if another higher priority candidate arrives,
   // it will not be set as the best connection because the best connection
   // is nominated by the controlling side.
-  ch.AddRemoteCandidate(CreateCandidate("4.4.4.4", 4, 100));
+  ch.OnCandidate(CreateCandidate("4.4.4.4", 4, 100));
   cricket::Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
   ASSERT_TRUE(conn4 != nullptr);
   EXPECT_EQ(conn3, ch.best_connection());
@@ -1826,7 +1848,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_EQ(conn1, ch.best_connection());
 
   // Another connection is nominated via use_candidate.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 1));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   // Because it has a lower priority, the best connection is still conn1.
@@ -1872,7 +1894,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   PrepareChannel(&ch);
   ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
   ch.Connect();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 10));
+  ch.OnCandidate(CreateCandidate("1.1.1.1", 1, 10));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
@@ -1880,7 +1902,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   // If a data packet is received on conn2, the best connection should
   // switch to conn2 because the controlled side must mirror the media path
   // chosen by the controlling side.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 1));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();  // Become readable.

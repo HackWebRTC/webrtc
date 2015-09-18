@@ -25,8 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <vector>
-
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/fakemetricsobserver.h"
 #include "talk/app/webrtc/jsepicecandidate.h"
@@ -165,8 +163,8 @@ static void InjectAfter(const std::string& line,
                         const std::string& newlines,
                         std::string* message) {
   const std::string tmp = line + newlines;
-  rtc::replace_substrs(line.c_str(), line.length(), tmp.c_str(), tmp.length(),
-                       message);
+  rtc::replace_substrs(line.c_str(), line.length(),
+                       tmp.c_str(), tmp.length(), message);
 }
 
 class MockIceObserver : public webrtc::IceObserver {
@@ -246,52 +244,12 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
   }
   virtual ~WebRtcSessionForTest() {}
 
-  // Note that these methods are only safe to use if the signaling thread
-  // is the same as the worker thread
-  cricket::TransportChannel* voice_rtp_transport_channel() {
-    return rtp_transport_channel(voice_channel());
-  }
-
-  cricket::TransportChannel* voice_rtcp_transport_channel() {
-    return rtcp_transport_channel(voice_channel());
-  }
-
-  cricket::TransportChannel* video_rtp_transport_channel() {
-    return rtp_transport_channel(video_channel());
-  }
-
-  cricket::TransportChannel* video_rtcp_transport_channel() {
-    return rtcp_transport_channel(video_channel());
-  }
-
-  cricket::TransportChannel* data_rtp_transport_channel() {
-    return rtp_transport_channel(data_channel());
-  }
-
-  cricket::TransportChannel* data_rtcp_transport_channel() {
-    return rtcp_transport_channel(data_channel());
-  }
-
+  using cricket::BaseSession::GetTransportProxy;
   using webrtc::WebRtcSession::SetAudioPlayout;
   using webrtc::WebRtcSession::SetAudioSend;
   using webrtc::WebRtcSession::SetCaptureDevice;
   using webrtc::WebRtcSession::SetVideoPlayout;
   using webrtc::WebRtcSession::SetVideoSend;
-
- private:
-  cricket::TransportChannel* rtp_transport_channel(cricket::BaseChannel* ch) {
-    if (!ch) {
-      return nullptr;
-    }
-    return ch->transport_channel();
-  }
-
-  cricket::TransportChannel* rtcp_transport_channel(cricket::BaseChannel* ch) {
-    if (!ch) {
-      return nullptr;
-    }
-    return ch->rtcp_transport_channel();
-  }
 };
 
 class WebRtcSessionCreateSDPObserverForTest
@@ -417,9 +375,9 @@ class WebRtcSessionTest
     EXPECT_EQ(PeerConnectionInterface::kIceGatheringNew,
         observer_.ice_gathering_state_);
 
-    EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
-                                     dtls_identity_store.Pass(),
-                                     rtc_configuration));
+    EXPECT_TRUE(session_->Initialize(
+        options_, constraints_.get(), dtls_identity_store.Pass(),
+        rtc_configuration));
     session_->set_metrics_observer(metrics_observer_);
   }
 
@@ -530,6 +488,13 @@ class WebRtcSessionTest
   bool ChannelsExist() const {
     return (session_->voice_channel() != NULL &&
             session_->video_channel() != NULL);
+  }
+
+  void CheckTransportChannels() const {
+    EXPECT_TRUE(session_->GetChannel(cricket::CN_AUDIO, 1) != NULL);
+    EXPECT_TRUE(session_->GetChannel(cricket::CN_AUDIO, 2) != NULL);
+    EXPECT_TRUE(session_->GetChannel(cricket::CN_VIDEO, 1) != NULL);
+    EXPECT_TRUE(session_->GetChannel(cricket::CN_VIDEO, 2) != NULL);
   }
 
   void VerifyCryptoParams(const cricket::SessionDescription* sdp) {
@@ -1003,10 +968,15 @@ class WebRtcSessionTest
     SetRemoteDescriptionWithoutError(new_answer);
     EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
     EXPECT_EQ(expected_candidate_num, observer_.mline_0_candidates_.size());
-    if (bundle) {
-      EXPECT_EQ(0, observer_.mline_1_candidates_.size());
-    } else {
-      EXPECT_EQ(expected_candidate_num, observer_.mline_1_candidates_.size());
+    EXPECT_EQ(expected_candidate_num, observer_.mline_1_candidates_.size());
+    for (size_t i = 0; i < observer_.mline_0_candidates_.size(); ++i) {
+      cricket::Candidate c0 = observer_.mline_0_candidates_[i];
+      cricket::Candidate c1 = observer_.mline_1_candidates_[i];
+      if (bundle) {
+        EXPECT_TRUE(c0.IsEquivalent(c1));
+      } else {
+        EXPECT_FALSE(c0.IsEquivalent(c1));
+      }
     }
   }
   // Tests that we can only send DTMF when the dtmf codec is supported.
@@ -1031,7 +1001,7 @@ class WebRtcSessionTest
   // initial ICE convergences.
 
   class LoopbackNetworkConfiguration {
-   public:
+  public:
     LoopbackNetworkConfiguration()
         : test_ipv6_network_(false),
           test_extra_ipv4_network_(false),
@@ -1180,8 +1150,11 @@ class WebRtcSessionTest
 
     // Clearing the rules, session should move back to completed state.
     loopback_network_manager.ClearRules(fss_.get());
+    // Session is automatically calling OnSignalingReady after creation of
+    // new portallocator session which will allocate new set of candidates.
 
     LOG(LS_INFO) << "Firewall Rules cleared";
+
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
@@ -1734,14 +1707,15 @@ TEST_P(WebRtcSessionTest, TestSetLocalNonDtlsAnswerWhenDtlsOn) {
 // a DTLS fingerprint when DTLS is required.
 TEST_P(WebRtcSessionTest, TestSetRemoteNonDtlsAnswerWhenDtlsOn) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+  // Enable both SDES and DTLS, so that offer won't be outright rejected as a
+  // result of using the "UDP/TLS/RTP/SAVPF" profile.
   InitWithDtls(GetParam());
+  session_->SetSdesPolicy(cricket::SEC_ENABLED);
   SessionDescriptionInterface* offer = CreateOffer();
   cricket::MediaSessionOptions options;
   options.recv_video = true;
-  rtc::scoped_ptr<SessionDescriptionInterface> temp_offer(
-      CreateRemoteOffer(options, cricket::SEC_ENABLED));
   JsepSessionDescription* answer =
-      CreateRemoteAnswer(temp_offer.get(), options, cricket::SEC_ENABLED);
+      CreateRemoteAnswer(offer, options, cricket::SEC_ENABLED);
 
   // SetRemoteDescription and SetLocalDescription will take the ownership of
   // the offer and answer.
@@ -2043,7 +2017,7 @@ TEST_F(WebRtcSessionTest, TestLocalCandidatesAddedToSessionDescription) {
   EXPECT_LT(0u, candidates->count());
   candidates = local_desc->candidates(1);
   ASSERT_TRUE(candidates != NULL);
-  EXPECT_EQ(0u, candidates->count());
+  EXPECT_LT(0u, candidates->count());
 
   // Update the session descriptions.
   mediastream_signaling_.SendAudioVideoStream1();
@@ -2055,7 +2029,7 @@ TEST_F(WebRtcSessionTest, TestLocalCandidatesAddedToSessionDescription) {
   EXPECT_LT(0u, candidates->count());
   candidates = local_desc->candidates(1);
   ASSERT_TRUE(candidates != NULL);
-  EXPECT_EQ(0u, candidates->count());
+  EXPECT_LT(0u, candidates->count());
 }
 
 // Test that we can set a remote session description with remote candidates.
@@ -2099,17 +2073,23 @@ TEST_F(WebRtcSessionTest, TestSetLocalAndRemoteDescriptionWithCandidates) {
   // Wait until at least one local candidate has been collected.
   EXPECT_TRUE_WAIT(0u < observer_.mline_0_candidates_.size(),
                    kIceCandidatesTimeout);
+  EXPECT_TRUE_WAIT(0u < observer_.mline_1_candidates_.size(),
+                   kIceCandidatesTimeout);
 
   rtc::scoped_ptr<SessionDescriptionInterface> local_offer(CreateOffer());
 
   ASSERT_TRUE(local_offer->candidates(kMediaContentIndex0) != NULL);
   EXPECT_LT(0u, local_offer->candidates(kMediaContentIndex0)->count());
+  ASSERT_TRUE(local_offer->candidates(kMediaContentIndex1) != NULL);
+  EXPECT_LT(0u, local_offer->candidates(kMediaContentIndex1)->count());
 
   SessionDescriptionInterface* remote_offer(CreateRemoteOffer());
   SetRemoteDescriptionWithoutError(remote_offer);
   SessionDescriptionInterface* answer = CreateAnswer(NULL);
   ASSERT_TRUE(answer->candidates(kMediaContentIndex0) != NULL);
   EXPECT_LT(0u, answer->candidates(kMediaContentIndex0)->count());
+  ASSERT_TRUE(answer->candidates(kMediaContentIndex1) != NULL);
+  EXPECT_LT(0u, answer->candidates(kMediaContentIndex1)->count());
   SetLocalDescriptionWithoutError(answer);
 }
 
@@ -2151,14 +2131,8 @@ TEST_F(WebRtcSessionTest, TestChannelCreationsWithContentNames) {
       CreateAnswer(NULL);
   SetLocalDescriptionWithoutError(answer);
 
-  cricket::TransportChannel* voice_transport_channel =
-      session_->voice_rtp_transport_channel();
-  EXPECT_TRUE(voice_transport_channel != NULL);
-  EXPECT_EQ(voice_transport_channel->transport_name(), "audio_content_name");
-  cricket::TransportChannel* video_transport_channel =
-      session_->video_rtp_transport_channel();
-  EXPECT_TRUE(video_transport_channel != NULL);
-  EXPECT_EQ(video_transport_channel->transport_name(), "video_content_name");
+  EXPECT_TRUE(session_->GetTransportProxy("audio_content_name") != NULL);
+  EXPECT_TRUE(session_->GetTransportProxy("video_content_name") != NULL);
   EXPECT_TRUE((video_channel_ = media_engine_->GetVideoChannel(0)) != NULL);
   EXPECT_TRUE((voice_channel_ = media_engine_->GetVoiceChannel(0)) != NULL);
 }
@@ -2718,23 +2692,20 @@ TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
   SessionDescriptionInterface* answer = CreateAnswer(NULL);
   SetLocalDescriptionWithoutError(answer);
 
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 
-  cricket::BaseChannel* voice_channel = session_->voice_channel();
-  ASSERT(voice_channel != NULL);
+  cricket::Transport* t = session_->GetTransport("audio");
 
   // Checks if one of the transport channels contains a connection using a given
   // port.
-  auto connection_with_remote_port = [this, voice_channel](int port) {
-    cricket::SessionStats stats;
-    session_->GetChannelTransportStats(voice_channel, &stats);
-    for (auto& kv : stats.transport_stats) {
-      for (auto& chan_stat : kv.second.channel_stats) {
-        for (auto& conn_info : chan_stat.connection_infos) {
-          if (conn_info.remote_candidate.address().port() == port) {
-            return true;
-          }
+  auto connection_with_remote_port = [t](int port) {
+    cricket::TransportStats stats;
+    t->GetStats(&stats);
+    for (auto& chan_stat : stats.channel_stats) {
+      for (auto& conn_info : chan_stat.connection_infos) {
+        if (conn_info.remote_candidate.address().port() == port) {
+          return true;
         }
       }
     }
@@ -2787,7 +2758,7 @@ TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
   EXPECT_FALSE(connection_with_remote_port(6000));
 }
 
-// kBundlePolicyBalanced BUNDLE policy and answer contains BUNDLE.
+// kBundlePolicyBalanced bundle policy and answer contains BUNDLE.
 TEST_F(WebRtcSessionTest, TestBalancedBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
   mediastream_signaling_.SendAudioVideoStream1();
@@ -2798,19 +2769,19 @@ TEST_F(WebRtcSessionTest, TestBalancedBundleInAnswer) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetLocalDescriptionWithoutError(offer);
 
-  EXPECT_NE(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_NE(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 
   mediastream_signaling_.SendAudioVideoStream2();
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(session_->local_description());
   SetRemoteDescriptionWithoutError(answer);
 
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 }
 
-// kBundlePolicyBalanced BUNDLE policy but no BUNDLE in the answer.
+// kBundlePolicyBalanced bundle policy but no BUNDLE in the answer.
 TEST_F(WebRtcSessionTest, TestBalancedNoBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
   mediastream_signaling_.SendAudioVideoStream1();
@@ -2821,8 +2792,8 @@ TEST_F(WebRtcSessionTest, TestBalancedNoBundleInAnswer) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetLocalDescriptionWithoutError(offer);
 
-  EXPECT_NE(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_NE(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 
   mediastream_signaling_.SendAudioVideoStream2();
 
@@ -2836,8 +2807,8 @@ TEST_F(WebRtcSessionTest, TestBalancedNoBundleInAnswer) {
   modified_answer->Initialize(answer_copy, "1", "1");
   SetRemoteDescriptionWithoutError(modified_answer);  //
 
-  EXPECT_NE(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_NE(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 }
 
 // kBundlePolicyMaxBundle policy with BUNDLE in the answer.
@@ -2851,49 +2822,16 @@ TEST_F(WebRtcSessionTest, TestMaxBundleBundleInAnswer) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetLocalDescriptionWithoutError(offer);
 
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 
   mediastream_signaling_.SendAudioVideoStream2();
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(session_->local_description());
   SetRemoteDescriptionWithoutError(answer);
 
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
-}
-
-// kBundlePolicyMaxBundle policy with BUNDLE in the answer, but no
-// audio content in the answer.
-TEST_F(WebRtcSessionTest, TestMaxBundleRejectAudio) {
-  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
-  mediastream_signaling_.SendAudioVideoStream1();
-
-  PeerConnectionInterface::RTCOfferAnswerOptions options;
-  options.use_rtp_mux = true;
-
-  SessionDescriptionInterface* offer = CreateOffer(options);
-  SetLocalDescriptionWithoutError(offer);
-
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
-
-  mediastream_signaling_.SendAudioVideoStream2();
-  cricket::MediaSessionOptions recv_options;
-  recv_options.recv_audio = false;
-  recv_options.recv_video = true;
-  SessionDescriptionInterface* answer =
-      CreateRemoteAnswer(session_->local_description(), recv_options);
-  SetRemoteDescriptionWithoutError(answer);
-
-  EXPECT_TRUE(NULL == session_->voice_channel());
-  EXPECT_TRUE(NULL != session_->video_rtp_transport_channel());
-
-  session_->Terminate();
-  EXPECT_TRUE(NULL == session_->voice_rtp_transport_channel());
-  EXPECT_TRUE(NULL == session_->voice_rtcp_transport_channel());
-  EXPECT_TRUE(NULL == session_->video_rtp_transport_channel());
-  EXPECT_TRUE(NULL == session_->video_rtcp_transport_channel());
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 }
 
 // kBundlePolicyMaxBundle policy but no BUNDLE in the answer.
@@ -2907,8 +2845,8 @@ TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInAnswer) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetLocalDescriptionWithoutError(offer);
 
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 
   mediastream_signaling_.SendAudioVideoStream2();
 
@@ -2922,45 +2860,8 @@ TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInAnswer) {
   modified_answer->Initialize(answer_copy, "1", "1");
   SetRemoteDescriptionWithoutError(modified_answer);
 
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
-}
-
-// kBundlePolicyMaxBundle policy with BUNDLE in the remote offer.
-TEST_F(WebRtcSessionTest, TestMaxBundleBundleInRemoteOffer) {
-  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
-  mediastream_signaling_.SendAudioVideoStream1();
-
-  SessionDescriptionInterface* offer = CreateRemoteOffer();
-  SetRemoteDescriptionWithoutError(offer);
-
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
-
-  mediastream_signaling_.SendAudioVideoStream2();
-  SessionDescriptionInterface* answer = CreateAnswer(nullptr);
-  SetLocalDescriptionWithoutError(answer);
-
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
-}
-
-// kBundlePolicyMaxBundle policy but no BUNDLE in the remote offer.
-TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInRemoteOffer) {
-  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
-  mediastream_signaling_.SendAudioVideoStream1();
-
-  // Remove BUNDLE from the offer.
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
-  cricket::SessionDescription* offer_copy = offer->description()->Copy();
-  offer_copy->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
-  JsepSessionDescription* modified_offer =
-      new JsepSessionDescription(JsepSessionDescription::kOffer);
-  modified_offer->Initialize(offer_copy, "1", "1");
-
-  // Expect an error when applying the remote description
-  SetRemoteDescriptionExpectError(JsepSessionDescription::kOffer,
-                                  kCreateChannelFailed, modified_offer);
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 }
 
 // kBundlePolicyMaxCompat bundle policy and answer contains BUNDLE.
@@ -2974,8 +2875,8 @@ TEST_F(WebRtcSessionTest, TestMaxCompatBundleInAnswer) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetLocalDescriptionWithoutError(offer);
 
-  EXPECT_NE(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_NE(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 
   mediastream_signaling_.SendAudioVideoStream2();
   SessionDescriptionInterface* answer =
@@ -2984,11 +2885,11 @@ TEST_F(WebRtcSessionTest, TestMaxCompatBundleInAnswer) {
 
   // This should lead to an audio-only call but isn't implemented
   // correctly yet.
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 }
 
-// kBundlePolicyMaxCompat BUNDLE policy but no BUNDLE in the answer.
+// kBundlePolicyMaxCompat bundle policy but no BUNDLE in the answer.
 TEST_F(WebRtcSessionTest, TestMaxCompatNoBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxCompat);
   mediastream_signaling_.SendAudioVideoStream1();
@@ -2998,8 +2899,8 @@ TEST_F(WebRtcSessionTest, TestMaxCompatNoBundleInAnswer) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetLocalDescriptionWithoutError(offer);
 
-  EXPECT_NE(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_NE(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 
   mediastream_signaling_.SendAudioVideoStream2();
 
@@ -3013,8 +2914,8 @@ TEST_F(WebRtcSessionTest, TestMaxCompatNoBundleInAnswer) {
   modified_answer->Initialize(answer_copy, "1", "1");
   SetRemoteDescriptionWithoutError(modified_answer);  //
 
-  EXPECT_NE(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_NE(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 }
 
 // kBundlePolicyMaxbundle and then we call SetRemoteDescription first.
@@ -3028,8 +2929,8 @@ TEST_F(WebRtcSessionTest, TestMaxBundleWithSetRemoteDescriptionFirst) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetRemoteDescriptionWithoutError(offer);
 
-  EXPECT_EQ(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
 }
 
 TEST_F(WebRtcSessionTest, TestRequireRtcpMux) {
@@ -3040,16 +2941,16 @@ TEST_F(WebRtcSessionTest, TestRequireRtcpMux) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetLocalDescriptionWithoutError(offer);
 
-  EXPECT_TRUE(session_->voice_rtcp_transport_channel() == NULL);
-  EXPECT_TRUE(session_->video_rtcp_transport_channel() == NULL);
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
 
   mediastream_signaling_.SendAudioVideoStream2();
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(session_->local_description());
   SetRemoteDescriptionWithoutError(answer);
 
-  EXPECT_TRUE(session_->voice_rtcp_transport_channel() == NULL);
-  EXPECT_TRUE(session_->video_rtcp_transport_channel() == NULL);
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
 }
 
 TEST_F(WebRtcSessionTest, TestNegotiateRtcpMux) {
@@ -3060,16 +2961,16 @@ TEST_F(WebRtcSessionTest, TestNegotiateRtcpMux) {
   SessionDescriptionInterface* offer = CreateOffer(options);
   SetLocalDescriptionWithoutError(offer);
 
-  EXPECT_TRUE(session_->voice_rtcp_transport_channel() != NULL);
-  EXPECT_TRUE(session_->video_rtcp_transport_channel() != NULL);
+  EXPECT_TRUE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_TRUE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
 
   mediastream_signaling_.SendAudioVideoStream2();
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(session_->local_description());
   SetRemoteDescriptionWithoutError(answer);
 
-  EXPECT_TRUE(session_->voice_rtcp_transport_channel() == NULL);
-  EXPECT_TRUE(session_->video_rtcp_transport_channel() == NULL);
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
 }
 
 // This test verifies that SetLocalDescription and SetRemoteDescription fails
@@ -3090,11 +2991,11 @@ TEST_F(WebRtcSessionTest, TestDisabledRtcpMuxWithBundleEnabled) {
   rtc::replace_substrs(rtcp_mux.c_str(), rtcp_mux.length(),
                              xrtcp_mux.c_str(), xrtcp_mux.length(),
                              &offer_str);
-  JsepSessionDescription* local_offer =
+  JsepSessionDescription *local_offer =
       new JsepSessionDescription(JsepSessionDescription::kOffer);
   EXPECT_TRUE((local_offer)->Initialize(offer_str, NULL));
   SetLocalDescriptionOfferExpectError(kBundleWithoutRtcpMux, local_offer);
-  JsepSessionDescription* remote_offer =
+  JsepSessionDescription *remote_offer =
       new JsepSessionDescription(JsepSessionDescription::kOffer);
   EXPECT_TRUE((remote_offer)->Initialize(offer_str, NULL));
   SetRemoteDescriptionOfferExpectError(kBundleWithoutRtcpMux, remote_offer);
@@ -3357,8 +3258,8 @@ TEST_F(WebRtcSessionTest, TestIceStartAfterSetLocalDescriptionOnly) {
                                   candidate1);
   EXPECT_TRUE(offer->AddCandidate(&ice_candidate1));
   SetRemoteDescriptionWithoutError(offer);
-  ASSERT_TRUE(session_->voice_rtp_transport_channel() != NULL);
-  ASSERT_TRUE(session_->video_rtp_transport_channel() != NULL);
+  ASSERT_TRUE(session_->GetTransportProxy("audio") != NULL);
+  ASSERT_TRUE(session_->GetTransportProxy("video") != NULL);
 
   // Pump for 1 second and verify that no candidates are generated.
   rtc::Thread::Current()->ProcessMessages(1000);
@@ -3367,6 +3268,8 @@ TEST_F(WebRtcSessionTest, TestIceStartAfterSetLocalDescriptionOnly) {
 
   SessionDescriptionInterface* answer = CreateAnswer(NULL);
   SetLocalDescriptionWithoutError(answer);
+  EXPECT_TRUE(session_->GetTransportProxy("audio")->negotiated());
+  EXPECT_TRUE(session_->GetTransportProxy("video")->negotiated());
   EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
 }
 
@@ -3401,7 +3304,7 @@ TEST_F(WebRtcSessionTest, TestCryptoAfterSetLocalDescriptionWithDisabled) {
   // will be set as per MediaSessionDescriptionFactory.
   std::string offer_str;
   offer->ToString(&offer_str);
-  SessionDescriptionInterface* jsep_offer_str =
+  SessionDescriptionInterface *jsep_offer_str =
       CreateSessionDescription(JsepSessionDescription::kOffer, offer_str, NULL);
   SetLocalDescriptionWithoutError(jsep_offer_str);
   EXPECT_FALSE(session_->voice_channel()->secure_required());
@@ -3754,8 +3657,8 @@ TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnFailure) {
 TEST_P(WebRtcSessionTest,
        TestMultipleCreateOfferBeforeIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  VerifyMultipleAsyncCreateDescription(GetParam(),
-                                       CreateSessionDescriptionRequest::kOffer);
+  VerifyMultipleAsyncCreateDescription(
+      GetParam(), CreateSessionDescriptionRequest::kOffer);
 }
 
 // Verifies that CreateOffer fails when Multiple CreateOffer calls are made
@@ -3978,31 +3881,31 @@ TEST_F(WebRtcSessionTest, TestSetSocketOptionBeforeBundle) {
                                        rtc::Socket::Option::OPT_RCVBUF, 8000);
 
   int option_val;
-  EXPECT_TRUE(session_->video_rtp_transport_channel()->GetOption(
+  EXPECT_TRUE(session_->video_channel()->transport_channel()->GetOption(
       rtc::Socket::Option::OPT_SNDBUF, &option_val));
   EXPECT_EQ(4000, option_val);
-  EXPECT_FALSE(session_->voice_rtp_transport_channel()->GetOption(
+  EXPECT_FALSE(session_->voice_channel()->transport_channel()->GetOption(
       rtc::Socket::Option::OPT_SNDBUF, &option_val));
 
-  EXPECT_TRUE(session_->voice_rtp_transport_channel()->GetOption(
+  EXPECT_TRUE(session_->voice_channel()->transport_channel()->GetOption(
       rtc::Socket::Option::OPT_RCVBUF, &option_val));
   EXPECT_EQ(8000, option_val);
-  EXPECT_FALSE(session_->video_rtp_transport_channel()->GetOption(
+  EXPECT_FALSE(session_->video_channel()->transport_channel()->GetOption(
       rtc::Socket::Option::OPT_RCVBUF, &option_val));
 
-  EXPECT_NE(session_->voice_rtp_transport_channel(),
-            session_->video_rtp_transport_channel());
+  EXPECT_NE(session_->voice_channel()->transport_channel(),
+            session_->video_channel()->transport_channel());
 
   mediastream_signaling_.SendAudioVideoStream2();
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(session_->local_description());
   SetRemoteDescriptionWithoutError(answer);
 
-  EXPECT_TRUE(session_->voice_rtp_transport_channel()->GetOption(
+  EXPECT_TRUE(session_->voice_channel()->transport_channel()->GetOption(
       rtc::Socket::Option::OPT_SNDBUF, &option_val));
   EXPECT_EQ(4000, option_val);
 
-  EXPECT_TRUE(session_->voice_rtp_transport_channel()->GetOption(
+  EXPECT_TRUE(session_->voice_channel()->transport_channel()->GetOption(
       rtc::Socket::Option::OPT_RCVBUF, &option_val));
   EXPECT_EQ(8000, option_val);
 }
@@ -4038,7 +3941,6 @@ TEST_F(WebRtcSessionTest, CreateOffersAndShutdown) {
 // currently fails because upon disconnection and reconnection OnIceComplete is
 // called more than once without returning to IceGatheringGathering.
 
-INSTANTIATE_TEST_CASE_P(WebRtcSessionTests,
-                        WebRtcSessionTest,
-                        testing::Values(ALREADY_GENERATED,
-                                        DTLS_IDENTITY_STORE));
+INSTANTIATE_TEST_CASE_P(
+    WebRtcSessionTests, WebRtcSessionTest,
+    testing::Values(ALREADY_GENERATED, DTLS_IDENTITY_STORE));

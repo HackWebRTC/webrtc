@@ -90,12 +90,13 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
                                         public sigslot::has_slots<> {
  public:
   // Construct with DTLS disabled.
-  WebRtcSessionDescriptionFactory(rtc::Thread* signaling_thread,
-                                  cricket::ChannelManager* channel_manager,
-                                  MediaStreamSignaling* mediastream_signaling,
-                                  WebRtcSession* session,
-                                  const std::string& session_id,
-                                  cricket::DataChannelType dct);
+  WebRtcSessionDescriptionFactory(
+      rtc::Thread* signaling_thread,
+      cricket::ChannelManager* channel_manager,
+      MediaStreamSignaling* mediastream_signaling,
+      WebRtcSession* session,
+      const std::string& session_id,
+      cricket::DataChannelType dct);
 
   // Construct with DTLS enabled using the specified |dtls_identity_store| to
   // generate a certificate.
