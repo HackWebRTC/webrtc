@@ -66,7 +66,7 @@ VideoProcessingModuleTest::VideoProcessingModuleTest()
       frame_length_(CalcBufferSize(kI420, width_, height_)) {}
 
 void VideoProcessingModuleTest::SetUp() {
-  vpm_ = VideoProcessingModule::Create(0);
+  vpm_ = VideoProcessingModule::Create();
   ASSERT_TRUE(vpm_ != NULL);
 
   ASSERT_EQ(0, video_frame_.CreateEmptyFrame(width_, height_, width_,

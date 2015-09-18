@@ -109,7 +109,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
                        BitrateAllocator* bitrate_allocator)
     : channel_id_(channel_id),
       number_of_cores_(number_of_cores),
-      vpm_(VideoProcessingModule::Create(ViEModuleId(-1, channel_id))),
+      vpm_(VideoProcessingModule::Create()),
       qm_callback_(new QMVideoSettingsCallback(vpm_.get())),
       vcm_(VideoCodingModule::Create(Clock::GetRealTimeClock(),
                                      this,

@@ -76,7 +76,7 @@ class VideoProcessingModule : public Module {
 
      \return Pointer to a VPM object.
   */
-  static VideoProcessingModule* Create(int32_t id);
+  static VideoProcessingModule* Create();
 
   /**
      Destroys a VPM object.

@@ -37,8 +37,8 @@ void  SetSubSampling(VideoProcessingModule::FrameStats* stats,
 }
 }  // namespace
 
-VideoProcessingModule* VideoProcessingModule::Create(const int32_t id) {
-  return new VideoProcessingModuleImpl(id);
+VideoProcessingModule* VideoProcessingModule::Create() {
+  return new VideoProcessingModuleImpl();
 }
 
 void VideoProcessingModule::Destroy(VideoProcessingModule* module) {
@@ -46,16 +46,11 @@ void VideoProcessingModule::Destroy(VideoProcessingModule* module) {
     delete static_cast<VideoProcessingModuleImpl*>(module);
 }
 
-VideoProcessingModuleImpl::VideoProcessingModuleImpl(const int32_t id)
-    : mutex_(*CriticalSectionWrapper::CreateCriticalSection()) {
-}
-
-VideoProcessingModuleImpl::~VideoProcessingModuleImpl() {
-  delete &mutex_;
-}
+VideoProcessingModuleImpl::VideoProcessingModuleImpl() {}
+VideoProcessingModuleImpl::~VideoProcessingModuleImpl() {}
 
 void VideoProcessingModuleImpl::Reset() {
-  CriticalSectionScoped mutex(&mutex_);
+  rtc::CritScope mutex(&mutex_);
   deflickering_.Reset();
   brightness_detection_.Reset();
   frame_pre_processor_.Reset();
@@ -117,71 +112,71 @@ int32_t VideoProcessingModule::Brighten(VideoFrame* frame, int delta) {
 
 int32_t VideoProcessingModuleImpl::Deflickering(VideoFrame* frame,
                                                 FrameStats* stats) {
-  CriticalSectionScoped mutex(&mutex_);
+  rtc::CritScope mutex(&mutex_);
   return deflickering_.ProcessFrame(frame, stats);
 }
 
 int32_t VideoProcessingModuleImpl::BrightnessDetection(
     const VideoFrame& frame,
     const FrameStats& stats) {
-  CriticalSectionScoped mutex(&mutex_);
+  rtc::CritScope mutex(&mutex_);
   return brightness_detection_.ProcessFrame(frame, stats);
 }
 
 
 void VideoProcessingModuleImpl::EnableTemporalDecimation(bool enable) {
-  CriticalSectionScoped mutex(&mutex_);
+  rtc::CritScope mutex(&mutex_);
   frame_pre_processor_.EnableTemporalDecimation(enable);
 }
 
 
 void VideoProcessingModuleImpl::SetInputFrameResampleMode(VideoFrameResampling
                                                           resampling_mode) {
-  CriticalSectionScoped cs(&mutex_);
+  rtc::CritScope cs(&mutex_);
   frame_pre_processor_.SetInputFrameResampleMode(resampling_mode);
 }
 
 int32_t VideoProcessingModuleImpl::SetTargetResolution(uint32_t width,
                                                        uint32_t height,
                                                        uint32_t frame_rate) {
-  CriticalSectionScoped cs(&mutex_);
+  rtc::CritScope cs(&mutex_);
   return frame_pre_processor_.SetTargetResolution(width, height, frame_rate);
 }
 
 void VideoProcessingModuleImpl::SetTargetFramerate(int frame_rate) {
-  CriticalSectionScoped cs(&mutex_);
+  rtc::CritScope cs(&mutex_);
   frame_pre_processor_.SetTargetFramerate(frame_rate);
 }
 
 uint32_t VideoProcessingModuleImpl::Decimatedframe_rate() {
-  CriticalSectionScoped cs(&mutex_);
+  rtc::CritScope cs(&mutex_);
   return  frame_pre_processor_.Decimatedframe_rate();
 }
 
 uint32_t VideoProcessingModuleImpl::DecimatedWidth() const {
-  CriticalSectionScoped cs(&mutex_);
+  rtc::CritScope cs(&mutex_);
   return frame_pre_processor_.DecimatedWidth();
 }
 
 uint32_t VideoProcessingModuleImpl::DecimatedHeight() const {
-  CriticalSectionScoped cs(&mutex_);
+  rtc::CritScope cs(&mutex_);
   return frame_pre_processor_.DecimatedHeight();
 }
 
 int32_t VideoProcessingModuleImpl::PreprocessFrame(
     const VideoFrame& frame,
     VideoFrame** processed_frame) {
-  CriticalSectionScoped mutex(&mutex_);
+  rtc::CritScope mutex(&mutex_);
   return frame_pre_processor_.PreprocessFrame(frame, processed_frame);
 }
 
 VideoContentMetrics* VideoProcessingModuleImpl::ContentMetrics() const {
-  CriticalSectionScoped mutex(&mutex_);
+  rtc::CritScope mutex(&mutex_);
   return frame_pre_processor_.ContentMetrics();
 }
 
 void VideoProcessingModuleImpl::EnableContentAnalysis(bool enable) {
-  CriticalSectionScoped mutex(&mutex_);
+  rtc::CritScope mutex(&mutex_);
   frame_pre_processor_.EnableContentAnalysis(enable);
 }
 

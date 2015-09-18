@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULE_VIDEO_PROCESSING_IMPL_H
 #define WEBRTC_MODULE_VIDEO_PROCESSING_IMPL_H
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/modules/video_processing/main/source/brighten.h"
 #include "webrtc/modules/video_processing/main/source/brightness_detection.h"
@@ -22,9 +23,8 @@ class CriticalSectionWrapper;
 
 class VideoProcessingModuleImpl : public VideoProcessingModule {
  public:
-  VideoProcessingModuleImpl(int32_t id);
-
-  virtual ~VideoProcessingModuleImpl();
+  VideoProcessingModuleImpl();
+  ~VideoProcessingModuleImpl() override;
 
   void Reset() override;
 
@@ -64,8 +64,8 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
   VideoContentMetrics* ContentMetrics() const override;
 
  private:
-  CriticalSectionWrapper& mutex_;
-  VPMDeflickering deflickering_;
+  mutable rtc::CriticalSection mutex_;
+  VPMDeflickering deflickering_ GUARDED_BY(mutex_);
   VPMBrightnessDetection brightness_detection_;
   VPMFramePreprocessor frame_pre_processor_;
 };
