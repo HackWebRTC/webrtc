@@ -13,13 +13,26 @@ package org.webrtc;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.EnumSet;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /** Java wrapper for WebRTC logging. */
 public class Logging {
+  private static final Logger fallbackLogger = Logger.getLogger("org.webrtc.Logging");
+
   static {
     try {
       System.loadLibrary("jingle_peerconnection_so");
     } catch (Throwable t) {
+      // If native logging is unavailable, log to system log.
+      ConsoleHandler consolehandler = new ConsoleHandler();
+      consolehandler.setFormatter(new SimpleFormatter());
+      consolehandler.setLevel(Level.ALL);
+      fallbackLogger.addHandler(consolehandler);
+      fallbackLogger.setLevel(Level.FINE);
     }
   }
 
@@ -75,6 +88,22 @@ public class Logging {
     try {
       nativeLog(severity.ordinal(), tag, message);
     } catch (Throwable t) {
+      Level level;
+      switch (severity) {
+        case LS_ERROR:
+          level = Level.SEVERE;
+          break;
+        case LS_WARNING:
+          level = Level.WARNING;
+          break;
+        case LS_INFO:
+          level = Level.INFO;
+          break;
+        default:
+          level = Level.FINE;
+          break;
+      }
+      fallbackLogger.log(level, tag + ": " + message);
     }
   }
 
