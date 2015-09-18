@@ -859,6 +859,19 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_GT(info.receivers[0].framerate_decoded, 0);
     EXPECT_GT(info.receivers[0].framerate_output, 0);
   }
+
+  cricket::VideoSenderInfo GetSenderStats(size_t i) {
+    cricket::VideoMediaInfo info;
+    EXPECT_TRUE(channel_->GetStats(&info));
+    return info.senders[i];
+  }
+
+  cricket::VideoReceiverInfo GetReceiverStats(size_t i) {
+    cricket::VideoMediaInfo info;
+    EXPECT_TRUE(channel_->GetStats(&info));
+    return info.receivers[i];
+  }
+
   // Test that stats work properly for a conf call with multiple recv streams.
   void GetStatsMultipleRecvStreams() {
     cricket::FakeVideoRenderer renderer1, renderer2;
@@ -886,25 +899,28 @@ class VideoMediaChannelTest : public testing::Test,
         renderer1, 1, DefaultCodec().width, DefaultCodec().height, kTimeout);
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer2, 1, DefaultCodec().width, DefaultCodec().height, kTimeout);
+
+    EXPECT_TRUE(channel_->SetSend(false));
+
     cricket::VideoMediaInfo info;
     EXPECT_TRUE(channel_->GetStats(&info));
-
     ASSERT_EQ(1U, info.senders.size());
     // TODO(whyuan): bytes_sent and bytes_rcvd are different. Are both payload?
     // For webrtc, bytes_sent does not include the RTP header length.
-    EXPECT_GT(info.senders[0].bytes_sent, 0);
-    EXPECT_EQ(NumRtpPackets(), info.senders[0].packets_sent);
-    EXPECT_EQ(DefaultCodec().width, info.senders[0].send_frame_width);
-    EXPECT_EQ(DefaultCodec().height, info.senders[0].send_frame_height);
+    EXPECT_GT(GetSenderStats(0).bytes_sent, 0);
+    EXPECT_EQ_WAIT(NumRtpPackets(), GetSenderStats(0).packets_sent, kTimeout);
+    EXPECT_EQ(DefaultCodec().width, GetSenderStats(0).send_frame_width);
+    EXPECT_EQ(DefaultCodec().height, GetSenderStats(0).send_frame_height);
 
     ASSERT_EQ(2U, info.receivers.size());
     for (size_t i = 0; i < info.receivers.size(); ++i) {
-      EXPECT_EQ(1U, info.receivers[i].ssrcs().size());
-      EXPECT_EQ(i + 1, info.receivers[i].ssrcs()[0]);
-      EXPECT_EQ(NumRtpBytes(), info.receivers[i].bytes_rcvd);
-      EXPECT_EQ(NumRtpPackets(), info.receivers[i].packets_rcvd);
-      EXPECT_EQ(DefaultCodec().width, info.receivers[i].frame_width);
-      EXPECT_EQ(DefaultCodec().height, info.receivers[i].frame_height);
+      EXPECT_EQ(1U, GetReceiverStats(i).ssrcs().size());
+      EXPECT_EQ(i + 1, GetReceiverStats(i).ssrcs()[0]);
+      EXPECT_EQ_WAIT(NumRtpBytes(), GetReceiverStats(i).bytes_rcvd, kTimeout);
+      EXPECT_EQ_WAIT(NumRtpPackets(), GetReceiverStats(i).packets_rcvd,
+                     kTimeout);
+      EXPECT_EQ(DefaultCodec().width, GetReceiverStats(i).frame_width);
+      EXPECT_EQ(DefaultCodec().height, GetReceiverStats(i).frame_height);
     }
   }
   // Test that stats work properly for a conf call with multiple send streams.
@@ -1065,7 +1081,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetRenderer(kDefaultReceiveSsrc, &renderer_));
     EXPECT_TRUE(SendFrame());
     EXPECT_FRAME_WAIT(1, DefaultCodec().width, DefaultCodec().height, kTimeout);
-    EXPECT_GE(2, NumRtpPackets());
+    EXPECT_GT(NumRtpPackets(), 0);
     uint32 ssrc = 0;
     size_t last_packet = NumRtpPackets() - 1;
     rtc::scoped_ptr<const rtc::Buffer>
@@ -1707,7 +1723,7 @@ class VideoMediaChannelTest : public testing::Test,
     SendAndReceive(codec);
     // Test sending and receiving on second stream.
     EXPECT_EQ_WAIT(1, renderer2_.num_rendered_frames(), kTimeout);
-    EXPECT_EQ(2, NumRtpPackets());
+    EXPECT_GT(NumRtpPackets(), 0);
     EXPECT_EQ(1, renderer2_.num_rendered_frames());
   }
 

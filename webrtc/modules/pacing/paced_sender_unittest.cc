@@ -743,22 +743,6 @@ TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
   }
 }
 
-class ProbingPacedSender : public PacedSender {
- public:
-  ProbingPacedSender(Clock* clock,
-                     Callback* callback,
-                     int bitrate_kbps,
-                     int max_bitrate_kbps,
-                     int min_bitrate_kbps)
-      : PacedSender(clock,
-                    callback,
-                    bitrate_kbps,
-                    max_bitrate_kbps,
-                    min_bitrate_kbps) {}
-
-  bool ProbingExperimentIsEnabled() const override { return true; }
-};
-
 TEST_F(PacedSenderTest, ProbingWithTooSmallInitialFrame) {
   const int kNumPackets = 11;
   const int kNumDeltas = kNumPackets - 1;
@@ -770,9 +754,8 @@ TEST_F(PacedSenderTest, ProbingWithTooSmallInitialFrame) {
   std::list<int> expected_deltas_list(expected_deltas,
                                       expected_deltas + kNumPackets - 1);
   PacedSenderProbing callback(expected_deltas_list, &clock_);
-  send_bucket_.reset(
-      new ProbingPacedSender(&clock_, &callback, kInitialBitrateKbps,
-                             kPaceMultiplier * kInitialBitrateKbps, 0));
+  send_bucket_.reset(new PacedSender(&clock_, &callback, kInitialBitrateKbps,
+                                     kPaceMultiplier * kInitialBitrateKbps, 0));
 
   for (int i = 0; i < kNumPackets - 5; ++i) {
     EXPECT_FALSE(send_bucket_->SendPacket(

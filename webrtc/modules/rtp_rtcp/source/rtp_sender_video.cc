@@ -320,7 +320,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
       // a lock. It'll be a no-op if it's not registered.
       // TODO(guoweis): For now, all packets sent will carry the CVO such that
       // the RTP header length is consistent, although the receiver side will
-      // only exam the packets with market bit set.
+      // only exam the packets with marker bit set.
       size_t packetSize = payloadSize + rtp_header_length;
       RtpUtility::RtpHeaderParser rtp_parser(dataBuffer, packetSize);
       RTPHeader rtp_header;

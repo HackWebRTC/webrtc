@@ -382,7 +382,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
       if (dropped_packets_.find(header.sequenceNumber) !=
           dropped_packets_.end()) {
         retransmitted_packets_.insert(header.sequenceNumber);
-        if (nacks_left_ == 0 &&
+        if (nacks_left_ <= 0 &&
             retransmitted_packets_.size() == dropped_packets_.size()) {
           observation_complete_->Set();
         }
@@ -392,7 +392,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
       ++sent_rtp_packets_;
 
       // Enough NACKs received, stop dropping packets.
-      if (nacks_left_ == 0)
+      if (nacks_left_ <= 0)
         return SEND_PACKET;
 
       // Check if it's time for a new loss burst.
@@ -678,7 +678,9 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
 // This test drops second RTP packet with a marker bit set, makes sure it's
 // retransmitted and renders. Retransmission SSRCs are also checked.
 void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
-  static const int kDroppedFrameNumber = 2;
+  // Must be set high enough to allow the bitrate probing to finish.
+  static const int kMinProbePackets = 30;
+  static const int kDroppedFrameNumber = kMinProbePackets + 1;
   class RetransmissionObserver : public test::EndToEndTest,
                                  public I420FrameCallback {
    public:
@@ -688,6 +690,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
           retransmission_ssrc_(use_rtx ? kSendRtxSsrcs[0] : kSendSsrcs[0]),
           retransmission_payload_type_(GetPayloadType(use_rtx, use_red)),
           marker_bits_observed_(0),
+          num_packets_observed_(0),
           retransmitted_timestamp_(0),
           frame_retransmitted_(false) {}
 
@@ -696,6 +699,14 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
+      // We accept some padding or RTX packets in the beginning to enable
+      // bitrate probing.
+      if (num_packets_observed_++ < kMinProbePackets &&
+          header.payloadType != payload_type_) {
+        EXPECT_TRUE(retransmission_payload_type_ == header.payloadType ||
+                    length == header.headerLength + header.paddingLength);
+        return SEND_PACKET;
+      }
       if (header.timestamp == retransmitted_timestamp_) {
         EXPECT_EQ(retransmission_ssrc_, header.ssrc);
         EXPECT_EQ(retransmission_payload_type_, header.payloadType);
@@ -706,8 +717,8 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
       EXPECT_EQ(kSendSsrcs[0], header.ssrc);
       EXPECT_EQ(payload_type_, header.payloadType);
 
-      // Found the second frame's final packet, drop this and expect a
-      // retransmission.
+      // Found the final packet of the frame to inflict loss to, drop this and
+      // expect a retransmission.
       if (header.markerBit && ++marker_bits_observed_ == kDroppedFrameNumber) {
         retransmitted_timestamp_ = header.timestamp;
         return DROP_PACKET;
@@ -762,6 +773,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
     const uint32_t retransmission_ssrc_;
     const int retransmission_payload_type_;
     int marker_bits_observed_;
+    int num_packets_observed_;
     uint32_t retransmitted_timestamp_;
     bool frame_retransmitted_;
   } test(use_rtx, use_red);

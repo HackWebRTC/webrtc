@@ -539,10 +539,15 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
         TriggerLossReport(header);
 
       if (test_generic_packetization_) {
-        size_t overhead = header.headerLength + header.paddingLength +
-                          (1 /* Generic header */);
-        if (use_fec_)
-          overhead += 1;  // RED for FEC header.
+        size_t overhead = header.headerLength + header.paddingLength;
+        // Only remove payload header and RED header if the packet actually
+        // contains payload.
+        if (length > overhead) {
+          overhead += (1 /* Generic header */);
+          if (use_fec_)
+            overhead += 1;  // RED for FEC header.
+        }
+        EXPECT_GE(length, overhead);
         accumulated_payload_ += length - overhead;
       }
 
@@ -1843,19 +1848,21 @@ class VP9HeaderObeserver : public test::SendTest {
       size_t payload_length =
           length - header.headerLength - header.paddingLength;
 
-      bool parse_vp9header_successful =
-          vp9depacketizer.Parse(&vp9payload, vp9_packet, payload_length);
-      bool is_vp9_codec_type =
-          vp9payload.type.Video.codec == RtpVideoCodecTypes::kRtpVideoVp9;
-      EXPECT_TRUE(parse_vp9header_successful);
-      EXPECT_TRUE(is_vp9_codec_type);
+      if (payload_length > 0) {
+        bool parse_vp9header_successful =
+            vp9depacketizer.Parse(&vp9payload, vp9_packet, payload_length);
+        bool is_vp9_codec_type =
+            vp9payload.type.Video.codec == RtpVideoCodecTypes::kRtpVideoVp9;
+        EXPECT_TRUE(parse_vp9header_successful);
+        EXPECT_TRUE(is_vp9_codec_type);
 
-      RTPVideoHeaderVP9* vp9videoHeader =
-          &vp9payload.type.Video.codecHeader.VP9;
-      if (parse_vp9header_successful && is_vp9_codec_type) {
-        InspectHeader(vp9videoHeader);
-      } else {
-        observation_complete_->Set();
+        RTPVideoHeaderVP9* vp9videoHeader =
+            &vp9payload.type.Video.codecHeader.VP9;
+        if (parse_vp9header_successful && is_vp9_codec_type) {
+          InspectHeader(vp9videoHeader);
+        } else {
+          observation_complete_->Set();
+        }
       }
     }
 

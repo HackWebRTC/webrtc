@@ -566,51 +566,38 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send) {
   return bytes_to_send - bytes_left;
 }
 
-size_t RTPSender::BuildPaddingPacket(uint8_t* packet, size_t header_length) {
-  size_t padding_bytes_in_packet = kMaxPaddingLength;
+void RTPSender::BuildPaddingPacket(uint8_t* packet,
+                                   size_t header_length,
+                                   size_t padding_length) {
   packet[0] |= 0x20;  // Set padding bit.
   int32_t *data =
       reinterpret_cast<int32_t *>(&(packet[header_length]));
 
   // Fill data buffer with random data.
-  for (size_t j = 0; j < (padding_bytes_in_packet >> 2); ++j) {
+  for (size_t j = 0; j < (padding_length >> 2); ++j) {
     data[j] = rand();  // NOLINT
   }
   // Set number of padding bytes in the last byte of the packet.
-  packet[header_length + padding_bytes_in_packet - 1] =
-      static_cast<uint8_t>(padding_bytes_in_packet);
-  return padding_bytes_in_packet;
+  packet[header_length + padding_length - 1] =
+      static_cast<uint8_t>(padding_length);
 }
 
-size_t RTPSender::TrySendPadData(size_t bytes) {
-  int64_t capture_time_ms;
-  uint32_t timestamp;
-  {
-    CriticalSectionScoped cs(send_critsect_.get());
-    timestamp = timestamp_;
-    capture_time_ms = capture_time_ms_;
-    if (last_timestamp_time_ms_ > 0) {
-      timestamp +=
-          (clock_->TimeInMilliseconds() - last_timestamp_time_ms_) * 90;
-      capture_time_ms +=
-          (clock_->TimeInMilliseconds() - last_timestamp_time_ms_);
-    }
-  }
-  return SendPadData(timestamp, capture_time_ms, bytes);
-}
-
-size_t RTPSender::SendPadData(uint32_t timestamp,
-                              int64_t capture_time_ms,
-                              size_t bytes) {
-  size_t padding_bytes_in_packet = 0;
+size_t RTPSender::SendPadData(size_t bytes,
+                              bool timestamp_provided,
+                              uint32_t timestamp,
+                              int64_t capture_time_ms) {
+  // Always send full padding packets. This is accounted for by the PacedSender,
+  // which will make sure we don't send too much padding even if a single packet
+  // is larger than requested.
+  size_t padding_bytes_in_packet =
+      std::min(MaxDataPayloadLength(), kMaxPaddingLength);
   size_t bytes_sent = 0;
   bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
                                  kRtpExtensionTransportSequenceNumber) &&
                              packet_router_;
   for (; bytes > 0; bytes -= padding_bytes_in_packet) {
-    // Always send full padding packets.
-    if (bytes < kMaxPaddingLength)
-      bytes = kMaxPaddingLength;
+    if (bytes < padding_bytes_in_packet)
+      bytes = padding_bytes_in_packet;
 
     uint32_t ssrc;
     uint16_t sequence_number;
@@ -618,8 +605,10 @@ size_t RTPSender::SendPadData(uint32_t timestamp,
     bool over_rtx;
     {
       CriticalSectionScoped cs(send_critsect_.get());
-      // Only send padding packets following the last packet of a frame,
-      // indicated by the marker bit.
+      if (!timestamp_provided) {
+        timestamp = timestamp_;
+        capture_time_ms = capture_time_ms_;
+      }
       if (rtx_ == kRtxOff) {
         // Without RTX we can't send padding in the middle of frames.
         if (!last_packet_marker_bit_)
@@ -635,6 +624,15 @@ size_t RTPSender::SendPadData(uint32_t timestamp,
         if (!media_has_been_sent_ && !rtp_header_extension_map_.IsRegistered(
             kRtpExtensionAbsoluteSendTime))
           return 0;
+        // Only change change the timestamp of padding packets sent over RTX.
+        // Padding only packets over RTP has to be sent as part of a media
+        // frame (and therefore the same timestamp).
+        if (last_timestamp_time_ms_ > 0) {
+          timestamp +=
+              (clock_->TimeInMilliseconds() - last_timestamp_time_ms_) * 90;
+          capture_time_ms +=
+              (clock_->TimeInMilliseconds() - last_timestamp_time_ms_);
+        }
         ssrc = ssrc_rtx_;
         sequence_number = sequence_number_rtx_;
         ++sequence_number_rtx_;
@@ -647,9 +645,7 @@ size_t RTPSender::SendPadData(uint32_t timestamp,
     size_t header_length =
         CreateRtpHeader(padding_packet, payload_type, ssrc, false, timestamp,
                         sequence_number, std::vector<uint32_t>());
-    assert(header_length != static_cast<size_t>(-1));
-    padding_bytes_in_packet = BuildPaddingPacket(padding_packet, header_length);
-    assert(padding_bytes_in_packet <= bytes);
+    BuildPaddingPacket(padding_packet, header_length, padding_bytes_in_packet);
     size_t length = padding_bytes_in_packet + header_length;
     int64_t now_ms = clock_->TimeInMilliseconds();
 
@@ -999,7 +995,7 @@ size_t RTPSender::TimeToSendPadding(size_t bytes) {
   }
   size_t bytes_sent = TrySendRedundantPayloads(bytes);
   if (bytes_sent < bytes)
-    bytes_sent += TrySendPadData(bytes - bytes_sent);
+    bytes_sent += SendPadData(bytes - bytes_sent, false, 0, 0);
   return bytes_sent;
 }
 

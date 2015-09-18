@@ -361,8 +361,11 @@ int32_t PacedSender::Process() {
       }
     }
 
+    if (!packets_->Empty())
+      return 0;
+
     size_t padding_needed;
-    if (prober_->IsProbing() && ProbingExperimentIsEnabled())
+    if (prober_->IsProbing())
       padding_needed = prober_->RecommendedPacketSize();
     else
       padding_needed = padding_budget_->bytes_remaining();
@@ -406,10 +409,5 @@ void PacedSender::SendPadding(size_t padding_needed) {
 void PacedSender::UpdateBytesPerInterval(int64_t delta_time_ms) {
   media_budget_->IncreaseBudget(delta_time_ms);
   padding_budget_->IncreaseBudget(delta_time_ms);
-}
-
-bool PacedSender::ProbingExperimentIsEnabled() const {
-  return webrtc::field_trial::FindFullName("WebRTC-BitrateProbing") ==
-         "Enabled";
 }
 }  // namespace webrtc

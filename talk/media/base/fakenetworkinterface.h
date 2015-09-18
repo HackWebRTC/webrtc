@@ -123,11 +123,6 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     return new rtc::Buffer(rtcp_packets_[index]);
   }
 
-  // Indicate that |n|'th packet for |ssrc| should be dropped.
-  void AddPacketDrop(uint32 ssrc, uint32 n) {
-    drop_map_[ssrc].insert(n);
-  }
-
   int sendbuf_size() const { return sendbuf_size_; }
   int recvbuf_size() const { return recvbuf_size_; }
   rtc::DiffServCodePoint dscp() const { return dscp_; }
@@ -142,15 +137,6 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
       return false;
     }
     sent_ssrcs_[cur_ssrc]++;
-
-    // Check if we need to drop this packet.
-    std::map<uint32, std::set<uint32> >::iterator itr =
-      drop_map_.find(cur_ssrc);
-    if (itr != drop_map_.end() &&
-        itr->second.count(sent_ssrcs_[cur_ssrc]) > 0) {
-        // "Drop" the packet.
-        return true;
-    }
 
     rtp_packets_.push_back(*packet);
     if (conf_) {

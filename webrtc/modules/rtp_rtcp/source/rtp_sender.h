@@ -296,9 +296,10 @@ class RTPSender : public RTPSenderInterface {
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);
 
-  size_t SendPadData(uint32_t timestamp,
-                     int64_t capture_time_ms,
-                     size_t bytes);
+  size_t SendPadData(size_t bytes,
+                     bool timestamp_provided,
+                     uint32_t timestamp,
+                     int64_t capture_time_ms);
 
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
@@ -340,9 +341,10 @@ class RTPSender : public RTPSenderInterface {
   // Return the number of bytes sent.  Note that both of these functions may
   // return a larger value that their argument.
   size_t TrySendRedundantPayloads(size_t bytes);
-  size_t TrySendPadData(size_t bytes);
 
-  size_t BuildPaddingPacket(uint8_t* packet, size_t header_length);
+  void BuildPaddingPacket(uint8_t* packet,
+                          size_t header_length,
+                          size_t padding_length);
 
   void BuildRtxPacket(uint8_t* buffer, size_t* length,
                       uint8_t* buffer_rtx);

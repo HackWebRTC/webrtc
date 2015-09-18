@@ -739,6 +739,7 @@ TEST_F(RtpSenderTest, SendPadding) {
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   int rtp_length_int = rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, timestamp, capture_time_ms);
+  const uint32_t media_packet_timestamp = timestamp;
   ASSERT_NE(-1, rtp_length_int);
   size_t rtp_length = static_cast<size_t>(rtp_length_int);
 
@@ -779,11 +780,13 @@ TEST_F(RtpSenderTest, SendPadding) {
                                   &rtp_header));
     EXPECT_EQ(kMaxPaddingLength, rtp_header.paddingLength);
 
-    // Verify sequence number and timestamp.
+    // Verify sequence number and timestamp. The timestamp should be the same
+    // as the last media packet.
     EXPECT_EQ(seq_num++, rtp_header.sequenceNumber);
-    EXPECT_EQ(timestamp, rtp_header.timestamp);
+    EXPECT_EQ(media_packet_timestamp, rtp_header.timestamp);
     // Verify transmission time offset.
-    EXPECT_EQ(0, rtp_header.extension.transmissionTimeOffset);
+    int offset = timestamp - media_packet_timestamp;
+    EXPECT_EQ(offset, rtp_header.extension.transmissionTimeOffset);
     uint64_t expected_send_time =
         ConvertMsToAbsSendTime(fake_clock_.TimeInMilliseconds());
     EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
