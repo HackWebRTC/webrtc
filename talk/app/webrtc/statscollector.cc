@@ -697,24 +697,18 @@ void StatsCollector::ExtractSessionInfo() {
     // expose them in stats reports.  All channels in a transport share the
     // same local and remote certificates.
     //
-    // Note that Transport::GetCertificate and Transport::GetRemoteCertificate
-    // invoke method calls on the worker thread and block this thread, but
-    // messages are still processed on this thread, which may blow way the
-    // existing transports. So we cannot reuse |transport| after these calls.
     StatsReport::Id local_cert_report_id, remote_cert_report_id;
-
-    cricket::Transport* transport =
-        session_->GetTransport(transport_iter.second.content_name);
     rtc::scoped_refptr<rtc::RTCCertificate> certificate;
-    if (transport && transport->GetCertificate(&certificate)) {
+    if (session_->GetLocalCertificate(transport_iter.second.transport_name,
+                                      &certificate)) {
       StatsReport* r = AddCertificateReports(&(certificate->ssl_certificate()));
       if (r)
         local_cert_report_id = r->id();
     }
 
-    transport = session_->GetTransport(transport_iter.second.content_name);
     rtc::scoped_ptr<rtc::SSLCertificate> cert;
-    if (transport && transport->GetRemoteSSLCertificate(cert.accept())) {
+    if (session_->GetRemoteSSLCertificate(transport_iter.second.transport_name,
+                                          cert.accept())) {
       StatsReport* r = AddCertificateReports(cert.get());
       if (r)
         remote_cert_report_id = r->id();
@@ -722,7 +716,7 @@ void StatsCollector::ExtractSessionInfo() {
 
     for (const auto& channel_iter : transport_iter.second.channel_stats) {
       StatsReport::Id id(StatsReport::NewComponentId(
-          transport_iter.second.content_name, channel_iter.component));
+          transport_iter.second.transport_name, channel_iter.component));
       StatsReport* channel_report = reports_.ReplaceOrAddNew(id);
       channel_report->set_timestamp(stats_gathering_started_);
       channel_report->AddInt(StatsReport::kStatsValueNameComponent,
@@ -939,7 +933,6 @@ void StatsCollector::UpdateTrackReports() {
     StatsReport* report = entry.second;
     report->set_timestamp(stats_gathering_started_);
   }
-
 }
 
 void StatsCollector::ClearUpdateStatsCacheForTest() {

@@ -868,6 +868,11 @@ void PeerConnection::OnRemoveLocalStream(MediaStreamInterface* stream) {
 void PeerConnection::OnIceConnectionChange(
     PeerConnectionInterface::IceConnectionState new_state) {
   ASSERT(signaling_thread()->IsCurrent());
+  // After transitioning to "closed", ignore any additional states from
+  // WebRtcSession (such as "disconnected").
+  if (ice_connection_state_ == kIceConnectionClosed) {
+    return;
+  }
   ice_connection_state_ = new_state;
   observer_->OnIceConnectionChange(ice_connection_state_);
 }

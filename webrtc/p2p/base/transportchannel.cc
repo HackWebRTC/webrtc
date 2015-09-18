@@ -18,9 +18,8 @@ std::string TransportChannel::ToString() const {
   const char READABLE_ABBREV[2] = { '_', 'R' };
   const char WRITABLE_ABBREV[2] = { '_', 'W' };
   std::stringstream ss;
-  ss << "Channel[" << content_name_
-     << "|" << component_
-     << "|" << READABLE_ABBREV[readable_] << WRITABLE_ABBREV[writable_] << "]";
+  ss << "Channel[" << transport_name_ << "|" << component_ << "|"
+     << READABLE_ABBREV[readable_] << WRITABLE_ABBREV[writable_] << "]";
   return ss.str();
 }
 

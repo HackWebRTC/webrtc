@@ -87,9 +87,9 @@ bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
 }
 
 DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
-                                           Transport* transport,
-                                           TransportChannelImpl* channel)
-    : TransportChannelImpl(channel->content_name(), channel->component()),
+    Transport* transport,
+    TransportChannelImpl* channel)
+    : TransportChannelImpl(channel->transport_name(), channel->component()),
       transport_(transport),
       worker_thread_(rtc::Thread::Current()),
       channel_(channel),
@@ -105,12 +105,10 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       &DtlsTransportChannelWrapper::OnReadPacket);
   channel_->SignalReadyToSend.connect(this,
       &DtlsTransportChannelWrapper::OnReadyToSend);
-  channel_->SignalRequestSignaling.connect(this,
-      &DtlsTransportChannelWrapper::OnRequestSignaling);
-  channel_->SignalCandidateReady.connect(this,
-      &DtlsTransportChannelWrapper::OnCandidateReady);
-  channel_->SignalCandidatesAllocationDone.connect(this,
-      &DtlsTransportChannelWrapper::OnCandidatesAllocationDone);
+  channel_->SignalGatheringState.connect(
+      this, &DtlsTransportChannelWrapper::OnGatheringState);
+  channel_->SignalCandidateGathered.connect(
+      this, &DtlsTransportChannelWrapper::OnCandidateGathered);
   channel_->SignalRoleConflict.connect(this,
       &DtlsTransportChannelWrapper::OnRoleConflict);
   channel_->SignalRouteChange.connect(this,
@@ -213,7 +211,7 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
     return true;
   }
 
-  // Allow SetRemoteFingerprint with a NULL digest even if SetLocalIdentity
+  // Allow SetRemoteFingerprint with a NULL digest even if SetLocalCertificate
   // hasn't been called.
   if (dtls_state_ > STATE_OFFERED ||
       (dtls_state_ == STATE_NONE && !digest_alg.empty())) {
@@ -610,22 +608,17 @@ bool DtlsTransportChannelWrapper::HandleDtlsPacket(const char* data,
   return downward_->OnPacketReceived(data, size);
 }
 
-void DtlsTransportChannelWrapper::OnRequestSignaling(
+void DtlsTransportChannelWrapper::OnGatheringState(
     TransportChannelImpl* channel) {
   ASSERT(channel == channel_);
-  SignalRequestSignaling(this);
+  SignalGatheringState(this);
 }
 
-void DtlsTransportChannelWrapper::OnCandidateReady(
-    TransportChannelImpl* channel, const Candidate& c) {
+void DtlsTransportChannelWrapper::OnCandidateGathered(
+    TransportChannelImpl* channel,
+    const Candidate& c) {
   ASSERT(channel == channel_);
-  SignalCandidateReady(this, c);
-}
-
-void DtlsTransportChannelWrapper::OnCandidatesAllocationDone(
-    TransportChannelImpl* channel) {
-  ASSERT(channel == channel_);
-  SignalCandidatesAllocationDone(this);
+  SignalCandidateGathered(this, c);
 }
 
 void DtlsTransportChannelWrapper::OnRoleConflict(

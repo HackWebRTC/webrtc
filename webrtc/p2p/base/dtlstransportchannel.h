@@ -27,7 +27,7 @@ namespace cricket {
 // the bottom and a StreamInterface on the top.
 class StreamInterfaceChannel : public rtc::StreamInterface {
  public:
-  StreamInterfaceChannel(TransportChannel* channel);
+  explicit StreamInterfaceChannel(TransportChannel* channel);
 
   // Push in a packet; this gets pulled out from Read().
   bool OnPacketReceived(const char* data, size_t size);
@@ -35,10 +35,14 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
   // Implementations of StreamInterface
   rtc::StreamState GetState() const override { return state_; }
   void Close() override { state_ = rtc::SS_CLOSED; }
-  rtc::StreamResult Read(void* buffer, size_t buffer_len,
-                         size_t* read, int* error) override;
-  rtc::StreamResult Write(const void* data, size_t data_len,
-                          size_t* written, int* error) override;
+  rtc::StreamResult Read(void* buffer,
+                         size_t buffer_len,
+                         size_t* read,
+                         int* error) override;
+  rtc::StreamResult Write(const void* data,
+                          size_t data_len,
+                          size_t* written,
+                          int* error) override;
 
  private:
   TransportChannel* channel_;  // owned by DtlsTransportChannelWrapper
@@ -93,12 +97,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
                               TransportChannelImpl* channel);
   ~DtlsTransportChannelWrapper() override;
 
-  void SetIceRole(IceRole role) override {
-    channel_->SetIceRole(role);
-  }
-  IceRole GetIceRole() const override {
-    return channel_->GetIceRole();
-  }
+  void SetIceRole(IceRole role) override { channel_->SetIceRole(role); }
+  IceRole GetIceRole() const override { return channel_->GetIceRole(); }
   bool SetLocalCertificate(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override;
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override;
@@ -109,7 +109,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool IsDtlsActive() const override { return dtls_state_ != STATE_NONE; }
 
   // Called to send a packet (via DTLS, if turned on).
-  int SendPacket(const char* data, size_t size,
+  int SendPacket(const char* data,
+                 size_t size,
                  const rtc::PacketOptions& options,
                  int flags) override;
 
@@ -120,15 +121,11 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool GetOption(rtc::Socket::Option opt, int* value) override {
     return channel_->GetOption(opt, value);
   }
-  int GetError() override {
-    return channel_->GetError();
-  }
+  int GetError() override { return channel_->GetError(); }
   bool GetStats(ConnectionInfos* infos) override {
     return channel_->GetStats(infos);
   }
-  const std::string SessionId() const override {
-    return channel_->SessionId();
-  }
+  const std::string SessionId() const override { return channel_->SessionId(); }
 
   virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
 
@@ -168,9 +165,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   }
 
   // TransportChannelImpl calls.
-  Transport* GetTransport() override {
-    return transport_;
-  }
+  Transport* GetTransport() override { return transport_; }
 
   TransportChannelState GetState() const override {
     return channel_->GetState();
@@ -192,11 +187,12 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
 
   void Connect() override;
 
-  void OnSignalingReady() override {
-    channel_->OnSignalingReady();
+  IceGatheringState gathering_state() const override {
+    return channel_->gathering_state();
   }
-  void OnCandidate(const Candidate& candidate) override {
-    channel_->OnCandidate(candidate);
+
+  void AddRemoteCandidate(const Candidate& candidate) override {
+    channel_->AddRemoteCandidate(candidate);
   }
 
   void SetReceivingTimeout(int receiving_timeout_ms) override {
@@ -217,9 +213,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool SetupDtls();
   bool MaybeStartDtls();
   bool HandleDtlsPacket(const char* data, size_t size);
-  void OnRequestSignaling(TransportChannelImpl* channel);
-  void OnCandidateReady(TransportChannelImpl* channel, const Candidate& c);
-  void OnCandidatesAllocationDone(TransportChannelImpl* channel);
+  void OnGatheringState(TransportChannelImpl* channel);
+  void OnCandidateGathered(TransportChannelImpl* channel, const Candidate& c);
   void OnRoleConflict(TransportChannelImpl* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
   void OnConnectionRemoved(TransportChannelImpl* channel);
