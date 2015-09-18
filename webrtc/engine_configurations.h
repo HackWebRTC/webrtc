@@ -107,10 +107,4 @@
 #define EAGL_RENDERING
 #endif
 
-// ----------------------------------------------------------------------------
-//  Deprecated
-// ----------------------------------------------------------------------------
-
-// #define WEBRTC_DTMF_DETECTION
-
 #endif  // WEBRTC_ENGINE_CONFIGURATIONS_H_

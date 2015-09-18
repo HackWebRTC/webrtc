@@ -153,7 +153,6 @@ class APITest : public ACMTest {
 
   char _movingDot[41];
 
-  DTMFDetector* _dtmfCallback;
   VADCallback* _vadCallbackA;
   VADCallback* _vadCallbackB;
   RWLockWrapper& _apiTestRWLock;

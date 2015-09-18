@@ -86,7 +86,6 @@ APITest::APITest(const Config& config)
       _dotMoveDirectionA(1),
       _dotPositionB(39),
       _dotMoveDirectionB(-1),
-      _dtmfCallback(NULL),
       _vadCallbackA(NULL),
       _vadCallbackB(NULL),
       _apiTestRWLock(*RWLockWrapper::CreateRWLock()),
@@ -125,7 +124,6 @@ APITest::~APITest() {
   _inFileB.Close();
   _outFileB.Close();
 
-  DELETE_POINTER(_dtmfCallback);
   DELETE_POINTER(_vadCallbackA);
   DELETE_POINTER(_vadCallbackB);
 
@@ -290,9 +288,6 @@ int16_t APITest::SetUp() {
     }
   }
 
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfCallback = new DTMFDetector;
-#endif
   _vadCallbackA = new VADCallback;
   _vadCallbackB = new VADCallback;
 

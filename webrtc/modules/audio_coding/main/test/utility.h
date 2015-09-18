@@ -115,19 +115,6 @@ void PrintCodecs();
 
 bool FixedPayloadTypeCodec(const char* payloadName);
 
-class DTMFDetector : public AudioCodingFeedback {
- public:
-  DTMFDetector();
-  ~DTMFDetector();
-  // used for inband DTMF detection
-  int32_t IncomingDtmf(const uint8_t digitDtmf, const bool toneEnded);
-  void PrintDetectedDigits();
-
- private:
-  uint32_t _toneCntr[1000];
-
-};
-
 class VADCallback : public ACMVADCallback {
  public:
   VADCallback();

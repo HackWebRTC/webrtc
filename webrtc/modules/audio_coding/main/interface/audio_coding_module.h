@@ -46,15 +46,6 @@ class AudioPacketizationCallback {
                            const RTPFragmentationHeader* fragmentation) = 0;
 };
 
-// Callback class used for inband Dtmf detection
-class AudioCodingFeedback {
- public:
-  virtual ~AudioCodingFeedback() {}
-
-  virtual int32_t IncomingDtmf(const uint8_t digit_dtmf,
-                               const bool end) = 0;
-};
-
 // Callback class used for reporting VAD decision
 class ACMVADCallback {
  public:

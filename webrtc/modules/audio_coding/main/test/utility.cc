@@ -279,32 +279,6 @@ bool FixedPayloadTypeCodec(const char* payloadName) {
   return false;
 }
 
-DTMFDetector::DTMFDetector() {
-  for (int16_t n = 0; n < 1000; n++) {
-    _toneCntr[n] = 0;
-  }
-}
-
-DTMFDetector::~DTMFDetector() {
-}
-
-int32_t DTMFDetector::IncomingDtmf(const uint8_t digitDtmf,
-                                   const bool /* toneEnded */) {
-  fprintf(stdout, "%d-", digitDtmf);
-  _toneCntr[digitDtmf]++;
-  return 0;
-}
-
-void DTMFDetector::PrintDetectedDigits() {
-  for (int16_t n = 0; n < 1000; n++) {
-    if (_toneCntr[n] > 0) {
-      fprintf(stdout, "%d %u  msec, \n", n, _toneCntr[n] * 10);
-    }
-  }
-  fprintf(stdout, "\n");
-  return;
-}
-
 void VADCallback::Reset() {
   memset(_numFrameTypes, 0, sizeof(_numFrameTypes));
 }

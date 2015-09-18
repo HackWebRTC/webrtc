@@ -96,11 +96,6 @@ void TwoWayCommunication::SetUp() {
   //--- Set A codecs
   EXPECT_EQ(0, _acmA->RegisterSendCodec(codecInst_A));
   EXPECT_EQ(0, _acmA->RegisterReceiveCodec(codecInst_B));
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfDetectorA = new(DTMFDetector);
-  EXPECT_GT(_acmA->RegisterIncomingMessagesCallback(_dtmfDetectorA, ACMUSA),
-            -1);
-#endif
   //--- Set ref-A codecs
   EXPECT_EQ(0, _acmRefA->RegisterSendCodec(codecInst_A));
   EXPECT_EQ(0, _acmRefA->RegisterReceiveCodec(codecInst_B));
@@ -108,11 +103,6 @@ void TwoWayCommunication::SetUp() {
   //--- Set B codecs
   EXPECT_EQ(0, _acmB->RegisterSendCodec(codecInst_B));
   EXPECT_EQ(0, _acmB->RegisterReceiveCodec(codecInst_A));
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfDetectorB = new(DTMFDetector);
-  EXPECT_GT(_acmB->RegisterIncomingMessagesCallback(_dtmfDetectorB, ACMUSA),
-            -1);
-#endif
 
   //--- Set ref-B codecs
   EXPECT_EQ(0, _acmRefB->RegisterSendCodec(codecInst_B));
@@ -188,10 +178,6 @@ void TwoWayCommunication::SetUpAutotest() {
   //--- Set A codecs
   EXPECT_EQ(0, _acmA->RegisterSendCodec(codecInst_A));
   EXPECT_EQ(0, _acmA->RegisterReceiveCodec(codecInst_B));
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfDetectorA = new(DTMFDetector);
-  EXPECT_EQ(0, _acmA->RegisterIncomingMessagesCallback(_dtmfDetectorA, ACMUSA));
-#endif
 
   //--- Set ref-A codecs
   EXPECT_GT(_acmRefA->RegisterSendCodec(codecInst_A), -1);
@@ -200,10 +186,6 @@ void TwoWayCommunication::SetUpAutotest() {
   //--- Set B codecs
   EXPECT_GT(_acmB->RegisterSendCodec(codecInst_B), -1);
   EXPECT_GT(_acmB->RegisterReceiveCodec(codecInst_A), -1);
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfDetectorB = new(DTMFDetector);
-  EXPECT_EQ(0, _acmB->RegisterIncomingMessagesCallback(_dtmfDetectorB, ACMUSA));
-#endif
 
   //--- Set ref-B codecs
   EXPECT_EQ(0, _acmRefB->RegisterSendCodec(codecInst_B));
