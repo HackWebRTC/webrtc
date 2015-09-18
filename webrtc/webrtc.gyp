@@ -31,6 +31,21 @@
         },
       ],
     }],
+    ['include_tests==1 and enable_protobuf==1', {
+      'targets': [
+        {
+          'target_name': 'rtc_event_log2rtp_dump',
+          'type': 'executable',
+          'sources': ['video/rtc_event_log2rtp_dump.cc',],
+          'dependencies': [
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+            'rtc_event_log',
+            'rtc_event_log_proto',
+            'test/test.gyp:rtp_test_utils'
+          ],
+        },
+      ],
+    }],
   ],
   'includes': [
     'build/common.gypi',
