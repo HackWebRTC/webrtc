@@ -364,7 +364,7 @@ class TurnPortTest : public testing::Test,
     conn1->Ping(0);
     WAIT(!turn_unknown_address_, kTimeout);
     EXPECT_FALSE(turn_unknown_address_);
-    EXPECT_FALSE(conn1->receiving());
+    EXPECT_EQ(Connection::STATE_READ_INIT, conn1->read_state());
     EXPECT_EQ(Connection::STATE_WRITE_INIT, conn1->write_state());
 
     // Send ping from TURN to UDP.
@@ -375,14 +375,14 @@ class TurnPortTest : public testing::Test,
     conn2->Ping(0);
 
     EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, conn2->write_state(), kTimeout);
-    EXPECT_TRUE(conn1->receiving());
-    EXPECT_TRUE(conn2->receiving());
+    EXPECT_EQ(Connection::STATE_READABLE, conn1->read_state());
+    EXPECT_EQ(Connection::STATE_READ_INIT, conn2->read_state());
     EXPECT_EQ(Connection::STATE_WRITE_INIT, conn1->write_state());
 
     // Send another ping from UDP to TURN.
     conn1->Ping(0);
     EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, conn1->write_state(), kTimeout);
-    EXPECT_TRUE(conn2->receiving());
+    EXPECT_EQ(Connection::STATE_READABLE, conn2->read_state());
   }
 
   void TestTurnSendData() {

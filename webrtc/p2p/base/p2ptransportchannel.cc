@@ -221,7 +221,6 @@ void P2PTransportChannel::AddAllocatorSession(PortAllocatorSession* session) {
 void P2PTransportChannel::AddConnection(Connection* connection) {
   connections_.push_back(connection);
   connection->set_remote_ice_mode(remote_ice_mode_);
-  connection->set_receiving_timeout(receiving_timeout_);
   connection->SignalReadPacket.connect(
       this, &P2PTransportChannel::OnReadPacket);
   connection->SignalReadyToSend.connect(
@@ -341,10 +340,6 @@ void P2PTransportChannel::SetReceivingTimeout(int receiving_timeout_ms) {
   receiving_timeout_ = receiving_timeout_ms;
   check_receiving_delay_ =
       std::max(MIN_CHECK_RECEIVING_DELAY, receiving_timeout_ / 10);
-
-  for (Connection* connection : connections_) {
-    connection->set_receiving_timeout(receiving_timeout_);
-  }
   LOG(LS_VERBOSE) << "Set ICE receiving timeout to " << receiving_timeout_
                   << " milliseconds";
 }
@@ -405,7 +400,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   std::vector<RemoteCandidate>::iterator iter;
   for (iter = remote_candidates_.begin(); iter != remote_candidates_.end();
        ++iter) {
-    CreateConnection(port, *iter, iter->origin_port());
+    CreateConnection(port, *iter, iter->origin_port(), false);
   }
 
   SortConnections();
@@ -621,7 +616,7 @@ void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
   }
 
   // Create connections to this remote candidate.
-  CreateConnections(candidate, NULL);
+  CreateConnections(candidate, NULL, false);
 
   // Resort the connections list, which may have new elements.
   SortConnections();
@@ -631,7 +626,8 @@ void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
 // remote candidate.  The return value is true if we created a connection from
 // the origin port.
 bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
-                                            PortInterface* origin_port) {
+                                            PortInterface* origin_port,
+                                            bool readable) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
   Candidate new_remote_candidate(remote_candidate);
@@ -669,7 +665,7 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
   bool created = false;
   std::vector<PortInterface *>::reverse_iterator it;
   for (it = ports_.rbegin(); it != ports_.rend(); ++it) {
-    if (CreateConnection(*it, new_remote_candidate, origin_port)) {
+    if (CreateConnection(*it, new_remote_candidate, origin_port, readable)) {
       if (*it == origin_port)
         created = true;
     }
@@ -677,7 +673,8 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
 
   if ((origin_port != NULL) &&
       std::find(ports_.begin(), ports_.end(), origin_port) == ports_.end()) {
-    if (CreateConnection(origin_port, new_remote_candidate, origin_port))
+    if (CreateConnection(
+        origin_port, new_remote_candidate, origin_port, readable))
       created = true;
   }
 
@@ -691,7 +688,8 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
 // And then listen to connection object for changes.
 bool P2PTransportChannel::CreateConnection(PortInterface* port,
                                            const Candidate& remote_candidate,
-                                           PortInterface* origin_port) {
+                                           PortInterface* origin_port,
+                                           bool readable) {
   // Look for an existing connection with this remote address.  If one is not
   // found, then we can create a new connection for this address.
   Connection* connection = port->GetConnection(remote_candidate.address());
@@ -725,6 +723,11 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
     LOG_J(LS_INFO, this) << "Created connection with origin=" << origin << ", ("
                          << connections_.size() << " total)";
   }
+
+  // If we are readable, it is because we are creating this in response to a
+  // ping from the other side.  This will cause the state to become readable.
+  if (readable)
+    connection->ReceivedPing();
 
   return true;
 }
@@ -850,7 +853,8 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
     Connection *connection = *it;
     ConnectionInfo info;
     info.best_connection = (best_connection_ == connection);
-    info.receiving = connection->receiving();
+    info.readable =
+        (connection->read_state() == Connection::STATE_READABLE);
     info.writable =
         (connection->write_state() == Connection::STATE_WRITABLE);
     info.timeout =
@@ -1025,7 +1029,8 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
     LOG_J(LS_INFO, this) << "New best connection: "
                          << best_connection_->ToString();
     SignalRouteChange(this, best_connection_->remote_candidate());
-    set_receiving(best_connection_->receiving());
+    // When it just switched to a best connection, set receiving to true.
+    set_receiving(true);
   } else {
     LOG_J(LS_INFO, this) << "No best connection";
   }
@@ -1041,8 +1046,14 @@ void P2PTransportChannel::UpdateChannelState() {
   if (writable != this->writable())
     LOG(LS_ERROR) << "UpdateChannelState: writable state mismatch";
 
-  // TODO(honghaiz): The channel receiving state is set in OnCheckReceiving.
-  // Will revisit in a subsequent code change.
+  bool readable = false;
+  for (uint32 i = 0; i < connections_.size(); ++i) {
+    if (connections_[i]->read_state() == Connection::STATE_READABLE) {
+      readable = true;
+      break;
+    }
+  }
+  set_readable(readable);
 }
 
 // We checked the status of our connections and we had at least one that
@@ -1133,7 +1144,10 @@ void P2PTransportChannel::OnPing() {
 }
 
 void P2PTransportChannel::OnCheckReceiving() {
-  if (best_connection_) {
+  // Check receiving only if the best connection has received data packets
+  // because we want to detect not receiving any packets only after the media
+  // have started flowing.
+  if (best_connection_ && best_connection_->recv_total_bytes() > 0) {
     bool receiving = rtc::Time() <=
         best_connection_->last_received() + receiving_timeout_;
     set_receiving(receiving);
@@ -1157,13 +1171,23 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
   // An never connected connection cannot be written to at all, so pinging is
   // out of the question. However, if it has become WRITABLE, it is in the
   // reconnecting state so ping is needed.
-  if (!conn->connected() && !conn->writable()) {
+  if (!conn->connected() && conn->write_state() != Connection::STATE_WRITABLE) {
     return false;
   }
 
-  // If the channel is not writable, ping all candidates. Otherwise, we only
-  // want to ping connections that have not timed out on writing.
-  return !writable() || conn->write_state() != Connection::STATE_WRITE_TIMEOUT;
+  if (writable()) {
+    // If we are writable, then we only want to ping connections that could be
+    // better than this one, i.e., the ones that were not pruned.
+    return (conn->write_state() != Connection::STATE_WRITE_TIMEOUT);
+  } else {
+    // If we are not writable, then we need to try everything that might work.
+    // This includes both connections that do not have write timeout as well as
+    // ones that do not have read timeout.  A connection could be readable but
+    // be in write-timeout if we pruned it before.  Since the other side is
+    // still pinging it, it very well might still work.
+    return (conn->write_state() != Connection::STATE_WRITE_TIMEOUT) ||
+           (conn->read_state() != Connection::STATE_READ_TIMEOUT);
+  }
 }
 
 // Returns the next pingable connection to ping.  This will be the oldest

@@ -46,8 +46,7 @@ class TransportChannel : public sigslot::has_slots<> {
   explicit TransportChannel(const std::string& content_name, int component)
       : content_name_(content_name),
         component_(component),
-        writable_(false),
-        receiving_(false) {}
+        readable_(false), writable_(false), receiving_(false) {}
   virtual ~TransportChannel() {}
 
   // TODO(guoweis) - Make this pure virtual once all subclasses of
@@ -63,10 +62,13 @@ class TransportChannel : public sigslot::has_slots<> {
   const std::string& content_name() const { return content_name_; }
   int component() const { return component_; }
 
-  // Returns the states of this channel.  Each time one of these states changes,
-  // a signal is raised.  These states are aggregated by the TransportManager.
+  // Returns the readable and states of this channel.  Each time one of these
+  // states changes, a signal is raised.  These states are aggregated by the
+  // TransportManager.
+  bool readable() const { return readable_; }
   bool writable() const { return writable_; }
   bool receiving() const { return receiving_; }
+  sigslot::signal1<TransportChannel*> SignalReadableState;
   sigslot::signal1<TransportChannel*> SignalWritableState;
   // Emitted when the TransportChannel's ability to send has changed.
   sigslot::signal1<TransportChannel*> SignalReadyToSend;
@@ -137,6 +139,8 @@ class TransportChannel : public sigslot::has_slots<> {
   std::string ToString() const;
 
  protected:
+  // Sets the readable state, signaling if necessary.
+  void set_readable(bool readable);
 
   // Sets the writable state, signaling if necessary.
   void set_writable(bool writable);
@@ -149,6 +153,7 @@ class TransportChannel : public sigslot::has_slots<> {
   // Used mostly for debugging.
   std::string content_name_;
   int component_;
+  bool readable_;
   bool writable_;
   bool receiving_;
 

@@ -50,12 +50,8 @@ extern const char TCPTYPE_ACTIVE_STR[];
 extern const char TCPTYPE_PASSIVE_STR[];
 extern const char TCPTYPE_SIMOPEN_STR[];
 
-// If a connection does not receive anything for this long, it is considered
-// dead.
-const uint32 DEAD_CONNECTION_RECEIVE_TIMEOUT = 30 * 1000;  // 30 seconds.
-
-// The timeout duration when a connection does not receive anything.
-const uint32 WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;  // 2.5 seconds
+// The length of time we wait before timing out readability on a connection.
+const uint32 CONNECTION_READ_TIMEOUT = 30 * 1000;   // 30 seconds
 
 // The length of time we wait before timing out writability on a connection.
 const uint32 CONNECTION_WRITE_TIMEOUT = 15 * 1000;  // 15 seconds
@@ -421,6 +417,15 @@ class Connection : public rtc::MessageHandler,
   // Returns the pair priority.
   uint64 priority() const;
 
+  enum ReadState {
+    STATE_READ_INIT    = 0,  // we have yet to receive a ping
+    STATE_READABLE     = 1,  // we have received pings recently
+    STATE_READ_TIMEOUT = 2,  // we haven't received pings in a while
+  };
+
+  ReadState read_state() const { return read_state_; }
+  bool readable() const { return read_state_ == STATE_READABLE; }
+
   enum WriteState {
     STATE_WRITABLE          = 0,  // we have received ping responses recently
     STATE_WRITE_UNRELIABLE  = 1,  // we have had a few ping failures
@@ -430,7 +435,6 @@ class Connection : public rtc::MessageHandler,
 
   WriteState write_state() const { return write_state_; }
   bool writable() const { return write_state_ == STATE_WRITABLE; }
-  bool receiving() const { return receiving_; }
 
   // Determines whether the connection has finished connecting.  This can only
   // be false for TCP connections.
@@ -462,8 +466,8 @@ class Connection : public rtc::MessageHandler,
   // Error if Send() returns < 0
   virtual int GetError() = 0;
 
-  sigslot::signal4<Connection*, const char*, size_t, const rtc::PacketTime&>
-      SignalReadPacket;
+  sigslot::signal4<Connection*, const char*, size_t,
+                   const rtc::PacketTime&> SignalReadPacket;
 
   sigslot::signal1<Connection*> SignalReadyToSend;
 
@@ -489,10 +493,6 @@ class Connection : public rtc::MessageHandler,
 
   void set_remote_ice_mode(IceMode mode) {
     remote_ice_mode_ = mode;
-  }
-
-  void set_receiving_timeout(uint32 receiving_timeout_ms) {
-    receiving_timeout_ = receiving_timeout_ms;
   }
 
   // Makes the connection go away.
@@ -565,8 +565,8 @@ class Connection : public rtc::MessageHandler,
   void OnConnectionRequestSent(ConnectionRequest* req);
 
   // Changes the state and signals if necessary.
+  void set_read_state(ReadState value);
   void set_write_state(WriteState value);
-  void set_receiving(bool value);
   void set_state(State state);
   void set_connected(bool value);
 
@@ -578,8 +578,8 @@ class Connection : public rtc::MessageHandler,
   Port* port_;
   size_t local_candidate_index_;
   Candidate remote_candidate_;
+  ReadState read_state_;
   WriteState write_state_;
-  bool receiving_;
   bool connected_;
   bool pruned_;
   // By default |use_candidate_attr_| flag will be true,
@@ -611,8 +611,6 @@ class Connection : public rtc::MessageHandler,
 
   bool reported_;
   State state_;
-  // Time duration to switch from receiving to not receiving.
-  uint32 receiving_timeout_;
 
   friend class Port;
   friend class ConnectionRequest;

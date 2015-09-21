@@ -821,7 +821,7 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
 
     if (same_addr1 && same_addr2) {
       // The new ping got back to the source.
-      EXPECT_TRUE(ch1.conn()->receiving());
+      EXPECT_EQ(Connection::STATE_READABLE, ch1.conn()->read_state());
       EXPECT_EQ(Connection::STATE_WRITABLE, ch2.conn()->write_state());
 
       // First connection may not be writable if the first ping did not get
@@ -841,7 +841,7 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
       // able to get a ping from it. This gives us the real source address.
       ch1.Ping();
       EXPECT_TRUE_WAIT(!ch2.remote_address().IsNil(), kTimeout);
-      EXPECT_FALSE(ch2.conn()->receiving());
+      EXPECT_EQ(Connection::STATE_READ_INIT, ch2.conn()->read_state());
       EXPECT_TRUE(ch1.remote_address().IsNil());
 
       // Pick up the actual address and establish the connection.
@@ -854,7 +854,7 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
       // The new ping came in, but from an unexpected address. This will happen
       // when the destination NAT is symmetric.
       EXPECT_FALSE(ch1.remote_address().IsNil());
-      EXPECT_FALSE(ch1.conn()->receiving());
+      EXPECT_EQ(Connection::STATE_READ_INIT, ch1.conn()->read_state());
 
       // Update our address and complete the connection.
       ch1.AcceptConnection(GetCandidate(port2));
@@ -876,14 +876,14 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
   ASSERT_TRUE(ch1.conn() != NULL);
   ASSERT_TRUE(ch2.conn() != NULL);
   if (possible) {
-    EXPECT_TRUE(ch1.conn()->receiving());
+    EXPECT_EQ(Connection::STATE_READABLE, ch1.conn()->read_state());
     EXPECT_EQ(Connection::STATE_WRITABLE, ch1.conn()->write_state());
-    EXPECT_TRUE(ch2.conn()->receiving());
+    EXPECT_EQ(Connection::STATE_READABLE, ch2.conn()->read_state());
     EXPECT_EQ(Connection::STATE_WRITABLE, ch2.conn()->write_state());
   } else {
-    EXPECT_FALSE(ch1.conn()->receiving());
+    EXPECT_NE(Connection::STATE_READABLE, ch1.conn()->read_state());
     EXPECT_NE(Connection::STATE_WRITABLE, ch1.conn()->write_state());
-    EXPECT_FALSE(ch2.conn()->receiving());
+    EXPECT_NE(Connection::STATE_READABLE, ch2.conn()->read_state());
     EXPECT_NE(Connection::STATE_WRITABLE, ch2.conn()->write_state());
   }
 
@@ -1273,7 +1273,7 @@ TEST_F(PortTest, TestLoopbackCal) {
   // response.
   lport->Reset();
   lport->AddCandidateAddress(kLocalAddr2);
-  // Creating a different connection as |conn| is receiving.
+  // Creating a different connection as |conn| is in STATE_READABLE.
   Connection* conn1 = lport->CreateConnection(lport->Candidates()[1],
                                               Port::ORIGIN_MESSAGE);
   conn1->Ping(0);

@@ -492,9 +492,9 @@ class P2PTransportChannelTestBase : public testing::Test,
     CreateChannels(1);
     EXPECT_TRUE_WAIT_MARGIN(ep1_ch1() != NULL &&
                             ep2_ch1() != NULL &&
-                            ep1_ch1()->receiving() &&
+                            ep1_ch1()->readable() &&
                             ep1_ch1()->writable() &&
-                            ep2_ch1()->receiving() &&
+                            ep2_ch1()->readable() &&
                             ep2_ch1()->writable(),
                             expected.connect_wait,
                             1000);
@@ -561,7 +561,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
   }
 
-  // This test waits for the transport to become receiving and writable on both
+  // This test waits for the transport to become readable and writable on both
   // end points. Once they are, the end points set new local ice credentials to
   // restart the ice gathering. Finally it waits for the transport to select a
   // new connection using the newly generated ice candidates.
@@ -569,8 +569,8 @@ class P2PTransportChannelTestBase : public testing::Test,
   void TestHandleIceUfragPasswordChanged() {
     ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
     ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
-    EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                            ep2_ch1()->receiving() && ep2_ch1()->writable(),
+    EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                            ep2_ch1()->readable() && ep2_ch1()->writable(),
                             1000, 1000);
 
     const cricket::Candidate* old_local_candidate1 = LocalCandidate(ep1_ch1());
@@ -614,9 +614,9 @@ class P2PTransportChannelTestBase : public testing::Test,
     EXPECT_TRUE_WAIT(GetRoleConflict(0), 1000);
     EXPECT_FALSE(GetRoleConflict(1));
 
-    EXPECT_TRUE_WAIT(ep1_ch1()->receiving() &&
+    EXPECT_TRUE_WAIT(ep1_ch1()->readable() &&
                      ep1_ch1()->writable() &&
-                     ep2_ch1()->receiving() &&
+                     ep2_ch1()->readable() &&
                      ep2_ch1()->writable(),
                      1000);
 
@@ -1103,8 +1103,8 @@ TEST_F(P2PTransportChannelTest, GetStats) {
                      kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   CreateChannels(1);
-  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                          ep2_ch1()->receiving() && ep2_ch1()->writable(),
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                          ep2_ch1()->readable() && ep2_ch1()->writable(),
                           1000, 1000);
   TestSendRecv(1);
   cricket::ConnectionInfos infos;
@@ -1112,7 +1112,7 @@ TEST_F(P2PTransportChannelTest, GetStats) {
   ASSERT_EQ(1U, infos.size());
   EXPECT_TRUE(infos[0].new_connection);
   EXPECT_TRUE(infos[0].best_connection);
-  EXPECT_TRUE(infos[0].receiving);
+  EXPECT_TRUE(infos[0].readable);
   EXPECT_TRUE(infos[0].writable);
   EXPECT_FALSE(infos[0].timeout);
   EXPECT_EQ(10U, infos[0].sent_total_packets);
@@ -1241,9 +1241,9 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyBlocked) {
   // Pump for 1 second and verify that the channels are not connected.
   rtc::Thread::Current()->ProcessMessages(1000);
 
-  EXPECT_FALSE(ep1_ch1()->receiving());
+  EXPECT_FALSE(ep1_ch1()->readable());
   EXPECT_FALSE(ep1_ch1()->writable());
-  EXPECT_FALSE(ep2_ch1()->receiving());
+  EXPECT_FALSE(ep2_ch1()->readable());
   EXPECT_FALSE(ep2_ch1()->writable());
 
   DestroyChannels();
@@ -1261,8 +1261,8 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyOpen) {
   ep1_ch1()->set_incoming_only(true);
 
   EXPECT_TRUE_WAIT_MARGIN(ep1_ch1() != NULL && ep2_ch1() != NULL &&
-                          ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                          ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                          ep2_ch1()->readable() && ep2_ch1()->writable(),
                           1000, 1000);
 
   DestroyChannels();
@@ -1287,8 +1287,8 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
 
   CreateChannels(1);
 
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() && ep2_ch1()->writable(),
                    1000);
   EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
@@ -1343,9 +1343,9 @@ TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
     EXPECT_EQ(kTiebreaker1, ports_before[i]->IceTiebreaker());
   }
 
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() &&
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() &&
                    ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() &&
+                   ep2_ch1()->readable() &&
                    ep2_ch1()->writable(),
                    1000);
 
@@ -1400,8 +1400,8 @@ TEST_F(P2PTransportChannelTest, TestIPv6Connections) {
 
   CreateChannels(1);
 
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() && ep2_ch1()->writable(),
                    1000);
   EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
@@ -1426,8 +1426,10 @@ TEST_F(P2PTransportChannelTest, TestForceTurn) {
 
   CreateChannels(1);
 
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                       ep2_ch1()->receiving() && ep2_ch1()->writable(),
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() &&
+                   ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() &&
+                   ep2_ch1()->writable(),
                    2000);
 
   EXPECT_TRUE(ep1_ch1()->best_connection() &&
@@ -1506,8 +1508,8 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailover) {
 
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() && ep2_ch1()->writable(),
                    1000);
   EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
@@ -1550,8 +1552,8 @@ TEST_F(P2PTransportChannelMultihomedTest, TestDrain) {
 
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() && ep2_ch1()->writable(),
                    1000);
   EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
@@ -1704,14 +1706,14 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   uint32 remote_priority = conn1->remote_candidate().priority();
 
   // Create a higher priority candidate and make the connection
-  // receiving/writable. This will prune conn1.
+  // readable/writable. This will prune conn1.
   ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 2));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();
   conn2->ReceivedPingResponse();
 
-  // Wait for conn1 to be destroyed.
+  // Wait for conn1 being destroyed.
   EXPECT_TRUE_WAIT(GetConnectionTo(&ch, "1.1.1.1", 1) == nullptr, 3000);
   cricket::Port* port = GetPort(&ch);
 
@@ -1903,7 +1905,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   ch.OnCandidate(CreateCandidate("2.2.2.2", 2, 1));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
-  conn2->ReceivedPing();  // Start receiving.
+  conn2->ReceivedPing();  // Become readable.
   // Do not switch because it is not writable.
   conn2->OnReadPacket("ABC", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(conn1, ch.best_connection());

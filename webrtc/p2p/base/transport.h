@@ -54,7 +54,7 @@ class TransportChannelImpl;
 
 typedef std::vector<Candidate> Candidates;
 
-// For "writable" and "receiving", we need to differentiate between
+// For "writable", "readable", and "receiving", we need to differentiate between
 // none, all, and some.
 enum TransportState {
   TRANSPORT_STATE_NONE = 0,
@@ -63,9 +63,10 @@ enum TransportState {
 };
 
 // When checking transport state, we need to differentiate between
-// "writable" or "receiving" check.
+// "readable", "writable", or "receiving" check.
 enum TransportStateType {
-  TRANSPORT_WRITABLE_STATE = 0,
+  TRANSPORT_READABLE_STATE = 0,
+  TRANSPORT_WRITABLE_STATE,
   TRANSPORT_RECEIVING_STATE
 };
 
@@ -75,7 +76,7 @@ struct ConnectionInfo {
   ConnectionInfo()
       : best_connection(false),
         writable(false),
-        receiving(false),
+        readable(false),
         timeout(false),
         new_connection(false),
         rtt(0),
@@ -89,7 +90,7 @@ struct ConnectionInfo {
 
   bool best_connection;        // Is this the best connection we have?
   bool writable;               // Has this connection received a STUN response?
-  bool receiving;              // Has this connection received anything?
+  bool readable;               // Has this connection received a STUN request?
   bool timeout;                // Has this connection timed out?
   bool new_connection;         // Is this a newly created connection?
   size_t rtt;                  // The STUN RTT for this connection.
@@ -155,15 +156,24 @@ class Transport : public rtc::MessageHandler,
   // Returns the port allocator object for this transport.
   PortAllocator* port_allocator() { return allocator_; }
 
-  // Returns the states of this manager.  These bits are the ORs
+  // Returns the readable and states of this manager.  These bits are the ORs
   // of the corresponding bits on the managed channels.  Each time one of these
   // states changes, a signal is raised.
-  // TODO(honghaiz): Replace uses of writable() with any_channels_writable().
+  // TODO: Replace uses of readable() and writable() with
+  // any_channels_readable() and any_channels_writable().
+  bool readable() const { return any_channels_readable(); }
   bool writable() const { return any_channels_writable(); }
   bool was_writable() const { return was_writable_; }
+  bool any_channels_readable() const {
+    return (readable_ == TRANSPORT_STATE_SOME ||
+            readable_ == TRANSPORT_STATE_ALL);
+  }
   bool any_channels_writable() const {
     return (writable_ == TRANSPORT_STATE_SOME ||
             writable_ == TRANSPORT_STATE_ALL);
+  }
+  bool all_channels_readable() const {
+    return (readable_ == TRANSPORT_STATE_ALL);
   }
   bool all_channels_writable() const {
     return (writable_ == TRANSPORT_STATE_ALL);
@@ -173,6 +183,7 @@ class Transport : public rtc::MessageHandler,
             receiving_ == TRANSPORT_STATE_ALL);
   }
 
+  sigslot::signal1<Transport*> SignalReadableState;
   sigslot::signal1<Transport*> SignalWritableState;
   sigslot::signal1<Transport*> SignalReceivingState;
   sigslot::signal1<Transport*> SignalCompleted;
@@ -363,7 +374,8 @@ class Transport : public rtc::MessageHandler,
   // Candidate component => ChannelMapEntry
   typedef std::map<int, ChannelMapEntry> ChannelMap;
 
-  // Called when the write state of a channel changes.
+  // Called when the state of a channel changes.
+  void OnChannelReadableState(TransportChannel* channel);
   void OnChannelWritableState(TransportChannel* channel);
 
   // Called when the receiving state of a channel changes.
@@ -397,6 +409,7 @@ class Transport : public rtc::MessageHandler,
   void ResetChannels_w();
   void DestroyAllChannels_w();
   void OnRemoteCandidate_w(const Candidate& candidate);
+  void OnChannelReadableState_s();
   void OnChannelWritableState_s();
   void OnChannelReceivingState_s();
   void OnChannelRequestSignaling_s();
