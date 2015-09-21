@@ -1138,8 +1138,8 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
     RtcpRttStats* rtt_stats,
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
     RemoteBitrateEstimator* remote_bitrate_estimator,
-    PacedSender* paced_sender,
-    PacketRouter* packet_router,
+    RtpPacketSender* paced_sender,
+    TransportSequenceNumberAllocator* transport_sequence_number_allocator,
     BitrateStatisticsObserver* send_bitrate_observer,
     FrameCountObserver* send_frame_count_observer,
     SendSideDelayObserver* send_side_delay_observer,
@@ -1156,7 +1156,8 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
   configuration.rtcp_packet_type_counter_observer =
       rtcp_packet_type_counter_observer;
   configuration.paced_sender = paced_sender;
-  configuration.packet_router = packet_router;
+  configuration.transport_sequence_number_allocator =
+      transport_sequence_number_allocator;
   configuration.send_bitrate_observer = send_bitrate_observer;
   configuration.send_frame_count_observer = send_frame_count_observer;
   configuration.send_side_delay_observer = send_side_delay_observer;

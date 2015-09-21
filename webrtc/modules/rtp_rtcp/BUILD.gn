@@ -110,7 +110,6 @@ source_set("rtp_rtcp") {
   deps = [
     "../..:webrtc_common",
     "../../system_wrappers",
-    "../pacing",
     "../remote_bitrate_estimator",
   ]
 

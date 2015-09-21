@@ -36,7 +36,7 @@ const int64_t kMaxIntervalTimeMs = 30;
 namespace webrtc {
 namespace paced_sender {
 struct Packet {
-  Packet(PacedSender::Priority priority,
+  Packet(RtpPacketSender::Priority priority,
          uint32_t ssrc,
          uint16_t seq_number,
          int64_t capture_time_ms,
@@ -53,7 +53,7 @@ struct Packet {
         retransmission(retransmission),
         enqueue_order(enqueue_order) {}
 
-  PacedSender::Priority priority;
+  RtpPacketSender::Priority priority;
   uint32_t ssrc;
   uint16_t sequence_number;
   int64_t capture_time_ms;
@@ -268,9 +268,12 @@ void PacedSender::UpdateBitrate(int bitrate_kbps,
   bitrate_bps_ = 1000 * bitrate_kbps;
 }
 
-bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
-    uint16_t sequence_number, int64_t capture_time_ms, size_t bytes,
-    bool retransmission) {
+bool PacedSender::SendPacket(RtpPacketSender::Priority priority,
+                             uint32_t ssrc,
+                             uint16_t sequence_number,
+                             int64_t capture_time_ms,
+                             size_t bytes,
+                             bool retransmission) {
   CriticalSectionScoped cs(critsect_.get());
 
   if (!enabled_) {

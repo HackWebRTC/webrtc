@@ -22,8 +22,6 @@ namespace webrtc {
 // on being protected by the caller.
 class BitrateProber {
  public:
-  static const size_t kMinProbePacketSize;
-
   BitrateProber();
 
   void SetEnabled(bool enable);

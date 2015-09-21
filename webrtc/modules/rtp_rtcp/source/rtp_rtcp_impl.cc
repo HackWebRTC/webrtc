@@ -40,7 +40,7 @@ RtpRtcp::Configuration::Configuration()
       audio_messages(NullObjectRtpAudioFeedback()),
       remote_bitrate_estimator(nullptr),
       paced_sender(nullptr),
-      packet_router(nullptr),
+      transport_sequence_number_allocator(nullptr),
       send_bitrate_observer(nullptr),
       send_frame_count_observer(nullptr),
       send_side_delay_observer(nullptr) {}
@@ -64,7 +64,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.outgoing_transport,
                   configuration.audio_messages,
                   configuration.paced_sender,
-                  configuration.packet_router,
+                  configuration.transport_sequence_number_allocator,
                   configuration.transport_feedback_callback,
                   configuration.send_bitrate_observer,
                   configuration.send_frame_count_observer,

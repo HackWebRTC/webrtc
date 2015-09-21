@@ -19,8 +19,6 @@
 
 namespace webrtc {
 // Forward declarations.
-class PacedSender;
-class PacketRouter;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
 class RtpReceiver;
@@ -69,8 +67,8 @@ class RtpRtcp : public Module {
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer;
     RtpAudioFeedback* audio_messages;
     RemoteBitrateEstimator* remote_bitrate_estimator;
-    PacedSender* paced_sender;
-    PacketRouter* packet_router;
+    RtpPacketSender* paced_sender;
+    TransportSequenceNumberAllocator* transport_sequence_number_allocator;
     BitrateStatisticsObserver* send_bitrate_observer;
     FrameCountObserver* send_frame_count_observer;
     SendSideDelayObserver* send_side_delay_observer;

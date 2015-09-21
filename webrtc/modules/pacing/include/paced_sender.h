@@ -17,6 +17,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -30,16 +31,8 @@ struct Packet;
 class PacketQueue;
 }  // namespace paced_sender
 
-class PacedSender : public Module {
+class PacedSender : public Module, public RtpPacketSender {
  public:
-  enum Priority {
-    kHighPriority = 0,  // Pass through; will be sent immediately.
-    kNormalPriority = 2,  // Put in back of the line.
-    kLowPriority = 3,  // Put in back of the low priority line.
-  };
-  // Low priority packets are mixed with the normal priority packets
-  // while we are paused.
-
   class Callback {
    public:
     // Note: packets sent as a result of a callback should not pass by this
@@ -67,6 +60,8 @@ class PacedSender : public Module {
   // Increasing this factor will result in lower delays in cases of bitrate
   // overshoots from the encoder.
   static const float kDefaultPaceMultiplier;
+
+  static const size_t kMinProbePacketSize = 200;
 
   PacedSender(Clock* clock,
               Callback* callback,
@@ -103,12 +98,12 @@ class PacedSender : public Module {
 
   // Returns true if we send the packet now, else it will add the packet
   // information to the queue and call TimeToSendPacket when it's time to send.
-  virtual bool SendPacket(Priority priority,
-                          uint32_t ssrc,
-                          uint16_t sequence_number,
-                          int64_t capture_time_ms,
-                          size_t bytes,
-                          bool retransmission);
+  bool SendPacket(RtpPacketSender::Priority priority,
+                  uint32_t ssrc,
+                  uint16_t sequence_number,
+                  int64_t capture_time_ms,
+                  size_t bytes,
+                  bool retransmission) override;
 
   // Returns the time since the oldest queued packet was enqueued.
   virtual int64_t QueueInMs() const;

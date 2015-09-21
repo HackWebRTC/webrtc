@@ -19,15 +19,19 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
 class RtpRtcp;
+namespace rtcp {
+class TransportFeedback;
+}  // namespace rtcp
 
 // PacketRouter routes outgoing data to the correct sending RTP module, based
 // on the simulcast layer in RTPVideoHeader.
-class PacketRouter : public PacedSender::Callback {
+class PacketRouter : public PacedSender::Callback,
+                     public TransportSequenceNumberAllocator {
  public:
   PacketRouter();
   virtual ~PacketRouter();
@@ -44,7 +48,7 @@ class PacketRouter : public PacedSender::Callback {
   size_t TimeToSendPadding(size_t bytes) override;
 
   void SetTransportWideSequenceNumber(uint16_t sequence_number);
-  uint16_t AllocateSequenceNumber();
+  uint16_t AllocateSequenceNumber() override;
 
   // Send transport feedback packet to send-side.
   virtual bool SendFeedback(rtcp::TransportFeedback* packet);

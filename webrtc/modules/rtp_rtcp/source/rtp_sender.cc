@@ -97,16 +97,17 @@ class BitrateAggregator {
   uint32_t ssrc_;
 };
 
-RTPSender::RTPSender(bool audio,
-                     Clock* clock,
-                     Transport* transport,
-                     RtpAudioFeedback* audio_feedback,
-                     PacedSender* paced_sender,
-                     PacketRouter* packet_router,
-                     TransportFeedbackObserver* transport_feedback_observer,
-                     BitrateStatisticsObserver* bitrate_callback,
-                     FrameCountObserver* frame_count_observer,
-                     SendSideDelayObserver* send_side_delay_observer)
+RTPSender::RTPSender(
+    bool audio,
+    Clock* clock,
+    Transport* transport,
+    RtpAudioFeedback* audio_feedback,
+    RtpPacketSender* paced_sender,
+    TransportSequenceNumberAllocator* sequence_number_allocator,
+    TransportFeedbackObserver* transport_feedback_observer,
+    BitrateStatisticsObserver* bitrate_callback,
+    FrameCountObserver* frame_count_observer,
+    SendSideDelayObserver* send_side_delay_observer)
     : clock_(clock),
       // TODO(holmer): Remove this conversion when we remove the use of
       // TickTime.
@@ -118,7 +119,7 @@ RTPSender::RTPSender(bool audio,
       audio_(audio ? new RTPSenderAudio(clock, this, audio_feedback) : nullptr),
       video_(audio ? nullptr : new RTPSenderVideo(clock, this)),
       paced_sender_(paced_sender),
-      packet_router_(packet_router),
+      transport_sequence_number_allocator_(sequence_number_allocator),
       transport_feedback_observer_(transport_feedback_observer),
       last_capture_time_ms_sent_(0),
       send_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -586,7 +587,8 @@ size_t RTPSender::SendPadData(size_t bytes,
                               bool timestamp_provided,
                               uint32_t timestamp,
                               int64_t capture_time_ms) {
-  // Always send full padding packets. This is accounted for by the PacedSender,
+  // Always send full padding packets. This is accounted for by the
+  // RtpPacketSender,
   // which will make sure we don't send too much padding even if a single packet
   // is larger than requested.
   size_t padding_bytes_in_packet =
@@ -594,7 +596,7 @@ size_t RTPSender::SendPadData(size_t bytes,
   size_t bytes_sent = 0;
   bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
                                  kRtpExtensionTransportSequenceNumber) &&
-                             packet_router_;
+                             transport_sequence_number_allocator_;
   for (; bytes > 0; bytes -= padding_bytes_in_packet) {
     if (bytes < padding_bytes_in_packet)
       bytes = padding_bytes_in_packet;
@@ -711,7 +713,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
     // TickTime.
     int64_t corrected_capture_tims_ms = capture_time_ms + clock_delta_ms_;
     if (!paced_sender_->SendPacket(
-            PacedSender::kHighPriority, header.ssrc, header.sequenceNumber,
+            RtpPacketSender::kHighPriority, header.ssrc, header.sequenceNumber,
             corrected_capture_tims_ms, length - header.headerLength, true)) {
       // We can't send the packet right now.
       // We will be called when it is time.
@@ -917,7 +919,8 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
   // TODO(sprang): Potentially too much overhead in IsRegistered()?
   bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
                                  kRtpExtensionTransportSequenceNumber) &&
-                             packet_router_ && !is_retransmit;
+                             transport_sequence_number_allocator_ &&
+                             !is_retransmit;
   if (using_transport_seq) {
     transport_seq =
         UpdateTransportSequenceNumber(buffer_to_send_ptr, length, rtp_header);
@@ -1000,10 +1003,12 @@ size_t RTPSender::TimeToSendPadding(size_t bytes) {
 }
 
 // TODO(pwestin): send in the RtpHeaderParser to avoid parsing it again.
-int32_t RTPSender::SendToNetwork(
-    uint8_t *buffer, size_t payload_length, size_t rtp_header_length,
-    int64_t capture_time_ms, StorageType storage,
-    PacedSender::Priority priority) {
+int32_t RTPSender::SendToNetwork(uint8_t* buffer,
+                                 size_t payload_length,
+                                 size_t rtp_header_length,
+                                 int64_t capture_time_ms,
+                                 StorageType storage,
+                                 RtpPacketSender::Priority priority) {
   RtpUtility::RtpHeaderParser rtp_parser(buffer,
                                          payload_length + rtp_header_length);
   RTPHeader rtp_header;
@@ -1615,7 +1620,7 @@ uint16_t RTPSender::UpdateTransportSequenceNumber(
       RTC_NOTREACHED();
   }
 
-  uint16_t seq = packet_router_->AllocateSequenceNumber();
+  uint16_t seq = transport_sequence_number_allocator_->AllocateSequenceNumber();
   BuildTransportSequenceNumberExtension(rtp_packet + offset, seq);
   return seq;
 }

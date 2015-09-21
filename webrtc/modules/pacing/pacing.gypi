@@ -14,6 +14,7 @@
       'dependencies': [
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/modules/modules.gyp:bitrate_controller',
+        '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
       ],
       'sources': [
         'include/paced_sender.h',

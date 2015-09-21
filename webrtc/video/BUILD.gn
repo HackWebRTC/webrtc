@@ -70,6 +70,7 @@ source_set("video") {
     "..:webrtc_common",
     "../common_video",
     "../modules/bitrate_controller",
+    "../modules/pacing",
     "../modules/rtp_rtcp",
     "../modules/utility",
     "../modules/video_capture:video_capture_module",

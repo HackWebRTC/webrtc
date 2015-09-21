@@ -12,7 +12,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"

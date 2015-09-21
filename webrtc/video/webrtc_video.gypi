@@ -12,6 +12,7 @@
       '<(webrtc_root)/common.gyp:webrtc_common',
       '<(webrtc_root)/common_video/common_video.gyp:common_video',
       '<(webrtc_root)/modules/modules.gyp:bitrate_controller',
+      '<(webrtc_root)/modules/modules.gyp:paced_sender',
       '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
       '<(webrtc_root)/modules/modules.gyp:video_capture_module',
       '<(webrtc_root)/modules/modules.gyp:video_processing',

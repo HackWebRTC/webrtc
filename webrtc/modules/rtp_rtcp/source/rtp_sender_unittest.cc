@@ -12,11 +12,11 @@
  * This file includes unit tests for the RTPSender.
  */
 
+#include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
@@ -100,6 +100,20 @@ class LoopbackTransportTest : public webrtc::Transport {
 
 }  // namespace
 
+class MockRtpPacketSender : public RtpPacketSender {
+ public:
+  MockRtpPacketSender() {}
+  virtual ~MockRtpPacketSender() {}
+
+  MOCK_METHOD6(SendPacket,
+               bool(Priority priority,
+                    uint32_t ssrc,
+                    uint16_t sequence_number,
+                    int64_t capture_time_ms,
+                    size_t bytes,
+                    bool retransmission));
+};
+
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
@@ -121,7 +135,7 @@ class RtpSenderTest : public ::testing::Test {
   }
 
   SimulatedClock fake_clock_;
-  MockPacedSender mock_paced_sender_;
+  MockRtpPacketSender mock_paced_sender_;
   rtc::scoped_ptr<RTPSender> rtp_sender_;
   int payload_;
   LoopbackTransportTest transport_;
@@ -152,12 +166,9 @@ class RtpSenderTest : public ::testing::Test {
     ASSERT_GE(rtp_length, 0);
 
     // Packet should be stored in a send bucket.
-    EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
-                                            payload_length,
-                                            rtp_length,
-                                            capture_time_ms,
-                                            kAllowRetransmission,
-                                            PacedSender::kNormalPriority));
+    EXPECT_EQ(0, rtp_sender_->SendToNetwork(
+                     packet_, payload_length, rtp_length, capture_time_ms,
+                     kAllowRetransmission, RtpPacketSender::kNormalPriority));
   }
 };
 
@@ -593,8 +604,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
 
 TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   EXPECT_CALL(mock_paced_sender_,
-              SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _, _)).
-                  WillOnce(testing::Return(false));
+              SendPacket(RtpPacketSender::kNormalPriority, _, kSeqNum, _, _, _))
+      .WillOnce(testing::Return(false));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
@@ -609,12 +620,9 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   size_t rtp_length = static_cast<size_t>(rtp_length_int);
 
   // Packet should be stored in a send bucket.
-  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
-                                          0,
-                                          rtp_length,
-                                          capture_time_ms,
-                                          kAllowRetransmission,
-                                          PacedSender::kNormalPriority));
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          capture_time_ms, kAllowRetransmission,
+                                          RtpPacketSender::kNormalPriority));
 
   EXPECT_EQ(0, transport_.packets_sent_);
 
@@ -646,8 +654,8 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
 
 TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_CALL(mock_paced_sender_,
-              SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _, _)).
-                  WillOnce(testing::Return(false));
+              SendPacket(RtpPacketSender::kNormalPriority, _, kSeqNum, _, _, _))
+      .WillOnce(testing::Return(false));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
@@ -662,18 +670,15 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   size_t rtp_length = static_cast<size_t>(rtp_length_int);
 
   // Packet should be stored in a send bucket.
-  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
-                                          0,
-                                          rtp_length,
-                                          capture_time_ms,
-                                          kAllowRetransmission,
-                                          PacedSender::kNormalPriority));
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          capture_time_ms, kAllowRetransmission,
+                                          RtpPacketSender::kNormalPriority));
 
   EXPECT_EQ(0, transport_.packets_sent_);
 
   EXPECT_CALL(mock_paced_sender_,
-              SendPacket(PacedSender::kHighPriority, _, kSeqNum, _, _, _)).
-                  WillOnce(testing::Return(false));
+              SendPacket(RtpPacketSender::kHighPriority, _, kSeqNum, _, _, _))
+      .WillOnce(testing::Return(false));
 
   const int kStoredTimeInMs = 100;
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
@@ -710,8 +715,8 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
 TEST_F(RtpSenderTest, SendPadding) {
   // Make all (non-padding) packets go to send queue.
   EXPECT_CALL(mock_paced_sender_,
-              SendPacket(PacedSender::kNormalPriority, _, _, _, _, _)).
-                  WillRepeatedly(testing::Return(false));
+              SendPacket(RtpPacketSender::kNormalPriority, _, _, _, _, _))
+      .WillRepeatedly(testing::Return(false));
 
   uint16_t seq_num = kSeqNum;
   uint32_t timestamp = kTimestamp;
@@ -744,12 +749,9 @@ TEST_F(RtpSenderTest, SendPadding) {
   size_t rtp_length = static_cast<size_t>(rtp_length_int);
 
   // Packet should be stored in a send bucket.
-  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
-                                          0,
-                                          rtp_length,
-                                          capture_time_ms,
-                                          kAllowRetransmission,
-                                          PacedSender::kNormalPriority));
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          capture_time_ms, kAllowRetransmission,
+                                          RtpPacketSender::kNormalPriority));
 
   int total_packets_sent = 0;
   EXPECT_EQ(total_packets_sent, transport_.packets_sent_);
@@ -802,12 +804,9 @@ TEST_F(RtpSenderTest, SendPadding) {
   rtp_length = static_cast<size_t>(rtp_length_int);
 
   // Packet should be stored in a send bucket.
-  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
-                                          0,
-                                          rtp_length,
-                                          capture_time_ms,
-                                          kAllowRetransmission,
-                                          PacedSender::kNormalPriority));
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          capture_time_ms, kAllowRetransmission,
+                                          RtpPacketSender::kNormalPriority));
 
   rtp_sender_->TimeToSendPacket(seq_num, capture_time_ms, false);
   // Process send bucket.
@@ -836,8 +835,8 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
   // Make all packets go through the pacer.
   EXPECT_CALL(mock_paced_sender_,
-              SendPacket(PacedSender::kNormalPriority, _, _, _, _, _)).
-                  WillRepeatedly(testing::Return(false));
+              SendPacket(RtpPacketSender::kNormalPriority, _, _, _, _, _))
+      .WillRepeatedly(testing::Return(false));
 
   uint16_t seq_num = kSeqNum;
   rtp_sender_->SetStorePacketsStatus(true, 10);

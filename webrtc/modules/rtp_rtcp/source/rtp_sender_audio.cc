@@ -13,6 +13,7 @@
 #include <assert.h> //assert
 #include <string.h> //memcpy
 
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
@@ -368,7 +369,7 @@ int32_t RTPSenderAudio::SendAudio(
                            _rtpSender->SequenceNumber());
     return _rtpSender->SendToNetwork(dataBuffer, payloadSize, rtpHeaderLength,
                                      -1, kAllowRetransmission,
-                                     PacedSender::kHighPriority);
+                                     RtpPacketSender::kHighPriority);
   }
 
     // Audio level magnitude and voice activity flag are set for each RTP packet
@@ -477,7 +478,7 @@ RTPSenderAudio::SendTelephoneEventPacket(bool ended,
                              _rtpSender->SequenceNumber());
         retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12, -1,
                                            kAllowRetransmission,
-                                           PacedSender::kHighPriority);
+                                           RtpPacketSender::kHighPriority);
         sendCount--;
 
     }while (sendCount > 0 && retVal == 0);

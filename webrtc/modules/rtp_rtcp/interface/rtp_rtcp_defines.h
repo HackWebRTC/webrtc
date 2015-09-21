@@ -395,5 +395,36 @@ struct RtpPacketLossStats {
   uint64_t multiple_packet_loss_packet_count;
 };
 
+class RtpPacketSender {
+ public:
+  RtpPacketSender() {}
+  virtual ~RtpPacketSender() {}
+
+  enum Priority {
+    kHighPriority = 0,    // Pass through; will be sent immediately.
+    kNormalPriority = 2,  // Put in back of the line.
+    kLowPriority = 3,     // Put in back of the low priority line.
+  };
+  // Low priority packets are mixed with the normal priority packets
+  // while we are paused.
+
+  // Returns true if we send the packet now, else it will add the packet
+  // information to the queue and call TimeToSendPacket when it's time to send.
+  virtual bool SendPacket(Priority priority,
+                          uint32_t ssrc,
+                          uint16_t sequence_number,
+                          int64_t capture_time_ms,
+                          size_t bytes,
+                          bool retransmission) = 0;
+};
+
+class TransportSequenceNumberAllocator {
+ public:
+  TransportSequenceNumberAllocator() {}
+  virtual ~TransportSequenceNumberAllocator() {}
+
+  virtual uint16_t AllocateSequenceNumber() = 0;
+};
+
 }  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_

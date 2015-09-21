@@ -15,6 +15,7 @@
 #include <limits>
 #include <sstream>
 
+#include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
@@ -28,8 +29,6 @@ int ComputeDeltaFromBitrate(size_t packet_size, int bitrate_bps) {
       bitrate_bps);
 }
 }  // namespace
-
-const size_t BitrateProber::kMinProbePacketSize = 200;
 
 BitrateProber::BitrateProber()
     : probing_state_(kDisabled),
@@ -90,7 +89,7 @@ int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
   // We will send the first probe packet immediately if no packet has been
   // sent before.
   int time_until_probe_ms = 0;
-  if (packet_size_last_send_ > kMinProbePacketSize &&
+  if (packet_size_last_send_ > PacedSender::kMinProbePacketSize &&
       probing_state_ == kProbing) {
     int next_delta_ms = ComputeDeltaFromBitrate(packet_size_last_send_,
                                                 probe_bitrates_.front());
