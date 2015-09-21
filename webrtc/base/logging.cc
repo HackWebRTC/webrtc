@@ -184,6 +184,7 @@ LogMessage::LogMessage(const char* file,
                        const std::string& tag)
     : LogMessage(file, line, sev, ERRCTX_NONE, 0 /* err */, NULL /* module */) {
   tag_ = tag;
+  print_stream_ << tag << ": ";
 }
 
 LogMessage::~LogMessage() {
