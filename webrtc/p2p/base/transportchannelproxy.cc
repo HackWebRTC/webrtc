@@ -55,10 +55,10 @@ void TransportChannelProxy::SetImplementation(TransportChannelImpl* impl) {
   impl_ = impl;
 
   if (impl_) {
-    impl_->SignalReadableState.connect(
-        this, &TransportChannelProxy::OnReadableState);
     impl_->SignalWritableState.connect(
         this, &TransportChannelProxy::OnWritableState);
+    impl_->SignalReceivingState.connect(
+        this, &TransportChannelProxy::OnReceivingState);
     impl_->SignalReadPacket.connect(
         this, &TransportChannelProxy::OnReadPacket);
     impl_->SignalReadyToSend.connect(
@@ -229,18 +229,18 @@ IceRole TransportChannelProxy::GetIceRole() const {
   return impl_->GetIceRole();
 }
 
-void TransportChannelProxy::OnReadableState(TransportChannel* channel) {
-  ASSERT(rtc::Thread::Current() == worker_thread_);
-  ASSERT(channel == impl_);
-  set_readable(impl_->readable());
-  // Note: SignalReadableState fired by set_readable.
-}
-
 void TransportChannelProxy::OnWritableState(TransportChannel* channel) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == impl_);
   set_writable(impl_->writable());
-  // Note: SignalWritableState fired by set_readable.
+  // Note: SignalWritableState fired by set_writable.
+}
+
+void TransportChannelProxy::OnReceivingState(TransportChannel* channel) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
+  ASSERT(channel == impl_);
+  set_receiving(impl_->receiving());
+  // Note: SignalReceivingState fired by set_receiving.
 }
 
 void TransportChannelProxy::OnReadPacket(
@@ -267,9 +267,9 @@ void TransportChannelProxy::OnRouteChange(TransportChannel* channel,
 void TransportChannelProxy::OnMessage(rtc::Message* msg) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   if (msg->message_id == MSG_UPDATESTATE) {
-     // If impl_ is already readable or writable, push up those signals.
-     set_readable(impl_ ? impl_->readable() : false);
-     set_writable(impl_ ? impl_->writable() : false);
+    // If impl_ is already receiving or writable, push up those signals.
+    set_writable(impl_ ? impl_->writable() : false);
+    set_receiving(impl_ ? impl_->receiving() : false);
   }
 }
 

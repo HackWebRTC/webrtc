@@ -125,7 +125,7 @@ class StatsReport {
     kStatsValueNamePacketsReceived,
     kStatsValueNamePacketsSent,
     kStatsValueNameProtocol,
-    kStatsValueNameReadable,
+    kStatsValueNameReceiving,
     kStatsValueNameSelectedCandidatePairId,
     kStatsValueNameSsrc,
     kStatsValueNameState,

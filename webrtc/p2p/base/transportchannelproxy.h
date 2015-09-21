@@ -72,7 +72,7 @@ class TransportChannelProxy : public TransportChannel,
  private:
   // Catch signals from the implementation channel.  These just forward to the
   // client (after updating our state to match).
-  void OnReadableState(TransportChannel* channel);
+  void OnReceivingState(TransportChannel* channel);
   void OnWritableState(TransportChannel* channel);
   void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
                     const rtc::PacketTime& packet_time, int flags);
