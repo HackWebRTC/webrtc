@@ -223,7 +223,7 @@
           '<(DEPTH)',
           # The overrides must be included before the WebRTC root as that's the
           # mechanism for selecting the override headers in Chromium.
-          '../../webrtc_overrides',
+          '../overrides',
           # The WebRTC root is needed to allow includes in the WebRTC code base
           # to be prefixed with webrtc/.
           '../..',
@@ -408,9 +408,9 @@
             'WEBRTC_CHROMIUM_BUILD',
           ],
           'include_dirs': [
-            # The overrides must be included first as that is the mechanism for
+            # overrides must be included first as that is the mechanism for
             # selecting the override headers in Chromium.
-            '../../webrtc_overrides',
+            '../overrides',
             '../..',
           ],
         }, {
