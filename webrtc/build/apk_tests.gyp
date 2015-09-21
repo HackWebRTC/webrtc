@@ -216,36 +216,6 @@
       ],
     },
     {
-      'target_name': 'video_capture_tests_apk',
-      'type': 'none',
-       'variables': {
-         'test_suite_name': 'video_capture_tests',
-         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_capture_tests<(SHARED_LIB_SUFFIX)',
-       },
-       'dependencies': [
-         '<(webrtc_root)/modules/modules.gyp:video_capture_tests',
-         'video_capture_java',
-       ],
-       'includes': [
-         '../../build/apk_test.gypi',
-       ],
-    },
-    {
-      # Used only by video_capture_tests_apk above, and impossible to use in the
-      # standalone build, which is why it's declared here instead of under
-      # modules/video_capture/ (to avoid the need for a forked _noop.gyp file
-      # like this file has; see comment at the top of this file).
-      'target_name': 'video_capture_java',
-      'type': 'none',
-      'variables': {
-        'java_in_dir': '<(webrtc_root)/modules/video_capture/android/java',
-        'additional_src_dirs': [ '<(webrtc_root)/base/java/src', ],
-      },
-      'includes': [
-        '../../build/java.gypi',
-      ],
-    },
-    {
       'target_name': 'audio_device_java',
       'type': 'none',
       'variables': {

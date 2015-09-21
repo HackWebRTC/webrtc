@@ -17,7 +17,6 @@
       'type': 'static_library',
       'dependencies': [
         'webrtc_utility',
-        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
@@ -54,11 +53,13 @@
         {
           'target_name': 'video_capture_module_internal_impl',
           'type': 'static_library',
-          'dependencies': [
-            'video_capture_module',
-            '<(webrtc_root)/common.gyp:webrtc_common',
-          ],
           'conditions': [
+            ['OS!="android"', {
+              'dependencies': [
+                'video_capture_module',
+                '<(webrtc_root)/common.gyp:webrtc_common',
+              ],
+            }],
             ['OS=="linux"', {
               'sources': [
                 'linux/device_info_linux.cc',
@@ -115,26 +116,6 @@
                 ],
               },
             }],  # win
-            ['OS=="android"', {
-              'sources': [
-                'android/device_info_android.cc',
-                'android/device_info_android.h',
-                'android/video_capture_android.cc',
-                'android/video_capture_android.h',
-              ],
-              'conditions': [
-                ['build_json==1', {
-                  'dependencies': [
-                    '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-                  ],
-                }],
-                ['build_icu==1', {
-                  'dependencies': [
-                    '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
-                  ],
-                }],
-              ],
-            }],  # android
             ['OS=="ios"', {
               'sources': [
                 'ios/device_info_ios.h',
@@ -164,7 +145,7 @@
         },
       ],
     }], # build_with_chromium==0
-    ['include_tests==1', {
+    ['include_tests==1 and OS!="android"', {
       'targets': [
         {
           'target_name': 'video_capture_tests',
@@ -177,8 +158,6 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
-            'ensure_initialized.cc',
-            'ensure_initialized.h',
             'test/video_capture_unittest.cc',
             'test/video_capture_main_mac.mm',
           ],
@@ -196,18 +175,6 @@
                 '-lrt',
                 '-lXext',
                 '-lX11',
-              ],
-            }],
-            ['OS=="android"', {
-              'dependencies': [
-                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
-              ],
-              # Need to disable error due to the line in
-              # base/android/jni_android.h triggering it:
-              # const BASE_EXPORT jobject GetApplicationContext()
-              # error: type qualifiers ignored on function return type
-              'cflags': [
-                '-Wno-ignored-qualifiers',
               ],
             }],
             ['OS=="mac"', {
@@ -231,36 +198,6 @@
           ] # conditions
         },
       ], # targets
-      'conditions': [
-        ['OS=="android"', {
-          'targets': [
-            {
-              'target_name': 'video_capture_tests_apk_target',
-              'type': 'none',
-              'dependencies': [
-                '<(apk_tests_path):video_capture_tests_apk',
-              ],
-            },
-          ],
-        }],
-        ['test_isolation_mode != "noop"', {
-          'targets': [
-            {
-              'target_name': 'video_capture_tests_run',
-              'type': 'none',
-              'dependencies': [
-                'video_capture_tests',
-              ],
-              'includes': [
-                '../../build/isolate.gypi',
-              ],
-              'sources': [
-                'video_capture_tests.isolate',
-              ],
-            },
-          ],
-        }],
-      ],
     }],
   ],
 }

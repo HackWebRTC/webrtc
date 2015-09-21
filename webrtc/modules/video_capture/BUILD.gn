@@ -130,21 +130,6 @@ if (!build_with_chromium) {
 
       deps += [ "//third_party/winsdk_samples" ]
     }
-    if (is_android) {
-      sources = [
-        "android/device_info_android.cc",
-        "android/device_info_android.h",
-        "android/video_capture_android.cc",
-        "android/video_capture_android.h",
-      ]
-
-      if (rtc_build_json) {
-        deps += [ "//third_party/jsoncpp" ]
-      }
-      if (rtc_build_icu) {
-        deps += [ "//third_party/icu:icuuc" ]
-      }
-    }
     if (is_ios) {
       sources = [
         "ios/device_info_ios.h",

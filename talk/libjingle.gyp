@@ -227,7 +227,6 @@
               'app/webrtc/java/android',
               '<(webrtc_base_dir)/java/src',
               '<(webrtc_modules_dir)/audio_device/android/java/src',
-              '<(webrtc_modules_dir)/video_capture/android/java/src',
               '<(webrtc_modules_dir)/video_render/android/java/src',
             ],
           },
