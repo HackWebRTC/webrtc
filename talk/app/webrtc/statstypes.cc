@@ -556,7 +556,7 @@ const char* StatsReport::Value::display_name() const {
       return "googPlisSent";
     case kStatsValueNamePreferredJitterBufferMs:
       return "googPreferredJitterBufferMs";
-    case kStatsValueNameReadable:
+    case kStatsValueNameReceiving:
       return "googReadable";
     case kStatsValueNameRemoteAddress:
       return "googRemoteAddress";

@@ -603,9 +603,9 @@ StatsReport* StatsCollector::AddConnectionInfoReport(
   report->set_timestamp(stats_gathering_started_);
 
   const BoolForAdd bools[] = {
-    { StatsReport::kStatsValueNameActiveConnection, info.best_connection },
-    { StatsReport::kStatsValueNameReadable, info.readable },
-    { StatsReport::kStatsValueNameWritable, info.writable },
+    {StatsReport::kStatsValueNameActiveConnection, info.best_connection},
+    {StatsReport::kStatsValueNameReceiving, info.receiving},
+    {StatsReport::kStatsValueNameWritable, info.writable},
   };
   for (const auto& b : bools)
     report->AddBoolean(b.name, b.value);

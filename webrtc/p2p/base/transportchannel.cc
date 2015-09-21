@@ -15,20 +15,12 @@
 namespace cricket {
 
 std::string TransportChannel::ToString() const {
-  const char READABLE_ABBREV[2] = { '_', 'R' };
+  const char RECEIVING_ABBREV[2] = { '_', 'R' };
   const char WRITABLE_ABBREV[2] = { '_', 'W' };
   std::stringstream ss;
-  ss << "Channel[" << content_name_
-     << "|" << component_
-     << "|" << READABLE_ABBREV[readable_] << WRITABLE_ABBREV[writable_] << "]";
+  ss << "Channel[" << content_name_ << "|" << component_ << "|"
+     << RECEIVING_ABBREV[receiving_] << WRITABLE_ABBREV[writable_] << "]";
   return ss.str();
-}
-
-void TransportChannel::set_readable(bool readable) {
-  if (readable_ != readable) {
-    readable_ = readable;
-    SignalReadableState(this);
-  }
 }
 
 void TransportChannel::set_receiving(bool receiving) {

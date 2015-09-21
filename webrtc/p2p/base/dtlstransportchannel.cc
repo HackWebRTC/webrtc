@@ -97,8 +97,6 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       dtls_state_(STATE_NONE),
       ssl_role_(rtc::SSL_CLIENT),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10) {
-  channel_->SignalReadableState.connect(this,
-      &DtlsTransportChannelWrapper::OnReadableState);
   channel_->SignalWritableState.connect(this,
       &DtlsTransportChannelWrapper::OnWritableState);
   channel_->SignalReadPacket.connect(this,
@@ -392,25 +390,12 @@ int DtlsTransportChannelWrapper::SendPacket(
 // (1) If we're not doing DTLS-SRTP, then the state is just the
 //     state of the underlying impl()
 // (2) If we're doing DTLS-SRTP:
-//     - Prior to the DTLS handshake, the state is neither readable or
+//     - Prior to the DTLS handshake, the state is neither receiving nor
 //       writable
 //     - When the impl goes writable for the first time we
 //       start the DTLS handshake
 //     - Once the DTLS handshake completes, the state is that of the
 //       impl again
-void DtlsTransportChannelWrapper::OnReadableState(TransportChannel* channel) {
-  ASSERT(rtc::Thread::Current() == worker_thread_);
-  ASSERT(channel == channel_);
-  LOG_J(LS_VERBOSE, this)
-      << "DTLSTransportChannelWrapper: channel readable state changed to "
-      << channel_->readable();
-
-  if (dtls_state_ == STATE_NONE || dtls_state_ == STATE_OPEN) {
-    set_readable(channel_->readable());
-    // Note: SignalReadableState fired by set_readable.
-  }
-}
-
 void DtlsTransportChannelWrapper::OnWritableState(TransportChannel* channel) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
@@ -545,8 +530,6 @@ void DtlsTransportChannelWrapper::OnDtlsEvent(rtc::StreamInterface* dtls,
       // The check for OPEN shouldn't be necessary but let's make
       // sure we don't accidentally frob the state if it's closed.
       dtls_state_ = STATE_OPEN;
-
-      set_readable(true);
       set_writable(true);
     }
   }
@@ -564,8 +547,6 @@ void DtlsTransportChannelWrapper::OnDtlsEvent(rtc::StreamInterface* dtls,
     } else {
       LOG_J(LS_INFO, this) << "DTLS channel error, code=" << err;
     }
-
-    set_readable(false);
     set_writable(false);
     dtls_state_ = STATE_CLOSED;
   }

@@ -25,7 +25,6 @@ using rtc::Bind;
 enum {
   MSG_ONSIGNALINGREADY = 1,
   MSG_ONREMOTECANDIDATE,
-  MSG_READSTATE,
   MSG_WRITESTATE,
   MSG_REQUESTSIGNALING,
   MSG_CANDIDATEREADY,
@@ -238,7 +237,6 @@ TransportChannelImpl* Transport::CreateChannel_w(int component) {
   if (local_description_ && remote_description_)
     ApplyNegotiatedTransportDescription_w(impl, NULL);
 
-  impl->SignalReadableState.connect(this, &Transport::OnChannelReadableState);
   impl->SignalWritableState.connect(this, &Transport::OnChannelWritableState);
   impl->SignalReceivingState.connect(this, &Transport::OnChannelReceivingState);
   impl->SignalRequestSignaling.connect(
@@ -493,20 +491,6 @@ void Transport::OnRemoteCandidate_w(const Candidate& candidate) {
   }
 }
 
-void Transport::OnChannelReadableState(TransportChannel* channel) {
-  ASSERT(worker_thread()->IsCurrent());
-  signaling_thread()->Post(this, MSG_READSTATE, NULL);
-}
-
-void Transport::OnChannelReadableState_s() {
-  ASSERT(signaling_thread()->IsCurrent());
-  TransportState readable = GetTransportState_s(TRANSPORT_READABLE_STATE);
-  if (readable_ != readable) {
-    readable_ = readable;
-    SignalReadableState(this);
-  }
-}
-
 void Transport::OnChannelWritableState(TransportChannel* channel) {
   ASSERT(worker_thread()->IsCurrent());
   signaling_thread()->Post(this, MSG_WRITESTATE, NULL);
@@ -547,9 +531,6 @@ TransportState Transport::GetTransportState_s(TransportStateType state_type) {
   for (const auto iter : channels_) {
     bool b = false;
     switch (state_type) {
-      case TRANSPORT_READABLE_STATE:
-        b = iter.second->readable();
-        break;
       case TRANSPORT_WRITABLE_STATE:
         b = iter.second->writable();
         break;
@@ -869,9 +850,6 @@ void Transport::OnMessage(rtc::Message* msg) {
       break;
     case MSG_CONNECTING:
       OnConnecting_s();
-      break;
-    case MSG_READSTATE:
-      OnChannelReadableState_s();
       break;
     case MSG_WRITESTATE:
       OnChannelWritableState_s();

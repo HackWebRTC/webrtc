@@ -176,10 +176,11 @@ class P2PTransportChannel : public TransportChannelImpl,
   void HandleAllTimedOut();
 
   Connection* GetBestConnectionOnNetwork(rtc::Network* network) const;
-  bool CreateConnections(const Candidate &remote_candidate,
-                         PortInterface* origin_port, bool readable);
-  bool CreateConnection(PortInterface* port, const Candidate& remote_candidate,
-                        PortInterface* origin_port, bool readable);
+  bool CreateConnections(const Candidate& remote_candidate,
+                         PortInterface* origin_port);
+  bool CreateConnection(PortInterface* port,
+                        const Candidate& remote_candidate,
+                        PortInterface* origin_port);
   bool FindConnection(cricket::Connection* connection) const;
 
   uint32 GetRemoteCandidateGeneration(const Candidate& candidate);
