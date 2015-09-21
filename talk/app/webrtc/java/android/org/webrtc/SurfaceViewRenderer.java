@@ -54,11 +54,11 @@ public class SurfaceViewRenderer extends SurfaceView
     implements SurfaceHolder.Callback, VideoRenderer.Callbacks {
   private static final String TAG = "SurfaceViewRenderer";
 
-  // These variables are synchronized on |threadLock|.
-  private final Object threadLock = new Object();
   // Dedicated render thread.
   private HandlerThread renderThread;
-  // Handler for inter-thread communication.
+  // |renderThreadHandler| is a handler for communicating with |renderThread|, and is synchronized
+  // on |handlerLock|.
+  private final Object handlerLock = new Object();
   private Handler renderThreadHandler;
 
   // EGL and GL resources for drawing YUV/OES textures. After initilization, these are only accessed
@@ -156,11 +156,13 @@ public class SurfaceViewRenderer extends SurfaceView
   }
 
   /**
-   * Release all resources. This needs to be done manually, otherwise the resources are leaked. You
-   * should call this before the Activity is destroyed, while the EGLContext is still valid.
+   * Block until any pending frame is returned and all GL resources released, even if an interrupt
+   * occurs. If an interrupt occurs during release(), the interrupt flag will be set. This function
+   * should be called before the Activity is destroyed and the EGLContext is still valid. If you
+   * don't call this function, the GL resources might leak.
    */
   public void release() {
-    synchronized (threadLock) {
+    synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         Logging.d(TAG, "Already released");
         return;
@@ -169,7 +171,7 @@ public class SurfaceViewRenderer extends SurfaceView
       // TODO(magjed): This might not be necessary - all OpenGL resources are automatically deleted
       // when the EGL context is lost. It might be dangerous to delete them manually in
       // Activity.onDestroy().
-      renderThreadHandler.post(new Runnable() {
+      renderThreadHandler.postAtFrontOfQueue(new Runnable() {
         @Override public void run() {
           drawer.release();
           drawer = null;
@@ -181,18 +183,34 @@ public class SurfaceViewRenderer extends SurfaceView
           eglBase = null;
         }
       });
-      // Don't accept any more messages to the render thread.
+      // Don't accept any more frames or messages to the render thread.
       renderThreadHandler = null;
-      // Quit safely to make sure the EGL/GL cleanup posted above is executed.
-      renderThread.quitSafely();
-      renderThread = null;
     }
-    getHolder().removeCallback(this);
+    // Quit safely to make sure the EGL/GL cleanup posted above is executed.
+    renderThread.quitSafely();
     synchronized (frameLock) {
       if (pendingFrame != null) {
         VideoRenderer.renderFrameDone(pendingFrame);
         pendingFrame = null;
       }
+    }
+    // The |renderThread| cleanup is not safe to cancel and we need to wait until it's done.
+    boolean wasInterrupted = false;
+    while (true) {
+      try {
+        renderThread.join();
+        renderThread = null;
+        break;
+      } catch (InterruptedException e) {
+        // Someone is asking us to return early at our convenience. We can't cancel this cleanup,
+        // but we should preserve the information and pass it along. Any rendering in progress
+        // should complete in a few ms.
+        wasInterrupted = true;
+      }
+    }
+    // Pass interruption information along.
+    if (wasInterrupted) {
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -220,7 +238,7 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (statisticsLock) {
       ++framesReceived;
     }
-    synchronized (threadLock) {
+    synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         Logging.d(TAG, "Dropping frame - SurfaceViewRenderer not initialized or already released.");
       } else {
@@ -322,7 +340,7 @@ public class SurfaceViewRenderer extends SurfaceView
    * Private helper function to post tasks safely.
    */
   private void runOnRenderThread(Runnable runnable) {
-    synchronized (threadLock) {
+    synchronized (handlerLock) {
       if (renderThreadHandler != null) {
         renderThreadHandler.post(runnable);
       }
