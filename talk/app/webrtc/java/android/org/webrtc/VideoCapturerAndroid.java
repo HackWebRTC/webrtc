@@ -76,6 +76,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private Camera camera;  // Only non-null while capturing.
   private CameraThread cameraThread;
   private Handler cameraThreadHandler;
+  // |cameraSurfaceTexture| is used with setPreviewTexture. Must be a member, see issue webrtc:5021.
+  private SurfaceTexture cameraSurfaceTexture;
   private Context applicationContext;
   private int id;
   private Camera.CameraInfo info;
@@ -321,9 +323,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       // and never call updateTexImage on it.
       try {
         cameraGlTexture = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-        SurfaceTexture cameraSurfaceTexture = new SurfaceTexture(cameraGlTexture);
+        cameraSurfaceTexture = new SurfaceTexture(cameraGlTexture);
         cameraSurfaceTexture.setOnFrameAvailableListener(null);
-
         camera.setPreviewTexture(cameraSurfaceTexture);
       } catch (IOException e) {
         Logging.e(TAG, "setPreviewTexture failed", error);
@@ -461,6 +462,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     Logging.d(TAG, "Release camera.");
     camera.release();
     camera = null;
+    cameraSurfaceTexture = null;
   }
 
   private void switchCameraOnCameraThread(Runnable switchDoneEvent) {
