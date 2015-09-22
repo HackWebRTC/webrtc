@@ -40,10 +40,10 @@ VideoCaptureInput::VideoCaptureInput(ProcessThread* module_process_thread,
       local_renderer_(local_renderer),
       stats_proxy_(stats_proxy),
       incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      capture_thread_(ThreadWrapper::CreateThread(CaptureThreadFunction,
+      encoder_thread_(ThreadWrapper::CreateThread(EncoderThreadFunction,
                                                   this,
-                                                  "CaptureThread")),
-      capture_event_(*EventWrapper::Create()),
+                                                  "EncoderThread")),
+      capture_event_(EventWrapper::Create()),
       stop_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(
@@ -53,8 +53,8 @@ VideoCaptureInput::VideoCaptureInput(ProcessThread* module_process_thread,
                                                  CpuOveruseOptions(),
                                                  overuse_observer,
                                                  stats_proxy)) {
-  capture_thread_->Start();
-  capture_thread_->SetPriority(kHighPriority);
+  encoder_thread_->Start();
+  encoder_thread_->SetPriority(kHighPriority);
   module_process_thread_->RegisterModule(overuse_detector_.get());
 }
 
@@ -63,11 +63,8 @@ VideoCaptureInput::~VideoCaptureInput() {
 
   // Stop the thread.
   rtc::AtomicOps::ReleaseStore(&stop_, 1);
-  capture_event_.Set();
-
-  // Stop the camera input.
-  capture_thread_->Stop();
-  delete &capture_event_;
+  capture_event_->Set();
+  encoder_thread_->Stop();
 }
 
 void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
@@ -118,17 +115,17 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
 
-  capture_event_.Set();
+  capture_event_->Set();
 }
 
-bool VideoCaptureInput::CaptureThreadFunction(void* obj) {
-  return static_cast<VideoCaptureInput*>(obj)->CaptureProcess();
+bool VideoCaptureInput::EncoderThreadFunction(void* obj) {
+  return static_cast<VideoCaptureInput*>(obj)->EncoderProcess();
 }
 
-bool VideoCaptureInput::CaptureProcess() {
+bool VideoCaptureInput::EncoderProcess() {
   static const int kThreadWaitTimeMs = 100;
   int64_t capture_time = -1;
-  if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
+  if (capture_event_->Wait(kThreadWaitTimeMs) == kEventSignaled) {
     if (rtc::AtomicOps::AcquireLoad(&stop_))
       return false;
 

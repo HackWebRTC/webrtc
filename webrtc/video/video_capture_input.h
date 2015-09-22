@@ -62,8 +62,8 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
 
  private:
   // Thread functions for deliver captured frames to receivers.
-  static bool CaptureThreadFunction(void* obj);
-  bool CaptureProcess();
+  static bool EncoderThreadFunction(void* obj);
+  bool EncoderProcess();
 
   void DeliverI420Frame(VideoFrame* video_frame);
 
@@ -78,10 +78,8 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   rtc::scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
   VideoFrame incoming_frame_;
 
-  // Capture thread.
-  rtc::scoped_ptr<ThreadWrapper> capture_thread_;
-  // TODO(pbos): scoped_ptr
-  EventWrapper& capture_event_;
+  rtc::scoped_ptr<ThreadWrapper> encoder_thread_;
+  rtc::scoped_ptr<EventWrapper> capture_event_;
 
   volatile int stop_;
 
