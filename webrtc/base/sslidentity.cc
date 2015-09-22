@@ -39,6 +39,10 @@ const char kPemTypeCertificate[] = "CERTIFICATE";
 const char kPemTypeRsaPrivateKey[] = "RSA PRIVATE KEY";
 const char kPemTypeEcPrivateKey[] = "EC PRIVATE KEY";
 
+KeyType IntKeyTypeFamilyToKeyType(int key_type_family) {
+  return static_cast<KeyType>(key_type_family);
+}
+
 bool SSLIdentity::PemToDer(const std::string& pem_type,
                            const std::string& pem_string,
                            std::string* der) {

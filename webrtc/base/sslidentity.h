@@ -107,10 +107,15 @@ class SSLCertChain {
   RTC_DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };
 
-// TODO(hbos, torbjorng): Don't change KT_DEFAULT without first
-// updating PeerConnectionFactory_nativeCreatePeerConnection's certificate
-// generation code.
+// TODO(hbos,torbjorng): Don't change KT_DEFAULT without first updating
+// PeerConnectionFactory_nativeCreatePeerConnection's certificate generation
+// code.
 enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
+
+// TODO(hbos): Remove once rtc::KeyType (to be modified) and
+// blink::WebRTCKeyType (to be landed) match. By using this function in Chromium
+// appropriately we can change KeyType enum -> class without breaking Chromium.
+KeyType IntKeyTypeFamilyToKeyType(int key_type_family);
 
 // Parameters for generating an identity for testing. If common_name is
 // non-empty, it will be used for the certificate's subject and issuer name,
