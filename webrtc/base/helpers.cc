@@ -16,14 +16,6 @@
 #include "webrtc/base/sslconfig.h"
 #if defined(SSL_USE_OPENSSL)
 #include <openssl/rand.h>
-#elif defined(SSL_USE_NSS_RNG)
-// Hack: Define+undefine int64 and uint64 to avoid typedef conflict with NSS.
-// TODO(kjellander): Remove when webrtc:4497 is completed.
-#define uint64 foo_uint64
-#define int64 foo_int64
-#include "pk11func.h"
-#undef uint64
-#undef int64
 #else
 #if defined(WEBRTC_WIN)
 #define WIN32_LEAN_AND_MEAN

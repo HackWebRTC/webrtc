@@ -24,11 +24,7 @@
 
 #include "openssladapter.h"
 
-#elif SSL_USE_NSS     // && !SSL_USE_CHANNEL && !SSL_USE_OPENSSL
-
-#include "nssstreamadapter.h"
-
-#endif  // SSL_USE_OPENSSL && !SSL_USE_SCHANNEL && !SSL_USE_NSS
+#endif  // SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -62,21 +58,7 @@ bool CleanupSSL() {
   return OpenSSLAdapter::CleanupSSL();
 }
 
-#elif SSL_USE_NSS  // !SSL_USE_OPENSSL
-
-bool InitializeSSL(VerificationCallback callback) {
-  return NSSContext::InitializeSSL(callback);
-}
-
-bool InitializeSSLThread() {
-  return NSSContext::InitializeSSLThread();
-}
-
-bool CleanupSSL() {
-  return NSSContext::CleanupSSL();
-}
-
-#else  // !SSL_USE_OPENSSL && !SSL_USE_NSS
+#else  // !SSL_USE_OPENSSL
 
 bool InitializeSSL(VerificationCallback callback) {
   return true;
@@ -90,7 +72,7 @@ bool CleanupSSL() {
   return true;
 }
 
-#endif  // !SSL_USE_OPENSSL && !SSL_USE_NSS
+#endif  // !SSL_USE_OPENSSL
 
 ///////////////////////////////////////////////////////////////////////////////
 

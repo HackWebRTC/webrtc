@@ -27,10 +27,6 @@
 
 #include "webrtc/base/opensslidentity.h"
 
-#elif SSL_USE_NSS  // !SSL_USE_SCHANNEL && !SSL_USE_OPENSSL
-
-#include "webrtc/base/nssidentity.h"
-
 #endif  // SSL_USE_SCHANNEL
 
 namespace rtc {
@@ -147,27 +143,7 @@ SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
   return OpenSSLIdentity::FromPEMStrings(private_key, certificate);
 }
 
-#elif SSL_USE_NSS  // !SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
-
-SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
-  return NSSCertificate::FromPEMString(pem_string);
-}
-
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
-                                   KeyType key_type) {
-  return NSSIdentity::Generate(common_name, key_type);
-}
-
-SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
-  return NSSIdentity::GenerateForTest(params);
-}
-
-SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
-                                         const std::string& certificate) {
-  return NSSIdentity::FromPEMStrings(private_key, certificate);
-}
-
-#else  // !SSL_USE_OPENSSL && !SSL_USE_SCHANNEL && !SSL_USE_NSS
+#else  // !SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
 
 #error "No SSL implementation"
 

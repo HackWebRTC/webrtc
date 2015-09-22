@@ -1041,7 +1041,7 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
   // the digest.
   //
   // TODO(jiayl): Verify the chain is a proper chain and report the chain to
-  // |stream->peer_certificate_|, like what NSS does.
+  // |stream->peer_certificate_|.
   if (depth > 0) {
     LOG(LS_INFO) << "Ignored chained certificate at depth " << depth;
     return 1;

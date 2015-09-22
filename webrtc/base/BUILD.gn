@@ -39,14 +39,6 @@ config("openssl_config") {
   ]
 }
 
-config("nss_config") {
-  defines = [
-    "SSL_USE_NSS",
-    "HAVE_NSS_SSL_H",
-    "SSL_USE_NSS_RNG",
-  ]
-}
-
 config("ios_config") {
   libs = [
     "CFNetwork.framework",
@@ -83,15 +75,6 @@ if (is_linux && !build_with_chromium) {
     if (use_openssl) {
       deps = [
         "//third_party/boringssl",
-      ]
-    } else {
-      deps = [
-        "//net/third_party/nss/ssl:libssl",
-      ]
-
-      public_configs = [
-        "//net/third_party/nss/ssl:ssl_config",
-        "//third_party/nss:system_nss_no_ssl_config",
       ]
     }
   }
@@ -489,31 +472,6 @@ static_library("rtc_base") {
       "opensslidentity.h",
       "opensslstreamadapter.cc",
       "opensslstreamadapter.h",
-    ]
-  } else {
-    public_configs += [ ":nss_config" ]
-    if (rtc_build_ssl) {
-      if (build_with_chromium) {
-        deps += [ "//crypto:platform" ]
-      } else {
-        deps += [ "//net/third_party/nss/ssl:libssl" ]
-        if (is_linux) {
-          deps += [ ":linux_system_ssl" ]
-        } else {
-          deps += [
-            "//third_party/nss:nspr",
-            "//third_party/nss:nss",
-          ]
-        }
-      }
-    } else {
-      configs += [ "external_ssl_library" ]
-    }
-    sources += [
-      "nssidentity.cc",
-      "nssidentity.h",
-      "nssstreamadapter.cc",
-      "nssstreamadapter.h",
     ]
   }
 
