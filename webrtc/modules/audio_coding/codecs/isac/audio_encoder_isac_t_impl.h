@@ -13,10 +13,7 @@
 
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 
-#include <algorithm>
-
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
 
 namespace webrtc {
 
@@ -191,92 +188,6 @@ void AudioEncoderIsacT<T>::RecreateEncoderInstance(const Config& config) {
   RTC_CHECK_EQ(0, T::SetDecSampRate(isac_state_, decoder_sample_rate_hz));
 
   config_ = config;
-}
-
-template <typename T>
-AudioDecoderIsacT<T>::AudioDecoderIsacT()
-    : AudioDecoderIsacT(nullptr) {}
-
-template <typename T>
-AudioDecoderIsacT<T>::AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo)
-    : bwinfo_(bwinfo), decoder_sample_rate_hz_(-1) {
-  RTC_CHECK_EQ(0, T::Create(&isac_state_));
-  T::DecoderInit(isac_state_);
-  if (bwinfo_) {
-    IsacBandwidthInfo bi;
-    T::GetBandwidthInfo(isac_state_, &bi);
-    bwinfo_->Set(bi);
-  }
-}
-
-template <typename T>
-AudioDecoderIsacT<T>::~AudioDecoderIsacT() {
-  RTC_CHECK_EQ(0, T::Free(isac_state_));
-}
-
-template <typename T>
-int AudioDecoderIsacT<T>::DecodeInternal(const uint8_t* encoded,
-                                         size_t encoded_len,
-                                         int sample_rate_hz,
-                                         int16_t* decoded,
-                                         SpeechType* speech_type) {
-  // We want to crate the illusion that iSAC supports 48000 Hz decoding, while
-  // in fact it outputs 32000 Hz. This is the iSAC fullband mode.
-  if (sample_rate_hz == 48000)
-    sample_rate_hz = 32000;
-  RTC_CHECK(sample_rate_hz == 16000 || sample_rate_hz == 32000)
-      << "Unsupported sample rate " << sample_rate_hz;
-  if (sample_rate_hz != decoder_sample_rate_hz_) {
-    RTC_CHECK_EQ(0, T::SetDecSampRate(isac_state_, sample_rate_hz));
-    decoder_sample_rate_hz_ = sample_rate_hz;
-  }
-  int16_t temp_type = 1;  // Default is speech.
-  int ret =
-      T::DecodeInternal(isac_state_, encoded, encoded_len, decoded, &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-template <typename T>
-bool AudioDecoderIsacT<T>::HasDecodePlc() const {
-  return false;
-}
-
-template <typename T>
-size_t AudioDecoderIsacT<T>::DecodePlc(size_t num_frames, int16_t* decoded) {
-  return T::DecodePlc(isac_state_, decoded, num_frames);
-}
-
-template <typename T>
-void AudioDecoderIsacT<T>::Reset() {
-  T::DecoderInit(isac_state_);
-}
-
-template <typename T>
-int AudioDecoderIsacT<T>::IncomingPacket(const uint8_t* payload,
-                                         size_t payload_len,
-                                         uint16_t rtp_sequence_number,
-                                         uint32_t rtp_timestamp,
-                                         uint32_t arrival_timestamp) {
-  int ret = T::UpdateBwEstimate(
-      isac_state_, payload, payload_len,
-      rtp_sequence_number, rtp_timestamp, arrival_timestamp);
-  if (bwinfo_) {
-    IsacBandwidthInfo bwinfo;
-    T::GetBandwidthInfo(isac_state_, &bwinfo);
-    bwinfo_->Set(bwinfo);
-  }
-  return ret;
-}
-
-template <typename T>
-int AudioDecoderIsacT<T>::ErrorCode() {
-  return T::GetErrorCode(isac_state_);
-}
-
-template <typename T>
-size_t AudioDecoderIsacT<T>::Channels() const {
-  return 1;
 }
 
 }  // namespace webrtc

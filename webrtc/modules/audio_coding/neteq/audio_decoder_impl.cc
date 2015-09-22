@@ -22,9 +22,11 @@
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_decoder_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
+#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_decoder_isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
 #endif
 #ifdef WEBRTC_CODEC_ISAC
+#include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_decoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 #endif
 #ifdef WEBRTC_CODEC_OPUS

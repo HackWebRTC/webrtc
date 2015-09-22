@@ -16,6 +16,5 @@ namespace webrtc {
 
 // Explicit instantiation:
 template class AudioEncoderIsacT<IsacFloat>;
-template class AudioDecoderIsacT<IsacFloat>;
 
 }  // namespace webrtc
