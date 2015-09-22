@@ -36,6 +36,7 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/modules/video_coding/utility/include/vp8_header_parser.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
@@ -297,7 +298,11 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       << codecType_;
 
   ALOGD("InitEncode request");
-  scale_ = false;
+
+  scale_ = webrtc::field_trial::FindFullName(
+      "WebRTC-MediaCodecVideoEncoder-AutomaticResize") == "Enabled";
+  ALOGD("Automatic resize: %s", scale_ ? "enabled" : "disabled");
+
   if (scale_ && codecType_ == kVideoCodecVP8) {
     quality_scaler_->Init(kMaxQP / kLowQpThresholdDenominator, true);
     quality_scaler_->SetMinResolution(kMinWidth, kMinHeight);
