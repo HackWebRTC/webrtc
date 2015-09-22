@@ -105,11 +105,10 @@ class ChannelManager : public rtc::MessageHandler,
   void Terminate();
 
   // The operations below all occur on the worker thread.
-
   // Creates a voice channel, to be associated with the specified session.
   VoiceChannel* CreateVoiceChannel(
       webrtc::MediaControllerInterface* media_controller,
-      BaseSession* session,
+      TransportController* transport_controller,
       const std::string& content_name,
       bool rtcp,
       const AudioOptions& options);
@@ -119,15 +118,16 @@ class ChannelManager : public rtc::MessageHandler,
   // associated with the specified session.
   VideoChannel* CreateVideoChannel(
       webrtc::MediaControllerInterface* media_controller,
-      BaseSession* session,
+      TransportController* transport_controller,
       const std::string& content_name,
       bool rtcp,
       const VideoOptions& options);
   // Destroys a video channel created with the Create API.
   void DestroyVideoChannel(VideoChannel* video_channel);
-  DataChannel* CreateDataChannel(
-      BaseSession* session, const std::string& content_name,
-      bool rtcp, DataChannelType data_channel_type);
+  DataChannel* CreateDataChannel(TransportController* transport_controller,
+                                 const std::string& content_name,
+                                 bool rtcp,
+                                 DataChannelType data_channel_type);
   // Destroys a data channel created with the Create API.
   void DestroyDataChannel(DataChannel* data_channel);
 
@@ -249,21 +249,22 @@ class ChannelManager : public rtc::MessageHandler,
   void Terminate_w();
   VoiceChannel* CreateVoiceChannel_w(
       webrtc::MediaControllerInterface* media_controller,
-      BaseSession* session,
+      TransportController* transport_controller,
       const std::string& content_name,
       bool rtcp,
       const AudioOptions& options);
   void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
   VideoChannel* CreateVideoChannel_w(
       webrtc::MediaControllerInterface* media_controller,
-      BaseSession* session,
+      TransportController* transport_controller,
       const std::string& content_name,
       bool rtcp,
       const VideoOptions& options);
   void DestroyVideoChannel_w(VideoChannel* video_channel);
-  DataChannel* CreateDataChannel_w(
-      BaseSession* session, const std::string& content_name,
-      bool rtcp, DataChannelType data_channel_type);
+  DataChannel* CreateDataChannel_w(TransportController* transport_controller,
+                                   const std::string& content_name,
+                                   bool rtcp,
+                                   DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);
   bool SetAudioOptions_w(const AudioOptions& options, int delay_offset,
                          const Device* in_dev, const Device* out_dev);

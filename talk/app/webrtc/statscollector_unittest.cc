@@ -27,6 +27,8 @@
 
 #include <stdio.h>
 
+#include <algorithm>
+
 #include "talk/app/webrtc/statscollector.h"
 
 #include "talk/app/webrtc/mediastream.h"
@@ -45,7 +47,7 @@
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/network.h"
-#include "webrtc/p2p/base/fakesession.h"
+#include "webrtc/p2p/base/faketransportcontroller.h"
 
 using rtc::scoped_ptr;
 using testing::_;
@@ -89,7 +91,12 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32, std::string*));
   MOCK_METHOD2(GetRemoteTrackIdBySsrc, bool(uint32, std::string*));
   MOCK_METHOD1(GetTransportStats, bool(cricket::SessionStats*));
-  MOCK_METHOD1(GetTransport, cricket::Transport*(const std::string&));
+  MOCK_METHOD2(GetLocalCertificate,
+               bool(const std::string& transport_name,
+                    rtc::scoped_refptr<rtc::RTCCertificate>* certificate));
+  MOCK_METHOD2(GetRemoteSSLCertificate,
+               bool(const std::string& transport_name,
+                    rtc::SSLCertificate** cert));
 };
 
 class MockVideoMediaChannel : public cricket::FakeVideoMediaChannel {
@@ -500,7 +507,7 @@ class StatsCollectorTest : public testing::Test {
     cricket::TransportStats transport_stats;
     cricket::TransportChannelStats channel_stats;
     channel_stats.component = 1;
-    transport_stats.content_name = kTransportName;
+    transport_stats.transport_name = kTransportName;
     transport_stats.channel_stats.push_back(channel_stats);
 
     session_stats_.transport_stats[kTransportName] = transport_stats;
@@ -647,36 +654,27 @@ class StatsCollectorTest : public testing::Test {
     channel_stats.ssl_cipher = "the-ssl-cipher";
 
     cricket::TransportStats transport_stats;
-    transport_stats.content_name = "audio";
+    transport_stats.transport_name = "audio";
     transport_stats.channel_stats.push_back(channel_stats);
 
     cricket::SessionStats session_stats;
-    session_stats.transport_stats[transport_stats.content_name] =
+    session_stats.transport_stats[transport_stats.transport_name] =
         transport_stats;
 
-    // Fake certificates to report.
+    // Fake certificate to report
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate(
         rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::FakeSSLIdentity>(
-            new rtc::FakeSSLIdentity(local_cert)).Pass()));
-    rtc::scoped_ptr<rtc::FakeSSLCertificate> remote_cert_copy(
-        remote_cert.GetReference());
-
-    // Fake transport object.
-    rtc::scoped_ptr<cricket::FakeTransport> transport(
-        new cricket::FakeTransport(
-            session_.signaling_thread(),
-            session_.worker_thread(),
-            transport_stats.content_name));
-    transport->SetCertificate(local_certificate);
-    cricket::FakeTransportChannel* channel =
-        static_cast<cricket::FakeTransportChannel*>(
-            transport->CreateChannel(channel_stats.component));
-    EXPECT_FALSE(channel == NULL);
-    channel->SetRemoteSSLCertificate(remote_cert_copy.get());
+                                        new rtc::FakeSSLIdentity(local_cert))
+                                        .Pass()));
 
     // Configure MockWebRtcSession
-    EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
-      .WillRepeatedly(Return(transport.get()));
+    EXPECT_CALL(session_,
+                GetLocalCertificate(transport_stats.transport_name, _))
+        .WillOnce(DoAll(SetArgPointee<1>(local_certificate), Return(true)));
+    EXPECT_CALL(session_,
+                GetRemoteSSLCertificate(transport_stats.transport_name, _))
+        .WillOnce(
+            DoAll(SetArgPointee<1>(remote_cert.GetReference()), Return(true)));
     EXPECT_CALL(session_, GetTransportStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                       Return(true)));
@@ -790,14 +788,17 @@ TEST_F(StatsCollectorTest, ExtractDataInfo) {
 TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   StatsCollectorForTest stats(&session_);
 
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   const char kVideoChannelName[] = "video";
 
   InitSessionStats(kVideoChannelName);
   EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
@@ -833,14 +834,17 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
 TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   StatsCollectorForTest stats(&session_);
 
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   const char kVideoChannelName[] = "video";
 
   InitSessionStats(kVideoChannelName);
   EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
@@ -946,13 +950,16 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
 TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   StatsCollectorForTest stats(&session_);
 
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   const char kVideoChannelName[] = "video";
   InitSessionStats(kVideoChannelName);
   EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
@@ -1011,11 +1018,13 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   StatsCollectorForTest stats(&session_);
 
-  // Ignore unused callback (logspam).
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
-  // The content_name known by the video channel.
+  // The transport_name known by the video channel.
   const std::string kVcName("vcname");
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
       media_channel, NULL, kVcName, false);
@@ -1073,7 +1082,7 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
   StatsCollectorForTest stats(&session_);
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
-  // The content_name known by the video channel.
+  // The transport_name known by the video channel.
   const std::string kVcName("vcname");
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
       media_channel, NULL, kVcName, false);
@@ -1096,11 +1105,13 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
 TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
   StatsCollectorForTest stats(&session_);
 
-  // Ignore unused callback (logspam).
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
-  // The content_name known by the video channel.
+  // The transport_name known by the video channel.
   const std::string kVcName("vcname");
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
       media_channel, NULL, kVcName, false);
@@ -1145,13 +1156,16 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
 TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
   StatsCollectorForTest stats(&session_);
 
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   const char kVideoChannelName[] = "video";
   InitSessionStats(kVideoChannelName);
   EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
@@ -1330,6 +1344,11 @@ TEST_F(StatsCollectorTest, ChainlessCertificateReportsCreated) {
 TEST_F(StatsCollectorTest, NoTransport) {
   StatsCollectorForTest stats(&session_);
 
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   StatsReports reports;  // returned values.
 
   // Fake stats to process.
@@ -1337,16 +1356,14 @@ TEST_F(StatsCollectorTest, NoTransport) {
   channel_stats.component = 1;
 
   cricket::TransportStats transport_stats;
-  transport_stats.content_name = "audio";
+  transport_stats.transport_name = "audio";
   transport_stats.channel_stats.push_back(channel_stats);
 
   cricket::SessionStats session_stats;
-  session_stats.transport_stats[transport_stats.content_name] =
+  session_stats.transport_stats[transport_stats.transport_name] =
       transport_stats;
 
   // Configure MockWebRtcSession
-  EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
-    .WillRepeatedly(ReturnNull());
   EXPECT_CALL(session_, GetTransportStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
@@ -1389,6 +1406,11 @@ TEST_F(StatsCollectorTest, NoTransport) {
 TEST_F(StatsCollectorTest, NoCertificates) {
   StatsCollectorForTest stats(&session_);
 
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   StatsReports reports;  // returned values.
 
   // Fake stats to process.
@@ -1396,23 +1418,18 @@ TEST_F(StatsCollectorTest, NoCertificates) {
   channel_stats.component = 1;
 
   cricket::TransportStats transport_stats;
-  transport_stats.content_name = "audio";
+  transport_stats.transport_name = "audio";
   transport_stats.channel_stats.push_back(channel_stats);
 
   cricket::SessionStats session_stats;
-  session_stats.transport_stats[transport_stats.content_name] =
+  session_stats.transport_stats[transport_stats.transport_name] =
       transport_stats;
 
   // Fake transport object.
   rtc::scoped_ptr<cricket::FakeTransport> transport(
-      new cricket::FakeTransport(
-          session_.signaling_thread(),
-          session_.worker_thread(),
-          transport_stats.content_name));
+      new cricket::FakeTransport(transport_stats.transport_name));
 
   // Configure MockWebRtcSession
-  EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
-    .WillRepeatedly(Return(transport.get()));
   EXPECT_CALL(session_, GetTransportStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
@@ -1458,12 +1475,13 @@ TEST_F(StatsCollectorTest, UnsupportedDigestIgnored) {
 TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
   StatsCollectorForTest stats(&session_);
 
-  // Ignore unused callback (logspam).
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
 
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
-  // The content_name known by the voice channel.
+  // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(rtc::Thread::Current(),
       media_engine_, media_channel, NULL, kVcName, false);
@@ -1492,11 +1510,13 @@ TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
 TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
   StatsCollectorForTest stats(&session_);
 
-  // Ignore unused callback (logspam).
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
-  // The content_name known by the voice channel.
+  // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(rtc::Thread::Current(),
       media_engine_, media_channel, NULL, kVcName, false);
@@ -1519,11 +1539,13 @@ TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
 TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
   StatsCollectorForTest stats(&session_);
 
-  // Ignore unused callback (logspam).
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
-  // The content_name known by the voice channel.
+  // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(rtc::Thread::Current(),
       media_engine_, media_channel, NULL, kVcName, false);
@@ -1578,11 +1600,13 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
 TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
   StatsCollectorForTest stats(&session_);
 
-  // Ignore unused callback (logspam).
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
-  // The content_name known by the voice channel.
+  // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(rtc::Thread::Current(),
       media_engine_, media_channel, NULL, kVcName, false);
@@ -1663,11 +1687,13 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
 TEST_F(StatsCollectorTest, TwoLocalTracksWithSameSsrc) {
   StatsCollectorForTest stats(&session_);
 
-  // Ignore unused callback (logspam).
-  EXPECT_CALL(session_, GetTransport(_))
-      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate(_, _))
+      .WillRepeatedly(Return(false));
+
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
-  // The content_name known by the voice channel.
+  // The transport_name known by the voice channel.
   const std::string kVcName("vcname");
   cricket::VoiceChannel voice_channel(rtc::Thread::Current(),
       media_engine_, media_channel, NULL, kVcName, false);

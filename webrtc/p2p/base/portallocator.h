@@ -74,11 +74,10 @@ enum {
 class PortAllocatorSession : public sigslot::has_slots<> {
  public:
   // Content name passed in mostly for logging and debugging.
-  // TODO(mallinath) - Change username and password to ice_ufrag and ice_pwd.
   PortAllocatorSession(const std::string& content_name,
                        int component,
-                       const std::string& username,
-                       const std::string& password,
+                       const std::string& ice_ufrag,
+                       const std::string& ice_pwd,
                        uint32 flags);
 
   // Subclasses should clean up any ports created.
@@ -103,9 +102,14 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual void set_generation(uint32 generation) { generation_ = generation; }
   sigslot::signal1<PortAllocatorSession*> SignalDestroyed;
 
+  const std::string& ice_ufrag() const { return ice_ufrag_; }
+  const std::string& ice_pwd() const { return ice_pwd_; }
+
  protected:
-  const std::string& username() const { return username_; }
-  const std::string& password() const { return password_; }
+  // TODO(deadbeef): Get rid of these when everyone switches to ice_ufrag and
+  // ice_pwd.
+  const std::string& username() const { return ice_ufrag_; }
+  const std::string& password() const { return ice_pwd_; }
 
   std::string content_name_;
   int component_;
@@ -113,8 +117,8 @@ class PortAllocatorSession : public sigslot::has_slots<> {
  private:
   uint32 flags_;
   uint32 generation_;
-  std::string username_;
-  std::string password_;
+  std::string ice_ufrag_;
+  std::string ice_pwd_;
 };
 
 class PortAllocator : public sigslot::has_slots<> {

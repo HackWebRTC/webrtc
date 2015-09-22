@@ -165,9 +165,15 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     WebRtcSession* session,
     const std::string& session_id,
     cricket::DataChannelType dct)
-    : WebRtcSessionDescriptionFactory(
-        signaling_thread, channel_manager, mediastream_signaling, nullptr,
-        nullptr, session, session_id, dct, false) {
+    : WebRtcSessionDescriptionFactory(signaling_thread,
+                                      channel_manager,
+                                      mediastream_signaling,
+                                      nullptr,
+                                      nullptr,
+                                      session,
+                                      session_id,
+                                      dct,
+                                      false) {
   LOG(LS_VERBOSE) << "DTLS-SRTP disabled.";
 }
 
@@ -226,9 +232,9 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
   // We already have a certificate but we wait to do SetIdentity; if we do
   // it in the constructor then the caller has not had a chance to connect to
   // SignalIdentityReady.
-  signaling_thread_->Post(this, MSG_USE_CONSTRUCTOR_CERTIFICATE,
-                          new rtc::ScopedRefMessageData<rtc::RTCCertificate>(
-                              certificate));
+  signaling_thread_->Post(
+      this, MSG_USE_CONSTRUCTOR_CERTIFICATE,
+      new rtc::ScopedRefMessageData<rtc::RTCCertificate>(certificate));
 }
 
 WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
@@ -254,8 +260,6 @@ WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
       delete msg.pdata;
     }
   }
-
-  transport_desc_factory_.set_certificate(nullptr);
 }
 
 void WebRtcSessionDescriptionFactory::CreateOffer(

@@ -32,8 +32,9 @@ enum IceProtocolType {
 // client.
 class TransportChannelImpl : public TransportChannel {
  public:
-  explicit TransportChannelImpl(const std::string& content_name, int component)
-      : TransportChannel(content_name, component) {}
+  explicit TransportChannelImpl(const std::string& transport_name,
+                                int component)
+      : TransportChannel(transport_name, component) {}
 
   // Returns the transport that created this channel.
   virtual Transport* GetTransport() = 0;
@@ -63,11 +64,11 @@ class TransportChannelImpl : public TransportChannel {
   // Begins the process of attempting to make a connection to the other client.
   virtual void Connect() = 0;
 
-  // Allows an individual channel to request signaling and be notified when it
-  // is ready.  This is useful if the individual named channels have need to
-  // send their own transport-info stanzas.
-  sigslot::signal1<TransportChannelImpl*> SignalRequestSignaling;
-  virtual void OnSignalingReady() = 0;
+  // Start gathering candidates if not already started, or if an ICE restart
+  // occurred.
+  virtual void MaybeStartGathering() = 0;
+
+  sigslot::signal1<TransportChannelImpl*> SignalGatheringState;
 
   // Handles sending and receiving of candidates.  The Transport
   // receives the candidates and may forward them to the relevant
@@ -77,9 +78,11 @@ class TransportChannelImpl : public TransportChannel {
   // channel, they cannot return an error if the message is invalid.
   // It is assumed that the Transport will have checked validity
   // before forwarding.
-  sigslot::signal2<TransportChannelImpl*,
-                   const Candidate&> SignalCandidateReady;
-  virtual void OnCandidate(const Candidate& candidate) = 0;
+  sigslot::signal2<TransportChannelImpl*, const Candidate&>
+      SignalCandidateGathered;
+  virtual void AddRemoteCandidate(const Candidate& candidate) = 0;
+
+  virtual IceGatheringState gathering_state() const = 0;
 
   // DTLS methods
   virtual bool SetLocalCertificate(
@@ -91,9 +94,6 @@ class TransportChannelImpl : public TransportChannel {
     size_t digest_len) = 0;
 
   virtual bool SetSslRole(rtc::SSLRole role) = 0;
-
-  // TransportChannel is forwarding this signal from PortAllocatorSession.
-  sigslot::signal1<TransportChannelImpl*> SignalCandidatesAllocationDone;
 
   // Invoked when there is conflict in the ICE role between local and remote
   // agents.

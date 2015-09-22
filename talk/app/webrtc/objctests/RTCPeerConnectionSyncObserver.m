@@ -196,8 +196,11 @@
   if (newState == RTCICEGatheringGathering) {
     return;
   }
+  NSAssert([_expectedICEGatheringChanges count] > 0,
+           @"Unexpected ICE gathering state change");
   int expectedState = [self popFirstElementAsInt:_expectedICEGatheringChanges];
-  NSAssert(expectedState == (int)newState, @"Empty expectation array");
+  NSAssert(expectedState == (int)newState,
+           @"ICE gathering state should match expectation");
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
@@ -205,8 +208,11 @@
   // See TODO(fischman) in RTCPeerConnectionTest.mm about Completed.
   if (newState == RTCICEConnectionCompleted)
     return;
+  NSAssert([_expectedICEConnectionChanges count] > 0,
+           @"Unexpected ICE connection state change");
   int expectedState = [self popFirstElementAsInt:_expectedICEConnectionChanges];
-  NSAssert(expectedState == (int)newState, @"Empty expectation array");
+  NSAssert(expectedState == (int)newState,
+           @"ICE connection state should match expectation");
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
