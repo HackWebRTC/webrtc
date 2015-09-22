@@ -153,6 +153,7 @@
                   'app/webrtc/java/android/org/webrtc/RendererCommon.java',
                   'app/webrtc/java/android/org/webrtc/SurfaceTextureHelper.java',
                   'app/webrtc/java/android/org/webrtc/SurfaceViewRenderer.java',
+                  'app/webrtc/java/android/org/webrtc/ThreadUtils.java',
                   'app/webrtc/java/android/org/webrtc/VideoCapturerAndroid.java',
                   'app/webrtc/java/android/org/webrtc/VideoRendererGui.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoDecoder.java',

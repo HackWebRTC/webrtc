@@ -195,23 +195,8 @@ public class SurfaceViewRenderer extends SurfaceView
       }
     }
     // The |renderThread| cleanup is not safe to cancel and we need to wait until it's done.
-    boolean wasInterrupted = false;
-    while (true) {
-      try {
-        renderThread.join();
-        renderThread = null;
-        break;
-      } catch (InterruptedException e) {
-        // Someone is asking us to return early at our convenience. We can't cancel this cleanup,
-        // but we should preserve the information and pass it along. Any rendering in progress
-        // should complete in a few ms.
-        wasInterrupted = true;
-      }
-    }
-    // Pass interruption information along.
-    if (wasInterrupted) {
-      Thread.currentThread().interrupt();
-    }
+    ThreadUtils.joinUninterruptibly(renderThread);
+    renderThread = null;
   }
 
   /**
