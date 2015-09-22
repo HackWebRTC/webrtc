@@ -58,7 +58,6 @@ static const cricket::AudioCodec* const kAudioCodecs[] = {
     &kPcmuCodec, &kIsacCodec, &kOpusCodec, &kG722CodecVoE, &kRedCodec,
     &kCn8000Codec, &kCn16000Codec, &kTelephoneEventCodec,
 };
-const char kRingbackTone[] = "RIFF____WAVE____ABCD1234";
 static uint32 kSsrc1 = 0x99;
 static uint32 kSsrc2 = 0x98;
 
@@ -2557,62 +2556,6 @@ TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCaller) {
 // Test the InsertDtmf on specified send stream as callee.
 TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCallee) {
   TestInsertDtmf(kSsrc1, false);
-}
-
-// Test that we can play a ringback tone properly in a single-stream call.
-TEST_F(WebRtcVoiceEngineTestFake, PlayRingback) {
-  EXPECT_TRUE(SetupEngine());
-  int channel_num = voe_.GetLastChannel();
-  EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
-  // Check we fail if no ringback tone specified.
-  EXPECT_FALSE(channel_->PlayRingbackTone(0, true, true));
-  EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
-  // Check we can set and play a ringback tone.
-  EXPECT_TRUE(channel_->SetRingbackTone(
-                  kRingbackTone, static_cast<int>(strlen(kRingbackTone))));
-  EXPECT_TRUE(channel_->PlayRingbackTone(0, true, true));
-  EXPECT_EQ(1, voe_.IsPlayingFileLocally(channel_num));
-  // Check we can stop the tone manually.
-  EXPECT_TRUE(channel_->PlayRingbackTone(0, false, false));
-  EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
-  // Check we stop the tone if a packet arrives.
-  EXPECT_TRUE(channel_->PlayRingbackTone(0, true, true));
-  EXPECT_EQ(1, voe_.IsPlayingFileLocally(channel_num));
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
-  EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
-}
-
-// Test that we can play a ringback tone properly in a multi-stream call.
-TEST_F(WebRtcVoiceEngineTestFake, PlayRingbackWithMultipleStreams) {
-  EXPECT_TRUE(SetupEngine());
-  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
-  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
-  int channel_num = voe_.GetLastChannel();
-  EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
-  // Check we fail if no ringback tone specified.
-  EXPECT_FALSE(channel_->PlayRingbackTone(2, true, true));
-  EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
-  // Check we can set and play a ringback tone on the correct ssrc.
-  EXPECT_TRUE(channel_->SetRingbackTone(
-                  kRingbackTone, static_cast<int>(strlen(kRingbackTone))));
-  EXPECT_FALSE(channel_->PlayRingbackTone(77, true, true));
-  EXPECT_TRUE(channel_->PlayRingbackTone(2, true, true));
-  EXPECT_EQ(1, voe_.IsPlayingFileLocally(channel_num));
-  // Check we can stop the tone manually.
-  EXPECT_TRUE(channel_->PlayRingbackTone(2, false, false));
-  EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
-  // Check we stop the tone if a packet arrives, but only with the right SSRC.
-  EXPECT_TRUE(channel_->PlayRingbackTone(2, true, true));
-  EXPECT_EQ(1, voe_.IsPlayingFileLocally(channel_num));
-  // Send a packet with SSRC 1; the tone should not stop.
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
-  EXPECT_EQ(1, voe_.IsPlayingFileLocally(channel_num));
-  // Send a packet with SSRC 2; the tone should stop.
-  char packet[sizeof(kPcmuFrame)];
-  memcpy(packet, kPcmuFrame, sizeof(kPcmuFrame));
-  rtc::SetBE32(packet + 8, 2);
-  DeliverPacket(packet, sizeof(packet));
-  EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, MediaEngineCallbackOnError) {

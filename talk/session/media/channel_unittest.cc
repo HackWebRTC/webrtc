@@ -2091,33 +2091,6 @@ TEST_F(VoiceChannelTest, TestOnReadyToSendWithRtcpMux) {
   Base::TestOnReadyToSendWithRtcpMux();
 }
 
-// Test that we can play a ringback tone properly.
-TEST_F(VoiceChannelTest, TestRingbackTone) {
-  CreateChannels(RTCP, RTCP);
-  EXPECT_FALSE(media_channel1_->ringback_tone_play());
-  EXPECT_TRUE(channel1_->SetRingbackTone("RIFF", 4));
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-  // Play ringback tone, no loop.
-  EXPECT_TRUE(channel1_->PlayRingbackTone(0, true, false));
-  EXPECT_EQ(0U, media_channel1_->ringback_tone_ssrc());
-  EXPECT_TRUE(media_channel1_->ringback_tone_play());
-  EXPECT_FALSE(media_channel1_->ringback_tone_loop());
-  // Stop the ringback tone.
-  EXPECT_TRUE(channel1_->PlayRingbackTone(0, false, false));
-  EXPECT_FALSE(media_channel1_->ringback_tone_play());
-  // Add a stream.
-  EXPECT_TRUE(AddStream1(1));
-  // Play ringback tone, looping, on the new stream.
-  EXPECT_TRUE(channel1_->PlayRingbackTone(1, true, true));
-  EXPECT_EQ(1U, media_channel1_->ringback_tone_ssrc());
-  EXPECT_TRUE(media_channel1_->ringback_tone_play());
-  EXPECT_TRUE(media_channel1_->ringback_tone_loop());
-  // Stop the ringback tone.
-  EXPECT_TRUE(channel1_->PlayRingbackTone(1, false, false));
-  EXPECT_FALSE(media_channel1_->ringback_tone_play());
-}
-
 // Test that we can scale the output volume properly for 1:1 calls.
 TEST_F(VoiceChannelTest, TestScaleVolume1to1Call) {
   CreateChannels(RTCP, RTCP);

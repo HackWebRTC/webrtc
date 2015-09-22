@@ -1086,10 +1086,6 @@ class VoiceMediaChannel : public MediaChannel {
     int type_event_delay) = 0;
   // Set left and right scale for speaker output volume of the specified ssrc.
   virtual bool SetOutputScaling(uint32 ssrc, double left, double right) = 0;
-  // Specifies a ringback tone to be played during call setup.
-  virtual bool SetRingbackTone(const char *buf, int len) = 0;
-  // Plays or stops the aforementioned ringback tone
-  virtual bool PlayRingbackTone(uint32 ssrc, bool play, bool loop) = 0;
   // Returns if the telephone-event has been negotiated.
   virtual bool CanInsertDtmf() { return false; }
   // Send and/or play a DTMF |event| according to the |flags|.

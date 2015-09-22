@@ -241,9 +241,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
                                  const AudioOptions& options)
       : engine_(engine),
         fail_set_send_(false),
-        ringback_tone_ssrc_(0),
-        ringback_tone_play_(false),
-        ringback_tone_loop_(false),
         time_since_last_typing_(-1) {
     output_scalings_[0] = OutputScaling();  // For default channel.
     SetOptions(options);
@@ -256,10 +253,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     return dtmf_info_queue_;
   }
   const AudioOptions& options() const { return options_; }
-
-  uint32 ringback_tone_ssrc() const { return ringback_tone_ssrc_; }
-  bool ringback_tone_play() const { return ringback_tone_play_; }
-  bool ringback_tone_loop() const { return ringback_tone_loop_; }
 
   virtual bool SetSendParameters(const AudioSendParameters& params) {
     return (SetSendCodecs(params.codecs) &&
@@ -336,14 +329,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   virtual void SetTypingDetectionParameters(
       int time_window, int cost_per_typing, int reporting_threshold,
       int penalty_decay, int type_event_delay) {}
-
-  virtual bool SetRingbackTone(const char* buf, int len) { return true; }
-  virtual bool PlayRingbackTone(uint32 ssrc, bool play, bool loop) {
-    ringback_tone_ssrc_ = ssrc;
-    ringback_tone_play_ = play;
-    ringback_tone_loop_ = loop;
-    return true;
-  }
 
   virtual bool CanInsertDtmf() {
     for (std::vector<AudioCodec>::const_iterator it = send_codecs_.begin();
@@ -474,9 +459,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   std::map<uint32, OutputScaling> output_scalings_;
   std::vector<DtmfInfo> dtmf_info_queue_;
   bool fail_set_send_;
-  uint32 ringback_tone_ssrc_;
-  bool ringback_tone_play_;
-  bool ringback_tone_loop_;
   int time_since_last_typing_;
   AudioOptions options_;
   std::map<uint32, VoiceChannelAudioSink*> local_renderers_;

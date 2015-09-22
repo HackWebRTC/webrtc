@@ -340,14 +340,12 @@ class VoiceChannel : public BaseChannel {
     return static_cast<VoiceMediaChannel*>(BaseChannel::media_channel());
   }
 
-  bool SetRingbackTone(const void* buf, int len);
   void SetEarlyMedia(bool enable);
   // This signal is emitted when we have gone a period of time without
   // receiving early media. When received, a UI should start playing its
   // own ringing sound
   sigslot::signal1<VoiceChannel*> SignalEarlyMediaTimeout;
 
-  bool PlayRingbackTone(uint32 ssrc, bool play, bool loop);
   // TODO(ronghuawu): Replace PressDTMF with InsertDtmf.
   bool PressDTMF(int digit, bool playout);
   // Returns if the telephone-event has been negotiated.
@@ -398,8 +396,6 @@ class VoiceChannel : public BaseChannel {
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
                                   ContentAction action,
                                   std::string* error_desc);
-  bool SetRingbackTone_w(const void* buf, int len);
-  bool PlayRingbackTone_w(uint32 ssrc, bool play, bool loop);
   void HandleEarlyMediaTimeout();
   bool InsertDtmf_w(uint32 ssrc, int event, int duration, int flags);
   bool SetOutputScaling_w(uint32 ssrc, double left, double right);

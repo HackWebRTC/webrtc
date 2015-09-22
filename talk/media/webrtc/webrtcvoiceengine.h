@@ -53,23 +53,6 @@ class VideoEngine;
 
 namespace cricket {
 
-// WebRtcSoundclipStream is an adapter object that allows a memory stream to be
-// passed into WebRtc, and support looping.
-class WebRtcSoundclipStream : public webrtc::InStream {
- public:
-  WebRtcSoundclipStream(const char* buf, size_t len)
-      : mem_(buf, len), loop_(true) {
-  }
-  void set_loop(bool loop) { loop_ = loop; }
-
-  int Read(void* buf, size_t len) override;
-  int Rewind() override;
-
- private:
-  rtc::MemoryStream mem_;
-  bool loop_;
-};
-
 // WebRtcMonitorStream is used to monitor a stream coming from WebRtc.
 // For now we just dump the data.
 class WebRtcMonitorStream : public webrtc::OutStream {
@@ -316,8 +299,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                                     int type_event_delay) override;
   bool SetOutputScaling(uint32 ssrc, double left, double right) override;
 
-  bool SetRingbackTone(const char* buf, int len) override;
-  bool PlayRingbackTone(uint32 ssrc, bool play, bool loop) override;
   bool CanInsertDtmf() override;
   bool InsertDtmf(uint32 ssrc, int event, int duration, int flags) override;
 
@@ -421,8 +402,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
 
   WebRtcVoiceEngine* const engine_;
   const int voe_channel_;
-  rtc::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
-  std::set<int> ringback_channels_;  // channels playing ringback
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   rtc::scoped_ptr<webrtc::CodecInst> send_codec_;

@@ -2860,53 +2860,6 @@ bool WebRtcVoiceMediaChannel::SetOutputScaling(
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetRingbackTone(const char *buf, int len) {
-  ringback_tone_.reset(new WebRtcSoundclipStream(buf, len));
-  return true;
-}
-
-bool WebRtcVoiceMediaChannel::PlayRingbackTone(uint32 ssrc,
-                                             bool play, bool loop) {
-  if (!ringback_tone_) {
-    return false;
-  }
-
-  // The voe file api is not available in chrome.
-  if (!engine()->voe()->file()) {
-    return false;
-  }
-
-  // Determine which VoiceEngine channel to play on.
-  int channel = (ssrc == 0) ? voe_channel() : GetReceiveChannelNum(ssrc);
-  if (channel == -1) {
-    return false;
-  }
-
-  // Make sure the ringtone is cued properly, and play it out.
-  if (play) {
-    ringback_tone_->set_loop(loop);
-    ringback_tone_->Rewind();
-    if (engine()->voe()->file()->StartPlayingFileLocally(channel,
-        ringback_tone_.get()) == -1) {
-      LOG_RTCERR2(StartPlayingFileLocally, channel, ringback_tone_.get());
-      LOG(LS_ERROR) << "Unable to start ringback tone";
-      return false;
-    }
-    ringback_channels_.insert(channel);
-    LOG(LS_INFO) << "Started ringback on channel " << channel;
-  } else {
-    if (engine()->voe()->file()->IsPlayingFileLocally(channel) == 1 &&
-        engine()->voe()->file()->StopPlayingFileLocally(channel) == -1) {
-      LOG_RTCERR1(StopPlayingFileLocally, channel);
-      return false;
-    }
-    LOG(LS_INFO) << "Stopped ringback on channel " << channel;
-    ringback_channels_.erase(channel);
-  }
-
-  return true;
-}
-
 bool WebRtcVoiceMediaChannel::CanInsertDtmf() {
   return dtmf_allowed_;
 }
@@ -2979,22 +2932,6 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
       GetReceiveChannelNum(ParseSsrc(packet->data(), packet->size(), false));
   if (which_channel == -1) {
     which_channel = voe_channel();
-  }
-
-  // Stop any ringback that might be playing on the channel.
-  // It's possible the ringback has already stopped, ih which case we'll just
-  // use the opportunity to remove the channel from ringback_channels_.
-  if (engine()->voe()->file()) {
-    const std::set<int>::iterator it = ringback_channels_.find(which_channel);
-    if (it != ringback_channels_.end()) {
-      if (engine()->voe()->file()->IsPlayingFileLocally(
-          which_channel) == 1) {
-        engine()->voe()->file()->StopPlayingFileLocally(which_channel);
-        LOG(LS_INFO) << "Stopped ringback on channel " << which_channel
-                     << " due to incoming media";
-      }
-      ringback_channels_.erase(which_channel);
-    }
   }
 
   // Pass it off to the decoder.
@@ -3615,18 +3552,6 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecsInternal(
     }
   }
   return true;
-}
-
-int WebRtcSoundclipStream::Read(void *buf, size_t len) {
-  size_t res = 0;
-  mem_.Read(buf, len, &res, NULL);
-  return static_cast<int>(res);
-}
-
-int WebRtcSoundclipStream::Rewind() {
-  mem_.Rewind();
-  // Return -1 to keep VoiceEngine from looping.
-  return (loop_) ? 0 : -1;
 }
 
 }  // namespace cricket

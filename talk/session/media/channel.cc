@@ -1271,10 +1271,6 @@ bool VoiceChannel::SetAudioSend(uint32 ssrc, bool mute,
                              media_channel(), ssrc, mute, options, renderer));
 }
 
-bool VoiceChannel::SetRingbackTone(const void* buf, int len) {
-  return InvokeOnWorker(Bind(&VoiceChannel::SetRingbackTone_w, this, buf, len));
-}
-
 // TODO(juberti): Handle early media the right way. We should get an explicit
 // ringing message telling us to start playing local ringback, which we cancel
 // if any early media actually arrives. For now, we do the opposite, which is
@@ -1289,11 +1285,6 @@ void VoiceChannel::SetEarlyMedia(bool enable) {
     // Stop the timeout if currently going.
     worker_thread()->Clear(this, MSG_EARLYMEDIATIMEOUT);
   }
-}
-
-bool VoiceChannel::PlayRingbackTone(uint32 ssrc, bool play, bool loop) {
-  return InvokeOnWorker(Bind(&VoiceChannel::PlayRingbackTone_w,
-                             this, ssrc, play, loop));
 }
 
 bool VoiceChannel::PressDTMF(int digit, bool playout) {
@@ -1503,21 +1494,6 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   set_remote_content_direction(content->direction());
   ChangeState();
   return true;
-}
-
-bool VoiceChannel::SetRingbackTone_w(const void* buf, int len) {
-  ASSERT(worker_thread() == rtc::Thread::Current());
-  return media_channel()->SetRingbackTone(static_cast<const char*>(buf), len);
-}
-
-bool VoiceChannel::PlayRingbackTone_w(uint32 ssrc, bool play, bool loop) {
-  ASSERT(worker_thread() == rtc::Thread::Current());
-  if (play) {
-    LOG(LS_INFO) << "Playing ringback tone, loop=" << loop;
-  } else {
-    LOG(LS_INFO) << "Stopping ringback tone";
-  }
-  return media_channel()->PlayRingbackTone(ssrc, play, loop);
 }
 
 void VoiceChannel::HandleEarlyMediaTimeout() {
