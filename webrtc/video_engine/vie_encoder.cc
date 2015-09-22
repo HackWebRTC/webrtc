@@ -104,7 +104,9 @@ class ViEBitrateObserver : public BitrateObserver {
 
 ViEEncoder::ViEEncoder(int32_t channel_id,
                        uint32_t number_of_cores,
-                       ProcessThread& module_process_thread,
+                       ProcessThread* module_process_thread,
+                       SendStatisticsProxy* stats_proxy,
+                       I420FrameCallback* pre_encode_callback,
                        PacedSender* pacer,
                        BitrateAllocator* bitrate_allocator)
     : channel_id_(channel_id),
@@ -115,8 +117,9 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
                                      this,
                                      qm_callback_.get())),
       send_payload_router_(NULL),
-      callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
+      stats_proxy_(stats_proxy),
+      pre_encode_callback_(pre_encode_callback),
       pacer_(pacer),
       bitrate_allocator_(bitrate_allocator),
       time_of_last_frame_activity_ms_(0),
@@ -129,16 +132,13 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       encoder_paused_and_dropped_frame_(false),
       fec_enabled_(false),
       nack_enabled_(false),
-      codec_observer_(NULL),
       module_process_thread_(module_process_thread),
       has_received_sli_(false),
       picture_id_sli_(0),
       has_received_rpsi_(false),
       picture_id_rpsi_(0),
       video_suspended_(false),
-      pre_encode_callback_(NULL),
-      start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()),
-      send_statistics_proxy_(NULL) {
+      start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()) {
   bitrate_observer_.reset(new ViEBitrateObserver(this));
 }
 
@@ -164,14 +164,14 @@ void ViEEncoder::StartThreadsAndSetSharedMembers(
 
   send_payload_router_ = send_payload_router;
   vcm_->RegisterProtectionCallback(vcm_protection_callback);
-  module_process_thread_.RegisterModule(vcm_.get());
+  module_process_thread_->RegisterModule(vcm_.get());
 }
 
 void ViEEncoder::StopThreadsAndRemoveSharedMembers() {
   if (bitrate_allocator_)
     bitrate_allocator_->RemoveBitrateObserver(bitrate_observer_.get());
-  module_process_thread_.DeRegisterModule(vcm_.get());
-  module_process_thread_.DeRegisterModule(vpm_.get());
+  module_process_thread_->DeRegisterModule(vcm_.get());
+  module_process_thread_->DeRegisterModule(vpm_.get());
 }
 
 ViEEncoder::~ViEEncoder() {
@@ -449,16 +449,13 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
   // If we haven't resampled the frame and we have a FrameCallback, we need to
   // make a deep copy of |video_frame|.
   VideoFrame copied_frame;
-  {
-    CriticalSectionScoped cs(callback_cs_.get());
-    if (pre_encode_callback_) {
-      // If the frame was not resampled or scaled => use copy of original.
-      if (decimated_frame == NULL) {
-        copied_frame.CopyFrame(video_frame);
-        decimated_frame = &copied_frame;
-      }
-      pre_encode_callback_->FrameCallback(decimated_frame);
+  if (pre_encode_callback_) {
+    // If the frame was not resampled or scaled => use copy of original.
+    if (decimated_frame == NULL) {
+      copied_frame.CopyFrame(video_frame);
+      decimated_frame = &copied_frame;
     }
+    pre_encode_callback_->FrameCallback(decimated_frame);
   }
 
   // If the frame was not resampled, scaled, or touched by FrameCallback => use
@@ -577,9 +574,8 @@ void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
 }
 
 void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (send_statistics_proxy_ != nullptr)
-    send_statistics_proxy_->OnSetRates(bitrate_bps, framerate);
+  if (stats_proxy_)
+    stats_proxy_->OnSetRates(bitrate_bps, framerate);
 }
 
 int32_t ViEEncoder::SendData(
@@ -594,11 +590,8 @@ int32_t ViEEncoder::SendData(
     time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
   }
 
-  {
-    CriticalSectionScoped cs(callback_cs_.get());
-    if (send_statistics_proxy_ != NULL)
-      send_statistics_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
-  }
+  if (stats_proxy_ != NULL)
+    stats_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
 
   return send_payload_router_->RoutePayload(
       VCMEncodedFrame::ConvertFrameType(encoded_image._frameType), payload_type,
@@ -609,20 +602,8 @@ int32_t ViEEncoder::SendData(
 
 int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
                                    const uint32_t frame_rate) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (codec_observer_) {
-    codec_observer_->OutgoingRate(channel_id_, frame_rate, bit_rate);
-  }
-  return 0;
-}
-
-int32_t ViEEncoder::RegisterCodecObserver(ViEEncoderObserver* observer) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (observer && codec_observer_) {
-    LOG_F(LS_ERROR) << "Observer already set.";
-    return -1;
-  }
-  codec_observer_ = observer;
+  if (stats_proxy_)
+    stats_proxy_->OnOutgoingRate(frame_rate, bit_rate);
   return 0;
 }
 
@@ -743,14 +724,12 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
     if (video_suspended_ == video_is_suspended)
       return;
     video_suspended_ = video_is_suspended;
-  }
-  // Video suspend-state changed, inform codec observer.
-  CriticalSectionScoped crit(callback_cs_.get());
-  if (codec_observer_) {
     LOG(LS_INFO) << "Video suspended " << video_is_suspended
                  << " for channel " << channel_id_;
-    codec_observer_->SuspendChange(channel_id_, video_is_suspended);
   }
+  // Video suspend-state changed, inform codec observer.
+  if (stats_proxy_)
+    stats_proxy_->OnSuspendChange(video_is_suspended);
 }
 
 void ViEEncoder::SuspendBelowMinBitrate() {
@@ -758,21 +737,9 @@ void ViEEncoder::SuspendBelowMinBitrate() {
   bitrate_allocator_->EnforceMinBitrate(false);
 }
 
-void ViEEncoder::RegisterPreEncodeCallback(
-    I420FrameCallback* pre_encode_callback) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  pre_encode_callback_ = pre_encode_callback;
-}
-
 void ViEEncoder::RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) {
   vcm_->RegisterPostEncodeImageCallback(post_encode_callback);
-}
-
-void ViEEncoder::RegisterSendStatisticsProxy(
-    SendStatisticsProxy* send_statistics_proxy) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  send_statistics_proxy_ = send_statistics_proxy;
 }
 
 QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessingModule* vpm)

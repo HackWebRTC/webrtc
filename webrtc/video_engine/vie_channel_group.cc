@@ -194,6 +194,8 @@ ChannelGroup::~ChannelGroup() {
 
 bool ChannelGroup::CreateSendChannel(int channel_id,
                                      Transport* transport,
+                                     SendStatisticsProxy* stats_proxy,
+                                     I420FrameCallback* pre_encode_callback,
                                      int number_of_cores,
                                      const VideoSendStream::Config& config) {
   TransportFeedbackObserver* transport_feedback_observer = nullptr;
@@ -220,9 +222,9 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
 
   const std::vector<uint32_t>& ssrcs = config.rtp.ssrcs;
   RTC_DCHECK(!ssrcs.empty());
-  rtc::scoped_ptr<ViEEncoder> vie_encoder(
-      new ViEEncoder(channel_id, number_of_cores, *process_thread_,
-                     pacer_.get(), bitrate_allocator_.get()));
+  rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
+      channel_id, number_of_cores, process_thread_, stats_proxy,
+      pre_encode_callback, pacer_.get(), bitrate_allocator_.get()));
   if (!vie_encoder->Init()) {
     return false;
   }

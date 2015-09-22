@@ -66,9 +66,7 @@ void SendStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.EncodeTimeInMs", encode_ms);
 }
 
-void SendStatisticsProxy::OutgoingRate(const int video_channel,
-                                       const unsigned int framerate,
-                                       const unsigned int bitrate) {
+void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
   rtc::CritScope lock(&crit_);
   stats_.encode_frame_rate = framerate;
   stats_.media_bitrate_bps = bitrate;
@@ -82,7 +80,7 @@ void SendStatisticsProxy::CpuOveruseMetricsUpdated(
   stats_.encode_usage_percent = metrics.encode_usage_percent;
 }
 
-void SendStatisticsProxy::SuspendChange(int video_channel, bool is_suspended) {
+void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
   rtc::CritScope lock(&crit_);
   stats_.suspended = is_suspended;
 }

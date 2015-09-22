@@ -33,7 +33,6 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                             public StreamDataCountersCallback,
                             public BitrateStatisticsObserver,
                             public FrameCountObserver,
-                            public ViEEncoderObserver,
                             public VideoEncoderRateObserver,
                             public SendSideDelayObserver {
  public:
@@ -55,6 +54,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // From VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
+  void OnOutgoingRate(uint32_t framerate, uint32_t bitrate);
+  void OnSuspendChange(bool is_suspended);
   void OnInactiveSsrc(uint32_t ssrc);
 
  protected:
@@ -80,13 +81,6 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // From FrameCountObserver.
   void FrameCountUpdated(const FrameCounts& frame_counts,
                          uint32_t ssrc) override;
-
-  // From ViEEncoderObserver.
-  void OutgoingRate(const int video_channel,
-                    const unsigned int framerate,
-                    const unsigned int bitrate) override;
-
-  void SuspendChange(int video_channel, bool is_suspended) override;
 
   void SendSideDelayUpdated(int avg_delay_ms,
                             int max_delay_ms,

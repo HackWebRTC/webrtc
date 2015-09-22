@@ -118,8 +118,9 @@ VideoSendStream::VideoSendStream(
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
   RTC_DCHECK(!config_.rtp.ssrcs.empty());
-  RTC_CHECK(channel_group->CreateSendChannel(channel_id_, &transport_adapter_,
-                                             num_cpu_cores, config_));
+  RTC_CHECK(channel_group->CreateSendChannel(
+      channel_id_, &transport_adapter_, &stats_proxy_,
+      config.pre_encode_callback, num_cpu_cores, config_));
   vie_channel_ = channel_group_->GetChannel(channel_id_);
   vie_encoder_ = channel_group_->GetEncoder(channel_id_);
 
@@ -178,9 +179,7 @@ VideoSendStream::VideoSendStream(
   RTC_CHECK(ReconfigureVideoEncoder(encoder_config));
 
   vie_channel_->RegisterSendSideDelayObserver(&stats_proxy_);
-  vie_encoder_->RegisterSendStatisticsProxy(&stats_proxy_);
 
-  vie_encoder_->RegisterPreEncodeCallback(config_.pre_encode_callback);
   if (config_.post_encode_callback)
     vie_encoder_->RegisterPostEncodeImageCallback(&encoded_frame_proxy_);
 
@@ -198,21 +197,14 @@ VideoSendStream::VideoSendStream(
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(&stats_proxy_);
   vie_channel_->RegisterSendBitrateObserver(&stats_proxy_);
   vie_channel_->RegisterSendFrameCountObserver(&stats_proxy_);
-
-  vie_encoder_->RegisterCodecObserver(&stats_proxy_);
 }
 
 VideoSendStream::~VideoSendStream() {
-  vie_encoder_->RegisterCodecObserver(nullptr);
-
   vie_channel_->RegisterSendFrameCountObserver(nullptr);
   vie_channel_->RegisterSendBitrateObserver(nullptr);
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(nullptr);
   vie_channel_->RegisterSendChannelRtpStatisticsCallback(nullptr);
   vie_channel_->RegisterSendChannelRtcpStatisticsCallback(nullptr);
-
-  vie_encoder_->RegisterPreEncodeCallback(nullptr);
-  vie_encoder_->RegisterPostEncodeImageCallback(nullptr);
 
   // Remove capture input (thread) so that it's not running after the current
   // channel is deleted.

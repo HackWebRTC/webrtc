@@ -28,11 +28,13 @@ class BitrateAllocator;
 class CallStats;
 class Config;
 class EncoderStateFeedback;
+class I420FrameCallback;
 class PacedSender;
 class PacketRouter;
 class ProcessThread;
 class RemoteBitrateEstimator;
 class RemoteEstimatorProxy;
+class SendStatisticsProxy;
 class TransportFeedbackAdapter;
 class ViEChannel;
 class ViEEncoder;
@@ -49,6 +51,8 @@ class ChannelGroup : public BitrateObserver {
   ~ChannelGroup();
   bool CreateSendChannel(int channel_id,
                          Transport* transport,
+                         SendStatisticsProxy* stats_proxy,
+                         I420FrameCallback* pre_encode_callback,
                          int number_of_cores,
                          const VideoSendStream::Config& config);
   bool CreateReceiveChannel(int channel_id,
