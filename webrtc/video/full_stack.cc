@@ -107,7 +107,7 @@ TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
 
 TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   VideoQualityTest::Params foreman_cif = {
-      {352, 288, 30, 30000, 500000, 2000000, "VP8", 1},
+      {352, 288, 30, 30000, 2000000, 2000000, "VP8", 1},
       {"foreman_cif"},
       {},
       {"foreman_cif_1000kbps_100ms_32pkts_queue", 0.0, 0.0,
