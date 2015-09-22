@@ -113,14 +113,8 @@ class MediaEngineInterface {
   // Sets the current speaker volume, as a value between 0 and 255.
   virtual bool SetOutputVolume(int level) = 0;
 
-  // Local monitoring
   // Gets the current microphone level, as a value between 0 and 10.
   virtual int GetInputLevel() = 0;
-  // Starts or stops the local microphone. Useful if local mic info is needed
-  // prior to a call being connected; the mic will be started automatically
-  // when a VoiceMediaChannel starts sending.
-  virtual bool SetLocalMonitor(bool enable) = 0;
-  // Installs a callback for raw frames from the local camera.
 
   virtual const std::vector<AudioCodec>& audio_codecs() = 0;
   virtual const std::vector<RtpHeaderExtension>&
@@ -223,9 +217,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual int GetInputLevel() {
     return voice_.GetInputLevel();
   }
-  virtual bool SetLocalMonitor(bool enable) {
-    return voice_.SetLocalMonitor(enable);
-  }
   virtual const std::vector<AudioCodec>& audio_codecs() {
     return voice_.codecs();
   }
@@ -289,7 +280,6 @@ class NullVoiceEngine {
   }
   bool SetOutputVolume(int level) { return true; }
   int GetInputLevel() { return 0; }
-  bool SetLocalMonitor(bool enable) { return true; }
   const std::vector<AudioCodec>& codecs() { return codecs_; }
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() {
     return rtp_header_extensions_;

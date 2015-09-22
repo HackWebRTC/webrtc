@@ -369,7 +369,6 @@ WebRtcVoiceEngine::WebRtcVoiceEngine()
       adm_(NULL),
       log_filter_(SeverityToFilter(kDefaultLogSeverity)),
       is_dumping_aec_(false),
-      desired_local_monitor_enable_(false),
       tx_processor_ssrc_(0),
       rx_processor_ssrc_(0) {
   Construct();
@@ -382,7 +381,6 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper,
       adm_(NULL),
       log_filter_(SeverityToFilter(kDefaultLogSeverity)),
       is_dumping_aec_(false),
-      desired_local_monitor_enable_(false),
       tx_processor_ssrc_(0),
       rx_processor_ssrc_(0) {
   Construct();
@@ -572,7 +570,6 @@ void WebRtcVoiceEngine::Terminate() {
   StopAecDump();
 
   voe_wrapper_->base()->Terminate();
-  desired_local_monitor_enable_ = false;
 }
 
 int WebRtcVoiceEngine::GetCapabilities() {
@@ -933,14 +930,8 @@ bool WebRtcVoiceEngine::SetDevices(const Device* in_device,
             << ") and speaker to (id=" << out_id << ", name=" << out_name
             << ")";
 
-  // If we're running the local monitor, we need to stop it first.
-  bool ret = true;
-  if (!PauseLocalMonitor()) {
-    LOG(LS_WARNING) << "Failed to pause local monitor";
-    ret = false;
-  }
-
   // Must also pause all audio playback and capture.
+  bool ret = true;
   for (WebRtcVoiceMediaChannel* channel : channels_) {
     if (!channel->PausePlayout()) {
       LOG(LS_WARNING) << "Failed to pause playout";
@@ -988,12 +979,6 @@ bool WebRtcVoiceEngine::SetDevices(const Device* in_device,
       LOG(LS_WARNING) << "Failed to resume send";
       ret = false;
     }
-  }
-
-  // Resume local monitor.
-  if (!ResumeLocalMonitor()) {
-    LOG(LS_WARNING) << "Failed to resume local monitor";
-    ret = false;
   }
 
   if (ret) {
@@ -1081,42 +1066,6 @@ int WebRtcVoiceEngine::GetInputLevel() {
   unsigned int ulevel;
   return (voe_wrapper_->volume()->GetSpeechInputLevel(ulevel) != -1) ?
       static_cast<int>(ulevel) : -1;
-}
-
-bool WebRtcVoiceEngine::SetLocalMonitor(bool enable) {
-  desired_local_monitor_enable_ = enable;
-  return ChangeLocalMonitor(desired_local_monitor_enable_);
-}
-
-bool WebRtcVoiceEngine::ChangeLocalMonitor(bool enable) {
-  // The voe file api is not available in chrome.
-  if (!voe_wrapper_->file()) {
-    return false;
-  }
-  if (enable && !monitor_) {
-    monitor_.reset(new WebRtcMonitorStream);
-    if (voe_wrapper_->file()->StartRecordingMicrophone(monitor_.get()) == -1) {
-      LOG_RTCERR1(StartRecordingMicrophone, monitor_.get());
-      // Must call Stop() because there are some cases where Start will report
-      // failure but still change the state, and if we leave VE in the on state
-      // then it could crash later when trying to invoke methods on our monitor.
-      voe_wrapper_->file()->StopRecordingMicrophone();
-      monitor_.reset();
-      return false;
-    }
-  } else if (!enable && monitor_) {
-    voe_wrapper_->file()->StopRecordingMicrophone();
-    monitor_.reset();
-  }
-  return true;
-}
-
-bool WebRtcVoiceEngine::PauseLocalMonitor() {
-  return ChangeLocalMonitor(false);
-}
-
-bool WebRtcVoiceEngine::ResumeLocalMonitor() {
-  return ChangeLocalMonitor(desired_local_monitor_enable_);
 }
 
 const std::vector<AudioCodec>& WebRtcVoiceEngine::codecs() {

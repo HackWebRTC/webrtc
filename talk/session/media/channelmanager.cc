@@ -114,7 +114,6 @@ void ChannelManager::Construct(MediaEngineInterface* me,
   audio_output_volume_ = kNotSetOutputVolume;
   local_renderer_ = NULL;
   capturing_ = false;
-  monitoring_ = false;
   enable_rtx_ = false;
 
   // Init the device manager immediately, and set up our default video device.
@@ -704,16 +703,6 @@ bool ChannelManager::SetDefaultVideoEncoderConfig(const VideoEncoderConfig& c) {
   }
   if (ret) {
     default_video_encoder_config_ = c;
-  }
-  return ret;
-}
-
-bool ChannelManager::SetLocalMonitor(bool enable) {
-  bool ret = initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&MediaEngineInterface::SetLocalMonitor,
-           media_engine_.get(), enable));
-  if (ret) {
-    monitoring_ = enable;
   }
   return ret;
 }

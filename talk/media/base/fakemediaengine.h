@@ -836,8 +836,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
   int GetInputLevel() { return 0; }
 
-  bool SetLocalMonitor(bool enable) { return true; }
-
   bool StartAecDump(rtc::PlatformFile file) { return false; }
 
   bool RegisterProcessor(uint32 ssrc, VoiceProcessor* voice_processor,

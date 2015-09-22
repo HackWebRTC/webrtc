@@ -53,12 +53,6 @@ class VideoEngine;
 
 namespace cricket {
 
-// WebRtcMonitorStream is used to monitor a stream coming from WebRtc.
-// For now we just dump the data.
-class WebRtcMonitorStream : public webrtc::OutStream {
-  bool Write(const void* buf, size_t len) override { return true; }
-};
-
 class AudioDeviceModule;
 class AudioRenderer;
 class VoETraceWrapper;
@@ -94,7 +88,6 @@ class WebRtcVoiceEngine
   bool GetOutputVolume(int* level);
   bool SetOutputVolume(int level);
   int GetInputLevel();
-  bool SetLocalMonitor(bool enable);
 
   const std::vector<AudioCodec>& codecs();
   bool FindCodec(const AudioCodec& codec);
@@ -190,9 +183,6 @@ class WebRtcVoiceEngine
   bool FindChannelNumFromSsrc(uint32 ssrc,
                               MediaProcessorDirection direction,
                               int* channel_num);
-  bool ChangeLocalMonitor(bool enable);
-  bool PauseLocalMonitor();
-  bool ResumeLocalMonitor();
 
   bool UnregisterProcessorChannel(MediaProcessorDirection channel_direction,
                                   uint32 ssrc,
@@ -221,8 +211,6 @@ class WebRtcVoiceEngine
   bool is_dumping_aec_;
   std::vector<AudioCodec> codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
-  bool desired_local_monitor_enable_;
-  rtc::scoped_ptr<WebRtcMonitorStream> monitor_;
   ChannelList channels_;
   // channels_ can be read from WebRtc callback thread. We need a lock on that
   // callback as well as the RegisterChannel/UnregisterChannel.

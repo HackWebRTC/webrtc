@@ -295,8 +295,6 @@ class FakeWebRtcVoiceEngine
         observer_(NULL),
         playout_fail_channel_(-1),
         send_fail_channel_(-1),
-        fail_start_recording_microphone_(false),
-        recording_microphone_(false),
         recording_sample_rate_(-1),
         playout_sample_rate_(-1),
         media_processor_(NULL) {
@@ -330,9 +328,6 @@ class FakeWebRtcVoiceEngine
   }
   bool GetSend(int channel) {
     return channels_[channel]->send;
-  }
-  bool GetRecordingMicrophone() {
-    return recording_microphone_;
   }
   bool GetVAD(int channel) {
     return channels_[channel]->vad;
@@ -391,10 +386,6 @@ class FakeWebRtcVoiceEngine
   }
   void set_send_fail_channel(int channel) {
     send_fail_channel_ = channel;
-  }
-  void set_fail_start_recording_microphone(
-      bool fail_start_recording_microphone) {
-    fail_start_recording_microphone_ = fail_start_recording_microphone;
   }
   void set_fail_create_channel(bool fail_create_channel) {
     fail_create_channel_ = fail_create_channel;
@@ -780,25 +771,13 @@ class FakeWebRtcVoiceEngine
   WEBRTC_FUNC(StartRecordingMicrophone, (const char* fileNameUTF8,
                                          webrtc::CodecInst* compression,
                                          int maxSizeBytes)) {
-    if (fail_start_recording_microphone_) {
-      return -1;
-    }
-    recording_microphone_ = true;
     return 0;
   }
   WEBRTC_FUNC(StartRecordingMicrophone, (webrtc::OutStream* stream,
                                          webrtc::CodecInst* compression)) {
-    if (fail_start_recording_microphone_) {
-      return -1;
-    }
-    recording_microphone_ = true;
     return 0;
   }
   WEBRTC_FUNC(StopRecordingMicrophone, ()) {
-    if (!recording_microphone_) {
-      return -1;
-    }
-    recording_microphone_ = false;
     return 0;
   }
 
@@ -1277,8 +1256,6 @@ class FakeWebRtcVoiceEngine
   webrtc::VoiceEngineObserver* observer_;
   int playout_fail_channel_;
   int send_fail_channel_;
-  bool fail_start_recording_microphone_;
-  bool recording_microphone_;
   int recording_sample_rate_;
   int playout_sample_rate_;
   DtmfInfo dtmf_info_;

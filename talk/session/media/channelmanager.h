@@ -165,8 +165,6 @@ class ChannelManager : public rtc::MessageHandler,
   bool SetVideoRtxEnabled(bool enable);
 
   // Starts/stops the local microphone and enables polling of the input level.
-  bool SetLocalMonitor(bool enable);
-  bool monitoring() const { return monitoring_; }
   bool capturing() const { return capturing_; }
 
   // Configures the logging output of the mediaengine(s).
@@ -301,7 +299,6 @@ class ChannelManager : public rtc::MessageHandler,
   bool enable_rtx_;
 
   bool capturing_;
-  bool monitoring_;
 
   // String containing currently set device. Note that this string is subtly
   // different from camera_device_. E.g. camera_device_ will list unplugged

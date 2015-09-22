@@ -2127,38 +2127,31 @@ TEST_F(WebRtcVoiceEngineTestFake, SetDevices) {
   EXPECT_TRUE(engine_.SetDevices(&default_dev, &default_dev));
 
   // Test SetDevices() while sending and playing.
-  EXPECT_TRUE(engine_.SetLocalMonitor(true));
   EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
   EXPECT_TRUE(channel_->SetPlayout(true));
-  EXPECT_TRUE(voe_.GetRecordingMicrophone());
   EXPECT_TRUE(voe_.GetSend(channel_num));
   EXPECT_TRUE(voe_.GetPlayout(channel_num));
 
   EXPECT_TRUE(engine_.SetDevices(&dev, &dev));
 
-  EXPECT_TRUE(voe_.GetRecordingMicrophone());
   EXPECT_TRUE(voe_.GetSend(channel_num));
   EXPECT_TRUE(voe_.GetPlayout(channel_num));
 
   // Test that failure to open newly selected devices does not prevent opening
   // ones after that.
-  voe_.set_fail_start_recording_microphone(true);
   voe_.set_playout_fail_channel(channel_num);
   voe_.set_send_fail_channel(channel_num);
 
   EXPECT_FALSE(engine_.SetDevices(&default_dev, &default_dev));
 
-  EXPECT_FALSE(voe_.GetRecordingMicrophone());
   EXPECT_FALSE(voe_.GetSend(channel_num));
   EXPECT_FALSE(voe_.GetPlayout(channel_num));
 
-  voe_.set_fail_start_recording_microphone(false);
   voe_.set_playout_fail_channel(-1);
   voe_.set_send_fail_channel(-1);
 
   EXPECT_TRUE(engine_.SetDevices(&dev, &dev));
 
-  EXPECT_TRUE(voe_.GetRecordingMicrophone());
   EXPECT_TRUE(voe_.GetSend(channel_num));
   EXPECT_TRUE(voe_.GetPlayout(channel_num));
 }
@@ -2177,26 +2170,21 @@ TEST_F(WebRtcVoiceEngineTestFake, SetDevicesWithInitiallyBadDevices) {
 
   // Test that failure to open devices selected before starting
   // send/play does not prevent opening newly selected ones after that.
-  voe_.set_fail_start_recording_microphone(true);
   voe_.set_playout_fail_channel(channel_num);
   voe_.set_send_fail_channel(channel_num);
 
   EXPECT_TRUE(engine_.SetDevices(&default_dev, &default_dev));
 
-  EXPECT_FALSE(engine_.SetLocalMonitor(true));
   EXPECT_FALSE(channel_->SetSend(cricket::SEND_MICROPHONE));
   EXPECT_FALSE(channel_->SetPlayout(true));
-  EXPECT_FALSE(voe_.GetRecordingMicrophone());
   EXPECT_FALSE(voe_.GetSend(channel_num));
   EXPECT_FALSE(voe_.GetPlayout(channel_num));
 
-  voe_.set_fail_start_recording_microphone(false);
   voe_.set_playout_fail_channel(-1);
   voe_.set_send_fail_channel(-1);
 
   EXPECT_TRUE(engine_.SetDevices(&dev, &dev));
 
-  EXPECT_TRUE(voe_.GetRecordingMicrophone());
   EXPECT_TRUE(voe_.GetSend(channel_num));
   EXPECT_TRUE(voe_.GetPlayout(channel_num));
 }
