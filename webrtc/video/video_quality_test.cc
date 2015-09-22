@@ -677,11 +677,17 @@ void VideoQualityTest::SetupScreenshare(const Params& params) {
     RTC_CHECK_LE(params.screenshare.scroll_duration,
                  params.screenshare.slide_change_interval);
 
-    frame_generator_.reset(
-        test::FrameGenerator::CreateScrollingInputFromYuvFiles(
-            clock_, slides, kWidth, kHeight, params.common.width,
-            params.common.height, params.screenshare.scroll_duration * 1000,
-            kPauseDurationMs));
+    if (params.screenshare.scroll_duration) {
+      frame_generator_.reset(
+          test::FrameGenerator::CreateScrollingInputFromYuvFiles(
+              clock_, slides, kWidth, kHeight, params.common.width,
+              params.common.height, params.screenshare.scroll_duration * 1000,
+              kPauseDurationMs));
+    } else {
+      frame_generator_.reset(test::FrameGenerator::CreateFromYuvFile(
+              slides, kWidth, kHeight,
+              params.screenshare.slide_change_interval * params.common.fps));
+    }
   }
 }
 
