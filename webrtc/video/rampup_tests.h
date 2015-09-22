@@ -26,9 +26,11 @@ namespace webrtc {
 
 static const int kTransmissionTimeOffsetExtensionId = 6;
 static const int kAbsSendTimeExtensionId = 7;
+static const int kTransportSequenceNumberExtensionId = 8;
 static const unsigned int kSingleStreamTargetBps = 1000000;
 
 class Clock;
+class PacketRouter;
 class ReceiveStatistics;
 class RtpHeaderParser;
 class RTPPayloadRegistry;
@@ -41,6 +43,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   StreamObserver(const SsrcMap& rtx_media_ssrcs,
                  newapi::Transport* feedback_transport,
                  Clock* clock);
+  virtual ~StreamObserver();
 
   void set_expected_bitrate_bps(unsigned int expected_bitrate_bps);
 
@@ -57,6 +60,8 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
 
   void SetRemoteBitrateEstimator(RemoteBitrateEstimator* rbe);
 
+  PacketRouter* GetPacketRouter();
+
  private:
   void ReportResult(const std::string& measurement,
                     size_t value,
@@ -67,6 +72,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   const rtc::scoped_ptr<EventWrapper> test_done_;
   const rtc::scoped_ptr<RtpHeaderParser> rtp_parser_;
   rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
+  rtc::scoped_ptr<PacketRouter> packet_router_;
   internal::TransportAdapter feedback_transport_;
   const rtc::scoped_ptr<ReceiveStatistics> receive_stats_;
   const rtc::scoped_ptr<RTPPayloadRegistry> payload_registry_;

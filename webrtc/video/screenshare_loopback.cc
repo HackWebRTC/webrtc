@@ -139,6 +139,8 @@ int DurationSecs() {
   return static_cast<int>(FLAGS_duration);
 }
 
+DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
+
 DEFINE_string(
     force_fieldtrials,
     "",
@@ -162,19 +164,12 @@ void Loopback() {
   call_bitrate_config.max_bitrate_bps = flags::MaxBitrateKbps() * 1000;
 
   VideoQualityTest::Params params{
-      {
-        flags::Width(),
-        flags::Height(),
-        flags::Fps(),
-        flags::MinBitrateKbps() * 1000,
-        flags::TargetBitrateKbps() * 1000,
-        flags::MaxBitrateKbps() * 1000,
-        flags::Codec(),
-        flags::NumTemporalLayers(),
-        flags::MinTransmitBitrateKbps() * 1000,
-        call_bitrate_config,
-        flags::TLDiscardThreshold()
-      },
+      {flags::Width(), flags::Height(), flags::Fps(),
+       flags::MinBitrateKbps() * 1000, flags::TargetBitrateKbps() * 1000,
+       flags::MaxBitrateKbps() * 1000, flags::Codec(),
+       flags::NumTemporalLayers(), flags::MinTransmitBitrateKbps() * 1000,
+       call_bitrate_config, flags::TLDiscardThreshold(),
+       flags::FLAGS_send_side_bwe},
       {},  // Video specific.
       {true, flags::SlideChangeInterval(), flags::ScrollDuration()},
       {"screenshare", 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename()},

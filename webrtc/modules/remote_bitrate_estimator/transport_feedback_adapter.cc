@@ -107,6 +107,7 @@ void TransportFeedbackAdapter::OnTransportFeedback(
                       << ". Send time history too small?";
     }
   }
+
   RTC_DCHECK(bitrate_estimator_.get() != nullptr);
   bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector);
 }
