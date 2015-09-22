@@ -172,10 +172,12 @@ config("g711_config") {
 
 source_set("g711") {
   sources = [
+    "codecs/g711/audio_decoder_pcm.cc",
     "codecs/g711/audio_encoder_pcm.cc",
     "codecs/g711/g711.c",
     "codecs/g711/g711.h",
     "codecs/g711/g711_interface.c",
+    "codecs/g711/include/audio_decoder_pcm.h",
     "codecs/g711/include/audio_encoder_pcm.h",
     "codecs/g711/include/g711_interface.h",
   ]

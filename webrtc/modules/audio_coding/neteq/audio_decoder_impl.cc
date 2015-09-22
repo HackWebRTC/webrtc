@@ -14,7 +14,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
-#include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/audio_decoder_pcm.h"
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_decoder_g722.h"
 #endif
@@ -33,66 +33,6 @@
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_decoder_pcm16b.h"
 
 namespace webrtc {
-
-// PCMu
-
-void AudioDecoderPcmU::Reset() {
-}
-size_t AudioDecoderPcmU::Channels() const {
-  return 1;
-}
-
-int AudioDecoderPcmU::DecodeInternal(const uint8_t* encoded,
-                                     size_t encoded_len,
-                                     int sample_rate_hz,
-                                     int16_t* decoded,
-                                     SpeechType* speech_type) {
-  RTC_DCHECK_EQ(sample_rate_hz, 8000);
-  int16_t temp_type = 1;  // Default is speech.
-  size_t ret = WebRtcG711_DecodeU(encoded, encoded_len, decoded, &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return static_cast<int>(ret);
-}
-
-int AudioDecoderPcmU::PacketDuration(const uint8_t* encoded,
-                                     size_t encoded_len) const {
-  // One encoded byte per sample per channel.
-  return static_cast<int>(encoded_len / Channels());
-}
-
-size_t AudioDecoderPcmUMultiCh::Channels() const {
-  return channels_;
-}
-
-// PCMa
-
-void AudioDecoderPcmA::Reset() {
-}
-size_t AudioDecoderPcmA::Channels() const {
-  return 1;
-}
-
-int AudioDecoderPcmA::DecodeInternal(const uint8_t* encoded,
-                                     size_t encoded_len,
-                                     int sample_rate_hz,
-                                     int16_t* decoded,
-                                     SpeechType* speech_type) {
-  RTC_DCHECK_EQ(sample_rate_hz, 8000);
-  int16_t temp_type = 1;  // Default is speech.
-  size_t ret = WebRtcG711_DecodeA(encoded, encoded_len, decoded, &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return static_cast<int>(ret);
-}
-
-int AudioDecoderPcmA::PacketDuration(const uint8_t* encoded,
-                                     size_t encoded_len) const {
-  // One encoded byte per sample per channel.
-  return static_cast<int>(encoded_len / Channels());
-}
-
-size_t AudioDecoderPcmAMultiCh::Channels() const {
-  return channels_;
-}
 
 AudioDecoderCng::AudioDecoderCng() {
   RTC_CHECK_EQ(0, WebRtcCng_CreateDec(&dec_state_));

@@ -16,6 +16,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/audio_decoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"

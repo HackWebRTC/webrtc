@@ -28,68 +28,6 @@
 
 namespace webrtc {
 
-class AudioDecoderPcmU : public AudioDecoder {
- public:
-  AudioDecoderPcmU() {}
-  void Reset() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
-  size_t Channels() const override;
-
- protected:
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmU);
-};
-
-class AudioDecoderPcmA : public AudioDecoder {
- public:
-  AudioDecoderPcmA() {}
-  void Reset() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
-  size_t Channels() const override;
-
- protected:
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmA);
-};
-
-class AudioDecoderPcmUMultiCh : public AudioDecoderPcmU {
- public:
-  explicit AudioDecoderPcmUMultiCh(size_t channels)
-      : AudioDecoderPcmU(), channels_(channels) {
-    assert(channels > 0);
-  }
-  size_t Channels() const override;
-
- private:
-  const size_t channels_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmUMultiCh);
-};
-
-class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
- public:
-  explicit AudioDecoderPcmAMultiCh(size_t channels)
-      : AudioDecoderPcmA(), channels_(channels) {
-    assert(channels > 0);
-  }
-  size_t Channels() const override;
-
- private:
-  const size_t channels_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmAMultiCh);
-};
-
 // AudioDecoderCng is a special type of AudioDecoder. It inherits from
 // AudioDecoder just to fit in the DecoderDatabase. None of the class methods
 // should be used, except constructor, destructor, and accessors.
