@@ -16,9 +16,9 @@
 
 namespace webrtc {
 
-class AudioDecoderPcm16B : public AudioDecoder {
+class AudioDecoderPcm16B final : public AudioDecoder {
  public:
-  AudioDecoderPcm16B();
+  explicit AudioDecoderPcm16B(size_t num_channels);
   void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   size_t Channels() const override;
@@ -31,18 +31,10 @@ class AudioDecoderPcm16B : public AudioDecoder {
                      SpeechType* speech_type) override;
 
  private:
+  const size_t num_channels_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16B);
 };
 
-class AudioDecoderPcm16BMultiCh : public AudioDecoderPcm16B {
- public:
-  explicit AudioDecoderPcm16BMultiCh(size_t num_channels);
-  size_t Channels() const override;
-
- private:
-  const size_t channels_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16BMultiCh);
-};
-
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_PCM16B_INCLUDE_AUDIO_DECODER_PCM16B_H_

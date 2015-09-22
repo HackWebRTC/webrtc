@@ -66,6 +66,7 @@ class AudioEncoderG722 final : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
   const rtc::scoped_ptr<EncoderState[]> encoders_;
   rtc::Buffer interleave_buffer_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderG722);
 };
 
 }  // namespace webrtc

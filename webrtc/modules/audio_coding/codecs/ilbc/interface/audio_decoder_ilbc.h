@@ -17,7 +17,7 @@ typedef struct iLBC_decinst_t_ IlbcDecoderInstance;
 
 namespace webrtc {
 
-class AudioDecoderIlbc : public AudioDecoder {
+class AudioDecoderIlbc final : public AudioDecoder {
  public:
   AudioDecoderIlbc();
   ~AudioDecoderIlbc() override;

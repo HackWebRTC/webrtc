@@ -286,7 +286,7 @@ class AudioDecoderPcmUTest : public AudioDecoderTest {
   AudioDecoderPcmUTest() : AudioDecoderTest() {
     frame_size_ = 160;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderPcmU;
+    decoder_ = new AudioDecoderPcmU(1);
     AudioEncoderPcmU::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_ / 8);
     config.payload_type = payload_type_;
@@ -299,7 +299,7 @@ class AudioDecoderPcmATest : public AudioDecoderTest {
   AudioDecoderPcmATest() : AudioDecoderTest() {
     frame_size_ = 160;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderPcmA;
+    decoder_ = new AudioDecoderPcmA(1);
     AudioEncoderPcmA::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_ / 8);
     config.payload_type = payload_type_;
@@ -313,7 +313,7 @@ class AudioDecoderPcm16BTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 20 * codec_input_rate_hz_ / 1000;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderPcm16B;
+    decoder_ = new AudioDecoderPcm16B(1);
     assert(decoder_);
     AudioEncoderPcm16B::Config config;
     config.sample_rate_hz = codec_input_rate_hz_;

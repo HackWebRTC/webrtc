@@ -985,7 +985,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutput) {
 #define MAYBE_48kHzOutputExternalDecoder 48kHzOutputExternalDecoder
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutputExternalDecoder) {
-  AudioDecoderPcmU decoder;
+  AudioDecoderPcmU decoder(1);
   MockAudioDecoder mock_decoder;
   // Set expectations on the mock decoder and also delegate the calls to the
   // real decoder.

@@ -13,8 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
@@ -95,7 +94,9 @@ class AudioEncoderOpus final : public AudioEncoder {
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;
   uint32_t first_timestamp_in_buffer_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderOpus);
 };
 
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_AUDIO_ENCODER_OPUS_H_

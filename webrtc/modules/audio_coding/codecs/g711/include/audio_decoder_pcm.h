@@ -16,9 +16,11 @@
 
 namespace webrtc {
 
-class AudioDecoderPcmU : public AudioDecoder {
+class AudioDecoderPcmU final : public AudioDecoder {
  public:
-  AudioDecoderPcmU() {}
+  explicit AudioDecoderPcmU(size_t num_channels) : num_channels_(num_channels) {
+    RTC_DCHECK_GE(num_channels, 1u);
+  }
   void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   size_t Channels() const override;
@@ -31,12 +33,15 @@ class AudioDecoderPcmU : public AudioDecoder {
                      SpeechType* speech_type) override;
 
  private:
+  const size_t num_channels_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmU);
 };
 
-class AudioDecoderPcmA : public AudioDecoder {
+class AudioDecoderPcmA final : public AudioDecoder {
  public:
-  AudioDecoderPcmA() {}
+  explicit AudioDecoderPcmA(size_t num_channels) : num_channels_(num_channels) {
+    RTC_DCHECK_GE(num_channels, 1u);
+  }
   void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   size_t Channels() const override;
@@ -49,34 +54,10 @@ class AudioDecoderPcmA : public AudioDecoder {
                      SpeechType* speech_type) override;
 
  private:
+  const size_t num_channels_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmA);
 };
 
-class AudioDecoderPcmUMultiCh : public AudioDecoderPcmU {
- public:
-  explicit AudioDecoderPcmUMultiCh(size_t channels)
-      : AudioDecoderPcmU(), channels_(channels) {
-    RTC_DCHECK_GT(channels, 0u);
-  }
-  size_t Channels() const override;
-
- private:
-  const size_t channels_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmUMultiCh);
-};
-
-class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
- public:
-  explicit AudioDecoderPcmAMultiCh(size_t channels)
-      : AudioDecoderPcmA(), channels_(channels) {
-    RTC_DCHECK_GT(channels, 0u);
-  }
-  size_t Channels() const override;
-
- private:
-  const size_t channels_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmAMultiCh);
-};
-
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_G711_INCLUDE_AUDIO_DECODER_PCM_H_

@@ -87,6 +87,7 @@ class AudioEncoderPcmA final : public AudioEncoderPcm {
 
  private:
   static const int kSampleRateHz = 8000;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderPcmA);
 };
 
 class AudioEncoderPcmU final : public AudioEncoderPcm {
@@ -108,7 +109,9 @@ class AudioEncoderPcmU final : public AudioEncoderPcm {
 
  private:
   static const int kSampleRateHz = 8000;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderPcmU);
 };
 
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_G711_INCLUDE_AUDIO_ENCODER_PCM_H_

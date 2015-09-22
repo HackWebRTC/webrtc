@@ -60,7 +60,9 @@ class AudioEncoderCopyRed final : public AudioEncoder {
   int red_payload_type_;
   rtc::Buffer secondary_encoded_;
   EncodedInfoLeaf secondary_info_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderCopyRed);
 };
 
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_RED_AUDIO_ENCODER_COPY_RED_H_

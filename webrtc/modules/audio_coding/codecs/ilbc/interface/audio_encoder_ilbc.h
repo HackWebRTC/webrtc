@@ -56,6 +56,7 @@ class AudioEncoderIlbc final : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
   int16_t input_buffer_[kMaxSamplesPerPacket];
   IlbcEncoderInstance* encoder_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderIlbc);
 };
 
 }  // namespace webrtc

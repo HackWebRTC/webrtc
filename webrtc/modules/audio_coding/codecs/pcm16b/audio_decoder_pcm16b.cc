@@ -15,12 +15,15 @@
 
 namespace webrtc {
 
-AudioDecoderPcm16B::AudioDecoderPcm16B() {}
+AudioDecoderPcm16B::AudioDecoderPcm16B(size_t num_channels)
+    : num_channels_(num_channels) {
+  RTC_DCHECK_GE(num_channels, 1u);
+}
 
 void AudioDecoderPcm16B::Reset() {}
 
 size_t AudioDecoderPcm16B::Channels() const {
-  return 1;
+  return num_channels_;
 }
 
 int AudioDecoderPcm16B::DecodeInternal(const uint8_t* encoded,
@@ -40,15 +43,6 @@ int AudioDecoderPcm16B::PacketDuration(const uint8_t* encoded,
                                        size_t encoded_len) const {
   // Two encoded byte per sample per channel.
   return static_cast<int>(encoded_len / (2 * Channels()));
-}
-
-AudioDecoderPcm16BMultiCh::AudioDecoderPcm16BMultiCh(size_t num_channels)
-    : channels_(num_channels) {
-  RTC_DCHECK(num_channels > 0);
-}
-
-size_t AudioDecoderPcm16BMultiCh::Channels() const {
-  return channels_;
 }
 
 }  // namespace webrtc

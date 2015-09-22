@@ -16,7 +16,7 @@
 
 namespace webrtc {
 
-class AudioDecoderOpus : public AudioDecoder {
+class AudioDecoderOpus final : public AudioDecoder {
  public:
   explicit AudioDecoderOpus(size_t num_channels);
   ~AudioDecoderOpus() override;

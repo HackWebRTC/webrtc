@@ -183,13 +183,13 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
   }
   switch (codec_type) {
     case kDecoderPCMu:
-      return new AudioDecoderPcmU;
+      return new AudioDecoderPcmU(1);
     case kDecoderPCMa:
-      return new AudioDecoderPcmA;
+      return new AudioDecoderPcmA(1);
     case kDecoderPCMu_2ch:
-      return new AudioDecoderPcmUMultiCh(2);
+      return new AudioDecoderPcmU(2);
     case kDecoderPCMa_2ch:
-      return new AudioDecoderPcmAMultiCh(2);
+      return new AudioDecoderPcmA(2);
 #ifdef WEBRTC_CODEC_ILBC
     case kDecoderILBC:
       return new AudioDecoderIlbc;
@@ -207,14 +207,14 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
     case kDecoderPCM16Bwb:
     case kDecoderPCM16Bswb32kHz:
     case kDecoderPCM16Bswb48kHz:
-      return new AudioDecoderPcm16B;
+      return new AudioDecoderPcm16B(1);
     case kDecoderPCM16B_2ch:
     case kDecoderPCM16Bwb_2ch:
     case kDecoderPCM16Bswb32kHz_2ch:
     case kDecoderPCM16Bswb48kHz_2ch:
-      return new AudioDecoderPcm16BMultiCh(2);
+      return new AudioDecoderPcm16B(2);
     case kDecoderPCM16B_5ch:
-      return new AudioDecoderPcm16BMultiCh(5);
+      return new AudioDecoderPcm16B(5);
 #ifdef WEBRTC_CODEC_G722
     case kDecoderG722:
       return new AudioDecoderG722;

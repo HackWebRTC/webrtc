@@ -94,4 +94,5 @@ class AudioEncoderIsacT final : public AudioEncoder {
 };
 
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_AUDIO_ENCODER_ISAC_T_H_
