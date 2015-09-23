@@ -379,6 +379,15 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
                             << socket->GetRemoteAddress().ToSensitiveString();
     set_connected(true);
     connection_pending_ = false;
+  } else if (IPIsAny(port()->ip())) {
+    LOG(LS_WARNING) << "Socket is bound to a different address:"
+                    << socket->GetLocalAddress().ipaddr().ToString()
+                    << ", rather then the local port:"
+                    << port()->ip().ToString()
+                    << ". Still allowing it since it's any address"
+                    << ", possibly caused by multi-routes being disabled.";
+    set_connected(true);
+    connection_pending_ = false;
   } else {
     LOG_J(LS_WARNING, this) << "Dropping connection as TCP socket bound to IP "
                             << socket_ip.ToSensitiveString()
