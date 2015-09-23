@@ -2308,11 +2308,6 @@ bool WebRtcVoiceMediaChannel::ChangeSend(int channel, SendFlags send) {
       LOG_RTCERR1(StartSend, channel);
       return false;
     }
-    if (engine()->voe()->file() &&
-        engine()->voe()->file()->StopPlayingFileAsMicrophone(channel) == -1) {
-      LOG_RTCERR1(StopPlayingFileAsMicrophone, channel);
-      return false;
-    }
   } else {  // SEND_NOTHING
     RTC_DCHECK(send == SEND_NOTHING);
     if (engine()->voe()->base()->StopSend(channel) == -1) {

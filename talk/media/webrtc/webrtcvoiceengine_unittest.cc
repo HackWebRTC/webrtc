@@ -68,7 +68,6 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
                             engine,  // base
                             engine,  // codec
                             engine,  // dtmf
-                            engine,  // file
                             engine,  // hw
                             engine,  // media
                             engine,  // neteq

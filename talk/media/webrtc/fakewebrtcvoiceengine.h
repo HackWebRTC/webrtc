@@ -187,7 +187,7 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
       public webrtc::VoEBase, public webrtc::VoECodec, public webrtc::VoEDtmf,
-      public webrtc::VoEFile, public webrtc::VoEHardware,
+      public webrtc::VoEHardware,
       public webrtc::VoEExternalMedia, public webrtc::VoENetEqStats,
       public webrtc::VoENetwork, public webrtc::VoERTP_RTCP,
       public webrtc::VoEVideoSync, public webrtc::VoEVolumeControl {
@@ -209,7 +209,6 @@ class FakeWebRtcVoiceEngine
           volume_scale(1.0),
           volume_pan_left(1.0),
           volume_pan_right(1.0),
-          file(false),
           vad(false),
           codec_fec(false),
           max_encoding_bandwidth(0),
@@ -241,7 +240,6 @@ class FakeWebRtcVoiceEngine
     float volume_scale;
     float volume_pan_left;
     float volume_pan_right;
-    bool file;
     bool vad;
     bool codec_fec;
     int max_encoding_bandwidth;
@@ -720,64 +718,6 @@ class FakeWebRtcVoiceEngine
       (int event_code, int length_ms = 200, int attenuation_db = 10)) {
     dtmf_info_.dtmf_event_code = event_code;
     dtmf_info_.dtmf_length_ms = length_ms;
-    return 0;
-  }
-
-  // webrtc::VoEFile
-  WEBRTC_FUNC(StartPlayingFileLocally, (int channel, const char* fileNameUTF8,
-                                        bool loop, webrtc::FileFormats format,
-                                        float volumeScaling, int startPointMs,
-                                        int stopPointMs)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->file = true;
-    return 0;
-  }
-  WEBRTC_FUNC(StartPlayingFileLocally, (int channel, webrtc::InStream* stream,
-                                        webrtc::FileFormats format,
-                                        float volumeScaling, int startPointMs,
-                                        int stopPointMs)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->file = true;
-    return 0;
-  }
-  WEBRTC_FUNC(StopPlayingFileLocally, (int channel)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->file = false;
-    return 0;
-  }
-  WEBRTC_FUNC(IsPlayingFileLocally, (int channel)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    return (channels_[channel]->file) ? 1 : 0;
-  }
-  WEBRTC_STUB(StartPlayingFileAsMicrophone, (int channel,
-                                             const char* fileNameUTF8,
-                                             bool loop,
-                                             bool mixWithMicrophone,
-                                             webrtc::FileFormats format,
-                                             float volumeScaling));
-  WEBRTC_STUB(StartPlayingFileAsMicrophone, (int channel,
-                                             webrtc::InStream* stream,
-                                             bool mixWithMicrophone,
-                                             webrtc::FileFormats format,
-                                             float volumeScaling));
-  WEBRTC_STUB(StopPlayingFileAsMicrophone, (int channel));
-  WEBRTC_STUB(IsPlayingFileAsMicrophone, (int channel));
-  WEBRTC_STUB(StartRecordingPlayout, (int channel, const char* fileNameUTF8,
-                                      webrtc::CodecInst* compression,
-                                      int maxSizeBytes));
-  WEBRTC_STUB(StartRecordingPlayout, (int channel, webrtc::OutStream* stream,
-                                      webrtc::CodecInst* compression));
-  WEBRTC_STUB(StopRecordingPlayout, (int channel));
-  WEBRTC_FUNC(StartRecordingMicrophone, (const char* fileNameUTF8,
-                                         webrtc::CodecInst* compression,
-                                         int maxSizeBytes)) {
-    return 0;
-  }
-  WEBRTC_FUNC(StartRecordingMicrophone, (webrtc::OutStream* stream,
-                                         webrtc::CodecInst* compression)) {
-    return 0;
-  }
-  WEBRTC_FUNC(StopRecordingMicrophone, ()) {
     return 0;
   }
 

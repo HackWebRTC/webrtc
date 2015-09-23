@@ -47,10 +47,6 @@
 #include "webrtc/common.h"
 #include "webrtc/config.h"
 
-namespace webrtc {
-class VideoEngine;
-}
-
 namespace cricket {
 
 class AudioDeviceModule;
