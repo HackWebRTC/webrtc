@@ -25,33 +25,5 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_MEDIA_BASE_VOICEPROCESSOR_H_
-#define TALK_MEDIA_BASE_VOICEPROCESSOR_H_
-
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/sigslot.h"
-
-namespace cricket {
-
-class AudioFrame;
-
-enum MediaProcessorDirection {
-    MPD_INVALID = 0,
-    MPD_RX = 1 << 0,
-    MPD_TX = 1 << 1,
-    MPD_RX_AND_TX = MPD_RX | MPD_TX,
-};
-
-class VoiceProcessor : public sigslot::has_slots<> {
- public:
-  virtual ~VoiceProcessor() {}
-  // Contents of frame may be manipulated by the processor.
-  // The processed data is expected to be the same size as the
-  // original data.
-  virtual void OnFrame(uint32 ssrc,
-                       MediaProcessorDirection direction,
-                       AudioFrame* frame) = 0;
-};
-
-}  // namespace cricket
-#endif  // TALK_MEDIA_BASE_VOICEPROCESSOR_H_
+// TODO(solenberg): Remove this file once Chromium's libjingle.gyp/.gn are
+//                  updated.

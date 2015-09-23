@@ -53,7 +53,6 @@
       'sources': [
         'media/base/fakecapturemanager.h',
         'media/base/fakemediaengine.h',
-        'media/base/fakemediaprocessor.h',
         'media/base/fakenetworkinterface.h',
         'media/base/fakertp.h',
         'media/base/fakevideocapturer.h',

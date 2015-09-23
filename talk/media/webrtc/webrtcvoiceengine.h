@@ -53,15 +53,13 @@ class AudioDeviceModule;
 class AudioRenderer;
 class VoETraceWrapper;
 class VoEWrapper;
-class VoiceProcessor;
 class WebRtcVoiceMediaChannel;
 
 // WebRtcVoiceEngine is a class to be used with CompositeMediaEngine.
 // It uses the WebRtc VoiceEngine library for audio handling.
 class WebRtcVoiceEngine
     : public webrtc::VoiceEngineObserver,
-      public webrtc::TraceCallback,
-      public webrtc::VoEMediaProcess  {
+      public webrtc::TraceCallback  {
   friend class WebRtcVoiceMediaChannel;
 
  public:
@@ -93,21 +91,6 @@ class WebRtcVoiceEngine
 
   void SetLogging(int min_sev, const char* filter);
 
-  bool RegisterProcessor(uint32 ssrc,
-                         VoiceProcessor* voice_processor,
-                         MediaProcessorDirection direction);
-  bool UnregisterProcessor(uint32 ssrc,
-                           VoiceProcessor* voice_processor,
-                           MediaProcessorDirection direction);
-
-  // Method from webrtc::VoEMediaProcess
-  void Process(int channel,
-               webrtc::ProcessingTypes type,
-               int16_t audio10ms[],
-               size_t length,
-               int sampling_freq,
-               bool is_stereo) override;
-
   // For tracking WebRtc channels. Needed because we have to pause them
   // all when switching devices.
   // May only be called by WebRtcVoiceMediaChannel.
@@ -135,8 +118,6 @@ class WebRtcVoiceEngine
 
  private:
   typedef std::vector<WebRtcVoiceMediaChannel*> ChannelList;
-  typedef sigslot::
-      signal3<uint32, MediaProcessorDirection, AudioFrame*> FrameSignal;
 
   void Construct();
   void ConstructCodecs();
@@ -176,24 +157,10 @@ class WebRtcVoiceEngine
   bool FindChannelAndSsrc(int channel_num,
                           WebRtcVoiceMediaChannel** channel,
                           uint32* ssrc) const;
-  bool FindChannelNumFromSsrc(uint32 ssrc,
-                              MediaProcessorDirection direction,
-                              int* channel_num);
-
-  bool UnregisterProcessorChannel(MediaProcessorDirection channel_direction,
-                                  uint32 ssrc,
-                                  VoiceProcessor* voice_processor,
-                                  MediaProcessorDirection processor_direction);
 
   void StartAecDump(const std::string& filename);
   void StopAecDump();
   int CreateVoiceChannel(VoEWrapper* voe);
-
-  // When a voice processor registers with the engine, it is connected
-  // to either the Rx or Tx signals, based on the direction parameter.
-  // SignalXXMediaFrame will be invoked for every audio packet.
-  FrameSignal SignalRxMediaFrame;
-  FrameSignal SignalTxMediaFrame;
 
   static const int kDefaultLogSeverity = rtc::LS_WARNING;
 
@@ -224,16 +191,6 @@ class WebRtcVoiceEngine
   // can restore the options_ without the option_overrides.
   AudioOptions options_;
   AudioOptions option_overrides_;
-
-  // When the media processor registers with the engine, the ssrc is cached
-  // here so that a look up need not be made when the callback is invoked.
-  // This is necessary because the lookup results in mux_channels_cs lock being
-  // held and if a remote participant leaves the hangout at the same time
-  // we hit a deadlock.
-  uint32 tx_processor_ssrc_;
-  uint32 rx_processor_ssrc_;
-
-  rtc::CriticalSection signal_media_critical_;
 
   // Cache received extended_filter_aec, delay_agnostic_aec and experimental_ns
   // values, and apply them in case they are missing in the audio options. We

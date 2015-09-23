@@ -27,7 +27,6 @@
 
 #include "talk/media/base/capturemanager.h"
 
-#include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "webrtc/base/gunit.h"
@@ -77,7 +76,6 @@ class CaptureManagerTest : public ::testing::Test, public sigslot::has_slots<> {
   }
 
  protected:
-  cricket::FakeMediaProcessor media_processor_;
   cricket::FakeVideoCapturer video_capturer_;
   cricket::FakeVideoRenderer video_renderer_;
 

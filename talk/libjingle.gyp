@@ -480,7 +480,6 @@
         'media/base/videoframefactory.cc',
         'media/base/videoframefactory.h',
         'media/base/videorenderer.h',
-        'media/base/voiceprocessor.h',
         'media/base/yuvframegenerator.cc',
         'media/base/yuvframegenerator.h',
         'media/devices/deviceinfo.h',

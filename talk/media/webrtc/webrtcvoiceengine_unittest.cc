@@ -30,7 +30,6 @@
 #include "webrtc/call.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/fakemediaengine.h"
-#include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakenetworkinterface.h"
 #include "talk/media/base/fakertp.h"
 #include "talk/media/webrtc/fakewebrtccall.h"
@@ -69,7 +68,6 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
                             engine,  // codec
                             engine,  // dtmf
                             engine,  // hw
-                            engine,  // media
                             engine,  // neteq
                             engine,  // network
                             engine,  // rtp
@@ -2601,86 +2599,6 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetPlayoutError) {
   voe_.set_playout_fail_channel(voe_.GetLastChannel() - 1);
   EXPECT_TRUE(channel_->SetPlayout(false));
   EXPECT_FALSE(channel_->SetPlayout(true));
-}
-
-// Test that the Registering/Unregistering with the
-// webrtcvoiceengine works as expected
-TEST_F(WebRtcVoiceEngineTestFake, RegisterVoiceProcessor) {
-  EXPECT_TRUE(SetupEngine());
-  EXPECT_TRUE(channel_->AddRecvStream(
-      cricket::StreamParams::CreateLegacy(kSsrc2)));
-  cricket::FakeMediaProcessor vp_1;
-  cricket::FakeMediaProcessor vp_2;
-
-  EXPECT_FALSE(engine_.RegisterProcessor(kSsrc2, &vp_1, cricket::MPD_TX));
-  EXPECT_TRUE(engine_.RegisterProcessor(kSsrc2, &vp_1, cricket::MPD_RX));
-  EXPECT_TRUE(engine_.RegisterProcessor(kSsrc2, &vp_2, cricket::MPD_RX));
-  voe_.TriggerProcessPacket(cricket::MPD_RX);
-  voe_.TriggerProcessPacket(cricket::MPD_TX);
-
-  EXPECT_TRUE(voe_.IsExternalMediaProcessorRegistered());
-  EXPECT_EQ(1, vp_1.voice_frame_count());
-  EXPECT_EQ(1, vp_2.voice_frame_count());
-
-  EXPECT_TRUE(engine_.UnregisterProcessor(kSsrc2,
-                                          &vp_2,
-                                          cricket::MPD_RX));
-  voe_.TriggerProcessPacket(cricket::MPD_RX);
-  EXPECT_TRUE(voe_.IsExternalMediaProcessorRegistered());
-  EXPECT_EQ(1, vp_2.voice_frame_count());
-  EXPECT_EQ(2, vp_1.voice_frame_count());
-
-  EXPECT_TRUE(engine_.UnregisterProcessor(kSsrc2,
-                                          &vp_1,
-                                          cricket::MPD_RX));
-  voe_.TriggerProcessPacket(cricket::MPD_RX);
-  EXPECT_FALSE(voe_.IsExternalMediaProcessorRegistered());
-  EXPECT_EQ(2, vp_1.voice_frame_count());
-
-  EXPECT_FALSE(engine_.RegisterProcessor(kSsrc1, &vp_1, cricket::MPD_RX));
-  EXPECT_TRUE(engine_.RegisterProcessor(kSsrc1, &vp_1, cricket::MPD_TX));
-  voe_.TriggerProcessPacket(cricket::MPD_RX);
-  voe_.TriggerProcessPacket(cricket::MPD_TX);
-  EXPECT_TRUE(voe_.IsExternalMediaProcessorRegistered());
-  EXPECT_EQ(3, vp_1.voice_frame_count());
-
-  EXPECT_TRUE(engine_.UnregisterProcessor(kSsrc1,
-                                          &vp_1,
-                                          cricket::MPD_RX_AND_TX));
-  voe_.TriggerProcessPacket(cricket::MPD_TX);
-  EXPECT_FALSE(voe_.IsExternalMediaProcessorRegistered());
-  EXPECT_EQ(3, vp_1.voice_frame_count());
-  EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc2));
-  EXPECT_FALSE(engine_.RegisterProcessor(kSsrc2, &vp_1, cricket::MPD_RX));
-  EXPECT_FALSE(voe_.IsExternalMediaProcessorRegistered());
-
-  // Test that we can register a processor on the receive channel on SSRC 0.
-  // This tests the 1:1 case when the receive SSRC is unknown.
-  EXPECT_TRUE(engine_.RegisterProcessor(0, &vp_1, cricket::MPD_RX));
-  voe_.TriggerProcessPacket(cricket::MPD_RX);
-  EXPECT_TRUE(voe_.IsExternalMediaProcessorRegistered());
-  EXPECT_EQ(4, vp_1.voice_frame_count());
-  EXPECT_TRUE(engine_.UnregisterProcessor(0,
-                                          &vp_1,
-                                          cricket::MPD_RX));
-
-  // The following tests test that FindChannelNumFromSsrc is doing
-  // what we expect.
-  // pick an invalid ssrc and make sure we can't register
-  EXPECT_FALSE(engine_.RegisterProcessor(99,
-                                         &vp_1,
-                                         cricket::MPD_RX));
-  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
-  EXPECT_TRUE(engine_.RegisterProcessor(1,
-                                        &vp_1,
-                                        cricket::MPD_RX));
-  EXPECT_TRUE(engine_.UnregisterProcessor(1,
-                                          &vp_1,
-                                          cricket::MPD_RX));
-  EXPECT_FALSE(engine_.RegisterProcessor(1,
-                                         &vp_1,
-                                         cricket::MPD_TX));
-  EXPECT_TRUE(channel_->RemoveRecvStream(1));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {

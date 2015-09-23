@@ -48,7 +48,6 @@ namespace cricket {
 const int kDefaultAudioDelayOffset = 0;
 
 class VoiceChannel;
-class VoiceProcessor;
 
 // ChannelManager allows the MediaEngine to run on a separate thread, and takes
 // care of marshalling calls between threads. It also creates and keeps track of
@@ -174,13 +173,6 @@ class ChannelManager : public rtc::MessageHandler,
   // Gets capturer's supported formats in a thread safe manner
   std::vector<cricket::VideoFormat> GetSupportedFormats(
       VideoCapturer* capturer) const;
-  // The channel manager handles the Tx and Rx side for Voice processing.
-  bool RegisterVoiceProcessor(uint32 ssrc,
-                              VoiceProcessor* processor,
-                              MediaProcessorDirection direction);
-  bool UnregisterVoiceProcessor(uint32 ssrc,
-                                VoiceProcessor* processor,
-                                MediaProcessorDirection direction);
   // The following are done in the new "CaptureManager" style that
   // all local video capturers, processors, and managers should move to.
   // TODO(pthatcher): Make methods nicer by having start return a handle that

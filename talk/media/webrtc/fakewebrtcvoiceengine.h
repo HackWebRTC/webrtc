@@ -34,7 +34,6 @@
 
 #include "talk/media/base/codec.h"
 #include "talk/media/base/rtputils.h"
-#include "talk/media/base/voiceprocessor.h"
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "webrtc/base/basictypes.h"
@@ -187,8 +186,7 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
       public webrtc::VoEBase, public webrtc::VoECodec, public webrtc::VoEDtmf,
-      public webrtc::VoEHardware,
-      public webrtc::VoEExternalMedia, public webrtc::VoENetEqStats,
+      public webrtc::VoEHardware, public webrtc::VoENetEqStats,
       public webrtc::VoENetwork, public webrtc::VoERTP_RTCP,
       public webrtc::VoEVideoSync, public webrtc::VoEVolumeControl {
  public:
@@ -215,7 +213,6 @@ class FakeWebRtcVoiceEngine
           opus_dtx(false),
           red(false),
           nack(false),
-          media_processor_registered(false),
           rx_agc_enabled(false),
           rx_agc_mode(webrtc::kAgcDefault),
           cn8_type(13),
@@ -246,7 +243,6 @@ class FakeWebRtcVoiceEngine
     bool opus_dtx;
     bool red;
     bool nack;
-    bool media_processor_registered;
     bool rx_agc_enabled;
     webrtc::AgcModes rx_agc_mode;
     webrtc::AgcConfig rx_agc_config;
@@ -294,8 +290,7 @@ class FakeWebRtcVoiceEngine
         playout_fail_channel_(-1),
         send_fail_channel_(-1),
         recording_sample_rate_(-1),
-        playout_sample_rate_(-1),
-        media_processor_(NULL) {
+        playout_sample_rate_(-1) {
     memset(&agc_config_, 0, sizeof(agc_config_));
   }
   ~FakeWebRtcVoiceEngine() {
@@ -307,9 +302,6 @@ class FakeWebRtcVoiceEngine
     }
   }
 
-  bool IsExternalMediaProcessorRegistered() const {
-    return media_processor_ != NULL;
-  }
   bool IsInited() const { return inited_; }
   int GetLastChannel() const { return last_channel_; }
   int GetChannelFromLocalSsrc(uint32 local_ssrc) const {
@@ -387,19 +379,6 @@ class FakeWebRtcVoiceEngine
   }
   void set_fail_create_channel(bool fail_create_channel) {
     fail_create_channel_ = fail_create_channel;
-  }
-  void TriggerProcessPacket(MediaProcessorDirection direction) {
-    webrtc::ProcessingTypes pt =
-        (direction == cricket::MPD_TX) ?
-            webrtc::kRecordingPerChannel : webrtc::kPlaybackAllChannelsMixed;
-    if (media_processor_ != NULL) {
-      media_processor_->Process(0,
-                                pt,
-                                NULL,
-                                0,
-                                0,
-                                true);
-    }
   }
   int AddChannel(const webrtc::Config& config) {
     if (fail_create_channel_) {
@@ -1101,31 +1080,6 @@ class FakeWebRtcVoiceEngine
     return (dtmf_info_.dtmf_event_code == event_code &&
             dtmf_info_.dtmf_length_ms == length_ms);
   }
-  // webrtc::VoEExternalMedia
-  WEBRTC_FUNC(RegisterExternalMediaProcessing,
-              (int channel, webrtc::ProcessingTypes type,
-               webrtc::VoEMediaProcess& processObject)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    if (channels_[channel]->media_processor_registered) {
-      return -1;
-    }
-    channels_[channel]->media_processor_registered = true;
-    media_processor_ = &processObject;
-    return 0;
-  }
-  WEBRTC_FUNC(DeRegisterExternalMediaProcessing,
-              (int channel, webrtc::ProcessingTypes type)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    if (!channels_[channel]->media_processor_registered) {
-      return -1;
-    }
-    channels_[channel]->media_processor_registered = false;
-    media_processor_ = NULL;
-    return 0;
-  }
-  WEBRTC_STUB(GetAudioFrame, (int channel, int desired_sample_rate_hz,
-                              webrtc::AudioFrame* frame));
-  WEBRTC_STUB(SetExternalMixing, (int channel, bool enable));
   int GetNetEqCapacity() const {
     auto ch = channels_.find(last_channel_);
     ASSERT(ch != channels_.end());
@@ -1199,7 +1153,6 @@ class FakeWebRtcVoiceEngine
   int recording_sample_rate_;
   int playout_sample_rate_;
   DtmfInfo dtmf_info_;
-  webrtc::VoEMediaProcess* media_processor_;
   FakeAudioProcessing audio_processing_;
 };
 

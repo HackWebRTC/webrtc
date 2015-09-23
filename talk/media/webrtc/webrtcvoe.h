@@ -96,7 +96,7 @@ class VoEWrapper {
   VoEWrapper()
       : engine_(webrtc::VoiceEngine::Create()), processing_(engine_),
         base_(engine_), codec_(engine_), dtmf_(engine_),
-        hw_(engine_), media_(engine_), neteq_(engine_), network_(engine_),
+        hw_(engine_), neteq_(engine_), network_(engine_),
         rtp_(engine_), sync_(engine_), volume_(engine_) {
   }
   VoEWrapper(webrtc::VoEAudioProcessing* processing,
@@ -104,7 +104,6 @@ class VoEWrapper {
              webrtc::VoECodec* codec,
              webrtc::VoEDtmf* dtmf,
              webrtc::VoEHardware* hw,
-             webrtc::VoEExternalMedia* media,
              webrtc::VoENetEqStats* neteq,
              webrtc::VoENetwork* network,
              webrtc::VoERTP_RTCP* rtp,
@@ -116,7 +115,6 @@ class VoEWrapper {
         codec_(codec),
         dtmf_(dtmf),
         hw_(hw),
-        media_(media),
         neteq_(neteq),
         network_(network),
         rtp_(rtp),
@@ -130,7 +128,6 @@ class VoEWrapper {
   webrtc::VoECodec* codec() const { return codec_.get(); }
   webrtc::VoEDtmf* dtmf() const { return dtmf_.get(); }
   webrtc::VoEHardware* hw() const { return hw_.get(); }
-  webrtc::VoEExternalMedia* media() const { return media_.get(); }
   webrtc::VoENetEqStats* neteq() const { return neteq_.get(); }
   webrtc::VoENetwork* network() const { return network_.get(); }
   webrtc::VoERTP_RTCP* rtp() const { return rtp_.get(); }
@@ -145,7 +142,6 @@ class VoEWrapper {
   scoped_voe_ptr<webrtc::VoECodec> codec_;
   scoped_voe_ptr<webrtc::VoEDtmf> dtmf_;
   scoped_voe_ptr<webrtc::VoEHardware> hw_;
-  scoped_voe_ptr<webrtc::VoEExternalMedia> media_;
   scoped_voe_ptr<webrtc::VoENetEqStats> neteq_;
   scoped_voe_ptr<webrtc::VoENetwork> network_;
   scoped_voe_ptr<webrtc::VoERTP_RTCP> rtp_;

@@ -129,14 +129,6 @@ class MediaEngineInterface {
 
   // Starts AEC dump using existing file.
   virtual bool StartAecDump(rtc::PlatformFile file) = 0;
-
-  // Voice processors for effects.
-  virtual bool RegisterVoiceProcessor(uint32 ssrc,
-                                      VoiceProcessor* video_processor,
-                                      MediaProcessorDirection direction) = 0;
-  virtual bool UnregisterVoiceProcessor(uint32 ssrc,
-                                        VoiceProcessor* video_processor,
-                                        MediaProcessorDirection direction) = 0;
 };
 
 
@@ -241,17 +233,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
     return voice_.StartAecDump(file);
   }
 
-  virtual bool RegisterVoiceProcessor(uint32 ssrc,
-                                      VoiceProcessor* processor,
-                                      MediaProcessorDirection direction) {
-    return voice_.RegisterProcessor(ssrc, processor, direction);
-  }
-  virtual bool UnregisterVoiceProcessor(uint32 ssrc,
-                                        VoiceProcessor* processor,
-                                        MediaProcessorDirection direction) {
-    return voice_.UnregisterProcessor(ssrc, processor, direction);
-  }
-
  protected:
   VOICE voice_;
   VIDEO video_;
@@ -286,12 +267,6 @@ class NullVoiceEngine {
   }
   void SetLogging(int min_sev, const char* filter) {}
   bool StartAecDump(rtc::PlatformFile file) { return false; }
-  bool RegisterProcessor(uint32 ssrc,
-                         VoiceProcessor* voice_processor,
-                         MediaProcessorDirection direction) { return true; }
-  bool UnregisterProcessor(uint32 ssrc,
-                           VoiceProcessor* voice_processor,
-                           MediaProcessorDirection direction) { return true; }
 
  private:
   std::vector<AudioCodec> codecs_;

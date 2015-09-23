@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <vector>
 
-#include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/testutils.h"

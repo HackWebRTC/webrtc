@@ -744,24 +744,6 @@ void ChannelManager::GetSupportedFormats_w(
     *out_formats = *formats;
 }
 
-bool ChannelManager::RegisterVoiceProcessor(
-    uint32 ssrc,
-    VoiceProcessor* processor,
-    MediaProcessorDirection direction) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&MediaEngineInterface::RegisterVoiceProcessor, media_engine_.get(),
-           ssrc, processor, direction));
-}
-
-bool ChannelManager::UnregisterVoiceProcessor(
-    uint32 ssrc,
-    VoiceProcessor* processor,
-    MediaProcessorDirection direction) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&MediaEngineInterface::UnregisterVoiceProcessor,
-           media_engine_.get(), ssrc, processor, direction));
-}
-
 // The following are done in the new "CaptureManager" style that
 // all local video capturers, processors, and managers should move
 // to.

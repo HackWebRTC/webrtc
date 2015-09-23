@@ -25,37 +25,5 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_MEDIA_BASE_FAKEMEDIAPROCESSOR_H_
-#define TALK_MEDIA_BASE_FAKEMEDIAPROCESSOR_H_
-
-#include "talk/media/base/voiceprocessor.h"
-
-namespace cricket {
-
-class AudioFrame;
-
-class FakeMediaProcessor : public VoiceProcessor {
- public:
-  FakeMediaProcessor()
-      : voice_frame_count_(0) {
-  }
-  virtual ~FakeMediaProcessor() {}
-
-  virtual void OnFrame(uint32 ssrc,
-                       MediaProcessorDirection direction,
-                       AudioFrame* frame) {
-    ++voice_frame_count_;
-  }
-  virtual void OnVoiceMute(uint32 ssrc, bool muted) {}
-  virtual void OnVideoMute(uint32 ssrc, bool muted) {}
-
-  int voice_frame_count() const { return voice_frame_count_; }
-
- private:
-  // TODO(janahan): make is a map so that we can multiple ssrcs
-  int voice_frame_count_;
-};
-
-}  // namespace cricket
-
-#endif  // TALK_MEDIA_BASE_FAKEMEDIAPROCESSOR_H_
+// TODO(solenberg): Remove this file once Chromium's libjingle.gyp/.gn are
+//                  updated.

@@ -771,9 +771,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
  public:
   FakeVoiceEngine()
       : output_volume_(-1),
-        delay_offset_(0),
-        rx_processor_(NULL),
-        tx_processor_(NULL) {
+        delay_offset_(0) {
     // Add a fake audio codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1, 0));
@@ -838,32 +836,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
   bool StartAecDump(rtc::PlatformFile file) { return false; }
 
-  bool RegisterProcessor(uint32 ssrc, VoiceProcessor* voice_processor,
-                         MediaProcessorDirection direction) {
-    if (direction == MPD_RX) {
-      rx_processor_ = voice_processor;
-      return true;
-    } else if (direction == MPD_TX) {
-      tx_processor_ = voice_processor;
-      return true;
-    }
-    return false;
-  }
-
-  bool UnregisterProcessor(uint32 ssrc, VoiceProcessor* voice_processor,
-                           MediaProcessorDirection direction) {
-    bool unregistered = false;
-    if (direction & MPD_RX) {
-      rx_processor_ = NULL;
-      unregistered = true;
-    }
-    if (direction & MPD_TX) {
-      tx_processor_ = NULL;
-      unregistered = true;
-    }
-    return unregistered;
-  }
-
  private:
   std::vector<FakeVoiceMediaChannel*> channels_;
   std::vector<AudioCodec> codecs_;
@@ -871,8 +843,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
   int delay_offset_;
   std::string in_device_;
   std::string out_device_;
-  VoiceProcessor* rx_processor_;
-  VoiceProcessor* tx_processor_;
   AudioOptions options_;
 
   friend class FakeMediaEngine;
@@ -1004,14 +974,6 @@ class FakeMediaEngine :
   void set_fail_create_channel(bool fail) {
     voice_.set_fail_create_channel(fail);
     video_.set_fail_create_channel(fail);
-  }
-  bool voice_processor_registered(MediaProcessorDirection direction) const {
-    if (direction == MPD_RX) {
-      return voice_.rx_processor_ != NULL;
-    } else if (direction == MPD_TX) {
-      return voice_.tx_processor_ != NULL;
-    }
-    return false;
   }
 };
 

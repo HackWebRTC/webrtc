@@ -42,7 +42,6 @@
 #include "talk/media/base/audiorenderer.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
-#include "talk/media/base/voiceprocessor.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/byteorder.h"
@@ -368,9 +367,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine()
       tracing_(new VoETraceWrapper()),
       adm_(NULL),
       log_filter_(SeverityToFilter(kDefaultLogSeverity)),
-      is_dumping_aec_(false),
-      tx_processor_ssrc_(0),
-      rx_processor_ssrc_(0) {
+      is_dumping_aec_(false) {
   Construct();
 }
 
@@ -380,9 +377,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper,
       tracing_(tracing),
       adm_(NULL),
       log_filter_(SeverityToFilter(kDefaultLogSeverity)),
-      is_dumping_aec_(false),
-      tx_processor_ssrc_(0),
-      rx_processor_ssrc_(0) {
+      is_dumping_aec_(false) {
   Construct();
 }
 
@@ -489,10 +484,6 @@ WebRtcVoiceEngine::~WebRtcVoiceEngine() {
     adm_->Release();
     adm_ = NULL;
   }
-
-  // Test to see if the media processor was deregistered properly
-  RTC_DCHECK(SignalRxMediaFrame.is_empty());
-  RTC_DCHECK(SignalTxMediaFrame.is_empty());
 
   tracing_->SetTraceCallback(NULL);
 }
@@ -1277,31 +1268,6 @@ bool WebRtcVoiceEngine::FindChannelAndSsrc(
   return false;
 }
 
-// This method will search through the WebRtcVoiceMediaChannels and
-// obtain the voice engine's channel number.
-bool WebRtcVoiceEngine::FindChannelNumFromSsrc(
-    uint32 ssrc, MediaProcessorDirection direction, int* channel_num) {
-  RTC_DCHECK(channel_num != NULL);
-  RTC_DCHECK(direction == MPD_RX || direction == MPD_TX);
-
-  *channel_num = -1;
-  // Find corresponding channel for ssrc.
-  for (const WebRtcVoiceMediaChannel* ch : channels_) {
-    RTC_DCHECK(ch != NULL);
-    if (direction & MPD_RX) {
-      *channel_num = ch->GetReceiveChannelNum(ssrc);
-    }
-    if (*channel_num == -1 && (direction & MPD_TX)) {
-      *channel_num = ch->GetSendChannelNum(ssrc);
-    }
-    if (*channel_num != -1) {
-      return true;
-    }
-  }
-  LOG(LS_WARNING) << "FindChannelFromSsrc. No Channel Found for Ssrc: " << ssrc;
-  return false;
-}
-
 void WebRtcVoiceEngine::RegisterChannel(WebRtcVoiceMediaChannel *channel) {
   rtc::CritScope lock(&channels_cs_);
   channels_.push_back(channel);
@@ -1368,158 +1334,6 @@ bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file) {
   }
   is_dumping_aec_ = true;
   return true;
-}
-
-bool WebRtcVoiceEngine::RegisterProcessor(
-    uint32 ssrc,
-    VoiceProcessor* voice_processor,
-    MediaProcessorDirection direction) {
-  bool register_with_webrtc = false;
-  int channel_id = -1;
-  bool success = false;
-  uint32* processor_ssrc = NULL;
-  bool found_channel = FindChannelNumFromSsrc(ssrc, direction, &channel_id);
-  if (voice_processor == NULL || !found_channel) {
-    LOG(LS_WARNING) << "Media Processing Registration Failed. ssrc: " << ssrc
-        << " foundChannel: " << found_channel;
-    return false;
-  }
-
-  webrtc::ProcessingTypes processing_type;
-  {
-    rtc::CritScope cs(&signal_media_critical_);
-    if (direction == MPD_RX) {
-      processing_type = webrtc::kPlaybackAllChannelsMixed;
-      if (SignalRxMediaFrame.is_empty()) {
-        register_with_webrtc = true;
-        processor_ssrc = &rx_processor_ssrc_;
-      }
-      SignalRxMediaFrame.connect(voice_processor,
-                                 &VoiceProcessor::OnFrame);
-    } else {
-      processing_type = webrtc::kRecordingPerChannel;
-      if (SignalTxMediaFrame.is_empty()) {
-        register_with_webrtc = true;
-        processor_ssrc = &tx_processor_ssrc_;
-      }
-      SignalTxMediaFrame.connect(voice_processor,
-                                 &VoiceProcessor::OnFrame);
-    }
-  }
-  if (register_with_webrtc) {
-    // TODO(janahan): when registering consider instantiating a
-    // a VoeMediaProcess object and not make the engine extend the interface.
-    if (voe()->media() && voe()->media()->
-        RegisterExternalMediaProcessing(channel_id,
-                                        processing_type,
-                                        *this) != -1) {
-      LOG(LS_INFO) << "Media Processing Registration Succeeded. channel:"
-                   << channel_id;
-      *processor_ssrc = ssrc;
-      success = true;
-    } else {
-      LOG_RTCERR2(RegisterExternalMediaProcessing,
-                  channel_id,
-                  processing_type);
-      success = false;
-    }
-  } else {
-    // If we don't have to register with the engine, we just needed to
-    // connect a new processor, set success to true;
-    success = true;
-  }
-  return success;
-}
-
-bool WebRtcVoiceEngine::UnregisterProcessorChannel(
-    MediaProcessorDirection channel_direction,
-    uint32 ssrc,
-    VoiceProcessor* voice_processor,
-    MediaProcessorDirection processor_direction) {
-  bool success = true;
-  FrameSignal* signal;
-  webrtc::ProcessingTypes processing_type;
-  uint32* processor_ssrc = NULL;
-  if (channel_direction == MPD_RX) {
-    signal = &SignalRxMediaFrame;
-    processing_type = webrtc::kPlaybackAllChannelsMixed;
-    processor_ssrc = &rx_processor_ssrc_;
-  } else {
-    signal = &SignalTxMediaFrame;
-    processing_type = webrtc::kRecordingPerChannel;
-    processor_ssrc = &tx_processor_ssrc_;
-  }
-
-  int deregister_id = -1;
-  {
-    rtc::CritScope cs(&signal_media_critical_);
-    if ((processor_direction & channel_direction) != 0 && !signal->is_empty()) {
-      signal->disconnect(voice_processor);
-      int channel_id = -1;
-      bool found_channel = FindChannelNumFromSsrc(ssrc,
-                                                  channel_direction,
-                                                  &channel_id);
-      if (signal->is_empty() && found_channel) {
-        deregister_id = channel_id;
-      }
-    }
-  }
-  if (deregister_id != -1) {
-    if (voe()->media() &&
-        voe()->media()->DeRegisterExternalMediaProcessing(deregister_id,
-        processing_type) != -1) {
-      *processor_ssrc = 0;
-      LOG(LS_INFO) << "Media Processing DeRegistration Succeeded. channel:"
-                   << deregister_id;
-    } else {
-      LOG_RTCERR2(DeRegisterExternalMediaProcessing,
-                  deregister_id,
-                  processing_type);
-      success = false;
-    }
-  }
-  return success;
-}
-
-bool WebRtcVoiceEngine::UnregisterProcessor(
-    uint32 ssrc,
-    VoiceProcessor* voice_processor,
-    MediaProcessorDirection direction) {
-  bool success = true;
-  if (voice_processor == NULL) {
-    LOG(LS_WARNING) << "Media Processing Deregistration Failed. ssrc: "
-                    << ssrc;
-    return false;
-  }
-  if (!UnregisterProcessorChannel(MPD_RX, ssrc, voice_processor, direction)) {
-    success = false;
-  }
-  if (!UnregisterProcessorChannel(MPD_TX, ssrc, voice_processor, direction)) {
-    success = false;
-  }
-  return success;
-}
-
-// Implementing method from WebRtc VoEMediaProcess interface
-// Do not lock mux_channel_cs_ in this callback.
-void WebRtcVoiceEngine::Process(int channel,
-                                webrtc::ProcessingTypes type,
-                                int16_t audio10ms[],
-                                size_t length,
-                                int sampling_freq,
-                                bool is_stereo) {
-    rtc::CritScope cs(&signal_media_critical_);
-    AudioFrame frame(audio10ms, length, sampling_freq, is_stereo);
-    if (type == webrtc::kPlaybackAllChannelsMixed) {
-      SignalRxMediaFrame(rx_processor_ssrc_, MPD_RX, &frame);
-    } else if (type == webrtc::kRecordingPerChannel) {
-      SignalTxMediaFrame(tx_processor_ssrc_, MPD_TX, &frame);
-    } else {
-      LOG(LS_WARNING) << "Media Processing invoked unexpectedly."
-                      << " channel: " << channel << " type: " << type
-                      << " tx_ssrc: " << tx_processor_ssrc_
-                      << " rx_ssrc: " << rx_processor_ssrc_;
-    }
 }
 
 void WebRtcVoiceEngine::StartAecDump(const std::string& filename) {

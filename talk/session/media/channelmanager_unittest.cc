@@ -28,7 +28,6 @@
 #include "talk/app/webrtc/mediacontroller.h"
 #include "talk/media/base/fakecapturemanager.h"
 #include "talk/media/base/fakemediaengine.h"
-#include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/devices/fakedevicemanager.h"
 #include "talk/media/webrtc/fakewebrtccall.h"
@@ -527,45 +526,6 @@ TEST_F(ChannelManagerTest, SetLogging) {
   EXPECT_STREQ("test-voice", fme_->voice_logfilter().c_str());
   EXPECT_EQ(rtc::LS_VERBOSE, fme_->video_loglevel());
   EXPECT_STREQ("test-video", fme_->video_logfilter().c_str());
-}
-
-// Test that the Video/Voice Processors register and unregister
-TEST_F(ChannelManagerTest, RegisterProcessors) {
-  cricket::FakeMediaProcessor fmp;
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_TX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_RX));
-
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_TX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_RX));
-
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_TX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_RX));
-
-  EXPECT_TRUE(cm_->RegisterVoiceProcessor(1,
-                                          &fmp,
-                                          cricket::MPD_RX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_TX));
-  EXPECT_TRUE(fme_->voice_processor_registered(cricket::MPD_RX));
-
-
-  EXPECT_TRUE(cm_->UnregisterVoiceProcessor(1,
-                                            &fmp,
-                                            cricket::MPD_RX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_TX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_RX));
-
-  EXPECT_TRUE(cm_->RegisterVoiceProcessor(1,
-                                          &fmp,
-                                          cricket::MPD_TX));
-  EXPECT_TRUE(fme_->voice_processor_registered(cricket::MPD_TX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_RX));
-
-  EXPECT_TRUE(cm_->UnregisterVoiceProcessor(1,
-                                            &fmp,
-                                            cricket::MPD_TX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_TX));
-  EXPECT_FALSE(fme_->voice_processor_registered(cricket::MPD_RX));
 }
 
 TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
