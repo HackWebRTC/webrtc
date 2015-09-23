@@ -75,6 +75,8 @@ class VideoQualityTest : public test::CallTest {
                       newapi::Transport* recv_transport);
   void SetupScreenshare(const Params& params);
 
+  // We need a more general capturer than the FrameGeneratorCapturer.
+  rtc::scoped_ptr<test::VideoCapturer> capturer_;
   rtc::scoped_ptr<test::TraceToStderr> trace_to_stderr_;
   rtc::scoped_ptr<test::FrameGenerator> frame_generator_;
   rtc::scoped_ptr<VideoEncoder> encoder_;

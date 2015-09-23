@@ -694,22 +694,22 @@ void VideoQualityTest::SetupScreenshare(const Params& params) {
 void VideoQualityTest::CreateCapturer(const Params& params,
                                       VideoCaptureInput* input) {
   if (params.screenshare.enabled) {
-    frame_generator_capturer_.reset(new test::FrameGeneratorCapturer(
-        clock_, input, frame_generator_.release(), params.common.fps));
-    EXPECT_TRUE(frame_generator_capturer_->Init());
+    test::FrameGeneratorCapturer *frame_generator_capturer =
+        new test::FrameGeneratorCapturer(
+            clock_, input, frame_generator_.release(), params.common.fps);
+    EXPECT_TRUE(frame_generator_capturer->Init());
+    capturer_.reset(frame_generator_capturer);
   } else {
     if (params.video.clip_name.empty()) {
-      frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
+      capturer_.reset(test::VideoCapturer::Create(
           input, params.common.width, params.common.height, params.common.fps,
           clock_));
-      EXPECT_TRUE(frame_generator_capturer_->Init());
     } else {
-      frame_generator_capturer_.reset(
-          test::FrameGeneratorCapturer::CreateFromYuvFile(
-              input, test::ResourcePath(params.video.clip_name, "yuv"),
-              params.common.width, params.common.height, params.common.fps,
-              clock_));
-      ASSERT_TRUE(frame_generator_capturer_.get() != nullptr)
+      capturer_.reset(test::FrameGeneratorCapturer::CreateFromYuvFile(
+          input, test::ResourcePath(params.video.clip_name, "yuv"),
+          params.common.width, params.common.height, params.common.fps,
+          clock_));
+      ASSERT_TRUE(capturer_.get() != nullptr)
           << "Could not create capturer for " << params.video.clip_name
           << ".yuv. Is this resource file present?";
     }
@@ -762,14 +762,20 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   analyzer.input_ = send_stream_->Input();
   analyzer.send_stream_ = send_stream_;
 
-  Start();
+  send_stream_->Start();
+  for (size_t i = 0; i < receive_streams_.size(); ++i)
+    receive_streams_[i]->Start();
+  capturer_->Start();
 
   analyzer.Wait();
 
   send_transport.StopSending();
   recv_transport.StopSending();
 
-  Stop();
+  capturer_->Stop();
+  for (size_t i = 0; i < receive_streams_.size(); ++i)
+    receive_streams_[i]->Stop();
+  send_stream_->Stop();
 
   DestroyStreams();
 
@@ -816,11 +822,11 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
 
   receive_stream->Start();
   send_stream_->Start();
-  frame_generator_capturer_->Start();
+  capturer_->Start();
 
   test::PressEnterToContinue();
 
-  frame_generator_capturer_->Stop();
+  capturer_->Stop();
   send_stream_->Stop();
   receive_stream->Stop();
 
