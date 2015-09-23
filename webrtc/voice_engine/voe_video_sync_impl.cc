@@ -45,9 +45,6 @@ VoEVideoSyncImpl::~VoEVideoSyncImpl() {
 
 int VoEVideoSyncImpl::GetPlayoutTimestamp(int channel,
                                           unsigned int& timestamp) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetPlayoutTimestamp(channel=%d, timestamp=?)", channel);
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -141,9 +138,6 @@ int VoEVideoSyncImpl::SetInitialPlayoutDelay(int channel, int delay_ms) {
 int VoEVideoSyncImpl::GetDelayEstimate(int channel,
                                        int* jitter_buffer_delay_ms,
                                        int* playout_buffer_delay_ms) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetDelayEstimate(channel=%d, delayMs=?)", channel);
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -163,9 +157,6 @@ int VoEVideoSyncImpl::GetDelayEstimate(int channel,
 }
 
 int VoEVideoSyncImpl::GetPlayoutBufferSize(int& bufferMs) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetPlayoutBufferSize(bufferMs=?)");
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -178,17 +169,12 @@ int VoEVideoSyncImpl::GetPlayoutBufferSize(int& bufferMs) {
     return -1;
   }
   bufferMs = sizeMS;
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetPlayoutBufferSize() => bufferMs=%d", bufferMs);
   return 0;
 }
 
 int VoEVideoSyncImpl::GetRtpRtcp(int channel,
                                  RtpRtcp** rtpRtcpModule,
                                  RtpReceiver** rtp_receiver) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRtpRtcp(channel=%i)", channel);
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -204,9 +190,6 @@ int VoEVideoSyncImpl::GetRtpRtcp(int channel,
 }
 
 int VoEVideoSyncImpl::GetLeastRequiredDelayMs(int channel) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetLeastRequiredDelayMS(channel=%d)", channel);
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;

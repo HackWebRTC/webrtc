@@ -45,20 +45,12 @@ VoECodecImpl::~VoECodecImpl() {
 }
 
 int VoECodecImpl::NumOfCodecs() {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "NumOfCodecs()");
-
   // Number of supported codecs in the ACM
   uint8_t nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
-
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "NumOfCodecs() => %u", nSupportedCodecs);
   return (nSupportedCodecs);
 }
 
 int VoECodecImpl::GetCodec(int index, CodecInst& codec) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetCodec(index=%d, codec=?)", index);
   CodecInst acmCodec;
   if (AudioCodingModule::Codec(index, &acmCodec) == -1) {
     _shared->SetLastError(VE_INVALID_LISTNR, kTraceError,
@@ -66,11 +58,6 @@ int VoECodecImpl::GetCodec(int index, CodecInst& codec) {
     return -1;
   }
   ACMToExternalCodecRepresentation(codec, acmCodec);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetCodec() => plname=%s, pacsize=%d, plfreq=%d, pltype=%d, "
-               "channels=%d, rate=%d",
-               codec.plname, codec.pacsize, codec.plfreq, codec.pltype,
-               codec.channels, codec.rate);
   return 0;
 }
 
@@ -130,8 +117,6 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec) {
 }
 
 int VoECodecImpl::GetSendCodec(int channel, CodecInst& codec) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetSendCodec(channel=%d, codec=?)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -150,11 +135,6 @@ int VoECodecImpl::GetSendCodec(int channel, CodecInst& codec) {
     return -1;
   }
   ACMToExternalCodecRepresentation(codec, acmCodec);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetSendCodec() => plname=%s, pacsize=%d, plfreq=%d, "
-               "channels=%d, rate=%d",
-               codec.plname, codec.pacsize, codec.plfreq, codec.channels,
-               codec.rate);
   return 0;
 }
 
@@ -171,8 +151,6 @@ int VoECodecImpl::SetBitRate(int channel, int bitrate_bps) {
 }
 
 int VoECodecImpl::GetRecCodec(int channel, CodecInst& codec) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRecCodec(channel=%d, codec=?)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -186,16 +164,9 @@ int VoECodecImpl::GetRecCodec(int channel, CodecInst& codec) {
   }
   CodecInst acmCodec;
   if (channelPtr->GetRecCodec(acmCodec) != 0) {
-    _shared->SetLastError(VE_CANNOT_GET_REC_CODEC, kTraceError,
-                          "GetRecCodec() failed to get received codec");
     return -1;
   }
   ACMToExternalCodecRepresentation(codec, acmCodec);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRecCodec() => plname=%s, pacsize=%d, plfreq=%d, "
-               "channels=%d, rate=%d",
-               codec.plname, codec.pacsize, codec.plfreq, codec.channels,
-               codec.rate);
   return 0;
 }
 
@@ -222,8 +193,6 @@ int VoECodecImpl::SetRecPayloadType(int channel, const CodecInst& codec) {
 }
 
 int VoECodecImpl::GetRecPayloadType(int channel, CodecInst& codec) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRecPayloadType(channel=%d, codec)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -290,8 +259,6 @@ int VoECodecImpl::SetFECStatus(int channel, bool enable) {
 }
 
 int VoECodecImpl::GetFECStatus(int channel, bool& enabled) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetCodecFECStatus(channel=%d)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -349,9 +316,6 @@ int VoECodecImpl::GetVADStatus(int channel,
                                bool& enabled,
                                VadModes& mode,
                                bool& disabledDTX) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetVADStatus(channel=%i)", channel);
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;

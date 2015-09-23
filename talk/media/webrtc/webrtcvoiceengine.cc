@@ -1182,34 +1182,6 @@ void WebRtcVoiceEngine::SetTraceOptions(const std::string& options) {
   }
 }
 
-// Ignore spammy trace messages, mostly from the stats API when we haven't
-// gotten RTCP info yet from the remote side.
-bool WebRtcVoiceEngine::ShouldIgnoreTrace(const std::string& trace) {
-  static const char* kTracesToIgnore[] = {
-    "\tfailed to GetReportBlockInformation",
-    "GetRecCodec() failed to get received codec",
-    "GetReceivedRtcpStatistics: Could not get received RTP statistics",
-    "GetRemoteRTCPData() failed to measure statistics due to lack of received RTP and/or RTCP packets",  // NOLINT
-    "GetRemoteRTCPData() failed to retrieve sender info for remote side",
-    "GetRTPStatistics() failed to measure RTT since no RTP packets have been received yet",  // NOLINT
-    "GetRTPStatistics() failed to read RTP statistics from the RTP/RTCP module",
-    "GetRTPStatistics() failed to retrieve RTT from the RTP/RTCP module",
-    "SenderInfoReceived No received SR",
-    "StatisticsRTP() no statistics available",
-    "TransmitMixer::TypingDetection() VE_TYPING_NOISE_WARNING message has been posted",  // NOLINT
-    "TransmitMixer::TypingDetection() pending noise-saturation warning exists",  // NOLINT
-    "GetRecPayloadType() failed to retrieve RX payload type (error=10026)", // NOLINT
-    "StopPlayingFileAsMicrophone() isnot playing (error=8088)",
-    NULL
-  };
-  for (const char* const* p = kTracesToIgnore; *p; ++p) {
-    if (trace.find(*p) != std::string::npos) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void WebRtcVoiceEngine::Print(webrtc::TraceLevel level, const char* trace,
                               int length) {
   rtc::LoggingSeverity sev = rtc::LS_VERBOSE;
@@ -1229,9 +1201,7 @@ void WebRtcVoiceEngine::Print(webrtc::TraceLevel level, const char* trace,
     LOG_V(sev) << msg;
   } else {
     std::string msg(trace + 71, length - 72);
-    if (!ShouldIgnoreTrace(msg)) {
-      LOG_V(sev) << "webrtc: " << msg;
-    }
+    LOG_V(sev) << "webrtc: " << msg;
   }
 }
 

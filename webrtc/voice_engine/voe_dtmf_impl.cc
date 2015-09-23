@@ -150,8 +150,6 @@ int VoEDtmfImpl::SetSendTelephoneEventPayloadType(int channel,
 
 int VoEDtmfImpl::GetSendTelephoneEventPayloadType(int channel,
                                                   unsigned char& type) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetSendTelephoneEventPayloadType(channel=%d)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -208,17 +206,10 @@ int VoEDtmfImpl::SetDtmfFeedbackStatus(bool enable, bool directFeedback) {
 }
 
 int VoEDtmfImpl::GetDtmfFeedbackStatus(bool& enabled, bool& directFeedback) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetDtmfFeedbackStatus()");
-
   CriticalSectionScoped sc(_shared->crit_sec());
 
   enabled = _dtmfFeedback;
   directFeedback = _dtmfDirectFeedback;
-
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetDtmfFeedbackStatus() => enabled=%d, directFeedback=%d",
-               enabled, directFeedback);
   return 0;
 }
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_DTMF_API

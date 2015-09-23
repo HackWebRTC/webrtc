@@ -645,9 +645,6 @@ int TransmitMixer::StopPlayingFileAsMicrophone()
 
     if (!_filePlaying)
     {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceWarning,
-            "StopPlayingFileAsMicrophone() isnot playing");
         return 0;
     }
 

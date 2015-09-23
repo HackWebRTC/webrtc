@@ -47,9 +47,6 @@ VoENetEqStatsImpl::~VoENetEqStatsImpl() {
 
 int VoENetEqStatsImpl::GetNetworkStatistics(int channel,
                                             NetworkStatistics& stats) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetNetworkStatistics(channel=%d, stats=?)", channel);
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;

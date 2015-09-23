@@ -124,8 +124,6 @@ int VoEFileImpl::StopPlayingFileLocally(int channel) {
 }
 
 int VoEFileImpl::IsPlayingFileLocally(int channel) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "IsPlayingFileLocally(channel=%d)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;

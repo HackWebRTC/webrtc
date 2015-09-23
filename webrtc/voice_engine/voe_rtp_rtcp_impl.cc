@@ -63,8 +63,6 @@ int VoERTP_RTCPImpl::SetLocalSSRC(int channel, unsigned int ssrc) {
 }
 
 int VoERTP_RTCPImpl::GetLocalSSRC(int channel, unsigned int& ssrc) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetLocalSSRC(channel=%d, ssrc=?)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -80,8 +78,6 @@ int VoERTP_RTCPImpl::GetLocalSSRC(int channel, unsigned int& ssrc) {
 }
 
 int VoERTP_RTCPImpl::GetRemoteSSRC(int channel, unsigned int& ssrc) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRemoteSSRC(channel=%d, ssrc=?)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -243,8 +239,6 @@ int VoERTP_RTCPImpl::SetRTCPStatus(int channel, bool enable) {
 }
 
 int VoERTP_RTCPImpl::GetRTCPStatus(int channel, bool& enabled) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRTCPStatus(channel=%d)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -277,8 +271,6 @@ int VoERTP_RTCPImpl::SetRTCP_CNAME(int channel, const char cName[256]) {
 }
 
 int VoERTP_RTCPImpl::GetRemoteRTCP_CNAME(int channel, char cName[256]) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRemoteRTCP_CNAME(channel=%d, cName=?)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -302,8 +294,6 @@ int VoERTP_RTCPImpl::GetRemoteRTCPData(
     unsigned int* jitter,            // from report block 1 in SR/RR
     unsigned short* fractionLost)    // from report block 1 in SR/RR
 {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRemoteRTCPData(channel=%d,...)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -323,8 +313,6 @@ int VoERTP_RTCPImpl::GetRTPStatistics(int channel,
                                       unsigned int& averageJitterMs,
                                       unsigned int& maxJitterMs,
                                       unsigned int& discardedPackets) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRTPStatistics(channel=%d,....)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -341,8 +329,6 @@ int VoERTP_RTCPImpl::GetRTPStatistics(int channel,
 }
 
 int VoERTP_RTCPImpl::GetRTCPStatistics(int channel, CallStatistics& stats) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRTCPStatistics(channel=%d)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -359,8 +345,6 @@ int VoERTP_RTCPImpl::GetRTCPStatistics(int channel, CallStatistics& stats) {
 
 int VoERTP_RTCPImpl::GetRemoteRTCPReportBlocks(
     int channel, std::vector<ReportBlock>* report_blocks) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRemoteRTCPReportBlocks(channel=%d)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -405,9 +389,6 @@ int VoERTP_RTCPImpl::SetREDStatus(int channel,
 int VoERTP_RTCPImpl::GetREDStatus(int channel,
                                   bool& enabled,
                                   int& redPayloadtype) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetREDStatus(channel=%d, enabled=?, redPayloadtype=?)",
-               channel);
 #ifdef WEBRTC_CODEC_RED
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);

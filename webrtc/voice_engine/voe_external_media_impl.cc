@@ -124,10 +124,6 @@ int VoEExternalMediaImpl::DeRegisterExternalMediaProcessing(
 
 int VoEExternalMediaImpl::GetAudioFrame(int channel, int desired_sample_rate_hz,
                                         AudioFrame* frame) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
-               VoEId(shared_->instance_id(), channel),
-               "GetAudioFrame(channel=%d, desired_sample_rate_hz=%d)", channel,
-               desired_sample_rate_hz);
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;

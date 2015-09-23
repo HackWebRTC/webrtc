@@ -110,9 +110,6 @@ class WebRtcVoiceEngine
   // Starts AEC dump using existing file.
   bool StartAecDump(rtc::PlatformFile file);
 
-  // Check whether the supplied trace should be ignored.
-  bool ShouldIgnoreTrace(const std::string& trace);
-
   // Create a VoiceEngine Channel.
   int CreateMediaVoiceChannel();
 
