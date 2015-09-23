@@ -154,6 +154,7 @@
         'test/common_unittest.cc',
         'test/testsupport/metrics/video_metrics_unittest.cc',
         'tools/agc/agc_manager_unittest.cc',
+        'video/audio_receive_stream_unittest.cc',
         'video/bitrate_estimator_tests.cc',
         'video/end_to_end_tests.cc',
         'video/packet_injection_tests.cc',
