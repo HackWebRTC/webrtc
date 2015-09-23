@@ -15,6 +15,7 @@
 #include <stdio.h>  // FILE
 #include <vector>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/beamformer/array_util.h"
@@ -127,8 +128,6 @@ struct Intelligibility {
   explicit Intelligibility(bool enabled) : enabled(enabled) {}
   bool enabled;
 };
-
-static const int kAudioProcMaxNativeSampleRateHz = 32000;
 
 // The Audio Processing Module (APM) provides a collection of voice processing
 // components designed for real-time communications software.
@@ -470,6 +469,11 @@ class AudioProcessing {
     kSampleRate32kHz = 32000,
     kSampleRate48kHz = 48000
   };
+
+  static const int kNativeSampleRatesHz[];
+  static const size_t kNumNativeSampleRates;
+  static const int kMaxNativeSampleRateHz;
+  static const int kMaxAECMSampleRateHz;
 
   static const int kChunkSizeMs = 10;
 };

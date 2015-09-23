@@ -290,8 +290,9 @@ int32_t AudioConferenceMixerImpl::Process() {
 
         // We only use the limiter if it supports the output sample rate and
         // we're actually mixing multiple streams.
-        use_limiter_ = _numMixedParticipants > 1 &&
-                       _outputFrequency <= kAudioProcMaxNativeSampleRateHz;
+        use_limiter_ =
+            _numMixedParticipants > 1 &&
+            _outputFrequency <= AudioProcessing::kMaxNativeSampleRateHz;
 
         MixFromList(mixedAudio, mixList);
         MixAnonomouslyFromList(mixedAudio, additionalFramesList);

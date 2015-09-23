@@ -21,11 +21,6 @@ namespace webrtc {
 namespace voe {
 namespace {
 
-enum FunctionToTest {
-  TestRemixAndResample,
-  TestDownConvertToCodecFormat
-};
-
 class UtilityTest : public ::testing::Test {
  protected:
   UtilityTest() {
@@ -36,9 +31,10 @@ class UtilityTest : public ::testing::Test {
     golden_frame_.CopyFrom(src_frame_);
   }
 
-  void RunResampleTest(int src_channels, int src_sample_rate_hz,
-                       int dst_channels, int dst_sample_rate_hz,
-                       FunctionToTest function);
+  void RunResampleTest(int src_channels,
+                       int src_sample_rate_hz,
+                       int dst_channels,
+                       int dst_sample_rate_hz);
 
   PushResampler<int16_t> resampler_;
   AudioFrame src_frame_;
@@ -130,8 +126,7 @@ void VerifyFramesAreEqual(const AudioFrame& ref_frame,
 void UtilityTest::RunResampleTest(int src_channels,
                                   int src_sample_rate_hz,
                                   int dst_channels,
-                                  int dst_sample_rate_hz,
-                                  FunctionToTest function) {
+                                  int dst_sample_rate_hz) {
   PushResampler<int16_t> resampler;  // Create a new one with every test.
   const int16_t kSrcLeft = 30;  // Shouldn't overflow for any used sample rate.
   const int16_t kSrcRight = 15;
@@ -168,20 +163,7 @@ void UtilityTest::RunResampleTest(int src_channels,
       kInputKernelDelaySamples * dst_channels * 2);
   printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
       src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
-  if (function == TestRemixAndResample) {
-    RemixAndResample(src_frame_, &resampler, &dst_frame_);
-  } else {
-    int16_t mono_buffer[kMaxMonoDataSizeSamples];
-    DownConvertToCodecFormat(src_frame_.data_,
-                             src_frame_.samples_per_channel_,
-                             src_frame_.num_channels_,
-                             src_frame_.sample_rate_hz_,
-                             dst_frame_.num_channels_,
-                             dst_frame_.sample_rate_hz_,
-                             mono_buffer,
-                             &resampler,
-                             &dst_frame_);
-  }
+  RemixAndResample(src_frame_, &resampler, &dst_frame_);
 
   if (src_sample_rate_hz == 96000 && dst_sample_rate_hz == 8000) {
     // The sinc resampler gives poor SNR at this extreme conversion, but we
@@ -232,28 +214,7 @@ TEST_F(UtilityTest, RemixAndResampleSucceeds) {
       for (int src_channel = 0; src_channel < kChannelsSize; src_channel++) {
         for (int dst_channel = 0; dst_channel < kChannelsSize; dst_channel++) {
           RunResampleTest(kChannels[src_channel], kSampleRates[src_rate],
-                          kChannels[dst_channel], kSampleRates[dst_rate],
-                          TestRemixAndResample);
-        }
-      }
-    }
-  }
-}
-
-TEST_F(UtilityTest, ConvertToCodecFormatSucceeds) {
-  const int kSampleRates[] = {8000, 16000, 32000, 44100, 48000, 96000};
-  const int kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
-  const int kChannels[] = {1, 2};
-  const int kChannelsSize = sizeof(kChannels) / sizeof(*kChannels);
-  for (int src_rate = 0; src_rate < kSampleRatesSize; src_rate++) {
-    for (int dst_rate = 0; dst_rate < kSampleRatesSize; dst_rate++) {
-      for (int src_channel = 0; src_channel < kChannelsSize; src_channel++) {
-        for (int dst_channel = 0; dst_channel < kChannelsSize; dst_channel++) {
-          if (dst_rate <= src_rate && dst_channel <= src_channel) {
-            RunResampleTest(kChannels[src_channel], kSampleRates[src_rate],
-                            kChannels[src_channel], kSampleRates[dst_rate],
-                            TestDownConvertToCodecFormat);
-          }
+                          kChannels[dst_channel], kSampleRates[dst_rate]);
         }
       }
     }

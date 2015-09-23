@@ -3190,19 +3190,12 @@ void Channel::Demultiplex(const int16_t* audio_data,
   CodecInst codec;
   GetSendCodec(codec);
 
-  if (!mono_recording_audio_.get()) {
-    // Temporary space for DownConvertToCodecFormat.
-    mono_recording_audio_.reset(new int16_t[kMaxMonoDataSizeSamples]);
-  }
-  DownConvertToCodecFormat(audio_data,
-                           number_of_frames,
-                           number_of_channels,
-                           sample_rate,
-                           codec.channels,
-                           codec.plfreq,
-                           mono_recording_audio_.get(),
-                           &input_resampler_,
-                           &_audioFrame);
+  // Never upsample or upmix the capture signal here. This should be done at the
+  // end of the send chain.
+  _audioFrame.sample_rate_hz_ = std::min(codec.plfreq, sample_rate);
+  _audioFrame.num_channels_ = std::min(number_of_channels, codec.channels);
+  RemixAndResample(audio_data, number_of_frames, number_of_channels,
+                   sample_rate, &input_resampler_, &_audioFrame);
 }
 
 uint32_t

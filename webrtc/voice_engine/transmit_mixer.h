@@ -229,7 +229,6 @@ private:
     int32_t _remainingMuteMicTimeMs;
     bool stereo_codec_;
     bool swap_stereo_channels_;
-    rtc::scoped_ptr<int16_t[]> mono_buffer_;
 };
 
 }  // namespace voe

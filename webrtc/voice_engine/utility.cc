@@ -21,34 +21,43 @@
 namespace webrtc {
 namespace voe {
 
-// TODO(ajm): There is significant overlap between RemixAndResample and
-// ConvertToCodecFormat. Consolidate using AudioConverter.
 void RemixAndResample(const AudioFrame& src_frame,
                       PushResampler<int16_t>* resampler,
                       AudioFrame* dst_frame) {
-  const int16_t* audio_ptr = src_frame.data_;
-  int audio_ptr_num_channels = src_frame.num_channels_;
+  RemixAndResample(src_frame.data_, src_frame.samples_per_channel_,
+                   src_frame.num_channels_, src_frame.sample_rate_hz_,
+                   resampler, dst_frame);
+  dst_frame->timestamp_ = src_frame.timestamp_;
+  dst_frame->elapsed_time_ms_ = src_frame.elapsed_time_ms_;
+  dst_frame->ntp_time_ms_ = src_frame.ntp_time_ms_;
+}
+
+void RemixAndResample(const int16_t* src_data,
+                      size_t samples_per_channel,
+                      int num_channels,
+                      int sample_rate_hz,
+                      PushResampler<int16_t>* resampler,
+                      AudioFrame* dst_frame) {
+  const int16_t* audio_ptr = src_data;
+  int audio_ptr_num_channels = num_channels;
   int16_t mono_audio[AudioFrame::kMaxDataSizeSamples];
 
   // Downmix before resampling.
-  if (src_frame.num_channels_ == 2 && dst_frame->num_channels_ == 1) {
-    AudioFrameOperations::StereoToMono(src_frame.data_,
-                                       src_frame.samples_per_channel_,
+  if (num_channels == 2 && dst_frame->num_channels_ == 1) {
+    AudioFrameOperations::StereoToMono(src_data, samples_per_channel,
                                        mono_audio);
     audio_ptr = mono_audio;
     audio_ptr_num_channels = 1;
   }
 
-  if (resampler->InitializeIfNeeded(src_frame.sample_rate_hz_,
-                                    dst_frame->sample_rate_hz_,
+  if (resampler->InitializeIfNeeded(sample_rate_hz, dst_frame->sample_rate_hz_,
                                     audio_ptr_num_channels) == -1) {
-    LOG_FERR3(LS_ERROR, InitializeIfNeeded, src_frame.sample_rate_hz_,
+    LOG_FERR3(LS_ERROR, InitializeIfNeeded, sample_rate_hz,
               dst_frame->sample_rate_hz_, audio_ptr_num_channels);
     assert(false);
   }
 
-  const size_t src_length = src_frame.samples_per_channel_ *
-                         audio_ptr_num_channels;
+  const size_t src_length = samples_per_channel * audio_ptr_num_channels;
   int out_length = resampler->Resample(audio_ptr, src_length, dst_frame->data_,
                                        AudioFrame::kMaxDataSizeSamples);
   if (out_length == -1) {
@@ -59,66 +68,12 @@ void RemixAndResample(const AudioFrame& src_frame,
       static_cast<size_t>(out_length / audio_ptr_num_channels);
 
   // Upmix after resampling.
-  if (src_frame.num_channels_ == 1 && dst_frame->num_channels_ == 2) {
+  if (num_channels == 1 && dst_frame->num_channels_ == 2) {
     // The audio in dst_frame really is mono at this point; MonoToStereo will
     // set this back to stereo.
     dst_frame->num_channels_ = 1;
     AudioFrameOperations::MonoToStereo(dst_frame);
   }
-
-  dst_frame->timestamp_ = src_frame.timestamp_;
-  dst_frame->elapsed_time_ms_ = src_frame.elapsed_time_ms_;
-  dst_frame->ntp_time_ms_ = src_frame.ntp_time_ms_;
-}
-
-void DownConvertToCodecFormat(const int16_t* src_data,
-                              size_t samples_per_channel,
-                              int num_channels,
-                              int sample_rate_hz,
-                              int codec_num_channels,
-                              int codec_rate_hz,
-                              int16_t* mono_buffer,
-                              PushResampler<int16_t>* resampler,
-                              AudioFrame* dst_af) {
-  assert(samples_per_channel <= kMaxMonoDataSizeSamples);
-  assert(num_channels == 1 || num_channels == 2);
-  assert(codec_num_channels == 1 || codec_num_channels == 2);
-  dst_af->Reset();
-
-  // Never upsample the capture signal here. This should be done at the
-  // end of the send chain.
-  int destination_rate = std::min(codec_rate_hz, sample_rate_hz);
-
-  // If no stereo codecs are in use, we downmix a stereo stream from the
-  // device early in the chain, before resampling.
-  if (num_channels == 2 && codec_num_channels == 1) {
-    AudioFrameOperations::StereoToMono(src_data, samples_per_channel,
-                                       mono_buffer);
-    src_data = mono_buffer;
-    num_channels = 1;
-  }
-
-  if (resampler->InitializeIfNeeded(
-          sample_rate_hz, destination_rate, num_channels) != 0) {
-    LOG_FERR3(LS_ERROR,
-              InitializeIfNeeded,
-              sample_rate_hz,
-              destination_rate,
-              num_channels);
-    assert(false);
-  }
-
-  const size_t in_length = samples_per_channel * num_channels;
-  int out_length = resampler->Resample(
-      src_data, in_length, dst_af->data_, AudioFrame::kMaxDataSizeSamples);
-  if (out_length == -1) {
-    LOG_FERR3(LS_ERROR, Resample, src_data, in_length, dst_af->data_);
-    assert(false);
-  }
-
-  dst_af->samples_per_channel_ = static_cast<size_t>(out_length / num_channels);
-  dst_af->sample_rate_hz_ = destination_rate;
-  dst_af->num_channels_ = num_channels;
 }
 
 void MixWithSat(int16_t target[],

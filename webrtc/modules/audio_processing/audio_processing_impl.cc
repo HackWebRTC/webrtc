@@ -147,6 +147,17 @@ class GainControlForNewAgc : public GainControl, public VolumeCallbacks {
   int volume_;
 };
 
+const int AudioProcessing::kNativeSampleRatesHz[] = {
+    AudioProcessing::kSampleRate8kHz,
+    AudioProcessing::kSampleRate16kHz,
+    AudioProcessing::kSampleRate32kHz,
+    AudioProcessing::kSampleRate48kHz};
+const size_t AudioProcessing::kNumNativeSampleRates =
+    arraysize(AudioProcessing::kNativeSampleRatesHz);
+const int AudioProcessing::kMaxNativeSampleRateHz = AudioProcessing::
+    kNativeSampleRatesHz[AudioProcessing::kNumNativeSampleRates - 1];
+const int AudioProcessing::kMaxAECMSampleRateHz = kSampleRate16kHz;
+
 AudioProcessing* AudioProcessing::Create() {
   Config config;
   return Create(config, nullptr);
@@ -400,18 +411,16 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
       std::min(api_format_.input_stream().sample_rate_hz(),
                api_format_.output_stream().sample_rate_hz());
   int fwd_proc_rate;
-  if (min_proc_rate > kSampleRate32kHz) {
-    fwd_proc_rate = kSampleRate48kHz;
-  } else if (min_proc_rate > kSampleRate16kHz) {
-    fwd_proc_rate = kSampleRate32kHz;
-  } else if (min_proc_rate > kSampleRate8kHz) {
-    fwd_proc_rate = kSampleRate16kHz;
-  } else {
-    fwd_proc_rate = kSampleRate8kHz;
+  for (size_t i = 0; i < kNumNativeSampleRates; ++i) {
+    fwd_proc_rate = kNativeSampleRatesHz[i];
+    if (fwd_proc_rate >= min_proc_rate) {
+      break;
+    }
   }
   // ...with one exception.
-  if (echo_control_mobile_->is_enabled() && min_proc_rate > kSampleRate16kHz) {
-    fwd_proc_rate = kSampleRate16kHz;
+  if (echo_control_mobile_->is_enabled() &&
+      min_proc_rate > kMaxAECMSampleRateHz) {
+    fwd_proc_rate = kMaxAECMSampleRateHz;
   }
 
   fwd_proc_format_ = StreamConfig(fwd_proc_rate);
@@ -592,7 +601,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return kBadSampleRateError;
   }
   if (echo_control_mobile_->is_enabled() &&
-      frame->sample_rate_hz_ > kSampleRate16kHz) {
+      frame->sample_rate_hz_ > kMaxAECMSampleRateHz) {
     LOG(LS_ERROR) << "AECM only supports 16 or 8 kHz sample rates";
     return kUnsupportedComponentError;
   }
