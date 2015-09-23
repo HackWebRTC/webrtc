@@ -15,15 +15,11 @@
 // state changes (in order to update the manager's state), and forwards
 // requests to begin connecting or to reset to each of the channels.
 //
-// On Threading:  Transport performs work on both the signaling and worker
-// threads.  For subclasses, the rule is that all signaling related calls will
-// be made on the signaling thread and all channel related calls (including
-// signaling for a channel) will be made on the worker thread.  When
-// information needs to be sent between the two threads, this class should do
-// the work (e.g., OnRemoteCandidate).
+// On Threading:  Transport performs work solely on the worker thread, and so
+// its methods should only be called on the worker thread.
 //
-// Note: Subclasses must call DestroyChannels() in their own constructors.
-// It is not possible to do so here because the subclass constructor will
+// Note: Subclasses must call DestroyChannels() in their own destructors.
+// It is not possible to do so here because the subclass destructor will
 // already have run.
 
 #ifndef WEBRTC_P2P_BASE_TRANSPORT_H_
@@ -36,15 +32,10 @@
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/base/transportinfo.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/rtccertificate.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslstreamadapter.h"
-
-namespace rtc {
-class Thread;
-}
 
 namespace cricket {
 
@@ -53,6 +44,26 @@ class TransportChannel;
 class TransportChannelImpl;
 
 typedef std::vector<Candidate> Candidates;
+
+// TODO(deadbeef): Unify with PeerConnectionInterface::IceConnectionState
+// once /talk/ and /webrtc/ are combined, and also switch to ENUM_NAME naming
+// style.
+enum IceConnectionState {
+  kIceConnectionConnecting = 0,
+  kIceConnectionFailed,
+  kIceConnectionConnected,  // Writable, but still checking one or more
+                            // connections
+  kIceConnectionCompleted,
+};
+
+// TODO(deadbeef): Unify with PeerConnectionInterface::IceConnectionState
+// once /talk/ and /webrtc/ are combined, and also switch to ENUM_NAME naming
+// style.
+enum IceGatheringState {
+  kIceGatheringNew = 0,
+  kIceGatheringGathering,
+  kIceGatheringComplete,
+};
 
 // For "writable" and "receiving", we need to differentiate between
 // none, all, and some.
@@ -124,7 +135,7 @@ typedef std::vector<TransportChannelStats> TransportChannelStatsList;
 
 // Information about the stats of a transport.
 struct TransportStats {
-  std::string content_name;
+  std::string transport_name;
   TransportChannelStatsList channel_stats;
 };
 
@@ -135,22 +146,13 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& new_ufrag,
                            const std::string& new_pwd);
 
-class Transport : public rtc::MessageHandler,
-                  public sigslot::has_slots<> {
+class Transport : public sigslot::has_slots<> {
  public:
-  Transport(rtc::Thread* signaling_thread,
-            rtc::Thread* worker_thread,
-            const std::string& content_name,
-            PortAllocator* allocator);
+  Transport(const std::string& name, PortAllocator* allocator);
   virtual ~Transport();
 
-  // Returns the signaling thread. The app talks to Transport on this thread.
-  rtc::Thread* signaling_thread() const { return signaling_thread_; }
-  // Returns the worker thread. The actual networking is done on this thread.
-  rtc::Thread* worker_thread() const { return worker_thread_; }
-
-  // Returns the content_name of this transport.
-  const std::string& content_name() const { return content_name_; }
+  // Returns the name of this transport.
+  const std::string& name() const { return name_; }
 
   // Returns the port allocator object for this transport.
   PortAllocator* port_allocator() { return allocator_; }
@@ -172,6 +174,14 @@ class Transport : public rtc::MessageHandler,
     return (receiving_ == TRANSPORT_STATE_SOME ||
             receiving_ == TRANSPORT_STATE_ALL);
   }
+  bool ready_for_remote_candidates() const {
+    return local_description_set_ && remote_description_set_;
+  }
+
+  bool AllChannelsCompleted() const;
+  bool AnyChannelFailed() const;
+
+  IceGatheringState gathering_state() const { return gathering_state_; }
 
   sigslot::signal1<Transport*> SignalWritableState;
   sigslot::signal1<Transport*> SignalReceivingState;
@@ -190,21 +200,23 @@ class Transport : public rtc::MessageHandler,
   void SetChannelReceivingTimeout(int timeout_ms);
 
   // Must be called before applying local session description.
-  void SetCertificate(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
+  virtual void SetLocalCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {}
 
-  // Get a copy of the local identity provided by SetIdentity.
-  bool GetCertificate(rtc::scoped_refptr<rtc::RTCCertificate>* certificate);
+  // Get a copy of the local certificate provided by SetLocalCertificate.
+  virtual bool GetLocalCertificate(
+      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
+    return false;
+  }
 
   // Get a copy of the remote certificate in use by the specified channel.
   bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert);
 
   // Create, destroy, and lookup the channels of this type by their components.
   TransportChannelImpl* CreateChannel(int component);
-  // Note: GetChannel may lead to race conditions, since the mutex is not held
-  // after the pointer is returned.
+
   TransportChannelImpl* GetChannel(int component);
-  // Note: HasChannel does not lead to race conditions, unlike GetChannel.
+
   bool HasChannel(int component) {
     return (NULL != GetChannel(component));
   }
@@ -212,7 +224,6 @@ class Transport : public rtc::MessageHandler,
   void DestroyChannel(int component);
 
   // Set the local TransportDescription to be used by TransportChannels.
-  // This should be called before ConnectChannels().
   bool SetLocalTransportDescription(const TransportDescription& description,
                                     ContentAction action,
                                     std::string* error_desc);
@@ -227,6 +238,11 @@ class Transport : public rtc::MessageHandler,
   void ConnectChannels();
   sigslot::signal1<Transport*> SignalConnecting;
 
+  // Tells channels to start gathering candidates if necessary.
+  // Should be called after ConnectChannels() has been called at least once,
+  // which will happen in SetLocalTransportDescription.
+  void MaybeStartGathering();
+
   // Resets all of the channels back to their initial state.  They are no
   // longer connecting.
   void ResetChannels();
@@ -236,20 +252,15 @@ class Transport : public rtc::MessageHandler,
 
   bool GetStats(TransportStats* stats);
 
-  // Before any stanza is sent, the manager will request signaling.  Once
-  // signaling is available, the client should call OnSignalingReady.  Once
-  // this occurs, the transport (or its channels) can send any waiting stanzas.
-  // OnSignalingReady invokes OnTransportSignalingReady and then forwards this
-  // signal to each channel.
-  sigslot::signal1<Transport*> SignalRequestSignaling;
-  void OnSignalingReady();
+  sigslot::signal1<Transport*> SignalGatheringState;
 
   // Handles sending of ready candidates and receiving of remote candidates.
-  sigslot::signal2<Transport*,
-                   const std::vector<Candidate>&> SignalCandidatesReady;
+  sigslot::signal2<Transport*, const std::vector<Candidate>&>
+      SignalCandidatesGathered;
 
-  sigslot::signal1<Transport*> SignalCandidatesAllocationDone;
-  void OnRemoteCandidates(const std::vector<Candidate>& candidates);
+  // Called when one or more candidates are ready from the remote peer.
+  bool AddRemoteCandidates(const std::vector<Candidate>& candidates,
+                           std::string* error);
 
   // If candidate is not acceptable, returns false and sets error.
   // Call this before calling OnRemoteCandidates.
@@ -264,19 +275,18 @@ class Transport : public rtc::MessageHandler,
   // Forwards the signal from TransportChannel to BaseSession.
   sigslot::signal0<> SignalRoleConflict;
 
-  virtual bool GetSslRole(rtc::SSLRole* ssl_role) const;
+  virtual bool GetSslRole(rtc::SSLRole* ssl_role) const { return false; }
 
   // Must be called before channel is starting to connect.
-  virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
+  virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) {
+    return false;
+  }
 
  protected:
   // These are called by Create/DestroyChannel above in order to create or
   // destroy the appropriate type of channel.
   virtual TransportChannelImpl* CreateTransportChannel(int component) = 0;
   virtual void DestroyTransportChannel(TransportChannelImpl* channel) = 0;
-
-  // Informs the subclass that we received the signaling ready message.
-  virtual void OnTransportSignalingReady() {}
 
   // The current local transport description, for use by derived classes
   // when performing transport description negotiation.
@@ -290,53 +300,37 @@ class Transport : public rtc::MessageHandler,
     return remote_description_.get();
   }
 
-  virtual void SetCertificate_w(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {}
-
-  virtual bool GetCertificate_w(
-      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
-    return false;
-  }
-
   // Pushes down the transport parameters from the local description, such
   // as the ICE ufrag and pwd.
   // Derived classes can override, but must call the base as well.
-  virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
-                                                std::string* error_desc);
+  virtual bool ApplyLocalTransportDescription(TransportChannelImpl* channel,
+                                              std::string* error_desc);
 
   // Pushes down remote ice credentials from the remote description to the
   // transport channel.
-  virtual bool ApplyRemoteTransportDescription_w(TransportChannelImpl* ch,
-                                                 std::string* error_desc);
+  virtual bool ApplyRemoteTransportDescription(TransportChannelImpl* ch,
+                                               std::string* error_desc);
 
   // Negotiates the transport parameters based on the current local and remote
   // transport description, such as the ICE role to use, and whether DTLS
   // should be activated.
   // Derived classes can negotiate their specific parameters here, but must call
   // the base as well.
-  virtual bool NegotiateTransportDescription_w(ContentAction local_role,
-                                               std::string* error_desc);
+  virtual bool NegotiateTransportDescription(ContentAction local_role,
+                                             std::string* error_desc);
 
   // Pushes down the transport parameters obtained via negotiation.
   // Derived classes can set their specific parameters here, but must call the
   // base as well.
-  virtual bool ApplyNegotiatedTransportDescription_w(
-      TransportChannelImpl* channel, std::string* error_desc);
-
-  virtual bool GetSslRole_w(rtc::SSLRole* ssl_role) const {
-    return false;
-  }
-
-  virtual bool SetSslMaxProtocolVersion_w(rtc::SSLProtocolVersion version) {
-    return false;
-  }
+  virtual bool ApplyNegotiatedTransportDescription(
+      TransportChannelImpl* channel,
+      std::string* error_desc);
 
  private:
   struct ChannelMapEntry {
-    ChannelMapEntry() : impl_(NULL), candidates_allocated_(false), ref_(0) {}
+    ChannelMapEntry() : impl_(NULL), ref_(0) {}
     explicit ChannelMapEntry(TransportChannelImpl *impl)
         : impl_(impl),
-          candidates_allocated_(false),
           ref_(0) {
     }
 
@@ -349,14 +343,9 @@ class Transport : public rtc::MessageHandler,
 
     TransportChannelImpl* get() const { return impl_; }
     TransportChannelImpl* operator->() const  { return impl_; }
-    void set_candidates_allocated(bool status) {
-      candidates_allocated_ = status;
-    }
-    bool candidates_allocated() const { return candidates_allocated_; }
 
-  private:
-    TransportChannelImpl *impl_;
-    bool candidates_allocated_;
+   private:
+    TransportChannelImpl* impl_;
     int ref_;
   };
 
@@ -369,92 +358,55 @@ class Transport : public rtc::MessageHandler,
   // Called when the receiving state of a channel changes.
   void OnChannelReceivingState(TransportChannel* channel);
 
-  // Called when a channel requests signaling.
-  void OnChannelRequestSignaling(TransportChannelImpl* channel);
+  // Called when a channel starts finishes gathering candidates
+  void OnChannelGatheringState(TransportChannelImpl* channel);
 
-  // Called when a candidate is ready from remote peer.
-  void OnRemoteCandidate(const Candidate& candidate);
   // Called when a candidate is ready from channel.
-  void OnChannelCandidateReady(TransportChannelImpl* channel,
-                               const Candidate& candidate);
+  void OnChannelCandidateGathered(TransportChannelImpl* channel,
+                                  const Candidate& candidate);
   void OnChannelRouteChange(TransportChannel* channel,
                             const Candidate& remote_candidate);
-  void OnChannelCandidatesAllocationDone(TransportChannelImpl* channel);
   // Called when there is ICE role change.
   void OnRoleConflict(TransportChannelImpl* channel);
   // Called when the channel removes a connection.
   void OnChannelConnectionRemoved(TransportChannelImpl* channel);
 
-  // Dispatches messages to the appropriate handler (below).
-  void OnMessage(rtc::Message* msg);
-
-  // These are versions of the above methods that are called only on a
-  // particular thread (s = signaling, w = worker).  The above methods post or
-  // send a message to invoke this version.
-  TransportChannelImpl* CreateChannel_w(int component);
-  void DestroyChannel_w(int component);
-  void ConnectChannels_w();
-  void ResetChannels_w();
-  void DestroyAllChannels_w();
-  void OnRemoteCandidate_w(const Candidate& candidate);
-  void OnChannelWritableState_s();
-  void OnChannelReceivingState_s();
-  void OnChannelRequestSignaling_s();
-  void OnConnecting_s();
-  void OnChannelRouteChange_s(const TransportChannel* channel,
-                              const Candidate& remote_candidate);
-  void OnChannelCandidatesAllocationDone_s();
-
   // Helper function that invokes the given function on every channel.
   typedef void (TransportChannelImpl::* TransportChannelFunc)();
-  void CallChannels_w(TransportChannelFunc func);
+  void CallChannels(TransportChannelFunc func);
 
   // Computes the AND and OR of the channel's read/write/receiving state
   // (argument picks the operation).
-  TransportState GetTransportState_s(TransportStateType type);
-
-  void OnChannelCandidateReady_s();
-
-  void SetIceRole_w(IceRole role);
-  void SetRemoteIceMode_w(IceMode mode);
-  bool SetLocalTransportDescription_w(const TransportDescription& desc,
-                                      ContentAction action,
-                                      std::string* error_desc);
-  bool SetRemoteTransportDescription_w(const TransportDescription& desc,
-                                       ContentAction action,
-                                       std::string* error_desc);
-  bool GetStats_w(TransportStats* infos);
-  bool GetRemoteSSLCertificate_w(rtc::SSLCertificate** cert);
-
-  void SetChannelReceivingTimeout_w(int timeout_ms);
+  TransportState GetTransportState(TransportStateType type);
 
   // Sends SignalCompleted if we are now in that state.
-  void MaybeCompleted_w();
+  void MaybeSignalCompleted();
 
-  rtc::Thread* const signaling_thread_;
-  rtc::Thread* const worker_thread_;
-  const std::string content_name_;
+  // Sends SignalGatheringState if gathering state changed
+  void UpdateGatheringState();
+
+  void UpdateWritableState();
+  void UpdateReceivingState();
+
+  const std::string name_;
   PortAllocator* const allocator_;
-  bool destroyed_;
-  TransportState readable_;
-  TransportState writable_;
-  TransportState receiving_;
-  bool was_writable_;
-  bool connect_requested_;
-  IceRole ice_role_;
-  uint64 tiebreaker_;
-  IceMode remote_ice_mode_;
-  int channel_receiving_timeout_;
+  bool channels_destroyed_ = false;
+  TransportState readable_ = TRANSPORT_STATE_NONE;
+  TransportState writable_ = TRANSPORT_STATE_NONE;
+  TransportState receiving_ = TRANSPORT_STATE_NONE;
+  bool was_writable_ = false;
+  bool connect_requested_ = false;
+  IceRole ice_role_ = ICEROLE_UNKNOWN;
+  uint64 tiebreaker_ = 0;
+  IceMode remote_ice_mode_ = ICEMODE_FULL;
+  int channel_receiving_timeout_ = -1;
   rtc::scoped_ptr<TransportDescription> local_description_;
   rtc::scoped_ptr<TransportDescription> remote_description_;
+  bool local_description_set_ = false;
+  bool remote_description_set_ = false;
+  IceGatheringState gathering_state_ = kIceGatheringNew;
 
-  // TODO(tommi): Make sure we only use this on the worker thread.
   ChannelMap channels_;
-  // Buffers the ready_candidates so that SignalCanidatesReady can
-  // provide them in multiples.
-  std::vector<Candidate> ready_candidates_;
-  // Protects changes to channels and messages
-  rtc::CriticalSection crit_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Transport);
 };

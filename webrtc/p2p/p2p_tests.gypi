@@ -15,13 +15,12 @@
       'direct_dependent_settings': {
         'sources': [
           'base/dtlstransportchannel_unittest.cc',
-          'base/fakesession.h',
+          'base/faketransportcontroller.h',
           'base/p2ptransportchannel_unittest.cc',
           'base/port_unittest.cc',
           'base/pseudotcp_unittest.cc',
           'base/relayport_unittest.cc',
           'base/relayserver_unittest.cc',
-          'base/session_unittest.cc',
           'base/stun_unittest.cc',
           'base/stunport_unittest.cc',
           'base/stunrequest_unittest.cc',
@@ -30,6 +29,7 @@
           'base/teststunserver.h',
           'base/testturnserver.h',
           'base/transport_unittest.cc',
+          'base/transportcontroller_unittest.cc',
           'base/transportdescriptionfactory_unittest.cc',
           'base/turnport_unittest.cc',
           'client/fakeportallocator.h',

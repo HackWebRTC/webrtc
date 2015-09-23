@@ -29,12 +29,7 @@ const int kFakeIPv6NetworkPrefixLength = 64;
 class FakeNetworkManager : public NetworkManagerBase,
                            public MessageHandler {
  public:
-  FakeNetworkManager()
-      : thread_(Thread::Current()),
-        next_index_(0),
-        started_(false),
-        sent_first_update_(false) {
-  }
+  FakeNetworkManager() : thread_(Thread::Current()) {}
 
   typedef std::vector<SocketAddress> IfaceList;
 
@@ -58,20 +53,18 @@ class FakeNetworkManager : public NetworkManagerBase,
   }
 
   virtual void StartUpdating() {
-    if (started_) {
-      if (sent_first_update_)
+    ++start_count_;
+    if (start_count_ == 1) {
+      sent_first_update_ = false;
+      thread_->Post(this);
+    } else {
+      if (sent_first_update_) {
         SignalNetworksChanged();
-      return;
+      }
     }
-
-    started_ = true;
-    sent_first_update_ = false;
-    thread_->Post(this);
   }
 
-  virtual void StopUpdating() {
-    started_ = false;
-  }
+  virtual void StopUpdating() { --start_count_; }
 
   // MessageHandler interface.
   virtual void OnMessage(Message* msg) {
@@ -82,7 +75,7 @@ class FakeNetworkManager : public NetworkManagerBase,
 
  private:
   void DoUpdateNetworks() {
-    if (!started_)
+    if (start_count_ == 0)
       return;
     std::vector<Network*> networks;
     for (IfaceList::iterator it = ifaces_.begin();
@@ -111,9 +104,9 @@ class FakeNetworkManager : public NetworkManagerBase,
 
   Thread* thread_;
   IfaceList ifaces_;
-  int next_index_;
-  bool started_;
-  bool sent_first_update_;
+  int next_index_ = 0;
+  int start_count_ = 0;
+  bool sent_first_update_ = false;
 };
 
 }  // namespace rtc

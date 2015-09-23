@@ -11,6 +11,7 @@
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 
 #include <set>
+#include <algorithm>
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
 #include "webrtc/p2p/base/stunport.h"  // For STUN_PORT_TYPE.
@@ -169,28 +170,27 @@ bool ShouldSwitch(cricket::Connection* a_conn, cricket::Connection* b_conn) {
 
 namespace cricket {
 
-P2PTransportChannel::P2PTransportChannel(const std::string& content_name,
+P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
                                          P2PTransport* transport,
-                                         PortAllocator *allocator) :
-    TransportChannelImpl(content_name, component),
-    transport_(transport),
-    allocator_(allocator),
-    worker_thread_(rtc::Thread::Current()),
-    incoming_only_(false),
-    waiting_for_signaling_(false),
-    error_(0),
-    best_connection_(NULL),
-    pending_best_connection_(NULL),
-    sort_dirty_(false),
-    was_writable_(false),
-    remote_ice_mode_(ICEMODE_FULL),
-    ice_role_(ICEROLE_UNKNOWN),
-    tiebreaker_(0),
-    remote_candidate_generation_(0),
-    check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
-    receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50) {
-}
+                                         PortAllocator* allocator)
+    : TransportChannelImpl(transport_name, component),
+      transport_(transport),
+      allocator_(allocator),
+      worker_thread_(rtc::Thread::Current()),
+      incoming_only_(false),
+      error_(0),
+      best_connection_(NULL),
+      pending_best_connection_(NULL),
+      sort_dirty_(false),
+      was_writable_(false),
+      remote_ice_mode_(ICEMODE_FULL),
+      ice_role_(ICEROLE_UNKNOWN),
+      tiebreaker_(0),
+      remote_candidate_generation_(0),
+      gathering_state_(kIceGatheringNew),
+      check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
+      receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50) {}
 
 P2PTransportChannel::~P2PTransportChannel() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
@@ -231,6 +231,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
   connection->SignalDestroyed.connect(
       this, &P2PTransportChannel::OnConnectionDestroyed);
   connection->SignalNominated.connect(this, &P2PTransportChannel::OnNominated);
+  had_connection_ = true;
 }
 
 void P2PTransportChannel::SetIceRole(IceRole ice_role) {
@@ -265,8 +266,9 @@ void P2PTransportChannel::SetIceTiebreaker(uint64 tiebreaker) {
 TransportChannelState P2PTransportChannel::GetState() const {
   std::set<rtc::Network*> networks;
 
-  if (connections_.size() == 0) {
-    return TransportChannelState::STATE_FAILED;
+  if (connections_.empty()) {
+    return had_connection_ ? TransportChannelState::STATE_FAILED
+                           : TransportChannelState::STATE_INIT;
   }
 
   for (uint32 i = 0; i < connections_.size(); ++i) {
@@ -288,21 +290,10 @@ TransportChannelState P2PTransportChannel::GetState() const {
 void P2PTransportChannel::SetIceCredentials(const std::string& ice_ufrag,
                                             const std::string& ice_pwd) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  bool ice_restart = false;
-  if (!ice_ufrag_.empty() && !ice_pwd_.empty()) {
-    // Restart candidate allocation if there is any change in either
-    // ice ufrag or password.
-    ice_restart =
-        IceCredentialsChanged(ice_ufrag_, ice_pwd_, ice_ufrag, ice_pwd);
-  }
-
   ice_ufrag_ = ice_ufrag;
   ice_pwd_ = ice_pwd;
-
-  if (ice_restart) {
-    // Restart candidate gathering.
-    Allocate();
-  }
+  // Note: Candidate gathering will restart when MaybeStartGathering is next
+  // called.
 }
 
 void P2PTransportChannel::SetRemoteIceCredentials(const std::string& ice_ufrag,
@@ -359,14 +350,27 @@ void P2PTransportChannel::Connect() {
     return;
   }
 
-  // Kick off an allocator session
-  Allocate();
-
   // Start pinging as the ports come in.
   thread()->Post(this, MSG_PING);
 
   thread()->PostDelayed(
       check_receiving_delay_, this, MSG_CHECK_RECEIVING);
+}
+
+void P2PTransportChannel::MaybeStartGathering() {
+  // Start gathering if we never started before, or if an ICE restart occurred.
+  if (allocator_sessions_.empty() ||
+      IceCredentialsChanged(allocator_sessions_.back()->ice_ufrag(),
+                            allocator_sessions_.back()->ice_pwd(), ice_ufrag_,
+                            ice_pwd_)) {
+    if (gathering_state_ != kIceGatheringGathering) {
+      gathering_state_ = kIceGatheringGathering;
+      SignalGatheringState(this);
+    }
+    // Time for a new allocator
+    AddAllocatorSession(allocator_->CreateSession(
+        SessionId(), transport_name(), component(), ice_ufrag_, ice_pwd_));
+  }
 }
 
 // A new port is available, attempt to make connections for it
@@ -413,17 +417,21 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
 
 // A new candidate is available, let listeners know
 void P2PTransportChannel::OnCandidatesReady(
-    PortAllocatorSession *session, const std::vector<Candidate>& candidates) {
+    PortAllocatorSession* session,
+    const std::vector<Candidate>& candidates) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   for (size_t i = 0; i < candidates.size(); ++i) {
-    SignalCandidateReady(this, candidates[i]);
+    SignalCandidateGathered(this, candidates[i]);
   }
 }
 
 void P2PTransportChannel::OnCandidatesAllocationDone(
     PortAllocatorSession* session) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  SignalCandidatesAllocationDone(this);
+  gathering_state_ = kIceGatheringComplete;
+  LOG(LS_INFO) << "P2PTransportChannel: " << transport_name() << ", component "
+               << component() << " gathering complete";
+  SignalGatheringState(this);
 }
 
 // Handle stun packets
@@ -494,8 +502,7 @@ void P2PTransportChannel::OnUnknownAddress(
       LOG(LS_WARNING) << "P2PTransportChannel::OnUnknownAddress - "
                       << "No STUN_ATTR_PRIORITY found in the "
                       << "stun request message";
-      port->SendBindingErrorResponse(stun_msg, address,
-                                     STUN_ERROR_BAD_REQUEST,
+      port->SendBindingErrorResponse(stun_msg, address, STUN_ERROR_BAD_REQUEST,
                                      STUN_ERROR_REASON_BAD_REQUEST);
       return;
     }
@@ -545,8 +552,7 @@ void P2PTransportChannel::OnUnknownAddress(
       remote_candidate, cricket::PortInterface::ORIGIN_THIS_PORT);
   if (!connection) {
     ASSERT(false);
-    port->SendBindingErrorResponse(stun_msg, address,
-                                   STUN_ERROR_SERVER_ERROR,
+    port->SendBindingErrorResponse(stun_msg, address, STUN_ERROR_SERVER_ERROR,
                                    STUN_ERROR_REASON_SERVER_ERROR);
     return;
   }
@@ -575,16 +581,6 @@ void P2PTransportChannel::OnRoleConflict(PortInterface* port) {
                              // from Transport.
 }
 
-// When the signalling channel is ready, we can really kick off the allocator
-void P2PTransportChannel::OnSignalingReady() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (waiting_for_signaling_) {
-    waiting_for_signaling_ = false;
-    AddAllocatorSession(allocator_->CreateSession(
-        SessionId(), content_name(), component(), ice_ufrag_, ice_pwd_));
-  }
-}
-
 void P2PTransportChannel::OnNominated(Connection* conn) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(ice_role_ == ICEROLE_CONTROLLED);
@@ -606,7 +602,7 @@ void P2PTransportChannel::OnNominated(Connection* conn) {
   }
 }
 
-void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
+void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
   uint32 generation = candidate.generation();
@@ -847,7 +843,7 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
 
   std::vector<Connection *>::const_iterator it;
   for (it = connections_.begin(); it != connections_.end(); ++it) {
-    Connection *connection = *it;
+    Connection* connection = *it;
     ConnectionInfo info;
     info.best_connection = (best_connection_ == connection);
     info.receiving = connection->receiving();
@@ -879,14 +875,6 @@ rtc::DiffServCodePoint P2PTransportChannel::DefaultDscpValue() const {
     return rtc::DSCP_NO_CHANGE;
   }
   return static_cast<rtc::DiffServCodePoint> (it->second);
-}
-
-// Begin allocate (or immediately re-allocate, if MSG_ALLOCATE pending)
-void P2PTransportChannel::Allocate() {
-  // Time for a new allocator, lets make sure we have a signalling channel
-  // to communicate candidates through first.
-  waiting_for_signaling_ = true;
-  SignalRequestSignaling(this);
 }
 
 // Monitor connection states.
@@ -1228,8 +1216,7 @@ Connection* P2PTransportChannel::FindNextPingableConnection() {
 void P2PTransportChannel::PingConnection(Connection* conn) {
   bool use_candidate = false;
   if (remote_ice_mode_ == ICEMODE_FULL && ice_role_ == ICEROLE_CONTROLLING) {
-    use_candidate = (conn == best_connection_) ||
-                    (best_connection_ == NULL) ||
+    use_candidate = (conn == best_connection_) || (best_connection_ == NULL) ||
                     (!best_connection_->writable()) ||
                     (conn->priority() > best_connection_->priority());
   } else if (remote_ice_mode_ == ICEMODE_LITE && conn == best_connection_) {
@@ -1311,9 +1298,10 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
 }
 
 // We data is available, let listeners know
-void P2PTransportChannel::OnReadPacket(
-    Connection *connection, const char *data, size_t len,
-    const rtc::PacketTime& packet_time) {
+void P2PTransportChannel::OnReadPacket(Connection* connection,
+                                       const char* data,
+                                       size_t len,
+                                       const rtc::PacketTime& packet_time) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Do not deliver, if packet doesn't belong to the correct transport channel.

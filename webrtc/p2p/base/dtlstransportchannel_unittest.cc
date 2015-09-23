@@ -11,7 +11,7 @@
 #include <set>
 
 #include "webrtc/p2p/base/dtlstransport.h"
-#include "webrtc/p2p/base/fakesession.h"
+#include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/gunit.h"
@@ -21,7 +21,6 @@
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stringutils.h"
-#include "webrtc/base/thread.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(rtc::SSLStreamAdapter::feature())) {  \
@@ -45,19 +44,14 @@ enum Flags { NF_REOFFER = 0x1, NF_EXPECT_FAILURE = 0x2 };
 
 class DtlsTestClient : public sigslot::has_slots<> {
  public:
-  DtlsTestClient(const std::string& name,
-                 rtc::Thread* signaling_thread,
-                 rtc::Thread* worker_thread) :
-      name_(name),
-      signaling_thread_(signaling_thread),
-      worker_thread_(worker_thread),
-      packet_size_(0),
-      use_dtls_srtp_(false),
-      ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10),
-      negotiated_dtls_(false),
-      received_dtls_client_hello_(false),
-      received_dtls_server_hello_(false) {
-  }
+  DtlsTestClient(const std::string& name)
+      : name_(name),
+        packet_size_(0),
+        use_dtls_srtp_(false),
+        ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10),
+        negotiated_dtls_(false),
+        received_dtls_client_hello_(false),
+        received_dtls_server_hello_(false) {}
   void CreateCertificate(rtc::KeyType key_type) {
     certificate_ = rtc::RTCCertificate::Create(
         rtc::scoped_ptr<rtc::SSLIdentity>(
@@ -71,13 +65,12 @@ class DtlsTestClient : public sigslot::has_slots<> {
     use_dtls_srtp_ = true;
   }
   void SetupMaxProtocolVersion(rtc::SSLProtocolVersion version) {
-    ASSERT(transport_.get() == NULL);
+    ASSERT(!transport_);
     ssl_max_version_ = version;
   }
   void SetupChannels(int count, cricket::IceRole role) {
     transport_.reset(new cricket::DtlsTransport<cricket::FakeTransport>(
-        signaling_thread_, worker_thread_, "dtls content name", nullptr,
-        certificate_));
+        "dtls content name", nullptr, certificate_));
     transport_->SetAsync(true);
     transport_->SetIceRole(role);
     transport_->SetIceTiebreaker(
@@ -118,8 +111,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
   void Negotiate(DtlsTestClient* peer, cricket::ContentAction action,
                  ConnectionRole local_role, ConnectionRole remote_role,
                  int flags) {
-    Negotiate(certificate_, certificate_ ? peer->certificate_ : nullptr,
-              action, local_role, remote_role, flags);
+    Negotiate(certificate_, certificate_ ? peer->certificate_ : nullptr, action,
+              local_role, remote_role, flags);
   }
 
   // Allow any DTLS configuration to be specified (including invalid ones).
@@ -163,18 +156,18 @@ class DtlsTestClient : public sigslot::has_slots<> {
     }
 
     cricket::TransportDescription local_desc(
-        std::vector<std::string>(), kIceUfrag1, kIcePwd1,
-        cricket::ICEMODE_FULL, local_role,
-         // If remote if the offerer and has no DTLS support, answer will be
+        std::vector<std::string>(), kIceUfrag1, kIcePwd1, cricket::ICEMODE_FULL,
+        local_role,
+        // If remote if the offerer and has no DTLS support, answer will be
         // without any fingerprint.
-        (action == cricket::CA_ANSWER && !remote_cert) ?
-            NULL : local_fingerprint.get(),
+        (action == cricket::CA_ANSWER && !remote_cert)
+            ? nullptr
+            : local_fingerprint.get(),
         cricket::Candidates());
 
     cricket::TransportDescription remote_desc(
-        std::vector<std::string>(), kIceUfrag1, kIcePwd1,
-        cricket::ICEMODE_FULL, remote_role, remote_fingerprint.get(),
-        cricket::Candidates());
+        std::vector<std::string>(), kIceUfrag1, kIcePwd1, cricket::ICEMODE_FULL,
+        remote_role, remote_fingerprint.get(), cricket::Candidates());
 
     bool expect_success = (flags & NF_EXPECT_FAILURE) ? false : true;
     // If |expect_success| is false, expect SRTD or SLTD to fail when
@@ -199,7 +192,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
     return true;
   }
 
-  bool writable() const { return transport_->writable(); }
+  bool all_channels_writable() const {
+    return transport_->all_channels_writable();
+  }
 
   void CheckRole(rtc::SSLRole role) {
     if (role == rtc::SSL_CLIENT) {
@@ -337,8 +332,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
     ASSERT_TRUE(VerifyPacket(data, size, &packet_num));
     received_.insert(packet_num);
     // Only DTLS-SRTP packets should have the bypass flag set.
-    int expected_flags = (certificate_ && IsRtpLeadByte(data[0])) ?
-        cricket::PF_SRTP_BYPASS : 0;
+    int expected_flags =
+        (certificate_ && IsRtpLeadByte(data[0])) ? cricket::PF_SRTP_BYPASS : 0;
     ASSERT_EQ(expected_flags, flags);
   }
 
@@ -372,8 +367,6 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
  private:
   std::string name_;
-  rtc::Thread* signaling_thread_;
-  rtc::Thread* worker_thread_;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::scoped_ptr<cricket::FakeTransport> transport_;
   std::vector<cricket::DtlsTransportChannelWrapper*> channels_;
@@ -389,16 +382,13 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
 class DtlsTransportChannelTest : public testing::Test {
  public:
-  DtlsTransportChannelTest() :
-      client1_("P1", rtc::Thread::Current(),
-               rtc::Thread::Current()),
-      client2_("P2", rtc::Thread::Current(),
-               rtc::Thread::Current()),
-      channel_ct_(1),
-      use_dtls_(false),
-      use_dtls_srtp_(false),
-      ssl_expected_version_(rtc::SSL_PROTOCOL_DTLS_10) {
-  }
+  DtlsTransportChannelTest()
+      : client1_("P1"),
+        client2_("P2"),
+        channel_ct_(1),
+        use_dtls_(false),
+        use_dtls_srtp_(false),
+        ssl_expected_version_(rtc::SSL_PROTOCOL_DTLS_10) {}
 
   void SetChannelCount(size_t channel_ct) {
     channel_ct_ = static_cast<int>(channel_ct);
@@ -440,8 +430,10 @@ class DtlsTransportChannelTest : public testing::Test {
     if (!rv)
       return false;
 
-    EXPECT_TRUE_WAIT(client1_.writable() && client2_.writable(), 10000);
-    if (!client1_.writable() || !client2_.writable())
+    EXPECT_TRUE_WAIT(
+        client1_.all_channels_writable() && client2_.all_channels_writable(),
+        10000);
+    if (!client1_.all_channels_writable() || !client2_.all_channels_writable())
       return false;
 
     // Check that we used the right roles.
@@ -818,7 +810,9 @@ TEST_F(DtlsTransportChannelTest, TestRenegotiateBeforeConnect) {
               cricket::CONNECTIONROLE_ACTIVE, NF_REOFFER);
   bool rv = client1_.Connect(&client2_);
   EXPECT_TRUE(rv);
-  EXPECT_TRUE_WAIT(client1_.writable() && client2_.writable(), 10000);
+  EXPECT_TRUE_WAIT(
+      client1_.all_channels_writable() && client2_.all_channels_writable(),
+      10000);
 
   TestTransfer(0, 1000, 100, true);
   TestTransfer(1, 1000, 100, true);
@@ -837,8 +831,8 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
 
   // After negotiation, each side has a distinct local certificate, but still no
   // remote certificate, because connection has not yet occurred.
-  ASSERT_TRUE(client1_.transport()->GetCertificate(&certificate1));
-  ASSERT_TRUE(client2_.transport()->GetCertificate(&certificate2));
+  ASSERT_TRUE(client1_.transport()->GetLocalCertificate(&certificate1));
+  ASSERT_TRUE(client2_.transport()->GetLocalCertificate(&certificate2));
   ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
   ASSERT_FALSE(
@@ -861,8 +855,8 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
   rtc::scoped_ptr<rtc::SSLCertificate> remote_cert2;
 
   // After connection, each side has a distinct local certificate.
-  ASSERT_TRUE(client1_.transport()->GetCertificate(&certificate1));
-  ASSERT_TRUE(client2_.transport()->GetCertificate(&certificate2));
+  ASSERT_TRUE(client1_.transport()->GetLocalCertificate(&certificate1));
+  ASSERT_TRUE(client2_.transport()->GetLocalCertificate(&certificate2));
   ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
 
