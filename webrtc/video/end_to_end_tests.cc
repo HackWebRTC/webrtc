@@ -15,7 +15,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/frame_callback.h"
@@ -1446,68 +1445,6 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
   tester.RunTest();
 }
 
-TEST_F(EndToEndTest, ReceivesTransportFeedback) {
-  static const int kExtensionId = 5;
-
-  class TransportFeedbackObserver : public test::DirectTransport {
-   public:
-    TransportFeedbackObserver(rtc::Event* done_event) : done_(done_event) {}
-    virtual ~TransportFeedbackObserver() {}
-
-    bool SendRtcp(const uint8_t* data, size_t length) override {
-      RTCPUtility::RTCPParserV2 parser(data, length, true);
-      EXPECT_TRUE(parser.IsValid());
-
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kTransportFeedback) {
-          done_->Set();
-          break;
-        }
-        packet_type = parser.Iterate();
-      }
-
-      return test::DirectTransport::SendRtcp(data, length);
-    }
-
-    rtc::Event* done_;
-  };
-
-  class TransportFeedbackTester : public MultiStreamTest {
-   public:
-    TransportFeedbackTester() : done_(false, false) {}
-    virtual ~TransportFeedbackTester() {}
-
-   protected:
-    void Wait() override {
-      EXPECT_TRUE(done_.Wait(CallTest::kDefaultTimeoutMs));
-    }
-
-    void UpdateSendConfig(
-        size_t stream_index,
-        VideoSendStream::Config* send_config,
-        VideoEncoderConfig* encoder_config,
-        test::FrameGeneratorCapturer** frame_generator) override {
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
-    }
-
-    void UpdateReceiveConfig(
-        size_t stream_index,
-        VideoReceiveStream::Config* receive_config) override {
-      receive_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
-    }
-
-    virtual test::DirectTransport* CreateReceiveTransport() {
-      return new TransportFeedbackObserver(&done_);
-    }
-
-   private:
-    rtc::Event done_;
-  } tester;
-  tester.RunTest();
-}
 TEST_F(EndToEndTest, ObserversEncodedFrames) {
   class EncodedFrameTestObserver : public EncodedFrameObserver {
    public:

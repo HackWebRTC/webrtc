@@ -60,11 +60,7 @@ class RtcpFormatRembTest : public ::testing::Test {
   RtcpFormatRembTest()
       : over_use_detector_options_(),
         system_clock_(Clock::GetRealTimeClock()),
-        dummy_rtp_rtcp_impl_(nullptr),
         receive_statistics_(ReceiveStatistics::Create(system_clock_)),
-        rtcp_sender_(nullptr),
-        rtcp_receiver_(nullptr),
-        test_transport_(nullptr),
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(new RemoteBitrateEstimatorSingleStream(
             &remote_bitrate_observer_,
@@ -91,9 +87,9 @@ void RtcpFormatRembTest::SetUp() {
   configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
   dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
   rtcp_sender_ =
-      new RTCPSender(false, system_clock_, receive_statistics_.get(), nullptr);
-  rtcp_receiver_ = new RTCPReceiver(system_clock_, false, nullptr, nullptr,
-                                    nullptr, nullptr, dummy_rtp_rtcp_impl_);
+      new RTCPSender(false, system_clock_, receive_statistics_.get(), NULL);
+  rtcp_receiver_ = new RTCPReceiver(system_clock_, false, NULL, NULL, NULL,
+                                    dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
 
   EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(test_transport_));

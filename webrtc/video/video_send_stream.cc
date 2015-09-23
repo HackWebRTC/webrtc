@@ -120,7 +120,7 @@ VideoSendStream::VideoSendStream(
   RTC_DCHECK(!config_.rtp.ssrcs.empty());
   RTC_CHECK(channel_group->CreateSendChannel(
       channel_id_, &transport_adapter_, &stats_proxy_,
-      config.pre_encode_callback, num_cpu_cores, config_));
+      config.pre_encode_callback, num_cpu_cores, config_.rtp.ssrcs));
   vie_channel_ = channel_group_->GetChannel(channel_id_);
   vie_encoder_ = channel_group_->GetEncoder(channel_id_);
 

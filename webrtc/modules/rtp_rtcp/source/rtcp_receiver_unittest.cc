@@ -33,7 +33,9 @@ namespace {  // Anonymous namespace; hide utility functions and classes.
 class TestTransport : public Transport,
                       public NullRtpData {
  public:
-  explicit TestTransport() : rtcp_receiver_(nullptr) {}
+  explicit TestTransport()
+      : rtcp_receiver_(NULL) {
+  }
   void SetRTCPReceiver(RTCPReceiver* rtcp_receiver) {
     rtcp_receiver_ = rtcp_receiver;
   }
@@ -76,8 +78,8 @@ class RtcpReceiverTest : public ::testing::Test {
     configuration.outgoing_transport = test_transport_;
     configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
-    rtcp_receiver_ = new RTCPReceiver(&system_clock_, false, nullptr, nullptr,
-                                      nullptr, nullptr, rtp_rtcp_impl_);
+    rtcp_receiver_ = new RTCPReceiver(&system_clock_, false, NULL, NULL, NULL,
+                                      rtp_rtcp_impl_);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
   }
   ~RtcpReceiverTest() {
@@ -360,8 +362,7 @@ TEST_F(RtcpReceiverTest, GetRtt) {
   rtcp_receiver_->SetSsrcs(kSourceSsrc, ssrcs);
 
   // No report block received.
-  EXPECT_EQ(
-      -1, rtcp_receiver_->RTT(kSenderSsrc, nullptr, nullptr, nullptr, nullptr));
+  EXPECT_EQ(-1, rtcp_receiver_->RTT(kSenderSsrc, NULL, NULL, NULL, NULL));
 
   rtcp::ReportBlock rb;
   rb.To(kSourceSsrc);
@@ -373,12 +374,10 @@ TEST_F(RtcpReceiverTest, GetRtt) {
   EXPECT_EQ(kSenderSsrc, rtcp_packet_info_.remoteSSRC);
   EXPECT_EQ(kRtcpRr, rtcp_packet_info_.rtcpPacketTypeFlags);
   EXPECT_EQ(1u, rtcp_packet_info_.report_blocks.size());
-  EXPECT_EQ(
-      0, rtcp_receiver_->RTT(kSenderSsrc, nullptr, nullptr, nullptr, nullptr));
+  EXPECT_EQ(0, rtcp_receiver_->RTT(kSenderSsrc, NULL, NULL, NULL, NULL));
 
   // Report block not received.
-  EXPECT_EQ(-1, rtcp_receiver_->RTT(kSenderSsrc + 1, nullptr, nullptr, nullptr,
-                                    nullptr));
+  EXPECT_EQ(-1, rtcp_receiver_->RTT(kSenderSsrc + 1, NULL, NULL, NULL, NULL));
 }
 
 TEST_F(RtcpReceiverTest, InjectIjWithNoItem) {
@@ -590,7 +589,7 @@ TEST_F(RtcpReceiverTest, InjectXrVoipPacket) {
   xr.WithVoipMetric(&voip_metric);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
-  ASSERT_TRUE(rtcp_packet_info_.VoIPMetric != nullptr);
+  ASSERT_TRUE(rtcp_packet_info_.VoIPMetric != NULL);
   EXPECT_EQ(kLossRate, rtcp_packet_info_.VoIPMetric->lossRate);
   EXPECT_EQ(kRtcpXrVoipMetric, rtcp_packet_info_.rtcpPacketTypeFlags);
 }
@@ -844,7 +843,7 @@ TEST_F(RtcpReceiverTest, ReceiveReportTimeout) {
 
 TEST_F(RtcpReceiverTest, TmmbrReceivedWithNoIncomingPacket) {
   // This call is expected to fail because no data has arrived.
-  EXPECT_EQ(-1, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(-1, rtcp_receiver_->TMMBRReceived(0, 0, NULL));
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
@@ -865,7 +864,7 @@ TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
   rtc::scoped_ptr<rtcp::RawPacket> packet(sr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
 
-  EXPECT_EQ(1, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(1, rtcp_receiver_->TMMBRReceived(0, 0, NULL));
   TMMBRSet candidate_set;
   candidate_set.VerifyAndAllocateSet(1);
   EXPECT_EQ(1, rtcp_receiver_->TMMBRReceived(1, 0, &candidate_set));
@@ -891,7 +890,7 @@ TEST_F(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
   ssrcs.insert(kMediaFlowSsrc);
   rtcp_receiver_->SetSsrcs(kMediaFlowSsrc, ssrcs);
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
-  EXPECT_EQ(0, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(0, rtcp_receiver_->TMMBRReceived(0, 0, NULL));
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
@@ -912,7 +911,7 @@ TEST_F(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
   rtc::scoped_ptr<rtcp::RawPacket> packet(sr.Build());
 
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
-  EXPECT_EQ(0, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(0, rtcp_receiver_->TMMBRReceived(0, 0, NULL));
 }
 
 TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
@@ -939,7 +938,7 @@ TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
     system_clock_.AdvanceTimeMilliseconds(5000);
   }
   // It is now starttime + 15.
-  EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(0, 0, NULL));
   TMMBRSet candidate_set;
   candidate_set.VerifyAndAllocateSet(3);
   EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(3, 0, &candidate_set));
@@ -948,7 +947,7 @@ TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
   // seconds, timing out the first packet.
   system_clock_.AdvanceTimeMilliseconds(12000);
   // Odd behaviour: Just counting them does not trigger the timeout.
-  EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(0, 0, NULL));
   EXPECT_EQ(2, rtcp_receiver_->TMMBRReceived(3, 0, &candidate_set));
   EXPECT_EQ(kSenderSsrc + 1, candidate_set.Ssrc(0));
 }
@@ -1009,7 +1008,7 @@ TEST_F(RtcpReceiverTest, Callbacks) {
   EXPECT_TRUE(callback.Matches(kSourceSsrc, kSequenceNumber, kFractionLoss,
                                kCumulativeLoss, kJitter));
 
-  rtcp_receiver_->RegisterRtcpStatisticsCallback(nullptr);
+  rtcp_receiver_->RegisterRtcpStatisticsCallback(NULL);
 
   // Add arbitrary numbers, callback should not be called (retain old values).
   rtcp::ReportBlock rb2;

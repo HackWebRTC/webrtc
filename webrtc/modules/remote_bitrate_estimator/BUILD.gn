@@ -36,11 +36,7 @@ source_set("rbe_components") {
     "overuse_estimator.h",
     "remote_bitrate_estimator_abs_send_time.cc",
     "remote_bitrate_estimator_single_stream.cc",
-    "remote_estimator_proxy.cc",
-    "remote_estimator_proxy.h",
     "send_time_history.cc",
-    "transport_feedback_adapter.cc",
-    "transport_feedback_adapter.h",
   ]
 
   configs += [ "../..:common_config" ]

@@ -13,7 +13,6 @@
 #include <assert.h>  // assert
 #include <string.h>  // memset
 
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
@@ -37,7 +36,8 @@ RTCPPacketInformation::RTCPPacketInformation()
       rtp_timestamp(0),
       xr_originator_ssrc(0),
       xr_dlrr_item(false),
-      VoIPMetric(nullptr) {}
+      VoIPMetric(NULL) {
+}
 
 RTCPPacketInformation::~RTCPPacketInformation()
 {

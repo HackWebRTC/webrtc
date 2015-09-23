@@ -215,7 +215,6 @@
             'pacing/packet_router_unittest.cc',
             'remote_bitrate_estimator/bwe_simulations.cc',
             'remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h',
-            'remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h',
             'remote_bitrate_estimator/inter_arrival_unittest.cc',
             'remote_bitrate_estimator/overuse_detector_unittest.cc',
             'remote_bitrate_estimator/rate_statistics_unittest.cc',

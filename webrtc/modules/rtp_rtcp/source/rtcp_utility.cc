@@ -8,9 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 #include <assert.h>
 #include <math.h>   // ceil
@@ -57,7 +55,6 @@ RTCPUtility::RTCPParserV2::RTCPParserV2(const uint8_t* rtcpData,
       _ptrRTCPBlockEnd(NULL),
       _state(ParseState::State_TopLevel),
       _numberOfBlocks(0),
-      num_skipped_blocks_(0),
       _packetType(RTCPPacketTypes::kInvalid) {
   Validate();
 }
@@ -83,9 +80,6 @@ RTCPUtility::RTCPParserV2::Packet() const
     return _packet;
 }
 
-rtcp::RtcpPacket* RTCPUtility::RTCPParserV2::ReleaseRtcpPacket() {
-  return rtcp_packet_.release();
-}
 RTCPUtility::RTCPPacketTypes
 RTCPUtility::RTCPParserV2::Begin()
 {
@@ -153,7 +147,7 @@ RTCPUtility::RTCPParserV2::Iterate()
             IterateAppItem();
             break;
         default:
-          RTC_NOTREACHED() << "Invalid state!";
+            assert(false); // Invalid state!
             break;
         }
     }
@@ -176,7 +170,7 @@ RTCPUtility::RTCPParserV2::IterateTopLevel()
         _ptrRTCPBlockEnd = _ptrRTCPData + header.BlockSize();
         if (_ptrRTCPBlockEnd > _ptrRTCPDataEnd)
         {
-          ++num_skipped_blocks_;
+            // Bad block!
             return;
         }
 
@@ -225,15 +219,16 @@ RTCPUtility::RTCPParserV2::IterateTopLevel()
             ParseIJ();
             return;
         }
-        case PT_RTPFB:
-          FALLTHROUGH();
+        case PT_RTPFB: // Fall through!
         case PT_PSFB:
         {
-          if (!ParseFBCommon(header)) {
-            // Nothing supported found, continue to next block!
-            break;
-          }
-          return;
+            const bool ok = ParseFBCommon(header);
+            if (!ok)
+            {
+                // Nothing supported found, continue to next block!
+                break;
+            }
+            return;
         }
         case PT_APP:
         {
@@ -257,7 +252,6 @@ RTCPUtility::RTCPParserV2::IterateTopLevel()
         }
         default:
             // Not supported! Skip!
-            ++num_skipped_blocks_;
             EndCurrentBlock();
             break;
         }
@@ -1166,26 +1160,28 @@ bool RTCPUtility::RTCPParserV2::ParseXrUnsupportedBlockType(
 }
 
 bool RTCPUtility::RTCPParserV2::ParseFBCommon(const RtcpCommonHeader& header) {
-  RTC_CHECK((header.packet_type == PT_RTPFB) ||
-            (header.packet_type == PT_PSFB));  // Parser logic check
+  assert((header.packet_type == PT_RTPFB) ||
+         (header.packet_type == PT_PSFB));  // Parser logic check
 
     const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
-    // 4 * 3, RFC4585 section 6.1
-    if (length < 12) {
-      LOG(LS_WARNING)
-          << "Invalid RTCP packet: Too little data (" << length
-          << " bytes) left in buffer to parse a 12 byte RTPFB/PSFB message.";
+    if (length < 12) // 4 * 3, RFC4585 section 6.1
+    {
+        EndCurrentBlock();
         return false;
     }
 
     _ptrRTCPData += 4; // Skip RTCP header
 
-    uint32_t senderSSRC = ByteReader<uint32_t>::ReadBigEndian(_ptrRTCPData);
-    _ptrRTCPData += 4;
+    uint32_t senderSSRC = *_ptrRTCPData++ << 24;
+    senderSSRC += *_ptrRTCPData++ << 16;
+    senderSSRC += *_ptrRTCPData++ << 8;
+    senderSSRC += *_ptrRTCPData++;
 
-    uint32_t mediaSSRC = ByteReader<uint32_t>::ReadBigEndian(_ptrRTCPData);
-    _ptrRTCPData += 4;
+    uint32_t mediaSSRC = *_ptrRTCPData++ << 24;
+    mediaSSRC += *_ptrRTCPData++ << 16;
+    mediaSSRC += *_ptrRTCPData++ << 8;
+    mediaSSRC += *_ptrRTCPData++;
 
     if (header.packet_type == PT_RTPFB) {
         // Transport layer feedback
@@ -1201,6 +1197,12 @@ bool RTCPUtility::RTCPParserV2::ParseFBCommon(const RtcpCommonHeader& header) {
             _state = ParseState::State_RTPFB_NACKItem;
 
             return true;
+        }
+        case 2:
+        {
+            // used to be ACK is this code point, which is removed
+            // conficts with http://tools.ietf.org/html/draft-levin-avt-rtcp-burst-00
+            break;
         }
         case 3:
         {
@@ -1234,23 +1236,10 @@ bool RTCPUtility::RTCPParserV2::ParseFBCommon(const RtcpCommonHeader& header) {
             // Note: No state transition, SR REQ is empty!
             return true;
         }
-        case 15: {
-          _packetType = RTCPPacketTypes::kTransportFeedback;
-          rtcp_packet_ =
-              rtcp::TransportFeedback::ParseFrom(_ptrRTCPData - 12, length);
-          // Since we parse the whole packet here, keep the TopLevel state and
-          // just end the current block.
-          if (rtcp_packet_.get()) {
-            EndCurrentBlock();
-            return true;
-          }
-          break;
-        }
         default:
             break;
         }
-        // Unsupported RTPFB message. Skip and move to next block.
-        ++num_skipped_blocks_;
+        EndCurrentBlock();
         return false;
     } else if (header.packet_type == PT_PSFB) {
         // Payload specific feedback
@@ -1298,11 +1287,14 @@ bool RTCPUtility::RTCPParserV2::ParseFBCommon(const RtcpCommonHeader& header) {
             break;
         }
 
+        EndCurrentBlock();
         return false;
     }
     else
     {
-      RTC_NOTREACHED();
+        assert(false);
+
+        EndCurrentBlock();
         return false;
     }
 }
@@ -1660,10 +1652,6 @@ RTCPUtility::RTCPParserV2::ParseAPPItem()
         _ptrRTCPData += length;
     }
     return true;
-}
-
-size_t RTCPUtility::RTCPParserV2::NumSkippedBlocks() const {
-  return num_skipped_blocks_;
 }
 
 RTCPUtility::RTCPPacketIterator::RTCPPacketIterator(uint8_t* rtcpData,

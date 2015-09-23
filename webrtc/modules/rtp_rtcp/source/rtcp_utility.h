@@ -13,15 +13,11 @@
 
 #include <stddef.h> // size_t, ptrdiff_t
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-namespace rtcp {
-class RtcpPacket;
-}
 namespace RTCPUtility {
 
 class NackStats {
@@ -298,9 +294,6 @@ enum class RTCPPacketTypes {
 
   kApp,
   kAppItem,
-
-  // draft-holmer-rmcat-transport-wide-cc-extensions
-  kTransportFeedback,
 };
 
 struct RTCPRawPacket {
@@ -366,12 +359,10 @@ class RTCPParserV2 {
 
   RTCPPacketTypes PacketType() const;
   const RTCPPacket& Packet() const;
-  rtcp::RtcpPacket* ReleaseRtcpPacket();
   const RTCPRawPacket& RawPacket() const;
   ptrdiff_t LengthLeft() const;
 
   bool IsValid() const;
-  size_t NumSkippedBlocks() const;
 
   RTCPPacketTypes Begin();
   RTCPPacketTypes Iterate();
@@ -463,11 +454,9 @@ class RTCPParserV2 {
 
   ParseState _state;
   uint8_t _numberOfBlocks;
-  size_t num_skipped_blocks_;
 
   RTCPPacketTypes _packetType;
   RTCPPacket _packet;
-  rtc::scoped_ptr<webrtc::rtcp::RtcpPacket> rtcp_packet_;
 };
 
 class RTCPPacketIterator {

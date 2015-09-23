@@ -32,8 +32,6 @@
 
 namespace webrtc {
 
-static const int kTransportSeqExtensionId =
-    VideoQualityTest::kAbsSendTimeExtensionId + 1;
 static const int kSendStatsPollingIntervalMs = 1000;
 static const int kPayloadTypeVP8 = 123;
 static const int kPayloadTypeVP9 = 124;
@@ -599,15 +597,6 @@ void VideoQualityTest::SetupFullStack(const Params& params,
   send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
   send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
-
-  send_config_.rtp.extensions.clear();
-  if (params.common.send_side_bwe) {
-    send_config_.rtp.extensions.push_back(RtpExtension(
-        RtpExtension::kTransportSequenceNumber, kTransportSeqExtensionId));
-  } else {
-    send_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
-  }
 
   // Automatically fill out streams[0] with params.
   VideoStream* stream = &encoder_config_.streams[0];

@@ -91,9 +91,6 @@ class RtcpPacket {
                            size_t max_length,
                            PacketReadyCallback* callback) const;
 
-  // Size of this packet in bytes (including headers, excluding nested packets).
-  virtual size_t BlockLength() const = 0;
-
  protected:
   RtcpPacket() {}
 
@@ -112,6 +109,7 @@ class RtcpPacket {
                     size_t* index,
                     RtcpPacket::PacketReadyCallback* callback) const;
 
+  virtual size_t BlockLength() const = 0;
   size_t HeaderLength() const;
 
   static const size_t kHeaderLength = 4;

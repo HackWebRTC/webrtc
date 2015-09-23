@@ -140,8 +140,6 @@ int DurationSecs() {
   return static_cast<int>(FLAGS_duration);
 }
 
-DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
-
 }  // namespace flags
 
 void Loopback() {
@@ -160,13 +158,19 @@ void Loopback() {
   std::string clip = flags::Clip();
   std::string graph_title = clip.empty() ? "" : "video " + clip;
   VideoQualityTest::Params params{
-      {flags::Width(), flags::Height(), flags::Fps(),
-       flags::MinBitrateKbps() * 1000, flags::TargetBitrateKbps() * 1000,
-       flags::MaxBitrateKbps() * 1000, flags::Codec(),
-       flags::NumTemporalLayers(),
-       0,  // No min transmit bitrate.
-       call_bitrate_config, flags::TLDiscardThreshold(),
-       flags::FLAGS_send_side_bwe},
+      {
+        flags::Width(),
+        flags::Height(),
+        flags::Fps(),
+        flags::MinBitrateKbps() * 1000,
+        flags::TargetBitrateKbps() * 1000,
+        flags::MaxBitrateKbps() * 1000,
+        flags::Codec(),
+        flags::NumTemporalLayers(),
+        0,  // No min transmit bitrate.
+        call_bitrate_config,
+        flags::TLDiscardThreshold()
+      },
       {clip},
       {},  // Screenshare specific.
       {graph_title, 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename()},
