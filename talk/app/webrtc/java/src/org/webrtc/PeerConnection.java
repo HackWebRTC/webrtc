@@ -190,8 +190,7 @@ public class PeerConnection {
   public native void setRemoteDescription(
       SdpObserver observer, SessionDescription sdp);
 
-  public native boolean updateIce(
-      List<IceServer> iceServers, MediaConstraints constraints);
+  public native boolean setConfiguration(RTCConfiguration config);
 
   public boolean addIceCandidate(IceCandidate candidate) {
     return nativeAddIceCandidate(

@@ -1360,13 +1360,10 @@ static void JavaIceServersToJsepIceServers(
   CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
 }
 
-JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
-    JNIEnv *jni, jclass, jlong factory, jobject j_rtc_config,
-    jobject j_constraints, jlong observer_p) {
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> f(
-      reinterpret_cast<PeerConnectionFactoryInterface*>(
-          factoryFromJava(factory)));
-
+static void JavaRTCConfigurationToJsepRTCConfiguration(
+    JNIEnv* jni,
+    jobject j_rtc_config,
+    PeerConnectionInterface::RTCConfiguration* rtc_config) {
   jclass j_rtc_config_class = GetObjectClass(jni, j_rtc_config);
 
   jfieldID j_ice_transports_type_id = GetFieldID(
@@ -1405,25 +1402,37 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
   jfieldID j_ice_connection_receiving_timeout_id =
       GetFieldID(jni, j_rtc_config_class, "iceConnectionReceivingTimeout", "I");
 
-  jfieldID j_key_type_id = GetFieldID(jni, j_rtc_config_class, "keyType",
-      "Lorg/webrtc/PeerConnection$KeyType;");
-  jobject j_key_type = GetObjectField(jni, j_rtc_config, j_key_type_id);
+  rtc_config->type =
+      JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
+  rtc_config->bundle_policy =
+      JavaBundlePolicyToNativeType(jni, j_bundle_policy);
+  rtc_config->rtcp_mux_policy =
+      JavaRtcpMuxPolicyToNativeType(jni, j_rtcp_mux_policy);
+  rtc_config->tcp_candidate_policy =
+      JavaTcpCandidatePolicyToNativeType(jni, j_tcp_candidate_policy);
+  JavaIceServersToJsepIceServers(jni, j_ice_servers, &rtc_config->servers);
+  rtc_config->audio_jitter_buffer_max_packets =
+      GetIntField(jni, j_rtc_config, j_audio_jitter_buffer_max_packets_id);
+  rtc_config->audio_jitter_buffer_fast_accelerate = GetBooleanField(
+      jni, j_rtc_config, j_audio_jitter_buffer_fast_accelerate_id);
+  rtc_config->ice_connection_receiving_timeout =
+      GetIntField(jni, j_rtc_config, j_ice_connection_receiving_timeout_id);
+}
+
+JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
+    JNIEnv *jni, jclass, jlong factory, jobject j_rtc_config,
+    jobject j_constraints, jlong observer_p) {
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> f(
+      reinterpret_cast<PeerConnectionFactoryInterface*>(
+          factoryFromJava(factory)));
 
   PeerConnectionInterface::RTCConfiguration rtc_config;
-  rtc_config.type =
-      JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
-  rtc_config.bundle_policy = JavaBundlePolicyToNativeType(jni, j_bundle_policy);
-  rtc_config.rtcp_mux_policy =
-      JavaRtcpMuxPolicyToNativeType(jni, j_rtcp_mux_policy);
-  rtc_config.tcp_candidate_policy =
-      JavaTcpCandidatePolicyToNativeType(jni, j_tcp_candidate_policy);
-  JavaIceServersToJsepIceServers(jni, j_ice_servers, &rtc_config.servers);
-  rtc_config.audio_jitter_buffer_max_packets =
-      GetIntField(jni, j_rtc_config, j_audio_jitter_buffer_max_packets_id);
-  rtc_config.audio_jitter_buffer_fast_accelerate = GetBooleanField(
-      jni, j_rtc_config, j_audio_jitter_buffer_fast_accelerate_id);
-  rtc_config.ice_connection_receiving_timeout =
-      GetIntField(jni, j_rtc_config, j_ice_connection_receiving_timeout_id);
+  JavaRTCConfigurationToJsepRTCConfiguration(jni, j_rtc_config, &rtc_config);
+
+  jclass j_rtc_config_class = GetObjectClass(jni, j_rtc_config);
+  jfieldID j_key_type_id = GetFieldID(jni, j_rtc_config_class, "keyType",
+                                      "Lorg/webrtc/PeerConnection$KeyType;");
+  jobject j_key_type = GetObjectField(jni, j_rtc_config, j_key_type_id);
 
   // Create ECDSA certificate.
   if (JavaKeyTypeToNativeType(jni, j_key_type) == rtc::KT_ECDSA) {
@@ -1556,13 +1565,11 @@ JOW(void, PeerConnection_setRemoteDescription)(
       observer, JavaSdpToNativeSdp(jni, j_sdp));
 }
 
-JOW(jboolean, PeerConnection_updateIce)(
-    JNIEnv* jni, jobject j_pc, jobject j_ice_servers, jobject j_constraints) {
-  PeerConnectionInterface::IceServers ice_servers;
-  JavaIceServersToJsepIceServers(jni, j_ice_servers, &ice_servers);
-  scoped_ptr<ConstraintsWrapper> constraints(
-      new ConstraintsWrapper(jni, j_constraints));
-  return ExtractNativePC(jni, j_pc)->UpdateIce(ice_servers, constraints.get());
+JOW(jboolean, PeerConnection_setConfiguration)(
+    JNIEnv* jni, jobject j_pc, jobject j_rtc_config) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  JavaRTCConfigurationToJsepRTCConfiguration(jni, j_rtc_config, &rtc_config);
+  return ExtractNativePC(jni, j_pc)->SetConfiguration(rtc_config);
 }
 
 JOW(jboolean, PeerConnection_nativeAddIceCandidate)(
