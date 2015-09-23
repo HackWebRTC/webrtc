@@ -480,6 +480,38 @@ int VoEHardwareImpl::EnableBuiltInAEC(bool enable) {
   return _shared->audio_device()->EnableBuiltInAEC(enable);
 }
 
+bool VoEHardwareImpl::BuiltInAGCIsAvailable() const {
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return false;
+  }
+  return _shared->audio_device()->BuiltInAGCIsAvailable();
+}
+
+int VoEHardwareImpl::EnableBuiltInAGC(bool enable) {
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  return _shared->audio_device()->EnableBuiltInAGC(enable);
+}
+
+bool VoEHardwareImpl::BuiltInNSIsAvailable() const {
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return false;
+  }
+  return _shared->audio_device()->BuiltInNSIsAvailable();
+}
+
+int VoEHardwareImpl::EnableBuiltInNS(bool enable) {
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  return _shared->audio_device()->EnableBuiltInNS(enable);
+}
+
 #endif  // WEBRTC_VOICE_ENGINE_HARDWARE_API
 
 }  // namespace webrtc

@@ -47,6 +47,10 @@ class VoEHardwareImpl : public VoEHardware {
 
   bool BuiltInAECIsAvailable() const override;
   int EnableBuiltInAEC(bool enable) override;
+  bool BuiltInAGCIsAvailable() const override;
+  int EnableBuiltInAGC(bool enable) override;
+  bool BuiltInNSIsAvailable() const override;
+  int EnableBuiltInNS(bool enable) override;
 
  protected:
   VoEHardwareImpl(voe::SharedData* shared);

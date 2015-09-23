@@ -30,13 +30,13 @@ namespace webrtc {
 AudioTrackJni::JavaAudioTrack::JavaAudioTrack(
     NativeRegistration* native_reg, rtc::scoped_ptr<GlobalRef> audio_track)
     : audio_track_(audio_track.Pass()),
-      init_playout_(native_reg->GetMethodId("InitPlayout", "(II)V")),
-      start_playout_(native_reg->GetMethodId("StartPlayout", "()Z")),
-      stop_playout_(native_reg->GetMethodId("StopPlayout", "()Z")),
-      set_stream_volume_(native_reg->GetMethodId("SetStreamVolume", "(I)Z")),
+      init_playout_(native_reg->GetMethodId("initPlayout", "(II)V")),
+      start_playout_(native_reg->GetMethodId("startPlayout", "()Z")),
+      stop_playout_(native_reg->GetMethodId("stopPlayout", "()Z")),
+      set_stream_volume_(native_reg->GetMethodId("setStreamVolume", "(I)Z")),
       get_stream_max_volume_(native_reg->GetMethodId(
-          "GetStreamMaxVolume", "()I")),
-      get_stream_volume_(native_reg->GetMethodId("GetStreamVolume", "()I")) {
+          "getStreamMaxVolume", "()I")),
+      get_stream_volume_(native_reg->GetMethodId("getStreamVolume", "()I")) {
 }
 
 AudioTrackJni::JavaAudioTrack::~JavaAudioTrack() {}

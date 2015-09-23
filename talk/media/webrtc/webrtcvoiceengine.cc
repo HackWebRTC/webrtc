@@ -615,6 +615,7 @@ bool WebRtcVoiceEngine::ClearOptionOverrides() {
 // AudioOptions defaults are set in InitInternal (for options with corresponding
 // MediaEngineInterface flags) and in SetOptions(int) for flagless options.
 bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
+  LOG(LS_INFO) << "ApplyOptions: " << options_in.ToString();
   AudioOptions options = options_in;  // The options are modified below.
   // kEcConference is AEC with high suppression.
   webrtc::EcModes ec_mode = webrtc::kEcConference;
@@ -658,8 +659,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 #endif
-
-  LOG(LS_INFO) << "Applying audio options: " << options.ToString();
 
   webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();
 
@@ -707,8 +706,19 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  bool auto_gain_control;
+  bool auto_gain_control = false;
   if (options.auto_gain_control.Get(&auto_gain_control)) {
+    const bool built_in_agc = voe_wrapper_->hw()->BuiltInAGCIsAvailable();
+    if (built_in_agc) {
+      if (voe_wrapper_->hw()->EnableBuiltInAGC(auto_gain_control) == 0 &&
+          auto_gain_control) {
+        // Disable internal software AGC if built-in AGC is enabled,
+        // i.e., replace the software AGC with the built-in AGC.
+        options.auto_gain_control.Set(false);
+        auto_gain_control = false;
+        LOG(LS_INFO) << "Disabling AGC since built-in AGC will be used instead";
+      }
+    }
     if (voep->SetAgcStatus(auto_gain_control, agc_mode) == -1) {
       LOG_RTCERR2(SetAgcStatus, auto_gain_control, agc_mode);
       return false;
@@ -747,14 +757,25 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  bool noise_suppression;
+  bool noise_suppression = false;
   if (options.noise_suppression.Get(&noise_suppression)) {
+    const bool built_in_ns = voe_wrapper_->hw()->BuiltInNSIsAvailable();
+    if (built_in_ns) {
+      if (voe_wrapper_->hw()->EnableBuiltInNS(noise_suppression) == 0 &&
+          noise_suppression) {
+        // Disable internal software NS if built-in NS is enabled,
+        // i.e., replace the software NS with the built-in NS.
+        options.noise_suppression.Set(false);
+        noise_suppression = false;
+        LOG(LS_INFO) << "Disabling NS since built-in NS will be used instead";
+      }
+    }
     if (voep->SetNsStatus(noise_suppression, ns_mode) == -1) {
       LOG_RTCERR2(SetNsStatus, noise_suppression, ns_mode);
       return false;
     } else {
-      LOG(LS_VERBOSE) << "Noise suppression set to " << noise_suppression
-                      << " with mode " << ns_mode;
+      LOG(LS_INFO) << "Noise suppression set to " << noise_suppression
+                   << " with mode " << ns_mode;
     }
   }
 

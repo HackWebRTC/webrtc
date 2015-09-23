@@ -61,6 +61,16 @@ TEST_F(AudioManagerTest, IsAcousticEchoCancelerSupported) {
         audio_manager()->IsAcousticEchoCancelerSupported() ? "Yes" : "No");
 }
 
+TEST_F(AudioManagerTest, IsAutomaticGainControlSupported) {
+  PRINT("%sAutomatic Gain Control support: %s\n", kTag,
+        audio_manager()->IsAutomaticGainControlSupported() ? "Yes" : "No");
+}
+
+TEST_F(AudioManagerTest, IsNoiseSuppressorSupported) {
+  PRINT("%sNoise Suppressor support: %s\n", kTag,
+        audio_manager()->IsNoiseSuppressorSupported() ? "Yes" : "No");
+}
+
 TEST_F(AudioManagerTest, IsLowLatencyPlayoutSupported) {
   PRINT("%sLow latency output support: %s\n", kTag,
         audio_manager()->IsLowLatencyPlayoutSupported() ? "Yes" : "No");

@@ -42,10 +42,6 @@ class WebRtcAudioManager {
   // Guaranteed to be supported by all devices.
   private static final int BITS_PER_SAMPLE = 16;
 
-  // Use 16kHz as the default sample rate. A higher sample rate might prevent
-  // us from supporting communication mode on some older (e.g. ICS) devices.
-  private static final int DEFAULT_SAMPLE_RATE_HZ = 16000;
-
   private static final int DEFAULT_FRAME_PER_BUFFER = 256;
 
   // TODO(henrika): add stereo support for playout.
@@ -68,6 +64,8 @@ class WebRtcAudioManager {
   private int nativeChannels;
 
   private boolean hardwareAEC;
+  private boolean hardwareAGC;
+  private boolean hardwareNS;
   private boolean lowLatencyOutput;
   private int sampleRate;
   private int channels;
@@ -75,7 +73,7 @@ class WebRtcAudioManager {
   private int inputBufferSize;
 
   WebRtcAudioManager(Context context, long nativeAudioManager) {
-    Logd("ctor" + WebRtcAudioUtils.getThreadInfo());
+    Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.context = context;
     this.nativeAudioManager = nativeAudioManager;
     audioManager = (AudioManager) context.getSystemService(
@@ -85,22 +83,23 @@ class WebRtcAudioManager {
     }
     storeAudioParameters();
     nativeCacheAudioParameters(
-        sampleRate, channels, hardwareAEC, lowLatencyOutput, outputBufferSize,
-        inputBufferSize, nativeAudioManager);
+        sampleRate, channels, hardwareAEC, hardwareAGC, hardwareNS,
+        lowLatencyOutput, outputBufferSize, inputBufferSize,
+        nativeAudioManager);
   }
 
   private boolean init() {
-    Logd("init" + WebRtcAudioUtils.getThreadInfo());
+    Logging.d(TAG, "init" + WebRtcAudioUtils.getThreadInfo());
     if (initialized) {
       return true;
     }
-    Logd("audio mode is: " + AUDIO_MODES[audioManager.getMode()]);
+    Logging.d(TAG, "audio mode is: " + AUDIO_MODES[audioManager.getMode()]);
     initialized = true;
     return true;
   }
 
   private void dispose() {
-    Logd("dispose" + WebRtcAudioUtils.getThreadInfo());
+    Logging.d(TAG, "dispose" + WebRtcAudioUtils.getThreadInfo());
     if (!initialized) {
       return;
     }
@@ -116,7 +115,7 @@ class WebRtcAudioManager {
     if (blacklisted) {
       // TODO(henrika): enable again for all devices once issue in b/21485703
       // has been resolved.
-      Loge(Build.MODEL + " is blacklisted for OpenSL ES usage!");
+      Logging.e(TAG, Build.MODEL + " is blacklisted for OpenSL ES usage!");
     }
     return blacklisted;
   }
@@ -127,6 +126,8 @@ class WebRtcAudioManager {
     channels = CHANNELS;
     sampleRate = getNativeOutputSampleRate();
     hardwareAEC = isAcousticEchoCancelerSupported();
+    hardwareAGC = isAutomaticGainControlSupported();
+    hardwareNS = isNoiseSuppressorSupported();
     lowLatencyOutput = isLowLatencyOutputSupported();
     outputBufferSize = lowLatencyOutput ?
         getLowLatencyOutputFramesPerBuffer() :
@@ -163,16 +164,30 @@ class WebRtcAudioManager {
     // Override this if we're running on an old emulator image which only
     // supports 8 kHz and doesn't support PROPERTY_OUTPUT_SAMPLE_RATE.
     if (WebRtcAudioUtils.runningOnEmulator()) {
-      Logd("Running on old emulator, overriding sampling rate to 8 kHz.");
+      Logging.d(TAG, "Running emulator, overriding sample rate to 8 kHz.");
       return 8000;
     }
-    if (!WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {
-      return DEFAULT_SAMPLE_RATE_HZ;
+    // Default can be overriden by WebRtcAudioUtils.setDefaultSampleRateHz().
+    // If so, use that value and return here.
+    if (WebRtcAudioUtils.isDefaultSampleRateOverridden()) {
+      Logging.d(TAG, "Default sample rate is overriden to " +
+          WebRtcAudioUtils.getDefaultSampleRateHz() + " Hz");
+      return WebRtcAudioUtils.getDefaultSampleRateHz();
     }
-    String sampleRateString = audioManager.getProperty(
-        AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
-    return (sampleRateString == null) ?
-        DEFAULT_SAMPLE_RATE_HZ : Integer.parseInt(sampleRateString);
+    // No overrides available. Deliver best possible estimate based on default
+    // Android AudioManager APIs.
+    final int sampleRateHz;
+    if (!WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {
+      sampleRateHz = WebRtcAudioUtils.getDefaultSampleRateHz();
+    } else {
+      String sampleRateString = audioManager.getProperty(
+          AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+      sampleRateHz = (sampleRateString == null)
+          ? WebRtcAudioUtils.getDefaultSampleRateHz()
+          : Integer.parseInt(sampleRateString);
+    }
+    Logging.d(TAG, "Sample rate is set to " + sampleRateHz + " Hz");
+    return sampleRateHz;
   }
 
   // Returns the native output buffer size for low-latency output streams.
@@ -187,14 +202,20 @@ class WebRtcAudioManager {
         DEFAULT_FRAME_PER_BUFFER : Integer.parseInt(framesPerBuffer);
   }
 
-  // Returns true if the device supports Acoustic Echo Canceler (AEC).
-  // Also takes blacklisting into account.
+  // Returns true if the device supports an audio effect (AEC, AGC or NS).
+  // Four conditions must be fulfilled if functions are to return true:
+  // 1) the platform must support the built-in (HW) effect,
+  // 2) explicit use (override) of a WebRTC based version must not be set,
+  // 3) the device must not be blacklisted for use of the effect, and
+  // 4) the UUID of the effect must be approved (some UUIDs can be excluded).
   private static boolean isAcousticEchoCancelerSupported() {
-    if (WebRtcAudioUtils.deviceIsBlacklistedForHwAecUsage()) {
-      Logd(Build.MODEL + " is blacklisted for HW AEC usage!");
-      return false;
-    }
-    return WebRtcAudioUtils.isAcousticEchoCancelerSupported();
+    return WebRtcAudioEffects.canUseAcousticEchoCanceler();
+  }
+  private static boolean isAutomaticGainControlSupported() {
+    return WebRtcAudioEffects.canUseAutomaticGainControl();
+  }
+  private static boolean isNoiseSuppressorSupported() {
+    return WebRtcAudioEffects.canUseNoiseSuppressor();
   }
 
   // Returns the minimum output buffer size for Java based audio (AudioTrack).
@@ -245,16 +266,8 @@ class WebRtcAudioManager {
     }
   }
 
-  private static void Logd(String msg) {
-    Logging.d(TAG, msg);
-  }
-
-  private static void Loge(String msg) {
-    Logging.e(TAG, msg);
-  }
-
   private native void nativeCacheAudioParameters(
-    int sampleRate, int channels, boolean hardwareAEC, boolean lowLatencyOutput,
-    int outputBufferSize, int inputBufferSize,
-    long nativeAudioManager);
+    int sampleRate, int channels, boolean hardwareAEC, boolean hardwareAGC,
+    boolean hardwareNS, boolean lowLatencyOutput, int outputBufferSize,
+    int inputBufferSize, long nativeAudioManager);
 }

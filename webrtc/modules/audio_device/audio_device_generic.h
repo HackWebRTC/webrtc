@@ -146,9 +146,13 @@ class AudioDeviceGeneric {
 
   // Android only
   virtual bool BuiltInAECIsAvailable() const;
+  virtual bool BuiltInAGCIsAvailable() const;
+  virtual bool BuiltInNSIsAvailable() const;
 
   // Windows Core Audio and Android only.
   virtual int32_t EnableBuiltInAEC(bool enable);
+  virtual int32_t EnableBuiltInAGC(bool enable);
+  virtual int32_t EnableBuiltInNS(bool enable);
 
   // Windows Core Audio only.
   virtual bool BuiltInAECIsEnabled() const;

@@ -147,6 +147,10 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual bool BuiltInAECIsAvailable() const { return false; }
   virtual int32_t EnableBuiltInAEC(bool enable) { return -1; }
   virtual bool BuiltInAECIsEnabled() const { return false; }
+  virtual bool BuiltInAGCIsAvailable() const { return false; }
+  virtual int32_t EnableBuiltInAGC(bool enable) { return -1; }
+  virtual bool BuiltInNSIsAvailable() const { return false; }
+  virtual int32_t EnableBuiltInNS(bool enable) { return -1; }
 };
 
 }  // namespace webrtc

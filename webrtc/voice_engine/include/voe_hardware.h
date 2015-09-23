@@ -91,8 +91,13 @@ class WEBRTC_DLLEXPORT VoEHardware {
   virtual int SetPlayoutSampleRate(unsigned int samples_per_sec) = 0;
   virtual int PlayoutSampleRate(unsigned int* samples_per_sec) const = 0;
 
+  // Queries and controls platform audio effects on Android devices.
   virtual bool BuiltInAECIsAvailable() const = 0;
   virtual int EnableBuiltInAEC(bool enable) = 0;
+  virtual bool BuiltInAGCIsAvailable() const = 0;
+  virtual int EnableBuiltInAGC(bool enable) = 0;
+  virtual bool BuiltInNSIsAvailable() const = 0;
+  virtual int EnableBuiltInNS(bool enable) = 0;
 
  protected:
   VoEHardware() {}

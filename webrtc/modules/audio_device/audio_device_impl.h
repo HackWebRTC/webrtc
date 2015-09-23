@@ -182,10 +182,13 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   int32_t SetLoudspeakerStatus(bool enable) override;
   int32_t GetLoudspeakerStatus(bool* enabled) const override;
 
-  bool BuiltInAECIsAvailable() const override;
-
-  int32_t EnableBuiltInAEC(bool enable) override;
   bool BuiltInAECIsEnabled() const override;
+  bool BuiltInAECIsAvailable() const override;
+  int32_t EnableBuiltInAEC(bool enable) override;
+  bool BuiltInAGCIsAvailable() const override;
+  int32_t EnableBuiltInAGC(bool enable) override;
+  bool BuiltInNSIsAvailable() const override;
+  int32_t EnableBuiltInNS(bool enable) override;
 
   int GetPlayoutAudioParameters(AudioParameters* params) const override;
   int GetRecordAudioParameters(AudioParameters* params) const override;

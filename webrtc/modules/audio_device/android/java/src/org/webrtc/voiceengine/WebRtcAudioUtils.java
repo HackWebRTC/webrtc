@@ -22,29 +22,111 @@ import android.os.Process;
 import org.webrtc.Logging;
 
 import java.lang.Thread;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public final class WebRtcAudioUtils {
-  // List of devices where it has been verified that the built-in AEC performs
-  // bad and where it makes sense to avoid using it and instead rely on the
-  // native WebRTC AEC instead. The device name is given by Build.MODEL.
-  private static final String[] BLACKLISTED_AEC_MODELS = new String[] {
-      "Nexus 5", // Nexus 5
-      "D6503",   // Sony Xperia Z2 D6503
-  };
+  private static final String TAG = "WebRtcAudioUtils";
 
   // List of devices where we have seen issues (e.g. bad audio quality) using
-  // the low latency ouput mode in combination with OpenSL ES.
+  // the low latency output mode in combination with OpenSL ES.
   // The device name is given by Build.MODEL.
   private static final String[] BLACKLISTED_OPEN_SL_ES_MODELS = new String[] {
       "Nexus 6", // Nexus 6
   };
 
-  // Use 44.1kHz as the default sampling rate.
-  private static final int SAMPLE_RATE_HZ = 44100;
+  // List of devices where it has been verified that the built-in effect
+  // bad and where it makes sense to avoid using it and instead rely on the
+  // native WebRTC version instead. The device name is given by Build.MODEL.
+  private static final String[] BLACKLISTED_AEC_MODELS = new String[] {
+      "Nexus 5",
+      "D6503",   // Sony Xperia Z2 D6503
+  };
+  private static final String[] BLACKLISTED_AGC_MODELS = new String[] {
+      "Nexus 10",
+      "Nexus 9",
+  };
+  private static final String[] BLACKLISTED_NS_MODELS = new String[] {
+      "Nexus 10",
+      "Nexus 9",
+      "Nexus 6",
+      "Nexus 5",
+  };
+
+  // Use 16kHz as the default sample rate. A higher sample rate might prevent
+  // us from supporting communication mode on some older (e.g. ICS) devices.
+  private static final int DEFAULT_SAMPLE_RATE_HZ = 16000;
+  private static int defaultSampleRateHz = DEFAULT_SAMPLE_RATE_HZ;
+  // Set to true if setDefaultSampleRateHz() has been called.
+  private static boolean isDefaultSampleRateOverridden = false;
+
+  // By default, utilize hardware based audio effects when available.
+  private static boolean useWebRtcBasedAcousticEchoCanceler = false;
+  private static boolean useWebRtcBasedAutomaticGainControl = false;
+  private static boolean useWebRtcBasedNoiseSuppressor = false;
+
+  // Call these methods if any hardware based effect shall be replaced by a
+  // software based version provided by the WebRTC stack instead.
+  public static synchronized void setWebRtcBasedAcousticEchoCanceler(
+      boolean enable) {
+    useWebRtcBasedAcousticEchoCanceler = enable;
+  }
+  public static synchronized void setWebRtcBasedAutomaticGainControl(
+      boolean enable) {
+    useWebRtcBasedAutomaticGainControl = enable;
+  }
+  public static synchronized void setWebRtcBasedNoiseSuppressor(
+      boolean enable) {
+    useWebRtcBasedNoiseSuppressor = enable;
+  }
+
+  public static synchronized boolean useWebRtcBasedAcousticEchoCanceler() {
+    if (useWebRtcBasedAcousticEchoCanceler) {
+      Logging.w(TAG, "Overriding default behavior; now using WebRTC AEC!");
+    }
+    return useWebRtcBasedAcousticEchoCanceler;
+  }
+  public static synchronized boolean useWebRtcBasedAutomaticGainControl() {
+    if (useWebRtcBasedAutomaticGainControl) {
+      Logging.w(TAG, "Overriding default behavior; now using WebRTC AGC!");
+    }
+    return useWebRtcBasedAutomaticGainControl;
+  }
+  public static synchronized boolean useWebRtcBasedNoiseSuppressor() {
+    if (useWebRtcBasedNoiseSuppressor) {
+      Logging.w(TAG, "Overriding default behavior; now using WebRTC NS!");
+    }
+    return useWebRtcBasedNoiseSuppressor;
+  }
+
+  // Call this method if the default handling of querying the native sample
+  // rate shall be overridden. Can be useful on some devices where the
+  // available Android APIs are known to return invalid results.
+  public static synchronized void setDefaultSampleRateHz(int sampleRateHz) {
+    isDefaultSampleRateOverridden = true;
+    defaultSampleRateHz = sampleRateHz;
+  }
+
+  public static synchronized boolean isDefaultSampleRateOverridden() {
+    return isDefaultSampleRateOverridden;
+  }
+
+  public static synchronized int getDefaultSampleRateHz() {
+    return defaultSampleRateHz;
+  }
+
+  public static List<String> getBlackListedModelsForAecUsage() {
+    return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_AEC_MODELS);
+  }
+
+  public static List<String> getBlackListedModelsForAgcUsage() {
+    return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_AGC_MODELS);
+  }
+
+  public static List<String> getBlackListedModelsForNsUsage() {
+    return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_NS_MODELS);
+  }
 
   public static boolean runningOnGingerBreadOrHigher() {
     // November 2010: Android 2.3, API Level 9.
@@ -78,34 +160,11 @@ public final class WebRtcAudioUtils {
         Build.BRAND.startsWith("generic_");
   }
 
-  // Returns true if the device is blacklisted for HW AEC usage.
-  public static boolean deviceIsBlacklistedForHwAecUsage() {
-    List<String> blackListedModels = Arrays.asList(BLACKLISTED_AEC_MODELS);
-    return blackListedModels.contains(Build.MODEL);
-  }
-
   // Returns true if the device is blacklisted for OpenSL ES usage.
   public static boolean deviceIsBlacklistedForOpenSLESUsage() {
     List<String> blackListedModels =
         Arrays.asList(BLACKLISTED_OPEN_SL_ES_MODELS);
     return blackListedModels.contains(Build.MODEL);
-  }
-
-  // Returns true if the device supports Acoustic Echo Canceler (AEC).
-  public static boolean isAcousticEchoCancelerSupported() {
-    // AcousticEchoCanceler was added in API level 16 (Jelly Bean).
-    if (!WebRtcAudioUtils.runningOnJellyBeanOrHigher()) {
-      return false;
-    }
-    // Check if the device implements acoustic echo cancellation.
-    return AcousticEchoCanceler.isAvailable();
-  }
-
-  // Returns true if the device supports AEC and it not blacklisted.
-  public static boolean isAcousticEchoCancelerApproved() {
-    if (deviceIsBlacklistedForHwAecUsage())
-      return false;
-    return isAcousticEchoCancelerSupported();
   }
 
   // Information about the current build, taken from system properties.

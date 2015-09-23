@@ -146,8 +146,8 @@ class WebRtcAudioTrack {
     }
   }
 
-  private void InitPlayout(int sampleRate, int channels) {
-    Logd("InitPlayout(sampleRate=" + sampleRate + ", channels=" +
+  private void initPlayout(int sampleRate, int channels) {
+    Logd("initPlayout(sampleRate=" + sampleRate + ", channels=" +
          channels + ")");
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     byteBuffer = byteBuffer.allocateDirect(
@@ -192,8 +192,8 @@ class WebRtcAudioTrack {
     assertTrue(audioTrack.getStreamType() == AudioManager.STREAM_VOICE_CALL);
   }
 
-  private boolean StartPlayout() {
-    Logd("StartPlayout");
+  private boolean startPlayout() {
+    Logd("startPlayout");
     assertTrue(audioTrack != null);
     assertTrue(audioThread == null);
     audioThread = new AudioTrackThread("AudioTrackJavaThread");
@@ -201,8 +201,8 @@ class WebRtcAudioTrack {
     return true;
   }
 
-  private boolean StopPlayout() {
-    Logd("StopPlayout");
+  private boolean stopPlayout() {
+    Logd("stopPlayout");
     assertTrue(audioThread != null);
     audioThread.joinThread();
     audioThread = null;
@@ -214,15 +214,15 @@ class WebRtcAudioTrack {
   }
 
   /** Get max possible volume index for a phone call audio stream. */
-  private int GetStreamMaxVolume() {
-    Logd("GetStreamMaxVolume");
+  private int getStreamMaxVolume() {
+    Logd("getStreamMaxVolume");
     assertTrue(audioManager != null);
     return audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
   }
 
   /** Set current volume level for a phone call audio stream. */
-  private boolean SetStreamVolume(int volume) {
-    Logd("SetStreamVolume(" + volume + ")");
+  private boolean setStreamVolume(int volume) {
+    Logd("setStreamVolume(" + volume + ")");
     assertTrue(audioManager != null);
     if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
       if (audioManager.isVolumeFixed()) {
@@ -235,8 +235,8 @@ class WebRtcAudioTrack {
   }
 
   /** Get current volume level for a phone call audio stream. */
-  private int GetStreamVolume() {
-    Logd("GetStreamVolume");
+  private int getStreamVolume() {
+    Logd("getStreamVolume");
     assertTrue(audioManager != null);
     return audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
   }

@@ -62,6 +62,26 @@ bool AudioDeviceGeneric::BuiltInAECIsEnabled() const {
   return false;
 }
 
+bool AudioDeviceGeneric::BuiltInAGCIsAvailable() const {
+  LOG_F(LS_ERROR) << "Not supported on this platform";
+  return false;
+}
+
+int32_t AudioDeviceGeneric::EnableBuiltInAGC(bool enable) {
+  LOG_F(LS_ERROR) << "Not supported on this platform";
+  return -1;
+}
+
+bool AudioDeviceGeneric::BuiltInNSIsAvailable() const {
+  LOG_F(LS_ERROR) << "Not supported on this platform";
+  return false;
+}
+
+int32_t AudioDeviceGeneric::EnableBuiltInNS(bool enable) {
+  LOG_F(LS_ERROR) << "Not supported on this platform";
+  return -1;
+}
+
 int AudioDeviceGeneric::GetPlayoutAudioParameters(
     AudioParameters* params) const {
   LOG_F(LS_ERROR) << "Not supported on this platform";

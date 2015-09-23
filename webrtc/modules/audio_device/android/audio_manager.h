@@ -74,12 +74,14 @@ class AudioManager {
   const AudioParameters& GetPlayoutAudioParameters();
   const AudioParameters& GetRecordAudioParameters();
 
-  // Returns true if the device supports a built-in Acoustic Echo Canceler.
-  // Some devices can also be blacklisted for use in combination with an AEC
-  // and these devices will return false.
+  // Returns true if the device supports built-in audio effects for AEC, AGC
+  // and NS. Some devices can also be blacklisted for use in combination with
+  // platform effects and these devices will return false.
   // Can currently only be used in combination with a Java based audio backend
   // for the recoring side (i.e. using the android.media.AudioRecord API).
   bool IsAcousticEchoCancelerSupported() const;
+  bool IsAutomaticGainControlSupported() const;
+  bool IsNoiseSuppressorSupported() const;
 
   // Returns true if the device supports the low-latency audio paths in
   // combination with OpenSL ES.
@@ -100,6 +102,8 @@ class AudioManager {
                                            jint sample_rate,
                                            jint channels,
                                            jboolean hardware_aec,
+                                           jboolean hardware_agc,
+                                           jboolean hardware_ns,
                                            jboolean low_latency_output,
                                            jint output_buffer_size,
                                            jint input_buffer_size,
@@ -108,6 +112,8 @@ class AudioManager {
                               jint sample_rate,
                               jint channels,
                               jboolean hardware_aec,
+                              jboolean hardware_agc,
+                              jboolean hardware_ns,
                               jboolean low_latency_output,
                               jint output_buffer_size,
                               jint input_buffer_size);
@@ -137,6 +143,10 @@ class AudioManager {
 
   // True if device supports hardware (or built-in) AEC.
   bool hardware_aec_;
+  // True if device supports hardware (or built-in) AGC.
+  bool hardware_agc_;
+  // True if device supports hardware (or built-in) NS.
+  bool hardware_ns_;
 
   // True if device supports the low-latency OpenSL ES audio path.
   bool low_latency_playout_;

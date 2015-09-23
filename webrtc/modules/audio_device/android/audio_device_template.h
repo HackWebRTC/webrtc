@@ -460,6 +460,28 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return input_.EnableBuiltInAEC(enable);
   }
 
+  // Returns true if the device both supports built in AGC and the device
+  // is not blacklisted.
+  bool BuiltInAGCIsAvailable() const override {
+    return audio_manager_->IsAutomaticGainControlSupported();
+  }
+
+  int32_t EnableBuiltInAGC(bool enable) override {
+    RTC_CHECK(BuiltInAGCIsAvailable()) << "HW AGC is not available";
+    return input_.EnableBuiltInAGC(enable);
+  }
+
+  // Returns true if the device both supports built in NS and the device
+  // is not blacklisted.
+  bool BuiltInNSIsAvailable() const override {
+    return audio_manager_->IsNoiseSuppressorSupported();
+  }
+
+  int32_t EnableBuiltInNS(bool enable) override {
+    RTC_CHECK(BuiltInNSIsAvailable()) << "HW NS is not available";
+    return input_.EnableBuiltInNS(enable);
+  }
+
  private:
   rtc::ThreadChecker thread_checker_;
 
