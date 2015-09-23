@@ -88,6 +88,10 @@ bool AndroidVideoCapturerJni::Init(jstring device_name) {
 
 AndroidVideoCapturerJni::~AndroidVideoCapturerJni() {
   LOG(LS_INFO) << "AndroidVideoCapturerJni dtor";
+  jni()->CallVoidMethod(
+      *j_capturer_global_,
+      GetMethodID(jni(), *j_video_capturer_class_, "release", "()V"));
+  CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.release()";
 }
 
 void AndroidVideoCapturerJni::Start(int width, int height, int framerate,

@@ -29,6 +29,7 @@ package org.webrtc;
 import android.hardware.Camera;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
+import android.test.suitebuilder.annotation.MediumTest;
 import android.util.Size;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 @SuppressWarnings("deprecation")
 public class VideoCapturerAndroidTest extends ActivityTestCase {
@@ -62,7 +64,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     }
   }
 
-  static class AsyncRenderer implements VideoRenderer.Callbacks {
+  static class FakeAsyncRenderer implements VideoRenderer.Callbacks {
     private final List<I420Frame> pendingFrames = new ArrayList<I420Frame>();
 
     @Override
@@ -74,18 +76,12 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     }
 
     // Wait until at least one frame have been received, before returning them.
-    public List<I420Frame> WaitForFrames() {
+    public List<I420Frame> waitForPendingFrames() throws InterruptedException {
       synchronized (pendingFrames) {
         while (pendingFrames.isEmpty()) {
-          try {
-            pendingFrames.wait();
-          } catch (InterruptedException e) {
-            // Ignore.
-          }
+          pendingFrames.wait();
         }
-        final List<I420Frame> frames = new ArrayList<I420Frame>(pendingFrames);
-        pendingFrames.clear();
-        return frames;
+        return new ArrayList<I420Frame>(pendingFrames);
       }
     }
   }
@@ -169,6 +165,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     track.dispose();
     source.dispose();
     factory.dispose();
+    assertTrue(capturer.isReleased());
   }
 
   @Override
@@ -213,6 +210,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null);
     assertNotNull(capturer);
     capturer.dispose();
+    assertTrue(capturer.isReleased());
   }
 
   @SmallTest
@@ -250,7 +248,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   }
 
   @SmallTest
-  // This test that the default camera can be started and but the camera can
+  // This test that the default camera can be started and that the camera can
   // later be switched to another camera.
   // It tests both the Java and the C++ layer.
   public void testSwitchVideoCapturer() throws Exception {
@@ -260,14 +258,30 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
         factory.createVideoSource(capturer, new MediaConstraints());
     VideoTrack track = factory.createVideoTrack("dummy", source);
 
-    if (HaveTwoCameras())
-      assertTrue(capturer.switchCamera(null));
-    else
-      assertFalse(capturer.switchCamera(null));
+    // Array with one element to avoid final problem in nested classes.
+    final boolean[] cameraSwitchSuccessful = new boolean[1];
+    final CountDownLatch barrier = new CountDownLatch(1);
+    capturer.switchCamera(new VideoCapturerAndroid.CameraSwitchHandler() {
+      @Override
+      public void onCameraSwitchDone(boolean isFrontCamera) {
+        cameraSwitchSuccessful[0] = true;
+        barrier.countDown();
+      }
+      @Override
+      public void onCameraSwitchError(String errorDescription) {
+        cameraSwitchSuccessful[0] = false;
+        barrier.countDown();
+      }
+    });
+    // Wait until the camera has been switched.
+    barrier.await();
 
-    // Wait until the camera have been switched.
-    capturer.runCameraThreadUntilIdle();
-
+    // Check result.
+    if (HaveTwoCameras()) {
+      assertTrue(cameraSwitchSuccessful[0]);
+    } else {
+      assertFalse(cameraSwitchSuccessful[0]);
+    }
     // Ensure that frames are received.
     RendererCallbacks callbacks = new RendererCallbacks();
     track.addRenderer(new VideoRenderer(callbacks));
@@ -275,6 +289,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     track.dispose();
     source.dispose();
     factory.dispose();
+    assertTrue(capturer.isReleased());
   }
 
   @SmallTest
@@ -300,6 +315,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     track.dispose();
     source.dispose();
     factory.dispose();
+    assertTrue(capturer.isReleased());
   }
 
   @SmallTest
@@ -322,8 +338,12 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       // Check the frame size.
       assertEquals(format.frameSize(), observer.frameSize());
       capturer.stopCapture();
+      for (long timestamp : observer.getCopyAndResetListOftimeStamps()) {
+        capturer.returnBuffer(timestamp);
+      }
     }
     capturer.dispose();
+    assertTrue(capturer.isReleased());
   }
 
   @SmallTest
@@ -365,55 +385,48 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     for (Long timeStamp : listOftimestamps) {
       capturer.returnBuffer(timeStamp);
     }
+    capturer.dispose();
+    assertTrue(capturer.isReleased());
   }
 
-  @SmallTest
-  // This test that we can capture frames, stop capturing, keep the frames for rendering, and then
-  // return the frames. It tests both the Java and the C++ layer.
-  public void testCaptureAndAsyncRender() {
+  @MediumTest
+  // This test that we can capture frames, keep the frames in a local renderer, stop capturing,
+  // and then return the frames. The difference between the test testReturnBufferLate() is that we
+  // also test the JNI and C++ AndroidVideoCapturer parts.
+  public void testReturnBufferLateEndToEnd() throws InterruptedException {
     final VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null);
-    // Helper class that sets everything up, captures at least one frame, and then shuts
-    // everything down.
-    class CaptureFramesRunnable implements Runnable {
-      public List<I420Frame> frames;
+    final PeerConnectionFactory factory = new PeerConnectionFactory();
+    final VideoSource source = factory.createVideoSource(capturer, new MediaConstraints());
+    final VideoTrack track = factory.createVideoTrack("dummy", source);
+    final FakeAsyncRenderer renderer = new FakeAsyncRenderer();
+    track.addRenderer(new VideoRenderer(renderer));
+    // Wait for at least one frame that has not been returned.
+    assertFalse(renderer.waitForPendingFrames().isEmpty());
 
+    capturer.stopCapture();
+
+    // Dispose source and |capturer|.
+    track.dispose();
+    source.dispose();
+    // The pending frames should keep the JNI parts and |capturer| alive.
+    assertFalse(capturer.isReleased());
+
+    // Return the frame(s), on a different thread out of spite.
+    final List<I420Frame> pendingFrames = renderer.waitForPendingFrames();
+    final Thread returnThread = new Thread(new Runnable() {
       @Override
       public void run() {
-        PeerConnectionFactory factory = new PeerConnectionFactory();
-        VideoSource source = factory.createVideoSource(capturer, new MediaConstraints());
-        VideoTrack track = factory.createVideoTrack("dummy", source);
-        AsyncRenderer renderer = new AsyncRenderer();
-        track.addRenderer(new VideoRenderer(renderer));
-
-        // Wait until we get at least one frame.
-        frames = renderer.WaitForFrames();
-
-        // Stop everything.
-        track.dispose();
-        source.dispose();
-        factory.dispose();
+        for (I420Frame frame : pendingFrames) {
+          VideoRenderer.renderFrameDone(frame);
+        }
       }
-    }
+    });
+    returnThread.start();
+    returnThread.join();
 
-    // Capture frames on a separate thread.
-    CaptureFramesRunnable captureFramesRunnable = new CaptureFramesRunnable();
-    Thread captureThread = new Thread(captureFramesRunnable);
-    captureThread.start();
+    // Check that frames have successfully returned. This will cause |capturer| to be released.
+    assertTrue(capturer.isReleased());
 
-    // Wait until frames are captured, and then kill the thread.
-    try {
-      captureThread.join();
-    } catch (InterruptedException e) {
-      fail("Capture thread was interrupted");
-    }
-    captureThread = null;
-
-    // Assert that we have frames that have not been returned.
-    assertTrue(!captureFramesRunnable.frames.isEmpty());
-    // Return the frame(s).
-    for (I420Frame frame : captureFramesRunnable.frames) {
-      VideoRenderer.renderFrameDone(frame);
-    }
-    assertEquals(capturer.pendingFramesTimeStamps(), "[]");
+    factory.dispose();
   }
 }
