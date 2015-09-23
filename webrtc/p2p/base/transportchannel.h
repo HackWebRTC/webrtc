@@ -37,19 +37,14 @@ enum PacketFlags {
 };
 
 // Used to indicate channel's connection state.
-enum TransportChannelState {
-  STATE_INIT,
-  STATE_CONNECTING,  // Will enter this state once a connection is created
-  STATE_COMPLETED,
-  STATE_FAILED
-};
+enum TransportChannelState { STATE_CONNECTING, STATE_COMPLETED, STATE_FAILED };
 
 // A TransportChannel represents one logical stream of packets that are sent
 // between the two sides of a session.
 class TransportChannel : public sigslot::has_slots<> {
  public:
-  explicit TransportChannel(const std::string& transport_name, int component)
-      : transport_name_(transport_name),
+  explicit TransportChannel(const std::string& content_name, int component)
+      : content_name_(content_name),
         component_(component),
         writable_(false),
         receiving_(false) {}
@@ -65,7 +60,7 @@ class TransportChannel : public sigslot::has_slots<> {
   // Returns the session id of this channel.
   virtual const std::string SessionId() const { return std::string(); }
 
-  const std::string& transport_name() const { return transport_name_; }
+  const std::string& content_name() const { return content_name_; }
   int component() const { return component_; }
 
   // Returns the states of this channel.  Each time one of these states changes,
@@ -151,9 +146,10 @@ class TransportChannel : public sigslot::has_slots<> {
   // Sets the receiving state, signaling if necessary.
   void set_receiving(bool receiving);
 
+
  private:
   // Used mostly for debugging.
-  std::string transport_name_;
+  std::string content_name_;
   int component_;
   bool writable_;
   bool receiving_;

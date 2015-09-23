@@ -51,11 +51,11 @@ class RemoteCandidate : public Candidate {
 class P2PTransportChannel : public TransportChannelImpl,
                             public rtc::MessageHandler {
  public:
-  P2PTransportChannel(const std::string& transport_name,
+  P2PTransportChannel(const std::string& content_name,
                       int component,
                       P2PTransport* transport,
-                      PortAllocator* allocator);
-  virtual ~P2PTransportChannel();
+                      PortAllocator *allocator);
+  ~P2PTransportChannel() override;
 
   // From TransportChannelImpl:
   Transport* GetTransport() override { return transport_; }
@@ -69,20 +69,15 @@ class P2PTransportChannel : public TransportChannelImpl,
                                const std::string& ice_pwd) override;
   void SetRemoteIceMode(IceMode mode) override;
   void Connect() override;
-  void MaybeStartGathering() override;
-  IceGatheringState gathering_state() const override {
-    return gathering_state_;
-  }
-  void AddRemoteCandidate(const Candidate& candidate) override;
+  void OnSignalingReady() override;
+  void OnCandidate(const Candidate& candidate) override;
   // Sets the receiving timeout in milliseconds.
   // This also sets the check_receiving_delay proportionally.
   void SetReceivingTimeout(int receiving_timeout_ms) override;
 
   // From TransportChannel:
-  int SendPacket(const char* data,
-                 size_t len,
-                 const rtc::PacketOptions& options,
-                 int flags) override;
+  int SendPacket(const char *data, size_t len,
+                 const rtc::PacketOptions& options, int flags) override;
   int SetOption(rtc::Socket::Option opt, int value) override;
   bool GetOption(rtc::Socket::Option opt, int* value) override;
   int GetError() override { return error_; }
@@ -101,9 +96,13 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool IsDtlsActive() const override { return false; }
 
   // Default implementation.
-  bool GetSslRole(rtc::SSLRole* role) const override { return false; }
+  bool GetSslRole(rtc::SSLRole* role) const override {
+    return false;
+  }
 
-  bool SetSslRole(rtc::SSLRole role) override { return false; }
+  bool SetSslRole(rtc::SSLRole role) override {
+    return false;
+  }
 
   // Set up the ciphers to use for DTLS-SRTP.
   bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override {
@@ -111,10 +110,14 @@ class P2PTransportChannel : public TransportChannelImpl,
   }
 
   // Find out which DTLS-SRTP cipher was negotiated.
-  bool GetSrtpCipher(std::string* cipher) override { return false; }
+  bool GetSrtpCipher(std::string* cipher) override {
+    return false;
+  }
 
   // Find out which DTLS cipher was negotiated.
-  bool GetSslCipher(std::string* cipher) override { return false; }
+  bool GetSslCipher(std::string* cipher) override {
+    return false;
+  }
 
   // Returns null because the channel is not encrypted by default.
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {
@@ -162,6 +165,7 @@ class P2PTransportChannel : public TransportChannelImpl,
     return allocator_sessions_.back();
   }
 
+  void Allocate();
   void UpdateConnectionStates();
   void RequestSort();
   void SortConnections();
@@ -209,7 +213,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   void OnNominated(Connection* conn);
 
-  void OnMessage(rtc::Message* pmsg) override;
+  void OnMessage(rtc::Message *pmsg) override;
   void OnSort();
   void OnPing();
 
@@ -219,9 +223,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   Connection* best_nominated_connection() const;
 
   P2PTransport* transport_;
-  PortAllocator* allocator_;
-  rtc::Thread* worker_thread_;
+  PortAllocator *allocator_;
+  rtc::Thread *worker_thread_;
   bool incoming_only_;
+  bool waiting_for_signaling_;
   int error_;
   std::vector<PortAllocatorSession*> allocator_sessions_;
   std::vector<PortInterface *> ports_;
@@ -233,7 +238,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   std::vector<RemoteCandidate> remote_candidates_;
   bool sort_dirty_;  // indicates whether another sort is needed right now
   bool was_writable_;
-  bool had_connection_ = false;  // if connections_ has ever been nonempty
   typedef std::map<rtc::Socket::Option, int> OptionMap;
   OptionMap options_;
   std::string ice_ufrag_;
@@ -244,7 +248,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   IceRole ice_role_;
   uint64 tiebreaker_;
   uint32 remote_candidate_generation_;
-  IceGatheringState gathering_state_;
 
   int check_receiving_delay_;
   int receiving_timeout_;

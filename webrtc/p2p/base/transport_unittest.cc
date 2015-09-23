@@ -11,7 +11,8 @@
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/network.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/p2p/base/fakesession.h"
 #include "webrtc/p2p/base/p2ptransport.h"
 
 using cricket::Candidate;
@@ -34,7 +35,9 @@ class TransportTest : public testing::Test,
                       public sigslot::has_slots<> {
  public:
   TransportTest()
-      : transport_(new FakeTransport("test content name")),
+      : thread_(rtc::Thread::Current()),
+        transport_(new FakeTransport(
+            thread_, thread_, "test content name", NULL)),
         channel_(NULL),
         connecting_signalled_(false),
         completed_(false),
@@ -70,6 +73,7 @@ class TransportTest : public testing::Test,
     failed_ = true;
   }
 
+  rtc::Thread* thread_;
   rtc::scoped_ptr<FakeTransport> transport_;
   FakeTransportChannel* channel_;
   bool connecting_signalled_;
@@ -81,7 +85,20 @@ class TransportTest : public testing::Test,
 TEST_F(TransportTest, TestConnectChannelsDoesSignal) {
   EXPECT_TRUE(SetupChannel());
   transport_->ConnectChannels();
-  EXPECT_TRUE(connecting_signalled_);
+  EXPECT_FALSE(connecting_signalled_);
+
+  EXPECT_TRUE_WAIT(connecting_signalled_, 100);
+}
+
+// Test that DestroyAllChannels kills any pending OnConnecting signals.
+TEST_F(TransportTest, TestDestroyAllClearsPosts) {
+  EXPECT_TRUE(transport_->CreateChannel(1) != NULL);
+
+  transport_->ConnectChannels();
+  transport_->DestroyAllChannels();
+
+  thread_->ProcessMessages(0);
+  EXPECT_FALSE(connecting_signalled_);
 }
 
 // This test verifies channels are created with proper ICE
@@ -215,7 +232,7 @@ TEST_F(TransportTest, TestChannelCompletedAndFailed) {
                                                         NULL));
 
   channel_->SetConnectionCount(2);
-  channel_->SetCandidatesGatheringComplete();
+  channel_->SignalCandidatesAllocationDone(channel_);
   channel_->SetWritable(true);
   EXPECT_TRUE_WAIT(transport_->all_channels_writable(), 100);
   // ICE is not yet completed because there is still more than one connection.

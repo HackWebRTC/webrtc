@@ -182,10 +182,7 @@
   EXPECT_GT([answerSDP.description length], 0);
 
   [offeringExpectations expectICECandidates:2];
-  // It's possible to only have 1 ICE candidate for the answerer, since we use
-  // BUNDLE and rtcp-mux by default, and don't provide any ICE servers in this
-  // test.
-  [answeringExpectations expectICECandidates:1];
+  [answeringExpectations expectICECandidates:2];
 
   sdpObserver = [[RTCSessionDescriptionSyncObserver alloc] init];
   [answeringExpectations expectSignalingChange:RTCSignalingStable];

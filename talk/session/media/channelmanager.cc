@@ -318,18 +318,23 @@ void ChannelManager::Terminate_w() {
 
 VoiceChannel* ChannelManager::CreateVoiceChannel(
     webrtc::MediaControllerInterface* media_controller,
-    TransportController* transport_controller,
+    BaseSession* session,
     const std::string& content_name,
     bool rtcp,
     const AudioOptions& options) {
   return worker_thread_->Invoke<VoiceChannel*>(
-      Bind(&ChannelManager::CreateVoiceChannel_w, this, media_controller,
-           transport_controller, content_name, rtcp, options));
+      Bind(&ChannelManager::CreateVoiceChannel_w,
+          this,
+          media_controller,
+          session,
+          content_name,
+          rtcp,
+          options));
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel_w(
     webrtc::MediaControllerInterface* media_controller,
-    TransportController* transport_controller,
+    BaseSession* session,
     const std::string& content_name,
     bool rtcp,
     const AudioOptions& options) {
@@ -341,9 +346,9 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
   if (!media_channel)
     return nullptr;
 
-  VoiceChannel* voice_channel =
-      new VoiceChannel(worker_thread_, media_engine_.get(), media_channel,
-                       transport_controller, content_name, rtcp);
+  VoiceChannel* voice_channel = new VoiceChannel(
+      worker_thread_, media_engine_.get(), media_channel,
+      session, content_name, rtcp);
   if (!voice_channel->Init()) {
     delete voice_channel;
     return nullptr;
@@ -374,18 +379,23 @@ void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel) {
 
 VideoChannel* ChannelManager::CreateVideoChannel(
     webrtc::MediaControllerInterface* media_controller,
-    TransportController* transport_controller,
+    BaseSession* session,
     const std::string& content_name,
     bool rtcp,
     const VideoOptions& options) {
   return worker_thread_->Invoke<VideoChannel*>(
-      Bind(&ChannelManager::CreateVideoChannel_w, this, media_controller,
-           transport_controller, content_name, rtcp, options));
+      Bind(&ChannelManager::CreateVideoChannel_w,
+           this,
+           media_controller,
+           session,
+           content_name,
+           rtcp,
+           options));
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel_w(
     webrtc::MediaControllerInterface* media_controller,
-    TransportController* transport_controller,
+    BaseSession* session,
     const std::string& content_name,
     bool rtcp,
     const VideoOptions& options) {
@@ -394,12 +404,12 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
   ASSERT(nullptr != media_controller);
   VideoMediaChannel* media_channel =
       media_engine_->CreateVideoChannel(media_controller->call_w(), options);
-  if (media_channel == NULL) {
+  if (media_channel == NULL)
     return NULL;
-  }
 
   VideoChannel* video_channel = new VideoChannel(
-      worker_thread_, media_channel, transport_controller, content_name, rtcp);
+      worker_thread_, media_channel,
+      session, content_name, rtcp);
   if (!video_channel->Init()) {
     delete video_channel;
     return NULL;
@@ -430,20 +440,16 @@ void ChannelManager::DestroyVideoChannel_w(VideoChannel* video_channel) {
 }
 
 DataChannel* ChannelManager::CreateDataChannel(
-    TransportController* transport_controller,
-    const std::string& content_name,
-    bool rtcp,
-    DataChannelType channel_type) {
+    BaseSession* session, const std::string& content_name,
+    bool rtcp, DataChannelType channel_type) {
   return worker_thread_->Invoke<DataChannel*>(
-      Bind(&ChannelManager::CreateDataChannel_w, this, transport_controller,
-           content_name, rtcp, channel_type));
+      Bind(&ChannelManager::CreateDataChannel_w, this, session, content_name,
+           rtcp, channel_type));
 }
 
 DataChannel* ChannelManager::CreateDataChannel_w(
-    TransportController* transport_controller,
-    const std::string& content_name,
-    bool rtcp,
-    DataChannelType data_channel_type) {
+    BaseSession* session, const std::string& content_name,
+    bool rtcp, DataChannelType data_channel_type) {
   // This is ok to alloc from a thread other than the worker thread.
   ASSERT(initialized_);
   DataMediaChannel* media_channel = data_media_engine_->CreateChannel(
@@ -455,7 +461,8 @@ DataChannel* ChannelManager::CreateDataChannel_w(
   }
 
   DataChannel* data_channel = new DataChannel(
-      worker_thread_, media_channel, transport_controller, content_name, rtcp);
+      worker_thread_, media_channel,
+      session, content_name, rtcp);
   if (!data_channel->Init()) {
     LOG(LS_WARNING) << "Failed to init data channel.";
     delete data_channel;

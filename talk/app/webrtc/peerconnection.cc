@@ -616,10 +616,6 @@ void PeerConnection::SetLocalDescription(
   }
   SetSessionDescriptionMsg* msg =  new SetSessionDescriptionMsg(observer);
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
-  // MaybeStartGathering needs to be called after posting
-  // MSG_SET_SESSIONDESCRIPTION_SUCCESS, so that we don't signal any candidates
-  // before signaling that SetLocalDescription completed.
-  session_->MaybeStartGathering();
 }
 
 void PeerConnection::SetRemoteDescription(
@@ -872,11 +868,6 @@ void PeerConnection::OnRemoveLocalStream(MediaStreamInterface* stream) {
 void PeerConnection::OnIceConnectionChange(
     PeerConnectionInterface::IceConnectionState new_state) {
   ASSERT(signaling_thread()->IsCurrent());
-  // After transitioning to "closed", ignore any additional states from
-  // WebRtcSession (such as "disconnected").
-  if (ice_connection_state_ == kIceConnectionClosed) {
-    return;
-  }
   ice_connection_state_ = new_state;
   observer_->OnIceConnectionChange(ice_connection_state_);
 }

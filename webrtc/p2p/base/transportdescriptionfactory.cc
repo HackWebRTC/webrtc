@@ -14,6 +14,7 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslfingerprint.h"
 
 namespace cricket {
