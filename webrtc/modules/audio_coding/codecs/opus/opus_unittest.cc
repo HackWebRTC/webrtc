@@ -105,9 +105,12 @@ int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
                                             kMaxBytes, bitstream_);
   EXPECT_GE(encoded_bytes_int, 0);
   encoded_bytes_ = static_cast<size_t>(encoded_bytes_int);
-  return WebRtcOpus_Decode(decoder, bitstream_,
-                           encoded_bytes_, output_audio,
-                           audio_type);
+  int est_len = WebRtcOpus_DurationEst(decoder, bitstream_, encoded_bytes_);
+  int act_len = WebRtcOpus_Decode(decoder, bitstream_,
+                                  encoded_bytes_, output_audio,
+                                  audio_type);
+  EXPECT_EQ(est_len, act_len);
+  return act_len;
 }
 
 // Test if encoder/decoder can enter DTX mode properly and do not enter DTX when

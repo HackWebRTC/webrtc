@@ -294,6 +294,20 @@ int WebRtcOpus_DurationEst(OpusDecInst* inst,
                            const uint8_t* payload,
                            size_t payload_length_bytes);
 
+/****************************************************************************
+ * WebRtcOpus_PlcDuration(...)
+ *
+ * This function calculates the duration of a frame returned by packet loss
+ * concealment (PLC).
+ *
+ * Input:
+ *        - inst                 : Decoder context
+ *
+ * Return value                  : The duration of a frame returned by PLC, in
+ *                                 samples per channel.
+ */
+int WebRtcOpus_PlcDuration(OpusDecInst* inst);
+
 /* TODO(minyue): Check whether it is needed to add a decoder context to the
  * arguments, like WebRtcOpus_DurationEst(...). In fact, the packet itself tells
  * the duration. The decoder context in WebRtcOpus_DurationEst(...) is not used.

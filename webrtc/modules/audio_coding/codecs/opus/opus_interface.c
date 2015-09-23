@@ -359,6 +359,12 @@ int WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
 int WebRtcOpus_DurationEst(OpusDecInst* inst,
                            const uint8_t* payload,
                            size_t payload_length_bytes) {
+  if (payload_length_bytes == 0) {
+    // WebRtcOpus_Decode calls PLC when payload length is zero. So we return
+    // PLC duration correspondingly.
+    return WebRtcOpus_PlcDuration(inst);
+  }
+
   int frames, samples;
   frames = opus_packet_get_nb_frames(payload, (opus_int32)payload_length_bytes);
   if (frames < 0) {
@@ -371,6 +377,15 @@ int WebRtcOpus_DurationEst(OpusDecInst* inst,
     return 0;
   }
   return samples;
+}
+
+int WebRtcOpus_PlcDuration(OpusDecInst* inst) {
+  /* The number of samples we ask for is |number_of_lost_frames| times
+   * |prev_decoded_samples_|. Limit the number of samples to maximum
+   * |kWebRtcOpusMaxFrameSizePerChannel|. */
+  const int plc_samples = inst->prev_decoded_samples;
+  return (plc_samples <= kWebRtcOpusMaxFrameSizePerChannel) ?
+      plc_samples : kWebRtcOpusMaxFrameSizePerChannel;
 }
 
 int WebRtcOpus_FecDurationEst(const uint8_t* payload,

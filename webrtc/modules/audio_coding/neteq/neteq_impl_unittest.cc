@@ -1005,4 +1005,245 @@ TEST_F(NetEqImplTest, DecodedPayloadTooShort) {
 
   EXPECT_CALL(mock_decoder, Die());
 }
-}  // namespace webrtc
+
+// This test checks the behavior of NetEq when audio decoder fails.
+TEST_F(NetEqImplTest, DecodingError) {
+  UseNoMocks();
+  CreateInstance();
+
+  const uint8_t kPayloadType = 17;   // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
+  const int kSampleRateHz = 8000;
+  const int kDecoderErrorCode = -97;  // Any negative number.
+
+  // We let decoder return 5 ms each time, and therefore, 2 packets make 10 ms.
+  const size_t kFrameLengthSamples =
+      static_cast<size_t>(5 * kSampleRateHz / 1000);
+
+  const size_t kPayloadLengthBytes = 1;  // This can be arbitrary.
+
+  uint8_t payload[kPayloadLengthBytes] = {0};
+
+  WebRtcRTPHeader rtp_header;
+  rtp_header.header.payloadType = kPayloadType;
+  rtp_header.header.sequenceNumber = 0x1234;
+  rtp_header.header.timestamp = 0x12345678;
+  rtp_header.header.ssrc = 0x87654321;
+
+  // Create a mock decoder object.
+  MockAudioDecoder mock_decoder;
+  EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
+  EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
+  EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
+      .WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, PacketDuration(_, _))
+      .WillRepeatedly(Return(kFrameLengthSamples));
+  EXPECT_CALL(mock_decoder, ErrorCode())
+      .WillOnce(Return(kDecoderErrorCode));
+  EXPECT_CALL(mock_decoder, HasDecodePlc())
+      .WillOnce(Return(false));
+  int16_t dummy_output[kFrameLengthSamples] = {0};
+
+  {
+    InSequence sequence;  // Dummy variable.
+    // Mock decoder works normally the first time.
+    EXPECT_CALL(mock_decoder,
+                Decode(_, kPayloadLengthBytes, kSampleRateHz, _, _, _))
+        .Times(3)
+        .WillRepeatedly(
+            DoAll(SetArrayArgument<4>(dummy_output,
+                                      dummy_output + kFrameLengthSamples),
+                  SetArgPointee<5>(AudioDecoder::kSpeech),
+                  Return(kFrameLengthSamples)))
+        .RetiresOnSaturation();
+
+    // Then mock decoder fails. A common reason for failure can be buffer being
+    // too short
+    EXPECT_CALL(mock_decoder,
+                Decode(_, kPayloadLengthBytes, kSampleRateHz, _, _, _))
+        .WillOnce(Return(-1))
+        .RetiresOnSaturation();
+
+    // Mock decoder finally returns to normal.
+    EXPECT_CALL(mock_decoder,
+                Decode(_, kPayloadLengthBytes, kSampleRateHz, _, _, _))
+        .Times(2)
+        .WillRepeatedly(
+            DoAll(SetArrayArgument<4>(dummy_output,
+                                  dummy_output + kFrameLengthSamples),
+                  SetArgPointee<5>(AudioDecoder::kSpeech),
+                  Return(kFrameLengthSamples)));
+  }
+
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->RegisterExternalDecoder(&mock_decoder, kDecoderPCM16B,
+                                            kPayloadType, kSampleRateHz));
+
+  // Insert packets.
+  for (int i = 0; i < 6; ++i) {
+    rtp_header.header.sequenceNumber += 1;
+    rtp_header.header.timestamp += kFrameLengthSamples;
+    EXPECT_EQ(NetEq::kOK,
+              neteq_->InsertPacket(rtp_header, payload, kPayloadLengthBytes,
+                                   kReceiveTime));
+  }
+
+  // Pull audio.
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
+  int16_t output[kMaxOutputSize];
+  size_t samples_per_channel;
+  int num_channels;
+  NetEqOutputType type;
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputNormal, type);
+
+  // Pull audio again. Decoder fails.
+  EXPECT_EQ(NetEq::kFail,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  EXPECT_EQ(NetEq::kDecoderErrorCode, neteq_->LastError());
+  EXPECT_EQ(kDecoderErrorCode, neteq_->LastDecoderError());
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  // TODO(minyue): should NetEq better give kOutputPLC, since it is actually an
+  // expansion.
+  EXPECT_EQ(kOutputNormal, type);
+
+  // Pull audio again, should continue an expansion.
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputPLC, type);
+
+  // Pull audio again, should behave normal.
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputNormal, type);
+
+  EXPECT_CALL(mock_decoder, Die());
+}
+
+// This test checks the behavior of NetEq when audio decoder fails during CNG.
+TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
+  UseNoMocks();
+  CreateInstance();
+
+  const uint8_t kPayloadType = 17;   // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
+  const int kSampleRateHz = 8000;
+  const int kDecoderErrorCode = -97;  // Any negative number.
+
+  // We let decoder return 5 ms each time, and therefore, 2 packets make 10 ms.
+  const size_t kFrameLengthSamples =
+      static_cast<size_t>(5 * kSampleRateHz / 1000);
+
+  const size_t kPayloadLengthBytes = 1;  // This can be arbitrary.
+
+  uint8_t payload[kPayloadLengthBytes] = {0};
+
+  WebRtcRTPHeader rtp_header;
+  rtp_header.header.payloadType = kPayloadType;
+  rtp_header.header.sequenceNumber = 0x1234;
+  rtp_header.header.timestamp = 0x12345678;
+  rtp_header.header.ssrc = 0x87654321;
+
+  // Create a mock decoder object.
+  MockAudioDecoder mock_decoder;
+  EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
+  EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
+  EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
+      .WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, PacketDuration(_, _))
+      .WillRepeatedly(Return(kFrameLengthSamples));
+  EXPECT_CALL(mock_decoder, ErrorCode())
+      .WillOnce(Return(kDecoderErrorCode));
+  int16_t dummy_output[kFrameLengthSamples] = {0};
+
+  {
+    InSequence sequence;  // Dummy variable.
+    // Mock decoder works normally the first 2 times.
+    EXPECT_CALL(mock_decoder,
+                Decode(_, kPayloadLengthBytes, kSampleRateHz, _, _, _))
+        .Times(2)
+        .WillRepeatedly(
+            DoAll(SetArrayArgument<4>(dummy_output,
+                                      dummy_output + kFrameLengthSamples),
+                  SetArgPointee<5>(AudioDecoder::kComfortNoise),
+                  Return(kFrameLengthSamples)))
+        .RetiresOnSaturation();
+
+    // Then mock decoder fails. A common reason for failure can be buffer being
+    // too short
+    EXPECT_CALL(mock_decoder, Decode(nullptr, 0, kSampleRateHz, _, _, _))
+        .WillOnce(Return(-1))
+        .RetiresOnSaturation();
+
+    // Mock decoder finally returns to normal.
+    EXPECT_CALL(mock_decoder, Decode(nullptr, 0, kSampleRateHz, _, _, _))
+        .Times(2)
+        .WillRepeatedly(
+            DoAll(SetArrayArgument<4>(dummy_output,
+                                  dummy_output + kFrameLengthSamples),
+                  SetArgPointee<5>(AudioDecoder::kComfortNoise),
+                  Return(kFrameLengthSamples)));
+  }
+
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->RegisterExternalDecoder(&mock_decoder, kDecoderPCM16B,
+                                            kPayloadType, kSampleRateHz));
+
+  // Insert 2 packets. This will make netEq into codec internal CNG mode.
+  for (int i = 0; i < 2; ++i) {
+    rtp_header.header.sequenceNumber += 1;
+    rtp_header.header.timestamp += kFrameLengthSamples;
+    EXPECT_EQ(NetEq::kOK,
+              neteq_->InsertPacket(rtp_header, payload, kPayloadLengthBytes,
+                                   kReceiveTime));
+  }
+
+  // Pull audio.
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
+  int16_t output[kMaxOutputSize];
+  size_t samples_per_channel;
+  int num_channels;
+  NetEqOutputType type;
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputCNG, type);
+
+  // Pull audio again. Decoder fails.
+  EXPECT_EQ(NetEq::kFail,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  EXPECT_EQ(NetEq::kDecoderErrorCode, neteq_->LastError());
+  EXPECT_EQ(kDecoderErrorCode, neteq_->LastDecoderError());
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  // TODO(minyue): should NetEq better give kOutputPLC, since it is actually an
+  // expansion.
+  EXPECT_EQ(kOutputCNG, type);
+
+  // Pull audio again, should resume codec CNG.
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputCNG, type);
+
+  EXPECT_CALL(mock_decoder, Die());
+}
+
+}// namespace webrtc

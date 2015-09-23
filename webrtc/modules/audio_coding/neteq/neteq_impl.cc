@@ -765,7 +765,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
       // This handles the case when there is no transmission and the decoder
       // should produce internal comfort noise.
       // TODO(hlundin): Write test for codec-internal CNG.
-      DoCodecInternalCng();
+      DoCodecInternalCng(decoded_buffer_.get(), length);
       break;
     }
     case kDtmf: {
@@ -1163,7 +1163,11 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
                       int* decoded_length,
                       AudioDecoder::SpeechType* speech_type) {
   *speech_type = AudioDecoder::kSpeech;
-  AudioDecoder* decoder = NULL;
+
+  // When packet_list is empty, we may be in kCodecInternalCng mode, and for
+  // that we use current active decoder.
+  AudioDecoder* decoder = decoder_database_->GetActiveDecoder();
+
   if (!packet_list->empty()) {
     const Packet* packet = packet_list->front();
     uint8_t payload_type = packet->header.payloadType;
@@ -1231,8 +1235,14 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
     decoder->DecodePlc(1, &decoded_buffer_[*decoded_length]);
   }
 
-  int return_value = DecodeLoop(packet_list, operation, decoder,
-                                decoded_length, speech_type);
+  int return_value;
+  if (*operation == kCodecInternalCng) {
+    RTC_DCHECK(packet_list->empty());
+    return_value = DecodeCng(decoder, decoded_length, speech_type);
+  } else {
+    return_value = DecodeLoop(packet_list, *operation, decoder,
+                              decoded_length, speech_type);
+  }
 
   if (*decoded_length < 0) {
     // Error returned from the decoder.
@@ -1266,13 +1276,45 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
   return return_value;
 }
 
-int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
+int NetEqImpl::DecodeCng(AudioDecoder* decoder, int* decoded_length,
+                         AudioDecoder::SpeechType* speech_type) {
+  if (!decoder) {
+    // This happens when active decoder is not defined.
+    *decoded_length = -1;
+    return 0;
+  }
+
+  while (*decoded_length < rtc::checked_cast<int>(output_size_samples_)) {
+    const int length = decoder->Decode(
+            nullptr, 0, fs_hz_,
+            (decoded_buffer_length_ - *decoded_length) * sizeof(int16_t),
+            &decoded_buffer_[*decoded_length], speech_type);
+    if (length > 0) {
+      *decoded_length += length;
+      LOG(LS_VERBOSE) << "Decoded " << length << " CNG samples";
+    } else {
+      // Error.
+      LOG(LS_WARNING) << "Failed to decode CNG";
+      *decoded_length = -1;
+      break;
+    }
+    if (*decoded_length > static_cast<int>(decoded_buffer_length_)) {
+      // Guard against overflow.
+      LOG(LS_WARNING) << "Decoded too much CNG.";
+      return kDecodedTooMuch;
+    }
+  }
+  return 0;
+}
+
+int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
                           AudioDecoder* decoder, int* decoded_length,
                           AudioDecoder::SpeechType* speech_type) {
   Packet* packet = NULL;
   if (!packet_list->empty()) {
     packet = packet_list->front();
   }
+
   // Do decoding.
   while (packet &&
       !decoder_database_->IsComfortNoise(packet->header.payloadType)) {
@@ -1281,9 +1323,9 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     // number decoder channels.
     assert(sync_buffer_->Channels() == decoder->Channels());
     assert(decoded_buffer_length_ >= kMaxFrameSize * decoder->Channels());
-    assert(*operation == kNormal || *operation == kAccelerate ||
-           *operation == kFastAccelerate || *operation == kMerge ||
-           *operation == kPreemptiveExpand);
+    assert(operation == kNormal || operation == kAccelerate ||
+           operation == kFastAccelerate || operation == kMerge ||
+           operation == kPreemptiveExpand);
     packet_list->pop_front();
     size_t payload_length = packet->payload_length;
     int decode_length;
@@ -1643,21 +1685,12 @@ int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
   return 0;
 }
 
-void NetEqImpl::DoCodecInternalCng() {
-  int length = 0;
-  // TODO(hlundin): Will probably need a longer buffer for multi-channel.
-  int16_t decoded_buffer[kMaxFrameSize];
-  AudioDecoder* decoder = decoder_database_->GetActiveDecoder();
-  if (decoder) {
-    const uint8_t* dummy_payload = NULL;
-    AudioDecoder::SpeechType speech_type;
-    length = decoder->Decode(
-        dummy_payload, 0, fs_hz_, kMaxFrameSize * sizeof(int16_t),
-        decoded_buffer, &speech_type);
-  }
-  assert(mute_factor_array_.get());
-  normal_->Process(decoded_buffer, length, last_mode_, mute_factor_array_.get(),
-                   algorithm_buffer_.get());
+void NetEqImpl::DoCodecInternalCng(const int16_t* decoded_buffer,
+                                   size_t decoded_length) {
+  RTC_DCHECK(normal_.get());
+  RTC_DCHECK(mute_factor_array_.get());
+  normal_->Process(decoded_buffer, decoded_length, last_mode_,
+                   mute_factor_array_.get(), algorithm_buffer_.get());
   last_mode_ = kModeCodecInternalCng;
   expand_->Reset();
 }

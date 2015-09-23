@@ -61,7 +61,8 @@ class AudioDecoder {
   virtual bool HasDecodePlc() const;
 
   // Calls the packet-loss concealment of the decoder to update the state after
-  // one or several lost packets.
+  // one or several lost packets. The caller has to make sure that the
+  // memory allocated in |decoded| should accommodate |num_frames| frames.
   virtual size_t DecodePlc(size_t num_frames, int16_t* decoded);
 
   // Resets the decoder state (empty buffers etc.).

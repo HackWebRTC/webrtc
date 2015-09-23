@@ -243,9 +243,14 @@ class NetEqImpl : public webrtc::NetEq {
              AudioDecoder::SpeechType* speech_type)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
+  // Sub-method to Decode(). Performs codec internal CNG.
+  int DecodeCng(AudioDecoder* decoder, int* decoded_length,
+                AudioDecoder::SpeechType* speech_type)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
   // Sub-method to Decode(). Performs the actual decoding.
   int DecodeLoop(PacketList* packet_list,
-                 Operations* operation,
+                 const Operations& operation,
                  AudioDecoder* decoder,
                  int* decoded_length,
                  AudioDecoder::SpeechType* speech_type)
@@ -290,7 +295,8 @@ class NetEqImpl : public webrtc::NetEq {
 
   // Calls the audio decoder to generate codec-internal comfort noise when
   // no packet was received.
-  void DoCodecInternalCng() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  void DoCodecInternalCng(const int16_t* decoded_buffer, size_t decoded_length)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Calls the DtmfToneGenerator class to generate DTMF tones.
   int DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf)
