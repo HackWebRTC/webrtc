@@ -211,10 +211,10 @@ class WebRtcAudioEffects {
     for (Descriptor d : AudioEffect.queryEffects()) {
       if (effectTypeIsVoIP(d.type)) {
         // Only log information for VoIP effects (AEC, AEC and NS).
-        Logging.d(TAG, "name: " + d.name + ", " +
-                       "mode: " + d.connectMode + ", " +
-                       "implementor: " + d.implementor + ", " +
-                       "UUID: " + d.uuid);
+        Logging.d(TAG, "name: " + d.name + ", "
+            + "mode: " + d.connectMode + ", "
+            + "implementor: " + d.implementor + ", "
+            + "UUID: " + d.uuid);
       }
     }
   }
@@ -292,10 +292,11 @@ class WebRtcAudioEffects {
         if (aec.setEnabled(enable) != AudioEffect.SUCCESS) {
           Logging.e(TAG, "Failed to set the AcousticEchoCanceler state");
         }
-        Logging.d(TAG, "AcousticEchoCanceler: was " +
-                       (enabled ? "enabled" : "disabled") +
-                       ", enable: " + enable + ", is now: " +
-                       (aec.getEnabled() ? "enabled" : "disabled"));
+        Logging.d(TAG, "AcousticEchoCanceler: was "
+            + (enabled ? "enabled" : "disabled")
+            + ", enable: " + enable + ", is now: "
+            + (aec.getEnabled() ? "enabled" : "disabled")
+            + ", has control: " + aec.hasControl());
       } else {
         Logging.e(TAG, "Failed to create the AcousticEchoCanceler instance");
       }
@@ -311,10 +312,11 @@ class WebRtcAudioEffects {
         if (agc.setEnabled(enable) != AudioEffect.SUCCESS) {
           Logging.e(TAG, "Failed to set the AutomaticGainControl state");
         }
-        Logging.d(TAG, "AutomaticGainControl: was " +
-                       (enabled ? "enabled" : "disabled") +
-                       ", enable: " + enable + ", is now: " +
-                       (agc.getEnabled() ? "enabled" : "disabled"));
+        Logging.d(TAG, "AutomaticGainControl: was "
+            + (enabled ? "enabled" : "disabled")
+            + ", enable: " + enable + ", is now: "
+            + (agc.getEnabled() ? "enabled" : "disabled")
+            + ", has control: " + agc.hasControl());
       } else {
         Logging.e(TAG, "Failed to create the AutomaticGainControl instance");
       }
@@ -330,10 +332,11 @@ class WebRtcAudioEffects {
         if (ns.setEnabled(enable) != AudioEffect.SUCCESS) {
           Logging.e(TAG, "Failed to set the NoiseSuppressor state");
         }
-        Logging.d(TAG, "NoiseSuppressor: was " +
-                       (enabled ? "enabled" : "disabled") +
-                       ", enable: " + enable + ", is now: " +
-                       (ns.getEnabled() ? "enabled" : "disabled"));
+        Logging.d(TAG, "NoiseSuppressor: was "
+            + (enabled ? "enabled" : "disabled")
+            + ", enable: " + enable + ", is now: "
+            + (ns.getEnabled() ? "enabled" : "disabled")
+            + ", has control: " + ns.hasControl());
       } else {
         Logging.e(TAG, "Failed to create the NoiseSuppressor instance");
       }
@@ -361,11 +364,18 @@ class WebRtcAudioEffects {
 
   // Returns true for effect types in |type| that are of "VoIP" types:
   // Acoustic Echo Canceler (AEC) or Automatic Gain Control (AGC) or
-  // Noise Suppressor (NS).
+  // Noise Suppressor (NS). Note that, an extra check for support is needed
+  // in each comparison since some devices includes effects in the
+  // AudioEffect.Descriptor array that are actually not available on the device.
+  // As an example: Samsung Galaxy S6 includes an AGC in the descriptor but
+  // AutomaticGainControl.isAvailable() returns false.
   private boolean effectTypeIsVoIP(UUID type) {
-    return AudioEffect.EFFECT_TYPE_AEC.equals(type)
-        || AudioEffect.EFFECT_TYPE_AGC.equals(type)
-        || AudioEffect.EFFECT_TYPE_NS.equals(type);
+    return (AudioEffect.EFFECT_TYPE_AEC.equals(type)
+        && isAcousticEchoCancelerSupported())
+        || (AudioEffect.EFFECT_TYPE_AGC.equals(type)
+        && isAutomaticGainControlSupported())
+        || (AudioEffect.EFFECT_TYPE_NS.equals(type)
+        && isNoiseSuppressorSupported());
   }
 
   // Helper method which throws an exception when an assertion has failed.
