@@ -13,9 +13,6 @@ package org.webrtc;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.EnumSet;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -28,11 +25,7 @@ public class Logging {
       System.loadLibrary("jingle_peerconnection_so");
     } catch (Throwable t) {
       // If native logging is unavailable, log to system log.
-      ConsoleHandler consolehandler = new ConsoleHandler();
-      consolehandler.setFormatter(new SimpleFormatter());
-      consolehandler.setLevel(Level.ALL);
-      fallbackLogger.addHandler(consolehandler);
-      fallbackLogger.setLevel(Level.FINE);
+      fallbackLogger.setLevel(Level.ALL);
     }
   }
 
