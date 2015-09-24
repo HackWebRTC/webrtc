@@ -24,18 +24,19 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
+import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.RendererCommon.ScalingType;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRendererGui;
+import org.webrtc.SurfaceViewRenderer;
 
 /**
  * Activity for peer connection call setup, call waiting
@@ -104,13 +105,15 @@ public class CallActivity extends Activity
   private static final int REMOTE_Y = 0;
   private static final int REMOTE_WIDTH = 100;
   private static final int REMOTE_HEIGHT = 100;
-
   private PeerConnectionClient peerConnectionClient = null;
   private AppRTCClient appRtcClient;
   private SignalingParameters signalingParameters;
   private AppRTCAudioManager audioManager = null;
-  private VideoRenderer.Callbacks localRender;
-  private VideoRenderer.Callbacks remoteRender;
+  private EglBase rootEglBase;
+  private SurfaceViewRenderer localRender;
+  private SurfaceViewRenderer remoteRender;
+  private PercentFrameLayout localRenderLayout;
+  private PercentFrameLayout remoteRenderLayout;
   private ScalingType scalingType;
   private Toast logToast;
   private boolean commandLineRun;
@@ -124,7 +127,6 @@ public class CallActivity extends Activity
   private long callStartedTimeMs = 0;
 
   // Controls
-  private GLSurfaceView videoView;
   CallFragment callFragment;
   HudFragment hudFragment;
 
@@ -154,31 +156,30 @@ public class CallActivity extends Activity
     scalingType = ScalingType.SCALE_ASPECT_FILL;
 
     // Create UI controls.
-    videoView = (GLSurfaceView) findViewById(R.id.glview_call);
+    localRender = (SurfaceViewRenderer) findViewById(R.id.local_video_view);
+    remoteRender = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
+    localRenderLayout = (PercentFrameLayout) findViewById(R.id.local_video_layout);
+    remoteRenderLayout = (PercentFrameLayout) findViewById(R.id.remote_video_layout);
     callFragment = new CallFragment();
     hudFragment = new HudFragment();
 
-    // Create video renderers.
-    VideoRendererGui.setView(videoView, new Runnable() {
-      @Override
-      public void run() {
-        createPeerConnectionFactory();
-      }
-    });
-    remoteRender = VideoRendererGui.create(
-        REMOTE_X, REMOTE_Y,
-        REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-    localRender = VideoRendererGui.create(
-        LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
-        LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
-
     // Show/hide call control fragment on view click.
-    videoView.setOnClickListener(new View.OnClickListener() {
+    View.OnClickListener listener = new View.OnClickListener() {
       @Override
       public void onClick(View view) {
         toggleCallControlFragmentVisibility();
       }
-    });
+    };
+
+    localRender.setOnClickListener(listener);
+    remoteRender.setOnClickListener(listener);
+
+    // Create video renderers.
+    rootEglBase = new EglBase();
+    localRender.init(rootEglBase.getContext(), null);
+    remoteRender.init(rootEglBase.getContext(), null);
+    localRender.setZOrderMediaOverlay(true);
+    updateVideoView();
 
     // Check for mandatory permissions.
     for (String permission : MANDATORY_PERMISSIONS) {
@@ -242,19 +243,22 @@ public class CallActivity extends Activity
 
     // For command line execution run connection for <runTimeMs> and exit.
     if (commandLineRun && runTimeMs > 0) {
-      videoView.postDelayed(new Runnable() {
+      (new Handler()).postDelayed(new Runnable() {
         public void run() {
           disconnect();
         }
       }, runTimeMs);
     }
+
+    peerConnectionClient = PeerConnectionClient.getInstance();
+    peerConnectionClient.createPeerConnectionFactory(
+        CallActivity.this, peerConnectionParameters, CallActivity.this);
   }
 
   // Activity interfaces
   @Override
   public void onPause() {
     super.onPause();
-    videoView.onPause();
     activityRunning = false;
     if (peerConnectionClient != null) {
       peerConnectionClient.stopVideoSource();
@@ -264,7 +268,6 @@ public class CallActivity extends Activity
   @Override
   public void onResume() {
     super.onResume();
-    videoView.onResume();
     activityRunning = true;
     if (peerConnectionClient != null) {
       peerConnectionClient.startVideoSource();
@@ -274,12 +277,12 @@ public class CallActivity extends Activity
   @Override
   protected void onDestroy() {
     disconnect();
-    super.onDestroy();
     if (logToast != null) {
       logToast.cancel();
     }
     activityRunning = false;
-    VideoRendererGui.dispose();
+    rootEglBase.release();
+    super.onDestroy();
   }
 
   // CallFragment.OnCallEvents interface implementation.
@@ -321,19 +324,23 @@ public class CallActivity extends Activity
   }
 
   private void updateVideoView() {
-    VideoRendererGui.update(remoteRender,
-        REMOTE_X, REMOTE_Y,
-        REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
+    remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
+    remoteRender.setScalingType(scalingType);
+    remoteRender.setMirror(false);
+
     if (iceConnected) {
-      VideoRendererGui.update(localRender,
-          LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED,
-          LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED,
-          ScalingType.SCALE_ASPECT_FIT, true);
+      localRenderLayout.setPosition(
+          LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
+      localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
     } else {
-      VideoRendererGui.update(localRender,
-          LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
-          LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
+      localRenderLayout.setPosition(
+          LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
+      localRender.setScalingType(scalingType);
     }
+    localRender.setMirror(true);
+
+    localRender.requestLayout();
+    remoteRender.requestLayout();
   }
 
   private void startCall() {
@@ -384,26 +391,6 @@ public class CallActivity extends Activity
     // is active.
   }
 
-  // Create peer connection factory when EGL context is ready.
-  private void createPeerConnectionFactory() {
-    runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        if (peerConnectionClient == null) {
-          final long delta = System.currentTimeMillis() - callStartedTimeMs;
-          Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
-          peerConnectionClient = PeerConnectionClient.getInstance();
-          peerConnectionClient.createPeerConnectionFactory(CallActivity.this,
-              peerConnectionParameters, CallActivity.this);
-        }
-        if (signalingParameters != null) {
-          Log.w(TAG, "EGL context is ready after room connection.");
-          onConnectedToRoomInternal(signalingParameters);
-        }
-      }
-    });
-  }
-
   // Disconnect from remote resources, dispose of local resources, and exit.
   private void disconnect() {
     activityRunning = false;
@@ -414,6 +401,14 @@ public class CallActivity extends Activity
     if (peerConnectionClient != null) {
       peerConnectionClient.close();
       peerConnectionClient = null;
+    }
+    if (localRender != null) {
+      localRender.release();
+      localRender = null;
+    }
+    if (remoteRender != null) {
+      remoteRender.release();
+      remoteRender = null;
     }
     if (audioManager != null) {
       audioManager.close();
@@ -475,12 +470,8 @@ public class CallActivity extends Activity
     final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
     signalingParameters = params;
-    if (peerConnectionClient == null) {
-      Log.w(TAG, "Room is connected, but EGL context is not ready yet.");
-      return;
-    }
     logAndToast("Creating peer connection, delay=" + delta + "ms");
-    peerConnectionClient.createPeerConnection(VideoRendererGui.getEGLContext(),
+    peerConnectionClient.createPeerConnection(rootEglBase.getContext(),
         localRender, remoteRender, signalingParameters);
 
     if (signalingParameters.initiator) {
