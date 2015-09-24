@@ -131,15 +131,18 @@ rtc::scoped_ptr<AudioEncoder> CreateSpeechEncoder(
 AudioEncoder* CreateRedEncoder(int red_payload_type,
                                AudioEncoder* encoder,
                                rtc::scoped_ptr<AudioEncoder>* red_encoder) {
-  if (red_payload_type == -1) {
-    red_encoder->reset();
-    return encoder;
+#ifdef WEBRTC_CODEC_RED
+  if (red_payload_type != -1) {
+    AudioEncoderCopyRed::Config config;
+    config.payload_type = red_payload_type;
+    config.speech_encoder = encoder;
+    red_encoder->reset(new AudioEncoderCopyRed(config));
+    return red_encoder->get();
   }
-  AudioEncoderCopyRed::Config config;
-  config.payload_type = red_payload_type;
-  config.speech_encoder = encoder;
-  red_encoder->reset(new AudioEncoderCopyRed(config));
-  return red_encoder->get();
+#endif
+
+  red_encoder->reset();
+  return encoder;
 }
 
 void CreateCngEncoder(int cng_payload_type,

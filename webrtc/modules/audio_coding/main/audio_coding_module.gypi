@@ -11,12 +11,7 @@
     'audio_coding_dependencies': [
       'cng',
       'g711',
-      'g722',
-      'ilbc',
-      'isac',
-      'isac_fix',
       'pcm16b',
-      'red',
       '<(webrtc_root)/common.gyp:webrtc_common',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
@@ -26,6 +21,23 @@
       ['include_opus==1', {
         'audio_coding_dependencies': ['webrtc_opus',],
         'audio_coding_defines': ['WEBRTC_CODEC_OPUS',],
+      }],
+      ['build_with_mozilla==0', {
+        'conditions': [
+          ['target_arch=="arm"', {
+            'audio_coding_dependencies': ['isac_fix',],
+            'audio_coding_defines': ['WEBRTC_CODEC_ISACFX',],
+          }, {
+            'audio_coding_dependencies': ['isac',],
+            'audio_coding_defines': ['WEBRTC_CODEC_ISAC',],
+          }],
+        ],
+        'audio_coding_dependencies': ['g722',],
+        'audio_coding_defines': ['WEBRTC_CODEC_G722',],
+      }],
+      ['build_with_mozilla==0 and build_with_chromium==0', {
+        'audio_coding_dependencies': ['ilbc', 'red',],
+        'audio_coding_defines': ['WEBRTC_CODEC_ILBC', 'WEBRTC_CODEC_RED',],
       }],
     ],
   },

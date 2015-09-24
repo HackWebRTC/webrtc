@@ -67,13 +67,8 @@ source_set("audio_coding") {
   deps = [
     ":cng",
     ":g711",
-    ":g722",
-    ":ilbc",
-    ":isac",
-    ":isac_fix",
     ":neteq",
     ":pcm16b",
-    ":red",
     "../..:rtc_event_log",
     "../..:webrtc_common",
     "../../common_audio",
@@ -83,6 +78,27 @@ source_set("audio_coding") {
   if (rtc_include_opus) {
     defines += [ "WEBRTC_CODEC_OPUS" ]
     deps += [ ":webrtc_opus" ]
+  }
+  if (!build_with_mozilla) {
+    if (current_cpu == "arm") {
+      defines += [ "WEBRTC_CODEC_ISACFX" ]
+      deps += [ ":isac_fix" ]
+    } else {
+      defines += [ "WEBRTC_CODEC_ISAC" ]
+      deps += [ ":isac" ]
+    }
+    defines += [ "WEBRTC_CODEC_G722" ]
+    deps += [ ":g722" ]
+  }
+  if (!build_with_mozilla && !build_with_chromium) {
+    defines += [
+      "WEBRTC_CODEC_ILBC",
+      "WEBRTC_CODEC_RED",
+    ]
+    deps += [
+      ":ilbc",
+      ":red",
+    ]
   }
 }
 
@@ -788,10 +804,6 @@ source_set("neteq") {
     ":audio_decoder_interface",
     ":cng",
     ":g711",
-    ":g722",
-    ":ilbc",
-    ":isac",
-    ":isac_fix",
     ":pcm16b",
     "../..:webrtc_common",
     "../../common_audio",
@@ -803,5 +815,20 @@ source_set("neteq") {
   if (rtc_include_opus) {
     defines += [ "WEBRTC_CODEC_OPUS" ]
     deps += [ ":webrtc_opus" ]
+  }
+  if (!build_with_mozilla) {
+    if (current_cpu == "arm") {
+      defines += [ "WEBRTC_CODEC_ISACFX" ]
+      deps += [ ":isac_fix" ]
+    } else {
+      defines += [ "WEBRTC_CODEC_ISAC" ]
+      deps += [ ":isac" ]
+    }
+    defines += [ "WEBRTC_CODEC_G722" ]
+    deps += [ ":g722" ]
+  }
+  if (!build_with_mozilla && !build_with_chromium) {
+    defines += [ "WEBRTC_CODEC_ILBC" ]
+    deps += [ ":ilbc" ]
   }
 }
