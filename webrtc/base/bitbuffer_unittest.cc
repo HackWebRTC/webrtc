@@ -205,6 +205,25 @@ TEST(BitBufferTest, GolombUint32Values) {
   }
 }
 
+TEST(BitBufferTest, SignedGolombValues) {
+  uint8_t golomb_bits[] = {
+      0x80,  // 1
+      0x40,  // 010
+      0x60,  // 011
+      0x20,  // 00100
+      0x38,  // 00111
+  };
+  int32_t expected[] = {0, 1, -1, 2, -3};
+  for (size_t i = 0; i < sizeof(golomb_bits); ++i) {
+    BitBuffer buffer(&golomb_bits[i], 1);
+    int32_t decoded_val;
+    ASSERT_TRUE(buffer.ReadSignedExponentialGolomb(&decoded_val));
+    EXPECT_EQ(expected[i], decoded_val)
+        << "Mismatch in expected/decoded value for golomb_bits[" << i
+        << "]: " << static_cast<int>(golomb_bits[i]);
+  }
+}
+
 TEST(BitBufferTest, NoGolombOverread) {
   const uint8 bytes[] = {0x00, 0xFF, 0xFF};
   // Make sure the bit buffer correctly enforces byte length on golomb reads.

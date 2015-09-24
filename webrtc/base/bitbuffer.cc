@@ -187,6 +187,19 @@ bool BitBuffer::ReadExponentialGolomb(uint32_t* val) {
   return true;
 }
 
+bool BitBuffer::ReadSignedExponentialGolomb(int32_t* val) {
+  uint32_t unsigned_val;
+  if (!ReadExponentialGolomb(&unsigned_val)) {
+    return false;
+  }
+  if ((unsigned_val & 1) == 0) {
+    *val = -static_cast<int32_t>(unsigned_val / 2);
+  } else {
+    *val = (unsigned_val + 1) / 2;
+  }
+  return true;
+}
+
 void BitBuffer::GetCurrentOffset(
     size_t* out_byte_offset, size_t* out_bit_offset) {
   RTC_CHECK(out_byte_offset != NULL);

@@ -60,6 +60,10 @@ class BitBuffer {
   // Returns false if there isn't enough data left for the specified type, or if
   // the value wouldn't fit in a uint32_t.
   bool ReadExponentialGolomb(uint32_t* val);
+  // Reads signed exponential golomb values at the current offset. Signed
+  // exponential golomb values are just the unsigned values mapped to the
+  // sequence 0, 1, -1, 2, -2, etc. in order.
+  bool ReadSignedExponentialGolomb(int32_t* val);
 
   // Moves current position |byte_count| bytes forward. Returns false if
   // there aren't enough bytes left in the buffer.

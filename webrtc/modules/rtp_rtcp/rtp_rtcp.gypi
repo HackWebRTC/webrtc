@@ -77,6 +77,8 @@
         'source/forward_error_correction.h',
         'source/forward_error_correction_internal.cc',
         'source/forward_error_correction_internal.h',
+        'source/h264_bitstream_parser.cc',
+        'source/h264_bitstream_parser.h',
         'source/h264_sps_parser.cc',
         'source/h264_sps_parser.h',
         'source/producer_fec.cc',
