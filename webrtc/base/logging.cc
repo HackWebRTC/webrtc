@@ -347,7 +347,7 @@ void LogMessage::OutputToDebug(const std::string& str,
                                LoggingSeverity severity,
                                const std::string& tag) {
   bool log_to_stderr = log_to_stderr_;
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && (!defined(DEBUG) || defined(NDEBUG))
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && (!defined(_DEBUG) || defined(NDEBUG))
   // On the Mac, all stderr output goes to the Console log and causes clutter.
   // So in opt builds, don't log to stderr unless the user specifically sets
   // a preference to do so.
