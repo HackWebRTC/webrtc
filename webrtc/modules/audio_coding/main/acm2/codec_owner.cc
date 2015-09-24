@@ -14,15 +14,27 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/audio_encoder_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
+#ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
+#endif
+#ifdef WEBRTC_CODEC_ILBC
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"
+#endif
+#ifdef WEBRTC_CODEC_ISACFX
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_decoder_isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
+#endif
+#ifdef WEBRTC_CODEC_ISAC
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_decoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
+#endif
+#ifdef WEBRTC_CODEC_OPUS
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
+#endif
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
+#ifdef WEBRTC_CODEC_RED
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
+#endif
 
 namespace webrtc {
 namespace acm2 {
