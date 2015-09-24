@@ -64,9 +64,6 @@ class VideoCapturer;
 // proper synchronization between both media types.
 class MediaEngineInterface {
  public:
-  // Default value to be used for SetAudioDelayOffset().
-  static const int kDefaultAudioDelayOffset;
-
   virtual ~MediaEngineInterface() {}
 
   // Initialization
@@ -93,9 +90,6 @@ class MediaEngineInterface {
   virtual AudioOptions GetAudioOptions() const = 0;
   // Sets global audio options. "options" are from AudioOptions, above.
   virtual bool SetAudioOptions(const AudioOptions& options) = 0;
-  // Sets the value used by the echo canceller to offset delay values obtained
-  // from the OS.
-  virtual bool SetAudioDelayOffset(int offset) = 0;
   // Sets the default (maximum) codec/resolution and encoder option to capture
   // and encode video.
   virtual bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config)
@@ -182,9 +176,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual bool SetAudioOptions(const AudioOptions& options) {
     return voice_.SetOptions(options);
   }
-  virtual bool SetAudioDelayOffset(int offset) {
-    return voice_.SetDelayOffset(offset);
-  }
   virtual bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config) {
     return video_.SetDefaultEncoderConfig(config);
   }
@@ -243,7 +234,6 @@ class NullVoiceEngine {
   VoiceMediaChannel* CreateChannel(const AudioOptions& options) {
     return nullptr;
   }
-  bool SetDelayOffset(int offset) { return true; }
   AudioOptions GetOptions() const { return AudioOptions(); }
   bool SetOptions(const AudioOptions& options) { return true; }
   bool SetDevices(const Device* in_device, const Device* out_device) {

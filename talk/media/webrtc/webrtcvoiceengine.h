@@ -76,7 +76,6 @@ class WebRtcVoiceEngine
 
   AudioOptions GetOptions() const { return options_; }
   bool SetOptions(const AudioOptions& options);
-  bool SetDelayOffset(int offset);
   bool SetDevices(const Device* in_device, const Device* out_device);
   bool GetOutputVolume(int* level);
   bool SetOutputVolume(int level);

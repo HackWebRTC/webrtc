@@ -103,7 +103,6 @@ void ChannelManager::Construct(MediaEngineInterface* me,
   worker_thread_ = worker_thread;
   // Get the default audio options from the media engine.
   audio_options_ = media_engine_->GetAudioOptions();
-  audio_delay_offset_ = kDefaultAudioDelayOffset;
   audio_output_volume_ = kNotSetOutputVolume;
   local_renderer_ = NULL;
   capturing_ = false;
@@ -206,10 +205,9 @@ bool ChannelManager::Init() {
     return false;
   }
 
-  if (!SetAudioOptions(audio_options_, audio_delay_offset_)) {
-    LOG(LS_WARNING) << "Failed to SetAudioOptions with"
-                    << " options: " << audio_options_.ToString()
-                    << " delay: " << audio_delay_offset_;
+  if (!SetAudioOptions(audio_options_)) {
+    LOG(LS_WARNING) << "Failed to SetAudioOptions with options: "
+                    << audio_options_.ToString();
   }
 
   // If audio_output_volume_ has been set via SetOutputVolume(), set the
@@ -429,8 +427,7 @@ void ChannelManager::DestroyDataChannel_w(DataChannel* data_channel) {
   delete data_channel;
 }
 
-bool ChannelManager::SetAudioOptions(const AudioOptions& options,
-                                     int delay_offset) {
+bool ChannelManager::SetAudioOptions(const AudioOptions& options) {
   // "Get device ids from DeviceManager" - these are the defaults returned.
   Device in_dev("", -1);
   Device out_dev("", -1);
@@ -440,29 +437,24 @@ bool ChannelManager::SetAudioOptions(const AudioOptions& options,
   if (initialized_) {
     ret = worker_thread_->Invoke<bool>(
         Bind(&ChannelManager::SetAudioOptions_w, this,
-             options, delay_offset, &in_dev, &out_dev));
+             options, &in_dev, &out_dev));
   }
 
   // If all worked well, save the values for use in GetAudioOptions.
   if (ret) {
     audio_options_ = options;
-    audio_delay_offset_ = delay_offset;
   }
   return ret;
 }
 
 bool ChannelManager::SetAudioOptions_w(
-    const AudioOptions& options, int delay_offset,
+    const AudioOptions& options,
     const Device* in_dev, const Device* out_dev) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(initialized_);
 
   // Set audio options
   bool ret = media_engine_->SetAudioOptions(options);
-
-  if (ret) {
-    ret = media_engine_->SetAudioDelayOffset(delay_offset);
-  }
 
   // Set the audio devices
   if (ret) {

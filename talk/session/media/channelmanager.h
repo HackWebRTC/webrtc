@@ -45,8 +45,6 @@ class MediaControllerInterface;
 }
 namespace cricket {
 
-const int kDefaultAudioDelayOffset = 0;
-
 class VoiceChannel;
 
 // ChannelManager allows the MediaEngine to run on a separate thread, and takes
@@ -178,8 +176,7 @@ class ChannelManager : public rtc::MessageHandler,
  protected:
   // Adds non-transient parameters which can only be changed through the
   // options store.
-  bool SetAudioOptions(const AudioOptions& options, int delay_offset);
-  int audio_delay_offset() const { return audio_delay_offset_; }
+  bool SetAudioOptions(const AudioOptions& options);
 
  private:
   typedef std::vector<VoiceChannel*> VoiceChannels;
@@ -212,7 +209,7 @@ class ChannelManager : public rtc::MessageHandler,
                                    bool rtcp,
                                    DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);
-  bool SetAudioOptions_w(const AudioOptions& options, int delay_offset,
+  bool SetAudioOptions_w(const AudioOptions& options,
                          const Device* in_dev, const Device* out_dev);
   void OnVideoCaptureStateChange(VideoCapturer* capturer,
                                  CaptureState result);
@@ -234,7 +231,6 @@ class ChannelManager : public rtc::MessageHandler,
   DataChannels data_channels_;
 
   AudioOptions audio_options_;
-  int audio_delay_offset_;
   int audio_output_volume_;
   VideoEncoderConfig default_video_encoder_config_;
   VideoRenderer* local_renderer_;

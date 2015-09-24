@@ -888,16 +888,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   return true;
 }
 
-bool WebRtcVoiceEngine::SetDelayOffset(int offset) {
-  voe_wrapper_->processing()->SetDelayOffsetMs(offset);
-  if (voe_wrapper_->processing()->DelayOffsetMs() != offset) {
-    LOG_RTCERR1(SetDelayOffsetMs, offset);
-    return false;
-  }
-
-  return true;
-}
-
 struct ResumeEntry {
   ResumeEntry(WebRtcVoiceMediaChannel *c, bool p, SendFlags s)
       : channel(c),
