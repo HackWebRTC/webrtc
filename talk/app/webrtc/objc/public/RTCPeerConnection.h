@@ -27,7 +27,6 @@
 
 #import "RTCPeerConnectionDelegate.h"
 
-@class RTCConfiguration;
 @class RTCDataChannel;
 @class RTCDataChannelInit;
 @class RTCICECandidate;
@@ -98,12 +97,10 @@
     setRemoteDescriptionWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                   sessionDescription:(RTCSessionDescription *)sdp;
 
-// Sets the PeerConnection's global configuration to |configuration|.
-// Any changes to STUN/TURN servers or ICE candidate policy will affect the
-// next gathering phase, and cause the next call to createOffer to generate
-// new ICE credentials. Note that the BUNDLE and RTCP-multiplexing policies
-// cannot be changed with this method.
-- (BOOL)setConfiguration:(RTCConfiguration *)configuration;
+// Restarts or updates the ICE Agent process of gathering local candidates
+// and pinging remote candidates.
+- (BOOL)updateICEServers:(NSArray *)servers
+             constraints:(RTCMediaConstraints *)constraints;
 
 // Provides a remote candidate to the ICE Agent.
 - (BOOL)addICECandidate:(RTCICECandidate *)candidate;

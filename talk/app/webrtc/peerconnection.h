@@ -64,59 +64,59 @@ class PeerConnection : public PeerConnectionInterface,
       PortAllocatorFactoryInterface* allocator_factory,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer);
-  rtc::scoped_refptr<StreamCollectionInterface> local_streams() override;
-  rtc::scoped_refptr<StreamCollectionInterface> remote_streams() override;
-  bool AddStream(MediaStreamInterface* local_stream) override;
-  void RemoveStream(MediaStreamInterface* local_stream) override;
+  virtual rtc::scoped_refptr<StreamCollectionInterface> local_streams();
+  virtual rtc::scoped_refptr<StreamCollectionInterface> remote_streams();
+  virtual bool AddStream(MediaStreamInterface* local_stream);
+  virtual void RemoveStream(MediaStreamInterface* local_stream);
 
-  rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
-      AudioTrackInterface* track) override;
+  virtual rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
+      AudioTrackInterface* track);
 
-  rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
+  virtual rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,
-      const DataChannelInit* config) override;
-  bool GetStats(StatsObserver* observer,
-                webrtc::MediaStreamTrackInterface* track,
-                StatsOutputLevel level) override;
+      const DataChannelInit* config);
+  virtual bool GetStats(StatsObserver* observer,
+                        webrtc::MediaStreamTrackInterface* track,
+                        StatsOutputLevel level);
 
-  SignalingState signaling_state() override;
+  virtual SignalingState signaling_state();
 
   // TODO(bemasc): Remove ice_state() when callers are removed.
-  IceState ice_state() override;
-  IceConnectionState ice_connection_state() override;
-  IceGatheringState ice_gathering_state() override;
+  virtual IceState ice_state();
+  virtual IceConnectionState ice_connection_state();
+  virtual IceGatheringState ice_gathering_state();
 
-  const SessionDescriptionInterface* local_description() const override;
-  const SessionDescriptionInterface* remote_description() const override;
+  virtual const SessionDescriptionInterface* local_description() const;
+  virtual const SessionDescriptionInterface* remote_description() const;
 
   // JSEP01
-  void CreateOffer(CreateSessionDescriptionObserver* observer,
-                   const MediaConstraintsInterface* constraints) override;
-  void CreateOffer(CreateSessionDescriptionObserver* observer,
-                   const RTCOfferAnswerOptions& options) override;
-  void CreateAnswer(CreateSessionDescriptionObserver* observer,
-                    const MediaConstraintsInterface* constraints) override;
-  void SetLocalDescription(SetSessionDescriptionObserver* observer,
-                           SessionDescriptionInterface* desc) override;
-  void SetRemoteDescription(SetSessionDescriptionObserver* observer,
-                            SessionDescriptionInterface* desc) override;
-  // TODO(deadbeef) : Deprecated version, remove after all clients are updated.
-  bool UpdateIce(const IceServers& configuration,
-                 const MediaConstraintsInterface* constraints) override;
-  bool SetConfiguration(
-      const PeerConnectionInterface::RTCConfiguration& config) override;
-  bool AddIceCandidate(const IceCandidateInterface* candidate) override;
+  virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
+                           const MediaConstraintsInterface* constraints);
+  virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
+                           const RTCOfferAnswerOptions& options);
+  virtual void CreateAnswer(CreateSessionDescriptionObserver* observer,
+                            const MediaConstraintsInterface* constraints);
+  virtual void SetLocalDescription(SetSessionDescriptionObserver* observer,
+                                   SessionDescriptionInterface* desc);
+  virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
+                                    SessionDescriptionInterface* desc);
+  // TODO(mallinath) : Deprecated version, remove after all clients are updated.
+  virtual bool UpdateIce(const IceServers& configuration,
+                         const MediaConstraintsInterface* constraints);
+  virtual bool UpdateIce(
+      const PeerConnectionInterface::RTCConfiguration& config);
+  virtual bool AddIceCandidate(const IceCandidateInterface* candidate);
 
-  void RegisterUMAObserver(UMAObserver* observer) override;
+  virtual void RegisterUMAObserver(UMAObserver* observer);
 
-  void Close() override;
+  virtual void Close();
 
  protected:
-  ~PeerConnection() override;
+  virtual ~PeerConnection();
 
  private:
   // Implements MessageHandler.
-  void OnMessage(rtc::Message* msg) override;
+  virtual void OnMessage(rtc::Message* msg);
 
   // Implements MediaStreamSignalingObserver.
   void OnAddRemoteStream(MediaStreamInterface* stream) override;

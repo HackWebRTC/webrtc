@@ -359,16 +359,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
                                     SessionDescriptionInterface* desc) = 0;
   // Restarts or updates the ICE Agent process of gathering local candidates
   // and pinging remote candidates.
-  // TODO(deadbeef): Remove once Chrome is moved over to SetConfiguration.
   virtual bool UpdateIce(const IceServers& configuration,
                          const MediaConstraintsInterface* constraints) = 0;
-  // Sets the PeerConnection's global configuration to |config|.
-  // Any changes to STUN/TURN servers or ICE candidate policy will affect the
-  // next gathering phase, and cause the next call to createOffer to generate
-  // new ICE credentials. Note that the BUNDLE and RTCP-multiplexing policies
-  // cannot be changed with this method.
-  virtual bool SetConfiguration(
-      const PeerConnectionInterface::RTCConfiguration& config) = 0;
   // Provides a remote candidate to the ICE Agent.
   // A copy of the |candidate| will be created and added to the remote
   // description. So the caller of this method still has the ownership of the

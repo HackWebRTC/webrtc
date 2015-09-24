@@ -208,9 +208,13 @@ class RTCStatsObserver : public StatsObserver {
   self.peerConnection->SetRemoteDescription(observer, sdp.sessionDescription);
 }
 
-- (BOOL)setConfiguration:(RTCConfiguration *)configuration {
-  return self.peerConnection->SetConfiguration(
-      configuration.nativeConfiguration);
+- (BOOL)updateICEServers:(NSArray*)servers
+             constraints:(RTCMediaConstraints*)constraints {
+  webrtc::PeerConnectionInterface::IceServers iceServers;
+  for (RTCICEServer* server in servers) {
+    iceServers.push_back(server.iceServer);
+  }
+  return self.peerConnection->UpdateIce(iceServers, constraints.constraints);
 }
 
 - (RTCSessionDescription*)localDescription {

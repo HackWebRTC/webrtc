@@ -658,7 +658,7 @@ bool PeerConnection::UpdateIce(const IceServers& configuration,
   return false;
 }
 
-bool PeerConnection::SetConfiguration(const RTCConfiguration& config) {
+bool PeerConnection::UpdateIce(const RTCConfiguration& config) {
   if (port_allocator_) {
     std::vector<PortAllocatorFactoryInterface::StunConfiguration> stuns;
     std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turns;
@@ -675,8 +675,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& config) {
     rtc::SocketAddress stun_addr;
     if (!stun_hosts.empty()) {
       stun_addr = stun_hosts.front();
-      LOG(LS_INFO) << "SetConfiguration: StunServer Address: "
-                   << stun_addr.ToString();
+      LOG(LS_INFO) << "UpdateIce: StunServer Address: " << stun_addr.ToString();
     }
 
     for (size_t i = 0; i < turns.size(); ++i) {
@@ -688,7 +687,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& config) {
         relay_server.ports.push_back(cricket::ProtocolAddress(
             turns[i].server, protocol, turns[i].secure));
         relay_server.credentials = credentials;
-        LOG(LS_INFO) << "SetConfiguration: TurnServer Address: "
+        LOG(LS_INFO) << "UpdateIce: TurnServer Address: "
                      << turns[i].server.ToString();
       } else {
         LOG(LS_WARNING) << "Ignoring TURN server " << turns[i].server << ". "
