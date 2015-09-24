@@ -53,71 +53,10 @@ public class GlRectDrawerTest extends ActivityTestCase {
     return 255.0f * Math.max(0, Math.min(c, 1));
   }
 
-  // Assert RGB ByteBuffers are pixel perfect identical.
-  private static void assertEquals(int width, int height, ByteBuffer actual, ByteBuffer expected) {
-    actual.rewind();
-    expected.rewind();
-    assertEquals(actual.capacity(), width * height * 3);
-    assertEquals(expected.capacity(), width * height * 3);
-    for (int y = 0; y < HEIGHT; ++y) {
-      for (int x = 0; x < WIDTH; ++x) {
-        final int actualR = actual.get() & 0xFF;
-        final int actualG = actual.get() & 0xFF;
-        final int actualB = actual.get() & 0xFF;
-        final int expectedR = expected.get() & 0xFF;
-        final int expectedG = expected.get() & 0xFF;
-        final int expectedB = expected.get() & 0xFF;
-        if (actualR != expectedR || actualG != expectedG || actualB != expectedB) {
-          fail("ByteBuffers of size " + width + "x" + height + " not equal at position "
-              + "(" +  x + ", " + y + "). Expected color (R,G,B): "
-              + "(" + expectedR + ", " + expectedG + ", " + expectedB + ")"
-              + " but was: " + "(" + actualR + ", " + actualG + ", " + actualB + ").");
-        }
-      }
-    }
-  }
-
-  @SmallTest
-  public void testRgbRendering() throws Exception {
-    // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
-    eglBase.createPbufferSurface(WIDTH, HEIGHT);
-    eglBase.makeCurrent();
-
-    // Create RGB byte buffer plane with random content.
-    final ByteBuffer rgbPlane = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 3);
-    final Random random = new Random(SEED);
-    random.nextBytes(rgbPlane.array());
-
-    // Upload the RGB byte buffer data as a texture.
-    final int rgbTexture = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
-    GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, rgbTexture);
-    GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH,
-        HEIGHT, 0, GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, rgbPlane);
-
-    // Draw the RGB frame onto the pixel buffer.
-    final GlRectDrawer drawer = new GlRectDrawer();
-    final float[] identityMatrix = new float[16];
-    Matrix.setIdentityM(identityMatrix, 0);
-    drawer.drawRgb(rgbTexture, identityMatrix);
-
-    // Download the pixels in the pixel buffer as RGB.
-    final ByteBuffer data = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 3);
-    GLES20.glReadPixels(0, 0, WIDTH, HEIGHT, GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, data);
-
-    // Assert rendered image is pixel perfect to source RGB.
-    assertEquals(WIDTH, HEIGHT, data, rgbPlane);
-
-    drawer.release();
-    GLES20.glDeleteTextures(1, new int[] {rgbTexture}, 0);
-    eglBase.release();
-  }
-
   @SmallTest
   public void testYuvRendering() throws Exception {
     // Create EGL base with a pixel buffer as display output.
-    EglBase eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    EglBase eglBase = eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
     eglBase.makeCurrent();
 
