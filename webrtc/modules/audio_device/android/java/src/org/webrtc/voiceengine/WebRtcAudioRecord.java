@@ -39,6 +39,11 @@ class  WebRtcAudioRecord {
   // Average number of callbacks per second.
   private static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
 
+  // We ask for a native buffer size of BUFFER_SIZE_FACTOR * (minimum required
+  // buffer size). The extra space is allocated to guard against glitches under
+  // high load.
+  private static final int BUFFER_SIZE_FACTOR = 2;
+
   private final long nativeAudioRecord;
   private final Context context;
 
@@ -169,15 +174,22 @@ class  WebRtcAudioRecord {
     // Get the minimum buffer size required for the successful creation of
     // an AudioRecord object, in byte units.
     // Note that this size doesn't guarantee a smooth recording under load.
-    // TODO(henrika): Do we need to make this larger to avoid underruns?
     int minBufferSize = AudioRecord.getMinBufferSize(
           sampleRate,
           AudioFormat.CHANNEL_IN_MONO,
           AudioFormat.ENCODING_PCM_16BIT);
+    if (minBufferSize == AudioRecord.ERROR
+        || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
+      Logging.e(TAG, "AudioRecord.getMinBufferSize failed: " + minBufferSize);
+      return -1;
+    }
     Logging.w(TAG, "AudioRecord.getMinBufferSize: " + minBufferSize);
 
-
-    int bufferSizeInBytes = Math.max(byteBuffer.capacity(), minBufferSize);
+    // Use a larger buffer size than the minimum required when creating the
+    // AudioRecord instance to ensure smooth recording under load. It has been
+    // verified that it does not increase the actual recording latency.
+    int bufferSizeInBytes =
+        Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
     Logging.w(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
     try {
       audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION,
@@ -185,7 +197,6 @@ class  WebRtcAudioRecord {
                                     AudioFormat.CHANNEL_IN_MONO,
                                     AudioFormat.ENCODING_PCM_16BIT,
                                     bufferSizeInBytes);
-
     } catch (IllegalArgumentException e) {
       Logging.e(TAG,e.getMessage());
       return -1;
@@ -202,6 +213,15 @@ class  WebRtcAudioRecord {
         + "sample rate: " + audioRecord.getSampleRate());
     if (effects != null) {
       effects.enable(audioRecord.getAudioSessionId());
+    }
+    if (WebRtcAudioUtils.runningOnMOrHigher()) {
+      // Returns the frame count of the native AudioRecord buffer. This is
+      // greater than or equal to the bufferSizeInBytes converted to frame
+      // units. The native frame count may be enlarged to accommodate the
+      // requirements of the source on creation or if the AudioRecord is
+      // subsequently rerouted.
+      Logging.d(TAG, "bufferSizeInFrames: "
+          + audioRecord.getBufferSizeInFrames());
     }
     return framesPerBuffer;
   }

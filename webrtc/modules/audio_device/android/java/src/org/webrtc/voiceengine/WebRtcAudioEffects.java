@@ -295,8 +295,7 @@ class WebRtcAudioEffects {
         Logging.d(TAG, "AcousticEchoCanceler: was "
             + (enabled ? "enabled" : "disabled")
             + ", enable: " + enable + ", is now: "
-            + (aec.getEnabled() ? "enabled" : "disabled")
-            + ", has control: " + aec.hasControl());
+            + (aec.getEnabled() ? "enabled" : "disabled"));
       } else {
         Logging.e(TAG, "Failed to create the AcousticEchoCanceler instance");
       }
@@ -315,8 +314,7 @@ class WebRtcAudioEffects {
         Logging.d(TAG, "AutomaticGainControl: was "
             + (enabled ? "enabled" : "disabled")
             + ", enable: " + enable + ", is now: "
-            + (agc.getEnabled() ? "enabled" : "disabled")
-            + ", has control: " + agc.hasControl());
+            + (agc.getEnabled() ? "enabled" : "disabled"));
       } else {
         Logging.e(TAG, "Failed to create the AutomaticGainControl instance");
       }
@@ -335,8 +333,7 @@ class WebRtcAudioEffects {
         Logging.d(TAG, "NoiseSuppressor: was "
             + (enabled ? "enabled" : "disabled")
             + ", enable: " + enable + ", is now: "
-            + (ns.getEnabled() ? "enabled" : "disabled")
-            + ", has control: " + ns.hasControl());
+            + (ns.getEnabled() ? "enabled" : "disabled"));
       } else {
         Logging.e(TAG, "Failed to create the NoiseSuppressor instance");
       }
