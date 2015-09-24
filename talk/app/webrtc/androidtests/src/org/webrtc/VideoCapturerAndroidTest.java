@@ -292,6 +292,32 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     assertTrue(capturer.isReleased());
   }
 
+  @MediumTest
+  // Test what happens when attempting to call e.g. switchCamera() after camera has been stopped.
+  public void testCameraCallsAfterStop() throws InterruptedException {
+    final String deviceName = CameraEnumerationAndroid.getDeviceName(0);
+    final VideoCapturerAndroid capturer = VideoCapturerAndroid.create(deviceName, null);
+    final List<CaptureFormat> formats = CameraEnumerationAndroid.getSupportedFormats(0);
+    final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+
+    final FakeCapturerObserver observer = new FakeCapturerObserver();
+    capturer.startCapture(format.width, format.height, format.maxFramerate,
+        getInstrumentation().getContext(), observer);
+    // Make sure camera is started and then stop it.
+    assertTrue(observer.WaitForCapturerToStart());
+    capturer.stopCapture();
+    for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {
+      capturer.returnBuffer(timeStamp);
+    }
+    // We can't change |capturer| at this point, but we should not crash.
+    capturer.switchCamera(null);
+    capturer.onOutputFormatRequest(640, 480, 15);
+    capturer.changeCaptureFormat(640, 480, 15);
+
+    capturer.dispose();
+    assertTrue(capturer.isReleased());
+  }
+
   @SmallTest
   // This test that the VideoSource that the VideoCapturer is connected to can
   // be stopped and restarted. It tests both the Java and the C++ layer.
