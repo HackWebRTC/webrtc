@@ -33,6 +33,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/modules/video_coding/utility/include/vp8_header_parser.h"
@@ -199,10 +200,12 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   bool drop_next_input_frame_;
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
-  scoped_ptr<webrtc::QualityScaler> quality_scaler_;
+  webrtc::QualityScaler quality_scaler_;
   // Dynamic resolution change, off by default.
   bool scale_;
-  int updated_framerate_;
+
+  // H264 bitstream parser, used to extract QP from encoded bitstreams.
+  webrtc::H264BitstreamParser h264_bitstream_parser_;
 };
 
 MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
@@ -217,7 +220,6 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
     inited_(false),
     picture_id_(0),
     codec_thread_(new Thread()),
-    quality_scaler_(new webrtc::QualityScaler()),
     j_media_codec_video_encoder_class_(
         jni,
         FindClass(jni, "org/webrtc/MediaCodecVideoEncoder")),
@@ -283,10 +285,6 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     size_t /* max_payload_size */) {
   const int kMinWidth = 320;
   const int kMinHeight = 180;
-  // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
-  // (internal) range: [0, 127]. And we cannot change QP_max in HW, so it is
-  // always = 127. Note that in SW, QP is that of the user-level range [0, 63].
-  const int kMaxQP = 127;
   const int kLowQpThresholdDenominator = 3;
   if (codec_settings == NULL) {
     ALOGE("NULL VideoCodec instance");
@@ -298,18 +296,28 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       << codecType_;
 
   ALOGD("InitEncode request");
-
   scale_ = webrtc::field_trial::FindFullName(
       "WebRTC-MediaCodecVideoEncoder-AutomaticResize") == "Enabled";
   ALOGD("Automatic resize: %s", scale_ ? "enabled" : "disabled");
-
-  if (scale_ && codecType_ == kVideoCodecVP8) {
-    quality_scaler_->Init(kMaxQP / kLowQpThresholdDenominator, true);
-    quality_scaler_->SetMinResolution(kMinWidth, kMinHeight);
-    quality_scaler_->ReportFramerate(codec_settings->maxFramerate);
-    updated_framerate_ = codec_settings->maxFramerate;
-  } else {
-    updated_framerate_ = -1;
+  if (scale_) {
+    if (codecType_ == kVideoCodecVP8) {
+      // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
+      // (internal) range: [0, 127]. And we cannot change QP_max in HW, so it is
+      // always = 127. Note that in SW, QP is that of the user-level range [0,
+      // 63].
+      const int kMaxQp = 127;
+      quality_scaler_.Init(kMaxQp / kLowQpThresholdDenominator, true);
+    } else if (codecType_ == kVideoCodecH264) {
+      // H264 QP is in the range [0, 51].
+      const int kMaxQp = 51;
+      quality_scaler_.Init(kMaxQp / kLowQpThresholdDenominator, true);
+    } else {
+      // When adding codec support to additional hardware codecs, also configure
+      // their QP thresholds for scaling.
+      RTC_NOTREACHED() << "Unsupported codec without configured QP thresholds.";
+    }
+    quality_scaler_.SetMinResolution(kMinWidth, kMinHeight);
+    quality_scaler_.ReportFramerate(codec_settings->maxFramerate);
   }
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::InitEncodeOnCodecThread,
@@ -349,9 +357,9 @@ int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
 
 int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
                                          uint32_t frame_rate) {
-  if (scale_ && codecType_ == kVideoCodecVP8) {
-    quality_scaler_->ReportFramerate(frame_rate);
-  }
+  if (scale_)
+    quality_scaler_.ReportFramerate(frame_rate);
+
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread,
            this,
@@ -507,12 +515,11 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   RTC_CHECK(frame_types->size() == 1) << "Unexpected stream count";
   // Check framerate before spatial resolution change.
-  if (scale_ && codecType_ == kVideoCodecVP8) {
-    quality_scaler_->OnEncodeFrame(frame);
-    updated_framerate_ = quality_scaler_->GetTargetFramerate();
-  }
-  const VideoFrame& input_frame = (scale_ && codecType_ == kVideoCodecVP8) ?
-      quality_scaler_->GetScaledFrame(frame) : frame;
+  if (scale_)
+    quality_scaler_.OnEncodeFrame(frame);
+
+  const VideoFrame& input_frame =
+      scale_ ? quality_scaler_.GetScaledFrame(frame) : frame;
 
   if (input_frame.width() != width_ || input_frame.height() != height_) {
     ALOGD("Frame resolution change from %d x %d to %d x %d",
@@ -723,9 +730,6 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         last_input_timestamp_ms_ - last_output_timestamp_ms_,
         frame_encoding_time_ms);
 
-    if (payload_size && scale_ && codecType_ == kVideoCodecVP8)
-      quality_scaler_->ReportQP(webrtc::vp8::GetQP(payload));
-
     // Calculate and print encoding statistics - every 3 seconds.
     frames_encoded_++;
     current_frames_++;
@@ -781,7 +785,15 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         header.fragmentationLength[0] = image->_length;
         header.fragmentationPlType[0] = 0;
         header.fragmentationTimeDiff[0] = 0;
+        if (scale_)
+          quality_scaler_.ReportQP(webrtc::vp8::GetQP(payload));
       } else if (codecType_ == kVideoCodecH264) {
+        if (scale_) {
+          h264_bitstream_parser_.ParseBitstream(payload, payload_size);
+          int qp;
+          if (h264_bitstream_parser_.GetLastSliceQp(&qp))
+            quality_scaler_.ReportQP(qp);
+        }
         // For H.264 search for start codes.
         int32_t scPositions[MAX_NALUS_PERFRAME + 1] = {};
         int32_t scPositionsLength = 0;
@@ -871,12 +883,12 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
 }
 
 void MediaCodecVideoEncoder::OnDroppedFrame() {
-  if (scale_ && codecType_ == kVideoCodecVP8)
-    quality_scaler_->ReportDroppedFrame();
+  if (scale_)
+    quality_scaler_.ReportDroppedFrame();
 }
 
 int MediaCodecVideoEncoder::GetTargetFramerate() {
-  return updated_framerate_;
+  return scale_ ? quality_scaler_.GetTargetFramerate() : -1;
 }
 
 MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
