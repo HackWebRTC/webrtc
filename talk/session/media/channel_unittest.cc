@@ -126,11 +126,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   enum Flags { RTCP = 0x1, RTCP_MUX = 0x2, SECURE = 0x4, SSRC_MUX = 0x8,
                DTLS = 0x10 };
 
-  ChannelTest(const uint8* rtp_data,
+  ChannelTest(bool verify_playout,
+              const uint8* rtp_data,
               int rtp_len,
               const uint8* rtcp_data,
               int rtcp_len)
-      : transport_controller1_(cricket::ICEROLE_CONTROLLING),
+      : verify_playout_(verify_playout),
+        transport_controller1_(cricket::ICEROLE_CONTROLLING),
         transport_controller2_(cricket::ICEROLE_CONTROLLED),
         media_channel1_(NULL),
         media_channel2_(NULL),
@@ -489,7 +491,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, 0);
     EXPECT_FALSE(channel1_->secure());
     EXPECT_FALSE(media_channel1_->sending());
-    EXPECT_FALSE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel1_->playout());
+    }
     EXPECT_TRUE(media_channel1_->codecs().empty());
     EXPECT_TRUE(media_channel1_->recv_streams().empty());
     EXPECT_TRUE(media_channel1_->rtp_packets().empty());
@@ -816,36 +820,56 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Test that we only start playout and sending at the right times.
   void TestPlayoutAndSendingStates() {
     CreateChannels(0, 0);
-    EXPECT_FALSE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel1_->playout());
+    }
     EXPECT_FALSE(media_channel1_->sending());
-    EXPECT_FALSE(media_channel2_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel2_->playout());
+    }
     EXPECT_FALSE(media_channel2_->sending());
     EXPECT_TRUE(channel1_->Enable(true));
-    EXPECT_FALSE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel1_->playout());
+    }
     EXPECT_FALSE(media_channel1_->sending());
     EXPECT_TRUE(channel1_->SetLocalContent(&local_media_content1_,
                                            CA_OFFER, NULL));
-    EXPECT_TRUE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel1_->playout());
+    }
     EXPECT_FALSE(media_channel1_->sending());
     EXPECT_TRUE(channel2_->SetRemoteContent(&local_media_content1_,
                                             CA_OFFER, NULL));
-    EXPECT_FALSE(media_channel2_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel2_->playout());
+    }
     EXPECT_FALSE(media_channel2_->sending());
     EXPECT_TRUE(channel2_->SetLocalContent(&local_media_content2_,
                                            CA_ANSWER, NULL));
-    EXPECT_FALSE(media_channel2_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel2_->playout());
+    }
     EXPECT_FALSE(media_channel2_->sending());
     transport_controller1_.Connect(&transport_controller2_);
-    EXPECT_TRUE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel1_->playout());
+    }
     EXPECT_FALSE(media_channel1_->sending());
-    EXPECT_FALSE(media_channel2_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel2_->playout());
+    }
     EXPECT_FALSE(media_channel2_->sending());
     EXPECT_TRUE(channel2_->Enable(true));
-    EXPECT_TRUE(media_channel2_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel2_->playout());
+    }
     EXPECT_TRUE(media_channel2_->sending());
     EXPECT_TRUE(channel1_->SetRemoteContent(&local_media_content2_,
                                             CA_ANSWER, NULL));
-    EXPECT_TRUE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel1_->playout());
+    }
     EXPECT_TRUE(media_channel1_->sending());
   }
 
@@ -862,9 +886,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     EXPECT_TRUE(channel1_->Enable(true));
     EXPECT_TRUE(channel2_->Enable(true));
-    EXPECT_FALSE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel1_->playout());
+    }
     EXPECT_FALSE(media_channel1_->sending());
-    EXPECT_FALSE(media_channel2_->playout());
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel2_->playout());
+    }
     EXPECT_FALSE(media_channel2_->sending());
 
     EXPECT_TRUE(channel1_->SetLocalContent(&content1, CA_OFFER, NULL));
@@ -873,9 +901,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(channel1_->SetRemoteContent(&content2, CA_PRANSWER, NULL));
     transport_controller1_.Connect(&transport_controller2_);
 
-    EXPECT_TRUE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel1_->playout());
+    }
     EXPECT_FALSE(media_channel1_->sending());  // remote InActive
-    EXPECT_FALSE(media_channel2_->playout());  // local InActive
+    if (verify_playout_) {
+      EXPECT_FALSE(media_channel2_->playout());  // local InActive
+    }
     EXPECT_FALSE(media_channel2_->sending());  // local InActive
 
     // Update |content2| to be RecvOnly.
@@ -883,9 +915,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(channel2_->SetLocalContent(&content2, CA_PRANSWER, NULL));
     EXPECT_TRUE(channel1_->SetRemoteContent(&content2, CA_PRANSWER, NULL));
 
-    EXPECT_TRUE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel1_->playout());
+    }
     EXPECT_TRUE(media_channel1_->sending());
-    EXPECT_TRUE(media_channel2_->playout());  // local RecvOnly
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel2_->playout());  // local RecvOnly
+    }
     EXPECT_FALSE(media_channel2_->sending());  // local RecvOnly
 
     // Update |content2| to be SendRecv.
@@ -893,9 +929,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(channel2_->SetLocalContent(&content2, CA_ANSWER, NULL));
     EXPECT_TRUE(channel1_->SetRemoteContent(&content2, CA_ANSWER, NULL));
 
-    EXPECT_TRUE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel1_->playout());
+    }
     EXPECT_TRUE(media_channel1_->sending());
-    EXPECT_TRUE(media_channel2_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel2_->playout());
+    }
     EXPECT_TRUE(media_channel2_->sending());
   }
 
@@ -904,13 +944,17 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, 0);
     EXPECT_FALSE(channel1_->secure());
     EXPECT_TRUE(SendInitiate());
-    EXPECT_TRUE(media_channel1_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel1_->playout());
+    }
     EXPECT_FALSE(media_channel1_->sending());
     EXPECT_TRUE(SendAccept());
     EXPECT_FALSE(channel1_->secure());
     EXPECT_TRUE(media_channel1_->sending());
     EXPECT_EQ(1U, media_channel1_->codecs().size());
-    EXPECT_TRUE(media_channel2_->playout());
+    if (verify_playout_) {
+      EXPECT_TRUE(media_channel2_->playout());
+    }
     EXPECT_TRUE(media_channel2_->sending());
     EXPECT_EQ(1U, media_channel2_->codecs().size());
   }
@@ -1738,6 +1782,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
  protected:
+  // TODO(pbos): Remove playout from all media channels and let renderers mute
+  // themselves.
+  const bool verify_playout_;
   cricket::FakeTransportController transport_controller1_;
   cricket::FakeTransportController transport_controller2_;
   cricket::FakeMediaEngine media_engine_;
@@ -1759,7 +1806,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   uint32 ssrc_;
   typename T::MediaChannel::Error error_;
 };
-
 
 template<>
 void ChannelTest<VoiceTraits>::CreateContent(
@@ -1801,8 +1847,11 @@ class VoiceChannelTest
  public:
   typedef ChannelTest<VoiceTraits> Base;
   VoiceChannelTest()
-      : Base(kPcmuFrame, sizeof(kPcmuFrame), kRtcpReport, sizeof(kRtcpReport)) {
-  }
+      : Base(true,
+             kPcmuFrame,
+             sizeof(kPcmuFrame),
+             kRtcpReport,
+             sizeof(kRtcpReport)) {}
 };
 
 // override to add NULL parameter
@@ -1868,7 +1917,8 @@ class VideoChannelTest
  public:
   typedef ChannelTest<VideoTraits> Base;
   VideoChannelTest()
-      : Base(kH264Packet,
+      : Base(false,
+             kH264Packet,
              sizeof(kH264Packet),
              kRtcpReport,
              sizeof(kRtcpReport)) {}
@@ -2556,9 +2606,12 @@ class DataChannelTest
  public:
   typedef ChannelTest<DataTraits>
   Base;
-  DataChannelTest() : Base(kDataPacket, sizeof(kDataPacket),
-                           kRtcpReport, sizeof(kRtcpReport)) {
-  }
+  DataChannelTest()
+      : Base(true,
+             kDataPacket,
+             sizeof(kDataPacket),
+             kRtcpReport,
+             sizeof(kRtcpReport)) {}
 };
 
 // Override to avoid engine channel parameter.

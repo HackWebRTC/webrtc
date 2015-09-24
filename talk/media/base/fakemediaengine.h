@@ -539,10 +539,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     *send_codec = send_codecs_[0];
     return true;
   }
-  virtual bool SetRender(bool render) {
-    set_playout(render);
-    return true;
-  }
   virtual bool SetRenderer(uint32 ssrc, VideoRenderer* r) {
     if (ssrc != 0 && renderers_.find(ssrc) == renderers_.end()) {
       return false;

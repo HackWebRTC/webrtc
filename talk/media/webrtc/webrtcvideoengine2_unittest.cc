@@ -889,7 +889,6 @@ TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
   codec.width /= 2;
   codec.height /= 2;
   EXPECT_TRUE(SetSend(true));
-  EXPECT_TRUE(channel_->SetRender(true));
   EXPECT_EQ(0, renderer_.num_rendered_frames());
   EXPECT_TRUE(SendFrame());
   EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
@@ -1458,10 +1457,6 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_AddRemoveRecvStreamConference) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetRender) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
 TEST_F(WebRtcVideoChannel2Test, DISABLED_SetBandwidthAuto) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
@@ -1825,7 +1820,6 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeAndElapsedTimeCorrectly) {
   FakeVideoReceiveStream* stream = AddRecvStream();
   cricket::FakeVideoRenderer renderer;
   EXPECT_TRUE(channel_->SetRenderer(last_ssrc_, &renderer));
-  EXPECT_TRUE(channel_->SetRender(true));
 
   webrtc::VideoFrame video_frame;
   CreateBlackFrame(&video_frame, 4, 4);

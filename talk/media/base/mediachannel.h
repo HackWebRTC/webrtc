@@ -1140,8 +1140,6 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
   // Sets the format of a specified outgoing stream.
   virtual bool SetSendStreamFormat(uint32 ssrc, const VideoFormat& format) = 0;
-  // Starts or stops playout of received video.
-  virtual bool SetRender(bool render) = 0;
   // Starts or stops transmission (and potentially capture) of local video.
   virtual bool SetSend(bool send) = 0;
   // Configure stream for sending.

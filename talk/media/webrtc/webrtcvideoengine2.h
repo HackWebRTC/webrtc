@@ -170,7 +170,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   bool SetRecvParameters(const VideoRecvParameters& params) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
   bool SetSendStreamFormat(uint32 ssrc, const VideoFormat& format) override;
-  bool SetRender(bool render) override;
   bool SetSend(bool send) override;
   bool SetVideoSend(uint32 ssrc, bool mute,
                     const VideoOptions* options) override;

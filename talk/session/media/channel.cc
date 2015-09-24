@@ -1743,14 +1743,6 @@ bool VideoChannel::SetVideoSend(uint32 ssrc,
 }
 
 void VideoChannel::ChangeState() {
-  // Render incoming data if we're the active call, and we have the local
-  // content. We receive data on the default channel and multiplexed streams.
-  bool recv = IsReadyToReceive();
-  if (!media_channel()->SetRender(recv)) {
-    LOG(LS_ERROR) << "Failed to SetRender on video channel";
-    // TODO(gangji): Report error back to server.
-  }
-
   // Send outgoing data if we're the active call, we have the remote content,
   // and we have had some form of connectivity.
   bool send = IsReadyToSend();
@@ -1759,7 +1751,7 @@ void VideoChannel::ChangeState() {
     // TODO(gangji): Report error back to server.
   }
 
-  LOG(LS_INFO) << "Changing video state, recv=" << recv << " send=" << send;
+  LOG(LS_INFO) << "Changing video state, send=" << send;
 }
 
 bool VideoChannel::GetStats(VideoMediaInfo* stats) {

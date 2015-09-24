@@ -1021,12 +1021,6 @@ bool WebRtcVideoChannel2::SetSendStreamFormat(uint32 ssrc,
   return send_streams_[ssrc]->SetVideoFormat(format);
 }
 
-bool WebRtcVideoChannel2::SetRender(bool render) {
-  // TODO(pbos): Implement. Or refactor away as it shouldn't be needed.
-  LOG(LS_VERBOSE) << "SetRender: " << (render ? "true" : "false");
-  return true;
-}
-
 bool WebRtcVideoChannel2::SetSend(bool send) {
   LOG(LS_VERBOSE) << "SetSend: " << (send ? "true" : "false");
   if (send && !send_codec_.IsSet()) {
