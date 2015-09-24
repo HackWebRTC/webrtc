@@ -1832,7 +1832,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // as the best connection.
   ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 10));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
-  ASSERT_TRUE(conn1 != nullptr);
+  ASSERT_TRUE(conn2 != nullptr);
   EXPECT_EQ(conn2, ch.best_connection());
 
   // If a stun request with use-candidate attribute arrives, the receiving
@@ -1991,4 +1991,43 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   conn2->ReceivedPingResponse();
   conn2->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(conn3, ch.best_connection());
+}
+
+// When the current best connection is strong, lower-priority connections will
+// be pruned. Otherwise, lower-priority connections are kept.
+TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
+  ch.Connect();
+  ch.MaybeStartGathering();
+  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(conn1, ch.best_connection());
+  conn1->ReceivedPingResponse();  // Becomes writable and receiving
+
+  // When a higher-priority, nominated candidate comes in, the connections with
+  // lower-priority are pruned.
+  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 10));
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn2 != nullptr);
+  conn2->ReceivedPingResponse();  // Becomes writable and receiving
+  conn2->set_nominated(true);
+  conn2->SignalNominated(conn2);
+  EXPECT_TRUE_WAIT(conn1->pruned(), 3000);
+
+  ch.SetReceivingTimeout(500);
+  // Wait until conn2 becomes not receiving.
+  EXPECT_TRUE_WAIT(!conn2->receiving(), 3000);
+
+  ch.AddRemoteCandidate(CreateCandidate("3.3.3.3", 3, 1));
+  cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
+  ASSERT_TRUE(conn3 != nullptr);
+  // The best connection should still be conn2. Even through conn3 has lower
+  // priority and is not receiving/writable, it is not pruned because the best
+  // connection is not receiving.
+  WAIT(conn3->pruned(), 1000);
+  EXPECT_FALSE(conn3->pruned());
 }

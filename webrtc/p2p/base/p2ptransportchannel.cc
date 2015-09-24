@@ -1000,7 +1000,7 @@ void P2PTransportChannel::PruneConnections() {
   // which point, we would prune out the current best connection).  We leave
   // connections on other networks because they may not be using the same
   // resources and they may represent very distinct paths over which we can
-  // switch. If the |primier| connection is not connected, we may be
+  // switch. If the |premier| connection is not connected, we may be
   // reconnecting a TCP connection and temporarily do not prune connections in
   // this network. See the big comment in CompareConnections.
 
@@ -1010,14 +1010,16 @@ void P2PTransportChannel::PruneConnections() {
     networks.insert(conn->port()->Network());
   }
   for (rtc::Network* network : networks) {
-    Connection* primier = GetBestConnectionOnNetwork(network);
-    if (!(primier && primier->writable() && primier->connected())) {
+    Connection* premier = GetBestConnectionOnNetwork(network);
+    // Do not prune connections if the current best connection is weak on this
+    // network. Otherwise, it may delete connections prematurely.
+    if (!premier || premier->Weak()) {
       continue;
     }
 
     for (Connection* conn : connections_) {
-      if ((conn != primier) && (conn->port()->Network() == network) &&
-          (CompareConnectionCandidates(primier, conn) >= 0)) {
+      if ((conn != premier) && (conn->port()->Network() == network) &&
+          (CompareConnectionCandidates(premier, conn) >= 0)) {
         conn->Prune();
       }
     }
@@ -1092,8 +1094,7 @@ void P2PTransportChannel::HandleAllTimedOut() {
 }
 
 bool P2PTransportChannel::Weak() const {
-  return !(best_connection_ && best_connection_->receiving() &&
-           best_connection_->writable());
+  return !best_connection_ || best_connection_->Weak();
 }
 
 // If we have a best connection, return it, otherwise return top one in the

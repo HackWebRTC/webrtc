@@ -436,6 +436,8 @@ class Connection : public rtc::MessageHandler,
   // be false for TCP connections.
   bool connected() const { return connected_; }
 
+  bool Weak() const { return !(writable() && receiving() && connected()); }
+
   // Estimate of the round-trip time over this connection.
   uint32 rtt() const { return rtt_; }
 
