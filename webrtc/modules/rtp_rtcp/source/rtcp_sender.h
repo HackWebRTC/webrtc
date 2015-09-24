@@ -33,9 +33,6 @@ namespace webrtc {
 class ModuleRtpRtcpImpl;
 class RTCPReceiver;
 
-namespace rtcp {
-class TransportFeedback;
-}
 class NACKStringBuilder {
  public:
   NACKStringBuilder();

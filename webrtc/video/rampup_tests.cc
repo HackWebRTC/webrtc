@@ -11,14 +11,18 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
+#include "webrtc/base/event.h"
+#include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/rampup_tests.h"
 
@@ -70,12 +74,20 @@ StreamObserver::StreamObserver(const SsrcMap& rtx_media_ssrcs,
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
   rtp_rtcp_->SetREMBStatus(true);
   rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
+  packet_router_.reset(new PacketRouter());
+  packet_router_->AddRtpModule(rtp_rtcp_.get());
   rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
                                           kAbsSendTimeExtensionId);
   rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
                                           kTransmissionTimeOffsetExtensionId);
+  rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
+                                          kTransportSequenceNumberExtensionId);
   payload_registry_->SetRtxPayloadType(RampUpTest::kSendRtxPayloadType,
                                        RampUpTest::kFakeSendPayloadType);
+}
+
+StreamObserver::~StreamObserver() {
+  packet_router_->RemoveRtpModule(rtp_rtcp_.get());
 }
 
 void StreamObserver::set_expected_bitrate_bps(
@@ -161,6 +173,10 @@ EventTypeWrapper StreamObserver::Wait() {
 
 void StreamObserver::SetRemoteBitrateEstimator(RemoteBitrateEstimator* rbe) {
   remote_bitrate_estimator_.reset(rbe);
+}
+
+PacketRouter* StreamObserver::GetPacketRouter() {
+  return packet_router_.get();
 }
 
 void StreamObserver::ReportResult(const std::string& measurement,
@@ -371,6 +387,49 @@ EventTypeWrapper LowRateStreamObserver::Wait() {
   return test_done_->Wait(test::CallTest::kLongTimeoutMs);
 }
 
+class SendBitrateAdapter {
+ public:
+  static const int64_t kPollIntervalMs = 250;
+
+  SendBitrateAdapter(const Call& call,
+                     const std::vector<uint32_t>& ssrcs,
+                     RemoteBitrateObserver* bitrate_observer)
+      : event_(false, false),
+        call_(call),
+        ssrcs_(ssrcs),
+        bitrate_observer_(bitrate_observer) {
+    RTC_DCHECK(bitrate_observer != nullptr);
+    poller_thread_ = ThreadWrapper::CreateThread(&SendBitrateAdapterThread,
+                                                 this, "SendBitratePoller");
+    bool thread_start_ok = poller_thread_->Start();
+    RTC_DCHECK(thread_start_ok);
+  }
+
+  virtual ~SendBitrateAdapter() {
+    event_.Set();
+    poller_thread_->Stop();
+  }
+
+ private:
+  static bool SendBitrateAdapterThread(void* obj) {
+    return static_cast<SendBitrateAdapter*>(obj)->PollStats();
+  }
+
+  bool PollStats() {
+    Call::Stats stats = call_.GetStats();
+
+    bitrate_observer_->OnReceiveBitrateChanged(ssrcs_,
+                                               stats.send_bandwidth_bps);
+    return !event_.Wait(kPollIntervalMs);
+  }
+
+  rtc::Event event_;
+  rtc::scoped_ptr<ThreadWrapper> poller_thread_;
+  const Call& call_;
+  const std::vector<uint32_t> ssrcs_;
+  RemoteBitrateObserver* const bitrate_observer_;
+};
+
 void RampUpTest::RunRampUpTest(size_t num_streams,
                                unsigned int start_bitrate_bps,
                                const std::string& extension_type,
@@ -391,6 +450,8 @@ void RampUpTest::RunRampUpTest(size_t num_streams,
   CreateSendConfig(num_streams, &stream_observer);
   send_config_.rtp.extensions.clear();
 
+  rtc::scoped_ptr<SendBitrateAdapter> send_bitrate_adapter_;
+
   if (extension_type == RtpExtension::kAbsSendTime) {
     stream_observer.SetRemoteBitrateEstimator(
         new RemoteBitrateEstimatorAbsSendTime(
@@ -398,6 +459,11 @@ void RampUpTest::RunRampUpTest(size_t num_streams,
             kRemoteBitrateEstimatorMinBitrateBps));
     send_config_.rtp.extensions.push_back(RtpExtension(
         extension_type.c_str(), kAbsSendTimeExtensionId));
+  } else if (extension_type == RtpExtension::kTransportSequenceNumber) {
+    stream_observer.SetRemoteBitrateEstimator(new RemoteEstimatorProxy(
+        Clock::GetRealTimeClock(), stream_observer.GetPacketRouter()));
+    send_config_.rtp.extensions.push_back(RtpExtension(
+        extension_type.c_str(), kTransportSequenceNumberExtensionId));
   } else {
     stream_observer.SetRemoteBitrateEstimator(
         new RemoteBitrateEstimatorSingleStream(
@@ -449,9 +515,17 @@ void RampUpTest::RunRampUpTest(size_t num_streams,
   CreateStreams();
   CreateFrameGeneratorCapturer();
 
+  if (extension_type == RtpExtension::kTransportSequenceNumber) {
+    send_bitrate_adapter_.reset(
+        new SendBitrateAdapter(*sender_call_.get(), ssrcs, &stream_observer));
+  }
   Start();
 
   EXPECT_EQ(kEventSignaled, stream_observer.Wait());
+
+  // Destroy the SendBitrateAdapter (if any) to stop the poller thread in it,
+  // otherwise we might get a data race with the destruction of the call.
+  send_bitrate_adapter_.reset();
 
   Stop();
   DestroyStreams();
@@ -562,5 +636,26 @@ TEST_F(RampUpTest, AbsSendTimeSimulcastByRedWithRtx) {
 TEST_F(RampUpTest, AbsSendTimeSingleStreamWithHighStartBitrate) {
   RunRampUpTest(1, 0.9 * kSingleStreamTargetBps, RtpExtension::kAbsSendTime,
                 false, false);
+}
+
+TEST_F(RampUpTest, TransportSequenceNumberSingleStream) {
+  RunRampUpTest(1, 0, RtpExtension::kTransportSequenceNumber, false, false);
+}
+
+TEST_F(RampUpTest, TransportSequenceNumberSimulcast) {
+  RunRampUpTest(3, 0, RtpExtension::kTransportSequenceNumber, false, false);
+}
+
+TEST_F(RampUpTest, TransportSequenceNumberSimulcastWithRtx) {
+  RunRampUpTest(3, 0, RtpExtension::kTransportSequenceNumber, true, false);
+}
+
+TEST_F(RampUpTest, TransportSequenceNumberSimulcastByRedWithRtx) {
+  RunRampUpTest(3, 0, RtpExtension::kTransportSequenceNumber, true, true);
+}
+
+TEST_F(RampUpTest, TransportSequenceNumberSingleStreamWithHighStartBitrate) {
+  RunRampUpTest(1, 0.9 * kSingleStreamTargetBps,
+                RtpExtension::kTransportSequenceNumber, false, false);
 }
 }  // namespace webrtc

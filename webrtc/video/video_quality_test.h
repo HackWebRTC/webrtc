@@ -38,6 +38,7 @@ class VideoQualityTest : public test::CallTest {
       int min_transmit_bps;
       Call::Config::BitrateConfig call_bitrate_config;
       size_t tl_discard_threshold;
+      bool send_side_bwe;
     } common;
     struct {  // Video-specific settings.
       std::string clip_name;

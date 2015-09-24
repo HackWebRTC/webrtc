@@ -78,6 +78,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                      configuration.rtcp_packet_type_counter_observer,
                      configuration.bandwidth_callback,
                      configuration.intra_frame_callback,
+                     configuration.transport_feedback_callback,
                      this),
       clock_(configuration.clock),
       audio_(configuration.audio),

@@ -18,6 +18,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -145,7 +146,6 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
     : remb_(new VieRemb()),
       bitrate_allocator_(new BitrateAllocator()),
       call_stats_(new CallStats()),
-      encoder_state_feedback_(new EncoderStateFeedback()),
       packet_router_(new PacketRouter()),
       pacer_(new PacedSender(Clock::GetRealTimeClock(),
                              packet_router_.get(),
@@ -153,6 +153,12 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
                              PacedSender::kDefaultPaceMultiplier *
                                  BitrateController::kDefaultStartBitrateKbps,
                              0)),
+      remote_bitrate_estimator_(
+          new WrappingBitrateEstimator(remb_.get(), Clock::GetRealTimeClock())),
+      remote_estimator_proxy_(
+          new RemoteEstimatorProxy(Clock::GetRealTimeClock(),
+                                   packet_router_.get())),
+      encoder_state_feedback_(new EncoderStateFeedback()),
       process_thread_(process_thread),
       pacer_thread_(ProcessThread::Create("PacerThread")),
       // Constructed last as this object calls the provided callback on
@@ -160,14 +166,12 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
       bitrate_controller_(
           BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
                                                      this)) {
-  remote_bitrate_estimator_.reset(new WrappingBitrateEstimator(
-      remb_.get(), Clock::GetRealTimeClock()));
-
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
 
   pacer_thread_->RegisterModule(pacer_.get());
   pacer_thread_->Start();
 
+  process_thread->RegisterModule(remote_estimator_proxy_.get());
   process_thread->RegisterModule(remote_bitrate_estimator_.get());
   process_thread->RegisterModule(call_stats_.get());
   process_thread->RegisterModule(bitrate_controller_.get());
@@ -179,7 +183,10 @@ ChannelGroup::~ChannelGroup() {
   process_thread_->DeRegisterModule(bitrate_controller_.get());
   process_thread_->DeRegisterModule(call_stats_.get());
   process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
+  process_thread_->DeRegisterModule(remote_estimator_proxy_.get());
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
+  if (transport_feedback_adapter_.get())
+    call_stats_->DeregisterStatsObserver(transport_feedback_adapter_.get());
   RTC_DCHECK(channel_map_.empty());
   RTC_DCHECK(!remb_->InUse());
   RTC_DCHECK(vie_encoder_map_.empty());
@@ -190,7 +197,30 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
                                      SendStatisticsProxy* stats_proxy,
                                      I420FrameCallback* pre_encode_callback,
                                      int number_of_cores,
-                                     const std::vector<uint32_t>& ssrcs) {
+                                     const VideoSendStream::Config& config) {
+  TransportFeedbackObserver* transport_feedback_observer = nullptr;
+  bool transport_seq_enabled = false;
+  for (const RtpExtension& extension : config.rtp.extensions) {
+    if (extension.name == RtpExtension::kTransportSequenceNumber) {
+      transport_seq_enabled = true;
+      break;
+    }
+  }
+  if (transport_seq_enabled) {
+    if (transport_feedback_adapter_.get() == nullptr) {
+      transport_feedback_adapter_.reset(new TransportFeedbackAdapter(
+          bitrate_controller_->CreateRtcpBandwidthObserver(),
+          Clock::GetRealTimeClock(), process_thread_));
+      transport_feedback_adapter_->SetBitrateEstimator(
+          new RemoteBitrateEstimatorAbsSendTime(
+              transport_feedback_adapter_.get(), Clock::GetRealTimeClock(),
+              RemoteBitrateEstimator::kDefaultMinBitrateBps));
+      call_stats_->RegisterStatsObserver(transport_feedback_adapter_.get());
+    }
+    transport_feedback_observer = transport_feedback_adapter_.get();
+  }
+
+  const std::vector<uint32_t>& ssrcs = config.rtp.ssrcs;
   RTC_DCHECK(!ssrcs.empty());
   rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
       channel_id, number_of_cores, process_thread_, stats_proxy,
@@ -200,7 +230,9 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   }
   ViEEncoder* encoder = vie_encoder.get();
   if (!CreateChannel(channel_id, transport, number_of_cores,
-                     vie_encoder.release(), ssrcs.size(), true)) {
+                     vie_encoder.release(), ssrcs.size(), true,
+                     remote_bitrate_estimator_.get(),
+                     transport_feedback_observer)) {
     return false;
   }
   ViEChannel* channel = channel_map_[channel_id];
@@ -214,11 +246,27 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   return true;
 }
 
-bool ChannelGroup::CreateReceiveChannel(int channel_id,
-                                        Transport* transport,
-                                        int number_of_cores) {
-  return CreateChannel(channel_id, transport, number_of_cores,
-                       nullptr, 1, false);
+bool ChannelGroup::CreateReceiveChannel(
+    int channel_id,
+    Transport* transport,
+    int number_of_cores,
+    const VideoReceiveStream::Config& config) {
+  bool send_side_bwe = false;
+  for (const RtpExtension& extension : config.rtp.extensions) {
+    if (extension.name == RtpExtension::kTransportSequenceNumber) {
+      send_side_bwe = true;
+      break;
+    }
+  }
+
+  RemoteBitrateEstimator* bitrate_estimator;
+  if (send_side_bwe) {
+    bitrate_estimator = remote_estimator_proxy_.get();
+  } else {
+    bitrate_estimator = remote_bitrate_estimator_.get();
+  }
+  return CreateChannel(channel_id, transport, number_of_cores, nullptr, 1,
+                       false, bitrate_estimator, nullptr);
 }
 
 bool ChannelGroup::CreateChannel(int channel_id,
@@ -226,13 +274,15 @@ bool ChannelGroup::CreateChannel(int channel_id,
                                  int number_of_cores,
                                  ViEEncoder* vie_encoder,
                                  size_t max_rtp_streams,
-                                 bool sender) {
+                                 bool sender,
+                                 RemoteBitrateEstimator* bitrate_estimator,
+                                 TransportFeedbackObserver* feedback_observer) {
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
       number_of_cores, transport, process_thread_,
       encoder_state_feedback_->GetRtcpIntraFrameObserver(),
-      bitrate_controller_->CreateRtcpBandwidthObserver(), nullptr,
-      remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
-      pacer_.get(), packet_router_.get(), max_rtp_streams, sender));
+      bitrate_controller_->CreateRtcpBandwidthObserver(), feedback_observer,
+      bitrate_estimator, call_stats_->rtcp_rtt_stats(), pacer_.get(),
+      packet_router_.get(), max_rtp_streams, sender));
   if (channel->Init() != 0) {
     return false;
   }
