@@ -124,18 +124,11 @@ class ACMCodecDB {
   //                        that can be different from packet size.
   // channel_support      - number of channels supported to encode;
   //                        1 = mono, 2 = stereo, etc.
-  // owns_decoder         - if true, it means that the codec should own the
-  //                        decoder instance. In this case, the codec should
-  //                        implement ACMGenericCodec::Decoder(), which returns
-  //                        a pointer to AudioDecoder. This pointer is injected
-  //                        into NetEq when this codec is registered as receive
-  //                        codec. DEPRECATED.
   struct CodecSettings {
     int num_packet_sizes;
     int packet_sizes_samples[kMaxNumPacketSize];
     int basic_block_samples;
     int channel_support;
-    bool owns_decoder;
   };
 
   // Gets codec information from database at the position in database given by
@@ -171,41 +164,6 @@ class ACMCodecDB {
   // Return:
   //   codec sampling frequency if successful, otherwise -1.
   static int CodecFreq(int codec_id);
-
-  // Return the codec's basic coding block size in samples.
-  // TODO(tlegrand): Check if function is needed, or if we can change
-  // to access database directly.
-  // Input:
-  //   [codec_id] - number that specifies at what position in the database to
-  //                get the information.
-  // Return:
-  //   codec basic block size if successful, otherwise -1.
-  static int BasicCodingBlock(int codec_id);
-
-  // Returns the NetEQ decoder database.
-  static const NetEqDecoder* NetEQDecoders();
-
-  // Specifies if the codec specified by |codec_id| MUST own its own decoder.
-  // This is the case for codecs which *should* share a single codec instance
-  // between encoder and decoder. Or for codecs which ACM should have control
-  // over the decoder. For instance iSAC is such a codec that encoder and
-  // decoder share the same codec instance.
-  static bool OwnsDecoder(int codec_id);
-
-  // Checks if the bitrate is valid for the codec.
-  // Input:
-  //   [codec_id] - number that specifies codec's position in the database.
-  //   [rate] - bitrate to check.
-  //   [frame_size_samples] - (used for iLBC) specifies which frame size to go
-  //                          with the rate.
-  static bool IsRateValid(int codec_id, int rate);
-  static bool IsISACRateValid(int rate);
-  static bool IsILBCRateValid(int rate, int frame_size_samples);
-  static bool IsAMRRateValid(int rate);
-  static bool IsAMRwbRateValid(int rate);
-  static bool IsG7291RateValid(int rate);
-  static bool IsSpeexRateValid(int rate);
-  static bool IsOpusRateValid(int rate);
 
   // Check if the payload type is valid, meaning that it is in the valid range
   // of 0 to 127.

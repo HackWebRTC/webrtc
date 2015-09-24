@@ -27,6 +27,38 @@ namespace webrtc {
 
 namespace acm2 {
 
+namespace {
+
+// Checks if the bitrate is valid for the codec.
+bool IsRateValid(int codec_id, int rate) {
+  return ACMCodecDB::database_[codec_id].rate == rate;
+}
+
+// Checks if the bitrate is valid for iSAC.
+bool IsISACRateValid(int rate) {
+  return (rate == -1) || ((rate <= 56000) && (rate >= 10000));
+}
+
+// Checks if the bitrate is valid for iLBC.
+bool IsILBCRateValid(int rate, int frame_size_samples) {
+  if (((frame_size_samples == 240) || (frame_size_samples == 480)) &&
+      (rate == 13300)) {
+    return true;
+  } else if (((frame_size_samples == 160) || (frame_size_samples == 320)) &&
+      (rate == 15200)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Checks if the bitrate is valid for Opus.
+bool IsOpusRateValid(int rate) {
+  return (rate >= 6000) && (rate <= 510000);
+}
+
+}  // namespace
+
 // Not yet used payload-types.
 // 83,  82,  81, 80, 79,  78,  77,  76,  75,  74,  73,  72,  71,  70,  69, 68,
 // 67, 66, 65
@@ -89,55 +121,55 @@ const CodecInst ACMCodecDB::database_[] = {
 // Basic block samples, max number of channels that are supported.
 const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1, true},
+    {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1},
 # if (defined(WEBRTC_CODEC_ISAC))
-    {1, {kIsacPacSize960}, 0, 1, true},
-    {1, {kIsacPacSize1440}, 0, 1, true},
+    {1, {kIsacPacSize960}, 0, 1},
+    {1, {kIsacPacSize1440}, 0, 1},
 # endif
 #endif
     // Mono
-    {4, {80, 160, 240, 320}, 0, 2, false},
-    {4, {160, 320, 480, 640}, 0, 2, false},
-    {2, {320, 640}, 0, 2, false},
+    {4, {80, 160, 240, 320}, 0, 2},
+    {4, {160, 320, 480, 640}, 0, 2},
+    {2, {320, 640}, 0, 2},
     // Stereo
-    {4, {80, 160, 240, 320}, 0, 2, false},
-    {4, {160, 320, 480, 640}, 0, 2, false},
+    {4, {80, 160, 240, 320}, 0, 2},
+    {4, {160, 320, 480, 640}, 0, 2},
     {2, {320, 640}, 0, 2},
     // G.711, PCM mu-law and A-law.
     // Mono
-    {6, {80, 160, 240, 320, 400, 480}, 0, 2, false},
-    {6, {80, 160, 240, 320, 400, 480}, 0, 2, false},
+    {6, {80, 160, 240, 320, 400, 480}, 0, 2},
+    {6, {80, 160, 240, 320, 400, 480}, 0, 2},
     // Stereo
-    {6, {80, 160, 240, 320, 400, 480}, 0, 2, false},
-    {6, {80, 160, 240, 320, 400, 480}, 0, 2, false},
+    {6, {80, 160, 240, 320, 400, 480}, 0, 2},
+    {6, {80, 160, 240, 320, 400, 480}, 0, 2},
 #ifdef WEBRTC_CODEC_ILBC
-    {4, {160, 240, 320, 480}, 0, 1, false},
+    {4, {160, 240, 320, 480}, 0, 1},
 #endif
 #ifdef WEBRTC_CODEC_G722
     // Mono
-    {6, {160, 320, 480, 640, 800, 960}, 0, 2, false},
+    {6, {160, 320, 480, 640, 800, 960}, 0, 2},
     // Stereo
-    {6, {160, 320, 480, 640, 800, 960}, 0, 2, false},
+    {6, {160, 320, 480, 640, 800, 960}, 0, 2},
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     // Opus supports frames shorter than 10ms,
     // but it doesn't help us to use them.
     // Mono and stereo.
-    {4, {480, 960, 1920, 2880}, 0, 2, false},
+    {4, {480, 960, 1920, 2880}, 0, 2},
 #endif
     // Comfort noise for three different sampling frequencies.
-    {1, {240}, 240, 1, false},
-    {1, {480}, 480, 1, false},
-    {1, {960}, 960, 1, false},
+    {1, {240}, 240, 1},
+    {1, {480}, 480, 1},
+    {1, {960}, 960, 1},
 #ifdef ENABLE_48000_HZ
-    {1, {1440}, 1440, 1, false},
+    {1, {1440}, 1440, 1},
 #endif
-    {1, {240}, 240, 1, false},
+    {1, {240}, 240, 1},
 #ifdef WEBRTC_CODEC_RED
-    {1, {0}, 0, 1, false},
+    {1, {0}, 0, 1},
 #endif
     // To prevent compile errors due to trailing commas.
-    {-1, {-1}, -1, -1, false}
+    {-1, {-1}, -1, -1}
 };
 
 // Create a database of all NetEQ decoders at compile time.
@@ -269,20 +301,8 @@ int ACMCodecDB::CodecNumber(const CodecInst& codec_inst) {
   } else if (STR_CASE_CMP("ilbc", codec_inst.plname) == 0) {
     return IsILBCRateValid(codec_inst.rate, codec_inst.pacsize)
         ? codec_id : kInvalidRate;
-  } else if (STR_CASE_CMP("amr", codec_inst.plname) == 0) {
-    return IsAMRRateValid(codec_inst.rate)
-        ? codec_id : kInvalidRate;
-  } else if (STR_CASE_CMP("amr-wb", codec_inst.plname) == 0) {
-    return IsAMRwbRateValid(codec_inst.rate)
-        ? codec_id : kInvalidRate;
-  } else if (STR_CASE_CMP("g7291", codec_inst.plname) == 0) {
-    return IsG7291RateValid(codec_inst.rate)
-        ? codec_id : kInvalidRate;
   } else if (STR_CASE_CMP("opus", codec_inst.plname) == 0) {
     return IsOpusRateValid(codec_inst.rate)
-        ? codec_id : kInvalidRate;
-  } else if (STR_CASE_CMP("speex", codec_inst.plname) == 0) {
-    return IsSpeexRateValid(codec_inst.rate)
         ? codec_id : kInvalidRate;
   }
 
@@ -345,124 +365,9 @@ int ACMCodecDB::CodecFreq(int codec_id) {
   return database_[codec_id].plfreq;
 }
 
-// Returns the codec's basic coding block size in samples.
-int ACMCodecDB::BasicCodingBlock(int codec_id) {
-  // Error check to see that codec_id is not out of bounds.
-  if (codec_id < 0 || codec_id >= kNumCodecs) {
-    return -1;
-  }
-
-  return codec_settings_[codec_id].basic_block_samples;
-}
-
-// Returns the NetEQ decoder database.
-const NetEqDecoder* ACMCodecDB::NetEQDecoders() {
-  return neteq_decoders_;
-}
-
-// Checks if the bitrate is valid for the codec.
-bool ACMCodecDB::IsRateValid(int codec_id, int rate) {
-  return database_[codec_id].rate == rate;
-}
-
-// Checks if the bitrate is valid for iSAC.
-bool ACMCodecDB::IsISACRateValid(int rate) {
-  return (rate == -1) || ((rate <= 56000) && (rate >= 10000));
-}
-
-// Checks if the bitrate is valid for iLBC.
-bool ACMCodecDB::IsILBCRateValid(int rate, int frame_size_samples) {
-  if (((frame_size_samples == 240) || (frame_size_samples == 480)) &&
-      (rate == 13300)) {
-    return true;
-  } else if (((frame_size_samples == 160) || (frame_size_samples == 320)) &&
-      (rate == 15200)) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// Check if the bitrate is valid for the GSM-AMR.
-bool ACMCodecDB::IsAMRRateValid(int rate) {
-  switch (rate) {
-    case 4750:
-    case 5150:
-    case 5900:
-    case 6700:
-    case 7400:
-    case 7950:
-    case 10200:
-    case 12200: {
-      return true;
-    }
-    default: {
-      return false;
-    }
-  }
-}
-
-// Check if the bitrate is valid for GSM-AMR-WB.
-bool ACMCodecDB::IsAMRwbRateValid(int rate) {
-  switch (rate) {
-    case 7000:
-    case 9000:
-    case 12000:
-    case 14000:
-    case 16000:
-    case 18000:
-    case 20000:
-    case 23000:
-    case 24000: {
-      return true;
-    }
-    default: {
-      return false;
-    }
-  }
-}
-
-// Check if the bitrate is valid for G.729.1.
-bool ACMCodecDB::IsG7291RateValid(int rate) {
-  switch (rate) {
-    case 8000:
-    case 12000:
-    case 14000:
-    case 16000:
-    case 18000:
-    case 20000:
-    case 22000:
-    case 24000:
-    case 26000:
-    case 28000:
-    case 30000:
-    case 32000: {
-      return true;
-    }
-    default: {
-      return false;
-    }
-  }
-}
-
-// Checks if the bitrate is valid for Speex.
-bool ACMCodecDB::IsSpeexRateValid(int rate) {
-  return rate > 2000;
-}
-
-// Checks if the bitrate is valid for Opus.
-bool ACMCodecDB::IsOpusRateValid(int rate) {
-  return (rate >= 6000) && (rate <= 510000);
-}
-
 // Checks if the payload type is in the valid range.
 bool ACMCodecDB::ValidPayloadType(int payload_type) {
   return (payload_type >= 0) && (payload_type <= 127);
-}
-
-bool ACMCodecDB::OwnsDecoder(int codec_id) {
-  assert(codec_id >= 0 && codec_id < ACMCodecDB::kNumCodecs);
-  return ACMCodecDB::codec_settings_[codec_id].owns_decoder;
 }
 
 }  // namespace acm2
