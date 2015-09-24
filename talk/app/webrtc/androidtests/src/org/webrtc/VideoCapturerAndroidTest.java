@@ -405,9 +405,11 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
 
     capturer.stopCapture();
 
-    // Dispose source and |capturer|.
+    // Dispose everything.
     track.dispose();
     source.dispose();
+    factory.dispose();
+
     // The pending frames should keep the JNI parts and |capturer| alive.
     assertFalse(capturer.isReleased());
 
@@ -426,7 +428,5 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
 
     // Check that frames have successfully returned. This will cause |capturer| to be released.
     assertTrue(capturer.isReleased());
-
-    factory.dispose();
   }
 }
