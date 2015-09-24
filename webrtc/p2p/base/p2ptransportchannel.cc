@@ -10,8 +10,8 @@
 
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 
-#include <set>
 #include <algorithm>
+#include <set>
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
 #include "webrtc/p2p/base/stunport.h"  // For STUN_PORT_TYPE.
@@ -23,11 +23,7 @@
 namespace {
 
 // messages for queuing up work for ourselves
-enum {
-  MSG_SORT = 1,
-  MSG_PING,
-  MSG_CHECK_RECEIVING
-};
+enum { MSG_SORT = 1, MSG_CHECK_AND_PING };
 
 // When the socket is unwritable, we will use 10 Kbps (ignoring IP+UDP headers)
 // for pinging.  When the socket is writable, we will use only 1 Kbps because
@@ -35,12 +31,17 @@ enum {
 // well on a 28.8K modem, which is the slowest connection on which the voice
 // quality is reasonable at all.
 static const uint32 PING_PACKET_SIZE = 60 * 8;
-static const uint32 WRITABLE_DELAY = 1000 * PING_PACKET_SIZE / 1000;  // 480ms
-static const uint32 UNWRITABLE_DELAY = 1000 * PING_PACKET_SIZE / 10000;  // 50ms
+// STRONG_PING_DELAY (480ms) is applied when the best connection is both
+// writable and receiving.
+static const uint32 STRONG_PING_DELAY = 1000 * PING_PACKET_SIZE / 1000;
+// WEAK_PING_DELAY (48ms) is applied when the best connection is either not
+// writable or not receiving.
+static const uint32 WEAK_PING_DELAY = 1000 * PING_PACKET_SIZE / 10000;
 
-// If there is a current writable connection, then we will also try hard to
-// make sure it is pinged at this rate.
-static const uint32 MAX_CURRENT_WRITABLE_DELAY = 900;  // 2*WRITABLE_DELAY - bit
+// If the current best connection is both writable and receiving, then we will
+// also try hard to make sure it is pinged at this rate (a little less than
+// 2 * STRONG_PING_DELAY).
+static const uint32 MAX_CURRENT_STRONG_DELAY = 900;
 
 static const int MIN_CHECK_RECEIVING_DELAY = 50;  // ms
 
@@ -71,13 +72,21 @@ int CompareConnectionCandidates(cricket::Connection* a,
          (b->remote_candidate().generation() + b->port()->generation());
 }
 
-// Compare two connections based on their connected state, writability and
-// static preferences.
-int CompareConnections(cricket::Connection *a, cricket::Connection *b) {
+// Compare two connections based on their writing, receiving, and connected
+// states.
+int CompareConnectionStates(cricket::Connection* a, cricket::Connection* b) {
   // Sort based on write-state.  Better states have lower values.
   if (a->write_state() < b->write_state())
     return 1;
   if (a->write_state() > b->write_state())
+    return -1;
+
+  // We prefer a receiving connection to a non-receiving, higher-priority
+  // connection when sorting connections and choosing which connection to
+  // switch to.
+  if (a->receiving() && !b->receiving())
+    return 1;
+  if (!a->receiving() && b->receiving())
     return -1;
 
   // WARNING: Some complexity here about TCP reconnecting.
@@ -111,7 +120,14 @@ int CompareConnections(cricket::Connection *a, cricket::Connection *b) {
       return -1;
     }
   }
+  return 0;
+}
 
+int CompareConnections(cricket::Connection* a, cricket::Connection* b) {
+  int state_cmp = CompareConnectionStates(a, b);
+  if (state_cmp != 0) {
+    return state_cmp;
+  }
   // Compare the candidate information.
   return CompareConnectionCandidates(a, b);
 }
@@ -149,19 +165,33 @@ class ConnectionCompare {
 };
 
 // Determines whether we should switch between two connections, based first on
-// static preferences and then (if those are equal) on latency estimates.
-bool ShouldSwitch(cricket::Connection* a_conn, cricket::Connection* b_conn) {
+// connection states, static preferences, and then (if those are equal) on
+// latency estimates.
+bool ShouldSwitch(cricket::Connection* a_conn,
+                  cricket::Connection* b_conn,
+                  cricket::IceRole ice_role) {
   if (a_conn == b_conn)
     return false;
 
   if (!a_conn || !b_conn)  // don't think the latter should happen
     return true;
 
-  int prefs_cmp = CompareConnections(a_conn, b_conn);
-  if (prefs_cmp < 0)
-    return true;
-  if (prefs_cmp > 0)
+  // We prefer to switch to a writable and receiving connection over a
+  // non-writable or non-receiving connection, even if the latter has
+  // been nominated by the controlling side.
+  int state_cmp = CompareConnectionStates(a_conn, b_conn);
+  if (state_cmp != 0) {
+    return state_cmp < 0;
+  }
+  if (ice_role == cricket::ICEROLE_CONTROLLED && a_conn->nominated()) {
+    LOG(LS_VERBOSE) << "Controlled side did not switch due to nominated status";
     return false;
+  }
+
+  int prefs_cmp = CompareConnectionCandidates(a_conn, b_conn);
+  if (prefs_cmp != 0) {
+    return prefs_cmp < 0;
+  }
 
   return b_conn->rtt() <= a_conn->rtt() + kMinImprovement;
 }
@@ -350,11 +380,8 @@ void P2PTransportChannel::Connect() {
     return;
   }
 
-  // Start pinging as the ports come in.
-  thread()->Post(this, MSG_PING);
-
-  thread()->PostDelayed(
-      check_receiving_delay_, this, MSG_CHECK_RECEIVING);
+  // Start checking and pinging as the ports come in.
+  thread()->Post(this, MSG_CHECK_AND_PING);
 }
 
 void P2PTransportChannel::MaybeStartGathering() {
@@ -913,7 +940,8 @@ void P2PTransportChannel::SortConnections() {
   // need to consider switching to.
   ConnectionCompare cmp;
   std::stable_sort(connections_.begin(), connections_.end(), cmp);
-  LOG(LS_VERBOSE) << "Sorting available connections:";
+  LOG(LS_VERBOSE) << "Sorting " << connections_.size()
+                  << " available connections:";
   for (uint32 i = 0; i < connections_.size(); ++i) {
     LOG(LS_VERBOSE) << connections_[i]->ToString();
   }
@@ -924,10 +952,7 @@ void P2PTransportChannel::SortConnections() {
   // If necessary, switch to the new choice.
   // Note that |top_connection| doesn't have to be writable to become the best
   // connection although it will have higher priority if it is writable.
-  // The controlled side can switch the best connection only if the current
-  // |best connection_| has not been nominated by the controlling side yet.
-  if ((ice_role_ == ICEROLE_CONTROLLING || !best_nominated_connection()) &&
-      ShouldSwitch(best_connection_, top_connection)) {
+  if (ShouldSwitch(best_connection_, top_connection, ice_role_)) {
     LOG(LS_INFO) << "Switching best connection: " << top_connection->ToString();
     SwitchBestConnectionTo(top_connection);
   }
@@ -1013,7 +1038,6 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
     LOG_J(LS_INFO, this) << "New best connection: "
                          << best_connection_->ToString();
     SignalRouteChange(this, best_connection_->remote_candidate());
-    set_receiving(best_connection_->receiving());
   } else {
     LOG_J(LS_INFO, this) << "No best connection";
   }
@@ -1022,15 +1046,19 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
 void P2PTransportChannel::UpdateChannelState() {
   // The Handle* functions already set the writable state.  We'll just double-
   // check it here.
-  bool writable = ((best_connection_ != NULL)  &&
-      (best_connection_->write_state() ==
-      Connection::STATE_WRITABLE));
+  bool writable = best_connection_ && best_connection_->writable();
   ASSERT(writable == this->writable());
   if (writable != this->writable())
     LOG(LS_ERROR) << "UpdateChannelState: writable state mismatch";
 
-  // TODO(honghaiz): The channel receiving state is set in OnCheckReceiving.
-  // Will revisit in a subsequent code change.
+  bool receiving = false;
+  for (const Connection* connection : connections_) {
+    if (connection->receiving()) {
+      receiving = true;
+      break;
+    }
+  }
+  set_receiving(receiving);
 }
 
 // We checked the status of our connections and we had at least one that
@@ -1063,6 +1091,11 @@ void P2PTransportChannel::HandleAllTimedOut() {
   HandleNotWritable();
 }
 
+bool P2PTransportChannel::Weak() const {
+  return !(best_connection_ && best_connection_->receiving() &&
+           best_connection_->writable());
+}
+
 // If we have a best connection, return it, otherwise return top one in the
 // list (later we will mark it best).
 Connection* P2PTransportChannel::GetBestConnectionOnNetwork(
@@ -1086,11 +1119,8 @@ void P2PTransportChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_SORT:
       OnSort();
       break;
-    case MSG_PING:
-      OnPing();
-      break;
-    case MSG_CHECK_RECEIVING:
-      OnCheckReceiving();
+    case MSG_CHECK_AND_PING:
+      OnCheckAndPing();
       break;
     default:
       ASSERT(false);
@@ -1104,30 +1134,22 @@ void P2PTransportChannel::OnSort() {
   SortConnections();
 }
 
-// Handle queued up ping request
-void P2PTransportChannel::OnPing() {
+// Handle queued up check-and-ping request
+void P2PTransportChannel::OnCheckAndPing() {
   // Make sure the states of the connections are up-to-date (since this affects
   // which ones are pingable).
   UpdateConnectionStates();
-
-  // Find the oldest pingable connection and have it do a ping.
-  Connection* conn = FindNextPingableConnection();
-  if (conn)
-    PingConnection(conn);
-
-  // Post ourselves a message to perform the next ping.
-  uint32 delay = writable() ? WRITABLE_DELAY : UNWRITABLE_DELAY;
-  thread()->PostDelayed(delay, this, MSG_PING);
-}
-
-void P2PTransportChannel::OnCheckReceiving() {
-  if (best_connection_) {
-    bool receiving = rtc::Time() <=
-        best_connection_->last_received() + receiving_timeout_;
-    set_receiving(receiving);
+  // When the best connection is either not receiving or not writable,
+  // switch to weak ping delay.
+  int ping_delay = Weak() ? WEAK_PING_DELAY : STRONG_PING_DELAY;
+  if (rtc::Time() >= last_ping_sent_ms_ + ping_delay) {
+    Connection* conn = FindNextPingableConnection();
+    if (conn) {
+      PingConnection(conn);
+    }
   }
-
-  thread()->PostDelayed(check_receiving_delay_, this, MSG_CHECK_RECEIVING);
+  int check_delay = std::min(ping_delay, check_receiving_delay_);
+  thread()->PostDelayed(check_delay, this, MSG_CHECK_AND_PING);
 }
 
 // Is the connection in a state for us to even consider pinging the other side?
@@ -1149,9 +1171,9 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
     return false;
   }
 
-  // If the channel is not writable, ping all candidates. Otherwise, we only
+  // If the channel is weak, ping all candidates. Otherwise, we only
   // want to ping connections that have not timed out on writing.
-  return !writable() || conn->write_state() != Connection::STATE_WRITE_TIMEOUT;
+  return Weak() || conn->write_state() != Connection::STATE_WRITE_TIMEOUT;
 }
 
 // Returns the next pingable connection to ping.  This will be the oldest
@@ -1163,9 +1185,8 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
 Connection* P2PTransportChannel::FindNextPingableConnection() {
   uint32 now = rtc::Time();
   if (best_connection_ && best_connection_->connected() &&
-      (best_connection_->write_state() == Connection::STATE_WRITABLE) &&
-      (best_connection_->last_ping_sent() + MAX_CURRENT_WRITABLE_DELAY <=
-       now)) {
+      best_connection_->writable() &&
+      (best_connection_->last_ping_sent() + MAX_CURRENT_STRONG_DELAY <= now)) {
     return best_connection_;
   }
 
@@ -1223,7 +1244,8 @@ void P2PTransportChannel::PingConnection(Connection* conn) {
     use_candidate = best_connection_->writable();
   }
   conn->set_use_candidate_attr(use_candidate);
-  conn->Ping(rtc::Time());
+  last_ping_sent_ms_ = rtc::Time();
+  conn->Ping(last_ping_sent_ms_);
 }
 
 // When a connection's state changes, we need to figure out who to use as

@@ -1254,7 +1254,7 @@ void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
 void Connection::CheckTimeout() {
   // If write has timed out and it is not receiving, remove the connection.
   if (!receiving_ && write_state_ == STATE_WRITE_TIMEOUT) {
-    port_->thread()->Post(this, MSG_DELETE);
+    Destroy();
   }
 }
 

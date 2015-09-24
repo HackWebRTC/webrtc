@@ -162,6 +162,9 @@ class P2PTransportChannel : public TransportChannelImpl,
     return allocator_sessions_.back();
   }
 
+  // A transport channel is weak if the current best connection is either
+  // not receiving or not writable, or if there is no best connection at all.
+  bool Weak() const;
   void UpdateConnectionStates();
   void RequestSort();
   void SortConnections();
@@ -211,9 +214,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   void OnMessage(rtc::Message* pmsg) override;
   void OnSort();
-  void OnPing();
-
-  void OnCheckReceiving();
+  void OnCheckAndPing();
 
   void PruneConnections();
   Connection* best_nominated_connection() const;
@@ -248,6 +249,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   int check_receiving_delay_;
   int receiving_timeout_;
+  uint32 last_ping_sent_ms_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

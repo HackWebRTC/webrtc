@@ -1482,7 +1482,8 @@ TEST_F(P2PTransportChannelMultihomedTest, DISABLED_TestBasic) {
 }
 
 // Test that we can quickly switch links if an interface goes down.
-TEST_F(P2PTransportChannelMultihomedTest, TestFailover) {
+// The controlled side has two interfaces and one will die.
+TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   AddAddress(0, kPublicAddrs[0]);
   // Adding alternate address will make sure |kPublicAddrs| has the higher
   // priority than others. This is due to FakeNetwork::AddInterface method.
@@ -1495,6 +1496,11 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailover) {
 
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
+
+  // Make the receiving timeout shorter for testing.
+  ep1_ch1()->SetReceivingTimeout(1000);
+  ep2_ch1()->SetReceivingTimeout(1000);
+
   EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                    ep2_ch1()->receiving() && ep2_ch1()->writable(),
                    1000);
@@ -1505,19 +1511,74 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailover) {
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
-  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY,
-                kPublicAddrs[1]);
-
-  // We should detect loss of connectivity within 5 seconds or so.
-  EXPECT_TRUE_WAIT(!ep1_ch1()->writable(), 7000);
-
-  // We should switch over to use the alternate addr immediately
-  // when we lose writability.
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[1]);
+  // The best connections will switch, so keep references to them.
+  const cricket::Connection* best_connection1 = ep1_ch1()->best_connection();
+  const cricket::Connection* best_connection2 = ep2_ch1()->best_connection();
+  // We should detect loss of receiving within 1 second or so.
   EXPECT_TRUE_WAIT(
+      !best_connection1->receiving() && !best_connection2->receiving(), 3000);
+
+  // We should switch over to use the alternate addr immediately on both sides
+  // when we are not receiving.
+  EXPECT_TRUE_WAIT(
+      ep1_ch1()->best_connection()->receiving() &&
+      ep2_ch1()->best_connection()->receiving(), 1000);
+  EXPECT_TRUE(LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]));
+  EXPECT_TRUE(
+      RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[1]));
+  EXPECT_TRUE(
+      LocalCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[1]));
+
+  DestroyChannels();
+}
+
+// Test that we can quickly switch links if an interface goes down.
+// The controlling side has two interfaces and one will die.
+TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
+  // Adding alternate address will make sure |kPublicAddrs| has the higher
+  // priority than others. This is due to FakeNetwork::AddInterface method.
+  AddAddress(0, kAlternateAddrs[0]);
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kPublicAddrs[1]);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  // Make the receiving timeout shorter for testing.
+  ep1_ch1()->SetReceivingTimeout(1000);
+  ep2_ch1()->SetReceivingTimeout(1000);
+  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                   1000);
+  EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
       LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
-      RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[1]),
-      3000);
+      RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+  // Blackhole any traffic to or from the public addrs.
+  LOG(LS_INFO) << "Failing over...";
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
+  // The best connections will switch, so keep references to them.
+  const cricket::Connection* best_connection1 = ep1_ch1()->best_connection();
+  const cricket::Connection* best_connection2 = ep2_ch1()->best_connection();
+  // We should detect loss of receiving within 1 second or so.
+  EXPECT_TRUE_WAIT(
+      !best_connection1->receiving() && !best_connection2->receiving(), 3000);
+
+  // We should switch over to use the alternate addr immediately on both sides
+  // when we are not receiving.
+  EXPECT_TRUE_WAIT(
+      ep1_ch1()->best_connection()->receiving() &&
+      ep2_ch1()->best_connection()->receiving(), 1000);
+  EXPECT_TRUE(
+    LocalCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[0]));
+  EXPECT_TRUE(RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+  EXPECT_TRUE(
+      RemoteCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[0]));
 
   DestroyChannels();
 }
