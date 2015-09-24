@@ -83,9 +83,6 @@ class ChannelManager : public rtc::MessageHandler,
 
   MediaEngineInterface* media_engine() { return media_engine_.get(); }
 
-  // Gets capabilities. Can be called prior to starting the media engine.
-  int GetCapabilities();
-
   // Retrieves the list of supported audio & video codec types.
   // Can be called before starting the media engine.
   void GetSupportedAudioCodecs(std::vector<AudioCodec>* codecs) const;

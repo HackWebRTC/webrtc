@@ -572,8 +572,6 @@ void WebRtcVideoEngine2::Init() {
   initialized_ = true;
 }
 
-int WebRtcVideoEngine2::GetCapabilities() { return VIDEO_RECV | VIDEO_SEND; }
-
 bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
     const VideoEncoderConfig& config) {
   const VideoCodec& codec = config.max_codec;

@@ -778,7 +778,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
   }
   bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
-  int GetCapabilities() { return AUDIO_SEND | AUDIO_RECV; }
   webrtc::VoiceEngine* GetVoE() { return nullptr; }
   AudioOptions GetOptions() const {
     return options_;
@@ -861,7 +860,6 @@ class FakeVideoEngine : public FakeBaseEngine {
     options_changed_ = true;
     return true;
   }
-  int GetCapabilities() { return VIDEO_SEND | VIDEO_RECV; }
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config) {
     default_encoder_config_ = config;
     return true;

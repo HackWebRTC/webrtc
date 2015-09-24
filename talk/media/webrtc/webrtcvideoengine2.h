@@ -112,7 +112,6 @@ class WebRtcVideoEngine2 {
   // Basic video engine implementation.
   void Init();
 
-  int GetCapabilities();
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config);
 
   WebRtcVideoChannel2* CreateChannel(webrtc::Call* call,

@@ -70,7 +70,6 @@ class WebRtcVoiceEngine
   bool Init(rtc::Thread* worker_thread);
   void Terminate();
 
-  int GetCapabilities();
   webrtc::VoiceEngine* GetVoE() { return voe()->engine(); }
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                    const AudioOptions& options);

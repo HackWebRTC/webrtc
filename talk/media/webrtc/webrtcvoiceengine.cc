@@ -563,10 +563,6 @@ void WebRtcVoiceEngine::Terminate() {
   voe_wrapper_->base()->Terminate();
 }
 
-int WebRtcVoiceEngine::GetCapabilities() {
-  return AUDIO_SEND | AUDIO_RECV;
-}
-
 VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(webrtc::Call* call,
     const AudioOptions& options) {
   WebRtcVoiceMediaChannel* ch =

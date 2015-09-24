@@ -144,10 +144,6 @@ bool ChannelManager::SetVideoRtxEnabled(bool enable) {
   }
 }
 
-int ChannelManager::GetCapabilities() {
-  return media_engine_->GetCapabilities();
-}
-
 void ChannelManager::GetSupportedAudioCodecs(
     std::vector<AudioCodec>* codecs) const {
   codecs->clear();

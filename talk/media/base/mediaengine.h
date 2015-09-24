@@ -74,8 +74,6 @@ class MediaEngineInterface {
   virtual bool Init(rtc::Thread* worker_thread) = 0;
   // Shuts down the engine.
   virtual void Terminate() = 0;
-  // Returns what the engine is capable of, as a set of Capabilities, above.
-  virtual int GetCapabilities() = 0;
   // TODO(solenberg): Remove once VoE API refactoring is done.
   virtual webrtc::VoiceEngine* GetVoE() = 0;
 
@@ -166,9 +164,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
     voice_.Terminate();
   }
 
-  virtual int GetCapabilities() {
-    return (voice_.GetCapabilities() | video_.GetCapabilities());
-  }
   virtual webrtc::VoiceEngine* GetVoE() {
     return voice_.GetVoE();
   }
@@ -244,7 +239,6 @@ class NullVoiceEngine {
  public:
   bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
-  int GetCapabilities() { return 0; }
   // If you need this to return an actual channel, use FakeMediaEngine instead.
   VoiceMediaChannel* CreateChannel(const AudioOptions& options) {
     return nullptr;
@@ -279,7 +273,6 @@ class NullVideoEngine {
  public:
   bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
-  int GetCapabilities() { return 0; }
   // If you need this to return an actual channel, use FakeMediaEngine instead.
   VideoMediaChannel* CreateChannel(
       const VideoOptions& options,
