@@ -32,7 +32,6 @@
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/media/base/fakemediaengine.h"
-#include "talk/media/devices/fakedevicemanager.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/gunit.h"
@@ -58,8 +57,7 @@ class VideoTrackTest : public testing::Test {
     static const char kVideoTrackId[] = "track_id";
 
     channel_manager_.reset(new cricket::ChannelManager(
-        new cricket::FakeMediaEngine(), new cricket::FakeDeviceManager(),
-        rtc::Thread::Current()));
+        new cricket::FakeMediaEngine(), rtc::Thread::Current()));
     EXPECT_TRUE(channel_manager_->Init());
     video_track_ = VideoTrack::Create(
         kVideoTrackId,

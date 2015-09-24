@@ -42,7 +42,6 @@
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/mediachannel.h"
-#include "talk/media/devices/fakedevicemanager.h"
 #include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
@@ -362,10 +361,9 @@ class WebRtcSessionTest
   WebRtcSessionTest()
     : media_engine_(new cricket::FakeMediaEngine()),
       data_engine_(new cricket::FakeDataEngine()),
-      device_manager_(new cricket::FakeDeviceManager()),
       channel_manager_(new cricket::ChannelManager(
-         media_engine_, data_engine_, device_manager_,
-         new cricket::CaptureManager(), rtc::Thread::Current())),
+         media_engine_, data_engine_, new cricket::CaptureManager(),
+         rtc::Thread::Current())),
       tdesc_factory_(new cricket::TransportDescriptionFactory()),
       desc_factory_(new cricket::MediaSessionDescriptionFactory(
           channel_manager_.get(), tdesc_factory_.get())),
@@ -1303,7 +1301,6 @@ class WebRtcSessionTest
 
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeDataEngine* data_engine_;
-  cricket::FakeDeviceManager* device_manager_;
   rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
   rtc::scoped_ptr<cricket::TransportDescriptionFactory> tdesc_factory_;
   rtc::scoped_ptr<cricket::MediaSessionDescriptionFactory> desc_factory_;

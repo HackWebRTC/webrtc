@@ -37,7 +37,6 @@
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/media/base/fakemediaengine.h"
-#include "talk/media/devices/fakedevicemanager.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "talk/session/media/channelmanager.h"
@@ -482,7 +481,6 @@ class MediaStreamSignalingTest: public testing::Test {
     observer_.reset(new MockSignalingObserver());
     channel_manager_.reset(
         new cricket::ChannelManager(new cricket::FakeMediaEngine(),
-                                    new cricket::FakeDeviceManager(),
                                     rtc::Thread::Current()));
     signaling_.reset(new MediaStreamSignalingForTest(observer_.get(),
                                                      channel_manager_.get()));

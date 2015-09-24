@@ -32,8 +32,8 @@
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/videosource.h"
 #include "talk/media/base/fakemediaengine.h"
+#include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"
-#include "talk/media/devices/fakedevicemanager.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/gunit.h"
@@ -130,8 +130,7 @@ class VideoSourceTest : public testing::Test {
       : capturer_cleanup_(new TestVideoCapturer()),
         capturer_(capturer_cleanup_.get()),
         channel_manager_(new cricket::ChannelManager(
-          new cricket::FakeMediaEngine(),
-          new cricket::FakeDeviceManager(), rtc::Thread::Current())) {
+          new cricket::FakeMediaEngine(), rtc::Thread::Current())) {
   }
 
   void SetUp() {

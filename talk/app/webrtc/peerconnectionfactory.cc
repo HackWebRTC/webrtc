@@ -38,7 +38,6 @@
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videosourceproxy.h"
 #include "talk/app/webrtc/videotrack.h"
-#include "talk/media/devices/dummydevicemanager.h"
 #include "talk/media/webrtc/webrtcmediaengine.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
@@ -174,17 +173,14 @@ bool PeerConnectionFactory::Initialize() {
   if (!default_allocator_factory_)
     return false;
 
-  cricket::DummyDeviceManager* device_manager(
-      new cricket::DummyDeviceManager());
-
   // TODO:  Need to make sure only one VoE is created inside
   // WebRtcMediaEngine.
   cricket::MediaEngineInterface* media_engine =
       worker_thread_->Invoke<cricket::MediaEngineInterface*>(rtc::Bind(
       &PeerConnectionFactory::CreateMediaEngine_w, this));
 
-  channel_manager_.reset(new cricket::ChannelManager(
-      media_engine, device_manager, worker_thread_));
+  channel_manager_.reset(
+      new cricket::ChannelManager(media_engine, worker_thread_));
 
   channel_manager_->SetVideoRtxEnabled(true);
   if (!channel_manager_->Init()) {

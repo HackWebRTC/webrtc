@@ -39,7 +39,6 @@
 #include "talk/app/webrtc/test/fakemediastreamsignaling.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/media/base/fakemediaengine.h"
-#include "talk/media/devices/fakedevicemanager.h"
 #include "talk/session/media/channelmanager.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -63,7 +62,6 @@ using webrtc::StatsReports;
 namespace cricket {
 
 class ChannelManager;
-class FakeDeviceManager;
 
 }  // namespace cricket
 
@@ -486,9 +484,7 @@ class StatsCollectorTest : public testing::Test {
   StatsCollectorTest()
     : media_engine_(new cricket::FakeMediaEngine()),
       channel_manager_(
-          new cricket::ChannelManager(media_engine_,
-                                      new cricket::FakeDeviceManager(),
-                                      rtc::Thread::Current())),
+          new cricket::ChannelManager(media_engine_, rtc::Thread::Current())),
       session_(channel_manager_.get()),
       signaling_(channel_manager_.get()) {
     // By default, we ignore session GetStats calls.

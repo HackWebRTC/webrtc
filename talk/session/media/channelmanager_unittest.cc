@@ -28,8 +28,8 @@
 #include "talk/app/webrtc/mediacontroller.h"
 #include "talk/media/base/fakecapturemanager.h"
 #include "talk/media/base/fakemediaengine.h"
+#include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/testutils.h"
-#include "talk/media/devices/fakedevicemanager.h"
 #include "talk/media/webrtc/fakewebrtccall.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/gunit.h"
@@ -68,7 +68,6 @@ class ChannelManagerTest : public testing::Test {
       : fake_call_(webrtc::Call::Config()),
         fake_mc_(&fake_call_),
         fme_(NULL),
-        fdm_(NULL),
         fcm_(NULL),
         cm_(NULL) {}
 
@@ -77,30 +76,17 @@ class ChannelManagerTest : public testing::Test {
     fme_->SetAudioCodecs(MAKE_VECTOR(kAudioCodecs));
     fme_->SetVideoCodecs(MAKE_VECTOR(kVideoCodecs));
     fdme_ = new cricket::FakeDataEngine();
-    fdm_ = new cricket::FakeDeviceManager();
     fcm_ = new cricket::FakeCaptureManager();
     cm_ = new cricket::ChannelManager(
-        fme_, fdme_, fdm_, fcm_, rtc::Thread::Current());
+        fme_, fdme_, fcm_, rtc::Thread::Current());
     transport_controller_ =
         new cricket::FakeTransportController(ICEROLE_CONTROLLING);
-
-    std::vector<std::string> in_device_list, out_device_list, vid_device_list;
-    in_device_list.push_back("audio-in1");
-    in_device_list.push_back("audio-in2");
-    out_device_list.push_back("audio-out1");
-    out_device_list.push_back("audio-out2");
-    vid_device_list.push_back("video-in1");
-    vid_device_list.push_back("video-in2");
-    fdm_->SetAudioInputDevices(in_device_list);
-    fdm_->SetAudioOutputDevices(out_device_list);
-    fdm_->SetVideoCaptureDevices(vid_device_list);
   }
 
   virtual void TearDown() {
     delete transport_controller_;
     delete cm_;
     cm_ = NULL;
-    fdm_ = NULL;
     fcm_ = NULL;
     fdme_ = NULL;
     fme_ = NULL;
@@ -111,7 +97,6 @@ class ChannelManagerTest : public testing::Test {
   cricket::FakeMediaController fake_mc_;
   cricket::FakeMediaEngine* fme_;
   cricket::FakeDataEngine* fdme_;
-  cricket::FakeDeviceManager* fdm_;
   cricket::FakeCaptureManager* fcm_;
   cricket::ChannelManager* cm_;
   cricket::FakeTransportController* transport_controller_;
@@ -234,31 +219,6 @@ struct GetCapturerFrameSize : public sigslot::has_slots<> {
   size_t height;
 };
 
-TEST_F(ChannelManagerTest, DefaultCapturerAspectRatio) {
-  VideoCodec codec(100, "VP8", 640, 360, 30, 0);
-  VideoFormat format(640, 360, 33, FOURCC_ANY);
-  VideoEncoderConfig config(codec, 1, 2);
-  EXPECT_TRUE(cm_->Init());
-  // A capturer created before the default encoder config is set will have no
-  // set aspect ratio, so it'll be 4:3 (based on the fake video capture impl).
-  VideoCapturer* capturer = cm_->CreateVideoCapturer();
-  ASSERT_TRUE(capturer != NULL);
-  EXPECT_EQ(CS_RUNNING, capturer->Start(format));
-  GetCapturerFrameSize size(capturer);
-  EXPECT_EQ(640u, size.width);
-  EXPECT_EQ(480u, size.height);
-  delete capturer;
-  // Try again, but with the encoder config set to 16:9.
-  EXPECT_TRUE(cm_->SetDefaultVideoEncoderConfig(config));
-  capturer = cm_->CreateVideoCapturer();
-  ASSERT_TRUE(capturer != NULL);
-  EXPECT_EQ(CS_RUNNING, capturer->Start(format));
-  GetCapturerFrameSize cropped_size(capturer);
-  EXPECT_EQ(640u, cropped_size.width);
-  EXPECT_EQ(360u, cropped_size.height);
-  delete capturer;
-}
-
 // Test that SetDefaultVideoCodec passes through the right values.
 TEST_F(ChannelManagerTest, SetDefaultVideoCodecBeforeInit) {
   cricket::VideoCodec codec(96, "G264", 1280, 720, 60, 0);
@@ -266,215 +226,6 @@ TEST_F(ChannelManagerTest, SetDefaultVideoCodecBeforeInit) {
   EXPECT_TRUE(cm_->SetDefaultVideoEncoderConfig(config));
   EXPECT_TRUE(cm_->Init());
   EXPECT_EQ(config, fme_->default_video_encoder_config());
-}
-
-TEST_F(ChannelManagerTest, SetAudioOptionsBeforeInit) {
-  // Test that values that we set before Init are applied.
-  AudioOptions options;
-  options.auto_gain_control.Set(true);
-  options.echo_cancellation.Set(false);
-  EXPECT_TRUE(cm_->SetAudioOptions("audio-in1", "audio-out1", options));
-  std::string audio_in, audio_out;
-  AudioOptions set_options;
-  // Check options before Init.
-  EXPECT_TRUE(cm_->GetAudioOptions(&audio_in, &audio_out, &set_options));
-  EXPECT_EQ("audio-in1", audio_in);
-  EXPECT_EQ("audio-out1", audio_out);
-  EXPECT_EQ(options, set_options);
-  EXPECT_TRUE(cm_->Init());
-  // Check options after Init.
-  EXPECT_TRUE(cm_->GetAudioOptions(&audio_in, &audio_out, &set_options));
-  EXPECT_EQ("audio-in1", audio_in);
-  EXPECT_EQ("audio-out1", audio_out);
-  EXPECT_EQ(options, set_options);
-  // At this point, the media engine should also be initialized.
-  EXPECT_EQ(options, fme_->audio_options());
-  EXPECT_EQ(cricket::kDefaultAudioDelayOffset,
-            fme_->audio_delay_offset());
-}
-
-TEST_F(ChannelManagerTest, GetAudioOptionsWithNullParameters) {
-  std::string audio_in, audio_out;
-  AudioOptions options;
-  options.echo_cancellation.Set(true);
-  EXPECT_TRUE(cm_->SetAudioOptions("audio-in2", "audio-out2", options));
-  EXPECT_TRUE(cm_->GetAudioOptions(&audio_in, NULL, NULL));
-  EXPECT_EQ("audio-in2", audio_in);
-  EXPECT_TRUE(cm_->GetAudioOptions(NULL, &audio_out, NULL));
-  EXPECT_EQ("audio-out2", audio_out);
-  AudioOptions out_options;
-  EXPECT_TRUE(cm_->GetAudioOptions(NULL, NULL, &out_options));
-  bool echo_cancellation = false;
-  EXPECT_TRUE(out_options.echo_cancellation.Get(&echo_cancellation));
-  EXPECT_TRUE(echo_cancellation);
-}
-
-TEST_F(ChannelManagerTest, SetAudioOptions) {
-  // Test initial state.
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_EQ(std::string(cricket::DeviceManagerInterface::kDefaultDeviceName),
-            fme_->audio_in_device());
-  EXPECT_EQ(std::string(cricket::DeviceManagerInterface::kDefaultDeviceName),
-            fme_->audio_out_device());
-  EXPECT_EQ(cricket::kDefaultAudioDelayOffset,
-            fme_->audio_delay_offset());
-  // Test setting specific values.
-  AudioOptions options;
-  options.auto_gain_control.Set(true);
-  EXPECT_TRUE(cm_->SetAudioOptions("audio-in1", "audio-out1", options));
-  EXPECT_EQ("audio-in1", fme_->audio_in_device());
-  EXPECT_EQ("audio-out1", fme_->audio_out_device());
-  bool auto_gain_control = false;
-  EXPECT_TRUE(
-      fme_->audio_options().auto_gain_control.Get(&auto_gain_control));
-  EXPECT_TRUE(auto_gain_control);
-  EXPECT_EQ(cricket::kDefaultAudioDelayOffset,
-            fme_->audio_delay_offset());
-  // Test setting bad values.
-  EXPECT_FALSE(cm_->SetAudioOptions("audio-in9", "audio-out2", options));
-}
-
-TEST_F(ChannelManagerTest, SetCaptureDeviceBeforeInit) {
-  // Test that values that we set before Init are applied.
-  EXPECT_TRUE(cm_->SetCaptureDevice("video-in2"));
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_EQ("video-in2", cm_->video_device_name());
-}
-
-TEST_F(ChannelManagerTest, GetCaptureDeviceBeforeInit) {
-  std::string video_in;
-  // Test that GetCaptureDevice works before Init.
-  EXPECT_TRUE(cm_->SetCaptureDevice("video-in1"));
-  EXPECT_TRUE(cm_->GetCaptureDevice(&video_in));
-  EXPECT_EQ("video-in1", video_in);
-  // Test that options set before Init can be gotten after Init.
-  EXPECT_TRUE(cm_->SetCaptureDevice("video-in2"));
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_TRUE(cm_->GetCaptureDevice(&video_in));
-  EXPECT_EQ("video-in2", video_in);
-}
-
-TEST_F(ChannelManagerTest, SetCaptureDevice) {
-  // Test setting defaults.
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_TRUE(cm_->SetCaptureDevice(""));  // will use DeviceManager default
-  EXPECT_EQ("video-in1", cm_->video_device_name());
-  // Test setting specific values.
-  EXPECT_TRUE(cm_->SetCaptureDevice("video-in2"));
-  EXPECT_EQ("video-in2", cm_->video_device_name());
-  // TODO(juberti): Add test for invalid value here.
-}
-
-// Test unplugging and plugging back the preferred devices. When the preferred
-// device is unplugged, we fall back to the default device. When the preferred
-// device is plugged back, we use it.
-TEST_F(ChannelManagerTest, SetAudioOptionsUnplugPlug) {
-  // Set preferences "audio-in1" and "audio-out1" before init.
-  AudioOptions options;
-  EXPECT_TRUE(cm_->SetAudioOptions("audio-in1", "audio-out1", options));
-  // Unplug device "audio-in1" and "audio-out1".
-  std::vector<std::string> in_device_list, out_device_list;
-  in_device_list.push_back("audio-in2");
-  out_device_list.push_back("audio-out2");
-  fdm_->SetAudioInputDevices(in_device_list);
-  fdm_->SetAudioOutputDevices(out_device_list);
-  // Init should fall back to default devices.
-  EXPECT_TRUE(cm_->Init());
-  // The media engine should use the default.
-  EXPECT_EQ("", fme_->audio_in_device());
-  EXPECT_EQ("", fme_->audio_out_device());
-  // The channel manager keeps the preferences "audio-in1" and "audio-out1".
-  std::string audio_in, audio_out;
-  EXPECT_TRUE(cm_->GetAudioOptions(&audio_in, &audio_out, NULL));
-  EXPECT_EQ("audio-in1", audio_in);
-  EXPECT_EQ("audio-out1", audio_out);
-  cm_->Terminate();
-
-  // Plug devices "audio-in2" and "audio-out2" back.
-  in_device_list.push_back("audio-in1");
-  out_device_list.push_back("audio-out1");
-  fdm_->SetAudioInputDevices(in_device_list);
-  fdm_->SetAudioOutputDevices(out_device_list);
-  // Init again. The preferences, "audio-in2" and "audio-out2", are used.
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_EQ("audio-in1", fme_->audio_in_device());
-  EXPECT_EQ("audio-out1", fme_->audio_out_device());
-  EXPECT_TRUE(cm_->GetAudioOptions(&audio_in, &audio_out, NULL));
-  EXPECT_EQ("audio-in1", audio_in);
-  EXPECT_EQ("audio-out1", audio_out);
-}
-
-// We have one camera. Unplug it, fall back to no camera.
-TEST_F(ChannelManagerTest, SetCaptureDeviceUnplugPlugOneCamera) {
-  // Set preferences "video-in1" before init.
-  std::vector<std::string> vid_device_list;
-  vid_device_list.push_back("video-in1");
-  fdm_->SetVideoCaptureDevices(vid_device_list);
-  EXPECT_TRUE(cm_->SetCaptureDevice("video-in1"));
-
-  // Unplug "video-in1".
-  vid_device_list.clear();
-  fdm_->SetVideoCaptureDevices(vid_device_list);
-
-  // Init should fall back to avatar.
-  EXPECT_TRUE(cm_->Init());
-  // The media engine should use no camera.
-  EXPECT_EQ("", cm_->video_device_name());
-  // The channel manager keeps the user preference "video-in".
-  std::string video_in;
-  EXPECT_TRUE(cm_->GetCaptureDevice(&video_in));
-  EXPECT_EQ("video-in1", video_in);
-  cm_->Terminate();
-
-  // Plug device "video-in1" back.
-  vid_device_list.push_back("video-in1");
-  fdm_->SetVideoCaptureDevices(vid_device_list);
-  // Init again. The user preferred device, "video-in1", is used.
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_EQ("video-in1", cm_->video_device_name());
-  EXPECT_TRUE(cm_->GetCaptureDevice(&video_in));
-  EXPECT_EQ("video-in1", video_in);
-}
-
-// We have multiple cameras. Unplug the preferred, fall back to another camera.
-TEST_F(ChannelManagerTest, SetCaptureDeviceUnplugPlugTwoDevices) {
-  // Set video device to "video-in1" before init.
-  EXPECT_TRUE(cm_->SetCaptureDevice("video-in1"));
-  // Unplug device "video-in1".
-  std::vector<std::string> vid_device_list;
-  vid_device_list.push_back("video-in2");
-  fdm_->SetVideoCaptureDevices(vid_device_list);
-  // Init should fall back to default device "video-in2".
-  EXPECT_TRUE(cm_->Init());
-  // The media engine should use the default device "video-in2".
-  EXPECT_EQ("video-in2", cm_->video_device_name());
-  // The channel manager keeps the user preference "video-in".
-  std::string video_in;
-  EXPECT_TRUE(cm_->GetCaptureDevice(&video_in));
-  EXPECT_EQ("video-in1", video_in);
-  cm_->Terminate();
-
-  // Plug device "video-in1" back.
-  vid_device_list.push_back("video-in1");
-  fdm_->SetVideoCaptureDevices(vid_device_list);
-  // Init again. The user preferred device, "video-in1", is used.
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_EQ("video-in1", cm_->video_device_name());
-  EXPECT_TRUE(cm_->GetCaptureDevice(&video_in));
-  EXPECT_EQ("video-in1", video_in);
-}
-
-TEST_F(ChannelManagerTest, GetCaptureDevice) {
-  std::string video_in;
-  // Test setting/getting defaults.
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_TRUE(cm_->SetCaptureDevice(""));
-  EXPECT_TRUE(cm_->GetCaptureDevice(&video_in));
-  EXPECT_EQ("video-in1", video_in);
-  // Test setting/getting specific values.
-  EXPECT_TRUE(cm_->SetCaptureDevice("video-in2"));
-  EXPECT_TRUE(cm_->GetCaptureDevice(&video_in));
-  EXPECT_EQ("video-in2", video_in);
 }
 
 TEST_F(ChannelManagerTest, GetSetOutputVolumeBeforeInit) {
