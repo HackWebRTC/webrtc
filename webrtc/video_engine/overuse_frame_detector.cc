@@ -199,21 +199,21 @@ OveruseFrameDetector::OveruseFrameDetector(
       observer_(observer),
       metrics_observer_(metrics_observer),
       clock_(clock),
-      next_process_time_(clock_->TimeInMilliseconds()),
       num_process_times_(0),
       last_capture_time_(0),
+      num_pixels_(0),
+      next_process_time_(clock_->TimeInMilliseconds()),
       last_overuse_time_(0),
       checks_above_threshold_(0),
       num_overuse_detections_(0),
       last_rampup_time_(0),
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
-      num_pixels_(0),
       last_encode_sample_ms_(0),
+      last_sample_time_ms_(0),
       encode_time_(new EncodeTimeAvg()),
       usage_(new SendProcessingUsage(options)),
-      frame_queue_(new FrameQueue()),
-      last_sample_time_ms_(0) {
+      frame_queue_(new FrameQueue()) {
   RTC_DCHECK(metrics_observer != nullptr);
   // Make sure stats are initially up-to-date. This simplifies unit testing
   // since we don't have to trigger an update using one of the methods which
@@ -338,14 +338,17 @@ int32_t OveruseFrameDetector::Process() {
 
   next_process_time_ = now + kProcessIntervalMs;
 
-  rtc::CritScope cs(&crit_);
-  ++num_process_times_;
+  CpuOveruseMetrics current_metrics;
+  {
+    rtc::CritScope cs(&crit_);
+    ++num_process_times_;
 
-  if (num_process_times_ <= options_.min_process_count) {
-    return 0;
+    current_metrics = metrics_;
+    if (num_process_times_ <= options_.min_process_count)
+      return 0;
   }
 
-  if (IsOverusing()) {
+  if (IsOverusing(current_metrics)) {
     // If the last thing we did was going up, and now have to back down, we need
     // to check if this peak was short. If so we should back off to avoid going
     // back and forth between this load, the system doesn't seem to handle it.
@@ -370,7 +373,7 @@ int32_t OveruseFrameDetector::Process() {
 
     if (observer_ != NULL)
       observer_->OveruseDetected();
-  } else if (IsUnderusing(now)) {
+  } else if (IsUnderusing(current_metrics, now)) {
     last_rampup_time_ = now;
     in_quick_rampup_ = true;
 
@@ -380,18 +383,21 @@ int32_t OveruseFrameDetector::Process() {
 
   int rampup_delay =
       in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_;
-  LOG(LS_VERBOSE) << " Frame stats: encode usage: " << usage_->Value()
+
+  LOG(LS_VERBOSE) << " Frame stats: "
+                  << " encode usage " << current_metrics.encode_usage_percent
                   << " overuse detections " << num_overuse_detections_
                   << " rampup delay " << rampup_delay;
 
   return 0;
 }
 
-bool OveruseFrameDetector::IsOverusing() {
+bool OveruseFrameDetector::IsOverusing(const CpuOveruseMetrics& metrics) {
   bool overusing = false;
-  if (options_.enable_encode_usage_method)
-    overusing = usage_->Value() >= options_.high_encode_usage_threshold_percent;
-
+  if (options_.enable_encode_usage_method) {
+    overusing = metrics.encode_usage_percent >=
+                options_.high_encode_usage_threshold_percent;
+  }
   if (overusing) {
     ++checks_above_threshold_;
   } else {
@@ -400,15 +406,17 @@ bool OveruseFrameDetector::IsOverusing() {
   return checks_above_threshold_ >= options_.high_threshold_consecutive_count;
 }
 
-bool OveruseFrameDetector::IsUnderusing(int64_t time_now) {
+bool OveruseFrameDetector::IsUnderusing(const CpuOveruseMetrics& metrics,
+                                        int64_t time_now) {
   int delay = in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_;
   if (time_now < last_rampup_time_ + delay)
     return false;
 
   bool underusing = false;
-  if (options_.enable_encode_usage_method)
-    underusing = usage_->Value() < options_.low_encode_usage_threshold_percent;
-
+  if (options_.enable_encode_usage_method) {
+    underusing = metrics.encode_usage_percent <
+                 options_.low_encode_usage_threshold_percent;
+  }
   return underusing;
 }
 }  // namespace webrtc

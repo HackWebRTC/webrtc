@@ -121,12 +121,9 @@ class OveruseFrameDetector : public Module {
   // need a guard.
   void AddProcessingTime(int elapsed_ms) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // TODO(asapersson): This method is always called on the processing thread.
-  // If locking is required, consider doing that locking inside the
-  // implementation and reduce scope as much as possible.  We should also
-  // see if we can avoid calling out to other methods while holding the lock.
-  bool IsOverusing() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  bool IsUnderusing(int64_t time_now) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Only called on the processing thread.
+  bool IsOverusing(const CpuOveruseMetrics& metrics);
+  bool IsUnderusing(const CpuOveruseMetrics& metrics, int64_t time_now);
 
   bool FrameTimeoutDetected(int64_t now) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
   bool FrameSizeChanged(int num_pixels) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
@@ -149,32 +146,30 @@ class OveruseFrameDetector : public Module {
   CpuOveruseMetrics metrics_ GUARDED_BY(crit_);
 
   Clock* const clock_;
-  int64_t next_process_time_;  // Only accessed on the processing thread.
   int64_t num_process_times_ GUARDED_BY(crit_);
 
   int64_t last_capture_time_ GUARDED_BY(crit_);
 
-  // These six members are only accessed on the processing thread.
+  // Number of pixels of last captured frame.
+  int num_pixels_ GUARDED_BY(crit_);
+
+  // These seven members are only accessed on the processing thread.
+  int64_t next_process_time_;
   int64_t last_overuse_time_;
   int checks_above_threshold_;
   int num_overuse_detections_;
-
   int64_t last_rampup_time_;
   bool in_quick_rampup_;
   int current_rampup_delay_ms_;
 
-  // Number of pixels of last captured frame.
-  int num_pixels_ GUARDED_BY(crit_);
-
   int64_t last_encode_sample_ms_;  // Only accessed by one thread.
+  int64_t last_sample_time_ms_;    // Only accessed by one thread.
 
   // TODO(asapersson): Can these be regular members (avoid separate heap
   // allocs)?
   const rtc::scoped_ptr<EncodeTimeAvg> encode_time_ GUARDED_BY(crit_);
   const rtc::scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
   const rtc::scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
-
-  int64_t last_sample_time_ms_;  // Only accessed by one thread.
 
   rtc::ThreadChecker processing_thread_;
 
