@@ -113,8 +113,6 @@ class WebRtcAudioManager {
     boolean blacklisted =
         WebRtcAudioUtils.deviceIsBlacklistedForOpenSLESUsage();
     if (blacklisted) {
-      // TODO(henrika): enable again for all devices once issue in b/21485703
-      // has been resolved.
       Logging.e(TAG, Build.MODEL + " is blacklisted for OpenSL ES usage!");
     }
     return blacklisted;

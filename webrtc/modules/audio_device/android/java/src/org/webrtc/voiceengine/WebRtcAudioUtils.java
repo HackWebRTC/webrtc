@@ -33,7 +33,7 @@ public final class WebRtcAudioUtils {
   // the low latency output mode in combination with OpenSL ES.
   // The device name is given by Build.MODEL.
   private static final String[] BLACKLISTED_OPEN_SL_ES_MODELS = new String[] {
-      "Nexus 6", // Nexus 6
+    // This list is currently empty ;-)
   };
 
   // List of devices where it has been verified that the built-in effect
