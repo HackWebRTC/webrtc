@@ -306,11 +306,18 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       // always = 127. Note that in SW, QP is that of the user-level range [0,
       // 63].
       const int kMaxQp = 127;
-      quality_scaler_.Init(kMaxQp / kLowQpThresholdDenominator, true);
+      // TODO(pbos): Investigate whether high-QP thresholds make sense for VP8.
+      // This effectively disables high QP as VP8 QP can't go above this
+      // threshold.
+      const int kDisabledBadQpThreshold = kMaxQp + 1;
+      quality_scaler_.Init(kMaxQp / kLowQpThresholdDenominator,
+                           kDisabledBadQpThreshold, true);
     } else if (codecType_ == kVideoCodecH264) {
       // H264 QP is in the range [0, 51].
       const int kMaxQp = 51;
-      quality_scaler_.Init(kMaxQp / kLowQpThresholdDenominator, true);
+      const int kBadQpThreshold = 40;
+      quality_scaler_.Init(kMaxQp / kLowQpThresholdDenominator, kBadQpThreshold,
+                           false);
     } else {
       // When adding codec support to additional hardware codecs, also configure
       // their QP thresholds for scaling.

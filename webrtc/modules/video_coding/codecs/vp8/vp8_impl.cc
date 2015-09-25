@@ -579,8 +579,11 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   rps_.Init();
+  // Disable both high-QP limits and framedropping. Both are handled by libvpx
+  // internally.
+  const int kDisabledBadQpThreshold = 64;
   quality_scaler_.Init(codec_.qpMax / QualityScaler::kDefaultLowQpDenominator,
-                       false);
+                       kDisabledBadQpThreshold, false);
   quality_scaler_.ReportFramerate(codec_.maxFramerate);
 
   return InitAndSetControlSettings();

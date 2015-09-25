@@ -21,6 +21,7 @@ static const int kHeight = 1080;
 static const int kFramerate = 30;
 static const int kLowQp = 15;
 static const int kNormalQp = 30;
+static const int kHighQp = 40;
 static const int kMaxQp = 56;
 }  // namespace
 
@@ -33,13 +34,18 @@ class QualityScalerTest : public ::testing::Test {
     int height;
   };
  protected:
-  enum ScaleDirection { kScaleDown, kScaleUp };
+  enum ScaleDirection {
+    kKeepScaleAtHighQp,
+    kScaleDown,
+    kScaleDownAboveHighQp,
+    kScaleUp
+  };
   enum BadQualityMetric { kDropFrame, kReportLowQP };
 
   QualityScalerTest() {
     input_frame_.CreateEmptyFrame(
         kWidth, kHeight, kWidth, kHalfWidth, kHalfWidth);
-    qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator, false);
+    qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator, kHighQp, false);
     qs_.ReportFramerate(kFramerate);
     qs_.OnEncodeFrame(input_frame_);
   }
@@ -54,6 +60,12 @@ class QualityScalerTest : public ::testing::Test {
           break;
         case kScaleDown:
           qs_.ReportDroppedFrame();
+          break;
+        case kKeepScaleAtHighQp:
+          qs_.ReportQP(kHighQp);
+          break;
+        case kScaleDownAboveHighQp:
+          qs_.ReportQP(kHighQp + 1);
           break;
       }
       qs_.OnEncodeFrame(input_frame_);
@@ -112,6 +124,22 @@ TEST_F(QualityScalerTest, ReportsOriginalResolutionInitially) {
 TEST_F(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
   EXPECT_TRUE(TriggerScale(kScaleDown)) << "No downscale within " << kNumSeconds
                                         << " seconds.";
+  QualityScaler::Resolution res = qs_.GetScaledResolution();
+  EXPECT_LT(res.width, input_frame_.width());
+  EXPECT_LT(res.height, input_frame_.height());
+}
+
+TEST_F(QualityScalerTest, KeepsScaleAtHighQp) {
+  EXPECT_FALSE(TriggerScale(kKeepScaleAtHighQp))
+      << "Downscale at high threshold which should keep scale.";
+  QualityScaler::Resolution res = qs_.GetScaledResolution();
+  EXPECT_EQ(res.width, input_frame_.width());
+  EXPECT_EQ(res.height, input_frame_.height());
+}
+
+TEST_F(QualityScalerTest, DownscalesAboveHighQp) {
+  EXPECT_TRUE(TriggerScale(kScaleDownAboveHighQp))
+      << "No downscale within " << kNumSeconds << " seconds.";
   QualityScaler::Resolution res = qs_.GetScaledResolution();
   EXPECT_LT(res.width, input_frame_.width());
   EXPECT_LT(res.height, input_frame_.height());
@@ -262,7 +290,9 @@ QualityScalerTest::Resolution QualityScalerTest::TriggerResolutionChange(
 void QualityScalerTest::VerifyQualityAdaptation(
     int initial_framerate, int seconds, bool expect_spatial_resize,
     bool expect_framerate_reduction) {
-  qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator, true);
+  const int kDisabledBadQpThreshold = kMaxQp + 1;
+  qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator,
+           kDisabledBadQpThreshold, true);
   qs_.OnEncodeFrame(input_frame_);
   int init_width = qs_.GetScaledResolution().width;
   int init_height = qs_.GetScaledResolution().height;

@@ -29,9 +29,12 @@ QualityScaler::QualityScaler()
       min_height_(kDefaultMinDownscaleDimension) {
 }
 
-void QualityScaler::Init(int low_qp_threshold, bool use_framerate_reduction) {
+void QualityScaler::Init(int low_qp_threshold,
+                         int high_qp_threshold,
+                         bool use_framerate_reduction) {
   ClearSamples();
   low_qp_threshold_ = low_qp_threshold;
+  high_qp_threshold_ = high_qp_threshold;
   use_framerate_reduction_ = use_framerate_reduction;
   target_framerate_ = -1;
 }
@@ -70,8 +73,10 @@ void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
 
   // When encoder consistently overshoots, framerate reduction and spatial
   // resizing will be triggered to get a smoother video.
-  if (framedrop_percent_.GetAverage(num_samples_, &avg_drop) &&
-      avg_drop >= kFramedropPercentThreshold) {
+  if ((framedrop_percent_.GetAverage(num_samples_, &avg_drop) &&
+       avg_drop >= kFramedropPercentThreshold) ||
+      (average_qp_.GetAverage(num_samples_, &avg_qp) &&
+       avg_qp > high_qp_threshold_)) {
     // Reducing frame rate before spatial resolution change.
     // Reduce frame rate only when it is above a certain number.
     // Only one reduction is allowed for now.
