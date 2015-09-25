@@ -105,6 +105,7 @@ if 'ios' in target_os:
 
 FILES = {
   'tools/find_depot_tools.py': None,
+  'tools/isolate_driver.py': None,
   'third_party/BUILD.gn': None,
 }
 

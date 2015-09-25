@@ -236,25 +236,6 @@
           ],
         },
       ], # targets
-      'conditions': [
-        ['test_isolation_mode != "noop"', {
-          'targets': [
-            {
-              'target_name': 'audio_device_tests_run',
-              'type': 'none',
-              'dependencies': [
-                'audio_device_tests',
-              ],
-              'includes': [
-                '../../build/isolate.gypi',
-              ],
-              'sources': [
-                'audio_device_tests.isolate',
-              ],
-            },
-          ],
-        }],
-      ],
     }], # include_tests
   ],
 }

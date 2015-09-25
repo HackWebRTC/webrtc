@@ -273,6 +273,7 @@ def _CommonChecks(input_api, output_api):
                   r'^tools[\\\/]generate_library_loader[\\\/].*\.py$',
                   r'^tools[\\\/]gn[\\\/].*\.py$',
                   r'^tools[\\\/]gyp[\\\/].*\.py$',
+                  r'^tools[\\\/]isolate_driver.py$',
                   r'^tools[\\\/]protoc_wrapper[\\\/].*\.py$',
                   r'^tools[\\\/]python[\\\/].*\.py$',
                   r'^tools[\\\/]python_charts[\\\/]data[\\\/].*\.py$',

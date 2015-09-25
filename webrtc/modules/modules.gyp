@@ -469,6 +469,45 @@
         ['test_isolation_mode != "noop"', {
           'targets': [
             {
+              'target_name': 'audio_codec_speed_tests_run',
+              'type': 'none',
+              'dependencies': [
+                'audio_codec_speed_tests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+              ],
+              'sources': [
+                'audio_codec_speed_tests.isolate',
+              ],
+            },
+            {
+              'target_name': 'audio_decoder_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'audio_decoder_unittests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+              ],
+              'sources': [
+                'audio_decoder_unittests.isolate',
+              ],
+            },
+            {
+              'target_name': 'audio_device_tests_run',
+              'type': 'none',
+              'dependencies': [
+                'audio_device_tests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+              ],
+              'sources': [
+                'audio_device_tests.isolate',
+              ],
+            },
+            {
               'target_name': 'modules_tests_run',
               'type': 'none',
               'dependencies': [
@@ -492,6 +531,19 @@
               ],
               'sources': [
                 'modules_unittests.isolate',
+              ],
+            },
+            {
+              'target_name': 'video_render_tests_run',
+              'type': 'none',
+              'dependencies': [
+                'video_render_tests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+              ],
+              'sources': [
+                'video_render_tests.isolate',
               ],
             },
           ],

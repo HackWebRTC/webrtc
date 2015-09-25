@@ -33,7 +33,7 @@ def main():
   # pylint: disable=protected-access
   gtest_test_instance._DEFAULT_ISOLATE_FILE_PATHS.update({
     'audio_decoder_unittests':
-        'webrtc/modules/audio_coding/neteq/audio_decoder_unittests.isolate',
+        'webrtc/modules/audio_decoder_unittests.isolate',
     'common_audio_unittests':
         'webrtc/common_audio/common_audio_unittests.isolate',
     'common_video_unittests':

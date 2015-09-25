@@ -51,22 +51,5 @@
         },
       ],
     }],
-    ['test_isolation_mode != "noop"', {
-      'targets': [
-        {
-          'target_name': 'audio_codec_speed_tests_run',
-          'type': 'none',
-          'dependencies': [
-            'audio_codec_speed_tests',
-          ],
-          'includes': [
-            '../../build/isolate.gypi',
-          ],
-          'sources': [
-            'audio_codec_speed_tests.isolate',
-          ],
-        },
-      ],
-    }],
   ],
 }
