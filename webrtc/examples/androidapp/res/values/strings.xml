@@ -46,6 +46,11 @@
     <string name="pref_fps_dlg">Enter local camera fps.</string>
     <string name="pref_fps_default">Default</string>
 
+    <string name="pref_capturequalityslider_key">capturequalityslider_preference</string>
+    <string name="pref_capturequalityslider_title">Capture quality slider.</string>
+    <string name="pref_capturequalityslider_dlg">Enable slider for changing capture quality.</string>
+    <string name="pref_capturequalityslider_default">false</string>
+
     <string name="pref_startvideobitrate_key">startvideobitrate_preference</string>
     <string name="pref_startvideobitrate_title">Start video bitrate setting.</string>
     <string name="pref_startvideobitrate_dlg">Start video bitrate setting.</string>

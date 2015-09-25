@@ -26,6 +26,12 @@
             android:entries="@array/cameraFps"
             android:entryValues="@array/cameraFps" />
 
+        <CheckBoxPreference
+            android:key="@string/pref_capturequalityslider_key"
+            android:title="@string/pref_capturequalityslider_title"
+            android:dialogTitle="@string/pref_capturequalityslider_dlg"
+            android:defaultValue="@string/pref_capturequalityslider_default" />
+
         <ListPreference
             android:key="@string/pref_startvideobitrate_key"
             android:title="@string/pref_startvideobitrate_title"

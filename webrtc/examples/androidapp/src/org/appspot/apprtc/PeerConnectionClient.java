@@ -844,6 +844,24 @@ public class PeerConnectionClient {
     });
   }
 
+  public void changeCaptureFormat(final int width, final int height, final int framerate) {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        changeCaptureFormatInternal(width, height, framerate);
+      }
+    });
+  }
+
+  private void changeCaptureFormatInternal(int width, int height, int framerate) {
+    if (!videoCallEnabled || isError || videoCapturer == null) {
+      Log.e(TAG, "Failed to change capture format. Video: " + videoCallEnabled + ". Error : "
+          + isError);
+      return;
+    }
+    videoCapturer.onOutputFormatRequest(width, height, framerate);
+  }
+
   // Implementation detail: observe ICE & stream changes and react accordingly.
   private class PCObserver implements PeerConnection.Observer {
     @Override

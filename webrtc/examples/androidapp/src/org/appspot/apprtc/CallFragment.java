@@ -17,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import org.webrtc.RendererCommon.ScalingType;
@@ -30,6 +31,8 @@ public class CallFragment extends Fragment {
   private ImageButton disconnectButton;
   private ImageButton cameraSwitchButton;
   private ImageButton videoScalingButton;
+  private TextView captureFormatText;
+  private SeekBar captureFormatSlider;
   private OnCallEvents callEvents;
   private ScalingType scalingType;
   private boolean videoCallEnabled = true;
@@ -41,6 +44,7 @@ public class CallFragment extends Fragment {
     public void onCallHangUp();
     public void onCameraSwitch();
     public void onVideoScalingSwitch(ScalingType scalingType);
+    public void onCaptureFormatChange(int width, int height, int framerate);
   }
 
   @Override
@@ -58,6 +62,10 @@ public class CallFragment extends Fragment {
         (ImageButton) controlView.findViewById(R.id.button_call_switch_camera);
     videoScalingButton =
         (ImageButton) controlView.findViewById(R.id.button_call_scaling_mode);
+    captureFormatText =
+        (TextView) controlView.findViewById(R.id.capture_format_text_call);
+    captureFormatSlider =
+        (SeekBar) controlView.findViewById(R.id.capture_format_slider_call);
 
     // Add buttons click events.
     disconnectButton.setOnClickListener(new View.OnClickListener() {
@@ -98,14 +106,24 @@ public class CallFragment extends Fragment {
   public void onStart() {
     super.onStart();
 
+    boolean captureSliderEnabled = false;
     Bundle args = getArguments();
     if (args != null) {
       String contactName = args.getString(CallActivity.EXTRA_ROOMID);
       contactView.setText(contactName);
       videoCallEnabled = args.getBoolean(CallActivity.EXTRA_VIDEO_CALL, true);
+      captureSliderEnabled = videoCallEnabled
+          && args.getBoolean(CallActivity.EXTRA_VIDEO_CAPTUREQUALITYSLIDER_ENABLED, false);
     }
     if (!videoCallEnabled) {
       cameraSwitchButton.setVisibility(View.INVISIBLE);
+    }
+    if (captureSliderEnabled) {
+      captureFormatSlider.setOnSeekBarChangeListener(
+          new CaptureQualityController(captureFormatText, callEvents));
+    } else {
+      captureFormatText.setVisibility(View.GONE);
+      captureFormatSlider.setVisibility(View.GONE);
     }
   }
 

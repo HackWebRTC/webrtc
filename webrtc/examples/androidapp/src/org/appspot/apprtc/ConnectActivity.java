@@ -57,6 +57,7 @@ public class ConnectActivity extends Activity {
   private String keyprefVideoCallEnabled;
   private String keyprefResolution;
   private String keyprefFps;
+  private String keyprefCaptureQualitySlider;
   private String keyprefVideoBitrateType;
   private String keyprefVideoBitrateValue;
   private String keyprefVideoCodec;
@@ -83,6 +84,7 @@ public class ConnectActivity extends Activity {
     keyprefVideoCallEnabled = getString(R.string.pref_videocall_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
+    keyprefCaptureQualitySlider = getString(R.string.pref_capturequalityslider_key);
     keyprefVideoBitrateType = getString(R.string.pref_startvideobitrate_key);
     keyprefVideoBitrateValue = getString(R.string.pref_startvideobitratevalue_key);
     keyprefVideoCodec = getString(R.string.pref_videocodec_key);
@@ -286,6 +288,10 @@ public class ConnectActivity extends Activity {
       }
     }
 
+    // Check capture quality slider flag.
+    boolean captureQualitySlider = sharedPref.getBoolean(keyprefCaptureQualitySlider,
+        Boolean.valueOf(getString(R.string.pref_capturequalityslider_default)));
+
     // Get video and audio start bitrate.
     int videoStartBitrate = 0;
     String bitrateTypeDefault = getString(
@@ -329,6 +335,8 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_VIDEO_WIDTH, videoWidth);
       intent.putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, videoHeight);
       intent.putExtra(CallActivity.EXTRA_VIDEO_FPS, cameraFps);
+      intent.putExtra(CallActivity.EXTRA_VIDEO_CAPTUREQUALITYSLIDER_ENABLED,
+          captureQualitySlider);
       intent.putExtra(CallActivity.EXTRA_VIDEO_BITRATE, videoStartBitrate);
       intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, videoCodec);
       intent.putExtra(CallActivity.EXTRA_HWCODEC_ENABLED, hwCodec);
