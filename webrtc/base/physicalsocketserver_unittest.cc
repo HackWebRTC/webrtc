@@ -211,13 +211,16 @@ TEST_F(PhysicalSocketTest, MAYBE_TestUdpIPv6) {
 
 // Disable for TSan v2, see
 // https://code.google.com/p/webrtc/issues/detail?id=3498 for details.
-#if !defined(THREAD_SANITIZER)
+// Also disable for MSan, see:
+// https://code.google.com/p/webrtc/issues/detail?id=4958
+// TODO(deadbeef): Enable again once test is reimplemented to be unflaky.
+#if !defined(THREAD_SANITIZER) && !defined(MEMORY_SANITIZER)
 
 TEST_F(PhysicalSocketTest, TestUdpReadyToSendIPv4) {
   SocketTest::TestUdpReadyToSendIPv4();
 }
 
-#endif // if !defined(THREAD_SANITIZER)
+#endif // if !defined(THREAD_SANITIZER) && !defined(MEMORY_SANITIZER)
 
 TEST_F(PhysicalSocketTest, TestUdpReadyToSendIPv6) {
   SocketTest::TestUdpReadyToSendIPv6();
