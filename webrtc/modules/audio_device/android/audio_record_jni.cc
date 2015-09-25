@@ -175,6 +175,7 @@ int32_t AudioRecordJni::StopRecording() {
   thread_checker_java_.DetachFromThread();
   initialized_ = false;
   recording_ = false;
+  direct_buffer_address_= nullptr;
   return 0;
 }
 

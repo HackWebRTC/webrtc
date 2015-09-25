@@ -831,6 +831,15 @@ TEST_F(AudioDeviceTest, StartStopPlayout) {
   StopPlayout();
 }
 
+// Tests that recording can be initiated, started and stopped. No audio callback
+// is registered in this test.
+TEST_F(AudioDeviceTest, StartStopRecording) {
+  StartRecording();
+  StopRecording();
+  StartRecording();
+  StopRecording();
+}
+
 // Verify that calling StopPlayout() will leave us in an uninitialized state
 // which will require a new call to InitPlayout(). This test does not call
 // StartPlayout() while being uninitialized since doing so will hit a

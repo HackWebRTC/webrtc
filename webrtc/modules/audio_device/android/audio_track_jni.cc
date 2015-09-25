@@ -156,6 +156,7 @@ int32_t AudioTrackJni::StopPlayout() {
   thread_checker_java_.DetachFromThread();
   initialized_ = false;
   playing_ = false;
+  direct_buffer_address_ = nullptr;
   return 0;
 }
 
@@ -215,6 +216,7 @@ void AudioTrackJni::OnCacheDirectBufferAddress(
     JNIEnv* env, jobject byte_buffer) {
   ALOGD("OnCacheDirectBufferAddress");
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!direct_buffer_address_);
   direct_buffer_address_ =
       env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
