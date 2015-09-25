@@ -281,9 +281,10 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
       // VAD/DTX not supported.
       dtx_enabled_ = false;
     }
-    codec_owner_.SetEncoders(
-        send_codec, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
-        vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1);
+    if (!codec_owner_.SetEncoders(
+            send_codec, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
+            vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1))
+      return -1;
     RTC_DCHECK(codec_owner_.Encoder());
 
     codec_fec_enabled_ = codec_fec_enabled_ &&
@@ -297,9 +298,10 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   if (send_codec_inst_.plfreq != send_codec.plfreq ||
       send_codec_inst_.pacsize != send_codec.pacsize ||
       send_codec_inst_.channels != send_codec.channels) {
-    codec_owner_.SetEncoders(
-        send_codec, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
-        vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1);
+    if (!codec_owner_.SetEncoders(
+            send_codec, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
+            vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1))
+      return -1;
     RTC_DCHECK(codec_owner_.Encoder());
   }
   send_codec_inst_.plfreq = send_codec.plfreq;

@@ -29,10 +29,12 @@ class CodecOwner {
   CodecOwner();
   ~CodecOwner();
 
-  void SetEncoders(const CodecInst& speech_inst,
+  // Start using the specified encoder. Returns false on error.
+  // TODO(kwiberg): Don't handle errors here (bug 5033)
+  bool SetEncoders(const CodecInst& speech_inst,
                    int cng_payload_type,
                    ACMVADMode vad_mode,
-                   int red_payload_type);
+                   int red_payload_type) WARN_UNUSED_RESULT;
 
   void SetEncoders(AudioEncoder* external_speech_encoder,
                    int cng_payload_type,

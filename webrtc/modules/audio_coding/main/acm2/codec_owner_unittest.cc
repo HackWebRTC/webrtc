@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstring>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/safe_conversions.h"
@@ -34,7 +36,8 @@ class CodecOwnerTest : public ::testing::Test {
   CodecOwnerTest() : timestamp_(0) {}
 
   void CreateCodec() {
-    codec_owner_.SetEncoders(kDefaultCodecInst, kCngPt, VADNormal, -1);
+    ASSERT_TRUE(
+        codec_owner_.SetEncoders(kDefaultCodecInst, kCngPt, VADNormal, -1));
   }
 
   void EncodeAndVerify(size_t expected_out_length,
@@ -167,7 +170,7 @@ TEST_F(CodecOwnerTest, ExternalEncoder) {
   // Change to internal encoder.
   CodecInst codec_inst = kDefaultCodecInst;
   codec_inst.pacsize = kPacketSizeSamples;
-  codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1);
+  ASSERT_TRUE(codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1));
   // Don't expect any more calls to the external encoder.
   info = codec_owner_.Encoder()->Encode(1, audio, arraysize(audio),
                                         arraysize(encoded), encoded);
@@ -194,6 +197,13 @@ TEST_F(CodecOwnerTest, CngAndRedResetsSpeechEncoder) {
 
 TEST_F(CodecOwnerTest, NoCngAndRedNoSpeechEncoderReset) {
   TestCngAndRedResetSpeechEncoder(false, false);
+}
+
+TEST_F(CodecOwnerTest, SetEncodersError) {
+  CodecInst codec_inst = kDefaultCodecInst;
+  static const char bad_name[] = "Robert'); DROP TABLE Students;";
+  std::memcpy(codec_inst.plname, bad_name, sizeof bad_name);
+  EXPECT_FALSE(codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1));
 }
 
 }  // namespace acm2

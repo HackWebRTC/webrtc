@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/main/acm2/codec_owner.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/audio_encoder_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
@@ -117,6 +118,8 @@ rtc::scoped_ptr<AudioEncoder> CreateIsacEncoder(
 #endif
 }
 
+// Returns a new speech encoder, or null on error.
+// TODO(kwiberg): Don't handle errors here (bug 5033)
 rtc::scoped_ptr<AudioEncoder> CreateSpeechEncoder(
     const CodecInst& speech_inst,
     LockedIsacBandwidthInfo* bwinfo) {
@@ -135,7 +138,8 @@ rtc::scoped_ptr<AudioEncoder> CreateSpeechEncoder(
   } else if (IsG722(speech_inst)) {
     return rtc_make_scoped_ptr(new AudioEncoderG722(speech_inst));
   } else {
-    FATAL() << "Could not create encoder of type " << speech_inst.plname;
+    LOG_F(LS_ERROR) << "Could not create encoder of type "
+                    << speech_inst.plname;
     return rtc::scoped_ptr<AudioEncoder>();
   }
 }
@@ -189,13 +193,16 @@ void CreateCngEncoder(int cng_payload_type,
 }
 }  // namespace
 
-void CodecOwner::SetEncoders(const CodecInst& speech_inst,
+bool CodecOwner::SetEncoders(const CodecInst& speech_inst,
                              int cng_payload_type,
                              ACMVADMode vad_mode,
                              int red_payload_type) {
   speech_encoder_ = CreateSpeechEncoder(speech_inst, &isac_bandwidth_info_);
+  if (!speech_encoder_)
+    return false;
   external_speech_encoder_ = nullptr;
   ChangeCngAndRed(cng_payload_type, vad_mode, red_payload_type);
+  return true;
 }
 
 void CodecOwner::SetEncoders(AudioEncoder* external_speech_encoder,
