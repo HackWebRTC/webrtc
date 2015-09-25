@@ -53,10 +53,90 @@ public class GlRectDrawerTest extends ActivityTestCase {
     return 255.0f * Math.max(0, Math.min(c, 1));
   }
 
+  // Assert RGB ByteBuffers are pixel perfect identical.
+  private static void assertEquals(int width, int height, ByteBuffer actual, ByteBuffer expected) {
+    actual.rewind();
+    expected.rewind();
+    assertEquals(actual.remaining(), width * height * 3);
+    assertEquals(expected.remaining(), width * height * 3);
+    for (int y = 0; y < height; ++y) {
+      for (int x = 0; x < width; ++x) {
+        final int actualR = actual.get() & 0xFF;
+        final int actualG = actual.get() & 0xFF;
+        final int actualB = actual.get() & 0xFF;
+        final int expectedR = expected.get() & 0xFF;
+        final int expectedG = expected.get() & 0xFF;
+        final int expectedB = expected.get() & 0xFF;
+        if (actualR != expectedR || actualG != expectedG || actualB != expectedB) {
+          fail("ByteBuffers of size " + width + "x" + height + " not equal at position "
+              + "(" +  x + ", " + y + "). Expected color (R,G,B): "
+              + "(" + expectedR + ", " + expectedG + ", " + expectedB + ")"
+              + " but was: " + "(" + actualR + ", " + actualG + ", " + actualB + ").");
+        }
+      }
+    }
+  }
+
+  // Convert RGBA ByteBuffer to RGB ByteBuffer.
+  private static ByteBuffer stripAlphaChannel(ByteBuffer rgbaBuffer) {
+    rgbaBuffer.rewind();
+    assertEquals(rgbaBuffer.remaining() % 4, 0);
+    final int numberOfPixels = rgbaBuffer.remaining() / 4;
+    final ByteBuffer rgbBuffer = ByteBuffer.allocateDirect(numberOfPixels * 3);
+    while (rgbaBuffer.hasRemaining()) {
+      // Copy RGB.
+      for (int channel = 0; channel < 3; ++channel) {
+        rgbBuffer.put(rgbaBuffer.get());
+      }
+      // Drop alpha.
+      rgbaBuffer.get();
+    }
+    return rgbBuffer;
+  }
+
+  @SmallTest
+  public void testRgbRendering() throws Exception {
+    // Create EGL base with a pixel buffer as display output.
+    final EglBase eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    eglBase.createPbufferSurface(WIDTH, HEIGHT);
+    eglBase.makeCurrent();
+
+    // Create RGB byte buffer plane with random content.
+    final ByteBuffer rgbPlane = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 3);
+    final Random random = new Random(SEED);
+    random.nextBytes(rgbPlane.array());
+
+    // Upload the RGB byte buffer data as a texture.
+    final int rgbTexture = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
+    GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, rgbTexture);
+    GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH,
+        HEIGHT, 0, GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, rgbPlane);
+    GlUtil.checkNoGLES2Error("glTexImage2D");
+
+    // Draw the RGB frame onto the pixel buffer.
+    final GlRectDrawer drawer = new GlRectDrawer();
+    final float[] identityMatrix = new float[16];
+    Matrix.setIdentityM(identityMatrix, 0);
+    drawer.drawRgb(rgbTexture, identityMatrix);
+
+    // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
+    final ByteBuffer rgbaData = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
+    GLES20.glReadPixels(0, 0, WIDTH, HEIGHT, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, rgbaData);
+    GlUtil.checkNoGLES2Error("glReadPixels");
+
+    // Assert rendered image is pixel perfect to source RGB.
+    assertEquals(WIDTH, HEIGHT, stripAlphaChannel(rgbaData), rgbPlane);
+
+    drawer.release();
+    GLES20.glDeleteTextures(1, new int[] {rgbTexture}, 0);
+    eglBase.release();
+  }
+
   @SmallTest
   public void testYuvRendering() throws Exception {
     // Create EGL base with a pixel buffer as display output.
-    EglBase eglBase = eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    EglBase eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
     eglBase.makeCurrent();
 
@@ -80,6 +160,7 @@ public class GlRectDrawerTest extends ActivityTestCase {
       GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
       GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, WIDTH,
           HEIGHT, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, yuvPlanes[i]);
+      GlUtil.checkNoGLES2Error("glTexImage2D");
     }
 
     // Draw the YUV frame onto the pixel buffer.
@@ -88,9 +169,10 @@ public class GlRectDrawerTest extends ActivityTestCase {
     Matrix.setIdentityM(texMatrix, 0);
     drawer.drawYuv(yuvTextures, texMatrix);
 
-    // Download the pixels in the pixel buffer as RGBA.
+    // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer data = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
     GLES20.glReadPixels(0, 0, WIDTH, HEIGHT, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, data);
+    GlUtil.checkNoGLES2Error("glReadPixels");
 
     // Compare the YUV data with the RGBA result.
     for (int y = 0; y < HEIGHT; ++y) {
