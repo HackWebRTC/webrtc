@@ -19,18 +19,18 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
+#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
-#include "webrtc/video/rtc_event_log.h"
 
 // Files generated at build-time by the protobuf compiler.
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/video/rtc_event_log.pb.h"
+#include "external/webrtc/webrtc/call/rtc_event_log.pb.h"
 #else
-#include "webrtc/video/rtc_event_log.pb.h"
+#include "webrtc/call/rtc_event_log.pb.h"
 #endif
 
 namespace webrtc {
@@ -50,7 +50,7 @@ const char* kExtensionNames[] = {RtpExtension::kTOffset,
                                  RtpExtension::kTransportSequenceNumber};
 const size_t kNumExtensions = 5;
 
-}  // namepsace
+}  // namespace
 
 // TODO(terelius): Place this definition with other parsing functions?
 MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {

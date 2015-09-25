@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_AUDIO_RECEIVE_STREAM_H_
-#define WEBRTC_VIDEO_AUDIO_RECEIVE_STREAM_H_
+#ifndef WEBRTC_AUDIO_AUDIO_RECEIVE_STREAM_H_
+#define WEBRTC_AUDIO_AUDIO_RECEIVE_STREAM_H_
 
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
@@ -50,4 +50,4 @@ class AudioReceiveStream : public webrtc::AudioReceiveStream {
 }  // namespace internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_AUDIO_RECEIVE_STREAM_H_
+#endif  // WEBRTC_AUDIO_AUDIO_RECEIVE_STREAM_H_

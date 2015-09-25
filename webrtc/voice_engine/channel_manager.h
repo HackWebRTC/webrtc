@@ -15,10 +15,10 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/system_wrappers/interface/atomic32.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video/rtc_event_log.h"
 
 namespace webrtc {
 

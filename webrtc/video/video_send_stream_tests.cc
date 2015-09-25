@@ -17,6 +17,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
+#include "webrtc/call/transport_adapter.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -36,7 +37,6 @@
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_frame.h"
 #include "webrtc/video_send_stream.h"
 

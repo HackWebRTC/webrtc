@@ -10,9 +10,9 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/audio/audio_receive_stream.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/video/audio_receive_stream.h"
 
 namespace webrtc {
 

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_RTC_EVENT_LOG_H_
-#define WEBRTC_VIDEO_RTC_EVENT_LOG_H_
+#ifndef WEBRTC_CALL_RTC_EVENT_LOG_H_
+#define WEBRTC_CALL_RTC_EVENT_LOG_H_
 
 #include <string>
 
@@ -75,4 +75,4 @@ class RtcEventLog {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_RTC_EVENT_LOG_H_
+#endif  // WEBRTC_CALL_RTC_EVENT_LOG_H_

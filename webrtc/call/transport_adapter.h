@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_VIDEO_TRANSPORT_ADAPTER_H_
-#define WEBRTC_VIDEO_TRANSPORT_ADAPTER_H_
+#ifndef WEBRTC_CALL_TRANSPORT_ADAPTER_H_
+#define WEBRTC_CALL_TRANSPORT_ADAPTER_H_
 
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/atomic32.h"
@@ -34,4 +34,4 @@ class TransportAdapter : public webrtc::Transport {
 }  // namespace internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_TRANSPORT_ADAPTER_H_
+#endif  // WEBRTC_CALL_TRANSPORT_ADAPTER_H_

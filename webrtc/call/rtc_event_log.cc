@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/rtc_event_log.h"
+#include "webrtc/call/rtc_event_log.h"
 
 #include <deque>
 
@@ -23,9 +23,9 @@
 #ifdef ENABLE_RTC_EVENT_LOG
 // Files generated at build-time by the protobuf compiler.
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/video/rtc_event_log.pb.h"
+#include "external/webrtc/webrtc/call/rtc_event_log.pb.h"
 #else
-#include "webrtc/video/rtc_event_log.pb.h"
+#include "webrtc/call/rtc_event_log.pb.h"
 #endif
 #endif
 

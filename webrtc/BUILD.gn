@@ -178,8 +178,10 @@ source_set("webrtc") {
   public_configs = [ ":common_inherited_config" ]
 
   deps = [
+    "audio",
     ":webrtc_common",
     "base:rtc_base",
+    "call",
     "common_audio",
     "common_video",
     "modules/audio_coding",
@@ -247,16 +249,16 @@ source_set("gtest_prod") {
 if (rtc_enable_protobuf) {
   proto_library("rtc_event_log_proto") {
     sources = [
-      "video/rtc_event_log.proto",
+      "call/rtc_event_log.proto",
     ]
-    proto_out_dir = "webrtc/video"
+    proto_out_dir = "webrtc/call"
   }
 }
 
 source_set("rtc_event_log") {
   sources = [
-    "video/rtc_event_log.cc",
-    "video/rtc_event_log.h",
+    "call/rtc_event_log.cc",
+    "call/rtc_event_log.h",
   ]
 
   defines = []

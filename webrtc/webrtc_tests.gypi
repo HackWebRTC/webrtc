@@ -146,18 +146,17 @@
       ],
     },
     {
-      # TODO(pbos): Rename target to webrtc_tests or rtc_tests, this target is
-      # not meant to only include video.
+      # TODO(pbos): Add separate target webrtc_audio_tests and move files there.
       'target_name': 'video_engine_tests',
       'type': '<(gtest_target_type)',
       'sources': [
+        'audio/audio_receive_stream_unittest.cc',
+        'call/bitrate_estimator_tests.cc',
+        'call/packet_injection_tests.cc',
         'test/common_unittest.cc',
         'test/testsupport/metrics/video_metrics_unittest.cc',
         'tools/agc/agc_manager_unittest.cc',
-        'video/audio_receive_stream_unittest.cc',
-        'video/bitrate_estimator_tests.cc',
         'video/end_to_end_tests.cc',
-        'video/packet_injection_tests.cc',
         'video/send_statistics_proxy_unittest.cc',
         'video/video_capture_input_unittest.cc',
         'video/video_decoder_unittest.cc',
@@ -194,7 +193,7 @@
             'webrtc.gyp:rtc_event_log_proto',
           ],
           'sources': [
-            'video/rtc_event_log_unittest.cc',
+            'call/rtc_event_log_unittest.cc',
           ],
         }],
       ],
@@ -203,11 +202,10 @@
       'target_name': 'webrtc_perf_tests',
       'type': '<(gtest_target_type)',
       'sources': [
+        'call/call_perf_tests.cc',
         'modules/audio_coding/neteq/test/neteq_performance_unittest.cc',
         'modules/remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
-
         'tools/agc/agc_manager_integrationtest.cc',
-        'video/call_perf_tests.cc',
         'video/full_stack.cc',
         'video/rampup_tests.cc',
         'video/rampup_tests.h',

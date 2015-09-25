@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/transport_adapter.h"
+#include "webrtc/call/transport_adapter.h"
 
 #include "webrtc/base/checks.h"
 

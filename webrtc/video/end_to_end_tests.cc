@@ -18,6 +18,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
+#include "webrtc/call/transport_adapter.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -42,7 +43,6 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/test/testsupport/perf_test.h"
-#include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_encoder.h"
 
 namespace webrtc {
