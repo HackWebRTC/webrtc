@@ -19,6 +19,7 @@ import java.util.logging.Level;
 /** Java wrapper for WebRTC logging. */
 public class Logging {
   private static final Logger fallbackLogger = Logger.getLogger("org.webrtc.Logging");
+  private static boolean tracingEnabled;
 
   static {
     try {
@@ -68,36 +69,46 @@ public class Logging {
 
   // Enable tracing to |path| of messages of |levels| and |severity|.
   // On Android, use "logcat:" for |path| to send output there.
-  public static void enableTracing(
+  public static synchronized void enableTracing(
       String path, EnumSet<TraceLevel> levels, Severity severity) {
+    if (tracingEnabled) {
+      return;
+    }
     int nativeLevel = 0;
     for (TraceLevel level : levels) {
       nativeLevel |= level.level;
     }
     nativeEnableTracing(path, nativeLevel, severity.ordinal());
+    tracingEnabled = true;
   }
 
   public static void log(Severity severity, String tag, String message) {
-    try {
-      nativeLog(severity.ordinal(), tag, message);
-    } catch (Throwable t) {
-      Level level;
-      switch (severity) {
-        case LS_ERROR:
-          level = Level.SEVERE;
-          break;
-        case LS_WARNING:
-          level = Level.WARNING;
-          break;
-        case LS_INFO:
-          level = Level.INFO;
-          break;
-        default:
-          level = Level.FINE;
-          break;
+    if (tracingEnabled) {
+      try {
+        nativeLog(severity.ordinal(), tag, message);
+        return;
+      } catch (Throwable t) {
+        // Don't log the error to avoid spamming.
       }
-      fallbackLogger.log(level, tag + ": " + message);
     }
+
+    // Fallback to system log.
+    Level level;
+    switch (severity) {
+      case LS_ERROR:
+        level = Level.SEVERE;
+        break;
+      case LS_WARNING:
+        level = Level.WARNING;
+        break;
+      case LS_INFO:
+        level = Level.INFO;
+        break;
+      default:
+        level = Level.FINE;
+        break;
+    }
+    fallbackLogger.log(level, tag + ": " + message);
   }
 
   public static void d(String tag, String message) {
