@@ -297,7 +297,8 @@ def _IsTreeClean():
   logging.error('Dirty/unversioned files:\n%s', stdout)
   return False
 
-def _CreateRollBranch(dry_run):
+
+def _EnsureUpdatedMasterBranch(dry_run):
   current_branch = _RunCommand(
       ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])[0].splitlines()[0]
   if current_branch != 'master':
@@ -308,6 +309,9 @@ def _CreateRollBranch(dry_run):
   logging.info('Updating master branch...')
   if not dry_run:
     _RunCommand(['git', 'pull'])
+
+
+def _CreateRollBranch(dry_run):
   logging.info('Creating roll branch: %s', ROLL_BRANCH_NAME)
   if not dry_run:
     _RunCommand(['git', 'checkout', '-b', ROLL_BRANCH_NAME])
@@ -371,6 +375,8 @@ def main():
 
   if opts.clean:
     _RemovePreviousRollBranch(opts.dry_run)
+
+  _EnsureUpdatedMasterBranch(opts.dry_run)
 
   if not opts.revision:
     lkgr_contents = ReadUrlContent(CHROMIUM_LKGR_URL)
