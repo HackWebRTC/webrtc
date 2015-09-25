@@ -13,7 +13,11 @@
 
 #include <assert.h>
 
+#ifndef AUDIO_DECODER_UNITTEST
+// If this is compiled as a part of the audio_deoder_unittest, the codec
+// selection is made in the gypi file instead of in engine_configurations.h.
 #include "webrtc/engine_configurations.h"
+#endif
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"

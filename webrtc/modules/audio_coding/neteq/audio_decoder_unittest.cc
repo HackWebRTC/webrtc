@@ -562,6 +562,7 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   int tolerance = 19757;
   double mse = 8.18e6;
   int delay = 160;  // Delay from input to output.
+  EXPECT_TRUE(CodecSupported(kDecoderISACswb));
   EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
   EXPECT_FALSE(decoder_->HasDecodePlc());
@@ -675,10 +676,8 @@ TEST(AudioDecoder, CodecSampleRateHz) {
   EXPECT_EQ(8000, CodecSampleRateHz(kDecoderPCMa_2ch));
   EXPECT_EQ(8000, CodecSampleRateHz(kDecoderILBC));
   EXPECT_EQ(16000, CodecSampleRateHz(kDecoderISAC));
-#ifndef WEBRTC_ARCH_ARM
   EXPECT_EQ(32000, CodecSampleRateHz(kDecoderISACswb));
   EXPECT_EQ(32000, CodecSampleRateHz(kDecoderISACfb));
-#endif
   EXPECT_EQ(8000, CodecSampleRateHz(kDecoderPCM16B));
   EXPECT_EQ(16000, CodecSampleRateHz(kDecoderPCM16Bwb));
   EXPECT_EQ(32000, CodecSampleRateHz(kDecoderPCM16Bswb32kHz));
@@ -703,19 +702,14 @@ TEST(AudioDecoder, CodecSampleRateHz) {
 }
 
 TEST(AudioDecoder, CodecSupported) {
-#ifdef WEBRTC_ARCH_ARM
-  static const bool has_isac_swb = false;
-#else
-  static const bool has_isac_swb = true;
-#endif
   EXPECT_TRUE(CodecSupported(kDecoderPCMu));
   EXPECT_TRUE(CodecSupported(kDecoderPCMa));
   EXPECT_TRUE(CodecSupported(kDecoderPCMu_2ch));
   EXPECT_TRUE(CodecSupported(kDecoderPCMa_2ch));
   EXPECT_TRUE(CodecSupported(kDecoderILBC));
   EXPECT_TRUE(CodecSupported(kDecoderISAC));
-  EXPECT_EQ(has_isac_swb, CodecSupported(kDecoderISACswb));
-  EXPECT_EQ(has_isac_swb, CodecSupported(kDecoderISACfb));
+  EXPECT_TRUE(CodecSupported(kDecoderISACswb));
+  EXPECT_TRUE(CodecSupported(kDecoderISACfb));
   EXPECT_TRUE(CodecSupported(kDecoderPCM16B));
   EXPECT_TRUE(CodecSupported(kDecoderPCM16Bwb));
   EXPECT_TRUE(CodecSupported(kDecoderPCM16Bswb32kHz));
