@@ -206,8 +206,8 @@ void BaseSession::SetError(Error error, const std::string& error_desc) {
   }
 }
 
-void BaseSession::SetIceConnectionReceivingTimeout(int timeout_ms) {
-  transport_controller_->SetIceConnectionReceivingTimeout(timeout_ms);
+void BaseSession::SetIceConfig(const IceConfig& config) {
+  transport_controller_->SetIceConfig(config);
 }
 
 void BaseSession::MaybeStartGathering() {

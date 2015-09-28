@@ -197,8 +197,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     channel_->AddRemoteCandidate(candidate);
   }
 
-  void SetReceivingTimeout(int receiving_timeout_ms) override {
-    channel_->SetReceivingTimeout(receiving_timeout_ms);
+  void SetIceConfig(const IceConfig& config) override {
+    channel_->SetIceConfig(config);
   }
 
   // Needed by DtlsTransport.

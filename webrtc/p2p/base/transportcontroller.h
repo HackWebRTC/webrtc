@@ -45,7 +45,7 @@ class TransportController : public sigslot::has_slots<>,
   // and WebRtcSession are combined
   bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
 
-  void SetIceConnectionReceivingTimeout(int timeout_ms);
+  void SetIceConfig(const IceConfig& config);
   void SetIceRole(IceRole ice_role);
 
   // TODO(deadbeef) - Return role of each transport, as role may differ from
@@ -126,7 +126,7 @@ class TransportController : public sigslot::has_slots<>,
   void DestroyAllTransports_w();
 
   bool SetSslMaxProtocolVersion_w(rtc::SSLProtocolVersion version);
-  void SetIceConnectionReceivingTimeout_w(int timeout_ms);
+  void SetIceConfig_w(const IceConfig& config);
   void SetIceRole_w(IceRole ice_role);
   bool GetSslRole_w(rtc::SSLRole* role);
   bool SetLocalCertificate_w(
@@ -180,10 +180,7 @@ class TransportController : public sigslot::has_slots<>,
   IceGatheringState gathering_state_ = kIceGatheringNew;
 
   // TODO(deadbeef): Move the fields below down to the transports themselves
-
-  // Timeout value in milliseconds for which no ICE connection receives
-  // any packets
-  int ice_receiving_timeout_ms_ = -1;
+  IceConfig ice_config_;
   IceRole ice_role_ = ICEROLE_CONTROLLING;
   // Flag which will be set to true after the first role switch
   bool ice_role_switch_ = false;

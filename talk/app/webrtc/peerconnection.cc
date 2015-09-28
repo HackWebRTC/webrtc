@@ -696,8 +696,7 @@ bool PeerConnection::UpdateIce(const RTCConfiguration& config) {
       }
     }
   }
-  session_->SetIceConnectionReceivingTimeout(
-      config.ice_connection_receiving_timeout);
+  session_->SetIceConfig(session_->ParseIceConfig(config));
   return session_->SetIceTransports(config.type);
 }
 

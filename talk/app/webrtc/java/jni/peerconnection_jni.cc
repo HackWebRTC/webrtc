@@ -1322,6 +1322,23 @@ static rtc::KeyType JavaKeyTypeToNativeType(JNIEnv* jni, jobject j_key_type) {
   return rtc::KT_ECDSA;
 }
 
+static PeerConnectionInterface::ContinualGatheringPolicy
+    JavaContinualGatheringPolicyToNativeType(
+        JNIEnv* jni, jobject j_gathering_policy) {
+  std::string enum_name = GetJavaEnumName(
+      jni, "org/webrtc/PeerConnection$ContinualGatheringPolicy",
+      j_gathering_policy);
+  if (enum_name == "GATHER_ONCE")
+    return PeerConnectionInterface::GATHER_ONCE;
+
+  if (enum_name == "GATHER_CONTINUALLY")
+    return PeerConnectionInterface::GATHER_CONTINUALLY;
+
+  RTC_CHECK(false) << "Unexpected ContinualGatheringPolicy enum name "
+                   << enum_name;
+  return PeerConnectionInterface::GATHER_ONCE;
+}
+
 static void JavaIceServersToJsepIceServers(
     JNIEnv* jni, jobject j_ice_servers,
     PeerConnectionInterface::IceServers* ice_servers) {
@@ -1409,6 +1426,12 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
       "Lorg/webrtc/PeerConnection$KeyType;");
   jobject j_key_type = GetObjectField(jni, j_rtc_config, j_key_type_id);
 
+  jfieldID j_continual_gathering_policy_id =
+      GetFieldID(jni, j_rtc_config_class, "continualGatheringPolicy",
+                 "Lorg/webrtc/PeerConnection$ContinualGatheringPolicy;");
+  jobject j_continual_gathering_policy =
+      GetObjectField(jni, j_rtc_config, j_continual_gathering_policy_id);
+
   PeerConnectionInterface::RTCConfiguration rtc_config;
   rtc_config.type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
@@ -1424,6 +1447,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
       jni, j_rtc_config, j_audio_jitter_buffer_fast_accelerate_id);
   rtc_config.ice_connection_receiving_timeout =
       GetIntField(jni, j_rtc_config, j_ice_connection_receiving_timeout_id);
+  rtc_config.continual_gathering_policy =
+      JavaContinualGatheringPolicyToNativeType(
+          jni, j_continual_gathering_policy);
 
   // Create ECDSA certificate.
   if (JavaKeyTypeToNativeType(jni, j_key_type) == rtc::KT_ECDSA) {

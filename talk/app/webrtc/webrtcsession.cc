@@ -608,8 +608,7 @@ bool WebRtcSession::Initialize(
     certificate = rtc_configuration.certificates[0];
   }
 
-  SetIceConnectionReceivingTimeout(
-      rtc_configuration.ice_connection_receiving_timeout);
+  SetIceConfig(ParseIceConfig(rtc_configuration));
 
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
   // mandatory constraints can be fulfilled. Note that |constraints|
@@ -780,6 +779,15 @@ bool WebRtcSession::Initialize(
       worker_thread(), channel_manager_->media_engine()->GetVoE()));
 
   return true;
+}
+
+cricket::IceConfig WebRtcSession::ParseIceConfig(
+    const PeerConnectionInterface::RTCConfiguration& config) const {
+  cricket::IceConfig ice_config;
+  ice_config.receiving_timeout_ms = config.ice_connection_receiving_timeout;
+  ice_config.gather_continually = (config.continual_gathering_policy ==
+                                   PeerConnectionInterface::GATHER_CONTINUALLY);
+  return ice_config;
 }
 
 void WebRtcSession::Terminate() {

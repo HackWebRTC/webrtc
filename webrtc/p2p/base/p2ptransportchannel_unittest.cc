@@ -100,6 +100,14 @@ enum {
   MSG_CANDIDATE
 };
 
+static cricket::IceConfig CreateIceConfig(int receiving_timeout_ms,
+                                          bool gather_continually) {
+  cricket::IceConfig config;
+  config.receiving_timeout_ms = receiving_timeout_ms;
+  config.gather_continually = gather_continually;
+  return config;
+}
+
 // This test simulates 2 P2P endpoints that want to establish connectivity
 // with each other over various network topologies and conditions, which can be
 // specified in each individial test.
@@ -386,7 +394,6 @@ class P2PTransportChannelTestBase : public testing::Test,
   void SetAllowTcpListen(int endpoint, bool allow_tcp_listen) {
     return GetEndpoint(endpoint)->SetAllowTcpListen(allow_tcp_listen);
   }
-
   bool IsLocalToPrflxOrTheReverse(const Result& expected) {
     return (
         (expected.local_type == "local" && expected.remote_type == "prflx") ||
@@ -1498,8 +1505,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   CreateChannels(1);
 
   // Make the receiving timeout shorter for testing.
-  ep1_ch1()->SetReceivingTimeout(1000);
-  ep2_ch1()->SetReceivingTimeout(1000);
+  cricket::IceConfig config = CreateIceConfig(1000, false);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
 
   EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                    ep2_ch1()->receiving() && ep2_ch1()->writable(),
@@ -1549,8 +1557,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
   // Make the receiving timeout shorter for testing.
-  ep1_ch1()->SetReceivingTimeout(1000);
-  ep2_ch1()->SetReceivingTimeout(1000);
+  cricket::IceConfig config = CreateIceConfig(1000, false);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
   EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                    ep2_ch1()->receiving() && ep2_ch1()->writable(),
                    1000);
@@ -1796,7 +1805,7 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   // small.
   EXPECT_LE(1000, ch.receiving_timeout());
   EXPECT_LE(200, ch.check_receiving_delay());
-  ch.SetReceivingTimeout(500);
+  ch.SetIceConfig(CreateIceConfig(500, false));
   EXPECT_EQ(500, ch.receiving_timeout());
   EXPECT_EQ(50, ch.check_receiving_delay());
   ch.Connect();
@@ -2018,7 +2027,7 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   conn2->SignalNominated(conn2);
   EXPECT_TRUE_WAIT(conn1->pruned(), 3000);
 
-  ch.SetReceivingTimeout(500);
+  ch.SetIceConfig(CreateIceConfig(500, false));
   // Wait until conn2 becomes not receiving.
   EXPECT_TRUE_WAIT(!conn2->receiving(), 3000);
 

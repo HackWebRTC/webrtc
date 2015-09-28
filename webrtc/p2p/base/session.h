@@ -146,7 +146,7 @@ class BaseSession : public sigslot::has_slots<>,
   // TODO(ronghuawu): remove the SetError method that doesn't take |error_desc|.
   virtual void SetError(Error error, const std::string& error_desc);
 
-  void SetIceConnectionReceivingTimeout(int timeout_ms);
+  void SetIceConfig(const IceConfig& ice_config);
 
   // Start gathering candidates for any new transports, or transports doing an
   // ICE restart.

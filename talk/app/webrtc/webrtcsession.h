@@ -178,6 +178,9 @@ class WebRtcSession : public cricket::BaseSession,
 
   bool SetIceTransports(PeerConnectionInterface::IceTransportsType type);
 
+  cricket::IceConfig ParseIceConfig(
+      const PeerConnectionInterface::RTCConfiguration& config) const;
+
   const SessionDescriptionInterface* local_description() const {
     return local_desc_.get();
   }

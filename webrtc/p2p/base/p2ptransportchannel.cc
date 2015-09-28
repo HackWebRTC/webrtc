@@ -355,19 +355,22 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
   remote_ice_mode_ = mode;
 }
 
-void P2PTransportChannel::SetReceivingTimeout(int receiving_timeout_ms) {
-  if (receiving_timeout_ms < 0) {
+void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
+  gather_continually_ = config.gather_continually;
+  LOG(LS_INFO) << "Set gather_continually to " << gather_continually_;
+
+  if (config.receiving_timeout_ms < 0) {
     return;
   }
-  receiving_timeout_ = receiving_timeout_ms;
+  receiving_timeout_ = config.receiving_timeout_ms;
   check_receiving_delay_ =
       std::max(MIN_CHECK_RECEIVING_DELAY, receiving_timeout_ / 10);
 
   for (Connection* connection : connections_) {
     connection->set_receiving_timeout(receiving_timeout_);
   }
-  LOG(LS_VERBOSE) << "Set ICE receiving timeout to " << receiving_timeout_
-                  << " milliseconds";
+  LOG(LS_INFO) << "Set ICE receiving timeout to " << receiving_timeout_
+               << " milliseconds";
 }
 
 // Go into the state of processing candidates, and running in general

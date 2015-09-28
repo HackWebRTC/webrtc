@@ -98,6 +98,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/MediaStream");
   LoadClass(jni, "org/webrtc/MediaStreamTrack$State");
   LoadClass(jni, "org/webrtc/PeerConnection$BundlePolicy");
+  LoadClass(jni, "org/webrtc/PeerConnection$ContinualGatheringPolicy");
   LoadClass(jni, "org/webrtc/PeerConnection$RtcpMuxPolicy");
   LoadClass(jni, "org/webrtc/PeerConnection$IceConnectionState");
   LoadClass(jni, "org/webrtc/PeerConnection$IceGatheringState");

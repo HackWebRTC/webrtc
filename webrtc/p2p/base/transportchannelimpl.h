@@ -59,7 +59,7 @@ class TransportChannelImpl : public TransportChannel {
   // SetRemoteIceMode must be implemented only by the ICE transport channels.
   virtual void SetRemoteIceMode(IceMode mode) = 0;
 
-  virtual void SetReceivingTimeout(int timeout_ms) = 0;
+  virtual void SetIceConfig(const IceConfig& config) = 0;
 
   // Begins the process of attempting to make a connection to the other client.
   virtual void Connect() = 0;

@@ -74,9 +74,9 @@ class P2PTransportChannel : public TransportChannelImpl,
     return gathering_state_;
   }
   void AddRemoteCandidate(const Candidate& candidate) override;
-  // Sets the receiving timeout in milliseconds.
+  // Sets the receiving timeout and gather_continually.
   // This also sets the check_receiving_delay proportionally.
-  void SetReceivingTimeout(int receiving_timeout_ms) override;
+  void SetIceConfig(const IceConfig& config) override;
 
   // From TransportChannel:
   int SendPacket(const char* data,
@@ -250,6 +250,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   int check_receiving_delay_;
   int receiving_timeout_;
   uint32 last_ping_sent_ms_ = 0;
+  bool gather_continually_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

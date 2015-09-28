@@ -125,10 +125,10 @@ bool Transport::GetRemoteSSLCertificate(rtc::SSLCertificate** cert) {
   return iter->second->GetRemoteSSLCertificate(cert);
 }
 
-void Transport::SetChannelReceivingTimeout(int timeout_ms) {
-  channel_receiving_timeout_ = timeout_ms;
+void Transport::SetIceConfig(const IceConfig& config) {
+  ice_config_ = config;
   for (const auto& kv : channels_) {
-    kv.second->SetReceivingTimeout(timeout_ms);
+    kv.second->SetIceConfig(ice_config_);
   }
 }
 
@@ -229,7 +229,7 @@ TransportChannelImpl* Transport::CreateChannel(int component) {
   // Push down our transport state to the new channel.
   impl->SetIceRole(ice_role_);
   impl->SetIceTiebreaker(tiebreaker_);
-  impl->SetReceivingTimeout(channel_receiving_timeout_);
+  impl->SetIceConfig(ice_config_);
   // TODO(ronghuawu): Change CreateChannel to be able to return error since
   // below Apply**Description calls can fail.
   if (local_description_)

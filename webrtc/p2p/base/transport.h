@@ -139,6 +139,14 @@ struct TransportStats {
   TransportChannelStatsList channel_stats;
 };
 
+// Information about ICE configuration.
+struct IceConfig {
+  // The ICE connection receiving timeout value.
+  int receiving_timeout_ms = -1;
+  // If true, the most recent port allocator session will keep on running.
+  bool gather_continually = false;
+};
+
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);
 
 bool IceCredentialsChanged(const std::string& old_ufrag,
@@ -197,7 +205,7 @@ class Transport : public sigslot::has_slots<> {
   void SetIceTiebreaker(uint64 IceTiebreaker) { tiebreaker_ = IceTiebreaker; }
   uint64 IceTiebreaker() { return tiebreaker_; }
 
-  void SetChannelReceivingTimeout(int timeout_ms);
+  void SetIceConfig(const IceConfig& config);
 
   // Must be called before applying local session description.
   virtual void SetLocalCertificate(
@@ -399,7 +407,7 @@ class Transport : public sigslot::has_slots<> {
   IceRole ice_role_ = ICEROLE_UNKNOWN;
   uint64 tiebreaker_ = 0;
   IceMode remote_ice_mode_ = ICEMODE_FULL;
-  int channel_receiving_timeout_ = -1;
+  IceConfig ice_config_;
   rtc::scoped_ptr<TransportDescription> local_description_;
   rtc::scoped_ptr<TransportDescription> remote_description_;
   bool local_description_set_ = false;

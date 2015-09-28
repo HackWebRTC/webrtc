@@ -53,10 +53,9 @@ bool TransportController::SetSslMaxProtocolVersion(
       &TransportController::SetSslMaxProtocolVersion_w, this, version));
 }
 
-void TransportController::SetIceConnectionReceivingTimeout(int timeout_ms) {
+void TransportController::SetIceConfig(const IceConfig& config) {
   worker_thread_->Invoke<void>(
-      rtc::Bind(&TransportController::SetIceConnectionReceivingTimeout_w, this,
-                timeout_ms));
+      rtc::Bind(&TransportController::SetIceConfig_w, this, config));
 }
 
 void TransportController::SetIceRole(IceRole ice_role) {
@@ -235,7 +234,7 @@ Transport* TransportController::GetOrCreateTransport_w(
   // The stuff below happens outside of CreateTransport_w so that unit tests
   // can override CreateTransport_w to return a different type of transport.
   transport->SetSslMaxProtocolVersion(ssl_max_version_);
-  transport->SetChannelReceivingTimeout(ice_receiving_timeout_ms_);
+  transport->SetIceConfig(ice_config_);
   transport->SetIceRole(ice_role_);
   transport->SetIceTiebreaker(ice_tiebreaker_);
   if (certificate_) {
@@ -297,11 +296,11 @@ bool TransportController::SetSslMaxProtocolVersion_w(
   return true;
 }
 
-void TransportController::SetIceConnectionReceivingTimeout_w(int timeout_ms) {
+void TransportController::SetIceConfig_w(const IceConfig& config) {
   RTC_DCHECK(worker_thread_->IsCurrent());
-  ice_receiving_timeout_ms_ = timeout_ms;
+  ice_config_ = config;
   for (const auto& kv : transports_) {
-    kv.second->SetChannelReceivingTimeout(timeout_ms);
+    kv.second->SetIceConfig(ice_config_);
   }
 }
 

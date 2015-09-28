@@ -225,6 +225,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kTcpCandidatePolicyDisabled
   };
 
+  enum ContinualGatheringPolicy {
+    GATHER_ONCE,
+    GATHER_CONTINUALLY
+  };
+
   // TODO(hbos): Change into class with private data and public getters.
   struct RTCConfiguration {
     static const int kUndefined = -1;
@@ -245,6 +250,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     int audio_jitter_buffer_max_packets;
     bool audio_jitter_buffer_fast_accelerate;
     int ice_connection_receiving_timeout;
+    ContinualGatheringPolicy continual_gathering_policy;
     std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
 
     RTCConfiguration()
@@ -255,7 +261,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
           tcp_candidate_policy(kTcpCandidatePolicyEnabled),
           audio_jitter_buffer_max_packets(kAudioJitterBufferMaxPackets),
           audio_jitter_buffer_fast_accelerate(false),
-          ice_connection_receiving_timeout(kUndefined) {}
+          ice_connection_receiving_timeout(kUndefined),
+          continual_gathering_policy(GATHER_ONCE) {}
   };
 
   struct RTCOfferAnswerOptions {

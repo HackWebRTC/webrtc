@@ -135,6 +135,11 @@ public class PeerConnection {
     RSA, ECDSA
   }
 
+  /** Java version of PeerConnectionInterface.ContinualGatheringPolicy */
+  public enum ContinualGatheringPolicy {
+    GATHER_ONCE, GATHER_CONTINUALLY
+  }
+
   /** Java version of PeerConnectionInterface.RTCConfiguration */
   public static class RTCConfiguration {
     public IceTransportsType iceTransportsType;
@@ -146,6 +151,7 @@ public class PeerConnection {
     public boolean audioJitterBufferFastAccelerate;
     public int iceConnectionReceivingTimeout;
     public KeyType keyType;
+    public ContinualGatheringPolicy continualGatheringPolicy;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
@@ -157,6 +163,7 @@ public class PeerConnection {
       audioJitterBufferFastAccelerate = false;
       iceConnectionReceivingTimeout = -1;
       keyType = KeyType.ECDSA;
+      continualGatheringPolicy = ContinualGatheringPolicy.GATHER_ONCE;
     }
   };
 

@@ -134,6 +134,14 @@ class TransportControllerTest : public testing::Test,
     channel2->SetConnectionCount(1);
   }
 
+  cricket::IceConfig CreateIceConfig(int receiving_timeout_ms,
+                                     bool gather_continually) {
+    cricket::IceConfig config;
+    config.receiving_timeout_ms = receiving_timeout_ms;
+    config.gather_continually = gather_continually;
+    return config;
+  }
+
  protected:
   void OnConnectionState(IceConnectionState state) {
     if (!signaling_thread_->IsCurrent()) {
@@ -189,17 +197,19 @@ class TransportControllerTest : public testing::Test,
   bool signaled_on_non_signaling_thread_ = false;
 };
 
-TEST_F(TransportControllerTest, TestSetIceReceivingTimeout) {
+TEST_F(TransportControllerTest, TestSetIceConfig) {
   FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
 
-  transport_controller_->SetIceConnectionReceivingTimeout(1000);
+  transport_controller_->SetIceConfig(CreateIceConfig(1000, true));
   EXPECT_EQ(1000, channel1->receiving_timeout());
+  EXPECT_TRUE(channel1->gather_continually());
 
   // Test that value stored in controller is applied to new channels.
   FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
   EXPECT_EQ(1000, channel2->receiving_timeout());
+  EXPECT_TRUE(channel2->gather_continually());
 }
 
 TEST_F(TransportControllerTest, TestSetSslMaxProtocolVersion) {
