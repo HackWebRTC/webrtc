@@ -63,6 +63,9 @@ class ChannelGroup : public BitrateObserver {
   ViEChannel* GetChannel(int channel_id) const;
   ViEEncoder* GetEncoder(int channel_id) const;
   void SetSyncInterface(VoEVideoSync* sync_interface);
+  void SetBweBitrates(int min_bitrate_bps,
+                      int start_bitrate_bps,
+                      int max_bitrate_bps);
 
   void SetChannelRembStatus(bool sender, bool receiver, ViEChannel* channel);
 
@@ -110,6 +113,7 @@ class ChannelGroup : public BitrateObserver {
 
   rtc::scoped_ptr<BitrateController> bitrate_controller_;
   rtc::scoped_ptr<TransportFeedbackAdapter> transport_feedback_adapter_;
+  int min_bitrate_bps_;
 };
 
 }  // namespace webrtc

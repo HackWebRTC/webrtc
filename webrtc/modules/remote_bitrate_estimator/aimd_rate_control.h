@@ -23,13 +23,13 @@ namespace webrtc {
 // multiplicatively.
 class AimdRateControl {
  public:
-  explicit AimdRateControl(uint32_t min_bitrate_bps);
+  AimdRateControl();
   virtual ~AimdRateControl() {}
 
   // Returns true if there is a valid estimate of the incoming bitrate, false
   // otherwise.
   bool ValidEstimate() const;
-  uint32_t GetMinBitrate() const;
+  void SetMinBitrate(int min_bitrate_bps);
   int64_t GetFeedbackInterval() const;
   // Returns true if the bitrate estimate hasn't been changed for more than
   // an RTT, or if the incoming_bitrate is more than 5% above the current
@@ -81,8 +81,6 @@ class AimdRateControl {
   int64_t rtt_;
   int64_t time_of_last_log_;
   bool in_experiment_;
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AimdRateControl);
 };
 }  // namespace webrtc
 

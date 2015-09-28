@@ -171,9 +171,9 @@ class RtpRtcpObserver {
   rtc::CriticalSection crit_;
   const rtc::scoped_ptr<EventWrapper> observation_complete_;
   const rtc::scoped_ptr<RtpHeaderParser> parser_;
+  PacketTransport send_transport_, receive_transport_;
 
  private:
-  PacketTransport send_transport_, receive_transport_;
   unsigned int timeout_ms_;
 };
 }  // namespace test

@@ -91,6 +91,8 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   // Returns true if the statistics are available.
   virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const = 0;
 
+  virtual void SetMinBitrate(int min_bitrate_bps) = 0;
+
  protected:
   static const int64_t kProcessIntervalMs = 500;
   static const int64_t kStreamTimeOutMs = 2000;

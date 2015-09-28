@@ -21,8 +21,6 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/test/rtp_file_reader.h"
 
-const int kMinBitrateBps = 30000;
-
 namespace flags {
 
 DEFINE_string(extension_type,
@@ -116,14 +114,14 @@ bool ParseArgsAndSetupEstimator(int argc,
   if (estimator) {
     switch (extension) {
       case webrtc::kRtpExtensionAbsoluteSendTime: {
-        *estimator = new webrtc::RemoteBitrateEstimatorAbsSendTime(
-            observer, clock, kMinBitrateBps);
+        *estimator =
+            new webrtc::RemoteBitrateEstimatorAbsSendTime(observer, clock);
           *estimator_used = "AbsoluteSendTimeRemoteBitrateEstimator";
           break;
         }
       case webrtc::kRtpExtensionTransmissionTimeOffset: {
-        *estimator = new webrtc::RemoteBitrateEstimatorSingleStream(
-            observer, clock, kMinBitrateBps);
+        *estimator =
+            new webrtc::RemoteBitrateEstimatorSingleStream(observer, clock);
           *estimator_used = "RemoteBitrateEstimator";
           break;
         }

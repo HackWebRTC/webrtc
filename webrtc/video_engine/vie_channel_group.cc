@@ -43,12 +43,10 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
       : observer_(observer),
         clock_(clock),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-        min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
-        rbe_(new RemoteBitrateEstimatorSingleStream(observer_,
-                                                    clock_,
-                                                    min_bitrate_bps_)),
+        rbe_(new RemoteBitrateEstimatorSingleStream(observer_, clock_)),
         using_absolute_send_time_(false),
-        packets_since_absolute_send_time_(0) {}
+        packets_since_absolute_send_time_(0),
+        min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps) {}
 
   virtual ~WrappingBitrateEstimator() {}
 
@@ -92,6 +90,12 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     return rbe_->GetStats(output);
   }
 
+  void SetMinBitrate(int min_bitrate_bps) {
+    CriticalSectionScoped cs(crit_sect_.get());
+    rbe_->SetMinBitrate(min_bitrate_bps);
+    min_bitrate_bps_ = min_bitrate_bps;
+  }
+
  private:
   void PickEstimatorFromHeader(const RTPHeader& header)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
@@ -121,21 +125,20 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   // Instantiate RBE for Time Offset or Absolute Send Time extensions.
   void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
     if (using_absolute_send_time_) {
-      rbe_.reset(new RemoteBitrateEstimatorAbsSendTime(observer_, clock_,
-                                                       min_bitrate_bps_));
+      rbe_.reset(new RemoteBitrateEstimatorAbsSendTime(observer_, clock_));
     } else {
-      rbe_.reset(new RemoteBitrateEstimatorSingleStream(observer_, clock_,
-                                                        min_bitrate_bps_));
+      rbe_.reset(new RemoteBitrateEstimatorSingleStream(observer_, clock_));
     }
+    rbe_->SetMinBitrate(min_bitrate_bps_);
   }
 
   RemoteBitrateObserver* observer_;
   Clock* clock_;
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
-  const uint32_t min_bitrate_bps_;
   rtc::scoped_ptr<RemoteBitrateEstimator> rbe_;
   bool using_absolute_send_time_;
   uint32_t packets_since_absolute_send_time_;
+  int min_bitrate_bps_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WrappingBitrateEstimator);
 };
@@ -165,7 +168,8 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
       // construction.
       bitrate_controller_(
           BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                     this)) {
+                                                     this)),
+      min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps) {
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
 
   pacer_thread_->RegisterModule(pacer_.get());
@@ -213,8 +217,9 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
           Clock::GetRealTimeClock(), process_thread_));
       transport_feedback_adapter_->SetBitrateEstimator(
           new RemoteBitrateEstimatorAbsSendTime(
-              transport_feedback_adapter_.get(), Clock::GetRealTimeClock(),
-              RemoteBitrateEstimator::kDefaultMinBitrateBps));
+              transport_feedback_adapter_.get(), Clock::GetRealTimeClock()));
+      transport_feedback_adapter_->GetBitrateEstimator()->SetMinBitrate(
+          min_bitrate_bps_);
       call_stats_->RegisterStatsObserver(transport_feedback_adapter_.get());
     }
     transport_feedback_observer = transport_feedback_adapter_.get();
@@ -362,6 +367,20 @@ ViEChannel* ChannelGroup::PopChannel(int channel_id) {
 void ChannelGroup::SetSyncInterface(VoEVideoSync* sync_interface) {
   for (auto channel : channel_map_)
     channel.second->SetVoiceChannel(-1, sync_interface);
+}
+
+void ChannelGroup::SetBweBitrates(int min_bitrate_bps,
+                                  int start_bitrate_bps,
+                                  int max_bitrate_bps) {
+  if (start_bitrate_bps > 0)
+    bitrate_controller_->SetStartBitrate(start_bitrate_bps);
+  bitrate_controller_->SetMinMaxBitrate(min_bitrate_bps, max_bitrate_bps);
+  if (remote_bitrate_estimator_.get())
+    remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);
+  if (transport_feedback_adapter_.get())
+    transport_feedback_adapter_->GetBitrateEstimator()->SetMinBitrate(
+        min_bitrate_bps);
+  min_bitrate_bps_ = min_bitrate_bps;
 }
 
 BitrateController* ChannelGroup::GetBitrateController() const {

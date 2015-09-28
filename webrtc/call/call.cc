@@ -85,9 +85,6 @@ class Call : public webrtc::Call, public PacketReceiver {
                             size_t length,
                             const PacketTime& packet_time);
 
-  void SetBitrateControllerConfig(
-      const webrtc::Call::Config::BitrateConfig& bitrate_config);
-
   void ConfigureSync(const std::string& sync_group)
       EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
 
@@ -159,7 +156,9 @@ Call::Call(const Call::Config& config)
   Trace::CreateTrace();
   module_process_thread_->Start();
 
-  SetBitrateControllerConfig(config_.bitrate_config);
+  channel_group_->SetBweBitrates(config_.bitrate_config.min_bitrate_bps,
+                                 config_.bitrate_config.start_bitrate_bps,
+                                 config_.bitrate_config.max_bitrate_bps);
 }
 
 Call::~Call() {
@@ -387,17 +386,9 @@ void Call::SetBitrateConfig(
     return;
   }
   config_.bitrate_config = bitrate_config;
-  SetBitrateControllerConfig(bitrate_config);
-}
-
-void Call::SetBitrateControllerConfig(
-    const webrtc::Call::Config::BitrateConfig& bitrate_config) {
-  BitrateController* bitrate_controller =
-      channel_group_->GetBitrateController();
-  if (bitrate_config.start_bitrate_bps > 0)
-    bitrate_controller->SetStartBitrate(bitrate_config.start_bitrate_bps);
-  bitrate_controller->SetMinMaxBitrate(bitrate_config.min_bitrate_bps,
-                                       bitrate_config.max_bitrate_bps);
+  channel_group_->SetBweBitrates(bitrate_config.min_bitrate_bps,
+                                 bitrate_config.start_bitrate_bps,
+                                 bitrate_config.max_bitrate_bps);
 }
 
 void Call::SignalNetworkState(NetworkState state) {

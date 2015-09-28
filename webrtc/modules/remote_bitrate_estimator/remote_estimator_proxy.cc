@@ -63,8 +63,6 @@ bool RemoteEstimatorProxy::GetStats(
   return false;
 }
 
-void RemoteEstimatorProxy::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
-}
 
 int64_t RemoteEstimatorProxy::TimeUntilNextProcess() {
   int64_t now = clock_->TimeInMilliseconds();

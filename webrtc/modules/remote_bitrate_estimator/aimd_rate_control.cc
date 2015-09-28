@@ -15,7 +15,9 @@
 #include <cmath>
 
 #include "webrtc/base/checks.h"
+
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 
 namespace webrtc {
@@ -25,8 +27,9 @@ static const int64_t kLogIntervalMs = 1000;
 static const double kWithinIncomingBitrateHysteresis = 1.05;
 static const int64_t kMaxFeedbackIntervalMs = 1000;
 
-AimdRateControl::AimdRateControl(uint32_t min_bitrate_bps)
-    : min_configured_bitrate_bps_(min_bitrate_bps),
+AimdRateControl::AimdRateControl()
+    : min_configured_bitrate_bps_(
+          RemoteBitrateEstimator::kDefaultMinBitrateBps),
       max_configured_bitrate_bps_(30000000),
       current_bitrate_bps_(max_configured_bitrate_bps_),
       avg_max_bitrate_kbps_(-1.0f),
@@ -41,11 +44,11 @@ AimdRateControl::AimdRateControl(uint32_t min_bitrate_bps)
       beta_(0.85f),
       rtt_(kDefaultRttMs),
       time_of_last_log_(-1),
-      in_experiment_(AdaptiveThresholdExperimentIsEnabled()) {
-}
+      in_experiment_(AdaptiveThresholdExperimentIsEnabled()) {}
 
-uint32_t AimdRateControl::GetMinBitrate() const {
-  return min_configured_bitrate_bps_;
+void AimdRateControl::SetMinBitrate(int min_bitrate_bps) {
+  min_configured_bitrate_bps_ = min_bitrate_bps;
+  current_bitrate_bps_ = std::max<int>(min_bitrate_bps, current_bitrate_bps_);
 }
 
 bool AimdRateControl::ValidEstimate() const {

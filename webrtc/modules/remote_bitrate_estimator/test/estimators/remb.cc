@@ -69,15 +69,13 @@ RembReceiver::RembReceiver(int flow_id, bool plot)
       recv_stats_(ReceiveStatistics::Create(&clock_)),
       latest_estimate_bps_(-1),
       last_feedback_ms_(-1),
-      estimator_(new RemoteBitrateEstimatorAbsSendTime(
-          this,
-          &clock_,
-          kRemoteBitrateEstimatorMinBitrateBps)) {
+      estimator_(new RemoteBitrateEstimatorAbsSendTime(this, &clock_)) {
   std::stringstream ss;
   ss << "Estimate_" << flow_id_ << "#1";
   estimate_log_prefix_ = ss.str();
   // Default RTT in RemoteRateControl is 200 ms ; 50 ms is more realistic.
   estimator_->OnRttUpdate(50, 50);
+  estimator_->SetMinBitrate(kRemoteBitrateEstimatorMinBitrateBps);
 }
 
 RembReceiver::~RembReceiver() {

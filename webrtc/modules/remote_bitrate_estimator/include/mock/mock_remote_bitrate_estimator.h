@@ -34,6 +34,7 @@ class MockRemoteBitrateEstimator : public RemoteBitrateEstimator {
   // From Module.
   MOCK_METHOD0(TimeUntilNextProcess, int64_t());
   MOCK_METHOD0(Process, int32_t());
+  MOCK_METHOD1(SetMinBitrate, void(int));
 };
 
 }  // namespace webrtc

@@ -36,133 +36,97 @@ class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpRtcp;
 
-class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
+class RampUpTester : public test::EndToEndTest {
  public:
-  typedef std::map<uint32_t, int> BytesSentMap;
-  typedef std::map<uint32_t, uint32_t> SsrcMap;
-  StreamObserver(const SsrcMap& rtx_media_ssrcs,
-                 newapi::Transport* feedback_transport,
-                 Clock* clock);
-  virtual ~StreamObserver();
+  RampUpTester(size_t num_streams,
+               unsigned int start_bitrate_bps,
+               const std::string& extension_type,
+               bool rtx,
+               bool red);
+  ~RampUpTester() override;
 
-  void set_expected_bitrate_bps(unsigned int expected_bitrate_bps);
+  void PerformTest() override;
 
-  void set_start_bitrate_bps(unsigned int start_bitrate_bps);
+ protected:
+  virtual bool PollStats();
 
-  void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                               unsigned int bitrate) override;
+  void GetStats(const VideoSendStream::StreamStats& stream,
+                size_t* total_packets_sent,
+                size_t* total_sent,
+                size_t* padding_sent,
+                size_t* media_sent) const;
 
-  bool SendRtp(const uint8_t* packet, size_t length) override;
-
-  bool SendRtcp(const uint8_t* packet, size_t length) override;
-
-  EventTypeWrapper Wait();
-
-  void SetRemoteBitrateEstimator(RemoteBitrateEstimator* rbe);
-
-  PacketRouter* GetPacketRouter();
-
- private:
   void ReportResult(const std::string& measurement,
                     size_t value,
-                    const std::string& units);
-  void TriggerTestDone() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+                    const std::string& units) const;
+  void TriggerTestDone();
 
+  rtc::Event event_;
   Clock* const clock_;
-  const rtc::scoped_ptr<EventWrapper> test_done_;
-  const rtc::scoped_ptr<RtpHeaderParser> rtp_parser_;
-  rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
-  rtc::scoped_ptr<PacketRouter> packet_router_;
-  internal::TransportAdapter feedback_transport_;
-  const rtc::scoped_ptr<ReceiveStatistics> receive_stats_;
-  const rtc::scoped_ptr<RTPPayloadRegistry> payload_registry_;
-  rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
-
-  rtc::CriticalSection crit_;
-  unsigned int expected_bitrate_bps_ GUARDED_BY(crit_);
-  unsigned int start_bitrate_bps_ GUARDED_BY(crit_);
-  SsrcMap rtx_media_ssrcs_ GUARDED_BY(crit_);
-  size_t total_sent_ GUARDED_BY(crit_);
-  size_t padding_sent_ GUARDED_BY(crit_);
-  size_t rtx_media_sent_ GUARDED_BY(crit_);
-  int total_packets_sent_ GUARDED_BY(crit_);
-  int padding_packets_sent_ GUARDED_BY(crit_);
-  int rtx_media_packets_sent_ GUARDED_BY(crit_);
-  int64_t test_start_ms_ GUARDED_BY(crit_);
-  int64_t ramp_up_finished_ms_ GUARDED_BY(crit_);
-};
-
-class LowRateStreamObserver : public test::DirectTransport,
-                              public RemoteBitrateObserver,
-                              public PacketReceiver {
- public:
-  LowRateStreamObserver(newapi::Transport* feedback_transport,
-                        Clock* clock,
-                        size_t number_of_streams,
-                        bool rtx_used);
-
-  virtual void SetSendStream(VideoSendStream* send_stream);
-
-  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate);
-
-  bool SendRtp(const uint8_t* data, size_t length) override;
-
-  DeliveryStatus DeliverPacket(MediaType media_type,
-                               const uint8_t* packet,
-                               size_t length,
-                               const PacketTime& packet_time) override;
-
-  bool SendRtcp(const uint8_t* packet, size_t length) override;
-
-  // Produces a string similar to "1stream_nortx", depending on the values of
-  // number_of_streams_ and rtx_used_;
-  std::string GetModifierString();
-
-  // This method defines the state machine for the ramp up-down-up test.
-  void EvolveTestState(unsigned int bitrate_bps);
-
-  EventTypeWrapper Wait();
+  const size_t num_streams_;
+  const bool rtx_;
+  const bool red_;
+  VideoSendStream* send_stream_;
 
  private:
-  static const unsigned int kHighBandwidthLimitBps = 80000;
-  static const unsigned int kExpectedHighBitrateBps = 60000;
-  static const unsigned int kLowBandwidthLimitBps = 20000;
-  static const unsigned int kExpectedLowBitrateBps = 20000;
-  enum TestStates { kFirstRampup, kLowRate, kSecondRampup };
+  typedef std::map<uint32_t, uint32_t> SsrcMap;
 
-  Clock* const clock_;
-  const size_t number_of_streams_;
-  const bool rtx_used_;
-  const rtc::scoped_ptr<EventWrapper> test_done_;
-  const rtc::scoped_ptr<RtpHeaderParser> rtp_parser_;
-  const rtc::scoped_ptr<RTPPayloadRegistry> payload_registry_;
-  rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
-  internal::TransportAdapter feedback_transport_;
-  const rtc::scoped_ptr<ReceiveStatistics> receive_stats_;
-  rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  Call::Config GetSenderCallConfig() override;
+  void OnStreamsCreated(
+      VideoSendStream* send_stream,
+      const std::vector<VideoReceiveStream*>& receive_streams) override;
+  size_t GetNumStreams() const;
+  void ModifyConfigs(VideoSendStream::Config* send_config,
+                     std::vector<VideoReceiveStream::Config>* receive_configs,
+                     VideoEncoderConfig* encoder_config) override;
+  void OnCallsCreated(Call* sender_call, Call* receiver_call) override;
 
-  rtc::CriticalSection crit_;
-  VideoSendStream* send_stream_ GUARDED_BY(crit_);
-  FakeNetworkPipe::Config forward_transport_config_ GUARDED_BY(crit_);
-  TestStates test_state_ GUARDED_BY(crit_);
-  int64_t state_start_ms_ GUARDED_BY(crit_);
-  int64_t interval_start_ms_ GUARDED_BY(crit_);
-  unsigned int last_remb_bps_ GUARDED_BY(crit_);
-  size_t sent_bytes_ GUARDED_BY(crit_);
-  size_t total_overuse_bytes_ GUARDED_BY(crit_);
-  bool suspended_in_stats_ GUARDED_BY(crit_);
+  static bool BitrateStatsPollingThread(void* obj);
+
+  const int start_bitrate_bps_;
+  bool start_bitrate_verified_;
+  int expected_bitrate_bps_;
+  int64_t test_start_ms_;
+  int64_t ramp_up_finished_ms_;
+
+  const std::string extension_type_;
+  std::vector<uint32_t> ssrcs_;
+  std::vector<uint32_t> rtx_ssrcs_;
+  SsrcMap rtx_ssrc_map_;
+
+  rtc::scoped_ptr<ThreadWrapper> poller_thread_;
+  Call* sender_call_;
 };
 
-class RampUpTest : public test::CallTest {
- protected:
-  void RunRampUpTest(size_t num_streams,
+class RampUpDownUpTester : public RampUpTester {
+ public:
+  RampUpDownUpTester(size_t num_streams,
                      unsigned int start_bitrate_bps,
                      const std::string& extension_type,
                      bool rtx,
                      bool red);
+  ~RampUpDownUpTester() override;
 
-  void RunRampUpDownUpTest(size_t number_of_streams, bool rtx, bool red);
+ protected:
+  bool PollStats() override;
+
+ private:
+  static const int kHighBandwidthLimitBps = 80000;
+  static const int kExpectedHighBitrateBps = 60000;
+  static const int kLowBandwidthLimitBps = 20000;
+  static const int kExpectedLowBitrateBps = 20000;
+  enum TestStates { kFirstRampup, kLowRate, kSecondRampup };
+
+  Call::Config GetReceiverCallConfig() override;
+
+  std::string GetModifierString() const;
+  void EvolveTestState(int bitrate_bps, bool suspended);
+
+  FakeNetworkPipe::Config forward_transport_config_;
+  TestStates test_state_;
+  int64_t state_start_ms_;
+  int64_t interval_start_ms_;
+  int sent_bytes_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_VIDEO_RAMPUP_TESTS_H_

@@ -58,16 +58,13 @@ class TestTransport : public Transport,
 
 class RtcpReceiverTest : public ::testing::Test {
  protected:
-  static const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
-
   RtcpReceiverTest()
       : over_use_detector_options_(),
         system_clock_(1335900000),
         remote_bitrate_observer_(),
-        remote_bitrate_estimator_(new RemoteBitrateEstimatorSingleStream(
-            &remote_bitrate_observer_,
-            &system_clock_,
-            kRemoteBitrateEstimatorMinBitrateBps)) {
+        remote_bitrate_estimator_(
+            new RemoteBitrateEstimatorSingleStream(&remote_bitrate_observer_,
+                                                   &system_clock_)) {
     test_transport_ = new TestTransport();
 
     RtpRtcp::Configuration configuration;

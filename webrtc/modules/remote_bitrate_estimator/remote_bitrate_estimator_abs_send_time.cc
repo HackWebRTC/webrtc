@@ -89,8 +89,7 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
 
   RemoteBitrateEstimatorAbsSendTime::RemoteBitrateEstimatorAbsSendTime(
       RemoteBitrateObserver* observer,
-      Clock* clock,
-      uint32_t min_bitrate_bps)
+      Clock* clock)
       : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         observer_(observer),
         clock_(clock),
@@ -99,7 +98,6 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
         estimator_(OverUseDetectorOptions()),
         detector_(OverUseDetectorOptions()),
         incoming_bitrate_(kBitrateWindowMs, 8000),
-        remote_rate_(min_bitrate_bps),
         last_process_time_(-1),
         process_interval_ms_(kProcessIntervalMs),
         total_propagation_delta_ms_(0),
@@ -436,5 +434,10 @@ void RemoteBitrateEstimatorAbsSendTime::UpdateStats(int propagation_delta_ms,
 
   total_propagation_delta_ms_ =
       std::max(total_propagation_delta_ms_ + propagation_delta_ms, 0);
+}
+
+void RemoteBitrateEstimatorAbsSendTime::SetMinBitrate(int min_bitrate_bps) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  remote_rate_.SetMinBitrate(min_bitrate_bps);
 }
 }  // namespace webrtc

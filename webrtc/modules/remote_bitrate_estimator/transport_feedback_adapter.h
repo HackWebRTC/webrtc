@@ -39,6 +39,10 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
 
   void SetBitrateEstimator(RemoteBitrateEstimator* rbe);
 
+  RemoteBitrateEstimator* GetBitrateEstimator() const {
+    return bitrate_estimator_.get();
+  }
+
  private:
   void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                unsigned int bitrate) override;

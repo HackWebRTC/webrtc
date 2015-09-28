@@ -55,8 +55,6 @@ class TestTransport : public Transport {
 
 class RtcpFormatRembTest : public ::testing::Test {
  protected:
-  static const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
-
   RtcpFormatRembTest()
       : over_use_detector_options_(),
         system_clock_(Clock::GetRealTimeClock()),
@@ -66,10 +64,9 @@ class RtcpFormatRembTest : public ::testing::Test {
         rtcp_receiver_(nullptr),
         test_transport_(nullptr),
         remote_bitrate_observer_(),
-        remote_bitrate_estimator_(new RemoteBitrateEstimatorSingleStream(
-            &remote_bitrate_observer_,
-            system_clock_,
-            kRemoteBitrateEstimatorMinBitrateBps)) {}
+        remote_bitrate_estimator_(
+            new RemoteBitrateEstimatorSingleStream(&remote_bitrate_observer_,
+                                                   system_clock_)) {}
   void SetUp() override;
   void TearDown() override;
 
