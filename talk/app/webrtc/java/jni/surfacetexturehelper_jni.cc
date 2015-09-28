@@ -63,7 +63,7 @@ SurfaceTextureHelper::SurfaceTextureHelper(JNIEnv* jni,
                                            jobject egl_shared_context)
     : j_surface_texture_helper_class_(
           jni,
-          jni->FindClass("org/webrtc/SurfaceTextureHelper")),
+          FindClass(jni, "org/webrtc/SurfaceTextureHelper")),
       j_surface_texture_helper_(
           jni,
           jni->NewObject(*j_surface_texture_helper_class_,

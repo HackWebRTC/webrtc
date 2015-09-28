@@ -83,6 +83,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$VideoCodecType");
+  LoadClass(jni, "org/webrtc/SurfaceTextureHelper");
   jclass j_egl_base_class = GetClass("org/webrtc/EglBase");
   jmethodID j_is_egl14_supported_method = jni->GetStaticMethodID(
       j_egl_base_class, "isEGL14Supported", "()Z");
