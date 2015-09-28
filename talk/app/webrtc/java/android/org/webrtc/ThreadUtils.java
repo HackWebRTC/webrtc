@@ -27,20 +27,32 @@
 
 package org.webrtc;
 
-public class ThreadUtils {
+import java.util.concurrent.CountDownLatch;
+
+final class ThreadUtils {
   /**
-   * Helper function to make sure a thread is joined without getting interrupted. This should be
-   * used in cases where |thread| is doing some critical work, e.g. cleanup, that must complete
-   * before returning. The thread interruption flag is set if an interrupt occurs during join().
+   * Utility interface to be used with executeUninterruptibly() to wait for blocking operations
+   * to complete without getting interrupted..
    */
-  public static void joinUninterruptibly(Thread thread) {
+  public interface BlockingOperation {
+    void run() throws InterruptedException;
+  }
+
+  /**
+   * Utility method to make sure a blocking operation is executed to completion without getting
+   * interrupted. This should be used in cases where the operation is waiting for some critical
+   * work, e.g. cleanup, that must complete before returning. If the thread is interrupted during
+   * the blocking operation, this function will re-run the operation until completion, and only then
+   * re-interrupt the thread.
+   */
+  public static void executeUninterruptibly(BlockingOperation operation) {
     boolean wasInterrupted = false;
     while (true) {
       try {
-        thread.join();
+        operation.run();
         break;
       } catch (InterruptedException e) {
-        // Someone is asking us to return early at our convenience. We can't cancel this join(),
+        // Someone is asking us to return early at our convenience. We can't cancel this operation,
         // but we should preserve the information and pass it along.
         wasInterrupted = true;
       }
@@ -49,5 +61,23 @@ public class ThreadUtils {
     if (wasInterrupted) {
       Thread.currentThread().interrupt();
     }
+  }
+
+  public static void joinUninterruptibly(final Thread thread) {
+    executeUninterruptibly(new BlockingOperation() {
+      @Override
+      public void run() throws InterruptedException {
+        thread.join();
+      }
+    });
+  }
+
+  public static void awaitUninterruptibly(final CountDownLatch latch) {
+    executeUninterruptibly(new BlockingOperation() {
+      @Override
+      public void run() throws InterruptedException {
+        latch.await();
+      }
+    });
   }
 }

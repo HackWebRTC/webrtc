@@ -35,7 +35,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
-import android.util.Log;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -159,20 +158,7 @@ final class SurfaceTextureHelper {
         }
       }
     });
-    boolean wasInterrupted = true;
-    while(true) {
-      try {
-        barrier.await();
-        break;
-      } catch (InterruptedException e) {
-        // Someone is asking us to return early at our convenience. We must wait until the
-        // |isQuitting| flag has been set but we should preserve the information and pass it along.
-        wasInterrupted = true;
-      }
-    }
-    if (wasInterrupted) {
-      Thread.currentThread().interrupt();
-    }
+    ThreadUtils.awaitUninterruptibly(barrier);
   }
 
   private void tryDeliverTextureFrame() {
@@ -195,18 +181,15 @@ final class SurfaceTextureHelper {
   }
 
   private void release() {
+    if (Thread.currentThread() != thread) {
+      throw new IllegalStateException("Wrong thread.");
+    }
     if (isTextureInUse || !isQuitting) {
       throw new IllegalStateException("Unexpected release.");
     }
-    // Release GL resources on dedicated thread.
-    handler.post(new Runnable() {
-      @Override public void run() {
-        GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
-        surfaceTexture.release();
-        eglBase.release();
-      }
-    });
-    // Quit safely to make sure the clean-up posted above is executed.
+    GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
+    surfaceTexture.release();
+    eglBase.release();
     thread.quitSafely();
   }
 }

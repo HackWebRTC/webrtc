@@ -27,6 +27,7 @@
 
 package org.webrtc;
 
+import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
@@ -85,6 +86,19 @@ public final class EglBase {
 
   // Create EGLSurface from the Android Surface.
   public void createSurface(Surface surface) {
+    createSurfaceInternal(surface);
+  }
+
+  // Create EGLSurface from the Android SurfaceTexture.
+  public void createSurface(SurfaceTexture surfaceTexture) {
+    createSurfaceInternal(surfaceTexture);
+  }
+
+  // Create EGLSurface from either Surface or SurfaceTexture.
+  private void createSurfaceInternal(Object surface) {
+    if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture)) {
+      throw new IllegalStateException("Input must be either a Surface or SurfaceTexture");
+    }
     checkIsNotReleased();
     if (configType == ConfigType.PIXEL_BUFFER) {
       Logging.w(TAG, "This EGL context is configured for PIXEL_BUFFER, but uses regular Surface");
