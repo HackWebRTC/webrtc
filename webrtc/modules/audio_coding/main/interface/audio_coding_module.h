@@ -54,19 +54,6 @@ class ACMVADCallback {
   virtual int32_t InFrameType(FrameType frame_type) = 0;
 };
 
-// Callback class used for reporting receiver statistics
-class ACMVQMonCallback {
- public:
-  virtual ~ACMVQMonCallback() {}
-
-  virtual int32_t NetEqStatistics(
-      const int32_t id,  // current ACM id
-      const uint16_t MIUsValid,  // valid voice duration in ms
-      const uint16_t MIUsReplaced,  // concealed voice duration in ms
-      const uint8_t eventFlags,  // concealed voice flags
-      const uint16_t delayMS) = 0;  // average delay in ms
-};
-
 class AudioCodingModule {
  protected:
   AudioCodingModule() {}
