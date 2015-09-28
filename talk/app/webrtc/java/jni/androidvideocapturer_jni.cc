@@ -176,13 +176,13 @@ void AndroidVideoCapturerJni::OnCapturerStarted(bool success) {
                       success);
 }
 
-void AndroidVideoCapturerJni::OnIncomingFrame(void* video_frame,
+void AndroidVideoCapturerJni::OnIncomingFrame(const uint8_t* video_frame,
                                               int length,
                                               int width,
                                               int height,
                                               int rotation,
                                               int64 time_stamp) {
-  const uint8_t* y_plane = static_cast<uint8_t*>(video_frame);
+  const uint8_t* y_plane = video_frame;
   // Android guarantees that the stride is a multiple of 16.
   // http://developer.android.com/reference/android/hardware/Camera.Parameters.html#setPreviewFormat%28int%29
   int y_stride;
@@ -215,20 +215,14 @@ void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,
 JNIEnv* AndroidVideoCapturerJni::jni() { return AttachCurrentThreadIfNeeded(); }
 
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnFrameCaptured)
-    (JNIEnv* jni, jclass, jlong j_capturer, jbyteArray j_frame, jint length,
+    (JNIEnv* jni, jclass, jlong j_capturer, jobject j_byte_buffer,
         jint width, jint height, jint rotation, jlong ts) {
-  jboolean is_copy = true;
-  jbyte* bytes = jni->GetByteArrayElements(j_frame, &is_copy);
-  // If this is a copy of the original frame, it means that the memory
-  // is not direct memory and thus VideoCapturerAndroid does not guarantee
-  // that the memory is valid when we have released |j_frame|.
-  // TODO(magjed): Move ReleaseByteArrayElements() into ReturnBuffer() and
-  // remove this check.
-  RTC_CHECK(!is_copy)
-      << "NativeObserver_nativeOnFrameCaptured: frame is a copy";
+  const uint8_t* bytes =
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_byte_buffer));
+  const int length = jni->GetDirectBufferCapacity(j_byte_buffer);
+  RTC_CHECK(bytes != nullptr && length != -1) << "ByteBuffer is not direct";
   reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)
       ->OnIncomingFrame(bytes, length, width, height, rotation, ts);
-  jni->ReleaseByteArrayElements(j_frame, bytes, JNI_ABORT);
 }
 
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeCapturerStarted)

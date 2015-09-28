@@ -569,12 +569,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
     rotation = (info.orientation + rotation) % 360;
     // Mark the frame owning |data| as used.
-    // Note that since data is directBuffer,
-    // data.length >= videoBuffers.frameSize.
-    if (videoBuffers.reserveByteBuffer(data, captureTimeNs)) {
+    final ByteBuffer buffer = videoBuffers.reserveByteBuffer(data, captureTimeNs);
+    if (buffer != null) {
       cameraFramesCount++;
-      frameObserver.OnFrameCaptured(data, videoBuffers.frameSize, captureFormat.width,
-          captureFormat.height, rotation, captureTimeNs);
+      frameObserver.OnFrameCaptured(buffer, captureFormat.width, captureFormat.height,
+          rotation, captureTimeNs);
     } else {
       Logging.w(TAG, "reserveByteBuffer failed - dropping frame.");
     }
@@ -656,7 +655,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
                    : " Pending buffers: " + pendingFramesTimeStamps() + "."));
     }
 
-    public boolean reserveByteBuffer(byte[] data, long timeStamp) {
+    // Returns the reserved byte buffer, or null on failure.
+    public ByteBuffer reserveByteBuffer(byte[] data, long timeStamp) {
       checkIsOnValidThread();
       final ByteBuffer buffer = queuedBuffers.remove(data);
       if (buffer == null) {
@@ -664,21 +664,21 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         // capture format in |startPreviewOnCameraThread|. Drop these old frames.
         Logging.w(TAG, "Received callback buffer from previous configuration with length: "
             + (data == null ? "null" : data.length));
-        return false;
+        return null;
       }
       if (buffer.capacity() != frameSize) {
         throw new IllegalStateException("Callback buffer has unexpected frame size");
       }
       if (pendingBuffers.containsKey(timeStamp)) {
         Logging.e(TAG, "Timestamp already present in pending buffers - they need to be unique");
-        return false;
+        return null;
       }
       pendingBuffers.put(timeStamp, buffer);
       if (queuedBuffers.isEmpty()) {
         Logging.v(TAG, "Camera is running out of capture buffers."
             + " Pending buffers: " + pendingFramesTimeStamps());
       }
-      return true;
+      return buffer;
     }
 
     public void returnBuffer(long timeStamp) {
@@ -722,8 +722,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
     // Delivers a captured frame. Called on a Java thread owned by
     // VideoCapturerAndroid.
-    abstract void OnFrameCaptured(byte[] data, int length, int width, int height,
-        int rotation, long timeStamp);
+    abstract void OnFrameCaptured(ByteBuffer buffer, int width, int height, int rotation,
+        long timeStamp);
 
     // Requests an output format from the video capturer. Captured frames
     // by the camera will be scaled/or dropped by the video capturer.
@@ -746,9 +746,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     @Override
-    public void OnFrameCaptured(byte[] data, int length, int width, int height,
-        int rotation, long timeStamp) {
-      nativeOnFrameCaptured(nativeCapturer, data, length, width, height, rotation, timeStamp);
+    public void OnFrameCaptured(ByteBuffer buffer, int width, int height, int rotation,
+        long timeStamp) {
+      nativeOnFrameCaptured(nativeCapturer, buffer, width, height, rotation, timeStamp);
     }
 
     @Override
@@ -759,7 +759,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     private native void nativeCapturerStarted(long nativeCapturer,
         boolean success);
     private native void nativeOnFrameCaptured(long nativeCapturer,
-        byte[] data, int length, int width, int height, int rotation, long timeStamp);
+        ByteBuffer buffer, int width, int height, int rotation, long timeStamp);
     private native void nativeOnOutputFormatRequest(long nativeCapturer,
         int width, int height, int fps);
   }
