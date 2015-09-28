@@ -28,6 +28,8 @@
 #ifndef TALK_APP_WEBRTC_MEDIASTREAMPROVIDER_H_
 #define TALK_APP_WEBRTC_MEDIASTREAMPROVIDER_H_
 
+#include "webrtc/base/basictypes.h"
+
 namespace cricket {
 
 class AudioRenderer;
@@ -39,6 +41,14 @@ struct VideoOptions;
 }  // namespace cricket
 
 namespace webrtc {
+
+// TODO(deadbeef): Change the key from an ssrc to a "sender_id" or
+// "receiver_id" string, which will be the MSID in the short term and MID in
+// the long term.
+
+// TODO(deadbeef): These interfaces are effectively just a way for the
+// RtpSenders/Receivers to get to the BaseChannels. These interfaces should be
+// refactored away eventually, as the classes converge.
 
 // This interface is called by AudioTrackHandler classes in mediastreamhandler.h
 // to change the settings of an audio track connected to certain PeerConnection.

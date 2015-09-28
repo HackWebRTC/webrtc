@@ -25,4 +25,46 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This file is currently stubbed so that Chromium's build files can be updated.
+// This file contains interfaces for RtpSenders
+// http://w3c.github.io/webrtc-pc/#rtcrtpsender-interface
+
+#ifndef TALK_APP_WEBRTC_RTPSENDERINTERFACE_H_
+#define TALK_APP_WEBRTC_RTPSENDERINTERFACE_H_
+
+#include <string>
+
+#include "talk/app/webrtc/proxy.h"
+#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+
+namespace webrtc {
+
+class RtpSenderInterface : public rtc::RefCountInterface {
+ public:
+  // Returns true if successful in setting the track.
+  // Fails if an audio track is set on a video RtpSender, or vice-versa.
+  virtual bool SetTrack(MediaStreamTrackInterface* track) = 0;
+  virtual rtc::scoped_refptr<MediaStreamTrackInterface> track() const = 0;
+
+  // Not to be confused with "mid", this is a field we can temporarily use
+  // to uniquely identify a receiver until we implement Unified Plan SDP.
+  virtual std::string id() const = 0;
+
+  virtual void Stop() = 0;
+
+ protected:
+  virtual ~RtpSenderInterface() {}
+};
+
+// Define proxy for RtpSenderInterface.
+BEGIN_PROXY_MAP(RtpSender)
+PROXY_METHOD1(bool, SetTrack, MediaStreamTrackInterface*)
+PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
+PROXY_CONSTMETHOD0(std::string, id)
+PROXY_METHOD0(void, Stop)
+END_PROXY()
+
+}  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_RTPSENDERINTERFACE_H_

@@ -739,14 +739,14 @@ void MediaStreamSignaling::MaybeCreateDefaultStream() {
                                              kDefaultAudioTrackLabel, 0));
 
     OnRemoteTrackSeen(kDefaultStreamLabel, kDefaultAudioTrackLabel, 0,
-                       cricket::MEDIA_TYPE_AUDIO);
+                      cricket::MEDIA_TYPE_AUDIO);
   }
   if (remote_info_.default_video_track_needed &&
       default_remote_stream->GetVideoTracks().size() == 0) {
     remote_video_tracks_.push_back(TrackInfo(kDefaultStreamLabel,
                                              kDefaultVideoTrackLabel, 0));
     OnRemoteTrackSeen(kDefaultStreamLabel, kDefaultVideoTrackLabel, 0,
-                       cricket::MEDIA_TYPE_VIDEO);
+                      cricket::MEDIA_TYPE_VIDEO);
   }
   if (default_created) {
     stream_observer_->OnAddRemoteStream(default_remote_stream);
@@ -807,17 +807,15 @@ void MediaStreamSignaling::UpdateLocalTracks(
                                                 track_id);
     if (!track_info) {
       current_tracks->push_back(TrackInfo(stream_label, track_id, ssrc));
-      OnLocalTrackSeen(stream_label, track_id, it->first_ssrc(),
-                       media_type);
+      OnLocalTrackSeen(stream_label, track_id, it->first_ssrc(), media_type);
     }
   }
 }
 
-void MediaStreamSignaling::OnLocalTrackSeen(
-    const std::string& stream_label,
-    const std::string& track_id,
-    uint32 ssrc,
-    cricket::MediaType media_type) {
+void MediaStreamSignaling::OnLocalTrackSeen(const std::string& stream_label,
+                                            const std::string& track_id,
+                                            uint32 ssrc,
+                                            cricket::MediaType media_type) {
   MediaStreamInterface* stream = local_streams_->find(stream_label);
   if (!stream) {
     LOG(LS_WARNING) << "An unknown local MediaStream with label "

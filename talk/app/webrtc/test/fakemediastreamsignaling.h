@@ -85,51 +85,34 @@ class FakeMediaStreamSignaling : public webrtc::MediaStreamSignaling,
   }
 
   // Implements MediaStreamSignalingObserver.
-  virtual void OnAddRemoteStream(webrtc::MediaStreamInterface* stream) {
-  }
-  virtual void OnRemoveRemoteStream(webrtc::MediaStreamInterface* stream) {
-  }
-  virtual void OnAddDataChannel(webrtc::DataChannelInterface* data_channel) {
-  }
+  virtual void OnAddRemoteStream(webrtc::MediaStreamInterface* stream) {}
+  virtual void OnRemoveRemoteStream(webrtc::MediaStreamInterface* stream) {}
+  virtual void OnAddDataChannel(webrtc::DataChannelInterface* data_channel) {}
   virtual void OnAddLocalAudioTrack(webrtc::MediaStreamInterface* stream,
                                     webrtc::AudioTrackInterface* audio_track,
-                                    uint32 ssrc) {
-  }
+                                    uint32 ssrc) {}
   virtual void OnAddLocalVideoTrack(webrtc::MediaStreamInterface* stream,
                                     webrtc::VideoTrackInterface* video_track,
-                                    uint32 ssrc) {
-  }
+                                    uint32 ssrc) {}
   virtual void OnAddRemoteAudioTrack(webrtc::MediaStreamInterface* stream,
                                      webrtc::AudioTrackInterface* audio_track,
-                                     uint32 ssrc) {
-  }
-
+                                     uint32 ssrc) {}
   virtual void OnAddRemoteVideoTrack(webrtc::MediaStreamInterface* stream,
                                      webrtc::VideoTrackInterface* video_track,
-                                     uint32 ssrc) {
-  }
-
+                                     uint32 ssrc) {}
   virtual void OnRemoveRemoteAudioTrack(
       webrtc::MediaStreamInterface* stream,
-      webrtc::AudioTrackInterface* audio_track) {
-  }
-
+      webrtc::AudioTrackInterface* audio_track) {}
   virtual void OnRemoveRemoteVideoTrack(
       webrtc::MediaStreamInterface* stream,
-      webrtc::VideoTrackInterface* video_track) {
-  }
-
-  virtual void OnRemoveLocalAudioTrack(
-      webrtc::MediaStreamInterface* stream,
-      webrtc::AudioTrackInterface* audio_track,
-      uint32 ssrc) {
-  }
+      webrtc::VideoTrackInterface* video_track) {}
+  virtual void OnRemoveLocalAudioTrack(webrtc::MediaStreamInterface* stream,
+                                       webrtc::AudioTrackInterface* audio_track,
+                                       uint32 ssrc) {}
   virtual void OnRemoveLocalVideoTrack(
       webrtc::MediaStreamInterface* stream,
-      webrtc::VideoTrackInterface* video_track) {
-  }
-  virtual void OnRemoveLocalStream(webrtc::MediaStreamInterface* stream) {
-  }
+      webrtc::VideoTrackInterface* video_track) {}
+  virtual void OnRemoveLocalStream(webrtc::MediaStreamInterface* stream) {}
 
  private:
   rtc::scoped_refptr<webrtc::MediaStreamInterface> CreateStream(

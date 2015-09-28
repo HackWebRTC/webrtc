@@ -34,20 +34,21 @@
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
+#include "talk/app/webrtc/rtpreceiverinterface.h"
+#include "talk/app/webrtc/rtpsenderinterface.h"
 #include "talk/app/webrtc/statscollector.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/webrtcsession.h"
 #include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
-class MediaStreamHandlerContainer;
 
 typedef std::vector<PortAllocatorFactoryInterface::StunConfiguration>
     StunConfigurations;
 typedef std::vector<PortAllocatorFactoryInterface::TurnConfiguration>
     TurnConfigurations;
 
-// PeerConnectionImpl implements the PeerConnection interface.
+// PeerConnection implements the PeerConnectionInterface interface.
 // It uses MediaStreamSignaling and WebRtcSession to implement
 // the PeerConnection functionality.
 class PeerConnection : public PeerConnectionInterface,
@@ -71,6 +72,11 @@ class PeerConnection : public PeerConnectionInterface,
 
   virtual rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
       AudioTrackInterface* track);
+
+  std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
+      const override;
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
+      const override;
 
   virtual rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,
@@ -168,6 +174,11 @@ class PeerConnection : public PeerConnectionInterface,
     return signaling_state_ == PeerConnectionInterface::kClosed;
   }
 
+  std::vector<rtc::scoped_refptr<RtpSenderInterface>>::iterator
+  FindSenderForTrack(MediaStreamTrackInterface* track);
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>>::iterator
+  FindReceiverForTrack(MediaStreamTrackInterface* track);
+
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the
   // PeerConnection is running. It is passed to PeerConnection as a raw pointer.
@@ -186,8 +197,10 @@ class PeerConnection : public PeerConnectionInterface,
   rtc::scoped_ptr<cricket::PortAllocator> port_allocator_;
   rtc::scoped_ptr<WebRtcSession> session_;
   rtc::scoped_ptr<MediaStreamSignaling> mediastream_signaling_;
-  rtc::scoped_ptr<MediaStreamHandlerContainer> stream_handler_container_;
   rtc::scoped_ptr<StatsCollector> stats_;
+
+  std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders_;
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers_;
 };
 
 }  // namespace webrtc

@@ -25,4 +25,42 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This file is currently stubbed so that Chromium's build files can be updated.
+// This file contains interfaces for RtpReceivers
+// http://w3c.github.io/webrtc-pc/#rtcrtpreceiver-interface
+
+#ifndef TALK_APP_WEBRTC_RTPRECEIVERINTERFACE_H_
+#define TALK_APP_WEBRTC_RTPRECEIVERINTERFACE_H_
+
+#include <string>
+
+#include "talk/app/webrtc/proxy.h"
+#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+
+namespace webrtc {
+
+class RtpReceiverInterface : public rtc::RefCountInterface {
+ public:
+  virtual rtc::scoped_refptr<MediaStreamTrackInterface> track() const = 0;
+
+  // Not to be confused with "mid", this is a field we can temporarily use
+  // to uniquely identify a receiver until we implement Unified Plan SDP.
+  virtual std::string id() const = 0;
+
+  virtual void Stop() = 0;
+
+ protected:
+  virtual ~RtpReceiverInterface() {}
+};
+
+// Define proxy for RtpReceiverInterface.
+BEGIN_PROXY_MAP(RtpReceiver)
+PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
+PROXY_CONSTMETHOD0(std::string, id)
+PROXY_METHOD0(void, Stop)
+END_PROXY()
+
+}  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_RTPRECEIVERINTERFACE_H_

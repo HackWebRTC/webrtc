@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc/mediastreamhandler.h"
-
 #include <string>
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/remoteaudiosource.h"
+#include "talk/app/webrtc/rtpreceiver.h"
+#include "talk/app/webrtc/rtpsender.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
@@ -52,29 +52,36 @@ static const uint32 kAudioSsrc = 99;
 
 namespace webrtc {
 
-// Helper class to test MediaStreamHandler.
+// Helper class to test RtpSender/RtpReceiver.
 class MockAudioProvider : public AudioProviderInterface {
  public:
   virtual ~MockAudioProvider() {}
-  MOCK_METHOD3(SetAudioPlayout, void(uint32 ssrc, bool enable,
-                                     cricket::AudioRenderer* renderer));
-  MOCK_METHOD4(SetAudioSend, void(uint32 ssrc, bool enable,
-                                  const cricket::AudioOptions& options,
-                                  cricket::AudioRenderer* renderer));
+  MOCK_METHOD3(SetAudioPlayout,
+               void(uint32 ssrc,
+                    bool enable,
+                    cricket::AudioRenderer* renderer));
+  MOCK_METHOD4(SetAudioSend,
+               void(uint32 ssrc,
+                    bool enable,
+                    const cricket::AudioOptions& options,
+                    cricket::AudioRenderer* renderer));
   MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32 ssrc, double volume));
 };
 
-// Helper class to test MediaStreamHandler.
+// Helper class to test RtpSender/RtpReceiver.
 class MockVideoProvider : public VideoProviderInterface {
  public:
   virtual ~MockVideoProvider() {}
-  MOCK_METHOD2(SetCaptureDevice, bool(uint32 ssrc,
-                                      cricket::VideoCapturer* camera));
-  MOCK_METHOD3(SetVideoPlayout, void(uint32 ssrc,
-                                     bool enable,
-                                     cricket::VideoRenderer* renderer));
-  MOCK_METHOD3(SetVideoSend, void(uint32 ssrc, bool enable,
-                                  const cricket::VideoOptions* options));
+  MOCK_METHOD2(SetCaptureDevice,
+               bool(uint32 ssrc, cricket::VideoCapturer* camera));
+  MOCK_METHOD3(SetVideoPlayout,
+               void(uint32 ssrc,
+                    bool enable,
+                    cricket::VideoRenderer* renderer));
+  MOCK_METHOD3(SetVideoSend,
+               void(uint32 ssrc,
+                    bool enable,
+                    const cricket::VideoOptions* options));
 };
 
 class FakeVideoSource : public Notifier<VideoSourceInterface> {
@@ -82,9 +89,7 @@ class FakeVideoSource : public Notifier<VideoSourceInterface> {
   static rtc::scoped_refptr<FakeVideoSource> Create() {
     return new rtc::RefCountedObject<FakeVideoSource>();
   }
-  virtual cricket::VideoCapturer* GetVideoCapturer() {
-    return &fake_capturer_;
-  }
+  virtual cricket::VideoCapturer* GetVideoCapturer() { return &fake_capturer_; }
   virtual void Stop() {}
   virtual void Restart() {}
   virtual void AddSink(cricket::VideoRenderer* output) {}
@@ -103,154 +108,113 @@ class FakeVideoSource : public Notifier<VideoSourceInterface> {
   cricket::VideoOptions options_;
 };
 
-class MediaStreamHandlerTest : public testing::Test {
+class RtpSenderReceiverTest : public testing::Test {
  public:
-  MediaStreamHandlerTest()
-      : handlers_(&audio_provider_, &video_provider_) {
-  }
-
   virtual void SetUp() {
     stream_ = MediaStream::Create(kStreamLabel1);
-    rtc::scoped_refptr<VideoSourceInterface> source(
-        FakeVideoSource::Create());
+    rtc::scoped_refptr<VideoSourceInterface> source(FakeVideoSource::Create());
     video_track_ = VideoTrack::Create(kVideoTrackId, source);
     EXPECT_TRUE(stream_->AddTrack(video_track_));
   }
 
-  void AddLocalAudioTrack() {
+  void CreateAudioRtpSender() {
     audio_track_ = AudioTrack::Create(kAudioTrackId, NULL);
     EXPECT_TRUE(stream_->AddTrack(audio_track_));
     EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
-    handlers_.AddLocalAudioTrack(stream_, stream_->GetAudioTracks()[0],
-                                 kAudioSsrc);
+    audio_rtp_sender_ = new AudioRtpSender(stream_->GetAudioTracks()[0],
+                                           kAudioSsrc, &audio_provider_);
   }
 
-  void AddLocalVideoTrack() {
-    EXPECT_CALL(video_provider_, SetCaptureDevice(
-        kVideoSsrc, video_track_->GetSource()->GetVideoCapturer()));
+  void CreateVideoRtpSender() {
+    EXPECT_CALL(video_provider_,
+                SetCaptureDevice(
+                    kVideoSsrc, video_track_->GetSource()->GetVideoCapturer()));
     EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
-    handlers_.AddLocalVideoTrack(stream_, stream_->GetVideoTracks()[0],
-                                 kVideoSsrc);
+    video_rtp_sender_ = new VideoRtpSender(stream_->GetVideoTracks()[0],
+                                           kVideoSsrc, &video_provider_);
   }
 
-  void RemoveLocalAudioTrack() {
+  void DestroyAudioRtpSender() {
     EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _))
         .Times(1);
-    handlers_.RemoveLocalTrack(stream_, audio_track_);
+    audio_rtp_sender_ = nullptr;
   }
 
-  void RemoveLocalVideoTrack() {
-    EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, NULL))
-        .Times(1);
-    EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _))
-        .Times(1);
-    handlers_.RemoveLocalTrack(stream_, video_track_);
+  void DestroyVideoRtpSender() {
+    EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, NULL)).Times(1);
+    EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _)).Times(1);
+    video_rtp_sender_ = nullptr;
   }
 
-  void AddRemoteAudioTrack() {
-    audio_track_ = AudioTrack::Create(kAudioTrackId,
-                                      RemoteAudioSource::Create().get());
+  void CreateAudioRtpReceiver() {
+    audio_track_ =
+        AudioTrack::Create(kAudioTrackId, RemoteAudioSource::Create().get());
     EXPECT_TRUE(stream_->AddTrack(audio_track_));
     EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
-    handlers_.AddRemoteAudioTrack(stream_, stream_->GetAudioTracks()[0],
-                                  kAudioSsrc);
+    audio_rtp_receiver_ = new AudioRtpReceiver(stream_->GetAudioTracks()[0],
+                                               kAudioSsrc, &audio_provider_);
   }
 
-  void AddRemoteVideoTrack() {
-    EXPECT_CALL(video_provider_, SetVideoPlayout(
-        kVideoSsrc, true, video_track_->GetSource()->FrameInput()));
-    handlers_.AddRemoteVideoTrack(stream_, stream_->GetVideoTracks()[0],
-                                  kVideoSsrc);
+  void CreateVideoRtpReceiver() {
+    EXPECT_CALL(video_provider_,
+                SetVideoPlayout(kVideoSsrc, true,
+                                video_track_->GetSource()->FrameInput()));
+    video_rtp_receiver_ = new VideoRtpReceiver(stream_->GetVideoTracks()[0],
+                                               kVideoSsrc, &video_provider_);
   }
 
-  void RemoveRemoteAudioTrack() {
+  void DestroyAudioRtpReceiver() {
     EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _));
-    handlers_.RemoveRemoteTrack(stream_, stream_->GetAudioTracks()[0]);
+    audio_rtp_receiver_ = nullptr;
   }
 
-  void RemoveRemoteVideoTrack() {
+  void DestroyVideoRtpReceiver() {
     EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, false, NULL));
-    handlers_.RemoveRemoteTrack(stream_, stream_->GetVideoTracks()[0]);
+    video_rtp_receiver_ = nullptr;
   }
 
  protected:
   MockAudioProvider audio_provider_;
   MockVideoProvider video_provider_;
-  MediaStreamHandlerContainer handlers_;
+  rtc::scoped_refptr<AudioRtpSender> audio_rtp_sender_;
+  rtc::scoped_refptr<VideoRtpSender> video_rtp_sender_;
+  rtc::scoped_refptr<AudioRtpReceiver> audio_rtp_receiver_;
+  rtc::scoped_refptr<VideoRtpReceiver> video_rtp_receiver_;
   rtc::scoped_refptr<MediaStreamInterface> stream_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
   rtc::scoped_refptr<AudioTrackInterface> audio_track_;
 };
 
 // Test that |audio_provider_| is notified when an audio track is associated
-// and disassociated with a MediaStreamHandler.
-TEST_F(MediaStreamHandlerTest, AddAndRemoveLocalAudioTrack) {
-  AddLocalAudioTrack();
-  RemoveLocalAudioTrack();
-
-  handlers_.RemoveLocalStream(stream_);
+// and disassociated with an AudioRtpSender.
+TEST_F(RtpSenderReceiverTest, AddAndDestroyAudioRtpSender) {
+  CreateAudioRtpSender();
+  DestroyAudioRtpSender();
 }
 
 // Test that |video_provider_| is notified when a video track is associated and
-// disassociated with a MediaStreamHandler.
-TEST_F(MediaStreamHandlerTest, AddAndRemoveLocalVideoTrack) {
-  AddLocalVideoTrack();
-  RemoveLocalVideoTrack();
-
-  handlers_.RemoveLocalStream(stream_);
+// disassociated with a VideoRtpSender.
+TEST_F(RtpSenderReceiverTest, AddAndDestroyVideoRtpSender) {
+  CreateVideoRtpSender();
+  DestroyVideoRtpSender();
 }
-
-// Test that |video_provider_| and |audio_provider_| is notified when an audio
-// and video track is disassociated with a MediaStreamHandler by calling
-// RemoveLocalStream.
-TEST_F(MediaStreamHandlerTest, RemoveLocalStream) {
-  AddLocalAudioTrack();
-  AddLocalVideoTrack();
-
-  EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, NULL))
-      .Times(1);
-  EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _))
-      .Times(1);
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _))
-      .Times(1);
-  handlers_.RemoveLocalStream(stream_);
-}
-
 
 // Test that |audio_provider_| is notified when a remote audio and track is
-// associated and disassociated with a MediaStreamHandler.
-TEST_F(MediaStreamHandlerTest, AddAndRemoveRemoteAudioTrack) {
-  AddRemoteAudioTrack();
-  RemoveRemoteAudioTrack();
-
-  handlers_.RemoveRemoteStream(stream_);
+// associated and disassociated with an AudioRtpReceiver.
+TEST_F(RtpSenderReceiverTest, AddAndDestroyAudioRtpReceiver) {
+  CreateAudioRtpReceiver();
+  DestroyAudioRtpReceiver();
 }
 
 // Test that |video_provider_| is notified when a remote
-// video track is associated and disassociated with a MediaStreamHandler.
-TEST_F(MediaStreamHandlerTest, AddAndRemoveRemoteVideoTrack) {
-  AddRemoteVideoTrack();
-  RemoveRemoteVideoTrack();
-
-  handlers_.RemoveRemoteStream(stream_);
+// video track is associated and disassociated with a VideoRtpReceiver.
+TEST_F(RtpSenderReceiverTest, AddAndDestroyVideoRtpReceiver) {
+  CreateVideoRtpReceiver();
+  DestroyVideoRtpReceiver();
 }
 
-// Test that |audio_provider_| and |video_provider_| is notified when an audio
-// and video track is disassociated with a MediaStreamHandler by calling
-// RemoveRemoveStream.
-TEST_F(MediaStreamHandlerTest, RemoveRemoteStream) {
-  AddRemoteAudioTrack();
-  AddRemoteVideoTrack();
-
-  EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, false, NULL))
-      .Times(1);
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _))
-      .Times(1);
-  handlers_.RemoveRemoteStream(stream_);
-}
-
-TEST_F(MediaStreamHandlerTest, LocalAudioTrackDisable) {
-  AddLocalAudioTrack();
+TEST_F(RtpSenderReceiverTest, LocalAudioTrackDisable) {
+  CreateAudioRtpSender();
 
   EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _));
   audio_track_->set_enabled(false);
@@ -258,12 +222,11 @@ TEST_F(MediaStreamHandlerTest, LocalAudioTrackDisable) {
   EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
   audio_track_->set_enabled(true);
 
-  RemoveLocalAudioTrack();
-  handlers_.TearDown();
+  DestroyAudioRtpSender();
 }
 
-TEST_F(MediaStreamHandlerTest, RemoteAudioTrackDisable) {
-  AddRemoteAudioTrack();
+TEST_F(RtpSenderReceiverTest, RemoteAudioTrackDisable) {
+  CreateAudioRtpReceiver();
 
   EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _));
   audio_track_->set_enabled(false);
@@ -271,12 +234,11 @@ TEST_F(MediaStreamHandlerTest, RemoteAudioTrackDisable) {
   EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
   audio_track_->set_enabled(true);
 
-  RemoveRemoteAudioTrack();
-  handlers_.TearDown();
+  DestroyAudioRtpReceiver();
 }
 
-TEST_F(MediaStreamHandlerTest, LocalVideoTrackDisable) {
-  AddLocalVideoTrack();
+TEST_F(RtpSenderReceiverTest, LocalVideoTrackDisable) {
+  CreateVideoRtpSender();
 
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _));
   video_track_->set_enabled(false);
@@ -284,23 +246,21 @@ TEST_F(MediaStreamHandlerTest, LocalVideoTrackDisable) {
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
   video_track_->set_enabled(true);
 
-  RemoveLocalVideoTrack();
-  handlers_.TearDown();
+  DestroyVideoRtpSender();
 }
 
-TEST_F(MediaStreamHandlerTest, RemoteVideoTrackDisable) {
-  AddRemoteVideoTrack();
+TEST_F(RtpSenderReceiverTest, RemoteVideoTrackDisable) {
+  CreateVideoRtpReceiver();
 
   video_track_->set_enabled(false);
 
   video_track_->set_enabled(true);
 
-  RemoveRemoteVideoTrack();
-  handlers_.TearDown();
+  DestroyVideoRtpReceiver();
 }
 
-TEST_F(MediaStreamHandlerTest, RemoteAudioTrackSetVolume) {
-  AddRemoteAudioTrack();
+TEST_F(RtpSenderReceiverTest, RemoteAudioTrackSetVolume) {
+  CreateAudioRtpReceiver();
 
   double volume = 0.5;
   EXPECT_CALL(audio_provider_, SetAudioPlayoutVolume(kAudioSsrc, volume));
@@ -318,8 +278,7 @@ TEST_F(MediaStreamHandlerTest, RemoteAudioTrackSetVolume) {
   EXPECT_CALL(audio_provider_, SetAudioPlayoutVolume(kAudioSsrc, new_volume));
   audio_track_->GetSource()->SetVolume(new_volume);
 
-  RemoveRemoteAudioTrack();
-  handlers_.TearDown();
+  DestroyAudioRtpReceiver();
 }
 
 }  // namespace webrtc

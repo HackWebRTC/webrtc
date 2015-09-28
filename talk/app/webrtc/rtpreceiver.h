@@ -25,4 +25,80 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This file is currently stubbed so that Chromium's build files can be updated.
+// This file contains classes that implement RtpReceiverInterface.
+// An RtpReceiver associates a MediaStreamTrackInterface with an underlying
+// transport (provided by AudioProviderInterface/VideoProviderInterface)
+
+#ifndef TALK_APP_WEBRTC_RTPRECEIVER_H_
+#define TALK_APP_WEBRTC_RTPRECEIVER_H_
+
+#include <string>
+
+#include "talk/app/webrtc/mediastreamprovider.h"
+#include "talk/app/webrtc/rtpreceiverinterface.h"
+#include "webrtc/base/basictypes.h"
+
+namespace webrtc {
+
+class AudioRtpReceiver : public ObserverInterface,
+                         public AudioSourceInterface::AudioObserver,
+                         public rtc::RefCountedObject<RtpReceiverInterface> {
+ public:
+  AudioRtpReceiver(AudioTrackInterface* track,
+                   uint32 ssrc,
+                   AudioProviderInterface* provider);
+
+  virtual ~AudioRtpReceiver();
+
+  // ObserverInterface implementation
+  void OnChanged() override;
+
+  // AudioSourceInterface::AudioObserver implementation
+  void OnSetVolume(double volume) override;
+
+  // RtpReceiverInterface implementation
+  rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
+    return track_.get();
+  }
+
+  std::string id() const override { return id_; }
+
+  void Stop() override;
+
+ private:
+  void Reconfigure();
+
+  std::string id_;
+  rtc::scoped_refptr<AudioTrackInterface> track_;
+  uint32 ssrc_;
+  AudioProviderInterface* provider_;
+  bool cached_track_enabled_;
+};
+
+class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInterface> {
+ public:
+  VideoRtpReceiver(VideoTrackInterface* track,
+                   uint32 ssrc,
+                   VideoProviderInterface* provider);
+
+  virtual ~VideoRtpReceiver();
+
+  // RtpReceiverInterface implementation
+  rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
+    return track_.get();
+  }
+
+  std::string id() const override { return id_; }
+
+  void Stop() override;
+
+ private:
+  std::string id_;
+  rtc::scoped_refptr<VideoTrackInterface> track_;
+  uint32 ssrc_;
+  VideoProviderInterface* provider_;
+};
+
+}  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_RTPRECEIVER_H_

@@ -33,7 +33,8 @@
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
-#include "talk/app/webrtc/mediastreamhandler.h"
+#include "talk/app/webrtc/rtpreceiver.h"
+#include "talk/app/webrtc/rtpsender.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "webrtc/p2p/client/basicportallocator.h"
 #include "talk/session/media/channelmanager.h"
@@ -339,10 +340,17 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
 
 PeerConnection::~PeerConnection() {
   ASSERT(signaling_thread()->IsCurrent());
-  if (mediastream_signaling_)
+  if (mediastream_signaling_) {
     mediastream_signaling_->TearDown();
-  if (stream_handler_container_)
-    stream_handler_container_->TearDown();
+  }
+  // Need to detach RTP senders/receivers from WebRtcSession,
+  // since it's about to be destroyed.
+  for (const auto& sender : senders_) {
+    sender->Stop();
+  }
+  for (const auto& receiver : receivers_) {
+    receiver->Stop();
+  }
 }
 
 bool PeerConnection::Initialize(
@@ -398,8 +406,6 @@ bool PeerConnection::Initialize(
                                    factory_->worker_thread(),
                                    port_allocator_.get(),
                                    mediastream_signaling_.get()));
-  stream_handler_container_.reset(new MediaStreamHandlerContainer(
-      session_.get(), session_.get()));
   stats_.reset(new StatsCollector(session_.get()));
 
   // Initialize the WebRtcSession. It creates transport channels etc.
@@ -424,6 +430,8 @@ PeerConnection::remote_streams() {
   return mediastream_signaling_->remote_streams();
 }
 
+// TODO(deadbeef): Create RtpSenders immediately here, even if local
+// description hasn't yet been set.
 bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
   if (IsClosed()) {
     return false;
@@ -466,6 +474,25 @@ rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
     return NULL;
   }
   return DtmfSenderProxy::Create(signaling_thread(), sender.get());
+}
+
+std::vector<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::GetSenders()
+    const {
+  std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders;
+  for (const auto& sender : senders_) {
+    senders.push_back(RtpSenderProxy::Create(signaling_thread(), sender.get()));
+  }
+  return senders;
+}
+
+std::vector<rtc::scoped_refptr<RtpReceiverInterface>>
+PeerConnection::GetReceivers() const {
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers;
+  for (const auto& receiver : receivers_) {
+    receivers.push_back(
+        RtpReceiverProxy::Create(signaling_thread(), receiver.get()));
+  }
+  return receivers;
 }
 
 bool PeerConnection::GetStats(StatsObserver* observer,
@@ -808,7 +835,6 @@ void PeerConnection::OnAddRemoteStream(MediaStreamInterface* stream) {
 }
 
 void PeerConnection::OnRemoveRemoteStream(MediaStreamInterface* stream) {
-  stream_handler_container_->RemoveRemoteStream(stream);
   observer_->OnRemoveStream(stream);
 }
 
@@ -820,52 +846,87 @@ void PeerConnection::OnAddDataChannel(DataChannelInterface* data_channel) {
 void PeerConnection::OnAddRemoteAudioTrack(MediaStreamInterface* stream,
                                            AudioTrackInterface* audio_track,
                                            uint32 ssrc) {
-  stream_handler_container_->AddRemoteAudioTrack(stream, audio_track, ssrc);
+  receivers_.push_back(new AudioRtpReceiver(audio_track, ssrc, session_.get()));
 }
 
 void PeerConnection::OnAddRemoteVideoTrack(MediaStreamInterface* stream,
                                            VideoTrackInterface* video_track,
                                            uint32 ssrc) {
-  stream_handler_container_->AddRemoteVideoTrack(stream, video_track, ssrc);
+  receivers_.push_back(new VideoRtpReceiver(video_track, ssrc, session_.get()));
 }
 
+// TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote
+// description.
 void PeerConnection::OnRemoveRemoteAudioTrack(
     MediaStreamInterface* stream,
     AudioTrackInterface* audio_track) {
-  stream_handler_container_->RemoveRemoteTrack(stream, audio_track);
+  auto it = FindReceiverForTrack(audio_track);
+  if (it == receivers_.end()) {
+    LOG(LS_WARNING) << "RtpReceiver for track with id " << audio_track->id()
+                    << " doesn't exist.";
+  } else {
+    (*it)->Stop();
+    receivers_.erase(it);
+  }
 }
 
 void PeerConnection::OnRemoveRemoteVideoTrack(
     MediaStreamInterface* stream,
     VideoTrackInterface* video_track) {
-  stream_handler_container_->RemoveRemoteTrack(stream, video_track);
+  auto it = FindReceiverForTrack(video_track);
+  if (it == receivers_.end()) {
+    LOG(LS_WARNING) << "RtpReceiver for track with id " << video_track->id()
+                    << " doesn't exist.";
+  } else {
+    (*it)->Stop();
+    receivers_.erase(it);
+  }
 }
+
 void PeerConnection::OnAddLocalAudioTrack(MediaStreamInterface* stream,
                                           AudioTrackInterface* audio_track,
                                           uint32 ssrc) {
-  stream_handler_container_->AddLocalAudioTrack(stream, audio_track, ssrc);
+  senders_.push_back(new AudioRtpSender(audio_track, ssrc, session_.get()));
   stats_->AddLocalAudioTrack(audio_track, ssrc);
 }
+
 void PeerConnection::OnAddLocalVideoTrack(MediaStreamInterface* stream,
                                           VideoTrackInterface* video_track,
                                           uint32 ssrc) {
-  stream_handler_container_->AddLocalVideoTrack(stream, video_track, ssrc);
+  senders_.push_back(new VideoRtpSender(video_track, ssrc, session_.get()));
 }
 
+// TODO(deadbeef): Keep RtpSenders around even if track goes away in local
+// description.
 void PeerConnection::OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
                                              AudioTrackInterface* audio_track,
                                              uint32 ssrc) {
-  stream_handler_container_->RemoveLocalTrack(stream, audio_track);
+  auto it = FindSenderForTrack(audio_track);
+  if (it == senders_.end()) {
+    LOG(LS_WARNING) << "RtpSender for track with id " << audio_track->id()
+                    << " doesn't exist.";
+    return;
+  } else {
+    (*it)->Stop();
+    senders_.erase(it);
+  }
   stats_->RemoveLocalAudioTrack(audio_track, ssrc);
 }
 
 void PeerConnection::OnRemoveLocalVideoTrack(MediaStreamInterface* stream,
                                              VideoTrackInterface* video_track) {
-  stream_handler_container_->RemoveLocalTrack(stream, video_track);
+  auto it = FindSenderForTrack(video_track);
+  if (it == senders_.end()) {
+    LOG(LS_WARNING) << "RtpSender for track with id " << video_track->id()
+                    << " doesn't exist.";
+    return;
+  } else {
+    (*it)->Stop();
+    senders_.erase(it);
+  }
 }
 
 void PeerConnection::OnRemoveLocalStream(MediaStreamInterface* stream) {
-  stream_handler_container_->RemoveLocalStream(stream);
 }
 
 void PeerConnection::OnIceConnectionChange(
@@ -918,6 +979,24 @@ void PeerConnection::ChangeSignalingState(
   }
   observer_->OnSignalingChange(signaling_state_);
   observer_->OnStateChange(PeerConnectionObserver::kSignalingState);
+}
+
+std::vector<rtc::scoped_refptr<RtpSenderInterface>>::iterator
+PeerConnection::FindSenderForTrack(MediaStreamTrackInterface* track) {
+  return std::find_if(
+      senders_.begin(), senders_.end(),
+      [track](const rtc::scoped_refptr<RtpSenderInterface>& sender) {
+        return sender->track() == track;
+      });
+}
+
+std::vector<rtc::scoped_refptr<RtpReceiverInterface>>::iterator
+PeerConnection::FindReceiverForTrack(MediaStreamTrackInterface* track) {
+  return std::find_if(
+      receivers_.begin(), receivers_.end(),
+      [track](const rtc::scoped_refptr<RtpReceiverInterface>& receiver) {
+        return receiver->track() == track;
+      });
 }
 
 }  // namespace webrtc

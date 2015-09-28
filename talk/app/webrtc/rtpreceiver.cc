@@ -27,4 +27,80 @@
 
 #include "talk/app/webrtc/rtpreceiver.h"
 
-// This file is currently stubbed so that Chromium's build files can be updated.
+#include "talk/app/webrtc/videosourceinterface.h"
+
+namespace webrtc {
+
+AudioRtpReceiver::AudioRtpReceiver(AudioTrackInterface* track,
+                                   uint32 ssrc,
+                                   AudioProviderInterface* provider)
+    : id_(track->id()),
+      track_(track),
+      ssrc_(ssrc),
+      provider_(provider),
+      cached_track_enabled_(track->enabled()) {
+  track_->RegisterObserver(this);
+  track_->GetSource()->RegisterAudioObserver(this);
+  Reconfigure();
+}
+
+AudioRtpReceiver::~AudioRtpReceiver() {
+  track_->GetSource()->UnregisterAudioObserver(this);
+  track_->UnregisterObserver(this);
+  Stop();
+}
+
+void AudioRtpReceiver::OnChanged() {
+  if (cached_track_enabled_ != track_->enabled()) {
+    cached_track_enabled_ = track_->enabled();
+    Reconfigure();
+  }
+}
+
+void AudioRtpReceiver::OnSetVolume(double volume) {
+  // When the track is disabled, the volume of the source, which is the
+  // corresponding WebRtc Voice Engine channel will be 0. So we do not allow
+  // setting the volume to the source when the track is disabled.
+  if (provider_ && track_->enabled())
+    provider_->SetAudioPlayoutVolume(ssrc_, volume);
+}
+
+void AudioRtpReceiver::Stop() {
+  // TODO(deadbeef): Need to do more here to fully stop receiving packets.
+  if (!provider_) {
+    return;
+  }
+  provider_->SetAudioPlayout(ssrc_, false, nullptr);
+  provider_ = nullptr;
+}
+
+void AudioRtpReceiver::Reconfigure() {
+  if (!provider_) {
+    return;
+  }
+  provider_->SetAudioPlayout(ssrc_, track_->enabled(), track_->GetRenderer());
+}
+
+VideoRtpReceiver::VideoRtpReceiver(VideoTrackInterface* track,
+                                   uint32 ssrc,
+                                   VideoProviderInterface* provider)
+    : id_(track->id()), track_(track), ssrc_(ssrc), provider_(provider) {
+  provider_->SetVideoPlayout(ssrc_, true, track_->GetSource()->FrameInput());
+}
+
+VideoRtpReceiver::~VideoRtpReceiver() {
+  // Since cricket::VideoRenderer is not reference counted,
+  // we need to remove it from the provider before we are deleted.
+  Stop();
+}
+
+void VideoRtpReceiver::Stop() {
+  // TODO(deadbeef): Need to do more here to fully stop receiving packets.
+  if (!provider_) {
+    return;
+  }
+  provider_->SetVideoPlayout(ssrc_, false, nullptr);
+  provider_ = nullptr;
+}
+
+}  // namespace webrtc

@@ -287,10 +287,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
     TrackInfo(const std::string& stream_label,
               const std::string track_id,
               uint32 ssrc)
-        : stream_label(stream_label),
-          track_id(track_id),
-          ssrc(ssrc) {
-    }
+        : stream_label(stream_label), track_id(track_id), ssrc(ssrc) {}
     std::string stream_label;
     std::string track_id;
     uint32 ssrc;

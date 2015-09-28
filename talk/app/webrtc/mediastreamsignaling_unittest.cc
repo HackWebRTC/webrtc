@@ -367,55 +367,53 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
 
   size_t NumberOfRemoteAudioTracks() { return remote_audio_tracks_.size(); }
 
-  void  VerifyRemoteAudioTrack(const std::string& stream_label,
-                               const std::string& track_id,
-                               uint32 ssrc) {
+  void VerifyRemoteAudioTrack(const std::string& stream_label,
+                              const std::string& track_id,
+                              uint32 ssrc) {
     VerifyTrack(remote_audio_tracks_, stream_label, track_id, ssrc);
   }
 
   size_t NumberOfRemoteVideoTracks() { return remote_video_tracks_.size(); }
 
-  void  VerifyRemoteVideoTrack(const std::string& stream_label,
-                               const std::string& track_id,
-                               uint32 ssrc) {
+  void VerifyRemoteVideoTrack(const std::string& stream_label,
+                              const std::string& track_id,
+                              uint32 ssrc) {
     VerifyTrack(remote_video_tracks_, stream_label, track_id, ssrc);
   }
 
   size_t NumberOfLocalAudioTracks() { return local_audio_tracks_.size(); }
-  void  VerifyLocalAudioTrack(const std::string& stream_label,
-                              const std::string& track_id,
-                              uint32 ssrc) {
+  void VerifyLocalAudioTrack(const std::string& stream_label,
+                             const std::string& track_id,
+                             uint32 ssrc) {
     VerifyTrack(local_audio_tracks_, stream_label, track_id, ssrc);
   }
 
   size_t NumberOfLocalVideoTracks() { return local_video_tracks_.size(); }
 
-  void  VerifyLocalVideoTrack(const std::string& stream_label,
-                              const std::string& track_id,
-                              uint32 ssrc) {
+  void VerifyLocalVideoTrack(const std::string& stream_label,
+                             const std::string& track_id,
+                             uint32 ssrc) {
     VerifyTrack(local_video_tracks_, stream_label, track_id, ssrc);
   }
 
  private:
   struct TrackInfo {
     TrackInfo() {}
-    TrackInfo(const std::string& stream_label, const std::string track_id,
+    TrackInfo(const std::string& stream_label,
+              const std::string track_id,
               uint32 ssrc)
-        : stream_label(stream_label),
-          track_id(track_id),
-          ssrc(ssrc) {
-    }
+        : stream_label(stream_label), track_id(track_id), ssrc(ssrc) {}
     std::string stream_label;
     std::string track_id;
     uint32 ssrc;
   };
   typedef std::vector<TrackInfo> TrackInfos;
 
-  void AddTrack(TrackInfos* track_infos, MediaStreamInterface* stream,
+  void AddTrack(TrackInfos* track_infos,
+                MediaStreamInterface* stream,
                 MediaStreamTrackInterface* track,
                 uint32 ssrc) {
-    (*track_infos).push_back(TrackInfo(stream->label(), track->id(),
-                                       ssrc));
+    (*track_infos).push_back(TrackInfo(stream->label(), track->id(), ssrc));
   }
 
   void RemoveTrack(TrackInfos* track_infos, MediaStreamInterface* stream,
@@ -440,7 +438,6 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
     }
     return NULL;
   }
-
 
   void VerifyTrack(const TrackInfos& track_infos,
                    const std::string& stream_label,

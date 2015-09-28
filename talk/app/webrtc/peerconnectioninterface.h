@@ -77,6 +77,8 @@
 #include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/rtpreceiverinterface.h"
+#include "talk/app/webrtc/rtpsenderinterface.h"
 #include "talk/app/webrtc/statstypes.h"
 #include "talk/app/webrtc/umametrics.h"
 #include "webrtc/base/fileutils.h"
@@ -328,6 +330,17 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Otherwise returns NULL.
   virtual rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
       AudioTrackInterface* track) = 0;
+
+  // TODO(deadbeef): Make these pure virtual once all subclasses implement them.
+  virtual std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
+      const {
+    return std::vector<rtc::scoped_refptr<RtpSenderInterface>>();
+  }
+
+  virtual std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
+      const {
+    return std::vector<rtc::scoped_refptr<RtpReceiverInterface>>();
+  }
 
   virtual bool GetStats(StatsObserver* observer,
                         MediaStreamTrackInterface* track,
