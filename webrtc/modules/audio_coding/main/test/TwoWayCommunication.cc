@@ -32,10 +32,16 @@ namespace webrtc {
 
 TwoWayCommunication::TwoWayCommunication(int testMode)
     : _acmA(AudioCodingModule::Create(1)),
-      _acmB(AudioCodingModule::Create(2)),
       _acmRefA(AudioCodingModule::Create(3)),
-      _acmRefB(AudioCodingModule::Create(4)),
-      _testMode(testMode) {}
+      _testMode(testMode) {
+  AudioCodingModule::Config config;
+  // The clicks will be more obvious in FAX mode. TODO(henrik.lundin) Really?
+  config.neteq_config.playout_mode = kPlayoutFax;
+  config.id = 2;
+  _acmB.reset(AudioCodingModule::Create(config));
+  config.id = 4;
+  _acmRefB.reset(AudioCodingModule::Create(config));
+}
 
 TwoWayCommunication::~TwoWayCommunication() {
   delete _channel_A2B;
@@ -159,11 +165,6 @@ void TwoWayCommunication::SetUp() {
   _channelRef_B2A = new Channel;
   _acmRefB->RegisterTransportCallback(_channelRef_B2A);
   _channelRef_B2A->RegisterReceiverACM(_acmRefA.get());
-
-  // The clicks will be more obvious when we
-  // are in FAX mode.
-  EXPECT_EQ(_acmB->SetPlayoutMode(fax), 0);
-  EXPECT_EQ(_acmRefB->SetPlayoutMode(fax), 0);
 }
 
 void TwoWayCommunication::SetUpAutotest() {
@@ -233,11 +234,6 @@ void TwoWayCommunication::SetUpAutotest() {
   _channelRef_B2A = new Channel;
   _acmRefB->RegisterTransportCallback(_channelRef_B2A);
   _channelRef_B2A->RegisterReceiverACM(_acmRefA.get());
-
-  // The clicks will be more obvious when we
-  // are in FAX mode.
-  EXPECT_EQ(0, _acmB->SetPlayoutMode(fax));
-  EXPECT_EQ(0, _acmRefB->SetPlayoutMode(fax));
 }
 
 void TwoWayCommunication::Perform() {

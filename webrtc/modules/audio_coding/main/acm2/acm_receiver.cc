@@ -213,51 +213,6 @@ int AcmReceiver::current_sample_rate_hz() const {
   return current_sample_rate_hz_;
 }
 
-// TODO(turajs): use one set of enumerators, e.g. the one defined in
-// common_types.h
-// TODO(henrik.lundin): This method is not used any longer. The call hierarchy
-// stops in voe::Channel::SetNetEQPlayoutMode(). Remove it.
-void AcmReceiver::SetPlayoutMode(AudioPlayoutMode mode) {
-  enum NetEqPlayoutMode playout_mode = kPlayoutOn;
-  switch (mode) {
-    case voice:
-      playout_mode = kPlayoutOn;
-      break;
-    case fax:  // No change to background noise mode.
-      playout_mode = kPlayoutFax;
-      break;
-    case streaming:
-      playout_mode = kPlayoutStreaming;
-      break;
-    case off:
-      playout_mode = kPlayoutOff;
-      break;
-  }
-  neteq_->SetPlayoutMode(playout_mode);
-}
-
-AudioPlayoutMode AcmReceiver::PlayoutMode() const {
-  AudioPlayoutMode acm_mode = voice;
-  NetEqPlayoutMode mode = neteq_->PlayoutMode();
-  switch (mode) {
-    case kPlayoutOn:
-      acm_mode = voice;
-      break;
-    case kPlayoutOff:
-      acm_mode = off;
-      break;
-    case kPlayoutFax:
-      acm_mode = fax;
-      break;
-    case kPlayoutStreaming:
-      acm_mode = streaming;
-      break;
-    default:
-      assert(false);
-  }
-  return acm_mode;
-}
-
 int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
                               const uint8_t* incoming_payload,
                               size_t length_payload) {

@@ -154,12 +154,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // audio is accumulated in NetEq buffer, then starts decoding payloads.
   int SetInitialPlayoutDelay(int delay_ms) override;
 
-  // Set playout mode voice, fax.
-  int SetPlayoutMode(AudioPlayoutMode mode) override;
-
-  // Get playout mode voice, fax.
-  AudioPlayoutMode PlayoutMode() const override;
-
   // Get playout timestamp.
   int PlayoutTimestamp(uint32_t* timestamp) override;
 

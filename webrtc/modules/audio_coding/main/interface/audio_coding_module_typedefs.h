@@ -19,35 +19,6 @@
 namespace webrtc {
 
 ///////////////////////////////////////////////////////////////////////////
-// enum AudioPlayoutMode
-// An enumerator for different playout modes.
-//
-// -voice       : This is the standard mode for VoIP calls. The trade-off
-//                between low delay and jitter robustness is optimized
-//                for high-quality two-way communication.
-//                NetEQs packet loss concealment and signal processing
-//                capabilities are fully employed.
-// -fax         : The fax mode is optimized for decodability of fax signals
-//                rather than for perceived audio quality. When this mode
-//                is selected, NetEQ will do as few delay changes as possible,
-//                trying to maintain a high and constant delay. Meanwhile,
-//                the packet loss concealment efforts are reduced.
-//
-// -streaming   : In the case of one-way communication such as passive
-//                conference participant, a webinar, or a streaming application,
-//                this mode can be used to improve the jitter robustness at
-//                the cost of increased delay.
-// -off         : Turns off most of NetEQ's features. Stuffs zeros for lost
-//                packets and during buffer increases.
-//
-enum AudioPlayoutMode {
-  voice = 0,
-  fax = 1,
-  streaming = 2,
-  off = 3,
-};
-
-///////////////////////////////////////////////////////////////////////////
 // enum ACMSpeechType
 // An enumerator for possible labels of a decoded frame.
 //

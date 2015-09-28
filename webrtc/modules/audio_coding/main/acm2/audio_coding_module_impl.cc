@@ -659,17 +659,6 @@ int AudioCodingModuleImpl::SetMaximumPlayoutDelay(int time_ms) {
   return receiver_.SetMaximumDelay(time_ms);
 }
 
-// Set playout mode for: voice, fax, streaming or off.
-int AudioCodingModuleImpl::SetPlayoutMode(AudioPlayoutMode mode) {
-  receiver_.SetPlayoutMode(mode);
-  return 0;  // TODO(turajs): return value is for backward compatibility.
-}
-
-// Get playout mode voice, fax, streaming or off.
-AudioPlayoutMode AudioCodingModuleImpl::PlayoutMode() const {
-  return receiver_.PlayoutMode();
-}
-
 // Get 10 milliseconds of raw audio data to play out.
 // Automatic resample to the requested frequency.
 int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,

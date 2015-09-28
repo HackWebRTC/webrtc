@@ -606,43 +606,6 @@ class AudioCodingModule {
   virtual int32_t PlayoutTimestamp(uint32_t* timestamp) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t SetPlayoutMode()
-  // Call this API to set the playout mode. Playout mode could be optimized
-  // for i) voice, ii) FAX or iii) streaming. In Voice mode, NetEQ is
-  // optimized to deliver highest audio quality while maintaining a minimum
-  // delay. In FAX mode, NetEQ is optimized to have few delay changes as
-  // possible and maintain a constant delay, perhaps large relative to voice
-  // mode, to avoid PLC. In streaming mode, we tolerate a little more delay
-  // to achieve better jitter robustness.
-  //
-  // Input:
-  //   -mode               : playout mode. Possible inputs are:
-  //                         "voice",
-  //                         "fax" and
-  //                         "streaming".
-  //
-  // Return value:
-  //   -1 if failed to set the mode,
-  //    0 if succeeding.
-  //
-  virtual int32_t SetPlayoutMode(const AudioPlayoutMode mode) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // AudioPlayoutMode PlayoutMode()
-  // Get playout mode, i.e. whether it is speech, FAX or streaming. See
-  // audio_coding_module_typedefs.h for definition of AudioPlayoutMode.
-  //
-  // Return value:
-  //   voice:       is for voice output,
-  //   fax:         a mode that is optimized for receiving FAX signals.
-  //                In this mode NetEq tries to maintain a constant high
-  //                delay to avoid PLC if possible.
-  //   streaming:   a mode that is suitable for streaming. In this mode we
-  //                accept longer delay to improve jitter robustness.
-  //
-  virtual AudioPlayoutMode PlayoutMode() const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t PlayoutData10Ms(
   // Get 10 milliseconds of raw audio data for playout, at the given sampling
   // frequency. ACM will perform a resampling if required.

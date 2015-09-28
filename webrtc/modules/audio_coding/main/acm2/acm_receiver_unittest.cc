@@ -265,21 +265,6 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(SampleRate)) {
   }
 }
 
-// Verify that the playout mode is set correctly.
-TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(PlayoutMode)) {
-  receiver_->SetPlayoutMode(voice);
-  EXPECT_EQ(voice, receiver_->PlayoutMode());
-
-  receiver_->SetPlayoutMode(streaming);
-  EXPECT_EQ(streaming, receiver_->PlayoutMode());
-
-  receiver_->SetPlayoutMode(fax);
-  EXPECT_EQ(fax, receiver_->PlayoutMode());
-
-  receiver_->SetPlayoutMode(off);
-  EXPECT_EQ(off, receiver_->PlayoutMode());
-}
-
 TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(PostdecodingVad)) {
   receiver_->EnableVad();
   EXPECT_TRUE(receiver_->vad_enabled());

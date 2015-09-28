@@ -178,21 +178,6 @@ class AcmReceiver {
   int current_sample_rate_hz() const;
 
   //
-  // Sets the playout mode.
-  //
-  // Input:
-  //   - mode                 : an enumerator specifying the playout mode.
-  //
-  void SetPlayoutMode(AudioPlayoutMode mode);
-
-  //
-  // Get the current playout mode.
-  //
-  // Return value             : The current playout mode.
-  //
-  AudioPlayoutMode PlayoutMode() const;
-
-  //
   // Get the current network statistics from NetEq.
   //
   // Output:

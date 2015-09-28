@@ -141,9 +141,6 @@ class APITest : public ACMTest {
   int32_t _minDelayB;
   bool _payloadUsed[32];
 
-  AudioPlayoutMode _playoutModeA;
-  AudioPlayoutMode _playoutModeB;
-
   bool _verbose;
 
   int _dotPositionA;
