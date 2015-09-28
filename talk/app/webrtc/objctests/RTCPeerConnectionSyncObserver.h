@@ -54,6 +54,7 @@
 - (void)expectMessage:(NSData*)message isBinary:(BOOL)isBinary;
 
 // Wait until all registered expectations above have been observed.
-- (void)waitForAllExpectationsToBeSatisfied;
+// Return false if expectations aren't met within |timeoutSeconds|.
+- (BOOL)waitForAllExpectationsToBeSatisfiedWithTimeout:(NSTimeInterval)timeout;
 
 @end

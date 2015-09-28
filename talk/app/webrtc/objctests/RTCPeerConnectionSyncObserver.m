@@ -139,14 +139,20 @@
   [_expectedMessages addObject:buffer];
 }
 
-- (void)waitForAllExpectationsToBeSatisfied {
+- (BOOL)waitForAllExpectationsToBeSatisfiedWithTimeout:(NSTimeInterval)timeout {
+  NSParameterAssert(timeout >= 0);
   // TODO (fischman):  Revisit.  Keeping in sync with the Java version, but
   // polling is not optimal.
   // https://code.google.com/p/libjingle/source/browse/trunk/talk/app/webrtc/javatests/src/org/webrtc/PeerConnectionTest.java?line=212#212
+  NSDate *startTime = [NSDate date];
   while (![self areAllExpectationsSatisfied]) {
+    if (startTime.timeIntervalSinceNow < -timeout) {
+      return NO;
+    }
     [[NSRunLoop currentRunLoop]
         runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
   }
+  return YES;
 }
 
 #pragma mark - RTCPeerConnectionDelegate methods

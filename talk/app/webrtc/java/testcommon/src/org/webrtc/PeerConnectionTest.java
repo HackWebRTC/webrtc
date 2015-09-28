@@ -50,6 +50,7 @@ import static junit.framework.Assert.*;
 public class PeerConnectionTest {
   // Set to true to render video.
   private static final boolean RENDER_TO_GUI = false;
+  private static final int TIMEOUT_SECONDS = 20;
   private TreeSet<String> threadsBeforeTest = null;
 
   private static class ObserverExpectations implements PeerConnection.Observer,
@@ -347,7 +348,7 @@ public class PeerConnectionTest {
       return stillWaitingForExpectations;
     }
 
-    public void waitForAllExpectationsToBeSatisfied() {
+    public boolean waitForAllExpectationsToBeSatisfied(int timeoutSeconds) {
       // TODO(fischman): problems with this approach:
       // - come up with something better than a poll loop
       // - avoid serializing expectations explicitly; the test is not as robust
@@ -357,6 +358,7 @@ public class PeerConnectionTest {
       //   stall a wait).  Use callbacks to fire off dependent steps instead of
       //   explicitly waiting, so there can be just a single wait at the end of
       //   the test.
+      long endTime = System.currentTimeMillis() + 1000 * timeoutSeconds;
       TreeSet<String> prev = null;
       TreeSet<String> stillWaitingForExpectations = unsatisfiedExpectations();
       while (!stillWaitingForExpectations.isEmpty()) {
@@ -366,6 +368,11 @@ public class PeerConnectionTest {
               (new Throwable()).getStackTrace()[1] +
               "\n    for: " +
               Arrays.toString(stillWaitingForExpectations.toArray()));
+        }
+        if (endTime < System.currentTimeMillis()) {
+          System.out.println(name + " timed out waiting for: "
+              + Arrays.toString(stillWaitingForExpectations.toArray()));
+          return false;
         }
         try {
           Thread.sleep(10);
@@ -379,6 +386,7 @@ public class PeerConnectionTest {
         System.out.println(name + " didn't need to wait at\n    " +
                            (new Throwable()).getStackTrace()[1]);
       }
+      return true;
     }
 
     // This methods return a list of all currently gathered ice candidates or waits until
@@ -661,8 +669,8 @@ public class PeerConnectionTest {
       offeringPC.addIceCandidate(candidate);
     }
 
-    offeringExpectations.waitForAllExpectationsToBeSatisfied();
-    answeringExpectations.waitForAllExpectationsToBeSatisfied();
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
 
     assertEquals(
         PeerConnection.SignalingState.STABLE, offeringPC.signalingState());
@@ -675,7 +683,7 @@ public class PeerConnectionTest {
     DataChannel.Buffer buffer = new DataChannel.Buffer(
         ByteBuffer.wrap("hello!".getBytes(Charset.forName("UTF-8"))), false);
     assertTrue(offeringExpectations.dataChannel.send(buffer));
-    answeringExpectations.waitForAllExpectationsToBeSatisfied();
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
 
     // Construct this binary message two different ways to ensure no
     // shortcuts are taken.
@@ -688,7 +696,7 @@ public class PeerConnectionTest {
     assertTrue(answeringExpectations.dataChannel.send(
         new DataChannel.Buffer(
             ByteBuffer.wrap(new byte[] { 1, 2, 3, 4, 5 }), true)));
-    offeringExpectations.waitForAllExpectationsToBeSatisfied();
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
 
     offeringExpectations.expectStateChange(DataChannel.State.CLOSING);
     answeringExpectations.expectStateChange(DataChannel.State.CLOSING);
@@ -734,14 +742,14 @@ public class PeerConnectionTest {
     expectations.dataChannel.dispose();
     expectations.expectStatsCallback();
     assertTrue(pc.getStats(expectations, null));
-    expectations.waitForAllExpectationsToBeSatisfied();
+    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
     expectations.expectIceConnectionChange(IceConnectionState.CLOSED);
     expectations.expectSignalingChange(SignalingState.CLOSED);
     pc.close();
-    expectations.waitForAllExpectationsToBeSatisfied();
+    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
     expectations.expectStatsCallback();
     assertTrue(pc.getStats(expectations, null));
-    expectations.waitForAllExpectationsToBeSatisfied();
+    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
 
     System.out.println("FYI stats: ");
     int reportIndex = -1;
