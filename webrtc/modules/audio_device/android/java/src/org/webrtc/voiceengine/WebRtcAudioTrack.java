@@ -22,7 +22,7 @@ import android.os.Process;
 import org.webrtc.Logging;
 
 class WebRtcAudioTrack {
-  private static final boolean DEBUG = true;
+  private static final boolean DEBUG = false;
 
   private static final String TAG = "WebRtcAudioTrack";
 

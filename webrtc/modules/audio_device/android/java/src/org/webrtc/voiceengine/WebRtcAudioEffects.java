@@ -209,7 +209,7 @@ class WebRtcAudioEffects {
   private WebRtcAudioEffects() {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     for (Descriptor d : AudioEffect.queryEffects()) {
-      if (effectTypeIsVoIP(d.type)) {
+      if (effectTypeIsVoIP(d.type) || DEBUG) {
         // Only log information for VoIP effects (AEC, AEC and NS).
         Logging.d(TAG, "name: " + d.name + ", "
             + "mode: " + d.connectMode + ", "
