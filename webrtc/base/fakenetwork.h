@@ -34,8 +34,12 @@ class FakeNetworkManager : public NetworkManagerBase,
   typedef std::vector<SocketAddress> IfaceList;
 
   void AddInterface(const SocketAddress& iface) {
-    // ensure a unique name for the interface
-    SocketAddress address("test" + rtc::ToString(next_index_++), 0);
+    // Ensure a unique name for the interface if its name is not given.
+    AddInterface(iface, "test" + rtc::ToString(next_index_++));
+  }
+
+  void AddInterface(const SocketAddress& iface, const std::string& if_name) {
+    SocketAddress address(if_name, 0);
     address.SetResolvedIP(iface.ipaddr());
     ifaces_.push_back(address);
     DoUpdateNetworks();

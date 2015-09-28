@@ -298,28 +298,35 @@ void BasicPortAllocatorSession::OnAllocate() {
   allocation_started_ = true;
 }
 
-// For each network, see if we have a sequence that covers it already.  If not,
-// create a new sequence to create the appropriate ports.
-void BasicPortAllocatorSession::DoAllocate() {
-  bool done_signal_needed = false;
-  std::vector<rtc::Network*> networks;
-
+void BasicPortAllocatorSession::GetNetworks(
+    std::vector<rtc::Network*>* networks) {
+  networks->clear();
+  rtc::NetworkManager* network_manager = allocator_->network_manager();
+  ASSERT(network_manager != nullptr);
   // If the network permission state is BLOCKED, we just act as if the flag has
   // been passed in.
-  if (allocator_->network_manager()->enumeration_permission() ==
+  if (network_manager->enumeration_permission() ==
       rtc::NetworkManager::ENUMERATION_BLOCKED) {
     set_flags(flags() | PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
   }
-
   // If the adapter enumeration is disabled, we'll just bind to any address
   // instead of specific NIC. This is to ensure the same routing for http
   // traffic by OS is also used here to avoid any local or public IP leakage
   // during stun process.
   if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
-    allocator_->network_manager()->GetAnyAddressNetworks(&networks);
+    network_manager->GetAnyAddressNetworks(networks);
   } else {
-    allocator_->network_manager()->GetNetworks(&networks);
+    network_manager->GetNetworks(networks);
   }
+}
+
+// For each network, see if we have a sequence that covers it already.  If not,
+// create a new sequence to create the appropriate ports.
+void BasicPortAllocatorSession::DoAllocate() {
+  bool done_signal_needed = false;
+  std::vector<rtc::Network*> networks;
+  GetNetworks(&networks);
+
   if (networks.empty()) {
     LOG(LS_WARNING) << "Machine has no networks; no ports will be allocated";
     done_signal_needed = true;
@@ -377,6 +384,18 @@ void BasicPortAllocatorSession::DoAllocate() {
 }
 
 void BasicPortAllocatorSession::OnNetworksChanged() {
+  std::vector<rtc::Network*> networks;
+  GetNetworks(&networks);
+  for (AllocationSequence* sequence : sequences_) {
+    // Remove the network from the allocation sequence if it is not in
+    // |networks|.
+    if (!sequence->network_removed() &&
+        std::find(networks.begin(), networks.end(), sequence->network()) ==
+            networks.end()) {
+      sequence->OnNetworkRemoved();
+    }
+  }
+
   network_manager_started_ = true;
   if (allocation_started_)
     DoAllocate();
@@ -711,12 +730,24 @@ void AllocationSequence::Clear() {
   turn_ports_.clear();
 }
 
+void AllocationSequence::OnNetworkRemoved() {
+  // Stop the allocation sequence if its network is gone.
+  Stop();
+  network_removed_ = true;
+}
+
 AllocationSequence::~AllocationSequence() {
   session_->network_thread()->Clear(this);
 }
 
 void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
     PortConfiguration* config, uint32* flags) {
+  if (network_removed_) {
+    // If the network of this allocation sequence has ever gone away,
+    // it won't be equivalent to the new network.
+    return;
+  }
+
   if (!((network == network_) && (ip_ == network->GetBestIP()))) {
     // Different network setup; nothing is equivalent.
     return;

@@ -111,11 +111,17 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   void AddInterface(const SocketAddress& addr) {
     network_manager_.AddInterface(addr);
   }
+  void AddInterface(const SocketAddress& addr, const std::string& if_name) {
+    network_manager_.AddInterface(addr, if_name);
+  }
   void AddInterfaceAsDefaultRoute(const SocketAddress& addr) {
     AddInterface(addr);
     // When a binding comes from the any address, the |addr| will be used as the
     // srflx address.
     vss_->SetDefaultRoute(addr.ipaddr());
+  }
+  void RemoveInterface(const SocketAddress& addr) {
+    network_manager_.RemoveInterface(addr);
   }
   bool SetPortRange(int min_port, int max_port) {
     return allocator_->SetPortRange(min_port, max_port);
@@ -429,6 +435,61 @@ TEST_F(PortAllocatorTest, TestGetAllPortsWithMinimumStepDelay) {
   EXPECT_PRED5(CheckCandidate, candidates_[6],
       cricket::ICE_CANDIDATE_COMPONENT_RTP,
       "relay", "ssltcp", kRelaySslTcpIntAddr);
+  EXPECT_TRUE(candidate_allocation_done_);
+}
+
+// Test that when the same network interface is brought down and up, the
+// port allocator session will restart a new allocation sequence if
+// it is not stopped.
+TEST_F(PortAllocatorTest, TestSameNetworkDownAndUpWhenSessionNotStopped) {
+  std::string if_name("test_net0");
+  AddInterface(kClientAddr, if_name);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, ports_.size());
+  EXPECT_TRUE(candidate_allocation_done_);
+  candidate_allocation_done_ = false;
+  candidates_.clear();
+  ports_.clear();
+
+  RemoveInterface(kClientAddr);
+  ASSERT_EQ_WAIT(0U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(0U, ports_.size());
+  EXPECT_FALSE(candidate_allocation_done_);
+
+  // When the same interfaces are added again, new candidates/ports should be
+  // generated.
+  AddInterface(kClientAddr, if_name);
+  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, ports_.size());
+  EXPECT_TRUE(candidate_allocation_done_);
+}
+
+// Test that when the same network interface is brought down and up, the
+// port allocator session will not restart a new allocation sequence if
+// it is stopped.
+TEST_F(PortAllocatorTest, TestSameNetworkDownAndUpWhenSessionStopped) {
+  std::string if_name("test_net0");
+  AddInterface(kClientAddr, if_name);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, ports_.size());
+  EXPECT_TRUE(candidate_allocation_done_);
+  session_->StopGettingPorts();
+  candidates_.clear();
+  ports_.clear();
+
+  RemoveInterface(kClientAddr);
+  ASSERT_EQ_WAIT(0U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(0U, ports_.size());
+
+  // When the same interfaces are added again, new candidates/ports should not
+  // be generated because the session has stopped.
+  AddInterface(kClientAddr, if_name);
+  ASSERT_EQ_WAIT(0U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(0U, ports_.size());
   EXPECT_TRUE(candidate_allocation_done_);
 }
 
