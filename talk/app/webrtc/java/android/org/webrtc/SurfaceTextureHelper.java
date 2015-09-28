@@ -37,6 +37,7 @@ import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.util.Log;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,8 +46,11 @@ import java.util.concurrent.TimeUnit;
  * the frame. Only one texture frame can be in flight at once, so returnTextureFrame() must be
  * called in order to receive a new frame. Call disconnect() to stop receiveing new frames and
  * release all resources.
+ * Note that there is a C++ counter part of this class that optionally can be used. It is used for
+ * wrapping texture frames into webrtc::VideoFrames and also handles calling returnTextureFrame()
+ * when the webrtc::VideoFrame is no longer used.
  */
-public final class SurfaceTextureHelper {
+final class SurfaceTextureHelper {
   private static final String TAG = "SurfaceTextureHelper";
   /**
    * Callback interface for being notified that a new texture frame is available. The calls will be
@@ -65,18 +69,16 @@ public final class SurfaceTextureHelper {
   private final EglBase eglBase;
   private final SurfaceTexture surfaceTexture;
   private final int oesTextureId;
-  private final OnTextureFrameAvailableListener listener;
+  private OnTextureFrameAvailableListener listener;
   // The possible states of this class.
   private boolean hasPendingTexture = false;
   private boolean isTextureInUse = false;
   private boolean isQuitting = false;
 
   /**
-   * Construct a new SurfaceTextureHelper to stream textures to the given |listener|, sharing OpenGL
-   * resources with |sharedContext|.
+   * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|.
    */
-  public SurfaceTextureHelper(EGLContext sharedContext, OnTextureFrameAvailableListener listener) {
-    this.listener = listener;
+  public SurfaceTextureHelper(EGLContext sharedContext) {
     thread = new HandlerThread(TAG);
     thread.start();
     handler = new Handler(thread.getLooper());
@@ -87,13 +89,6 @@ public final class SurfaceTextureHelper {
 
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     surfaceTexture = new SurfaceTexture(oesTextureId);
-    surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-      @Override
-      public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        hasPendingTexture = true;
-        tryDeliverTextureFrame();
-      }
-    }, handler);
 
     // Reattach EGL context to private thread.
     eglBase.detachCurrent();
@@ -102,6 +97,24 @@ public final class SurfaceTextureHelper {
         eglBase.makeCurrent();
       }
     });
+  }
+
+  /**
+   *  Start to stream textures to the given |listener|.
+   *  A Listener can only be set once.
+   */
+  public void setListener(OnTextureFrameAvailableListener listener) {
+    if (this.listener != null) {
+      throw new IllegalStateException("SurfaceTextureHelper listener has already been set.");
+    }
+    this.listener = listener;
+    surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+      @Override
+      public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        hasPendingTexture = true;
+        tryDeliverTextureFrame();
+      }
+    }, handler);
   }
 
   /**
@@ -131,23 +144,34 @@ public final class SurfaceTextureHelper {
   }
 
   /**
-   * Call disconnect() to stop receiving frames and release all resources. This function will block
-   * until all frames are returned and all resoureces are released. You are guaranteed to not
-   * receive any more onTextureFrameAvailable() after this function returns.
+   * Call disconnect() to stop receiving frames. Resources are released when the texture frame has
+   * been returned by a call to returnTextureFrame(). You are guaranteed to not receive any more
+   * onTextureFrameAvailable() after this function returns.
    */
   public void disconnect() {
+    final CountDownLatch barrier = new CountDownLatch(1);
     handler.postAtFrontOfQueue(new Runnable() {
       @Override public void run() {
         isQuitting = true;
+        barrier.countDown();
         if (!isTextureInUse) {
           release();
         }
       }
     });
-    try {
-      thread.join();
-    } catch (InterruptedException e) {
-      Log.e(TAG, "SurfaceTexture thread was interrupted in join().");
+    boolean wasInterrupted = true;
+    while(true) {
+      try {
+        barrier.await();
+        break;
+      } catch (InterruptedException e) {
+        // Someone is asking us to return early at our convenience. We must wait until the
+        // |isQuitting| flag has been set but we should preserve the information and pass it along.
+        wasInterrupted = true;
+      }
+    }
+    if (wasInterrupted) {
+      Thread.currentThread().interrupt();
     }
   }
 

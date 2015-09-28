@@ -102,6 +102,8 @@
                 'app/webrtc/java/jni/androidmediadecoder_jni.h',
                 'app/webrtc/java/jni/androidmediaencoder_jni.cc',
                 'app/webrtc/java/jni/androidmediaencoder_jni.h',
+                'app/webrtc/java/jni/surfacetexturehelper_jni.cc',
+                'app/webrtc/java/jni/surfacetexturehelper_jni.h',
               ]
             }],
           ],
