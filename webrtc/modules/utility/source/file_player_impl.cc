@@ -389,7 +389,7 @@ int32_t FilePlayerImpl::SetUpAudioDecoder()
         return -1;
     }
     if( STR_CASE_CMP(_codec.plname, "L16") != 0 &&
-        _audioDecoder.SetDecodeCodec(_codec,AMRFileStorage) == -1)
+        _audioDecoder.SetDecodeCodec(_codec) == -1)
     {
         LOG(LS_WARNING) << "SetUpAudioDecoder() codec " << _codec.plname
                         << " not supported.";

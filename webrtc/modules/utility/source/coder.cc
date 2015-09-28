@@ -29,8 +29,7 @@ AudioCoder::~AudioCoder()
 {
 }
 
-int32_t AudioCoder::SetEncodeCodec(const CodecInst& codecInst,
-                                   ACMAMRPackingFormat amrFormat)
+int32_t AudioCoder::SetEncodeCodec(const CodecInst& codecInst)
 {
     if(_acm->RegisterSendCodec((CodecInst&)codecInst) == -1)
     {
@@ -39,8 +38,7 @@ int32_t AudioCoder::SetEncodeCodec(const CodecInst& codecInst,
     return 0;
 }
 
-int32_t AudioCoder::SetDecodeCodec(const CodecInst& codecInst,
-                                   ACMAMRPackingFormat amrFormat)
+int32_t AudioCoder::SetDecodeCodec(const CodecInst& codecInst)
 {
     if(_acm->RegisterReceiveCodec((CodecInst&)codecInst) == -1)
     {

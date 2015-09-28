@@ -240,7 +240,7 @@ int32_t FileRecorderImpl::SetUpAudioEncoder()
     if (_fileFormat == kFileFormatPreencodedFile ||
         STR_CASE_CMP(codec_info_.plname, "L16") != 0)
     {
-        if(_audioEncoder.SetEncodeCodec(codec_info_,_amrFormat) == -1)
+        if(_audioEncoder.SetEncodeCodec(codec_info_) == -1)
         {
             LOG(LS_ERROR) << "SetUpAudioEncoder() codec "
                           << codec_info_.plname << " not supported.";

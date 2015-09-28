@@ -25,13 +25,9 @@ public:
     AudioCoder(uint32_t instanceID);
     ~AudioCoder();
 
-    int32_t SetEncodeCodec(
-        const CodecInst& codecInst,
-        ACMAMRPackingFormat amrFormat = AMRBandwidthEfficient);
+    int32_t SetEncodeCodec(const CodecInst& codecInst);
 
-    int32_t SetDecodeCodec(
-        const CodecInst& codecInst,
-        ACMAMRPackingFormat amrFormat = AMRBandwidthEfficient);
+    int32_t SetDecodeCodec(const CodecInst& codecInst);
 
     int32_t Decode(AudioFrame& decodedAudio, uint32_t sampFreqHz,
                    const int8_t* incomingPayload, size_t payloadLength);
