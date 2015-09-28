@@ -70,7 +70,7 @@ class  WebRtcAudioRecord {
     @Override
     public void run() {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-      Logging.w(TAG, "AudioRecordThread" + WebRtcAudioUtils.getThreadInfo());
+      Logging.d(TAG, "AudioRecordThread" + WebRtcAudioUtils.getThreadInfo());
       assertTrue(audioRecord.getRecordingState()
           == AudioRecord.RECORDSTATE_RECORDING);
 
@@ -90,7 +90,7 @@ class  WebRtcAudioRecord {
           long durationInMs =
               TimeUnit.NANOSECONDS.toMillis((nowTime - lastTime));
           lastTime = nowTime;
-          Logging.w(TAG, "bytesRead[" + durationInMs + "] " + bytesRead);
+          Logging.d(TAG, "bytesRead[" + durationInMs + "] " + bytesRead);
         }
       }
 
@@ -114,7 +114,7 @@ class  WebRtcAudioRecord {
   }
 
   WebRtcAudioRecord(Context context, long nativeAudioRecord) {
-    Logging.w(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
+    Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.context = context;
     this.nativeAudioRecord = nativeAudioRecord;
     if (DEBUG) {
@@ -124,7 +124,7 @@ class  WebRtcAudioRecord {
   }
 
   private boolean enableBuiltInAEC(boolean enable) {
-    Logging.w(TAG, "enableBuiltInAEC(" + enable + ')');
+    Logging.d(TAG, "enableBuiltInAEC(" + enable + ')');
     if (effects == null) {
       Logging.e(TAG,"Built-in AEC is not supported on this platform");
       return false;
@@ -133,7 +133,7 @@ class  WebRtcAudioRecord {
   }
 
   private boolean enableBuiltInAGC(boolean enable) {
-    Logging.w(TAG, "enableBuiltInAGC(" + enable + ')');
+    Logging.d(TAG, "enableBuiltInAGC(" + enable + ')');
     if (effects == null) {
       Logging.e(TAG,"Built-in AGC is not supported on this platform");
       return false;
@@ -142,7 +142,7 @@ class  WebRtcAudioRecord {
   }
 
   private boolean enableBuiltInNS(boolean enable) {
-    Logging.w(TAG, "enableBuiltInNS(" + enable + ')');
+    Logging.d(TAG, "enableBuiltInNS(" + enable + ')');
     if (effects == null) {
       Logging.e(TAG,"Built-in NS is not supported on this platform");
       return false;
@@ -151,7 +151,7 @@ class  WebRtcAudioRecord {
   }
 
   private int initRecording(int sampleRate, int channels) {
-    Logging.w(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" +
+    Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" +
         channels + ")");
     if (!WebRtcAudioUtils.hasPermission(
         context, android.Manifest.permission.RECORD_AUDIO)) {
@@ -165,7 +165,7 @@ class  WebRtcAudioRecord {
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
-    Logging.w(TAG, "byteBuffer.capacity: " + byteBuffer.capacity());
+    Logging.d(TAG, "byteBuffer.capacity: " + byteBuffer.capacity());
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the
     // the native class cache the address to the memory once.
@@ -183,14 +183,14 @@ class  WebRtcAudioRecord {
       Logging.e(TAG, "AudioRecord.getMinBufferSize failed: " + minBufferSize);
       return -1;
     }
-    Logging.w(TAG, "AudioRecord.getMinBufferSize: " + minBufferSize);
+    Logging.d(TAG, "AudioRecord.getMinBufferSize: " + minBufferSize);
 
     // Use a larger buffer size than the minimum required when creating the
     // AudioRecord instance to ensure smooth recording under load. It has been
     // verified that it does not increase the actual recording latency.
     int bufferSizeInBytes =
         Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
-    Logging.w(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
+    Logging.d(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
     try {
       audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION,
                                     sampleRate,
@@ -206,7 +206,7 @@ class  WebRtcAudioRecord {
       Logging.e(TAG,"Failed to create a new AudioRecord instance");
       return -1;
     }
-    Logging.w(TAG, "AudioRecord "
+    Logging.d(TAG, "AudioRecord "
         + "session ID: " + audioRecord.getAudioSessionId() + ", "
         + "audio format: " + audioRecord.getAudioFormat() + ", "
         + "channels: " + audioRecord.getChannelCount() + ", "
@@ -227,7 +227,7 @@ class  WebRtcAudioRecord {
   }
 
   private boolean startRecording() {
-    Logging.w(TAG, "startRecording");
+    Logging.d(TAG, "startRecording");
     assertTrue(audioRecord != null);
     assertTrue(audioThread == null);
     try {
@@ -246,7 +246,7 @@ class  WebRtcAudioRecord {
   }
 
   private boolean stopRecording() {
-    Logging.w(TAG, "stopRecording");
+    Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     audioThread.joinThread();
     audioThread = null;
