@@ -1117,7 +1117,7 @@ bool RTCPSender::PrepareReport(const FeedbackState& feedback_state,
 int32_t RTCPSender::SendToNetwork(const uint8_t* dataBuffer, size_t length) {
   CriticalSectionScoped lock(critical_section_transport_.get());
   if (cbTransport_) {
-    if (cbTransport_->SendRTCPPacket(dataBuffer, length) > 0)
+    if (cbTransport_->SendRtcp(dataBuffer, length))
       return 0;
   }
   return -1;
@@ -1220,7 +1220,7 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
         : transport_(transport), send_failure_(false) {}
 
     void OnPacketReady(uint8_t* data, size_t length) override {
-      if (transport_->SendRTCPPacket(data, length) <= 0)
+      if (!transport_->SendRtcp(data, length))
         send_failure_ = true;
     }
 

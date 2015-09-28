@@ -22,6 +22,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/transport.h"
 
 using namespace webrtc;
 
@@ -95,7 +96,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     packet_loss_ = 0;
   }
 
-  int SendPacket(const void* data, size_t len) override {
+  bool SendRtp(const uint8_t* data, size_t len) override {
     count_++;
     const unsigned char* ptr = static_cast<const unsigned  char*>(data);
     uint32_t ssrc = (ptr[8] << 24) + (ptr[9] << 16) + (ptr[10] << 8) + ptr[11];
@@ -110,7 +111,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     RTPHeader header;
     rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     if (!parser->Parse(ptr, len, &header)) {
-      return -1;
+      return false;
     }
 
     if (!rtp_payload_registry_->IsRtx(header)) {
@@ -121,11 +122,11 @@ class RtxLoopBackTransport : public webrtc::Transport {
     }
     if (packet_loss_ > 0) {
       if ((count_ % packet_loss_) == 0) {
-        return static_cast<int>(len);
+        return true;
       }
     } else if (count_ >= consecutive_drop_start_ &&
                count_ < consecutive_drop_end_) {
-      return static_cast<int>(len);
+      return true;
     }
     if (rtp_payload_registry_->IsRtx(header)) {
       // Remove the RTX header and parse the original RTP header.
@@ -133,7 +134,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
           &restored_packet_ptr, ptr, &packet_length, rtp_receiver_->SSRC(),
           header));
       if (!parser->Parse(restored_packet_ptr, packet_length, &header)) {
-        return -1;
+        return false;
       }
     } else {
       rtp_payload_registry_->SetIncomingPayloadType(header);
@@ -144,21 +145,18 @@ class RtxLoopBackTransport : public webrtc::Transport {
     PayloadUnion payload_specific;
     if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
                                                     &payload_specific)) {
-      return -1;
+      return false;
     }
     if (!rtp_receiver_->IncomingRtpPacket(header, restored_packet_ptr,
                                           packet_length, payload_specific,
                                           true)) {
-      return -1;
+      return false;
     }
-    return static_cast<int>(len);
+    return true;
   }
 
-  int SendRTCPPacket(const void* data, size_t len) override {
-    if (module_->IncomingRtcpPacket((const uint8_t*)data, len) == 0) {
-      return static_cast<int>(len);
-    }
-    return -1;
+  bool SendRtcp(const uint8_t* data, size_t len) override {
+    return module_->IncomingRtcpPacket((const uint8_t*)data, len) == 0;
   }
   int count_;
   int packet_loss_;

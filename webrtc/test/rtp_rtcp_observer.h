@@ -27,11 +27,11 @@ namespace test {
 class RtpRtcpObserver {
  public:
   virtual ~RtpRtcpObserver() {}
-  newapi::Transport* SendTransport() {
+  Transport* SendTransport() {
     return &send_transport_;
   }
 
-  newapi::Transport* ReceiveTransport() {
+  Transport* ReceiveTransport() {
     return &receive_transport_;
   }
 

@@ -735,7 +735,8 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
 bool RTPSender::SendPacketToNetwork(const uint8_t *packet, size_t size) {
   int bytes_sent = -1;
   if (transport_) {
-    bytes_sent = transport_->SendPacket(packet, size);
+    bytes_sent =
+        transport_->SendRtp(packet, size) ? static_cast<int>(size) : -1;
   }
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "RTPSender::SendPacketToNetwork", "size", size, "sent",

@@ -17,7 +17,7 @@ namespace webrtc {
 class PacketReceiver;
 
 namespace test {
-class NullTransport : public newapi::Transport {
+class NullTransport : public Transport {
  public:
   bool SendRtp(const uint8_t* packet, size_t length) override;
   bool SendRtcp(const uint8_t* packet, size_t length) override;

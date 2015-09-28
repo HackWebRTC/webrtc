@@ -16,7 +16,6 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-namespace newapi {
 
 class Transport {
  public:
@@ -26,7 +25,7 @@ class Transport {
  protected:
   virtual ~Transport() {}
 };
-}  // namespace newapi
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_TRANSPORT_H_

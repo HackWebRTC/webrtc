@@ -30,37 +30,37 @@ void LoopBackTransport::DropEveryNthPacket(int n) {
   packet_loss_ = n;
 }
 
-int LoopBackTransport::SendPacket(const void* data, size_t len) {
+bool LoopBackTransport::SendRtp(const uint8_t* data, size_t len) {
   count_++;
   if (packet_loss_ > 0) {
     if ((count_ % packet_loss_) == 0) {
-      return len;
+      return true;
     }
   }
   RTPHeader header;
   rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
   if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
-    return -1;
+    return false;
   }
   PayloadUnion payload_specific;
   if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
                                                   &payload_specific)) {
-    return -1;
+    return false;
   }
   receive_statistics_->IncomingPacket(header, len, false);
   if (!rtp_receiver_->IncomingRtpPacket(header,
                                         static_cast<const uint8_t*>(data), len,
                                         payload_specific, true)) {
-    return -1;
+    return false;
   }
-  return len;
+  return true;
 }
 
-int LoopBackTransport::SendRTCPPacket(const void* data, size_t len) {
+bool LoopBackTransport::SendRtcp(const uint8_t* data, size_t len) {
   if (rtp_rtcp_module_->IncomingRtcpPacket((const uint8_t*)data, len) < 0) {
-    return -1;
+    return false;
   }
-  return static_cast<int>(len);
+  return true;
 }
 
 int32_t TestRtpReceiver::OnReceivedPayloadData(

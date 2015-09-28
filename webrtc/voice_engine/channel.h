@@ -378,8 +378,8 @@ public:
                               uint8_t volume) override;
 
     // From Transport (called by the RTP/RTCP module)
-    int SendPacket(const void* data, size_t len) override;
-    int SendRTCPPacket(const void* data, size_t len) override;
+    bool SendRtp(const uint8_t* data, size_t len) override;
+    bool SendRtcp(const uint8_t* data, size_t len) override;
 
     // From MixerParticipant
     int32_t GetAudioFrame(int32_t id, AudioFrame* audioFrame) override;
@@ -465,7 +465,6 @@ private:
     int InsertInbandDtmfTone();
     int32_t MixOrReplaceAudioWithFile(int mixingFrequency);
     int32_t MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency);
-    int32_t SendPacketRaw(const void *data, size_t len, bool RTCP);
     void UpdatePlayoutTimestamp(bool rtcp);
     void UpdatePacketDelay(uint32_t timestamp,
                            uint16_t sequenceNumber);

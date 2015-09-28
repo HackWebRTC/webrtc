@@ -10,9 +10,9 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
+#include "webrtc/test/mock_transport.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_network.h"
-#include "webrtc/voice_engine/mock/mock_transport.h"
 #include "webrtc/voice_engine/mock/mock_voe_observer.h"
 
 namespace webrtc {

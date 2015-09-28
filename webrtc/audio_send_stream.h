@@ -29,7 +29,7 @@ class AudioSendStream : public SendStream {
 
   struct Config {
     Config() = delete;
-    explicit Config(newapi::Transport* send_transport)
+    explicit Config(Transport* send_transport)
         : send_transport(send_transport) {}
 
     std::string ToString() const;
@@ -46,7 +46,7 @@ class AudioSendStream : public SendStream {
     } rtp;
 
     // Transport for outgoing packets.
-    newapi::Transport* send_transport = nullptr;
+    Transport* send_transport = nullptr;
 
     rtc::scoped_ptr<AudioEncoder> encoder;
     int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.

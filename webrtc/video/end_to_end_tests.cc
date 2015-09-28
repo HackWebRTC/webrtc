@@ -59,7 +59,7 @@ class EndToEndTest : public test::CallTest {
   }
 
  protected:
-  class UnusedTransport : public newapi::Transport {
+  class UnusedTransport : public Transport {
    private:
     bool SendRtp(const uint8_t* packet, size_t length) override {
       ADD_FAILURE() << "Unexpected RTP sent.";

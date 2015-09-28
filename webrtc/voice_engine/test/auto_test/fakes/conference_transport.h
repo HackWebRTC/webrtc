@@ -98,8 +98,8 @@ class ConferenceTransport: public webrtc::Transport {
   bool GetReceiverStatistics(unsigned int id, webrtc::CallStatistics* stats);
 
   // Inherit from class webrtc::Transport.
-  int SendPacket(const void *data, size_t len) override;
-  int SendRTCPPacket(const void *data, size_t len) override;
+  bool SendRtp(const uint8_t *data, size_t len) override;
+  bool SendRtcp(const uint8_t *data, size_t len) override;
 
  private:
   struct Packet {

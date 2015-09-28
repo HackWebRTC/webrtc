@@ -108,14 +108,14 @@ ConferenceTransport::~ConferenceTransport() {
   EXPECT_TRUE(webrtc::VoiceEngine::Delete(local_voe_));
 }
 
-int ConferenceTransport::SendPacket(const void* data, size_t len) {
+bool ConferenceTransport::SendRtp(const uint8_t* data, size_t len) {
   StorePacket(Packet::Rtp, data, len);
-  return static_cast<int>(len);
+  return true;
 }
 
-int ConferenceTransport::SendRTCPPacket(const void* data, size_t len) {
+bool ConferenceTransport::SendRtcp(const uint8_t* data, size_t len) {
   StorePacket(Packet::Rtcp, data, len);
-  return static_cast<int>(len);
+  return true;
 }
 
 int ConferenceTransport::GetReceiverChannelForSsrc(unsigned int sender_ssrc)

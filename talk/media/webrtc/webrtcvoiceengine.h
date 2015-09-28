@@ -250,16 +250,16 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                          VoiceMediaChannel::Error* error) override;
 
   // implements Transport interface
-  int SendPacket(const void* data, size_t len) override {
+  bool SendRtp(const uint8_t* data, size_t len) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
-    return VoiceMediaChannel::SendPacket(&packet) ? static_cast<int>(len) : -1;
+    return VoiceMediaChannel::SendPacket(&packet);
   }
 
-  int SendRTCPPacket(const void* data, size_t len) override {
+  bool SendRtcp(const uint8_t* data, size_t len) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
-    return VoiceMediaChannel::SendRtcp(&packet) ? static_cast<int>(len) : -1;
+    return VoiceMediaChannel::SendRtcp(&packet);
   }
 
   bool FindSsrc(int channel_num, uint32* ssrc);

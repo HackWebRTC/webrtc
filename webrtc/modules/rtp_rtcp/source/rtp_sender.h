@@ -24,6 +24,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
+#include "webrtc/transport.h"
 
 #define MAX_INIT_RTP_SEQ_NUMBER 32767  // 2^15 -1.
 

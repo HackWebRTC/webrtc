@@ -90,7 +90,7 @@ void CallTest::CreateReceiverCall(const Call::Config& config) {
 }
 
 void CallTest::CreateSendConfig(size_t num_streams,
-                                newapi::Transport* send_transport) {
+                                Transport* send_transport) {
   assert(num_streams <= kNumSsrcs);
   send_config_ = VideoSendStream::Config(send_transport);
   send_config_.encoder_settings.encoder = &fake_encoder_;
@@ -106,7 +106,7 @@ void CallTest::CreateSendConfig(size_t num_streams,
 }
 
 void CallTest::CreateMatchingReceiveConfigs(
-    newapi::Transport* rtcp_send_transport) {
+    Transport* rtcp_send_transport) {
   assert(!send_config_.rtp.ssrcs.empty());
   assert(receive_configs_.empty());
   assert(allocated_decoders_.empty());

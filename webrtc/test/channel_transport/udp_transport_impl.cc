@@ -1931,18 +1931,18 @@ int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
     return -1;
 }
 
-int UdpTransportImpl::SendPacket(const void* data, size_t length) {
+bool UdpTransportImpl::SendRtp(const uint8_t* data, size_t length) {
     WEBRTC_TRACE(kTraceStream, kTraceTransport, _id, "%s", __FUNCTION__);
 
     CriticalSectionScoped cs(_crit);
 
     if(_destIP[0] == 0)
     {
-        return -1;
+        return false;
     }
     if(_destPort == 0)
     {
-        return -1;
+        return false;
     }
 
     // Create socket if it hasn't been set up already.
@@ -1980,32 +1980,32 @@ int UdpTransportImpl::SendPacket(const void* data, size_t length) {
                          "SendPacket() failed to bind RTP socket");
             _lastError = retVal;
             CloseReceiveSockets();
-            return -1;
+            return false;
         }
     }
 
     if(_ptrSendRtpSocket)
     {
         return _ptrSendRtpSocket->SendTo((const int8_t*)data, length,
-                                         _remoteRTPAddr);
+                                         _remoteRTPAddr) >= 0;
 
     } else if(_ptrRtpSocket)
     {
         return _ptrRtpSocket->SendTo((const int8_t*)data, length,
-                                     _remoteRTPAddr);
+                                     _remoteRTPAddr) >= 0;
     }
-    return -1;
+    return false;
 }
 
-int UdpTransportImpl::SendRTCPPacket(const void* data, size_t length) {
+bool UdpTransportImpl::SendRtcp(const uint8_t* data, size_t length) {
     CriticalSectionScoped cs(_crit);
     if(_destIP[0] == 0)
     {
-        return -1;
+        return false;
     }
     if(_destPortRTCP == 0)
     {
-        return -1;
+        return false;
     }
 
     // Create socket if it hasn't been set up already.
@@ -2041,22 +2041,22 @@ int UdpTransportImpl::SendRTCPPacket(const void* data, size_t length) {
         {
             _lastError = retVal;
             WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
-                         "SendRTCPPacket() failed to bind RTCP socket");
+                         "SendRtcp() failed to bind RTCP socket");
             CloseReceiveSockets();
-            return -1;
+            return false;
         }
     }
 
     if(_ptrSendRtcpSocket)
     {
         return _ptrSendRtcpSocket->SendTo((const int8_t*)data, length,
-                                          _remoteRTCPAddr);
+                                          _remoteRTCPAddr) >= 0;
     } else if(_ptrRtcpSocket)
     {
         return _ptrRtcpSocket->SendTo((const int8_t*)data, length,
-                                      _remoteRTCPAddr);
+                                      _remoteRTCPAddr) >= 0;
     }
-    return -1;
+    return false;
 }
 
 int32_t UdpTransportImpl::SetSendIP(const char* ipaddr)

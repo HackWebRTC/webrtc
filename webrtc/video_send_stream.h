@@ -67,7 +67,7 @@ class VideoSendStream : public SendStream {
 
   struct Config {
     Config() = delete;
-    explicit Config(newapi::Transport* send_transport)
+    explicit Config(Transport* send_transport)
         : send_transport(send_transport) {}
 
     std::string ToString() const;
@@ -121,7 +121,7 @@ class VideoSendStream : public SendStream {
     } rtp;
 
     // Transport for outgoing packets.
-    newapi::Transport* send_transport = nullptr;
+    Transport* send_transport = nullptr;
 
     // Callback for overuse and normal usage based on the jitter of incoming
     // captured frames. 'nullptr' disables the callback.

@@ -37,14 +37,14 @@ class TestTransport : public Transport,
   void SetRTCPReceiver(RTCPReceiver* rtcp_receiver) {
     rtcp_receiver_ = rtcp_receiver;
   }
-  int SendPacket(const void* /*data*/, size_t /*len*/) override {
+  bool SendRtp(const uint8_t* /*data*/, size_t /*len*/) override {
     ADD_FAILURE();  // FAIL() gives a compile error.
-    return -1;
+    return false;
   }
 
-  int SendRTCPPacket(const void* packet, size_t packet_len) override {
+  bool SendRtcp(const uint8_t* packet, size_t packet_len) override {
     ADD_FAILURE();
-    return 0;
+    return true;
   }
 
   int OnReceivedPayloadData(const uint8_t* payloadData,

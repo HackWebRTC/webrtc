@@ -89,7 +89,7 @@ class VideoReceiveStream : public ReceiveStream {
 
   struct Config {
     Config() = delete;
-    explicit Config(newapi::Transport* rtcp_send_transport)
+    explicit Config(Transport* rtcp_send_transport)
         : rtcp_send_transport(rtcp_send_transport) {}
 
     std::string ToString() const;
@@ -144,7 +144,7 @@ class VideoReceiveStream : public ReceiveStream {
     } rtp;
 
     // Transport for outgoing packets (RTCP).
-    newapi::Transport* rtcp_send_transport = nullptr;
+    Transport* rtcp_send_transport = nullptr;
 
     // VideoRenderer will be called for each decoded frame. 'nullptr' disables
     // rendering of this stream.

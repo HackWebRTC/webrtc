@@ -71,8 +71,8 @@ class VideoQualityTest : public test::CallTest {
   void CreateCapturer(const Params& params, VideoCaptureInput* input);
   void ValidateParams(const Params& params);
   void SetupFullStack(const Params& params,
-                      newapi::Transport* send_transport,
-                      newapi::Transport* recv_transport);
+                      Transport* send_transport,
+                      Transport* recv_transport);
   void SetupScreenshare(const Params& params);
 
   // We need a more general capturer than the FrameGeneratorCapturer.

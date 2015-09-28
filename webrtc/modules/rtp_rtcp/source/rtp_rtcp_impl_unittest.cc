@@ -61,15 +61,15 @@ class SendTransport : public Transport,
     clock_ = clock;
     delay_ms_ = delay_ms;
   }
-  int SendPacket(const void* data, size_t len) override {
+  bool SendRtp(const uint8_t* data, size_t len) override {
     RTPHeader header;
     rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data), len, &header));
     ++rtp_packets_sent_;
     last_rtp_header_ = header;
-    return static_cast<int>(len);
+    return true;
   }
-  int SendRTCPPacket(const void* data, size_t len) override {
+  bool SendRtcp(const uint8_t* data, size_t len) override {
     test::RtcpPacketParser parser;
     parser.Parse(static_cast<const uint8_t*>(data), len);
     last_nack_list_ = parser.nack_item()->last_nack_list();
@@ -80,7 +80,7 @@ class SendTransport : public Transport,
     EXPECT_TRUE(receiver_ != NULL);
     EXPECT_EQ(0, receiver_->IncomingRtcpPacket(
         static_cast<const uint8_t*>(data), len));
-    return static_cast<int>(len);
+    return true;
   }
   ModuleRtpRtcpImpl* receiver_;
   SimulatedClock* clock_;

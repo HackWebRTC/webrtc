@@ -39,7 +39,7 @@ static const int kPayloadTypeVP8 = 123;
 static const int kPayloadTypeVP9 = 124;
 
 class VideoAnalyzer : public PacketReceiver,
-                      public newapi::Transport,
+                      public Transport,
                       public VideoRenderer,
                       public VideoCaptureInput,
                       public EncodedFrameObserver {
@@ -574,8 +574,8 @@ void VideoQualityTest::ValidateParams(const Params& params) {
 void VideoQualityTest::TestBody() {}
 
 void VideoQualityTest::SetupFullStack(const Params& params,
-                                      newapi::Transport* send_transport,
-                                      newapi::Transport* recv_transport) {
+                                      Transport* send_transport,
+                                      Transport* recv_transport) {
   if (params.logs)
     trace_to_stderr_.reset(new test::TraceToStderr);
 

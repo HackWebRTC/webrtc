@@ -155,7 +155,7 @@ class WebRtcVideoEngine2 {
 
 class WebRtcVideoChannel2 : public rtc::MessageHandler,
                             public VideoMediaChannel,
-                            public webrtc::newapi::Transport,
+                            public webrtc::Transport,
                             public webrtc::LoadObserver {
  public:
   WebRtcVideoChannel2(webrtc::Call* call,

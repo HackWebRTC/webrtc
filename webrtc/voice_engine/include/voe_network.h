@@ -35,6 +35,7 @@
 #define WEBRTC_VOICE_ENGINE_VOE_NETWORK_H
 
 #include "webrtc/common_types.h"
+#include "webrtc/transport.h"
 
 namespace webrtc {
 

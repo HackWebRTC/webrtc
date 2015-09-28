@@ -165,17 +165,6 @@ enum FrameType
     kVideoFrameDelta       = 4,    // depends on the previus frame
 };
 
-// External transport callback interface
-class Transport {
- public:
-  virtual int SendPacket(const void* data, size_t len) = 0;
-  virtual int SendRTCPPacket(const void* data, size_t len) = 0;
-
- protected:
-  virtual ~Transport() {}
-  Transport() {}
-};
-
 // Statistics for an RTCP channel
 struct RtcpStatistics {
   RtcpStatistics()

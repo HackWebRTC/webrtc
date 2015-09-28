@@ -31,8 +31,10 @@ class TestTransport : public Transport {
     rtcp_receiver_(rtcp_receiver) {
   }
 
-  int SendPacket(const void* /*data*/, size_t /*len*/) override { return -1; }
-  int SendRTCPPacket(const void* packet, size_t packetLength) override {
+  bool SendRtp(const uint8_t* /*data*/, size_t /*len*/) override {
+    return false;
+  }
+  bool SendRtcp(const uint8_t* packet, size_t packetLength) override {
     RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
                                          packetLength,
                                          true); // Allow non-compound RTCP
@@ -46,7 +48,7 @@ class TestTransport : public Transport {
               rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb);
     EXPECT_EQ((uint32_t)1234,
               rtcpPacketInformation.receiverEstimatedMaxBitrate);
-    return static_cast<int>(packetLength);
+    return true;
   }
  private:
   RTCPReceiver* rtcp_receiver_;

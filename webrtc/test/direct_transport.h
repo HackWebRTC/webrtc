@@ -28,7 +28,7 @@ class PacketReceiver;
 
 namespace test {
 
-class DirectTransport : public newapi::Transport {
+class DirectTransport : public Transport {
  public:
   DirectTransport();
   explicit DirectTransport(const FakeNetworkPipe::Config& config);

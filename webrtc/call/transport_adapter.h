@@ -17,18 +17,18 @@
 namespace webrtc {
 namespace internal {
 
-class TransportAdapter : public webrtc::Transport {
+class TransportAdapter : public Transport {
  public:
-  explicit TransportAdapter(newapi::Transport* transport);
+  explicit TransportAdapter(Transport* transport);
 
-  int SendPacket(const void* packet, size_t length) override;
-  int SendRTCPPacket(const void* packet, size_t length) override;
+  bool SendRtp(const uint8_t* packet, size_t length) override;
+  bool SendRtcp(const uint8_t* packet, size_t length) override;
 
   void Enable();
   void Disable();
 
  private:
-  newapi::Transport *transport_;
+  Transport *transport_;
   Atomic32 enabled_;
 };
 }  // namespace internal

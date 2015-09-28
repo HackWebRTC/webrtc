@@ -214,8 +214,8 @@ Channel::OnRxVadDetected(int vadDecision)
     return 0;
 }
 
-int
-Channel::SendPacket(const void *data, size_t len)
+bool
+Channel::SendRtp(const uint8_t *data, size_t len)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SendPacket(channel=%d, len=%" PRIuS ")", len);
@@ -227,55 +227,54 @@ Channel::SendPacket(const void *data, size_t len)
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::SendPacket() failed to send RTP packet due to"
                      " invalid transport object");
-        return -1;
+        return false;
     }
 
     uint8_t* bufferToSendPtr = (uint8_t*)data;
     size_t bufferLength = len;
 
-    int n = _transportPtr->SendPacket(bufferToSendPtr, bufferLength);
-    if (n < 0) {
+    if (!_transportPtr->SendRtp(bufferToSendPtr, bufferLength)) {
       std::string transport_name =
           _externalTransport ? "external transport" : "WebRtc sockets";
       WEBRTC_TRACE(kTraceError, kTraceVoice,
                    VoEId(_instanceId,_channelId),
                    "Channel::SendPacket() RTP transmission using %s failed",
                    transport_name.c_str());
-      return -1;
+      return false;
     }
-    return n;
+    return true;
 }
 
-int
-Channel::SendRTCPPacket(const void *data, size_t len)
+bool
+Channel::SendRtcp(const uint8_t *data, size_t len)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::SendRTCPPacket(len=%" PRIuS ")", len);
+                 "Channel::SendRtcp(len=%" PRIuS ")", len);
 
     CriticalSectionScoped cs(&_callbackCritSect);
     if (_transportPtr == NULL)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::SendRTCPPacket() failed to send RTCP packet"
+                     "Channel::SendRtcp() failed to send RTCP packet"
                      " due to invalid transport object");
-        return -1;
+        return false;
     }
 
     uint8_t* bufferToSendPtr = (uint8_t*)data;
     size_t bufferLength = len;
 
-    int n = _transportPtr->SendRTCPPacket(bufferToSendPtr, bufferLength);
+    int n = _transportPtr->SendRtcp(bufferToSendPtr, bufferLength);
     if (n < 0) {
       std::string transport_name =
           _externalTransport ? "external transport" : "WebRtc sockets";
       WEBRTC_TRACE(kTraceInfo, kTraceVoice,
                    VoEId(_instanceId,_channelId),
-                   "Channel::SendRTCPPacket() transmission using %s failed",
+                   "Channel::SendRtcp() transmission using %s failed",
                    transport_name.c_str());
-      return -1;
+      return false;
     }
-    return n;
+    return true;
 }
 
 void Channel::OnPlayTelephoneEvent(uint8_t event,
@@ -3706,24 +3705,6 @@ Channel::InsertInbandDtmfTone()
         _inbandDtmfGenerator.UpdateDelaySinceLastTone();
     }
     return 0;
-}
-
-int32_t
-Channel::SendPacketRaw(const void *data, size_t len, bool RTCP)
-{
-    CriticalSectionScoped cs(&_callbackCritSect);
-    if (_transportPtr == NULL)
-    {
-        return -1;
-    }
-    if (!RTCP)
-    {
-        return _transportPtr->SendPacket(data, len);
-    }
-    else
-    {
-        return _transportPtr->SendRTCPPacket(data, len);
-    }
 }
 
 void Channel::UpdatePlayoutTimestamp(bool rtcp) {

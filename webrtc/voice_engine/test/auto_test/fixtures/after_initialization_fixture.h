@@ -41,14 +41,14 @@ class LoopBackTransport : public webrtc::Transport {
 
   ~LoopBackTransport() { thread_->Stop(); }
 
-  int SendPacket(const void* data, size_t len) override {
+  bool SendRtp(const uint8_t* data, size_t len) override {
     StorePacket(Packet::Rtp, data, len);
-    return static_cast<int>(len);
+    return true;
   }
 
-  int SendRTCPPacket(const void* data, size_t len) override {
+  bool SendRtcp(const uint8_t* data, size_t len) override {
     StorePacket(Packet::Rtcp, data, len);
-    return static_cast<int>(len);
+    return true;
   }
 
   void WaitForTransmittedPackets(int32_t packet_count) {

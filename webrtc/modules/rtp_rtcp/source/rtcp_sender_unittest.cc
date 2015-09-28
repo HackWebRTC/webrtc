@@ -199,12 +199,12 @@ class TestTransport : public Transport,
  public:
   TestTransport() {}
 
-  int SendPacket(const void* /*data*/, size_t /*len*/) override {
-    return -1;
+  bool SendRtp(const uint8_t* /*data*/, size_t /*len*/) override {
+    return false;
   }
-  int SendRTCPPacket(const void* data, size_t len) override {
+  bool SendRtcp(const uint8_t* data, size_t len) override {
     parser_.Parse(static_cast<const uint8_t*>(data), len);
-    return static_cast<int>(len);
+    return true;
   }
   int OnReceivedPayloadData(const uint8_t* payload_data,
                             const size_t payload_size,
