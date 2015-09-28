@@ -11,40 +11,35 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_TIMESTAMP_MAP_H_
 #define WEBRTC_MODULES_VIDEO_CODING_TIMESTAMP_MAP_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-struct VCMTimestampDataTuple
-{
-    uint32_t    timestamp;
-    void*             data;
-};
+struct VCMFrameInformation;
 
-class VCMTimestampMap
-{
-public:
-    // Constructor. Optional parameter specifies maximum number of
-    // timestamps in map.
-    VCMTimestampMap(const int32_t length = 10);
+class VCMTimestampMap {
+ public:
+  explicit VCMTimestampMap(size_t capacity);
+  ~VCMTimestampMap();
 
-    // Destructor.
-    ~VCMTimestampMap();
+  // Empty the map.
+  void Reset();
 
-    // Empty the map
-    void Reset();
+  void Add(uint32_t timestamp, VCMFrameInformation* data);
+  VCMFrameInformation* Pop(uint32_t timestamp);
 
-    int32_t Add(uint32_t timestamp, void*  data);
-    void* Pop(uint32_t timestamp);
+ private:
+  struct TimestampDataTuple {
+    uint32_t timestamp;
+    VCMFrameInformation* data;
+  };
+  bool IsEmpty() const;
 
-private:
-    bool IsEmpty() const;
-
-    VCMTimestampDataTuple* _map;
-    int32_t                   _nextAddIx;
-    int32_t                   _nextPopIx;
-    int32_t                   _length;
+  rtc::scoped_ptr<TimestampDataTuple[]> ring_buffer_;
+  const size_t capacity_;
+  size_t next_add_idx_;
+  size_t next_pop_idx_;
 };
 
 }  // namespace webrtc

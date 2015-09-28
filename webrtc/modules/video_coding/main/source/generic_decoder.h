@@ -46,7 +46,7 @@ public:
 
     uint64_t LastReceivedPictureID() const;
 
-    int32_t Map(uint32_t timestamp, VCMFrameInformation* frameInfo);
+    void Map(uint32_t timestamp, VCMFrameInformation* frameInfo);
     int32_t Pop(uint32_t timestamp);
 
 private:

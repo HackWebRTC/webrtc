@@ -10,90 +10,56 @@
 
 #include <assert.h>
 #include <stdlib.h>
+
+#include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/main/source/timestamp_map.h"
 
 namespace webrtc {
 
-// Constructor. Optional parameter specifies maximum number of
-// coexisting timers.
-VCMTimestampMap::VCMTimestampMap(int32_t length):
-    _nextAddIx(0),
-    _nextPopIx(0)
-{
-    if (length <= 0)
-    {
-        // default
-        length = 10;
+VCMTimestampMap::VCMTimestampMap(size_t capacity)
+    : ring_buffer_(new TimestampDataTuple[capacity]),
+      capacity_(capacity),
+      next_add_idx_(0),
+      next_pop_idx_(0) {
+}
+
+VCMTimestampMap::~VCMTimestampMap() {
+}
+
+void VCMTimestampMap::Add(uint32_t timestamp, VCMFrameInformation* data) {
+  ring_buffer_[next_add_idx_].timestamp = timestamp;
+  ring_buffer_[next_add_idx_].data = data;
+  next_add_idx_ = (next_add_idx_ + 1) % capacity_;
+
+  if (next_add_idx_ == next_pop_idx_) {
+    // Circular list full; forget oldest entry.
+    next_pop_idx_ = (next_pop_idx_ + 1) % capacity_;
+  }
+}
+
+VCMFrameInformation* VCMTimestampMap::Pop(uint32_t timestamp) {
+  while (!IsEmpty()) {
+    if (ring_buffer_[next_pop_idx_].timestamp == timestamp) {
+      // Found start time for this timestamp.
+      VCMFrameInformation* data = ring_buffer_[next_pop_idx_].data;
+      ring_buffer_[next_pop_idx_].data = nullptr;
+      next_pop_idx_ = (next_pop_idx_ + 1) % capacity_;
+      return data;
+    } else if (IsNewerTimestamp(ring_buffer_[next_pop_idx_].timestamp,
+                                timestamp)) {
+      // The timestamp we are looking for is not in the list.
+      return nullptr;
     }
 
-    _map = new VCMTimestampDataTuple[length];
-    _length = length;
+    // Not in this position, check next (and forget this position).
+    next_pop_idx_ = (next_pop_idx_ + 1) % capacity_;
+  }
+
+  // Could not find matching timestamp in list.
+  return nullptr;
 }
 
-// Destructor.
-VCMTimestampMap::~VCMTimestampMap()
-{
-    delete [] _map;
+bool VCMTimestampMap::IsEmpty() const {
+  return (next_add_idx_ == next_pop_idx_);
 }
-
-// Empty the list of timers.
-void
-VCMTimestampMap::Reset()
-{
-    _nextAddIx = 0;
-    _nextPopIx = 0;
-}
-
-int32_t
-VCMTimestampMap::Add(uint32_t timestamp, void* data)
-{
-    _map[_nextAddIx].timestamp = timestamp;
-    _map[_nextAddIx].data = data;
-    _nextAddIx = (_nextAddIx + 1) % _length;
-
-    if (_nextAddIx == _nextPopIx)
-    {
-        // Circular list full; forget oldest entry
-        _nextPopIx = (_nextPopIx + 1) % _length;
-        return -1;
-    }
-    return 0;
-}
-
-void*
-VCMTimestampMap::Pop(uint32_t timestamp)
-{
-    while (!IsEmpty())
-    {
-        if (_map[_nextPopIx].timestamp == timestamp)
-        {
-            // found start time for this timestamp
-            void* data = _map[_nextPopIx].data;
-            _map[_nextPopIx].data = NULL;
-            _nextPopIx = (_nextPopIx + 1) % _length;
-            return data;
-        }
-        else if (_map[_nextPopIx].timestamp > timestamp)
-        {
-            // the timestamp we are looking for is not in the list
-            assert(_nextPopIx < _length && _nextPopIx >= 0);
-            return NULL;
-        }
-
-        // not in this position, check next (and forget this position)
-        _nextPopIx = (_nextPopIx + 1) % _length;
-    }
-
-    // could not find matching timestamp in list
-    assert(_nextPopIx < _length && _nextPopIx >= 0);
-    return NULL;
-}
-
-// Check if no timers are currently running
-bool
-VCMTimestampMap::IsEmpty() const
-{
-    return (_nextAddIx == _nextPopIx);
-}
-
 }
