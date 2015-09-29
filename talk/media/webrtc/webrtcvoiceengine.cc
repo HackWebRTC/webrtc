@@ -582,32 +582,6 @@ bool WebRtcVoiceEngine::SetOptions(const AudioOptions& options) {
   return true;
 }
 
-bool WebRtcVoiceEngine::SetOptionOverrides(const AudioOptions& overrides) {
-  LOG(LS_INFO) << "Setting option overrides: " << overrides.ToString();
-  if (!ApplyOptions(overrides)) {
-    return false;
-  }
-  option_overrides_ = overrides;
-  return true;
-}
-
-bool WebRtcVoiceEngine::ClearOptionOverrides() {
-  LOG(LS_INFO) << "Clearing option overrides.";
-  AudioOptions options = options_;
-  // Only call ApplyOptions if |options_overrides_| contains overrided options.
-  // ApplyOptions affects NS, AGC other options that is shared between
-  // all WebRtcVoiceEngineChannels.
-  if (option_overrides_ == AudioOptions()) {
-    return true;
-  }
-
-  if (!ApplyOptions(options)) {
-    return false;
-  }
-  option_overrides_ = AudioOptions();
-  return true;
-}
-
 // AudioOptions defaults are set in InitInternal (for options with corresponding
 // MediaEngineInterface flags) and in SetOptions(int) for flagless options.
 bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
@@ -1245,18 +1219,16 @@ bool WebRtcVoiceEngine::FindChannelAndSsrc(
   return false;
 }
 
-void WebRtcVoiceEngine::RegisterChannel(WebRtcVoiceMediaChannel *channel) {
+void WebRtcVoiceEngine::RegisterChannel(WebRtcVoiceMediaChannel* channel) {
   rtc::CritScope lock(&channels_cs_);
   channels_.push_back(channel);
 }
 
-void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel *channel) {
+void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
   rtc::CritScope lock(&channels_cs_);
-  ChannelList::iterator i = std::find(channels_.begin(),
-                                      channels_.end(),
-                                      channel);
-  if (i != channels_.end()) {
-    channels_.erase(i);
+  auto it = std::find(channels_.begin(), channels_.end(), channel);
+  if (it != channels_.end()) {
+    channels_.erase(it);
   }
 }
 
@@ -1507,13 +1479,11 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
   options_.SetAll(options);
 
   if (send_ != SEND_NOTHING) {
-    if (!engine()->SetOptionOverrides(options_)) {
+    if (!engine()->ApplyOptions(options_)) {
       LOG(LS_WARNING) <<
-          "Failed to engine SetOptionOverrides during channel SetOptions.";
+          "Failed to apply engine options during channel SetOptions.";
       return false;
     }
-  } else {
-    // Will be interpreted when appropriate.
   }
 
   // Receiver-side auto gain control happens per channel, so set it here from
@@ -2075,19 +2045,24 @@ bool WebRtcVoiceMediaChannel::ChangeSend(SendFlags send) {
     return true;
   }
 
-  // Change the settings on each send channel.
-  if (send == SEND_MICROPHONE)
-    engine()->SetOptionOverrides(options_);
+  // Apply channel specific options.
+  if (send == SEND_MICROPHONE) {
+    engine()->ApplyOptions(options_);
+  }
 
   // Change the settings on each send channel.
   for (const auto& ch : send_channels_) {
-    if (!ChangeSend(ch.second->channel(), send))
+    if (!ChangeSend(ch.second->channel(), send)) {
       return false;
+    }
   }
 
-  // Clear up the options after stopping sending.
-  if (send == SEND_NOTHING)
-    engine()->ClearOptionOverrides();
+  // Clear up the options after stopping sending. Since we may previously have
+  // applied the channel specific options, now apply the original options stored
+  // in WebRtcVoiceEngine.
+  if (send == SEND_NOTHING) {
+    engine()->ApplyOptions(engine()->GetOptions());
+  }
 
   send_ = send;
   return true;
