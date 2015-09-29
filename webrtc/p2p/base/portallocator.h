@@ -91,6 +91,9 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   // Starts gathering STUN and Relay configurations.
   virtual void StartGettingPorts() = 0;
   virtual void StopGettingPorts() = 0;
+  // Only stop the existing gathering process but may start new ones if needed.
+  virtual void ClearGettingPorts() = 0;
+  // Whether the process of getting ports has been stopped.
   virtual bool IsGettingPorts() = 0;
 
   sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortReady;

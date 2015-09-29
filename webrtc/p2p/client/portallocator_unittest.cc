@@ -1279,3 +1279,45 @@ TEST_F(PortAllocatorTest, TestEnableIPv6Addresses) {
       kClientAddr);
   EXPECT_EQ(4U, candidates_.size());
 }
+
+TEST_F(PortAllocatorTest, TestStopGettingPorts) {
+  AddInterface(kClientAddr);
+  allocator_->set_step_delay(cricket::kDefaultStepDelay);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(2U, candidates_.size(), 1000);
+  EXPECT_EQ(2U, ports_.size());
+  session_->StopGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, 1000);
+
+  // After stopping getting ports, adding a new interface will not start
+  // getting ports again.
+  candidates_.clear();
+  ports_.clear();
+  candidate_allocation_done_ = false;
+  network_manager_.AddInterface(kClientAddr2);
+  rtc::Thread::Current()->ProcessMessages(1000);
+  EXPECT_EQ(0U, candidates_.size());
+  EXPECT_EQ(0U, ports_.size());
+}
+
+TEST_F(PortAllocatorTest, TestClearGettingPorts) {
+  AddInterface(kClientAddr);
+  allocator_->set_step_delay(cricket::kDefaultStepDelay);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(2U, candidates_.size(), 1000);
+  EXPECT_EQ(2U, ports_.size());
+  session_->ClearGettingPorts();
+  WAIT(candidate_allocation_done_, 1000);
+  EXPECT_FALSE(candidate_allocation_done_);
+
+  // After clearing getting ports, adding a new interface will start getting
+  // ports again.
+  candidates_.clear();
+  ports_.clear();
+  candidate_allocation_done_ = false;
+  network_manager_.AddInterface(kClientAddr2);
+  ASSERT_EQ_WAIT(2U, candidates_.size(), 1000);
+  EXPECT_EQ(2U, ports_.size());
+}

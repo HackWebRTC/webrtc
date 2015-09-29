@@ -1439,6 +1439,34 @@ TEST_F(P2PTransportChannelTest, TestForceTurn) {
   DestroyChannels();
 }
 
+// Test that if continual gathering is set to true, ICE gathering state will
+// not change to "Complete", and vice versa.
+TEST_F(P2PTransportChannelTest, TestContinualGathering) {
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  SetAllocationStepDelay(0, kDefaultStepDelay);
+  SetAllocationStepDelay(1, kDefaultStepDelay);
+  CreateChannels(1);
+  cricket::IceConfig config = CreateIceConfig(1000, true);
+  ep1_ch1()->SetIceConfig(config);
+  // By default, ep2 does not gather continually.
+
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1() != NULL && ep2_ch1() != NULL &&
+                              ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  WAIT(cricket::IceGatheringState::kIceGatheringComplete ==
+           ep1_ch1()->gathering_state(),
+       1000);
+  EXPECT_EQ(cricket::IceGatheringState::kIceGatheringGathering,
+            ep1_ch1()->gathering_state());
+  // By now, ep2 should have completed gathering.
+  EXPECT_EQ(cricket::IceGatheringState::kIceGatheringComplete,
+            ep2_ch1()->gathering_state());
+
+  DestroyChannels();
+}
+
 // Test what happens when we have 2 users behind the same NAT. This can lead
 // to interesting behavior because the STUN server will only give out the
 // address of the outermost NAT.

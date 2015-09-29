@@ -192,10 +192,14 @@ void BasicPortAllocatorSession::StartGettingPorts() {
 void BasicPortAllocatorSession::StopGettingPorts() {
   ASSERT(rtc::Thread::Current() == network_thread_);
   running_ = false;
+  network_thread_->Post(this, MSG_CONFIG_STOP);
+  ClearGettingPorts();
+}
+
+void BasicPortAllocatorSession::ClearGettingPorts() {
   network_thread_->Clear(this, MSG_ALLOCATE);
   for (uint32 i = 0; i < sequences_.size(); ++i)
     sequences_[i]->Stop();
-  network_thread_->Post(this, MSG_CONFIG_STOP);
 }
 
 void BasicPortAllocatorSession::OnMessage(rtc::Message *message) {

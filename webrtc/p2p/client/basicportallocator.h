@@ -112,6 +112,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 
   virtual void StartGettingPorts();
   virtual void StopGettingPorts();
+  virtual void ClearGettingPorts();
   virtual bool IsGettingPorts() { return running_; }
 
  protected:

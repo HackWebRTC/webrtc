@@ -63,6 +63,8 @@ class FakePortAllocatorSession : public PortAllocatorSession {
 
   virtual void StopGettingPorts() { running_ = false; }
   virtual bool IsGettingPorts() { return running_; }
+  virtual void ClearGettingPorts() {}
+
   int port_config_count() { return port_config_count_; }
 
   void AddPort(cricket::Port* port) {

@@ -1070,12 +1070,21 @@ void P2PTransportChannel::UpdateChannelState() {
 // was writable, go into the writable state.
 void P2PTransportChannel::HandleWritable() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (!writable()) {
-    for (uint32 i = 0; i < allocator_sessions_.size(); ++i) {
-      if (allocator_sessions_[i]->IsGettingPorts()) {
-        allocator_sessions_[i]->StopGettingPorts();
-      }
+  if (writable()) {
+    return;
+  }
+
+  for (PortAllocatorSession* session : allocator_sessions_) {
+    if (!session->IsGettingPorts()) {
+      continue;
     }
+    // If gathering continually, keep the last session running so that it
+    // will gather candidates if the networks change.
+    if (gather_continually_ && session == allocator_sessions_.back()) {
+      session->ClearGettingPorts();
+      break;
+    }
+    session->StopGettingPorts();
   }
 
   was_writable_ = true;
