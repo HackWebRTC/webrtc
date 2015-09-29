@@ -155,7 +155,6 @@
         'call/packet_injection_tests.cc',
         'test/common_unittest.cc',
         'test/testsupport/metrics/video_metrics_unittest.cc',
-        'tools/agc/agc_manager_unittest.cc',
         'video/end_to_end_tests.cc',
         'video/send_statistics_proxy_unittest.cc',
         'video/video_capture_input_unittest.cc',
@@ -175,7 +174,6 @@
         'test/metrics.gyp:metrics',
         'test/test.gyp:test_main',
         'test/webrtc_test_common.gyp:webrtc_test_common',
-        'tools/tools.gyp:agc_manager',
         'webrtc',
       ],
       'conditions': [
@@ -205,7 +203,6 @@
         'call/call_perf_tests.cc',
         'modules/audio_coding/neteq/test/neteq_performance_unittest.cc',
         'modules/remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
-        'tools/agc/agc_manager_integrationtest.cc',
         'video/full_stack.cc',
         'video/rampup_tests.cc',
         'video/rampup_tests.h',
@@ -223,7 +220,6 @@
         'test/test.gyp:test_main',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/webrtc_test_common.gyp:webrtc_test_renderer',
-        'tools/tools.gyp:agc_manager',
         'webrtc',
       ],
       'conditions': [

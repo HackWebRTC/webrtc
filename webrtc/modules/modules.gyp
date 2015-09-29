@@ -163,6 +163,7 @@
             'audio_device/fine_audio_buffer_unittest.cc',
             'audio_processing/aec/echo_cancellation_unittest.cc',
             'audio_processing/aec/system_delay_unittest.cc',
+            'audio_processing/agc/agc_manager_direct_unittest.cc',
             # TODO(ajm): Fix to match new interface.
             # 'audio_processing/agc/agc_unittest.cc',
             'audio_processing/agc/histogram_unittest.cc',
