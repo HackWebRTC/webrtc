@@ -50,13 +50,11 @@ public:
     virtual int32_t StartRecordingAudioFile(
         const char* fileName,
         const CodecInst& codecInst,
-        uint32_t notificationTimeMs,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage);
+        uint32_t notificationTimeMs) override;
     virtual int32_t StartRecordingAudioFile(
         OutStream& destStream,
         const CodecInst& codecInst,
-        uint32_t notificationTimeMs,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage);
+        uint32_t notificationTimeMs) override;
     virtual int32_t StopRecording();
     virtual bool IsRecording() const;
     virtual int32_t codec_info(CodecInst& codecInst) const;
@@ -67,8 +65,7 @@ public:
         const char* fileName,
         const CodecInst& audioCodecInst,
         const VideoCodec& videoCodecInst,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage,
-        bool videoOnly = false)
+        bool videoOnly = false) override
     {
         return -1;
     }
@@ -88,8 +85,6 @@ protected:
 
 private:
     CodecInst codec_info_;
-    ACMAMRPackingFormat _amrFormat;
-
     int8_t _audioBuffer[MAX_AUDIO_BUFFER_IN_BYTES];
     AudioCoder _audioEncoder;
     Resampler _audioResampler;

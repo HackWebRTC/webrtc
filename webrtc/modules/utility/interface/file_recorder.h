@@ -13,7 +13,6 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/media_file/interface/media_file_defines.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -40,14 +39,12 @@ public:
     virtual int32_t StartRecordingAudioFile(
         const char* fileName,
         const CodecInst& codecInst,
-        uint32_t notification,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage) = 0;
+        uint32_t notification) = 0;
 
     virtual int32_t StartRecordingAudioFile(
         OutStream& destStream,
         const CodecInst& codecInst,
-        uint32_t notification,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage) = 0;
+        uint32_t notification) = 0;
 
     // Stop recording.
     // Note: this API is for both audio and video.
@@ -74,7 +71,6 @@ public:
         const char* fileName,
         const CodecInst& audioCodecInst,
         const VideoCodec& videoCodecInst,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage,
         bool videoOnly = false) = 0;
 
     // Record the video frame in videoFrame to AVI file.

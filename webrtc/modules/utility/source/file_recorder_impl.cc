@@ -32,7 +32,6 @@ FileRecorderImpl::FileRecorderImpl(uint32_t instanceID,
       _fileFormat(fileFormat),
       _moduleFile(MediaFile::CreateMediaFile(_instanceID)),
       codec_info_(),
-      _amrFormat(AMRFileStorage),
       _audioBuffer(),
       _audioEncoder(instanceID),
       _audioResampler()
@@ -62,16 +61,13 @@ int32_t FileRecorderImpl::RegisterModuleFileCallback(
 int32_t FileRecorderImpl::StartRecordingAudioFile(
     const char* fileName,
     const CodecInst& codecInst,
-    uint32_t notificationTimeMs,
-    ACMAMRPackingFormat amrFormat)
+    uint32_t notificationTimeMs)
 {
     if(_moduleFile == NULL)
     {
         return -1;
     }
     codec_info_ = codecInst;
-    _amrFormat = amrFormat;
-
     int32_t retVal = 0;
     retVal =_moduleFile->StartRecordingAudioFile(fileName, _fileFormat,
                                                  codecInst,
@@ -97,12 +93,9 @@ int32_t FileRecorderImpl::StartRecordingAudioFile(
 int32_t FileRecorderImpl::StartRecordingAudioFile(
     OutStream& destStream,
     const CodecInst& codecInst,
-    uint32_t notificationTimeMs,
-    ACMAMRPackingFormat amrFormat)
+    uint32_t notificationTimeMs)
 {
     codec_info_ = codecInst;
-    _amrFormat = amrFormat;
-
     int32_t retVal = _moduleFile->StartRecordingAudioStream(
         destStream,
         _fileFormat,

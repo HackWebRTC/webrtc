@@ -35,25 +35,6 @@ enum ACMVADMode {
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// enum ACMAMRPackingFormat
-// An enumerator for different bit-packing format of AMR codec according to
-// RFC 3267.
-//
-// -AMRUndefined           : undefined.
-// -AMRBandwidthEfficient  : bandwidth-efficient mode.
-// -AMROctetAlligned       : Octet-alligned mode.
-// -AMRFileStorage         : file-storage mode.
-//
-// TODO(henrik.lundin) Remove; only referenced in file_recorder, but all use
-// is no-op.
-enum ACMAMRPackingFormat {
-  AMRUndefined = -1,
-  AMRBandwidthEfficient = 0,
-  AMROctetAlligned = 1,
-  AMRFileStorage = 2
-};
-
-///////////////////////////////////////////////////////////////////////////
 //
 // Enumeration of Opus mode for intended application.
 //
