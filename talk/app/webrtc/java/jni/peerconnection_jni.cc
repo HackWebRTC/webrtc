@@ -776,17 +776,23 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
 
   void RenderFrame(const cricket::VideoFrame* video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    // Make a shallow copy. |j_callbacks_| is responsible for releasing the
-    // copy by calling VideoRenderer.renderFrameDone().
-    video_frame = video_frame->Copy();
     jobject j_frame = (video_frame->GetNativeHandle() != nullptr)
                           ? CricketToJavaTextureFrame(video_frame)
                           : CricketToJavaI420Frame(video_frame);
+    // |j_callbacks_| is responsible for releasing |j_frame| with
+    // VideoRenderer.renderFrameDone().
     jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
     CHECK_EXCEPTION(jni());
   }
 
  private:
+  // Make a shallow copy of |frame| to be used with Java. The callee has
+  // ownership of the frame, and the frame should be released with
+  // VideoRenderer.releaseNativeFrame().
+  static jlong javaShallowCopy(const cricket::VideoFrame* frame) {
+    return jlongFromPointer(frame->Copy());
+  }
+
   // Return a VideoRenderer.I420Frame referring to the data in |frame|.
   jobject CricketToJavaI420Frame(const cricket::VideoFrame* frame) {
     jintArray strides = jni()->NewIntArray(3);
@@ -810,7 +816,7 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
         *j_frame_class_, j_i420_frame_ctor_id_,
         frame->GetWidth(), frame->GetHeight(),
         static_cast<int>(frame->GetVideoRotation()),
-        strides, planes, frame);
+        strides, planes, javaShallowCopy(frame));
   }
 
   // Return a VideoRenderer.I420Frame referring texture object in |frame|.
@@ -823,7 +829,7 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
         *j_frame_class_, j_texture_frame_ctor_id_,
         frame->GetWidth(), frame->GetHeight(),
         static_cast<int>(frame->GetVideoRotation()),
-        texture_object, texture_id, frame);
+        texture_object, texture_id, javaShallowCopy(frame));
   }
 
   JNIEnv* jni() {
