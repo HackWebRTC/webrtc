@@ -50,11 +50,11 @@ class RampUpTester : public test::EndToEndTest {
  protected:
   virtual bool PollStats();
 
-  void GetStats(const VideoSendStream::StreamStats& stream,
-                size_t* total_packets_sent,
-                size_t* total_sent,
-                size_t* padding_sent,
-                size_t* media_sent) const;
+  void AccumulateStats(const VideoSendStream::StreamStats& stream,
+                       size_t* total_packets_sent,
+                       size_t* total_sent,
+                       size_t* padding_sent,
+                       size_t* media_sent) const;
 
   void ReportResult(const std::string& measurement,
                     size_t value,

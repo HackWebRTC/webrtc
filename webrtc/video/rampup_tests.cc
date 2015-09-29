@@ -210,11 +210,11 @@ void RampUpTester::ReportResult(const std::string& measurement,
       value, units, false);
 }
 
-void RampUpTester::GetStats(const VideoSendStream::StreamStats& stream,
-                            size_t* total_packets_sent,
-                            size_t* total_sent,
-                            size_t* padding_sent,
-                            size_t* media_sent) const {
+void RampUpTester::AccumulateStats(const VideoSendStream::StreamStats& stream,
+                                   size_t* total_packets_sent,
+                                   size_t* total_sent,
+                                   size_t* padding_sent,
+                                   size_t* media_sent) const {
   *total_packets_sent += stream.rtp_stats.transmitted.packets +
                          stream.rtp_stats.retransmitted.packets +
                          stream.rtp_stats.fec.packets;
@@ -235,8 +235,8 @@ void RampUpTester::TriggerTestDone() {
   size_t padding_sent = 0;
   size_t media_sent = 0;
   for (uint32_t ssrc : ssrcs_) {
-    GetStats(send_stats.substreams[ssrc], &total_packets_sent, &total_sent,
-             &padding_sent, &media_sent);
+    AccumulateStats(send_stats.substreams[ssrc], &total_packets_sent,
+                    &total_sent, &padding_sent, &media_sent);
   }
 
   size_t rtx_total_packets_sent = 0;
@@ -244,8 +244,8 @@ void RampUpTester::TriggerTestDone() {
   size_t rtx_padding_sent = 0;
   size_t rtx_media_sent = 0;
   for (uint32_t rtx_ssrc : rtx_ssrcs_) {
-    GetStats(send_stats.substreams[rtx_ssrc], &total_packets_sent, &total_sent,
-             &padding_sent, &media_sent);
+    AccumulateStats(send_stats.substreams[rtx_ssrc], &rtx_total_packets_sent,
+                    &rtx_total_sent, &rtx_padding_sent, &rtx_media_sent);
   }
 
   ReportResult("ramp-up-total-packets-sent", total_packets_sent, "packets");
