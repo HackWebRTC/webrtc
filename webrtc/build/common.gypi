@@ -102,7 +102,7 @@
     'build_with_mozilla%': 0,
 
     # Make it possible to provide custom locations for some libraries.
-    'libvpx_dir%': '<(DEPTH)/third_party/libvpx',
+    'libvpx_dir%': '<(DEPTH)/third_party/libvpx_new',
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
     'opus_dir%': '<(opus_dir)',
 

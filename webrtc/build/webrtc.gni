@@ -117,6 +117,6 @@ declare_args() {
 
 # Make it possible to provide custom locations for some libraries (move these
 # up into declare_args should we need to actually use them for the GN build).
-rtc_libvpx_dir = "//third_party/libvpx"
+rtc_libvpx_dir = "//third_party/libvpx_new"
 rtc_libyuv_dir = "//third_party/libyuv"
 rtc_opus_dir = "//third_party/opus"

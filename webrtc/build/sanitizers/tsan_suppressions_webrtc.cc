@@ -27,7 +27,7 @@ char kTSanDefaultSuppressions[] =
 "race:rtc::MessageQueue::Quit\n"
 "race:FileVideoCapturerTest::VideoCapturerListener::OnFrameCaptured\n"
 "race:vp8cx_remove_encoder_threads\n"
-"race:third_party/libvpx/source/libvpx/vp9/common/vp9_scan.h\n"
+"race:third_party/libvpx_new/source/libvpx/vp9/common/vp9_scan.h\n"
 
 // Usage of trace callback and trace level is racy in libjingle_media_unittests.
 // https://code.google.com/p/webrtc/issues/detail?id=3372
