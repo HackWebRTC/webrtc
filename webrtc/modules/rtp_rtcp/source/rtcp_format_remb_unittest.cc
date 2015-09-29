@@ -18,6 +18,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/test/null_transport.h"
 #include "webrtc/typedefs.h"
 
 namespace {
@@ -79,6 +80,7 @@ class RtcpFormatRembTest : public ::testing::Test {
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;
   TestTransport* test_transport_;
+  test::NullTransport null_transport_;
   MockRemoteBitrateObserver remote_bitrate_observer_;
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
 };
@@ -88,14 +90,13 @@ void RtcpFormatRembTest::SetUp() {
   configuration.audio = false;
   configuration.clock = system_clock_;
   configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
+  configuration.outgoing_transport = &null_transport_;
   dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
-  rtcp_sender_ =
-      new RTCPSender(false, system_clock_, receive_statistics_.get(), nullptr);
   rtcp_receiver_ = new RTCPReceiver(system_clock_, false, nullptr, nullptr,
                                     nullptr, nullptr, dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
-
-  EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(test_transport_));
+  rtcp_sender_ = new RTCPSender(false, system_clock_, receive_statistics_.get(),
+                                nullptr, test_transport_);
 }
 
 void RtcpFormatRembTest::TearDown() {

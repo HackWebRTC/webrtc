@@ -74,10 +74,9 @@ public:
  RTCPSender(bool audio,
             Clock* clock,
             ReceiveStatistics* receive_statistics,
-            RtcpPacketTypeCounterObserver* packet_type_counter_observer);
+            RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+            Transport* outgoing_transport);
  virtual ~RTCPSender();
-
- int32_t RegisterSendTransport(Transport* outgoingTransport);
 
  RTCPMethod Status() const;
  void SetRTCPStatus(RTCPMethod method);
@@ -228,8 +227,7 @@ private:
  Clock* const clock_;
  RTCPMethod method_ GUARDED_BY(critical_section_rtcp_sender_);
 
- rtc::scoped_ptr<CriticalSectionWrapper> critical_section_transport_;
- Transport* cbTransport_ GUARDED_BY(critical_section_transport_);
+ Transport* const transport_;
 
  rtc::scoped_ptr<CriticalSectionWrapper> critical_section_rtcp_sender_;
  bool using_nack_ GUARDED_BY(critical_section_rtcp_sender_);

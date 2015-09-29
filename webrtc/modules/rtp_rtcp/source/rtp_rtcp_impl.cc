@@ -72,7 +72,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       rtcp_sender_(configuration.audio,
                    configuration.clock,
                    configuration.receive_statistics,
-                   configuration.rtcp_packet_type_counter_observer),
+                   configuration.rtcp_packet_type_counter_observer,
+                   configuration.outgoing_transport),
       rtcp_receiver_(configuration.clock,
                      configuration.receiver_only,
                      configuration.rtcp_packet_type_counter_observer,
@@ -98,9 +99,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       critical_section_rtt_(CriticalSectionWrapper::CreateCriticalSection()),
       rtt_ms_(0) {
   send_video_codec_.codecType = kVideoCodecUnknown;
-
-  // TODO(pwestin) move to constructors of each rtp/rtcp sender/receiver object.
-  rtcp_sender_.RegisterSendTransport(configuration.outgoing_transport);
 
   // Make sure that RTCP objects are aware of our SSRC.
   uint32_t SSRC = rtp_sender_.SSRC();

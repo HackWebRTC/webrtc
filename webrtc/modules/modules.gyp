@@ -93,6 +93,7 @@
             '<(webrtc_root)/test/test.gyp:frame_generator',
             '<(webrtc_root)/test/test.gyp:rtp_test_utils',
             '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/test/webrtc_test_common.gyp:webrtc_test_common',
             '<(webrtc_root)/tools/tools.gyp:agc_test_utils',
           ],
           'sources': [

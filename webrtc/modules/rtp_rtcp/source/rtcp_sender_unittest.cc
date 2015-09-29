@@ -230,11 +230,10 @@ class RtcpSenderTest : public ::testing::Test {
     configuration.outgoing_transport = &test_transport_;
 
     rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
-    rtcp_sender_.reset(
-        new RTCPSender(false, &clock_, receive_statistics_.get(), nullptr));
+    rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
+                                      nullptr, &test_transport_));
     rtcp_sender_->SetSSRC(kSenderSsrc);
     rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
-    EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(&test_transport_));
   }
 
   void InsertIncomingPacket(uint32_t remote_ssrc, uint16_t seq_num) {
@@ -667,10 +666,9 @@ TEST_F(RtcpSenderTest, TestSendTimeOfXrRrtr) {
 
 TEST_F(RtcpSenderTest, TestRegisterRtcpPacketTypeObserver) {
   RtcpPacketTypeCounterObserverImpl observer;
-  rtcp_sender_.reset(
-      new RTCPSender(false, &clock_, receive_statistics_.get(), &observer));
+  rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
+                                    &observer, &test_transport_));
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
-  EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(&test_transport_));
   rtcp_sender_->SetRTCPStatus(kRtcpNonCompound);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpPli));
   EXPECT_EQ(1, parser()->pli()->num_packets());

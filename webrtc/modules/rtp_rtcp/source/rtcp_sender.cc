@@ -135,13 +135,12 @@ RTCPSender::RTCPSender(
     bool audio,
     Clock* clock,
     ReceiveStatistics* receive_statistics,
-    RtcpPacketTypeCounterObserver* packet_type_counter_observer)
+    RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+    Transport* outgoing_transport)
     : audio_(audio),
       clock_(clock),
       method_(kRtcpOff),
-      critical_section_transport_(
-          CriticalSectionWrapper::CreateCriticalSection()),
-      cbTransport_(nullptr),
+      transport_(outgoing_transport),
 
       critical_section_rtcp_sender_(
           CriticalSectionWrapper::CreateCriticalSection()),
@@ -173,6 +172,7 @@ RTCPSender::RTCPSender(
       packet_type_counter_observer_(packet_type_counter_observer) {
   memset(last_send_report_, 0, sizeof(last_send_report_));
   memset(last_rtcp_time_, 0, sizeof(last_rtcp_time_));
+  RTC_DCHECK(transport_ != nullptr);
 
   builders_[kRtcpSr] = &RTCPSender::BuildSR;
   builders_[kRtcpRr] = &RTCPSender::BuildRR;
@@ -194,12 +194,6 @@ RTCPSender::RTCPSender(
 }
 
 RTCPSender::~RTCPSender() {
-}
-
-int32_t RTCPSender::RegisterSendTransport(Transport* outgoingTransport) {
-  CriticalSectionScoped lock(critical_section_transport_.get());
-  cbTransport_ = outgoingTransport;
-  return 0;
 }
 
 RTCPMethod RTCPSender::Status() const {
@@ -1115,11 +1109,8 @@ bool RTCPSender::PrepareReport(const FeedbackState& feedback_state,
 }
 
 int32_t RTCPSender::SendToNetwork(const uint8_t* dataBuffer, size_t length) {
-  CriticalSectionScoped lock(critical_section_transport_.get());
-  if (cbTransport_) {
-    if (cbTransport_->SendRtcp(dataBuffer, length))
-      return 0;
-  }
+  if (transport_->SendRtcp(dataBuffer, length))
+    return 0;
   return -1;
 }
 
@@ -1210,10 +1201,6 @@ bool RTCPSender::AllVolatileFlagsConsumed() const {
 }
 
 bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
-  CriticalSectionScoped lock(critical_section_transport_.get());
-  if (!cbTransport_)
-    return false;
-
   class Sender : public rtcp::RtcpPacket::PacketReadyCallback {
    public:
     Sender(Transport* transport)
@@ -1226,7 +1213,7 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
 
     Transport* const transport_;
     bool send_failure_;
-  } sender(cbTransport_);
+  } sender(transport_);
 
   uint8_t buffer[IP_PACKET_SIZE];
   return packet.BuildExternalBuffer(buffer, IP_PACKET_SIZE, &sender) &&

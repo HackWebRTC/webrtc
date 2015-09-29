@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
+#include "webrtc/test/null_transport.h"
 
 #include <algorithm>
 #include <vector>
@@ -90,6 +91,7 @@ class RtpRtcpAPITest : public ::testing::Test {
     RtpRtcp::Configuration configuration;
     configuration.audio = true;
     configuration.clock = &fake_clock_;
+    configuration.outgoing_transport = &null_transport_;
     module_.reset(RtpRtcp::CreateRtpRtcp(configuration));
     rtp_payload_registry_.reset(new RTPPayloadRegistry(
             RTPPayloadStrategy::CreateStrategy(true)));
@@ -105,6 +107,7 @@ class RtpRtcpAPITest : public ::testing::Test {
   uint16_t test_sequence_number_;
   std::vector<uint32_t> test_csrcs_;
   SimulatedClock fake_clock_;
+  test::NullTransport null_transport_;
 };
 
 TEST_F(RtpRtcpAPITest, Basic) {
