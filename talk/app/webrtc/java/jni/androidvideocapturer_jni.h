@@ -61,7 +61,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
 
   // Called from VideoCapturerAndroid::NativeObserver on a Java thread.
   void OnCapturerStarted(bool success);
-  void OnIncomingFrame(const uint8_t* video_frame,
+  void OnIncomingFrame(void* video_frame,
                        int length,
                        int width,
                        int height,

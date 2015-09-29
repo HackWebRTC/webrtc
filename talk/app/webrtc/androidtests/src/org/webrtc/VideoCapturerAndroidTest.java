@@ -35,7 +35,6 @@ import android.util.Size;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import org.webrtc.VideoRenderer.I420Frame;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -105,11 +104,11 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     }
 
     @Override
-    public void OnFrameCaptured(ByteBuffer frame, int width, int height,
+    public void OnFrameCaptured(byte[] frame, int length, int width, int height,
         int rotation, long timeStamp) {
       synchronized (frameLock) {
         ++framesCaptured;
-        frameSize = frame.capacity();
+        frameSize = length;
         timestamps.add(timeStamp);
         frameLock.notify();
       }
