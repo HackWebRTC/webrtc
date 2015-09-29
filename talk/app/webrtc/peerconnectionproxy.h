@@ -62,8 +62,9 @@ BEGIN_PROXY_MAP(PeerConnection)
                 SessionDescriptionInterface*)
   PROXY_METHOD2(void, SetRemoteDescription, SetSessionDescriptionObserver*,
                 SessionDescriptionInterface*)
-  PROXY_METHOD2(bool, UpdateIce, const IceServers&,
-                const MediaConstraintsInterface*)
+  PROXY_METHOD1(bool,
+                SetConfiguration,
+                const PeerConnectionInterface::RTCConfiguration&);
   PROXY_METHOD1(bool, AddIceCandidate, const IceCandidateInterface*)
   PROXY_METHOD1(void, RegisterUMAObserver, UMAObserver*)
   PROXY_METHOD0(SignalingState, signaling_state)
