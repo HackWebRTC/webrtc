@@ -1348,6 +1348,35 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
             rtx_stats.transmitted.TotalBytes());
 }
 
+TEST_F(RtpSenderTest, RespectsNackBitrateLimit) {
+  const int32_t kPacketSize = 1400;
+  const int32_t kNumPackets = 30;
+
+  rtp_sender_->SetStorePacketsStatus(true, kNumPackets);
+  // Set bitrate (in kbps) to fit kNumPackets á kPacketSize bytes in one second.
+  rtp_sender_->SetTargetBitrate(kNumPackets * kPacketSize * 8);
+  const uint16_t kStartSequenceNumber = rtp_sender_->SequenceNumber();
+  std::list<uint16_t> sequence_numbers;
+  for (int32_t i = 0; i < kNumPackets; ++i) {
+    sequence_numbers.push_back(kStartSequenceNumber + i);
+    fake_clock_.AdvanceTimeMilliseconds(1);
+    SendPacket(fake_clock_.TimeInMilliseconds(), kPacketSize);
+  }
+  EXPECT_EQ(kNumPackets, transport_.packets_sent_);
+
+  fake_clock_.AdvanceTimeMilliseconds(1000 - kNumPackets);
+
+  // Resending should work - brings the bandwidth up to the limit.
+  // NACK bitrate is capped to the same bitrate as the encoder, since the max
+  // protection overhead is 50% (see MediaOptimization::SetTargetRates).
+  rtp_sender_->OnReceivedNACK(sequence_numbers, 0);
+  EXPECT_EQ(kNumPackets * 2, transport_.packets_sent_);
+
+  // Resending should not work, bandwidth exceeded.
+  rtp_sender_->OnReceivedNACK(sequence_numbers, 0);
+  EXPECT_EQ(kNumPackets * 2, transport_.packets_sent_);
+}
+
 // Verify that all packets of a frame have CVO byte set.
 TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
   RTPVideoHeader hdr = {0};
