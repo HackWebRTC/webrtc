@@ -143,7 +143,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // |screenHeight|, |videoWidth|, |videoHeight|, |rotationDegree|, |scalingType|, and |mirror|.
     private final Object updateLayoutLock = new Object();
     // Texture sampling matrix.
-    private float[] samplingMatrix;
+    private float[] rotatedSamplingMatrix;
     // Viewport dimensions.
     private int screenWidth;
     private int screenHeight;
@@ -240,24 +240,29 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         }
 
         if (isNewFrame) {
+          final float[] samplingMatrix;
           if (pendingFrame.yuvFrame) {
             rendererType = RendererType.RENDERER_YUV;
             drawer.uploadYuvData(yuvTextures, pendingFrame.width, pendingFrame.height,
                 pendingFrame.yuvStrides, pendingFrame.yuvPlanes);
+            // The convention in WebRTC is that the first element in a ByteBuffer corresponds to the
+            // top-left corner of the image, but in glTexImage2D() the first element corresponds to
+            // the bottom-left corner. We correct this discrepancy by setting a vertical flip as
+            // sampling matrix.
+            samplingMatrix = RendererCommon.verticalFlipMatrix();
           } else {
             rendererType = RendererType.RENDERER_TEXTURE;
             // External texture rendering. Copy texture id and update texture image to latest.
             // TODO(magjed): We should not make an unmanaged copy of texture id. Also, this is not
             // the best place to call updateTexImage.
             oesTexture = pendingFrame.textureId;
-            if (pendingFrame.textureObject instanceof SurfaceTexture) {
-              SurfaceTexture surfaceTexture =
-                  (SurfaceTexture) pendingFrame.textureObject;
-              surfaceTexture.updateTexImage();
-            }
+            final SurfaceTexture surfaceTexture = (SurfaceTexture) pendingFrame.textureObject;
+            surfaceTexture.updateTexImage();
+            samplingMatrix = new float[16];
+            surfaceTexture.getTransformMatrix(samplingMatrix);
           }
-          samplingMatrix = RendererCommon.getSamplingMatrix(
-              (SurfaceTexture) pendingFrame.textureObject, pendingFrame.rotationDegree);
+          rotatedSamplingMatrix = RendererCommon.rotateTextureMatrix(
+              samplingMatrix, pendingFrame.rotationDegree);
           copyTimeNs += (System.nanoTime() - now);
           VideoRenderer.renderFrameDone(pendingFrame);
           pendingFrame = null;
@@ -265,8 +270,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
 
       updateLayoutMatrix();
-      final float[] texMatrix = new float[16];
-      Matrix.multiplyMM(texMatrix, 0, samplingMatrix, 0, layoutMatrix, 0);
+      final float[] texMatrix =
+          RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);
       if (rendererType == RendererType.RENDERER_YUV) {
         drawer.drawYuv(yuvTextures, texMatrix);
       } else {

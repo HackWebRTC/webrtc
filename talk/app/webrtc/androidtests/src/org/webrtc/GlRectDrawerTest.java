@@ -119,9 +119,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
 
     // Draw the RGB frame onto the pixel buffer.
     final GlRectDrawer drawer = new GlRectDrawer();
-    final float[] identityMatrix = new float[16];
-    Matrix.setIdentityM(identityMatrix, 0);
-    drawer.drawRgb(rgbTexture, identityMatrix);
+    drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix());
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer rgbaData = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
@@ -168,9 +166,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
 
     // Draw the YUV frame onto the pixel buffer.
     final GlRectDrawer drawer = new GlRectDrawer();
-    final float[] texMatrix = new float[16];
-    Matrix.setIdentityM(texMatrix, 0);
-    drawer.drawYuv(yuvTextures, texMatrix);
+    drawer.drawYuv(yuvTextures, RendererCommon.identityMatrix());
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer data = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
@@ -257,9 +253,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH,
             HEIGHT, 0, GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, rgbPlane);
         // Draw the RGB data onto the SurfaceTexture.
-        final float[] identityMatrix = new float[16];
-        Matrix.setIdentityM(identityMatrix, 0);
-        drawer.drawRgb(rgbTexture, identityMatrix);
+        drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix());
         eglBase.swapBuffers();
       }
 

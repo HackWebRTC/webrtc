@@ -99,6 +99,8 @@ public class GlRectDrawer {
       + "  gl_FragColor = texture2D(oes_tex, interp_tc);\n"
       + "}\n";
 
+  // Vertex coordinates in Normalized Device Coordinates, i.e. (-1, -1) is bottom-left and (1, 1) is
+  // top-right.
   private static final FloatBuffer FULL_RECTANGLE_BUF =
       GlUtil.createFloatBuffer(new float[] {
             -1.0f, -1.0f,  // Bottom left.
@@ -107,6 +109,7 @@ public class GlRectDrawer {
              1.0f,  1.0f,  // Top right.
           });
 
+  // Texture coordinates - (0, 0) is bottom-left and (1, 1) is top-right.
   private static final FloatBuffer FULL_RECTANGLE_TEX_BUF =
       GlUtil.createFloatBuffer(new float[] {
             0.0f, 0.0f,  // Bottom left.

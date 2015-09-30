@@ -28,7 +28,6 @@
 package org.webrtc;
 
 import android.graphics.Point;
-import android.graphics.SurfaceTexture;
 import android.opengl.Matrix;
 
 /**
@@ -61,37 +60,40 @@ public class RendererCommon {
   // The minimum fraction of the frame content that will be shown for |SCALE_ASPECT_BALANCED|.
   // This limits excessive cropping when adjusting display size.
   private static float BALANCED_VISIBLE_FRACTION = 0.5625f;
+  public static final float[] identityMatrix() {
+    return new float[] {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1};
+  }
   // Matrix with transform y' = 1 - y.
-  private static final float[] VERTICAL_FLIP = new float[] {
-      1,  0, 0, 0,
-      0, -1, 0, 0,
-      0,  0, 1, 0,
-      0,  1, 0, 1};
+  public static final float[] verticalFlipMatrix() {
+    return new float[] {
+        1,  0, 0, 0,
+        0, -1, 0, 0,
+        0,  0, 1, 0,
+        0,  1, 0, 1};
+  }
 
   /**
-   * Returns matrix that transforms standard coordinates to their proper sampling locations in
-   * the texture. This transform compensates for any properties of the video source that
-   * cause it to appear different from a normalized texture. If the video source is based on
-   * ByteBuffers, pass null in |surfaceTexture|.
+   * Returns texture matrix that will have the effect of rotating the frame |rotationDegree|
+   * clockwise when rendered.
    */
-  public static float[] getSamplingMatrix(SurfaceTexture surfaceTexture, float rotationDegree) {
-    final float[] samplingMatrix;
-    if (surfaceTexture == null) {
-      // For ByteBuffers, row 0 specifies the top row, but for a texture, row 0 specifies the
-      // bottom row. Flip the image vertically to compensate for this.
-      samplingMatrix = VERTICAL_FLIP;
-    } else {
-      samplingMatrix = new float[16];
-      surfaceTexture.getTransformMatrix(samplingMatrix);
-    }
-    // Clockwise rotation matrix in the XY-plane (around the Z-axis).
+  public static float[] rotateTextureMatrix(float[] textureMatrix, float rotationDegree) {
     final float[] rotationMatrix = new float[16];
     Matrix.setRotateM(rotationMatrix, 0, rotationDegree, 0, 0, 1);
     adjustOrigin(rotationMatrix);
-    // Multiply matrices together.
-    final float[] tmpMatrix = new float[16];
-    Matrix.multiplyMM(tmpMatrix, 0, samplingMatrix, 0, rotationMatrix, 0);
-    return tmpMatrix;
+    return multiplyMatrices(textureMatrix, rotationMatrix);
+  }
+
+  /**
+   * Returns new matrix with the result of a * b.
+   */
+  public static float[] multiplyMatrices(float[] a, float[] b) {
+    final float[] resultMatrix = new float[16];
+    Matrix.multiplyMM(resultMatrix, 0, a, 0, b, 0);
+    return resultMatrix;
   }
 
   /**

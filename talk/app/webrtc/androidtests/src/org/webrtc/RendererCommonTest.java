@@ -36,64 +36,64 @@ import android.graphics.Point;
 import static org.webrtc.RendererCommon.ScalingType.*;
 import static org.webrtc.RendererCommon.getDisplaySize;
 import static org.webrtc.RendererCommon.getLayoutMatrix;
-import static org.webrtc.RendererCommon.getSamplingMatrix;
+import static org.webrtc.RendererCommon.rotateTextureMatrix;
 
-public class RendererCommonTest extends ActivityTestCase {
+public final class RendererCommonTest extends ActivityTestCase {
   @SmallTest
   static public void testDisplaySizeNoFrame() {
-    assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 0.0f, 0, 0), new Point(0, 0));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 0.0f, 0, 0), new Point(0, 0));
-    assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 0.0f, 0, 0), new Point(0, 0));
+    assertEquals(new Point(0, 0), getDisplaySize(SCALE_ASPECT_FIT, 0.0f, 0, 0));
+    assertEquals(new Point(0, 0), getDisplaySize(SCALE_ASPECT_FILL, 0.0f, 0, 0));
+    assertEquals(new Point(0, 0), getDisplaySize(SCALE_ASPECT_BALANCED, 0.0f, 0, 0));
   }
 
   @SmallTest
-  static public void testDisplaySizeDegenerateAspectRatio() {
-    assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 0.0f, 1280, 720), new Point(1280, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 0.0f, 1280, 720), new Point(1280, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 0.0f, 1280, 720), new Point(1280, 720));
+  public static void testDisplaySizeDegenerateAspectRatio() {
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_FIT, 0.0f, 1280, 720));
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_FILL, 0.0f, 1280, 720));
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_BALANCED, 0.0f, 1280, 720));
   }
 
   @SmallTest
-  static public void testZeroDisplaySize() {
-    assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 16.0f / 9, 0, 0), new Point(0, 0));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 16.0f / 9, 0, 0), new Point(0, 0));
-    assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 16.0f / 9, 0, 0), new Point(0, 0));
+  public static void testZeroDisplaySize() {
+    assertEquals(new Point(0, 0), getDisplaySize(SCALE_ASPECT_FIT, 16.0f / 9, 0, 0));
+    assertEquals(new Point(0, 0), getDisplaySize(SCALE_ASPECT_FILL, 16.0f / 9, 0, 0));
+    assertEquals(new Point(0, 0), getDisplaySize(SCALE_ASPECT_BALANCED, 16.0f / 9, 0, 0));
   }
 
   @SmallTest
-  static public void testDisplaySizePerfectFit() {
-    assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 16.0f / 9, 1280, 720), new Point(1280, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 16.0f / 9, 1280, 720), new Point(1280, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 16.0f / 9, 1280, 720), new Point(1280, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 9.0f / 16, 720, 1280), new Point(720, 1280));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 9.0f / 16, 720, 1280), new Point(720, 1280));
-    assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 9.0f / 16, 720, 1280), new Point(720, 1280));
+  public static void testDisplaySizePerfectFit() {
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_FIT, 16.0f / 9, 1280, 720));
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_FILL, 16.0f / 9, 1280, 720));
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_BALANCED, 16.0f / 9, 1280, 720));
+    assertEquals(new Point(720, 1280), getDisplaySize(SCALE_ASPECT_FIT, 9.0f / 16, 720, 1280));
+    assertEquals(new Point(720, 1280), getDisplaySize(SCALE_ASPECT_FILL, 9.0f / 16, 720, 1280));
+    assertEquals(new Point(720, 1280), getDisplaySize(SCALE_ASPECT_BALANCED, 9.0f / 16, 720, 1280));
   }
 
   @SmallTest
-  static public void testLandscapeVideoInPortraitDisplay() {
-    assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 16.0f / 9, 720, 1280), new Point(720, 405));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 16.0f / 9, 720, 1280), new Point(720, 1280));
-    assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 16.0f / 9, 720, 1280), new Point(720, 720));
+  public static void testLandscapeVideoInPortraitDisplay() {
+    assertEquals(new Point(720, 405), getDisplaySize(SCALE_ASPECT_FIT, 16.0f / 9, 720, 1280));
+    assertEquals(new Point(720, 1280), getDisplaySize(SCALE_ASPECT_FILL, 16.0f / 9, 720, 1280));
+    assertEquals(new Point(720, 720), getDisplaySize(SCALE_ASPECT_BALANCED, 16.0f / 9, 720, 1280));
   }
 
   @SmallTest
-  static public void testPortraitVideoInLandscapeDisplay() {
-    assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 9.0f / 16, 1280, 720), new Point(405, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 9.0f / 16, 1280, 720), new Point(1280, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 9.0f / 16, 1280, 720), new Point(720, 720));
+  public static void testPortraitVideoInLandscapeDisplay() {
+    assertEquals(new Point(405, 720), getDisplaySize(SCALE_ASPECT_FIT, 9.0f / 16, 1280, 720));
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_FILL, 9.0f / 16, 1280, 720));
+    assertEquals(new Point(720, 720), getDisplaySize(SCALE_ASPECT_BALANCED, 9.0f / 16, 1280, 720));
   }
 
   @SmallTest
-  static public void testFourToThreeVideoInSixteenToNineDisplay() {
-    assertEquals(getDisplaySize(SCALE_ASPECT_FIT, 4.0f / 3, 1280, 720), new Point(960, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_FILL, 4.0f / 3, 1280, 720), new Point(1280, 720));
-    assertEquals(getDisplaySize(SCALE_ASPECT_BALANCED, 4.0f / 3, 1280, 720), new Point(1280, 720));
+  public static void testFourToThreeVideoInSixteenToNineDisplay() {
+    assertEquals(new Point(960, 720), getDisplaySize(SCALE_ASPECT_FIT, 4.0f / 3, 1280, 720));
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_FILL, 4.0f / 3, 1280, 720));
+    assertEquals(new Point(1280, 720), getDisplaySize(SCALE_ASPECT_BALANCED, 4.0f / 3, 1280, 720));
   }
 
   // Only keep 2 rounded decimals to make float comparison robust.
-  static private double[] round(float[] array) {
-    assertEquals(array.length, 16);
+  private static double[] round(float[] array) {
+    assertEquals(16, array.length);
     final double[] doubleArray = new double[16];
     for (int i = 0; i < 16; ++i) {
       doubleArray[i] = Math.round(100 * array[i]) / 100.0;
@@ -108,69 +108,82 @@ public class RendererCommonTest extends ActivityTestCase {
   // v' = u * m[1] + v * m[5] + m[13].
 
   @SmallTest
-  static public void testLayoutMatrixDefault() {
+  public static void testLayoutMatrixDefault() {
     final float layoutMatrix[] = getLayoutMatrix(false, 1.0f, 1.0f);
     // Assert:
     // u' = u.
     // v' = v.
-    MoreAsserts.assertEquals(round(layoutMatrix), new double[]
-        {1, 0, 0, 0,
-         0, 1, 0, 0,
-         0, 0, 1, 0,
-         0, 0, 0, 1});
+    MoreAsserts.assertEquals(new double[] {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1}, round(layoutMatrix));
   }
 
   @SmallTest
-  static public void testLayoutMatrixMirror() {
+  public static void testLayoutMatrixMirror() {
     final float layoutMatrix[] = getLayoutMatrix(true, 1.0f, 1.0f);
     // Assert:
     // u' = 1 - u.
     // v' = v.
-    MoreAsserts.assertEquals(round(layoutMatrix), new double[]
-        {-1, 0, 0, 0,
-          0, 1, 0, 0,
-          0, 0, 1, 0,
-          1, 0, 0, 1});
+    MoreAsserts.assertEquals(new double[] {
+        -1, 0, 0, 0,
+         0, 1, 0, 0,
+         0, 0, 1, 0,
+         1, 0, 0, 1}, round(layoutMatrix));
   }
 
   @SmallTest
-  static public void testLayoutMatrixScale() {
+  public static void testLayoutMatrixScale() {
     // Video has aspect ratio 2, but layout is square. This will cause only the center part of the
     // video to be visible, i.e. the u coordinate will go from 0.25 to 0.75 instead of from 0 to 1.
     final float layoutMatrix[] = getLayoutMatrix(false, 2.0f, 1.0f);
     // Assert:
     // u' = 0.25 + 0.5 u.
     // v' = v.
-    MoreAsserts.assertEquals(round(layoutMatrix), new double[]
-        { 0.5, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-         0.25, 0, 0, 1});
+    MoreAsserts.assertEquals(new double[] {
+         0.5, 0, 0, 0,
+           0, 1, 0, 0,
+           0, 0, 1, 0,
+        0.25, 0, 0, 1}, round(layoutMatrix));
   }
 
   @SmallTest
-  static public void testSamplingMatrixDefault() {
-    final float samplingMatrix[] = getSamplingMatrix(null, 0);
+  public static void testRotateTextureMatrixDefault() {
+    // Test that rotation with 0 degrees returns an identical matrix.
+    final float[] matrix = new float[] {
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 0, 1, 2,
+        3, 4, 5, 6
+    };
+    final float rotatedMatrix[] = rotateTextureMatrix(matrix, 0);
+    MoreAsserts.assertEquals(round(matrix), round(rotatedMatrix));
+  }
+
+  @SmallTest
+  public static void testRotateTextureMatrix90Deg() {
+    final float samplingMatrix[] = rotateTextureMatrix(RendererCommon.identityMatrix(), 90);
     // Assert:
-    // u' = u.
-    // v' = 1 - v.
-    MoreAsserts.assertEquals(round(samplingMatrix), new double[]
-        {1,  0, 0, 0,
-         0, -1, 0, 0,
-         0,  0, 1, 0,
-         0,  1, 0, 1});
+    // u' = 1 - v.
+    // v' = u.
+    MoreAsserts.assertEquals(new double[] {
+         0, 1, 0, 0,
+        -1, 0, 0, 0,
+         0, 0, 1, 0,
+         1, 0, 0, 1}, round(samplingMatrix));
   }
 
   @SmallTest
-  static public void testSamplingMatrixRotation90Deg() {
-    final float samplingMatrix[] = getSamplingMatrix(null, 90);
+  public static void testRotateTextureMatrix180Deg() {
+    final float samplingMatrix[] = rotateTextureMatrix(RendererCommon.identityMatrix(), 180);
     // Assert:
     // u' = 1 - u.
     // v' = 1 - v.
-    MoreAsserts.assertEquals(round(samplingMatrix), new double[]
-        { 0, -1, 0, 0,
-         -1,  0, 0, 0,
-          0,  0, 1, 0,
-          1,  1, 0, 1});
+    MoreAsserts.assertEquals(new double[] {
+        -1,  0, 0, 0,
+         0, -1, 0, 0,
+         0,  0, 1, 0,
+         1,  1, 0, 1}, round(samplingMatrix));
   }
 }
