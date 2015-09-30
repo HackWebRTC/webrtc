@@ -75,8 +75,6 @@ class DtlsTestClient : public sigslot::has_slots<> {
     transport_->SetIceRole(role);
     transport_->SetIceTiebreaker(
         (role == cricket::ICEROLE_CONTROLLING) ? 1 : 2);
-    transport_->SignalWritableState.connect(this,
-        &DtlsTestClient::OnTransportWritableState);
 
     for (int i = 0; i < count; ++i) {
       cricket::DtlsTransportChannelWrapper* channel =
@@ -193,7 +191,15 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
 
   bool all_channels_writable() const {
-    return transport_->all_channels_writable();
+    if (channels_.empty()) {
+      return false;
+    }
+    for (cricket::DtlsTransportChannelWrapper* channel : channels_) {
+      if (!channel->writable()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void CheckRole(rtc::SSLRole role) {
@@ -311,11 +317,6 @@ class DtlsTestClient : public sigslot::has_slots<> {
       }
     }
     return (num_matches < ((static_cast<int>(size) - 5) / 10));
-  }
-
-  // Transport callbacks
-  void OnTransportWritableState(cricket::Transport* transport) {
-    LOG(LS_INFO) << name_ << ": is writable";
   }
 
   // Transport channel callbacks

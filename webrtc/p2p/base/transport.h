@@ -65,21 +65,6 @@ enum IceGatheringState {
   kIceGatheringComplete,
 };
 
-// For "writable" and "receiving", we need to differentiate between
-// none, all, and some.
-enum TransportState {
-  TRANSPORT_STATE_NONE = 0,
-  TRANSPORT_STATE_SOME,
-  TRANSPORT_STATE_ALL
-};
-
-// When checking transport state, we need to differentiate between
-// "writable" or "receiving" check.
-enum TransportStateType {
-  TRANSPORT_WRITABLE_STATE = 0,
-  TRANSPORT_RECEIVING_STATE
-};
-
 // Stats that we can return about the connections for a transport channel.
 // TODO(hta): Rename to ConnectionStats
 struct ConnectionInfo {
@@ -165,36 +150,9 @@ class Transport : public sigslot::has_slots<> {
   // Returns the port allocator object for this transport.
   PortAllocator* port_allocator() { return allocator_; }
 
-  // Returns the states of this manager.  These bits are the ORs
-  // of the corresponding bits on the managed channels.  Each time one of these
-  // states changes, a signal is raised.
-  // TODO(honghaiz): Replace uses of writable() with any_channels_writable().
-  bool writable() const { return any_channels_writable(); }
-  bool was_writable() const { return was_writable_; }
-  bool any_channels_writable() const {
-    return (writable_ == TRANSPORT_STATE_SOME ||
-            writable_ == TRANSPORT_STATE_ALL);
-  }
-  bool all_channels_writable() const {
-    return (writable_ == TRANSPORT_STATE_ALL);
-  }
-  bool any_channel_receiving() const {
-    return (receiving_ == TRANSPORT_STATE_SOME ||
-            receiving_ == TRANSPORT_STATE_ALL);
-  }
   bool ready_for_remote_candidates() const {
     return local_description_set_ && remote_description_set_;
   }
-
-  bool AllChannelsCompleted() const;
-  bool AnyChannelFailed() const;
-
-  IceGatheringState gathering_state() const { return gathering_state_; }
-
-  sigslot::signal1<Transport*> SignalWritableState;
-  sigslot::signal1<Transport*> SignalReceivingState;
-  sigslot::signal1<Transport*> SignalCompleted;
-  sigslot::signal1<Transport*> SignalFailed;
 
   // Returns whether the client has requested the channels to connect.
   bool connect_requested() const { return connect_requested_; }
@@ -229,6 +187,7 @@ class Transport : public sigslot::has_slots<> {
     return (NULL != GetChannel(component));
   }
   bool HasChannels();
+
   void DestroyChannel(int component);
 
   // Set the local TransportDescription to be used by TransportChannels.
@@ -241,10 +200,8 @@ class Transport : public sigslot::has_slots<> {
                                      ContentAction action,
                                      std::string* error_desc);
 
-  // Tells all current and future channels to start connecting.  When the first
-  // channel begins connecting, the following signal is raised.
+  // Tells all current and future channels to start connecting.
   void ConnectChannels();
-  sigslot::signal1<Transport*> SignalConnecting;
 
   // Tells channels to start gathering candidates if necessary.
   // Should be called after ConnectChannels() has been called at least once,
@@ -260,12 +217,6 @@ class Transport : public sigslot::has_slots<> {
 
   bool GetStats(TransportStats* stats);
 
-  sigslot::signal1<Transport*> SignalGatheringState;
-
-  // Handles sending of ready candidates and receiving of remote candidates.
-  sigslot::signal2<Transport*, const std::vector<Candidate>&>
-      SignalCandidatesGathered;
-
   // Called when one or more candidates are ready from the remote peer.
   bool AddRemoteCandidates(const std::vector<Candidate>& candidates,
                            std::string* error);
@@ -274,14 +225,6 @@ class Transport : public sigslot::has_slots<> {
   // Call this before calling OnRemoteCandidates.
   virtual bool VerifyCandidate(const Candidate& candidate,
                                std::string* error);
-
-  // Signals when the best connection for a channel changes.
-  sigslot::signal3<Transport*,
-                   int,  // component
-                   const Candidate&> SignalRouteChange;
-
-  // Forwards the signal from TransportChannel to BaseSession.
-  sigslot::signal0<> SignalRoleConflict;
 
   virtual bool GetSslRole(rtc::SSLRole* ssl_role) const { return false; }
 
@@ -335,74 +278,16 @@ class Transport : public sigslot::has_slots<> {
       std::string* error_desc);
 
  private:
-  struct ChannelMapEntry {
-    ChannelMapEntry() : impl_(NULL), ref_(0) {}
-    explicit ChannelMapEntry(TransportChannelImpl *impl)
-        : impl_(impl),
-          ref_(0) {
-    }
-
-    void AddRef() { ++ref_; }
-    void DecRef() {
-      ASSERT(ref_ > 0);
-      --ref_;
-    }
-    int ref() const { return ref_; }
-
-    TransportChannelImpl* get() const { return impl_; }
-    TransportChannelImpl* operator->() const  { return impl_; }
-
-   private:
-    TransportChannelImpl* impl_;
-    int ref_;
-  };
-
-  // Candidate component => ChannelMapEntry
-  typedef std::map<int, ChannelMapEntry> ChannelMap;
-
-  // Called when the write state of a channel changes.
-  void OnChannelWritableState(TransportChannel* channel);
-
-  // Called when the receiving state of a channel changes.
-  void OnChannelReceivingState(TransportChannel* channel);
-
-  // Called when a channel starts finishes gathering candidates
-  void OnChannelGatheringState(TransportChannelImpl* channel);
-
-  // Called when a candidate is ready from channel.
-  void OnChannelCandidateGathered(TransportChannelImpl* channel,
-                                  const Candidate& candidate);
-  void OnChannelRouteChange(TransportChannel* channel,
-                            const Candidate& remote_candidate);
-  // Called when there is ICE role change.
-  void OnRoleConflict(TransportChannelImpl* channel);
-  // Called when the channel removes a connection.
-  void OnChannelConnectionRemoved(TransportChannelImpl* channel);
+  // Candidate component => TransportChannelImpl*
+  typedef std::map<int, TransportChannelImpl*> ChannelMap;
 
   // Helper function that invokes the given function on every channel.
   typedef void (TransportChannelImpl::* TransportChannelFunc)();
   void CallChannels(TransportChannelFunc func);
 
-  // Computes the AND and OR of the channel's read/write/receiving state
-  // (argument picks the operation).
-  TransportState GetTransportState(TransportStateType type);
-
-  // Sends SignalCompleted if we are now in that state.
-  void MaybeSignalCompleted();
-
-  // Sends SignalGatheringState if gathering state changed
-  void UpdateGatheringState();
-
-  void UpdateWritableState();
-  void UpdateReceivingState();
-
   const std::string name_;
   PortAllocator* const allocator_;
   bool channels_destroyed_ = false;
-  TransportState readable_ = TRANSPORT_STATE_NONE;
-  TransportState writable_ = TRANSPORT_STATE_NONE;
-  TransportState receiving_ = TRANSPORT_STATE_NONE;
-  bool was_writable_ = false;
   bool connect_requested_ = false;
   IceRole ice_role_ = ICEROLE_UNKNOWN;
   uint64 tiebreaker_ = 0;
@@ -412,7 +297,6 @@ class Transport : public sigslot::has_slots<> {
   rtc::scoped_ptr<TransportDescription> remote_description_;
   bool local_description_set_ = false;
   bool remote_description_set_ = false;
-  IceGatheringState gathering_state_ = kIceGatheringNew;
 
   ChannelMap channels_;
 

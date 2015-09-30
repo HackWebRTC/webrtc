@@ -81,9 +81,14 @@ class TransportController : public sigslot::has_slots<>,
   bool ReadyForRemoteCandidates(const std::string& transport_name);
   bool GetStats(const std::string& transport_name, TransportStats* stats);
 
+  // Creates a channel if it doesn't exist. Otherwise, increments a reference
+  // count and returns an existing channel.
   virtual TransportChannel* CreateTransportChannel_w(
       const std::string& transport_name,
       int component);
+
+  // Decrements a channel's reference count, and destroys the channel if
+  // nothing is referencing it.
   virtual void DestroyTransportChannel_w(const std::string& transport_name,
                                          int component);
 
@@ -121,6 +126,33 @@ class TransportController : public sigslot::has_slots<>,
  private:
   void OnMessage(rtc::Message* pmsg) override;
 
+  // It's the Transport that's currently responsible for creating/destroying
+  // channels, but the TransportController keeps track of how many external
+  // objects (BaseChannels) reference each channel.
+  struct RefCountedChannel {
+    RefCountedChannel() : impl_(nullptr), ref_(0) {}
+    explicit RefCountedChannel(TransportChannelImpl* impl)
+        : impl_(impl), ref_(0) {}
+
+    void AddRef() { ++ref_; }
+    void DecRef() {
+      ASSERT(ref_ > 0);
+      --ref_;
+    }
+    int ref() const { return ref_; }
+
+    TransportChannelImpl* get() const { return impl_; }
+    TransportChannelImpl* operator->() const { return impl_; }
+
+   private:
+    TransportChannelImpl* impl_;
+    int ref_;
+  };
+
+  std::vector<RefCountedChannel>::iterator FindChannel_w(
+      const std::string& transport_name,
+      int component);
+
   Transport* GetOrCreateTransport_w(const std::string& transport_name);
   void DestroyTransport_w(const std::string& transport_name);
   void DestroyAllTransports_w();
@@ -152,29 +184,27 @@ class TransportController : public sigslot::has_slots<>,
   bool GetStats_w(const std::string& transport_name, TransportStats* stats);
 
   // Handlers for signals from Transport.
-  void OnTransportConnecting_w(Transport* transport);
-  void OnTransportWritableState_w(Transport* transport);
-  void OnTransportReceivingState_w(Transport* transport);
-  void OnTransportCompleted_w(Transport* transport);
-  void OnTransportFailed_w(Transport* transport);
-  void OnTransportGatheringState_w(Transport* transport);
-  void OnTransportCandidatesGathered_w(
-      Transport* transport,
-      const std::vector<Candidate>& candidates);
-  void OnTransportRoleConflict_w();
+  void OnChannelWritableState_w(TransportChannel* channel);
+  void OnChannelReceivingState_w(TransportChannel* channel);
+  void OnChannelGatheringState_w(TransportChannelImpl* channel);
+  void OnChannelCandidateGathered_w(TransportChannelImpl* channel,
+                                    const Candidate& candidate);
+  void OnChannelRoleConflict_w(TransportChannelImpl* channel);
+  void OnChannelConnectionRemoved_w(TransportChannelImpl* channel);
 
   void UpdateAggregateStates_w();
-  bool HasChannels_w();
 
   rtc::Thread* const signaling_thread_ = nullptr;
   rtc::Thread* const worker_thread_ = nullptr;
   typedef std::map<std::string, Transport*> TransportMap;
   TransportMap transports_;
 
+  std::vector<RefCountedChannel> channels_;
+
   PortAllocator* const port_allocator_ = nullptr;
   rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_10;
 
-  // Aggregate state for Transports
+  // Aggregate state for TransportChannelImpls.
   IceConnectionState connection_state_ = kIceConnectionConnecting;
   bool receiving_ = false;
   IceGatheringState gathering_state_ = kIceGatheringNew;

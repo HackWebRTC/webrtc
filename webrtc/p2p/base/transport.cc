@@ -17,7 +17,7 @@
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/bind.h"
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
 namespace cricket {
@@ -69,59 +69,22 @@ Transport::Transport(const std::string& name, PortAllocator* allocator)
     : name_(name), allocator_(allocator) {}
 
 Transport::~Transport() {
-  ASSERT(channels_destroyed_);
-}
-
-bool Transport::AllChannelsCompleted() const {
-  // We aren't completed until at least one channel is complete, so if there
-  // are no channels, we aren't complete yet.
-  if (channels_.empty()) {
-    LOG(LS_INFO) << name() << " transport is not complete"
-                 << " because it has no TransportChannels";
-    return false;
-  }
-
-  // A Transport's ICE process is completed if all of its channels are writable,
-  // have finished allocating candidates, and have pruned all but one of their
-  // connections.
-  for (const auto& iter : channels_) {
-    const TransportChannelImpl* channel = iter.second.get();
-    bool complete =
-        channel->writable() &&
-        channel->GetState() == TransportChannelState::STATE_COMPLETED &&
-        channel->GetIceRole() == ICEROLE_CONTROLLING &&
-        channel->gathering_state() == kIceGatheringComplete;
-    if (!complete) {
-      LOG(LS_INFO) << name() << " transport is not complete"
-                   << " because a channel is still incomplete.";
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool Transport::AnyChannelFailed() const {
-  for (const auto& iter : channels_) {
-    if (iter.second->GetState() == TransportChannelState::STATE_FAILED) {
-      return true;
-    }
-  }
-  return false;
+  RTC_DCHECK(channels_destroyed_);
 }
 
 void Transport::SetIceRole(IceRole role) {
   ice_role_ = role;
-  for (auto& iter : channels_) {
-    iter.second->SetIceRole(ice_role_);
+  for (const auto& kv : channels_) {
+    kv.second->SetIceRole(ice_role_);
   }
 }
 
 bool Transport::GetRemoteSSLCertificate(rtc::SSLCertificate** cert) {
-  if (channels_.empty())
+  if (channels_.empty()) {
     return false;
+  }
 
-  ChannelMap::iterator iter = channels_.begin();
+  auto iter = channels_.begin();
   return iter->second->GetRemoteSSLCertificate(cert);
 }
 
@@ -155,8 +118,8 @@ bool Transport::SetLocalTransportDescription(
 
   local_description_.reset(new TransportDescription(description));
 
-  for (auto& iter : channels_) {
-    ret &= ApplyLocalTransportDescription(iter.second.get(), error_desc);
+  for (const auto& kv : channels_) {
+    ret &= ApplyLocalTransportDescription(kv.second, error_desc);
   }
   if (!ret) {
     return false;
@@ -186,8 +149,8 @@ bool Transport::SetRemoteTransportDescription(
   }
 
   remote_description_.reset(new TransportDescription(description));
-  for (auto& iter : channels_) {
-    ret &= ApplyRemoteTransportDescription(iter.second.get(), error_desc);
+  for (const auto& kv : channels_) {
+    ret &= ApplyRemoteTransportDescription(kv.second, error_desc);
   }
 
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
@@ -202,67 +165,48 @@ bool Transport::SetRemoteTransportDescription(
 }
 
 TransportChannelImpl* Transport::CreateChannel(int component) {
-  TransportChannelImpl* impl;
+  TransportChannelImpl* channel;
 
   // Create the entry if it does not exist.
-  bool impl_exists = false;
-  auto iterator = channels_.find(component);
-  if (iterator == channels_.end()) {
-    impl = CreateTransportChannel(component);
-    iterator = channels_.insert(std::pair<int, ChannelMapEntry>(
-        component, ChannelMapEntry(impl))).first;
+  bool channel_exists = false;
+  auto iter = channels_.find(component);
+  if (iter == channels_.end()) {
+    channel = CreateTransportChannel(component);
+    channels_.insert(std::pair<int, TransportChannelImpl*>(component, channel));
   } else {
-    impl = iterator->second.get();
-    impl_exists = true;
+    channel = iter->second;
+    channel_exists = true;
   }
 
-  // Increase the ref count.
-  iterator->second.AddRef();
   channels_destroyed_ = false;
 
-  if (impl_exists) {
-    // If this is an existing channel, we should just return it without
-    // connecting to all the signal again.
-    return impl;
+  if (channel_exists) {
+    // If this is an existing channel, we should just return it.
+    return channel;
   }
 
   // Push down our transport state to the new channel.
-  impl->SetIceRole(ice_role_);
-  impl->SetIceTiebreaker(tiebreaker_);
-  impl->SetIceConfig(ice_config_);
+  channel->SetIceRole(ice_role_);
+  channel->SetIceTiebreaker(tiebreaker_);
+  channel->SetIceConfig(ice_config_);
   // TODO(ronghuawu): Change CreateChannel to be able to return error since
   // below Apply**Description calls can fail.
   if (local_description_)
-    ApplyLocalTransportDescription(impl, NULL);
+    ApplyLocalTransportDescription(channel, nullptr);
   if (remote_description_)
-    ApplyRemoteTransportDescription(impl, NULL);
+    ApplyRemoteTransportDescription(channel, nullptr);
   if (local_description_ && remote_description_)
-    ApplyNegotiatedTransportDescription(impl, NULL);
-
-  impl->SignalWritableState.connect(this, &Transport::OnChannelWritableState);
-  impl->SignalReceivingState.connect(this, &Transport::OnChannelReceivingState);
-  impl->SignalGatheringState.connect(this, &Transport::OnChannelGatheringState);
-  impl->SignalCandidateGathered.connect(this,
-                                        &Transport::OnChannelCandidateGathered);
-  impl->SignalRouteChange.connect(this, &Transport::OnChannelRouteChange);
-  impl->SignalRoleConflict.connect(this, &Transport::OnRoleConflict);
-  impl->SignalConnectionRemoved.connect(
-      this, &Transport::OnChannelConnectionRemoved);
+    ApplyNegotiatedTransportDescription(channel, nullptr);
 
   if (connect_requested_) {
-    impl->Connect();
-    if (channels_.size() == 1) {
-      // If this is the first channel, then indicate that we have started
-      // connecting.
-      SignalConnecting(this);
-    }
+    channel->Connect();
   }
-  return impl;
+  return channel;
 }
 
 TransportChannelImpl* Transport::GetChannel(int component) {
-  ChannelMap::iterator iter = channels_.find(component);
-  return (iter != channels_.end()) ? iter->second.get() : NULL;
+  auto iter = channels_.find(component);
+  return (iter != channels_.end()) ? iter->second : nullptr;
 }
 
 bool Transport::HasChannels() {
@@ -270,32 +214,13 @@ bool Transport::HasChannels() {
 }
 
 void Transport::DestroyChannel(int component) {
-  ChannelMap::iterator iter = channels_.find(component);
+  auto iter = channels_.find(component);
   if (iter == channels_.end())
     return;
 
-  TransportChannelImpl* impl = NULL;
-
-  iter->second.DecRef();
-  if (!iter->second.ref()) {
-    impl = iter->second.get();
-    channels_.erase(iter);
-  }
-
-  if (connect_requested_ && channels_.empty()) {
-    // We're no longer attempting to connect.
-    SignalConnecting(this);
-  }
-
-  if (impl) {
-    DestroyTransportChannel(impl);
-    // Need to update aggregate state after destroying a channel,
-    // for example if it was the only one that wasn't yet writable.
-    UpdateWritableState();
-    UpdateReceivingState();
-    UpdateGatheringState();
-    MaybeSignalCompleted();
-  }
+  TransportChannelImpl* channel = iter->second;
+  channels_.erase(iter);
+  DestroyTransportChannel(channel);
 }
 
 void Transport::ConnectChannels() {
@@ -316,14 +241,11 @@ void Transport::ConnectChannels() {
     TransportDescription desc(
         std::vector<std::string>(), rtc::CreateRandomString(ICE_UFRAG_LENGTH),
         rtc::CreateRandomString(ICE_PWD_LENGTH), ICEMODE_FULL,
-        CONNECTIONROLE_NONE, NULL, Candidates());
-    SetLocalTransportDescription(desc, CA_OFFER, NULL);
+        CONNECTIONROLE_NONE, nullptr, Candidates());
+    SetLocalTransportDescription(desc, CA_OFFER, nullptr);
   }
 
   CallChannels(&TransportChannelImpl::Connect);
-  if (HasChannels()) {
-    SignalConnecting(this);
-  }
 }
 
 void Transport::MaybeStartGathering() {
@@ -333,24 +255,16 @@ void Transport::MaybeStartGathering() {
 }
 
 void Transport::DestroyAllChannels() {
-  std::vector<TransportChannelImpl*> impls;
-  for (auto& iter : channels_) {
-    iter.second.DecRef();
-    if (!iter.second.ref())
-      impls.push_back(iter.second.get());
+  for (const auto& kv : channels_) {
+    DestroyTransportChannel(kv.second);
   }
-
   channels_.clear();
-
-  for (TransportChannelImpl* impl : impls) {
-    DestroyTransportChannel(impl);
-  }
   channels_destroyed_ = true;
 }
 
 void Transport::CallChannels(TransportChannelFunc func) {
-  for (const auto& iter : channels_) {
-    ((iter.second.get())->*func)();
+  for (const auto& kv : channels_) {
+    (kv.second->*func)();
   }
 }
 
@@ -389,13 +303,13 @@ bool Transport::VerifyCandidate(const Candidate& cand, std::string* error) {
 bool Transport::GetStats(TransportStats* stats) {
   stats->transport_name = name();
   stats->channel_stats.clear();
-  for (auto iter : channels_) {
-    ChannelMapEntry& entry = iter.second;
+  for (auto kv : channels_) {
+    TransportChannelImpl* channel = kv.second;
     TransportChannelStats substats;
-    substats.component = entry->component();
-    entry->GetSrtpCipher(&substats.srtp_cipher);
-    entry->GetSslCipher(&substats.ssl_cipher);
-    if (!entry->GetStats(&substats.connection_infos)) {
+    substats.component = channel->component();
+    channel->GetSrtpCipher(&substats.srtp_cipher);
+    channel->GetSslCipher(&substats.ssl_cipher);
+    if (!channel->GetStats(&substats.connection_infos)) {
       return false;
     }
     stats->channel_stats.push_back(substats);
@@ -418,168 +332,13 @@ bool Transport::AddRemoteCandidates(const std::vector<Candidate>& candidates,
     }
   }
 
-  for (std::vector<Candidate>::const_iterator iter = candidates.begin();
-       iter != candidates.end();
-       ++iter) {
-    TransportChannelImpl* channel = GetChannel(iter->component());
-    if (channel != NULL) {
-      channel->AddRemoteCandidate(*iter);
+  for (const Candidate& candidate : candidates) {
+    TransportChannelImpl* channel = GetChannel(candidate.component());
+    if (channel != nullptr) {
+      channel->AddRemoteCandidate(candidate);
     }
   }
   return true;
-}
-
-void Transport::OnChannelWritableState(TransportChannel* channel) {
-  LOG(LS_INFO) << name() << " TransportChannel " << channel->component()
-               << " writability changed to " << channel->writable()
-               << ". Check if transport is complete.";
-  UpdateWritableState();
-  MaybeSignalCompleted();
-}
-
-void Transport::OnChannelReceivingState(TransportChannel* channel) {
-  UpdateReceivingState();
-}
-
-TransportState Transport::GetTransportState(TransportStateType state_type) {
-  bool any = false;
-  bool all = !channels_.empty();
-  for (const auto iter : channels_) {
-    bool b = false;
-    switch (state_type) {
-      case TRANSPORT_WRITABLE_STATE:
-        b = iter.second->writable();
-        break;
-      case TRANSPORT_RECEIVING_STATE:
-        b = iter.second->receiving();
-        break;
-      default:
-        ASSERT(false);
-    }
-    any |= b;
-    all &=  b;
-  }
-
-  if (all) {
-    return TRANSPORT_STATE_ALL;
-  } else if (any) {
-    return TRANSPORT_STATE_SOME;
-  }
-
-  return TRANSPORT_STATE_NONE;
-}
-
-void Transport::OnChannelGatheringState(TransportChannelImpl* channel) {
-  ASSERT(channels_.find(channel->component()) != channels_.end());
-  UpdateGatheringState();
-  if (gathering_state_ == kIceGatheringComplete) {
-    // If UpdateGatheringState brought us to kIceGatheringComplete, check if
-    // our connection state is also "Completed". Otherwise, there's no point in
-    // checking (since it would only produce log messages).
-    MaybeSignalCompleted();
-  }
-}
-
-void Transport::OnChannelCandidateGathered(TransportChannelImpl* channel,
-                                           const Candidate& candidate) {
-  // We should never signal peer-reflexive candidates.
-  if (candidate.type() == PRFLX_PORT_TYPE) {
-    ASSERT(false);
-    return;
-  }
-
-  ASSERT(connect_requested_);
-  std::vector<Candidate> candidates;
-  candidates.push_back(candidate);
-  SignalCandidatesGathered(this, candidates);
-}
-
-void Transport::OnChannelRouteChange(TransportChannel* channel,
-                                     const Candidate& remote_candidate) {
-  SignalRouteChange(this, remote_candidate.component(), remote_candidate);
-}
-
-void Transport::OnRoleConflict(TransportChannelImpl* channel) {
-  SignalRoleConflict();
-}
-
-void Transport::OnChannelConnectionRemoved(TransportChannelImpl* channel) {
-  LOG(LS_INFO) << name() << " TransportChannel " << channel->component()
-               << " connection removed. Check if transport is complete.";
-  MaybeSignalCompleted();
-
-  // Check if the state is now Failed.
-  // Failed is only available in the Controlling ICE role.
-  if (channel->GetIceRole() != ICEROLE_CONTROLLING) {
-    return;
-  }
-
-  // Failed can only occur after candidate gathering has stopped.
-  if (channel->gathering_state() != kIceGatheringComplete) {
-    return;
-  }
-
-  if (channel->GetState() == TransportChannelState::STATE_FAILED) {
-    // A Transport has failed if any of its channels have no remaining
-    // connections.
-    SignalFailed(this);
-  }
-}
-
-void Transport::MaybeSignalCompleted() {
-  if (AllChannelsCompleted()) {
-    LOG(LS_INFO) << name() << " transport is complete"
-                 << " because all the channels are complete.";
-    SignalCompleted(this);
-  }
-  // TODO(deadbeef): Should we do anything if we previously were completed,
-  // but now are not (if, for example, a new remote candidate is added)?
-}
-
-void Transport::UpdateGatheringState() {
-  IceGatheringState new_state = kIceGatheringNew;
-  bool any_gathering = false;
-  bool all_complete = !channels_.empty();
-  for (const auto& kv : channels_) {
-    any_gathering =
-        any_gathering || kv.second->gathering_state() != kIceGatheringNew;
-    all_complete =
-        all_complete && kv.second->gathering_state() == kIceGatheringComplete;
-  }
-  if (all_complete) {
-    new_state = kIceGatheringComplete;
-  } else if (any_gathering) {
-    new_state = kIceGatheringGathering;
-  }
-
-  if (gathering_state_ != new_state) {
-    gathering_state_ = new_state;
-    if (gathering_state_ == kIceGatheringGathering) {
-      LOG(LS_INFO) << "Transport: " << name_ << ", gathering candidates";
-    } else if (gathering_state_ == kIceGatheringComplete) {
-      LOG(LS_INFO) << "Transport " << name() << " gathering complete.";
-    }
-    SignalGatheringState(this);
-  }
-}
-
-void Transport::UpdateReceivingState() {
-  TransportState receiving = GetTransportState(TRANSPORT_RECEIVING_STATE);
-  if (receiving_ != receiving) {
-    receiving_ = receiving;
-    SignalReceivingState(this);
-  }
-}
-
-void Transport::UpdateWritableState() {
-  TransportState writable = GetTransportState(TRANSPORT_WRITABLE_STATE);
-  LOG(LS_INFO) << name() << " transport writable state changed? " << writable_
-               << " => " << writable;
-  if (writable_ != writable) {
-    was_writable_ = (writable_ == TRANSPORT_STATE_ALL);
-    writable_ = writable;
-    SignalWritableState(this);
-  }
 }
 
 bool Transport::ApplyLocalTransportDescription(TransportChannelImpl* ch,
@@ -623,9 +382,10 @@ bool Transport::NegotiateTransportDescription(ContentAction local_role,
   // between future SetRemote/SetLocal invocations and new channel
   // creation, we have the negotiation state saved until a new
   // negotiation happens.
-  for (auto& iter : channels_) {
-    if (!ApplyNegotiatedTransportDescription(iter.second.get(), error_desc))
+  for (const auto& kv : channels_) {
+    if (!ApplyNegotiatedTransportDescription(kv.second, error_desc)) {
       return false;
+    }
   }
   return true;
 }

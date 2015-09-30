@@ -34,15 +34,7 @@ class TransportTest : public testing::Test,
                       public sigslot::has_slots<> {
  public:
   TransportTest()
-      : transport_(new FakeTransport("test content name")),
-        channel_(NULL),
-        connecting_signalled_(false),
-        completed_(false),
-        failed_(false) {
-    transport_->SignalConnecting.connect(this, &TransportTest::OnConnecting);
-    transport_->SignalCompleted.connect(this, &TransportTest::OnCompleted);
-    transport_->SignalFailed.connect(this, &TransportTest::OnFailed);
-  }
+      : transport_(new FakeTransport("test content name")), channel_(NULL) {}
   ~TransportTest() {
     transport_->DestroyAllChannels();
   }
@@ -60,29 +52,9 @@ class TransportTest : public testing::Test,
   }
 
  protected:
-  void OnConnecting(Transport* transport) {
-    connecting_signalled_ = true;
-  }
-  void OnCompleted(Transport* transport) {
-    completed_ = true;
-  }
-  void OnFailed(Transport* transport) {
-    failed_ = true;
-  }
-
   rtc::scoped_ptr<FakeTransport> transport_;
   FakeTransportChannel* channel_;
-  bool connecting_signalled_;
-  bool completed_;
-  bool failed_;
 };
-
-// Test that calling ConnectChannels triggers an OnConnecting signal.
-TEST_F(TransportTest, TestConnectChannelsDoesSignal) {
-  EXPECT_TRUE(SetupChannel());
-  transport_->ConnectChannels();
-  EXPECT_TRUE(connecting_signalled_);
-}
 
 // This test verifies channels are created with proper ICE
 // role, tiebreaker and remote ice mode and credentials after offer and
@@ -200,41 +172,6 @@ TEST_F(TransportTest, TestIceControllingOnIceRestartIfRemoteIsIceLite) {
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
 }
 
-// This test verifies that the Completed and Failed states can be reached.
-TEST_F(TransportTest, TestChannelCompletedAndFailed) {
-  transport_->SetIceRole(cricket::ICEROLE_CONTROLLING);
-  cricket::TransportDescription local_desc(kIceUfrag1, kIcePwd1);
-  ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
-                                                       cricket::CA_OFFER,
-                                                       NULL));
-  EXPECT_TRUE(SetupChannel());
-
-  cricket::TransportDescription remote_desc(kIceUfrag1, kIcePwd1);
-  ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
-                                                        cricket::CA_ANSWER,
-                                                        NULL));
-
-  channel_->SetConnectionCount(2);
-  channel_->SetCandidatesGatheringComplete();
-  channel_->SetWritable(true);
-  EXPECT_TRUE_WAIT(transport_->all_channels_writable(), 100);
-  // ICE is not yet completed because there is still more than one connection.
-  EXPECT_FALSE(completed_);
-  EXPECT_FALSE(failed_);
-
-  // When the connection count drops to 1, SignalCompleted should be emitted,
-  // and completed() should be true.
-  channel_->SetConnectionCount(1);
-  EXPECT_TRUE_WAIT(completed_, 100);
-  completed_ = false;
-
-  // When the connection count drops to 0, SignalFailed should be emitted, and
-  // completed() should be false.
-  channel_->SetConnectionCount(0);
-  EXPECT_TRUE_WAIT(failed_, 100);
-  EXPECT_FALSE(completed_);
-}
-
 // Tests channel role is reversed after receiving ice-lite from remote.
 TEST_F(TransportTest, TestSetRemoteIceLiteInOffer) {
   transport_->SetIceRole(cricket::ICEROLE_CONTROLLED);
@@ -293,23 +230,3 @@ TEST_F(TransportTest, TestGetStats) {
   EXPECT_EQ(1, stats.channel_stats[0].component);
 }
 
-TEST_F(TransportTest, TestReceivingStateChange) {
-  ASSERT_TRUE(SetupChannel());
-  channel_->SetConnectionCount(1);
-  transport_->ConnectChannels();
-  EXPECT_FALSE(transport_->any_channel_receiving());
-
-  channel_->SetReceiving(true);
-  EXPECT_TRUE_WAIT(transport_->any_channel_receiving(), 100);
-  FakeTransportChannel* channel2 = CreateChannel(2);
-  channel2->SetReceiving(true);
-  EXPECT_TRUE_WAIT(transport_->any_channel_receiving(), 100);
-
-  channel2->SetReceiving(false);
-  EXPECT_TRUE_WAIT(transport_->any_channel_receiving(), 100);
-
-  // After both channels become not receiving, the transport receiving state
-  // becomes TRANSPORT_STATE_NONE.
-  channel_->SetReceiving(false);
-  EXPECT_TRUE_WAIT(!transport_->any_channel_receiving(), 100);
-}
