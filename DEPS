@@ -46,11 +46,6 @@ include_rules = [
   '+vpx',
 ]
 
-# checkdeps.py shouldn't check include paths for files in these dirs:
-skip_child_includes = [
-  'webrtc/overrides',
-]
-
 hooks = [
   {
     # Check for legacy named top-level dir (named 'trunk').
