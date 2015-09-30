@@ -35,7 +35,9 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/common_video/interface/i420_buffer_pool.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -106,7 +108,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   bool sw_fallback_required_;
   bool use_surface_;
   VideoCodec codec_;
-  VideoFrame decoded_image_;
+  webrtc::I420BufferPool decoded_frame_pool_;
   NativeHandleImpl native_handle_;
   DecodedImageCallback* callback_;
   int frames_received_;  // Number of frames received by decoder.
@@ -120,9 +122,6 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   std::vector<int64_t> ntp_times_ms_;
   std::vector<int64_t> frame_rtc_times_ms_;  // Time when video frame is sent to
                                              // decoder input.
-  int32_t output_timestamp_;  // Last output frame timestamp from timestamps_ Q.
-  int64_t output_ntp_time_ms_; // Last output frame ntp time from
-                               // ntp_times_ms_ queue.
 
   // State that is constant for the lifetime of this object once the ctor
   // returns.
@@ -331,8 +330,6 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   current_frames_ = 0;
   current_bytes_ = 0;
   current_decoding_time_ms_ = 0;
-  output_timestamp_ = 0;
-  output_ntp_time_ms_ = 0;
   timestamps_.clear();
   ntp_times_ms_.clear();
   frame_rtc_times_ms_.clear();
@@ -600,9 +597,14 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int texture_id = GetIntField(jni, *j_media_codec_video_decoder_,
       j_textureID_field_);
 
-  // Extract data from Java ByteBuffer and create output yuv420 frame -
-  // for non surface decoding only.
-  if (!use_surface_) {
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> frame_buffer;
+  if (use_surface_) {
+    native_handle_.SetTextureObject(surface_texture_, texture_id);
+    frame_buffer = new rtc::RefCountedObject<JniNativeHandleBuffer>(
+        &native_handle_, width, height);
+  } else {
+    // Extract data from Java ByteBuffer and create output yuv420 frame -
+    // for non surface decoding only.
     if (output_buffer_size < width * height * 3 / 2) {
       ALOGE("Insufficient output buffer size: %d", output_buffer_size);
       return false;
@@ -619,37 +621,50 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     payload += output_buffer_offset;
 
     // Create yuv420 frame.
+    frame_buffer = decoded_frame_pool_.CreateBuffer(width, height);
     if (color_format == COLOR_FormatYUV420Planar) {
-      decoded_image_.CreateFrame(
-          payload,
-          payload + (stride * slice_height),
-          payload + (5 * stride * slice_height / 4),
-          width, height,
-          stride, stride / 2, stride / 2);
+      RTC_CHECK_EQ(0, stride % 2);
+      RTC_CHECK_EQ(0, slice_height % 2);
+      const int uv_stride = stride / 2;
+      const int u_slice_height = slice_height / 2;
+      const uint8_t* y_ptr = payload;
+      const uint8_t* u_ptr = y_ptr + stride * slice_height;
+      const uint8_t* v_ptr = u_ptr + uv_stride * u_slice_height;
+      libyuv::I420Copy(y_ptr, stride,
+                       u_ptr, uv_stride,
+                       v_ptr, uv_stride,
+                       frame_buffer->MutableData(webrtc::kYPlane),
+                       frame_buffer->stride(webrtc::kYPlane),
+                       frame_buffer->MutableData(webrtc::kUPlane),
+                       frame_buffer->stride(webrtc::kUPlane),
+                       frame_buffer->MutableData(webrtc::kVPlane),
+                       frame_buffer->stride(webrtc::kVPlane),
+                       width, height);
     } else {
       // All other supported formats are nv12.
-      decoded_image_.CreateEmptyFrame(width, height, width,
-          width / 2, width / 2);
+      const uint8_t* y_ptr = payload;
+      const uint8_t* uv_ptr = y_ptr + stride * slice_height;
       libyuv::NV12ToI420(
-          payload, stride,
-          payload + stride * slice_height, stride,
-          decoded_image_.buffer(webrtc::kYPlane),
-          decoded_image_.stride(webrtc::kYPlane),
-          decoded_image_.buffer(webrtc::kUPlane),
-          decoded_image_.stride(webrtc::kUPlane),
-          decoded_image_.buffer(webrtc::kVPlane),
-          decoded_image_.stride(webrtc::kVPlane),
+          y_ptr, stride,
+          uv_ptr, stride,
+          frame_buffer->MutableData(webrtc::kYPlane),
+          frame_buffer->stride(webrtc::kYPlane),
+          frame_buffer->MutableData(webrtc::kUPlane),
+          frame_buffer->stride(webrtc::kUPlane),
+          frame_buffer->MutableData(webrtc::kVPlane),
+          frame_buffer->stride(webrtc::kVPlane),
           width, height);
     }
   }
+  VideoFrame decoded_frame(frame_buffer, 0, 0, webrtc::kVideoRotation_0);
 
   // Get frame timestamps from a queue.
   if (timestamps_.size() > 0) {
-    output_timestamp_ = timestamps_.front();
+    decoded_frame.set_timestamp(timestamps_.front());
     timestamps_.erase(timestamps_.begin());
   }
   if (ntp_times_ms_.size() > 0) {
-    output_ntp_time_ms_ = ntp_times_ms_.front();
+    decoded_frame.set_ntp_time_ms(ntp_times_ms_.front());
     ntp_times_ms_.erase(ntp_times_ms_.begin());
   }
   int64_t frame_decoding_time_ms = 0;
@@ -689,19 +704,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   }
 
   // Callback - output decoded frame.
-  int32_t callback_status = WEBRTC_VIDEO_CODEC_OK;
-  if (use_surface_) {
-    native_handle_.SetTextureObject(surface_texture_, texture_id);
-    VideoFrame texture_image(new rtc::RefCountedObject<JniNativeHandleBuffer>(
-                                 &native_handle_, width, height),
-                             output_timestamp_, 0, webrtc::kVideoRotation_0);
-    texture_image.set_ntp_time_ms(output_ntp_time_ms_);
-    callback_status = callback_->Decoded(texture_image);
-  } else {
-    decoded_image_.set_timestamp(output_timestamp_);
-    decoded_image_.set_ntp_time_ms(output_ntp_time_ms_);
-    callback_status = callback_->Decoded(decoded_image_);
-  }
+  const int32_t callback_status = callback_->Decoded(decoded_frame);
   if (callback_status > 0) {
     ALOGE("callback error");
   }
