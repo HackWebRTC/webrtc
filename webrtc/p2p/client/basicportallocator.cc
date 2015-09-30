@@ -473,10 +473,22 @@ void BasicPortAllocatorSession::OnCandidateReady(
 
   ProtocolType pvalue;
   bool candidate_signalable = CheckCandidateFilter(c);
+
+  // When device enumeration is disabled (to prevent non-default IP addresses
+  // from leaking), we ping from some local candidates even though we don't
+  // signal them. However, if host candidates are also disabled (for example, to
+  // prevent even default IP addresses from leaking), we still don't want to
+  // ping from them, even if device enumeration is disabled.  Thus, we check for
+  // both device enumeration and host candidates being disabled.
+  bool network_enumeration_disabled = c.address().IsAnyIP();
+  bool can_ping_from_candidate =
+      (port->SharedSocket() || c.protocol() == TCP_PROTOCOL_NAME);
+  bool host_canidates_disabled = !(allocator_->candidate_filter() & CF_HOST);
+
   bool candidate_pairable =
       candidate_signalable ||
-      (c.address().IsAnyIP() &&
-       (port->SharedSocket() || c.protocol() == TCP_PROTOCOL_NAME));
+      (network_enumeration_disabled && can_ping_from_candidate &&
+       !host_canidates_disabled);
   bool candidate_protocol_enabled =
       StringToProto(c.protocol().c_str(), &pvalue) &&
       data->sequence()->ProtocolEnabled(pvalue);

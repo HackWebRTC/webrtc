@@ -585,6 +585,18 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoAdapters) {
   EXPECT_TRUE(candidate_allocation_done_);
 }
 
+// Test that when enumeration is disabled, we should not have any ports when
+// candidate_filter() is set to CF_RELAY and no relay is specified.
+TEST_F(PortAllocatorTest,
+       TestDisableAdapterEnumerationWithoutNatRelayTransportOnly) {
+  AddInterfaceAsDefaultRoute(kClientAddr);
+  ResetWithStunServerNoNat(kStunAddr);
+  allocator().set_candidate_filter(cricket::CF_RELAY);
+  // Expect to see no ports and no candidates.
+  CheckDisableAdapterEnumeration(0U, rtc::IPAddress(), rtc::IPAddress(),
+                                 rtc::IPAddress(), rtc::IPAddress());
+}
+
 // Test that we should only get STUN and TURN candidates when adapter
 // enumeration is disabled.
 TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationBehindNat) {
