@@ -84,7 +84,7 @@
       'conditions': [
         ['build_with_chromium==1', {
           'include_dirs': [
-            '../overrides',
+            '../../webrtc_overrides',
           ],
           'sources!': [
             'basictypes.h',
@@ -349,9 +349,9 @@
         'worker.h',
         'x11windowpicker.cc',
         'x11windowpicker.h',
-        '../overrides/webrtc/base/logging.cc',
-        '../overrides/webrtc/base/logging.h',
-        '../overrides/webrtc/base/win32socketinit.cc',
+        '../../webrtc_overrides/webrtc/base/logging.cc',
+        '../../webrtc_overrides/webrtc/base/logging.h',
+        '../../webrtc_overrides/webrtc/base/win32socketinit.cc',
       ],
       # TODO(henrike): issue 3307, make rtc_base build without disabling
       # these flags.
@@ -379,7 +379,7 @@
       'conditions': [
         ['build_with_chromium==1', {
           'include_dirs': [
-            '../overrides',
+            '../../webrtc_overrides',
             '../../boringssl/src/include',
           ],
           'sources!': [
@@ -494,9 +494,9 @@
             }],
           ],
           'sources!': [
-            '../overrides/webrtc/base/win32socketinit.cc',
-            '../overrides/webrtc/base/logging.cc',
-            '../overrides/webrtc/base/logging.h',
+            '../../webrtc_overrides/webrtc/base/win32socketinit.cc',
+            '../../webrtc_overrides/webrtc/base/logging.cc',
+            '../../webrtc_overrides/webrtc/base/logging.h',
           ],
         }],
         ['OS == "android"', {

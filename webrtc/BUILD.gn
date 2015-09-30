@@ -23,9 +23,9 @@ config("common_inherited_config") {
   if (build_with_chromium) {
     defines = [ "WEBRTC_CHROMIUM_BUILD" ]
     include_dirs = [
-      # overrides must be included first as that is the mechanism for
+      # The overrides must be included first as that is the mechanism for
       # selecting the override headers in Chromium.
-      "overrides",
+      "../webrtc_overrides",
 
       # Allow includes to be prefixed with webrtc/ in case it is not an
       # immediate subdirectory of the top-level.

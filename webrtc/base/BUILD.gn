@@ -315,18 +315,18 @@ static_library("rtc_base") {
 
   if (build_with_chromium) {
     sources += [
-      "../overrides/webrtc/base/logging.cc",
-      "../overrides/webrtc/base/logging.h",
+      "../../webrtc_overrides/webrtc/base/logging.cc",
+      "../../webrtc_overrides/webrtc/base/logging.h",
     ]
 
     deps += [ "..:webrtc_common" ]
 
     if (is_win) {
-      sources += [ "../overrides/webrtc/base/win32socketinit.cc" ]
+      sources += [ "../../webrtc_overrides/webrtc/base/win32socketinit.cc" ]
     }
 
     include_dirs = [
-      "../overrides",
+      "../../webrtc_overrides",
       "../../boringssl/src/include",
     ]
 
