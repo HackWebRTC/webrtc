@@ -288,7 +288,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
 
  protected:
   enum {
-    MSG_CHECKTIMEOUT = 0,
+    MSG_DEAD = 0,
     MSG_FIRST_AVAILABLE
   };
 
@@ -340,8 +340,11 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // Called when one of our connections deletes itself.
   void OnConnectionDestroyed(Connection* conn);
 
-  // Checks if this port is useless, and hence, should be destroyed.
-  void CheckTimeout();
+  // Whether this port is dead, and hence, should be destroyed on the controlled
+  // side.
+  bool dead() const {
+    return ice_role_ == ICEROLE_CONTROLLED && connections_.empty();
+  }
 
   rtc::Thread* thread_;
   rtc::PacketSocketFactory* factory_;

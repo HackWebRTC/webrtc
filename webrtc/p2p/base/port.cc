@@ -566,7 +566,7 @@ void Port::SendBindingResponse(StunMessage* request,
   response.AddFingerprint();
 
   // The fact that we received a successful request means that this connection
-  // (if one exists) should now be readable.
+  // (if one exists) should now be receiving.
   Connection* conn = GetConnection(addr);
 
   // Send the response message.
@@ -630,8 +630,10 @@ void Port::SendBindingErrorResponse(StunMessage* request,
 }
 
 void Port::OnMessage(rtc::Message *pmsg) {
-  ASSERT(pmsg->message_id == MSG_CHECKTIMEOUT);
-  CheckTimeout();
+  ASSERT(pmsg->message_id == MSG_DEAD);
+  if (dead()) {
+    Destroy();
+  }
 }
 
 std::string Port::ToString() const {
@@ -652,12 +654,13 @@ void Port::OnConnectionDestroyed(Connection* conn) {
   ASSERT(iter != connections_.end());
   connections_.erase(iter);
 
-  // On the controlled side, ports time out, but only after all connections
-  // fail.  Note: If a new connection is added after this message is posted,
-  // but it fails and is removed before kPortTimeoutDelay, then this message
-  //  will still cause the Port to be destroyed.
-  if (ice_role_ == ICEROLE_CONTROLLED)
-    thread_->PostDelayed(timeout_delay_, this, MSG_CHECKTIMEOUT);
+  // On the controlled side, ports time out after all connections fail.
+  // Note: If a new connection is added after this message is posted, but it
+  // fails and is removed before kPortTimeoutDelay, then this message will
+  // still cause the Port to be destroyed.
+  if (dead()) {
+    thread_->PostDelayed(timeout_delay_, this, MSG_DEAD);
+  }
 }
 
 void Port::Destroy() {
@@ -665,16 +668,6 @@ void Port::Destroy() {
   LOG_J(LS_INFO, this) << "Port deleted";
   SignalDestroyed(this);
   delete this;
-}
-
-void Port::CheckTimeout() {
-  ASSERT(ice_role_ == ICEROLE_CONTROLLED);
-  // If this port has no connections, then there's no reason to keep it around.
-  // When the connections time out (both read and write), they will delete
-  // themselves, so if we have any connections, they are either readable or
-  // writable (or still connecting).
-  if (connections_.empty())
-    Destroy();
 }
 
 const std::string Port::username_fragment() const {
@@ -918,7 +911,7 @@ void Connection::OnReadPacket(
   } else {
     // The packet is STUN and passed the Port checks.
     // Perform our own checks to ensure this packet is valid.
-    // If this is a STUN request, then update the readable bit and respond.
+    // If this is a STUN request, then update the receiving bit and respond.
     // If this is a STUN response, then update the writable bit.
     // Log at LS_INFO if we receive a ping on an unwritable connection.
     rtc::LoggingSeverity sev = (!writable() ? rtc::LS_INFO : rtc::LS_VERBOSE);
@@ -936,7 +929,7 @@ void Connection::OnReadPacket(
           }
 
           // Incoming, validated stun request from remote peer.
-          // This call will also set the connection readable.
+          // This call will also set the connection receiving.
           port_->SendBindingResponse(msg.get(), addr);
 
           // If timed out sending writability checks, start up again
@@ -976,10 +969,9 @@ void Connection::OnReadPacket(
         // Otherwise silently discard the response message.
         break;
 
-      // Remote end point sent an STUN indication instead of regular
-      // binding request. In this case |last_ping_received_| will be updated.
-      // Otherwise we can mark connection to read timeout. No response will be
-      // sent in this scenario.
+      // Remote end point sent an STUN indication instead of regular binding
+      // request. In this case |last_ping_received_| will be updated but no
+      // response will be sent.
       case STUN_BINDING_INDICATION:
         ReceivedPing();
         break;
@@ -1302,7 +1294,7 @@ void Connection::MaybeUpdatePeerReflexiveCandidate(
 
 void Connection::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_DELETE);
-  LOG_J(LS_INFO, this) << "Connection deleted due to read or write timeout";
+  LOG_J(LS_INFO, this) << "Connection deleted";
   SignalDestroyed(this);
   delete this;
 }

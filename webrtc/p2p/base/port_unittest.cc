@@ -2410,3 +2410,38 @@ TEST_F(PortTest, TestControlledTimeout) {
   // The controlled port should be destroyed after 10 milliseconds.
   EXPECT_TRUE_WAIT(destroyed(), kTimeout);
 }
+
+// This test case verifies that if the role of a port changes from controlled
+// to controlling after all connections fail, the port will not be destroyed.
+TEST_F(PortTest, TestControlledToControllingNotDestroyed) {
+  UDPPort* port1 = CreateUdpPort(kLocalAddr1);
+  port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  port1->SetIceTiebreaker(kTiebreaker1);
+
+  UDPPort* port2 = CreateUdpPort(kLocalAddr2);
+  ConnectToSignalDestroyed(port2);
+  port2->set_timeout_delay(10);  // milliseconds
+  port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  port2->SetIceTiebreaker(kTiebreaker2);
+
+  // The connection must not be destroyed before a connection is attempted.
+  EXPECT_FALSE(destroyed());
+
+  port1->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
+  port2->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
+
+  // Set up channels and ensure both ports will be deleted.
+  TestChannel ch1(port1);
+  TestChannel ch2(port2);
+
+  // Simulate a connection that succeeds, and then is destroyed.
+  StartConnectAndStopChannels(&ch1, &ch2);
+  // Switch the role after all connections are destroyed.
+  EXPECT_TRUE_WAIT(ch2.conn() == nullptr, kTimeout);
+  port1->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  port2->SetIceRole(cricket::ICEROLE_CONTROLLING);
+
+  // After the connection is destroyed, the port should not be destroyed.
+  rtc::Thread::Current()->ProcessMessages(kTimeout);
+  EXPECT_FALSE(destroyed());
+}
