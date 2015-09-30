@@ -801,7 +801,8 @@ Connection::Connection(Port* port,
       sent_packets_total_(0),
       reported_(false),
       state_(STATE_WAITING),
-      receiving_timeout_(WEAK_CONNECTION_RECEIVE_TIMEOUT) {
+      receiving_timeout_(WEAK_CONNECTION_RECEIVE_TIMEOUT),
+      time_created_ms_(rtc::Time()) {
   // All of our connections start in WAITING state.
   // TODO(mallinath) - Start connections from STATE_FROZEN.
   // Wire up to send stun packets
@@ -849,7 +850,6 @@ void Connection::set_write_state(WriteState value) {
     LOG_J(LS_VERBOSE, this) << "set_write_state from: " << old_value << " to "
                             << value;
     SignalStateChange(this);
-    CheckTimeout();
   }
 }
 
@@ -858,7 +858,6 @@ void Connection::set_receiving(bool value) {
     LOG_J(LS_VERBOSE, this) << "set_receiving to " << value;
     receiving_ = value;
     SignalStateChange(this);
-    CheckTimeout();
   }
 }
 
@@ -999,7 +998,7 @@ void Connection::OnReadyToSend() {
 }
 
 void Connection::Prune() {
-  if (!pruned_) {
+  if (!pruned_ || active()) {
     LOG_J(LS_VERBOSE, this) << "Connection pruned";
     pruned_ = true;
     requests_.Clear();
@@ -1089,6 +1088,9 @@ void Connection::UpdateState(uint32 now) {
   uint32 last_recv_time = last_received();
   bool receiving = now <= last_recv_time + receiving_timeout_;
   set_receiving(receiving);
+  if (dead(now)) {
+    Destroy();
+  }
 }
 
 void Connection::Ping(uint32 now) {
@@ -1117,6 +1119,28 @@ void Connection::ReceivedPingResponse() {
   set_state(STATE_SUCCEEDED);
   pings_since_last_response_.clear();
   last_ping_response_received_ = rtc::Time();
+}
+
+bool Connection::dead(uint32 now) const {
+  if (now < (time_created_ms_ + MIN_CONNECTION_LIFETIME)) {
+    // A connection that hasn't passed its minimum lifetime is still alive.
+    // We do this to prevent connections from being pruned too quickly
+    // during a network change event when two networks would be up
+    // simultaneously but only for a brief period.
+    return false;
+  }
+
+  if (receiving_) {
+    // A connection that is receiving is alive.
+    return false;
+  }
+
+  // A connection is alive until it is inactive.
+  return !active();
+
+  // TODO(honghaiz): Move from using the write state to using the receiving
+  // state with something like the following:
+  // return (now > (last_received() + DEAD_CONNECTION_RECEIVE_TIMEOUT));
 }
 
 std::string Connection::ToDebugId() const {
@@ -1230,7 +1254,7 @@ void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
     LOG_J(LS_ERROR, this) << "Received STUN error response, code="
                           << error_code << "; killing connection";
     set_state(STATE_FAILED);
-    set_write_state(STATE_WRITE_TIMEOUT);
+    Destroy();
   }
 }
 
@@ -1249,13 +1273,6 @@ void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
   LOG_JV(sev, this) << "Sent STUN ping"
                     << ", id=" << rtc::hex_encode(request->id())
                     << ", use_candidate=" << use_candidate;
-}
-
-void Connection::CheckTimeout() {
-  // If write has timed out and it is not receiving, remove the connection.
-  if (!receiving_ && write_state_ == STATE_WRITE_TIMEOUT) {
-    Destroy();
-  }
 }
 
 void Connection::HandleRoleConflictFromPeer() {

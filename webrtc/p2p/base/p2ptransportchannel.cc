@@ -286,23 +286,26 @@ void P2PTransportChannel::SetIceTiebreaker(uint64 tiebreaker) {
   tiebreaker_ = tiebreaker;
 }
 
-// Currently a channel is considered ICE completed once there is no
-// more than one connection per Network. This works for a single NIC
-// with both IPv4 and IPv6 enabled. However, this condition won't
-// happen when there are multiple NICs and all of them have
-// connectivity.
-// TODO(guoweis): Change Completion to be driven by a channel level
-// timer.
+// A channel is considered ICE completed once there is at most one active
+// connection per network and at least one active connection.
 TransportChannelState P2PTransportChannel::GetState() const {
-  std::set<rtc::Network*> networks;
-
-  if (connections_.empty()) {
-    return had_connection_ ? TransportChannelState::STATE_FAILED
-                           : TransportChannelState::STATE_INIT;
+  if (!had_connection_) {
+    return TransportChannelState::STATE_INIT;
   }
 
-  for (uint32 i = 0; i < connections_.size(); ++i) {
-    rtc::Network* network = connections_[i]->port()->Network();
+  std::vector<Connection*> active_connections;
+  for (Connection* connection : connections_) {
+    if (connection->active()) {
+      active_connections.push_back(connection);
+    }
+  }
+  if (active_connections.empty()) {
+    return TransportChannelState::STATE_FAILED;
+  }
+
+  std::set<rtc::Network*> networks;
+  for (Connection* connection : active_connections) {
+    rtc::Network* network = connection->port()->Network();
     if (networks.find(network) == networks.end()) {
       networks.insert(network);
     } else {
@@ -312,8 +315,8 @@ TransportChannelState P2PTransportChannel::GetState() const {
       return TransportChannelState::STATE_CONNECTING;
     }
   }
-  LOG_J(LS_VERBOSE, this) << "Ice is completed for this channel.";
 
+  LOG_J(LS_VERBOSE, this) << "Ice is completed for this channel.";
   return TransportChannelState::STATE_COMPLETED;
 }
 
@@ -872,8 +875,7 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
   infos->clear();
 
   std::vector<Connection *>::const_iterator it;
-  for (it = connections_.begin(); it != connections_.end(); ++it) {
-    Connection* connection = *it;
+  for (Connection* connection : connections_) {
     ConnectionInfo info;
     info.best_connection = (best_connection_ == connection);
     info.receiving = connection->receiving();
@@ -1016,7 +1018,7 @@ void P2PTransportChannel::PruneConnections() {
     Connection* premier = GetBestConnectionOnNetwork(network);
     // Do not prune connections if the current best connection is weak on this
     // network. Otherwise, it may delete connections prematurely.
-    if (!premier || premier->Weak()) {
+    if (!premier || premier->weak()) {
       continue;
     }
 
@@ -1105,8 +1107,8 @@ void P2PTransportChannel::HandleAllTimedOut() {
   HandleNotWritable();
 }
 
-bool P2PTransportChannel::Weak() const {
-  return !best_connection_ || best_connection_->Weak();
+bool P2PTransportChannel::weak() const {
+  return !best_connection_ || best_connection_->weak();
 }
 
 // If we have a best connection, return it, otherwise return top one in the
@@ -1154,7 +1156,7 @@ void P2PTransportChannel::OnCheckAndPing() {
   UpdateConnectionStates();
   // When the best connection is either not receiving or not writable,
   // switch to weak ping delay.
-  int ping_delay = Weak() ? WEAK_PING_DELAY : STRONG_PING_DELAY;
+  int ping_delay = weak() ? WEAK_PING_DELAY : STRONG_PING_DELAY;
   if (rtc::Time() >= last_ping_sent_ms_ + ping_delay) {
     Connection* conn = FindNextPingableConnection();
     if (conn) {
@@ -1186,7 +1188,7 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
 
   // If the channel is weak, ping all candidates. Otherwise, we only
   // want to ping connections that have not timed out on writing.
-  return Weak() || conn->write_state() != Connection::STATE_WRITE_TIMEOUT;
+  return weak() || conn->write_state() != Connection::STATE_WRITE_TIMEOUT;
 }
 
 // Returns the next pingable connection to ping.  This will be the oldest

@@ -50,9 +50,9 @@ extern const char TCPTYPE_ACTIVE_STR[];
 extern const char TCPTYPE_PASSIVE_STR[];
 extern const char TCPTYPE_SIMOPEN_STR[];
 
-// If a connection does not receive anything for this long, it is considered
-// dead.
-const uint32 DEAD_CONNECTION_RECEIVE_TIMEOUT = 30 * 1000;  // 30 seconds.
+// The minimum time we will wait before destroying a connection after creating
+// it.
+const uint32 MIN_CONNECTION_LIFETIME = 10 * 1000;  // 10 seconds.
 
 // The timeout duration when a connection does not receive anything.
 const uint32 WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;  // 2.5 seconds
@@ -435,8 +435,13 @@ class Connection : public rtc::MessageHandler,
   // Determines whether the connection has finished connecting.  This can only
   // be false for TCP connections.
   bool connected() const { return connected_; }
-
-  bool Weak() const { return !(writable() && receiving() && connected()); }
+  bool weak() const { return !(writable() && receiving() && connected()); }
+  bool active() const {
+    // TODO(honghaiz): Move from using |write_state_| to using |pruned_|.
+    return write_state_ != STATE_WRITE_TIMEOUT;
+  }
+  // A connection is dead if it can be safely deleted.
+  bool dead(uint32 now) const;
 
   // Estimate of the round-trip time over this connection.
   uint32 rtt() const { return rtt_; }
@@ -572,9 +577,6 @@ class Connection : public rtc::MessageHandler,
   void set_state(State state);
   void set_connected(bool value);
 
-  // Checks if this connection is useless, and hence, should be destroyed.
-  void CheckTimeout();
-
   void OnMessage(rtc::Message *pmsg);
 
   Port* port_;
@@ -615,6 +617,7 @@ class Connection : public rtc::MessageHandler,
   State state_;
   // Time duration to switch from receiving to not receiving.
   uint32 receiving_timeout_;
+  uint32 time_created_ms_;
 
   friend class Port;
   friend class ConnectionRequest;

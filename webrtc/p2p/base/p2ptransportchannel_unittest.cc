@@ -1112,17 +1112,24 @@ TEST_F(P2PTransportChannelTest, GetStats) {
   TestSendRecv(1);
   cricket::ConnectionInfos infos;
   ASSERT_TRUE(ep1_ch1()->GetStats(&infos));
-  ASSERT_EQ(1U, infos.size());
-  EXPECT_TRUE(infos[0].new_connection);
-  EXPECT_TRUE(infos[0].best_connection);
-  EXPECT_TRUE(infos[0].receiving);
-  EXPECT_TRUE(infos[0].writable);
-  EXPECT_FALSE(infos[0].timeout);
-  EXPECT_EQ(10U, infos[0].sent_total_packets);
-  EXPECT_EQ(0U, infos[0].sent_discarded_packets);
-  EXPECT_EQ(10 * 36U, infos[0].sent_total_bytes);
-  EXPECT_EQ(10 * 36U, infos[0].recv_total_bytes);
-  EXPECT_GT(infos[0].rtt, 0U);
+  ASSERT_TRUE(infos.size() >= 1);
+  cricket::ConnectionInfo* best_conn_info = nullptr;
+  for (cricket::ConnectionInfo& info : infos) {
+    if (info.best_connection) {
+      best_conn_info = &info;
+      break;
+    }
+  }
+  ASSERT_TRUE(best_conn_info != nullptr);
+  EXPECT_TRUE(best_conn_info->new_connection);
+  EXPECT_TRUE(best_conn_info->receiving);
+  EXPECT_TRUE(best_conn_info->writable);
+  EXPECT_FALSE(best_conn_info->timeout);
+  EXPECT_EQ(10U, best_conn_info->sent_total_packets);
+  EXPECT_EQ(0U, best_conn_info->sent_discarded_packets);
+  EXPECT_EQ(10 * 36U, best_conn_info->sent_total_bytes);
+  EXPECT_EQ(10 * 36U, best_conn_info->recv_total_bytes);
+  EXPECT_GT(best_conn_info->rtt, 0U);
   DestroyChannels();
 }
 
@@ -1620,6 +1627,20 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   DestroyChannels();
 }
 
+TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
+  AddAddress(0, kAlternateAddrs[0]);
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kPublicAddrs[1]);
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+
+  // Both transport channels will reach STATE_COMPLETED quickly.
+  EXPECT_EQ_WAIT(cricket::TransportChannelState::STATE_COMPLETED,
+                 ep1_ch1()->GetState(), 1000);
+  EXPECT_EQ_WAIT(cricket::TransportChannelState::STATE_COMPLETED,
+                 ep2_ch1()->GetState(), 1000);
+}
+
 /*
 
 TODO(pthatcher): Once have a way to handle network interfaces changes
@@ -1796,9 +1817,11 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   conn2->ReceivedPing();
   conn2->ReceivedPingResponse();
 
-  // Wait for conn1 to be destroyed.
-  EXPECT_TRUE_WAIT(GetConnectionTo(&ch, "1.1.1.1", 1) == nullptr, 3000);
-  cricket::Port* port = GetPort(&ch);
+  // Wait for conn1 to be pruned.
+  EXPECT_TRUE_WAIT(conn1->pruned(), 3000);
+  // Destroy the connection to test SignalUnknownAddress.
+  conn1->Destroy();
+  EXPECT_TRUE_WAIT(GetConnectionTo(&ch, "1.1.1.1", 1) == nullptr, 1000);
 
   // Create a minimal STUN message with prflx priority.
   cricket::IceMessage request;
@@ -1810,6 +1833,7 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
       cricket::STUN_ATTR_PRIORITY, prflx_priority));
   EXPECT_NE(prflx_priority, remote_priority);
 
+  cricket::Port* port = GetPort(&ch);
   // conn1 should be resurrected with original priority.
   port->SignalUnknownAddress(port, rtc::SocketAddress("1.1.1.1", 1),
                              cricket::PROTO_UDP, &request, kIceUfrag[1], false);
@@ -2067,4 +2091,71 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   // connection is not receiving.
   WAIT(conn3->pruned(), 1000);
   EXPECT_FALSE(conn3->pruned());
+}
+
+// Test that GetState returns the state correctly.
+TEST_F(P2PTransportChannelPingTest, TestGetState) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+  ch.MaybeStartGathering();
+  EXPECT_EQ(cricket::TransportChannelState::STATE_INIT, ch.GetState());
+  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn1 != nullptr);
+  ASSERT_TRUE(conn2 != nullptr);
+  // Now there are two connections, so the transport channel is connecting.
+  EXPECT_EQ(cricket::TransportChannelState::STATE_CONNECTING, ch.GetState());
+  // |conn1| becomes writable and receiving; it then should prune |conn2|.
+  conn1->ReceivedPingResponse();
+  EXPECT_TRUE_WAIT(conn2->pruned(), 1000);
+  EXPECT_EQ(cricket::TransportChannelState::STATE_COMPLETED, ch.GetState());
+  conn1->Prune();  // All connections are pruned.
+  EXPECT_EQ(cricket::TransportChannelState::STATE_FAILED, ch.GetState());
+}
+
+// Test that when a low-priority connection is pruned, it is not deleted
+// right away, and it can become active and be pruned again.
+TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceConfig(CreateIceConfig(1000, false));
+  ch.Connect();
+  ch.MaybeStartGathering();
+  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 100));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(conn1, ch.best_connection());
+  conn1->ReceivedPingResponse();  // Becomes writable and receiving
+
+  // Add a low-priority connection |conn2|, which will be pruned, but it will
+  // not be deleted right away. Once the current best connection becomes not
+  // receiving, |conn2| will start to ping and upon receiving the ping response,
+  // it will become the best connection.
+  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn2 != nullptr);
+  EXPECT_TRUE_WAIT(!conn2->active(), 1000);
+  // |conn2| should not send a ping yet.
+  EXPECT_EQ(cricket::Connection::STATE_WAITING, conn2->state());
+  EXPECT_EQ(cricket::TransportChannelState::STATE_COMPLETED, ch.GetState());
+  // Wait for |conn1| becoming not receiving.
+  EXPECT_TRUE_WAIT(!conn1->receiving(), 3000);
+  // Make sure conn2 is not deleted.
+  conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn2 != nullptr);
+  EXPECT_EQ_WAIT(cricket::Connection::STATE_INPROGRESS, conn2->state(), 1000);
+  conn2->ReceivedPingResponse();
+  EXPECT_EQ_WAIT(conn2, ch.best_connection(), 1000);
+  EXPECT_EQ(cricket::TransportChannelState::STATE_CONNECTING, ch.GetState());
+
+  // When |conn1| comes back again, |conn2| will be pruned again.
+  conn1->ReceivedPingResponse();
+  EXPECT_EQ_WAIT(conn1, ch.best_connection(), 1000);
+  EXPECT_TRUE_WAIT(!conn2->active(), 1000);
+  EXPECT_EQ(cricket::TransportChannelState::STATE_COMPLETED, ch.GetState());
 }
