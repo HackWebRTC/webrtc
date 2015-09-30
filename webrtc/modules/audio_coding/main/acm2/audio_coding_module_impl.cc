@@ -32,29 +32,6 @@ namespace webrtc {
 
 namespace acm2 {
 
-enum {
-  kACMToneEnd = 999
-};
-
-// Maximum number of bytes in one packet (PCM16B, 20 ms packets, stereo).
-enum {
-  kMaxPacketSize = 2560
-};
-
-// Maximum number of payloads that can be packed in one RED packet. For
-// regular RED, we only pack two payloads. In case of dual-streaming, in worst
-// case we might pack 3 payloads in one RED packet.
-enum {
-  kNumRedFragmentationVectors = 2,
-  kMaxNumFragmentationVectors = 3
-};
-
-// If packet N is arrived all packets prior to N - |kNackThresholdPackets| which
-// are not received are considered as lost, and appear in NACK list.
-enum {
-  kNackThresholdPackets = 2
-};
-
 namespace {
 
 // TODO(turajs): the same functionality is used in NetEq. If both classes
