@@ -1643,39 +1643,39 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0, renderer_.num_rendered_frames());
     // Mute the channel and expect black output frame.
     int frame_count = 0;
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
     EXPECT_TRUE(video_capturer.CaptureFrame());
     ++frame_count;
     EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
     EXPECT_TRUE(renderer_.black_frame());
     // Unmute the channel and expect non-black output frame.
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
     EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
     EXPECT_TRUE(video_capturer.CaptureFrame());
     ++frame_count;
     EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
     EXPECT_FALSE(renderer_.black_frame());
     // Test that we can also Mute using the correct send stream SSRC.
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
     EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
     EXPECT_TRUE(video_capturer.CaptureFrame());
     ++frame_count;
     EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
     EXPECT_TRUE(renderer_.black_frame());
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
     EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
     EXPECT_TRUE(video_capturer.CaptureFrame());
     ++frame_count;
     EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
     EXPECT_FALSE(renderer_.black_frame());
     // Test that muting an existing stream succeeds even if it's muted.
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
     // Test that unmuting an existing stream succeeds even if it's not muted.
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
     // Test that muting an invalid stream fails.
-    EXPECT_FALSE(channel_->SetVideoSend(kSsrc+1, true, nullptr));
+    EXPECT_FALSE(channel_->SetVideoSend(kSsrc+1, false, nullptr));
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
   }
 

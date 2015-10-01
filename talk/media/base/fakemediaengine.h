@@ -275,16 +275,16 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     }
     return set_sending(flag != SEND_NOTHING);
   }
-  virtual bool SetAudioSend(uint32 ssrc, bool mute,
+  virtual bool SetAudioSend(uint32 ssrc, bool enable,
                             const AudioOptions* options,
                             AudioRenderer* renderer) {
     if (!SetLocalRenderer(ssrc, renderer)) {
       return false;
     }
-    if (!RtpHelper<VoiceMediaChannel>::MuteStream(ssrc, mute)) {
+    if (!RtpHelper<VoiceMediaChannel>::MuteStream(ssrc, !enable)) {
       return false;
     }
-    if (!mute && options) {
+    if (enable && options) {
       return SetOptions(*options);
     }
     return true;
@@ -550,12 +550,12 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   }
 
   virtual bool SetSend(bool send) { return set_sending(send); }
-  virtual bool SetVideoSend(uint32 ssrc, bool mute,
+  virtual bool SetVideoSend(uint32 ssrc, bool enable,
                             const VideoOptions* options) {
-    if (!RtpHelper<VideoMediaChannel>::MuteStream(ssrc, mute)) {
+    if (!RtpHelper<VideoMediaChannel>::MuteStream(ssrc, !enable)) {
       return false;
     }
-    if (!mute && options) {
+    if (enable && options) {
       return SetOptions(*options);
     }
     return true;

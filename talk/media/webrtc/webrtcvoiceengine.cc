@@ -2085,7 +2085,7 @@ bool WebRtcVoiceMediaChannel::ChangeSend(int channel, SendFlags send) {
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetAudioSend(uint32 ssrc, bool mute,
+bool WebRtcVoiceMediaChannel::SetAudioSend(uint32 ssrc, bool enable,
                                            const AudioOptions* options,
                                            AudioRenderer* renderer) {
   // TODO(solenberg): The state change should be fully rolled back if any one of
@@ -2093,10 +2093,10 @@ bool WebRtcVoiceMediaChannel::SetAudioSend(uint32 ssrc, bool mute,
   if (!SetLocalRenderer(ssrc, renderer)) {
     return false;
   }
-  if (!MuteStream(ssrc, mute)) {
+  if (!MuteStream(ssrc, !enable)) {
     return false;
   }
-  if (!mute && options) {
+  if (enable && options) {
     return SetOptions(*options);
   }
   return true;

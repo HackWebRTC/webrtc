@@ -625,15 +625,6 @@ void ChannelManager::OnMessage(rtc::Message* message) {
   }
 }
 
-
-static void GetDeviceNames(const std::vector<Device>& devs,
-                           std::vector<std::string>* names) {
-  names->clear();
-  for (size_t i = 0; i < devs.size(); ++i) {
-    names->push_back(devs[i].name);
-  }
-}
-
 bool ChannelManager::StartAecDump(rtc::PlatformFile file) {
   return worker_thread_->Invoke<bool>(
       Bind(&MediaEngineInterface::StartAecDump, media_engine_.get(), file));

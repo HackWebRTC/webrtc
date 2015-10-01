@@ -195,7 +195,7 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool SetSend(SendFlags send) override;
   bool PauseSend();
   bool ResumeSend();
-  bool SetAudioSend(uint32 ssrc, bool mute, const AudioOptions* options,
+  bool SetAudioSend(uint32 ssrc, bool enable, const AudioOptions* options,
                     AudioRenderer* renderer) override;
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32 ssrc) override;
@@ -242,7 +242,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool FindSsrc(int channel_num, uint32* ssrc);
   void OnError(uint32 ssrc, int error);
 
-  bool sending() const { return send_ != SEND_NOTHING; }
   int GetReceiveChannelNum(uint32 ssrc) const;
   int GetSendChannelNum(uint32 ssrc) const;
 

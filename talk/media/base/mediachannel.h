@@ -1070,7 +1070,8 @@ class VoiceMediaChannel : public MediaChannel {
   // Starts or stops sending (and potentially capture) of local audio.
   virtual bool SetSend(SendFlags flag) = 0;
   // Configure stream for sending.
-  virtual bool SetAudioSend(uint32 ssrc, bool mute, const AudioOptions* options,
+  virtual bool SetAudioSend(uint32 ssrc, bool enable,
+                            const AudioOptions* options,
                             AudioRenderer* renderer) = 0;
   // Sets the renderer object to be used for the specified remote audio stream.
   virtual bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) = 0;
@@ -1143,7 +1144,7 @@ class VideoMediaChannel : public MediaChannel {
   // Starts or stops transmission (and potentially capture) of local video.
   virtual bool SetSend(bool send) = 0;
   // Configure stream for sending.
-  virtual bool SetVideoSend(uint32 ssrc, bool mute,
+  virtual bool SetVideoSend(uint32 ssrc, bool enable,
                             const VideoOptions* options) = 0;
   // Sets the renderer object to be used for the specified stream.
   // If SSRC is 0, the renderer is used for the 'default' stream.

@@ -1258,7 +1258,7 @@ void WebRtcSession::SetAudioSend(uint32 ssrc, bool enable,
     LOG(LS_ERROR) << "SetAudioSend: No audio channel exists.";
     return;
   }
-  if (!voice_channel_->SetAudioSend(ssrc, !enable, &options, renderer)) {
+  if (!voice_channel_->SetAudioSend(ssrc, enable, &options, renderer)) {
     LOG(LS_ERROR) << "SetAudioSend: ssrc is incorrect: " << ssrc;
   }
 }
@@ -1319,7 +1319,7 @@ void WebRtcSession::SetVideoSend(uint32 ssrc, bool enable,
     LOG(LS_WARNING) << "SetVideoSend: No video channel exists.";
     return;
   }
-  if (!video_channel_->SetVideoSend(ssrc, !enable, options)) {
+  if (!video_channel_->SetVideoSend(ssrc, enable, options)) {
     // Allow that MuteStream fail if |enable| is false but assert otherwise.
     // This in the normal case when the underlying media channel has already
     // been deleted.

@@ -1978,20 +1978,20 @@ TEST_F(VoiceChannelTest, TestMuteStream) {
   // Test that we can Mute the default channel even though the sending SSRC
   // is unknown.
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  EXPECT_TRUE(channel1_->SetAudioSend(0, true, nullptr, nullptr));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
   EXPECT_TRUE(channel1_->SetAudioSend(0, false, nullptr, nullptr));
+  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
+  EXPECT_TRUE(channel1_->SetAudioSend(0, true, nullptr, nullptr));
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
 
   // Test that we can not mute an unknown SSRC.
-  EXPECT_FALSE(channel1_->SetAudioSend(kSsrc1, true, nullptr, nullptr));
+  EXPECT_FALSE(channel1_->SetAudioSend(kSsrc1, false, nullptr, nullptr));
 
   SendInitiate();
   // After the local session description has been set, we can mute a stream
   // with its SSRC.
-  EXPECT_TRUE(channel1_->SetAudioSend(kSsrc1, true, nullptr, nullptr));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
   EXPECT_TRUE(channel1_->SetAudioSend(kSsrc1, false, nullptr, nullptr));
+  EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
+  EXPECT_TRUE(channel1_->SetAudioSend(kSsrc1, true, nullptr, nullptr));
   EXPECT_FALSE(media_channel1_->IsStreamMuted(kSsrc1));
 }
 
@@ -2356,18 +2356,18 @@ TEST_F(VideoChannelTest, TestMuteStream) {
   // Test that we can Mute the default channel even though the sending SSRC
   // is unknown.
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  EXPECT_TRUE(channel1_->SetVideoSend(0, true, nullptr));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
   EXPECT_TRUE(channel1_->SetVideoSend(0, false, nullptr));
+  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
+  EXPECT_TRUE(channel1_->SetVideoSend(0, true, nullptr));
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
   // Test that we can not mute an unknown SSRC.
-  EXPECT_FALSE(channel1_->SetVideoSend(kSsrc1, true, nullptr));
+  EXPECT_FALSE(channel1_->SetVideoSend(kSsrc1, false, nullptr));
   SendInitiate();
   // After the local session description has been set, we can mute a stream
   // with its SSRC.
-  EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, true, nullptr));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
   EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, false, nullptr));
+  EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
+  EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, true, nullptr));
   EXPECT_FALSE(media_channel1_->IsStreamMuted(kSsrc1));
 }
 

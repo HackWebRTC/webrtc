@@ -343,7 +343,7 @@ class VoiceChannel : public BaseChannel {
   // Configure sending media on the stream with SSRC |ssrc|
   // If there is only one sending stream SSRC 0 can be used.
   bool SetAudioSend(uint32 ssrc,
-                    bool mute,
+                    bool enable,
                     const AudioOptions* options,
                     AudioRenderer* renderer);
 
@@ -486,7 +486,7 @@ class VideoChannel : public BaseChannel {
 
   // Configure sending media on the stream with SSRC |ssrc|
   // If there is only one sending stream SSRC 0 can be used.
-  bool SetVideoSend(uint32 ssrc, bool mute, const VideoOptions* options);
+  bool SetVideoSend(uint32 ssrc, bool enable, const VideoOptions* options);
 
  private:
   typedef std::map<uint32, VideoCapturer*> ScreencastMap;

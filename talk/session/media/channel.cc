@@ -1314,11 +1314,11 @@ bool VoiceChannel::SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) {
 }
 
 bool VoiceChannel::SetAudioSend(uint32 ssrc,
-                                bool mute,
+                                bool enable,
                                 const AudioOptions* options,
                                 AudioRenderer* renderer) {
   return InvokeOnWorker(Bind(&VoiceMediaChannel::SetAudioSend, media_channel(),
-                             ssrc, mute, options, renderer));
+                             ssrc, enable, options, renderer));
 }
 
 // TODO(juberti): Handle early media the right way. We should get an explicit
