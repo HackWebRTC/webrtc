@@ -85,7 +85,7 @@ class Call {
     } bitrate_config;
 
     struct AudioConfig {
-      AudioDeviceModule* audio_device_manager = nullptr;
+      AudioDeviceModule* audio_device_module = nullptr;
       AudioProcessing* audio_processing = nullptr;
       VoiceEngineObserver* voice_engine_observer = nullptr;
     } audio_config;

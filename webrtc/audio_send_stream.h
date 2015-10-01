@@ -48,6 +48,12 @@ class AudioSendStream : public SendStream {
     // Transport for outgoing packets.
     Transport* send_transport = nullptr;
 
+    // Underlying VoiceEngine handle, used to map AudioSendStream to lower-level
+    // components.
+    // TODO(solenberg): Remove when VoiceEngine channels are created outside
+    // of Call.
+    int voe_channel_id = -1;
+
     rtc::scoped_ptr<AudioEncoder> encoder;
     int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.
     int red_payload_type = -1;  // pt, or -1 to disable REDundant coding.

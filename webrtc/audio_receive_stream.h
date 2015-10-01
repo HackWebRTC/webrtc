@@ -17,6 +17,7 @@
 
 #include "webrtc/config.h"
 #include "webrtc/stream.h"
+#include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -44,9 +45,13 @@ class AudioReceiveStream : public ReceiveStream {
       std::vector<RtpExtension> extensions;
     } rtp;
 
-    // Underlying VoiceEngine handle, used to map AudioReceiveStream to
-    // lower-level components. Temporarily used while VoiceEngine channels are
-    // created outside of Call.
+    Transport* receive_transport = nullptr;
+    Transport* rtcp_send_transport = nullptr;
+
+    // Underlying VoiceEngine handle, used to map AudioReceiveStream to lower-
+    // level components.
+    // TODO(solenberg): Remove when VoiceEngine channels are created outside
+    // of Call.
     int voe_channel_id = -1;
 
     // Identifier for an A/V synchronization group. Empty string to disable.
