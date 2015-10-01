@@ -1235,13 +1235,13 @@ bool RTCPUtility::RTCPParserV2::ParseFBCommon(const RtcpCommonHeader& header) {
             return true;
         }
         case 15: {
-          _packetType = RTCPPacketTypes::kTransportFeedback;
           rtcp_packet_ =
               rtcp::TransportFeedback::ParseFrom(_ptrRTCPData - 12, length);
           // Since we parse the whole packet here, keep the TopLevel state and
           // just end the current block.
+          EndCurrentBlock();
           if (rtcp_packet_.get()) {
-            EndCurrentBlock();
+            _packetType = RTCPPacketTypes::kTransportFeedback;
             return true;
           }
           break;

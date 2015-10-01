@@ -447,7 +447,7 @@ bool TransportFeedback::Encode(StatusSymbol symbol) {
       return true;
     } else {
       // New symbol does not match what's already in symbol_vec.
-      if (first_symbol_cardinality_ > capacity) {
+      if (first_symbol_cardinality_ >= capacity) {
         // Symbols in symbol_vec can only be RLE-encoded. Emit the RLE-chunk
         // and re-add input. symbol_vec is then guaranteed to have room for the
         // symbol, so recursion cannot continue.

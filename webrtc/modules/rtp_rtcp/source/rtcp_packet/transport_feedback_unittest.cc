@@ -454,5 +454,29 @@ TEST(RtcpPacketTest, TransportFeedback_Padding) {
   EXPECT_EQ(kExpectedSizeWords * 4, packet->Length());  // Padding not included.
 }
 
+TEST(RtcpPacketTest, TransportFeedback_CorrectlySplitsVectorChunks) {
+  const int kOneBitVectorCapacity = 14;
+  const int64_t kLargeTimeDelta =
+      TransportFeedback::kDeltaScaleFactor * (1 << 8);
+
+  // Test that a number of small deltas followed by a large delta results in a
+  // correct split into multiple chunks, as needed.
+
+  for (int deltas = 0; deltas <= kOneBitVectorCapacity + 1; ++deltas) {
+    TransportFeedback feedback;
+    feedback.WithBase(0, 0);
+    for (int i = 0; i < deltas; ++i)
+      feedback.WithReceivedPacket(i, i * 1000);
+    feedback.WithReceivedPacket(deltas, deltas * 1000 + kLargeTimeDelta);
+
+    rtc::scoped_ptr<rtcp::RawPacket> serialized_packet = feedback.Build();
+    EXPECT_TRUE(serialized_packet.get() != nullptr);
+    rtc::scoped_ptr<TransportFeedback> deserialized_packet =
+        TransportFeedback::ParseFrom(serialized_packet->Buffer(),
+                                     serialized_packet->Length());
+    EXPECT_TRUE(deserialized_packet.get() != nullptr);
+  }
+}
+
 }  // namespace
 }  // namespace webrtc

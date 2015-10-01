@@ -19,11 +19,13 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 namespace webrtc {
 
@@ -117,9 +119,10 @@ class RtcpReceiverTest : public ::testing::Test {
     rtcp_packet_info_.ntp_frac = rtcpPacketInformation.ntp_frac;
     rtcp_packet_info_.rtp_timestamp = rtcpPacketInformation.rtp_timestamp;
     rtcp_packet_info_.xr_dlrr_item = rtcpPacketInformation.xr_dlrr_item;
-    if (rtcpPacketInformation.VoIPMetric) {
+    if (rtcpPacketInformation.VoIPMetric)
       rtcp_packet_info_.AddVoIPMetric(rtcpPacketInformation.VoIPMetric);
-    }
+    rtcp_packet_info_.transport_feedback_.reset(
+        rtcpPacketInformation.transport_feedback_.release());
     return 0;
   }
 
@@ -1023,6 +1026,68 @@ TEST_F(RtcpReceiverTest, Callbacks) {
   EXPECT_EQ(0, InjectRtcpPacket(p2->Buffer(), p2->Length()));
   EXPECT_TRUE(callback.Matches(kSourceSsrc, kSequenceNumber, kFractionLoss,
                                kCumulativeLoss, kJitter));
+}
+
+TEST_F(RtcpReceiverTest, ReceivesTransportFeedback) {
+  const uint32_t kSenderSsrc = 0x10203;
+  const uint32_t kSourceSsrc = 0x123456;
+
+  std::set<uint32_t> ssrcs;
+  ssrcs.insert(kSourceSsrc);
+  rtcp_receiver_->SetSsrcs(kSourceSsrc, ssrcs);
+
+  rtcp::TransportFeedback packet;
+  packet.WithMediaSourceSsrc(kSourceSsrc);
+  packet.WithPacketSenderSsrc(kSenderSsrc);
+  packet.WithBase(1, 1000);
+  packet.WithReceivedPacket(1, 1000);
+
+  rtc::scoped_ptr<rtcp::RawPacket> built_packet = packet.Build();
+  ASSERT_TRUE(built_packet.get() != nullptr);
+
+  EXPECT_EQ(0,
+            InjectRtcpPacket(built_packet->Buffer(), built_packet->Length()));
+
+  EXPECT_NE(0u, rtcp_packet_info_.rtcpPacketTypeFlags & kRtcpTransportFeedback);
+  EXPECT_TRUE(rtcp_packet_info_.transport_feedback_.get() != nullptr);
+}
+
+TEST_F(RtcpReceiverTest, HandlesInvalidTransportFeedback) {
+  const uint32_t kSenderSsrc = 0x10203;
+  const uint32_t kSourceSsrc = 0x123456;
+
+  std::set<uint32_t> ssrcs;
+  ssrcs.insert(kSourceSsrc);
+  rtcp_receiver_->SetSsrcs(kSourceSsrc, ssrcs);
+
+  // Send a compound packet with a TransportFeedback followed by something else.
+  rtcp::TransportFeedback packet;
+  packet.WithMediaSourceSsrc(kSourceSsrc);
+  packet.WithPacketSenderSsrc(kSenderSsrc);
+  packet.WithBase(1, 1000);
+  packet.WithReceivedPacket(1, 1000);
+
+  static uint32_t kBitrateBps = 50000;
+  rtcp::Remb remb;
+  remb.From(kSourceSsrc);
+  remb.WithBitrateBps(kBitrateBps);
+  packet.Append(&remb);
+
+  rtc::scoped_ptr<rtcp::RawPacket> built_packet = packet.Build();
+  ASSERT_TRUE(built_packet.get() != nullptr);
+
+  // Modify the TransportFeedback packet so that it is invalid.
+  const size_t kStatusCountOffset = 14;
+  ByteWriter<uint16_t>::WriteBigEndian(
+      &built_packet->MutableBuffer()[kStatusCountOffset], 42);
+
+  EXPECT_EQ(0,
+            InjectRtcpPacket(built_packet->Buffer(), built_packet->Length()));
+
+  // Transport feedback should be ignored, but next packet should work.
+  EXPECT_EQ(0u, rtcp_packet_info_.rtcpPacketTypeFlags & kRtcpTransportFeedback);
+  EXPECT_NE(0u, rtcp_packet_info_.rtcpPacketTypeFlags & kRtcpRemb);
+  EXPECT_EQ(kBitrateBps, rtcp_packet_info_.receiverEstimatedMaxBitrate);
 }
 
 }  // Anonymous namespace
