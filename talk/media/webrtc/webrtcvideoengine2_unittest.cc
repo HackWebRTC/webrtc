@@ -492,7 +492,6 @@ TEST_F(WebRtcVideoEngine2Test,
   rtc::scoped_ptr<char[]> data(new char[frame.data_size]);
   frame.data = data.get();
   memset(frame.data, 1, frame.data_size);
-  frame.elapsed_time = 0;
   const int kInitialTimestamp = 123456;
   frame.time_stamp = kInitialTimestamp;
 
@@ -1810,7 +1809,7 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
 }
 
-TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeAndElapsedTimeCorrectly) {
+TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeCorrectly) {
   // Start at last timestamp to verify that wraparounds are estimated correctly.
   static const uint32_t kInitialTimestamp = 0xFFFFFFFFu;
   static const int64_t kInitialNtpTimeMs = 1247891230;
@@ -1829,7 +1828,6 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeAndElapsedTimeCorrectly) {
   stream->InjectFrame(video_frame, 0);
 
   EXPECT_EQ(1, renderer.num_rendered_frames());
-  EXPECT_EQ(0, renderer.last_frame_elapsed_time_ns());
 
   // This timestamp is kInitialTimestamp (-1) + kFrameOffsetMs * 90, which
   // triggers a constant-overflow warning, hence we're calculating it explicitly
@@ -1839,8 +1837,6 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeAndElapsedTimeCorrectly) {
   stream->InjectFrame(video_frame, 0);
 
   EXPECT_EQ(2, renderer.num_rendered_frames());
-  EXPECT_EQ(kFrameOffsetMs * rtc::kNumNanosecsPerMillisec,
-            renderer.last_frame_elapsed_time_ns());
 
   // Verify that NTP time has been correctly deduced.
   cricket::VideoMediaInfo info;

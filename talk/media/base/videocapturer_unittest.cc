@@ -55,7 +55,6 @@ class VideoCapturerTest
       : capture_state_(cricket::CS_STOPPED),
         num_state_changes_(0),
         video_frames_received_(0),
-        last_frame_elapsed_time_(0),
         expects_rotation_applied_(true) {
     capturer_.SignalVideoFrame.connect(this, &VideoCapturerTest::OnVideoFrame);
     capturer_.SignalStateChange.connect(this,
@@ -69,7 +68,6 @@ class VideoCapturerTest
  protected:
   void OnVideoFrame(cricket::VideoCapturer*, const cricket::VideoFrame* frame) {
     ++video_frames_received_;
-    last_frame_elapsed_time_ = frame->GetElapsedTime();
     if (expects_rotation_applied_) {
       EXPECT_EQ(webrtc::kVideoRotation_0, frame->GetRotation());
     } else {
@@ -87,13 +85,11 @@ class VideoCapturerTest
   int video_frames_received() const {
     return video_frames_received_;
   }
-  int64 last_frame_elapsed_time() const { return last_frame_elapsed_time_; }
 
   cricket::FakeVideoCapturer capturer_;
   cricket::CaptureState capture_state_;
   int num_state_changes_;
   int video_frames_received_;
-  int64 last_frame_elapsed_time_;
   cricket::FakeVideoRenderer renderer_;
   bool expects_rotation_applied_;
 };

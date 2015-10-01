@@ -2537,7 +2537,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
 
   const WebRtcVideoFrame render_frame(
       frame.video_frame_buffer(),
-      elapsed_time_ms * rtc::kNumNanosecsPerMillisec,
       frame.render_time_ms() * rtc::kNumNanosecsPerMillisec, frame.rotation());
   renderer_->RenderFrame(&render_frame);
 }

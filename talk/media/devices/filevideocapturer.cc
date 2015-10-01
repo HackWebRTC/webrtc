@@ -74,7 +74,9 @@ bool VideoRecorder::RecordFrame(const CapturedFrame& frame) {
     buffer.WriteUInt32(frame.fourcc);
     buffer.WriteUInt32(frame.pixel_width);
     buffer.WriteUInt32(frame.pixel_height);
-    buffer.WriteUInt64(frame.elapsed_time);
+    // Elapsed time is deprecated.
+    const uint64_t dummy_elapsed_time = 0;
+    buffer.WriteUInt64(dummy_elapsed_time);
     buffer.WriteUInt64(frame.time_stamp);
     buffer.WriteUInt32(size);
 
@@ -163,7 +165,6 @@ FileVideoCapturer::FileVideoCapturer()
     : frame_buffer_size_(0),
       file_read_thread_(NULL),
       repeat_(0),
-      start_time_ns_(0),
       last_frame_timestamp_ns_(0),
       ignore_framerate_(false) {
 }
@@ -243,8 +244,6 @@ CaptureState FileVideoCapturer::Start(const VideoFormat& capture_format) {
   SetCaptureFormat(&capture_format);
   // Create a thread to read the file.
   file_read_thread_ = new FileReadThread(this);
-  start_time_ns_ = kNumNanoSecsPerMilliSec *
-      static_cast<int64>(rtc::Time());
   bool ret = file_read_thread_->Start();
   if (ret) {
     LOG(LS_INFO) << "File video capturer '" << GetId() << "' started";
@@ -302,7 +301,9 @@ rtc::StreamResult FileVideoCapturer::ReadFrameHeader(
     buffer.ReadUInt32(&frame->fourcc);
     buffer.ReadUInt32(&frame->pixel_width);
     buffer.ReadUInt32(&frame->pixel_height);
-    buffer.ReadUInt64(reinterpret_cast<uint64*>(&frame->elapsed_time));
+    // Elapsed time is deprecated.
+    uint64 dummy_elapsed_time;
+    buffer.ReadUInt64(&dummy_elapsed_time);
     buffer.ReadUInt64(reinterpret_cast<uint64*>(&frame->time_stamp));
     buffer.ReadUInt32(&frame->data_size);
   }
@@ -318,7 +319,6 @@ bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
   if (!first_frame) {
     captured_frame_.time_stamp = kNumNanoSecsPerMilliSec *
         static_cast<int64>(start_read_time_ms);
-    captured_frame_.elapsed_time = captured_frame_.time_stamp - start_time_ns_;
     SignalFrameCaptured(this, &captured_frame_);
   }
 

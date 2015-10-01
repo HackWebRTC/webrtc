@@ -82,7 +82,7 @@ TEST_F(VideoTrackTest, RenderVideo) {
   ASSERT_FALSE(renderer_input == NULL);
 
   cricket::WebRtcVideoFrame frame;
-  frame.InitToBlack(123, 123, 1, 1, 0, 0);
+  frame.InitToBlack(123, 123, 1, 1, 0);
   renderer_input->RenderFrame(&frame);
   EXPECT_EQ(1, renderer_1->num_rendered_frames());
 

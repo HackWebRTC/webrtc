@@ -142,7 +142,7 @@ class VideoFrameTest : public testing::Test {
     bool ret = false;
     for (int i = 0; i < repeat_; ++i) {
       ret = frame->Init(format, width, height, dw, dh,
-                        sample, sample_size, 1, 1, 0, 0, rotation);
+                        sample, sample_size, 1, 1, 0, rotation);
     }
     return ret;
   }
@@ -280,7 +280,7 @@ class VideoFrameTest : public testing::Test {
 
     const uint8* start = reinterpret_cast<const uint8*>(ms->GetBuffer());
     int awidth = (width + 1) & ~1;
-    frame->InitToBlack(width, height, 1, 1, 0, 0);
+    frame->InitToBlack(width, height, 1, 1, 0);
     int stride_y = frame->GetYPitch();
     int stride_u = frame->GetUPitch();
     int stride_v = frame->GetVPitch();
@@ -322,7 +322,7 @@ class VideoFrameTest : public testing::Test {
       start = start + pitch * (height - 1);
       pitch = -pitch;
     }
-    frame->InitToBlack(width, height, 1, 1, 0, 0);
+    frame->InitToBlack(width, height, 1, 1, 0);
     int stride_y = frame->GetYPitch();
     int stride_u = frame->GetUPitch();
     int stride_v = frame->GetVPitch();
@@ -435,7 +435,7 @@ class VideoFrameTest : public testing::Test {
   static bool IsEqual(const cricket::VideoFrame& frame,
                       size_t width, size_t height,
                       size_t pixel_width, size_t pixel_height,
-                      int64 elapsed_time, int64 time_stamp,
+                      int64 time_stamp,
                       const uint8* y, uint32 ypitch,
                       const uint8* u, uint32 upitch,
                       const uint8* v, uint32 vpitch,
@@ -445,7 +445,6 @@ class VideoFrameTest : public testing::Test {
                   static_cast<uint32>(height)) &&
         frame.GetPixelWidth() == pixel_width &&
         frame.GetPixelHeight() == pixel_height &&
-        frame.GetElapsedTime() == elapsed_time &&
         frame.GetTimeStamp() == time_stamp &&
         IsPlaneEqual("y", frame.GetYPlane(), frame.GetYPitch(), y, ypitch,
                      static_cast<uint32>(width),
@@ -464,7 +463,7 @@ class VideoFrameTest : public testing::Test {
     return IsEqual(frame1,
                    frame2.GetWidth(), frame2.GetHeight(),
                    frame2.GetPixelWidth(), frame2.GetPixelHeight(),
-                   frame2.GetElapsedTime(), frame2.GetTimeStamp(),
+                   frame2.GetTimeStamp(),
                    frame2.GetYPlane(), frame2.GetYPitch(),
                    frame2.GetUPlane(), frame2.GetUPitch(),
                    frame2.GetVPlane(), frame2.GetVPitch(),
@@ -480,7 +479,7 @@ class VideoFrameTest : public testing::Test {
                    frame2.GetWidth() - hcrop * 2,
                    frame2.GetHeight() - vcrop * 2,
                    frame2.GetPixelWidth(), frame2.GetPixelHeight(),
-                   frame2.GetElapsedTime(), frame2.GetTimeStamp(),
+                   frame2.GetTimeStamp(),
                    frame2.GetYPlane() + vcrop * frame2.GetYPitch()
                        + hcrop,
                    frame2.GetYPitch(),
@@ -516,7 +515,7 @@ class VideoFrameTest : public testing::Test {
     const uint8* y = reinterpret_cast<uint8*>(ms.get()->GetBuffer());
     const uint8* u = y + kWidth * kHeight;
     const uint8* v = u + kWidth * kHeight / 4;
-    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 1, 1, 0, 0,
+    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 1, 1, 0,
                         y, kWidth, u, kWidth / 2, v, kWidth / 2, 0));
   }
 
@@ -531,7 +530,7 @@ class VideoFrameTest : public testing::Test {
     const uint8* y = reinterpret_cast<uint8*>(ms.get()->GetBuffer());
     const uint8* v = y + kWidth * kHeight;
     const uint8* u = v + kWidth * kHeight / 4;
-    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 1, 1, 0, 0,
+    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 1, 1, 0,
                         y, kWidth, u, kWidth / 2, v, kWidth / 2, 0));
   }
 
@@ -795,10 +794,10 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(frame2.Init(cricket::FOURCC_##FOURCC, kWidth, kHeight, kWidth, \
                             kHeight,                                           \
                             reinterpret_cast<uint8*>(ms->GetBuffer()),         \
-                            data_size, 1, 1, 0, 0, webrtc::kVideoRotation_0)); \
+                            data_size, 1, 1, 0, webrtc::kVideoRotation_0));    \
     int width_rotate = static_cast<int>(frame1.GetWidth());                    \
     int height_rotate = static_cast<int>(frame1.GetHeight());                  \
-    EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 1, 1, 0, 0));  \
+    EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 1, 1, 0));     \
     libyuv::I420Mirror(                                                        \
         frame2.GetYPlane(), frame2.GetYPitch(), frame2.GetUPlane(),            \
         frame2.GetUPitch(), frame2.GetVPlane(), frame2.GetVPitch(),            \
@@ -826,10 +825,10 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(frame2.Init(cricket::FOURCC_##FOURCC, kWidth, kHeight, kWidth, \
                             kHeight,                                           \
                             reinterpret_cast<uint8*>(ms->GetBuffer()),         \
-                            data_size, 1, 1, 0, 0, webrtc::kVideoRotation_0)); \
+                            data_size, 1, 1, 0, webrtc::kVideoRotation_0));    \
     int width_rotate = static_cast<int>(frame1.GetWidth());                    \
     int height_rotate = static_cast<int>(frame1.GetHeight());                  \
-    EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 1, 1, 0, 0));  \
+    EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 1, 1, 0));     \
     libyuv::I420Rotate(                                                        \
         frame2.GetYPlane(), frame2.GetYPitch(), frame2.GetUPlane(),            \
         frame2.GetUPitch(), frame2.GetVPlane(), frame2.GetVPitch(),            \
@@ -935,13 +934,12 @@ class VideoFrameTest : public testing::Test {
     uint8 pixel[3] = { 1, 2, 3 };
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1, pixel,
-                             sizeof(pixel), 1, 1, 0, 0,
-                             webrtc::kVideoRotation_0));
+                             sizeof(pixel), 1, 1, 0, webrtc::kVideoRotation_0));
     }
     const uint8* y = pixel;
     const uint8* u = y + 1;
     const uint8* v = u + 1;
-    EXPECT_TRUE(IsEqual(frame, 1, 1, 1, 1, 0, 0,
+    EXPECT_TRUE(IsEqual(frame, 1, 1, 1, 1, 0,
                         y, 1, u, 1, v, 1, 0));
   }
 
@@ -952,7 +950,7 @@ class VideoFrameTest : public testing::Test {
     memset(pixels5x5, 1, 5 * 5 + ((5 + 1) / 2 * (5 + 1) / 2) *  2);
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 5, 5, 5, 5, pixels5x5,
-                             sizeof(pixels5x5), 1, 1, 0, 0,
+                             sizeof(pixels5x5), 1, 1, 0,
                              webrtc::kVideoRotation_0));
     }
     EXPECT_EQ(5u, frame.GetWidth());
@@ -968,7 +966,7 @@ class VideoFrameTest : public testing::Test {
     uint8 pixel[4] = { 64, 128, 192, 255 };
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_TRUE(frame.Init(cricket::FOURCC_ARGB, 1, 1, 1, 1, pixel,
-                             sizeof(pixel), 1, 1, 0, 0,
+                             sizeof(pixel), 1, 1, 0,
                              webrtc::kVideoRotation_0));
     }
     // Convert back to ARGB.
@@ -1005,7 +1003,7 @@ class VideoFrameTest : public testing::Test {
 
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_TRUE(frame.Init(cricket::FOURCC_ARGB, 10, 1, 10, 1, pixel,
-                             sizeof(pixel), 1, 1, 0, 0,
+                             sizeof(pixel), 1, 1, 0,
                              webrtc::kVideoRotation_0));
     }
     // Convert back to ARGB
@@ -1314,7 +1312,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructBlack() {
     T frame;
     for (int i = 0; i < repeat_; ++i) {
-      EXPECT_TRUE(frame.InitToBlack(kWidth, kHeight, 1, 1, 0, 0));
+      EXPECT_TRUE(frame.InitToBlack(kWidth, kHeight, 1, 1, 0));
     }
     EXPECT_TRUE(IsSize(frame, kWidth, kHeight));
     EXPECT_TRUE(IsBlack(frame));
@@ -1380,13 +1378,13 @@ class VideoFrameTest : public testing::Test {
     ASSERT_TRUE(ms.get() != NULL);
     size_t data_size;
     ms->GetSize(&data_size);
-    EXPECT_TRUE(frame1.InitToBlack(kWidth, kHeight, 1, 1, 0, 0));
-    EXPECT_TRUE(frame2.InitToBlack(kWidth, kHeight, 1, 1, 0, 0));
+    EXPECT_TRUE(frame1.InitToBlack(kWidth, kHeight, 1, 1, 0));
+    EXPECT_TRUE(frame2.InitToBlack(kWidth, kHeight, 1, 1, 0));
     EXPECT_TRUE(IsBlack(frame1));
     EXPECT_TRUE(IsEqual(frame1, frame2, 0));
     EXPECT_TRUE(frame1.Reset(cricket::FOURCC_I420, kWidth, kHeight, kWidth,
                              kHeight, reinterpret_cast<uint8*>(ms->GetBuffer()),
-                             data_size, 1, 1, 0, 0, rotation,
+                             data_size, 1, 1, 0, rotation,
                              apply_rotation));
     if (apply_rotation)
       EXPECT_EQ(webrtc::kVideoRotation_0, frame1.GetVideoRotation());
@@ -1450,7 +1448,7 @@ class VideoFrameTest : public testing::Test {
                                                     out,
                                                     out_size, stride));
     }
-    EXPECT_TRUE(frame2.InitToBlack(kWidth, kHeight, 1, 1, 0, 0));
+    EXPECT_TRUE(frame2.InitToBlack(kWidth, kHeight, 1, 1, 0));
     for (int i = 0; i < repeat_from; ++i) {
       EXPECT_EQ(0, RGBToI420(out, stride,
                              frame2.GetYPlane(), frame2.GetYPitch(),
@@ -1767,7 +1765,7 @@ class VideoFrameTest : public testing::Test {
                                       kWidth, kHeight));
     }
     EXPECT_TRUE(frame2.Init(cricket::FOURCC_I422, kWidth, kHeight, kWidth,
-                            kHeight, y, out_size, 1, 1, 0, 0,
+                            kHeight, y, out_size, 1, 1, 0,
                             webrtc::kVideoRotation_0));
     EXPECT_TRUE(IsEqual(frame1, frame2, 1));
   }
@@ -1871,7 +1869,7 @@ class VideoFrameTest : public testing::Test {
     uint8 pixel[3] = { 1, 2, 3 };
     T frame;
     EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1, pixel,
-                           sizeof(pixel), 1, 1, 0, 0,
+                           sizeof(pixel), 1, 1, 0,
                            webrtc::kVideoRotation_0));
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(out_size, frame.CopyToBuffer(out.get(), out_size));
@@ -1885,7 +1883,7 @@ class VideoFrameTest : public testing::Test {
   void StretchToFrame() {
     // Create the source frame as a black frame.
     T source;
-    EXPECT_TRUE(source.InitToBlack(kWidth * 2, kHeight * 2, 1, 1, 0, 0));
+    EXPECT_TRUE(source.InitToBlack(kWidth * 2, kHeight * 2, 1, 1, 0));
     EXPECT_TRUE(IsSize(source, kWidth * 2, kHeight * 2));
 
     // Create the target frame by loading from a file.
@@ -1902,7 +1900,6 @@ class VideoFrameTest : public testing::Test {
     ASSERT_TRUE(LoadFrameNoRepeat(&target2));
     source.StretchToFrame(&target2, true, true);
     EXPECT_TRUE(IsBlack(target2));
-    EXPECT_EQ(source.GetElapsedTime(), target2.GetElapsedTime());
     EXPECT_EQ(source.GetTimeStamp(), target2.GetTimeStamp());
   }
 

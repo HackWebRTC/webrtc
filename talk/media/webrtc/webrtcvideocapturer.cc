@@ -434,8 +434,7 @@ WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::VideoFrame& sample,
   pixel_width = 1;
   pixel_height = 1;
   // Convert units from VideoFrame RenderTimeMs to CapturedFrame (nanoseconds).
-  elapsed_time = sample.render_time_ms() * rtc::kNumNanosecsPerMillisec;
-  time_stamp = elapsed_time;
+  time_stamp = sample.render_time_ms() * rtc::kNumNanosecsPerMillisec;
   data_size = rtc::checked_cast<uint32>(length);
   data = buffer;
   rotation = sample.rotation();

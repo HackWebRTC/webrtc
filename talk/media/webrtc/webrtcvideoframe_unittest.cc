@@ -41,11 +41,9 @@ class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
                                        int h,
                                        size_t pixel_width,
                                        size_t pixel_height,
-                                       int64_t elapsed_time,
                                        int64_t time_stamp) const override {
     WebRtcVideoTestFrame* frame = new WebRtcVideoTestFrame();
-    frame->InitToBlack(w, h, pixel_width, pixel_height, elapsed_time,
-                       time_stamp);
+    frame->InitToBlack(w, h, pixel_width, pixel_height, time_stamp);
     return frame;
   }
 };
@@ -68,7 +66,6 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     captured_frame.fourcc = cricket::FOURCC_I420;
     captured_frame.pixel_width = 1;
     captured_frame.pixel_height = 1;
-    captured_frame.elapsed_time = 1234;
     captured_frame.time_stamp = 5678;
     captured_frame.rotation = frame_rotation;
     captured_frame.width = frame_width;
@@ -90,7 +87,6 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     // Verify the new frame.
     EXPECT_EQ(1u, frame.GetPixelWidth());
     EXPECT_EQ(1u, frame.GetPixelHeight());
-    EXPECT_EQ(1234, frame.GetElapsedTime());
     EXPECT_EQ(5678, frame.GetTimeStamp());
     if (apply_rotation)
       EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetRotation());
@@ -303,14 +299,11 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
   webrtc::NativeHandleBuffer* buffer =
       new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
           dummy_handle, 640, 480);
-  cricket::WebRtcVideoFrame frame(buffer, 100, 200, webrtc::kVideoRotation_0);
+  cricket::WebRtcVideoFrame frame(buffer, 200, webrtc::kVideoRotation_0);
   EXPECT_EQ(dummy_handle, frame.GetNativeHandle());
   EXPECT_EQ(640u, frame.GetWidth());
   EXPECT_EQ(480u, frame.GetHeight());
-  EXPECT_EQ(100, frame.GetElapsedTime());
   EXPECT_EQ(200, frame.GetTimeStamp());
-  frame.SetElapsedTime(300);
-  EXPECT_EQ(300, frame.GetElapsedTime());
   frame.SetTimeStamp(400);
   EXPECT_EQ(400, frame.GetTimeStamp());
 }
@@ -321,12 +314,11 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
   webrtc::NativeHandleBuffer* buffer =
       new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
           dummy_handle, 640, 480);
-  cricket::WebRtcVideoFrame frame1(buffer, 100, 200, webrtc::kVideoRotation_0);
+  cricket::WebRtcVideoFrame frame1(buffer, 200, webrtc::kVideoRotation_0);
   cricket::VideoFrame* frame2 = frame1.Copy();
   EXPECT_EQ(frame1.GetNativeHandle(), frame2->GetNativeHandle());
   EXPECT_EQ(frame1.GetWidth(), frame2->GetWidth());
   EXPECT_EQ(frame1.GetHeight(), frame2->GetHeight());
-  EXPECT_EQ(frame1.GetElapsedTime(), frame2->GetElapsedTime());
   EXPECT_EQ(frame1.GetTimeStamp(), frame2->GetTimeStamp());
   delete frame2;
 }

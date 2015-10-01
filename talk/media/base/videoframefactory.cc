@@ -70,7 +70,6 @@ VideoFrame* VideoFrameFactory::CreateAliasedFrame(
     }
   } else {
     cropped_input_frame->StretchToFrame(output_frame_.get(), true, true);
-    output_frame_->SetElapsedTime(cropped_input_frame->GetElapsedTime());
     output_frame_->SetTimeStamp(cropped_input_frame->GetTimeStamp());
   }
   return output_frame_->Copy();

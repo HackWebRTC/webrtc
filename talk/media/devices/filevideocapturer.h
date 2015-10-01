@@ -149,7 +149,6 @@ class FileVideoCapturer : public VideoCapturer {
   uint32 frame_buffer_size_;
   FileReadThread* file_read_thread_;
   int repeat_;  // How many times to repeat the file.
-  int64 start_time_ns_;  // Time when the file video capturer starts.
   int64 last_frame_timestamp_ns_;  // Timestamp of last read frame.
   bool ignore_framerate_;
 

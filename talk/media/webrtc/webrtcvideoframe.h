@@ -43,7 +43,6 @@ class WebRtcVideoFrame : public VideoFrame {
  public:
   WebRtcVideoFrame();
   WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-                   int64_t elapsed_time_ns,
                    int64_t time_stamp_ns,
                    webrtc::VideoRotation rotation);
 
@@ -67,17 +66,20 @@ class WebRtcVideoFrame : public VideoFrame {
             size_t sample_size,
             size_t pixel_width,
             size_t pixel_height,
-            int64_t elapsed_time_ns,
             int64_t time_stamp_ns,
             webrtc::VideoRotation rotation);
 
   bool Init(const CapturedFrame* frame, int dw, int dh, bool apply_rotation);
 
   void InitToEmptyBuffer(int w, int h, size_t pixel_width, size_t pixel_height,
-                         int64_t elapsed_time_ns, int64_t time_stamp_ns);
+                         int64_t time_stamp_ns);
 
+  // TODO(magjed): Remove once Chromium is updated.
   bool InitToBlack(int w, int h, size_t pixel_width, size_t pixel_height,
                    int64_t elapsed_time_ns, int64_t time_stamp_ns);
+
+  bool InitToBlack(int w, int h, size_t pixel_width, size_t pixel_height,
+                   int64_t time_stamp_ns);
 
   // From base class VideoFrame.
   virtual bool Reset(uint32 format,
@@ -89,7 +91,6 @@ class WebRtcVideoFrame : public VideoFrame {
                      size_t sample_size,
                      size_t pixel_width,
                      size_t pixel_height,
-                     int64_t elapsed_time_ns,
                      int64_t time_stamp_ns,
                      webrtc::VideoRotation rotation,
                      bool apply_rotation);
@@ -111,11 +112,7 @@ class WebRtcVideoFrame : public VideoFrame {
 
   virtual size_t GetPixelWidth() const { return pixel_width_; }
   virtual size_t GetPixelHeight() const { return pixel_height_; }
-  virtual int64_t GetElapsedTime() const { return elapsed_time_ns_; }
   virtual int64_t GetTimeStamp() const { return time_stamp_ns_; }
-  virtual void SetElapsedTime(int64_t elapsed_time_ns) {
-    elapsed_time_ns_ = elapsed_time_ns;
-  }
   virtual void SetTimeStamp(int64_t time_stamp_ns) {
     time_stamp_ns_ = time_stamp_ns;
   }
@@ -138,14 +135,12 @@ class WebRtcVideoFrame : public VideoFrame {
  private:
   virtual VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,
                                        size_t pixel_height,
-                                       int64_t elapsed_time_ns,
                                        int64_t time_stamp_ns) const;
 
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
   size_t pixel_width_;
   size_t pixel_height_;
-  int64_t elapsed_time_ns_;
   int64_t time_stamp_ns_;
   webrtc::VideoRotation rotation_;
 

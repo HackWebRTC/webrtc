@@ -80,7 +80,6 @@ CapturedFrame::CapturedFrame()
       fourcc(0),
       pixel_width(0),
       pixel_height(0),
-      elapsed_time(0),
       time_stamp(0),
       data_size(0),
       rotation(0),
@@ -323,8 +322,7 @@ std::string VideoCapturer::ToString(const CapturedFrame* captured_frame) const {
   }
 
   std::ostringstream ss;
-  ss << fourcc_name << captured_frame->width << "x" << captured_frame->height
-     << "x" << VideoFormat::IntervalToFpsFloat(captured_frame->elapsed_time);
+  ss << fourcc_name << captured_frame->width << "x" << captured_frame->height;
   return ss.str();
 }
 

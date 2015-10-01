@@ -42,8 +42,7 @@ class VideoFrame {
   virtual ~VideoFrame() {}
 
   virtual bool InitToBlack(int w, int h, size_t pixel_width,
-                           size_t pixel_height, int64_t elapsed_time,
-                           int64_t time_stamp) = 0;
+                           size_t pixel_height, int64_t time_stamp) = 0;
   // Creates a frame from a raw sample with FourCC |format| and size |w| x |h|.
   // |h| can be negative indicating a vertically flipped image.
   // |dw| is destination width; can be less than |w| if cropping is desired.
@@ -59,7 +58,6 @@ class VideoFrame {
                      size_t sample_size,
                      size_t pixel_width,
                      size_t pixel_height,
-                     int64_t elapsed_time,
                      int64_t time_stamp,
                      webrtc::VideoRotation rotation,
                      bool apply_rotation) = 0;
@@ -74,11 +72,10 @@ class VideoFrame {
                      size_t sample_size,
                      size_t pixel_width,
                      size_t pixel_height,
-                     int64_t elapsed_time,
                      int64_t time_stamp,
                      int rotation) {
     return Reset(fourcc, w, h, dw, dh, sample, sample_size, pixel_width,
-                 pixel_height, elapsed_time, time_stamp,
+                 pixel_height, time_stamp,
                  static_cast<webrtc::VideoRotation>(rotation), true);
   }
 
@@ -117,9 +114,7 @@ class VideoFrame {
   virtual size_t GetPixelWidth() const = 0;
   virtual size_t GetPixelHeight() const = 0;
 
-  virtual int64_t GetElapsedTime() const = 0;
   virtual int64_t GetTimeStamp() const = 0;
-  virtual void SetElapsedTime(int64_t elapsed_time) = 0;
   virtual void SetTimeStamp(int64_t time_stamp) = 0;
 
   // Indicates the rotation angle in degrees.
@@ -218,7 +213,6 @@ class VideoFrame {
   // Creates an empty frame.
   virtual VideoFrame *CreateEmptyFrame(int w, int h, size_t pixel_width,
                                        size_t pixel_height,
-                                       int64_t elapsed_time,
                                        int64_t time_stamp) const = 0;
   virtual void SetRotation(webrtc::VideoRotation rotation) = 0;
 };

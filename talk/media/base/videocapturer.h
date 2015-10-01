@@ -90,8 +90,8 @@ struct CapturedFrame {
   uint32 fourcc;        // compression
   uint32 pixel_width;   // width of a pixel, default is 1
   uint32 pixel_height;  // height of a pixel, default is 1
-  int64  elapsed_time;  // elapsed time since the creation of the frame
-                        // source (that is, the camera), in nanoseconds.
+  // TODO(magjed): |elapsed_time| is deprecated - remove once not used anymore.
+  int64  elapsed_time;
   int64  time_stamp;    // timestamp of when the frame was captured, in unix
                         // time with nanosecond units.
   uint32 data_size;     // number of bytes of the frame data

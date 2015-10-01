@@ -43,7 +43,7 @@ namespace webrtc {
 class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
  public:
   FrameFactory(const rtc::scoped_refptr<AndroidVideoCapturerDelegate>& delegate)
-      : start_time_(rtc::TimeNanos()), delegate_(delegate) {
+      : delegate_(delegate) {
     // Create a CapturedFrame that only contains header information, not the
     // actual pixel data.
     captured_frame_.pixel_height = 1;
@@ -60,7 +60,6 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     buffer_ = buffer;
     captured_frame_.width = buffer->width();
     captured_frame_.height = buffer->height();
-    captured_frame_.elapsed_time = rtc::TimeNanos() - start_time_;
     captured_frame_.time_stamp = time_stamp_in_ns;
     captured_frame_.rotation = rotation;
   }
@@ -69,7 +68,6 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     buffer_ = nullptr;
     captured_frame_.width = 0;
     captured_frame_.height = 0;
-    captured_frame_.elapsed_time = 0;
     captured_frame_.time_stamp = 0;
   }
 
@@ -85,8 +83,7 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     RTC_CHECK(captured_frame == &captured_frame_);
     rtc::scoped_ptr<cricket::VideoFrame> frame(new cricket::WebRtcVideoFrame(
         ShallowCenterCrop(buffer_, dst_width, dst_height),
-        captured_frame->elapsed_time, captured_frame->time_stamp,
-        captured_frame->GetRotation()));
+        captured_frame->time_stamp, captured_frame->GetRotation()));
     // Caller takes ownership.
     // TODO(magjed): Change CreateAliasedFrame() to return a rtc::scoped_ptr.
     return apply_rotation_ ? frame->GetCopyWithRotationApplied()->Copy()
@@ -94,7 +91,6 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
   }
 
  private:
-  uint64 start_time_;
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer_;
   cricket::CapturedFrame captured_frame_;
   rtc::scoped_refptr<AndroidVideoCapturerDelegate> delegate_;

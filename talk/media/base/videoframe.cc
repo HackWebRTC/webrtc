@@ -201,7 +201,6 @@ void VideoFrame::StretchToFrame(VideoFrame* dst,
                   dst->GetYPitch(), dst->GetUPitch(), dst->GetVPitch(),
                   dst->GetWidth(), dst->GetHeight(),
                   interpolate, vert_crop);
-  dst->SetElapsedTime(GetElapsedTime());
   dst->SetTimeStamp(GetTimeStamp());
   // Stretched frame should have the same rotation as the source.
   dst->SetRotation(GetVideoRotation());
@@ -212,7 +211,7 @@ VideoFrame* VideoFrame::Stretch(size_t dst_width, size_t dst_height,
   VideoFrame* dest = CreateEmptyFrame(static_cast<int>(dst_width),
                                       static_cast<int>(dst_height),
                                       GetPixelWidth(), GetPixelHeight(),
-                                      GetElapsedTime(), GetTimeStamp());
+                                      GetTimeStamp());
   if (dest) {
     StretchToFrame(dest, interpolate, vert_crop);
   }
