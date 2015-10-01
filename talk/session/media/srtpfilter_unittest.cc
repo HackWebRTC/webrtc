@@ -40,8 +40,8 @@ extern "C" {
 #endif
 }
 
-using rtc::CS_AES_CM_128_HMAC_SHA1_80;
-using rtc::CS_AES_CM_128_HMAC_SHA1_32;
+using cricket::CS_AES_CM_128_HMAC_SHA1_80;
+using cricket::CS_AES_CM_128_HMAC_SHA1_32;
 using cricket::CryptoParams;
 using cricket::CS_LOCAL;
 using cricket::CS_REMOTE;

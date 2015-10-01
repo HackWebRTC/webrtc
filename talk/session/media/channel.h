@@ -284,8 +284,7 @@ class BaseChannel
 
   // Handled in derived classes
   // Get the SRTP ciphers to use for RTP media
-  virtual void GetSrtpCryptoSuiteNames(
-      std::vector<std::string>* ciphers) const = 0;
+  virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const = 0;
   virtual void OnConnectionMonitorUpdate(ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) = 0;
 
@@ -414,7 +413,7 @@ class VoiceChannel : public BaseChannel {
   bool GetStats_w(VoiceMediaInfo* stats);
 
   virtual void OnMessage(rtc::Message* pmsg);
-  virtual void GetSrtpCryptoSuiteNames(std::vector<std::string>* ciphers) const;
+  virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
@@ -511,7 +510,7 @@ class VideoChannel : public BaseChannel {
   bool GetStats_w(VideoMediaInfo* stats);
 
   virtual void OnMessage(rtc::Message* pmsg);
-  virtual void GetSrtpCryptoSuiteNames(std::vector<std::string>* ciphers) const;
+  virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
@@ -636,7 +635,7 @@ class DataChannel : public BaseChannel {
   virtual bool WantsPacket(bool rtcp, rtc::Buffer* packet);
 
   virtual void OnMessage(rtc::Message* pmsg);
-  virtual void GetSrtpCryptoSuiteNames(std::vector<std::string>* ciphers) const;
+  virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(

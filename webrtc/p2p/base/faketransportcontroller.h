@@ -243,7 +243,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     return true;
   }
 
-  bool GetSrtpCryptoSuite(std::string* cipher) override {
+  bool GetSrtpCipher(std::string* cipher) override {
     if (!chosen_srtp_cipher_.empty()) {
       *cipher = chosen_srtp_cipher_;
       return true;
@@ -251,7 +251,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  bool GetSslCipherSuite(uint16_t* cipher) override { return false; }
+  bool GetSslCipher(std::string* cipher) override { return false; }
 
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const {
     return local_cert_;

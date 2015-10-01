@@ -87,10 +87,12 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   void Close() override;
   StreamState GetState() const override;
 
-  // TODO(guoweis): Move this away from a static class method.
-  static std::string GetSslCipherSuiteName(uint16_t cipher);
+#ifndef OPENSSL_IS_BORINGSSL
+  // Return the RFC (5246, 3268, etc.) cipher name for an OpenSSL cipher.
+  static const char* GetRfcSslCipherName(const SSL_CIPHER* cipher);
+#endif
 
-  bool GetSslCipherSuite(uint16_t* cipher) override;
+  bool GetSslCipher(std::string* cipher) override;
 
   // Key Extractor interface
   bool ExportKeyingMaterial(const std::string& label,
@@ -108,10 +110,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
-
-  // TODO(guoweis): Move this away from a static class method.
-  static uint16_t GetDefaultSslCipherForTest(SSLProtocolVersion version,
-                                             KeyType key_type);
+  static std::string GetDefaultSslCipher(SSLProtocolVersion version,
+                                         KeyType key_type);
 
  protected:
   void OnEvent(StreamInterface* stream, int events, int err) override;

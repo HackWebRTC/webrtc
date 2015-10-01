@@ -734,12 +734,10 @@ void StatsCollector::ExtractSessionInfo() {
         channel_report->AddString(StatsReport::kStatsValueNameSrtpCipher,
                                   srtp_cipher);
       }
-      uint16_t ssl_cipher = channel_iter.ssl_cipher;
-      if (ssl_cipher &&
-          rtc::SSLStreamAdapter::GetSslCipherSuiteName(ssl_cipher).length()) {
-        channel_report->AddString(
-            StatsReport::kStatsValueNameDtlsCipher,
-            rtc::SSLStreamAdapter::GetSslCipherSuiteName(ssl_cipher));
+      const std::string& ssl_cipher = channel_iter.ssl_cipher;
+      if (!ssl_cipher.empty()) {
+        channel_report->AddString(StatsReport::kStatsValueNameDtlsCipher,
+                                  ssl_cipher);
       }
 
       int connection_id = 0;

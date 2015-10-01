@@ -135,13 +135,13 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override;
 
   // Find out which DTLS-SRTP cipher was negotiated
-  bool GetSrtpCryptoSuite(std::string* cipher) override;
+  bool GetSrtpCipher(std::string* cipher) override;
 
   bool GetSslRole(rtc::SSLRole* role) const override;
   bool SetSslRole(rtc::SSLRole role) override;
 
   // Find out which DTLS cipher was negotiated
-  bool GetSslCipherSuite(uint16_t* cipher) override;
+  bool GetSslCipher(std::string* cipher) override;
 
   // Once DTLS has been established, this method retrieves the certificate in
   // use by the remote peer, for use in external identity verification.

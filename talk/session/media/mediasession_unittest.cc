@@ -84,8 +84,8 @@ using cricket::RtpHeaderExtension;
 using cricket::SEC_DISABLED;
 using cricket::SEC_ENABLED;
 using cricket::SEC_REQUIRED;
-using rtc::CS_AES_CM_128_HMAC_SHA1_32;
-using rtc::CS_AES_CM_128_HMAC_SHA1_80;
+using cricket::CS_AES_CM_128_HMAC_SHA1_32;
+using cricket::CS_AES_CM_128_HMAC_SHA1_80;
 
 static const AudioCodec kAudioCodecs1[] = {
   AudioCodec(103, "ISAC",   16000, -1,    1, 6),

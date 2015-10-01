@@ -42,13 +42,6 @@ enum PeerConnectionEnumCounterType {
   // to the TURN server in the case of TURN candidates.
   kEnumCounterIceCandidatePairTypeUdp,
   kEnumCounterIceCandidatePairTypeTcp,
-
-  kEnumCounterAudioSrtpCipher,
-  kEnumCounterAudioSslCipher,
-  kEnumCounterVideoSrtpCipher,
-  kEnumCounterVideoSslCipher,
-  kEnumCounterDataSrtpCipher,
-  kEnumCounterDataSslCipher,
   kPeerConnectionEnumCounterMax
 };
 
@@ -85,6 +78,12 @@ enum PeerConnectionMetricsName {
   kTimeToConnect,           // In milliseconds.
   kLocalCandidates_IPv4,    // Number of IPv4 local candidates.
   kLocalCandidates_IPv6,    // Number of IPv6 local candidates.
+  kAudioSrtpCipher,         // Name of SRTP cipher used in audio channel.
+  kAudioSslCipher,          // Name of SSL cipher used in audio channel.
+  kVideoSrtpCipher,         // Name of SRTP cipher used in video channel.
+  kVideoSslCipher,          // Name of SSL cipher used in video channel.
+  kDataSrtpCipher,          // Name of SRTP cipher used in data channel.
+  kDataSslCipher,           // Name of SSL cipher used in data channel.
   kPeerConnectionMetricsName_Max
 };
 

@@ -155,24 +155,25 @@ bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
 void GetSupportedAudioCryptoSuites(
     std::vector<std::string>* crypto_suites) {
 #ifdef HAVE_SRTP
-  crypto_suites->push_back(rtc::CS_AES_CM_128_HMAC_SHA1_32);
-  crypto_suites->push_back(rtc::CS_AES_CM_128_HMAC_SHA1_80);
+  crypto_suites->push_back(CS_AES_CM_128_HMAC_SHA1_32);
+  crypto_suites->push_back(CS_AES_CM_128_HMAC_SHA1_80);
 #endif
 }
 
 void GetSupportedVideoCryptoSuites(
     std::vector<std::string>* crypto_suites) {
-  GetDefaultSrtpCryptoSuiteNames(crypto_suites);
+  GetSupportedDefaultCryptoSuites(crypto_suites);
 }
 
 void GetSupportedDataCryptoSuites(
     std::vector<std::string>* crypto_suites) {
-  GetDefaultSrtpCryptoSuiteNames(crypto_suites);
+  GetSupportedDefaultCryptoSuites(crypto_suites);
 }
 
-void GetDefaultSrtpCryptoSuiteNames(std::vector<std::string>* crypto_suites) {
+void GetSupportedDefaultCryptoSuites(
+    std::vector<std::string>* crypto_suites) {
 #ifdef HAVE_SRTP
-  crypto_suites->push_back(rtc::CS_AES_CM_128_HMAC_SHA1_80);
+  crypto_suites->push_back(CS_AES_CM_128_HMAC_SHA1_80);
 #endif
 }
 
@@ -187,9 +188,8 @@ static bool SelectCrypto(const MediaContentDescription* offer,
 
   for (CryptoParamsVec::const_iterator i = cryptos.begin();
        i != cryptos.end(); ++i) {
-    if (rtc::CS_AES_CM_128_HMAC_SHA1_80 == i->cipher_suite ||
-        (rtc::CS_AES_CM_128_HMAC_SHA1_32 == i->cipher_suite && audio &&
-         !bundle)) {
+    if (CS_AES_CM_128_HMAC_SHA1_80 == i->cipher_suite ||
+        (CS_AES_CM_128_HMAC_SHA1_32 == i->cipher_suite && audio && !bundle)) {
       return CreateCryptoParams(i->tag, i->cipher_suite, crypto);
     }
   }

@@ -37,7 +37,10 @@ FakeMetricsObserver::FakeMetricsObserver() {
 void FakeMetricsObserver::Reset() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   counters_.clear();
-  memset(histogram_samples_, 0, sizeof(histogram_samples_));
+  memset(int_histogram_samples_, 0, sizeof(int_histogram_samples_));
+  for (std::string& type : string_histogram_samples_) {
+    type.clear();
+  }
 }
 
 void FakeMetricsObserver::IncrementEnumCounter(
@@ -49,31 +52,43 @@ void FakeMetricsObserver::IncrementEnumCounter(
     counters_.resize(type + 1);
   }
   auto& counters = counters_[type];
+  if (counters.size() < static_cast<size_t>(counter_max)) {
+    counters.resize(counter_max);
+  }
   ++counters[counter];
 }
 
 void FakeMetricsObserver::AddHistogramSample(PeerConnectionMetricsName type,
     int value) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK_EQ(histogram_samples_[type], 0);
-  histogram_samples_[type] = value;
+  RTC_DCHECK_EQ(int_histogram_samples_[type], 0);
+  int_histogram_samples_[type] = value;
+}
+
+void FakeMetricsObserver::AddHistogramSample(PeerConnectionMetricsName type,
+    const std::string& value) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  string_histogram_samples_[type].assign(value);
 }
 
 int FakeMetricsObserver::GetEnumCounter(PeerConnectionEnumCounterType type,
                                         int counter) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_CHECK(counters_.size() > static_cast<size_t>(type));
-  const auto& it = counters_[type].find(counter);
-  if (it == counters_[type].end()) {
-    return 0;
-  }
-  return it->second;
+  RTC_CHECK(counters_.size() > static_cast<size_t>(type) &&
+            counters_[type].size() > static_cast<size_t>(counter));
+  return counters_[type][counter];
 }
 
-int FakeMetricsObserver::GetHistogramSample(
+int FakeMetricsObserver::GetIntHistogramSample(
     PeerConnectionMetricsName type) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return histogram_samples_[type];
+  return int_histogram_samples_[type];
+}
+
+const std::string& FakeMetricsObserver::GetStringHistogramSample(
+    PeerConnectionMetricsName type) const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  return string_histogram_samples_[type];
 }
 
 }  // namespace webrtc

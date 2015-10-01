@@ -307,8 +307,8 @@ bool Transport::GetStats(TransportStats* stats) {
     TransportChannelImpl* channel = kv.second;
     TransportChannelStats substats;
     substats.component = channel->component();
-    channel->GetSrtpCryptoSuite(&substats.srtp_cipher);
-    channel->GetSslCipherSuite(&substats.ssl_cipher);
+    channel->GetSrtpCipher(&substats.srtp_cipher);
+    channel->GetSslCipher(&substats.ssl_cipher);
     if (!channel->GetStats(&substats.connection_infos)) {
       return false;
     }
