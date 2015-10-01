@@ -43,21 +43,21 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
 
   int32_t Init() override;
   int32_t Terminate() override;
-  bool Initialized() const override { return _initialized; }
+  bool Initialized() const override { return initialized_; }
 
   int32_t InitPlayout() override;
-  bool PlayoutIsInitialized() const override { return _playIsInitialized; }
+  bool PlayoutIsInitialized() const override { return play_is_initialized_; }
 
   int32_t InitRecording() override;
-  bool RecordingIsInitialized() const override { return _recIsInitialized; }
+  bool RecordingIsInitialized() const override { return rec_is_initialized_; }
 
   int32_t StartPlayout() override;
   int32_t StopPlayout() override;
-  bool Playing() const override { return _playing; }
+  bool Playing() const override { return playing_; }
 
   int32_t StartRecording() override;
   int32_t StopRecording() override;
-  bool Recording() const override { return _recording; }
+  bool Recording() const override { return recording_; }
 
   int32_t SetLoudspeakerStatus(bool enable) override;
   int32_t GetLoudspeakerStatus(bool& enabled) const override;
@@ -145,13 +145,13 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   bool PlayoutError() const override;
   bool RecordingWarning() const override;
   bool RecordingError() const override;
-  void ClearPlayoutWarning() override{};
-  void ClearPlayoutError() override{};
-  void ClearRecordingWarning() override{};
-  void ClearRecordingError() override{};
+  void ClearPlayoutWarning() override {}
+  void ClearPlayoutError() override {}
+  void ClearRecordingWarning() override {}
+  void ClearRecordingError() override {}
 
  private:
-  // Uses current |_playoutParameters| and |_recordParameters| to inform the
+  // Uses current |playout_parameters_| and |record_parameters_| to inform the
   // audio device buffer (ADB) about our internal audio parameters.
   void UpdateAudioDeviceBuffer();
 
@@ -159,7 +159,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // values may be different once the AVAudioSession has been activated.
   // This method asks for the current hardware parameters and takes actions
   // if they should differ from what we have asked for initially. It also
-  // defines |_playoutParameters| and |_recordParameters|.
+  // defines |playout_parameters_| and |record_parameters_|.
   void SetupAudioBuffersForActiveAudioSession();
 
   // Creates a Voice-Processing I/O unit and configures it for full-duplex
@@ -168,7 +168,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // This method also initializes the created audio unit.
   bool SetupAndInitializeVoiceProcessingAudioUnit();
 
-  // Activates our audio session, creates and initilizes the voice-processing
+  // Activates our audio session, creates and initializes the voice-processing
   // audio unit and verifies that we got the preferred native audio parameters.
   bool InitPlayOrRecord();
 
@@ -178,39 +178,40 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // Callback function called on a real-time priority I/O thread from the audio
   // unit. This method is used to signal that recorded audio is available.
   static OSStatus RecordedDataIsAvailable(
-      void* inRefCon,
-      AudioUnitRenderActionFlags* ioActionFlags,
-      const AudioTimeStamp* timeStamp,
-      UInt32 inBusNumber,
-      UInt32 inNumberFrames,
-      AudioBufferList* ioData);
-  OSStatus OnRecordedDataIsAvailable(AudioUnitRenderActionFlags* ioActionFlags,
-                                     const AudioTimeStamp* timeStamp,
-                                     UInt32 inBusNumber,
-                                     UInt32 inNumberFrames);
+      void* in_ref_con,
+      AudioUnitRenderActionFlags* io_action_flags,
+      const AudioTimeStamp* time_stamp,
+      UInt32 in_bus_number,
+      UInt32 in_number_frames,
+      AudioBufferList* io_data);
+  OSStatus OnRecordedDataIsAvailable(
+      AudioUnitRenderActionFlags* io_action_flags,
+      const AudioTimeStamp* time_stamp,
+      UInt32 in_bus_number,
+      UInt32 in_number_frames);
 
   // Callback function called on a real-time priority I/O thread from the audio
   // unit. This method is used to provide audio samples to the audio unit.
-  static OSStatus GetPlayoutData(void* inRefCon,
-                                 AudioUnitRenderActionFlags* ioActionFlags,
-                                 const AudioTimeStamp* timeStamp,
-                                 UInt32 inBusNumber,
-                                 UInt32 inNumberFrames,
-                                 AudioBufferList* ioData);
-  OSStatus OnGetPlayoutData(AudioUnitRenderActionFlags* ioActionFlags,
-                            UInt32 inNumberFrames,
-                            AudioBufferList* ioData);
+  static OSStatus GetPlayoutData(void* in_ref_con,
+                                 AudioUnitRenderActionFlags* io_action_flags,
+                                 const AudioTimeStamp* time_stamp,
+                                 UInt32 in_bus_number,
+                                 UInt32 in_number_frames,
+                                 AudioBufferList* io_data);
+  OSStatus OnGetPlayoutData(AudioUnitRenderActionFlags* io_action_flags,
+                            UInt32 in_number_frames,
+                            AudioBufferList* io_data);
 
  private:
   // Ensures that methods are called from the same thread as this object is
   // created on.
-  rtc::ThreadChecker _threadChecker;
+  rtc::ThreadChecker thread_checker_;
 
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
   // AudioDeviceModuleImpl class and called by AudioDeviceModuleImpl::Create().
   // The AudioDeviceBuffer is a member of the AudioDeviceModuleImpl instance
   // and therefore outlives this object.
-  AudioDeviceBuffer* _audioDeviceBuffer;
+  AudioDeviceBuffer* audio_device_buffer_;
 
   // Contains audio parameters (sample rate, #channels, buffer size etc.) for
   // the playout and recording sides. These structure is set in two steps:
@@ -220,15 +221,15 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // component to the parameters; the native I/O buffer duration.
   // A RTC_CHECK will be hit if we for some reason fail to open an audio session
   // using the specified parameters.
-  AudioParameters _playoutParameters;
-  AudioParameters _recordParameters;
+  AudioParameters playout_parameters_;
+  AudioParameters record_parameters_;
 
   // The Voice-Processing I/O unit has the same characteristics as the
   // Remote I/O unit (supports full duplex low-latency audio input and output)
   // and adds AEC for for two-way duplex communication. It also adds AGC,
   // adjustment of voice-processing quality, and muting. Hence, ideal for
   // VoIP applications.
-  AudioUnit _vpioUnit;
+  AudioUnit vpio_unit_;
 
   // FineAudioBuffer takes an AudioDeviceBuffer which delivers audio data
   // in chunks of 10ms. It then allows for this data to be pulled in
@@ -244,37 +245,37 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // can provide audio data frames of size 128 and these are accumulated until
   // enough data to supply one 10ms call exists. This 10ms chunk is then sent
   // to WebRTC and the remaining part is stored.
-  rtc::scoped_ptr<FineAudioBuffer> _fineAudioBuffer;
+  rtc::scoped_ptr<FineAudioBuffer> fine_audio_buffer_;
 
   // Extra audio buffer to be used by the playout side for rendering audio.
   // The buffer size is given by FineAudioBuffer::RequiredBufferSizeBytes().
-  rtc::scoped_ptr<SInt8[]> _playoutAudioBuffer;
+  rtc::scoped_ptr<SInt8[]> playout_audio_buffer_;
 
   // Provides a mechanism for encapsulating one or more buffers of audio data.
   // Only used on the recording side.
-  AudioBufferList _audioRecordBufferList;
+  AudioBufferList audio_record_buffer_list_;
 
   // Temporary storage for recorded data. AudioUnitRender() renders into this
   // array as soon as a frame of the desired buffer size has been recorded.
-  rtc::scoped_ptr<SInt8[]> _recordAudioBuffer;
+  rtc::scoped_ptr<SInt8[]> record_audio_buffer_;
 
   // Set to 1 when recording is active and 0 otherwise.
-  volatile int _recording;
+  volatile int recording_;
 
   // Set to 1 when playout is active and 0 otherwise.
-  volatile int _playing;
+  volatile int playing_;
 
   // Set to true after successful call to Init(), false otherwise.
-  bool _initialized;
+  bool initialized_;
 
   // Set to true after successful call to InitRecording(), false otherwise.
-  bool _recIsInitialized;
+  bool rec_is_initialized_;
 
   // Set to true after successful call to InitPlayout(), false otherwise.
-  bool _playIsInitialized;
+  bool play_is_initialized_;
 
   // Audio interruption observer instance.
-  void* _audioInterruptionObserver;
+  void* audio_interruption_observer_;
 };
 
 }  // namespace webrtc
