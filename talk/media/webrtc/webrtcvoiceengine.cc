@@ -2970,14 +2970,6 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   return true;
 }
 
-void WebRtcVoiceMediaChannel::GetLastMediaError(
-    uint32* ssrc, VoiceMediaChannel::Error* error) {
-  RTC_DCHECK(ssrc != NULL);
-  RTC_DCHECK(error != NULL);
-  FindSsrc(voe_channel(), ssrc);
-  *error = WebRtcErrorToChannelError(GetLastEngineError());
-}
-
 bool WebRtcVoiceMediaChannel::FindSsrc(int channel_num, uint32* ssrc) {
   rtc::CritScope lock(&receive_channels_cs_);
   RTC_DCHECK(ssrc != NULL);
@@ -3019,7 +3011,6 @@ void WebRtcVoiceMediaChannel::OnError(uint32 ssrc, int error) {
   } else if (error == VE_TYPING_NOISE_OFF_WARNING) {
     typing_noise_detected_ = false;
   }
-  SignalMediaError(ssrc, WebRtcErrorToChannelError(error));
 }
 
 int WebRtcVoiceMediaChannel::GetOutputLevel(int channel) {

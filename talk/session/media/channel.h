@@ -144,10 +144,6 @@ class BaseChannel
   // For ConnectionStatsGetter, used by ConnectionMonitor
   bool GetConnectionStats(ConnectionInfos* infos) override;
 
-  void set_srtp_signal_silent_time(uint32 silent_time) {
-    srtp_filter_.set_signal_silent_time(silent_time);
-  }
-
   BundleFilter* bundle_filter() { return &bundle_filter_; }
 
   const std::vector<StreamParams>& local_streams() const {
@@ -169,6 +165,8 @@ class BaseChannel
 
   // Only public for unit tests.  Otherwise, consider protected.
   virtual int SetOption(SocketType type, rtc::Socket::Option o, int val);
+
+  SrtpFilter* srtp_filter() { return &srtp_filter_; }
 
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_; }
@@ -192,7 +190,6 @@ class BaseChannel
   rtc::Thread* signaling_thread() {
     return transport_controller_->signaling_thread();
   }
-  SrtpFilter* srtp_filter() { return &srtp_filter_; }
   bool rtcp_transport_enabled() const { return rtcp_transport_enabled_; }
 
   void ConnectToTransportChannel(TransportChannel* tc);
@@ -389,11 +386,6 @@ class VoiceChannel : public BaseChannel {
   int GetOutputLevel_w();
   void GetActiveStreams_w(AudioInfo::StreamList* actives);
 
-  // Signal errors from VoiceMediaChannel.  Arguments are:
-  //     ssrc(uint32), and error(VoiceMediaChannel::Error).
-  sigslot::signal3<VoiceChannel*, uint32, VoiceMediaChannel::Error>
-      SignalMediaError;
-
  private:
   // overrides from BaseChannel
   virtual void OnChannelRead(TransportChannel* channel,
@@ -420,9 +412,6 @@ class VoiceChannel : public BaseChannel {
   virtual void OnMediaMonitorUpdate(
       VoiceMediaChannel* media_channel, const VoiceMediaInfo& info);
   void OnAudioMonitorUpdate(AudioMonitor* monitor, const AudioInfo& info);
-  void OnVoiceChannelError(uint32 ssrc, VoiceMediaChannel::Error error);
-  void SendLastMediaError();
-  void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
 
   static const int kEarlyMediaTimeout = 1000;
   MediaEngineInterface* media_engine_;
@@ -481,8 +470,6 @@ class VideoChannel : public BaseChannel {
 
   bool SendIntraFrame();
   bool RequestIntraFrame();
-  sigslot::signal3<VideoChannel*, uint32, VideoMediaChannel::Error>
-      SignalMediaError;
 
   // Configure sending media on the stream with SSRC |ssrc|
   // If there is only one sending stream SSRC 0 can be used.
@@ -520,9 +507,6 @@ class VideoChannel : public BaseChannel {
                                        rtc::WindowEvent event);
   virtual void OnStateChange(VideoCapturer* capturer, CaptureState ev);
   bool GetLocalSsrc(const VideoCapturer* capturer, uint32* ssrc);
-
-  void OnVideoChannelError(uint32 ssrc, VideoMediaChannel::Error error);
-  void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
 
   VideoRenderer* renderer_;
   ScreencastMap screencast_capturers_;
@@ -564,8 +548,6 @@ class DataChannel : public BaseChannel {
   sigslot::signal2<DataChannel*, const DataMediaInfo&> SignalMediaMonitor;
   sigslot::signal2<DataChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;
-  sigslot::signal3<DataChannel*, uint32, DataMediaChannel::Error>
-      SignalMediaError;
   sigslot::signal3<DataChannel*,
                    const ReceiveDataParams&,
                    const rtc::Buffer&>
@@ -646,7 +628,6 @@ class DataChannel : public BaseChannel {
       const ReceiveDataParams& params, const char* data, size_t len);
   void OnDataChannelError(uint32 ssrc, DataMediaChannel::Error error);
   void OnDataChannelReadyToSend(bool writable);
-  void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
   void OnStreamClosedRemotely(uint32 sid);
 
   rtc::scoped_ptr<DataMediaMonitor> media_monitor_;

@@ -221,10 +221,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override {}
   bool GetStats(VoiceMediaInfo* info) override;
-  // Gets last reported error from WebRtc voice engine.  This should be only
-  // called in response a failure.
-  void GetLastMediaError(uint32* ssrc,
-                         VoiceMediaChannel::Error* error) override;
 
   // implements Transport interface
   bool SendRtp(const uint8_t* data, size_t len) override {

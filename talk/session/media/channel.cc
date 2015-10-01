@@ -1301,10 +1301,6 @@ bool VoiceChannel::Init() {
   if (!BaseChannel::Init()) {
     return false;
   }
-  media_channel()->SignalMediaError.connect(
-      this, &VoiceChannel::OnVoiceChannelError);
-  srtp_filter()->SignalSrtpError.connect(
-      this, &VoiceChannel::OnSrtpError);
   return true;
 }
 
@@ -1430,9 +1426,7 @@ void VoiceChannel::ChangeState() {
   // Render incoming data if we're the active call, and we have the local
   // content. We receive data on the default channel and multiplexed streams.
   bool recv = IsReadyToReceive();
-  if (!media_channel()->SetPlayout(recv)) {
-    SendLastMediaError();
-  }
+  media_channel()->SetPlayout(recv);
 
   // Send outgoing data if we're the active call, we have the remote content,
   // and we have had some form of connectivity.
@@ -1440,7 +1434,6 @@ void VoiceChannel::ChangeState() {
   SendFlags send_flag = send ? SEND_MICROPHONE : SEND_NOTHING;
   if (!media_channel()->SetSend(send_flag)) {
     LOG(LS_ERROR) << "Failed to SetSend " << send_flag << " on voice channel";
-    SendLastMediaError();
   }
 
   LOG(LS_INFO) << "Changing voice state, recv=" << recv << " send=" << send;
@@ -1571,7 +1564,6 @@ void VoiceChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_CHANNEL_ERROR: {
       VoiceChannelErrorMessageData* data =
           static_cast<VoiceChannelErrorMessageData*>(pmsg->pdata);
-      SignalMediaError(this, data->ssrc, data->error);
       delete data;
       break;
     }
@@ -1597,36 +1589,6 @@ void VoiceChannel::OnAudioMonitorUpdate(AudioMonitor* monitor,
   SignalAudioMonitor(this, info);
 }
 
-void VoiceChannel::OnVoiceChannelError(
-    uint32 ssrc, VoiceMediaChannel::Error err) {
-  VoiceChannelErrorMessageData* data = new VoiceChannelErrorMessageData(
-      ssrc, err);
-  signaling_thread()->Post(this, MSG_CHANNEL_ERROR, data);
-}
-
-void VoiceChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,
-                               SrtpFilter::Error error) {
-  switch (error) {
-    case SrtpFilter::ERROR_FAIL:
-      OnVoiceChannelError(ssrc, (mode == SrtpFilter::PROTECT) ?
-                          VoiceMediaChannel::ERROR_REC_SRTP_ERROR :
-                          VoiceMediaChannel::ERROR_PLAY_SRTP_ERROR);
-      break;
-    case SrtpFilter::ERROR_AUTH:
-      OnVoiceChannelError(ssrc, (mode == SrtpFilter::PROTECT) ?
-                          VoiceMediaChannel::ERROR_REC_SRTP_AUTH_FAILED :
-                          VoiceMediaChannel::ERROR_PLAY_SRTP_AUTH_FAILED);
-      break;
-    case SrtpFilter::ERROR_REPLAY:
-      // Only receving channel should have this error.
-      ASSERT(mode == SrtpFilter::UNPROTECT);
-      OnVoiceChannelError(ssrc, VoiceMediaChannel::ERROR_PLAY_SRTP_REPLAY);
-      break;
-    default:
-      break;
-  }
-}
-
 void VoiceChannel::GetSrtpCryptoSuiteNames(
     std::vector<std::string>* ciphers) const {
   GetSupportedAudioCryptoSuites(ciphers);
@@ -1649,18 +1611,7 @@ bool VideoChannel::Init() {
   if (!BaseChannel::Init()) {
     return false;
   }
-  media_channel()->SignalMediaError.connect(
-      this, &VideoChannel::OnVideoChannelError);
-  srtp_filter()->SignalSrtpError.connect(
-      this, &VideoChannel::OnSrtpError);
   return true;
-}
-
-void VoiceChannel::SendLastMediaError() {
-  uint32 ssrc;
-  VoiceMediaChannel::Error error;
-  media_channel()->GetLastMediaError(&ssrc, &error);
-  SignalMediaError(this, ssrc, error);
 }
 
 VideoChannel::~VideoChannel() {
@@ -1964,7 +1915,6 @@ void VideoChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_CHANNEL_ERROR: {
       const VideoChannelErrorMessageData* data =
           static_cast<VideoChannelErrorMessageData*>(pmsg->pdata);
-      SignalMediaError(this, data->ssrc, data->error);
       delete data;
       break;
     }
@@ -2029,38 +1979,6 @@ bool VideoChannel::GetLocalSsrc(const VideoCapturer* capturer, uint32* ssrc) {
   return false;
 }
 
-void VideoChannel::OnVideoChannelError(uint32 ssrc,
-                                       VideoMediaChannel::Error error) {
-  VideoChannelErrorMessageData* data = new VideoChannelErrorMessageData(
-      ssrc, error);
-  signaling_thread()->Post(this, MSG_CHANNEL_ERROR, data);
-}
-
-void VideoChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,
-                               SrtpFilter::Error error) {
-  switch (error) {
-    case SrtpFilter::ERROR_FAIL:
-      OnVideoChannelError(ssrc, (mode == SrtpFilter::PROTECT) ?
-                          VideoMediaChannel::ERROR_REC_SRTP_ERROR :
-                          VideoMediaChannel::ERROR_PLAY_SRTP_ERROR);
-      break;
-    case SrtpFilter::ERROR_AUTH:
-      OnVideoChannelError(ssrc, (mode == SrtpFilter::PROTECT) ?
-                          VideoMediaChannel::ERROR_REC_SRTP_AUTH_FAILED :
-                          VideoMediaChannel::ERROR_PLAY_SRTP_AUTH_FAILED);
-      break;
-    case SrtpFilter::ERROR_REPLAY:
-      // Only receving channel should have this error.
-      ASSERT(mode == SrtpFilter::UNPROTECT);
-      // TODO(gangji): Turn on the signaling of replay error once we have
-      // switched to the new mechanism for doing video retransmissions.
-      // OnVideoChannelError(ssrc, VideoMediaChannel::ERROR_PLAY_SRTP_REPLAY);
-      break;
-    default:
-      break;
-  }
-}
-
 void VideoChannel::GetSrtpCryptoSuiteNames(
     std::vector<std::string>* ciphers) const {
   GetSupportedVideoCryptoSuites(ciphers);
@@ -2093,14 +2011,10 @@ bool DataChannel::Init() {
   }
   media_channel()->SignalDataReceived.connect(
       this, &DataChannel::OnDataReceived);
-  media_channel()->SignalMediaError.connect(
-      this, &DataChannel::OnDataChannelError);
   media_channel()->SignalReadyToSend.connect(
       this, &DataChannel::OnDataChannelReadyToSend);
   media_channel()->SignalStreamClosedRemotely.connect(
       this, &DataChannel::OnStreamClosedRemotely);
-  srtp_filter()->SignalSrtpError.connect(
-      this, &DataChannel::OnSrtpError);
   return true;
 }
 
@@ -2308,7 +2222,6 @@ void DataChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_CHANNEL_ERROR: {
       const DataChannelErrorMessageData* data =
           static_cast<DataChannelErrorMessageData*>(pmsg->pdata);
-      SignalMediaError(this, data->ssrc, data->error);
       delete data;
       break;
     }
@@ -2372,29 +2285,6 @@ void DataChannel::OnDataChannelReadyToSend(bool writable) {
   // that the transport channel is ready.
   signaling_thread()->Post(this, MSG_READYTOSENDDATA,
                            new DataChannelReadyToSendMessageData(writable));
-}
-
-void DataChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,
-                              SrtpFilter::Error error) {
-  switch (error) {
-    case SrtpFilter::ERROR_FAIL:
-      OnDataChannelError(ssrc, (mode == SrtpFilter::PROTECT) ?
-                         DataMediaChannel::ERROR_SEND_SRTP_ERROR :
-                         DataMediaChannel::ERROR_RECV_SRTP_ERROR);
-      break;
-    case SrtpFilter::ERROR_AUTH:
-      OnDataChannelError(ssrc, (mode == SrtpFilter::PROTECT) ?
-                         DataMediaChannel::ERROR_SEND_SRTP_AUTH_FAILED :
-                         DataMediaChannel::ERROR_RECV_SRTP_AUTH_FAILED);
-      break;
-    case SrtpFilter::ERROR_REPLAY:
-      // Only receving channel should have this error.
-      ASSERT(mode == SrtpFilter::UNPROTECT);
-      OnDataChannelError(ssrc, DataMediaChannel::ERROR_RECV_SRTP_REPLAY);
-      break;
-    default:
-      break;
-  }
 }
 
 void DataChannel::GetSrtpCryptoSuiteNames(

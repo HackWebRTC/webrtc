@@ -89,35 +89,6 @@ class FakeVoETraceWrapper : public cricket::VoETraceWrapper {
 
 class WebRtcVoiceEngineTestFake : public testing::Test {
  public:
-  class ChannelErrorListener : public sigslot::has_slots<> {
-   public:
-    explicit ChannelErrorListener(cricket::VoiceMediaChannel* channel)
-        : ssrc_(0), error_(cricket::VoiceMediaChannel::ERROR_NONE) {
-      RTC_DCHECK(channel != NULL);
-      channel->SignalMediaError.connect(
-          this, &ChannelErrorListener::OnVoiceChannelError);
-    }
-    void OnVoiceChannelError(uint32 ssrc,
-                             cricket::VoiceMediaChannel::Error error) {
-      ssrc_ = ssrc;
-      error_ = error;
-    }
-    void Reset() {
-      ssrc_ = 0;
-      error_ = cricket::VoiceMediaChannel::ERROR_NONE;
-    }
-    uint32 ssrc() const {
-      return ssrc_;
-    }
-    cricket::VoiceMediaChannel::Error error() const {
-      return error_;
-    }
-
-   private:
-    uint32 ssrc_;
-    cricket::VoiceMediaChannel::Error error_;
-  };
-
   WebRtcVoiceEngineTestFake()
       : call_(webrtc::Call::Config()),
         voe_(kAudioCodecs, ARRAY_SIZE(kAudioCodecs)),
@@ -2541,51 +2512,6 @@ TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCaller) {
 // Test the InsertDtmf on specified send stream as callee.
 TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCallee) {
   TestInsertDtmf(kSsrc1, false);
-}
-
-TEST_F(WebRtcVoiceEngineTestFake, MediaEngineCallbackOnError) {
-  rtc::scoped_ptr<ChannelErrorListener> listener;
-  cricket::WebRtcVoiceMediaChannel* media_channel;
-  unsigned int ssrc = 0;
-
-  EXPECT_TRUE(SetupEngine());
-  send_parameters_.options = options_conference_;
-  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
-
-  media_channel = static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  listener.reset(new ChannelErrorListener(channel_));
-
-  // Test on WebRtc VoE channel.
-  voe_.TriggerCallbackOnError(media_channel->voe_channel(),
-                              VE_SATURATION_WARNING);
-  EXPECT_EQ(cricket::VoiceMediaChannel::ERROR_REC_DEVICE_SATURATION,
-            listener->error());
-  EXPECT_NE(-1, voe_.GetLocalSSRC(voe_.GetLastChannel(), ssrc));
-  EXPECT_EQ(ssrc, listener->ssrc());
-
-  listener->Reset();
-  voe_.TriggerCallbackOnError(-1, VE_TYPING_NOISE_WARNING);
-  EXPECT_EQ(cricket::VoiceMediaChannel::ERROR_REC_TYPING_NOISE_DETECTED,
-            listener->error());
-  EXPECT_EQ(0U, listener->ssrc());
-
-  // Add another stream and test on that.
-  ++ssrc;
-  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(
-      ssrc)));
-  listener->Reset();
-  voe_.TriggerCallbackOnError(voe_.GetLastChannel(),
-                              VE_SATURATION_WARNING);
-  EXPECT_EQ(cricket::VoiceMediaChannel::ERROR_REC_DEVICE_SATURATION,
-            listener->error());
-  EXPECT_EQ(ssrc, listener->ssrc());
-
-  // Testing a non-existing channel.
-  listener->Reset();
-  voe_.TriggerCallbackOnError(voe_.GetLastChannel() + 2,
-                              VE_SATURATION_WARNING);
-  EXPECT_EQ(0, listener->error());
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, TestSetPlayoutError) {

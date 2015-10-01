@@ -1097,16 +1097,6 @@ class VoiceMediaChannel : public MediaChannel {
   virtual bool InsertDtmf(uint32 ssrc, int event, int duration, int flags) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VoiceMediaInfo* info) = 0;
-  // Gets last reported error for this media channel.
-  virtual void GetLastMediaError(uint32* ssrc,
-                                 VoiceMediaChannel::Error* error) {
-    ASSERT(error != NULL);
-    *error = ERROR_NONE;
-  }
-
-  // Signal errors from MediaChannel.  Arguments are:
-  //     ssrc(uint32), and error(VoiceMediaChannel::Error).
-  sigslot::signal2<uint32, VoiceMediaChannel::Error> SignalMediaError;
 };
 
 struct VideoSendParameters : RtpSendParameters<VideoCodec, VideoOptions> {
@@ -1159,10 +1149,6 @@ class VideoMediaChannel : public MediaChannel {
   // Reuqest each of the remote senders to send an intra frame.
   virtual bool RequestIntraFrame() = 0;
   virtual void UpdateAspectRatio(int ratio_w, int ratio_h) = 0;
-
-  // Signal errors from MediaChannel.  Arguments are:
-  //     ssrc(uint32), and error(VideoMediaChannel::Error).
-  sigslot::signal2<uint32, Error> SignalMediaError;
 
  protected:
   VideoRenderer *renderer_;
@@ -1286,9 +1272,6 @@ class DataMediaChannel : public MediaChannel {
   sigslot::signal3<const ReceiveDataParams&,
                    const char*,
                    size_t> SignalDataReceived;
-  // Signal errors from MediaChannel.  Arguments are:
-  //     ssrc(uint32), and error(DataMediaChannel::Error).
-  sigslot::signal2<uint32, DataMediaChannel::Error> SignalMediaError;
   // Signal when the media channel is ready to send the stream. Arguments are:
   //     writable(bool)
   sigslot::signal1<bool> SignalReadyToSend;

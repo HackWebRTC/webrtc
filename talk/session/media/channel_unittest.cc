@@ -139,9 +139,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         rtp_packet_(reinterpret_cast<const char*>(rtp_data), rtp_len),
         rtcp_packet_(reinterpret_cast<const char*>(rtcp_data), rtcp_len),
         media_info_callbacks1_(),
-        media_info_callbacks2_(),
-        ssrc_(0),
-        error_(T::MediaChannel::ERROR_NONE) {}
+        media_info_callbacks2_() {}
 
   void CreateChannels(int flags1, int flags2) {
     CreateChannels(new typename T::MediaChannel(NULL, typename T::Options()),
@@ -163,10 +161,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         this, &ChannelTest<T>::OnMediaMonitor);
     channel2_->SignalMediaMonitor.connect(
         this, &ChannelTest<T>::OnMediaMonitor);
-    channel1_->SignalMediaError.connect(
-        this, &ChannelTest<T>::OnMediaChannelError);
-    channel2_->SignalMediaError.connect(
-        this, &ChannelTest<T>::OnMediaChannelError);
     if ((flags1 & DTLS) && (flags2 & DTLS)) {
       flags1 = (flags1 & ~SECURE);
       flags2 = (flags2 & ~SECURE);
@@ -470,13 +464,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     } else if (channel == channel2_.get()) {
       media_info_callbacks2_++;
     }
-  }
-
-  void OnMediaChannelError(typename T::Channel* channel,
-                           uint32 ssrc,
-                           typename T::MediaChannel::Error error) {
-    ssrc_ = ssrc;
-    error_ = error;
   }
 
   void AddLegacyStreamInContent(uint32 ssrc, int flags,
@@ -1677,16 +1664,20 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckRtcp2());
   }
 
-  void TestChangeStateError() {
-    CreateChannels(RTCP, RTCP);
-    EXPECT_TRUE(SendInitiate());
-    media_channel2_->set_fail_set_send(true);
-    EXPECT_TRUE(channel2_->Enable(true));
-    EXPECT_EQ(cricket::VoiceMediaChannel::ERROR_REC_DEVICE_OPEN_FAILED,
-              error_);
-  }
-
   void TestSrtpError(int pl_type) {
+    struct SrtpErrorHandler : public sigslot::has_slots<> {
+      SrtpErrorHandler() :
+          mode_(cricket::SrtpFilter::UNPROTECT),
+          error_(cricket::SrtpFilter::ERROR_NONE) {}
+      void OnSrtpError(uint32 ssrc, cricket::SrtpFilter::Mode mode,
+                       cricket::SrtpFilter::Error error) {
+        mode_ = mode;
+        error_ = error;
+      }
+      cricket::SrtpFilter::Mode mode_;
+      cricket::SrtpFilter::Error error_;
+    } error_handler;
+
     // For Audio, only pl_type 0 is added to the bundle filter.
     // For Video, only pl_type 97 is added to the bundle filter.
     // So we need to pass in pl_type so that the packet can pass through
@@ -1711,30 +1702,36 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(SendAccept());
     EXPECT_TRUE(channel1_->secure());
     EXPECT_TRUE(channel2_->secure());
-    channel2_->set_srtp_signal_silent_time(200);
+
+    channel2_->srtp_filter()->SignalSrtpError.connect(
+        &error_handler, &SrtpErrorHandler::OnSrtpError);
 
     // Testing failures in sending packets.
     EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
     // The first failure will trigger an error.
-    EXPECT_EQ_WAIT(T::MediaChannel::ERROR_REC_SRTP_ERROR, error_, 500);
-    error_ = T::MediaChannel::ERROR_NONE;
+    EXPECT_EQ_WAIT(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_, 500);
+    EXPECT_EQ(cricket::SrtpFilter::PROTECT, error_handler.mode_);
+    error_handler.error_ = cricket::SrtpFilter::ERROR_NONE;
     // The next 1 sec failures will not trigger an error.
     EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
     // Wait for a while to ensure no message comes in.
     rtc::Thread::Current()->ProcessMessages(210);
-    EXPECT_EQ(T::MediaChannel::ERROR_NONE, error_);
+    EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_handler.error_);
     // The error will be triggered again.
     EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
-    EXPECT_EQ_WAIT(T::MediaChannel::ERROR_REC_SRTP_ERROR, error_, 500);
+    EXPECT_EQ_WAIT(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_, 500);
+    EXPECT_EQ(cricket::SrtpFilter::PROTECT, error_handler.mode_);
 
     // Testing failures in receiving packets.
-    error_ = T::MediaChannel::ERROR_NONE;
+    error_handler.error_ = cricket::SrtpFilter::ERROR_NONE;
+
     cricket::TransportChannel* transport_channel =
         channel2_->transport_channel();
     transport_channel->SignalReadPacket(
         transport_channel, reinterpret_cast<const char*>(kBadPacket),
         sizeof(kBadPacket), rtc::PacketTime(), 0);
-    EXPECT_EQ_WAIT(T::MediaChannel::ERROR_PLAY_SRTP_ERROR, error_, 500);
+    EXPECT_EQ_WAIT(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_, 500);
+    EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, error_handler.mode_);
   }
 
   void TestOnReadyToSend() {
@@ -1802,9 +1799,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   std::string rtcp_packet_;
   int media_info_callbacks1_;
   int media_info_callbacks2_;
-
-  uint32 ssrc_;
-  typename T::MediaChannel::Error error_;
 };
 
 template<>
@@ -2168,10 +2162,6 @@ TEST_F(VoiceChannelTest, TestFlushRtcp) {
   Base::TestFlushRtcp();
 }
 
-TEST_F(VoiceChannelTest, TestChangeStateError) {
-  Base::TestChangeStateError();
-}
-
 TEST_F(VoiceChannelTest, TestSrtpError) {
   Base::TestSrtpError(kAudioPts[0]);
 }
@@ -2523,8 +2513,6 @@ TEST_F(VideoChannelTest, SendBundleToBundleWithRtcpMuxSecure) {
   Base::SendBundleToBundle(
       kVideoPts, ARRAY_SIZE(kVideoPts), true, true);
 }
-
-// TODO(gangji): Add VideoChannelTest.TestChangeStateError.
 
 TEST_F(VideoChannelTest, TestSrtpError) {
   Base::TestSrtpError(kVideoPts[0]);

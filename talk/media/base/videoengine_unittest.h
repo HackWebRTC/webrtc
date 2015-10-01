@@ -465,7 +465,6 @@ class VideoMediaChannelTest : public testing::Test,
     channel_.reset(
         engine_.CreateChannel(call_.get(), cricket::VideoOptions()));
     EXPECT_TRUE(channel_.get() != NULL);
-    ConnectVideoChannelError();
     network_interface_.SetDestination(channel_.get());
     channel_->SetInterface(&network_interface_);
     media_error_ = cricket::VideoMediaChannel::ERROR_NONE;
@@ -519,10 +518,6 @@ class VideoMediaChannelTest : public testing::Test,
   }
   virtual void TearDown() {
     channel_.reset();
-  }
-  void ConnectVideoChannelError() {
-    channel_->SignalMediaError.connect(this,
-        &VideoMediaChannelTest<E, C>::OnVideoChannelError);
   }
   bool SetDefaultCodec() {
     return SetOneCodec(DefaultCodec());

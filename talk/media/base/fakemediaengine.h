@@ -240,7 +240,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   explicit FakeVoiceMediaChannel(FakeVoiceEngine* engine,
                                  const AudioOptions& options)
       : engine_(engine),
-        fail_set_send_(false),
         time_since_last_typing_(-1) {
     output_scalings_[0] = OutputScaling();  // For default channel.
     SetOptions(options);
@@ -270,9 +269,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     return true;
   }
   virtual bool SetSend(SendFlags flag) {
-    if (fail_set_send_) {
-      return false;
-    }
     return set_sending(flag != SEND_NOTHING);
   }
   virtual bool SetAudioSend(uint32 ssrc, bool enable,
@@ -370,17 +366,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   }
 
   virtual bool GetStats(VoiceMediaInfo* info) { return false; }
-  virtual void GetLastMediaError(uint32* ssrc,
-                                 VoiceMediaChannel::Error* error) {
-    *ssrc = 0;
-    *error = fail_set_send_ ? VoiceMediaChannel::ERROR_REC_DEVICE_OPEN_FAILED
-                            : VoiceMediaChannel::ERROR_NONE;
-  }
-
-  void set_fail_set_send(bool fail) { fail_set_send_ = fail; }
-  void TriggerError(uint32 ssrc, VoiceMediaChannel::Error error) {
-    VoiceMediaChannel::SignalMediaError(ssrc, error);
-  }
 
  private:
   struct OutputScaling {
@@ -458,7 +443,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   std::vector<AudioCodec> send_codecs_;
   std::map<uint32, OutputScaling> output_scalings_;
   std::vector<DtmfInfo> dtmf_info_queue_;
-  bool fail_set_send_;
   int time_since_last_typing_;
   AudioOptions options_;
   std::map<uint32, VoiceChannelAudioSink*> local_renderers_;
