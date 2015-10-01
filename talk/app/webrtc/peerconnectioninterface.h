@@ -137,11 +137,16 @@ class MetricsObserverInterface : public rtc::RefCountInterface {
                                     int counter,
                                     int counter_max) {}
 
+  // This is used to handle sparse counters like SSL cipher suites.
+  // TODO(guoweis): Remove the implementation once the dependency's interface
+  // definition is updated.
+  virtual void IncrementSparseEnumCounter(PeerConnectionEnumCounterType type,
+                                          int counter) {
+    IncrementEnumCounter(type, counter, 0 /* Ignored */);
+  }
+
   virtual void AddHistogramSample(PeerConnectionMetricsName type,
                                   int value) = 0;
-  // TODO(jbauch): Make method abstract when it is implemented by Chromium.
-  virtual void AddHistogramSample(PeerConnectionMetricsName type,
-                                  const std::string& value) {}
 
  protected:
   virtual ~MetricsObserverInterface() {}

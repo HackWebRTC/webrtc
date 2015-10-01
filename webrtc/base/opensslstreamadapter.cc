@@ -51,13 +51,13 @@ struct SrtpCipherMapEntry {
 
 // This isn't elegant, but it's better than an external reference
 static SrtpCipherMapEntry SrtpCipherMap[] = {
-  {"AES_CM_128_HMAC_SHA1_80", "SRTP_AES128_CM_SHA1_80"},
-  {"AES_CM_128_HMAC_SHA1_32", "SRTP_AES128_CM_SHA1_32"},
-  {NULL, NULL}
-};
+    {CS_AES_CM_128_HMAC_SHA1_80, "SRTP_AES128_CM_SHA1_80"},
+    {CS_AES_CM_128_HMAC_SHA1_32, "SRTP_AES128_CM_SHA1_32"},
+    {NULL, NULL}};
 #endif
 
 #ifndef OPENSSL_IS_BORINGSSL
+
 // Cipher name table. Maps internal OpenSSL cipher ids to the RFC name.
 struct SslCipherMapEntry {
   uint32_t openssl_id;
@@ -139,31 +139,41 @@ static const SslCipherMapEntry kSslCipherMap[] = {
 };
 #endif  // #ifndef OPENSSL_IS_BORINGSSL
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4309)
+#pragma warning(disable : 4310)
+#endif  // defined(_MSC_VER)
+
 // Default cipher used between OpenSSL/BoringSSL stream adapters.
 // This needs to be updated when the default of the SSL library changes.
-static const char kDefaultSslCipher10[] =
-    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
-static const char kDefaultSslEcCipher10[] =
-    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA";
-
+// static_cast<uint16_t> causes build warnings on windows platform.
+static uint16_t kDefaultSslCipher10 =
+    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_WITH_AES_256_CBC_SHA);
+static uint16_t kDefaultSslEcCipher10 =
+    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_WITH_AES_256_CBC_SHA);
 #ifdef OPENSSL_IS_BORINGSSL
-static const char kDefaultSslCipher12[] =
-    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
-static const char kDefaultSslEcCipher12[] =
-    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256";
+static uint16_t kDefaultSslCipher12 =
+    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256);
+static uint16_t kDefaultSslEcCipher12 =
+    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256);
 // Fallback cipher for DTLS 1.2 if hardware-accelerated AES-GCM is unavailable.
-static const char kDefaultSslCipher12NoAesGcm[] =
-    "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256";
-static const char kDefaultSslEcCipher12NoAesGcm[] =
-    "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256";
+static uint16_t kDefaultSslCipher12NoAesGcm =
+    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_CHACHA20_POLY1305);
+static uint16_t kDefaultSslEcCipher12NoAesGcm =
+    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_CHACHA20_POLY1305);
 #else  // !OPENSSL_IS_BORINGSSL
 // OpenSSL sorts differently than BoringSSL, so the default cipher doesn't
 // change between TLS 1.0 and TLS 1.2 with the current setup.
-static const char kDefaultSslCipher12[] =
-    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
-static const char kDefaultSslEcCipher12[] =
-    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA";
+static uint16_t kDefaultSslCipher12 =
+    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_WITH_AES_256_CBC_SHA);
+static uint16_t kDefaultSslEcCipher12 =
+    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_WITH_AES_256_CBC_SHA);
 #endif
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif  // defined(_MSC_VER)
 
 //////////////////////////////////////////////////////////////////////
 // StreamBIO
@@ -338,9 +348,17 @@ bool OpenSSLStreamAdapter::SetPeerCertificateDigest(const std::string
   return true;
 }
 
-#ifndef OPENSSL_IS_BORINGSSL
-const char* OpenSSLStreamAdapter::GetRfcSslCipherName(
-    const SSL_CIPHER* cipher) {
+std::string OpenSSLStreamAdapter::GetSslCipherSuiteName(uint16_t cipher) {
+#ifdef OPENSSL_IS_BORINGSSL
+  const SSL_CIPHER* ssl_cipher = SSL_get_cipher_by_value(cipher);
+  if (!ssl_cipher) {
+    return std::string();
+  }
+  char* cipher_name = SSL_CIPHER_get_rfc_name(ssl_cipher);
+  std::string rfc_name = std::string(cipher_name);
+  OPENSSL_free(cipher_name);
+  return rfc_name;
+#else
   ASSERT(cipher != NULL);
   for (const SslCipherMapEntry* entry = kSslCipherMap; entry->rfc_name;
        ++entry) {
@@ -348,11 +366,11 @@ const char* OpenSSLStreamAdapter::GetRfcSslCipherName(
       return entry->rfc_name;
     }
   }
-  return NULL;
-}
+  return std::string();
 #endif
+}
 
-bool OpenSSLStreamAdapter::GetSslCipher(std::string* cipher) {
+bool OpenSSLStreamAdapter::GetSslCipherSuite(uint16_t* cipher) {
   if (state_ != SSL_CONNECTED)
     return false;
 
@@ -361,19 +379,7 @@ bool OpenSSLStreamAdapter::GetSslCipher(std::string* cipher) {
     return false;
   }
 
-#ifdef OPENSSL_IS_BORINGSSL
-  char* cipher_name = SSL_CIPHER_get_rfc_name(current_cipher);
-#else
-  const char* cipher_name = GetRfcSslCipherName(current_cipher);
-#endif
-  if (cipher_name == NULL) {
-    return false;
-  }
-
-  *cipher = cipher_name;
-#ifdef OPENSSL_IS_BORINGSSL
-  OPENSSL_free(cipher_name);
-#endif
+  *cipher = static_cast<uint16_t>(SSL_CIPHER_get_id(current_cipher));
   return true;
 }
 
@@ -1125,7 +1131,7 @@ bool OpenSSLStreamAdapter::HaveExporter() {
 #endif
 }
 
-std::string OpenSSLStreamAdapter::GetDefaultSslCipher(
+uint16_t OpenSSLStreamAdapter::GetDefaultSslCipherForTest(
     SSLProtocolVersion version,
     KeyType key_type) {
   if (key_type == KT_RSA) {
@@ -1163,7 +1169,8 @@ std::string OpenSSLStreamAdapter::GetDefaultSslCipher(
 #endif
     }
   } else {
-    return std::string();
+    RTC_NOTREACHED();
+    return kDefaultSslEcCipher12;
   }
 }
 

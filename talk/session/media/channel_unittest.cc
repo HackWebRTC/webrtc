@@ -1817,8 +1817,8 @@ void ChannelTest<VoiceTraits>::CreateContent(
   audio->set_rtcp_mux((flags & RTCP_MUX) != 0);
   if (flags & SECURE) {
     audio->AddCrypto(cricket::CryptoParams(
-        1, cricket::CS_AES_CM_128_HMAC_SHA1_32,
-        "inline:" + rtc::CreateRandomString(40), ""));
+        1, rtc::CS_AES_CM_128_HMAC_SHA1_32,
+        "inline:" + rtc::CreateRandomString(40), std::string()));
   }
 }
 
@@ -1887,8 +1887,8 @@ void ChannelTest<VideoTraits>::CreateContent(
   video->set_rtcp_mux((flags & RTCP_MUX) != 0);
   if (flags & SECURE) {
     video->AddCrypto(cricket::CryptoParams(
-        1, cricket::CS_AES_CM_128_HMAC_SHA1_80,
-        "inline:" + rtc::CreateRandomString(40), ""));
+        1, rtc::CS_AES_CM_128_HMAC_SHA1_80,
+        "inline:" + rtc::CreateRandomString(40), std::string()));
   }
 }
 
@@ -2580,7 +2580,7 @@ TEST_F(VideoChannelTest, TestApplyViewRequest) {
   // stream1: 0x0x0; stream2: 640x400x30
   request.static_video_views.clear();
   request.static_video_views.push_back(cricket::StaticVideoView(
-      cricket::StreamSelector("", stream2.id), 640, 400, 30));
+      cricket::StreamSelector(std::string(), stream2.id), 640, 400, 30));
   EXPECT_TRUE(channel1_->ApplyViewRequest(request));
   EXPECT_TRUE(media_channel1_->GetSendStreamFormat(kSsrc1, &send_format));
   EXPECT_EQ(0, send_format.width);
@@ -2641,8 +2641,8 @@ void ChannelTest<DataTraits>::CreateContent(
   data->set_rtcp_mux((flags & RTCP_MUX) != 0);
   if (flags & SECURE) {
     data->AddCrypto(cricket::CryptoParams(
-        1, cricket::CS_AES_CM_128_HMAC_SHA1_32,
-        "inline:" + rtc::CreateRandomString(40), ""));
+        1, rtc::CS_AES_CM_128_HMAC_SHA1_32,
+        "inline:" + rtc::CreateRandomString(40), std::string()));
   }
 }
 

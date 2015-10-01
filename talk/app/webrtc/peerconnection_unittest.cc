@@ -1342,21 +1342,22 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12None) {
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
   LocalP2PTest();
 
-  EXPECT_EQ_WAIT(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      initializing_client()->GetDtlsCipherStats(),
-      kMaxWaitForStatsMs);
-  EXPECT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      init_observer->GetStringHistogramSample(webrtc::kAudioSslCipher));
+  EXPECT_EQ_WAIT(rtc::SSLStreamAdapter::GetSslCipherSuiteName(
+                     rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                         rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)),
+                 initializing_client()->GetDtlsCipherStats(),
+                 kMaxWaitForStatsMs);
+  EXPECT_EQ(1, init_observer->GetEnumCounter(
+                   webrtc::kEnumCounterAudioSslCipher,
+                   rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                       rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)));
 
-  EXPECT_EQ_WAIT(
-      kDefaultSrtpCipher,
-      initializing_client()->GetSrtpCipherStats(),
-      kMaxWaitForStatsMs);
-  EXPECT_EQ(
-      kDefaultSrtpCipher,
-      init_observer->GetStringHistogramSample(webrtc::kAudioSrtpCipher));
+  EXPECT_EQ_WAIT(kDefaultSrtpCipher,
+                 initializing_client()->GetSrtpCipherStats(),
+                 kMaxWaitForStatsMs);
+  EXPECT_EQ(1, init_observer->GetEnumCounter(
+                   webrtc::kEnumCounterAudioSrtpCipher,
+                   rtc::GetSrtpCryptoSuiteFromName(kDefaultSrtpCipher)));
 }
 
 // Test that DTLS 1.2 is used if both ends support it.
@@ -1371,21 +1372,22 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Both) {
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
   LocalP2PTest();
 
-  EXPECT_EQ_WAIT(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_12),
-      initializing_client()->GetDtlsCipherStats(),
-      kMaxWaitForStatsMs);
-  EXPECT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_12),
-      init_observer->GetStringHistogramSample(webrtc::kAudioSslCipher));
+  EXPECT_EQ_WAIT(rtc::SSLStreamAdapter::GetSslCipherSuiteName(
+                     rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                         rtc::SSL_PROTOCOL_DTLS_12, rtc::KT_DEFAULT)),
+                 initializing_client()->GetDtlsCipherStats(),
+                 kMaxWaitForStatsMs);
+  EXPECT_EQ(1, init_observer->GetEnumCounter(
+                   webrtc::kEnumCounterAudioSslCipher,
+                   rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                       rtc::SSL_PROTOCOL_DTLS_12, rtc::KT_DEFAULT)));
 
-  EXPECT_EQ_WAIT(
-      kDefaultSrtpCipher,
-      initializing_client()->GetSrtpCipherStats(),
-      kMaxWaitForStatsMs);
-  EXPECT_EQ(
-      kDefaultSrtpCipher,
-      init_observer->GetStringHistogramSample(webrtc::kAudioSrtpCipher));
+  EXPECT_EQ_WAIT(kDefaultSrtpCipher,
+                 initializing_client()->GetSrtpCipherStats(),
+                 kMaxWaitForStatsMs);
+  EXPECT_EQ(1, init_observer->GetEnumCounter(
+                   webrtc::kEnumCounterAudioSrtpCipher,
+                   rtc::GetSrtpCryptoSuiteFromName(kDefaultSrtpCipher)));
 }
 
 // Test that DTLS 1.0 is used if the initator supports DTLS 1.2 and the
@@ -1401,21 +1403,22 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Init) {
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
   LocalP2PTest();
 
-  EXPECT_EQ_WAIT(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      initializing_client()->GetDtlsCipherStats(),
-      kMaxWaitForStatsMs);
-  EXPECT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      init_observer->GetStringHistogramSample(webrtc::kAudioSslCipher));
+  EXPECT_EQ_WAIT(rtc::SSLStreamAdapter::GetSslCipherSuiteName(
+                     rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                         rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)),
+                 initializing_client()->GetDtlsCipherStats(),
+                 kMaxWaitForStatsMs);
+  EXPECT_EQ(1, init_observer->GetEnumCounter(
+                   webrtc::kEnumCounterAudioSslCipher,
+                   rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                       rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)));
 
-  EXPECT_EQ_WAIT(
-      kDefaultSrtpCipher,
-      initializing_client()->GetSrtpCipherStats(),
-      kMaxWaitForStatsMs);
-  EXPECT_EQ(
-      kDefaultSrtpCipher,
-      init_observer->GetStringHistogramSample(webrtc::kAudioSrtpCipher));
+  EXPECT_EQ_WAIT(kDefaultSrtpCipher,
+                 initializing_client()->GetSrtpCipherStats(),
+                 kMaxWaitForStatsMs);
+  EXPECT_EQ(1, init_observer->GetEnumCounter(
+                   webrtc::kEnumCounterAudioSrtpCipher,
+                   rtc::GetSrtpCryptoSuiteFromName(kDefaultSrtpCipher)));
 }
 
 // Test that DTLS 1.0 is used if the initator supports DTLS 1.0 and the
@@ -1431,21 +1434,22 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Recv) {
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
   LocalP2PTest();
 
-  EXPECT_EQ_WAIT(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      initializing_client()->GetDtlsCipherStats(),
-      kMaxWaitForStatsMs);
-  EXPECT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
-      init_observer->GetStringHistogramSample(webrtc::kAudioSslCipher));
+  EXPECT_EQ_WAIT(rtc::SSLStreamAdapter::GetSslCipherSuiteName(
+                     rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                         rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)),
+                 initializing_client()->GetDtlsCipherStats(),
+                 kMaxWaitForStatsMs);
+  EXPECT_EQ(1, init_observer->GetEnumCounter(
+                   webrtc::kEnumCounterAudioSslCipher,
+                   rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                       rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)));
 
-  EXPECT_EQ_WAIT(
-      kDefaultSrtpCipher,
-      initializing_client()->GetSrtpCipherStats(),
-      kMaxWaitForStatsMs);
-  EXPECT_EQ(
-      kDefaultSrtpCipher,
-      init_observer->GetStringHistogramSample(webrtc::kAudioSrtpCipher));
+  EXPECT_EQ_WAIT(kDefaultSrtpCipher,
+                 initializing_client()->GetSrtpCipherStats(),
+                 kMaxWaitForStatsMs);
+  EXPECT_EQ(1, init_observer->GetEnumCounter(
+                   webrtc::kEnumCounterAudioSrtpCipher,
+                   rtc::GetSrtpCryptoSuiteFromName(kDefaultSrtpCipher)));
 }
 
 // This test sets up a call between two parties with audio, video and data.

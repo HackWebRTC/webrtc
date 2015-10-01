@@ -816,9 +816,9 @@ bool BaseChannel::SetDtlsSrtpCiphers(TransportChannel *tc, bool rtcp) {
   // We always use the default SRTP ciphers for RTCP, but we may use different
   // ciphers for RTP depending on the media type.
   if (!rtcp) {
-    GetSrtpCiphers(&ciphers);
+    GetSrtpCryptoSuiteNames(&ciphers);
   } else {
-    GetSupportedDefaultCryptoSuites(&ciphers);
+    GetDefaultSrtpCryptoSuiteNames(&ciphers);
   }
   return tc->SetSrtpCiphers(ciphers);
 }
@@ -841,7 +841,7 @@ bool BaseChannel::SetupDtlsSrtp(bool rtcp_channel) {
 
   std::string selected_cipher;
 
-  if (!channel->GetSrtpCipher(&selected_cipher)) {
+  if (!channel->GetSrtpCryptoSuite(&selected_cipher)) {
     LOG(LS_ERROR) << "No DTLS-SRTP selected cipher";
     return false;
   }
@@ -1627,7 +1627,8 @@ void VoiceChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,
   }
 }
 
-void VoiceChannel::GetSrtpCiphers(std::vector<std::string>* ciphers) const {
+void VoiceChannel::GetSrtpCryptoSuiteNames(
+    std::vector<std::string>* ciphers) const {
   GetSupportedAudioCryptoSuites(ciphers);
 }
 
@@ -2060,7 +2061,8 @@ void VideoChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,
   }
 }
 
-void VideoChannel::GetSrtpCiphers(std::vector<std::string>* ciphers) const {
+void VideoChannel::GetSrtpCryptoSuiteNames(
+    std::vector<std::string>* ciphers) const {
   GetSupportedVideoCryptoSuites(ciphers);
 }
 
@@ -2395,7 +2397,8 @@ void DataChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,
   }
 }
 
-void DataChannel::GetSrtpCiphers(std::vector<std::string>* ciphers) const {
+void DataChannel::GetSrtpCryptoSuiteNames(
+    std::vector<std::string>* ciphers) const {
   GetSupportedDataCryptoSuites(ciphers);
 }
 

@@ -73,8 +73,6 @@ extern "C" debug_module_t mod_aes_hmac;
 
 namespace cricket {
 
-const char CS_AES_CM_128_HMAC_SHA1_80[] = "AES_CM_128_HMAC_SHA1_80";
-const char CS_AES_CM_128_HMAC_SHA1_32[] = "AES_CM_128_HMAC_SHA1_32";
 const int SRTP_MASTER_KEY_BASE64_LEN = SRTP_MASTER_KEY_LEN * 4 / 3;
 const int SRTP_MASTER_KEY_KEY_LEN = 16;
 const int SRTP_MASTER_KEY_SALT_LEN = 14;
@@ -663,10 +661,10 @@ bool SrtpSession::SetKey(int type, const std::string& cs,
   srtp_policy_t policy;
   memset(&policy, 0, sizeof(policy));
 
-  if (cs == CS_AES_CM_128_HMAC_SHA1_80) {
+  if (cs == rtc::CS_AES_CM_128_HMAC_SHA1_80) {
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
-  } else if (cs == CS_AES_CM_128_HMAC_SHA1_32) {
+  } else if (cs == rtc::CS_AES_CM_128_HMAC_SHA1_32) {
     crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);   // rtp is 32,
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // rtcp still 80
   } else {

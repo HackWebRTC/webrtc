@@ -2149,32 +2149,33 @@ void WebRtcSession::ReportNegotiatedCiphers(
   }
 
   const std::string& srtp_cipher = stats.channel_stats[0].srtp_cipher;
-  const std::string& ssl_cipher = stats.channel_stats[0].ssl_cipher;
-  if (srtp_cipher.empty() && ssl_cipher.empty()) {
+  uint16_t ssl_cipher = stats.channel_stats[0].ssl_cipher;
+  if (srtp_cipher.empty() && !ssl_cipher) {
     return;
   }
 
-  PeerConnectionMetricsName srtp_name;
-  PeerConnectionMetricsName ssl_name;
+  PeerConnectionEnumCounterType srtp_counter_type;
+  PeerConnectionEnumCounterType ssl_counter_type;
   if (stats.transport_name == cricket::CN_AUDIO) {
-    srtp_name = kAudioSrtpCipher;
-    ssl_name = kAudioSslCipher;
+    srtp_counter_type = kEnumCounterAudioSrtpCipher;
+    ssl_counter_type = kEnumCounterAudioSslCipher;
   } else if (stats.transport_name == cricket::CN_VIDEO) {
-    srtp_name = kVideoSrtpCipher;
-    ssl_name = kVideoSslCipher;
+    srtp_counter_type = kEnumCounterVideoSrtpCipher;
+    ssl_counter_type = kEnumCounterVideoSslCipher;
   } else if (stats.transport_name == cricket::CN_DATA) {
-    srtp_name = kDataSrtpCipher;
-    ssl_name = kDataSslCipher;
+    srtp_counter_type = kEnumCounterDataSrtpCipher;
+    ssl_counter_type = kEnumCounterDataSslCipher;
   } else {
     RTC_NOTREACHED();
     return;
   }
 
   if (!srtp_cipher.empty()) {
-    metrics_observer_->AddHistogramSample(srtp_name, srtp_cipher);
+    metrics_observer_->IncrementSparseEnumCounter(
+        srtp_counter_type, rtc::GetSrtpCryptoSuiteFromName(srtp_cipher));
   }
-  if (!ssl_cipher.empty()) {
-    metrics_observer_->AddHistogramSample(ssl_name, ssl_cipher);
+  if (ssl_cipher) {
+    metrics_observer_->IncrementSparseEnumCounter(ssl_counter_type, ssl_cipher);
   }
 }
 

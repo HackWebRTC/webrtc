@@ -59,6 +59,11 @@ using webrtc::PeerConnectionInterface;
 using webrtc::StatsReport;
 using webrtc::StatsReports;
 
+namespace {
+// This value comes from openssl/tls1.h
+const uint16_t TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA = 0xC014;
+}  // namespace
+
 namespace cricket {
 
 class ChannelManager;
@@ -647,7 +652,7 @@ class StatsCollectorTest : public testing::Test {
     cricket::TransportChannelStats channel_stats;
     channel_stats.component = 1;
     channel_stats.srtp_cipher = "the-srtp-cipher";
-    channel_stats.ssl_cipher = "the-ssl-cipher";
+    channel_stats.ssl_cipher = TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;
 
     cricket::TransportStats transport_stats;
     transport_stats.transport_name = "audio";
@@ -716,7 +721,9 @@ class StatsCollectorTest : public testing::Test {
         StatsReport::kStatsReportTypeComponent,
         reports,
         StatsReport::kStatsValueNameDtlsCipher);
-    EXPECT_EQ("the-ssl-cipher", dtls_cipher);
+    EXPECT_EQ(rtc::SSLStreamAdapter::GetSslCipherSuiteName(
+                  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA),
+              dtls_cipher);
     std::string srtp_cipher = ExtractStatsValue(
         StatsReport::kStatsReportTypeComponent,
         reports,
