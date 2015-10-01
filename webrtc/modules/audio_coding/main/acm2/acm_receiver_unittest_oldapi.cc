@@ -292,7 +292,14 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(PostdecodingVad)) {
   EXPECT_EQ(AudioFrame::kVadUnknown, frame.vad_activity_);
 }
 
-TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(LastAudioCodec)) {
+#ifdef WEBRTC_CODEC_ISAC
+#define IF_ISAC_FLOAT(x) x
+#else
+#define IF_ISAC_FLOAT(x) DISABLED_##x
+#endif
+
+TEST_F(AcmReceiverTestOldApi,
+       DISABLED_ON_ANDROID(IF_ISAC_FLOAT(LastAudioCodec))) {
   const int kCodecId[] = {
       ACMCodecDB::kISAC, ACMCodecDB::kPCMA, ACMCodecDB::kISACSWB,
       ACMCodecDB::kPCM16Bswb32kHz,

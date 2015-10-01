@@ -15,64 +15,30 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/audio_encoder_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
+#ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
+#endif
+#ifdef WEBRTC_CODEC_ILBC
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"
+#endif
+#ifdef WEBRTC_CODEC_ISACFX
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_decoder_isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
+#endif
+#ifdef WEBRTC_CODEC_ISAC
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_decoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
+#endif
+#ifdef WEBRTC_CODEC_OPUS
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
+#endif
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
+#ifdef WEBRTC_CODEC_RED
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
+#endif
 
 namespace webrtc {
 namespace acm2 {
-
-namespace {
-bool IsIsac(const CodecInst& codec) {
-  return
-#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-      !STR_CASE_CMP(codec.plname, "isac") ||
-#endif
-      false;
-}
-
-bool IsOpus(const CodecInst& codec) {
-  return
-#ifdef WEBRTC_CODEC_OPUS
-      !STR_CASE_CMP(codec.plname, "opus") ||
-#endif
-      false;
-}
-
-bool IsPcmU(const CodecInst& codec) {
-  return !STR_CASE_CMP(codec.plname, "pcmu");
-}
-
-bool IsPcmA(const CodecInst& codec) {
-  return !STR_CASE_CMP(codec.plname, "pcma");
-}
-
-bool IsPcm16B(const CodecInst& codec) {
-  return !STR_CASE_CMP(codec.plname, "l16");
-}
-
-bool IsIlbc(const CodecInst& codec) {
-  return
-#ifdef WEBRTC_CODEC_ILBC
-      !STR_CASE_CMP(codec.plname, "ilbc") ||
-#endif
-      false;
-}
-
-bool IsG722(const CodecInst& codec) {
-  return
-#ifdef WEBRTC_CODEC_G722
-      !STR_CASE_CMP(codec.plname, "g722") ||
-#endif
-      false;
-}
-}  // namespace
 
 CodecOwner::CodecOwner() : external_speech_encoder_(nullptr) {
 }
@@ -93,57 +59,56 @@ rtc::scoped_ptr<AudioDecoder> CreateIsacDecoder(
 #endif
 }
 
-rtc::scoped_ptr<AudioEncoder> CreateIsacEncoder(
-    const CodecInst& speech_inst,
-    LockedIsacBandwidthInfo* bwinfo) {
-#if defined(WEBRTC_CODEC_ISACFX)
-  return rtc_make_scoped_ptr(new AudioEncoderIsacFix(speech_inst, bwinfo));
-#elif defined(WEBRTC_CODEC_ISAC)
-  return rtc_make_scoped_ptr(new AudioEncoderIsac(speech_inst, bwinfo));
-#else
-  FATAL() << "iSAC is not supported.";
-  return rtc::scoped_ptr<AudioEncoderMutable>();
-#endif
-}
-
 // Returns a new speech encoder, or null on error.
 // TODO(kwiberg): Don't handle errors here (bug 5033)
 rtc::scoped_ptr<AudioEncoder> CreateSpeechEncoder(
     const CodecInst& speech_inst,
     LockedIsacBandwidthInfo* bwinfo) {
-  if (IsIsac(speech_inst)) {
-    return CreateIsacEncoder(speech_inst, bwinfo);
-  } else if (IsOpus(speech_inst)) {
+#if defined(WEBRTC_CODEC_ISACFX)
+  if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderIsacFix(speech_inst, bwinfo));
+#endif
+#if defined(WEBRTC_CODEC_ISAC)
+  if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderIsac(speech_inst, bwinfo));
+#endif
+#ifdef WEBRTC_CODEC_OPUS
+  if (STR_CASE_CMP(speech_inst.plname, "opus") == 0)
     return rtc_make_scoped_ptr(new AudioEncoderOpus(speech_inst));
-  } else if (IsPcmU(speech_inst)) {
+#endif
+  if (STR_CASE_CMP(speech_inst.plname, "pcmu") == 0)
     return rtc_make_scoped_ptr(new AudioEncoderPcmU(speech_inst));
-  } else if (IsPcmA(speech_inst)) {
+  if (STR_CASE_CMP(speech_inst.plname, "pcma") == 0)
     return rtc_make_scoped_ptr(new AudioEncoderPcmA(speech_inst));
-  } else if (IsPcm16B(speech_inst)) {
+  if (STR_CASE_CMP(speech_inst.plname, "l16") == 0)
     return rtc_make_scoped_ptr(new AudioEncoderPcm16B(speech_inst));
-  } else if (IsIlbc(speech_inst)) {
+#ifdef WEBRTC_CODEC_ILBC
+  if (STR_CASE_CMP(speech_inst.plname, "ilbc") == 0)
     return rtc_make_scoped_ptr(new AudioEncoderIlbc(speech_inst));
-  } else if (IsG722(speech_inst)) {
+#endif
+#ifdef WEBRTC_CODEC_G722
+  if (STR_CASE_CMP(speech_inst.plname, "g722") == 0)
     return rtc_make_scoped_ptr(new AudioEncoderG722(speech_inst));
-  } else {
-    LOG_F(LS_ERROR) << "Could not create encoder of type "
-                    << speech_inst.plname;
-    return rtc::scoped_ptr<AudioEncoder>();
-  }
+#endif
+  LOG_F(LS_ERROR) << "Could not create encoder of type " << speech_inst.plname;
+  return rtc::scoped_ptr<AudioEncoder>();
 }
 
 AudioEncoder* CreateRedEncoder(int red_payload_type,
                                AudioEncoder* encoder,
                                rtc::scoped_ptr<AudioEncoder>* red_encoder) {
-  if (red_payload_type == -1) {
-    red_encoder->reset();
-    return encoder;
+#ifdef WEBRTC_CODEC_RED
+  if (red_payload_type != -1) {
+    AudioEncoderCopyRed::Config config;
+    config.payload_type = red_payload_type;
+    config.speech_encoder = encoder;
+    red_encoder->reset(new AudioEncoderCopyRed(config));
+    return red_encoder->get();
   }
-  AudioEncoderCopyRed::Config config;
-  config.payload_type = red_payload_type;
-  config.speech_encoder = encoder;
-  red_encoder->reset(new AudioEncoderCopyRed(config));
-  return red_encoder->get();
+#endif
+
+  red_encoder->reset();
+  return encoder;
 }
 
 void CreateCngEncoder(int cng_payload_type,

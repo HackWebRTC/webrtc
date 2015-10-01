@@ -15,13 +15,19 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
+#else
+// Dummy implementation, for when we don't have iSAC.
 namespace webrtc {
+class LockedIsacBandwidthInfo {};
+}
+#endif
 
-class AudioDecoder;
-
+namespace webrtc {
 namespace acm2 {
 
 class CodecOwner {

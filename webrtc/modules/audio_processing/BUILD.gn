@@ -140,6 +140,7 @@ source_set("audio_processing") {
   defines = []
   deps = [
     "../..:webrtc_common",
+    "../audio_coding:isac",
   ]
 
   if (aec_debug_dump) {

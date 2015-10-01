@@ -42,9 +42,13 @@
       'webrtc_vp9_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp9',
       'include_opus%': 1,
       'opus_dir%': '<(DEPTH)/third_party/opus',
+
+      # Enable to use the Mozilla internal settings.
+      'build_with_mozilla%': 0,
     },
     'build_with_chromium%': '<(build_with_chromium)',
     'build_with_libjingle%': '<(build_with_libjingle)',
+    'build_with_mozilla%': '<(build_with_mozilla)',
     'webrtc_root%': '<(webrtc_root)',
     'apk_tests_path%': '<(apk_tests_path)',
     'modules_java_gyp_path%': '<(modules_java_gyp_path)',
@@ -97,9 +101,6 @@
 
     # Disable by default
     'have_dbus_glib%': 0,
-
-    # Enable to use the Mozilla internal settings.
-    'build_with_mozilla%': 0,
 
     # Make it possible to provide custom locations for some libraries.
     'libvpx_dir%': '<(DEPTH)/third_party/libvpx_new',

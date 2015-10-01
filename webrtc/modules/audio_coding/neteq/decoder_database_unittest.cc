@@ -172,8 +172,14 @@ TEST(DecoderDatabase, CheckPayloadTypes) {
   }
 }
 
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+#define IF_ISAC(x) x
+#else
+#define IF_ISAC(x) DISABLED_##x
+#endif
+
 // Test the methods for setting and getting active speech and CNG decoders.
-TEST(DecoderDatabase, ActiveDecoders) {
+TEST(DecoderDatabase, IF_ISAC(ActiveDecoders)) {
   DecoderDatabase db;
   // Load payload types.
   ASSERT_EQ(DecoderDatabase::kOK, db.RegisterPayload(0, kDecoderPCMu));
