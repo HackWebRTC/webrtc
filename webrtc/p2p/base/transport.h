@@ -108,10 +108,10 @@ typedef std::vector<ConnectionInfo> ConnectionInfos;
 
 // Information about a specific channel
 struct TransportChannelStats {
-  int component;
+  int component = 0;
   ConnectionInfos connection_infos;
   std::string srtp_cipher;
-  std::string ssl_cipher;
+  uint16_t ssl_cipher = 0;
 };
 
 // Information about all the channels of a transport.

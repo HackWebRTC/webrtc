@@ -217,7 +217,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
            channels_.begin(); it != channels_.end(); ++it) {
       std::string cipher;
 
-      bool rv = (*it)->GetSrtpCipher(&cipher);
+      bool rv = (*it)->GetSrtpCryptoSuite(&cipher);
       if (negotiated_dtls_ && !expected_cipher.empty()) {
         ASSERT_TRUE(rv);
 
@@ -228,13 +228,13 @@ class DtlsTestClient : public sigslot::has_slots<> {
     }
   }
 
-  void CheckSsl(const std::string& expected_cipher) {
+  void CheckSsl(uint16_t expected_cipher) {
     for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
            channels_.begin(); it != channels_.end(); ++it) {
-      std::string cipher;
+      uint16_t cipher;
 
-      bool rv = (*it)->GetSslCipher(&cipher);
-      if (negotiated_dtls_ && !expected_cipher.empty()) {
+      bool rv = (*it)->GetSslCipherSuite(&cipher);
+      if (negotiated_dtls_ && expected_cipher) {
         ASSERT_TRUE(rv);
 
         ASSERT_EQ(cipher, expected_cipher);
@@ -463,10 +463,10 @@ class DtlsTransportChannelTest : public testing::Test {
       client1_.CheckSrtp("");
       client2_.CheckSrtp("");
     }
-    client1_.CheckSsl(
-        rtc::SSLStreamAdapter::GetDefaultSslCipher(ssl_expected_version_));
-    client2_.CheckSsl(
-        rtc::SSLStreamAdapter::GetDefaultSslCipher(ssl_expected_version_));
+    client1_.CheckSsl(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+        ssl_expected_version_, rtc::KT_DEFAULT));
+    client2_.CheckSsl(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+        ssl_expected_version_, rtc::KT_DEFAULT));
 
     return true;
   }

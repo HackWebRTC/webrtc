@@ -29,6 +29,19 @@
 
 namespace rtc {
 
+// TODO(guoweis): Move this to SDP layer and use int form internally.
+// webrtc:5043.
+const char CS_AES_CM_128_HMAC_SHA1_80[] = "AES_CM_128_HMAC_SHA1_80";
+const char CS_AES_CM_128_HMAC_SHA1_32[] = "AES_CM_128_HMAC_SHA1_32";
+
+uint16_t GetSrtpCryptoSuiteFromName(const std::string& cipher) {
+  if (cipher == CS_AES_CM_128_HMAC_SHA1_32)
+    return SRTP_AES128_CM_SHA1_32;
+  if (cipher == CS_AES_CM_128_HMAC_SHA1_80)
+    return SRTP_AES128_CM_SHA1_80;
+  return 0;
+}
+
 SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
 #if SSL_USE_SCHANNEL
   return NULL;
@@ -39,7 +52,7 @@ SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
 #endif
 }
 
-bool SSLStreamAdapter::GetSslCipher(std::string* cipher) {
+bool SSLStreamAdapter::GetSslCipherSuite(uint16_t* cipher) {
   return false;
 }
 
@@ -66,9 +79,10 @@ bool SSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
 bool SSLStreamAdapter::HaveDtls() { return false; }
 bool SSLStreamAdapter::HaveDtlsSrtp() { return false; }
 bool SSLStreamAdapter::HaveExporter() { return false; }
-std::string SSLStreamAdapter::GetDefaultSslCipher(SSLProtocolVersion version,
-                                                  KeyType key_type) {
-  return std::string();
+uint16_t SSLStreamAdapter::GetDefaultSslCipherForTest(
+    SSLProtocolVersion version,
+    KeyType key_type) {
+  return 0;
 }
 #elif SSL_USE_OPENSSL
 bool SSLStreamAdapter::HaveDtls() {
@@ -80,9 +94,14 @@ bool SSLStreamAdapter::HaveDtlsSrtp() {
 bool SSLStreamAdapter::HaveExporter() {
   return OpenSSLStreamAdapter::HaveExporter();
 }
-std::string SSLStreamAdapter::GetDefaultSslCipher(SSLProtocolVersion version,
-                                                  KeyType key_type) {
-  return OpenSSLStreamAdapter::GetDefaultSslCipher(version, key_type);
+uint16_t SSLStreamAdapter::GetDefaultSslCipherForTest(
+    SSLProtocolVersion version,
+    KeyType key_type) {
+  return OpenSSLStreamAdapter::GetDefaultSslCipherForTest(version, key_type);
+}
+
+std::string SSLStreamAdapter::GetSslCipherSuiteName(uint16_t cipher) {
+  return OpenSSLStreamAdapter::GetSslCipherSuiteName(cipher);
 }
 #endif  // !SSL_USE_SCHANNEL && !SSL_USE_OPENSSL
 

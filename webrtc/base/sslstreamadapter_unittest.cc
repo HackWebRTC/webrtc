@@ -410,11 +410,11 @@ class SSLStreamAdapterTestBase : public testing::Test,
       return server_ssl_->GetPeerCertificate(cert);
   }
 
-  bool GetSslCipher(bool client, std::string *retval) {
+  bool GetSslCipherSuite(bool client, uint16_t* retval) {
     if (client)
-      return client_ssl_->GetSslCipher(retval);
+      return client_ssl_->GetSslCipherSuite(retval);
     else
-      return server_ssl_->GetSslCipher(retval);
+      return server_ssl_->GetSslCipherSuite(retval);
   }
 
   bool ExportKeyingMaterial(const char *label,
@@ -967,70 +967,70 @@ TEST_P(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
 
 // Test getting the used DTLS ciphers.
 // DTLS 1.2 enabled for neither client nor server -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipher) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuite) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
-  std::string client_cipher;
-  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
-  std::string server_cipher;
-  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+  uint16_t client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  uint16_t server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
                 rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
             server_cipher);
 }
 
 // Test getting the used DTLS 1.2 ciphers.
 // DTLS 1.2 enabled for client and server -> DTLS 1.2 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Both) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Both) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
 
-  std::string client_cipher;
-  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
-  std::string server_cipher;
-  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+  uint16_t client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  uint16_t server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
                 rtc::SSL_PROTOCOL_DTLS_12, ::testing::get<1>(GetParam())),
             server_cipher);
 }
 
 // DTLS 1.2 enabled for client only -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Client) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Client) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
 
-  std::string client_cipher;
-  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
-  std::string server_cipher;
-  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+  uint16_t client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  uint16_t server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
                 rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
             server_cipher);
 }
 
 // DTLS 1.2 enabled for server only -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Server) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Server) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
-  std::string client_cipher;
-  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
-  std::string server_cipher;
-  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+  uint16_t client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  uint16_t server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
                 rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
             server_cipher);
 }

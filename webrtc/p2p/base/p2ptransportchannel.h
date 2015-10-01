@@ -111,10 +111,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   }
 
   // Find out which DTLS-SRTP cipher was negotiated.
-  bool GetSrtpCipher(std::string* cipher) override { return false; }
+  bool GetSrtpCryptoSuite(std::string* cipher) override { return false; }
 
   // Find out which DTLS cipher was negotiated.
-  bool GetSslCipher(std::string* cipher) override { return false; }
+  bool GetSslCipherSuite(uint16_t* cipher) override { return false; }
 
   // Returns null because the channel is not encrypted by default.
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {

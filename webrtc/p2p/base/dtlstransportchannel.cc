@@ -186,12 +186,12 @@ bool DtlsTransportChannelWrapper::GetSslRole(rtc::SSLRole* role) const {
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetSslCipher(std::string* cipher) {
+bool DtlsTransportChannelWrapper::GetSslCipherSuite(uint16_t* cipher) {
   if (dtls_state_ != STATE_OPEN) {
     return false;
   }
 
-  return dtls_->GetSslCipher(cipher);
+  return dtls_->GetSslCipherSuite(cipher);
 }
 
 bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
@@ -330,7 +330,7 @@ bool DtlsTransportChannelWrapper::SetSrtpCiphers(
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetSrtpCipher(std::string* cipher) {
+bool DtlsTransportChannelWrapper::GetSrtpCryptoSuite(std::string* cipher) {
   if (dtls_state_ != STATE_OPEN) {
     return false;
   }
