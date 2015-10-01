@@ -1702,7 +1702,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(SendAccept());
     EXPECT_TRUE(channel1_->secure());
     EXPECT_TRUE(channel2_->secure());
-
+    channel2_->srtp_filter()->set_signal_silent_time(250);
     channel2_->srtp_filter()->SignalSrtpError.connect(
         &error_handler, &SrtpErrorHandler::OnSrtpError);
 
@@ -1712,18 +1712,22 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_EQ_WAIT(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_, 500);
     EXPECT_EQ(cricket::SrtpFilter::PROTECT, error_handler.mode_);
     error_handler.error_ = cricket::SrtpFilter::ERROR_NONE;
-    // The next 1 sec failures will not trigger an error.
+    error_handler.mode_ = cricket::SrtpFilter::UNPROTECT;
+    // The next 250 ms failures will not trigger an error.
     EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
     // Wait for a while to ensure no message comes in.
-    rtc::Thread::Current()->ProcessMessages(210);
+    rtc::Thread::Current()->ProcessMessages(200);
     EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_handler.error_);
-    // The error will be triggered again.
+    EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, error_handler.mode_);
+    // Wait for a little more - the error will be triggered again.
+    rtc::Thread::Current()->ProcessMessages(200);
     EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
     EXPECT_EQ_WAIT(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_, 500);
     EXPECT_EQ(cricket::SrtpFilter::PROTECT, error_handler.mode_);
 
     // Testing failures in receiving packets.
     error_handler.error_ = cricket::SrtpFilter::ERROR_NONE;
+    error_handler.mode_ = cricket::SrtpFilter::UNPROTECT;
 
     cricket::TransportChannel* transport_channel =
         channel2_->transport_channel();
