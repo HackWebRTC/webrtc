@@ -448,6 +448,12 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     // (Re)start preview.
     Logging.d(TAG, "Start capturing: " + captureFormat);
     this.captureFormat = captureFormat;
+
+    List<String> focusModes = parameters.getSupportedFocusModes();
+    if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+      parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+    }
+
     camera.setParameters(parameters);
     videoBuffers.queueCameraBuffers(captureFormat.frameSize(), camera);
     camera.setPreviewCallbackWithBuffer(this);
