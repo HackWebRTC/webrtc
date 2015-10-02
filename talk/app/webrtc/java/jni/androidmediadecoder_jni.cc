@@ -37,6 +37,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/interface/i420_buffer_pool.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
@@ -198,7 +199,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, *j_media_codec_video_decoder_class_, "dequeueOutputBuffer",
       "(I)Lorg/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo;");
   j_release_output_buffer_method_ = GetMethodID(
-      jni, *j_media_codec_video_decoder_class_, "releaseOutputBuffer", "(I)Z");
+      jni, *j_media_codec_video_decoder_class_, "releaseOutputBuffer", "(I)V");
 
   j_input_buffers_field_ = GetFieldID(
       jni, *j_media_codec_video_decoder_class_,
@@ -572,16 +573,13 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   // Extract output buffer info from Java DecoderOutputBufferInfo.
   int output_buffer_index =
       GetIntField(jni, j_decoder_output_buffer_info, j_info_index_field_);
-  if (output_buffer_index < 0) {
-    ALOGE("dequeueOutputBuffer error : %d", output_buffer_index);
-    return false;
-  }
+  RTC_CHECK_GE(output_buffer_index, 0);
   int output_buffer_offset =
       GetIntField(jni, j_decoder_output_buffer_info, j_info_offset_field_);
   int output_buffer_size =
       GetIntField(jni, j_decoder_output_buffer_info, j_info_size_field_);
   long output_timestamps_ms = GetLongField(jni, j_decoder_output_buffer_info,
-      j_info_presentation_timestamp_us_field_) / 1000;
+      j_info_presentation_timestamp_us_field_) / rtc::kNumMicrosecsPerMillisec;
   if (CheckException(jni)) {
     return false;
   }
@@ -677,11 +675,11 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       color_format, output_timestamps_ms, frame_decoding_time_ms);
 
   // Return output buffer back to codec.
-  bool success = jni->CallBooleanMethod(
+  jni->CallVoidMethod(
       *j_media_codec_video_decoder_,
       j_release_output_buffer_method_,
       output_buffer_index);
-  if (CheckException(jni) || !success) {
+  if (CheckException(jni)) {
     ALOGE("releaseOutputBuffer error");
     return false;
   }
