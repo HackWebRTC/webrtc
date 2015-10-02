@@ -20,7 +20,6 @@ import sys
 import urllib
 
 
-CHROMIUM_LKGR_URL = 'https://chromium-status.appspot.com/lkgr'
 CHROMIUM_SRC_URL = 'https://chromium.googlesource.com/chromium/src'
 CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
 CHROMIUM_FILE_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s/%s'
@@ -353,7 +352,7 @@ def main():
                  help='Removes any previous local roll branch.')
   p.add_argument('-r', '--revision',
                  help=('Chromium Git revision to roll to. Defaults to the '
-                       'Chromium LKGR revision if omitted.'))
+                       'Chromium HEAD revision if omitted.'))
   p.add_argument('--dry-run', action='store_true', default=False,
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
@@ -379,9 +378,10 @@ def main():
   _EnsureUpdatedMasterBranch(opts.dry_run)
 
   if not opts.revision:
-    lkgr_contents = ReadUrlContent(CHROMIUM_LKGR_URL)
-    logging.info('No revision specified. Using LKGR: %s', lkgr_contents[0])
-    opts.revision = lkgr_contents[0]
+    stdout, _ = _RunCommand(['git', 'ls-remote', CHROMIUM_SRC_URL, 'HEAD'])
+    head_rev = stdout.strip().split('\t')[0]
+    logging.info('No revision specified. Using HEAD: %s', head_rev)
+    opts.revision = head_rev
 
   deps_filename = os.path.join(CHECKOUT_ROOT_DIR, 'DEPS')
   local_deps = ParseLocalDepsFile(deps_filename)
