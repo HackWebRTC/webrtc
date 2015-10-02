@@ -31,6 +31,8 @@ class EchoControlMobileImpl : public EchoControlMobile,
 
   // EchoControlMobile implementation.
   bool is_enabled() const override;
+  RoutingMode routing_mode() const override;
+  bool is_comfort_noise_enabled() const override;
 
   // ProcessingComponent implementation.
   int Initialize() override;
@@ -39,9 +41,7 @@ class EchoControlMobileImpl : public EchoControlMobile,
   // EchoControlMobile implementation.
   int Enable(bool enable) override;
   int set_routing_mode(RoutingMode mode) override;
-  RoutingMode routing_mode() const override;
   int enable_comfort_noise(bool enable) override;
-  bool is_comfort_noise_enabled() const override;
   int SetEchoPath(const void* echo_path, size_t size_bytes) override;
   int GetEchoPath(void* echo_path, size_t size_bytes) const override;
 

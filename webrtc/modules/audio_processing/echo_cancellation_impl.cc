@@ -280,6 +280,14 @@ bool EchoCancellationImpl::is_delay_logging_enabled() const {
   return delay_logging_enabled_;
 }
 
+bool EchoCancellationImpl::is_delay_agnostic_enabled() const {
+  return delay_agnostic_enabled_;
+}
+
+bool EchoCancellationImpl::is_extended_filter_enabled() const {
+  return extended_filter_enabled_;
+}
+
 // TODO(bjornv): How should we handle the multi-channel case?
 int EchoCancellationImpl::GetDelayMetrics(int* median, int* std) {
   float fraction_poor_delays = 0;

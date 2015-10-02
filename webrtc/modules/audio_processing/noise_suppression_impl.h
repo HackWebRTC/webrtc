@@ -32,12 +32,12 @@ class NoiseSuppressionImpl : public NoiseSuppression,
   // NoiseSuppression implementation.
   bool is_enabled() const override;
   float speech_probability() const override;
+  Level level() const override;
 
  private:
   // NoiseSuppression implementation.
   int Enable(bool enable) override;
   int set_level(Level level) override;
-  Level level() const override;
 
   // ProcessingComponent implementation.
   void* CreateHandle() const override;

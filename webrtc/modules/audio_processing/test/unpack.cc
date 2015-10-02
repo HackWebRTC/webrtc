@@ -40,6 +40,11 @@ DEFINE_bool(text,
             false,
             "Write non-audio files as text files instead of binary files.");
 
+#define PRINT_CONFIG(field_name) \
+  if (msg.has_##field_name()) { \
+    fprintf(settings_file, "  " #field_name ": %d\n", msg.field_name()); \
+  }
+
 namespace webrtc {
 
 using audioproc::Event;
@@ -83,6 +88,9 @@ int do_main(int argc, char* argv[]) {
   rtc::scoped_ptr<RawFile> reverse_raw_file;
   rtc::scoped_ptr<RawFile> input_raw_file;
   rtc::scoped_ptr<RawFile> output_raw_file;
+
+  FILE* settings_file = OpenFile(FLAGS_settings_file, "wb");
+
   while (ReadMessageFromFile(debug_file, &event_msg)) {
     if (event_msg.type() == Event::REVERSE_STREAM) {
       if (!event_msg.has_reverse_stream()) {
@@ -217,13 +225,37 @@ int do_main(int argc, char* argv[]) {
           }
         }
       }
+    } else if (event_msg.type() == Event::CONFIG) {
+      if (!event_msg.has_config()) {
+        printf("Corrupt input file: Config missing.\n");
+        return 1;
+      }
+      const audioproc::Config msg = event_msg.config();
+
+      fprintf(settings_file, "APM re-config at frame: %d\n", frame_count);
+
+      PRINT_CONFIG(aec_enabled);
+      PRINT_CONFIG(aec_delay_agnostic_enabled);
+      PRINT_CONFIG(aec_drift_compensation_enabled);
+      PRINT_CONFIG(aec_extended_filter_enabled);
+      PRINT_CONFIG(aec_suppression_level);
+      PRINT_CONFIG(aecm_enabled);
+      PRINT_CONFIG(aecm_comfort_noise_enabled);
+      PRINT_CONFIG(aecm_routing_mode);
+      PRINT_CONFIG(agc_enabled);
+      PRINT_CONFIG(agc_mode);
+      PRINT_CONFIG(agc_limiter_enabled);
+      PRINT_CONFIG(noise_robust_agc_enabled);
+      PRINT_CONFIG(hpf_enabled);
+      PRINT_CONFIG(ns_enabled);
+      PRINT_CONFIG(ns_level);
+      PRINT_CONFIG(transient_suppression_enabled);
     } else if (event_msg.type() == Event::INIT) {
       if (!event_msg.has_init()) {
         printf("Corrupt input file: Init missing.\n");
         return 1;
       }
 
-      static FILE* settings_file = OpenFile(FLAGS_settings_file, "wb");
       const Init msg = event_msg.init();
       // These should print out zeros if they're missing.
       fprintf(settings_file, "Init at frame: %d\n", frame_count);

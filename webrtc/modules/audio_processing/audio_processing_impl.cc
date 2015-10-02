@@ -539,6 +539,8 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
+    RETURN_ON_ERR(WriteConfigMessage(false));
+
     event_msg_->set_type(audioproc::Event::STREAM);
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t channel_size =
@@ -920,10 +922,8 @@ int AudioProcessingImpl::StartDebugRecording(
     return kFileError;
   }
 
-  int err = WriteInitMessage();
-  if (err != kNoError) {
-    return err;
-  }
+  RETURN_ON_ERR(WriteConfigMessage(true));
+  RETURN_ON_ERR(WriteInitMessage());
   return kNoError;
 #else
   return kUnsupportedFunctionError;
@@ -949,10 +949,8 @@ int AudioProcessingImpl::StartDebugRecording(FILE* handle) {
     return kFileError;
   }
 
-  int err = WriteInitMessage();
-  if (err != kNoError) {
-    return err;
-  }
+  RETURN_ON_ERR(WriteConfigMessage(true));
+  RETURN_ON_ERR(WriteInitMessage());
   return kNoError;
 #else
   return kUnsupportedFunctionError;
@@ -1222,11 +1220,52 @@ int AudioProcessingImpl::WriteInitMessage() {
   msg->set_output_sample_rate(api_format_.output_stream().sample_rate_hz());
   // TODO(ekmeyerson): Add reverse output fields to event_msg_.
 
-  int err = WriteMessageToDebugFile();
-  if (err != kNoError) {
-    return err;
+  RETURN_ON_ERR(WriteMessageToDebugFile());
+  return kNoError;
+}
+
+int AudioProcessingImpl::WriteConfigMessage(bool forced) {
+  audioproc::Config config;
+
+  config.set_aec_enabled(echo_cancellation_->is_enabled());
+  config.set_aec_delay_agnostic_enabled(
+      echo_cancellation_->is_delay_agnostic_enabled());
+  config.set_aec_drift_compensation_enabled(
+      echo_cancellation_->is_drift_compensation_enabled());
+  config.set_aec_extended_filter_enabled(
+      echo_cancellation_->is_extended_filter_enabled());
+  config.set_aec_suppression_level(
+      static_cast<int>(echo_cancellation_->suppression_level()));
+
+  config.set_aecm_enabled(echo_control_mobile_->is_enabled());
+  config.set_aecm_comfort_noise_enabled(
+      echo_control_mobile_->is_comfort_noise_enabled());
+  config.set_aecm_routing_mode(
+      static_cast<int>(echo_control_mobile_->routing_mode()));
+
+  config.set_agc_enabled(gain_control_->is_enabled());
+  config.set_agc_mode(static_cast<int>(gain_control_->mode()));
+  config.set_agc_limiter_enabled(gain_control_->is_limiter_enabled());
+  config.set_noise_robust_agc_enabled(use_new_agc_);
+
+  config.set_hpf_enabled(high_pass_filter_->is_enabled());
+
+  config.set_ns_enabled(noise_suppression_->is_enabled());
+  config.set_ns_level(static_cast<int>(noise_suppression_->level()));
+
+  config.set_transient_suppression_enabled(transient_suppressor_enabled_);
+
+  std::string serialized_config = config.SerializeAsString();
+  if (!forced && last_serialized_config_ == serialized_config) {
+    return kNoError;
   }
 
+  last_serialized_config_ = serialized_config;
+
+  event_msg_->set_type(audioproc::Event::CONFIG);
+  event_msg_->mutable_config()->CopyFrom(config);
+
+  RETURN_ON_ERR(WriteMessageToDebugFile());
   return kNoError;
 }
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP

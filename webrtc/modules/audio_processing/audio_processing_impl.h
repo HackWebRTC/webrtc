@@ -162,9 +162,18 @@ class AudioProcessingImpl : public AudioProcessing {
   // out into a separate class with an "enabled" and "disabled" implementation.
   int WriteMessageToDebugFile();
   int WriteInitMessage();
+
+  // Writes Config message. If not |forced|, only writes the current config if
+  // it is different from the last saved one; if |forced|, writes the config
+  // regardless of the last saved.
+  int WriteConfigMessage(bool forced);
+
   rtc::scoped_ptr<FileWrapper> debug_file_;
   rtc::scoped_ptr<audioproc::Event> event_msg_;  // Protobuf message.
   std::string event_str_;  // Memory for protobuf serialization.
+
+  // Serialized string of last saved APM configuration.
+  std::string last_serialized_config_;
 #endif
 
   // Format of processing streams at input/output call sites.
