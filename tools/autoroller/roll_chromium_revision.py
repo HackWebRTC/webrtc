@@ -258,13 +258,17 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, changed_deps_list,
 
   commit_msg = ['Roll chromium_revision %s (%s)' % (rev_interval,
                                                     git_number_interval)]
-
+  # TBR field will be empty unless in some custom cases, where some engineers
+  # are added.
+  tbr_authors = ''
   if changed_deps_list:
     commit_msg.append('\nRelevant changes:')
 
     for c in changed_deps_list:
       commit_msg.append('* %s: %s..%s' % (c.path, c.current_rev[0:7],
                                           c.new_rev[0:7]))
+      if 'libvpx' in c.path:
+        tbr_authors += 'marpan@webrtc.org, stefan@webrtc.org, '
 
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval, 'DEPS')
     commit_msg.append('Details: %s' % change_url)
@@ -275,8 +279,10 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, changed_deps_list,
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval,
                                            CLANG_UPDATE_SCRIPT_URL_PATH)
     commit_msg.append('Details: %s' % change_url)
+    tbr_authors += 'pbos@webrtc.org'
   else:
     commit_msg.append('\nClang version was not updated in this roll.')
+  commit_msg.append('\nTBR=%s\n' % tbr_authors)
   return '\n'.join(commit_msg)
 
 
@@ -306,8 +312,7 @@ def _EnsureUpdatedMasterBranch(dry_run):
       sys.exit(-1)
 
   logging.info('Updating master branch...')
-  if not dry_run:
-    _RunCommand(['git', 'pull'])
+  _RunCommand(['git', 'pull'])
 
 
 def _CreateRollBranch(dry_run):
