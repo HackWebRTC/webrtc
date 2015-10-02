@@ -139,9 +139,9 @@ TEST_F(RtpRtcpAPITest, SSRC) {
 }
 
 TEST_F(RtpRtcpAPITest, RTCP) {
-  EXPECT_EQ(kRtcpOff, module_->RTCP());
-  module_->SetRTCPStatus(kRtcpCompound);
-  EXPECT_EQ(kRtcpCompound, module_->RTCP());
+  EXPECT_EQ(RtcpMode::kOff, module_->RTCP());
+  module_->SetRTCPStatus(RtcpMode::kCompound);
+  EXPECT_EQ(RtcpMode::kCompound, module_->RTCP());
 
   EXPECT_EQ(0, module_->SetCNAME("john.doe@test.test"));
 

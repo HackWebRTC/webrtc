@@ -327,14 +327,14 @@ class RtpRtcp : public Module {
     /*
     *    Get RTCP status
     */
-    virtual RTCPMethod RTCP() const = 0;
+    virtual RtcpMode RTCP() const = 0;
 
     /*
     *   configure RTCP status i.e on(compound or non- compound)/off
     *
     *   method  - RTCP method to use
     */
-    virtual void SetRTCPStatus(RTCPMethod method) = 0;
+    virtual void SetRTCPStatus(RtcpMode method) = 0;
 
     /*
     *   Set RTCP CName (i.e unique identifier)

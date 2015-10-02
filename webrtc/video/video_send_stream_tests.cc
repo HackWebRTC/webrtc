@@ -332,7 +332,7 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
                                &lossy_receive_stats, nullptr,
                                &transport_adapter_);
 
-        rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+        rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
         rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
 
         RTCPSender::FeedbackState feedback_state;
@@ -413,7 +413,7 @@ void VideoSendStreamTest::TestNackRetransmission(
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), &null_stats,
                                nullptr, &transport_adapter_);
 
-        rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+        rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
         rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
 
         RTCPSender::FeedbackState feedback_state;
@@ -600,7 +600,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
                                &lossy_receive_stats, nullptr,
                                &transport_adapter_);
 
-        rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+        rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
         rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
 
         RTCPSender::FeedbackState feedback_state;
@@ -830,7 +830,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       RTCPSender rtcp_sender(false, clock_, &receive_stats, nullptr,
                              &transport_adapter_);
 
-      rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+      rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
       rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
       if (remb_value > 0) {
         rtcp_sender.SetREMBStatus(true);
@@ -889,7 +889,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
       RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), &receive_stats,
                              nullptr, &transport_adapter_);
 
-      rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+      rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
       rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
 
       RTCPSender::FeedbackState feedback_state;
@@ -950,7 +950,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       config.outgoing_transport = &feedback_transport_;
       rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
       rtp_rtcp_->SetREMBStatus(true);
-      rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
+      rtp_rtcp_->SetRTCPStatus(RtcpMode::kReducedSize);
     }
 
     void OnStreamsCreated(

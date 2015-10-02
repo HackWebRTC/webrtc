@@ -472,7 +472,7 @@ int ViEChannel::ReceiveDelay() const {
   return vcm_->Delay();
 }
 
-void ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
+void ViEChannel::SetRTCPMode(const RtcpMode rtcp_mode) {
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     rtp_rtcp->SetRTCPStatus(rtcp_mode);
 }
@@ -518,7 +518,7 @@ void ViEChannel::SetProtectionMode(bool enable_nack,
 void ViEChannel::ProcessNACKRequest(const bool enable) {
   if (enable) {
     // Turn on NACK.
-    if (rtp_rtcp_modules_[0]->RTCP() == kRtcpOff)
+    if (rtp_rtcp_modules_[0]->RTCP() == RtcpMode::kOff)
       return;
     vie_receiver_.SetNackStatus(true, max_nack_reordering_threshold_);
 
@@ -1169,7 +1169,7 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
     RtpRtcp* rtp_rtcp = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_rtcp->SetSendingStatus(false);
     rtp_rtcp->SetSendingMediaStatus(false);
-    rtp_rtcp->SetRTCPStatus(kRtcpCompound);
+    rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
     modules.push_back(rtp_rtcp);
     // Receive statistics and remote bitrate estimator should only be set for
     // the primary (first) module.

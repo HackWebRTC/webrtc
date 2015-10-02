@@ -116,7 +116,7 @@ TEST_F(RtcpFormatRembTest, TestRembStatus) {
 
 TEST_F(RtcpFormatRembTest, TestNonCompund) {
   uint32_t SSRC = 456789;
-  rtcp_sender_->SetRTCPStatus(kRtcpNonCompound);
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   rtcp_sender_->SetREMBData(1234, std::vector<uint32_t>(1, SSRC));
   RTCPSender::FeedbackState feedback_state =
       dummy_rtp_rtcp_impl_->GetFeedbackState();
@@ -125,7 +125,7 @@ TEST_F(RtcpFormatRembTest, TestNonCompund) {
 
 TEST_F(RtcpFormatRembTest, TestCompund) {
   uint32_t SSRCs[2] = {456789, 98765};
-  rtcp_sender_->SetRTCPStatus(kRtcpCompound);
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   rtcp_sender_->SetREMBData(1234, std::vector<uint32_t>(SSRCs, SSRCs + 2));
   RTCPSender::FeedbackState feedback_state =
       dummy_rtp_rtcp_impl_->GetFeedbackState();

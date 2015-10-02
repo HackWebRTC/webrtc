@@ -130,9 +130,8 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD2(RegisterRtcpObservers,
       void(RtcpIntraFrameObserver* intraFrameCallback,
            RtcpBandwidthObserver* bandwidthCallback));
-  MOCK_CONST_METHOD0(RTCP,
-      RTCPMethod());
-  MOCK_METHOD1(SetRTCPStatus, void(const RTCPMethod method));
+  MOCK_CONST_METHOD0(RTCP, RtcpMode());
+  MOCK_METHOD1(SetRTCPStatus, void(const RtcpMode method));
   MOCK_METHOD1(SetCNAME,
       int32_t(const char cName[RTCP_CNAME_SIZE]));
   MOCK_CONST_METHOD2(RemoteCNAME,

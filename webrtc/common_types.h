@@ -893,6 +893,11 @@ class StreamDataCountersCallback {
   virtual void DataCountersUpdated(const StreamDataCounters& counters,
                                    uint32_t ssrc) = 0;
 };
+
+// RTCP mode to use. Compound mode is described by RFC 4585 and reduced-size
+// RTCP mode is described by RFC 5506.
+enum class RtcpMode { kOff, kCompound, kReducedSize };
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_COMMON_TYPES_H_

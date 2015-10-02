@@ -127,8 +127,7 @@ int32_t TestSenderReceiver::InitReceiver (const uint16_t rtpPort,
         exit(1);
     }
 
-    if (_rtp->SetRTCPStatus(kRtcpNonCompound) != 0)
-    {
+    if (_rtp->SetRTCPStatus(RtcpMode::kReducedSize) != 0) {
         throw "_rtp->SetRTCPStatus";
         exit(1);
     }
@@ -343,8 +342,7 @@ int32_t TestSenderReceiver::InitSender (const uint32_t startBitrateKbps,
         exit(1);
     }
 
-    if (_rtp->SetRTCPStatus(kRtcpNonCompound) != 0)
-    {
+    if (_rtp->SetRTCPStatus(RtcpMode::kReducedSize) != 0) {
         throw "_rtp->SetRTCPStatus";
         exit(1);
     }

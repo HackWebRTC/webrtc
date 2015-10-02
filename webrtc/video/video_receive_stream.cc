@@ -63,9 +63,9 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
   std::stringstream ss;
   ss << "{remote_ssrc: " << remote_ssrc;
   ss << ", local_ssrc: " << local_ssrc;
-  ss << ", rtcp_mode: " << (rtcp_mode == newapi::kRtcpCompound
-                                ? "kRtcpCompound"
-                                : "kRtcpReducedSize");
+  ss << ", rtcp_mode: "
+     << (rtcp_mode == RtcpMode::kCompound ? "RtcpMode::kCompound"
+                                          : "RtcpMode::kReducedSize");
   ss << ", rtcp_xr: ";
   ss << "{receiver_reference_time_report: "
      << (rtcp_xr.receiver_reference_time_report ? "on" : "off");
@@ -148,7 +148,10 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   vie_channel_->SetProtectionMode(config_.rtp.nack.rtp_history_ms > 0, false,
                                   -1, -1);
   vie_channel_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
-  SetRtcpMode(config_.rtp.rtcp_mode);
+  RTC_DCHECK(config_.rtp.rtcp_mode != RtcpMode::kOff)
+      << "A stream should not be configured with RTCP disabled. This value is "
+         "reserved for internal usage.";
+  vie_channel_->SetRTCPMode(config_.rtp.rtcp_mode);
 
   RTC_DCHECK(config_.rtp.remote_ssrc != 0);
   // TODO(pbos): What's an appropriate local_ssrc for receive-only streams?
@@ -325,21 +328,9 @@ int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
 }
 
 void VideoReceiveStream::SignalNetworkState(NetworkState state) {
-  if (state == kNetworkUp)
-    SetRtcpMode(config_.rtp.rtcp_mode);
-  if (state == kNetworkDown)
-    vie_channel_->SetRTCPMode(kRtcpOff);
+  vie_channel_->SetRTCPMode(state == kNetworkUp ? config_.rtp.rtcp_mode
+                                                : RtcpMode::kOff);
 }
 
-void VideoReceiveStream::SetRtcpMode(newapi::RtcpMode mode) {
-  switch (mode) {
-    case newapi::kRtcpCompound:
-      vie_channel_->SetRTCPMode(kRtcpCompound);
-      break;
-    case newapi::kRtcpReducedSize:
-      vie_channel_->SetRTCPMode(kRtcpNonCompound);
-      break;
-  }
-}
 }  // namespace internal
 }  // namespace webrtc

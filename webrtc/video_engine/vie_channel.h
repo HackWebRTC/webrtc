@@ -101,7 +101,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Returns the estimated delay in milliseconds.
   int ReceiveDelay() const;
 
-  void SetRTCPMode(const RTCPMethod rtcp_mode);
+  void SetRTCPMode(const RtcpMode rtcp_mode);
   void SetProtectionMode(bool enable_nack,
                          bool enable_fec,
                          int payload_type_red,

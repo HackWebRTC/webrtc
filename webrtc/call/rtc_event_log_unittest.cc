@@ -129,7 +129,7 @@ void VerifyReceiveStreamConfig(const rtclog::Event& event,
   EXPECT_EQ(config.rtp.local_ssrc, receiver_config.local_ssrc());
   // Check RTCP settings.
   ASSERT_TRUE(receiver_config.has_rtcp_mode());
-  if (config.rtp.rtcp_mode == newapi::kRtcpCompound)
+  if (config.rtp.rtcp_mode == RtcpMode::kCompound)
     EXPECT_EQ(rtclog::VideoReceiveConfig::RTCP_COMPOUND,
               receiver_config.rtcp_mode());
   else
@@ -356,8 +356,8 @@ void GenerateVideoReceiveConfig(uint32_t extensions_bitvector,
   config->rtp.remote_ssrc = rand();
   config->rtp.local_ssrc = rand();
   // Add extensions and settings for RTCP.
-  config->rtp.rtcp_mode = rand() % 2 ? newapi::kRtcpCompound
-                                     : newapi::kRtcpReducedSize;
+  config->rtp.rtcp_mode =
+      rand() % 2 ? RtcpMode::kCompound : RtcpMode::kReducedSize;
   config->rtp.rtcp_xr.receiver_reference_time_report = (rand() % 2 == 1);
   config->rtp.remb = (rand() % 2 == 1);
   // Add a map from a payload type to a new ssrc and a new payload type for RTX.

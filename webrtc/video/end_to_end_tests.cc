@@ -74,7 +74,7 @@ class EndToEndTest : public test::CallTest {
 
   void DecodesRetransmittedFrame(bool use_rtx, bool use_red);
   void ReceivesPliAndRecovers(int rtp_history_ms);
-  void RespectsRtcpMode(newapi::RtcpMode rtcp_mode);
+  void RespectsRtcpMode(RtcpMode rtcp_mode);
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
   void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
   void TestRtpStatePreservation(bool use_rtx);
@@ -1054,11 +1054,11 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   receive_transport.StopSending();
 }
 
-void EndToEndTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
+void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
   static const int kNumCompoundRtcpPacketsToObserve = 10;
   class RtcpModeObserver : public test::EndToEndTest {
    public:
-    explicit RtcpModeObserver(newapi::RtcpMode rtcp_mode)
+    explicit RtcpModeObserver(RtcpMode rtcp_mode)
         : EndToEndTest(kDefaultTimeoutMs),
           rtcp_mode_(rtcp_mode),
           sent_rtp_(0),
@@ -1089,10 +1089,10 @@ void EndToEndTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
       }
 
       switch (rtcp_mode_) {
-        case newapi::kRtcpCompound:
+        case RtcpMode::kCompound:
           if (!has_report_block) {
             ADD_FAILURE() << "Received RTCP packet without receiver report for "
-                             "kRtcpCompound.";
+                             "RtcpMode::kCompound.";
             observation_complete_->Set();
           }
 
@@ -1100,9 +1100,12 @@ void EndToEndTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
             observation_complete_->Set();
 
           break;
-        case newapi::kRtcpReducedSize:
+        case RtcpMode::kReducedSize:
           if (!has_report_block)
             observation_complete_->Set();
+          break;
+        case RtcpMode::kOff:
+          RTC_NOTREACHED();
           break;
       }
 
@@ -1119,12 +1122,12 @@ void EndToEndTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
 
     void PerformTest() override {
       EXPECT_EQ(kEventSignaled, Wait())
-          << (rtcp_mode_ == newapi::kRtcpCompound
+          << (rtcp_mode_ == RtcpMode::kCompound
                   ? "Timed out before observing enough compound packets."
                   : "Timed out before receiving a non-compound RTCP packet.");
     }
 
-    newapi::RtcpMode rtcp_mode_;
+    RtcpMode rtcp_mode_;
     int sent_rtp_;
     int sent_rtcp_;
   } test(rtcp_mode);
@@ -1133,11 +1136,11 @@ void EndToEndTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
 }
 
 TEST_F(EndToEndTest, UsesRtcpCompoundMode) {
-  RespectsRtcpMode(newapi::kRtcpCompound);
+  RespectsRtcpMode(RtcpMode::kCompound);
 }
 
 TEST_F(EndToEndTest, UsesRtcpReducedSizeMode) {
-  RespectsRtcpMode(newapi::kRtcpReducedSize);
+  RespectsRtcpMode(RtcpMode::kReducedSize);
 }
 
 // Test sets up a Call multiple senders with different resolutions and SSRCs.
@@ -2036,7 +2039,7 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
     void ModifyConfigs(VideoSendStream::Config* send_config,
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
-      (*receive_configs)[0].rtp.rtcp_mode = newapi::kRtcpReducedSize;
+      (*receive_configs)[0].rtp.rtcp_mode = RtcpMode::kReducedSize;
       (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report =
           enable_rrtr_;
     }
@@ -3112,7 +3115,7 @@ TEST_F(EndToEndTest, VerifyDefaultSendConfigParameters) {
 
 TEST_F(EndToEndTest, VerifyDefaultReceiveConfigParameters) {
   VideoReceiveStream::Config default_receive_config(nullptr);
-  EXPECT_EQ(newapi::kRtcpCompound, default_receive_config.rtp.rtcp_mode)
+  EXPECT_EQ(RtcpMode::kCompound, default_receive_config.rtp.rtcp_mode)
       << "Reduced-size RTCP require rtcp-rsize to be negotiated.";
   EXPECT_FALSE(default_receive_config.rtp.remb)
       << "REMB require rtcp-fb: goog-remb to be negotiated.";

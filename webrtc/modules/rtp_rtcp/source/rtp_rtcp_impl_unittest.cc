@@ -103,7 +103,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     config.rtt_stats = &rtt_stats_;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
-    impl_->SetRTCPStatus(kRtcpCompound);
+    impl_->SetRTCPStatus(RtcpMode::kCompound);
 
     transport_.SimulateNetworkDelay(kOneWayNetworkDelayMs, clock);
   }

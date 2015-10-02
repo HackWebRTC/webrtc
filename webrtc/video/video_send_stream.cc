@@ -442,10 +442,10 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
   // When it goes down, disable RTCP afterwards. This ensures that any packets
   // sent due to the network state changed will not be dropped.
   if (state == kNetworkUp)
-    vie_channel_->SetRTCPMode(kRtcpCompound);
+    vie_channel_->SetRTCPMode(RtcpMode::kCompound);
   vie_encoder_->SetNetworkTransmissionState(state == kNetworkUp);
   if (state == kNetworkDown)
-    vie_channel_->SetRTCPMode(kRtcpOff);
+    vie_channel_->SetRTCPMode(RtcpMode::kOff);
 }
 
 int64_t VideoSendStream::GetRtt() const {

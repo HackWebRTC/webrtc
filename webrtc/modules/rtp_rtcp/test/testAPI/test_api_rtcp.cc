@@ -123,8 +123,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     myRTCPFeedback1->SetModule(module1);
     myRTCPFeedback2->SetModule(module2);
 
-    module1->SetRTCPStatus(kRtcpCompound);
-    module2->SetRTCPStatus(kRtcpCompound);
+    module1->SetRTCPStatus(RtcpMode::kCompound);
+    module2->SetRTCPStatus(RtcpMode::kCompound);
 
     module2->SetSSRC(test_ssrc + 1);
     module1->SetSSRC(test_ssrc);

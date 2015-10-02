@@ -197,7 +197,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
         &rtp_payload_registry_));
 
     rtp_rtcp_module_->SetSSRC(kTestSsrc);
-    rtp_rtcp_module_->SetRTCPStatus(kRtcpCompound);
+    rtp_rtcp_module_->SetRTCPStatus(RtcpMode::kCompound);
     rtp_receiver_->SetNACKStatus(kNackRtcp);
     rtp_rtcp_module_->SetStorePacketsStatus(true, 600);
     EXPECT_EQ(0, rtp_rtcp_module_->SetSendingStatus(true));

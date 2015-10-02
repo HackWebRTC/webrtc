@@ -38,8 +38,8 @@ public:
               ModuleRtpRtcpImpl* owner);
     virtual ~RTCPReceiver();
 
-    RTCPMethod Status() const;
-    void SetRTCPStatus(RTCPMethod method);
+    RtcpMode Status() const;
+    void SetRTCPStatus(RtcpMode method);
 
     int64_t LastReceived();
     int64_t LastReceivedReceiverReport() const;
@@ -239,7 +239,7 @@ protected:
 
   Clock* const _clock;
   const bool receiver_only_;
-  RTCPMethod _method;
+  RtcpMode _method;
   int64_t _lastReceived;
   ModuleRtpRtcpImpl& _rtpRtcp;
 

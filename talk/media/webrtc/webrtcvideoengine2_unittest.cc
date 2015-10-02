@@ -1362,7 +1362,7 @@ TEST_F(WebRtcVideoChannel2Test, AddRecvStreamOnlyUsesOneReceiveStream) {
 
 TEST_F(WebRtcVideoChannel2Test, RtcpIsCompoundByDefault) {
   FakeVideoReceiveStream* stream = AddRecvStream();
-  EXPECT_EQ(webrtc::newapi::kRtcpCompound, stream->GetConfig().rtp.rtcp_mode);
+  EXPECT_EQ(webrtc::RtcpMode::kCompound, stream->GetConfig().rtp.rtcp_mode);
 }
 
 TEST_F(WebRtcVideoChannel2Test, RembIsEnabledByDefault) {

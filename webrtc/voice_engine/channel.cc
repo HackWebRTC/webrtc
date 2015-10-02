@@ -921,7 +921,7 @@ Channel::Init()
     // be transmitted since the Transport object will then be invalid.
     telephone_event_handler_->SetTelephoneEventForwardToDecoder(true);
     // RTCP is enabled by default.
-    _rtpRtcpModule->SetRTCPStatus(kRtcpCompound);
+    _rtpRtcpModule->SetRTCPStatus(RtcpMode::kCompound);
     // --- Register all permanent callbacks
     const bool fail =
         (audio_coding_->RegisterTransportCallback(this) == -1) ||
@@ -2783,14 +2783,14 @@ int Channel::SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
 void Channel::SetRTCPStatus(bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetRTCPStatus()");
-  _rtpRtcpModule->SetRTCPStatus(enable ? kRtcpCompound : kRtcpOff);
+  _rtpRtcpModule->SetRTCPStatus(enable ? RtcpMode::kCompound : RtcpMode::kOff);
 }
 
 int
 Channel::GetRTCPStatus(bool& enabled)
 {
-    RTCPMethod method = _rtpRtcpModule->RTCP();
-    enabled = (method != kRtcpOff);
+  RtcpMode method = _rtpRtcpModule->RTCP();
+  enabled = (method != RtcpMode::kOff);
     return 0;
 }
 
@@ -2936,9 +2936,8 @@ Channel::SendApplicationDefinedRTCPPacket(unsigned char subType,
             "SendApplicationDefinedRTCPPacket() invalid length value");
         return -1;
     }
-    RTCPMethod status = _rtpRtcpModule->RTCP();
-    if (status == kRtcpOff)
-    {
+    RtcpMode status = _rtpRtcpModule->RTCP();
+    if (status == RtcpMode::kOff) {
         _engineStatisticsPtr->SetLastError(
             VE_RTCP_ERROR, kTraceError,
             "SendApplicationDefinedRTCPPacket() RTCP is disabled");
@@ -2968,7 +2967,7 @@ Channel::GetRTPStatistics(
 {
     // The jitter statistics is updated for each received RTP packet and is
     // based on received packets.
-    if (_rtpRtcpModule->RTCP() == kRtcpOff) {
+    if (_rtpRtcpModule->RTCP() == RtcpMode::kOff) {
       // If RTCP is off, there is no timed thread in the RTCP module regularly
       // generating new stats, trigger the update manually here instead.
       StreamStatistician* statistician =
@@ -3039,8 +3038,9 @@ Channel::GetRTPStatistics(CallStatistics& stats)
     RtcpStatistics statistics;
     StreamStatistician* statistician =
         rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
-    if (!statistician || !statistician->GetStatistics(
-        &statistics, _rtpRtcpModule->RTCP() == kRtcpOff)) {
+    if (!statistician ||
+        !statistician->GetStatistics(
+            &statistics, _rtpRtcpModule->RTCP() == RtcpMode::kOff)) {
       _engineStatisticsPtr->SetLastError(
           VE_CANNOT_RETRIEVE_RTP_STAT, kTraceWarning,
           "GetRTPStatistics() failed to read RTP statistics from the "
@@ -3911,8 +3911,8 @@ int32_t Channel::GetPlayoutFrequency() {
 }
 
 int64_t Channel::GetRTT(bool allow_associate_channel) const {
-  RTCPMethod method = _rtpRtcpModule->RTCP();
-  if (method == kRtcpOff) {
+  RtcpMode method = _rtpRtcpModule->RTCP();
+  if (method == RtcpMode::kOff) {
     return 0;
   }
   std::vector<RTCPReportBlock> report_blocks;

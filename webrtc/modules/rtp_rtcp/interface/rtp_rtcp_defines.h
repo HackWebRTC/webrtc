@@ -52,13 +52,6 @@ union PayloadUnion
     VideoPayload Video;
 };
 
-enum RTCPMethod
-{
-    kRtcpOff          = 0,
-    kRtcpCompound     = 1,
-    kRtcpNonCompound = 2
-};
-
 enum RTPAliveType
 {
     kRtpDead   = 0,
