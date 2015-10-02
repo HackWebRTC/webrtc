@@ -25,6 +25,9 @@ CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
 CHROMIUM_LOG_TEMPLATE = CHROMIUM_SRC_URL + '/+log/%s'
 CHROMIUM_FILE_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s/%s'
 
+# Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
+EXTRA_TRYBOTS = 'tryserver.webrtc:win_baremetal,mac_baremetal,linux_baremetal'
+
 COMMIT_POSITION_RE = re.compile('^Cr-Commit-Position: .*#([0-9]+).*$')
 CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION=(\d+)$')
 ROLL_BRANCH_NAME = 'roll_chromium_revision'
@@ -260,11 +263,9 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
   commit_msg.append('Change log: %s' % (CHROMIUM_LOG_TEMPLATE % rev_interval))
   commit_msg.append('Full diff: %s\n' % (CHROMIUM_COMMIT_TEMPLATE %
                                          rev_interval))
-
   # TBR field will be empty unless in some custom cases, where some engineers
   # are added.
   tbr_authors = ''
-
   if changed_deps_list:
     commit_msg.append('Changed dependencies:')
 
@@ -285,12 +286,13 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
                       (clang_change.current_rev, clang_change.new_rev))
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval,
                                            CLANG_UPDATE_SCRIPT_URL_PATH)
-    commit_msg.append('Details: %s' % change_url)
+    commit_msg.append('Details: %s\n' % change_url)
     tbr_authors += 'pbos@webrtc.org'
   else:
-    commit_msg.append('No update to Clang.')
+    commit_msg.append('No update to Clang.\n')
 
-  commit_msg.append('\nTBR=%s\n' % tbr_authors)
+  commit_msg.append('TBR=%s' % tbr_authors)
+  commit_msg.append('CQ_EXTRA_TRYBOTS=%s' % EXTRA_TRYBOTS)
   return '\n'.join(commit_msg)
 
 
@@ -359,6 +361,13 @@ def _LaunchTrybots(dry_run, skip_try):
     _RunCommand(['git', 'cl', 'try'])
 
 
+def _SendToCQ(dry_run, skip_cq):
+  logging.info('Sending the CL to the CQ...')
+  if not dry_run and not skip_cq:
+    _RunCommand(['git', 'cl', 'set_commit'])
+    logging.info('Sent the CL to the CQ.')
+
+
 def main():
   p = argparse.ArgumentParser()
   p.add_argument('--clean', action='store_true', default=False,
@@ -374,7 +383,9 @@ def main():
                  help=('Allow rolling back in time (disabled by default but '
                        'may be useful to be able do to manually).'))
   p.add_argument('-s', '--skip-try', action='store_true', default=False,
-                 help='Do everything except sending tryjobs.')
+                 help='Skip sending tryjobs (default: %(default)s)')
+  p.add_argument('--skip-cq', action='store_true', default=False,
+                 help='Skip sending the CL to the CQ (default: %(default)s)')
   p.add_argument('-v', '--verbose', action='store_true', default=False,
                  help='Be extra verbose in printing of log messages.')
   opts = p.parse_args()
@@ -430,6 +441,7 @@ def main():
   _LocalCommit(commit_msg, opts.dry_run)
   _UploadCL(opts.dry_run)
   _LaunchTrybots(opts.dry_run, opts.skip_try)
+  _SendToCQ(opts.dry_run, opts.skip_cq)
   return 0
 
 
