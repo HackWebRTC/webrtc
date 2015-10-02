@@ -22,6 +22,7 @@ import urllib
 
 CHROMIUM_SRC_URL = 'https://chromium.googlesource.com/chromium/src'
 CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
+CHROMIUM_LOG_TEMPLATE = CHROMIUM_SRC_URL + '/+log/%s'
 CHROMIUM_FILE_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s/%s'
 
 COMMIT_POSITION_RE = re.compile('^Cr-Commit-Position: .*#([0-9]+).*$')
@@ -44,7 +45,8 @@ CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join('tools', 'clang', 'scripts',
                                               'update.sh')
 
 DepsEntry = collections.namedtuple('DepsEntry', 'path url revision')
-ChangedDep = collections.namedtuple('ChangedDep', 'path current_rev new_rev')
+ChangedDep = collections.namedtuple('ChangedDep',
+                                    'path url current_rev new_rev')
 
 
 def ParseDepsDict(deps_content):
@@ -219,9 +221,9 @@ def CalculateChangedDeps(current_deps, new_deps):
           'Should never find more than one entry matching %s in %s, found %d' %
           (entry.path, new_entries, len(new_matching_entries)))
       if not new_matching_entries:
-        result.append(ChangedDep(entry.path, entry.revision, 'None'))
+        result.append(ChangedDep(entry.path, entry.url, entry.revision, 'None'))
       elif entry != new_matching_entries[0]:
-        result.append(ChangedDep(entry.path, entry.revision,
+        result.append(ChangedDep(entry.path, entry.url, entry.revision,
                                  new_matching_entries[0].revision))
   return result
 
@@ -243,45 +245,51 @@ def CalculateChangedClang(new_cr_rev):
   new_clang_update_sh = ReadRemoteCrFile(CLANG_UPDATE_SCRIPT_URL_PATH,
                                          new_cr_rev).splitlines()
   new_rev = GetClangRev(new_clang_update_sh)
-  return ChangedDep(CLANG_UPDATE_SCRIPT_LOCAL_PATH, current_rev, new_rev)
+  return ChangedDep(CLANG_UPDATE_SCRIPT_LOCAL_PATH, None, current_rev, new_rev)
 
 
-def GenerateCommitMessage(current_cr_rev, new_cr_rev, changed_deps_list,
-                          clang_change):
+def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
+                          new_commit_pos, changed_deps_list, clang_change):
   current_cr_rev = current_cr_rev[0:7]
   new_cr_rev = new_cr_rev[0:7]
   rev_interval = '%s..%s' % (current_cr_rev, new_cr_rev)
+  git_number_interval = '%s:%s' % (current_commit_pos, new_commit_pos)
 
-  current_git_number = ParseCommitPosition(ReadRemoteCrCommit(current_cr_rev))
-  new_git_number = ParseCommitPosition(ReadRemoteCrCommit(new_cr_rev))
-  git_number_interval = '%s:%s' % (current_git_number, new_git_number)
-
-  commit_msg = ['Roll chromium_revision %s (%s)' % (rev_interval,
+  commit_msg = ['Roll chromium_revision %s (%s)\n' % (rev_interval,
                                                     git_number_interval)]
+  commit_msg.append('Change log: %s' % (CHROMIUM_LOG_TEMPLATE % rev_interval))
+  commit_msg.append('Full diff: %s\n' % (CHROMIUM_COMMIT_TEMPLATE %
+                                         rev_interval))
+
   # TBR field will be empty unless in some custom cases, where some engineers
   # are added.
   tbr_authors = ''
+
   if changed_deps_list:
-    commit_msg.append('\nRelevant changes:')
+    commit_msg.append('Changed dependencies:')
 
     for c in changed_deps_list:
-      commit_msg.append('* %s: %s..%s' % (c.path, c.current_rev[0:7],
-                                          c.new_rev[0:7]))
+      commit_msg.append('* %s: %s/+log/%s..%s' % (c.path, c.url,
+                                                  c.current_rev[0:7],
+                                                  c.new_rev[0:7]))
       if 'libvpx' in c.path:
         tbr_authors += 'marpan@webrtc.org, stefan@webrtc.org, '
 
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval, 'DEPS')
-    commit_msg.append('Details: %s' % change_url)
+    commit_msg.append('DEPS diff: %s\n' % change_url)
+  else:
+    commit_msg.append('No dependencies changed.')
 
   if clang_change.current_rev != clang_change.new_rev:
-    commit_msg.append('\nClang version changed %s:%s' %
+    commit_msg.append('Clang version changed %s:%s' %
                       (clang_change.current_rev, clang_change.new_rev))
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval,
                                            CLANG_UPDATE_SCRIPT_URL_PATH)
     commit_msg.append('Details: %s' % change_url)
     tbr_authors += 'pbos@webrtc.org'
   else:
-    commit_msg.append('\nClang version was not updated in this roll.')
+    commit_msg.append('No update to Clang.')
+
   commit_msg.append('\nTBR=%s\n' % tbr_authors)
   return '\n'.join(commit_msg)
 
@@ -362,6 +370,9 @@ def main():
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
                        'tryjobs.'))
+  p.add_argument('--allow-reverse', action='store_true', default=False,
+                 help=('Allow rolling back in time (disabled by default but '
+                       'may be useful to be able do to manually).'))
   p.add_argument('-s', '--skip-try', action='store_true', default=False,
                  help='Do everything except sending tryjobs.')
   p.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -382,32 +393,40 @@ def main():
 
   _EnsureUpdatedMasterBranch(opts.dry_run)
 
-  if not opts.revision:
+  new_cr_rev = opts.revision
+  if not new_cr_rev:
     stdout, _ = _RunCommand(['git', 'ls-remote', CHROMIUM_SRC_URL, 'HEAD'])
     head_rev = stdout.strip().split('\t')[0]
     logging.info('No revision specified. Using HEAD: %s', head_rev)
-    opts.revision = head_rev
+    new_cr_rev = head_rev
 
   deps_filename = os.path.join(CHECKOUT_ROOT_DIR, 'DEPS')
   local_deps = ParseLocalDepsFile(deps_filename)
   current_cr_rev = local_deps['vars']['chromium_revision']
 
-  current_cr_deps = ParseRemoteCrDepsFile(current_cr_rev)
-  new_cr_deps = ParseRemoteCrDepsFile(opts.revision)
+  current_commit_pos = ParseCommitPosition(ReadRemoteCrCommit(current_cr_rev))
+  new_commit_pos = ParseCommitPosition(ReadRemoteCrCommit(new_cr_rev))
 
-  changed_deps = sorted(CalculateChangedDeps(current_cr_deps, new_cr_deps))
-  clang_change = CalculateChangedClang(opts.revision)
-  if changed_deps or clang_change:
-    commit_msg = GenerateCommitMessage(current_cr_rev, opts.revision,
+  current_cr_deps = ParseRemoteCrDepsFile(current_cr_rev)
+  new_cr_deps = ParseRemoteCrDepsFile(new_cr_rev)
+
+  if new_commit_pos > current_commit_pos or opts.allow_reverse:
+    changed_deps = sorted(CalculateChangedDeps(current_cr_deps, new_cr_deps))
+    clang_change = CalculateChangedClang(new_cr_rev)
+    commit_msg = GenerateCommitMessage(current_cr_rev, new_cr_rev,
+                                       current_commit_pos, new_commit_pos,
                                        changed_deps, clang_change)
     logging.debug('Commit message:\n%s', commit_msg)
   else:
-    logging.info('No deps changes detected when rolling from %s to %s. '
-                 'Aborting without action.', current_cr_rev, opts.revision)
+    logging.info('Currently pinned chromium_revision: %s (#%s) is newer than '
+                 '%s (#%s). To roll to older revisions, you must pass the '
+                 '--allow-reverse flag.\n'
+                 'Aborting without action.', current_cr_rev, current_commit_pos,
+                 new_cr_rev, new_commit_pos)
     return 0
 
   _CreateRollBranch(opts.dry_run)
-  UpdateDeps(deps_filename, current_cr_rev, opts.revision)
+  UpdateDeps(deps_filename, current_cr_rev, new_cr_rev)
   _LocalCommit(commit_msg, opts.dry_run)
   _UploadCL(opts.dry_run)
   _LaunchTrybots(opts.dry_run, opts.skip_try)
