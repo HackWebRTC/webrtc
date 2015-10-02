@@ -118,16 +118,12 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
     experimental_ns_enabled_ = config.Get<webrtc::ExperimentalNs>().enabled;
   }
 
-  WEBRTC_STUB(set_sample_rate_hz, (int rate));
-  WEBRTC_STUB_CONST(input_sample_rate_hz, ());
-  WEBRTC_STUB_CONST(sample_rate_hz, ());
   WEBRTC_STUB_CONST(proc_sample_rate_hz, ());
   WEBRTC_STUB_CONST(proc_split_sample_rate_hz, ());
   WEBRTC_STUB_CONST(num_input_channels, ());
   WEBRTC_STUB_CONST(num_output_channels, ());
   WEBRTC_STUB_CONST(num_reverse_channels, ());
   WEBRTC_VOID_STUB(set_output_will_be_muted, (bool muted));
-  WEBRTC_BOOL_STUB_CONST(output_will_be_muted, ());
   WEBRTC_STUB(ProcessStream, (webrtc::AudioFrame* frame));
   WEBRTC_STUB(ProcessStream, (
       const float* const* src,
@@ -158,7 +154,6 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB_CONST(stream_delay_ms, ());
   WEBRTC_BOOL_STUB_CONST(was_stream_delay_set, ());
   WEBRTC_VOID_STUB(set_stream_key_pressed, (bool key_pressed));
-  WEBRTC_BOOL_STUB_CONST(stream_key_pressed, ());
   WEBRTC_VOID_STUB(set_delay_offset_ms, (int offset));
   WEBRTC_STUB_CONST(delay_offset_ms, ());
   WEBRTC_STUB(StartDebugRecording, (const char filename[kMaxFilenameSize]));

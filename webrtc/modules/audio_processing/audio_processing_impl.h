@@ -68,16 +68,12 @@ class AudioProcessingImpl : public AudioProcessing {
                  ChannelLayout reverse_layout) override;
   int Initialize(const ProcessingConfig& processing_config) override;
   void SetExtraOptions(const Config& config) override;
-  int set_sample_rate_hz(int rate) override;
-  int input_sample_rate_hz() const override;
-  int sample_rate_hz() const override;
   int proc_sample_rate_hz() const override;
   int proc_split_sample_rate_hz() const override;
   int num_input_channels() const override;
   int num_output_channels() const override;
   int num_reverse_channels() const override;
   void set_output_will_be_muted(bool muted) override;
-  bool output_will_be_muted() const override;
   int ProcessStream(AudioFrame* frame) override;
   int ProcessStream(const float* const* src,
                     size_t samples_per_channel,
@@ -106,7 +102,6 @@ class AudioProcessingImpl : public AudioProcessing {
   void set_delay_offset_ms(int offset) override;
   int delay_offset_ms() const override;
   void set_stream_key_pressed(bool key_pressed) override;
-  bool stream_key_pressed() const override;
   int StartDebugRecording(const char filename[kMaxFilenameSize]) override;
   int StartDebugRecording(FILE* handle) override;
   int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) override;

@@ -281,15 +281,6 @@ int AudioProcessingImpl::Initialize() {
   return InitializeLocked();
 }
 
-int AudioProcessingImpl::set_sample_rate_hz(int rate) {
-  CriticalSectionScoped crit_scoped(crit_);
-
-  ProcessingConfig processing_config = api_format_;
-  processing_config.input_stream().set_sample_rate_hz(rate);
-  processing_config.output_stream().set_sample_rate_hz(rate);
-  return InitializeLocked(processing_config);
-}
-
 int AudioProcessingImpl::Initialize(int input_sample_rate_hz,
                                     int output_sample_rate_hz,
                                     int reverse_sample_rate_hz,
@@ -475,15 +466,6 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
   }
 }
 
-int AudioProcessingImpl::input_sample_rate_hz() const {
-  CriticalSectionScoped crit_scoped(crit_);
-  return api_format_.input_stream().sample_rate_hz();
-}
-
-int AudioProcessingImpl::sample_rate_hz() const {
-  CriticalSectionScoped crit_scoped(crit_);
-  return api_format_.input_stream().sample_rate_hz();
-}
 
 int AudioProcessingImpl::proc_sample_rate_hz() const {
   return fwd_proc_format_.sample_rate_hz();
@@ -513,10 +495,6 @@ void AudioProcessingImpl::set_output_will_be_muted(bool muted) {
   }
 }
 
-bool AudioProcessingImpl::output_will_be_muted() const {
-  CriticalSectionScoped lock(crit_);
-  return output_will_be_muted_;
-}
 
 int AudioProcessingImpl::ProcessStream(const float* const* src,
                                        size_t samples_per_channel,
@@ -909,10 +887,6 @@ bool AudioProcessingImpl::was_stream_delay_set() const {
 
 void AudioProcessingImpl::set_stream_key_pressed(bool key_pressed) {
   key_pressed_ = key_pressed;
-}
-
-bool AudioProcessingImpl::stream_key_pressed() const {
-  return key_pressed_;
 }
 
 void AudioProcessingImpl::set_delay_offset_ms(int offset) {

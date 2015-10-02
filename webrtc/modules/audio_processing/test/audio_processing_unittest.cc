@@ -902,7 +902,6 @@ TEST_F(ApmTest, SampleRatesInt) {
   for (size_t i = 0; i < sizeof(fs) / sizeof(*fs); i++) {
     SetContainerFormat(fs[i], 2, frame_, &float_cb_);
     EXPECT_NOERR(ProcessStreamChooser(kIntFormat));
-    EXPECT_EQ(fs[i], apm_->input_sample_rate_hz());
   }
 }
 
