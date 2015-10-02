@@ -68,12 +68,10 @@ RampUpTester::RampUpTester(size_t num_streams,
     for (size_t i = 0; i < ssrcs_.size(); ++i)
       rtx_ssrc_map_[rtx_ssrcs_[i]] = ssrcs_[i];
   }
-  poller_thread_->Start();
 }
 
 RampUpTester::~RampUpTester() {
   event_.Set();
-  poller_thread_->Stop();
 }
 
 Call::Config RampUpTester::GetSenderCallConfig() {
@@ -264,11 +262,13 @@ void RampUpTester::TriggerTestDone() {
 }
 
 void RampUpTester::PerformTest() {
+  poller_thread_->Start();
   if (Wait() != kEventSignaled) {
     printf("Timed out while waiting for ramp-up to complete.");
     return;
   }
   TriggerTestDone();
+  poller_thread_->Stop();
 }
 
 RampUpDownUpTester::RampUpDownUpTester(size_t num_streams,
