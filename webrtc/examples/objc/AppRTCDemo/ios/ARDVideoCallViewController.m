@@ -31,10 +31,14 @@
 
 @synthesize videoCallView = _videoCallView;
 
-- (instancetype)initForRoom:(NSString *)room {
+- (instancetype)initForRoom:(NSString *)room
+                 isLoopback:(BOOL)isLoopback
+                isAudioOnly:(BOOL)isAudioOnly {
   if (self = [super init]) {
     _client = [[ARDAppClient alloc] initWithDelegate:self];
-    [_client connectToRoomWithId:room options:nil];
+    [_client connectToRoomWithId:room
+                      isLoopback:isLoopback
+                     isAudioOnly:isAudioOnly];
   }
   return self;
 }

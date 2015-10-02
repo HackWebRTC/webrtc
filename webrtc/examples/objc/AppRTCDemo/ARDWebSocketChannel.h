@@ -29,3 +29,13 @@
 - (void)sendMessage:(ARDSignalingMessage *)message;
 
 @end
+
+// Loopback mode is used to cause the client to connect to itself for testing.
+// A second web socket connection is established simulating the other client.
+// Any messages received are sent back to the WebSocket server after modifying
+// them as appropriate.
+@interface ARDLoopbackWebSocketChannel : ARDWebSocketChannel
+
+- (instancetype)initWithURL:(NSURL *)url restURL:(NSURL *)restURL;
+
+@end

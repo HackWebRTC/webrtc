@@ -61,11 +61,11 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 - (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate;
 
 // Establishes a connection with the AppRTC servers for the given room id.
-// TODO(tkchin): provide available keys/values for options. This will be used
-// for call configurations such as overriding server choice, specifying codecs
-// and so on.
+// If |isLoopback| is true, the call will connect to itself.
+// If |isAudioOnly| is true, video will be disabled for the call.
 - (void)connectToRoomWithId:(NSString *)roomId
-                    options:(NSDictionary *)options;
+                 isLoopback:(BOOL)isLoopback
+                isAudioOnly:(BOOL)isAudioOnly;
 
 // Disconnects from the AppRTC servers and any connected clients.
 - (void)disconnect;

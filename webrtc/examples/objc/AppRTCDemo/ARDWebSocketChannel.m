@@ -13,6 +13,7 @@
 #import "RTCLogging.h"
 #import "SRWebSocket.h"
 
+#import "ARDSignalingMessage.h"
 #import "ARDUtilities.h"
 
 // TODO(tkchin): move these to a configuration object.
@@ -197,3 +198,53 @@ static NSString const *kARDWSSMessagePayloadKey = @"msg";
 }
 
 @end
+
+@interface ARDLoopbackWebSocketChannel () <ARDSignalingChannelDelegate>
+@end
+
+@implementation ARDLoopbackWebSocketChannel
+
+- (instancetype)initWithURL:(NSURL *)url restURL:(NSURL *)restURL {
+  return [super initWithURL:url restURL:restURL delegate:self];
+}
+
+#pragma mark - ARDSignalingChannelDelegate
+
+- (void)channel:(id<ARDSignalingChannel>)channel
+    didReceiveMessage:(ARDSignalingMessage *)message {
+  switch (message.type) {
+    case kARDSignalingMessageTypeOffer: {
+      // Change message to answer, send back to server.
+      ARDSessionDescriptionMessage *sdpMessage =
+          (ARDSessionDescriptionMessage *)message;
+      RTCSessionDescription *description = sdpMessage.sessionDescription;
+      NSString *dsc = description.description;
+      dsc = [dsc stringByReplacingOccurrencesOfString:@"offer"
+                                           withString:@"answer"];
+      RTCSessionDescription *answerDescription =
+          [[RTCSessionDescription alloc] initWithType:@"answer" sdp:dsc];
+      ARDSignalingMessage *answer =
+          [[ARDSessionDescriptionMessage alloc]
+               initWithDescription:answerDescription];
+      [self sendMessage:answer];
+      break;
+    }
+    case kARDSignalingMessageTypeAnswer:
+      // Should not receive answer in loopback scenario.
+      break;
+    case kARDSignalingMessageTypeCandidate:
+      // Send back to server.
+      [self sendMessage:message];
+      break;
+    case kARDSignalingMessageTypeBye:
+      // Nothing to do.
+      return;
+  }
+}
+
+- (void)channel:(id<ARDSignalingChannel>)channel
+    didChangeState:(ARDSignalingChannelState)state {
+}
+
+@end
+

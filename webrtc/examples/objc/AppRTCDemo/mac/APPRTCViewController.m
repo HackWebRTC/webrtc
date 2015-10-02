@@ -280,7 +280,7 @@ static NSUInteger const kLogViewHeight = 280;
         didEnterRoomId:(NSString*)roomId {
   [_client disconnect];
   ARDAppClient *client = [[ARDAppClient alloc] initWithDelegate:self];
-  [client connectToRoomWithId:roomId options:nil];
+  [client connectToRoomWithId:roomId isLoopback:NO isAudioOnly:NO];
   _client = client;
 }
 

@@ -138,7 +138,7 @@
                                                   NSError *error);
     [invocation getArgument:&completionHandler atIndex:3];
     completionHandler(joinResponse, nil);
-  }] joinRoomWithRoomId:roomId completionHandler:[OCMArg any]];
+  }] joinRoomWithRoomId:roomId isLoopback:NO completionHandler:[OCMArg any]];
 
   // Return message response from above on join.
   [[[mockRoomServerClient stub] andDo:^(NSInvocation *invocation) {
@@ -278,8 +278,8 @@
   weakAnswerer = answerer;
 
   // Kick off connection.
-  [caller connectToRoomWithId:roomId options:nil];
-  [answerer connectToRoomWithId:roomId options:nil];
+  [caller connectToRoomWithId:roomId isLoopback:NO isAudioOnly:NO];
+  [answerer connectToRoomWithId:roomId isLoopback:NO isAudioOnly:NO];
   [self waitForExpectationsWithTimeout:20 handler:^(NSError *error) {
     if (error) {
       NSLog(@"Expectations error: %@", error);

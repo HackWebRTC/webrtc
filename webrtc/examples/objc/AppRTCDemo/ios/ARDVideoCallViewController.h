@@ -12,6 +12,8 @@
 
 @interface ARDVideoCallViewController : UIViewController
 
-- (instancetype)initForRoom:(NSString *)room;
+- (instancetype)initForRoom:(NSString *)room
+                 isLoopback:(BOOL)isLoopback
+                isAudioOnly:(BOOL)isAudioOnly;
 
 @end

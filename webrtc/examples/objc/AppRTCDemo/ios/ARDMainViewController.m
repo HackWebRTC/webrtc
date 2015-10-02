@@ -32,8 +32,12 @@
 
 #pragma mark - ARDMainViewDelegate
 
-- (void)mainView:(ARDMainView *)mainView didInputRoom:(NSString *)room {
+- (void)mainView:(ARDMainView *)mainView
+    didInputRoom:(NSString *)room
+      isLoopback:(BOOL)isLoopback
+     isAudioOnly:(BOOL)isAudioOnly {
   if (!room.length) {
+    [self showAlertWithMessage:@"Missing room name."];
     return;
   }
   // Trim whitespaces.
@@ -63,7 +67,9 @@
 
   // Kick off the video call.
   ARDVideoCallViewController *videoCallViewController =
-      [[ARDVideoCallViewController alloc] initForRoom:trimmedRoom];
+      [[ARDVideoCallViewController alloc] initForRoom:trimmedRoom
+                                           isLoopback:isLoopback
+                                          isAudioOnly:isAudioOnly];
   videoCallViewController.modalTransitionStyle =
       UIModalTransitionStyleCrossDissolve;
   [self presentViewController:videoCallViewController

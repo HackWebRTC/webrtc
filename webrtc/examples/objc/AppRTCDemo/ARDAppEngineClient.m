@@ -22,6 +22,8 @@ static NSString * const kARDRoomServerHostUrl =
     @"https://apprtc.appspot.com";
 static NSString * const kARDRoomServerJoinFormat =
     @"https://apprtc.appspot.com/join/%@";
+static NSString * const kARDRoomServerJoinFormatLoopback =
+    @"https://apprtc.appspot.com/join/%@?debug=loopback";
 static NSString * const kARDRoomServerMessageFormat =
     @"https://apprtc.appspot.com/message/%@/%@";
 static NSString * const kARDRoomServerLeaveFormat =
@@ -35,12 +37,20 @@ static NSInteger const kARDAppEngineClientErrorBadResponse = -1;
 #pragma mark - ARDRoomServerClient
 
 - (void)joinRoomWithRoomId:(NSString *)roomId
+                isLoopback:(BOOL)isLoopback
          completionHandler:(void (^)(ARDJoinResponse *response,
                                      NSError *error))completionHandler {
   NSParameterAssert(roomId.length);
 
-  NSString *urlString =
-      [NSString stringWithFormat:kARDRoomServerJoinFormat, roomId];
+  NSString *urlString = nil;
+  if (isLoopback) {
+    urlString =
+        [NSString stringWithFormat:kARDRoomServerJoinFormatLoopback, roomId];
+  } else {
+    urlString =
+        [NSString stringWithFormat:kARDRoomServerJoinFormat, roomId];
+  }
+
   NSURL *roomURL = [NSURL URLWithString:urlString];
   RTCLog(@"Joining room:%@ on room server.", roomId);
   NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:roomURL];
