@@ -223,7 +223,9 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool GetStats(VoiceMediaInfo* info) override;
 
   // implements Transport interface
-  bool SendRtp(const uint8_t* data, size_t len) override {
+  bool SendRtp(const uint8_t* data,
+               size_t len,
+               const webrtc::PacketOptions& options) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
     return VoiceMediaChannel::SendPacket(&packet);

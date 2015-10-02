@@ -1658,7 +1658,9 @@ void WebRtcVideoChannel2::OnLoadUpdate(Load load) {
   }
 }
 
-bool WebRtcVideoChannel2::SendRtp(const uint8_t* data, size_t len) {
+bool WebRtcVideoChannel2::SendRtp(const uint8_t* data,
+                                  size_t len,
+                                  const webrtc::PacketOptions& options) {
   rtc::Buffer packet(data, len, kMaxRtpPacketLen);
   return MediaChannel::SendPacket(&packet);
 }

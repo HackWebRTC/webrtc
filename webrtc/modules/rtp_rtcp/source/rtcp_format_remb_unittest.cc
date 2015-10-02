@@ -32,7 +32,9 @@ class TestTransport : public Transport {
     rtcp_receiver_(rtcp_receiver) {
   }
 
-  bool SendRtp(const uint8_t* /*data*/, size_t /*len*/) override {
+  bool SendRtp(const uint8_t* /*data*/,
+               size_t /*len*/,
+               const PacketOptions& options) override {
     return false;
   }
   bool SendRtcp(const uint8_t* packet, size_t packetLength) override {

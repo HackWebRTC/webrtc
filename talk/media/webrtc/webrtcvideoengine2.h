@@ -464,7 +464,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   void Construct(webrtc::Call* call, WebRtcVideoEngine2* engine);
   void SetDefaultOptions();
 
-  bool SendRtp(const uint8_t* data, size_t len) override;
+  bool SendRtp(const uint8_t* data,
+               size_t len,
+               const webrtc::PacketOptions& options) override;
   bool SendRtcp(const uint8_t* data, size_t len) override;
 
   void StartAllSendStreams();

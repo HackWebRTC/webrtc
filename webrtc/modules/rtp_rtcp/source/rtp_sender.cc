@@ -662,18 +662,18 @@ size_t RTPSender::SendPadData(size_t bytes,
 
     UpdateAbsoluteSendTime(padding_packet, length, rtp_header, now_ms);
 
-    uint16_t transport_seq = 0;
+    PacketOptions options;
     if (using_transport_seq) {
-      transport_seq =
+      options.packet_id =
           UpdateTransportSequenceNumber(padding_packet, length, rtp_header);
     }
 
-    if (!SendPacketToNetwork(padding_packet, length))
+    if (!SendPacketToNetwork(padding_packet, length, options))
       break;
 
     if (using_transport_seq && transport_feedback_observer_) {
-      transport_feedback_observer_->OnPacketSent(
-          PacketInfo(0, now_ms, transport_seq, length, true));
+      transport_feedback_observer_->OnPacketSent(PacketInfo(
+          0, now_ms, options.packet_id, length, true));
     }
 
     bytes_sent += padding_bytes_in_packet;
@@ -732,11 +732,14 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
   return static_cast<int32_t>(length);
 }
 
-bool RTPSender::SendPacketToNetwork(const uint8_t *packet, size_t size) {
+bool RTPSender::SendPacketToNetwork(const uint8_t* packet,
+                                    size_t size,
+                                    const PacketOptions& options) {
   int bytes_sent = -1;
   if (transport_) {
-    bytes_sent =
-        transport_->SendRtp(packet, size) ? static_cast<int>(size) : -1;
+    bytes_sent = transport_->SendRtp(packet, size, options)
+                     ? static_cast<int>(size)
+                     : -1;
   }
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "RTPSender::SendPacketToNetwork", "size", size, "sent",
@@ -916,25 +919,25 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
                                diff_ms);
   UpdateAbsoluteSendTime(buffer_to_send_ptr, length, rtp_header, now_ms);
 
-  uint16_t transport_seq = 0;
   // TODO(sprang): Potentially too much overhead in IsRegistered()?
   bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
                                  kRtpExtensionTransportSequenceNumber) &&
                              transport_sequence_number_allocator_ &&
                              !is_retransmit;
+  PacketOptions options;
   if (using_transport_seq) {
-    transport_seq =
+    options.packet_id =
         UpdateTransportSequenceNumber(buffer_to_send_ptr, length, rtp_header);
   }
 
-  bool ret = SendPacketToNetwork(buffer_to_send_ptr, length);
+  bool ret = SendPacketToNetwork(buffer_to_send_ptr, length, options);
   if (ret) {
     CriticalSectionScoped lock(send_critsect_.get());
     media_has_been_sent_ = true;
   }
   if (using_transport_seq && transport_feedback_observer_) {
     transport_feedback_observer_->OnPacketSent(
-        PacketInfo(0, now_ms, transport_seq, length, true));
+        PacketInfo(0, now_ms, options.packet_id, length, true));
   }
   UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, send_over_rtx,
                  is_retransmit);
@@ -1058,7 +1061,7 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
   }
 
   size_t length = payload_length + rtp_header_length;
-  bool sent = SendPacketToNetwork(buffer, length);
+  bool sent = SendPacketToNetwork(buffer, length, PacketOptions());
 
   if (storage != kDontStore) {
     // Mark the packet as sent in the history even if send failed. Dropping a

@@ -78,7 +78,9 @@ class LoopbackTransportTest : public webrtc::Transport {
   ~LoopbackTransportTest() {
     STLDeleteContainerPointers(sent_packets_.begin(), sent_packets_.end());
   }
-  bool SendRtp(const uint8_t *data, size_t len) override {
+  bool SendRtp(const uint8_t* data,
+               size_t len,
+               const PacketOptions& options) override {
     packets_sent_++;
     rtc::Buffer* buffer =
         new rtc::Buffer(reinterpret_cast<const uint8_t*>(data), len);
@@ -864,25 +866,26 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   // Send 10 packets of increasing size.
   for (size_t i = 0; i < kNumPayloadSizes; ++i) {
     int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-    EXPECT_CALL(transport, SendRtp(_, _)).WillOnce(testing::Return(true));
+    EXPECT_CALL(transport, SendRtp(_, _, _)).WillOnce(testing::Return(true));
     SendPacket(capture_time_ms, kPayloadSizes[i]);
     rtp_sender_->TimeToSendPacket(seq_num++, capture_time_ms, false);
     fake_clock_.AdvanceTimeMilliseconds(33);
   }
   // The amount of padding to send it too small to send a payload packet.
-  EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len))
+  EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
       .WillOnce(testing::Return(true));
   EXPECT_EQ(kMaxPaddingSize, rtp_sender_->TimeToSendPadding(49));
 
   EXPECT_CALL(transport,
-              SendRtp(_, kPayloadSizes[0] + rtp_header_len + kRtxHeaderSize))
+              SendRtp(_, kPayloadSizes[0] + rtp_header_len + kRtxHeaderSize, _))
       .WillOnce(testing::Return(true));
   EXPECT_EQ(kPayloadSizes[0], rtp_sender_->TimeToSendPadding(500));
 
   EXPECT_CALL(transport, SendRtp(_, kPayloadSizes[kNumPayloadSizes - 1] +
-                                           rtp_header_len + kRtxHeaderSize))
+                                        rtp_header_len + kRtxHeaderSize,
+                                 _))
       .WillOnce(testing::Return(true));
-  EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len))
+  EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
       .WillOnce(testing::Return(true));
   EXPECT_EQ(kPayloadSizes[kNumPayloadSizes - 1] + kMaxPaddingSize,
             rtp_sender_->TimeToSendPadding(999));

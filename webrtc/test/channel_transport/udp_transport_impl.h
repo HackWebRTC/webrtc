@@ -116,7 +116,9 @@ public:
                              size_t length,
                              uint16_t rtcpPort) override;
     // Transport functions
-    bool SendRtp(const uint8_t* data, size_t length) override;
+    bool SendRtp(const uint8_t* data,
+                 size_t length,
+                 const PacketOptions& packet_options) override;
     bool SendRtcp(const uint8_t* data, size_t length) override;
 
     // UdpTransport functions continue.

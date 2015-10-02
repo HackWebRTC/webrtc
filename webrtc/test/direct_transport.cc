@@ -57,7 +57,9 @@ void DirectTransport::SetReceiver(PacketReceiver* receiver) {
   fake_network_.SetReceiver(receiver);
 }
 
-bool DirectTransport::SendRtp(const uint8_t* data, size_t length) {
+bool DirectTransport::SendRtp(const uint8_t* data,
+                              size_t length,
+                              const PacketOptions& options) {
   fake_network_.SendPacket(data, length);
   packet_event_->Set();
   return true;

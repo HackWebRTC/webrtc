@@ -17,9 +17,17 @@
 
 namespace webrtc {
 
+struct PacketOptions {
+  // A 16 bits positive id. Negative ids are invalid and should be interpreted
+  // as packet_id not being set.
+  int packet_id = -1;
+};
+
 class Transport {
  public:
-  virtual bool SendRtp(const uint8_t* packet, size_t length) = 0;
+  virtual bool SendRtp(const uint8_t* packet,
+                       size_t length,
+                       const PacketOptions& options) = 0;
   virtual bool SendRtcp(const uint8_t* packet, size_t length) = 0;
 
  protected:

@@ -61,7 +61,9 @@ class EndToEndTest : public test::CallTest {
  protected:
   class UnusedTransport : public Transport {
    private:
-    bool SendRtp(const uint8_t* packet, size_t length) override {
+    bool SendRtp(const uint8_t* packet,
+                 size_t length,
+                 const PacketOptions& options) override {
       ADD_FAILURE() << "Unexpected RTP sent.";
       return false;
     }
@@ -1351,13 +1353,17 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
     }
     virtual ~RtpExtensionHeaderObserver() {}
 
-    bool SendRtp(const uint8_t* data, size_t length) override {
+    bool SendRtp(const uint8_t* data,
+                 size_t length,
+                 const PacketOptions& options) override {
       if (IsDone())
         return false;
 
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(data, length, &header));
       if (header.extension.hasTransportSequenceNumber) {
+        EXPECT_EQ(options.packet_id,
+                  header.extension.transportSequenceNumber);
         if (!streams_observed_.empty()) {
           EXPECT_EQ(static_cast<uint16_t>(last_seq_ + 1),
                     header.extension.transportSequenceNumber);
@@ -1377,7 +1383,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
         if (IsDone())
           done_->Set();
       }
-      return test::DirectTransport::SendRtp(data, length);
+      return test::DirectTransport::SendRtp(data, length, options);
     }
 
     bool IsDone() {

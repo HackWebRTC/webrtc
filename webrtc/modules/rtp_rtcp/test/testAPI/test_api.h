@@ -36,7 +36,9 @@ class LoopBackTransport : public Transport {
                      RtpReceiver* receiver,
                      ReceiveStatistics* receive_statistics);
   void DropEveryNthPacket(int n);
-  bool SendRtp(const uint8_t* data, size_t len) override;
+  bool SendRtp(const uint8_t* data,
+               size_t len,
+               const PacketOptions& options) override;
   bool SendRtcp(const uint8_t* data, size_t len) override;
 
  private:

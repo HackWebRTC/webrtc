@@ -108,7 +108,9 @@ ConferenceTransport::~ConferenceTransport() {
   EXPECT_TRUE(webrtc::VoiceEngine::Delete(local_voe_));
 }
 
-bool ConferenceTransport::SendRtp(const uint8_t* data, size_t len) {
+bool ConferenceTransport::SendRtp(const uint8_t* data,
+                                  size_t len,
+                                  const webrtc::PacketOptions& options) {
   StorePacket(Packet::Rtp, data, len);
   return true;
 }

@@ -1931,7 +1931,9 @@ int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
     return -1;
 }
 
-bool UdpTransportImpl::SendRtp(const uint8_t* data, size_t length) {
+bool UdpTransportImpl::SendRtp(const uint8_t* data,
+                               size_t length,
+                               const PacketOptions& packet_options) {
     WEBRTC_TRACE(kTraceStream, kTraceTransport, _id, "%s", __FUNCTION__);
 
     CriticalSectionScoped cs(_crit);

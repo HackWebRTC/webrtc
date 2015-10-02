@@ -21,7 +21,9 @@ class TransportAdapter : public Transport {
  public:
   explicit TransportAdapter(Transport* transport);
 
-  bool SendRtp(const uint8_t* packet, size_t length) override;
+  bool SendRtp(const uint8_t* packet,
+               size_t length,
+               const PacketOptions& options) override;
   bool SendRtcp(const uint8_t* packet, size_t length) override;
 
   void Enable();

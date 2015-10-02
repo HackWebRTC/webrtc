@@ -214,9 +214,9 @@ Channel::OnRxVadDetected(int vadDecision)
     return 0;
 }
 
-bool
-Channel::SendRtp(const uint8_t *data, size_t len)
-{
+bool Channel::SendRtp(const uint8_t* data,
+                      size_t len,
+                      const PacketOptions& options) {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SendPacket(channel=%d, len=%" PRIuS ")", len);
 
@@ -233,7 +233,7 @@ Channel::SendRtp(const uint8_t *data, size_t len)
     uint8_t* bufferToSendPtr = (uint8_t*)data;
     size_t bufferLength = len;
 
-    if (!_transportPtr->SendRtp(bufferToSendPtr, bufferLength)) {
+    if (!_transportPtr->SendRtp(bufferToSendPtr, bufferLength, options)) {
       std::string transport_name =
           _externalTransport ? "external transport" : "WebRtc sockets";
       WEBRTC_TRACE(kTraceError, kTraceVoice,

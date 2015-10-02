@@ -31,7 +31,9 @@ void LoopBackTransport::DropEveryNthPacket(int n) {
   packet_loss_ = n;
 }
 
-bool LoopBackTransport::SendRtp(const uint8_t* data, size_t len) {
+bool LoopBackTransport::SendRtp(const uint8_t* data,
+                                size_t len,
+                                const PacketOptions& options) {
   count_++;
   if (packet_loss_ > 0) {
     if ((count_ % packet_loss_) == 0) {

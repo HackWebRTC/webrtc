@@ -19,7 +19,9 @@ class PacketReceiver;
 namespace test {
 class NullTransport : public Transport {
  public:
-  bool SendRtp(const uint8_t* packet, size_t length) override;
+  bool SendRtp(const uint8_t* packet,
+               size_t length,
+               const PacketOptions& options) override;
   bool SendRtcp(const uint8_t* packet, size_t length) override;
 };
 }  // namespace test

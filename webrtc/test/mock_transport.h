@@ -18,7 +18,10 @@ namespace webrtc {
 
 class MockTransport : public Transport {
  public:
-  MOCK_METHOD2(SendRtp, bool(const uint8_t* data, size_t len));
+  MOCK_METHOD3(SendRtp,
+               bool(const uint8_t* data,
+                    size_t len,
+                    const PacketOptions& options));
   MOCK_METHOD2(SendRtcp, bool(const uint8_t* data, size_t len));
 };
 }  // namespace webrtc

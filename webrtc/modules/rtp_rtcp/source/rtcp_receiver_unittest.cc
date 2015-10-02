@@ -39,7 +39,9 @@ class TestTransport : public Transport,
   void SetRTCPReceiver(RTCPReceiver* rtcp_receiver) {
     rtcp_receiver_ = rtcp_receiver;
   }
-  bool SendRtp(const uint8_t* /*data*/, size_t /*len*/) override {
+  bool SendRtp(const uint8_t* /*data*/,
+               size_t /*len*/,
+               const PacketOptions& options) override {
     ADD_FAILURE();  // FAIL() gives a compile error.
     return false;
   }

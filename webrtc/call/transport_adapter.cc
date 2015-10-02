@@ -20,11 +20,13 @@ TransportAdapter::TransportAdapter(Transport* transport)
   RTC_DCHECK(nullptr != transport);
 }
 
-bool TransportAdapter::SendRtp(const uint8_t* packet, size_t length) {
+bool TransportAdapter::SendRtp(const uint8_t* packet,
+                               size_t length,
+                               const PacketOptions& options) {
   if (enabled_.Value() == 0)
     return false;
 
-  return transport_->SendRtp(packet, length);
+  return transport_->SendRtp(packet, length, options);
 }
 
 bool TransportAdapter::SendRtcp(const uint8_t* packet, size_t length) {
