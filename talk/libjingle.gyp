@@ -53,6 +53,7 @@
             'app/webrtc/java/jni/classreferenceholder.h',
             'app/webrtc/java/jni/jni_helpers.cc',
             'app/webrtc/java/jni/jni_helpers.h',
+            'app/webrtc/java/jni/native_handle_impl.cc',
             'app/webrtc/java/jni/native_handle_impl.h',
             'app/webrtc/java/jni/peerconnection_jni.cc',
           ],

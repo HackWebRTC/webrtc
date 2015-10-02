@@ -23,43 +23,40 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
-#ifndef TALK_APP_WEBRTC_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
-#define TALK_APP_WEBRTC_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
+#include "talk/app/webrtc/java/jni/native_handle_impl.h"
 
-#include <jni.h>
-
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc_jni {
 
-// Wrapper for texture object.
-class NativeHandleImpl {
- public:
-  NativeHandleImpl();
+NativeHandleImpl::NativeHandleImpl() : texture_object_(NULL), texture_id_(-1) {}
 
-  void* GetHandle();
-  int GetTextureId();
-  void SetTextureObject(void* texture_object, int texture_id);
+void* NativeHandleImpl::GetHandle() {
+  return texture_object_;
+}
 
- private:
-  jobject texture_object_;
-  int32_t texture_id_;
-};
+int NativeHandleImpl::GetTextureId() {
+  return texture_id_;
+}
 
-class JniNativeHandleBuffer : public webrtc::NativeHandleBuffer {
- public:
-  JniNativeHandleBuffer(void* native_handle, int width, int height);
+void NativeHandleImpl::SetTextureObject(void* texture_object, int texture_id) {
+  texture_object_ = reinterpret_cast<jobject>(texture_object);
+  texture_id_ = texture_id;
+}
 
-  // TODO(pbos): Override destructor to release native handle, at the moment the
-  // native handle is not released based on refcount.
+JniNativeHandleBuffer::JniNativeHandleBuffer(void* native_handle,
+                                             int width,
+                                             int height)
+    : NativeHandleBuffer(native_handle, width, height) {}
 
- private:
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> NativeToI420Buffer() override;
-};
+rtc::scoped_refptr<webrtc::VideoFrameBuffer>
+JniNativeHandleBuffer::NativeToI420Buffer() {
+  // TODO(pbos): Implement before using this in the encoder pipeline (or
+  // remove the RTC_CHECK() in VideoCapture).
+  RTC_NOTREACHED();
+  return nullptr;
+}
 
 }  // namespace webrtc_jni
-
-#endif  // TALK_APP_WEBRTC_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
