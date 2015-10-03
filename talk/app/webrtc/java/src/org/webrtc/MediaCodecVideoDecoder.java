@@ -300,10 +300,9 @@ public class MediaCodecVideoDecoder {
     }
   }
 
-  // Helper struct for dequeueOutputBuffer() below.
-  private static class DecoderOutputBufferInfo {
-    public DecoderOutputBufferInfo(
-        int index, int offset, int size, long presentationTimestampUs) {
+  // Helper structs for dequeueOutputBuffer() below.
+  private static class DecodedByteBuffer {
+    public DecodedByteBuffer(int index, int offset, int size, long presentationTimestampUs) {
       this.index = index;
       this.offset = offset;
       this.size = size;
@@ -316,11 +315,22 @@ public class MediaCodecVideoDecoder {
     private final long presentationTimestampUs;
   }
 
-  // Dequeue and return a DecoderOutputBufferInfo, or null if no decoded buffer is ready.
+  private static class DecodedTextureBuffer {
+    private final int textureID;
+    private final long presentationTimestampUs;
+
+    public DecodedTextureBuffer(int textureID, long presentationTimestampUs) {
+      this.textureID = textureID;
+      this.presentationTimestampUs = presentationTimestampUs;
+    }
+  }
+
+  // Returns null if no decoded buffer is available, and otherwise either a DecodedByteBuffer or
+  // DecodedTexturebuffer depending on |useSurface| configuration.
   // Throws IllegalStateException if call is made on the wrong thread, if color format changes to an
   // unsupported format, or if |mediaCodec| is not in the Executing state. Throws CodecException
   // upon codec error.
-  private DecoderOutputBufferInfo dequeueOutputBuffer(int dequeueTimeoutUs)
+  private Object dequeueOutputBuffer(int dequeueTimeoutUs)
       throws IllegalStateException, MediaCodec.CodecException {
     checkOnMediaCodecThread();
     // Drain the decoder until receiving a decoded buffer or hitting
@@ -359,18 +369,29 @@ public class MediaCodecVideoDecoder {
           break;
         default:
           // Output buffer decoded.
-          return new DecoderOutputBufferInfo(
-              result, info.offset, info.size, info.presentationTimeUs);
+          if (useSurface) {
+            mediaCodec.releaseOutputBuffer(result, true /* render */);
+            // TODO(magjed): Wait for SurfaceTexture.onFrameAvailable() before returning a texture
+            // frame.
+            return new DecodedTextureBuffer(textureID, info.presentationTimeUs);
+          } else {
+            return new DecodedByteBuffer(result, info.offset, info.size, info.presentationTimeUs);
+          }
       }
     }
   }
 
-  // Release a dequeued output buffer back to the codec for re-use.
-  // Throws IllegalStateException if the call is made on the wrong thread or if |mediaCodec| is not
-  // in the Executing state. Throws MediaCodec.CodecException upon codec error.
-  private void releaseOutputBuffer(int index)
+  // Release a dequeued output byte buffer back to the codec for re-use. Should only be called for
+  // non-surface decoding.
+  // Throws IllegalStateException if the call is made on the wrong thread, if codec is configured
+  // for surface decoding, or if |mediaCodec| is not in the Executing state. Throws
+  // MediaCodec.CodecException upon codec error.
+  private void returnDecodedByteBuffer(int index)
       throws IllegalStateException, MediaCodec.CodecException {
     checkOnMediaCodecThread();
-    mediaCodec.releaseOutputBuffer(index, useSurface);
+    if (useSurface) {
+      throw new IllegalStateException("returnDecodedByteBuffer() called for surface decoding.");
+    }
+    mediaCodec.releaseOutputBuffer(index, false /* render */);
   }
 }

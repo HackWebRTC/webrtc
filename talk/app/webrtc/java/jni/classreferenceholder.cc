@@ -81,7 +81,8 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$VideoCodecType");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
-  LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo");
+  LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecodedTextureBuffer");
+  LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecodedByteBuffer");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$VideoCodecType");
   LoadClass(jni, "org/webrtc/SurfaceTextureHelper");
   jclass j_egl_base_class = GetClass("org/webrtc/EglBase");

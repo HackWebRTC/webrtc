@@ -134,7 +134,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   jmethodID j_dequeue_input_buffer_method_;
   jmethodID j_queue_input_buffer_method_;
   jmethodID j_dequeue_output_buffer_method_;
-  jmethodID j_release_output_buffer_method_;
+  jmethodID j_return_decoded_byte_buffer_method_;
   // MediaCodecVideoDecoder fields.
   jfieldID j_input_buffers_field_;
   jfieldID j_output_buffers_field_;
@@ -144,8 +144,10 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   jfieldID j_stride_field_;
   jfieldID j_slice_height_field_;
   jfieldID j_surface_texture_field_;
+  // MediaCodecVideoDecoder.DecodedTextureBuffer fields.
   jfieldID j_textureID_field_;
-  // MediaCodecVideoDecoder.DecoderOutputBufferInfo fields.
+  jfieldID j_texture_presentation_timestamp_us_field_;
+  // MediaCodecVideoDecoder.DecodedByteBuffer fields.
   jfieldID j_info_index_field_;
   jfieldID j_info_offset_field_;
   jfieldID j_info_size_field_;
@@ -197,9 +199,10 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, *j_media_codec_video_decoder_class_, "queueInputBuffer", "(IIJ)Z");
   j_dequeue_output_buffer_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "dequeueOutputBuffer",
-      "(I)Lorg/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo;");
-  j_release_output_buffer_method_ = GetMethodID(
-      jni, *j_media_codec_video_decoder_class_, "releaseOutputBuffer", "(I)V");
+      "(I)Ljava/lang/Object;");
+  j_return_decoded_byte_buffer_method_ =
+      GetMethodID(jni, *j_media_codec_video_decoder_class_,
+                  "returnDecodedByteBuffer", "(I)V");
 
   j_input_buffers_field_ = GetFieldID(
       jni, *j_media_codec_video_decoder_class_,
@@ -217,22 +220,28 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, *j_media_codec_video_decoder_class_, "stride", "I");
   j_slice_height_field_ = GetFieldID(
       jni, *j_media_codec_video_decoder_class_, "sliceHeight", "I");
-  j_textureID_field_ = GetFieldID(
-      jni, *j_media_codec_video_decoder_class_, "textureID", "I");
   j_surface_texture_field_ = GetFieldID(
       jni, *j_media_codec_video_decoder_class_, "surfaceTexture",
       "Landroid/graphics/SurfaceTexture;");
 
-  jclass j_decoder_output_buffer_info_class = FindClass(jni,
-      "org/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo");
+  jclass j_decoder_decoded_texture_buffer_class = FindClass(jni,
+      "org/webrtc/MediaCodecVideoDecoder$DecodedTextureBuffer");
+  j_textureID_field_ = GetFieldID(
+      jni, j_decoder_decoded_texture_buffer_class, "textureID", "I");
+  j_texture_presentation_timestamp_us_field_ =
+      GetFieldID(jni, j_decoder_decoded_texture_buffer_class,
+                 "presentationTimestampUs", "J");
+
+  jclass j_decoder_decoded_byte_buffer_class = FindClass(jni,
+      "org/webrtc/MediaCodecVideoDecoder$DecodedByteBuffer");
   j_info_index_field_ = GetFieldID(
-      jni, j_decoder_output_buffer_info_class, "index", "I");
+      jni, j_decoder_decoded_byte_buffer_class, "index", "I");
   j_info_offset_field_ = GetFieldID(
-      jni, j_decoder_output_buffer_info_class, "offset", "I");
+      jni, j_decoder_decoded_byte_buffer_class, "offset", "I");
   j_info_size_field_ = GetFieldID(
-      jni, j_decoder_output_buffer_info_class, "size", "I");
+      jni, j_decoder_decoded_byte_buffer_class, "size", "I");
   j_info_presentation_timestamp_us_field_ = GetFieldID(
-      jni, j_decoder_output_buffer_info_class, "presentationTimestampUs", "J");
+      jni, j_decoder_decoded_byte_buffer_class, "presentationTimestampUs", "J");
 
   CHECK_EXCEPTION(jni) << "MediaCodecVideoDecoder ctor failed";
   use_surface_ = (render_egl_context_ != NULL);
@@ -559,29 +568,17 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     return true;
   }
   // Get decoder output.
-  jobject j_decoder_output_buffer_info = jni->CallObjectMethod(
+  jobject j_decoder_output_buffer = jni->CallObjectMethod(
       *j_media_codec_video_decoder_,
       j_dequeue_output_buffer_method_,
       dequeue_timeout_us);
   if (CheckException(jni)) {
+    ALOGE("dequeueOutputBuffer() error");
     return false;
   }
-  if (IsNull(jni, j_decoder_output_buffer_info)) {
+  if (IsNull(jni, j_decoder_output_buffer)) {
+    // No decoded frame ready.
     return true;
-  }
-
-  // Extract output buffer info from Java DecoderOutputBufferInfo.
-  int output_buffer_index =
-      GetIntField(jni, j_decoder_output_buffer_info, j_info_index_field_);
-  RTC_CHECK_GE(output_buffer_index, 0);
-  int output_buffer_offset =
-      GetIntField(jni, j_decoder_output_buffer_info, j_info_offset_field_);
-  int output_buffer_size =
-      GetIntField(jni, j_decoder_output_buffer_info, j_info_size_field_);
-  long output_timestamps_ms = GetLongField(jni, j_decoder_output_buffer_info,
-      j_info_presentation_timestamp_us_field_) / rtc::kNumMicrosecsPerMillisec;
-  if (CheckException(jni)) {
-    return false;
   }
 
   // Get decoded video frame properties.
@@ -592,17 +589,34 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int stride = GetIntField(jni, *j_media_codec_video_decoder_, j_stride_field_);
   int slice_height = GetIntField(jni, *j_media_codec_video_decoder_,
       j_slice_height_field_);
-  int texture_id = GetIntField(jni, *j_media_codec_video_decoder_,
-      j_textureID_field_);
 
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> frame_buffer;
+  long output_timestamps_ms = 0;
   if (use_surface_) {
+    // Extract data from Java DecodedTextureBuffer.
+    const int texture_id =
+        GetIntField(jni, j_decoder_output_buffer, j_textureID_field_);
+    const int64_t timestamp_us =
+        GetLongField(jni, j_decoder_output_buffer,
+                     j_texture_presentation_timestamp_us_field_);
+    output_timestamps_ms = timestamp_us / rtc::kNumMicrosecsPerMillisec;
+    // Create webrtc::VideoFrameBuffer with native texture handle.
     native_handle_.SetTextureObject(surface_texture_, texture_id);
     frame_buffer = new rtc::RefCountedObject<JniNativeHandleBuffer>(
         &native_handle_, width, height);
   } else {
     // Extract data from Java ByteBuffer and create output yuv420 frame -
     // for non surface decoding only.
+    const int output_buffer_index =
+        GetIntField(jni, j_decoder_output_buffer, j_info_index_field_);
+    const int output_buffer_offset =
+        GetIntField(jni, j_decoder_output_buffer, j_info_offset_field_);
+    const int output_buffer_size =
+        GetIntField(jni, j_decoder_output_buffer, j_info_size_field_);
+    const int64_t timestamp_us = GetLongField(
+        jni, j_decoder_output_buffer, j_info_presentation_timestamp_us_field_);
+    output_timestamps_ms = timestamp_us / rtc::kNumMicrosecsPerMillisec;
+
     if (output_buffer_size < width * height * 3 / 2) {
       ALOGE("Insufficient output buffer size: %d", output_buffer_size);
       return false;
@@ -653,6 +667,15 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
           frame_buffer->stride(webrtc::kVPlane),
           width, height);
     }
+    // Return output byte buffer back to codec.
+    jni->CallVoidMethod(
+        *j_media_codec_video_decoder_,
+        j_return_decoded_byte_buffer_method_,
+        output_buffer_index);
+    if (CheckException(jni)) {
+      ALOGE("returnDecodedByteBuffer error");
+      return false;
+    }
   }
   VideoFrame decoded_frame(frame_buffer, 0, 0, webrtc::kVideoRotation_0);
 
@@ -673,16 +696,6 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   ALOGV("Decoder frame out # %d. %d x %d. %d x %d. Color: 0x%x. TS: %ld."
       " DecTime: %lld", frames_decoded_, width, height, stride, slice_height,
       color_format, output_timestamps_ms, frame_decoding_time_ms);
-
-  // Return output buffer back to codec.
-  jni->CallVoidMethod(
-      *j_media_codec_video_decoder_,
-      j_release_output_buffer_method_,
-      output_buffer_index);
-  if (CheckException(jni)) {
-    ALOGE("releaseOutputBuffer error");
-    return false;
-  }
 
   // Calculate and print decoding statistics - every 3 seconds.
   frames_decoded_++;
