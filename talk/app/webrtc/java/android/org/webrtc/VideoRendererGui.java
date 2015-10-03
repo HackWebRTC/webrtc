@@ -99,9 +99,12 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // |surface| is synchronized on |this|.
     private GLSurfaceView surface;
     private int id;
-    // TODO(magjed): Delete |yuvTextures| in release(). Must be synchronized with draw().
+    // TODO(magjed): Delete GL resources in release(). Must be synchronized with draw(). We are
+    // currently leaking resources to avoid a rare crash in release() where the EGLContext has
+    // become invalid beforehand.
     private int[] yuvTextures = { 0, 0, 0 };
-    private int oesTexture = 0;
+    // Resources for making a deep copy of incoming OES texture frame.
+    private GlTextureFrameBuffer textureCopy;
 
     // Pending frame to render. Serves as a queue with size 1. |pendingFrame| is accessed by two
     // threads - frames are received in renderFrame() and consumed in draw(). Frames are dropped in
@@ -187,6 +190,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       for (int i = 0; i < 3; i++)  {
         yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
       }
+      // Generate texture and framebuffer for offscreen texture copy.
+      textureCopy = new GlTextureFrameBuffer(GLES20.GL_RGB);
     }
 
     private void updateLayoutMatrix() {
@@ -228,10 +233,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
       long now = System.nanoTime();
 
-      // OpenGL defaults to lower left origin.
-      GLES20.glViewport(displayLayout.left, screenHeight - displayLayout.bottom,
-                        displayLayout.width(), displayLayout.height());
-
       final boolean isNewFrame;
       synchronized (pendingFrameLock) {
         isNewFrame = (pendingFrame != null);
@@ -240,7 +241,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         }
 
         if (isNewFrame) {
-          final float[] samplingMatrix;
           if (pendingFrame.yuvFrame) {
             rendererType = RendererType.RENDERER_YUV;
             drawer.uploadYuvData(yuvTextures, pendingFrame.width, pendingFrame.height,
@@ -249,25 +249,45 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             // top-left corner of the image, but in glTexImage2D() the first element corresponds to
             // the bottom-left corner. We correct this discrepancy by setting a vertical flip as
             // sampling matrix.
-            samplingMatrix = RendererCommon.verticalFlipMatrix();
+            final float[] samplingMatrix = RendererCommon.verticalFlipMatrix();
+            rotatedSamplingMatrix =
+                RendererCommon.rotateTextureMatrix(samplingMatrix, pendingFrame.rotationDegree);
           } else {
             rendererType = RendererType.RENDERER_TEXTURE;
-            // External texture rendering. Copy texture id and update texture image to latest.
-            // TODO(magjed): We should not make an unmanaged copy of texture id. Also, this is not
-            // the best place to call updateTexImage.
-            oesTexture = pendingFrame.textureId;
+            // External texture rendering. Update texture image to latest and make a deep copy of
+            // the external texture.
+            // TODO(magjed): Move updateTexImage() to the video source instead.
             final SurfaceTexture surfaceTexture = (SurfaceTexture) pendingFrame.textureObject;
             surfaceTexture.updateTexImage();
-            samplingMatrix = new float[16];
+            final float[] samplingMatrix = new float[16];
             surfaceTexture.getTransformMatrix(samplingMatrix);
+            rotatedSamplingMatrix =
+                RendererCommon.rotateTextureMatrix(samplingMatrix, pendingFrame.rotationDegree);
+
+            // Reallocate offscreen texture if necessary.
+            textureCopy.setSize(pendingFrame.rotatedWidth(), pendingFrame.rotatedHeight());
+
+            // Bind our offscreen framebuffer.
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, textureCopy.getFrameBufferId());
+            GlUtil.checkNoGLES2Error("glBindFramebuffer");
+
+            // Copy the OES texture content. This will also normalize the sampling matrix.
+             GLES20.glViewport(0, 0, textureCopy.getWidth(), textureCopy.getHeight());
+             drawer.drawOes(pendingFrame.textureId, rotatedSamplingMatrix);
+             rotatedSamplingMatrix = RendererCommon.identityMatrix();
+
+             // Restore normal framebuffer.
+             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
           }
-          rotatedSamplingMatrix = RendererCommon.rotateTextureMatrix(
-              samplingMatrix, pendingFrame.rotationDegree);
           copyTimeNs += (System.nanoTime() - now);
           VideoRenderer.renderFrameDone(pendingFrame);
           pendingFrame = null;
         }
       }
+
+      // OpenGL defaults to lower left origin - flip vertically.
+      GLES20.glViewport(displayLayout.left, screenHeight - displayLayout.bottom,
+                        displayLayout.width(), displayLayout.height());
 
       updateLayoutMatrix();
       final float[] texMatrix =
@@ -275,7 +295,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       if (rendererType == RendererType.RENDERER_YUV) {
         drawer.drawYuv(yuvTextures, texMatrix);
       } else {
-        drawer.drawOes(oesTexture, texMatrix);
+        drawer.drawRgb(textureCopy.getTextureId(), texMatrix);
       }
 
       if (isNewFrame) {
