@@ -137,8 +137,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       picture_id_sli_(0),
       has_received_rpsi_(false),
       picture_id_rpsi_(0),
-      video_suspended_(false),
-      start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()) {
+      video_suspended_(false) {
   bitrate_observer_.reset(new ViEBitrateObserver(this));
 }
 
@@ -175,25 +174,6 @@ void ViEEncoder::StopThreadsAndRemoveSharedMembers() {
 }
 
 ViEEncoder::~ViEEncoder() {
-  UpdateHistograms();
-}
-
-void ViEEncoder::UpdateHistograms() {
-  int64_t elapsed_sec =
-      (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_ms_) / 1000;
-  if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
-    return;
-  }
-  webrtc::VCMFrameCount frames;
-  if (vcm_->SentFrameCount(frames) != VCM_OK) {
-    return;
-  }
-  uint32_t total_frames = frames.numKeyFrames + frames.numDeltaFrames;
-  if (total_frames > 0) {
-    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesSentInPermille",
-        static_cast<int>(
-            (frames.numKeyFrames * 1000.0f / total_frames) + 0.5f));
-  }
 }
 
 int ViEEncoder::Owner() const {
@@ -491,17 +471,6 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
 
 int ViEEncoder::SendKeyFrame() {
   return vcm_->IntraFrameRequest(0);
-}
-
-int32_t ViEEncoder::SendCodecStatistics(
-    uint32_t* num_key_frames, uint32_t* num_delta_frames) {
-  webrtc::VCMFrameCount sent_frames;
-  if (vcm_->SentFrameCount(sent_frames) != VCM_OK) {
-    return -1;
-  }
-  *num_key_frames = sent_frames.numKeyFrames;
-  *num_delta_frames = sent_frames.numDeltaFrames;
-  return 0;
 }
 
 uint32_t ViEEncoder::LastObservedBitrateBps() const {

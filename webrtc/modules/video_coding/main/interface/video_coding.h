@@ -313,8 +313,6 @@ public:
     //                     < 0,         on error.
     virtual int32_t EnableFrameDropper(bool enable) = 0;
 
-    // Sent frame counters
-    virtual int32_t SentFrameCount(VCMFrameCount& frameCount) const = 0;
 
     /*
     *   Receiver

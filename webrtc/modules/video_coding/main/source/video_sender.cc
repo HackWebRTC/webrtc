@@ -184,13 +184,6 @@ int32_t VideoSender::CodecConfigParameters(uint8_t* buffer,
   return VCM_UNINITIALIZED;
 }
 
-// TODO(andresp): Make const once media_opt is thread-safe and this has a
-// pointer to it.
-int32_t VideoSender::SentFrameCount(VCMFrameCount* frameCount) {
-  *frameCount = _mediaOpt.SentFrameCount();
-  return VCM_OK;
-}
-
 // Get encode bitrate
 int VideoSender::Bitrate(unsigned int* bitrate) const {
   RTC_DCHECK(main_thread_.CalledOnValidThread());

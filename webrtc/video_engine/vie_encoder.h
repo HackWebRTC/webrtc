@@ -102,8 +102,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   void DeliverFrame(VideoFrame video_frame) override;
 
   int32_t SendKeyFrame();
-  int32_t SendCodecStatistics(uint32_t* num_key_frames,
-                              uint32_t* num_delta_frames);
 
   uint32_t LastObservedBitrateBps() const;
   int CodecTargetBitrate(uint32_t* bitrate) const;
@@ -162,8 +160,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
 
-  void UpdateHistograms();
-
   const int channel_id_;
   const uint32_t number_of_cores_;
 
@@ -206,7 +202,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   std::map<uint32_t, int> ssrc_streams_ GUARDED_BY(data_cs_);
 
   bool video_suspended_ GUARDED_BY(data_cs_);
-  const int64_t start_ms_;
 };
 
 }  // namespace webrtc

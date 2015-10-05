@@ -86,7 +86,6 @@ class VideoSender {
                                   bool internalSource);
 
   int32_t CodecConfigParameters(uint8_t* buffer, int32_t size) const;
-  int32_t SentFrameCount(VCMFrameCount* frameCount);
   int Bitrate(unsigned int* bitrate) const;
   int FrameRate(unsigned int* framerate) const;
 

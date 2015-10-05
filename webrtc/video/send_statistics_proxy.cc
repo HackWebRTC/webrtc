@@ -64,6 +64,12 @@ void SendStatisticsProxy::UpdateHistograms() {
   int encode_ms = encode_time_counter_.Avg(kMinRequiredSamples);
   if (encode_ms != -1)
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.EncodeTimeInMs", encode_ms);
+
+  int key_frames_permille = key_frame_counter_.Permille(kMinRequiredSamples);
+  if (key_frames_permille != -1) {
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesSentInPermille",
+        key_frames_permille);
+  }
 }
 
 void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
@@ -161,6 +167,9 @@ void SendStatisticsProxy::OnSendEncodedImage(
   stats->width = encoded_image._encodedWidth;
   stats->height = encoded_image._encodedHeight;
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
+
+  if (encoded_image._frameType != kSkipFrame)
+    key_frame_counter_.Add(encoded_image._frameType == kKeyFrame);
 
   // TODO(asapersson): This is incorrect if simulcast layers are encoded on
   // different threads and there is no guarantee that one frame of all layers
@@ -271,6 +280,29 @@ int SendStatisticsProxy::SampleCounter::Avg(int min_required_samples) const {
   if (num_samples < min_required_samples || num_samples == 0)
     return -1;
   return sum / num_samples;
+}
+
+void SendStatisticsProxy::BoolSampleCounter::Add(bool sample) {
+  if (sample)
+    ++sum;
+  ++num_samples;
+}
+
+int SendStatisticsProxy::BoolSampleCounter::Percent(
+    int min_required_samples) const {
+  return Fraction(min_required_samples, 100.0f);
+}
+
+int SendStatisticsProxy::BoolSampleCounter::Permille(
+    int min_required_samples) const {
+  return Fraction(min_required_samples, 1000.0f);
+}
+
+int SendStatisticsProxy::BoolSampleCounter::Fraction(
+    int min_required_samples, float multiplier) const {
+  if (num_samples < min_required_samples || num_samples == 0)
+    return -1;
+  return static_cast<int>((sum * multiplier / num_samples) + 0.5f);
 }
 
 }  // namespace webrtc

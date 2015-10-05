@@ -83,7 +83,6 @@ class MediaOptimization {
   uint32_t InputFrameRate();
   uint32_t SentFrameRate();
   uint32_t SentBitRate();
-  VCMFrameCount SentFrameCount();
 
  private:
   enum {

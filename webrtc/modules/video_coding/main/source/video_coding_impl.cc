@@ -189,10 +189,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_->EnableFrameDropper(enable);
   }
 
-  int32_t SentFrameCount(VCMFrameCount& frameCount) const override {
-    return sender_->SentFrameCount(&frameCount);
-  }
-
   void SuspendBelowMinBitrate() override {
     return sender_->SuspendBelowMinBitrate();
   }

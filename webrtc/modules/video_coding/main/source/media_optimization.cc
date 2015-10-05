@@ -351,14 +351,6 @@ uint32_t MediaOptimization::SentBitRate() {
   return avg_sent_bit_rate_bps_;
 }
 
-VCMFrameCount MediaOptimization::SentFrameCount() {
-  CriticalSectionScoped lock(crit_sect_.get());
-  VCMFrameCount count;
-  count.numDeltaFrames = delta_frame_cnt_;
-  count.numKeyFrames = key_frame_cnt_;
-  return count;
-}
-
 int32_t MediaOptimization::UpdateWithEncodedData(
     const EncodedImage& encoded_image) {
   size_t encoded_length = encoded_image._length;
