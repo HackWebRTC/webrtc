@@ -29,7 +29,7 @@
 namespace webrtc {
 namespace {
 
-static const int64_t kPollIntervalMs = 250;
+static const int64_t kPollIntervalMs = 20;
 
 std::vector<uint32_t> GenerateSsrcs(size_t num_streams,
                                     uint32_t ssrc_offset) {
