@@ -228,10 +228,10 @@ class DtlsTestClient : public sigslot::has_slots<> {
     }
   }
 
-  void CheckSsl(uint16_t expected_cipher) {
+  void CheckSsl(int expected_cipher) {
     for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
            channels_.begin(); it != channels_.end(); ++it) {
-      uint16_t cipher;
+      int cipher;
 
       bool rv = (*it)->GetSslCipherSuite(&cipher);
       if (negotiated_dtls_ && expected_cipher) {

@@ -34,7 +34,7 @@ namespace rtc {
 const char CS_AES_CM_128_HMAC_SHA1_80[] = "AES_CM_128_HMAC_SHA1_80";
 const char CS_AES_CM_128_HMAC_SHA1_32[] = "AES_CM_128_HMAC_SHA1_32";
 
-uint16_t GetSrtpCryptoSuiteFromName(const std::string& cipher) {
+int GetSrtpCryptoSuiteFromName(const std::string& cipher) {
   if (cipher == CS_AES_CM_128_HMAC_SHA1_32)
     return SRTP_AES128_CM_SHA1_32;
   if (cipher == CS_AES_CM_128_HMAC_SHA1_80)
@@ -52,7 +52,7 @@ SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
 #endif
 }
 
-bool SSLStreamAdapter::GetSslCipherSuite(uint16_t* cipher) {
+bool SSLStreamAdapter::GetSslCipherSuite(int* cipher) {
   return false;
 }
 
@@ -79,9 +79,8 @@ bool SSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
 bool SSLStreamAdapter::HaveDtls() { return false; }
 bool SSLStreamAdapter::HaveDtlsSrtp() { return false; }
 bool SSLStreamAdapter::HaveExporter() { return false; }
-uint16_t SSLStreamAdapter::GetDefaultSslCipherForTest(
-    SSLProtocolVersion version,
-    KeyType key_type) {
+int SSLStreamAdapter::GetDefaultSslCipherForTest(SSLProtocolVersion version,
+                                                 KeyType key_type) {
   return 0;
 }
 #elif SSL_USE_OPENSSL
@@ -94,13 +93,12 @@ bool SSLStreamAdapter::HaveDtlsSrtp() {
 bool SSLStreamAdapter::HaveExporter() {
   return OpenSSLStreamAdapter::HaveExporter();
 }
-uint16_t SSLStreamAdapter::GetDefaultSslCipherForTest(
-    SSLProtocolVersion version,
-    KeyType key_type) {
+int SSLStreamAdapter::GetDefaultSslCipherForTest(SSLProtocolVersion version,
+                                                 KeyType key_type) {
   return OpenSSLStreamAdapter::GetDefaultSslCipherForTest(version, key_type);
 }
 
-std::string SSLStreamAdapter::GetSslCipherSuiteName(uint16_t cipher) {
+std::string SSLStreamAdapter::GetSslCipherSuiteName(int cipher) {
   return OpenSSLStreamAdapter::GetSslCipherSuiteName(cipher);
 }
 #endif  // !SSL_USE_SCHANNEL && !SSL_USE_OPENSSL

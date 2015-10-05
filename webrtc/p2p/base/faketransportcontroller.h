@@ -251,7 +251,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  bool GetSslCipherSuite(uint16_t* cipher) override { return false; }
+  bool GetSslCipherSuite(int* cipher) override { return false; }
 
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const {
     return local_cert_;

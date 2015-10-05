@@ -61,7 +61,7 @@ using webrtc::StatsReports;
 
 namespace {
 // This value comes from openssl/tls1.h
-const uint16_t TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA = 0xC014;
+const int TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA = 0xC014;
 }  // namespace
 
 namespace cricket {

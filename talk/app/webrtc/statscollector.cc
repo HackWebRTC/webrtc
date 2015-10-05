@@ -734,7 +734,7 @@ void StatsCollector::ExtractSessionInfo() {
         channel_report->AddString(StatsReport::kStatsValueNameSrtpCipher,
                                   srtp_cipher);
       }
-      uint16_t ssl_cipher = channel_iter.ssl_cipher;
+      int ssl_cipher = channel_iter.ssl_cipher;
       if (ssl_cipher &&
           rtc::SSLStreamAdapter::GetSslCipherSuiteName(ssl_cipher).length()) {
         channel_report->AddString(

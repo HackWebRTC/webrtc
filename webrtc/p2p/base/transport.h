@@ -111,7 +111,7 @@ struct TransportChannelStats {
   int component = 0;
   ConnectionInfos connection_infos;
   std::string srtp_cipher;
-  uint16_t ssl_cipher = 0;
+  int ssl_cipher = 0;
 };
 
 // Information about all the channels of a transport.

@@ -410,7 +410,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
       return server_ssl_->GetPeerCertificate(cert);
   }
 
-  bool GetSslCipherSuite(bool client, uint16_t* retval) {
+  bool GetSslCipherSuite(bool client, int* retval) {
     if (client)
       return client_ssl_->GetSslCipherSuite(retval);
     else
@@ -972,9 +972,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuite) {
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
-  uint16_t client_cipher;
+  int client_cipher;
   ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
-  uint16_t server_cipher;
+  int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
@@ -990,9 +990,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Both) {
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
 
-  uint16_t client_cipher;
+  int client_cipher;
   ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
-  uint16_t server_cipher;
+  int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
@@ -1007,9 +1007,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Client) {
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
 
-  uint16_t client_cipher;
+  int client_cipher;
   ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
-  uint16_t server_cipher;
+  int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
@@ -1024,9 +1024,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Server) {
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
-  uint16_t client_cipher;
+  int client_cipher;
   ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
-  uint16_t server_cipher;
+  int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);

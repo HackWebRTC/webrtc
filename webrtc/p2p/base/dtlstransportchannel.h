@@ -141,7 +141,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool SetSslRole(rtc::SSLRole role) override;
 
   // Find out which DTLS cipher was negotiated
-  bool GetSslCipherSuite(uint16_t* cipher) override;
+  bool GetSslCipherSuite(int* cipher) override;
 
   // Once DTLS has been established, this method retrieves the certificate in
   // use by the remote peer, for use in external identity verification.

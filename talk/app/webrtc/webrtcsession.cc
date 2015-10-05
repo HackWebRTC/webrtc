@@ -2149,7 +2149,7 @@ void WebRtcSession::ReportNegotiatedCiphers(
   }
 
   const std::string& srtp_cipher = stats.channel_stats[0].srtp_cipher;
-  uint16_t ssl_cipher = stats.channel_stats[0].ssl_cipher;
+  int ssl_cipher = stats.channel_stats[0].ssl_cipher;
   if (srtp_cipher.empty() && !ssl_cipher) {
     return;
   }

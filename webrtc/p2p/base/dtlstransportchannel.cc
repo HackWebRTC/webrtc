@@ -186,7 +186,7 @@ bool DtlsTransportChannelWrapper::GetSslRole(rtc::SSLRole* role) const {
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetSslCipherSuite(uint16_t* cipher) {
+bool DtlsTransportChannelWrapper::GetSslCipherSuite(int* cipher) {
   if (dtls_state_ != STATE_OPEN) {
     return false;
   }

@@ -113,9 +113,7 @@ class TransportChannel : public sigslot::has_slots<> {
 
   // Finds out which DTLS cipher was negotiated.
   // TODO(guoweis): Remove this once all dependencies implement this.
-  virtual bool GetSslCipherSuite(uint16_t* cipher) {
-    return false;
-  }
+  virtual bool GetSslCipherSuite(int* cipher) { return false; }
 
   // Gets the local RTCCertificate used for DTLS.
   virtual rtc::scoped_refptr<rtc::RTCCertificate>
