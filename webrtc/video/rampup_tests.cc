@@ -55,7 +55,7 @@ RampUpTester::RampUpTester(size_t num_streams,
       start_bitrate_bps_(start_bitrate_bps),
       start_bitrate_verified_(false),
       expected_bitrate_bps_(0),
-      test_start_ms_(clock_->TimeInMilliseconds()),
+      test_start_ms_(-1),
       ramp_up_finished_ms_(-1),
       extension_type_(extension_type),
       ssrcs_(GenerateSsrcs(num_streams, 100)),
@@ -226,6 +226,8 @@ void RampUpTester::AccumulateStats(const VideoSendStream::StreamStats& stream,
 }
 
 void RampUpTester::TriggerTestDone() {
+  RTC_DCHECK_GE(test_start_ms_, 0);
+
   VideoSendStream::Stats send_stats = send_stream_->GetStats();
 
   size_t total_packets_sent = 0;
@@ -262,6 +264,7 @@ void RampUpTester::TriggerTestDone() {
 }
 
 void RampUpTester::PerformTest() {
+  test_start_ms_ = clock_->TimeInMilliseconds();
   poller_thread_->Start();
   if (Wait() != kEventSignaled) {
     printf("Timed out while waiting for ramp-up to complete.");
