@@ -42,7 +42,6 @@ import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import org.webrtc.Logging;
 import org.webrtc.VideoRenderer.I420Frame;
@@ -170,6 +169,10 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       layoutInPercentage = new Rect(x, y, Math.min(100, x + width), Math.min(100, y + height));
       updateLayoutProperties = false;
       rotationDegree = 0;
+    }
+
+    public synchronized void reset() {
+      seenFrame = false;
     }
 
     private synchronized void release() {
@@ -549,7 +552,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     Logging.d(TAG, "VideoRendererGui.remove");
     if (instance == null) {
       throw new RuntimeException(
-          "Attempt to remove yuv renderer before setting GLSurfaceView");
+          "Attempt to remove renderer before setting GLSurfaceView");
     }
     synchronized (instance.yuvImageRenderers) {
       final int index = instance.yuvImageRenderers.indexOf(renderer);
@@ -557,6 +560,21 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         Logging.w(TAG, "Couldn't remove renderer (not present in current list)");
       } else {
         instance.yuvImageRenderers.remove(index).release();
+      }
+    }
+  }
+
+  public static synchronized void reset(VideoRenderer.Callbacks renderer) {
+    Logging.d(TAG, "VideoRendererGui.reset");
+    if (instance == null) {
+      throw new RuntimeException(
+          "Attempt to reset renderer before setting GLSurfaceView");
+    }
+    synchronized (instance.yuvImageRenderers) {
+      for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
+        if (yuvImageRenderer == renderer) {
+          yuvImageRenderer.reset();
+        }
       }
     }
   }
