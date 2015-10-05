@@ -6,3 +6,7 @@ SctpDataMediaChannelTest.*
 
 #TODO(pbos): https://code.google.com/p/webrtc/issues/detail?id=5048
 WebRtcVideoChannel2BaseTest.GetStats
+
+# TODO(pbos): https://code.google.com/p/webrtc/issues/detail?id=5050
+WebRtcVideoChannel2BaseTest.AddRemoveCapturerMultipleSources
+
