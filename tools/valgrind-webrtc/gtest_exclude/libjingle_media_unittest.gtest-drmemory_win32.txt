@@ -34,3 +34,7 @@ SctpDataMediaChannelTest.*
 # https://code.google.com/p/webrtc/issues/detail?id=3771
 VideoAdapterTest.AdaptResolutionWide
 VideoAdapterTest.AdaptResolutionNarrow
+
+# TODO(pbos): https://code.google.com/p/webrtc/issues/detail?id=5050
+WebRtcVideoChannel2BaseTest.AddRemoveCapturerMultipleSources
+
