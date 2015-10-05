@@ -92,7 +92,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private final Object pendingCameraSwitchLock = new Object();
   private volatile boolean pendingCameraSwitch;
   private CapturerObserver frameObserver = null;
-  private CameraErrorHandler errorHandler = null;
+  private final CameraErrorHandler errorHandler;
 
   // Camera error callback.
   private final Camera.ErrorCallback cameraErrorCallback =
@@ -155,15 +155,14 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     void onCameraSwitchError(String errorDescription);
   }
 
-  public static VideoCapturerAndroid create(String name,
-      CameraErrorHandler errorHandler) {
-    VideoCapturer capturer = VideoCapturer.create(name);
-    if (capturer != null) {
-      VideoCapturerAndroid capturerAndroid = (VideoCapturerAndroid) capturer;
-      capturerAndroid.errorHandler = errorHandler;
-      return capturerAndroid;
+  public static VideoCapturerAndroid create(String name, CameraErrorHandler errorHandler) {
+    final int cameraId = lookupDeviceName(name);
+    if (cameraId == -1) {
+      return null;
     }
-    return null;
+    final VideoCapturerAndroid capturer = new VideoCapturerAndroid(cameraId, errorHandler);
+    capturer.setNativeCapturer(nativeCreateVideoCapturer(capturer));
+    return capturer;
   }
 
   // Switch camera to the next valid camera id. This can only be called while
@@ -244,8 +243,15 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     return CameraEnumerationAndroid.getSupportedFormatsAsJson(getCurrentCameraId());
   }
 
-  private VideoCapturerAndroid() {
+  // Called from native VideoCapturer_nativeCreateVideoCapturer.
+  private VideoCapturerAndroid(int cameraId) {
+    this(cameraId, null);
+  }
+
+  private VideoCapturerAndroid(int cameraId, CameraErrorHandler errorHandler) {
     Logging.d(TAG, "VideoCapturerAndroid");
+    this.id = cameraId;
+    this.errorHandler = errorHandler;
     cameraThread = new HandlerThread(TAG);
     cameraThread.start();
     cameraThreadHandler = new Handler(cameraThread.getLooper());
@@ -258,30 +264,22 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
   }
 
-  // Called by native code.
-  // Initializes local variables for the camera named |deviceName|. If |deviceName| is empty, the
-  // first available device is used in order to be compatible with the generic VideoCapturer class.
-  boolean init(String deviceName) {
-    Logging.d(TAG, "init: " + deviceName);
-    if (deviceName == null)
-      return false;
-
+  // Returns the camera index for camera with name |deviceName|, or -1 if no such camera can be
+  // found. If |deviceName| is empty, the first available device is used.
+  private static int lookupDeviceName(String deviceName) {
+    Logging.d(TAG, "lookupDeviceName: " + deviceName);
+    if (deviceName == null || Camera.getNumberOfCameras() == 0) {
+      return -1;
+    }
     if (deviceName.isEmpty()) {
-      synchronized (cameraIdLock) {
-        this.id = 0;
-      }
-      return true;
-    } else {
-      for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-        if (deviceName.equals(CameraEnumerationAndroid.getDeviceName(i))) {
-          synchronized (cameraIdLock) {
-            this.id = i;
-          }
-          return true;
-        }
+      return 0;
+    }
+    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+      if (deviceName.equals(CameraEnumerationAndroid.getDeviceName(i))) {
+        return i;
       }
     }
-    return false;
+    return -1;
   }
 
   // Called by native code to quit the camera thread. This needs to be done manually, otherwise the
@@ -769,4 +767,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     private native void nativeOnOutputFormatRequest(long nativeCapturer,
         int width, int height, int fps);
   }
+
+  private static native long nativeCreateVideoCapturer(VideoCapturerAndroid videoCapturer);
 }

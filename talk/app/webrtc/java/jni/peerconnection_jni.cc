@@ -1672,17 +1672,21 @@ JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
 #if defined(ANDROID)
   jclass j_video_capturer_class(
       FindClass(jni, "org/webrtc/VideoCapturerAndroid"));
-  const jmethodID j_videocapturer_ctor(GetMethodID(
-      jni, j_video_capturer_class, "<init>", "()V"));
-  jobject j_video_capturer = jni->NewObject(j_video_capturer_class,
-                                            j_videocapturer_ctor);
-  CHECK_EXCEPTION(jni) << "error during NewObject";
-
-  rtc::scoped_refptr<AndroidVideoCapturerJni> delegate =
-      AndroidVideoCapturerJni::Create(jni, j_video_capturer, j_device_name);
-  if (!delegate.get())
+  const int camera_id = jni->CallStaticIntMethod(
+      j_video_capturer_class,
+      GetStaticMethodID(jni, j_video_capturer_class, "lookupDeviceName",
+                        "(Ljava/lang/String;)I"),
+      j_device_name);
+  CHECK_EXCEPTION(jni) << "error during VideoCapturerAndroid.lookupDeviceName";
+  if (camera_id == -1)
     return nullptr;
-  rtc::scoped_ptr<webrtc::AndroidVideoCapturer> capturer(
+  jobject j_video_capturer = jni->NewObject(
+      j_video_capturer_class,
+      GetMethodID(jni, j_video_capturer_class, "<init>", "(I)V"), camera_id);
+  CHECK_EXCEPTION(jni) << "error during creation of VideoCapturerAndroid";
+  rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
+      new rtc::RefCountedObject<AndroidVideoCapturerJni>(jni, j_video_capturer);
+  rtc::scoped_ptr<cricket::VideoCapturer> capturer(
       new webrtc::AndroidVideoCapturer(delegate));
 
 #else
@@ -1712,7 +1716,7 @@ JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
       jni, j_video_capturer_class, "setNativeCapturer", "(J)V"));
   jni->CallVoidMethod(j_video_capturer,
                       j_videocapturer_set_native_capturer,
-                      (jlong)capturer.release());
+                      jlongFromPointer(capturer.release()));
   CHECK_EXCEPTION(jni) << "error during setNativeCapturer";
   return j_video_capturer;
 }

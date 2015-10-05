@@ -46,22 +46,6 @@ int AndroidVideoCapturerJni::SetAndroidObjects(JNIEnv* jni,
   return 0;
 }
 
-// static
-rtc::scoped_refptr<AndroidVideoCapturerJni>
-AndroidVideoCapturerJni::Create(JNIEnv* jni,
-                                jobject j_video_capture,
-                                jstring device_name) {
-  LOG(LS_INFO) << "AndroidVideoCapturerJni::Create";
-  rtc::scoped_refptr<AndroidVideoCapturerJni> capturer(
-      new rtc::RefCountedObject<AndroidVideoCapturerJni>(jni, j_video_capture));
-
-  if (capturer->Init(device_name)) {
-    return capturer;
-  }
-  LOG(LS_ERROR) << "AndroidVideoCapturerJni init fails";
-  return nullptr;
-}
-
 AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
                                                  jobject j_video_capturer)
     : j_capturer_global_(jni, j_video_capturer),
@@ -74,16 +58,6 @@ AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
       capturer_(nullptr) {
   LOG(LS_INFO) << "AndroidVideoCapturerJni ctor";
   thread_checker_.DetachFromThread();
-}
-
-bool AndroidVideoCapturerJni::Init(jstring device_name) {
-  const jmethodID m(GetMethodID(
-        jni(), *j_video_capturer_class_, "init", "(Ljava/lang/String;)Z"));
-  if (!jni()->CallBooleanMethod(*j_capturer_global_, m, device_name)) {
-    return false;
-  }
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
-  return true;
 }
 
 AndroidVideoCapturerJni::~AndroidVideoCapturerJni() {
@@ -244,6 +218,16 @@ JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnOutputFormatRequest)
   LOG(LS_INFO) << "NativeObserver_nativeOnOutputFormatRequest";
   reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)->OnOutputFormatRequest(
       j_width, j_height, j_fps);
+}
+
+JOW(jlong, VideoCapturerAndroid_nativeCreateVideoCapturer)
+    (JNIEnv* jni, jclass, jobject j_video_capturer) {
+  rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
+      new rtc::RefCountedObject<AndroidVideoCapturerJni>(jni, j_video_capturer);
+  rtc::scoped_ptr<cricket::VideoCapturer> capturer(
+      new webrtc::AndroidVideoCapturer(delegate));
+  // Caller takes ownership of the cricket::VideoCapturer* pointer.
+  return jlongFromPointer(capturer.release());
 }
 
 }  // namespace webrtc_jni

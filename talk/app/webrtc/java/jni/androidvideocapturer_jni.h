@@ -46,12 +46,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
  public:
   static int SetAndroidObjects(JNIEnv* jni, jobject appliction_context);
 
-  // Creates a new instance of AndroidVideoCapturerJni. Returns a nullptr if
-  // it can't be created. This happens if |device_name| is invalid.
-  static rtc::scoped_refptr<AndroidVideoCapturerJni> Create(
-      JNIEnv* jni,
-      jobject j_video_capture, // Instance of VideoCapturerAndroid
-      jstring device_name); // Name of the camera to use.
+  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
 
   void Start(int width, int height, int framerate,
              webrtc::AndroidVideoCapturer* capturer) override;
@@ -68,12 +63,11 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
                        int rotation,
                        int64 time_stamp);
   void OnOutputFormatRequest(int width, int height, int fps);
-protected:
-  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
+
+ protected:
   ~AndroidVideoCapturerJni();
 
-private:
-  bool Init(jstring device_name);
+ private:
   void ReturnBuffer(int64 time_stamp);
   JNIEnv* jni();
 
