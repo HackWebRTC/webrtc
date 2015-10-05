@@ -4,25 +4,8 @@ WebRtcVideoChannel2BaseTest.SimulateConference
 WebRtcVideoChannel2BaseTest.TwoStreamsSendAndReceive
 WebRtcVideoChannel2BaseTest.TwoStreamsReUseFirstStream
 
-# https://code.google.com/p/webrtc/issues/detail?id=4963
-WebRtcVideoChannel2BaseTest.AdaptResolution16x10
-WebRtcVideoChannel2BaseTest.AdaptResolution4x3
-WebRtcVideoChannel2BaseTest.AddRemoveCapturer
-WebRtcVideoChannel2BaseTest.AddRemoveSendStreams
-WebRtcVideoChannel2BaseTest.GetStatsMultipleRecvStreams
-WebRtcVideoChannel2BaseTest.GetStatsMultipleSendStreams
-WebRtcVideoChannel2BaseTest.MuteStream
-WebRtcVideoChannel2BaseTest.RemoveCapturerWithoutAdd
-WebRtcVideoChannel2BaseTest.SendAndReceiveVp8Vga
-WebRtcVideoChannel2BaseTest.SendManyResizeOnce
-WebRtcVideoChannel2BaseTest.SetRenderer
-WebRtcVideoChannel2BaseTest.SetSend
-WebRtcVideoChannel2BaseTest.SetSendSsrc
-WebRtcVideoChannel2BaseTest.SetSendSsrcAfterSetCodecs
-WebRtcVideoChannel2BaseTest.SetSendStreamFormat0x0
-
-# https://code.google.com/p/webrtc/issues/detail?id=3158
-WebRtcVideoMediaChannelTest.SendVp8HdAndReceiveAdaptedVp8Vga
+# TODO(pbos): https://code.google.com/p/webrtc/issues/detail?id=4963
+WebRtcVideoChannel2BaseTest.*
 
 # https://code.google.com/p/webrtc/issues/detail?id=3482
 WebRtcVideoMediaChannelTest.GetStats
@@ -34,7 +17,3 @@ SctpDataMediaChannelTest.*
 # https://code.google.com/p/webrtc/issues/detail?id=3771
 VideoAdapterTest.AdaptResolutionWide
 VideoAdapterTest.AdaptResolutionNarrow
-
-# TODO(pbos): https://code.google.com/p/webrtc/issues/detail?id=5050
-WebRtcVideoChannel2BaseTest.AddRemoveCapturerMultipleSources
-
