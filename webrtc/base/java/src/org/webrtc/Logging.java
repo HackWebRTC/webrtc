@@ -19,14 +19,18 @@ import java.util.logging.Level;
 /** Java wrapper for WebRTC logging. */
 public class Logging {
   private static final Logger fallbackLogger = Logger.getLogger("org.webrtc.Logging");
-  private static boolean tracingEnabled;
+  private static volatile boolean tracingEnabled;
+  private static volatile boolean nativeLibLoaded;
 
   static {
     try {
       System.loadLibrary("jingle_peerconnection_so");
-    } catch (Throwable t) {
+      nativeLibLoaded = true;
+    } catch (UnsatisfiedLinkError t) {
       // If native logging is unavailable, log to system log.
       fallbackLogger.setLevel(Level.ALL);
+
+      fallbackLogger.log(Level.WARNING, "Failed to load jingle_peerconnection_so: ", t);
     }
   }
 
@@ -60,10 +64,19 @@ public class Logging {
   };
 
   public static void enableLogThreads() {
+    if (!nativeLibLoaded) {
+      fallbackLogger.log(Level.WARNING, "Cannot enable log thread because native lib not loaded.");
+      return;
+    }
     nativeEnableLogThreads();
   }
 
   public static void enableLogTimeStamps() {
+    if (!nativeLibLoaded) {
+      fallbackLogger.log(Level.WARNING,
+                         "Cannot enable log timestamps because native lib not loaded.");
+      return;
+    }
     nativeEnableLogTimeStamps();
   }
 
@@ -71,6 +84,11 @@ public class Logging {
   // On Android, use "logcat:" for |path| to send output there.
   public static synchronized void enableTracing(
       String path, EnumSet<TraceLevel> levels, Severity severity) {
+    if (!nativeLibLoaded) {
+      fallbackLogger.log(Level.WARNING, "Cannot enable tracing because native lib not loaded.");
+      return;
+    }
+
     if (tracingEnabled) {
       return;
     }
@@ -84,12 +102,8 @@ public class Logging {
 
   public static void log(Severity severity, String tag, String message) {
     if (tracingEnabled) {
-      try {
-        nativeLog(severity.ordinal(), tag, message);
-        return;
-      } catch (Throwable t) {
-        // Don't log the error to avoid spamming.
-      }
+      nativeLog(severity.ordinal(), tag, message);
+      return;
     }
 
     // Fallback to system log.
