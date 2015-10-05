@@ -28,10 +28,11 @@ package org.webrtc;
 
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.MediumTest;
-
+import android.test.suitebuilder.annotation.SmallTest;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.GLES20;
+import android.os.HandlerThread;
 import android.os.SystemClock;
 
 import java.nio.ByteBuffer;
@@ -45,10 +46,23 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     public int oesTextureId;
     public float[] transformMatrix;
     private boolean hasNewFrame = false;
+    // Thread where frames are expected to be received on.
+    private final Thread expectedThread;
+
+    MockTextureListener() {
+      this.expectedThread = null;
+    }
+
+    MockTextureListener(Thread expectedThread) {
+      this.expectedThread = expectedThread;
+    }
 
     @Override
     public synchronized void onTextureFrameAvailable(
         int oesTextureId, float[] transformMatrix, long timestampNs) {
+      if (expectedThread != null && Thread.currentThread() != expectedThread) {
+        throw new IllegalStateException("onTextureFrameAvailable called on wrong thread.");
+      }
       this.oesTextureId = oesTextureId;
       this.transformMatrix = transformMatrix;
       hasNewFrame = true;
@@ -251,5 +265,52 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     assertFalse(listener.waitForNewFrame(500));
 
     eglBase.release();
+  }
+
+  /**
+   * Test disconnecting the SurfaceTextureHelper immediately after is has been setup to use a
+   * shared context. No frames should be delivered to the listener.
+   */
+  @SmallTest
+  public static void testDisconnectImmediately() {
+    final SurfaceTextureHelper surfaceTextureHelper =
+        new SurfaceTextureHelper(EGL14.EGL_NO_CONTEXT);
+    surfaceTextureHelper.disconnect();
+  }
+
+  /**
+   * Test use SurfaceTextureHelper on a separate thread. A uniform texture frame is created and
+   * received on a thread separate from the test thread.
+   */
+  @MediumTest
+  public static void testFrameOnSeparateThread() throws InterruptedException {
+    final HandlerThread thread = new HandlerThread("SurfaceTextureHelperTestThread");
+    thread.start();
+
+    // Create SurfaceTextureHelper and listener.
+    final SurfaceTextureHelper surfaceTextureHelper =
+        new SurfaceTextureHelper(EGL14.EGL_NO_CONTEXT, thread);
+    // Create a mock listener and expect frames to be delivered on |thread|.
+    final MockTextureListener listener = new MockTextureListener(thread);
+    surfaceTextureHelper.setListener(listener);
+
+    // Create resources for stubbing an OES texture producer. |eglOesBase| has the
+    // SurfaceTexture in |surfaceTextureHelper| as the target EGLSurface.
+    final EglBase eglOesBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PLAIN);
+    eglOesBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
+    eglOesBase.makeCurrent();
+    // Draw a frame onto the SurfaceTexture.
+    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+    // swapBuffers() will ultimately trigger onTextureFrameAvailable().
+    eglOesBase.swapBuffers();
+    eglOesBase.release();
+
+    // Wait for an OES texture to arrive.
+    listener.waitForNewFrame();
+
+    // Return the frame from this thread.
+    surfaceTextureHelper.returnTextureFrame();
+    surfaceTextureHelper.disconnect();
+    thread.quitSafely();
   }
 }

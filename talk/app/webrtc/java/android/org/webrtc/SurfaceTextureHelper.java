@@ -65,6 +65,7 @@ final class SurfaceTextureHelper {
 
   private final HandlerThread thread;
   private final Handler handler;
+  private final boolean isOwningThread;
   private final EglBase eglBase;
   private final SurfaceTexture surfaceTexture;
   private final int oesTextureId;
@@ -78,9 +79,19 @@ final class SurfaceTextureHelper {
    * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|.
    */
   public SurfaceTextureHelper(EGLContext sharedContext) {
-    thread = new HandlerThread(TAG);
-    thread.start();
-    handler = new Handler(thread.getLooper());
+    this(sharedContext, null);
+  }
+
+  public SurfaceTextureHelper(EGLContext sharedContext, HandlerThread thread) {
+    if (thread == null) {
+      this.thread = new HandlerThread(TAG);
+      this.thread.start();
+      this.isOwningThread = true;
+    } else {
+      this.thread = thread;
+      this.isOwningThread = false;
+    }
+    this.handler = new Handler(this.thread.getLooper());
 
     eglBase = new EglBase(sharedContext, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createDummyPbufferSurface();
@@ -89,13 +100,8 @@ final class SurfaceTextureHelper {
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     surfaceTexture = new SurfaceTexture(oesTextureId);
 
-    // Reattach EGL context to private thread.
+    // The EGL context will be re-attached to the private thread.
     eglBase.detachCurrent();
-    handler.post(new Runnable() {
-      @Override public void run() {
-        eglBase.makeCurrent();
-      }
-    });
   }
 
   /**
@@ -148,6 +154,13 @@ final class SurfaceTextureHelper {
    * onTextureFrameAvailable() after this function returns.
    */
   public void disconnect() {
+    if (Thread.currentThread() == thread) {
+      isQuitting = true;
+      if (!isTextureInUse) {
+        release();
+      }
+      return;
+    }
     final CountDownLatch barrier = new CountDownLatch(1);
     handler.postAtFrontOfQueue(new Runnable() {
       @Override public void run() {
@@ -171,7 +184,9 @@ final class SurfaceTextureHelper {
     isTextureInUse = true;
     hasPendingTexture = false;
 
+    eglBase.makeCurrent();
     surfaceTexture.updateTexImage();
+
     final float[] transformMatrix = new float[16];
     surfaceTexture.getTransformMatrix(transformMatrix);
     final long timestampNs = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
@@ -187,9 +202,12 @@ final class SurfaceTextureHelper {
     if (isTextureInUse || !isQuitting) {
       throw new IllegalStateException("Unexpected release.");
     }
+    eglBase.makeCurrent();
     GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
     surfaceTexture.release();
     eglBase.release();
-    thread.quitSafely();
+    if (isOwningThread) {
+      thread.quitSafely();
+    }
   }
 }
