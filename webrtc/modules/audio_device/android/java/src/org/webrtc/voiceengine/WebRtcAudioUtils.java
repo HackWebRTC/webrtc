@@ -50,7 +50,6 @@ public final class WebRtcAudioUtils {
   private static final String[] BLACKLISTED_NS_MODELS = new String[] {
       "Nexus 10",
       "Nexus 9",
-      "Nexus 6",
       "Nexus 5",
   };
 
