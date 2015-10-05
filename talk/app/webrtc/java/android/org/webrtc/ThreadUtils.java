@@ -31,6 +31,26 @@ import java.util.concurrent.CountDownLatch;
 
 final class ThreadUtils {
   /**
+   * Utility class to be used for checking that a method is called on the correct thread.
+   */
+  public static class ThreadChecker {
+    private Thread thread = Thread.currentThread();
+
+    public void checkIsOnValidThread() {
+      if (thread == null) {
+        thread = Thread.currentThread();
+      }
+      if (Thread.currentThread() != thread) {
+        throw new IllegalStateException("Wrong thread");
+      }
+    }
+
+    public void detachThread() {
+      thread = null;
+    }
+  }
+
+  /**
    * Utility interface to be used with executeUninterruptibly() to wait for blocking operations
    * to complete without getting interrupted..
    */
