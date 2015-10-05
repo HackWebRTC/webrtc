@@ -378,9 +378,9 @@
             '../../boringssl/src/include',
           ],
           'sources': [
-            '../../webrtc_overrides/webrtc/base/win32socketinit.cc',
             '../../webrtc_overrides/webrtc/base/logging.cc',
             '../../webrtc_overrides/webrtc/base/logging.h',
+            '../../webrtc_overrides/webrtc/base/win32socketinit.cc',
           ],
           'sources!': [
             'atomicops.h',
