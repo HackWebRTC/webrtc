@@ -349,10 +349,13 @@ def _LocalCommit(commit_msg, dry_run):
     _RunCommand(['git', 'commit', '-m', commit_msg])
 
 
-def _UploadCL(dry_run):
+def _UploadCL(dry_run, rietveld_email=None):
   logging.info('Uploading CL...')
   if not dry_run:
-    _RunCommand(['git', 'cl', 'upload'], extra_env={'EDITOR': 'true'})
+    cmd = ['git', 'cl', 'upload', '-f']
+    if rietveld_email:
+      cmd.append('--email=%s' % rietveld_email)
+    _RunCommand(cmd, extra_env={'EDITOR': 'true'})
 
 
 def _LaunchTrybots(dry_run, skip_try):
@@ -375,6 +378,10 @@ def main():
   p.add_argument('-r', '--revision',
                  help=('Chromium Git revision to roll to. Defaults to the '
                        'Chromium HEAD revision if omitted.'))
+  p.add_argument('-u', '--rietveld-email',
+                 help=('E-mail address to use for creating the CL at Rietveld'
+                       'If omitted a previously cached one will be used or an '
+                       'error will be thrown during upload.'))
   p.add_argument('--dry-run', action='store_true', default=False,
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
@@ -439,7 +446,7 @@ def main():
   _CreateRollBranch(opts.dry_run)
   UpdateDeps(deps_filename, current_cr_rev, new_cr_rev)
   _LocalCommit(commit_msg, opts.dry_run)
-  _UploadCL(opts.dry_run)
+  _UploadCL(opts.dry_run, opts.rietveld_email)
   _LaunchTrybots(opts.dry_run, opts.skip_try)
   _SendToCQ(opts.dry_run, opts.skip_cq)
   return 0
