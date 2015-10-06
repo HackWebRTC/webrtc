@@ -29,6 +29,7 @@
 package org.webrtc;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -170,11 +171,15 @@ public class PeerConnection {
   private final List<MediaStream> localStreams;
   private final long nativePeerConnection;
   private final long nativeObserver;
+  private List<RtpSender> senders;
+  private List<RtpReceiver> receivers;
 
   PeerConnection(long nativePeerConnection, long nativeObserver) {
     this.nativePeerConnection = nativePeerConnection;
     this.nativeObserver = nativeObserver;
     localStreams = new LinkedList<MediaStream>();
+    senders = new LinkedList<RtpSender>();
+    receivers = new LinkedList<RtpReceiver>();
   }
 
   // JsepInterface.
@@ -218,6 +223,24 @@ public class PeerConnection {
     localStreams.remove(stream);
   }
 
+  // Note that calling getSenders will dispose of the senders previously
+  // returned (and same goes for getReceivers).
+  public List<RtpSender> getSenders() {
+    for (RtpSender sender : senders) {
+      sender.dispose();
+    }
+    senders = nativeGetSenders();
+    return Collections.unmodifiableList(senders);
+  }
+
+  public List<RtpReceiver> getReceivers() {
+    for (RtpReceiver receiver : receivers) {
+      receiver.dispose();
+    }
+    receivers = nativeGetReceivers();
+    return Collections.unmodifiableList(receivers);
+  }
+
   public boolean getStats(StatsObserver observer, MediaStreamTrack track) {
     return nativeGetStats(observer, (track == null) ? 0 : track.nativeTrack);
   }
@@ -239,6 +262,14 @@ public class PeerConnection {
       stream.dispose();
     }
     localStreams.clear();
+    for (RtpSender sender : senders) {
+      sender.dispose();
+    }
+    senders.clear();
+    for (RtpReceiver receiver : receivers) {
+      receiver.dispose();
+    }
+    receivers.clear();
     freePeerConnection(nativePeerConnection);
     freeObserver(nativeObserver);
   }
@@ -256,4 +287,8 @@ public class PeerConnection {
 
   private native boolean nativeGetStats(
       StatsObserver observer, long nativeTrack);
+
+  private native List<RtpSender> nativeGetSenders();
+
+  private native List<RtpReceiver> nativeGetReceivers();
 }

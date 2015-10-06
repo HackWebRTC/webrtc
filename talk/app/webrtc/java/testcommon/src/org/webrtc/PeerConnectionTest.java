@@ -645,6 +645,11 @@ public class PeerConnectionTest {
     assertEquals(answeringPC.getLocalDescription().type, answerSdp.type);
     assertEquals(answeringPC.getRemoteDescription().type, offerSdp.type);
 
+    assertEquals(offeringPC.getSenders().size(), 2);
+    assertEquals(offeringPC.getReceivers().size(), 2);
+    assertEquals(answeringPC.getSenders().size(), 2);
+    assertEquals(answeringPC.getReceivers().size(), 2);
+
     if (!RENDER_TO_GUI) {
       // Wait for at least some frames to be delivered at each end (number
       // chosen arbitrarily).

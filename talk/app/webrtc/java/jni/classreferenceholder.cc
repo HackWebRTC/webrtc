@@ -63,6 +63,7 @@ void FreeGlobalClassReferenceHolder() {
 
 ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "java/nio/ByteBuffer");
+  LoadClass(jni, "java/util/ArrayList");
   LoadClass(jni, "org/webrtc/AudioTrack");
   LoadClass(jni, "org/webrtc/DataChannel");
   LoadClass(jni, "org/webrtc/DataChannel$Buffer");
@@ -107,6 +108,8 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/PeerConnection$TcpCandidatePolicy");
   LoadClass(jni, "org/webrtc/PeerConnection$KeyType");
   LoadClass(jni, "org/webrtc/PeerConnection$SignalingState");
+  LoadClass(jni, "org/webrtc/RtpReceiver");
+  LoadClass(jni, "org/webrtc/RtpSender");
   LoadClass(jni, "org/webrtc/SessionDescription");
   LoadClass(jni, "org/webrtc/SessionDescription$Type");
   LoadClass(jni, "org/webrtc/StatsReport");

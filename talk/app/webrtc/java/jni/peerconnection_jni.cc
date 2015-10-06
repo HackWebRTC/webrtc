@@ -64,6 +64,8 @@
 #include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
+#include "talk/app/webrtc/rtpreceiverinterface.h"
+#include "talk/app/webrtc/rtpsenderinterface.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
@@ -113,6 +115,8 @@ using webrtc::MediaStreamTrackInterface;
 using webrtc::PeerConnectionFactoryInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionObserver;
+using webrtc::RtpReceiverInterface;
+using webrtc::RtpSenderInterface;
 using webrtc::SessionDescriptionInterface;
 using webrtc::SetSessionDescriptionObserver;
 using webrtc::StatsObserver;
@@ -971,7 +975,7 @@ JOW(void, VideoRenderer_releaseNativeFrame)(
 }
 
 JOW(void, MediaStreamTrack_free)(JNIEnv*, jclass, jlong j_p) {
-  CHECK_RELEASE(reinterpret_cast<MediaStreamTrackInterface*>(j_p));
+  reinterpret_cast<MediaStreamTrackInterface*>(j_p)->Release();
 }
 
 JOW(jboolean, MediaStream_nativeAddAudioTrack)(
@@ -1626,6 +1630,60 @@ JOW(void, PeerConnection_nativeRemoveLocalStream)(
       reinterpret_cast<MediaStreamInterface*>(native_stream));
 }
 
+JOW(jobject, PeerConnection_nativeGetSenders)(JNIEnv* jni, jobject j_pc) {
+  jclass j_array_list_class = FindClass(jni, "java/util/ArrayList");
+  jmethodID j_array_list_ctor =
+      GetMethodID(jni, j_array_list_class, "<init>", "()V");
+  jmethodID j_array_list_add =
+      GetMethodID(jni, j_array_list_class, "add", "(Ljava/lang/Object;)Z");
+  jobject j_senders = jni->NewObject(j_array_list_class, j_array_list_ctor);
+  CHECK_EXCEPTION(jni) << "error during NewObject";
+
+  jclass j_rtp_sender_class = FindClass(jni, "org/webrtc/RtpSender");
+  jmethodID j_rtp_sender_ctor =
+      GetMethodID(jni, j_rtp_sender_class, "<init>", "(J)V");
+
+  auto senders = ExtractNativePC(jni, j_pc)->GetSenders();
+  for (const auto& sender : senders) {
+    jlong nativeSenderPtr = jlongFromPointer(sender.get());
+    jobject j_sender =
+        jni->NewObject(j_rtp_sender_class, j_rtp_sender_ctor, nativeSenderPtr);
+    CHECK_EXCEPTION(jni) << "error during NewObject";
+    // Sender is now owned by Java object, and will be freed from there.
+    sender->AddRef();
+    jni->CallBooleanMethod(j_senders, j_array_list_add, j_sender);
+    CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
+  }
+  return j_senders;
+}
+
+JOW(jobject, PeerConnection_nativeGetReceivers)(JNIEnv* jni, jobject j_pc) {
+  jclass j_array_list_class = FindClass(jni, "java/util/ArrayList");
+  jmethodID j_array_list_ctor =
+      GetMethodID(jni, j_array_list_class, "<init>", "()V");
+  jmethodID j_array_list_add =
+      GetMethodID(jni, j_array_list_class, "add", "(Ljava/lang/Object;)Z");
+  jobject j_receivers = jni->NewObject(j_array_list_class, j_array_list_ctor);
+  CHECK_EXCEPTION(jni) << "error during NewObject";
+
+  jclass j_rtp_receiver_class = FindClass(jni, "org/webrtc/RtpReceiver");
+  jmethodID j_rtp_receiver_ctor =
+      GetMethodID(jni, j_rtp_receiver_class, "<init>", "(J)V");
+
+  auto receivers = ExtractNativePC(jni, j_pc)->GetReceivers();
+  for (const auto& receiver : receivers) {
+    jlong nativeReceiverPtr = jlongFromPointer(receiver.get());
+    jobject j_receiver = jni->NewObject(j_rtp_receiver_class,
+                                        j_rtp_receiver_ctor, nativeReceiverPtr);
+    CHECK_EXCEPTION(jni) << "error during NewObject";
+    // Receiver is now owned by Java object, and will be freed from there.
+    receiver->AddRef();
+    jni->CallBooleanMethod(j_receivers, j_array_list_add, j_receiver);
+    CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
+  }
+  return j_receivers;
+}
+
 JOW(bool, PeerConnection_nativeGetStats)(
     JNIEnv* jni, jobject j_pc, jobject j_observer, jlong native_track) {
   rtc::scoped_refptr<StatsObserverWrapper> observer(
@@ -1869,6 +1927,55 @@ JOW(jbyteArray, CallSessionFileRotatingLogSink_nativeGetLogData)(
   jni->SetByteArrayRegion(result, 0, read, buffer.get());
 
   return result;
+}
+
+JOW(void, RtpSender_nativeSetTrack)(JNIEnv* jni,
+                                    jclass,
+                                    jlong j_rtp_sender_pointer,
+                                    jlong j_track_pointer) {
+  reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+      ->SetTrack(reinterpret_cast<MediaStreamTrackInterface*>(j_track_pointer));
+}
+
+JOW(jlong, RtpSender_nativeGetTrack)(JNIEnv* jni,
+                                  jclass,
+                                  jlong j_rtp_sender_pointer,
+                                  jlong j_track_pointer) {
+  return jlongFromPointer(
+      reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+          ->track()
+          .release());
+}
+
+JOW(jstring, RtpSender_nativeId)(
+    JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+  return JavaStringFromStdString(
+      jni, reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)->id());
+}
+
+JOW(void, RtpSender_free)(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+  reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)->Release();
+}
+
+JOW(jlong, RtpReceiver_nativeGetTrack)(JNIEnv* jni,
+                                    jclass,
+                                    jlong j_rtp_receiver_pointer,
+                                    jlong j_track_pointer) {
+  return jlongFromPointer(
+      reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)
+          ->track()
+          .release());
+}
+
+JOW(jstring, RtpReceiver_nativeId)(
+    JNIEnv* jni, jclass, jlong j_rtp_receiver_pointer) {
+  return JavaStringFromStdString(
+      jni,
+      reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)->id());
+}
+
+JOW(void, RtpReceiver_free)(JNIEnv* jni, jclass, jlong j_rtp_receiver_pointer) {
+  reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)->Release();
 }
 
 }  // namespace webrtc_jni
