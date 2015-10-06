@@ -115,6 +115,7 @@ ViEChannel::ViEChannel(uint32_t number_of_cores,
       report_block_stats_sender_(new ReportBlockStats()),
       time_of_first_rtt_ms_(-1),
       rtt_sum_ms_(0),
+      last_rtt_ms_(0),
       num_rtts_(0),
       rtp_rtcp_modules_(
           CreateRtpRtcpModules(!sender,
@@ -1068,7 +1069,7 @@ void ViEChannel::OnDecoderTiming(int decode_ms,
     return;
   receive_stats_callback_->OnDecoderTiming(
       decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
-      jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
+      jitter_buffer_ms, min_playout_delay_ms, render_delay_ms, last_rtt_ms_);
 }
 
 int32_t ViEChannel::RequestKeyFrame() {
@@ -1102,6 +1103,7 @@ void ViEChannel::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   if (time_of_first_rtt_ms_ == -1)
     time_of_first_rtt_ms_ = Clock::GetRealTimeClock()->TimeInMilliseconds();
   rtt_sum_ms_ += avg_rtt_ms;
+  last_rtt_ms_ = avg_rtt_ms;
   ++num_rtts_;
 }
 

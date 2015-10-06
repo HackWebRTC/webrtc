@@ -443,6 +443,7 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   int64_t time_of_first_rtt_ms_ GUARDED_BY(crit_);
   int64_t rtt_sum_ms_ GUARDED_BY(crit_);
+  int64_t last_rtt_ms_ GUARDED_BY(crit_);
   size_t num_rtts_ GUARDED_BY(crit_);
 
   // RtpRtcp modules, declared last as they use other members on construction.

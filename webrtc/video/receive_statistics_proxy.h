@@ -51,7 +51,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                        int target_delay_ms,
                        int jitter_buffer_ms,
                        int min_playout_delay_ms,
-                       int render_delay_ms);
+                       int render_delay_ms,
+                       int64_t rtt_ms);
 
   // Overrides VCMReceiveStatisticsCallback.
   void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) override;
@@ -94,6 +95,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   SampleCounter render_width_counter_ GUARDED_BY(crit_);
   SampleCounter render_height_counter_ GUARDED_BY(crit_);
   SampleCounter decode_time_counter_ GUARDED_BY(crit_);
+  SampleCounter delay_counter_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
 };
 
