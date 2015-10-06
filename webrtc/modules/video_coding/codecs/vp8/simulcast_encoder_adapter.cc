@@ -262,6 +262,10 @@ int SimulcastEncoderAdapter::Encode(
   int src_width = input_image.width();
   int src_height = input_image.height();
   for (size_t stream_idx = 0; stream_idx < streaminfos_.size(); ++stream_idx) {
+    // Don't encode frames in resolutions that we don't intend to send.
+    if (!streaminfos_[stream_idx].send_stream)
+      continue;
+
     std::vector<VideoFrameType> stream_frame_types;
     if (send_key_frame) {
       stream_frame_types.push_back(kKeyFrame);
@@ -390,23 +394,8 @@ int32_t SimulcastEncoderAdapter::Encoded(
   CodecSpecificInfoVP8* vp8Info = &(stream_codec_specific.codecSpecific.VP8);
   vp8Info->simulcastIdx = stream_idx;
 
-  if (streaminfos_[stream_idx].send_stream) {
-    return encoded_complete_callback_->Encoded(encodedImage,
-                                               &stream_codec_specific,
-                                               fragmentation);
-  } else {
-    EncodedImage dummy_image;
-    // Required in case padding is applied to dropped frames.
-    dummy_image._timeStamp = encodedImage._timeStamp;
-    dummy_image.capture_time_ms_ = encodedImage.capture_time_ms_;
-    dummy_image._encodedWidth = encodedImage._encodedWidth;
-    dummy_image._encodedHeight = encodedImage._encodedHeight;
-    dummy_image._length = 0;
-    dummy_image._frameType = kSkipFrame;
-    vp8Info->keyIdx = kNoKeyIdx;
-    return encoded_complete_callback_->Encoded(dummy_image,
-                                               &stream_codec_specific, NULL);
-  }
+  return encoded_complete_callback_->Encoded(
+      encodedImage, &stream_codec_specific, fragmentation);
 }
 
 uint32_t SimulcastEncoderAdapter::GetStreamBitrate(

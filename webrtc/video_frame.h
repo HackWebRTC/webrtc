@@ -169,9 +169,6 @@ class VideoFrame {
 enum VideoFrameType {
   kKeyFrame = 0,
   kDeltaFrame = 1,
-  kGoldenFrame = 2,
-  kAltRefFrame = 3,
-  kSkipFrame = 4
 };
 
 // TODO(pbos): Rename EncodedFrame and reformat this class' members.

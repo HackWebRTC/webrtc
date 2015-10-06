@@ -233,11 +233,9 @@ webrtc::FrameType VCMEncodedFrame::ConvertFrameType(VideoFrameType frameType)
       return  kVideoFrameKey;
     case kDeltaFrame:
       return kVideoFrameDelta;
-    case kSkipFrame:
-      return kFrameEmpty;
-    default:
-      return kVideoFrameDelta;
   }
+  // Bogus default return value.
+  return kVideoFrameDelta;
 }
 
 VideoFrameType VCMEncodedFrame::ConvertFrameType(webrtc::FrameType frame_type) {

@@ -100,10 +100,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     encoded._encodedWidth = config_.simulcastStream[i].width;
     encoded._encodedHeight = config_.simulcastStream[i].height;
     // Always encode something on the first frame.
-    if (min_stream_bits > bits_available && i > 0) {
-      encoded._length = 0;
-      encoded._frameType = kSkipFrame;
-    }
+    if (min_stream_bits > bits_available && i > 0)
+      continue;
     assert(callback_ != NULL);
     if (callback_->Encoded(encoded, &specifics, NULL) != 0)
       return -1;

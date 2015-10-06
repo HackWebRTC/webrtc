@@ -367,13 +367,6 @@ class TestVp8Simulcast : public ::testing::Test {
           .Times(1)
           .WillRepeatedly(Return(0));
     }
-    if (expected_video_streams < kNumberOfSimulcastStreams) {
-      EXPECT_CALL(encoder_callback_, Encoded(
-          AllOf(Field(&EncodedImage::_frameType, kSkipFrame),
-                Field(&EncodedImage::_length, 0)), _, _))
-          .Times(kNumberOfSimulcastStreams - expected_video_streams)
-          .WillRepeatedly(Return(0));
-    }
   }
 
   void VerifyTemporalIdxAndSyncForAllSpatialLayers(

@@ -351,6 +351,9 @@ TEST_F(TestSimulcastEncoderAdapterFake, SetChannelParameters) {
 TEST_F(TestSimulcastEncoderAdapterFake, EncodedCallbackForDifferentEncoders) {
   SetupCodec();
 
+  // Set bitrates so that we send all layers.
+  adapter_->SetRates(1200, 30);
+
   // At this point, the simulcast encoder adapter should have 3 streams: HD,
   // quarter HD, and quarter quarter HD. We're going to mostly ignore the exact
   // resolutions, to test that the adapter forwards on the correct resolution

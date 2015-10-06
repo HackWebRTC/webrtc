@@ -168,8 +168,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   stats->height = encoded_image._encodedHeight;
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
 
-  if (encoded_image._frameType != kSkipFrame)
-    key_frame_counter_.Add(encoded_image._frameType == kKeyFrame);
+  key_frame_counter_.Add(encoded_image._frameType == kKeyFrame);
 
   // TODO(asapersson): This is incorrect if simulcast layers are encoded on
   // different threads and there is no guarantee that one frame of all layers

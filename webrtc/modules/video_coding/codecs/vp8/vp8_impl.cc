@@ -1018,17 +1018,6 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
       } else if (codec_.mode == kScreensharing) {
         result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
       }
-    } else {
-      // Required in case padding is applied to dropped frames.
-      encoded_images_[encoder_idx]._length = 0;
-      encoded_images_[encoder_idx]._frameType = kSkipFrame;
-      codec_specific.codecType = kVideoCodecVP8;
-      CodecSpecificInfoVP8* vp8Info = &(codec_specific.codecSpecific.VP8);
-      vp8Info->pictureId = picture_id_[stream_idx];
-      vp8Info->simulcastIdx = stream_idx;
-      vp8Info->keyIdx = kNoKeyIdx;
-      encoded_complete_callback_->Encoded(encoded_images_[encoder_idx],
-                                          &codec_specific, NULL);
     }
   }
   if (encoders_.size() == 1 && send_stream_[0]) {
