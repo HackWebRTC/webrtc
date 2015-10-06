@@ -29,11 +29,13 @@
 namespace webrtc {
 
 namespace internal {
-VideoCaptureInput::VideoCaptureInput(ProcessThread* module_process_thread,
-                                     VideoCaptureCallback* frame_callback,
-                                     VideoRenderer* local_renderer,
-                                     SendStatisticsProxy* stats_proxy,
-                                     CpuOveruseObserver* overuse_observer)
+VideoCaptureInput::VideoCaptureInput(
+    ProcessThread* module_process_thread,
+    VideoCaptureCallback* frame_callback,
+    VideoRenderer* local_renderer,
+    SendStatisticsProxy* stats_proxy,
+    CpuOveruseObserver* overuse_observer,
+    EncodingTimeObserver* encoding_time_observer)
     : capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       module_process_thread_(module_process_thread),
       frame_callback_(frame_callback),
@@ -52,7 +54,8 @@ VideoCaptureInput::VideoCaptureInput(ProcessThread* module_process_thread,
       overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock(),
                                                  CpuOveruseOptions(),
                                                  overuse_observer,
-                                                 stats_proxy)) {
+                                                 stats_proxy)),
+      encoding_time_observer_(encoding_time_observer) {
   encoder_thread_->Start();
   encoder_thread_->SetPriority(kHighPriority);
   module_process_thread_->RegisterModule(overuse_detector_.get());
@@ -149,6 +152,10 @@ bool VideoCaptureInput::EncoderProcess() {
           Clock::GetRealTimeClock()->TimeInMilliseconds() - encode_start_time);
       overuse_detector_->FrameEncoded(encode_time_ms);
       stats_proxy_->OnEncodedFrame(encode_time_ms);
+      if (encoding_time_observer_) {
+        encoding_time_observer_->OnReportEncodedTime(
+            deliver_frame.ntp_time_ms(), encode_time_ms);
+      }
     }
   }
   // We're done!
