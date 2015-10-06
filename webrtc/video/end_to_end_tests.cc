@@ -20,6 +20,7 @@
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
@@ -1335,9 +1336,6 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
 }
 
 TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
-  // TODO(sprang): Extend this to verify received values once send-side BWE
-  // is in place.
-
   static const int kExtensionId = 5;
 
   class RtpExtensionHeaderObserver : public test::DirectTransport {
@@ -1347,7 +1345,8 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
           parser_(RtpHeaderParser::Create()),
           last_seq_(0),
           padding_observed_(false),
-          rtx_padding_observed_(false) {
+          rtx_padding_observed_(false),
+          retransmit_observed_(false) {
       parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
                                           kExtensionId);
     }
@@ -1361,6 +1360,8 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
 
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(data, length, &header));
+      bool drop_packet = false;
+
       if (header.extension.hasTransportSequenceNumber) {
         EXPECT_EQ(options.packet_id,
                   header.extension.transportSequenceNumber);
@@ -1370,12 +1371,25 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
         }
         last_seq_ = header.extension.transportSequenceNumber;
 
+        // Drop every 20th packet, so we get retransmits.
+        if (header.sequenceNumber % 20 == 0) {
+          dropped_seq_.insert(header.sequenceNumber);
+          drop_packet = true;
+        }
+
         size_t payload_length =
             length - (header.headerLength + header.paddingLength);
         if (payload_length == 0) {
           padding_observed_ = true;
         } else if (header.payloadType == kSendRtxPayloadType) {
-          rtx_padding_observed_ = true;
+          uint16_t original_sequence_number =
+              ByteReader<uint16_t>::ReadBigEndian(&data[header.headerLength]);
+          if (dropped_seq_.find(original_sequence_number) !=
+              dropped_seq_.end()) {
+            retransmit_observed_ = true;
+          } else {
+            rtx_padding_observed_ = true;
+          }
         } else {
           streams_observed_.insert(header.ssrc);
         }
@@ -1383,12 +1397,14 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
         if (IsDone())
           done_->Set();
       }
+      if (drop_packet)
+        return true;
       return test::DirectTransport::SendRtp(data, length, options);
     }
 
     bool IsDone() {
       return streams_observed_.size() == MultiStreamTest::kNumStreams &&
-             padding_observed_ && rtx_padding_observed_;
+             padding_observed_ && retransmit_observed_ && rtx_padding_observed_;
     }
 
     EventTypeWrapper Wait() { return done_->Wait(kDefaultTimeoutMs); }
@@ -1397,8 +1413,10 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
     rtc::scoped_ptr<RtpHeaderParser> parser_;
     uint16_t last_seq_;
     std::set<uint32_t> streams_observed_;
+    std::set<uint16_t> dropped_seq_;
     bool padding_observed_;
     bool rtx_padding_observed_;
+    bool retransmit_observed_;
   };
 
   class TransportSequenceNumberTester : public MultiStreamTest {

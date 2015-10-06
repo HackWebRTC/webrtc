@@ -695,6 +695,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
   size_t length = IP_PACKET_SIZE;
   uint8_t data_buffer[IP_PACKET_SIZE];
   int64_t capture_time_ms;
+
   if (!packet_history_.GetPacketAndSetSendTime(packet_id, min_resend_time, true,
                                                data_buffer, &length,
                                                &capture_time_ms)) {
@@ -922,8 +923,8 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
   // TODO(sprang): Potentially too much overhead in IsRegistered()?
   bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
                                  kRtpExtensionTransportSequenceNumber) &&
-                             transport_sequence_number_allocator_ &&
-                             !is_retransmit;
+                             transport_sequence_number_allocator_;
+
   PacketOptions options;
   if (using_transport_seq) {
     options.packet_id =
