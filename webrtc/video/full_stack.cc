@@ -118,10 +118,7 @@ TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   RunTest(foreman_cif);
 }
 
-// Temporarily disabled on Android due to low test timeouts.
-// https://code.google.com/p/chromium/issues/detail?id=513170
-#include "webrtc/test/testsupport/gtest_disable.h"
-TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP8_2TL)) {
+TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
   VideoQualityTest::Params screenshare = {
       {1850, 1110, 5, 50000, 200000, 2000000, "VP8", 2, 400000},
       {},          // Video-specific.
@@ -130,7 +127,7 @@ TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP8_2TL)) {
   RunTest(screenshare);
 }
 
-TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP8_2TL_Scroll)) {
+TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
   VideoQualityTest::Params config = {
       {1850, 1110 / 2, 5, 50000, 200000, 2000000, "VP8", 2, 400000},
       {},
@@ -139,8 +136,7 @@ TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP8_2TL_Scroll)) {
   RunTest(config);
 }
 
-// Disabled on Android along with VP8 screenshare above.
-TEST_F(FullStackTest, DISABLED_ON_ANDROID(ScreenshareSlidesVP9_2TL)) {
+TEST_F(FullStackTest, ScreenshareSlidesVP9_2TL) {
   VideoQualityTest::Params screenshare = {
       {1850, 1110, 5, 50000, 200000, 2000000, "VP9", 2, 400000},
       {},
