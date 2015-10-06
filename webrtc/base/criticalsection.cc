@@ -88,7 +88,12 @@ void CriticalSection::Leave() UNLOCK_FUNCTION() {
 
 bool CriticalSection::CurrentThreadIsOwner() const {
 #if defined(WEBRTC_WIN)
-  return crit_.OwningThread == reinterpret_cast<HANDLE>(GetCurrentThreadId());
+  // OwningThread has type HANDLE but actually contains the Thread ID:
+  // http://stackoverflow.com/questions/12675301/why-is-the-owningthread-member-of-critical-section-of-type-handle-when-it-is-de
+  // Converting through size_t avoids the VS 2015 warning C4312: conversion from
+  // 'type1' to 'type2' of greater size
+  return crit_.OwningThread ==
+         reinterpret_cast<HANDLE>(static_cast<size_t>(GetCurrentThreadId()));
 #else
 #if CS_DEBUG_CHECKS
   return pthread_equal(thread_, pthread_self());
