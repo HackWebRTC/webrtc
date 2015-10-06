@@ -824,7 +824,9 @@ TEST_F(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
 
 // Tests that playout can be initiated, started and stopped. No audio callback
 // is registered in this test.
-TEST_F(AudioDeviceTest, StartStopPlayout) {
+// Flaky on our trybots makes this test unusable.
+// https://code.google.com/p/webrtc/issues/detail?id=5046
+TEST_F(AudioDeviceTest, DISABLED_StartStopPlayout) {
   StartPlayout();
   StopPlayout();
   StartPlayout();
