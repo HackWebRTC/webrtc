@@ -146,6 +146,11 @@ size_t split(const std::string& source, char delimiter,
 size_t tokenize(const std::string& source, char delimiter,
                 std::vector<std::string>* fields);
 
+// Tokenize, including the empty tokens.
+size_t tokenize_with_empty_tokens(const std::string& source,
+                                  char delimiter,
+                                  std::vector<std::string>* fields);
+
 // Tokenize and append the tokens to fields. Return the new size of fields.
 size_t tokenize_append(const std::string& source, char delimiter,
                        std::vector<std::string>* fields);

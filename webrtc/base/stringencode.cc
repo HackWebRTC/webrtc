@@ -556,7 +556,6 @@ std::string s_transform(const std::string& source, Transform t) {
 
 size_t tokenize(const std::string& source, char delimiter,
                 std::vector<std::string>* fields) {
-  RTC_DCHECK(fields);
   fields->clear();
   size_t last = 0;
   for (size_t i = 0; i < source.length(); ++i) {
@@ -570,6 +569,21 @@ size_t tokenize(const std::string& source, char delimiter,
   if (last != source.length()) {
     fields->push_back(source.substr(last, source.length() - last));
   }
+  return fields->size();
+}
+
+size_t tokenize_with_empty_tokens(const std::string& source,
+                                  char delimiter,
+                                  std::vector<std::string>* fields) {
+  fields->clear();
+  size_t last = 0;
+  for (size_t i = 0; i < source.length(); ++i) {
+    if (source[i] == delimiter) {
+      fields->push_back(source.substr(last, i - last));
+      last = i + 1;
+    }
+  }
+  fields->push_back(source.substr(last, source.length() - last));
   return fields->size();
 }
 

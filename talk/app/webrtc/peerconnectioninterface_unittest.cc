@@ -247,9 +247,11 @@ class PeerConnectionInterfaceTest : public testing::Test {
                             webrtc::MediaConstraintsInterface* constraints) {
     PeerConnectionInterface::IceServer server;
     PeerConnectionInterface::IceServers servers;
-    server.uri = uri;
-    server.password = password;
-    servers.push_back(server);
+    if (!uri.empty()) {
+      server.uri = uri;
+      server.password = password;
+      servers.push_back(server);
+    }
 
     port_allocator_factory_ = FakePortAllocatorFactory::Create();
 
@@ -281,6 +283,21 @@ class PeerConnectionInterfaceTest : public testing::Test {
     EXPECT_EQ(PeerConnectionInterface::kStable, observer_.state_);
   }
 
+  void CreatePeerConnectionExpectFail(const std::string& uri) {
+    PeerConnectionInterface::IceServer server;
+    PeerConnectionInterface::IceServers servers;
+    server.uri = uri;
+    servers.push_back(server);
+
+    scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store;
+    port_allocator_factory_ = FakePortAllocatorFactory::Create();
+    scoped_refptr<PeerConnectionInterface> pc;
+    pc = pc_factory_->CreatePeerConnection(
+        servers, nullptr, port_allocator_factory_.get(),
+        dtls_identity_store.Pass(), &observer_);
+    ASSERT_EQ(nullptr, pc);
+  }
+
   void CreatePeerConnectionWithDifferentConfigurations() {
     CreatePeerConnection(kStunAddressOnly, "", NULL);
     EXPECT_EQ(1u, port_allocator_factory_->stun_configs().size());
@@ -290,17 +307,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
     EXPECT_EQ(kDefaultStunPort,
         port_allocator_factory_->stun_configs()[0].server.port());
 
-    CreatePeerConnection(kStunInvalidPort, "", NULL);
-    EXPECT_EQ(0u, port_allocator_factory_->stun_configs().size());
-    EXPECT_EQ(0u, port_allocator_factory_->turn_configs().size());
-
-    CreatePeerConnection(kStunAddressPortAndMore1, "", NULL);
-    EXPECT_EQ(0u, port_allocator_factory_->stun_configs().size());
-    EXPECT_EQ(0u, port_allocator_factory_->turn_configs().size());
-
-    CreatePeerConnection(kStunAddressPortAndMore2, "", NULL);
-    EXPECT_EQ(0u, port_allocator_factory_->stun_configs().size());
-    EXPECT_EQ(0u, port_allocator_factory_->turn_configs().size());
+    CreatePeerConnectionExpectFail(kStunInvalidPort);
+    CreatePeerConnectionExpectFail(kStunAddressPortAndMore1);
+    CreatePeerConnectionExpectFail(kStunAddressPortAndMore2);
 
     CreatePeerConnection(kTurnIceServerUri, kTurnPassword, NULL);
     EXPECT_EQ(0u, port_allocator_factory_->stun_configs().size());

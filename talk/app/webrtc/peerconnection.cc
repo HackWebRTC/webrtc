@@ -28,6 +28,7 @@
 #include "talk/app/webrtc/peerconnection.h"
 
 #include <vector>
+#include <cctype>  // for isdigit
 
 #include "talk/app/webrtc/dtmfsender.h"
 #include "talk/app/webrtc/jsepicecandidate.h"
@@ -45,6 +46,12 @@
 namespace {
 
 using webrtc::PeerConnectionInterface;
+using webrtc::StunConfigurations;
+using webrtc::TurnConfigurations;
+typedef webrtc::PortAllocatorFactoryInterface::StunConfiguration
+    StunConfiguration;
+typedef webrtc::PortAllocatorFactoryInterface::TurnConfiguration
+    TurnConfiguration;
 
 // The min number of tokens must present in Turn host uri.
 // e.g. user@turn.example.org
@@ -59,16 +66,20 @@ static const char kUdpTransportType[] = "udp";
 static const char kTcpTransportType[] = "tcp";
 
 // NOTE: Must be in the same order as the ServiceType enum.
-static const char* kValidIceServiceTypes[] = {
-    "stun", "stuns", "turn", "turns", "invalid" };
+static const char* kValidIceServiceTypes[] = {"stun", "stuns", "turn", "turns"};
 
+// NOTE: A loop below assumes that the first value of this enum is 0 and all
+// other values are incremental.
 enum ServiceType {
-  STUN,     // Indicates a STUN server.
-  STUNS,    // Indicates a STUN server used with a TLS session.
-  TURN,     // Indicates a TURN server
-  TURNS,    // Indicates a TURN server used with a TLS session.
-  INVALID,  // Unknown.
+  STUN = 0,  // Indicates a STUN server.
+  STUNS,     // Indicates a STUN server used with a TLS session.
+  TURN,      // Indicates a TURN server
+  TURNS,     // Indicates a TURN server used with a TLS session.
+  INVALID,   // Unknown.
 };
+static_assert(INVALID == ARRAY_SIZE(kValidIceServiceTypes),
+              "kValidIceServiceTypes must have as many strings as ServiceType "
+              "has values.");
 
 enum {
   MSG_SET_SESSIONDESCRIPTION_SUCCESS = 0,
@@ -100,7 +111,7 @@ struct GetStatsMsg : public rtc::MessageData {
 // scheme        = "stun" / "stuns"
 // stun-host     = IP-literal / IPv4address / reg-name
 // stun-port     = *DIGIT
-
+//
 // draft-petithuguenin-behave-turn-uris-01
 // turnURI       = scheme ":" turn-host [ ":" turn-port ]
 // turn-host     = username@IP-literal / IPv4address / reg-name
@@ -108,12 +119,17 @@ bool GetServiceTypeAndHostnameFromUri(const std::string& in_str,
                                       ServiceType* service_type,
                                       std::string* hostname) {
   const std::string::size_type colonpos = in_str.find(':');
-  if (colonpos == std::string::npos || (colonpos + 1) == in_str.length()) {
+  if (colonpos == std::string::npos) {
+    LOG(LS_WARNING) << "Missing ':' in ICE URI: " << in_str;
     return false;
   }
-  std::string type = in_str.substr(0, colonpos);
+  if ((colonpos + 1) == in_str.length()) {
+    LOG(LS_WARNING) << "Empty hostname in ICE URI: " << in_str;
+    return false;
+  }
+  *service_type = INVALID;
   for (size_t i = 0; i < ARRAY_SIZE(kValidIceServiceTypes); ++i) {
-    if (type.compare(kValidIceServiceTypes[i]) == 0) {
+    if (in_str.compare(0, colonpos, kValidIceServiceTypes[i]) == 0) {
       *service_type = static_cast<ServiceType>(i);
       break;
     }
@@ -125,52 +141,59 @@ bool GetServiceTypeAndHostnameFromUri(const std::string& in_str,
   return true;
 }
 
+bool ParsePort(const std::string& in_str, int* port) {
+  // Make sure port only contains digits. FromString doesn't check this.
+  for (const char& c : in_str) {
+    if (!std::isdigit(c)) {
+      return false;
+    }
+  }
+  return rtc::FromString(in_str, port);
+}
+
 // This method parses IPv6 and IPv4 literal strings, along with hostnames in
 // standard hostname:port format.
 // Consider following formats as correct.
 // |hostname:port|, |[IPV6 address]:port|, |IPv4 address|:port,
-// |hostname|, |[IPv6 address]|, |IPv4 address|
+// |hostname|, |[IPv6 address]|, |IPv4 address|.
 bool ParseHostnameAndPortFromString(const std::string& in_str,
                                     std::string* host,
                                     int* port) {
+  RTC_DCHECK(host->empty());
   if (in_str.at(0) == '[') {
     std::string::size_type closebracket = in_str.rfind(']');
     if (closebracket != std::string::npos) {
-      *host = in_str.substr(1, closebracket - 1);
       std::string::size_type colonpos = in_str.find(':', closebracket);
       if (std::string::npos != colonpos) {
-        if (!rtc::FromString(
-            in_str.substr(closebracket + 2, std::string::npos), port)) {
+        if (!ParsePort(in_str.substr(closebracket + 2, std::string::npos),
+                       port)) {
           return false;
         }
       }
+      *host = in_str.substr(1, closebracket - 1);
     } else {
       return false;
     }
   } else {
     std::string::size_type colonpos = in_str.find(':');
     if (std::string::npos != colonpos) {
-      *host = in_str.substr(0, colonpos);
-      if (!rtc::FromString(
-          in_str.substr(colonpos + 1, std::string::npos), port)) {
+      if (!ParsePort(in_str.substr(colonpos + 1, std::string::npos), port)) {
         return false;
       }
+      *host = in_str.substr(0, colonpos);
     } else {
       *host = in_str;
     }
   }
-  return true;
+  return !host->empty();
 }
 
-typedef webrtc::PortAllocatorFactoryInterface::StunConfiguration
-    StunConfiguration;
-typedef webrtc::PortAllocatorFactoryInterface::TurnConfiguration
-    TurnConfiguration;
-
+// Adds a StunConfiguration or TurnConfiguration to the appropriate list,
+// by parsing |url| and using the username/password in |server|.
 bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
                        const std::string& url,
-                       std::vector<StunConfiguration>* stun_config,
-                       std::vector<TurnConfiguration>* turn_config) {
+                       StunConfigurations* stun_config,
+                       TurnConfigurations* turn_config) {
   // draft-nandakumar-rtcweb-stun-uri-01
   // stunURI       = scheme ":" stun-host [ ":" stun-port ]
   // scheme        = "stun" / "stuns"
@@ -185,9 +208,11 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   // transport-ext = 1*unreserved
   // turn-host     = IP-literal / IPv4address / reg-name
   // turn-port     = *DIGIT
+  RTC_DCHECK(stun_config != nullptr);
+  RTC_DCHECK(turn_config != nullptr);
   std::vector<std::string> tokens;
   std::string turn_transport_type = kUdpTransportType;
-  ASSERT(!url.empty());
+  RTC_DCHECK(!url.empty());
   rtc::tokenize(url, '?', &tokens);
   std::string uri_without_transport = tokens[0];
   // Let's look into transport= param, if it exists.
@@ -199,32 +224,38 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
       // letters.
       if (tokens[1] != kUdpTransportType && tokens[1] != kTcpTransportType) {
         LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
-        return true;
+        return false;
       }
       turn_transport_type = tokens[1];
     }
   }
 
   std::string hoststring;
-  ServiceType service_type = INVALID;
+  ServiceType service_type;
   if (!GetServiceTypeAndHostnameFromUri(uri_without_transport,
                                        &service_type,
                                        &hoststring)) {
-    LOG(LS_WARNING) << "Invalid transport parameter in ICE URI: "
-                    << uri_without_transport;
-    return true;
+    LOG(LS_WARNING) << "Invalid transport parameter in ICE URI: " << url;
+    return false;
   }
 
-  ASSERT(!hoststring.empty());
+  // GetServiceTypeAndHostnameFromUri should never give an empty hoststring
+  RTC_DCHECK(!hoststring.empty());
 
   // Let's break hostname.
   tokens.clear();
-  rtc::tokenize(hoststring, '@', &tokens);
-  ASSERT(!tokens.empty());
+  rtc::tokenize_with_empty_tokens(hoststring, '@', &tokens);
+
   std::string username(server.username);
-  // TODO(pthatcher): What's the right thing to do if tokens.size() is >2?
-  // E.g. a string like "foo@bar@bat".
-  if (tokens.size() >= kTurnHostTokensNum) {
+  if (tokens.size() > kTurnHostTokensNum) {
+    LOG(LS_WARNING) << "Invalid user@hostname format: " << hoststring;
+    return false;
+  }
+  if (tokens.size() == kTurnHostTokensNum) {
+    if (tokens[0].empty() || tokens[1].empty()) {
+      LOG(LS_WARNING) << "Invalid user@hostname format: " << hoststring;
+      return false;
+    }
     username.assign(rtc::s_url_decode(tokens[0]));
     hoststring = tokens[1];
   } else {
@@ -239,13 +270,13 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
 
   std::string address;
   if (!ParseHostnameAndPortFromString(hoststring, &address, &port)) {
-    LOG(WARNING) << "Invalid Hostname format: " << uri_without_transport;
-    return true;
+    LOG(WARNING) << "Invalid hostname format: " << uri_without_transport;
+    return false;
   }
 
   if (port <= 0 || port > 0xffff) {
     LOG(WARNING) << "Invalid port: " << port;
-    return true;
+    return false;
   }
 
   switch (service_type) {
@@ -255,18 +286,7 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
       break;
     case TURN:
     case TURNS: {
-      if (username.empty()) {
-        // Turn url example from the spec |url:"turn:user@turn.example.org"|.
-        std::vector<std::string> turn_tokens;
-        rtc::tokenize(address, '@', &turn_tokens);
-        if (turn_tokens.size() == kTurnHostTokensNum) {
-          username.assign(rtc::s_url_decode(turn_tokens[0]));
-          address = turn_tokens[1];
-        }
-      }
-
       bool secure = (service_type == TURNS);
-
       turn_config->push_back(TurnConfiguration(address, port,
                                                username,
                                                server.password,
@@ -282,15 +302,19 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   return true;
 }
 
+}  // namespace
+
+namespace webrtc {
+
 bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
-                     std::vector<StunConfiguration>* stun_config,
-                     std::vector<TurnConfiguration>* turn_config) {
+                     StunConfigurations* stun_config,
+                     TurnConfigurations* turn_config) {
   for (const webrtc::PeerConnectionInterface::IceServer& server : servers) {
     if (!server.urls.empty()) {
       for (const std::string& url : server.urls) {
         if (url.empty()) {
-          LOG(WARNING) << "Empty uri.";
-          continue;
+          LOG(LS_ERROR) << "Empty uri.";
+          return false;
         }
         if (!ParseIceServerUrl(server, url, stun_config, turn_config)) {
           return false;
@@ -302,7 +326,8 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
         return false;
       }
     } else {
-      LOG(WARNING) << "Empty uri.";
+      LOG(LS_ERROR) << "Empty uri.";
+      return false;
     }
   }
   return true;
@@ -324,10 +349,6 @@ bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
   return true;
 }
 
-}  // namespace
-
-namespace webrtc {
-
 PeerConnection::PeerConnection(PeerConnectionFactory* factory)
     : factory_(factory),
       observer_(NULL),
@@ -339,7 +360,7 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
 }
 
 PeerConnection::~PeerConnection() {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (mediastream_signaling_) {
     mediastream_signaling_->TearDown();
   }
@@ -359,7 +380,7 @@ bool PeerConnection::Initialize(
     PortAllocatorFactoryInterface* allocator_factory,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
-  ASSERT(observer != NULL);
+  RTC_DCHECK(observer != NULL);
   if (!observer)
     return false;
   observer_ = observer;
@@ -498,7 +519,7 @@ PeerConnection::GetReceivers() const {
 bool PeerConnection::GetStats(StatsObserver* observer,
                               MediaStreamTrackInterface* track,
                               StatsOutputLevel level) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (!VERIFY(observer != NULL)) {
     LOG(LS_ERROR) << "GetStats - observer is NULL.";
     return false;
@@ -820,7 +841,7 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
       break;
     }
     default:
-      ASSERT(false && "Not implemented");
+      RTC_DCHECK(false && "Not implemented");
       break;
   }
 }
@@ -927,7 +948,7 @@ void PeerConnection::OnRemoveLocalStream(MediaStreamInterface* stream) {
 
 void PeerConnection::OnIceConnectionChange(
     PeerConnectionInterface::IceConnectionState new_state) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   // After transitioning to "closed", ignore any additional states from
   // WebRtcSession (such as "disconnected").
   if (ice_connection_state_ == kIceConnectionClosed) {
@@ -939,7 +960,7 @@ void PeerConnection::OnIceConnectionChange(
 
 void PeerConnection::OnIceGatheringChange(
     PeerConnectionInterface::IceGatheringState new_state) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (IsClosed()) {
     return;
   }
@@ -948,17 +969,17 @@ void PeerConnection::OnIceGatheringChange(
 }
 
 void PeerConnection::OnIceCandidate(const IceCandidateInterface* candidate) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   observer_->OnIceCandidate(candidate);
 }
 
 void PeerConnection::OnIceComplete() {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   observer_->OnIceComplete();
 }
 
 void PeerConnection::OnIceConnectionReceivingChange(bool receiving) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   observer_->OnIceConnectionReceivingChange(receiving);
 }
 

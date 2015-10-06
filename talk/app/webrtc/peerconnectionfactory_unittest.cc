@@ -79,8 +79,6 @@ static const char kStunIceServerWithIPv4AddressWithoutPort[] = "stun:1.2.3.4";
 static const char kStunIceServerWithIPv6Address[] = "stun:[2401:fa00:4::]:1234";
 static const char kStunIceServerWithIPv6AddressWithoutPort[] =
     "stun:[2401:fa00:4::]";
-static const char kStunIceServerWithInvalidIPv6Address[] =
-    "stun:[2401:fa00:4:::3478";
 static const char kTurnIceServerWithIPv6Address[] =
     "turn:test@[2401:fa00:4::]:1234";
 
@@ -208,7 +206,6 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServers) {
 TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServersUrls) {
   PeerConnectionInterface::RTCConfiguration config;
   webrtc::PeerConnectionInterface::IceServer ice_server;
-  ice_server.urls.push_back("");  // Empty URLs should be ignored.
   ice_server.urls.push_back(kStunIceServer);
   ice_server.urls.push_back(kTurnIceServer);
   ice_server.urls.push_back(kTurnIceServerWithTransport);
@@ -367,8 +364,6 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
   ice_server.uri = kStunIceServerWithIPv6Address;
   config.servers.push_back(ice_server);
   ice_server.uri = kStunIceServerWithIPv6AddressWithoutPort;
-  config.servers.push_back(ice_server);
-  ice_server.uri = kStunIceServerWithInvalidIPv6Address;
   config.servers.push_back(ice_server);
   ice_server.uri = kTurnIceServerWithIPv6Address;
   ice_server.password = kTurnPassword;

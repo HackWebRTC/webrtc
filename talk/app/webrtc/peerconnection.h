@@ -48,6 +48,12 @@ typedef std::vector<PortAllocatorFactoryInterface::StunConfiguration>
 typedef std::vector<PortAllocatorFactoryInterface::TurnConfiguration>
     TurnConfigurations;
 
+// Parses the URLs for each server in |servers| to build |stun_config| and
+// |turn_config|.
+bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
+                     StunConfigurations* stun_config,
+                     TurnConfigurations* turn_config);
+
 // PeerConnection implements the PeerConnectionInterface interface.
 // It uses MediaStreamSignaling and WebRtcSession to implement
 // the PeerConnection functionality.

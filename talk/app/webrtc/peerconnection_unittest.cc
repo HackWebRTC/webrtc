@@ -37,6 +37,7 @@
 #include "talk/app/webrtc/fakeportallocatorfactory.h"
 #include "talk/app/webrtc/localaudiosource.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/peerconnection.h"
 #include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/test/fakeaudiocapturemodule.h"
@@ -1628,6 +1629,182 @@ TEST_F(JsepPeerConnectionP2PTestClient,
   ASSERT_TRUE(CreateTestClients());
   EnableVideoDecoderFactory();
   LocalP2PTest();
+}
+
+class IceServerParsingTest : public testing::Test {
+ public:
+  // Convenience for parsing a single URL.
+  bool ParseUrl(const std::string& url) {
+    return ParseUrl(url, std::string(), std::string());
+  }
+
+  bool ParseUrl(const std::string& url,
+                const std::string& username,
+                const std::string& password) {
+    PeerConnectionInterface::IceServers servers;
+    PeerConnectionInterface::IceServer server;
+    server.urls.push_back(url);
+    server.username = username;
+    server.password = password;
+    servers.push_back(server);
+    return webrtc::ParseIceServers(servers, &stun_configurations_,
+                                   &turn_configurations_);
+  }
+
+ protected:
+  webrtc::StunConfigurations stun_configurations_;
+  webrtc::TurnConfigurations turn_configurations_;
+};
+
+// Make sure all STUN/TURN prefixes are parsed correctly.
+TEST_F(IceServerParsingTest, ParseStunPrefixes) {
+  EXPECT_TRUE(ParseUrl("stun:hostname"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ(0U, turn_configurations_.size());
+  stun_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("stuns:hostname"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ(0U, turn_configurations_.size());
+  stun_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("turn:hostname"));
+  EXPECT_EQ(0U, stun_configurations_.size());
+  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_FALSE(turn_configurations_[0].secure);
+  turn_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("turns:hostname"));
+  EXPECT_EQ(0U, stun_configurations_.size());
+  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_TRUE(turn_configurations_[0].secure);
+  turn_configurations_.clear();
+
+  // invalid prefixes
+  EXPECT_FALSE(ParseUrl("stunn:hostname"));
+  EXPECT_FALSE(ParseUrl(":hostname"));
+  EXPECT_FALSE(ParseUrl(":"));
+  EXPECT_FALSE(ParseUrl(""));
+}
+
+TEST_F(IceServerParsingTest, VerifyDefaults) {
+  // TURNS defaults
+  EXPECT_TRUE(ParseUrl("turns:hostname"));
+  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_EQ(5349, turn_configurations_[0].server.port());
+  EXPECT_EQ("tcp", turn_configurations_[0].transport_type);
+  turn_configurations_.clear();
+
+  // TURN defaults
+  EXPECT_TRUE(ParseUrl("turn:hostname"));
+  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_EQ(3478, turn_configurations_[0].server.port());
+  EXPECT_EQ("udp", turn_configurations_[0].transport_type);
+  turn_configurations_.clear();
+
+  // STUN defaults
+  EXPECT_TRUE(ParseUrl("stun:hostname"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ(3478, stun_configurations_[0].server.port());
+  stun_configurations_.clear();
+}
+
+// Check that the 6 combinations of IPv4/IPv6/hostname and with/without port
+// can be parsed correctly.
+TEST_F(IceServerParsingTest, ParseHostnameAndPort) {
+  EXPECT_TRUE(ParseUrl("stun:1.2.3.4:1234"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ("1.2.3.4", stun_configurations_[0].server.hostname());
+  EXPECT_EQ(1234, stun_configurations_[0].server.port());
+  stun_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("stun:[1:2:3:4:5:6:7:8]:4321"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ("1:2:3:4:5:6:7:8", stun_configurations_[0].server.hostname());
+  EXPECT_EQ(4321, stun_configurations_[0].server.port());
+  stun_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("stun:hostname:9999"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ("hostname", stun_configurations_[0].server.hostname());
+  EXPECT_EQ(9999, stun_configurations_[0].server.port());
+  stun_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("stun:1.2.3.4"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ("1.2.3.4", stun_configurations_[0].server.hostname());
+  EXPECT_EQ(3478, stun_configurations_[0].server.port());
+  stun_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("stun:[1:2:3:4:5:6:7:8]"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ("1:2:3:4:5:6:7:8", stun_configurations_[0].server.hostname());
+  EXPECT_EQ(3478, stun_configurations_[0].server.port());
+  stun_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("stun:hostname"));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ("hostname", stun_configurations_[0].server.hostname());
+  EXPECT_EQ(3478, stun_configurations_[0].server.port());
+  stun_configurations_.clear();
+
+  // Try some invalid hostname:port strings.
+  EXPECT_FALSE(ParseUrl("stun:hostname:99a99"));
+  EXPECT_FALSE(ParseUrl("stun:hostname:-1"));
+  EXPECT_FALSE(ParseUrl("stun:hostname:"));
+  EXPECT_FALSE(ParseUrl("stun:[1:2:3:4:5:6:7:8]junk:1000"));
+  EXPECT_FALSE(ParseUrl("stun::5555"));
+  EXPECT_FALSE(ParseUrl("stun:"));
+}
+
+// Test parsing the "?transport=xxx" part of the URL.
+TEST_F(IceServerParsingTest, ParseTransport) {
+  EXPECT_TRUE(ParseUrl("turn:hostname:1234?transport=tcp"));
+  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_EQ("tcp", turn_configurations_[0].transport_type);
+  turn_configurations_.clear();
+
+  EXPECT_TRUE(ParseUrl("turn:hostname?transport=udp"));
+  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_EQ("udp", turn_configurations_[0].transport_type);
+  turn_configurations_.clear();
+
+  EXPECT_FALSE(ParseUrl("turn:hostname?transport=invalid"));
+}
+
+// Test parsing ICE username contained in URL.
+TEST_F(IceServerParsingTest, ParseUsername) {
+  EXPECT_TRUE(ParseUrl("turn:user@hostname"));
+  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_EQ("user", turn_configurations_[0].username);
+  turn_configurations_.clear();
+
+  EXPECT_FALSE(ParseUrl("turn:@hostname"));
+  EXPECT_FALSE(ParseUrl("turn:username@"));
+  EXPECT_FALSE(ParseUrl("turn:@"));
+  EXPECT_FALSE(ParseUrl("turn:user@name@hostname"));
+}
+
+// Test that username and password from IceServer is copied into the resulting
+// TurnConfiguration.
+TEST_F(IceServerParsingTest, CopyUsernameAndPasswordFromIceServer) {
+  EXPECT_TRUE(ParseUrl("turn:hostname", "username", "password"));
+  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_EQ("username", turn_configurations_[0].username);
+  EXPECT_EQ("password", turn_configurations_[0].password);
+}
+
+// Ensure that if a server has multiple URLs, each one is parsed.
+TEST_F(IceServerParsingTest, ParseMultipleUrls) {
+  PeerConnectionInterface::IceServers servers;
+  PeerConnectionInterface::IceServer server;
+  server.urls.push_back("stun:hostname");
+  server.urls.push_back("turn:hostname");
+  servers.push_back(server);
+  EXPECT_TRUE(webrtc::ParseIceServers(servers, &stun_configurations_,
+                                      &turn_configurations_));
+  EXPECT_EQ(1U, stun_configurations_.size());
+  EXPECT_EQ(1U, turn_configurations_.size());
 }
 
 #endif // if !defined(THREAD_SANITIZER)
