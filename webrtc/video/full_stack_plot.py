@@ -34,16 +34,15 @@ import numpy
 
 # Fields
 DROPPED = 0
-INPUT_TIME = 1              # ms (timestamp)
-SEND_TIME = 2               # ms (timestamp)
-RECV_TIME = 3               # ms (timestamp)
-RENDER_TIME = 4             # ms (timestamp)
-ENCODED_FRAME_SIZE = 5      # bytes
-PSNR = 6
-SSIM = 7
-ENCODE_TIME = 8             # ms (time interval)
+INPUT_TIME = 1              # ms
+SEND_TIME = 2               # ms
+RECV_TIME = 3               # ms
+ENCODED_FRAME_SIZE = 4      # bytes
+PSNR = 5
+SSIM = 6
+RENDER_TIME = 7             # ms
 
-TOTAL_RAW_FIELDS = 9
+TOTAL_RAW_FIELDS = 8
 
 SENDER_TIME = TOTAL_RAW_FIELDS + 0
 RECEIVER_TIME = TOTAL_RAW_FIELDS + 1
@@ -67,7 +66,6 @@ _fields = [
     (PSNR, "psnr", "PSNR"),
     (SSIM, "ssim", "SSIM"),
     (RENDER_TIME, "render_time_ms", "render time"),
-    (ENCODE_TIME, "encode_time_ms", "encode time"),
     # Auto-generated
     (SENDER_TIME, "sender_time", "sender time"),
     (RECEIVER_TIME, "receiver_time", "receiver time"),
