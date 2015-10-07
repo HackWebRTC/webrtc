@@ -85,7 +85,7 @@ void UnixTimeToFileTime(const time_t& ut, FILETIME * ft);
 bool Utf8ToWindowsFilename(const std::string& utf8, std::wstring* filename);
 
 // Convert a FILETIME to a UInt64
-inline uint64 ToUInt64(const FILETIME& ft) {
+inline uint64_t ToUInt64(const FILETIME& ft) {
   ULARGE_INTEGER r = {{ft.dwLowDateTime, ft.dwHighDateTime}};
   return r.QuadPart;
 }

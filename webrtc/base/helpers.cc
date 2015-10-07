@@ -152,7 +152,7 @@ class TestRandomGenerator : public RandomGenerator {
   bool Init(const void* seed, size_t len) override { return true; }
   bool Generate(void* buf, size_t len) override {
     for (size_t i = 0; i < len; ++i) {
-      static_cast<uint8*>(buf)[i] = static_cast<uint8>(GetRandom());
+      static_cast<uint8_t*>(buf)[i] = static_cast<uint8_t>(GetRandom());
     }
     return true;
   }
@@ -219,7 +219,7 @@ bool CreateRandomString(size_t len,
                         const char* table, int table_size,
                         std::string* str) {
   str->clear();
-  scoped_ptr<uint8[]> bytes(new uint8[len]);
+  scoped_ptr<uint8_t[]> bytes(new uint8_t[len]);
   if (!Rng().Generate(bytes.get(), len)) {
     LOG(LS_ERROR) << "Failed to generate random string!";
     return false;
@@ -241,20 +241,20 @@ bool CreateRandomString(size_t len, const std::string& table,
                             static_cast<int>(table.size()), str);
 }
 
-uint32 CreateRandomId() {
-  uint32 id;
+uint32_t CreateRandomId() {
+  uint32_t id;
   if (!Rng().Generate(&id, sizeof(id))) {
     LOG(LS_ERROR) << "Failed to generate random id!";
   }
   return id;
 }
 
-uint64 CreateRandomId64() {
-  return static_cast<uint64>(CreateRandomId()) << 32 | CreateRandomId();
+uint64_t CreateRandomId64() {
+  return static_cast<uint64_t>(CreateRandomId()) << 32 | CreateRandomId();
 }
 
-uint32 CreateRandomNonZeroId() {
-  uint32 id;
+uint32_t CreateRandomNonZeroId() {
+  uint32_t id;
   do {
     id = CreateRandomId();
   } while (id == 0);
@@ -262,8 +262,8 @@ uint32 CreateRandomNonZeroId() {
 }
 
 double CreateRandomDouble() {
-  return CreateRandomId() / (std::numeric_limits<uint32>::max() +
-      std::numeric_limits<double>::epsilon());
+  return CreateRandomId() / (std::numeric_limits<uint32_t>::max() +
+                             std::numeric_limits<double>::epsilon());
 }
 
 }  // namespace rtc

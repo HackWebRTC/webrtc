@@ -114,16 +114,14 @@ class DataChannel : public DataChannelInterface,
   virtual std::string label() const { return label_; }
   virtual bool reliable() const;
   virtual bool ordered() const { return config_.ordered; }
-  virtual uint16 maxRetransmitTime() const {
+  virtual uint16_t maxRetransmitTime() const {
     return config_.maxRetransmitTime;
   }
-  virtual uint16 maxRetransmits() const {
-    return config_.maxRetransmits;
-  }
+  virtual uint16_t maxRetransmits() const { return config_.maxRetransmits; }
   virtual std::string protocol() const { return config_.protocol; }
   virtual bool negotiated() const { return config_.negotiated; }
   virtual int id() const { return config_.id; }
-  virtual uint64 buffered_amount() const;
+  virtual uint64_t buffered_amount() const;
   virtual void Close();
   virtual DataState state() const { return state_; }
   virtual bool Send(const DataBuffer& buffer);
@@ -160,10 +158,10 @@ class DataChannel : public DataChannelInterface,
   // Set the SSRC this channel should use to send data on the
   // underlying data engine. |send_ssrc| == 0 means that the channel is no
   // longer part of the session negotiation.
-  void SetSendSsrc(uint32 send_ssrc);
+  void SetSendSsrc(uint32_t send_ssrc);
   // Set the SSRC this channel should use to receive data from the
   // underlying data engine.
-  void SetReceiveSsrc(uint32 receive_ssrc);
+  void SetReceiveSsrc(uint32_t receive_ssrc);
 
   cricket::DataChannelType data_channel_type() const {
     return data_channel_type_;
@@ -240,8 +238,8 @@ class DataChannel : public DataChannelInterface,
   bool send_ssrc_set_;
   bool receive_ssrc_set_;
   bool writable_;
-  uint32 send_ssrc_;
-  uint32 receive_ssrc_;
+  uint32_t send_ssrc_;
+  uint32_t receive_ssrc_;
   // Control messages that always have to get sent out before any queued
   // data.
   PacketQueue queued_control_data_;
@@ -266,13 +264,13 @@ BEGIN_PROXY_MAP(DataChannel)
   PROXY_CONSTMETHOD0(std::string, label)
   PROXY_CONSTMETHOD0(bool, reliable)
   PROXY_CONSTMETHOD0(bool, ordered)
-  PROXY_CONSTMETHOD0(uint16, maxRetransmitTime)
-  PROXY_CONSTMETHOD0(uint16, maxRetransmits)
+  PROXY_CONSTMETHOD0(uint16_t, maxRetransmitTime)
+  PROXY_CONSTMETHOD0(uint16_t, maxRetransmits)
   PROXY_CONSTMETHOD0(std::string, protocol)
   PROXY_CONSTMETHOD0(bool, negotiated)
   PROXY_CONSTMETHOD0(int, id)
   PROXY_CONSTMETHOD0(DataState, state)
-  PROXY_CONSTMETHOD0(uint64, buffered_amount)
+  PROXY_CONSTMETHOD0(uint64_t, buffered_amount)
   PROXY_METHOD0(void, Close)
   PROXY_METHOD1(bool, Send, const DataBuffer&)
 END_PROXY()

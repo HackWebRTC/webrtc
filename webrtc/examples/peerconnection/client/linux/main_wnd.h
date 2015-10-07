@@ -79,9 +79,7 @@ class GtkMainWnd : public MainWindow {
     virtual void SetSize(int width, int height);
     virtual void RenderFrame(const cricket::VideoFrame* frame);
 
-    const uint8* image() const {
-      return image_.get();
-    }
+    const uint8_t* image() const { return image_.get(); }
 
     int width() const {
       return width_;
@@ -92,7 +90,7 @@ class GtkMainWnd : public MainWindow {
     }
 
    protected:
-    rtc::scoped_ptr<uint8[]> image_;
+    rtc::scoped_ptr<uint8_t[]> image_;
     int width_;
     int height_;
     GtkMainWnd* main_wnd_;
@@ -113,7 +111,7 @@ class GtkMainWnd : public MainWindow {
   bool autocall_;
   rtc::scoped_ptr<VideoRenderer> local_renderer_;
   rtc::scoped_ptr<VideoRenderer> remote_renderer_;
-  rtc::scoped_ptr<uint8> draw_buffer_;
+  rtc::scoped_ptr<uint8_t[]> draw_buffer_;
   int draw_buffer_size_;
 };
 

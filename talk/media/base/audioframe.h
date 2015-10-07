@@ -38,14 +38,13 @@ class AudioFrame {
         sampling_frequency_(8000),
         stereo_(false) {
   }
-  AudioFrame(int16* audio, size_t audio_length, int sample_freq, bool stereo)
+  AudioFrame(int16_t* audio, size_t audio_length, int sample_freq, bool stereo)
       : audio10ms_(audio),
         length_(audio_length),
         sampling_frequency_(sample_freq),
-        stereo_(stereo) {
-  }
+        stereo_(stereo) {}
 
-  int16* GetData() { return audio10ms_; }
+  int16_t* GetData() { return audio10ms_; }
   size_t GetSize() const { return length_; }
   int GetSamplingFrequency() const { return sampling_frequency_; }
   bool GetStereo() const { return stereo_; }
@@ -53,7 +52,7 @@ class AudioFrame {
  private:
   // TODO(janahan): currently the data is not owned by this class.
   // add ownership when we come up with the first use case that requires it.
-  int16* audio10ms_;
+  int16_t* audio10ms_;
   size_t length_;
   int sampling_frequency_;
   bool stereo_;

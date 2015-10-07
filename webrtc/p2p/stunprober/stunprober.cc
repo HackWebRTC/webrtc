@@ -44,16 +44,16 @@ class StunProber::Requester : public sigslot::has_slots<> {
   // Each Request maps to a request and response.
   struct Request {
     // Actual time the STUN bind request was sent.
-    int64 sent_time_ms = 0;
+    int64_t sent_time_ms = 0;
     // Time the response was received.
-    int64 received_time_ms = 0;
+    int64_t received_time_ms = 0;
 
     // Server reflexive address from STUN response for this given request.
     rtc::SocketAddress srflx_addr;
 
     rtc::IPAddress server_addr;
 
-    int64 rtt() { return received_time_ms - sent_time_ms; }
+    int64_t rtt() { return received_time_ms - sent_time_ms; }
     void ProcessResponse(const char* buf, size_t buf_len);
   };
 
@@ -97,8 +97,8 @@ class StunProber::Requester : public sigslot::has_slots<> {
 
   std::vector<Request*> requests_;
   std::vector<rtc::SocketAddress> server_ips_;
-  int16 num_request_sent_ = 0;
-  int16 num_response_received_ = 0;
+  int16_t num_request_sent_ = 0;
+  int16_t num_response_received_ = 0;
 
   rtc::ThreadChecker& thread_checker_;
 
@@ -169,7 +169,7 @@ void StunProber::Requester::SendStunRequest() {
 
 void StunProber::Requester::Request::ProcessResponse(const char* buf,
                                                      size_t buf_len) {
-  int64 now = rtc::Time();
+  int64_t now = rtc::Time();
   rtc::ByteBuffer message(buf, buf_len);
   cricket::StunMessage stun_response;
   if (!stun_response.Read(&message)) {
@@ -376,7 +376,7 @@ bool StunProber::SendNextRequest() {
 
 void StunProber::MaybeScheduleStunRequests() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  uint32 now = rtc::Time();
+  uint32_t now = rtc::Time();
 
   if (Done()) {
     invoker_.AsyncInvokeDelayed<void>(
@@ -404,8 +404,8 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) const {
   StunProber::Stats stats;
 
   int rtt_sum = 0;
-  int64 first_sent_time = 0;
-  int64 last_sent_time = 0;
+  int64_t first_sent_time = 0;
+  int64_t last_sent_time = 0;
   NatType nat_type = NATTYPE_INVALID;
 
   // Track of how many srflx IP that we have seen.

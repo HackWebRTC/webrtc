@@ -66,21 +66,20 @@ class RtpDataEngine : public DataEngineInterface {
 // according to the clockrate.
 class RtpClock {
  public:
-  RtpClock(int clockrate, uint16 first_seq_num, uint32 timestamp_offset)
+  RtpClock(int clockrate, uint16_t first_seq_num, uint32_t timestamp_offset)
       : clockrate_(clockrate),
         last_seq_num_(first_seq_num),
-        timestamp_offset_(timestamp_offset) {
-  }
+        timestamp_offset_(timestamp_offset) {}
 
   // Given the current time (in number of seconds which must be
   // monotonically increasing), Return the next sequence number and
   // timestamp.
-  void Tick(double now, int* seq_num, uint32* timestamp);
+  void Tick(double now, int* seq_num, uint32_t* timestamp);
 
  private:
   int clockrate_;
-  uint16 last_seq_num_;
-  uint32 timestamp_offset_;
+  uint16_t last_seq_num_;
+  uint32_t timestamp_offset_;
 };
 
 class RtpDataMediaChannel : public DataMediaChannel {
@@ -99,9 +98,9 @@ class RtpDataMediaChannel : public DataMediaChannel {
   virtual bool SetSendParameters(const DataSendParameters& params);
   virtual bool SetRecvParameters(const DataRecvParameters& params);
   virtual bool AddSendStream(const StreamParams& sp);
-  virtual bool RemoveSendStream(uint32 ssrc);
+  virtual bool RemoveSendStream(uint32_t ssrc);
   virtual bool AddRecvStream(const StreamParams& sp);
-  virtual bool RemoveRecvStream(uint32 ssrc);
+  virtual bool RemoveRecvStream(uint32_t ssrc);
   virtual bool SetSend(bool send) {
     sending_ = send;
     return true;
@@ -133,7 +132,7 @@ class RtpDataMediaChannel : public DataMediaChannel {
   std::vector<DataCodec> recv_codecs_;
   std::vector<StreamParams> send_streams_;
   std::vector<StreamParams> recv_streams_;
-  std::map<uint32, RtpClock*> rtp_clock_by_send_ssrc_;
+  std::map<uint32_t, RtpClock*> rtp_clock_by_send_ssrc_;
   rtc::scoped_ptr<rtc::RateLimiter> send_limiter_;
 };
 

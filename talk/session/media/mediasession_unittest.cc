@@ -176,11 +176,11 @@ static const RtpHeaderExtension kVideoRtpExtensionAnswer[] = {
   RtpHeaderExtension("urn:ietf:params:rtp-hdrext:toffset", 14),
 };
 
-static const uint32 kSimulcastParamsSsrc[] = {10, 11, 20, 21, 30, 31};
-static const uint32 kSimSsrc[] = {10, 20, 30};
-static const uint32 kFec1Ssrc[] = {10, 11};
-static const uint32 kFec2Ssrc[] = {20, 21};
-static const uint32 kFec3Ssrc[] = {30, 31};
+static const uint32_t kSimulcastParamsSsrc[] = {10, 11, 20, 21, 30, 31};
+static const uint32_t kSimSsrc[] = {10, 20, 30};
+static const uint32_t kFec1Ssrc[] = {10, 11};
+static const uint32_t kFec2Ssrc[] = {20, 21};
+static const uint32_t kFec3Ssrc[] = {30, 31};
 
 static const char kMediaStream1[] = "stream_1";
 static const char kMediaStream2[] = "stream_2";
@@ -1810,10 +1810,10 @@ TEST_F(MediaSessionDescriptionFactoryTest, SimSsrcsGenerateMultipleRtxSsrcs) {
   EXPECT_TRUE(streams[0].has_ssrc_group("SIM"));
   // And a FID group for RTX.
   EXPECT_TRUE(streams[0].has_ssrc_group("FID"));
-  std::vector<uint32> primary_ssrcs;
+  std::vector<uint32_t> primary_ssrcs;
   streams[0].GetPrimarySsrcs(&primary_ssrcs);
   EXPECT_EQ(3u, primary_ssrcs.size());
-  std::vector<uint32> fid_ssrcs;
+  std::vector<uint32_t> fid_ssrcs;
   streams[0].GetFidSsrcs(primary_ssrcs, &fid_ssrcs);
   EXPECT_EQ(3u, fid_ssrcs.size());
 }

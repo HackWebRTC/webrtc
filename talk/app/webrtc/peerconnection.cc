@@ -862,13 +862,13 @@ void PeerConnection::OnAddDataChannel(DataChannelInterface* data_channel) {
 
 void PeerConnection::OnAddRemoteAudioTrack(MediaStreamInterface* stream,
                                            AudioTrackInterface* audio_track,
-                                           uint32 ssrc) {
+                                           uint32_t ssrc) {
   receivers_.push_back(new AudioRtpReceiver(audio_track, ssrc, session_.get()));
 }
 
 void PeerConnection::OnAddRemoteVideoTrack(MediaStreamInterface* stream,
                                            VideoTrackInterface* video_track,
-                                           uint32 ssrc) {
+                                           uint32_t ssrc) {
   receivers_.push_back(new VideoRtpReceiver(video_track, ssrc, session_.get()));
 }
 
@@ -902,14 +902,14 @@ void PeerConnection::OnRemoveRemoteVideoTrack(
 
 void PeerConnection::OnAddLocalAudioTrack(MediaStreamInterface* stream,
                                           AudioTrackInterface* audio_track,
-                                          uint32 ssrc) {
+                                          uint32_t ssrc) {
   senders_.push_back(new AudioRtpSender(audio_track, ssrc, session_.get()));
   stats_->AddLocalAudioTrack(audio_track, ssrc);
 }
 
 void PeerConnection::OnAddLocalVideoTrack(MediaStreamInterface* stream,
                                           VideoTrackInterface* video_track,
-                                          uint32 ssrc) {
+                                          uint32_t ssrc) {
   senders_.push_back(new VideoRtpSender(video_track, ssrc, session_.get()));
 }
 
@@ -917,7 +917,7 @@ void PeerConnection::OnAddLocalVideoTrack(MediaStreamInterface* stream,
 // description.
 void PeerConnection::OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
                                              AudioTrackInterface* audio_track,
-                                             uint32 ssrc) {
+                                             uint32_t ssrc) {
   auto it = FindSenderForTrack(audio_track);
   if (it == senders_.end()) {
     LOG(LS_WARNING) << "RtpSender for track with id " << audio_track->id()

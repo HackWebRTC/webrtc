@@ -75,9 +75,9 @@ using webrtc::SessionDescriptionInterface;
 typedef std::vector<AudioCodec> AudioCodecs;
 typedef std::vector<Candidate> Candidates;
 
-static const uint32 kDefaultSctpPort = 5000;
+static const uint32_t kDefaultSctpPort = 5000;
 static const char kSessionTime[] = "t=0 0\r\n";
-static const uint32 kCandidatePriority = 2130706432U;  // pref = 1.0
+static const uint32_t kCandidatePriority = 2130706432U;  // pref = 1.0
 static const char kCandidateUfragVoice[] = "ufrag_voice";
 static const char kCandidatePwdVoice[] = "pwd_voice";
 static const char kAttributeIcePwdVoice[] = "a=ice-pwd:pwd_voice\r\n";
@@ -86,7 +86,7 @@ static const char kCandidatePwdVideo[] = "pwd_video";
 static const char kCandidateUfragData[] = "ufrag_data";
 static const char kCandidatePwdData[] = "pwd_data";
 static const char kAttributeIcePwdVideo[] = "a=ice-pwd:pwd_video\r\n";
-static const uint32 kCandidateGeneration = 2;
+static const uint32_t kCandidateGeneration = 2;
 static const char kCandidateFoundation1[] = "a0+B/1";
 static const char kCandidateFoundation2[] = "a0+B/2";
 static const char kCandidateFoundation3[] = "a0+B/3";
@@ -107,11 +107,9 @@ static const char kExtmap[] =
 static const char kExtmapWithDirectionAndAttribute[] =
     "a=extmap:1/sendrecv http://example.com/082005/ext.htm#ttime a1 a2\r\n";
 
-static const uint8 kIdentityDigest[] = {0x4A, 0xAD, 0xB9, 0xB1,
-                                        0x3F, 0x82, 0x18, 0x3B,
-                                        0x54, 0x02, 0x12, 0xDF,
-                                        0x3E, 0x5D, 0x49, 0x6B,
-                                        0x19, 0xE5, 0x7C, 0xAB};
+static const uint8_t kIdentityDigest[] = {
+    0x4A, 0xAD, 0xB9, 0xB1, 0x3F, 0x82, 0x18, 0x3B, 0x54, 0x02,
+    0x12, 0xDF, 0x3E, 0x5D, 0x49, 0x6B, 0x19, 0xE5, 0x7C, 0xAB};
 
 static const char kDtlsSctp[] = "DTLS/SCTP";
 static const char kUdpDtlsSctp[] = "UDP/DTLS/SCTP";
@@ -409,26 +407,26 @@ static const char kDataContentName[] = "data_content_name";
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kStream1Cname[] = "stream_1_cname";
 static const char kAudioTrackId1[] = "audio_track_id_1";
-static const uint32 kAudioTrack1Ssrc = 1;
+static const uint32_t kAudioTrack1Ssrc = 1;
 static const char kVideoTrackId1[] = "video_track_id_1";
-static const uint32 kVideoTrack1Ssrc = 2;
+static const uint32_t kVideoTrack1Ssrc = 2;
 static const char kVideoTrackId2[] = "video_track_id_2";
-static const uint32 kVideoTrack2Ssrc = 3;
+static const uint32_t kVideoTrack2Ssrc = 3;
 
 // MediaStream 2
 static const char kStreamLabel2[] = "local_stream_2";
 static const char kStream2Cname[] = "stream_2_cname";
 static const char kAudioTrackId2[] = "audio_track_id_2";
-static const uint32 kAudioTrack2Ssrc = 4;
+static const uint32_t kAudioTrack2Ssrc = 4;
 static const char kVideoTrackId3[] = "video_track_id_3";
-static const uint32 kVideoTrack3Ssrc = 5;
-static const uint32 kVideoTrack4Ssrc = 6;
+static const uint32_t kVideoTrack3Ssrc = 5;
+static const uint32_t kVideoTrack4Ssrc = 6;
 
 // DataChannel
 static const char kDataChannelLabel[] = "data_channel";
 static const char kDataChannelMsid[] = "data_channeld0";
 static const char kDataChannelCname[] = "data_channel_cname";
-static const uint32 kDataChannelSsrc = 10;
+static const uint32_t kDataChannelSsrc = 10;
 
 // Candidate
 static const char kDummyMid[] = "dummy_mid";
@@ -2157,7 +2155,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithCorruptedSctpDataChannels) {
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
   AddSctpDataChannel();
-  const uint16 kUnusualSctpPort = 9556;
+  const uint16_t kUnusualSctpPort = 9556;
   char default_portstr[16];
   char unusual_portstr[16];
   rtc::sprintfn(default_portstr, sizeof(default_portstr), "%d",

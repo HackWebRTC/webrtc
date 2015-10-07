@@ -122,7 +122,7 @@ class FileVideoCapturer : public VideoCapturer {
 
  protected:
   // Override virtual methods of parent class VideoCapturer.
-  virtual bool GetPreferredFourccs(std::vector<uint32>* fourccs);
+  virtual bool GetPreferredFourccs(std::vector<uint32_t>* fourccs);
 
   // Read the frame header from the file stream, video_file_.
   rtc::StreamResult ReadFrameHeader(CapturedFrame* frame);
@@ -146,10 +146,10 @@ class FileVideoCapturer : public VideoCapturer {
   rtc::FileStream video_file_;
   CapturedFrame captured_frame_;
   // The number of bytes allocated buffer for captured_frame_.data.
-  uint32 frame_buffer_size_;
+  uint32_t frame_buffer_size_;
   FileReadThread* file_read_thread_;
   int repeat_;  // How many times to repeat the file.
-  int64 last_frame_timestamp_ns_;  // Timestamp of last read frame.
+  int64_t last_frame_timestamp_ns_;  // Timestamp of last read frame.
   bool ignore_framerate_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FileVideoCapturer);

@@ -71,49 +71,41 @@ struct PacketMessageData : public rtc::MessageData {
 };
 
 struct ScreencastEventMessageData : public rtc::MessageData {
-  ScreencastEventMessageData(uint32 s, rtc::WindowEvent we)
-      : ssrc(s),
-        event(we) {
-  }
-  uint32 ssrc;
+  ScreencastEventMessageData(uint32_t s, rtc::WindowEvent we)
+      : ssrc(s), event(we) {}
+  uint32_t ssrc;
   rtc::WindowEvent event;
 };
 
 struct VoiceChannelErrorMessageData : public rtc::MessageData {
-  VoiceChannelErrorMessageData(uint32 in_ssrc,
+  VoiceChannelErrorMessageData(uint32_t in_ssrc,
                                VoiceMediaChannel::Error in_error)
-      : ssrc(in_ssrc),
-        error(in_error) {
-  }
-  uint32 ssrc;
+      : ssrc(in_ssrc), error(in_error) {}
+  uint32_t ssrc;
   VoiceMediaChannel::Error error;
 };
 
 struct VideoChannelErrorMessageData : public rtc::MessageData {
-  VideoChannelErrorMessageData(uint32 in_ssrc,
+  VideoChannelErrorMessageData(uint32_t in_ssrc,
                                VideoMediaChannel::Error in_error)
-      : ssrc(in_ssrc),
-        error(in_error) {
-  }
-  uint32 ssrc;
+      : ssrc(in_ssrc), error(in_error) {}
+  uint32_t ssrc;
   VideoMediaChannel::Error error;
 };
 
 struct DataChannelErrorMessageData : public rtc::MessageData {
-  DataChannelErrorMessageData(uint32 in_ssrc,
+  DataChannelErrorMessageData(uint32_t in_ssrc,
                               DataMediaChannel::Error in_error)
-      : ssrc(in_ssrc),
-        error(in_error) {}
-  uint32 ssrc;
+      : ssrc(in_ssrc), error(in_error) {}
+  uint32_t ssrc;
   DataMediaChannel::Error error;
 };
 
 
 struct VideoChannel::ScreencastDetailsData {
-  explicit ScreencastDetailsData(uint32 s)
-      : ssrc(s), fps(0), screencast_max_pixels(0) {
-  }
-  uint32 ssrc;
+  explicit ScreencastDetailsData(uint32_t s)
+      : ssrc(s), fps(0), screencast_max_pixels(0) {}
+  uint32_t ssrc;
   int fps;
   int screencast_max_pixels;
 };
@@ -365,7 +357,7 @@ bool BaseChannel::AddRecvStream(const StreamParams& sp) {
   return InvokeOnWorker(Bind(&BaseChannel::AddRecvStream_w, this, sp));
 }
 
-bool BaseChannel::RemoveRecvStream(uint32 ssrc) {
+bool BaseChannel::RemoveRecvStream(uint32_t ssrc) {
   return InvokeOnWorker(Bind(&BaseChannel::RemoveRecvStream_w, this, ssrc));
 }
 
@@ -374,7 +366,7 @@ bool BaseChannel::AddSendStream(const StreamParams& sp) {
       Bind(&MediaChannel::AddSendStream, media_channel(), sp));
 }
 
-bool BaseChannel::RemoveSendStream(uint32 ssrc) {
+bool BaseChannel::RemoveSendStream(uint32_t ssrc) {
   return InvokeOnWorker(
       Bind(&MediaChannel::RemoveSendStream, media_channel(), ssrc));
 }
@@ -566,7 +558,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
           &options.packet_time_params.srtp_packet_index);
       // If protection succeeds, let's get auth params from srtp.
       if (res) {
-        uint8* auth_key = NULL;
+        uint8_t* auth_key = NULL;
         int key_len;
         res = srtp_filter_.GetRtpAuthParams(
             &auth_key, &key_len, &options.packet_time_params.srtp_auth_tag_len);
@@ -579,7 +571,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
 #endif
       if (!res) {
         int seq_num = -1;
-        uint32 ssrc = 0;
+        uint32_t ssrc = 0;
         GetRtpSeqNum(data, len, &seq_num);
         GetRtpSsrc(data, len, &ssrc);
         LOG(LS_ERROR) << "Failed to protect " << content_name_
@@ -660,7 +652,7 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
       res = srtp_filter_.UnprotectRtp(data, len, &len);
       if (!res) {
         int seq_num = -1;
-        uint32 ssrc = 0;
+        uint32_t ssrc = 0;
         GetRtpSeqNum(data, len, &seq_num);
         GetRtpSsrc(data, len, &ssrc);
         LOG(LS_ERROR) << "Failed to unprotect " << content_name_
@@ -1086,7 +1078,7 @@ bool BaseChannel::AddRecvStream_w(const StreamParams& sp) {
   return bundle_filter_.AddStream(sp);
 }
 
-bool BaseChannel::RemoveRecvStream_w(uint32 ssrc) {
+bool BaseChannel::RemoveRecvStream_w(uint32_t ssrc) {
   ASSERT(worker_thread() == rtc::Thread::Current());
   bundle_filter_.RemoveStream(ssrc);
   return media_channel()->RemoveRecvStream(ssrc);
@@ -1304,12 +1296,12 @@ bool VoiceChannel::Init() {
   return true;
 }
 
-bool VoiceChannel::SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) {
+bool VoiceChannel::SetRemoteRenderer(uint32_t ssrc, AudioRenderer* renderer) {
   return InvokeOnWorker(Bind(&VoiceMediaChannel::SetRemoteRenderer,
                              media_channel(), ssrc, renderer));
 }
 
-bool VoiceChannel::SetAudioSend(uint32 ssrc,
+bool VoiceChannel::SetAudioSend(uint32_t ssrc,
                                 bool enable,
                                 const AudioOptions* options,
                                 AudioRenderer* renderer) {
@@ -1347,13 +1339,15 @@ bool VoiceChannel::CanInsertDtmf() {
                              media_channel()));
 }
 
-bool VoiceChannel::InsertDtmf(uint32 ssrc, int event_code, int duration,
+bool VoiceChannel::InsertDtmf(uint32_t ssrc,
+                              int event_code,
+                              int duration,
                               int flags) {
   return InvokeOnWorker(Bind(&VoiceChannel::InsertDtmf_w, this,
                              ssrc, event_code, duration, flags));
 }
 
-bool VoiceChannel::SetOutputScaling(uint32 ssrc, double left, double right) {
+bool VoiceChannel::SetOutputScaling(uint32_t ssrc, double left, double right) {
   return InvokeOnWorker(Bind(&VoiceMediaChannel::SetOutputScaling,
                              media_channel(), ssrc, left, right));
 }
@@ -1547,7 +1541,9 @@ void VoiceChannel::HandleEarlyMediaTimeout() {
   }
 }
 
-bool VoiceChannel::InsertDtmf_w(uint32 ssrc, int event, int duration,
+bool VoiceChannel::InsertDtmf_w(uint32_t ssrc,
+                                int event,
+                                int duration,
                                 int flags) {
   if (!enabled()) {
     return false;
@@ -1615,7 +1611,7 @@ bool VideoChannel::Init() {
 }
 
 VideoChannel::~VideoChannel() {
-  std::vector<uint32> screencast_ssrcs;
+  std::vector<uint32_t> screencast_ssrcs;
   ScreencastMap::iterator iter;
   while (!screencast_capturers_.empty()) {
     if (!RemoveScreencast(screencast_capturers_.begin()->first)) {
@@ -1633,7 +1629,7 @@ VideoChannel::~VideoChannel() {
   Deinit();
 }
 
-bool VideoChannel::SetRenderer(uint32 ssrc, VideoRenderer* renderer) {
+bool VideoChannel::SetRenderer(uint32_t ssrc, VideoRenderer* renderer) {
   worker_thread()->Invoke<void>(Bind(
       &VideoMediaChannel::SetRenderer, media_channel(), ssrc, renderer));
   return true;
@@ -1643,17 +1639,17 @@ bool VideoChannel::ApplyViewRequest(const ViewRequest& request) {
   return InvokeOnWorker(Bind(&VideoChannel::ApplyViewRequest_w, this, request));
 }
 
-bool VideoChannel::AddScreencast(uint32 ssrc, VideoCapturer* capturer) {
+bool VideoChannel::AddScreencast(uint32_t ssrc, VideoCapturer* capturer) {
   return worker_thread()->Invoke<bool>(Bind(
       &VideoChannel::AddScreencast_w, this, ssrc, capturer));
 }
 
-bool VideoChannel::SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
+bool VideoChannel::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
   return InvokeOnWorker(Bind(&VideoMediaChannel::SetCapturer,
                              media_channel(), ssrc, capturer));
 }
 
-bool VideoChannel::RemoveScreencast(uint32 ssrc) {
+bool VideoChannel::RemoveScreencast(uint32_t ssrc) {
   return InvokeOnWorker(Bind(&VideoChannel::RemoveScreencast_w, this, ssrc));
 }
 
@@ -1661,14 +1657,14 @@ bool VideoChannel::IsScreencasting() {
   return InvokeOnWorker(Bind(&VideoChannel::IsScreencasting_w, this));
 }
 
-int VideoChannel::GetScreencastFps(uint32 ssrc) {
+int VideoChannel::GetScreencastFps(uint32_t ssrc) {
   ScreencastDetailsData data(ssrc);
   worker_thread()->Invoke<void>(Bind(
       &VideoChannel::GetScreencastDetails_w, this, &data));
   return data.fps;
 }
 
-int VideoChannel::GetScreencastMaxPixels(uint32 ssrc) {
+int VideoChannel::GetScreencastMaxPixels(uint32_t ssrc) {
   ScreencastDetailsData data(ssrc);
   worker_thread()->Invoke<void>(Bind(
       &VideoChannel::GetScreencastDetails_w, this, &data));
@@ -1687,7 +1683,7 @@ bool VideoChannel::RequestIntraFrame() {
   return true;
 }
 
-bool VideoChannel::SetVideoSend(uint32 ssrc,
+bool VideoChannel::SetVideoSend(uint32_t ssrc,
                                 bool mute,
                                 const VideoOptions* options) {
   return InvokeOnWorker(Bind(&VideoMediaChannel::SetVideoSend, media_channel(),
@@ -1861,7 +1857,7 @@ bool VideoChannel::ApplyViewRequest_w(const ViewRequest& request) {
   return ret;
 }
 
-bool VideoChannel::AddScreencast_w(uint32 ssrc, VideoCapturer* capturer) {
+bool VideoChannel::AddScreencast_w(uint32_t ssrc, VideoCapturer* capturer) {
   if (screencast_capturers_.find(ssrc) != screencast_capturers_.end()) {
     return false;
   }
@@ -1870,7 +1866,7 @@ bool VideoChannel::AddScreencast_w(uint32 ssrc, VideoCapturer* capturer) {
   return true;
 }
 
-bool VideoChannel::RemoveScreencast_w(uint32 ssrc) {
+bool VideoChannel::RemoveScreencast_w(uint32_t ssrc) {
   ScreencastMap::iterator iter = screencast_capturers_.find(ssrc);
   if (iter  == screencast_capturers_.end()) {
     return false;
@@ -1897,7 +1893,7 @@ void VideoChannel::GetScreencastDetails_w(
   data->screencast_max_pixels = capturer->screencast_max_pixels();
 }
 
-void VideoChannel::OnScreencastWindowEvent_s(uint32 ssrc,
+void VideoChannel::OnScreencastWindowEvent_s(uint32_t ssrc,
                                              rtc::WindowEvent we) {
   ASSERT(signaling_thread() == rtc::Thread::Current());
   SignalScreencastWindowEvent(ssrc, we);
@@ -1937,7 +1933,7 @@ void VideoChannel::OnMediaMonitorUpdate(
   SignalMediaMonitor(this, info);
 }
 
-void VideoChannel::OnScreencastWindowEvent(uint32 ssrc,
+void VideoChannel::OnScreencastWindowEvent(uint32_t ssrc,
                                            rtc::WindowEvent event) {
   ScreencastEventMessageData* pdata =
       new ScreencastEventMessageData(ssrc, event);
@@ -1959,7 +1955,7 @@ void VideoChannel::OnStateChange(VideoCapturer* capturer, CaptureState ev) {
   }
   previous_we_ = we;
 
-  uint32 ssrc = 0;
+  uint32_t ssrc = 0;
   if (!GetLocalSsrc(capturer, &ssrc)) {
     return;
   }
@@ -1967,7 +1963,7 @@ void VideoChannel::OnStateChange(VideoCapturer* capturer, CaptureState ev) {
   OnScreencastWindowEvent(ssrc, we);
 }
 
-bool VideoChannel::GetLocalSsrc(const VideoCapturer* capturer, uint32* ssrc) {
+bool VideoChannel::GetLocalSsrc(const VideoCapturer* capturer, uint32_t* ssrc) {
   *ssrc = 0;
   for (ScreencastMap::iterator iter = screencast_capturers_.begin();
        iter != screencast_capturers_.end(); ++iter) {
@@ -2226,8 +2222,8 @@ void DataChannel::OnMessage(rtc::Message *pmsg) {
       break;
     }
     case MSG_STREAMCLOSEDREMOTELY: {
-      rtc::TypedMessageData<uint32>* data =
-          static_cast<rtc::TypedMessageData<uint32>*>(pmsg->pdata);
+      rtc::TypedMessageData<uint32_t>* data =
+          static_cast<rtc::TypedMessageData<uint32_t>*>(pmsg->pdata);
       SignalStreamClosedRemotely(data->data());
       delete data;
       break;
@@ -2272,8 +2268,8 @@ void DataChannel::OnDataReceived(
   signaling_thread()->Post(this, MSG_DATARECEIVED, msg);
 }
 
-void DataChannel::OnDataChannelError(
-    uint32 ssrc, DataMediaChannel::Error err) {
+void DataChannel::OnDataChannelError(uint32_t ssrc,
+                                     DataMediaChannel::Error err) {
   DataChannelErrorMessageData* data = new DataChannelErrorMessageData(
       ssrc, err);
   signaling_thread()->Post(this, MSG_CHANNEL_ERROR, data);
@@ -2296,9 +2292,9 @@ bool DataChannel::ShouldSetupDtlsSrtp() const {
   return (data_channel_type_ == DCT_RTP);
 }
 
-void DataChannel::OnStreamClosedRemotely(uint32 sid) {
-  rtc::TypedMessageData<uint32>* message =
-      new rtc::TypedMessageData<uint32>(sid);
+void DataChannel::OnStreamClosedRemotely(uint32_t sid) {
+  rtc::TypedMessageData<uint32_t>* message =
+      new rtc::TypedMessageData<uint32_t>(sid);
   signaling_thread()->Post(this, MSG_STREAMCLOSEDREMOTELY, message);
 }
 

@@ -66,12 +66,12 @@ class MediaStreamSignalingObserver {
   // Triggered when the remote SessionDescription has a new audio track.
   virtual void OnAddRemoteAudioTrack(MediaStreamInterface* stream,
                                      AudioTrackInterface* audio_track,
-                                     uint32 ssrc) = 0;
+                                     uint32_t ssrc) = 0;
 
   // Triggered when the remote SessionDescription has a new video track.
   virtual void OnAddRemoteVideoTrack(MediaStreamInterface* stream,
                                      VideoTrackInterface* video_track,
-                                     uint32 ssrc) = 0;
+                                     uint32_t ssrc) = 0;
 
   // Triggered when the remote SessionDescription has removed an audio track.
   virtual void OnRemoveRemoteAudioTrack(MediaStreamInterface* stream,
@@ -84,17 +84,17 @@ class MediaStreamSignalingObserver {
   // Triggered when the local SessionDescription has a new audio track.
   virtual void OnAddLocalAudioTrack(MediaStreamInterface* stream,
                                     AudioTrackInterface* audio_track,
-                                    uint32 ssrc) = 0;
+                                    uint32_t ssrc) = 0;
 
   // Triggered when the local SessionDescription has a new video track.
   virtual void OnAddLocalVideoTrack(MediaStreamInterface* stream,
                                     VideoTrackInterface* video_track,
-                                    uint32 ssrc) = 0;
+                                    uint32_t ssrc) = 0;
 
   // Triggered when the local SessionDescription has removed an audio track.
   virtual void OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
                                        AudioTrackInterface* audio_track,
-                                       uint32 ssrc) = 0;
+                                       uint32_t ssrc) = 0;
 
   // Triggered when the local SessionDescription has removed a video track.
   virtual void OnRemoveLocalVideoTrack(MediaStreamInterface* stream,
@@ -254,7 +254,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   }
   void OnDataTransportCreatedForSctp();
   void OnDtlsRoleReadyForSctp(rtc::SSLRole role);
-  void OnRemoteSctpDataChannelClosed(uint32 sid);
+  void OnRemoteSctpDataChannelClosed(uint32_t sid);
 
   const SctpDataChannels& sctp_data_channels() const {
     return sctp_data_channels_;
@@ -286,11 +286,11 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
     TrackInfo() : ssrc(0) {}
     TrackInfo(const std::string& stream_label,
               const std::string track_id,
-              uint32 ssrc)
+              uint32_t ssrc)
         : stream_label(stream_label), track_id(track_id), ssrc(ssrc) {}
     std::string stream_label;
     std::string track_id;
-    uint32 ssrc;
+    uint32_t ssrc;
   };
   typedef std::vector<TrackInfo> TrackInfos;
 
@@ -309,7 +309,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   // MediaStreamSignaling::OnAddRemoteVideoTrack.
   void OnRemoteTrackSeen(const std::string& stream_label,
                          const std::string& track_id,
-                         uint32 ssrc,
+                         uint32_t ssrc,
                          cricket::MediaType media_type);
 
   // Triggered when a remote track has been removed from a remote session
@@ -350,7 +350,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   // |local_streams_|
   void OnLocalTrackSeen(const std::string& stream_label,
                         const std::string& track_id,
-                        uint32 ssrc,
+                        uint32_t ssrc,
                         cricket::MediaType media_type);
 
   // Triggered when a local track has been removed from a local session
@@ -361,14 +361,14 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   // MediaStreamTrack in a MediaStream in |local_streams_|.
   void OnLocalTrackRemoved(const std::string& stream_label,
                            const std::string& track_id,
-                           uint32 ssrc,
+                           uint32_t ssrc,
                            cricket::MediaType media_type);
 
   void UpdateLocalRtpDataChannels(const cricket::StreamParamsVec& streams);
   void UpdateRemoteRtpDataChannels(const cricket::StreamParamsVec& streams);
   void UpdateClosingDataChannels(
       const std::vector<std::string>& active_channels, bool is_local_update);
-  void CreateRemoteDataChannel(const std::string& label, uint32 remote_ssrc);
+  void CreateRemoteDataChannel(const std::string& label, uint32_t remote_ssrc);
 
   const TrackInfo* FindTrackInfo(const TrackInfos& infos,
                                  const std::string& stream_label,

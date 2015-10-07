@@ -106,9 +106,12 @@ class FakeVideoRenderer : public VideoRenderer {
   sigslot::signal1<const VideoFrame*> SignalRenderFrame;
 
  private:
-  static bool CheckFrameColorYuv(uint8 y_min, uint8 y_max,
-                                 uint8 u_min, uint8 u_max,
-                                 uint8 v_min, uint8 v_max,
+  static bool CheckFrameColorYuv(uint8_t y_min,
+                                 uint8_t y_max,
+                                 uint8_t u_min,
+                                 uint8_t u_max,
+                                 uint8_t v_min,
+                                 uint8_t v_max,
                                  const cricket::VideoFrame* frame) {
     if (!frame) {
       return false;
@@ -116,12 +119,12 @@ class FakeVideoRenderer : public VideoRenderer {
     // Y
     size_t y_width = frame->GetWidth();
     size_t y_height = frame->GetHeight();
-    const uint8* y_plane = frame->GetYPlane();
-    const uint8* y_pos = y_plane;
-    int32 y_pitch = frame->GetYPitch();
+    const uint8_t* y_plane = frame->GetYPlane();
+    const uint8_t* y_pos = y_plane;
+    int32_t y_pitch = frame->GetYPitch();
     for (size_t i = 0; i < y_height; ++i) {
       for (size_t j = 0; j < y_width; ++j) {
-        uint8 y_value = *(y_pos + j);
+        uint8_t y_value = *(y_pos + j);
         if (y_value < y_min || y_value > y_max) {
           return false;
         }
@@ -131,19 +134,19 @@ class FakeVideoRenderer : public VideoRenderer {
     // U and V
     size_t chroma_width = frame->GetChromaWidth();
     size_t chroma_height = frame->GetChromaHeight();
-    const uint8* u_plane = frame->GetUPlane();
-    const uint8* v_plane = frame->GetVPlane();
-    const uint8* u_pos = u_plane;
-    const uint8* v_pos = v_plane;
-    int32 u_pitch = frame->GetUPitch();
-    int32 v_pitch = frame->GetVPitch();
+    const uint8_t* u_plane = frame->GetUPlane();
+    const uint8_t* v_plane = frame->GetVPlane();
+    const uint8_t* u_pos = u_plane;
+    const uint8_t* v_pos = v_plane;
+    int32_t u_pitch = frame->GetUPitch();
+    int32_t v_pitch = frame->GetVPitch();
     for (size_t i = 0; i < chroma_height; ++i) {
       for (size_t j = 0; j < chroma_width; ++j) {
-        uint8 u_value = *(u_pos + j);
+        uint8_t u_value = *(u_pos + j);
         if (u_value < u_min || u_value > u_max) {
           return false;
         }
-        uint8 v_value = *(v_pos + j);
+        uint8_t v_value = *(v_pos + j);
         if (v_value < v_min || v_value > v_max) {
           return false;
         }

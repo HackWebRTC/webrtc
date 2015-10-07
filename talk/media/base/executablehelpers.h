@@ -42,7 +42,7 @@ namespace rtc {
 // Returns the path to the running executable or an empty path.
 // TODO(thorcarpenter): Consolidate with FluteClient::get_executable_dir.
 inline Pathname GetExecutablePath() {
-  const int32 kMaxExePathSize = 255;
+  const int32_t kMaxExePathSize = 255;
 #ifdef WIN32
   TCHAR exe_path_buffer[kMaxExePathSize];
   DWORD copied_length = GetModuleFileName(NULL,  // NULL = Current process
@@ -71,7 +71,7 @@ inline Pathname GetExecutablePath() {
     return rtc::Pathname();
   }
 #elif defined LINUX
-  int32 copied_length = kMaxExePathSize - 1;
+  int32_t copied_length = kMaxExePathSize - 1;
   const char* kProcExeFmt = "/proc/%d/exe";
   char proc_exe_link[40];
   snprintf(proc_exe_link, sizeof(proc_exe_link), kProcExeFmt, getpid());

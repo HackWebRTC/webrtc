@@ -43,7 +43,7 @@ namespace {
 const int kMsCallbackWait = 500;
 // For HD only the height matters.
 const int kMinHdHeight = 720;
-const uint32 kTimeout = 5000U;
+const uint32_t kTimeout = 5000U;
 
 }  // namespace
 

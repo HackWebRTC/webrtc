@@ -58,7 +58,7 @@ static const char kTurnIceServerUri[] = "turn:user@turn.example.org";
 static const char kTurnUsername[] = "user";
 static const char kTurnPassword[] = "password";
 static const char kTurnHostname[] = "turn.example.org";
-static const uint32 kTimeout = 10000U;
+static const uint32_t kTimeout = 10000U;
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(feature())) {                               \

@@ -334,7 +334,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
                                       size_t data_len, size_t *written,
                                       int *error) {
     // Randomly drop loss_ percent of packets
-    if (rtc::CreateRandomId() % 100 < static_cast<uint32>(loss_)) {
+    if (rtc::CreateRandomId() % 100 < static_cast<uint32_t>(loss_)) {
       LOG(LS_INFO) << "Randomly dropping packet, size=" << data_len;
       *written = data_len;
       return rtc::SR_SUCCESS;

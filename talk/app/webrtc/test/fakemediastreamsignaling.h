@@ -90,16 +90,16 @@ class FakeMediaStreamSignaling : public webrtc::MediaStreamSignaling,
   virtual void OnAddDataChannel(webrtc::DataChannelInterface* data_channel) {}
   virtual void OnAddLocalAudioTrack(webrtc::MediaStreamInterface* stream,
                                     webrtc::AudioTrackInterface* audio_track,
-                                    uint32 ssrc) {}
+                                    uint32_t ssrc) {}
   virtual void OnAddLocalVideoTrack(webrtc::MediaStreamInterface* stream,
                                     webrtc::VideoTrackInterface* video_track,
-                                    uint32 ssrc) {}
+                                    uint32_t ssrc) {}
   virtual void OnAddRemoteAudioTrack(webrtc::MediaStreamInterface* stream,
                                      webrtc::AudioTrackInterface* audio_track,
-                                     uint32 ssrc) {}
+                                     uint32_t ssrc) {}
   virtual void OnAddRemoteVideoTrack(webrtc::MediaStreamInterface* stream,
                                      webrtc::VideoTrackInterface* video_track,
-                                     uint32 ssrc) {}
+                                     uint32_t ssrc) {}
   virtual void OnRemoveRemoteAudioTrack(
       webrtc::MediaStreamInterface* stream,
       webrtc::AudioTrackInterface* audio_track) {}
@@ -108,7 +108,7 @@ class FakeMediaStreamSignaling : public webrtc::MediaStreamSignaling,
       webrtc::VideoTrackInterface* video_track) {}
   virtual void OnRemoveLocalAudioTrack(webrtc::MediaStreamInterface* stream,
                                        webrtc::AudioTrackInterface* audio_track,
-                                       uint32 ssrc) {}
+                                       uint32_t ssrc) {}
   virtual void OnRemoveLocalVideoTrack(
       webrtc::MediaStreamInterface* stream,
       webrtc::VideoTrackInterface* video_track) {}

@@ -16,11 +16,11 @@ namespace rtc {
 class RateTrackerForTest : public RateTracker {
  public:
   RateTrackerForTest() : RateTracker(100u, 10u), time_(0) {}
-  virtual uint32 Time() const { return time_; }
-  void AdvanceTime(uint32 delta) { time_ += delta; }
+  virtual uint32_t Time() const { return time_; }
+  void AdvanceTime(uint32_t delta) { time_ += delta; }
 
  private:
-  uint32 time_;
+  uint32_t time_;
 };
 
 TEST(RateTrackerTest, Test30FPS) {

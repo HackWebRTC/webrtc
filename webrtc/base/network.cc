@@ -62,8 +62,8 @@ namespace {
 // limit of IPv6 networks but could be changed by set_max_ipv6_networks().
 const int kMaxIPv6Networks = 5;
 
-const uint32 kUpdateNetworksMessage = 1;
-const uint32 kSignalNetworksMessage = 2;
+const uint32_t kUpdateNetworksMessage = 1;
+const uint32_t kSignalNetworksMessage = 2;
 
 // Fetch list of networks every two seconds.
 const int kNetworksUpdateIntervalMs = 2000;

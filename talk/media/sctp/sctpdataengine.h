@@ -56,7 +56,7 @@ struct socket;
 namespace cricket {
 // The highest stream ID (Sid) that SCTP allows, and the number of streams we
 // tell SCTP we're going to use.
-const uint32 kMaxSctpSid = 1023;
+const uint32_t kMaxSctpSid = 1023;
 
 // This is the default SCTP port to use. It is passed along the wire and the
 // connectee and connector must be using the same port. It is not related to the
@@ -134,7 +134,7 @@ class SctpDataMediaChannel : public DataMediaChannel,
     PPID_TEXT_LAST = 51
   };
 
-  typedef std::set<uint32> StreamSet;
+  typedef std::set<uint32_t> StreamSet;
 
   // Given a thread which will be used to post messages (received data) to this
   // SctpDataMediaChannel instance.
@@ -151,9 +151,9 @@ class SctpDataMediaChannel : public DataMediaChannel,
   virtual bool SetSendParameters(const DataSendParameters& params);
   virtual bool SetRecvParameters(const DataRecvParameters& params);
   virtual bool AddSendStream(const StreamParams& sp);
-  virtual bool RemoveSendStream(uint32 ssrc);
+  virtual bool RemoveSendStream(uint32_t ssrc);
   virtual bool AddRecvStream(const StreamParams& sp);
-  virtual bool RemoveRecvStream(uint32 ssrc);
+  virtual bool RemoveRecvStream(uint32_t ssrc);
 
   // Called when Sctp gets data. The data may be a notification or data for
   // OnSctpInboundData. Called from the worker thread.
@@ -207,7 +207,7 @@ class SctpDataMediaChannel : public DataMediaChannel,
   // Adds a stream.
   bool AddStream(const StreamParams &sp);
   // Queues a stream for reset.
-  bool ResetStream(uint32 ssrc);
+  bool ResetStream(uint32_t ssrc);
 
   // Called by OnMessage to send packet on the network.
   void OnPacketFromSctpToNetwork(rtc::Buffer* buffer);

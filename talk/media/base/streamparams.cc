@@ -100,10 +100,10 @@ bool MediaStreams::RemoveDataStream(
   return RemoveStream(&data_, selector);
 }
 
-static std::string SsrcsToString(const std::vector<uint32>& ssrcs) {
+static std::string SsrcsToString(const std::vector<uint32_t>& ssrcs) {
   std::ostringstream ost;
   ost << "ssrcs:[";
-  for (std::vector<uint32>::const_iterator it = ssrcs.begin();
+  for (std::vector<uint32_t>::const_iterator it = ssrcs.begin();
        it != ssrcs.end(); ++it) {
     if (it != ssrcs.begin()) {
       ost << ",";
@@ -161,7 +161,7 @@ std::string StreamParams::ToString() const {
   ost << "}";
   return ost.str();
 }
-void StreamParams::GetPrimarySsrcs(std::vector<uint32>* ssrcs) const {
+void StreamParams::GetPrimarySsrcs(std::vector<uint32_t>* ssrcs) const {
   const SsrcGroup* sim_group = get_ssrc_group(kSimSsrcGroupSemantics);
   if (sim_group == NULL) {
     ssrcs->push_back(first_ssrc());
@@ -172,10 +172,10 @@ void StreamParams::GetPrimarySsrcs(std::vector<uint32>* ssrcs) const {
   }
 }
 
-void StreamParams::GetFidSsrcs(const std::vector<uint32>& primary_ssrcs,
-                               std::vector<uint32>* fid_ssrcs) const {
+void StreamParams::GetFidSsrcs(const std::vector<uint32_t>& primary_ssrcs,
+                               std::vector<uint32_t>* fid_ssrcs) const {
   for (size_t i = 0; i < primary_ssrcs.size(); ++i) {
-    uint32 fid_ssrc;
+    uint32_t fid_ssrc;
     if (GetFidSsrc(primary_ssrcs[i], &fid_ssrc)) {
       fid_ssrcs->push_back(fid_ssrc);
     }
@@ -183,14 +183,14 @@ void StreamParams::GetFidSsrcs(const std::vector<uint32>& primary_ssrcs,
 }
 
 bool StreamParams::AddSecondarySsrc(const std::string& semantics,
-                                    uint32 primary_ssrc,
-                                    uint32 secondary_ssrc) {
+                                    uint32_t primary_ssrc,
+                                    uint32_t secondary_ssrc) {
   if (!has_ssrc(primary_ssrc)) {
     return false;
   }
 
   ssrcs.push_back(secondary_ssrc);
-  std::vector<uint32> ssrc_vector;
+  std::vector<uint32_t> ssrc_vector;
   ssrc_vector.push_back(primary_ssrc);
   ssrc_vector.push_back(secondary_ssrc);
   SsrcGroup ssrc_group = SsrcGroup(semantics, ssrc_vector);
@@ -199,8 +199,8 @@ bool StreamParams::AddSecondarySsrc(const std::string& semantics,
 }
 
 bool StreamParams::GetSecondarySsrc(const std::string& semantics,
-                                    uint32 primary_ssrc,
-                                    uint32* secondary_ssrc) const {
+                                    uint32_t primary_ssrc,
+                                    uint32_t* secondary_ssrc) const {
   for (std::vector<SsrcGroup>::const_iterator it = ssrc_groups.begin();
        it != ssrc_groups.end(); ++it) {
     if (it->has_semantics(semantics) &&
@@ -226,8 +226,8 @@ bool IsOneSsrcStream(const StreamParams& sp) {
   return false;
 }
 
-static void RemoveFirst(std::list<uint32>* ssrcs, uint32 value) {
-  std::list<uint32>::iterator it =
+static void RemoveFirst(std::list<uint32_t>* ssrcs, uint32_t value) {
+  std::list<uint32_t>::iterator it =
       std::find(ssrcs->begin(), ssrcs->end(), value);
   if (it != ssrcs->end()) {
     ssrcs->erase(it);
@@ -242,7 +242,7 @@ bool IsSimulcastStream(const StreamParams& sp) {
   // Start with all StreamParams SSRCs. Remove simulcast SSRCs (from sg) and
   // RTX SSRCs. If we still have SSRCs left, we don't know what they're for.
   // Also we remove first-found SSRCs only. So duplicates should lead to errors.
-  std::list<uint32> sp_ssrcs(sp.ssrcs.begin(), sp.ssrcs.end());
+  std::list<uint32_t> sp_ssrcs(sp.ssrcs.begin(), sp.ssrcs.end());
   for (size_t i = 0; i < sg->ssrcs.size(); ++i) {
     RemoveFirst(&sp_ssrcs, sg->ssrcs[i]);
   }

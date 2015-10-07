@@ -62,7 +62,7 @@ extern "C" {
 // The pointer to the key  will be allocated in the external_hmac_init function.
 // This pointer is owned by srtp_t in a template context.
 typedef struct {
-  uint8 key[HMAC_KEY_LENGTH];
+  uint8_t key[HMAC_KEY_LENGTH];
   int key_length;
 } ExternalHmacContext;
 

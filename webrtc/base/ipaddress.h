@@ -62,7 +62,7 @@ class IPAddress {
     u_.ip6 = ip6;
   }
 
-  explicit IPAddress(uint32 ip_in_host_byte_order) : family_(AF_INET) {
+  explicit IPAddress(uint32_t ip_in_host_byte_order) : family_(AF_INET) {
     memset(&u_, 0, sizeof(u_));
     u_.ip4.s_addr = HostToNetwork32(ip_in_host_byte_order);
   }
@@ -107,7 +107,7 @@ class IPAddress {
   IPAddress AsIPv6Address() const;
 
   // For socketaddress' benefit. Returns the IP in host byte order.
-  uint32 v4AddressAsHostOrderInteger() const;
+  uint32_t v4AddressAsHostOrderInteger() const;
 
   // Whether this is an unspecified IP address.
   bool IsNil() const;

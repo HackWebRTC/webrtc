@@ -415,13 +415,13 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
       uvPlaneAddress == yPlaneAddress + yPlaneHeight * yPlaneBytesPerRow);
 
   // Stuff data into a cricket::CapturedFrame.
-  int64 currentTime = rtc::TimeNanos();
+  int64_t currentTime = rtc::TimeNanos();
   cricket::CapturedFrame frame;
   frame.width = yPlaneWidth;
   frame.height = yPlaneHeight;
   frame.pixel_width = 1;
   frame.pixel_height = 1;
-  frame.fourcc = static_cast<uint32>(cricket::FOURCC_NV12);
+  frame.fourcc = static_cast<uint32_t>(cricket::FOURCC_NV12);
   frame.time_stamp = currentTime;
   frame.data = yPlaneAddress;
   frame.data_size = frameSize;

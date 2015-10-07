@@ -42,8 +42,8 @@
 namespace cricket {
 
 namespace {
-  static const uint32 kWaitTimeout = 3000U;  // 3 seconds.
-  static const uint32 kShortWaitTimeout = 1000U;  // 1 second.
+static const uint32_t kWaitTimeout = 3000U;       // 3 seconds.
+static const uint32_t kShortWaitTimeout = 1000U;  // 1 second.
   void UpdateCpuLoad(CoordinatedVideoAdapter* adapter,
     int current_cpus, int max_cpus, float process_load, float system_load) {
     adapter->set_cpu_load_min_samples(1);

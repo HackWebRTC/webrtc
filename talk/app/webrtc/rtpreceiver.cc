@@ -32,7 +32,7 @@
 namespace webrtc {
 
 AudioRtpReceiver::AudioRtpReceiver(AudioTrackInterface* track,
-                                   uint32 ssrc,
+                                   uint32_t ssrc,
                                    AudioProviderInterface* provider)
     : id_(track->id()),
       track_(track),
@@ -82,7 +82,7 @@ void AudioRtpReceiver::Reconfigure() {
 }
 
 VideoRtpReceiver::VideoRtpReceiver(VideoTrackInterface* track,
-                                   uint32 ssrc,
+                                   uint32_t ssrc,
                                    VideoProviderInterface* provider)
     : id_(track->id()), track_(track), ssrc_(ssrc), provider_(provider) {
   provider_->SetVideoPlayout(ssrc_, true, track_->GetSource()->FrameInput());

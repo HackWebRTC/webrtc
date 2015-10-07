@@ -98,9 +98,9 @@ void Vp9FrameBufferPool::ClearPool() {
 }
 
 // static
-int32 Vp9FrameBufferPool::VpxGetFrameBuffer(void* user_priv,
-                                            size_t min_size,
-                                            vpx_codec_frame_buffer* fb) {
+int32_t Vp9FrameBufferPool::VpxGetFrameBuffer(void* user_priv,
+                                              size_t min_size,
+                                              vpx_codec_frame_buffer* fb) {
   RTC_DCHECK(user_priv);
   RTC_DCHECK(fb);
   Vp9FrameBufferPool* pool = static_cast<Vp9FrameBufferPool*>(user_priv);
@@ -118,8 +118,8 @@ int32 Vp9FrameBufferPool::VpxGetFrameBuffer(void* user_priv,
 }
 
 // static
-int32 Vp9FrameBufferPool::VpxReleaseFrameBuffer(void* user_priv,
-                                                vpx_codec_frame_buffer* fb) {
+int32_t Vp9FrameBufferPool::VpxReleaseFrameBuffer(void* user_priv,
+                                                  vpx_codec_frame_buffer* fb) {
   RTC_DCHECK(user_priv);
   RTC_DCHECK(fb);
   Vp9FrameBuffer* buffer = static_cast<Vp9FrameBuffer*>(fb->priv);

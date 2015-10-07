@@ -93,8 +93,8 @@ static const char* kIcePwd[4] = {"TESTICEPWD00000000000000",
                                  "TESTICEPWD00000000000002",
                                  "TESTICEPWD00000000000003"};
 
-static const uint64 kTiebreaker1 = 11111;
-static const uint64 kTiebreaker2 = 22222;
+static const uint64_t kTiebreaker1 = 11111;
+static const uint64_t kTiebreaker2 = 22222;
 
 enum {
   MSG_CANDIDATE
@@ -239,11 +239,11 @@ class P2PTransportChannelTestBase : public testing::Test,
 
     void SetIceRole(cricket::IceRole role) { role_ = role; }
     cricket::IceRole ice_role() { return role_; }
-    void SetIceTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
-    uint64 GetIceTiebreaker() { return tiebreaker_; }
+    void SetIceTiebreaker(uint64_t tiebreaker) { tiebreaker_ = tiebreaker; }
+    uint64_t GetIceTiebreaker() { return tiebreaker_; }
     void OnRoleConflict(bool role_conflict) { role_conflict_ = role_conflict; }
     bool role_conflict() { return role_conflict_; }
-    void SetAllocationStepDelay(uint32 delay) {
+    void SetAllocationStepDelay(uint32_t delay) {
       allocator_->set_step_delay(delay);
     }
     void SetAllowTcpListen(bool allow_tcp_listen) {
@@ -255,7 +255,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     ChannelData cd1_;
     ChannelData cd2_;
     cricket::IceRole role_;
-    uint64 tiebreaker_;
+    uint64_t tiebreaker_;
     bool role_conflict_;
     bool save_candidates_;
     std::vector<CandidateData*> saved_candidates_;
@@ -382,13 +382,13 @@ class P2PTransportChannelTestBase : public testing::Test,
   void SetIceRole(int endpoint, cricket::IceRole role) {
     GetEndpoint(endpoint)->SetIceRole(role);
   }
-  void SetIceTiebreaker(int endpoint, uint64 tiebreaker) {
+  void SetIceTiebreaker(int endpoint, uint64_t tiebreaker) {
     GetEndpoint(endpoint)->SetIceTiebreaker(tiebreaker);
   }
   bool GetRoleConflict(int endpoint) {
     return GetEndpoint(endpoint)->role_conflict();
   }
-  void SetAllocationStepDelay(int endpoint, uint32 delay) {
+  void SetAllocationStepDelay(int endpoint, uint32_t delay) {
     return GetEndpoint(endpoint)->SetAllocationStepDelay(delay);
   }
   void SetAllowTcpListen(int endpoint, bool allow_tcp_listen) {
@@ -491,7 +491,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   void Test(const Result& expected) {
-    int32 connect_start = rtc::Time(), connect_time;
+    int32_t connect_start = rtc::Time(), connect_time;
 
     // Create the channels and wait for them to connect.
     CreateChannels(1);
@@ -515,7 +515,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     // This may take up to 2 seconds.
     if (ep1_ch1()->best_connection() &&
         ep2_ch1()->best_connection()) {
-      int32 converge_start = rtc::Time(), converge_time;
+      int32_t converge_start = rtc::Time(), converge_time;
       int converge_wait = 2000;
       EXPECT_TRUE_WAIT_MARGIN(CheckCandidate1(expected), converge_wait,
                               converge_wait);
@@ -1807,7 +1807,7 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
-  uint32 remote_priority = conn1->remote_candidate().priority();
+  uint32_t remote_priority = conn1->remote_candidate().priority();
 
   // Create a higher priority candidate and make the connection
   // receiving/writable. This will prune conn1.
@@ -1828,7 +1828,7 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   request.SetType(cricket::STUN_BINDING_REQUEST);
   request.AddAttribute(new cricket::StunByteStringAttribute(
       cricket::STUN_ATTR_USERNAME, kIceUfrag[1]));
-  uint32 prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
+  uint32_t prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
   request.AddAttribute(new cricket::StunUInt32Attribute(
       cricket::STUN_ATTR_PRIORITY, prflx_priority));
   EXPECT_NE(prflx_priority, remote_priority);
@@ -1945,7 +1945,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   request.SetType(cricket::STUN_BINDING_REQUEST);
   request.AddAttribute(new cricket::StunByteStringAttribute(
       cricket::STUN_ATTR_USERNAME, kIceUfrag[1]));
-  uint32 prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
+  uint32_t prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
   request.AddAttribute(new cricket::StunUInt32Attribute(
       cricket::STUN_ATTR_PRIORITY, prflx_priority));
   cricket::Port* port = GetPort(&ch);
@@ -2032,7 +2032,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   request.SetType(cricket::STUN_BINDING_REQUEST);
   request.AddAttribute(new cricket::StunByteStringAttribute(
       cricket::STUN_ATTR_USERNAME, kIceUfrag[1]));
-  uint32 prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
+  uint32_t prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
   request.AddAttribute(new cricket::StunUInt32Attribute(
       cricket::STUN_ATTR_PRIORITY, prflx_priority));
   request.AddAttribute(

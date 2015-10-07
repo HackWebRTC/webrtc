@@ -51,7 +51,7 @@ class WebRtcVideoFrameFactoryTest
     captured_frame_.data_size =
         (frame_width * frame_height) +
         ((frame_width + 1) / 2) * ((frame_height + 1) / 2) * 2;
-    captured_frame_buffer_.reset(new uint8[captured_frame_.data_size]);
+    captured_frame_buffer_.reset(new uint8_t[captured_frame_.data_size]);
     // Initialize memory to satisfy DrMemory tests.
     memset(captured_frame_buffer_.get(), 0, captured_frame_.data_size);
     captured_frame_.data = captured_frame_buffer_.get();
@@ -111,7 +111,7 @@ class WebRtcVideoFrameFactoryTest
 
  private:
   cricket::CapturedFrame captured_frame_;
-  rtc::scoped_ptr<uint8[]> captured_frame_buffer_;
+  rtc::scoped_ptr<uint8_t[]> captured_frame_buffer_;
   cricket::WebRtcVideoFrameFactory factory_;
 };
 

@@ -71,7 +71,7 @@ class AudioRtpSender : public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInterface> {
  public:
   AudioRtpSender(AudioTrackInterface* track,
-                 uint32 ssrc,
+                 uint32_t ssrc,
                  AudioProviderInterface* provider);
 
   virtual ~AudioRtpSender();
@@ -94,7 +94,7 @@ class AudioRtpSender : public ObserverInterface,
 
   std::string id_;
   rtc::scoped_refptr<AudioTrackInterface> track_;
-  uint32 ssrc_;
+  uint32_t ssrc_;
   AudioProviderInterface* provider_;
   bool cached_track_enabled_;
 
@@ -107,7 +107,7 @@ class VideoRtpSender : public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInterface> {
  public:
   VideoRtpSender(VideoTrackInterface* track,
-                 uint32 ssrc,
+                 uint32_t ssrc,
                  VideoProviderInterface* provider);
 
   virtual ~VideoRtpSender();
@@ -130,7 +130,7 @@ class VideoRtpSender : public ObserverInterface,
 
   std::string id_;
   rtc::scoped_refptr<VideoTrackInterface> track_;
-  uint32 ssrc_;
+  uint32_t ssrc_;
   VideoProviderInterface* provider_;
   bool cached_track_enabled_;
 };

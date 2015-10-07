@@ -62,7 +62,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   TransportChannelState GetState() const override;
   void SetIceRole(IceRole role) override;
   IceRole GetIceRole() const override { return ice_role_; }
-  void SetIceTiebreaker(uint64 tiebreaker) override;
+  void SetIceTiebreaker(uint64_t tiebreaker) override;
   void SetIceCredentials(const std::string& ice_ufrag,
                          const std::string& ice_pwd) override;
   void SetRemoteIceCredentials(const std::string& ice_ufrag,
@@ -127,10 +127,10 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // Allows key material to be extracted for external encryption.
   bool ExportKeyingMaterial(const std::string& label,
-                            const uint8* context,
+                            const uint8_t* context,
                             size_t context_len,
                             bool use_context,
-                            uint8* result,
+                            uint8_t* result,
                             size_t result_len) override {
     return false;
   }
@@ -142,7 +142,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // Set DTLS Remote fingerprint. Must be after local identity set.
   bool SetRemoteFingerprint(const std::string& digest_alg,
-                            const uint8* digest,
+                            const uint8_t* digest,
                             size_t digest_len) override {
     return false;
   }
@@ -182,7 +182,7 @@ class P2PTransportChannel : public TransportChannelImpl,
                         PortInterface* origin_port);
   bool FindConnection(cricket::Connection* connection) const;
 
-  uint32 GetRemoteCandidateGeneration(const Candidate& candidate);
+  uint32_t GetRemoteCandidateGeneration(const Candidate& candidate);
   bool IsDuplicateRemoteCandidate(const Candidate& candidate);
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
@@ -243,13 +243,13 @@ class P2PTransportChannel : public TransportChannelImpl,
   std::string remote_ice_pwd_;
   IceMode remote_ice_mode_;
   IceRole ice_role_;
-  uint64 tiebreaker_;
-  uint32 remote_candidate_generation_;
+  uint64_t tiebreaker_;
+  uint32_t remote_candidate_generation_;
   IceGatheringState gathering_state_;
 
   int check_receiving_delay_;
   int receiving_timeout_;
-  uint32 last_ping_sent_ms_ = 0;
+  uint32_t last_ping_sent_ms_ = 0;
   bool gather_continually_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);

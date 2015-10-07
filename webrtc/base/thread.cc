@@ -385,7 +385,7 @@ void Thread::Stop() {
   Join();
 }
 
-void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
+void Thread::Send(MessageHandler* phandler, uint32_t id, MessageData* pdata) {
   if (fStop_)
     return;
 
@@ -495,7 +495,8 @@ void Thread::InvokeEnd() {
   TRACE_EVENT_END0("webrtc", "Thread::Invoke");
 }
 
-void Thread::Clear(MessageHandler *phandler, uint32 id,
+void Thread::Clear(MessageHandler* phandler,
+                   uint32_t id,
                    MessageList* removed) {
   CritScope cs(&crit_);
 
@@ -524,7 +525,7 @@ void Thread::Clear(MessageHandler *phandler, uint32 id,
 }
 
 bool Thread::ProcessMessages(int cmsLoop) {
-  uint32 msEnd = (kForever == cmsLoop) ? 0 : TimeAfter(cmsLoop);
+  uint32_t msEnd = (kForever == cmsLoop) ? 0 : TimeAfter(cmsLoop);
   int cmsNext = cmsLoop;
 
   while (true) {

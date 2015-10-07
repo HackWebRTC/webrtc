@@ -848,7 +848,7 @@ class TestVp8Simulcast : public ::testing::Test {
   // 3rd stream: -1, -1, -1, -1, ....
   // Regarding the 3rd stream, note that a stream/encoder with 1 temporal layer
   // should always have temporal layer idx set to kNoTemporalIdx = -1.
-  // Since CodecSpecificInfoVP8.temporalIdx is uint8, this will wrap to 255.
+  // Since CodecSpecificInfoVP8.temporalIdx is uint8_t, this will wrap to 255.
   // TODO(marpan): Although this seems safe for now, we should fix this.
   void TestSpatioTemporalLayers321PatternEncoder() {
     int temporal_layer_profile[3] = {3, 2, 1};

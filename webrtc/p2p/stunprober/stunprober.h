@@ -146,15 +146,15 @@ class StunProber : public sigslot::has_slots<> {
   Requester* current_requester_ = nullptr;
 
   // The time when the next request should go out.
-  uint64 next_request_time_ms_ = 0;
+  uint64_t next_request_time_ms_ = 0;
 
   // Total requests sent so far.
-  uint32 num_request_sent_ = 0;
+  uint32_t num_request_sent_ = 0;
 
   bool shared_socket_mode_ = false;
 
   // How many requests should be done against each resolved IP.
-  uint32 requests_per_ip_ = 0;
+  uint32_t requests_per_ip_ = 0;
 
   // Milliseconds to pause between each STUN request.
   int interval_ms_;

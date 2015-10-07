@@ -61,7 +61,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   // Conference mode is a mode where instead of simply forwarding the packets,
   // the transport will send multiple copies of the packet with the specified
   // SSRCs. This allows us to simulate receiving media from multiple sources.
-  void SetConferenceMode(bool conf, const std::vector<uint32>& ssrcs) {
+  void SetConferenceMode(bool conf, const std::vector<uint32_t>& ssrcs) {
     rtc::CritScope cs(&crit_);
     conf_ = conf;
     conf_sent_ssrcs_ = ssrcs;
@@ -76,7 +76,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     return bytes;
   }
 
-  int NumRtpBytes(uint32 ssrc) {
+  int NumRtpBytes(uint32_t ssrc) {
     rtc::CritScope cs(&crit_);
     int bytes = 0;
     GetNumRtpBytesAndPackets(ssrc, &bytes, NULL);
@@ -88,7 +88,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     return static_cast<int>(rtp_packets_.size());
   }
 
-  int NumRtpPackets(uint32 ssrc) {
+  int NumRtpPackets(uint32_t ssrc) {
     rtc::CritScope cs(&crit_);
     int packets = 0;
     GetNumRtpBytesAndPackets(ssrc, NULL, &packets);
@@ -132,7 +132,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
                           rtc::DiffServCodePoint dscp) {
     rtc::CritScope cs(&crit_);
 
-    uint32 cur_ssrc = 0;
+    uint32_t cur_ssrc = 0;
     if (!GetRtpSsrc(packet->data(), packet->size(), &cur_ssrc)) {
       return false;
     }
@@ -198,14 +198,14 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   }
 
  private:
-  void GetNumRtpBytesAndPackets(uint32 ssrc, int* bytes, int* packets) {
+  void GetNumRtpBytesAndPackets(uint32_t ssrc, int* bytes, int* packets) {
     if (bytes) {
       *bytes = 0;
     }
     if (packets) {
       *packets = 0;
     }
-    uint32 cur_ssrc = 0;
+    uint32_t cur_ssrc = 0;
     for (size_t i = 0; i < rtp_packets_.size(); ++i) {
       if (!GetRtpSsrc(rtp_packets_[i].data(), rtp_packets_[i].size(),
                       &cur_ssrc)) {
@@ -226,12 +226,12 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   MediaChannel* dest_;
   bool conf_;
   // The ssrcs used in sending out packets in conference mode.
-  std::vector<uint32> conf_sent_ssrcs_;
+  std::vector<uint32_t> conf_sent_ssrcs_;
   // Map to track counts of packets that have been sent per ssrc.
   // This includes packets that are dropped.
-  std::map<uint32, uint32> sent_ssrcs_;
+  std::map<uint32_t, uint32_t> sent_ssrcs_;
   // Map to track packet-number that needs to be dropped per ssrc.
-  std::map<uint32, std::set<uint32> > drop_map_;
+  std::map<uint32_t, std::set<uint32_t> > drop_map_;
   rtc::CriticalSection crit_;
   std::vector<rtc::Buffer> rtp_packets_;
   std::vector<rtc::Buffer> rtcp_packets_;

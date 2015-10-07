@@ -44,15 +44,15 @@ namespace cricket {
 rtc::StreamResult VideoFrame::Write(rtc::StreamInterface* stream,
                                           int* error) const {
   rtc::StreamResult result = rtc::SR_SUCCESS;
-  const uint8* src_y = GetYPlane();
-  const uint8* src_u = GetUPlane();
-  const uint8* src_v = GetVPlane();
+  const uint8_t* src_y = GetYPlane();
+  const uint8_t* src_u = GetUPlane();
+  const uint8_t* src_v = GetVPlane();
   if (!src_y || !src_u || !src_v) {
     return result;  // Nothing to write.
   }
-  const int32 y_pitch = GetYPitch();
-  const int32 u_pitch = GetUPitch();
-  const int32 v_pitch = GetVPitch();
+  const int32_t y_pitch = GetYPitch();
+  const int32_t u_pitch = GetUPitch();
+  const int32_t v_pitch = GetVPitch();
   const size_t width = GetWidth();
   const size_t height = GetHeight();
   const size_t half_width = (width + 1) >> 1;
@@ -81,7 +81,7 @@ rtc::StreamResult VideoFrame::Write(rtc::StreamInterface* stream,
   return result;
 }
 
-size_t VideoFrame::CopyToBuffer(uint8* buffer, size_t size) const {
+size_t VideoFrame::CopyToBuffer(uint8_t* buffer, size_t size) const {
   const size_t y_size = GetHeight() * GetYPitch();
   const size_t u_size = GetUPitch() * GetChromaHeight();
   const size_t v_size = GetVPitch() * GetChromaHeight();
@@ -93,15 +93,18 @@ size_t VideoFrame::CopyToBuffer(uint8* buffer, size_t size) const {
   return needed;
 }
 
-bool VideoFrame::CopyToPlanes(
-    uint8* dst_y, uint8* dst_u, uint8* dst_v,
-    int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v) const {
+bool VideoFrame::CopyToPlanes(uint8_t* dst_y,
+                              uint8_t* dst_u,
+                              uint8_t* dst_v,
+                              int32_t dst_pitch_y,
+                              int32_t dst_pitch_u,
+                              int32_t dst_pitch_v) const {
   if (!GetYPlane() || !GetUPlane() || !GetVPlane()) {
     LOG(LS_ERROR) << "NULL plane pointer.";
     return false;
   }
-  int32 src_width = static_cast<int>(GetWidth());
-  int32 src_height = static_cast<int>(GetHeight());
+  int32_t src_width = static_cast<int>(GetWidth());
+  int32_t src_height = static_cast<int>(GetHeight());
   return libyuv::I420Copy(GetYPlane(), GetYPitch(),
                           GetUPlane(), GetUPitch(),
                           GetVPlane(), GetVPitch(),
@@ -121,8 +124,8 @@ void VideoFrame::CopyToFrame(VideoFrame* dst) const {
                dst->GetYPitch(), dst->GetUPitch(), dst->GetVPitch());
 }
 
-size_t VideoFrame::ConvertToRgbBuffer(uint32 to_fourcc,
-                                      uint8* buffer,
+size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
+                                      uint8_t* buffer,
                                       size_t size,
                                       int stride_rgb) const {
   const size_t needed = std::abs(stride_rgb) * GetHeight();
@@ -142,10 +145,16 @@ size_t VideoFrame::ConvertToRgbBuffer(uint32 to_fourcc,
 }
 
 // TODO(fbarchard): Handle odd width/height with rounding.
-void VideoFrame::StretchToPlanes(
-    uint8* dst_y, uint8* dst_u, uint8* dst_v,
-    int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v,
-    size_t width, size_t height, bool interpolate, bool vert_crop) const {
+void VideoFrame::StretchToPlanes(uint8_t* dst_y,
+                                 uint8_t* dst_u,
+                                 uint8_t* dst_v,
+                                 int32_t dst_pitch_y,
+                                 int32_t dst_pitch_u,
+                                 int32_t dst_pitch_v,
+                                 size_t width,
+                                 size_t height,
+                                 bool interpolate,
+                                 bool vert_crop) const {
   if (!GetYPlane() || !GetUPlane() || !GetVPlane()) {
     LOG(LS_ERROR) << "NULL plane pointer.";
     return;
@@ -157,24 +166,24 @@ void VideoFrame::StretchToPlanes(
     CopyToPlanes(dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v);
     return;
   }
-  const uint8* src_y = GetYPlane();
-  const uint8* src_u = GetUPlane();
-  const uint8* src_v = GetVPlane();
+  const uint8_t* src_y = GetYPlane();
+  const uint8_t* src_u = GetUPlane();
+  const uint8_t* src_v = GetVPlane();
 
   if (vert_crop) {
     // Adjust the input width:height ratio to be the same as the output ratio.
     if (src_width * height > src_height * width) {
       // Reduce the input width, but keep size/position aligned for YuvScaler
       src_width = ROUNDTO2(src_height * width / height);
-      int32 iwidth_offset = ROUNDTO2((GetWidth() - src_width) / 2);
+      int32_t iwidth_offset = ROUNDTO2((GetWidth() - src_width) / 2);
       src_y += iwidth_offset;
       src_u += iwidth_offset / 2;
       src_v += iwidth_offset / 2;
     } else if (src_width * height < src_height * width) {
       // Reduce the input height.
       src_height = src_width * height / width;
-      int32 iheight_offset = static_cast<int32>(
-          (GetHeight() - src_height) >> 2);
+      int32_t iheight_offset =
+          static_cast<int32_t>((GetHeight() - src_height) >> 2);
       iheight_offset <<= 1;  // Ensure that iheight_offset is even.
       src_y += iheight_offset * GetYPitch();
       src_u += iheight_offset / 2 * GetUPitch();
@@ -230,8 +239,11 @@ bool VideoFrame::SetToBlack() {
 
 static const size_t kMaxSampleSize = 1000000000u;
 // Returns whether a sample is valid.
-bool VideoFrame::Validate(uint32 fourcc, int w, int h,
-                          const uint8 *sample, size_t sample_size) {
+bool VideoFrame::Validate(uint32_t fourcc,
+                          int w,
+                          int h,
+                          const uint8_t* sample,
+                          size_t sample_size) {
   if (h < 0) {
     h = -h;
   }
@@ -240,7 +252,7 @@ bool VideoFrame::Validate(uint32 fourcc, int w, int h,
     LOG(LS_ERROR) << "Invalid dimensions: " << w << "x" << h;
     return false;
   }
-  uint32 format = CanonicalFourCC(fourcc);
+  uint32_t format = CanonicalFourCC(fourcc);
   int expected_bpp = 8;
   switch (format) {
     case FOURCC_I400:
@@ -305,7 +317,7 @@ bool VideoFrame::Validate(uint32 fourcc, int w, int h,
     return false;
   }
   // TODO(fbarchard): Make function to dump information about frames.
-  uint8 four_samples[4] = { 0, 0, 0, 0 };
+  uint8_t four_samples[4] = {0, 0, 0, 0};
   for (size_t i = 0; i < ARRAY_SIZE(four_samples) && i < sample_size; ++i) {
     four_samples[i] = sample[i];
   }

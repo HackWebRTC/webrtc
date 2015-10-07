@@ -61,20 +61,22 @@ class RtpDumpWriter;
 class VideoFrame;
 
 struct RawRtpPacket {
-  void WriteToByteBuffer(uint32 in_ssrc, rtc::ByteBuffer* buf) const;
+  void WriteToByteBuffer(uint32_t in_ssrc, rtc::ByteBuffer* buf) const;
   bool ReadFromByteBuffer(rtc::ByteBuffer* buf);
   // Check if this packet is the same as the specified packet except the
   // sequence number and timestamp, which should be the same as the specified
   // parameters.
-  bool SameExceptSeqNumTimestampSsrc(
-      const RawRtpPacket& packet, uint16 seq, uint32 ts, uint32 ssc) const;
+  bool SameExceptSeqNumTimestampSsrc(const RawRtpPacket& packet,
+                                     uint16_t seq,
+                                     uint32_t ts,
+                                     uint32_t ssc) const;
   int size() const { return 28; }
 
-  uint8 ver_to_cc;
-  uint8 m_to_pt;
-  uint16 sequence_number;
-  uint32 timestamp;
-  uint32 ssrc;
+  uint8_t ver_to_cc;
+  uint8_t m_to_pt;
+  uint16_t sequence_number;
+  uint32_t timestamp;
+  uint32_t ssrc;
   char payload[16];
 };
 
@@ -83,9 +85,9 @@ struct RawRtcpPacket {
   bool ReadFromByteBuffer(rtc::ByteBuffer* buf);
   bool EqualsTo(const RawRtcpPacket& packet) const;
 
-  uint8 ver_to_count;
-  uint8 type;
-  uint16 length;
+  uint8_t ver_to_count;
+  uint8_t type;
+  uint16_t length;
   char payload[16];
 };
 
@@ -96,26 +98,29 @@ class RtpTestUtility {
   // Write the first count number of kTestRawRtcpPackets or kTestRawRtpPackets,
   // depending on the flag rtcp. If it is RTP, use the specified SSRC. Return
   // true if successful.
-  static bool WriteTestPackets(
-      size_t count, bool rtcp, uint32 rtp_ssrc, RtpDumpWriter* writer);
+  static bool WriteTestPackets(size_t count,
+                               bool rtcp,
+                               uint32_t rtp_ssrc,
+                               RtpDumpWriter* writer);
 
   // Loop read the first count number of packets from the specified stream.
   // Verify the elapsed time of the dump packets increase monotonically. If the
   // stream is a RTP stream, verify the RTP sequence number, timestamp, and
   // payload. If the stream is a RTCP stream, verify the RTCP header and
   // payload.
-  static bool VerifyTestPacketsFromStream(
-      size_t count, rtc::StreamInterface* stream, uint32 ssrc);
+  static bool VerifyTestPacketsFromStream(size_t count,
+                                          rtc::StreamInterface* stream,
+                                          uint32_t ssrc);
 
   // Verify the dump packet is the same as the raw RTP packet.
   static bool VerifyPacket(const RtpDumpPacket* dump,
                            const RawRtpPacket* raw,
                            bool header_only);
 
-  static const uint32 kDefaultSsrc = 1;
-  static const uint32 kRtpTimestampIncrease = 90;
-  static const uint32 kDefaultTimeIncrease = 30;
-  static const uint32 kElapsedTimeInterval = 10;
+  static const uint32_t kDefaultSsrc = 1;
+  static const uint32_t kRtpTimestampIncrease = 90;
+  static const uint32_t kDefaultTimeIncrease = 30;
+  static const uint32_t kElapsedTimeInterval = 10;
   static const RawRtpPacket kTestRawRtpPackets[];
   static const RawRtcpPacket kTestRawRtcpPackets[];
 
@@ -130,10 +135,10 @@ class VideoCapturerListener : public sigslot::has_slots<> {
 
   CaptureState last_capture_state() const { return last_capture_state_; }
   int frame_count() const { return frame_count_; }
-  uint32 frame_fourcc() const { return frame_fourcc_; }
+  uint32_t frame_fourcc() const { return frame_fourcc_; }
   int frame_width() const { return frame_width_; }
   int frame_height() const { return frame_height_; }
-  uint32 frame_size() const { return frame_size_; }
+  uint32_t frame_size() const { return frame_size_; }
   bool resolution_changed() const { return resolution_changed_; }
 
   void OnStateChange(VideoCapturer* capturer, CaptureState state);
@@ -142,38 +147,38 @@ class VideoCapturerListener : public sigslot::has_slots<> {
  private:
   CaptureState last_capture_state_;
   int frame_count_;
-  uint32 frame_fourcc_;
+  uint32_t frame_fourcc_;
   int frame_width_;
   int frame_height_;
-  uint32 frame_size_;
+  uint32_t frame_size_;
   bool resolution_changed_;
 };
 
 class ScreencastEventCatcher : public sigslot::has_slots<> {
  public:
   ScreencastEventCatcher() : ssrc_(0), ev_(rtc::WE_RESIZE) { }
-  uint32 ssrc() const { return ssrc_; }
+  uint32_t ssrc() const { return ssrc_; }
   rtc::WindowEvent event() const { return ev_; }
-  void OnEvent(uint32 ssrc, rtc::WindowEvent ev) {
+  void OnEvent(uint32_t ssrc, rtc::WindowEvent ev) {
     ssrc_ = ssrc;
     ev_ = ev;
   }
  private:
-  uint32 ssrc_;
+  uint32_t ssrc_;
   rtc::WindowEvent ev_;
 };
 
 class VideoMediaErrorCatcher : public sigslot::has_slots<> {
  public:
   VideoMediaErrorCatcher() : ssrc_(0), error_(VideoMediaChannel::ERROR_NONE) { }
-  uint32 ssrc() const { return ssrc_; }
+  uint32_t ssrc() const { return ssrc_; }
   VideoMediaChannel::Error error() const { return error_; }
-  void OnError(uint32 ssrc, VideoMediaChannel::Error error) {
+  void OnError(uint32_t ssrc, VideoMediaChannel::Error error) {
     ssrc_ = ssrc;
     error_ = error;
   }
  private:
-  uint32 ssrc_;
+  uint32_t ssrc_;
   VideoMediaChannel::Error error_;
 };
 
@@ -183,28 +188,35 @@ std::string GetTestFilePath(const std::string& filename);
 // PSNR formula: psnr = 10 * log10 (Peak Signal^2 / mse)
 // sse is set to a small number for identical frames or sse == 0
 static inline double ComputePSNR(double sse, double count) {
-  return libyuv::SumSquareErrorToPsnr(static_cast<uint64>(sse),
-                                      static_cast<uint64>(count));
+  return libyuv::SumSquareErrorToPsnr(static_cast<uint64_t>(sse),
+                                      static_cast<uint64_t>(count));
 }
 
-static inline double ComputeSumSquareError(const uint8 *org, const uint8 *rec,
+static inline double ComputeSumSquareError(const uint8_t* org,
+                                           const uint8_t* rec,
                                            int size) {
   return static_cast<double>(libyuv::ComputeSumSquareError(org, rec, size));
 }
 
 // Loads the image with the specified prefix and size into |out|.
 bool LoadPlanarYuvTestImage(const std::string& prefix,
-                            int width, int height, uint8* out);
+                            int width,
+                            int height,
+                            uint8_t* out);
 
 // Dumps the YUV image out to a file, for visual inspection.
 // PYUV tool can be used to view dump files.
-void DumpPlanarYuvTestImage(const std::string& prefix, const uint8* img,
-                            int w, int h);
+void DumpPlanarYuvTestImage(const std::string& prefix,
+                            const uint8_t* img,
+                            int w,
+                            int h);
 
 // Dumps the ARGB image out to a file, for visual inspection.
 // ffplay tool can be used to view dump files.
-void DumpPlanarArgbTestImage(const std::string& prefix, const uint8* img,
-                             int w, int h);
+void DumpPlanarArgbTestImage(const std::string& prefix,
+                             const uint8_t* img,
+                             int w,
+                             int h);
 
 // Compare two I420 frames.
 bool VideoFrameEqual(const VideoFrame* frame0, const VideoFrame* frame1);
@@ -222,13 +234,14 @@ bool ContainsMatchingCodec(const std::vector<C>& codecs, const C& codec) {
 }
 
 // Create Simulcast StreamParams with given |ssrcs| and |cname|.
-cricket::StreamParams CreateSimStreamParams(
-    const std::string& cname, const std::vector<uint32>& ssrcs);
+cricket::StreamParams CreateSimStreamParams(const std::string& cname,
+                                            const std::vector<uint32_t>& ssrcs);
 // Create Simulcast stream with given |ssrcs| and |rtx_ssrcs|.
 // The number of |rtx_ssrcs| must match number of |ssrcs|.
 cricket::StreamParams CreateSimWithRtxStreamParams(
-    const std::string& cname, const std::vector<uint32>& ssrcs,
-    const std::vector<uint32>& rtx_ssrcs);
+    const std::string& cname,
+    const std::vector<uint32_t>& ssrcs,
+    const std::vector<uint32_t>& rtx_ssrcs);
 
 }  // namespace cricket
 

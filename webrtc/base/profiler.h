@@ -91,7 +91,7 @@ class ProfilerEvent {
   ProfilerEvent();
   void Start();
   void Stop();
-  void Stop(uint64 stop_time);
+  void Stop(uint64_t stop_time);
   double standard_deviation() const;
   double total_time() const { return total_time_; }
   double mean() const { return mean_; }
@@ -101,7 +101,7 @@ class ProfilerEvent {
   bool is_started() const { return start_count_ > 0; }
 
  private:
-  uint64 current_start_time_;
+  uint64_t current_start_time_;
   double total_time_;
   double mean_;
   double sum_of_squared_differences_;

@@ -41,7 +41,7 @@ bool GetUint8(const void* data, size_t offset, int* value) {
   if (!data || !value) {
     return false;
   }
-  *value = *(static_cast<const uint8*>(data) + offset);
+  *value = *(static_cast<const uint8_t*>(data) + offset);
   return true;
 }
 
@@ -50,15 +50,15 @@ bool GetUint16(const void* data, size_t offset, int* value) {
     return false;
   }
   *value = static_cast<int>(
-      rtc::GetBE16(static_cast<const uint8*>(data) + offset));
+      rtc::GetBE16(static_cast<const uint8_t*>(data) + offset));
   return true;
 }
 
-bool GetUint32(const void* data, size_t offset, uint32* value) {
+bool GetUint32(const void* data, size_t offset, uint32_t* value) {
   if (!data || !value) {
     return false;
   }
-  *value = rtc::GetBE32(static_cast<const uint8*>(data) + offset);
+  *value = rtc::GetBE32(static_cast<const uint8_t*>(data) + offset);
   return true;
 }
 
@@ -74,15 +74,15 @@ bool SetUint16(void* data, size_t offset, uint16_t value) {
   if (!data) {
     return false;
   }
-  rtc::SetBE16(static_cast<uint8*>(data) + offset, value);
+  rtc::SetBE16(static_cast<uint8_t*>(data) + offset, value);
   return true;
 }
 
-bool SetUint32(void* data, size_t offset, uint32 value) {
+bool SetUint32(void* data, size_t offset, uint32_t value) {
   if (!data) {
     return false;
   }
-  rtc::SetBE32(static_cast<uint8*>(data) + offset, value);
+  rtc::SetBE32(static_cast<uint8_t*>(data) + offset, value);
   return true;
 }
 
@@ -111,14 +111,14 @@ bool GetRtpSeqNum(const void* data, size_t len, int* value) {
   return GetUint16(data, kRtpSeqNumOffset, value);
 }
 
-bool GetRtpTimestamp(const void* data, size_t len, uint32* value) {
+bool GetRtpTimestamp(const void* data, size_t len, uint32_t* value) {
   if (len < kMinRtpPacketLen) {
     return false;
   }
   return GetUint32(data, kRtpTimestampOffset, value);
 }
 
-bool GetRtpSsrc(const void* data, size_t len, uint32* value) {
+bool GetRtpSsrc(const void* data, size_t len, uint32_t* value) {
   if (len < kMinRtpPacketLen) {
     return false;
   }
@@ -127,15 +127,16 @@ bool GetRtpSsrc(const void* data, size_t len, uint32* value) {
 
 bool GetRtpHeaderLen(const void* data, size_t len, size_t* value) {
   if (!data || len < kMinRtpPacketLen || !value) return false;
-  const uint8* header = static_cast<const uint8*>(data);
+  const uint8_t* header = static_cast<const uint8_t*>(data);
   // Get base header size + length of CSRCs (not counting extension yet).
-  size_t header_size = kMinRtpPacketLen + (header[0] & 0xF) * sizeof(uint32);
+  size_t header_size = kMinRtpPacketLen + (header[0] & 0xF) * sizeof(uint32_t);
   if (len < header_size) return false;
   // If there's an extension, read and add in the extension size.
   if (header[0] & 0x10) {
-    if (len < header_size + sizeof(uint32)) return false;
-    header_size += ((rtc::GetBE16(header + header_size + 2) + 1) *
-                    sizeof(uint32));
+    if (len < header_size + sizeof(uint32_t))
+      return false;
+    header_size +=
+        ((rtc::GetBE16(header + header_size + 2) + 1) * sizeof(uint32_t));
     if (len < header_size) return false;
   }
   *value = header_size;
@@ -159,18 +160,18 @@ bool GetRtcpType(const void* data, size_t len, int* value) {
 // This method returns SSRC first of RTCP packet, except if packet is SDES.
 // TODO(mallinath) - Fully implement RFC 5506. This standard doesn't restrict
 // to send non-compound packets only to feedback messages.
-bool GetRtcpSsrc(const void* data, size_t len, uint32* value) {
+bool GetRtcpSsrc(const void* data, size_t len, uint32_t* value) {
   // Packet should be at least of 8 bytes, to get SSRC from a RTCP packet.
   if (!data || len < kMinRtcpPacketLen + 4 || !value) return false;
   int pl_type;
   if (!GetRtcpType(data, len, &pl_type)) return false;
   // SDES packet parsing is not supported.
   if (pl_type == kRtcpTypeSDES) return false;
-  *value = rtc::GetBE32(static_cast<const uint8*>(data) + 4);
+  *value = rtc::GetBE32(static_cast<const uint8_t*>(data) + 4);
   return true;
 }
 
-bool SetRtpSsrc(void* data, size_t len, uint32 value) {
+bool SetRtpSsrc(void* data, size_t len, uint32_t value) {
   return SetUint32(data, kRtpSsrcOffset, value);
 }
 
@@ -192,7 +193,7 @@ bool IsRtpPacket(const void* data, size_t len) {
   if (len < kMinRtpPacketLen)
     return false;
 
-  return (static_cast<const uint8*>(data)[0] >> 6) == kRtpVersion;
+  return (static_cast<const uint8_t*>(data)[0] >> 6) == kRtpVersion;
 }
 
 bool IsValidRtpPayloadType(int payload_type) {

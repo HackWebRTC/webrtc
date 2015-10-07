@@ -16,9 +16,9 @@
 namespace rtc {
 
 TEST(BitBufferTest, ConsumeBits) {
-  const uint8 bytes[64] = {0};
+  const uint8_t bytes[64] = {0};
   BitBuffer buffer(bytes, 32);
-  uint64 total_bits = 32 * 8;
+  uint64_t total_bits = 32 * 8;
   EXPECT_EQ(total_bits, buffer.RemainingBitCount());
   EXPECT_TRUE(buffer.ConsumeBits(3));
   total_bits -= 3;
@@ -38,10 +38,10 @@ TEST(BitBufferTest, ConsumeBits) {
 }
 
 TEST(BitBufferTest, ReadBytesAligned) {
-  const uint8 bytes[] = {0x0A, 0xBC, 0xDE, 0xF1, 0x23, 0x45, 0x67, 0x89};
-  uint8 val8;
-  uint16 val16;
-  uint32 val32;
+  const uint8_t bytes[] = {0x0A, 0xBC, 0xDE, 0xF1, 0x23, 0x45, 0x67, 0x89};
+  uint8_t val8;
+  uint16_t val16;
+  uint32_t val32;
   BitBuffer buffer(bytes, 8);
   EXPECT_TRUE(buffer.ReadUInt8(&val8));
   EXPECT_EQ(0x0Au, val8);
@@ -54,10 +54,11 @@ TEST(BitBufferTest, ReadBytesAligned) {
 }
 
 TEST(BitBufferTest, ReadBytesOffset4) {
-  const uint8 bytes[] = {0x0A, 0xBC, 0xDE, 0xF1, 0x23, 0x45, 0x67, 0x89, 0x0A};
-  uint8 val8;
-  uint16 val16;
-  uint32 val32;
+  const uint8_t bytes[] = {0x0A, 0xBC, 0xDE, 0xF1, 0x23,
+                           0x45, 0x67, 0x89, 0x0A};
+  uint8_t val8;
+  uint16_t val16;
+  uint32_t val32;
   BitBuffer buffer(bytes, 9);
   EXPECT_TRUE(buffer.ConsumeBits(4));
 
@@ -88,11 +89,11 @@ TEST(BitBufferTest, ReadBytesOffset3) {
 
   // The bytes. It almost looks like counting down by two at a time, except the
   // jump at 5->3->0, since that's when the high bit is turned off.
-  const uint8 bytes[] = {0x1F, 0xDB, 0x97, 0x53, 0x0E, 0xCA, 0x86, 0x42};
+  const uint8_t bytes[] = {0x1F, 0xDB, 0x97, 0x53, 0x0E, 0xCA, 0x86, 0x42};
 
-  uint8 val8;
-  uint16 val16;
-  uint32 val32;
+  uint8_t val8;
+  uint16_t val16;
+  uint32_t val32;
   BitBuffer buffer(bytes, 8);
   EXPECT_TRUE(buffer.ConsumeBits(3));
   EXPECT_TRUE(buffer.ReadUInt8(&val8));
@@ -101,7 +102,7 @@ TEST(BitBufferTest, ReadBytesOffset3) {
   EXPECT_EQ(0xDCBAu, val16);
   EXPECT_TRUE(buffer.ReadUInt32(&val32));
   EXPECT_EQ(0x98765432u, val32);
-  // 5 bits left unread. Not enough to read a uint8.
+  // 5 bits left unread. Not enough to read a uint8_t.
   EXPECT_EQ(5u, buffer.RemainingBitCount());
   EXPECT_FALSE(buffer.ReadUInt8(&val8));
 }
@@ -110,7 +111,7 @@ TEST(BitBufferTest, ReadBits) {
   // Bit values are:
   //  0b01001101,
   //  0b00110010
-  const uint8 bytes[] = {0x4D, 0x32};
+  const uint8_t bytes[] = {0x4D, 0x32};
   uint32_t val;
   BitBuffer buffer(bytes, 2);
   EXPECT_TRUE(buffer.ReadBits(&val, 3));
@@ -136,7 +137,7 @@ TEST(BitBufferTest, ReadBits) {
 }
 
 TEST(BitBufferTest, SetOffsetValues) {
-  uint8 bytes[4] = {0};
+  uint8_t bytes[4] = {0};
   BitBufferWriter buffer(bytes, 4);
 
   size_t byte_offset, bit_offset;
@@ -174,31 +175,31 @@ TEST(BitBufferTest, SetOffsetValues) {
 #endif
 }
 
-uint64 GolombEncoded(uint32 val) {
+uint64_t GolombEncoded(uint32_t val) {
   val++;
-  uint32 bit_counter = val;
-  uint64 bit_count = 0;
+  uint32_t bit_counter = val;
+  uint64_t bit_count = 0;
   while (bit_counter > 0) {
     bit_count++;
     bit_counter >>= 1;
   }
-  return static_cast<uint64>(val) << (64 - (bit_count * 2 - 1));
+  return static_cast<uint64_t>(val) << (64 - (bit_count * 2 - 1));
 }
 
 TEST(BitBufferTest, GolombUint32Values) {
   ByteBuffer byteBuffer;
   byteBuffer.Resize(16);
-  BitBuffer buffer(reinterpret_cast<const uint8*>(byteBuffer.Data()),
+  BitBuffer buffer(reinterpret_cast<const uint8_t*>(byteBuffer.Data()),
                    byteBuffer.Capacity());
-  // Test over the uint32 range with a large enough step that the test doesn't
+  // Test over the uint32_t range with a large enough step that the test doesn't
   // take forever. Around 20,000 iterations should do.
-  const int kStep = std::numeric_limits<uint32>::max() / 20000;
-  for (uint32 i = 0; i < std::numeric_limits<uint32>::max() - kStep;
+  const int kStep = std::numeric_limits<uint32_t>::max() / 20000;
+  for (uint32_t i = 0; i < std::numeric_limits<uint32_t>::max() - kStep;
        i += kStep) {
-    uint64 encoded_val = GolombEncoded(i);
+    uint64_t encoded_val = GolombEncoded(i);
     byteBuffer.Clear();
     byteBuffer.WriteUInt64(encoded_val);
-    uint32 decoded_val;
+    uint32_t decoded_val;
     EXPECT_TRUE(buffer.Seek(0, 0));
     EXPECT_TRUE(buffer.ReadExponentialGolomb(&decoded_val));
     EXPECT_EQ(i, decoded_val);
@@ -225,11 +226,11 @@ TEST(BitBufferTest, SignedGolombValues) {
 }
 
 TEST(BitBufferTest, NoGolombOverread) {
-  const uint8 bytes[] = {0x00, 0xFF, 0xFF};
+  const uint8_t bytes[] = {0x00, 0xFF, 0xFF};
   // Make sure the bit buffer correctly enforces byte length on golomb reads.
   // If it didn't, the above buffer would be valid at 3 bytes.
   BitBuffer buffer(bytes, 1);
-  uint32 decoded_val;
+  uint32_t decoded_val;
   EXPECT_FALSE(buffer.ReadExponentialGolomb(&decoded_val));
 
   BitBuffer longer_buffer(bytes, 2);
@@ -243,7 +244,7 @@ TEST(BitBufferTest, NoGolombOverread) {
 }
 
 TEST(BitBufferWriterTest, SymmetricReadWrite) {
-  uint8 bytes[16] = {0};
+  uint8_t bytes[16] = {0};
   BitBufferWriter buffer(bytes, 4);
 
   // Write some bit data at various sizes.
@@ -257,7 +258,7 @@ TEST(BitBufferWriterTest, SymmetricReadWrite) {
   EXPECT_FALSE(buffer.WriteBits(1, 1));
 
   EXPECT_TRUE(buffer.Seek(0, 0));
-  uint32 val;
+  uint32_t val;
   EXPECT_TRUE(buffer.ReadBits(&val, 3));
   EXPECT_EQ(0x2u, val);
   EXPECT_TRUE(buffer.ReadBits(&val, 2));
@@ -275,7 +276,7 @@ TEST(BitBufferWriterTest, SymmetricReadWrite) {
 }
 
 TEST(BitBufferWriterTest, SymmetricBytesMisaligned) {
-  uint8 bytes[16] = {0};
+  uint8_t bytes[16] = {0};
   BitBufferWriter buffer(bytes, 16);
 
   // Offset 3, to get things misaligned.
@@ -285,9 +286,9 @@ TEST(BitBufferWriterTest, SymmetricBytesMisaligned) {
   EXPECT_TRUE(buffer.WriteUInt32(0x789ABCDEu));
 
   buffer.Seek(0, 3);
-  uint8 val8;
-  uint16 val16;
-  uint32 val32;
+  uint8_t val8;
+  uint16_t val16;
+  uint32_t val32;
   EXPECT_TRUE(buffer.ReadUInt8(&val8));
   EXPECT_EQ(0x12u, val8);
   EXPECT_TRUE(buffer.ReadUInt16(&val16));
@@ -298,22 +299,22 @@ TEST(BitBufferWriterTest, SymmetricBytesMisaligned) {
 
 TEST(BitBufferWriterTest, SymmetricGolomb) {
   char test_string[] = "my precious";
-  uint8 bytes[64] = {0};
+  uint8_t bytes[64] = {0};
   BitBufferWriter buffer(bytes, 64);
   for (size_t i = 0; i < ARRAY_SIZE(test_string); ++i) {
     EXPECT_TRUE(buffer.WriteExponentialGolomb(test_string[i]));
   }
   buffer.Seek(0, 0);
   for (size_t i = 0; i < ARRAY_SIZE(test_string); ++i) {
-    uint32 val;
+    uint32_t val;
     EXPECT_TRUE(buffer.ReadExponentialGolomb(&val));
-    EXPECT_LE(val, std::numeric_limits<uint8>::max());
+    EXPECT_LE(val, std::numeric_limits<uint8_t>::max());
     EXPECT_EQ(test_string[i], static_cast<char>(val));
   }
 }
 
 TEST(BitBufferWriterTest, WriteClearsBits) {
-  uint8 bytes[] = {0xFF, 0xFF};
+  uint8_t bytes[] = {0xFF, 0xFF};
   BitBufferWriter buffer(bytes, 2);
   EXPECT_TRUE(buffer.ConsumeBits(3));
   EXPECT_TRUE(buffer.WriteBits(0, 1));

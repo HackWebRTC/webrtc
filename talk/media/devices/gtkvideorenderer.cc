@@ -89,7 +89,7 @@ bool GtkVideoRenderer::SetSize(int width, int height, int reserved) {
     return false;
   }
 
-  image_.reset(new uint8[width * height * 4]);
+  image_.reset(new uint8_t[width * height * 4]);
   gtk_widget_set_size_request(draw_area_, width, height);
 
   width_ = width;
@@ -153,7 +153,7 @@ bool GtkVideoRenderer::Initialize(int width, int height) {
   gtk_widget_show_all(window_);
   gtk_window_move(GTK_WINDOW(window_), initial_x_, initial_y_);
 
-  image_.reset(new uint8[width * height * 4]);
+  image_.reset(new uint8_t[width * height * 4]);
   return true;
 }
 

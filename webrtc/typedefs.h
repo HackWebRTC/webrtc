@@ -62,19 +62,8 @@
 #define WEBRTC_CPU_DETECTION
 #endif
 
-#if !defined(_MSC_VER)
+// TODO(pbos): Use webrtc/base/basictypes.h instead to include fixed-size ints.
 #include <stdint.h>
-#else
-// Define C99 equivalent types, since pre-2010 MSVC doesn't provide stdint.h.
-typedef signed char         int8_t;
-typedef signed short        int16_t;
-typedef signed int          int32_t;
-typedef __int64             int64_t;
-typedef unsigned char       uint8_t;
-typedef unsigned short      uint16_t;
-typedef unsigned int        uint32_t;
-typedef unsigned __int64    uint64_t;
-#endif
 
 // Annotate a function indicating the caller must examine the return value.
 // Use like:

@@ -104,7 +104,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override;
 
   bool SetRemoteFingerprint(const std::string& digest_alg,
-                            const uint8* digest,
+                            const uint8_t* digest,
                             size_t digest_len) override;
   bool IsDtlsActive() const override { return dtls_state_ != STATE_NONE; }
 
@@ -152,10 +152,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   // encryption. DTLS-SRTP uses this to extract the needed SRTP keys.
   // See the SSLStreamAdapter documentation for info on the specific parameters.
   bool ExportKeyingMaterial(const std::string& label,
-                            const uint8* context,
+                            const uint8_t* context,
                             size_t context_len,
                             bool use_context,
-                            uint8* result,
+                            uint8_t* result,
                             size_t result_len) override {
     return (dtls_.get()) ? dtls_->ExportKeyingMaterial(label, context,
                                                        context_len,
@@ -170,7 +170,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   TransportChannelState GetState() const override {
     return channel_->GetState();
   }
-  void SetIceTiebreaker(uint64 tiebreaker) override {
+  void SetIceTiebreaker(uint64_t tiebreaker) override {
     channel_->SetIceTiebreaker(tiebreaker);
   }
   void SetIceCredentials(const std::string& ice_ufrag,

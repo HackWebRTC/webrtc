@@ -612,7 +612,7 @@ void MediaStreamSignaling::UpdateRemoteStreamsList(
     // track id.
     const std::string& stream_label = it->sync_label;
     const std::string& track_id = it->id;
-    uint32 ssrc = it->first_ssrc();
+    uint32_t ssrc = it->first_ssrc();
 
     rtc::scoped_refptr<MediaStreamInterface> stream =
         remote_streams_->find(stream_label);
@@ -634,7 +634,7 @@ void MediaStreamSignaling::UpdateRemoteStreamsList(
 
 void MediaStreamSignaling::OnRemoteTrackSeen(const std::string& stream_label,
                                              const std::string& track_id,
-                                             uint32 ssrc,
+                                             uint32_t ssrc,
                                              cricket::MediaType media_type) {
   MediaStreamInterface* stream = remote_streams_->find(stream_label);
 
@@ -801,7 +801,7 @@ void MediaStreamSignaling::UpdateLocalTracks(
     // track id.
     const std::string& stream_label = it->sync_label;
     const std::string& track_id = it->id;
-    uint32 ssrc = it->first_ssrc();
+    uint32_t ssrc = it->first_ssrc();
     const TrackInfo* track_info = FindTrackInfo(*current_tracks,
                                                 stream_label,
                                                 track_id);
@@ -814,7 +814,7 @@ void MediaStreamSignaling::UpdateLocalTracks(
 
 void MediaStreamSignaling::OnLocalTrackSeen(const std::string& stream_label,
                                             const std::string& track_id,
-                                            uint32 ssrc,
+                                            uint32_t ssrc,
                                             cricket::MediaType media_type) {
   MediaStreamInterface* stream = local_streams_->find(stream_label);
   if (!stream) {
@@ -844,11 +844,10 @@ void MediaStreamSignaling::OnLocalTrackSeen(const std::string& stream_label,
   }
 }
 
-void MediaStreamSignaling::OnLocalTrackRemoved(
-    const std::string& stream_label,
-    const std::string& track_id,
-    uint32 ssrc,
-    cricket::MediaType media_type) {
+void MediaStreamSignaling::OnLocalTrackRemoved(const std::string& stream_label,
+                                               const std::string& track_id,
+                                               uint32_t ssrc,
+                                               cricket::MediaType media_type) {
   MediaStreamInterface* stream = local_streams_->find(stream_label);
   if (!stream) {
     // This is the normal case. Ie RemoveLocalStream has been called and the
@@ -953,7 +952,7 @@ void MediaStreamSignaling::UpdateClosingDataChannels(
 }
 
 void MediaStreamSignaling::CreateRemoteDataChannel(const std::string& label,
-                                                   uint32 remote_ssrc) {
+                                                   uint32_t remote_ssrc) {
   if (!data_channel_factory_) {
     LOG(LS_WARNING) << "Remote peer requested a DataChannel but DataChannels "
                     << "are not supported.";
@@ -991,8 +990,7 @@ void MediaStreamSignaling::OnDtlsRoleReadyForSctp(rtc::SSLRole role) {
   }
 }
 
-
-void MediaStreamSignaling::OnRemoteSctpDataChannelClosed(uint32 sid) {
+void MediaStreamSignaling::OnRemoteSctpDataChannelClosed(uint32_t sid) {
   int index = FindDataChannelBySid(sid);
   if (index < 0) {
     LOG(LS_WARNING) << "Unexpected sid " << sid

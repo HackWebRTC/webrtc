@@ -250,10 +250,10 @@ const cricket::VideoFormat& GetBestCaptureFormat(
   std::vector<cricket::VideoFormat>::const_iterator it = formats.begin();
   std::vector<cricket::VideoFormat>::const_iterator best_it = formats.begin();
   int best_diff_area = std::abs(default_area - it->width * it->height);
-  int64 best_diff_interval = kDefaultFormat.interval;
+  int64_t best_diff_interval = kDefaultFormat.interval;
   for (; it != formats.end(); ++it) {
     int diff_area = std::abs(default_area - it->width * it->height);
-    int64 diff_interval = std::abs(kDefaultFormat.interval - it->interval);
+    int64_t diff_interval = std::abs(kDefaultFormat.interval - it->interval);
     if (diff_area < best_diff_area ||
         (diff_area == best_diff_area && diff_interval < best_diff_interval)) {
       best_diff_area = diff_area;

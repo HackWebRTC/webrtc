@@ -36,8 +36,8 @@ namespace webrtc {
 // Format defined at
 // http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-01#section
 
-static const uint8 DATA_CHANNEL_OPEN_MESSAGE_TYPE = 0x03;
-static const uint8 DATA_CHANNEL_OPEN_ACK_MESSAGE_TYPE = 0x02;
+static const uint8_t DATA_CHANNEL_OPEN_MESSAGE_TYPE = 0x03;
+static const uint8_t DATA_CHANNEL_OPEN_ACK_MESSAGE_TYPE = 0x02;
 
 enum DataChannelOpenMessageChannelType {
   DCOMCT_ORDERED_RELIABLE = 0x00,
@@ -55,7 +55,7 @@ bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
   // http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-04
 
   rtc::ByteBuffer buffer(payload);
-  uint8 message_type;
+  uint8_t message_type;
   if (!buffer.ReadUInt8(&message_type)) {
     LOG(LS_WARNING) << "Could not read OPEN message type.";
     return false;
@@ -66,28 +66,28 @@ bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
     return false;
   }
 
-  uint8 channel_type;
+  uint8_t channel_type;
   if (!buffer.ReadUInt8(&channel_type)) {
     LOG(LS_WARNING) << "Could not read OPEN message channel type.";
     return false;
   }
 
-  uint16 priority;
+  uint16_t priority;
   if (!buffer.ReadUInt16(&priority)) {
     LOG(LS_WARNING) << "Could not read OPEN message reliabilility prioirty.";
     return false;
   }
-  uint32 reliability_param;
+  uint32_t reliability_param;
   if (!buffer.ReadUInt32(&reliability_param)) {
     LOG(LS_WARNING) << "Could not read OPEN message reliabilility param.";
     return false;
   }
-  uint16 label_length;
+  uint16_t label_length;
   if (!buffer.ReadUInt16(&label_length)) {
     LOG(LS_WARNING) << "Could not read OPEN message label length.";
     return false;
   }
-  uint16 protocol_length;
+  uint16_t protocol_length;
   if (!buffer.ReadUInt16(&protocol_length)) {
     LOG(LS_WARNING) << "Could not read OPEN message protocol length.";
     return false;
@@ -126,7 +126,7 @@ bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
 
 bool ParseDataChannelOpenAckMessage(const rtc::Buffer& payload) {
   rtc::ByteBuffer buffer(payload);
-  uint8 message_type;
+  uint8_t message_type;
   if (!buffer.ReadUInt8(&message_type)) {
     LOG(LS_WARNING) << "Could not read OPEN_ACK message type.";
     return false;
@@ -144,9 +144,9 @@ bool WriteDataChannelOpenMessage(const std::string& label,
                                  rtc::Buffer* payload) {
   // Format defined at
   // http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-00#section-6.1
-  uint8 channel_type = 0;
-  uint32 reliability_param = 0;
-  uint16 priority = 0;
+  uint8_t channel_type = 0;
+  uint32_t reliability_param = 0;
+  uint16_t priority = 0;
   if (config.ordered) {
     if (config.maxRetransmits > -1) {
       channel_type = DCOMCT_ORDERED_PARTIAL_RTXS;
@@ -176,8 +176,8 @@ bool WriteDataChannelOpenMessage(const std::string& label,
   buffer.WriteUInt8(channel_type);
   buffer.WriteUInt16(priority);
   buffer.WriteUInt32(reliability_param);
-  buffer.WriteUInt16(static_cast<uint16>(label.length()));
-  buffer.WriteUInt16(static_cast<uint16>(config.protocol.length()));
+  buffer.WriteUInt16(static_cast<uint16_t>(label.length()));
+  buffer.WriteUInt16(static_cast<uint16_t>(config.protocol.length()));
   buffer.WriteString(label);
   buffer.WriteString(config.protocol);
   payload->SetData(buffer.Data(), buffer.Length());

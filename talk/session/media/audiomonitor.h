@@ -40,7 +40,7 @@ class VoiceChannel;
 struct AudioInfo {
   int input_level;
   int output_level;
-  typedef std::vector<std::pair<uint32, int> > StreamList;
+  typedef std::vector<std::pair<uint32_t, int> > StreamList;
   StreamList active_streams; // ssrcs contributing to output_level
 };
 
@@ -66,7 +66,7 @@ class AudioMonitor : public rtc::MessageHandler,
   VoiceChannel* voice_channel_;
   rtc::Thread* monitoring_thread_;
   rtc::CriticalSection crit_;
-  uint32 rate_;
+  uint32_t rate_;
   bool monitoring_;
 };
 

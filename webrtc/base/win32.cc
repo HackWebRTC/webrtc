@@ -82,8 +82,7 @@ const char* inet_ntop_v6(const void* src, char* dst, socklen_t size) {
   if (size < INET6_ADDRSTRLEN) {
     return NULL;
   }
-  const uint16* as_shorts =
-      reinterpret_cast<const uint16*>(src);
+  const uint16_t* as_shorts = reinterpret_cast<const uint16_t*>(src);
   int runpos[8];
   int current = 1;
   int max = 0;
@@ -214,8 +213,8 @@ int inet_pton_v6(const char* src, void* dst) {
   struct in6_addr an_addr;
   memset(&an_addr, 0, sizeof(an_addr));
 
-  uint16* addr_cursor = reinterpret_cast<uint16*>(&an_addr.s6_addr[0]);
-  uint16* addr_end = reinterpret_cast<uint16*>(&an_addr.s6_addr[16]);
+  uint16_t* addr_cursor = reinterpret_cast<uint16_t*>(&an_addr.s6_addr[0]);
+  uint16_t* addr_end = reinterpret_cast<uint16_t*>(&an_addr.s6_addr[16]);
   bool seencompressed = false;
 
   // Addresses that start with "::" (i.e., a run of initial zeros) or
@@ -228,7 +227,7 @@ int inet_pton_v6(const char* src, void* dst) {
     if (rtc::strchr(addrstart, ".")) {
       const char* colon = rtc::strchr(addrstart, "::");
       if (colon) {
-        uint16 a_short;
+        uint16_t a_short;
         int bytesread = 0;
         if (sscanf(addrstart, "%hx%n", &a_short, &bytesread) != 1 ||
             a_short != 0xFFFF || bytesread != 4) {
@@ -283,7 +282,7 @@ int inet_pton_v6(const char* src, void* dst) {
         ++readcursor;
       }
     } else {
-      uint16 word;
+      uint16_t word;
       int bytesread = 0;
       if (sscanf(readcursor, "%hx%n", &word, &bytesread) != 1) {
         return 0;
@@ -362,7 +361,7 @@ void UnixTimeToFileTime(const time_t& ut, FILETIME* ft) {
   // base date value.
   const ULONGLONG RATIO = 10000000;
   ULARGE_INTEGER current_ul;
-  current_ul.QuadPart = base_ul.QuadPart + static_cast<int64>(ut) * RATIO;
+  current_ul.QuadPart = base_ul.QuadPart + static_cast<int64_t>(ut) * RATIO;
   memcpy(ft, &current_ul, sizeof(FILETIME));
 }
 

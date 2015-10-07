@@ -50,7 +50,7 @@ MediaMonitor::~MediaMonitor() {
   worker_thread_->Clear(this);
 }
 
-void MediaMonitor::Start(uint32 milliseconds) {
+void MediaMonitor::Start(uint32_t milliseconds) {
   rate_ = milliseconds;
   if (rate_ < 100)
     rate_ = 100;

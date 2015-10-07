@@ -234,7 +234,7 @@ class FilesystemInterface {
   // Delete the contents of the folder returned by GetAppTempFolder
   bool CleanAppTempFolder();
 
-  virtual bool GetDiskFreeSpace(const Pathname& path, int64 *freebytes) = 0;
+  virtual bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) = 0;
 
   // Returns the absolute path of the current directory.
   virtual Pathname GetCurrentDirectory() = 0;
@@ -379,7 +379,7 @@ class Filesystem {
     return EnsureDefaultFilesystem()->CleanAppTempFolder();
   }
 
-  static bool GetDiskFreeSpace(const Pathname& path, int64 *freebytes) {
+  static bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) {
     return EnsureDefaultFilesystem()->GetDiskFreeSpace(path, freebytes);
   }
 

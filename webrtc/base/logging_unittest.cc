@@ -123,7 +123,7 @@ TEST(LogTest, MultipleThreads) {
 
 
 TEST(LogTest, WallClockStartTime) {
-  uint32 time = LogMessage::WallClockStartTime();
+  uint32_t time = LogMessage::WallClockStartTime();
   // Expect the time to be in a sensible range, e.g. > 2012-01-01.
   EXPECT_GT(time, 1325376000u);
 }
@@ -139,7 +139,7 @@ TEST(LogTest, Perf) {
   stream.DisableBuffering();
   LogMessage::AddLogToStream(&stream, LS_SENSITIVE);
 
-  uint32 start = Time(), finish;
+  uint32_t start = Time(), finish;
   std::string message('X', 80);
   for (int i = 0; i < 1000; ++i) {
     LOG(LS_SENSITIVE) << message;

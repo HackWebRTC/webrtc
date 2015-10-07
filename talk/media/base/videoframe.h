@@ -49,12 +49,12 @@ class VideoFrame {
   // |dh| is destination height, like |dw|, but must be a positive number.
   // Returns whether the function succeeded or failed.
 
-  virtual bool Reset(uint32 fourcc,
+  virtual bool Reset(uint32_t fourcc,
                      int w,
                      int h,
                      int dw,
                      int dh,
-                     uint8* sample,
+                     uint8_t* sample,
                      size_t sample_size,
                      size_t pixel_width,
                      size_t pixel_height,
@@ -63,12 +63,12 @@ class VideoFrame {
                      bool apply_rotation) = 0;
 
   // TODO(guoweis): Remove this once all external implementations are updated.
-  virtual bool Reset(uint32 fourcc,
+  virtual bool Reset(uint32_t fourcc,
                      int w,
                      int h,
                      int dw,
                      int dh,
-                     uint8* sample,
+                     uint8_t* sample,
                      size_t sample_size,
                      size_t pixel_width,
                      size_t pixel_height,
@@ -88,16 +88,16 @@ class VideoFrame {
   size_t GetChromaHeight() const { return (GetHeight() + 1) / 2; }
   size_t GetChromaSize() const { return GetUPitch() * GetChromaHeight(); }
   // These can return NULL if the object is not backed by a buffer.
-  virtual const uint8 *GetYPlane() const = 0;
-  virtual const uint8 *GetUPlane() const = 0;
-  virtual const uint8 *GetVPlane() const = 0;
-  virtual uint8 *GetYPlane() = 0;
-  virtual uint8 *GetUPlane() = 0;
-  virtual uint8 *GetVPlane() = 0;
+  virtual const uint8_t* GetYPlane() const = 0;
+  virtual const uint8_t* GetUPlane() const = 0;
+  virtual const uint8_t* GetVPlane() const = 0;
+  virtual uint8_t* GetYPlane() = 0;
+  virtual uint8_t* GetUPlane() = 0;
+  virtual uint8_t* GetVPlane() = 0;
 
-  virtual int32 GetYPitch() const = 0;
-  virtual int32 GetUPitch() const = 0;
-  virtual int32 GetVPitch() const = 0;
+  virtual int32_t GetYPitch() const = 0;
+  virtual int32_t GetUPitch() const = 0;
+  virtual int32_t GetVPitch() const = 0;
 
   // Returns the handle of the underlying video frame. This is used when the
   // frame is backed by a texture. The object should be destroyed when it is no
@@ -144,15 +144,18 @@ class VideoFrame {
   // sufficient size. Returns the frame's actual size, regardless of whether
   // it was written or not (like snprintf). If there is insufficient space,
   // nothing is written.
-  virtual size_t CopyToBuffer(uint8 *buffer, size_t size) const;
+  virtual size_t CopyToBuffer(uint8_t* buffer, size_t size) const;
 
   // Writes the frame into the given planes, stretched to the given width and
   // height. The parameter "interpolate" controls whether to interpolate or just
   // take the nearest-point. The parameter "crop" controls whether to crop this
   // frame to the aspect ratio of the given dimensions before stretching.
-  virtual bool CopyToPlanes(
-      uint8* dst_y, uint8* dst_u, uint8* dst_v,
-      int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v) const;
+  virtual bool CopyToPlanes(uint8_t* dst_y,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int32_t dst_pitch_y,
+                            int32_t dst_pitch_u,
+                            int32_t dst_pitch_v) const;
 
   // Writes the frame into the target VideoFrame.
   virtual void CopyToFrame(VideoFrame* target) const;
@@ -172,16 +175,25 @@ class VideoFrame {
   // Returns the frame's actual size, regardless of whether it was written or
   // not (like snprintf). Parameters size and stride_rgb are in units of bytes.
   // If there is insufficient space, nothing is written.
-  virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8 *buffer,
-                                    size_t size, int stride_rgb) const;
+  virtual size_t ConvertToRgbBuffer(uint32_t to_fourcc,
+                                    uint8_t* buffer,
+                                    size_t size,
+                                    int stride_rgb) const;
 
   // Writes the frame into the given planes, stretched to the given width and
   // height. The parameter "interpolate" controls whether to interpolate or just
   // take the nearest-point. The parameter "crop" controls whether to crop this
   // frame to the aspect ratio of the given dimensions before stretching.
-  virtual void StretchToPlanes(
-      uint8 *y, uint8 *u, uint8 *v, int32 pitchY, int32 pitchU, int32 pitchV,
-      size_t width, size_t height, bool interpolate, bool crop) const;
+  virtual void StretchToPlanes(uint8_t* y,
+                               uint8_t* u,
+                               uint8_t* v,
+                               int32_t pitchY,
+                               int32_t pitchU,
+                               int32_t pitchV,
+                               size_t width,
+                               size_t height,
+                               bool interpolate,
+                               bool crop) const;
 
   // Writes the frame into the target VideoFrame, stretched to the size of that
   // frame. The parameter "interpolate" controls whether to interpolate or just
@@ -201,7 +213,10 @@ class VideoFrame {
   virtual bool SetToBlack();
 
   // Tests if sample is valid.  Returns true if valid.
-  static bool Validate(uint32 fourcc, int w, int h, const uint8 *sample,
+  static bool Validate(uint32_t fourcc,
+                       int w,
+                       int h,
+                       const uint8_t* sample,
                        size_t sample_size);
 
   // Size of an I420 image of given dimensions when stored as a frame buffer.

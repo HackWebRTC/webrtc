@@ -186,7 +186,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   MediaStreamSignaling* const mediastream_signaling_;
   cricket::TransportDescriptionFactory transport_desc_factory_;
   cricket::MediaSessionDescriptionFactory session_desc_factory_;
-  uint64 session_version_;
+  uint64_t session_version_;
   const rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store_;
   const rtc::scoped_refptr<WebRtcIdentityRequestObserver>
       identity_request_observer_;

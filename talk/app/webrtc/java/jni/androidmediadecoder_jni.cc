@@ -519,10 +519,10 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
 
   // Copy encoded data to Java ByteBuffer.
   jobject j_input_buffer = input_buffers_[j_input_buffer_index];
-  uint8* buffer =
-      reinterpret_cast<uint8*>(jni->GetDirectBufferAddress(j_input_buffer));
+  uint8_t* buffer =
+      reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_input_buffer));
   RTC_CHECK(buffer) << "Indirect buffer??";
-  int64 buffer_capacity = jni->GetDirectBufferCapacity(j_input_buffer);
+  int64_t buffer_capacity = jni->GetDirectBufferCapacity(j_input_buffer);
   if (CheckException(jni) || buffer_capacity < inputImage._length) {
     ALOGE("Input frame size %d is bigger than buffer size %d.",
         inputImage._length, buffer_capacity);

@@ -19,7 +19,7 @@ namespace rtc {
 static const char kUserAgent[] = "";
 static const char kPath[] = "/";
 static const char kHost[] = "relay.google.com";
-static const uint16 kPort = 443;
+static const uint16_t kPort = 443;
 static const bool kSecure = true;
 // At most, AutoDetectProxy should take ~6 seconds. Each connect step is
 // allotted 2 seconds, with the initial resolution + connect given an
@@ -37,10 +37,10 @@ class AutoDetectProxyTest : public testing::Test, public sigslot::has_slots<> {
   AutoDetectProxyTest() : auto_detect_proxy_(NULL), done_(false) {}
 
  protected:
-  bool Create(const std::string &user_agent,
-              const std::string &path,
-              const std::string &host,
-              uint16 port,
+  bool Create(const std::string& user_agent,
+              const std::string& path,
+              const std::string& host,
+              uint16_t port,
               bool secure,
               bool startnow) {
     auto_detect_proxy_ = new AutoDetectProxy(user_agent);

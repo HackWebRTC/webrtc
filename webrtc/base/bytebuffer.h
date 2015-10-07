@@ -47,11 +47,11 @@ class ByteBuffer {
 
   // Read a next value from the buffer. Return false if there isn't
   // enough data left for the specified type.
-  bool ReadUInt8(uint8* val);
-  bool ReadUInt16(uint16* val);
-  bool ReadUInt24(uint32* val);
-  bool ReadUInt32(uint32* val);
-  bool ReadUInt64(uint64* val);
+  bool ReadUInt8(uint8_t* val);
+  bool ReadUInt16(uint16_t* val);
+  bool ReadUInt24(uint32_t* val);
+  bool ReadUInt32(uint32_t* val);
+  bool ReadUInt64(uint64_t* val);
   bool ReadBytes(char* val, size_t len);
 
   // Appends next |len| bytes from the buffer to |val|. Returns false
@@ -60,11 +60,11 @@ class ByteBuffer {
 
   // Write value to the buffer. Resizes the buffer when it is
   // neccessary.
-  void WriteUInt8(uint8 val);
-  void WriteUInt16(uint16 val);
-  void WriteUInt24(uint32 val);
-  void WriteUInt32(uint32 val);
-  void WriteUInt64(uint64 val);
+  void WriteUInt8(uint8_t val);
+  void WriteUInt16(uint16_t val);
+  void WriteUInt24(uint32_t val);
+  void WriteUInt32(uint32_t val);
+  void WriteUInt64(uint64_t val);
   void WriteString(const std::string& val);
   void WriteBytes(const char* val, size_t len);
 

@@ -36,7 +36,7 @@ class SystemInfo {
   Architecture GetCpuArchitecture();
   std::string GetCpuVendor();
   // Total amount of physical memory, in bytes.
-  int64 GetMemorySize();
+  int64_t GetMemorySize();
   // The model name of the machine, e.g. "MacBookAir1,1"
   std::string GetMachineModel();
 

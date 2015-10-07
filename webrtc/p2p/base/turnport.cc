@@ -38,7 +38,7 @@ static const size_t TURN_CHANNEL_HEADER_SIZE = 4U;
 // STUN_ERROR_ALLOCATION_MISMATCH error per rfc5766.
 static const size_t MAX_ALLOCATE_MISMATCH_RETRIES = 2;
 
-inline bool IsTurnChannelData(uint16 msg_type) {
+inline bool IsTurnChannelData(uint16_t msg_type) {
   return ((msg_type & 0xC000) == 0x4000);  // MSB are 0b01
 }
 
@@ -196,8 +196,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    rtc::PacketSocketFactory* factory,
                    rtc::Network* network,
                    const rtc::IPAddress& ip,
-                   uint16 min_port,
-                   uint16 max_port,
+                   uint16_t min_port,
+                   uint16_t max_port,
                    const std::string& username,
                    const std::string& password,
                    const ProtocolAddress& server_address,
@@ -534,7 +534,7 @@ void TurnPort::OnReadPacket(
   // Check the message type, to see if is a Channel Data message.
   // The message will either be channel data, a TURN data indication, or
   // a response to a previous request.
-  uint16 msg_type = rtc::GetBE16(data);
+  uint16_t msg_type = rtc::GetBE16(data);
   if (IsTurnChannelData(msg_type)) {
     HandleChannelData(msg_type, data, size, packet_time);
   } else if (msg_type == TURN_DATA_INDICATION) {
@@ -779,7 +779,7 @@ void TurnPort::HandleChannelData(int channel_id, const char* data,
   //   +-------------------------------+
 
   // Extract header fields from the message.
-  uint16 len = rtc::GetBE16(data + 2);
+  uint16_t len = rtc::GetBE16(data + 2);
   if (len > size - TURN_CHANNEL_HEADER_SIZE) {
     LOG_J(LS_WARNING, this) << "Received TURN channel data message with "
                             << "incorrect length, len=" << len;
@@ -1325,7 +1325,7 @@ int TurnEntry::Send(const void* data, size_t size, bool payload,
   } else {
     // If the channel is bound, we can send the data as a Channel Message.
     buf.WriteUInt16(channel_id_);
-    buf.WriteUInt16(static_cast<uint16>(size));
+    buf.WriteUInt16(static_cast<uint16_t>(size));
     buf.WriteBytes(reinterpret_cast<const char*>(data), size);
   }
   return port_->Send(buf.Data(), buf.Length(), options);

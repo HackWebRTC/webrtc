@@ -140,7 +140,7 @@ CaptureState YuvFramesCapturer::Start(const VideoFormat& capture_format) {
   SetCaptureFormat(&capture_format);
 
   barcode_reference_timestamp_millis_ =
-      static_cast<int64>(rtc::Time()) * 1000;
+      static_cast<int64_t>(rtc::Time()) * 1000;
   // Create a thread to generate frames.
   frames_generator_thread = new YuvFramesThread(this);
   bool ret = frames_generator_thread->Start();
@@ -166,7 +166,7 @@ void YuvFramesCapturer::Stop() {
   SetCaptureFormat(NULL);
 }
 
-bool YuvFramesCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
+bool YuvFramesCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
   if (!fourccs) {
     return false;
   }
@@ -180,21 +180,20 @@ void YuvFramesCapturer::ReadFrame(bool first_frame) {
   if (!first_frame) {
     SignalFrameCaptured(this, &captured_frame_);
   }
-  uint8* buffer = new uint8[frame_data_size_];
+  uint8_t* buffer = new uint8_t[frame_data_size_];
   frame_generator_->GenerateNextFrame(buffer, GetBarcodeValue());
   frame_index_++;
   memmove(captured_frame_.data, buffer, frame_data_size_);
   delete[] buffer;
 }
 
-
-int32 YuvFramesCapturer::GetBarcodeValue() {
+int32_t YuvFramesCapturer::GetBarcodeValue() {
   if (barcode_reference_timestamp_millis_ == -1 ||
        frame_index_ % barcode_interval_ != 0) {
      return -1;
   }
-  int64 now_millis = static_cast<int64>(rtc::Time()) * 1000;
-  return static_cast<int32>(now_millis - barcode_reference_timestamp_millis_);
+  int64_t now_millis = static_cast<int64_t>(rtc::Time()) * 1000;
+  return static_cast<int32_t>(now_millis - barcode_reference_timestamp_millis_);
 }
 
 }  // namespace cricket

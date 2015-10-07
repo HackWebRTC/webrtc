@@ -487,7 +487,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   for (size_t i = 0; i < num_input_buffers; ++i) {
     input_buffers_[i] =
         jni->NewGlobalRef(jni->GetObjectArrayElement(input_buffers, i));
-    int64 yuv_buffer_capacity =
+    int64_t yuv_buffer_capacity =
         jni->GetDirectBufferCapacity(input_buffers_[i]);
     CHECK_EXCEPTION(jni);
     RTC_CHECK(yuv_buffer_capacity >= yuv_size_) << "Insufficient capacity";
@@ -572,8 +572,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       frames_received_ - 1, current_timestamp_us_ / 1000, frames_in_queue_);
 
   jobject j_input_buffer = input_buffers_[j_input_buffer_index];
-  uint8* yuv_buffer =
-      reinterpret_cast<uint8*>(jni->GetDirectBufferAddress(j_input_buffer));
+  uint8_t* yuv_buffer =
+      reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_input_buffer));
   CHECK_EXCEPTION(jni);
   RTC_CHECK(yuv_buffer) << "Indirect buffer??";
   RTC_CHECK(!libyuv::ConvertFromI420(
@@ -726,7 +726,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
 
     // Extract payload.
     size_t payload_size = jni->GetDirectBufferCapacity(j_output_buffer);
-    uint8* payload = reinterpret_cast<uint8_t*>(
+    uint8_t* payload = reinterpret_cast<uint8_t*>(
         jni->GetDirectBufferAddress(j_output_buffer));
     CHECK_EXCEPTION(jni);
 

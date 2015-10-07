@@ -58,7 +58,7 @@ class GtkVideoRenderer : public VideoRenderer {
   // Check if the window has been closed.
   bool IsClosed() const;
 
-  rtc::scoped_ptr<uint8[]> image_;
+  rtc::scoped_ptr<uint8_t[]> image_;
   GtkWidget* window_;
   GtkWidget* draw_area_;
   // The initial position of the window.

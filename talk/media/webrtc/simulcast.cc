@@ -74,7 +74,7 @@ static const int
     kDefaultConferenceNumberOfTemporalLayers[webrtc::kMaxSimulcastStreams] =
     {3, 3, 3, 3};
 
-void GetSimulcastSsrcs(const StreamParams& sp, std::vector<uint32>* ssrcs) {
+void GetSimulcastSsrcs(const StreamParams& sp, std::vector<uint32_t>* ssrcs) {
   const SsrcGroup* sim_group = sp.get_ssrc_group(kSimSsrcGroupSemantics);
   if (sim_group) {
     ssrcs->insert(
@@ -339,7 +339,7 @@ bool ConfigureSimulcastCodec(
     const StreamParams& sp,
     const VideoOptions& options,
     webrtc::VideoCodec* codec) {
-  std::vector<uint32> ssrcs;
+  std::vector<uint32_t> ssrcs;
   GetSimulcastSsrcs(sp, &ssrcs);
   SimulcastBitrateMode bitrate_mode = GetSimulcastBitrateMode(options);
   return ConfigureSimulcastCodec(static_cast<int>(ssrcs.size()), bitrate_mode,

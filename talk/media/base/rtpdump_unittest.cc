@@ -36,7 +36,7 @@
 
 namespace cricket {
 
-static const uint32 kTestSsrc = 1;
+static const uint32_t kTestSsrc = 1;
 
 // Test that we read the correct header fields from the RTP/RTCP packet.
 TEST(RtpDumpTest, ReadRtpDumpPacket) {
@@ -46,8 +46,8 @@ TEST(RtpDumpTest, ReadRtpDumpPacket) {
 
   int payload_type;
   int seq_num;
-  uint32 ts;
-  uint32 ssrc;
+  uint32_t ts;
+  uint32_t ssrc;
   int rtcp_type;
   EXPECT_FALSE(rtp_packet.is_rtcp());
   EXPECT_TRUE(rtp_packet.IsValidRtpPacket());
@@ -129,7 +129,7 @@ TEST(RtpDumpTest, WriteReadSameRtp) {
   RtpDumpReader reader(&stream);
   for (size_t i = 0; i < RtpTestUtility::GetTestPacketCount(); ++i) {
     EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
-    uint32 ssrc;
+    uint32_t ssrc;
     EXPECT_TRUE(GetRtpSsrc(&packet.data[0], packet.data.size(), &ssrc));
     EXPECT_EQ(kTestSsrc, ssrc);
   }
@@ -139,13 +139,13 @@ TEST(RtpDumpTest, WriteReadSameRtp) {
   // Rewind the stream and read again with a specified ssrc.
   stream.Rewind();
   RtpDumpReader reader_w_ssrc(&stream);
-  const uint32 send_ssrc = kTestSsrc + 1;
+  const uint32_t send_ssrc = kTestSsrc + 1;
   reader_w_ssrc.SetSsrc(send_ssrc);
   for (size_t i = 0; i < RtpTestUtility::GetTestPacketCount(); ++i) {
     EXPECT_EQ(rtc::SR_SUCCESS, reader_w_ssrc.ReadPacket(&packet));
     EXPECT_FALSE(packet.is_rtcp());
     EXPECT_EQ(packet.original_data_len, packet.data.size());
-    uint32 ssrc;
+    uint32_t ssrc;
     EXPECT_TRUE(GetRtpSsrc(&packet.data[0], packet.data.size(), &ssrc));
     EXPECT_EQ(send_ssrc, ssrc);
   }

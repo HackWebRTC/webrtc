@@ -246,7 +246,7 @@ class FakeWebRtcVoiceEngine
     int dtmf_type;
     int red_type;
     int nack_max_packets;
-    uint32 send_ssrc;
+    uint32_t send_ssrc;
     int send_audio_level_ext_;
     int receive_audio_level_ext_;
     int send_absolute_sender_time_ext_;
@@ -299,7 +299,7 @@ class FakeWebRtcVoiceEngine
 
   bool IsInited() const { return inited_; }
   int GetLastChannel() const { return last_channel_; }
-  int GetChannelFromLocalSsrc(uint32 local_ssrc) const {
+  int GetChannelFromLocalSsrc(uint32_t local_ssrc) const {
     for (std::map<int, Channel*>::const_iterator iter = channels_.begin();
          iter != channels_.end(); ++iter) {
       if (local_ssrc == iter->second->send_ssrc)
@@ -857,7 +857,7 @@ class FakeWebRtcVoiceEngine
                                  unsigned int& discardedPackets));
   WEBRTC_FUNC(GetRTCPStatistics, (int channel, webrtc::CallStatistics& stats)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    stats.fractionLost = static_cast<int16>(kIntStatValue);
+    stats.fractionLost = static_cast<int16_t>(kIntStatValue);
     stats.cumulativeLost = kIntStatValue;
     stats.extendedMax = kIntStatValue;
     stats.jitterSamples = kIntStatValue;

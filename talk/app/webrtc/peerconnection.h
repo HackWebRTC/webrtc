@@ -133,23 +133,23 @@ class PeerConnection : public PeerConnectionInterface,
   void OnAddDataChannel(DataChannelInterface* data_channel) override;
   void OnAddRemoteAudioTrack(MediaStreamInterface* stream,
                              AudioTrackInterface* audio_track,
-                             uint32 ssrc) override;
+                             uint32_t ssrc) override;
   void OnAddRemoteVideoTrack(MediaStreamInterface* stream,
                              VideoTrackInterface* video_track,
-                             uint32 ssrc) override;
+                             uint32_t ssrc) override;
   void OnRemoveRemoteAudioTrack(MediaStreamInterface* stream,
                                 AudioTrackInterface* audio_track) override;
   void OnRemoveRemoteVideoTrack(MediaStreamInterface* stream,
                                 VideoTrackInterface* video_track) override;
   void OnAddLocalAudioTrack(MediaStreamInterface* stream,
                             AudioTrackInterface* audio_track,
-                            uint32 ssrc) override;
+                            uint32_t ssrc) override;
   void OnAddLocalVideoTrack(MediaStreamInterface* stream,
                             VideoTrackInterface* video_track,
-                            uint32 ssrc) override;
+                            uint32_t ssrc) override;
   void OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
                                AudioTrackInterface* audio_track,
-                               uint32 ssrc) override;
+                               uint32_t ssrc) override;
   void OnRemoveLocalVideoTrack(MediaStreamInterface* stream,
                                VideoTrackInterface* video_track) override;
   void OnRemoveLocalStream(MediaStreamInterface* stream) override;

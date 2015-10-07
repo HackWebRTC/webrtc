@@ -929,7 +929,7 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
   client->SetOption(rtc::Socket::OPT_SNDBUF, send_buffer_size);
 
   int error = 0;
-  uint32 start_ms = Time();
+  uint32_t start_ms = Time();
   int sent_packet_num = 0;
   int expected_error = EWOULDBLOCK;
   while (start_ms + kTimeout > Time()) {
@@ -990,7 +990,7 @@ void SocketTest::GetSetOptionsInternal(const IPAddress& loopback) {
         mtu_socket(
             ss_->CreateAsyncSocket(loopback.family(), SOCK_DGRAM));
     mtu_socket->Bind(SocketAddress(loopback, 0));
-    uint16 mtu;
+    uint16_t mtu;
     // should fail until we connect
     ASSERT_EQ(-1, mtu_socket->EstimateMTU(&mtu));
     mtu_socket->Connect(SocketAddress(loopback, 0));

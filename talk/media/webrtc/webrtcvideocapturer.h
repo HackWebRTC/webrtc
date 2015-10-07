@@ -77,7 +77,7 @@ class WebRtcVideoCapturer : public VideoCapturer,
 
  protected:
   // Override virtual methods of the parent class VideoCapturer.
-  virtual bool GetPreferredFourccs(std::vector<uint32>* fourccs);
+  virtual bool GetPreferredFourccs(std::vector<uint32_t>* fourccs);
 
  private:
   // Callback when a frame is captured by camera.

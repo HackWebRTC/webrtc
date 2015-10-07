@@ -60,9 +60,9 @@ class LinuxDeviceWatcher
   virtual void Stop();
 
  private:
-  virtual uint32 GetRequestedEvents();
-  virtual void OnPreEvent(uint32 ff);
-  virtual void OnEvent(uint32 ff, int err);
+  virtual uint32_t GetRequestedEvents();
+  virtual void OnPreEvent(uint32_t ff);
+  virtual void OnEvent(uint32_t ff, int err);
   virtual int GetDescriptor();
   virtual bool IsDescriptorClosed();
 
@@ -368,15 +368,15 @@ void LinuxDeviceWatcher::Stop() {
   libudev_.Unload();
 }
 
-uint32 LinuxDeviceWatcher::GetRequestedEvents() {
+uint32_t LinuxDeviceWatcher::GetRequestedEvents() {
   return rtc::DE_READ;
 }
 
-void LinuxDeviceWatcher::OnPreEvent(uint32 ff) {
+void LinuxDeviceWatcher::OnPreEvent(uint32_t ff) {
   // Nothing to do.
 }
 
-void LinuxDeviceWatcher::OnEvent(uint32 ff, int err) {
+void LinuxDeviceWatcher::OnEvent(uint32_t ff, int err) {
   udev_device* device = libudev_.udev_monitor_receive_device()(udev_monitor_);
   if (!device) {
     // Probably the socket connection to the udev daemon was terminated (perhaps

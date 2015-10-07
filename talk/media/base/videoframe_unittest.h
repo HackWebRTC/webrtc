@@ -82,15 +82,18 @@ class VideoFrameTest : public testing::Test {
     return success;
   }
 
-  bool LoadFrame(const std::string& filename, uint32 format,
-                 int32 width, int32 height, T* frame) {
+  bool LoadFrame(const std::string& filename,
+                 uint32_t format,
+                 int32_t width,
+                 int32_t height,
+                 T* frame) {
     return LoadFrame(filename, format, width, height, width, abs(height),
                      webrtc::kVideoRotation_0, frame);
   }
   bool LoadFrame(const std::string& filename,
-                 uint32 format,
-                 int32 width,
-                 int32 height,
+                 uint32_t format,
+                 int32_t width,
+                 int32_t height,
                  int dw,
                  int dh,
                  webrtc::VideoRotation rotation,
@@ -99,15 +102,18 @@ class VideoFrameTest : public testing::Test {
     return LoadFrame(ms.get(), format, width, height, dw, dh, rotation, frame);
   }
   // Load a video frame from a memory stream.
-  bool LoadFrame(rtc::MemoryStream* ms, uint32 format,
-                 int32 width, int32 height, T* frame) {
+  bool LoadFrame(rtc::MemoryStream* ms,
+                 uint32_t format,
+                 int32_t width,
+                 int32_t height,
+                 T* frame) {
     return LoadFrame(ms, format, width, height, width, abs(height),
                      webrtc::kVideoRotation_0, frame);
   }
   bool LoadFrame(rtc::MemoryStream* ms,
-                 uint32 format,
-                 int32 width,
-                 int32 height,
+                 uint32_t format,
+                 int32_t width,
+                 int32_t height,
                  int dw,
                  int dh,
                  webrtc::VideoRotation rotation,
@@ -119,22 +125,26 @@ class VideoFrameTest : public testing::Test {
     bool ret = ms->GetSize(&data_size);
     EXPECT_TRUE(ret);
     if (ret) {
-      ret = LoadFrame(reinterpret_cast<uint8*>(ms->GetBuffer()), data_size,
+      ret = LoadFrame(reinterpret_cast<uint8_t*>(ms->GetBuffer()), data_size,
                       format, width, height, dw, dh, rotation, frame);
     }
     return ret;
   }
   // Load a frame from a raw buffer.
-  bool LoadFrame(uint8* sample, size_t sample_size, uint32 format,
-                 int32 width, int32 height, T* frame) {
+  bool LoadFrame(uint8_t* sample,
+                 size_t sample_size,
+                 uint32_t format,
+                 int32_t width,
+                 int32_t height,
+                 T* frame) {
     return LoadFrame(sample, sample_size, format, width, height, width,
                      abs(height), webrtc::kVideoRotation_0, frame);
   }
-  bool LoadFrame(uint8* sample,
+  bool LoadFrame(uint8_t* sample,
                  size_t sample_size,
-                 uint32 format,
-                 int32 width,
-                 int32 height,
+                 uint32_t format,
+                 int32_t width,
+                 int32_t height,
                  int dw,
                  int dh,
                  webrtc::VideoRotation rotation,
@@ -178,7 +188,7 @@ class VideoFrameTest : public testing::Test {
                         prefix.c_str(), frame.GetWidth(), frame.GetHeight());
     size_t out_size = cricket::VideoFrame::SizeOf(frame.GetWidth(),
                                                   frame.GetHeight());
-    rtc::scoped_ptr<uint8[]> out(new uint8[out_size]);
+    rtc::scoped_ptr<uint8_t[]> out(new uint8_t[out_size]);
     frame.CopyToBuffer(out.get(), out_size);
     return DumpSample(filename, out.get(), out_size);
   }
@@ -200,8 +210,9 @@ class VideoFrameTest : public testing::Test {
   // The pattern is { { green, orange }, { blue, purple } }
   // There is also a gradient within each square to ensure that the luma
   // values are handled properly.
-  rtc::MemoryStream* CreateYuv422Sample(uint32 fourcc,
-                                              uint32 width, uint32 height) {
+  rtc::MemoryStream* CreateYuv422Sample(uint32_t fourcc,
+                                        uint32_t width,
+                                        uint32_t height) {
     int y1_pos, y2_pos, u_pos, v_pos;
     if (!GetYuv422Packing(fourcc, &y1_pos, &y2_pos, &u_pos, &v_pos)) {
       return NULL;
@@ -214,9 +225,9 @@ class VideoFrameTest : public testing::Test {
     if (!ms->ReserveSize(size)) {
       return NULL;
     }
-    for (uint32 y = 0; y < height; ++y) {
+    for (uint32_t y = 0; y < height; ++y) {
       for (int x = 0; x < awidth; x += 2) {
-        uint8 quad[4];
+        uint8_t quad[4];
         quad[y1_pos] = (x % 63 + y % 63) + 64;
         quad[y2_pos] = ((x + 1) % 63 + y % 63) + 64;
         quad[u_pos] = ((x / 63) & 1) ? 192 : 64;
@@ -228,23 +239,25 @@ class VideoFrameTest : public testing::Test {
   }
 
   // Create a test image for YUV 420 formats with 12 bits per pixel.
-  rtc::MemoryStream* CreateYuvSample(uint32 width, uint32 height,
-                                           uint32 bpp) {
+  rtc::MemoryStream* CreateYuvSample(uint32_t width,
+                                     uint32_t height,
+                                     uint32_t bpp) {
     rtc::scoped_ptr<rtc::MemoryStream> ms(
         new rtc::MemoryStream);
     if (!ms->ReserveSize(width * height * bpp / 8)) {
       return NULL;
     }
 
-    for (uint32 i = 0; i < width * height * bpp / 8; ++i) {
+    for (uint32_t i = 0; i < width * height * bpp / 8; ++i) {
       char value = ((i / 63) & 1) ? 192 : 64;
       ms->Write(&value, sizeof(value), NULL, NULL);
     }
     return ms.release();
   }
 
-  rtc::MemoryStream* CreateRgbSample(uint32 fourcc,
-                                           uint32 width, uint32 height) {
+  rtc::MemoryStream* CreateRgbSample(uint32_t fourcc,
+                                     uint32_t width,
+                                     uint32_t height) {
     int r_pos, g_pos, b_pos, bytes;
     if (!GetRgbPacking(fourcc, &r_pos, &g_pos, &b_pos, &bytes)) {
       return NULL;
@@ -256,9 +269,9 @@ class VideoFrameTest : public testing::Test {
       return NULL;
     }
 
-    for (uint32 y = 0; y < height; ++y) {
-      for (uint32 x = 0; x < width; ++x) {
-        uint8 rgb[4] = { 255, 255, 255, 255 };
+    for (uint32_t y = 0; y < height; ++y) {
+      for (uint32_t x = 0; x < width; ++x) {
+        uint8_t rgb[4] = {255, 255, 255, 255};
         rgb[r_pos] = ((x / 63) & 1) ? 224 : 32;
         rgb[g_pos] = (x % 63 + y % 63) + 96;
         rgb[b_pos] = ((y / 63) & 1) ? 224 : 32;
@@ -271,28 +284,30 @@ class VideoFrameTest : public testing::Test {
   // Simple conversion routines to verify the optimized VideoFrame routines.
   // Converts from the specified colorspace to I420.
   bool ConvertYuv422(const rtc::MemoryStream* ms,
-                     uint32 fourcc, uint32 width, uint32 height,
+                     uint32_t fourcc,
+                     uint32_t width,
+                     uint32_t height,
                      T* frame) {
     int y1_pos, y2_pos, u_pos, v_pos;
     if (!GetYuv422Packing(fourcc, &y1_pos, &y2_pos, &u_pos, &v_pos)) {
       return false;
     }
 
-    const uint8* start = reinterpret_cast<const uint8*>(ms->GetBuffer());
+    const uint8_t* start = reinterpret_cast<const uint8_t*>(ms->GetBuffer());
     int awidth = (width + 1) & ~1;
     frame->InitToBlack(width, height, 1, 1, 0);
     int stride_y = frame->GetYPitch();
     int stride_u = frame->GetUPitch();
     int stride_v = frame->GetVPitch();
-    for (uint32 y = 0; y < height; ++y) {
-      for (uint32 x = 0; x < width; x += 2) {
-        const uint8* quad1 = start + (y * awidth + x) * 2;
+    for (uint32_t y = 0; y < height; ++y) {
+      for (uint32_t x = 0; x < width; x += 2) {
+        const uint8_t* quad1 = start + (y * awidth + x) * 2;
         frame->GetYPlane()[stride_y * y + x] = quad1[y1_pos];
         if ((x + 1) < width) {
           frame->GetYPlane()[stride_y * y + x + 1] = quad1[y2_pos];
         }
         if ((y & 1) == 0) {
-          const uint8* quad2 = quad1 + awidth * 2;
+          const uint8_t* quad2 = quad1 + awidth * 2;
           if ((y + 1) >= height) {
             quad2 = quad1;
           }
@@ -309,14 +324,16 @@ class VideoFrameTest : public testing::Test {
   // Convert RGB to 420.
   // A negative height inverts the image.
   bool ConvertRgb(const rtc::MemoryStream* ms,
-                  uint32 fourcc, int32 width, int32 height,
+                  uint32_t fourcc,
+                  int32_t width,
+                  int32_t height,
                   T* frame) {
     int r_pos, g_pos, b_pos, bytes;
     if (!GetRgbPacking(fourcc, &r_pos, &g_pos, &b_pos, &bytes)) {
       return false;
     }
     int pitch = width * bytes;
-    const uint8* start = reinterpret_cast<const uint8*>(ms->GetBuffer());
+    const uint8_t* start = reinterpret_cast<const uint8_t*>(ms->GetBuffer());
     if (height < 0) {
       height = -height;
       start = start + pitch * (height - 1);
@@ -326,10 +343,10 @@ class VideoFrameTest : public testing::Test {
     int stride_y = frame->GetYPitch();
     int stride_u = frame->GetUPitch();
     int stride_v = frame->GetVPitch();
-    for (int32 y = 0; y < height; y += 2) {
-      for (int32 x = 0; x < width; x += 2) {
-        const uint8* rgb[4];
-        uint8 yuv[4][3];
+    for (int32_t y = 0; y < height; y += 2) {
+      for (int32_t x = 0; x < width; x += 2) {
+        const uint8_t* rgb[4];
+        uint8_t yuv[4][3];
         rgb[0] = start + y * pitch + x * bytes;
         rgb[1] = rgb[0] + ((x + 1) < width ? bytes : 0);
         rgb[2] = rgb[0] + ((y + 1) < height ? pitch : 0);
@@ -358,15 +375,22 @@ class VideoFrameTest : public testing::Test {
   }
 
   // Simple and slow RGB->YUV conversion. From NTSC standard, c/o Wikipedia.
-  void ConvertRgbPixel(uint8 r, uint8 g, uint8 b,
-                       uint8* y, uint8* u, uint8* v) {
+  void ConvertRgbPixel(uint8_t r,
+                       uint8_t g,
+                       uint8_t b,
+                       uint8_t* y,
+                       uint8_t* u,
+                       uint8_t* v) {
     *y = static_cast<int>(.257 * r + .504 * g + .098 * b) + 16;
     *u = static_cast<int>(-.148 * r - .291 * g + .439 * b) + 128;
     *v = static_cast<int>(.439 * r - .368 * g - .071 * b) + 128;
   }
 
-  bool GetYuv422Packing(uint32 fourcc,
-                        int* y1_pos, int* y2_pos, int* u_pos, int* v_pos) {
+  bool GetYuv422Packing(uint32_t fourcc,
+                        int* y1_pos,
+                        int* y2_pos,
+                        int* u_pos,
+                        int* v_pos) {
     if (fourcc == cricket::FOURCC_YUY2) {
       *y1_pos = 0; *u_pos = 1; *y2_pos = 2; *v_pos = 3;
     } else if (fourcc == cricket::FOURCC_UYVY) {
@@ -377,8 +401,11 @@ class VideoFrameTest : public testing::Test {
     return true;
   }
 
-  bool GetRgbPacking(uint32 fourcc,
-                     int* r_pos, int* g_pos, int* b_pos, int* bytes) {
+  bool GetRgbPacking(uint32_t fourcc,
+                     int* r_pos,
+                     int* g_pos,
+                     int* b_pos,
+                     int* bytes) {
     if (fourcc == cricket::FOURCC_RAW) {
       *r_pos = 0; *g_pos = 1; *b_pos = 2; *bytes = 3;  // RGB in memory.
     } else if (fourcc == cricket::FOURCC_24BG) {
@@ -401,23 +428,26 @@ class VideoFrameTest : public testing::Test {
   }
 
   static bool IsSize(const cricket::VideoFrame& frame,
-                     uint32 width, uint32 height) {
-    return !IsNull(frame) &&
-        frame.GetYPitch() >= static_cast<int32>(width) &&
-        frame.GetUPitch() >= static_cast<int32>(width) / 2 &&
-        frame.GetVPitch() >= static_cast<int32>(width) / 2 &&
-        frame.GetWidth() == width && frame.GetHeight() == height;
+                     uint32_t width,
+                     uint32_t height) {
+    return !IsNull(frame) && frame.GetYPitch() >= static_cast<int32_t>(width) &&
+           frame.GetUPitch() >= static_cast<int32_t>(width) / 2 &&
+           frame.GetVPitch() >= static_cast<int32_t>(width) / 2 &&
+           frame.GetWidth() == width && frame.GetHeight() == height;
   }
 
   static bool IsPlaneEqual(const std::string& name,
-                           const uint8* plane1, uint32 pitch1,
-                           const uint8* plane2, uint32 pitch2,
-                           uint32 width, uint32 height,
+                           const uint8_t* plane1,
+                           uint32_t pitch1,
+                           const uint8_t* plane2,
+                           uint32_t pitch2,
+                           uint32_t width,
+                           uint32_t height,
                            int max_error) {
-    const uint8* r1 = plane1;
-    const uint8* r2 = plane2;
-    for (uint32 y = 0; y < height; ++y) {
-      for (uint32 x = 0; x < width; ++x) {
+    const uint8_t* r1 = plane1;
+    const uint8_t* r2 = plane2;
+    for (uint32_t y = 0; y < height; ++y) {
+      for (uint32_t x = 0; x < width; ++x) {
         if (abs(static_cast<int>(r1[x] - r2[x])) > max_error) {
           LOG(LS_INFO) << "IsPlaneEqual(" << name << "): pixel["
                        << x << "," << y << "] differs: "
@@ -433,28 +463,32 @@ class VideoFrameTest : public testing::Test {
   }
 
   static bool IsEqual(const cricket::VideoFrame& frame,
-                      size_t width, size_t height,
-                      size_t pixel_width, size_t pixel_height,
-                      int64 time_stamp,
-                      const uint8* y, uint32 ypitch,
-                      const uint8* u, uint32 upitch,
-                      const uint8* v, uint32 vpitch,
+                      size_t width,
+                      size_t height,
+                      size_t pixel_width,
+                      size_t pixel_height,
+                      int64_t time_stamp,
+                      const uint8_t* y,
+                      uint32_t ypitch,
+                      const uint8_t* u,
+                      uint32_t upitch,
+                      const uint8_t* v,
+                      uint32_t vpitch,
                       int max_error) {
-    return IsSize(frame,
-                  static_cast<uint32>(width),
-                  static_cast<uint32>(height)) &&
-        frame.GetPixelWidth() == pixel_width &&
-        frame.GetPixelHeight() == pixel_height &&
-        frame.GetTimeStamp() == time_stamp &&
-        IsPlaneEqual("y", frame.GetYPlane(), frame.GetYPitch(), y, ypitch,
-                     static_cast<uint32>(width),
-                     static_cast<uint32>(height), max_error) &&
-        IsPlaneEqual("u", frame.GetUPlane(), frame.GetUPitch(), u, upitch,
-                     static_cast<uint32>((width + 1) / 2),
-                     static_cast<uint32>((height + 1) / 2), max_error) &&
-        IsPlaneEqual("v", frame.GetVPlane(), frame.GetVPitch(), v, vpitch,
-                     static_cast<uint32>((width + 1) / 2),
-                     static_cast<uint32>((height + 1) / 2), max_error);
+    return IsSize(frame, static_cast<uint32_t>(width),
+                  static_cast<uint32_t>(height)) &&
+           frame.GetPixelWidth() == pixel_width &&
+           frame.GetPixelHeight() == pixel_height &&
+           frame.GetTimeStamp() == time_stamp &&
+           IsPlaneEqual("y", frame.GetYPlane(), frame.GetYPitch(), y, ypitch,
+                        static_cast<uint32_t>(width),
+                        static_cast<uint32_t>(height), max_error) &&
+           IsPlaneEqual("u", frame.GetUPlane(), frame.GetUPitch(), u, upitch,
+                        static_cast<uint32_t>((width + 1) / 2),
+                        static_cast<uint32_t>((height + 1) / 2), max_error) &&
+           IsPlaneEqual("v", frame.GetVPlane(), frame.GetVPitch(), v, vpitch,
+                        static_cast<uint32_t>((width + 1) / 2),
+                        static_cast<uint32_t>((height + 1) / 2), max_error);
   }
 
   static bool IsEqual(const cricket::VideoFrame& frame1,
@@ -512,11 +546,11 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420,
                           kWidth, kHeight, &frame));
 
-    const uint8* y = reinterpret_cast<uint8*>(ms.get()->GetBuffer());
-    const uint8* u = y + kWidth * kHeight;
-    const uint8* v = u + kWidth * kHeight / 4;
-    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 1, 1, 0,
-                        y, kWidth, u, kWidth / 2, v, kWidth / 2, 0));
+    const uint8_t* y = reinterpret_cast<uint8_t*>(ms.get()->GetBuffer());
+    const uint8_t* u = y + kWidth * kHeight;
+    const uint8_t* v = u + kWidth * kHeight / 4;
+    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 1, 1, 0, y, kWidth, u,
+                        kWidth / 2, v, kWidth / 2, 0));
   }
 
   // Test constructing an image from a YV12 buffer.
@@ -527,11 +561,11 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YV12,
                           kWidth, kHeight, &frame));
 
-    const uint8* y = reinterpret_cast<uint8*>(ms.get()->GetBuffer());
-    const uint8* v = y + kWidth * kHeight;
-    const uint8* u = v + kWidth * kHeight / 4;
-    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 1, 1, 0,
-                        y, kWidth, u, kWidth / 2, v, kWidth / 2, 0));
+    const uint8_t* y = reinterpret_cast<uint8_t*>(ms.get()->GetBuffer());
+    const uint8_t* v = y + kWidth * kHeight;
+    const uint8_t* u = v + kWidth * kHeight / 4;
+    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 1, 1, 0, y, kWidth, u,
+                        kWidth / 2, v, kWidth / 2, 0));
   }
 
   // Test constructing an image from a I422 buffer.
@@ -539,10 +573,10 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    rtc::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment]);
-    uint8* y = ALIGNP(buf.get(), kAlignment);
-    uint8* u = y + kWidth * kHeight;
-    uint8* v = u + (kWidth / 2) * kHeight;
+    rtc::scoped_ptr<uint8_t[]> buf(new uint8_t[buf_size + kAlignment]);
+    uint8_t* y = ALIGNP(buf.get(), kAlignment);
+    uint8_t* u = y + kWidth * kHeight;
+    uint8_t* v = u + (kWidth / 2) * kHeight;
     EXPECT_EQ(0, libyuv::I420ToI422(frame1.GetYPlane(), frame1.GetYPitch(),
                                     frame1.GetUPlane(), frame1.GetUPitch(),
                                     frame1.GetVPlane(), frame1.GetVPitch(),
@@ -560,8 +594,8 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    rtc::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment]);
-    uint8* yuy2 = ALIGNP(buf.get(), kAlignment);
+    rtc::scoped_ptr<uint8_t[]> buf(new uint8_t[buf_size + kAlignment]);
+    uint8_t* yuy2 = ALIGNP(buf.get(), kAlignment);
     EXPECT_EQ(0, libyuv::I420ToYUY2(frame1.GetYPlane(), frame1.GetYPitch(),
                                     frame1.GetUPlane(), frame1.GetUPitch(),
                                     frame1.GetVPlane(), frame1.GetVPitch(),
@@ -577,8 +611,8 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    rtc::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment + 1]);
-    uint8* yuy2 = ALIGNP(buf.get(), kAlignment) + 1;
+    rtc::scoped_ptr<uint8_t[]> buf(new uint8_t[buf_size + kAlignment + 1]);
+    uint8_t* yuy2 = ALIGNP(buf.get(), kAlignment) + 1;
     EXPECT_EQ(0, libyuv::I420ToYUY2(frame1.GetYPlane(), frame1.GetYPitch(),
                                     frame1.GetUPlane(), frame1.GetUPitch(),
                                     frame1.GetVPlane(), frame1.GetVPitch(),
@@ -734,8 +768,8 @@ class VideoFrameTest : public testing::Test {
   void ConstructRGB565() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8* out = ALIGNP(outbuf.get(), kAlignment);
+    rtc::scoped_ptr<uint8_t[]> outbuf(new uint8_t[out_size + kAlignment]);
+    uint8_t* out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     EXPECT_EQ(out_size, frame1.ConvertToRgbBuffer(cricket::FOURCC_RGBP,
@@ -750,8 +784,8 @@ class VideoFrameTest : public testing::Test {
   void ConstructARGB1555() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8* out = ALIGNP(outbuf.get(), kAlignment);
+    rtc::scoped_ptr<uint8_t[]> outbuf(new uint8_t[out_size + kAlignment]);
+    uint8_t* out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     EXPECT_EQ(out_size, frame1.ConvertToRgbBuffer(cricket::FOURCC_RGBO,
@@ -766,8 +800,8 @@ class VideoFrameTest : public testing::Test {
   void ConstructARGB4444() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8* out = ALIGNP(outbuf.get(), kAlignment);
+    rtc::scoped_ptr<uint8_t[]> outbuf(new uint8_t[out_size + kAlignment]);
+    uint8_t* out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     EXPECT_EQ(out_size, frame1.ConvertToRgbBuffer(cricket::FOURCC_R444,
@@ -793,7 +827,7 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(ret);                                                          \
     EXPECT_TRUE(frame2.Init(cricket::FOURCC_##FOURCC, kWidth, kHeight, kWidth, \
                             kHeight,                                           \
-                            reinterpret_cast<uint8*>(ms->GetBuffer()),         \
+                            reinterpret_cast<uint8_t*>(ms->GetBuffer()),       \
                             data_size, 1, 1, 0, webrtc::kVideoRotation_0));    \
     int width_rotate = static_cast<int>(frame1.GetWidth());                    \
     int height_rotate = static_cast<int>(frame1.GetHeight());                  \
@@ -824,7 +858,7 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(ret);                                                          \
     EXPECT_TRUE(frame2.Init(cricket::FOURCC_##FOURCC, kWidth, kHeight, kWidth, \
                             kHeight,                                           \
-                            reinterpret_cast<uint8*>(ms->GetBuffer()),         \
+                            reinterpret_cast<uint8_t*>(ms->GetBuffer()),       \
                             data_size, 1, 1, 0, webrtc::kVideoRotation_0));    \
     int width_rotate = static_cast<int>(frame1.GetWidth());                    \
     int height_rotate = static_cast<int>(frame1.GetHeight());                  \
@@ -931,22 +965,21 @@ class VideoFrameTest : public testing::Test {
   // Test 1 pixel edge case image I420 buffer.
   void ConstructI4201Pixel() {
     T frame;
-    uint8 pixel[3] = { 1, 2, 3 };
+    uint8_t pixel[3] = {1, 2, 3};
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1, pixel,
                              sizeof(pixel), 1, 1, 0, webrtc::kVideoRotation_0));
     }
-    const uint8* y = pixel;
-    const uint8* u = y + 1;
-    const uint8* v = u + 1;
-    EXPECT_TRUE(IsEqual(frame, 1, 1, 1, 1, 0,
-                        y, 1, u, 1, v, 1, 0));
+    const uint8_t* y = pixel;
+    const uint8_t* u = y + 1;
+    const uint8_t* v = u + 1;
+    EXPECT_TRUE(IsEqual(frame, 1, 1, 1, 1, 0, y, 1, u, 1, v, 1, 0));
   }
 
   // Test 5 pixel edge case image.
   void ConstructI4205Pixel() {
     T frame;
-    uint8 pixels5x5[5 * 5 + ((5 + 1) / 2 * (5 + 1) / 2) *  2];
+    uint8_t pixels5x5[5 * 5 + ((5 + 1) / 2 * (5 + 1) / 2) * 2];
     memset(pixels5x5, 1, 5 * 5 + ((5 + 1) / 2 * (5 + 1) / 2) *  2);
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 5, 5, 5, 5, pixels5x5,
@@ -963,7 +996,7 @@ class VideoFrameTest : public testing::Test {
   // Test 1 pixel edge case image ARGB buffer.
   void ConstructARGB1Pixel() {
     T frame;
-    uint8 pixel[4] = { 64, 128, 192, 255 };
+    uint8_t pixel[4] = {64, 128, 192, 255};
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_TRUE(frame.Init(cricket::FOURCC_ARGB, 1, 1, 1, 1, pixel,
                              sizeof(pixel), 1, 1, 0,
@@ -971,8 +1004,8 @@ class VideoFrameTest : public testing::Test {
     }
     // Convert back to ARGB.
     size_t out_size = 4;
-    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8* out = ALIGNP(outbuf.get(), kAlignment);
+    rtc::scoped_ptr<uint8_t[]> outbuf(new uint8_t[out_size + kAlignment]);
+    uint8_t* out = ALIGNP(outbuf.get(), kAlignment);
 
     EXPECT_EQ(out_size, frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
                                                  out,
@@ -990,16 +1023,16 @@ class VideoFrameTest : public testing::Test {
   // Test Black, White and Grey pixels.
   void ConstructARGBBlackWhitePixel() {
     T frame;
-    uint8 pixel[10 * 4] = { 0, 0, 0, 255,  // Black.
-                            0, 0, 0, 255,
-                            64, 64, 64, 255,  // Dark Grey.
-                            64, 64, 64, 255,
-                            128, 128, 128, 255,  // Grey.
-                            128, 128, 128, 255,
-                            196, 196, 196, 255,  // Light Grey.
-                            196, 196, 196, 255,
-                            255, 255, 255, 255,  // White.
-                            255, 255, 255, 255 };
+    uint8_t pixel[10 * 4] = {0,   0,   0,   255,   // Black.
+                             0,   0,   0,   255,   // Black.
+                             64,  64,  64,  255,   // Dark Grey.
+                             64,  64,  64,  255,   // Dark Grey.
+                             128, 128, 128, 255,   // Grey.
+                             128, 128, 128, 255,   // Grey.
+                             196, 196, 196, 255,   // Light Grey.
+                             196, 196, 196, 255,   // Light Grey.
+                             255, 255, 255, 255,   // White.
+                             255, 255, 255, 255};  // White.
 
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_TRUE(frame.Init(cricket::FOURCC_ARGB, 10, 1, 10, 1, pixel,
@@ -1008,8 +1041,8 @@ class VideoFrameTest : public testing::Test {
     }
     // Convert back to ARGB
     size_t out_size = 10 * 4;
-    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8* out = ALIGNP(outbuf.get(), kAlignment);
+    rtc::scoped_ptr<uint8_t[]> outbuf(new uint8_t[out_size + kAlignment]);
+    uint8_t* out = ALIGNP(outbuf.get(), kAlignment);
 
     EXPECT_EQ(out_size, frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
                                                  out,
@@ -1131,12 +1164,16 @@ class VideoFrameTest : public testing::Test {
   }
 
   // Test constructing an image from an I420 MJPG buffer.
-  void ValidateFrame(const char* name, uint32 fourcc, int data_adjust,
-                     int size_adjust, bool expected_result) {
+  void ValidateFrame(const char* name,
+                     uint32_t fourcc,
+                     int data_adjust,
+                     int size_adjust,
+                     bool expected_result) {
     T frame;
     rtc::scoped_ptr<rtc::MemoryStream> ms(LoadSample(name));
     ASSERT_TRUE(ms.get() != NULL);
-    const uint8* sample = reinterpret_cast<const uint8*>(ms.get()->GetBuffer());
+    const uint8_t* sample =
+        reinterpret_cast<const uint8_t*>(ms.get()->GetBuffer());
     size_t sample_size;
     ms->GetSize(&sample_size);
     // Optional adjust size to test invalid size.
@@ -1144,9 +1181,9 @@ class VideoFrameTest : public testing::Test {
 
     // Allocate a buffer with end page aligned.
     const int kPadToHeapSized = 16 * 1024 * 1024;
-    rtc::scoped_ptr<uint8[]> page_buffer(
-        new uint8[((data_size + kPadToHeapSized + 4095) & ~4095)]);
-    uint8* data_ptr = page_buffer.get();
+    rtc::scoped_ptr<uint8_t[]> page_buffer(
+        new uint8_t[((data_size + kPadToHeapSized + 4095) & ~4095)]);
+    uint8_t* data_ptr = page_buffer.get();
     if (!data_ptr) {
       LOG(LS_WARNING) << "Failed to allocate memory for ValidateFrame test.";
       EXPECT_FALSE(expected_result);  // NULL is okay if failure was expected.
@@ -1383,9 +1420,9 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(IsBlack(frame1));
     EXPECT_TRUE(IsEqual(frame1, frame2, 0));
     EXPECT_TRUE(frame1.Reset(cricket::FOURCC_I420, kWidth, kHeight, kWidth,
-                             kHeight, reinterpret_cast<uint8*>(ms->GetBuffer()),
-                             data_size, 1, 1, 0, rotation,
-                             apply_rotation));
+                             kHeight,
+                             reinterpret_cast<uint8_t*>(ms->GetBuffer()),
+                             data_size, 1, 1, 0, rotation, apply_rotation));
     if (apply_rotation)
       EXPECT_EQ(webrtc::kVideoRotation_0, frame1.GetVideoRotation());
     else
@@ -1419,23 +1456,32 @@ class VideoFrameTest : public testing::Test {
   enum ToFrom { TO, FROM };
 
   // Helper function for test converting from I420 to packed formats.
-  inline void ConvertToBuffer(int bpp, int rowpad, bool invert, ToFrom to_from,
-      int error, uint32 fourcc,
-      int (*RGBToI420)(const uint8* src_frame, int src_stride_frame,
-                       uint8* dst_y, int dst_stride_y,
-                       uint8* dst_u, int dst_stride_u,
-                       uint8* dst_v, int dst_stride_v,
-                       int width, int height)) {
+  inline void ConvertToBuffer(int bpp,
+                              int rowpad,
+                              bool invert,
+                              ToFrom to_from,
+                              int error,
+                              uint32_t fourcc,
+                              int (*RGBToI420)(const uint8_t* src_frame,
+                                               int src_stride_frame,
+                                               uint8_t* dst_y,
+                                               int dst_stride_y,
+                                               uint8_t* dst_u,
+                                               int dst_stride_u,
+                                               uint8_t* dst_v,
+                                               int dst_stride_v,
+                                               int width,
+                                               int height)) {
     T frame1, frame2;
     int repeat_to = (to_from == TO) ? repeat_ : 1;
     int repeat_from  = (to_from == FROM) ? repeat_ : 1;
 
     int astride = kWidth * bpp + rowpad;
     size_t out_size = astride * kHeight;
-    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment + 1]);
+    rtc::scoped_ptr<uint8_t[]> outbuf(new uint8_t[out_size + kAlignment + 1]);
     memset(outbuf.get(), 0, out_size + kAlignment + 1);
-    uint8* outtop = ALIGNP(outbuf.get(), kAlignment);
-    uint8* out = outtop;
+    uint8_t* outtop = ALIGNP(outbuf.get(), kAlignment);
+    uint8_t* out = outtop;
     int stride = astride;
     if (invert) {
       out += (kHeight - 1) * stride;  // Point to last row.
@@ -1750,10 +1796,10 @@ class VideoFrameTest : public testing::Test {
   void ConvertToI422Buffer() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    rtc::scoped_ptr<uint8[]> buf(new uint8[out_size + kAlignment]);
-    uint8* y = ALIGNP(buf.get(), kAlignment);
-    uint8* u = y + kWidth * kHeight;
-    uint8* v = u + (kWidth / 2) * kHeight;
+    rtc::scoped_ptr<uint8_t[]> buf(new uint8_t[out_size + kAlignment]);
+    uint8_t* y = ALIGNP(buf.get(), kAlignment);
+    uint8_t* u = y + kWidth * kHeight;
+    uint8_t* v = u + (kWidth / 2) * kHeight;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(0, libyuv::I420ToI422(frame1.GetYPlane(), frame1.GetYPitch(),
@@ -1816,7 +1862,7 @@ class VideoFrameTest : public testing::Test {
     ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
                           &frame));
     size_t out_size = kWidth * kHeight * 3 / 2;
-    rtc::scoped_ptr<uint8[]> out(new uint8[out_size]);
+    rtc::scoped_ptr<uint8_t[]> out(new uint8_t[out_size]);
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(out_size, frame.CopyToBuffer(out.get(), out_size));
     }
@@ -1864,9 +1910,9 @@ class VideoFrameTest : public testing::Test {
 
   void CopyToBuffer1Pixel() {
     size_t out_size = 3;
-    rtc::scoped_ptr<uint8[]> out(new uint8[out_size + 1]);
+    rtc::scoped_ptr<uint8_t[]> out(new uint8_t[out_size + 1]);
     memset(out.get(), 0xfb, out_size + 1);  // Fill buffer
-    uint8 pixel[3] = { 1, 2, 3 };
+    uint8_t pixel[3] = {1, 2, 3};
     T frame;
     EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1, pixel,
                            sizeof(pixel), 1, 1, 0,

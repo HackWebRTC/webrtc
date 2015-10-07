@@ -30,7 +30,7 @@ static const SocketAddress kStunHostnameAddr("localhost", 5000);
 static const SocketAddress kBadHostnameAddr("not-a-real-hostname", 5000);
 static const int kTimeoutMs = 10000;
 // stun prio = 100 << 24 | 30 (IPV4) << 8 | 256 - 0
-static const uint32 kStunCandidatePriority = 1677729535;
+static const uint32_t kStunCandidatePriority = 1677729535;
 
 // Tests connecting a StunPort to a fake STUN server (cricket::StunServer)
 // TODO: Use a VirtualSocketServer here. We have to use a

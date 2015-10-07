@@ -43,7 +43,7 @@ void CpuInfo::MaskCpuFlagsForTest(int enable_flags) {
 bool IsCoreIOrBetter() {
 #if defined(__i386__) || defined(__x86_64__) || \
     defined(_M_IX86) || defined(_M_X64)
-  uint32 cpu_info[4];
+  uint32_t cpu_info[4];
   libyuv::CpuId(0, 0, &cpu_info[0]);  // Function 0: Vendor ID
   if (cpu_info[1] == 0x756e6547 && cpu_info[3] == 0x49656e69 &&
       cpu_info[2] == 0x6c65746e) {  // GenuineIntel

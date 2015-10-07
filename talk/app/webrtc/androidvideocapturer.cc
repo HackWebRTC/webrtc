@@ -50,13 +50,13 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     captured_frame_.pixel_width = 1;
     captured_frame_.data = nullptr;
     captured_frame_.data_size = cricket::CapturedFrame::kUnknownDataSize;
-    captured_frame_.fourcc = static_cast<uint32>(cricket::FOURCC_ANY);
+    captured_frame_.fourcc = static_cast<uint32_t>(cricket::FOURCC_ANY);
   }
 
   void UpdateCapturedFrame(
       const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
       int rotation,
-      int64 time_stamp_in_ns) {
+      int64_t time_stamp_in_ns) {
     buffer_ = buffer;
     captured_frame_.width = buffer->width();
     captured_frame_.height = buffer->height();
@@ -169,7 +169,7 @@ bool AndroidVideoCapturer::IsRunning() {
   return running_;
 }
 
-bool AndroidVideoCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
+bool AndroidVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
   fourccs->push_back(cricket::FOURCC_YV12);
   return true;
@@ -192,7 +192,7 @@ void AndroidVideoCapturer::OnCapturerStarted(bool success) {
 void AndroidVideoCapturer::OnIncomingFrame(
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer,
     int rotation,
-    int64 time_stamp) {
+    int64_t time_stamp) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
   frame_factory_->UpdateCapturedFrame(buffer, rotation, time_stamp);
   SignalFrameCaptured(this, frame_factory_->GetCapturedFrame());

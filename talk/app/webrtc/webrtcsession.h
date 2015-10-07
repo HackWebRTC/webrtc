@@ -198,25 +198,25 @@ class WebRtcSession : public cricket::BaseSession,
   }
 
   // Get the id used as a media stream track's "id" field from ssrc.
-  virtual bool GetLocalTrackIdBySsrc(uint32 ssrc, std::string* track_id);
-  virtual bool GetRemoteTrackIdBySsrc(uint32 ssrc, std::string* track_id);
+  virtual bool GetLocalTrackIdBySsrc(uint32_t ssrc, std::string* track_id);
+  virtual bool GetRemoteTrackIdBySsrc(uint32_t ssrc, std::string* track_id);
 
   // AudioMediaProviderInterface implementation.
-  void SetAudioPlayout(uint32 ssrc,
+  void SetAudioPlayout(uint32_t ssrc,
                        bool enable,
                        cricket::AudioRenderer* renderer) override;
-  void SetAudioSend(uint32 ssrc,
+  void SetAudioSend(uint32_t ssrc,
                     bool enable,
                     const cricket::AudioOptions& options,
                     cricket::AudioRenderer* renderer) override;
-  void SetAudioPlayoutVolume(uint32 ssrc, double volume) override;
+  void SetAudioPlayoutVolume(uint32_t ssrc, double volume) override;
 
   // Implements VideoMediaProviderInterface.
-  bool SetCaptureDevice(uint32 ssrc, cricket::VideoCapturer* camera) override;
-  void SetVideoPlayout(uint32 ssrc,
+  bool SetCaptureDevice(uint32_t ssrc, cricket::VideoCapturer* camera) override;
+  void SetVideoPlayout(uint32_t ssrc,
                        bool enable,
                        cricket::VideoRenderer* renderer) override;
-  void SetVideoSend(uint32 ssrc,
+  void SetVideoSend(uint32_t ssrc,
                     bool enable,
                     const cricket::VideoOptions* options) override;
 

@@ -47,8 +47,8 @@ using ::testing::Exactly;
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoTrackId[] = "video_1";
 static const char kAudioTrackId[] = "audio_1";
-static const uint32 kVideoSsrc = 98;
-static const uint32 kAudioSsrc = 99;
+static const uint32_t kVideoSsrc = 98;
+static const uint32_t kAudioSsrc = 99;
 
 namespace webrtc {
 
@@ -57,15 +57,15 @@ class MockAudioProvider : public AudioProviderInterface {
  public:
   virtual ~MockAudioProvider() {}
   MOCK_METHOD3(SetAudioPlayout,
-               void(uint32 ssrc,
+               void(uint32_t ssrc,
                     bool enable,
                     cricket::AudioRenderer* renderer));
   MOCK_METHOD4(SetAudioSend,
-               void(uint32 ssrc,
+               void(uint32_t ssrc,
                     bool enable,
                     const cricket::AudioOptions& options,
                     cricket::AudioRenderer* renderer));
-  MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32 ssrc, double volume));
+  MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32_t ssrc, double volume));
 };
 
 // Helper class to test RtpSender/RtpReceiver.
@@ -73,13 +73,13 @@ class MockVideoProvider : public VideoProviderInterface {
  public:
   virtual ~MockVideoProvider() {}
   MOCK_METHOD2(SetCaptureDevice,
-               bool(uint32 ssrc, cricket::VideoCapturer* camera));
+               bool(uint32_t ssrc, cricket::VideoCapturer* camera));
   MOCK_METHOD3(SetVideoPlayout,
-               void(uint32 ssrc,
+               void(uint32_t ssrc,
                     bool enable,
                     cricket::VideoRenderer* renderer));
   MOCK_METHOD3(SetVideoSend,
-               void(uint32 ssrc,
+               void(uint32_t ssrc,
                     bool enable,
                     const cricket::VideoOptions* options));
 };

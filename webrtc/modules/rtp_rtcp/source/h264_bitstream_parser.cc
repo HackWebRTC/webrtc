@@ -90,11 +90,9 @@ rtc::ByteBuffer* ParseRbsp(const uint8_t* bytes, size_t length) {
     return false;                     \
   }
 
-H264BitstreamParser::PpsState::PpsState() {
-}
+H264BitstreamParser::PpsState::PpsState() {}
 
-H264BitstreamParser::SpsState::SpsState() {
-}
+H264BitstreamParser::SpsState::SpsState() {}
 
 // These functions are similar to webrtc::H264SpsParser::Parse, and based on the
 // same version of the H.264 standard. You can find it here:
@@ -107,7 +105,7 @@ bool H264BitstreamParser::ParseSpsNalu(const uint8_t* sps, size_t length) {
   // copy. We'll eventually write this back.
   rtc::scoped_ptr<rtc::ByteBuffer> sps_rbsp(
       ParseRbsp(sps + kNaluHeaderAndTypeSize, length - kNaluHeaderAndTypeSize));
-  rtc::BitBuffer sps_parser(reinterpret_cast<const uint8*>(sps_rbsp->Data()),
+  rtc::BitBuffer sps_parser(reinterpret_cast<const uint8_t*>(sps_rbsp->Data()),
                             sps_rbsp->Length());
 
   uint8_t byte_tmp;
@@ -115,7 +113,7 @@ bool H264BitstreamParser::ParseSpsNalu(const uint8_t* sps, size_t length) {
   uint32_t bits_tmp;
 
   // profile_idc: u(8).
-  uint8 profile_idc;
+  uint8_t profile_idc;
   RETURN_FALSE_ON_FAIL(sps_parser.ReadUInt8(&profile_idc));
   // constraint_set0_flag through constraint_set5_flag + reserved_zero_2bits
   // 1 bit each for the flags + 2 bits = 8 bits = 1 byte.
@@ -131,7 +129,7 @@ bool H264BitstreamParser::ParseSpsNalu(const uint8_t* sps, size_t length) {
       profile_idc == 86 || profile_idc == 118 || profile_idc == 128 ||
       profile_idc == 138 || profile_idc == 139 || profile_idc == 134) {
     // chroma_format_idc: ue(v)
-    uint32 chroma_format_idc;
+    uint32_t chroma_format_idc;
     RETURN_FALSE_ON_FAIL(sps_parser.ReadExponentialGolomb(&chroma_format_idc));
     if (chroma_format_idc == 3) {
       // separate_colour_plane_flag: u(1)
@@ -213,7 +211,7 @@ bool H264BitstreamParser::ParsePpsNalu(const uint8_t* pps, size_t length) {
   pps_parsed_ = false;
   rtc::scoped_ptr<rtc::ByteBuffer> buffer(
       ParseRbsp(pps + kNaluHeaderAndTypeSize, length - kNaluHeaderAndTypeSize));
-  rtc::BitBuffer parser(reinterpret_cast<const uint8*>(buffer->Data()),
+  rtc::BitBuffer parser(reinterpret_cast<const uint8_t*>(buffer->Data()),
                         buffer->Length());
 
   uint32_t bits_tmp;
@@ -322,7 +320,8 @@ bool H264BitstreamParser::ParseNonParameterSetNalu(const uint8_t* source,
   rtc::scoped_ptr<rtc::ByteBuffer> slice_rbsp(ParseRbsp(
       source + kNaluHeaderAndTypeSize, source_length - kNaluHeaderAndTypeSize));
   rtc::BitBuffer slice_reader(
-      reinterpret_cast<const uint8*>(slice_rbsp->Data()), slice_rbsp->Length());
+      reinterpret_cast<const uint8_t*>(slice_rbsp->Data()),
+      slice_rbsp->Length());
   // Check to see if this is an IDR slice, which has an extra field to parse
   // out.
   bool is_idr = (source[kNaluHeaderSize] & 0x0F) == kNaluIdr;
@@ -349,7 +348,7 @@ bool H264BitstreamParser::ParseNonParameterSetNalu(const uint8_t* source,
   // Represented by log2_max_frame_num_minus4 + 4 bits.
   RETURN_FALSE_ON_FAIL(
       slice_reader.ReadBits(&bits_tmp, sps_.log2_max_frame_num_minus4 + 4));
-  uint32 field_pic_flag = 0;
+  uint32_t field_pic_flag = 0;
   if (sps_.frame_mbs_only_flag == 0) {
     // field_pic_flag: u(1)
     RETURN_FALSE_ON_FAIL(slice_reader.ReadBits(&field_pic_flag, 1));

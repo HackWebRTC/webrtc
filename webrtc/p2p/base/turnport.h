@@ -57,8 +57,8 @@ class TurnPort : public Port {
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
                           const rtc::IPAddress& ip,
-                          uint16 min_port,
-                          uint16 max_port,
+                          uint16_t min_port,
+                          uint16_t max_port,
                           const std::string& username,  // ice username.
                           const std::string& password,  // ice password.
                           const ProtocolAddress& server_address,
@@ -149,8 +149,8 @@ class TurnPort : public Port {
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
            const rtc::IPAddress& ip,
-           uint16 min_port,
-           uint16 max_port,
+           uint16_t min_port,
+           uint16_t max_port,
            const std::string& username,
            const std::string& password,
            const ProtocolAddress& server_address,

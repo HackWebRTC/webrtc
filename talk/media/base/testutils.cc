@@ -47,8 +47,8 @@ namespace cricket {
 /////////////////////////////////////////////////////////////////////////
 // Implementation of RawRtpPacket
 /////////////////////////////////////////////////////////////////////////
-void RawRtpPacket::WriteToByteBuffer(
-    uint32 in_ssrc, rtc::ByteBuffer *buf) const {
+void RawRtpPacket::WriteToByteBuffer(uint32_t in_ssrc,
+                                     rtc::ByteBuffer* buf) const {
   if (!buf) return;
 
   buf->WriteUInt8(ver_to_cc);
@@ -72,8 +72,10 @@ bool RawRtpPacket::ReadFromByteBuffer(rtc::ByteBuffer* buf) {
   return ret;
 }
 
-bool RawRtpPacket::SameExceptSeqNumTimestampSsrc(
-    const RawRtpPacket& packet, uint16 seq, uint32 ts, uint32 ssc) const {
+bool RawRtpPacket::SameExceptSeqNumTimestampSsrc(const RawRtpPacket& packet,
+                                                 uint16_t seq,
+                                                 uint32_t ts,
+                                                 uint32_t ssc) const {
   return sequence_number == seq &&
       timestamp == ts &&
       ver_to_cc == packet.ver_to_cc &&
@@ -134,12 +136,14 @@ size_t RtpTestUtility::GetTestPacketCount() {
                   ARRAY_SIZE(kTestRawRtcpPackets));
 }
 
-bool RtpTestUtility::WriteTestPackets(
-    size_t count, bool rtcp, uint32 rtp_ssrc, RtpDumpWriter* writer) {
+bool RtpTestUtility::WriteTestPackets(size_t count,
+                                      bool rtcp,
+                                      uint32_t rtp_ssrc,
+                                      RtpDumpWriter* writer) {
   if (!writer || count > GetTestPacketCount()) return false;
 
   bool result = true;
-  uint32 elapsed_time_ms = 0;
+  uint32_t elapsed_time_ms = 0;
   for (size_t i = 0; i < count && result; ++i) {
     rtc::ByteBuffer buf;
     if (rtcp) {
@@ -155,11 +159,12 @@ bool RtpTestUtility::WriteTestPackets(
   return result;
 }
 
-bool RtpTestUtility::VerifyTestPacketsFromStream(
-    size_t count, rtc::StreamInterface* stream, uint32 ssrc) {
+bool RtpTestUtility::VerifyTestPacketsFromStream(size_t count,
+                                                 rtc::StreamInterface* stream,
+                                                 uint32_t ssrc) {
   if (!stream) return false;
 
-  uint32 prev_elapsed_time = 0;
+  uint32_t prev_elapsed_time = 0;
   bool result = true;
   stream->Rewind();
   RtpDumpLoopReader reader(stream);
@@ -188,10 +193,10 @@ bool RtpTestUtility::VerifyTestPacketsFromStream(
       result &= rtp_packet.ReadFromByteBuffer(&buf);
       result &= rtp_packet.SameExceptSeqNumTimestampSsrc(
           kTestRawRtpPackets[index],
-          static_cast<uint16>(kTestRawRtpPackets[index].sequence_number +
-                              loop * GetTestPacketCount()),
-          static_cast<uint32>(kTestRawRtpPackets[index].timestamp +
-                              loop * kRtpTimestampIncrease),
+          static_cast<uint16_t>(kTestRawRtpPackets[index].sequence_number +
+                                loop * GetTestPacketCount()),
+          static_cast<uint32_t>(kTestRawRtpPackets[index].timestamp +
+                                loop * kRtpTimestampIncrease),
           ssrc);
     }
   }
@@ -271,7 +276,9 @@ std::string GetTestFilePath(const std::string& filename) {
 
 // Loads the image with the specified prefix and size into |out|.
 bool LoadPlanarYuvTestImage(const std::string& prefix,
-                            int width, int height, uint8* out) {
+                            int width,
+                            int height,
+                            uint8_t* out) {
   std::stringstream ss;
   ss << prefix << "." << width << "x" << height << "_P420.yuv";
 
@@ -289,8 +296,10 @@ bool LoadPlanarYuvTestImage(const std::string& prefix,
 
 // Dumps the YUV image out to a file, for visual inspection.
 // PYUV tool can be used to view dump files.
-void DumpPlanarYuvTestImage(const std::string& prefix, const uint8* img,
-                            int w, int h) {
+void DumpPlanarYuvTestImage(const std::string& prefix,
+                            const uint8_t* img,
+                            int w,
+                            int h) {
   rtc::FileStream fs;
   char filename[256];
   rtc::sprintfn(filename, sizeof(filename), "%s.%dx%d_P420.yuv",
@@ -301,8 +310,10 @@ void DumpPlanarYuvTestImage(const std::string& prefix, const uint8* img,
 
 // Dumps the ARGB image out to a file, for visual inspection.
 // ffplay tool can be used to view dump files.
-void DumpPlanarArgbTestImage(const std::string& prefix, const uint8* img,
-                             int w, int h) {
+void DumpPlanarArgbTestImage(const std::string& prefix,
+                             const uint8_t* img,
+                             int w,
+                             int h) {
   rtc::FileStream fs;
   char filename[256];
   rtc::sprintfn(filename, sizeof(filename), "%s.%dx%d_ARGB.raw",
@@ -312,12 +323,12 @@ void DumpPlanarArgbTestImage(const std::string& prefix, const uint8* img,
 }
 
 bool VideoFrameEqual(const VideoFrame* frame0, const VideoFrame* frame1) {
-  const uint8* y0 = frame0->GetYPlane();
-  const uint8* u0 = frame0->GetUPlane();
-  const uint8* v0 = frame0->GetVPlane();
-  const uint8* y1 = frame1->GetYPlane();
-  const uint8* u1 = frame1->GetUPlane();
-  const uint8* v1 = frame1->GetVPlane();
+  const uint8_t* y0 = frame0->GetYPlane();
+  const uint8_t* u0 = frame0->GetUPlane();
+  const uint8_t* v0 = frame0->GetVPlane();
+  const uint8_t* y1 = frame1->GetYPlane();
+  const uint8_t* u1 = frame1->GetUPlane();
+  const uint8_t* v1 = frame1->GetVPlane();
 
   for (size_t i = 0; i < frame0->GetHeight(); ++i) {
     if (0 != memcmp(y0, y1, frame0->GetWidth())) {
@@ -344,7 +355,8 @@ bool VideoFrameEqual(const VideoFrame* frame0, const VideoFrame* frame1) {
 }
 
 cricket::StreamParams CreateSimStreamParams(
-    const std::string& cname, const std::vector<uint32>& ssrcs) {
+    const std::string& cname,
+    const std::vector<uint32_t>& ssrcs) {
   cricket::StreamParams sp;
   cricket::SsrcGroup sg(cricket::kSimSsrcGroupSemantics, ssrcs);
   sp.ssrcs = ssrcs;
@@ -355,12 +367,13 @@ cricket::StreamParams CreateSimStreamParams(
 
 // There should be an rtx_ssrc per ssrc.
 cricket::StreamParams CreateSimWithRtxStreamParams(
-    const std::string& cname, const std::vector<uint32>& ssrcs,
-    const std::vector<uint32>& rtx_ssrcs) {
+    const std::string& cname,
+    const std::vector<uint32_t>& ssrcs,
+    const std::vector<uint32_t>& rtx_ssrcs) {
   cricket::StreamParams sp = CreateSimStreamParams(cname, ssrcs);
   for (size_t i = 0; i < ssrcs.size(); ++i) {
     sp.ssrcs.push_back(rtx_ssrcs[i]);
-    std::vector<uint32> fid_ssrcs;
+    std::vector<uint32_t> fid_ssrcs;
     fid_ssrcs.push_back(ssrcs[i]);
     fid_ssrcs.push_back(rtx_ssrcs[i]);
     cricket::SsrcGroup fid_group(cricket::kFidSsrcGroupSemantics, fid_ssrcs);

@@ -56,10 +56,10 @@ rtc::scoped_refptr<webrtc::VideoFrameBuffer> VideoFrameBufferForPixelBuffer(
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
       new rtc::RefCountedObject<webrtc::I420Buffer>(width, height);
   CVPixelBufferLockBaseAddress(pixel_buffer, kCVPixelBufferLock_ReadOnly);
-  const uint8* src_y = reinterpret_cast<const uint8*>(
+  const uint8_t* src_y = reinterpret_cast<const uint8_t*>(
       CVPixelBufferGetBaseAddressOfPlane(pixel_buffer, 0));
   int src_y_stride = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 0);
-  const uint8* src_uv = reinterpret_cast<const uint8*>(
+  const uint8_t* src_uv = reinterpret_cast<const uint8_t*>(
       CVPixelBufferGetBaseAddressOfPlane(pixel_buffer, 1));
   int src_uv_stride = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 1);
   int ret = libyuv::NV12ToI420(

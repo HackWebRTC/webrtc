@@ -311,19 +311,19 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
 
   virtual void OnAddLocalAudioTrack(MediaStreamInterface* stream,
                                     AudioTrackInterface* audio_track,
-                                    uint32 ssrc) {
+                                    uint32_t ssrc) {
     AddTrack(&local_audio_tracks_, stream, audio_track, ssrc);
   }
 
   virtual void OnAddLocalVideoTrack(MediaStreamInterface* stream,
                                     VideoTrackInterface* video_track,
-                                    uint32 ssrc) {
+                                    uint32_t ssrc) {
     AddTrack(&local_video_tracks_, stream, video_track, ssrc);
   }
 
   virtual void OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
                                        AudioTrackInterface* audio_track,
-                                       uint32 ssrc) {
+                                       uint32_t ssrc) {
     RemoveTrack(&local_audio_tracks_, stream, audio_track);
   }
 
@@ -334,13 +334,13 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
 
   virtual void OnAddRemoteAudioTrack(MediaStreamInterface* stream,
                                      AudioTrackInterface* audio_track,
-                                     uint32 ssrc) {
+                                     uint32_t ssrc) {
     AddTrack(&remote_audio_tracks_, stream, audio_track, ssrc);
   }
 
   virtual void OnAddRemoteVideoTrack(MediaStreamInterface* stream,
                                      VideoTrackInterface* video_track,
-                                     uint32 ssrc) {
+                                     uint32_t ssrc) {
     AddTrack(&remote_video_tracks_, stream, video_track, ssrc);
   }
 
@@ -369,7 +369,7 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
 
   void VerifyRemoteAudioTrack(const std::string& stream_label,
                               const std::string& track_id,
-                              uint32 ssrc) {
+                              uint32_t ssrc) {
     VerifyTrack(remote_audio_tracks_, stream_label, track_id, ssrc);
   }
 
@@ -377,14 +377,14 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
 
   void VerifyRemoteVideoTrack(const std::string& stream_label,
                               const std::string& track_id,
-                              uint32 ssrc) {
+                              uint32_t ssrc) {
     VerifyTrack(remote_video_tracks_, stream_label, track_id, ssrc);
   }
 
   size_t NumberOfLocalAudioTracks() { return local_audio_tracks_.size(); }
   void VerifyLocalAudioTrack(const std::string& stream_label,
                              const std::string& track_id,
-                             uint32 ssrc) {
+                             uint32_t ssrc) {
     VerifyTrack(local_audio_tracks_, stream_label, track_id, ssrc);
   }
 
@@ -392,7 +392,7 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
 
   void VerifyLocalVideoTrack(const std::string& stream_label,
                              const std::string& track_id,
-                             uint32 ssrc) {
+                             uint32_t ssrc) {
     VerifyTrack(local_video_tracks_, stream_label, track_id, ssrc);
   }
 
@@ -401,18 +401,18 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
     TrackInfo() {}
     TrackInfo(const std::string& stream_label,
               const std::string track_id,
-              uint32 ssrc)
+              uint32_t ssrc)
         : stream_label(stream_label), track_id(track_id), ssrc(ssrc) {}
     std::string stream_label;
     std::string track_id;
-    uint32 ssrc;
+    uint32_t ssrc;
   };
   typedef std::vector<TrackInfo> TrackInfos;
 
   void AddTrack(TrackInfos* track_infos,
                 MediaStreamInterface* stream,
                 MediaStreamTrackInterface* track,
-                uint32 ssrc) {
+                uint32_t ssrc) {
     (*track_infos).push_back(TrackInfo(stream->label(), track->id(), ssrc));
   }
 
@@ -442,7 +442,7 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
   void VerifyTrack(const TrackInfos& track_infos,
                    const std::string& stream_label,
                    const std::string& track_id,
-                   uint32 ssrc) {
+                   uint32_t ssrc) {
     const TrackInfo* track_info = FindTrackInfo(track_infos,
                                                 stream_label,
                                                 track_id);

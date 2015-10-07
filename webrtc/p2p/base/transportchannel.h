@@ -124,11 +124,11 @@ class TransportChannel : public sigslot::has_slots<> {
 
   // Allows key material to be extracted for external encryption.
   virtual bool ExportKeyingMaterial(const std::string& label,
-      const uint8* context,
-      size_t context_len,
-      bool use_context,
-      uint8* result,
-      size_t result_len) = 0;
+                                    const uint8_t* context,
+                                    size_t context_len,
+                                    bool use_context,
+                                    uint8_t* result,
+                                    size_t result_len) = 0;
 
   // Signalled each time a packet is received on this channel.
   sigslot::signal5<TransportChannel*, const char*,

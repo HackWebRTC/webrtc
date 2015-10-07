@@ -132,7 +132,7 @@ class FakeDtmfProvider : public DtmfProviderInterface {
  private:
   std::set<std::string> can_insert_dtmf_tracks_;
   std::vector<DtmfInfo> dtmf_info_queue_;
-  int64 last_insert_dtmf_call_;
+  int64_t last_insert_dtmf_call_;
   sigslot::signal0<> SignalDestroyed;
 };
 

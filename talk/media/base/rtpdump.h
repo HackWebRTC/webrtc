@@ -56,24 +56,23 @@ enum RtpDumpPacketFilter {
 };
 
 struct RtpDumpFileHeader {
-  RtpDumpFileHeader(uint32 start_ms, uint32 s, uint16 p);
+  RtpDumpFileHeader(uint32_t start_ms, uint32_t s, uint16_t p);
   void WriteToByteBuffer(rtc::ByteBuffer* buf);
 
   static const char kFirstLine[];
   static const size_t kHeaderLength = 16;
-  uint32 start_sec;   // start of recording, the seconds part.
-  uint32 start_usec;  // start of recording, the microseconds part.
-  uint32 source;      // network source (multicast address).
-  uint16 port;        // UDP port.
-  uint16 padding;     // 2 bytes padding.
+  uint32_t start_sec;   // start of recording, the seconds part.
+  uint32_t start_usec;  // start of recording, the microseconds part.
+  uint32_t source;      // network source (multicast address).
+  uint16_t port;        // UDP port.
+  uint16_t padding;     // 2 bytes padding.
 };
 
 struct RtpDumpPacket {
   RtpDumpPacket() {}
 
-  RtpDumpPacket(const void* d, size_t s, uint32 elapsed, bool rtcp)
-      : elapsed_time(elapsed),
-        original_data_len((rtcp) ? 0 : s) {
+  RtpDumpPacket(const void* d, size_t s, uint32_t elapsed, bool rtcp)
+      : elapsed_time(elapsed), original_data_len((rtcp) ? 0 : s) {
     data.resize(s);
     memcpy(&data[0], d, s);
   }
@@ -87,16 +86,16 @@ struct RtpDumpPacket {
   // packet. Return true and set the output parameter if successful.
   bool GetRtpPayloadType(int* pt) const;
   bool GetRtpSeqNum(int* seq_num) const;
-  bool GetRtpTimestamp(uint32* ts) const;
-  bool GetRtpSsrc(uint32* ssrc) const;
+  bool GetRtpTimestamp(uint32_t* ts) const;
+  bool GetRtpSsrc(uint32_t* ssrc) const;
   bool GetRtpHeaderLen(size_t* len) const;
   // Get the type of the RTCP packet. Return true and set the output parameter
   // if successful.
   bool GetRtcpType(int* type) const;
 
   static const size_t kHeaderLength = 8;
-  uint32 elapsed_time;       // Milliseconds since the start of recording.
-  std::vector<uint8> data;   // The actual RTP or RTCP packet.
+  uint32_t elapsed_time;      // Milliseconds since the start of recording.
+  std::vector<uint8_t> data;  // The actual RTP or RTCP packet.
   size_t original_data_len;  // The original length of the packet; may be
                              // greater than data.size() if only part of the
                              // packet was recorded.
@@ -114,7 +113,7 @@ class RtpDumpReader {
   virtual ~RtpDumpReader() {}
 
   // Use the specified ssrc, rather than the ssrc from dump, for RTP packets.
-  void SetSsrc(uint32 ssrc);
+  void SetSsrc(uint32_t ssrc);
   virtual rtc::StreamResult ReadPacket(RtpDumpPacket* packet);
 
  protected:
@@ -130,8 +129,8 @@ class RtpDumpReader {
   rtc::StreamInterface* stream_;
   bool file_header_read_;
   size_t first_line_and_file_header_len_;
-  uint32 start_time_ms_;
-  uint32 ssrc_override_;
+  uint32_t start_time_ms_;
+  uint32_t ssrc_override_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpDumpReader);
 };
@@ -164,22 +163,22 @@ class RtpDumpLoopReader : public RtpDumpReader {
   // How much to increase the elapsed time, RTP sequence number, RTP timestampe
   // for each loop. They are calcualted with the variables below during the
   // first loop.
-  uint32 elapsed_time_increases_;
+  uint32_t elapsed_time_increases_;
   int rtp_seq_num_increase_;
-  uint32 rtp_timestamp_increase_;
+  uint32_t rtp_timestamp_increase_;
   // How many RTP packets and how many payload frames in the input stream. RTP
   // packets belong to the same frame have the same RTP timestamp, different
   // dump timestamp, and different RTP sequence number.
-  uint32 packet_count_;
-  uint32 frame_count_;
+  uint32_t packet_count_;
+  uint32_t frame_count_;
   // The elapsed time, RTP sequence number, and RTP timestamp of the first and
   // the previous dump packets in the input stream.
-  uint32 first_elapsed_time_;
+  uint32_t first_elapsed_time_;
   int first_rtp_seq_num_;
-  uint32 first_rtp_timestamp_;
-  uint32 prev_elapsed_time_;
+  uint32_t first_rtp_timestamp_;
+  uint32_t prev_elapsed_time_;
   int prev_rtp_seq_num_;
-  uint32 prev_rtp_timestamp_;
+  uint32_t prev_rtp_timestamp_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpDumpLoopReader);
 };
@@ -202,7 +201,7 @@ class RtpDumpWriter {
     return WritePacket(&packet.data[0], packet.data.size(), packet.elapsed_time,
                        packet.is_rtcp());
   }
-  uint32 GetElapsedTime() const;
+  uint32_t GetElapsedTime() const;
 
   bool GetDumpSize(size_t* size) {
     // Note that we use GetPosition(), rather than GetSize(), to avoid flush the
@@ -214,17 +213,19 @@ class RtpDumpWriter {
   rtc::StreamResult WriteFileHeader();
 
  private:
-  rtc::StreamResult WritePacket(const void* data, size_t data_len,
-                                      uint32 elapsed, bool rtcp);
+  rtc::StreamResult WritePacket(const void* data,
+                                size_t data_len,
+                                uint32_t elapsed,
+                                bool rtcp);
   size_t FilterPacket(const void* data, size_t data_len, bool rtcp);
   rtc::StreamResult WriteToStream(const void* data, size_t data_len);
 
   rtc::StreamInterface* stream_;
   int packet_filter_;
   bool file_header_written_;
-  uint32 start_time_ms_;  // Time when the record starts.
+  uint32_t start_time_ms_;  // Time when the record starts.
   // If writing to the stream takes longer than this many ms, log a warning.
-  uint32 warn_slow_writes_delay_;
+  uint32_t warn_slow_writes_delay_;
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpDumpWriter);
 };
 

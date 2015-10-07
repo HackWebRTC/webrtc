@@ -16,7 +16,7 @@
 
 namespace cricket {
 
-static const uint32 kMessageConnectTimeout = 1;
+static const uint32_t kMessageConnectTimeout = 1;
 static const int kKeepAliveDelay           = 10 * 60 * 1000;
 static const int kRetryTimeout             = 50 * 1000;  // ICE says 50 secs
 // How long to wait for a socket to connect to remote host in milliseconds
@@ -171,19 +171,26 @@ class AllocateRequest : public StunRequest {
  private:
   RelayEntry* entry_;
   RelayConnection* connection_;
-  uint32 start_time_;
+  uint32_t start_time_;
 };
 
 RelayPort::RelayPort(rtc::Thread* thread,
                      rtc::PacketSocketFactory* factory,
                      rtc::Network* network,
                      const rtc::IPAddress& ip,
-                     uint16 min_port,
-                     uint16 max_port,
+                     uint16_t min_port,
+                     uint16_t max_port,
                      const std::string& username,
                      const std::string& password)
-    : Port(thread, RELAY_PORT_TYPE, factory, network, ip, min_port, max_port,
-           username, password),
+    : Port(thread,
+           RELAY_PORT_TYPE,
+           factory,
+           network,
+           ip,
+           min_port,
+           max_port,
+           username,
+           password),
       ready_(false),
       error_(0) {
   entries_.push_back(

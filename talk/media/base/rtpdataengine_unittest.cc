@@ -302,8 +302,8 @@ TEST_F(RtpDataMediaChannelTest, SendData) {
   cricket::RtpHeader header1 = GetSentDataHeader(1);
   EXPECT_EQ(header1.ssrc, 42U);
   EXPECT_EQ(header1.payload_type, 103);
-  EXPECT_EQ(static_cast<uint16>(header0.seq_num + 1),
-            static_cast<uint16>(header1.seq_num));
+  EXPECT_EQ(static_cast<uint16_t>(header0.seq_num + 1),
+            static_cast<uint16_t>(header1.seq_num));
   EXPECT_EQ(header0.timestamp + 180000, header1.timestamp);
 }
 
@@ -362,11 +362,11 @@ TEST_F(RtpDataMediaChannelTest, SendDataMultipleClocks) {
   cricket::RtpHeader header1b = GetSentDataHeader(2);
   cricket::RtpHeader header2b = GetSentDataHeader(3);
 
-  EXPECT_EQ(static_cast<uint16>(header1a.seq_num + 1),
-            static_cast<uint16>(header1b.seq_num));
+  EXPECT_EQ(static_cast<uint16_t>(header1a.seq_num + 1),
+            static_cast<uint16_t>(header1b.seq_num));
   EXPECT_EQ(header1a.timestamp + 90000, header1b.timestamp);
-  EXPECT_EQ(static_cast<uint16>(header2a.seq_num + 1),
-            static_cast<uint16>(header2b.seq_num));
+  EXPECT_EQ(static_cast<uint16_t>(header2a.seq_num + 1),
+            static_cast<uint16_t>(header2b.seq_num));
   EXPECT_EQ(header2a.timestamp + 180000, header2b.timestamp);
 }
 

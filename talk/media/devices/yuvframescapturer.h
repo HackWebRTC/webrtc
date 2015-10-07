@@ -70,7 +70,7 @@ class YuvFramesCapturer : public VideoCapturer {
 
  protected:
   // Override virtual methods of parent class VideoCapturer.
-  virtual bool GetPreferredFourccs(std::vector<uint32>* fourccs);
+  virtual bool GetPreferredFourccs(std::vector<uint32_t>* fourccs);
 
   // Read a frame and determine how long to wait for the next frame.
   void ReadFrame(bool first_frame);
@@ -83,12 +83,12 @@ class YuvFramesCapturer : public VideoCapturer {
   YuvFramesThread* frames_generator_thread;
   int width_;
   int height_;
-  uint32 frame_data_size_;
-  uint32 frame_index_;
+  uint32_t frame_data_size_;
+  uint32_t frame_index_;
 
-  int64 barcode_reference_timestamp_millis_;
-  int32 barcode_interval_;
-  int32 GetBarcodeValue();
+  int64_t barcode_reference_timestamp_millis_;
+  int32_t barcode_interval_;
+  int32_t GetBarcodeValue();
 
   RTC_DISALLOW_COPY_AND_ASSIGN(YuvFramesCapturer);
 };

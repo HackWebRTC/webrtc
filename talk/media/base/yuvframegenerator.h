@@ -48,8 +48,8 @@ class YuvFrameGenerator {
  public:
   // Constructs a frame-generator that produces frames of size |width|x|height|.
   // If |enable_barcode| is specified, barcodes can be included in the frames
-  // when calling |GenerateNextFrame(uint8*, uint32)|. If |enable_barcode| is
-  // |true| then |width|x|height| should be at least 160x100; otherwise this
+  // when calling |GenerateNextFrame(uint8_t*, uint32_t)|. If |enable_barcode|
+  // is |true| then |width|x|height| should be at least 160x100; otherwise this
   // constructor will abort.
   YuvFrameGenerator(int width, int height, bool enable_barcode);
   ~YuvFrameGenerator();
@@ -61,7 +61,7 @@ class YuvFrameGenerator {
   // into a barcode in the frame.  The value should in the range:
   // [0..9,999,999]. If the value exceeds this range or barcodes were not
   // requested in the constructor, this function will abort.
-  void GenerateNextFrame(uint8* frame_buffer, int32 barcode_value);
+  void GenerateNextFrame(uint8_t* frame_buffer, int32_t barcode_value);
 
   int GetHeight() { return height_; }
   int GetWidth() { return width_; }
@@ -72,28 +72,33 @@ class YuvFrameGenerator {
   void GetBarcodeBounds(int* top, int* left, int* width, int* height);
 
  private:
-  void DrawLandscape(uint8 *p, int w, int h);
-  void DrawGradientX(uint8 *p, int w, int h);
-  void DrawGradientY(uint8 *p, int w, int h);
-  void DrawMovingLineX(uint8 *p, int w, int h, int n);
-  void DrawMovingLineY(uint8 *p, int w, int h, int n);
-  void DrawBouncingCube(uint8 *p, int w, int h, int n);
+  void DrawLandscape(uint8_t* p, int w, int h);
+  void DrawGradientX(uint8_t* p, int w, int h);
+  void DrawGradientY(uint8_t* p, int w, int h);
+  void DrawMovingLineX(uint8_t* p, int w, int h, int n);
+  void DrawMovingLineY(uint8_t* p, int w, int h, int n);
+  void DrawBouncingCube(uint8_t* p, int w, int h, int n);
 
-  void DrawBarcode(uint32 value);
+  void DrawBarcode(uint32_t value);
   int DrawSideGuardBars(int x, int y, int height);
   int DrawMiddleGuardBars(int x, int y, int height);
   int DrawEanEncodedDigit(int digit, int x, int y, int height, bool r_code);
-  void DrawBlockRectangle(uint8* p, int x_start, int y_start,
-                          int width, int height, int pitch, uint8 value);
+  void DrawBlockRectangle(uint8_t* p,
+                          int x_start,
+                          int y_start,
+                          int width,
+                          int height,
+                          int pitch,
+                          uint8_t value);
 
  private:
   int width_;
   int height_;
   int frame_index_;
   int frame_data_size_;
-  uint8* y_data_;
-  uint8* u_data_;
-  uint8* v_data_;
+  uint8_t* y_data_;
+  uint8_t* u_data_;
+  uint8_t* v_data_;
 
   int barcode_start_x_;
   int barcode_start_y_;

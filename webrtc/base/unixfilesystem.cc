@@ -502,7 +502,8 @@ bool UnixFilesystem::GetAppTempFolder(Pathname* path) {
 #endif
 }
 
-bool UnixFilesystem::GetDiskFreeSpace(const Pathname& path, int64 *freebytes) {
+bool UnixFilesystem::GetDiskFreeSpace(const Pathname& path,
+                                      int64_t* freebytes) {
 #ifdef __native_client__
   return false;
 #else  // __native_client__
@@ -526,9 +527,9 @@ bool UnixFilesystem::GetDiskFreeSpace(const Pathname& path, int64 *freebytes) {
     return false;
 #endif  // WEBRTC_ANDROID
 #if defined(WEBRTC_LINUX)
-  *freebytes = static_cast<int64>(vfs.f_bsize) * vfs.f_bavail;
+  *freebytes = static_cast<int64_t>(vfs.f_bsize) * vfs.f_bavail;
 #elif defined(WEBRTC_MAC)
-  *freebytes = static_cast<int64>(vfs.f_frsize) * vfs.f_bavail;
+  *freebytes = static_cast<int64_t>(vfs.f_frsize) * vfs.f_bavail;
 #endif
 
   return true;

@@ -65,10 +65,10 @@ static const int kAlignment = 16;
 #endif
 
 #if defined(__GNUC__) && defined(__i386__)
-static inline uint64 __rdtsc(void) {
+static inline uint64_t __rdtsc(void) {
   uint32_t a, d;
   __asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
-  return (reinterpret_cast<uint64>(d) << 32) + a;
+  return (reinterpret_cast<uint64_t>(d) << 32) + a;
 }
 
 static inline void _mm_clflush(volatile void *__p) {
@@ -76,7 +76,7 @@ static inline void _mm_clflush(volatile void *__p) {
 }
 #endif
 
-static void FlushCache(uint8* dst, int count) {
+static void FlushCache(uint8_t* dst, int count) {
   while (count >= 32) {
     _mm_clflush(dst);
     dst += 32;
@@ -101,13 +101,16 @@ class YuvScalerTest : public testing::Test {
     *error = 0.;
     size_t isize = I420_SIZE(iw, ih);
     size_t osize = I420_SIZE(ow, oh);
-    scoped_ptr<uint8[]> ibuffer(new uint8[isize + kAlignment + memoffset]());
-    scoped_ptr<uint8[]> obuffer(new uint8[osize + kAlignment + memoffset]());
-    scoped_ptr<uint8[]> xbuffer(new uint8[osize + kAlignment + memoffset]());
+    scoped_ptr<uint8_t[]> ibuffer(
+        new uint8_t[isize + kAlignment + memoffset]());
+    scoped_ptr<uint8_t[]> obuffer(
+        new uint8_t[osize + kAlignment + memoffset]());
+    scoped_ptr<uint8_t[]> xbuffer(
+        new uint8_t[osize + kAlignment + memoffset]());
 
-    uint8 *ibuf = ALIGNP(ibuffer.get(), kAlignment) + memoffset;
-    uint8 *obuf = ALIGNP(obuffer.get(), kAlignment) + memoffset;
-    uint8 *xbuf = ALIGNP(xbuffer.get(), kAlignment) + memoffset;
+    uint8_t* ibuf = ALIGNP(ibuffer.get(), kAlignment) + memoffset;
+    uint8_t* obuf = ALIGNP(obuffer.get(), kAlignment) + memoffset;
+    uint8_t* xbuf = ALIGNP(xbuffer.get(), kAlignment) + memoffset;
 
     if (usefile) {
       if (!LoadPlanarYuvTestImage("faces", iw, ih, ibuf) ||
@@ -133,7 +136,7 @@ class YuvScalerTest : public testing::Test {
     // TODO(fbarchard): set flags for libyuv
     libyuv::MaskCpuFlags(cpuflags);
 #ifdef TEST_RSTSC
-    uint64 t = 0;
+    uint64_t t = 0;
 #endif
     for (int i = 0; i < repeat_; ++i) {
 #ifdef TEST_UNCACHED
@@ -141,12 +144,12 @@ class YuvScalerTest : public testing::Test {
       FlushCache(obuf, osize);
 #endif
 #ifdef TEST_RSTSC
-      uint64 t1 = __rdtsc();
+      uint64_t t1 = __rdtsc();
 #endif
       EXPECT_EQ(0, libyuv::ScaleOffset(ibuf, iw, ih, obuf, ow, oh,
                                        offset, interpolate));
 #ifdef TEST_RSTSC
-      uint64 t2 = __rdtsc();
+      uint64_t t2 = __rdtsc();
       t += t2 - t1;
 #endif
     }
@@ -172,7 +175,7 @@ class YuvScalerTest : public testing::Test {
   }
 
   // Returns the index of the first differing byte. Easier to debug than memcmp.
-  static int FindDiff(const uint8* buf1, const uint8* buf2, int len) {
+  static int FindDiff(const uint8_t* buf1, const uint8_t* buf2, int len) {
     int i = 0;
     while (i < len && buf1[i] == buf2[i]) {
       i++;
@@ -189,8 +192,8 @@ class YuvScalerTest : public testing::Test {
 TEST_F(YuvScalerTest, TestCopy) {
   const int iw = 640, ih = 360;
   const int ow = 640, oh = 360;
-  ALIGN16(uint8 ibuf[I420_SIZE(iw, ih)]);
-  ALIGN16(uint8 obuf[I420_SIZE(ow, oh)]);
+  ALIGN16(uint8_t ibuf[I420_SIZE(iw, ih)]);
+  ALIGN16(uint8_t obuf[I420_SIZE(ow, oh)]);
 
   // Load the frame, scale it, check it.
   ASSERT_TRUE(LoadPlanarYuvTestImage("faces", iw, ih, ibuf));
@@ -206,11 +209,11 @@ TEST_F(YuvScalerTest, TestOffset16_10Copy) {
   const int iw = 640, ih = 360;
   const int ow = 640, oh = 480;
   const int offset = (480 - 360) / 2;
-  scoped_ptr<uint8[]> ibuffer(new uint8[I420_SIZE(iw, ih) + kAlignment]);
-  scoped_ptr<uint8[]> obuffer(new uint8[I420_SIZE(ow, oh) + kAlignment]);
+  scoped_ptr<uint8_t[]> ibuffer(new uint8_t[I420_SIZE(iw, ih) + kAlignment]);
+  scoped_ptr<uint8_t[]> obuffer(new uint8_t[I420_SIZE(ow, oh) + kAlignment]);
 
-  uint8 *ibuf = ALIGNP(ibuffer.get(), kAlignment);
-  uint8 *obuf = ALIGNP(obuffer.get(), kAlignment);
+  uint8_t* ibuf = ALIGNP(ibuffer.get(), kAlignment);
+  uint8_t* obuf = ALIGNP(obuffer.get(), kAlignment);
 
   // Load the frame, scale it, check it.
   ASSERT_TRUE(LoadPlanarYuvTestImage("faces", iw, ih, ibuf));

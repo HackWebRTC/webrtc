@@ -95,7 +95,7 @@ void RtpDataMediaChannel::Construct(rtc::Timing* timing) {
 
 
 RtpDataMediaChannel::~RtpDataMediaChannel() {
-  std::map<uint32, RtpClock*>::const_iterator iter;
+  std::map<uint32_t, RtpClock*>::const_iterator iter;
   for (iter = rtp_clock_by_send_ssrc_.begin();
        iter != rtp_clock_by_send_ssrc_.end();
        ++iter) {
@@ -103,10 +103,9 @@ RtpDataMediaChannel::~RtpDataMediaChannel() {
   }
 }
 
-void RtpClock::Tick(
-    double now, int* seq_num, uint32* timestamp) {
+void RtpClock::Tick(double now, int* seq_num, uint32_t* timestamp) {
   *seq_num = ++last_seq_num_;
-  *timestamp = timestamp_offset_ + static_cast<uint32>(now * clockrate_);
+  *timestamp = timestamp_offset_ + static_cast<uint32_t>(now * clockrate_);
 }
 
 const DataCodec* FindUnknownCodec(const std::vector<DataCodec>& codecs) {
@@ -188,7 +187,7 @@ bool RtpDataMediaChannel::AddSendStream(const StreamParams& stream) {
   return true;
 }
 
-bool RtpDataMediaChannel::RemoveSendStream(uint32 ssrc) {
+bool RtpDataMediaChannel::RemoveSendStream(uint32_t ssrc) {
   if (!GetStreamBySsrc(send_streams_, ssrc)) {
     return false;
   }
@@ -217,7 +216,7 @@ bool RtpDataMediaChannel::AddRecvStream(const StreamParams& stream) {
   return true;
 }
 
-bool RtpDataMediaChannel::RemoveRecvStream(uint32 ssrc) {
+bool RtpDataMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   RemoveStreamBySsrc(&recv_streams_, ssrc);
   return true;
 }

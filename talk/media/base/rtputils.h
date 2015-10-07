@@ -39,8 +39,8 @@ const size_t kMinRtcpPacketLen = 4;
 struct RtpHeader {
   int payload_type;
   int seq_num;
-  uint32 timestamp;
-  uint32 ssrc;
+  uint32_t timestamp;
+  uint32_t ssrc;
 };
 
 enum RtcpTypes {
@@ -55,14 +55,14 @@ enum RtcpTypes {
 
 bool GetRtpPayloadType(const void* data, size_t len, int* value);
 bool GetRtpSeqNum(const void* data, size_t len, int* value);
-bool GetRtpTimestamp(const void* data, size_t len, uint32* value);
-bool GetRtpSsrc(const void* data, size_t len, uint32* value);
+bool GetRtpTimestamp(const void* data, size_t len, uint32_t* value);
+bool GetRtpSsrc(const void* data, size_t len, uint32_t* value);
 bool GetRtpHeaderLen(const void* data, size_t len, size_t* value);
 bool GetRtcpType(const void* data, size_t len, int* value);
-bool GetRtcpSsrc(const void* data, size_t len, uint32* value);
+bool GetRtcpSsrc(const void* data, size_t len, uint32_t* value);
 bool GetRtpHeader(const void* data, size_t len, RtpHeader* header);
 
-bool SetRtpSsrc(void* data, size_t len, uint32 value);
+bool SetRtpSsrc(void* data, size_t len, uint32_t value);
 // Assumes version 2, no padding, no extensions, no csrcs.
 bool SetRtpHeader(void* data, size_t len, const RtpHeader& header);
 

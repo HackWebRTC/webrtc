@@ -67,9 +67,9 @@ static const cricket::AudioCodec kIsacCodec(103, "ISAC", 40000, 16000, 1, 0);
 static const cricket::VideoCodec kH264Codec(97, "H264", 640, 400, 30, 0);
 static const cricket::VideoCodec kH264SvcCodec(99, "H264-SVC", 320, 200, 15, 0);
 static const cricket::DataCodec kGoogleDataCodec(101, "google-data", 0);
-static const uint32 kSsrc1 = 0x1111;
-static const uint32 kSsrc2 = 0x2222;
-static const uint32 kSsrc3 = 0x3333;
+static const uint32_t kSsrc1 = 0x1111;
+static const uint32_t kSsrc2 = 0x2222;
+static const uint32_t kSsrc3 = 0x3333;
 static const int kAudioPts[] = {0, 8};
 static const int kVideoPts[] = {97, 99};
 
@@ -127,9 +127,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                DTLS = 0x10 };
 
   ChannelTest(bool verify_playout,
-              const uint8* rtp_data,
+              const uint8_t* rtp_data,
               int rtp_len,
-              const uint8* rtcp_data,
+              const uint8_t* rtcp_data,
               int rtcp_len)
       : verify_playout_(verify_playout),
         transport_controller1_(cricket::ICEROLE_CONTROLLING),
@@ -309,22 +309,22 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                                      static_cast<int>(rtcp_packet_.size()));
   }
   // Methods to send custom data.
-  bool SendCustomRtp1(uint32 ssrc, int sequence_number, int pl_type = -1) {
+  bool SendCustomRtp1(uint32_t ssrc, int sequence_number, int pl_type = -1) {
     std::string data(CreateRtpData(ssrc, sequence_number, pl_type));
     return media_channel1_->SendRtp(data.c_str(),
                                     static_cast<int>(data.size()));
   }
-  bool SendCustomRtp2(uint32 ssrc, int sequence_number, int pl_type = -1) {
+  bool SendCustomRtp2(uint32_t ssrc, int sequence_number, int pl_type = -1) {
     std::string data(CreateRtpData(ssrc, sequence_number, pl_type));
     return media_channel2_->SendRtp(data.c_str(),
                                     static_cast<int>(data.size()));
   }
-  bool SendCustomRtcp1(uint32 ssrc) {
+  bool SendCustomRtcp1(uint32_t ssrc) {
     std::string data(CreateRtcpData(ssrc));
     return media_channel1_->SendRtcp(data.c_str(),
                                      static_cast<int>(data.size()));
   }
-  bool SendCustomRtcp2(uint32 ssrc) {
+  bool SendCustomRtcp2(uint32_t ssrc) {
     std::string data(CreateRtcpData(ssrc));
     return media_channel2_->SendRtcp(data.c_str(),
                                      static_cast<int>(data.size()));
@@ -346,27 +346,27 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                                       static_cast<int>(rtcp_packet_.size()));
   }
   // Methods to check custom data.
-  bool CheckCustomRtp1(uint32 ssrc, int sequence_number, int pl_type = -1 ) {
+  bool CheckCustomRtp1(uint32_t ssrc, int sequence_number, int pl_type = -1) {
     std::string data(CreateRtpData(ssrc, sequence_number, pl_type));
     return media_channel1_->CheckRtp(data.c_str(),
                                      static_cast<int>(data.size()));
   }
-  bool CheckCustomRtp2(uint32 ssrc, int sequence_number, int pl_type = -1) {
+  bool CheckCustomRtp2(uint32_t ssrc, int sequence_number, int pl_type = -1) {
     std::string data(CreateRtpData(ssrc, sequence_number, pl_type));
     return media_channel2_->CheckRtp(data.c_str(),
                                      static_cast<int>(data.size()));
   }
-  bool CheckCustomRtcp1(uint32 ssrc) {
+  bool CheckCustomRtcp1(uint32_t ssrc) {
     std::string data(CreateRtcpData(ssrc));
     return media_channel1_->CheckRtcp(data.c_str(),
                                       static_cast<int>(data.size()));
   }
-  bool CheckCustomRtcp2(uint32 ssrc) {
+  bool CheckCustomRtcp2(uint32_t ssrc) {
     std::string data(CreateRtcpData(ssrc));
     return media_channel2_->CheckRtcp(data.c_str(),
                                       static_cast<int>(data.size()));
   }
-  std::string CreateRtpData(uint32 ssrc, int sequence_number, int pl_type) {
+  std::string CreateRtpData(uint32_t ssrc, int sequence_number, int pl_type) {
     std::string data(rtp_packet_);
     // Set SSRC in the rtp packet copy.
     rtc::SetBE32(const_cast<char*>(data.c_str()) + 8, ssrc);
@@ -377,7 +377,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     }
     return data;
   }
-  std::string CreateRtcpData(uint32 ssrc) {
+  std::string CreateRtcpData(uint32_t ssrc) {
     std::string data(rtcp_packet_);
     // Set SSRC in the rtcp packet copy.
     rtc::SetBE32(const_cast<char*>(data.c_str()) + 4, ssrc);
@@ -410,7 +410,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Creates a cricket::SessionDescription with one MediaContent and one stream.
   // kPcmuCodec is used as audio codec and kH264Codec is used as video codec.
-  cricket::SessionDescription* CreateSessionDescriptionWithStream(uint32 ssrc) {
+  cricket::SessionDescription* CreateSessionDescriptionWithStream(
+      uint32_t ssrc) {
      typename T::Content content;
      cricket::SessionDescription* sdesc = new cricket::SessionDescription();
      CreateContent(SECURE, kPcmuCodec, kH264Codec, &content);
@@ -466,8 +467,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     }
   }
 
-  void AddLegacyStreamInContent(uint32 ssrc, int flags,
-                        typename T::Content* content) {
+  void AddLegacyStreamInContent(uint32_t ssrc,
+                                int flags,
+                                typename T::Content* content) {
     // Base implementation.
   }
 
@@ -1450,7 +1452,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     int pl_type2 = pl_types[1];
     int flags = SSRC_MUX | RTCP;
     if (secure) flags |= SECURE;
-    uint32 expected_channels = 2U;
+    uint32_t expected_channels = 2U;
     if (rtcp_mux) {
       flags |= RTCP_MUX;
       expected_channels = 1U;
@@ -1834,9 +1836,11 @@ bool ChannelTest<VoiceTraits>::CodecMatches(const cricket::AudioCodec& c1,
       c1.bitrate == c2.bitrate && c1.channels == c2.channels;
 }
 
-template<>
+template <>
 void ChannelTest<VoiceTraits>::AddLegacyStreamInContent(
-    uint32 ssrc, int flags, cricket::AudioContentDescription* audio) {
+    uint32_t ssrc,
+    int flags,
+    cricket::AudioContentDescription* audio) {
   audio->AddLegacyStream(ssrc);
 }
 
@@ -1904,9 +1908,11 @@ bool ChannelTest<VideoTraits>::CodecMatches(const cricket::VideoCodec& c1,
       c1.framerate == c2.framerate;
 }
 
-template<>
+template <>
 void ChannelTest<VideoTraits>::AddLegacyStreamInContent(
-    uint32 ssrc, int flags, cricket::VideoContentDescription* video) {
+    uint32_t ssrc,
+    int flags,
+    cricket::VideoContentDescription* video) {
   video->AddLegacyStream(ssrc);
 }
 
@@ -2651,9 +2657,11 @@ bool ChannelTest<DataTraits>::CodecMatches(const cricket::DataCodec& c1,
   return c1.name == c2.name;
 }
 
-template<>
+template <>
 void ChannelTest<DataTraits>::AddLegacyStreamInContent(
-    uint32 ssrc, int flags, cricket::DataContentDescription* data) {
+    uint32_t ssrc,
+    int flags,
+    cricket::DataContentDescription* data) {
   data->AddLegacyStream(ssrc);
 }
 

@@ -59,7 +59,7 @@ int ShakeDelay() {
 }  // namespace
 
 namespace cricket {
-const uint32 DISABLE_ALL_PHASES =
+const uint32_t DISABLE_ALL_PHASES =
     PORTALLOCATOR_DISABLE_UDP | PORTALLOCATOR_DISABLE_TCP |
     PORTALLOCATOR_DISABLE_STUN | PORTALLOCATOR_DISABLE_RELAY;
 
@@ -157,7 +157,7 @@ BasicPortAllocatorSession::~BasicPortAllocatorSession() {
   if (network_thread_ != NULL)
     network_thread_->Clear(this);
 
-  for (uint32 i = 0; i < sequences_.size(); ++i) {
+  for (uint32_t i = 0; i < sequences_.size(); ++i) {
     // AllocationSequence should clear it's map entry for turn ports before
     // ports are destroyed.
     sequences_[i]->Clear();
@@ -167,10 +167,10 @@ BasicPortAllocatorSession::~BasicPortAllocatorSession() {
   for (it = ports_.begin(); it != ports_.end(); it++)
     delete it->port();
 
-  for (uint32 i = 0; i < configs_.size(); ++i)
+  for (uint32_t i = 0; i < configs_.size(); ++i)
     delete configs_[i];
 
-  for (uint32 i = 0; i < sequences_.size(); ++i)
+  for (uint32_t i = 0; i < sequences_.size(); ++i)
     delete sequences_[i];
 }
 
@@ -198,7 +198,7 @@ void BasicPortAllocatorSession::StopGettingPorts() {
 
 void BasicPortAllocatorSession::ClearGettingPorts() {
   network_thread_->Clear(this, MSG_ALLOCATE);
-  for (uint32 i = 0; i < sequences_.size(); ++i)
+  for (uint32_t i = 0; i < sequences_.size(); ++i)
     sequences_[i]->Stop();
 }
 
@@ -335,12 +335,12 @@ void BasicPortAllocatorSession::DoAllocate() {
     LOG(LS_WARNING) << "Machine has no networks; no ports will be allocated";
     done_signal_needed = true;
   } else {
-    for (uint32 i = 0; i < networks.size(); ++i) {
+    for (uint32_t i = 0; i < networks.size(); ++i) {
       PortConfiguration* config = NULL;
       if (configs_.size() > 0)
         config = configs_.back();
 
-      uint32 sequence_flags = flags();
+      uint32_t sequence_flags = flags();
       if ((sequence_flags & DISABLE_ALL_PHASES) == DISABLE_ALL_PHASES) {
         // If all the ports are disabled we should just fire the allocation
         // done event and return.
@@ -406,9 +406,12 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
 }
 
 void BasicPortAllocatorSession::DisableEquivalentPhases(
-    rtc::Network* network, PortConfiguration* config, uint32* flags) {
-  for (uint32 i = 0; i < sequences_.size() &&
-      (*flags & DISABLE_ALL_PHASES) != DISABLE_ALL_PHASES; ++i) {
+    rtc::Network* network,
+    PortConfiguration* config,
+    uint32_t* flags) {
+  for (uint32_t i = 0; i < sequences_.size() &&
+                           (*flags & DISABLE_ALL_PHASES) != DISABLE_ALL_PHASES;
+       ++i) {
     sequences_[i]->DisableEquivalentPhases(network, config, flags);
   }
 }
@@ -429,7 +432,7 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
       PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
 
   // Push down the candidate_filter to individual port.
-  uint32 candidate_filter = allocator_->candidate_filter();
+  uint32_t candidate_filter = allocator_->candidate_filter();
 
   // When adapter enumeration is disabled, disable CF_HOST at port level so
   // local address is not leaked by stunport in the candidate's related address.
@@ -572,7 +575,7 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
 }
 
 bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
-  uint32 filter = allocator_->candidate_filter();
+  uint32_t filter = allocator_->candidate_filter();
 
   // When binding to any address, before sending packets out, the getsockname
   // returns all 0s, but after sending packets, it'll be the NIC used to
@@ -714,7 +717,7 @@ BasicPortAllocatorSession::PortData* BasicPortAllocatorSession::FindPort(
 AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
                                        rtc::Network* network,
                                        PortConfiguration* config,
-                                       uint32 flags)
+                                       uint32_t flags)
     : session_(session),
       network_(network),
       ip_(network->GetBestIP()),
@@ -757,7 +760,7 @@ AllocationSequence::~AllocationSequence() {
 }
 
 void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
-    PortConfiguration* config, uint32* flags) {
+    PortConfiguration* config, uint32_t* flags) {
   if (network_removed_) {
     // If the network of this allocation sequence has ever gone away,
     // it won't be equivalent to the new network.

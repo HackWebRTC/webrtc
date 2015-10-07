@@ -42,7 +42,7 @@ namespace cricket {
 // processing, it doesn't have the correct ssrc. Since currently only Tx
 // Video processing is supported, this is ok. When we switch over to trigger
 // from capturer, this should be fixed and this const removed.
-const uint32 kDummyVideoSsrc = 0xFFFFFFFF;
+const uint32_t kDummyVideoSsrc = 0xFFFFFFFF;
 
 // Minimum interval is 10k fps.
 #define FPS_TO_INTERVAL(fps) \
@@ -55,9 +55,9 @@ const uint32 kDummyVideoSsrc = 0xFFFFFFFF;
 // Convert four characters to a FourCC code.
 // Needs to be a macro otherwise the OS X compiler complains when the kFormat*
 // constants are used in a switch.
-#define FOURCC(a, b, c, d) ( \
-    (static_cast<uint32>(a)) | (static_cast<uint32>(b) << 8) | \
-    (static_cast<uint32>(c) << 16) | (static_cast<uint32>(d) << 24))
+#define FOURCC(a, b, c, d)                                        \
+  ((static_cast<uint32_t>(a)) | (static_cast<uint32_t>(b) << 8) | \
+   (static_cast<uint32_t>(c) << 16) | (static_cast<uint32_t>(d) << 24))
 // Some pages discussing FourCC codes:
 //   http://www.fourcc.org/yuv.php
 //   http://v4l2spec.bytesex.org/spec/book1.htm
@@ -137,13 +137,13 @@ enum FourCC {
 // We move this out of the enum because using it in many places caused
 // the compiler to get grumpy, presumably since the above enum is
 // backed by an int.
-static const uint32 FOURCC_ANY  = 0xFFFFFFFF;
+static const uint32_t FOURCC_ANY = 0xFFFFFFFF;
 
 // Converts fourcc aliases into canonical ones.
-uint32 CanonicalFourCC(uint32 fourcc);
+uint32_t CanonicalFourCC(uint32_t fourcc);
 
 // Get FourCC code as a string.
-inline std::string GetFourccName(uint32 fourcc) {
+inline std::string GetFourccName(uint32_t fourcc) {
   std::string name;
   name.push_back(static_cast<char>(fourcc & 0xFF));
   name.push_back(static_cast<char>((fourcc >> 8) & 0xFF));
@@ -185,19 +185,19 @@ void ComputeScaleToSquarePixels(int in_width, int in_height,
 struct VideoFormatPod {
   int width;  // Number of pixels.
   int height;  // Number of pixels.
-  int64 interval;  // Nanoseconds.
-  uint32 fourcc;  // Color space. FOURCC_ANY means that any color space is OK.
+  int64_t interval;  // Nanoseconds.
+  uint32_t fourcc;  // Color space. FOURCC_ANY means that any color space is OK.
 };
 
 struct VideoFormat : VideoFormatPod {
-  static const int64 kMinimumInterval =
+  static const int64_t kMinimumInterval =
       rtc::kNumNanosecsPerSec / 10000;  // 10k fps.
 
   VideoFormat() {
     Construct(0, 0, 0, 0);
   }
 
-  VideoFormat(int w, int h, int64 interval_ns, uint32 cc) {
+  VideoFormat(int w, int h, int64_t interval_ns, uint32_t cc) {
     Construct(w, h, interval_ns, cc);
   }
 
@@ -205,25 +205,25 @@ struct VideoFormat : VideoFormatPod {
     Construct(format.width, format.height, format.interval, format.fourcc);
   }
 
-  void Construct(int w, int h, int64 interval_ns, uint32 cc) {
+  void Construct(int w, int h, int64_t interval_ns, uint32_t cc) {
     width = w;
     height = h;
     interval = interval_ns;
     fourcc = cc;
   }
 
-  static int64 FpsToInterval(int fps) {
+  static int64_t FpsToInterval(int fps) {
     return fps ? rtc::kNumNanosecsPerSec / fps : kMinimumInterval;
   }
 
-  static int IntervalToFps(int64 interval) {
+  static int IntervalToFps(int64_t interval) {
     if (!interval) {
       return 0;
     }
     return static_cast<int>(rtc::kNumNanosecsPerSec / interval);
   }
 
-  static float IntervalToFpsFloat(int64 interval) {
+  static float IntervalToFpsFloat(int64_t interval) {
     if (!interval) {
       return 0.f;
     }

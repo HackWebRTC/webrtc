@@ -90,7 +90,7 @@ class StunRequest : public rtc::MessageHandler {
   const StunMessage* msg() const;
 
   // Time elapsed since last send (in ms)
-  uint32 Elapsed() const;
+  uint32_t Elapsed() const;
 
  protected:
   int count_;
@@ -118,7 +118,7 @@ class StunRequest : public rtc::MessageHandler {
 
   StunRequestManager* manager_;
   StunMessage* msg_;
-  uint32 tstamp_;
+  uint32_t tstamp_;
 
   friend class StunRequestManager;
 };

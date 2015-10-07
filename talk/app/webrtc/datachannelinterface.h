@@ -92,7 +92,7 @@ class DataChannelObserver {
   //  A data buffer was successfully received.
   virtual void OnMessage(const DataBuffer& buffer) = 0;
   // The data channel's buffered_amount has changed.
-  virtual void OnBufferedAmountChange(uint64 previous_amount){};
+  virtual void OnBufferedAmountChange(uint64_t previous_amount){};
 
  protected:
   virtual ~DataChannelObserver() {}
@@ -135,8 +135,8 @@ class DataChannelInterface : public rtc::RefCountInterface {
   // implemented these APIs. They should all just return the values the
   // DataChannel was created with.
   virtual bool ordered() const { return false; }
-  virtual uint16 maxRetransmitTime() const { return 0; }
-  virtual uint16 maxRetransmits() const { return 0; }
+  virtual uint16_t maxRetransmitTime() const { return 0; }
+  virtual uint16_t maxRetransmits() const { return 0; }
   virtual std::string protocol() const { return std::string(); }
   virtual bool negotiated() const { return false; }
 
@@ -145,7 +145,7 @@ class DataChannelInterface : public rtc::RefCountInterface {
   // The buffered_amount returns the number of bytes of application data
   // (UTF-8 text and binary data) that have been queued using SendBuffer but
   // have not yet been transmitted to the network.
-  virtual uint64 buffered_amount() const = 0;
+  virtual uint64_t buffered_amount() const = 0;
   virtual void Close() = 0;
   // Sends |data| to the remote peer.
   virtual bool Send(const DataBuffer& buffer) = 0;

@@ -165,7 +165,7 @@ static const unsigned char kStunMessageWithPaddedByteStringAttribute[] = {
   0x61, 0x62, 0x63, 0xcc   // abc
 };
 
-// Message with an Unknown Attributes (uint16 list) attribute.
+// Message with an Unknown Attributes (uint16_t list) attribute.
 static const unsigned char kStunMessageWithUInt16ListAttribute[] = {
   0x00, 0x01, 0x00, 0x0c,
   0x21, 0x12, 0xa4, 0x42,

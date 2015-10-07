@@ -94,10 +94,10 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   // Key Extractor interface
   bool ExportKeyingMaterial(const std::string& label,
-                            const uint8* context,
+                            const uint8_t* context,
                             size_t context_len,
                             bool use_context,
-                            uint8* result,
+                            uint8_t* result,
                             size_t result_len) override;
 
   // DTLS-SRTP interface

@@ -106,7 +106,7 @@ class StunBindingRequest : public StunRequest {
   UDPPort* port_;
   bool keep_alive_;
   const rtc::SocketAddress server_addr_;
-  uint32 start_time_;
+  uint32_t start_time_;
 };
 
 UDPPort::AddressResolver::AddressResolver(
@@ -182,14 +182,21 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  rtc::PacketSocketFactory* factory,
                  rtc::Network* network,
                  const rtc::IPAddress& ip,
-                 uint16 min_port,
-                 uint16 max_port,
+                 uint16_t min_port,
+                 uint16_t max_port,
                  const std::string& username,
                  const std::string& password,
                  const std::string& origin,
                  bool emit_localhost_for_anyaddress)
-    : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
-           username, password),
+    : Port(thread,
+           LOCAL_PORT_TYPE,
+           factory,
+           network,
+           ip,
+           min_port,
+           max_port,
+           username,
+           password),
       requests_(thread),
       socket_(NULL),
       error_(0),

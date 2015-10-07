@@ -42,7 +42,7 @@ class TransportChannelImpl : public TransportChannel {
   // For ICE channels.
   virtual IceRole GetIceRole() const = 0;
   virtual void SetIceRole(IceRole role) = 0;
-  virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
+  virtual void SetIceTiebreaker(uint64_t tiebreaker) = 0;
   // TODO(pthatcher): Remove this once it's no longer called in
   // remoting/protocol/libjingle_transport_factory.cc
   virtual void SetIceProtocolType(IceProtocolType type) {}
@@ -90,8 +90,8 @@ class TransportChannelImpl : public TransportChannel {
 
   // Set DTLS Remote fingerprint. Must be after local identity set.
   virtual bool SetRemoteFingerprint(const std::string& digest_alg,
-    const uint8* digest,
-    size_t digest_len) = 0;
+                                    const uint8_t* digest,
+                                    size_t digest_len) = 0;
 
   virtual bool SetSslRole(rtc::SSLRole role) = 0;
 

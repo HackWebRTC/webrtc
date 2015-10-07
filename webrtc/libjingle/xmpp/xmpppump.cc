@@ -49,8 +49,8 @@ void XmppPump::WakeTasks() {
   rtc::Thread::Current()->Post(this);
 }
 
-int64 XmppPump::CurrentTime() {
-  return (int64)rtc::Time();
+int64_t XmppPump::CurrentTime() {
+  return (int64_t)rtc::Time();
 }
 
 void XmppPump::OnMessage(rtc::Message *pmsg) {

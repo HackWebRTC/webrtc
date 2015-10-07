@@ -49,7 +49,7 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer {
   bool IsScreencast() const override {
     return false;
   }
-  bool GetPreferredFourccs(std::vector<uint32>* fourccs) override {
+  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override {
     fourccs->push_back(cricket::FOURCC_NV12);
     return true;
   }

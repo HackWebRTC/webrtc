@@ -30,17 +30,16 @@ namespace {
 // pings fail to have a response.
 inline bool TooManyFailures(
     const std::vector<cricket::Connection::SentPing>& pings_since_last_response,
-    uint32 maximum_failures,
-    uint32 rtt_estimate,
-    uint32 now) {
-
+    uint32_t maximum_failures,
+    uint32_t rtt_estimate,
+    uint32_t now) {
   // If we haven't sent that many pings, then we can't have failed that many.
   if (pings_since_last_response.size() < maximum_failures)
     return false;
 
   // Check if the window in which we would expect a response to the ping has
   // already elapsed.
-  uint32 expected_response_time =
+  uint32_t expected_response_time =
       pings_since_last_response[maximum_failures - 1].sent_time + rtt_estimate;
   return now > expected_response_time;
 }
@@ -48,9 +47,8 @@ inline bool TooManyFailures(
 // Determines whether we have gone too long without seeing any response.
 inline bool TooLongWithoutResponse(
     const std::vector<cricket::Connection::SentPing>& pings_since_last_response,
-    uint32 maximum_time,
-    uint32 now) {
-
+    uint32_t maximum_time,
+    uint32_t now) {
   if (pings_since_last_response.size() == 0)
     return false;
 
@@ -60,15 +58,15 @@ inline bool TooLongWithoutResponse(
 
 // We will restrict RTT estimates (when used for determining state) to be
 // within a reasonable range.
-const uint32 MINIMUM_RTT = 100;   // 0.1 seconds
-const uint32 MAXIMUM_RTT = 3000;  // 3 seconds
+const uint32_t MINIMUM_RTT = 100;   // 0.1 seconds
+const uint32_t MAXIMUM_RTT = 3000;  // 3 seconds
 
 // When we don't have any RTT data, we have to pick something reasonable.  We
 // use a large value just in case the connection is really slow.
-const uint32 DEFAULT_RTT = MAXIMUM_RTT;
+const uint32_t DEFAULT_RTT = MAXIMUM_RTT;
 
 // Computes our estimate of the RTT given the current estimate.
-inline uint32 ConservativeRTTEstimate(uint32 rtt) {
+inline uint32_t ConservativeRTTEstimate(uint32_t rtt) {
   return std::max(MINIMUM_RTT, std::min(MAXIMUM_RTT, 2 * rtt));
 }
 
@@ -128,7 +126,7 @@ static std::string ComputeFoundation(
     const rtc::SocketAddress& base_address) {
   std::ostringstream ost;
   ost << type << base_address.ipaddr().ToString() << protocol;
-  return rtc::ToString<uint32>(rtc::ComputeCrc32(ost.str()));
+  return rtc::ToString<uint32_t>(rtc::ComputeCrc32(ost.str()));
 }
 
 Port::Port(rtc::Thread* thread,
@@ -162,8 +160,8 @@ Port::Port(rtc::Thread* thread,
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
            const rtc::IPAddress& ip,
-           uint16 min_port,
-           uint16 max_port,
+           uint16_t min_port,
+           uint16_t max_port,
            const std::string& username_fragment,
            const std::string& password)
     : thread_(thread),
@@ -212,7 +210,7 @@ Port::~Port() {
     ++iter;
   }
 
-  for (uint32 i = 0; i < list.size(); i++)
+  for (uint32_t i = 0; i < list.size(); i++)
     delete list[i];
 }
 
@@ -231,8 +229,8 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                       const std::string& relay_protocol,
                       const std::string& tcptype,
                       const std::string& type,
-                      uint32 type_preference,
-                      uint32 relay_preference,
+                      uint32_t type_preference,
+                      uint32_t relay_preference,
                       bool final) {
   if (protocol == TCP_PROTOCOL_NAME && type == LOCAL_PORT_TYPE) {
     ASSERT(!tcptype.empty());
@@ -465,7 +463,7 @@ bool Port::MaybeIceRoleConflict(
   // Validate ICE_CONTROLLING or ICE_CONTROLLED attributes.
   bool ret = true;
   IceRole remote_ice_role = ICEROLE_UNKNOWN;
-  uint64 remote_tiebreaker = 0;
+  uint64_t remote_tiebreaker = 0;
   const StunUInt64Attribute* stun_attr =
       stun_msg->GetUInt64(STUN_ATTR_ICE_CONTROLLING);
   if (stun_attr) {
@@ -697,8 +695,8 @@ class ConnectionRequest : public StunRequest {
     if (connection_->port()->send_retransmit_count_attribute()) {
       request->AddAttribute(new StunUInt32Attribute(
           STUN_ATTR_RETRANSMIT_COUNT,
-          static_cast<uint32>(
-              connection_->pings_since_last_response_.size() - 1)));
+          static_cast<uint32_t>(connection_->pings_since_last_response_.size() -
+                                1)));
     }
 
     // Adding ICE_CONTROLLED or ICE_CONTROLLING attribute based on the role.
@@ -727,7 +725,8 @@ class ConnectionRequest : public StunRequest {
     // priority = (2^24)*(type preference) +
     //           (2^8)*(local preference) +
     //           (2^0)*(256 - component ID)
-    uint32 prflx_priority = ICE_TYPE_PREFERENCE_PRFLX << 24 |
+    uint32_t prflx_priority =
+        ICE_TYPE_PREFERENCE_PRFLX << 24 |
         (connection_->local_candidate().priority() & 0x00FFFFFF);
     request->AddAttribute(
         new StunUInt32Attribute(STUN_ATTR_PRIORITY, prflx_priority));
@@ -811,8 +810,8 @@ const Candidate& Connection::local_candidate() const {
   return port_->Candidates()[local_candidate_index_];
 }
 
-uint64 Connection::priority() const {
-  uint64 priority = 0;
+uint64_t Connection::priority() const {
+  uint64_t priority = 0;
   // RFC 5245 - 5.7.2.  Computing Pair Priority and Ordering Pairs
   // Let G be the priority for the candidate provided by the controlling
   // agent.  Let D be the priority for the candidate provided by the
@@ -820,8 +819,8 @@ uint64 Connection::priority() const {
   // pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G>D?1:0)
   IceRole role = port_->GetIceRole();
   if (role != ICEROLE_UNKNOWN) {
-    uint32 g = 0;
-    uint32 d = 0;
+    uint32_t g = 0;
+    uint32_t d = 0;
     if (role == ICEROLE_CONTROLLING) {
       g = local_candidate().priority();
       d = remote_candidate_.priority();
@@ -1020,8 +1019,8 @@ void Connection::PrintPingsSinceLastResponse(std::string* s, size_t max) {
   *s = oss.str();
 }
 
-void Connection::UpdateState(uint32 now) {
-  uint32 rtt = ConservativeRTTEstimate(rtt_);
+void Connection::UpdateState(uint32_t now) {
+  uint32_t rtt = ConservativeRTTEstimate(rtt_);
 
   if (LOG_CHECK_LEVEL(LS_VERBOSE)) {
     std::string pings;
@@ -1052,7 +1051,7 @@ void Connection::UpdateState(uint32 now) {
       TooLongWithoutResponse(pings_since_last_response_,
                              CONNECTION_WRITE_CONNECT_TIMEOUT,
                              now)) {
-    uint32 max_pings = CONNECTION_WRITE_CONNECT_FAILURES;
+    uint32_t max_pings = CONNECTION_WRITE_CONNECT_FAILURES;
     LOG_J(LS_INFO, this) << "Unwritable after " << max_pings
                          << " ping failures and "
                          << now - pings_since_last_response_[0].sent_time
@@ -1077,7 +1076,7 @@ void Connection::UpdateState(uint32 now) {
   }
 
   // Check the receiving state.
-  uint32 last_recv_time = last_received();
+  uint32_t last_recv_time = last_received();
   bool receiving = now <= last_recv_time + receiving_timeout_;
   set_receiving(receiving);
   if (dead(now)) {
@@ -1085,7 +1084,7 @@ void Connection::UpdateState(uint32 now) {
   }
 }
 
-void Connection::Ping(uint32 now) {
+void Connection::Ping(uint32_t now) {
   last_ping_sent_ = now;
   ConnectionRequest *req = new ConnectionRequest(this);
   pings_since_last_response_.push_back(SentPing(req->id(), now));
@@ -1113,7 +1112,7 @@ void Connection::ReceivedPingResponse() {
   last_ping_response_received_ = rtc::Time();
 }
 
-bool Connection::dead(uint32 now) const {
+bool Connection::dead(uint32_t now) const {
   if (now < (time_created_ms_ + MIN_CONNECTION_LIFETIME)) {
     // A connection that hasn't passed its minimum lifetime is still alive.
     // We do this to prevent connections from being pruned too quickly
@@ -1198,7 +1197,7 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
   // connection.
   rtc::LoggingSeverity sev = !writable() ? rtc::LS_INFO : rtc::LS_VERBOSE;
 
-  uint32 rtt = request->Elapsed();
+  uint32_t rtt = request->Elapsed();
 
   ReceivedPingResponse();
 
@@ -1299,7 +1298,7 @@ void Connection::OnMessage(rtc::Message *pmsg) {
   delete this;
 }
 
-uint32 Connection::last_received() {
+uint32_t Connection::last_received() {
   return std::max(last_data_received_,
              std::max(last_ping_received_, last_ping_response_received_));
 }
@@ -1366,7 +1365,7 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
                     << "stun response message";
     return;
   }
-  const uint32 priority = priority_attr->value();
+  const uint32_t priority = priority_attr->value();
   std::string id = rtc::CreateRandomString(8);
 
   Candidate new_local_candidate;

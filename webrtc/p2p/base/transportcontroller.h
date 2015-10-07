@@ -214,7 +214,7 @@ class TransportController : public sigslot::has_slots<>,
   IceRole ice_role_ = ICEROLE_CONTROLLING;
   // Flag which will be set to true after the first role switch
   bool ice_role_switch_ = false;
-  uint64 ice_tiebreaker_ = rtc::CreateRandomId64();
+  uint64_t ice_tiebreaker_ = rtc::CreateRandomId64();
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
 };
 

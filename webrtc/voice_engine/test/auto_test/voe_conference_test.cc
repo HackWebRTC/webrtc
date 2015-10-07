@@ -72,7 +72,7 @@ TEST(VoeConferenceTest, RttAndStartNtpTime) {
   const int kStatsRequestIntervalMs = 1000;
   const int kStatsBufferSize = 3;
 
-  uint32 deadline = rtc::TimeAfter(kMaxRunTimeMs);
+  uint32_t deadline = rtc::TimeAfter(kMaxRunTimeMs);
   // Run the following up to |kMaxRunTimeMs| milliseconds.
   int successive_pass = 0;
   webrtc::CallStatistics stats_1;

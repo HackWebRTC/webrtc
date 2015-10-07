@@ -231,7 +231,7 @@ struct SsrcInfo {
         // Create random string (which will be used as track label later)?
         msid_appdata(rtc::CreateRandomString(8)) {
   }
-  uint32 ssrc_id;
+  uint32_t ssrc_id;
   std::string cname;
   std::string msid_identifier;
   std::string msid_appdata;
@@ -525,8 +525,10 @@ static bool HasAttribute(const std::string& line,
   return (line.compare(kLinePrefixLength, attribute.size(), attribute) == 0);
 }
 
-static bool AddSsrcLine(uint32 ssrc_id, const std::string& attribute,
-                        const std::string& value, std::string* message) {
+static bool AddSsrcLine(uint32_t ssrc_id,
+                        const std::string& attribute,
+                        const std::string& value,
+                        std::string* message) {
   // RFC 5576
   // a=ssrc:<ssrc-id> <attribute>:<value>
   std::ostringstream os;
@@ -1004,7 +1006,7 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
     return false;
   }
   const std::string& transport = fields[2];
-  uint32 priority = 0;
+  uint32_t priority = 0;
   if (!GetValueFromString(first_line, fields[3], &priority, error)) {
     return false;
   }
@@ -1078,7 +1080,7 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   // kept for backwards compatibility.
   std::string username;
   std::string password;
-  uint32 generation = 0;
+  uint32_t generation = 0;
   for (size_t i = current_position; i + 1 < fields.size(); ++i) {
     // RFC 5245
     // *(SP extension-att-name SP extension-att-value)
@@ -1441,16 +1443,16 @@ void BuildRtpContentAttributes(
       std::ostringstream os;
       InitAttrLine(kAttributeSsrcGroup, &os);
       os << kSdpDelimiterColon << track->ssrc_groups[i].semantics;
-      std::vector<uint32>::const_iterator ssrc =
+      std::vector<uint32_t>::const_iterator ssrc =
           track->ssrc_groups[i].ssrcs.begin();
       for (; ssrc != track->ssrc_groups[i].ssrcs.end(); ++ssrc) {
-        os << kSdpDelimiterSpace << rtc::ToString<uint32>(*ssrc);
+        os << kSdpDelimiterSpace << rtc::ToString<uint32_t>(*ssrc);
       }
       AddLine(os.str(), message);
     }
     // Build the ssrc lines for each ssrc.
     for (size_t i = 0; i < track->ssrcs.size(); ++i) {
-      uint32 ssrc = track->ssrcs[i];
+      uint32_t ssrc = track->ssrcs[i];
       // RFC 5576
       // a=ssrc:<ssrc-id> cname:<value>
       AddSsrcLine(ssrc, kSsrcAttributeCname,
@@ -2634,7 +2636,7 @@ bool ParseContent(const std::string& message,
     if (ssrc_group->ssrcs.empty()) {
       continue;
     }
-    uint32 ssrc = ssrc_group->ssrcs.front();
+    uint32_t ssrc = ssrc_group->ssrcs.front();
     for (StreamParamsVec::iterator track = tracks.begin();
          track != tracks.end(); ++track) {
       if (track->has_ssrc(ssrc)) {
@@ -2706,7 +2708,7 @@ bool ParseSsrcAttribute(const std::string& line, SsrcInfoVec* ssrc_infos,
   if (!GetValue(field1, kAttributeSsrc, &ssrc_id_s, error)) {
     return false;
   }
-  uint32 ssrc_id = 0;
+  uint32_t ssrc_id = 0;
   if (!GetValueFromString(line, ssrc_id_s, &ssrc_id, error)) {
     return false;
   }
@@ -2783,9 +2785,9 @@ bool ParseSsrcGroupAttribute(const std::string& line,
   if (!GetValue(fields[0], kAttributeSsrcGroup, &semantics, error)) {
     return false;
   }
-  std::vector<uint32> ssrcs;
+  std::vector<uint32_t> ssrcs;
   for (size_t i = 1; i < fields.size(); ++i) {
-    uint32 ssrc = 0;
+    uint32_t ssrc = 0;
     if (!GetValueFromString(line, fields[i], &ssrc, error)) {
       return false;
     }

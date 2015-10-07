@@ -53,10 +53,10 @@ bool MobileDeviceManager::GetVideoCaptureDevices(std::vector<Device>* devs) {
   if (!info)
     return false;
 
-  uint32 num_cams = info->NumberOfDevices();
+  uint32_t num_cams = info->NumberOfDevices();
   char id[256];
   char name[256];
-  for (uint32 i = 0; i < num_cams; ++i) {
+  for (uint32_t i = 0; i < num_cams; ++i) {
     if (info->GetDeviceName(i, name, arraysize(name), id, arraysize(id)))
       continue;
     devs->push_back(Device(name, id));

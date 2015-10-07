@@ -32,7 +32,7 @@
 
 namespace cricket {
 
-static const uint32 kSsrc01 = 0x01;
+static const uint32_t kSsrc01 = 0x01;
 
 BundleFilter::BundleFilter() {
 }
@@ -60,7 +60,7 @@ bool BundleFilter::DemuxPacket(const char* data, size_t len, bool rtcp) {
 
   // Rtcp packets using ssrc filter.
   int pl_type = 0;
-  uint32 ssrc = 0;
+  uint32_t ssrc = 0;
   if (!GetRtcpType(data, len, &pl_type)) return false;
   if (pl_type == kRtcpTypeSDES) {
     // SDES packet parsing not supported.
@@ -92,7 +92,7 @@ bool BundleFilter::AddStream(const StreamParams& stream) {
   return true;
 }
 
-bool BundleFilter::RemoveStream(uint32 ssrc) {
+bool BundleFilter::RemoveStream(uint32_t ssrc) {
   return RemoveStreamBySsrc(&streams_, ssrc);
 }
 
@@ -100,7 +100,7 @@ bool BundleFilter::HasStreams() const {
   return !streams_.empty();
 }
 
-bool BundleFilter::FindStream(uint32 ssrc) const {
+bool BundleFilter::FindStream(uint32_t ssrc) const {
   return ssrc == 0 ? false : GetStreamBySsrc(streams_, ssrc) != nullptr;
 }
 

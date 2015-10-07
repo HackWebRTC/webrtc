@@ -384,17 +384,16 @@ bool OpenSSLStreamAdapter::GetSslCipherSuite(int* cipher) {
 
 // Key Extractor interface
 bool OpenSSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
-                                                const uint8* context,
+                                                const uint8_t* context,
                                                 size_t context_len,
                                                 bool use_context,
-                                                uint8* result,
+                                                uint8_t* result,
                                                 size_t result_len) {
 #ifdef HAVE_DTLS_SRTP
   int i;
 
-  i = SSL_export_keying_material(ssl_, result, result_len,
-                                 label.c_str(), label.length(),
-                                 const_cast<uint8 *>(context),
+  i = SSL_export_keying_material(ssl_, result, result_len, label.c_str(),
+                                 label.length(), const_cast<uint8_t*>(context),
                                  context_len, use_context);
 
   if (i != 1)

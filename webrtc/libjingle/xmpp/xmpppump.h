@@ -44,7 +44,7 @@ public:
 
   void WakeTasks();
 
-  int64 CurrentTime();
+  int64_t CurrentTime();
 
   void OnMessage(rtc::Message *pmsg);
 

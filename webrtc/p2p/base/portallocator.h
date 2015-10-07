@@ -55,12 +55,12 @@ enum {
   PORTALLOCATOR_DISABLE_UDP_RELAY = 0x1000,
 };
 
-const uint32 kDefaultPortAllocatorFlags = 0;
+const uint32_t kDefaultPortAllocatorFlags = 0;
 
-const uint32 kDefaultStepDelay = 1000;  // 1 sec step delay.
+const uint32_t kDefaultStepDelay = 1000;  // 1 sec step delay.
 // As per RFC 5245 Appendix B.1, STUN transactions need to be paced at certain
 // internal. Less than 20ms is not acceptable. We choose 50ms as our default.
-const uint32 kMinimumStepDelay = 50;
+const uint32_t kMinimumStepDelay = 50;
 
 // CF = CANDIDATE FILTER
 enum {
@@ -78,13 +78,13 @@ class PortAllocatorSession : public sigslot::has_slots<> {
                        int component,
                        const std::string& ice_ufrag,
                        const std::string& ice_pwd,
-                       uint32 flags);
+                       uint32_t flags);
 
   // Subclasses should clean up any ports created.
   virtual ~PortAllocatorSession() {}
 
-  uint32 flags() const { return flags_; }
-  void set_flags(uint32 flags) { flags_ = flags; }
+  uint32_t flags() const { return flags_; }
+  void set_flags(uint32_t flags) { flags_ = flags; }
   std::string content_name() const { return content_name_; }
   int component() const { return component_; }
 
@@ -101,8 +101,8 @@ class PortAllocatorSession : public sigslot::has_slots<> {
                    const std::vector<Candidate>&> SignalCandidatesReady;
   sigslot::signal1<PortAllocatorSession*> SignalCandidatesAllocationDone;
 
-  virtual uint32 generation() { return generation_; }
-  virtual void set_generation(uint32 generation) { generation_ = generation; }
+  virtual uint32_t generation() { return generation_; }
+  virtual void set_generation(uint32_t generation) { generation_ = generation; }
   sigslot::signal1<PortAllocatorSession*> SignalDestroyed;
 
   const std::string& ice_ufrag() const { return ice_ufrag_; }
@@ -118,8 +118,8 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   int component_;
 
  private:
-  uint32 flags_;
-  uint32 generation_;
+  uint32_t flags_;
+  uint32_t generation_;
   std::string ice_ufrag_;
   std::string ice_pwd_;
 };
@@ -144,8 +144,8 @@ class PortAllocator : public sigslot::has_slots<> {
       const std::string& ice_ufrag,
       const std::string& ice_pwd);
 
-  uint32 flags() const { return flags_; }
-  void set_flags(uint32 flags) { flags_ = flags; }
+  uint32_t flags() const { return flags_; }
+  void set_flags(uint32_t flags) { flags_ = flags; }
 
   const std::string& user_agent() const { return agent_; }
   const rtc::ProxyInfo& proxy() const { return proxy_; }
@@ -167,18 +167,16 @@ class PortAllocator : public sigslot::has_slots<> {
     return true;
   }
 
-  uint32 step_delay() const { return step_delay_; }
-  void set_step_delay(uint32 delay) {
-    step_delay_ = delay;
-  }
+  uint32_t step_delay() const { return step_delay_; }
+  void set_step_delay(uint32_t delay) { step_delay_ = delay; }
 
   bool allow_tcp_listen() const { return allow_tcp_listen_; }
   void set_allow_tcp_listen(bool allow_tcp_listen) {
     allow_tcp_listen_ = allow_tcp_listen;
   }
 
-  uint32 candidate_filter() { return candidate_filter_; }
-  bool set_candidate_filter(uint32 filter) {
+  uint32_t candidate_filter() { return candidate_filter_; }
+  bool set_candidate_filter(uint32_t filter) {
     // TODO(mallinath) - Do transition check?
     candidate_filter_ = filter;
     return true;
@@ -195,14 +193,14 @@ class PortAllocator : public sigslot::has_slots<> {
       const std::string& ice_ufrag,
       const std::string& ice_pwd) = 0;
 
-  uint32 flags_;
+  uint32_t flags_;
   std::string agent_;
   rtc::ProxyInfo proxy_;
   int min_port_;
   int max_port_;
-  uint32 step_delay_;
+  uint32_t step_delay_;
   bool allow_tcp_listen_;
-  uint32 candidate_filter_;
+  uint32_t candidate_filter_;
   std::string origin_;
 };
 

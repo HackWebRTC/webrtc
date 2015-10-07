@@ -78,7 +78,7 @@ const char kNotFound[] = "NOT FOUND";
 // Constant names for track identification.
 const char kLocalTrackId[] = "local_track_id";
 const char kRemoteTrackId[] = "remote_track_id";
-const uint32 kSsrcOfTrack = 1234;
+const uint32_t kSsrcOfTrack = 1234;
 
 class MockWebRtcSession : public webrtc::WebRtcSession {
  public:
@@ -91,8 +91,8 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   MOCK_CONST_METHOD0(mediastream_signaling, const MediaStreamSignaling*());
   // Libjingle uses "local" for a outgoing track, and "remote" for a incoming
   // track.
-  MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32, std::string*));
-  MOCK_METHOD2(GetRemoteTrackIdBySsrc, bool(uint32, std::string*));
+  MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32_t, std::string*));
+  MOCK_METHOD2(GetRemoteTrackIdBySsrc, bool(uint32_t, std::string*));
   MOCK_METHOD1(GetTransportStats, bool(cricket::SessionStats*));
   MOCK_METHOD2(GetLocalCertificate,
                bool(const std::string& transport_name,
@@ -301,7 +301,7 @@ void VerifyVoiceReceiverInfoReport(
   EXPECT_EQ(rtc::ToString<int>(info.audio_level), value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameBytesReceived, &value_in_report));
-  EXPECT_EQ(rtc::ToString<int64>(info.bytes_rcvd), value_in_report);
+  EXPECT_EQ(rtc::ToString<int64_t>(info.bytes_rcvd), value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameJitterReceived, &value_in_report));
   EXPECT_EQ(rtc::ToString<int>(info.jitter_ms), value_in_report);
@@ -367,7 +367,7 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
   EXPECT_EQ(sinfo.codec_name, value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameBytesSent, &value_in_report));
-  EXPECT_EQ(rtc::ToString<int64>(sinfo.bytes_sent), value_in_report);
+  EXPECT_EQ(rtc::ToString<int64_t>(sinfo.bytes_sent), value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNamePacketsSent, &value_in_report));
   EXPECT_EQ(rtc::ToString<int>(sinfo.packets_sent), value_in_report);
@@ -610,7 +610,7 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_EQ(audio_track->id(), track_id);
     std::string ssrc_id = ExtractSsrcStatsValue(
         *reports, StatsReport::kStatsValueNameSsrc);
-    EXPECT_EQ(rtc::ToString<uint32>(kSsrcOfTrack), ssrc_id);
+    EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
 
     // Verifies the values in the track report.
     if (voice_sender_info) {
@@ -633,7 +633,7 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_EQ(audio_track->id(), track_id);
     ssrc_id = ExtractSsrcStatsValue(track_reports,
                                     StatsReport::kStatsValueNameSsrc);
-    EXPECT_EQ(rtc::ToString<uint32>(kSsrcOfTrack), ssrc_id);
+    EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
     if (voice_sender_info)
       VerifyVoiceSenderInfoReport(track_report, *voice_sender_info);
     if (voice_receiver_info)
@@ -775,9 +775,8 @@ TEST_F(StatsCollectorTest, ExtractDataInfo) {
   EXPECT_EQ(label, ExtractStatsValue(StatsReport::kStatsReportTypeDataChannel,
                                      reports,
                                      StatsReport::kStatsValueNameLabel));
-  EXPECT_EQ(rtc::ToString<int64>(id),
-            ExtractStatsValue(StatsReport::kStatsReportTypeDataChannel,
-                              reports,
+  EXPECT_EQ(rtc::ToString<int64_t>(id),
+            ExtractStatsValue(StatsReport::kStatsReportTypeDataChannel, reports,
                               StatsReport::kStatsValueNameDataChannelId));
   EXPECT_EQ(state, ExtractStatsValue(StatsReport::kStatsReportTypeDataChannel,
                                      reports,
@@ -810,7 +809,7 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
   // The number of bytes must be larger than 0xFFFFFFFF for this test.
-  const int64 kBytesSent = 12345678901234LL;
+  const int64_t kBytesSent = 12345678901234LL;
   const std::string kBytesSentString("12345678901234");
 
   AddOutgoingVideoTrackStats();
@@ -858,7 +857,7 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   cricket::VideoMediaInfo stats_read;
   // Set up an SSRC just to test that we get both kinds of stats back: SSRC and
   // BWE.
-  const int64 kBytesSent = 12345678901234LL;
+  const int64_t kBytesSent = 12345678901234LL;
   const std::string kBytesSentString("12345678901234");
 
   AddOutgoingVideoTrackStats();
@@ -973,7 +972,7 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   // Constructs an ssrc stats update.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
-  const int64 kBytesSent = 12345678901234LL;
+  const int64_t kBytesSent = 12345678901234LL;
 
   // Construct a stats value to read.
   video_sender_info.add_ssrc(1234);
@@ -1009,7 +1008,7 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 
   std::string ssrc_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameSsrc);
-  EXPECT_EQ(rtc::ToString<uint32>(kSsrcOfTrack), ssrc_id);
+  EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
 
   std::string track_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameTrackId);
@@ -1037,7 +1036,7 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   // Constructs an ssrc stats update.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
-  const int64 kBytesSent = 12345678901234LL;
+  const int64_t kBytesSent = 12345678901234LL;
 
   // Construct a stats value to read.
   video_sender_info.add_ssrc(1234);
@@ -1179,7 +1178,7 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
   // Constructs an ssrc stats update.
   cricket::VideoReceiverInfo video_receiver_info;
   cricket::VideoMediaInfo stats_read;
-  const int64 kNumOfPacketsConcealed = 54321;
+  const int64_t kNumOfPacketsConcealed = 54321;
 
   // Construct a stats value to read.
   video_receiver_info.add_ssrc(1234);
@@ -1205,7 +1204,7 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
 
   std::string ssrc_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameSsrc);
-  EXPECT_EQ(rtc::ToString<uint32>(kSsrcOfTrack), ssrc_id);
+  EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
 
   std::string track_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameTrackId);
@@ -1227,7 +1226,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   rtc::SocketAddress local_address(local_ip, local_port);
   rtc::SocketAddress remote_address(remote_ip, remote_port);
   rtc::AdapterType network_type = rtc::ADAPTER_TYPE_ETHERNET;
-  uint32 priority = 1000;
+  uint32_t priority = 1000;
 
   cricket::Candidate c;
   ASSERT(c.id().length() > 0);
@@ -1590,7 +1589,7 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
   EXPECT_EQ(kLocalTrackId, track_id);
   std::string ssrc_id = ExtractSsrcStatsValue(
       reports, StatsReport::kStatsValueNameSsrc);
-  EXPECT_EQ(rtc::ToString<uint32>(kSsrcOfTrack), ssrc_id);
+  EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
 
   // Verifies the values in the track report, no value will be changed by the
   // AudioTrackInterface::GetSignalValue() and

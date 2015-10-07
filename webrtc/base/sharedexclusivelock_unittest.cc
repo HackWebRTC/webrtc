@@ -20,8 +20,8 @@
 
 namespace rtc {
 
-static const uint32 kMsgRead = 0;
-static const uint32 kMsgWrite = 0;
+static const uint32_t kMsgRead = 0;
+static const uint32_t kMsgWrite = 0;
 static const int kNoWaitThresholdInMs = 10;
 static const int kWaitThresholdInMs = 80;
 static const int kProcessTimeInMs = 100;
@@ -69,7 +69,7 @@ class ReadTask : public SharedExclusiveTask {
     TypedMessageData<int*>* message_data =
         static_cast<TypedMessageData<int*>*>(message->pdata);
 
-    uint32 start_time = Time();
+    uint32_t start_time = Time();
     {
       SharedScope ss(shared_exclusive_lock_);
       waiting_time_in_ms_ = TimeDiff(Time(), start_time);
@@ -102,7 +102,7 @@ class WriteTask : public SharedExclusiveTask {
     TypedMessageData<int>* message_data =
         static_cast<TypedMessageData<int>*>(message->pdata);
 
-    uint32 start_time = Time();
+    uint32_t start_time = Time();
     {
       ExclusiveScope es(shared_exclusive_lock_);
       waiting_time_in_ms_ = TimeDiff(Time(), start_time);

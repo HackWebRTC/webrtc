@@ -28,7 +28,7 @@ struct PacketTimeUpdateParams {
   int rtp_sendtime_extension_id;    // extension header id present in packet.
   std::vector<char> srtp_auth_key;  // Authentication key.
   int srtp_auth_tag_len;            // Authentication tag length.
-  int64 srtp_packet_index;          // Required for Rtp Packet authentication.
+  int64_t srtp_packet_index;        // Required for Rtp Packet authentication.
 };
 
 // This structure holds meta information for the packet which is about to send
@@ -45,19 +45,19 @@ struct PacketOptions {
 // received by socket.
 struct PacketTime {
   PacketTime() : timestamp(-1), not_before(-1) {}
-  PacketTime(int64 timestamp, int64 not_before)
-      : timestamp(timestamp), not_before(not_before) {
-  }
+  PacketTime(int64_t timestamp, int64_t not_before)
+      : timestamp(timestamp), not_before(not_before) {}
 
-  int64 timestamp;  // Receive time after socket delivers the data.
-  int64 not_before; // Earliest possible time the data could have arrived,
-                    // indicating the potential error in the |timestamp| value,
-                    // in case the system, is busy. For example, the time of
-                    // the last select() call.
-                    // If unknown, this value will be set to zero.
+  int64_t timestamp;   // Receive time after socket delivers the data.
+
+  // Earliest possible time the data could have arrived, indicating the
+  // potential error in the |timestamp| value, in case the system, is busy. For
+  // example, the time of the last select() call.
+  // If unknown, this value will be set to zero.
+  int64_t not_before;
 };
 
-inline PacketTime CreatePacketTime(int64 not_before) {
+inline PacketTime CreatePacketTime(int64_t not_before) {
   return PacketTime(TimeMicros(), not_before);
 }
 

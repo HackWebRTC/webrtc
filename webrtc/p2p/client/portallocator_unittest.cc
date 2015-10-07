@@ -249,7 +249,7 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   // also the related address for TURN candidate if it is expected. Otherwise,
   // it should be ignore.
   void CheckDisableAdapterEnumeration(
-      uint32 total_ports,
+      uint32_t total_ports,
       const rtc::IPAddress& host_candidate_addr,
       const rtc::IPAddress& stun_candidate_addr,
       const rtc::IPAddress& relay_candidate_udp_transport_addr,
@@ -264,7 +264,7 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     session_->StartGettingPorts();
     EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
 
-    uint32 total_candidates = 0;
+    uint32_t total_candidates = 0;
     if (!host_candidate_addr.IsNil()) {
       EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
                    cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",

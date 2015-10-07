@@ -18,8 +18,8 @@ namespace buzz {
 
 PingTask::PingTask(buzz::XmppTaskParentInterface* parent,
                    rtc::MessageQueue* message_queue,
-                   uint32 ping_period_millis,
-                   uint32 ping_timeout_millis)
+                   uint32_t ping_period_millis,
+                   uint32_t ping_timeout_millis)
     : buzz::XmppTask(parent, buzz::XmppEngine::HL_SINGLE),
       message_queue_(message_queue),
       ping_period_millis_(ping_period_millis),
@@ -56,7 +56,7 @@ int PingTask::ProcessStart() {
     ping_response_deadline_ = 0;
   }
 
-  uint32 now = rtc::Time();
+  uint32_t now = rtc::Time();
 
   // If the ping timed out, signal.
   if (ping_response_deadline_ != 0 && now >= ping_response_deadline_) {

@@ -207,8 +207,8 @@ bool ConferenceTransport::DispatchPackets() {
       packet_queue_.pop_front();
     }
 
-    int32 elapsed_time_ms = rtc::TimeSince(packet.send_time_ms_);
-    int32 sleep_ms = rtt_ms_ / 2 - elapsed_time_ms;
+    int32_t elapsed_time_ms = rtc::TimeSince(packet.send_time_ms_);
+    int32_t sleep_ms = rtt_ms_ / 2 - elapsed_time_ms;
     if (sleep_ms > 0) {
       // Every packet should be delayed by half of RTT.
       webrtc::SleepMs(sleep_ms);

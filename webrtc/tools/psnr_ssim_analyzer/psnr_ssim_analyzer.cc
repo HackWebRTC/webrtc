@@ -34,8 +34,8 @@ void CompareFiles(const char* reference_file_name, const char* test_file_name,
   int size = webrtc::test::GetI420FrameSize(width, height);
 
   // Allocate buffers for test and reference frames.
-  uint8* test_frame = new uint8[size];
-  uint8* ref_frame = new uint8[size];
+  uint8_t* test_frame = new uint8_t[size];
+  uint8_t* ref_frame = new uint8_t[size];
 
   bool read_result = true;
   for(int frame_counter = 0; frame_counter < MAX_NUM_FRAMES_PER_FILE;

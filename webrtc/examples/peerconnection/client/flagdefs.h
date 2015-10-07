@@ -14,7 +14,7 @@
 
 #include "webrtc/base/flags.h"
 
-extern const uint16 kDefaultServerPort;  // From defaults.[h|cc]
+extern const uint16_t kDefaultServerPort;  // From defaults.[h|cc]
 
 // Define flags for the peerconnect_client testing tool, in a separate
 // header file so that they can be shared across the different main.cc's

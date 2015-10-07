@@ -74,7 +74,7 @@ buzz::XmppReturnStatus PingXmppClient::SendStanza(
 }
 
 TEST_F(PingTaskTest, TestSuccess) {
-  uint32 ping_period_millis = 100;
+  uint32_t ping_period_millis = 100;
   buzz::PingTask* task = new buzz::PingTask(xmpp_client,
       rtc::Thread::Current(),
       ping_period_millis, ping_period_millis / 10);
@@ -89,7 +89,7 @@ TEST_F(PingTaskTest, TestSuccess) {
 
 TEST_F(PingTaskTest, TestTimeout) {
   respond_to_pings = false;
-  uint32 ping_timeout_millis = 200;
+  uint32_t ping_timeout_millis = 200;
   buzz::PingTask* task = new buzz::PingTask(xmpp_client,
       rtc::Thread::Current(),
       ping_timeout_millis * 10, ping_timeout_millis);

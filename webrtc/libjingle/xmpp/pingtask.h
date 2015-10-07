@@ -28,8 +28,9 @@ namespace buzz {
 class PingTask : public buzz::XmppTask, private rtc::MessageHandler {
  public:
   PingTask(buzz::XmppTaskParentInterface* parent,
-      rtc::MessageQueue* message_queue, uint32 ping_period_millis,
-      uint32 ping_timeout_millis);
+           rtc::MessageQueue* message_queue,
+           uint32_t ping_period_millis,
+           uint32_t ping_timeout_millis);
 
   virtual bool HandleStanza(const buzz::XmlElement* stanza);
   virtual int ProcessStart();
@@ -43,10 +44,10 @@ class PingTask : public buzz::XmppTask, private rtc::MessageHandler {
   virtual void OnMessage(rtc::Message* msg);
 
   rtc::MessageQueue* message_queue_;
-  uint32 ping_period_millis_;
-  uint32 ping_timeout_millis_;
-  uint32 next_ping_time_;
-  uint32 ping_response_deadline_; // 0 if the response has been received
+  uint32_t ping_period_millis_;
+  uint32_t ping_timeout_millis_;
+  uint32_t next_ping_time_;
+  uint32_t ping_response_deadline_;  // 0 if the response has been received
 };
 
 } // namespace buzz

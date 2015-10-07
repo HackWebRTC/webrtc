@@ -51,7 +51,7 @@ jmethodID GetMethodID(JNIEnv* jni, jclass c, const std::string& name,
                       const char* signature);
 
 // Return a |jlong| that will automatically convert back to |ptr| when assigned
-// to a |uint64|
+// to a |uint64_t|
 jlong jlongFromPointer(void* ptr);
 
 // Given a (UTF-16) jstring return a new UTF-8 native string.

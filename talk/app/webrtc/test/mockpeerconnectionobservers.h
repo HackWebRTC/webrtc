@@ -98,7 +98,7 @@ class MockDataChannelObserver : public webrtc::DataChannelObserver {
     channel_->UnregisterObserver();
   }
 
-  void OnBufferedAmountChange(uint64 previous_amount) override {}
+  void OnBufferedAmountChange(uint64_t previous_amount) override {}
 
   void OnStateChange() override { state_ = channel_->state(); }
   void OnMessage(const DataBuffer& buffer) override {

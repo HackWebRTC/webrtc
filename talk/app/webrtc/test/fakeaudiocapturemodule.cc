@@ -40,7 +40,7 @@ static const int kHighSampleValue = 10000;
 
 // Same value as src/modules/audio_device/main/source/audio_device_config.h in
 // https://code.google.com/p/webrtc/
-static const uint32 kAdmMaxIdleTimeProcess = 1000;
+static const uint32_t kAdmMaxIdleTimeProcess = 1000;
 
 // Constants here are derived by running VoE using a real ADM.
 // The constants correspond to 10ms of mono audio at 44kHz.
@@ -90,12 +90,12 @@ int FakeAudioCaptureModule::frames_received() const {
 }
 
 int64_t FakeAudioCaptureModule::TimeUntilNextProcess() {
-  const uint32 current_time = rtc::Time();
+  const uint32_t current_time = rtc::Time();
   if (current_time < last_process_time_ms_) {
     // TODO: wraparound could be handled more gracefully.
     return 0;
   }
-  const uint32 elapsed_time = current_time - last_process_time_ms_;
+  const uint32_t elapsed_time = current_time - last_process_time_ms_;
   if (kAdmMaxIdleTimeProcess < elapsed_time) {
     return 0;
   }
@@ -684,9 +684,9 @@ void FakeAudioCaptureModule::ProcessFrameP() {
   }
 
   next_frame_time_ += kTimePerFrameMs;
-  const uint32 current_time = rtc::Time();
-  const uint32 wait_time = (next_frame_time_ > current_time) ?
-      next_frame_time_ - current_time : 0;
+  const uint32_t current_time = rtc::Time();
+  const uint32_t wait_time =
+      (next_frame_time_ > current_time) ? next_frame_time_ - current_time : 0;
   process_thread_->PostDelayed(wait_time, this, MSG_RUN_PROCESS);
 }
 

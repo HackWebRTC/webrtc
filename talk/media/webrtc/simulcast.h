@@ -74,7 +74,7 @@ SimulcastBitrateMode GetSimulcastBitrateMode(
     const VideoOptions& options);
 
 // Get the ssrcs of the SIM group from the stream params.
-void GetSimulcastSsrcs(const StreamParams& sp, std::vector<uint32>* ssrcs);
+void GetSimulcastSsrcs(const StreamParams& sp, std::vector<uint32_t>* ssrcs);
 
 // Get simulcast settings.
 std::vector<webrtc::VideoStream> GetSimulcastConfig(

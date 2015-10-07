@@ -137,11 +137,11 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
     return connected_channels_.find(data_channel) != connected_channels_.end();
   }
 
-  bool IsSendStreamAdded(uint32 stream) const {
+  bool IsSendStreamAdded(uint32_t stream) const {
     return send_ssrcs_.find(stream) != send_ssrcs_.end();
   }
 
-  bool IsRecvStreamAdded(uint32 stream) const {
+  bool IsRecvStreamAdded(uint32_t stream) const {
     return recv_ssrcs_.find(stream) != recv_ssrcs_.end();
   }
 
@@ -152,6 +152,6 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   bool ready_to_send_;
   bool transport_error_;
   std::set<webrtc::DataChannel*> connected_channels_;
-  std::set<uint32> send_ssrcs_;
-  std::set<uint32> recv_ssrcs_;
+  std::set<uint32_t> send_ssrcs_;
+  std::set<uint32_t> recv_ssrcs_;
 };

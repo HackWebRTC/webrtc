@@ -55,9 +55,9 @@ YuvFrameGenerator::YuvFrameGenerator(int width, int height,
   int size = width_ * height_;
   int qsize = size / 4;
   frame_data_size_ = size + 2 * qsize;
-  y_data_ = new uint8[size];
-  u_data_ = new uint8[qsize];
-  v_data_ = new uint8[qsize];
+  y_data_ = new uint8_t[size];
+  u_data_ = new uint8_t[qsize];
+  v_data_ = new uint8_t[qsize];
   if (enable_barcode) {
     ASSERT(width_ >= kBarcodeBackgroundWidth);
     ASSERT(height_>= kBarcodeBackgroundHeight);
@@ -75,8 +75,8 @@ YuvFrameGenerator::~YuvFrameGenerator() {
   delete v_data_;
 }
 
-void YuvFrameGenerator::GenerateNextFrame(uint8* frame_buffer,
-                                          int32 barcode_value) {
+void YuvFrameGenerator::GenerateNextFrame(uint8_t* frame_buffer,
+                                          int32_t barcode_value) {
   int size = width_ * height_;
   int qsize = size / 4;
   memset(y_data_, 0, size);
@@ -104,7 +104,7 @@ void YuvFrameGenerator::GenerateNextFrame(uint8* frame_buffer,
   frame_index_ = (frame_index_ + 1) & 0x0000FFFF;
 }
 
-void YuvFrameGenerator::DrawLandscape(uint8 *p, int w, int h) {
+void YuvFrameGenerator::DrawLandscape(uint8_t* p, int w, int h) {
   int x, y;
   for (y = 0; y < h; y++) {
     for (x = 0; x < w; x++) {
@@ -117,7 +117,7 @@ void YuvFrameGenerator::DrawLandscape(uint8 *p, int w, int h) {
   }
 }
 
-void YuvFrameGenerator::DrawGradientX(uint8 *p, int w, int h) {
+void YuvFrameGenerator::DrawGradientX(uint8_t* p, int w, int h) {
   int x, y;
   for (y = 0; y < h; y++) {
     for (x = 0; x < w; x++) {
@@ -126,7 +126,7 @@ void YuvFrameGenerator::DrawGradientX(uint8 *p, int w, int h) {
   }
 }
 
-void YuvFrameGenerator::DrawGradientY(uint8 *p, int w, int h) {
+void YuvFrameGenerator::DrawGradientY(uint8_t* p, int w, int h) {
   int x, y;
   for (y = 0; y < h; y++) {
     for (x = 0; x < w; x++) {
@@ -135,7 +135,7 @@ void YuvFrameGenerator::DrawGradientY(uint8 *p, int w, int h) {
   }
 }
 
-void YuvFrameGenerator::DrawMovingLineX(uint8 *p, int w, int h, int n) {
+void YuvFrameGenerator::DrawMovingLineX(uint8_t* p, int w, int h, int n) {
   int x, y;
   x = n % (w * 2);
   if (x >= w) x = w + w - x - 1;
@@ -144,7 +144,7 @@ void YuvFrameGenerator::DrawMovingLineX(uint8 *p, int w, int h, int n) {
   }
 }
 
-void YuvFrameGenerator::DrawMovingLineY(uint8 *p, int w, int h, int n) {
+void YuvFrameGenerator::DrawMovingLineY(uint8_t* p, int w, int h, int n) {
   int x, y;
   y = n % (h * 2);
   if (y >= h) y = h + h - y - 1;
@@ -153,7 +153,7 @@ void YuvFrameGenerator::DrawMovingLineY(uint8 *p, int w, int h, int n) {
   }
 }
 
-void YuvFrameGenerator::DrawBouncingCube(uint8 *p, int w, int h, int n) {
+void YuvFrameGenerator::DrawBouncingCube(uint8_t* p, int w, int h, int n) {
   int x, y, pw, ph, px, py;
   pw = w / 16;
   ph = h / 16;
@@ -181,7 +181,7 @@ void YuvFrameGenerator::GetBarcodeBounds(int* top, int* left,
   *height = kBarcodeBackgroundHeight;
 }
 
-static void ComputeBarcodeDigits(uint32 value, std::stringstream* result) {
+static void ComputeBarcodeDigits(uint32_t value, std::stringstream* result) {
   // Serialize |value| as 7-char string, padded with 0's to the left.
   result->width(kBarcodeMaxEncodableDigits);
   result->fill('0');
@@ -193,10 +193,10 @@ static void ComputeBarcodeDigits(uint32 value, std::stringstream* result) {
   for (int pos = 1; pos <= kBarcodeMaxEncodableDigits; pos++) {
     char next_char;
     result->get(next_char);
-    uint8 digit = next_char - '0';
+    uint8_t digit = next_char - '0';
     sum += digit * (pos % 2 ? 3 : 1);
   }
-  uint8 check_digit = sum % 10;
+  uint8_t check_digit = sum % 10;
   if (check_digit != 0) {
     check_digit = 10 - check_digit;
   }
@@ -205,7 +205,7 @@ static void ComputeBarcodeDigits(uint32 value, std::stringstream* result) {
   result->seekg(0);
 }
 
-void YuvFrameGenerator::DrawBarcode(uint32 value) {
+void YuvFrameGenerator::DrawBarcode(uint32_t value) {
   std::stringstream value_str_stream;
   ComputeBarcodeDigits(value, &value_str_stream);
 
@@ -234,7 +234,7 @@ void YuvFrameGenerator::DrawBarcode(uint32 value) {
     if (pos++ == 4) {
       x = DrawMiddleGuardBars(x, y, kBarcodeGuardBarHeight);
     }
-    uint8 digit = next_char - '0';
+    uint8_t digit = next_char - '0';
     x = DrawEanEncodedDigit(digit, x, y, kBarcodeNormalBarHeight, pos > 4);
   }
   x = DrawSideGuardBars(x, y, kBarcodeGuardBarHeight);
@@ -259,15 +259,15 @@ int YuvFrameGenerator::DrawSideGuardBars(int x, int y, int height) {
 // which bars are black (1) and which are blank (0). These are for the L-code
 // only. R-code values are bitwise negation of these. Reference:
 // http://en.wikipedia.org/wiki/European_Article_Number#Binary_encoding_of_data_digits_into_EAN-13_barcode // NOLINT
-const uint8 kEanEncodings[] = { 13, 25, 19, 61, 35, 49, 47, 59, 55, 11 };
+const uint8_t kEanEncodings[] = {13, 25, 19, 61, 35, 49, 47, 59, 55, 11};
 
 int YuvFrameGenerator::DrawEanEncodedDigit(int digit, int x, int y,
                                            int height, bool flip) {
-  uint8 ean_encoding = kEanEncodings[digit];
+  uint8_t ean_encoding = kEanEncodings[digit];
   if (flip) {
     ean_encoding = ~ean_encoding;
   }
-  uint8 mask = 0x40;
+  uint8_t mask = 0x40;
   for (int i = 6; i >= 0; i--, mask >>= 1) {
     if (ean_encoding & mask) {
       DrawBlockRectangle(y_data_, x, y, kUnitBarSize, height, width_, 0);
@@ -277,8 +277,13 @@ int YuvFrameGenerator::DrawEanEncodedDigit(int digit, int x, int y,
   return x;
 }
 
-void YuvFrameGenerator::DrawBlockRectangle(uint8* p,
-    int x_start, int y_start, int width, int height, int pitch, uint8 value) {
+void YuvFrameGenerator::DrawBlockRectangle(uint8_t* p,
+                                           int x_start,
+                                           int y_start,
+                                           int width,
+                                           int height,
+                                           int pitch,
+                                           uint8_t value) {
   for (int x = x_start; x < x_start + width; x++) {
     for (int y = y_start; y < y_start + height; y++) {
       p[x + y * pitch] = value;

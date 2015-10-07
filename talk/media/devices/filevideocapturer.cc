@@ -60,7 +60,7 @@ bool VideoRecorder::RecordFrame(const CapturedFrame& frame) {
     return false;
   }
 
-  uint32 size = 0;
+  uint32_t size = 0;
   if (!frame.GetDataSize(&size)) {
     LOG(LS_ERROR) << "Unable to calculate the data size of the frame";
     return false;
@@ -158,7 +158,7 @@ class FileVideoCapturer::FileReadThread
 /////////////////////////////////////////////////////////////////////
 // Implementation of class FileVideoCapturer
 /////////////////////////////////////////////////////////////////////
-static const int64 kNumNanoSecsPerMilliSec = 1000000;
+static const int64_t kNumNanoSecsPerMilliSec = 1000000;
 const char* FileVideoCapturer::kVideoFileDevicePrefix = "video-file:";
 
 FileVideoCapturer::FileVideoCapturer()
@@ -267,7 +267,7 @@ void FileVideoCapturer::Stop() {
   SetCaptureFormat(NULL);
 }
 
-bool FileVideoCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
+bool FileVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
   if (!fourccs) {
     return false;
   }
@@ -296,15 +296,15 @@ rtc::StreamResult FileVideoCapturer::ReadFrameHeader(
       return rtc::SR_EOS;
     }
     rtc::ByteBuffer buffer(header, CapturedFrame::kFrameHeaderSize);
-    buffer.ReadUInt32(reinterpret_cast<uint32*>(&frame->width));
-    buffer.ReadUInt32(reinterpret_cast<uint32*>(&frame->height));
+    buffer.ReadUInt32(reinterpret_cast<uint32_t*>(&frame->width));
+    buffer.ReadUInt32(reinterpret_cast<uint32_t*>(&frame->height));
     buffer.ReadUInt32(&frame->fourcc);
     buffer.ReadUInt32(&frame->pixel_width);
     buffer.ReadUInt32(&frame->pixel_height);
     // Elapsed time is deprecated.
-    uint64 dummy_elapsed_time;
+    uint64_t dummy_elapsed_time;
     buffer.ReadUInt64(&dummy_elapsed_time);
-    buffer.ReadUInt64(reinterpret_cast<uint64*>(&frame->time_stamp));
+    buffer.ReadUInt64(reinterpret_cast<uint64_t*>(&frame->time_stamp));
     buffer.ReadUInt32(&frame->data_size);
   }
 
@@ -313,12 +313,12 @@ rtc::StreamResult FileVideoCapturer::ReadFrameHeader(
 
 // Executed in the context of FileReadThread.
 bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
-  uint32 start_read_time_ms = rtc::Time();
+  uint32_t start_read_time_ms = rtc::Time();
 
   // 1. Signal the previously read frame to downstream.
   if (!first_frame) {
-    captured_frame_.time_stamp = kNumNanoSecsPerMilliSec *
-        static_cast<int64>(start_read_time_ms);
+    captured_frame_.time_stamp =
+        kNumNanoSecsPerMilliSec * static_cast<int64_t>(start_read_time_ms);
     SignalFrameCaptured(this, &captured_frame_);
   }
 
@@ -367,10 +367,10 @@ bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
   // control the rate; otherwise, we use the timestamp in the file to control
   // the rate.
   if (!first_frame && !ignore_framerate_) {
-    int64 interval_ns =
-        GetCaptureFormat()->interval > VideoFormat::kMinimumInterval ?
-        GetCaptureFormat()->interval :
-        captured_frame_.time_stamp - last_frame_timestamp_ns_;
+    int64_t interval_ns =
+        GetCaptureFormat()->interval > VideoFormat::kMinimumInterval
+            ? GetCaptureFormat()->interval
+            : captured_frame_.time_stamp - last_frame_timestamp_ns_;
     int interval_ms = static_cast<int>(interval_ns / kNumNanoSecsPerMilliSec);
     interval_ms -= rtc::Time() - start_read_time_ms;
     if (interval_ms > 0) {

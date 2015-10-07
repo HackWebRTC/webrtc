@@ -120,7 +120,7 @@ class MainWnd : public MainWindow {
     virtual void RenderFrame(const cricket::VideoFrame* frame);
 
     const BITMAPINFO& bmi() const { return bmi_; }
-    const uint8* image() const { return image_.get(); }
+    const uint8_t* image() const { return image_.get(); }
 
    protected:
     enum {
@@ -130,7 +130,7 @@ class MainWnd : public MainWindow {
 
     HWND wnd_;
     BITMAPINFO bmi_;
-    rtc::scoped_ptr<uint8[]> image_;
+    rtc::scoped_ptr<uint8_t[]> image_;
     CRITICAL_SECTION buffer_lock_;
     rtc::scoped_refptr<webrtc::VideoTrackInterface> rendered_track_;
   };

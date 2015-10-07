@@ -67,11 +67,11 @@ class StatsCollector {
   void AddStream(MediaStreamInterface* stream);
 
   // Adds a local audio track that is used for getting some voice statistics.
-  void AddLocalAudioTrack(AudioTrackInterface* audio_track, uint32 ssrc);
+  void AddLocalAudioTrack(AudioTrackInterface* audio_track, uint32_t ssrc);
 
   // Removes a local audio tracks that is used for getting some voice
   // statistics.
-  void RemoveLocalAudioTrack(AudioTrackInterface* audio_track, uint32 ssrc);
+  void RemoveLocalAudioTrack(AudioTrackInterface* audio_track, uint32_t ssrc);
 
   // Gather statistics from the session and store them for future use.
   void UpdateStats(PeerConnectionInterface::StatsOutputLevel level);
@@ -89,8 +89,10 @@ class StatsCollector {
 
   // Prepare a local or remote SSRC report for the given ssrc. Used internally
   // in the ExtractStatsFromList template.
-  StatsReport* PrepareReport(bool local, uint32 ssrc,
-      const StatsReport::Id& transport_id, StatsReport::Direction direction);
+  StatsReport* PrepareReport(bool local,
+                             uint32_t ssrc,
+                             const StatsReport::Id& transport_id,
+                             StatsReport::Direction direction);
 
   // Method used by the unittest to force a update of stats since UpdateStats()
   // that occur less than kMinGatherStatsPeriod number of ms apart will be
@@ -139,7 +141,8 @@ class StatsCollector {
 
   // Helper method to get the id for the track identified by ssrc.
   // |direction| tells if the track is for sending or receiving.
-  bool GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
+  bool GetTrackIdBySsrc(uint32_t ssrc,
+                        std::string* track_id,
                         StatsReport::Direction direction);
 
   // Helper method to update the timestamp of track records.
@@ -155,7 +158,7 @@ class StatsCollector {
 
   // TODO(tommi): We appear to be holding on to raw pointers to reference
   // counted objects?  We should be using scoped_refptr here.
-  typedef std::vector<std::pair<AudioTrackInterface*, uint32> >
+  typedef std::vector<std::pair<AudioTrackInterface*, uint32_t> >
       LocalAudioTrackVector;
   LocalAudioTrackVector local_audio_tracks_;
 };

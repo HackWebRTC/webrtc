@@ -43,7 +43,7 @@ class RTCDataChannelObserver : public DataChannelObserver {
     [_channel.delegate channelDidChangeState:_channel];
   }
 
-  void OnBufferedAmountChange(uint64 previousAmount) override {
+  void OnBufferedAmountChange(uint64_t previousAmount) override {
     RTCDataChannel* channel = _channel;
     id<RTCDataChannelDelegate> delegate = channel.delegate;
     if ([delegate

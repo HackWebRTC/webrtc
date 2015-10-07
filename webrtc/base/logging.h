@@ -131,7 +131,7 @@ class LogSink {
 
 class LogMessage {
  public:
-  static const uint32 WARN_SLOW_LOGS_DELAY = 50;  // ms
+  static const uint32_t WARN_SLOW_LOGS_DELAY = 50;  // ms
 
   LogMessage(const char* file, int line, LoggingSeverity sev,
              LogErrorContext err_ctx = ERRCTX_NONE, int err = 0,
@@ -152,11 +152,11 @@ class LogMessage {
   // If this is not called externally, the LogMessage ctor also calls it, in
   // which case the logging start time will be the time of the first LogMessage
   // instance is created.
-  static uint32 LogStartTime();
+  static uint32_t LogStartTime();
 
   // Returns the wall clock equivalent of |LogStartTime|, in seconds from the
   // epoch.
-  static uint32 WallClockStartTime();
+  static uint32_t WallClockStartTime();
 
   //  LogThreads: Display the thread identifier of the current thread
   static void LogThreads(bool on = true);
@@ -218,7 +218,7 @@ class LogMessage {
 
   // If time it takes to write to stream is more than this, log one
   // additional warning about it.
-  uint32 warn_slow_logs_delay_;
+  uint32_t warn_slow_logs_delay_;
 
   // Global lock for the logging subsystem
   static CriticalSection crit_;

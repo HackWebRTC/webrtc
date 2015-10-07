@@ -265,9 +265,9 @@ static void UpdateSessionDescriptionSecurePolicy(cricket::CryptoType type,
   }
 }
 
-static bool GetAudioSsrcByTrackId(
-    const SessionDescription* session_description,
-    const std::string& track_id, uint32 *ssrc) {
+static bool GetAudioSsrcByTrackId(const SessionDescription* session_description,
+                                  const std::string& track_id,
+                                  uint32_t* ssrc) {
   const cricket::ContentInfo* audio_info =
       cricket::GetFirstAudioContent(session_description);
   if (!audio_info) {
@@ -289,7 +289,8 @@ static bool GetAudioSsrcByTrackId(
 }
 
 static bool GetTrackIdBySsrc(const SessionDescription* session_description,
-                             uint32 ssrc, std::string* track_id) {
+                             uint32_t ssrc,
+                             std::string* track_id) {
   ASSERT(track_id != NULL);
 
   const cricket::ContentInfo* audio_info =
@@ -461,7 +462,7 @@ static void SetOptionFromOptionalConstraint(
   }
 }
 
-uint32 ConvertIceTransportTypeToCandidateFilter(
+uint32_t ConvertIceTransportTypeToCandidateFilter(
     PeerConnectionInterface::IceTransportsType type) {
   switch (type) {
     case PeerConnectionInterface::kNone:
@@ -1212,13 +1213,15 @@ bool WebRtcSession::SetIceTransports(
         ConvertIceTransportTypeToCandidateFilter(type));
 }
 
-bool WebRtcSession::GetLocalTrackIdBySsrc(uint32 ssrc, std::string* track_id) {
+bool WebRtcSession::GetLocalTrackIdBySsrc(uint32_t ssrc,
+                                          std::string* track_id) {
   if (!base_local_description())
     return false;
   return webrtc::GetTrackIdBySsrc(base_local_description(), ssrc, track_id);
 }
 
-bool WebRtcSession::GetRemoteTrackIdBySsrc(uint32 ssrc, std::string* track_id) {
+bool WebRtcSession::GetRemoteTrackIdBySsrc(uint32_t ssrc,
+                                           std::string* track_id) {
   if (!base_remote_description())
     return false;
   return webrtc::GetTrackIdBySsrc(base_remote_description(), ssrc, track_id);
@@ -1230,7 +1233,8 @@ std::string WebRtcSession::BadStateErrMsg(State state) {
   return desc.str();
 }
 
-void WebRtcSession::SetAudioPlayout(uint32 ssrc, bool enable,
+void WebRtcSession::SetAudioPlayout(uint32_t ssrc,
+                                    bool enable,
                                     cricket::AudioRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
@@ -1250,7 +1254,8 @@ void WebRtcSession::SetAudioPlayout(uint32 ssrc, bool enable,
   }
 }
 
-void WebRtcSession::SetAudioSend(uint32 ssrc, bool enable,
+void WebRtcSession::SetAudioSend(uint32_t ssrc,
+                                 bool enable,
                                  const cricket::AudioOptions& options,
                                  cricket::AudioRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
@@ -1263,7 +1268,7 @@ void WebRtcSession::SetAudioSend(uint32 ssrc, bool enable,
   }
 }
 
-void WebRtcSession::SetAudioPlayoutVolume(uint32 ssrc, double volume) {
+void WebRtcSession::SetAudioPlayoutVolume(uint32_t ssrc, double volume) {
   ASSERT(signaling_thread()->IsCurrent());
   ASSERT(volume >= 0 && volume <= 10);
   if (!voice_channel_) {
@@ -1276,7 +1281,7 @@ void WebRtcSession::SetAudioPlayoutVolume(uint32 ssrc, double volume) {
   }
 }
 
-bool WebRtcSession::SetCaptureDevice(uint32 ssrc,
+bool WebRtcSession::SetCaptureDevice(uint32_t ssrc,
                                      cricket::VideoCapturer* camera) {
   ASSERT(signaling_thread()->IsCurrent());
 
@@ -1296,7 +1301,7 @@ bool WebRtcSession::SetCaptureDevice(uint32 ssrc,
   return true;
 }
 
-void WebRtcSession::SetVideoPlayout(uint32 ssrc,
+void WebRtcSession::SetVideoPlayout(uint32_t ssrc,
                                     bool enable,
                                     cricket::VideoRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
@@ -1312,7 +1317,8 @@ void WebRtcSession::SetVideoPlayout(uint32 ssrc,
   }
 }
 
-void WebRtcSession::SetVideoSend(uint32 ssrc, bool enable,
+void WebRtcSession::SetVideoSend(uint32_t ssrc,
+                                 bool enable,
                                  const cricket::VideoOptions* options) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!video_channel_) {
@@ -1333,7 +1339,7 @@ bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {
     LOG(LS_ERROR) << "CanInsertDtmf: No audio channel exists.";
     return false;
   }
-  uint32 send_ssrc = 0;
+  uint32_t send_ssrc = 0;
   // The Dtmf is negotiated per channel not ssrc, so we only check if the ssrc
   // exists.
   if (!GetAudioSsrcByTrackId(base_local_description(), track_id,
@@ -1351,7 +1357,7 @@ bool WebRtcSession::InsertDtmf(const std::string& track_id,
     LOG(LS_ERROR) << "InsertDtmf: No audio channel exists.";
     return false;
   }
-  uint32 send_ssrc = 0;
+  uint32_t send_ssrc = 0;
   if (!VERIFY(GetAudioSsrcByTrackId(base_local_description(),
                                     track_id, &send_ssrc))) {
     LOG(LS_ERROR) << "InsertDtmf: Track does not exist: " << track_id;

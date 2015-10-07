@@ -46,8 +46,8 @@ using cricket::CryptoParams;
 using cricket::CS_LOCAL;
 using cricket::CS_REMOTE;
 
-static const uint8 kTestKey1[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234";
-static const uint8 kTestKey2[] = "4321ZYXWVUTSRQPONMLKJIHGFEDCBA";
+static const uint8_t kTestKey1[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234";
+static const uint8_t kTestKey2[] = "4321ZYXWVUTSRQPONMLKJIHGFEDCBA";
 static const int kTestKeyLen = 30;
 static const std::string kTestKeyParams1 =
     "inline:WVNfX19zZW1jdGwgKCkgewkyMjA7fQp9CnVubGVz";
@@ -99,8 +99,8 @@ class SrtpFilterTest : public testing::Test {
     memcpy(rtp_packet, kPcmuFrame, rtp_len);
     // In order to be able to run this test function multiple times we can not
     // use the same sequence number twice. Increase the sequence number by one.
-    rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet) + 2,
-                       ++sequence_number_);
+    rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet) + 2,
+                 ++sequence_number_);
     memcpy(original_rtp_packet, rtp_packet, rtp_len);
     memcpy(rtcp_packet, kRtcpReport, rtcp_len);
 
@@ -574,7 +574,7 @@ TEST_F(SrtpFilterTest, TestGetSendAuthParams) {
                                 kTestKey1, kTestKeyLen,
                                 CS_AES_CM_128_HMAC_SHA1_32,
                                 kTestKey2, kTestKeyLen));
-  uint8* auth_key = NULL;
+  uint8_t* auth_key = NULL;
   int auth_key_len = 0, auth_tag_len = 0;
   EXPECT_TRUE(f1_.GetRtpAuthParams(&auth_key, &auth_key_len, &auth_tag_len));
   EXPECT_TRUE(auth_key != NULL);
@@ -669,12 +669,12 @@ TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_32) {
 
 TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
   EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_32, kTestKey1, kTestKeyLen));
-  int64 index;
+  int64_t index;
   int out_len = 0;
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_,
                              sizeof(rtp_packet_), &out_len, &index));
   // |index| will be shifted by 16.
-  int64 be64_index = static_cast<int64>(rtc::NetworkToHost64(1 << 16));
+  int64_t be64_index = static_cast<int64_t>(rtc::NetworkToHost64(1 << 16));
   EXPECT_EQ(be64_index, index);
 }
 
@@ -711,46 +711,46 @@ TEST_F(SrtpSessionTest, TestBuffersTooSmall) {
 }
 
 TEST_F(SrtpSessionTest, TestReplay) {
-  static const uint16 kMaxSeqnum = static_cast<uint16>(-1);
-  static const uint16 seqnum_big = 62275;
-  static const uint16 seqnum_small = 10;
-  static const uint16 replay_window = 1024;
+  static const uint16_t kMaxSeqnum = static_cast<uint16_t>(-1);
+  static const uint16_t seqnum_big = 62275;
+  static const uint16_t seqnum_small = 10;
+  static const uint16_t replay_window = 1024;
   int out_len;
 
   EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
   EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
 
   // Initial sequence number.
-  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum_big);
+  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum_big);
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                              &out_len));
 
   // Replay within the 1024 window should succeed.
-  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
-                     seqnum_big - replay_window + 1);
+  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2,
+               seqnum_big - replay_window + 1);
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                              &out_len));
 
   // Replay out side of the 1024 window should fail.
-  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
-                     seqnum_big - replay_window - 1);
+  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2,
+               seqnum_big - replay_window - 1);
   EXPECT_FALSE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                               &out_len));
 
   // Increment sequence number to a small number.
-  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum_small);
+  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum_small);
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                              &out_len));
 
   // Replay around 0 but out side of the 1024 window should fail.
-  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
-                     kMaxSeqnum + seqnum_small - replay_window - 1);
+  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2,
+               kMaxSeqnum + seqnum_small - replay_window - 1);
   EXPECT_FALSE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                               &out_len));
 
   // Replay around 0 but within the 1024 window should succeed.
-  for (uint16 seqnum = 65000; seqnum < 65003; ++seqnum) {
-    rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum);
+  for (uint16_t seqnum = 65000; seqnum < 65003; ++seqnum) {
+    rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum);
     EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                                &out_len));
   }
@@ -760,8 +760,7 @@ TEST_F(SrtpSessionTest, TestReplay) {
   // without the fix, the loop above would keep incrementing local sequence
   // number in libsrtp, eventually the new sequence number would go out side
   // of the window.
-  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
-                     seqnum_small + 1);
+  rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum_small + 1);
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                              &out_len));
 }
@@ -779,7 +778,8 @@ class SrtpStatTest
   }
 
  protected:
-  void OnSrtpError(uint32 ssrc, cricket::SrtpFilter::Mode mode,
+  void OnSrtpError(uint32_t ssrc,
+                   cricket::SrtpFilter::Mode mode,
                    cricket::SrtpFilter::Error error) {
     ssrc_ = ssrc;
     mode_ = mode;
@@ -792,7 +792,7 @@ class SrtpStatTest
   }
 
   cricket::SrtpStat srtp_stat_;
-  uint32 ssrc_;
+  uint32_t ssrc_;
   int mode_;
   cricket::SrtpFilter::Error error_;
 

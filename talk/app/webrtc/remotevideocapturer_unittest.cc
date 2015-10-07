@@ -104,7 +104,7 @@ TEST_F(RemoteVideoCapturerTest, StartStop) {
 TEST_F(RemoteVideoCapturerTest, GetPreferredFourccs) {
   EXPECT_FALSE(capturer_.GetPreferredFourccs(NULL));
 
-  std::vector<uint32> fourccs;
+  std::vector<uint32_t> fourccs;
   EXPECT_TRUE(capturer_.GetPreferredFourccs(&fourccs));
   EXPECT_EQ(1u, fourccs.size());
   EXPECT_EQ(cricket::FOURCC_I420, fourccs.at(0));

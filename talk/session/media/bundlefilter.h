@@ -60,12 +60,12 @@ class BundleFilter {
   bool AddStream(const StreamParams& stream);
 
   // Removes source from the filter.
-  bool RemoveStream(uint32 ssrc);
+  bool RemoveStream(uint32_t ssrc);
 
   // Utility methods added for unitest.
   // True if |streams_| is not empty.
   bool HasStreams() const;
-  bool FindStream(uint32 ssrc) const;
+  bool FindStream(uint32_t ssrc) const;
   bool FindPayloadType(int pl_type) const;
   void ClearAllPayloadTypes();
 

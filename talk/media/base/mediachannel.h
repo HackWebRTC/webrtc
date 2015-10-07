@@ -288,14 +288,14 @@ struct AudioOptions {
   Settable<bool> experimental_ns;
   Settable<bool> aec_dump;
   // Note that tx_agc_* only applies to non-experimental AGC.
-  Settable<uint16> tx_agc_target_dbov;
-  Settable<uint16> tx_agc_digital_compression_gain;
+  Settable<uint16_t> tx_agc_target_dbov;
+  Settable<uint16_t> tx_agc_digital_compression_gain;
   Settable<bool> tx_agc_limiter;
-  Settable<uint16> rx_agc_target_dbov;
-  Settable<uint16> rx_agc_digital_compression_gain;
+  Settable<uint16_t> rx_agc_target_dbov;
+  Settable<uint16_t> rx_agc_digital_compression_gain;
   Settable<bool> rx_agc_limiter;
-  Settable<uint32> recording_sample_rate;
-  Settable<uint32> playout_sample_rate;
+  Settable<uint32_t> recording_sample_rate;
+  Settable<uint32_t> playout_sample_rate;
   // Set DSCP value for packet sent from audio channel.
   Settable<bool> dscp;
   // Enable combined audio+bandwidth BWE.
@@ -557,14 +557,14 @@ class MediaChannel : public sigslot::has_slots<> {
   // Removes an outgoing media stream.
   // ssrc must be the first SSRC of the media stream if the stream uses
   // multiple SSRCs.
-  virtual bool RemoveSendStream(uint32 ssrc) = 0;
+  virtual bool RemoveSendStream(uint32_t ssrc) = 0;
   // Creates a new incoming media stream with SSRCs and CNAME as described
   // by sp.
   virtual bool AddRecvStream(const StreamParams& sp) = 0;
   // Removes an incoming media stream.
   // ssrc must be the first SSRC of the media stream if the stream uses
   // multiple SSRCs.
-  virtual bool RemoveRecvStream(uint32 ssrc) = 0;
+  virtual bool RemoveRecvStream(uint32_t ssrc) = 0;
 
   // Returns the absoulte sendtime extension id value from media channel.
   virtual int GetRtpSendTimeExtnId() const {
@@ -640,7 +640,7 @@ struct SsrcSenderInfo {
       : ssrc(0),
     timestamp(0) {
   }
-  uint32 ssrc;
+  uint32_t ssrc;
   double timestamp;  // NTP timestamp, represented as seconds since epoch.
 };
 
@@ -649,7 +649,7 @@ struct SsrcReceiverInfo {
       : ssrc(0),
         timestamp(0) {
   }
-  uint32 ssrc;
+  uint32_t ssrc;
   double timestamp;
 };
 
@@ -666,14 +666,14 @@ struct MediaSenderInfo {
   }
   // Temporary utility function for call sites that only provide SSRC.
   // As more info is added into SsrcSenderInfo, this function should go away.
-  void add_ssrc(uint32 ssrc) {
+  void add_ssrc(uint32_t ssrc) {
     SsrcSenderInfo stat;
     stat.ssrc = ssrc;
     add_ssrc(stat);
   }
   // Utility accessor for clients that are only interested in ssrc numbers.
-  std::vector<uint32> ssrcs() const {
-    std::vector<uint32> retval;
+  std::vector<uint32_t> ssrcs() const {
+    std::vector<uint32_t> retval;
     for (std::vector<SsrcSenderInfo>::const_iterator it = local_stats.begin();
          it != local_stats.end(); ++it) {
       retval.push_back(it->ssrc);
@@ -683,14 +683,14 @@ struct MediaSenderInfo {
   // Utility accessor for clients that make the assumption only one ssrc
   // exists per media.
   // This will eventually go away.
-  uint32 ssrc() const {
+  uint32_t ssrc() const {
     if (local_stats.size() > 0) {
       return local_stats[0].ssrc;
     } else {
       return 0;
     }
   }
-  int64 bytes_sent;
+  int64_t bytes_sent;
   int packets_sent;
   int packets_lost;
   float fraction_lost;
@@ -726,13 +726,13 @@ struct MediaReceiverInfo {
   }
   // Temporary utility function for call sites that only provide SSRC.
   // As more info is added into SsrcSenderInfo, this function should go away.
-  void add_ssrc(uint32 ssrc) {
+  void add_ssrc(uint32_t ssrc) {
     SsrcReceiverInfo stat;
     stat.ssrc = ssrc;
     add_ssrc(stat);
   }
-  std::vector<uint32> ssrcs() const {
-    std::vector<uint32> retval;
+  std::vector<uint32_t> ssrcs() const {
+    std::vector<uint32_t> retval;
     for (std::vector<SsrcReceiverInfo>::const_iterator it = local_stats.begin();
          it != local_stats.end(); ++it) {
       retval.push_back(it->ssrc);
@@ -742,7 +742,7 @@ struct MediaReceiverInfo {
   // Utility accessor for clients that make the assumption only one ssrc
   // exists per media.
   // This will eventually go away.
-  uint32 ssrc() const {
+  uint32_t ssrc() const {
     if (local_stats.size() > 0) {
       return local_stats[0].ssrc;
     } else {
@@ -750,7 +750,7 @@ struct MediaReceiverInfo {
     }
   }
 
-  int64 bytes_rcvd;
+  int64_t bytes_rcvd;
   int packets_rcvd;
   int packets_lost;
   float fraction_lost;
@@ -827,7 +827,7 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int decoding_cng;
   int decoding_plc_cng;
   // Estimated capture start time in NTP time in ms.
-  int64 capture_start_ntp_time_ms;
+  int64_t capture_start_ntp_time_ms;
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {
@@ -931,7 +931,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   int current_delay_ms;
 
   // Estimated capture start time in NTP time in ms.
-  int64 capture_start_ntp_time_ms;
+  int64_t capture_start_ntp_time_ms;
 };
 
 struct DataSenderInfo : public MediaSenderInfo {
@@ -939,7 +939,7 @@ struct DataSenderInfo : public MediaSenderInfo {
       : ssrc(0) {
   }
 
-  uint32 ssrc;
+  uint32_t ssrc;
 };
 
 struct DataReceiverInfo : public MediaReceiverInfo {
@@ -947,7 +947,7 @@ struct DataReceiverInfo : public MediaReceiverInfo {
       : ssrc(0) {
   }
 
-  uint32 ssrc;
+  uint32_t ssrc;
 };
 
 struct BandwidthEstimationInfo {
@@ -1070,11 +1070,12 @@ class VoiceMediaChannel : public MediaChannel {
   // Starts or stops sending (and potentially capture) of local audio.
   virtual bool SetSend(SendFlags flag) = 0;
   // Configure stream for sending.
-  virtual bool SetAudioSend(uint32 ssrc, bool enable,
+  virtual bool SetAudioSend(uint32_t ssrc,
+                            bool enable,
                             const AudioOptions* options,
                             AudioRenderer* renderer) = 0;
   // Sets the renderer object to be used for the specified remote audio stream.
-  virtual bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) = 0;
+  virtual bool SetRemoteRenderer(uint32_t ssrc, AudioRenderer* renderer) = 0;
   // Gets current energy levels for all incoming streams.
   virtual bool GetActiveStreams(AudioInfo::StreamList* actives) = 0;
   // Get the current energy level of the stream sent to the speaker.
@@ -1086,7 +1087,7 @@ class VoiceMediaChannel : public MediaChannel {
     int cost_per_typing, int reporting_threshold, int penalty_decay,
     int type_event_delay) = 0;
   // Set left and right scale for speaker output volume of the specified ssrc.
-  virtual bool SetOutputScaling(uint32 ssrc, double left, double right) = 0;
+  virtual bool SetOutputScaling(uint32_t ssrc, double left, double right) = 0;
   // Returns if the telephone-event has been negotiated.
   virtual bool CanInsertDtmf() { return false; }
   // Send and/or play a DTMF |event| according to the |flags|.
@@ -1094,7 +1095,10 @@ class VoiceMediaChannel : public MediaChannel {
   // The |ssrc| should be either 0 or a valid send stream ssrc.
   // The valid value for the |event| are 0 to 15 which corresponding to
   // DTMF event 0-9, *, #, A-D.
-  virtual bool InsertDtmf(uint32 ssrc, int event, int duration, int flags) = 0;
+  virtual bool InsertDtmf(uint32_t ssrc,
+                          int event,
+                          int duration,
+                          int flags) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VoiceMediaInfo* info) = 0;
 };
@@ -1130,18 +1134,20 @@ class VideoMediaChannel : public MediaChannel {
   // Gets the currently set codecs/payload types to be used for outgoing media.
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
   // Sets the format of a specified outgoing stream.
-  virtual bool SetSendStreamFormat(uint32 ssrc, const VideoFormat& format) = 0;
+  virtual bool SetSendStreamFormat(uint32_t ssrc,
+                                   const VideoFormat& format) = 0;
   // Starts or stops transmission (and potentially capture) of local video.
   virtual bool SetSend(bool send) = 0;
   // Configure stream for sending.
-  virtual bool SetVideoSend(uint32 ssrc, bool enable,
+  virtual bool SetVideoSend(uint32_t ssrc,
+                            bool enable,
                             const VideoOptions* options) = 0;
   // Sets the renderer object to be used for the specified stream.
   // If SSRC is 0, the renderer is used for the 'default' stream.
-  virtual bool SetRenderer(uint32 ssrc, VideoRenderer* renderer) = 0;
+  virtual bool SetRenderer(uint32_t ssrc, VideoRenderer* renderer) = 0;
   // If |ssrc| is 0, replace the default capturer (engine capturer) with
   // |capturer|. If |ssrc| is non zero create a new stream with |ssrc| as SSRC.
-  virtual bool SetCapturer(uint32 ssrc, VideoCapturer* capturer) = 0;
+  virtual bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VideoMediaInfo* info) = 0;
   // Send an intra frame to the receivers.
@@ -1169,7 +1175,7 @@ enum DataMessageType {
 struct ReceiveDataParams {
   // The in-packet stream indentifier.
   // For SCTP, this is really SID, not SSRC.
-  uint32 ssrc;
+  uint32_t ssrc;
   // The type of message (binary, text, or control).
   DataMessageType type;
   // A per-stream value incremented per packet in the stream.
@@ -1188,7 +1194,7 @@ struct ReceiveDataParams {
 struct SendDataParams {
   // The in-packet stream indentifier.
   // For SCTP, this is really SID, not SSRC.
-  uint32 ssrc;
+  uint32_t ssrc;
   // The type of message (binary, text, or control).
   DataMessageType type;
 
@@ -1276,7 +1282,7 @@ class DataMediaChannel : public MediaChannel {
   //     writable(bool)
   sigslot::signal1<bool> SignalReadyToSend;
   // Signal for notifying that the remote side has closed the DataChannel.
-  sigslot::signal1<uint32> SignalStreamClosedRemotely;
+  sigslot::signal1<uint32_t> SignalStreamClosedRemotely;
 };
 
 }  // namespace cricket

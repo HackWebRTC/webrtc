@@ -394,20 +394,20 @@ void GtkMainWnd::OnRedraw() {
 
     if (!draw_buffer_.get()) {
       draw_buffer_size_ = (width * height * 4) * 4;
-      draw_buffer_.reset(new uint8[draw_buffer_size_]);
+      draw_buffer_.reset(new uint8_t[draw_buffer_size_]);
       gtk_widget_set_size_request(draw_area_, width * 2, height * 2);
     }
 
-    const uint32* image = reinterpret_cast<const uint32*>(
-        remote_renderer->image());
-    uint32* scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
+    const uint32_t* image =
+        reinterpret_cast<const uint32_t*>(remote_renderer->image());
+    uint32_t* scaled = reinterpret_cast<uint32_t*>(draw_buffer_.get());
     for (int r = 0; r < height; ++r) {
       for (int c = 0; c < width; ++c) {
         int x = c * 2;
         scaled[x] = scaled[x + 1] = image[c];
       }
 
-      uint32* prev_line = scaled;
+      uint32_t* prev_line = scaled;
       scaled += width * 2;
       memcpy(scaled, prev_line, (width * 2) * 4);
 
@@ -417,8 +417,8 @@ void GtkMainWnd::OnRedraw() {
 
     VideoRenderer* local_renderer = local_renderer_.get();
     if (local_renderer && local_renderer->image()) {
-      image = reinterpret_cast<const uint32*>(local_renderer->image());
-      scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
+      image = reinterpret_cast<const uint32_t*>(local_renderer->image());
+      scaled = reinterpret_cast<uint32_t*>(draw_buffer_.get());
       // Position the local preview on the right side.
       scaled += (width * 2) - (local_renderer->width() / 2);
       // right margin...
@@ -474,7 +474,7 @@ void GtkMainWnd::VideoRenderer::SetSize(int width, int height) {
 
   width_ = width;
   height_ = height;
-  image_.reset(new uint8[width * height * 4]);
+  image_.reset(new uint8_t[width * height * 4]);
   gdk_threads_leave();
 }
 
@@ -495,8 +495,8 @@ void GtkMainWnd::VideoRenderer::RenderFrame(
                             width_ * 4);
   // Convert the B,G,R,A frame to R,G,B,A, which is accepted by GTK.
   // The 'A' is just padding for GTK, so we can use it as temp.
-  uint8* pix = image_.get();
-  uint8* end = image_.get() + size;
+  uint8_t* pix = image_.get();
+  uint8_t* end = image_.get() + size;
   while (pix < end) {
     pix[3] = pix[0];     // Save B to A.
     pix[0] = pix[2];  // Set Red.

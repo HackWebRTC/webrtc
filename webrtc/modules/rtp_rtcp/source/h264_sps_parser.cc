@@ -21,7 +21,7 @@
 
 namespace webrtc {
 
-H264SpsParser::H264SpsParser(const uint8* sps, size_t byte_length)
+H264SpsParser::H264SpsParser(const uint8_t* sps, size_t byte_length)
     : sps_(sps), byte_length_(byte_length), width_(), height_() {
 }
 
@@ -62,22 +62,22 @@ bool H264SpsParser::Parse() {
   // chroma_format_idc -> affects crop units
   // pic_{width,height}_* -> resolution of the frame in macroblocks (16x16).
   // frame_crop_*_offset -> crop information
-  rtc::BitBuffer parser(reinterpret_cast<const uint8*>(rbsp_buffer.Data()),
+  rtc::BitBuffer parser(reinterpret_cast<const uint8_t*>(rbsp_buffer.Data()),
                         rbsp_buffer.Length());
 
   // The golomb values we have to read, not just consume.
-  uint32 golomb_ignored;
+  uint32_t golomb_ignored;
 
   // separate_colour_plane_flag is optional (assumed 0), but has implications
   // about the ChromaArrayType, which modifies how we treat crop coordinates.
-  uint32 separate_colour_plane_flag = 0;
+  uint32_t separate_colour_plane_flag = 0;
   // chroma_format_idc will be ChromaArrayType if separate_colour_plane_flag is
   // 0. It defaults to 1, when not specified.
-  uint32 chroma_format_idc = 1;
+  uint32_t chroma_format_idc = 1;
 
   // profile_idc: u(8). We need it to determine if we need to read/skip chroma
   // formats.
-  uint8 profile_idc;
+  uint8_t profile_idc;
   RETURN_FALSE_ON_FAIL(parser.ReadUInt8(&profile_idc));
   // constraint_set0_flag through constraint_set5_flag + reserved_zero_2bits
   // 1 bit each for the flags + 2 bits = 8 bits = 1 byte.
@@ -104,12 +104,12 @@ bool H264SpsParser::Parse() {
     // qpprime_y_zero_transform_bypass_flag: u(1)
     RETURN_FALSE_ON_FAIL(parser.ConsumeBits(1));
     // seq_scaling_matrix_present_flag: u(1)
-    uint32 seq_scaling_matrix_present_flag;
+    uint32_t seq_scaling_matrix_present_flag;
     RETURN_FALSE_ON_FAIL(parser.ReadBits(&seq_scaling_matrix_present_flag, 1));
     if (seq_scaling_matrix_present_flag) {
       // seq_scaling_list_present_flags. Either 8 or 12, depending on
       // chroma_format_idc.
-      uint32 seq_scaling_list_present_flags;
+      uint32_t seq_scaling_list_present_flags;
       if (chroma_format_idc != 3) {
         RETURN_FALSE_ON_FAIL(
             parser.ReadBits(&seq_scaling_list_present_flags, 8));
@@ -129,7 +129,7 @@ bool H264SpsParser::Parse() {
   // log2_max_frame_num_minus4: ue(v)
   RETURN_FALSE_ON_FAIL(parser.ReadExponentialGolomb(&golomb_ignored));
   // pic_order_cnt_type: ue(v)
-  uint32 pic_order_cnt_type;
+  uint32_t pic_order_cnt_type;
   RETURN_FALSE_ON_FAIL(parser.ReadExponentialGolomb(&pic_order_cnt_type));
   if (pic_order_cnt_type == 0) {
     // log2_max_pic_order_cnt_lsb_minus4: ue(v)
@@ -142,7 +142,7 @@ bool H264SpsParser::Parse() {
     // offset_for_top_to_bottom_field: se(v)
     RETURN_FALSE_ON_FAIL(parser.ReadExponentialGolomb(&golomb_ignored));
     // num_ref_frames_in_pic_order_cnt_cycle: ue(v)
-    uint32 num_ref_frames_in_pic_order_cnt_cycle;
+    uint32_t num_ref_frames_in_pic_order_cnt_cycle;
     RETURN_FALSE_ON_FAIL(
         parser.ReadExponentialGolomb(&num_ref_frames_in_pic_order_cnt_cycle));
     for (size_t i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; ++i) {
@@ -161,14 +161,14 @@ bool H264SpsParser::Parse() {
   // to signify resolutions that aren't multiples of 16.
   //
   // pic_width_in_mbs_minus1: ue(v)
-  uint32 pic_width_in_mbs_minus1;
+  uint32_t pic_width_in_mbs_minus1;
   RETURN_FALSE_ON_FAIL(parser.ReadExponentialGolomb(&pic_width_in_mbs_minus1));
   // pic_height_in_map_units_minus1: ue(v)
-  uint32 pic_height_in_map_units_minus1;
+  uint32_t pic_height_in_map_units_minus1;
   RETURN_FALSE_ON_FAIL(
       parser.ReadExponentialGolomb(&pic_height_in_map_units_minus1));
   // frame_mbs_only_flag: u(1)
-  uint32 frame_mbs_only_flag;
+  uint32_t frame_mbs_only_flag;
   RETURN_FALSE_ON_FAIL(parser.ReadBits(&frame_mbs_only_flag, 1));
   if (!frame_mbs_only_flag) {
     // mb_adaptive_frame_field_flag: u(1)
@@ -180,11 +180,11 @@ bool H264SpsParser::Parse() {
   // MORE IMPORTANT ONES! Now we're at the frame crop information.
   //
   // frame_cropping_flag: u(1)
-  uint32 frame_cropping_flag;
-  uint32 frame_crop_left_offset = 0;
-  uint32 frame_crop_right_offset = 0;
-  uint32 frame_crop_top_offset = 0;
-  uint32 frame_crop_bottom_offset = 0;
+  uint32_t frame_cropping_flag;
+  uint32_t frame_crop_left_offset = 0;
+  uint32_t frame_crop_right_offset = 0;
+  uint32_t frame_crop_top_offset = 0;
+  uint32_t frame_crop_bottom_offset = 0;
   RETURN_FALSE_ON_FAIL(parser.ReadBits(&frame_cropping_flag, 1));
   if (frame_cropping_flag) {
     // frame_crop_{left, right, top, bottom}_offset: ue(v)

@@ -31,11 +31,11 @@ static const size_t kMinRtpPacketLen = 12;
 static const size_t kMaxPendingPackets = 1;
 
 static bool IsDtlsPacket(const char* data, size_t len) {
-  const uint8* u = reinterpret_cast<const uint8*>(data);
+  const uint8_t* u = reinterpret_cast<const uint8_t*>(data);
   return (len >= kDtlsRecordHeaderLen && (u[0] > 19 && u[0] < 64));
 }
 static bool IsRtpPacket(const char* data, size_t len) {
-  const uint8* u = reinterpret_cast<const uint8*>(data);
+  const uint8_t* u = reinterpret_cast<const uint8_t*>(data);
   return (len >= kMinRtpPacketLen && (u[0] & 0xC0) == 0x80);
 }
 
@@ -196,9 +196,8 @@ bool DtlsTransportChannelWrapper::GetSslCipherSuite(int* cipher) {
 
 bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
     const std::string& digest_alg,
-    const uint8* digest,
+    const uint8_t* digest,
     size_t digest_len) {
-
   rtc::Buffer remote_fingerprint_value(digest, digest_len);
 
   if (dtls_state_ != STATE_NONE &&
@@ -570,7 +569,7 @@ bool DtlsTransportChannelWrapper::HandleDtlsPacket(const char* data,
                                                    size_t size) {
   // Sanity check we're not passing junk that
   // just looks like DTLS.
-  const uint8* tmp_data = reinterpret_cast<const uint8* >(data);
+  const uint8_t* tmp_data = reinterpret_cast<const uint8_t*>(data);
   size_t tmp_size = size;
   while (tmp_size > 0) {
     if (tmp_size < kDtlsRecordHeaderLen)

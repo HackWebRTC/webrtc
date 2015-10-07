@@ -46,7 +46,7 @@ class MediaMonitor : public rtc::MessageHandler,
                rtc::Thread* monitor_thread);
   ~MediaMonitor();
 
-  void Start(uint32 milliseconds);
+  void Start(uint32_t milliseconds);
   void Stop();
 
  protected:
@@ -59,7 +59,7 @@ class MediaMonitor : public rtc::MessageHandler,
   rtc::Thread* worker_thread_;
   rtc::Thread* monitor_thread_;
   bool monitoring_;
-  uint32 rate_;
+  uint32_t rate_;
 };
 
 // Templatized MediaMonitor that can deal with different kinds of media.

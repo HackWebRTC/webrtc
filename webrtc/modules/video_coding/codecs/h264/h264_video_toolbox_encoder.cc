@@ -136,10 +136,10 @@ bool CopyVideoFrameToPixelBuffer(const webrtc::VideoFrame& frame,
     LOG(LS_ERROR) << "Failed to lock base address: " << cvRet;
     return false;
   }
-  uint8* dst_y = reinterpret_cast<uint8*>(
+  uint8_t* dst_y = reinterpret_cast<uint8_t*>(
       CVPixelBufferGetBaseAddressOfPlane(pixel_buffer, 0));
   int dst_stride_y = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 0);
-  uint8* dst_uv = reinterpret_cast<uint8*>(
+  uint8_t* dst_uv = reinterpret_cast<uint8_t*>(
       CVPixelBufferGetBaseAddressOfPlane(pixel_buffer, 1));
   int dst_stride_uv = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 1);
   // Convert I420 to NV12.

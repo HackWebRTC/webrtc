@@ -43,7 +43,7 @@ class FakeDataChannelObserver : public webrtc::DataChannelObserver {
     ++on_state_change_count_;
   }
 
-  void OnBufferedAmountChange(uint64 previous_amount) {
+  void OnBufferedAmountChange(uint64_t previous_amount) {
     ++on_buffered_amount_change_count_;
   }
 
@@ -215,7 +215,7 @@ TEST_F(SctpDataChannelTest, OpenMessageSent) {
   EXPECT_GE(webrtc_data_channel_->id(), 0);
   EXPECT_EQ(cricket::DMT_CONTROL, provider_.last_send_data_params().type);
   EXPECT_EQ(provider_.last_send_data_params().ssrc,
-            static_cast<uint32>(webrtc_data_channel_->id()));
+            static_cast<uint32_t>(webrtc_data_channel_->id()));
 }
 
 TEST_F(SctpDataChannelTest, QueuedOpenMessageSent) {
@@ -225,7 +225,7 @@ TEST_F(SctpDataChannelTest, QueuedOpenMessageSent) {
 
   EXPECT_EQ(cricket::DMT_CONTROL, provider_.last_send_data_params().type);
   EXPECT_EQ(provider_.last_send_data_params().ssrc,
-            static_cast<uint32>(webrtc_data_channel_->id()));
+            static_cast<uint32_t>(webrtc_data_channel_->id()));
 }
 
 // Tests that the DataChannel created after transport gets ready can enter OPEN

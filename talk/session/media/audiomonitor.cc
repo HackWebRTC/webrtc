@@ -31,10 +31,10 @@
 
 namespace cricket {
 
-const uint32 MSG_MONITOR_POLL = 1;
-const uint32 MSG_MONITOR_START = 2;
-const uint32 MSG_MONITOR_STOP = 3;
-const uint32 MSG_MONITOR_SIGNAL = 4;
+const uint32_t MSG_MONITOR_POLL = 1;
+const uint32_t MSG_MONITOR_START = 2;
+const uint32_t MSG_MONITOR_STOP = 3;
+const uint32_t MSG_MONITOR_SIGNAL = 4;
 
 AudioMonitor::AudioMonitor(VoiceChannel *voice_channel,
                            rtc::Thread *monitor_thread) {

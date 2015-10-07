@@ -126,7 +126,7 @@ void AndroidVideoCapturerJni::AsyncCapturerInvoke(
   invoker_->AsyncInvoke<void>(rtc::Bind(method, capturer_, args...));
 }
 
-void AndroidVideoCapturerJni::ReturnBuffer(int64 time_stamp) {
+void AndroidVideoCapturerJni::ReturnBuffer(int64_t time_stamp) {
   jmethodID m = GetMethodID(jni(), *j_video_capturer_class_,
                             "returnBuffer", "(J)V");
   jni()->CallVoidMethod(*j_capturer_global_, m, time_stamp);
@@ -155,7 +155,7 @@ void AndroidVideoCapturerJni::OnIncomingFrame(void* video_frame,
                                               int width,
                                               int height,
                                               int rotation,
-                                              int64 time_stamp) {
+                                              int64_t time_stamp) {
   const uint8_t* y_plane = static_cast<uint8_t*>(video_frame);
   // Android guarantees that the stride is a multiple of 16.
   // http://developer.android.com/reference/android/hardware/Camera.Parameters.html#setPreviewFormat%28int%29

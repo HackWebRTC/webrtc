@@ -16,9 +16,9 @@
 namespace rtc {
 
 TEST(TimeTest, TimeInMs) {
-  uint32 ts_earlier = Time();
+  uint32_t ts_earlier = Time();
   Thread::SleepMs(100);
-  uint32 ts_now = Time();
+  uint32_t ts_now = Time();
   // Allow for the thread to wakeup ~20ms early.
   EXPECT_GE(ts_now, ts_earlier + 80);
   // Make sure the Time is not returning in smaller unit like microseconds.
@@ -152,8 +152,8 @@ class TimestampWrapAroundHandlerTest : public testing::Test {
 };
 
 TEST_F(TimestampWrapAroundHandlerTest, Unwrap) {
-  uint32 ts = 0xfffffff2;
-  int64 unwrapped_ts = ts;
+  uint32_t ts = 0xfffffff2;
+  int64_t unwrapped_ts = ts;
   EXPECT_EQ(ts, wraparound_handler_.Unwrap(ts));
   ts = 2;
   unwrapped_ts += 0x10;

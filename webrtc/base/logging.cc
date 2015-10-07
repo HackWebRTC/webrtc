@@ -118,7 +118,7 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
       tag_(kLibjingle),
       warn_slow_logs_delay_(WARN_SLOW_LOGS_DELAY) {
   if (timestamp_) {
-    uint32 time = TimeSince(LogStartTime());
+    uint32_t time = TimeSince(LogStartTime());
     // Also ensure WallClockStartTime is initialized, so that it matches
     // LogStartTime.
     WallClockStartTime();
@@ -197,7 +197,7 @@ LogMessage::~LogMessage() {
     OutputToDebug(str, severity_, tag_);
   }
 
-  uint32 before = Time();
+  uint32_t before = Time();
   // Must lock streams_ before accessing
   CritScope cs(&crit_);
   for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
@@ -205,7 +205,7 @@ LogMessage::~LogMessage() {
       it->first->OnLogMessage(str);
     }
   }
-  uint32 delay = TimeSince(before);
+  uint32_t delay = TimeSince(before);
   if (delay >= warn_slow_logs_delay_) {
     rtc::LogMessage slow_log_warning(__FILE__, __LINE__, LS_WARNING);
     // If our warning is slow, we don't want to warn about it, because
@@ -217,13 +217,13 @@ LogMessage::~LogMessage() {
   }
 }
 
-uint32 LogMessage::LogStartTime() {
-  static const uint32 g_start = Time();
+uint32_t LogMessage::LogStartTime() {
+  static const uint32_t g_start = Time();
   return g_start;
 }
 
-uint32 LogMessage::WallClockStartTime() {
-  static const uint32 g_start_wallclock = time(NULL);
+uint32_t LogMessage::WallClockStartTime() {
+  static const uint32_t g_start_wallclock = time(NULL);
   return g_start_wallclock;
 }
 

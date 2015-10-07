@@ -171,7 +171,8 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void OnNetworksChanged();
   void OnAllocationSequenceObjectsCreated();
   void DisableEquivalentPhases(rtc::Network* network,
-                               PortConfiguration* config, uint32* flags);
+                               PortConfiguration* config,
+                               uint32_t* flags);
   void AddAllocatedPort(Port* port, AllocationSequence* seq,
                         bool prepare_address);
   void OnCandidateReady(Port* port, const Candidate& c);
@@ -258,7 +259,7 @@ class AllocationSequence : public rtc::MessageHandler,
   AllocationSequence(BasicPortAllocatorSession* session,
                      rtc::Network* network,
                      PortConfiguration* config,
-                     uint32 flags);
+                     uint32_t flags);
   ~AllocationSequence();
   bool Init();
   void Clear();
@@ -272,7 +273,7 @@ class AllocationSequence : public rtc::MessageHandler,
   // equivalent network setup.
   void DisableEquivalentPhases(rtc::Network* network,
                                PortConfiguration* config,
-                               uint32* flags);
+                               uint32_t* flags);
 
   // Starts and stops the sequence.  When started, it will continue allocating
   // new ports on its own timed schedule.
@@ -300,7 +301,7 @@ class AllocationSequence : public rtc::MessageHandler,
  private:
   typedef std::vector<ProtocolType> ProtocolList;
 
-  bool IsFlagSet(uint32 flag) { return ((flags_ & flag) != 0); }
+  bool IsFlagSet(uint32_t flag) { return ((flags_ & flag) != 0); }
   void CreateUDPPorts();
   void CreateTCPPorts();
   void CreateStunPorts();
@@ -321,7 +322,7 @@ class AllocationSequence : public rtc::MessageHandler,
   rtc::IPAddress ip_;
   PortConfiguration* config_;
   State state_;
-  uint32 flags_;
+  uint32_t flags_;
   ProtocolList protocols_;
   rtc::scoped_ptr<rtc::AsyncPacketSocket> udp_socket_;
   // There will be only one udp port per AllocationSequence.

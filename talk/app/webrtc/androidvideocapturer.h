@@ -69,7 +69,7 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
   // Argument |buffer| is intentionally by value, for use with rtc::Bind.
   void OnIncomingFrame(rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer,
                        int rotation,
-                       int64 time_stamp);
+                       int64_t time_stamp);
 
   // Called from JNI to request a new video format.
   void OnOutputFormatRequest(int width, int height, int fps);
@@ -89,7 +89,7 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
   void Stop() override;
   bool IsRunning() override;
   bool IsScreencast() const override { return false; }
-  bool GetPreferredFourccs(std::vector<uint32>* fourccs) override;
+  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override;
 
   bool running_;
   rtc::scoped_refptr<AndroidVideoCapturerDelegate> delegate_;

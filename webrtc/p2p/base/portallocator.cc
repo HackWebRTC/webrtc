@@ -17,7 +17,7 @@ PortAllocatorSession::PortAllocatorSession(const std::string& content_name,
                                            int component,
                                            const std::string& ice_ufrag,
                                            const std::string& ice_pwd,
-                                           uint32 flags)
+                                           uint32_t flags)
     : content_name_(content_name),
       component_(component),
       flags_(flags),

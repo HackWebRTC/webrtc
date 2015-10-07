@@ -44,7 +44,7 @@ static const char kFailedDueToIdentityFailed[] =
 static const char kFailedDueToSessionShutdown[] =
     " failed because the session was shut down";
 
-static const uint64 kInitSessionVersion = 2;
+static const uint64_t kInitSessionVersion = 2;
 
 static bool CompareStream(const MediaSessionOptions::Stream& stream1,
                           const MediaSessionOptions::Stream& stream2) {
@@ -415,7 +415,7 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
 
   // Just increase the version number by one each time when a new offer
   // is created regardless if it's identical to the previous one or not.
-  // The |session_version_| is a uint64, the wrap around should not happen.
+  // The |session_version_| is a uint64_t, the wrap around should not happen.
   ASSERT(session_version_ + 1 > session_version_);
   JsepSessionDescription* offer(new JsepSessionDescription(
       JsepSessionDescription::kOffer));
@@ -459,7 +459,7 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   // In that case, the version number in the "o=" line of the answer is
   // unrelated to the version number in the o line of the offer.
   // Get a new version number by increasing the |session_version_answer_|.
-  // The |session_version_| is a uint64, the wrap around should not happen.
+  // The |session_version_| is a uint64_t, the wrap around should not happen.
   ASSERT(session_version_ + 1 > session_version_);
   JsepSessionDescription* answer(new JsepSessionDescription(
       JsepSessionDescription::kAnswer));

@@ -606,7 +606,7 @@ class DataChannelObserverWrapper : public DataChannelObserver {
 
   virtual ~DataChannelObserverWrapper() {}
 
-  void OnBufferedAmountChange(uint64 previous_amount) override {
+  void OnBufferedAmountChange(uint64_t previous_amount) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jni()->CallVoidMethod(*j_observer_global_, j_on_buffered_amount_change_mid_,
                           previous_amount);
@@ -806,13 +806,13 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
     strides_array[2] = frame->GetVPitch();
     jni()->ReleaseIntArrayElements(strides, strides_array, 0);
     jobjectArray planes = jni()->NewObjectArray(3, *j_byte_buffer_class_, NULL);
-    jobject y_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8*>(frame->GetYPlane()),
-        frame->GetYPitch() * frame->GetHeight());
+    jobject y_buffer =
+        jni()->NewDirectByteBuffer(const_cast<uint8_t*>(frame->GetYPlane()),
+                                   frame->GetYPitch() * frame->GetHeight());
     jobject u_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8*>(frame->GetUPlane()), frame->GetChromaSize());
+        const_cast<uint8_t*>(frame->GetUPlane()), frame->GetChromaSize());
     jobject v_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8*>(frame->GetVPlane()), frame->GetChromaSize());
+        const_cast<uint8_t*>(frame->GetVPlane()), frame->GetChromaSize());
     jni()->SetObjectArrayElement(planes, 0, y_buffer);
     jni()->SetObjectArrayElement(planes, 1, u_buffer);
     jni()->SetObjectArrayElement(planes, 2, v_buffer);
@@ -880,8 +880,8 @@ JOW(jobject, DataChannel_state)(JNIEnv* jni, jobject j_dc) {
 }
 
 JOW(jlong, DataChannel_bufferedAmount)(JNIEnv* jni, jobject j_dc) {
-  uint64 buffered_amount = ExtractNativeDC(jni, j_dc)->buffered_amount();
-  RTC_CHECK_LE(buffered_amount, std::numeric_limits<int64>::max())
+  uint64_t buffered_amount = ExtractNativeDC(jni, j_dc)->buffered_amount();
+  RTC_CHECK_LE(buffered_amount, std::numeric_limits<int64_t>::max())
       << "buffered_amount overflowed jlong!";
   return static_cast<jlong>(buffered_amount);
 }

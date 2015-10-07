@@ -26,7 +26,7 @@ size_t PackAddressForNAT(char* buf, size_t buf_size,
   buf[0] = 0;
   buf[1] = family;
   // Writes the port.
-  *(reinterpret_cast<uint16*>(&buf[2])) = HostToNetwork16(remote_addr.port());
+  *(reinterpret_cast<uint16_t*>(&buf[2])) = HostToNetwork16(remote_addr.port());
   if (family == AF_INET) {
     ASSERT(buf_size >= kNATEncodedIPv4AddressSize);
     in_addr v4addr = ip.ipv4_address();
@@ -49,7 +49,8 @@ size_t UnpackAddressFromNAT(const char* buf, size_t buf_size,
   ASSERT(buf_size >= 8);
   ASSERT(buf[0] == 0);
   int family = buf[1];
-  uint16 port = NetworkToHost16(*(reinterpret_cast<const uint16*>(&buf[2])));
+  uint16_t port =
+      NetworkToHost16(*(reinterpret_cast<const uint16_t*>(&buf[2])));
   if (family == AF_INET) {
     const in_addr* v4addr = reinterpret_cast<const in_addr*>(&buf[4]);
     *remote_addr = SocketAddress(IPAddress(*v4addr), port);
@@ -220,7 +221,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
   ConnState GetState() const override {
     return connected_ ? CS_CONNECTED : CS_CLOSED;
   }
-  int EstimateMTU(uint16* mtu) override { return socket_->EstimateMTU(mtu); }
+  int EstimateMTU(uint16_t* mtu) override { return socket_->EstimateMTU(mtu); }
   int GetOption(Option opt, int* value) override {
     return socket_->GetOption(opt, value);
   }

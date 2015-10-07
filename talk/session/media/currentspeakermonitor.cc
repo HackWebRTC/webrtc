@@ -80,17 +80,17 @@ void CurrentSpeakerMonitor::Stop() {
 }
 
 void CurrentSpeakerMonitor::set_min_time_between_switches(
-    uint32 min_time_between_switches) {
+    uint32_t min_time_between_switches) {
   min_time_between_switches_ = min_time_between_switches;
 }
 
 void CurrentSpeakerMonitor::OnAudioMonitor(
     AudioSourceContext* audio_source_context, const AudioInfo& info) {
-  std::map<uint32, int> active_ssrc_to_level_map;
+  std::map<uint32_t, int> active_ssrc_to_level_map;
   cricket::AudioInfo::StreamList::const_iterator stream_list_it;
   for (stream_list_it = info.active_streams.begin();
        stream_list_it != info.active_streams.end(); ++stream_list_it) {
-    uint32 ssrc = stream_list_it->first;
+    uint32_t ssrc = stream_list_it->first;
     active_ssrc_to_level_map[ssrc] = stream_list_it->second;
 
     // It's possible we haven't yet added this source to our map.  If so,
@@ -102,11 +102,11 @@ void CurrentSpeakerMonitor::OnAudioMonitor(
   }
 
   int max_level = 0;
-  uint32 loudest_speaker_ssrc = 0;
+  uint32_t loudest_speaker_ssrc = 0;
 
   // Update the speaking states of all participants based on the new audio
   // level information.  Also retain loudest speaker.
-  std::map<uint32, SpeakingState>::iterator state_it;
+  std::map<uint32_t, SpeakingState>::iterator state_it;
   for (state_it = ssrc_to_speaking_state_map_.begin();
        state_it != ssrc_to_speaking_state_map_.end(); ++state_it) {
     bool is_previous_speaker = current_speaker_ssrc_ == state_it->first;
@@ -115,7 +115,7 @@ void CurrentSpeakerMonitor::OnAudioMonitor(
     // members as having started or stopped speaking. Matches the
     // algorithm used by the hangouts js code.
 
-    std::map<uint32, int>::const_iterator level_it =
+    std::map<uint32_t, int>::const_iterator level_it =
         active_ssrc_to_level_map.find(state_it->first);
     // Note that the stream map only contains streams with non-zero audio
     // levels.
@@ -182,7 +182,7 @@ void CurrentSpeakerMonitor::OnAudioMonitor(
 
   // We avoid over-switching by disabling switching for a period of time after
   // a switch is done.
-  uint32 now = rtc::Time();
+  uint32_t now = rtc::Time();
   if (earliest_permitted_switch_time_ <= now &&
       current_speaker_ssrc_ != loudest_speaker_ssrc) {
     current_speaker_ssrc_ = loudest_speaker_ssrc;

@@ -845,7 +845,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     audioproc->SetExtraOptions(config);
   }
 
-  uint32 recording_sample_rate;
+  uint32_t recording_sample_rate;
   if (options.recording_sample_rate.Get(&recording_sample_rate)) {
     LOG(LS_INFO) << "Recording sample rate is " << recording_sample_rate;
     if (voe_wrapper_->hw()->SetRecordingSampleRate(recording_sample_rate)) {
@@ -853,7 +853,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  uint32 playout_sample_rate;
+  uint32_t playout_sample_rate;
   if (options.playout_sample_rate.Get(&playout_sample_rate)) {
     LOG(LS_INFO) << "Playout sample rate is " << playout_sample_rate;
     if (voe_wrapper_->hw()->SetPlayoutSampleRate(playout_sample_rate)) {
@@ -2066,7 +2066,8 @@ bool WebRtcVoiceMediaChannel::ChangeSend(int channel, SendFlags send) {
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetAudioSend(uint32 ssrc, bool enable,
+bool WebRtcVoiceMediaChannel::SetAudioSend(uint32_t ssrc,
+                                           bool enable,
                                            const AudioOptions* options,
                                            AudioRenderer* renderer) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -2190,7 +2191,7 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   return ChangeSend(channel, desired_send_);
 }
 
-bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32 ssrc) {
+bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
   ChannelMap::iterator it = send_channels_.find(ssrc);
   if (it == send_channels_.end()) {
     LOG(LS_WARNING) << "Try to remove stream with ssrc " << ssrc
@@ -2232,7 +2233,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
 
   if (!VERIFY(sp.ssrcs.size() == 1))
     return false;
-  uint32 ssrc = sp.first_ssrc();
+  uint32_t ssrc = sp.first_ssrc();
 
   if (ssrc == 0) {
     LOG(LS_WARNING) << "AddRecvStream with 0 ssrc is not supported.";
@@ -2357,7 +2358,7 @@ bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
   return SetPlayout(channel, playout_);
 }
 
-bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32 ssrc) {
+bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "RemoveRecvStream: " << ssrc;
 
@@ -2417,7 +2418,7 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32 ssrc) {
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetRemoteRenderer(uint32 ssrc,
+bool WebRtcVoiceMediaChannel::SetRemoteRenderer(uint32_t ssrc,
                                                 AudioRenderer* renderer) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   ChannelMap::iterator it = receive_channels_.find(ssrc);
@@ -2440,7 +2441,7 @@ bool WebRtcVoiceMediaChannel::SetRemoteRenderer(uint32 ssrc,
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetLocalRenderer(uint32 ssrc,
+bool WebRtcVoiceMediaChannel::SetLocalRenderer(uint32_t ssrc,
                                                AudioRenderer* renderer) {
   ChannelMap::iterator it = send_channels_.find(ssrc);
   if (it == send_channels_.end()) {
@@ -2513,8 +2514,9 @@ void WebRtcVoiceMediaChannel::SetTypingDetectionParameters(int time_window,
   }
 }
 
-bool WebRtcVoiceMediaChannel::SetOutputScaling(
-    uint32 ssrc, double left, double right) {
+bool WebRtcVoiceMediaChannel::SetOutputScaling(uint32_t ssrc,
+                                               double left,
+                                               double right) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   rtc::CritScope lock(&receive_channels_cs_);
   // Collect the channels to scale the output volume.
@@ -2566,8 +2568,10 @@ bool WebRtcVoiceMediaChannel::CanInsertDtmf() {
   return dtmf_allowed_;
 }
 
-bool WebRtcVoiceMediaChannel::InsertDtmf(uint32 ssrc, int event,
-                                         int duration, int flags) {
+bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc,
+                                         int event,
+                                         int duration,
+                                         int flags) {
   if (!dtmf_allowed_) {
     return false;
   }
@@ -2691,7 +2695,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
   }
 }
 
-bool WebRtcVoiceMediaChannel::MuteStream(uint32 ssrc, bool muted) {
+bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
   int channel = (ssrc == 0) ? voe_channel() : GetSendChannelId(ssrc);
   if (channel == -1) {
     LOG(LS_WARNING) << "The specified ssrc " << ssrc << " is not in use.";
@@ -2981,7 +2985,7 @@ int WebRtcVoiceMediaChannel::GetOutputLevel(int channel) {
   return (ret == 0) ? static_cast<int>(ulevel) : -1;
 }
 
-int WebRtcVoiceMediaChannel::GetReceiveChannelId(uint32 ssrc) const {
+int WebRtcVoiceMediaChannel::GetReceiveChannelId(uint32_t ssrc) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   ChannelMap::const_iterator it = receive_channels_.find(ssrc);
   if (it != receive_channels_.end())
@@ -2989,7 +2993,7 @@ int WebRtcVoiceMediaChannel::GetReceiveChannelId(uint32 ssrc) const {
   return (ssrc == default_receive_ssrc_) ? voe_channel() : -1;
 }
 
-int WebRtcVoiceMediaChannel::GetSendChannelId(uint32 ssrc) const {
+int WebRtcVoiceMediaChannel::GetSendChannelId(uint32_t ssrc) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   ChannelMap::const_iterator it = send_channels_.find(ssrc);
   if (it != send_channels_.end())
@@ -3084,10 +3088,11 @@ bool WebRtcVoiceMediaChannel::SetPlayout(int channel, bool playout) {
   return true;
 }
 
-uint32 WebRtcVoiceMediaChannel::ParseSsrc(const void* data, size_t len,
-                                        bool rtcp) {
+uint32_t WebRtcVoiceMediaChannel::ParseSsrc(const void* data,
+                                            size_t len,
+                                            bool rtcp) {
   size_t ssrc_pos = (!rtcp) ? 8 : 4;
-  uint32 ssrc = 0;
+  uint32_t ssrc = 0;
   if (len >= (ssrc_pos + sizeof(ssrc))) {
     ssrc = rtc::GetBE32(static_cast<const char*>(data) + ssrc_pos);
   }
@@ -3154,7 +3159,7 @@ void WebRtcVoiceMediaChannel::RecreateAudioReceiveStreams() {
   }
 }
 
-void WebRtcVoiceMediaChannel::AddAudioReceiveStream(uint32 ssrc) {
+void WebRtcVoiceMediaChannel::AddAudioReceiveStream(uint32_t ssrc) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   WebRtcVoiceChannelRenderer* channel = receive_channels_[ssrc];
   RTC_DCHECK(channel != nullptr);
@@ -3171,7 +3176,7 @@ void WebRtcVoiceMediaChannel::AddAudioReceiveStream(uint32 ssrc) {
   receive_streams_.insert(std::make_pair(ssrc, s));
 }
 
-void WebRtcVoiceMediaChannel::RemoveAudioReceiveStream(uint32 ssrc) {
+void WebRtcVoiceMediaChannel::RemoveAudioReceiveStream(uint32_t ssrc) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   auto stream_it = receive_streams_.find(ssrc);
   if (stream_it != receive_streams_.end()) {

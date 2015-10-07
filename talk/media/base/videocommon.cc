@@ -36,8 +36,8 @@
 namespace cricket {
 
 struct FourCCAliasEntry {
-  uint32 alias;
-  uint32 canonical;
+  uint32_t alias;
+  uint32_t canonical;
 };
 
 static const FourCCAliasEntry kFourCCAliases[] = {
@@ -57,7 +57,7 @@ static const FourCCAliasEntry kFourCCAliases[] = {
   {FOURCC_CM24, FOURCC_RAW},
 };
 
-uint32 CanonicalFourCC(uint32 fourcc) {
+uint32_t CanonicalFourCC(uint32_t fourcc) {
   for (int i = 0; i < ARRAY_SIZE(kFourCCAliases); ++i) {
     if (kFourCCAliases[i].alias == fourcc) {
       return kFourCCAliases[i].canonical;
@@ -223,7 +223,7 @@ void ComputeScaleToSquarePixels(int in_width, int in_height,
 // as a multiply defined symbol error. See Also:
 // http://msdn.microsoft.com/en-us/library/34h23df8.aspx
 #ifndef _MSC_EXTENSIONS
-const int64 VideoFormat::kMinimumInterval;  // Initialized in header.
+const int64_t VideoFormat::kMinimumInterval;  // Initialized in header.
 #endif
 
 std::string VideoFormat::ToString() const {

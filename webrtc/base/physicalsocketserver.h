@@ -41,9 +41,9 @@ class PosixSignalDispatcher;
 class Dispatcher {
  public:
   virtual ~Dispatcher() {}
-  virtual uint32 GetRequestedEvents() = 0;
-  virtual void OnPreEvent(uint32 ff) = 0;
-  virtual void OnEvent(uint32 ff, int err) = 0;
+  virtual uint32_t GetRequestedEvents() = 0;
+  virtual void OnPreEvent(uint32_t ff) = 0;
+  virtual void OnEvent(uint32_t ff, int err) = 0;
 #if defined(WEBRTC_WIN)
   virtual WSAEVENT GetWSAEvent() = 0;
   virtual SOCKET GetSocket() = 0;

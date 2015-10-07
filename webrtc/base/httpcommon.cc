@@ -149,12 +149,12 @@ bool FromString(HttpHeader& header, const std::string& str) {
   return Enum<HttpHeader>::Parse(header, str);
 }
 
-bool HttpCodeHasBody(uint32 code) {
+bool HttpCodeHasBody(uint32_t code) {
   return !HttpCodeIsInformational(code)
          && (code != HC_NO_CONTENT) && (code != HC_NOT_MODIFIED);
 }
 
-bool HttpCodeIsCacheable(uint32 code) {
+bool HttpCodeIsCacheable(uint32_t code) {
   switch (code) {
   case HC_OK:
   case HC_NON_AUTHORITATIVE:
@@ -599,32 +599,29 @@ HttpResponseData::copy(const HttpResponseData& src) {
   HttpData::copy(src);
 }
 
-void
-HttpResponseData::set_success(uint32 scode) {
+void HttpResponseData::set_success(uint32_t scode) {
   this->scode = scode;
   message.clear();
   setHeader(HH_CONTENT_LENGTH, "0", false);
 }
 
-void
-HttpResponseData::set_success(const std::string& content_type,
-                              StreamInterface* document,
-                              uint32 scode) {
+void HttpResponseData::set_success(const std::string& content_type,
+                                   StreamInterface* document,
+                                   uint32_t scode) {
   this->scode = scode;
   message.erase(message.begin(), message.end());
   setContent(content_type, document);
 }
 
-void
-HttpResponseData::set_redirect(const std::string& location, uint32 scode) {
+void HttpResponseData::set_redirect(const std::string& location,
+                                    uint32_t scode) {
   this->scode = scode;
   message.clear();
   setHeader(HH_LOCATION, location);
   setHeader(HH_CONTENT_LENGTH, "0", false);
 }
 
-void
-HttpResponseData::set_error(uint32 scode) {
+void HttpResponseData::set_error(uint32_t scode) {
   this->scode = scode;
   message.clear();
   setHeader(HH_CONTENT_LENGTH, "0", false);
@@ -911,7 +908,7 @@ HttpAuthResult HttpAuthenticate(
     bool specify_credentials = !username.empty();
     size_t steps = 0;
 
-    //uint32 now = Time();
+    // uint32_t now = Time();
 
     NegotiateAuthContext * neg = static_cast<NegotiateAuthContext *>(context);
     if (neg) {

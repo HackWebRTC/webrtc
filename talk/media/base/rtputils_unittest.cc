@@ -88,11 +88,11 @@ TEST(RtpUtilsTest, GetRtp) {
   EXPECT_TRUE(GetRtpSeqNum(kPcmuFrame, sizeof(kPcmuFrame), &seq_num));
   EXPECT_EQ(1, seq_num);
 
-  uint32 ts;
+  uint32_t ts;
   EXPECT_TRUE(GetRtpTimestamp(kPcmuFrame, sizeof(kPcmuFrame), &ts));
   EXPECT_EQ(0u, ts);
 
-  uint32 ssrc;
+  uint32_t ssrc;
   EXPECT_TRUE(GetRtpSsrc(kPcmuFrame, sizeof(kPcmuFrame), &ssrc));
   EXPECT_EQ(1u, ssrc);
 
@@ -157,7 +157,7 @@ TEST(RtpUtilsTest, GetRtcp) {
 
   EXPECT_FALSE(GetRtcpType(kInvalidPacket, sizeof(kInvalidPacket), &pt));
 
-  uint32 ssrc;
+  uint32_t ssrc;
   EXPECT_TRUE(GetRtcpSsrc(kNonCompoundRtcpPliFeedbackPacket,
                           sizeof(kNonCompoundRtcpPliFeedbackPacket),
                           &ssrc));

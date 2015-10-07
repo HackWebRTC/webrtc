@@ -88,9 +88,9 @@ class Vp9FrameBufferPool {
   // |fb|        Pointer to the libvpx frame buffer object, this is updated to
   //             use the pool's buffer.
   // Returns 0 on success. Returns < 0 on failure.
-  static int32 VpxGetFrameBuffer(void* user_priv,
-                                 size_t min_size,
-                                 vpx_codec_frame_buffer* fb);
+  static int32_t VpxGetFrameBuffer(void* user_priv,
+                                   size_t min_size,
+                                   vpx_codec_frame_buffer* fb);
 
   // InitializeVpxUsePool configures libvpx to call this function when it has
   // finished using one of the pool's frame buffer. Parameters:
@@ -98,8 +98,8 @@ class Vp9FrameBufferPool {
   //             to be a pointer to the pool.
   // |fb|        Pointer to the libvpx frame buffer object, its |priv| will be
   //             a pointer to one of the pool's Vp9FrameBuffer.
-  static int32 VpxReleaseFrameBuffer(void* user_priv,
-                                     vpx_codec_frame_buffer* fb);
+  static int32_t VpxReleaseFrameBuffer(void* user_priv,
+                                       vpx_codec_frame_buffer* fb);
 
  private:
   // Protects |allocated_buffers_|.

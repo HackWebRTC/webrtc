@@ -19,18 +19,18 @@ namespace webrtc {
 // Currently, only resolution is read without being ignored.
 class H264SpsParser {
  public:
-  H264SpsParser(const uint8* sps, size_t byte_length);
+  H264SpsParser(const uint8_t* sps, size_t byte_length);
   // Parses the SPS to completion. Returns true if the SPS was parsed correctly.
   bool Parse();
-  uint16 width() { return width_; }
-  uint16 height() { return height_; }
+  uint16_t width() { return width_; }
+  uint16_t height() { return height_; }
 
  private:
-  const uint8* const sps_;
+  const uint8_t* const sps_;
   const size_t byte_length_;
 
-  uint16 width_;
-  uint16 height_;
+  uint16_t width_;
+  uint16_t height_;
 };
 
 }  // namespace webrtc

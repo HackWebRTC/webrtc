@@ -100,7 +100,7 @@ class GdiVideoRenderer::VideoWindow : public rtc::Win32Window {
   void OnRenderFrame(const VideoFrame* frame);
 
   BITMAPINFO bmi_;
-  rtc::scoped_ptr<uint8[]> image_;
+  rtc::scoped_ptr<uint8_t[]> image_;
   rtc::scoped_ptr<WindowThread> window_thread_;
   // The initial position of the window.
   int initial_x_;
@@ -123,7 +123,7 @@ GdiVideoRenderer::VideoWindow::VideoWindow(
   bmi_.bmiHeader.biHeight = -height;
   bmi_.bmiHeader.biSizeImage = width * height * 4;
 
-  image_.reset(new uint8[bmi_.bmiHeader.biSizeImage]);
+  image_.reset(new uint8_t[bmi_.bmiHeader.biSizeImage]);
 }
 
 GdiVideoRenderer::VideoWindow::~VideoWindow() {
@@ -237,7 +237,7 @@ void GdiVideoRenderer::VideoWindow::OnSize(int width, int height,
     bmi_.bmiHeader.biWidth = width;
     bmi_.bmiHeader.biHeight = -height;
     bmi_.bmiHeader.biSizeImage = width * height * 4;
-    image_.reset(new uint8[bmi_.bmiHeader.biSizeImage]);
+    image_.reset(new uint8_t[bmi_.bmiHeader.biSizeImage]);
   }
 }
 

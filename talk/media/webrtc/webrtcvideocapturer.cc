@@ -49,7 +49,7 @@
 namespace cricket {
 
 struct kVideoFourCCEntry {
-  uint32 fourcc;
+  uint32_t fourcc;
   webrtc::RawVideoType webrtc_type;
 };
 
@@ -82,7 +82,7 @@ class WebRtcVcmFactory : public WebRtcVcmFactoryInterface {
 
 static bool CapabilityToFormat(const webrtc::VideoCaptureCapability& cap,
                                VideoFormat* format) {
-  uint32 fourcc = 0;
+  uint32_t fourcc = 0;
   for (size_t i = 0; i < ARRAY_SIZE(kSupportedFourCCs); ++i) {
     if (kSupportedFourCCs[i].webrtc_type == cap.rawType) {
       fourcc = kSupportedFourCCs[i].fourcc;
@@ -303,7 +303,7 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
     return CS_FAILED;
   }
 
-  uint32 start = rtc::Time();
+  uint32_t start = rtc::Time();
   module_->RegisterCaptureDataCallback(*this);
   if (module_->StartCapture(cap) != 0) {
     LOG(LS_ERROR) << "Camera '" << GetId() << "' failed to start";
@@ -355,8 +355,7 @@ bool WebRtcVideoCapturer::IsRunning() {
   return (module_ != NULL && module_->CaptureStarted());
 }
 
-bool WebRtcVideoCapturer::GetPreferredFourccs(
-    std::vector<uint32>* fourccs) {
+bool WebRtcVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
   if (!fourccs) {
     return false;
   }
@@ -435,7 +434,7 @@ WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::VideoFrame& sample,
   pixel_height = 1;
   // Convert units from VideoFrame RenderTimeMs to CapturedFrame (nanoseconds).
   time_stamp = sample.render_time_ms() * rtc::kNumNanosecsPerMillisec;
-  data_size = rtc::checked_cast<uint32>(length);
+  data_size = rtc::checked_cast<uint32_t>(length);
   data = buffer;
   rotation = sample.rotation();
 }

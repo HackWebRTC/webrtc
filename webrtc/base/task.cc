@@ -14,7 +14,7 @@
 
 namespace rtc {
 
-int32 Task::unique_id_seed_ = 0;
+int32_t Task::unique_id_seed_ = 0;
 
 Task::Task(TaskParent *parent)
     : TaskParent(this, parent),
@@ -48,11 +48,11 @@ Task::~Task() {
   }
 }
 
-int64 Task::CurrentTime() {
+int64_t Task::CurrentTime() {
   return GetRunner()->CurrentTime();
 }
 
-int64 Task::ElapsedTime() {
+int64_t Task::ElapsedTime() {
   return CurrentTime() - start_time_;
 }
 
@@ -240,7 +240,7 @@ bool Task::TimedOut() {
 }
 
 void Task::ResetTimeout() {
-  int64 previous_timeout_time = timeout_time_;
+  int64_t previous_timeout_time = timeout_time_;
   bool timeout_allowed = (state_ != STATE_INIT)
                       && (state_ != STATE_DONE)
                       && (state_ != STATE_ERROR);
@@ -254,7 +254,7 @@ void Task::ResetTimeout() {
 }
 
 void Task::ClearTimeout() {
-  int64 previous_timeout_time = timeout_time_;
+  int64_t previous_timeout_time = timeout_time_;
   timeout_time_ = 0;
   GetRunner()->UpdateTaskTimeout(this, previous_timeout_time);
 }

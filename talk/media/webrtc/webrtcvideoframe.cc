@@ -69,12 +69,12 @@ WebRtcVideoFrame::WebRtcVideoFrame(
 
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
-bool WebRtcVideoFrame::Init(uint32 format,
+bool WebRtcVideoFrame::Init(uint32_t format,
                             int w,
                             int h,
                             int dw,
                             int dh,
-                            uint8* sample,
+                            uint8_t* sample,
                             size_t sample_size,
                             size_t pixel_width,
                             size_t pixel_height,
@@ -88,11 +88,9 @@ bool WebRtcVideoFrame::Init(uint32 format,
 bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh,
                             bool apply_rotation) {
   return Reset(frame->fourcc, frame->width, frame->height, dw, dh,
-               static_cast<uint8*>(frame->data), frame->data_size,
-               frame->pixel_width, frame->pixel_height,
-               frame->time_stamp,
-               frame->GetRotation(),
-               apply_rotation);
+               static_cast<uint8_t*>(frame->data), frame->data_size,
+               frame->pixel_width, frame->pixel_height, frame->time_stamp,
+               frame->GetRotation(), apply_rotation);
 }
 
 bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
@@ -115,42 +113,42 @@ size_t WebRtcVideoFrame::GetHeight() const {
   return video_frame_buffer_ ? video_frame_buffer_->height() : 0;
 }
 
-const uint8* WebRtcVideoFrame::GetYPlane() const {
+const uint8_t* WebRtcVideoFrame::GetYPlane() const {
   return video_frame_buffer_ ? video_frame_buffer_->data(kYPlane) : nullptr;
 }
 
-const uint8* WebRtcVideoFrame::GetUPlane() const {
+const uint8_t* WebRtcVideoFrame::GetUPlane() const {
   return video_frame_buffer_ ? video_frame_buffer_->data(kUPlane) : nullptr;
 }
 
-const uint8* WebRtcVideoFrame::GetVPlane() const {
+const uint8_t* WebRtcVideoFrame::GetVPlane() const {
   return video_frame_buffer_ ? video_frame_buffer_->data(kVPlane) : nullptr;
 }
 
-uint8* WebRtcVideoFrame::GetYPlane() {
+uint8_t* WebRtcVideoFrame::GetYPlane() {
   return video_frame_buffer_ ? video_frame_buffer_->MutableData(kYPlane)
                              : nullptr;
 }
 
-uint8* WebRtcVideoFrame::GetUPlane() {
+uint8_t* WebRtcVideoFrame::GetUPlane() {
   return video_frame_buffer_ ? video_frame_buffer_->MutableData(kUPlane)
                              : nullptr;
 }
 
-uint8* WebRtcVideoFrame::GetVPlane() {
+uint8_t* WebRtcVideoFrame::GetVPlane() {
   return video_frame_buffer_ ? video_frame_buffer_->MutableData(kVPlane)
                              : nullptr;
 }
 
-int32 WebRtcVideoFrame::GetYPitch() const {
+int32_t WebRtcVideoFrame::GetYPitch() const {
   return video_frame_buffer_ ? video_frame_buffer_->stride(kYPlane) : 0;
 }
 
-int32 WebRtcVideoFrame::GetUPitch() const {
+int32_t WebRtcVideoFrame::GetUPitch() const {
   return video_frame_buffer_ ? video_frame_buffer_->stride(kUPlane) : 0;
 }
 
-int32 WebRtcVideoFrame::GetVPitch() const {
+int32_t WebRtcVideoFrame::GetVPitch() const {
   return video_frame_buffer_ ? video_frame_buffer_->stride(kVPlane) : 0;
 }
 
@@ -199,19 +197,21 @@ bool WebRtcVideoFrame::MakeExclusive() {
   return true;
 }
 
-size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
-                                            size_t size, int stride_rgb) const {
+size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
+                                            uint8_t* buffer,
+                                            size_t size,
+                                            int stride_rgb) const {
   RTC_CHECK(video_frame_buffer_);
   RTC_CHECK(video_frame_buffer_->native_handle() == nullptr);
   return VideoFrame::ConvertToRgbBuffer(to_fourcc, buffer, size, stride_rgb);
 }
 
-bool WebRtcVideoFrame::Reset(uint32 format,
+bool WebRtcVideoFrame::Reset(uint32_t format,
                              int w,
                              int h,
                              int dw,
                              int dh,
-                             uint8* sample,
+                             uint8_t* sample,
                              size_t sample_size,
                              size_t pixel_width,
                              size_t pixel_height,

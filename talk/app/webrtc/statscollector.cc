@@ -66,7 +66,7 @@ struct TypeForAdd {
 
 typedef TypeForAdd<bool> BoolForAdd;
 typedef TypeForAdd<float> FloatForAdd;
-typedef TypeForAdd<int64> Int64ForAdd;
+typedef TypeForAdd<int64_t> Int64ForAdd;
 typedef TypeForAdd<int> IntForAdd;
 
 StatsReport::Id GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
@@ -301,7 +301,7 @@ void ExtractStatsFromList(const std::vector<T>& data,
                           StatsCollector* collector,
                           StatsReport::Direction direction) {
   for (const auto& d : data) {
-    uint32 ssrc = d.ssrc();
+    uint32_t ssrc = d.ssrc();
     // Each track can have stats for both local and remote objects.
     // TODO(hta): Handle the case of multiple SSRCs per object.
     StatsReport* report = collector->PrepareReport(true, ssrc, transport_id,
@@ -383,7 +383,7 @@ void StatsCollector::AddStream(MediaStreamInterface* stream) {
 }
 
 void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
-                                        uint32 ssrc) {
+                                        uint32_t ssrc) {
   RTC_DCHECK(session_->signaling_thread()->IsCurrent());
   RTC_DCHECK(audio_track != NULL);
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
@@ -405,7 +405,7 @@ void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
 }
 
 void StatsCollector::RemoveLocalAudioTrack(AudioTrackInterface* audio_track,
-                                           uint32 ssrc) {
+                                           uint32_t ssrc) {
   RTC_DCHECK(audio_track != NULL);
   local_audio_tracks_.erase(std::remove_if(local_audio_tracks_.begin(),
       local_audio_tracks_.end(),
@@ -482,16 +482,15 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
   }
 }
 
-StatsReport* StatsCollector::PrepareReport(
-    bool local,
-    uint32 ssrc,
-    const StatsReport::Id& transport_id,
-    StatsReport::Direction direction) {
+StatsReport* StatsCollector::PrepareReport(bool local,
+                                           uint32_t ssrc,
+                                           const StatsReport::Id& transport_id,
+                                           StatsReport::Direction direction) {
   RTC_DCHECK(session_->signaling_thread()->IsCurrent());
   StatsReport::Id id(StatsReport::NewIdWithDirection(
-      local ? StatsReport::kStatsReportTypeSsrc :
-              StatsReport::kStatsReportTypeRemoteSsrc,
-      rtc::ToString<uint32>(ssrc), direction));
+      local ? StatsReport::kStatsReportTypeSsrc
+            : StatsReport::kStatsReportTypeRemoteSsrc,
+      rtc::ToString<uint32_t>(ssrc), direction));
   StatsReport* report = reports_.Find(id);
 
   // Use the ID of the track that is currently mapped to the SSRC, if any.
@@ -861,10 +860,10 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
   // Loop through the existing local audio tracks.
   for (const auto& it : local_audio_tracks_) {
     AudioTrackInterface* track = it.first;
-    uint32 ssrc = it.second;
-    StatsReport* report = GetReport(StatsReport::kStatsReportTypeSsrc,
-                                    rtc::ToString<uint32>(ssrc),
-                                    StatsReport::kSend);
+    uint32_t ssrc = it.second;
+    StatsReport* report =
+        GetReport(StatsReport::kStatsReportTypeSsrc,
+                  rtc::ToString<uint32_t>(ssrc), StatsReport::kSend);
     if (report == NULL) {
       // This can happen if a local audio track is added to a stream on the
       // fly and the report has not been set up yet. Do nothing in this case.
@@ -905,7 +904,8 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
       stats.echo_delay_std_ms);
 }
 
-bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
+bool StatsCollector::GetTrackIdBySsrc(uint32_t ssrc,
+                                      std::string* track_id,
                                       StatsReport::Direction direction) {
   RTC_DCHECK(session_->signaling_thread()->IsCurrent());
   if (direction == StatsReport::kSend) {

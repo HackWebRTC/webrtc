@@ -276,7 +276,7 @@ int MacAsyncSocket::Close() {
   return 0;
 }
 
-int MacAsyncSocket::EstimateMTU(uint16* mtu) {
+int MacAsyncSocket::EstimateMTU(uint16_t* mtu) {
   ASSERT(false && "NYI");
   return -1;
 }

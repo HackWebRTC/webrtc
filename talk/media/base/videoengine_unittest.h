@@ -58,13 +58,13 @@
   EXPECT_TRUE_WAIT((r).num_rendered_frames() >= (c) && \
                    (w) == (r).width() && \
                    (h) == (r).height(), (t)); \
-  EXPECT_EQ(0, (r).errors()); \
+  EXPECT_EQ(0, (r).errors());
 
-static const uint32 kTimeout = 5000U;
-static const uint32 kDefaultReceiveSsrc = 0;
-static const uint32 kSsrc = 1234u;
-static const uint32 kRtxSsrc = 4321u;
-static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+static const uint32_t kTimeout = 5000U;
+static const uint32_t kDefaultReceiveSsrc = 0;
+static const uint32_t kSsrc = 1234u;
+static const uint32_t kRtxSsrc = 4321u;
+static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
 
 inline bool IsEqualRes(const cricket::VideoCodec& a, int w, int h, int fps) {
   return a.width == w && a.height == h && a.framerate == fps;
@@ -119,8 +119,9 @@ class VideoEngineOverride : public T {
                           const cricket::VideoFormat*) {
   }
 
-  void TriggerMediaFrame(
-      uint32 ssrc, cricket::VideoFrame* frame, bool* drop_frame) {
+  void TriggerMediaFrame(uint32_t ssrc,
+                         cricket::VideoFrame* frame,
+                         bool* drop_frame) {
     T::SignalMediaFrame(ssrc, frame, drop_frame);
   }
 };
@@ -553,7 +554,7 @@ class VideoMediaChannelTest : public testing::Test,
   bool SetSend(bool send) {
     return channel_->SetSend(send);
   }
-  bool SetSendStreamFormat(uint32 ssrc, const cricket::VideoCodec& codec) {
+  bool SetSendStreamFormat(uint32_t ssrc, const cricket::VideoCodec& codec) {
     return channel_->SetSendStreamFormat(ssrc, cricket::VideoFormat(
         codec.width, codec.height,
         cricket::VideoFormat::FpsToInterval(codec.framerate),
@@ -604,13 +605,13 @@ class VideoMediaChannelTest : public testing::Test,
   int NumRtpBytes() {
     return network_interface_.NumRtpBytes();
   }
-  int NumRtpBytes(uint32 ssrc) {
+  int NumRtpBytes(uint32_t ssrc) {
     return network_interface_.NumRtpBytes(ssrc);
   }
   int NumRtpPackets() {
     return network_interface_.NumRtpPackets();
   }
-  int NumRtpPackets(uint32 ssrc) {
+  int NumRtpPackets(uint32_t ssrc) {
     return network_interface_.NumRtpPackets(ssrc);
   }
   int NumSentSsrcs() {
@@ -630,18 +631,22 @@ class VideoMediaChannelTest : public testing::Test,
     ParseRtpPacket(p, NULL, &pt, NULL, NULL, NULL, NULL);
     return pt;
   }
-  static bool ParseRtpPacket(const rtc::Buffer* p, bool* x, int* pt,
-                             int* seqnum, uint32* tstamp, uint32* ssrc,
+  static bool ParseRtpPacket(const rtc::Buffer* p,
+                             bool* x,
+                             int* pt,
+                             int* seqnum,
+                             uint32_t* tstamp,
+                             uint32_t* ssrc,
                              std::string* payload) {
     rtc::ByteBuffer buf(*p);
-    uint8 u08 = 0;
-    uint16 u16 = 0;
-    uint32 u32 = 0;
+    uint8_t u08 = 0;
+    uint16_t u16 = 0;
+    uint32_t u32 = 0;
 
     // Read X and CC fields.
     if (!buf.ReadUInt8(&u08)) return false;
     bool extension = ((u08 & 0x10) != 0);
-    uint8 cc = (u08 & 0x0F);
+    uint8_t cc = (u08 & 0x0F);
     if (x) *x = extension;
 
     // Read PT field.
@@ -661,7 +666,7 @@ class VideoMediaChannelTest : public testing::Test,
     if (ssrc) *ssrc = u32;
 
     // Skip CSRCs.
-    for (uint8 i = 0; i < cc; ++i) {
+    for (uint8_t i = 0; i < cc; ++i) {
       if (!buf.ReadUInt32(&u32)) return false;
     }
 
@@ -672,10 +677,10 @@ class VideoMediaChannelTest : public testing::Test,
 
       // Read Extension header length
       if (!buf.ReadUInt16(&u16)) return false;
-      uint16 ext_header_len = u16;
+      uint16_t ext_header_len = u16;
 
       // Read Extension header
-      for (uint16 i = 0; i < ext_header_len; ++i) {
+      for (uint16_t i = 0; i < ext_header_len; ++i) {
         if (!buf.ReadUInt32(&u32)) return false;
       }
     }
@@ -698,9 +703,9 @@ class VideoMediaChannelTest : public testing::Test,
       // The packet may be a compound RTCP packet.
       while (total_len < p->size()) {
         // Read FMT, type and length.
-        uint8 fmt = 0;
-        uint8 type = 0;
-        uint16 length = 0;
+        uint8_t fmt = 0;
+        uint8_t type = 0;
+        uint16_t length = 0;
         if (!buf.ReadUInt8(&fmt)) return false;
         fmt &= 0x1F;
         if (!buf.ReadUInt8(&type)) return false;
@@ -719,7 +724,7 @@ class VideoMediaChannelTest : public testing::Test,
     return true;
   }
 
-  void OnVideoChannelError(uint32 ssrc,
+  void OnVideoChannelError(uint32_t ssrc,
                            cricket::VideoMediaChannel::Error error) {
     media_error_ = error;
   }
@@ -881,7 +886,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetRenderer(2, &renderer2));
     EXPECT_EQ(0, renderer1.num_rendered_frames());
     EXPECT_EQ(0, renderer2.num_rendered_frames());
-    std::vector<uint32> ssrcs;
+    std::vector<uint32_t> ssrcs;
     ssrcs.push_back(1);
     ssrcs.push_back(2);
     network_interface_.SetConferenceMode(true, ssrcs);
@@ -958,7 +963,7 @@ class VideoMediaChannelTest : public testing::Test,
     // the number of expected packets have been sent to avoid races where we
     // check stats before it has been updated.
     cricket::VideoMediaInfo info;
-    for (uint32 i = 0; i < kTimeout; ++i) {
+    for (uint32_t i = 0; i < kTimeout; ++i) {
       rtc::Thread::Current()->ProcessMessages(1);
       EXPECT_TRUE(channel_->GetStats(&info));
       ASSERT_EQ(2U, info.senders.size());
@@ -1000,7 +1005,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(SendFrame());
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
-    uint32 ssrc = 0;
+    uint32_t ssrc = 0;
     rtc::scoped_ptr<const rtc::Buffer> p(GetRtpPacket(0));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(kSsrc, ssrc);
@@ -1022,7 +1027,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(WaitAndSendFrame(0));
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
-    uint32 ssrc = 0;
+    uint32_t ssrc = 0;
     rtc::scoped_ptr<const rtc::Buffer> p(GetRtpPacket(0));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(999u, ssrc);
@@ -1035,9 +1040,8 @@ class VideoMediaChannelTest : public testing::Test,
   // Test that we can set the default video renderer before and after
   // media is received.
   void SetRenderer() {
-    uint8 data1[] = {
-        0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
+    uint8_t data1[] = {
+        0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
     rtc::Buffer packet1(data1, sizeof(data1));
     rtc::SetBE32(packet1.data() + 8, kSsrc);
@@ -1070,7 +1074,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SendFrame());
     EXPECT_FRAME_WAIT(1, DefaultCodec().width, DefaultCodec().height, kTimeout);
     EXPECT_GT(NumRtpPackets(), 0);
-    uint32 ssrc = 0;
+    uint32_t ssrc = 0;
     size_t last_packet = NumRtpPackets() - 1;
     rtc::scoped_ptr<const rtc::Buffer>
         p(GetRtpPacket(static_cast<int>(last_packet)));
@@ -1243,7 +1247,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetRenderer(2, &renderer2));
     EXPECT_EQ(0, renderer1.num_rendered_frames());
     EXPECT_EQ(0, renderer2.num_rendered_frames());
-    std::vector<uint32> ssrcs;
+    std::vector<uint32_t> ssrcs;
     ssrcs.push_back(1);
     ssrcs.push_back(2);
     network_interface_.SetConferenceMode(true, ssrcs);
@@ -1608,8 +1612,8 @@ class VideoMediaChannelTest : public testing::Test,
     // This frame should be received.
     EXPECT_TRUE(SendFrame());
     EXPECT_FRAME_WAIT(1, DefaultCodec().width, DefaultCodec().height, kTimeout);
-    const int64 interval = cricket::VideoFormat::FpsToInterval(
-        DefaultCodec().framerate);
+    const int64_t interval =
+        cricket::VideoFormat::FpsToInterval(DefaultCodec().framerate);
     cricket::VideoFormat format(
         0,
         0,
@@ -1719,7 +1723,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FALSE(channel_->RemoveSendStream(kSsrc));
     // Default channel is no longer used by a stream.
     EXPECT_EQ(0u, channel_->GetDefaultSendChannelSsrc());
-    uint32 new_ssrc = kSsrc + 100;
+    uint32_t new_ssrc = kSsrc + 100;
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(new_ssrc)));
     // Re-use default channel.

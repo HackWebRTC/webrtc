@@ -18,7 +18,7 @@
 
 namespace cricket {
 
-const uint32 MSG_STUN_SEND = 1;
+const uint32_t MSG_STUN_SEND = 1;
 
 const int MAX_SENDS = 9;
 const int DELAY_UNIT = 100;  // 100 milliseconds
@@ -68,7 +68,7 @@ void StunRequestManager::Clear() {
   for (RequestMap::iterator i = requests_.begin(); i != requests_.end(); ++i)
     requests.push_back(i->second);
 
-  for (uint32 i = 0; i < requests.size(); ++i) {
+  for (uint32_t i = 0; i < requests.size(); ++i) {
     // StunRequest destructor calls Remove() which deletes requests
     // from |requests_|.
     delete requests[i];
@@ -171,7 +171,7 @@ const StunMessage* StunRequest::msg() const {
   return msg_;
 }
 
-uint32 StunRequest::Elapsed() const {
+uint32_t StunRequest::Elapsed() const {
   return rtc::TimeSince(tstamp_);
 }
 

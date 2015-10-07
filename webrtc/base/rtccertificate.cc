@@ -28,7 +28,7 @@ RTCCertificate::RTCCertificate(SSLIdentity* identity)
 RTCCertificate::~RTCCertificate() {
 }
 
-uint64 RTCCertificate::expires_timestamp_ns() const {
+uint64_t RTCCertificate::expires_timestamp_ns() const {
   // TODO(hbos): Update once SSLIdentity/SSLCertificate supports expires field.
   return 0;
 }

@@ -29,15 +29,17 @@
 #include "talk/media/base/testutils.h"
 #include "webrtc/base/gunit.h"
 
-static const uint32 kSsrcs1[] = {1};
-static const uint32 kSsrcs2[] = {1, 2};
-static const uint32 kSsrcs3[] = {1, 2, 3};
-static const uint32 kRtxSsrcs3[] = {4, 5, 6};
+static const uint32_t kSsrcs1[] = {1};
+static const uint32_t kSsrcs2[] = {1, 2};
+static const uint32_t kSsrcs3[] = {1, 2, 3};
+static const uint32_t kRtxSsrcs3[] = {4, 5, 6};
 
 static cricket::StreamParams CreateStreamParamsWithSsrcGroup(
-    const std::string& semantics, const uint32 ssrcs_in[], size_t len) {
+    const std::string& semantics,
+    const uint32_t ssrcs_in[],
+    size_t len) {
   cricket::StreamParams stream;
-  std::vector<uint32> ssrcs(ssrcs_in, ssrcs_in + len);
+  std::vector<uint32_t> ssrcs(ssrcs_in, ssrcs_in + len);
   cricket::SsrcGroup sg(semantics, ssrcs);
   stream.ssrcs = ssrcs;
   stream.ssrc_groups.push_back(sg);
@@ -77,7 +79,7 @@ TEST(SsrcGroup, ToString) {
 }
 
 TEST(StreamParams, CreateLegacy) {
-  const uint32 ssrc = 7;
+  const uint32_t ssrc = 7;
   cricket::StreamParams one_sp = cricket::StreamParams::CreateLegacy(ssrc);
   EXPECT_EQ(1U, one_sp.ssrcs.size());
   EXPECT_EQ(ssrc, one_sp.first_ssrc());
@@ -132,7 +134,7 @@ TEST(StreamParams, EqualNotEqual) {
 }
 
 TEST(StreamParams, FidFunctions) {
-  uint32 fid_ssrc;
+  uint32_t fid_ssrc;
 
   cricket::StreamParams sp = cricket::StreamParams::CreateLegacy(1);
   EXPECT_FALSE(sp.AddFidSsrc(10, 20));
@@ -149,7 +151,7 @@ TEST(StreamParams, FidFunctions) {
   // Manually create SsrcGroup to test bounds-checking
   // in GetSecondarySsrc. We construct an invalid StreamParams
   // for this.
-  std::vector<uint32> fid_vector;
+  std::vector<uint32_t> fid_vector;
   fid_vector.push_back(13);
   cricket::SsrcGroup invalid_fid_group(cricket::kFidSsrcGroupSemantics,
                                         fid_vector);
@@ -165,9 +167,9 @@ TEST(StreamParams, GetPrimaryAndFidSsrcs) {
   sp.ssrcs.push_back(2);
   sp.ssrcs.push_back(3);
 
-  std::vector<uint32> primary_ssrcs;
+  std::vector<uint32_t> primary_ssrcs;
   sp.GetPrimarySsrcs(&primary_ssrcs);
-  std::vector<uint32> fid_ssrcs;
+  std::vector<uint32_t> fid_ssrcs;
   sp.GetFidSsrcs(primary_ssrcs, &fid_ssrcs);
   ASSERT_EQ(1u, primary_ssrcs.size());
   EXPECT_EQ(1u, primary_ssrcs[0]);
@@ -272,7 +274,7 @@ TEST(StreamParams, TestIsSimulcastStream_InvalidStreams) {
   // stream3 has two SIM groups.
   cricket::StreamParams stream3 =
       cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2));
-  std::vector<uint32> sim_ssrcs = MAKE_VECTOR(kRtxSsrcs3);
+  std::vector<uint32_t> sim_ssrcs = MAKE_VECTOR(kRtxSsrcs3);
   cricket::SsrcGroup sg(cricket::kSimSsrcGroupSemantics, sim_ssrcs);
   for (size_t i = 0; i < sim_ssrcs.size(); i++) {
     stream3.add_ssrc(sim_ssrcs[i]);

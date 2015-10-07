@@ -27,15 +27,18 @@ using namespace rtc;
 
 // Sends at a constant rate but with random packet sizes.
 struct Sender : public MessageHandler {
-  Sender(Thread* th, AsyncSocket* s, uint32 rt)
-      : thread(th), socket(new AsyncUDPSocket(s)),
-        done(false), rate(rt), count(0) {
+  Sender(Thread* th, AsyncSocket* s, uint32_t rt)
+      : thread(th),
+        socket(new AsyncUDPSocket(s)),
+        done(false),
+        rate(rt),
+        count(0) {
     last_send = rtc::Time();
     thread->PostDelayed(NextDelay(), this, 1);
   }
 
-  uint32 NextDelay() {
-    uint32 size = (rand() % 4096) + 1;
+  uint32_t NextDelay() {
+    uint32_t size = (rand() % 4096) + 1;
     return 1000 * size / rate;
   }
 
@@ -45,11 +48,11 @@ struct Sender : public MessageHandler {
     if (done)
       return;
 
-    uint32 cur_time = rtc::Time();
-    uint32 delay = cur_time - last_send;
-    uint32 size = rate * delay / 1000;
-    size = std::min<uint32>(size, 4096);
-    size = std::max<uint32>(size, sizeof(uint32));
+    uint32_t cur_time = rtc::Time();
+    uint32_t delay = cur_time - last_send;
+    uint32_t size = rate * delay / 1000;
+    size = std::min<uint32_t>(size, 4096);
+    size = std::max<uint32_t>(size, sizeof(uint32_t));
 
     count += size;
     memcpy(dummy, &cur_time, sizeof(cur_time));
@@ -63,16 +66,23 @@ struct Sender : public MessageHandler {
   scoped_ptr<AsyncUDPSocket> socket;
   rtc::PacketOptions options;
   bool done;
-  uint32 rate;  // bytes per second
-  uint32 count;
-  uint32 last_send;
+  uint32_t rate;  // bytes per second
+  uint32_t count;
+  uint32_t last_send;
   char dummy[4096];
 };
 
 struct Receiver : public MessageHandler, public sigslot::has_slots<> {
-  Receiver(Thread* th, AsyncSocket* s, uint32 bw)
-      : thread(th), socket(new AsyncUDPSocket(s)), bandwidth(bw), done(false),
-        count(0), sec_count(0), sum(0), sum_sq(0), samples(0) {
+  Receiver(Thread* th, AsyncSocket* s, uint32_t bw)
+      : thread(th),
+        socket(new AsyncUDPSocket(s)),
+        bandwidth(bw),
+        done(false),
+        count(0),
+        sec_count(0),
+        sum(0),
+        sum_sq(0),
+        samples(0) {
     socket->SignalReadPacket.connect(this, &Receiver::OnReadPacket);
     thread->PostDelayed(1000, this, 1);
   }
@@ -90,9 +100,9 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
     count += size;
     sec_count += size;
 
-    uint32 send_time = *reinterpret_cast<const uint32*>(data);
-    uint32 recv_time = rtc::Time();
-    uint32 delay = recv_time - send_time;
+    uint32_t send_time = *reinterpret_cast<const uint32_t*>(data);
+    uint32_t recv_time = rtc::Time();
+    uint32_t delay = recv_time - send_time;
     sum += delay;
     sum_sq += delay * delay;
     samples += 1;
@@ -114,13 +124,13 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
 
   Thread* thread;
   scoped_ptr<AsyncUDPSocket> socket;
-  uint32 bandwidth;
+  uint32_t bandwidth;
   bool done;
   size_t count;
   size_t sec_count;
   double sum;
   double sum_sq;
-  uint32 samples;
+  uint32_t samples;
 };
 
 class VirtualSocketServerTest : public testing::Test {
@@ -143,8 +153,8 @@ class VirtualSocketServerTest : public testing::Test {
     } else if (post_ip.family() == AF_INET6) {
       in6_addr post_ip6 = post_ip.ipv6_address();
       in6_addr pre_ip6 = pre_ip.ipv6_address();
-      uint32* post_as_ints = reinterpret_cast<uint32*>(&post_ip6.s6_addr);
-      uint32* pre_as_ints = reinterpret_cast<uint32*>(&pre_ip6.s6_addr);
+      uint32_t* post_as_ints = reinterpret_cast<uint32_t*>(&post_ip6.s6_addr);
+      uint32_t* pre_as_ints = reinterpret_cast<uint32_t*>(&pre_ip6.s6_addr);
       EXPECT_EQ(post_as_ints[3], pre_as_ints[3]);
     }
   }
@@ -620,8 +630,8 @@ class VirtualSocketServerTest : public testing::Test {
     }
 
     // Next, deliver packets at random intervals
-    const uint32 mean = 50;
-    const uint32 stddev = 50;
+    const uint32_t mean = 50;
+    const uint32_t stddev = 50;
 
     ss_->set_delay_mean(mean);
     ss_->set_delay_stddev(stddev);
@@ -654,7 +664,7 @@ class VirtualSocketServerTest : public testing::Test {
     EXPECT_EQ(recv_socket->GetLocalAddress().family(), initial_addr.family());
     ASSERT_EQ(0, send_socket->Connect(recv_socket->GetLocalAddress()));
 
-    uint32 bandwidth = 64 * 1024;
+    uint32_t bandwidth = 64 * 1024;
     ss_->set_bandwidth(bandwidth);
 
     Thread* pthMain = Thread::Current();
@@ -679,8 +689,8 @@ class VirtualSocketServerTest : public testing::Test {
     LOG(LS_VERBOSE) << "seed = " << seed;
     srand(static_cast<unsigned int>(seed));
 
-    const uint32 mean = 2000;
-    const uint32 stddev = 500;
+    const uint32_t mean = 2000;
+    const uint32_t stddev = 500;
 
     ss_->set_delay_mean(mean);
     ss_->set_delay_stddev(stddev);
@@ -1008,16 +1018,16 @@ TEST_F(VirtualSocketServerTest, CanSendDatagramFromUnboundIPv6ToIPv4Any) {
 }
 
 TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
-  const uint32 kTestMean[] = { 10, 100, 333, 1000 };
+  const uint32_t kTestMean[] = {10, 100, 333, 1000};
   const double kTestDev[] = { 0.25, 0.1, 0.01 };
   // TODO: The current code only works for 1000 data points or more.
-  const uint32 kTestSamples[] = { /*10, 100,*/ 1000 };
+  const uint32_t kTestSamples[] = {/*10, 100,*/ 1000};
   for (size_t midx = 0; midx < ARRAY_SIZE(kTestMean); ++midx) {
     for (size_t didx = 0; didx < ARRAY_SIZE(kTestDev); ++didx) {
       for (size_t sidx = 0; sidx < ARRAY_SIZE(kTestSamples); ++sidx) {
         ASSERT_LT(0u, kTestSamples[sidx]);
-        const uint32 kStdDev =
-            static_cast<uint32>(kTestDev[didx] * kTestMean[midx]);
+        const uint32_t kStdDev =
+            static_cast<uint32_t>(kTestDev[didx] * kTestMean[midx]);
         VirtualSocketServer::Function* f =
             VirtualSocketServer::CreateDistribution(kTestMean[midx],
                                                     kStdDev,
@@ -1025,12 +1035,12 @@ TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
         ASSERT_TRUE(NULL != f);
         ASSERT_EQ(kTestSamples[sidx], f->size());
         double sum = 0;
-        for (uint32 i = 0; i < f->size(); ++i) {
+        for (uint32_t i = 0; i < f->size(); ++i) {
           sum += (*f)[i].second;
         }
         const double mean = sum / f->size();
         double sum_sq_dev = 0;
-        for (uint32 i = 0; i < f->size(); ++i) {
+        for (uint32_t i = 0; i < f->size(); ++i) {
           double dev = (*f)[i].second - mean;
           sum_sq_dev += dev * dev;
         }

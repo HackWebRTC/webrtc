@@ -24,7 +24,7 @@ namespace rtc {
 
 static const size_t kMaxPacketSize = 64 * 1024;
 
-typedef uint16 PacketLength;
+typedef uint16_t PacketLength;
 static const size_t kPacketLenSize = sizeof(PacketLength);
 
 static const size_t kBufSize = kMaxPacketSize + kPacketLenSize;

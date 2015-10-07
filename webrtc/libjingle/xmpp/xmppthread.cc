@@ -16,8 +16,8 @@
 namespace buzz {
 namespace {
 
-const uint32 MSG_LOGIN = 1;
-const uint32 MSG_DISCONNECT = 2;
+const uint32_t MSG_LOGIN = 1;
+const uint32_t MSG_DISCONNECT = 2;
 
 struct LoginData: public rtc::MessageData {
   LoginData(const buzz::XmppClientSettings& s) : xcs(s) {}

@@ -213,13 +213,13 @@ bool ProxyItemMatch(const Url<char>& url, char * item, size_t len) {
   int a, b, c, d, m;
   int match = sscanf(item, "%d.%d.%d.%d/%d", &a, &b, &c, &d, &m);
   if (match >= 4) {
-    uint32 ip = ((a & 0xFF) << 24) | ((b & 0xFF) << 16) | ((c & 0xFF) << 8) |
-        (d & 0xFF);
+    uint32_t ip = ((a & 0xFF) << 24) | ((b & 0xFF) << 16) | ((c & 0xFF) << 8) |
+                  (d & 0xFF);
     if ((match < 5) || (m > 32))
       m = 32;
     else if (m < 0)
       m = 0;
-    uint32 mask = (m == 0) ? 0 : (~0UL) << (32 - m);
+    uint32_t mask = (m == 0) ? 0 : (~0UL) << (32 - m);
     SocketAddress addr(url.host(), 0);
     // TODO: Support IPv6 proxyitems. This code block is IPv4 only anyway.
     return !addr.IsUnresolved() &&
@@ -289,7 +289,7 @@ bool ParseProxy(const std::string& saddress, ProxyInfo* proxy) {
 
   ProxyType ptype;
   std::string host;
-  uint16 port;
+  uint16_t port;
 
   const char* address = saddress.c_str();
   while (*address) {
@@ -323,7 +323,7 @@ bool ParseProxy(const std::string& saddress, ProxyInfo* proxy) {
 
     *colon = 0;
     char * endptr;
-    port = static_cast<uint16>(strtol(colon + 1, &endptr, 0));
+    port = static_cast<uint16_t>(strtol(colon + 1, &endptr, 0));
     if (*endptr != 0) {
       LOG(LS_WARNING) << "Proxy address with invalid port [" << buffer << "]";
       continue;
@@ -397,7 +397,7 @@ bool GetFirefoxProfilePath(Pathname* path) {
     return false;
   }
   char buffer[NAME_MAX + 1];
-  if (0 != FSRefMakePath(&fr, reinterpret_cast<uint8*>(buffer),
+  if (0 != FSRefMakePath(&fr, reinterpret_cast<uint8_t*>(buffer),
                          ARRAY_SIZE(buffer))) {
     LOG(LS_ERROR) << "FSRefMakePath failed";
     return false;

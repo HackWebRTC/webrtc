@@ -36,7 +36,7 @@ void AsyncInvoker::OnMessage(Message* msg) {
   closure->Execute();
 }
 
-void AsyncInvoker::Flush(Thread* thread, uint32 id /*= MQID_ANY*/) {
+void AsyncInvoker::Flush(Thread* thread, uint32_t id /*= MQID_ANY*/) {
   if (destroying_) return;
 
   // Run this on |thread| to reduce the number of context switches.
@@ -57,7 +57,7 @@ void AsyncInvoker::Flush(Thread* thread, uint32 id /*= MQID_ANY*/) {
 
 void AsyncInvoker::DoInvoke(Thread* thread,
                             const scoped_refptr<AsyncClosure>& closure,
-                            uint32 id) {
+                            uint32_t id) {
   if (destroying_) {
     LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
     return;
@@ -67,8 +67,8 @@ void AsyncInvoker::DoInvoke(Thread* thread,
 
 void AsyncInvoker::DoInvokeDelayed(Thread* thread,
                                    const scoped_refptr<AsyncClosure>& closure,
-                                   uint32 delay_ms,
-                                   uint32 id) {
+                                   uint32_t delay_ms,
+                                   uint32_t id) {
   if (destroying_) {
     LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
     return;
@@ -85,7 +85,7 @@ GuardedAsyncInvoker::GuardedAsyncInvoker() : thread_(Thread::Current()) {
 GuardedAsyncInvoker::~GuardedAsyncInvoker() {
 }
 
-bool GuardedAsyncInvoker::Flush(uint32 id) {
+bool GuardedAsyncInvoker::Flush(uint32_t id) {
   rtc::CritScope cs(&crit_);
   if (thread_ == nullptr)
     return false;

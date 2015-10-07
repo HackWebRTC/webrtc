@@ -196,9 +196,9 @@ class AsyncSocksProxyServerSocket : public AsyncProxyServerSocket {
   void DirectSend(const ByteBuffer& buf);
 
   void HandleHello(ByteBuffer* request);
-  void SendHelloReply(uint8 method);
+  void SendHelloReply(uint8_t method);
   void HandleAuth(ByteBuffer* request);
-  void SendAuthReply(uint8 result);
+  void SendAuthReply(uint8_t result);
   void HandleConnect(ByteBuffer* request);
   void SendConnectResult(int result, const SocketAddress& addr) override;
 

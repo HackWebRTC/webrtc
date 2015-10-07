@@ -1465,8 +1465,8 @@ TEST_F(WebRtcSessionTest, TestCreateSdesOfferReceiveSdesAnswer) {
   // Verify the session id is the same and the session version is
   // increased.
   EXPECT_EQ(session_id_orig, offer->session_id());
-  EXPECT_LT(rtc::FromString<uint64>(session_version_orig),
-            rtc::FromString<uint64>(offer->session_version()));
+  EXPECT_LT(rtc::FromString<uint64_t>(session_version_orig),
+            rtc::FromString<uint64_t>(offer->session_version()));
 
   SetLocalDescriptionWithoutError(offer);
   EXPECT_EQ(0u, video_channel_->send_streams().size());
@@ -1525,8 +1525,8 @@ TEST_F(WebRtcSessionTest, TestReceiveSdesOfferCreateSdesAnswer) {
   // Verify the session id is the same and the session version is
   // increased.
   EXPECT_EQ(session_id_orig, answer->session_id());
-  EXPECT_LT(rtc::FromString<uint64>(session_version_orig),
-            rtc::FromString<uint64>(answer->session_version()));
+  EXPECT_LT(rtc::FromString<uint64_t>(session_version_orig),
+            rtc::FromString<uint64_t>(answer->session_version()));
   SetLocalDescriptionWithoutError(answer);
 
   ASSERT_EQ(2u, video_channel_->recv_streams().size());
@@ -3107,7 +3107,7 @@ TEST_F(WebRtcSessionTest, SetAudioPlayout) {
   cricket::FakeVoiceMediaChannel* channel = media_engine_->GetVoiceChannel(0);
   ASSERT_TRUE(channel != NULL);
   ASSERT_EQ(1u, channel->recv_streams().size());
-  uint32 receive_ssrc  = channel->recv_streams()[0].first_ssrc();
+  uint32_t receive_ssrc = channel->recv_streams()[0].first_ssrc();
   double left_vol, right_vol;
   EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
   EXPECT_EQ(1, left_vol);
@@ -3132,7 +3132,7 @@ TEST_F(WebRtcSessionTest, SetAudioSend) {
   cricket::FakeVoiceMediaChannel* channel = media_engine_->GetVoiceChannel(0);
   ASSERT_TRUE(channel != NULL);
   ASSERT_EQ(1u, channel->send_streams().size());
-  uint32 send_ssrc  = channel->send_streams()[0].first_ssrc();
+  uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
 
   cricket::AudioOptions options;
@@ -3162,7 +3162,7 @@ TEST_F(WebRtcSessionTest, AudioRendererForLocalStream) {
   cricket::FakeVoiceMediaChannel* channel = media_engine_->GetVoiceChannel(0);
   ASSERT_TRUE(channel != NULL);
   ASSERT_EQ(1u, channel->send_streams().size());
-  uint32 send_ssrc  = channel->send_streams()[0].first_ssrc();
+  uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
 
   rtc::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
   cricket::AudioOptions options;
@@ -3187,7 +3187,7 @@ TEST_F(WebRtcSessionTest, SetVideoPlayout) {
   ASSERT_LT(0u, channel->renderers().size());
   EXPECT_TRUE(channel->renderers().begin()->second == NULL);
   ASSERT_EQ(1u, channel->recv_streams().size());
-  uint32 receive_ssrc  = channel->recv_streams()[0].first_ssrc();
+  uint32_t receive_ssrc = channel->recv_streams()[0].first_ssrc();
   cricket::FakeVideoRenderer renderer;
   session_->SetVideoPlayout(receive_ssrc, true, &renderer);
   EXPECT_TRUE(channel->renderers().begin()->second == &renderer);
@@ -3202,7 +3202,7 @@ TEST_F(WebRtcSessionTest, SetVideoSend) {
   cricket::FakeVideoMediaChannel* channel = media_engine_->GetVideoChannel(0);
   ASSERT_TRUE(channel != NULL);
   ASSERT_EQ(1u, channel->send_streams().size());
-  uint32 send_ssrc  = channel->send_streams()[0].first_ssrc();
+  uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
   cricket::VideoOptions* options = NULL;
   session_->SetVideoSend(send_ssrc, false, options);
@@ -3236,7 +3236,7 @@ TEST_F(WebRtcSessionTest, InsertDtmf) {
 
   // Verify
   ASSERT_EQ(3U, channel->dtmf_info_queue().size());
-  const uint32 send_ssrc  = channel->send_streams()[0].first_ssrc();
+  const uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
   EXPECT_TRUE(CompareDtmfInfo(channel->dtmf_info_queue()[0], send_ssrc, 0,
                               expected_duration, expected_flags));
   EXPECT_TRUE(CompareDtmfInfo(channel->dtmf_info_queue()[1], send_ssrc, 1,

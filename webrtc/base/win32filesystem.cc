@@ -379,7 +379,7 @@ bool Win32Filesystem::GetAppTempFolder(Pathname* path) {
 }
 
 bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
-                                       int64 *free_bytes) {
+                                       int64_t* free_bytes) {
   if (!free_bytes) {
     return false;
   }
@@ -405,11 +405,11 @@ bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
     return false;
   }
 
-  int64 total_number_of_bytes;  // receives the number of bytes on disk
-  int64 total_number_of_free_bytes;  // receives the free bytes on disk
+  int64_t total_number_of_bytes;       // receives the number of bytes on disk
+  int64_t total_number_of_free_bytes;  // receives the free bytes on disk
   // make sure things won't change in 64 bit machine
   // TODO replace with compile time assert
-  ASSERT(sizeof(ULARGE_INTEGER) == sizeof(uint64));  //NOLINT
+  ASSERT(sizeof(ULARGE_INTEGER) == sizeof(uint64_t));  // NOLINT
   if (::GetDiskFreeSpaceEx(target_drive,
                            (PULARGE_INTEGER)free_bytes,
                            (PULARGE_INTEGER)&total_number_of_bytes,

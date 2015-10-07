@@ -59,8 +59,8 @@ class StunProberTest : public testing::Test {
                     const std::vector<rtc::SocketAddress>& addrs,
                     const rtc::NetworkManager::NetworkList& networks,
                     bool shared_socket,
-                    uint16 interval,
-                    uint16 pings_per_ip) {
+                    uint16_t interval,
+                    uint16_t pings_per_ip) {
     prober.reset(
         new StunProber(socket_factory, rtc::Thread::Current(), networks));
     prober->Start(addrs, shared_socket, interval, pings_per_ip,
@@ -89,12 +89,12 @@ class StunProberTest : public testing::Test {
     // Set up the expected results for verification.
     std::set<std::string> srflx_addresses;
     srflx_addresses.insert(kStunMappedAddr.ToString());
-    const uint32 total_pings_tried =
-        static_cast<uint32>(pings_per_ip * addrs.size());
+    const uint32_t total_pings_tried =
+        static_cast<uint32_t>(pings_per_ip * addrs.size());
 
     // The reported total_pings should not count for pings sent to the
     // kFailedStunAddr.
-    const uint32 total_pings_reported = total_pings_tried - pings_per_ip;
+    const uint32_t total_pings_reported = total_pings_tried - pings_per_ip;
 
     StartProbing(socket_factory.get(), addrs, networks, shared_mode, 3,
                  pings_per_ip);
@@ -106,9 +106,9 @@ class StunProberTest : public testing::Test {
     EXPECT_EQ(stats.success_percent, 100);
     EXPECT_TRUE(stats.nat_type > stunprober::NATTYPE_NONE);
     EXPECT_EQ(stats.srflx_addrs, srflx_addresses);
-    EXPECT_EQ(static_cast<uint32>(stats.num_request_sent),
+    EXPECT_EQ(static_cast<uint32_t>(stats.num_request_sent),
               total_pings_reported);
-    EXPECT_EQ(static_cast<uint32>(stats.num_response_received),
+    EXPECT_EQ(static_cast<uint32_t>(stats.num_response_received),
               total_pings_reported);
   }
 

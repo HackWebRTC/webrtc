@@ -47,8 +47,8 @@ class PortInterface {
   virtual void SetIceRole(IceRole role) = 0;
   virtual IceRole GetIceRole() const = 0;
 
-  virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
-  virtual uint64 IceTiebreaker() const = 0;
+  virtual void SetIceTiebreaker(uint64_t tiebreaker) = 0;
+  virtual uint64_t IceTiebreaker() const = 0;
 
   virtual bool SharedSocket() const = 0;
 

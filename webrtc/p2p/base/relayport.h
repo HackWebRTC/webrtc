@@ -35,15 +35,14 @@ class RelayPort : public Port {
   typedef std::pair<rtc::Socket::Option, int> OptionValue;
 
   // RelayPort doesn't yet do anything fancy in the ctor.
-  static RelayPort* Create(
-      rtc::Thread* thread,
-      rtc::PacketSocketFactory* factory,
-      rtc::Network* network,
-      const rtc::IPAddress& ip,
-      uint16 min_port,
-      uint16 max_port,
-      const std::string& username,
-      const std::string& password) {
+  static RelayPort* Create(rtc::Thread* thread,
+                           rtc::PacketSocketFactory* factory,
+                           rtc::Network* network,
+                           const rtc::IPAddress& ip,
+                           uint16_t min_port,
+                           uint16_t max_port,
+                           const std::string& username,
+                           const std::string& password) {
     return new RelayPort(thread, factory, network, ip, min_port, max_port,
                          username, password);
   }
@@ -74,8 +73,8 @@ class RelayPort : public Port {
             rtc::PacketSocketFactory* factory,
             rtc::Network*,
             const rtc::IPAddress& ip,
-            uint16 min_port,
-            uint16 max_port,
+            uint16_t min_port,
+            uint16_t max_port,
             const std::string& username,
             const std::string& password);
   bool Init();

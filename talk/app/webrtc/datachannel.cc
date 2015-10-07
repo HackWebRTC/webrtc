@@ -193,7 +193,7 @@ bool DataChannel::reliable() const {
   }
 }
 
-uint64 DataChannel::buffered_amount() const {
+uint64_t DataChannel::buffered_amount() const {
   return queued_send_data_.byte_count();
 }
 
@@ -239,7 +239,7 @@ bool DataChannel::Send(const DataBuffer& buffer) {
   return true;
 }
 
-void DataChannel::SetReceiveSsrc(uint32 receive_ssrc) {
+void DataChannel::SetReceiveSsrc(uint32_t receive_ssrc) {
   ASSERT(data_channel_type_ == cricket::DCT_RTP);
 
   if (receive_ssrc_set_) {
@@ -276,7 +276,7 @@ void DataChannel::OnTransportChannelCreated() {
   }
 }
 
-void DataChannel::SetSendSsrc(uint32 send_ssrc) {
+void DataChannel::SetSendSsrc(uint32_t send_ssrc) {
   ASSERT(data_channel_type_ == cricket::DCT_RTP);
   if (send_ssrc_set_) {
     return;
@@ -304,7 +304,7 @@ void DataChannel::OnDataEngineClose() {
 void DataChannel::OnDataReceived(cricket::DataChannel* channel,
                                  const cricket::ReceiveDataParams& params,
                                  const rtc::Buffer& payload) {
-  uint32 expected_ssrc =
+  uint32_t expected_ssrc =
       (data_channel_type_ == cricket::DCT_RTP) ? receive_ssrc_ : config_.id;
   if (params.ssrc != expected_ssrc) {
     return;
@@ -476,7 +476,7 @@ void DataChannel::SendQueuedDataMessages() {
 
   ASSERT(state_ == kOpen || state_ == kClosing);
 
-  uint64 start_buffered_amount = buffered_amount();
+  uint64_t start_buffered_amount = buffered_amount();
   while (!queued_send_data_.Empty()) {
     DataBuffer* buffer = queued_send_data_.Front();
     if (!SendDataMessage(*buffer, false)) {

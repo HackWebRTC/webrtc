@@ -74,9 +74,7 @@ class AsyncInvoker : public MessageHandler {
   // Call |functor| asynchronously on |thread|, with no callback upon
   // completion. Returns immediately.
   template <class ReturnT, class FunctorT>
-  void AsyncInvoke(Thread* thread,
-                   const FunctorT& functor,
-                   uint32 id = 0) {
+  void AsyncInvoke(Thread* thread, const FunctorT& functor, uint32_t id = 0) {
     scoped_refptr<AsyncClosure> closure(
         new RefCountedObject<FireAndForgetAsyncClosure<FunctorT> >(functor));
     DoInvoke(thread, closure, id);
@@ -87,8 +85,8 @@ class AsyncInvoker : public MessageHandler {
   template <class ReturnT, class FunctorT>
   void AsyncInvokeDelayed(Thread* thread,
                           const FunctorT& functor,
-                          uint32 delay_ms,
-                          uint32 id = 0) {
+                          uint32_t delay_ms,
+                          uint32_t id = 0) {
     scoped_refptr<AsyncClosure> closure(
         new RefCountedObject<FireAndForgetAsyncClosure<FunctorT> >(functor));
     DoInvokeDelayed(thread, closure, delay_ms, id);
@@ -100,7 +98,7 @@ class AsyncInvoker : public MessageHandler {
                    const FunctorT& functor,
                    void (HostT::*callback)(ReturnT),
                    HostT* callback_host,
-                   uint32 id = 0) {
+                   uint32_t id = 0) {
     scoped_refptr<AsyncClosure> closure(
         new RefCountedObject<NotifyingAsyncClosure<ReturnT, FunctorT, HostT> >(
             this, Thread::Current(), functor, callback, callback_host));
@@ -114,7 +112,7 @@ class AsyncInvoker : public MessageHandler {
                    const FunctorT& functor,
                    void (HostT::*callback)(),
                    HostT* callback_host,
-                   uint32 id = 0) {
+                   uint32_t id = 0) {
     scoped_refptr<AsyncClosure> closure(
         new RefCountedObject<NotifyingAsyncClosure<void, FunctorT, HostT> >(
             this, Thread::Current(), functor, callback, callback_host));
@@ -126,19 +124,20 @@ class AsyncInvoker : public MessageHandler {
   // before returning. Optionally filter by message id.
   // The destructor will not wait for outstanding calls, so if that
   // behavior is desired, call Flush() before destroying this object.
-  void Flush(Thread* thread, uint32 id = MQID_ANY);
+  void Flush(Thread* thread, uint32_t id = MQID_ANY);
 
   // Signaled when this object is destructed.
   sigslot::signal0<> SignalInvokerDestroyed;
 
  private:
   void OnMessage(Message* msg) override;
-  void DoInvoke(Thread* thread, const scoped_refptr<AsyncClosure>& closure,
-                uint32 id);
+  void DoInvoke(Thread* thread,
+                const scoped_refptr<AsyncClosure>& closure,
+                uint32_t id);
   void DoInvokeDelayed(Thread* thread,
                        const scoped_refptr<AsyncClosure>& closure,
-                       uint32 delay_ms,
-                       uint32 id);
+                       uint32_t delay_ms,
+                       uint32_t id);
   bool destroying_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncInvoker);
@@ -159,12 +158,12 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   // complete before returning. Optionally filter by message id. The destructor
   // will not wait for outstanding calls, so if that behavior is desired, call
   // Flush() first. Returns false if the thread has died.
-  bool Flush(uint32 id = MQID_ANY);
+  bool Flush(uint32_t id = MQID_ANY);
 
   // Call |functor| asynchronously with no callback upon completion. Returns
   // immediately. Returns false if the thread has died.
   template <class ReturnT, class FunctorT>
-  bool AsyncInvoke(const FunctorT& functor, uint32 id = 0) {
+  bool AsyncInvoke(const FunctorT& functor, uint32_t id = 0) {
     rtc::CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
@@ -176,8 +175,8 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   // completion. Returns immediately. Returns false if the thread has died.
   template <class ReturnT, class FunctorT>
   bool AsyncInvokeDelayed(const FunctorT& functor,
-                          uint32 delay_ms,
-                          uint32 id = 0) {
+                          uint32_t delay_ms,
+                          uint32_t id = 0) {
     rtc::CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
@@ -192,7 +191,7 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   bool AsyncInvoke(const FunctorT& functor,
                    void (HostT::*callback)(ReturnT),
                    HostT* callback_host,
-                   uint32 id = 0) {
+                   uint32_t id = 0) {
     rtc::CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
@@ -207,7 +206,7 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   bool AsyncInvoke(const FunctorT& functor,
                    void (HostT::*callback)(),
                    HostT* callback_host,
-                   uint32 id = 0) {
+                   uint32_t id = 0) {
     rtc::CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;

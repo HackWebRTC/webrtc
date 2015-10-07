@@ -59,7 +59,7 @@ class CarbonVideoRenderer : public VideoRenderer {
   static OSStatus DrawEventHandler(EventHandlerCallRef handler,
                                    EventRef event,
                                    void* data);
-  rtc::scoped_ptr<uint8[]> image_;
+  rtc::scoped_ptr<uint8_t[]> image_;
   rtc::CriticalSection image_crit_;
   int image_width_;
   int image_height_;

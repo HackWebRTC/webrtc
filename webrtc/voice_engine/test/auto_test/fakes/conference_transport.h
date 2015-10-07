@@ -108,7 +108,7 @@ class ConferenceTransport: public webrtc::Transport {
     enum Type { Rtp, Rtcp, } type_;
 
     Packet() : len_(0) {}
-    Packet(Type type, const void* data, size_t len, uint32 time_ms)
+    Packet(Type type, const void* data, size_t len, uint32_t time_ms)
         : type_(type), len_(len), send_time_ms_(time_ms) {
       EXPECT_LE(len_, kMaxPacketSizeByte);
       memcpy(data_, data, len_);
@@ -116,7 +116,7 @@ class ConferenceTransport: public webrtc::Transport {
 
     uint8_t data_[kMaxPacketSizeByte];
     size_t len_;
-    uint32 send_time_ms_;
+    uint32_t send_time_ms_;
   };
 
   static bool Run(void* transport) {

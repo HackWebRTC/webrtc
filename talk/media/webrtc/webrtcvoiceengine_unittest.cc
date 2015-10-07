@@ -57,8 +57,8 @@ static const cricket::AudioCodec* const kAudioCodecs[] = {
     &kPcmuCodec, &kIsacCodec, &kOpusCodec, &kG722CodecVoE, &kRedCodec,
     &kCn8000Codec, &kCn16000Codec, &kTelephoneEventCodec,
 };
-static uint32 kSsrc1 = 0x99;
-static uint32 kSsrc2 = 0x98;
+static uint32_t kSsrc1 = 0x99;
+static uint32_t kSsrc2 = 0x98;
 
 class FakeVoEWrapper : public cricket::VoEWrapper {
  public:
@@ -118,7 +118,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_TRUE(SetupEngine());
     // Remove stream added in Setup, which is corresponding to default channel.
     int default_channel_num = voe_.GetLastChannel();
-    uint32 default_send_ssrc = 0u;
+    uint32_t default_send_ssrc = 0u;
     EXPECT_EQ(0, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
     EXPECT_EQ(kSsrc1, default_send_ssrc);
     EXPECT_TRUE(channel_->RemoveSendStream(default_send_ssrc));
@@ -135,7 +135,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     engine_.Terminate();
   }
 
-  void TestInsertDtmf(uint32 ssrc, bool caller) {
+  void TestInsertDtmf(uint32_t ssrc, bool caller) {
     EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
     channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
     EXPECT_TRUE(channel_ != nullptr);
@@ -1863,7 +1863,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SendAndPlayout) {
 TEST_F(WebRtcVoiceEngineTestFake, CreateAndDeleteMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+  static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
 
   // Set the global state for sending.
   EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
@@ -1898,7 +1898,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateAndDeleteMultipleSendStreams) {
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+  static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
   // Create send streams.
   for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
     EXPECT_TRUE(channel_->AddSendStream(
@@ -1937,7 +1937,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
 TEST_F(WebRtcVoiceEngineTestFake, SetSendWithMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+  static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
   // Create the send channels and they should be a SEND_NOTHING date.
   for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
     EXPECT_TRUE(channel_->AddSendStream(
@@ -1967,7 +1967,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendWithMultipleSendStreams) {
 TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+  static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
   // Create send streams.
   for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
     EXPECT_TRUE(channel_->AddSendStream(
@@ -2391,7 +2391,7 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvWithMultipleStreams) {
   char packets[4][sizeof(kPcmuFrame)];
   for (size_t i = 0; i < ARRAY_SIZE(packets); ++i) {
     memcpy(packets[i], kPcmuFrame, sizeof(kPcmuFrame));
-    rtc::SetBE32(packets[i] + 8, static_cast<uint32>(i));
+    rtc::SetBE32(packets[i] + 8, static_cast<uint32_t>(i));
   }
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num1));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num2));
@@ -2921,7 +2921,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputScaling) {
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromSyncLabel) {
-  const uint32 kAudioSsrc = 123;
+  const uint32_t kAudioSsrc = 123;
   const std::string kSyncLabel = "AvSyncLabel";
 
   EXPECT_TRUE(SetupEngine());
@@ -2945,21 +2945,21 @@ TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromSyncLabel) {
 TEST_F(WebRtcVoiceEngineTestFake, CanChangeCombinedBweOption) {
   // Test that changing the combined_audio_video_bwe option results in the
   // expected state changes on an associated Call.
-  std::vector<uint32> ssrcs;
+  std::vector<uint32_t> ssrcs;
   ssrcs.push_back(223);
   ssrcs.push_back(224);
 
   EXPECT_TRUE(SetupEngine());
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  for (uint32 ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     EXPECT_TRUE(media_channel->AddRecvStream(
         cricket::StreamParams::CreateLegacy(ssrc)));
   }
   EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
 
   // Combined BWE should be disabled.
-  for (uint32 ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     EXPECT_EQ(false, s->GetConfig().combined_audio_video_bwe);
@@ -2968,7 +2968,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CanChangeCombinedBweOption) {
   // Enable combined BWE option - now it should be set up.
   send_parameters_.options.combined_audio_video_bwe.Set(true);
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
-  for (uint32 ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     EXPECT_EQ(true, s->GetConfig().combined_audio_video_bwe);
@@ -2977,7 +2977,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CanChangeCombinedBweOption) {
   // Disable combined BWE option - should be disabled again.
   send_parameters_.options.combined_audio_video_bwe.Set(false);
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
-  for (uint32 ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     EXPECT_EQ(false, s->GetConfig().combined_audio_video_bwe);
@@ -2995,7 +2995,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
   send_parameters_.options.combined_audio_video_bwe.Set(true);
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
 
-  static const uint32 kSsrcs[] = {1, 2, 3, 4};
+  static const uint32_t kSsrcs[] = {1, 2, 3, 4};
   for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs); ++i) {
     EXPECT_TRUE(media_channel->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrcs[i])));
@@ -3007,7 +3007,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
 TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   // Test that setting the header extensions results in the expected state
   // changes on an associated Call.
-  std::vector<uint32> ssrcs;
+  std::vector<uint32_t> ssrcs;
   ssrcs.push_back(223);
   ssrcs.push_back(224);
 
@@ -3016,14 +3016,14 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
   send_parameters_.options.combined_audio_video_bwe.Set(true);
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
-  for (uint32 ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     EXPECT_TRUE(media_channel->AddRecvStream(
         cricket::StreamParams::CreateLegacy(ssrc)));
   }
 
   // Combined BWE should be set up, but with no configured extensions.
   EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
-  for (uint32 ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     EXPECT_EQ(0, s->GetConfig().rtp.extensions.size());
@@ -3035,7 +3035,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   recv_parameters.extensions = e_exts;
   channel_->SetRecvParameters(recv_parameters);
   EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
-  for (uint32 ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     const auto& s_exts = s->GetConfig().rtp.extensions;
@@ -3051,7 +3051,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
 
   // Disable receive extensions.
   channel_->SetRecvParameters(cricket::AudioRecvParameters());
-  for (uint32 ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     EXPECT_EQ(0, s->GetConfig().rtp.extensions.size());
@@ -3060,7 +3060,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
 
 TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   // Test that packets are forwarded to the Call when configured accordingly.
-  const uint32 kAudioSsrc = 1;
+  const uint32_t kAudioSsrc = 1;
   rtc::Buffer kPcmuPacket(kPcmuFrame, sizeof(kPcmuFrame));
   static const unsigned char kRtcp[] = {
     0x80, 0xc9, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02,

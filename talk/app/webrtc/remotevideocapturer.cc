@@ -65,7 +65,7 @@ bool RemoteVideoCapturer::IsRunning() {
   return capture_state() == cricket::CS_RUNNING;
 }
 
-bool RemoteVideoCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
+bool RemoteVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
   if (!fourccs)
     return false;
   fourccs->push_back(cricket::FOURCC_I420);

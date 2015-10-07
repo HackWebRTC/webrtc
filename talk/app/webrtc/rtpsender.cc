@@ -59,7 +59,7 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioRenderer::Sink* sink) {
 }
 
 AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
-                               uint32 ssrc,
+                               uint32_t ssrc,
                                AudioProviderInterface* provider)
     : id_(track->id()),
       track_(track),
@@ -136,7 +136,7 @@ void AudioRtpSender::Reconfigure() {
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
-                               uint32 ssrc,
+                               uint32_t ssrc,
                                VideoProviderInterface* provider)
     : id_(track->id()),
       track_(track),

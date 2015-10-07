@@ -61,14 +61,14 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
                        int width,
                        int height,
                        int rotation,
-                       int64 time_stamp);
+                       int64_t time_stamp);
   void OnOutputFormatRequest(int width, int height, int fps);
 
  protected:
   ~AndroidVideoCapturerJni();
 
  private:
-  void ReturnBuffer(int64 time_stamp);
+  void ReturnBuffer(int64_t time_stamp);
   JNIEnv* jni();
 
   // Helper function to make safe asynchronous calls to |capturer_|. The calls

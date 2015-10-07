@@ -57,12 +57,12 @@ class WebRtcVideoFrame : public VideoFrame {
   // "h" can be negative indicating a vertically flipped image.
   // "dh" is destination height if cropping is desired and is always positive.
   // Returns "true" if successful.
-  bool Init(uint32 format,
+  bool Init(uint32_t format,
             int w,
             int h,
             int dw,
             int dh,
-            uint8* sample,
+            uint8_t* sample,
             size_t sample_size,
             size_t pixel_width,
             size_t pixel_height,
@@ -82,12 +82,12 @@ class WebRtcVideoFrame : public VideoFrame {
                    int64_t time_stamp_ns);
 
   // From base class VideoFrame.
-  virtual bool Reset(uint32 format,
+  virtual bool Reset(uint32_t format,
                      int w,
                      int h,
                      int dw,
                      int dh,
-                     uint8* sample,
+                     uint8_t* sample,
                      size_t sample_size,
                      size_t pixel_width,
                      size_t pixel_height,
@@ -97,15 +97,15 @@ class WebRtcVideoFrame : public VideoFrame {
 
   virtual size_t GetWidth() const;
   virtual size_t GetHeight() const;
-  virtual const uint8* GetYPlane() const;
-  virtual const uint8* GetUPlane() const;
-  virtual const uint8* GetVPlane() const;
-  virtual uint8* GetYPlane();
-  virtual uint8* GetUPlane();
-  virtual uint8* GetVPlane();
-  virtual int32 GetYPitch() const;
-  virtual int32 GetUPitch() const;
-  virtual int32 GetVPitch() const;
+  virtual const uint8_t* GetYPlane() const;
+  virtual const uint8_t* GetUPlane() const;
+  virtual const uint8_t* GetVPlane() const;
+  virtual uint8_t* GetYPlane();
+  virtual uint8_t* GetUPlane();
+  virtual uint8_t* GetVPlane();
+  virtual int32_t GetYPitch() const;
+  virtual int32_t GetUPitch() const;
+  virtual int32_t GetVPitch() const;
   virtual void* GetNativeHandle() const;
   virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
       const;
@@ -122,8 +122,10 @@ class WebRtcVideoFrame : public VideoFrame {
   virtual VideoFrame* Copy() const;
   virtual bool IsExclusive() const;
   virtual bool MakeExclusive();
-  virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
-                                    size_t size, int stride_rgb) const;
+  virtual size_t ConvertToRgbBuffer(uint32_t to_fourcc,
+                                    uint8_t* buffer,
+                                    size_t size,
+                                    int stride_rgb) const;
 
   const VideoFrame* GetCopyWithRotationApplied() const override;
 

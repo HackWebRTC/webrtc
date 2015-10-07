@@ -31,8 +31,8 @@
 
 namespace rtc {
 
-static int64 GetCurrentTime() {
-  return static_cast<int64>(Time()) * 10000;
+static int64_t GetCurrentTime() {
+  return static_cast<int64_t>(Time()) * 10000;
 }
 
 // feel free to change these numbers.  Note that '0' won't work, though
@@ -98,9 +98,7 @@ class HappyTask : public IdTimeoutTask {
 class MyTaskRunner : public TaskRunner {
  public:
   virtual void WakeTasks() { RunTasks(); }
-  virtual int64 CurrentTime() {
-    return GetCurrentTime();
-  }
+  virtual int64_t CurrentTime() { return GetCurrentTime(); }
 
   bool timeout_change() const {
     return timeout_change_;
@@ -490,9 +488,7 @@ class DeleteTestTaskRunner : public TaskRunner {
   DeleteTestTaskRunner() {
   }
   virtual void WakeTasks() { }
-  virtual int64 CurrentTime() {
-    return GetCurrentTime();
-  }
+  virtual int64_t CurrentTime() { return GetCurrentTime(); }
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(DeleteTestTaskRunner);
 };

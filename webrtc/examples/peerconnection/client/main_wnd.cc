@@ -234,7 +234,7 @@ void MainWnd::OnPaint() {
     int height = abs(bmi.bmiHeader.biHeight);
     int width = bmi.bmiHeader.biWidth;
 
-    const uint8* image = remote_renderer->image();
+    const uint8_t* image = remote_renderer->image();
     if (image != NULL) {
       HDC dc_mem = ::CreateCompatibleDC(ps.hdc);
       ::SetStretchBltMode(dc_mem, HALFTONE);
@@ -594,7 +594,7 @@ void MainWnd::VideoRenderer::SetSize(int width, int height) {
   bmi_.bmiHeader.biHeight = -height;
   bmi_.bmiHeader.biSizeImage = width * height *
                                (bmi_.bmiHeader.biBitCount >> 3);
-  image_.reset(new uint8[bmi_.bmiHeader.biSizeImage]);
+  image_.reset(new uint8_t[bmi_.bmiHeader.biSizeImage]);
 }
 
 void MainWnd::VideoRenderer::RenderFrame(

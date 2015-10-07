@@ -30,7 +30,7 @@ SSLFingerprint* SSLFingerprint::Create(
 
 SSLFingerprint* SSLFingerprint::Create(
     const std::string& algorithm, const rtc::SSLCertificate* cert) {
-  uint8 digest_val[64];
+  uint8_t digest_val[64];
   size_t digest_len;
   bool ret = cert->ComputeDigest(
       algorithm, digest_val, sizeof(digest_val), &digest_len);
@@ -58,13 +58,13 @@ SSLFingerprint* SSLFingerprint::CreateFromRfc4572(
   if (!value_len)
     return NULL;
 
-  return new SSLFingerprint(algorithm,
-                            reinterpret_cast<uint8*>(value),
+  return new SSLFingerprint(algorithm, reinterpret_cast<uint8_t*>(value),
                             value_len);
 }
 
-SSLFingerprint::SSLFingerprint(
-    const std::string& algorithm, const uint8* digest_in, size_t digest_len)
+SSLFingerprint::SSLFingerprint(const std::string& algorithm,
+                               const uint8_t* digest_in,
+                               size_t digest_len)
     : algorithm(algorithm) {
   digest.SetData(digest_in, digest_len);
 }

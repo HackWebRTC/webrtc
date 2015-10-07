@@ -160,8 +160,8 @@ class Transport : public sigslot::has_slots<> {
   void SetIceRole(IceRole role);
   IceRole ice_role() const { return ice_role_; }
 
-  void SetIceTiebreaker(uint64 IceTiebreaker) { tiebreaker_ = IceTiebreaker; }
-  uint64 IceTiebreaker() { return tiebreaker_; }
+  void SetIceTiebreaker(uint64_t IceTiebreaker) { tiebreaker_ = IceTiebreaker; }
+  uint64_t IceTiebreaker() { return tiebreaker_; }
 
   void SetIceConfig(const IceConfig& config);
 
@@ -290,7 +290,7 @@ class Transport : public sigslot::has_slots<> {
   bool channels_destroyed_ = false;
   bool connect_requested_ = false;
   IceRole ice_role_ = ICEROLE_UNKNOWN;
-  uint64 tiebreaker_ = 0;
+  uint64_t tiebreaker_ = 0;
   IceMode remote_ice_mode_ = ICEMODE_FULL;
   IceConfig ice_config_;
   rtc::scoped_ptr<TransportDescription> local_description_;

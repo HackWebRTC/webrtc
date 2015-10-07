@@ -36,7 +36,7 @@ class SocketAddress {
 
   // Creates the address with the given IP and port.
   // IP is given as an integer in host byte order. V4 only, to be deprecated.
-  SocketAddress(uint32 ip_as_host_order_integer, int port);
+  SocketAddress(uint32_t ip_as_host_order_integer, int port);
 
   // Creates the address with the given IP and port.
   SocketAddress(const IPAddress& ip, int port);
@@ -58,7 +58,7 @@ class SocketAddress {
 
   // Changes the IP of this address to the given one, and clears the hostname
   // IP is given as an integer in host byte order. V4 only, to be deprecated..
-  void SetIP(uint32 ip_as_host_order_integer);
+  void SetIP(uint32_t ip_as_host_order_integer);
 
   // Changes the IP of this address to the given one, and clears the hostname.
   void SetIP(const IPAddress& ip);
@@ -70,7 +70,7 @@ class SocketAddress {
   // Sets the IP address while retaining the hostname.  Useful for bypassing
   // DNS for a pre-resolved IP.
   // IP is given as an integer in host byte order. V4 only, to be deprecated.
-  void SetResolvedIP(uint32 ip_as_host_order_integer);
+  void SetResolvedIP(uint32_t ip_as_host_order_integer);
 
   // Sets the IP address while retaining the hostname.  Useful for bypassing
   // DNS for a pre-resolved IP.
@@ -84,14 +84,14 @@ class SocketAddress {
 
   // Returns the IP address as a host byte order integer.
   // Returns 0 for non-v4 addresses.
-  uint32 ip() const;
+  uint32_t ip() const;
 
   const IPAddress& ipaddr() const;
 
   int family() const {return ip_.family(); }
 
   // Returns the port part of this address.
-  uint16 port() const;
+  uint16_t port() const;
 
   // Returns the scope ID associated with this address. Scope IDs are a
   // necessary addition to IPv6 link-local addresses, with different network
@@ -181,18 +181,18 @@ class SocketAddress {
   // Converts the IP address given in 'compact form' into dotted form.
   // IP is given as an integer in host byte order. V4 only, to be deprecated.
   // TODO: Deprecate this.
-  static std::string IPToString(uint32 ip_as_host_order_integer);
+  static std::string IPToString(uint32_t ip_as_host_order_integer);
 
   // Same as IPToString but anonymizes it by hiding the last part.
   // TODO: Deprecate this.
-  static std::string IPToSensitiveString(uint32 ip_as_host_order_integer);
+  static std::string IPToSensitiveString(uint32_t ip_as_host_order_integer);
 
   // Converts the IP address given in dotted form into compact form.
   // Only dotted names (A.B.C.D) are  converted.
   // Output integer is returned in host byte order.
   // TODO: Deprecate, replace wth agnostic versions.
-  static bool StringToIP(const std::string& str, uint32* ip);
-  static uint32 StringToIP(const std::string& str);
+  static bool StringToIP(const std::string& str, uint32_t* ip);
+  static uint32_t StringToIP(const std::string& str);
 
   // Converts the IP address given in printable form into an IPAddress.
   static bool StringToIP(const std::string& str, IPAddress* ip);
@@ -200,7 +200,7 @@ class SocketAddress {
  private:
   std::string hostname_;
   IPAddress ip_;
-  uint16 port_;
+  uint16_t port_;
   int scope_id_;
   bool literal_;  // Indicates that 'hostname_' contains a literal IP string.
 };

@@ -88,7 +88,7 @@ class VideoAdapter {
   int adaption_changes_;  // Number of changes in scale factor.
   size_t previous_width_;  // Previous adapter output width.
   size_t previous_height_;  // Previous adapter output height.
-  int64 interval_next_frame_;
+  int64_t interval_next_frame_;
   // The critical section to protect the above variables.
   rtc::CriticalSection critical_section_;
 
@@ -190,7 +190,7 @@ class CoordinatedVideoAdapter
   // Video formats that the server view requests, the CPU wants, and the encoder
   // wants respectively. The adapted output format is the minimum of these.
   int view_desired_num_pixels_;
-  int64 view_desired_interval_;
+  int64_t view_desired_interval_;
   int encoder_desired_num_pixels_;
   int cpu_desired_num_pixels_;
   CoordinatedVideoAdapter::AdaptReason adapt_reason_;

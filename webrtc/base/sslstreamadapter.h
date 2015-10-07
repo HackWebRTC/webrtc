@@ -167,10 +167,10 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // result              -- where to put the computed value
   // result_len          -- the length of the computed value
   virtual bool ExportKeyingMaterial(const std::string& label,
-                                    const uint8* context,
+                                    const uint8_t* context,
                                     size_t context_len,
                                     bool use_context,
-                                    uint8* result,
+                                    uint8_t* result,
                                     size_t result_len);
 
   // DTLS-SRTP interface

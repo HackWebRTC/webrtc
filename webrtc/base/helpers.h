@@ -40,13 +40,13 @@ bool CreateRandomString(size_t length, const std::string& table,
                         std::string* str);
 
 // Generates a random id.
-uint32 CreateRandomId();
+uint32_t CreateRandomId();
 
 // Generates a 64 bit random id.
-uint64 CreateRandomId64();
+uint64_t CreateRandomId64();
 
 // Generates a random id > 0.
-uint32 CreateRandomNonZeroId();
+uint32_t CreateRandomNonZeroId();
 
 // Generates a random double between 0.0 (inclusive) and 1.0 (exclusive).
 double CreateRandomDouble();

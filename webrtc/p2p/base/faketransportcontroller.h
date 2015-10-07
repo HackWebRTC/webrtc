@@ -51,7 +51,7 @@ class FakeTransportChannel : public TransportChannelImpl,
         dtls_fingerprint_("", nullptr, 0) {}
   ~FakeTransportChannel() { Reset(); }
 
-  uint64 IceTiebreaker() const { return tiebreaker_; }
+  uint64_t IceTiebreaker() const { return tiebreaker_; }
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
   const std::string& ice_ufrag() const { return ice_ufrag_; }
   const std::string& ice_pwd() const { return ice_pwd_; }
@@ -82,7 +82,7 @@ class FakeTransportChannel : public TransportChannelImpl,
 
   void SetIceRole(IceRole role) override { role_ = role; }
   IceRole GetIceRole() const override { return role_; }
-  void SetIceTiebreaker(uint64 tiebreaker) override {
+  void SetIceTiebreaker(uint64_t tiebreaker) override {
     tiebreaker_ = tiebreaker;
   }
   void SetIceCredentials(const std::string& ice_ufrag,
@@ -98,7 +98,7 @@ class FakeTransportChannel : public TransportChannelImpl,
 
   void SetRemoteIceMode(IceMode mode) override { remote_ice_mode_ = mode; }
   bool SetRemoteFingerprint(const std::string& alg,
-                            const uint8* digest,
+                            const uint8_t* digest,
                             size_t digest_len) override {
     dtls_fingerprint_ = rtc::SSLFingerprint(alg, digest, digest_len);
     return true;
@@ -266,10 +266,10 @@ class FakeTransportChannel : public TransportChannelImpl,
   }
 
   bool ExportKeyingMaterial(const std::string& label,
-                            const uint8* context,
+                            const uint8_t* context,
                             size_t context_len,
                             bool use_context,
-                            uint8* result,
+                            uint8_t* result,
                             size_t result_len) override {
     if (!chosen_srtp_cipher_.empty()) {
       memset(result, 0xff, result_len);
@@ -323,7 +323,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   int receiving_timeout_ = -1;
   bool gather_continually_ = false;
   IceRole role_ = ICEROLE_UNKNOWN;
-  uint64 tiebreaker_ = 0;
+  uint64_t tiebreaker_ = 0;
   std::string ice_ufrag_;
   std::string ice_pwd_;
   std::string remote_ice_ufrag_;

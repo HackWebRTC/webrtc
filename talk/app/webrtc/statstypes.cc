@@ -229,7 +229,7 @@ bool StatsReport::IdBase::Equals(const IdBase& other) const {
   return other.type_ == type_;
 }
 
-StatsReport::Value::Value(StatsValueName name, int64 value, Type int_type)
+StatsReport::Value::Value(StatsValueName name, int64_t value, Type int_type)
     : name(name), type_(int_type) {
   RTC_DCHECK(type_ == kInt || type_ == kInt64);
   type_ == kInt ? value_.int_ = static_cast<int>(value) : value_.int64_ = value;
@@ -331,7 +331,7 @@ bool StatsReport::Value::operator==(const char* value) const {
   return value == value_.static_string_;
 }
 
-bool StatsReport::Value::operator==(int64 value) const {
+bool StatsReport::Value::operator==(int64_t value) const {
   return type_ == kInt ? value_.int_ == static_cast<int>(value) :
       (type_ == kInt64 ? value_.int64_ == value : false);
 }
@@ -353,7 +353,7 @@ int StatsReport::Value::int_val() const {
   return value_.int_;
 }
 
-int64 StatsReport::Value::int64_val() const {
+int64_t StatsReport::Value::int64_val() const {
   RTC_DCHECK(type_ == kInt64);
   return value_.int64_;
 }
@@ -682,7 +682,7 @@ void StatsReport::AddString(StatsReport::StatsValueName name,
     values_[name] = ValuePtr(new Value(name, value));
 }
 
-void StatsReport::AddInt64(StatsReport::StatsValueName name, int64 value) {
+void StatsReport::AddInt64(StatsReport::StatsValueName name, int64_t value) {
   const Value* found = FindValue(name);
   if (!found || !(*found == value))
     values_[name] = ValuePtr(new Value(name, value, Value::kInt64));
@@ -690,7 +690,7 @@ void StatsReport::AddInt64(StatsReport::StatsValueName name, int64 value) {
 
 void StatsReport::AddInt(StatsReport::StatsValueName name, int value) {
   const Value* found = FindValue(name);
-  if (!found || !(*found == static_cast<int64>(value)))
+  if (!found || !(*found == static_cast<int64_t>(value)))
     values_[name] = ValuePtr(new Value(name, value, Value::kInt));
 }
 
