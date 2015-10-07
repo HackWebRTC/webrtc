@@ -2866,23 +2866,23 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 }
 
-// Test that GetReceiveChannelNum returns the default channel for the first
+// Test that GetReceiveChannelId returns the default channel for the first
 // recv stream in 1-1 calls.
-TEST_F(WebRtcVoiceEngineTestFake, TestGetReceiveChannelNumIn1To1Calls) {
+TEST_F(WebRtcVoiceEngineTestFake, TestGetReceiveChannelIdIn1To1Calls) {
   EXPECT_TRUE(SetupEngine());
   cricket::WebRtcVoiceMediaChannel* media_channel =
         static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
   // Test that GetChannelNum returns the default channel if the SSRC is unknown.
   EXPECT_EQ(media_channel->voe_channel(),
-            media_channel->GetReceiveChannelNum(0));
+            media_channel->GetReceiveChannelId(0));
   cricket::StreamParams stream;
   stream.ssrcs.push_back(kSsrc2);
   EXPECT_TRUE(channel_->AddRecvStream(stream));
   EXPECT_EQ(media_channel->voe_channel(),
-            media_channel->GetReceiveChannelNum(kSsrc2));
+            media_channel->GetReceiveChannelId(kSsrc2));
 }
 
-// Test that GetReceiveChannelNum doesn't return the default channel for the
+// Test that GetReceiveChannelId doesn't return the default channel for the
 // first recv stream in conference calls.
 TEST_F(WebRtcVoiceEngineTestFake, TestGetChannelNumInConferenceCalls) {
   EXPECT_TRUE(SetupEngine());
@@ -2894,7 +2894,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TestGetChannelNumInConferenceCalls) {
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
   EXPECT_LT(media_channel->voe_channel(),
-            media_channel->GetReceiveChannelNum(kSsrc2));
+            media_channel->GetReceiveChannelId(kSsrc2));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetOutputScaling) {

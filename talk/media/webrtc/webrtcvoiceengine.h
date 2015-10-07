@@ -127,15 +127,12 @@ class WebRtcVoiceEngine
   void Print(webrtc::TraceLevel level, const char* trace, int length) override;
 
   // webrtc::VoiceEngineObserver:
-  void CallbackOnError(int channel, int errCode) override;
+  void CallbackOnError(int channel_id, int errCode) override;
 
   // Given the device type, name, and id, find device id. Return true and
   // set the output parameter rtc_id if successful.
   bool FindWebRtcAudioDeviceId(
       bool is_input, const std::string& dev_name, int dev_id, int* rtc_id);
-  bool FindChannelAndSsrc(int channel_num,
-                          WebRtcVoiceMediaChannel** channel,
-                          uint32* ssrc) const;
 
   void StartAecDump(const std::string& filename);
   void StopAecDump();
@@ -237,11 +234,10 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
     return VoiceMediaChannel::SendRtcp(&packet);
   }
 
-  bool FindSsrc(int channel_num, uint32* ssrc);
-  void OnError(uint32 ssrc, int error);
+  void OnError(int error);
 
-  int GetReceiveChannelNum(uint32 ssrc) const;
-  int GetSendChannelNum(uint32 ssrc) const;
+  int GetReceiveChannelId(uint32 ssrc) const;
+  int GetSendChannelId(uint32 ssrc) const;
 
  private:
   bool SetSendCodecs(const std::vector<AudioCodec>& codecs);

@@ -908,10 +908,6 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
   }
 
  protected:
-  virtual std::vector<cricket::VideoCodec> GetCodecs() {
-    return engine_.codecs();
-  }
-
   FakeVideoSendStream* AddSendStream() {
     return AddSendStream(StreamParams::CreateLegacy(++last_ssrc_));
   }

@@ -51,10 +51,6 @@
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 
-#define UNIMPLEMENTED                                                 \
-  LOG(LS_ERROR) << "Call to unimplemented function " << __FUNCTION__; \
-  RTC_NOTREACHED()
-
 namespace cricket {
 namespace {
 
