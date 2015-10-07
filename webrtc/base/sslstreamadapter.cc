@@ -15,15 +15,11 @@
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/sslconfig.h"
 
-#if SSL_USE_SCHANNEL
-
-// SChannel support for DTLS and peer-to-peer mode are not
-// done.
-#elif SSL_USE_OPENSSL  // && !SSL_USE_SCHANNEL
+#if SSL_USE_OPENSSL
 
 #include "webrtc/base/opensslstreamadapter.h"
 
-#endif  // !SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
+#endif  // SSL_USE_OPENSSL
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -43,13 +39,11 @@ int GetSrtpCryptoSuiteFromName(const std::string& cipher) {
 }
 
 SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
-#if SSL_USE_SCHANNEL
-  return NULL;
-#elif SSL_USE_OPENSSL  // !SSL_USE_SCHANNEL
+#if SSL_USE_OPENSSL
   return new OpenSSLStreamAdapter(stream);
-#else  // !SSL_USE_SCHANNEL && !SSL_USE_OPENSSL
+#else  // !SSL_USE_OPENSSL
   return NULL;
-#endif
+#endif  // SSL_USE_OPENSSL
 }
 
 bool SSLStreamAdapter::GetSslCipherSuite(int* cipher) {
@@ -74,16 +68,7 @@ bool SSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
   return false;
 }
 
-// Note: this matches the logic above with SCHANNEL dominating
-#if SSL_USE_SCHANNEL
-bool SSLStreamAdapter::HaveDtls() { return false; }
-bool SSLStreamAdapter::HaveDtlsSrtp() { return false; }
-bool SSLStreamAdapter::HaveExporter() { return false; }
-int SSLStreamAdapter::GetDefaultSslCipherForTest(SSLProtocolVersion version,
-                                                 KeyType key_type) {
-  return 0;
-}
-#elif SSL_USE_OPENSSL
+#if SSL_USE_OPENSSL
 bool SSLStreamAdapter::HaveDtls() {
   return OpenSSLStreamAdapter::HaveDtls();
 }
@@ -101,7 +86,7 @@ int SSLStreamAdapter::GetDefaultSslCipherForTest(SSLProtocolVersion version,
 std::string SSLStreamAdapter::GetSslCipherSuiteName(int cipher) {
   return OpenSSLStreamAdapter::GetSslCipherSuiteName(cipher);
 }
-#endif  // !SSL_USE_SCHANNEL && !SSL_USE_OPENSSL
+#endif  // SSL_USE_OPENSSL
 
 ///////////////////////////////////////////////////////////////////////////////
 

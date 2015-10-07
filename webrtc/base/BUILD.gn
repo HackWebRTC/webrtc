@@ -537,8 +537,6 @@ static_library("rtc_base") {
 
   if (is_win) {
     sources += [
-      "schanneladapter.cc",
-      "schanneladapter.h",
       "win32.cc",
       "win32.h",
       "win32filesystem.cc",

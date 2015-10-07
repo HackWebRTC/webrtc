@@ -252,8 +252,6 @@
         'rollingaccumulator.h',
         'rtccertificate.cc',
         'rtccertificate.h',
-        'schanneladapter.cc',
-        'schanneladapter.h',
         'scoped_autorelease_pool.h',
         'scoped_autorelease_pool.mm',
         'scoped_ref_ptr.h',
@@ -617,8 +615,6 @@
             ['exclude', 'win32[a-z0-9]*\\.(h|cc)$'],
           ],
           'sources!': [
-              'schanneladapter.cc',
-              'schanneladapter.h',
               'winping.cc',
               'winping.h',
               'winfirewall.cc',

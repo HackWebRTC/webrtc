@@ -16,15 +16,11 @@
 
 #include "webrtc/base/sslconfig.h"
 
-#if SSL_USE_SCHANNEL
-
-#include "schanneladapter.h"
-
-#elif SSL_USE_OPENSSL  // && !SSL_USE_SCHANNEL
+#if SSL_USE_OPENSSL
 
 #include "openssladapter.h"
 
-#endif  // SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -32,14 +28,12 @@ namespace rtc {
 
 SSLAdapter*
 SSLAdapter::Create(AsyncSocket* socket) {
-#if SSL_USE_SCHANNEL
-  return new SChannelAdapter(socket);
-#elif SSL_USE_OPENSSL  // && !SSL_USE_SCHANNEL
+#if SSL_USE_OPENSSL
   return new OpenSSLAdapter(socket);
-#else  // !SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
+#else  // !SSL_USE_OPENSSL
   delete socket;
   return NULL;
-#endif  // !SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
+#endif  // SSL_USE_OPENSSL
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -72,7 +66,7 @@ bool CleanupSSL() {
   return true;
 }
 
-#endif  // !SSL_USE_OPENSSL
+#endif  // SSL_USE_OPENSSL
 
 ///////////////////////////////////////////////////////////////////////////////
 
