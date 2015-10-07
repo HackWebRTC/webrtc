@@ -162,7 +162,7 @@ VideoSendStream::VideoSendStream(
 
   input_.reset(new internal::VideoCaptureInput(
       module_process_thread_, vie_encoder_, config_.local_renderer,
-      &stats_proxy_, this));
+      &stats_proxy_, this, config_.encoding_time_observer));
 
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
   RTC_DCHECK_LE(config_.rtp.max_packet_size, static_cast<size_t>(0xFFFF - 28));

@@ -55,7 +55,8 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
                     VideoCaptureCallback* frame_callback,
                     VideoRenderer* local_renderer,
                     SendStatisticsProxy* send_stats_proxy,
-                    CpuOveruseObserver* overuse_observer);
+                    CpuOveruseObserver* overuse_observer,
+                    EncodingTimeObserver* encoding_time_observer);
   ~VideoCaptureInput();
 
   void IncomingCapturedFrame(const VideoFrame& video_frame) override;
@@ -90,6 +91,7 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   const int64_t delta_ntp_internal_ms_;
 
   rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
+  EncodingTimeObserver* const encoding_time_observer_;
 };
 
 }  // namespace internal

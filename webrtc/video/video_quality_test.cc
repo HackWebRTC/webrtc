@@ -42,16 +42,16 @@ class VideoAnalyzer : public PacketReceiver,
                       public Transport,
                       public VideoRenderer,
                       public VideoCaptureInput,
-                      public EncodedFrameObserver {
+                      public EncodedFrameObserver,
+                      public EncodingTimeObserver {
  public:
-  VideoAnalyzer(VideoCaptureInput* input,
-                Transport* transport,
+  VideoAnalyzer(Transport* transport,
                 const std::string& test_label,
                 double avg_psnr_threshold,
                 double avg_ssim_threshold,
                 int duration_frames,
                 FILE* graph_data_output_file)
-      : input_(input),
+      : input_(nullptr),
         transport_(transport),
         receiver_(nullptr),
         send_stream_(nullptr),
@@ -121,6 +121,12 @@ class VideoAnalyzer : public PacketReceiver,
     }
 
     return receiver_->DeliverPacket(media_type, packet, length, packet_time);
+  }
+
+  // EncodingTimeObserver.
+  void OnReportEncodedTime(int64_t ntp_time_ms, int encode_time_ms) override {
+    rtc::CritScope crit(&comparison_lock_);
+    samples_encode_time_ms_[ntp_time_ms] = encode_time_ms;
   }
 
   void IncomingCapturedFrame(const VideoFrame& video_frame) override {
@@ -279,31 +285,31 @@ class VideoAnalyzer : public PacketReceiver,
   };
 
   struct Sample {
-    Sample(double dropped,
-           double input_time_ms,
-           double send_time_ms,
-           double recv_time_ms,
-           double encoded_frame_size,
+    Sample(int dropped,
+           int64_t input_time_ms,
+           int64_t send_time_ms,
+           int64_t recv_time_ms,
+           int64_t render_time_ms,
+           size_t encoded_frame_size,
            double psnr,
-           double ssim,
-           double render_time_ms)
+           double ssim)
         : dropped(dropped),
           input_time_ms(input_time_ms),
           send_time_ms(send_time_ms),
           recv_time_ms(recv_time_ms),
+          render_time_ms(render_time_ms),
           encoded_frame_size(encoded_frame_size),
           psnr(psnr),
-          ssim(ssim),
-          render_time_ms(render_time_ms) {}
+          ssim(ssim) {}
 
-    double dropped;
-    double input_time_ms;
-    double send_time_ms;
-    double recv_time_ms;
-    double encoded_frame_size;
+    int dropped;
+    int64_t input_time_ms;
+    int64_t send_time_ms;
+    int64_t recv_time_ms;
+    int64_t render_time_ms;
+    size_t encoded_frame_size;
     double psnr;
     double ssim;
-    double render_time_ms;
   };
 
   void AddFrameComparison(const VideoFrame& reference,
@@ -465,8 +471,8 @@ class VideoAnalyzer : public PacketReceiver,
     if (graph_data_output_file_) {
       samples_.push_back(
           Sample(comparison.dropped, input_time_ms, comparison.send_time_ms,
-                 comparison.recv_time_ms, comparison.encoded_frame_size, psnr,
-                 ssim, comparison.render_time_ms));
+                 comparison.recv_time_ms, comparison.render_time_ms,
+                 comparison.encoded_frame_size, psnr, ssim));
     }
     psnr_.AddSample(psnr);
     ssim_.AddSample(ssim);
@@ -512,21 +518,39 @@ class VideoAnalyzer : public PacketReceiver,
             "input_time_ms "
             "send_time_ms "
             "recv_time_ms "
+            "render_time_ms "
             "encoded_frame_size "
             "psnr "
             "ssim "
-            "render_time_ms\n");
+            "encode_time_ms\n");
+    int missing_encode_time_samples = 0;
     for (const Sample& sample : samples_) {
-      fprintf(out, "%lf %lf %lf %lf %lf %lf %lf %lf\n", sample.dropped,
-              sample.input_time_ms, sample.send_time_ms, sample.recv_time_ms,
+      auto it = samples_encode_time_ms_.find(sample.input_time_ms);
+      int encode_time_ms;
+      if (it != samples_encode_time_ms_.end()) {
+        encode_time_ms = it->second;
+      } else {
+        ++missing_encode_time_samples;
+        encode_time_ms = -1;
+      }
+      fprintf(out, "%d %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRIuS
+                   " %lf %lf %d\n",
+              sample.dropped, sample.input_time_ms, sample.send_time_ms,
+              sample.recv_time_ms, sample.render_time_ms,
               sample.encoded_frame_size, sample.psnr, sample.ssim,
-              sample.render_time_ms);
+              encode_time_ms);
+    }
+    if (missing_encode_time_samples) {
+      fprintf(stderr,
+              "Warning: Missing encode_time_ms samples for %d frame(s).\n",
+              missing_encode_time_samples);
     }
   }
 
   const std::string test_label_;
   FILE* const graph_data_output_file_;
   std::vector<Sample> samples_ GUARDED_BY(comparison_lock_);
+  std::map<int64_t, int> samples_encode_time_ms_ GUARDED_BY(comparison_lock_);
   test::Statistics sender_time_ GUARDED_BY(comparison_lock_);
   test::Statistics receiver_time_ GUARDED_BY(comparison_lock_);
   test::Statistics psnr_ GUARDED_BY(comparison_lock_);
@@ -737,7 +761,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       static_cast<uint8_t>(params.common.tl_discard_threshold), 0);
   test::DirectTransport recv_transport(params.pipe);
   VideoAnalyzer analyzer(
-      nullptr, &send_transport, params.analyzer.test_label,
+      &send_transport, params.analyzer.test_label,
       params.analyzer.avg_psnr_threshold, params.analyzer.avg_ssim_threshold,
       params.analyzer.test_durations_secs * params.common.fps,
       graph_data_output_file);
@@ -751,6 +775,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   recv_transport.SetReceiver(sender_call_->Receiver());
 
   SetupFullStack(params, &analyzer, &recv_transport);
+  send_config_.encoding_time_observer = &analyzer;
   receive_configs_[0].renderer = &analyzer;
   for (auto& config : receive_configs_)
     config.pre_decode_callback = &analyzer;

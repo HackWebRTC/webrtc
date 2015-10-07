@@ -64,7 +64,7 @@ class VideoCaptureInputTest : public ::testing::Test {
     Config config;
     input_.reset(new internal::VideoCaptureInput(
         mock_process_thread_.get(), mock_frame_callback_.get(), nullptr,
-        &stats_proxy_, nullptr));
+        &stats_proxy_, nullptr, nullptr));
   }
 
   virtual void TearDown() {
