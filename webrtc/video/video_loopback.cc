@@ -10,18 +10,14 @@
 
 #include <stdio.h>
 
-#include <map>
-
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/run_test.h"
-#include "webrtc/typedefs.h"
 #include "webrtc/video/video_quality_test.h"
 
 namespace webrtc {
-
 namespace flags {
 
 DEFINE_int32(width, 640, "Video width.");

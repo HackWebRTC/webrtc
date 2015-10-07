@@ -34,8 +34,8 @@ class VideoQualityTest : public test::CallTest {
       int max_bitrate_bps;
       std::string codec;
       size_t num_temporal_layers;
-
       int min_transmit_bps;
+
       Call::Config::BitrateConfig call_bitrate_config;
       size_t tl_discard_threshold;
       bool send_side_bwe;

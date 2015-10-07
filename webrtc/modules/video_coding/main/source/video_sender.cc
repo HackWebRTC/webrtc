@@ -106,9 +106,15 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
     return VCM_CODEC_ERROR;
   }
 
-  int numLayers = (sendCodec->codecType != kVideoCodecVP8)
-                      ? 1
-                      : sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
+  int numLayers;
+  if (sendCodec->codecType == kVideoCodecVP8) {
+    numLayers = sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
+  } else if (sendCodec->codecType == kVideoCodecVP9) {
+    numLayers = sendCodec->codecSpecific.VP9.numberOfTemporalLayers;
+  } else {
+    numLayers = 1;
+  }
+
   // If we have screensharing and we have layers, we disable frame dropper.
   bool disable_frame_dropper =
       numLayers > 1 && sendCodec->mode == kScreensharing;
