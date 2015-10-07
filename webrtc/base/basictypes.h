@@ -12,21 +12,11 @@
 #define WEBRTC_BASE_BASICTYPES_H_
 
 #include <stddef.h>  // for NULL, size_t
-#include <stdint.h>  // for uintptr_t
+#include <stdint.h>  // for uintptr_t and (u)int_t types.
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"  // NOLINT
 #endif
-
-// TODO(grunell): Use (u)intxx_t everywhere instead and remove these typedefs.
-typedef int8_t int8;
-typedef uint8_t uint8;
-typedef int16_t int16;
-typedef uint16_t uint16;
-typedef int32_t int32;
-typedef uint32_t uint32;
-typedef int64_t int64;
-typedef uint64_t uint64;
 
 // Detect compiler is for x86 or x64.
 #if defined(__x86_64__) || defined(_M_X64) || \
