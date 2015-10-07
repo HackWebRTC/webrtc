@@ -31,33 +31,16 @@
 
 #include <jni.h>
 
-#include "webrtc/common_video/interface/video_frame_buffer.h"
-
 namespace webrtc_jni {
 
 // Wrapper for texture object.
-class NativeHandleImpl {
- public:
-  NativeHandleImpl();
+struct NativeHandleImpl {
+  NativeHandleImpl(JNIEnv* jni,
+                   jint j_oes_texture_id,
+                   jfloatArray j_transform_matrix);
 
-  void* GetHandle();
-  int GetTextureId();
-  void SetTextureObject(void* texture_object, int texture_id);
-
- private:
-  jobject texture_object_;
-  int32_t texture_id_;
-};
-
-class JniNativeHandleBuffer : public webrtc::NativeHandleBuffer {
- public:
-  JniNativeHandleBuffer(void* native_handle, int width, int height);
-
-  // TODO(pbos): Override destructor to release native handle, at the moment the
-  // native handle is not released based on refcount.
-
- private:
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> NativeToI420Buffer() override;
+  const int oes_texture_id;
+  float sampling_matrix[16];
 };
 
 }  // namespace webrtc_jni

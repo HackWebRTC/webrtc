@@ -389,25 +389,10 @@ public class SurfaceViewRenderer extends SurfaceView
     }
 
     final long startTimeNs = System.nanoTime();
-    final float[] samplingMatrix;
-    if (frame.yuvFrame) {
-      // The convention in WebRTC is that the first element in a ByteBuffer corresponds to the
-      // top-left corner of the image, but in glTexImage2D() the first element corresponds to the
-      // bottom-left corner. We correct this discrepancy by setting a vertical flip as sampling
-      // matrix.
-      samplingMatrix = RendererCommon.verticalFlipMatrix();
-    } else {
-      // TODO(magjed): Move updateTexImage() to the video source instead.
-      SurfaceTexture surfaceTexture = (SurfaceTexture) frame.textureObject;
-      surfaceTexture.updateTexImage();
-      samplingMatrix = new float[16];
-      surfaceTexture.getTransformMatrix(samplingMatrix);
-    }
-
     final float[] texMatrix;
     synchronized (layoutLock) {
       final float[] rotatedSamplingMatrix =
-          RendererCommon.rotateTextureMatrix(samplingMatrix, frame.rotationDegree);
+          RendererCommon.rotateTextureMatrix(frame.samplingMatrix, frame.rotationDegree);
       final float[] layoutMatrix = RendererCommon.getLayoutMatrix(
           mirror, frameAspectRatio(), (float) layoutWidth / layoutHeight);
       texMatrix = RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);

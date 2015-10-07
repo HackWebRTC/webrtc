@@ -27,7 +27,6 @@
 
 package org.webrtc;
 
-import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -42,8 +41,9 @@ import android.view.Surface;
 import org.webrtc.Logging;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.
@@ -93,10 +93,11 @@ public class MediaCodecVideoDecoder {
   private int stride;
   private int sliceHeight;
   private boolean useSurface;
-  private int textureID = 0;
-  private SurfaceTexture surfaceTexture = null;
+  // |isWaitingForTexture| is true when waiting for the transition:
+  // MediaCodec.releaseOutputBuffer() -> onTextureFrameAvailable().
+  private boolean isWaitingForTexture = false;
+  private TextureListener textureListener;
   private Surface surface = null;
-  private EglBase eglBase;
 
   private MediaCodecVideoDecoder() { }
 
@@ -180,12 +181,13 @@ public class MediaCodecVideoDecoder {
     }
   }
 
-  // Pass null in |sharedContext| to configure the codec for ByteBuffer output.
-  private boolean initDecode(VideoCodecType type, int width, int height, EGLContext sharedContext) {
+  // Pass null in |surfaceTextureHelper| to configure the codec for ByteBuffer output.
+  private boolean initDecode(
+      VideoCodecType type, int width, int height, SurfaceTextureHelper surfaceTextureHelper) {
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
     }
-    useSurface = (sharedContext != null);
+    useSurface = (surfaceTextureHelper != null);
     String mime = null;
     String[] supportedCodecPrefixes = null;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
@@ -204,9 +206,6 @@ public class MediaCodecVideoDecoder {
     Logging.d(TAG, "Java initDecode: " + type + " : "+ width + " x " + height +
         ". Color: 0x" + Integer.toHexString(properties.colorFormat) +
         ". Use Surface: " + useSurface);
-    if (sharedContext != null) {
-      Logging.d(TAG, "Decoder shared EGL Context: " + sharedContext);
-    }
     mediaCodecThread = Thread.currentThread();
     try {
       this.width = width;
@@ -215,16 +214,8 @@ public class MediaCodecVideoDecoder {
       sliceHeight = height;
 
       if (useSurface) {
-        // Create shared EGL context.
-        eglBase = new EglBase(sharedContext, EglBase.ConfigType.PIXEL_BUFFER);
-        eglBase.createDummyPbufferSurface();
-        eglBase.makeCurrent();
-
-        // Create output surface
-        textureID = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-        Logging.d(TAG, "Video decoder TextureID = " + textureID);
-        surfaceTexture = new SurfaceTexture(textureID);
-        surface = new Surface(surfaceTexture);
+        textureListener = new TextureListener(surfaceTextureHelper);
+        surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
       }
 
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
@@ -265,11 +256,7 @@ public class MediaCodecVideoDecoder {
     if (useSurface) {
       surface.release();
       surface = null;
-      Logging.d(TAG, "Delete video decoder TextureID " + textureID);
-      GLES20.glDeleteTextures(1, new int[] {textureID}, 0);
-      textureID = 0;
-      eglBase.release();
-      eglBase = null;
+      textureListener.release();
     }
   }
 
@@ -317,11 +304,72 @@ public class MediaCodecVideoDecoder {
 
   private static class DecodedTextureBuffer {
     private final int textureID;
-    private final long presentationTimestampUs;
+    private final float[] transformMatrix;
+    private final long timestampNs;
 
-    public DecodedTextureBuffer(int textureID, long presentationTimestampUs) {
+    public DecodedTextureBuffer(int textureID, float[] transformMatrix, long timestampNs) {
       this.textureID = textureID;
-      this.presentationTimestampUs = presentationTimestampUs;
+      this.transformMatrix = transformMatrix;
+      this.timestampNs = timestampNs;
+    }
+  }
+
+  // Poll based texture listener.
+  private static class TextureListener
+      implements SurfaceTextureHelper.OnTextureFrameAvailableListener {
+    private final SurfaceTextureHelper surfaceTextureHelper;
+    private DecodedTextureBuffer textureBuffer;
+    // |newFrameLock| is used to synchronize arrival of new frames with wait()/notifyAll().
+    private final Object newFrameLock = new Object();
+
+    public TextureListener(SurfaceTextureHelper surfaceTextureHelper) {
+      this.surfaceTextureHelper = surfaceTextureHelper;
+      surfaceTextureHelper.setListener(this);
+    }
+
+    // Callback from |surfaceTextureHelper|. May be called on an arbitrary thread.
+    @Override
+    public void onTextureFrameAvailable(
+        int oesTextureId, float[] transformMatrix, long timestampNs) {
+      synchronized (newFrameLock) {
+        if (textureBuffer != null) {
+          Logging.e(TAG,
+              "Unexpected onTextureFrameAvailable() called while already holding a texture.");
+          throw new IllegalStateException("Already holding a texture.");
+        }
+        textureBuffer = new DecodedTextureBuffer(oesTextureId, transformMatrix, timestampNs);
+        newFrameLock.notifyAll();
+      }
+    }
+
+    // Dequeues and returns a texture buffer if available, or null otherwise.
+    public DecodedTextureBuffer dequeueTextureFrame(int timeoutMs) {
+      synchronized (newFrameLock) {
+        if (textureBuffer == null && timeoutMs > 0) {
+          try {
+            newFrameLock.wait(timeoutMs);
+          } catch(InterruptedException e) {
+            // Restore the interrupted status by reinterrupting the thread.
+            Thread.currentThread().interrupt();
+          }
+        }
+        final DecodedTextureBuffer textureBuffer = this.textureBuffer;
+        this.textureBuffer = null;
+        return textureBuffer;
+      }
+    }
+
+    public void release() {
+      // SurfaceTextureHelper.disconnect() will block until any onTextureFrameAvailable() in
+      // progress is done. Therefore, the call to disconnect() must be outside any synchronized
+      // statement that is also used in the onTextureFrameAvailable() above to avoid deadlocks.
+      surfaceTextureHelper.disconnect();
+      synchronized (newFrameLock) {
+        if (textureBuffer != null) {
+          surfaceTextureHelper.returnTextureFrame();
+          textureBuffer = null;
+        }
+      }
     }
   }
 
@@ -330,14 +378,25 @@ public class MediaCodecVideoDecoder {
   // Throws IllegalStateException if call is made on the wrong thread, if color format changes to an
   // unsupported format, or if |mediaCodec| is not in the Executing state. Throws CodecException
   // upon codec error.
-  private Object dequeueOutputBuffer(int dequeueTimeoutUs)
+  private Object dequeueOutputBuffer(int dequeueTimeoutMs)
       throws IllegalStateException, MediaCodec.CodecException {
     checkOnMediaCodecThread();
+    // Calling multiple MediaCodec.releaseOutputBuffer() with render=true in a row will result in
+    // dropped texture frames. Therefore, wait for any pending onTextureFrameAvailable() before
+    // proceeding.
+    if (isWaitingForTexture) {
+      final DecodedTextureBuffer textureBuffer =
+          textureListener.dequeueTextureFrame(dequeueTimeoutMs);
+      isWaitingForTexture = (textureBuffer == null);
+      return textureBuffer;
+    }
+
     // Drain the decoder until receiving a decoded buffer or hitting
     // MediaCodec.INFO_TRY_AGAIN_LATER.
     final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
     while (true) {
-      final int result = mediaCodec.dequeueOutputBuffer(info, dequeueTimeoutUs);
+      final int result = mediaCodec.dequeueOutputBuffer(
+          info, TimeUnit.MILLISECONDS.toMicros(dequeueTimeoutMs));
       switch (result) {
         case MediaCodec.INFO_TRY_AGAIN_LATER:
           return null;
@@ -371,9 +430,10 @@ public class MediaCodecVideoDecoder {
           // Output buffer decoded.
           if (useSurface) {
             mediaCodec.releaseOutputBuffer(result, true /* render */);
-            // TODO(magjed): Wait for SurfaceTexture.onFrameAvailable() before returning a texture
-            // frame.
-            return new DecodedTextureBuffer(textureID, info.presentationTimeUs);
+            final DecodedTextureBuffer textureBuffer =
+                textureListener.dequeueTextureFrame(dequeueTimeoutMs);
+            isWaitingForTexture = (textureBuffer == null);
+            return textureBuffer;
           } else {
             return new DecodedByteBuffer(result, info.offset, info.size, info.presentationTimeUs);
           }

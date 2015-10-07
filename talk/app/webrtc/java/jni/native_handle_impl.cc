@@ -31,32 +31,17 @@
 
 namespace webrtc_jni {
 
-NativeHandleImpl::NativeHandleImpl() : texture_object_(NULL), texture_id_(-1) {}
-
-void* NativeHandleImpl::GetHandle() {
-  return texture_object_;
-}
-
-int NativeHandleImpl::GetTextureId() {
-  return texture_id_;
-}
-
-void NativeHandleImpl::SetTextureObject(void* texture_object, int texture_id) {
-  texture_object_ = reinterpret_cast<jobject>(texture_object);
-  texture_id_ = texture_id;
-}
-
-JniNativeHandleBuffer::JniNativeHandleBuffer(void* native_handle,
-                                             int width,
-                                             int height)
-    : NativeHandleBuffer(native_handle, width, height) {}
-
-rtc::scoped_refptr<webrtc::VideoFrameBuffer>
-JniNativeHandleBuffer::NativeToI420Buffer() {
-  // TODO(pbos): Implement before using this in the encoder pipeline (or
-  // remove the RTC_CHECK() in VideoCapture).
-  RTC_NOTREACHED();
-  return nullptr;
+NativeHandleImpl::NativeHandleImpl(JNIEnv* jni,
+                                   jint j_oes_texture_id,
+                                   jfloatArray j_transform_matrix)
+    : oes_texture_id(j_oes_texture_id) {
+  RTC_CHECK_EQ(16, jni->GetArrayLength(j_transform_matrix));
+  jfloat* transform_matrix_ptr =
+      jni->GetFloatArrayElements(j_transform_matrix, nullptr);
+  for (int i = 0; i < 16; ++i) {
+    sampling_matrix[i] = transform_matrix_ptr[i];
+  }
+  jni->ReleaseFloatArrayElements(j_transform_matrix, transform_matrix_ptr, 0);
 }
 
 }  // namespace webrtc_jni

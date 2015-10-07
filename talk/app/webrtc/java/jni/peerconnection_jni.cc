@@ -771,7 +771,7 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
             jni, *j_frame_class_, "<init>", "(III[I[Ljava/nio/ByteBuffer;J)V")),
         j_texture_frame_ctor_id_(GetMethodID(
             jni, *j_frame_class_, "<init>",
-            "(IIILjava/lang/Object;IJ)V")),
+            "(IIII[FJ)V")),
         j_byte_buffer_class_(jni, FindClass(jni, "java/nio/ByteBuffer")) {
     CHECK_EXCEPTION(jni);
   }
@@ -827,13 +827,13 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
   jobject CricketToJavaTextureFrame(const cricket::VideoFrame* frame) {
     NativeHandleImpl* handle =
         reinterpret_cast<NativeHandleImpl*>(frame->GetNativeHandle());
-    jobject texture_object = reinterpret_cast<jobject>(handle->GetHandle());
-    int texture_id = handle->GetTextureId();
+    jfloatArray sampling_matrix = jni()->NewFloatArray(16);
+    jni()->SetFloatArrayRegion(sampling_matrix, 0, 16, handle->sampling_matrix);
     return jni()->NewObject(
         *j_frame_class_, j_texture_frame_ctor_id_,
         frame->GetWidth(), frame->GetHeight(),
         static_cast<int>(frame->GetVideoRotation()),
-        texture_object, texture_id, javaShallowCopy(frame));
+        handle->oes_texture_id, sampling_matrix, javaShallowCopy(frame));
   }
 
   JNIEnv* jni() {
