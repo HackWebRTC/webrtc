@@ -26,6 +26,9 @@ namespace test {
 
 using std::string;
 
+ResultsContainer::ResultsContainer() {}
+ResultsContainer::~ResultsContainer() {}
+
 int GetI420FrameSize(int width, int height) {
   int half_width = (width + 1) >> 1;
   int half_height = (height + 1) >> 1;

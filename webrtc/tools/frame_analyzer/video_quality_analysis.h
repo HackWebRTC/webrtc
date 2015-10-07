@@ -32,6 +32,9 @@ struct AnalysisResult {
 };
 
 struct ResultsContainer {
+  ResultsContainer();
+  ~ResultsContainer();
+
   std::vector<AnalysisResult> frames;
 };
 
