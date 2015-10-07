@@ -39,7 +39,10 @@ public class PeerConnectionFactory {
     System.loadLibrary("jingle_peerconnection_so");
   }
 
+  private static final String TAG = "PeerConnectionFactory";
   private final long nativeFactory;
+  private static Thread workerThread;
+  private static Thread signalingThread;
 
   public static class Options {
     // Keep in sync with webrtc/base/network.h!
@@ -136,7 +139,38 @@ public class PeerConnectionFactory {
   }
 
   public void dispose() {
-    freeFactory(nativeFactory);
+    nativeFreeFactory(nativeFactory);
+    signalingThread = null;
+    workerThread = null;
+  }
+
+  public void threadsCallbacks() {
+    nativeThreadsCallbacks(nativeFactory);
+  }
+
+  public static void printStackTraces() {
+    if (workerThread != null) {
+      Logging.d(TAG, "Worker thread stacks trace:");
+      for (StackTraceElement stackTrace : workerThread.getStackTrace()) {
+        Logging.d(TAG, stackTrace.toString());
+      }
+    }
+    if (signalingThread != null) {
+      Logging.d(TAG, "Signaling thread stacks trace:");
+      for (StackTraceElement stackTrace : signalingThread.getStackTrace()) {
+        Logging.d(TAG, stackTrace.toString());
+      }
+    }
+  }
+
+  private static void onWorkerThreadReady() {
+    workerThread = Thread.currentThread();
+    Logging.d(TAG, "onWorkerThreadReady");
+  }
+
+  private static void onSignalingThreadReady() {
+    signalingThread = Thread.currentThread();
+    Logging.d(TAG, "onSignalingThreadReady");
   }
 
   private static native long nativeCreatePeerConnectionFactory();
@@ -169,5 +203,7 @@ public class PeerConnectionFactory {
   private static native void nativeSetVideoHwAccelerationOptions(
       long nativeFactory, Object renderEGLContext);
 
-  private static native void freeFactory(long nativeFactory);
+  private static native void nativeThreadsCallbacks(long nativeFactory);
+
+  private static native void nativeFreeFactory(long nativeFactory);
 }

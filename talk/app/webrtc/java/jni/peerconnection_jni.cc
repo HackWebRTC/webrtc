@@ -1075,14 +1075,45 @@ class OwnedFactoryAndThreads {
   PeerConnectionFactoryInterface* factory() { return factory_; }
   WebRtcVideoEncoderFactory* encoder_factory() { return encoder_factory_; }
   WebRtcVideoDecoderFactory* decoder_factory() { return decoder_factory_; }
+  void InvokeJavaCallbacksOnFactoryThreads();
 
  private:
+  void JavaCallbackOnFactoryThreads();
+
   const scoped_ptr<Thread> worker_thread_;
   const scoped_ptr<Thread> signaling_thread_;
   WebRtcVideoEncoderFactory* encoder_factory_;
   WebRtcVideoDecoderFactory* decoder_factory_;
   PeerConnectionFactoryInterface* factory_;  // Const after ctor except dtor.
 };
+
+void OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads() {
+  JNIEnv* jni = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(jni);
+  jclass j_factory_class = FindClass(jni, "org/webrtc/PeerConnectionFactory");
+  jmethodID m = nullptr;
+  if (Thread::Current() == worker_thread_) {
+    LOG(LS_INFO) << "Worker thread JavaCallback";
+    m = GetStaticMethodID(jni, j_factory_class, "onWorkerThreadReady", "()V");
+  }
+  if (Thread::Current() == signaling_thread_) {
+    LOG(LS_INFO) << "Signaling thread JavaCallback";
+    m = GetStaticMethodID(
+        jni, j_factory_class, "onSignalingThreadReady", "()V");
+  }
+  if (m != nullptr) {
+    jni->CallStaticVoidMethod(j_factory_class, m);
+    CHECK_EXCEPTION(jni) << "error during JavaCallback::CallStaticVoidMethod";
+  }
+}
+
+void OwnedFactoryAndThreads::InvokeJavaCallbacksOnFactoryThreads() {
+  LOG(LS_INFO) << "InvokeJavaCallbacksOnFactoryThreads.";
+  worker_thread_->Invoke<void>(
+      Bind(&OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads, this));
+  signaling_thread_->Invoke<void>(
+      Bind(&OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads, this));
+}
 
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
     JNIEnv* jni, jclass) {
@@ -1119,10 +1150,11 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
       worker_thread, signaling_thread,
       encoder_factory, decoder_factory,
       factory.release());
+  owned_factory->InvokeJavaCallbacksOnFactoryThreads();
   return jlongFromPointer(owned_factory);
 }
 
-JOW(void, PeerConnectionFactory_freeFactory)(JNIEnv*, jclass, jlong j_p) {
+JOW(void, PeerConnectionFactory_nativeFreeFactory)(JNIEnv*, jclass, jlong j_p) {
   delete reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
   if (field_trials_init_string) {
     webrtc::field_trial::InitFieldTrialsFromString(NULL);
@@ -1134,6 +1166,13 @@ JOW(void, PeerConnectionFactory_freeFactory)(JNIEnv*, jclass, jlong j_p) {
 
 static PeerConnectionFactoryInterface* factoryFromJava(jlong j_p) {
   return reinterpret_cast<OwnedFactoryAndThreads*>(j_p)->factory();
+}
+
+JOW(void, PeerConnectionFactory_nativeThreadsCallbacks)(
+    JNIEnv*, jclass, jlong j_p) {
+  OwnedFactoryAndThreads *factory =
+      reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
+  factory->InvokeJavaCallbacksOnFactoryThreads();
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreateLocalMediaStream)(
