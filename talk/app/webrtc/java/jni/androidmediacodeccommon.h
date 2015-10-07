@@ -32,6 +32,7 @@
 #include <android/log.h>
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
 namespace webrtc_jni {
@@ -46,9 +47,9 @@ namespace webrtc_jni {
 #else
 #define ALOGV(...)
 #endif
-#define ALOGD(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)
-#define ALOGW(...) __android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__)
-#define ALOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
+#define ALOGD LOG_TAG(rtc::LS_INFO, TAG)
+#define ALOGW LOG_TAG(rtc::LS_WARNING, TAG)
+#define ALOGE LOG_TAG(rtc::LS_ERROR, TAG)
 
 // Color formats supported by encoder - should mirror supportedColorList
 // from MediaCodecVideoEncoder.java
@@ -97,7 +98,7 @@ static inline jobject JavaEnumFromIndex(
 // currently thrown exception.
 static inline bool CheckException(JNIEnv* jni) {
   if (jni->ExceptionCheck()) {
-    ALOGE("Java JNI exception.");
+    ALOGE << "Java JNI exception.";
     jni->ExceptionDescribe();
     jni->ExceptionClear();
     return true;
