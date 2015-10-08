@@ -108,8 +108,8 @@ SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
 }
 
 SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
-                                   KeyType key_type) {
-  return OpenSSLIdentity::Generate(common_name, key_type);
+                                   const KeyParams& key_params) {
+  return OpenSSLIdentity::Generate(common_name, key_params);
 }
 
 SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {

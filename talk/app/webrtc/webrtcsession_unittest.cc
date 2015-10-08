@@ -596,8 +596,9 @@ class WebRtcSessionTest
         rtc::ToString(rtc::CreateRandomId());
     // Confirmed to work with KT_RSA and KT_ECDSA.
     tdesc_factory_->set_certificate(rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(rtc::SSLIdentity::Generate(
-            identity_name, rtc::KT_DEFAULT)).Pass()));
+        rtc::scoped_ptr<rtc::SSLIdentity>(
+            rtc::SSLIdentity::Generate(identity_name, rtc::KT_DEFAULT))
+            .Pass()));
     tdesc_factory_->set_secure(cricket::SEC_REQUIRED);
   }
 
