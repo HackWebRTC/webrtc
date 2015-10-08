@@ -96,7 +96,9 @@ public class MediaCodecVideoDecoder {
   private TextureListener textureListener;
   private Surface surface = null;
 
-  private MediaCodecVideoDecoder() { }
+  private MediaCodecVideoDecoder() {
+    mediaCodecThread = null;
+  }
 
   // Helper struct for findVp8Decoder() below.
   private static class DecoderProperties {

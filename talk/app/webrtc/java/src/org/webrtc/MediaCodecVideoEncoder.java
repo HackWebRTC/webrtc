@@ -101,7 +101,9 @@ public class MediaCodecVideoEncoder {
   // SPS and PPS NALs (Config frame) for H.264.
   private ByteBuffer configData = null;
 
-  private MediaCodecVideoEncoder() {}
+  private MediaCodecVideoEncoder() {
+    mediaCodecThread = null;
+  }
 
   // Helper struct for findHwEncoder() below.
   private static class EncoderProperties {
