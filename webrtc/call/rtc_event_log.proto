@@ -29,13 +29,15 @@ message Event {
   // receive the new events as UNKNOWN_EVENT.
   enum EventType {
     UNKNOWN_EVENT = 0;
-    RTP_EVENT = 1;
-    RTCP_EVENT = 2;
-    DEBUG_EVENT = 3;
-    VIDEO_RECEIVER_CONFIG_EVENT = 4;
-    VIDEO_SENDER_CONFIG_EVENT = 5;
-    AUDIO_RECEIVER_CONFIG_EVENT = 6;
-    AUDIO_SENDER_CONFIG_EVENT = 7;
+    LOG_START = 1;
+    LOG_END = 2;
+    RTP_EVENT = 3;
+    RTCP_EVENT = 4;
+    AUDIO_PLAYOUT_EVENT = 5;
+    VIDEO_RECEIVER_CONFIG_EVENT = 6;
+    VIDEO_SENDER_CONFIG_EVENT = 7;
+    AUDIO_RECEIVER_CONFIG_EVENT = 8;
+    AUDIO_SENDER_CONFIG_EVENT = 9;
   }
 
   // required - Indicates the type of this event
@@ -47,8 +49,8 @@ message Event {
   // optional - but required if type == RTCP_EVENT
   optional RtcpPacket rtcp_packet = 4;
 
-  // optional - but required if type == DEBUG_EVENT
-  optional DebugEvent debug_event = 5;
+  // optional - but required if type == AUDIO_PLAYOUT_EVENT
+  optional AudioPlayoutEvent audio_playout_event = 5;
 
   // optional - but required if type == VIDEO_RECEIVER_CONFIG_EVENT
   optional VideoReceiveConfig video_receiver_config = 6;
@@ -92,22 +94,8 @@ message RtcpPacket {
   optional bytes packet_data = 3;
 }
 
-
-message DebugEvent {
-  // Indicates the type of the debug event.
-  // LOG_START and LOG_END indicate the start and end of the log respectively.
-  // AUDIO_PLAYOUT indicates a call to the PlayoutData10Ms() function in ACM.
-  enum EventType {
-    UNKNOWN_EVENT = 0;
-    LOG_START = 1;
-    LOG_END = 2;
-    AUDIO_PLAYOUT = 3;
-  }
-
-  // required
-  optional EventType type = 1;
-
-  // required if type == AUDIO_PLAYOUT
+message AudioPlayoutEvent {
+  // required - The SSRC of the audio stream associated with the playout event.
   optional uint32 local_ssrc = 2;
 }
 
@@ -222,10 +210,21 @@ message EncoderConfig {
 
 
 message AudioReceiveConfig {
-  // TODO(terelius): Add audio-receive config.
+  // required - Synchronization source (stream identifier) to be received.
+  optional uint32 remote_ssrc = 1;
+
+  // required - Sender SSRC used for sending RTCP (such as receiver reports).
+  optional uint32 local_ssrc = 2;
+
+  // RTP header extensions used for the received audio stream.
+  repeated RtpHeaderExtension header_extensions = 3;
 }
 
 
 message AudioSendConfig {
-  // TODO(terelius): Add audio-receive config.
+  // required - Synchronization source (stream identifier) for outgoing stream.
+  optional uint32 ssrc = 1;
+
+  // RTP header extensions used for the outgoing audio stream.
+  repeated RtpHeaderExtension header_extensions = 2;
 }

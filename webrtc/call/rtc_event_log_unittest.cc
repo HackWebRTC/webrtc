@@ -84,10 +84,12 @@ MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {
     return ::testing::AssertionFailure()
            << "Event of type " << type << " has "
            << (event.has_rtcp_packet() ? "" : "no ") << "RTCP packet";
-  if ((type == rtclog::Event::DEBUG_EVENT) != event.has_debug_event())
+  if ((type == rtclog::Event::AUDIO_PLAYOUT_EVENT) !=
+      event.has_audio_playout_event())
     return ::testing::AssertionFailure()
            << "Event of type " << type << " has "
-           << (event.has_debug_event() ? "" : "no ") << "debug event";
+           << (event.has_audio_playout_event() ? "" : "no ")
+           << "audio_playout event";
   if ((type == rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT) !=
       event.has_video_receiver_config())
     return ::testing::AssertionFailure()
@@ -267,20 +269,15 @@ void VerifyRtcpEvent(const rtclog::Event& event,
 
 void VerifyPlayoutEvent(const rtclog::Event& event, uint32_t ssrc) {
   ASSERT_TRUE(IsValidBasicEvent(event));
-  ASSERT_EQ(rtclog::Event::DEBUG_EVENT, event.type());
-  const rtclog::DebugEvent& debug_event = event.debug_event();
-  ASSERT_TRUE(debug_event.has_type());
-  EXPECT_EQ(rtclog::DebugEvent::AUDIO_PLAYOUT, debug_event.type());
-  ASSERT_TRUE(debug_event.has_local_ssrc());
-  EXPECT_EQ(ssrc, debug_event.local_ssrc());
+  ASSERT_EQ(rtclog::Event::AUDIO_PLAYOUT_EVENT, event.type());
+  const rtclog::AudioPlayoutEvent& playout_event = event.audio_playout_event();
+  ASSERT_TRUE(playout_event.has_local_ssrc());
+  EXPECT_EQ(ssrc, playout_event.local_ssrc());
 }
 
 void VerifyLogStartEvent(const rtclog::Event& event) {
   ASSERT_TRUE(IsValidBasicEvent(event));
-  ASSERT_EQ(rtclog::Event::DEBUG_EVENT, event.type());
-  const rtclog::DebugEvent& debug_event = event.debug_event();
-  ASSERT_TRUE(debug_event.has_type());
-  EXPECT_EQ(rtclog::DebugEvent::LOG_START, debug_event.type());
+  EXPECT_EQ(rtclog::Event::LOG_START, event.type());
 }
 
 /*
@@ -399,12 +396,12 @@ void GenerateVideoSendConfig(uint32_t extensions_bitvector,
 // them back to see if they match.
 void LogSessionAndReadBack(size_t rtp_count,
                            size_t rtcp_count,
-                           size_t debug_count,
+                           size_t playout_count,
                            uint32_t extensions_bitvector,
                            uint32_t csrcs_count,
                            unsigned random_seed) {
   ASSERT_LE(rtcp_count, rtp_count);
-  ASSERT_LE(debug_count, rtp_count);
+  ASSERT_LE(playout_count, rtp_count);
   std::vector<rtc::Buffer> rtp_packets;
   std::vector<rtc::Buffer> rtcp_packets;
   std::vector<size_t> rtp_header_sizes;
@@ -429,8 +426,8 @@ void LogSessionAndReadBack(size_t rtp_count,
     rtcp_packets.push_back(rtc::Buffer(packet_size));
     GenerateRtcpPacket(rtcp_packets[i].data(), packet_size);
   }
-  // Create debug_count random SSRCs to use when logging AudioPlayout events.
-  for (size_t i = 0; i < debug_count; i++) {
+  // Create playout_count random SSRCs to use when logging AudioPlayout events.
+  for (size_t i = 0; i < playout_count; i++) {
     playout_ssrcs.push_back(static_cast<uint32_t>(rand()));
   }
   // Create configurations for the video streams.
@@ -450,7 +447,7 @@ void LogSessionAndReadBack(size_t rtp_count,
     rtc::scoped_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
     log_dumper->LogVideoReceiveStreamConfig(receiver_config);
     log_dumper->LogVideoSendStreamConfig(sender_config);
-    size_t rtcp_index = 1, debug_index = 1;
+    size_t rtcp_index = 1, playout_index = 1;
     for (size_t i = 1; i <= rtp_count; i++) {
       log_dumper->LogRtpHeader(
           (i % 2 == 0),  // Every second packet is incoming.
@@ -464,9 +461,9 @@ void LogSessionAndReadBack(size_t rtp_count,
             rtcp_packets[rtcp_index - 1].size());
         rtcp_index++;
       }
-      if (i * debug_count >= debug_index * rtp_count) {
-        log_dumper->LogAudioPlayout(playout_ssrcs[debug_index - 1]);
-        debug_index++;
+      if (i * playout_count >= playout_index * rtp_count) {
+        log_dumper->LogAudioPlayout(playout_ssrcs[playout_index - 1]);
+        playout_index++;
       }
       if (i == rtp_count / 2) {
         log_dumper->StartLogging(temp_filename, 10000000);
@@ -481,11 +478,11 @@ void LogSessionAndReadBack(size_t rtp_count,
 
   // Verify the result.
   const int event_count =
-      config_count + debug_count + rtcp_count + rtp_count + 1;
+      config_count + playout_count + rtcp_count + rtp_count + 1;
   EXPECT_EQ(event_count, parsed_stream.stream_size());
   VerifyReceiveStreamConfig(parsed_stream.stream(0), receiver_config);
   VerifySendStreamConfig(parsed_stream.stream(1), sender_config);
-  size_t event_index = config_count, rtcp_index = 1, debug_index = 1;
+  size_t event_index = config_count, rtcp_index = 1, playout_index = 1;
   for (size_t i = 1; i <= rtp_count; i++) {
     VerifyRtpEvent(parsed_stream.stream(event_index),
                    (i % 2 == 0),  // Every second packet is incoming.
@@ -502,11 +499,11 @@ void LogSessionAndReadBack(size_t rtp_count,
       event_index++;
       rtcp_index++;
     }
-    if (i * debug_count >= debug_index * rtp_count) {
+    if (i * playout_count >= playout_index * rtp_count) {
       VerifyPlayoutEvent(parsed_stream.stream(event_index),
-                         playout_ssrcs[debug_index - 1]);
+                         playout_ssrcs[playout_index - 1]);
       event_index++;
-      debug_index++;
+      playout_index++;
     }
     if (i == rtp_count / 2) {
       VerifyLogStartEvent(parsed_stream.stream(event_index));

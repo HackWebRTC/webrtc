@@ -47,16 +47,16 @@ const rtclog::RtpPacket* GetRtpPacket(const rtclog::Event& event) {
   return &rtp_packet;
 }
 
-const rtclog::DebugEvent* GetAudioOutputEvent(const rtclog::Event& event) {
-  if (!event.has_type() || event.type() != rtclog::Event::DEBUG_EVENT)
+const rtclog::AudioPlayoutEvent* GetAudioPlayoutEvent(
+    const rtclog::Event& event) {
+  if (!event.has_type() || event.type() != rtclog::Event::AUDIO_PLAYOUT_EVENT)
     return nullptr;
-  if (!event.has_timestamp_us() || !event.has_debug_event())
+  if (!event.has_timestamp_us() || !event.has_audio_playout_event())
     return nullptr;
-  const rtclog::DebugEvent& debug_event = event.debug_event();
-  if (!debug_event.has_type() ||
-      debug_event.type() != rtclog::DebugEvent::AUDIO_PLAYOUT)
+  const rtclog::AudioPlayoutEvent& playout_event = event.audio_playout_event();
+  if (!playout_event.has_local_ssrc())
     return nullptr;
-  return &debug_event;
+  return &playout_event;
 }
 
 }  // namespace
@@ -107,9 +107,10 @@ Packet* RtcEventLogSource::NextPacket() {
 int64_t RtcEventLogSource::NextAudioOutputEventMs() {
   while (audio_output_index_ < event_log_->stream_size()) {
     const rtclog::Event& event = event_log_->stream(audio_output_index_);
-    const rtclog::DebugEvent* debug_event = GetAudioOutputEvent(event);
+    const rtclog::AudioPlayoutEvent* playout_event =
+        GetAudioPlayoutEvent(event);
     audio_output_index_++;
-    if (debug_event)
+    if (playout_event)
       return event.timestamp_us() / 1000;
   }
   return std::numeric_limits<int64_t>::max();

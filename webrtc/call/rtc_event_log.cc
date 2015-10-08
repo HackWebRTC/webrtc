@@ -174,9 +174,7 @@ void RtcEventLogImpl::StartLogging(const std::string& file_name,
   // Write a LOG_START event to the file.
   rtclog::Event start_event;
   start_event.set_timestamp_us(start_time_us_);
-  start_event.set_type(rtclog::Event::DEBUG_EVENT);
-  auto debug_event = start_event.mutable_debug_event();
-  debug_event->set_type(rtclog::DebugEvent_EventType_LOG_START);
+  start_event.set_type(rtclog::Event::LOG_START);
   StoreToFile(&start_event);
 }
 
@@ -323,23 +321,20 @@ void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
   rtclog::Event event;
   const int64_t timestamp = clock_->TimeInMicroseconds();
   event.set_timestamp_us(timestamp);
-  event.set_type(rtclog::Event::DEBUG_EVENT);
-  auto debug_event = event.mutable_debug_event();
-  debug_event->set_type(rtclog::DebugEvent_EventType_AUDIO_PLAYOUT);
-  debug_event->set_local_ssrc(ssrc);
+  event.set_type(rtclog::Event::AUDIO_PLAYOUT_EVENT);
+  auto playout_event = event.mutable_audio_playout_event();
+  playout_event->set_local_ssrc(ssrc);
   HandleEvent(&event);
 }
 
 void RtcEventLogImpl::StopLoggingLocked() {
   if (currently_logging_) {
     currently_logging_ = false;
-    // Create a LogEnd debug event
+    // Create a LogEnd event
     rtclog::Event event;
     int64_t timestamp = clock_->TimeInMicroseconds();
     event.set_timestamp_us(timestamp);
-    event.set_type(rtclog::Event::DEBUG_EVENT);
-    auto debug_event = event.mutable_debug_event();
-    debug_event->set_type(rtclog::DebugEvent_EventType_LOG_END);
+    event.set_type(rtclog::Event::LOG_END);
     // Store the event and close the file
     RTC_DCHECK(file_->Open());
     StoreToFile(&event);
