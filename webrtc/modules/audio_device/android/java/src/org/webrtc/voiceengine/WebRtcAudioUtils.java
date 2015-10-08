@@ -147,10 +147,11 @@ public final class WebRtcAudioUtils {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
   }
 
-  public static boolean runningOnMOrHigher() {
+  // TODO(phoglund): enable when all downstream users use M.
+  // public static boolean runningOnMOrHigher() {
     // API Level 23.
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
-  }
+    // return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
+  //}
 
   // Helper method for building a string of thread information.
   public static String getThreadInfo() {

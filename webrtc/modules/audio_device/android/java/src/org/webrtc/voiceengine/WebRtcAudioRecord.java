@@ -214,15 +214,18 @@ class  WebRtcAudioRecord {
     if (effects != null) {
       effects.enable(audioRecord.getAudioSessionId());
     }
-    if (WebRtcAudioUtils.runningOnMOrHigher()) {
+    // TODO(phoglund): put back audioRecord.getBufferSizeInFrames when
+    // all known downstream users supports M.
+    // if (WebRtcAudioUtils.runningOnMOrHigher()) {
       // Returns the frame count of the native AudioRecord buffer. This is
       // greater than or equal to the bufferSizeInBytes converted to frame
       // units. The native frame count may be enlarged to accommodate the
       // requirements of the source on creation or if the AudioRecord is
       // subsequently rerouted.
-      Logging.d(TAG, "bufferSizeInFrames: "
-          + audioRecord.getBufferSizeInFrames());
-    }
+
+      // Logging.d(TAG, "bufferSizeInFrames: "
+      //     + audioRecord.getBufferSizeInFrames());
+    //}
     return framesPerBuffer;
   }
 
