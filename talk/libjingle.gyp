@@ -712,6 +712,8 @@
       'sources': [
         'app/webrtc/audiotrack.cc',
         'app/webrtc/audiotrack.h',
+        'app/webrtc/audiotrackrenderer.cc',
+        'app/webrtc/audiotrackrenderer.h',
         'app/webrtc/datachannel.cc',
         'app/webrtc/datachannel.h',
         'app/webrtc/datachannelinterface.h',

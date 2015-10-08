@@ -55,6 +55,20 @@ class AudioRenderer {
   // to the renderer at a time.
   virtual void SetSink(Sink* sink) {}
 
+  // Add the WebRtc VoE channel to the renderer.
+  // For local stream, multiple WebRtc VoE channels can be connected to the
+  // renderer. While for remote stream, only one WebRtc VoE channel can be
+  // connected to the renderer.
+  // TODO(xians): Remove this interface after Chrome switches to the
+  // AudioRenderer::Sink interface.
+  virtual void AddChannel(int channel_id) {}
+
+  // Remove the WebRtc VoE channel from the renderer.
+  // This method is called when the VoE channel is going away.
+  // TODO(xians): Remove this interface after Chrome switches to the
+  // AudioRenderer::Sink interface.
+  virtual void RemoveChannel(int channel_id) {}
+
  protected:
   virtual ~AudioRenderer() {}
 };

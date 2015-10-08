@@ -330,16 +330,26 @@ class WebRtcSessionCreateSDPObserverForTest
 
 class FakeAudioRenderer : public cricket::AudioRenderer {
  public:
-  FakeAudioRenderer() : sink_(NULL) {}
+  FakeAudioRenderer() : channel_id_(-1), sink_(NULL) {}
   virtual ~FakeAudioRenderer() {
     if (sink_)
       sink_->OnClose();
   }
 
+  void AddChannel(int channel_id) override {
+    ASSERT(channel_id_ == -1);
+    channel_id_ = channel_id;
+  }
+  void RemoveChannel(int channel_id) override {
+    ASSERT(channel_id == channel_id_);
+    channel_id_ = -1;
+  }
   void SetSink(Sink* sink) override { sink_ = sink; }
 
+  int channel_id() const { return channel_id_; }
   cricket::AudioRenderer::Sink* sink() const { return sink_; }
  private:
+  int channel_id_;
   cricket::AudioRenderer::Sink* sink_;
 };
 
@@ -3107,10 +3117,12 @@ TEST_F(WebRtcSessionTest, SetAudioPlayout) {
   EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
   EXPECT_EQ(0, left_vol);
   EXPECT_EQ(0, right_vol);
+  EXPECT_EQ(0, renderer->channel_id());
   session_->SetAudioPlayout(receive_ssrc, true, NULL);
   EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
   EXPECT_EQ(1, left_vol);
   EXPECT_EQ(1, right_vol);
+  EXPECT_EQ(-1, renderer->channel_id());
 }
 
 TEST_F(WebRtcSessionTest, SetAudioSend) {
@@ -3130,6 +3142,7 @@ TEST_F(WebRtcSessionTest, SetAudioSend) {
   session_->SetAudioSend(send_ssrc, false, options, renderer.get());
   EXPECT_TRUE(channel->IsStreamMuted(send_ssrc));
   EXPECT_FALSE(channel->options().echo_cancellation.IsSet());
+  EXPECT_EQ(0, renderer->channel_id());
   EXPECT_TRUE(renderer->sink() != NULL);
 
   // This will trigger SetSink(NULL) to the |renderer|.
@@ -3138,6 +3151,7 @@ TEST_F(WebRtcSessionTest, SetAudioSend) {
   bool value;
   EXPECT_TRUE(channel->options().echo_cancellation.Get(&value));
   EXPECT_TRUE(value);
+  EXPECT_EQ(-1, renderer->channel_id());
   EXPECT_TRUE(renderer->sink() == NULL);
 }
 
