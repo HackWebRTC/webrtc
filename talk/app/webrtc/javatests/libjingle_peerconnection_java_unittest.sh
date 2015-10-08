@@ -46,7 +46,7 @@ export CLASSPATH=`pwd`/junit-4.11.jar
 CLASSPATH=$CLASSPATH:`pwd`/libjingle_peerconnection_test.jar
 CLASSPATH=$CLASSPATH:`pwd`/libjingle_peerconnection.jar
 
-# This sets java.library.path so our lookup of libpeerconnection.so works.
+# This sets java.library.path so lookup of libjingle_peerconnection_so.so works.
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`:`pwd`/lib:`pwd`/lib.target
 
 # The RHS value is replaced by the build action that copies this script to
