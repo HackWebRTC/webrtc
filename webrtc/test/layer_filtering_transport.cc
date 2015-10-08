@@ -23,13 +23,18 @@ LayerFilteringTransport::LayerFilteringTransport(
     const FakeNetworkPipe::Config& config,
     uint8_t vp8_video_payload_type,
     uint8_t vp9_video_payload_type,
-    uint8_t tl_discard_threshold,
-    uint8_t sl_discard_threshold)
+    int selected_tl,
+    int selected_sl)
     : test::DirectTransport(config),
       vp8_video_payload_type_(vp8_video_payload_type),
       vp9_video_payload_type_(vp9_video_payload_type),
-      tl_discard_threshold_(tl_discard_threshold),
-      sl_discard_threshold_(sl_discard_threshold) {
+      selected_tl_(selected_tl),
+      selected_sl_(selected_sl),
+      discarded_last_packet_(false) {
+}
+
+bool LayerFilteringTransport::DiscardedLastPacket() const {
+  return discarded_last_packet_;
 }
 
 uint16_t LayerFilteringTransport::NextSequenceNumber(uint32_t ssrc) {
@@ -42,7 +47,7 @@ uint16_t LayerFilteringTransport::NextSequenceNumber(uint32_t ssrc) {
 bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
                                       size_t length,
                                       const PacketOptions& options) {
-  if (tl_discard_threshold_ == 0 && sl_discard_threshold_ == 0) {
+  if (selected_tl_ == -1 && selected_sl_ == -1) {
     // Nothing to change, forward the packet immediately.
     return test::DirectTransport::SendRtp(packet, length, options);
   }
@@ -65,23 +70,24 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
         RtpDepacketizer::Create(is_vp8 ? kRtpVideoVp8 : kRtpVideoVp9));
     RtpDepacketizer::ParsedPayload parsed_payload;
     if (depacketizer->Parse(&parsed_payload, payload, payload_data_length)) {
-      const uint8_t temporalIdx =
+      const int temporal_idx = static_cast<int>(
           is_vp8 ? parsed_payload.type.Video.codecHeader.VP8.temporalIdx
-                 : parsed_payload.type.Video.codecHeader.VP9.temporal_idx;
-      const uint8_t spatialIdx =
+                 : parsed_payload.type.Video.codecHeader.VP9.temporal_idx);
+      const int spatial_idx = static_cast<int>(
           is_vp8 ? kNoSpatialIdx
-                 : parsed_payload.type.Video.codecHeader.VP9.spatial_idx;
-      if (sl_discard_threshold_ > 0 &&
-          spatialIdx == sl_discard_threshold_ - 1 &&
+                 : parsed_payload.type.Video.codecHeader.VP9.spatial_idx);
+      if (selected_sl_ >= 0 &&
+          spatial_idx == selected_sl_ &&
           parsed_payload.type.Video.codecHeader.VP9.end_of_frame) {
         // This layer is now the last in the superframe.
         set_marker_bit = true;
       }
-      if ((tl_discard_threshold_ > 0 && temporalIdx != kNoTemporalIdx &&
-           temporalIdx >= tl_discard_threshold_) ||
-          (sl_discard_threshold_ > 0 && spatialIdx != kNoSpatialIdx &&
-           spatialIdx >= sl_discard_threshold_)) {
-        return true;  // Discard the packet.
+      if ((selected_tl_ >= 0 && temporal_idx != kNoTemporalIdx &&
+           temporal_idx > selected_tl_) ||
+          (selected_sl_ >= 0 && spatial_idx != kNoSpatialIdx &&
+           spatial_idx > selected_sl_)) {
+        discarded_last_packet_ = true;
+        return true;
       }
     } else {
       RTC_NOTREACHED() << "Parse error";

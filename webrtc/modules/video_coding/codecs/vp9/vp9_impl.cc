@@ -112,42 +112,72 @@ int VP9EncoderImpl::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+bool VP9EncoderImpl::ExplicitlyConfiguredSpatialLayers() const {
+  // We check target_bitrate_bps of the 0th layer to see if the spatial layers
+  // (i.e. bitrates) were explicitly configured.
+  return num_spatial_layers_ > 1 &&
+         codec_.spatialLayers[0].target_bitrate_bps > 0;
+}
+
 bool VP9EncoderImpl::SetSvcRates() {
-  float rate_ratio[VPX_MAX_LAYERS] = {0};
-  float total = 0;
   uint8_t i = 0;
 
-  for (i = 0; i < num_spatial_layers_; ++i) {
-    if (svc_internal_.svc_params.scaling_factor_num[i] <= 0 ||
-        svc_internal_.svc_params.scaling_factor_den[i] <= 0) {
+  if (ExplicitlyConfiguredSpatialLayers()) {
+    if (num_temporal_layers_ > 1) {
+      LOG(LS_ERROR) << "Multiple temporal layers when manually specifying "
+                       "spatial layers not implemented yet!";
       return false;
     }
-    rate_ratio[i] = static_cast<float>(
-        svc_internal_.svc_params.scaling_factor_num[i]) /
-        svc_internal_.svc_params.scaling_factor_den[i];
-    total += rate_ratio[i];
-  }
+    int total_bitrate_bps = 0;
+    for (i = 0; i < num_spatial_layers_; ++i)
+      total_bitrate_bps += codec_.spatialLayers[i].target_bitrate_bps;
+    // If total bitrate differs now from what has been specified at the
+    // beginning, update the bitrates in the same ratio as before.
+    for (i = 0; i < num_spatial_layers_; ++i) {
+      config_->ss_target_bitrate[i] =
+          config_->layer_target_bitrate[i] = static_cast<int>(
+              static_cast<int64_t>(config_->rc_target_bitrate) *
+              codec_.spatialLayers[i].target_bitrate_bps / total_bitrate_bps);
+    }
+  } else {
+    float rate_ratio[VPX_MAX_LAYERS] = {0};
+    float total = 0;
 
-  for (i = 0; i < num_spatial_layers_; ++i) {
-    config_->ss_target_bitrate[i] = static_cast<unsigned int>(
-        config_->rc_target_bitrate * rate_ratio[i] / total);
-    if (num_temporal_layers_ == 1) {
-      config_->layer_target_bitrate[i] = config_->ss_target_bitrate[i];
-    } else if (num_temporal_layers_ == 2) {
-      config_->layer_target_bitrate[i * num_temporal_layers_] =
-          config_->ss_target_bitrate[i] * 2 / 3;
-      config_->layer_target_bitrate[i * num_temporal_layers_ + 1] =
-          config_->ss_target_bitrate[i];
-    } else if (num_temporal_layers_ == 3) {
-      config_->layer_target_bitrate[i * num_temporal_layers_] =
-          config_->ss_target_bitrate[i] / 2;
-      config_->layer_target_bitrate[i * num_temporal_layers_ + 1] =
-          config_->layer_target_bitrate[i * num_temporal_layers_] +
-          (config_->ss_target_bitrate[i] / 4);
-      config_->layer_target_bitrate[i * num_temporal_layers_ + 2] =
-          config_->ss_target_bitrate[i];
-    } else {
-      return false;
+    for (i = 0; i < num_spatial_layers_; ++i) {
+      if (svc_internal_.svc_params.scaling_factor_num[i] <= 0 ||
+          svc_internal_.svc_params.scaling_factor_den[i] <= 0) {
+        LOG(LS_ERROR) << "Scaling factors not specified!";
+        return false;
+      }
+      rate_ratio[i] = static_cast<float>(
+          svc_internal_.svc_params.scaling_factor_num[i]) /
+          svc_internal_.svc_params.scaling_factor_den[i];
+      total += rate_ratio[i];
+    }
+
+    for (i = 0; i < num_spatial_layers_; ++i) {
+      config_->ss_target_bitrate[i] = static_cast<unsigned int>(
+          config_->rc_target_bitrate * rate_ratio[i] / total);
+      if (num_temporal_layers_ == 1) {
+        config_->layer_target_bitrate[i] = config_->ss_target_bitrate[i];
+      } else if (num_temporal_layers_ == 2) {
+        config_->layer_target_bitrate[i * num_temporal_layers_] =
+            config_->ss_target_bitrate[i] * 2 / 3;
+        config_->layer_target_bitrate[i * num_temporal_layers_ + 1] =
+            config_->ss_target_bitrate[i];
+      } else if (num_temporal_layers_ == 3) {
+        config_->layer_target_bitrate[i * num_temporal_layers_] =
+            config_->ss_target_bitrate[i] / 2;
+        config_->layer_target_bitrate[i * num_temporal_layers_ + 1] =
+            config_->layer_target_bitrate[i * num_temporal_layers_] +
+            (config_->ss_target_bitrate[i] / 4);
+        config_->layer_target_bitrate[i * num_temporal_layers_ + 2] =
+            config_->ss_target_bitrate[i];
+      } else {
+        LOG(LS_ERROR) << "Unsupported number of temporal layers: "
+                      << num_temporal_layers_;
+        return false;
+      }
     }
   }
 
@@ -355,14 +385,24 @@ int VP9EncoderImpl::NumberOfThreads(int width,
 int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   config_->ss_number_layers = num_spatial_layers_;
 
-  int scaling_factor_num = 256;
-  for (int i = num_spatial_layers_ - 1; i >= 0; --i) {
-    svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
-    svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
-    // 1:2 scaling in each dimension.
-    svc_internal_.svc_params.scaling_factor_num[i] = scaling_factor_num;
-    svc_internal_.svc_params.scaling_factor_den[i] = 256;
-    scaling_factor_num /= 2;
+  if (ExplicitlyConfiguredSpatialLayers()) {
+    for (int i = 0; i < num_spatial_layers_; ++i) {
+      const auto &layer = codec_.spatialLayers[i];
+      svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
+      svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
+      svc_internal_.svc_params.scaling_factor_num[i] = layer.scaling_factor_num;
+      svc_internal_.svc_params.scaling_factor_den[i] = layer.scaling_factor_den;
+    }
+  } else {
+    int scaling_factor_num = 256;
+    for (int i = num_spatial_layers_ - 1; i >= 0; --i) {
+      svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
+      svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
+      // 1:2 scaling in each dimension.
+      svc_internal_.svc_params.scaling_factor_num[i] = scaling_factor_num;
+      svc_internal_.svc_params.scaling_factor_den[i] = 256;
+      scaling_factor_num /= 2;
+    }
   }
 
   if (!SetSvcRates()) {
