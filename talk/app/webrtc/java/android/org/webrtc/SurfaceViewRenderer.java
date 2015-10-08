@@ -206,9 +206,11 @@ public class SurfaceViewRenderer extends SurfaceView
             GLES20.glDeleteTextures(3, yuvTextures, 0);
             yuvTextures = null;
           }
-          // Clear last rendered image to black.
-          GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-          eglBase.swapBuffers();
+          if (eglBase.hasSurface()) {
+            // Clear last rendered image to black.
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+            eglBase.swapBuffers();
+          }
           eglBase.release();
           eglBase = null;
         }
