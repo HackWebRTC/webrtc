@@ -783,11 +783,11 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   if (params.screenshare.enabled)
     SetupScreenshare(params);
 
-  CreateCapturer(params, &analyzer);
-
   CreateStreams();
   analyzer.input_ = send_stream_->Input();
   analyzer.send_stream_ = send_stream_;
+
+  CreateCapturer(params, &analyzer);
 
   send_stream_->Start();
   for (size_t i = 0; i < receive_streams_.size(); ++i)
@@ -842,10 +842,9 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
     SetupScreenshare(params);
 
   send_stream_ = call->CreateVideoSendStream(send_config_, encoder_config_);
-  CreateCapturer(params, send_stream_->Input());
-
   VideoReceiveStream* receive_stream =
       call->CreateVideoReceiveStream(receive_configs_[0]);
+  CreateCapturer(params, send_stream_->Input());
 
   receive_stream->Start();
   send_stream_->Start();
