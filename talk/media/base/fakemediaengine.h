@@ -308,11 +308,9 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
         ASSERT(it->second == renderer);
       } else {
         remote_renderers_.insert(std::make_pair(ssrc, renderer));
-        renderer->AddChannel(0);
       }
     } else {
       if (it != remote_renderers_.end()) {
-        it->second->RemoveChannel(0);
         remote_renderers_.erase(it);
       } else {
         return false;
@@ -382,12 +380,10 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
    public:
     explicit VoiceChannelAudioSink(AudioRenderer* renderer)
         : renderer_(renderer) {
-      renderer_->AddChannel(0);
       renderer_->SetSink(this);
     }
     virtual ~VoiceChannelAudioSink() {
       if (renderer_) {
-        renderer_->RemoveChannel(0);
         renderer_->SetSink(NULL);
       }
     }
