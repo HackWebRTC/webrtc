@@ -219,7 +219,6 @@ PacedSender::PacedSender(Clock* clock,
     : clock_(clock),
       callback_(callback),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      enabled_(true),
       paused_(false),
       probing_enabled_(true),
       media_budget_(new paced_sender::IntervalBudget(max_bitrate_kbps)),
@@ -249,16 +248,6 @@ void PacedSender::SetProbingEnabled(bool enabled) {
   probing_enabled_ = enabled;
 }
 
-void PacedSender::SetStatus(bool enable) {
-  CriticalSectionScoped cs(critsect_.get());
-  enabled_ = enable;
-}
-
-bool PacedSender::Enabled() const {
-  CriticalSectionScoped cs(critsect_.get());
-  return enabled_;
-}
-
 void PacedSender::UpdateBitrate(int bitrate_kbps,
                                 int max_bitrate_kbps,
                                 int min_bitrate_kbps) {
@@ -268,17 +257,14 @@ void PacedSender::UpdateBitrate(int bitrate_kbps,
   bitrate_bps_ = 1000 * bitrate_kbps;
 }
 
-bool PacedSender::SendPacket(RtpPacketSender::Priority priority,
-                             uint32_t ssrc,
-                             uint16_t sequence_number,
-                             int64_t capture_time_ms,
-                             size_t bytes,
-                             bool retransmission) {
+void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
+                               uint32_t ssrc,
+                               uint16_t sequence_number,
+                               int64_t capture_time_ms,
+                               size_t bytes,
+                               bool retransmission) {
   CriticalSectionScoped cs(critsect_.get());
 
-  if (!enabled_) {
-    return true;  // We can send now.
-  }
   if (probing_enabled_ && !prober_->IsProbing()) {
     prober_->SetEnabled(true);
   }
@@ -291,7 +277,6 @@ bool PacedSender::SendPacket(RtpPacketSender::Priority priority,
   packets_->Push(paced_sender::Packet(
       priority, ssrc, sequence_number, capture_time_ms,
       clock_->TimeInMilliseconds(), bytes, retransmission, packet_counter_++));
-  return false;
 }
 
 int64_t PacedSender::ExpectedQueueTimeMs() const {
@@ -334,48 +319,45 @@ int32_t PacedSender::Process() {
   CriticalSectionScoped cs(critsect_.get());
   int64_t elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
   time_last_update_us_ = now_us;
-  if (!enabled_) {
+  if (paused_)
     return 0;
+  if (elapsed_time_ms > 0) {
+    int64_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
+    UpdateBytesPerInterval(delta_time_ms);
   }
-  if (!paused_) {
-    if (elapsed_time_ms > 0) {
-      int64_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
-      UpdateBytesPerInterval(delta_time_ms);
-    }
-    while (!packets_->Empty()) {
-      if (media_budget_->bytes_remaining() == 0 && !prober_->IsProbing()) {
-        return 0;
-      }
-
-      // Since we need to release the lock in order to send, we first pop the
-      // element from the priority queue but keep it in storage, so that we can
-      // reinsert it if send fails.
-      const paced_sender::Packet& packet = packets_->BeginPop();
-      if (SendPacket(packet)) {
-        // Send succeeded, remove it from the queue.
-        packets_->FinalizePop(packet);
-        if (prober_->IsProbing()) {
-          return 0;
-        }
-      } else {
-        // Send failed, put it back into the queue.
-        packets_->CancelPop(packet);
-        return 0;
-      }
-    }
-
-    if (!packets_->Empty())
+  while (!packets_->Empty()) {
+    if (media_budget_->bytes_remaining() == 0 && !prober_->IsProbing()) {
       return 0;
+    }
 
-    size_t padding_needed;
-    if (prober_->IsProbing())
-      padding_needed = prober_->RecommendedPacketSize();
-    else
-      padding_needed = padding_budget_->bytes_remaining();
-
-    if (padding_needed > 0)
-      SendPadding(static_cast<size_t>(padding_needed));
+    // Since we need to release the lock in order to send, we first pop the
+    // element from the priority queue but keep it in storage, so that we can
+    // reinsert it if send fails.
+    const paced_sender::Packet& packet = packets_->BeginPop();
+    if (SendPacket(packet)) {
+      // Send succeeded, remove it from the queue.
+      packets_->FinalizePop(packet);
+      if (prober_->IsProbing()) {
+        return 0;
+      }
+    } else {
+      // Send failed, put it back into the queue.
+      packets_->CancelPop(packet);
+      return 0;
+    }
   }
+
+  if (!packets_->Empty())
+    return 0;
+
+  size_t padding_needed;
+  if (prober_->IsProbing())
+    padding_needed = prober_->RecommendedPacketSize();
+  else
+    padding_needed = padding_budget_->bytes_remaining();
+
+  if (padding_needed > 0)
+    SendPadding(static_cast<size_t>(padding_needed));
   return 0;
 }
 

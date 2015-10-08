@@ -144,7 +144,7 @@ int32_t ViEChannel::Init() {
   // RTP/RTCP initialization.
   module_process_thread_->RegisterModule(rtp_rtcp_modules_[0]);
 
-  rtp_rtcp_modules_[0]->SetKeyFrameRequestMethod(kKeyFrameReqFirRtp);
+  rtp_rtcp_modules_[0]->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
   if (paced_sender_) {
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
       rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
@@ -609,11 +609,6 @@ int ViEChannel::GetRequiredNackListSize(int target_delay_ms) {
   return target_delay_ms * 40 * 30 / 1000;
 }
 
-int32_t ViEChannel::SetKeyFrameRequestMethod(
-    const KeyFrameRequestMethod method) {
-  return rtp_rtcp_modules_[0]->SetKeyFrameRequestMethod(method);
-}
-
 void ViEChannel::EnableRemb(bool enable) {
   rtp_rtcp_modules_[0]->SetREMBStatus(enable);
 }
@@ -700,11 +695,6 @@ int ViEChannel::SetReceiveTransportSequenceNumber(bool enable, int id) {
 
 void ViEChannel::SetRtcpXrRrtrStatus(bool enable) {
   rtp_rtcp_modules_[0]->SetRtcpXrRrtrStatus(enable);
-}
-
-void ViEChannel::SetTransmissionSmoothingStatus(bool enable) {
-  RTC_DCHECK(paced_sender_ && "No paced sender registered.");
-  paced_sender_->SetStatus(enable);
 }
 
 void ViEChannel::EnableTMMBR(bool enable) {

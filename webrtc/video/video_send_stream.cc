@@ -183,14 +183,8 @@ VideoSendStream::VideoSendStream(
   if (config_.post_encode_callback)
     vie_encoder_->RegisterPostEncodeImageCallback(&encoded_frame_proxy_);
 
-  if (config_.suspend_below_min_bitrate) {
+  if (config_.suspend_below_min_bitrate)
     vie_encoder_->SuspendBelowMinBitrate();
-    // Must enable pacing when enabling SuspendBelowMinBitrate. Otherwise, no
-    // padding will be sent when the video is suspended so the video will be
-    // unable to recover.
-    // TODO(pbos): Pacing should probably be enabled outside of VideoSendStream.
-    vie_channel_->SetTransmissionSmoothingStatus(true);
-  }
 
   vie_channel_->RegisterSendChannelRtcpStatisticsCallback(&stats_proxy_);
   vie_channel_->RegisterSendChannelRtpStatisticsCallback(&stats_proxy_);

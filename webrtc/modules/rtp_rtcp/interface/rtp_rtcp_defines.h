@@ -65,7 +65,6 @@ enum ProtectionType {
 };
 
 enum StorageType {
-  kDontStore,
   kDontRetransmit,
   kAllowRetransmission
 };
@@ -108,12 +107,7 @@ enum RTCPPacketType : uint32_t {
   kRtcpTransportFeedback = 0x100000,
 };
 
-enum KeyFrameRequestMethod
-{
-    kKeyFrameReqFirRtp    = 1,
-    kKeyFrameReqPliRtcp   = 2,
-    kKeyFrameReqFirRtcp   = 3
-};
+enum KeyFrameRequestMethod { kKeyFrameReqPliRtcp, kKeyFrameReqFirRtcp };
 
 enum RtpRtcpPacketType
 {
@@ -404,12 +398,12 @@ class RtpPacketSender {
 
   // Returns true if we send the packet now, else it will add the packet
   // information to the queue and call TimeToSendPacket when it's time to send.
-  virtual bool SendPacket(Priority priority,
-                          uint32_t ssrc,
-                          uint16_t sequence_number,
-                          int64_t capture_time_ms,
-                          size_t bytes,
-                          bool retransmission) = 0;
+  virtual void InsertPacket(Priority priority,
+                            uint32_t ssrc,
+                            uint16_t sequence_number,
+                            int64_t capture_time_ms,
+                            size_t bytes,
+                            bool retransmission) = 0;
 };
 
 class TransportSequenceNumberAllocator {

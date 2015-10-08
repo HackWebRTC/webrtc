@@ -93,7 +93,7 @@ class RTPPacketHistory {
     uint16_t sequence_number = 0;
     int64_t time_ms = 0;
     int64_t send_time = 0;
-    StorageType storage_type = kDontStore;
+    StorageType storage_type = kDontRetransmit;
 
     uint8_t data[IP_PACKET_SIZE];
     size_t length = 0;

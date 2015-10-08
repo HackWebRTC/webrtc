@@ -209,7 +209,7 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
     if (!generated_packets.empty()) {
       for (Packet* packet : generated_packets) {
         MediaPacket* media_packet = static_cast<MediaPacket*>(packet);
-        pacer_.SendPacket(
+        pacer_.InsertPacket(
             PacedSender::kNormalPriority, media_packet->header().ssrc,
             media_packet->header().sequenceNumber, media_packet->send_time_ms(),
             media_packet->payload_size(), false);

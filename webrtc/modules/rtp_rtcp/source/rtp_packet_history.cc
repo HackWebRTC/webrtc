@@ -75,10 +75,6 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
                                        size_t packet_length,
                                        int64_t capture_time_ms,
                                        StorageType type) {
-  if (type == kDontStore) {
-    return 0;
-  }
-
   CriticalSectionScoped cs(critsect_.get());
   if (!store_) {
     return 0;

@@ -147,7 +147,6 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   // TODO(pbos): This is not fine grained enough...
   vie_channel_->SetProtectionMode(config_.rtp.nack.rtp_history_ms > 0, false,
                                   -1, -1);
-  vie_channel_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
   RTC_DCHECK(config_.rtp.rtcp_mode != RtcpMode::kOff)
       << "A stream should not be configured with RTCP disabled. This value is "
          "reserved for internal usage.";

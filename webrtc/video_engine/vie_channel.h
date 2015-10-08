@@ -109,7 +109,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   bool IsSendingFecEnabled();
   int SetSenderBufferingMode(int target_delay_ms);
   int SetReceiverBufferingMode(int target_delay_ms);
-  int32_t SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
   void EnableRemb(bool enable);
   int SetSendTimestampOffsetStatus(bool enable, int id);
   int SetReceiveTimestampOffsetStatus(bool enable, int id);
@@ -120,7 +119,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   int SetSendTransportSequenceNumber(bool enable, int id);
   int SetReceiveTransportSequenceNumber(bool enable, int id);
   void SetRtcpXrRrtrStatus(bool enable);
-  void SetTransmissionSmoothingStatus(bool enable);
   void EnableTMMBR(bool enable);
 
   // Sets SSRC for outgoing stream.

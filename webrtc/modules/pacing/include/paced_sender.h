@@ -71,11 +71,6 @@ class PacedSender : public Module, public RtpPacketSender {
 
   virtual ~PacedSender();
 
-  // Enable/disable pacing.
-  void SetStatus(bool enable);
-
-  bool Enabled() const;
-
   // Temporarily pause all sending.
   void Pause();
 
@@ -98,12 +93,12 @@ class PacedSender : public Module, public RtpPacketSender {
 
   // Returns true if we send the packet now, else it will add the packet
   // information to the queue and call TimeToSendPacket when it's time to send.
-  bool SendPacket(RtpPacketSender::Priority priority,
-                  uint32_t ssrc,
-                  uint16_t sequence_number,
-                  int64_t capture_time_ms,
-                  size_t bytes,
-                  bool retransmission) override;
+  void InsertPacket(RtpPacketSender::Priority priority,
+                    uint32_t ssrc,
+                    uint16_t sequence_number,
+                    int64_t capture_time_ms,
+                    size_t bytes,
+                    bool retransmission) override;
 
   // Returns the time since the oldest queued packet was enqueued.
   virtual int64_t QueueInMs() const;
@@ -134,7 +129,6 @@ class PacedSender : public Module, public RtpPacketSender {
   Callback* const callback_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
-  bool enabled_ GUARDED_BY(critsect_);
   bool paused_ GUARDED_BY(critsect_);
   bool probing_enabled_;
   // This is the media budget, keeping track of how many bits of media

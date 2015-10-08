@@ -79,20 +79,6 @@ TEST_F(RtpPacketHistoryTest, NoStoreStatus) {
                                               &time));
 }
 
-TEST_F(RtpPacketHistoryTest, DontStore) {
-  hist_->SetStorePacketsStatus(true, 10);
-  size_t len = 0;
-  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-  CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms, kDontStore));
-
-  // Packet should not be stored.
-  len = kMaxPacketLength;
-  int64_t time;
-  EXPECT_FALSE(hist_->GetPacketAndSetSendTime(kSeqNum, 0, false, packet_, &len,
-                                              &time));
-}
-
 TEST_F(RtpPacketHistoryTest, PutRtpPacket_TooLargePacketLength) {
   hist_->SetStorePacketsStatus(true, 10);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();

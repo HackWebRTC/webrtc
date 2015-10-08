@@ -283,8 +283,6 @@ class RTPSender : public RTPSenderInterface {
 
   uint32_t MaxConfiguredBitrateVideo() const;
 
-  int32_t SendRTPIntraRequest();
-
   // FEC.
   void SetGenericFECStatus(bool enable,
                            uint8_t payload_type_red,

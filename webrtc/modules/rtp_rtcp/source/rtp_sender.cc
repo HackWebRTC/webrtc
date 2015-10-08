@@ -712,13 +712,11 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
     // Convert from TickTime to Clock since capture_time_ms is based on
     // TickTime.
     int64_t corrected_capture_tims_ms = capture_time_ms + clock_delta_ms_;
-    if (!paced_sender_->SendPacket(
-            RtpPacketSender::kHighPriority, header.ssrc, header.sequenceNumber,
-            corrected_capture_tims_ms, length - header.headerLength, true)) {
-      // We can't send the packet right now.
-      // We will be called when it is time.
-      return length;
-    }
+    paced_sender_->InsertPacket(
+        RtpPacketSender::kHighPriority, header.ssrc, header.sequenceNumber,
+        corrected_capture_tims_ms, length - header.headerLength, true);
+
+    return length;
   }
   int rtx = kRtxOff;
   {
@@ -1037,24 +1035,21 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
     return -1;
   }
 
-  if (paced_sender_ && storage != kDontStore) {
+  if (paced_sender_) {
     // Correct offset between implementations of millisecond time stamps in
     // TickTime and Clock.
     int64_t corrected_time_ms = capture_time_ms + clock_delta_ms_;
-    if (!paced_sender_->SendPacket(priority, rtp_header.ssrc,
-                                   rtp_header.sequenceNumber, corrected_time_ms,
-                                   payload_length, false)) {
-      if (last_capture_time_ms_sent_ == 0 ||
-          corrected_time_ms > last_capture_time_ms_sent_) {
-        last_capture_time_ms_sent_ = corrected_time_ms;
-        TRACE_EVENT_ASYNC_BEGIN1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                                 "PacedSend", corrected_time_ms,
-                                 "capture_time_ms", corrected_time_ms);
-      }
-      // We can't send the packet right now.
-      // We will be called when it is time.
-      return 0;
+    paced_sender_->InsertPacket(priority, rtp_header.ssrc,
+                                rtp_header.sequenceNumber, corrected_time_ms,
+                                payload_length, false);
+    if (last_capture_time_ms_sent_ == 0 ||
+        corrected_time_ms > last_capture_time_ms_sent_) {
+      last_capture_time_ms_sent_ = corrected_time_ms;
+      TRACE_EVENT_ASYNC_BEGIN1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
+                               "PacedSend", corrected_time_ms,
+                               "capture_time_ms", corrected_time_ms);
     }
+    return 0;
   }
   if (capture_time_ms > 0) {
     UpdateDelayStatistics(capture_time_ms, now_ms);
@@ -1063,12 +1058,11 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
   size_t length = payload_length + rtp_header_length;
   bool sent = SendPacketToNetwork(buffer, length, PacketOptions());
 
-  if (storage != kDontStore) {
-    // Mark the packet as sent in the history even if send failed. Dropping a
-    // packet here should be treated as any other packet drop so we should be
-    // ready for a retransmission.
-    packet_history_.SetSent(rtp_header.sequenceNumber);
-  }
+  // Mark the packet as sent in the history even if send failed. Dropping a
+  // packet here should be treated as any other packet drop so we should be
+  // ready for a retransmission.
+  packet_history_.SetSent(rtp_header.sequenceNumber);
+
   if (!sent)
     return -1;
 
@@ -1782,13 +1776,6 @@ uint32_t RTPSender::MaxConfiguredBitrateVideo() const {
     return 0;
   }
   return video_->MaxConfiguredBitrateVideo();
-}
-
-int32_t RTPSender::SendRTPIntraRequest() {
-  if (audio_configured_) {
-    return -1;
-  }
-  return video_->SendRTPIntraRequest();
 }
 
 void RTPSender::SetGenericFECStatus(bool enable,
