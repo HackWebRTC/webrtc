@@ -36,8 +36,10 @@ import java.nio.ByteBuffer;
  * on various platforms.
  */
 public class VideoRenderer {
-
-  /** Java version of cricket::VideoFrame. Frames are only constructed from native code. */
+  /**
+   * Java version of cricket::VideoFrame. Frames are only constructed from native code and test
+   * code.
+   */
   public static class I420Frame {
     public final int width;
     public final int height;
@@ -60,9 +62,8 @@ public class VideoRenderer {
     /**
      * Construct a frame of the given dimensions with the specified planar data.
      */
-    private I420Frame(
-        int width, int height, int rotationDegree,
-        int[] yuvStrides, ByteBuffer[] yuvPlanes, long nativeFramePointer) {
+    I420Frame(int width, int height, int rotationDegree, int[] yuvStrides, ByteBuffer[] yuvPlanes,
+        long nativeFramePointer) {
       this.width = width;
       this.height = height;
       this.yuvStrides = yuvStrides;
@@ -87,9 +88,8 @@ public class VideoRenderer {
     /**
      * Construct a texture frame of the given dimensions with data in SurfaceTexture
      */
-    private I420Frame(
-        int width, int height, int rotationDegree,
-        int textureId, float[] samplingMatrix, long nativeFramePointer) {
+    I420Frame(int width, int height, int rotationDegree, int textureId, float[] samplingMatrix,
+        long nativeFramePointer) {
       this.width = width;
       this.height = height;
       this.yuvStrides = null;

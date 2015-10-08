@@ -313,9 +313,9 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (layoutLock) {
       this.widthSpec = widthSpec;
       this.heightSpec = heightSpec;
+      final Point size = getDesiredLayoutSize();
+      setMeasuredDimension(size.x, size.y);
     }
-    final Point size = getDesiredLayoutSize();
-    setMeasuredDimension(size.x, size.y);
   }
 
   @Override
