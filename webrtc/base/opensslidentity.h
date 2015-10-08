@@ -32,7 +32,7 @@ class OpenSSLKeyPair {
     ASSERT(pkey_ != NULL);
   }
 
-  static OpenSSLKeyPair* Generate(const KeyParams& key_params);
+  static OpenSSLKeyPair* Generate(KeyType key_type);
 
   virtual ~OpenSSLKeyPair();
 
@@ -100,7 +100,7 @@ class OpenSSLCertificate : public SSLCertificate {
 class OpenSSLIdentity : public SSLIdentity {
  public:
   static OpenSSLIdentity* Generate(const std::string& common_name,
-                                   const KeyParams& key_params);
+                                   KeyType key_type);
   static OpenSSLIdentity* GenerateForTest(const SSLIdentityParams& params);
   static SSLIdentity* FromPEMStrings(const std::string& private_key,
                                      const std::string& certificate);

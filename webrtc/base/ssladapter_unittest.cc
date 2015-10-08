@@ -131,10 +131,10 @@ class SSLAdapterTestDummyClient : public sigslot::has_slots<> {
 class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
  public:
   explicit SSLAdapterTestDummyServer(const rtc::SSLMode& ssl_mode,
-                                     const rtc::KeyParams& key_params)
+                                     const rtc::KeyType key_type)
       : ssl_mode_(ssl_mode) {
     // Generate a key pair and a certificate for this host.
-    ssl_identity_.reset(rtc::SSLIdentity::Generate(GetHostname(), key_params));
+    ssl_identity_.reset(rtc::SSLIdentity::Generate(GetHostname(), key_type));
 
     server_socket_.reset(CreateSocket(ssl_mode_));
 
@@ -271,10 +271,10 @@ class SSLAdapterTestBase : public testing::Test,
                            public sigslot::has_slots<> {
  public:
   explicit SSLAdapterTestBase(const rtc::SSLMode& ssl_mode,
-                              const rtc::KeyParams& key_params)
+                              const rtc::KeyType key_type)
       : ssl_mode_(ssl_mode),
         ss_scope_(new rtc::VirtualSocketServer(NULL)),
-        server_(new SSLAdapterTestDummyServer(ssl_mode_, key_params)),
+        server_(new SSLAdapterTestDummyServer(ssl_mode_, key_type)),
         client_(new SSLAdapterTestDummyClient(ssl_mode_)),
         handshake_wait_(kTimeout) {}
 
@@ -348,25 +348,25 @@ class SSLAdapterTestBase : public testing::Test,
 class SSLAdapterTestTLS_RSA : public SSLAdapterTestBase {
  public:
   SSLAdapterTestTLS_RSA()
-      : SSLAdapterTestBase(rtc::SSL_MODE_TLS, rtc::KeyParams::RSA()) {}
+      : SSLAdapterTestBase(rtc::SSL_MODE_TLS, rtc::KT_RSA) {}
 };
 
 class SSLAdapterTestTLS_ECDSA : public SSLAdapterTestBase {
  public:
   SSLAdapterTestTLS_ECDSA()
-      : SSLAdapterTestBase(rtc::SSL_MODE_TLS, rtc::KeyParams::ECDSA()) {}
+      : SSLAdapterTestBase(rtc::SSL_MODE_TLS, rtc::KT_ECDSA) {}
 };
 
 class SSLAdapterTestDTLS_RSA : public SSLAdapterTestBase {
  public:
   SSLAdapterTestDTLS_RSA()
-      : SSLAdapterTestBase(rtc::SSL_MODE_DTLS, rtc::KeyParams::RSA()) {}
+      : SSLAdapterTestBase(rtc::SSL_MODE_DTLS, rtc::KT_RSA) {}
 };
 
 class SSLAdapterTestDTLS_ECDSA : public SSLAdapterTestBase {
  public:
   SSLAdapterTestDTLS_ECDSA()
-      : SSLAdapterTestBase(rtc::SSL_MODE_DTLS, rtc::KeyParams::ECDSA()) {}
+      : SSLAdapterTestBase(rtc::SSL_MODE_DTLS, rtc::KT_ECDSA) {}
 };
 
 #if SSL_USE_OPENSSL

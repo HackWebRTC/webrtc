@@ -33,6 +33,9 @@ namespace rtc {
 // We could have exposed a myriad of parameters for the crypto stuff,
 // but keeping it simple seems best.
 
+// Strength of generated keys. Those are RSA.
+static const int KEY_LENGTH = 1024;
+
 // Random bits for certificate serial number
 static const int SERIAL_RAND_BITS = 64;
 
@@ -43,16 +46,15 @@ static const int CERTIFICATE_LIFETIME = 60*60*24*30;  // 30 days, arbitrarily
 static const int CERTIFICATE_WINDOW = -60*60*24;
 
 // Generate a key pair. Caller is responsible for freeing the returned object.
-static EVP_PKEY* MakeKey(const KeyParams& key_params) {
+static EVP_PKEY* MakeKey(KeyType key_type) {
   LOG(LS_INFO) << "Making key pair";
   EVP_PKEY* pkey = EVP_PKEY_new();
-  if (key_params.type() == KT_RSA) {
-    int key_length = key_params.rsa_params().mod_size;
+  if (key_type == KT_RSA) {
     BIGNUM* exponent = BN_new();
     RSA* rsa = RSA_new();
     if (!pkey || !exponent || !rsa ||
-        !BN_set_word(exponent, key_params.rsa_params().pub_exp) ||
-        !RSA_generate_key_ex(rsa, key_length, exponent, NULL) ||
+        !BN_set_word(exponent, 0x10001) ||  // 65537 RSA exponent
+        !RSA_generate_key_ex(rsa, KEY_LENGTH, exponent, NULL) ||
         !EVP_PKEY_assign_RSA(pkey, rsa)) {
       EVP_PKEY_free(pkey);
       BN_free(exponent);
@@ -62,23 +64,16 @@ static EVP_PKEY* MakeKey(const KeyParams& key_params) {
     }
     // ownership of rsa struct was assigned, don't free it.
     BN_free(exponent);
-  } else if (key_params.type() == KT_ECDSA) {
-    if (key_params.ec_curve() == EC_NIST_P256) {
-      EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-      if (!pkey || !ec_key || !EC_KEY_generate_key(ec_key) ||
-          !EVP_PKEY_assign_EC_KEY(pkey, ec_key)) {
-        EVP_PKEY_free(pkey);
-        EC_KEY_free(ec_key);
-        LOG(LS_ERROR) << "Failed to make EC key pair";
-        return NULL;
-      }
-      // ownership of ec_key struct was assigned, don't free it.
-    } else {
-      // Add generation of any other curves here.
+  } else if (key_type == KT_ECDSA) {
+    EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+    if (!pkey || !ec_key || !EC_KEY_generate_key(ec_key) ||
+        !EVP_PKEY_assign_EC_KEY(pkey, ec_key)) {
       EVP_PKEY_free(pkey);
-      LOG(LS_ERROR) << "ECDSA key requested for unknown curve";
+      EC_KEY_free(ec_key);
+      LOG(LS_ERROR) << "Failed to make EC key pair";
       return NULL;
     }
+    // ownership of ec_key struct was assigned, don't free it.
   } else {
     EVP_PKEY_free(pkey);
     LOG(LS_ERROR) << "Key type requested not understood";
@@ -160,8 +155,8 @@ static void LogSSLErrors(const std::string& prefix) {
   }
 }
 
-OpenSSLKeyPair* OpenSSLKeyPair::Generate(const KeyParams& key_params) {
-  EVP_PKEY* pkey = MakeKey(key_params);
+OpenSSLKeyPair* OpenSSLKeyPair::Generate(KeyType key_type) {
+  EVP_PKEY* pkey = MakeKey(key_type);
   if (!pkey) {
     LogSSLErrors("Generating key pair");
     return NULL;
@@ -384,7 +379,7 @@ OpenSSLIdentity::~OpenSSLIdentity() = default;
 
 OpenSSLIdentity* OpenSSLIdentity::GenerateInternal(
     const SSLIdentityParams& params) {
-  OpenSSLKeyPair* key_pair = OpenSSLKeyPair::Generate(params.key_params);
+  OpenSSLKeyPair* key_pair = OpenSSLKeyPair::Generate(params.key_type);
   if (key_pair) {
     OpenSSLCertificate* certificate =
         OpenSSLCertificate::Generate(key_pair, params);
@@ -397,12 +392,12 @@ OpenSSLIdentity* OpenSSLIdentity::GenerateInternal(
 }
 
 OpenSSLIdentity* OpenSSLIdentity::Generate(const std::string& common_name,
-                                           const KeyParams& key_params) {
+                                           KeyType key_type) {
   SSLIdentityParams params;
-  params.key_params = key_params;
   params.common_name = common_name;
   params.not_before = CERTIFICATE_WINDOW;
   params.not_after = CERTIFICATE_LIFETIME;
+  params.key_type = key_type;
   return GenerateInternal(params);
 }
 

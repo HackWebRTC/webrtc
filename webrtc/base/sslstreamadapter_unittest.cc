@@ -161,12 +161,11 @@ static const int kFifoBufferSize = 4096;
 class SSLStreamAdapterTestBase : public testing::Test,
                                  public sigslot::has_slots<> {
  public:
-  SSLStreamAdapterTestBase(
-      const std::string& client_cert_pem,
-      const std::string& client_private_key_pem,
-      bool dtls,
-      rtc::KeyParams client_key_type = rtc::KeyParams(rtc::KT_DEFAULT),
-      rtc::KeyParams server_key_type = rtc::KeyParams(rtc::KT_DEFAULT))
+  SSLStreamAdapterTestBase(const std::string& client_cert_pem,
+                           const std::string& client_private_key_pem,
+                           bool dtls,
+                           rtc::KeyType client_key_type = rtc::KT_DEFAULT,
+                           rtc::KeyType server_key_type = rtc::KT_DEFAULT)
       : client_buffer_(kFifoBufferSize),
         server_buffer_(kFifoBufferSize),
         client_stream_(
@@ -225,17 +224,17 @@ class SSLStreamAdapterTestBase : public testing::Test,
     server_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
 
     rtc::SSLIdentityParams client_params;
-    client_params.key_params = rtc::KeyParams(rtc::KT_DEFAULT);
     client_params.common_name = "client";
     client_params.not_before = not_before;
     client_params.not_after = not_after;
+    client_params.key_type = rtc::KT_DEFAULT;
     client_identity_ = rtc::SSLIdentity::GenerateForTest(client_params);
 
     rtc::SSLIdentityParams server_params;
-    server_params.key_params = rtc::KeyParams(rtc::KT_DEFAULT);
     server_params.common_name = "server";
     server_params.not_before = not_before;
     server_params.not_after = not_after;
+    server_params.key_type = rtc::KT_DEFAULT;
     server_identity_ = rtc::SSLIdentity::GenerateForTest(server_params);
 
     client_ssl_->SetIdentity(client_identity_);
@@ -463,7 +462,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
 
 class SSLStreamAdapterTestTLS
     : public SSLStreamAdapterTestBase,
-      public WithParamInterface<tuple<rtc::KeyParams, rtc::KeyParams>> {
+      public WithParamInterface<tuple<rtc::KeyType, rtc::KeyType>> {
  public:
   SSLStreamAdapterTestTLS()
       : SSLStreamAdapterTestBase("",
@@ -571,7 +570,7 @@ class SSLStreamAdapterTestTLS
 
 class SSLStreamAdapterTestDTLS
     : public SSLStreamAdapterTestBase,
-      public WithParamInterface<tuple<rtc::KeyParams, rtc::KeyParams>> {
+      public WithParamInterface<tuple<rtc::KeyType, rtc::KeyType>> {
  public:
   SSLStreamAdapterTestDTLS()
       : SSLStreamAdapterTestBase("",
@@ -979,10 +978,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuite) {
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
-      server_cipher);
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
+            server_cipher);
 }
 
 // Test getting the used DTLS 1.2 ciphers.
@@ -998,10 +996,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Both) {
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-          rtc::SSL_PROTOCOL_DTLS_12, ::testing::get<1>(GetParam()).type()),
-      server_cipher);
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                rtc::SSL_PROTOCOL_DTLS_12, ::testing::get<1>(GetParam())),
+            server_cipher);
 }
 
 // DTLS 1.2 enabled for client only -> DTLS 1.0 will be used.
@@ -1016,10 +1013,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Client) {
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
-      server_cipher);
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
+            server_cipher);
 }
 
 // DTLS 1.2 enabled for server only -> DTLS 1.0 will be used.
@@ -1034,30 +1030,16 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Server) {
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
-      server_cipher);
+  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
+            server_cipher);
 }
 
-// The RSA keysizes here might look strange, why not include the RFC's size
-// 2048?. The reason is test case slowness; testing two sizes to exercise
-// parametrization is sufficient.
-INSTANTIATE_TEST_CASE_P(
-    SSLStreamAdapterTestsTLS,
-    SSLStreamAdapterTestTLS,
-    Combine(Values(rtc::KeyParams::RSA(1024, 65537),
-                   rtc::KeyParams::RSA(1152, 65537),
-                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256)),
-            Values(rtc::KeyParams::RSA(1024, 65537),
-                   rtc::KeyParams::RSA(1152, 65537),
-                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256))));
-INSTANTIATE_TEST_CASE_P(
-    SSLStreamAdapterTestsDTLS,
-    SSLStreamAdapterTestDTLS,
-    Combine(Values(rtc::KeyParams::RSA(1024, 65537),
-                   rtc::KeyParams::RSA(1152, 65537),
-                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256)),
-            Values(rtc::KeyParams::RSA(1024, 65537),
-                   rtc::KeyParams::RSA(1152, 65537),
-                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256))));
+INSTANTIATE_TEST_CASE_P(SSLStreamAdapterTestsTLS,
+                        SSLStreamAdapterTestTLS,
+                        Combine(Values(rtc::KT_RSA, rtc::KT_ECDSA),
+                                Values(rtc::KT_RSA, rtc::KT_ECDSA)));
+INSTANTIATE_TEST_CASE_P(SSLStreamAdapterTestsDTLS,
+                        SSLStreamAdapterTestDTLS,
+                        Combine(Values(rtc::KT_RSA, rtc::KT_ECDSA),
+                                Values(rtc::KT_RSA, rtc::KT_ECDSA)));
