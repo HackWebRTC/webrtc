@@ -91,6 +91,8 @@ public class SurfaceViewRenderer extends SurfaceView
   // layout and surface size.
   private int surfaceWidth;
   private int surfaceHeight;
+  // |isSurfaceCreated| keeps track of the current status in surfaceCreated()/surfaceDestroyed().
+  private boolean isSurfaceCreated;
   // Last rendered frame dimensions, or 0 if no frame has been rendered yet.
   private int frameWidth;
   private int frameHeight;
@@ -128,6 +130,7 @@ public class SurfaceViewRenderer extends SurfaceView
    */
   public SurfaceViewRenderer(Context context) {
     super(context);
+    getHolder().addCallback(this);
   }
 
   /**
@@ -135,24 +138,48 @@ public class SurfaceViewRenderer extends SurfaceView
    */
   public SurfaceViewRenderer(Context context, AttributeSet attrs) {
     super(context, attrs);
+    getHolder().addCallback(this);
   }
 
   /**
-   * Initialize this class, sharing resources with |sharedContext|.
+   * Initialize this class, sharing resources with |sharedContext|. It is allowed to call init() to
+   * reinitialize the renderer after a previous init()/release() cycle.
    */
   public void init(
       EGLContext sharedContext, RendererCommon.RendererEvents rendererEvents) {
-    if (renderThreadHandler != null) {
-      throw new IllegalStateException("Already initialized");
+    synchronized (handlerLock) {
+      if (renderThreadHandler != null) {
+        throw new IllegalStateException("Already initialized");
+      }
+      Logging.d(TAG, "Initializing");
+      this.rendererEvents = rendererEvents;
+      renderThread = new HandlerThread(TAG);
+      renderThread.start();
+      drawer = new GlRectDrawer();
+      eglBase = new EglBase(sharedContext, EglBase.ConfigType.PLAIN);
+      renderThreadHandler = new Handler(renderThread.getLooper());
     }
-    Logging.d(TAG, "Initializing");
-    this.rendererEvents = rendererEvents;
-    renderThread = new HandlerThread(TAG);
-    renderThread.start();
-    renderThreadHandler = new Handler(renderThread.getLooper());
-    eglBase = new EglBase(sharedContext, EglBase.ConfigType.PLAIN);
-    drawer = new GlRectDrawer();
-    getHolder().addCallback(this);
+    tryCreateEglSurface();
+  }
+
+  /**
+   * Create and make an EGLSurface current if both init() and surfaceCreated() have been called.
+   */
+  public void tryCreateEglSurface() {
+    // |renderThreadHandler| is only created after |eglBase| is created in init(), so the
+    // following code will only execute if eglBase != null.
+    runOnRenderThread(new Runnable() {
+      @Override public void run() {
+        synchronized (layoutLock) {
+          if (isSurfaceCreated) {
+            eglBase.createSurface(getHolder().getSurface());
+            eglBase.makeCurrent();
+            // Necessary for YUV frames with odd width.
+            GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -179,6 +206,9 @@ public class SurfaceViewRenderer extends SurfaceView
             GLES20.glDeleteTextures(3, yuvTextures, 0);
             yuvTextures = null;
           }
+          // Clear last rendered image to black.
+          GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+          eglBase.swapBuffers();
           eglBase.release();
           eglBase = null;
         }
@@ -197,6 +227,20 @@ public class SurfaceViewRenderer extends SurfaceView
     // The |renderThread| cleanup is not safe to cancel and we need to wait until it's done.
     ThreadUtils.joinUninterruptibly(renderThread);
     renderThread = null;
+    // Reset statistics and event reporting.
+    synchronized (layoutLock) {
+      frameWidth = 0;
+      frameHeight = 0;
+      frameRotation = 0;
+      rendererEvents = null;
+    }
+    synchronized (statisticsLock) {
+      framesReceived = 0;
+      framesDropped = 0;
+      framesRendered = 0;
+      firstFrameTimeNs = 0;
+      renderTimeNs = 0;
+    }
   }
 
   /**
@@ -286,20 +330,17 @@ public class SurfaceViewRenderer extends SurfaceView
   @Override
   public void surfaceCreated(final SurfaceHolder holder) {
     Logging.d(TAG, "Surface created");
-    runOnRenderThread(new Runnable() {
-      @Override public void run() {
-        eglBase.createSurface(holder.getSurface());
-        eglBase.makeCurrent();
-        // Necessary for YUV frames with odd width.
-        GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
-      }
-    });
+    synchronized (layoutLock) {
+      isSurfaceCreated = true;
+    }
+    tryCreateEglSurface();
   }
 
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
     Logging.d(TAG, "Surface destroyed");
     synchronized (layoutLock) {
+      isSurfaceCreated = false;
       surfaceWidth = 0;
       surfaceHeight = 0;
     }
