@@ -128,7 +128,6 @@ class SocketAddress {
   // That is, 0.0.0.0 or ::.
   // Hostname and/or port may be set.
   bool IsAnyIP() const;
-  inline bool IsAny() const { return IsAnyIP(); }  // deprecated
 
   // Determines whether the IP address refers to a loopback address.
   // For v4 addresses this means the address is in the range 127.0.0.0/8.

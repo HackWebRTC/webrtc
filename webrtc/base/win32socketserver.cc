@@ -514,7 +514,7 @@ int Win32Socket::Close() {
 
 int Win32Socket::EstimateMTU(uint16_t* mtu) {
   SocketAddress addr = GetRemoteAddress();
-  if (addr.IsAny()) {
+  if (addr.IsAnyIP()) {
     error_ = ENOTCONN;
     return -1;
   }

@@ -400,7 +400,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
 
   int EstimateMTU(uint16_t* mtu) override {
     SocketAddress addr = GetRemoteAddress();
-    if (addr.IsAny()) {
+    if (addr.IsAnyIP()) {
       SetError(ENOTCONN);
       return -1;
     }

@@ -385,7 +385,7 @@ int VirtualSocket::EstimateMTU(uint16_t* mtu) {
 
 void VirtualSocket::OnMessage(Message* pmsg) {
   if (pmsg->message_id == MSG_ID_PACKET) {
-    // ASSERT(!local_addr_.IsAny());
+    // ASSERT(!local_addr_.IsAnyIP());
     ASSERT(NULL != pmsg->pdata);
     Packet* packet = static_cast<Packet*>(pmsg->pdata);
 
