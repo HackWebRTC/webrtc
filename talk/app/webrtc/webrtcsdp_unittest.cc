@@ -295,6 +295,15 @@ static const char kSdpSctpDataChannelStringWithSctpPort[] =
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n";
 
+static const char kSdpSctpDataChannelStringWithSctpColonPort[] =
+    "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
+    "a=max-message-size=100000\r\n"
+    "a=sctp-port:5000\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=ice-ufrag:ufrag_data\r\n"
+    "a=ice-pwd:pwd_data\r\n"
+    "a=mid:data_content_name\r\n";
+
 static const char kSdpSctpDataChannelWithCandidatesString[] =
     "m=application 2345 DTLS/SCTP 5000\r\n"
     "c=IN IP4 74.125.127.126\r\n"
@@ -2108,6 +2117,32 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpPort) {
   JsepSessionDescription jdesc_output(kDummyString);
 
   // Verify with DTLS/SCTP (already in kSdpSctpDataChannelStringWithSctpPort).
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+
+  // Verify with UDP/DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp),
+                        strlen(kDtlsSctp), kUdpDtlsSctp);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+
+  // Verify with TCP/DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp),
+                        strlen(kUdpDtlsSctp), kTcpDtlsSctp);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
+  AddSctpDataChannel();
+  JsepSessionDescription jdesc(kDummyString);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  std::string sdp_with_data = kSdpString;
+  sdp_with_data.append(kSdpSctpDataChannelStringWithSctpColonPort);
+  JsepSessionDescription jdesc_output(kDummyString);
+
+  // Verify with DTLS/SCTP.
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 

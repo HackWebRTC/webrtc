@@ -1127,16 +1127,17 @@ bool ParseSctpPort(const std::string& line,
   // draft-ietf-mmusic-sctp-sdp-07
   // a=sctp-port
   std::vector<std::string> fields;
-  rtc::split(line.substr(kLinePrefixLength),
-                   kSdpDelimiterSpace, &fields);
   const size_t expected_min_fields = 2;
+  rtc::split(line.substr(kLinePrefixLength), kSdpDelimiterColon, &fields);
+  if (fields.size() < expected_min_fields) {
+    fields.resize(0);
+    rtc::split(line.substr(kLinePrefixLength), kSdpDelimiterSpace, &fields);
+  }
   if (fields.size() < expected_min_fields) {
     return ParseFailedExpectMinFieldNum(line, expected_min_fields, error);
   }
   if (!rtc::FromString(fields[1], sctp_port)) {
-    return ParseFailed(line,
-                       "Invalid sctp port value.",
-                       error);
+    return ParseFailed(line, "Invalid sctp port value.", error);
   }
   return true;
 }
@@ -1350,6 +1351,8 @@ void BuildMediaDescription(const ContentInfo* content_info,
 void BuildSctpContentAttributes(std::string* message, int sctp_port) {
   // draft-ietf-mmusic-sctp-sdp-04
   // a=sctpmap:sctpmap-number  protocol  [streams]
+  // TODO(lally): switch this over to mmusic-sctp-sdp-12 (or later), with
+  // 'a=sctp-port:'
   std::ostringstream os;
   InitAttrLine(kAttributeSctpmap, &os);
   os << kSdpDelimiterColon << sctp_port << kSdpDelimiterSpace
