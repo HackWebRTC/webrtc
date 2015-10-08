@@ -364,12 +364,6 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 int VP9EncoderImpl::NumberOfThreads(int width,
                                     int height,
                                     int number_of_cores) {
-  // For the current libvpx library, only 1 thread is supported when SVC is
-  // turned on.
-  if (num_temporal_layers_ > 1 || num_spatial_layers_ > 1) {
-    return 1;
-  }
-
   // Keep the number of encoder threads equal to the possible number of column
   // tiles, which is (1, 2, 4, 8). See comments below for VP9E_SET_TILE_COLUMNS.
   if (width * height >= 1280 * 720 && number_of_cores > 4) {
