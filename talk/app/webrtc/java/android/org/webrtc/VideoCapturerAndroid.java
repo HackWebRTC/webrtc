@@ -35,7 +35,6 @@ import android.opengl.EGLContext;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
-import android.text.StaticLayout;
 import android.view.Surface;
 import android.view.WindowManager;
 
@@ -215,6 +214,18 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         sharedContext);
     capturer.setNativeCapturer(nativeCreateVideoCapturer(capturer));
     return capturer;
+  }
+
+  public void printStackTrace() {
+    if (cameraThread != null) {
+      StackTraceElement[] cameraStackTraces = cameraThread.getStackTrace();
+      if (cameraStackTraces.length > 0) {
+        Logging.d(TAG, "VideoCapturerAndroid stacks trace:");
+        for (StackTraceElement stackTrace : cameraStackTraces) {
+          Logging.d(TAG, stackTrace.toString());
+        }
+      }
+    }
   }
 
   // Switch camera to the next valid camera id. This can only be called while

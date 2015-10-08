@@ -25,7 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package org.webrtc;
 
 import android.media.MediaCodec;
@@ -62,7 +61,7 @@ public class MediaCodecVideoEncoder {
   }
 
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
-  private Thread mediaCodecThread;
+  private static Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
@@ -194,6 +193,18 @@ public class MediaCodecVideoEncoder {
       throw new RuntimeException(
           "MediaCodecVideoEncoder previously operated on " + mediaCodecThread +
           " but is now called on " + Thread.currentThread());
+    }
+  }
+
+  public static void printStackTrace() {
+    if (mediaCodecThread != null) {
+      StackTraceElement[] mediaCodecStackTraces = mediaCodecThread.getStackTrace();
+      if (mediaCodecStackTraces.length > 0) {
+        Logging.d(TAG, "MediaCodecVideoEncoder stacks trace:");
+        for (StackTraceElement stackTrace : mediaCodecStackTraces) {
+          Logging.d(TAG, stackTrace.toString());
+        }
+      }
     }
   }
 
