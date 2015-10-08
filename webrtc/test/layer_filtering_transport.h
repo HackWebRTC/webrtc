@@ -13,6 +13,8 @@
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_network_pipe.h"
 
+#include <map>
+
 namespace webrtc {
 
 namespace test {
@@ -29,6 +31,7 @@ class LayerFilteringTransport : public test::DirectTransport {
                const PacketOptions& options) override;
 
  private:
+  uint16_t NextSequenceNumber(uint32_t ssrc);
   // Used to distinguish between VP8 and VP9.
   const uint8_t vp8_video_payload_type_;
   const uint8_t vp9_video_payload_type_;
@@ -36,7 +39,8 @@ class LayerFilteringTransport : public test::DirectTransport {
   // threshold. 0 to disable.
   const uint8_t tl_discard_threshold_;
   const uint8_t sl_discard_threshold_;
-  uint16_t current_seq_num_;
+  // Current sequence number for each SSRC separately.
+  std::map<uint32_t, uint16_t> current_seq_nums_;
 };
 
 }  // namespace test

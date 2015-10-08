@@ -29,9 +29,15 @@ LayerFilteringTransport::LayerFilteringTransport(
       vp8_video_payload_type_(vp8_video_payload_type),
       vp9_video_payload_type_(vp9_video_payload_type),
       tl_discard_threshold_(tl_discard_threshold),
-      sl_discard_threshold_(sl_discard_threshold),
-      current_seq_num_(10000) {
-}  // TODO(ivica): random seq num?
+      sl_discard_threshold_(sl_discard_threshold) {
+}
+
+uint16_t LayerFilteringTransport::NextSequenceNumber(uint32_t ssrc) {
+  auto it = current_seq_nums_.find(ssrc);
+  if (it == current_seq_nums_.end())
+    return current_seq_nums_[ssrc] = 10000;
+  return ++it->second;
+}
 
 bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
                                       size_t length,
@@ -88,13 +94,11 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
   // We are discarding some of the packets (specifically, whole layers), so
   // make sure the marker bit is set properly, and that sequence numbers are
   // continuous.
-  if (set_marker_bit) {
+  if (set_marker_bit)
     temp_buffer[1] |= kRtpMarkerBitMask;
-  }
-  ByteWriter<uint16_t>::WriteBigEndian(&temp_buffer[2], current_seq_num_);
 
-  ++current_seq_num_;  // Increase only if packet not discarded.
-
+  uint16_t seq_num = NextSequenceNumber(header.ssrc);
+  ByteWriter<uint16_t>::WriteBigEndian(&temp_buffer[2], seq_num);
   return test::DirectTransport::SendRtp(temp_buffer, length, options);
 }
 
