@@ -103,13 +103,12 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.startCapturerAndRender(capturer);
   }
 
-  /* TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
   public void testStartVideoCapturerUsingTextures() throws InterruptedException {
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.startCapturerAndRender(capturer);
-  }*/
+  }
 
   @SmallTest
   // This test that the camera can be started and that the frames are forwarded
@@ -146,12 +145,11 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.switchCamera(capturer);
   }
 
-  /* TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
   public void testSwitchVideoCapturerUsingTextures() throws InterruptedException {
     VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.switchCamera(capturer);
-  }*/
+  }
 
   @MediumTest
   // Test what happens when attempting to call e.g. switchCamera() after camera has been stopped.
@@ -181,12 +179,11 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.stopRestartVideoSource(capturer);
   }
 
-  /* TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
   public void testStopRestartVideoSourceUsingTextures() throws InterruptedException {
     VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.stopRestartVideoSource(capturer);
-  }*/
+  }
 
   @SmallTest
   // This test that the camera can be started at different resolutions.
@@ -237,11 +234,10 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.returnBufferLateEndToEnd(capturer);
   }
 
-  /* TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @MediumTest
   public void testReturnBufferLateEndToEndUsingTextures() throws InterruptedException {
     final VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.returnBufferLateEndToEnd(capturer);
-  }*/
+  }
 }
