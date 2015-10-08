@@ -28,14 +28,14 @@
 package org.webrtc;
 
 import android.content.Context;
-import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
-import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
+import android.opengl.EGL14;
+import android.opengl.EGLContext;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
+import android.text.StaticLayout;
 import android.view.Surface;
 import android.view.WindowManager;
 
@@ -47,9 +47,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -65,34 +67,36 @@ import java.util.concurrent.TimeUnit;
 // camera thread. The internal *OnCameraThread() methods must check |camera| for null to check if
 // the camera has been stopped.
 @SuppressWarnings("deprecation")
-public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallback {
+public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallback,
+    SurfaceTextureHelper.OnTextureFrameAvailableListener {
   private final static String TAG = "VideoCapturerAndroid";
   private final static int CAMERA_OBSERVER_PERIOD_MS = 5000;
 
   private Camera camera;  // Only non-null while capturing.
   private HandlerThread cameraThread;
   private final Handler cameraThreadHandler;
-  // |cameraSurfaceTexture| is used with setPreviewTexture. Must be a member, see issue webrtc:5021.
-  private SurfaceTexture cameraSurfaceTexture;
   private Context applicationContext;
   // Synchronization lock for |id|.
   private final Object cameraIdLock = new Object();
   private int id;
   private Camera.CameraInfo info;
-  private int cameraGlTexture = 0;
   private final FramePool videoBuffers;
+  private final CameraStatistics cameraStatistics = new CameraStatistics();
   // Remember the requested format in case we want to switch cameras.
   private int requestedWidth;
   private int requestedHeight;
   private int requestedFramerate;
   // The capture format will be the closest supported format to the requested format.
   private CaptureFormat captureFormat;
-  private int cameraFramesCount;
-  private int captureBuffersCount;
   private final Object pendingCameraSwitchLock = new Object();
   private volatile boolean pendingCameraSwitch;
   private CapturerObserver frameObserver = null;
   private final CameraErrorHandler errorHandler;
+  private final boolean isCapturingToTexture;
+  private final SurfaceTextureHelper surfaceHelper;
+  // The camera API can output one old frame after the camera has been switched or the resolution
+  // has been changed. This flag is used for dropping the first frame after camera restart.
+  private boolean dropNextFrame = false;
 
   // Camera error callback.
   private final Camera.ErrorCallback cameraErrorCallback =
@@ -112,33 +116,73 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
   };
 
-  // Camera observer - monitors camera framerate and amount of available
-  // camera buffers. Observer is excecuted on camera thread.
+  // Camera observer - monitors camera framerate. Observer is executed on camera thread.
   private final Runnable cameraObserver = new Runnable() {
     @Override
     public void run() {
+      int cameraFramesCount = cameraStatistics.getAndResetFrameCount();
       int cameraFps = (cameraFramesCount * 1000 + CAMERA_OBSERVER_PERIOD_MS / 2)
           / CAMERA_OBSERVER_PERIOD_MS;
-      double averageCaptureBuffersCount = 0;
-      if (cameraFramesCount > 0) {
-        averageCaptureBuffersCount =
-            (double)captureBuffersCount / cameraFramesCount;
-      }
-      Logging.d(TAG, "Camera fps: " + cameraFps + ". CaptureBuffers: " +
-          String.format("%.1f", averageCaptureBuffersCount) +
-          ". Pending buffers: " + videoBuffers.pendingFramesTimeStamps());
+
+      Logging.d(TAG, "Camera fps: " + cameraFps +
+          ". Pending buffers: " + cameraStatistics.pendingFramesTimeStamps());
       if (cameraFramesCount == 0) {
         Logging.e(TAG, "Camera freezed.");
         if (errorHandler != null) {
           errorHandler.onCameraError("Camera failure.");
         }
       } else {
-        cameraFramesCount = 0;
-        captureBuffersCount = 0;
         cameraThreadHandler.postDelayed(this, CAMERA_OBSERVER_PERIOD_MS);
       }
     }
   };
+
+  private static class CameraStatistics {
+    private int frameCount = 0;
+    private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
+    private final Set<Long> timeStampsNs = new HashSet<Long>();
+
+    CameraStatistics() {
+      threadChecker.detachThread();
+    }
+
+    public void addPendingFrame(long timestamp) {
+      threadChecker.checkIsOnValidThread();
+      ++frameCount;
+      timeStampsNs.add(timestamp);
+    }
+
+    public void frameReturned(long timestamp) {
+      threadChecker.checkIsOnValidThread();
+      if (!timeStampsNs.contains(timestamp)) {
+        throw new IllegalStateException(
+            "CameraStatistics.frameReturned called with unknown timestamp " + timestamp);
+      }
+      timeStampsNs.remove(timestamp);
+    }
+
+    public int getAndResetFrameCount() {
+      threadChecker.checkIsOnValidThread();
+      int count = frameCount;
+      frameCount = 0;
+      return count;
+    }
+
+    // Return number of pending frames that have not been returned.
+    public int pendingFramesCount() {
+      threadChecker.checkIsOnValidThread();
+      return timeStampsNs.size();
+    }
+
+    public String pendingFramesTimeStamps() {
+      threadChecker.checkIsOnValidThread();
+      List<Long> timeStampsMs = new ArrayList<Long>();
+      for (long ts : timeStampsNs) {
+        timeStampsMs.add(TimeUnit.NANOSECONDS.toMillis(ts));
+      }
+      return timeStampsMs.toString();
+    }
+  }
 
   // Camera error handler - invoked when camera stops receiving frames
   // or any camera exception happens on camera thread.
@@ -155,12 +199,20 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     void onCameraSwitchError(String errorDescription);
   }
 
-  public static VideoCapturerAndroid create(String name, CameraErrorHandler errorHandler) {
+  public static VideoCapturerAndroid create(String name,
+      CameraErrorHandler errorHandler) {
+    return VideoCapturerAndroid.create(name, errorHandler, null);
+  }
+
+  public static VideoCapturerAndroid create(String name,
+      CameraErrorHandler errorHandler, EGLContext sharedContext) {
     final int cameraId = lookupDeviceName(name);
     if (cameraId == -1) {
       return null;
     }
-    final VideoCapturerAndroid capturer = new VideoCapturerAndroid(cameraId, errorHandler);
+
+    final VideoCapturerAndroid capturer = new VideoCapturerAndroid(cameraId, errorHandler,
+        sharedContext);
     capturer.setNativeCapturer(nativeCreateVideoCapturer(capturer));
     return capturer;
   }
@@ -208,10 +260,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // Requests a new output format from the video capturer. Captured frames
   // by the camera will be scaled/or dropped by the video capturer.
   // TODO(magjed/perkj): Document what this function does. Change name?
-  public void onOutputFormatRequest(final int width, final int height, final int fps) {
+  public void onOutputFormatRequest(final int width, final int height, final int framerate) {
     cameraThreadHandler.post(new Runnable() {
       @Override public void run() {
-        onOutputFormatRequestOnCameraThread(width, height, fps);
+        onOutputFormatRequestOnCameraThread(width, height, framerate);
       }
     });
   }
@@ -238,6 +290,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     return CameraEnumerationAndroid.getSupportedFormats(getCurrentCameraId());
   }
 
+  // Returns true if this VideoCapturer is setup to capture video frames to a SurfaceTexture.
+  public boolean isCapturingToTexture() {
+    return isCapturingToTexture;
+  }
+
   // Called from native code.
   private String getSupportedFormatsAsJson() throws JSONException {
     return CameraEnumerationAndroid.getSupportedFormatsAsJson(getCurrentCameraId());
@@ -245,10 +302,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // Called from native VideoCapturer_nativeCreateVideoCapturer.
   private VideoCapturerAndroid(int cameraId) {
-    this(cameraId, null);
+    this(cameraId, null, null);
   }
 
-  private VideoCapturerAndroid(int cameraId, CameraErrorHandler errorHandler) {
+  private VideoCapturerAndroid(int cameraId, CameraErrorHandler errorHandler,
+      EGLContext sharedContext) {
     Logging.d(TAG, "VideoCapturerAndroid");
     this.id = cameraId;
     this.errorHandler = errorHandler;
@@ -256,6 +314,13 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     cameraThread.start();
     cameraThreadHandler = new Handler(cameraThread.getLooper());
     videoBuffers = new FramePool(cameraThread);
+    surfaceHelper =
+        new SurfaceTextureHelper(sharedContext == null ? EGL14.EGL_NO_CONTEXT : sharedContext,
+            cameraThread);
+    if (sharedContext != null) {
+      surfaceHelper.setListener(this);
+    }
+    isCapturingToTexture = sharedContext != null;
   }
 
   private void checkIsOnCameraThread() {
@@ -285,6 +350,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // Called by native code to quit the camera thread. This needs to be done manually, otherwise the
   // thread and handler will not be garbage collected.
   private void release() {
+    Logging.d(TAG, "release");
     if (isReleased()) {
       throw new IllegalStateException("Already released");
     }
@@ -294,11 +360,13 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         if (camera != null) {
           throw new IllegalStateException("Release called while camera is running");
         }
-        if (videoBuffers.pendingFramesCount() != 0) {
+        if (cameraStatistics.pendingFramesCount() != 0) {
           throw new IllegalStateException("Release called with pending frames left");
         }
       }
     });
+    surfaceHelper.disconnect();
+
     cameraThread.quitSafely();
     ThreadUtils.joinUninterruptibly(cameraThread);
     cameraThread = null;
@@ -349,16 +417,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         info = new Camera.CameraInfo();
         Camera.getCameraInfo(id, info);
       }
-      // No local renderer (we only care about onPreviewFrame() buffers, not a
-      // directly-displayed UI element).  Camera won't capture without
-      // setPreview{Texture,Display}, so we create a SurfaceTexture and hand
-      // it over to Camera, but never listen for frame-ready callbacks,
-      // and never call updateTexImage on it.
       try {
-        cameraGlTexture = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-        cameraSurfaceTexture = new SurfaceTexture(cameraGlTexture);
-        cameraSurfaceTexture.setOnFrameAvailableListener(null);
-        camera.setPreviewTexture(cameraSurfaceTexture);
+        camera.setPreviewTexture(surfaceHelper.getSurfaceTexture());
       } catch (IOException e) {
         Logging.e(TAG, "setPreviewTexture failed", error);
         throw new RuntimeException(e);
@@ -368,11 +428,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           " .Device orientation: " + getDeviceOrientation());
       camera.setErrorCallback(cameraErrorCallback);
       startPreviewOnCameraThread(width, height, framerate);
-      frameObserver.OnCapturerStarted(true);
+      frameObserver.onCapturerStarted(true);
 
       // Start camera observer.
-      cameraFramesCount = 0;
-      captureBuffersCount = 0;
       cameraThreadHandler.postDelayed(cameraObserver, CAMERA_OBSERVER_PERIOD_MS);
       return;
     } catch (RuntimeException e) {
@@ -380,7 +438,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
     Logging.e(TAG, "startCapture failed", error);
     stopCaptureOnCameraThread();
-    frameObserver.OnCapturerStarted(false);
+    frameObserver.onCapturerStarted(false);
     if (errorHandler != null) {
       errorHandler.onCameraError("Camera can not be started.");
     }
@@ -438,6 +496,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     // Temporarily stop preview if it's already running.
     if (this.captureFormat != null) {
       camera.stopPreview();
+      dropNextFrame = true;
       // Calling |setPreviewCallbackWithBuffer| with null should clear the internal camera buffer
       // queue, but sometimes we receive a frame with the old resolution after this call anyway.
       camera.setPreviewCallbackWithBuffer(null);
@@ -453,8 +512,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     camera.setParameters(parameters);
-    videoBuffers.queueCameraBuffers(captureFormat.frameSize(), camera);
-    camera.setPreviewCallbackWithBuffer(this);
+    if (!isCapturingToTexture) {
+      videoBuffers.queueCameraBuffers(captureFormat.frameSize(), camera);
+      camera.setPreviewCallbackWithBuffer(this);
+    }
     camera.startPreview();
   }
 
@@ -481,21 +542,22 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     cameraThreadHandler.removeCallbacks(cameraObserver);
+    cameraStatistics.getAndResetFrameCount();
     Logging.d(TAG, "Stop preview.");
     camera.stopPreview();
     camera.setPreviewCallbackWithBuffer(null);
-    videoBuffers.stopReturnBuffersToCamera();
+    if (!isCapturingToTexture()) {
+      videoBuffers.stopReturnBuffersToCamera();
+      Logging.d(TAG, "stopReturnBuffersToCamera called."
+        + (cameraStatistics.pendingFramesCount() == 0?
+               " All buffers have been returned."
+               : " Pending buffers: " + cameraStatistics.pendingFramesTimeStamps() + "."));
+    }
     captureFormat = null;
 
-    if (cameraGlTexture != 0) {
-      GLES20.glDeleteTextures(1, new int[] {cameraGlTexture}, 0);
-      cameraGlTexture = 0;
-    }
     Logging.d(TAG, "Release camera.");
     camera.release();
     camera = null;
-    cameraSurfaceTexture.release();
-    cameraSurfaceTexture = null;
   }
 
   private void switchCameraOnCameraThread() {
@@ -505,26 +567,32 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     synchronized (cameraIdLock) {
       id = (id + 1) % Camera.getNumberOfCameras();
     }
+    dropNextFrame = true;
     startCaptureOnCameraThread(requestedWidth, requestedHeight, requestedFramerate, frameObserver,
         applicationContext);
     Logging.d(TAG, "switchCameraOnCameraThread done");
   }
 
-  private void onOutputFormatRequestOnCameraThread(int width, int height, int fps) {
+  private void onOutputFormatRequestOnCameraThread(int width, int height, int framerate) {
     checkIsOnCameraThread();
     if (camera == null) {
       Logging.e(TAG, "Calling onOutputFormatRequest() on stopped camera.");
       return;
     }
     Logging.d(TAG, "onOutputFormatRequestOnCameraThread: " + width + "x" + height +
-        "@" + fps);
-    frameObserver.OnOutputFormatRequest(width, height, fps);
+        "@" + framerate);
+    frameObserver.onOutputFormatRequest(width, height, framerate);
   }
 
   public void returnBuffer(final long timeStamp) {
     cameraThreadHandler.post(new Runnable() {
       @Override public void run() {
-        videoBuffers.returnBuffer(timeStamp);
+        cameraStatistics.frameReturned(timeStamp);
+        if (isCapturingToTexture) {
+          surfaceHelper.returnTextureFrame();
+        } else {
+          videoBuffers.returnBuffer(timeStamp);
+        }
       }
     });
   }
@@ -552,6 +620,14 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     return orientation;
   }
 
+  private int getFrameOrientation() {
+    int rotation = getDeviceOrientation();
+    if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+      rotation = 360 - rotation;
+    }
+    return (info.orientation + rotation) % 360;
+  }
+
   // Called on cameraThread so must not "synchronized".
   @Override
   public void onPreviewFrame(byte[] data, Camera callbackCamera) {
@@ -566,22 +642,48 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     final long captureTimeNs =
         TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
 
-    captureBuffersCount += videoBuffers.numCaptureBuffersAvailable();
-    int rotation = getDeviceOrientation();
-    if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-      rotation = 360 - rotation;
-    }
-    rotation = (info.orientation + rotation) % 360;
+
     // Mark the frame owning |data| as used.
     // Note that since data is directBuffer,
     // data.length >= videoBuffers.frameSize.
     if (videoBuffers.reserveByteBuffer(data, captureTimeNs)) {
-      cameraFramesCount++;
-      frameObserver.OnFrameCaptured(data, videoBuffers.frameSize, captureFormat.width,
-          captureFormat.height, rotation, captureTimeNs);
+      cameraStatistics.addPendingFrame(captureTimeNs);
+      frameObserver.onByteBufferFrameCaptured(data, videoBuffers.frameSize, captureFormat.width,
+          captureFormat.height, getFrameOrientation(), captureTimeNs);
     } else {
       Logging.w(TAG, "reserveByteBuffer failed - dropping frame.");
     }
+  }
+
+  @Override
+  public void onTextureFrameAvailable(
+      int oesTextureId, float[] transformMatrix, long timestampNs) {
+    checkIsOnCameraThread();
+    if (camera == null) {
+      // Camera is stopped, we need to return the buffer immediately.
+      surfaceHelper.returnTextureFrame();
+      return;
+    }
+    if (!dropNextFrame)  {
+     surfaceHelper.returnTextureFrame();
+     dropNextFrame = true;
+     return;
+    }
+
+    int rotation = getFrameOrientation();
+    if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+      // Undo the mirror that the OS "helps" us with.
+      // http://developer.android.com/reference/android/hardware/Camera.html#setDisplayOrientation(int)
+      transformMatrix =
+          RendererCommon.multiplyMatrices(transformMatrix, RendererCommon.horizontalFlipMatrix());
+    }
+    transformMatrix = RendererCommon.rotateTextureMatrix(transformMatrix, rotation);
+
+    final int rotatedWidth = (rotation % 180 == 0) ? captureFormat.width : captureFormat.height;
+    final int rotatedHeight = (rotation % 180 == 0) ? captureFormat.height : captureFormat.width;
+    cameraStatistics.addPendingFrame(timestampNs);
+    frameObserver.onTextureFrameCaptured(rotatedWidth, rotatedHeight, oesTextureId,
+        transformMatrix, timestampNs);
   }
 
   // Class used for allocating and bookkeeping video frames. All buffers are
@@ -613,11 +715,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       }
     }
 
-    public int numCaptureBuffersAvailable() {
-      checkIsOnValidThread();
-      return queuedBuffers.size();
-    }
-
     // Discards previous queued buffers and adds new callback buffers to camera.
     public void queueCameraBuffers(int frameSize, Camera camera) {
       checkIsOnValidThread();
@@ -634,30 +731,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           + " buffers of size " + frameSize + ".");
     }
 
-    // Return number of pending frames that have not been returned.
-    public int pendingFramesCount() {
-      checkIsOnValidThread();
-      return pendingBuffers.size();
-    }
-
-    public String pendingFramesTimeStamps() {
-      checkIsOnValidThread();
-      List<Long> timeStampsMs = new ArrayList<Long>();
-      for (Long timeStampNs : pendingBuffers.keySet()) {
-        timeStampsMs.add(TimeUnit.NANOSECONDS.toMillis(timeStampNs));
-      }
-      return timeStampsMs.toString();
-    }
-
     public void stopReturnBuffersToCamera() {
       checkIsOnValidThread();
       this.camera = null;
       queuedBuffers.clear();
       // Frames in |pendingBuffers| need to be kept alive until they are returned.
-      Logging.d(TAG, "stopReturnBuffersToCamera called."
-            + (pendingBuffers.isEmpty() ?
-                   " All buffers have been returned."
-                   : " Pending buffers: " + pendingFramesTimeStamps() + "."));
     }
 
     public boolean reserveByteBuffer(byte[] data, long timeStamp) {
@@ -679,8 +757,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       }
       pendingBuffers.put(timeStamp, buffer);
       if (queuedBuffers.isEmpty()) {
-        Logging.v(TAG, "Camera is running out of capture buffers."
-            + " Pending buffers: " + pendingFramesTimeStamps());
+        Logging.v(TAG, "Camera is running out of capture buffers.");
       }
       return true;
     }
@@ -722,17 +799,22 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   interface CapturerObserver {
     // Notify if the camera have been started successfully or not.
     // Called on a Java thread owned by VideoCapturerAndroid.
-    abstract void OnCapturerStarted(boolean success);
+    abstract void onCapturerStarted(boolean success);
 
     // Delivers a captured frame. Called on a Java thread owned by
     // VideoCapturerAndroid.
-    abstract void OnFrameCaptured(byte[] data, int length, int width, int height,
+    abstract void onByteBufferFrameCaptured(byte[] data, int length, int width, int height,
         int rotation, long timeStamp);
+
+    // Delivers a captured frame in a texture with id |oesTextureId|. Called on a Java thread
+    // owned by VideoCapturerAndroid.
+    abstract void onTextureFrameCaptured(
+        int width, int height, int oesTextureId, float[] transformMatrix, long timestamp);
 
     // Requests an output format from the video capturer. Captured frames
     // by the camera will be scaled/or dropped by the video capturer.
     // Called on a Java thread owned by VideoCapturerAndroid.
-    abstract void OnOutputFormatRequest(int width, int height, int fps);
+    abstract void onOutputFormatRequest(int width, int height, int framerate);
   }
 
   // An implementation of CapturerObserver that forwards all calls from
@@ -745,27 +827,37 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     @Override
-    public void OnCapturerStarted(boolean success) {
+    public void onCapturerStarted(boolean success) {
       nativeCapturerStarted(nativeCapturer, success);
     }
 
     @Override
-    public void OnFrameCaptured(byte[] data, int length, int width, int height,
+    public void onByteBufferFrameCaptured(byte[] data, int length, int width, int height,
         int rotation, long timeStamp) {
-      nativeOnFrameCaptured(nativeCapturer, data, length, width, height, rotation, timeStamp);
+      nativeOnByteBufferFrameCaptured(nativeCapturer, data, length, width, height, rotation,
+          timeStamp);
     }
 
     @Override
-    public void OnOutputFormatRequest(int width, int height, int fps) {
-      nativeOnOutputFormatRequest(nativeCapturer, width, height, fps);
+    public void onTextureFrameCaptured(
+        int width, int height, int oesTextureId, float[] transformMatrix, long timestamp) {
+      nativeOnTextureFrameCaptured(nativeCapturer, width, height, oesTextureId, transformMatrix,
+          timestamp);
+    }
+
+    @Override
+    public void onOutputFormatRequest(int width, int height, int framerate) {
+      nativeOnOutputFormatRequest(nativeCapturer, width, height, framerate);
     }
 
     private native void nativeCapturerStarted(long nativeCapturer,
         boolean success);
-    private native void nativeOnFrameCaptured(long nativeCapturer,
+    private native void nativeOnByteBufferFrameCaptured(long nativeCapturer,
         byte[] data, int length, int width, int height, int rotation, long timeStamp);
+    private native void nativeOnTextureFrameCaptured(long nativeCapturer, int width, int height,
+        int oesTextureId, float[] transformMatrix, long timestamp);
     private native void nativeOnOutputFormatRequest(long nativeCapturer,
-        int width, int height, int fps);
+        int width, int height, int framerate);
   }
 
   private static native long nativeCreateVideoCapturer(VideoCapturerAndroid videoCapturer);

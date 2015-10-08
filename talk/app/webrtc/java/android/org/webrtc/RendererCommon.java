@@ -76,6 +76,15 @@ public class RendererCommon {
         0,  1, 0, 1};
   }
 
+  // Matrix with transform x' = 1 - x.
+  public static final float[] horizontalFlipMatrix() {
+    return new float[] {
+        -1, 0, 0, 0,
+         0, 1, 0, 0,
+         0, 0, 1, 0,
+         1, 0, 0, 1};
+  }
+
   /**
    * Returns texture matrix that will have the effect of rotating the frame |rotationDegree|
    * clockwise when rendered.

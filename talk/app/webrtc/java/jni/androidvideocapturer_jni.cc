@@ -188,7 +188,8 @@ void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,
 
 JNIEnv* AndroidVideoCapturerJni::jni() { return AttachCurrentThreadIfNeeded(); }
 
-JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnFrameCaptured)
+JOW(void,
+    VideoCapturerAndroid_00024NativeObserver_nativeOnByteBufferFrameCaptured)
     (JNIEnv* jni, jclass, jlong j_capturer, jbyteArray j_frame, jint length,
         jint width, jint height, jint rotation, jlong ts) {
   jboolean is_copy = true;
