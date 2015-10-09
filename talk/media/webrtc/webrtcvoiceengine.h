@@ -209,7 +209,7 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                                     int reporting_threshold,
                                     int penalty_decay,
                                     int type_event_delay) override;
-  bool SetOutputScaling(uint32_t ssrc, double left, double right) override;
+  bool SetOutputVolume(uint32_t ssrc, double volume) override;
 
   bool CanInsertDtmf() override;
   bool InsertDtmf(uint32_t ssrc, int event, int duration, int flags) override;

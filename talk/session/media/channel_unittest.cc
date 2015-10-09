@@ -2189,26 +2189,23 @@ TEST_F(VoiceChannelTest, TestScaleVolume1to1Call) {
   CreateChannels(RTCP, RTCP);
   EXPECT_TRUE(SendInitiate());
   EXPECT_TRUE(SendAccept());
-  double left, right;
+  double volume;
 
-  // Default is (1.0, 1.0).
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(0, &left, &right));
-  EXPECT_DOUBLE_EQ(1.0, left);
-  EXPECT_DOUBLE_EQ(1.0, right);
+  // Default is (1.0).
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
+  EXPECT_DOUBLE_EQ(1.0, volume);
   // invalid ssrc.
-  EXPECT_FALSE(media_channel1_->GetOutputScaling(3, &left, &right));
+  EXPECT_FALSE(media_channel1_->GetOutputVolume(3, &volume));
 
-  // Set scale to (1.5, 0.5).
-  EXPECT_TRUE(channel1_->SetOutputScaling(0, 1.5, 0.5));
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(0, &left, &right));
-  EXPECT_DOUBLE_EQ(1.5, left);
-  EXPECT_DOUBLE_EQ(0.5, right);
+  // Set scale to (1.5).
+  EXPECT_TRUE(channel1_->SetOutputVolume(0, 1.5));
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
+  EXPECT_DOUBLE_EQ(1.5, volume);
 
-  // Set scale to (0, 0).
-  EXPECT_TRUE(channel1_->SetOutputScaling(0, 0.0, 0.0));
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(0, &left, &right));
-  EXPECT_DOUBLE_EQ(0.0, left);
-  EXPECT_DOUBLE_EQ(0.0, right);
+  // Set scale to (0).
+  EXPECT_TRUE(channel1_->SetOutputVolume(0, 0.0));
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
+  EXPECT_DOUBLE_EQ(0.0, volume);
 }
 
 // Test that we can scale the output volume properly for multiway calls.
@@ -2219,43 +2216,34 @@ TEST_F(VoiceChannelTest, TestScaleVolumeMultiwayCall) {
   EXPECT_TRUE(AddStream1(1));
   EXPECT_TRUE(AddStream1(2));
 
-  double left, right;
-  // Default is (1.0, 1.0).
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(0, &left, &right));
-  EXPECT_DOUBLE_EQ(1.0, left);
-  EXPECT_DOUBLE_EQ(1.0, right);
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(1, &left, &right));
-  EXPECT_DOUBLE_EQ(1.0, left);
-  EXPECT_DOUBLE_EQ(1.0, right);
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(2, &left, &right));
-  EXPECT_DOUBLE_EQ(1.0, left);
-  EXPECT_DOUBLE_EQ(1.0, right);
+  double volume;
+  // Default is (1.0).
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
+  EXPECT_DOUBLE_EQ(1.0, volume);
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
+  EXPECT_DOUBLE_EQ(1.0, volume);
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
+  EXPECT_DOUBLE_EQ(1.0, volume);
   // invalid ssrc.
-  EXPECT_FALSE(media_channel1_->GetOutputScaling(3, &left, &right));
+  EXPECT_FALSE(media_channel1_->GetOutputVolume(3, &volume));
 
-  // Set scale to (1.5, 0.5) for ssrc = 1.
-  EXPECT_TRUE(channel1_->SetOutputScaling(1, 1.5, 0.5));
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(1, &left, &right));
-  EXPECT_DOUBLE_EQ(1.5, left);
-  EXPECT_DOUBLE_EQ(0.5, right);
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(2, &left, &right));
-  EXPECT_DOUBLE_EQ(1.0, left);
-  EXPECT_DOUBLE_EQ(1.0, right);
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(0, &left, &right));
-  EXPECT_DOUBLE_EQ(1.0, left);
-  EXPECT_DOUBLE_EQ(1.0, right);
+  // Set scale to (1.5) for ssrc = 1.
+  EXPECT_TRUE(channel1_->SetOutputVolume(1, 1.5));
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
+  EXPECT_DOUBLE_EQ(1.5, volume);
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
+  EXPECT_DOUBLE_EQ(1.0, volume);
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
+  EXPECT_DOUBLE_EQ(1.0, volume);
 
-  // Set scale to (0, 0) for all ssrcs.
-  EXPECT_TRUE(channel1_->SetOutputScaling(0,  0.0, 0.0));
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(0, &left, &right));
-  EXPECT_DOUBLE_EQ(0.0, left);
-  EXPECT_DOUBLE_EQ(0.0, right);
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(1, &left, &right));
-  EXPECT_DOUBLE_EQ(0.0, left);
-  EXPECT_DOUBLE_EQ(0.0, right);
-  EXPECT_TRUE(media_channel1_->GetOutputScaling(2, &left, &right));
-  EXPECT_DOUBLE_EQ(0.0, left);
-  EXPECT_DOUBLE_EQ(0.0, right);
+  // Set scale to (0) for all ssrcs.
+  EXPECT_TRUE(channel1_->SetOutputVolume(0,  0.0));
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
+  EXPECT_DOUBLE_EQ(0.0, volume);
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
+  EXPECT_DOUBLE_EQ(0.0, volume);
+  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
+  EXPECT_DOUBLE_EQ(0.0, volume);
 }
 
 TEST_F(VoiceChannelTest, SendBundleToBundle) {

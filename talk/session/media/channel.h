@@ -365,7 +365,7 @@ class VoiceChannel : public BaseChannel {
   // The valid value for the |event| are 0 which corresponding to DTMF
   // event 0-9, *, #, A-D.
   bool InsertDtmf(uint32_t ssrc, int event_code, int duration, int flags);
-  bool SetOutputScaling(uint32_t ssrc, double left, double right);
+  bool SetOutputVolume(uint32_t ssrc, double volume);
   // Get statistics about the current media session.
   bool GetStats(VoiceMediaInfo* stats);
 
@@ -402,7 +402,7 @@ class VoiceChannel : public BaseChannel {
                                   std::string* error_desc);
   void HandleEarlyMediaTimeout();
   bool InsertDtmf_w(uint32_t ssrc, int event, int duration, int flags);
-  bool SetOutputScaling_w(uint32_t ssrc, double left, double right);
+  bool SetOutputVolume_w(uint32_t ssrc, double volume);
   bool GetStats_w(VoiceMediaInfo* stats);
 
   virtual void OnMessage(rtc::Message* pmsg);

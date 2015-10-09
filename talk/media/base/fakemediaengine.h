@@ -243,7 +243,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
                                  const AudioOptions& options)
       : engine_(engine),
         time_since_last_typing_(-1) {
-    output_scalings_[0] = OutputScaling();  // For default channel.
+    output_scalings_[0] = 1.0;  // For default channel.
     SetOptions(options);
   }
   ~FakeVoiceMediaChannel();
@@ -291,7 +291,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   virtual bool AddRecvStream(const StreamParams& sp) {
     if (!RtpHelper<VoiceMediaChannel>::AddRecvStream(sp))
       return false;
-    output_scalings_[sp.first_ssrc()] = OutputScaling();
+    output_scalings_[sp.first_ssrc()] = 1.0;
     return true;
   }
   virtual bool RemoveRecvStream(uint32_t ssrc) {
@@ -347,37 +347,29 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     return true;
   }
 
-  virtual bool SetOutputScaling(uint32_t ssrc, double left, double right) {
+  virtual bool SetOutputVolume(uint32_t ssrc, double volume) {
     if (0 == ssrc) {
-      std::map<uint32_t, OutputScaling>::iterator it;
+      std::map<uint32_t, double>::iterator it;
       for (it = output_scalings_.begin(); it != output_scalings_.end(); ++it) {
-        it->second.left = left;
-        it->second.right = right;
+        it->second = volume;
       }
       return true;
     } else if (output_scalings_.find(ssrc) != output_scalings_.end()) {
-      output_scalings_[ssrc].left = left;
-      output_scalings_[ssrc].right = right;
+      output_scalings_[ssrc] = volume;
       return true;
     }
     return false;
   }
-  bool GetOutputScaling(uint32_t ssrc, double* left, double* right) {
+  bool GetOutputVolume(uint32_t ssrc, double* volume) {
     if (output_scalings_.find(ssrc) == output_scalings_.end())
       return false;
-    *left = output_scalings_[ssrc].left;
-    *right = output_scalings_[ssrc].right;
+    *volume = output_scalings_[ssrc];
     return true;
   }
 
   virtual bool GetStats(VoiceMediaInfo* info) { return false; }
 
  private:
-  struct OutputScaling {
-    OutputScaling() : left(1.0), right(1.0) {}
-    double left, right;
-  };
-
   class VoiceChannelAudioSink : public AudioRenderer::Sink {
    public:
     explicit VoiceChannelAudioSink(AudioRenderer* renderer)
@@ -446,7 +438,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   FakeVoiceEngine* engine_;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
-  std::map<uint32_t, OutputScaling> output_scalings_;
+  std::map<uint32_t, double> output_scalings_;
   std::vector<DtmfInfo> dtmf_info_queue_;
   int time_since_last_typing_;
   AudioOptions options_;

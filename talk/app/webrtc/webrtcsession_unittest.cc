@@ -3108,20 +3108,17 @@ TEST_F(WebRtcSessionTest, SetAudioPlayout) {
   ASSERT_TRUE(channel != NULL);
   ASSERT_EQ(1u, channel->recv_streams().size());
   uint32_t receive_ssrc = channel->recv_streams()[0].first_ssrc();
-  double left_vol, right_vol;
-  EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
-  EXPECT_EQ(1, left_vol);
-  EXPECT_EQ(1, right_vol);
+  double volume;
+  EXPECT_TRUE(channel->GetOutputVolume(receive_ssrc, &volume));
+  EXPECT_EQ(1, volume);
   rtc::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
   session_->SetAudioPlayout(receive_ssrc, false, renderer.get());
-  EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
-  EXPECT_EQ(0, left_vol);
-  EXPECT_EQ(0, right_vol);
+  EXPECT_TRUE(channel->GetOutputVolume(receive_ssrc, &volume));
+  EXPECT_EQ(0, volume);
   EXPECT_EQ(0, renderer->channel_id());
   session_->SetAudioPlayout(receive_ssrc, true, NULL);
-  EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
-  EXPECT_EQ(1, left_vol);
-  EXPECT_EQ(1, right_vol);
+  EXPECT_TRUE(channel->GetOutputVolume(receive_ssrc, &volume));
+  EXPECT_EQ(1, volume);
   EXPECT_EQ(-1, renderer->channel_id());
 }
 

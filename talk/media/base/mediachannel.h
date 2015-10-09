@@ -1067,8 +1067,8 @@ class VoiceMediaChannel : public MediaChannel {
   virtual void SetTypingDetectionParameters(int time_window,
     int cost_per_typing, int reporting_threshold, int penalty_decay,
     int type_event_delay) = 0;
-  // Set left and right scale for speaker output volume of the specified ssrc.
-  virtual bool SetOutputScaling(uint32_t ssrc, double left, double right) = 0;
+  // Set speaker output volume of the specified ssrc.
+  virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
   // Returns if the telephone-event has been negotiated.
   virtual bool CanInsertDtmf() { return false; }
   // Send and/or play a DTMF |event| according to the |flags|.

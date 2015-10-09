@@ -1347,9 +1347,9 @@ bool VoiceChannel::InsertDtmf(uint32_t ssrc,
                              ssrc, event_code, duration, flags));
 }
 
-bool VoiceChannel::SetOutputScaling(uint32_t ssrc, double left, double right) {
-  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetOutputScaling,
-                             media_channel(), ssrc, left, right));
+bool VoiceChannel::SetOutputVolume(uint32_t ssrc, double volume) {
+  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetOutputVolume,
+                             media_channel(), ssrc, volume));
 }
 
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {

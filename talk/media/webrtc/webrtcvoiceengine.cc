@@ -2491,9 +2491,7 @@ void WebRtcVoiceMediaChannel::SetTypingDetectionParameters(int time_window,
   }
 }
 
-bool WebRtcVoiceMediaChannel::SetOutputScaling(uint32_t ssrc,
-                                               double left,
-                                               double right) {
+bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   rtc::CritScope lock(&receive_channels_cs_);
   // Collect the channels to scale the output volume.
@@ -2515,27 +2513,13 @@ bool WebRtcVoiceMediaChannel::SetOutputScaling(uint32_t ssrc,
     channels.push_back(channel);
   }
 
-  // Scale the output volume for the collected channels. We first normalize to
-  // scale the volume and then set the left and right pan.
-  float scale = static_cast<float>(std::max(left, right));
-  if (scale > 0.0001f) {
-    left /= scale;
-    right /= scale;
-  }
   for (int ch_id : channels) {
     if (-1 == engine()->voe()->volume()->SetChannelOutputVolumeScaling(
-        ch_id, scale)) {
-      LOG_RTCERR2(SetChannelOutputVolumeScaling, ch_id, scale);
+        ch_id, volume)) {
+      LOG_RTCERR2(SetChannelOutputVolumeScaling, ch_id, volume);
       return false;
     }
-    if (-1 == engine()->voe()->volume()->SetOutputVolumePan(
-        ch_id, static_cast<float>(left), static_cast<float>(right))) {
-      LOG_RTCERR3(SetOutputVolumePan, ch_id, left, right);
-      // Do not return if fails. SetOutputVolumePan is not available for all
-      // pltforms.
-    }
-    LOG(LS_INFO) << "SetOutputScaling to left=" << left * scale
-                 << " right=" << right * scale
+    LOG(LS_INFO) << "SetOutputVolume to " << volume
                  << " for channel " << ch_id << " and ssrc " << ssrc;
   }
   return true;

@@ -1246,8 +1246,8 @@ void WebRtcSession::SetAudioPlayout(uint32_t ssrc,
     LOG(LS_ERROR) << "SetAudioPlayout: ssrc is incorrect: " << ssrc;
     return;
   }
-  if (!voice_channel_->SetOutputScaling(ssrc, enable ? 1 : 0, enable ? 1 : 0)) {
-    // Allow that SetOutputScaling fail if |enable| is false but assert
+  if (!voice_channel_->SetOutputVolume(ssrc, enable ? 1 : 0)) {
+    // Allow that SetOutputVolume fail if |enable| is false but assert
     // otherwise. This in the normal case when the underlying media channel has
     // already been deleted.
     ASSERT(enable == false);
@@ -1276,7 +1276,7 @@ void WebRtcSession::SetAudioPlayoutVolume(uint32_t ssrc, double volume) {
     return;
   }
 
-  if (!voice_channel_->SetOutputScaling(ssrc, volume, volume)) {
+  if (!voice_channel_->SetOutputVolume(ssrc, volume)) {
     ASSERT(false);
   }
 }

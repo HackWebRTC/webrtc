@@ -200,8 +200,6 @@ class FakeWebRtcVoiceEngine
           send(false),
           playout(false),
           volume_scale(1.0),
-          volume_pan_left(1.0),
-          volume_pan_right(1.0),
           vad(false),
           codec_fec(false),
           max_encoding_bandwidth(0),
@@ -227,8 +225,6 @@ class FakeWebRtcVoiceEngine
     bool send;
     bool playout;
     float volume_scale;
-    float volume_pan_left;
-    float volume_pan_right;
     bool vad;
     bool codec_fec;
     int max_encoding_bandwidth;
@@ -924,18 +920,8 @@ class FakeWebRtcVoiceEngine
     scale = channels_[channel]->volume_scale;
     return 0;
   }
-  WEBRTC_FUNC(SetOutputVolumePan, (int channel, float left, float right)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->volume_pan_left = left;
-    channels_[channel]->volume_pan_right = right;
-    return 0;
-  }
-  WEBRTC_FUNC(GetOutputVolumePan, (int channel, float& left, float& right)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    left = channels_[channel]->volume_pan_left;
-    right = channels_[channel]->volume_pan_right;
-    return 0;
-  }
+  WEBRTC_STUB(SetOutputVolumePan, (int channel, float left, float right));
+  WEBRTC_STUB(GetOutputVolumePan, (int channel, float& left, float& right));
 
   // webrtc::VoEAudioProcessing
   WEBRTC_FUNC(SetNsStatus, (bool enable, webrtc::NsModes mode)) {
