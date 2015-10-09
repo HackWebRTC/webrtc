@@ -70,7 +70,7 @@ void AudioRtpReceiver::Stop() {
   if (!provider_) {
     return;
   }
-  provider_->SetAudioPlayout(ssrc_, false, nullptr);
+  provider_->SetAudioPlayout(ssrc_, false);
   provider_ = nullptr;
 }
 
@@ -78,7 +78,7 @@ void AudioRtpReceiver::Reconfigure() {
   if (!provider_) {
     return;
   }
-  provider_->SetAudioPlayout(ssrc_, track_->enabled(), track_->GetRenderer());
+  provider_->SetAudioPlayout(ssrc_, track_->enabled());
 }
 
 VideoRtpReceiver::VideoRtpReceiver(VideoTrackInterface* track,

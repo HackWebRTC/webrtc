@@ -1233,17 +1233,10 @@ std::string WebRtcSession::BadStateErrMsg(State state) {
   return desc.str();
 }
 
-void WebRtcSession::SetAudioPlayout(uint32_t ssrc,
-                                    bool enable,
-                                    cricket::AudioRenderer* renderer) {
+void WebRtcSession::SetAudioPlayout(uint32_t ssrc, bool enable) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
     LOG(LS_ERROR) << "SetAudioPlayout: No audio channel exists.";
-    return;
-  }
-  if (!voice_channel_->SetRemoteRenderer(ssrc, renderer)) {
-    // SetRenderer() can fail if the ssrc does not match any playout channel.
-    LOG(LS_ERROR) << "SetAudioPlayout: ssrc is incorrect: " << ssrc;
     return;
   }
   if (!voice_channel_->SetOutputVolume(ssrc, enable ? 1 : 0)) {

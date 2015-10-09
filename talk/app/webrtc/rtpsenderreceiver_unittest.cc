@@ -56,10 +56,9 @@ namespace webrtc {
 class MockAudioProvider : public AudioProviderInterface {
  public:
   virtual ~MockAudioProvider() {}
-  MOCK_METHOD3(SetAudioPlayout,
+  MOCK_METHOD2(SetAudioPlayout,
                void(uint32_t ssrc,
-                    bool enable,
-                    cricket::AudioRenderer* renderer));
+                    bool enable));
   MOCK_METHOD4(SetAudioSend,
                void(uint32_t ssrc,
                     bool enable,
@@ -150,7 +149,7 @@ class RtpSenderReceiverTest : public testing::Test {
     audio_track_ =
         AudioTrack::Create(kAudioTrackId, RemoteAudioSource::Create().get());
     EXPECT_TRUE(stream_->AddTrack(audio_track_));
-    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
+    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
     audio_rtp_receiver_ = new AudioRtpReceiver(stream_->GetAudioTracks()[0],
                                                kAudioSsrc, &audio_provider_);
   }
@@ -164,7 +163,7 @@ class RtpSenderReceiverTest : public testing::Test {
   }
 
   void DestroyAudioRtpReceiver() {
-    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _));
+    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false));
     audio_rtp_receiver_ = nullptr;
   }
 
@@ -228,10 +227,10 @@ TEST_F(RtpSenderReceiverTest, LocalAudioTrackDisable) {
 TEST_F(RtpSenderReceiverTest, RemoteAudioTrackDisable) {
   CreateAudioRtpReceiver();
 
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _));
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false));
   audio_track_->set_enabled(false);
 
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
   audio_track_->set_enabled(true);
 
   DestroyAudioRtpReceiver();
@@ -267,11 +266,11 @@ TEST_F(RtpSenderReceiverTest, RemoteAudioTrackSetVolume) {
   audio_track_->GetSource()->SetVolume(volume);
 
   // Disable the audio track, this should prevent setting the volume.
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _));
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false));
   audio_track_->set_enabled(false);
   audio_track_->GetSource()->SetVolume(1.0);
 
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
   audio_track_->set_enabled(true);
 
   double new_volume = 0.8;

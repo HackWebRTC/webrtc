@@ -3101,11 +3101,10 @@ TEST_F(WebRtcSessionTest, SetAudioPlayout) {
   double volume;
   EXPECT_TRUE(channel->GetOutputVolume(receive_ssrc, &volume));
   EXPECT_EQ(1, volume);
-  rtc::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
-  session_->SetAudioPlayout(receive_ssrc, false, renderer.get());
+  session_->SetAudioPlayout(receive_ssrc, false);
   EXPECT_TRUE(channel->GetOutputVolume(receive_ssrc, &volume));
   EXPECT_EQ(0, volume);
-  session_->SetAudioPlayout(receive_ssrc, true, NULL);
+  session_->SetAudioPlayout(receive_ssrc, true);
   EXPECT_TRUE(channel->GetOutputVolume(receive_ssrc, &volume));
   EXPECT_EQ(1, volume);
 }

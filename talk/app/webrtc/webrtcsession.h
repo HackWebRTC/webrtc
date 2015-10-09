@@ -202,9 +202,7 @@ class WebRtcSession : public cricket::BaseSession,
   virtual bool GetRemoteTrackIdBySsrc(uint32_t ssrc, std::string* track_id);
 
   // AudioMediaProviderInterface implementation.
-  void SetAudioPlayout(uint32_t ssrc,
-                       bool enable,
-                       cricket::AudioRenderer* renderer) override;
+  void SetAudioPlayout(uint32_t ssrc, bool enable) override;
   void SetAudioSend(uint32_t ssrc,
                     bool enable,
                     const cricket::AudioOptions& options,

@@ -2389,29 +2389,6 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetRemoteRenderer(uint32_t ssrc,
-                                                AudioRenderer* renderer) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ChannelMap::iterator it = receive_channels_.find(ssrc);
-  if (it == receive_channels_.end()) {
-    if (renderer) {
-      // Return an error if trying to set a valid renderer with an invalid ssrc.
-      LOG(LS_ERROR) << "SetRemoteRenderer failed with ssrc "<< ssrc;
-      return false;
-    }
-
-    // The channel likely has gone away, do nothing.
-    return true;
-  }
-
-  if (renderer)
-    it->second->Start(renderer);
-  else
-    it->second->Stop();
-
-  return true;
-}
-
 bool WebRtcVoiceMediaChannel::SetLocalRenderer(uint32_t ssrc,
                                                AudioRenderer* renderer) {
   ChannelMap::iterator it = send_channels_.find(ssrc);

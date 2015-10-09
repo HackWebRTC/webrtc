@@ -1296,11 +1296,6 @@ bool VoiceChannel::Init() {
   return true;
 }
 
-bool VoiceChannel::SetRemoteRenderer(uint32_t ssrc, AudioRenderer* renderer) {
-  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetRemoteRenderer,
-                             media_channel(), ssrc, renderer));
-}
-
 bool VoiceChannel::SetAudioSend(uint32_t ssrc,
                                 bool enable,
                                 const AudioOptions* options,

@@ -335,7 +335,6 @@ class VoiceChannel : public BaseChannel {
                bool rtcp);
   ~VoiceChannel();
   bool Init();
-  bool SetRemoteRenderer(uint32_t ssrc, AudioRenderer* renderer);
 
   // Configure sending media on the stream with SSRC |ssrc|
   // If there is only one sending stream SSRC 0 can be used.

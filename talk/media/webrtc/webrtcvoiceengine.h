@@ -200,7 +200,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool RemoveRecvStream(uint32_t ssrc) override;
-  bool SetRemoteRenderer(uint32_t ssrc, AudioRenderer* renderer) override;
   bool GetActiveStreams(AudioInfo::StreamList* actives) override;
   int GetOutputLevel() override;
   int GetTimeSinceLastTyping() override;

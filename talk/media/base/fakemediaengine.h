@@ -300,24 +300,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     output_scalings_.erase(ssrc);
     return true;
   }
-  virtual bool SetRemoteRenderer(uint32_t ssrc, AudioRenderer* renderer) {
-    std::map<uint32_t, AudioRenderer*>::iterator it =
-        remote_renderers_.find(ssrc);
-    if (renderer) {
-      if (it != remote_renderers_.end()) {
-        ASSERT(it->second == renderer);
-      } else {
-        remote_renderers_.insert(std::make_pair(ssrc, renderer));
-      }
-    } else {
-      if (it != remote_renderers_.end()) {
-        remote_renderers_.erase(it);
-      } else {
-        return false;
-      }
-    }
-    return true;
-  }
 
   virtual bool GetActiveStreams(AudioInfo::StreamList* streams) { return true; }
   virtual int GetOutputLevel() { return 0; }
@@ -439,7 +421,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   int time_since_last_typing_;
   AudioOptions options_;
   std::map<uint32_t, VoiceChannelAudioSink*> local_renderers_;
-  std::map<uint32_t, AudioRenderer*> remote_renderers_;
 };
 
 // A helper function to compare the FakeVoiceMediaChannel::DtmfInfo.

@@ -1055,8 +1055,6 @@ class VoiceMediaChannel : public MediaChannel {
                             bool enable,
                             const AudioOptions* options,
                             AudioRenderer* renderer) = 0;
-  // Sets the renderer object to be used for the specified remote audio stream.
-  virtual bool SetRemoteRenderer(uint32_t ssrc, AudioRenderer* renderer) = 0;
   // Gets current energy levels for all incoming streams.
   virtual bool GetActiveStreams(AudioInfo::StreamList* actives) = 0;
   // Get the current energy level of the stream sent to the speaker.
