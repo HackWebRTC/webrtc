@@ -208,8 +208,6 @@ class FakeWebRtcVoiceEngine
           opus_dtx(false),
           red(false),
           nack(false),
-          rx_agc_enabled(false),
-          rx_agc_mode(webrtc::kAgcDefault),
           cn8_type(13),
           cn16_type(105),
           dtmf_type(106),
@@ -224,7 +222,6 @@ class FakeWebRtcVoiceEngine
           neteq_capacity(-1),
           neteq_fast_accelerate(false) {
       memset(&send_codec, 0, sizeof(send_codec));
-      memset(&rx_agc_config, 0, sizeof(rx_agc_config));
     }
     bool external_transport;
     bool send;
@@ -238,9 +235,6 @@ class FakeWebRtcVoiceEngine
     bool opus_dtx;
     bool red;
     bool nack;
-    bool rx_agc_enabled;
-    webrtc::AgcModes rx_agc_mode;
-    webrtc::AgcConfig rx_agc_config;
     int cn8_type;
     int cn16_type;
     int dtmf_type;
@@ -1001,27 +995,12 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(SetRxNsStatus, (int channel, bool enable, webrtc::NsModes mode));
   WEBRTC_STUB(GetRxNsStatus, (int channel, bool& enabled,
                               webrtc::NsModes& mode));
-  WEBRTC_FUNC(SetRxAgcStatus, (int channel, bool enable,
-                               webrtc::AgcModes mode)) {
-    channels_[channel]->rx_agc_enabled = enable;
-    channels_[channel]->rx_agc_mode = mode;
-    return 0;
-  }
-  WEBRTC_FUNC(GetRxAgcStatus, (int channel, bool& enabled,
-                               webrtc::AgcModes& mode)) {
-    enabled = channels_[channel]->rx_agc_enabled;
-    mode = channels_[channel]->rx_agc_mode;
-    return 0;
-  }
-
-  WEBRTC_FUNC(SetRxAgcConfig, (int channel, webrtc::AgcConfig config)) {
-    channels_[channel]->rx_agc_config = config;
-    return 0;
-  }
-  WEBRTC_FUNC(GetRxAgcConfig, (int channel, webrtc::AgcConfig& config)) {
-    config = channels_[channel]->rx_agc_config;
-    return 0;
-  }
+  WEBRTC_STUB(SetRxAgcStatus, (int channel, bool enable,
+                               webrtc::AgcModes mode));
+  WEBRTC_STUB(GetRxAgcStatus, (int channel, bool& enabled,
+                               webrtc::AgcModes& mode));
+  WEBRTC_STUB(SetRxAgcConfig, (int channel, webrtc::AgcConfig config));
+  WEBRTC_STUB(GetRxAgcConfig, (int channel, webrtc::AgcConfig& config));
 
   WEBRTC_STUB(RegisterRxVadObserver, (int, webrtc::VoERxVadCallback&));
   WEBRTC_STUB(DeRegisterRxVadObserver, (int channel));

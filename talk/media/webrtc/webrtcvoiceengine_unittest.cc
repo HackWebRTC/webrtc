@@ -2219,23 +2219,6 @@ TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
   EXPECT_EQ(13, agc_config.targetLeveldBOv);
 }
 
-TEST_F(WebRtcVoiceEngineTestFake, RxAgcConfigViaOptions) {
-  EXPECT_TRUE(SetupEngine());
-  int channel_num = voe_.GetLastChannel();
-  send_parameters_.options.rx_agc_target_dbov.Set(6);
-  send_parameters_.options.rx_agc_digital_compression_gain.Set(0);
-  send_parameters_.options.rx_agc_limiter.Set(true);
-  send_parameters_.options.rx_auto_gain_control.Set(true);
-  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-
-  webrtc::AgcConfig agc_config;
-  EXPECT_EQ(0, engine_.voe()->processing()->GetRxAgcConfig(
-      channel_num, agc_config));
-  EXPECT_EQ(6, agc_config.targetLeveldBOv);
-  EXPECT_EQ(0, agc_config.digitalCompressionGaindB);
-  EXPECT_TRUE(agc_config.limiterEnable);
-}
-
 TEST_F(WebRtcVoiceEngineTestFake, SampleRatesViaOptions) {
   EXPECT_TRUE(SetupEngine());
   cricket::AudioOptions options;

@@ -160,7 +160,6 @@ struct AudioOptions {
   void SetAll(const AudioOptions& change) {
     echo_cancellation.SetFrom(change.echo_cancellation);
     auto_gain_control.SetFrom(change.auto_gain_control);
-    rx_auto_gain_control.SetFrom(change.rx_auto_gain_control);
     noise_suppression.SetFrom(change.noise_suppression);
     highpass_filter.SetFrom(change.highpass_filter);
     stereo_swapping.SetFrom(change.stereo_swapping);
@@ -181,10 +180,6 @@ struct AudioOptions {
     tx_agc_digital_compression_gain.SetFrom(
         change.tx_agc_digital_compression_gain);
     tx_agc_limiter.SetFrom(change.tx_agc_limiter);
-    rx_agc_target_dbov.SetFrom(change.rx_agc_target_dbov);
-    rx_agc_digital_compression_gain.SetFrom(
-        change.rx_agc_digital_compression_gain);
-    rx_agc_limiter.SetFrom(change.rx_agc_limiter);
     recording_sample_rate.SetFrom(change.recording_sample_rate);
     playout_sample_rate.SetFrom(change.playout_sample_rate);
     dscp.SetFrom(change.dscp);
@@ -194,7 +189,6 @@ struct AudioOptions {
   bool operator==(const AudioOptions& o) const {
     return echo_cancellation == o.echo_cancellation &&
         auto_gain_control == o.auto_gain_control &&
-        rx_auto_gain_control == o.rx_auto_gain_control &&
         noise_suppression == o.noise_suppression &&
         highpass_filter == o.highpass_filter &&
         stereo_swapping == o.stereo_swapping &&
@@ -213,9 +207,6 @@ struct AudioOptions {
         tx_agc_target_dbov == o.tx_agc_target_dbov &&
         tx_agc_digital_compression_gain == o.tx_agc_digital_compression_gain &&
         tx_agc_limiter == o.tx_agc_limiter &&
-        rx_agc_target_dbov == o.rx_agc_target_dbov &&
-        rx_agc_digital_compression_gain == o.rx_agc_digital_compression_gain &&
-        rx_agc_limiter == o.rx_agc_limiter &&
         recording_sample_rate == o.recording_sample_rate &&
         playout_sample_rate == o.playout_sample_rate &&
         dscp == o.dscp &&
@@ -227,7 +218,6 @@ struct AudioOptions {
     ost << "AudioOptions {";
     ost << ToStringIfSet("aec", echo_cancellation);
     ost << ToStringIfSet("agc", auto_gain_control);
-    ost << ToStringIfSet("rx_agc", rx_auto_gain_control);
     ost << ToStringIfSet("ns", noise_suppression);
     ost << ToStringIfSet("hf", highpass_filter);
     ost << ToStringIfSet("swap", stereo_swapping);
@@ -248,10 +238,6 @@ struct AudioOptions {
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
         tx_agc_digital_compression_gain);
     ost << ToStringIfSet("tx_agc_limiter", tx_agc_limiter);
-    ost << ToStringIfSet("rx_agc_target_dbov", rx_agc_target_dbov);
-    ost << ToStringIfSet("rx_agc_digital_compression_gain",
-        rx_agc_digital_compression_gain);
-    ost << ToStringIfSet("rx_agc_limiter", rx_agc_limiter);
     ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
     ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
     ost << ToStringIfSet("dscp", dscp);
@@ -265,8 +251,6 @@ struct AudioOptions {
   Settable<bool> echo_cancellation;
   // Audio processing to adjust the sensitivity of the local mic dynamically.
   Settable<bool> auto_gain_control;
-  // Audio processing to apply gain to the remote audio.
-  Settable<bool> rx_auto_gain_control;
   // Audio processing to filter out background noise.
   Settable<bool> noise_suppression;
   // Audio processing to remove background noise of lower frequencies.
@@ -291,9 +275,6 @@ struct AudioOptions {
   Settable<uint16_t> tx_agc_target_dbov;
   Settable<uint16_t> tx_agc_digital_compression_gain;
   Settable<bool> tx_agc_limiter;
-  Settable<uint16_t> rx_agc_target_dbov;
-  Settable<uint16_t> rx_agc_digital_compression_gain;
-  Settable<bool> rx_agc_limiter;
   Settable<uint32_t> recording_sample_rate;
   Settable<uint32_t> playout_sample_rate;
   // Set DSCP value for packet sent from audio channel.

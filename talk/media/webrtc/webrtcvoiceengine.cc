@@ -148,6 +148,18 @@ const char kAecDumpByAudioOptionFilename[] = "/sdcard/audio.aecdump";
 const char kAecDumpByAudioOptionFilename[] = "audio.aecdump";
 #endif
 
+bool ValidateStreamParams(const StreamParams& sp) {
+  if (sp.ssrcs.empty()) {
+    LOG(LS_ERROR) << "No SSRCs in stream parameters: " << sp.ToString();
+    return false;
+  }
+  if (sp.ssrcs.size() > 1) {
+    LOG(LS_ERROR) << "Multiple SSRCs in stream parameters: " << sp.ToString();
+    return false;
+  }
+  return true;
+}
+
 // Dumps an AudioCodec in RFC 2327-ish format.
 std::string ToString(const AudioCodec& codec) {
   std::stringstream ss;
@@ -219,6 +231,19 @@ bool FindCodec(const std::vector<AudioCodec>& codecs,
     }
   }
   return false;
+}
+
+bool VerifyUniquePayloadTypes(const std::vector<AudioCodec>& codecs) {
+  if (codecs.empty()) {
+    return true;
+  }
+  std::vector<int> payload_types;
+  for (const AudioCodec& codec : codecs) {
+    payload_types.push_back(codec.id);
+  }
+  std::sort(payload_types.begin(), payload_types.end());
+  auto it = std::unique(payload_types.begin(), payload_types.end());
+  return it == payload_types.end();
 }
 
 bool IsNackEnabled(const AudioCodec& codec) {
@@ -1445,9 +1470,6 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
   // Check if DSCP value is changed from previous.
   bool dscp_option_changed = (options_.dscp != options.dscp);
 
-  // TODO(xians): Add support to set different options for different send
-  // streams after we support multiple APMs.
-
   // We retain all of the existing options, and apply the given ones
   // on top.  This means there is no way to "clear" options such that
   // they go back to the engine default.
@@ -1461,55 +1483,6 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
     }
   }
 
-  // Receiver-side auto gain control happens per channel, so set it here from
-  // options. Note that, like conference mode, setting it on the engine won't
-  // have the desired effect, since voice channels don't inherit options from
-  // the media engine when those options are applied per-channel.
-  bool rx_auto_gain_control;
-  if (options.rx_auto_gain_control.Get(&rx_auto_gain_control)) {
-    if (engine()->voe()->processing()->SetRxAgcStatus(
-            voe_channel(), rx_auto_gain_control,
-            webrtc::kAgcFixedDigital) == -1) {
-      LOG_RTCERR1(SetRxAgcStatus, rx_auto_gain_control);
-      return false;
-    } else {
-      LOG(LS_VERBOSE) << "Rx auto gain set to " << rx_auto_gain_control
-                      << " with mode " << webrtc::kAgcFixedDigital;
-    }
-  }
-  if (options.rx_agc_target_dbov.IsSet() ||
-      options.rx_agc_digital_compression_gain.IsSet() ||
-      options.rx_agc_limiter.IsSet()) {
-    webrtc::AgcConfig config;
-    // If only some of the options are being overridden, get the current
-    // settings for the channel and bail if they aren't available.
-    if (!options.rx_agc_target_dbov.IsSet() ||
-        !options.rx_agc_digital_compression_gain.IsSet() ||
-        !options.rx_agc_limiter.IsSet()) {
-      if (engine()->voe()->processing()->GetRxAgcConfig(
-              voe_channel(), config) != 0) {
-        LOG(LS_ERROR) << "Failed to get default rx agc configuration for "
-                      << "channel " << voe_channel() << ". Since not all rx "
-                      << "agc options are specified, unable to safely set rx "
-                      << "agc options.";
-        return false;
-      }
-    }
-    config.targetLeveldBOv =
-        options.rx_agc_target_dbov.GetWithDefaultIfUnset(
-            config.targetLeveldBOv);
-    config.digitalCompressionGaindB =
-        options.rx_agc_digital_compression_gain.GetWithDefaultIfUnset(
-            config.digitalCompressionGaindB);
-    config.limiterEnable = options.rx_agc_limiter.GetWithDefaultIfUnset(
-        config.limiterEnable);
-    if (engine()->voe()->processing()->SetRxAgcConfig(
-            voe_channel(), config) == -1) {
-      LOG_RTCERR4(SetRxAgcConfig, voe_channel(), config.targetLeveldBOv,
-                  config.digitalCompressionGaindB, config.limiterEnable);
-      return false;
-    }
-  }
   if (dscp_option_changed) {
     rtc::DiffServCodePoint dscp = rtc::DSCP_DEFAULT;
     if (options_.dscp.GetWithDefaultIfUnset(false))
@@ -1518,9 +1491,7 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
       LOG(LS_WARNING) << "Failed to set DSCP settings for audio channel";
     }
   }
-
   RecreateAudioReceiveStreams();
-
   LOG(LS_INFO) << "Set voice channel options.  Current options: "
                << options_.ToString();
   return true;
@@ -1528,9 +1499,14 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
 
 bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     const std::vector<AudioCodec>& codecs) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   // Set the payload types to be used for incoming media.
-  LOG(LS_INFO) << "Setting receive voice codecs:";
+  LOG(LS_INFO) << "Setting receive voice codecs.";
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
+  if (!VerifyUniquePayloadTypes(codecs)) {
+    LOG(LS_ERROR) << "Codec payload types overlap.";
+    return false;
+  }
 
   std::vector<AudioCodec> new_codecs;
   // Find all new codecs. We allow adding new codecs but don't allow changing
@@ -2229,16 +2205,17 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "AddRecvStream: " << sp.ToString();
 
-  rtc::CritScope lock(&receive_channels_cs_);
-
-  if (!VERIFY(sp.ssrcs.size() == 1))
-    return false;
-  uint32_t ssrc = sp.first_ssrc();
-
-  if (ssrc == 0) {
-    LOG(LS_WARNING) << "AddRecvStream with 0 ssrc is not supported.";
+  if (!ValidateStreamParams(sp)) {
     return false;
   }
+
+  uint32_t ssrc = sp.first_ssrc();
+  if (ssrc == 0) {
+    LOG(LS_WARNING) << "AddRecvStream with ssrc==0 is not supported.";
+    return false;
+  }
+
+  rtc::CritScope lock(&receive_channels_cs_);
 
   if (receive_channels_.find(ssrc) != receive_channels_.end()) {
     LOG(LS_ERROR) << "Stream already exists with ssrc " << ssrc;
@@ -2667,16 +2644,19 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
     return;
   }
 
-  // If it is a sender report, find the channel that is listening.
+  // If it is a sender report, find the receive channel that is listening.
   bool has_sent_to_default_channel = false;
   if (type == kRtcpTypeSR) {
-    int which_channel =
-        GetReceiveChannelId(ParseSsrc(packet->data(), packet->size(), true));
-    if (which_channel != -1) {
+    uint32_t ssrc = 0;
+    if (!GetRtcpSsrc(packet->data(), packet->size(), &ssrc)) {
+      return;
+    }
+    int recv_channel_id = GetReceiveChannelId(ssrc);
+    if (recv_channel_id != -1) {
       engine()->voe()->network()->ReceivedRTCPPacket(
-          which_channel, packet->data(), packet->size());
+          recv_channel_id, packet->data(), packet->size());
 
-      if (IsDefaultChannel(which_channel))
+      if (IsDefaultChannel(recv_channel_id))
         has_sent_to_default_channel = true;
     }
   }
