@@ -32,6 +32,9 @@ import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
+import android.opengl.EGLContext;
+import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
 import android.os.Build;
 import android.view.Surface;
 
@@ -62,7 +65,7 @@ public class MediaCodecVideoDecoder {
   }
 
   private static final int DEQUEUE_INPUT_TIMEOUT = 500000;  // 500 ms timeout.
-  private static Thread mediaCodecThread;
+  private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] inputBuffers;
   private ByteBuffer[] outputBuffers;
@@ -172,18 +175,6 @@ public class MediaCodecVideoDecoder {
     return findDecoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null;
   }
 
-  public static void printStackTrace() {
-    if (mediaCodecThread != null) {
-      StackTraceElement[] mediaCodecStackTraces = mediaCodecThread.getStackTrace();
-      if (mediaCodecStackTraces.length > 0) {
-        Logging.d(TAG, "MediaCodecVideoDecoder stacks trace:");
-        for (StackTraceElement stackTrace : mediaCodecStackTraces) {
-          Logging.d(TAG, stackTrace.toString());
-        }
-      }
-    }
-  }
-
   private void checkOnMediaCodecThread() throws IllegalStateException {
     if (mediaCodecThread.getId() != Thread.currentThread().getId()) {
       throw new IllegalStateException(
@@ -195,7 +186,7 @@ public class MediaCodecVideoDecoder {
   // Pass null in |surfaceTextureHelper| to configure the codec for ByteBuffer output.
   private boolean initDecode(
       VideoCodecType type, int width, int height, SurfaceTextureHelper surfaceTextureHelper) {
-    if (mediaCodec != null) {
+    if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
     }
     useSurface = (surfaceTextureHelper != null);
@@ -237,7 +228,6 @@ public class MediaCodecVideoDecoder {
       mediaCodec =
           MediaCodecVideoEncoder.createByCodecName(properties.codecName);
       if (mediaCodec == null) {
-        Logging.e(TAG, "Can not create media decoder");
         return false;
       }
       mediaCodec.configure(format, surface, null, 0);
@@ -270,7 +260,6 @@ public class MediaCodecVideoDecoder {
       surface = null;
       textureListener.release();
     }
-    Logging.d(TAG, "Java releaseDecoder done");
   }
 
   // Dequeue an input buffer and return its index, -1 if no input buffer is

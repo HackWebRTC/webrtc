@@ -36,10 +36,12 @@ import javax.microedition.khronos.opengles.GL10;
 import android.annotation.SuppressLint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 
 import org.webrtc.Logging;
 import org.webrtc.VideoRenderer.I420Frame;
@@ -75,9 +77,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   // Current SDK version.
   private static final int CURRENT_SDK_VERSION =
       android.os.Build.VERSION.SDK_INT;
-  // Render and draw threads.
-  private static Thread renderFrameThread;
-  private static Thread drawThread;
 
   private VideoRendererGui(GLSurfaceView surface) {
     this.surface = surface;
@@ -373,9 +372,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         VideoRenderer.renderFrameDone(frame);
         return;
       }
-      if (renderFrameThread == null) {
-        renderFrameThread = Thread.currentThread();
-      }
       if (!seenFrame && rendererEvents != null) {
         Logging.d(TAG, "ID: " + id + ". Reporting first rendered frame.");
         rendererEvents.onFirstFrameRendered();
@@ -398,7 +394,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           // Skip rendering of this frame if previous frame was not rendered yet.
           framesDropped++;
           VideoRenderer.renderFrameDone(frame);
-          seenFrame = true;
           return;
         }
         pendingFrame = frame;
@@ -435,8 +430,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
       instance.yuvImageRenderers.clear();
     }
-    renderFrameThread = null;
-    drawThread = null;
     instance.surface = null;
     eglContext = null;
     eglContextReady = null;
@@ -572,26 +565,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
   }
 
-  private static void printStackTrace(Thread thread, String threadName) {
-    if (thread != null) {
-      StackTraceElement[] stackTraces = thread.getStackTrace();
-      if (stackTraces.length > 0) {
-        Logging.d(TAG, threadName + " stacks trace:");
-        for (StackTraceElement stackTrace : stackTraces) {
-          Logging.d(TAG, stackTrace.toString());
-        }
-      }
-    }
-  }
-
-  public static synchronized void printStackTraces() {
-    if (instance == null) {
-      return;
-    }
-    printStackTrace(renderFrameThread, "Render frame thread");
-    printStackTrace(drawThread, "Draw thread");
-  }
-
   @SuppressLint("NewApi")
   @Override
   public void onSurfaceCreated(GL10 unused, EGLConfig config) {
@@ -640,9 +613,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   @Override
   public void onDrawFrame(GL10 unused) {
-    if (drawThread == null) {
-      drawThread = Thread.currentThread();
-    }
     GLES20.glViewport(0, 0, screenWidth, screenHeight);
     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
     synchronized (yuvImageRenderers) {
