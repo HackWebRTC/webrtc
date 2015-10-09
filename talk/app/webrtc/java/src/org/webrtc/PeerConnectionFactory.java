@@ -148,19 +148,21 @@ public class PeerConnectionFactory {
     nativeThreadsCallbacks(nativeFactory);
   }
 
+  private static void printStackTrace(Thread thread, String threadName) {
+    if (thread != null) {
+      StackTraceElement[] stackTraces = thread.getStackTrace();
+      if (stackTraces.length > 0) {
+        Logging.d(TAG, threadName + " stacks trace:");
+        for (StackTraceElement stackTrace : stackTraces) {
+          Logging.d(TAG, stackTrace.toString());
+        }
+      }
+    }
+  }
+
   public static void printStackTraces() {
-    if (workerThread != null) {
-      Logging.d(TAG, "Worker thread stacks trace:");
-      for (StackTraceElement stackTrace : workerThread.getStackTrace()) {
-        Logging.d(TAG, stackTrace.toString());
-      }
-    }
-    if (signalingThread != null) {
-      Logging.d(TAG, "Signaling thread stacks trace:");
-      for (StackTraceElement stackTrace : signalingThread.getStackTrace()) {
-        Logging.d(TAG, stackTrace.toString());
-      }
-    }
+    printStackTrace(workerThread, "Worker thread");
+    printStackTrace(signalingThread, "Signaling thread");
   }
 
   private static void onWorkerThreadReady() {

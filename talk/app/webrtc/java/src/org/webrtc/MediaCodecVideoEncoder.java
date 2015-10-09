@@ -25,7 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package org.webrtc;
 
 import android.media.MediaCodec;
@@ -62,7 +61,7 @@ public class MediaCodecVideoEncoder {
   }
 
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
-  private Thread mediaCodecThread;
+  private static Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
@@ -199,6 +198,18 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  public static void printStackTrace() {
+    if (mediaCodecThread != null) {
+      StackTraceElement[] mediaCodecStackTraces = mediaCodecThread.getStackTrace();
+      if (mediaCodecStackTraces.length > 0) {
+        Logging.d(TAG, "MediaCodecVideoEncoder stacks trace:");
+        for (StackTraceElement stackTrace : mediaCodecStackTraces) {
+          Logging.d(TAG, stackTrace.toString());
+        }
+      }
+    }
+  }
+
   static MediaCodec createByCodecName(String codecName) {
     try {
       // In the L-SDK this call can throw IOException so in order to work in
@@ -215,7 +226,7 @@ public class MediaCodecVideoEncoder {
     Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
         ". @ " + kbps + " kbps. Fps: " + fps +
         ". Color: 0x" + Integer.toHexString(colorFormat));
-    if (mediaCodecThread != null) {
+    if (mediaCodec != null) {
       throw new RuntimeException("Forgot to release()?");
     }
     this.type = type;
@@ -245,6 +256,7 @@ public class MediaCodecVideoEncoder {
       Logging.d(TAG, "  Format: " + format);
       mediaCodec = createByCodecName(properties.codecName);
       if (mediaCodec == null) {
+        Logging.e(TAG, "Can not create media encoder");
         return null;
       }
       mediaCodec.configure(
@@ -298,6 +310,7 @@ public class MediaCodecVideoEncoder {
     }
     mediaCodec = null;
     mediaCodecThread = null;
+    Logging.d(TAG, "Java releaseEncoder done");
   }
 
   private boolean setRates(int kbps, int frameRateIgnored) {
