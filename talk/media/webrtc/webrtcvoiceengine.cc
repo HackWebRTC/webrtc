@@ -1330,10 +1330,6 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
       RTC_DCHECK(renderer_ == renderer);
       return;
     }
-
-    // TODO(xians): Remove AddChannel() call after Chrome turns on APM
-    // in getUserMedia by default.
-    renderer->AddChannel(channel_);
     renderer->SetSink(this);
     renderer_ = renderer;
   }
@@ -1343,12 +1339,10 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
   // This method is called on the libjingle worker thread.
   void Stop() {
     rtc::CritScope lock(&lock_);
-    if (renderer_ == NULL)
-      return;
-
-    renderer_->RemoveChannel(channel_);
-    renderer_->SetSink(NULL);
-    renderer_ = NULL;
+    if (renderer_ != NULL) {
+      renderer_->SetSink(NULL);
+      renderer_ = NULL;
+    }
   }
 
   // AudioRenderer::Sink implementation.
