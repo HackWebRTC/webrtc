@@ -95,11 +95,11 @@ class RefCountedObject : public T {
   : T(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), ref_count_(0) {
   }
 
-  int AddRef() const override {
+  virtual int AddRef() const {
     return AtomicOps::Increment(&ref_count_);
   }
 
-  int Release() const override {
+  virtual int Release() const {
     int count = AtomicOps::Decrement(&ref_count_);
     if (!count) {
       delete this;
