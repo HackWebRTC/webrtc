@@ -25,7 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package org.webrtc;
 
 import android.media.MediaCodec;
@@ -62,6 +61,7 @@ public class MediaCodecVideoEncoder {
   }
 
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
+  private static MediaCodecVideoEncoder instance = null;
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
@@ -103,7 +103,7 @@ public class MediaCodecVideoEncoder {
   private ByteBuffer configData = null;
 
   MediaCodecVideoEncoder() {
-    mediaCodecThread = null;
+    instance = this;
   }
 
   // Helper struct for findHwEncoder() below.
@@ -199,6 +199,18 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  public static void printStackTrace() {
+    if (instance != null && instance.mediaCodecThread != null) {
+      StackTraceElement[] mediaCodecStackTraces = instance.mediaCodecThread.getStackTrace();
+      if (mediaCodecStackTraces.length > 0) {
+        Logging.d(TAG, "MediaCodecVideoEncoder stacks trace:");
+        for (StackTraceElement stackTrace : mediaCodecStackTraces) {
+          Logging.d(TAG, stackTrace.toString());
+        }
+      }
+    }
+  }
+
   static MediaCodec createByCodecName(String codecName) {
     try {
       // In the L-SDK this call can throw IOException so in order to work in
@@ -245,6 +257,7 @@ public class MediaCodecVideoEncoder {
       mediaCodec = createByCodecName(properties.codecName);
       this.type = type;
       if (mediaCodec == null) {
+        Logging.e(TAG, "Can not create media encoder");
         return false;
       }
       mediaCodec.configure(
@@ -302,6 +315,8 @@ public class MediaCodecVideoEncoder {
     }
     mediaCodec = null;
     mediaCodecThread = null;
+    instance = null;
+    Logging.d(TAG, "Java releaseEncoder done");
   }
 
   private boolean setRates(int kbps, int frameRateIgnored) {
