@@ -20,8 +20,8 @@ namespace rtc {
 // Reference count interface.
 class RefCountInterface {
  public:
-  virtual int AddRef() = 0;
-  virtual int Release() = 0;
+  virtual int AddRef() const = 0;
+  virtual int Release() const = 0;
  protected:
   virtual ~RefCountInterface() {}
 };
@@ -95,11 +95,11 @@ class RefCountedObject : public T {
   : T(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), ref_count_(0) {
   }
 
-  virtual int AddRef() {
+  int AddRef() const override {
     return AtomicOps::Increment(&ref_count_);
   }
 
-  virtual int Release() {
+  int Release() const override {
     int count = AtomicOps::Decrement(&ref_count_);
     if (!count) {
       delete this;
@@ -121,7 +121,7 @@ class RefCountedObject : public T {
   virtual ~RefCountedObject() {
   }
 
-  volatile int ref_count_;
+  mutable volatile int ref_count_;
 };
 
 }  // namespace rtc

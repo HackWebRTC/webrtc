@@ -61,11 +61,11 @@ class RefCountImpl : public T {
   RefCountImpl(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
       : T(p1, p2, p3, p4, p5), ref_count_(0) {}
 
-  virtual int32_t AddRef() {
+  int32_t AddRef() const override {
     return ++ref_count_;
   }
 
-  virtual int32_t Release() {
+  int32_t Release() const override {
     int32_t ref_count;
     ref_count = --ref_count_;
     if (ref_count == 0)
@@ -74,7 +74,7 @@ class RefCountImpl : public T {
   }
 
  protected:
-  Atomic32 ref_count_;
+  mutable Atomic32 ref_count_;
 };
 
 }  // namespace webrtc

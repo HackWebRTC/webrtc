@@ -101,8 +101,8 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
       const webrtc::VideoCodec& codec) override {
     return NULL;  // not implemented
   }
-  int32_t AddRef() override { return 0; }
-  int32_t Release() override {
+  int32_t AddRef() const override { return 0; }
+  int32_t Release() const override {
     delete this;
     return 0;
   }

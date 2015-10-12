@@ -22,8 +22,8 @@ class MockVideoCaptureModule : public VideoCaptureModule {
   MOCK_METHOD0(Process, int32_t());
 
   // from RefCountedModule
-  MOCK_METHOD0(AddRef, int32_t());
-  MOCK_METHOD0(Release, int32_t());
+  MOCK_CONST_METHOD0(AddRef, int32_t());
+  MOCK_CONST_METHOD0(Release, int32_t());
 
   // from VideoCaptureModule
   MOCK_METHOD1(RegisterCaptureDataCallback,

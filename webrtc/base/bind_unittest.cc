@@ -108,6 +108,7 @@ EXPECT_IS_CAPTURED_AS_SCOPED_REFPTR(F);
 EXPECT_IS_CAPTURED_AS_SCOPED_REFPTR(RefCountedObject<RefCountInterface>);
 EXPECT_IS_CAPTURED_AS_SCOPED_REFPTR(RefCountedObject<B>);
 EXPECT_IS_CAPTURED_AS_SCOPED_REFPTR(RefCountedObject<C>);
+EXPECT_IS_CAPTURED_AS_SCOPED_REFPTR(const RefCountedObject<RefCountInterface>);
 
 TEST(BindTest, BindToMethod) {
   MethodBindTester object = {0};

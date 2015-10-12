@@ -34,6 +34,7 @@
 #include "talk/app/webrtc/audiotrack.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/refcount.h"
 #include "webrtc/base/timeutils.h"
 
 using webrtc::AudioTrackInterface;
@@ -45,7 +46,7 @@ using webrtc::DtmfSenderObserverInterface;
 static const char kTestAudioLabel[] = "test_audio_track";
 static const int kMaxWaitMs = 3000;
 
-class FakeDtmfObserver : public DtmfSenderObserverInterface {
+class FakeDtmfObserver : public DtmfSenderObserverInterface, RefCountInterface {
  public:
   FakeDtmfObserver() : completed_(false) {}
 

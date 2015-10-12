@@ -16,8 +16,8 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
  public:
   FakeAudioDeviceModule() {}
   virtual ~FakeAudioDeviceModule() {}
-  virtual int32_t AddRef() { return 0; }
-  virtual int32_t Release() { return 0; }
+  virtual int32_t AddRef() const { return 0; }
+  virtual int32_t Release() const { return 0; }
   virtual int32_t RegisterEventObserver(AudioDeviceObserver* eventCallback) {
     return 0;
   }
