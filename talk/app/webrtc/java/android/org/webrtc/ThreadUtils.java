@@ -27,6 +27,9 @@
 
 package org.webrtc;
 
+import android.os.Handler;
+
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 final class ThreadUtils {
@@ -99,5 +102,28 @@ final class ThreadUtils {
         latch.await();
       }
     });
+  }
+
+  /**
+   * Post |callable| to |handler| and wait for the result.
+   */
+  public static <V> V invokeUninterruptibly(final Handler handler, final Callable<V> callable) {
+    class Result {
+      public V value;
+    }
+    final Result result = new Result();
+    final CountDownLatch barrier = new CountDownLatch(1);
+    handler.post(new Runnable() {
+      @Override public void run() {
+        try {
+          result.value = callable.call();
+        } catch (Exception e) {
+          throw new RuntimeException("Callable threw exception: " + e);
+        }
+        barrier.countDown();
+      }
+    });
+    awaitUninterruptibly(barrier);
+    return result.value;
   }
 }
