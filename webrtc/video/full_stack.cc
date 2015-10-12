@@ -23,15 +23,6 @@ class FullStackTest : public VideoQualityTest {
   }
 };
 
-// VideoQualityTest::Params params = {
-//   { ... },      // Common.
-//   { ... },      // Video-specific settings.
-//   { ... },      // Screenshare-specific settings.
-//   { ... },      // Analyzer settings.
-//   pipe,         // FakeNetworkPipe::Config
-//   { ... },      // Spatial scalability.
-//   logs          // bool
-// };
 
 TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
   VideoQualityTest::Params paris_qcif = {
@@ -129,16 +120,16 @@ TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
 
 TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
   VideoQualityTest::Params screenshare = {
-      {1850, 1110, 5, 50000, 200000, 2000000, "VP8", 2, 1, 400000},
-      {},
-      {true, 10},
+      {1850, 1110, 5, 50000, 200000, 2000000, "VP8", 2, 400000},
+      {},          // Video-specific.
+      {true, 10},  // Screenshare-specific.
       {"screenshare_slides", 0.0, 0.0, kFullStackTestDurationSecs}};
   RunTest(screenshare);
 }
 
 TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
   VideoQualityTest::Params config = {
-      {1850, 1110 / 2, 5, 50000, 200000, 2000000, "VP8", 2, 1, 400000},
+      {1850, 1110 / 2, 5, 50000, 200000, 2000000, "VP8", 2, 400000},
       {},
       {true, 10, 2},
       {"screenshare_slides_scrolling", 0.0, 0.0, kFullStackTestDurationSecs}};
@@ -147,7 +138,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
 
 TEST_F(FullStackTest, ScreenshareSlidesVP9_2TL) {
   VideoQualityTest::Params screenshare = {
-      {1850, 1110, 5, 50000, 200000, 2000000, "VP9", 2, 1, 400000},
+      {1850, 1110, 5, 50000, 200000, 2000000, "VP9", 2, 400000},
       {},
       {true, 10},
       {"screenshare_slides_vp9_2tl", 0.0, 0.0, kFullStackTestDurationSecs}};

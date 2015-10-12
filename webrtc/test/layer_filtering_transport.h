@@ -24,9 +24,8 @@ class LayerFilteringTransport : public test::DirectTransport {
   LayerFilteringTransport(const FakeNetworkPipe::Config& config,
                           uint8_t vp8_video_payload_type,
                           uint8_t vp9_video_payload_type,
-                          int selected_tl,
-                          int selected_sl);
-  bool DiscardedLastPacket() const;
+                          uint8_t tl_discard_threshold,
+                          uint8_t sl_discard_threshold);
   bool SendRtp(const uint8_t* data,
                size_t length,
                const PacketOptions& options) override;
@@ -36,13 +35,12 @@ class LayerFilteringTransport : public test::DirectTransport {
   // Used to distinguish between VP8 and VP9.
   const uint8_t vp8_video_payload_type_;
   const uint8_t vp9_video_payload_type_;
-  // Discard or invalidate all temporal/spatial layers with id greater than the
-  // selected one. -1 to disable filtering.
-  const int selected_tl_;
-  const int selected_sl_;
+  // Discard all temporal/spatial layers with id greater or equal the
+  // threshold. 0 to disable.
+  const uint8_t tl_discard_threshold_;
+  const uint8_t sl_discard_threshold_;
   // Current sequence number for each SSRC separately.
   std::map<uint32_t, uint16_t> current_seq_nums_;
-  bool discarded_last_packet_;
 };
 
 }  // namespace test

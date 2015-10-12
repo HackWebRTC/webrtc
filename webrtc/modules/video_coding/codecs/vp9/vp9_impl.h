@@ -56,7 +56,6 @@ class VP9EncoderImpl : public VP9Encoder {
                              const vpx_codec_cx_pkt& pkt,
                              uint32_t timestamp);
 
-  bool ExplicitlyConfiguredSpatialLayers() const;
   bool SetSvcRates();
 
   virtual int GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt);

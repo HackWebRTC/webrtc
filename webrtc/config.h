@@ -104,7 +104,6 @@ struct VideoEncoderConfig {
   std::string ToString() const;
 
   std::vector<VideoStream> streams;
-  std::vector<SpatialLayer> spatial_layers;
   ContentType content_type;
   void* encoder_specific_settings;
 

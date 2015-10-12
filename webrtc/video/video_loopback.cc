@@ -20,7 +20,6 @@
 namespace webrtc {
 namespace flags {
 
-// Flags common with screenshare loopback, with different default values.
 DEFINE_int32(width, 640, "Video width.");
 size_t Width() {
   return static_cast<size_t>(FLAGS_width);
@@ -56,43 +55,9 @@ int MaxBitrateKbps() {
   return static_cast<int>(FLAGS_max_bitrate);
 }
 
-DEFINE_int32(num_temporal_layers,
-             1,
-             "Number of temporal layers. Set to 1-4 to override.");
-int NumTemporalLayers() {
-  return static_cast<int>(FLAGS_num_temporal_layers);
-}
-
-// Flags common with screenshare loopback, with equal default values.
 DEFINE_string(codec, "VP8", "Video codec to use.");
 std::string Codec() {
   return static_cast<std::string>(FLAGS_codec);
-}
-
-DEFINE_int32(selected_tl,
-             -1,
-             "Temporal layer to show or analyze. -1 to disable filtering.");
-int SelectedTL() {
-  return static_cast<int>(FLAGS_selected_tl);
-}
-
-DEFINE_int32(
-    duration,
-    0,
-    "Duration of the test in seconds. If 0, rendered will be shown instead.");
-int DurationSecs() {
-  return static_cast<int>(FLAGS_duration);
-}
-
-DEFINE_string(output_filename, "", "Target graph data filename.");
-std::string OutputFilename() {
-  return static_cast<std::string>(FLAGS_output_filename);
-}
-
-DEFINE_string(
-    graph_title, "", "If empty, title will be generated automatically.");
-std::string GraphTitle() {
-  return static_cast<std::string>(FLAGS_graph_title);
 }
 
 DEFINE_int32(loss_percent, 0, "Percentage of packets randomly lost.");
@@ -126,52 +91,7 @@ int StdPropagationDelayMs() {
   return static_cast<int>(FLAGS_std_propagation_delay_ms);
 }
 
-DEFINE_int32(selected_stream, 0, "ID of the stream to show or analyze.");
-int SelectedStream() {
-  return static_cast<int>(FLAGS_selected_stream);
-}
-
-DEFINE_int32(num_spatial_layers, 1, "Number of spatial layers to use.");
-int NumSpatialLayers() {
-  return static_cast<int>(FLAGS_num_spatial_layers);
-}
-
-DEFINE_int32(selected_sl,
-             -1,
-             "Spatial layer to show or analyze. -1 to disable filtering.");
-int SelectedSL() {
-  return static_cast<int>(FLAGS_selected_sl);
-}
-
-DEFINE_string(stream0,
-              "",
-              "Comma separated values describing VideoStream for stream #0.");
-std::string Stream0() {
-  return static_cast<std::string>(FLAGS_stream0);
-}
-
-DEFINE_string(stream1,
-              "",
-              "Comma separated values describing VideoStream for stream #1.");
-std::string Stream1() {
-  return static_cast<std::string>(FLAGS_stream1);
-}
-
-DEFINE_string(
-    sl0, "", "Comma separated values describing SpatialLayer for layer #0.");
-std::string SL0() {
-  return static_cast<std::string>(FLAGS_sl0);
-}
-
-DEFINE_string(
-    sl1, "", "Comma separated values describing SpatialLayer for layer #1.");
-std::string SL1() {
-  return static_cast<std::string>(FLAGS_sl1);
-}
-
 DEFINE_bool(logs, false, "print logs to stderr");
-
-DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
 
 DEFINE_string(
     force_fieldtrials,
@@ -181,13 +101,42 @@ DEFINE_string(
     " will assign the group Enable to field trial WebRTC-FooFeature. Multiple "
     "trials are separated by \"/\"");
 
-// Video-specific flags.
+DEFINE_int32(num_temporal_layers,
+             1,
+             "Number of temporal layers. Set to 1-4 to override.");
+size_t NumTemporalLayers() {
+  return static_cast<size_t>(FLAGS_num_temporal_layers);
+}
+
+DEFINE_int32(
+    tl_discard_threshold,
+    0,
+    "Discard TLs with id greater or equal the threshold. 0 to disable.");
+size_t TLDiscardThreshold() {
+  return static_cast<size_t>(FLAGS_tl_discard_threshold);
+}
+
 DEFINE_string(clip,
               "",
               "Name of the clip to show. If empty, using chroma generator.");
 std::string Clip() {
   return static_cast<std::string>(FLAGS_clip);
 }
+
+DEFINE_string(
+    output_filename,
+    "",
+    "Name of a target graph data file. If set, no preview will be shown.");
+std::string OutputFilename() {
+  return static_cast<std::string>(FLAGS_output_filename);
+}
+
+DEFINE_int32(duration, 60, "Duration of the test in seconds.");
+int DurationSecs() {
+  return static_cast<int>(FLAGS_duration);
+}
+
+DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
 
 }  // namespace flags
 
@@ -204,35 +153,27 @@ void Loopback() {
   call_bitrate_config.start_bitrate_bps = flags::StartBitrateKbps() * 1000;
   call_bitrate_config.max_bitrate_bps = flags::MaxBitrateKbps() * 1000;
 
+  std::string clip = flags::Clip();
+  std::string graph_title = clip.empty() ? "" : "video " + clip;
   VideoQualityTest::Params params{
       {flags::Width(), flags::Height(), flags::Fps(),
        flags::MinBitrateKbps() * 1000, flags::TargetBitrateKbps() * 1000,
        flags::MaxBitrateKbps() * 1000, flags::Codec(),
-       flags::NumTemporalLayers(), flags::SelectedTL(),
+       flags::NumTemporalLayers(),
        0,  // No min transmit bitrate.
-       call_bitrate_config, flags::FLAGS_send_side_bwe},
-      {flags::Clip()},
+       call_bitrate_config, flags::TLDiscardThreshold(),
+       flags::FLAGS_send_side_bwe},
+      {clip},
       {},  // Screenshare specific.
-      {"video", 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename(),
-       flags::GraphTitle()},
+      {graph_title, 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename()},
       pipe_config,
       flags::FLAGS_logs};
 
-  std::vector<std::string> stream_descriptors;
-  stream_descriptors.push_back(flags::Stream0());
-  stream_descriptors.push_back(flags::Stream1());
-  std::vector<std::string> SL_descriptors;
-  SL_descriptors.push_back(flags::SL0());
-  SL_descriptors.push_back(flags::SL1());
-  VideoQualityTest::FillScalabilitySettings(&params, stream_descriptors,
-      flags::SelectedStream(), flags::NumSpatialLayers(), flags::SelectedSL(),
-      SL_descriptors);
-
   VideoQualityTest test;
-  if (flags::DurationSecs())
-    test.RunWithAnalyzer(params);
-  else
+  if (flags::OutputFilename().empty())
     test.RunWithVideoRenderer(params);
+  else
+    test.RunWithAnalyzer(params);
 }
 }  // namespace webrtc
 
