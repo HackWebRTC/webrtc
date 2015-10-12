@@ -31,6 +31,8 @@
 
 #include <jni.h>
 
+#include "webrtc/common_video/interface/video_frame_buffer.h"
+
 namespace webrtc_jni {
 
 // Wrapper for texture object.
@@ -41,6 +43,20 @@ struct NativeHandleImpl {
 
   const int oes_texture_id;
   float sampling_matrix[16];
+};
+
+class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
+ public:
+  AndroidTextureBuffer(int width,
+                       int height,
+                       const NativeHandleImpl& native_handle,
+                       const rtc::Callback0<void>& no_longer_used);
+  ~AndroidTextureBuffer();
+  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
+
+ private:
+  NativeHandleImpl native_handle_;
+  rtc::Callback0<void> no_longer_used_cb_;
 };
 
 }  // namespace webrtc_jni
