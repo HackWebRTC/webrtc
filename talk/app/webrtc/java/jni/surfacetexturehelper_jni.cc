@@ -30,10 +30,34 @@
 #include "talk/app/webrtc/java/jni/surfacetexturehelper_jni.h"
 
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
-#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 
 namespace webrtc_jni {
+
+class SurfaceTextureHelper::TextureBuffer : public webrtc::NativeHandleBuffer {
+ public:
+  TextureBuffer(int width,
+                int height,
+                const rtc::scoped_refptr<SurfaceTextureHelper>& pool,
+                const NativeHandleImpl& native_handle)
+      : webrtc::NativeHandleBuffer(&native_handle_, width, height),
+        native_handle_(native_handle),
+        pool_(pool) {}
+
+  ~TextureBuffer() {
+    pool_->ReturnTextureFrame();
+  }
+
+  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {
+    RTC_NOTREACHED()
+        << "SurfaceTextureHelper::NativeToI420Buffer not implemented.";
+    return nullptr;
+  }
+
+ private:
+  NativeHandleImpl native_handle_;
+  const rtc::scoped_refptr<SurfaceTextureHelper> pool_;
+};
 
 SurfaceTextureHelper::SurfaceTextureHelper(JNIEnv* jni,
                                            jobject egl_shared_context)
@@ -69,9 +93,8 @@ void SurfaceTextureHelper::ReturnTextureFrame() const {
 rtc::scoped_refptr<webrtc::VideoFrameBuffer>
 SurfaceTextureHelper::CreateTextureFrame(int width, int height,
     const NativeHandleImpl& native_handle) {
-  return new rtc::RefCountedObject<AndroidTextureBuffer>(
-      width, height, native_handle,
-      rtc::Bind(&SurfaceTextureHelper::ReturnTextureFrame, this));
+  return new rtc::RefCountedObject<TextureBuffer>(
+      width, height, this, native_handle);
 }
 
 }  // namespace webrtc_jni

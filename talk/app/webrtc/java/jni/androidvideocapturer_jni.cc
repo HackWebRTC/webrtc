@@ -34,6 +34,34 @@
 
 namespace webrtc_jni {
 
+namespace {
+
+class CameraTextureBuffer : public webrtc::NativeHandleBuffer {
+ public:
+  CameraTextureBuffer(int width, int height,
+      const NativeHandleImpl& native_handle,
+      const rtc::Callback0<void>& no_longer_used)
+      : webrtc::NativeHandleBuffer(&native_handle_, width, height),
+        native_handle_(native_handle),
+        no_longer_used_cb_(no_longer_used) {}
+
+  ~CameraTextureBuffer() {
+    no_longer_used_cb_();
+  }
+
+  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {
+    RTC_NOTREACHED()
+        << "CameraTextureBuffer::NativeToI420Buffer not implemented.";
+    return nullptr;
+  }
+
+ private:
+  NativeHandleImpl native_handle_;
+  rtc::Callback0<void> no_longer_used_cb_;
+};
+
+}  // anonymous namespace
+
 jobject AndroidVideoCapturerJni::application_context_ = nullptr;
 
 // static
@@ -185,7 +213,7 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
                                              int64_t timestamp_ns,
                                              const NativeHandleImpl& handle) {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
-      new rtc::RefCountedObject<AndroidTextureBuffer>(
+      new rtc::RefCountedObject<CameraTextureBuffer>(
           width, height, handle,
           rtc::Bind(&AndroidVideoCapturerJni::ReturnBuffer, this,
                     timestamp_ns)));
