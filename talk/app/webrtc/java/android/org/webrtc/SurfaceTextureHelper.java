@@ -105,7 +105,7 @@ final class SurfaceTextureHelper {
   private boolean isQuitting = false;
 
   private SurfaceTextureHelper(EGLContext sharedContext, Handler handler, boolean isOwningThread) {
-    if (!handler.getLooper().isCurrentThread()) {
+    if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("SurfaceTextureHelper must be created on the handler thread");
     }
     this.handler = handler;
@@ -169,7 +169,7 @@ final class SurfaceTextureHelper {
    * onTextureFrameAvailable() after this function returns.
    */
   public void disconnect() {
-    if (handler.getLooper().isCurrentThread()) {
+    if (handler.getLooper().getThread() == Thread.currentThread()) {
       isQuitting = true;
       if (!isTextureInUse) {
         release();
@@ -190,7 +190,7 @@ final class SurfaceTextureHelper {
   }
 
   private void tryDeliverTextureFrame() {
-    if (!handler.getLooper().isCurrentThread()) {
+    if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("Wrong thread.");
     }
     if (isQuitting || !hasPendingTexture || isTextureInUse) {
@@ -211,7 +211,7 @@ final class SurfaceTextureHelper {
   }
 
   private void release() {
-    if (!handler.getLooper().isCurrentThread()) {
+    if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("Wrong thread.");
     }
     if (isTextureInUse || !isQuitting) {
