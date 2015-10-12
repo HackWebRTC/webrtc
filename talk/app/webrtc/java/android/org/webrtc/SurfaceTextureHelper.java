@@ -36,6 +36,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -63,7 +64,35 @@ final class SurfaceTextureHelper {
         int oesTextureId, float[] transformMatrix, long timestampNs);
   }
 
-  private final HandlerThread thread;
+  public static SurfaceTextureHelper create(EGLContext sharedContext) {
+    return create(sharedContext, null);
+  }
+
+  /**
+   * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|. If
+   * |handler| is non-null, the callback will be executed on that handler's thread. If |handler| is
+   * null, a dedicated private thread is created for the callbacks.
+   */
+  public static SurfaceTextureHelper create(final EGLContext sharedContext, final Handler handler) {
+    final Handler finalHandler;
+    if (handler != null) {
+      finalHandler = handler;
+    } else {
+      final HandlerThread thread = new HandlerThread(TAG);
+      thread.start();
+      finalHandler = new Handler(thread.getLooper());
+    }
+    // The onFrameAvailable() callback will be executed on the SurfaceTexture ctor thread. See:
+    // http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.1.1_r1/android/graphics/SurfaceTexture.java#195.
+    // Therefore, in order to control the callback thread on API lvl < 21, the SurfaceTextureHelper
+    // is constructed on the |handler| thread.
+    return ThreadUtils.invokeUninterruptibly(finalHandler, new Callable<SurfaceTextureHelper>() {
+      @Override public SurfaceTextureHelper call() {
+        return new SurfaceTextureHelper(sharedContext, finalHandler, (handler == null));
+      }
+    });
+  }
+
   private final Handler handler;
   private final boolean isOwningThread;
   private final EglBase eglBase;
@@ -75,23 +104,12 @@ final class SurfaceTextureHelper {
   private boolean isTextureInUse = false;
   private boolean isQuitting = false;
 
-  /**
-   * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|.
-   */
-  public SurfaceTextureHelper(EGLContext sharedContext) {
-    this(sharedContext, null);
-  }
-
-  public SurfaceTextureHelper(EGLContext sharedContext, HandlerThread thread) {
-    if (thread == null) {
-      this.thread = new HandlerThread(TAG);
-      this.thread.start();
-      this.isOwningThread = true;
-    } else {
-      this.thread = thread;
-      this.isOwningThread = false;
+  private SurfaceTextureHelper(EGLContext sharedContext, Handler handler, boolean isOwningThread) {
+    if (!handler.getLooper().isCurrentThread()) {
+      throw new IllegalStateException("SurfaceTextureHelper must be created on the handler thread");
     }
-    this.handler = new Handler(this.thread.getLooper());
+    this.handler = handler;
+    this.isOwningThread = isOwningThread;
 
     eglBase = new EglBase(sharedContext, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createDummyPbufferSurface();
@@ -99,9 +117,6 @@ final class SurfaceTextureHelper {
 
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     surfaceTexture = new SurfaceTexture(oesTextureId);
-
-    // The EGL context will be re-attached to the private thread.
-    eglBase.detachCurrent();
   }
 
   /**
@@ -119,7 +134,7 @@ final class SurfaceTextureHelper {
         hasPendingTexture = true;
         tryDeliverTextureFrame();
       }
-    }, handler);
+    });
   }
 
   /**
@@ -154,7 +169,7 @@ final class SurfaceTextureHelper {
    * onTextureFrameAvailable() after this function returns.
    */
   public void disconnect() {
-    if (Thread.currentThread() == thread) {
+    if (handler.getLooper().isCurrentThread()) {
       isQuitting = true;
       if (!isTextureInUse) {
         release();
@@ -175,7 +190,7 @@ final class SurfaceTextureHelper {
   }
 
   private void tryDeliverTextureFrame() {
-    if (Thread.currentThread() != thread) {
+    if (!handler.getLooper().isCurrentThread()) {
       throw new IllegalStateException("Wrong thread.");
     }
     if (isQuitting || !hasPendingTexture || isTextureInUse) {
@@ -196,7 +211,7 @@ final class SurfaceTextureHelper {
   }
 
   private void release() {
-    if (Thread.currentThread() != thread) {
+    if (!handler.getLooper().isCurrentThread()) {
       throw new IllegalStateException("Wrong thread.");
     }
     if (isTextureInUse || !isQuitting) {
@@ -207,7 +222,7 @@ final class SurfaceTextureHelper {
     surfaceTexture.release();
     eglBase.release();
     if (isOwningThread) {
-      thread.quitSafely();
+      handler.getLooper().quitSafely();
     }
   }
 }

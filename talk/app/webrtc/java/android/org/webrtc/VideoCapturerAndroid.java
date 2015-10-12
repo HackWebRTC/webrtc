@@ -314,9 +314,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     cameraThread.start();
     cameraThreadHandler = new Handler(cameraThread.getLooper());
     videoBuffers = new FramePool(cameraThread);
-    surfaceHelper =
-        new SurfaceTextureHelper(sharedContext == null ? EGL14.EGL_NO_CONTEXT : sharedContext,
-            cameraThread);
+    surfaceHelper = SurfaceTextureHelper.create(
+        sharedContext == null ? EGL14.EGL_NO_CONTEXT : sharedContext, cameraThreadHandler);
     if (sharedContext != null) {
       surfaceHelper.setListener(this);
     }

@@ -32,6 +32,7 @@ import android.test.suitebuilder.annotation.SmallTest;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.GLES20;
+import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 
@@ -113,7 +114,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
 
     // Create SurfaceTextureHelper and listener.
     final SurfaceTextureHelper surfaceTextureHelper =
-        new SurfaceTextureHelper(eglBase.getContext());
+        SurfaceTextureHelper.create(eglBase.getContext());
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.setListener(listener);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
@@ -179,7 +180,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
 
     // Create SurfaceTextureHelper and listener.
     final SurfaceTextureHelper surfaceTextureHelper =
-        new SurfaceTextureHelper(eglBase.getContext());
+        SurfaceTextureHelper.create(eglBase.getContext());
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.setListener(listener);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
@@ -238,7 +239,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   public static void testDisconnect() throws InterruptedException {
     // Create SurfaceTextureHelper and listener.
     final SurfaceTextureHelper surfaceTextureHelper =
-        new SurfaceTextureHelper(EGL14.EGL_NO_CONTEXT);
+        SurfaceTextureHelper.create(EGL14.EGL_NO_CONTEXT);
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.setListener(listener);
     // Create EglBase with the SurfaceTexture as target EGLSurface.
@@ -274,7 +275,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   @SmallTest
   public static void testDisconnectImmediately() {
     final SurfaceTextureHelper surfaceTextureHelper =
-        new SurfaceTextureHelper(EGL14.EGL_NO_CONTEXT);
+        SurfaceTextureHelper.create(EGL14.EGL_NO_CONTEXT);
     surfaceTextureHelper.disconnect();
   }
 
@@ -286,10 +287,11 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   public static void testFrameOnSeparateThread() throws InterruptedException {
     final HandlerThread thread = new HandlerThread("SurfaceTextureHelperTestThread");
     thread.start();
+    final Handler handler = new Handler(thread.getLooper());
 
     // Create SurfaceTextureHelper and listener.
     final SurfaceTextureHelper surfaceTextureHelper =
-        new SurfaceTextureHelper(EGL14.EGL_NO_CONTEXT, thread);
+        SurfaceTextureHelper.create(EGL14.EGL_NO_CONTEXT, handler);
     // Create a mock listener and expect frames to be delivered on |thread|.
     final MockTextureListener listener = new MockTextureListener(thread);
     surfaceTextureHelper.setListener(listener);
