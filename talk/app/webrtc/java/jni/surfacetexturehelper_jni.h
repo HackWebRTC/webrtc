@@ -72,7 +72,6 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
   ~SurfaceTextureHelper();
 
  private:
-  class TextureBuffer;
   //  May be called on arbitrary thread.
   void ReturnTextureFrame() const;
 

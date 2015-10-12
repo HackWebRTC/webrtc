@@ -44,4 +44,24 @@ NativeHandleImpl::NativeHandleImpl(JNIEnv* jni,
   jni->ReleaseFloatArrayElements(j_transform_matrix, transform_matrix_ptr, 0);
 }
 
+AndroidTextureBuffer::AndroidTextureBuffer(
+    int width,
+    int height,
+    const NativeHandleImpl& native_handle,
+    const rtc::Callback0<void>& no_longer_used)
+    : webrtc::NativeHandleBuffer(&native_handle_, width, height),
+      native_handle_(native_handle),
+      no_longer_used_cb_(no_longer_used) {}
+
+AndroidTextureBuffer::~AndroidTextureBuffer() {
+  no_longer_used_cb_();
+}
+
+rtc::scoped_refptr<webrtc::VideoFrameBuffer>
+AndroidTextureBuffer::NativeToI420Buffer() {
+  RTC_NOTREACHED()
+      << "AndroidTextureBuffer::NativeToI420Buffer not implemented.";
+  return nullptr;
+}
+
 }  // namespace webrtc_jni
