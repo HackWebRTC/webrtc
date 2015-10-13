@@ -31,7 +31,6 @@
 
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/sctputils.h"
-#include "talk/media/sctp/sctpdataengine.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/refcount.h"
 
@@ -43,42 +42,6 @@ static size_t kMaxQueuedSendDataBytes = 16 * 1024 * 1024;
 enum {
   MSG_CHANNELREADY,
 };
-
-bool SctpSidAllocator::AllocateSid(rtc::SSLRole role, int* sid) {
-  int potential_sid = (role == rtc::SSL_CLIENT) ? 0 : 1;
-  while (!IsSidAvailable(potential_sid)) {
-    potential_sid += 2;
-    if (potential_sid > static_cast<int>(cricket::kMaxSctpSid)) {
-      return false;
-    }
-  }
-
-  *sid = potential_sid;
-  used_sids_.insert(potential_sid);
-  return true;
-}
-
-bool SctpSidAllocator::ReserveSid(int sid) {
-  if (!IsSidAvailable(sid)) {
-    return false;
-  }
-  used_sids_.insert(sid);
-  return true;
-}
-
-void SctpSidAllocator::ReleaseSid(int sid) {
-  auto it = used_sids_.find(sid);
-  if (it != used_sids_.end()) {
-    used_sids_.erase(it);
-  }
-}
-
-bool SctpSidAllocator::IsSidAvailable(int sid) const {
-  if (sid < 0 || sid > static_cast<int>(cricket::kMaxSctpSid)) {
-    return false;
-  }
-  return used_sids_.find(sid) == used_sids_.end();
-}
 
 DataChannel::PacketQueue::PacketQueue() : byte_count_(0) {}
 
@@ -294,9 +257,8 @@ void DataChannel::RemotePeerRequestClose() {
 
 void DataChannel::SetSctpSid(int sid) {
   ASSERT(config_.id < 0 && sid >= 0 && data_channel_type_ == cricket::DCT_SCTP);
-  if (config_.id == sid) {
+  if (config_.id == sid)
     return;
-  }
 
   config_.id = sid;
   provider_->AddSctpDataStream(sid);
@@ -312,13 +274,6 @@ void DataChannel::OnTransportChannelCreated() {
   if (config_.id >= 0) {
     provider_->AddSctpDataStream(config_.id);
   }
-}
-
-// The underlying transport channel was destroyed.
-// This function makes sure the DataChannel is disconnected and changes state to
-// kClosed.
-void DataChannel::OnTransportChannelDestroyed() {
-  DoClose();
 }
 
 void DataChannel::SetSendSsrc(uint32_t send_ssrc) {
@@ -337,6 +292,13 @@ void DataChannel::OnMessage(rtc::Message* msg) {
       OnChannelReady(true);
       break;
   }
+}
+
+// The underlaying data engine is closing.
+// This function makes sure the DataChannel is disconnected and changes state to
+// kClosed.
+void DataChannel::OnDataEngineClose() {
+  DoClose();
 }
 
 void DataChannel::OnDataReceived(cricket::DataChannel* channel,
@@ -396,12 +358,6 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
       return;
     }
     queued_received_data_.Push(buffer.release());
-  }
-}
-
-void DataChannel::OnStreamClosedRemotely(uint32_t sid) {
-  if (data_channel_type_ == cricket::DCT_SCTP && sid == config_.id) {
-    Close();
   }
 }
 
@@ -480,16 +436,12 @@ void DataChannel::UpdateState() {
 }
 
 void DataChannel::SetState(DataState state) {
-  if (state_ == state) {
+  if (state_ == state)
     return;
-  }
 
   state_ = state;
   if (observer_) {
     observer_->OnStateChange();
-  }
-  if (state_ == kClosed) {
-    SignalClosed(this);
   }
 }
 

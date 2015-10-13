@@ -200,6 +200,7 @@
         'app/webrtc/jsepsessiondescription_unittest.cc',
         'app/webrtc/localaudiosource_unittest.cc',
         'app/webrtc/mediastream_unittest.cc',
+        'app/webrtc/mediastreamsignaling_unittest.cc',
         'app/webrtc/peerconnection_unittest.cc',
         'app/webrtc/peerconnectionendtoend_unittest.cc',
         'app/webrtc/peerconnectionfactory_unittest.cc',

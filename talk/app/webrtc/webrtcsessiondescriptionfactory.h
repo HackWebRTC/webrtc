@@ -43,6 +43,7 @@ class TransportDescriptionFactory;
 namespace webrtc {
 class CreateSessionDescriptionObserver;
 class MediaConstraintsInterface;
+class MediaStreamSignaling;
 class SessionDescriptionInterface;
 class WebRtcSession;
 
@@ -91,26 +92,32 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   // Construct with DTLS disabled.
   WebRtcSessionDescriptionFactory(rtc::Thread* signaling_thread,
                                   cricket::ChannelManager* channel_manager,
+                                  MediaStreamSignaling* mediastream_signaling,
                                   WebRtcSession* session,
-                                  const std::string& session_id);
+                                  const std::string& session_id,
+                                  cricket::DataChannelType dct);
 
   // Construct with DTLS enabled using the specified |dtls_identity_store| to
   // generate a certificate.
   WebRtcSessionDescriptionFactory(
       rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
+      MediaStreamSignaling* mediastream_signaling,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       WebRtcSession* session,
-      const std::string& session_id);
+      const std::string& session_id,
+      cricket::DataChannelType dct);
 
   // Construct with DTLS enabled using the specified (already generated)
   // |certificate|.
   WebRtcSessionDescriptionFactory(
       rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
+      MediaStreamSignaling* mediastream_signaling,
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
       WebRtcSession* session,
-      const std::string& session_id);
+      const std::string& session_id,
+      cricket::DataChannelType dct);
   virtual ~WebRtcSessionDescriptionFactory();
 
   static void CopyCandidatesFromSessionDescription(
@@ -119,11 +126,10 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
 
   void CreateOffer(
       CreateSessionDescriptionObserver* observer,
-      const PeerConnectionInterface::RTCOfferAnswerOptions& options,
-      const cricket::MediaSessionOptions& session_options);
-  void CreateAnswer(CreateSessionDescriptionObserver* observer,
-                    const MediaConstraintsInterface* constraints,
-                    const cricket::MediaSessionOptions& session_options);
+      const PeerConnectionInterface::RTCOfferAnswerOptions& options);
+  void CreateAnswer(
+      CreateSessionDescriptionObserver* observer,
+      const MediaConstraintsInterface* constraints);
 
   void SetSdesPolicy(cricket::SecurePolicy secure_policy);
   cricket::SecurePolicy SdesPolicy() const;
@@ -147,11 +153,13 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   WebRtcSessionDescriptionFactory(
       rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
+      MediaStreamSignaling* mediastream_signaling,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       const rtc::scoped_refptr<WebRtcIdentityRequestObserver>&
           identity_request_observer,
       WebRtcSession* session,
       const std::string& session_id,
+      cricket::DataChannelType dct,
       bool dtls_enabled);
 
   // MessageHandler implementation.
@@ -175,6 +183,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   std::queue<CreateSessionDescriptionRequest>
       create_session_description_requests_;
   rtc::Thread* const signaling_thread_;
+  MediaStreamSignaling* const mediastream_signaling_;
   cricket::TransportDescriptionFactory transport_desc_factory_;
   cricket::MediaSessionDescriptionFactory session_desc_factory_;
   uint64_t session_version_;
@@ -184,6 +193,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   // TODO(jiayl): remove the dependency on session once bug 2264 is fixed.
   WebRtcSession* const session_;
   const std::string session_id_;
+  const cricket::DataChannelType data_channel_type_;
   CertificateRequestState certificate_request_state_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcSessionDescriptionFactory);

@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013 Google Inc.
+ * Copyright 2013 Google Inc
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -158,21 +158,4 @@ TEST_F(SctpUtilsTest, WriteParseAckMessage) {
   EXPECT_EQ(0x02, message_type);
 
   EXPECT_TRUE(webrtc::ParseDataChannelOpenAckMessage(packet));
-}
-
-TEST_F(SctpUtilsTest, TestIsOpenMessage) {
-  rtc::ByteBuffer open;
-  open.WriteUInt8(0x03);
-  EXPECT_TRUE(webrtc::IsOpenMessage(open));
-
-  rtc::ByteBuffer openAck;
-  openAck.WriteUInt8(0x02);
-  EXPECT_FALSE(webrtc::IsOpenMessage(open));
-
-  rtc::ByteBuffer invalid;
-  openAck.WriteUInt8(0x01);
-  EXPECT_FALSE(webrtc::IsOpenMessage(invalid));
-
-  rtc::ByteBuffer empty;
-  EXPECT_FALSE(webrtc::IsOpenMessage(empty));
 }

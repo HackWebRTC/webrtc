@@ -31,13 +31,12 @@
 
 #include "talk/app/webrtc/statscollector.h"
 
-#include "talk/app/webrtc/peerconnection.h"
-#include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
+#include "talk/app/webrtc/test/fakemediastreamsignaling.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/session/media/channelmanager.h"
@@ -55,7 +54,6 @@ using testing::DoAll;
 using testing::Field;
 using testing::Return;
 using testing::ReturnNull;
-using testing::ReturnRef;
 using testing::SetArgPointee;
 using webrtc::PeerConnectionInterface;
 using webrtc::StatsReport;
@@ -85,12 +83,12 @@ const uint32_t kSsrcOfTrack = 1234;
 class MockWebRtcSession : public webrtc::WebRtcSession {
  public:
   explicit MockWebRtcSession(cricket::ChannelManager* channel_manager)
-      : WebRtcSession(channel_manager,
-                      rtc::Thread::Current(),
-                      rtc::Thread::Current(),
-                      nullptr) {}
+    : WebRtcSession(channel_manager, rtc::Thread::Current(),
+                    rtc::Thread::Current(), NULL, NULL) {
+  }
   MOCK_METHOD0(voice_channel, cricket::VoiceChannel*());
   MOCK_METHOD0(video_channel, cricket::VideoChannel*());
+  MOCK_CONST_METHOD0(mediastream_signaling, const MediaStreamSignaling*());
   // Libjingle uses "local" for a outgoing track, and "remote" for a incoming
   // track.
   MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32_t, std::string*));
@@ -102,21 +100,6 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   MOCK_METHOD2(GetRemoteSSLCertificate,
                bool(const std::string& transport_name,
                     rtc::SSLCertificate** cert));
-};
-
-// The factory isn't really used; it just satisfies the base PeerConnection.
-class FakePeerConnectionFactory
-    : public rtc::RefCountedObject<PeerConnectionFactory> {};
-
-class MockPeerConnection
-    : public rtc::RefCountedObject<webrtc::PeerConnection> {
- public:
-  MockPeerConnection()
-      : rtc::RefCountedObject<webrtc::PeerConnection>(
-            new FakePeerConnectionFactory()) {}
-  MOCK_METHOD0(session, WebRtcSession*());
-  MOCK_CONST_METHOD0(sctp_data_channels,
-                     const std::vector<rtc::scoped_refptr<DataChannel>>&());
 };
 
 class MockVideoMediaChannel : public cricket::FakeVideoMediaChannel {
@@ -489,8 +472,9 @@ void InitVoiceReceiverInfo(cricket::VoiceReceiverInfo* voice_receiver_info) {
 
 class StatsCollectorForTest : public webrtc::StatsCollector {
  public:
-  explicit StatsCollectorForTest(PeerConnection* pc)
-      : StatsCollector(pc), time_now_(19477) {}
+  explicit StatsCollectorForTest(WebRtcSession* session) :
+      StatsCollector(session), time_now_(19477) {
+  }
 
   double GetTimeNow() override {
     return time_now_;
@@ -503,18 +487,15 @@ class StatsCollectorForTest : public webrtc::StatsCollector {
 class StatsCollectorTest : public testing::Test {
  protected:
   StatsCollectorTest()
-      : media_engine_(new cricket::FakeMediaEngine()),
-        channel_manager_(
-            new cricket::ChannelManager(media_engine_, rtc::Thread::Current())),
-        session_(channel_manager_.get()) {
+    : media_engine_(new cricket::FakeMediaEngine()),
+      channel_manager_(
+          new cricket::ChannelManager(media_engine_, rtc::Thread::Current())),
+      session_(channel_manager_.get()),
+      signaling_(channel_manager_.get()) {
     // By default, we ignore session GetStats calls.
     EXPECT_CALL(session_, GetTransportStats(_)).WillRepeatedly(Return(false));
-    // Add default returns for mock classes.
-    EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
-    EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-    EXPECT_CALL(pc_, session()).WillRepeatedly(Return(&session_));
-    EXPECT_CALL(pc_, sctp_data_channels())
-        .WillRepeatedly(ReturnRef(data_channels_));
+    EXPECT_CALL(session_, mediastream_signaling()).WillRepeatedly(
+        Return(&signaling_));
   }
 
   ~StatsCollectorTest() {}
@@ -574,16 +555,6 @@ class StatsCollectorTest : public testing::Test {
     stream_->AddTrack(audio_track_);
     EXPECT_CALL(session_, GetRemoteTrackIdBySsrc(kSsrcOfTrack, _))
         .WillOnce(DoAll(SetArgPointee<1>(kRemoteTrackId), Return(true)));
-  }
-
-  void AddDataChannel(cricket::DataChannelType type,
-                      const std::string& label,
-                      int id) {
-    InternalDataChannelInit config;
-    config.id = id;
-
-    data_channels_.push_back(DataChannel::Create(
-        &data_channel_provider_, cricket::DCT_SCTP, label, config));
   }
 
   StatsReport* AddCandidateReport(StatsCollector* collector,
@@ -673,7 +644,7 @@ class StatsCollectorTest : public testing::Test {
                               const std::vector<std::string>& local_ders,
                               const rtc::FakeSSLCertificate& remote_cert,
                               const std::vector<std::string>& remote_ders) {
-    StatsCollectorForTest stats(&pc_);
+    StatsCollectorForTest stats(&session_);
 
     StatsReports reports;  // returned values.
 
@@ -708,6 +679,8 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_CALL(session_, GetTransportStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                       Return(true)));
+    EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+    EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
 
     stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
 
@@ -761,13 +734,12 @@ class StatsCollectorTest : public testing::Test {
   cricket::FakeMediaEngine* media_engine_;
   rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
   MockWebRtcSession session_;
-  MockPeerConnection pc_;
+  FakeMediaStreamSignaling signaling_;
   FakeDataChannelProvider data_channel_provider_;
   cricket::SessionStats session_stats_;
   rtc::scoped_refptr<webrtc::MediaStream> stream_;
   rtc::scoped_refptr<webrtc::VideoTrack> track_;
   rtc::scoped_refptr<FakeAudioTrack> audio_track_;
-  std::vector<rtc::scoped_refptr<DataChannel>> data_channels_;
 };
 
 // Verify that ExtractDataInfo populates reports.
@@ -777,8 +749,14 @@ TEST_F(StatsCollectorTest, ExtractDataInfo) {
   const std::string state = DataChannelInterface::DataStateString(
       DataChannelInterface::DataState::kConnecting);
 
-  AddDataChannel(cricket::DCT_SCTP, label, id);
-  StatsCollectorForTest stats(&pc_);
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
+
+  InternalDataChannelInit config;
+  config.id = id;
+  signaling_.AddDataChannel(DataChannel::Create(
+      &data_channel_provider_, cricket::DCT_SCTP, label, config));
+  StatsCollectorForTest stats(&session_);
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
 
@@ -810,7 +788,7 @@ TEST_F(StatsCollectorTest, ExtractDataInfo) {
 
 // This test verifies that 64-bit counters are passed successfully.
 TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -856,7 +834,7 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
 
 // Test that BWE information is reported via stats.
 TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -913,9 +891,11 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
 // This test verifies that an object of type "googSession" always
 // exists in the returned stats.
 TEST_F(StatsCollectorTest, SessionObjectExists) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   StatsReports reports;  // returned values.
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   const StatsReport* session_report = FindNthReportByType(
@@ -926,9 +906,11 @@ TEST_F(StatsCollectorTest, SessionObjectExists) {
 // This test verifies that only one object of type "googSession" exists
 // in the returned stats.
 TEST_F(StatsCollectorTest, OnlyOneSessionObjectExists) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   StatsReports reports;  // returned values.
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
@@ -943,7 +925,7 @@ TEST_F(StatsCollectorTest, OnlyOneSessionObjectExists) {
 // This test verifies that the empty track report exists in the returned stats
 // without calling StatsCollector::UpdateStats.
 TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
@@ -968,7 +950,7 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
 // This test verifies that the empty track report exists in the returned stats
 // when StatsCollector::UpdateStats is called with ssrc stats.
 TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1036,7 +1018,7 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 // This test verifies that an SSRC object has the identifier of a Transport
 // stats object, and that this transport stats object exists in stats.
 TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1099,7 +1081,7 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
 // This test verifies that a remote stats object will not be created for
 // an outgoing SSRC where remote stats are not returned.
 TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   // The transport_name known by the video channel.
@@ -1108,6 +1090,9 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
       media_channel, NULL, kVcName, false);
   AddOutgoingVideoTrackStats();
   stats.AddStream(stream_);
+
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   StatsReports reports;
@@ -1120,7 +1105,7 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
 // This test verifies that a remote stats object will be created for
 // an outgoing SSRC where stats are returned.
 TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1171,7 +1156,7 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
 // This test verifies that the empty track report exists in the returned stats
 // when StatsCollector::UpdateStats is called with ssrc stats.
 TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1229,7 +1214,7 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
 // This test verifies the Ice Candidate report should contain the correct
 // information from local/remote candidates.
 TEST_F(StatsCollectorTest, IceCandidateReport) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   StatsReports reports;                     // returned values.
 
@@ -1359,7 +1344,7 @@ TEST_F(StatsCollectorTest, ChainlessCertificateReportsCreated) {
 // This test verifies that the stats are generated correctly when no
 // transport is present.
 TEST_F(StatsCollectorTest, NoTransport) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1384,6 +1369,9 @@ TEST_F(StatsCollectorTest, NoTransport) {
   EXPECT_CALL(session_, GetTransportStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
+
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
@@ -1418,7 +1406,7 @@ TEST_F(StatsCollectorTest, NoTransport) {
 // This test verifies that the stats are generated correctly when the transport
 // does not have any certificates.
 TEST_F(StatsCollectorTest, NoCertificates) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1447,6 +1435,9 @@ TEST_F(StatsCollectorTest, NoCertificates) {
   EXPECT_CALL(session_, GetTransportStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
+
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
 
@@ -1484,7 +1475,7 @@ TEST_F(StatsCollectorTest, UnsupportedDigestIgnored) {
 // This test verifies that a local stats object can get statistics via
 // AudioTrackInterface::GetStats() method.
 TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1519,7 +1510,7 @@ TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
 // This test verifies that audio receive streams populate stats reports
 // correctly.
 TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1548,7 +1539,7 @@ TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
 // This test verifies that a local stats object won't update its statistics
 // after a RemoveLocalAudioTrack() call.
 TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1609,7 +1600,7 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
 // This test verifies that when ongoing and incoming audio tracks are using
 // the same ssrc, they populate stats reports correctly.
 TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));
@@ -1696,7 +1687,7 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
 // TODO(xians): Figure out if it is possible to encapsulate the setup and
 // avoid duplication of code in test cases.
 TEST_F(StatsCollectorTest, TwoLocalTracksWithSameSsrc) {
-  StatsCollectorForTest stats(&pc_);
+  StatsCollectorForTest stats(&session_);
 
   EXPECT_CALL(session_, GetLocalCertificate(_, _))
       .WillRepeatedly(Return(false));

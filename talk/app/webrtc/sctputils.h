@@ -39,9 +39,6 @@ class Buffer;
 namespace webrtc {
 struct DataChannelInit;
 
-// Read the message type and return true if it's an OPEN message.
-bool IsOpenMessage(const rtc::Buffer& payload);
-
 bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
                                  std::string* label,
                                  DataChannelInit* config);

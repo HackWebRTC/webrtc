@@ -31,7 +31,6 @@
 #include "webrtc/base/gunit.h"
 
 using webrtc::DataChannel;
-using webrtc::SctpSidAllocator;
 
 class FakeDataChannelObserver : public webrtc::DataChannelObserver {
  public:
@@ -506,76 +505,4 @@ TEST_F(SctpDataChannelTest, NeverOpened) {
   provider_.set_transport_available(true);
   webrtc_data_channel_->OnTransportChannelCreated();
   webrtc_data_channel_->Close();
-}
-
-class SctpSidAllocatorTest : public testing::Test {
- protected:
-  SctpSidAllocator allocator_;
-};
-
-// Verifies that an even SCTP id is allocated for SSL_CLIENT and an odd id for
-// SSL_SERVER.
-TEST_F(SctpSidAllocatorTest, SctpIdAllocationBasedOnRole) {
-  int id;
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_SERVER, &id));
-  EXPECT_EQ(1, id);
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_CLIENT, &id));
-  EXPECT_EQ(0, id);
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_SERVER, &id));
-  EXPECT_EQ(3, id);
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_CLIENT, &id));
-  EXPECT_EQ(2, id);
-}
-
-// Verifies that SCTP ids of existing DataChannels are not reused.
-TEST_F(SctpSidAllocatorTest, SctpIdAllocationNoReuse) {
-  int old_id = 1;
-  EXPECT_TRUE(allocator_.ReserveSid(old_id));
-
-  int new_id;
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_SERVER, &new_id));
-  EXPECT_NE(old_id, new_id);
-
-  old_id = 0;
-  EXPECT_TRUE(allocator_.ReserveSid(old_id));
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_CLIENT, &new_id));
-  EXPECT_NE(old_id, new_id);
-}
-
-// Verifies that SCTP ids of removed DataChannels can be reused.
-TEST_F(SctpSidAllocatorTest, SctpIdReusedForRemovedDataChannel) {
-  int odd_id = 1;
-  int even_id = 0;
-  EXPECT_TRUE(allocator_.ReserveSid(odd_id));
-  EXPECT_TRUE(allocator_.ReserveSid(even_id));
-
-  int allocated_id = -1;
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_SERVER, &allocated_id));
-  EXPECT_EQ(odd_id + 2, allocated_id);
-
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_CLIENT, &allocated_id));
-  EXPECT_EQ(even_id + 2, allocated_id);
-
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_SERVER, &allocated_id));
-  EXPECT_EQ(odd_id + 4, allocated_id);
-
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_CLIENT, &allocated_id));
-  EXPECT_EQ(even_id + 4, allocated_id);
-
-  allocator_.ReleaseSid(odd_id);
-  allocator_.ReleaseSid(even_id);
-
-  // Verifies that removed ids are reused.
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_SERVER, &allocated_id));
-  EXPECT_EQ(odd_id, allocated_id);
-
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_CLIENT, &allocated_id));
-  EXPECT_EQ(even_id, allocated_id);
-
-  // Verifies that used higher ids are not reused.
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_SERVER, &allocated_id));
-  EXPECT_EQ(odd_id + 6, allocated_id);
-
-  EXPECT_TRUE(allocator_.AllocateSid(rtc::SSL_CLIENT, &allocated_id));
-  EXPECT_EQ(even_id + 6, allocated_id);
 }
