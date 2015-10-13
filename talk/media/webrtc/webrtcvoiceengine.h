@@ -180,8 +180,8 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                           webrtc::Call* call);
   ~WebRtcVoiceMediaChannel() override;
 
-  int voe_channel() const { return voe_channel_; }
-  bool valid() const { return voe_channel_ != -1; }
+  int default_send_channel_id() const { return default_send_channel_id_; }
+  bool valid() const { return default_send_channel_id_ != -1; }
   const AudioOptions& options() const { return options_; }
 
   bool SetSendParameters(const AudioSendParameters& params) override;
@@ -286,7 +286,7 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
     return options_.conference_mode.GetWithDefaultIfUnset(false);
   }
   bool IsDefaultChannel(int channel_id) const {
-    return channel_id == voe_channel();
+    return channel_id == default_send_channel_id_;
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
   bool SetSendBitrateInternal(int bps);
@@ -308,7 +308,7 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   rtc::ThreadChecker thread_checker_;
 
   WebRtcVoiceEngine* const engine_;
-  const int voe_channel_;
+  const int default_send_channel_id_;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   rtc::scoped_ptr<webrtc::CodecInst> send_codec_;
@@ -325,12 +325,12 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   webrtc::Call* const call_;
 
   // send_channels_ contains the channels which are being used for sending.
-  // When the default channel (voe_channel) is used for sending, it is
-  // contained in send_channels_, otherwise not.
+  // When the default channel (default_send_channel_id) is used for sending, it
+  // is contained in send_channels_, otherwise not.
   ChannelMap send_channels_;
   std::vector<RtpHeaderExtension> send_extensions_;
   uint32_t default_receive_ssrc_;
-  // Note the default channel (voe_channel()) can reside in both
+  // Note the default channel (default_send_channel_id()) can reside in both
   // receive_channels_ and send_channels_ in non-conference mode and in that
   // case it will only be there if a non-zero default_receive_ssrc_ is set.
   ChannelMap receive_channels_;  // for multiple sources

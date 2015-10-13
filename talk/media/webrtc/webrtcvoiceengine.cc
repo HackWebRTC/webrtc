@@ -1390,7 +1390,7 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
                                                  const AudioOptions& options,
                                                  webrtc::Call* call)
     : engine_(engine),
-      voe_channel_(engine->CreateMediaVoiceChannel()),
+      default_send_channel_id_(engine->CreateMediaVoiceChannel()),
       send_bitrate_setting_(false),
       send_bitrate_bps_(0),
       options_(),
@@ -1406,16 +1406,16 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   engine->RegisterChannel(this);
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel "
-                  << voe_channel();
+                  << default_send_channel_id();
   RTC_DCHECK(nullptr != call);
-  ConfigureSendChannel(voe_channel());
+  ConfigureSendChannel(default_send_channel_id());
   SetOptions(options);
 }
 
 WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel "
-                  << voe_channel();
+                  << default_send_channel_id();
 
   // Remove any remaining send streams, the default channel will be deleted
   // later.
@@ -1433,7 +1433,7 @@ WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
   RTC_DCHECK(receive_streams_.empty());
 
   // Delete the default channel.
-  DeleteChannel(voe_channel());
+  DeleteChannel(default_send_channel_id());
 }
 
 bool WebRtcVoiceMediaChannel::SetSendParameters(
@@ -1485,7 +1485,9 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
       LOG(LS_WARNING) << "Failed to set DSCP settings for audio channel";
     }
   }
+
   RecreateAudioReceiveStreams();
+
   LOG(LS_INFO) << "Set voice channel options.  Current options: "
                << options_.ToString();
   return true;
@@ -1493,9 +1495,10 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
 
 bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     const std::vector<AudioCodec>& codecs) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   // Set the payload types to be used for incoming media.
   LOG(LS_INFO) << "Setting receive voice codecs.";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   if (!VerifyUniquePayloadTypes(codecs)) {
     LOG(LS_ERROR) << "Codec payload types overlap.";
@@ -1830,7 +1833,8 @@ bool WebRtcVoiceMediaChannel::SetRecvRtpHeaderExtensions(
 
   // The default channel may or may not be in |receive_channels_|. Set the rtp
   // header extensions for default channel regardless.
-  if (!SetChannelRecvRtpHeaderExtensions(voe_channel(), extensions)) {
+  if (!SetChannelRecvRtpHeaderExtensions(default_send_channel_id(),
+                                         extensions)) {
     return false;
   }
 
@@ -1899,7 +1903,8 @@ bool WebRtcVoiceMediaChannel::SetSendRtpHeaderExtensions(
   // The default channel may or may not be in |send_channels_|. Set the rtp
   // header extensions for default channel regardless.
 
-  if (!SetChannelSendRtpHeaderExtensions(voe_channel(), extensions)) {
+  if (!SetChannelSendRtpHeaderExtensions(default_send_channel_id(),
+                                         extensions)) {
     return false;
   }
 
@@ -1959,7 +1964,7 @@ bool WebRtcVoiceMediaChannel::ChangePlayout(bool playout) {
   bool result = true;
   if (receive_channels_.empty()) {
     // Only toggle the default channel if we don't have any other channels.
-    result = SetPlayout(voe_channel(), playout);
+    result = SetPlayout(default_send_channel_id(), playout);
   }
   for (const auto& ch : receive_channels_) {
     if (!SetPlayout(ch.second->channel(), playout)) {
@@ -2103,7 +2108,7 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
     }
   }
   if (default_channel_is_available) {
-    channel = voe_channel();
+    channel = default_send_channel_id();
   } else {
     // Create a new channel for sending audio data.
     channel = engine()->CreateMediaVoiceChannel();
@@ -2226,11 +2231,12 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     LOG(LS_INFO) << "Recv stream " << ssrc << " reuse default channel";
     default_receive_ssrc_ = ssrc;
     WebRtcVoiceChannelRenderer* channel_renderer =
-        new WebRtcVoiceChannelRenderer(voe_channel(), audio_transport);
+        new WebRtcVoiceChannelRenderer(default_send_channel_id(),
+                                       audio_transport);
     receive_channels_.insert(std::make_pair(ssrc, channel_renderer));
     receive_stream_params_[ssrc] = sp;
     AddAudioReceiveStream(ssrc);
-    return SetPlayout(voe_channel(), playout_);
+    return SetPlayout(default_send_channel_id(), playout_);
   }
 
   // Create a new channel for receiving audio data.
@@ -2239,7 +2245,6 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     LOG_RTCERR0(CreateChannel);
     return false;
   }
-
   if (!ConfigureRecvChannel(channel)) {
     DeleteChannel(channel);
     return false;
@@ -2259,17 +2264,18 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
 
 bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  // Configure to use external transport, like our default channel.
+  // Configure to use external transport.
   if (engine()->voe()->network()->RegisterExternalTransport(
           channel, *this) == -1) {
     LOG_RTCERR2(SetExternalTransport, channel, this);
     return false;
   }
 
-  // Use the same SSRC as our default channel (so the RTCP reports are correct).
+  // Use the same SSRC as our default send channel, so the RTCP reports are
+  // correct.
   unsigned int send_ssrc = 0;
   webrtc::VoERTP_RTCP* rtp = engine()->voe()->rtp();
-  if (rtp->GetLocalSSRC(voe_channel(), send_ssrc) == -1) {
+  if (rtp->GetLocalSSRC(default_send_channel_id(), send_ssrc) == -1) {
     LOG_RTCERR1(GetSendSSRC, channel);
     return false;
   }
@@ -2278,12 +2284,13 @@ bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
     return false;
   }
 
-  // Associate receive channel to default channel (so the receive channel can
-  // obtain RTT from the send channel)
-  engine()->voe()->base()->AssociateSendChannel(channel, voe_channel());
+  // Associate receive channel to default send channel (so the receive channel
+  // can obtain RTT from the send channel).
+  engine()->voe()->base()->AssociateSendChannel(channel,
+                                                default_send_channel_id());
   LOG(LS_INFO) << "VoiceEngine channel #"
                << channel << " is associated with channel #"
-               << voe_channel() << ".";
+               << default_send_channel_id() << ".";
 
   // Use the same recv payload types as our default channel.
   ResetRecvCodecs(channel);
@@ -2294,7 +2301,7 @@ bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
         voe_codec.pltype = codec.id;
         voe_codec.rate = 0;  // Needed to make GetRecPayloadType work for ISAC
         if (engine()->voe()->codec()->GetRecPayloadType(
-            voe_channel(), voe_codec) != -1) {
+            default_send_channel_id(), voe_codec) != -1) {
           if (engine()->voe()->codec()->SetRecPayloadType(
               channel, voe_codec) == -1) {
             LOG_RTCERR2(SetRecPayloadType, channel, ToString(voe_codec));
@@ -2306,8 +2313,8 @@ bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
   }
 
   if (InConferenceMode()) {
-    // To be in par with the video, voe_channel() is not used for receiving in
-    // a conference call.
+    // To be in par with the video, default_send_channel_id() is not used for
+    // receiving in a conference call.
     if (receive_channels_.empty() && default_receive_ssrc_ == 0 && playout_) {
       // This is the first stream in a multi user meeting. We can now
       // disable playback of the default stream. This since the default
@@ -2316,9 +2323,10 @@ bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
       // the default channel will be mixed in with the other streams
       // throughout the whole meeting, which might be disturbing.
       LOG(LS_INFO) << "Disabling playback on the default voice channel";
-      SetPlayout(voe_channel(), false);
+      SetPlayout(default_send_channel_id(), false);
     }
   }
+
   SetNack(channel, nack_enabled_);
 
   // Set RTP header extension for the new channel.
@@ -2355,7 +2363,7 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
     RTC_DCHECK(IsDefaultChannel(channel));
     // Recycle the default channel is for recv stream.
     if (playout_)
-      SetPlayout(voe_channel(), false);
+      SetPlayout(default_send_channel_id(), false);
 
     default_receive_ssrc_ = 0;
     return true;
@@ -2383,7 +2391,7 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   }
   if (enable_default_channel_playout && playout_) {
     LOG(LS_INFO) << "Enabling playback on the default voice channel";
-    SetPlayout(voe_channel(), true);
+    SetPlayout(default_send_channel_id(), true);
   }
 
   return true;
@@ -2429,10 +2437,9 @@ bool WebRtcVoiceMediaChannel::GetActiveStreams(
 int WebRtcVoiceMediaChannel::GetOutputLevel() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   // return the highest output level of all streams
-  int highest = GetOutputLevel(voe_channel());
+  int highest = GetOutputLevel(default_send_channel_id());
   for (const auto& ch : receive_channels_) {
-    int level = GetOutputLevel(ch.second->channel());
-    highest = std::max(level, highest);
+    highest = std::max(GetOutputLevel(ch.second->channel()), highest);
   }
   return highest;
 }
@@ -2471,7 +2478,7 @@ bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
     // Default channel is not in receive_channels_ if it is not being used for
     // playout.
     if (default_receive_ssrc_ == 0)
-      channels.push_back(voe_channel());
+      channels.push_back(default_send_channel_id());
     for (const auto& ch : receive_channels_) {
       channels.push_back(ch.second->channel());
     }
@@ -2520,7 +2527,7 @@ bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc,
         }
       }
       if (default_channel_is_inuse) {
-        channel = voe_channel();
+        channel = default_send_channel_id();
       } else if (!send_channels_.empty()) {
         channel = send_channels_.begin()->second->channel();
       }
@@ -2569,7 +2576,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
   int which_channel =
       GetReceiveChannelId(ParseSsrc(packet->data(), packet->size(), false));
   if (which_channel == -1) {
-    which_channel = voe_channel();
+    which_channel = default_send_channel_id();
   }
 
   // Pass it off to the decoder.
@@ -2631,7 +2638,8 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
 }
 
 bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
-  int channel = (ssrc == 0) ? voe_channel() : GetSendChannelId(ssrc);
+  int channel =
+      (ssrc == 0) ? default_send_channel_id() : GetSendChannelId(ssrc);
   if (channel == -1) {
     LOG(LS_WARNING) << "The specified ssrc " << ssrc << " is not in use.";
     return false;
@@ -2825,7 +2833,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     channels.push_back(ch.second->channel());
   }
   if (channels.empty()) {
-    channels.push_back(voe_channel());
+    channels.push_back(default_send_channel_id());
   }
 
   // Get the SSRC and stats for each receiver, based on our own calculations.
@@ -2923,17 +2931,18 @@ int WebRtcVoiceMediaChannel::GetOutputLevel(int channel) {
 int WebRtcVoiceMediaChannel::GetReceiveChannelId(uint32_t ssrc) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   ChannelMap::const_iterator it = receive_channels_.find(ssrc);
-  if (it != receive_channels_.end())
+  if (it != receive_channels_.end()) {
     return it->second->channel();
-  return (ssrc == default_receive_ssrc_) ? voe_channel() : -1;
+  }
+  return (ssrc == default_receive_ssrc_) ? default_send_channel_id() : -1;
 }
 
 int WebRtcVoiceMediaChannel::GetSendChannelId(uint32_t ssrc) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   ChannelMap::const_iterator it = send_channels_.find(ssrc);
-  if (it != send_channels_.end())
+  if (it != send_channels_.end()) {
     return it->second->channel();
-
+  }
   return -1;
 }
 
@@ -2988,8 +2997,8 @@ bool WebRtcVoiceMediaChannel::EnableRtcp(int channel) {
   }
   // TODO(juberti): Enable VQMon and RTCP XR reports, once we know what
   // what we want to do with them.
-  // engine()->voe().EnableVQMon(voe_channel(), true);
-  // engine()->voe().EnableRTCP_XR(voe_channel(), true);
+  // engine()->voe().EnableVQMon(default_send_channel_id(), true);
+  // engine()->voe().EnableRTCP_XR(default_send_channel_id(), true);
   return true;
 }
 
@@ -3136,8 +3145,9 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecsInternal(
         // TODO(xians): Figure out how we use the default channel in conference
         // mode.
         if (engine()->voe()->codec()->SetRecPayloadType(
-            voe_channel(), voe_codec) == -1) {
-          LOG_RTCERR2(SetRecPayloadType, voe_channel(), ToString(voe_codec));
+            default_send_channel_id(), voe_codec) == -1) {
+          LOG_RTCERR2(SetRecPayloadType, default_send_channel_id(),
+                      ToString(voe_codec));
           return false;
         }
       }

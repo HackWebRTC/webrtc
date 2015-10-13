@@ -2856,12 +2856,12 @@ TEST_F(WebRtcVoiceEngineTestFake, TestGetReceiveChannelIdIn1To1Calls) {
   cricket::WebRtcVoiceMediaChannel* media_channel =
         static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
   // Test that GetChannelNum returns the default channel if the SSRC is unknown.
-  EXPECT_EQ(media_channel->voe_channel(),
+  EXPECT_EQ(media_channel->default_send_channel_id(),
             media_channel->GetReceiveChannelId(0));
   cricket::StreamParams stream;
   stream.ssrcs.push_back(kSsrc2);
   EXPECT_TRUE(channel_->AddRecvStream(stream));
-  EXPECT_EQ(media_channel->voe_channel(),
+  EXPECT_EQ(media_channel->default_send_channel_id(),
             media_channel->GetReceiveChannelId(kSsrc2));
 }
 
@@ -2876,7 +2876,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TestGetChannelNumInConferenceCalls) {
   EXPECT_TRUE(channel_->AddRecvStream(stream));
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  EXPECT_LT(media_channel->voe_channel(),
+  EXPECT_LT(media_channel->default_send_channel_id(),
             media_channel->GetReceiveChannelId(kSsrc2));
 }
 
@@ -3081,9 +3081,7 @@ TEST_F(WebRtcVoiceEngineTestFake, AssociateChannelUnset1On1) {
 // does not send RTCP SR.
 TEST_F(WebRtcVoiceEngineTestFake, AssociateDefaultChannelOnSecondRecvChannel) {
   EXPECT_TRUE(SetupEngine());
-  cricket::WebRtcVoiceMediaChannel* media_channel =
-      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  int default_channel = media_channel->voe_channel();
+  int default_channel = voe_.GetLastChannel();
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
   int recv_ch_1 = voe_.GetLastChannel();
   EXPECT_EQ(recv_ch_1, default_channel);
@@ -3103,9 +3101,7 @@ TEST_F(WebRtcVoiceEngineTestFake, AssociateDefaultChannelOnConference) {
   EXPECT_TRUE(SetupEngine());
   send_parameters_.options = options_conference_;
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  cricket::WebRtcVoiceMediaChannel* media_channel =
-      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  int default_channel = media_channel->voe_channel();
+  int default_channel = voe_.GetLastChannel();
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
   int recv_ch = voe_.GetLastChannel();
   EXPECT_NE(recv_ch, default_channel);
