@@ -29,6 +29,7 @@
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/localaudiosource.h"
+#include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
 #include "talk/app/webrtc/peerconnection.h"

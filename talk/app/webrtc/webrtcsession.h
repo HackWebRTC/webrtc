@@ -114,7 +114,6 @@ class IceObserver {
 
 class WebRtcSession : public cricket::BaseSession,
                       public AudioProviderInterface,
-                      public DataChannelFactory,
                       public VideoProviderInterface,
                       public DtmfProviderInterface,
                       public DataChannelProviderInterface {
@@ -122,8 +121,7 @@ class WebRtcSession : public cricket::BaseSession,
   WebRtcSession(cricket::ChannelManager* channel_manager,
                 rtc::Thread* signaling_thread,
                 rtc::Thread* worker_thread,
-                cricket::PortAllocator* port_allocator,
-                MediaStreamSignaling* mediastream_signaling);
+                cricket::PortAllocator* port_allocator);
   virtual ~WebRtcSession();
 
   bool Initialize(
@@ -149,10 +147,6 @@ class WebRtcSession : public cricket::BaseSession,
     return data_channel_.get();
   }
 
-  virtual const MediaStreamSignaling* mediastream_signaling() const {
-    return mediastream_signaling_;
-  }
-
   void SetSdesPolicy(cricket::SecurePolicy secure_policy);
   cricket::SecurePolicy SdesPolicy() const;
 
@@ -165,9 +159,11 @@ class WebRtcSession : public cricket::BaseSession,
 
   void CreateOffer(
       CreateSessionDescriptionObserver* observer,
-      const PeerConnectionInterface::RTCOfferAnswerOptions& options);
+      const PeerConnectionInterface::RTCOfferAnswerOptions& options,
+      const cricket::MediaSessionOptions& session_options);
   void CreateAnswer(CreateSessionDescriptionObserver* observer,
-                    const MediaConstraintsInterface* constraints);
+                    const MediaConstraintsInterface* constraints,
+                    const cricket::MediaSessionOptions& session_options);
   // The ownership of |desc| will be transferred after this call.
   bool SetLocalDescription(SessionDescriptionInterface* desc,
                            std::string* err_desc);
@@ -251,11 +247,6 @@ class WebRtcSession : public cricket::BaseSession,
   virtual bool GetRemoteSSLCertificate(const std::string& transport_name,
                                        rtc::SSLCertificate** cert);
 
-  // Implements DataChannelFactory.
-  rtc::scoped_refptr<DataChannel> CreateDataChannel(
-      const std::string& label,
-      const InternalDataChannelInit* config) override;
-
   cricket::DataChannelType data_channel_type() const;
 
   bool IceRestartPending() const;
@@ -276,6 +267,20 @@ class WebRtcSession : public cricket::BaseSession,
       webrtc::MetricsObserverInterface* metrics_observer) {
     metrics_observer_ = metrics_observer;
   }
+
+  // Called when voice_channel_, video_channel_ and data_channel_ are created
+  // and destroyed. As a result of, for example, setting a new description.
+  sigslot::signal0<> SignalVoiceChannelCreated;
+  sigslot::signal0<> SignalVoiceChannelDestroyed;
+  sigslot::signal0<> SignalVideoChannelCreated;
+  sigslot::signal0<> SignalVideoChannelDestroyed;
+  sigslot::signal0<> SignalDataChannelCreated;
+  sigslot::signal0<> SignalDataChannelDestroyed;
+
+  // Called when a valid data channel OPEN message is received.
+  // std::string represents the data channel label.
+  sigslot::signal2<const std::string&, const InternalDataChannelInit&>
+      SignalDataChannelOpenMessage;
 
  private:
   // Indicates the type of SessionDescription in a call to SetLocalDescription
@@ -386,7 +391,6 @@ class WebRtcSession : public cricket::BaseSession,
   rtc::scoped_ptr<cricket::VideoChannel> video_channel_;
   rtc::scoped_ptr<cricket::DataChannel> data_channel_;
   cricket::ChannelManager* channel_manager_;
-  MediaStreamSignaling* mediastream_signaling_;
   IceObserver* ice_observer_;
   PeerConnectionInterface::IceConnectionState ice_connection_state_;
   bool ice_connection_receiving_;
@@ -409,10 +413,6 @@ class WebRtcSession : public cricket::BaseSession,
 
   rtc::scoped_ptr<WebRtcSessionDescriptionFactory>
       webrtc_session_desc_factory_;
-
-  sigslot::signal0<> SignalVoiceChannelDestroyed;
-  sigslot::signal0<> SignalVideoChannelDestroyed;
-  sigslot::signal0<> SignalDataChannelDestroyed;
 
   // Member variables for caching global options.
   cricket::AudioOptions audio_options_;

@@ -43,6 +43,8 @@
 
 namespace webrtc {
 
+class PeerConnection;
+
 // Conversion function to convert candidate type string to the corresponding one
 // from  enum RTCStatsIceCandidateType.
 const char* IceCandidateTypeToStatsType(const std::string& candidate_type);
@@ -57,9 +59,9 @@ typedef std::map<std::string, StatsReport*> TrackIdMap;
 
 class StatsCollector {
  public:
-  // The caller is responsible for ensuring that the session outlives the
+  // The caller is responsible for ensuring that the pc outlives the
   // StatsCollector instance.
-  explicit StatsCollector(WebRtcSession* session);
+  explicit StatsCollector(PeerConnection* pc);
   virtual ~StatsCollector();
 
   // Adds a MediaStream with tracks that can be used as a |selector| in a call
@@ -151,8 +153,8 @@ class StatsCollector {
   // A collection for all of our stats reports.
   StatsCollection reports_;
   TrackIdMap track_ids_;
-  // Raw pointer to the session the statistics are gathered from.
-  WebRtcSession* const session_;
+  // Raw pointer to the peer connection the statistics are gathered from.
+  PeerConnection* const pc_;
   double stats_gathering_started_;
   cricket::ProxyTransportMap proxy_to_transport_;
 
