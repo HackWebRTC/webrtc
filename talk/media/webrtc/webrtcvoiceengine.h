@@ -259,9 +259,7 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                        const std::vector<AudioCodec>& all_codecs,
                        webrtc::CodecInst* send_codec);
   bool EnableRtcp(int channel);
-  bool ResetRecvCodecs(int channel);
   bool SetPlayout(int channel, bool playout);
-  static uint32_t ParseSsrc(const void* data, size_t len, bool rtcp);
   static Error WebRtcErrorToChannelError(int err_code);
 
   class WebRtcVoiceChannelRenderer;
@@ -282,11 +280,11 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   void ConfigureSendChannel(int channel);
   bool ConfigureRecvChannel(int channel);
   bool DeleteChannel(int channel);
-  bool InConferenceMode() const {
-    return options_.conference_mode.GetWithDefaultIfUnset(false);
-  }
   bool IsDefaultChannel(int channel_id) const {
     return channel_id == default_send_channel_id_;
+  }
+  bool IsDefaultRecvStream(uint32_t ssrc) {
+    return default_recv_ssrc_ == static_cast<int64_t>(ssrc);
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
   bool SetSendBitrateInternal(int bps);
@@ -324,16 +322,17 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   SendFlags send_;
   webrtc::Call* const call_;
 
+  // SSRC of unsignalled receive stream, or -1 if there isn't one.
+  int64_t default_recv_ssrc_ = -1;
+  // Volume for unsignalled stream, which may be set before the stream exists.
+  double default_recv_volume_ = 1.0;
+
   // send_channels_ contains the channels which are being used for sending.
   // When the default channel (default_send_channel_id) is used for sending, it
   // is contained in send_channels_, otherwise not.
   ChannelMap send_channels_;
   std::vector<RtpHeaderExtension> send_extensions_;
-  uint32_t default_receive_ssrc_;
-  // Note the default channel (default_send_channel_id()) can reside in both
-  // receive_channels_ and send_channels_ in non-conference mode and in that
-  // case it will only be there if a non-zero default_receive_ssrc_ is set.
-  ChannelMap receive_channels_;  // for multiple sources
+  ChannelMap receive_channels_;
   std::map<uint32_t, webrtc::AudioReceiveStream*> receive_streams_;
   std::map<uint32_t, StreamParams> receive_stream_params_;
   // receive_channels_ can be read from WebRtc callback thread.  Access from
@@ -341,10 +340,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   // Reads on the worker thread are ok.
   std::vector<RtpHeaderExtension> receive_extensions_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
-
-  // Do not lock this on the VoE media processor thread; potential for deadlock
-  // exists.
-  mutable rtc::CriticalSection receive_channels_cs_;
 };
 
 }  // namespace cricket

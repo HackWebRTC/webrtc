@@ -1497,9 +1497,6 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
 
   AudioSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription(audio, &send_params);
-  if (audio->conference_mode()) {
-    send_params.options.conference_mode.Set(true);
-  }
   if (audio->agc_minus_10db()) {
     send_params.options.adjust_agc_delta.Set(kAgcMinus10db);
   }
