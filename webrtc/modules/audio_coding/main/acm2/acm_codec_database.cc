@@ -68,7 +68,6 @@ const CodecInst ACMCodecDB::database_[] = {
   {103, "ISAC", 16000, kIsacPacSize480, 1, kIsacWbDefaultRate},
 # if (defined(WEBRTC_CODEC_ISAC))
   {104, "ISAC", 32000, kIsacPacSize960, 1, kIsacSwbDefaultRate},
-  {105, "ISAC", 48000, kIsacPacSize1440, 1, kIsacSwbDefaultRate},
 # endif
 #endif
   // Mono
@@ -124,7 +123,6 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
     {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1},
 # if (defined(WEBRTC_CODEC_ISAC))
     {1, {kIsacPacSize960}, 0, 1},
-    {1, {kIsacPacSize1440}, 0, 1},
 # endif
 #endif
     // Mono
@@ -178,7 +176,6 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
     kDecoderISAC,
 # if (defined(WEBRTC_CODEC_ISAC))
     kDecoderISACswb,
-    kDecoderISACfb,
 # endif
 #endif
     // Mono

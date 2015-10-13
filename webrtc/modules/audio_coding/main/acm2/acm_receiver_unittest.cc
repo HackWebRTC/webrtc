@@ -244,7 +244,7 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(AddCodecRemoveCodec)) {
 
 TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(SampleRate)) {
   const int kCodecId[] = {
-      ACMCodecDB::kISAC, ACMCodecDB::kISACSWB, ACMCodecDB::kISACFB,
+      ACMCodecDB::kISAC, ACMCodecDB::kISACSWB,
       -1  // Terminator.
   };
   AddSetOfCodecs(kCodecId);

@@ -1008,11 +1008,6 @@ bool AudioCodingImpl::MapCodecTypeToParameters(int codec_type,
       *sample_rate_hz = 32000;
       *channels = 1;
       break;
-    case acm2::ACMCodecDB::kISACFB:
-      *codec_name = "ISAC";
-      *sample_rate_hz = 48000;
-      *channels = 1;
-      break;
 #endif
 #ifdef WEBRTC_CODEC_ILBC
     case acm2::ACMCodecDB::kILBC:

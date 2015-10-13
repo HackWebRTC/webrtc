@@ -47,7 +47,6 @@ bool ModifyAndUseThisCodec(CodecInst* codec_param) {
 // iLBC = 102
 // iSAC wideband = 103
 // iSAC super-wideband = 104
-// iSAC fullband = 124
 // AVT/DTMF = 106
 // RED = 117
 // PCM16b 8 kHz = 93
@@ -78,8 +77,6 @@ bool RemapPltypeAndUseThisCodec(const char* plname,
     *pltype = 103;
   } else if (STR_CASE_CMP(plname, "ISAC") == 0 && plfreq == 32000) {
     *pltype = 104;
-  } else if (STR_CASE_CMP(plname, "ISAC") == 0 && plfreq == 48000) {
-    *pltype = 124;
   } else if (STR_CASE_CMP(plname, "telephone-event") == 0) {
     *pltype = 106;
   } else if (STR_CASE_CMP(plname, "red") == 0) {
