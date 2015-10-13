@@ -126,4 +126,18 @@ final class ThreadUtils {
     awaitUninterruptibly(barrier);
     return result.value;
   }
+
+  /**
+   * Post |runner| to |handler| and wait for the result.
+   */
+  public static void invokeUninterruptibly(final Handler handler, final Runnable runner) {
+    final CountDownLatch barrier = new CountDownLatch(1);
+    handler.post(new Runnable() {
+      @Override public void run() {
+          runner.run();
+        barrier.countDown();
+      }
+    });
+    awaitUninterruptibly(barrier);
+  }
 }
