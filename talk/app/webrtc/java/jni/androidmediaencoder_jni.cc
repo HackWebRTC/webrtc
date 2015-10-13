@@ -543,7 +543,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   const VideoFrame& input_frame =
       scale_ ? quality_scaler_.GetScaledFrame(frame) : frame;
 
-  if (!MaybeReconfigureEncoderOnCodecThread(frame)) {
+  if (!MaybeReconfigureEncoderOnCodecThread(input_frame)) {
     ALOGE << "Failed to reconfigure encoder.";
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
