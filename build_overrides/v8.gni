@@ -1,0 +1,3 @@
+# Dummy file due to https://codereview.chromium.org/1397493004
+# TODO(kjellander): Clean up when http://crbug.com/541791 is done.
+v8_use_external_startup_data = false

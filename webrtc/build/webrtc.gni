@@ -8,11 +8,9 @@
 
 import("//build/config/arm.gni")
 import("//build/config/mips.gni")
+import("//build_overrides/webrtc.gni")
 
 declare_args() {
-  # Assume Chromium build for now, since that's the priority case for getting GN
-  # up and running with WebRTC.
-  build_with_chromium = true
   build_with_libjingle = true
 
   # Disable this to avoid building the Opus audio codec.
@@ -60,25 +58,6 @@ declare_args() {
   # Executes code generation at link-time instead of compile-time.
   # https://gcc.gnu.org/wiki/LinkTimeOptimization
   rtc_use_lto = false
-
-  if (build_with_chromium) {
-    # Exclude pulse audio on Chromium since its prerequisites don't require
-    # pulse audio.
-    rtc_include_pulse_audio = false
-
-    # Exclude internal ADM since Chromium uses its own IO handling.
-    rtc_include_internal_audio_device = false
-  } else {
-    # Settings for the standalone (not-in-Chromium) build.
-
-    # TODO(andrew): For now, disable the Chrome plugins, which causes a
-    # flood of chromium-style warnings. Investigate enabling them:
-    # http://code.google.com/p/webrtc/issues/detail?id=163
-    clang_use_chrome_plugins = false
-
-    rtc_include_pulse_audio = true
-    rtc_include_internal_audio_device = true
-  }
 
   if (build_with_libjingle) {
     rtc_include_tests = false
