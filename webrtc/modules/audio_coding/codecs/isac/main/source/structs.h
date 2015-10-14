@@ -484,12 +484,9 @@ typedef struct {
   int16_t               maxRateBytesPer30Ms;
   // Maximum allowed payload-size, measured in Bytes.
   int16_t               maxPayloadSizeBytes;
-  /* The expected sampling rate of the input signal. Valid values are 16000,
-   * 32000 and 48000. This is not the operation sampling rate of the codec.
-   * Input signals at 48 kHz are resampled to 32 kHz, then encoded. */
+  /* The expected sampling rate of the input signal. Valid values are 16000
+   * and 32000. This is not the operation sampling rate of the codec. */
   uint16_t in_sample_rate_hz;
-  /* State for the input-resampler. It is only used for 48 kHz input signals. */
-  int16_t state_in_resampler[SIZE_RESAMPLER_STATE];
 
   // Trig tables for WebRtcIsac_Time2Spec and WebRtcIsac_Spec2time.
   TransformTables transform_tables;
