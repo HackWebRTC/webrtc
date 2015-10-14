@@ -38,6 +38,7 @@
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
+#include "talk/app/webrtc/sctputils.h"
 #include "talk/app/webrtc/webrtcsessiondescriptionfactory.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/videocapturer.h"
@@ -536,12 +537,10 @@ class IceRestartAnswerLatch {
   bool ice_restart_;
 };
 
-WebRtcSession::WebRtcSession(
-    cricket::ChannelManager* channel_manager,
-    rtc::Thread* signaling_thread,
-    rtc::Thread* worker_thread,
-    cricket::PortAllocator* port_allocator,
-    MediaStreamSignaling* mediastream_signaling)
+WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
+                             rtc::Thread* signaling_thread,
+                             rtc::Thread* worker_thread,
+                             cricket::PortAllocator* port_allocator)
     : cricket::BaseSession(signaling_thread,
                            worker_thread,
                            port_allocator,
@@ -551,7 +550,6 @@ WebRtcSession::WebRtcSession(
       // o line MUST be representable with a "64 bit signed integer".
       // Due to this constraint session id |sid_| is max limited to LLONG_MAX.
       channel_manager_(channel_manager),
-      mediastream_signaling_(mediastream_signaling),
       ice_observer_(NULL),
       ice_connection_state_(PeerConnectionInterface::kIceConnectionNew),
       ice_connection_receiving_(true),
@@ -642,9 +640,6 @@ bool WebRtcSession::Initialize(
       LOG(LS_INFO) << "Allowing SCTP data engine.";
       data_channel_type_ = cricket::DCT_SCTP;
     }
-  }
-  if (data_channel_type_ != cricket::DCT_NONE) {
-    mediastream_signaling_->SetDataChannelFactory(this);
   }
 
   // Find DSCP constraint.
@@ -743,21 +738,19 @@ bool WebRtcSession::Initialize(
   if (!dtls_enabled_) {
     // Construct with DTLS disabled.
     webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-        signaling_thread(), channel_manager_, mediastream_signaling_, this,
-        id(), data_channel_type_));
+        signaling_thread(), channel_manager_, this, id()));
   } else {
     // Construct with DTLS enabled.
     if (!certificate) {
       // Use the |dtls_identity_store| to generate a certificate.
       RTC_DCHECK(dtls_identity_store);
       webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-          signaling_thread(), channel_manager_, mediastream_signaling_,
-          dtls_identity_store.Pass(), this, id(), data_channel_type_));
+          signaling_thread(), channel_manager_, dtls_identity_store.Pass(),
+          this, id()));
     } else {
       // Use the already generated certificate.
       webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-          signaling_thread(), channel_manager_, mediastream_signaling_,
-          certificate, this, id(), data_channel_type_));
+          signaling_thread(), channel_manager_, certificate, this, id()));
     }
   }
 
@@ -819,13 +812,17 @@ bool WebRtcSession::GetSslRole(rtc::SSLRole* role) {
 
 void WebRtcSession::CreateOffer(
     CreateSessionDescriptionObserver* observer,
-    const PeerConnectionInterface::RTCOfferAnswerOptions& options) {
-  webrtc_session_desc_factory_->CreateOffer(observer, options);
+    const PeerConnectionInterface::RTCOfferAnswerOptions& options,
+    const cricket::MediaSessionOptions& session_options) {
+  webrtc_session_desc_factory_->CreateOffer(observer, options, session_options);
 }
 
-void WebRtcSession::CreateAnswer(CreateSessionDescriptionObserver* observer,
-                                 const MediaConstraintsInterface* constraints) {
-  webrtc_session_desc_factory_->CreateAnswer(observer, constraints);
+void WebRtcSession::CreateAnswer(
+    CreateSessionDescriptionObserver* observer,
+    const MediaConstraintsInterface* constraints,
+    const cricket::MediaSessionOptions& session_options) {
+  webrtc_session_desc_factory_->CreateAnswer(observer, constraints,
+                                             session_options);
 }
 
 bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
@@ -883,14 +880,6 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
     UseCandidatesInSessionDescription(remote_desc_.get());
   }
 
-  // Update state and SSRC of local MediaStreams and DataChannels based on the
-  // local session description.
-  mediastream_signaling_->OnLocalDescriptionChanged(local_desc_.get());
-
-  rtc::SSLRole role;
-  if (data_channel_type_ == cricket::DCT_SCTP && GetSslRole(&role)) {
-    mediastream_signaling_->OnDtlsRoleReadyForSctp(role);
-  }
   if (error() != cricket::BaseSession::ERROR_NONE) {
     return BadLocalSdp(desc->type(), GetSessionErrorMsg(), err_desc);
   }
@@ -927,8 +916,6 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
     return false;
   }
 
-  // Update remote MediaStreams.
-  mediastream_signaling_->OnRemoteDescriptionChanged(desc);
   if (local_description() && !UseCandidatesInSessionDescription(desc)) {
     return BadRemoteSdp(desc->type(), kInvalidCandidates, err_desc);
   }
@@ -949,11 +936,6 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   }
 
   remote_desc_.reset(desc_temp.release());
-
-  rtc::SSLRole role;
-  if (data_channel_type_ == cricket::DCT_SCTP && GetSslRole(&role)) {
-    mediastream_signaling_->OnDtlsRoleReadyForSctp(role);
-  }
 
   if (error() != cricket::BaseSession::ERROR_NONE) {
     return BadRemoteSdp(desc->type(), GetSessionErrorMsg(), err_desc);
@@ -1387,6 +1369,8 @@ bool WebRtcSession::ConnectDataChannel(DataChannel* webrtc_data_channel) {
                                                &DataChannel::OnChannelReady);
   data_channel_->SignalDataReceived.connect(webrtc_data_channel,
                                             &DataChannel::OnDataReceived);
+  data_channel_->SignalStreamClosedRemotely.connect(
+      webrtc_data_channel, &DataChannel::OnStreamClosedRemotely);
   return true;
 }
 
@@ -1397,6 +1381,7 @@ void WebRtcSession::DisconnectDataChannel(DataChannel* webrtc_data_channel) {
   }
   data_channel_->SignalReadyToSendData.disconnect(webrtc_data_channel);
   data_channel_->SignalDataReceived.disconnect(webrtc_data_channel);
+  data_channel_->SignalStreamClosedRemotely.disconnect(webrtc_data_channel);
 }
 
 void WebRtcSession::AddSctpDataStream(int sid) {
@@ -1409,8 +1394,6 @@ void WebRtcSession::AddSctpDataStream(int sid) {
 }
 
 void WebRtcSession::RemoveSctpDataStream(int sid) {
-  mediastream_signaling_->RemoveSctpDataChannel(sid);
-
   if (!data_channel_) {
     LOG(LS_ERROR) << "RemoveDataChannelStreams called when data_channel_ is "
                   << "NULL.";
@@ -1422,41 +1405,6 @@ void WebRtcSession::RemoveSctpDataStream(int sid) {
 
 bool WebRtcSession::ReadyToSendData() const {
   return data_channel_ && data_channel_->ready_to_send_data();
-}
-
-rtc::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
-    const std::string& label,
-    const InternalDataChannelInit* config) {
-  if (state() == STATE_RECEIVEDTERMINATE) {
-    return NULL;
-  }
-  if (data_channel_type_ == cricket::DCT_NONE) {
-    LOG(LS_ERROR) << "CreateDataChannel: Data is not supported in this call.";
-    return NULL;
-  }
-  InternalDataChannelInit new_config =
-      config ? (*config) : InternalDataChannelInit();
-  if (data_channel_type_ == cricket::DCT_SCTP) {
-    if (new_config.id < 0) {
-      rtc::SSLRole role;
-      if (GetSslRole(&role) &&
-          !mediastream_signaling_->AllocateSctpSid(role, &new_config.id)) {
-        LOG(LS_ERROR) << "No id can be allocated for the SCTP data channel.";
-        return NULL;
-      }
-    } else if (!mediastream_signaling_->IsSctpSidAvailable(new_config.id)) {
-      LOG(LS_ERROR) << "Failed to create a SCTP data channel "
-                    << "because the id is already in use or out of range.";
-      return NULL;
-    }
-  }
-
-  rtc::scoped_refptr<DataChannel> channel(DataChannel::Create(
-      this, data_channel_type_, label, new_config));
-  if (channel && !mediastream_signaling_->AddDataChannel(channel))
-    return NULL;
-
-  return channel;
 }
 
 cricket::DataChannelType WebRtcSession::data_channel_type() const {
@@ -1727,7 +1675,6 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
   const cricket::ContentInfo* video_info =
       cricket::GetFirstVideoContent(desc);
   if ((!video_info || video_info->rejected) && video_channel_) {
-    mediastream_signaling_->OnVideoChannelClose();
     SignalVideoChannelDestroyed();
     const std::string content_name = video_channel_->content_name();
     channel_manager_->DestroyVideoChannel(video_channel_.release());
@@ -1736,7 +1683,6 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
   const cricket::ContentInfo* voice_info =
       cricket::GetFirstAudioContent(desc);
   if ((!voice_info || voice_info->rejected) && voice_channel_) {
-    mediastream_signaling_->OnAudioChannelClose();
     SignalVoiceChannelDestroyed();
     const std::string content_name = voice_channel_->content_name();
     channel_manager_->DestroyVoiceChannel(voice_channel_.release());
@@ -1745,7 +1691,6 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
   const cricket::ContentInfo* data_info =
       cricket::GetFirstDataContent(desc);
   if ((!data_info || data_info->rejected) && data_channel_) {
-    mediastream_signaling_->OnDataChannelClose();
     SignalDataChannelDestroyed();
     const std::string content_name = data_channel_->content_name();
     channel_manager_->DestroyDataChannel(data_channel_.release());
@@ -1820,6 +1765,8 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
 
   voice_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
+
+  SignalVoiceChannelCreated();
   return true;
 }
 
@@ -1833,6 +1780,8 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
 
   video_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
+
+  SignalVideoChannelCreated();
   return true;
 }
 
@@ -1845,16 +1794,14 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
   }
 
   if (sctp) {
-    mediastream_signaling_->OnDataTransportCreatedForSctp();
     data_channel_->SignalDataReceived.connect(
         this, &WebRtcSession::OnDataChannelMessageReceived);
-    data_channel_->SignalStreamClosedRemotely.connect(
-        mediastream_signaling_,
-        &MediaStreamSignaling::OnRemoteSctpDataChannelClosed);
   }
 
   data_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
+
+  SignalDataChannelCreated();
   return true;
 }
 
@@ -1880,13 +1827,22 @@ void WebRtcSession::OnDataChannelMessageReceived(
     cricket::DataChannel* channel,
     const cricket::ReceiveDataParams& params,
     const rtc::Buffer& payload) {
-  ASSERT(data_channel_type_ == cricket::DCT_SCTP);
-  if (params.type == cricket::DMT_CONTROL &&
-      mediastream_signaling_->IsSctpSidAvailable(params.ssrc)) {
-    // Received CONTROL on unused sid, process as an OPEN message.
-    mediastream_signaling_->AddDataChannelFromOpenMessage(params, payload);
+  RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
+  if (params.type == cricket::DMT_CONTROL && IsOpenMessage(payload)) {
+    // Received OPEN message; parse and signal that a new data channel should
+    // be created.
+    std::string label;
+    InternalDataChannelInit config;
+    config.id = params.ssrc;
+    if (!ParseDataChannelOpenMessage(payload, &label, &config)) {
+      LOG(LS_WARNING) << "Failed to parse the OPEN message for sid "
+                      << params.ssrc;
+      return;
+    }
+    config.open_handshake_role = InternalDataChannelInit::kAcker;
+    SignalDataChannelOpenMessage(label, config);
   }
-  // otherwise ignore the message.
+  // Otherwise ignore the message.
 }
 
 // Returns false if bundle is enabled and rtcp_mux is disabled.

@@ -31,7 +31,6 @@
 #include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
-#include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/webrtcsession.h"
 #include "webrtc/base/sslidentity.h"
 
@@ -131,16 +130,13 @@ void WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
-    MediaStreamSignaling* mediastream_signaling,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     const rtc::scoped_refptr<WebRtcIdentityRequestObserver>&
         identity_request_observer,
     WebRtcSession* session,
     const std::string& session_id,
-    cricket::DataChannelType dct,
     bool dtls_enabled)
     : signaling_thread_(signaling_thread),
-      mediastream_signaling_(mediastream_signaling),
       session_desc_factory_(channel_manager, &transport_desc_factory_),
       // RFC 4566 suggested a Network Time Protocol (NTP) format timestamp
       // as the session id and session version. To simplify, it should be fine
@@ -151,7 +147,6 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
       identity_request_observer_(identity_request_observer),
       session_(session),
       session_id_(session_id),
-      data_channel_type_(dct),
       certificate_request_state_(CERTIFICATE_NOT_NEEDED) {
   session_desc_factory_.set_add_legacy_streams(false);
   // SRTP-SDES is disabled if DTLS is on.
@@ -161,18 +156,14 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
-    MediaStreamSignaling* mediastream_signaling,
     WebRtcSession* session,
-    const std::string& session_id,
-    cricket::DataChannelType dct)
+    const std::string& session_id)
     : WebRtcSessionDescriptionFactory(signaling_thread,
                                       channel_manager,
-                                      mediastream_signaling,
                                       nullptr,
                                       nullptr,
                                       session,
                                       session_id,
-                                      dct,
                                       false) {
   LOG(LS_VERBOSE) << "DTLS-SRTP disabled.";
 }
@@ -180,21 +171,17 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
-    MediaStreamSignaling* mediastream_signaling,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     WebRtcSession* session,
-    const std::string& session_id,
-    cricket::DataChannelType dct)
+    const std::string& session_id)
     : WebRtcSessionDescriptionFactory(
-        signaling_thread,
-        channel_manager,
-        mediastream_signaling,
-        dtls_identity_store.Pass(),
-        new rtc::RefCountedObject<WebRtcIdentityRequestObserver>(),
-        session,
-        session_id,
-        dct,
-        true) {
+          signaling_thread,
+          channel_manager,
+          dtls_identity_store.Pass(),
+          new rtc::RefCountedObject<WebRtcIdentityRequestObserver>(),
+          session,
+          session_id,
+          true) {
   RTC_DCHECK(dtls_identity_store_);
 
   certificate_request_state_ = CERTIFICATE_WAITING;
@@ -216,14 +203,16 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
-    MediaStreamSignaling* mediastream_signaling,
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
     WebRtcSession* session,
-    const std::string& session_id,
-    cricket::DataChannelType dct)
-    : WebRtcSessionDescriptionFactory(
-        signaling_thread, channel_manager, mediastream_signaling, nullptr,
-        nullptr, session, session_id, dct, true) {
+    const std::string& session_id)
+    : WebRtcSessionDescriptionFactory(signaling_thread,
+                                      channel_manager,
+                                      nullptr,
+                                      nullptr,
+                                      session,
+                                      session_id,
+                                      true) {
   RTC_DCHECK(certificate);
 
   certificate_request_state_ = CERTIFICATE_WAITING;
@@ -264,20 +253,11 @@ WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
 
 void WebRtcSessionDescriptionFactory::CreateOffer(
     CreateSessionDescriptionObserver* observer,
-    const PeerConnectionInterface::RTCOfferAnswerOptions& options) {
-  cricket::MediaSessionOptions session_options;
-
+    const PeerConnectionInterface::RTCOfferAnswerOptions& options,
+    const cricket::MediaSessionOptions& session_options) {
   std::string error = "CreateOffer";
   if (certificate_request_state_ == CERTIFICATE_FAILED) {
     error += kFailedDueToIdentityFailed;
-    LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailed(observer, error);
-    return;
-  }
-
-  if (!mediastream_signaling_->GetOptionsForOffer(options,
-                                                  &session_options)) {
-    error += " called with invalid options.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
     return;
@@ -288,11 +268,6 @@ void WebRtcSessionDescriptionFactory::CreateOffer(
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
     return;
-  }
-
-  if (data_channel_type_ == cricket::DCT_SCTP &&
-      mediastream_signaling_->HasDataChannels()) {
-    session_options.data_channel_type = cricket::DCT_SCTP;
   }
 
   CreateSessionDescriptionRequest request(
@@ -308,7 +283,8 @@ void WebRtcSessionDescriptionFactory::CreateOffer(
 
 void WebRtcSessionDescriptionFactory::CreateAnswer(
     CreateSessionDescriptionObserver* observer,
-    const MediaConstraintsInterface* constraints) {
+    const MediaConstraintsInterface* constraints,
+    const cricket::MediaSessionOptions& session_options) {
   std::string error = "CreateAnswer";
   if (certificate_request_state_ == CERTIFICATE_FAILED) {
     error += kFailedDueToIdentityFailed;
@@ -330,28 +306,15 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
     return;
   }
 
-  cricket::MediaSessionOptions options;
-  if (!mediastream_signaling_->GetOptionsForAnswer(constraints, &options)) {
-    error += " called with invalid constraints.";
-    LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailed(observer, error);
-    return;
-  }
-  if (!ValidStreams(options.streams)) {
+  if (!ValidStreams(session_options.streams)) {
     error += " called with invalid media streams.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
     return;
   }
-  // RTP data channel is handled in MediaSessionOptions::AddStream. SCTP streams
-  // are not signaled in the SDP so does not go through that path and must be
-  // handled here.
-  if (data_channel_type_ == cricket::DCT_SCTP) {
-    options.data_channel_type = cricket::DCT_SCTP;
-  }
 
   CreateSessionDescriptionRequest request(
-      CreateSessionDescriptionRequest::kAnswer, observer, options);
+      CreateSessionDescriptionRequest::kAnswer, observer, session_options);
   if (certificate_request_state_ == CERTIFICATE_WAITING) {
     create_session_description_requests_.push(request);
   } else {

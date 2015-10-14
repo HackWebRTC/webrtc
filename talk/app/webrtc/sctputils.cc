@@ -48,6 +48,19 @@ enum DataChannelOpenMessageChannelType {
   DCOMCT_UNORDERED_PARTIAL_TIME = 0x82,
 };
 
+bool IsOpenMessage(const rtc::Buffer& payload) {
+  // Format defined at
+  // http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-04
+
+  rtc::ByteBuffer buffer(payload);
+  uint8_t message_type;
+  if (!buffer.ReadUInt8(&message_type)) {
+    LOG(LS_WARNING) << "Could not read OPEN message type.";
+    return false;
+  }
+  return message_type == DATA_CHANNEL_OPEN_MESSAGE_TYPE;
+}
+
 bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
                                  std::string* label,
                                  DataChannelInit* config) {

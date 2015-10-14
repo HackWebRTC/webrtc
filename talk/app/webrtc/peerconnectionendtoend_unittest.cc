@@ -364,3 +364,35 @@ TEST_F(PeerConnectionEndToEndTest,
   EXPECT_EQ(1U, dc_1_observer->received_message_count());
   EXPECT_EQ(1U, dc_2_observer->received_message_count());
 }
+
+// Verifies that a DataChannel added from an OPEN message functions after
+// a channel has been previously closed (webrtc issue 3778).
+// This previously failed because the new channel re-uses the ID of the closed
+// channel, and the closed channel was incorrectly still assigned to the id.
+// TODO(deadbeef): This is disabled because there's currently a race condition
+// caused by the fact that a data channel signals that it's closed before it
+// really is. Re-enable this test once that's fixed.
+TEST_F(PeerConnectionEndToEndTest,
+       DISABLED_DataChannelFromOpenWorksAfterClose) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+
+  CreatePcs();
+
+  webrtc::DataChannelInit init;
+  rtc::scoped_refptr<DataChannelInterface> caller_dc(
+      caller_->CreateDataChannel("data", init));
+
+  Negotiate();
+  WaitForConnection();
+
+  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
+  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 0);
+
+  // Create a new channel and ensure it works after closing the previous one.
+  caller_dc = caller_->CreateDataChannel("data2", init);
+
+  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
+  TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1]);
+
+  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
+}
