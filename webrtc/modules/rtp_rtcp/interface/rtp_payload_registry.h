@@ -83,7 +83,7 @@ class RTPPayloadRegistry {
 
   bool IsRtx(const RTPHeader& header) const;
 
-  bool RestoreOriginalPacket(uint8_t** restored_packet,
+  bool RestoreOriginalPacket(uint8_t* restored_packet,
                              const uint8_t* packet,
                              size_t* packet_length,
                              uint32_t original_ssrc,
@@ -138,6 +138,16 @@ class RTPPayloadRegistry {
     return last_received_media_payload_type_;
   };
 
+  bool use_rtx_payload_mapping_on_restore() const {
+    CriticalSectionScoped cs(crit_sect_.get());
+    return use_rtx_payload_mapping_on_restore_;
+  }
+
+  void set_use_rtx_payload_mapping_on_restore(bool val) {
+    CriticalSectionScoped cs(crit_sect_.get());
+    use_rtx_payload_mapping_on_restore_ = val;
+  }
+
  private:
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
@@ -163,6 +173,9 @@ class RTPPayloadRegistry {
   int rtx_payload_type_;
   // Mapping rtx_payload_type_map_[rtx] = associated.
   std::map<int, int> rtx_payload_type_map_;
+  // When true, use rtx_payload_type_map_ when restoring RTX packets to get the
+  // correct payload type.
+  bool use_rtx_payload_mapping_on_restore_;
   uint32_t ssrc_rtx_;
 };
 

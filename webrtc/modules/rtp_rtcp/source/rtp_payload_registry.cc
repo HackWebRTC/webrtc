@@ -25,8 +25,8 @@ RTPPayloadRegistry::RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy)
       last_received_media_payload_type_(-1),
       rtx_(false),
       rtx_payload_type_(-1),
-      ssrc_rtx_(0) {
-}
+      use_rtx_payload_mapping_on_restore_(false),
+      ssrc_rtx_(0) {}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() {
   while (!payload_type_map_.empty()) {
@@ -232,7 +232,7 @@ bool RTPPayloadRegistry::IsRtxInternal(const RTPHeader& header) const {
   return rtx_ && ssrc_rtx_ == header.ssrc;
 }
 
-bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
+bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
                                                const uint8_t* packet,
                                                size_t* packet_length,
                                                uint32_t original_ssrc,
@@ -245,30 +245,41 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
   uint16_t original_sequence_number = (rtx_header[0] << 8) + rtx_header[1];
 
   // Copy the packet into the restored packet, except for the RTX header.
-  memcpy(*restored_packet, packet, header.headerLength);
-  memcpy(*restored_packet + header.headerLength,
+  memcpy(restored_packet, packet, header.headerLength);
+  memcpy(restored_packet + header.headerLength,
          packet + header.headerLength + kRtxHeaderSize,
          *packet_length - header.headerLength - kRtxHeaderSize);
   *packet_length -= kRtxHeaderSize;
 
   // Replace the SSRC and the sequence number with the originals.
-  ByteWriter<uint16_t>::WriteBigEndian(*restored_packet + 2,
+  ByteWriter<uint16_t>::WriteBigEndian(restored_packet + 2,
                                        original_sequence_number);
-  ByteWriter<uint32_t>::WriteBigEndian(*restored_packet + 8, original_ssrc);
+  ByteWriter<uint32_t>::WriteBigEndian(restored_packet + 8, original_ssrc);
 
   CriticalSectionScoped cs(crit_sect_.get());
   if (!rtx_)
     return true;
 
-  if (rtx_payload_type_ == -1 || incoming_payload_type_ == -1) {
-    LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
-    return false;
+  int associated_payload_type;
+  auto apt_mapping = rtx_payload_type_map_.find(header.payloadType);
+  if (use_rtx_payload_mapping_on_restore_ &&
+      apt_mapping != rtx_payload_type_map_.end()) {
+    associated_payload_type = apt_mapping->second;
+  } else {
+    // In the future, this will be a bug. For now, just assume this RTX packet
+    // matches the last non-RTX payload type we received. There are cases where
+    // this could break, especially where RTX is sent outside of NACKing (e.g.
+    // padding with redundant payloads).
+    if (rtx_payload_type_ == -1 || incoming_payload_type_ == -1) {
+      LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
+      return false;
+    }
+    associated_payload_type = incoming_payload_type_;
   }
-  // TODO(changbin): Will use RTX APT map for restoring packets,
-  // thus incoming_payload_type_ should be removed in future.
-  (*restored_packet)[1] = static_cast<uint8_t>(incoming_payload_type_);
+
+  restored_packet[1] = static_cast<uint8_t>(associated_payload_type);
   if (header.markerBit) {
-    (*restored_packet)[1] |= kRtpMarkerBitMask;  // Marker bit is set.
+    restored_packet[1] |= kRtpMarkerBitMask;  // Marker bit is set.
   }
   return true;
 }

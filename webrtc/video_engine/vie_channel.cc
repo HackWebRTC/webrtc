@@ -750,6 +750,10 @@ void ViEChannel::SetRtxReceivePayloadType(int payload_type,
   vie_receiver_.SetRtxPayloadType(payload_type, associated_payload_type);
 }
 
+void ViEChannel::SetUseRtxPayloadMappingOnRestore(bool val) {
+  vie_receiver_.SetUseRtxPayloadMappingOnRestore(val);
+}
+
 void ViEChannel::SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state) {
   RTC_DCHECK(!rtp_rtcp_modules_[0]->Sending());
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {

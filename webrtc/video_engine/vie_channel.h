@@ -134,6 +134,11 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   int SetRtxSendPayloadType(int payload_type, int associated_payload_type);
   void SetRtxReceivePayloadType(int payload_type, int associated_payload_type);
+  // If set to true, the RTX payload type mapping supplied in
+  // |SetRtxReceivePayloadType| will be used when restoring RTX packets. Without
+  // it, RTX packets will always be restored to the last non-RTX packet payload
+  // type received.
+  void SetUseRtxPayloadMappingOnRestore(bool val);
 
   void SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state);
   RtpState GetRtpStateForSsrc(uint32_t ssrc);

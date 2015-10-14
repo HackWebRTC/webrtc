@@ -167,6 +167,10 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
     vie_channel_->SetRemoteSSRCType(kViEStreamTypeRtx, it->second.ssrc);
     vie_channel_->SetRtxReceivePayloadType(it->second.payload_type, it->first);
   }
+  // TODO(holmer): When Chrome no longer depends on this being false by default,
+  // always use the mapping and remove this whole codepath.
+  vie_channel_->SetUseRtxPayloadMappingOnRestore(
+      config_.rtp.use_rtx_payload_mapping_on_restore);
 
   // TODO(pbos): Remove channel_group_ usage from VideoReceiveStream. This
   // should be configured in call.cc.

@@ -118,6 +118,10 @@ void ViEReceiver::SetRtxPayloadType(int payload_type,
                                            associated_payload_type);
 }
 
+void ViEReceiver::SetUseRtxPayloadMappingOnRestore(bool val) {
+  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(val);
+}
+
 void ViEReceiver::SetRtxSsrc(uint32_t ssrc) {
   rtp_payload_registry_->SetRtxSsrc(ssrc);
 }
@@ -361,15 +365,14 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
       LOG(LS_WARNING) << "Multiple RTX headers detected, dropping packet.";
       return false;
     }
-    uint8_t* restored_packet_ptr = restored_packet_;
     if (!rtp_payload_registry_->RestoreOriginalPacket(
-        &restored_packet_ptr, packet, &packet_length, rtp_receiver_->SSRC(),
-        header)) {
+            restored_packet_, packet, &packet_length, rtp_receiver_->SSRC(),
+            header)) {
       LOG(LS_WARNING) << "Incoming RTX packet: Invalid RTP header";
       return false;
     }
     restored_packet_in_use_ = true;
-    bool ret = OnRecoveredPacket(restored_packet_ptr, packet_length);
+    bool ret = OnRecoveredPacket(restored_packet_, packet_length);
     restored_packet_in_use_ = false;
     return ret;
   }

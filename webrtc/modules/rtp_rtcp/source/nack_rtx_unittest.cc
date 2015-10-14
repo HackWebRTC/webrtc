@@ -109,7 +109,6 @@ class RtxLoopBackTransport : public webrtc::Transport {
     // is hiding a bug either in test setup or other code.
     // https://code.google.com/p/webrtc/issues/detail?id=3183
     uint8_t restored_packet[1500] = {0};
-    uint8_t* restored_packet_ptr = restored_packet;
     RTPHeader header;
     rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     if (!parser->Parse(ptr, len, &header)) {
@@ -133,23 +132,23 @@ class RtxLoopBackTransport : public webrtc::Transport {
     if (rtp_payload_registry_->IsRtx(header)) {
       // Remove the RTX header and parse the original RTP header.
       EXPECT_TRUE(rtp_payload_registry_->RestoreOriginalPacket(
-          &restored_packet_ptr, ptr, &packet_length, rtp_receiver_->SSRC(),
-          header));
-      if (!parser->Parse(restored_packet_ptr, packet_length, &header)) {
+          restored_packet, ptr, &packet_length, rtp_receiver_->SSRC(), header));
+      if (!parser->Parse(restored_packet, packet_length, &header)) {
         return false;
       }
     } else {
       rtp_payload_registry_->SetIncomingPayloadType(header);
     }
 
-    restored_packet_ptr += header.headerLength;
+    const uint8_t* restored_packet_payload =
+        restored_packet + header.headerLength;
     packet_length -= header.headerLength;
     PayloadUnion payload_specific;
     if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
                                                     &payload_specific)) {
       return false;
     }
-    if (!rtp_receiver_->IncomingRtpPacket(header, restored_packet_ptr,
+    if (!rtp_receiver_->IncomingRtpPacket(header, restored_packet_payload,
                                           packet_length, payload_specific,
                                           true)) {
       return false;

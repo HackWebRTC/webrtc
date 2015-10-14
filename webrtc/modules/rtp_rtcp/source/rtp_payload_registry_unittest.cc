@@ -13,6 +13,8 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/mock/mock_rtp_payload_strategy.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
@@ -255,6 +257,142 @@ TEST_P(RtpPayloadRegistryGenericTest, RegisterGenericReceivePayloadType) {
   EXPECT_EQ(0, rtp_payload_registry_->RegisterReceivePayload("generic-codec",
     static_cast<int8_t>(payload_type),
     19, 1, 17, &ignored)); // dummy values, except for payload_type
+}
+
+// Generates an RTX packet for the given length and original sequence number.
+// The RTX sequence number and ssrc will use the default value of 9999. The
+// caller takes ownership of the returned buffer.
+const uint8_t* GenerateRtxPacket(size_t header_length,
+                                 size_t payload_length,
+                                 uint16_t original_sequence_number) {
+  uint8_t* packet =
+      new uint8_t[kRtxHeaderSize + header_length + payload_length]();
+  // Write the RTP version to the first byte, so the resulting header can be
+  // parsed.
+  static const int kRtpExpectedVersion = 2;
+  packet[0] = static_cast<uint8_t>(kRtpExpectedVersion << 6);
+  // Write a junk sequence number. It should be thrown away when the packet is
+  // restored.
+  ByteWriter<uint16_t>::WriteBigEndian(packet + 2, 9999);
+  // Write a junk ssrc. It should also be thrown away when the packet is
+  // restored.
+  ByteWriter<uint32_t>::WriteBigEndian(packet + 8, 9999);
+
+  // Now write the RTX header. It occurs at the start of the payload block, and
+  // contains just the sequence number.
+  ByteWriter<uint16_t>::WriteBigEndian(packet + header_length,
+                                       original_sequence_number);
+  return packet;
+}
+
+void TestRtxPacket(RTPPayloadRegistry* rtp_payload_registry,
+                   int rtx_payload_type,
+                   int expected_payload_type,
+                   bool should_succeed) {
+  size_t header_length = 100;
+  size_t payload_length = 200;
+  size_t original_length = header_length + payload_length + kRtxHeaderSize;
+
+  RTPHeader header;
+  header.ssrc = 1000;
+  header.sequenceNumber = 100;
+  header.payloadType = rtx_payload_type;
+  header.headerLength = header_length;
+
+  uint16_t original_sequence_number = 1234;
+  uint32_t original_ssrc = 500;
+
+  rtc::scoped_ptr<const uint8_t[]> packet(GenerateRtxPacket(
+      header_length, payload_length, original_sequence_number));
+  rtc::scoped_ptr<uint8_t[]> restored_packet(
+      new uint8_t[header_length + payload_length]);
+  size_t length = original_length;
+  bool success = rtp_payload_registry->RestoreOriginalPacket(
+      restored_packet.get(), packet.get(), &length, original_ssrc, header);
+  ASSERT_EQ(should_succeed, success)
+      << "Test success should match should_succeed.";
+  if (!success) {
+    return;
+  }
+
+  EXPECT_EQ(original_length - kRtxHeaderSize, length)
+      << "The restored packet should be exactly kRtxHeaderSize smaller.";
+
+  rtc::scoped_ptr<RtpHeaderParser> header_parser(RtpHeaderParser::Create());
+  RTPHeader restored_header;
+  ASSERT_TRUE(
+      header_parser->Parse(restored_packet.get(), length, &restored_header));
+  EXPECT_EQ(original_sequence_number, restored_header.sequenceNumber)
+      << "The restored packet should have the original sequence number "
+      << "in the correct location in the RTP header.";
+  EXPECT_EQ(expected_payload_type, restored_header.payloadType)
+      << "The restored packet should have the correct payload type.";
+  EXPECT_EQ(original_ssrc, restored_header.ssrc)
+      << "The restored packet should have the correct ssrc.";
+}
+
+TEST_F(RtpPayloadRegistryTest, MultipleRtxPayloadTypes) {
+  // Set the incoming payload type to 90.
+  RTPHeader header;
+  header.payloadType = 90;
+  header.ssrc = 1;
+  rtp_payload_registry_->SetIncomingPayloadType(header);
+  rtp_payload_registry_->SetRtxSsrc(100);
+  // Map two RTX payload types.
+  rtp_payload_registry_->SetRtxPayloadType(105, 95);
+  rtp_payload_registry_->SetRtxPayloadType(106, 96);
+  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(true);
+
+  TestRtxPacket(rtp_payload_registry_.get(), 105, 95, true);
+  TestRtxPacket(rtp_payload_registry_.get(), 106, 96, true);
+
+  // If the option is off, the map will be ignored.
+  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(false);
+  TestRtxPacket(rtp_payload_registry_.get(), 105, 90, true);
+  TestRtxPacket(rtp_payload_registry_.get(), 106, 90, true);
+}
+
+// TODO(holmer): Ignored by default for compatibility with misconfigured RTX
+// streams in Chrome. When that is fixed, remove this.
+TEST_F(RtpPayloadRegistryTest, IgnoresRtxPayloadTypeMappingByDefault) {
+  // Set the incoming payload type to 90.
+  RTPHeader header;
+  header.payloadType = 90;
+  header.ssrc = 1;
+  rtp_payload_registry_->SetIncomingPayloadType(header);
+  rtp_payload_registry_->SetRtxSsrc(100);
+  // Map two RTX payload types.
+  rtp_payload_registry_->SetRtxPayloadType(105, 95);
+  rtp_payload_registry_->SetRtxPayloadType(106, 96);
+
+  TestRtxPacket(rtp_payload_registry_.get(), 105, 90, true);
+  TestRtxPacket(rtp_payload_registry_.get(), 106, 90, true);
+}
+
+TEST_F(RtpPayloadRegistryTest, InferLastReceivedPacketIfPayloadTypeUnknown) {
+  rtp_payload_registry_->SetRtxSsrc(100);
+  // Set the incoming payload type to 90.
+  RTPHeader header;
+  header.payloadType = 90;
+  header.ssrc = 1;
+  rtp_payload_registry_->SetIncomingPayloadType(header);
+  rtp_payload_registry_->SetRtxPayloadType(105, 95);
+  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(true);
+  // Mapping respected for known type.
+  TestRtxPacket(rtp_payload_registry_.get(), 105, 95, true);
+  // Mapping ignored for unknown type, even though the option is on.
+  TestRtxPacket(rtp_payload_registry_.get(), 106, 90, true);
+}
+
+TEST_F(RtpPayloadRegistryTest, InvalidRtxConfiguration) {
+  rtp_payload_registry_->SetRtxSsrc(100);
+  // Fails because no mappings exist and the incoming payload type isn't known.
+  TestRtxPacket(rtp_payload_registry_.get(), 105, 0, false);
+  // Succeeds when the mapping is used, but fails for the implicit fallback.
+  rtp_payload_registry_->SetRtxPayloadType(105, 95);
+  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(true);
+  TestRtxPacket(rtp_payload_registry_.get(), 105, 95, true);
+  TestRtxPacket(rtp_payload_registry_.get(), 106, 0, false);
 }
 
 INSTANTIATE_TEST_CASE_P(TestDynamicRange, RtpPayloadRegistryGenericTest,

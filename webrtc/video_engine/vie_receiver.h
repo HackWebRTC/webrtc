@@ -46,6 +46,11 @@ class ViEReceiver : public RtpData {
 
   void SetNackStatus(bool enable, int max_nack_reordering_threshold);
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
+  // If set to true, the RTX payload type mapping supplied in
+  // |SetRtxPayloadType| will be used when restoring RTX packets. Without it,
+  // RTX packets will always be restored to the last non-RTX packet payload type
+  // received.
+  void SetUseRtxPayloadMappingOnRestore(bool val);
   void SetRtxSsrc(uint32_t ssrc);
   bool GetRtxSsrc(uint32_t* ssrc) const;
 

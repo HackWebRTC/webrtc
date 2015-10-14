@@ -1627,16 +1627,15 @@ bool Channel::HandleRtxPacket(const uint8_t* packet,
                  "Multiple RTX headers detected, dropping packet");
     return false;
   }
-  uint8_t* restored_packet_ptr = restored_packet_;
   if (!rtp_payload_registry_->RestoreOriginalPacket(
-      &restored_packet_ptr, packet, &packet_length, rtp_receiver_->SSRC(),
-      header)) {
+          restored_packet_, packet, &packet_length, rtp_receiver_->SSRC(),
+          header)) {
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVoice, _channelId,
                  "Incoming RTX packet: invalid RTP header");
     return false;
   }
   restored_packet_in_use_ = true;
-  bool ret = OnRecoveredPacket(restored_packet_ptr, packet_length);
+  bool ret = OnRecoveredPacket(restored_packet_, packet_length);
   restored_packet_in_use_ = false;
   return ret;
 }
