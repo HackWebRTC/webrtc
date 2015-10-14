@@ -209,8 +209,7 @@ class PeerConnection : public PeerConnectionInterface,
   void OnIceConnectionReceivingChange(bool receiving) override;
 
   // Signals from WebRtcSession.
-  void OnSessionStateChange(cricket::BaseSession* session,
-                            cricket::BaseSession::State state);
+  void OnSessionStateChange(WebRtcSession* session, WebRtcSession::State state);
   void ChangeSignalingState(SignalingState signaling_state);
 
   rtc::Thread* signaling_thread() const {

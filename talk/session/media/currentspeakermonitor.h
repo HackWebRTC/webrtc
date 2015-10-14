@@ -38,7 +38,6 @@
 
 namespace cricket {
 
-class BaseSession;
 struct AudioInfo;
 struct MediaStreams;
 
@@ -46,11 +45,10 @@ class AudioSourceContext {
  public:
   sigslot::signal2<AudioSourceContext*, const cricket::AudioInfo&>
       SignalAudioMonitor;
-  sigslot::signal2<AudioSourceContext*, cricket::BaseSession*>
-      SignalMediaStreamsReset;
-  sigslot::signal4<AudioSourceContext*, cricket::BaseSession*,
-      const cricket::MediaStreams&, const cricket::MediaStreams&>
-          SignalMediaStreamsUpdate;
+  sigslot::signal1<AudioSourceContext*> SignalMediaStreamsReset;
+  sigslot::signal3<AudioSourceContext*,
+                   const cricket::MediaStreams&,
+                   const cricket::MediaStreams&> SignalMediaStreamsUpdate;
 };
 
 // CurrentSpeakerMonitor can be used to monitor the audio-levels from
@@ -64,11 +62,8 @@ class AudioSourceContext {
 // It's recommended that the audio monitor be started with a 100 ms period.
 class CurrentSpeakerMonitor : public sigslot::has_slots<> {
  public:
-  CurrentSpeakerMonitor(AudioSourceContext* audio_source_context,
-                        BaseSession* session);
+  CurrentSpeakerMonitor(AudioSourceContext* audio_source_context);
   ~CurrentSpeakerMonitor();
-
-  BaseSession* session() const { return session_; }
 
   void Start();
   void Stop();
@@ -87,11 +82,9 @@ class CurrentSpeakerMonitor : public sigslot::has_slots<> {
   void OnAudioMonitor(AudioSourceContext* audio_source_context,
                       const AudioInfo& info);
   void OnMediaStreamsUpdate(AudioSourceContext* audio_source_context,
-                            BaseSession* session,
                             const MediaStreams& added,
                             const MediaStreams& removed);
-  void OnMediaStreamsReset(AudioSourceContext* audio_source_context,
-                           BaseSession* session);
+  void OnMediaStreamsReset(AudioSourceContext* audio_source_context);
 
   // These are states that a participant will pass through so that we gradually
   // recognize that they have started and stopped speaking.  This avoids
@@ -106,7 +99,6 @@ class CurrentSpeakerMonitor : public sigslot::has_slots<> {
 
   bool started_;
   AudioSourceContext* audio_source_context_;
-  BaseSession* session_;
   std::map<uint32_t, SpeakingState> ssrc_to_speaking_state_map_;
   uint32_t current_speaker_ssrc_;
   // To prevent overswitching, switching is disabled for some time after a

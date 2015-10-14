@@ -70,7 +70,6 @@
     return;                                         \
   }
 
-using cricket::BaseSession;
 using cricket::DF_PLAY;
 using cricket::DF_SEND;
 using cricket::FakeVoiceMediaChannel;
@@ -92,6 +91,7 @@ using webrtc::JsepSessionDescription;
 using webrtc::PeerConnectionFactoryInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::SessionDescriptionInterface;
+using webrtc::SessionStats;
 using webrtc::StreamCollection;
 using webrtc::WebRtcSession;
 using webrtc::kBundleWithoutRtcpMux;
@@ -857,7 +857,7 @@ class WebRtcSessionTest
     session_->MaybeStartGathering();
   }
   void SetLocalDescriptionExpectState(SessionDescriptionInterface* desc,
-                                      BaseSession::State expected_state) {
+                                      WebRtcSession::State expected_state) {
     SetLocalDescriptionWithoutError(desc);
     EXPECT_EQ(expected_state, session_->state());
   }
@@ -885,7 +885,7 @@ class WebRtcSessionTest
     EXPECT_TRUE(session_->SetRemoteDescription(desc, NULL));
   }
   void SetRemoteDescriptionExpectState(SessionDescriptionInterface* desc,
-                                       BaseSession::State expected_state) {
+                                       WebRtcSession::State expected_state) {
     SetRemoteDescriptionWithoutError(desc);
     EXPECT_EQ(expected_state, session_->state());
   }
@@ -1946,8 +1946,8 @@ TEST_F(WebRtcSessionTest, TestSetLocalAndRemoteOffer) {
   SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
   offer = CreateOffer();
-  SetRemoteDescriptionOfferExpectError(
-      "Called in wrong state: STATE_SENTINITIATE", offer);
+  SetRemoteDescriptionOfferExpectError("Called in wrong state: STATE_SENTOFFER",
+                                       offer);
 }
 
 TEST_F(WebRtcSessionTest, TestSetRemoteAndLocalOffer) {
@@ -1957,44 +1957,44 @@ TEST_F(WebRtcSessionTest, TestSetRemoteAndLocalOffer) {
   SetRemoteDescriptionWithoutError(offer);
   offer = CreateOffer();
   SetLocalDescriptionOfferExpectError(
-      "Called in wrong state: STATE_RECEIVEDINITIATE", offer);
+      "Called in wrong state: STATE_RECEIVEDOFFER", offer);
 }
 
 TEST_F(WebRtcSessionTest, TestSetLocalPrAnswer) {
   Init();
   SendNothing();
   SessionDescriptionInterface* offer = CreateRemoteOffer();
-  SetRemoteDescriptionExpectState(offer, BaseSession::STATE_RECEIVEDINITIATE);
+  SetRemoteDescriptionExpectState(offer, WebRtcSession::STATE_RECEIVEDOFFER);
 
   JsepSessionDescription* pranswer = static_cast<JsepSessionDescription*>(
       CreateAnswer(NULL));
   pranswer->set_type(SessionDescriptionInterface::kPrAnswer);
-  SetLocalDescriptionExpectState(pranswer, BaseSession::STATE_SENTPRACCEPT);
+  SetLocalDescriptionExpectState(pranswer, WebRtcSession::STATE_SENTPRANSWER);
 
   SendAudioVideoStream1();
   JsepSessionDescription* pranswer2 = static_cast<JsepSessionDescription*>(
       CreateAnswer(NULL));
   pranswer2->set_type(SessionDescriptionInterface::kPrAnswer);
 
-  SetLocalDescriptionExpectState(pranswer2, BaseSession::STATE_SENTPRACCEPT);
+  SetLocalDescriptionExpectState(pranswer2, WebRtcSession::STATE_SENTPRANSWER);
 
   SendAudioVideoStream2();
   SessionDescriptionInterface* answer = CreateAnswer(NULL);
-  SetLocalDescriptionExpectState(answer, BaseSession::STATE_SENTACCEPT);
+  SetLocalDescriptionExpectState(answer, WebRtcSession::STATE_INPROGRESS);
 }
 
 TEST_F(WebRtcSessionTest, TestSetRemotePrAnswer) {
   Init();
   SendNothing();
   SessionDescriptionInterface* offer = CreateOffer();
-  SetLocalDescriptionExpectState(offer, BaseSession::STATE_SENTINITIATE);
+  SetLocalDescriptionExpectState(offer, WebRtcSession::STATE_SENTOFFER);
 
   JsepSessionDescription* pranswer =
       CreateRemoteAnswer(session_->local_description());
   pranswer->set_type(SessionDescriptionInterface::kPrAnswer);
 
   SetRemoteDescriptionExpectState(pranswer,
-                                  BaseSession::STATE_RECEIVEDPRACCEPT);
+                                  WebRtcSession::STATE_RECEIVEDPRANSWER);
 
   SendAudioVideoStream1();
   JsepSessionDescription* pranswer2 =
@@ -2002,12 +2002,12 @@ TEST_F(WebRtcSessionTest, TestSetRemotePrAnswer) {
   pranswer2->set_type(SessionDescriptionInterface::kPrAnswer);
 
   SetRemoteDescriptionExpectState(pranswer2,
-                                  BaseSession::STATE_RECEIVEDPRACCEPT);
+                                  WebRtcSession::STATE_RECEIVEDPRANSWER);
 
   SendAudioVideoStream2();
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(session_->local_description());
-  SetRemoteDescriptionExpectState(answer, BaseSession::STATE_RECEIVEDACCEPT);
+  SetRemoteDescriptionExpectState(answer, WebRtcSession::STATE_INPROGRESS);
 }
 
 TEST_F(WebRtcSessionTest, TestSetLocalAnswerWithoutOffer) {
@@ -2040,20 +2040,23 @@ TEST_F(WebRtcSessionTest, TestAddRemoteCandidate) {
   candidate.set_component(1);
   JsepIceCandidate ice_candidate1(kMediaContentName0, 0, candidate);
 
-  // Fail since we have not set a offer description.
+  // Fail since we have not set a remote description.
   EXPECT_FALSE(session_->ProcessIceMessage(&ice_candidate1));
 
   SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
-  // Candidate should be allowed to add before remote description.
-  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate1));
-  candidate.set_component(2);
-  JsepIceCandidate ice_candidate2(kMediaContentName0, 0, candidate);
-  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate2));
+
+  // Fail since we have not set a remote description.
+  EXPECT_FALSE(session_->ProcessIceMessage(&ice_candidate1));
 
   SessionDescriptionInterface* answer = CreateRemoteAnswer(
       session_->local_description());
   SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate1));
+  candidate.set_component(2);
+  JsepIceCandidate ice_candidate2(kMediaContentName0, 0, candidate);
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate2));
 
   // Verifying the candidates are copied properly from internal vector.
   const SessionDescriptionInterface* remote_desc =
@@ -2231,8 +2234,9 @@ TEST_F(WebRtcSessionTest, TestChannelCreationsWithContentNames) {
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
 
   // CreateOffer creates session description with the content names "audio" and
-  // "video". Goal is to modify these content names and verify transport channel
-  // proxy in the BaseSession, as proxies are created with the content names
+  // "video". Goal is to modify these content names and verify transport
+  // channels
+  // in the WebRtcSession, as channels are created with the content names
   // present in SDP.
   std::string sdp;
   EXPECT_TRUE(offer->ToString(&sdp));
@@ -2812,7 +2816,7 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionWithIceRestart) {
 }
 
 // Test that candidates sent to the "video" transport do not get pushed down to
-// the "audio" transport channel when bundling using TransportProxy.
+// the "audio" transport channel when bundling.
 TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
   AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
 
@@ -2837,7 +2841,7 @@ TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
   // Checks if one of the transport channels contains a connection using a given
   // port.
   auto connection_with_remote_port = [this, voice_channel](int port) {
-    cricket::SessionStats stats;
+    SessionStats stats;
     session_->GetChannelTransportStats(voice_channel, &stats);
     for (auto& kv : stats.transport_stats) {
       for (auto& chan_stat : kv.second.channel_stats) {
@@ -2996,14 +3000,14 @@ TEST_F(WebRtcSessionTest, TestMaxBundleRejectAudio) {
       CreateRemoteAnswer(session_->local_description(), recv_options);
   SetRemoteDescriptionWithoutError(answer);
 
-  EXPECT_TRUE(NULL == session_->voice_channel());
-  EXPECT_TRUE(NULL != session_->video_rtp_transport_channel());
+  EXPECT_TRUE(nullptr == session_->voice_channel());
+  EXPECT_TRUE(nullptr != session_->video_rtp_transport_channel());
 
-  session_->Terminate();
-  EXPECT_TRUE(NULL == session_->voice_rtp_transport_channel());
-  EXPECT_TRUE(NULL == session_->voice_rtcp_transport_channel());
-  EXPECT_TRUE(NULL == session_->video_rtp_transport_channel());
-  EXPECT_TRUE(NULL == session_->video_rtcp_transport_channel());
+  session_->Close();
+  EXPECT_TRUE(nullptr == session_->voice_rtp_transport_channel());
+  EXPECT_TRUE(nullptr == session_->voice_rtcp_transport_channel());
+  EXPECT_TRUE(nullptr == session_->video_rtp_transport_channel());
+  EXPECT_TRUE(nullptr == session_->video_rtcp_transport_channel());
 }
 
 // kBundlePolicyMaxBundle policy but no BUNDLE in the answer.
@@ -3349,29 +3353,30 @@ TEST_F(WebRtcSessionTest, InsertDtmf) {
                               expected_duration, expected_flags));
 }
 
-// This test verifies the |initiator| flag when session initiates the call.
+// This test verifies the |initial_offerer| flag when session initiates the
+// call.
 TEST_F(WebRtcSessionTest, TestInitiatorFlagAsOriginator) {
   Init();
-  EXPECT_FALSE(session_->initiator());
+  EXPECT_FALSE(session_->initial_offerer());
   SessionDescriptionInterface* offer = CreateOffer();
   SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
   SetLocalDescriptionWithoutError(offer);
-  EXPECT_TRUE(session_->initiator());
+  EXPECT_TRUE(session_->initial_offerer());
   SetRemoteDescriptionWithoutError(answer);
-  EXPECT_TRUE(session_->initiator());
+  EXPECT_TRUE(session_->initial_offerer());
 }
 
-// This test verifies the |initiator| flag when session receives the call.
+// This test verifies the |initial_offerer| flag when session receives the call.
 TEST_F(WebRtcSessionTest, TestInitiatorFlagAsReceiver) {
   Init();
-  EXPECT_FALSE(session_->initiator());
+  EXPECT_FALSE(session_->initial_offerer());
   SessionDescriptionInterface* offer = CreateRemoteOffer();
   SetRemoteDescriptionWithoutError(offer);
   SessionDescriptionInterface* answer = CreateAnswer(NULL);
 
-  EXPECT_FALSE(session_->initiator());
+  EXPECT_FALSE(session_->initial_offerer());
   SetLocalDescriptionWithoutError(answer);
-  EXPECT_FALSE(session_->initiator());
+  EXPECT_FALSE(session_->initial_offerer());
 }
 
 // Verifing local offer and remote answer have matching m-lines as per RFC 3264.
@@ -3583,10 +3588,17 @@ TEST_F(WebRtcSessionTest, TestSessionContentError) {
   video_channel_ = media_engine_->GetVideoChannel(0);
   video_channel_->set_fail_set_send_codecs(true);
 
-  SendAudioVideoStream2();
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(session_->local_description());
   SetRemoteDescriptionAnswerExpectError("ERROR_CONTENT", answer);
+
+  // Test that after a content error, setting any description will
+  // result in an error.
+  video_channel_->set_fail_set_send_codecs(false);
+  answer = CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionExpectError("", "ERROR_CONTENT", answer);
+  offer = CreateRemoteOffer();
+  SetLocalDescriptionExpectError("", "ERROR_CONTENT", offer);
 }
 
 // Runs the loopback call test with BUNDLE and STUN disabled.
@@ -3618,28 +3630,6 @@ TEST_F(WebRtcSessionTest, TestIceStatesBundle) {
   allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                         cricket::PORTALLOCATOR_DISABLE_RELAY);
   TestLoopbackCall();
-}
-
-TEST_F(WebRtcSessionTest, SetSdpFailedOnSessionError) {
-  Init();
-  cricket::MediaSessionOptions options;
-  options.recv_video = true;
-
-  cricket::BaseSession::Error error_code = cricket::BaseSession::ERROR_CONTENT;
-  std::string error_code_str = "ERROR_CONTENT";
-  std::string error_desc = "Fake session error description.";
-  session_->SetError(error_code, error_desc);
-
-  SessionDescriptionInterface* offer = CreateRemoteOffer(options);
-  SessionDescriptionInterface* answer =
-      CreateRemoteAnswer(offer, options);
-
-  std::string action;
-  std::ostringstream session_error_msg;
-  session_error_msg << kSessionError << error_code_str << ". ";
-  session_error_msg << kSessionErrorDesc << error_desc << ".";
-  SetRemoteDescriptionExpectError(action, session_error_msg.str(), offer);
-  SetLocalDescriptionExpectError(action, session_error_msg.str(), answer);
 }
 
 TEST_F(WebRtcSessionTest, TestRtpDataChannel) {

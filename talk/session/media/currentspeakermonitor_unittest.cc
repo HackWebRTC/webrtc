@@ -46,7 +46,7 @@ class CurrentSpeakerMonitorTest : public testing::Test,
     public sigslot::has_slots<> {
  public:
   CurrentSpeakerMonitorTest() {
-    monitor_ = new CurrentSpeakerMonitor(&source_, NULL);
+    monitor_ = new CurrentSpeakerMonitor(&source_);
     // Shrink the minimum time betweeen switches to 10 ms so we don't have to
     // slow down our tests.
     monitor_->set_min_time_between_switches(kMinTimeBetweenSwitches);

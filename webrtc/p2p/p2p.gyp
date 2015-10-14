@@ -46,8 +46,6 @@
         'base/relayport.h',
         'base/relayserver.cc',
         'base/relayserver.h',
-        'base/session.cc',
-        'base/session.h',
         'base/sessiondescription.cc',
         'base/sessiondescription.h',
         'base/sessionid.h',

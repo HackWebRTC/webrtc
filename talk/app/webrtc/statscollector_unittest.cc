@@ -95,7 +95,7 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   // track.
   MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32_t, std::string*));
   MOCK_METHOD2(GetRemoteTrackIdBySsrc, bool(uint32_t, std::string*));
-  MOCK_METHOD1(GetTransportStats, bool(cricket::SessionStats*));
+  MOCK_METHOD1(GetTransportStats, bool(SessionStats*));
   MOCK_METHOD2(GetLocalCertificate,
                bool(const std::string& transport_name,
                     rtc::scoped_refptr<rtc::RTCCertificate>* certificate));
@@ -687,7 +687,7 @@ class StatsCollectorTest : public testing::Test {
     transport_stats.transport_name = "audio";
     transport_stats.channel_stats.push_back(channel_stats);
 
-    cricket::SessionStats session_stats;
+    SessionStats session_stats;
     session_stats.transport_stats[transport_stats.transport_name] =
         transport_stats;
 
@@ -763,7 +763,7 @@ class StatsCollectorTest : public testing::Test {
   MockWebRtcSession session_;
   MockPeerConnection pc_;
   FakeDataChannelProvider data_channel_provider_;
-  cricket::SessionStats session_stats_;
+  SessionStats session_stats_;
   rtc::scoped_refptr<webrtc::MediaStream> stream_;
   rtc::scoped_refptr<webrtc::VideoTrack> track_;
   rtc::scoped_refptr<FakeAudioTrack> audio_track_;
@@ -1376,7 +1376,7 @@ TEST_F(StatsCollectorTest, NoTransport) {
   transport_stats.transport_name = "audio";
   transport_stats.channel_stats.push_back(channel_stats);
 
-  cricket::SessionStats session_stats;
+  SessionStats session_stats;
   session_stats.transport_stats[transport_stats.transport_name] =
       transport_stats;
 
@@ -1435,7 +1435,7 @@ TEST_F(StatsCollectorTest, NoCertificates) {
   transport_stats.transport_name = "audio";
   transport_stats.channel_stats.push_back(channel_stats);
 
-  cricket::SessionStats session_stats;
+  SessionStats session_stats;
   session_stats.transport_stats[transport_stats.transport_name] =
       transport_stats;
 

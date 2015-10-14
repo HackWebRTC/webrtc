@@ -366,10 +366,10 @@ void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
 
 void WebRtcSessionDescriptionFactory::InternalCreateOffer(
     CreateSessionDescriptionRequest request) {
-  cricket::SessionDescription* desc(
-      session_desc_factory_.CreateOffer(
-          request.options,
-          static_cast<cricket::BaseSession*>(session_)->local_description()));
+  cricket::SessionDescription* desc(session_desc_factory_.CreateOffer(
+      request.options, session_->local_description()
+                           ? session_->local_description()->description()
+                           : nullptr));
   // RFC 3264
   // When issuing an offer that modifies the session,
   // the "o=" line of the new SDP MUST be identical to that in the
@@ -413,9 +413,12 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   }
 
   cricket::SessionDescription* desc(session_desc_factory_.CreateAnswer(
-      static_cast<cricket::BaseSession*>(session_)->remote_description(),
-      request.options,
-      static_cast<cricket::BaseSession*>(session_)->local_description()));
+      session_->remote_description()
+          ? session_->remote_description()->description()
+          : nullptr,
+      request.options, session_->local_description()
+                           ? session_->local_description()->description()
+                           : nullptr));
   // RFC 3264
   // If the answer is different from the offer in any way (different IP
   // addresses, ports, etc.), the origin line MUST be different in the answer.

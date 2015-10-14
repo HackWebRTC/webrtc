@@ -41,14 +41,12 @@ const int kDefaultMinTimeBetweenSwitches = 1000;
 }
 
 CurrentSpeakerMonitor::CurrentSpeakerMonitor(
-    AudioSourceContext* audio_source_context, BaseSession* session)
+    AudioSourceContext* audio_source_context)
     : started_(false),
       audio_source_context_(audio_source_context),
-      session_(session),
       current_speaker_ssrc_(0),
       earliest_permitted_switch_time_(0),
-      min_time_between_switches_(kDefaultMinTimeBetweenSwitches) {
-}
+      min_time_between_switches_(kDefaultMinTimeBetweenSwitches) {}
 
 CurrentSpeakerMonitor::~CurrentSpeakerMonitor() {
   Stop();
@@ -193,10 +191,10 @@ void CurrentSpeakerMonitor::OnAudioMonitor(
 }
 
 void CurrentSpeakerMonitor::OnMediaStreamsUpdate(
-    AudioSourceContext* audio_source_context, BaseSession* session,
-    const MediaStreams& added, const MediaStreams& removed) {
-
-  if (audio_source_context == audio_source_context_ && session == session_) {
+    AudioSourceContext* audio_source_context,
+    const MediaStreams& added,
+    const MediaStreams& removed) {
+  if (audio_source_context == audio_source_context_) {
     // Update the speaking state map based on added and removed streams.
     for (std::vector<cricket::StreamParams>::const_iterator
            it = removed.audio().begin(); it != removed.audio().end(); ++it) {
@@ -211,8 +209,8 @@ void CurrentSpeakerMonitor::OnMediaStreamsUpdate(
 }
 
 void CurrentSpeakerMonitor::OnMediaStreamsReset(
-    AudioSourceContext* audio_source_context, BaseSession* session) {
-  if (audio_source_context == audio_source_context_ && session == session_) {
+    AudioSourceContext* audio_source_context) {
+  if (audio_source_context == audio_source_context_) {
     ssrc_to_speaking_state_map_.clear();
   }
 }

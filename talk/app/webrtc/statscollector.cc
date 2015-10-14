@@ -70,12 +70,13 @@ typedef TypeForAdd<float> FloatForAdd;
 typedef TypeForAdd<int64_t> Int64ForAdd;
 typedef TypeForAdd<int> IntForAdd;
 
-StatsReport::Id GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
+StatsReport::Id GetTransportIdFromProxy(const ProxyTransportMap& map,
                                         const std::string& proxy) {
   RTC_DCHECK(!proxy.empty());
-  cricket::ProxyTransportMap::const_iterator found = map.find(proxy);
-  if (found == map.end())
+  auto found = map.find(proxy);
+  if (found == map.end()) {
     return StatsReport::Id();
+  }
 
   return StatsReport::NewComponentId(
       found->second, cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -677,9 +678,9 @@ void StatsCollector::ExtractSessionInfo() {
   StatsReport* report = reports_.ReplaceOrAddNew(id);
   report->set_timestamp(stats_gathering_started_);
   report->AddBoolean(StatsReport::kStatsValueNameInitiator,
-                     pc_->session()->initiator());
+                     pc_->session()->initial_offerer());
 
-  cricket::SessionStats stats;
+  SessionStats stats;
   if (!pc_->session()->GetTransportStats(&stats)) {
     return;
   }

@@ -1163,32 +1163,31 @@ void PeerConnection::Close() {
   // streams before the channels are closed.
   stats_->UpdateStats(kStatsOutputLevelStandard);
 
-  session_->Terminate();
+  session_->Close();
 }
 
-void PeerConnection::OnSessionStateChange(cricket::BaseSession* /*session*/,
-                                          cricket::BaseSession::State state) {
+void PeerConnection::OnSessionStateChange(WebRtcSession* /*session*/,
+                                          WebRtcSession::State state) {
   switch (state) {
-    case cricket::BaseSession::STATE_INIT:
+    case WebRtcSession::STATE_INIT:
       ChangeSignalingState(PeerConnectionInterface::kStable);
       break;
-    case cricket::BaseSession::STATE_SENTINITIATE:
+    case WebRtcSession::STATE_SENTOFFER:
       ChangeSignalingState(PeerConnectionInterface::kHaveLocalOffer);
       break;
-    case cricket::BaseSession::STATE_SENTPRACCEPT:
+    case WebRtcSession::STATE_SENTPRANSWER:
       ChangeSignalingState(PeerConnectionInterface::kHaveLocalPrAnswer);
       break;
-    case cricket::BaseSession::STATE_RECEIVEDINITIATE:
+    case WebRtcSession::STATE_RECEIVEDOFFER:
       ChangeSignalingState(PeerConnectionInterface::kHaveRemoteOffer);
       break;
-    case cricket::BaseSession::STATE_RECEIVEDPRACCEPT:
+    case WebRtcSession::STATE_RECEIVEDPRANSWER:
       ChangeSignalingState(PeerConnectionInterface::kHaveRemotePrAnswer);
       break;
-    case cricket::BaseSession::STATE_SENTACCEPT:
-    case cricket::BaseSession::STATE_RECEIVEDACCEPT:
+    case WebRtcSession::STATE_INPROGRESS:
       ChangeSignalingState(PeerConnectionInterface::kStable);
       break;
-    case cricket::BaseSession::STATE_RECEIVEDTERMINATE:
+    case WebRtcSession::STATE_CLOSED:
       ChangeSignalingState(PeerConnectionInterface::kClosed);
       break;
     default:
