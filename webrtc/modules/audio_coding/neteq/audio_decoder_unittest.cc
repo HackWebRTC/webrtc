@@ -687,7 +687,6 @@ TEST(AudioDecoder, CodecSampleRateHz) {
   EXPECT_EQ(has_ilbc ? 8000 : -1, CodecSampleRateHz(kDecoderILBC));
   EXPECT_EQ(has_isac ? 16000 : -1, CodecSampleRateHz(kDecoderISAC));
   EXPECT_EQ(has_isac_swb ? 32000 : -1, CodecSampleRateHz(kDecoderISACswb));
-  EXPECT_EQ(has_isac_swb ? 32000 : -1, CodecSampleRateHz(kDecoderISACfb));
   EXPECT_EQ(8000, CodecSampleRateHz(kDecoderPCM16B));
   EXPECT_EQ(16000, CodecSampleRateHz(kDecoderPCM16Bwb));
   EXPECT_EQ(32000, CodecSampleRateHz(kDecoderPCM16Bswb32kHz));
@@ -719,7 +718,6 @@ TEST(AudioDecoder, CodecSupported) {
   EXPECT_EQ(has_ilbc, CodecSupported(kDecoderILBC));
   EXPECT_EQ(has_isac, CodecSupported(kDecoderISAC));
   EXPECT_EQ(has_isac_swb, CodecSupported(kDecoderISACswb));
-  EXPECT_EQ(has_isac_swb, CodecSupported(kDecoderISACfb));
   EXPECT_TRUE(CodecSupported(kDecoderPCM16B));
   EXPECT_TRUE(CodecSupported(kDecoderPCM16Bwb));
   EXPECT_TRUE(CodecSupported(kDecoderPCM16Bswb32kHz));

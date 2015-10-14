@@ -87,7 +87,6 @@ bool CodecSupported(NetEqDecoder codec_type) {
 #endif
 #ifdef WEBRTC_CODEC_ISAC
     case kDecoderISACswb:
-    case kDecoderISACfb:
 #endif
     case kDecoderPCM16B:
     case kDecoderPCM16Bwb:
@@ -150,7 +149,6 @@ int CodecSampleRateHz(NetEqDecoder codec_type) {
     }
 #ifdef WEBRTC_CODEC_ISAC
     case kDecoderISACswb:
-    case kDecoderISACfb:
 #endif
     case kDecoderPCM16Bswb32kHz:
     case kDecoderPCM16Bswb32kHz_2ch:
@@ -200,7 +198,6 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
 #elif defined(WEBRTC_CODEC_ISAC)
     case kDecoderISAC:
     case kDecoderISACswb:
-    case kDecoderISACfb:
       return new AudioDecoderIsac();
 #endif
     case kDecoderPCM16B:

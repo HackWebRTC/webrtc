@@ -283,34 +283,6 @@ TEST(TimestampScaler, TestOpusLargeStep) {
   EXPECT_CALL(db, Die());  // Called when database object is deleted.
 }
 
-TEST(TimestampScaler, TestIsacFbLargeStep) {
-  MockDecoderDatabase db;
-  DecoderDatabase::DecoderInfo info;
-  info.codec_type = kDecoderISACfb;
-  static const uint8_t kRtpPayloadType = 17;
-  EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
-      .WillRepeatedly(Return(&info));
-
-  TimestampScaler scaler(db);
-  // Test both sides of the timestamp wrap-around.
-  static const uint32_t kStep = 960;
-  uint32_t external_timestamp = 0;
-  // |external_timestamp| will be a large positive value.
-  external_timestamp = external_timestamp - 5 * kStep;
-  uint32_t internal_timestamp = external_timestamp;
-  for (; external_timestamp != 5 * kStep; external_timestamp += kStep) {
-    // Scale to internal timestamp.
-    EXPECT_EQ(internal_timestamp,
-              scaler.ToInternal(external_timestamp, kRtpPayloadType));
-    // Scale back.
-    EXPECT_EQ(external_timestamp, scaler.ToExternal(internal_timestamp));
-    // Internal timestamp should be incremented with two-thirds the step.
-    internal_timestamp += 2 * kStep / 3;
-  }
-
-  EXPECT_CALL(db, Die());  // Called when database object is deleted.
-}
-
 TEST(TimestampScaler, Failures) {
   static const uint8_t kRtpPayloadType = 17;
   MockDecoderDatabase db;
