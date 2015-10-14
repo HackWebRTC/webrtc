@@ -69,6 +69,8 @@ class ChannelGroup : public BitrateObserver {
 
   void SetChannelRembStatus(bool sender, bool receiver, ViEChannel* channel);
 
+  void SignalNetworkState(NetworkState state);
+
   BitrateController* GetBitrateController() const;
   CallStats* GetCallStats() const;
   RemoteBitrateEstimator* GetRemoteBitrateEstimator() const;

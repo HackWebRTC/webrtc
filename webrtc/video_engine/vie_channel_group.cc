@@ -422,6 +422,14 @@ void ChannelGroup::SetChannelRembStatus(bool sender,
   }
 }
 
+void ChannelGroup::SignalNetworkState(NetworkState state) {
+  if (state == kNetworkUp) {
+    pacer_->Resume();
+  } else {
+    pacer_->Pause();
+  }
+}
+
 void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
                                     uint8_t fraction_loss,
                                     int64_t rtt) {

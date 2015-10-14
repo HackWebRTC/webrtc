@@ -396,6 +396,7 @@ void Call::SignalNetworkState(NetworkState state) {
   // to guarantee a consistent state across streams.
   rtc::CritScope lock(&network_enabled_crit_);
   network_enabled_ = state == kNetworkUp;
+  channel_group_->SignalNetworkState(state);
   {
     ReadLockScoped write_lock(*send_crit_);
     for (auto& kv : video_send_ssrcs_) {

@@ -185,11 +185,6 @@ void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
     CriticalSectionScoped cs(data_cs_.get());
     network_is_transmitting_ = is_transmitting;
   }
-  if (is_transmitting) {
-    pacer_->Resume();
-  } else {
-    pacer_->Pause();
-  }
 }
 
 void ViEEncoder::Pause() {
