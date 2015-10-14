@@ -26,6 +26,7 @@
  *
  */
 
+#include <algorithm>
 #include <vector>
 
 #include "talk/app/webrtc/java/jni/androidmediadecoder_jni.h"
@@ -340,6 +341,8 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   jobjectArray input_buffers = (jobjectArray)GetObjectField(
       jni, *j_media_codec_video_decoder_, j_input_buffers_field_);
   size_t num_input_buffers = jni->GetArrayLength(input_buffers);
+  max_pending_frames_ =
+      std::min(max_pending_frames_, static_cast<uint32_t>(num_input_buffers));
   input_buffers_.resize(num_input_buffers);
   for (size_t i = 0; i < num_input_buffers; ++i) {
     input_buffers_[i] =
