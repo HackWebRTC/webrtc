@@ -71,6 +71,9 @@ static const char kStreams[][8] = {"stream1", "stream2"};
 static const char kAudioTracks[][32] = {"audiotrack0", "audiotrack1"};
 static const char kVideoTracks[][32] = {"videotrack0", "videotrack1"};
 
+static const char kRecvonly[] = "recvonly";
+static const char kSendrecv[] = "sendrecv";
+
 // Reference SDP with a MediaStream with label "stream1" and audio track with
 // id "audio_1" and a video track with id "video_1;
 static const char kSdpStringWithStream1[] =
@@ -84,12 +87,14 @@ static const char kSdpStringWithStream1[] =
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "a=ssrc:1 cname:stream1\r\n"
     "a=ssrc:1 mslabel:stream1\r\n"
     "a=ssrc:1 label:audiotrack0\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:120 VP8/90000\r\n"
     "a=ssrc:2 cname:stream1\r\n"
     "a=ssrc:2 mslabel:stream1\r\n"
@@ -110,6 +115,7 @@ static const char kSdpStringWithStream1And2[] =
     "a=msid-semantic: WMS stream1 stream2\r\n"
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "a=ssrc:1 cname:stream1\r\n"
     "a=ssrc:1 msid:stream1 audiotrack0\r\n"
@@ -117,6 +123,7 @@ static const char kSdpStringWithStream1And2[] =
     "a=ssrc:3 msid:stream2 audiotrack1\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:120 VP8/0\r\n"
     "a=ssrc:2 cname:stream1\r\n"
     "a=ssrc:2 msid:stream1 videotrack0\r\n"
@@ -135,9 +142,11 @@ static const char kSdpStringWithoutStreams[] =
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:120 VP8/90000\r\n";
 
 // Reference SDP without MediaStreams. Msid is supported.
@@ -153,9 +162,11 @@ static const char kSdpStringWithMsidWithoutStreams[] =
     "a=msid-semantic: WMS\r\n"
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:120 VP8/90000\r\n";
 
 // Reference SDP without MediaStreams and audio only.
@@ -170,6 +181,7 @@ static const char kSdpStringWithoutStreamsAudioOnly[] =
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:103 ISAC/16000\r\n";
 
 // Reference SENDONLY SDP without MediaStreams. Msid is not supported.
@@ -184,10 +196,12 @@ static const char kSdpStringSendOnlyWithoutStreams[] =
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
+    "a=sendrecv\r\n"
     "a=sendonly\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
+    "a=sendrecv\r\n"
     "a=sendonly\r\n"
     "a=rtpmap:120 VP8/90000\r\n";
 
@@ -205,11 +219,13 @@ static const char kSdpStringInit[] =
 static const char kSdpStringAudio[] =
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:103 ISAC/16000\r\n";
 
 static const char kSdpStringVideo[] =
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
+    "a=sendrecv\r\n"
     "a=rtpmap:120 VP8/90000\r\n";
 
 static const char kSdpStringMs1Audio0[] =
@@ -1781,6 +1797,23 @@ TEST_F(PeerConnectionInterfaceTest, RemoveTrackThenRejectMediaContent) {
   EXPECT_TRUE(DoSetLocalDescription(local_answer.release()));
 
   // No crash is a pass.
+}
+
+// This tests that if a recvonly remote description is set, no remote streams
+// will be created, even if the description contains SSRCs/MSIDs.
+// See: https://code.google.com/p/webrtc/issues/detail?id=5054
+TEST_F(PeerConnectionInterfaceTest, RecvonlyDescriptionDoesntCreateStream) {
+  FakeConstraints constraints;
+  constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                           true);
+  CreatePeerConnection(&constraints);
+
+  std::string recvonly_offer = kSdpStringWithStream1;
+  rtc::replace_substrs(kSendrecv, strlen(kSendrecv), kRecvonly,
+                       strlen(kRecvonly), &recvonly_offer);
+  CreateAndSetRemoteOffer(recvonly_offer);
+
+  EXPECT_EQ(0u, observer_.remote_streams()->count());
 }
 
 // This tests that a default MediaStream is created if a remote session

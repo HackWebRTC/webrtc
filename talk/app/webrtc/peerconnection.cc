@@ -348,6 +348,16 @@ bool MediaContentDirectionHasSend(cricket::MediaContentDirection dir) {
   return dir == cricket::MD_SENDONLY || dir == cricket::MD_SENDRECV;
 }
 
+// If the direction is "recvonly" or "inactive", treat the description
+// as containing no streams.
+// See: https://code.google.com/p/webrtc/issues/detail?id=5054
+std::vector<cricket::StreamParams> GetActiveStreams(
+    const cricket::MediaContentDescription* desc) {
+  return MediaContentDirectionHasSend(desc->direction())
+             ? desc->streams()
+             : std::vector<cricket::StreamParams>();
+}
+
 bool IsValidOfferToReceiveMedia(int value) {
   typedef PeerConnectionInterface::RTCOfferAnswerOptions Options;
   return (value >= Options::kUndefined) &&
@@ -1031,7 +1041,7 @@ void PeerConnection::SetRemoteDescription(
     const cricket::AudioContentDescription* desc =
         static_cast<const cricket::AudioContentDescription*>(
             audio_content->description);
-    UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams);
+    UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams);
     remote_info_.default_audio_track_needed =
         MediaContentDirectionHasSend(desc->direction()) &&
         desc->streams().empty();
@@ -1044,7 +1054,7 @@ void PeerConnection::SetRemoteDescription(
     const cricket::VideoContentDescription* desc =
         static_cast<const cricket::VideoContentDescription*>(
             video_content->description);
-    UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams);
+    UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams);
     remote_info_.default_video_track_needed =
         MediaContentDirectionHasSend(desc->direction()) &&
         desc->streams().empty();
@@ -1053,12 +1063,12 @@ void PeerConnection::SetRemoteDescription(
   // Update the DataChannels with the information from the remote peer.
   const cricket::ContentInfo* data_content = GetFirstDataContent(remote_desc);
   if (data_content) {
-    const cricket::DataContentDescription* data_desc =
+    const cricket::DataContentDescription* desc =
         static_cast<const cricket::DataContentDescription*>(
             data_content->description);
-    if (rtc::starts_with(data_desc->protocol().data(),
+    if (rtc::starts_with(desc->protocol().data(),
                          cricket::kMediaProtocolRtpPrefix)) {
-      UpdateRemoteRtpDataChannels(data_desc->streams());
+      UpdateRemoteRtpDataChannels(GetActiveStreams(desc));
     }
   }
 
