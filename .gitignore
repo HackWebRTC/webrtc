@@ -29,6 +29,7 @@
 .cproject
 .gdb_history
 .gdbinit
+.landmines
 .metadata
 .project
 .pydevproject
@@ -176,4 +177,3 @@
 /webrtc/video_engine/test/android/obj
 /x86-generic_out/
 /xcodebuild
-

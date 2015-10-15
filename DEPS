@@ -71,6 +71,21 @@ hooks = [
     'action': ['python', 'src/setup_links.py'],
   },
   {
+    # This clobbers when necessary (based on get_landmines.py). It should be
+    # an early hook but it will need to be run after syncing Chromium and
+    # setting up the links, so the script actually exists.
+    'name': 'landmines',
+    'pattern': '.',
+    'action': [
+        'python',
+        'src/build/landmines.py',
+        '--landmine-scripts',
+        'src/webrtc/build/get_landmines.py',
+        '--src-dir',
+        'src',
+    ],
+  },
+  {
      # Pull sanitizer-instrumented third-party libraries if requested via
      # GYP_DEFINES. This could be done as part of sync_chromium.py above
      # but then we would need to run all the Chromium hooks each time,
