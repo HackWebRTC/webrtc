@@ -106,14 +106,12 @@ VCMCodecDataBase::VCMCodecDataBase(
       max_payload_size_(kDefaultPayloadSize),
       periodic_key_frames_(false),
       pending_encoder_reset_(true),
-      current_enc_is_external_(false),
       send_codec_(),
       receive_codec_(),
-      external_payload_type_(0),
+      encoder_payload_type_(0),
       external_encoder_(NULL),
       internal_source_(false),
       encoder_rate_observer_(encoder_rate_observer),
-      ptr_encoder_(NULL),
       ptr_decoder_(NULL),
       dec_map_(),
       dec_external_map_() {
@@ -296,17 +294,10 @@ bool VCMCodecDataBase::SetSendCodec(
 
   // If encoder exists, will destroy it and create new one.
   DeleteEncoder();
-  if (send_codec_.plType == external_payload_type_) {
-    // External encoder.
-    ptr_encoder_ = new VCMGenericEncoder(
-        external_encoder_, encoder_rate_observer_, internal_source_);
-    current_enc_is_external_ = true;
-  } else {
-    ptr_encoder_ = CreateEncoder(send_codec_.codecType);
-    current_enc_is_external_ = false;
-    if (!ptr_encoder_)
-      return false;
-  }
+  RTC_DCHECK_EQ(encoder_payload_type_, send_codec_.plType)
+      << "Encoder not registered for payload type " << send_codec_.plType;
+  ptr_encoder_.reset(new VCMGenericEncoder(
+      external_encoder_, encoder_rate_observer_, internal_source_));
   encoded_frame_callback->SetPayloadType(send_codec_.plType);
   if (ptr_encoder_->InitEncode(&send_codec_, number_of_cores_,
                                max_payload_size_) < 0) {
@@ -348,17 +339,16 @@ bool VCMCodecDataBase::DeregisterExternalEncoder(
     uint8_t payload_type, bool* was_send_codec) {
   assert(was_send_codec);
   *was_send_codec = false;
-  if (external_payload_type_ != payload_type) {
+  if (encoder_payload_type_ != payload_type) {
     return false;
   }
   if (send_codec_.plType == payload_type) {
     // De-register as send codec if needed.
     DeleteEncoder();
     memset(&send_codec_, 0, sizeof(VideoCodec));
-    current_enc_is_external_ = false;
     *was_send_codec = true;
   }
-  external_payload_type_ = 0;
+  encoder_payload_type_ = 0;
   external_encoder_ = NULL;
   internal_source_ = false;
   return true;
@@ -371,7 +361,7 @@ void VCMCodecDataBase::RegisterExternalEncoder(
   // Since only one encoder can be used at a given time, only one external
   // encoder can be registered/used.
   external_encoder_ = external_encoder;
-  external_payload_type_ = payload_type;
+  encoder_payload_type_ = payload_type;
   internal_source_ = internal_source;
   pending_encoder_reset_ = true;
 }
@@ -446,7 +436,7 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
 }
 
 VCMGenericEncoder* VCMCodecDataBase::GetEncoder() {
-  return ptr_encoder_;
+  return ptr_encoder_.get();
 }
 
 bool VCMCodecDataBase::SetPeriodicKeyFrames(bool enable) {
@@ -649,48 +639,11 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   return ptr_decoder;
 }
 
-VCMGenericEncoder* VCMCodecDataBase::CreateEncoder(
-  const VideoCodecType type) const {
-  switch (type) {
-#ifdef VIDEOCODEC_VP8
-    case kVideoCodecVP8:
-      return new VCMGenericEncoder(VP8Encoder::Create(), encoder_rate_observer_,
-                                   false);
-#endif
-#ifdef VIDEOCODEC_VP9
-    case kVideoCodecVP9:
-      return new VCMGenericEncoder(VP9Encoder::Create(), encoder_rate_observer_,
-                                   false);
-#endif
-#ifdef VIDEOCODEC_I420
-    case kVideoCodecI420:
-      return new VCMGenericEncoder(new I420Encoder(), encoder_rate_observer_,
-                                   false);
-#endif
-#ifdef VIDEOCODEC_H264
-    case kVideoCodecH264:
-      if (H264Encoder::IsSupported()) {
-        return new VCMGenericEncoder(H264Encoder::Create(),
-                                     encoder_rate_observer_,
-                                     false);
-      }
-      break;
-#endif
-    default:
-      break;
-  }
-  LOG(LS_WARNING) << "No internal encoder of this type exists.";
-  return NULL;
-}
-
 void VCMCodecDataBase::DeleteEncoder() {
-  if (ptr_encoder_) {
-    ptr_encoder_->Release();
-    if (!current_enc_is_external_)
-      delete ptr_encoder_->encoder_;
-    delete ptr_encoder_;
-    ptr_encoder_ = NULL;
-  }
+  if (!ptr_encoder_)
+    return;
+  ptr_encoder_->Release();
+  ptr_encoder_.reset();
 }
 
 VCMGenericDecoder* VCMCodecDataBase::CreateDecoder(VideoCodecType type) const {

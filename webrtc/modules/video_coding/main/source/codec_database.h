@@ -151,8 +151,6 @@ class VCMCodecDataBase {
   // Determines whether a new codec has to be created or not.
   // Checks every setting apart from maxFramerate and startBitrate.
   bool RequiresEncoderReset(const VideoCodec& send_codec);
-  // Create an internal encoder given a codec type.
-  VCMGenericEncoder* CreateEncoder(const VideoCodecType type) const;
 
   void DeleteEncoder();
 
@@ -168,14 +166,13 @@ class VCMCodecDataBase {
   size_t max_payload_size_;
   bool periodic_key_frames_;
   bool pending_encoder_reset_;
-  bool current_enc_is_external_;
   VideoCodec send_codec_;
   VideoCodec receive_codec_;
-  uint8_t external_payload_type_;
+  uint8_t encoder_payload_type_;
   VideoEncoder* external_encoder_;
   bool internal_source_;
   VideoEncoderRateObserver* const encoder_rate_observer_;
-  VCMGenericEncoder* ptr_encoder_;
+  rtc::scoped_ptr<VCMGenericEncoder> ptr_encoder_;
   VCMGenericDecoder* ptr_decoder_;
   DecoderMap dec_map_;
   ExternalDecoderMap dec_external_map_;

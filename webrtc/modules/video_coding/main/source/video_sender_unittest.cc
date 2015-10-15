@@ -14,6 +14,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/main/interface/mock/mock_vcm_callbacks.h"
@@ -190,6 +191,8 @@ class TestVideoSender : public ::testing::Test {
   SimulatedClock clock_;
   PacketizationCallback packetization_callback_;
   MockEncodedImageCallback post_encode_callback_;
+  // Used by subclassing tests, need to outlive sender_.
+  rtc::scoped_ptr<VideoEncoder> encoder_;
   rtc::scoped_ptr<VideoSender> sender_;
   rtc::scoped_ptr<FrameGenerator> generator_;
 };
@@ -347,6 +350,9 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
     codec_.minBitrate = 10;
     codec_.startBitrate = codec_bitrate_kbps_;
     codec_.maxBitrate = codec_bitrate_kbps_;
+    encoder_.reset(VP8Encoder::Create());
+    ASSERT_EQ(0, sender_->RegisterExternalEncoder(encoder_.get(), codec_.plType,
+                                                  false));
     EXPECT_EQ(0, sender_->RegisterSendCodec(&codec_, 1, 1200));
   }
 
