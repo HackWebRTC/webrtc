@@ -139,6 +139,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       clock_(Clock::GetRealTimeClock()),
       channel_group_(channel_group),
       channel_id_(channel_id) {
+  LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
   RTC_CHECK(channel_group_->CreateReceiveChannel(
       channel_id_, &transport_adapter_, num_cpu_cores, config));
 
@@ -257,6 +258,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
+  LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   incoming_video_stream_->Stop();
   vie_channel_->RegisterPreRenderCallback(nullptr);
   vie_channel_->RegisterPreDecodeImageCallback(nullptr);

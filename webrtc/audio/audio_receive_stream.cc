@@ -13,6 +13,7 @@
 #include <string>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
@@ -48,6 +49,7 @@ AudioReceiveStream::AudioReceiveStream(
     : remote_bitrate_estimator_(remote_bitrate_estimator),
       config_(config),
       rtp_header_parser_(RtpHeaderParser::Create()) {
+  LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
   RTC_DCHECK(config.voe_channel_id != -1);
   RTC_DCHECK(remote_bitrate_estimator_ != nullptr);
   RTC_DCHECK(rtp_header_parser_ != nullptr);
@@ -70,8 +72,16 @@ AudioReceiveStream::AudioReceiveStream(
   }
 }
 
+AudioReceiveStream::~AudioReceiveStream() {
+  LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
+}
+
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   return webrtc::AudioReceiveStream::Stats();
+}
+
+const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {
+  return config_;
 }
 
 void AudioReceiveStream::Start() {

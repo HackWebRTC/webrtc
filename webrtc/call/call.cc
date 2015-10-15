@@ -176,16 +176,19 @@ PacketReceiver* Call::Receiver() { return this; }
 
 webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
+  // TODO(pbos): When adding AudioSendStream, add both TRACE_EVENT0 and config
+  // logging to AudioSendStream constructor.
   return nullptr;
 }
 
 void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
+  // TODO(pbos): When adding AudioSendStream, add both TRACE_EVENT0 and config
+  // logging to AudioSendStream destructor.
 }
 
 webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
-  LOG(LS_INFO) << "CreateAudioReceiveStream: " << config.ToString();
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       channel_group_->GetRemoteBitrateEstimator(), config);
   {
@@ -224,8 +227,6 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
-  LOG(LS_INFO) << "CreateVideoSendStream: " << config.ToString();
-  RTC_DCHECK(!config.rtp.ssrcs.empty());
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
@@ -288,7 +289,6 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
     const webrtc::VideoReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
-  LOG(LS_INFO) << "CreateVideoReceiveStream: " << config.ToString();
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       num_cpu_cores_, channel_group_.get(),
       rtc::AtomicOps::Increment(&next_channel_id_), config,

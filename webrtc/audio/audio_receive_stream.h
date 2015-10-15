@@ -24,7 +24,7 @@ class AudioReceiveStream : public webrtc::AudioReceiveStream {
  public:
   AudioReceiveStream(RemoteBitrateEstimator* remote_bitrate_estimator,
                      const webrtc::AudioReceiveStream::Config& config);
-  ~AudioReceiveStream() override {}
+  ~AudioReceiveStream() override;
 
   // webrtc::ReceiveStream implementation.
   void Start() override;
@@ -38,9 +38,7 @@ class AudioReceiveStream : public webrtc::AudioReceiveStream {
   // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
 
-  const webrtc::AudioReceiveStream::Config& config() const {
-    return config_;
-  }
+  const webrtc::AudioReceiveStream::Config& config() const;
 
  private:
   RemoteBitrateEstimator* const remote_bitrate_estimator_;

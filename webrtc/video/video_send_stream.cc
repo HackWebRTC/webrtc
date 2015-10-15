@@ -117,6 +117,7 @@ VideoSendStream::VideoSendStream(
       channel_id_(channel_id),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
+  LOG(LS_INFO) << "VideoSendStream: " << config_.ToString();
   RTC_DCHECK(!config_.rtp.ssrcs.empty());
   RTC_CHECK(channel_group->CreateSendChannel(
       channel_id_, &transport_adapter_, &stats_proxy_,
@@ -194,6 +195,7 @@ VideoSendStream::VideoSendStream(
 }
 
 VideoSendStream::~VideoSendStream() {
+  LOG(LS_INFO) << "~VideoSendStream: " << config_.ToString();
   vie_channel_->RegisterSendFrameCountObserver(nullptr);
   vie_channel_->RegisterSendBitrateObserver(nullptr);
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(nullptr);
