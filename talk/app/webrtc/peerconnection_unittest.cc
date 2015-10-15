@@ -127,13 +127,6 @@ static void RemoveLinesFromSdp(const std::string& line_start,
 
 class SignalingMessageReceiver {
  public:
- protected:
-  SignalingMessageReceiver() {}
-  virtual ~SignalingMessageReceiver() {}
-};
-
-class JsepMessageReceiver : public SignalingMessageReceiver {
- public:
   virtual void ReceiveSdpMessage(const std::string& type,
                                  std::string& msg) = 0;
   virtual void ReceiveIceMessage(const std::string& sdp_mid,
@@ -141,16 +134,26 @@ class JsepMessageReceiver : public SignalingMessageReceiver {
                                  const std::string& msg) = 0;
 
  protected:
-  JsepMessageReceiver() {}
-  virtual ~JsepMessageReceiver() {}
+  SignalingMessageReceiver() {}
+  virtual ~SignalingMessageReceiver() {}
 };
 
-template <typename MessageReceiver>
-class PeerConnectionTestClientBase
-    : public webrtc::PeerConnectionObserver,
-      public MessageReceiver {
+class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
+                                 public SignalingMessageReceiver {
  public:
-  ~PeerConnectionTestClientBase() {
+  static PeerConnectionTestClient* CreateClient(
+      const std::string& id,
+      const MediaConstraintsInterface* constraints,
+      const PeerConnectionFactory::Options* options) {
+    PeerConnectionTestClient* client(new PeerConnectionTestClient(id));
+    if (!client->Init(constraints, options)) {
+      delete client;
+      return nullptr;
+    }
+    return client;
+  }
+
+  ~PeerConnectionTestClient() {
     while (!fake_video_renderers_.empty()) {
       RenderMap::iterator it = fake_video_renderers_.begin();
       delete it->second;
@@ -158,19 +161,91 @@ class PeerConnectionTestClientBase
     }
   }
 
-  virtual void Negotiate()  = 0;
+  void Negotiate() { Negotiate(true, true); }
 
-  virtual void Negotiate(bool audio, bool video)  = 0;
+  void Negotiate(bool audio, bool video) {
+    rtc::scoped_ptr<SessionDescriptionInterface> offer;
+    ASSERT_TRUE(DoCreateOffer(offer.use()));
 
-  virtual void SetVideoConstraints(
-      const webrtc::FakeConstraints& video_constraint) {
+    if (offer->description()->GetContentByName("audio")) {
+      offer->description()->GetContentByName("audio")->rejected = !audio;
+    }
+    if (offer->description()->GetContentByName("video")) {
+      offer->description()->GetContentByName("video")->rejected = !video;
+    }
+
+    std::string sdp;
+    EXPECT_TRUE(offer->ToString(&sdp));
+    EXPECT_TRUE(DoSetLocalDescription(offer.release()));
+    signaling_message_receiver_->ReceiveSdpMessage(
+        webrtc::SessionDescriptionInterface::kOffer, sdp);
+  }
+
+  // SignalingMessageReceiver callback.
+  void ReceiveSdpMessage(const std::string& type, std::string& msg) override {
+    FilterIncomingSdpMessage(&msg);
+    if (type == webrtc::SessionDescriptionInterface::kOffer) {
+      HandleIncomingOffer(msg);
+    } else {
+      HandleIncomingAnswer(msg);
+    }
+  }
+
+  // SignalingMessageReceiver callback.
+  void ReceiveIceMessage(const std::string& sdp_mid,
+                         int sdp_mline_index,
+                         const std::string& msg) override {
+    LOG(INFO) << id_ << "ReceiveIceMessage";
+    rtc::scoped_ptr<webrtc::IceCandidateInterface> candidate(
+        webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, msg, nullptr));
+    EXPECT_TRUE(pc()->AddIceCandidate(candidate.get()));
+  }
+
+  // PeerConnectionObserver callbacks.
+  void OnSignalingChange(
+      webrtc::PeerConnectionInterface::SignalingState new_state) override {
+    EXPECT_EQ(pc()->signaling_state(), new_state);
+  }
+  void OnAddStream(webrtc::MediaStreamInterface* media_stream) override {
+    for (size_t i = 0; i < media_stream->GetVideoTracks().size(); ++i) {
+      const std::string id = media_stream->GetVideoTracks()[i]->id();
+      ASSERT_TRUE(fake_video_renderers_.find(id) ==
+                  fake_video_renderers_.end());
+      fake_video_renderers_[id] =
+          new webrtc::FakeVideoTrackRenderer(media_stream->GetVideoTracks()[i]);
+    }
+  }
+  void OnRemoveStream(webrtc::MediaStreamInterface* media_stream) override {}
+  void OnRenegotiationNeeded() override {}
+  void OnIceConnectionChange(
+      webrtc::PeerConnectionInterface::IceConnectionState new_state) override {
+    EXPECT_EQ(pc()->ice_connection_state(), new_state);
+  }
+  void OnIceGatheringChange(
+      webrtc::PeerConnectionInterface::IceGatheringState new_state) override {
+    EXPECT_EQ(pc()->ice_gathering_state(), new_state);
+  }
+  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
+    LOG(INFO) << id_ << "OnIceCandidate";
+
+    std::string ice_sdp;
+    EXPECT_TRUE(candidate->ToString(&ice_sdp));
+    if (signaling_message_receiver_ == nullptr) {
+      // Remote party may be deleted.
+      return;
+    }
+    signaling_message_receiver_->ReceiveIceMessage(
+        candidate->sdp_mid(), candidate->sdp_mline_index(), ice_sdp);
+  }
+
+  void SetVideoConstraints(const webrtc::FakeConstraints& video_constraint) {
     video_constraints_ = video_constraint;
   }
 
   void AddMediaStream(bool audio, bool video) {
-    std::string stream_label = kStreamLabelBase +
-        rtc::ToString<int>(
-            static_cast<int>(peer_connection_->local_streams()->count()));
+    std::string stream_label =
+        kStreamLabelBase +
+        rtc::ToString<int>(static_cast<int>(pc()->local_streams()->count()));
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         peer_connection_factory_->CreateLocalMediaStream(stream_label);
 
@@ -192,20 +267,17 @@ class PeerConnectionTestClientBase
       stream->AddTrack(CreateLocalVideoTrack(stream_label));
     }
 
-    EXPECT_TRUE(peer_connection_->AddStream(stream));
+    EXPECT_TRUE(pc()->AddStream(stream));
   }
 
-  size_t NumberOfLocalMediaStreams() {
-    return peer_connection_->local_streams()->count();
-  }
+  size_t NumberOfLocalMediaStreams() { return pc()->local_streams()->count(); }
 
   bool SessionActive() {
-    return peer_connection_->signaling_state() ==
-        webrtc::PeerConnectionInterface::kStable;
+    return pc()->signaling_state() == webrtc::PeerConnectionInterface::kStable;
   }
 
   void set_signaling_message_receiver(
-      MessageReceiver* signaling_message_receiver) {
+      SignalingMessageReceiver* signaling_message_receiver) {
     signaling_message_receiver_ = signaling_message_receiver;
   }
 
@@ -213,6 +285,91 @@ class PeerConnectionTestClientBase
     video_decoder_factory_enabled_ = true;
     fake_video_decoder_factory_->AddSupportedVideoCodecType(
         webrtc::kVideoCodecVP8);
+  }
+
+  void IceRestart() {
+    session_description_constraints_.SetMandatoryIceRestart(true);
+    SetExpectIceRestart(true);
+  }
+
+  void SetExpectIceRestart(bool expect_restart) {
+    expect_ice_restart_ = expect_restart;
+  }
+
+  bool ExpectIceRestart() const { return expect_ice_restart_; }
+
+  void SetReceiveAudioVideo(bool audio, bool video) {
+    SetReceiveAudio(audio);
+    SetReceiveVideo(video);
+    ASSERT_EQ(audio, can_receive_audio());
+    ASSERT_EQ(video, can_receive_video());
+  }
+
+  void SetReceiveAudio(bool audio) {
+    if (audio && can_receive_audio())
+      return;
+    session_description_constraints_.SetMandatoryReceiveAudio(audio);
+  }
+
+  void SetReceiveVideo(bool video) {
+    if (video && can_receive_video())
+      return;
+    session_description_constraints_.SetMandatoryReceiveVideo(video);
+  }
+
+  void RemoveMsidFromReceivedSdp(bool remove) { remove_msid_ = remove; }
+
+  void RemoveSdesCryptoFromReceivedSdp(bool remove) { remove_sdes_ = remove; }
+
+  void RemoveBundleFromReceivedSdp(bool remove) { remove_bundle_ = remove; }
+
+  bool can_receive_audio() {
+    bool value;
+    if (webrtc::FindConstraint(&session_description_constraints_,
+                               MediaConstraintsInterface::kOfferToReceiveAudio,
+                               &value, nullptr)) {
+      return value;
+    }
+    return true;
+  }
+
+  bool can_receive_video() {
+    bool value;
+    if (webrtc::FindConstraint(&session_description_constraints_,
+                               MediaConstraintsInterface::kOfferToReceiveVideo,
+                               &value, nullptr)) {
+      return value;
+    }
+    return true;
+  }
+
+  void OnIceComplete() override { LOG(INFO) << id_ << "OnIceComplete"; }
+
+  void OnDataChannel(DataChannelInterface* data_channel) override {
+    LOG(INFO) << id_ << "OnDataChannel";
+    data_channel_ = data_channel;
+    data_observer_.reset(new MockDataChannelObserver(data_channel));
+  }
+
+  void CreateDataChannel() {
+    data_channel_ = pc()->CreateDataChannel(kDataChannelLabel, nullptr);
+    ASSERT_TRUE(data_channel_.get() != nullptr);
+    data_observer_.reset(new MockDataChannelObserver(data_channel_));
+  }
+
+  DataChannelInterface* data_channel() { return data_channel_; }
+  const MockDataChannelObserver* data_observer() const {
+    return data_observer_.get();
+  }
+
+  webrtc::PeerConnectionInterface* pc() { return peer_connection_.get(); }
+
+  void StopVideoCapturers() {
+    for (std::vector<cricket::VideoCapturer*>::iterator it =
+             video_capturers_.begin();
+         it != video_capturers_.end(); ++it) {
+      (*it)->Stop();
+    }
   }
 
   bool AudioFramesReceivedCheck(int number_of_frames) const {
@@ -248,6 +405,7 @@ class PeerConnectionTestClientBase
       return true;
     }
   }
+
   // Verify the CreateDtmfSender interface
   void VerifyDtmf() {
     rtc::scoped_ptr<DummyDtmfObserver> observer(new DummyDtmfObserver());
@@ -255,17 +413,16 @@ class PeerConnectionTestClientBase
 
     // We can't create a DTMF sender with an invalid audio track or a non local
     // track.
-    EXPECT_TRUE(peer_connection_->CreateDtmfSender(NULL) == NULL);
+    EXPECT_TRUE(peer_connection_->CreateDtmfSender(nullptr) == nullptr);
     rtc::scoped_refptr<webrtc::AudioTrackInterface> non_localtrack(
-        peer_connection_factory_->CreateAudioTrack("dummy_track",
-                                                   NULL));
-    EXPECT_TRUE(peer_connection_->CreateDtmfSender(non_localtrack) == NULL);
+        peer_connection_factory_->CreateAudioTrack("dummy_track", nullptr));
+    EXPECT_TRUE(peer_connection_->CreateDtmfSender(non_localtrack) == nullptr);
 
     // We should be able to create a DTMF sender from a local track.
     webrtc::AudioTrackInterface* localtrack =
         peer_connection_->local_streams()->at(0)->GetAudioTracks()[0];
     dtmf_sender = peer_connection_->CreateDtmfSender(localtrack);
-    EXPECT_TRUE(dtmf_sender.get() != NULL);
+    EXPECT_TRUE(dtmf_sender.get() != nullptr);
     dtmf_sender->RegisterObserver(observer.get());
 
     // Test the DtmfSender object just created.
@@ -288,8 +445,8 @@ class PeerConnectionTestClientBase
   // Verifies that the SessionDescription have rejected the appropriate media
   // content.
   void VerifyRejectedMediaInSessionDescription() {
-    ASSERT_TRUE(peer_connection_->remote_description() != NULL);
-    ASSERT_TRUE(peer_connection_->local_description() != NULL);
+    ASSERT_TRUE(peer_connection_->remote_description() != nullptr);
+    ASSERT_TRUE(peer_connection_->local_description() != nullptr);
     const cricket::SessionDescription* remote_desc =
         peer_connection_->remote_description()->description();
     const cricket::SessionDescription* local_desc =
@@ -310,14 +467,8 @@ class PeerConnectionTestClientBase
     }
   }
 
-  void SetExpectIceRestart(bool expect_restart) {
-    expect_ice_restart_ = expect_restart;
-  }
-
-  bool ExpectIceRestart() const { return expect_ice_restart_; }
-
   void VerifyLocalIceUfragAndPassword() {
-    ASSERT_TRUE(peer_connection_->local_description() != NULL);
+    ASSERT_TRUE(peer_connection_->local_description() != nullptr);
     const cricket::SessionDescription* desc =
         peer_connection_->local_description()->description();
     const cricket::ContentInfos& contents = desc->contents();
@@ -360,7 +511,7 @@ class PeerConnectionTestClientBase
     rtc::scoped_refptr<MockStatsObserver>
         observer(new rtc::RefCountedObject<MockStatsObserver>());
     EXPECT_TRUE(peer_connection_->GetStats(
-        observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
+        observer, nullptr, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     EXPECT_NE(0, observer->timestamp());
     return observer->AudioInputLevel();
@@ -390,7 +541,7 @@ class PeerConnectionTestClientBase
     rtc::scoped_refptr<MockStatsObserver>
         observer(new rtc::RefCountedObject<MockStatsObserver>());
     EXPECT_TRUE(peer_connection_->GetStats(
-        observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
+        observer, nullptr, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     EXPECT_NE(0, observer->timestamp());
     int bw = observer->AvailableReceiveBandwidth();
@@ -401,7 +552,7 @@ class PeerConnectionTestClientBase
     rtc::scoped_refptr<MockStatsObserver>
         observer(new rtc::RefCountedObject<MockStatsObserver>());
     EXPECT_TRUE(peer_connection_->GetStats(
-        observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
+        observer, nullptr, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     EXPECT_NE(0, observer->timestamp());
     return observer->DtlsCipher();
@@ -411,7 +562,7 @@ class PeerConnectionTestClientBase
     rtc::scoped_refptr<MockStatsObserver>
         observer(new rtc::RefCountedObject<MockStatsObserver>());
     EXPECT_TRUE(peer_connection_->GetStats(
-        observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
+        observer, nullptr, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     EXPECT_NE(0, observer->timestamp());
     return observer->SrtpCipher();
@@ -438,7 +589,7 @@ class PeerConnectionTestClientBase
   StreamCollectionInterface* remote_streams() {
     if (!pc()) {
       ADD_FAILURE();
-      return NULL;
+      return nullptr;
     }
     return pc()->remote_streams();
   }
@@ -446,7 +597,7 @@ class PeerConnectionTestClientBase
   StreamCollectionInterface* local_streams() {
     if (!pc()) {
       ADD_FAILURE();
-      return NULL;
+      return nullptr;
     }
     return pc()->local_streams();
   }
@@ -463,104 +614,13 @@ class PeerConnectionTestClientBase
     return pc()->ice_gathering_state();
   }
 
-  // PeerConnectionObserver callbacks.
-  virtual void OnMessage(const std::string&) {}
-  virtual void OnSignalingMessage(const std::string& /*msg*/) {}
-  virtual void OnSignalingChange(
-      webrtc::PeerConnectionInterface::SignalingState new_state) {
-    EXPECT_EQ(peer_connection_->signaling_state(), new_state);
-  }
-  virtual void OnAddStream(webrtc::MediaStreamInterface* media_stream) {
-    for (size_t i = 0; i < media_stream->GetVideoTracks().size(); ++i) {
-      const std::string id = media_stream->GetVideoTracks()[i]->id();
-      ASSERT_TRUE(fake_video_renderers_.find(id) ==
-          fake_video_renderers_.end());
-      fake_video_renderers_[id] = new webrtc::FakeVideoTrackRenderer(
-          media_stream->GetVideoTracks()[i]);
-    }
-  }
-  virtual void OnRemoveStream(webrtc::MediaStreamInterface* media_stream) {}
-  virtual void OnRenegotiationNeeded() {}
-  virtual void OnIceConnectionChange(
-      webrtc::PeerConnectionInterface::IceConnectionState new_state) {
-    EXPECT_EQ(peer_connection_->ice_connection_state(), new_state);
-  }
-  virtual void OnIceGatheringChange(
-      webrtc::PeerConnectionInterface::IceGatheringState new_state) {
-    EXPECT_EQ(peer_connection_->ice_gathering_state(), new_state);
-  }
-  virtual void OnIceCandidate(
-      const webrtc::IceCandidateInterface* /*candidate*/) {}
-
-  webrtc::PeerConnectionInterface* pc() {
-    return peer_connection_.get();
-  }
-  void StopVideoCapturers() {
-    for (std::vector<cricket::VideoCapturer*>::iterator it =
-        video_capturers_.begin(); it != video_capturers_.end(); ++it) {
-      (*it)->Stop();
-    }
-  }
-
- protected:
-  explicit PeerConnectionTestClientBase(const std::string& id)
-      : id_(id),
-        expect_ice_restart_(false),
-        fake_video_decoder_factory_(NULL),
-        fake_video_encoder_factory_(NULL),
-        video_decoder_factory_enabled_(false),
-        signaling_message_receiver_(NULL) {
-  }
-  bool Init(const MediaConstraintsInterface* constraints,
-            const PeerConnectionFactory::Options* options) {
-    EXPECT_TRUE(!peer_connection_);
-    EXPECT_TRUE(!peer_connection_factory_);
-    allocator_factory_ = webrtc::FakePortAllocatorFactory::Create();
-    if (!allocator_factory_) {
-      return false;
-    }
-    fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
-
-    if (fake_audio_capture_module_ == NULL) {
-      return false;
-    }
-    fake_video_decoder_factory_ = new FakeWebRtcVideoDecoderFactory();
-    fake_video_encoder_factory_ = new FakeWebRtcVideoEncoderFactory();
-    peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
-        rtc::Thread::Current(), rtc::Thread::Current(),
-        fake_audio_capture_module_, fake_video_encoder_factory_,
-        fake_video_decoder_factory_);
-    if (!peer_connection_factory_) {
-      return false;
-    }
-    if (options) {
-      peer_connection_factory_->SetOptions(*options);
-    }
-    peer_connection_ = CreatePeerConnection(allocator_factory_.get(),
-                                            constraints);
-    return peer_connection_.get() != NULL;
-  }
-  virtual rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-      CreatePeerConnection(webrtc::PortAllocatorFactoryInterface* factory,
-                           const MediaConstraintsInterface* constraints) = 0;
-  MessageReceiver* signaling_message_receiver() {
-    return signaling_message_receiver_;
-  }
-  webrtc::PeerConnectionFactoryInterface* peer_connection_factory() {
-    return peer_connection_factory_.get();
-  }
-
-  virtual bool can_receive_audio() = 0;
-  virtual bool can_receive_video() = 0;
-  const std::string& id() const { return id_; }
-
  private:
   class DummyDtmfObserver : public DtmfSenderObserverInterface {
    public:
     DummyDtmfObserver() : completed_(false) {}
 
     // Implements DtmfSenderObserverInterface.
-    void OnToneChange(const std::string& tone) {
+    void OnToneChange(const std::string& tone) override {
       tones_.push_back(tone);
       if (tone.empty()) {
         completed_ = true;
@@ -579,6 +639,38 @@ class PeerConnectionTestClientBase
     std::vector<std::string> tones_;
   };
 
+  explicit PeerConnectionTestClient(const std::string& id) : id_(id) {}
+
+  bool Init(const MediaConstraintsInterface* constraints,
+            const PeerConnectionFactory::Options* options) {
+    EXPECT_TRUE(!peer_connection_);
+    EXPECT_TRUE(!peer_connection_factory_);
+    allocator_factory_ = webrtc::FakePortAllocatorFactory::Create();
+    if (!allocator_factory_) {
+      return false;
+    }
+    fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
+
+    if (fake_audio_capture_module_ == nullptr) {
+      return false;
+    }
+    fake_video_decoder_factory_ = new FakeWebRtcVideoDecoderFactory();
+    fake_video_encoder_factory_ = new FakeWebRtcVideoEncoderFactory();
+    peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
+        rtc::Thread::Current(), rtc::Thread::Current(),
+        fake_audio_capture_module_, fake_video_encoder_factory_,
+        fake_video_decoder_factory_);
+    if (!peer_connection_factory_) {
+      return false;
+    }
+    if (options) {
+      peer_connection_factory_->SetOptions(*options);
+    }
+    peer_connection_ = CreatePeerConnection(allocator_factory_.get(),
+                                            constraints);
+    return peer_connection_.get() != nullptr;
+  }
+
   rtc::scoped_refptr<webrtc::VideoTrackInterface>
   CreateLocalVideoTrack(const std::string stream_label) {
     // Set max frame rate to 10fps to reduce the risk of the tests to be flaky.
@@ -595,195 +687,9 @@ class PeerConnectionTestClientBase
     return peer_connection_factory_->CreateVideoTrack(label, source);
   }
 
-  std::string id_;
-
-  rtc::scoped_refptr<webrtc::PortAllocatorFactoryInterface>
-      allocator_factory_;
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-      peer_connection_factory_;
-
-  typedef std::pair<std::string, std::string> IceUfragPwdPair;
-  std::map<int, IceUfragPwdPair> ice_ufrag_pwd_;
-  bool expect_ice_restart_;
-
-  // Needed to keep track of number of frames send.
-  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
-  // Needed to keep track of number of frames received.
-  typedef std::map<std::string, webrtc::FakeVideoTrackRenderer*> RenderMap;
-  RenderMap fake_video_renderers_;
-  // Needed to keep track of number of frames received when external decoder
-  // used.
-  FakeWebRtcVideoDecoderFactory* fake_video_decoder_factory_;
-  FakeWebRtcVideoEncoderFactory* fake_video_encoder_factory_;
-  bool video_decoder_factory_enabled_;
-  webrtc::FakeConstraints video_constraints_;
-
-  // For remote peer communication.
-  MessageReceiver* signaling_message_receiver_;
-
-  // Store references to the video capturers we've created, so that we can stop
-  // them, if required.
-  std::vector<cricket::VideoCapturer*> video_capturers_;
-};
-
-class JsepTestClient
-    : public PeerConnectionTestClientBase<JsepMessageReceiver> {
- public:
-  static JsepTestClient* CreateClient(
-      const std::string& id,
-      const MediaConstraintsInterface* constraints,
-      const PeerConnectionFactory::Options* options) {
-    JsepTestClient* client(new JsepTestClient(id));
-    if (!client->Init(constraints, options)) {
-      delete client;
-      return NULL;
-    }
-    return client;
-  }
-  ~JsepTestClient() {}
-
-  virtual void Negotiate() {
-    Negotiate(true, true);
-  }
-  virtual void Negotiate(bool audio, bool video) {
-    rtc::scoped_ptr<SessionDescriptionInterface> offer;
-    ASSERT_TRUE(DoCreateOffer(offer.use()));
-
-    if (offer->description()->GetContentByName("audio")) {
-      offer->description()->GetContentByName("audio")->rejected = !audio;
-    }
-    if (offer->description()->GetContentByName("video")) {
-      offer->description()->GetContentByName("video")->rejected = !video;
-    }
-
-    std::string sdp;
-    EXPECT_TRUE(offer->ToString(&sdp));
-    EXPECT_TRUE(DoSetLocalDescription(offer.release()));
-    signaling_message_receiver()->ReceiveSdpMessage(
-        webrtc::SessionDescriptionInterface::kOffer, sdp);
-  }
-  // JsepMessageReceiver callback.
-  virtual void ReceiveSdpMessage(const std::string& type,
-                                 std::string& msg) {
-    FilterIncomingSdpMessage(&msg);
-    if (type == webrtc::SessionDescriptionInterface::kOffer) {
-      HandleIncomingOffer(msg);
-    } else {
-      HandleIncomingAnswer(msg);
-    }
-  }
-  // JsepMessageReceiver callback.
-  virtual void ReceiveIceMessage(const std::string& sdp_mid,
-                                 int sdp_mline_index,
-                                 const std::string& msg) {
-    LOG(INFO) << id() << "ReceiveIceMessage";
-    rtc::scoped_ptr<webrtc::IceCandidateInterface> candidate(
-        webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, msg, NULL));
-    EXPECT_TRUE(pc()->AddIceCandidate(candidate.get()));
-  }
-  // Implements PeerConnectionObserver functions needed by Jsep.
-  virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
-    LOG(INFO) << id() << "OnIceCandidate";
-
-    std::string ice_sdp;
-    EXPECT_TRUE(candidate->ToString(&ice_sdp));
-    if (signaling_message_receiver() == NULL) {
-      // Remote party may be deleted.
-      return;
-    }
-    signaling_message_receiver()->ReceiveIceMessage(candidate->sdp_mid(),
-        candidate->sdp_mline_index(), ice_sdp);
-  }
-
-  void IceRestart() {
-    session_description_constraints_.SetMandatoryIceRestart(true);
-    SetExpectIceRestart(true);
-  }
-
-  void SetReceiveAudioVideo(bool audio, bool video) {
-    SetReceiveAudio(audio);
-    SetReceiveVideo(video);
-    ASSERT_EQ(audio, can_receive_audio());
-    ASSERT_EQ(video, can_receive_video());
-  }
-
-  void SetReceiveAudio(bool audio) {
-    if (audio && can_receive_audio())
-      return;
-    session_description_constraints_.SetMandatoryReceiveAudio(audio);
-  }
-
-  void SetReceiveVideo(bool video) {
-    if (video && can_receive_video())
-      return;
-    session_description_constraints_.SetMandatoryReceiveVideo(video);
-  }
-
-  void RemoveMsidFromReceivedSdp(bool remove) {
-    remove_msid_ = remove;
-  }
-
-  void RemoveSdesCryptoFromReceivedSdp(bool remove) {
-    remove_sdes_ = remove;
-  }
-
-  void RemoveBundleFromReceivedSdp(bool remove) {
-    remove_bundle_ = remove;
-  }
-
-  virtual bool can_receive_audio() {
-    bool value;
-    if (webrtc::FindConstraint(&session_description_constraints_,
-        MediaConstraintsInterface::kOfferToReceiveAudio, &value, NULL)) {
-      return value;
-    }
-    return true;
-  }
-
-  virtual bool can_receive_video() {
-    bool value;
-    if (webrtc::FindConstraint(&session_description_constraints_,
-        MediaConstraintsInterface::kOfferToReceiveVideo, &value, NULL)) {
-      return value;
-    }
-    return true;
-  }
-
-  virtual void OnIceComplete() {
-    LOG(INFO) << id() << "OnIceComplete";
-  }
-
-  virtual void OnDataChannel(DataChannelInterface* data_channel) {
-    LOG(INFO) << id() << "OnDataChannel";
-    data_channel_ = data_channel;
-    data_observer_.reset(new MockDataChannelObserver(data_channel));
-  }
-
-  void CreateDataChannel() {
-    data_channel_ = pc()->CreateDataChannel(kDataChannelLabel,
-                                                         NULL);
-    ASSERT_TRUE(data_channel_.get() != NULL);
-    data_observer_.reset(new MockDataChannelObserver(data_channel_));
-  }
-
-  DataChannelInterface* data_channel() { return data_channel_; }
-  const MockDataChannelObserver* data_observer() const {
-    return data_observer_.get();
-  }
-
- protected:
-  explicit JsepTestClient(const std::string& id)
-      : PeerConnectionTestClientBase<JsepMessageReceiver>(id),
-        remove_msid_(false),
-        remove_bundle_(false),
-        remove_sdes_(false) {
-  }
-
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-      CreatePeerConnection(
-          webrtc::PortAllocatorFactoryInterface* factory,
-          const MediaConstraintsInterface* constraints) override {
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
+      webrtc::PortAllocatorFactoryInterface* factory,
+      const MediaConstraintsInterface* constraints) {
     // CreatePeerConnection with IceServers.
     webrtc::PeerConnectionInterface::IceServers ice_servers;
     webrtc::PeerConnectionInterface::IceServer ice_server;
@@ -793,34 +699,34 @@ class JsepTestClient
     rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
         rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
                                               : nullptr);
-    return peer_connection_factory()->CreatePeerConnection(
+    return peer_connection_factory_->CreatePeerConnection(
         ice_servers, constraints, factory, dtls_identity_store.Pass(), this);
   }
 
   void HandleIncomingOffer(const std::string& msg) {
-    LOG(INFO) << id() << "HandleIncomingOffer ";
+    LOG(INFO) << id_ << "HandleIncomingOffer ";
     if (NumberOfLocalMediaStreams() == 0) {
       // If we are not sending any streams ourselves it is time to add some.
       AddMediaStream(true, true);
     }
     rtc::scoped_ptr<SessionDescriptionInterface> desc(
-         webrtc::CreateSessionDescription("offer", msg, NULL));
+        webrtc::CreateSessionDescription("offer", msg, nullptr));
     EXPECT_TRUE(DoSetRemoteDescription(desc.release()));
     rtc::scoped_ptr<SessionDescriptionInterface> answer;
     EXPECT_TRUE(DoCreateAnswer(answer.use()));
     std::string sdp;
     EXPECT_TRUE(answer->ToString(&sdp));
     EXPECT_TRUE(DoSetLocalDescription(answer.release()));
-    if (signaling_message_receiver()) {
-      signaling_message_receiver()->ReceiveSdpMessage(
+    if (signaling_message_receiver_) {
+      signaling_message_receiver_->ReceiveSdpMessage(
           webrtc::SessionDescriptionInterface::kAnswer, sdp);
     }
   }
 
   void HandleIncomingAnswer(const std::string& msg) {
-    LOG(INFO) << id() << "HandleIncomingAnswer";
+    LOG(INFO) << id_ << "HandleIncomingAnswer";
     rtc::scoped_ptr<SessionDescriptionInterface> desc(
-         webrtc::CreateSessionDescription("answer", msg, NULL));
+        webrtc::CreateSessionDescription("answer", msg, nullptr));
     EXPECT_TRUE(DoSetRemoteDescription(desc.release()));
   }
 
@@ -854,7 +760,7 @@ class JsepTestClient
     rtc::scoped_refptr<MockSetSessionDescriptionObserver>
             observer(new rtc::RefCountedObject<
                 MockSetSessionDescriptionObserver>());
-    LOG(INFO) << id() << "SetLocalDescription ";
+    LOG(INFO) << id_ << "SetLocalDescription ";
     pc()->SetLocalDescription(observer, desc);
     // Ignore the observer result. If we wait for the result with
     // EXPECT_TRUE_WAIT, local ice candidates might be sent to the remote peer
@@ -875,7 +781,7 @@ class JsepTestClient
     rtc::scoped_refptr<MockSetSessionDescriptionObserver>
         observer(new rtc::RefCountedObject<
             MockSetSessionDescriptionObserver>());
-    LOG(INFO) << id() << "SetRemoteDescription ";
+    LOG(INFO) << id_ << "SetRemoteDescription ";
     pc()->SetRemoteDescription(observer, desc);
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     return observer->result();
@@ -899,17 +805,47 @@ class JsepTestClient
     }
   }
 
- private:
+  std::string id_;
+
+  rtc::scoped_refptr<webrtc::PortAllocatorFactoryInterface> allocator_factory_;
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+      peer_connection_factory_;
+
+  typedef std::pair<std::string, std::string> IceUfragPwdPair;
+  std::map<int, IceUfragPwdPair> ice_ufrag_pwd_;
+  bool expect_ice_restart_ = false;
+
+  // Needed to keep track of number of frames send.
+  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
+  // Needed to keep track of number of frames received.
+  typedef std::map<std::string, webrtc::FakeVideoTrackRenderer*> RenderMap;
+  RenderMap fake_video_renderers_;
+  // Needed to keep track of number of frames received when external decoder
+  // used.
+  FakeWebRtcVideoDecoderFactory* fake_video_decoder_factory_ = nullptr;
+  FakeWebRtcVideoEncoderFactory* fake_video_encoder_factory_ = nullptr;
+  bool video_decoder_factory_enabled_ = false;
+  webrtc::FakeConstraints video_constraints_;
+
+  // For remote peer communication.
+  SignalingMessageReceiver* signaling_message_receiver_ = nullptr;
+
+  // Store references to the video capturers we've created, so that we can stop
+  // them, if required.
+  std::vector<cricket::VideoCapturer*> video_capturers_;
+
   webrtc::FakeConstraints session_description_constraints_;
-  bool remove_msid_;  // True if MSID should be removed in received SDP.
-  bool remove_bundle_;  // True if bundle should be removed in received SDP.
-  bool remove_sdes_;  // True if a=crypto should be removed in received SDP.
+  bool remove_msid_ = false;  // True if MSID should be removed in received SDP.
+  bool remove_bundle_ =
+      false;  // True if bundle should be removed in received SDP.
+  bool remove_sdes_ =
+      false;  // True if a=crypto should be removed in received SDP.
 
   rtc::scoped_refptr<DataChannelInterface> data_channel_;
   rtc::scoped_ptr<MockDataChannelObserver> data_observer_;
 };
 
-template <typename SignalingClass>
 class P2PTestConductor : public testing::Test {
  public:
   P2PTestConductor()
@@ -969,32 +905,29 @@ class P2PTestConductor : public testing::Test {
 
   ~P2PTestConductor() {
     if (initiating_client_) {
-      initiating_client_->set_signaling_message_receiver(NULL);
+      initiating_client_->set_signaling_message_receiver(nullptr);
     }
     if (receiving_client_) {
-      receiving_client_->set_signaling_message_receiver(NULL);
+      receiving_client_->set_signaling_message_receiver(nullptr);
     }
   }
 
-  bool CreateTestClients() {
-    return CreateTestClients(NULL, NULL);
-  }
+  bool CreateTestClients() { return CreateTestClients(nullptr, nullptr); }
 
   bool CreateTestClients(MediaConstraintsInterface* init_constraints,
                          MediaConstraintsInterface* recv_constraints) {
-    return CreateTestClients(init_constraints, NULL, recv_constraints, NULL);
+    return CreateTestClients(init_constraints, nullptr, recv_constraints,
+                             nullptr);
   }
 
   bool CreateTestClients(MediaConstraintsInterface* init_constraints,
                          PeerConnectionFactory::Options* init_options,
                          MediaConstraintsInterface* recv_constraints,
                          PeerConnectionFactory::Options* recv_options) {
-    initiating_client_.reset(SignalingClass::CreateClient("Caller: ",
-                                                          init_constraints,
-                                                          init_options));
-    receiving_client_.reset(SignalingClass::CreateClient("Callee: ",
-                                                         recv_constraints,
-                                                         recv_options));
+    initiating_client_.reset(PeerConnectionTestClient::CreateClient(
+        "Caller: ", init_constraints, init_options));
+    receiving_client_.reset(PeerConnectionTestClient::CreateClient(
+        "Callee: ", recv_constraints, recv_options));
     if (!initiating_client_ || !receiving_client_) {
       return false;
     }
@@ -1088,17 +1021,20 @@ class P2PTestConductor : public testing::Test {
     }
   }
 
-  SignalingClass* initializing_client() { return initiating_client_.get(); }
-  SignalingClass* receiving_client() { return receiving_client_.get(); }
+  PeerConnectionTestClient* initializing_client() {
+    return initiating_client_.get();
+  }
+  PeerConnectionTestClient* receiving_client() {
+    return receiving_client_.get();
+  }
 
  private:
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
   rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
   rtc::SocketServerScope ss_scope_;
-  rtc::scoped_ptr<SignalingClass> initiating_client_;
-  rtc::scoped_ptr<SignalingClass> receiving_client_;
+  rtc::scoped_ptr<PeerConnectionTestClient> initiating_client_;
+  rtc::scoped_ptr<PeerConnectionTestClient> receiving_client_;
 };
-typedef P2PTestConductor<JsepTestClient> JsepPeerConnectionP2PTestClient;
 
 // Disable for TSan v2, see
 // https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
@@ -1107,7 +1043,7 @@ typedef P2PTestConductor<JsepTestClient> JsepPeerConnectionP2PTestClient;
 // This test sets up a Jsep call between two parties and test Dtmf.
 // TODO(holmer): Disabled due to sometimes crashing on buildbots.
 // See issue webrtc/2378.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDtmf) {
+TEST_F(P2PTestConductor, DISABLED_LocalP2PTestDtmf) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
   VerifyDtmf();
@@ -1115,7 +1051,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDtmf) {
 
 // This test sets up a Jsep call between two parties and test that we can get a
 // video aspect ratio of 16:9.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTest16To9) {
+TEST_F(P2PTestConductor, LocalP2PTest16To9) {
   ASSERT_TRUE(CreateTestClients());
   FakeConstraints constraint;
   double requested_ratio = 640.0/360;
@@ -1140,7 +1076,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTest16To9) {
 // received video has a resolution of 1280*720.
 // TODO(mallinath): Enable when
 // http://code.google.com/p/webrtc/issues/detail?id=981 is fixed.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTest1280By720) {
+TEST_F(P2PTestConductor, DISABLED_LocalP2PTest1280By720) {
   ASSERT_TRUE(CreateTestClients());
   FakeConstraints constraint;
   constraint.SetMandatoryMinWidth(1280);
@@ -1152,7 +1088,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTest1280By720) {
 
 // This test sets up a call between two endpoints that are configured to use
 // DTLS key agreement. As a result, DTLS is negotiated and used for transport.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtls) {
+TEST_F(P2PTestConductor, LocalP2PTestDtls) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1164,7 +1100,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtls) {
 
 // This test sets up a audio call initially and then upgrades to audio/video,
 // using DTLS.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
+TEST_F(P2PTestConductor, LocalP2PTestDtlsRenegotiate) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1179,7 +1115,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
 // This test sets up a call between two endpoints that are configured to use
 // DTLS key agreement. The offerer don't support SDES. As a result, DTLS is
 // negotiated and used for transport.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestOfferDtlsButNotSdes) {
+TEST_F(P2PTestConductor, LocalP2PTestOfferDtlsButNotSdes) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1192,7 +1128,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestOfferDtlsButNotSdes) {
 
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive video.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerVideo) {
+TEST_F(P2PTestConductor, LocalP2PTestAnswerVideo) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(false, true);
   LocalP2PTest();
@@ -1200,7 +1136,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerVideo) {
 
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive audio.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerAudio) {
+TEST_F(P2PTestConductor, LocalP2PTestAnswerAudio) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(true, false);
   LocalP2PTest();
@@ -1208,7 +1144,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerAudio) {
 
 // This test sets up a Jsep call between two parties, and the callee reject both
 // audio and video.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerNone) {
+TEST_F(P2PTestConductor, LocalP2PTestAnswerNone) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(false, false);
   LocalP2PTest();
@@ -1219,8 +1155,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerNone) {
 // being rejected. Once the re-negotiation is done, the video flow should stop
 // and the audio flow should continue.
 // Disabled due to b/14955157.
-TEST_F(JsepPeerConnectionP2PTestClient,
-       DISABLED_UpdateOfferWithRejectedContent) {
+TEST_F(P2PTestConductor, DISABLED_UpdateOfferWithRejectedContent) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
   TestUpdateOfferWithRejectedContent();
@@ -1229,7 +1164,7 @@ TEST_F(JsepPeerConnectionP2PTestClient,
 // This test sets up a Jsep call between two parties. The MSID is removed from
 // the SDP strings from the caller.
 // Disabled due to b/14955157.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestWithoutMsid) {
+TEST_F(P2PTestConductor, DISABLED_LocalP2PTestWithoutMsid) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->RemoveMsidFromReceivedSdp(true);
   // TODO(perkj): Currently there is a bug that cause audio to stop playing if
@@ -1244,7 +1179,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestWithoutMsid) {
 // sends two steams.
 // TODO(perkj): Disabled due to
 // https://code.google.com/p/webrtc/issues/detail?id=1454
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestTwoStreams) {
+TEST_F(P2PTestConductor, DISABLED_LocalP2PTestTwoStreams) {
   ASSERT_TRUE(CreateTestClients());
   // Set optional video constraint to max 320pixels to decrease CPU usage.
   FakeConstraints constraint;
@@ -1258,7 +1193,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestTwoStreams) {
 }
 
 // Test that we can receive the audio output level from a remote audio track.
-TEST_F(JsepPeerConnectionP2PTestClient, GetAudioOutputLevelStats) {
+TEST_F(P2PTestConductor, GetAudioOutputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1277,7 +1212,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetAudioOutputLevelStats) {
 }
 
 // Test that an audio input level is reported.
-TEST_F(JsepPeerConnectionP2PTestClient, GetAudioInputLevelStats) {
+TEST_F(P2PTestConductor, GetAudioInputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1288,7 +1223,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetAudioInputLevelStats) {
 }
 
 // Test that we can get incoming byte counts from both audio and video tracks.
-TEST_F(JsepPeerConnectionP2PTestClient, GetBytesReceivedStats) {
+TEST_F(P2PTestConductor, GetBytesReceivedStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1310,7 +1245,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetBytesReceivedStats) {
 }
 
 // Test that we can get outgoing byte counts from both audio and video tracks.
-TEST_F(JsepPeerConnectionP2PTestClient, GetBytesSentStats) {
+TEST_F(P2PTestConductor, GetBytesSentStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1332,12 +1267,13 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetBytesSentStats) {
 }
 
 // Test that DTLS 1.0 is used if both sides only support DTLS 1.0.
-TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12None) {
+TEST_F(P2PTestConductor, GetDtls12None) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_10;
   PeerConnectionFactory::Options recv_options;
   recv_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_10;
-  ASSERT_TRUE(CreateTestClients(NULL, &init_options, NULL, &recv_options));
+  ASSERT_TRUE(
+      CreateTestClients(nullptr, &init_options, nullptr, &recv_options));
   rtc::scoped_refptr<webrtc::FakeMetricsObserver>
       init_observer = new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
@@ -1362,12 +1298,13 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12None) {
 }
 
 // Test that DTLS 1.2 is used if both ends support it.
-TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Both) {
+TEST_F(P2PTestConductor, GetDtls12Both) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   PeerConnectionFactory::Options recv_options;
   recv_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
-  ASSERT_TRUE(CreateTestClients(NULL, &init_options, NULL, &recv_options));
+  ASSERT_TRUE(
+      CreateTestClients(nullptr, &init_options, nullptr, &recv_options));
   rtc::scoped_refptr<webrtc::FakeMetricsObserver>
       init_observer = new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
@@ -1393,12 +1330,13 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Both) {
 
 // Test that DTLS 1.0 is used if the initator supports DTLS 1.2 and the
 // received supports 1.0.
-TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Init) {
+TEST_F(P2PTestConductor, GetDtls12Init) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   PeerConnectionFactory::Options recv_options;
   recv_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_10;
-  ASSERT_TRUE(CreateTestClients(NULL, &init_options, NULL, &recv_options));
+  ASSERT_TRUE(
+      CreateTestClients(nullptr, &init_options, nullptr, &recv_options));
   rtc::scoped_refptr<webrtc::FakeMetricsObserver>
       init_observer = new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
@@ -1424,12 +1362,13 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Init) {
 
 // Test that DTLS 1.0 is used if the initator supports DTLS 1.0 and the
 // received supports 1.2.
-TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Recv) {
+TEST_F(P2PTestConductor, GetDtls12Recv) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_10;
   PeerConnectionFactory::Options recv_options;
   recv_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
-  ASSERT_TRUE(CreateTestClients(NULL, &init_options, NULL, &recv_options));
+  ASSERT_TRUE(
+      CreateTestClients(nullptr, &init_options, nullptr, &recv_options));
   rtc::scoped_refptr<webrtc::FakeMetricsObserver>
       init_observer = new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
@@ -1454,14 +1393,14 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Recv) {
 }
 
 // This test sets up a call between two parties with audio, video and data.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
+TEST_F(P2PTestConductor, LocalP2PTestDataChannel) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
   initializing_client()->CreateDataChannel();
   LocalP2PTest();
-  ASSERT_TRUE(initializing_client()->data_channel() != NULL);
-  ASSERT_TRUE(receiving_client()->data_channel() != NULL);
+  ASSERT_TRUE(initializing_client()->data_channel() != nullptr);
+  ASSERT_TRUE(receiving_client()->data_channel() != nullptr);
   EXPECT_TRUE_WAIT(initializing_client()->data_observer()->IsOpen(),
                    kMaxWaitMs);
   EXPECT_TRUE_WAIT(receiving_client()->data_observer()->IsOpen(),
@@ -1491,15 +1430,15 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
 // transport has detected that a channel is writable and thus data can be
 // received before the data channel state changes to open. That is hard to test
 // but the same buffering is used in that case.
-TEST_F(JsepPeerConnectionP2PTestClient, RegisterDataChannelObserver) {
+TEST_F(P2PTestConductor, RegisterDataChannelObserver) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
   initializing_client()->CreateDataChannel();
   initializing_client()->Negotiate();
 
-  ASSERT_TRUE(initializing_client()->data_channel() != NULL);
-  ASSERT_TRUE(receiving_client()->data_channel() != NULL);
+  ASSERT_TRUE(initializing_client()->data_channel() != nullptr);
+  ASSERT_TRUE(receiving_client()->data_channel() != nullptr);
   EXPECT_TRUE_WAIT(initializing_client()->data_observer()->IsOpen(),
                    kMaxWaitMs);
   EXPECT_EQ_WAIT(DataChannelInterface::kOpen,
@@ -1521,7 +1460,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, RegisterDataChannelObserver) {
 
 // This test sets up a call between two parties with audio, video and but only
 // the initiating client support data.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestReceiverDoesntSupportData) {
+TEST_F(P2PTestConductor, LocalP2PTestReceiverDoesntSupportData) {
   FakeConstraints setup_constraints_1;
   setup_constraints_1.SetAllowRtpDataChannels();
   // Must disable DTLS to make negotiation succeed.
@@ -1533,14 +1472,14 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestReceiverDoesntSupportData) {
   ASSERT_TRUE(CreateTestClients(&setup_constraints_1, &setup_constraints_2));
   initializing_client()->CreateDataChannel();
   LocalP2PTest();
-  EXPECT_TRUE(initializing_client()->data_channel() != NULL);
+  EXPECT_TRUE(initializing_client()->data_channel() != nullptr);
   EXPECT_FALSE(receiving_client()->data_channel());
   EXPECT_FALSE(initializing_client()->data_observer()->IsOpen());
 }
 
 // This test sets up a call between two parties with audio, video. When audio
 // and video is setup and flowing and data channel is negotiated.
-TEST_F(JsepPeerConnectionP2PTestClient, AddDataChannelAfterRenegotiation) {
+TEST_F(P2PTestConductor, AddDataChannelAfterRenegotiation) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
@@ -1548,8 +1487,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, AddDataChannelAfterRenegotiation) {
   initializing_client()->CreateDataChannel();
   // Send new offer and answer.
   initializing_client()->Negotiate();
-  ASSERT_TRUE(initializing_client()->data_channel() != NULL);
-  ASSERT_TRUE(receiving_client()->data_channel() != NULL);
+  ASSERT_TRUE(initializing_client()->data_channel() != nullptr);
+  ASSERT_TRUE(receiving_client()->data_channel() != nullptr);
   EXPECT_TRUE_WAIT(initializing_client()->data_observer()->IsOpen(),
                    kMaxWaitMs);
   EXPECT_TRUE_WAIT(receiving_client()->data_observer()->IsOpen(),
@@ -1559,7 +1498,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, AddDataChannelAfterRenegotiation) {
 // This test sets up a Jsep call with SCTP DataChannel and verifies the
 // negotiation is completed without error.
 #ifdef HAVE_SCTP
-TEST_F(JsepPeerConnectionP2PTestClient, CreateOfferWithSctpDataChannel) {
+TEST_F(P2PTestConductor, CreateOfferWithSctpDataChannel) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;
   constraints.SetMandatory(
@@ -1573,7 +1512,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, CreateOfferWithSctpDataChannel) {
 // This test sets up a call between two parties with audio, and video.
 // During the call, the initializing side restart ice and the test verifies that
 // new ice candidates are generated and audio and video still can flow.
-TEST_F(JsepPeerConnectionP2PTestClient, IceRestart) {
+TEST_F(P2PTestConductor, IceRestart) {
   ASSERT_TRUE(CreateTestClients());
 
   // Negotiate and wait for ice completion and make sure audio and video plays.
@@ -1624,8 +1563,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, IceRestart) {
 // VideoDecoderFactory.
 // TODO(holmer): Disabled due to sometimes crashing on buildbots.
 // See issue webrtc/2378.
-TEST_F(JsepPeerConnectionP2PTestClient,
-       DISABLED_LocalP2PTestWithVideoDecoderFactory) {
+TEST_F(P2PTestConductor, DISABLED_LocalP2PTestWithVideoDecoderFactory) {
   ASSERT_TRUE(CreateTestClients());
   EnableVideoDecoderFactory();
   LocalP2PTest();
