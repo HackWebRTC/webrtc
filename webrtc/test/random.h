@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_RANDOM_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_RANDOM_H_
+#ifndef WEBRTC_TEST_RANDOM_H_
+#define WEBRTC_TEST_RANDOM_H_
 
 #include "webrtc/typedefs.h"
 #include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
+
+namespace test {
 
 class Random {
  public:
@@ -23,8 +25,14 @@ class Random {
   // Return pseudo-random number in the interval [0.0, 1.0].
   float Rand();
 
+  // Return pseudo rounded random number in interval [low, high].
+  int Rand(int low, int high);
+
   // Normal Distribution.
   int Gaussian(int mean, int standard_deviation);
+
+  // Exponential Distribution.
+  int Exponential(float lambda);
 
   // TODO(solenberg): Random from histogram.
   // template<typename T> int Distribution(const std::vector<T> histogram) {
@@ -35,6 +43,7 @@ class Random {
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Random);
 };
+}  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_RANDOM_H_
+#endif  // WEBRTC_TEST_RANDOM_H_

@@ -37,6 +37,8 @@
         'mock_transport.h',
         'null_transport.cc',
         'null_transport.h',
+        'random.cc',
+        'random.h',
         'rtp_rtcp_observer.h',
         'run_loop.cc',
         'run_loop.h',

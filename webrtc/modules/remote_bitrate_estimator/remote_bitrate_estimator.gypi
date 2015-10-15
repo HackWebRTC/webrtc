@@ -85,8 +85,6 @@
             'test/packet_sender.cc',
             'test/packet_sender.h',
             'test/packet.h',
-            'test/random.cc',
-            'test/random.h',
             'test/estimators/nada.cc',
             'test/estimators/nada.h',
             'test/estimators/remb.cc',

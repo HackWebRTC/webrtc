@@ -30,7 +30,7 @@ TEST(BweTestFramework_RandomTest, Gaussian) {
     kStddev = 10
   };
 
-  Random random(0x12345678);
+  test::Random random(0x12345678);
 
   int buckets[kBuckets] = {0};
   for (int i = 0; i < kN; ++i) {

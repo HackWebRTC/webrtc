@@ -8,11 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/test/random.h"
+#include "webrtc/test/random.h"
 
 #include <math.h>
 
+#include "webrtc/base/checks.h"
+
 namespace webrtc {
+
+namespace test {
 
 Random::Random(uint32_t seed) : a_(0x531FDB97 ^ seed), b_(0x6420ECA8 + seed) {
 }
@@ -23,6 +27,12 @@ float Random::Rand() {
   a_ ^= b_;
   b_ += a_;
   return result;
+}
+
+int Random::Rand(int low, int high) {
+  RTC_DCHECK(low <= high);
+  float uniform = Rand() * (high - low + 1) + low;
+  return static_cast<int>(uniform);
 }
 
 int Random::Gaussian(int mean, int standard_deviation) {
@@ -38,4 +48,10 @@ int Random::Gaussian(int mean, int standard_deviation) {
   return static_cast<int>(
       mean + standard_deviation * sqrt(-2 * log(u1)) * cos(2 * kPi * u2));
 }
+
+int Random::Exponential(float lambda) {
+  float uniform = Rand();
+  return static_cast<int>(-log(uniform) / lambda);
+}
+}  // namespace test
 }  // namespace webrtc

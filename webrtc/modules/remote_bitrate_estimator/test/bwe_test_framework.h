@@ -29,9 +29,9 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/random.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/test/random.h"
 
 namespace webrtc {
 
@@ -173,32 +173,6 @@ template<typename T> class Stats {
   T max_;
 };
 
-class Random {
- public:
-  explicit Random(uint32_t seed);
-
-  // Return pseudo random number in the interval [0.0, 1.0].
-  float Rand();
-
-  // Return pseudo rounded random number in interval [low, high].
-  int Rand(int low, int high);
-
-  // Normal Distribution.
-  int Gaussian(int mean, int standard_deviation);
-
-  // Exponential Distribution.
-  int Exponential(float lambda);
-
-  // TODO(solenberg): Random from histogram.
-  // template<typename T> int Distribution(const std::vector<T> histogram) {
-
- private:
-  uint32_t a_;
-  uint32_t b_;
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Random);
-};
-
 bool IsTimeSorted(const Packets& packets);
 
 class PacketProcessor;
@@ -291,7 +265,7 @@ class LossFilter : public PacketProcessor {
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
-  Random random_;
+  test::Random random_;
   float loss_fraction_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(LossFilter);
@@ -325,7 +299,7 @@ class JitterFilter : public PacketProcessor {
   int64_t MeanUs();
 
  private:
-  Random random_;
+  test::Random random_;
   int64_t stddev_jitter_us_;
   int64_t last_send_time_us_;
   bool reordering_;  // False by default.
@@ -344,7 +318,7 @@ class ReorderFilter : public PacketProcessor {
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
-  Random random_;
+  test::Random random_;
   float reorder_fraction_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ReorderFilter);

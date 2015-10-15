@@ -947,7 +947,7 @@ std::vector<int> BweTest::GetFileSizesBytes(int num_files) {
   const int kMinKbytes = 100;
   const int kMaxKbytes = 1000;
 
-  Random random(0x12345678);
+  test::Random random(0x12345678);
   std::vector<int> tcp_file_sizes_bytes;
 
   while (num_files-- > 0) {
@@ -960,7 +960,7 @@ std::vector<int> BweTest::GetFileSizesBytes(int num_files) {
 std::vector<int64_t> BweTest::GetStartingTimesMs(int num_files) {
   // OFF state behaves as an exp. distribution with mean = 10 seconds.
   const float kMeanMs = 10000.0f;
-  Random random(0x12345678);
+  test::Random random(0x12345678);
 
   std::vector<int64_t> tcp_starting_times_ms;
 

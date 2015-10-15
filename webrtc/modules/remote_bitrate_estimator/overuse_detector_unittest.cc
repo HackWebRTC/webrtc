@@ -20,8 +20,8 @@
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
-#include "webrtc/modules/remote_bitrate_estimator/test/random.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/test/random.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
@@ -114,7 +114,7 @@ class OveruseDetectorTest : public ::testing::Test {
   rtc::scoped_ptr<OveruseDetector> overuse_detector_;
   rtc::scoped_ptr<OveruseEstimator> overuse_estimator_;
   rtc::scoped_ptr<InterArrival> inter_arrival_;
-  Random random_;
+  test::Random random_;
 };
 
 TEST_F(OveruseDetectorTest, GaussianRandom) {
