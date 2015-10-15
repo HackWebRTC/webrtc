@@ -110,32 +110,37 @@ class MockVideoEncoder : public VideoEncoder {
  public:
   int32_t InitEncode(const VideoCodec* codecSettings,
                      int32_t numberOfCores,
-                     size_t maxPayloadSize) {
+                     size_t maxPayloadSize) override {
     codec_ = *codecSettings;
     return 0;
   }
 
   int32_t Encode(const VideoFrame& inputImage,
                  const CodecSpecificInfo* codecSpecificInfo,
-                 const std::vector<VideoFrameType>* frame_types) {
+                 const std::vector<VideoFrameType>* frame_types) override {
     return 0;
   }
 
-  int32_t RegisterEncodeCompleteCallback(EncodedImageCallback* callback) {
+  int32_t RegisterEncodeCompleteCallback(
+      EncodedImageCallback* callback) override {
     callback_ = callback;
     return 0;
   }
 
-  int32_t Release() {
+  int32_t Release() override {
     return 0;
   }
 
-  int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) {
+  int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) override {
     return 0;
   }
 
   MOCK_METHOD2(SetChannelParameters,
       int32_t(uint32_t packetLoss, int64_t rtt));
+
+  bool SupportsNativeHandle() const override {
+    return supports_native_handle_;
+  }
 
   virtual ~MockVideoEncoder() {
   }
@@ -152,7 +157,12 @@ class MockVideoEncoder : public VideoEncoder {
     callback_->Encoded(image, &codecSpecificInfo, NULL);
   }
 
+  void set_supports_native_handle(bool enabled) {
+    supports_native_handle_ = enabled;
+  }
+
  private:
+  bool supports_native_handle_ = false;
   VideoCodec codec_;
   EncodedImageCallback* callback_;
 };
@@ -380,6 +390,34 @@ TEST_F(TestSimulcastEncoderAdapterFake, EncodedCallbackForDifferentEncoders) {
   EXPECT_EQ(120, width);
   EXPECT_EQ(240, height);
   EXPECT_EQ(2, simulcast_index);
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, SupportsNativeHandleForSingleStreams) {
+  TestVp8Simulcast::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
+  codec_.numberOfSimulcastStreams = 1;
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  adapter_->RegisterEncodeCompleteCallback(this);
+  ASSERT_EQ(1u, helper_->factory()->encoders().size());
+  helper_->factory()->encoders()[0]->set_supports_native_handle(true);
+  EXPECT_TRUE(adapter_->SupportsNativeHandle());
+  helper_->factory()->encoders()[0]->set_supports_native_handle(false);
+  EXPECT_FALSE(adapter_->SupportsNativeHandle());
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake,
+       SupportsNativeHandleDisabledForMultipleStreams) {
+  // TODO(pbos): Implement actual test (verify that it works) when implemented
+  // for multiple streams.
+  TestVp8Simulcast::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
+  codec_.numberOfSimulcastStreams = 3;
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  adapter_->RegisterEncodeCompleteCallback(this);
+  ASSERT_EQ(3u, helper_->factory()->encoders().size());
+  for (MockVideoEncoder* encoder : helper_->factory()->encoders())
+    encoder->set_supports_native_handle(true);
+  EXPECT_FALSE(adapter_->SupportsNativeHandle());
 }
 
 }  // namespace testing

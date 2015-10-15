@@ -15,6 +15,7 @@
 // NOTE(ajm): Path provided by gyp.
 #include "libyuv/scale.h"  // NOLINT
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 
@@ -495,6 +496,15 @@ void SimulcastEncoderAdapter::OnDroppedFrame() {
 
 int SimulcastEncoderAdapter::GetTargetFramerate() {
   return streaminfos_[0].encoder->GetTargetFramerate();
+}
+
+bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
+  // We should not be calling this method before streaminfos_ are configured.
+  RTC_DCHECK(!streaminfos_.empty());
+  // TODO(pbos): Support textures when using more than one encoder.
+  if (streaminfos_.size() != 1)
+    return false;
+  return streaminfos_[0].encoder->SupportsNativeHandle();
 }
 
 }  // namespace webrtc
