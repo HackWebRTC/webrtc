@@ -984,7 +984,7 @@ void SctpDataMediaChannel::OnPacketFromSctpToNetwork(
                   << " even after adding " << kSctpOverhead
                   << " extra SCTP overhead";
   }
-  MediaChannel::SendPacket(buffer);
+  MediaChannel::SendPacket(buffer, rtc::PacketOptions());
 }
 
 bool SctpDataMediaChannel::SendQueuedStreamResets() {

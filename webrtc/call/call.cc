@@ -77,6 +77,8 @@ class Call : public webrtc::Call, public PacketReceiver {
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
   void SignalNetworkState(NetworkState state) override;
 
+  void OnSentPacket(const rtc::SentPacket& sent_packet) override;
+
  private:
   DeliveryStatus DeliverRtcp(MediaType media_type, const uint8_t* packet,
                              size_t length);
@@ -409,6 +411,10 @@ void Call::SignalNetworkState(NetworkState state) {
       kv.second->SignalNetworkState(state);
     }
   }
+}
+
+void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
+  channel_group_->OnSentPacket(sent_packet);
 }
 
 void Call::ConfigureSync(const std::string& sync_group) {

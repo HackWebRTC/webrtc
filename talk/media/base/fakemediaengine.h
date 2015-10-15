@@ -69,18 +69,18 @@ template <class Base> class RtpHelper : public Base {
   const std::list<std::string>& rtp_packets() const { return rtp_packets_; }
   const std::list<std::string>& rtcp_packets() const { return rtcp_packets_; }
 
-  bool SendRtp(const void* data, int len) {
+  bool SendRtp(const void* data, int len, const rtc::PacketOptions& options) {
     if (!sending_) {
       return false;
     }
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
-    return Base::SendPacket(&packet);
+    return Base::SendPacket(&packet, options);
   }
   bool SendRtcp(const void* data, int len) {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
-    return Base::SendRtcp(&packet);
+    return Base::SendRtcp(&packet, rtc::PacketOptions());
   }
 
   bool CheckRtp(const void* data, int len) {

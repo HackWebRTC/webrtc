@@ -31,10 +31,12 @@ namespace cricket {
 
 class FakeTransport;
 
+namespace {
 struct PacketMessageData : public rtc::MessageData {
   PacketMessageData(const char* data, size_t len) : packet(data, len) {}
   rtc::Buffer packet;
 };
+}  // namespace
 
 // Fake transport channel class, which can be passed to anything that needs a
 // transport channel. Can be informed of another FakeTransportChannel via
@@ -208,6 +210,8 @@ class FakeTransportChannel : public TransportChannelImpl,
     } else {
       rtc::Thread::Current()->Send(this, 0, packet);
     }
+    rtc::SentPacket sent_packet(options.packet_id, rtc::Time());
+    SignalSentPacket(this, sent_packet);
     return static_cast<int>(len);
   }
   int SetOption(rtc::Socket::Option opt, int value) override { return true; }

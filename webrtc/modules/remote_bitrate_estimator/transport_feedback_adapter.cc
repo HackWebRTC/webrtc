@@ -49,9 +49,15 @@ void TransportFeedbackAdapter::SetBitrateEstimator(
   }
 }
 
-void TransportFeedbackAdapter::OnPacketSent(const PacketInfo& info) {
+void TransportFeedbackAdapter::OnSentPacket(const PacketInfo& info) {
   rtc::CritScope cs(&lock_);
   send_time_history_.AddAndRemoveOld(info);
+}
+
+void TransportFeedbackAdapter::UpdateSendTime(uint16_t sequence_number,
+                                              int64_t send_time_ms) {
+  rtc::CritScope cs(&lock_);
+  send_time_history_.UpdateSendTime(sequence_number, send_time_ms);
 }
 
 void TransportFeedbackAdapter::OnTransportFeedback(

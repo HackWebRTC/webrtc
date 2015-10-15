@@ -25,31 +25,31 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_MEDIACONTROLLER_H_
-#define TALK_APP_WEBRTC_MEDIACONTROLLER_H_
+#ifndef TALK_APP_WEBRTC_FAKEMEDIACONTROLLER_H_
+#define TALK_APP_WEBRTC_FAKEMEDIACONTROLLER_H_
 
-#include "webrtc/base/thread.h"
+#include "talk/app/webrtc/mediacontroller.h"
+#include "webrtc/base/checks.h"
 
 namespace cricket {
-class ChannelManager;
-}  // namespace cricket
 
-namespace webrtc {
-class Call;
-class VoiceEngine;
-
-// The MediaController currently owns shared state between media channels, but
-// in the future will create and own RtpSenders and RtpReceivers.
-class MediaControllerInterface {
+class FakeMediaController : public webrtc::MediaControllerInterface {
  public:
-  static MediaControllerInterface* Create(
-      rtc::Thread* worker_thread,
-      cricket::ChannelManager* channel_manager);
+  explicit FakeMediaController(cricket::ChannelManager* channel_manager,
+                               webrtc::Call* call)
+      : channel_manager_(channel_manager), call_(call) {
+    RTC_DCHECK(nullptr != channel_manager_);
+    RTC_DCHECK(nullptr != call_);
+  }
+  ~FakeMediaController() override {}
+  webrtc::Call* call_w() override { return call_; }
+  cricket::ChannelManager* channel_manager() const override {
+    return channel_manager_;
+  }
 
-  virtual ~MediaControllerInterface() {}
-  virtual webrtc::Call* call_w() = 0;
-  virtual cricket::ChannelManager* channel_manager() const = 0;
+ private:
+  cricket::ChannelManager* channel_manager_;
+  webrtc::Call* call_;
 };
-}  // namespace webrtc
-
-#endif  // TALK_APP_WEBRTC_MEDIACONTROLLER_H_
+}  // namespace cricket
+#endif  // TALK_APP_WEBRTC_FAKEMEDIACONTROLLER_H_

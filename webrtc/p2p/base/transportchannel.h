@@ -48,7 +48,7 @@ enum TransportChannelState {
 // between the two sides of a session.
 class TransportChannel : public sigslot::has_slots<> {
  public:
-  explicit TransportChannel(const std::string& transport_name, int component)
+  TransportChannel(const std::string& transport_name, int component)
       : transport_name_(transport_name),
         component_(component),
         writable_(false),
@@ -133,6 +133,9 @@ class TransportChannel : public sigslot::has_slots<> {
   // Signalled each time a packet is received on this channel.
   sigslot::signal5<TransportChannel*, const char*,
                    size_t, const rtc::PacketTime&, int> SignalReadPacket;
+
+  // Signalled each time a packet is sent on this channel.
+  sigslot::signal2<TransportChannel*, const rtc::SentPacket&> SignalSentPacket;
 
   // This signal occurs when there is a change in the way that packets are
   // being routed, i.e. to a different remote location. The candidate

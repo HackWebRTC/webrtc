@@ -144,6 +144,10 @@ class RelayEntry : public rtc::MessageHandler,
     const char* data, size_t size,
     const rtc::SocketAddress& remote_addr,
     const rtc::PacketTime& packet_time);
+
+  void OnSentPacket(rtc::AsyncPacketSocket* socket,
+                    const rtc::SentPacket& sent_packet);
+
   // Called when the socket is currently able to send.
   void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
@@ -508,6 +512,7 @@ void RelayEntry::Connect() {
 
   // Otherwise, create the new connection and configure any socket options.
   socket->SignalReadPacket.connect(this, &RelayEntry::OnReadPacket);
+  socket->SignalSentPacket.connect(this, &RelayEntry::OnSentPacket);
   socket->SignalReadyToSend.connect(this, &RelayEntry::OnReadyToSend);
   current_connection_ = new RelayConnection(ra, socket, port()->thread());
   for (size_t i = 0; i < port_->options().size(); ++i) {
@@ -745,6 +750,11 @@ void RelayEntry::OnReadPacket(
   // Process the actual data and remote address in the normal manner.
   port_->OnReadPacket(data_attr->bytes(), data_attr->length(), remote_addr2,
                       PROTO_UDP, packet_time);
+}
+
+void RelayEntry::OnSentPacket(rtc::AsyncPacketSocket* socket,
+                              const rtc::SentPacket& sent_packet) {
+  port_->OnSentPacket(sent_packet);
 }
 
 void RelayEntry::OnReadyToSend(rtc::AsyncPacketSocket* socket) {

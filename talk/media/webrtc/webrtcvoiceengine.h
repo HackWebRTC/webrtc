@@ -226,13 +226,15 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                const webrtc::PacketOptions& options) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
-    return VoiceMediaChannel::SendPacket(&packet);
+    rtc::PacketOptions rtc_options;
+    rtc_options.packet_id = options.packet_id;
+    return VoiceMediaChannel::SendPacket(&packet, rtc_options);
   }
 
   bool SendRtcp(const uint8_t* data, size_t len) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
-    return VoiceMediaChannel::SendRtcp(&packet);
+    return VoiceMediaChannel::SendRtcp(&packet, rtc::PacketOptions());
   }
 
   void OnError(int error);

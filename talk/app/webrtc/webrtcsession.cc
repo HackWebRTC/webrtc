@@ -51,7 +51,9 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/call.h"
 #include "webrtc/p2p/base/portallocator.h"
+#include "webrtc/p2p/base/transportchannel.h"
 
 using cricket::ContentInfo;
 using cricket::ContentInfos;
@@ -529,7 +531,7 @@ class IceRestartAnswerLatch {
   bool ice_restart_;
 };
 
-WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
+WebRtcSession::WebRtcSession(webrtc::MediaControllerInterface* media_controller,
                              rtc::Thread* signaling_thread,
                              rtc::Thread* worker_thread,
                              cricket::PortAllocator* port_allocator)
@@ -543,7 +545,8 @@ WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
       transport_controller_(new cricket::TransportController(signaling_thread,
                                                              worker_thread,
                                                              port_allocator)),
-      channel_manager_(channel_manager),
+      media_controller_(media_controller),
+      channel_manager_(media_controller_->channel_manager()),
       ice_observer_(NULL),
       ice_connection_state_(PeerConnectionInterface::kIceConnectionNew),
       ice_connection_receiving_(true),
@@ -762,9 +765,6 @@ bool WebRtcSession::Initialize(
         port_allocator()->flags() |
         cricket::PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
   }
-
-  media_controller_.reset(MediaControllerInterface::Create(
-      worker_thread(), channel_manager_->media_engine()->GetVoE()));
 
   return true;
 }
@@ -1844,7 +1844,7 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 
 bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
-      media_controller_.get(), transport_controller_.get(), content->name, true,
+      media_controller_, transport_controller_.get(), content->name, true,
       audio_options_));
   if (!voice_channel_) {
     return false;
@@ -1854,12 +1854,14 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
       this, &WebRtcSession::OnDtlsSetupFailure);
 
   SignalVoiceChannelCreated();
+  voice_channel_->transport_channel()->SignalSentPacket.connect(
+      this, &WebRtcSession::OnSentPacket_w);
   return true;
 }
 
 bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   video_channel_.reset(channel_manager_->CreateVideoChannel(
-      media_controller_.get(), transport_controller_.get(), content->name, true,
+      media_controller_, transport_controller_.get(), content->name, true,
       video_options_));
   if (!video_channel_) {
     return false;
@@ -1869,6 +1871,8 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
       this, &WebRtcSession::OnDtlsSetupFailure);
 
   SignalVideoChannelCreated();
+  video_channel_->transport_channel()->SignalSentPacket.connect(
+      this, &WebRtcSession::OnSentPacket_w);
   return true;
 }
 
@@ -1889,6 +1893,8 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
       this, &WebRtcSession::OnDtlsSetupFailure);
 
   SignalDataChannelCreated();
+  data_channel_->transport_channel()->SignalSentPacket.connect(
+      this, &WebRtcSession::OnSentPacket_w);
   return true;
 }
 
@@ -2203,6 +2209,12 @@ void WebRtcSession::ReportNegotiatedCiphers(
   if (ssl_cipher) {
     metrics_observer_->IncrementSparseEnumCounter(ssl_counter_type, ssl_cipher);
   }
+}
+
+void WebRtcSession::OnSentPacket_w(cricket::TransportChannel* channel,
+                                   const rtc::SentPacket& sent_packet) {
+  RTC_DCHECK(worker_thread()->IsCurrent());
+  media_controller_->call_w()->OnSentPacket(sent_packet);
 }
 
 }  // namespace webrtc

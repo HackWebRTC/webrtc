@@ -435,6 +435,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   port->SignalDestroyed.connect(this, &P2PTransportChannel::OnPortDestroyed);
   port->SignalRoleConflict.connect(
       this, &P2PTransportChannel::OnRoleConflict);
+  port->SignalSentPacket.connect(this, &P2PTransportChannel::OnSentPacket);
 
   // Attempt to create a connection from this new port to all of the remote
   // candidates that we were given so far.
@@ -1354,6 +1355,13 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
       connection->writable() && best_connection_ != connection) {
     SwitchBestConnectionTo(connection);
   }
+}
+
+void P2PTransportChannel::OnSentPacket(PortInterface* port,
+                                       const rtc::SentPacket& sent_packet) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
+  SignalSentPacket(this, sent_packet);
 }
 
 void P2PTransportChannel::OnReadyToSend(Connection* connection) {

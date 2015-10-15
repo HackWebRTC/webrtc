@@ -275,6 +275,9 @@ class Port : public PortInterface, public rtc::MessageHandler,
                             IceMessage* stun_msg,
                             const std::string& remote_ufrag);
 
+  // Called when a packet has been sent to the socket.
+  void OnSentPacket(const rtc::SentPacket& sent_packet);
+
   // Called when the socket is currently able to send.
   void OnReadyToSend();
 

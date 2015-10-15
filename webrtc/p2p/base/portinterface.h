@@ -14,6 +14,7 @@
 #include <string>
 
 #include "webrtc/p2p/base/transport.h"
+#include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/socketaddress.h"
 
 namespace rtc {
@@ -111,6 +112,9 @@ class PortInterface {
   virtual void EnablePortPackets() = 0;
   sigslot::signal4<PortInterface*, const char*, size_t,
                    const rtc::SocketAddress&> SignalReadPacket;
+
+  // Emitted each time a packet is sent on this port.
+  sigslot::signal2<PortInterface*, const rtc::SentPacket&> SignalSentPacket;
 
   virtual std::string ToString() const = 0;
 

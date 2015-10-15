@@ -124,6 +124,10 @@ const char kRtpVideoRotationHeaderExtension[] = "urn:3gpp:video-orientation";
 const char kRtpVideoRotation6BitsHeaderExtensionForTesting[] =
     "urn:3gpp:video-orientation:6";
 
+const int kRtpTransportSequenceNumberHeaderExtensionDefaultId = 5;
+const char kRtpTransportSequenceNumberHeaderExtension[] =
+    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions";
+
 const int kNumDefaultUnsignalledVideoRecvStreams = 0;
 
 const char kVp8CodecName[] = "VP8";

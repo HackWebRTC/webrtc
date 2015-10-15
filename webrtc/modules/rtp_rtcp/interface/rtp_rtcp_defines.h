@@ -313,7 +313,7 @@ class TransportFeedbackObserver {
 
   // Note: Transport-wide sequence number as sequence number. Arrival time
   // must be set to 0.
-  virtual void OnPacketSent(const PacketInfo& info) = 0;
+  virtual void OnSentPacket(const PacketInfo& info) = 0;
 
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
 };

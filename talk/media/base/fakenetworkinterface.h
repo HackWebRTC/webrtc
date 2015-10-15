@@ -129,7 +129,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
 
  protected:
   virtual bool SendPacket(rtc::Buffer* packet,
-                          rtc::DiffServCodePoint dscp) {
+                          const rtc::PacketOptions& options) {
     rtc::CritScope cs(&crit_);
 
     uint32_t cur_ssrc = 0;
@@ -155,7 +155,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   }
 
   virtual bool SendRtcp(rtc::Buffer* packet,
-                        rtc::DiffServCodePoint dscp) {
+                        const rtc::PacketOptions& options) {
     rtc::CritScope cs(&crit_);
     rtcp_packets_.push_back(*packet);
     if (!conf_) {

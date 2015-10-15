@@ -16,6 +16,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/audio_send_stream.h"
+#include "webrtc/base/socket.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -136,6 +137,8 @@ class Call {
   virtual void SetBitrateConfig(
       const Config::BitrateConfig& bitrate_config) = 0;
   virtual void SignalNetworkState(NetworkState state) = 0;
+
+  virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
 
   virtual ~Call() {}
 };

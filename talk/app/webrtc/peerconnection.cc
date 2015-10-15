@@ -630,12 +630,14 @@ bool PeerConnection::Initialize(
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
 
-  remote_stream_factory_.reset(new RemoteMediaStreamFactory(
-      factory_->signaling_thread(), factory_->channel_manager()));
+  media_controller_.reset(factory_->CreateMediaController());
 
-  session_.reset(new WebRtcSession(
-      factory_->channel_manager(), factory_->signaling_thread(),
-      factory_->worker_thread(), port_allocator_.get()));
+  remote_stream_factory_.reset(new RemoteMediaStreamFactory(
+      factory_->signaling_thread(), media_controller_->channel_manager()));
+
+  session_.reset(
+      new WebRtcSession(media_controller_.get(), factory_->signaling_thread(),
+                        factory_->worker_thread(), port_allocator_.get()));
   stats_.reset(new StatsCollector(this));
 
   // Initialize the WebRtcSession. It creates transport channels etc.

@@ -154,6 +154,11 @@ extern const char kRtpVideoRotationHeaderExtension[];
 // We don't support 6 bit CVO. Added here for testing purpose.
 extern const char kRtpVideoRotation6BitsHeaderExtensionForTesting[];
 
+// Header extension for transport sequence number, see url for details:
+// http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
+extern const int kRtpTransportSequenceNumberHeaderExtensionDefaultId;
+extern const char kRtpTransportSequenceNumberHeaderExtension[];
+
 extern const int kNumDefaultUnsignalledVideoRecvStreams;
 
 extern const char kVp8CodecName[];

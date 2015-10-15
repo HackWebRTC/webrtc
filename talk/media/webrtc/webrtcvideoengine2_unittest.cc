@@ -40,6 +40,7 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/test/field_trial.h"
 #include "webrtc/video_encoder.h"
 
 namespace {
@@ -108,9 +109,13 @@ void VerifySendStreamHasRtxTypes(const webrtc::VideoSendStream::Config& config,
 namespace cricket {
 class WebRtcVideoEngine2Test : public ::testing::Test {
  public:
-  WebRtcVideoEngine2Test() : WebRtcVideoEngine2Test(nullptr) {}
-  WebRtcVideoEngine2Test(WebRtcVoiceEngine* voice_engine)
-      : call_(webrtc::Call::Create(webrtc::Call::Config())),
+  WebRtcVideoEngine2Test() : WebRtcVideoEngine2Test("") {}
+  explicit WebRtcVideoEngine2Test(const char* field_trials)
+      : WebRtcVideoEngine2Test(nullptr, field_trials) {}
+  WebRtcVideoEngine2Test(WebRtcVoiceEngine* voice_engine,
+                         const char* field_trials)
+      : override_field_trials_(field_trials),
+        call_(webrtc::Call::Create(webrtc::Call::Config())),
         engine_() {
     std::vector<VideoCodec> engine_codecs = engine_.codecs();
     RTC_DCHECK(!engine_codecs.empty());
@@ -144,6 +149,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
       cricket::WebRtcVideoDecoderFactory* decoder_factory,
       const std::vector<VideoCodec>& codecs);
 
+  webrtc::test::ScopedFieldTrials override_field_trials_;
   // Used in WebRtcVideoEngine2VoiceTest, but defined here so it's properly
   // initialized when the constructor is called.
   rtc::scoped_ptr<webrtc::Call> call_;
@@ -256,6 +262,26 @@ TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
     }
   }
   FAIL() << "Absolute Sender Time extension not in header-extension list.";
+}
+
+class WebRtcVideoEngine2WithSendSideBweTest : public WebRtcVideoEngine2Test {
+ public:
+  WebRtcVideoEngine2WithSendSideBweTest()
+      : WebRtcVideoEngine2Test("WebRTC-SendSideBwe/Enabled/") {}
+};
+
+TEST_F(WebRtcVideoEngine2WithSendSideBweTest,
+       SupportsTransportSequenceNumberHeaderExtension) {
+  std::vector<RtpHeaderExtension> extensions = engine_.rtp_header_extensions();
+  ASSERT_FALSE(extensions.empty());
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    if (extensions[i].uri == kRtpTransportSequenceNumberHeaderExtension) {
+      EXPECT_EQ(kRtpTransportSequenceNumberHeaderExtensionDefaultId,
+                extensions[i].id);
+      return;
+    }
+  }
+  FAIL() << "Transport sequence number extension not in header-extension list.";
 }
 
 TEST_F(WebRtcVideoEngine2Test, SupportsVideoRotationHeaderExtension) {
@@ -895,7 +921,9 @@ TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
 
 class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
  public:
-  WebRtcVideoChannel2Test() : last_ssrc_(0) {}
+  WebRtcVideoChannel2Test() : WebRtcVideoChannel2Test("") {}
+  explicit WebRtcVideoChannel2Test(const char* field_trials)
+      : WebRtcVideoEngine2Test(field_trials), last_ssrc_(0) {}
   void SetUp() override {
     fake_call_.reset(new FakeCall(webrtc::Call::Config()));
     engine_.Init();
@@ -1169,6 +1197,26 @@ TEST_F(WebRtcVideoChannel2Test, SendAbsoluteSendTimeHeaderExtensions) {
 TEST_F(WebRtcVideoChannel2Test, RecvAbsoluteSendTimeHeaderExtensions) {
   TestSetRecvRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension,
                                  webrtc::RtpExtension::kAbsSendTime);
+}
+
+class WebRtcVideoChannel2WithSendSideBweTest : public WebRtcVideoChannel2Test {
+ public:
+  WebRtcVideoChannel2WithSendSideBweTest()
+      : WebRtcVideoChannel2Test("WebRTC-SendSideBwe/Enabled/") {}
+};
+
+// Test support for transport sequence number header extension.
+TEST_F(WebRtcVideoChannel2WithSendSideBweTest,
+       SendTransportSequenceNumberHeaderExtensions) {
+  TestSetSendRtpHeaderExtensions(
+      kRtpTransportSequenceNumberHeaderExtension,
+      webrtc::RtpExtension::kTransportSequenceNumber);
+}
+TEST_F(WebRtcVideoChannel2WithSendSideBweTest,
+       RecvTransportSequenceNumberHeaderExtensions) {
+  TestSetRecvRtpHeaderExtensions(
+      kRtpTransportSequenceNumberHeaderExtension,
+      webrtc::RtpExtension::kTransportSequenceNumber);
 }
 
 // Test support for video rotation header extension.

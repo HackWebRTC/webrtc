@@ -52,6 +52,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
 
 namespace cricket {
 namespace {
@@ -431,6 +432,11 @@ void WebRtcVoiceEngine::Construct() {
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
+    rtp_header_extensions_.push_back(RtpHeaderExtension(
+        kRtpTransportSequenceNumberHeaderExtension,
+        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
+  }
   options_ = GetDefaultEngineOptions();
 }
 

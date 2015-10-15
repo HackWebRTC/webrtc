@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc/mediacontroller.h"
+#include "talk/app/webrtc/fakemediacontroller.h"
 #include "talk/media/base/fakecapturemanager.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakevideocapturer.h"
@@ -50,37 +50,24 @@ static const VideoCodec kVideoCodecs[] = {
   VideoCodec(96, "rtx", 100, 200, 300, 0),
 };
 
-class FakeMediaController : public webrtc::MediaControllerInterface {
- public:
-  explicit FakeMediaController(webrtc::Call* call) : call_(call) {
-    RTC_DCHECK(nullptr != call);
-  }
-  ~FakeMediaController() override {}
-  webrtc::Call* call_w() override { return call_; }
-
- private:
-  webrtc::Call* call_;
-};
-
 class ChannelManagerTest : public testing::Test {
  protected:
   ChannelManagerTest()
-      : fake_call_(webrtc::Call::Config()),
-        fake_mc_(&fake_call_),
-        fme_(NULL),
-        fcm_(NULL),
-        cm_(NULL) {}
+      : fme_(new cricket::FakeMediaEngine()),
+        fdme_(new cricket::FakeDataEngine()),
+        fcm_(new cricket::FakeCaptureManager()),
+        cm_(new cricket::ChannelManager(fme_,
+                                        fdme_,
+                                        fcm_,
+                                        rtc::Thread::Current())),
+        fake_call_(webrtc::Call::Config()),
+        fake_mc_(cm_, &fake_call_),
+        transport_controller_(
+            new cricket::FakeTransportController(ICEROLE_CONTROLLING)) {}
 
   virtual void SetUp() {
-    fme_ = new cricket::FakeMediaEngine();
     fme_->SetAudioCodecs(MAKE_VECTOR(kAudioCodecs));
     fme_->SetVideoCodecs(MAKE_VECTOR(kVideoCodecs));
-    fdme_ = new cricket::FakeDataEngine();
-    fcm_ = new cricket::FakeCaptureManager();
-    cm_ = new cricket::ChannelManager(
-        fme_, fdme_, fcm_, rtc::Thread::Current());
-    transport_controller_ =
-        new cricket::FakeTransportController(ICEROLE_CONTROLLING);
   }
 
   virtual void TearDown() {
@@ -93,12 +80,12 @@ class ChannelManagerTest : public testing::Test {
   }
 
   rtc::Thread worker_;
-  cricket::FakeCall fake_call_;
-  cricket::FakeMediaController fake_mc_;
   cricket::FakeMediaEngine* fme_;
   cricket::FakeDataEngine* fdme_;
   cricket::FakeCaptureManager* fcm_;
   cricket::ChannelManager* cm_;
+  cricket::FakeCall fake_call_;
+  cricket::FakeMediaController fake_mc_;
   cricket::FakeTransportController* transport_controller_;
 };
 

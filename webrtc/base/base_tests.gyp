@@ -29,6 +29,7 @@
       'dependencies': [
         'base.gyp:rtc_base',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/test/test.gyp:field_trial',
       ],
       'direct_dependent_settings': {
         'defines': [

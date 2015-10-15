@@ -279,9 +279,11 @@ PeerConnectionFactory::CreateAudioTrack(const std::string& id,
   return AudioTrackProxy::Create(signaling_thread_, track);
 }
 
-cricket::ChannelManager* PeerConnectionFactory::channel_manager() {
+webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController()
+    const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  return channel_manager_.get();
+  return MediaControllerInterface::Create(worker_thread_,
+                                          channel_manager_.get());
 }
 
 rtc::Thread* PeerConnectionFactory::signaling_thread() {

@@ -361,6 +361,7 @@ class PeerConnection : public PeerConnectionInterface,
   IceGatheringState ice_gathering_state_;
 
   rtc::scoped_ptr<cricket::PortAllocator> port_allocator_;
+  rtc::scoped_ptr<MediaControllerInterface> media_controller_;
 
   // Streams added via AddStream.
   rtc::scoped_refptr<StreamCollection> local_streams_;

@@ -103,9 +103,9 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   }
 
   // Utility method, to reset arrival_time_ms before adding send time.
-  void OnPacketSent(PacketInfo info) {
+  void OnSentPacket(PacketInfo info) {
     info.arrival_time_ms = 0;
-    adapter_->OnPacketSent(info);
+    adapter_->OnSentPacket(info);
   }
 
   SimulatedClock clock_;
@@ -125,7 +125,7 @@ TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
   packets.push_back(PacketInfo(140, 240, 4, 1500, true));
 
   for (const PacketInfo& packet : packets)
-    OnPacketSent(packet);
+    OnSentPacket(packet);
 
   rtcp::TransportFeedback feedback;
   feedback.WithBase(packets[0].sequence_number,
@@ -160,7 +160,7 @@ TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
 
   for (const PacketInfo& packet : packets) {
     if (packet.sequence_number >= kSendSideDropBefore)
-      OnPacketSent(packet);
+      OnSentPacket(packet);
   }
 
   rtcp::TransportFeedback feedback;
@@ -199,7 +199,7 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
   packets.push_back(PacketInfo(kHighArrivalTimeMs, 220, 2, 1500, true));
 
   for (const PacketInfo& packet : packets)
-    OnPacketSent(packet);
+    OnSentPacket(packet);
 
   for (size_t i = 0; i < packets.size(); ++i) {
     rtc::scoped_ptr<rtcp::TransportFeedback> feedback(
@@ -263,8 +263,8 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
 
   // Packets will be added to send history.
   for (const PacketInfo& packet : sent_packets)
-    OnPacketSent(packet);
-  OnPacketSent(info);
+    OnSentPacket(packet);
+  OnSentPacket(info);
 
   // Create expected feedback and send into adapter.
   rtc::scoped_ptr<rtcp::TransportFeedback> feedback(

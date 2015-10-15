@@ -445,4 +445,11 @@ void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
       PacedSender::kDefaultPaceMultiplier * target_bitrate_bps / 1000,
       pad_up_to_bitrate_bps / 1000);
 }
+
+void ChannelGroup::OnSentPacket(const rtc::SentPacket& sent_packet) {
+  if (transport_feedback_adapter_) {
+    transport_feedback_adapter_->UpdateSendTime(sent_packet.packet_id,
+                                                sent_packet.send_time_ms);
+  }
+}
 }  // namespace webrtc

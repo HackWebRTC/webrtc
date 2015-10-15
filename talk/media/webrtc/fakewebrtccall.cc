@@ -202,8 +202,7 @@ FakeCall::FakeCall(const webrtc::Call::Config& config)
     : config_(config),
       network_state_(webrtc::kNetworkUp),
       num_created_send_streams_(0),
-      num_created_receive_streams_(0) {
-}
+      num_created_receive_streams_(0) {}
 
 FakeCall::~FakeCall() {
   EXPECT_EQ(0u, video_send_streams_.size());
@@ -366,5 +365,9 @@ void FakeCall::SetBitrateConfig(
 
 void FakeCall::SignalNetworkState(webrtc::NetworkState state) {
   network_state_ = state;
+}
+
+void FakeCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
+  last_sent_packet_ = sent_packet;
 }
 }  // namespace cricket

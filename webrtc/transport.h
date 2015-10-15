@@ -17,6 +17,8 @@
 
 namespace webrtc {
 
+// TODO(holmer): Look into unifying this with the PacketOptions in
+// asyncpacketsocket.h.
 struct PacketOptions {
   // A 16 bits positive id. Negative ids are invalid and should be interpreted
   // as packet_id not being set.

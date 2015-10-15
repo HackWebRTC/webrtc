@@ -142,6 +142,7 @@
       'dependencies': [
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle',
+        'libjingle.gyp:libjingle_peerconnection',
         'libjingle.gyp:libjingle_p2p',
         'libjingle_unittest_main',
       ],
@@ -344,6 +345,7 @@
           'includes': [ 'build/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             'libjingle.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [
@@ -375,6 +377,7 @@
           'includes': [ 'build/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
             '<(webrtc_root)/libjingle_examples.gyp:apprtc_signaling',
           ],

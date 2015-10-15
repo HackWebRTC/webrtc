@@ -67,7 +67,7 @@ static void SafeSetError(const std::string& message, std::string* error_desc) {
 
 struct PacketMessageData : public rtc::MessageData {
   rtc::Buffer packet;
-  rtc::DiffServCodePoint dscp;
+  rtc::PacketOptions options;
 };
 
 struct ScreencastEventMessageData : public rtc::MessageData {
@@ -423,13 +423,13 @@ bool BaseChannel::IsReadyToSend() const {
 }
 
 bool BaseChannel::SendPacket(rtc::Buffer* packet,
-                             rtc::DiffServCodePoint dscp) {
-  return SendPacket(false, packet, dscp);
+                             const rtc::PacketOptions& options) {
+  return SendPacket(false, packet, options);
 }
 
 bool BaseChannel::SendRtcp(rtc::Buffer* packet,
-                           rtc::DiffServCodePoint dscp) {
-  return SendPacket(true, packet, dscp);
+                           const rtc::PacketOptions& options) {
+  return SendPacket(true, packet, options);
 }
 
 int BaseChannel::SetOption(SocketType type, rtc::Socket::Option opt,
@@ -498,8 +498,9 @@ bool BaseChannel::PacketIsRtcp(const TransportChannel* channel,
           rtcp_mux_filter_.DemuxRtcp(data, static_cast<int>(len)));
 }
 
-bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
-                             rtc::DiffServCodePoint dscp) {
+bool BaseChannel::SendPacket(bool rtcp,
+                             rtc::Buffer* packet,
+                             const rtc::PacketOptions& options) {
   // SendPacket gets called from MediaEngine, typically on an encoder thread.
   // If the thread is not our worker thread, we will post to our worker
   // so that the real work happens on our worker. This avoids us having to
@@ -512,7 +513,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
     int message_id = (!rtcp) ? MSG_RTPPACKET : MSG_RTCPPACKET;
     PacketMessageData* data = new PacketMessageData;
     data->packet = packet->Pass();
-    data->dscp = dscp;
+    data->options = options;
     worker_thread_->Post(this, message_id, data);
     return true;
   }
@@ -535,7 +536,8 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
     return false;
   }
 
-  rtc::PacketOptions options(dscp);
+  rtc::PacketOptions updated_options;
+  updated_options = options;
   // Protect if needed.
   if (srtp_filter_.IsActive()) {
     bool res;
@@ -551,21 +553,22 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
       res = srtp_filter_.ProtectRtp(
           data, len, static_cast<int>(packet->capacity()), &len);
 #else
-      options.packet_time_params.rtp_sendtime_extension_id =
+      updated_options.packet_time_params.rtp_sendtime_extension_id =
           rtp_abs_sendtime_extn_id_;
       res = srtp_filter_.ProtectRtp(
           data, len, static_cast<int>(packet->capacity()), &len,
-          &options.packet_time_params.srtp_packet_index);
+          &updated_options.packet_time_params.srtp_packet_index);
       // If protection succeeds, let's get auth params from srtp.
       if (res) {
         uint8_t* auth_key = NULL;
         int key_len;
         res = srtp_filter_.GetRtpAuthParams(
-            &auth_key, &key_len, &options.packet_time_params.srtp_auth_tag_len);
+            &auth_key, &key_len,
+            &updated_options.packet_time_params.srtp_auth_tag_len);
         if (res) {
-          options.packet_time_params.srtp_auth_key.resize(key_len);
-          options.packet_time_params.srtp_auth_key.assign(auth_key,
-                                                          auth_key + key_len);
+          updated_options.packet_time_params.srtp_auth_key.resize(key_len);
+          updated_options.packet_time_params.srtp_auth_key.assign(
+              auth_key, auth_key + key_len);
         }
       }
 #endif
@@ -605,7 +608,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
 
   // Bon voyage.
   int ret =
-      channel->SendPacket(packet->data<char>(), packet->size(), options,
+      channel->SendPacket(packet->data<char>(), packet->size(), updated_options,
                           (secure() && secure_dtls()) ? PF_SRTP_BYPASS : 0);
   if (ret != static_cast<int>(packet->size())) {
     if (channel->GetError() == EWOULDBLOCK) {
@@ -1143,7 +1146,7 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
        it != streams.end(); ++it) {
     if (!GetStreamBySsrc(local_streams_, it->first_ssrc())) {
       if (media_channel()->AddSendStream(*it)) {
-        LOG(LS_INFO) << "Add send ssrc: " << it->ssrcs[0];
+        LOG(LS_INFO) << "Add send stream ssrc: " << it->ssrcs[0];
       } else {
         std::ostringstream desc;
         desc << "Failed to add send stream ssrc: " << it->first_ssrc();
@@ -1244,7 +1247,8 @@ void BaseChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_RTPPACKET:
     case MSG_RTCPPACKET: {
       PacketMessageData* data = static_cast<PacketMessageData*>(pmsg->pdata);
-      SendPacket(pmsg->message_id == MSG_RTCPPACKET, &data->packet, data->dscp);
+      SendPacket(pmsg->message_id == MSG_RTCPPACKET, &data->packet,
+                 data->options);
       delete data;  // because it is Posted
       break;
     }

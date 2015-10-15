@@ -19,9 +19,16 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
+#include "webrtc/test/field_trial.h"
 
 DEFINE_bool(help, false, "prints this message");
 DEFINE_string(log, "", "logging options to use");
+DEFINE_string(
+    force_fieldtrials,
+    "",
+    "Field trials control experimental feature code which can be forced. "
+    "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
+    " will assign the group Enable to field trial WebRTC-FooFeature.");
 #if defined(WEBRTC_WIN)
 DEFINE_int(crt_break_alloc, -1, "memory allocation to break on");
 DEFINE_bool(default_error_handlers, false,
@@ -60,6 +67,8 @@ int main(int argc, char** argv) {
     rtc::FlagList::Print(NULL, false);
     return 0;
   }
+
+  webrtc::test::InitFieldTrialsFromString(FLAG_force_fieldtrials);
 
 #if defined(WEBRTC_WIN)
   if (!FLAG_default_error_handlers) {

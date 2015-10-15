@@ -46,6 +46,7 @@
           'target_name': 'libjingle_peerconnection_so',
           'type': 'shared_library',
           'dependencies': [
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             'libjingle_peerconnection',
           ],
           'sources': [
@@ -432,8 +433,8 @@
         '<(webrtc_root)/webrtc.gyp:webrtc',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
         '<(webrtc_root)/sound/sound.gyp:rtc_sound',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
         '<(webrtc_root)/libjingle/xmllite/xmllite.gyp:rtc_xmllite',
         '<(webrtc_root)/libjingle/xmpp/xmpp.gyp:rtc_xmpp',
         '<(webrtc_root)/p2p/p2p.gyp:rtc_p2p',

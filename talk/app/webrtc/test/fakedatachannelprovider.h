@@ -25,6 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef TALK_APP_WEBRTC_TEST_FAKEDATACHANNELPROVIDER_H_
+#define TALK_APP_WEBRTC_TEST_FAKEDATACHANNELPROVIDER_H_
+
 #include "talk/app/webrtc/datachannel.h"
 
 class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
@@ -155,3 +158,4 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   std::set<uint32_t> send_ssrcs_;
   std::set<uint32_t> recv_ssrcs_;
 };
+#endif  // TALK_APP_WEBRTC_TEST_FAKEDATACHANNELPROVIDER_H_

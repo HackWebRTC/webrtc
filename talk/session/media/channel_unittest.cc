@@ -294,11 +294,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   bool SendRtp1() {
     return media_channel1_->SendRtp(rtp_packet_.c_str(),
-                                    static_cast<int>(rtp_packet_.size()));
+                                    static_cast<int>(rtp_packet_.size()),
+                                    rtc::PacketOptions());
   }
   bool SendRtp2() {
     return media_channel2_->SendRtp(rtp_packet_.c_str(),
-                                    static_cast<int>(rtp_packet_.size()));
+                                    static_cast<int>(rtp_packet_.size()),
+                                    rtc::PacketOptions());
   }
   bool SendRtcp1() {
     return media_channel1_->SendRtcp(rtcp_packet_.c_str(),
@@ -311,13 +313,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Methods to send custom data.
   bool SendCustomRtp1(uint32_t ssrc, int sequence_number, int pl_type = -1) {
     std::string data(CreateRtpData(ssrc, sequence_number, pl_type));
-    return media_channel1_->SendRtp(data.c_str(),
-                                    static_cast<int>(data.size()));
+    return media_channel1_->SendRtp(data.c_str(), static_cast<int>(data.size()),
+                                    rtc::PacketOptions());
   }
   bool SendCustomRtp2(uint32_t ssrc, int sequence_number, int pl_type = -1) {
     std::string data(CreateRtpData(ssrc, sequence_number, pl_type));
-    return media_channel2_->SendRtp(data.c_str(),
-                                    static_cast<int>(data.size()));
+    return media_channel2_->SendRtp(data.c_str(), static_cast<int>(data.size()),
+                                    rtc::PacketOptions());
   }
   bool SendCustomRtcp1(uint32_t ssrc) {
     std::string data(CreateRtcpData(ssrc));
@@ -957,7 +959,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
      public:
       LastWordMediaChannel() : T::MediaChannel(NULL, typename T::Options()) {}
       ~LastWordMediaChannel() {
-        T::MediaChannel::SendRtp(kPcmuFrame, sizeof(kPcmuFrame));
+        T::MediaChannel::SendRtp(kPcmuFrame, sizeof(kPcmuFrame),
+                                 rtc::PacketOptions());
         T::MediaChannel::SendRtcp(kRtcpReport, sizeof(kRtcpReport));
       }
     };
@@ -1709,21 +1712,24 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         &error_handler, &SrtpErrorHandler::OnSrtpError);
 
     // Testing failures in sending packets.
-    EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
+    EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket),
+                                          rtc::PacketOptions()));
     // The first failure will trigger an error.
     EXPECT_EQ_WAIT(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_, 500);
     EXPECT_EQ(cricket::SrtpFilter::PROTECT, error_handler.mode_);
     error_handler.error_ = cricket::SrtpFilter::ERROR_NONE;
     error_handler.mode_ = cricket::SrtpFilter::UNPROTECT;
     // The next 250 ms failures will not trigger an error.
-    EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
+    EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket),
+                                          rtc::PacketOptions()));
     // Wait for a while to ensure no message comes in.
     rtc::Thread::Current()->ProcessMessages(200);
     EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_handler.error_);
     EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, error_handler.mode_);
     // Wait for a little more - the error will be triggered again.
     rtc::Thread::Current()->ProcessMessages(200);
-    EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
+    EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket),
+                                          rtc::PacketOptions()));
     EXPECT_EQ_WAIT(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_, 500);
     EXPECT_EQ(cricket::SrtpFilter::PROTECT, error_handler.mode_);
 

@@ -101,6 +101,8 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       &DtlsTransportChannelWrapper::OnWritableState);
   channel_->SignalReadPacket.connect(this,
       &DtlsTransportChannelWrapper::OnReadPacket);
+  channel_->SignalSentPacket.connect(
+      this, &DtlsTransportChannelWrapper::OnSentPacket);
   channel_->SignalReadyToSend.connect(this,
       &DtlsTransportChannelWrapper::OnReadyToSend);
   channel_->SignalGatheringState.connect(
@@ -508,6 +510,14 @@ void DtlsTransportChannelWrapper::OnReadPacket(
       // This shouldn't be happening. Drop the packet
       break;
   }
+}
+
+void DtlsTransportChannelWrapper::OnSentPacket(
+    TransportChannel* channel,
+    const rtc::SentPacket& sent_packet) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
+
+  SignalSentPacket(this, sent_packet);
 }
 
 void DtlsTransportChannelWrapper::OnReadyToSend(TransportChannel* channel) {

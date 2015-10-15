@@ -557,6 +557,11 @@ WebRtcVideoEngine2::WebRtcVideoEngine2()
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpVideoRotationHeaderExtension,
                          kRtpVideoRotationHeaderExtensionDefaultId));
+  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
+    rtp_header_extensions_.push_back(RtpHeaderExtension(
+        kRtpTransportSequenceNumberHeaderExtension,
+        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
+  }
 }
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
@@ -1651,12 +1656,14 @@ bool WebRtcVideoChannel2::SendRtp(const uint8_t* data,
                                   size_t len,
                                   const webrtc::PacketOptions& options) {
   rtc::Buffer packet(data, len, kMaxRtpPacketLen);
-  return MediaChannel::SendPacket(&packet);
+  rtc::PacketOptions rtc_options;
+  rtc_options.packet_id = options.packet_id;
+  return MediaChannel::SendPacket(&packet, rtc_options);
 }
 
 bool WebRtcVideoChannel2::SendRtcp(const uint8_t* data, size_t len) {
   rtc::Buffer packet(data, len, kMaxRtpPacketLen);
-  return MediaChannel::SendRtcp(&packet);
+  return MediaChannel::SendRtcp(&packet, rtc::PacketOptions());
 }
 
 void WebRtcVideoChannel2::StartAllSendStreams() {

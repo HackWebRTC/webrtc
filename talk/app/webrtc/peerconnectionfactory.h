@@ -31,6 +31,7 @@
 #include <string>
 
 #include "talk/app/webrtc/dtlsidentitystore.h"
+#include "talk/app/webrtc/mediacontroller.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/session/media/channelmanager.h"
@@ -80,7 +81,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   bool StartAecDump(rtc::PlatformFile file) override;
 
-  virtual cricket::ChannelManager* channel_manager();
+  virtual webrtc::MediaControllerInterface* CreateMediaController() const;
   virtual rtc::Thread* signaling_thread();
   virtual rtc::Thread* worker_thread();
   const Options& options() const { return options_; }

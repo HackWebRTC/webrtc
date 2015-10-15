@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/audiotrack.h"
+#include "talk/app/webrtc/fakemediacontroller.h"
 #include "talk/app/webrtc/fakemetricsobserver.h"
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
@@ -44,6 +45,7 @@
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/mediachannel.h"
+#include "talk/media/webrtc/fakewebrtccall.h"
 #include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
@@ -245,12 +247,15 @@ class MockIceObserver : public webrtc::IceObserver {
 
 class WebRtcSessionForTest : public webrtc::WebRtcSession {
  public:
-  WebRtcSessionForTest(cricket::ChannelManager* cmgr,
+  WebRtcSessionForTest(webrtc::MediaControllerInterface* media_controller,
                        rtc::Thread* signaling_thread,
                        rtc::Thread* worker_thread,
                        cricket::PortAllocator* port_allocator,
                        webrtc::IceObserver* ice_observer)
-      : WebRtcSession(cmgr, signaling_thread, worker_thread, port_allocator) {
+      : WebRtcSession(media_controller,
+                      signaling_thread,
+                      worker_thread,
+                      port_allocator) {
     RegisterIceObserver(ice_observer);
   }
   virtual ~WebRtcSessionForTest() {}
@@ -360,24 +365,31 @@ class WebRtcSessionTest
   // TODO Investigate why ChannelManager crashes, if it's created
   // after stun_server.
   WebRtcSessionTest()
-    : media_engine_(new cricket::FakeMediaEngine()),
-      data_engine_(new cricket::FakeDataEngine()),
-      channel_manager_(new cricket::ChannelManager(
-         media_engine_, data_engine_, new cricket::CaptureManager(),
-         rtc::Thread::Current())),
-      tdesc_factory_(new cricket::TransportDescriptionFactory()),
-      desc_factory_(new cricket::MediaSessionDescriptionFactory(
-          channel_manager_.get(), tdesc_factory_.get())),
-      pss_(new rtc::PhysicalSocketServer),
-      vss_(new rtc::VirtualSocketServer(pss_.get())),
-      fss_(new rtc::FirewallSocketServer(vss_.get())),
-      ss_scope_(fss_.get()),
-      stun_socket_addr_(rtc::SocketAddress(kStunAddrHost,
-                                                 cricket::STUN_SERVER_PORT)),
-      stun_server_(cricket::TestStunServer::Create(Thread::Current(),
-                                                   stun_socket_addr_)),
-      turn_server_(Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
-      metrics_observer_(new rtc::RefCountedObject<FakeMetricsObserver>()) {
+      : media_engine_(new cricket::FakeMediaEngine()),
+        data_engine_(new cricket::FakeDataEngine()),
+        channel_manager_(
+            new cricket::ChannelManager(media_engine_,
+                                        data_engine_,
+                                        new cricket::CaptureManager(),
+                                        rtc::Thread::Current())),
+        fake_call_(webrtc::Call::Config()),
+        media_controller_(
+            webrtc::MediaControllerInterface::Create(rtc::Thread::Current(),
+                                                     channel_manager_.get())),
+        tdesc_factory_(new cricket::TransportDescriptionFactory()),
+        desc_factory_(
+            new cricket::MediaSessionDescriptionFactory(channel_manager_.get(),
+                                                        tdesc_factory_.get())),
+        pss_(new rtc::PhysicalSocketServer),
+        vss_(new rtc::VirtualSocketServer(pss_.get())),
+        fss_(new rtc::FirewallSocketServer(vss_.get())),
+        ss_scope_(fss_.get()),
+        stun_socket_addr_(
+            rtc::SocketAddress(kStunAddrHost, cricket::STUN_SERVER_PORT)),
+        stun_server_(cricket::TestStunServer::Create(Thread::Current(),
+                                                     stun_socket_addr_)),
+        turn_server_(Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
+        metrics_observer_(new rtc::RefCountedObject<FakeMetricsObserver>()) {
     cricket::ServerAddresses stun_servers;
     stun_servers.insert(stun_socket_addr_);
     allocator_.reset(new cricket::BasicPortAllocator(
@@ -405,7 +417,7 @@ class WebRtcSessionTest
       const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
     ASSERT_TRUE(session_.get() == NULL);
     session_.reset(new WebRtcSessionForTest(
-        channel_manager_.get(), rtc::Thread::Current(), rtc::Thread::Current(),
+        media_controller_.get(), rtc::Thread::Current(), rtc::Thread::Current(),
         allocator_.get(), &observer_));
     session_->SignalDataChannelOpenMessage.connect(
         this, &WebRtcSessionTest::OnDataChannelOpenMessage);
@@ -1226,8 +1238,7 @@ class WebRtcSessionTest
   //     -> Failed.
   // The Gathering state should go: New -> Gathering -> Completed.
 
-  void TestLoopbackCall(const LoopbackNetworkConfiguration& config) {
-    LoopbackNetworkManager loopback_network_manager(this, config);
+  void SetupLoopbackCall() {
     Init();
     SendAudioVideoStream1();
     SessionDescriptionInterface* offer = CreateOffer();
@@ -1238,30 +1249,29 @@ class WebRtcSessionTest
     EXPECT_EQ(PeerConnectionInterface::kIceConnectionNew,
               observer_.ice_connection_state_);
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceGatheringGathering,
-                   observer_.ice_gathering_state_,
-                   kIceCandidatesTimeout);
+                   observer_.ice_gathering_state_, kIceCandidatesTimeout);
     EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceGatheringComplete,
-                   observer_.ice_gathering_state_,
-                   kIceCandidatesTimeout);
+                   observer_.ice_gathering_state_, kIceCandidatesTimeout);
 
     std::string sdp;
     offer->ToString(&sdp);
-    SessionDescriptionInterface* desc =
-        webrtc::CreateSessionDescription(
-            JsepSessionDescription::kAnswer, sdp, nullptr);
+    SessionDescriptionInterface* desc = webrtc::CreateSessionDescription(
+        JsepSessionDescription::kAnswer, sdp, nullptr);
     ASSERT_TRUE(desc != NULL);
     SetRemoteDescriptionWithoutError(desc);
 
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionChecking,
-                   observer_.ice_connection_state_,
-                   kIceCandidatesTimeout);
+                   observer_.ice_connection_state_, kIceCandidatesTimeout);
 
     // The ice connection state is "Connected" too briefly to catch in a test.
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                   observer_.ice_connection_state_,
-                   kIceCandidatesTimeout);
+                   observer_.ice_connection_state_, kIceCandidatesTimeout);
+  }
 
+  void TestLoopbackCall(const LoopbackNetworkConfiguration& config) {
+    LoopbackNetworkManager loopback_network_manager(this, config);
+    SetupLoopbackCall();
     config.VerifyBestConnectionAfterIceConverge(metrics_observer_);
     // Adding firewall rule to block ping requests, which should cause
     // transport channel failure.
@@ -1298,6 +1308,25 @@ class WebRtcSessionTest
   void TestLoopbackCall() {
     LoopbackNetworkConfiguration config;
     TestLoopbackCall(config);
+  }
+
+  void TestPacketOptions() {
+    media_controller_.reset(
+        new cricket::FakeMediaController(channel_manager_.get(), &fake_call_));
+    LoopbackNetworkConfiguration config;
+    LoopbackNetworkManager loopback_network_manager(this, config);
+
+    SetupLoopbackCall();
+
+    uint8_t test_packet[15] = {0};
+    rtc::PacketOptions options;
+    options.packet_id = 10;
+    media_engine_->GetVideoChannel(0)
+        ->SendRtp(test_packet, sizeof(test_packet), options);
+
+    const int kPacketTimeout = 2000;
+    EXPECT_EQ_WAIT(fake_call_.last_sent_packet().packet_id, 10, kPacketTimeout);
+    EXPECT_GT(fake_call_.last_sent_packet().send_time_ms, -1);
   }
 
   // Adds CN codecs to FakeMediaEngine and MediaDescriptionFactory.
@@ -1406,6 +1435,8 @@ class WebRtcSessionTest
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeDataEngine* data_engine_;
   rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  cricket::FakeCall fake_call_;
+  rtc::scoped_ptr<webrtc::MediaControllerInterface> media_controller_;
   rtc::scoped_ptr<cricket::TransportDescriptionFactory> tdesc_factory_;
   rtc::scoped_ptr<cricket::MediaSessionDescriptionFactory> desc_factory_;
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
@@ -4152,6 +4183,10 @@ TEST_F(WebRtcSessionTest, CreateOffersAndShutdown) {
     // is kInit.
     EXPECT_NE(WebRtcSessionCreateSDPObserverForTest::kInit, o->state());
   }
+}
+
+TEST_F(WebRtcSessionTest, TestPacketOptionsAndOnPacketSent) {
+  TestPacketOptions();
 }
 
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test

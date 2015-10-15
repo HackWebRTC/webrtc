@@ -140,6 +140,9 @@ class UDPPort : public Port {
                     const rtc::SocketAddress& remote_addr,
                     const rtc::PacketTime& packet_time);
 
+  void OnSentPacket(rtc::AsyncPacketSocket* socket,
+                    const rtc::SentPacket& sent_packet);
+
   void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
   // This method will send STUN binding request if STUN server address is set.

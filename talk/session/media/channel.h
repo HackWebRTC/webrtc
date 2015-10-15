@@ -199,9 +199,8 @@ class BaseChannel
 
   // NetworkInterface implementation, called by MediaEngine
   virtual bool SendPacket(rtc::Buffer* packet,
-                          rtc::DiffServCodePoint dscp);
-  virtual bool SendRtcp(rtc::Buffer* packet,
-                        rtc::DiffServCodePoint dscp);
+                          const rtc::PacketOptions& options);
+  virtual bool SendRtcp(rtc::Buffer* packet, const rtc::PacketOptions& options);
 
   // From TransportChannel
   void OnWritableState(TransportChannel* channel);
@@ -214,8 +213,9 @@ class BaseChannel
 
   bool PacketIsRtcp(const TransportChannel* channel, const char* data,
                     size_t len);
-  bool SendPacket(bool rtcp, rtc::Buffer* packet,
-                  rtc::DiffServCodePoint dscp);
+  bool SendPacket(bool rtcp,
+                  rtc::Buffer* packet,
+                  const rtc::PacketOptions& options);
   virtual bool WantsPacket(bool rtcp, rtc::Buffer* packet);
   void HandlePacket(bool rtcp, rtc::Buffer* packet,
                     const rtc::PacketTime& packet_time);
@@ -261,7 +261,7 @@ class BaseChannel
   // Helper method to get RTP Absoulute SendTime extension header id if
   // present in remote supported extensions list.
   void MaybeCacheRtpAbsSendTimeHeaderExtension(
-    const std::vector<RtpHeaderExtension>& extensions);
+      const std::vector<RtpHeaderExtension>& extensions);
 
   bool CheckSrtpConfig(const std::vector<CryptoParams>& cryptos,
                        bool* dtls,
@@ -470,8 +470,6 @@ class VideoChannel : public BaseChannel {
   bool SendIntraFrame();
   bool RequestIntraFrame();
 
-  // Configure sending media on the stream with SSRC |ssrc|
-  // If there is only one sending stream SSRC 0 can be used.
   bool SetVideoSend(uint32_t ssrc, bool enable, const VideoOptions* options);
 
  private:

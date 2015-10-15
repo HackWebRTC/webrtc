@@ -81,6 +81,7 @@
           ],
           'dependencies': [
             '../talk/libjingle.gyp:libjingle_peerconnection',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             '<@(libjingle_tests_additional_deps)',
           ],
           'conditions': [
@@ -139,6 +140,7 @@
           'target_name': 'apprtc_common',
           'type': 'static_library',
           'dependencies': [
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             '../talk/libjingle.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [

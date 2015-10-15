@@ -33,7 +33,9 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
                            ProcessThread* process_thread);
   virtual ~TransportFeedbackAdapter();
 
-  void OnPacketSent(const PacketInfo& info) override;
+  void OnSentPacket(const PacketInfo& info) override;
+
+  void UpdateSendTime(uint16_t sequence_number, int64_t send_time_ms);
 
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
 

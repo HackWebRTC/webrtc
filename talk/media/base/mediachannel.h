@@ -504,12 +504,10 @@ class MediaChannel : public sigslot::has_slots<> {
   class NetworkInterface {
    public:
     enum SocketType { ST_RTP, ST_RTCP };
-    virtual bool SendPacket(
-        rtc::Buffer* packet,
-        rtc::DiffServCodePoint dscp = rtc::DSCP_NO_CHANGE) = 0;
-    virtual bool SendRtcp(
-        rtc::Buffer* packet,
-        rtc::DiffServCodePoint dscp = rtc::DSCP_NO_CHANGE) = 0;
+    virtual bool SendPacket(rtc::Buffer* packet,
+                            const rtc::PacketOptions& options) = 0;
+    virtual bool SendRtcp(rtc::Buffer* packet,
+                          const rtc::PacketOptions& options) = 0;
     virtual int SetOption(SocketType type, rtc::Socket::Option opt,
                           int option) = 0;
     virtual ~NetworkInterface() {}
@@ -553,12 +551,12 @@ class MediaChannel : public sigslot::has_slots<> {
   }
 
   // Base method to send packet using NetworkInterface.
-  bool SendPacket(rtc::Buffer* packet) {
-    return DoSendPacket(packet, false);
+  bool SendPacket(rtc::Buffer* packet, const rtc::PacketOptions& options) {
+    return DoSendPacket(packet, false, options);
   }
 
-  bool SendRtcp(rtc::Buffer* packet) {
-    return DoSendPacket(packet, true);
+  bool SendRtcp(rtc::Buffer* packet, const rtc::PacketOptions& options) {
+    return DoSendPacket(packet, true, options);
   }
 
   int SetOption(NetworkInterface::SocketType type,
@@ -587,13 +585,15 @@ class MediaChannel : public sigslot::has_slots<> {
   }
 
  private:
-  bool DoSendPacket(rtc::Buffer* packet, bool rtcp) {
+  bool DoSendPacket(rtc::Buffer* packet,
+                    bool rtcp,
+                    const rtc::PacketOptions& options) {
     rtc::CritScope cs(&network_interface_crit_);
     if (!network_interface_)
       return false;
 
-    return (!rtcp) ? network_interface_->SendPacket(packet) :
-                     network_interface_->SendRtcp(packet);
+    return (!rtcp) ? network_interface_->SendPacket(packet, options)
+                   : network_interface_->SendRtcp(packet, options);
   }
 
   // |network_interface_| can be accessed from the worker_thread and

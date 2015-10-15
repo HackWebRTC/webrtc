@@ -310,6 +310,10 @@ void Port::OnReadPacket(
   }
 }
 
+void Port::OnSentPacket(const rtc::SentPacket& sent_packet) {
+  PortInterface::SignalSentPacket(this, sent_packet);
+}
+
 void Port::OnReadyToSend() {
   AddressMap::iterator iter = connections_.begin();
   for (; iter != connections_.end(); ++iter) {

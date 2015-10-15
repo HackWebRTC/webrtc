@@ -34,10 +34,11 @@ struct PacketTimeUpdateParams {
 // This structure holds meta information for the packet which is about to send
 // over network.
 struct PacketOptions {
-  PacketOptions() : dscp(DSCP_NO_CHANGE) {}
-  explicit PacketOptions(DiffServCodePoint dscp) : dscp(dscp) {}
+  PacketOptions() : dscp(DSCP_NO_CHANGE), packet_id(-1) {}
+  explicit PacketOptions(DiffServCodePoint dscp) : dscp(dscp), packet_id(-1) {}
 
   DiffServCodePoint dscp;
+  int packet_id;  // 16 bits, -1 represents "not set".
   PacketTimeUpdateParams packet_time_params;
 };
 
@@ -108,6 +109,9 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
   sigslot::signal5<AsyncPacketSocket*, const char*, size_t,
                    const SocketAddress&,
                    const PacketTime&> SignalReadPacket;
+
+  // Emitted each time a packet is sent.
+  sigslot::signal2<AsyncPacketSocket*, const SentPacket&> SignalSentPacket;
 
   // Emitted when the socket is currently able to send.
   sigslot::signal1<AsyncPacketSocket*> SignalReadyToSend;

@@ -209,6 +209,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnWritableState(TransportChannel* channel);
   void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
                     const rtc::PacketTime& packet_time, int flags);
+  void OnSentPacket(TransportChannel* channel,
+                    const rtc::SentPacket& sent_packet);
   void OnReadyToSend(TransportChannel* channel);
   void OnReceivingState(TransportChannel* channel);
   void OnDtlsEvent(rtc::StreamInterface* stream_, int sig, int err);
@@ -223,7 +225,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
 
   Transport* transport_;  // The transport_ that created us.
   rtc::Thread* worker_thread_;  // Everything should occur on this thread.
-  TransportChannelImpl* channel_;  // Underlying channel, owned by transport_.
+  // Underlying channel, owned by transport_.
+  TransportChannelImpl* const channel_;
   rtc::scoped_ptr<rtc::SSLStreamAdapter> dtls_;  // The DTLS stream
   StreamInterfaceChannel* downward_;  // Wrapper for channel_, owned by dtls_.
   std::vector<std::string> srtp_ciphers_;  // SRTP ciphers to use with DTLS.

@@ -207,6 +207,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   void OnConnectionStateChange(Connection* connection);
   void OnReadPacket(Connection *connection, const char *data, size_t len,
                     const rtc::PacketTime& packet_time);
+  void OnSentPacket(PortInterface* port, const rtc::SentPacket& sent_packet);
   void OnReadyToSend(Connection* connection);
   void OnConnectionDestroyed(Connection *connection);
 

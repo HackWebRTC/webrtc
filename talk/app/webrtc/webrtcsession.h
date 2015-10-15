@@ -151,7 +151,7 @@ class WebRtcSession : public AudioProviderInterface,
     ERROR_TRANSPORT = 2,  // transport error of some kind
   };
 
-  WebRtcSession(cricket::ChannelManager* channel_manager,
+  WebRtcSession(webrtc::MediaControllerInterface* media_controller,
                 rtc::Thread* signaling_thread,
                 rtc::Thread* worker_thread,
                 cricket::PortAllocator* port_allocator);
@@ -458,6 +458,9 @@ class WebRtcSession : public AudioProviderInterface,
 
   void ReportNegotiatedCiphers(const cricket::TransportStats& stats);
 
+  void OnSentPacket_w(cricket::TransportChannel* channel,
+                      const rtc::SentPacket& sent_packet);
+
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   cricket::PortAllocator* const port_allocator_;
@@ -470,7 +473,7 @@ class WebRtcSession : public AudioProviderInterface,
   bool initial_offerer_ = false;
 
   rtc::scoped_ptr<cricket::TransportController> transport_controller_;
-  rtc::scoped_ptr<MediaControllerInterface> media_controller_;
+  MediaControllerInterface* media_controller_;
   rtc::scoped_ptr<cricket::VoiceChannel> voice_channel_;
   rtc::scoped_ptr<cricket::VideoChannel> video_channel_;
   rtc::scoped_ptr<cricket::DataChannel> data_channel_;

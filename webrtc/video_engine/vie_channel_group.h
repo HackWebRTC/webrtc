@@ -18,6 +18,7 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/socket.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -81,6 +82,8 @@ class ChannelGroup : public BitrateObserver {
   void OnNetworkChanged(uint32_t target_bitrate_bps,
                         uint8_t fraction_loss,
                         int64_t rtt) override;
+
+  void OnSentPacket(const rtc::SentPacket& sent_packet);
 
  private:
   typedef std::map<int, ViEChannel*> ChannelMap;

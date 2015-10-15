@@ -217,6 +217,7 @@ bool UDPPort::Init() {
     }
     socket_->SignalReadPacket.connect(this, &UDPPort::OnReadPacket);
   }
+  socket_->SignalSentPacket.connect(this, &UDPPort::OnSentPacket);
   socket_->SignalReadyToSend.connect(this, &UDPPort::OnReadyToSend);
   socket_->SignalAddressReady.connect(this, &UDPPort::OnLocalAddressReady);
   requests_.SignalSendPacket.connect(this, &UDPPort::OnSendPacket);
@@ -327,6 +328,11 @@ void UDPPort::OnReadPacket(
   } else {
     Port::OnReadPacket(data, size, remote_addr, PROTO_UDP);
   }
+}
+
+void UDPPort::OnSentPacket(rtc::AsyncPacketSocket* socket,
+                           const rtc::SentPacket& sent_packet) {
+  Port::OnSentPacket(sent_packet);
 }
 
 void UDPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
