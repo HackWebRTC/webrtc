@@ -180,10 +180,16 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
                       buffer, rotation, timestamp_ns);
 }
 
-void AndroidVideoCapturerJni::OnTextureFrame(int width,
-                                             int height,
-                                             int64_t timestamp_ns,
-                                             const NativeHandleImpl& handle) {
+void AndroidVideoCapturerJni::OnTextureFrame(
+    int width,
+    int height,
+    int64_t timestamp_ns,
+    const NativeTextureHandleImpl& handle) {
+  // TODO(magjed): Fix this. See bug webrtc:4993.
+  RTC_NOTREACHED()
+      << "The rest of the stack for Android expects the native "
+         "handle to be a NativeHandleImpl with a SurfaceTexture, not a "
+         "NativeTextureHandleImpl";
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
       new rtc::RefCountedObject<AndroidTextureBuffer>(
           width, height, handle,
@@ -228,8 +234,8 @@ JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnTextureFrameCaptured)
         jlong j_timestamp) {
    reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)
          ->OnTextureFrame(j_width, j_height, j_timestamp,
-                          NativeHandleImpl(jni, j_oes_texture_id,
-                                           j_transform_matrix));
+                          NativeTextureHandleImpl(jni, j_oes_texture_id,
+                                                  j_transform_matrix));
 }
 
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeCapturerStarted)

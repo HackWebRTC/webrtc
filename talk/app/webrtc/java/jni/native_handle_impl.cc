@@ -31,9 +31,9 @@
 
 namespace webrtc_jni {
 
-NativeHandleImpl::NativeHandleImpl(JNIEnv* jni,
-                                   jint j_oes_texture_id,
-                                   jfloatArray j_transform_matrix)
+NativeTextureHandleImpl::NativeTextureHandleImpl(JNIEnv* jni,
+                                                 jint j_oes_texture_id,
+                                                 jfloatArray j_transform_matrix)
     : oes_texture_id(j_oes_texture_id) {
   RTC_CHECK_EQ(16, jni->GetArrayLength(j_transform_matrix));
   jfloat* transform_matrix_ptr =
@@ -44,10 +44,38 @@ NativeHandleImpl::NativeHandleImpl(JNIEnv* jni,
   jni->ReleaseFloatArrayElements(j_transform_matrix, transform_matrix_ptr, 0);
 }
 
+NativeHandleImpl::NativeHandleImpl() : texture_object_(NULL), texture_id_(-1) {}
+
+void* NativeHandleImpl::GetHandle() {
+  return texture_object_;
+}
+
+int NativeHandleImpl::GetTextureId() {
+  return texture_id_;
+}
+
+void NativeHandleImpl::SetTextureObject(void* texture_object, int texture_id) {
+  texture_object_ = reinterpret_cast<jobject>(texture_object);
+  texture_id_ = texture_id;
+}
+
+JniNativeHandleBuffer::JniNativeHandleBuffer(void* native_handle,
+                                             int width,
+                                             int height)
+    : NativeHandleBuffer(native_handle, width, height) {}
+
+rtc::scoped_refptr<webrtc::VideoFrameBuffer>
+JniNativeHandleBuffer::NativeToI420Buffer() {
+  // TODO(pbos): Implement before using this in the encoder pipeline (or
+  // remove the RTC_CHECK() in VideoCapture).
+  RTC_NOTREACHED();
+  return nullptr;
+}
+
 AndroidTextureBuffer::AndroidTextureBuffer(
     int width,
     int height,
-    const NativeHandleImpl& native_handle,
+    const NativeTextureHandleImpl& native_handle,
     const rtc::Callback0<void>& no_longer_used)
     : webrtc::NativeHandleBuffer(&native_handle_, width, height),
       native_handle_(native_handle),

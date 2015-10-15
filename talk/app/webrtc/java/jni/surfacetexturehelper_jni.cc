@@ -68,7 +68,7 @@ void SurfaceTextureHelper::ReturnTextureFrame() const {
 
 rtc::scoped_refptr<webrtc::VideoFrameBuffer>
 SurfaceTextureHelper::CreateTextureFrame(int width, int height,
-    const NativeHandleImpl& native_handle) {
+    const NativeTextureHandleImpl& native_handle) {
   return new rtc::RefCountedObject<AndroidTextureBuffer>(
       width, height, native_handle,
       rtc::Bind(&SurfaceTextureHelper::ReturnTextureFrame, this));

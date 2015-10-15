@@ -39,7 +39,7 @@
 
 namespace webrtc_jni {
 
-class NativeHandleImpl;
+class NativeTextureHandleImpl;
 
 // AndroidVideoCapturerJni implements AndroidVideoCapturerDelegate.
 // The purpose of the delegate is to hide the JNI specifics from the C++ only
@@ -61,7 +61,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
   void OnMemoryBufferFrame(void* video_frame, int length, int width,
                            int height, int rotation, int64_t timestamp_ns);
   void OnTextureFrame(int width, int height, int64_t timestamp_ns,
-                      const NativeHandleImpl& handle);
+                      const NativeTextureHandleImpl& handle);
   void OnOutputFormatRequest(int width, int height, int fps);
 
  protected:

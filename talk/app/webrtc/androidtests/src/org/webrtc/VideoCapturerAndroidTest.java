@@ -112,8 +112,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.startCapturerAndRender(capturer);
   }
 
+  // TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
-  public void testStartVideoCapturerUsingTextures() throws InterruptedException {
+  public void DISABLED_testStartVideoCapturerUsingTextures() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
       Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
       return;
@@ -158,8 +159,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.switchCamera(capturer);
   }
 
+  // TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
-  public void testSwitchVideoCapturerUsingTextures() throws InterruptedException {
+  public void DISABLED_testSwitchVideoCapturerUsingTextures() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
       Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
       return;
@@ -200,8 +202,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.stopRestartVideoSource(capturer);
   }
 
+  // TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
-  public void testStopRestartVideoSourceUsingTextures() throws InterruptedException {
+  public void DISABLED_testStopRestartVideoSourceUsingTextures() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
       Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
       return;
@@ -267,8 +270,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.returnBufferLateEndToEnd(capturer);
   }
 
+  // TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @MediumTest
-  public void testReturnBufferLateEndToEndUsingTextures() throws InterruptedException {
+  public void DISABLED_testReturnBufferLateEndToEndUsingTextures() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
       Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
       return;
