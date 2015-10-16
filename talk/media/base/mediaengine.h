@@ -121,6 +121,12 @@ class MediaEngineInterface {
 
   // Starts AEC dump using existing file.
   virtual bool StartAecDump(rtc::PlatformFile file) = 0;
+
+  // Starts RtcEventLog using existing file.
+  virtual bool StartRtcEventLog(rtc::PlatformFile file) = 0;
+
+  // Stops recording an RtcEventLog.
+  virtual void StopRtcEventLog() = 0;
 };
 
 
@@ -219,6 +225,12 @@ class CompositeMediaEngine : public MediaEngineInterface {
     return voice_.StartAecDump(file);
   }
 
+  virtual bool StartRtcEventLog(rtc::PlatformFile file) {
+    return voice_.StartRtcEventLog(file);
+  }
+
+  virtual void StopRtcEventLog() { voice_.StopRtcEventLog(); }
+
  protected:
   VOICE voice_;
   VIDEO video_;
@@ -251,6 +263,8 @@ class NullVoiceEngine {
   }
   void SetLogging(int min_sev, const char* filter) {}
   bool StartAecDump(rtc::PlatformFile file) { return false; }
+  bool StartRtcEventLog(rtc::PlatformFile file) { return false; }
+  void StopRtcEventLog() {}
 
  private:
   std::vector<AudioCodec> codecs_;

@@ -108,6 +108,13 @@ class WebRtcVoiceEngine
   // Starts AEC dump using existing file.
   bool StartAecDump(rtc::PlatformFile file);
 
+  // Starts recording an RtcEventLog using an existing file until 10 minutes
+  // pass or the StopRtcEventLog function is called.
+  bool StartRtcEventLog(rtc::PlatformFile file);
+
+  // Stops recording the RtcEventLog.
+  void StopRtcEventLog();
+
   // Create a VoiceEngine Channel.
   int CreateMediaVoiceChannel();
 

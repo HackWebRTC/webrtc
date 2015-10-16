@@ -50,6 +50,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/interface/field_trial.h"
@@ -1304,6 +1305,14 @@ void WebRtcVoiceEngine::StopAecDump() {
     }
     is_dumping_aec_ = false;
   }
+}
+
+bool WebRtcVoiceEngine::StartRtcEventLog(rtc::PlatformFile file) {
+  return voe_wrapper_->codec()->GetEventLog()->StartLogging(file);
+}
+
+void WebRtcVoiceEngine::StopRtcEventLog() {
+  voe_wrapper_->codec()->GetEventLog()->StopLogging();
 }
 
 int WebRtcVoiceEngine::CreateVoiceChannel(VoEWrapper* voice_engine_wrapper) {

@@ -80,6 +80,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
                        AudioSourceInterface* audio_source) override;
 
   bool StartAecDump(rtc::PlatformFile file) override;
+  bool StartRtcEventLog(rtc::PlatformFile file) override;
+  void StopRtcEventLog() override;
 
   virtual webrtc::MediaControllerInterface* CreateMediaController() const;
   virtual rtc::Thread* signaling_thread();

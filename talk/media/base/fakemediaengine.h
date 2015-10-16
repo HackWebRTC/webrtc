@@ -785,6 +785,10 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
   bool StartAecDump(rtc::PlatformFile file) { return false; }
 
+  bool StartRtcEventLog(rtc::PlatformFile file) { return false; }
+
+  void StopRtcEventLog() {}
+
  private:
   std::vector<FakeVoiceMediaChannel*> channels_;
   std::vector<AudioCodec> codecs_;

@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/platform_file.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -40,6 +41,11 @@ class RtcEventLog {
   // If the file already exists it will be overwritten.
   // If the file cannot be opened, the RtcEventLog will not start logging.
   virtual void StartLogging(const std::string& file_name, int duration_ms) = 0;
+
+  // Starts logging until either the 10 minute timer runs out or the StopLogging
+  // function is called. The RtcEventLog takes ownership of the supplied
+  // rtc::PlatformFile.
+  virtual bool StartLogging(rtc::PlatformFile log_file) = 0;
 
   virtual void StopLogging() = 0;
 

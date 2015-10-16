@@ -37,6 +37,7 @@ namespace webrtc {
 class RtcEventLogImpl final : public RtcEventLog {
  public:
   void StartLogging(const std::string& file_name, int duration_ms) override {}
+  bool StartLogging(rtc::PlatformFile log_file) override { return false; }
   void StopLogging(void) override {}
   void LogVideoReceiveStreamConfig(
       const VideoReceiveStream::Config& config) override {}
@@ -57,9 +58,8 @@ class RtcEventLogImpl final : public RtcEventLog {
 
 class RtcEventLogImpl final : public RtcEventLog {
  public:
-  RtcEventLogImpl();
-
   void StartLogging(const std::string& file_name, int duration_ms) override;
+  bool StartLogging(rtc::PlatformFile log_file) override;
   void StopLogging() override;
   void LogVideoReceiveStreamConfig(
       const VideoReceiveStream::Config& config) override;
@@ -75,6 +75,9 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogAudioPlayout(uint32_t ssrc) override;
 
  private:
+  // Starts logging. This function assumes the file_ has been opened succesfully
+  // and that the start_time_us_ and _duration_us_ have been set.
+  void StartLoggingLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   // Stops logging and clears the stored data and buffers.
   void StopLoggingLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   // Adds a new event to the logfile if logging is active, or adds it to the
@@ -93,13 +96,16 @@ class RtcEventLogImpl final : public RtcEventLog {
   const int recent_log_duration_us = 10000000;
 
   rtc::CriticalSection crit_;
-  rtc::scoped_ptr<FileWrapper> file_ GUARDED_BY(crit_);
+  rtc::scoped_ptr<FileWrapper> file_ GUARDED_BY(crit_) =
+      rtc::scoped_ptr<FileWrapper>(FileWrapper::Create());
+  rtc::PlatformFile platform_file_ GUARDED_BY(crit_) =
+      rtc::kInvalidPlatformFileValue;
   rtclog::EventStream stream_ GUARDED_BY(crit_);
   std::deque<rtclog::Event> recent_log_events_ GUARDED_BY(crit_);
-  bool currently_logging_ GUARDED_BY(crit_);
-  int64_t start_time_us_ GUARDED_BY(crit_);
-  int64_t duration_us_ GUARDED_BY(crit_);
-  const Clock* const clock_;
+  bool currently_logging_ GUARDED_BY(crit_) = false;
+  int64_t start_time_us_ GUARDED_BY(crit_) = 0;
+  int64_t duration_us_ GUARDED_BY(crit_) = 0;
+  const Clock* const clock_ = Clock::GetRealTimeClock();
 };
 
 namespace {
@@ -143,14 +149,6 @@ rtclog::MediaType ConvertMediaType(MediaType media_type) {
 }  // namespace
 
 // RtcEventLogImpl member functions.
-RtcEventLogImpl::RtcEventLogImpl()
-    : file_(FileWrapper::Create()),
-      stream_(),
-      currently_logging_(false),
-      start_time_us_(0),
-      duration_us_(0),
-      clock_(Clock::GetRealTimeClock()) {
-}
 
 void RtcEventLogImpl::StartLogging(const std::string& file_name,
                                    int duration_ms) {
@@ -161,9 +159,39 @@ void RtcEventLogImpl::StartLogging(const std::string& file_name,
   if (file_->OpenFile(file_name.c_str(), false) != 0) {
     return;
   }
-  currently_logging_ = true;
   start_time_us_ = clock_->TimeInMicroseconds();
   duration_us_ = static_cast<int64_t>(duration_ms) * 1000;
+  StartLoggingLocked();
+}
+
+bool RtcEventLogImpl::StartLogging(rtc::PlatformFile log_file) {
+  rtc::CritScope lock(&crit_);
+
+  if (currently_logging_) {
+    StopLoggingLocked();
+  }
+  RTC_DCHECK(platform_file_ == rtc::kInvalidPlatformFileValue);
+
+  FILE* file_stream = rtc::FdopenPlatformFileForWriting(log_file);
+  if (!file_stream) {
+    rtc::ClosePlatformFile(log_file);
+    return false;
+  }
+
+  if (file_->OpenFromFileHandle(file_stream, true, false) != 0) {
+    rtc::ClosePlatformFile(log_file);
+    return false;
+  }
+  platform_file_ = log_file;
+  // Set the start time and duration to keep logging for 10 minutes.
+  start_time_us_ = clock_->TimeInMicroseconds();
+  duration_us_ = 10 * 60 * 1000000;
+  StartLoggingLocked();
+  return true;
+}
+
+void RtcEventLogImpl::StartLoggingLocked() {
+  currently_logging_ = true;
   // Write all the recent events to the log file, ignoring any old events.
   for (auto& event : recent_log_events_) {
     if (event.timestamp_us() >= start_time_us_ - recent_log_duration_us) {
@@ -339,6 +367,10 @@ void RtcEventLogImpl::StopLoggingLocked() {
     RTC_DCHECK(file_->Open());
     StoreToFile(&event);
     file_->CloseFile();
+    if (platform_file_ != rtc::kInvalidPlatformFileValue) {
+      rtc::ClosePlatformFile(platform_file_);
+      platform_file_ = rtc::kInvalidPlatformFileValue;
+    }
   }
   RTC_DCHECK(!file_->Open());
   stream_.Clear();

@@ -170,6 +170,12 @@ class ChannelManager : public rtc::MessageHandler,
   // Starts AEC dump using existing file.
   bool StartAecDump(rtc::PlatformFile file);
 
+  // Starts RtcEventLog using existing file.
+  bool StartRtcEventLog(rtc::PlatformFile file);
+
+  // Stops logging RtcEventLog.
+  void StopRtcEventLog();
+
   sigslot::signal2<VideoCapturer*, CaptureState> SignalVideoCaptureStateChange;
 
  protected:
