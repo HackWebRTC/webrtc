@@ -96,13 +96,13 @@ public class MediaCodecVideoEncoder {
     CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
     COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m
   };
+  private int colorFormat;
+  // Video encoder type.
   private VideoCodecType type;
-  private int colorFormat;  // Used by native code.
-
   // SPS and PPS NALs (Config frame) for H.264.
   private ByteBuffer configData = null;
 
-  MediaCodecVideoEncoder() {
+  private MediaCodecVideoEncoder() {
     instance = this;
   }
 
@@ -221,14 +221,16 @@ public class MediaCodecVideoEncoder {
     }
   }
 
-  // Returns false if the hardware encoder currently can't be used.
-  boolean initEncode(VideoCodecType type, int width, int height, int kbps, int fps) {
+  // Return the array of input buffers, or null on failure.
+  private ByteBuffer[] initEncode(
+      VideoCodecType type, int width, int height, int kbps, int fps) {
     Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
-        ". @ " + kbps + " kbps. Fps: " + fps + ".");
-
+        ". @ " + kbps + " kbps. Fps: " + fps +
+        ". Color: 0x" + Integer.toHexString(colorFormat));
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
     }
+    this.type = type;
     EncoderProperties properties = null;
     String mime = null;
     int keyFrameIntervalSec = 0;
@@ -244,7 +246,6 @@ public class MediaCodecVideoEncoder {
     if (properties == null) {
       throw new RuntimeException("Can not find HW encoder for " + type);
     }
-    colorFormat = properties.colorFormat;
     mediaCodecThread = Thread.currentThread();
     try {
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
@@ -255,31 +256,26 @@ public class MediaCodecVideoEncoder {
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
       Logging.d(TAG, "  Format: " + format);
       mediaCodec = createByCodecName(properties.codecName);
-      this.type = type;
       if (mediaCodec == null) {
         Logging.e(TAG, "Can not create media encoder");
-        return false;
+        return null;
       }
       mediaCodec.configure(
           format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-
       mediaCodec.start();
+      colorFormat = properties.colorFormat;
       outputBuffers = mediaCodec.getOutputBuffers();
-
+      ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
+      Logging.d(TAG, "Input buffers: " + inputBuffers.length +
+          ". Output buffers: " + outputBuffers.length);
+      return inputBuffers;
     } catch (IllegalStateException e) {
       Logging.e(TAG, "initEncode failed", e);
-      return false;
+      return null;
     }
-    return true;
   }
 
-  ByteBuffer[]  getInputBuffers() {
-    ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
-    Logging.d(TAG, "Input buffers: " + inputBuffers.length);
-    return inputBuffers;
-  }
-
-  boolean encodeBuffer(
+  private boolean encode(
       boolean isKeyframe, int inputBuffer, int size,
       long presentationTimestampUs) {
     checkOnMediaCodecThread();
@@ -299,12 +295,12 @@ public class MediaCodecVideoEncoder {
       return true;
     }
     catch (IllegalStateException e) {
-      Logging.e(TAG, "encodeBuffer failed", e);
+      Logging.e(TAG, "encode failed", e);
       return false;
     }
   }
 
-  void release() {
+  private void release() {
     Logging.d(TAG, "Java releaseEncoder");
     checkOnMediaCodecThread();
     try {
@@ -337,7 +333,7 @@ public class MediaCodecVideoEncoder {
 
   // Dequeue an input buffer and return its index, -1 if no input buffer is
   // available, or -2 if the codec is no longer operative.
-  int dequeueInputBuffer() {
+  private int dequeueInputBuffer() {
     checkOnMediaCodecThread();
     try {
       return mediaCodec.dequeueInputBuffer(DEQUEUE_TIMEOUT);
@@ -348,7 +344,7 @@ public class MediaCodecVideoEncoder {
   }
 
   // Helper struct for dequeueOutputBuffer() below.
-  static class OutputBufferInfo {
+  private static class OutputBufferInfo {
     public OutputBufferInfo(
         int index, ByteBuffer buffer,
         boolean isKeyFrame, long presentationTimestampUs) {
@@ -358,15 +354,15 @@ public class MediaCodecVideoEncoder {
       this.presentationTimestampUs = presentationTimestampUs;
     }
 
-    public final int index;
-    public final ByteBuffer buffer;
-    public final boolean isKeyFrame;
-    public final long presentationTimestampUs;
+    private final int index;
+    private final ByteBuffer buffer;
+    private final boolean isKeyFrame;
+    private final long presentationTimestampUs;
   }
 
   // Dequeue and return an output buffer, or null if no output is ready.  Return
   // a fake OutputBufferInfo with index -1 if the codec is no longer operable.
-  OutputBufferInfo dequeueOutputBuffer() {
+  private OutputBufferInfo dequeueOutputBuffer() {
     checkOnMediaCodecThread();
     try {
       MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
@@ -435,7 +431,7 @@ public class MediaCodecVideoEncoder {
 
   // Release a dequeued output buffer back to the codec for re-use.  Return
   // false if the codec is no longer operable.
-  boolean releaseOutputBuffer(int index) {
+  private boolean releaseOutputBuffer(int index) {
     checkOnMediaCodecThread();
     try {
       mediaCodec.releaseOutputBuffer(index, false);
