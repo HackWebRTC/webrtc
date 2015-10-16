@@ -20,6 +20,7 @@
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
@@ -1335,19 +1336,20 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
 }
 
 TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
-  // TODO(sprang): Extend this to verify received values once send-side BWE
-  // is in place.
-
   static const int kExtensionId = 5;
 
   class RtpExtensionHeaderObserver : public test::DirectTransport {
    public:
-    RtpExtensionHeaderObserver()
+    RtpExtensionHeaderObserver(const uint32_t& first_media_ssrc,
+                               const std::map<uint32_t, uint32_t>& ssrc_map)
         : done_(EventWrapper::Create()),
           parser_(RtpHeaderParser::Create()),
-          last_seq_(0),
+          first_media_ssrc_(first_media_ssrc),
+          rtx_to_media_ssrcs_(ssrc_map),
           padding_observed_(false),
-          rtx_padding_observed_(false) {
+          rtx_padding_observed_(false),
+          retransmit_observed_(false),
+          started_(false) {
       parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
                                           kExtensionId);
     }
@@ -1356,54 +1358,110 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
     bool SendRtp(const uint8_t* data,
                  size_t length,
                  const PacketOptions& options) override {
-      if (IsDone())
-        return false;
-
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(data, length, &header));
-      if (header.extension.hasTransportSequenceNumber) {
-        EXPECT_EQ(options.packet_id,
-                  header.extension.transportSequenceNumber);
-        if (!streams_observed_.empty()) {
-          EXPECT_EQ(static_cast<uint16_t>(last_seq_ + 1),
-                    header.extension.transportSequenceNumber);
-        }
-        last_seq_ = header.extension.transportSequenceNumber;
-
-        size_t payload_length =
-            length - (header.headerLength + header.paddingLength);
-        if (payload_length == 0) {
-          padding_observed_ = true;
-        } else if (header.payloadType == kSendRtxPayloadType) {
-          rtx_padding_observed_ = true;
-        } else {
-          streams_observed_.insert(header.ssrc);
-        }
+      {
+        rtc::CritScope cs(&lock_);
 
         if (IsDone())
-          done_->Set();
+          return false;
+
+        if (started_) {
+          RTPHeader header;
+          EXPECT_TRUE(parser_->Parse(data, length, &header));
+          bool drop_packet = false;
+
+          EXPECT_TRUE(header.extension.hasTransportSequenceNumber);
+          EXPECT_EQ(options.packet_id,
+                    header.extension.transportSequenceNumber);
+          if (!streams_observed_.empty()) {
+            // Unwrap packet id and verify uniqueness.
+            int64_t packet_id = unwrapper_.Unwrap(options.packet_id);
+            EXPECT_TRUE(received_packed_ids_.insert(packet_id).second);
+          }
+
+          // Drop (up to) every 17th packet, so we get retransmits.
+          // Only drop media, and not on the first stream (otherwise it will be
+          // hard to distinguish from padding, which is always sent on the first
+          // stream).
+          if (header.payloadType != kSendRtxPayloadType &&
+              header.ssrc != first_media_ssrc_ &&
+              header.extension.transportSequenceNumber % 17 == 0) {
+            dropped_seq_[header.ssrc].insert(header.sequenceNumber);
+            drop_packet = true;
+          }
+
+          size_t payload_length =
+              length - (header.headerLength + header.paddingLength);
+          if (payload_length == 0) {
+            padding_observed_ = true;
+          } else if (header.payloadType == kSendRtxPayloadType) {
+            uint16_t original_sequence_number =
+                ByteReader<uint16_t>::ReadBigEndian(&data[header.headerLength]);
+            uint32_t original_ssrc =
+                rtx_to_media_ssrcs_.find(header.ssrc)->second;
+            std::set<uint16_t>* seq_no_map = &dropped_seq_[original_ssrc];
+            auto it = seq_no_map->find(original_sequence_number);
+            if (it != seq_no_map->end()) {
+              retransmit_observed_ = true;
+              seq_no_map->erase(it);
+            } else {
+              rtx_padding_observed_ = true;
+            }
+          } else {
+            streams_observed_.insert(header.ssrc);
+          }
+
+          if (IsDone())
+            done_->Set();
+
+          if (drop_packet)
+            return true;
+        }
       }
+
       return test::DirectTransport::SendRtp(data, length, options);
     }
 
     bool IsDone() {
-      return streams_observed_.size() == MultiStreamTest::kNumStreams &&
-             padding_observed_ && rtx_padding_observed_;
+      bool observed_types_ok =
+          streams_observed_.size() == MultiStreamTest::kNumStreams &&
+          padding_observed_ && retransmit_observed_ && rtx_padding_observed_;
+      if (!observed_types_ok)
+        return false;
+      // We should not have any gaps in the sequence number range.
+      size_t seqno_range =
+          *received_packed_ids_.rbegin() - *received_packed_ids_.begin() + 1;
+      return seqno_range == received_packed_ids_.size();
     }
 
-    EventTypeWrapper Wait() { return done_->Wait(kDefaultTimeoutMs); }
+    EventTypeWrapper Wait() {
+      {
+        // Can't be sure until this point that rtx_to_media_ssrcs_ etc have
+        // been initialized and are OK to read.
+        rtc::CritScope cs(&lock_);
+        started_ = true;
+      }
+      return done_->Wait(kDefaultTimeoutMs);
+    }
 
+    rtc::CriticalSection lock_;
     rtc::scoped_ptr<EventWrapper> done_;
     rtc::scoped_ptr<RtpHeaderParser> parser_;
-    uint16_t last_seq_;
+    SequenceNumberUnwrapper unwrapper_;
+    std::set<int64_t> received_packed_ids_;
     std::set<uint32_t> streams_observed_;
+    std::map<uint32_t, std::set<uint16_t>> dropped_seq_;
+    const uint32_t& first_media_ssrc_;
+    const std::map<uint32_t, uint32_t>& rtx_to_media_ssrcs_;
     bool padding_observed_;
     bool rtx_padding_observed_;
+    bool retransmit_observed_;
+    bool started_;
   };
 
   class TransportSequenceNumberTester : public MultiStreamTest {
    public:
-    TransportSequenceNumberTester() : observer_(nullptr) {}
+    TransportSequenceNumberTester()
+        : first_media_ssrc_(0), observer_(nullptr) {}
     virtual ~TransportSequenceNumberTester() {}
 
    protected:
@@ -1431,24 +1489,33 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
 
       // Configure RTX for redundant payload padding.
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
+      send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[stream_index]);
       send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
+      rtx_to_media_ssrcs_[kSendRtxSsrcs[stream_index]] =
+          send_config->rtp.ssrcs[0];
+
+      if (stream_index == 0)
+        first_media_ssrc_ = send_config->rtp.ssrcs[0];
     }
 
     void UpdateReceiveConfig(
         size_t stream_index,
         VideoReceiveStream::Config* receive_config) override {
+      receive_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       receive_config->rtp.extensions.clear();
       receive_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
     }
 
     virtual test::DirectTransport* CreateSendTransport() {
-      observer_ = new RtpExtensionHeaderObserver();
+      observer_ = new RtpExtensionHeaderObserver(first_media_ssrc_,
+                                                 rtx_to_media_ssrcs_);
       return observer_;
     }
 
    private:
+    uint32_t first_media_ssrc_;
+    std::map<uint32_t, uint32_t> rtx_to_media_ssrcs_;
     RtpExtensionHeaderObserver* observer_;
   } tester;
 
