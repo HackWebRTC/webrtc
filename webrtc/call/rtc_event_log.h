@@ -36,6 +36,10 @@ class RtcEventLog {
 
   static rtc::scoped_ptr<RtcEventLog> Create();
 
+  // Sets the time that events are stored in the internal event buffer
+  // before the user calls StartLogging.  The default is 10 000 000 us = 10 s
+  virtual void SetBufferDuration(int64_t buffer_duration_us) = 0;
+
   // Starts logging for the specified duration to the specified file.
   // The logging will stop automatically after the specified duration.
   // If the file already exists it will be overwritten.

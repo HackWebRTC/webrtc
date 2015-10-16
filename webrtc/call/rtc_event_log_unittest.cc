@@ -18,6 +18,7 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
@@ -392,14 +393,14 @@ void GenerateVideoSendConfig(uint32_t extensions_bitvector,
   }
 }
 
-// Test for the RtcEventLog class. Dumps some RTP packets to disk, then reads
-// them back to see if they match.
+// Test for the RtcEventLog class. Dumps some RTP packets and other events
+// to disk, then reads them back to see if they match.
 void LogSessionAndReadBack(size_t rtp_count,
                            size_t rtcp_count,
                            size_t playout_count,
                            uint32_t extensions_bitvector,
                            uint32_t csrcs_count,
-                           unsigned random_seed) {
+                           unsigned int random_seed) {
   ASSERT_LE(rtcp_count, rtp_count);
   ASSERT_LE(playout_count, rtp_count);
   std::vector<rtc::Buffer> rtp_packets;
@@ -476,7 +477,9 @@ void LogSessionAndReadBack(size_t rtp_count,
 
   ASSERT_TRUE(RtcEventLog::ParseRtcEventLog(temp_filename, &parsed_stream));
 
-  // Verify the result.
+  // Verify that what we read back from the event log is the same as
+  // what we wrote down. For RTCP we log the full packets, but for
+  // RTP we should only log the header.
   const int event_count =
       config_count + playout_count + rtcp_count + rtp_count + 1;
   EXPECT_EQ(event_count, parsed_stream.stream_size());
@@ -544,6 +547,99 @@ TEST(RtcEventLogTest, LogSessionAndReadBack) {
                             rand());
     }
   }
+}
+
+// Tests that the event queue works correctly, i.e. drops old RTP, RTCP and
+// debug events, but keeps config events even if they are older than the limit.
+void DropOldEvents(uint32_t extensions_bitvector,
+                   uint32_t csrcs_count,
+                   unsigned int random_seed) {
+  rtc::Buffer old_rtp_packet;
+  rtc::Buffer recent_rtp_packet;
+  rtc::Buffer old_rtcp_packet;
+  rtc::Buffer recent_rtcp_packet;
+
+  VideoReceiveStream::Config receiver_config(nullptr);
+  VideoSendStream::Config sender_config(nullptr);
+
+  srand(random_seed);
+
+  // Create two RTP packets containing random data.
+  size_t packet_size = 1000 + rand() % 64;
+  old_rtp_packet.SetSize(packet_size);
+  GenerateRtpPacket(extensions_bitvector, csrcs_count, old_rtp_packet.data(),
+                    packet_size);
+  packet_size = 1000 + rand() % 64;
+  recent_rtp_packet.SetSize(packet_size);
+  size_t recent_header_size = GenerateRtpPacket(
+      extensions_bitvector, csrcs_count, recent_rtp_packet.data(), packet_size);
+
+  // Create two RTCP packets containing random data.
+  packet_size = 1000 + rand() % 64;
+  old_rtcp_packet.SetSize(packet_size);
+  GenerateRtcpPacket(old_rtcp_packet.data(), packet_size);
+  packet_size = 1000 + rand() % 64;
+  recent_rtcp_packet.SetSize(packet_size);
+  GenerateRtcpPacket(recent_rtcp_packet.data(), packet_size);
+
+  // Create configurations for the video streams.
+  GenerateVideoReceiveConfig(extensions_bitvector, &receiver_config);
+  GenerateVideoSendConfig(extensions_bitvector, &sender_config);
+
+  // Find the name of the current test, in order to use it as a temporary
+  // filename.
+  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  const std::string temp_filename =
+      test::OutputPath() + test_info->test_case_name() + test_info->name();
+
+  // The log file will be flushed to disk when the log_dumper goes out of scope.
+  {
+    rtc::scoped_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+    // Reduce the time old events are stored to 50 ms.
+    log_dumper->SetBufferDuration(50000);
+    log_dumper->LogVideoReceiveStreamConfig(receiver_config);
+    log_dumper->LogVideoSendStreamConfig(sender_config);
+    log_dumper->LogRtpHeader(false, MediaType::AUDIO, old_rtp_packet.data(),
+                             old_rtp_packet.size());
+    log_dumper->LogRtcpPacket(true, MediaType::AUDIO, old_rtcp_packet.data(),
+                              old_rtcp_packet.size());
+    // Sleep 55 ms to let old events be removed from the queue.
+    rtc::Thread::SleepMs(55);
+    log_dumper->StartLogging(temp_filename, 10000000);
+    log_dumper->LogRtpHeader(true, MediaType::VIDEO, recent_rtp_packet.data(),
+                             recent_rtp_packet.size());
+    log_dumper->LogRtcpPacket(false, MediaType::VIDEO,
+                              recent_rtcp_packet.data(),
+                              recent_rtcp_packet.size());
+  }
+
+  // Read the generated file from disk.
+  rtclog::EventStream parsed_stream;
+  ASSERT_TRUE(RtcEventLog::ParseRtcEventLog(temp_filename, &parsed_stream));
+
+  // Verify that what we read back from the event log is the same as
+  // what we wrote. Old RTP and RTCP events should have been discarded,
+  // but old configuration events should still be available.
+  EXPECT_EQ(5, parsed_stream.stream_size());
+  VerifyReceiveStreamConfig(parsed_stream.stream(0), receiver_config);
+  VerifySendStreamConfig(parsed_stream.stream(1), sender_config);
+  VerifyLogStartEvent(parsed_stream.stream(2));
+  VerifyRtpEvent(parsed_stream.stream(3), true, MediaType::VIDEO,
+                 recent_rtp_packet.data(), recent_header_size,
+                 recent_rtp_packet.size());
+  VerifyRtcpEvent(parsed_stream.stream(4), false, MediaType::VIDEO,
+                  recent_rtcp_packet.data(), recent_rtcp_packet.size());
+
+  // Clean up temporary file - can be pretty slow.
+  remove(temp_filename.c_str());
+}
+
+TEST(RtcEventLogTest, DropOldEvents) {
+  // Enable all header extensions
+  uint32_t extensions = (1u << kNumExtensions) - 1;
+  uint32_t csrcs_count = 2;
+  DropOldEvents(extensions, csrcs_count, 141421356);
+  DropOldEvents(extensions, csrcs_count, 173205080);
 }
 
 }  // namespace webrtc

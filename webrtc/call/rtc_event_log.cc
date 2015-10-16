@@ -11,6 +11,7 @@
 #include "webrtc/call/rtc_event_log.h"
 
 #include <deque>
+#include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
@@ -36,6 +37,7 @@ namespace webrtc {
 // No-op implementation if flag is not set.
 class RtcEventLogImpl final : public RtcEventLog {
  public:
+  void SetBufferDuration(int64_t buffer_duration_us) override {}
   void StartLogging(const std::string& file_name, int duration_ms) override {}
   bool StartLogging(rtc::PlatformFile log_file) override { return false; }
   void StopLogging(void) override {}
@@ -58,6 +60,9 @@ class RtcEventLogImpl final : public RtcEventLog {
 
 class RtcEventLogImpl final : public RtcEventLog {
  public:
+  RtcEventLogImpl();
+
+  void SetBufferDuration(int64_t buffer_duration_us) override;
   void StartLogging(const std::string& file_name, int duration_ms) override;
   bool StartLogging(rtc::PlatformFile log_file) override;
   void StopLogging() override;
@@ -91,10 +96,6 @@ class RtcEventLogImpl final : public RtcEventLog {
   void AddRecentEvent(const rtclog::Event& event)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Amount of time in microseconds to record log events, before starting the
-  // actual log.
-  const int recent_log_duration_us = 10000000;
-
   rtc::CriticalSection crit_;
   rtc::scoped_ptr<FileWrapper> file_ GUARDED_BY(crit_) =
       rtc::scoped_ptr<FileWrapper>(FileWrapper::Create());
@@ -102,10 +103,14 @@ class RtcEventLogImpl final : public RtcEventLog {
       rtc::kInvalidPlatformFileValue;
   rtclog::EventStream stream_ GUARDED_BY(crit_);
   std::deque<rtclog::Event> recent_log_events_ GUARDED_BY(crit_);
-  bool currently_logging_ GUARDED_BY(crit_) = false;
-  int64_t start_time_us_ GUARDED_BY(crit_) = 0;
-  int64_t duration_us_ GUARDED_BY(crit_) = 0;
-  const Clock* const clock_ = Clock::GetRealTimeClock();
+  std::vector<rtclog::Event> config_events_ GUARDED_BY(crit_);
+
+  // Microseconds to record log events, before starting the actual log.
+  int64_t buffer_duration_us_ GUARDED_BY(crit_);
+  bool currently_logging_ GUARDED_BY(crit_);
+  int64_t start_time_us_ GUARDED_BY(crit_);
+  int64_t duration_us_ GUARDED_BY(crit_);
+  const Clock* const clock_;
 };
 
 namespace {
@@ -148,7 +153,31 @@ rtclog::MediaType ConvertMediaType(MediaType media_type) {
 
 }  // namespace
 
+namespace {
+bool IsConfigEvent(const rtclog::Event& event) {
+  rtclog::Event_EventType event_type = event.type();
+  return event_type == rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT ||
+         event_type == rtclog::Event::VIDEO_SENDER_CONFIG_EVENT ||
+         event_type == rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT ||
+         event_type == rtclog::Event::AUDIO_SENDER_CONFIG_EVENT;
+}
+}  // namespace
+
 // RtcEventLogImpl member functions.
+RtcEventLogImpl::RtcEventLogImpl()
+    : file_(FileWrapper::Create()),
+      stream_(),
+      buffer_duration_us_(10000000),
+      currently_logging_(false),
+      start_time_us_(0),
+      duration_us_(0),
+      clock_(Clock::GetRealTimeClock()) {
+}
+
+void RtcEventLogImpl::SetBufferDuration(int64_t buffer_duration_us) {
+  rtc::CritScope lock(&crit_);
+  buffer_duration_us_ = buffer_duration_us;
+}
 
 void RtcEventLogImpl::StartLogging(const std::string& file_name,
                                    int duration_ms) {
@@ -192,9 +221,18 @@ bool RtcEventLogImpl::StartLogging(rtc::PlatformFile log_file) {
 
 void RtcEventLogImpl::StartLoggingLocked() {
   currently_logging_ = true;
-  // Write all the recent events to the log file, ignoring any old events.
+
+  // Write all old configuration events to the log file.
+  for (auto& event : config_events_) {
+    StoreToFile(&event);
+  }
+  // Write all recent configuration events to the log file, and
+  // write all other recent events to the log file, ignoring any old events.
   for (auto& event : recent_log_events_) {
-    if (event.timestamp_us() >= start_time_us_ - recent_log_duration_us) {
+    if (IsConfigEvent(event)) {
+      StoreToFile(&event);
+      config_events_.push_back(event);
+    } else if (event.timestamp_us() >= start_time_us_ - buffer_duration_us_) {
       StoreToFile(&event);
     }
   }
@@ -250,10 +288,6 @@ void RtcEventLogImpl::LogVideoReceiveStreamConfig(
     decoder->set_name(d.payload_name);
     decoder->set_payload_type(d.payload_type);
   }
-  // TODO(terelius): We should use a separate event queue for config events.
-  // The current approach of storing the configuration together with the
-  // RTP events causes the configuration information to be removed 10s
-  // after the ReceiveStream is created.
   HandleEvent(&event);
 }
 
@@ -289,11 +323,6 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
   rtclog::EncoderConfig* encoder = sender_config->mutable_encoder();
   encoder->set_name(config.encoder_settings.payload_name);
   encoder->set_payload_type(config.encoder_settings.payload_type);
-
-  // TODO(terelius): We should use a separate event queue for config events.
-  // The current approach of storing the configuration together with the
-  // RTP events causes the configuration information to be removed 10s
-  // after the ReceiveStream is created.
   HandleEvent(&event);
 }
 
@@ -404,7 +433,10 @@ void RtcEventLogImpl::StoreToFile(rtclog::Event* event) {
 void RtcEventLogImpl::AddRecentEvent(const rtclog::Event& event) {
   recent_log_events_.push_back(event);
   while (recent_log_events_.front().timestamp_us() <
-         event.timestamp_us() - recent_log_duration_us) {
+         event.timestamp_us() - buffer_duration_us_) {
+    if (IsConfigEvent(recent_log_events_.front())) {
+      config_events_.push_back(recent_log_events_.front());
+    }
     recent_log_events_.pop_front();
   }
 }
@@ -431,4 +463,5 @@ bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,
 rtc::scoped_ptr<RtcEventLog> RtcEventLog::Create() {
   return rtc::scoped_ptr<RtcEventLog>(new RtcEventLogImpl());
 }
+
 }  // namespace webrtc
