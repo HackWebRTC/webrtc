@@ -24,7 +24,6 @@ const int64_t kBweDecreaseIntervalMs = 300;
 const int64_t kStartPhaseMs = 2000;
 const int64_t kBweConverganceTimeMs = 20000;
 const int kLimitNumPackets = 20;
-const int kAvgPacketSizeBytes = 1000;
 const int kDefaultMinBitrateBps = 10000;
 const int kDefaultMaxBitrateBps = 1000000000;
 const int64_t kLowBitrateLogPeriodMs = 10000;
@@ -41,29 +40,6 @@ const UmaRampUpMetric kUmaRampupMetrics[] = {
 const size_t kNumUmaRampupMetrics =
     sizeof(kUmaRampupMetrics) / sizeof(kUmaRampupMetrics[0]);
 
-// Calculate the rate that TCP-Friendly Rate Control (TFRC) would apply.
-// The formula in RFC 3448, Section 3.1, is used.
-uint32_t CalcTfrcBps(int64_t rtt, uint8_t loss) {
-  if (rtt == 0 || loss == 0) {
-    // Input variables out of range.
-    return 0;
-  }
-  double R = static_cast<double>(rtt) / 1000;  // RTT in seconds.
-  int b = 1;  // Number of packets acknowledged by a single TCP acknowledgement:
-              // recommended = 1.
-  double t_RTO = 4.0 * R;  // TCP retransmission timeout value in seconds
-                           // recommended = 4*R.
-  double p = static_cast<double>(loss) / 255;  // Packet loss rate in [0, 1).
-  double s = static_cast<double>(kAvgPacketSizeBytes);
-
-  // Calculate send rate in bytes/second.
-  double X =
-      s / (R * std::sqrt(2 * b * p / 3) +
-           (t_RTO * (3 * std::sqrt(3 * b * p / 8) * p * (1 + 32 * p * p))));
-
-  // Convert to bits/second.
-  return (static_cast<uint32_t>(X * 8));
-}
 }
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation()
@@ -245,12 +221,6 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
         bitrate_ = static_cast<uint32_t>(
             (bitrate_ * static_cast<double>(512 - last_fraction_loss_)) /
             512.0);
-
-        // Calculate what rate TFRC would apply in this situation and to not
-        // reduce further than it.
-        bitrate_ = std::max(
-            bitrate_,
-            CalcTfrcBps(last_round_trip_time_ms_, last_fraction_loss_));
       }
     }
   }
