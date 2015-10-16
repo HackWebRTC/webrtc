@@ -83,11 +83,6 @@ public:
   enum RedirectAction { REDIRECT_DEFAULT, REDIRECT_ALWAYS, REDIRECT_NEVER };
   void set_redirect_action(RedirectAction action) { redirect_action_ = action; }
   RedirectAction redirect_action() const { return redirect_action_; }
-  // Deprecated
-  void set_fail_redirect(bool fail_redirect) {
-    redirect_action_ = REDIRECT_NEVER;
-  }
-  bool fail_redirect() const { return (REDIRECT_NEVER == redirect_action_); }
 
   enum UriForm { URI_DEFAULT, URI_ABSOLUTE, URI_RELATIVE };
   void set_uri_form(UriForm form) { uri_form_ = form; }
