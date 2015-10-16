@@ -170,6 +170,32 @@ public class VideoCapturerAndroidTestFixtures {
     }
   }
 
+  static class CameraEvents implements
+      VideoCapturerAndroid.CameraEventsHandler {
+    public boolean onCameraOpeningCalled;
+    public boolean onFirstFrameAvailableCalled;
+
+    @Override
+    public void onCameraError(String errorDescription) { }
+
+    @Override
+    public void onCameraOpening(int cameraId) {
+      onCameraOpeningCalled = true;
+    }
+
+    @Override
+    public void onFirstFrameAvailable() {
+      onFirstFrameAvailableCalled = true;
+    }
+
+    @Override
+    public void onCameraClosed() { }
+  }
+
+  static public CameraEvents createCameraEvents() {
+    return new CameraEvents();
+  }
+
   // Return true if the device under test have at least two cameras.
   @SuppressWarnings("deprecation")
   static public boolean HaveTwoCameras() {
@@ -235,6 +261,28 @@ public class VideoCapturerAndroidTestFixtures {
     source.dispose();
     factory.dispose();
     assertTrue(capturer.isReleased());
+  }
+
+  static public void cameraEventsInvoked(VideoCapturerAndroid capturer, CameraEvents events,
+      Context appContext) throws InterruptedException {
+    final List<CaptureFormat> formats = capturer.getSupportedFormats();
+    final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+
+    final FakeCapturerObserver observer = new FakeCapturerObserver();
+    capturer.startCapture(format.width, format.height, format.maxFramerate,
+        appContext, observer);
+    // Make sure camera is started and first frame is received and then stop it.
+    assertTrue(observer.WaitForCapturerToStart());
+    observer.WaitForNextCapturedFrame();
+    capturer.stopCapture();
+    for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {
+      capturer.returnBuffer(timeStamp);
+    }
+    capturer.dispose();
+
+    assertTrue(capturer.isReleased());
+    assertTrue(events.onCameraOpeningCalled);
+    assertTrue(events.onFirstFrameAvailableCalled);
   }
 
   static public void cameraCallsAfterStop(

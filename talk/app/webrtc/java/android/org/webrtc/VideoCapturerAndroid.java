@@ -31,7 +31,6 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
-import android.opengl.EGL14;
 import android.opengl.EGLContext;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
@@ -93,7 +92,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private final Object pendingCameraSwitchLock = new Object();
   private volatile boolean pendingCameraSwitch;
   private CapturerObserver frameObserver = null;
-  private final CameraErrorHandler errorHandler;
+  private final CameraEventsHandler eventsHandler;
+  private boolean firstFrameReported;
   private final boolean isCapturingToTexture;
   // |cameraGlTexture| is used with setPreviewTexture if the capturer is capturing to
   // ByteBuffers.
@@ -120,8 +120,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         errorMessage = "Camera error: " + error;
       }
       Logging.e(TAG, errorMessage);
-      if (errorHandler != null) {
-        errorHandler.onCameraError(errorMessage);
+      if (eventsHandler != null) {
+        eventsHandler.onCameraError(errorMessage);
       }
     }
   };
@@ -138,8 +138,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           ". Pending buffers: " + cameraStatistics.pendingFramesTimeStamps());
       if (cameraFramesCount == 0) {
         Logging.e(TAG, "Camera freezed.");
-        if (errorHandler != null) {
-          errorHandler.onCameraError("Camera failure.");
+        if (eventsHandler != null) {
+          eventsHandler.onCameraError("Camera failure.");
         }
       } else {
         cameraThreadHandler.postDelayed(this, CAMERA_OBSERVER_PERIOD_MS);
@@ -194,10 +194,19 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
   }
 
-  // Camera error handler - invoked when camera stops receiving frames
-  // or any camera exception happens on camera thread.
-  public static interface CameraErrorHandler {
-    public void onCameraError(String errorDescription);
+  public static interface CameraEventsHandler {
+    // Camera error handler - invoked when camera stops receiving frames
+    // or any camera exception happens on camera thread.
+    void onCameraError(String errorDescription);
+
+    // Callback invoked when camera is opening.
+    void onCameraOpening(int cameraId);
+
+    // Callback invoked when first camera frame is available after camera is opened.
+    void onFirstFrameAvailable();
+
+    // Callback invoked when camera closed.
+    void onCameraClosed();
   }
 
   // Camera switch handler - one of these functions are invoked with the result of switchCamera().
@@ -210,18 +219,18 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   public static VideoCapturerAndroid create(String name,
-      CameraErrorHandler errorHandler) {
-    return VideoCapturerAndroid.create(name, errorHandler, null);
+      CameraEventsHandler eventsHandler) {
+    return VideoCapturerAndroid.create(name, eventsHandler, null);
   }
 
   public static VideoCapturerAndroid create(String name,
-      CameraErrorHandler errorHandler, Object sharedEglContext) {
+      CameraEventsHandler eventsHandler, Object sharedEglContext) {
     final int cameraId = lookupDeviceName(name);
     if (cameraId == -1) {
       return null;
     }
 
-    final VideoCapturerAndroid capturer = new VideoCapturerAndroid(cameraId, errorHandler,
+    final VideoCapturerAndroid capturer = new VideoCapturerAndroid(cameraId, eventsHandler,
         sharedEglContext);
     capturer.setNativeCapturer(nativeCreateVideoCapturer(capturer));
     return capturer;
@@ -327,11 +336,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     this(cameraId, null, null);
   }
 
-  private VideoCapturerAndroid(int cameraId, CameraErrorHandler errorHandler,
+  private VideoCapturerAndroid(int cameraId, CameraEventsHandler eventsHandler,
       Object sharedContext) {
     Logging.d(TAG, "VideoCapturerAndroid");
     this.id = cameraId;
-    this.errorHandler = errorHandler;
+    this.eventsHandler = eventsHandler;
     cameraThread = new HandlerThread(TAG);
     cameraThread.start();
     cameraThreadHandler = new Handler(cameraThread.getLooper());
@@ -437,6 +446,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     try {
       synchronized (cameraIdLock) {
         Logging.d(TAG, "Opening camera " + id);
+        firstFrameReported = false;
+        if (eventsHandler != null) {
+          eventsHandler.onCameraOpening(id);
+        }
         camera = Camera.open(id);
         info = new Camera.CameraInfo();
         Camera.getCameraInfo(id, info);
@@ -469,8 +482,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     Logging.e(TAG, "startCapture failed", error);
     stopCaptureOnCameraThread();
     frameObserver.onCapturerStarted(false);
-    if (errorHandler != null) {
-      errorHandler.onCameraError("Camera can not be started.");
+    if (eventsHandler != null) {
+      eventsHandler.onCameraError("Camera can not be started.");
     }
     return;
   }
@@ -588,6 +601,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     Logging.d(TAG, "Release camera.");
     camera.release();
     camera = null;
+    if (eventsHandler != null) {
+      eventsHandler.onCameraClosed();
+    }
 
     if (cameraGlTexture != 0) {
       GLES20.glDeleteTextures(1, new int[] {cameraGlTexture}, 0);
@@ -680,6 +696,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     final long captureTimeNs =
         TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
 
+    if (eventsHandler != null && !firstFrameReported) {
+      eventsHandler.onFirstFrameAvailable();
+      firstFrameReported = true;
+    }
 
     // Mark the frame owning |data| as used.
     // Note that since data is directBuffer,
