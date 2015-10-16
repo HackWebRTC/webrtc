@@ -42,27 +42,20 @@ class ViEEncoder;
 class VieRemb;
 class VoEVideoSync;
 
-typedef std::list<ViEChannel*> ChannelList;
-
 // Channel group contains data common for several channels. All channels in the
 // group are assumed to send/receive data to the same end-point.
 class ChannelGroup : public BitrateObserver {
  public:
   explicit ChannelGroup(ProcessThread* process_thread);
   ~ChannelGroup();
-  bool CreateSendChannel(int channel_id,
-                         Transport* transport,
-                         SendStatisticsProxy* stats_proxy,
-                         I420FrameCallback* pre_encode_callback,
-                         int number_of_cores,
-                         const VideoSendStream::Config& config);
   bool CreateReceiveChannel(int channel_id,
                             Transport* transport,
                             int number_of_cores,
                             const VideoReceiveStream::Config& config);
   void DeleteChannel(int channel_id);
   ViEChannel* GetChannel(int channel_id) const;
-  ViEEncoder* GetEncoder(int channel_id) const;
+  void AddEncoder(const std::vector<uint32_t>& ssrcs, ViEEncoder* encoder);
+  void RemoveEncoder(ViEEncoder* encoder);
   void SetSyncInterface(VoEVideoSync* sync_interface);
   void SetBweBitrates(int min_bitrate_bps,
                       int start_bitrate_bps,
@@ -73,10 +66,15 @@ class ChannelGroup : public BitrateObserver {
   void SignalNetworkState(NetworkState state);
 
   BitrateController* GetBitrateController() const;
-  CallStats* GetCallStats() const;
   RemoteBitrateEstimator* GetRemoteBitrateEstimator() const;
-  EncoderStateFeedback* GetEncoderStateFeedback() const;
+  CallStats* GetCallStats() const;
   int64_t GetPacerQueuingDelayMs() const;
+  PacedSender* pacer() const { return pacer_.get(); }
+  PacketRouter* packet_router() const { return packet_router_.get(); }
+  BitrateAllocator* bitrate_allocator() const {
+      return bitrate_allocator_.get(); }
+  TransportFeedbackObserver* GetTransportFeedbackObserver();
+  RtcpIntraFrameObserver* GetRtcpIntraFrameObserver() const;
 
   // Implements BitrateObserver.
   void OnNetworkChanged(uint32_t target_bitrate_bps,
@@ -87,12 +85,10 @@ class ChannelGroup : public BitrateObserver {
 
  private:
   typedef std::map<int, ViEChannel*> ChannelMap;
-  typedef std::map<int, ViEEncoder*> EncoderMap;
 
   bool CreateChannel(int channel_id,
                      Transport* transport,
                      int number_of_cores,
-                     ViEEncoder* vie_encoder,
                      size_t max_rtp_streams,
                      bool sender,
                      RemoteBitrateEstimator* bitrate_estimator,
@@ -108,9 +104,9 @@ class ChannelGroup : public BitrateObserver {
   rtc::scoped_ptr<RemoteEstimatorProxy> remote_estimator_proxy_;
   rtc::scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
   ChannelMap channel_map_;
-  // Maps Channel id -> ViEEncoder.
-  mutable rtc::CriticalSection encoder_map_crit_;
-  EncoderMap vie_encoder_map_ GUARDED_BY(encoder_map_crit_);
+
+  mutable rtc::CriticalSection encoder_crit_;
+  std::vector<ViEEncoder*> encoders_ GUARDED_BY(encoder_crit_);
 
   // Registered at construct time and assumed to outlive this class.
   ProcessThread* const process_thread_;

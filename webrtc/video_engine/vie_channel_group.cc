@@ -193,62 +193,7 @@ ChannelGroup::~ChannelGroup() {
     call_stats_->DeregisterStatsObserver(transport_feedback_adapter_.get());
   RTC_DCHECK(channel_map_.empty());
   RTC_DCHECK(!remb_->InUse());
-  RTC_DCHECK(vie_encoder_map_.empty());
-}
-
-bool ChannelGroup::CreateSendChannel(int channel_id,
-                                     Transport* transport,
-                                     SendStatisticsProxy* stats_proxy,
-                                     I420FrameCallback* pre_encode_callback,
-                                     int number_of_cores,
-                                     const VideoSendStream::Config& config) {
-  TransportFeedbackObserver* transport_feedback_observer = nullptr;
-  bool transport_seq_enabled = false;
-  for (const RtpExtension& extension : config.rtp.extensions) {
-    if (extension.name == RtpExtension::kTransportSequenceNumber) {
-      transport_seq_enabled = true;
-      break;
-    }
-  }
-  if (transport_seq_enabled) {
-    if (transport_feedback_adapter_.get() == nullptr) {
-      transport_feedback_adapter_.reset(new TransportFeedbackAdapter(
-          bitrate_controller_->CreateRtcpBandwidthObserver(),
-          Clock::GetRealTimeClock(), process_thread_));
-      transport_feedback_adapter_->SetBitrateEstimator(
-          new RemoteBitrateEstimatorAbsSendTime(
-              transport_feedback_adapter_.get(), Clock::GetRealTimeClock()));
-      transport_feedback_adapter_->GetBitrateEstimator()->SetMinBitrate(
-          min_bitrate_bps_);
-      call_stats_->RegisterStatsObserver(transport_feedback_adapter_.get());
-    }
-    transport_feedback_observer = transport_feedback_adapter_.get();
-  }
-
-  const std::vector<uint32_t>& ssrcs = config.rtp.ssrcs;
-  RTC_DCHECK(!ssrcs.empty());
-  rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
-      channel_id, number_of_cores, process_thread_, stats_proxy,
-      pre_encode_callback, pacer_.get(), bitrate_allocator_.get()));
-  if (!vie_encoder->Init()) {
-    return false;
-  }
-  ViEEncoder* encoder = vie_encoder.get();
-  if (!CreateChannel(channel_id, transport, number_of_cores,
-                     vie_encoder.release(), ssrcs.size(), true,
-                     remote_bitrate_estimator_.get(),
-                     transport_feedback_observer)) {
-    return false;
-  }
-  ViEChannel* channel = channel_map_[channel_id];
-  // Connect the encoder with the send packet router, to enable sending.
-  encoder->StartThreadsAndSetSharedMembers(channel->send_payload_router(),
-                                           channel->vcm_protection_callback());
-
-  encoder_state_feedback_->AddEncoder(ssrcs, encoder);
-  std::vector<uint32_t> first_ssrc(1, ssrcs[0]);
-  encoder->SetSsrcs(first_ssrc);
-  return true;
+  RTC_DCHECK(encoders_.empty());
 }
 
 bool ChannelGroup::CreateReceiveChannel(
@@ -270,14 +215,13 @@ bool ChannelGroup::CreateReceiveChannel(
   } else {
     bitrate_estimator = remote_bitrate_estimator_.get();
   }
-  return CreateChannel(channel_id, transport, number_of_cores, nullptr, 1,
-                       false, bitrate_estimator, nullptr);
+  return CreateChannel(channel_id, transport, number_of_cores, 1, false,
+                       bitrate_estimator, nullptr);
 }
 
 bool ChannelGroup::CreateChannel(int channel_id,
                                  Transport* transport,
                                  int number_of_cores,
-                                 ViEEncoder* vie_encoder,
                                  size_t max_rtp_streams,
                                  bool sender,
                                  RemoteBitrateEstimator* bitrate_estimator,
@@ -295,45 +239,22 @@ bool ChannelGroup::CreateChannel(int channel_id,
   // Register the channel to receive stats updates.
   call_stats_->RegisterStatsObserver(channel->GetStatsObserver());
 
-  // Store the channel, add it to the channel group and save the vie_encoder.
+  // Store the channel and add it to the channel group.
   channel_map_[channel_id] = channel.release();
-  if (vie_encoder) {
-    rtc::CritScope lock(&encoder_map_crit_);
-    vie_encoder_map_[channel_id] = vie_encoder;
-  }
-
   return true;
 }
 
 void ChannelGroup::DeleteChannel(int channel_id) {
   ViEChannel* vie_channel = PopChannel(channel_id);
 
-  ViEEncoder* vie_encoder = GetEncoder(channel_id);
-
   call_stats_->DeregisterStatsObserver(vie_channel->GetStatsObserver());
   SetChannelRembStatus(false, false, vie_channel);
 
-  // If we're a sender, remove the feedback and stop all encoding threads and
-  // processing. This must be done before deleting the channel.
-  if (vie_encoder) {
-    encoder_state_feedback_->RemoveEncoder(vie_encoder);
-    vie_encoder->StopThreadsAndRemoveSharedMembers();
-  }
-
-  unsigned int remote_ssrc = 0;
-  vie_channel->GetRemoteSSRC(&remote_ssrc);
+  unsigned int remote_ssrc = vie_channel->GetRemoteSSRC();
   channel_map_.erase(channel_id);
   remote_bitrate_estimator_->RemoveStream(remote_ssrc);
 
   delete vie_channel;
-
-  if (vie_encoder) {
-    {
-      rtc::CritScope lock(&encoder_map_crit_);
-      vie_encoder_map_.erase(vie_encoder_map_.find(channel_id));
-    }
-    delete vie_encoder;
-  }
 
   LOG(LS_VERBOSE) << "Channel deleted " << channel_id;
 }
@@ -347,12 +268,22 @@ ViEChannel* ChannelGroup::GetChannel(int channel_id) const {
   return it->second;
 }
 
-ViEEncoder* ChannelGroup::GetEncoder(int channel_id) const {
-  rtc::CritScope lock(&encoder_map_crit_);
-  EncoderMap::const_iterator it = vie_encoder_map_.find(channel_id);
-  if (it == vie_encoder_map_.end())
-    return nullptr;
-  return it->second;
+void ChannelGroup::AddEncoder(const std::vector<uint32_t>& ssrcs,
+                              ViEEncoder* encoder) {
+  encoder_state_feedback_->AddEncoder(ssrcs, encoder);
+  rtc::CritScope lock(&encoder_crit_);
+  encoders_.push_back(encoder);
+}
+
+void ChannelGroup::RemoveEncoder(ViEEncoder* encoder) {
+  encoder_state_feedback_->RemoveEncoder(encoder);
+  rtc::CritScope lock(&encoder_crit_);
+  for (auto it = encoders_.begin(); it != encoders_.end(); ++it) {
+    if (*it == encoder) {
+      encoders_.erase(it);
+      return;
+    }
+  }
 }
 
 ViEChannel* ChannelGroup::PopChannel(int channel_id) {
@@ -395,8 +326,23 @@ CallStats* ChannelGroup::GetCallStats() const {
   return call_stats_.get();
 }
 
-EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() const {
-  return encoder_state_feedback_.get();
+TransportFeedbackObserver* ChannelGroup::GetTransportFeedbackObserver() {
+  if (transport_feedback_adapter_.get() == nullptr) {
+    transport_feedback_adapter_.reset(new TransportFeedbackAdapter(
+        bitrate_controller_->CreateRtcpBandwidthObserver(),
+        Clock::GetRealTimeClock(), process_thread_));
+    transport_feedback_adapter_->SetBitrateEstimator(
+        new RemoteBitrateEstimatorAbsSendTime(
+            transport_feedback_adapter_.get(), Clock::GetRealTimeClock()));
+    transport_feedback_adapter_->GetBitrateEstimator()->SetMinBitrate(
+        min_bitrate_bps_);
+    call_stats_->RegisterStatsObserver(transport_feedback_adapter_.get());
+  }
+  return transport_feedback_adapter_.get();
+}
+
+RtcpIntraFrameObserver* ChannelGroup::GetRtcpIntraFrameObserver() const {
+  return encoder_state_feedback_->GetRtcpIntraFrameObserver();
 }
 
 int64_t ChannelGroup::GetPacerQueuingDelayMs() const {
@@ -430,15 +376,16 @@ void ChannelGroup::SignalNetworkState(NetworkState state) {
   }
 }
 
+// TODO(mflodman): Move this logic out from ChannelGroup.
 void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
                                     uint8_t fraction_loss,
                                     int64_t rtt) {
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt);
   int pad_up_to_bitrate_bps = 0;
   {
-    rtc::CritScope lock(&encoder_map_crit_);
-    for (const auto& encoder : vie_encoder_map_)
-      pad_up_to_bitrate_bps += encoder.second->GetPaddingNeededBps();
+    rtc::CritScope lock(&encoder_crit_);
+    for (const auto& encoder : encoders_)
+      pad_up_to_bitrate_bps += encoder->GetPaddingNeededBps();
   }
   pacer_->UpdateBitrate(
       target_bitrate_bps / 1000,

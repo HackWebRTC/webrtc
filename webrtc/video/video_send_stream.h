@@ -78,11 +78,10 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   ProcessThread* const module_process_thread_;
   ChannelGroup* const channel_group_;
-  const int channel_id_;
 
   rtc::scoped_ptr<VideoCaptureInput> input_;
-  ViEChannel* vie_channel_;
-  ViEEncoder* vie_encoder_;
+  rtc::scoped_ptr<ViEChannel> vie_channel_;
+  rtc::scoped_ptr<ViEEncoder> vie_encoder_;
 
   // Used as a workaround to indicate that we should be using the configured
   // start bitrate initially, instead of the one reported by VideoEngine (which

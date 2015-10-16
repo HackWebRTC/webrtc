@@ -130,7 +130,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   int32_t GetLocalSSRC(uint8_t idx, unsigned int* ssrc);
 
   // Gets SSRC for the incoming stream.
-  int32_t GetRemoteSSRC(uint32_t* ssrc);
+  uint32_t GetRemoteSSRC();
 
   int SetRtxSendPayloadType(int payload_type, int associated_payload_type);
   void SetRtxReceivePayloadType(int payload_type, int associated_payload_type);

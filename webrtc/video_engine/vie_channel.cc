@@ -725,9 +725,8 @@ int32_t ViEChannel::GetLocalSSRC(uint8_t idx, unsigned int* ssrc) {
   return 0;
 }
 
-int32_t ViEChannel::GetRemoteSSRC(uint32_t* ssrc) {
-  *ssrc = vie_receiver_.GetRemoteSsrc();
-  return 0;
+uint32_t ViEChannel::GetRemoteSSRC() {
+  return vie_receiver_.GetRemoteSsrc();
 }
 
 int ViEChannel::SetRtxSendPayloadType(int payload_type,
