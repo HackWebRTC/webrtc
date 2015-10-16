@@ -12,6 +12,8 @@ source_set("audio") {
   sources = [
     "audio_receive_stream.cc",
     "audio_receive_stream.h",
+    "audio_send_stream.cc",
+    "audio_send_stream.h",
   ]
 
   configs += [ "..:common_config" ]

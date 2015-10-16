@@ -45,7 +45,8 @@ class AudioSendStream : public SendStream {
       std::vector<RtpExtension> extensions;
     } rtp;
 
-    // Transport for outgoing packets.
+    // Transport for outgoing packets. The transport is expected to exist for
+    // the entire life of the AudioSendStream and is owned by the API client.
     Transport* send_transport = nullptr;
 
     // Underlying VoiceEngine handle, used to map AudioSendStream to lower-level
@@ -54,7 +55,10 @@ class AudioSendStream : public SendStream {
     // of Call.
     int voe_channel_id = -1;
 
-    rtc::scoped_ptr<AudioEncoder> encoder;
+    // Ownership of the encoder object is transferred to Call when the config is
+    // passed to Call::CreateAudioSendStream().
+    // TODO(solenberg): Implement, once we configure codecs through the new API.
+    // rtc::scoped_ptr<AudioEncoder> encoder;
     int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.
     int red_payload_type = -1;  // pt, or -1 to disable REDundant coding.
   };

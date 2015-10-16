@@ -146,12 +146,14 @@
       ],
     },
     {
-      # TODO(pbos): Add separate target webrtc_audio_tests and move files there.
+      # TODO(solenberg): Rename to webrtc_call_tests.
       'target_name': 'video_engine_tests',
       'type': '<(gtest_target_type)',
       'sources': [
         'audio/audio_receive_stream_unittest.cc',
+        'audio/audio_send_stream_unittest.cc',
         'call/bitrate_estimator_tests.cc',
+        'call/call_unittest.cc',
         'call/packet_injection_tests.cc',
         'test/common_unittest.cc',
         'test/testsupport/metrics/video_metrics_unittest.cc',

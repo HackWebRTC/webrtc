@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/audio/audio_receive_stream.h"
+#include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -103,6 +104,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   bool network_enabled_ GUARDED_BY(network_enabled_crit_);
 
   rtc::scoped_ptr<RWLockWrapper> receive_crit_;
+  // Audio and Video receive streams are owned by the client that creates them.
   std::map<uint32_t, AudioReceiveStream*> audio_receive_ssrcs_
       GUARDED_BY(receive_crit_);
   std::map<uint32_t, VideoReceiveStream*> video_receive_ssrcs_
@@ -113,6 +115,8 @@ class Call : public webrtc::Call, public PacketReceiver {
       GUARDED_BY(receive_crit_);
 
   rtc::scoped_ptr<RWLockWrapper> send_crit_;
+  // Audio and Video send streams are owned by the client that creates them.
+  std::map<uint32_t, AudioSendStream*> audio_send_ssrcs_ GUARDED_BY(send_crit_);
   std::map<uint32_t, VideoSendStream*> video_send_ssrcs_ GUARDED_BY(send_crit_);
   std::set<VideoSendStream*> video_send_streams_ GUARDED_BY(send_crit_);
 
@@ -164,11 +168,12 @@ Call::Call(const Call::Config& config)
 }
 
 Call::~Call() {
-  RTC_CHECK_EQ(0u, video_send_ssrcs_.size());
-  RTC_CHECK_EQ(0u, video_send_streams_.size());
-  RTC_CHECK_EQ(0u, audio_receive_ssrcs_.size());
-  RTC_CHECK_EQ(0u, video_receive_ssrcs_.size());
-  RTC_CHECK_EQ(0u, video_receive_streams_.size());
+  RTC_CHECK(audio_send_ssrcs_.empty());
+  RTC_CHECK(video_send_ssrcs_.empty());
+  RTC_CHECK(video_send_streams_.empty());
+  RTC_CHECK(audio_receive_ssrcs_.empty());
+  RTC_CHECK(video_receive_ssrcs_.empty());
+  RTC_CHECK(video_receive_streams_.empty());
 
   module_process_thread_->Stop();
   Trace::ReturnTrace();
@@ -178,14 +183,36 @@ PacketReceiver* Call::Receiver() { return this; }
 
 webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
-  // TODO(pbos): When adding AudioSendStream, add both TRACE_EVENT0 and config
-  // logging to AudioSendStream constructor.
-  return nullptr;
+  TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
+  AudioSendStream* send_stream = new AudioSendStream(config);
+  {
+    rtc::CritScope lock(&network_enabled_crit_);
+    WriteLockScoped write_lock(*send_crit_);
+    RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
+               audio_send_ssrcs_.end());
+    audio_send_ssrcs_[config.rtp.ssrc] = send_stream;
+
+    if (!network_enabled_)
+      send_stream->SignalNetworkState(kNetworkDown);
+  }
+  return send_stream;
 }
 
 void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
-  // TODO(pbos): When adding AudioSendStream, add both TRACE_EVENT0 and config
-  // logging to AudioSendStream destructor.
+  TRACE_EVENT0("webrtc", "Call::DestroyAudioSendStream");
+  RTC_DCHECK(send_stream != nullptr);
+
+  send_stream->Stop();
+
+  webrtc::internal::AudioSendStream* audio_send_stream =
+      static_cast<webrtc::internal::AudioSendStream*>(send_stream);
+  {
+    WriteLockScoped write_lock(*send_crit_);
+    size_t num_deleted = audio_send_ssrcs_.erase(
+        audio_send_stream->config().rtp.ssrc);
+    RTC_DCHECK(num_deleted == 1);
+  }
+  delete audio_send_stream;
 }
 
 webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
@@ -207,8 +234,8 @@ void Call::DestroyAudioReceiveStream(
     webrtc::AudioReceiveStream* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyAudioReceiveStream");
   RTC_DCHECK(receive_stream != nullptr);
-  AudioReceiveStream* audio_receive_stream =
-      static_cast<AudioReceiveStream*>(receive_stream);
+  webrtc::internal::AudioReceiveStream* audio_receive_stream =
+      static_cast<webrtc::internal::AudioReceiveStream*>(receive_stream);
   {
     WriteLockScoped write_lock(*receive_crit_);
     size_t num_deleted = audio_receive_ssrcs_.erase(
@@ -362,6 +389,7 @@ Call::Stats Call::GetStats() const {
   stats.pacer_delay_ms = channel_group_->GetPacerQueuingDelayMs();
   {
     ReadLockScoped read_lock(*send_crit_);
+    // TODO(solenberg): Add audio send streams.
     for (const auto& kv : video_send_ssrcs_) {
       int rtt_ms = kv.second->GetRtt();
       if (rtt_ms > 0)
@@ -401,6 +429,9 @@ void Call::SignalNetworkState(NetworkState state) {
   channel_group_->SignalNetworkState(state);
   {
     ReadLockScoped write_lock(*send_crit_);
+    for (auto& kv : audio_send_ssrcs_) {
+      kv.second->SignalNetworkState(state);
+    }
     for (auto& kv : video_send_ssrcs_) {
       kv.second->SignalNetworkState(state);
     }
