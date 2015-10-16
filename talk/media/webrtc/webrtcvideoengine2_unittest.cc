@@ -2089,17 +2089,13 @@ TEST_F(WebRtcVideoChannel2Test,
   std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
   ASSERT_GT(streams.size(), 1u)
       << "Without simulcast this test doesn't make sense.";
-  int initial_max_bitrate_bps = 0;
-  for (auto& video_stream : streams)
-    initial_max_bitrate_bps += video_stream.max_bitrate_bps;
+  int initial_max_bitrate_bps = GetTotalMaxBitrateBps(streams);
   EXPECT_GT(initial_max_bitrate_bps, 0);
 
   parameters.max_bandwidth_bps = initial_max_bitrate_bps * 2;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   streams = stream->GetVideoStreams();
-  int increased_max_bitrate_bps = 0;
-  for (auto& video_stream : streams)
-    increased_max_bitrate_bps += video_stream.max_bitrate_bps;
+  int increased_max_bitrate_bps = GetTotalMaxBitrateBps(streams);
   EXPECT_EQ(initial_max_bitrate_bps * 2, increased_max_bitrate_bps);
 
   EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], nullptr));
@@ -3006,12 +3002,9 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
 
  protected:
   void VerifySimulcastSettings(const VideoCodec& codec,
-                               VideoOptions::HighestBitrate bitrate_mode,
                                size_t num_configured_streams,
-                               size_t expected_num_streams,
-                               SimulcastBitrateMode simulcast_bitrate_mode) {
+                               size_t expected_num_streams) {
     cricket::VideoSendParameters parameters;
-    parameters.options.video_highest_bitrate.Set(bitrate_mode);
     parameters.codecs.push_back(codec);
     ASSERT_TRUE(channel_->SetSendParameters(parameters));
 
@@ -3036,12 +3029,7 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
     ASSERT_EQ(expected_num_streams, video_streams.size());
 
     std::vector<webrtc::VideoStream> expected_streams = GetSimulcastConfig(
-        num_configured_streams,
-        simulcast_bitrate_mode,
-        codec.width,
-        codec.height,
-        0,
-        kDefaultQpMax,
+        num_configured_streams, codec.width, codec.height, 0, kDefaultQpMax,
         codec.framerate != 0 ? codec.framerate : kDefaultFramerate);
 
     ASSERT_EQ(expected_streams.size(), video_streams.size());
@@ -3128,34 +3116,11 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
 };
 
 TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWith2SimulcastStreams) {
-  VerifySimulcastSettings(kVp8Codec, VideoOptions::NORMAL, 2, 2, SBM_NORMAL);
+  VerifySimulcastSettings(kVp8Codec, 2, 2);
 }
 
 TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWith3SimulcastStreams) {
-  VerifySimulcastSettings(
-      kVp8Codec720p, VideoOptions::NORMAL, 3, 3, SBM_NORMAL);
-}
-
-TEST_F(WebRtcVideoChannel2SimulcastTest,
-       SetSendCodecsWith2SimulcastStreamsHighBitrateMode) {
-  VerifySimulcastSettings(kVp8Codec, VideoOptions::HIGH, 2, 2, SBM_HIGH);
-}
-
-TEST_F(WebRtcVideoChannel2SimulcastTest,
-       SetSendCodecsWith3SimulcastStreamsHighBitrateMode) {
-  VerifySimulcastSettings(kVp8Codec720p, VideoOptions::HIGH, 3, 3, SBM_HIGH);
-}
-
-TEST_F(WebRtcVideoChannel2SimulcastTest,
-       SetSendCodecsWith2SimulcastStreamsVeryHighBitrateMode) {
-  VerifySimulcastSettings(
-      kVp8Codec, VideoOptions::VERY_HIGH, 2, 2, SBM_VERY_HIGH);
-}
-
-TEST_F(WebRtcVideoChannel2SimulcastTest,
-       SetSendCodecsWith3SimulcastStreamsVeryHighBitrateMode) {
-  VerifySimulcastSettings(
-      kVp8Codec720p, VideoOptions::VERY_HIGH, 3, 3, SBM_VERY_HIGH);
+  VerifySimulcastSettings(kVp8Codec720p, 3, 3);
 }
 
 // Test that we normalize send codec format size in simulcast.
@@ -3163,7 +3128,7 @@ TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWithOddSizeInSimulcast) {
   cricket::VideoCodec codec(kVp8Codec270p);
   codec.width += 1;
   codec.height += 1;
-  VerifySimulcastSettings(codec, VideoOptions::NORMAL, 2, 2, SBM_NORMAL);
+  VerifySimulcastSettings(codec, 2, 2);
 }
 
 TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_1280x800) {

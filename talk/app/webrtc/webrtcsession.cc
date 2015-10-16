@@ -696,22 +696,6 @@ bool WebRtcSession::Initialize(
       MediaConstraintsInterface::kHighStartBitrate,
       &video_options_.video_start_bitrate);
 
-  if (FindConstraint(
-      constraints,
-      MediaConstraintsInterface::kVeryHighBitrate,
-      &value,
-      NULL)) {
-    video_options_.video_highest_bitrate.Set(
-        cricket::VideoOptions::VERY_HIGH);
-  } else if (FindConstraint(
-      constraints,
-      MediaConstraintsInterface::kHighBitrate,
-      &value,
-      NULL)) {
-    video_options_.video_highest_bitrate.Set(
-        cricket::VideoOptions::HIGH);
-  }
-
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kCombinedAudioVideoBwe,
       &audio_options_.combined_audio_video_bwe);

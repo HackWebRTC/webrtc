@@ -62,7 +62,6 @@ class VideoRenderer;
 const int kMinRtpHeaderExtensionId = 1;
 const int kMaxRtpHeaderExtensionId = 255;
 const int kScreencastDefaultFps = 5;
-const int kHighStartBitrate = 1500;
 
 // Used in AudioOptions and VideoOptions to signify "unset" values.
 template <class T>
@@ -288,12 +287,6 @@ struct AudioOptions {
 // We are moving all of the setting of options to structs like this,
 // but some things currently still use flags.
 struct VideoOptions {
-  enum HighestBitrate {
-    NORMAL,
-    HIGH,
-    VERY_HIGH
-  };
-
   VideoOptions() {
     process_adaptation_threshhold.Set(kProcessCpuThreshold);
     system_low_adaptation_threshhold.Set(kLowSystemCpuThreshold);
@@ -307,7 +300,6 @@ struct VideoOptions {
     video_adapt_third.SetFrom(change.video_adapt_third);
     video_noise_reduction.SetFrom(change.video_noise_reduction);
     video_start_bitrate.SetFrom(change.video_start_bitrate);
-    video_highest_bitrate.SetFrom(change.video_highest_bitrate);
     cpu_overuse_detection.SetFrom(change.cpu_overuse_detection);
     cpu_underuse_threshold.SetFrom(change.cpu_underuse_threshold);
     cpu_overuse_threshold.SetFrom(change.cpu_overuse_threshold);
@@ -335,7 +327,6 @@ struct VideoOptions {
            video_adapt_third == o.video_adapt_third &&
            video_noise_reduction == o.video_noise_reduction &&
            video_start_bitrate == o.video_start_bitrate &&
-           video_highest_bitrate == o.video_highest_bitrate &&
            cpu_overuse_detection == o.cpu_overuse_detection &&
            cpu_underuse_threshold == o.cpu_underuse_threshold &&
            cpu_overuse_threshold == o.cpu_overuse_threshold &&
@@ -365,7 +356,6 @@ struct VideoOptions {
     ost << ToStringIfSet("video adapt third", video_adapt_third);
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
     ost << ToStringIfSet("start bitrate", video_start_bitrate);
-    ost << ToStringIfSet("highest video bitrate", video_highest_bitrate);
     ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
     ost << ToStringIfSet("cpu underuse threshold", cpu_underuse_threshold);
     ost << ToStringIfSet("cpu overuse threshold", cpu_overuse_threshold);
@@ -400,8 +390,6 @@ struct VideoOptions {
   Settable<bool> video_noise_reduction;
   // Experimental: Enable WebRtc higher start bitrate?
   Settable<int> video_start_bitrate;
-  // Set highest bitrate mode for video.
-  Settable<HighestBitrate> video_highest_bitrate;
   // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU
   // adaptation algorithm. So this option will override the
   // |adapt_input_to_cpu_usage|.

@@ -116,10 +116,6 @@ const char MediaConstraintsInterface::kCpuOveruseEncodeUsage[] =
     "googCpuOveruseEncodeUsage";
 const char MediaConstraintsInterface::kHighStartBitrate[] =
     "googHighStartBitrate";
-const char MediaConstraintsInterface::kHighBitrate[] =
-    "googHighBitrate";
-const char MediaConstraintsInterface::kVeryHighBitrate[] =
-    "googVeryHighBitrate";
 const char MediaConstraintsInterface::kPayloadPadding[] = "googPayloadPadding";
 
 

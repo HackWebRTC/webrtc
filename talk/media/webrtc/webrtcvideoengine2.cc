@@ -432,8 +432,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateSimulcastVideoStreams(
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
 
   return GetSimulcastConfig(
-      num_streams, GetSimulcastBitrateMode(options), codec.width, codec.height,
-      max_bitrate_bps, max_qp,
+      num_streams, codec.width, codec.height, max_bitrate_bps, max_qp,
       codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate);
 }
 
