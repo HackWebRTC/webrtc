@@ -232,6 +232,15 @@ bool RTPPayloadRegistry::IsRtxInternal(const RTPHeader& header) const {
   return rtx_ && ssrc_rtx_ == header.ssrc;
 }
 
+bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
+                                               const uint8_t* packet,
+                                               size_t* packet_length,
+                                               uint32_t original_ssrc,
+                                               const RTPHeader& header) const {
+  return RestoreOriginalPacket(*restored_packet, packet, packet_length,
+                               original_ssrc, header);
+}
+
 bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
                                                const uint8_t* packet,
                                                size_t* packet_length,

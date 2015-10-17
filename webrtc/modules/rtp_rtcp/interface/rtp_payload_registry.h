@@ -83,6 +83,15 @@ class RTPPayloadRegistry {
 
   bool IsRtx(const RTPHeader& header) const;
 
+  // DEPRECATED. Use RestoreOriginalPacket below that takes a uint8_t*
+  // restored_packet, instead of a uint8_t**.
+  // TODO(noahric): Remove this when all callers have been updated.
+  bool RestoreOriginalPacket(uint8_t** restored_packet,
+                             const uint8_t* packet,
+                             size_t* packet_length,
+                             uint32_t original_ssrc,
+                             const RTPHeader& header) const;
+
   bool RestoreOriginalPacket(uint8_t* restored_packet,
                              const uint8_t* packet,
                              size_t* packet_length,
