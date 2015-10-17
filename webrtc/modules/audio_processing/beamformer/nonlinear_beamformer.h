@@ -17,6 +17,7 @@
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/beamformer.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
+#include "webrtc/system_wrappers/interface/scoped_vector.h"
 
 namespace webrtc {
 
@@ -26,14 +27,10 @@ namespace webrtc {
 //
 // The implemented nonlinear postfilter algorithm taken from "A Robust Nonlinear
 // Beamforming Postprocessor" by Bastiaan Kleijn.
-//
-// TODO(aluebs): Target angle assumed to be 0. Parameterize target angle.
 class NonlinearBeamformer
   : public Beamformer<float>,
     public LappedTransform::Callback {
  public:
-  // At the moment it only accepts uniform linear microphone arrays. Using the
-  // first microphone as a reference position [0, 0, 0] is a natural choice.
   explicit NonlinearBeamformer(const std::vector<Point>& array_geometry);
 
   // Sample rate corresponds to the lower band.
@@ -69,19 +66,17 @@ class NonlinearBeamformer
   typedef ComplexMatrix<float> ComplexMatrixF;
   typedef complex<float> complex_f;
 
+  void InitInterfAngles();
   void InitDelaySumMasks();
-  void InitTargetCovMats();  // TODO(aluebs): Make this depend on target angle.
+  void InitTargetCovMats();
   void InitInterfCovMats();
 
-  // An implementation of equation 18, which calculates postfilter masks that,
-  // when applied, minimize the mean-square error of our estimation of the
-  // desired signal. A sub-task is to calculate lambda, which is solved via
-  // equation 13.
+  // Calculates postfilter masks that minimize the mean squared error of our
+  // estimation of the desired signal.
   float CalculatePostfilterMask(const ComplexMatrixF& interf_cov_mat,
                                 float rpsiw,
                                 float ratio_rxiw_rxim,
-                                float rmxi_r,
-                                float mask_threshold);
+                                float rmxi_r);
 
   // Prevents the postfilter masks from degenerating too quickly (a cause of
   // musical noise).
@@ -134,6 +129,9 @@ class NonlinearBeamformer
   // Time and frequency smoothed mask.
   float final_mask_[kNumFreqBins];
 
+  // Angles of the interferer scenarios.
+  std::vector<float> interf_angles_radians_;
+
   // Array of length |kNumFreqBins|, Matrix of size |1| x |num_channels_|.
   ComplexMatrixF delay_sum_masks_[kNumFreqBins];
   ComplexMatrixF normalized_delay_sum_masks_[kNumFreqBins];
@@ -143,19 +141,18 @@ class NonlinearBeamformer
   ComplexMatrixF target_cov_mats_[kNumFreqBins];
 
   // Array of length |kNumFreqBins|, Matrix of size |num_input_channels_| x
-  // |num_input_channels_|.
-  ComplexMatrixF interf_cov_mats_[kNumFreqBins];
-  ComplexMatrixF reflected_interf_cov_mats_[kNumFreqBins];
+  // |num_input_channels_|. ScopedVector has a size equal to the number of
+  // interferer scenarios.
+  ScopedVector<ComplexMatrixF> interf_cov_mats_[kNumFreqBins];
 
   // Of length |kNumFreqBins|.
-  float mask_thresholds_[kNumFreqBins];
   float wave_numbers_[kNumFreqBins];
 
   // Preallocated for ProcessAudioBlock()
   // Of length |kNumFreqBins|.
   float rxiws_[kNumFreqBins];
-  float rpsiws_[kNumFreqBins];
-  float reflected_rpsiws_[kNumFreqBins];
+  // The vector has a size equal to the number of interferer scenarios.
+  std::vector<float> rpsiws_[kNumFreqBins];
 
   // The microphone normalization factor.
   ComplexMatrixF eig_m_;

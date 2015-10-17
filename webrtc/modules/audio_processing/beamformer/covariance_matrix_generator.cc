@@ -14,6 +14,7 @@
 
 #include <cmath>
 
+namespace webrtc {
 namespace {
 
 float BesselJ0(float x) {
@@ -24,9 +25,19 @@ float BesselJ0(float x) {
 #endif
 }
 
-}  // namespace
+// Calculates the Euclidean norm for a row vector.
+float Norm(const ComplexMatrix<float>& x) {
+  RTC_CHECK_EQ(1, x.num_rows());
+  const size_t length = x.num_columns();
+  const complex<float>* elems = x.elements()[0];
+  float result = 0.f;
+  for (size_t i = 0u; i < length; ++i) {
+    result += std::norm(elems[i]);
+  }
+  return std::sqrt(result);
+}
 
-namespace webrtc {
+}  // namespace
 
 void CovarianceMatrixGenerator::UniformCovarianceMatrix(
     float wave_number,
@@ -69,6 +80,7 @@ void CovarianceMatrixGenerator::AngledCovarianceMatrix(
                       geometry,
                       angle,
                       &interf_cov_vector);
+  interf_cov_vector.Scale(1.f / Norm(interf_cov_vector));
   interf_cov_vector_transposed.Transpose(interf_cov_vector);
   interf_cov_vector.PointwiseConjugate();
   mat->Multiply(interf_cov_vector_transposed, interf_cov_vector);

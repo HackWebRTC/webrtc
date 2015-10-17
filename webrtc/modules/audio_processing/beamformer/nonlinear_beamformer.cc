@@ -27,33 +27,22 @@ namespace {
 // Alpha for the Kaiser Bessel Derived window.
 const float kKbdAlpha = 1.5f;
 
-// The minimum value a post-processing mask can take.
-const float kMaskMinimum = 0.01f;
-
 const float kSpeedOfSoundMeterSeconds = 343;
 
 // For both target and interference angles, PI / 2 is perpendicular to the
 // microphone array, facing forwards. The positive direction goes
 // counterclockwise.
 // The angle at which we amplify sound.
+// TODO(aluebs): Make the target angle dynamically settable.
 const float kTargetAngleRadians = static_cast<float>(M_PI) / 2.f;
-
-// The angle at which we suppress sound. Suppression is symmetric around PI / 2
-// radians, so sound is suppressed at both +|kInterfAngleRadians| and
-// PI - |kInterfAngleRadians|. Since the beamformer is robust, this should
-// suppress sound coming from close angles as well.
-const float kInterfAngleRadians = static_cast<float>(M_PI) / 4.f;
 
 // When calculating the interference covariance matrix, this is the weight for
 // the weighted average between the uniform covariance matrix and the angled
 // covariance matrix.
 // Rpsi = Rpsi_angled * kBalance + Rpsi_uniform * (1 - kBalance)
-const float kBalance = 0.4f;
+const float kBalance = 0.95f;
 
 const float kHalfBeamWidthRadians = static_cast<float>(M_PI) * 20.f / 180.f;
-
-// TODO(claguna): need comment here.
-const float kBeamwidthConstant = 0.00002f;
 
 // Alpha coefficients for mask smoothing.
 const float kMaskTimeSmoothAlpha = 0.2f;
@@ -64,16 +53,32 @@ const float kMaskFrequencySmoothAlpha = 0.6f;
 const int kLowMeanStartHz = 200;
 const int kLowMeanEndHz = 400;
 
+// TODO(aluebs): Make the high frequency correction range depend on the target
+// angle.
 const int kHighMeanStartHz = 3000;
 const int kHighMeanEndHz = 5000;
+
+// Range limiter for subtractive terms in the nominator and denominator of the
+// postfilter expression. It handles the scenario mismatch between the true and
+// model sources (target and interference).
+const float kCutOffConstant = 0.9999f;
 
 // Quantile of mask values which is used to estimate target presence.
 const float kMaskQuantile = 0.7f;
 // Mask threshold over which the data is considered signal and not interference.
-const float kMaskTargetThreshold = 0.3f;
+// It has to be updated every time the postfilter calculation is changed
+// significantly.
+// TODO(aluebs): Write a tool to tune the target threshold automatically based
+// on files annotated with target and interference ground truth.
+const float kMaskTargetThreshold = 0.01f;
 // Time in seconds after which the data is considered interference if the mask
 // does not pass |kMaskTargetThreshold|.
 const float kHoldTargetSeconds = 0.25f;
+
+// To compensate for the attenuation this algorithm introduces to the target
+// signal. It was estimated empirically from a low-noise low-reverberation
+// recording from broadside.
+const float kCompensationGain = 2.f;
 
 // Does conjugate(|norm_mat|) * |mat| * transpose(|norm_mat|). No extra space is
 // used; to accomplish this, we compute both multiplications in the same loop.
@@ -218,7 +223,6 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   hold_target_blocks_ = kHoldTargetSeconds * 2 * sample_rate_hz / kFftSize;
   interference_blocks_count_ = hold_target_blocks_;
 
-
   lapped_transform_.reset(new LappedTransform(num_input_channels_,
                                               1,
                                               chunk_length_,
@@ -231,22 +235,32 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
     final_mask_[i] = 1.f;
     float freq_hz = (static_cast<float>(i) / kFftSize) * sample_rate_hz_;
     wave_numbers_[i] = 2 * M_PI * freq_hz / kSpeedOfSoundMeterSeconds;
-    mask_thresholds_[i] = num_input_channels_ * num_input_channels_ *
-                          kBeamwidthConstant * wave_numbers_[i] *
-                          wave_numbers_[i];
   }
 
   // Initialize all nonadaptive values before looping through the frames.
+  InitInterfAngles();
   InitDelaySumMasks();
   InitTargetCovMats();
   InitInterfCovMats();
 
   for (size_t i = 0; i < kNumFreqBins; ++i) {
     rxiws_[i] = Norm(target_cov_mats_[i], delay_sum_masks_[i]);
-    rpsiws_[i] = Norm(interf_cov_mats_[i], delay_sum_masks_[i]);
-    reflected_rpsiws_[i] =
-        Norm(reflected_interf_cov_mats_[i], delay_sum_masks_[i]);
+    rpsiws_[i].clear();
+    for (size_t j = 0; j < interf_angles_radians_.size(); ++j) {
+      rpsiws_[i].push_back(Norm(*interf_cov_mats_[i][j], delay_sum_masks_[i]));
+    }
   }
+}
+
+void NonlinearBeamformer::InitInterfAngles() {
+  // TODO(aluebs): Make kAwayRadians dependent on the mic spacing.
+  const float kAwayRadians = 0.5;
+
+  interf_angles_radians_.clear();
+  // TODO(aluebs): When the target angle is settable, make sure the interferer
+  // scenarios aren't reflected over the target one for linear geometries.
+  interf_angles_radians_.push_back(kTargetAngleRadians - kAwayRadians);
+  interf_angles_radians_.push_back(kTargetAngleRadians + kAwayRadians);
 }
 
 void NonlinearBeamformer::InitDelaySumMasks() {
@@ -273,40 +287,39 @@ void NonlinearBeamformer::InitTargetCovMats() {
   for (size_t i = 0; i < kNumFreqBins; ++i) {
     target_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
     TransposedConjugatedProduct(delay_sum_masks_[i], &target_cov_mats_[i]);
-    complex_f normalization_factor = target_cov_mats_[i].Trace();
-    target_cov_mats_[i].Scale(1.f / normalization_factor);
   }
 }
 
 void NonlinearBeamformer::InitInterfCovMats() {
   for (size_t i = 0; i < kNumFreqBins; ++i) {
-    interf_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
     ComplexMatrixF uniform_cov_mat(num_input_channels_, num_input_channels_);
-    ComplexMatrixF angled_cov_mat(num_input_channels_, num_input_channels_);
-
     CovarianceMatrixGenerator::UniformCovarianceMatrix(wave_numbers_[i],
                                                        array_geometry_,
                                                        &uniform_cov_mat);
-
-    CovarianceMatrixGenerator::AngledCovarianceMatrix(kSpeedOfSoundMeterSeconds,
-                                                      kInterfAngleRadians,
-                                                      i,
-                                                      kFftSize,
-                                                      kNumFreqBins,
-                                                      sample_rate_hz_,
-                                                      array_geometry_,
-                                                      &angled_cov_mat);
-    // Normalize matrices before averaging them.
-    complex_f normalization_factor = uniform_cov_mat.Trace();
+    complex_f normalization_factor = uniform_cov_mat.elements()[0][0];
     uniform_cov_mat.Scale(1.f / normalization_factor);
-    normalization_factor = angled_cov_mat.Trace();
-    angled_cov_mat.Scale(1.f / normalization_factor);
-
-    // Average matrices.
     uniform_cov_mat.Scale(1 - kBalance);
-    angled_cov_mat.Scale(kBalance);
-    interf_cov_mats_[i].Add(uniform_cov_mat, angled_cov_mat);
-    reflected_interf_cov_mats_[i].PointwiseConjugate(interf_cov_mats_[i]);
+    interf_cov_mats_[i].clear();
+    for (size_t j = 0; j < interf_angles_radians_.size(); ++j) {
+      interf_cov_mats_[i].push_back(new ComplexMatrixF(num_input_channels_,
+                                                       num_input_channels_));
+      ComplexMatrixF angled_cov_mat(num_input_channels_, num_input_channels_);
+      CovarianceMatrixGenerator::AngledCovarianceMatrix(
+          kSpeedOfSoundMeterSeconds,
+          interf_angles_radians_[j],
+          i,
+          kFftSize,
+          kNumFreqBins,
+          sample_rate_hz_,
+          array_geometry_,
+          &angled_cov_mat);
+      // Normalize matrices before averaging them.
+      normalization_factor = angled_cov_mat.elements()[0][0];
+      angled_cov_mat.Scale(1.f / normalization_factor);
+      // Weighted average of matrices.
+      angled_cov_mat.Scale(kBalance);
+      interf_cov_mats_[i][j]->Add(uniform_cov_mat, angled_cov_mat);
+    }
   }
 }
 
@@ -376,17 +389,19 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
     rmw *= rmw;
     float rmw_r = rmw.real();
 
-    new_mask_[i] = CalculatePostfilterMask(interf_cov_mats_[i],
-                                           rpsiws_[i],
+    new_mask_[i] = CalculatePostfilterMask(*interf_cov_mats_[i][0],
+                                           rpsiws_[i][0],
                                            ratio_rxiw_rxim,
-                                           rmw_r,
-                                           mask_thresholds_[i]);
-
-    new_mask_[i] *= CalculatePostfilterMask(reflected_interf_cov_mats_[i],
-                                            reflected_rpsiws_[i],
-                                            ratio_rxiw_rxim,
-                                            rmw_r,
-                                            mask_thresholds_[i]);
+                                           rmw_r);
+    for (size_t j = 1; j < interf_angles_radians_.size(); ++j) {
+      float tmp_mask = CalculatePostfilterMask(*interf_cov_mats_[i][j],
+                                               rpsiws_[i][j],
+                                               ratio_rxiw_rxim,
+                                               rmw_r);
+      if (tmp_mask < new_mask_[i]) {
+        new_mask_[i] = tmp_mask;
+      }
+    }
   }
 
   ApplyMaskTimeSmoothing();
@@ -401,24 +416,16 @@ float NonlinearBeamformer::CalculatePostfilterMask(
     const ComplexMatrixF& interf_cov_mat,
     float rpsiw,
     float ratio_rxiw_rxim,
-    float rmw_r,
-    float mask_threshold) {
+    float rmw_r) {
   float rpsim = Norm(interf_cov_mat, eig_m_);
 
-  // Find lambda.
   float ratio = 0.f;
   if (rpsim > 0.f) {
     ratio = rpsiw / rpsim;
   }
-  float numerator = rmw_r - ratio;
-  float denominator = ratio_rxiw_rxim - ratio;
 
-  float mask = 1.f;
-  if (denominator > mask_threshold) {
-    float lambda = numerator / denominator;
-    mask = std::max(lambda * ratio_rxiw_rxim / rmw_r, kMaskMinimum);
-  }
-  return mask;
+  return (1.f - std::min(kCutOffConstant, ratio / rmw_r)) /
+         (1.f - std::min(kCutOffConstant, ratio / ratio_rxiw_rxim));
 }
 
 void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
@@ -433,7 +440,7 @@ void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
       output_channel[f_ix] += input[c_ix][f_ix] * delay_sum_mask_els[c_ix];
     }
 
-    output_channel[f_ix] *= final_mask_[f_ix];
+    output_channel[f_ix] *= kCompensationGain * final_mask_[f_ix];
   }
 }
 
