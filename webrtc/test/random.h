@@ -22,10 +22,10 @@ class Random {
  public:
   explicit Random(uint32_t seed);
 
-  // Return pseudo-random number in the interval [0.0, 1.0].
+  // Return pseudo-random number in the interval [0.0, 1.0).
   float Rand();
 
-  // Return pseudo rounded random number in interval [low, high].
+  // Return pseudo-random number mapped to the interval [low, high].
   int Rand(int low, int high);
 
   // Normal Distribution.

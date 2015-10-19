@@ -22,11 +22,11 @@ Random::Random(uint32_t seed) : a_(0x531FDB97 ^ seed), b_(0x6420ECA8 + seed) {
 }
 
 float Random::Rand() {
-  const float kScale = 1.0f / 0xffffffff;
-  float result = kScale * b_;
+  const double kScale = 1.0f / (static_cast<uint64_t>(1) << 32);
+  double result = kScale * b_;
   a_ ^= b_;
   b_ += a_;
-  return result;
+  return static_cast<float>(result);
 }
 
 int Random::Rand(int low, int high) {
