@@ -18,6 +18,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
@@ -96,6 +97,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   const rtc::scoped_ptr<ChannelGroup> channel_group_;
   volatile int next_channel_id_;
   Call::Config config_;
+  rtc::ThreadChecker configuration_thread_checker_;
 
   // Needs to be held while write-locking |receive_crit_| or |send_crit_|. This
   // ensures that we have a consistent network state signalled to all senders
@@ -144,6 +146,7 @@ Call::Call(const Call::Config& config)
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
       event_log_(nullptr) {
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
                 config.bitrate_config.min_bitrate_bps);
@@ -168,6 +171,7 @@ Call::Call(const Call::Config& config)
 }
 
 Call::~Call() {
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_CHECK(audio_send_ssrcs_.empty());
   RTC_CHECK(video_send_ssrcs_.empty());
   RTC_CHECK(video_send_streams_.empty());
@@ -179,11 +183,17 @@ Call::~Call() {
   Trace::ReturnTrace();
 }
 
-PacketReceiver* Call::Receiver() { return this; }
+PacketReceiver* Call::Receiver() {
+  // TODO(solenberg): Some test cases in EndToEndTest use this from a different
+  // thread. Re-enable once that is fixed.
+  // RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+  return this;
+}
 
 webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioSendStream* send_stream = new AudioSendStream(config);
   {
     rtc::CritScope lock(&network_enabled_crit_);
@@ -200,6 +210,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
 
 void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyAudioSendStream");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(send_stream != nullptr);
 
   send_stream->Stop();
@@ -218,6 +229,7 @@ void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
 webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       channel_group_->GetRemoteBitrateEstimator(false), config);
   {
@@ -233,6 +245,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
 void Call::DestroyAudioReceiveStream(
     webrtc::AudioReceiveStream* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyAudioReceiveStream");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(receive_stream != nullptr);
   webrtc::internal::AudioReceiveStream* audio_receive_stream =
       static_cast<webrtc::internal::AudioReceiveStream*>(receive_stream);
@@ -256,6 +269,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
@@ -285,6 +299,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
 void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyVideoSendStream");
   RTC_DCHECK(send_stream != nullptr);
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
 
   send_stream->Stop();
 
@@ -318,6 +333,7 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
     const webrtc::VideoReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       num_cpu_cores_, channel_group_.get(),
       rtc::AtomicOps::Increment(&next_channel_id_), config,
@@ -351,6 +367,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
 void Call::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyVideoReceiveStream");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(receive_stream != nullptr);
   VideoReceiveStream* receive_stream_impl = nullptr;
   {
@@ -376,6 +393,9 @@ void Call::DestroyVideoReceiveStream(
 }
 
 Call::Stats Call::GetStats() const {
+  // TODO(solenberg): Some test cases in EndToEndTest use this from a different
+  // thread. Re-enable once that is fixed.
+  // RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   Stats stats;
   // Fetch available send/receive bitrates.
   uint32_t send_bandwidth = 0;
@@ -402,6 +422,7 @@ Call::Stats Call::GetStats() const {
 void Call::SetBitrateConfig(
     const webrtc::Call::Config::BitrateConfig& bitrate_config) {
   TRACE_EVENT0("webrtc", "Call::SetBitrateConfig");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
   if (bitrate_config.max_bitrate_bps != -1)
     RTC_DCHECK_GT(bitrate_config.max_bitrate_bps, 0);
@@ -422,6 +443,7 @@ void Call::SetBitrateConfig(
 }
 
 void Call::SignalNetworkState(NetworkState state) {
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   // Take crit for entire function, it needs to be held while updating streams
   // to guarantee a consistent state across streams.
   rtc::CritScope lock(&network_enabled_crit_);
@@ -445,6 +467,7 @@ void Call::SignalNetworkState(NetworkState state) {
 }
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   channel_group_->OnSentPacket(sent_packet);
 }
 
@@ -568,6 +591,10 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
     const uint8_t* packet,
     size_t length,
     const PacketTime& packet_time) {
+  // TODO(solenberg): Tests call this function on a network thread, libjingle
+  // calls on the worker thread. We should move towards always using a network
+  // thread. Then this check can be enabled.
+  // RTC_DCHECK(!configuration_thread_checker_.CalledOnValidThread());
   if (RtpHeaderParser::IsRtcp(packet, length))
     return DeliverRtcp(media_type, packet, length);
 
