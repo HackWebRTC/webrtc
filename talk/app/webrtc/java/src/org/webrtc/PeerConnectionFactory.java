@@ -55,6 +55,7 @@ public class PeerConnectionFactory {
 
     public int networkIgnoreMask;
     public boolean disableEncryption;
+    public boolean disableNetworkMonitor;
   }
 
   // |context| is an android.content.Context object, but we keep it untyped here

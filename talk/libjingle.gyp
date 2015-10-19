@@ -104,6 +104,8 @@
                 'app/webrtc/java/jni/androidmediadecoder_jni.h',
                 'app/webrtc/java/jni/androidmediaencoder_jni.cc',
                 'app/webrtc/java/jni/androidmediaencoder_jni.h',
+                'app/webrtc/java/jni/androidnetworkmonitor_jni.cc',
+                'app/webrtc/java/jni/androidnetworkmonitor_jni.h',
                 'app/webrtc/java/jni/surfacetexturehelper_jni.cc',
                 'app/webrtc/java/jni/surfacetexturehelper_jni.h',
               ]
@@ -156,6 +158,8 @@
                   'app/webrtc/java/android/org/webrtc/GlShader.java',
                   'app/webrtc/java/android/org/webrtc/GlUtil.java',
                   'app/webrtc/java/android/org/webrtc/GlTextureFrameBuffer.java',
+                  'app/webrtc/java/android/org/webrtc/NetworkMonitor.java',
+                  'app/webrtc/java/android/org/webrtc/NetworkMonitorAutoDetect.java',
                   'app/webrtc/java/android/org/webrtc/RendererCommon.java',
                   'app/webrtc/java/android/org/webrtc/SurfaceTextureHelper.java',
                   'app/webrtc/java/android/org/webrtc/SurfaceViewRenderer.java',

@@ -10,6 +10,7 @@
 
 #include "webrtc/base/network.h"
 
+#include "webrtc/base/networkmonitor.h"
 #include <vector>
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>
@@ -25,6 +26,20 @@
 #endif
 
 namespace rtc {
+
+class FakeNetworkMonitor : public NetworkMonitorBase {
+ public:
+  void Start() override {}
+  void Stop() override {}
+};
+
+class FakeNetworkMonitorFactory : public NetworkMonitorFactory {
+ public:
+  FakeNetworkMonitorFactory() {}
+  NetworkMonitorInterface* CreateNetworkMonitor() {
+    return new FakeNetworkMonitor();
+  }
+};
 
 class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
  public:
@@ -53,6 +68,18 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     NetworkManager::NetworkList list;
     network_manager.CreateNetworks(include_ignored, &list);
     return list;
+  }
+
+  NetworkMonitorInterface* GetNetworkMonitor(
+      BasicNetworkManager& network_manager) {
+    return network_manager.network_monitor_.get();
+  }
+  void ClearNetworks(BasicNetworkManager& network_manager) {
+    for (const auto& kv : network_manager.networks_map_) {
+      delete kv.second;
+    }
+    network_manager.networks_.clear();
+    network_manager.networks_map_.clear();
   }
 
 #if defined(WEBRTC_POSIX)
@@ -788,6 +815,31 @@ TEST_F(NetworkTest, TestIPv6Selection) {
   ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_TEMPORARY, &ip));
   ipv6_network.AddIP(ip);
   EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
+}
+
+TEST_F(NetworkTest, TestNetworkMonitoring) {
+  BasicNetworkManager manager;
+  manager.SignalNetworksChanged.connect(static_cast<NetworkTest*>(this),
+                                        &NetworkTest::OnNetworksChanged);
+  FakeNetworkMonitorFactory* factory = new FakeNetworkMonitorFactory();
+  NetworkMonitorFactory::SetFactory(factory);
+  manager.StartUpdating();
+  NetworkMonitorInterface* network_monitor = GetNetworkMonitor(manager);
+  EXPECT_TRUE_WAIT(callback_called_, 1000);
+  callback_called_ = false;
+
+  // Clear the networks so that there will be network changes below.
+  ClearNetworks(manager);
+  // Network manager is started, so the callback is called when the network
+  // monitor fires the network-change event.
+  network_monitor->OnNetworksChanged();
+  EXPECT_TRUE_WAIT(callback_called_, 1000);
+
+  // Network manager is stopped; the network monitor is removed.
+  manager.StopUpdating();
+  EXPECT_TRUE(GetNetworkMonitor(manager) == nullptr);
+
+  NetworkMonitorFactory::ReleaseFactory(factory);
 }
 
 }  // namespace rtc

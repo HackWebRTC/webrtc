@@ -236,6 +236,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     PeerConnectionClient client = PeerConnectionClient.getInstance();
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     options.networkIgnoreMask = 0;
+    options.disableNetworkMonitor = true;
     client.setPeerConnectionFactoryOptions(options);
     client.createPeerConnectionFactory(
         getInstrumentation().getContext(), peerConnectionParameters, this);

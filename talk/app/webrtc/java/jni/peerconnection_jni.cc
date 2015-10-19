@@ -76,6 +76,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/logsinks.h"
+#include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringutils.h"
@@ -88,6 +89,7 @@
 #include "talk/app/webrtc/java/jni/androidmediadecoder_jni.h"
 #include "talk/app/webrtc/java/jni/androidmediaencoder_jni.h"
 #include "talk/app/webrtc/java/jni/androidvideocapturer_jni.h"
+#include "talk/app/webrtc/java/jni/androidnetworkmonitor_jni.h"
 #include "webrtc/modules/video_render/video_render_internal.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
 using webrtc::LogcatTraceContext;
@@ -1023,6 +1025,7 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
     jboolean video_hw_acceleration) {
   bool failure = false;
   video_hw_acceleration_enabled = video_hw_acceleration;
+  AndroidNetworkMonitor::SetAndroidContext(jni, context);
   if (!factory_static_initialized) {
     if (initialize_video) {
       failure |= webrtc::SetRenderAndroidVM(GetJVM());
@@ -1063,18 +1066,29 @@ class OwnedFactoryAndThreads {
                          Thread* signaling_thread,
                          WebRtcVideoEncoderFactory* encoder_factory,
                          WebRtcVideoDecoderFactory* decoder_factory,
+                         rtc::NetworkMonitorFactory* network_monitor_factory,
                          PeerConnectionFactoryInterface* factory)
       : worker_thread_(worker_thread),
         signaling_thread_(signaling_thread),
         encoder_factory_(encoder_factory),
         decoder_factory_(decoder_factory),
+        network_monitor_factory_(network_monitor_factory),
         factory_(factory) {}
 
-  ~OwnedFactoryAndThreads() { CHECK_RELEASE(factory_); }
+  ~OwnedFactoryAndThreads() {
+    CHECK_RELEASE(factory_);
+    if (network_monitor_factory_ != nullptr) {
+      rtc::NetworkMonitorFactory::ReleaseFactory(network_monitor_factory_);
+    }
+  }
 
   PeerConnectionFactoryInterface* factory() { return factory_; }
   WebRtcVideoEncoderFactory* encoder_factory() { return encoder_factory_; }
   WebRtcVideoDecoderFactory* decoder_factory() { return decoder_factory_; }
+  rtc::NetworkMonitorFactory* network_monitor_factory() {
+    return network_monitor_factory_;
+  }
+  void clear_network_monitor_factory() { network_monitor_factory_ = nullptr; }
   void InvokeJavaCallbacksOnFactoryThreads();
 
  private:
@@ -1084,6 +1098,7 @@ class OwnedFactoryAndThreads {
   const scoped_ptr<Thread> signaling_thread_;
   WebRtcVideoEncoderFactory* encoder_factory_;
   WebRtcVideoDecoderFactory* decoder_factory_;
+  rtc::NetworkMonitorFactory* network_monitor_factory_;
   PeerConnectionFactoryInterface* factory_;  // Const after ctor except dtor.
 };
 
@@ -1132,11 +1147,15 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
       << "Failed to start threads";
   WebRtcVideoEncoderFactory* encoder_factory = nullptr;
   WebRtcVideoDecoderFactory* decoder_factory = nullptr;
+  rtc::NetworkMonitorFactory* network_monitor_factory = nullptr;
+
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   if (video_hw_acceleration_enabled) {
     encoder_factory = new MediaCodecVideoEncoderFactory();
     decoder_factory = new MediaCodecVideoDecoderFactory();
   }
+  network_monitor_factory = new AndroidNetworkMonitorFactory();
+  rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
 #endif
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory(worker_thread,
@@ -1149,7 +1168,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   OwnedFactoryAndThreads* owned_factory = new OwnedFactoryAndThreads(
       worker_thread, signaling_thread,
       encoder_factory, decoder_factory,
-      factory.release());
+      network_monitor_factory, factory.release());
   owned_factory->InvokeJavaCallbacksOnFactoryThreads();
   return jlongFromPointer(owned_factory);
 }
@@ -1247,13 +1266,29 @@ JOW(void, PeerConnectionFactory_nativeSetOptions)(
   bool disable_encryption =
       jni->GetBooleanField(options, disable_encryption_field);
 
+  jfieldID disable_network_monitor_field =
+      jni->GetFieldID(options_class, "disableNetworkMonitor", "Z");
+  bool disable_network_monitor =
+      jni->GetBooleanField(options, disable_network_monitor_field);
+
   PeerConnectionFactoryInterface::Options options_to_set;
 
   // This doesn't necessarily match the c++ version of this struct; feel free
   // to add more parameters as necessary.
   options_to_set.network_ignore_mask = network_ignore_mask;
   options_to_set.disable_encryption = disable_encryption;
+  options_to_set.disable_network_monitor = disable_network_monitor;
   factory->SetOptions(options_to_set);
+
+  if (disable_network_monitor) {
+    OwnedFactoryAndThreads* owner =
+        reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
+    if (owner->network_monitor_factory()) {
+      rtc::NetworkMonitorFactory::ReleaseFactory(
+          owner->network_monitor_factory());
+      owner->clear_network_monitor_factory();
+    }
+  }
 }
 
 JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(

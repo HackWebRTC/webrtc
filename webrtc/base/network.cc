@@ -48,6 +48,7 @@
 #include <algorithm>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socket.h"  // includes something that makes windows happy
 #include "webrtc/base/stream.h"
@@ -327,6 +328,11 @@ BasicNetworkManager::BasicNetworkManager()
 }
 
 BasicNetworkManager::~BasicNetworkManager() {
+}
+
+void BasicNetworkManager::OnNetworksChanged() {
+  LOG(LS_VERBOSE) << "Network change was observed at the network manager";
+  UpdateNetworksOnce();
 }
 
 #if defined(__native_client__)
@@ -663,6 +669,7 @@ void BasicNetworkManager::StartUpdating() {
       thread_->Post(this, kSignalNetworksMessage);
   } else {
     thread_->Post(this, kUpdateNetworksMessage);
+    StartNetworkMonitor();
   }
   ++start_count_;
 }
@@ -676,13 +683,36 @@ void BasicNetworkManager::StopUpdating() {
   if (!start_count_) {
     thread_->Clear(this);
     sent_first_update_ = false;
+    StopNetworkMonitor();
   }
+}
+
+void BasicNetworkManager::StartNetworkMonitor() {
+  NetworkMonitorFactory* factory = NetworkMonitorFactory::GetFactory();
+  if (factory == nullptr) {
+    return;
+  }
+  network_monitor_.reset(factory->CreateNetworkMonitor());
+  if (!network_monitor_) {
+    return;
+  }
+  network_monitor_->SignalNetworksChanged.connect(
+      this, &BasicNetworkManager::OnNetworksChanged);
+  network_monitor_->Start();
+}
+
+void BasicNetworkManager::StopNetworkMonitor() {
+  if (!network_monitor_) {
+    return;
+  }
+  network_monitor_->Stop();
+  network_monitor_.reset();
 }
 
 void BasicNetworkManager::OnMessage(Message* msg) {
   switch (msg->message_id) {
-    case kUpdateNetworksMessage:  {
-      DoUpdateNetworks();
+    case kUpdateNetworksMessage: {
+      UpdateNetworksContinually();
       break;
     }
     case kSignalNetworksMessage:  {
@@ -694,7 +724,7 @@ void BasicNetworkManager::OnMessage(Message* msg) {
   }
 }
 
-void BasicNetworkManager::DoUpdateNetworks() {
+void BasicNetworkManager::UpdateNetworksOnce() {
   if (!start_count_)
     return;
 
@@ -711,7 +741,10 @@ void BasicNetworkManager::DoUpdateNetworks() {
       sent_first_update_ = true;
     }
   }
+}
 
+void BasicNetworkManager::UpdateNetworksContinually() {
+  UpdateNetworksOnce();
   thread_->PostDelayed(kNetworksUpdateIntervalMs, this, kUpdateNetworksMessage);
 }
 

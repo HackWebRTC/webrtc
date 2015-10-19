@@ -219,6 +219,8 @@
         'nethelpers.h',
         'network.cc',
         'network.h',
+        'networkmonitor.cc',
+        'networkmonitor.h',
         'nullsocketserver.h',
         'openssl.h',
         'openssladapter.cc',

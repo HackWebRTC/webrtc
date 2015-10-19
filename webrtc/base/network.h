@@ -29,6 +29,7 @@ struct ifaddrs;
 namespace rtc {
 
 class Network;
+class NetworkMonitorInterface;
 class Thread;
 
 enum AdapterType {
@@ -147,7 +148,6 @@ class NetworkManagerBase : public NetworkManager {
 
  private:
   friend class NetworkTest;
-  void DoUpdateNetworks();
 
   EnumerationPermission enumeration_permission_;
 
@@ -164,7 +164,8 @@ class NetworkManagerBase : public NetworkManager {
 // Basic implementation of the NetworkManager interface that gets list
 // of networks using OS APIs.
 class BasicNetworkManager : public NetworkManagerBase,
-                            public MessageHandler {
+                            public MessageHandler,
+                            public sigslot::has_slots<> {
  public:
   BasicNetworkManager();
   ~BasicNetworkManager() override;
@@ -222,7 +223,17 @@ class BasicNetworkManager : public NetworkManagerBase,
  private:
   friend class NetworkTest;
 
-  void DoUpdateNetworks();
+  // Creates a network monitor and listens for network updates.
+  void StartNetworkMonitor();
+  // Stops and removes the network monitor.
+  void StopNetworkMonitor();
+  // Called when it receives updates from the network monitor.
+  void OnNetworksChanged();
+
+  // Updates the networks and reschedules the next update.
+  void UpdateNetworksContinually();
+  // Only updates the networks; does not reschedule the next update.
+  void UpdateNetworksOnce();
 
   Thread* thread_;
   bool sent_first_update_;
@@ -230,6 +241,7 @@ class BasicNetworkManager : public NetworkManagerBase,
   std::vector<std::string> network_ignore_list_;
   int network_ignore_mask_;
   bool ignore_non_default_routes_;
+  scoped_ptr<NetworkMonitorInterface> network_monitor_;
 };
 
 // Represents a Unix-type network interface, with a name and single address.
