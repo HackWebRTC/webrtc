@@ -191,81 +191,8 @@ ChannelGroup::~ChannelGroup() {
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
   if (transport_feedback_adapter_.get())
     call_stats_->DeregisterStatsObserver(transport_feedback_adapter_.get());
-  RTC_DCHECK(channel_map_.empty());
   RTC_DCHECK(!remb_->InUse());
   RTC_DCHECK(encoders_.empty());
-}
-
-bool ChannelGroup::CreateReceiveChannel(
-    int channel_id,
-    Transport* transport,
-    int number_of_cores,
-    const VideoReceiveStream::Config& config) {
-  bool send_side_bwe = false;
-  for (const RtpExtension& extension : config.rtp.extensions) {
-    if (extension.name == RtpExtension::kTransportSequenceNumber) {
-      send_side_bwe = true;
-      break;
-    }
-  }
-
-  RemoteBitrateEstimator* bitrate_estimator;
-  if (send_side_bwe) {
-    bitrate_estimator = remote_estimator_proxy_.get();
-  } else {
-    bitrate_estimator = remote_bitrate_estimator_.get();
-  }
-  return CreateChannel(channel_id, transport, number_of_cores, 1, false,
-                       bitrate_estimator, nullptr);
-}
-
-bool ChannelGroup::CreateChannel(int channel_id,
-                                 Transport* transport,
-                                 int number_of_cores,
-                                 size_t max_rtp_streams,
-                                 bool sender,
-                                 RemoteBitrateEstimator* bitrate_estimator,
-                                 TransportFeedbackObserver* feedback_observer) {
-  rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
-      number_of_cores, transport, process_thread_,
-      encoder_state_feedback_->GetRtcpIntraFrameObserver(),
-      bitrate_controller_->CreateRtcpBandwidthObserver(), feedback_observer,
-      bitrate_estimator, call_stats_->rtcp_rtt_stats(), pacer_.get(),
-      packet_router_.get(), max_rtp_streams, sender));
-  if (channel->Init() != 0) {
-    return false;
-  }
-
-  // Register the channel to receive stats updates.
-  call_stats_->RegisterStatsObserver(channel->GetStatsObserver());
-
-  // Store the channel and add it to the channel group.
-  channel_map_[channel_id] = channel.release();
-  return true;
-}
-
-void ChannelGroup::DeleteChannel(int channel_id) {
-  ViEChannel* vie_channel = PopChannel(channel_id);
-
-  call_stats_->DeregisterStatsObserver(vie_channel->GetStatsObserver());
-  SetChannelRembStatus(false, false, vie_channel);
-
-  unsigned int remote_ssrc = vie_channel->GetRemoteSSRC();
-  channel_map_.erase(channel_id);
-  remote_bitrate_estimator_->RemoveStream(remote_ssrc);
-
-  delete vie_channel;
-
-  LOG(LS_VERBOSE) << "Channel deleted " << channel_id;
-}
-
-ViEChannel* ChannelGroup::GetChannel(int channel_id) const {
-  ChannelMap::const_iterator it = channel_map_.find(channel_id);
-  if (it == channel_map_.end()) {
-    LOG(LS_ERROR) << "Channel doesn't exist " << channel_id;
-    return NULL;
-  }
-  return it->second;
 }
 
 void ChannelGroup::AddEncoder(const std::vector<uint32_t>& ssrcs,
@@ -286,20 +213,6 @@ void ChannelGroup::RemoveEncoder(ViEEncoder* encoder) {
   }
 }
 
-ViEChannel* ChannelGroup::PopChannel(int channel_id) {
-  ChannelMap::iterator c_it = channel_map_.find(channel_id);
-  RTC_DCHECK(c_it != channel_map_.end());
-  ViEChannel* channel = c_it->second;
-  channel_map_.erase(c_it);
-
-  return channel;
-}
-
-void ChannelGroup::SetSyncInterface(VoEVideoSync* sync_interface) {
-  for (auto channel : channel_map_)
-    channel.second->SetVoiceChannel(-1, sync_interface);
-}
-
 void ChannelGroup::SetBweBitrates(int min_bitrate_bps,
                                   int start_bitrate_bps,
                                   int max_bitrate_bps) {
@@ -318,8 +231,13 @@ BitrateController* ChannelGroup::GetBitrateController() const {
   return bitrate_controller_.get();
 }
 
-RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator() const {
-  return remote_bitrate_estimator_.get();
+RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator(
+    bool send_side_bwe) const {
+
+  if (send_side_bwe)
+    return remote_estimator_proxy_.get();
+  else
+    return remote_bitrate_estimator_.get();
 }
 
 CallStats* ChannelGroup::GetCallStats() const {

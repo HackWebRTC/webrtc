@@ -41,7 +41,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      ChannelGroup* channel_group,
                      int channel_id,
                      const VideoReceiveStream::Config& config,
-                     webrtc::VoiceEngine* voice_engine);
+                     webrtc::VoiceEngine* voice_engine,
+                     ProcessThread* process_thread);
   ~VideoReceiveStream() override;
 
   // webrtc::ReceiveStream implementation.
@@ -74,12 +75,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   Clock* const clock_;
 
   ChannelGroup* const channel_group_;
-  const int channel_id_;
 
-  ViEChannel* vie_channel_;
   rtc::scoped_ptr<IncomingVideoStream> incoming_video_stream_;
-
   rtc::scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
+  rtc::scoped_ptr<ViEChannel> vie_channel_;
 };
 }  // namespace internal
 }  // namespace webrtc

@@ -150,7 +150,7 @@ VideoSendStream::VideoSendStream(
       channel_group_->GetRtcpIntraFrameObserver(),
       channel_group_->GetBitrateController()->CreateRtcpBandwidthObserver(),
       transport_feedback_observer,
-      channel_group_->GetRemoteBitrateEstimator(),
+      channel_group_->GetRemoteBitrateEstimator(false),
       channel_group_->GetCallStats()->rtcp_rtt_stats(), channel_group_->pacer(),
       channel_group_->packet_router(), ssrcs.size(), true));
   RTC_CHECK(vie_channel_->Init() == 0);
@@ -258,7 +258,7 @@ VideoSendStream::~VideoSendStream() {
   vie_encoder_->StopThreadsAndRemoveSharedMembers();
 
   uint32_t remote_ssrc = vie_channel_->GetRemoteSSRC();
-  channel_group_->GetRemoteBitrateEstimator()->RemoveStream(remote_ssrc);
+  channel_group_->GetRemoteBitrateEstimator(false)->RemoveStream(remote_ssrc);
 }
 
 VideoCaptureInput* VideoSendStream::Input() {

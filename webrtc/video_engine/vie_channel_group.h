@@ -40,7 +40,6 @@ class TransportFeedbackAdapter;
 class ViEChannel;
 class ViEEncoder;
 class VieRemb;
-class VoEVideoSync;
 
 // Channel group contains data common for several channels. All channels in the
 // group are assumed to send/receive data to the same end-point.
@@ -48,15 +47,8 @@ class ChannelGroup : public BitrateObserver {
  public:
   explicit ChannelGroup(ProcessThread* process_thread);
   ~ChannelGroup();
-  bool CreateReceiveChannel(int channel_id,
-                            Transport* transport,
-                            int number_of_cores,
-                            const VideoReceiveStream::Config& config);
-  void DeleteChannel(int channel_id);
-  ViEChannel* GetChannel(int channel_id) const;
   void AddEncoder(const std::vector<uint32_t>& ssrcs, ViEEncoder* encoder);
   void RemoveEncoder(ViEEncoder* encoder);
-  void SetSyncInterface(VoEVideoSync* sync_interface);
   void SetBweBitrates(int min_bitrate_bps,
                       int start_bitrate_bps,
                       int max_bitrate_bps);
@@ -66,7 +58,7 @@ class ChannelGroup : public BitrateObserver {
   void SignalNetworkState(NetworkState state);
 
   BitrateController* GetBitrateController() const;
-  RemoteBitrateEstimator* GetRemoteBitrateEstimator() const;
+  RemoteBitrateEstimator* GetRemoteBitrateEstimator(bool send_side_bwe) const;
   CallStats* GetCallStats() const;
   int64_t GetPacerQueuingDelayMs() const;
   PacedSender* pacer() const { return pacer_.get(); }
@@ -84,17 +76,6 @@ class ChannelGroup : public BitrateObserver {
   void OnSentPacket(const rtc::SentPacket& sent_packet);
 
  private:
-  typedef std::map<int, ViEChannel*> ChannelMap;
-
-  bool CreateChannel(int channel_id,
-                     Transport* transport,
-                     int number_of_cores,
-                     size_t max_rtp_streams,
-                     bool sender,
-                     RemoteBitrateEstimator* bitrate_estimator,
-                     TransportFeedbackObserver* feedback_observer);
-  ViEChannel* PopChannel(int channel_id);
-
   rtc::scoped_ptr<VieRemb> remb_;
   rtc::scoped_ptr<BitrateAllocator> bitrate_allocator_;
   rtc::scoped_ptr<CallStats> call_stats_;
@@ -103,7 +84,6 @@ class ChannelGroup : public BitrateObserver {
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   rtc::scoped_ptr<RemoteEstimatorProxy> remote_estimator_proxy_;
   rtc::scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
-  ChannelMap channel_map_;
 
   mutable rtc::CriticalSection encoder_crit_;
   std::vector<ViEEncoder*> encoders_ GUARDED_BY(encoder_crit_);

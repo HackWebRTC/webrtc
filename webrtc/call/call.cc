@@ -219,7 +219,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      channel_group_->GetRemoteBitrateEstimator(), config);
+      channel_group_->GetRemoteBitrateEstimator(false), config);
   {
     WriteLockScoped write_lock(*receive_crit_);
     RTC_DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
@@ -321,7 +321,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       num_cpu_cores_, channel_group_.get(),
       rtc::AtomicOps::Increment(&next_channel_id_), config,
-      config_.voice_engine);
+      config_.voice_engine, module_process_thread_.get());
 
   // This needs to be taken before receive_crit_ as both locks need to be held
   // while changing network state.
@@ -382,8 +382,8 @@ Call::Stats Call::GetStats() const {
   channel_group_->GetBitrateController()->AvailableBandwidth(&send_bandwidth);
   std::vector<unsigned int> ssrcs;
   uint32_t recv_bandwidth = 0;
-  channel_group_->GetRemoteBitrateEstimator()->LatestEstimate(&ssrcs,
-                                                              &recv_bandwidth);
+  channel_group_->GetRemoteBitrateEstimator(false)->LatestEstimate(
+      &ssrcs, &recv_bandwidth);
   stats.send_bandwidth_bps = send_bandwidth;
   stats.recv_bandwidth_bps = recv_bandwidth;
   stats.pacer_delay_ms = channel_group_->GetPacerQueuingDelayMs();
