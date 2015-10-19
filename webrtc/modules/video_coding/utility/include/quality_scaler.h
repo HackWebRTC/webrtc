@@ -37,6 +37,7 @@ class QualityScaler {
   Resolution GetScaledResolution() const;
   const VideoFrame& GetScaledFrame(const VideoFrame& frame);
   int GetTargetFramerate() const;
+  int downscale_shift() const { return downscale_shift_; }
 
  private:
   void AdjustScale(bool up);

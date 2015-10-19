@@ -178,6 +178,14 @@ class EncodedImage {
   EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _buffer(buffer), _length(length), _size(size) {}
 
+  struct AdaptReason {
+    AdaptReason()
+        : quality_resolution_downscales(-1) {}
+
+    int quality_resolution_downscales;  // Number of times this frame is down
+                                        // scaled in resolution due to quality.
+                                        // Or -1 if information is not provided.
+  };
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
   uint32_t _timeStamp = 0;
@@ -190,6 +198,7 @@ class EncodedImage {
   size_t _length;
   size_t _size;
   bool _completeFrame = false;
+  AdaptReason adapt_reason_;
 };
 
 }  // namespace webrtc

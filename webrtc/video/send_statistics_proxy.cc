@@ -70,6 +70,17 @@ void SendStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesSentInPermille",
         key_frames_permille);
   }
+  int quality_limited =
+      quality_limited_frame_counter_.Percent(kMinRequiredSamples);
+  if (quality_limited != -1) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.QualityLimitedResolutionInPercent",
+                             quality_limited);
+  }
+  int downscales = quality_downscales_counter_.Avg(kMinRequiredSamples);
+  if (downscales != -1) {
+    RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.QualityLimitedResolutionDownscales",
+                              downscales, 20);
+  }
 }
 
 void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
@@ -169,6 +180,16 @@ void SendStatisticsProxy::OnSendEncodedImage(
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
 
   key_frame_counter_.Add(encoded_image._frameType == kKeyFrame);
+
+  if (encoded_image.adapt_reason_.quality_resolution_downscales != -1) {
+    bool downscaled =
+        encoded_image.adapt_reason_.quality_resolution_downscales > 0;
+    quality_limited_frame_counter_.Add(downscaled);
+    if (downscaled) {
+      quality_downscales_counter_.Add(
+          encoded_image.adapt_reason_.quality_resolution_downscales);
+    }
+  }
 
   // TODO(asapersson): This is incorrect if simulcast layers are encoded on
   // different threads and there is no guarantee that one frame of all layers

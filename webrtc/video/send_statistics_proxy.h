@@ -134,6 +134,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   SampleCounter sent_height_counter_ GUARDED_BY(crit_);
   SampleCounter encode_time_counter_ GUARDED_BY(crit_);
   BoolSampleCounter key_frame_counter_ GUARDED_BY(crit_);
+  BoolSampleCounter quality_limited_frame_counter_ GUARDED_BY(crit_);
+  SampleCounter quality_downscales_counter_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

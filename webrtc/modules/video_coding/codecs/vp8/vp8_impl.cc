@@ -148,7 +148,8 @@ VP8EncoderImpl::VP8EncoderImpl()
       down_scale_bitrate_(0),
       tl0_frame_dropper_(),
       tl1_frame_dropper_(kTl1MaxTimeToDropFrames),
-      key_frame_request_(kMaxSimulcastStreams, false) {
+      key_frame_request_(kMaxSimulcastStreams, false),
+      quality_scaler_enabled_(false) {
   uint32_t seed = static_cast<uint32_t>(TickTime::MillisecondTimestamp());
   srand(seed);
 
@@ -586,6 +587,12 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
                        kDisabledBadQpThreshold, false);
   quality_scaler_.ReportFramerate(codec_.maxFramerate);
 
+  // Only apply scaling to improve for single-layer streams. The scaling metrics
+  // use frame drops as a signal and is only applicable when we drop frames.
+  quality_scaler_enabled_ = encoders_.size() == 1 &&
+                            configurations_[0].rc_dropframe_thresh > 0 &&
+                            codec_.codecSpecific.VP8.automaticResizeOn;
+
   return InitAndSetControlSettings();
 }
 
@@ -709,17 +716,12 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   if (encoded_complete_callback_ == NULL)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
-  // Only apply scaling to improve for single-layer streams. The scaling metrics
-  // use frame drops as a signal and is only applicable when we drop frames.
-  const bool use_quality_scaler = encoders_.size() == 1 &&
-                                  configurations_[0].rc_dropframe_thresh > 0 &&
-                                  codec_.codecSpecific.VP8.automaticResizeOn;
-  if (use_quality_scaler)
+  if (quality_scaler_enabled_)
     quality_scaler_.OnEncodeFrame(frame);
   const VideoFrame& input_image =
-      use_quality_scaler ? quality_scaler_.GetScaledFrame(frame) : frame;
+      quality_scaler_enabled_ ? quality_scaler_.GetScaledFrame(frame) : frame;
 
-  if (use_quality_scaler && (input_image.width() != codec_.width ||
+  if (quality_scaler_enabled_ && (input_image.width() != codec_.width ||
       input_image.height() != codec_.height)) {
     int ret = UpdateCodecFrameSize(input_image);
     if (ret < 0)
@@ -1013,6 +1015,9 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
             codec_.simulcastStream[stream_idx].height;
         encoded_images_[encoder_idx]._encodedWidth =
             codec_.simulcastStream[stream_idx].width;
+        encoded_images_[encoder_idx]
+            .adapt_reason_.quality_resolution_downscales =
+            quality_scaler_enabled_ ? quality_scaler_.downscale_shift() : -1;
         encoded_complete_callback_->Encoded(encoded_images_[encoder_idx],
                                             &codec_specific, &frag_info);
       } else if (codec_.mode == kScreensharing) {
