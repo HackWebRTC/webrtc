@@ -39,7 +39,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
  public:
   VideoReceiveStream(int num_cpu_cores,
                      ChannelGroup* channel_group,
-                     int channel_id,
                      const VideoReceiveStream::Config& config,
                      webrtc::VoiceEngine* voice_engine,
                      ProcessThread* process_thread);

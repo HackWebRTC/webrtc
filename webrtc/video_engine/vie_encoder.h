@@ -49,8 +49,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
  public:
   friend class ViEBitrateObserver;
 
-  ViEEncoder(int32_t channel_id,
-             uint32_t number_of_cores,
+  ViEEncoder(uint32_t number_of_cores,
              ProcessThread* module_process_thread,
              SendStatisticsProxy* stats_proxy,
              I420FrameCallback* pre_encode_callback,
@@ -145,8 +144,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback);
 
-  int channel_id() const { return channel_id_; }
-
   int GetPaddingNeededBps() const;
 
  protected:
@@ -160,7 +157,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
 
-  const int channel_id_;
   const uint32_t number_of_cores_;
 
   const rtc::scoped_ptr<VideoProcessingModule> vpm_;

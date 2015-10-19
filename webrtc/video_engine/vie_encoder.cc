@@ -102,15 +102,13 @@ class ViEBitrateObserver : public BitrateObserver {
   ViEEncoder* owner_;
 };
 
-ViEEncoder::ViEEncoder(int32_t channel_id,
-                       uint32_t number_of_cores,
+ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
                        I420FrameCallback* pre_encode_callback,
                        PacedSender* pacer,
                        BitrateAllocator* bitrate_allocator)
-    : channel_id_(channel_id),
-      number_of_cores_(number_of_cores),
+    : number_of_cores_(number_of_cores),
       vpm_(VideoProcessingModule::Create()),
       qm_callback_(new QMVideoSettingsCallback(vpm_.get())),
       vcm_(VideoCodingModule::Create(Clock::GetRealTimeClock(),
@@ -174,10 +172,6 @@ void ViEEncoder::StopThreadsAndRemoveSharedMembers() {
 }
 
 ViEEncoder::~ViEEncoder() {
-}
-
-int ViEEncoder::Owner() const {
-  return channel_id_;
 }
 
 void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
@@ -689,8 +683,9 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
     if (video_suspended_ == video_is_suspended)
       return;
     video_suspended_ = video_is_suspended;
-    LOG(LS_INFO) << "Video suspended " << video_is_suspended
-                 << " for channel " << channel_id_;
+
+    LOG(LS_INFO) << "Video suspend state changed " << video_is_suspended
+                 << " for ssrc " << ssrc_streams_.begin()->first;
   }
   // Video suspend-state changed, inform codec observer.
   if (stats_proxy_)

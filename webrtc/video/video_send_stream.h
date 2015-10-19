@@ -40,7 +40,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   VideoSendStream(int num_cpu_cores,
                   ProcessThread* module_process_thread,
                   ChannelGroup* channel_group,
-                  int channel_id,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
                   const std::map<uint32_t, RtpState>& suspended_ssrcs);

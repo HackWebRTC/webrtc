@@ -112,7 +112,6 @@ VideoSendStream::VideoSendStream(
     int num_cpu_cores,
     ProcessThread* module_process_thread,
     ChannelGroup* channel_group,
-    int channel_id,
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs)
@@ -140,7 +139,7 @@ VideoSendStream::VideoSendStream(
   const std::vector<uint32_t>& ssrcs = config.rtp.ssrcs;
 
   vie_encoder_.reset(new ViEEncoder(
-      channel_id, num_cpu_cores, module_process_thread_, &stats_proxy_,
+      num_cpu_cores, module_process_thread_, &stats_proxy_,
       config.pre_encode_callback, channel_group_->pacer(),
       channel_group_->bitrate_allocator()));
   RTC_CHECK(vie_encoder_->Init());
