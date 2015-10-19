@@ -60,7 +60,6 @@
         'media/base/testutils.cc',
         'media/base/testutils.h',
         'media/devices/fakedevicemanager.h',
-        'media/webrtc/dummyinstantiation.cc',
         'media/webrtc/fakewebrtccall.cc',
         'media/webrtc/fakewebrtccall.h',
         'media/webrtc/fakewebrtccommon.h',
