@@ -61,25 +61,35 @@ def MergeLibs(lib_base_dir):
       entry = libs.get(filename, [])
       entry.append(os.path.join(dirpath, filename))
       libs[filename] = entry
-  # Some sublibaries are only present in certain architectures. We merge
-  # them into their parent library so that the library list is consistent
-  # across architectures.
-  libs_copy = dict(libs)
+
+  orphaned_libs = {}
+  valid_libs = {}
   for library, paths in libs.items():
     if len(paths) < len(archs):
-      # Hacky: we find parent libraries by stripping off each name component.
-      components = library.strip('.a').split('_')[:-1]
-      found = False
-      while components:
-        parent_library = '_'.join(components) + '.a'
-        if (parent_library in libs_copy
-            and len(libs_copy[parent_library]) >= len(archs)):
-          libs[parent_library].extend(paths)
-          del libs[library]
+      orphaned_libs[library] = paths
+    else:
+      valid_libs[library] = paths
+  for library, paths in orphaned_libs.items():
+    components = library[:-2].split('_')[:-1]
+    found = False
+    # Find directly matching parent libs by stripping suffix.
+    while components and not found:
+      parent_library = '_'.join(components) + '.a'
+      if parent_library in valid_libs:
+        valid_libs[parent_library].extend(paths)
+        found = True
+        break
+      components = components[:-1]
+    # Find next best match by finding parent libs with the same prefix.
+    if not found:
+      base_prefix = library[:-2].split('_')[0]
+      for valid_lib, valid_paths in valid_libs.items():
+        prefix = '_'.join(components)
+        if valid_lib[:len(base_prefix)] == base_prefix:
+          valid_paths.extend(paths)
           found = True
           break
-        components = components[:-1]
-      assert found
+    assert found
 
   # Create output directory.
   output_dir_path = os.path.join(lib_base_dir, output_dir_name)
@@ -94,7 +104,7 @@ def MergeLibs(lib_base_dir):
   libtool_re = re.compile(r'^.*libtool:.*file: .* has no symbols$')
 
   # Merge libraries using libtool.
-  for library, paths in libs.items():
+  for library, paths in valid_libs.items():
     cmd_list = ['libtool', '-static', '-v', '-o',
                 os.path.join(output_dir_path, library)] + paths
     libtoolout = subprocess.Popen(cmd_list, stderr=subprocess.PIPE, env=env)

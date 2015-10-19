@@ -34,6 +34,7 @@
           'includes': [ 'objc_app.gypi' ],
           'type': 'executable',
           'dependencies': [
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             '../libjingle.gyp:libjingle_peerconnection_objc',
           ],
           'sources': ['<(DEPTH)/webrtc/build/no_op.cc',],
