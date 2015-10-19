@@ -48,7 +48,7 @@ class VP8EncoderImpl : public VP8Encoder {
 
   virtual int Encode(const VideoFrame& input_image,
                      const CodecSpecificInfo* codec_specific_info,
-                     const std::vector<VideoFrameType>* frame_types);
+                     const std::vector<FrameType>* frame_types);
 
   virtual int RegisterEncodeCompleteCallback(EncodedImageCallback* callback);
 

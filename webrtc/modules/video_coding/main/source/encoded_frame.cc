@@ -226,38 +226,4 @@ void VCMEncodedFrame::VerifyAndAllocate(size_t minimumSize)
     }
 }
 
-webrtc::FrameType VCMEncodedFrame::ConvertFrameType(VideoFrameType frameType)
-{
-  switch(frameType) {
-    case kKeyFrame:
-      return  kVideoFrameKey;
-    case kDeltaFrame:
-      return kVideoFrameDelta;
-  }
-  // Bogus default return value.
-  return kVideoFrameDelta;
-}
-
-VideoFrameType VCMEncodedFrame::ConvertFrameType(webrtc::FrameType frame_type) {
-  switch (frame_type) {
-    case kVideoFrameKey:
-      return kKeyFrame;
-    case kVideoFrameDelta:
-      return kDeltaFrame;
-    default:
-      assert(false);
-      return kDeltaFrame;
-  }
-}
-
-void VCMEncodedFrame::ConvertFrameTypes(
-    const std::vector<webrtc::FrameType>& frame_types,
-    std::vector<VideoFrameType>* video_frame_types) {
-  assert(video_frame_types);
-  video_frame_types->reserve(frame_types.size());
-  for (size_t i = 0; i < frame_types.size(); ++i) {
-    (*video_frame_types)[i] = ConvertFrameType(frame_types[i]);
-  }
-}
-
-}
+}  // namespace webrtc

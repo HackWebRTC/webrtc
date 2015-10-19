@@ -47,7 +47,7 @@ int32_t FakeEncoder::InitEncode(const VideoCodec* config,
 
 int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                             const CodecSpecificInfo* codec_specific_info,
-                            const std::vector<VideoFrameType>* frame_types) {
+                            const std::vector<FrameType>* frame_types) {
   assert(config_.maxFramerate > 0);
   int64_t time_since_last_encode_ms = 1000 / config_.maxFramerate;
   int64_t time_now_ms = clock_->TimeInMilliseconds();
@@ -189,7 +189,7 @@ DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)
 
 int32_t DelayedEncoder::Encode(const VideoFrame& input_image,
                                const CodecSpecificInfo* codec_specific_info,
-                               const std::vector<VideoFrameType>* frame_types) {
+                               const std::vector<FrameType>* frame_types) {
   SleepMs(delay_ms_);
   return FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
 }

@@ -42,7 +42,7 @@ int32_t Channel::SendData(FrameType frameType,
   } else {
     rtpInfo.type.Audio.isCNG = false;
   }
-  if (frameType == kFrameEmpty) {
+  if (frameType == kEmptyFrame) {
     // When frame is empty, we should not transmit it. The frame size of the
     // next non-empty frame will be based on the previous frame size.
     _useLastFrameSize = _lastFrameSizeSample > 0;

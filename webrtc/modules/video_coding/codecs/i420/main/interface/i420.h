@@ -50,7 +50,7 @@ class I420Encoder : public VideoEncoder {
 //                                <0 - Error
   int Encode(const VideoFrame& inputImage,
              const CodecSpecificInfo* /*codecSpecificInfo*/,
-             const std::vector<VideoFrameType>* /*frame_types*/) override;
+             const std::vector<FrameType>* /*frame_types*/) override;
 
 // Register an encode complete callback object.
 //

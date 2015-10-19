@@ -98,7 +98,7 @@ class VideoEncoder {
   //                                  WEBRTC_VIDEO_CODEC_TIMEOUT
   virtual int32_t Encode(const VideoFrame& frame,
                          const CodecSpecificInfo* codec_specific_info,
-                         const std::vector<VideoFrameType>* frame_types) = 0;
+                         const std::vector<FrameType>* frame_types) = 0;
 
   // Inform the encoder of the new packet loss rate and the round-trip time of
   // the network.
@@ -147,7 +147,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   int32_t Release() override;
   int32_t Encode(const VideoFrame& frame,
                  const CodecSpecificInfo* codec_specific_info,
-                 const std::vector<VideoFrameType>* frame_types) override;
+                 const std::vector<FrameType>* frame_types) override;
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
 
   int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;

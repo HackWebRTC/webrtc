@@ -175,7 +175,7 @@ TEST_F(TestSessionInfo, TestSimpleAPIs) {
   packet_.markerBit = true;
   packet_.seqNum  = 2;
   packet_.sizeBytes = 0;
-  packet_.frameType = kFrameEmpty;
+  packet_.frameType = kEmptyFrame;
   EXPECT_EQ(0,
             session_.InsertPacket(packet_,
                                   frame_buffer_,
@@ -888,7 +888,7 @@ TEST_F(TestVP8Partitions, AggregationOverTwoPackets) {
 TEST_F(TestNalUnits, OnlyReceivedEmptyPacket) {
   packet_.isFirstPacket = false;
   packet_.completeNALU = kNaluComplete;
-  packet_.frameType = kFrameEmpty;
+  packet_.frameType = kEmptyFrame;
   packet_.sizeBytes = 0;
   packet_.seqNum = 0;
   packet_.markerBit = false;

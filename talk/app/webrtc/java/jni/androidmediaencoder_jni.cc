@@ -86,10 +86,9 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int32_t InitEncode(const webrtc::VideoCodec* codec_settings,
                      int32_t /* number_of_cores */,
                      size_t /* max_payload_size */) override;
-  int32_t Encode(
-      const webrtc::VideoFrame& input_image,
-      const webrtc::CodecSpecificInfo* /* codec_specific_info */,
-      const std::vector<webrtc::VideoFrameType>* frame_types) override;
+  int32_t Encode(const webrtc::VideoFrame& input_image,
+                 const webrtc::CodecSpecificInfo* /* codec_specific_info */,
+                 const std::vector<webrtc::FrameType>* frame_types) override;
   int32_t RegisterEncodeCompleteCallback(
       webrtc::EncodedImageCallback* callback) override;
   int32_t Release() override;
@@ -121,7 +120,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int32_t InitEncodeOnCodecThread(int width, int height, int kbps, int fps);
   int32_t EncodeOnCodecThread(
       const webrtc::VideoFrame& input_image,
-      const std::vector<webrtc::VideoFrameType>* frame_types);
+      const std::vector<webrtc::FrameType>* frame_types);
   int32_t RegisterEncodeCompleteCallbackOnCodecThread(
       webrtc::EncodedImageCallback* callback);
   int32_t ReleaseOnCodecThread();
@@ -338,7 +337,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
 int32_t MediaCodecVideoEncoder::Encode(
     const webrtc::VideoFrame& frame,
     const webrtc::CodecSpecificInfo* /* codec_specific_info */,
-    const std::vector<webrtc::VideoFrameType>* frame_types) {
+    const std::vector<webrtc::FrameType>* frame_types) {
   return codec_thread_->Invoke<int32_t>(Bind(
       &MediaCodecVideoEncoder::EncodeOnCodecThread, this, frame, frame_types));
 }
@@ -501,7 +500,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
 
 int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     const webrtc::VideoFrame& frame,
-    const std::vector<webrtc::VideoFrameType>* frame_types) {
+    const std::vector<webrtc::FrameType>* frame_types) {
   CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);

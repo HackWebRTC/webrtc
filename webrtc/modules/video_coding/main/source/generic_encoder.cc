@@ -140,9 +140,8 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
 int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
                                   const CodecSpecificInfo* codecSpecificInfo,
                                   const std::vector<FrameType>& frameTypes) {
-  std::vector<VideoFrameType> video_frame_types(frameTypes.size(),
-                                                kDeltaFrame);
-  VCMEncodedFrame::ConvertFrameTypes(frameTypes, &video_frame_types);
+  for (FrameType frame_type : frameTypes)
+    RTC_DCHECK(frame_type == kVideoFrameKey || frame_type == kVideoFrameDelta);
 
   rotation_ = inputFrame.rotation();
 
@@ -153,12 +152,11 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
     vcm_encoded_frame_callback_->SetRotation(rotation_);
   }
 
-  int32_t result =
-      encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
+  int32_t result = encoder_->Encode(inputFrame, codecSpecificInfo, &frameTypes);
   if (is_screenshare_ &&
       result == WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT) {
     // Target bitrate exceeded, encoder state has been reset - try again.
-    return encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
+    return encoder_->Encode(inputFrame, codecSpecificInfo, &frameTypes);
   }
 
   return result;
@@ -223,10 +221,7 @@ VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
 int32_t VCMGenericEncoder::RequestFrame(
     const std::vector<FrameType>& frame_types) {
   VideoFrame image;
-  std::vector<VideoFrameType> video_frame_types(frame_types.size(),
-                                                kDeltaFrame);
-  VCMEncodedFrame::ConvertFrameTypes(frame_types, &video_frame_types);
-  return encoder_->Encode(image, NULL, &video_frame_types);
+  return encoder_->Encode(image, NULL, &frame_types);
 }
 
 int32_t
@@ -294,6 +289,8 @@ int32_t VCMEncodedFrameCallback::Encoded(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentationHeader) {
+  RTC_DCHECK(encodedImage._frameType == kVideoFrameKey ||
+             encodedImage._frameType == kVideoFrameDelta);
   post_encode_callback_->Encoded(encodedImage, NULL, NULL);
 
   if (_sendCallback == NULL) {

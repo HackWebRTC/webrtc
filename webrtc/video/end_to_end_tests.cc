@@ -1589,7 +1589,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
    public:
     EncodedFrameTestObserver()
         : length_(0),
-          frame_type_(kFrameEmpty),
+          frame_type_(kEmptyFrame),
           called_(EventWrapper::Create()) {}
     virtual ~EncodedFrameTestObserver() {}
 
@@ -2957,7 +2957,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
 
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
-                   const std::vector<VideoFrameType>* frame_types) override {
+                   const std::vector<FrameType>* frame_types) override {
       {
         rtc::CritScope lock(&test_crit_);
         if (sender_state_ == kNetworkDown) {
@@ -3080,7 +3080,7 @@ TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
      UnusedEncoder() : FakeEncoder(Clock::GetRealTimeClock()) {}
      int32_t Encode(const VideoFrame& input_image,
                     const CodecSpecificInfo* codec_specific_info,
-                    const std::vector<VideoFrameType>* frame_types) override {
+                    const std::vector<FrameType>* frame_types) override {
       ADD_FAILURE() << "Unexpected frame encode.";
       return test::FakeEncoder::Encode(
           input_image, codec_specific_info, frame_types);

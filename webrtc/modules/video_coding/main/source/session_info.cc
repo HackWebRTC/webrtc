@@ -464,7 +464,7 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
                                  uint8_t* frame_buffer,
                                  VCMDecodeErrorMode decode_error_mode,
                                  const FrameData& frame_data) {
-  if (packet.frameType == kFrameEmpty) {
+  if (packet.frameType == kEmptyFrame) {
     // Update sequence number of an empty packet.
     // Only media packets are inserted into the packet list.
     InformOfEmptyPacket(packet.seqNum);
@@ -516,7 +516,7 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
       LOG(LS_WARNING) << "Received packet with a sequence number which is out "
                          "of frame boundaries";
       return -3;
-    } else if (frame_type_ == kFrameEmpty && packet.frameType != kFrameEmpty) {
+    } else if (frame_type_ == kEmptyFrame && packet.frameType != kEmptyFrame) {
       // Update the frame type with the type of the first media packet.
       // TODO(mikhal): Can this trigger?
       frame_type_ = packet.frameType;

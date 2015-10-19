@@ -74,7 +74,7 @@ int32_t TestPack::SendData(FrameType frame_type, uint8_t payload_type,
   } else {
     rtp_info.type.Audio.isCNG = false;
   }
-  if (frame_type == kFrameEmpty) {
+  if (frame_type == kEmptyFrame) {
     // Skip this frame.
     return 0;
   }

@@ -244,7 +244,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
     }
     assert(stream >= 0);
     assert(stream < kNumberOfStreams);
-    std::vector<VideoFrameType> frame_types(kNumberOfStreams, kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfStreams, kDeltaFrame);
     frame_types[stream] = kKeyFrame;
     EXPECT_CALL(
         encoder_,

@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_FRAME_H_
 
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/common_types.h"
 #include "webrtc/common_video/interface/video_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
@@ -166,11 +167,6 @@ class VideoFrame {
   VideoRotation rotation_;
 };
 
-enum VideoFrameType {
-  kKeyFrame = 0,
-  kDeltaFrame = 1,
-};
-
 // TODO(pbos): Rename EncodedFrame and reformat this class' members.
 class EncodedImage {
  public:
@@ -192,8 +188,7 @@ class EncodedImage {
   // NTP time of the capture time in local timebase in milliseconds.
   int64_t ntp_time_ms_ = 0;
   int64_t capture_time_ms_ = 0;
-  // TODO(pbos): Use webrtc::FrameType directly (and remove VideoFrameType).
-  VideoFrameType _frameType = kDeltaFrame;
+  FrameType _frameType = kDeltaFrame;
   uint8_t* _buffer;
   size_t _length;
   size_t _size;

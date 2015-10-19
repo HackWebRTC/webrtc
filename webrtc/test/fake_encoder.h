@@ -33,7 +33,7 @@ class FakeEncoder : public VideoEncoder {
                      size_t max_payload_size) override;
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
-                 const std::vector<VideoFrameType>* frame_types) override;
+                 const std::vector<FrameType>* frame_types) override;
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
   int32_t Release() override;
@@ -74,7 +74,7 @@ class DelayedEncoder : public test::FakeEncoder {
 
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
-                 const std::vector<VideoFrameType>* frame_types) override;
+                 const std::vector<FrameType>* frame_types) override;
 
  private:
   const int delay_ms_;

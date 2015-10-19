@@ -181,7 +181,7 @@ TEST(TestDecodingState, UpdateOldPacket) {
   // Now insert empty packet belonging to the same frame.
   packet.timestamp = 1;
   packet.seqNum = 2;
-  packet.frameType = kFrameEmpty;
+  packet.frameType = kEmptyFrame;
   packet.sizeBytes = 0;
   dec_state.UpdateOldPacket(&packet);
   EXPECT_EQ(dec_state.sequence_num(), 2);
@@ -196,7 +196,7 @@ TEST(TestDecodingState, UpdateOldPacket) {
   // sequence number.
   packet.timestamp = 0;
   packet.seqNum = 4;
-  packet.frameType = kFrameEmpty;
+  packet.frameType = kEmptyFrame;
   packet.sizeBytes = 0;
   dec_state.UpdateOldPacket(&packet);
   EXPECT_EQ(dec_state.sequence_num(), 3);

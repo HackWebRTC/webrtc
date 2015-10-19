@@ -117,7 +117,7 @@ class MockVideoEncoder : public VideoEncoder {
 
   int32_t Encode(const VideoFrame& inputImage,
                  const CodecSpecificInfo* codecSpecificInfo,
-                 const std::vector<VideoFrameType>* frame_types) override {
+                 const std::vector<FrameType>* frame_types) override {
     return 0;
   }
 

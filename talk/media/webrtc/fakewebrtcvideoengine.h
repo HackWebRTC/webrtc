@@ -155,10 +155,9 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
     return codec_settings_;
   }
 
-  virtual int32_t Encode(
-      const webrtc::VideoFrame& inputImage,
-      const webrtc::CodecSpecificInfo* codecSpecificInfo,
-      const std::vector<webrtc::VideoFrameType>* frame_types) {
+  virtual int32_t Encode(const webrtc::VideoFrame& inputImage,
+                         const webrtc::CodecSpecificInfo* codecSpecificInfo,
+                         const std::vector<webrtc::FrameType>* frame_types) {
     rtc::CritScope lock(&crit_);
     ++num_frames_encoded_;
     return WEBRTC_VIDEO_CODEC_OK;

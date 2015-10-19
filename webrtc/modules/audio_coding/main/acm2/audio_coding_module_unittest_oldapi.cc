@@ -92,7 +92,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
  public:
   PacketizationCallbackStubOldApi()
       : num_calls_(0),
-        last_frame_type_(kFrameEmpty),
+        last_frame_type_(kEmptyFrame),
         last_payload_type_(-1),
         last_timestamp_(0),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
@@ -416,18 +416,18 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
       int ix;
       FrameType type;
     } expectation[] = {{2, kAudioFrameCN},
-                       {5, kFrameEmpty},
-                       {8, kFrameEmpty},
+                       {5, kEmptyFrame},
+                       {8, kEmptyFrame},
                        {11, kAudioFrameCN},
-                       {14, kFrameEmpty},
-                       {17, kFrameEmpty},
+                       {14, kEmptyFrame},
+                       {17, kEmptyFrame},
                        {20, kAudioFrameCN},
-                       {23, kFrameEmpty},
-                       {26, kFrameEmpty},
-                       {29, kFrameEmpty},
+                       {23, kEmptyFrame},
+                       {26, kEmptyFrame},
+                       {29, kEmptyFrame},
                        {32, kAudioFrameCN},
-                       {35, kFrameEmpty},
-                       {38, kFrameEmpty}};
+                       {35, kEmptyFrame},
+                       {38, kEmptyFrame}};
     for (int i = 0; i < kLoops; ++i) {
       int num_calls_before = packet_cb_.num_calls();
       EXPECT_EQ(i / blocks_per_packet, num_calls_before);
@@ -447,7 +447,7 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
 
 // Checks that the transport callback is invoked once per frame period of the
 // underlying speech encoder, even when comfort noise is produced.
-// Also checks that the frame type is kAudioFrameCN or kFrameEmpty.
+// Also checks that the frame type is kAudioFrameCN or kEmptyFrame.
 // This test and the next check the same thing, but differ in the order of
 // speech codec and CNG registration.
 TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,

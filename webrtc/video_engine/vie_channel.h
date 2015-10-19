@@ -251,10 +251,10 @@ class ViEChannel : public VCMFrameTypeCallback,
                                int min_playout_delay_ms,
                                int render_delay_ms);
 
-  // Implements VideoFrameTypeCallback.
+  // Implements FrameTypeCallback.
   virtual int32_t RequestKeyFrame();
 
-  // Implements VideoFrameTypeCallback.
+  // Implements FrameTypeCallback.
   virtual int32_t SliceLossIndicationRequest(
       const uint64_t picture_id);
 

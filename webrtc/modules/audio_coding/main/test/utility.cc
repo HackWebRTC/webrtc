@@ -288,7 +288,7 @@ VADCallback::VADCallback() {
 }
 
 void VADCallback::PrintFrameTypes() {
-  printf("kFrameEmpty......... %d\n", _numFrameTypes[kFrameEmpty]);
+  printf("kEmptyFrame......... %d\n", _numFrameTypes[kEmptyFrame]);
   printf("kAudioFrameSpeech... %d\n", _numFrameTypes[kAudioFrameSpeech]);
   printf("kAudioFrameCN....... %d\n", _numFrameTypes[kAudioFrameCN]);
   printf("kVideoFrameKey...... %d\n", _numFrameTypes[kVideoFrameKey]);

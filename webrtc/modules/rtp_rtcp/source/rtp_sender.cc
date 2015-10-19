@@ -35,7 +35,8 @@ const size_t kRtpHeaderLength = 12;
 
 const char* FrameTypeToString(FrameType frame_type) {
   switch (frame_type) {
-    case kFrameEmpty: return "empty";
+    case kEmptyFrame:
+      return "empty";
     case kAudioFrameSpeech: return "audio_speech";
     case kAudioFrameCN: return "audio_cn";
     case kVideoFrameKey: return "video_key";
@@ -509,7 +510,7 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", capture_timestamp,
                             "Send", "type", FrameTypeToString(frame_type));
     assert(frame_type == kAudioFrameSpeech || frame_type == kAudioFrameCN ||
-           frame_type == kFrameEmpty);
+           frame_type == kEmptyFrame);
 
     ret_val = audio_->SendAudio(frame_type, payload_type, capture_timestamp,
                                 payload_data, payload_size, fragmentation);
@@ -518,7 +519,7 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
                             "Send", "type", FrameTypeToString(frame_type));
     assert(frame_type != kAudioFrameSpeech && frame_type != kAudioFrameCN);
 
-    if (frame_type == kFrameEmpty)
+    if (frame_type == kEmptyFrame)
       return 0;
 
     ret_val =

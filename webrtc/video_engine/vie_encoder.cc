@@ -558,10 +558,11 @@ int32_t ViEEncoder::SendData(
     stats_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
 
   return send_payload_router_->RoutePayload(
-      VCMEncodedFrame::ConvertFrameType(encoded_image._frameType), payload_type,
-      encoded_image._timeStamp, encoded_image.capture_time_ms_,
-      encoded_image._buffer, encoded_image._length, &fragmentation_header,
-      rtp_video_hdr) ? 0 : -1;
+             encoded_image._frameType, payload_type, encoded_image._timeStamp,
+             encoded_image.capture_time_ms_, encoded_image._buffer,
+             encoded_image._length, &fragmentation_header, rtp_video_hdr)
+             ? 0
+             : -1;
 }
 
 int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,

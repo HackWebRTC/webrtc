@@ -1266,7 +1266,7 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
 // audio channel.
 // This test checks the marker bit for the first packet and the consequent
 // packets of the same telephone event. Since it is specifically for DTMF
-// events, ignoring audio packets and sending kFrameEmpty instead of those.
+// events, ignoring audio packets and sending kEmptyFrame instead of those.
 TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
   char payload_name[RTP_PAYLOAD_NAME_SIZE] = "telephone-event";
   uint8_t payload_type = 126;
@@ -1284,13 +1284,13 @@ TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
   // During start, it takes the starting timestamp as last sent timestamp.
   // The duration is calculated as the difference of current and last sent
   // timestamp. So for first call it will skip since the duration is zero.
-  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kFrameEmpty, payload_type,
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
                                              capture_time_ms, 0, nullptr, 0,
                                              nullptr));
   // DTMF Sample Length is (Frequency/1000) * Duration.
   // So in this case, it is (8000/1000) * 500 = 4000.
   // Sending it as two packets.
-  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kFrameEmpty, payload_type,
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
                                              capture_time_ms + 2000, 0, nullptr,
                                              0, nullptr));
   rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
@@ -1303,7 +1303,7 @@ TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
   // Marker Bit should be set to 1 for first packet.
   EXPECT_TRUE(rtp_header.markerBit);
 
-  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kFrameEmpty, payload_type,
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
                                              capture_time_ms + 4000, 0, nullptr,
                                              0, nullptr));
   ASSERT_TRUE(rtp_parser->Parse(transport_.last_sent_packet_,

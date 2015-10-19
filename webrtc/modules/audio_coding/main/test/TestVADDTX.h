@@ -29,7 +29,7 @@ class ActivityMonitor : public ACMVADCallback {
   void ResetStatistics();
   void GetStatistics(uint32_t* stats);
  private:
-  // 0 - kFrameEmpty
+  // 0 - kEmptyFrame
   // 1 - kAudioFrameSpeech
   // 2 - kAudioFrameCN
   // 3 - kVideoFrameKey (not used by audio)
@@ -60,7 +60,7 @@ class TestVadDtx : public ACMTest {
   // 0  : there have been no packets of type |x|,
   // 1  : there have been packets of type |x|,
   // with |x| indicates the following packet types
-  // 0 - kFrameEmpty
+  // 0 - kEmptyFrame
   // 1 - kAudioFrameSpeech
   // 2 - kAudioFrameCN
   // 3 - kVideoFrameKey (not used by audio)

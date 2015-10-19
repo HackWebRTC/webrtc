@@ -338,7 +338,7 @@ class TestVp8Simulcast : public ::testing::Test {
     decoder_->Release();
   }
 
-  void ExpectStreams(VideoFrameType frame_type, int expected_video_streams) {
+  void ExpectStreams(FrameType frame_type, int expected_video_streams) {
     ASSERT_GE(expected_video_streams, 0);
     ASSERT_LE(expected_video_streams, kNumberOfSimulcastStreams);
     if (expected_video_streams >= 1) {
@@ -389,8 +389,7 @@ class TestVp8Simulcast : public ::testing::Test {
   // a key frame was only requested for some of them.
   void TestKeyFrameRequestsOnAllStreams() {
     encoder_->SetRates(kMaxBitrates[2], 30);  // To get all three streams.
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     ExpectStreams(kKeyFrame, kNumberOfSimulcastStreams);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
@@ -424,8 +423,7 @@ class TestVp8Simulcast : public ::testing::Test {
   void TestPaddingAllStreams() {
     // We should always encode the base layer.
     encoder_->SetRates(kMinBitrates[0] - 1, 30);
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     ExpectStreams(kKeyFrame, 1);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
@@ -437,8 +435,7 @@ class TestVp8Simulcast : public ::testing::Test {
   void TestPaddingTwoStreams() {
     // We have just enough to get only the first stream and padding for two.
     encoder_->SetRates(kMinBitrates[0], 30);
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     ExpectStreams(kKeyFrame, 1);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
@@ -451,8 +448,7 @@ class TestVp8Simulcast : public ::testing::Test {
     // We are just below limit of sending second stream, so we should get
     // the first stream maxed out (at |maxBitrate|), and padding for two.
     encoder_->SetRates(kTargetBitrates[0] + kMinBitrates[1] - 1, 30);
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     ExpectStreams(kKeyFrame, 1);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
@@ -464,8 +460,7 @@ class TestVp8Simulcast : public ::testing::Test {
   void TestPaddingOneStream() {
     // We have just enough to send two streams, so padding for one stream.
     encoder_->SetRates(kTargetBitrates[0] + kMinBitrates[1], 30);
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     ExpectStreams(kKeyFrame, 2);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
@@ -479,8 +474,7 @@ class TestVp8Simulcast : public ::testing::Test {
     // first stream's rate maxed out at |targetBitrate|, second at |maxBitrate|.
     encoder_->SetRates(kTargetBitrates[0] + kTargetBitrates[1] +
                        kMinBitrates[2] - 1, 30);
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     ExpectStreams(kKeyFrame, 2);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
@@ -493,8 +487,7 @@ class TestVp8Simulcast : public ::testing::Test {
     // We have just enough to send all streams.
     encoder_->SetRates(kTargetBitrates[0] + kTargetBitrates[1] +
                        kMinBitrates[2], 30);
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     ExpectStreams(kKeyFrame, 3);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
@@ -507,8 +500,7 @@ class TestVp8Simulcast : public ::testing::Test {
     // We should get three media streams.
     encoder_->SetRates(kMaxBitrates[0] + kMaxBitrates[1] +
                        kMaxBitrates[2], 30);
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     ExpectStreams(kKeyFrame, 3);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
@@ -589,8 +581,7 @@ class TestVp8Simulcast : public ::testing::Test {
 
     // Encode one frame and verify.
     encoder_->SetRates(kMaxBitrates[0] + kMaxBitrates[1], 30);
-    std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
-                                            kDeltaFrame);
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams, kDeltaFrame);
     EXPECT_CALL(encoder_callback_, Encoded(
         AllOf(Field(&EncodedImage::_frameType, kKeyFrame),
               Field(&EncodedImage::_encodedWidth, width),

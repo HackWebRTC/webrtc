@@ -162,7 +162,7 @@ size_t VideoProcessorImpl::EncodedFrameSize() {
   return encoded_frame_size_;
 }
 
-VideoFrameType VideoProcessorImpl::EncodedFrameType() {
+FrameType VideoProcessorImpl::EncodedFrameType() {
   return encoded_frame_type_;
 }
 
@@ -199,7 +199,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     source_frame_.set_timestamp(frame_number);
 
     // Decide if we're going to force a keyframe:
-    std::vector<VideoFrameType> frame_types(1, kDeltaFrame);
+    std::vector<FrameType> frame_types(1, kDeltaFrame);
     if (config_.keyframe_interval > 0 &&
         frame_number % config_.keyframe_interval == 0) {
       frame_types[0] = kKeyFrame;

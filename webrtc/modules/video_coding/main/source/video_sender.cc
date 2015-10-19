@@ -313,7 +313,7 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
   }
   // TODO(holmer): Add support for dropping frames per stream. Currently we
   // only have one frame dropper for all streams.
-  if (_nextFrameTypes[0] == kFrameEmpty) {
+  if (_nextFrameTypes[0] == kEmptyFrame) {
     return VCM_OK;
   }
   if (_mediaOpt.DropFrame()) {

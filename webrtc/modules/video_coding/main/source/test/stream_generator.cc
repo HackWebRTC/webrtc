@@ -46,8 +46,8 @@ void StreamGenerator::GenerateFrame(FrameType type,
     ++sequence_number_;
   }
   for (int i = 0; i < num_empty_packets; ++i) {
-    packets_.push_back(GeneratePacket(
-        sequence_number_, timestamp, 0, false, false, kFrameEmpty));
+    packets_.push_back(GeneratePacket(sequence_number_, timestamp, 0, false,
+                                      false, kEmptyFrame));
     ++sequence_number_;
   }
 }

@@ -1252,7 +1252,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
 
     int32_t Encode(const VideoFrame& inputImage,
                    const CodecSpecificInfo* codecSpecificInfo,
-                   const std::vector<VideoFrameType>* frame_types) override {
+                   const std::vector<FrameType>* frame_types) override {
       EXPECT_TRUE(IsReadyForEncode());
 
       observation_complete_->Set();
@@ -1451,7 +1451,7 @@ class VideoCodecConfigObserver : public test::SendTest,
 
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
-                 const std::vector<VideoFrameType>* frame_types) override {
+                 const std::vector<FrameType>* frame_types) override {
     // Silently skip the encode, FakeEncoder::Encode doesn't produce VP8.
     return 0;
   }
@@ -1742,7 +1742,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
    private:
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codecSpecificInfo,
-                   const std::vector<VideoFrameType>* frame_types) override {
+                   const std::vector<FrameType>* frame_types) override {
       CodecSpecificInfo specifics;
       memset(&specifics, 0, sizeof(specifics));
       specifics.codecType = kVideoCodecGeneric;

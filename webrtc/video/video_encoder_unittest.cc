@@ -32,7 +32,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
     }
     int32_t Encode(const VideoFrame& frame,
                    const CodecSpecificInfo* codec_specific_info,
-                   const std::vector<VideoFrameType>* frame_types) override {
+                   const std::vector<FrameType>* frame_types) override {
       ++encode_count_;
       return WEBRTC_VIDEO_CODEC_OK;
     }
@@ -120,7 +120,7 @@ void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {
   memset(frame_.buffer(webrtc::kVPlane), 128,
          frame_.allocated_size(webrtc::kVPlane));
 
-  std::vector<VideoFrameType> types(1, kKeyFrame);
+  std::vector<FrameType> types(1, kKeyFrame);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             fallback_wrapper_.Encode(frame_, nullptr, &types));
   EXPECT_EQ(0, fake_encoder_.encode_count_);
@@ -163,7 +163,7 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
   EXPECT_EQ(&callback2, fake_encoder_.encode_complete_callback_);
 
   // Encoding a frame using the fallback should arrive at the new callback.
-  std::vector<VideoFrameType> types(1, kKeyFrame);
+  std::vector<FrameType> types(1, kKeyFrame);
   frame_.set_timestamp(frame_.timestamp() + 1000);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             fallback_wrapper_.Encode(frame_, nullptr, &types));

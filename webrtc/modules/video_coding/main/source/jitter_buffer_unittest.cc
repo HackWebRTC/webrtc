@@ -168,10 +168,9 @@ class TestRunningJitterBuffer : public ::testing::Test {
   }
 
   VCMFrameBufferEnum InsertFrame(FrameType frame_type) {
-    stream_generator_->GenerateFrame(frame_type,
-                                    (frame_type != kFrameEmpty) ? 1 : 0,
-                                    (frame_type == kFrameEmpty) ? 1 : 0,
-                                    clock_->TimeInMilliseconds());
+    stream_generator_->GenerateFrame(
+        frame_type, (frame_type != kEmptyFrame) ? 1 : 0,
+        (frame_type == kEmptyFrame) ? 1 : 0, clock_->TimeInMilliseconds());
     VCMFrameBufferEnum ret = InsertPacketAndPop(0);
     clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
     return ret;
@@ -1050,7 +1049,7 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
     packet_->markerBit = false;
     packet_->seqNum = seq_num_;
     packet_->completeNALU = kNaluEnd;
-    packet_->frameType = kFrameEmpty;
+    packet_->frameType = kEmptyFrame;
 
     EXPECT_EQ(jitter_buffer_->InsertPacket(*packet_, &retransmitted),
               kDecodableSession);
@@ -1524,7 +1523,7 @@ TEST_F(TestBasicJitterBuffer, EmptyLastFrame) {
     packet_->markerBit = false;
     packet_->seqNum = seq_num_;
     packet_->timestamp = timestamp_;
-    packet_->frameType = kFrameEmpty;
+    packet_->frameType = kEmptyFrame;
 
     EXPECT_EQ(kNoError, jitter_buffer_->InsertPacket(*packet_,
                                                      &retransmitted));
@@ -1895,7 +1894,7 @@ TEST_F(TestRunningJitterBuffer, TwoPacketsNonContinuous) {
 TEST_F(TestJitterBufferNack, EmptyPackets) {
   // Make sure empty packets doesn't clog the jitter buffer.
   jitter_buffer_->SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
-  EXPECT_GE(InsertFrames(kMaxNumberOfFrames, kFrameEmpty), kNoError);
+  EXPECT_GE(InsertFrames(kMaxNumberOfFrames, kEmptyFrame), kNoError);
   InsertFrame(kVideoFrameKey);
   EXPECT_TRUE(DecodeCompleteFrame());
 }

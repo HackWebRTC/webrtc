@@ -58,7 +58,7 @@ int32_t TestPackStereo::SendData(const FrameType frame_type,
   rtp_info.header.sequenceNumber = seq_no_++;
   rtp_info.header.payloadType = payload_type;
   rtp_info.header.timestamp = timestamp;
-  if (frame_type == kFrameEmpty) {
+  if (frame_type == kEmptyFrame) {
     // Skip this frame
     return 0;
   }

@@ -208,8 +208,8 @@ int32_t RTPSenderAudio::SendAudio(
   // A source MAY send events and coded audio packets for the same time
   // but we don't support it
   if (_dtmfEventIsOn) {
-    if (frameType == kFrameEmpty) {
-      // kFrameEmpty is used to drive the DTMF when in CN mode
+    if (frameType == kEmptyFrame) {
+      // kEmptyFrame is used to drive the DTMF when in CN mode
       // it can be triggered more frequently than we want to send the
       // DTMF packets.
       if (packet_size_samples > (captureTimeStamp - _dtmfTimestampLastSent)) {
@@ -259,7 +259,7 @@ int32_t RTPSenderAudio::SendAudio(
     return 0;
   }
   if (payloadSize == 0 || payloadData == NULL) {
-    if (frameType == kFrameEmpty) {
+    if (frameType == kEmptyFrame) {
       // we don't send empty audio RTP packets
       // no error since we use it to drive DTMF when we use VAD
       return 0;

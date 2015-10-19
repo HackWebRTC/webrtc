@@ -63,10 +63,8 @@ class TestVCMReceiver : public ::testing::Test {
   int32_t InsertFrame(FrameType frame_type, bool complete) {
     int num_of_packets = complete ? 1 : 2;
     stream_generator_->GenerateFrame(
-        frame_type,
-        (frame_type != kFrameEmpty) ? num_of_packets : 0,
-        (frame_type == kFrameEmpty) ? 1 : 0,
-        clock_->TimeInMilliseconds());
+        frame_type, (frame_type != kEmptyFrame) ? num_of_packets : 0,
+        (frame_type == kEmptyFrame) ? 1 : 0, clock_->TimeInMilliseconds());
     int32_t ret = InsertPacketAndPop(0);
     if (!complete) {
       // Drop the second packet.

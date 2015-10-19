@@ -156,14 +156,21 @@ enum ProcessingTypes
     kRecordingPreprocessing
 };
 
-enum FrameType
-{
-    kFrameEmpty            = 0,
-    kAudioFrameSpeech      = 1,
-    kAudioFrameCN          = 2,
-    kVideoFrameKey         = 3,    // independent frame
-    kVideoFrameDelta       = 4,    // depends on the previus frame
+enum FrameType {
+  kEmptyFrame = 0,
+  kAudioFrameSpeech = 1,
+  kAudioFrameCN = 2,
+  kVideoFrameKey = 3,
+  kVideoFrameDelta = 4,
+  // TODO(pbos): Remove below aliases (non-kVideo prefixed) as soon as no
+  // VideoEncoder implementation in Chromium uses them.
+  kKeyFrame = kVideoFrameKey,
+  kDeltaFrame = kVideoFrameDelta,
 };
+
+// TODO(pbos): Remove VideoFrameType when VideoEncoder implementations no longer
+// depend on it.
+using VideoFrameType = FrameType;
 
 // Statistics for an RTCP channel
 struct RtcpStatistics {

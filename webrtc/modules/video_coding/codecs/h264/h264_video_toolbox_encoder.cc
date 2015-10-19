@@ -242,7 +242,7 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
 int H264VideoToolboxEncoder::Encode(
     const VideoFrame& input_image,
     const CodecSpecificInfo* codec_specific_info,
-    const std::vector<VideoFrameType>* frame_types) {
+    const std::vector<FrameType>* frame_types) {
   if (input_image.IsZeroSize()) {
     // It's possible to get zero sizes as a signal to produce keyframes (this
     // happens for internal sources). But this shouldn't happen in

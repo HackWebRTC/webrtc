@@ -39,7 +39,7 @@ struct FrameStatistic {
 
   // Copied from EncodedImage
   size_t encoded_frame_length_in_bytes;
-  webrtc::VideoFrameType frame_type;
+  webrtc::FrameType frame_type;
 };
 
 // Handles statistics from a single video processing run.

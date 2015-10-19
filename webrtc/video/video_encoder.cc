@@ -99,7 +99,7 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Release() {
 int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
     const VideoFrame& frame,
     const CodecSpecificInfo* codec_specific_info,
-    const std::vector<VideoFrameType>* frame_types) {
+    const std::vector<FrameType>* frame_types) {
   if (fallback_encoder_)
     return fallback_encoder_->Encode(frame, codec_specific_info, frame_types);
   return encoder_->Encode(frame, codec_specific_info, frame_types);

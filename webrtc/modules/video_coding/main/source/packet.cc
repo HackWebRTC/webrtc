@@ -16,23 +16,21 @@
 namespace webrtc {
 
 VCMPacket::VCMPacket()
-  :
-    payloadType(0),
-    timestamp(0),
-    ntp_time_ms_(0),
-    seqNum(0),
-    dataPtr(NULL),
-    sizeBytes(0),
-    markerBit(false),
-    frameType(kFrameEmpty),
-    codec(kVideoCodecUnknown),
-    isFirstPacket(false),
-    completeNALU(kNaluUnset),
-    insertStartCode(false),
-    width(0),
-    height(0),
-    codecSpecificHeader() {
-}
+    : payloadType(0),
+      timestamp(0),
+      ntp_time_ms_(0),
+      seqNum(0),
+      dataPtr(NULL),
+      sizeBytes(0),
+      markerBit(false),
+      frameType(kEmptyFrame),
+      codec(kVideoCodecUnknown),
+      isFirstPacket(false),
+      completeNALU(kNaluUnset),
+      insertStartCode(false),
+      width(0),
+      height(0),
+      codecSpecificHeader() {}
 
 VCMPacket::VCMPacket(const uint8_t* ptr,
                      const size_t size,
@@ -88,7 +86,7 @@ void VCMPacket::Reset() {
   dataPtr = NULL;
   sizeBytes = 0;
   markerBit = false;
-  frameType = kFrameEmpty;
+  frameType = kEmptyFrame;
   codec = kVideoCodecUnknown;
   isFirstPacket = false;
   completeNALU = kNaluUnset;

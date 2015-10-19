@@ -42,7 +42,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
                  size_t max_payload_size) override;
   int Encode(const VideoFrame& input_image,
              const CodecSpecificInfo* codec_specific_info,
-             const std::vector<VideoFrameType>* frame_types) override;
+             const std::vector<FrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int SetRates(uint32_t new_bitrate_kbit, uint32_t new_framerate) override;

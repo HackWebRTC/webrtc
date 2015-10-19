@@ -68,7 +68,7 @@ public:
     /**
     *   Get frame type
     */
-    webrtc::FrameType FrameType() const {return ConvertFrameType(_frameType);}
+    webrtc::FrameType FrameType() const { return _frameType; }
     /**
     *   Get frame rotation
     */
@@ -94,12 +94,6 @@ public:
     const CodecSpecificInfo* CodecSpecific() const {return &_codecSpecificInfo;}
 
     const RTPFragmentationHeader* FragmentationHeader() const;
-
-    static webrtc::FrameType ConvertFrameType(VideoFrameType frameType);
-    static VideoFrameType ConvertFrameType(webrtc::FrameType frameType);
-    static void ConvertFrameTypes(
-        const std::vector<webrtc::FrameType>& frame_types,
-        std::vector<VideoFrameType>* video_frame_types);
 
 protected:
     /**

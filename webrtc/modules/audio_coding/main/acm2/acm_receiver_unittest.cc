@@ -46,7 +46,7 @@ class AcmReceiverTest : public AudioPacketizationCallback,
       : timestamp_(0),
         packet_sent_(false),
         last_packet_send_timestamp_(timestamp_),
-        last_frame_type_(kFrameEmpty) {
+        last_frame_type_(kEmptyFrame) {
     AudioCoding::Config config;
     config.transport = this;
     acm_.reset(new AudioCodingImpl(config));
@@ -121,7 +121,7 @@ class AcmReceiverTest : public AudioPacketizationCallback,
                    const uint8_t* payload_data,
                    size_t payload_len_bytes,
                    const RTPFragmentationHeader* fragmentation) override {
-    if (frame_type == kFrameEmpty)
+    if (frame_type == kEmptyFrame)
       return 0;
 
     rtp_header_.header.payloadType = payload_type;

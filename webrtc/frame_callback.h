@@ -21,7 +21,7 @@ class VideoFrame;
 
 struct EncodedFrame {
  public:
-  EncodedFrame() : data_(NULL), length_(0), frame_type_(kFrameEmpty) {}
+  EncodedFrame() : data_(NULL), length_(0), frame_type_(kEmptyFrame) {}
   EncodedFrame(const uint8_t* data, size_t length, FrameType frame_type)
     : data_(data), length_(length), frame_type_(frame_type) {}
 

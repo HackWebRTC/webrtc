@@ -83,7 +83,7 @@ void TestFua(size_t frame_size,
   fragmentation.fragmentationOffset[0] = 0;
   fragmentation.fragmentationLength[0] = frame_size;
   rtc::scoped_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
-      kRtpVideoH264, max_payload_size, NULL, kFrameEmpty));
+      kRtpVideoH264, max_payload_size, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame.get(), frame_size, &fragmentation);
 
   rtc::scoped_ptr<uint8_t[]> packet(new uint8_t[max_payload_size]);
@@ -157,7 +157,7 @@ TEST(RtpPacketizerH264Test, TestSingleNalu) {
   fragmentation.fragmentationOffset[0] = 0;
   fragmentation.fragmentationLength[0] = sizeof(frame);
   rtc::scoped_ptr<RtpPacketizer> packetizer(
-      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kFrameEmpty));
+      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, sizeof(frame), &fragmentation);
   uint8_t packet[kMaxPayloadSize] = {0};
   size_t length = 0;
@@ -186,7 +186,7 @@ TEST(RtpPacketizerH264Test, TestSingleNaluTwoPackets) {
   frame[fragmentation.fragmentationOffset[1]] = 0x01;
 
   rtc::scoped_ptr<RtpPacketizer> packetizer(
-      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kFrameEmpty));
+      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
   uint8_t packet[kMaxPayloadSize] = {0};
@@ -223,7 +223,7 @@ TEST(RtpPacketizerH264Test, TestStapA) {
   fragmentation.fragmentationLength[2] =
       kNalHeaderSize + kFrameSize - kPayloadOffset;
   rtc::scoped_ptr<RtpPacketizer> packetizer(
-      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kFrameEmpty));
+      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
   uint8_t packet[kMaxPayloadSize] = {0};
@@ -258,7 +258,7 @@ TEST(RtpPacketizerH264Test, TestTooSmallForStapAHeaders) {
   fragmentation.fragmentationLength[2] =
       kNalHeaderSize + kFrameSize - kPayloadOffset;
   rtc::scoped_ptr<RtpPacketizer> packetizer(
-      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kFrameEmpty));
+      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
   uint8_t packet[kMaxPayloadSize] = {0};
@@ -306,7 +306,7 @@ TEST(RtpPacketizerH264Test, TestMixedStapA_FUA) {
     }
   }
   rtc::scoped_ptr<RtpPacketizer> packetizer(
-      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kFrameEmpty));
+      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
   // First expecting two FU-A packets.

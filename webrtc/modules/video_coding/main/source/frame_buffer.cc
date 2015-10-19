@@ -98,7 +98,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
         // We only take the ntp timestamp of the first packet of a frame.
         ntp_time_ms_ = packet.ntp_time_ms_;
         _codec = packet.codec;
-        if (packet.frameType != kFrameEmpty) {
+        if (packet.frameType != kEmptyFrame) {
             // first media packet
             SetState(kStateIncomplete);
         }
@@ -280,7 +280,7 @@ VCMFrameBuffer::PrepareForDecode(bool continuous) {
 #endif
     // Transfer frame information to EncodedFrame and create any codec
     // specific information.
-    _frameType = ConvertFrameType(_sessionInfo.FrameType());
+    _frameType = _sessionInfo.FrameType();
     _completeFrame = _sessionInfo.complete();
     _missingFrame = !continuous;
 }

@@ -422,7 +422,7 @@ uint32_t VP9EncoderImpl::MaxIntraTarget(uint32_t optimal_buffer_size) {
 
 int VP9EncoderImpl::Encode(const VideoFrame& input_image,
                            const CodecSpecificInfo* codec_specific_info,
-                           const std::vector<VideoFrameType>* frame_types) {
+                           const std::vector<FrameType>* frame_types) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -432,7 +432,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (encoded_complete_callback_ == NULL) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  VideoFrameType frame_type = kDeltaFrame;
+  FrameType frame_type = kDeltaFrame;
   // We only support one stream at the moment.
   if (frame_types && frame_types->size() > 0) {
     frame_type = (*frame_types)[0];

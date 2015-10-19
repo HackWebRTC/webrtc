@@ -88,7 +88,7 @@ TEST_F(TestVideoReceiver, PaddingOnlyFrames) {
   const uint8_t payload[kPaddingSize] = {0};
   WebRtcRTPHeader header;
   memset(&header, 0, sizeof(header));
-  header.frameType = kFrameEmpty;
+  header.frameType = kEmptyFrame;
   header.header.markerBit = false;
   header.header.paddingLength = kPaddingSize;
   header.header.payloadType = kUnusedPayloadType;
@@ -112,7 +112,7 @@ TEST_F(TestVideoReceiver, PaddingOnlyFramesWithLosses) {
   const uint8_t payload[kFrameSize] = {0};
   WebRtcRTPHeader header;
   memset(&header, 0, sizeof(header));
-  header.frameType = kFrameEmpty;
+  header.frameType = kEmptyFrame;
   header.header.markerBit = false;
   header.header.paddingLength = kPaddingSize;
   header.header.payloadType = kUnusedPayloadType;
@@ -127,7 +127,7 @@ TEST_F(TestVideoReceiver, PaddingOnlyFramesWithLosses) {
   clock_.AdvanceTimeMilliseconds(33);
   header.header.timestamp += 3000;
 
-  header.frameType = kFrameEmpty;
+  header.frameType = kEmptyFrame;
   header.type.Video.isFirstPacket = false;
   header.header.markerBit = false;
   // Insert padding frames.
@@ -163,7 +163,7 @@ TEST_F(TestVideoReceiver, PaddingOnlyAndVideo) {
   const uint8_t payload[kFrameSize] = {0};
   WebRtcRTPHeader header;
   memset(&header, 0, sizeof(header));
-  header.frameType = kFrameEmpty;
+  header.frameType = kEmptyFrame;
   header.type.Video.isFirstPacket = false;
   header.header.markerBit = false;
   header.header.paddingLength = kPaddingSize;
@@ -188,7 +188,7 @@ TEST_F(TestVideoReceiver, PaddingOnlyAndVideo) {
     }
 
     // Insert 2 padding only frames.
-    header.frameType = kFrameEmpty;
+    header.frameType = kEmptyFrame;
     header.type.Video.isFirstPacket = false;
     header.header.markerBit = false;
     for (int j = 0; j < 2; ++j) {

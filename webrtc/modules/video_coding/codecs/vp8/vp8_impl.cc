@@ -706,7 +706,7 @@ uint32_t VP8EncoderImpl::MaxIntraTarget(uint32_t optimalBuffersize) {
 
 int VP8EncoderImpl::Encode(const VideoFrame& frame,
                            const CodecSpecificInfo* codec_specific_info,
-                           const std::vector<VideoFrameType>* frame_types) {
+                           const std::vector<FrameType>* frame_types) {
   TRACE_EVENT1("webrtc", "VP8::Encode", "timestamp", frame.timestamp());
 
   if (!inited_)
