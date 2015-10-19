@@ -61,7 +61,9 @@ public class MediaCodecVideoEncoder {
   }
 
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
-  private static MediaCodecVideoEncoder instance = null;
+  // Active running encoder instance. Set in initDecode() (called from native code)
+  // and reset to null in release() call.
+  private static MediaCodecVideoEncoder runningInstance = null;
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
@@ -78,7 +80,8 @@ public class MediaCodecVideoEncoder {
     // HW H.264 encoder on below devices has poor bitrate control - actual
     // bitrates deviates a lot from the target value.
     "SAMSUNG-SGH-I337",
-    "Nexus 7"
+    "Nexus 7",
+    "Nexus 4"
   };
 
   // Bitrate modes - should be in sync with OMX_VIDEO_CONTROLRATETYPE defined
@@ -103,7 +106,6 @@ public class MediaCodecVideoEncoder {
   private ByteBuffer configData = null;
 
   private MediaCodecVideoEncoder() {
-    instance = this;
   }
 
   // Helper struct for findHwEncoder() below.
@@ -200,8 +202,8 @@ public class MediaCodecVideoEncoder {
   }
 
   public static void printStackTrace() {
-    if (instance != null && instance.mediaCodecThread != null) {
-      StackTraceElement[] mediaCodecStackTraces = instance.mediaCodecThread.getStackTrace();
+    if (runningInstance != null && runningInstance.mediaCodecThread != null) {
+      StackTraceElement[] mediaCodecStackTraces = runningInstance.mediaCodecThread.getStackTrace();
       if (mediaCodecStackTraces.length > 0) {
         Logging.d(TAG, "MediaCodecVideoEncoder stacks trace:");
         for (StackTraceElement stackTrace : mediaCodecStackTraces) {
@@ -246,6 +248,7 @@ public class MediaCodecVideoEncoder {
     if (properties == null) {
       throw new RuntimeException("Can not find HW encoder for " + type);
     }
+    runningInstance = this; // Encoder is now running and can be queried for stack traces.
     mediaCodecThread = Thread.currentThread();
     try {
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
@@ -311,7 +314,7 @@ public class MediaCodecVideoEncoder {
     }
     mediaCodec = null;
     mediaCodecThread = null;
-    instance = null;
+    runningInstance = null;
     Logging.d(TAG, "Java releaseEncoder done");
   }
 

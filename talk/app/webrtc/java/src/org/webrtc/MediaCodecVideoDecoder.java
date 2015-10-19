@@ -65,7 +65,9 @@ public class MediaCodecVideoDecoder {
   }
 
   private static final int DEQUEUE_INPUT_TIMEOUT = 500000;  // 500 ms timeout.
-  private static MediaCodecVideoDecoder instance;
+  // Active running decoder instance. Set in initDecode() (called from native code)
+  // and reset to null in release() call.
+  private static MediaCodecVideoDecoder runningInstance = null;
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] inputBuffers;
@@ -100,7 +102,6 @@ public class MediaCodecVideoDecoder {
   private EglBase eglBase;
 
   private MediaCodecVideoDecoder() {
-    instance = this;
   }
 
   // Helper struct for findVp8Decoder() below.
@@ -176,8 +177,8 @@ public class MediaCodecVideoDecoder {
   }
 
   public static void printStackTrace() {
-    if (instance != null && instance.mediaCodecThread != null) {
-      StackTraceElement[] mediaCodecStackTraces = instance.mediaCodecThread.getStackTrace();
+    if (runningInstance != null && runningInstance.mediaCodecThread != null) {
+      StackTraceElement[] mediaCodecStackTraces = runningInstance.mediaCodecThread.getStackTrace();
       if (mediaCodecStackTraces.length > 0) {
         Logging.d(TAG, "MediaCodecVideoDecoder stacks trace:");
         for (StackTraceElement stackTrace : mediaCodecStackTraces) {
@@ -222,6 +223,7 @@ public class MediaCodecVideoDecoder {
     if (sharedContext != null) {
       Logging.d(TAG, "Decoder shared EGL Context: " + sharedContext);
     }
+    runningInstance = this; // Decoder is now running and can be queried for stack traces.
     mediaCodecThread = Thread.currentThread();
     try {
       this.width = width;
@@ -278,7 +280,7 @@ public class MediaCodecVideoDecoder {
     }
     mediaCodec = null;
     mediaCodecThread = null;
-    instance = null;
+    runningInstance = null;
     if (useSurface) {
       surface.release();
       surface = null;
