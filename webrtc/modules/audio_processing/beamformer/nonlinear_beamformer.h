@@ -66,6 +66,7 @@ class NonlinearBeamformer
   typedef ComplexMatrix<float> ComplexMatrixF;
   typedef complex<float> complex_f;
 
+  void InitFrequencyCorrectionRanges();
   void InitInterfAngles();
   void InitDelaySumMasks();
   void InitTargetCovMats();

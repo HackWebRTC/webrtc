@@ -61,11 +61,6 @@ const float kMaskFrequencySmoothAlpha = 0.6f;
 const int kLowMeanStartHz = 200;
 const int kLowMeanEndHz = 400;
 
-// TODO(aluebs): Make the high frequency correction range depend on the target
-// angle.
-const int kHighMeanStartHz = 3000;
-const int kHighMeanEndHz = 5000;
-
 // Range limiter for subtractive terms in the nominator and denominator of the
 // postfilter expression. It handles the scenario mismatch between the true and
 // model sources (target and interference).
@@ -207,25 +202,7 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   chunk_length_ =
       static_cast<size_t>(sample_rate_hz / (1000.f / chunk_size_ms));
   sample_rate_hz_ = sample_rate_hz;
-  low_mean_start_bin_ = Round(kLowMeanStartHz * kFftSize / sample_rate_hz_);
-  low_mean_end_bin_ = Round(kLowMeanEndHz * kFftSize / sample_rate_hz_);
-  high_mean_start_bin_ = Round(kHighMeanStartHz * kFftSize / sample_rate_hz_);
-  high_mean_end_bin_ = Round(kHighMeanEndHz * kFftSize / sample_rate_hz_);
-  // These bin indexes determine the regions over which a mean is taken. This
-  // is applied as a constant value over the adjacent end "frequency correction"
-  // regions.
-  //
-  //             low_mean_start_bin_     high_mean_start_bin_
-  //                   v                         v              constant
-  // |----------------|--------|----------------|-------|----------------|
-  //   constant               ^                        ^
-  //             low_mean_end_bin_       high_mean_end_bin_
-  //
-  RTC_DCHECK_GT(low_mean_start_bin_, 0U);
-  RTC_DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
-  RTC_DCHECK_LT(low_mean_end_bin_, high_mean_end_bin_);
-  RTC_DCHECK_LT(high_mean_start_bin_, high_mean_end_bin_);
-  RTC_DCHECK_LT(high_mean_end_bin_, kNumFreqBins - 1);
+  InitFrequencyCorrectionRanges();
 
   high_pass_postfilter_mask_ = 1.f;
   is_target_present_ = false;
@@ -260,6 +237,37 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
     }
   }
 }
+
+void NonlinearBeamformer::InitFrequencyCorrectionRanges() {
+  const float kAliasingFreqHz =
+      kSpeedOfSoundMeterSeconds /
+      (min_mic_spacing_ * (1.f + std::abs(std::cos(kTargetAngleRadians))));
+  const float kHighMeanStartHz = std::min(0.5f *  kAliasingFreqHz,
+                                          sample_rate_hz_ / 2.f);
+  const float kHighMeanEndHz = std::min(0.75f *  kAliasingFreqHz,
+                                        sample_rate_hz_ / 2.f);
+
+  low_mean_start_bin_ = Round(kLowMeanStartHz * kFftSize / sample_rate_hz_);
+  low_mean_end_bin_ = Round(kLowMeanEndHz * kFftSize / sample_rate_hz_);
+  high_mean_start_bin_ = Round(kHighMeanStartHz * kFftSize / sample_rate_hz_);
+  high_mean_end_bin_ = Round(kHighMeanEndHz * kFftSize / sample_rate_hz_);
+  // These bin indexes determine the regions over which a mean is taken. This
+  // is applied as a constant value over the adjacent end "frequency correction"
+  // regions.
+  //
+  //             low_mean_start_bin_     high_mean_start_bin_
+  //                   v                         v              constant
+  // |----------------|--------|----------------|-------|----------------|
+  //   constant               ^                        ^
+  //             low_mean_end_bin_       high_mean_end_bin_
+  //
+  RTC_DCHECK_GT(low_mean_start_bin_, 0U);
+  RTC_DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
+  RTC_DCHECK_LT(low_mean_end_bin_, high_mean_end_bin_);
+  RTC_DCHECK_LT(high_mean_start_bin_, high_mean_end_bin_);
+  RTC_DCHECK_LT(high_mean_end_bin_, kNumFreqBins - 1);
+}
+
 
 void NonlinearBeamformer::InitInterfAngles() {
   const float kAwayRadians =
