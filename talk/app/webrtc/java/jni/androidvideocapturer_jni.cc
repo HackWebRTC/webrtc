@@ -118,7 +118,7 @@ template <typename... Args>
 void AndroidVideoCapturerJni::AsyncCapturerInvoke(
     const char* method_name,
     void (webrtc::AndroidVideoCapturer::*method)(Args...),
-    Args... args) {
+    typename Identity<Args>::type... args) {
   rtc::CritScope cs(&capturer_lock_);
   if (!invoker_) {
     LOG(LS_WARNING) << method_name << "() called for closed capturer.";

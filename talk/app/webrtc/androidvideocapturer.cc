@@ -211,7 +211,7 @@ void AndroidVideoCapturer::OnCapturerStarted(bool success) {
 }
 
 void AndroidVideoCapturer::OnIncomingFrame(
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer,
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
     int rotation,
     int64_t time_stamp) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());

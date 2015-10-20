@@ -67,9 +67,10 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
 
   // Called from JNI when a new frame has been captured.
   // Argument |buffer| is intentionally by value, for use with rtc::Bind.
-  void OnIncomingFrame(rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer,
-                       int rotation,
-                       int64_t time_stamp);
+  void OnIncomingFrame(
+      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+      int rotation,
+      int64_t time_stamp);
 
   // Called from JNI to request a new video format.
   void OnOutputFormatRequest(int width, int height, int fps);
