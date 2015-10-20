@@ -30,7 +30,6 @@
         'fake_encoder.h',
         'fake_network_pipe.cc',
         'fake_network_pipe.h',
-        'fake_voice_engine.h',
         'frame_generator_capturer.cc',
         'frame_generator_capturer.h',
         'layer_filtering_transport.cc',

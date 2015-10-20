@@ -12,23 +12,18 @@
 #define WEBRTC_AUDIO_AUDIO_RECEIVE_STREAM_H_
 
 #include "webrtc/audio_receive_stream.h"
-#include "webrtc/audio/scoped_voe_interface.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
-#include "webrtc/voice_engine/include/voe_base.h"
 
 namespace webrtc {
 
 class RemoteBitrateEstimator;
-class VoiceEngine;
 
 namespace internal {
 
 class AudioReceiveStream : public webrtc::AudioReceiveStream {
  public:
   AudioReceiveStream(RemoteBitrateEstimator* remote_bitrate_estimator,
-                     const webrtc::AudioReceiveStream::Config& config,
-                     VoiceEngine* voice_engine);
+                     const webrtc::AudioReceiveStream::Config& config);
   ~AudioReceiveStream() override;
 
   // webrtc::ReceiveStream implementation.
@@ -46,12 +41,8 @@ class AudioReceiveStream : public webrtc::AudioReceiveStream {
   const webrtc::AudioReceiveStream::Config& config() const;
 
  private:
-  rtc::ThreadChecker thread_checker_;
   RemoteBitrateEstimator* const remote_bitrate_estimator_;
   const webrtc::AudioReceiveStream::Config config_;
-  VoiceEngine* voice_engine_;
-  // We hold one interface pointer to the VoE to make sure it is kept alive.
-  ScopedVoEInterface<VoEBase> voe_base_;
   rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
 };
 }  // namespace internal

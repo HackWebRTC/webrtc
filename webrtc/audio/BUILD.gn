@@ -14,8 +14,6 @@ source_set("audio") {
     "audio_receive_stream.h",
     "audio_send_stream.cc",
     "audio_send_stream.h",
-    "conversion.h",
-    "scoped_voe_interface.h",
   ]
 
   configs += [ "..:common_config" ]

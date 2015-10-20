@@ -2694,6 +2694,11 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     }
   }
 
+  webrtc::CallStatistics cs;
+  unsigned int ssrc;
+  webrtc::CodecInst codec;
+  unsigned int level;
+
   for (const auto& ch : send_channels_) {
     const int channel = ch.second->channel();
 
@@ -2701,8 +2706,6 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     // remote side told us it got from its RTCP report.
     VoiceSenderInfo sinfo;
 
-    webrtc::CallStatistics cs = {0};
-    unsigned int ssrc = 0;
     if (engine()->voe()->rtp()->GetRTCPStatistics(channel, cs) == -1 ||
         engine()->voe()->rtp()->GetLocalSSRC(channel, ssrc) == -1) {
       continue;
@@ -2723,7 +2726,6 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     sinfo.packets_lost = -1;
     sinfo.ext_seqnum = -1;
     std::vector<webrtc::ReportBlock> receive_blocks;
-    webrtc::CodecInst codec = {0};
     if (engine()->voe()->rtp()->GetRemoteRTCPReportBlocks(
             channel, &receive_blocks) != -1 &&
         engine()->voe()->codec()->GetSendCodec(channel, codec) != -1) {
@@ -2744,7 +2746,6 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     }
 
     // Local speech level.
-    unsigned int level = 0;
     sinfo.audio_level = (engine()->voe()->volume()->
         GetSpeechInputLevelFullRange(level) != -1) ? level : -1;
 
@@ -2765,36 +2766,76 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   }
 
   // Get the SSRC and stats for each receiver.
-  info->receivers.clear();
-  for (const auto& stream : receive_streams_) {
-    webrtc::AudioReceiveStream::Stats stats = stream.second->GetStats();
-    VoiceReceiverInfo rinfo;
-    rinfo.add_ssrc(stats.remote_ssrc);
-    rinfo.bytes_rcvd = stats.bytes_rcvd;
-    rinfo.packets_rcvd = stats.packets_rcvd;
-    rinfo.packets_lost = stats.packets_lost;
-    rinfo.fraction_lost = stats.fraction_lost;
-    rinfo.codec_name = stats.codec_name;
-    rinfo.ext_seqnum = stats.ext_seqnum;
-    rinfo.jitter_ms = stats.jitter_ms;
-    rinfo.jitter_buffer_ms = stats.jitter_buffer_ms;
-    rinfo.jitter_buffer_preferred_ms = stats.jitter_buffer_preferred_ms;
-    rinfo.delay_estimate_ms = stats.delay_estimate_ms;
-    rinfo.audio_level = stats.audio_level;
-    rinfo.expand_rate = stats.expand_rate;
-    rinfo.speech_expand_rate = stats.speech_expand_rate;
-    rinfo.secondary_decoded_rate = stats.secondary_decoded_rate;
-    rinfo.accelerate_rate = stats.accelerate_rate;
-    rinfo.preemptive_expand_rate = stats.preemptive_expand_rate;
-    rinfo.decoding_calls_to_silence_generator =
-        stats.decoding_calls_to_silence_generator;
-    rinfo.decoding_calls_to_neteq = stats.decoding_calls_to_neteq;
-    rinfo.decoding_normal = stats.decoding_normal;
-    rinfo.decoding_plc = stats.decoding_plc;
-    rinfo.decoding_cng = stats.decoding_cng;
-    rinfo.decoding_plc_cng = stats.decoding_plc_cng;
-    rinfo.capture_start_ntp_time_ms = stats.capture_start_ntp_time_ms;
-    info->receivers.push_back(rinfo);
+  for (const auto& ch : receive_channels_) {
+    int ch_id = ch.second->channel();
+    memset(&cs, 0, sizeof(cs));
+    if (engine()->voe()->rtp()->GetRemoteSSRC(ch_id, ssrc) != -1 &&
+        engine()->voe()->rtp()->GetRTCPStatistics(ch_id, cs) != -1 &&
+        engine()->voe()->codec()->GetRecCodec(ch_id, codec) != -1) {
+      VoiceReceiverInfo rinfo;
+      rinfo.add_ssrc(ssrc);
+      rinfo.bytes_rcvd = cs.bytesReceived;
+      rinfo.packets_rcvd = cs.packetsReceived;
+      // The next four fields are from the most recently sent RTCP report.
+      // Convert Q8 to floating point.
+      rinfo.fraction_lost = static_cast<float>(cs.fractionLost) / (1 << 8);
+      rinfo.packets_lost = cs.cumulativeLost;
+      rinfo.ext_seqnum = cs.extendedMax;
+      rinfo.capture_start_ntp_time_ms = cs.capture_start_ntp_time_ms_;
+      if (codec.pltype != -1) {
+        rinfo.codec_name = codec.plname;
+      }
+      // Convert samples to milliseconds.
+      if (codec.plfreq / 1000 > 0) {
+        rinfo.jitter_ms = cs.jitterSamples / (codec.plfreq / 1000);
+      }
+
+      // Get jitter buffer and total delay (alg + jitter + playout) stats.
+      webrtc::NetworkStatistics ns;
+      if (engine()->voe()->neteq() &&
+          engine()->voe()->neteq()->GetNetworkStatistics(
+              ch_id, ns) != -1) {
+        rinfo.jitter_buffer_ms = ns.currentBufferSize;
+        rinfo.jitter_buffer_preferred_ms = ns.preferredBufferSize;
+        rinfo.expand_rate =
+            static_cast<float>(ns.currentExpandRate) / (1 << 14);
+        rinfo.speech_expand_rate =
+            static_cast<float>(ns.currentSpeechExpandRate) / (1 << 14);
+        rinfo.secondary_decoded_rate =
+            static_cast<float>(ns.currentSecondaryDecodedRate) / (1 << 14);
+        rinfo.accelerate_rate =
+            static_cast<float>(ns.currentAccelerateRate) / (1 << 14);
+        rinfo.preemptive_expand_rate =
+            static_cast<float>(ns.currentPreemptiveRate) / (1 << 14);
+      }
+
+      webrtc::AudioDecodingCallStats ds;
+      if (engine()->voe()->neteq() &&
+          engine()->voe()->neteq()->GetDecodingCallStatistics(
+              ch_id, &ds) != -1) {
+        rinfo.decoding_calls_to_silence_generator =
+            ds.calls_to_silence_generator;
+        rinfo.decoding_calls_to_neteq = ds.calls_to_neteq;
+        rinfo.decoding_normal = ds.decoded_normal;
+        rinfo.decoding_plc = ds.decoded_plc;
+        rinfo.decoding_cng = ds.decoded_cng;
+        rinfo.decoding_plc_cng = ds.decoded_plc_cng;
+      }
+
+      if (engine()->voe()->sync()) {
+        int jitter_buffer_delay_ms = 0;
+        int playout_buffer_delay_ms = 0;
+        engine()->voe()->sync()->GetDelayEstimate(
+            ch_id, &jitter_buffer_delay_ms, &playout_buffer_delay_ms);
+        rinfo.delay_estimate_ms = jitter_buffer_delay_ms +
+            playout_buffer_delay_ms;
+      }
+
+      // Get speech level.
+      rinfo.audio_level = (engine()->voe()->volume()->
+          GetSpeechOutputLevelFullRange(ch_id, level) != -1) ? level : -1;
+      info->receivers.push_back(rinfo);
+    }
   }
 
   return true;

@@ -65,6 +65,25 @@ static const int kOpusBandwidthWb = 8000;
 static const int kOpusBandwidthSwb = 12000;
 static const int kOpusBandwidthFb = 20000;
 
+static const webrtc::NetworkStatistics kNetStats = {
+    1,  // uint16_t currentBufferSize;
+    2,  // uint16_t preferredBufferSize;
+    true,  // bool jitterPeaksFound;
+    1234,  // uint16_t currentPacketLossRate;
+    567,   // uint16_t currentDiscardRate;
+    8901,  // uint16_t currentExpandRate;
+    234,  // uint16_t currentSpeechExpandRate;
+    5678, // uint16_t currentPreemptiveRate;
+    9012, // uint16_t currentAccelerateRate;
+    3456, // uint16_t currentSecondaryDecodedRate;
+    7890, // int32_t clockDriftPPM;
+    54,  // meanWaitingTimeMs;
+    32,  // int medianWaitingTimeMs;
+    1,  // int minWaitingTimeMs;
+    98, // int maxWaitingTimeMs;
+    7654,  // int addedSamples;
+};  // These random but non-trivial numbers are used for testing.
+
 #define WEBRTC_CHECK_CHANNEL(channel) \
   if (channels_.find(channel) == channels_.end()) return -1;
 
@@ -162,9 +181,9 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
       public webrtc::VoEBase, public webrtc::VoECodec, public webrtc::VoEDtmf,
-      public webrtc::VoEHardware,
+      public webrtc::VoEHardware, public webrtc::VoENetEqStats,
       public webrtc::VoENetwork, public webrtc::VoERTP_RTCP,
-      public webrtc::VoEVolumeControl {
+      public webrtc::VoEVideoSync, public webrtc::VoEVolumeControl {
  public:
   struct DtmfInfo {
     DtmfInfo()
@@ -508,7 +527,26 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   WEBRTC_STUB(SetBitRate, (int channel, int bitrate_bps));
-  WEBRTC_STUB(GetRecCodec, (int channel, webrtc::CodecInst& codec));
+  WEBRTC_FUNC(GetRecCodec, (int channel, webrtc::CodecInst& codec)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    const Channel* c = channels_[channel];
+    for (std::list<std::string>::const_iterator it_packet = c->packets.begin();
+        it_packet != c->packets.end(); ++it_packet) {
+      int pltype;
+      if (!GetRtpPayloadType(it_packet->data(), it_packet->length(), &pltype)) {
+        continue;
+      }
+      for (std::vector<webrtc::CodecInst>::const_iterator it_codec =
+          c->recv_codecs.begin(); it_codec != c->recv_codecs.end();
+          ++it_codec) {
+        if (it_codec->pltype == pltype) {
+          codec = *it_codec;
+          return 0;
+        }
+      }
+    }
+    return -1;
+  }
   WEBRTC_FUNC(SetRecPayloadType, (int channel,
                                   const webrtc::CodecInst& codec)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -687,6 +725,20 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(EnableBuiltInNS, (bool enable));
   virtual bool BuiltInNSIsAvailable() const { return false; }
 
+  // webrtc::VoENetEqStats
+  WEBRTC_FUNC(GetNetworkStatistics, (int channel,
+                                     webrtc::NetworkStatistics& ns)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    memcpy(&ns, &kNetStats, sizeof(webrtc::NetworkStatistics));
+    return 0;
+  }
+
+  WEBRTC_FUNC_CONST(GetDecodingCallStatistics, (int channel,
+      webrtc::AudioDecodingCallStats*)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    return 0;
+  }
+
   // webrtc::VoENetwork
   WEBRTC_FUNC(RegisterExternalTransport, (int channel,
                                           webrtc::Transport& transport)) {
@@ -834,6 +886,18 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->nack_max_packets = maxNoPackets;
     return 0;
   }
+
+  // webrtc::VoEVideoSync
+  WEBRTC_STUB(GetPlayoutBufferSize, (int& bufferMs));
+  WEBRTC_STUB(GetPlayoutTimestamp, (int channel, unsigned int& timestamp));
+  WEBRTC_STUB(GetRtpRtcp, (int, webrtc::RtpRtcp**, webrtc::RtpReceiver**));
+  WEBRTC_STUB(SetInitTimestamp, (int channel, unsigned int timestamp));
+  WEBRTC_STUB(SetInitSequenceNumber, (int channel, short sequenceNumber));
+  WEBRTC_STUB(SetMinimumPlayoutDelay, (int channel, int delayMs));
+  WEBRTC_STUB(SetInitialPlayoutDelay, (int channel, int delay_ms));
+  WEBRTC_STUB(GetDelayEstimate, (int channel, int* jitter_buffer_delay_ms,
+                                 int* playout_buffer_delay_ms));
+  WEBRTC_STUB_CONST(GetLeastRequiredDelayMs, (int channel));
 
   // webrtc::VoEVolumeControl
   WEBRTC_STUB(SetSpeakerVolume, (unsigned int));
