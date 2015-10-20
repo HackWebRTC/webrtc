@@ -131,6 +131,15 @@ bool ValidSimulcastResolutions(const VideoCodec& codec, int num_streams) {
   }
   return true;
 }
+
+int NumStreamsDisabled(std::vector<bool>& streams) {
+  int num_disabled = 0;
+  for (bool stream : streams) {
+    if (!stream)
+      ++num_disabled;
+  }
+  return num_disabled;
+}
 }  // namespace
 
 const float kTl1MaxTimeToDropFrames = 20.0f;
@@ -951,6 +960,9 @@ void VP8EncoderImpl::PopulateCodecSpecific(
 
 int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
                                          bool only_predicting_from_key_frame) {
+  int bw_resolutions_disabled =
+      (encoders_.size() > 1) ? NumStreamsDisabled(send_stream_) : -1;
+
   int stream_idx = static_cast<int>(encoders_.size()) - 1;
   int result = WEBRTC_VIDEO_CODEC_OK;
   for (size_t encoder_idx = 0; encoder_idx < encoders_.size();
@@ -1018,6 +1030,9 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
         encoded_images_[encoder_idx]
             .adapt_reason_.quality_resolution_downscales =
             quality_scaler_enabled_ ? quality_scaler_.downscale_shift() : -1;
+        // Report once per frame (lowest stream always sent).
+        encoded_images_[encoder_idx].adapt_reason_.bw_resolutions_disabled =
+            (stream_idx == 0) ? bw_resolutions_disabled : -1;
         encoded_complete_callback_->Encoded(encoded_images_[encoder_idx],
                                             &codec_specific, &frag_info);
       } else if (codec_.mode == kScreensharing) {

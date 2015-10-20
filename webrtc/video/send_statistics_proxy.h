@@ -87,8 +87,10 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                             uint32_t ssrc) override;
 
  private:
-  struct SampleCounter {
+  class SampleCounter {
+   public:
     SampleCounter() : sum(0), num_samples(0) {}
+    ~SampleCounter() {}
     void Add(int sample);
     int Avg(int min_required_samples) const;
 
@@ -96,8 +98,10 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     int sum;
     int num_samples;
   };
-  struct BoolSampleCounter {
+  class BoolSampleCounter {
+   public:
     BoolSampleCounter() : sum(0), num_samples(0) {}
+    ~BoolSampleCounter() {}
     void Add(bool sample);
     int Percent(int min_required_samples) const;
     int Permille(int min_required_samples) const;
@@ -136,6 +140,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   BoolSampleCounter key_frame_counter_ GUARDED_BY(crit_);
   BoolSampleCounter quality_limited_frame_counter_ GUARDED_BY(crit_);
   SampleCounter quality_downscales_counter_ GUARDED_BY(crit_);
+  BoolSampleCounter bw_limited_frame_counter_ GUARDED_BY(crit_);
+  SampleCounter bw_resolutions_disabled_counter_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

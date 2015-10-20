@@ -81,6 +81,16 @@ void SendStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.QualityLimitedResolutionDownscales",
                               downscales, 20);
   }
+  int bw_limited = bw_limited_frame_counter_.Percent(kMinRequiredSamples);
+  if (bw_limited != -1) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BandwidthLimitedResolutionInPercent",
+        bw_limited);
+  }
+  int num_disabled = bw_resolutions_disabled_counter_.Avg(kMinRequiredSamples);
+  if (num_disabled != -1) {
+    RTC_HISTOGRAM_ENUMERATION(
+        "WebRTC.Video.BandwidthLimitedResolutionsDisabled", num_disabled, 10);
+  }
 }
 
 void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
@@ -188,6 +198,14 @@ void SendStatisticsProxy::OnSendEncodedImage(
     if (downscaled) {
       quality_downscales_counter_.Add(
           encoded_image.adapt_reason_.quality_resolution_downscales);
+    }
+  }
+  if (encoded_image.adapt_reason_.bw_resolutions_disabled != -1) {
+    bool bw_limited = encoded_image.adapt_reason_.bw_resolutions_disabled > 0;
+    bw_limited_frame_counter_.Add(bw_limited);
+    if (bw_limited) {
+      bw_resolutions_disabled_counter_.Add(
+         encoded_image.adapt_reason_.bw_resolutions_disabled);
     }
   }
 
@@ -299,7 +317,7 @@ void SendStatisticsProxy::SampleCounter::Add(int sample) {
 int SendStatisticsProxy::SampleCounter::Avg(int min_required_samples) const {
   if (num_samples < min_required_samples || num_samples == 0)
     return -1;
-  return sum / num_samples;
+  return (sum + (num_samples / 2)) / num_samples;
 }
 
 void SendStatisticsProxy::BoolSampleCounter::Add(bool sample) {

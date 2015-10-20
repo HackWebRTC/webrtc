@@ -167,6 +167,7 @@ class VideoFrame {
   VideoRotation rotation_;
 };
 
+
 // TODO(pbos): Rename EncodedFrame and reformat this class' members.
 class EncodedImage {
  public:
@@ -176,11 +177,15 @@ class EncodedImage {
 
   struct AdaptReason {
     AdaptReason()
-        : quality_resolution_downscales(-1) {}
+        : quality_resolution_downscales(-1),
+          bw_resolutions_disabled(-1) {}
 
     int quality_resolution_downscales;  // Number of times this frame is down
                                         // scaled in resolution due to quality.
                                         // Or -1 if information is not provided.
+    int bw_resolutions_disabled;  // Number of resolutions that are not sent
+                                  // due to bandwidth for this frame.
+                                  // Or -1 if information is not provided.
   };
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
