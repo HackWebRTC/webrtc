@@ -40,13 +40,14 @@ FakeAudioReceiveStream::FakeAudioReceiveStream(
   RTC_DCHECK(config.voe_channel_id != -1);
 }
 
-webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
-  return webrtc::AudioReceiveStream::Stats();
-}
-
 const webrtc::AudioReceiveStream::Config&
     FakeAudioReceiveStream::GetConfig() const {
   return config_;
+}
+
+void FakeAudioReceiveStream::SetStats(
+    const webrtc::AudioReceiveStream::Stats& stats) {
+  stats_ = stats;
 }
 
 void FakeAudioReceiveStream::IncrementReceivedPackets() {

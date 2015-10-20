@@ -25,6 +25,7 @@
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
+#include "webrtc/test/fake_voice_engine.h"
 #include "webrtc/test/frame_generator_capturer.h"
 
 namespace webrtc {
@@ -130,8 +131,10 @@ class BitrateEstimatorTest : public test::CallTest {
   }
 
   virtual void SetUp() {
-    receiver_call_.reset(Call::Create(Call::Config()));
-    sender_call_.reset(Call::Create(Call::Config()));
+    Call::Config config;
+    config.voice_engine = &fake_voice_engine_;
+    receiver_call_.reset(Call::Create(config));
+    sender_call_.reset(Call::Create(config));
 
     send_transport_.SetReceiver(receiver_call_->Receiver());
     receive_transport_.SetReceiver(sender_call_->Receiver());
@@ -265,6 +268,7 @@ class BitrateEstimatorTest : public test::CallTest {
     test::FakeDecoder fake_decoder_;
   };
 
+  test::FakeVoiceEngine fake_voice_engine_;
   TraceObserver receiver_trace_;
   test::DirectTransport send_transport_;
   test::DirectTransport receive_transport_;

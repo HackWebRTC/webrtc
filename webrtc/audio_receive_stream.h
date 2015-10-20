@@ -26,7 +26,32 @@ class AudioDecoder;
 
 class AudioReceiveStream : public ReceiveStream {
  public:
-  struct Stats {};
+  struct Stats {
+    uint32_t remote_ssrc = 0;
+    int64_t bytes_rcvd = 0;
+    uint32_t packets_rcvd = 0;
+    uint32_t packets_lost = 0;
+    float fraction_lost = 0.0f;
+    std::string codec_name;
+    uint32_t ext_seqnum = 0;
+    uint32_t jitter_ms = 0;
+    uint32_t jitter_buffer_ms = 0;
+    uint32_t jitter_buffer_preferred_ms = 0;
+    uint32_t delay_estimate_ms = 0;
+    int32_t audio_level = -1;
+    float expand_rate = 0.0f;
+    float speech_expand_rate = 0.0f;
+    float secondary_decoded_rate = 0.0f;
+    float accelerate_rate = 0.0f;
+    float preemptive_expand_rate = 0.0f;
+    int32_t decoding_calls_to_silence_generator = 0;
+    int32_t decoding_calls_to_neteq = 0;
+    int32_t decoding_normal = 0;
+    int32_t decoding_plc = 0;
+    int32_t decoding_cng = 0;
+    int32_t decoding_plc_cng = 0;
+    int64_t capture_start_ntp_time_ms = 0;
+  };
 
   struct Config {
     std::string ToString() const;

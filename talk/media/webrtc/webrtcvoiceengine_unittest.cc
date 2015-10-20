@@ -38,27 +38,27 @@
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "talk/session/media/channel.h"
 
-// Tests for the WebRtcVoiceEngine/VoiceChannel code.
-
 using cricket::kRtpAudioLevelHeaderExtension;
 using cricket::kRtpAbsoluteSenderTimeHeaderExtension;
 
-static const cricket::AudioCodec kPcmuCodec(0, "PCMU", 8000, 64000, 1, 0);
-static const cricket::AudioCodec kIsacCodec(103, "ISAC", 16000, 32000, 1, 0);
-static const cricket::AudioCodec kOpusCodec(111, "opus", 48000, 64000, 2, 0);
-static const cricket::AudioCodec kG722CodecVoE(9, "G722", 16000, 64000, 1, 0);
-static const cricket::AudioCodec kG722CodecSdp(9, "G722", 8000, 64000, 1, 0);
-static const cricket::AudioCodec kRedCodec(117, "red", 8000, 0, 1, 0);
-static const cricket::AudioCodec kCn8000Codec(13, "CN", 8000, 0, 1, 0);
-static const cricket::AudioCodec kCn16000Codec(105, "CN", 16000, 0, 1, 0);
-static const cricket::AudioCodec
-    kTelephoneEventCodec(106, "telephone-event", 8000, 0, 1, 0);
-static const cricket::AudioCodec* const kAudioCodecs[] = {
+namespace {
+
+const cricket::AudioCodec kPcmuCodec(0, "PCMU", 8000, 64000, 1, 0);
+const cricket::AudioCodec kIsacCodec(103, "ISAC", 16000, 32000, 1, 0);
+const cricket::AudioCodec kOpusCodec(111, "opus", 48000, 64000, 2, 0);
+const cricket::AudioCodec kG722CodecVoE(9, "G722", 16000, 64000, 1, 0);
+const cricket::AudioCodec kG722CodecSdp(9, "G722", 8000, 64000, 1, 0);
+const cricket::AudioCodec kRedCodec(117, "red", 8000, 0, 1, 0);
+const cricket::AudioCodec kCn8000Codec(13, "CN", 8000, 0, 1, 0);
+const cricket::AudioCodec kCn16000Codec(105, "CN", 16000, 0, 1, 0);
+const cricket::AudioCodec kTelephoneEventCodec(106, "telephone-event", 8000, 0,
+                                               1, 0);
+const cricket::AudioCodec* const kAudioCodecs[] = {
     &kPcmuCodec, &kIsacCodec, &kOpusCodec, &kG722CodecVoE, &kRedCodec,
     &kCn8000Codec, &kCn16000Codec, &kTelephoneEventCodec,
 };
-static uint32_t kSsrc1 = 0x99;
-static uint32_t kSsrc2 = 0x98;
+const uint32_t kSsrc1 = 0x99;
+const uint32_t kSsrc2 = 0x98;
 
 class FakeVoEWrapper : public cricket::VoEWrapper {
  public:
@@ -68,10 +68,8 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
                             engine,  // codec
                             engine,  // dtmf
                             engine,  // hw
-                            engine,  // neteq
                             engine,  // network
                             engine,  // rtp
-                            engine,  // sync
                             engine) {  // volume
   }
 };
@@ -86,6 +84,7 @@ class FakeVoETraceWrapper : public cricket::VoETraceWrapper {
   int SetTraceCallback(webrtc::TraceCallback* callback) override { return 0; }
   unsigned int filter_;
 };
+}  // namespace
 
 class WebRtcVoiceEngineTestFake : public testing::Test {
  public:
@@ -291,6 +290,71 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_TRUE(channel_->SetRecvParameters(parameters));
     EXPECT_EQ(-1, voe_.GetReceiveRtpExtensionId(channel_num, ext));
     EXPECT_EQ(-1, voe_.GetReceiveRtpExtensionId(new_channel_num, ext));
+  }
+
+  const webrtc::AudioReceiveStream::Stats& GetAudioReceiveStreamStats() const {
+    static webrtc::AudioReceiveStream::Stats stats;
+    if (stats.remote_ssrc == 0) {
+      stats.remote_ssrc = 123;
+      stats.bytes_rcvd = 456;
+      stats.packets_rcvd = 768;
+      stats.packets_lost = 101;
+      stats.fraction_lost = 23.45f;
+      stats.codec_name = "codec_name";
+      stats.ext_seqnum = 678;
+      stats.jitter_ms = 901;
+      stats.jitter_buffer_ms = 234;
+      stats.jitter_buffer_preferred_ms = 567;
+      stats.delay_estimate_ms = 890;
+      stats.audio_level = 1234;
+      stats.expand_rate = 5.67f;
+      stats.speech_expand_rate = 8.90f;
+      stats.secondary_decoded_rate = 1.23f;
+      stats.accelerate_rate = 4.56f;
+      stats.preemptive_expand_rate = 7.89f;
+      stats.decoding_calls_to_silence_generator = 012;
+      stats.decoding_calls_to_neteq = 345;
+      stats.decoding_normal = 67890;
+      stats.decoding_plc = 1234;
+      stats.decoding_cng = 5678;
+      stats.decoding_plc_cng = 9012;
+      stats.capture_start_ntp_time_ms = 3456;
+    }
+    return stats;
+  }
+  void SetAudioReceiveStreamStats() {
+    for (auto* s : call_.GetAudioReceiveStreams()) {
+      s->SetStats(GetAudioReceiveStreamStats());
+    }
+  }
+  void VerifyVoiceReceiverInfo(const cricket::VoiceReceiverInfo& info) {
+    const auto& kStats = GetAudioReceiveStreamStats();
+    EXPECT_EQ(info.local_stats.front().ssrc, kStats.remote_ssrc);
+    EXPECT_EQ(info.bytes_rcvd, kStats.bytes_rcvd);
+    EXPECT_EQ(info.packets_rcvd, kStats.packets_rcvd);
+    EXPECT_EQ(info.packets_lost, kStats.packets_lost);
+    EXPECT_EQ(info.fraction_lost, kStats.fraction_lost);
+    EXPECT_EQ(info.codec_name, kStats.codec_name);
+    EXPECT_EQ(info.ext_seqnum, kStats.ext_seqnum);
+    EXPECT_EQ(info.jitter_ms, kStats.jitter_ms);
+    EXPECT_EQ(info.jitter_buffer_ms, kStats.jitter_buffer_ms);
+    EXPECT_EQ(info.jitter_buffer_preferred_ms,
+              kStats.jitter_buffer_preferred_ms);
+    EXPECT_EQ(info.delay_estimate_ms, kStats.delay_estimate_ms);
+    EXPECT_EQ(info.audio_level, kStats.audio_level);
+    EXPECT_EQ(info.expand_rate, kStats.expand_rate);
+    EXPECT_EQ(info.speech_expand_rate, kStats.speech_expand_rate);
+    EXPECT_EQ(info.secondary_decoded_rate, kStats.secondary_decoded_rate);
+    EXPECT_EQ(info.accelerate_rate, kStats.accelerate_rate);
+    EXPECT_EQ(info.preemptive_expand_rate, kStats.preemptive_expand_rate);
+    EXPECT_EQ(info.decoding_calls_to_silence_generator,
+              kStats.decoding_calls_to_silence_generator);
+    EXPECT_EQ(info.decoding_calls_to_neteq, kStats.decoding_calls_to_neteq);
+    EXPECT_EQ(info.decoding_normal, kStats.decoding_normal);
+    EXPECT_EQ(info.decoding_plc, kStats.decoding_plc);
+    EXPECT_EQ(info.decoding_cng, kStats.decoding_cng);
+    EXPECT_EQ(info.decoding_plc_cng, kStats.decoding_plc_cng);
+    EXPECT_EQ(info.capture_start_ntp_time_ms, kStats.capture_start_ntp_time_ms);
   }
 
  protected:
@@ -2008,38 +2072,23 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     EXPECT_EQ(cricket::kIntStatValue, info.senders[i].jitter_ms);
     EXPECT_EQ(kPcmuCodec.name, info.senders[i].codec_name);
   }
-  EXPECT_EQ(0u, info.receivers.size());
 
-  // Registered stream's remote SSRC is kSsrc2. Send a packet with SSRC=1.
-  // We should drop the packet and no stats should be available.
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  // We have added one receive stream. We should see empty stats.
+  EXPECT_EQ(info.receivers.size(), 1u);
+  EXPECT_EQ(info.receivers[0].local_stats.front().ssrc, 0);
+
+  // Remove the kSsrc2 stream. No receiver stats.
+  EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc2));
   EXPECT_EQ(true, channel_->GetStats(&info));
   EXPECT_EQ(0u, info.receivers.size());
 
-  // Remove the kSsrc2 stream and deliver a new packet - a default receive
-  // stream should be created and we should see stats.
-  EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc2));
+  // Deliver a new packet - a default receive stream should be created and we
+  // should see stats again.
   DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  SetAudioReceiveStreamStats();
   EXPECT_EQ(true, channel_->GetStats(&info));
   EXPECT_EQ(1u, info.receivers.size());
-
-  EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].bytes_rcvd);
-  EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].packets_rcvd);
-  EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].packets_lost);
-  EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].ext_seqnum);
-  EXPECT_EQ(kPcmuCodec.name, info.receivers[0].codec_name);
-  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentExpandRate) /
-      (1 << 14), info.receivers[0].expand_rate);
-  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSpeechExpandRate) /
-      (1 << 14), info.receivers[0].speech_expand_rate);
-  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSecondaryDecodedRate) /
-      (1 << 14), info.receivers[0].secondary_decoded_rate);
-  EXPECT_EQ(
-      static_cast<float>(cricket::kNetStats.currentAccelerateRate) / (1 << 14),
-      info.receivers[0].accelerate_rate);
-  EXPECT_EQ(
-      static_cast<float>(cricket::kNetStats.currentPreemptiveRate) / (1 << 14),
-      info.receivers[0].preemptive_expand_rate);
+  VerifyVoiceReceiverInfo(info.receivers[0]);
 }
 
 // Test that we can add and remove receive streams, and do proper send/playout.
@@ -2300,33 +2349,22 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStats) {
   // EXPECT_EQ(cricket::kIntStatValue, info.senders[0].echo_return_loss);
   // EXPECT_EQ(cricket::kIntStatValue,
   //           info.senders[0].echo_return_loss_enhancement);
-  EXPECT_EQ(0u, info.receivers.size());
+  // We have added one receive stream. We should see empty stats.
+  EXPECT_EQ(info.receivers.size(), 1u);
+  EXPECT_EQ(info.receivers[0].local_stats.front().ssrc, 0);
 
-  // Registered stream's remote SSRC is kSsrc2. Send a packet with SSRC=1.
-  // We should drop the packet and no stats should be available.
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  // Remove the kSsrc2 stream. No receiver stats.
+  EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc2));
   EXPECT_EQ(true, channel_->GetStats(&info));
   EXPECT_EQ(0u, info.receivers.size());
 
-  // Remove the kSsrc2 stream and deliver a new packet - a default receive
-  // stream should be created and we should see stats.
-  EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc2));
+  // Deliver a new packet - a default receive stream should be created and we
+  // should see stats again.
   DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  SetAudioReceiveStreamStats();
   EXPECT_EQ(true, channel_->GetStats(&info));
   EXPECT_EQ(1u, info.receivers.size());
-
-  EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].bytes_rcvd);
-  EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].packets_rcvd);
-  EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].packets_lost);
-  EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].ext_seqnum);
-  EXPECT_EQ(kPcmuCodec.name, info.receivers[0].codec_name);
-  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentExpandRate) /
-      (1 << 14), info.receivers[0].expand_rate);
-  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSpeechExpandRate) /
-      (1 << 14), info.receivers[0].speech_expand_rate);
-  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSecondaryDecodedRate) /
-      (1 << 14), info.receivers[0].secondary_decoded_rate);
-  // TODO(sriniv): Add testing for more receiver fields.
+  VerifyVoiceReceiverInfo(info.receivers[0]);
 }
 
 // Test that we can set the outgoing SSRC properly with multiple streams.
