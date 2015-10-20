@@ -82,6 +82,11 @@ char kTSanDefaultSuppressions[] =
 // https://code.google.com/p/webrtc/issues/detail?id=4719
 "race:webrtc::voe::TransmitMixer::PrepareDemux\n"
 "race:webrtc::voe::TransmitMixer::EnableStereoChannelSwapping\n"
+
+// Race between InitCpuFlags and TestCpuFlag in libyuv.
+// https://code.google.com/p/libyuv/issues/detail?id=508
+"race:libyuv::TestCpuFlag\n"
+
 // End of suppressions.
 ;  // Please keep this semicolon.
 
