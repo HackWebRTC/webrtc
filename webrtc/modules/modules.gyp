@@ -168,6 +168,7 @@
             # 'audio_processing/agc/agc_unittest.cc',
             'audio_processing/agc/histogram_unittest.cc',
             'audio_processing/agc/mock_agc.h',
+            'audio_processing/beamformer/array_util_unittest.cc',
             'audio_processing/beamformer/complex_matrix_unittest.cc',
             'audio_processing/beamformer/covariance_matrix_generator_unittest.cc',
             'audio_processing/beamformer/matrix_unittest.cc',

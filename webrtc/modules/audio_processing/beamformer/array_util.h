@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_ARRAY_UTIL_H_
 
 #include <cmath>
+#include <vector>
 
 namespace webrtc {
 
@@ -30,6 +31,10 @@ struct CartesianPoint {
 };
 
 using Point = CartesianPoint<float>;
+
+// Returns the minimum distance between any two Points in the given
+// |array_geometry|.
+float GetMinimumSpacing(const std::vector<Point>& array_geometry);
 
 template<typename T>
 float Distance(CartesianPoint<T> a, CartesianPoint<T> b) {

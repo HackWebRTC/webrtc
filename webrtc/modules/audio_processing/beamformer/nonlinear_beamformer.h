@@ -116,6 +116,9 @@ class NonlinearBeamformer
 
   const std::vector<Point> array_geometry_;
 
+  // Minimum spacing between microphone pairs.
+  const float min_mic_spacing_;
+
   // Calculated based on user-input and constants in the .cc file.
   size_t low_mean_start_bin_;
   size_t low_mean_end_bin_;

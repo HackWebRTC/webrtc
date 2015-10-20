@@ -36,6 +36,14 @@ const float kSpeedOfSoundMeterSeconds = 343;
 // TODO(aluebs): Make the target angle dynamically settable.
 const float kTargetAngleRadians = static_cast<float>(M_PI) / 2.f;
 
+// The minimum separation in radians between the target direction and an
+// interferer scenario.
+const float kMinAwayRadians = 0.2f;
+
+// The separation between the target direction and the closest interferer
+// scenario is proportional to this constant.
+const float kAwaySlope = 0.008f;
+
 // When calculating the interference covariance matrix, this is the weight for
 // the weighted average between the uniform covariance matrix and the angled
 // covariance matrix.
@@ -189,8 +197,9 @@ const size_t NonlinearBeamformer::kNumFreqBins;
 
 NonlinearBeamformer::NonlinearBeamformer(
     const std::vector<Point>& array_geometry)
-  : num_input_channels_(array_geometry.size()),
-      array_geometry_(GetCenteredArray(array_geometry)) {
+    : num_input_channels_(array_geometry.size()),
+      array_geometry_(GetCenteredArray(array_geometry)),
+      min_mic_spacing_(GetMinimumSpacing(array_geometry)) {
   WindowGenerator::KaiserBesselDerived(kKbdAlpha, kFftSize, window_);
 }
 
@@ -253,8 +262,10 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
 }
 
 void NonlinearBeamformer::InitInterfAngles() {
-  // TODO(aluebs): Make kAwayRadians dependent on the mic spacing.
-  const float kAwayRadians = 0.5;
+  const float kAwayRadians =
+      std::min(static_cast<float>(M_PI),
+               std::max(kMinAwayRadians, kAwaySlope * static_cast<float>(M_PI) /
+                                             min_mic_spacing_));
 
   interf_angles_radians_.clear();
   // TODO(aluebs): When the target angle is settable, make sure the interferer
