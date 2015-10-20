@@ -169,7 +169,6 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   channel_group_->GetCallStats()->RegisterStatsObserver(
       vie_channel_->GetStatsObserver());
 
-
   // TODO(pbos): This is not fine grained enough...
   vie_channel_->SetProtectionMode(config_.rtp.nack.rtp_history_ms > 0, false,
                                   -1, -1);

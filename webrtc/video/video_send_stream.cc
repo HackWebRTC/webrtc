@@ -154,6 +154,9 @@ VideoSendStream::VideoSendStream(
       channel_group_->packet_router(), ssrcs.size(), true));
   RTC_CHECK(vie_channel_->Init() == 0);
 
+  channel_group_->GetCallStats()->RegisterStatsObserver(
+      vie_channel_->GetStatsObserver());
+
   vie_encoder_->StartThreadsAndSetSharedMembers(
       vie_channel_->send_payload_router(),
       vie_channel_->vcm_protection_callback());
