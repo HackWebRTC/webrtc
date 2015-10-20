@@ -115,9 +115,6 @@ class WebRtcVoiceEngine
   // Stops recording the RtcEventLog.
   void StopRtcEventLog();
 
-  // Create a VoiceEngine Channel.
-  int CreateMediaVoiceChannel();
-
  private:
   void Construct();
   void ConstructCodecs();
@@ -143,7 +140,7 @@ class WebRtcVoiceEngine
 
   void StartAecDump(const std::string& filename);
   void StopAecDump();
-  int CreateVoiceChannel(VoEWrapper* voe);
+  int CreateVoEChannel();
 
   static const int kDefaultLogSeverity = rtc::LS_WARNING;
 
@@ -187,8 +184,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                           webrtc::Call* call);
   ~WebRtcVoiceMediaChannel() override;
 
-  int default_send_channel_id() const { return default_send_channel_id_; }
-  bool valid() const { return default_send_channel_id_ != -1; }
   const AudioOptions& options() const { return options_; }
 
   bool SetSendParameters(const AudioSendParameters& params) override;
@@ -267,7 +262,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool GetRedSendCodec(const AudioCodec& red_codec,
                        const std::vector<AudioCodec>& all_codecs,
                        webrtc::CodecInst* send_codec);
-  bool EnableRtcp(int channel);
   bool SetPlayout(int channel, bool playout);
   static Error WebRtcErrorToChannelError(int err_code);
 
@@ -280,18 +274,13 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
       unsigned char);
 
   void SetNack(int channel, bool nack_enabled);
-  void SetNack(const ChannelMap& channels, bool nack_enabled);
-  bool SetSendCodec(const webrtc::CodecInst& send_codec);
   bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
   bool ChangePlayout(bool playout);
   bool ChangeSend(SendFlags send);
   bool ChangeSend(int channel, SendFlags send);
-  void ConfigureSendChannel(int channel);
   bool ConfigureRecvChannel(int channel);
+  int CreateVoEChannel();
   bool DeleteChannel(int channel);
-  bool IsDefaultChannel(int channel_id) const {
-    return channel_id == default_send_channel_id_;
-  }
   bool IsDefaultRecvStream(uint32_t ssrc) {
     return default_recv_ssrc_ == static_cast<int64_t>(ssrc);
   }
@@ -315,7 +304,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   rtc::ThreadChecker thread_checker_;
 
   WebRtcVoiceEngine* const engine_;
-  const int default_send_channel_id_;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   rtc::scoped_ptr<webrtc::CodecInst> send_codec_;
@@ -335,6 +323,9 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   int64_t default_recv_ssrc_ = -1;
   // Volume for unsignalled stream, which may be set before the stream exists.
   double default_recv_volume_ = 1.0;
+  // SSRC to use for RTCP receiver reports; default to 1 in case of no signaled
+  // send streams. See: https://code.google.com/p/webrtc/issues/detail?id=4740
+  uint32_t receiver_reports_ssrc_ = 1;
 
   // send_channels_ contains the channels which are being used for sending.
   // When the default channel (default_send_channel_id) is used for sending, it

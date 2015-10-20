@@ -122,15 +122,15 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   }
   void SetupForMultiSendStream() {
     EXPECT_TRUE(SetupEngineWithSendStream());
-    // Remove stream added in Setup, which is corresponding to default channel.
+    // Remove stream added in Setup.
     int default_channel_num = voe_.GetLastChannel();
     uint32_t default_send_ssrc = 0u;
     EXPECT_EQ(0, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
     EXPECT_EQ(kSsrc1, default_send_ssrc);
     EXPECT_TRUE(channel_->RemoveSendStream(default_send_ssrc));
 
-    // Verify the default channel still exists.
-    EXPECT_EQ(0, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
+    // Verify the channel does not exist.
+    EXPECT_EQ(-1, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
   }
   void DeliverPacket(const void* data, int len) {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len);
@@ -146,12 +146,11 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
     EXPECT_TRUE(channel_ != nullptr);
     if (caller) {
-      // if this is a caller, local description will be applied and add the
+      // If this is a caller, local description will be applied and add the
       // send stream.
       EXPECT_TRUE(channel_->AddSendStream(
           cricket::StreamParams::CreateLegacy(kSsrc1)));
     }
-    int channel_id = voe_.GetLastChannel();
 
     // Test we can only InsertDtmf when the other side supports telephone-event.
     EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
@@ -163,7 +162,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_TRUE(channel_->CanInsertDtmf());
 
     if (!caller) {
-      // There's no active send channel yet.
+      // If this is callee, there's no active send channel yet.
       EXPECT_FALSE(channel_->InsertDtmf(ssrc, 2, 123, cricket::DF_SEND));
       EXPECT_TRUE(channel_->AddSendStream(
           cricket::StreamParams::CreateLegacy(kSsrc1)));
@@ -173,6 +172,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_FALSE(channel_->InsertDtmf(-1, 1, 111, cricket::DF_SEND));
 
     // Test send
+    int channel_id = voe_.GetLastChannel();
     EXPECT_FALSE(voe_.WasSendTelephoneEventCalled(channel_id, 2, 123));
     EXPECT_TRUE(channel_->InsertDtmf(ssrc, 2, 123, cricket::DF_SEND));
     EXPECT_TRUE(voe_.WasSendTelephoneEventCalled(channel_id, 2, 123));
@@ -212,7 +212,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   }
 
   void TestSetSendRtpHeaderExtensions(const std::string& ext) {
-    EXPECT_TRUE(SetupEngine());
+    EXPECT_TRUE(SetupEngineWithSendStream());
     int channel_num = voe_.GetLastChannel();
 
     // Ensure extensions are off by default.
@@ -235,12 +235,9 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
     EXPECT_EQ(id, voe_.GetSendRtpExtensionId(channel_num, ext));
 
-    // Ensure extension is set properly on new channel.
-    // The first stream to occupy the default channel.
+    // Ensure extension is set properly on new channels.
     EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(123)));
-    EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(234)));
+        cricket::StreamParams::CreateLegacy(kSsrc2)));
     int new_channel_num = voe_.GetLastChannel();
     EXPECT_NE(channel_num, new_channel_num);
     EXPECT_EQ(id, voe_.GetSendRtpExtensionId(new_channel_num, ext));
@@ -319,14 +316,6 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateChannel) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
   channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
-}
-
-// Tests that we properly handle failures in CreateChannel.
-TEST_F(WebRtcVoiceEngineTestFake, CreateChannelFail) {
-  voe_.set_fail_create_channel(true);
-  EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
-  EXPECT_TRUE(channel_ == nullptr);
 }
 
 // Tests that the list of supported codecs is created properly and ordered
@@ -998,7 +987,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCaller) {
 
 // Test that we can enable NACK with opus as callee.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCallee) {
-  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(SetupEngineWithRecvStream());
   int channel_num = voe_.GetLastChannel();
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kOpusCodec);
@@ -1011,7 +1000,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCallee) {
 
   EXPECT_TRUE(channel_->AddSendStream(
       cricket::StreamParams::CreateLegacy(kSsrc1)));
-  EXPECT_TRUE(voe_.GetNACK(channel_num));
+  EXPECT_TRUE(voe_.GetNACK(voe_.GetLastChannel()));
 }
 
 // Test that we can enable NACK on receive streams.
@@ -1581,7 +1570,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 
-  int channel_num = voe_.GetLastChannel();
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kPcmuCodec);
@@ -1596,6 +1584,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   EXPECT_TRUE(channel_->AddSendStream(
       cricket::StreamParams::CreateLegacy(kSsrc1)));
+  int channel_num = voe_.GetLastChannel();
 
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
@@ -1698,7 +1687,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCallee) {
   channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 
-  int channel_num = voe_.GetLastChannel();
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kRedCodec);
   parameters.codecs.push_back(kIsacCodec);
@@ -1709,6 +1697,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCallee) {
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   EXPECT_TRUE(channel_->AddSendStream(
       cricket::StreamParams::CreateLegacy(kSsrc1)));
+  int channel_num = voe_.GetLastChannel();
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_EQ(96, gcodec.pltype);
@@ -1892,8 +1881,6 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateAndDeleteMultipleSendStreams) {
   EXPECT_TRUE(channel_->RemoveSendStream(kSsrcs4[0]));
   // Stream should already be Removed from the send stream list.
   EXPECT_FALSE(channel_->RemoveSendStream(kSsrcs4[0]));
-  // But the default still exists.
-  EXPECT_EQ(0, voe_.GetChannelFromLocalSsrc(kSsrcs4[0]));
 
   // Delete the rest of send channel streams.
   for (unsigned int i = 1; i < ARRAY_SIZE(kSsrcs4); ++i) {
@@ -2416,12 +2403,18 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvWithMultipleStreams) {
   EXPECT_TRUE(channel_->RemoveRecvStream(1));
 }
 
-// Test that we properly handle failures to add a stream.
-TEST_F(WebRtcVoiceEngineTestFake, AddStreamFail) {
-  EXPECT_TRUE(SetupEngineWithSendStream());
+// Test that we properly handle failures to add a receive stream.
+TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamFail) {
+  EXPECT_TRUE(SetupEngine());
   voe_.set_fail_create_channel(true);
-  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   EXPECT_FALSE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
+}
+
+// Test that we properly handle failures to add a send stream.
+TEST_F(WebRtcVoiceEngineTestFake, AddSendStreamFail) {
+  EXPECT_TRUE(SetupEngine());
+  voe_.set_fail_create_channel(true);
+  EXPECT_FALSE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(2)));
 }
 
 // Test that AddRecvStream creates new stream.
@@ -3078,9 +3071,9 @@ TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   EXPECT_EQ(2, s->received_packets());
 }
 
-// All receive channels should be associated with the default send channel,
+// All receive channels should be associated with the first send channel,
 // since they do not send RTCP SR.
-TEST_F(WebRtcVoiceEngineTestFake, AssociateDefaultChannelOnConference) {
+TEST_F(WebRtcVoiceEngineTestFake, AssociateFirstSendChannel) {
   EXPECT_TRUE(SetupEngineWithSendStream());
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   int default_channel = voe_.GetLastChannel();
