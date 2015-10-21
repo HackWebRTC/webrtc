@@ -2816,15 +2816,18 @@ void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
 
   const uint32_t kSenderSsrc = 0xC0FFEE;
+  const uint32_t kSecondSenderSsrc = 0xBADCAFE;
   const uint32_t kReceiverSsrc = 0x4711;
+  const uint32_t kExpectedDefaultReceiverSsrc = 1;
 
   if (receiver_first) {
     AddRecvStream(StreamParams::CreateLegacy(kReceiverSsrc));
     std::vector<FakeVideoReceiveStream*> receive_streams =
         fake_call_->GetVideoReceiveStreams();
     ASSERT_EQ(1u, receive_streams.size());
-    // Bogus local SSRC when we have no sender.
-    EXPECT_EQ(1, receive_streams[0]->GetConfig().rtp.local_ssrc);
+    // Default local SSRC when we have no sender.
+    EXPECT_EQ(kExpectedDefaultReceiverSsrc,
+              receive_streams[0]->GetConfig().rtp.local_ssrc);
   }
   AddSendStream(StreamParams::CreateLegacy(kSenderSsrc));
   if (!receiver_first)
@@ -2833,6 +2836,23 @@ void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(
       fake_call_->GetVideoReceiveStreams();
   ASSERT_EQ(1u, receive_streams.size());
   EXPECT_EQ(kSenderSsrc, receive_streams[0]->GetConfig().rtp.local_ssrc);
+
+  // Removing first sender should fall back to another (in this case the second)
+  // local send stream's SSRC.
+  AddSendStream(StreamParams::CreateLegacy(kSecondSenderSsrc));
+  ASSERT_TRUE(channel_->RemoveSendStream(kSenderSsrc));
+  receive_streams =
+      fake_call_->GetVideoReceiveStreams();
+  ASSERT_EQ(1u, receive_streams.size());
+  EXPECT_EQ(kSecondSenderSsrc, receive_streams[0]->GetConfig().rtp.local_ssrc);
+
+  // Removing the last sender should fall back to default local SSRC.
+  ASSERT_TRUE(channel_->RemoveSendStream(kSecondSenderSsrc));
+  receive_streams =
+      fake_call_->GetVideoReceiveStreams();
+  ASSERT_EQ(1u, receive_streams.size());
+  EXPECT_EQ(kExpectedDefaultReceiverSsrc,
+            receive_streams[0]->GetConfig().rtp.local_ssrc);
 }
 
 TEST_F(WebRtcVideoChannel2Test, ConfiguresLocalSsrc) {

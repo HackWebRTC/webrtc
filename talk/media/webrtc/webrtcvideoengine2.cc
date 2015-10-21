@@ -1146,6 +1146,19 @@ bool WebRtcVideoChannel2::RemoveSendStream(uint32_t ssrc) {
 
     removed_stream = it->second;
     send_streams_.erase(it);
+
+    // Switch receiver report SSRCs, the one in use is no longer valid.
+    if (rtcp_receiver_report_ssrc_ == ssrc) {
+      rtcp_receiver_report_ssrc_ = send_streams_.empty()
+                                       ? kDefaultRtcpReceiverReportSsrc
+                                       : send_streams_.begin()->first;
+      LOG(LS_INFO) << "SetLocalSsrc on all the receive streams because the "
+                      "previous local SSRC was removed.";
+
+      for (auto& kv : receive_streams_) {
+        kv.second->SetLocalSsrc(rtcp_receiver_report_ssrc_);
+      }
+    }
   }
 
   delete removed_stream;
