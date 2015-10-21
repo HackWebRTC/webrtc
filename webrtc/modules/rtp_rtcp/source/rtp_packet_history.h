@@ -46,13 +46,12 @@ class RTPPacketHistory {
   // The packet is copied to the buffer pointed to by ptr_rtp_packet.
   // The rtp_packet_length should show the available buffer size.
   // Returns true if packet is found.
-  // rtp_packet_length: returns the copied packet length on success.
+  // packet_length: returns the copied packet length on success.
   // min_elapsed_time_ms: the minimum time that must have elapsed since the last
   // time the packet was resent (parameter is ignored if set to zero).
-  // If the packet is found but the minimum time has not elaped, no bytes are
+  // If the packet is found but the minimum time has not elapsed, no bytes are
   // copied.
   // stored_time_ms: returns the time when the packet was stored.
-  // type: returns the storage type set in PutRTPPacket.
   bool GetPacketAndSetSendTime(uint16_t sequence_number,
                                int64_t min_elapsed_time_ms,
                                bool retransmit,
@@ -94,6 +93,7 @@ class RTPPacketHistory {
     int64_t time_ms = 0;
     int64_t send_time = 0;
     StorageType storage_type = kDontRetransmit;
+    bool has_been_retransmitted = false;
 
     uint8_t data[IP_PACKET_SIZE];
     size_t length = 0;

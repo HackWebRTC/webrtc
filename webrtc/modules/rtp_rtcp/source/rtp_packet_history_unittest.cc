@@ -161,6 +161,8 @@ TEST_F(RtpPacketHistoryTest, DontRetransmit) {
 }
 
 TEST_F(RtpPacketHistoryTest, MinResendTime) {
+  static const int64_t kMinRetransmitIntervalMs = 100;
+
   hist_->SetStorePacketsStatus(true, 10);
   size_t len = 0;
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
@@ -168,22 +170,57 @@ TEST_F(RtpPacketHistoryTest, MinResendTime) {
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
                                    kAllowRetransmission));
 
+  // First transmission: TimeToSendPacket() call from pacer.
   int64_t time;
   len = kMaxPacketLength;
-  EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum, 100, false, packet_, &len,
-                                             &time));
-  fake_clock_.AdvanceTimeMilliseconds(100);
+  EXPECT_TRUE(
+      hist_->GetPacketAndSetSendTime(kSeqNum, 0, false, packet_, &len, &time));
+
+  fake_clock_.AdvanceTimeMilliseconds(kMinRetransmitIntervalMs);
   // Time has elapsed.
   len = kMaxPacketLength;
-  EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum, 100, false, packet_, &len,
-                                             &time));
+  EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum, kMinRetransmitIntervalMs,
+                                             true, packet_, &len, &time));
   EXPECT_GT(len, 0u);
   EXPECT_EQ(capture_time_ms, time);
 
+  fake_clock_.AdvanceTimeMilliseconds(kMinRetransmitIntervalMs - 1);
   // Time has not elapsed. Packet should be found, but no bytes copied.
   len = kMaxPacketLength;
-  EXPECT_FALSE(hist_->GetPacketAndSetSendTime(kSeqNum, 101, false, packet_,
-                                              &len, &time));
+  EXPECT_FALSE(hist_->GetPacketAndSetSendTime(kSeqNum, kMinRetransmitIntervalMs,
+                                              true, packet_, &len, &time));
+}
+
+TEST_F(RtpPacketHistoryTest, EarlyFirstResend) {
+  static const int64_t kMinRetransmitIntervalMs = 100;
+
+  hist_->SetStorePacketsStatus(true, 10);
+  size_t len = 0;
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+  CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
+  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, capture_time_ms,
+                                   kAllowRetransmission));
+
+  // First transmission: TimeToSendPacket() call from pacer.
+  int64_t time;
+  len = kMaxPacketLength;
+  EXPECT_TRUE(
+      hist_->GetPacketAndSetSendTime(kSeqNum, 0, false, packet_, &len, &time));
+
+  fake_clock_.AdvanceTimeMilliseconds(kMinRetransmitIntervalMs - 1);
+  // Time has not elapsed, but this is the first retransmission request so
+  // allow anyway.
+  len = kMaxPacketLength;
+  EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum, kMinRetransmitIntervalMs,
+                                             true, packet_, &len, &time));
+  EXPECT_GT(len, 0u);
+  EXPECT_EQ(capture_time_ms, time);
+
+  fake_clock_.AdvanceTimeMilliseconds(kMinRetransmitIntervalMs - 1);
+  // Time has not elapsed. Packet should be found, but no bytes copied.
+  len = kMaxPacketLength;
+  EXPECT_FALSE(hist_->GetPacketAndSetSendTime(kSeqNum, kMinRetransmitIntervalMs,
+                                              true, packet_, &len, &time));
 }
 
 TEST_F(RtpPacketHistoryTest, DynamicExpansion) {

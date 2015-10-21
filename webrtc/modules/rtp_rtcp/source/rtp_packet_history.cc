@@ -16,6 +16,7 @@
 #include <limits>
 #include <set>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -118,6 +119,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
       (capture_time_ms > 0) ? capture_time_ms : clock_->TimeInMilliseconds();
   stored_packets_[prev_index_].send_time = 0;  // Packet not sent.
   stored_packets_[prev_index_].storage_type = type;
+  stored_packets_[prev_index_].has_been_retransmitted = false;
 
   ++prev_index_;
   if (prev_index_ >= stored_packets_.size()) {
@@ -173,10 +175,9 @@ bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
                                                size_t* packet_length,
                                                int64_t* stored_time_ms) {
   CriticalSectionScoped cs(critsect_.get());
-  assert(*packet_length >= IP_PACKET_SIZE);
-  if (!store_) {
+  RTC_CHECK_GE(*packet_length, static_cast<size_t>(IP_PACKET_SIZE));
+  if (!store_)
     return false;
-  }
 
   int32_t index = 0;
   bool found = FindSeqNum(sequence_number, &index);
@@ -193,17 +194,22 @@ bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
     return false;
   }
 
-  // Verify elapsed time since last retrieve.
+  // Verify elapsed time since last retrieve, but only for retransmissions and
+  // always send packet upon first retransmission request.
   int64_t now = clock_->TimeInMilliseconds();
-  if (min_elapsed_time_ms > 0 &&
+  if (min_elapsed_time_ms > 0 && retransmit &&
+      stored_packets_[index].has_been_retransmitted &&
       ((now - stored_packets_[index].send_time) < min_elapsed_time_ms)) {
     return false;
   }
 
-  if (retransmit && stored_packets_[index].storage_type == kDontRetransmit) {
-    // No bytes copied since this packet shouldn't be retransmitted or is
-    // of zero size.
-    return false;
+  if (retransmit) {
+    if (stored_packets_[index].storage_type == kDontRetransmit) {
+      // No bytes copied since this packet shouldn't be retransmitted or is
+      // of zero size.
+      return false;
+    }
+    stored_packets_[index].has_been_retransmitted = true;
   }
   stored_packets_[index].send_time = clock_->TimeInMilliseconds();
   GetPacket(index, packet, packet_length, stored_time_ms);
