@@ -13,9 +13,9 @@
 #include <assert.h> //assert
 #include <string.h> //memcpy
 
+#include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 

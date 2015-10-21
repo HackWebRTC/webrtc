@@ -49,7 +49,6 @@
         'interface/tick_util.h',
         'interface/timestamp_extrapolator.h',
         'interface/trace.h',
-        'interface/trace_event.h',
         'interface/utf_util_win.h',
         'source/aligned_malloc.cc',
         'source/atomic32_mac.cc',

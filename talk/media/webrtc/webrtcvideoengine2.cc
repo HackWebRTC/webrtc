@@ -43,11 +43,11 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/system_wrappers/interface/field_trial.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 
