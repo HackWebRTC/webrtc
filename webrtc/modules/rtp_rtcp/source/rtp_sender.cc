@@ -26,8 +26,9 @@
 namespace webrtc {
 
 // Max in the RFC 3550 is 255 bytes, we limit it to be modulus 32 for SRTP.
-const size_t kMaxPaddingLength = 224;
-const int kSendSideDelayWindowMs = 1000;
+static const size_t kMaxPaddingLength = 224;
+static const int kSendSideDelayWindowMs = 1000;
+static const uint32_t kAbsSendTimeFraction = 18;
 
 namespace {
 
@@ -45,6 +46,16 @@ const char* FrameTypeToString(FrameType frame_type) {
   return "";
 }
 
+// TODO(holmer): Merge this with the implementation in
+// remote_bitrate_estimator_abs_send_time.cc.
+uint32_t ConvertMsTo24Bits(int64_t time_ms) {
+  uint32_t time_24_bits =
+      static_cast<uint32_t>(
+          ((static_cast<uint64_t>(time_ms) << kAbsSendTimeFraction) + 500) /
+          1000) &
+      0x00FFFFFF;
+  return time_24_bits;
+}
 }  // namespace
 
 class BitrateAggregator {
@@ -1596,7 +1607,7 @@ void RTPSender::UpdateAbsoluteSendTime(uint8_t* rtp_packet,
   // Update absolute send time field (convert ms to 24-bit unsigned with 18 bit
   // fractional part).
   ByteWriter<uint32_t, 3>::WriteBigEndian(rtp_packet + offset + 1,
-                                          ((now_ms << 18) / 1000) & 0x00ffffff);
+                                          ConvertMsTo24Bits(now_ms));
 }
 
 uint16_t RTPSender::UpdateTransportSequenceNumber(

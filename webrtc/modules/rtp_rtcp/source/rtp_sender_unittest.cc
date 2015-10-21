@@ -64,7 +64,7 @@ size_t GetPayloadDataLength(const RTPHeader& rtp_header,
 }
 
 uint64_t ConvertMsToAbsSendTime(int64_t time_ms) {
-  return 0x00fffffful & ((time_ms << 18) / 1000);
+  return (((time_ms << 18) + 500) / 1000) & 0x00ffffff;
 }
 
 class LoopbackTransportTest : public webrtc::Transport {
