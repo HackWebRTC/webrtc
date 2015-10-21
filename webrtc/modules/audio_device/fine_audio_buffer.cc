@@ -115,7 +115,6 @@ void FineAudioBuffer::DeliverRecordedData(const int8_t* buffer,
                                           size_t size_in_bytes,
                                           int playout_delay_ms,
                                           int record_delay_ms) {
-  RTC_CHECK_EQ(size_in_bytes, desired_frame_size_bytes_);
   // Check if the temporary buffer can store the incoming buffer. If not,
   // move the remaining (old) bytes to the beginning of the temporary buffer
   // and start adding new samples after the old samples.

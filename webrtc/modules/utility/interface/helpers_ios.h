@@ -20,6 +20,8 @@ namespace ios {
 
 bool CheckAndLogError(BOOL success, NSError* error);
 
+std::string StdStringFromNSString(NSString* nsString);
+
 // Return thread ID as a string.
 std::string GetThreadId();
 
@@ -29,6 +31,8 @@ std::string GetThreadInfo();
 // Returns [NSThread currentThread] description as string.
 // Example: <NSThread: 0x170066d80>{number = 1, name = main}
 std::string GetCurrentThreadDescription();
+
+std::string GetAudioSessionCategory();
 
 // Returns the current name of the operating system.
 std::string GetSystemName();

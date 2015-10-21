@@ -36,6 +36,14 @@ namespace webrtc {
     }                                           \
   } while (0)
 
+#define LOG_IF_ERROR(error, message)           \
+  do {                                         \
+    OSStatus err = error;                      \
+    if (err) {                                 \
+      LOG(LS_ERROR) << message << ": " << err; \
+    }                                          \
+  } while (0)
+
 // Preferred hardware sample rate (unit is in Hertz). The client sample rate
 // will be set to this value as well to avoid resampling the the audio unit's
 // format converter. Note that, some devices, e.g. BT headsets, only supports
@@ -77,12 +85,14 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
   @autoreleasepool {
     NSError* error = nil;
     BOOL success = NO;
+
     // Deactivate the audio session and return if |activate| is false.
     if (!activate) {
       success = [session setActive:NO error:&error];
       RTC_DCHECK(CheckAndLogError(success, error));
       return;
     }
+
     // Use a category which supports simultaneous recording and playback.
     // By default, using this category implies that our app’s audio is
     // nonmixable, hence activating the session will interrupt any other
@@ -90,15 +100,18 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
     if (session.category != AVAudioSessionCategoryPlayAndRecord) {
       error = nil;
       success = [session setCategory:AVAudioSessionCategoryPlayAndRecord
+                         withOptions:AVAudioSessionCategoryOptionAllowBluetooth
                                error:&error];
       RTC_DCHECK(CheckAndLogError(success, error));
     }
+
     // Specify mode for two-way voice communication (e.g. VoIP).
     if (session.mode != AVAudioSessionModeVoiceChat) {
       error = nil;
       success = [session setMode:AVAudioSessionModeVoiceChat error:&error];
       RTC_DCHECK(CheckAndLogError(success, error));
     }
+
     // Set the session's sample rate or the hardware sample rate.
     // It is essential that we use the same sample rate as stream format
     // to ensure that the I/O unit does not have to do sample rate conversion.
@@ -106,6 +119,7 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
     success =
         [session setPreferredSampleRate:kPreferredSampleRate error:&error];
     RTC_DCHECK(CheckAndLogError(success, error));
+
     // Set the preferred audio I/O buffer duration, in seconds.
     // TODO(henrika): add more comments here.
     error = nil;
@@ -113,18 +127,18 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
                                               error:&error];
     RTC_DCHECK(CheckAndLogError(success, error));
 
-    // TODO(henrika): add observers here...
-
     // Activate the audio session. Activation can fail if another active audio
     // session (e.g. phone call) has higher priority than ours.
     error = nil;
     success = [session setActive:YES error:&error];
     RTC_DCHECK(CheckAndLogError(success, error));
     RTC_CHECK(session.isInputAvailable) << "No input path is available!";
+
     // Ensure that category and mode are actually activated.
     RTC_DCHECK(
         [session.category isEqualToString:AVAudioSessionCategoryPlayAndRecord]);
     RTC_DCHECK([session.mode isEqualToString:AVAudioSessionModeVoiceChat]);
+
     // Try to set the preferred number of hardware audio channels. These calls
     // must be done after setting the audio session’s category and mode and
     // activating the session.
@@ -404,22 +418,163 @@ void AudioDeviceIOS::UpdateAudioDeviceBuffer() {
   audio_device_buffer_->SetRecordingChannels(record_parameters_.channels());
 }
 
+void AudioDeviceIOS::RegisterNotificationObservers() {
+  LOGI() << "RegisterNotificationObservers";
+  // This code block will be called when AVAudioSessionInterruptionNotification
+  // is observed.
+  void (^interrupt_block)(NSNotification*) = ^(NSNotification* notification) {
+    NSNumber* type_number =
+        notification.userInfo[AVAudioSessionInterruptionTypeKey];
+    AVAudioSessionInterruptionType type =
+        (AVAudioSessionInterruptionType)type_number.unsignedIntegerValue;
+    LOG(LS_INFO) << "Audio session interruption:";
+    switch (type) {
+      case AVAudioSessionInterruptionTypeBegan:
+        // The system has deactivated our audio session.
+        // Stop the active audio unit.
+        LOG(LS_INFO) << " Began => stopping the audio unit";
+        LOG_IF_ERROR(AudioOutputUnitStop(vpio_unit_),
+                     "Failed to stop the the Voice-Processing I/O unit");
+        break;
+      case AVAudioSessionInterruptionTypeEnded:
+        // The interruption has ended. Restart the audio session and start the
+        // initialized audio unit again.
+        LOG(LS_INFO) << " Ended => restarting audio session and audio unit";
+        NSError* error = nil;
+        BOOL success = NO;
+        AVAudioSession* session = [AVAudioSession sharedInstance];
+        success = [session setActive:YES error:&error];
+        if (CheckAndLogError(success, error)) {
+          LOG_IF_ERROR(AudioOutputUnitStart(vpio_unit_),
+                       "Failed to start the the Voice-Processing I/O unit");
+        }
+        break;
+    }
+  };
+
+  // This code block will be called when AVAudioSessionRouteChangeNotification
+  // is observed.
+  void (^route_change_block)(NSNotification*) =
+      ^(NSNotification* notification) {
+        // Get reason for current route change.
+        NSNumber* reason_number =
+            notification.userInfo[AVAudioSessionRouteChangeReasonKey];
+        AVAudioSessionRouteChangeReason reason =
+            (AVAudioSessionRouteChangeReason)reason_number.unsignedIntegerValue;
+        bool valid_route_change = true;
+        LOG(LS_INFO) << "Route change:";
+        switch (reason) {
+          case AVAudioSessionRouteChangeReasonUnknown:
+            LOG(LS_INFO) << " ReasonUnknown";
+            break;
+          case AVAudioSessionRouteChangeReasonNewDeviceAvailable:
+            LOG(LS_INFO) << " NewDeviceAvailable";
+            break;
+          case AVAudioSessionRouteChangeReasonOldDeviceUnavailable:
+            LOG(LS_INFO) << " OldDeviceUnavailable";
+            break;
+          case AVAudioSessionRouteChangeReasonCategoryChange:
+            LOG(LS_INFO) << " CategoryChange";
+            LOG(LS_INFO) << " New category: " << ios::GetAudioSessionCategory();
+            // Don't see this as route change since it can be triggered in
+            // combination with session interruptions as well.
+            valid_route_change = false;
+            break;
+          case AVAudioSessionRouteChangeReasonOverride:
+            LOG(LS_INFO) << " Override";
+            break;
+          case AVAudioSessionRouteChangeReasonWakeFromSleep:
+            LOG(LS_INFO) << " WakeFromSleep";
+            break;
+          case AVAudioSessionRouteChangeReasonNoSuitableRouteForCategory:
+            LOG(LS_INFO) << " NoSuitableRouteForCategory";
+            break;
+          case AVAudioSessionRouteChangeReasonRouteConfigurationChange:
+            // Ignore this type of route change since we are focusing
+            // on detecting headset changes.
+            LOG(LS_INFO) << " RouteConfigurationChange";
+            valid_route_change = false;
+            break;
+        }
+
+        if (valid_route_change) {
+          // Log previous route configuration.
+          AVAudioSessionRouteDescription* prev_route =
+              notification.userInfo[AVAudioSessionRouteChangePreviousRouteKey];
+          LOG(LS_INFO) << "Previous route:";
+          LOG(LS_INFO) << ios::StdStringFromNSString(
+              [NSString stringWithFormat:@"%@", prev_route]);
+
+          // Only restart audio for a valid route change and if the
+          // session sample rate has changed.
+          AVAudioSession* session = [AVAudioSession sharedInstance];
+          const double session_sample_rate = session.sampleRate;
+          LOG(LS_INFO) << "session sample rate: " << session_sample_rate;
+          if (playout_parameters_.sample_rate() != session_sample_rate) {
+            if (!RestartAudioUnitWithNewFormat(session_sample_rate)) {
+              LOG(LS_ERROR) << "Audio restart failed";
+            }
+          }
+        }
+      };
+
+  // Get the default notification center of the current process.
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+
+  // Add AVAudioSessionInterruptionNotification observer.
+  id interruption_observer =
+      [center addObserverForName:AVAudioSessionInterruptionNotification
+                          object:nil
+                           queue:[NSOperationQueue mainQueue]
+                      usingBlock:interrupt_block];
+  // Add AVAudioSessionRouteChangeNotification observer.
+  id route_change_observer =
+      [center addObserverForName:AVAudioSessionRouteChangeNotification
+                          object:nil
+                           queue:[NSOperationQueue mainQueue]
+                      usingBlock:route_change_block];
+
+  // Increment refcount on observers using ARC bridge. Instance variable is a
+  // void* instead of an id because header is included in other pure C++
+  // files.
+  audio_interruption_observer_ = (__bridge_retained void*)interruption_observer;
+  route_change_observer_ = (__bridge_retained void*)route_change_observer;
+}
+
+void AudioDeviceIOS::UnregisterNotificationObservers() {
+  LOGI() << "UnregisterNotificationObservers";
+  // Transfer ownership of observer back to ARC, which will deallocate the
+  // observer once it exits this scope.
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  if (audio_interruption_observer_ != nullptr) {
+    id observer = (__bridge_transfer id)audio_interruption_observer_;
+    [center removeObserver:observer];
+    audio_interruption_observer_ = nullptr;
+  }
+  if (route_change_observer_ != nullptr) {
+    id observer = (__bridge_transfer id)route_change_observer_;
+    [center removeObserver:observer];
+    route_change_observer_ = nullptr;
+  }
+}
+
 void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   LOGI() << "SetupAudioBuffersForActiveAudioSession";
-  AVAudioSession* session = [AVAudioSession sharedInstance];
   // Verify the current values once the audio session has been activated.
+  AVAudioSession* session = [AVAudioSession sharedInstance];
   LOG(LS_INFO) << " sample rate: " << session.sampleRate;
   LOG(LS_INFO) << " IO buffer duration: " << session.IOBufferDuration;
   LOG(LS_INFO) << " output channels: " << session.outputNumberOfChannels;
   LOG(LS_INFO) << " input channels: " << session.inputNumberOfChannels;
   LOG(LS_INFO) << " output latency: " << session.outputLatency;
   LOG(LS_INFO) << " input latency: " << session.inputLatency;
+
   // Log a warning message for the case when we are unable to set the preferred
   // hardware sample rate but continue and use the non-ideal sample rate after
-  // reinitializing the audio parameters.
-  if (session.sampleRate != playout_parameters_.sample_rate()) {
-    LOG(LS_WARNING)
-        << "Failed to enable an audio session with the preferred sample rate!";
+  // reinitializing the audio parameters. Most BT headsets only support 8kHz or
+  // 16kHz.
+  if (session.sampleRate != kPreferredSampleRate) {
+    LOG(LS_WARNING) << "Unable to set the preferred sample rate";
   }
 
   // At this stage, we also know the exact IO buffer duration and can add
@@ -532,8 +687,10 @@ bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
   application_format.mBytesPerFrame = kBytesPerSample;
   application_format.mChannelsPerFrame = kPreferredNumberOfChannels;
   application_format.mBitsPerChannel = 8 * kBytesPerSample;
+  // Store the new format.
+  application_format_ = application_format;
 #if !defined(NDEBUG)
-  LogABSD(application_format);
+  LogABSD(application_format_);
 #endif
 
   // Set the application format on the output scope of the input element/bus.
@@ -589,11 +746,47 @@ bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
   return true;
 }
 
+bool AudioDeviceIOS::RestartAudioUnitWithNewFormat(float sample_rate) {
+  LOGI() << "RestartAudioUnitWithNewFormat(sample_rate=" << sample_rate << ")";
+  // Stop the active audio unit.
+  LOG_AND_RETURN_IF_ERROR(AudioOutputUnitStop(vpio_unit_),
+                          "Failed to stop the the Voice-Processing I/O unit");
+
+  // The stream format is about to be changed and it requires that we first
+  // uninitialize it to deallocate its resources.
+  LOG_AND_RETURN_IF_ERROR(
+      AudioUnitUninitialize(vpio_unit_),
+      "Failed to uninitialize the the Voice-Processing I/O unit");
+
+  // Allocate new buffers given the new stream format.
+  SetupAudioBuffersForActiveAudioSession();
+
+  // Update the existing application format using the new sample rate.
+  application_format_.mSampleRate = playout_parameters_.sample_rate();
+  UInt32 size = sizeof(application_format_);
+  AudioUnitSetProperty(vpio_unit_, kAudioUnitProperty_StreamFormat,
+                       kAudioUnitScope_Output, 1, &application_format_, size);
+  AudioUnitSetProperty(vpio_unit_, kAudioUnitProperty_StreamFormat,
+                       kAudioUnitScope_Input, 0, &application_format_, size);
+
+  // Prepare the audio unit to render audio again.
+  LOG_AND_RETURN_IF_ERROR(AudioUnitInitialize(vpio_unit_),
+                          "Failed to initialize the Voice-Processing I/O unit");
+
+  // Start rendering audio using the new format.
+  LOG_AND_RETURN_IF_ERROR(AudioOutputUnitStart(vpio_unit_),
+                          "Failed to start the Voice-Processing I/O unit");
+  return true;
+}
+
 bool AudioDeviceIOS::InitPlayOrRecord() {
   LOGI() << "InitPlayOrRecord";
   AVAudioSession* session = [AVAudioSession sharedInstance];
   // Activate the audio session and ask for a set of preferred audio parameters.
   ActivateAudioSession(session, true);
+
+  // Start observing audio session interruptions and route changes.
+  RegisterNotificationObservers();
 
   // Ensure that we got what what we asked for in our active audio session.
   SetupAudioBuffersForActiveAudioSession();
@@ -602,59 +795,14 @@ bool AudioDeviceIOS::InitPlayOrRecord() {
   if (!SetupAndInitializeVoiceProcessingAudioUnit()) {
     return false;
   }
-
-  // Listen to audio interruptions.
-  // TODO(henrika): learn this area better.
-  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-  id observer = [center
-      addObserverForName:AVAudioSessionInterruptionNotification
-                  object:nil
-                   queue:[NSOperationQueue mainQueue]
-              usingBlock:^(NSNotification* notification) {
-                NSNumber* typeNumber =
-                    [notification userInfo][AVAudioSessionInterruptionTypeKey];
-                AVAudioSessionInterruptionType type =
-                    (AVAudioSessionInterruptionType)[typeNumber
-                                                         unsignedIntegerValue];
-                switch (type) {
-                  case AVAudioSessionInterruptionTypeBegan:
-                    // At this point our audio session has been deactivated and
-                    // the audio unit render callbacks no longer occur.
-                    // Nothing to do.
-                    break;
-                  case AVAudioSessionInterruptionTypeEnded: {
-                    NSError* error = nil;
-                    AVAudioSession* session = [AVAudioSession sharedInstance];
-                    [session setActive:YES error:&error];
-                    if (error != nil) {
-                      LOG_F(LS_ERROR) << "Failed to active audio session";
-                    }
-                    // Post interruption the audio unit render callbacks don't
-                    // automatically continue, so we restart the unit manually
-                    // here.
-                    AudioOutputUnitStop(vpio_unit_);
-                    AudioOutputUnitStart(vpio_unit_);
-                    break;
-                  }
-                }
-              }];
-  // Increment refcount on observer using ARC bridge. Instance variable is a
-  // void* instead of an id because header is included in other pure C++
-  // files.
-  audio_interruption_observer_ = (__bridge_retained void*)observer;
   return true;
 }
 
 bool AudioDeviceIOS::ShutdownPlayOrRecord() {
   LOGI() << "ShutdownPlayOrRecord";
-  if (audio_interruption_observer_ != nullptr) {
-    NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-    // Transfer ownership of observer back to ARC, which will dealloc the
-    // observer once it exits this scope.
-    id observer = (__bridge_transfer id)audio_interruption_observer_;
-    [center removeObserver:observer];
-    audio_interruption_observer_ = nullptr;
-  }
+  // Remove audio session notification observers.
+  UnregisterNotificationObservers();
+
   // Close and delete the voice-processing I/O unit.
   OSStatus result = -1;
   if (nullptr != vpio_unit_) {
@@ -662,12 +810,17 @@ bool AudioDeviceIOS::ShutdownPlayOrRecord() {
     if (result != noErr) {
       LOG_F(LS_ERROR) << "AudioOutputUnitStop failed: " << result;
     }
+    result = AudioUnitUninitialize(vpio_unit_);
+    if (result != noErr) {
+      LOG_F(LS_ERROR) << "AudioUnitUninitialize failed: " << result;
+    }
     result = AudioComponentInstanceDispose(vpio_unit_);
     if (result != noErr) {
       LOG_F(LS_ERROR) << "AudioComponentInstanceDispose failed: " << result;
     }
     vpio_unit_ = nullptr;
   }
+
   // All I/O should be stopped or paused prior to deactivating the audio
   // session, hence we deactivate as last action.
   AVAudioSession* session = [AVAudioSession sharedInstance];
@@ -695,12 +848,16 @@ OSStatus AudioDeviceIOS::OnRecordedDataIsAvailable(
     const AudioTimeStamp* in_time_stamp,
     UInt32 in_bus_number,
     UInt32 in_number_frames) {
-  RTC_DCHECK_EQ(record_parameters_.frames_per_buffer(), in_number_frames);
   OSStatus result = noErr;
   // Simply return if recording is not enabled.
   if (!rtc::AtomicOps::AcquireLoad(&recording_))
     return result;
-  RTC_DCHECK_EQ(record_parameters_.frames_per_buffer(), in_number_frames);
+  if (in_number_frames != record_parameters_.frames_per_buffer()) {
+    // We have seen short bursts (1-2 frames) where |in_number_frames| changes.
+    // Add a log to keep track of longer sequences if that should ever happen.
+    LOG(LS_WARNING) << "in_number_frames (" << in_number_frames
+                    << ") != " << record_parameters_.frames_per_buffer();
+  }
   // Obtain the recorded audio samples by initiating a rendering cycle.
   // Since it happens on the input bus, the |io_data| parameter is a reference
   // to the preallocated audio buffer list that the audio unit renders into.

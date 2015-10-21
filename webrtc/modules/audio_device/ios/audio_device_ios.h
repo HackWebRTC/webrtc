@@ -155,6 +155,11 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // audio device buffer (ADB) about our internal audio parameters.
   void UpdateAudioDeviceBuffer();
 
+  // Registers observers for the AVAudioSessionRouteChangeNotification and
+  // AVAudioSessionInterruptionNotification notifications.
+  void RegisterNotificationObservers();
+  void UnregisterNotificationObservers();
+
   // Since the preferred audio parameters are only hints to the OS, the actual
   // values may be different once the AVAudioSession has been activated.
   // This method asks for the current hardware parameters and takes actions
@@ -167,6 +172,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // and to match the 10ms callback rate for WebRTC as well as possible.
   // This method also initializes the created audio unit.
   bool SetupAndInitializeVoiceProcessingAudioUnit();
+
+  // Restarts active audio streams using a new sample rate. Required when e.g.
+  // a BT headset is enabled or disabled.
+  bool RestartAudioUnitWithNewFormat(float sample_rate);
 
   // Activates our audio session, creates and initializes the voice-processing
   // audio unit and verifies that we got the preferred native audio parameters.
@@ -202,7 +211,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
                             UInt32 in_number_frames,
                             AudioBufferList* io_data);
 
- private:
   // Ensures that methods are called from the same thread as this object is
   // created on.
   rtc::ThreadChecker thread_checker_;
@@ -276,6 +284,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
 
   // Audio interruption observer instance.
   void* audio_interruption_observer_;
+  void* route_change_observer_;
+
+  // Contains the audio data format specification for a stream of audio.
+  AudioStreamBasicDescription application_format_;
 };
 
 }  // namespace webrtc

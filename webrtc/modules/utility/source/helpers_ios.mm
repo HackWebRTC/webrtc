@@ -10,6 +10,7 @@
 
 #if defined(WEBRTC_IOS)
 
+#import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 #import <sys/sysctl.h>
 #import <UIKit/UIKit.h>
@@ -55,6 +56,11 @@ bool CheckAndLogError(BOOL success, NSError* error) {
 std::string GetCurrentThreadDescription() {
   NSString* name = [NSString stringWithFormat:@"%@", [NSThread currentThread]];
   return StdStringFromNSString(name);
+}
+
+std::string GetAudioSessionCategory() {
+  NSString* category = [[AVAudioSession sharedInstance] category];
+  return StdStringFromNSString(category);
 }
 
 std::string GetSystemName() {
@@ -112,6 +118,10 @@ std::string GetDeviceName() {
     return std::string("iPhone 6 Plus");
   if (!raw_name.compare("iPhone7,2"))
     return std::string("iPhone 6");
+  if (!raw_name.compare("iPhone8,1"))
+    return std::string("iPhone 6s");
+  if (!raw_name.compare("iPhone8,2"))
+    return std::string("iPhone 6s Plus");
   if (!raw_name.compare("iPod1,1"))
     return std::string("iPod Touch 1G");
   if (!raw_name.compare("iPod2,1"))
@@ -162,7 +172,7 @@ std::string GetDeviceName() {
     return std::string("Simulator");
   if (!raw_name.compare("x86_64"))
     return std::string("Simulator");
-  LOG(LS_WARNING) << "Failed to find device name";
+  LOG(LS_WARNING) << "Failed to find device name (" << raw_name << ")";
   return raw_name;
 }
 
