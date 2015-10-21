@@ -34,6 +34,20 @@
 #include "webrtc/base/gunit.h"
 
 namespace cricket {
+FakeAudioSendStream::FakeAudioSendStream(
+    const webrtc::AudioSendStream::Config& config) : config_(config) {
+  RTC_DCHECK(config.voe_channel_id != -1);
+}
+
+webrtc::AudioSendStream::Stats FakeAudioSendStream::GetStats() const {
+  return webrtc::AudioSendStream::Stats();
+}
+
+const webrtc::AudioSendStream::Config&
+    FakeAudioSendStream::GetConfig() const {
+  return config_;
+}
+
 FakeAudioReceiveStream::FakeAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config)
     : config_(config), received_packets_(0) {
@@ -206,6 +220,7 @@ FakeCall::FakeCall(const webrtc::Call::Config& config)
 
 FakeCall::~FakeCall() {
   EXPECT_EQ(0u, video_send_streams_.size());
+  EXPECT_EQ(0u, audio_send_streams_.size());
   EXPECT_EQ(0u, video_receive_streams_.size());
   EXPECT_EQ(0u, audio_receive_streams_.size());
 }
@@ -222,12 +237,25 @@ const std::vector<FakeVideoReceiveStream*>& FakeCall::GetVideoReceiveStreams() {
   return video_receive_streams_;
 }
 
+const std::vector<FakeAudioSendStream*>& FakeCall::GetAudioSendStreams() {
+  return audio_send_streams_;
+}
+
+const FakeAudioSendStream* FakeCall::GetAudioSendStream(uint32_t ssrc) {
+  for (const auto* p : GetAudioSendStreams()) {
+    if (p->GetConfig().rtp.ssrc == ssrc) {
+      return p;
+    }
+  }
+  return nullptr;
+}
+
 const std::vector<FakeAudioReceiveStream*>& FakeCall::GetAudioReceiveStreams() {
   return audio_receive_streams_;
 }
 
 const FakeAudioReceiveStream* FakeCall::GetAudioReceiveStream(uint32_t ssrc) {
-  for (const auto p : GetAudioReceiveStreams()) {
+  for (const auto* p : GetAudioReceiveStreams()) {
     if (p->GetConfig().rtp.remote_ssrc == ssrc) {
       return p;
     }
@@ -241,10 +269,22 @@ webrtc::NetworkState FakeCall::GetNetworkState() const {
 
 webrtc::AudioSendStream* FakeCall::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
-  return nullptr;
+  FakeAudioSendStream* fake_stream = new FakeAudioSendStream(config);
+  audio_send_streams_.push_back(fake_stream);
+  ++num_created_send_streams_;
+  return fake_stream;
 }
 
 void FakeCall::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
+  auto it = std::find(audio_send_streams_.begin(),
+                      audio_send_streams_.end(),
+                      static_cast<FakeAudioSendStream*>(send_stream));
+  if (it == audio_send_streams_.end()) {
+    ADD_FAILURE() << "DestroyAudioSendStream called with unknown paramter.";
+  } else {
+    delete *it;
+    audio_send_streams_.erase(it);
+  }
 }
 
 webrtc::AudioReceiveStream* FakeCall::CreateAudioReceiveStream(

@@ -25,6 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// This file contains fake implementations, for use in unit tests, of the
+// following classes:
+//
+//   webrtc::Call
+//   webrtc::AudioSendStream
+//   webrtc::AudioReceiveStream
+//   webrtc::VideoSendStream
+//   webrtc::VideoReceiveStream
+
 #ifndef TALK_MEDIA_WEBRTC_FAKEWEBRTCCALL_H_
 #define TALK_MEDIA_WEBRTC_FAKEWEBRTCCALL_H_
 
@@ -32,11 +41,35 @@
 
 #include "webrtc/call.h"
 #include "webrtc/audio_receive_stream.h"
+#include "webrtc/audio_send_stream.h"
 #include "webrtc/video_frame.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
 namespace cricket {
+
+class FakeAudioSendStream : public webrtc::AudioSendStream {
+ public:
+  explicit FakeAudioSendStream(
+      const webrtc::AudioSendStream::Config& config);
+
+  // webrtc::AudioSendStream implementation.
+  webrtc::AudioSendStream::Stats GetStats() const override;
+
+  const webrtc::AudioSendStream::Config& GetConfig() const;
+
+ private:
+  // webrtc::SendStream implementation.
+  void Start() override {}
+  void Stop() override {}
+  void SignalNetworkState(webrtc::NetworkState state) override {}
+  bool DeliverRtcp(const uint8_t* packet, size_t length) override {
+    return true;
+  }
+
+  webrtc::AudioSendStream::Config config_;
+};
+
 class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
  public:
   explicit FakeAudioReceiveStream(
@@ -161,6 +194,8 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   const std::vector<FakeVideoSendStream*>& GetVideoSendStreams();
   const std::vector<FakeVideoReceiveStream*>& GetVideoReceiveStreams();
 
+  const std::vector<FakeAudioSendStream*>& GetAudioSendStreams();
+  const FakeAudioSendStream* GetAudioSendStream(uint32_t ssrc);
   const std::vector<FakeAudioReceiveStream*>& GetAudioReceiveStreams();
   const FakeAudioReceiveStream* GetAudioReceiveStream(uint32_t ssrc);
 
@@ -208,6 +243,7 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   rtc::SentPacket last_sent_packet_;
   webrtc::Call::Stats stats_;
   std::vector<FakeVideoSendStream*> video_send_streams_;
+  std::vector<FakeAudioSendStream*> audio_send_streams_;
   std::vector<FakeVideoReceiveStream*> video_receive_streams_;
   std::vector<FakeAudioReceiveStream*> audio_receive_streams_;
 

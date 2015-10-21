@@ -1313,15 +1313,25 @@ int WebRtcVoiceEngine::CreateVoEChannel() {
   return voe_wrapper_->base()->CreateChannel(voe_config_);
 }
 
-class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
+class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     : public AudioRenderer::Sink {
  public:
-  WebRtcVoiceChannelRenderer(int ch,
-                             webrtc::AudioTransport* voe_audio_transport)
+  WebRtcAudioSendStream(int ch, webrtc::AudioTransport* voe_audio_transport,
+                        uint32_t ssrc, webrtc::Call* call)
       : channel_(ch),
         voe_audio_transport_(voe_audio_transport),
-        renderer_(NULL) {}
-  ~WebRtcVoiceChannelRenderer() override { Stop(); }
+        call_(call) {
+    RTC_DCHECK(call);
+    webrtc::AudioSendStream::Config config(nullptr);
+    config.voe_channel_id = channel_;
+    config.rtp.ssrc = ssrc;
+    stream_ = call_->CreateAudioSendStream(config);
+    RTC_DCHECK(stream_);
+  }
+  ~WebRtcAudioSendStream() override {
+    Stop();
+    call_->DestroyAudioSendStream(stream_);
+  }
 
   // Starts the rendering by setting a sink to the renderer to get data
   // callback.
@@ -1329,8 +1339,8 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
   // TODO(xians): Make sure Start() is called only once.
   void Start(AudioRenderer* renderer) {
     rtc::CritScope lock(&lock_);
-    RTC_DCHECK(renderer != NULL);
-    if (renderer_ != NULL) {
+    RTC_DCHECK(renderer);
+    if (renderer_) {
       RTC_DCHECK(renderer_ == renderer);
       return;
     }
@@ -1338,14 +1348,14 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
     renderer_ = renderer;
   }
 
-  // Stops rendering by setting the sink of the renderer to NULL. No data
+  // Stops rendering by setting the sink of the renderer to nullptr. No data
   // callback will be received after this method.
   // This method is called on the libjingle worker thread.
   void Stop() {
     rtc::CritScope lock(&lock_);
-    if (renderer_ != NULL) {
-      renderer_->SetSink(NULL);
-      renderer_ = NULL;
+    if (renderer_) {
+      renderer_->SetSink(nullptr);
+      renderer_ = nullptr;
     }
   }
 
@@ -1356,6 +1366,7 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
               int sample_rate,
               int number_of_channels,
               size_t number_of_frames) override {
+    RTC_DCHECK(voe_audio_transport_);
     voe_audio_transport_->OnData(channel_,
                                  audio_data,
                                  bits_per_sample,
@@ -1368,25 +1379,42 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
   // never been called, this callback won't be triggered.
   void OnClose() override {
     rtc::CritScope lock(&lock_);
-    // Set |renderer_| to NULL to make sure no more callback will get into
+    // Set |renderer_| to nullptr to make sure no more callback will get into
     // the renderer.
-    renderer_ = NULL;
+    renderer_ = nullptr;
   }
 
   // Accessor to the VoE channel ID.
   int channel() const { return channel_; }
 
  private:
-  const int channel_;
-  webrtc::AudioTransport* const voe_audio_transport_;
+  const int channel_ = -1;
+  webrtc::AudioTransport* const voe_audio_transport_ = nullptr;
+  webrtc::Call* call_ = nullptr;
+  webrtc::AudioSendStream* stream_ = nullptr;
 
   // Raw pointer to AudioRenderer owned by LocalAudioTrackHandler.
   // PeerConnection will make sure invalidating the pointer before the object
   // goes away.
-  AudioRenderer* renderer_;
+  AudioRenderer* renderer_ = nullptr;
 
   // Protects |renderer_| in Start(), Stop() and OnClose().
   rtc::CriticalSection lock_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioSendStream);
+};
+
+class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
+ public:
+  explicit WebRtcAudioReceiveStream(int voe_channel_id)
+      : channel_(voe_channel_id) {}
+
+  int channel() { return channel_; }
+
+ private:
+  int channel_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioReceiveStream);
 };
 
 // WebRtcVoiceMediaChannel
@@ -1417,8 +1445,8 @@ WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel";
 
   // Remove any remaining send streams.
-  while (!send_channels_.empty()) {
-    RemoveSendStream(send_channels_.begin()->first);
+  while (!send_streams_.empty()) {
+    RemoveSendStream(send_streams_.begin()->first);
   }
 
   // Remove any remaining receive streams.
@@ -1481,6 +1509,7 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
     }
   }
 
+  // TODO(solenberg): Don't recreate unless options changed.
   RecreateAudioReceiveStreams();
 
   LOG(LS_INFO) << "Set voice channel options.  Current options: "
@@ -1760,7 +1789,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
   // Cache the codecs in order to configure the channel created later.
   send_codecs_ = codecs;
-  for (const auto& ch : send_channels_) {
+  for (const auto& ch : send_streams_) {
     if (!SetSendCodecs(ch.second->channel(), codecs)) {
       return false;
     }
@@ -1871,7 +1900,7 @@ bool WebRtcVoiceMediaChannel::SetSendRtpHeaderExtensions(
     return true;
   }
 
-  for (const auto& ch : send_channels_) {
+  for (const auto& ch : send_streams_) {
     if (!SetChannelSendRtpHeaderExtensions(ch.second->channel(), extensions)) {
       return false;
     }
@@ -1935,8 +1964,9 @@ bool WebRtcVoiceMediaChannel::ChangePlayout(bool playout) {
 
 bool WebRtcVoiceMediaChannel::SetSend(SendFlags send) {
   desired_send_ = send;
-  if (!send_channels_.empty())
+  if (!send_streams_.empty()) {
     return ChangeSend(desired_send_);
+  }
   return true;
 }
 
@@ -1959,7 +1989,7 @@ bool WebRtcVoiceMediaChannel::ChangeSend(SendFlags send) {
   }
 
   // Change the settings on each send channel.
-  for (const auto& ch : send_channels_) {
+  for (const auto& ch : send_streams_) {
     if (!ChangeSend(ch.second->channel(), send)) {
       return false;
     }
@@ -2075,13 +2105,13 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
     return false;
   }
 
-  // Save the channel to send_channels_, so that RemoveSendStream() can still
+  // Save the channel to send_streams_, so that RemoveSendStream() can still
   // delete the channel in case failure happens below.
   webrtc::AudioTransport* audio_transport =
       engine()->voe()->base()->audio_transport();
-  send_channels_.insert(
+  send_streams_.insert(
       std::make_pair(ssrc,
-                     new WebRtcVoiceChannelRenderer(channel, audio_transport)));
+          new WebRtcAudioSendStream(channel, audio_transport, ssrc, call_)));
 
   // Set the current codecs to be used for the new channel. We need to do this
   // after adding the channel to send_channels_, because of how max bitrate is
@@ -2094,7 +2124,7 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   // At this point the channel's local SSRC has been updated. If the channel is
   // the first send channel make sure that all the receive channels are updated
   // with the same SSRC in order to send receiver reports.
-  if (send_channels_.size() == 1) {
+  if (send_streams_.size() == 1) {
     receiver_reports_ssrc_ = ssrc;
     for (const auto& ch : receive_channels_) {
       int recv_channel = ch.second->channel();
@@ -2113,8 +2143,8 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
 
 bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ChannelMap::iterator it = send_channels_.find(ssrc);
-  if (it == send_channels_.end()) {
+  auto it = send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
     LOG(LS_WARNING) << "Try to remove stream with ssrc " << ssrc
                     << " which doesn't exist.";
     return false;
@@ -2126,7 +2156,7 @@ bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
   // Delete the WebRtcVoiceChannelRenderer object connected to the channel,
   // this will disconnect the audio renderer with the send channel.
   delete it->second;
-  send_channels_.erase(it);
+  send_streams_.erase(it);
 
   // Clean up and delete the send channel.
   LOG(LS_INFO) << "Removing audio send stream " << ssrc
@@ -2134,7 +2164,7 @@ bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
   if (!DeleteChannel(channel)) {
     return false;
   }
-  if (send_channels_.empty()) {
+  if (send_streams_.empty()) {
     ChangeSend(SEND_NOTHING);
   }
   return true;
@@ -2176,11 +2206,8 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
-  webrtc::AudioTransport* audio_transport =
-      engine()->voe()->base()->audio_transport();
-  WebRtcVoiceChannelRenderer* channel_renderer =
-      new WebRtcVoiceChannelRenderer(channel, audio_transport);
-  receive_channels_.insert(std::make_pair(ssrc, channel_renderer));
+  WebRtcAudioReceiveStream* stream = new WebRtcAudioReceiveStream(channel);
+  receive_channels_.insert(std::make_pair(ssrc, stream));
   receive_stream_params_[ssrc] = sp;
   AddAudioReceiveStream(ssrc);
 
@@ -2249,7 +2276,7 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "RemoveRecvStream: " << ssrc;
 
-  ChannelMap::iterator it = receive_channels_.find(ssrc);
+  auto it = receive_channels_.find(ssrc);
   if (it == receive_channels_.end()) {
     LOG(LS_WARNING) << "Try to remove stream with ssrc " << ssrc
                     << " which doesn't exist.";
@@ -2259,9 +2286,6 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   RemoveAudioReceiveStream(ssrc);
   receive_stream_params_.erase(ssrc);
 
-  // Delete the WebRtcVoiceChannelRenderer object connected to the channel, this
-  // will disconnect the audio renderer with the receive channel.
-  // Cache the channel before the deletion.
   const int channel = it->second->channel();
   delete it->second;
   receive_channels_.erase(it);
@@ -2278,8 +2302,8 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
 
 bool WebRtcVoiceMediaChannel::SetLocalRenderer(uint32_t ssrc,
                                                AudioRenderer* renderer) {
-  ChannelMap::iterator it = send_channels_.find(ssrc);
-  if (it == send_channels_.end()) {
+  auto it = send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
     if (renderer) {
       // Return an error if trying to set a valid renderer with an invalid ssrc.
       LOG(LS_ERROR) << "SetLocalRenderer failed with ssrc "<< ssrc;
@@ -2388,8 +2412,8 @@ bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc,
   if (flags & cricket::DF_SEND) {
     int channel = -1;
     if (ssrc == 0) {
-      if (send_channels_.size() > 0) {
-        channel = send_channels_.begin()->second->channel();
+      if (send_streams_.size() > 0) {
+        channel = send_streams_.begin()->second->channel();
       }
     } else {
       channel = GetSendChannelId(ssrc);
@@ -2499,7 +2523,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
   // SR may continue RR and any RR entry may correspond to any one of the send
   // channels. So all RTCP packets must be forwarded all send channels. VoE
   // will filter out RR internally.
-  for (const auto& ch : send_channels_) {
+  for (const auto& ch : send_streams_) {
     engine()->voe()->network()->ReceivedRTCPPacket(
         ch.second->channel(), packet->data(), packet->size());
   }
@@ -2521,7 +2545,7 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
   // the mic channel is muted/unmuted. We can't do it today because there
   // is no good way to know which stream is mapping to the mic channel.
   bool all_muted = muted;
-  for (const auto& ch : send_channels_) {
+  for (const auto& ch : send_streams_) {
     if (!all_muted) {
       break;
     }
@@ -2570,7 +2594,7 @@ bool WebRtcVoiceMediaChannel::SetSendBitrateInternal(int bps) {
   if (is_multi_rate) {
     // If codec is multi-rate then just set the bitrate.
     codec.rate = bps;
-    for (const auto& ch : send_channels_) {
+    for (const auto& ch : send_streams_) {
       if (!SetSendCodec(ch.second->channel(), codec)) {
         LOG(LS_INFO) << "Failed to set codec " << codec.plname
                      << " to bitrate " << bps << " bps.";
@@ -2630,7 +2654,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   webrtc::CodecInst codec;
   unsigned int level;
 
-  for (const auto& ch : send_channels_) {
+  for (const auto& ch : send_streams_) {
     const int channel = ch.second->channel();
 
     // Fill in the sender info, based on what we know, and what the
@@ -2791,7 +2815,7 @@ int WebRtcVoiceMediaChannel::GetOutputLevel(int channel) {
 
 int WebRtcVoiceMediaChannel::GetReceiveChannelId(uint32_t ssrc) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ChannelMap::const_iterator it = receive_channels_.find(ssrc);
+  const auto it = receive_channels_.find(ssrc);
   if (it != receive_channels_.end()) {
     return it->second->channel();
   }
@@ -2800,8 +2824,8 @@ int WebRtcVoiceMediaChannel::GetReceiveChannelId(uint32_t ssrc) const {
 
 int WebRtcVoiceMediaChannel::GetSendChannelId(uint32_t ssrc) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ChannelMap::const_iterator it = send_channels_.find(ssrc);
-  if (it != send_channels_.end()) {
+  const auto it = send_streams_.find(ssrc);
+  if (it != send_streams_.end()) {
     return it->second->channel();
   }
   return -1;
@@ -2927,8 +2951,8 @@ void WebRtcVoiceMediaChannel::RecreateAudioReceiveStreams() {
 
 void WebRtcVoiceMediaChannel::AddAudioReceiveStream(uint32_t ssrc) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  WebRtcVoiceChannelRenderer* channel = receive_channels_[ssrc];
-  RTC_DCHECK(channel != nullptr);
+  WebRtcAudioReceiveStream* stream = receive_channels_[ssrc];
+  RTC_DCHECK(stream != nullptr);
   RTC_DCHECK(receive_streams_.find(ssrc) == receive_streams_.end());
   webrtc::AudioReceiveStream::Config config;
   config.rtp.remote_ssrc = ssrc;
@@ -2936,7 +2960,7 @@ void WebRtcVoiceMediaChannel::AddAudioReceiveStream(uint32_t ssrc) {
   config.rtp.extensions = recv_rtp_extensions_;
   config.combined_audio_video_bwe =
       options_.combined_audio_video_bwe.GetWithDefaultIfUnset(false);
-  config.voe_channel_id = channel->channel();
+  config.voe_channel_id = stream->channel();
   config.sync_group = receive_stream_params_[ssrc].sync_label;
   webrtc::AudioReceiveStream* s = call_->CreateAudioReceiveStream(config);
   receive_streams_.insert(std::make_pair(ssrc, s));

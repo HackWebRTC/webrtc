@@ -172,6 +172,8 @@ class WebRtcVoiceEngine
   Settable<bool> extended_filter_aec_;
   Settable<bool> delay_agnostic_aec_;
   Settable<bool> experimental_ns_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcVoiceEngine);
 };
 
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses
@@ -265,11 +267,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool SetPlayout(int channel, bool playout);
   static Error WebRtcErrorToChannelError(int err_code);
 
-  class WebRtcVoiceChannelRenderer;
-  // Map of ssrc to WebRtcVoiceChannelRenderer object.  A new object of
-  // WebRtcVoiceChannelRenderer will be created for every new stream and
-  // will be destroyed when the stream goes away.
-  typedef std::map<uint32_t, WebRtcVoiceChannelRenderer*> ChannelMap;
   typedef int (webrtc::VoERTP_RTCP::* ExtensionSetterFunction)(int, bool,
       unsigned char);
 
@@ -327,12 +324,12 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   // send streams. See: https://code.google.com/p/webrtc/issues/detail?id=4740
   uint32_t receiver_reports_ssrc_ = 1;
 
-  // send_channels_ contains the channels which are being used for sending.
-  // When the default channel (default_send_channel_id) is used for sending, it
-  // is contained in send_channels_, otherwise not.
-  ChannelMap send_channels_;
+  class WebRtcAudioSendStream;
+  std::map<uint32_t, WebRtcAudioSendStream*> send_streams_;
   std::vector<RtpHeaderExtension> send_extensions_;
-  ChannelMap receive_channels_;
+
+  class WebRtcAudioReceiveStream;
+  std::map<uint32_t, WebRtcAudioReceiveStream*> receive_channels_;
   std::map<uint32_t, webrtc::AudioReceiveStream*> receive_streams_;
   std::map<uint32_t, StreamParams> receive_stream_params_;
   // receive_channels_ can be read from WebRtc callback thread.  Access from
@@ -340,6 +337,8 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   // Reads on the worker thread are ok.
   std::vector<RtpHeaderExtension> receive_extensions_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceMediaChannel);
 };
 
 }  // namespace cricket

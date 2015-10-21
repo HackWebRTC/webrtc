@@ -59,6 +59,7 @@ static const cricket::AudioCodec* const kAudioCodecs[] = {
 };
 static uint32_t kSsrc1 = 0x99;
 static uint32_t kSsrc2 = 0x98;
+static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
 
 class FakeVoEWrapper : public cricket::VoEWrapper {
  public:
@@ -1862,44 +1863,39 @@ TEST_F(WebRtcVoiceEngineTestFake, Playout) {
 TEST_F(WebRtcVoiceEngineTestFake, CreateAndDeleteMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
-
   // Set the global state for sending.
   EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
 
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+  for (uint32_t ssrc : kSsrcs4) {
     EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+        cricket::StreamParams::CreateLegacy(ssrc)));
+    EXPECT_NE(nullptr, call_.GetAudioSendStream(ssrc));
 
     // Verify that we are in a sending state for all the created streams.
-    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    int channel_num = voe_.GetChannelFromLocalSsrc(ssrc);
     EXPECT_TRUE(voe_.GetSend(channel_num));
   }
+  EXPECT_EQ(ARRAY_SIZE(kSsrcs4), call_.GetAudioSendStreams().size());
 
-  // Remove the first send channel, which is the default channel. It will only
-  // recycle the default channel but not delete it.
-  EXPECT_TRUE(channel_->RemoveSendStream(kSsrcs4[0]));
-  // Stream should already be Removed from the send stream list.
-  EXPECT_FALSE(channel_->RemoveSendStream(kSsrcs4[0]));
-
-  // Delete the rest of send channel streams.
-  for (unsigned int i = 1; i < ARRAY_SIZE(kSsrcs4); ++i) {
-    EXPECT_TRUE(channel_->RemoveSendStream(kSsrcs4[i]));
+  // Delete the send streams.
+  for (uint32_t ssrc : kSsrcs4) {
+    EXPECT_TRUE(channel_->RemoveSendStream(ssrc));
+    EXPECT_EQ(nullptr, call_.GetAudioSendStream(ssrc));
     // Stream should already be deleted.
-    EXPECT_FALSE(channel_->RemoveSendStream(kSsrcs4[i]));
-    EXPECT_EQ(-1, voe_.GetChannelFromLocalSsrc(kSsrcs4[i]));
+    EXPECT_FALSE(channel_->RemoveSendStream(ssrc));
+    EXPECT_EQ(-1, voe_.GetChannelFromLocalSsrc(ssrc));
   }
+  EXPECT_EQ(0u, call_.GetAudioSendStreams().size());
 }
 
 // Test SetSendCodecs correctly configure the codecs in all send streams.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
   // Create send streams.
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+  for (uint32_t ssrc : kSsrcs4) {
     EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+        cricket::StreamParams::CreateLegacy(ssrc)));
   }
 
   cricket::AudioSendParameters parameters;
@@ -1911,8 +1907,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
 
   // Verify ISAC and VAD are corrected configured on all send channels.
   webrtc::CodecInst gcodec;
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
-    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+  for (uint32_t ssrc : kSsrcs4) {
+    int channel_num = voe_.GetChannelFromLocalSsrc(ssrc);
     EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
     EXPECT_STREQ("ISAC", gcodec.plname);
     EXPECT_TRUE(voe_.GetVAD(channel_num));
@@ -1922,8 +1918,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
   // Change to PCMU(8K) and CN(16K). VAD should not be activated.
   parameters.codecs[0] = kPcmuCodec;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
-    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+  for (uint32_t ssrc : kSsrcs4) {
+    int channel_num = voe_.GetChannelFromLocalSsrc(ssrc);
     EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
     EXPECT_STREQ("PCMU", gcodec.plname);
     EXPECT_FALSE(voe_.GetVAD(channel_num));
@@ -1934,28 +1930,27 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
 TEST_F(WebRtcVoiceEngineTestFake, SetSendWithMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
   // Create the send channels and they should be a SEND_NOTHING date.
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+  for (uint32_t ssrc : kSsrcs4) {
     EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+        cricket::StreamParams::CreateLegacy(ssrc)));
     int channel_num = voe_.GetLastChannel();
     EXPECT_FALSE(voe_.GetSend(channel_num));
   }
 
   // Set the global state for starting sending.
   EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+  for (uint32_t ssrc : kSsrcs4) {
     // Verify that we are in a sending state for all the send streams.
-    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    int channel_num = voe_.GetChannelFromLocalSsrc(ssrc);
     EXPECT_TRUE(voe_.GetSend(channel_num));
   }
 
   // Set the global state for stopping sending.
   EXPECT_TRUE(channel_->SetSend(cricket::SEND_NOTHING));
-  for (unsigned int i = 1; i < ARRAY_SIZE(kSsrcs4); ++i) {
+  for (uint32_t ssrc : kSsrcs4) {
     // Verify that we are in a stop state for all the send streams.
-    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    int channel_num = voe_.GetChannelFromLocalSsrc(ssrc);
     EXPECT_FALSE(voe_.GetSend(channel_num));
   }
 }
@@ -1964,11 +1959,10 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendWithMultipleSendStreams) {
 TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
   // Create send streams.
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+  for (uint32_t ssrc : kSsrcs4) {
     EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+        cricket::StreamParams::CreateLegacy(ssrc)));
   }
   // Create a receive stream to check that none of the send streams end up in
   // the receive stream stats.
@@ -1983,6 +1977,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
   EXPECT_EQ(static_cast<size_t>(ARRAY_SIZE(kSsrcs4)), info.senders.size());
 
   // Verify the statistic information is correct.
+  // TODO(solenberg): Make this loop ordering independent.
   for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
     EXPECT_EQ(kSsrcs4[i], info.senders[i].ssrc());
     EXPECT_EQ(kPcmuCodec.name, info.senders[i].codec_name);
