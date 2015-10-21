@@ -72,9 +72,24 @@ class DtlsIdentityStoreInterface {
 
   // The |observer| will be called when the requested identity is ready, or when
   // identity generation fails.
+  // TODO(torbjorng,hbos): The following RequestIdentity is about to be removed,
+  // see below todo.
   virtual void RequestIdentity(
       rtc::KeyType key_type,
-      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) = 0;
+      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
+    // Add default parameterization.
+    RequestIdentity(rtc::KeyParams(key_type), observer);
+  }
+  // TODO(torbjorng,hbos): Parameterized key types! The following
+  // RequestIdentity should replace the old one that takes rtc::KeyType. When
+  // the new one is implemented by Chromium and WebRTC the old one should be
+  // removed. crbug.com/544902, webrtc:5092.
+  virtual void RequestIdentity(
+      rtc::KeyParams key_params,
+      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
+    // Drop parameterization.
+    RequestIdentity(key_params.type(), observer);
+  }
 };
 
 // The WebRTC default implementation of DtlsIdentityStoreInterface.
