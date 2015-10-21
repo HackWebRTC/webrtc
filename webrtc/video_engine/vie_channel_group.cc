@@ -25,9 +25,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video_engine/call_stats.h"
-#include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/payload_router.h"
-#include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_engine/vie_remb.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
@@ -145,10 +143,10 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
 }  // namespace
 
-ChannelGroup::ChannelGroup(ProcessThread* process_thread)
+ChannelGroup::ChannelGroup(ProcessThread* process_thread,
+                           CallStats* call_stats)
     : remb_(new VieRemb()),
       bitrate_allocator_(new BitrateAllocator()),
-      call_stats_(new CallStats()),
       packet_router_(new PacketRouter()),
       pacer_(new PacedSender(Clock::GetRealTimeClock(),
                              packet_router_.get(),
@@ -161,8 +159,8 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
       remote_estimator_proxy_(
           new RemoteEstimatorProxy(Clock::GetRealTimeClock(),
                                    packet_router_.get())),
-      encoder_state_feedback_(new EncoderStateFeedback()),
       process_thread_(process_thread),
+      call_stats_(call_stats),
       pacer_thread_(ProcessThread::Create("PacerThread")),
       // Constructed last as this object calls the provided callback on
       // construction.
@@ -177,7 +175,6 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread)
 
   process_thread->RegisterModule(remote_estimator_proxy_.get());
   process_thread->RegisterModule(remote_bitrate_estimator_.get());
-  process_thread->RegisterModule(call_stats_.get());
   process_thread->RegisterModule(bitrate_controller_.get());
 }
 
@@ -185,7 +182,6 @@ ChannelGroup::~ChannelGroup() {
   pacer_thread_->Stop();
   pacer_thread_->DeRegisterModule(pacer_.get());
   process_thread_->DeRegisterModule(bitrate_controller_.get());
-  process_thread_->DeRegisterModule(call_stats_.get());
   process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
   process_thread_->DeRegisterModule(remote_estimator_proxy_.get());
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
@@ -195,15 +191,12 @@ ChannelGroup::~ChannelGroup() {
   RTC_DCHECK(encoders_.empty());
 }
 
-void ChannelGroup::AddEncoder(const std::vector<uint32_t>& ssrcs,
-                              ViEEncoder* encoder) {
-  encoder_state_feedback_->AddEncoder(ssrcs, encoder);
+void ChannelGroup::AddEncoder(ViEEncoder* encoder) {
   rtc::CritScope lock(&encoder_crit_);
   encoders_.push_back(encoder);
 }
 
 void ChannelGroup::RemoveEncoder(ViEEncoder* encoder) {
-  encoder_state_feedback_->RemoveEncoder(encoder);
   rtc::CritScope lock(&encoder_crit_);
   for (auto it = encoders_.begin(); it != encoders_.end(); ++it) {
     if (*it == encoder) {
@@ -240,10 +233,6 @@ RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator(
     return remote_bitrate_estimator_.get();
 }
 
-CallStats* ChannelGroup::GetCallStats() const {
-  return call_stats_.get();
-}
-
 TransportFeedbackObserver* ChannelGroup::GetTransportFeedbackObserver() {
   if (transport_feedback_adapter_.get() == nullptr) {
     transport_feedback_adapter_.reset(new TransportFeedbackAdapter(
@@ -259,21 +248,15 @@ TransportFeedbackObserver* ChannelGroup::GetTransportFeedbackObserver() {
   return transport_feedback_adapter_.get();
 }
 
-RtcpIntraFrameObserver* ChannelGroup::GetRtcpIntraFrameObserver() const {
-  return encoder_state_feedback_->GetRtcpIntraFrameObserver();
-}
-
 int64_t ChannelGroup::GetPacerQueuingDelayMs() const {
   return pacer_->QueueInMs();
 }
 
+// TODO(mflodman): Move out of this class.
 void ChannelGroup::SetChannelRembStatus(bool sender,
                                         bool receiver,
-                                        ViEChannel* channel) {
-  // Update the channel state.
-  channel->EnableRemb(sender || receiver);
-  // Update the REMB instance with necessary RTP modules.
-  RtpRtcp* rtp_module = channel->rtp_rtcp();
+                                        RtpRtcp* rtp_module) {
+  rtp_module->SetREMBStatus(sender || receiver);
   if (sender) {
     remb_->AddRembSender(rtp_module);
   } else {

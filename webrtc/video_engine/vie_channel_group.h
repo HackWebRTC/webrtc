@@ -28,16 +28,14 @@ namespace webrtc {
 class BitrateAllocator;
 class CallStats;
 class Config;
-class EncoderStateFeedback;
-class I420FrameCallback;
 class PacedSender;
 class PacketRouter;
 class ProcessThread;
 class RemoteBitrateEstimator;
 class RemoteEstimatorProxy;
+class RtpRtcp;
 class SendStatisticsProxy;
 class TransportFeedbackAdapter;
-class ViEChannel;
 class ViEEncoder;
 class VieRemb;
 
@@ -45,21 +43,20 @@ class VieRemb;
 // group are assumed to send/receive data to the same end-point.
 class ChannelGroup : public BitrateObserver {
  public:
-  explicit ChannelGroup(ProcessThread* process_thread);
+  ChannelGroup(ProcessThread* process_thread, CallStats* call_stats);
   ~ChannelGroup();
-  void AddEncoder(const std::vector<uint32_t>& ssrcs, ViEEncoder* encoder);
+  void AddEncoder(ViEEncoder* encoder);
   void RemoveEncoder(ViEEncoder* encoder);
   void SetBweBitrates(int min_bitrate_bps,
                       int start_bitrate_bps,
                       int max_bitrate_bps);
 
-  void SetChannelRembStatus(bool sender, bool receiver, ViEChannel* channel);
+  void SetChannelRembStatus(bool sender, bool receiver, RtpRtcp* rtp_module);
 
   void SignalNetworkState(NetworkState state);
 
   BitrateController* GetBitrateController() const;
   RemoteBitrateEstimator* GetRemoteBitrateEstimator(bool send_side_bwe) const;
-  CallStats* GetCallStats() const;
   int64_t GetPacerQueuingDelayMs() const;
   PacedSender* pacer() const { return pacer_.get(); }
   PacketRouter* packet_router() const { return packet_router_.get(); }
@@ -78,18 +75,18 @@ class ChannelGroup : public BitrateObserver {
  private:
   rtc::scoped_ptr<VieRemb> remb_;
   rtc::scoped_ptr<BitrateAllocator> bitrate_allocator_;
-  rtc::scoped_ptr<CallStats> call_stats_;
   rtc::scoped_ptr<PacketRouter> packet_router_;
   rtc::scoped_ptr<PacedSender> pacer_;
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   rtc::scoped_ptr<RemoteEstimatorProxy> remote_estimator_proxy_;
-  rtc::scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
 
   mutable rtc::CriticalSection encoder_crit_;
   std::vector<ViEEncoder*> encoders_ GUARDED_BY(encoder_crit_);
 
   // Registered at construct time and assumed to outlive this class.
   ProcessThread* const process_thread_;
+  CallStats* const call_stats_;
+
   rtc::scoped_ptr<ProcessThread> pacer_thread_;
 
   rtc::scoped_ptr<BitrateController> bitrate_controller_;

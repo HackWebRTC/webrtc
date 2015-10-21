@@ -30,6 +30,7 @@
 
 namespace webrtc {
 
+class CallStats;
 class VoiceEngine;
 
 namespace internal {
@@ -43,7 +44,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      ChannelGroup* channel_group,
                      const VideoReceiveStream::Config& config,
                      webrtc::VoiceEngine* voice_engine,
-                     ProcessThread* process_thread);
+                     ProcessThread* process_thread,
+                     CallStats* call_stats);
   ~VideoReceiveStream() override;
 
   // webrtc::ReceiveStream implementation.
@@ -81,6 +83,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   Clock* const clock_;
 
   ChannelGroup* const channel_group_;
+  CallStats* const call_stats_;
 
   rtc::scoped_ptr<IncomingVideoStream> incoming_video_stream_;
   rtc::scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;

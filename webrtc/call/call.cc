@@ -34,6 +34,7 @@
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
+#include "webrtc/video_engine/call_stats.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 
 namespace webrtc {
@@ -94,6 +95,7 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   const int num_cpu_cores_;
   const rtc::scoped_ptr<ProcessThread> module_process_thread_;
+  const rtc::scoped_ptr<CallStats> call_stats_;
   const rtc::scoped_ptr<ChannelGroup> channel_group_;
   Call::Config config_;
   rtc::ThreadChecker configuration_thread_checker_;
@@ -138,7 +140,9 @@ namespace internal {
 Call::Call(const Call::Config& config)
     : num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
-      channel_group_(new ChannelGroup(module_process_thread_.get())),
+      call_stats_(new CallStats()),
+      channel_group_(new ChannelGroup(module_process_thread_.get(),
+                     call_stats_.get())),
       config_(config),
       network_enabled_(true),
       receive_crit_(RWLockWrapper::CreateRWLock()),
@@ -162,6 +166,7 @@ Call::Call(const Call::Config& config)
 
   Trace::CreateTrace();
   module_process_thread_->Start();
+  module_process_thread_->RegisterModule(call_stats_.get());
 
   channel_group_->SetBweBitrates(config_.bitrate_config.min_bitrate_bps,
                                  config_.bitrate_config.start_bitrate_bps,
@@ -177,6 +182,7 @@ Call::~Call() {
   RTC_CHECK(video_receive_ssrcs_.empty());
   RTC_CHECK(video_receive_streams_.empty());
 
+  module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
   Trace::ReturnTrace();
 }
@@ -272,8 +278,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
   VideoSendStream* send_stream = new VideoSendStream(num_cpu_cores_,
-      module_process_thread_.get(), channel_group_.get(), config,
-      encoder_config, suspended_video_send_ssrcs_);
+      module_process_thread_.get(), call_stats_.get(), channel_group_.get(),
+      config, encoder_config, suspended_video_send_ssrcs_);
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.
@@ -333,7 +339,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       num_cpu_cores_, channel_group_.get(), config, config_.voice_engine,
-      module_process_thread_.get());
+      module_process_thread_.get(), call_stats_.get());
 
   // This needs to be taken before receive_crit_ as both locks need to be held
   // while changing network state.

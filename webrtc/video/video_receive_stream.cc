@@ -141,12 +141,14 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
                                        ChannelGroup* channel_group,
                                        const VideoReceiveStream::Config& config,
                                        webrtc::VoiceEngine* voice_engine,
-                                       ProcessThread* process_thread)
+                                       ProcessThread* process_thread,
+                                       CallStats* call_stats)
     : transport_adapter_(config.rtcp_send_transport),
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
       clock_(Clock::GetRealTimeClock()),
-      channel_group_(channel_group) {
+      channel_group_(channel_group),
+      call_stats_(call_stats) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   bool send_side_bwe = UseSendSideBwe(config_.rtp.extensions);
@@ -155,18 +157,15 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       channel_group_->GetRemoteBitrateEstimator(send_side_bwe);
 
   vie_channel_.reset(new ViEChannel(
-      num_cpu_cores, &transport_adapter_, process_thread,
-      channel_group_->GetRtcpIntraFrameObserver(),
+      num_cpu_cores, &transport_adapter_, process_thread, nullptr,
       channel_group_->GetBitrateController()->CreateRtcpBandwidthObserver(),
-      nullptr, bitrate_estimator,
-      channel_group_->GetCallStats()->rtcp_rtt_stats(), channel_group_->pacer(),
-      channel_group_->packet_router(), 1, false));
+      nullptr, bitrate_estimator, call_stats_->rtcp_rtt_stats(),
+      channel_group_->pacer(), channel_group_->packet_router(), 1, false));
 
   RTC_CHECK(vie_channel_->Init() == 0);
 
   // Register the channel to receive stats updates.
-  channel_group_->GetCallStats()->RegisterStatsObserver(
-      vie_channel_->GetStatsObserver());
+  call_stats_->RegisterStatsObserver(vie_channel_->GetStatsObserver());
 
   // TODO(pbos): This is not fine grained enough...
   vie_channel_->SetProtectionMode(config_.rtp.nack.rtp_history_ms > 0, false,
@@ -196,10 +195,8 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   vie_channel_->SetUseRtxPayloadMappingOnRestore(
       config_.rtp.use_rtx_payload_mapping_on_restore);
 
-  // TODO(pbos): Remove channel_group_ usage from VideoReceiveStream. This
-  // should be configured in call.cc.
   channel_group_->SetChannelRembStatus(false, config_.rtp.remb,
-                                       vie_channel_.get());
+                                       vie_channel_->rtp_rtcp());
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
@@ -289,9 +286,8 @@ VideoReceiveStream::~VideoReceiveStream() {
   for (size_t i = 0; i < config_.decoders.size(); ++i)
     vie_channel_->DeRegisterExternalDecoder(config_.decoders[i].payload_type);
 
-  channel_group_->GetCallStats()->DeregisterStatsObserver(
-      vie_channel_->GetStatsObserver());
-  channel_group_->SetChannelRembStatus(false, false, vie_channel_.get());
+  call_stats_->DeregisterStatsObserver(vie_channel_->GetStatsObserver());
+  channel_group_->SetChannelRembStatus(false, false, vie_channel_->rtp_rtcp());
 
   uint32_t remote_ssrc = vie_channel_->GetRemoteSSRC();
   bool send_side_bwe = UseSendSideBwe(config_.rtp.extensions);

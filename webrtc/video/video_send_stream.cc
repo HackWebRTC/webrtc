@@ -22,6 +22,7 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video/video_capture_input.h"
 #include "webrtc/video_engine/call_stats.h"
+#include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
@@ -111,6 +112,7 @@ namespace internal {
 VideoSendStream::VideoSendStream(
     int num_cpu_cores,
     ProcessThread* module_process_thread,
+    CallStats* call_stats,
     ChannelGroup* channel_group,
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
@@ -120,7 +122,9 @@ VideoSendStream::VideoSendStream(
       config_(config),
       suspended_ssrcs_(suspended_ssrcs),
       module_process_thread_(module_process_thread),
+      call_stats_(call_stats),
       channel_group_(channel_group),
+      encoder_feedback_(new EncoderStateFeedback()),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
   LOG(LS_INFO) << "VideoSendStream: " << config_.ToString();
@@ -146,16 +150,15 @@ VideoSendStream::VideoSendStream(
 
   vie_channel_.reset(new ViEChannel(
       num_cpu_cores, config.send_transport, module_process_thread_,
-      channel_group_->GetRtcpIntraFrameObserver(),
+      encoder_feedback_->GetRtcpIntraFrameObserver(),
       channel_group_->GetBitrateController()->CreateRtcpBandwidthObserver(),
       transport_feedback_observer,
       channel_group_->GetRemoteBitrateEstimator(false),
-      channel_group_->GetCallStats()->rtcp_rtt_stats(), channel_group_->pacer(),
+      call_stats_->rtcp_rtt_stats(), channel_group_->pacer(),
       channel_group_->packet_router(), ssrcs.size(), true));
   RTC_CHECK(vie_channel_->Init() == 0);
 
-  channel_group_->GetCallStats()->RegisterStatsObserver(
-      vie_channel_->GetStatsObserver());
+  call_stats_->RegisterStatsObserver(vie_channel_->GetStatsObserver());
 
   vie_encoder_->StartThreadsAndSetSharedMembers(
       vie_channel_->send_payload_router(),
@@ -183,8 +186,7 @@ VideoSendStream::VideoSendStream(
     }
   }
 
-  // TODO(pbos): Consider configuring REMB in Call.
-  channel_group_->SetChannelRembStatus(true, false, vie_channel_.get());
+  channel_group_->SetChannelRembStatus(true, false, vie_channel_->rtp_rtcp());
 
   // Enable NACK, FEC or both.
   const bool enable_protection_nack = config_.rtp.nack.rtp_history_ms > 0;
@@ -226,7 +228,8 @@ VideoSendStream::VideoSendStream(
   if (config_.suspend_below_min_bitrate)
     vie_encoder_->SuspendBelowMinBitrate();
 
-  channel_group_->AddEncoder(ssrcs, vie_encoder_.get());
+  channel_group_->AddEncoder(vie_encoder_.get());
+  encoder_feedback_->AddEncoder(ssrcs, vie_encoder_.get());
 
   vie_channel_->RegisterSendChannelRtcpStatisticsCallback(&stats_proxy_);
   vie_channel_->RegisterSendChannelRtpStatisticsCallback(&stats_proxy_);
@@ -250,13 +253,13 @@ VideoSendStream::~VideoSendStream() {
   vie_encoder_->DeRegisterExternalEncoder(
       config_.encoder_settings.payload_type);
 
-  channel_group_->GetCallStats()->DeregisterStatsObserver(
-      vie_channel_->GetStatsObserver());
-  channel_group_->SetChannelRembStatus(false, false, vie_channel_.get());
+  call_stats_->DeregisterStatsObserver(vie_channel_->GetStatsObserver());
+  channel_group_->SetChannelRembStatus(false, false, vie_channel_->rtp_rtcp());
 
   // Remove the feedback, stop all encoding threads and processing. This must be
   // done before deleting the channel.
   channel_group_->RemoveEncoder(vie_encoder_.get());
+  encoder_feedback_->RemoveEncoder(vie_encoder_.get());
   vie_encoder_->StopThreadsAndRemoveSharedMembers();
 
   uint32_t remote_ssrc = vie_channel_->GetRemoteSSRC();

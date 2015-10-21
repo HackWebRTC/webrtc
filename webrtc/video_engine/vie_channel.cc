@@ -609,10 +609,6 @@ int ViEChannel::GetRequiredNackListSize(int target_delay_ms) {
   return target_delay_ms * 40 * 30 / 1000;
 }
 
-void ViEChannel::EnableRemb(bool enable) {
-  rtp_rtcp_modules_[0]->SetREMBStatus(enable);
-}
-
 int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
   // Disable any previous registrations of this extension to avoid errors.
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {

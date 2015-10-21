@@ -27,7 +27,9 @@
 
 namespace webrtc {
 
+class CallStats;
 class ChannelGroup;
+class EncoderStateFeedback;
 class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
@@ -39,6 +41,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
  public:
   VideoSendStream(int num_cpu_cores,
                   ProcessThread* module_process_thread,
+                  CallStats* call_stats,
                   ChannelGroup* channel_group,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
@@ -76,11 +79,13 @@ class VideoSendStream : public webrtc::VideoSendStream,
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   ProcessThread* const module_process_thread_;
+  CallStats* const call_stats_;
   ChannelGroup* const channel_group_;
 
   rtc::scoped_ptr<VideoCaptureInput> input_;
   rtc::scoped_ptr<ViEChannel> vie_channel_;
   rtc::scoped_ptr<ViEEncoder> vie_encoder_;
+  rtc::scoped_ptr<EncoderStateFeedback> encoder_feedback_;
 
   // Used as a workaround to indicate that we should be using the configured
   // start bitrate initially, instead of the one reported by VideoEngine (which
