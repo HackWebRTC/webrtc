@@ -25,6 +25,7 @@
 #include "webrtc/modules/video_coding/main/source/media_optimization.h"
 #include "webrtc/modules/video_coding/main/source/receiver.h"
 #include "webrtc/modules/video_coding/main/source/timing.h"
+#include "webrtc/modules/video_coding/utility/include/qp_parser.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
@@ -237,6 +238,7 @@ class VideoReceiver {
   VCMProcessTimer _receiveStatsTimer;
   VCMProcessTimer _retransmissionTimer;
   VCMProcessTimer _keyRequestTimer;
+  QpParser qp_parser_;
 };
 
 }  // namespace vcm

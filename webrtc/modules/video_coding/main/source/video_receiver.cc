@@ -302,7 +302,12 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
 
     if (pre_decode_image_callback_) {
       EncodedImage encoded_image(frame->EncodedImage());
-      pre_decode_image_callback_->Encoded(encoded_image, NULL, NULL);
+      int qp = -1;
+      if (qp_parser_.GetQp(*frame, &qp)) {
+        encoded_image.qp_ = qp;
+      }
+      pre_decode_image_callback_->Encoded(
+          encoded_image, frame->CodecSpecific(), NULL);
     }
 
 #ifdef DEBUG_DECODER_BIT_STREAM

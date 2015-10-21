@@ -13,6 +13,7 @@
 #include <cmath>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/metrics.h"
@@ -53,6 +54,10 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedWidthInPixels", width);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedHeightInPixels", height);
   }
+  int qp = qp_counters_.vp8.Avg(kMinRequiredSamples);
+  if (qp != -1)
+    RTC_HISTOGRAM_COUNTS_200("WebRTC.Video.Decoded.Vp8.Qp", qp);
+
   // TODO(asapersson): DecoderTiming() is call periodically (each 1000ms) and
   // not per frame. Change decode time to include every frame.
   const int kMinRequiredDecodeSamples = 5;
@@ -178,6 +183,17 @@ void ReceiveStatisticsProxy::OnFrameCountsUpdated(
 void ReceiveStatisticsProxy::OnDiscardedPacketsUpdated(int discarded_packets) {
   rtc::CritScope lock(&crit_);
   stats_.discarded_packets = discarded_packets;
+}
+
+void ReceiveStatisticsProxy::OnPreDecode(
+    const EncodedImage& encoded_image,
+    const CodecSpecificInfo* codec_specific_info) {
+  if (codec_specific_info == nullptr || encoded_image.qp_ == -1) {
+    return;
+  }
+  if (codec_specific_info->codecType == kVideoCodecVP8) {
+    qp_counters_.vp8.Add(encoded_image.qp_);
+  }
 }
 
 void ReceiveStatisticsProxy::SampleCounter::Add(int sample) {

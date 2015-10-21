@@ -22,6 +22,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/receive_statistics_proxy.h"
+#include "webrtc/video_encoder.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
 #include "webrtc/video_engine/vie_encoder.h"
@@ -35,7 +36,8 @@ namespace internal {
 
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public I420FrameCallback,
-                           public VideoRenderCallback {
+                           public VideoRenderCallback,
+                           public EncodedImageCallback {
  public:
   VideoReceiveStream(int num_cpu_cores,
                      ChannelGroup* channel_group,
@@ -62,6 +64,11 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // Overrides VideoRenderCallback.
   int RenderFrame(const uint32_t /*stream_id*/,
                   const VideoFrame& video_frame) override;
+
+  // Overrides EncodedImageCallback.
+  int32_t Encoded(const EncodedImage& encoded_image,
+                  const CodecSpecificInfo* codec_specific_info,
+                  const RTPFragmentationHeader* fragmentation) override;
 
   const Config& config() const { return config_; }
 

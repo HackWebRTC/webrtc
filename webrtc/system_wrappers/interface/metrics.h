@@ -72,6 +72,9 @@
 #define RTC_HISTOGRAM_COUNTS_100(name, sample) RTC_HISTOGRAM_COUNTS( \
     name, sample, 1, 100, 50)
 
+#define RTC_HISTOGRAM_COUNTS_200(name, sample) RTC_HISTOGRAM_COUNTS( \
+    name, sample, 1, 200, 50)
+
 #define RTC_HISTOGRAM_COUNTS_1000(name, sample) RTC_HISTOGRAM_COUNTS( \
     name, sample, 1, 1000, 50)
 

@@ -96,8 +96,10 @@ source_set("video_coding_utility") {
     "utility/frame_dropper.cc",
     "utility/include/frame_dropper.h",
     "utility/include/moving_average.h",
+    "utility/include/qp_parser.h",
     "utility/include/quality_scaler.h",
     "utility/include/vp8_header_parser.h",
+    "utility/qp_parser.cc",
     "utility/quality_scaler.cc",
     "utility/vp8_header_parser.cc",
   ]

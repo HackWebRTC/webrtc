@@ -66,7 +66,9 @@ const uint8_t kVP8NewRange[128] = {
   241, 243, 245, 247, 249, 251, 253, 127
 };
 
-int GetQP(uint8_t* buf);
+// Gets the QP, QP range: [0, 127].
+// Returns true on success, false otherwise.
+bool GetQp(const uint8_t* buf, size_t length, int* qp);
 
 }  // namespace vp8
 

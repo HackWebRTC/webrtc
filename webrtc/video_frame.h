@@ -199,6 +199,7 @@ class EncodedImage {
   size_t _size;
   bool _completeFrame = false;
   AdaptReason adapt_reason_;
+  int qp_ = -1;  // Quantizer value.
 };
 
 }  // namespace webrtc

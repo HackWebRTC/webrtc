@@ -12,9 +12,15 @@
 
 #include "webrtc/modules/video_coding/utility/include/vp8_header_parser.h"
 
+#include "webrtc/system_wrappers/interface/logging.h"
+
 namespace webrtc {
 
 namespace vp8 {
+namespace {
+const size_t kCommonPayloadHeaderLength = 3;
+const size_t kKeyPayloadHeaderLength = 10;
+}  // namespace
 
 static uint32_t BSwap32(uint32_t x) {
   return (x >> 24) | ((x >> 8) & 0xff00) | ((x << 8) & 0xff0000) | (x << 24);
@@ -156,18 +162,26 @@ static void ParseFilterHeader(VP8BitReader* br) {
   }
 }
 
-int GetQP(uint8_t* buf) {
+bool GetQp(const uint8_t* buf, size_t length, int* qp) {
+  if (length < kCommonPayloadHeaderLength) {
+    LOG(LS_WARNING) << "Failed to get QP, invalid length.";
+    return false;
+  }
   VP8BitReader br;
   const uint32_t bits = buf[0] | (buf[1] << 8) | (buf[2] << 16);
   int key_frame = !(bits & 1);
   // Size of first partition in bytes.
-  int partition_length = (bits >> 5);
-  // Skip past uncompressed header: 10bytes for key, 3bytes for delta frames.
+  uint32_t partition_length = (bits >> 5);
+  size_t header_length = kCommonPayloadHeaderLength;
   if (key_frame) {
-    buf += 10;
-  } else {
-    buf += 3;
+    header_length = kKeyPayloadHeaderLength;
   }
+  if (header_length + partition_length > length) {
+    LOG(LS_WARNING) << "Failed to get QP, invalid length: " << length;
+    return false;
+  }
+  buf += header_length;
+
   VP8InitBitReader(&br, buf, buf + partition_length);
   if (key_frame) {
     // Color space and pixel type.
@@ -180,7 +194,12 @@ int GetQP(uint8_t* buf) {
   VP8GetValue(&br, 2);
   // Base QP.
   const int base_q0 = VP8GetValue(&br, 7);
-  return base_q0;
+  if (br.eof_ == 1) {
+    LOG(LS_WARNING) << "Failed to get QP, end of file reached.";
+    return false;
+  }
+  *qp = base_q0;
+  return true;
 }
 
 }  // namespace vp8

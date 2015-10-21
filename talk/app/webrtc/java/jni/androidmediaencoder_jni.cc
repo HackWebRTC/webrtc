@@ -795,8 +795,11 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         header.fragmentationLength[0] = image->_length;
         header.fragmentationPlType[0] = 0;
         header.fragmentationTimeDiff[0] = 0;
-        if (scale_)
-          quality_scaler_.ReportQP(webrtc::vp8::GetQP(payload));
+        if (scale_) {
+          int qp;
+          if (webrtc::vp8::GetQp(payload, payload_size, &qp))
+            quality_scaler_.ReportQP(qp);
+        }
       } else if (codecType_ == kVideoCodecH264) {
         if (scale_) {
           h264_bitstream_parser_.ParseBitstream(payload, payload_size);

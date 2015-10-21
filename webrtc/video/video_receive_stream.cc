@@ -19,7 +19,6 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video/receive_statistics_proxy.h"
-#include "webrtc/video_encoder.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_receive_stream.h"
 
@@ -277,8 +276,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   incoming_video_stream_->SetExternalCallback(this);
   vie_channel_->SetIncomingVideoStream(incoming_video_stream_.get());
 
-  if (config.pre_decode_callback)
-    vie_channel_->RegisterPreDecodeImageCallback(&encoded_frame_proxy_);
+  vie_channel_->RegisterPreDecodeImageCallback(this);
   vie_channel_->RegisterPreRenderCallback(this);
 }
 
@@ -361,6 +359,21 @@ int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
 
   stats_proxy_->OnRenderedFrame(video_frame.width(), video_frame.height());
 
+  return 0;
+}
+
+// TODO(asapersson): Consider moving callback from video_encoder.h or
+// creating a different callback.
+int32_t VideoReceiveStream::Encoded(
+    const EncodedImage& encoded_image,
+    const CodecSpecificInfo* codec_specific_info,
+    const RTPFragmentationHeader* fragmentation) {
+  stats_proxy_->OnPreDecode(encoded_image, codec_specific_info);
+  if (config_.pre_decode_callback) {
+    // TODO(asapersson): Remove EncodedFrameCallbackAdapter.
+    encoded_frame_proxy_.Encoded(
+        encoded_image, codec_specific_info, fragmentation);
+  }
   return 0;
 }
 
