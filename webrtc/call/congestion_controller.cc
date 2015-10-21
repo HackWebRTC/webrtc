@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video_engine/vie_channel_group.h"
+#include "webrtc/call/congestion_controller.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread_annotations.h"
@@ -143,8 +143,8 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
 }  // namespace
 
-ChannelGroup::ChannelGroup(ProcessThread* process_thread,
-                           CallStats* call_stats)
+CongestionController::CongestionController(ProcessThread* process_thread,
+                                           CallStats* call_stats)
     : remb_(new VieRemb()),
       bitrate_allocator_(new BitrateAllocator()),
       packet_router_(new PacketRouter()),
@@ -178,7 +178,7 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread,
   process_thread->RegisterModule(bitrate_controller_.get());
 }
 
-ChannelGroup::~ChannelGroup() {
+CongestionController::~CongestionController() {
   pacer_thread_->Stop();
   pacer_thread_->DeRegisterModule(pacer_.get());
   process_thread_->DeRegisterModule(bitrate_controller_.get());
@@ -191,12 +191,12 @@ ChannelGroup::~ChannelGroup() {
   RTC_DCHECK(encoders_.empty());
 }
 
-void ChannelGroup::AddEncoder(ViEEncoder* encoder) {
+void CongestionController::AddEncoder(ViEEncoder* encoder) {
   rtc::CritScope lock(&encoder_crit_);
   encoders_.push_back(encoder);
 }
 
-void ChannelGroup::RemoveEncoder(ViEEncoder* encoder) {
+void CongestionController::RemoveEncoder(ViEEncoder* encoder) {
   rtc::CritScope lock(&encoder_crit_);
   for (auto it = encoders_.begin(); it != encoders_.end(); ++it) {
     if (*it == encoder) {
@@ -206,9 +206,9 @@ void ChannelGroup::RemoveEncoder(ViEEncoder* encoder) {
   }
 }
 
-void ChannelGroup::SetBweBitrates(int min_bitrate_bps,
-                                  int start_bitrate_bps,
-                                  int max_bitrate_bps) {
+void CongestionController::SetBweBitrates(int min_bitrate_bps,
+                                          int start_bitrate_bps,
+                                          int max_bitrate_bps) {
   if (start_bitrate_bps > 0)
     bitrate_controller_->SetStartBitrate(start_bitrate_bps);
   bitrate_controller_->SetMinMaxBitrate(min_bitrate_bps, max_bitrate_bps);
@@ -220,11 +220,11 @@ void ChannelGroup::SetBweBitrates(int min_bitrate_bps,
   min_bitrate_bps_ = min_bitrate_bps;
 }
 
-BitrateController* ChannelGroup::GetBitrateController() const {
+BitrateController* CongestionController::GetBitrateController() const {
   return bitrate_controller_.get();
 }
 
-RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator(
+RemoteBitrateEstimator* CongestionController::GetRemoteBitrateEstimator(
     bool send_side_bwe) const {
 
   if (send_side_bwe)
@@ -233,7 +233,8 @@ RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator(
     return remote_bitrate_estimator_.get();
 }
 
-TransportFeedbackObserver* ChannelGroup::GetTransportFeedbackObserver() {
+TransportFeedbackObserver*
+CongestionController::GetTransportFeedbackObserver() {
   if (transport_feedback_adapter_.get() == nullptr) {
     transport_feedback_adapter_.reset(new TransportFeedbackAdapter(
         bitrate_controller_->CreateRtcpBandwidthObserver(),
@@ -248,14 +249,14 @@ TransportFeedbackObserver* ChannelGroup::GetTransportFeedbackObserver() {
   return transport_feedback_adapter_.get();
 }
 
-int64_t ChannelGroup::GetPacerQueuingDelayMs() const {
+int64_t CongestionController::GetPacerQueuingDelayMs() const {
   return pacer_->QueueInMs();
 }
 
 // TODO(mflodman): Move out of this class.
-void ChannelGroup::SetChannelRembStatus(bool sender,
-                                        bool receiver,
-                                        RtpRtcp* rtp_module) {
+void CongestionController::SetChannelRembStatus(bool sender,
+                                                bool receiver,
+                                                RtpRtcp* rtp_module) {
   rtp_module->SetREMBStatus(sender || receiver);
   if (sender) {
     remb_->AddRembSender(rtp_module);
@@ -269,7 +270,7 @@ void ChannelGroup::SetChannelRembStatus(bool sender,
   }
 }
 
-void ChannelGroup::SignalNetworkState(NetworkState state) {
+void CongestionController::SignalNetworkState(NetworkState state) {
   if (state == kNetworkUp) {
     pacer_->Resume();
   } else {
@@ -277,10 +278,10 @@ void ChannelGroup::SignalNetworkState(NetworkState state) {
   }
 }
 
-// TODO(mflodman): Move this logic out from ChannelGroup.
-void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
-                                    uint8_t fraction_loss,
-                                    int64_t rtt) {
+// TODO(mflodman): Move this logic out from CongestionController.
+void CongestionController::OnNetworkChanged(uint32_t target_bitrate_bps,
+                                            uint8_t fraction_loss,
+                                            int64_t rtt) {
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt);
   int pad_up_to_bitrate_bps = 0;
   {
@@ -294,7 +295,7 @@ void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
       pad_up_to_bitrate_bps / 1000);
 }
 
-void ChannelGroup::OnSentPacket(const rtc::SentPacket& sent_packet) {
+void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {
   if (transport_feedback_adapter_) {
     transport_feedback_adapter_->UpdateSendTime(sent_packet.packet_id,
                                                 sent_packet.send_time_ms);

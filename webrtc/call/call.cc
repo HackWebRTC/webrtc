@@ -21,6 +21,7 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"
+#include "webrtc/call/congestion_controller.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
@@ -96,7 +97,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   const int num_cpu_cores_;
   const rtc::scoped_ptr<ProcessThread> module_process_thread_;
   const rtc::scoped_ptr<CallStats> call_stats_;
-  const rtc::scoped_ptr<ChannelGroup> channel_group_;
+  const rtc::scoped_ptr<CongestionController> congestion_controller_;
   Call::Config config_;
   rtc::ThreadChecker configuration_thread_checker_;
 
@@ -141,8 +142,8 @@ Call::Call(const Call::Config& config)
     : num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
       call_stats_(new CallStats()),
-      channel_group_(new ChannelGroup(module_process_thread_.get(),
-                     call_stats_.get())),
+      congestion_controller_(new CongestionController(
+          module_process_thread_.get(), call_stats_.get())),
       config_(config),
       network_enabled_(true),
       receive_crit_(RWLockWrapper::CreateRWLock()),
@@ -168,9 +169,10 @@ Call::Call(const Call::Config& config)
   module_process_thread_->Start();
   module_process_thread_->RegisterModule(call_stats_.get());
 
-  channel_group_->SetBweBitrates(config_.bitrate_config.min_bitrate_bps,
-                                 config_.bitrate_config.start_bitrate_bps,
-                                 config_.bitrate_config.max_bitrate_bps);
+  congestion_controller_->SetBweBitrates(
+      config_.bitrate_config.min_bitrate_bps,
+      config_.bitrate_config.start_bitrate_bps,
+      config_.bitrate_config.max_bitrate_bps);
 }
 
 Call::~Call() {
@@ -235,7 +237,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      channel_group_->GetRemoteBitrateEstimator(false), config);
+      congestion_controller_->GetRemoteBitrateEstimator(false), config);
   {
     WriteLockScoped write_lock(*receive_crit_);
     RTC_DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
@@ -277,9 +279,10 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
-  VideoSendStream* send_stream = new VideoSendStream(num_cpu_cores_,
-      module_process_thread_.get(), call_stats_.get(), channel_group_.get(),
-      config, encoder_config, suspended_video_send_ssrcs_);
+  VideoSendStream* send_stream = new VideoSendStream(
+      num_cpu_cores_, module_process_thread_.get(), call_stats_.get(),
+      congestion_controller_.get(), config, encoder_config,
+      suspended_video_send_ssrcs_);
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.
@@ -338,8 +341,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      num_cpu_cores_, channel_group_.get(), config, config_.voice_engine,
-      module_process_thread_.get(), call_stats_.get());
+      num_cpu_cores_, congestion_controller_.get(), config,
+      config_.voice_engine, module_process_thread_.get(), call_stats_.get());
 
   // This needs to be taken before receive_crit_ as both locks need to be held
   // while changing network state.
@@ -401,14 +404,15 @@ Call::Stats Call::GetStats() const {
   Stats stats;
   // Fetch available send/receive bitrates.
   uint32_t send_bandwidth = 0;
-  channel_group_->GetBitrateController()->AvailableBandwidth(&send_bandwidth);
+  congestion_controller_->GetBitrateController()->AvailableBandwidth(
+      &send_bandwidth);
   std::vector<unsigned int> ssrcs;
   uint32_t recv_bandwidth = 0;
-  channel_group_->GetRemoteBitrateEstimator(false)->LatestEstimate(
+  congestion_controller_->GetRemoteBitrateEstimator(false)->LatestEstimate(
       &ssrcs, &recv_bandwidth);
   stats.send_bandwidth_bps = send_bandwidth;
   stats.recv_bandwidth_bps = recv_bandwidth;
-  stats.pacer_delay_ms = channel_group_->GetPacerQueuingDelayMs();
+  stats.pacer_delay_ms = congestion_controller_->GetPacerQueuingDelayMs();
   {
     ReadLockScoped read_lock(*send_crit_);
     // TODO(solenberg): Add audio send streams.
@@ -439,9 +443,9 @@ void Call::SetBitrateConfig(
     return;
   }
   config_.bitrate_config = bitrate_config;
-  channel_group_->SetBweBitrates(bitrate_config.min_bitrate_bps,
-                                 bitrate_config.start_bitrate_bps,
-                                 bitrate_config.max_bitrate_bps);
+  congestion_controller_->SetBweBitrates(bitrate_config.min_bitrate_bps,
+                                         bitrate_config.start_bitrate_bps,
+                                         bitrate_config.max_bitrate_bps);
 }
 
 void Call::SignalNetworkState(NetworkState state) {
@@ -450,7 +454,7 @@ void Call::SignalNetworkState(NetworkState state) {
   // to guarantee a consistent state across streams.
   rtc::CritScope lock(&network_enabled_crit_);
   network_enabled_ = state == kNetworkUp;
-  channel_group_->SignalNetworkState(state);
+  congestion_controller_->SignalNetworkState(state);
   {
     ReadLockScoped write_lock(*send_crit_);
     for (auto& kv : audio_send_ssrcs_) {
@@ -470,7 +474,7 @@ void Call::SignalNetworkState(NetworkState state) {
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  channel_group_->OnSentPacket(sent_packet);
+  congestion_controller_->OnSentPacket(sent_packet);
 }
 
 void Call::ConfigureSync(const std::string& sync_group) {

@@ -24,13 +24,13 @@
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_encoder.h"
 #include "webrtc/video_engine/vie_channel.h"
-#include "webrtc/video_engine/vie_channel_group.h"
 #include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
 
 class CallStats;
+class CongestionController;
 class VoiceEngine;
 
 namespace internal {
@@ -41,7 +41,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public EncodedImageCallback {
  public:
   VideoReceiveStream(int num_cpu_cores,
-                     ChannelGroup* channel_group,
+                     CongestionController* congestion_controller,
                      const VideoReceiveStream::Config& config,
                      webrtc::VoiceEngine* voice_engine,
                      ProcessThread* process_thread,
@@ -82,7 +82,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   const VideoReceiveStream::Config config_;
   Clock* const clock_;
 
-  ChannelGroup* const channel_group_;
+  CongestionController* const congestion_controller_;
   CallStats* const call_stats_;
 
   rtc::scoped_ptr<IncomingVideoStream> incoming_video_stream_;

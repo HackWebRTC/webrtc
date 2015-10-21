@@ -52,8 +52,6 @@
       'video_engine/stream_synchronization.h',
       'video_engine/vie_channel.cc',
       'video_engine/vie_channel.h',
-      'video_engine/vie_channel_group.cc',
-      'video_engine/vie_channel_group.h',
       'video_engine/vie_defines.h',
       'video_engine/vie_encoder.cc',
       'video_engine/vie_encoder.h',

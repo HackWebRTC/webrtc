@@ -15,6 +15,7 @@
     ],
     'webrtc_call_sources': [
       'call/call.cc',
+      'call/congestion_controller.cc',
       'call/transport_adapter.cc',
       'call/transport_adapter.h',
     ],

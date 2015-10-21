@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/call/congestion_controller.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -137,30 +138,33 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 }
 }  // namespace
 
-VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
-                                       ChannelGroup* channel_group,
-                                       const VideoReceiveStream::Config& config,
-                                       webrtc::VoiceEngine* voice_engine,
-                                       ProcessThread* process_thread,
-                                       CallStats* call_stats)
+VideoReceiveStream::VideoReceiveStream(
+    int num_cpu_cores,
+    CongestionController* congestion_controller,
+    const VideoReceiveStream::Config& config,
+    webrtc::VoiceEngine* voice_engine,
+    ProcessThread* process_thread,
+    CallStats* call_stats)
     : transport_adapter_(config.rtcp_send_transport),
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
       clock_(Clock::GetRealTimeClock()),
-      channel_group_(channel_group),
+      congestion_controller_(congestion_controller),
       call_stats_(call_stats) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   bool send_side_bwe = UseSendSideBwe(config_.rtp.extensions);
 
   RemoteBitrateEstimator* bitrate_estimator =
-      channel_group_->GetRemoteBitrateEstimator(send_side_bwe);
+      congestion_controller_->GetRemoteBitrateEstimator(send_side_bwe);
 
   vie_channel_.reset(new ViEChannel(
       num_cpu_cores, &transport_adapter_, process_thread, nullptr,
-      channel_group_->GetBitrateController()->CreateRtcpBandwidthObserver(),
+      congestion_controller_->GetBitrateController()->
+          CreateRtcpBandwidthObserver(),
       nullptr, bitrate_estimator, call_stats_->rtcp_rtt_stats(),
-      channel_group_->pacer(), channel_group_->packet_router(), 1, false));
+      congestion_controller_->pacer(), congestion_controller_->packet_router(),
+      1, false));
 
   RTC_CHECK(vie_channel_->Init() == 0);
 
@@ -195,8 +199,8 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   vie_channel_->SetUseRtxPayloadMappingOnRestore(
       config_.rtp.use_rtx_payload_mapping_on_restore);
 
-  channel_group_->SetChannelRembStatus(false, config_.rtp.remb,
-                                       vie_channel_->rtp_rtcp());
+  congestion_controller_->SetChannelRembStatus(false, config_.rtp.remb,
+                                               vie_channel_->rtp_rtcp());
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
@@ -287,12 +291,13 @@ VideoReceiveStream::~VideoReceiveStream() {
     vie_channel_->DeRegisterExternalDecoder(config_.decoders[i].payload_type);
 
   call_stats_->DeregisterStatsObserver(vie_channel_->GetStatsObserver());
-  channel_group_->SetChannelRembStatus(false, false, vie_channel_->rtp_rtcp());
+  congestion_controller_->SetChannelRembStatus(false, false,
+                                               vie_channel_->rtp_rtcp());
 
   uint32_t remote_ssrc = vie_channel_->GetRemoteSSRC();
   bool send_side_bwe = UseSendSideBwe(config_.rtp.extensions);
-  channel_group_->GetRemoteBitrateEstimator(send_side_bwe)->RemoveStream(
-      remote_ssrc);
+  congestion_controller_->GetRemoteBitrateEstimator(send_side_bwe)->
+      RemoveStream(remote_ssrc);
 }
 
 void VideoReceiveStream::Start() {

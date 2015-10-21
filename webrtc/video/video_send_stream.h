@@ -28,7 +28,7 @@
 namespace webrtc {
 
 class CallStats;
-class ChannelGroup;
+class CongestionController;
 class EncoderStateFeedback;
 class ProcessThread;
 class ViEChannel;
@@ -42,7 +42,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   VideoSendStream(int num_cpu_cores,
                   ProcessThread* module_process_thread,
                   CallStats* call_stats,
-                  ChannelGroup* channel_group,
+                  CongestionController* congestion_controller,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
                   const std::map<uint32_t, RtpState>& suspended_ssrcs);
@@ -80,7 +80,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   ProcessThread* const module_process_thread_;
   CallStats* const call_stats_;
-  ChannelGroup* const channel_group_;
+  CongestionController* const congestion_controller_;
 
   rtc::scoped_ptr<VideoCaptureInput> input_;
   rtc::scoped_ptr<ViEChannel> vie_channel_;

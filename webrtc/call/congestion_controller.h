@@ -8,20 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_GROUP_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_GROUP_H_
+#ifndef WEBRTC_CALL_CONGESTION_CONTROLLER_H_
+#define WEBRTC_CALL_CONGESTION_CONTROLLER_H_
 
-#include <list>
-#include <map>
-#include <set>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/video_receive_stream.h"
-#include "webrtc/video_send_stream.h"
+#include "webrtc/stream.h"
 
 namespace webrtc {
 
@@ -39,12 +35,10 @@ class TransportFeedbackAdapter;
 class ViEEncoder;
 class VieRemb;
 
-// Channel group contains data common for several channels. All channels in the
-// group are assumed to send/receive data to the same end-point.
-class ChannelGroup : public BitrateObserver {
+class CongestionController : public BitrateObserver {
  public:
-  ChannelGroup(ProcessThread* process_thread, CallStats* call_stats);
-  ~ChannelGroup();
+  CongestionController(ProcessThread* process_thread, CallStats* call_stats);
+  ~CongestionController();
   void AddEncoder(ViEEncoder* encoder);
   void RemoveEncoder(ViEEncoder* encoder);
   void SetBweBitrates(int min_bitrate_bps,
@@ -63,7 +57,6 @@ class ChannelGroup : public BitrateObserver {
   BitrateAllocator* bitrate_allocator() const {
       return bitrate_allocator_.get(); }
   TransportFeedbackObserver* GetTransportFeedbackObserver();
-  RtcpIntraFrameObserver* GetRtcpIntraFrameObserver() const;
 
   // Implements BitrateObserver.
   void OnNetworkChanged(uint32_t target_bitrate_bps,
@@ -74,6 +67,7 @@ class ChannelGroup : public BitrateObserver {
 
  private:
   rtc::scoped_ptr<VieRemb> remb_;
+  // TODO(mflodman): Move bitrate_allocator_ to Call.
   rtc::scoped_ptr<BitrateAllocator> bitrate_allocator_;
   rtc::scoped_ptr<PacketRouter> packet_router_;
   rtc::scoped_ptr<PacedSender> pacer_;
@@ -96,4 +90,4 @@ class ChannelGroup : public BitrateObserver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_GROUP_H_
+#endif  // WEBRTC_CALL_CONGESTION_CONTROLLER_H_
