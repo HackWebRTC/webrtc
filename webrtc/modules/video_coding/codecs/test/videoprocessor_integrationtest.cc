@@ -730,6 +730,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
 // Run with no packet loss, at low bitrate.
 // spatial_resize is on, so expect one resize during the sequence,
 // resize happens on delta frame. Expect only one key frame (first frame).
+/*
 TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
@@ -752,6 +753,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
                          process_settings,
                          rc_metrics);
 }
+*/
 
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
 // vp9 wrapper for this.
