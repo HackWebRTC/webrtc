@@ -16,7 +16,6 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
-#include "webrtc/modules/video_capture/include/mock/mock_video_capture.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
