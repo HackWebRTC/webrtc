@@ -62,23 +62,6 @@ class VideoFrame {
                      webrtc::VideoRotation rotation,
                      bool apply_rotation) = 0;
 
-  // TODO(guoweis): Remove this once all external implementations are updated.
-  virtual bool Reset(uint32_t fourcc,
-                     int w,
-                     int h,
-                     int dw,
-                     int dh,
-                     uint8_t* sample,
-                     size_t sample_size,
-                     size_t pixel_width,
-                     size_t pixel_height,
-                     int64_t time_stamp,
-                     int rotation) {
-    return Reset(fourcc, w, h, dw, dh, sample, sample_size, pixel_width,
-                 pixel_height, time_stamp,
-                 static_cast<webrtc::VideoRotation>(rotation), true);
-  }
-
   // Basic accessors.
   // Note this is the width and height without rotation applied.
   virtual size_t GetWidth() const = 0;
