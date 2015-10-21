@@ -70,6 +70,7 @@
           'httpserver_unittest.cc',
           'ipaddress_unittest.cc',
           'logging_unittest.cc',
+          'maybe_unittest.cc',
           'md5digest_unittest.cc',
           'messagedigest_unittest.cc',
           'messagequeue_unittest.cc',
