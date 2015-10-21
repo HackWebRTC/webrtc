@@ -34,8 +34,6 @@
 
 namespace cricket {
 
-extern const uint32_t WEAK_PING_DELAY;
-
 // Adds the port on which the candidate originated.
 class RemoteCandidate : public Candidate {
  public:
@@ -254,7 +252,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   int receiving_timeout_;
   uint32_t last_ping_sent_ms_ = 0;
   bool gather_continually_ = false;
-  int weak_ping_delay_ = WEAK_PING_DELAY;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };
