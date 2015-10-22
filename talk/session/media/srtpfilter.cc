@@ -57,7 +57,7 @@ extern "C" {
 #ifdef  ENABLE_EXTERNAL_AUTH
 #include "talk/session/media/externalhmac.h"
 #endif  // ENABLE_EXTERNAL_AUTH
-#ifdef _DEBUG
+#if !defined(NDEBUG)
 extern "C" debug_module_t mod_srtp;
 extern "C" debug_module_t mod_auth;
 extern "C" debug_module_t mod_cipher;
@@ -92,7 +92,7 @@ bool SrtpNotAvailable(const char *func) {
 
 void EnableSrtpDebugging() {
 #ifdef HAVE_SRTP
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   debug_on(mod_srtp);
   debug_on(mod_auth);
   debug_on(mod_cipher);

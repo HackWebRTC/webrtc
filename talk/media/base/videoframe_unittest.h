@@ -1251,7 +1251,7 @@ class VideoFrameTest : public testing::Test {
   // The following test that Validate crashes if the size is greater than the
   // actual buffer size.
   // TODO(fbarchard): Consider moving a filter into the capturer/plugin.
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_MSC_VER) && !defined(NDEBUG)
   int ExceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS *ep) {
     if (code == EXCEPTION_ACCESS_VIOLATION) {
       LOG(LS_INFO) << "Caught EXCEPTION_ACCESS_VIOLATION as expected.";
