@@ -26,8 +26,6 @@
  */
 package org.webrtc;
 
-import android.opengl.EGL14;
-import android.os.Build;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
@@ -38,6 +36,8 @@ import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.microedition.khronos.egl.EGL10;
 
 @SuppressWarnings("deprecation")
 public class VideoCapturerAndroidTest extends ActivityTestCase {
@@ -87,12 +87,8 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
 
   @SmallTest
   public void testCreateAndReleaseUsingTextures() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
-      return;
-    }
     VideoCapturerAndroidTestFixtures.release(
-        VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT));
+        VideoCapturerAndroid.create("", null, EGL10.EGL_NO_CONTEXT));
   }
 
   @SmallTest
@@ -115,12 +111,8 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
   public void DISABLED_testStartVideoCapturerUsingTextures() throws InterruptedException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
-      return;
-    }
     VideoCapturerAndroid capturer =
-        VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT);
+        VideoCapturerAndroid.create("", null, EGL10.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.startCapturerAndRender(capturer);
   }
 
@@ -162,11 +154,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
   public void DISABLED_testSwitchVideoCapturerUsingTextures() throws InterruptedException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
-      return;
-    }
-    VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT);
+    VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null, EGL10.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.switchCamera(capturer);
   }
 
@@ -191,13 +179,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
 
   @MediumTest
   public void testCameraCallsAfterStopUsingTextures() throws InterruptedException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
-      return;
-    }
     final String deviceName = CameraEnumerationAndroid.getDeviceName(0);
     final VideoCapturerAndroid capturer = VideoCapturerAndroid.create(deviceName, null,
-        EGL14.EGL_NO_CONTEXT);
+        EGL10.EGL_NO_CONTEXT);
 
     VideoCapturerAndroidTestFixtures.cameraCallsAfterStop(capturer,
         getInstrumentation().getContext());
@@ -214,11 +198,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @SmallTest
   public void DISABLED_testStopRestartVideoSourceUsingTextures() throws InterruptedException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
-      return;
-    }
-    VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT);
+    VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null, EGL10.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.stopRestartVideoSource(capturer);
   }
 
@@ -235,13 +215,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
 
   @SmallTest
   public void testStartStopWithDifferentResolutionsUsingTextures() throws InterruptedException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
-      return;
-    }
     String deviceName = CameraEnumerationAndroid.getDeviceName(0);
     VideoCapturerAndroid capturer =
-        VideoCapturerAndroid.create(deviceName, null, EGL14.EGL_NO_CONTEXT);
+        VideoCapturerAndroid.create(deviceName, null, EGL10.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.startStopWithDifferentResolutions(capturer,
         getInstrumentation().getContext());
   }
@@ -259,13 +235,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
 
   @SmallTest
   public void testReturnBufferLateUsingTextures() throws InterruptedException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
-      return;
-    }
     String deviceName = CameraEnumerationAndroid.getDeviceName(0);
     VideoCapturerAndroid capturer =
-        VideoCapturerAndroid.create(deviceName, null, EGL14.EGL_NO_CONTEXT);
+        VideoCapturerAndroid.create(deviceName, null, EGL10.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.returnBufferLate(capturer,
         getInstrumentation().getContext());
   }
@@ -282,12 +254,8 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // TODO(perkj): Enable once VideoCapture to texture support has landed in C++.
   @MediumTest
   public void DISABLED_testReturnBufferLateEndToEndUsingTextures() throws InterruptedException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Log.i(TAG, "Capturing to textures is not supported, requires EGL14.");
-      return;
-    }
     final VideoCapturerAndroid capturer =
-        VideoCapturerAndroid.create("", null, EGL14.EGL_NO_CONTEXT);
+        VideoCapturerAndroid.create("", null, EGL10.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.returnBufferLateEndToEnd(capturer);
   }
 }

@@ -31,14 +31,14 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.opengles.GL10;
 
 import android.annotation.SuppressLint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.opengl.EGL14;
-import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
@@ -71,11 +71,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   private final ArrayList<YuvImageRenderer> yuvImageRenderers;
   // |drawer| is synchronized on |yuvImageRenderers|.
   private GlRectDrawer drawer;
-  private static final int EGL14_SDK_VERSION =
-      android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
-  // Current SDK version.
-  private static final int CURRENT_SDK_VERSION =
-      android.os.Build.VERSION.SDK_INT;
   // Render and draw threads.
   private static Thread renderFrameThread;
   private static Thread drawThread;
@@ -612,11 +607,9 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   public void onSurfaceCreated(GL10 unused, EGLConfig config) {
     Logging.d(TAG, "VideoRendererGui.onSurfaceCreated");
     // Store render EGL context.
-    if (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION) {
-      synchronized (VideoRendererGui.class) {
-        eglContext = EGL14.eglGetCurrentContext();
-        Logging.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
-      }
+    synchronized (VideoRendererGui.class) {
+      eglContext = ((EGL10) EGLContext.getEGL()).eglGetCurrentContext();
+      Logging.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
     }
 
     synchronized (yuvImageRenderers) {

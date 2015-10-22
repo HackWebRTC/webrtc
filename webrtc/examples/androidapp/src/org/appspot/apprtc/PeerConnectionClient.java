@@ -11,7 +11,6 @@
 package org.appspot.apprtc;
 
 import android.content.Context;
-import android.opengl.EGLContext;
 import android.util.Log;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
@@ -42,6 +41,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.microedition.khronos.egl.EGLContext;
 
 /**
  * Peer connection client implementation.

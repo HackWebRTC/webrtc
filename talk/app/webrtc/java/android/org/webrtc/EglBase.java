@@ -28,35 +28,36 @@
 package org.webrtc;
 
 import android.graphics.SurfaceTexture;
-import android.opengl.EGL14;
-import android.opengl.EGLConfig;
-import android.opengl.EGLContext;
-import android.opengl.EGLDisplay;
-import android.opengl.EGLSurface;
 import android.view.Surface;
 
 import org.webrtc.Logging;
+
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 
 /**
  * Holds EGL state and utility methods for handling an EGLContext, an EGLDisplay, and an EGLSurface.
  */
 public final class EglBase {
   private static final String TAG = "EglBase";
-  private static final int EGL14_SDK_VERSION = android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
-  private static final int CURRENT_SDK_VERSION = android.os.Build.VERSION.SDK_INT;
+  // These constants are taken from EGL14.EGL_OPENGL_ES2_BIT and EGL14.EGL_CONTEXT_CLIENT_VERSION.
+  // https://android.googlesource.com/platform/frameworks/base/+/master/opengl/java/android/opengl/EGL14.java
+  // This is similar to how GlSurfaceView does:
+  // http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.1.1_r1/android/opengl/GLSurfaceView.java#760
+  private static final int EGL_OPENGL_ES2_BIT = 4;
+  private static final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
   // Android-specific extension.
   private static final int EGL_RECORDABLE_ANDROID = 0x3142;
 
+  private final EGL10 egl;
   private EGLContext eglContext;
   private ConfigType configType;
   private EGLConfig eglConfig;
   private EGLDisplay eglDisplay;
-  private EGLSurface eglSurface = EGL14.EGL_NO_SURFACE;
-
-  public static boolean isEGL14Supported() {
-    Logging.d(TAG, "SDK version: " + CURRENT_SDK_VERSION);
-    return (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION);
-  }
+  private EGLSurface eglSurface = EGL10.EGL_NO_SURFACE;
 
   // EGLConfig constructor type. Influences eglChooseConfig arguments.
   public static enum ConfigType {
@@ -73,11 +74,12 @@ public final class EglBase {
   // Create root context without any EGLSurface or parent EGLContext. This can be used for branching
   // new contexts that share data.
   public EglBase() {
-    this(EGL14.EGL_NO_CONTEXT, ConfigType.PLAIN);
+    this(EGL10.EGL_NO_CONTEXT, ConfigType.PLAIN);
   }
 
   // Create a new context with the specified config type, sharing data with sharedContext.
   public EglBase(EGLContext sharedContext, ConfigType configType) {
+    this.egl = (EGL10) EGLContext.getEGL();
     this.configType = configType;
     eglDisplay = getEglDisplay();
     eglConfig = getEglConfig(eglDisplay, configType);
@@ -103,12 +105,12 @@ public final class EglBase {
     if (configType == ConfigType.PIXEL_BUFFER) {
       Logging.w(TAG, "This EGL context is configured for PIXEL_BUFFER, but uses regular Surface");
     }
-    if (eglSurface != EGL14.EGL_NO_SURFACE) {
+    if (eglSurface != EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("Already has an EGLSurface");
     }
-    int[] surfaceAttribs = {EGL14.EGL_NONE};
-    eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, surface, surfaceAttribs, 0);
-    if (eglSurface == EGL14.EGL_NO_SURFACE) {
+    int[] surfaceAttribs = {EGL10.EGL_NONE};
+    eglSurface = egl.eglCreateWindowSurface(eglDisplay, eglConfig, surface, surfaceAttribs);
+    if (eglSurface == EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("Failed to create window surface");
     }
   }
@@ -124,12 +126,12 @@ public final class EglBase {
       throw new RuntimeException(
           "This EGL context is not configured to use a pixel buffer: " + configType);
     }
-    if (eglSurface != EGL14.EGL_NO_SURFACE) {
+    if (eglSurface != EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("Already has an EGLSurface");
     }
-    int[] surfaceAttribs = {EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT, height, EGL14.EGL_NONE};
-    eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, eglConfig, surfaceAttribs, 0);
-    if (eglSurface == EGL14.EGL_NO_SURFACE) {
+    int[] surfaceAttribs = {EGL10.EGL_WIDTH, width, EGL10.EGL_HEIGHT, height, EGL10.EGL_NONE};
+    eglSurface = egl.eglCreatePbufferSurface(eglDisplay, eglConfig, surfaceAttribs);
+    if (eglSurface == EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("Failed to create pixel buffer surface");
     }
   }
@@ -139,30 +141,30 @@ public final class EglBase {
   }
 
   public boolean hasSurface() {
-    return eglSurface != EGL14.EGL_NO_SURFACE;
+    return eglSurface != EGL10.EGL_NO_SURFACE;
   }
 
   public int surfaceWidth() {
     final int widthArray[] = new int[1];
-    EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL14.EGL_WIDTH, widthArray, 0);
+    egl.eglQuerySurface(eglDisplay, eglSurface, EGL10.EGL_WIDTH, widthArray);
     return widthArray[0];
   }
 
   public int surfaceHeight() {
     final int heightArray[] = new int[1];
-    EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL14.EGL_HEIGHT, heightArray, 0);
+    egl.eglQuerySurface(eglDisplay, eglSurface, EGL10.EGL_HEIGHT, heightArray);
     return heightArray[0];
   }
 
   public void releaseSurface() {
-    if (eglSurface != EGL14.EGL_NO_SURFACE) {
-      EGL14.eglDestroySurface(eglDisplay, eglSurface);
-      eglSurface = EGL14.EGL_NO_SURFACE;
+    if (eglSurface != EGL10.EGL_NO_SURFACE) {
+      egl.eglDestroySurface(eglDisplay, eglSurface);
+      eglSurface = EGL10.EGL_NO_SURFACE;
     }
   }
 
   private void checkIsNotReleased() {
-    if (eglDisplay == EGL14.EGL_NO_DISPLAY || eglContext == EGL14.EGL_NO_CONTEXT
+    if (eglDisplay == EGL10.EGL_NO_DISPLAY || eglContext == EGL10.EGL_NO_CONTEXT
         || eglConfig == null) {
       throw new RuntimeException("This object has been released");
     }
@@ -172,63 +174,62 @@ public final class EglBase {
     checkIsNotReleased();
     releaseSurface();
     detachCurrent();
-    EGL14.eglDestroyContext(eglDisplay, eglContext);
-    EGL14.eglReleaseThread();
-    EGL14.eglTerminate(eglDisplay);
-    eglContext = EGL14.EGL_NO_CONTEXT;
-    eglDisplay = EGL14.EGL_NO_DISPLAY;
+    egl.eglDestroyContext(eglDisplay, eglContext);
+    egl.eglTerminate(eglDisplay);
+    eglContext = EGL10.EGL_NO_CONTEXT;
+    eglDisplay = EGL10.EGL_NO_DISPLAY;
     eglConfig = null;
   }
 
   public void makeCurrent() {
     checkIsNotReleased();
-    if (eglSurface == EGL14.EGL_NO_SURFACE) {
+    if (eglSurface == EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("No EGLSurface - can't make current");
     }
-    if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+    if (!egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
       throw new RuntimeException("eglMakeCurrent failed");
     }
   }
 
   // Detach the current EGL context, so that it can be made current on another thread.
   public void detachCurrent() {
-    if (!EGL14.eglMakeCurrent(
-        eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)) {
+    if (!egl.eglMakeCurrent(
+        eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT)) {
       throw new RuntimeException("eglMakeCurrent failed");
     }
   }
 
   public void swapBuffers() {
     checkIsNotReleased();
-    if (eglSurface == EGL14.EGL_NO_SURFACE) {
+    if (eglSurface == EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("No EGLSurface - can't swap buffers");
     }
-    EGL14.eglSwapBuffers(eglDisplay, eglSurface);
+    egl.eglSwapBuffers(eglDisplay, eglSurface);
   }
 
   // Return an EGLDisplay, or die trying.
-  private static EGLDisplay getEglDisplay() {
-    EGLDisplay eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-    if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
-      throw new RuntimeException("Unable to get EGL14 display");
+  private EGLDisplay getEglDisplay() {
+    EGLDisplay eglDisplay = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+    if (eglDisplay == EGL10.EGL_NO_DISPLAY) {
+      throw new RuntimeException("Unable to get EGL10 display");
     }
     int[] version = new int[2];
-    if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
-      throw new RuntimeException("Unable to initialize EGL14");
+    if (!egl.eglInitialize(eglDisplay, version)) {
+      throw new RuntimeException("Unable to initialize EGL10");
     }
     return eglDisplay;
   }
 
   // Return an EGLConfig, or die trying.
-  private static EGLConfig getEglConfig(EGLDisplay eglDisplay, ConfigType configType) {
+  private EGLConfig getEglConfig(EGLDisplay eglDisplay, ConfigType configType) {
     // Always RGB888, GLES2.
     int[] configAttributes = {
-      EGL14.EGL_RED_SIZE, 8,
-      EGL14.EGL_GREEN_SIZE, 8,
-      EGL14.EGL_BLUE_SIZE, 8,
-      EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-      EGL14.EGL_NONE, 0,  // Allocate dummy fields for specific options.
-      EGL14.EGL_NONE
+      EGL10.EGL_RED_SIZE, 8,
+      EGL10.EGL_GREEN_SIZE, 8,
+      EGL10.EGL_BLUE_SIZE, 8,
+      EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+      EGL10.EGL_NONE, 0,  // Allocate dummy fields for specific options.
+      EGL10.EGL_NONE
     };
 
     // Fill in dummy fields based on configType.
@@ -236,8 +237,8 @@ public final class EglBase {
       case PLAIN:
         break;
       case PIXEL_BUFFER:
-        configAttributes[configAttributes.length - 3] = EGL14.EGL_SURFACE_TYPE;
-        configAttributes[configAttributes.length - 2] = EGL14.EGL_PBUFFER_BIT;
+        configAttributes[configAttributes.length - 3] = EGL10.EGL_SURFACE_TYPE;
+        configAttributes[configAttributes.length - 2] = EGL10.EGL_PBUFFER_BIT;
         break;
       case RECORDABLE:
         configAttributes[configAttributes.length - 3] = EGL_RECORDABLE_ANDROID;
@@ -249,20 +250,20 @@ public final class EglBase {
 
     EGLConfig[] configs = new EGLConfig[1];
     int[] numConfigs = new int[1];
-    if (!EGL14.eglChooseConfig(
-        eglDisplay, configAttributes, 0, configs, 0, configs.length, numConfigs, 0)) {
+    if (!egl.eglChooseConfig(
+        eglDisplay, configAttributes, configs, configs.length, numConfigs)) {
       throw new RuntimeException("Unable to find RGB888 " + configType + " EGL config");
     }
     return configs[0];
   }
 
   // Return an EGLConfig, or die trying.
-  private static EGLContext createEglContext(
+  private EGLContext createEglContext(
       EGLContext sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
-    int[] contextAttributes = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE};
+    int[] contextAttributes = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
     EGLContext eglContext =
-        EGL14.eglCreateContext(eglDisplay, eglConfig, sharedContext, contextAttributes, 0);
-    if (eglContext == EGL14.EGL_NO_CONTEXT) {
+        egl.eglCreateContext(eglDisplay, eglConfig, sharedContext, contextAttributes);
+    if (eglContext == EGL10.EGL_NO_CONTEXT) {
       throw new RuntimeException("Failed to create EGL context");
     }
     return eglContext;

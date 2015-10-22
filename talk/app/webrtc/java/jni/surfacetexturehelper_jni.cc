@@ -40,14 +40,16 @@ SurfaceTextureHelper::SurfaceTextureHelper(JNIEnv* jni,
     : j_surface_texture_helper_class_(
           jni,
           FindClass(jni, "org/webrtc/SurfaceTextureHelper")),
-      j_surface_texture_helper_(jni, jni->CallStaticObjectMethod(
-          *j_surface_texture_helper_class_,
-          GetStaticMethodID(
-              jni,
+      j_surface_texture_helper_(
+          jni,
+          jni->CallStaticObjectMethod(
               *j_surface_texture_helper_class_,
-              "create",
-              "(Landroid/opengl/EGLContext;)Lorg/webrtc/SurfaceTextureHelper;"),
-          egl_shared_context)),
+              GetStaticMethodID(jni,
+                                *j_surface_texture_helper_class_,
+                                "create",
+                                "(Ljavax/microedition/khronos/egl/EGLContext;)"
+                                "Lorg/webrtc/SurfaceTextureHelper;"),
+              egl_shared_context)),
       j_return_texture_method_(GetMethodID(jni,
                                            *j_surface_texture_helper_class_,
                                            "returnTextureFrame",

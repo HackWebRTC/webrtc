@@ -26,18 +26,18 @@
  */
 package org.webrtc;
 
+import android.graphics.SurfaceTexture;
+import android.opengl.GLES20;
+import android.opengl.Matrix;
 import android.test.ActivityTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
 import android.test.suitebuilder.annotation.MediumTest;
+import android.test.suitebuilder.annotation.SmallTest;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import android.graphics.SurfaceTexture;
-import android.opengl.EGL14;
-import android.opengl.EGLContext;
-import android.opengl.GLES20;
-import android.opengl.Matrix;
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLContext;
 
 public final class GlRectDrawerTest extends ActivityTestCase {
   // Resolution of the test image.
@@ -100,7 +100,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
   @SmallTest
   public void testRgbRendering() {
     // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglBase = new EglBase(EGL10.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
     eglBase.makeCurrent();
 
@@ -137,7 +137,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
   @SmallTest
   public void testYuvRendering() {
     // Create EGL base with a pixel buffer as display output.
-    EglBase eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    EglBase eglBase = new EglBase(EGL10.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
     eglBase.makeCurrent();
 
@@ -266,7 +266,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     }
 
     // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = new EglBase(EGL14.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglBase = new EglBase(EGL10.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
 
     // Create resources for generating OES textures.

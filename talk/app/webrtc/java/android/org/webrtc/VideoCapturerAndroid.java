@@ -31,9 +31,6 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
-import android.opengl.EGLContext;
-import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
@@ -55,6 +52,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGL10;
 
 // Android specific implementation of VideoCapturer.
 // An instance of this class can be created by an application using
@@ -95,14 +95,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private final CameraEventsHandler eventsHandler;
   private boolean firstFrameReported;
   private final boolean isCapturingToTexture;
-  // |cameraGlTexture| is used with setPreviewTexture if the capturer is capturing to
-  // ByteBuffers.
-  private int cameraGlTexture;
-  // |cameraSurfaceTexture| is used with setPreviewTexture if the capturer is capturing to
-  // ByteBuffers. Must be a member, see issue webrtc:5021.
-  private SurfaceTexture cameraSurfaceTexture;
-  //|surfaceHelper| is used if the capturer is capturing to a texture. Capturing to textures require
-  // API level 17.
   private final SurfaceTextureHelper surfaceHelper;
   // The camera API can output one old frame after the camera has been switched or the resolution
   // has been changed. This flag is used for dropping the first frame after camera restart.
@@ -224,7 +216,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   public static VideoCapturerAndroid create(String name,
-      CameraEventsHandler eventsHandler, Object sharedEglContext) {
+      CameraEventsHandler eventsHandler, EGLContext sharedEglContext) {
     final int cameraId = lookupDeviceName(name);
     if (cameraId == -1) {
       return null;
@@ -337,7 +329,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   private VideoCapturerAndroid(int cameraId, CameraEventsHandler eventsHandler,
-      Object sharedContext) {
+      EGLContext sharedContext) {
     Logging.d(TAG, "VideoCapturerAndroid");
     this.id = cameraId;
     this.eventsHandler = eventsHandler;
@@ -345,13 +337,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     cameraThread.start();
     cameraThreadHandler = new Handler(cameraThread.getLooper());
     videoBuffers = new FramePool(cameraThread);
-    if (sharedContext != null) {
-      surfaceHelper = SurfaceTextureHelper.create((EGLContext)sharedContext, cameraThreadHandler);
+    isCapturingToTexture = (sharedContext != null);
+    surfaceHelper = SurfaceTextureHelper.create(
+        isCapturingToTexture ? sharedContext : EGL10.EGL_NO_CONTEXT, cameraThreadHandler);
+    if (isCapturingToTexture) {
       surfaceHelper.setListener(this);
-      isCapturingToTexture = true;
-    } else {
-      surfaceHelper = null;
-      isCapturingToTexture = false;
     }
   }
 
@@ -397,9 +387,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         }
       }
     });
-    if (isCapturingToTexture) {
-      surfaceHelper.disconnect();
-    }
+    surfaceHelper.disconnect();
     cameraThread.quit();
     ThreadUtils.joinUninterruptibly(cameraThread);
     cameraThread = null;
@@ -455,13 +443,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         Camera.getCameraInfo(id, info);
       }
       try {
-        if (isCapturingToTexture) {
-          camera.setPreviewTexture(surfaceHelper.getSurfaceTexture());
-        } else {
-          cameraGlTexture = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-          cameraSurfaceTexture = new SurfaceTexture(cameraGlTexture);
-          camera.setPreviewTexture(cameraSurfaceTexture);
-        }
+        camera.setPreviewTexture(surfaceHelper.getSurfaceTexture());
       } catch (IOException e) {
         Logging.e(TAG, "setPreviewTexture failed", error);
         throw new RuntimeException(e);
@@ -603,14 +585,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     camera = null;
     if (eventsHandler != null) {
       eventsHandler.onCameraClosed();
-    }
-
-    if (cameraGlTexture != 0) {
-      GLES20.glDeleteTextures(1, new int[] {cameraGlTexture}, 0);
-      cameraGlTexture = 0;
-    }
-    if (cameraSurfaceTexture != null) {
-      cameraSurfaceTexture.release();
     }
   }
 

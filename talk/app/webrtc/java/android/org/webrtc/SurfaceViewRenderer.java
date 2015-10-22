@@ -30,7 +30,6 @@ package org.webrtc;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
-import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Handler;
@@ -40,6 +39,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import org.webrtc.Logging;
+
+import javax.microedition.khronos.egl.EGLContext;
 
 /**
  * Implements org.webrtc.VideoRenderer.Callbacks by displaying the video stream on a SurfaceView.

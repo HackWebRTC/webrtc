@@ -72,6 +72,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/IceCandidate");
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   LoadClass(jni, "android/graphics/SurfaceTexture");
+  LoadClass(jni, "javax/microedition/khronos/egl/EGLContext");
   LoadClass(jni, "org/webrtc/CameraEnumerator");
   LoadClass(jni, "org/webrtc/Camera2Enumerator");
   LoadClass(jni, "org/webrtc/CameraEnumerationAndroid");
@@ -87,15 +88,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecodedByteBuffer");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$VideoCodecType");
   LoadClass(jni, "org/webrtc/SurfaceTextureHelper");
-  jclass j_egl_base_class = GetClass("org/webrtc/EglBase");
-  jmethodID j_is_egl14_supported_method = jni->GetStaticMethodID(
-      j_egl_base_class, "isEGL14Supported", "()Z");
-  bool is_egl14_supported = jni->CallStaticBooleanMethod(
-      j_egl_base_class, j_is_egl14_supported_method);
-  CHECK_EXCEPTION(jni);
-  if (is_egl14_supported) {
-    LoadClass(jni, "android/opengl/EGLContext");
-  }
 #endif
   LoadClass(jni, "org/webrtc/MediaSource$State");
   LoadClass(jni, "org/webrtc/MediaStream");

@@ -33,7 +33,6 @@ import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
-import android.opengl.EGLContext;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
@@ -44,6 +43,8 @@ import org.webrtc.Logging;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.microedition.khronos.egl.EGLContext;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.

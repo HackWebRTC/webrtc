@@ -191,7 +191,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
   j_init_decode_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "initDecode",
       "(Lorg/webrtc/MediaCodecVideoDecoder$VideoCodecType;"
-      "IILandroid/opengl/EGLContext;)Z");
+      "IILjavax/microedition/khronos/egl/EGLContext;)Z");
   j_release_method_ =
       GetMethodID(jni, *j_media_codec_video_decoder_class_, "release", "()V");
   j_dequeue_input_buffer_method_ = GetMethodID(
@@ -815,7 +815,8 @@ void MediaCodecVideoDecoderFactory::SetEGLContext(
       ALOGE << "error calling NewGlobalRef for EGL Context.";
       render_egl_context_ = NULL;
     } else {
-      jclass j_egl_context_class = FindClass(jni, "android/opengl/EGLContext");
+      jclass j_egl_context_class =
+          FindClass(jni, "javax/microedition/khronos/egl/EGLContext");
       if (!jni->IsInstanceOf(render_egl_context_, j_egl_context_class)) {
         ALOGE << "Wrong EGL Context.";
         jni->DeleteGlobalRef(render_egl_context_);

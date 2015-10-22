@@ -28,7 +28,6 @@
 package org.webrtc;
 
 import android.graphics.SurfaceTexture;
-import android.opengl.EGLContext;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
@@ -39,6 +38,8 @@ import android.os.SystemClock;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import javax.microedition.khronos.egl.EGLContext;
 
 /**
  * Helper class to create and synchronize access to a SurfaceTexture. The caller will get notified
