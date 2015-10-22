@@ -52,6 +52,7 @@ class CallTest : public ::testing::Test {
                    const Call::Config& receiver_config);
   void CreateSenderCall(const Call::Config& config);
   void CreateReceiverCall(const Call::Config& config);
+  void DestroyCalls();
 
   void CreateSendConfig(size_t num_streams, Transport* send_transport);
   void CreateMatchingReceiveConfigs(Transport* rtcp_send_transport);

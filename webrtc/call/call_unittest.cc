@@ -13,19 +13,21 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/call.h"
+#include "webrtc/test/fake_voice_engine.h"
 
 namespace {
 
 struct CallHelper {
-  CallHelper() {
+  CallHelper() : voice_engine_(new webrtc::test::FakeVoiceEngine()) {
     webrtc::Call::Config config;
-    // TODO(solenberg): Fill in with VoiceEngine* etc.
+    config.voice_engine = voice_engine_.get();
     call_.reset(webrtc::Call::Create(config));
   }
 
   webrtc::Call* operator->() { return call_.get(); }
 
  private:
+  rtc::scoped_ptr<webrtc::test::FakeVoiceEngine> voice_engine_;
   rtc::scoped_ptr<webrtc::Call> call_;
 };
 }  // namespace

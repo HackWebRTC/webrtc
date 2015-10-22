@@ -89,6 +89,11 @@ void CallTest::CreateReceiverCall(const Call::Config& config) {
   receiver_call_.reset(Call::Create(config));
 }
 
+void CallTest::DestroyCalls() {
+  sender_call_.reset(nullptr);
+  receiver_call_.reset(nullptr);
+}
+
 void CallTest::CreateSendConfig(size_t num_streams,
                                 Transport* send_transport) {
   assert(num_streams <= kNumSsrcs);

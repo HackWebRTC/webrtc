@@ -126,7 +126,8 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   VideoSendStream::RtpStateMap suspended_video_send_ssrcs_;
 
-  RtcEventLog* event_log_;
+  RtcEventLog* event_log_ = nullptr;
+  VoECodec* voe_codec_ = nullptr;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -147,8 +148,7 @@ Call::Call(const Call::Config& config)
       config_(config),
       network_enabled_(true),
       receive_crit_(RWLockWrapper::CreateRWLock()),
-      send_crit_(RWLockWrapper::CreateRWLock()),
-      event_log_(nullptr) {
+      send_crit_(RWLockWrapper::CreateRWLock()) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -158,11 +158,11 @@ Call::Call(const Call::Config& config)
                   config.bitrate_config.start_bitrate_bps);
   }
   if (config.voice_engine) {
-    VoECodec* voe_codec = VoECodec::GetInterface(config.voice_engine);
-    if (voe_codec) {
-      event_log_ = voe_codec->GetEventLog();
-      voe_codec->Release();
-    }
+    // Keep a reference to VoECodec, so we're sure the VoiceEngine lives for the
+    // duration of the call.
+    voe_codec_ = VoECodec::GetInterface(config.voice_engine);
+    if (voe_codec_)
+      event_log_ = voe_codec_->GetEventLog();
   }
 
   Trace::CreateTrace();
@@ -187,6 +187,9 @@ Call::~Call() {
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
   Trace::ReturnTrace();
+
+  if (voe_codec_)
+    voe_codec_->Release();
 }
 
 PacketReceiver* Call::Receiver() {
@@ -237,7 +240,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      congestion_controller_->GetRemoteBitrateEstimator(false), config);
+      congestion_controller_->GetRemoteBitrateEstimator(false), config,
+      config_.voice_engine);
   {
     WriteLockScoped write_lock(*receive_crit_);
     RTC_DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==

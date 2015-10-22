@@ -38,13 +38,9 @@
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_dtmf.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
-#include "webrtc/voice_engine/include/voe_external_media.h"
-#include "webrtc/voice_engine/include/voe_file.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
-#include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-#include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 
 namespace cricket {
@@ -96,18 +92,16 @@ class VoEWrapper {
   VoEWrapper()
       : engine_(webrtc::VoiceEngine::Create()), processing_(engine_),
         base_(engine_), codec_(engine_), dtmf_(engine_),
-        hw_(engine_), neteq_(engine_), network_(engine_),
-        rtp_(engine_), sync_(engine_), volume_(engine_) {
+        hw_(engine_), network_(engine_),
+        rtp_(engine_), volume_(engine_) {
   }
   VoEWrapper(webrtc::VoEAudioProcessing* processing,
              webrtc::VoEBase* base,
              webrtc::VoECodec* codec,
              webrtc::VoEDtmf* dtmf,
              webrtc::VoEHardware* hw,
-             webrtc::VoENetEqStats* neteq,
              webrtc::VoENetwork* network,
              webrtc::VoERTP_RTCP* rtp,
-             webrtc::VoEVideoSync* sync,
              webrtc::VoEVolumeControl* volume)
       : engine_(NULL),
         processing_(processing),
@@ -115,10 +109,8 @@ class VoEWrapper {
         codec_(codec),
         dtmf_(dtmf),
         hw_(hw),
-        neteq_(neteq),
         network_(network),
         rtp_(rtp),
-        sync_(sync),
         volume_(volume) {
   }
   ~VoEWrapper() {}
@@ -128,10 +120,8 @@ class VoEWrapper {
   webrtc::VoECodec* codec() const { return codec_.get(); }
   webrtc::VoEDtmf* dtmf() const { return dtmf_.get(); }
   webrtc::VoEHardware* hw() const { return hw_.get(); }
-  webrtc::VoENetEqStats* neteq() const { return neteq_.get(); }
   webrtc::VoENetwork* network() const { return network_.get(); }
   webrtc::VoERTP_RTCP* rtp() const { return rtp_.get(); }
-  webrtc::VoEVideoSync* sync() const { return sync_.get(); }
   webrtc::VoEVolumeControl* volume() const { return volume_.get(); }
   int error() { return base_->LastError(); }
 
@@ -142,10 +132,8 @@ class VoEWrapper {
   scoped_voe_ptr<webrtc::VoECodec> codec_;
   scoped_voe_ptr<webrtc::VoEDtmf> dtmf_;
   scoped_voe_ptr<webrtc::VoEHardware> hw_;
-  scoped_voe_ptr<webrtc::VoENetEqStats> neteq_;
   scoped_voe_ptr<webrtc::VoENetwork> network_;
   scoped_voe_ptr<webrtc::VoERTP_RTCP> rtp_;
-  scoped_voe_ptr<webrtc::VoEVideoSync> sync_;
   scoped_voe_ptr<webrtc::VoEVolumeControl> volume_;
 };
 

@@ -321,6 +321,8 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
 
   receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
 
+  DestroyCalls();
+
   VoiceEngine::Delete(voice_engine);
 }
 

@@ -18,6 +18,8 @@
       'audio/audio_receive_stream.h',
       'audio/audio_send_stream.cc',
       'audio/audio_send_stream.h',
+      'audio/conversion.h',
+      'audio/scoped_voe_interface.h',
     ],
   },
 }
