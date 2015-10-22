@@ -18,6 +18,7 @@
       'variables': {
         'files': [
           '<(DEPTH)/data/audio_processing/output_data_float.pb',
+          '<(DEPTH)/data/audio_processing/output_data_mac.pb',
           '<(DEPTH)/data/voice_engine/audio_tiny48.wav',
           '<(DEPTH)/resources/att-downlink.rx',
           '<(DEPTH)/resources/att-uplink.rx',
