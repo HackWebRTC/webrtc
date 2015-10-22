@@ -18,7 +18,7 @@
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #endif
 #ifdef VIDEOCODEC_I420
-#include "webrtc/modules/video_coding/codecs/i420/main/interface/i420.h"
+#include "webrtc/modules/video_coding/codecs/i420/include/i420.h"
 #endif
 #ifdef VIDEOCODEC_VP8
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"

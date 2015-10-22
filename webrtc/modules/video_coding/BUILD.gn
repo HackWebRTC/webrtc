@@ -143,8 +143,8 @@ source_set("webrtc_h264") {
 
 source_set("webrtc_i420") {
   sources = [
-    "codecs/i420/main/interface/i420.h",
-    "codecs/i420/main/source/i420.cc",
+    "codecs/i420/i420.cc",
+    "codecs/i420/include/i420.h",
   ]
 
   configs += [ "../..:common_config" ]

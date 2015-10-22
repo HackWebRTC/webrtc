@@ -21,7 +21,7 @@
     'rtp_rtcp/rtp_rtcp.gypi',
     'utility/utility.gypi',
     'video_coding/codecs/h264/h264.gypi',
-    'video_coding/codecs/i420/main/source/i420.gypi',
+    'video_coding/codecs/i420/i420.gypi',
     'video_coding/video_coding.gypi',
     'video_capture/video_capture.gypi',
     'video_processing/video_processing.gypi',

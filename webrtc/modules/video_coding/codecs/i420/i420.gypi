@@ -15,7 +15,7 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        '../interface/i420.h',
+        'include/i420.h',
         'i420.cc',
       ],
     },
