@@ -571,8 +571,23 @@ class WebRtcSessionTest
   void GetOptionsForOffer(
       const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
       cricket::MediaSessionOptions* session_options) {
-    AddStreamsToOptions(session_options);
     ASSERT_TRUE(ConvertRtcOptionsForOffer(rtc_options, session_options));
+
+    AddStreamsToOptions(session_options);
+    if (rtc_options.offer_to_receive_audio ==
+        RTCOfferAnswerOptions::kUndefined) {
+      session_options->recv_audio =
+          session_options->HasSendMediaStream(cricket::MEDIA_TYPE_AUDIO);
+    }
+    if (rtc_options.offer_to_receive_video ==
+        RTCOfferAnswerOptions::kUndefined) {
+      session_options->recv_video =
+          session_options->HasSendMediaStream(cricket::MEDIA_TYPE_VIDEO);
+    }
+    session_options->bundle_enabled =
+        session_options->bundle_enabled &&
+        (session_options->has_audio() || session_options->has_video() ||
+         session_options->has_data());
 
     if (session_->data_channel_type() == cricket::DCT_SCTP && data_channel_) {
       session_options->data_channel_type = cricket::DCT_SCTP;
@@ -581,10 +596,15 @@ class WebRtcSessionTest
 
   void GetOptionsForAnswer(const webrtc::MediaConstraintsInterface* constraints,
                            cricket::MediaSessionOptions* session_options) {
-    AddStreamsToOptions(session_options);
     session_options->recv_audio = false;
     session_options->recv_video = false;
     ASSERT_TRUE(ParseConstraintsForAnswer(constraints, session_options));
+
+    AddStreamsToOptions(session_options);
+    session_options->bundle_enabled =
+        session_options->bundle_enabled &&
+        (session_options->has_audio() || session_options->has_video() ||
+         session_options->has_data());
 
     if (session_->data_channel_type() == cricket::DCT_SCTP) {
       session_options->data_channel_type = cricket::DCT_SCTP;

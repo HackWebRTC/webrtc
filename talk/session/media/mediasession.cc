@@ -1036,12 +1036,15 @@ static bool CreateMediaContentAnswer(
       answer->set_direction(MD_RECVONLY);
       break;
     case MD_RECVONLY:
-      answer->set_direction(MD_SENDONLY);
+      answer->set_direction(answer->streams().empty() ? MD_INACTIVE
+                                                      : MD_SENDONLY);
       break;
     case MD_SENDRECV:
-      answer->set_direction(MD_SENDRECV);
+      answer->set_direction(answer->streams().empty() ? MD_RECVONLY
+                                                      : MD_SENDRECV);
       break;
     default:
+      RTC_DCHECK(false && "MediaContentDescription has unexpected direction.");
       break;
   }
 
@@ -1529,8 +1532,18 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, audio.get());
 
-  if (!options.recv_audio) {
-    audio->set_direction(MD_SENDONLY);
+  if (!audio->streams().empty()) {
+    if (options.recv_audio) {
+      audio->set_direction(MD_SENDRECV);
+    } else {
+      audio->set_direction(MD_SENDONLY);
+    }
+  } else {
+    if (options.recv_audio) {
+      audio->set_direction(MD_RECVONLY);
+    } else {
+      audio->set_direction(MD_INACTIVE);
+    }
   }
 
   desc->AddContent(CN_AUDIO, NS_JINGLE_RTP, audio.release());
@@ -1574,8 +1587,18 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, video.get());
 
-  if (!options.recv_video) {
-    video->set_direction(MD_SENDONLY);
+  if (!video->streams().empty()) {
+    if (options.recv_video) {
+      video->set_direction(MD_SENDRECV);
+    } else {
+      video->set_direction(MD_SENDONLY);
+    }
+  } else {
+    if (options.recv_video) {
+      video->set_direction(MD_RECVONLY);
+    } else {
+      video->set_direction(MD_INACTIVE);
+    }
   }
 
   desc->AddContent(CN_VIDEO, NS_JINGLE_RTP, video.release());

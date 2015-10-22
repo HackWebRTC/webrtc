@@ -51,8 +51,6 @@ typedef std::vector<PortAllocatorFactoryInterface::TurnConfiguration>
 
 // Populates |session_options| from |rtc_options|, and returns true if options
 // are valid.
-// Send streams should already be added to |session_options| before this method
-// is called, as this affects the values of recv_audio and recv_video.
 bool ConvertRtcOptionsForOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
     cricket::MediaSessionOptions* session_options);

@@ -268,7 +268,6 @@ static bool IsDtlsSctp(const std::string& protocol);
 static bool ParseSessionDescription(const std::string& message, size_t* pos,
                                     std::string* session_id,
                                     std::string* session_version,
-                                    bool* supports_msid,
                                     TransportDescription* session_td,
                                     RtpHeaderExtensions* session_extmaps,
                                     cricket::SessionDescription* desc,
@@ -280,7 +279,6 @@ static bool ParseMediaDescription(
     const std::string& message,
     const TransportDescription& session_td,
     const RtpHeaderExtensions& session_extmaps,
-    bool supports_msid,
     size_t* pos, cricket::SessionDescription* desc,
     std::vector<JsepIceCandidate*>* candidates,
     SdpParseError* error);
@@ -898,20 +896,18 @@ bool SdpDeserialize(const std::string& message,
   cricket::SessionDescription* desc = new cricket::SessionDescription();
   std::vector<JsepIceCandidate*> candidates;
   size_t current_pos = 0;
-  bool supports_msid = false;
 
   // Session Description
   if (!ParseSessionDescription(message, &current_pos, &session_id,
-                               &session_version, &supports_msid, &session_td,
-                               &session_extmaps, desc, error)) {
+                               &session_version, &session_td, &session_extmaps,
+                               desc, error)) {
     delete desc;
     return false;
   }
 
   // Media Description
-  if (!ParseMediaDescription(message, session_td, session_extmaps,
-                             supports_msid, &current_pos, desc, &candidates,
-                             error)) {
+  if (!ParseMediaDescription(message, session_td, session_extmaps, &current_pos,
+                             desc, &candidates, error)) {
     delete desc;
     for (std::vector<JsepIceCandidate*>::const_iterator
          it = candidates.begin(); it != candidates.end(); ++it) {
@@ -1379,13 +1375,7 @@ void BuildRtpContentAttributes(
 
   // RFC 3264
   // a=sendrecv || a=sendonly || a=sendrecv || a=inactive
-
-  cricket::MediaContentDirection direction = media_desc->direction();
-  if (media_desc->streams().empty() && direction == cricket::MD_SENDRECV) {
-    direction = cricket::MD_RECVONLY;
-  }
-
-  switch (direction) {
+  switch (media_desc->direction()) {
     case cricket::MD_INACTIVE:
       InitAttrLine(kAttributeInactive, &os);
       break;
@@ -1798,12 +1788,13 @@ bool IsDtlsSctp(const std::string& protocol) {
 bool ParseSessionDescription(const std::string& message, size_t* pos,
                              std::string* session_id,
                              std::string* session_version,
-                             bool* supports_msid,
                              TransportDescription* session_td,
                              RtpHeaderExtensions* session_extmaps,
                              cricket::SessionDescription* desc,
                              SdpParseError* error) {
   std::string line;
+
+  desc->set_msid_supported(false);
 
   // RFC 4566
   // v=  (protocol version)
@@ -1936,7 +1927,8 @@ bool ParseSessionDescription(const std::string& message, size_t* pos,
       if (!GetValue(line, kAttributeMsidSemantics, &semantics, error)) {
         return false;
       }
-      *supports_msid = CaseInsensitiveFind(semantics, kMediaStreamSemantic);
+      desc->set_msid_supported(
+          CaseInsensitiveFind(semantics, kMediaStreamSemantic));
     } else if (HasAttribute(line, kAttributeExtmap)) {
       RtpHeaderExtension extmap;
       if (!ParseExtmap(line, &extmap, error)) {
@@ -2146,7 +2138,6 @@ static C* ParseContentDescription(const std::string& message,
 bool ParseMediaDescription(const std::string& message,
                            const TransportDescription& session_td,
                            const RtpHeaderExtensions& session_extmaps,
-                           bool supports_msid,
                            size_t* pos,
                            cricket::SessionDescription* desc,
                            std::vector<JsepIceCandidate*>* candidates,
@@ -2241,14 +2232,6 @@ bool ParseMediaDescription(const std::string& message,
     }
 
     if (IsRtp(protocol)) {
-      // Make sure to set the media direction correctly. If the direction is not
-      // MD_RECVONLY or Inactive and no streams are parsed,
-      // a default MediaStream will be created to prepare for receiving media.
-      if (supports_msid && content->streams().empty() &&
-          content->direction() == cricket::MD_SENDRECV) {
-        content->set_direction(cricket::MD_RECVONLY);
-      }
-
       // Set the extmap.
       if (!session_extmaps.empty() &&
           !content->rtp_header_extensions().empty()) {

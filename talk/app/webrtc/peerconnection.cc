@@ -463,27 +463,16 @@ bool ConvertRtcOptionsForOffer(
     return false;
   }
 
-  // According to the spec, offer to receive audio/video if the constraint is
-  // not set and there are send streams.
-  if (rtc_options.offer_to_receive_audio == RTCOfferAnswerOptions::kUndefined) {
-    session_options->recv_audio =
-        session_options->HasSendMediaStream(cricket::MEDIA_TYPE_AUDIO);
-  } else {
+  if (rtc_options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
     session_options->recv_audio = (rtc_options.offer_to_receive_audio > 0);
   }
-  if (rtc_options.offer_to_receive_video == RTCOfferAnswerOptions::kUndefined) {
-    session_options->recv_video =
-        session_options->HasSendMediaStream(cricket::MEDIA_TYPE_VIDEO);
-  } else {
+  if (rtc_options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
     session_options->recv_video = (rtc_options.offer_to_receive_video > 0);
   }
 
   session_options->vad_enabled = rtc_options.voice_activity_detection;
   session_options->transport_options.ice_restart = rtc_options.ice_restart;
-  session_options->bundle_enabled =
-      rtc_options.use_rtp_mux &&
-      (session_options->has_audio() || session_options->has_video() ||
-       session_options->has_data());
+  session_options->bundle_enabled = rtc_options.use_rtp_mux;
 
   return true;
 }
@@ -525,10 +514,6 @@ bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
     // kUseRtpMux defaults to true according to spec.
     session_options->bundle_enabled = true;
   }
-  session_options->bundle_enabled =
-      session_options->bundle_enabled &&
-      (session_options->has_audio() || session_options->has_video() ||
-       session_options->has_data());
 
   if (FindConstraint(constraints, MediaConstraintsInterface::kIceRestart,
                      &value, &mandatory_constraints_satisfied)) {
@@ -1043,8 +1028,8 @@ void PeerConnection::SetRemoteDescription(
             audio_content->description);
     UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams);
     remote_info_.default_audio_track_needed =
-        MediaContentDirectionHasSend(desc->direction()) &&
-        desc->streams().empty();
+        !remote_desc->msid_supported() && desc->streams().empty() &&
+        MediaContentDirectionHasSend(desc->direction());
   }
 
   // Find all video rtp streams and create corresponding remote VideoTracks
@@ -1056,8 +1041,8 @@ void PeerConnection::SetRemoteDescription(
             video_content->description);
     UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams);
     remote_info_.default_video_track_needed =
-        MediaContentDirectionHasSend(desc->direction()) &&
-        desc->streams().empty();
+        !remote_desc->msid_supported() && desc->streams().empty() &&
+        MediaContentDirectionHasSend(desc->direction());
   }
 
   // Update the DataChannels with the information from the remote peer.
@@ -1396,11 +1381,27 @@ void PeerConnection::PostCreateSessionDescriptionFailure(
 bool PeerConnection::GetOptionsForOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
     cricket::MediaSessionOptions* session_options) {
-  SetStreams(session_options, local_streams_, rtp_data_channels_);
-
   if (!ConvertRtcOptionsForOffer(rtc_options, session_options)) {
     return false;
   }
+
+  SetStreams(session_options, local_streams_, rtp_data_channels_);
+  // Offer to receive audio/video if the constraint is not set and there are
+  // send streams, or we're currently receiving.
+  if (rtc_options.offer_to_receive_audio == RTCOfferAnswerOptions::kUndefined) {
+    session_options->recv_audio =
+        session_options->HasSendMediaStream(cricket::MEDIA_TYPE_AUDIO) ||
+        !remote_audio_tracks_.empty();
+  }
+  if (rtc_options.offer_to_receive_video == RTCOfferAnswerOptions::kUndefined) {
+    session_options->recv_video =
+        session_options->HasSendMediaStream(cricket::MEDIA_TYPE_VIDEO) ||
+        !remote_video_tracks_.empty();
+  }
+  session_options->bundle_enabled =
+      session_options->bundle_enabled &&
+      (session_options->has_audio() || session_options->has_video() ||
+       session_options->has_data());
 
   if (session_->data_channel_type() == cricket::DCT_SCTP && HasDataChannels()) {
     session_options->data_channel_type = cricket::DCT_SCTP;
@@ -1411,13 +1412,17 @@ bool PeerConnection::GetOptionsForOffer(
 bool PeerConnection::GetOptionsForAnswer(
     const MediaConstraintsInterface* constraints,
     cricket::MediaSessionOptions* session_options) {
-  SetStreams(session_options, local_streams_, rtp_data_channels_);
   session_options->recv_audio = false;
   session_options->recv_video = false;
-
   if (!ParseConstraintsForAnswer(constraints, session_options)) {
     return false;
   }
+
+  SetStreams(session_options, local_streams_, rtp_data_channels_);
+  session_options->bundle_enabled =
+      session_options->bundle_enabled &&
+      (session_options->has_audio() || session_options->has_video() ||
+       session_options->has_data());
 
   // RTP data channel is handled in MediaSessionOptions::AddStream. SCTP streams
   // are not signaled in the SDP so does not go through that path and must be

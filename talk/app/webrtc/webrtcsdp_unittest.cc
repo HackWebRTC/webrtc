@@ -883,6 +883,9 @@ class WebRtcSdpTest : public testing::Test {
       EXPECT_TRUE(CompareCandidates(transport1.description.candidates,
                                     transport2.description.candidates));
     }
+
+    // global attributes
+    EXPECT_EQ(desc1.msid_supported(), desc2.msid_supported());
   }
 
   bool CompareCandidates(const Candidates& cs1, const Candidates& cs2) {
@@ -1967,6 +1970,7 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithRejectedAudioVideo) {
 // Tests that we can still handle the sdp uses mslabel and label instead of
 // msid for backward compatibility.
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutMsid) {
+  jdesc_.description()->set_msid_supported(false);
   JsepSessionDescription jdesc(kDummyString);
   std::string sdp_without_msid = kSdpFullString;
   Replace("msid", "xmsid", &sdp_without_msid);
