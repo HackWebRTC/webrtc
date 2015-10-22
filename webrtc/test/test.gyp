@@ -140,6 +140,11 @@
             'CLANG_ENABLE_OBJC_ARC': 'YES',
           },
         }],
+        ['use_x11==1', {
+          'dependencies': [
+            '<(DEPTH)/tools/xdisplaycheck/xdisplaycheck.gyp:xdisplaycheck',
+          ],
+        }],
       ],
     },
     {

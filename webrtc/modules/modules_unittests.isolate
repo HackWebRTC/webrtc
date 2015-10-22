@@ -129,7 +129,7 @@
         ],
       },
     }],
-    ['OS=="linux" or OS=="mac" or OS=="win"', {
+    ['(OS=="linux" or OS=="mac" or OS=="win") and use_x11==0', {
       'variables': {
         'command': [
           '<(DEPTH)/testing/test_env.py',
@@ -139,6 +139,23 @@
           '<(DEPTH)/DEPS',
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/modules_unittests<(EXECUTABLE_SUFFIX)',
+        ],
+      },
+    }],
+    ['(OS=="linux" or OS=="mac" or OS=="win") and use_x11==1', {
+      'variables': {
+        'command': [
+          '<(DEPTH)/testing/xvfb.py',
+          '<(PRODUCT_DIR)',
+          '<(DEPTH)/testing/test_env.py',
+          '<(PRODUCT_DIR)/modules_unittests<(EXECUTABLE_SUFFIX)',
+        ],
+        'files': [
+          '<(DEPTH)/DEPS',
+          '<(DEPTH)/testing/test_env.py',
+          '<(DEPTH)/testing/xvfb.py',
+          '<(PRODUCT_DIR)/modules_unittests<(EXECUTABLE_SUFFIX)',
+          '<(PRODUCT_DIR)/xdisplaycheck<(EXECUTABLE_SUFFIX)',
         ],
       },
     }],

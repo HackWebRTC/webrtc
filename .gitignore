@@ -155,6 +155,7 @@
 /tools/valgrind
 /tools/vim
 /tools/win
+/tools/xdisplaycheck
 /tools/whitespace.txt
 /webrtc/examples/android/media_demo/bin
 /webrtc/examples/android/media_demo/gen

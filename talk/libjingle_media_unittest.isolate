@@ -34,6 +34,7 @@
         'files': [
           '<(PRODUCT_DIR)/libjingle_media_unittest<(EXECUTABLE_SUFFIX)',
           'media/testdata/captured-320x240-2s-48.frames',
+          'media/testdata/faces.1280x720_P420.yuv',
         ],
       },
     }],
