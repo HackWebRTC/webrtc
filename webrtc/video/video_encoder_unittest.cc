@@ -15,6 +15,8 @@
 
 namespace webrtc {
 
+const int kWidth = 320;
+const int kHeight = 240;
 const size_t kMaxPayloadSize = 800;
 
 class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
@@ -34,7 +36,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<FrameType>* frame_types) override {
       ++encode_count_;
-      return WEBRTC_VIDEO_CODEC_OK;
+      return encode_return_code_;
     }
 
     int32_t RegisterEncodeCompleteCallback(
@@ -67,6 +69,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
 
     int init_encode_count_ = 0;
     int32_t init_encode_return_code_ = WEBRTC_VIDEO_CODEC_OK;
+    int32_t encode_return_code_ = WEBRTC_VIDEO_CODEC_OK;
     int encode_count_ = 0;
     EncodedImageCallback* encode_complete_callback_ = nullptr;
     int release_count_ = 0;
@@ -87,6 +90,8 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
   };
 
   void UtilizeFallbackEncoder();
+  void FallbackFromEncodeRequest();
+  void EncodeFrame();
 
   FakeEncodedImageCallback callback_;
   CountingFakeEncoder fake_encoder_;
@@ -95,9 +100,22 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
   VideoFrame frame_;
 };
 
+void VideoEncoderSoftwareFallbackWrapperTest::EncodeFrame() {
+  frame_.CreateEmptyFrame(kWidth, kHeight, kWidth, (kWidth + 1) / 2,
+                          (kWidth + 1) / 2);
+  memset(frame_.buffer(webrtc::kYPlane), 16,
+         frame_.allocated_size(webrtc::kYPlane));
+  memset(frame_.buffer(webrtc::kUPlane), 128,
+         frame_.allocated_size(webrtc::kUPlane));
+  memset(frame_.buffer(webrtc::kVPlane), 128,
+         frame_.allocated_size(webrtc::kVPlane));
+
+  std::vector<FrameType> types(1, kKeyFrame);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            fallback_wrapper_.Encode(frame_, nullptr, &types));
+}
+
 void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {
-  static const int kWidth = 320;
-  static const int kHeight = 240;
   fallback_wrapper_.RegisterEncodeCompleteCallback(&callback_);
   EXPECT_EQ(&callback_, fake_encoder_.encode_complete_callback_);
 
@@ -111,20 +129,31 @@ void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {
             fallback_wrapper_.InitEncode(&codec_, 2, kMaxPayloadSize));
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.SetRates(300, 30));
 
-  frame_.CreateEmptyFrame(kWidth, kHeight, kWidth, (kWidth + 1) / 2,
-                          (kWidth + 1) / 2);
-  memset(frame_.buffer(webrtc::kYPlane), 16,
-         frame_.allocated_size(webrtc::kYPlane));
-  memset(frame_.buffer(webrtc::kUPlane), 128,
-         frame_.allocated_size(webrtc::kUPlane));
-  memset(frame_.buffer(webrtc::kVPlane), 128,
-         frame_.allocated_size(webrtc::kVPlane));
+  int callback_count = callback_.callback_count_;
+  int encode_count = fake_encoder_.encode_count_;
+  EncodeFrame();
+  EXPECT_EQ(encode_count, fake_encoder_.encode_count_);
+  EXPECT_EQ(callback_count + 1, callback_.callback_count_);
+}
 
-  std::vector<FrameType> types(1, kKeyFrame);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            fallback_wrapper_.Encode(frame_, nullptr, &types));
-  EXPECT_EQ(0, fake_encoder_.encode_count_);
-  EXPECT_GT(callback_.callback_count_, 0);
+void VideoEncoderSoftwareFallbackWrapperTest::FallbackFromEncodeRequest() {
+  fallback_wrapper_.RegisterEncodeCompleteCallback(&callback_);
+  codec_.codecType = kVideoCodecVP8;
+  codec_.maxFramerate = 30;
+  codec_.width = kWidth;
+  codec_.height = kHeight;
+  fallback_wrapper_.InitEncode(&codec_, 2, kMaxPayloadSize);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.SetRates(300, 30));
+  EXPECT_EQ(1, fake_encoder_.init_encode_count_);
+
+  // Have the non-fallback encoder request a software fallback.
+  fake_encoder_.encode_return_code_ = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+  int callback_count = callback_.callback_count_;
+  int encode_count = fake_encoder_.encode_count_;
+  EncodeFrame();
+  // Single encode request, which returned failure.
+  EXPECT_EQ(encode_count + 1, fake_encoder_.encode_count_);
+  EXPECT_EQ(callback_count + 1, callback_.callback_count_);
 }
 
 TEST_F(VideoEncoderSoftwareFallbackWrapperTest, InitializesEncoder) {
@@ -133,22 +162,35 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest, InitializesEncoder) {
   EXPECT_EQ(1, fake_encoder_.init_encode_count_);
 }
 
+TEST_F(VideoEncoderSoftwareFallbackWrapperTest, EncodeRequestsFallback) {
+  FallbackFromEncodeRequest();
+  // After fallback, further encodes shouldn't hit the fake encoder.
+  int encode_count = fake_encoder_.encode_count_;
+  EncodeFrame();
+  EXPECT_EQ(encode_count, fake_encoder_.encode_count_);
+}
+
 TEST_F(VideoEncoderSoftwareFallbackWrapperTest, CanUtilizeFallbackEncoder) {
   UtilizeFallbackEncoder();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
 }
 
 TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
-       InternalEncoderNotReleasedDuringFallback) {
-  UtilizeFallbackEncoder();
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
+       InternalEncoderReleasedDuringFallback) {
   EXPECT_EQ(0, fake_encoder_.release_count_);
+  UtilizeFallbackEncoder();
+  EXPECT_EQ(1, fake_encoder_.release_count_);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
+  // No extra release when the fallback is released.
+  EXPECT_EQ(1, fake_encoder_.release_count_);
 }
 
 TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
        InternalEncoderNotEncodingDuringFallback) {
   UtilizeFallbackEncoder();
-  EXPECT_EQ(0, fake_encoder_.encode_count_);
+  int encode_count = fake_encoder_.encode_count_;
+  EncodeFrame();
+  EXPECT_EQ(encode_count, fake_encoder_.encode_count_);
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
 }

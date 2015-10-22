@@ -156,6 +156,24 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   bool SupportsNativeHandle() const override;
 
  private:
+  bool InitFallbackEncoder();
+
+  // Settings used in the last InitEncode call and used if a dynamic fallback to
+  // software is required.
+  VideoCodec codec_settings_;
+  int32_t number_of_cores_;
+  size_t max_payload_size_;
+
+  // The last bitrate/framerate set, and a flag for noting they are set.
+  bool rates_set_;
+  uint32_t bitrate_;
+  uint32_t framerate_;
+
+  // The last channel parameters set, and a flag for noting they are set.
+  bool channel_parameters_set_;
+  uint32_t packet_loss_;
+  int64_t rtt_;
+
   const EncoderType encoder_type_;
   webrtc::VideoEncoder* const encoder_;
 
