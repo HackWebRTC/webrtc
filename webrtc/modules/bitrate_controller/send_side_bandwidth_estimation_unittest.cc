@@ -44,4 +44,55 @@ TEST(SendSideBweTest, InitialRembWithProbing) {
   bwe.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   EXPECT_EQ(kRembBps, bitrate);
 }
+
+TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
+  SendSideBandwidthEstimation bwe;
+  static const int kMinBitrateBps = 100000;
+  static const int kInitialBitrateBps = 1000000;
+  bwe.SetMinMaxBitrate(kMinBitrateBps, 1500000);
+  bwe.SetSendBitrate(kInitialBitrateBps);
+
+  static const uint8_t kFractionLoss = 128;
+  static const int64_t kRttMs = 50;
+
+  int64_t now_ms = 0;
+  int bitrate_bps;
+  uint8_t fraction_loss;
+  int64_t rtt_ms;
+  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
+  EXPECT_EQ(kInitialBitrateBps, bitrate_bps);
+  EXPECT_EQ(0, fraction_loss);
+  EXPECT_EQ(0, rtt_ms);
+
+  // Signal heavy loss to go down in bitrate.
+  bwe.UpdateReceiverBlock(kFractionLoss, kRttMs, 100, now_ms);
+  // Trigger an update 2 seconds later to not be rate limited.
+  now_ms += 2000;
+  bwe.UpdateEstimate(now_ms);
+
+  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
+  EXPECT_LT(bitrate_bps, kInitialBitrateBps);
+  // Verify that the obtained bitrate isn't hitting the min bitrate, or this
+  // test doesn't make sense. If this ever happens, update the thresholds or
+  // loss rates so that it doesn't hit min bitrate after one bitrate update.
+  EXPECT_GT(bitrate_bps, kMinBitrateBps);
+  EXPECT_EQ(kFractionLoss, fraction_loss);
+  EXPECT_EQ(kRttMs, rtt_ms);
+
+  // Triggering an update shouldn't apply further downgrade nor upgrade since
+  // there's no intermediate receiver block received indicating whether this is
+  // currently good or not.
+  int last_bitrate_bps = bitrate_bps;
+  // Trigger an update 2 seconds later to not be rate limited (but it still
+  // shouldn't update).
+  now_ms += 2000;
+  bwe.UpdateEstimate(now_ms);
+  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
+
+  EXPECT_EQ(last_bitrate_bps, bitrate_bps);
+  // The old loss rate should still be applied though.
+  EXPECT_EQ(kFractionLoss, fraction_loss);
+  EXPECT_EQ(kRttMs, rtt_ms);
+}
+
 }  // namespace webrtc

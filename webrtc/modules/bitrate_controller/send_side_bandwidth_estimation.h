@@ -61,14 +61,15 @@ class SendSideBandwidthEstimation {
   std::deque<std::pair<int64_t, uint32_t> > min_bitrate_history_;
 
   // incoming filters
-  int accumulate_lost_packets_Q8_;
-  int accumulate_expected_packets_;
+  int lost_packets_since_last_loss_update_Q8_;
+  int expected_packets_since_last_loss_update_;
 
   uint32_t bitrate_;
   uint32_t min_bitrate_configured_;
   uint32_t max_bitrate_configured_;
   int64_t last_low_bitrate_log_ms_;
 
+  bool has_decreased_since_last_fraction_loss_;
   int64_t time_last_receiver_block_ms_;
   uint8_t last_fraction_loss_;
   int64_t last_round_trip_time_ms_;

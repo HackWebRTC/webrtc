@@ -43,13 +43,14 @@ const size_t kNumUmaRampupMetrics =
 }
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation()
-    : accumulate_lost_packets_Q8_(0),
-      accumulate_expected_packets_(0),
+    : lost_packets_since_last_loss_update_Q8_(0),
+      expected_packets_since_last_loss_update_(0),
       bitrate_(0),
       min_bitrate_configured_(kDefaultMinBitrateBps),
       max_bitrate_configured_(kDefaultMaxBitrateBps),
       last_low_bitrate_log_ms_(-1),
-      time_last_receiver_block_ms_(0),
+      has_decreased_since_last_fraction_loss_(false),
+      time_last_receiver_block_ms_(-1),
       last_fraction_loss_(0),
       last_round_trip_time_ms_(0),
       bwe_incoming_(0),
@@ -58,8 +59,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       initially_lost_packets_(0),
       bitrate_at_2_seconds_kbps_(0),
       uma_update_state_(kNoUpdate),
-      rampup_uma_stats_updated_(kNumUmaRampupMetrics, false) {
-}
+      rampup_uma_stats_updated_(kNumUmaRampupMetrics, false) {}
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
 
@@ -117,21 +117,20 @@ void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
     // Calculate number of lost packets.
     const int num_lost_packets_Q8 = fraction_loss * number_of_packets;
     // Accumulate reports.
-    accumulate_lost_packets_Q8_ += num_lost_packets_Q8;
-    accumulate_expected_packets_ += number_of_packets;
+    lost_packets_since_last_loss_update_Q8_ += num_lost_packets_Q8;
+    expected_packets_since_last_loss_update_ += number_of_packets;
 
-    // Report loss if the total report is based on sufficiently many packets.
-    if (accumulate_expected_packets_ >= kLimitNumPackets) {
-      last_fraction_loss_ =
-          accumulate_lost_packets_Q8_ / accumulate_expected_packets_;
-
-      // Reset accumulators.
-      accumulate_lost_packets_Q8_ = 0;
-      accumulate_expected_packets_ = 0;
-    } else {
-      // Early return without updating estimate.
+    // Don't generate a loss rate until it can be based on enough packets.
+    if (expected_packets_since_last_loss_update_ < kLimitNumPackets)
       return;
-    }
+
+    has_decreased_since_last_fraction_loss_ = false;
+    last_fraction_loss_ = lost_packets_since_last_loss_update_Q8_ /
+                          expected_packets_since_last_loss_update_;
+
+    // Reset accumulators.
+    lost_packets_since_last_loss_update_Q8_ = 0;
+    expected_packets_since_last_loss_update_ = 0;
   }
   time_last_receiver_block_ms_ = now_ms;
   UpdateEstimate(now_ms);
@@ -186,7 +185,9 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
   }
   UpdateMinHistory(now_ms);
   // Only start updating bitrate when receiving receiver blocks.
-  if (time_last_receiver_block_ms_ != 0) {
+  // TODO(pbos): Handle the case when no receiver report is received for a very
+  // long time.
+  if (time_last_receiver_block_ms_ != -1) {
     if (last_fraction_loss_ <= 5) {
       // Loss < 2%: Increase rate by 8% of the min bitrate in the last
       // kBweIncreaseIntervalMs.
@@ -207,12 +208,12 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
 
     } else if (last_fraction_loss_ <= 26) {
       // Loss between 2% - 10%: Do nothing.
-
     } else {
       // Loss > 10%: Limit the rate decreases to once a kBweDecreaseIntervalMs +
       // rtt.
-      if ((now_ms - time_last_decrease_ms_) >=
-          (kBweDecreaseIntervalMs + last_round_trip_time_ms_)) {
+      if (!has_decreased_since_last_fraction_loss_ &&
+          (now_ms - time_last_decrease_ms_) >=
+              (kBweDecreaseIntervalMs + last_round_trip_time_ms_)) {
         time_last_decrease_ms_ = now_ms;
 
         // Reduce rate:
@@ -221,6 +222,7 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
         bitrate_ = static_cast<uint32_t>(
             (bitrate_ * static_cast<double>(512 - last_fraction_loss_)) /
             512.0);
+        has_decreased_since_last_fraction_loss_ = true;
       }
     }
   }
