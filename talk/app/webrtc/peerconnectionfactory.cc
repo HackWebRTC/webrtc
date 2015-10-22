@@ -218,6 +218,11 @@ bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file) {
   return channel_manager_->StartAecDump(file);
 }
 
+void PeerConnectionFactory::StopAecDump() {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  channel_manager_->StopAecDump();
+}
+
 bool PeerConnectionFactory::StartRtcEventLog(rtc::PlatformFile file) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   return channel_manager_->StartRtcEventLog(file);

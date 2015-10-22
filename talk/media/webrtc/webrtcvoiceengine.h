@@ -108,6 +108,9 @@ class WebRtcVoiceEngine
   // Starts AEC dump using existing file.
   bool StartAecDump(rtc::PlatformFile file);
 
+  // Stops AEC dump.
+  void StopAecDump();
+
   // Starts recording an RtcEventLog using an existing file until 10 minutes
   // pass or the StopRtcEventLog function is called.
   bool StartRtcEventLog(rtc::PlatformFile file);
@@ -139,7 +142,6 @@ class WebRtcVoiceEngine
       bool is_input, const std::string& dev_name, int dev_id, int* rtc_id);
 
   void StartAecDump(const std::string& filename);
-  void StopAecDump();
   int CreateVoEChannel();
 
   static const int kDefaultLogSeverity = rtc::LS_WARNING;

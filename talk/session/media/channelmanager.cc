@@ -630,6 +630,11 @@ bool ChannelManager::StartAecDump(rtc::PlatformFile file) {
       Bind(&MediaEngineInterface::StartAecDump, media_engine_.get(), file));
 }
 
+void ChannelManager::StopAecDump() {
+  worker_thread_->Invoke<void>(
+      Bind(&MediaEngineInterface::StopAecDump, media_engine_.get()));
+}
+
 bool ChannelManager::StartRtcEventLog(rtc::PlatformFile file) {
   return worker_thread_->Invoke<bool>(
       Bind(&MediaEngineInterface::StartRtcEventLog, media_engine_.get(), file));

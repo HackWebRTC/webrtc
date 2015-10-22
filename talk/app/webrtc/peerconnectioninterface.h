@@ -621,6 +621,9 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // http://crbug.com/264611.
   virtual bool StartAecDump(rtc::PlatformFile file) = 0;
 
+  // Stops logging the AEC dump.
+  virtual void StopAecDump() = 0;
+
   // Starts RtcEventLog using existing file. Takes ownership of |file| and
   // passes it on to VoiceEngine, which will take the ownership. If the
   // operation fails the file will be closed. The logging will stop

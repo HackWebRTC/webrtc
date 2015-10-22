@@ -122,6 +122,9 @@ class MediaEngineInterface {
   // Starts AEC dump using existing file.
   virtual bool StartAecDump(rtc::PlatformFile file) = 0;
 
+  // Stops recording AEC dump.
+  virtual void StopAecDump() = 0;
+
   // Starts RtcEventLog using existing file.
   virtual bool StartRtcEventLog(rtc::PlatformFile file) = 0;
 
@@ -223,6 +226,10 @@ class CompositeMediaEngine : public MediaEngineInterface {
 
   virtual bool StartAecDump(rtc::PlatformFile file) {
     return voice_.StartAecDump(file);
+  }
+
+  virtual void StopAecDump() {
+    voice_.StopAecDump();
   }
 
   virtual bool StartRtcEventLog(rtc::PlatformFile file) {
