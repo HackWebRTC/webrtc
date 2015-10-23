@@ -44,7 +44,7 @@ struct ByteType {
 
 // Basic buffer class, can be grown and shrunk dynamically.
 // Unlike std::string/vector, does not initialize data when expanding capacity.
-class Buffer final {
+class Buffer {
  public:
   Buffer();                   // An empty buffer.
   Buffer(const Buffer& buf);  // Copy size and contents of an existing buffer.
