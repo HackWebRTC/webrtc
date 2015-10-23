@@ -281,16 +281,36 @@ class RtcpBandwidthObserver {
 };
 
 struct PacketInfo {
+  PacketInfo(int64_t arrival_time_ms, uint16_t sequence_number)
+      : PacketInfo(-1, arrival_time_ms, -1, sequence_number, 0, false) {}
+
   PacketInfo(int64_t arrival_time_ms,
              int64_t send_time_ms,
              uint16_t sequence_number,
              size_t payload_size,
              bool was_paced)
-      : arrival_time_ms(arrival_time_ms),
+      : PacketInfo(-1,
+                   arrival_time_ms,
+                   send_time_ms,
+                   sequence_number,
+                   payload_size,
+                   was_paced) {}
+
+  PacketInfo(int64_t creation_time_ms,
+             int64_t arrival_time_ms,
+             int64_t send_time_ms,
+             uint16_t sequence_number,
+             size_t payload_size,
+             bool was_paced)
+      : creation_time_ms(creation_time_ms),
+        arrival_time_ms(arrival_time_ms),
         send_time_ms(send_time_ms),
         sequence_number(sequence_number),
         payload_size(payload_size),
         was_paced(was_paced) {}
+
+  // Time corresponding to when this object was created.
+  int64_t creation_time_ms;
   // Time corresponding to when the packet was received. Timestamped with the
   // receiver's clock.
   int64_t arrival_time_ms;
@@ -313,7 +333,9 @@ class TransportFeedbackObserver {
 
   // Note: Transport-wide sequence number as sequence number. Arrival time
   // must be set to 0.
-  virtual void OnSentPacket(const PacketInfo& info) = 0;
+  virtual void AddPacket(uint16_t sequence_number,
+                         size_t length,
+                         bool was_paced) = 0;
 
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
 };

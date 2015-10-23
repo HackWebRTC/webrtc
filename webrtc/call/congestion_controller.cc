@@ -297,8 +297,8 @@ void CongestionController::OnNetworkChanged(uint32_t target_bitrate_bps,
 
 void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {
   if (transport_feedback_adapter_) {
-    transport_feedback_adapter_->UpdateSendTime(sent_packet.packet_id,
-                                                sent_packet.send_time_ms);
+    transport_feedback_adapter_->OnSentPacket(sent_packet.packet_id,
+                                              sent_packet.send_time_ms);
   }
 }
 }  // namespace webrtc

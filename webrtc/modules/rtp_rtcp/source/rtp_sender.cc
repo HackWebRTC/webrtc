@@ -684,8 +684,7 @@ size_t RTPSender::SendPadData(size_t bytes,
       break;
 
     if (using_transport_seq && transport_feedback_observer_) {
-      transport_feedback_observer_->OnSentPacket(
-          PacketInfo(0, now_ms, options.packet_id, length, true));
+      transport_feedback_observer_->AddPacket(options.packet_id, length, true);
     }
 
     bytes_sent += padding_bytes_in_packet;
@@ -947,8 +946,7 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
     media_has_been_sent_ = true;
   }
   if (using_transport_seq && transport_feedback_observer_) {
-    transport_feedback_observer_->OnSentPacket(
-        PacketInfo(0, now_ms, options.packet_id, length, true));
+    transport_feedback_observer_->AddPacket(options.packet_id, length, true);
   }
   UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, send_over_rtx,
                  is_retransmit);

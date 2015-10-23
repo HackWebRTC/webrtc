@@ -23,27 +23,39 @@ static const int kDefaultHistoryLengthMs = 1000;
 
 class SendTimeHistoryTest : public ::testing::Test {
  protected:
-  SendTimeHistoryTest() : history_(kDefaultHistoryLengthMs), clock_(0) {}
+  SendTimeHistoryTest()
+      : clock_(0), history_(&clock_, kDefaultHistoryLengthMs) {}
   ~SendTimeHistoryTest() {}
 
   virtual void SetUp() {}
 
   virtual void TearDown() {}
 
-  SendTimeHistory history_;
+  void AddPacketWithSendTime(uint16_t sequence_number,
+                             size_t length,
+                             bool was_paced,
+                             int64_t send_time_ms) {
+    history_.AddAndRemoveOld(sequence_number, length, was_paced);
+    history_.OnSentPacket(sequence_number, send_time_ms);
+  }
+
   webrtc::SimulatedClock clock_;
+  SendTimeHistory history_;
 };
 
 // Help class extended so we can do EXPECT_EQ and collections.
 class PacketInfo : public webrtc::PacketInfo {
  public:
-  PacketInfo() : webrtc::PacketInfo(0, 0, 0, 0, false) {}
+  PacketInfo() : webrtc::PacketInfo(-1, 0, 0, 0, 0, false) {}
+  PacketInfo(int64_t arrival_time_ms, uint16_t sequence_number)
+      : PacketInfo(arrival_time_ms, 0, sequence_number, 0, false) {}
   PacketInfo(int64_t arrival_time_ms,
              int64_t send_time_ms,
              uint16_t sequence_number,
              size_t payload_size,
              bool was_paced)
-      : webrtc::PacketInfo(arrival_time_ms,
+      : webrtc::PacketInfo(-1,
+                           arrival_time_ms,
                            send_time_ms,
                            sequence_number,
                            payload_size,
@@ -58,40 +70,19 @@ class PacketInfo : public webrtc::PacketInfo {
 
 TEST_F(SendTimeHistoryTest, AddRemoveOne) {
   const uint16_t kSeqNo = 10;
-  const PacketInfo kSentPacket = {0, 1, kSeqNo, 1, true};
-  history_.AddAndRemoveOld(kSentPacket);
+  const PacketInfo kSentPacket(0, 1, kSeqNo, 1, true);
+  AddPacketWithSendTime(kSeqNo, 1, true, 1);
 
-  PacketInfo received_packet = {0, 0, kSeqNo, 0, false};
+  PacketInfo received_packet(0, 0, kSeqNo, 0, false);
   EXPECT_TRUE(history_.GetInfo(&received_packet, false));
   EXPECT_EQ(kSentPacket, received_packet);
 
-  received_packet = {0, 0, kSeqNo, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&received_packet, true));
-  EXPECT_EQ(kSentPacket, received_packet);
+  PacketInfo received_packet2(0, 0, kSeqNo, 0, false);
+  EXPECT_TRUE(history_.GetInfo(&received_packet2, true));
+  EXPECT_EQ(kSentPacket, received_packet2);
 
-  received_packet = {0, 0, kSeqNo, 0, false};
-  EXPECT_FALSE(history_.GetInfo(&received_packet, true));
-}
-
-TEST_F(SendTimeHistoryTest, UpdateSendTime) {
-  const uint16_t kSeqNo = 10;
-  const int64_t kSendTime = 1000;
-  const int64_t kSendTimeUpdated = 2000;
-  const PacketInfo kSentPacket = {0, kSendTime, kSeqNo, 1, true};
-  const PacketInfo kUpdatedPacket = {0, kSendTimeUpdated, kSeqNo, 1, true};
-
-  history_.AddAndRemoveOld(kSentPacket);
-  PacketInfo info = {0, 0, kSeqNo, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, false));
-  EXPECT_EQ(kSentPacket, info);
-
-  EXPECT_TRUE(history_.UpdateSendTime(kSeqNo, kSendTimeUpdated));
-
-  info = {0, 0, kSeqNo, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, true));
-  EXPECT_EQ(kUpdatedPacket, info);
-
-  EXPECT_FALSE(history_.UpdateSendTime(kSeqNo, kSendTimeUpdated));
+  PacketInfo received_packet3(0, 0, kSeqNo, 0, false);
+  EXPECT_FALSE(history_.GetInfo(&received_packet3, true));
 }
 
 TEST_F(SendTimeHistoryTest, PopulatesExpectedFields) {
@@ -100,11 +91,10 @@ TEST_F(SendTimeHistoryTest, PopulatesExpectedFields) {
   const int64_t kReceiveTime = 2000;
   const size_t kPayloadSize = 42;
   const bool kPaced = true;
-  const PacketInfo kSentPacket = {0, kSendTime, kSeqNo, kPayloadSize, kPaced};
 
-  history_.AddAndRemoveOld(kSentPacket);
+  AddPacketWithSendTime(kSeqNo, kPayloadSize, kPaced, kSendTime);
 
-  PacketInfo info = {kReceiveTime, 0, kSeqNo, 0, false};
+  PacketInfo info(kReceiveTime, kSeqNo);
   EXPECT_TRUE(history_.GetInfo(&info, true));
   EXPECT_EQ(kReceiveTime, info.arrival_time_ms);
   EXPECT_EQ(kSendTime, info.send_time_ms);
@@ -128,8 +118,14 @@ TEST_F(SendTimeHistoryTest, AddThenRemoveOutOfOrder) {
         PacketInfo(static_cast<int64_t>(i) + kTransmissionTime, 0,
                    static_cast<uint16_t>(i), kPacketSize, false));
   }
+  for (size_t i = 0; i < num_items; ++i) {
+    history_.AddAndRemoveOld(sent_packets[i].sequence_number,
+                             sent_packets[i].payload_size,
+                             sent_packets[i].was_paced);
+  }
   for (size_t i = 0; i < num_items; ++i)
-    history_.AddAndRemoveOld(sent_packets[i]);
+    history_.OnSentPacket(sent_packets[i].sequence_number,
+                          sent_packets[i].send_time_ms);
   std::random_shuffle(received_packets.begin(), received_packets.end());
   for (size_t i = 0; i < num_items; ++i) {
     PacketInfo packet = received_packets[i];
@@ -145,54 +141,66 @@ TEST_F(SendTimeHistoryTest, AddThenRemoveOutOfOrder) {
 
 TEST_F(SendTimeHistoryTest, HistorySize) {
   const int kItems = kDefaultHistoryLengthMs / 100;
-  for (int i = 0; i < kItems; ++i)
-    history_.AddAndRemoveOld(PacketInfo(0, i * 100, i, 0, false));
   for (int i = 0; i < kItems; ++i) {
-    PacketInfo info = {0, 0, static_cast<uint16_t>(i), 0, false};
+    clock_.AdvanceTimeMilliseconds(100);
+    AddPacketWithSendTime(i, 0, false, i * 100);
+  }
+  for (int i = 0; i < kItems; ++i) {
+    PacketInfo info(0, 0, static_cast<uint16_t>(i), 0, false);
     EXPECT_TRUE(history_.GetInfo(&info, false));
     EXPECT_EQ(i * 100, info.send_time_ms);
   }
-  history_.AddAndRemoveOld(PacketInfo(0, kItems * 100, kItems, 0, false));
-  PacketInfo info = {0, 0, 0, 0, false};
+  clock_.AdvanceTimeMilliseconds(101);
+  AddPacketWithSendTime(kItems, 0, false, kItems * 101);
+  PacketInfo info(0, 0, 0, 0, false);
   EXPECT_FALSE(history_.GetInfo(&info, false));
   for (int i = 1; i < (kItems + 1); ++i) {
-    info = {0, 0, static_cast<uint16_t>(i), 0, false};
-    EXPECT_TRUE(history_.GetInfo(&info, false));
-    EXPECT_EQ(i * 100, info.send_time_ms);
+    PacketInfo info2(0, 0, static_cast<uint16_t>(i), 0, false);
+    EXPECT_TRUE(history_.GetInfo(&info2, false));
+    int64_t expected_time_ms = (i == kItems) ? i * 101 : i * 100;
+    EXPECT_EQ(expected_time_ms, info2.send_time_ms);
   }
 }
 
 TEST_F(SendTimeHistoryTest, HistorySizeWithWraparound) {
   const uint16_t kMaxSeqNo = std::numeric_limits<uint16_t>::max();
-  history_.AddAndRemoveOld(PacketInfo(0, 0, kMaxSeqNo - 2, 0, false));
-  history_.AddAndRemoveOld(PacketInfo(0, 100, kMaxSeqNo - 1, 0, false));
-  history_.AddAndRemoveOld(PacketInfo(0, 200, kMaxSeqNo, 0, false));
-  history_.AddAndRemoveOld(PacketInfo(0, kDefaultHistoryLengthMs, 0, 0, false));
-  PacketInfo info = {0, 0, static_cast<uint16_t>(kMaxSeqNo - 2), 0, false};
+  AddPacketWithSendTime(kMaxSeqNo - 2, 0, false, 0);
+
+  clock_.AdvanceTimeMilliseconds(100);
+  AddPacketWithSendTime(kMaxSeqNo - 1, 1, false, 100);
+
+  clock_.AdvanceTimeMilliseconds(100);
+  AddPacketWithSendTime(kMaxSeqNo, 0, false, 200);
+
+  clock_.AdvanceTimeMilliseconds(kDefaultHistoryLengthMs - 200 + 1);
+  AddPacketWithSendTime(0, 0, false, kDefaultHistoryLengthMs);
+
+  PacketInfo info(0, static_cast<uint16_t>(kMaxSeqNo - 2));
   EXPECT_FALSE(history_.GetInfo(&info, false));
-  info = {0, 0, static_cast<uint16_t>(kMaxSeqNo - 1), 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, false));
-  info = {0, 0, static_cast<uint16_t>(kMaxSeqNo), 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, false));
-  info = {0, 0, 0, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, false));
+  PacketInfo info2(0, static_cast<uint16_t>(kMaxSeqNo - 1));
+  EXPECT_TRUE(history_.GetInfo(&info2, false));
+  PacketInfo info3(0, static_cast<uint16_t>(kMaxSeqNo));
+  EXPECT_TRUE(history_.GetInfo(&info3, false));
+  PacketInfo info4(0, 0);
+  EXPECT_TRUE(history_.GetInfo(&info4, false));
 
   // Create a gap (kMaxSeqNo - 1) -> 0.
-  info = {0, 0, kMaxSeqNo, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, true));
+  PacketInfo info5(0, kMaxSeqNo);
+  EXPECT_TRUE(history_.GetInfo(&info5, true));
 
-  history_.AddAndRemoveOld(PacketInfo(0, 1100, 1, 0, false));
+  clock_.AdvanceTimeMilliseconds(100);
+  AddPacketWithSendTime(1, 0, false, 1100);
 
-  info = {0, 0, static_cast<uint16_t>(kMaxSeqNo - 2), 0, false};
-  EXPECT_FALSE(history_.GetInfo(&info, false));
-  info = {0, 0, static_cast<uint16_t>(kMaxSeqNo - 1), 0, false};
-  EXPECT_FALSE(history_.GetInfo(&info, false));
-  info = {0, 0, kMaxSeqNo, 0, false};
-  EXPECT_FALSE(history_.GetInfo(&info, false));
-  info = {0, 0, 0, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, false));
-  info = {0, 0, 1, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, false));
+  PacketInfo info6(0, static_cast<uint16_t>(kMaxSeqNo - 2));
+  EXPECT_FALSE(history_.GetInfo(&info6, false));
+  PacketInfo info7(0, static_cast<uint16_t>(kMaxSeqNo - 1));
+  EXPECT_FALSE(history_.GetInfo(&info7, false));
+  PacketInfo info8(0, kMaxSeqNo);
+  EXPECT_FALSE(history_.GetInfo(&info8, false));
+  PacketInfo info9(0, 0);
+  EXPECT_TRUE(history_.GetInfo(&info9, false));
+  PacketInfo info10(0, 1);
+  EXPECT_TRUE(history_.GetInfo(&info10, false));
 }
 
 TEST_F(SendTimeHistoryTest, InterlievedGetAndRemove) {
@@ -202,22 +210,24 @@ TEST_F(SendTimeHistoryTest, InterlievedGetAndRemove) {
                            {0, kTimestamp + 1, kSeqNo + 1, 0, false},
                            {0, kTimestamp + 2, kSeqNo + 2, 0, false}};
 
-  history_.AddAndRemoveOld(packets[0]);
-  history_.AddAndRemoveOld(packets[1]);
-
-  PacketInfo info = {0, 0, packets[0].sequence_number, 0, false};
+  AddPacketWithSendTime(packets[0].sequence_number, packets[0].payload_size,
+                        packets[0].was_paced, packets[0].send_time_ms);
+  AddPacketWithSendTime(packets[1].sequence_number, packets[1].payload_size,
+                        packets[1].was_paced, packets[1].send_time_ms);
+  PacketInfo info(0, 0, packets[0].sequence_number, 0, false);
   EXPECT_TRUE(history_.GetInfo(&info, true));
   EXPECT_EQ(packets[0], info);
 
-  history_.AddAndRemoveOld(packets[2]);
+  AddPacketWithSendTime(packets[2].sequence_number, packets[2].payload_size,
+                        packets[2].was_paced, packets[2].send_time_ms);
 
-  info = {0, 0, packets[1].sequence_number, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, true));
-  EXPECT_EQ(packets[1], info);
+  PacketInfo info2(0, 0, packets[1].sequence_number, 0, false);
+  EXPECT_TRUE(history_.GetInfo(&info2, true));
+  EXPECT_EQ(packets[1], info2);
 
-  info = {0, 0, packets[2].sequence_number, 0, false};
-  EXPECT_TRUE(history_.GetInfo(&info, true));
-  EXPECT_EQ(packets[2], info);
+  PacketInfo info3(0, 0, packets[2].sequence_number, 0, false);
+  EXPECT_TRUE(history_.GetInfo(&info3, true));
+  EXPECT_EQ(packets[2], info3);
 }
 
 }  // namespace test

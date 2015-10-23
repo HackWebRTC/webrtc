@@ -26,7 +26,7 @@ FullBweSender::FullBweSender(int kbps, BitrateObserver* observer, Clock* clock)
       rbe_(new RemoteBitrateEstimatorAbsSendTime(this, clock)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
       clock_(clock),
-      send_time_history_(10000),
+      send_time_history_(clock_, 10000),
       has_received_ack_(false),
       last_acked_seq_num_(0) {
   assert(kbps >= kMinBitrateKbps);
@@ -92,10 +92,11 @@ void FullBweSender::OnPacketsSent(const Packets& packets) {
   for (Packet* packet : packets) {
     if (packet->GetPacketType() == Packet::kMedia) {
       MediaPacket* media_packet = static_cast<MediaPacket*>(packet);
-      PacketInfo info(0, media_packet->sender_timestamp_ms(),
-                      media_packet->header().sequenceNumber,
-                      media_packet->payload_size(), packet->paced());
-      send_time_history_.AddAndRemoveOld(info);
+      send_time_history_.AddAndRemoveOld(media_packet->header().sequenceNumber,
+                                         media_packet->payload_size(),
+                                         packet->paced());
+      send_time_history_.OnSentPacket(media_packet->header().sequenceNumber,
+                                      media_packet->sender_timestamp_ms());
     }
   }
 }
@@ -125,7 +126,7 @@ SendSideBweReceiver::~SendSideBweReceiver() {
 void SendSideBweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                         const MediaPacket& media_packet) {
   packet_feedback_vector_.push_back(PacketInfo(
-      arrival_time_ms, media_packet.sender_timestamp_ms(),
+      -1, arrival_time_ms, media_packet.sender_timestamp_ms(),
       media_packet.header().sequenceNumber, media_packet.payload_size(), true));
 
   // Log received packet information.

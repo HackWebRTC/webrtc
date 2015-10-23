@@ -14,9 +14,10 @@
 
 namespace webrtc {
 
-SendTimeHistory::SendTimeHistory(int64_t packet_age_limit)
-    : packet_age_limit_(packet_age_limit), oldest_sequence_number_(0) {
-}
+SendTimeHistory::SendTimeHistory(Clock* clock, int64_t packet_age_limit)
+    : clock_(clock),
+      packet_age_limit_(packet_age_limit),
+      oldest_sequence_number_(0) {}
 
 SendTimeHistory::~SendTimeHistory() {
 }
@@ -25,18 +26,21 @@ void SendTimeHistory::Clear() {
   history_.clear();
 }
 
-void SendTimeHistory::AddAndRemoveOld(const PacketInfo& packet) {
-  EraseOld(packet.send_time_ms - packet_age_limit_);
+void SendTimeHistory::AddAndRemoveOld(uint16_t sequence_number,
+                                      size_t length,
+                                      bool was_paced) {
+  EraseOld();
 
   if (history_.empty())
-    oldest_sequence_number_ = packet.sequence_number;
+    oldest_sequence_number_ = sequence_number;
 
-  history_.insert(
-      std::pair<uint16_t, PacketInfo>(packet.sequence_number, packet));
+  history_.insert(std::pair<uint16_t, PacketInfo>(
+      sequence_number, PacketInfo(clock_->TimeInMilliseconds(), 0, -1,
+                                  sequence_number, length, was_paced)));
 }
 
-bool SendTimeHistory::UpdateSendTime(uint16_t sequence_number,
-                                     int64_t send_time_ms) {
+bool SendTimeHistory::OnSentPacket(uint16_t sequence_number,
+                                   int64_t send_time_ms) {
   auto it = history_.find(sequence_number);
   if (it == history_.end())
     return false;
@@ -44,13 +48,15 @@ bool SendTimeHistory::UpdateSendTime(uint16_t sequence_number,
   return true;
 }
 
-void SendTimeHistory::EraseOld(int64_t limit) {
+void SendTimeHistory::EraseOld() {
   while (!history_.empty()) {
     auto it = history_.find(oldest_sequence_number_);
     assert(it != history_.end());
 
-    if (it->second.send_time_ms > limit)
+    if (clock_->TimeInMilliseconds() - it->second.creation_time_ms <=
+        packet_age_limit_) {
       return;  // Oldest packet within age limit, return.
+    }
 
     // TODO(sprang): Warn if erasing (too many) old items?
     history_.erase(it);

@@ -21,11 +21,11 @@ namespace webrtc {
 
 class SendTimeHistory {
  public:
-  explicit SendTimeHistory(int64_t packet_age_limit);
+  SendTimeHistory(Clock* clock, int64_t packet_age_limit);
   virtual ~SendTimeHistory();
 
-  void AddAndRemoveOld(const PacketInfo& packet);
-  bool UpdateSendTime(uint16_t sequence_number, int64_t timestamp);
+  void AddAndRemoveOld(uint16_t sequence_number, size_t length, bool was_paced);
+  bool OnSentPacket(uint16_t sequence_number, int64_t timestamp);
   // Look up PacketInfo for a sent packet, based on the sequence number, and
   // populate all fields except for receive_time. The packet parameter must
   // thus be non-null and have the sequence_number field set.
@@ -33,9 +33,10 @@ class SendTimeHistory {
   void Clear();
 
  private:
-  void EraseOld(int64_t limit);
+  void EraseOld();
   void UpdateOldestSequenceNumber();
 
+  Clock* const clock_;
   const int64_t packet_age_limit_;
   uint16_t oldest_sequence_number_;  // Oldest may not be lowest.
   std::map<uint16_t, PacketInfo> history_;

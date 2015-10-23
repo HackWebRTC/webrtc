@@ -105,7 +105,9 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   // Utility method, to reset arrival_time_ms before adding send time.
   void OnSentPacket(PacketInfo info) {
     info.arrival_time_ms = 0;
-    adapter_->OnSentPacket(info);
+    adapter_->AddPacket(info.sequence_number, info.payload_size,
+                        info.was_paced);
+    adapter_->OnSentPacket(info.sequence_number, info.send_time_ms);
   }
 
   SimulatedClock clock_;
