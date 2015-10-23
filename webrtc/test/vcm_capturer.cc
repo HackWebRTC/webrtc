@@ -58,19 +58,25 @@ VcmCapturer* VcmCapturer::Create(VideoCaptureInput* input,
                                  size_t width,
                                  size_t height,
                                  size_t target_fps) {
-  VcmCapturer* vcm__capturer = new VcmCapturer(input);
-  if (!vcm__capturer->Init(width, height, target_fps)) {
+  VcmCapturer* vcm_capturer = new VcmCapturer(input);
+  if (!vcm_capturer->Init(width, height, target_fps)) {
     // TODO(pbos): Log a warning that this failed.
-    delete vcm__capturer;
+    delete vcm_capturer;
     return NULL;
   }
-  return vcm__capturer;
+  return vcm_capturer;
 }
 
 
-void VcmCapturer::Start() { started_ = true; }
+void VcmCapturer::Start() {
+  rtc::CritScope lock(&crit_);
+  started_ = true;
+}
 
-void VcmCapturer::Stop() { started_ = false; }
+void VcmCapturer::Stop() {
+  rtc::CritScope lock(&crit_);
+  started_ = false;
+}
 
 void VcmCapturer::Destroy() {
   if (vcm_ == NULL) {
@@ -90,6 +96,7 @@ VcmCapturer::~VcmCapturer() { Destroy(); }
 
 void VcmCapturer::OnIncomingCapturedFrame(const int32_t id,
                                           const VideoFrame& frame) {
+  rtc::CritScope lock(&crit_);
   if (started_)
     input_->IncomingCapturedFrame(frame);
 }

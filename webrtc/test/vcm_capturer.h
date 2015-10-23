@@ -10,6 +10,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_VCM_CAPTURER_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_COMMON_VCM_CAPTURER_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_capture/include/video_capture.h"
@@ -38,7 +39,8 @@ class VcmCapturer : public VideoCapturer, public VideoCaptureDataCallback {
   bool Init(size_t width, size_t height, size_t target_fps);
   void Destroy();
 
-  bool started_;
+  rtc::CriticalSection crit_;
+  bool started_ GUARDED_BY(crit_);
   VideoCaptureModule* vcm_;
   VideoCaptureCapability capability_;
 };
