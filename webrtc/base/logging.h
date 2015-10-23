@@ -54,8 +54,9 @@
 #include <sstream>
 #include <string>
 #include <utility>
+
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
 
 namespace rtc {
@@ -131,8 +132,6 @@ class LogSink {
 
 class LogMessage {
  public:
-  static const uint32_t WARN_SLOW_LOGS_DELAY = 50;  // ms
-
   LogMessage(const char* file, int line, LoggingSeverity sev,
              LogErrorContext err_ctx = ERRCTX_NONE, int err = 0,
              const char* module = NULL);
@@ -196,7 +195,7 @@ class LogMessage {
   typedef std::list<StreamAndSeverity> StreamList;
 
   // Updates min_sev_ appropriately when debug sinks change.
-  static void UpdateMinLogSeverity() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  static void UpdateMinLogSeverity();
 
   // These write out the actual log messages.
   static void OutputToDebug(const std::string& msg,
@@ -215,13 +214,6 @@ class LogMessage {
   // String data generated in the constructor, that should be appended to
   // the message before output.
   std::string extra_;
-
-  // If time it takes to write to stream is more than this, log one
-  // additional warning about it.
-  uint32_t warn_slow_logs_delay_;
-
-  // Global lock for the logging subsystem
-  static CriticalSection crit_;
 
   // dbg_sev_ is the thresholds for those output targets
   // min_sev_ is the minimum (most verbose) of those levels, and is used

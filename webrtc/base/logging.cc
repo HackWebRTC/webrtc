@@ -37,6 +37,7 @@ static const char kLibjingle[] = "libjingle";
 #include <ostream>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -100,23 +101,27 @@ LoggingSeverity LogMessage::dbg_sev_ = LS_NONE;
 #endif  // !_DEBUG
 bool LogMessage::log_to_stderr_ = true;
 
+namespace {
 // Global lock for log subsystem, only needed to serialize access to streams_.
-CriticalSection LogMessage::crit_;
+CriticalSection g_log_crit;
+}  // namespace
 
 // The list of logging streams currently configured.
 // Note: we explicitly do not clean this up, because of the uncertain ordering
 // of destructors at program exit.  Let the person who sets the stream trigger
 // cleanup by setting to NULL, or let it leak (safe at program exit).
-LogMessage::StreamList LogMessage::streams_ GUARDED_BY(LogMessage::crit_);
+LogMessage::StreamList LogMessage::streams_ GUARDED_BY(g_log_crit);
 
 // Boolean options default to false (0)
 bool LogMessage::thread_, LogMessage::timestamp_;
 
-LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
-                       LogErrorContext err_ctx, int err, const char* module)
-    : severity_(sev),
-      tag_(kLibjingle),
-      warn_slow_logs_delay_(WARN_SLOW_LOGS_DELAY) {
+LogMessage::LogMessage(const char* file,
+                       int line,
+                       LoggingSeverity sev,
+                       LogErrorContext err_ctx,
+                       int err,
+                       const char* module)
+    : severity_(sev), tag_(kLibjingle) {
   if (timestamp_) {
     uint32_t time = TimeSince(LogStartTime());
     // Also ensure WallClockStartTime is initialized, so that it matches
@@ -197,23 +202,11 @@ LogMessage::~LogMessage() {
     OutputToDebug(str, severity_, tag_);
   }
 
-  uint32_t before = Time();
-  // Must lock streams_ before accessing
-  CritScope cs(&crit_);
-  for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
-    if (severity_ >= it->second) {
-      it->first->OnLogMessage(str);
+  CritScope cs(&g_log_crit);
+  for (auto& kv : streams_) {
+    if (severity_ >= kv.second) {
+      kv.first->OnLogMessage(str);
     }
-  }
-  uint32_t delay = TimeSince(before);
-  if (delay >= warn_slow_logs_delay_) {
-    rtc::LogMessage slow_log_warning(__FILE__, __LINE__, LS_WARNING);
-    // If our warning is slow, we don't want to warn about it, because
-    // that would lead to inifinite recursion.  So, give a really big
-    // number for the delay threshold.
-    slow_log_warning.warn_slow_logs_delay_ = UINT_MAX;
-    slow_log_warning.stream() << "Slow log: took " << delay << "ms to write "
-                              << str.size() << " bytes.";
   }
 }
 
@@ -237,7 +230,7 @@ void LogMessage::LogTimestamps(bool on) {
 
 void LogMessage::LogToDebug(LoggingSeverity min_sev) {
   dbg_sev_ = min_sev;
-  CritScope cs(&crit_);
+  CritScope cs(&g_log_crit);
   UpdateMinLogSeverity();
 }
 
@@ -246,24 +239,24 @@ void LogMessage::SetLogToStderr(bool log_to_stderr) {
 }
 
 int LogMessage::GetLogToStream(LogSink* stream) {
-  CritScope cs(&crit_);
+  CritScope cs(&g_log_crit);
   LoggingSeverity sev = LS_NONE;
-  for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
-    if (!stream || stream == it->first) {
-      sev = std::min(sev, it->second);
+  for (auto& kv : streams_) {
+    if (!stream || stream == kv.first) {
+      sev = std::min(sev, kv.second);
     }
   }
   return sev;
 }
 
 void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
-  CritScope cs(&crit_);
+  CritScope cs(&g_log_crit);
   streams_.push_back(std::make_pair(stream, min_sev));
   UpdateMinLogSeverity();
 }
 
 void LogMessage::RemoveLogToStream(LogSink* stream) {
-  CritScope cs(&crit_);
+  CritScope cs(&g_log_crit);
   for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
     if (stream == it->first) {
       streams_.erase(it);
@@ -335,10 +328,10 @@ void LogMessage::ConfigureLogging(const char* params) {
   LogToDebug(debug_level);
 }
 
-void LogMessage::UpdateMinLogSeverity() EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+void LogMessage::UpdateMinLogSeverity() EXCLUSIVE_LOCKS_REQUIRED(g_log_crit) {
   LoggingSeverity min_sev = dbg_sev_;
-  for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
-    min_sev = std::min(dbg_sev_, it->second);
+  for (auto& kv : streams_) {
+    min_sev = std::min(dbg_sev_, kv.second);
   }
   min_sev_ = min_sev;
 }
