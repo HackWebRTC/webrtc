@@ -177,15 +177,6 @@ class SocketAddress {
   size_t ToDualStackSockAddrStorage(sockaddr_storage* saddr) const;
   size_t ToSockAddrStorage(sockaddr_storage* saddr) const;
 
-  // Converts the IP address given in 'compact form' into dotted form.
-  // IP is given as an integer in host byte order. V4 only, to be deprecated.
-  // TODO: Deprecate this.
-  static std::string IPToString(uint32_t ip_as_host_order_integer);
-
-  // Same as IPToString but anonymizes it by hiding the last part.
-  // TODO: Deprecate this.
-  static std::string IPToSensitiveString(uint32_t ip_as_host_order_integer);
-
   // Converts the IP address given in dotted form into compact form.
   // Only dotted names (A.B.C.D) are  converted.
   // Output integer is returned in host byte order.

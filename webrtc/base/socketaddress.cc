@@ -307,14 +307,6 @@ size_t SocketAddress::ToSockAddrStorage(sockaddr_storage* addr) const {
   return ToSockAddrStorageHelper(addr, ip_, port_, scope_id_);
 }
 
-std::string SocketAddress::IPToString(uint32_t ip_as_host_order_integer) {
-  return IPAddress(ip_as_host_order_integer).ToString();
-}
-
-std::string IPToSensitiveString(uint32_t ip_as_host_order_integer) {
-  return IPAddress(ip_as_host_order_integer).ToSensitiveString();
-}
-
 bool SocketAddress::StringToIP(const std::string& hostname, uint32_t* ip) {
   in_addr addr;
   if (rtc::inet_pton(AF_INET, hostname.c_str(), &addr) == 0)
