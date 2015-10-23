@@ -32,6 +32,7 @@ class AsyncPacketSocket;
 class PacketSocketFactory;
 class Thread;
 class NetworkManager;
+class AsyncResolverInterface;
 }  // namespace rtc
 
 namespace stunprober {
@@ -58,6 +59,13 @@ class StunProber : public sigslot::has_slots<> {
     RESOLVE_FAILED,   // Host resolution failed.
     WRITE_FAILED,     // Sending a message to the server failed.
     READ_FAILED,      // Reading the reply from the server failed.
+  };
+
+  class Observer {
+   public:
+    virtual ~Observer() = default;
+    virtual void OnPrepared(StunProber* prober, StunProber::Status status) = 0;
+    virtual void OnFinished(StunProber* prober, StunProber::Status status) = 0;
   };
 
   struct Stats {
@@ -98,7 +106,8 @@ class StunProber : public sigslot::has_slots<> {
   // many requests should be tried for each resolved IP address. In shared mode,
   // (the number of sockets to be created) equals to |requests_per_ip|. In
   // non-shared mode, (the number of sockets) equals to requests_per_ip * (the
-  // number of resolved IP addresses).
+  // number of resolved IP addresses). TODO(guoweis): Remove this once
+  // everything moved to Prepare() and Run().
   bool Start(const std::vector<rtc::SocketAddress>& servers,
              bool shared_socket_mode,
              int stun_ta_interval_ms,
@@ -106,15 +115,52 @@ class StunProber : public sigslot::has_slots<> {
              int timeout_ms,
              const AsyncCallback finish_callback);
 
+  // TODO(guoweis): The combination of Prepare() and Run() are equivalent to the
+  // Start() above. Remove Start() once everything is migrated.
+  bool Prepare(const std::vector<rtc::SocketAddress>& servers,
+               bool shared_socket_mode,
+               int stun_ta_interval_ms,
+               int requests_per_ip,
+               int timeout_ms,
+               StunProber::Observer* observer);
+
+  // Start to send out the STUN probes.
+  bool Start(StunProber::Observer* observer);
+
   // Method to retrieve the Stats once |finish_callback| is invoked. Returning
   // false when the result is inconclusive, for example, whether it's behind a
   // NAT or not.
   bool GetStats(Stats* stats) const;
 
+  int estimated_execution_time() {
+    return static_cast<int>(requests_per_ip_ * all_servers_addrs_.size() *
+                            interval_ms_);
+  }
+
  private:
   // A requester tracks the requests and responses from a single socket to many
   // STUN servers.
   class Requester;
+
+  // TODO(guoweis): Remove this once all dependencies move away from
+  // AsyncCallback.
+  class ObserverAdapter : public Observer {
+   public:
+    void set_callback(AsyncCallback callback) { callback_ = callback; }
+    void OnPrepared(StunProber* stunprober, Status status) {
+      if (status == SUCCESS) {
+        stunprober->Start(this);
+      } else {
+        callback_(stunprober, status);
+      }
+    }
+    void OnFinished(StunProber* stunprober, Status status) {
+      callback_(stunprober, status);
+    }
+
+   private:
+    AsyncCallback callback_;
+  };
 
   bool ResolveServerName(const rtc::SocketAddress& addr);
   void OnServerResolved(rtc::AsyncResolverInterface* resolver);
@@ -131,15 +177,17 @@ class StunProber : public sigslot::has_slots<> {
            requests_per_ip_;
   }
 
+  bool should_send_next_request(uint32_t now);
+  int get_wake_up_interval_ms();
+
   bool SendNextRequest();
 
   // Will be invoked in 1ms intervals and schedule the next request from the
   // |current_requester_| if the time has passed for another request.
   void MaybeScheduleStunRequests();
 
-  // End the probe with the given |status|.  Invokes |fininsh_callback|, which
-  // may destroy the class.
-  void End(StunProber::Status status);
+  void ReportOnPrepared(StunProber::Status status);
+  void ReportOnFinished(StunProber::Status status);
 
   Requester* CreateRequester();
 
@@ -172,10 +220,6 @@ class StunProber : public sigslot::has_slots<> {
   // Accumulate all resolved addresses.
   std::vector<rtc::SocketAddress> all_servers_addrs_;
 
-  // Caller-supplied callback executed when testing is completed, called by
-  // End().
-  AsyncCallback finished_callback_;
-
   // The set of STUN probe sockets and their state.
   std::vector<Requester*> requesters_;
 
@@ -187,6 +231,11 @@ class StunProber : public sigslot::has_slots<> {
   size_t total_ready_sockets_ = 0;
 
   rtc::AsyncInvoker invoker_;
+
+  Observer* observer_ = nullptr;
+  // TODO(guoweis): Remove this once all dependencies move away from
+  // AsyncCallback.
+  ObserverAdapter observer_adapter_;
 
   rtc::NetworkManager::NetworkList networks_;
 
