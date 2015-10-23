@@ -114,6 +114,24 @@ bool VCMSessionInfo::NonReference() const {
   return packets_.front().codecSpecificHeader.codecHeader.VP8.nonReference;
 }
 
+void VCMSessionInfo::SetGofInfo(const GofInfoVP9& gof_info, size_t idx) {
+  if (packets_.empty() ||
+      packets_.front().codecSpecificHeader.codec != kRtpVideoVp9 ||
+      packets_.front().codecSpecificHeader.codecHeader.VP9.flexible_mode) {
+    return;
+  }
+  packets_.front().codecSpecificHeader.codecHeader.VP9.temporal_idx =
+      gof_info.temporal_idx[idx];
+  packets_.front().codecSpecificHeader.codecHeader.VP9.temporal_up_switch =
+      gof_info.temporal_up_switch[idx];
+  packets_.front().codecSpecificHeader.codecHeader.VP9.num_ref_pics =
+      gof_info.num_ref_pics[idx];
+  for (size_t i = 0; i < gof_info.num_ref_pics[idx]; ++i) {
+    packets_.front().codecSpecificHeader.codecHeader.VP9.pid_diff[i] =
+        gof_info.pid_diff[idx][i];
+  }
+}
+
 void VCMSessionInfo::Reset() {
   session_nack_ = false;
   complete_ = false;

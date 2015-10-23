@@ -14,7 +14,9 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/frame_buffer.h"
 #include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
@@ -29,6 +31,9 @@
 #include "webrtc/system_wrappers/interface/metrics.h"
 
 namespace webrtc {
+
+// Interval for updating SS data.
+static const uint32_t kSsCleanupIntervalSec = 60;
 
 // Use this rtt if no value has been reported.
 static const int64_t kDefaultRtt = 200;
@@ -113,6 +118,97 @@ void FrameList::Reset(UnorderedFrameList* free_frames) {
   }
 }
 
+bool Vp9SsMap::Insert(const VCMPacket& packet) {
+  if (!packet.codecSpecificHeader.codecHeader.VP9.ss_data_available)
+    return false;
+
+  ss_map_[packet.timestamp] = packet.codecSpecificHeader.codecHeader.VP9.gof;
+  return true;
+}
+
+void Vp9SsMap::Reset() {
+  ss_map_.clear();
+}
+
+bool Vp9SsMap::Find(uint32_t timestamp, SsMap::iterator* it_out) {
+  bool found = false;
+  for (SsMap::iterator it = ss_map_.begin(); it != ss_map_.end(); ++it) {
+    if (it->first == timestamp || IsNewerTimestamp(timestamp, it->first)) {
+      *it_out = it;
+      found = true;
+    }
+  }
+  return found;
+}
+
+void Vp9SsMap::RemoveOld(uint32_t timestamp) {
+  if (!TimeForCleanup(timestamp))
+    return;
+
+  SsMap::iterator it;
+  if (!Find(timestamp, &it))
+    return;
+
+  ss_map_.erase(ss_map_.begin(), it);
+  AdvanceFront(timestamp);
+}
+
+bool Vp9SsMap::TimeForCleanup(uint32_t timestamp) const {
+  if (ss_map_.empty() || !IsNewerTimestamp(timestamp, ss_map_.begin()->first))
+    return false;
+
+  uint32_t diff = timestamp - ss_map_.begin()->first;
+  return diff / kVideoPayloadTypeFrequency >= kSsCleanupIntervalSec;
+}
+
+void Vp9SsMap::AdvanceFront(uint32_t timestamp) {
+  RTC_DCHECK(!ss_map_.empty());
+  GofInfoVP9 gof = ss_map_.begin()->second;
+  ss_map_.erase(ss_map_.begin());
+  ss_map_[timestamp] = gof;
+}
+
+bool Vp9SsMap::UpdatePacket(VCMPacket* packet) {
+  uint8_t gof_idx = packet->codecSpecificHeader.codecHeader.VP9.gof_idx;
+  if (gof_idx == kNoGofIdx)
+    return false;  // No update needed.
+
+  SsMap::iterator it;
+  if (!Find(packet->timestamp, &it))
+    return false;  // Corresponding SS not yet received.
+
+  if (gof_idx >= it->second.num_frames_in_gof)
+    return false;  // Assume corresponding SS not yet received.
+
+  RTPVideoHeaderVP9* vp9 = &packet->codecSpecificHeader.codecHeader.VP9;
+  vp9->temporal_idx = it->second.temporal_idx[gof_idx];
+  vp9->temporal_up_switch = it->second.temporal_up_switch[gof_idx];
+
+  // TODO(asapersson): Set vp9.ref_picture_id[i] and add usage.
+  vp9->num_ref_pics = it->second.num_ref_pics[gof_idx];
+  for (size_t i = 0; i < it->second.num_ref_pics[gof_idx]; ++i) {
+    vp9->pid_diff[i] = it->second.pid_diff[gof_idx][i];
+  }
+  return true;
+}
+
+void Vp9SsMap::UpdateFrames(FrameList* frames) {
+  for (const auto& frame_it : *frames) {
+    uint8_t gof_idx =
+        frame_it.second->CodecSpecific()->codecSpecific.VP9.gof_idx;
+    if (gof_idx == kNoGofIdx) {
+      continue;
+    }
+    SsMap::iterator ss_it;
+    if (Find(frame_it.second->TimeStamp(), &ss_it)) {
+      if (gof_idx >= ss_it->second.num_frames_in_gof) {
+        continue;  // Assume corresponding SS not yet received.
+      }
+      frame_it.second->SetGofInfo(ss_it->second, gof_idx);
+    }
+  }
+}
+
 VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
                                  rtc::scoped_ptr<EventWrapper> event)
     : clock_(clock),
@@ -125,8 +221,6 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       incomplete_frames_(),
       last_decoded_state_(),
       first_packet_since_reset_(true),
-      last_gof_timestamp_(0),
-      last_gof_valid_(false),
       stats_callback_(NULL),
       incoming_frame_rate_(0),
       incoming_frame_count_(0),
@@ -222,7 +316,7 @@ void VCMJitterBuffer::Start() {
   first_packet_since_reset_ = true;
   rtt_ms_ = kDefaultRtt;
   last_decoded_state_.Reset();
-  last_gof_valid_ = false;
+  vp9_ss_map_.Reset();
 }
 
 void VCMJitterBuffer::Stop() {
@@ -230,7 +324,7 @@ void VCMJitterBuffer::Stop() {
   UpdateHistograms();
   running_ = false;
   last_decoded_state_.Reset();
-  last_gof_valid_ = false;
+  vp9_ss_map_.Reset();
 
   // Make sure all frames are free and reset.
   for (FrameList::iterator it = decodable_frames_.begin();
@@ -262,7 +356,7 @@ void VCMJitterBuffer::Flush() {
   decodable_frames_.Reset(&free_frames_);
   incomplete_frames_.Reset(&free_frames_);
   last_decoded_state_.Reset();  // TODO(mikhal): sync reset.
-  last_gof_valid_ = false;
+  vp9_ss_map_.Reset();
   num_consecutive_old_packets_ = 0;
   // Also reset the jitter and delay estimates
   jitter_estimate_.Reset();
@@ -592,39 +686,22 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     return kOldPacket;
   }
 
+  num_consecutive_old_packets_ = 0;
+
   if (packet.codec == kVideoCodecVP9) {
-    // TODO(asapersson): Move this code to appropriate place.
-    // TODO(asapersson): Handle out of order GOF.
     if (packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
       // TODO(asapersson): Add support for flexible mode.
       return kGeneralError;
     }
-    if (packet.codecSpecificHeader.codecHeader.VP9.ss_data_available) {
-      if (!last_gof_valid_ ||
-          IsNewerTimestamp(packet.timestamp, last_gof_timestamp_)) {
-        last_gof_.CopyGofInfoVP9(
-            packet.codecSpecificHeader.codecHeader.VP9.gof);
-        last_gof_timestamp_ = packet.timestamp;
-        last_gof_valid_ = true;
-      }
-    }
-    if (last_gof_valid_ &&
-        !packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
-      uint8_t gof_idx = packet.codecSpecificHeader.codecHeader.VP9.gof_idx;
-      if (gof_idx != kNoGofIdx) {
-        if (gof_idx >= last_gof_.num_frames_in_gof) {
-          LOG(LS_WARNING) << "Incorrect gof_idx: " << gof_idx;
-          return kGeneralError;
-        }
-        RTPVideoTypeHeader* hdr = const_cast<RTPVideoTypeHeader*>(
-            &packet.codecSpecificHeader.codecHeader);
-        hdr->VP9.temporal_idx = last_gof_.temporal_idx[gof_idx];
-        hdr->VP9.temporal_up_switch = last_gof_.temporal_up_switch[gof_idx];
-      }
-    }
-  }
+    if (!packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
+      if (vp9_ss_map_.Insert(packet))
+        vp9_ss_map_.UpdateFrames(&incomplete_frames_);
 
-  num_consecutive_old_packets_ = 0;
+      vp9_ss_map_.UpdatePacket(const_cast<VCMPacket*>(&packet));
+    }
+    if (!last_decoded_state_.in_initial_state())
+      vp9_ss_map_.RemoveOld(last_decoded_state_.time_stamp());
+  }
 
   VCMFrameBuffer* frame;
   FrameList* frame_list;
