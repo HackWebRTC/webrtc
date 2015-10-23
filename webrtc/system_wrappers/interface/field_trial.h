@@ -13,8 +13,6 @@
 
 #include <string>
 
-#include "webrtc/common_types.h"
-
 // Field trials allow webrtc clients (such as Chrome) to turn on feature code
 // in binaries out in the field and gather information with that.
 //

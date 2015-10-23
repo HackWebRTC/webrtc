@@ -199,9 +199,6 @@
       'sources': [
         'interface/field_trial_default.h',
         'source/field_trial_default.cc',
-      ],
-      'dependencies': [
-        'system_wrappers',
       ]
     }, {
       'target_name': 'metrics_default',
