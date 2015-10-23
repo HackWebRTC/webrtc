@@ -432,7 +432,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (encoded_complete_callback_ == NULL) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  FrameType frame_type = kDeltaFrame;
+  FrameType frame_type = kVideoFrameDelta;
   // We only support one stream at the moment.
   if (frame_types && frame_types->size() > 0) {
     frame_type = (*frame_types)[0];
@@ -456,7 +456,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   raw_->stride[VPX_PLANE_V] = input_image.stride(kVPlane);
 
   int flags = 0;
-  bool send_keyframe = (frame_type == kKeyFrame);
+  bool send_keyframe = (frame_type == kVideoFrameKey);
   if (send_keyframe) {
     // Key frame request from caller.
     flags = VPX_EFLAG_FORCE_KF;
@@ -560,7 +560,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 
 int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   encoded_image_._length = 0;
-  encoded_image_._frameType = kDeltaFrame;
+  encoded_image_._frameType = kVideoFrameDelta;
   RTPFragmentationHeader frag_info;
   // Note: no data partitioning in VP9, so 1 partition only. We keep this
   // fragmentation data for now, until VP9 packetizer is implemented.
@@ -582,7 +582,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   // End of frame.
   // Check if encoded frame is a key frame.
   if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
-    encoded_image_._frameType = kKeyFrame;
+    encoded_image_._frameType = kVideoFrameKey;
   }
   PopulateCodecSpecific(&codec_specific, *pkt, input_image_->timestamp());
 
@@ -688,7 +688,7 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   }
   // Always start with a complete key frame.
   if (key_frame_required_) {
-    if (input_image._frameType != kKeyFrame)
+    if (input_image._frameType != kVideoFrameKey)
       return WEBRTC_VIDEO_CODEC_ERROR;
     // We have a key frame - is it complete?
     if (input_image._completeFrame) {

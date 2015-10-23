@@ -272,7 +272,7 @@ class VideoProcessorIntegrationTest: public testing::Test {
     float encoded_size_kbits = processor_->EncodedFrameSize() * 8.0f / 1000.0f;
     // Update layer data.
     // Update rate mismatch relative to per-frame bandwidth for delta frames.
-    if (frame_type == kDeltaFrame) {
+    if (frame_type == kVideoFrameDelta) {
       // TODO(marpan): Should we count dropped (zero size) frames in mismatch?
       sum_frame_size_mismatch_[layer_] += fabs(encoded_size_kbits -
                                                per_frame_bandwidth_[layer_]) /
@@ -450,7 +450,7 @@ class VideoProcessorIntegrationTest: public testing::Test {
     ResetRateControlMetrics(
         rate_profile.frame_index_rate_update[update_index + 1]);
     int frame_number = 0;
-    FrameType frame_type = kDeltaFrame;
+    FrameType frame_type = kVideoFrameDelta;
     while (processor_->ProcessFrame(frame_number) &&
         frame_number < num_frames) {
       // Get the layer index for the frame |frame_number|.

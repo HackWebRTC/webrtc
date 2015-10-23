@@ -792,7 +792,7 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   if (!send_key_frame && frame_types) {
     for (size_t i = 0; i < frame_types->size() && i < send_stream_.size();
          ++i) {
-      if ((*frame_types)[i] == kKeyFrame && send_stream_[i]) {
+      if ((*frame_types)[i] == kVideoFrameKey && send_stream_[i]) {
         send_key_frame = true;
         break;
       }
@@ -970,7 +970,7 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
     vpx_codec_iter_t iter = NULL;
     int part_idx = 0;
     encoded_images_[encoder_idx]._length = 0;
-    encoded_images_[encoder_idx]._frameType = kDeltaFrame;
+    encoded_images_[encoder_idx]._frameType = kVideoFrameDelta;
     RTPFragmentationHeader frag_info;
     // token_partitions_ is number of bits used.
     frag_info.VerifyAndAllocateFragmentationHeader((1 << token_partitions_)
@@ -1001,7 +1001,7 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
       if ((pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT) == 0) {
         // check if encoded frame is a key frame
         if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
-          encoded_images_[encoder_idx]._frameType = kKeyFrame;
+          encoded_images_[encoder_idx]._frameType = kVideoFrameKey;
           rps_.EncodedKeyFrame(picture_id_[stream_idx]);
         }
         PopulateCodecSpecific(&codec_specific, *pkt, stream_idx,
@@ -1172,7 +1172,7 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
 
   // Always start with a complete key frame.
   if (key_frame_required_) {
-    if (input_image._frameType != kKeyFrame)
+    if (input_image._frameType != kVideoFrameKey)
       return WEBRTC_VIDEO_CODEC_ERROR;
     // We have a key frame - is it complete?
     if (input_image._completeFrame) {
@@ -1185,7 +1185,8 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
   // the feedback mode is enabled (RPS).
   // Reset on a key frame refresh.
   if (!feedback_mode_) {
-    if (input_image._frameType == kKeyFrame && input_image._completeFrame) {
+    if (input_image._frameType == kVideoFrameKey &&
+        input_image._completeFrame) {
       propagation_cnt_ = -1;
     // Start count on first loss.
     } else if ((!input_image._completeFrame || missing_frames) &&
@@ -1238,7 +1239,7 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
 #endif
 
   // Store encoded frame if key frame. (Used in Copy method.)
-  if (input_image._frameType == kKeyFrame && input_image._buffer != NULL) {
+  if (input_image._frameType == kVideoFrameKey && input_image._buffer != NULL) {
     const uint32_t bytes_to_copy = input_image._length;
     if (last_keyframe_._size < bytes_to_copy) {
       delete [] last_keyframe_._buffer;
@@ -1272,7 +1273,7 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
     // Whenever we receive an incomplete key frame all reference buffers will
     // be corrupt. If that happens we must request new key frames until we
     // decode a complete key frame.
-    if (input_image._frameType == kKeyFrame && !input_image._completeFrame)
+    if (input_image._frameType == kVideoFrameKey && !input_image._completeFrame)
       return WEBRTC_VIDEO_CODEC_ERROR;
     // Check for reference updates and last reference buffer corruption and
     // signal successful reference propagation or frame corruption to the

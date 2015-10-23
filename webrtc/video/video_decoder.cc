@@ -87,7 +87,7 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Decode(
     int64_t render_time_ms) {
   // Try decoding with the provided decoder on every keyframe or when there's no
   // fallback decoder. This is the normal case.
-  if (!fallback_decoder_ || input_image._frameType == kKeyFrame) {
+  if (!fallback_decoder_ || input_image._frameType == kVideoFrameKey) {
     int32_t ret = decoder_->Decode(input_image, missing_frames, fragmentation,
                                    codec_specific_info, render_time_ms);
     if (ret == WEBRTC_VIDEO_CODEC_OK) {

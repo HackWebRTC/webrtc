@@ -32,7 +32,7 @@ FrameStatistic::FrameStatistic()
       total_packets(0),
       bit_rate_in_kbps(0),
       encoded_frame_length_in_bytes(0),
-      frame_type(kDeltaFrame) {}
+      frame_type(kVideoFrameDelta) {}
 
 Stats::Stats() {}
 
@@ -83,7 +83,7 @@ void Stats::PrintSummary() {
     total_encoding_time_in_us += it->encode_time_in_us;
     total_decoding_time_in_us += it->decode_time_in_us;
     total_encoded_frames_lengths += it->encoded_frame_length_in_bytes;
-    if (it->frame_type == webrtc::kKeyFrame) {
+    if (it->frame_type == webrtc::kVideoFrameKey) {
       total_encoded_key_frames_lengths += it->encoded_frame_length_in_bytes;
       nbr_keyframes++;
     } else {

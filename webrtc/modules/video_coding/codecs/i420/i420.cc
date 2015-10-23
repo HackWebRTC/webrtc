@@ -82,7 +82,7 @@ int I420Encoder::Encode(const VideoFrame& inputImage,
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  _encodedImage._frameType = kKeyFrame;
+  _encodedImage._frameType = kVideoFrameKey;
   _encodedImage._timeStamp = inputImage.timestamp();
   _encodedImage._encodedHeight = inputImage.height();
   _encodedImage._encodedWidth = inputImage.width();

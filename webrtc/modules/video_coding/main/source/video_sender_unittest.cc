@@ -236,16 +236,16 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
       // No intra request expected.
       EXPECT_CALL(
           encoder_,
-          Encode(_,
-                 _,
-                 Pointee(ElementsAre(kDeltaFrame, kDeltaFrame, kDeltaFrame))))
-          .Times(1).WillRepeatedly(Return(0));
+          Encode(_, _, Pointee(ElementsAre(kVideoFrameDelta, kVideoFrameDelta,
+                                           kVideoFrameDelta))))
+          .Times(1)
+          .WillRepeatedly(Return(0));
       return;
     }
     assert(stream >= 0);
     assert(stream < kNumberOfStreams);
-    std::vector<FrameType> frame_types(kNumberOfStreams, kDeltaFrame);
-    frame_types[stream] = kKeyFrame;
+    std::vector<FrameType> frame_types(kNumberOfStreams, kVideoFrameDelta);
+    frame_types[stream] = kVideoFrameKey;
     EXPECT_CALL(
         encoder_,
         Encode(_,

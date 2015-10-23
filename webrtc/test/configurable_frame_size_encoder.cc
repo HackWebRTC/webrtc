@@ -47,7 +47,7 @@ int32_t ConfigurableFrameSizeEncoder::Encode(
   encodedImage._completeFrame = true;
   encodedImage._encodedHeight = inputImage.height();
   encodedImage._encodedWidth = inputImage.width();
-  encodedImage._frameType = kKeyFrame;
+  encodedImage._frameType = kVideoFrameKey;
   encodedImage._timeStamp = inputImage.timestamp();
   encodedImage.capture_time_ms_ = inputImage.render_time_ms();
   RTPFragmentationHeader* fragmentation = NULL;

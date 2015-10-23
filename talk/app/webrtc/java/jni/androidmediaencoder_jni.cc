@@ -590,7 +590,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   render_times_ms_.push_back(input_frame.render_time_ms());
   frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
 
-  bool key_frame = frame_types->front() != webrtc::kDeltaFrame;
+  bool key_frame = frame_types->front() != webrtc::kVideoFrameDelta;
   bool encode_status = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
                                               j_encode_method_,
                                               key_frame,
@@ -769,7 +769,8 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       image->_encodedHeight = height_;
       image->_timeStamp = output_timestamp_;
       image->capture_time_ms_ = output_render_time_ms_;
-      image->_frameType = (key_frame ? webrtc::kKeyFrame : webrtc::kDeltaFrame);
+      image->_frameType =
+          (key_frame ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta);
       image->_completeFrame = true;
 
       webrtc::CodecSpecificInfo info;

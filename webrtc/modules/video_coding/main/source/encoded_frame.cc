@@ -89,7 +89,7 @@ void VCMEncodedFrame::Reset()
     _renderTimeMs = -1;
     _timeStamp = 0;
     _payloadType = 0;
-    _frameType = kDeltaFrame;
+    _frameType = kVideoFrameDelta;
     _encodedWidth = 0;
     _encodedHeight = 0;
     _completeFrame = false;

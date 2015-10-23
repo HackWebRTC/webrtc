@@ -38,7 +38,7 @@ class TestMediaOptimization : public ::testing::Test {
       EncodedImage encoded_image;
       encoded_image._length = bytes_per_frame;
       encoded_image._timeStamp = next_timestamp_;
-      encoded_image._frameType = kKeyFrame;
+      encoded_image._frameType = kVideoFrameKey;
       ASSERT_EQ(VCM_OK, media_opt_.UpdateWithEncodedData(encoded_image));
     }
     next_timestamp_ += frame_time_ms_ * kSampleRate / 1000;

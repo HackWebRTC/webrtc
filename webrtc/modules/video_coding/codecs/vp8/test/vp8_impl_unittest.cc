@@ -221,7 +221,7 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
   encoder_->Encode(input_frame_, NULL, NULL);
   EXPECT_GT(WaitForEncodedFrame(), 0u);
   // First frame should be a key frame.
-  encoded_frame_._frameType = kKeyFrame;
+  encoded_frame_._frameType = kVideoFrameKey;
   encoded_frame_.ntp_time_ms_ = kTestNtpTimeMs;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame_, false, NULL));
@@ -241,12 +241,12 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERROR,
             decoder_->Decode(encoded_frame_, false, NULL));
   // Setting complete back to true. Forcing a delta frame.
-  encoded_frame_._frameType = kDeltaFrame;
+  encoded_frame_._frameType = kVideoFrameDelta;
   encoded_frame_._completeFrame = true;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERROR,
             decoder_->Decode(encoded_frame_, false, NULL));
   // Now setting a key frame.
-  encoded_frame_._frameType = kKeyFrame;
+  encoded_frame_._frameType = kVideoFrameKey;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame_, false, NULL));
   EXPECT_GT(I420PSNR(&input_frame_, &decoded_frame_), 36);

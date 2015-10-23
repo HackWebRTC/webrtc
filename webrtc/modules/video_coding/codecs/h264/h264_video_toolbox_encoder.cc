@@ -198,7 +198,8 @@ void VTCompressionOutputCallback(void* encoder,
   frame._encodedWidth = encode_params->width;
   frame._encodedHeight = encode_params->height;
   frame._completeFrame = true;
-  frame._frameType = is_keyframe ? webrtc::kKeyFrame : webrtc::kDeltaFrame;
+  frame._frameType =
+      is_keyframe ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta;
   frame.capture_time_ms_ = encode_params->render_time_ms;
   frame._timeStamp = encode_params->timestamp;
 
@@ -277,7 +278,7 @@ int H264VideoToolboxEncoder::Encode(
   bool is_keyframe_required = false;
   if (frame_types) {
     for (auto frame_type : *frame_types) {
-      if (frame_type == kKeyFrame) {
+      if (frame_type == kVideoFrameKey) {
         is_keyframe_required = true;
         break;
       }

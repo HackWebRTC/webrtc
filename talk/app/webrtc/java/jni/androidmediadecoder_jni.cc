@@ -474,7 +474,7 @@ int32_t MediaCodecVideoDecoder::Decode(
 
   // Always start with a complete key frame.
   if (key_frame_required_) {
-    if (inputImage._frameType != webrtc::kKeyFrame) {
+    if (inputImage._frameType != webrtc::kVideoFrameKey) {
       ALOGE << "Decode() - key frame is required";
       return WEBRTC_VIDEO_CODEC_ERROR;
     }

@@ -189,7 +189,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   stats->height = encoded_image._encodedHeight;
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
 
-  key_frame_counter_.Add(encoded_image._frameType == kKeyFrame);
+  key_frame_counter_.Add(encoded_image._frameType == kVideoFrameKey);
 
   if (encoded_image.adapt_reason_.quality_resolution_downscales != -1) {
     bool downscaled =
