@@ -223,7 +223,7 @@ final class SurfaceTextureHelper {
     surfaceTexture.release();
     eglBase.release();
     if (isOwningThread) {
-      handler.getLooper().quitSafely();
+      handler.getLooper().quit();
     }
   }
 }
