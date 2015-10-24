@@ -28,7 +28,7 @@
 package org.webrtc;
 
 import android.graphics.SurfaceTexture;
-import android.view.Surface;
+import android.view.SurfaceHolder;
 
 import org.webrtc.Logging;
 
@@ -86,9 +86,9 @@ public final class EglBase {
     eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
   }
 
-  // Create EGLSurface from the Android Surface.
-  public void createSurface(Surface surface) {
-    createSurfaceInternal(surface);
+  // Create EGLSurface from the Android SurfaceHolder.
+  public void createSurface(SurfaceHolder surfaceHolder) {
+    createSurfaceInternal(surfaceHolder);
   }
 
   // Create EGLSurface from the Android SurfaceTexture.
@@ -96,10 +96,10 @@ public final class EglBase {
     createSurfaceInternal(surfaceTexture);
   }
 
-  // Create EGLSurface from either Surface or SurfaceTexture.
-  private void createSurfaceInternal(Object surface) {
-    if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture)) {
-      throw new IllegalStateException("Input must be either a Surface or SurfaceTexture");
+  // Create EGLSurface from either a SurfaceHolder or a SurfaceTexture.
+  private void createSurfaceInternal(Object nativeWindow) {
+    if (!(nativeWindow instanceof SurfaceHolder) && !(nativeWindow instanceof SurfaceTexture)) {
+      throw new IllegalStateException("Input must be either a SurfaceHolder or SurfaceTexture");
     }
     checkIsNotReleased();
     if (configType == ConfigType.PIXEL_BUFFER) {
@@ -109,7 +109,7 @@ public final class EglBase {
       throw new RuntimeException("Already has an EGLSurface");
     }
     int[] surfaceAttribs = {EGL10.EGL_NONE};
-    eglSurface = egl.eglCreateWindowSurface(eglDisplay, eglConfig, surface, surfaceAttribs);
+    eglSurface = egl.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, surfaceAttribs);
     if (eglSurface == EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("Failed to create window surface");
     }
