@@ -40,6 +40,8 @@ import android.view.SurfaceView;
 
 import org.webrtc.Logging;
 
+import java.util.concurrent.CountDownLatch;
+
 import javax.microedition.khronos.egl.EGLContext;
 
 /**
@@ -190,6 +192,7 @@ public class SurfaceViewRenderer extends SurfaceView
    * don't call this function, the GL resources might leak.
    */
   public void release() {
+    final CountDownLatch eglCleanupBarrier = new CountDownLatch(1);
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         Logging.d(TAG, "Already released");
@@ -214,13 +217,15 @@ public class SurfaceViewRenderer extends SurfaceView
           }
           eglBase.release();
           eglBase = null;
+          eglCleanupBarrier.countDown();
         }
       });
       // Don't accept any more frames or messages to the render thread.
       renderThreadHandler = null;
     }
-    // Quit safely to make sure the EGL/GL cleanup posted above is executed.
-    renderThread.quitSafely();
+    // Make sure the EGL/GL cleanup posted above is executed.
+    ThreadUtils.awaitUninterruptibly(eglCleanupBarrier);
+    renderThread.quit();
     synchronized (frameLock) {
       if (pendingFrame != null) {
         VideoRenderer.renderFrameDone(pendingFrame);
