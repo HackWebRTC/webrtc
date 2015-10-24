@@ -382,10 +382,12 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(
     // consistency with other capturers such as in Chrome, we need to do a
     // thread hop.
     // Note that Stop() can cause the async invoke call to be cancelled.
-    async_invoker_->AsyncInvoke<void>(start_thread_,
-        // Note that this results in a shallow copying of the frame.
-        rtc::Bind(&WebRtcVideoCapturer::SignalFrameCapturedOnStartThread,
-                  this, sample));
+    async_invoker_->AsyncInvoke<void>(
+        start_thread_,
+        // Note that Bind captures by value, so there's an intermediate copy
+        // of sample.
+        rtc::Bind(&WebRtcVideoCapturer::SignalFrameCapturedOnStartThread, this,
+                  sample));
   }
 }
 
@@ -395,7 +397,7 @@ void WebRtcVideoCapturer::OnCaptureDelayChanged(const int32_t id,
 }
 
 void WebRtcVideoCapturer::SignalFrameCapturedOnStartThread(
-    const webrtc::VideoFrame frame) {
+    const webrtc::VideoFrame& frame) {
   // This can only happen between Start() and Stop().
   RTC_DCHECK(start_thread_);
   RTC_DCHECK(start_thread_->IsCurrent());

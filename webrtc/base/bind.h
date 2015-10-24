@@ -65,6 +65,7 @@
 #define WEBRTC_BASE_BIND_H_
 
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/template_util.h"
 
 #define NONAME
 
@@ -126,18 +127,6 @@ struct PointerType {
   typedef typename TernaryTypeOperator<IsRefCounted<T>::value,
                                        scoped_refptr<T>,
                                        T*>::type type;
-};
-
-// RemoveScopedPtrRef will capture scoped_refptr by-value instead of
-// by-reference.
-template <class T> struct RemoveScopedPtrRef { typedef T type; };
-template <class T>
-struct RemoveScopedPtrRef<const scoped_refptr<T>&> {
-  typedef scoped_refptr<T> type;
-};
-template <class T>
-struct RemoveScopedPtrRef<scoped_refptr<T>&> {
-  typedef scoped_refptr<T> type;
 };
 
 }  // namespace detail
@@ -220,7 +209,7 @@ class MethodFunctor1 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename rtc::remove_reference<P1>::type p1_;
 };
 
 template <class FunctorT, class R,
@@ -234,7 +223,7 @@ class Functor1 {
     return functor_(p1_); }
  private:
   FunctorT functor_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
+  typename rtc::remove_reference<P1>::type p1_;
 };
 
 
@@ -303,8 +292,8 @@ class MethodFunctor2 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
 };
 
 template <class FunctorT, class R,
@@ -320,8 +309,8 @@ class Functor2 {
     return functor_(p1_, p2_); }
  private:
   FunctorT functor_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
 };
 
 
@@ -401,9 +390,9 @@ class MethodFunctor3 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
-  typename detail::RemoveScopedPtrRef<P3>::type p3_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
 };
 
 template <class FunctorT, class R,
@@ -421,9 +410,9 @@ class Functor3 {
     return functor_(p1_, p2_, p3_); }
  private:
   FunctorT functor_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
-  typename detail::RemoveScopedPtrRef<P3>::type p3_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
 };
 
 
@@ -514,10 +503,10 @@ class MethodFunctor4 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
-  typename detail::RemoveScopedPtrRef<P3>::type p3_;
-  typename detail::RemoveScopedPtrRef<P4>::type p4_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
 };
 
 template <class FunctorT, class R,
@@ -537,10 +526,10 @@ class Functor4 {
     return functor_(p1_, p2_, p3_, p4_); }
  private:
   FunctorT functor_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
-  typename detail::RemoveScopedPtrRef<P3>::type p3_;
-  typename detail::RemoveScopedPtrRef<P4>::type p4_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
 };
 
 
@@ -642,11 +631,11 @@ class MethodFunctor5 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
-  typename detail::RemoveScopedPtrRef<P3>::type p3_;
-  typename detail::RemoveScopedPtrRef<P4>::type p4_;
-  typename detail::RemoveScopedPtrRef<P5>::type p5_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
 };
 
 template <class FunctorT, class R,
@@ -668,11 +657,11 @@ class Functor5 {
     return functor_(p1_, p2_, p3_, p4_, p5_); }
  private:
   FunctorT functor_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
-  typename detail::RemoveScopedPtrRef<P3>::type p3_;
-  typename detail::RemoveScopedPtrRef<P4>::type p4_;
-  typename detail::RemoveScopedPtrRef<P5>::type p5_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
 };
 
 
@@ -785,12 +774,12 @@ class MethodFunctor6 {
  private:
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
-  typename detail::RemoveScopedPtrRef<P3>::type p3_;
-  typename detail::RemoveScopedPtrRef<P4>::type p4_;
-  typename detail::RemoveScopedPtrRef<P5>::type p5_;
-  typename detail::RemoveScopedPtrRef<P6>::type p6_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
+  typename rtc::remove_reference<P6>::type p6_;
 };
 
 template <class FunctorT, class R,
@@ -814,12 +803,12 @@ class Functor6 {
     return functor_(p1_, p2_, p3_, p4_, p5_, p6_); }
  private:
   FunctorT functor_;
-  typename detail::RemoveScopedPtrRef<P1>::type p1_;
-  typename detail::RemoveScopedPtrRef<P2>::type p2_;
-  typename detail::RemoveScopedPtrRef<P3>::type p3_;
-  typename detail::RemoveScopedPtrRef<P4>::type p4_;
-  typename detail::RemoveScopedPtrRef<P5>::type p5_;
-  typename detail::RemoveScopedPtrRef<P6>::type p6_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
+  typename rtc::remove_reference<P6>::type p6_;
 };
 
 
@@ -908,6 +897,640 @@ Bind(FP_T(function),
      typename detail::identity<P6>::type p6) {
   return Functor6<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6>(
       function, p1, p2, p3, p4, p5, p6);
+}
+
+#undef FP_T
+
+template <class ObjectT,
+          class MethodT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7>
+class MethodFunctor7 {
+ public:
+  MethodFunctor7(MethodT method,
+                 ObjectT* object,
+                 P1 p1,
+                 P2 p2,
+                 P3 p3,
+                 P4 p4,
+                 P5 p5,
+                 P6 p6,
+                 P7 p7)
+      : method_(method),
+        object_(object),
+        p1_(p1),
+        p2_(p2),
+        p3_(p3),
+        p4_(p4),
+        p5_(p5),
+        p6_(p6),
+        p7_(p7) {}
+  R operator()() const {
+    return (object_->*method_)(p1_, p2_, p3_, p4_, p5_, p6_, p7_);
+  }
+
+ private:
+  MethodT method_;
+  typename detail::PointerType<ObjectT>::type object_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
+  typename rtc::remove_reference<P6>::type p6_;
+  typename rtc::remove_reference<P7>::type p7_;
+};
+
+template <class FunctorT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7>
+class Functor7 {
+ public:
+  Functor7(const FunctorT& functor,
+           P1 p1,
+           P2 p2,
+           P3 p3,
+           P4 p4,
+           P5 p5,
+           P6 p6,
+           P7 p7)
+      : functor_(functor),
+        p1_(p1),
+        p2_(p2),
+        p3_(p3),
+        p4_(p4),
+        p5_(p5),
+        p6_(p6),
+        p7_(p7) {}
+  R operator()() const { return functor_(p1_, p2_, p3_, p4_, p5_, p6_, p7_); }
+
+ private:
+  FunctorT functor_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
+  typename rtc::remove_reference<P6>::type p6_;
+  typename rtc::remove_reference<P7>::type p7_;
+};
+
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7)
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7>
+MethodFunctor7<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7> Bind(
+    FP_T(method),
+    ObjectT* object,
+    typename detail::identity<P1>::type p1,
+    typename detail::identity<P2>::type p2,
+    typename detail::identity<P3>::type p3,
+    typename detail::identity<P4>::type p4,
+    typename detail::identity<P5>::type p5,
+    typename detail::identity<P6>::type p6,
+    typename detail::identity<P7>::type p7) {
+  return MethodFunctor7<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7>(
+      method, object, p1, p2, p3, p4, p5, p6, p7);
+}
+
+#undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7) const
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7>
+MethodFunctor7<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7> Bind(
+    FP_T(method),
+    const ObjectT* object,
+    typename detail::identity<P1>::type p1,
+    typename detail::identity<P2>::type p2,
+    typename detail::identity<P3>::type p3,
+    typename detail::identity<P4>::type p4,
+    typename detail::identity<P5>::type p5,
+    typename detail::identity<P6>::type p6,
+    typename detail::identity<P7>::type p7) {
+  return MethodFunctor7<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6,
+                        P7>(method, object, p1, p2, p3, p4, p5, p6, p7);
+}
+
+#undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7)
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7>
+MethodFunctor7<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7> Bind(
+    FP_T(method),
+    const scoped_refptr<ObjectT>& object,
+    typename detail::identity<P1>::type p1,
+    typename detail::identity<P2>::type p2,
+    typename detail::identity<P3>::type p3,
+    typename detail::identity<P4>::type p4,
+    typename detail::identity<P5>::type p5,
+    typename detail::identity<P6>::type p6,
+    typename detail::identity<P7>::type p7) {
+  return MethodFunctor7<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7>(
+      method, object.get(), p1, p2, p3, p4, p5, p6, p7);
+}
+
+#undef FP_T
+#define FP_T(x) R (*x)(P1, P2, P3, P4, P5, P6, P7)
+
+template <class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7>
+Functor7<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7> Bind(
+    FP_T(function),
+    typename detail::identity<P1>::type p1,
+    typename detail::identity<P2>::type p2,
+    typename detail::identity<P3>::type p3,
+    typename detail::identity<P4>::type p4,
+    typename detail::identity<P5>::type p5,
+    typename detail::identity<P6>::type p6,
+    typename detail::identity<P7>::type p7) {
+  return Functor7<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7>(
+      function, p1, p2, p3, p4, p5, p6, p7);
+}
+
+#undef FP_T
+
+template <class ObjectT,
+          class MethodT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8>
+class MethodFunctor8 {
+ public:
+  MethodFunctor8(MethodT method,
+                 ObjectT* object,
+                 P1 p1,
+                 P2 p2,
+                 P3 p3,
+                 P4 p4,
+                 P5 p5,
+                 P6 p6,
+                 P7 p7,
+                 P8 p8)
+      : method_(method),
+        object_(object),
+        p1_(p1),
+        p2_(p2),
+        p3_(p3),
+        p4_(p4),
+        p5_(p5),
+        p6_(p6),
+        p7_(p7),
+        p8_(p8) {}
+  R operator()() const {
+    return (object_->*method_)(p1_, p2_, p3_, p4_, p5_, p6_, p7_, p8_);
+  }
+
+ private:
+  MethodT method_;
+  typename detail::PointerType<ObjectT>::type object_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
+  typename rtc::remove_reference<P6>::type p6_;
+  typename rtc::remove_reference<P7>::type p7_;
+  typename rtc::remove_reference<P8>::type p8_;
+};
+
+template <class FunctorT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8>
+class Functor8 {
+ public:
+  Functor8(const FunctorT& functor,
+           P1 p1,
+           P2 p2,
+           P3 p3,
+           P4 p4,
+           P5 p5,
+           P6 p6,
+           P7 p7,
+           P8 p8)
+      : functor_(functor),
+        p1_(p1),
+        p2_(p2),
+        p3_(p3),
+        p4_(p4),
+        p5_(p5),
+        p6_(p6),
+        p7_(p7),
+        p8_(p8) {}
+  R operator()() const {
+    return functor_(p1_, p2_, p3_, p4_, p5_, p6_, p7_, p8_);
+  }
+
+ private:
+  FunctorT functor_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
+  typename rtc::remove_reference<P6>::type p6_;
+  typename rtc::remove_reference<P7>::type p7_;
+  typename rtc::remove_reference<P8>::type p8_;
+};
+
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7, P8)
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8>
+MethodFunctor8<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8> Bind(
+    FP_T(method),
+    ObjectT* object,
+    typename detail::identity<P1>::type p1,
+    typename detail::identity<P2>::type p2,
+    typename detail::identity<P3>::type p3,
+    typename detail::identity<P4>::type p4,
+    typename detail::identity<P5>::type p5,
+    typename detail::identity<P6>::type p6,
+    typename detail::identity<P7>::type p7,
+    typename detail::identity<P8>::type p8) {
+  return MethodFunctor8<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7,
+                        P8>(method, object, p1, p2, p3, p4, p5, p6, p7, p8);
+}
+
+#undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7, P8) const
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8>
+MethodFunctor8<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8>
+Bind(FP_T(method),
+     const ObjectT* object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5,
+     typename detail::identity<P6>::type p6,
+     typename detail::identity<P7>::type p7,
+     typename detail::identity<P8>::type p8) {
+  return MethodFunctor8<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6,
+                        P7, P8>(method, object, p1, p2, p3, p4, p5, p6, p7, p8);
+}
+
+#undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7, P8)
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8>
+MethodFunctor8<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8> Bind(
+    FP_T(method),
+    const scoped_refptr<ObjectT>& object,
+    typename detail::identity<P1>::type p1,
+    typename detail::identity<P2>::type p2,
+    typename detail::identity<P3>::type p3,
+    typename detail::identity<P4>::type p4,
+    typename detail::identity<P5>::type p5,
+    typename detail::identity<P6>::type p6,
+    typename detail::identity<P7>::type p7,
+    typename detail::identity<P8>::type p8) {
+  return MethodFunctor8<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7,
+                        P8>(method, object.get(), p1, p2, p3, p4, p5, p6, p7,
+                            p8);
+}
+
+#undef FP_T
+#define FP_T(x) R (*x)(P1, P2, P3, P4, P5, P6, P7, P8)
+
+template <class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8>
+Functor8<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8> Bind(
+    FP_T(function),
+    typename detail::identity<P1>::type p1,
+    typename detail::identity<P2>::type p2,
+    typename detail::identity<P3>::type p3,
+    typename detail::identity<P4>::type p4,
+    typename detail::identity<P5>::type p5,
+    typename detail::identity<P6>::type p6,
+    typename detail::identity<P7>::type p7,
+    typename detail::identity<P8>::type p8) {
+  return Functor8<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8>(
+      function, p1, p2, p3, p4, p5, p6, p7, p8);
+}
+
+#undef FP_T
+
+template <class ObjectT,
+          class MethodT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8,
+          class P9>
+class MethodFunctor9 {
+ public:
+  MethodFunctor9(MethodT method,
+                 ObjectT* object,
+                 P1 p1,
+                 P2 p2,
+                 P3 p3,
+                 P4 p4,
+                 P5 p5,
+                 P6 p6,
+                 P7 p7,
+                 P8 p8,
+                 P9 p9)
+      : method_(method),
+        object_(object),
+        p1_(p1),
+        p2_(p2),
+        p3_(p3),
+        p4_(p4),
+        p5_(p5),
+        p6_(p6),
+        p7_(p7),
+        p8_(p8),
+        p9_(p9) {}
+  R operator()() const {
+    return (object_->*method_)(p1_, p2_, p3_, p4_, p5_, p6_, p7_, p8_, p9_);
+  }
+
+ private:
+  MethodT method_;
+  typename detail::PointerType<ObjectT>::type object_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
+  typename rtc::remove_reference<P6>::type p6_;
+  typename rtc::remove_reference<P7>::type p7_;
+  typename rtc::remove_reference<P8>::type p8_;
+  typename rtc::remove_reference<P9>::type p9_;
+};
+
+template <class FunctorT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8,
+          class P9>
+class Functor9 {
+ public:
+  Functor9(const FunctorT& functor,
+           P1 p1,
+           P2 p2,
+           P3 p3,
+           P4 p4,
+           P5 p5,
+           P6 p6,
+           P7 p7,
+           P8 p8,
+           P9 p9)
+      : functor_(functor),
+        p1_(p1),
+        p2_(p2),
+        p3_(p3),
+        p4_(p4),
+        p5_(p5),
+        p6_(p6),
+        p7_(p7),
+        p8_(p8),
+        p9_(p9) {}
+  R operator()() const {
+    return functor_(p1_, p2_, p3_, p4_, p5_, p6_, p7_, p8_, p9_);
+  }
+
+ private:
+  FunctorT functor_;
+  typename rtc::remove_reference<P1>::type p1_;
+  typename rtc::remove_reference<P2>::type p2_;
+  typename rtc::remove_reference<P3>::type p3_;
+  typename rtc::remove_reference<P4>::type p4_;
+  typename rtc::remove_reference<P5>::type p5_;
+  typename rtc::remove_reference<P6>::type p6_;
+  typename rtc::remove_reference<P7>::type p7_;
+  typename rtc::remove_reference<P8>::type p8_;
+  typename rtc::remove_reference<P9>::type p9_;
+};
+
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7, P8, P9)
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8,
+          class P9>
+MethodFunctor9<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8, P9>
+Bind(FP_T(method),
+     ObjectT* object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5,
+     typename detail::identity<P6>::type p6,
+     typename detail::identity<P7>::type p7,
+     typename detail::identity<P8>::type p8,
+     typename detail::identity<P9>::type p9) {
+  return MethodFunctor9<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7,
+                        P8, P9>(method, object, p1, p2, p3, p4, p5, p6, p7, p8,
+                                p9);
+}
+
+#undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7, P8, P9) const
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8,
+          class P9>
+MethodFunctor9<const ObjectT,
+               FP_T(NONAME),
+               R,
+               P1,
+               P2,
+               P3,
+               P4,
+               P5,
+               P6,
+               P7,
+               P8,
+               P9>
+Bind(FP_T(method),
+     const ObjectT* object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5,
+     typename detail::identity<P6>::type p6,
+     typename detail::identity<P7>::type p7,
+     typename detail::identity<P8>::type p8,
+     typename detail::identity<P9>::type p9) {
+  return MethodFunctor9<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6,
+                        P7, P8, P9>(method, object, p1, p2, p3, p4, p5, p6, p7,
+                                    p8, p9);
+}
+
+#undef FP_T
+#define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5, P6, P7, P8, P9)
+
+template <class ObjectT,
+          class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8,
+          class P9>
+MethodFunctor9<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8, P9>
+Bind(FP_T(method),
+     const scoped_refptr<ObjectT>& object,
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5,
+     typename detail::identity<P6>::type p6,
+     typename detail::identity<P7>::type p7,
+     typename detail::identity<P8>::type p8,
+     typename detail::identity<P9>::type p9) {
+  return MethodFunctor9<ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7,
+                        P8, P9>(method, object.get(), p1, p2, p3, p4, p5, p6,
+                                p7, p8, p9);
+}
+
+#undef FP_T
+#define FP_T(x) R (*x)(P1, P2, P3, P4, P5, P6, P7, P8, P9)
+
+template <class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5,
+          class P6,
+          class P7,
+          class P8,
+          class P9>
+Functor9<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8, P9> Bind(
+    FP_T(function),
+    typename detail::identity<P1>::type p1,
+    typename detail::identity<P2>::type p2,
+    typename detail::identity<P3>::type p3,
+    typename detail::identity<P4>::type p4,
+    typename detail::identity<P5>::type p5,
+    typename detail::identity<P6>::type p6,
+    typename detail::identity<P7>::type p7,
+    typename detail::identity<P8>::type p8,
+    typename detail::identity<P9>::type p9) {
+  return Functor9<FP_T(NONAME), R, P1, P2, P3, P4, P5, P6, P7, P8, P9>(
+      function, p1, p2, p3, p4, p5, p6, p7, p8, p9);
 }
 
 #undef FP_T

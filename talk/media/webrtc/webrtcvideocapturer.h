@@ -92,7 +92,7 @@ class WebRtcVideoCapturer : public VideoCapturer,
   // directly from OnIncomingCapturedFrame.
   // TODO(tommi): Remove this workaround when we've updated the WebRTC capturers
   // to follow the same contract.
-  void SignalFrameCapturedOnStartThread(const webrtc::VideoFrame frame);
+  void SignalFrameCapturedOnStartThread(const webrtc::VideoFrame& frame);
 
   rtc::scoped_ptr<WebRtcVcmFactoryInterface> factory_;
   webrtc::VideoCaptureModule* module_;

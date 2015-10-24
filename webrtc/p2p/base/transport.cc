@@ -22,8 +22,6 @@
 
 namespace cricket {
 
-using rtc::Bind;
-
 static bool VerifyIceParams(const TransportDescription& desc) {
   // For legacy protocols.
   if (desc.ice_ufrag.empty() && desc.ice_pwd.empty())
