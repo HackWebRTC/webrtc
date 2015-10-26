@@ -35,7 +35,7 @@ static_library("rtc_sound") {
   }
 
   deps = [
-    "//webrtc/base:rtc_base",
+    "../base:rtc_base",
   ]
 
   if (is_linux) {
