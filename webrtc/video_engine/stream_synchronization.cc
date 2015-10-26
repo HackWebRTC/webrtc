@@ -16,7 +16,7 @@
 
 #include <algorithm>
 
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 

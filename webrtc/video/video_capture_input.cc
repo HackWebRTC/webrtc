@@ -11,6 +11,7 @@
 #include "webrtc/video/video_capture_input.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -20,7 +21,6 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_engine/overuse_frame_detector.h"
