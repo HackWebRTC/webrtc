@@ -101,11 +101,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   Call::Config config_;
   rtc::ThreadChecker configuration_thread_checker_;
 
-  // Needs to be held while write-locking |receive_crit_| or |send_crit_|. This
-  // ensures that we have a consistent network state signalled to all senders
-  // and receivers.
-  rtc::CriticalSection network_enabled_crit_;
-  bool network_enabled_ GUARDED_BY(network_enabled_crit_);
+ bool network_enabled_;
 
   rtc::scoped_ptr<RWLockWrapper> receive_crit_;
   // Audio and Video receive streams are owned by the client that creates them.
@@ -204,15 +200,13 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioSendStream* send_stream = new AudioSendStream(config);
+  if (!network_enabled_)
+    send_stream->SignalNetworkState(kNetworkDown);
   {
-    rtc::CritScope lock(&network_enabled_crit_);
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
                audio_send_ssrcs_.end());
     audio_send_ssrcs_[config.rtp.ssrc] = send_stream;
-
-    if (!network_enabled_)
-      send_stream->SignalNetworkState(kNetworkDown);
   }
   return send_stream;
 }
@@ -288,9 +282,9 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
       congestion_controller_.get(), config, encoder_config,
       suspended_video_send_ssrcs_);
 
-  // This needs to be taken before send_crit_ as both locks need to be held
-  // while changing network state.
-  rtc::CritScope lock(&network_enabled_crit_);
+  if (!network_enabled_)
+    send_stream->SignalNetworkState(kNetworkDown);
+
   WriteLockScoped write_lock(*send_crit_);
   for (uint32_t ssrc : config.rtp.ssrcs) {
     RTC_DCHECK(video_send_ssrcs_.find(ssrc) == video_send_ssrcs_.end());
@@ -301,8 +295,6 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   if (event_log_)
     event_log_->LogVideoSendStreamConfig(config);
 
-  if (!network_enabled_)
-    send_stream->SignalNetworkState(kNetworkDown);
   return send_stream;
 }
 
@@ -348,9 +340,6 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
       num_cpu_cores_, congestion_controller_.get(), config,
       config_.voice_engine, module_process_thread_.get(), call_stats_.get());
 
-  // This needs to be taken before receive_crit_ as both locks need to be held
-  // while changing network state.
-  rtc::CritScope lock(&network_enabled_crit_);
   WriteLockScoped write_lock(*receive_crit_);
   RTC_DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
              video_receive_ssrcs_.end());
@@ -454,9 +443,6 @@ void Call::SetBitrateConfig(
 
 void Call::SignalNetworkState(NetworkState state) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  // Take crit for entire function, it needs to be held while updating streams
-  // to guarantee a consistent state across streams.
-  rtc::CritScope lock(&network_enabled_crit_);
   network_enabled_ = state == kNetworkUp;
   congestion_controller_->SignalNetworkState(state);
   {
