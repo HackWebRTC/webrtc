@@ -29,6 +29,7 @@
       'target_name': 'rtc_base_approved',
       'type': 'static_library',
       'sources': [
+        'array_view.h',
         'atomicops.h',
         'basictypes.h',
         'bitbuffer.cc',

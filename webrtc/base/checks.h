@@ -164,6 +164,7 @@ DEFINE_RTC_CHECK_OP_IMPL(GT, > )
 // code in debug builds. It does reference the condition parameter in all cases,
 // though, so callers won't risk getting warnings about unused variables.
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+#define RTC_DCHECK_IS_ON 1
 #define RTC_DCHECK(condition) RTC_CHECK(condition)
 #define RTC_DCHECK_EQ(v1, v2) RTC_CHECK_EQ(v1, v2)
 #define RTC_DCHECK_NE(v1, v2) RTC_CHECK_NE(v1, v2)
@@ -172,6 +173,7 @@ DEFINE_RTC_CHECK_OP_IMPL(GT, > )
 #define RTC_DCHECK_GE(v1, v2) RTC_CHECK_GE(v1, v2)
 #define RTC_DCHECK_GT(v1, v2) RTC_CHECK_GT(v1, v2)
 #else
+#define RTC_DCHECK_IS_ON 0
 #define RTC_DCHECK(condition) RTC_EAT_STREAM_PARAMETERS(condition)
 #define RTC_DCHECK_EQ(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) == (v2))
 #define RTC_DCHECK_NE(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) != (v2))

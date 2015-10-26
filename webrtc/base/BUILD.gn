@@ -94,6 +94,7 @@ static_library("rtc_base_approved") {
   public_configs = [ "..:common_inherited_config" ]
 
   sources = [
+    "array_view.h",
     "atomicops.h",
     "bitbuffer.cc",
     "bitbuffer.h",
