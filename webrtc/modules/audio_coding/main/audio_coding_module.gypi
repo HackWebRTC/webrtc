@@ -108,8 +108,6 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
-            'acm2/acm_receive_test.cc',
-            'acm2/acm_receive_test.h',
             'acm2/acm_receive_test_oldapi.cc',
             'acm2/acm_receive_test_oldapi.h',
           ],
@@ -127,8 +125,6 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
-            'acm2/acm_send_test.cc',
-            'acm2/acm_send_test.h',
             'acm2/acm_send_test_oldapi.cc',
             'acm2/acm_send_test_oldapi.h',
           ],
