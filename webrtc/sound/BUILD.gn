@@ -1,0 +1,55 @@
+# Copyright 2015 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+import("../build/webrtc.gni")
+
+static_library("rtc_sound") {
+  sources = [
+    "automaticallychosensoundsystem.h",
+    "nullsoundsystem.cc",
+    "nullsoundsystem.h",
+    "nullsoundsystemfactory.cc",
+    "nullsoundsystemfactory.h",
+    "platformsoundsystem.cc",
+    "platformsoundsystem.h",
+    "platformsoundsystemfactory.cc",
+    "platformsoundsystemfactory.h",
+    "sounddevicelocator.h",
+    "soundinputstreaminterface.h",
+    "soundoutputstreaminterface.h",
+    "soundsystemfactory.h",
+    "soundsysteminterface.cc",
+    "soundsysteminterface.h",
+    "soundsystemproxy.cc",
+    "soundsystemproxy.h",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    "//webrtc/base:rtc_base",
+  ]
+
+  if (is_linux) {
+    sources += [
+      "alsasoundsystem.cc",
+      "alsasoundsystem.h",
+      "alsasymboltable.cc",
+      "alsasymboltable.h",
+      "linuxsoundsystem.cc",
+      "linuxsoundsystem.h",
+      "pulseaudiosoundsystem.cc",
+      "pulseaudiosoundsystem.h",
+      "pulseaudiosymboltable.cc",
+      "pulseaudiosymboltable.h",
+    ]
+  }
+}
