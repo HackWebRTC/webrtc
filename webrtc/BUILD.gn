@@ -178,8 +178,8 @@ source_set("webrtc") {
   public_configs = [ ":common_inherited_config" ]
 
   deps = [
-    ":webrtc_common",
     "audio",
+    ":webrtc_common",
     "base:rtc_base",
     "call",
     "common_audio",
@@ -195,7 +195,6 @@ source_set("webrtc") {
     "modules/utility",
     "modules/video_coding",
     "modules/video_processing",
-    "sound:rtc_sound",
     "system_wrappers",
     "tools",
     "video",
