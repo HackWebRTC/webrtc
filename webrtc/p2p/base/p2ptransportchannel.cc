@@ -19,31 +19,12 @@
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
 
 namespace {
 
 // messages for queuing up work for ourselves
 enum { MSG_SORT = 1, MSG_CHECK_AND_PING };
-
-// When the socket is unwritable, we will use 10 Kbps (ignoring IP+UDP headers)
-// for pinging.  When the socket is writable, we will use only 1 Kbps because
-// we don't want to degrade the quality on a modem.  These numbers should work
-// well on a 28.8K modem, which is the slowest connection on which the voice
-// quality is reasonable at all.
-static const uint32_t PING_PACKET_SIZE = 60 * 8;
-// STRONG_PING_DELAY (480ms) is applied when the best connection is both
-// writable and receiving.
-static const uint32_t STRONG_PING_DELAY = 1000 * PING_PACKET_SIZE / 1000;
-// WEAK_PING_DELAY (48ms) is applied when the best connection is either not
-// writable or not receiving.
-static const uint32_t WEAK_PING_DELAY = 1000 * PING_PACKET_SIZE / 10000;
-
-// If the current best connection is both writable and receiving, then we will
-// also try hard to make sure it is pinged at this rate (a little less than
-// 2 * STRONG_PING_DELAY).
-static const uint32_t MAX_CURRENT_STRONG_DELAY = 900;
-
-static const int MIN_CHECK_RECEIVING_DELAY = 50;  // ms
 
 // The minimum improvement in RTT that justifies a switch.
 static const double kMinImprovement = 10;
@@ -200,6 +181,27 @@ bool ShouldSwitch(cricket::Connection* a_conn,
 
 namespace cricket {
 
+// When the socket is unwritable, we will use 10 Kbps (ignoring IP+UDP headers)
+// for pinging.  When the socket is writable, we will use only 1 Kbps because
+// we don't want to degrade the quality on a modem.  These numbers should work
+// well on a 28.8K modem, which is the slowest connection on which the voice
+// quality is reasonable at all.
+static const uint32_t PING_PACKET_SIZE = 60 * 8;
+// STRONG_PING_DELAY (480ms) is applied when the best connection is both
+// writable and receiving.
+static const uint32_t STRONG_PING_DELAY = 1000 * PING_PACKET_SIZE / 1000;
+// WEAK_PING_DELAY (48ms) is applied when the best connection is either not
+// writable or not receiving.
+const uint32_t WEAK_PING_DELAY = 1000 * PING_PACKET_SIZE / 10000;
+
+// If the current best connection is both writable and receiving, then we will
+// also try hard to make sure it is pinged at this rate (a little less than
+// 2 * STRONG_PING_DELAY).
+static const uint32_t MAX_CURRENT_STRONG_DELAY = 900;
+
+static const int MIN_CHECK_RECEIVING_DELAY = 50;  // ms
+
+
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
                                          P2PTransport* transport,
@@ -220,7 +222,14 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       remote_candidate_generation_(0),
       gathering_state_(kIceGatheringNew),
       check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
-      receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50) {}
+      receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50) {
+  uint32_t weak_ping_delay = ::strtoul(
+      webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
+      nullptr, 10);
+  if (weak_ping_delay) {
+    weak_ping_delay_ =  weak_ping_delay;
+  }
+}
 
 P2PTransportChannel::~P2PTransportChannel() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
@@ -1157,7 +1166,7 @@ void P2PTransportChannel::OnCheckAndPing() {
   UpdateConnectionStates();
   // When the best connection is either not receiving or not writable,
   // switch to weak ping delay.
-  int ping_delay = weak() ? WEAK_PING_DELAY : STRONG_PING_DELAY;
+  int ping_delay = weak() ? weak_ping_delay_ : STRONG_PING_DELAY;
   if (rtc::Time() >= last_ping_sent_ms_ + ping_delay) {
     Connection* conn = FindNextPingableConnection();
     if (conn) {
