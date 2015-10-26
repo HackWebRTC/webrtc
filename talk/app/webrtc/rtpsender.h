@@ -36,6 +36,7 @@
 
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/rtpsenderinterface.h"
+#include "talk/app/webrtc/statscollector.h"
 #include "talk/media/base/audiorenderer.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
@@ -70,9 +71,15 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
 class AudioRtpSender : public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInterface> {
  public:
+  // StatsCollector provided so that Add/RemoveLocalAudioTrack can be called
+  // at the appropriate times.
   AudioRtpSender(AudioTrackInterface* track,
-                 uint32_t ssrc,
-                 AudioProviderInterface* provider);
+                 const std::string& stream_id,
+                 AudioProviderInterface* provider,
+                 StatsCollector* stats);
+
+  // Randomly generates id and stream_id.
+  AudioRtpSender(AudioProviderInterface* provider, StatsCollector* stats);
 
   virtual ~AudioRtpSender();
 
@@ -85,18 +92,37 @@ class AudioRtpSender : public ObserverInterface,
     return track_.get();
   }
 
+  void SetSsrc(uint32_t ssrc) override;
+
+  uint32_t ssrc() const override { return ssrc_; }
+
+  cricket::MediaType media_type() const override {
+    return cricket::MEDIA_TYPE_AUDIO;
+  }
+
   std::string id() const override { return id_; }
+
+  void set_stream_id(const std::string& stream_id) override {
+    stream_id_ = stream_id;
+  }
+  std::string stream_id() const override { return stream_id_; }
 
   void Stop() override;
 
  private:
-  void Reconfigure();
+  bool can_send_track() const { return track_ && ssrc_; }
+  // Helper function to construct options for
+  // AudioProviderInterface::SetAudioSend.
+  void SetAudioSend();
 
   std::string id_;
-  rtc::scoped_refptr<AudioTrackInterface> track_;
-  uint32_t ssrc_;
+  std::string stream_id_;
   AudioProviderInterface* provider_;
-  bool cached_track_enabled_;
+  StatsCollector* stats_;
+  rtc::scoped_refptr<AudioTrackInterface> track_;
+  uint32_t ssrc_ = 0;
+  bool cached_track_enabled_ = false;
+  bool stopped_ = false;
 
   // Used to pass the data callback from the |track_| to the other end of
   // cricket::AudioRenderer.
@@ -107,8 +133,11 @@ class VideoRtpSender : public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInterface> {
  public:
   VideoRtpSender(VideoTrackInterface* track,
-                 uint32_t ssrc,
+                 const std::string& stream_id,
                  VideoProviderInterface* provider);
+
+  // Randomly generates id and stream_id.
+  explicit VideoRtpSender(VideoProviderInterface* provider);
 
   virtual ~VideoRtpSender();
 
@@ -121,18 +150,36 @@ class VideoRtpSender : public ObserverInterface,
     return track_.get();
   }
 
+  void SetSsrc(uint32_t ssrc) override;
+
+  uint32_t ssrc() const override { return ssrc_; }
+
+  cricket::MediaType media_type() const override {
+    return cricket::MEDIA_TYPE_VIDEO;
+  }
+
   std::string id() const override { return id_; }
+
+  void set_stream_id(const std::string& stream_id) override {
+    stream_id_ = stream_id;
+  }
+  std::string stream_id() const override { return stream_id_; }
 
   void Stop() override;
 
  private:
-  void Reconfigure();
+  bool can_send_track() const { return track_ && ssrc_; }
+  // Helper function to construct options for
+  // VideoProviderInterface::SetVideoSend.
+  void SetVideoSend();
 
   std::string id_;
-  rtc::scoped_refptr<VideoTrackInterface> track_;
-  uint32_t ssrc_;
+  std::string stream_id_;
   VideoProviderInterface* provider_;
-  bool cached_track_enabled_;
+  rtc::scoped_refptr<VideoTrackInterface> track_;
+  uint32_t ssrc_ = 0;
+  bool cached_track_enabled_ = false;
+  bool stopped_ = false;
 };
 
 }  // namespace webrtc

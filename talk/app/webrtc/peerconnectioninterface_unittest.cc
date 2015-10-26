@@ -2020,8 +2020,10 @@ TEST_F(PeerConnectionInterfaceTest, LocalDescriptionChanged) {
   EXPECT_TRUE(ContainsSender(senders, kVideoTracks[1]));
 
   // Remove an audio and video track.
+  pc_->RemoveStream(reference_collection_->at(0));
   rtc::scoped_ptr<SessionDescriptionInterface> desc_2;
   CreateSessionDescriptionAndReference(1, 1, desc_2.accept());
+  pc_->AddStream(reference_collection_->at(0));
   EXPECT_TRUE(DoSetLocalDescription(desc_2.release()));
   senders = pc_->GetSenders();
   EXPECT_EQ(2u, senders.size());

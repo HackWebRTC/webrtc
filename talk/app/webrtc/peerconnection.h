@@ -91,6 +91,9 @@ class PeerConnection : public PeerConnectionInterface,
   rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
       AudioTrackInterface* track) override;
 
+  rtc::scoped_refptr<RtpSenderInterface> CreateSender(
+      const std::string& kind) override;
+
   std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
       const override;
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
@@ -187,12 +190,6 @@ class PeerConnection : public PeerConnectionInterface,
                             AudioTrackInterface* audio_track);
   void DestroyVideoReceiver(MediaStreamInterface* stream,
                             VideoTrackInterface* video_track);
-  void CreateAudioSender(MediaStreamInterface* stream,
-                         AudioTrackInterface* audio_track,
-                         uint32_t ssrc);
-  void CreateVideoSender(MediaStreamInterface* stream,
-                         VideoTrackInterface* video_track,
-                         uint32_t ssrc);
   void DestroyAudioSender(MediaStreamInterface* stream,
                           AudioTrackInterface* audio_track,
                           uint32_t ssrc);
@@ -327,6 +324,8 @@ class PeerConnection : public PeerConnectionInterface,
   // webrtc::DataChannel should be opened.
   void OnDataChannelOpenMessage(const std::string& label,
                                 const InternalDataChannelInit& config);
+
+  RtpSenderInterface* FindSenderById(const std::string& id);
 
   std::vector<rtc::scoped_refptr<RtpSenderInterface>>::iterator
   FindSenderForTrack(MediaStreamTrackInterface* track);
