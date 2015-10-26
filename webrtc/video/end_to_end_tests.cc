@@ -3125,40 +3125,6 @@ TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
   DestroyStreams();
 }
 
-// TODO(pbos): Remove this regression test when VideoEngine is no longer used as
-// a backend. This is to test that we hand channels back properly.
-TEST_F(EndToEndTest, CanCreateAndDestroyManyVideoStreams) {
-  test::NullTransport transport;
-  rtc::scoped_ptr<Call> call(Call::Create(Call::Config()));
-  test::FakeDecoder fake_decoder;
-  test::FakeEncoder fake_encoder(Clock::GetRealTimeClock());
-  for (size_t i = 0; i < 100; ++i) {
-    VideoSendStream::Config send_config(&transport);
-    send_config.encoder_settings.encoder = &fake_encoder;
-    send_config.encoder_settings.payload_name = "FAKE";
-    send_config.encoder_settings.payload_type = 123;
-
-    VideoEncoderConfig encoder_config;
-    encoder_config.streams = test::CreateVideoStreams(1);
-    send_config.rtp.ssrcs.push_back(1);
-    VideoSendStream* send_stream =
-        call->CreateVideoSendStream(send_config, encoder_config);
-    call->DestroyVideoSendStream(send_stream);
-
-    VideoReceiveStream::Config receive_config(&transport);
-    receive_config.rtp.remote_ssrc = 1;
-    receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
-    VideoReceiveStream::Decoder decoder;
-    decoder.decoder = &fake_decoder;
-    decoder.payload_type = 123;
-    decoder.payload_name = "FAKE";
-    receive_config.decoders.push_back(decoder);
-    VideoReceiveStream* receive_stream =
-        call->CreateVideoReceiveStream(receive_config);
-    call->DestroyVideoReceiveStream(receive_stream);
-  }
-}
-
 void VerifyEmptyNackConfig(const NackConfig& config) {
   EXPECT_EQ(0, config.rtp_history_ms)
       << "Enabling NACK requires rtcp-fb: nack negotiation.";
