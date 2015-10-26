@@ -1661,9 +1661,13 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
 
   EXPECT_TRUE(capturer.CaptureFrame());
 
+  webrtc::VideoCodecVP8 vp8_settings;
+  ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
+  EXPECT_TRUE(vp8_settings.denoisingOn)
+      << "VP8 denoising should be on by default.";
+
   stream = SetDenoisingOption(parameters, false);
 
-  webrtc::VideoCodecVP8 vp8_settings;
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_FALSE(vp8_settings.denoisingOn);
   EXPECT_TRUE(vp8_settings.automaticResizeOn);
@@ -1749,9 +1753,13 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
 
   EXPECT_TRUE(capturer.CaptureFrame());
 
+  webrtc::VideoCodecVP9 vp9_settings;
+  ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
+  EXPECT_FALSE(vp9_settings.denoisingOn)
+      << "VP9 denoising should be off by default.";
+
   stream = SetDenoisingOption(parameters, false);
 
-  webrtc::VideoCodecVP9 vp9_settings;
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
   // Frame dropping always on for real time video.

@@ -483,22 +483,28 @@ void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
       !is_screencast && parameters_.config.rtp.ssrcs.size() == 1;
   bool frame_dropping = !is_screencast;
   bool denoising;
+  bool codec_default_denoising = false;
   if (is_screencast) {
     denoising = false;
   } else {
-    options.video_noise_reduction.Get(&denoising);
+    // Use codec default if video_noise_reduction is unset.
+    codec_default_denoising = !options.video_noise_reduction.Get(&denoising);
   }
 
   if (CodecNamesEq(codec.name, kVp8CodecName)) {
     encoder_settings_.vp8 = webrtc::VideoEncoder::GetDefaultVp8Settings();
     encoder_settings_.vp8.automaticResizeOn = automatic_resize;
-    encoder_settings_.vp8.denoisingOn = denoising;
+    // VP8 denoising is enabled by default.
+    encoder_settings_.vp8.denoisingOn =
+        codec_default_denoising ? true : denoising;
     encoder_settings_.vp8.frameDroppingOn = frame_dropping;
     return &encoder_settings_.vp8;
   }
   if (CodecNamesEq(codec.name, kVp9CodecName)) {
     encoder_settings_.vp9 = webrtc::VideoEncoder::GetDefaultVp9Settings();
-    encoder_settings_.vp9.denoisingOn = denoising;
+    // VP9 denoising is disabled by default.
+    encoder_settings_.vp9.denoisingOn =
+        codec_default_denoising ? false : denoising;
     encoder_settings_.vp9.frameDroppingOn = frame_dropping;
     return &encoder_settings_.vp9;
   }
@@ -781,7 +787,6 @@ void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.cpu_overuse_detection.Set(true);
   options_.dscp.Set(false);
   options_.suspend_below_min_bitrate.Set(false);
-  options_.video_noise_reduction.Set(true);
   options_.screencast_min_bitrate.Set(0);
 }
 
