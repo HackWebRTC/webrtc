@@ -96,7 +96,6 @@ static const int kMaxWaitMs = 10000;
 #if !defined(THREAD_SANITIZER)
 static const int kMaxWaitForStatsMs = 3000;
 #endif
-static const int kMaxWaitForActivationMs = 5000;
 static const int kMaxWaitForFramesMs = 10000;
 static const int kEndAudioFrameCount = 3;
 static const int kEndVideoFrameCount = 3;
@@ -251,7 +250,18 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         peer_connection_factory_->CreateLocalMediaStream(stream_label);
 
     if (audio && can_receive_audio()) {
-      stream->AddTrack(CreateLocalAudioTrack(stream_label));
+      FakeConstraints constraints;
+      // Disable highpass filter so that we can get all the test audio frames.
+      constraints.AddMandatory(
+          MediaConstraintsInterface::kHighpassFilter, false);
+      rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
+          peer_connection_factory_->CreateAudioSource(&constraints);
+      // TODO(perkj): Test audio source when it is implemented. Currently audio
+      // always use the default input.
+      std::string label = stream_label + kAudioTrackLabelBase;
+      rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+          peer_connection_factory_->CreateAudioTrack(label, source));
+      stream->AddTrack(audio_track);
     }
     if (video && can_receive_video()) {
       stream->AddTrack(CreateLocalVideoTrack(stream_label));
@@ -345,35 +355,6 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     data_channel_ = pc()->CreateDataChannel(kDataChannelLabel, nullptr);
     ASSERT_TRUE(data_channel_.get() != nullptr);
     data_observer_.reset(new MockDataChannelObserver(data_channel_));
-  }
-
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> CreateLocalAudioTrack(
-      const std::string& stream_label) {
-    FakeConstraints constraints;
-    // Disable highpass filter so that we can get all the test audio frames.
-    constraints.AddMandatory(MediaConstraintsInterface::kHighpassFilter, false);
-    rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
-        peer_connection_factory_->CreateAudioSource(&constraints);
-    // TODO(perkj): Test audio source when it is implemented. Currently audio
-    // always use the default input.
-    std::string label = stream_label + kAudioTrackLabelBase;
-    return peer_connection_factory_->CreateAudioTrack(label, source);
-  }
-
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrack(
-      const std::string& stream_label) {
-    // Set max frame rate to 10fps to reduce the risk of the tests to be flaky.
-    FakeConstraints source_constraints = video_constraints_;
-    source_constraints.SetMandatoryMaxFrameRate(10);
-
-    cricket::FakeVideoCapturer* fake_capturer =
-        new webrtc::FakePeriodicVideoCapturer();
-    video_capturers_.push_back(fake_capturer);
-    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
-        peer_connection_factory_->CreateVideoSource(fake_capturer,
-                                                    &source_constraints);
-    std::string label = stream_label + kVideoTrackLabelBase;
-    return peer_connection_factory_->CreateVideoTrack(label, source);
   }
 
   DataChannelInterface* data_channel() { return data_channel_; }
@@ -690,6 +671,22 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     return peer_connection_.get() != nullptr;
   }
 
+  rtc::scoped_refptr<webrtc::VideoTrackInterface>
+  CreateLocalVideoTrack(const std::string stream_label) {
+    // Set max frame rate to 10fps to reduce the risk of the tests to be flaky.
+    FakeConstraints source_constraints = video_constraints_;
+    source_constraints.SetMandatoryMaxFrameRate(10);
+
+    cricket::FakeVideoCapturer* fake_capturer =
+        new webrtc::FakePeriodicVideoCapturer();
+    video_capturers_.push_back(fake_capturer);
+    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
+        peer_connection_factory_->CreateVideoSource(
+            fake_capturer, &source_constraints);
+    std::string label = stream_label + kVideoTrackLabelBase;
+    return peer_connection_factory_->CreateVideoTrack(label, source);
+  }
+
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
       webrtc::PortAllocatorFactoryInterface* factory,
       const MediaConstraintsInterface* constraints) {
@@ -960,10 +957,12 @@ class JsepPeerConnectionP2PTestClient : public testing::Test {
       initiating_client_->AddMediaStream(true, true);
     }
     initiating_client_->Negotiate();
+    const int kMaxWaitForActivationMs = 5000;
     // Assert true is used here since next tests are guaranteed to fail and
     // would eat up 5 seconds.
     ASSERT_TRUE_WAIT(SessionActive(), kMaxWaitForActivationMs);
     VerifySessionDescriptions();
+
 
     int audio_frame_count = kEndAudioFrameCount;
     // TODO(ronghuawu): Add test to cover the case of sendonly and recvonly.
@@ -1572,34 +1571,6 @@ TEST_F(JsepPeerConnectionP2PTestClient,
   ASSERT_TRUE(CreateTestClients());
   EnableVideoDecoderFactory();
   LocalP2PTest();
-}
-
-// This tests that if we negotiate after calling CreateSender but before we
-// have a track, then set a track later, frames from the newly-set track are
-// received end-to-end.
-TEST_F(JsepPeerConnectionP2PTestClient, EarlyWarmupTest) {
-  ASSERT_TRUE(CreateTestClients());
-  auto audio_sender = initializing_client()->pc()->CreateSender("audio");
-  auto video_sender = initializing_client()->pc()->CreateSender("video");
-  initializing_client()->Negotiate();
-  // Wait for ICE connection to complete, without any tracks.
-  // Note that the receiving client WILL (in HandleIncomingOffer) create
-  // tracks, so it's only the initiator here that's doing early warmup.
-  ASSERT_TRUE_WAIT(SessionActive(), kMaxWaitForActivationMs);
-  VerifySessionDescriptions();
-  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
-                 initializing_client()->ice_connection_state(),
-                 kMaxWaitForFramesMs);
-  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
-                 receiving_client()->ice_connection_state(),
-                 kMaxWaitForFramesMs);
-  // Now set the tracks, and expect frames to immediately start flowing.
-  EXPECT_TRUE(
-      audio_sender->SetTrack(initializing_client()->CreateLocalAudioTrack("")));
-  EXPECT_TRUE(
-      video_sender->SetTrack(initializing_client()->CreateLocalVideoTrack("")));
-  EXPECT_TRUE_WAIT(FramesNotPending(kEndAudioFrameCount, kEndVideoFrameCount),
-                   kMaxWaitForFramesMs);
 }
 
 class IceServerParsingTest : public testing::Test {

@@ -337,12 +337,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
       AudioTrackInterface* track) = 0;
 
   // TODO(deadbeef): Make these pure virtual once all subclasses implement them.
-  // |kind| must be "audio" or "video".
-  virtual rtc::scoped_refptr<RtpSenderInterface> CreateSender(
-      const std::string& kind) {
-    return rtc::scoped_refptr<RtpSenderInterface>();
-  }
-
   virtual std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
       const {
     return std::vector<rtc::scoped_refptr<RtpSenderInterface>>();

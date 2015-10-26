@@ -1747,6 +1747,7 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
       cricket::GetFirstVideoContent(desc);
   if ((!video_info || video_info->rejected) && video_channel_) {
     SignalVideoChannelDestroyed();
+    const std::string content_name = video_channel_->content_name();
     channel_manager_->DestroyVideoChannel(video_channel_.release());
   }
 
@@ -1754,6 +1755,7 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
       cricket::GetFirstAudioContent(desc);
   if ((!voice_info || voice_info->rejected) && voice_channel_) {
     SignalVoiceChannelDestroyed();
+    const std::string content_name = voice_channel_->content_name();
     channel_manager_->DestroyVoiceChannel(voice_channel_.release());
   }
 
@@ -1761,6 +1763,7 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
       cricket::GetFirstDataContent(desc);
   if ((!data_info || data_info->rejected) && data_channel_) {
     SignalDataChannelDestroyed();
+    const std::string content_name = data_channel_->content_name();
     channel_manager_->DestroyDataChannel(data_channel_.release());
   }
 }

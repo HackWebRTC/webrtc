@@ -50,8 +50,8 @@ namespace webrtc {
 // RtpSenders/Receivers to get to the BaseChannels. These interfaces should be
 // refactored away eventually, as the classes converge.
 
-// This interface is called by AudioRtpSender/Receivers to change the settings
-// of an audio track connected to certain PeerConnection.
+// This interface is called by AudioTrackHandler classes in mediastreamhandler.h
+// to change the settings of an audio track connected to certain PeerConnection.
 class AudioProviderInterface {
  public:
   // Enable/disable the audio playout of a remote audio track with |ssrc|.
@@ -71,8 +71,9 @@ class AudioProviderInterface {
   virtual ~AudioProviderInterface() {}
 };
 
-// This interface is called by VideoRtpSender/Receivers to change the settings
-// of a video track connected to a certain PeerConnection.
+// This interface is called by VideoTrackHandler classes in mediastreamhandler.h
+// to change the settings of a video track connected to a certain
+// PeerConnection.
 class VideoProviderInterface {
  public:
   virtual bool SetCaptureDevice(uint32_t ssrc,

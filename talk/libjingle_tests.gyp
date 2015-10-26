@@ -215,6 +215,7 @@
         'app/webrtc/test/fakeconstraints.h',
         'app/webrtc/test/fakedatachannelprovider.h',
         'app/webrtc/test/fakedtlsidentitystore.h',
+        'app/webrtc/test/fakemediastreamsignaling.h',
         'app/webrtc/test/fakeperiodicvideocapturer.h',
         'app/webrtc/test/fakevideotrackrenderer.h',
         'app/webrtc/test/mockpeerconnectionobservers.h',
