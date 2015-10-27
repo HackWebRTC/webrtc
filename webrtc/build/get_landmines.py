@@ -38,7 +38,7 @@ def print_landmines():
   # dependency problems, fix the dependency problems instead of adding a
   # landmine.
   # See the Chromium version in src/build/get_landmines.py for usage examples.
-  pass
+  print 'Clobber to remove out/{Debug,Release}/args.gn (webrtc:5070)'
 
 
 def main():
