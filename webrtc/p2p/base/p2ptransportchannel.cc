@@ -1112,9 +1112,11 @@ void P2PTransportChannel::HandleNotWritable() {
   }
 }
 
+// If all connections timed out, delete them all.
 void P2PTransportChannel::HandleAllTimedOut() {
-  // Currently we are treating this as channel not writable.
-  HandleNotWritable();
+  for (Connection* connection : connections_) {
+    connection->Destroy();
+  }
 }
 
 bool P2PTransportChannel::weak() const {

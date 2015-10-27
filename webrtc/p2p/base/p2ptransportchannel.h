@@ -158,6 +158,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Public for unit tests.
   Connection* FindNextPingableConnection();
 
+  // Public for unit tests.
+  const std::vector<Connection*>& connections() const { return connections_; }
+
  private:
   rtc::Thread* thread() { return worker_thread_; }
   PortAllocatorSession* allocator_session() {
