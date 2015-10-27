@@ -10,6 +10,7 @@
 #ifndef WEBRTC_TEST_LAYER_FILTERING_TRANSPORT_H_
 #define WEBRTC_TEST_LAYER_FILTERING_TRANSPORT_H_
 
+#include "webrtc/call.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_network_pipe.h"
 
@@ -22,6 +23,7 @@ namespace test {
 class LayerFilteringTransport : public test::DirectTransport {
  public:
   LayerFilteringTransport(const FakeNetworkPipe::Config& config,
+                          Call* send_call,
                           uint8_t vp8_video_payload_type,
                           uint8_t vp9_video_payload_type,
                           uint8_t tl_discard_threshold,

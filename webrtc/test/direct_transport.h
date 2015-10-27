@@ -23,6 +23,7 @@
 
 namespace webrtc {
 
+class Call;
 class Clock;
 class PacketReceiver;
 
@@ -30,13 +31,14 @@ namespace test {
 
 class DirectTransport : public Transport {
  public:
-  DirectTransport();
-  explicit DirectTransport(const FakeNetworkPipe::Config& config);
+  explicit DirectTransport(Call* send_call);
+  DirectTransport(const FakeNetworkPipe::Config& config, Call* send_call);
   ~DirectTransport();
 
   void SetConfig(const FakeNetworkPipe::Config& config);
 
   virtual void StopSending();
+  // TODO(holmer): Look into moving this to the constructor.
   virtual void SetReceiver(PacketReceiver* receiver);
 
   bool SendRtp(const uint8_t* data,
@@ -49,6 +51,7 @@ class DirectTransport : public Transport {
   bool SendPackets();
 
   rtc::CriticalSection lock_;
+  Call* const send_call_;
   rtc::scoped_ptr<EventWrapper> packet_event_;
   rtc::scoped_ptr<ThreadWrapper> thread_;
   Clock* const clock_;

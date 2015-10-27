@@ -463,7 +463,6 @@ void Call::SignalNetworkState(NetworkState state) {
 }
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
-  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   congestion_controller_->OnSentPacket(sent_packet);
 }
 

@@ -21,16 +21,16 @@ namespace test {
 
 LayerFilteringTransport::LayerFilteringTransport(
     const FakeNetworkPipe::Config& config,
+    Call* send_call,
     uint8_t vp8_video_payload_type,
     uint8_t vp9_video_payload_type,
     uint8_t tl_discard_threshold,
     uint8_t sl_discard_threshold)
-    : test::DirectTransport(config),
+    : test::DirectTransport(config, send_call),
       vp8_video_payload_type_(vp8_video_payload_type),
       vp9_video_payload_type_(vp9_video_payload_type),
       tl_discard_threshold_(tl_discard_threshold),
-      sl_discard_threshold_(sl_discard_threshold) {
-}
+      sl_discard_threshold_(sl_discard_threshold) {}
 
 uint16_t LayerFilteringTransport::NextSequenceNumber(uint32_t ssrc) {
   auto it = current_seq_nums_.find(ssrc);

@@ -81,7 +81,6 @@ class EndToEndTest : public test::CallTest {
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
   void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
   void TestRtpStatePreservation(bool use_rtx);
-  void TestReceivedFecPacketsNotNacked(const FakeNetworkPipe::Config& config);
   void VerifyHistogramStats(bool use_rtx, bool use_red);
 };
 
@@ -156,7 +155,8 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
 
   CreateCalls(Call::Config(), Call::Config());
 
-  test::DirectTransport sender_transport, receiver_transport;
+  test::DirectTransport sender_transport(sender_call_.get());
+  test::DirectTransport receiver_transport(receiver_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -206,7 +206,8 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
 
   CreateCalls(Call::Config(), Call::Config());
 
-  test::DirectTransport sender_transport, receiver_transport;
+  test::DirectTransport sender_transport(sender_call_.get());
+  test::DirectTransport receiver_transport(receiver_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -281,7 +282,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
     int frame_counter_;
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
@@ -333,7 +334,7 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
     int frame_counter_;
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
@@ -361,7 +362,7 @@ TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
     }
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
@@ -379,6 +380,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTPHeader header;
       EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
 
@@ -414,6 +416,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTCPUtility::RTCPParserV2 parser(packet, length, true);
       EXPECT_TRUE(parser.IsValid());
 
@@ -441,15 +444,16 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
              "rendered.";
     }
 
+    rtc::CriticalSection crit_;
     rtc::scoped_ptr<RtpHeaderParser> rtp_parser_;
     std::set<uint16_t> dropped_packets_;
     std::set<uint16_t> retransmitted_packets_;
     uint64_t sent_rtp_packets_;
     int packets_left_to_drop_;
-    int nacks_left_;
+    int nacks_left_ GUARDED_BY(&crit_);
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, CanReceiveFec) {
@@ -459,8 +463,8 @@ TEST_F(EndToEndTest, CanReceiveFec) {
         : EndToEndTest(kDefaultTimeoutMs), state_(kFirstPacket) {}
 
    private:
-    Action OnSendRtp(const uint8_t* packet, size_t length) override
-        EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
@@ -544,29 +548,20 @@ TEST_F(EndToEndTest, CanReceiveFec) {
           << "Timed out waiting for dropped frames frames to be rendered.";
     }
 
+    rtc::CriticalSection crit_;
     std::set<uint32_t> protected_sequence_numbers_ GUARDED_BY(crit_);
     std::set<uint32_t> protected_timestamps_ GUARDED_BY(crit_);
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 // Flacky on all platforms. See webrtc:4328.
 TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
-  // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
-  // Configure some network delay.
-  const int kNetworkDelayMs = 50;
-  FakeNetworkPipe::Config config;
-  config.queue_delay_ms = kNetworkDelayMs;
-  TestReceivedFecPacketsNotNacked(config);
-}
-
-void EndToEndTest::TestReceivedFecPacketsNotNacked(
-    const FakeNetworkPipe::Config& config) {
   class FecNackObserver : public test::EndToEndTest {
    public:
-    explicit FecNackObserver(const FakeNetworkPipe::Config& config)
-        : EndToEndTest(kDefaultTimeoutMs, config),
+    explicit FecNackObserver()
+        : EndToEndTest(kDefaultTimeoutMs),
           state_(kFirstPacket),
           fec_sequence_number_(0),
           has_last_sequence_number_(false),
@@ -674,9 +669,14 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
     uint16_t fec_sequence_number_;
     bool has_last_sequence_number_;
     uint16_t last_sequence_number_;
-  } test(config);
+  } test;
 
-  RunBaseTest(&test);
+  // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
+  // Configure some network delay.
+  const int kNetworkDelayMs = 50;
+  FakeNetworkPipe::Config config;
+  config.queue_delay_ms = kNetworkDelayMs;
+  RunBaseTest(&test, config);
 }
 
 // This test drops second RTP packet with a marker bit set, makes sure it's
@@ -700,6 +700,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
@@ -773,16 +774,17 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
                      : (use_red ? kRedPayloadType : kFakeSendPayloadType);
     }
 
+    rtc::CriticalSection crit_;
     const int payload_type_;
     const uint32_t retransmission_ssrc_;
     const int retransmission_payload_type_;
     int marker_bits_observed_;
     int num_packets_observed_;
-    uint32_t retransmitted_timestamp_;
+    uint32_t retransmitted_timestamp_ GUARDED_BY(&crit_);
     bool frame_retransmitted_;
   } test(use_rtx, use_red);
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, DecodesRetransmittedFrame) {
@@ -861,7 +863,8 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
 
   CreateCalls(Call::Config(), Call::Config());
 
-  test::DirectTransport sender_transport, receiver_transport;
+  test::DirectTransport sender_transport(sender_call_.get());
+  test::DirectTransport receiver_transport(receiver_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -918,6 +921,7 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
@@ -935,6 +939,7 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTCPUtility::RTCPParserV2 parser(packet, length, true);
       EXPECT_TRUE(parser.IsValid());
 
@@ -979,14 +984,15 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
                                            "rendered afterwards.";
     }
 
+    rtc::CriticalSection crit_;
     int rtp_history_ms_;
     bool nack_enabled_;
-    uint32_t highest_dropped_timestamp_;
-    int frames_to_drop_;
-    bool received_pli_;
+    uint32_t highest_dropped_timestamp_ GUARDED_BY(&crit_);
+    int frames_to_drop_ GUARDED_BY(&crit_);
+    bool received_pli_ GUARDED_BY(&crit_);
   } test(rtp_history_ms);
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, ReceivesPliAndRecoversWithNack) {
@@ -1031,7 +1037,8 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
 
   CreateCalls(Call::Config(), Call::Config());
 
-  test::DirectTransport send_transport, receive_transport;
+  test::DirectTransport send_transport(sender_call_.get());
+  test::DirectTransport receive_transport(receiver_call_.get());
   PacketInputObserver input_observer(receiver_call_->Receiver());
   send_transport.SetReceiver(&input_observer);
   receive_transport.SetReceiver(sender_call_->Receiver());
@@ -1135,7 +1142,7 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
     int sent_rtcp_;
   } test(rtcp_mode);
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, UsesRtcpCompoundMode) {
@@ -1167,13 +1174,12 @@ class MultiStreamTest {
   virtual ~MultiStreamTest() {}
 
   void RunTest() {
-    rtc::scoped_ptr<test::DirectTransport> sender_transport(
-        CreateSendTransport());
-    rtc::scoped_ptr<test::DirectTransport> receiver_transport(
-        CreateReceiveTransport());
-
     rtc::scoped_ptr<Call> sender_call(Call::Create(Call::Config()));
     rtc::scoped_ptr<Call> receiver_call(Call::Create(Call::Config()));
+    rtc::scoped_ptr<test::DirectTransport> sender_transport(
+        CreateSendTransport(sender_call.get()));
+    rtc::scoped_ptr<test::DirectTransport> receiver_transport(
+        CreateReceiveTransport(receiver_call.get()));
     sender_transport->SetReceiver(receiver_call->Receiver());
     receiver_transport->SetReceiver(sender_call->Receiver());
 
@@ -1257,11 +1263,11 @@ class MultiStreamTest {
   virtual void UpdateReceiveConfig(size_t stream_index,
                                    VideoReceiveStream::Config* receive_config) {
   }
-  virtual test::DirectTransport* CreateSendTransport() {
-    return new test::DirectTransport();
+  virtual test::DirectTransport* CreateSendTransport(Call* sender_call) {
+    return new test::DirectTransport(sender_call);
   }
-  virtual test::DirectTransport* CreateReceiveTransport() {
-    return new test::DirectTransport();
+  virtual test::DirectTransport* CreateReceiveTransport(Call* receiver_call) {
+    return new test::DirectTransport(receiver_call);
   }
 };
 
@@ -1340,9 +1346,11 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
 
   class RtpExtensionHeaderObserver : public test::DirectTransport {
    public:
-    RtpExtensionHeaderObserver(const uint32_t& first_media_ssrc,
+    RtpExtensionHeaderObserver(Call* sender_call,
+                               const uint32_t& first_media_ssrc,
                                const std::map<uint32_t, uint32_t>& ssrc_map)
-        : done_(EventWrapper::Create()),
+        : DirectTransport(sender_call),
+          done_(EventWrapper::Create()),
           parser_(RtpHeaderParser::Create()),
           first_media_ssrc_(first_media_ssrc),
           rtx_to_media_ssrcs_(ssrc_map),
@@ -1507,8 +1515,8 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
           RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
     }
 
-    virtual test::DirectTransport* CreateSendTransport() {
-      observer_ = new RtpExtensionHeaderObserver(first_media_ssrc_,
+    test::DirectTransport* CreateSendTransport(Call* sender_call) override {
+      observer_ = new RtpExtensionHeaderObserver(sender_call, first_media_ssrc_,
                                                  rtx_to_media_ssrcs_);
       return observer_;
     }
@@ -1527,7 +1535,8 @@ TEST_F(EndToEndTest, ReceivesTransportFeedback) {
 
   class TransportFeedbackObserver : public test::DirectTransport {
    public:
-    TransportFeedbackObserver(rtc::Event* done_event) : done_(done_event) {}
+    TransportFeedbackObserver(Call* receiver_call, rtc::Event* done_event)
+        : DirectTransport(receiver_call), done_(done_event) {}
     virtual ~TransportFeedbackObserver() {}
 
     bool SendRtcp(const uint8_t* data, size_t length) override {
@@ -1575,8 +1584,9 @@ TEST_F(EndToEndTest, ReceivesTransportFeedback) {
           RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
     }
 
-    virtual test::DirectTransport* CreateReceiveTransport() {
-      return new TransportFeedbackObserver(&done_);
+    test::DirectTransport* CreateReceiveTransport(
+        Call* receiver_call) override {
+      return new TransportFeedbackObserver(receiver_call, &done_);
     }
 
    private:
@@ -1624,7 +1634,8 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
 
   CreateCalls(Call::Config(), Call::Config());
 
-  test::DirectTransport sender_transport, receiver_transport;
+  test::DirectTransport sender_transport(sender_call_.get());
+  test::DirectTransport receiver_transport(receiver_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -1694,11 +1705,11 @@ TEST_F(EndToEndTest, ReceiveStreamSendsRemb) {
     }
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, VerifyBandwidthStats) {
-  class RtcpObserver : public test::EndToEndTest, public PacketReceiver {
+  class RtcpObserver : public test::EndToEndTest {
    public:
     RtcpObserver()
         : EndToEndTest(kDefaultTimeoutMs),
@@ -1706,10 +1717,7 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
           receiver_call_(nullptr),
           has_seen_pacer_delay_(false) {}
 
-    DeliveryStatus DeliverPacket(MediaType media_type,
-                                 const uint8_t* packet,
-                                 size_t length,
-                                 const PacketTime& packet_time) override {
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
       Call::Stats sender_stats = sender_call_->GetStats();
       Call::Stats receiver_stats = receiver_call_->GetStats();
       if (!has_seen_pacer_delay_)
@@ -1718,8 +1726,7 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
           receiver_stats.recv_bandwidth_bps > 0 && has_seen_pacer_delay_) {
         observation_complete_->Set();
       }
-      return receiver_call_->Receiver()->DeliverPacket(media_type, packet,
-                                                       length, packet_time);
+      return SEND_PACKET;
     }
 
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
@@ -1732,18 +1739,13 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
                                            "non-zero bandwidth stats.";
     }
 
-    void SetReceivers(PacketReceiver* send_transport_receiver,
-                      PacketReceiver* receive_transport_receiver) override {
-      test::RtpRtcpObserver::SetReceivers(this, receive_transport_receiver);
-    }
-
    private:
     Call* sender_call_;
     Call* receiver_call_;
     bool has_seen_pacer_delay_;
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, VerifyNackStats) {
@@ -1844,7 +1846,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
   } test;
 
   test::ClearHistograms();
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.UniqueNackRequestsSentInPercent"));
@@ -1857,7 +1859,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
 }
 
 void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
-  class StatsObserver : public test::EndToEndTest, public PacketReceiver {
+  class StatsObserver : public test::EndToEndTest {
    public:
     StatsObserver(bool use_rtx, bool use_red)
         : EndToEndTest(kLongTimeoutMs),
@@ -1872,20 +1874,13 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
       if (MinMetricRunTimePassed())
         observation_complete_->Set();
 
-      return SEND_PACKET;
-    }
-
-    DeliveryStatus DeliverPacket(MediaType media_type,
-                                 const uint8_t* packet,
-                                 size_t length,
-                                 const PacketTime& packet_time) override {
       // GetStats calls GetSendChannelRtcpStatistics
       // (via VideoSendStream::GetRtt) which updates ReportBlockStats used by
       // WebRTC.Video.SentPacketsLostInPercent.
       // TODO(asapersson): Remove dependency on calling GetStats.
       sender_call_->GetStats();
-      return receiver_call_->Receiver()->DeliverPacket(media_type, packet,
-                                                       length, packet_time);
+
+      return SEND_PACKET;
     }
 
     bool MinMetricRunTimePassed() {
@@ -1927,11 +1922,6 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
       receiver_call_ = receiver_call;
     }
 
-    void SetReceivers(PacketReceiver* send_transport_receiver,
-                      PacketReceiver* receive_transport_receiver) override {
-      test::RtpRtcpObserver::SetReceivers(this, receive_transport_receiver);
-    }
-
     void PerformTest() override {
       EXPECT_EQ(kEventSignaled, Wait())
           << "Timed out waiting for packet to be NACKed.";
@@ -1945,7 +1935,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
   } test(use_rtx, use_red);
 
   test::ClearHistograms();
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 
   // Verify that stats have been updated once.
   EXPECT_EQ(1, test::NumHistogramSamples(
@@ -2129,7 +2119,7 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
     int sent_rtcp_dlrr_;
   } test(enable_rrtr);
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
@@ -2227,7 +2217,7 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
     VideoEncoderConfig encoder_config_all_streams_;
   } test(kSendSsrcs, num_ssrcs, send_single_ssrc_first);
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, ReportsSetEncoderRates) {
@@ -2282,11 +2272,12 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
     }
 
    private:
+    rtc::CriticalSection crit_;
     VideoSendStream* send_stream_;
     uint32_t bitrate_kbps_ GUARDED_BY(crit_);
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, GetStats) {
@@ -2294,8 +2285,8 @@ TEST_F(EndToEndTest, GetStats) {
   static const int kExpectedRenderDelayMs = 20;
   class StatsObserver : public test::EndToEndTest, public I420FrameCallback {
    public:
-    explicit StatsObserver(const FakeNetworkPipe::Config& config)
-        : EndToEndTest(kLongTimeoutMs, config),
+    StatsObserver()
+        : EndToEndTest(kLongTimeoutMs),
           send_stream_(nullptr),
           expected_send_ssrcs_(),
           check_stats_event_(EventWrapper::Create()) {}
@@ -2542,13 +2533,11 @@ TEST_F(EndToEndTest, GetStats) {
     std::string expected_cname_;
 
     rtc::scoped_ptr<EventWrapper> check_stats_event_;
-  };
+  } test;
 
   FakeNetworkPipe::Config network_config;
   network_config.loss_percent = 5;
-
-  StatsObserver test(network_config);
-  RunBaseTest(&test);
+  RunBaseTest(&test, network_config);
 }
 
 TEST_F(EndToEndTest, ReceiverReferenceTimeReportEnabled) {
@@ -2596,7 +2585,7 @@ TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
     uint32_t sent_rtp_;
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, SendsSetSsrc) { TestSendsSetSsrcs(1, false); }
@@ -2676,7 +2665,7 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
     std::map<uint32_t, bool> registered_rtx_ssrc_;
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
@@ -2771,9 +2760,17 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
   } observer(use_rtx);
 
   CreateCalls(Call::Config(), Call::Config());
-  observer.SetReceivers(sender_call_->Receiver(), nullptr);
 
-  CreateSendConfig(kNumSsrcs, observer.SendTransport());
+  test::PacketTransport send_transport(sender_call_.get(), &observer,
+                                       test::PacketTransport::kSender,
+                                       FakeNetworkPipe::Config());
+  test::PacketTransport receive_transport(nullptr, &observer,
+                                          test::PacketTransport::kReceiver,
+                                          FakeNetworkPipe::Config());
+  send_transport.SetReceiver(receiver_call_->Receiver());
+  receive_transport.SetReceiver(sender_call_->Receiver());
+
+  CreateSendConfig(kNumSsrcs, &send_transport);
 
   if (use_rtx) {
     for (size_t i = 0; i < kNumSsrcs; ++i) {
@@ -2802,7 +2799,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
         encoder_config_.streams[i].max_bitrate_bps;
   }
 
-  CreateMatchingReceiveConfigs(observer.ReceiveTransport());
+  CreateMatchingReceiveConfigs(&receive_transport);
 
   CreateStreams();
   CreateFrameGeneratorCapturer();
@@ -2847,7 +2844,8 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
         << "Timed out waiting for all SSRCs to send packets.";
   }
 
-  observer.StopSending();
+  send_transport.StopSending();
+  receive_transport.StopSending();
 
   Stop();
   DestroyStreams();
@@ -3033,7 +3031,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     int down_frames_ GUARDED_BY(test_crit_);
   } test;
 
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(EndToEndTest, CallReportsRttForSender) {
@@ -3044,9 +3042,9 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
 
   FakeNetworkPipe::Config config;
   config.queue_delay_ms = kSendDelayMs;
-  test::DirectTransport sender_transport(config);
+  test::DirectTransport sender_transport(config, sender_call_.get());
   config.queue_delay_ms = kReceiveDelayMs;
-  test::DirectTransport receiver_transport(config);
+  test::DirectTransport receiver_transport(config, receiver_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -3108,7 +3106,7 @@ TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
   CreateCalls(Call::Config(), Call::Config());
   receiver_call_->SignalNetworkState(kNetworkDown);
 
-  test::DirectTransport sender_transport;
+  test::DirectTransport sender_transport(sender_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
   CreateSendConfig(1, &sender_transport);
   UnusedTransport transport;

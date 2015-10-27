@@ -63,10 +63,12 @@ class RampUpTester : public test::EndToEndTest {
 
   rtc::Event event_;
   Clock* const clock_;
+  FakeNetworkPipe::Config forward_transport_config_;
   const size_t num_streams_;
   const bool rtx_;
   const bool red_;
   VideoSendStream* send_stream_;
+  test::PacketTransport* send_transport_;
 
  private:
   typedef std::map<uint32_t, uint32_t> SsrcMap;
@@ -75,6 +77,8 @@ class RampUpTester : public test::EndToEndTest {
   void OnStreamsCreated(
       VideoSendStream* send_stream,
       const std::vector<VideoReceiveStream*>& receive_streams) override;
+  void OnTransportsCreated(test::PacketTransport* send_transport,
+                           test::PacketTransport* receive_transport) override;
   size_t GetNumStreams() const;
   void ModifyConfigs(VideoSendStream::Config* send_config,
                      std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -122,7 +126,6 @@ class RampUpDownUpTester : public RampUpTester {
   std::string GetModifierString() const;
   void EvolveTestState(int bitrate_bps, bool suspended);
 
-  FakeNetworkPipe::Config forward_transport_config_;
   TestStates test_state_;
   int64_t state_start_ms_;
   int64_t interval_start_ms_;

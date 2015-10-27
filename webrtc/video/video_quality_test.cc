@@ -247,7 +247,7 @@ class VideoAnalyzer : public PacketReceiver,
   }
 
   VideoCaptureInput* input_;
-  Transport* transport_;
+  Transport* const transport_;
   PacketReceiver* receiver_;
   VideoSendStream* send_stream_;
 
@@ -756,19 +756,20 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
         << params.analyzer.graph_data_output_filename << "!";
   }
 
+  Call::Config call_config;
+  call_config.bitrate_config = params.common.call_bitrate_config;
+  CreateCalls(call_config, call_config);
+
   test::LayerFilteringTransport send_transport(
-      params.pipe, kPayloadTypeVP8, kPayloadTypeVP9,
+      params.pipe, sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
       static_cast<uint8_t>(params.common.tl_discard_threshold), 0);
-  test::DirectTransport recv_transport(params.pipe);
+  test::DirectTransport recv_transport(params.pipe, receiver_call_.get());
+
   VideoAnalyzer analyzer(
       &send_transport, params.analyzer.test_label,
       params.analyzer.avg_psnr_threshold, params.analyzer.avg_ssim_threshold,
       params.analyzer.test_durations_secs * params.common.fps,
       graph_data_output_file);
-
-  Call::Config call_config;
-  call_config.bitrate_config = params.common.call_bitrate_config;
-  CreateCalls(call_config, call_config);
 
   analyzer.SetReceiver(receiver_call_->Receiver());
   send_transport.SetReceiver(&analyzer);
@@ -827,7 +828,7 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
   rtc::scoped_ptr<Call> call(Call::Create(call_config));
 
   test::LayerFilteringTransport transport(
-      params.pipe, kPayloadTypeVP8, kPayloadTypeVP9,
+      params.pipe, call.get(), kPayloadTypeVP8, kPayloadTypeVP9,
       static_cast<uint8_t>(params.common.tl_discard_threshold), 0);
   // TODO(ivica): Use two calls to be able to merge with RunWithAnalyzer or at
   // least share as much code as possible. That way this test would also match

@@ -116,15 +116,7 @@ static const int kASTExtensionId = 5;
 
 class BitrateEstimatorTest : public test::CallTest {
  public:
-  BitrateEstimatorTest()
-      : receiver_trace_(),
-        send_transport_(),
-        receive_transport_(),
-        sender_call_(),
-        receiver_call_(),
-        receive_config_(nullptr),
-        streams_() {
-  }
+  BitrateEstimatorTest() : receive_config_(nullptr) {}
 
   virtual ~BitrateEstimatorTest() {
     EXPECT_TRUE(streams_.empty());
@@ -136,10 +128,12 @@ class BitrateEstimatorTest : public test::CallTest {
     receiver_call_.reset(Call::Create(config));
     sender_call_.reset(Call::Create(config));
 
-    send_transport_.SetReceiver(receiver_call_->Receiver());
-    receive_transport_.SetReceiver(sender_call_->Receiver());
+    send_transport_.reset(new test::DirectTransport(sender_call_.get()));
+    send_transport_->SetReceiver(receiver_call_->Receiver());
+    receive_transport_.reset(new test::DirectTransport(receiver_call_.get()));
+    receive_transport_->SetReceiver(sender_call_->Receiver());
 
-    send_config_ = VideoSendStream::Config(&send_transport_);
+    send_config_ = VideoSendStream::Config(send_transport_.get());
     send_config_.rtp.ssrcs.push_back(kSendSsrcs[0]);
     // Encoders will be set separately per stream.
     send_config_.encoder_settings.encoder = nullptr;
@@ -147,7 +141,7 @@ class BitrateEstimatorTest : public test::CallTest {
     send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
     encoder_config_.streams = test::CreateVideoStreams(1);
 
-    receive_config_ = VideoReceiveStream::Config(&receive_transport_);
+    receive_config_ = VideoReceiveStream::Config(receive_transport_.get());
     // receive_config_.decoders will be set by every stream separately.
     receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
     receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
@@ -162,8 +156,8 @@ class BitrateEstimatorTest : public test::CallTest {
     std::for_each(streams_.begin(), streams_.end(),
         std::mem_fun(&Stream::StopSending));
 
-    send_transport_.StopSending();
-    receive_transport_.StopSending();
+    send_transport_->StopSending();
+    receive_transport_->StopSending();
 
     while (!streams_.empty()) {
       delete streams_.back();
@@ -211,8 +205,8 @@ class BitrateEstimatorTest : public test::CallTest {
         receive_config.rtp.extensions.push_back(
             RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
         receive_config.combined_audio_video_bwe = true;
-        audio_receive_stream_ = test_->receiver_call_->CreateAudioReceiveStream(
-            receive_config);
+        audio_receive_stream_ =
+            test_->receiver_call_->CreateAudioReceiveStream(receive_config);
       } else {
         VideoReceiveStream::Decoder decoder;
         decoder.decoder = &fake_decoder_;
@@ -270,8 +264,8 @@ class BitrateEstimatorTest : public test::CallTest {
 
   test::FakeVoiceEngine fake_voice_engine_;
   TraceObserver receiver_trace_;
-  test::DirectTransport send_transport_;
-  test::DirectTransport receive_transport_;
+  rtc::scoped_ptr<test::DirectTransport> send_transport_;
+  rtc::scoped_ptr<test::DirectTransport> receive_transport_;
   rtc::scoped_ptr<Call> sender_call_;
   rtc::scoped_ptr<Call> receiver_call_;
   VideoReceiveStream::Config receive_config_;

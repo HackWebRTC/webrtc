@@ -680,12 +680,12 @@ size_t RTPSender::SendPadData(size_t bytes,
           UpdateTransportSequenceNumber(padding_packet, length, rtp_header);
     }
 
-    if (!SendPacketToNetwork(padding_packet, length, options))
-      break;
-
     if (using_transport_seq && transport_feedback_observer_) {
       transport_feedback_observer_->AddPacket(options.packet_id, length, true);
     }
+
+    if (!SendPacketToNetwork(padding_packet, length, options))
+      break;
 
     bytes_sent += padding_bytes_in_packet;
     UpdateRtpStats(padding_packet, length, rtp_header, over_rtx, false);
@@ -940,13 +940,14 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
         UpdateTransportSequenceNumber(buffer_to_send_ptr, length, rtp_header);
   }
 
+  if (using_transport_seq && transport_feedback_observer_) {
+    transport_feedback_observer_->AddPacket(options.packet_id, length, true);
+  }
+
   bool ret = SendPacketToNetwork(buffer_to_send_ptr, length, options);
   if (ret) {
     CriticalSectionScoped lock(send_critsect_.get());
     media_has_been_sent_ = true;
-  }
-  if (using_transport_seq && transport_feedback_observer_) {
-    transport_feedback_observer_->AddPacket(options.packet_id, length, true);
   }
   UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, send_over_rtx,
                  is_retransmit);

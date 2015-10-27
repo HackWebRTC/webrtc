@@ -89,6 +89,13 @@ void RampUpTester::OnStreamsCreated(
   send_stream_ = send_stream;
 }
 
+void RampUpTester::OnTransportsCreated(
+    test::PacketTransport* send_transport,
+    test::PacketTransport* receive_transport) {
+  send_transport_ = send_transport;
+  send_transport_->SetConfig(forward_transport_config_);
+}
+
 size_t RampUpTester::GetNumStreams() const {
   return num_streams_;
 }
@@ -286,7 +293,6 @@ RampUpDownUpTester::RampUpDownUpTester(size_t num_streams,
       sent_bytes_(0) {
   forward_transport_config_.link_capacity_kbps =
       kHighBandwidthLimitBps / 1000;
-  send_transport_.SetConfig(forward_transport_config_);
 }
 
 RampUpDownUpTester::~RampUpDownUpTester() {}
@@ -334,7 +340,7 @@ void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
         // channel limit, and move to the next test state.
         forward_transport_config_.link_capacity_kbps =
             kLowBandwidthLimitBps / 1000;
-        send_transport_.SetConfig(forward_transport_config_);
+        send_transport_->SetConfig(forward_transport_config_);
         test_state_ = kLowRate;
         webrtc::test::PrintResult("ramp_up_down_up",
                                   GetModifierString(),
@@ -354,7 +360,7 @@ void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
         // high value, and move to the next test state.
         forward_transport_config_.link_capacity_kbps =
             kHighBandwidthLimitBps / 1000;
-        send_transport_.SetConfig(forward_transport_config_);
+        send_transport_->SetConfig(forward_transport_config_);
         test_state_ = kSecondRampup;
         webrtc::test::PrintResult("ramp_up_down_up",
                                   GetModifierString(),
@@ -395,109 +401,109 @@ class RampUpTest : public test::CallTest {
 
 TEST_F(RampUpTest, SingleStream) {
   RampUpTester test(1, 0, RtpExtension::kTOffset, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, Simulcast) {
   RampUpTester test(3, 0, RtpExtension::kTOffset, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, SimulcastWithRtx) {
   RampUpTester test(3, 0, RtpExtension::kTOffset, true, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, SimulcastByRedWithRtx) {
   RampUpTester test(3, 0, RtpExtension::kTOffset, true, true);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, SingleStreamWithHighStartBitrate) {
   RampUpTester test(1, 0.9 * kSingleStreamTargetBps, RtpExtension::kTOffset,
                     false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, UpDownUpOneStream) {
   RampUpDownUpTester test(1, 60000, RtpExtension::kAbsSendTime, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, UpDownUpThreeStreams) {
   RampUpDownUpTester test(3, 60000, RtpExtension::kAbsSendTime, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, UpDownUpOneStreamRtx) {
   RampUpDownUpTester test(1, 60000, RtpExtension::kAbsSendTime, true, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, UpDownUpThreeStreamsRtx) {
   RampUpDownUpTester test(3, 60000, RtpExtension::kAbsSendTime, true, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, UpDownUpOneStreamByRedRtx) {
   RampUpDownUpTester test(1, 60000, RtpExtension::kAbsSendTime, true, true);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, UpDownUpThreeStreamsByRedRtx) {
   RampUpDownUpTester test(3, 60000, RtpExtension::kAbsSendTime, true, true);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, AbsSendTimeSingleStream) {
   RampUpTester test(1, 0, RtpExtension::kAbsSendTime, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, AbsSendTimeSimulcast) {
   RampUpTester test(3, 0, RtpExtension::kAbsSendTime, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, AbsSendTimeSimulcastWithRtx) {
   RampUpTester test(3, 0, RtpExtension::kAbsSendTime, true, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, AbsSendTimeSimulcastByRedWithRtx) {
   RampUpTester test(3, 0, RtpExtension::kAbsSendTime, true, true);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, AbsSendTimeSingleStreamWithHighStartBitrate) {
   RampUpTester test(1, 0.9 * kSingleStreamTargetBps, RtpExtension::kAbsSendTime,
                     false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSingleStream) {
   RampUpTester test(1, 0, RtpExtension::kTransportSequenceNumber, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSimulcast) {
   RampUpTester test(3, 0, RtpExtension::kTransportSequenceNumber, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSimulcastWithRtx) {
   RampUpTester test(3, 0, RtpExtension::kTransportSequenceNumber, true, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSimulcastByRedWithRtx) {
   RampUpTester test(3, 0, RtpExtension::kTransportSequenceNumber, true, true);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSingleStreamWithHighStartBitrate) {
   RampUpTester test(1, 0.9 * kSingleStreamTargetBps,
                     RtpExtension::kTransportSequenceNumber, false, false);
-  RunBaseTest(&test);
+  RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 }  // namespace webrtc
