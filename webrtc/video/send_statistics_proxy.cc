@@ -20,6 +20,35 @@
 #include "webrtc/system_wrappers/interface/metrics.h"
 
 namespace webrtc {
+namespace {
+// Used by histograms. Values of entries should not be changed.
+enum HistogramCodecType {
+  kVideoUnknown = 0,
+  kVideoVp8 = 1,
+  kVideoVp9 = 2,
+  kVideoH264 = 3,
+  kVideoMax = 64,
+};
+
+HistogramCodecType PayloadNameToHistogramCodecType(
+    const std::string& payload_name) {
+  if (payload_name == "VP8") {
+    return kVideoVp8;
+  } else if (payload_name == "VP9") {
+    return kVideoVp9;
+  } else if (payload_name == "H264") {
+    return kVideoH264;
+  } else {
+    return kVideoUnknown;
+  }
+}
+
+void UpdateCodecTypeHistogram(const std::string& payload_name) {
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.Encoder.CodecType",
+      PayloadNameToHistogramCodecType(payload_name), kVideoMax);
+}
+}  // namespace
+
 
 const int SendStatisticsProxy::kStatsTimeoutMs = 5000;
 
@@ -32,6 +61,7 @@ SendStatisticsProxy::SendStatisticsProxy(Clock* clock,
       last_sent_frame_timestamp_(0),
       max_sent_width_per_timestamp_(0),
       max_sent_height_per_timestamp_(0) {
+  UpdateCodecTypeHistogram(config_.encoder_settings.payload_name);
 }
 
 SendStatisticsProxy::~SendStatisticsProxy() {
