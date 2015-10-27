@@ -24,7 +24,7 @@ class VoiceEngine;
 
 namespace internal {
 
-class AudioReceiveStream : public webrtc::AudioReceiveStream {
+class AudioReceiveStream final : public webrtc::AudioReceiveStream {
  public:
   AudioReceiveStream(RemoteBitrateEstimator* remote_bitrate_estimator,
                      const webrtc::AudioReceiveStream::Config& config,
@@ -53,6 +53,8 @@ class AudioReceiveStream : public webrtc::AudioReceiveStream {
   // We hold one interface pointer to the VoE to make sure it is kept alive.
   ScopedVoEInterface<VoEBase> voe_base_;
   rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioReceiveStream);
 };
 }  // namespace internal
 }  // namespace webrtc

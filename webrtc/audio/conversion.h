@@ -13,8 +13,13 @@
 
 namespace webrtc {
 
+// Convert fixed point number with 8 bit fractional part, to floating point.
+inline float Q8ToFloat(uint32_t v) {
+  return static_cast<float>(v) / (1 << 8);
+}
+
 // Convert fixed point number with 14 bit fractional part, to floating point.
-inline float Q14ToFloat(uint16_t v) {
+inline float Q14ToFloat(uint32_t v) {
   return static_cast<float>(v) / (1 << 14);
 }
 }  // namespace webrtc

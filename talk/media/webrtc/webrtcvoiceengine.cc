@@ -1321,7 +1321,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       : channel_(ch),
         voe_audio_transport_(voe_audio_transport),
         call_(call) {
+    RTC_DCHECK_GE(ch, 0);
+    // TODO(solenberg): Once we're not using FakeWebRtcVoiceEngine anymore:
+    // RTC_DCHECK(voe_audio_transport);
     RTC_DCHECK(call);
+    audio_capture_thread_checker_.DetachFromThread();
     webrtc::AudioSendStream::Config config(nullptr);
     config.voe_channel_id = channel_;
     config.rtp.ssrc = ssrc;
@@ -1329,6 +1333,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_DCHECK(stream_);
   }
   ~WebRtcAudioSendStream() override {
+    RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
     Stop();
     call_->DestroyAudioSendStream(stream_);
   }
@@ -1338,7 +1343,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   // This method is called on the libjingle worker thread.
   // TODO(xians): Make sure Start() is called only once.
   void Start(AudioRenderer* renderer) {
-    rtc::CritScope lock(&lock_);
+    RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(renderer);
     if (renderer_) {
       RTC_DCHECK(renderer_ == renderer);
@@ -1348,11 +1353,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     renderer_ = renderer;
   }
 
+  webrtc::AudioSendStream::Stats GetStats() const {
+    RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
+    return stream_->GetStats();
+  }
+
   // Stops rendering by setting the sink of the renderer to nullptr. No data
   // callback will be received after this method.
   // This method is called on the libjingle worker thread.
   void Stop() {
-    rtc::CritScope lock(&lock_);
+    RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
     if (renderer_) {
       renderer_->SetSink(nullptr);
       renderer_ = nullptr;
@@ -1366,6 +1376,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
               int sample_rate,
               int number_of_channels,
               size_t number_of_frames) override {
+    RTC_DCHECK(audio_capture_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(voe_audio_transport_);
     voe_audio_transport_->OnData(channel_,
                                  audio_data,
@@ -1378,16 +1389,21 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   // Callback from the |renderer_| when it is going away. In case Start() has
   // never been called, this callback won't be triggered.
   void OnClose() override {
-    rtc::CritScope lock(&lock_);
+    RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
     // Set |renderer_| to nullptr to make sure no more callback will get into
     // the renderer.
     renderer_ = nullptr;
   }
 
   // Accessor to the VoE channel ID.
-  int channel() const { return channel_; }
+  int channel() const {
+    RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
+    return channel_;
+  }
 
  private:
+  rtc::ThreadChecker signal_thread_checker_;
+  rtc::ThreadChecker audio_capture_thread_checker_;
   const int channel_ = -1;
   webrtc::AudioTransport* const voe_audio_transport_ = nullptr;
   webrtc::Call* call_ = nullptr;
@@ -1397,9 +1413,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   // PeerConnection will make sure invalidating the pointer before the object
   // goes away.
   AudioRenderer* renderer_ = nullptr;
-
-  // Protects |renderer_| in Start(), Stop() and OnClose().
-  rtc::CriticalSection lock_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioSendStream);
 };
@@ -1433,7 +1446,6 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
       desired_send_(SEND_NOTHING),
       send_(SEND_NOTHING),
       call_(call) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel";
   RTC_DCHECK(nullptr != call);
   engine->RegisterChannel(this);
@@ -2618,109 +2630,36 @@ bool WebRtcVoiceMediaChannel::SetSendBitrateInternal(int bps) {
 
 bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(info);
 
-  bool echo_metrics_on = false;
-  // These can take on valid negative values, so use the lowest possible level
-  // as default rather than -1.
-  int echo_return_loss = -100;
-  int echo_return_loss_enhancement = -100;
-  // These can also be negative, but in practice -1 is only used to signal
-  // insufficient data, since the resolution is limited to multiples of 4 ms.
-  int echo_delay_median_ms = -1;
-  int echo_delay_std_ms = -1;
-  if (engine()->voe()->processing()->GetEcMetricsStatus(
-          echo_metrics_on) != -1 && echo_metrics_on) {
-    // TODO(ajm): we may want to use VoECallReport::GetEchoMetricsSummary
-    // here, but it appears to be unsuitable currently. Revisit after this is
-    // investigated: http://b/issue?id=5666755
-    int erl, erle, rerl, anlp;
-    if (engine()->voe()->processing()->GetEchoMetrics(
-            erl, erle, rerl, anlp) != -1) {
-      echo_return_loss = erl;
-      echo_return_loss_enhancement = erle;
-    }
-
-    int median, std;
-    float dummy;
-    if (engine()->voe()->processing()->GetEcDelayMetrics(
-        median, std, dummy) != -1) {
-      echo_delay_median_ms = median;
-      echo_delay_std_ms = std;
-    }
-  }
-
-  for (const auto& ch : send_streams_) {
-    const int channel = ch.second->channel();
-
-    // Fill in the sender info, based on what we know, and what the
-    // remote side told us it got from its RTCP report.
+  // Get SSRC and stats for each sender.
+  RTC_DCHECK(info->senders.size() == 0);
+  for (const auto& stream : send_streams_) {
+    webrtc::AudioSendStream::Stats stats = stream.second->GetStats();
     VoiceSenderInfo sinfo;
-
-    webrtc::CallStatistics cs = {0};
-    unsigned int ssrc = 0;
-    if (engine()->voe()->rtp()->GetRTCPStatistics(channel, cs) == -1 ||
-        engine()->voe()->rtp()->GetLocalSSRC(channel, ssrc) == -1) {
-      continue;
-    }
-
-    sinfo.add_ssrc(ssrc);
-    sinfo.codec_name = send_codec_.get() ? send_codec_->plname : "";
-    sinfo.bytes_sent = cs.bytesSent;
-    sinfo.packets_sent = cs.packetsSent;
-    // RTT isn't known until a RTCP report is received. Until then, VoiceEngine
-    // returns 0 to indicate an error value.
-    sinfo.rtt_ms = (cs.rttMs > 0) ? cs.rttMs : -1;
-
-    // Get data from the last remote RTCP report. Use default values if no data
-    // available.
-    sinfo.fraction_lost = -1.0;
-    sinfo.jitter_ms = -1;
-    sinfo.packets_lost = -1;
-    sinfo.ext_seqnum = -1;
-    std::vector<webrtc::ReportBlock> receive_blocks;
-    webrtc::CodecInst codec = {0};
-    if (engine()->voe()->rtp()->GetRemoteRTCPReportBlocks(
-            channel, &receive_blocks) != -1 &&
-        engine()->voe()->codec()->GetSendCodec(channel, codec) != -1) {
-      for (const webrtc::ReportBlock& block : receive_blocks) {
-        // Lookup report for send ssrc only.
-        if (block.source_SSRC == sinfo.ssrc()) {
-          // Convert Q8 to floating point.
-          sinfo.fraction_lost = static_cast<float>(block.fraction_lost) / 256;
-          // Convert samples to milliseconds.
-          if (codec.plfreq / 1000 > 0) {
-            sinfo.jitter_ms = block.interarrival_jitter / (codec.plfreq / 1000);
-          }
-          sinfo.packets_lost = block.cumulative_num_packets_lost;
-          sinfo.ext_seqnum = block.extended_highest_sequence_number;
-          break;
-        }
-      }
-    }
-
-    // Local speech level.
-    unsigned int level = 0;
-    sinfo.audio_level = (engine()->voe()->volume()->
-        GetSpeechInputLevelFullRange(level) != -1) ? level : -1;
-
-    // TODO(xians): We are injecting the same APM logging to all the send
-    // channels here because there is no good way to know which send channel
-    // is using the APM. The correct fix is to allow the send channels to have
-    // their own APM so that we can feed the correct APM logging to different
-    // send channels. See issue crbug/264611 .
-    sinfo.echo_return_loss = echo_return_loss;
-    sinfo.echo_return_loss_enhancement = echo_return_loss_enhancement;
-    sinfo.echo_delay_median_ms = echo_delay_median_ms;
-    sinfo.echo_delay_std_ms = echo_delay_std_ms;
-    // TODO(ajm): Re-enable this metric once we have a reliable implementation.
-    sinfo.aec_quality_min = -1;
+    sinfo.add_ssrc(stats.local_ssrc);
+    sinfo.bytes_sent = stats.bytes_sent;
+    sinfo.packets_sent = stats.packets_sent;
+    sinfo.packets_lost = stats.packets_lost;
+    sinfo.fraction_lost = stats.fraction_lost;
+    sinfo.codec_name = stats.codec_name;
+    sinfo.ext_seqnum = stats.ext_seqnum;
+    sinfo.jitter_ms = stats.jitter_ms;
+    sinfo.rtt_ms = stats.rtt_ms;
+    sinfo.audio_level = stats.audio_level;
+    sinfo.aec_quality_min = stats.aec_quality_min;
+    sinfo.echo_delay_median_ms = stats.echo_delay_median_ms;
+    sinfo.echo_delay_std_ms = stats.echo_delay_std_ms;
+    sinfo.echo_return_loss = stats.echo_return_loss;
+    sinfo.echo_return_loss_enhancement = stats.echo_return_loss_enhancement;
     sinfo.typing_noise_detected = typing_noise_detected_;
-
+    // TODO(solenberg): Move to AudioSendStream.
+    //  sinfo.typing_noise_detected = stats.typing_noise_detected;
     info->senders.push_back(sinfo);
   }
 
-  // Get the SSRC and stats for each receiver.
-  info->receivers.clear();
+  // Get SSRC and stats for each receiver.
+  RTC_DCHECK(info->receivers.size() == 0);
   for (const auto& stream : receive_streams_) {
     webrtc::AudioReceiveStream::Stats stats = stream.second->GetStats();
     VoiceReceiverInfo rinfo;

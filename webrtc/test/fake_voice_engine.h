@@ -24,12 +24,25 @@ namespace test {
 // able to get the various interfaces as usual, via T::GetInterface().
 class FakeVoiceEngine final : public VoiceEngineImpl {
  public:
-  const int kSendChannelId = 1;
-  const int kReceiveChannelId = 2;
-
-  const int kRecvJitterBufferDelay = -7;
-  const int kRecvPlayoutBufferDelay = 302;
-  const unsigned int kRecvSpeechOutputLevel = 99;
+  static const int kSendChannelId;
+  static const int kRecvChannelId;
+  static const uint32_t kSendSsrc;
+  static const uint32_t kRecvSsrc;
+  static const int kSendEchoDelayMedian;
+  static const int kSendEchoDelayStdDev;
+  static const int kSendEchoReturnLoss;
+  static const int kSendEchoReturnLossEnhancement;
+  static const int kRecvJitterBufferDelay;
+  static const int kRecvPlayoutBufferDelay;
+  static const unsigned int kSendSpeechInputLevel;
+  static const unsigned int kRecvSpeechOutputLevel;
+  static const CallStatistics kSendCallStats;
+  static const CodecInst kSendCodecInst;
+  static const ReportBlock kSendReportBlock;
+  static const CallStatistics kRecvCallStats;
+  static const CodecInst kRecvCodecInst;
+  static const NetworkStatistics kRecvNetworkStats;
+  static const AudioDecodingCallStats kRecvAudioDecodingCallStats;
 
   FakeVoiceEngine() : VoiceEngineImpl(new Config(), true) {
     // Increase ref count so this object isn't automatically deleted whenever
@@ -42,39 +55,83 @@ class FakeVoiceEngine final : public VoiceEngineImpl {
     --_ref_count;
   }
 
-  const CallStatistics& GetRecvCallStats() const {
-    static const CallStatistics kStats = {
-      345, 678, 901, 234, -1, 0, 0, 567, 890, 123
-    };
-    return kStats;
+  // VoEAudioProcessing
+  int SetNsStatus(bool enable, NsModes mode = kNsUnchanged) override {
+    return -1;
   }
-
-  const CodecInst& GetRecvRecCodecInst() const {
-    static const CodecInst kStats = {
-      123, "codec_name", 96000, -1, -1, -1
-    };
-    return kStats;
+  int GetNsStatus(bool& enabled, NsModes& mode) override { return -1; }
+  int SetAgcStatus(bool enable, AgcModes mode = kAgcUnchanged) override {
+    return -1;
   }
-
-  const NetworkStatistics& GetRecvNetworkStats() const {
-    static const NetworkStatistics kStats = {
-      123, 456, false, 0, 0, 789, 12, 345, 678, 901, -1, -1, -1, -1, -1, 0
-    };
-    return kStats;
+  int GetAgcStatus(bool& enabled, AgcModes& mode) override { return -1; }
+  int SetAgcConfig(AgcConfig config) override { return -1; }
+  int GetAgcConfig(AgcConfig& config) override { return -1; }
+  int SetEcStatus(bool enable, EcModes mode = kEcUnchanged) override {
+    return -1;
   }
-
-  const AudioDecodingCallStats& GetRecvAudioDecodingCallStats() const {
-    static AudioDecodingCallStats stats;
-    if (stats.calls_to_silence_generator == 0) {
-      stats.calls_to_silence_generator = 234;
-      stats.calls_to_neteq = 567;
-      stats.decoded_normal = 890;
-      stats.decoded_plc = 123;
-      stats.decoded_cng = 456;
-      stats.decoded_plc_cng = 789;
-    }
-    return stats;
+  int GetEcStatus(bool& enabled, EcModes& mode) override { return -1; }
+  int EnableDriftCompensation(bool enable) override { return -1; }
+  bool DriftCompensationEnabled() override { return false; }
+  void SetDelayOffsetMs(int offset) override {}
+  int DelayOffsetMs() override { return -1; }
+  int SetAecmMode(AecmModes mode = kAecmSpeakerphone,
+                  bool enableCNG = true) override { return -1; }
+  int GetAecmMode(AecmModes& mode, bool& enabledCNG) override { return -1; }
+  int EnableHighPassFilter(bool enable) override { return -1; }
+  bool IsHighPassFilterEnabled() override { return false; }
+  int SetRxNsStatus(int channel,
+                    bool enable,
+                    NsModes mode = kNsUnchanged) override { return -1; }
+  int GetRxNsStatus(int channel, bool& enabled, NsModes& mode) override {
+    return -1;
   }
+  int SetRxAgcStatus(int channel,
+                     bool enable,
+                     AgcModes mode = kAgcUnchanged) override { return -1; }
+  int GetRxAgcStatus(int channel, bool& enabled, AgcModes& mode) override {
+    return -1;
+  }
+  int SetRxAgcConfig(int channel, AgcConfig config) override { return -1; }
+  int GetRxAgcConfig(int channel, AgcConfig& config) override { return -1; }
+  int RegisterRxVadObserver(int channel,
+                            VoERxVadCallback& observer) override { return -1; }
+  int DeRegisterRxVadObserver(int channel) override { return -1; }
+  int VoiceActivityIndicator(int channel) override { return -1; }
+  int SetEcMetricsStatus(bool enable) override { return -1; }
+  int GetEcMetricsStatus(bool& enabled) override {
+    enabled = true;
+    return 0;
+  }
+  int GetEchoMetrics(int& ERL, int& ERLE, int& RERL, int& A_NLP) override {
+    ERL = kSendEchoReturnLoss;
+    ERLE = kSendEchoReturnLossEnhancement;
+    RERL = -123456789;
+    A_NLP = 123456789;
+    return 0;
+  }
+  int GetEcDelayMetrics(int& delay_median,
+                        int& delay_std,
+                        float& fraction_poor_delays) override {
+    delay_median = kSendEchoDelayMedian;
+    delay_std = kSendEchoDelayStdDev;
+    fraction_poor_delays = -12345.7890f;
+    return 0;
+  }
+  int StartDebugRecording(const char* fileNameUTF8) override { return -1; }
+  int StartDebugRecording(FILE* file_handle) override { return -1; }
+  int StopDebugRecording() override { return -1; }
+  int SetTypingDetectionStatus(bool enable) override { return -1; }
+  int GetTypingDetectionStatus(bool& enabled) override { return -1; }
+  int TimeSinceLastTyping(int& seconds) override { return -1; }
+  int SetTypingDetectionParameters(int timeWindow,
+                                   int costPerTyping,
+                                   int reportingThreshold,
+                                   int penaltyDecay,
+                                   int typeEventDelay = 0) override {
+    return -1;
+  }
+  void EnableStereoChannelSwapping(bool enable) override {}
+  bool IsStereoChannelSwappingEnabled() override { return false; }
 
   // VoEBase
   int RegisterVoiceEngineObserver(VoiceEngineObserver& observer) override {
@@ -105,11 +162,15 @@ class FakeVoiceEngine final : public VoiceEngineImpl {
   int NumOfCodecs() override { return -1; }
   int GetCodec(int index, CodecInst& codec) override { return -1; }
   int SetSendCodec(int channel, const CodecInst& codec) override { return -1; }
-  int GetSendCodec(int channel, CodecInst& codec) override { return -1; }
+  int GetSendCodec(int channel, CodecInst& codec) override {
+    EXPECT_EQ(channel, kSendChannelId);
+    codec = kSendCodecInst;
+    return 0;
+  }
   int SetBitRate(int channel, int bitrate_bps) override { return -1; }
   int GetRecCodec(int channel, CodecInst& codec) override {
-    EXPECT_EQ(channel, kReceiveChannelId);
-    codec = GetRecvRecCodecInst();
+    EXPECT_EQ(channel, kRecvChannelId);
+    codec = kRecvCodecInst;
     return 0;
   }
   int SetRecPayloadType(int channel, const CodecInst& codec) override {
@@ -295,23 +356,27 @@ class FakeVoiceEngine final : public VoiceEngineImpl {
 
   // VoENetEqStats
   int GetNetworkStatistics(int channel, NetworkStatistics& stats) override {
-    EXPECT_EQ(channel, kReceiveChannelId);
-    stats = GetRecvNetworkStats();
+    EXPECT_EQ(channel, kRecvChannelId);
+    stats = kRecvNetworkStats;
     return 0;
   }
   int GetDecodingCallStatistics(int channel,
                                 AudioDecodingCallStats* stats) const override {
-    EXPECT_EQ(channel, kReceiveChannelId);
+    EXPECT_EQ(channel, kRecvChannelId);
     EXPECT_NE(nullptr, stats);
-    *stats = GetRecvAudioDecodingCallStats();
+    *stats = kRecvAudioDecodingCallStats;
     return 0;
   }
 
   // VoERTP_RTCP
   int SetLocalSSRC(int channel, unsigned int ssrc) override { return -1; }
-  int GetLocalSSRC(int channel, unsigned int& ssrc) override { return -1; }
+  int GetLocalSSRC(int channel, unsigned int& ssrc) override {
+    EXPECT_EQ(channel, kSendChannelId);
+    ssrc = 0;
+    return 0;
+  }
   int GetRemoteSSRC(int channel, unsigned int& ssrc) override {
-    EXPECT_EQ(channel, kReceiveChannelId);
+    EXPECT_EQ(channel, kRecvChannelId);
     ssrc = 0;
     return 0;
   }
@@ -347,13 +412,28 @@ class FakeVoiceEngine final : public VoiceEngineImpl {
                        unsigned int& maxJitterMs,
                        unsigned int& discardedPackets) override { return -1; }
   int GetRTCPStatistics(int channel, CallStatistics& stats) override {
-    EXPECT_EQ(channel, kReceiveChannelId);
-    stats = GetRecvCallStats();
+    if (channel == kSendChannelId) {
+      stats = kSendCallStats;
+    } else {
+      EXPECT_EQ(channel, kRecvChannelId);
+      stats = kRecvCallStats;
+    }
     return 0;
   }
   int GetRemoteRTCPReportBlocks(
       int channel,
-      std::vector<ReportBlock>* receive_blocks) override { return -1; }
+      std::vector<ReportBlock>* receive_blocks) override {
+    EXPECT_EQ(channel, kSendChannelId);
+    EXPECT_NE(receive_blocks, nullptr);
+    EXPECT_EQ(receive_blocks->size(), 0u);
+    webrtc::ReportBlock block = kSendReportBlock;
+    receive_blocks->push_back(block);   // Has wrong SSRC.
+    block.source_SSRC = kSendSsrc;
+    receive_blocks->push_back(block);   // Correct block.
+    block.fraction_lost = 0;
+    receive_blocks->push_back(block);   // Duplicate SSRC, bad fraction_lost.
+    return 0;
+  }
   int SetNACKStatus(int channel, bool enable, int maxNoPackets) override {
     return -1;
   }
@@ -365,7 +445,7 @@ class FakeVoiceEngine final : public VoiceEngineImpl {
   int GetDelayEstimate(int channel,
                        int* jitter_buffer_delay_ms,
                        int* playout_buffer_delay_ms) override {
-    EXPECT_EQ(channel, kReceiveChannelId);
+    EXPECT_EQ(channel, kRecvChannelId);
     *jitter_buffer_delay_ms = kRecvJitterBufferDelay;
     *playout_buffer_delay_ms = kRecvPlayoutBufferDelay;
     return 0;
@@ -395,10 +475,13 @@ class FakeVoiceEngine final : public VoiceEngineImpl {
   int GetSpeechOutputLevel(int channel, unsigned int& level) override {
     return -1;
   }
-  int GetSpeechInputLevelFullRange(unsigned int& level) override { return -1; }
+  int GetSpeechInputLevelFullRange(unsigned int& level) override {
+    level = kSendSpeechInputLevel;
+    return 0;
+  }
   int GetSpeechOutputLevelFullRange(int channel,
                                     unsigned int& level) override {
-    EXPECT_EQ(channel, kReceiveChannelId);
+    EXPECT_EQ(channel, kRecvChannelId);
     level = kRecvSpeechOutputLevel;
     return 0;
   }

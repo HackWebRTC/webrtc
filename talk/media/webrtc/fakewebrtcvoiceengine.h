@@ -45,11 +45,6 @@
 
 namespace cricket {
 
-// Function returning stats will return these values
-// for all values based on type.
-const int kIntStatValue = 123;
-const float kFractionLostStatValue = 0.5;
-
 static const char kFakeDefaultDeviceName[] = "Fake Default";
 static const int kFakeDefaultDeviceId = -1;
 static const char kFakeDeviceName[] = "Fake Device";
@@ -268,6 +263,8 @@ class FakeWebRtcVoiceEngine
     }
   }
 
+  bool ec_metrics_enabled() const { return ec_metrics_enabled_; }
+
   bool IsInited() const { return inited_; }
   int GetLastChannel() const { return last_channel_; }
   int GetChannelFromLocalSsrc(uint32_t local_ssrc) const {
@@ -279,6 +276,9 @@ class FakeWebRtcVoiceEngine
     return -1;
   }
   int GetNumChannels() const { return static_cast<int>(channels_.size()); }
+  uint32_t GetLocalSSRC(int channel) {
+    return channels_[channel]->send_ssrc;
+  }
   bool GetPlayout(int channel) {
     return channels_[channel]->playout;
   }
@@ -727,11 +727,7 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->send_ssrc = ssrc;
     return 0;
   }
-  WEBRTC_FUNC(GetLocalSSRC, (int channel, unsigned int& ssrc)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    ssrc = channels_[channel]->send_ssrc;
-    return 0;
-  }
+  WEBRTC_STUB(GetLocalSSRC, (int channel, unsigned int& ssrc));
   WEBRTC_STUB(GetRemoteSSRC, (int channel, unsigned int& ssrc));
   WEBRTC_FUNC(SetSendAudioLevelIndicationStatus, (int channel, bool enable,
       unsigned char id)) {
@@ -773,39 +769,12 @@ class FakeWebRtcVoiceEngine
                                   unsigned int& playoutTimestamp,
                                   unsigned int* jitter,
                                   unsigned short* fractionLost));
-  WEBRTC_FUNC(GetRemoteRTCPReportBlocks,
-              (int channel, std::vector<webrtc::ReportBlock>* receive_blocks)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    webrtc::ReportBlock block;
-    block.source_SSRC = channels_[channel]->send_ssrc;
-    webrtc::CodecInst send_codec = channels_[channel]->send_codec;
-    if (send_codec.pltype >= 0) {
-      block.fraction_lost = (unsigned char)(kFractionLostStatValue * 256);
-      if (send_codec.plfreq / 1000 > 0) {
-        block.interarrival_jitter = kIntStatValue * (send_codec.plfreq / 1000);
-      }
-      block.cumulative_num_packets_lost = kIntStatValue;
-      block.extended_highest_sequence_number = kIntStatValue;
-      receive_blocks->push_back(block);
-    }
-    return 0;
-  }
+  WEBRTC_STUB(GetRemoteRTCPReportBlocks,
+              (int channel, std::vector<webrtc::ReportBlock>* receive_blocks));
   WEBRTC_STUB(GetRTPStatistics, (int channel, unsigned int& averageJitterMs,
                                  unsigned int& maxJitterMs,
                                  unsigned int& discardedPackets));
-  WEBRTC_FUNC(GetRTCPStatistics, (int channel, webrtc::CallStatistics& stats)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    stats.fractionLost = static_cast<int16_t>(kIntStatValue);
-    stats.cumulativeLost = kIntStatValue;
-    stats.extendedMax = kIntStatValue;
-    stats.jitterSamples = kIntStatValue;
-    stats.rttMs = kIntStatValue;
-    stats.bytesSent = kIntStatValue;
-    stats.packetsSent = kIntStatValue;
-    stats.bytesReceived = kIntStatValue;
-    stats.packetsReceived = kIntStatValue;
-    return 0;
-  }
+  WEBRTC_STUB(GetRTCPStatistics, (int channel, webrtc::CallStatistics& stats));
   WEBRTC_FUNC(SetREDStatus, (int channel, bool enable, int redPayloadtype)) {
     return SetFECStatus(channel, enable, redPayloadtype);
   }
@@ -931,10 +900,7 @@ class FakeWebRtcVoiceEngine
     ec_metrics_enabled_ = enable;
     return 0;
   }
-  WEBRTC_FUNC(GetEcMetricsStatus, (bool& enabled)) {
-    enabled = ec_metrics_enabled_;
-    return 0;
-  }
+  WEBRTC_STUB(GetEcMetricsStatus, (bool& enabled));
   WEBRTC_STUB(GetEchoMetrics, (int& ERL, int& ERLE, int& RERL, int& A_NLP));
   WEBRTC_STUB(GetEcDelayMetrics, (int& delay_median, int& delay_std,
       float& fraction_poor_delays));

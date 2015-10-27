@@ -53,10 +53,8 @@ class FakeAudioSendStream : public webrtc::AudioSendStream {
   explicit FakeAudioSendStream(
       const webrtc::AudioSendStream::Config& config);
 
-  // webrtc::AudioSendStream implementation.
-  webrtc::AudioSendStream::Stats GetStats() const override;
-
   const webrtc::AudioSendStream::Config& GetConfig() const;
+  void SetStats(const webrtc::AudioSendStream::Stats& stats);
 
  private:
   // webrtc::SendStream implementation.
@@ -67,7 +65,11 @@ class FakeAudioSendStream : public webrtc::AudioSendStream {
     return true;
   }
 
+  // webrtc::AudioSendStream implementation.
+  webrtc::AudioSendStream::Stats GetStats() const override;
+
   webrtc::AudioSendStream::Config config_;
+  webrtc::AudioSendStream::Stats stats_;
 };
 
 class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
@@ -95,9 +97,7 @@ class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
   }
 
   // webrtc::AudioReceiveStream implementation.
-  webrtc::AudioReceiveStream::Stats GetStats() const override {
-    return stats_;
-  }
+  webrtc::AudioReceiveStream::Stats GetStats() const override;
 
   webrtc::AudioReceiveStream::Config config_;
   webrtc::AudioReceiveStream::Stats stats_;

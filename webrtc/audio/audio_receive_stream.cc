@@ -28,6 +28,7 @@ namespace webrtc {
 std::string AudioReceiveStream::Config::Rtp::ToString() const {
   std::stringstream ss;
   ss << "{remote_ssrc: " << remote_ssrc;
+  ss << ", local_ssrc: " << local_ssrc;
   ss << ", extensions: [";
   for (size_t i = 0; i < extensions.size(); ++i) {
     ss << extensions[i].ToString();
@@ -43,10 +44,16 @@ std::string AudioReceiveStream::Config::Rtp::ToString() const {
 std::string AudioReceiveStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{rtp: " << rtp.ToString();
+  ss << ", receive_transport: "
+     << (receive_transport ? "(Transport)" : "nullptr");
+  ss << ", rtcp_send_transport: "
+     << (rtcp_send_transport ? "(Transport)" : "nullptr");
   ss << ", voe_channel_id: " << voe_channel_id;
   if (!sync_group.empty()) {
     ss << ", sync_group: " << sync_group;
   }
+  ss << ", combined_audio_video_bwe: "
+     << (combined_audio_video_bwe ? "true" : "false");
   ss << '}';
   return ss.str();
 }
@@ -61,7 +68,6 @@ AudioReceiveStream::AudioReceiveStream(
       voice_engine_(voice_engine),
       voe_base_(voice_engine),
       rtp_header_parser_(RtpHeaderParser::Create()) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
   RTC_DCHECK(config.voe_channel_id != -1);
   RTC_DCHECK(remote_bitrate_estimator_ != nullptr);
@@ -101,26 +107,25 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   ScopedVoEInterface<VoEVideoSync> sync(voice_engine_);
   ScopedVoEInterface<VoEVolumeControl> volume(voice_engine_);
   unsigned int ssrc = 0;
-  webrtc::CallStatistics cs = {0};
-  webrtc::CodecInst ci = {0};
+  webrtc::CallStatistics call_stats = {0};
+  webrtc::CodecInst codec_inst = {0};
   // Only collect stats if we have seen some traffic with the SSRC.
   if (rtp->GetRemoteSSRC(config_.voe_channel_id, ssrc) == -1 ||
-      rtp->GetRTCPStatistics(config_.voe_channel_id, cs) == -1 ||
-      codec->GetRecCodec(config_.voe_channel_id, ci) == -1) {
+      rtp->GetRTCPStatistics(config_.voe_channel_id, call_stats) == -1 ||
+      codec->GetRecCodec(config_.voe_channel_id, codec_inst) == -1) {
     return stats;
   }
 
-  stats.bytes_rcvd = cs.bytesReceived;
-  stats.packets_rcvd = cs.packetsReceived;
-  stats.packets_lost = cs.cumulativeLost;
-  stats.fraction_lost = static_cast<float>(cs.fractionLost) / (1 << 8);
-  if (ci.pltype != -1) {
-    stats.codec_name = ci.plname;
+  stats.bytes_rcvd = call_stats.bytesReceived;
+  stats.packets_rcvd = call_stats.packetsReceived;
+  stats.packets_lost = call_stats.cumulativeLost;
+  stats.fraction_lost = Q8ToFloat(call_stats.fractionLost);
+  if (codec_inst.pltype != -1) {
+    stats.codec_name = codec_inst.plname;
   }
-
-  stats.ext_seqnum = cs.extendedMax;
-  if (ci.plfreq / 1000 > 0) {
-    stats.jitter_ms = cs.jitterSamples / (ci.plfreq / 1000);
+  stats.ext_seqnum = call_stats.extendedMax;
+  if (codec_inst.plfreq / 1000 > 0) {
+    stats.jitter_ms = call_stats.jitterSamples / (codec_inst.plfreq / 1000);
   }
   {
     int jitter_buffer_delay_ms = 0;
@@ -161,7 +166,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
     stats.decoding_plc_cng = ds.decoded_plc_cng;
   }
 
-  stats.capture_start_ntp_time_ms = cs.capture_start_ntp_time_ms_;
+  stats.capture_start_ntp_time_ms = call_stats.capture_start_ntp_time_ms_;
 
   return stats;
 }

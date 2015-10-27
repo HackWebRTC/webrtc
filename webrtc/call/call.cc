@@ -145,7 +145,6 @@ Call::Call(const Call::Config& config)
       network_enabled_(true),
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()) {
-  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
                 config.bitrate_config.min_bitrate_bps);
@@ -199,7 +198,8 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  AudioSendStream* send_stream = new AudioSendStream(config);
+  AudioSendStream* send_stream =
+      new AudioSendStream(config, config_.voice_engine);
   if (!network_enabled_)
     send_stream->SignalNetworkState(kNetworkDown);
   {
