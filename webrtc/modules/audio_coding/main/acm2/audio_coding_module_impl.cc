@@ -36,20 +36,12 @@ namespace {
 
 // TODO(turajs): the same functionality is used in NetEq. If both classes
 // need them, make it a static function in ACMCodecDB.
-bool IsCodecRED(const CodecInst* codec) {
-  return (STR_CASE_CMP(codec->plname, "RED") == 0);
+bool IsCodecRED(const CodecInst& codec) {
+  return (STR_CASE_CMP(codec.plname, "RED") == 0);
 }
 
-bool IsCodecRED(int index) {
-  return (IsCodecRED(&ACMCodecDB::database_[index]));
-}
-
-bool IsCodecCN(const CodecInst* codec) {
-  return (STR_CASE_CMP(codec->plname, "CN") == 0);
-}
-
-bool IsCodecCN(int index) {
-  return (IsCodecCN(&ACMCodecDB::database_[index]));
+bool IsCodecCN(const CodecInst& codec) {
+  return (STR_CASE_CMP(codec.plname, "CN") == 0);
 }
 
 // Stereo-to-mono can be used as in-place.
@@ -513,11 +505,12 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
   receiver_.FlushBuffers();
 
   // Register RED and CN.
-  for (int i = 0; i < ACMCodecDB::kNumCodecs; i++) {
-    if (IsCodecRED(i) || IsCodecCN(i)) {
-      uint8_t pl_type = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
-      int fs = ACMCodecDB::database_[i].plfreq;
-      if (receiver_.AddCodec(i, pl_type, 1, fs, NULL) < 0) {
+  auto db = RentACodec::Database();
+  for (size_t i = 0; i < db.size(); i++) {
+    if (IsCodecRED(db[i]) || IsCodecCN(db[i])) {
+      if (receiver_.AddCodec(static_cast<int>(i),
+                             static_cast<uint8_t>(db[i].pltype), 1,
+                             db[i].plfreq, nullptr) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                      "Cannot register master codec.");
         return -1;
@@ -561,11 +554,14 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
     return -1;
   }
 
-  int codec_id = ACMCodecDB::ReceiverCodecNumber(codec);
-  if (codec_id < 0 || codec_id >= ACMCodecDB::kNumCodecs) {
+  auto codec_id =
+      RentACodec::CodecIdByParams(codec.plname, codec.plfreq, codec.channels);
+  if (!codec_id) {
     LOG_F(LS_ERROR) << "Wrong codec params to be registered as receive codec";
     return -1;
   }
+  auto codec_index = RentACodec::CodecIndexFromId(*codec_id);
+  RTC_CHECK(codec_index) << "Invalid codec ID: " << static_cast<int>(*codec_id);
 
   // Check if the payload-type is valid.
   if (!ACMCodecDB::ValidPayloadType(codec.pltype)) {
@@ -576,7 +572,7 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
 
   // Get |decoder| associated with |codec|. |decoder| is NULL if |codec| does
   // not own its decoder.
-  return receiver_.AddCodec(codec_id, codec.pltype, codec.channels,
+  return receiver_.AddCodec(*codec_index, codec.pltype, codec.channels,
                             codec.plfreq,
                             codec_manager_.GetAudioDecoder(codec));
 }

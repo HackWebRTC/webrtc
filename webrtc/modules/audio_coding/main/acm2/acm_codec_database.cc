@@ -223,7 +223,7 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
 // TODO(tlegrand): replace memcpy with a pointer to the data base memory.
 int ACMCodecDB::Codec(int codec_id, CodecInst* codec_inst) {
   // Error check to see that codec_id is not out of bounds.
-  if ((codec_id < 0) || (codec_id >= kNumCodecs)) {
+  if (static_cast<size_t>(codec_id) >= RentACodec::NumberOfCodecs()) {
     return -1;
   }
 
@@ -318,7 +318,7 @@ int ACMCodecDB::CodecId(const CodecInst& codec_inst) {
 }
 
 int ACMCodecDB::CodecId(const char* payload_name, int frequency, int channels) {
-  for (int id = 0; id < kNumCodecs; id++) {
+  for (const CodecInst& ci : RentACodec::Database()) {
     bool name_match = false;
     bool frequency_match = false;
     bool channels_match = false;
@@ -326,11 +326,11 @@ int ACMCodecDB::CodecId(const char* payload_name, int frequency, int channels) {
     // Payload name, sampling frequency and number of channels need to match.
     // NOTE! If |frequency| is -1, the frequency is not applicable, and is
     // always treated as true, like for RED.
-    name_match = (STR_CASE_CMP(database_[id].plname, payload_name) == 0);
-    frequency_match = (frequency == database_[id].plfreq) || (frequency == -1);
+    name_match = (STR_CASE_CMP(ci.plname, payload_name) == 0);
+    frequency_match = (frequency == ci.plfreq) || (frequency == -1);
     // The number of channels must match for all codecs but Opus.
     if (STR_CASE_CMP(payload_name, "opus") != 0) {
-      channels_match = (channels == database_[id].channels);
+      channels_match = (channels == ci.channels);
     } else {
       // For opus we just check that number of channels is valid.
       channels_match = (channels == 1 || channels == 2);
@@ -338,7 +338,7 @@ int ACMCodecDB::CodecId(const char* payload_name, int frequency, int channels) {
 
     if (name_match && frequency_match && channels_match) {
       // We have found a matching codec in the list.
-      return id;
+      return &ci - RentACodec::Database().data();
     }
   }
 
@@ -354,12 +354,9 @@ int ACMCodecDB::ReceiverCodecNumber(const CodecInst& codec_inst) {
 // Returns the codec sampling frequency for codec with id = "codec_id" in
 // database.
 int ACMCodecDB::CodecFreq(int codec_id) {
-  // Error check to see that codec_id is not out of bounds.
-  if (codec_id < 0 || codec_id >= kNumCodecs) {
-    return -1;
-  }
-
-  return database_[codec_id].plfreq;
+  const size_t i = static_cast<size_t>(codec_id);
+  const auto db = RentACodec::Database();
+  return i < db.size() ? db[i].plfreq : -1;
 }
 
 // Checks if the payload type is in the valid range.

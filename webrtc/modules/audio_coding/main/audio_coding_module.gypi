@@ -43,6 +43,30 @@
   },
   'targets': [
     {
+      'target_name': 'rent_a_codec',
+      'type': 'static_library',
+      'defines': [
+        '<@(audio_coding_defines)',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
+      ],
+      'include_dirs': [
+        '<(webrtc_root)',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '<(webrtc_root)',
+        ],
+      },
+      'sources': [
+        'acm2/acm_codec_database.cc',
+        'acm2/acm_codec_database.h',
+        'acm2/rent_a_codec.cc',
+        'acm2/rent_a_codec.h',
+      ],
+    },
+    {
       'target_name': 'audio_coding_module',
       'type': 'static_library',
       'defines': [
@@ -53,6 +77,7 @@
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/webrtc.gyp:rtc_event_log',
         'neteq',
+        'rent_a_codec',
       ],
       'include_dirs': [
         'interface',
@@ -67,8 +92,6 @@
         ],
       },
       'sources': [
-        'acm2/acm_codec_database.cc',
-        'acm2/acm_codec_database.h',
         'acm2/acm_common_defs.h',
         'acm2/acm_receiver.cc',
         'acm2/acm_receiver.h',

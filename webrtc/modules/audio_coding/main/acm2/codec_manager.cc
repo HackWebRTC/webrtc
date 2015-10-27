@@ -23,16 +23,8 @@ bool IsCodecRED(const CodecInst& codec) {
   return (STR_CASE_CMP(codec.plname, "RED") == 0);
 }
 
-bool IsCodecRED(int index) {
-  return (IsCodecRED(ACMCodecDB::database_[index]));
-}
-
 bool IsCodecCN(const CodecInst& codec) {
   return (STR_CASE_CMP(codec.plname, "CN") == 0);
-}
-
-bool IsCodecCN(int index) {
-  return (IsCodecCN(ACMCodecDB::database_[index]));
 }
 
 // Check if the given codec is a valid to be registered as send codec.
@@ -164,18 +156,18 @@ CodecManager::CodecManager()
       encoder_is_opus_(false) {
   // Register the default payload type for RED and for CNG at sampling rates of
   // 8, 16, 32 and 48 kHz.
-  for (int i = (ACMCodecDB::kNumCodecs - 1); i >= 0; i--) {
-    if (IsCodecRED(i) && ACMCodecDB::database_[i].plfreq == 8000) {
-      red_nb_pltype_ = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
-    } else if (IsCodecCN(i)) {
-      if (ACMCodecDB::database_[i].plfreq == 8000) {
-        cng_nb_pltype_ = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
-      } else if (ACMCodecDB::database_[i].plfreq == 16000) {
-        cng_wb_pltype_ = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
-      } else if (ACMCodecDB::database_[i].plfreq == 32000) {
-        cng_swb_pltype_ = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
-      } else if (ACMCodecDB::database_[i].plfreq == 48000) {
-        cng_fb_pltype_ = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
+  for (const CodecInst& ci : RentACodec::Database()) {
+    if (IsCodecRED(ci) && ci.plfreq == 8000) {
+      red_nb_pltype_ = static_cast<uint8_t>(ci.pltype);
+    } else if (IsCodecCN(ci)) {
+      if (ci.plfreq == 8000) {
+        cng_nb_pltype_ = static_cast<uint8_t>(ci.pltype);
+      } else if (ci.plfreq == 16000) {
+        cng_wb_pltype_ = static_cast<uint8_t>(ci.pltype);
+      } else if (ci.plfreq == 32000) {
+        cng_swb_pltype_ = static_cast<uint8_t>(ci.pltype);
+      } else if (ci.plfreq == 48000) {
+        cng_fb_pltype_ = static_cast<uint8_t>(ci.pltype);
       }
     }
   }

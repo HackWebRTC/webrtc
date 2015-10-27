@@ -18,6 +18,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 
 namespace webrtc {
@@ -27,85 +28,6 @@ namespace acm2 {
 // TODO(tlegrand): replace class ACMCodecDB with a namespace.
 class ACMCodecDB {
  public:
-  // Enum with array indexes for the supported codecs. NOTE! The order MUST
-  // be the same as when creating the database in acm_codec_database.cc.
-  enum {
-    kNone = -1
-#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    , kISAC
-# if (defined(WEBRTC_CODEC_ISAC))
-    , kISACSWB
-# endif
-#endif
-    // Mono
-    , kPCM16B
-    , kPCM16Bwb
-    , kPCM16Bswb32kHz
-    // Stereo
-    , kPCM16B_2ch
-    , kPCM16Bwb_2ch
-    , kPCM16Bswb32kHz_2ch
-    // Mono
-    , kPCMU
-    , kPCMA
-    // Stereo
-    , kPCMU_2ch
-    , kPCMA_2ch
-#ifdef WEBRTC_CODEC_ILBC
-    , kILBC
-#endif
-#ifdef WEBRTC_CODEC_G722
-    // Mono
-    , kG722
-    // Stereo
-    , kG722_2ch
-#endif
-#ifdef WEBRTC_CODEC_OPUS
-    // Mono and stereo
-    , kOpus
-#endif
-    , kCNNB
-    , kCNWB
-    , kCNSWB
-#ifdef ENABLE_48000_HZ
-    , kCNFB
-#endif
-    , kAVT
-#ifdef WEBRTC_CODEC_RED
-    , kRED
-#endif
-    , kNumCodecs
-  };
-
-  // Set unsupported codecs to -1
-#ifndef WEBRTC_CODEC_ISAC
-  enum {kISACSWB = -1};
-# ifndef WEBRTC_CODEC_ISACFX
-  enum {kISAC = -1};
-# endif
-#endif
-  // 48 kHz not supported, always set to -1.
-  enum {kPCM16Bswb48kHz = -1};
-#ifndef WEBRTC_CODEC_ILBC
-  enum {kILBC = -1};
-#endif
-#ifndef WEBRTC_CODEC_G722
-  // Mono
-  enum {kG722 = -1};
-  // Stereo
-  enum {kG722_2ch = -1};
-#endif
-#ifndef WEBRTC_CODEC_OPUS
-  // Mono and stereo
-  enum {kOpus = -1};
-#endif
-#ifndef WEBRTC_CODEC_RED
-  enum {kRED = -1};
-#endif
-#ifndef ENABLE_48000_HZ
-  enum { kCNFB = -1 };
-#endif
-
   // kMaxNumCodecs - Maximum number of codecs that can be activated in one
   //                 build.
   // kMaxNumPacketSize - Maximum number of allowed packet sizes for one codec.

@@ -111,9 +111,13 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
 }
 
 // Is the given codec a CNG codec?
+// TODO(kwiberg): Move to RentACodec.
 bool IsCng(int codec_id) {
-  return (codec_id == ACMCodecDB::kCNNB || codec_id == ACMCodecDB::kCNWB ||
-      codec_id == ACMCodecDB::kCNSWB || codec_id == ACMCodecDB::kCNFB);
+  auto i = RentACodec::CodecIdFromIndex(codec_id);
+  return (i && (*i == RentACodec::CodecId::kCNNB ||
+                *i == RentACodec::CodecId::kCNWB ||
+                *i == RentACodec::CodecId::kCNSWB ||
+                *i == RentACodec::CodecId::kCNFB));
 }
 
 }  // namespace
@@ -241,7 +245,8 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
       if (last_audio_decoder_ && last_audio_decoder_->channels > 1)
         return 0;
       packet_type = InitialDelayManager::kCngPacket;
-    } else if (decoder->acm_codec_id == ACMCodecDB::kAVT) {
+    } else if (decoder->acm_codec_id ==
+               *RentACodec::CodecIndexFromId(RentACodec::CodecId::kAVT)) {
       packet_type = InitialDelayManager::kAvtPacket;
     } else {
       if (decoder != last_audio_decoder_) {
@@ -566,11 +571,13 @@ int AcmReceiver::last_audio_codec_id() const {
 }
 
 int AcmReceiver::RedPayloadType() const {
-  if (ACMCodecDB::kRED >= 0) {  // This ensures that RED is defined in WebRTC.
+  const auto red_index =
+      RentACodec::CodecIndexFromId(RentACodec::CodecId::kRED);
+  if (red_index) {
     CriticalSectionScoped lock(crit_sect_.get());
     for (const auto& decoder_pair : decoders_) {
       const Decoder& decoder = decoder_pair.second;
-      if (decoder.acm_codec_id == ACMCodecDB::kRED)
+      if (decoder.acm_codec_id == *red_index)
         return decoder.payload_type;
     }
   }
@@ -737,8 +744,10 @@ const AcmReceiver::Decoder* AcmReceiver::RtpHeaderToDecoder(
     const RTPHeader& rtp_header,
     const uint8_t* payload) const {
   auto it = decoders_.find(rtp_header.payloadType);
-  if (ACMCodecDB::kRED >= 0 &&  // This ensures that RED is defined in WebRTC.
-      it != decoders_.end() && ACMCodecDB::kRED == it->second.acm_codec_id) {
+  const auto red_index =
+      RentACodec::CodecIndexFromId(RentACodec::CodecId::kRED);
+  if (red_index &&  // This ensures that RED is defined in WebRTC.
+      it != decoders_.end() && it->second.acm_codec_id == *red_index) {
     // This is a RED packet, get the payload of the audio codec.
     it = decoders_.find(payload[0] & 0x7F);
   }

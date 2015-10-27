@@ -9,6 +9,39 @@
 import("//build/config/arm.gni")
 import("../../build/webrtc.gni")
 
+source_set("rent_a_codec") {
+  sources = [
+    "main/acm2/acm_codec_database.cc",
+    "main/acm2/acm_codec_database.h",
+    "main/acm2/rent_a_codec.cc",
+    "main/acm2/rent_a_codec.h",
+  ]
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+  deps = [
+    "../..:webrtc_common",
+  ]
+
+  defines = []
+  if (rtc_include_opus) {
+    defines += [ "WEBRTC_CODEC_OPUS" ]
+  }
+  if (!build_with_mozilla) {
+    if (current_cpu == "arm") {
+      defines += [ "WEBRTC_CODEC_ISACFX" ]
+    } else {
+      defines += [ "WEBRTC_CODEC_ISAC" ]
+    }
+    defines += [ "WEBRTC_CODEC_G722" ]
+  }
+  if (!build_with_mozilla && !build_with_chromium) {
+    defines += [
+      "WEBRTC_CODEC_ILBC",
+      "WEBRTC_CODEC_RED",
+    ]
+  }
+}
+
 config("audio_coding_config") {
   include_dirs = [
     "main/interface",
@@ -18,8 +51,6 @@ config("audio_coding_config") {
 
 source_set("audio_coding") {
   sources = [
-    "main/acm2/acm_codec_database.cc",
-    "main/acm2/acm_codec_database.h",
     "main/acm2/acm_common_defs.h",
     "main/acm2/acm_receiver.cc",
     "main/acm2/acm_receiver.h",
@@ -69,6 +100,7 @@ source_set("audio_coding") {
     ":g711",
     ":neteq",
     ":pcm16b",
+    ":rent_a_codec",
     "../..:rtc_event_log",
     "../..:webrtc_common",
     "../../common_audio",
