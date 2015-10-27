@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/network.h"
@@ -21,6 +22,28 @@
 #include "webrtc/base/thread.h"
 
 namespace cricket {
+
+struct RelayCredentials {
+  RelayCredentials() {}
+  RelayCredentials(const std::string& username,
+                   const std::string& password)
+      : username(username),
+        password(password) {
+  }
+
+  std::string username;
+  std::string password;
+};
+
+typedef std::vector<ProtocolAddress> PortList;
+struct RelayServerConfig {
+  RelayServerConfig(RelayType type) : type(type), priority(0) {}
+
+  RelayType type;
+  PortList ports;
+  RelayCredentials credentials;
+  int priority;
+};
 
 class BasicPortAllocator : public PortAllocator {
  public:
@@ -37,13 +60,6 @@ class BasicPortAllocator : public PortAllocator {
                      const rtc::SocketAddress& relay_server_ssl);
   virtual ~BasicPortAllocator();
 
-  void SetIceServers(
-      const ServerAddresses& stun_servers,
-      const std::vector<RelayServerConfig>& turn_servers) override {
-    stun_servers_ = stun_servers;
-    turn_servers_ = turn_servers;
-  }
-
   rtc::NetworkManager* network_manager() { return network_manager_; }
 
   // If socket_factory() is set to NULL each PortAllocatorSession
@@ -54,11 +70,11 @@ class BasicPortAllocator : public PortAllocator {
     return stun_servers_;
   }
 
-  const std::vector<RelayServerConfig>& turn_servers() const {
-    return turn_servers_;
+  const std::vector<RelayServerConfig>& relays() const {
+    return relays_;
   }
-  virtual void AddTurnServer(const RelayServerConfig& turn_server) {
-    turn_servers_.push_back(turn_server);
+  virtual void AddRelay(const RelayServerConfig& relay) {
+    relays_.push_back(relay);
   }
 
   virtual PortAllocatorSession* CreateSessionInternal(
@@ -72,8 +88,8 @@ class BasicPortAllocator : public PortAllocator {
 
   rtc::NetworkManager* network_manager_;
   rtc::PacketSocketFactory* socket_factory_;
-  ServerAddresses stun_servers_;
-  std::vector<RelayServerConfig> turn_servers_;
+  const ServerAddresses stun_servers_;
+  std::vector<RelayServerConfig> relays_;
   bool allow_tcp_listen_;
 };
 
@@ -188,7 +204,6 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 };
 
 // Records configuration information useful in creating ports.
-// TODO(deadbeef): Rename "relay" to "turn_server" in this struct.
 struct PortConfiguration : public rtc::MessageData {
   // TODO(jiayl): remove |stun_address| when Chrome is updated.
   rtc::SocketAddress stun_address;

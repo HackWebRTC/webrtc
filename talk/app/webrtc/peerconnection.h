@@ -75,22 +75,12 @@ class PeerConnection : public PeerConnectionInterface,
  public:
   explicit PeerConnection(PeerConnectionFactory* factory);
 
-  // TODO(deadbeef): Remove this overload of Initialize once everyone is moved
-  // to the new version.
   bool Initialize(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
       PortAllocatorFactoryInterface* allocator_factory,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer);
-
-  bool Initialize(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      const MediaConstraintsInterface* constraints,
-      rtc::scoped_ptr<cricket::PortAllocator> allocator,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-      PeerConnectionObserver* observer);
-
   rtc::scoped_refptr<StreamCollectionInterface> local_streams() override;
   rtc::scoped_refptr<StreamCollectionInterface> remote_streams() override;
   bool AddStream(MediaStreamInterface* local_stream) override;

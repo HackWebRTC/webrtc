@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/proxyinfo.h"
@@ -70,27 +69,6 @@ enum {
   CF_REFLEXIVE = 0x2,
   CF_RELAY = 0x4,
   CF_ALL = 0x7,
-};
-
-// TODO(deadbeef): Rename to TurnCredentials (and username to ufrag).
-struct RelayCredentials {
-  RelayCredentials() {}
-  RelayCredentials(const std::string& username, const std::string& password)
-      : username(username), password(password) {}
-
-  std::string username;
-  std::string password;
-};
-
-typedef std::vector<ProtocolAddress> PortList;
-// TODO(deadbeef): Rename to TurnServerConfig.
-struct RelayServerConfig {
-  RelayServerConfig(RelayType type) : type(type), priority(0) {}
-
-  RelayType type;
-  PortList ports;
-  RelayCredentials credentials;
-  int priority;
 };
 
 class PortAllocatorSession : public sigslot::has_slots<> {
@@ -158,11 +136,6 @@ class PortAllocator : public sigslot::has_slots<> {
     // This will allow us to have old behavior on non webrtc clients.
   }
   virtual ~PortAllocator() {}
-
-  // Set STUN and TURN servers to be used in future sessions.
-  virtual void SetIceServers(
-      const ServerAddresses& stun_servers,
-      const std::vector<RelayServerConfig>& turn_servers) = 0;
 
   PortAllocatorSession* CreateSession(
       const std::string& sid,

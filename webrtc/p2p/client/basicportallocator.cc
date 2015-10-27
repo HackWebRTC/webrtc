@@ -104,19 +104,15 @@ BasicPortAllocator::BasicPortAllocator(
       stun_servers_(stun_servers) {
 
   RelayServerConfig config(RELAY_GTURN);
-  if (!relay_address_udp.IsNil()) {
+  if (!relay_address_udp.IsNil())
     config.ports.push_back(ProtocolAddress(relay_address_udp, PROTO_UDP));
-  }
-  if (!relay_address_tcp.IsNil()) {
+  if (!relay_address_tcp.IsNil())
     config.ports.push_back(ProtocolAddress(relay_address_tcp, PROTO_TCP));
-  }
-  if (!relay_address_ssl.IsNil()) {
+  if (!relay_address_ssl.IsNil())
     config.ports.push_back(ProtocolAddress(relay_address_ssl, PROTO_SSLTCP));
-  }
 
-  if (!config.ports.empty()) {
-    AddTurnServer(config);
-  }
+  if (!config.ports.empty())
+    AddRelay(config);
 
   Construct();
 }
@@ -245,8 +241,8 @@ void BasicPortAllocatorSession::GetPortConfigurations() {
                                                     username(),
                                                     password());
 
-  for (const RelayServerConfig& turn_server : allocator_->turn_servers()) {
-    config->AddRelay(turn_server);
+  for (size_t i = 0; i < allocator_->relays().size(); ++i) {
+    config->AddRelay(allocator_->relays()[i]);
   }
   ConfigReady(config);
 }
@@ -257,9 +253,8 @@ void BasicPortAllocatorSession::ConfigReady(PortConfiguration* config) {
 
 // Adds a configuration to the list.
 void BasicPortAllocatorSession::OnConfigReady(PortConfiguration* config) {
-  if (config) {
+  if (config)
     configs_.push_back(config);
-  }
 
   AllocatePorts();
 }

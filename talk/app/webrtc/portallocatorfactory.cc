@@ -71,15 +71,15 @@ cricket::PortAllocator* PortAllocatorFactory::CreatePortAllocator(
 
   for (size_t i = 0; i < turn.size(); ++i) {
     cricket::RelayCredentials credentials(turn[i].username, turn[i].password);
-    cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
+    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
     cricket::ProtocolType protocol;
     if (cricket::StringToProto(turn[i].transport_type.c_str(), &protocol)) {
-      turn_server.ports.push_back(
-          cricket::ProtocolAddress(turn[i].server, protocol, turn[i].secure));
-      turn_server.credentials = credentials;
+      relay_server.ports.push_back(cricket::ProtocolAddress(
+          turn[i].server, protocol, turn[i].secure));
+      relay_server.credentials = credentials;
       // First in the list gets highest priority.
-      turn_server.priority = static_cast<int>(turn.size() - i - 1);
-      allocator->AddTurnServer(turn_server);
+      relay_server.priority = static_cast<int>(turn.size() - i - 1);
+      allocator->AddRelay(relay_server);
     } else {
       LOG(LS_WARNING) << "Ignoring TURN server " << turn[i].server << ". "
                       << "Reason= Incorrect " << turn[i].transport_type
