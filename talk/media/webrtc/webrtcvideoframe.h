@@ -79,10 +79,10 @@ class WebRtcVideoFrame : public VideoFrame {
                    int64_t elapsed_time_ns, int64_t time_stamp_ns);
 
   bool InitToBlack(int w, int h, size_t pixel_width, size_t pixel_height,
-                   int64_t time_stamp_ns);
+                   int64_t time_stamp_ns) override;
 
   // From base class VideoFrame.
-  virtual bool Reset(uint32_t format,
+  bool Reset(uint32_t format,
                      int w,
                      int h,
                      int dw,
@@ -93,39 +93,41 @@ class WebRtcVideoFrame : public VideoFrame {
                      size_t pixel_height,
                      int64_t time_stamp_ns,
                      webrtc::VideoRotation rotation,
-                     bool apply_rotation);
+                     bool apply_rotation) override;
 
-  virtual size_t GetWidth() const;
-  virtual size_t GetHeight() const;
-  virtual const uint8_t* GetYPlane() const;
-  virtual const uint8_t* GetUPlane() const;
-  virtual const uint8_t* GetVPlane() const;
-  virtual uint8_t* GetYPlane();
-  virtual uint8_t* GetUPlane();
-  virtual uint8_t* GetVPlane();
-  virtual int32_t GetYPitch() const;
-  virtual int32_t GetUPitch() const;
-  virtual int32_t GetVPitch() const;
-  virtual void* GetNativeHandle() const;
-  virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
-      const;
+  size_t GetWidth() const override;
+  size_t GetHeight() const override;
+  const uint8_t* GetYPlane() const override;
+  const uint8_t* GetUPlane() const override;
+  const uint8_t* GetVPlane() const override;
+  uint8_t* GetYPlane() override;
+  uint8_t* GetUPlane() override;
+  uint8_t* GetVPlane() override;
+  int32_t GetYPitch() const override;
+  int32_t GetUPitch() const override;
+  int32_t GetVPitch() const override;
+  void* GetNativeHandle() const override;
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
+      const override;
 
-  virtual size_t GetPixelWidth() const { return pixel_width_; }
-  virtual size_t GetPixelHeight() const { return pixel_height_; }
-  virtual int64_t GetTimeStamp() const { return time_stamp_ns_; }
-  virtual void SetTimeStamp(int64_t time_stamp_ns) {
+  size_t GetPixelWidth() const override { return pixel_width_; }
+  size_t GetPixelHeight() const override { return pixel_height_; }
+  int64_t GetTimeStamp() const override { return time_stamp_ns_; }
+  void SetTimeStamp(int64_t time_stamp_ns) override {
     time_stamp_ns_ = time_stamp_ns;
   }
 
-  virtual webrtc::VideoRotation GetVideoRotation() const { return rotation_; }
+  webrtc::VideoRotation GetVideoRotation() const override {
+    return rotation_;
+  }
 
-  virtual VideoFrame* Copy() const;
-  virtual bool IsExclusive() const;
-  virtual bool MakeExclusive();
-  virtual size_t ConvertToRgbBuffer(uint32_t to_fourcc,
-                                    uint8_t* buffer,
-                                    size_t size,
-                                    int stride_rgb) const;
+  VideoFrame* Copy() const override;
+  bool IsExclusive() const override;
+  bool MakeExclusive() override;
+  size_t ConvertToRgbBuffer(uint32_t to_fourcc,
+                            uint8_t* buffer,
+                            size_t size,
+                            int stride_rgb) const override;
 
   const VideoFrame* GetCopyWithRotationApplied() const override;
 
@@ -135,9 +137,9 @@ class WebRtcVideoFrame : public VideoFrame {
   }
 
  private:
-  virtual VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,
-                                       size_t pixel_height,
-                                       int64_t time_stamp_ns) const;
+  VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,
+                               size_t pixel_height,
+                               int64_t time_stamp_ns) const override;
 
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;

@@ -164,7 +164,8 @@ class BaseChannel
   void SetReadyToSend(bool rtcp, bool ready);
 
   // Only public for unit tests.  Otherwise, consider protected.
-  virtual int SetOption(SocketType type, rtc::Socket::Option o, int val);
+  int SetOption(SocketType type, rtc::Socket::Option o, int val)
+      override;
 
   SrtpFilter* srtp_filter() { return &srtp_filter_; }
 
@@ -198,9 +199,10 @@ class BaseChannel
   void FlushRtcpMessages();
 
   // NetworkInterface implementation, called by MediaEngine
-  virtual bool SendPacket(rtc::Buffer* packet,
-                          const rtc::PacketOptions& options);
-  virtual bool SendRtcp(rtc::Buffer* packet, const rtc::PacketOptions& options);
+  bool SendPacket(rtc::Buffer* packet,
+                          const rtc::PacketOptions& options) override;
+  bool SendRtcp(rtc::Buffer* packet, const rtc::PacketOptions& options)
+      override;
 
   // From TransportChannel
   void OnWritableState(TransportChannel* channel);
@@ -277,7 +279,7 @@ class BaseChannel
                     std::string* error_desc);
 
   // From MessageHandler
-  virtual void OnMessage(rtc::Message* pmsg);
+  void OnMessage(rtc::Message* pmsg) override;
 
   // Handled in derived classes
   // Get the SRTP ciphers to use for RTP media
