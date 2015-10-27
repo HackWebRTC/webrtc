@@ -825,12 +825,12 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
         rtc::SocketAddress(), rtc::SocketAddress(),
         rtc::SocketAddress()));
 
-    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
-    relay_server.credentials = kRelayCredentials;
-    relay_server.ports.push_back(
+    cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
+    turn_server.credentials = kRelayCredentials;
+    turn_server.ports.push_back(
         cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
-    GetEndpoint(0)->allocator_->AddRelay(relay_server);
-    GetEndpoint(1)->allocator_->AddRelay(relay_server);
+    GetEndpoint(0)->allocator_->AddTurnServer(turn_server);
+    GetEndpoint(1)->allocator_->AddTurnServer(turn_server);
 
     int delay = kMinimumStepDelay;
     ConfigureEndpoint(0, config1);
