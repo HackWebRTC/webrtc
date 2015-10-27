@@ -32,15 +32,26 @@ void TransportChannel::set_receiving(bool receiving) {
 }
 
 void TransportChannel::set_writable(bool writable) {
-  if (writable_ != writable) {
-    LOG_J(LS_VERBOSE, this) << "set_writable from:" << writable_ << " to "
-                            << writable;
-    writable_ = writable;
-    if (writable_) {
-      SignalReadyToSend(this);
-    }
-    SignalWritableState(this);
+  if (writable_ == writable) {
+    return;
   }
+  LOG_J(LS_VERBOSE, this) << "set_writable from:" << writable_ << " to "
+                          << writable;
+  writable_ = writable;
+  if (writable_) {
+    SignalReadyToSend(this);
+  }
+  SignalWritableState(this);
+}
+
+void TransportChannel::set_dtls_state(DtlsTransportState state) {
+  if (dtls_state_ == state) {
+    return;
+  }
+  LOG_J(LS_VERBOSE, this) << "set_dtls_state from:" << dtls_state_ << " to "
+                          << state;
+  dtls_state_ = state;
+  SignalDtlsState(this);
 }
 
 }  // namespace cricket

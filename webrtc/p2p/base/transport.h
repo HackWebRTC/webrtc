@@ -56,6 +56,19 @@ enum IceConnectionState {
   kIceConnectionCompleted,
 };
 
+enum DtlsTransportState {
+  // Haven't started negotiating.
+  DTLS_TRANSPORT_NEW = 0,
+  // Have started negotiating.
+  DTLS_TRANSPORT_CONNECTING,
+  // Negotiated, and has a secure connection.
+  DTLS_TRANSPORT_CONNECTED,
+  // Transport is closed.
+  DTLS_TRANSPORT_CLOSED,
+  // Failed due to some error in the handshake process.
+  DTLS_TRANSPORT_FAILED,
+};
+
 // TODO(deadbeef): Unify with PeerConnectionInterface::IceConnectionState
 // once /talk/ and /webrtc/ are combined, and also switch to ENUM_NAME naming
 // style.

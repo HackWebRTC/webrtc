@@ -81,15 +81,6 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
 //     which translates it into packet writes on channel_.
 class DtlsTransportChannelWrapper : public TransportChannelImpl {
  public:
-    enum State {
-      STATE_NONE,      // No state or rejected.
-      STATE_OFFERED,   // Our identity has been set.
-      STATE_ACCEPTED,  // The other side sent a fingerprint.
-      STATE_STARTED,   // We are negotiating.
-      STATE_OPEN,      // Negotiation complete.
-      STATE_CLOSED     // Connection closed.
-    };
-
   // The parameters here are:
   // transport -- the DtlsTransport that created us
   // channel -- the TransportChannel we are wrapping
@@ -106,7 +97,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool SetRemoteFingerprint(const std::string& digest_alg,
                             const uint8_t* digest,
                             size_t digest_len) override;
-  bool IsDtlsActive() const override { return dtls_state_ != STATE_NONE; }
+
+  // Returns false if no local certificate was set, or if the peer doesn't
+  // support DTLS.
+  bool IsDtlsActive() const override { return dtls_active_; }
 
   // Called to send a packet (via DTLS, if turned on).
   int SendPacket(const char* data,
@@ -230,7 +224,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   rtc::scoped_ptr<rtc::SSLStreamAdapter> dtls_;  // The DTLS stream
   StreamInterfaceChannel* downward_;  // Wrapper for channel_, owned by dtls_.
   std::vector<std::string> srtp_ciphers_;  // SRTP ciphers to use with DTLS.
-  State dtls_state_;
+  bool dtls_active_ = false;
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   rtc::SSLRole ssl_role_;
   rtc::SSLProtocolVersion ssl_max_version_;

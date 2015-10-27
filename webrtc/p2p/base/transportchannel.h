@@ -46,6 +46,8 @@ enum TransportChannelState {
 
 // A TransportChannel represents one logical stream of packets that are sent
 // between the two sides of a session.
+// TODO(deadbeef): This interface currently represents the unity of an ICE
+// transport and a DTLS transport. They need to be separated apart.
 class TransportChannel : public sigslot::has_slots<> {
  public:
   TransportChannel(const std::string& transport_name, int component)
@@ -72,10 +74,13 @@ class TransportChannel : public sigslot::has_slots<> {
   // a signal is raised.  These states are aggregated by the TransportManager.
   bool writable() const { return writable_; }
   bool receiving() const { return receiving_; }
+  DtlsTransportState dtls_state() const { return dtls_state_; }
   sigslot::signal1<TransportChannel*> SignalWritableState;
   // Emitted when the TransportChannel's ability to send has changed.
   sigslot::signal1<TransportChannel*> SignalReadyToSend;
   sigslot::signal1<TransportChannel*> SignalReceivingState;
+  // Emitted when the DtlsTransportState has changed.
+  sigslot::signal1<TransportChannel*> SignalDtlsState;
 
   // Attempts to send the given packet.  The return value is < 0 on failure.
   // TODO: Remove the default argument once channel code is updated.
@@ -158,12 +163,16 @@ class TransportChannel : public sigslot::has_slots<> {
   // Sets the receiving state, signaling if necessary.
   void set_receiving(bool receiving);
 
+  // Sets the DTLS state, signaling if necessary.
+  void set_dtls_state(DtlsTransportState state);
+
  private:
   // Used mostly for debugging.
   std::string transport_name_;
   int component_;
   bool writable_;
   bool receiving_;
+  DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannel);
 };
