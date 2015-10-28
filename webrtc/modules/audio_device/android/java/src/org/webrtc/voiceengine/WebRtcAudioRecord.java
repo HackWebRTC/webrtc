@@ -192,6 +192,10 @@ class  WebRtcAudioRecord {
         Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
     Logging.d(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
     try {
+      // TODO(henrika): the only supported audio source for input is currently
+      // AudioSource.VOICE_COMMUNICATION. Is there any reason why we should
+      // support other types, e.g. DEFAULT or MIC? Only reason I can think of
+      // is if the device does not support VOICE_COMMUNICATION.
       audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION,
                                     sampleRate,
                                     AudioFormat.CHANNEL_IN_MONO,
