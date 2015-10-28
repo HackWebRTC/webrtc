@@ -71,7 +71,7 @@ import javax.microedition.khronos.egl.EGL10;
 public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallback,
     SurfaceTextureHelper.OnTextureFrameAvailableListener {
   private final static String TAG = "VideoCapturerAndroid";
-  private final static int CAMERA_OBSERVER_PERIOD_MS = 5000;
+  private final static int CAMERA_OBSERVER_PERIOD_MS = 2000;
 
   private Camera camera;  // Only non-null while capturing.
   private HandlerThread cameraThread;
@@ -789,7 +789,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       }
       pendingBuffers.put(timeStamp, buffer);
       if (queuedBuffers.isEmpty()) {
-        Logging.v(TAG, "Camera is running out of capture buffers.");
+        Logging.d(TAG, "Camera is running out of capture buffers.");
       }
       return true;
     }
@@ -805,7 +805,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       if (camera != null && returnedFrame.capacity() == frameSize) {
         camera.addCallbackBuffer(returnedFrame.array());
         if (queuedBuffers.isEmpty()) {
-          Logging.v(TAG, "Frame returned when camera is running out of capture"
+          Logging.d(TAG, "Frame returned when camera is running out of capture"
               + " buffers for TS " + TimeUnit.NANOSECONDS.toMillis(timeStamp));
         }
         queuedBuffers.put(returnedFrame.array(), returnedFrame);
