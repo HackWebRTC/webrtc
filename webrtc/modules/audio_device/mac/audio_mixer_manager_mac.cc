@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/modules/audio_device/mac/audio_mixer_manager_mac.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 #include <unistd.h>             // getpid()
 

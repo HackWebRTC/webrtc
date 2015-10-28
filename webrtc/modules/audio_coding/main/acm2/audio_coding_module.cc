@@ -14,8 +14,8 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
 #include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 

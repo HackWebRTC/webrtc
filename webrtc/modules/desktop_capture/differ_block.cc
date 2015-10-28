@@ -14,7 +14,7 @@
 
 #include "build/build_config.h"
 #include "webrtc/modules/desktop_capture/differ_block_sse2.h"
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 namespace webrtc {
 

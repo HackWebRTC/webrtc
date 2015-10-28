@@ -20,8 +20,8 @@
 //v4l includes
 #include <linux/videodev2.h>
 
-#include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/ref_count.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 
 namespace webrtc

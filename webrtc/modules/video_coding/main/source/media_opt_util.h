@@ -18,7 +18,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/modules/video_coding/main/source/qm_select.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

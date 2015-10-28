@@ -17,7 +17,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_render/ios/video_render_ios_channel.h"
 #include "webrtc/modules/video_render/ios/video_render_ios_view.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace webrtc {
 

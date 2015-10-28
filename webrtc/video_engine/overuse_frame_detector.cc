@@ -20,7 +20,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 

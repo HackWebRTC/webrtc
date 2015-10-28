@@ -16,7 +16,7 @@
 #include <algorithm>
 
 #include "webrtc/call.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 

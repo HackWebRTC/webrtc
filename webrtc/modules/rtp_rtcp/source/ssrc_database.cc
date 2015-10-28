@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 #ifdef _WIN32
     #include <windows.h>

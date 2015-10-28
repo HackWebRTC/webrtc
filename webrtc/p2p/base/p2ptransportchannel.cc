@@ -19,7 +19,7 @@
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
-#include "webrtc/system_wrappers/interface/field_trial.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {
 

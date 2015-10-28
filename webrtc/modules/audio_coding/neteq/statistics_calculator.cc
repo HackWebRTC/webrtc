@@ -18,7 +18,7 @@
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/audio_coding/neteq/decision_logic.h"
 #include "webrtc/modules/audio_coding/neteq/delay_manager.h"
-#include "webrtc/system_wrappers/interface/metrics.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 

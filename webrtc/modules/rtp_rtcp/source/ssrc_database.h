@@ -13,7 +13,7 @@
 
 #include <map>
 
-#include "webrtc/system_wrappers/interface/static_instance.h"
+#include "webrtc/system_wrappers/include/static_instance.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -19,7 +19,7 @@
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/video_capture/include/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc

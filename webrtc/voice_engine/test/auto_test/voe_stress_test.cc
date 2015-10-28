@@ -25,7 +25,7 @@
 #include "webrtc/voice_engine/test/auto_test/voe_stress_test.h"
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"

@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/video_coding/main/test/receiver_tests.h"
 #include "webrtc/modules/video_coding/main/test/vcm_payload_sink_factory.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace {

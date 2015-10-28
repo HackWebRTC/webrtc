@@ -11,8 +11,8 @@
 #include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
 
 #include "webrtc/base/logging.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/timestamp_extrapolator.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
 
 namespace webrtc {
 

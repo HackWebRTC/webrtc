@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "webrtc/system_wrappers/interface/aligned_malloc.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 #include "webrtc/test/channel_transport/udp_socket2_win.h"
 
 namespace webrtc {

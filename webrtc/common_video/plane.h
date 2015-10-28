@@ -12,7 +12,7 @@
 #define COMMON_VIDEO_PLANE_H
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/aligned_malloc.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

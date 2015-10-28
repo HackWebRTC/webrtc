@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/fixtures/after_initialization_fixture.h"
 

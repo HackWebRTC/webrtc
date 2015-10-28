@@ -12,7 +12,7 @@
 
 #import "webrtc/modules/video_capture/mac/qtkit/video_capture_qtkit_info_objc.h"
 
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 using namespace webrtc;
 

@@ -13,8 +13,8 @@
 #include "webrtc/modules/video_coding/main/source/content_metrics_processing.h"
 #include "webrtc/modules/video_coding/main/source/qm_select.h"
 #include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 namespace media_optimization {

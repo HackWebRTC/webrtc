@@ -23,7 +23,7 @@
 
 #include <math.h>
 
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
 
 // These tables used to be computed at run-time. For example, refer to:

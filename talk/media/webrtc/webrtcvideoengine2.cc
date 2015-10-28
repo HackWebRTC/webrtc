@@ -47,7 +47,7 @@
 #include "webrtc/call.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
-#include "webrtc/system_wrappers/interface/field_trial.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 

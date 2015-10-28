@@ -33,7 +33,7 @@
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_decoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
-#include "webrtc/system_wrappers/interface/data_log.h"
+#include "webrtc/system_wrappers/include/data_log.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {

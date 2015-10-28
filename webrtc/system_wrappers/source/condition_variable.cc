@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/interface/condition_variable_wrapper.h"
+#include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
 
 #if defined(_WIN32)
 #include <windows.h>

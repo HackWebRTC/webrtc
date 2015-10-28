@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/modules/audio_device/win/audio_mixer_manager_win.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 #include <assert.h>      // assert()
 #include <strsafe.h>    // StringCchCopy(), StringCchCat(), StringCchPrintf()

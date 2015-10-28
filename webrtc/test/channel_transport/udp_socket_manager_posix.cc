@@ -17,8 +17,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "webrtc/system_wrappers/interface/sleep.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/channel_transport/udp_socket_posix.h"
 
 namespace webrtc {

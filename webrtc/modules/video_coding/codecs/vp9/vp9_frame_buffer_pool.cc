@@ -16,7 +16,7 @@
 #include "vpx/vpx_frame_buffer.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 

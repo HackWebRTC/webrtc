@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/modules/utility/source/file_player_impl.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,

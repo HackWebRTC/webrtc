@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/interface/cpu_info.h"
+#include "webrtc/system_wrappers/include/cpu_info.h"
 
 #include "webrtc/base/systeminfo.h"
 

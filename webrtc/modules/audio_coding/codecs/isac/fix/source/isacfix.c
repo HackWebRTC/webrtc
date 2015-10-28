@@ -26,7 +26,7 @@
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/structs.h"
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 // Declare function pointers.
 FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;

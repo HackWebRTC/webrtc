@@ -14,7 +14,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 #include <pthread.h>
 

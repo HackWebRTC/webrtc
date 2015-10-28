@@ -15,7 +15,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/utility/interface/audio_frame_operations.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace webrtc {

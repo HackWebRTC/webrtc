@@ -31,7 +31,7 @@
 #include "talk/media/webrtc/simulcast.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/system_wrappers/interface/field_trial.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 namespace cricket {
 
 struct SimulcastFormat {

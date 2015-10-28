@@ -17,7 +17,7 @@
 #import "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
 #import "webrtc/modules/video_capture/ios/rtc_video_capture_ios_objc.h"
 
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 using namespace webrtc;
 using namespace webrtc::videocapturemodule;

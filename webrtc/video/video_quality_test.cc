@@ -22,7 +22,7 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
-#include "webrtc/system_wrappers/interface/cpu_info.h"
+#include "webrtc/system_wrappers/include/cpu_info.h"
 #include "webrtc/test/layer_filtering_transport.h"
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/statistics.h"

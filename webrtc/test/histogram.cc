@@ -14,10 +14,10 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/system_wrappers/interface/metrics.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 // Test implementation of histogram methods in
-// webrtc/system_wrappers/interface/metrics.h.
+// webrtc/system_wrappers/include/metrics.h.
 
 namespace webrtc {
 namespace {

@@ -12,7 +12,7 @@
 #define WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H
 
 #include "webrtc/engine_configurations.h"
-#include "webrtc/system_wrappers/interface/atomic32.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/voice_engine/voe_base_impl.h"
 
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API

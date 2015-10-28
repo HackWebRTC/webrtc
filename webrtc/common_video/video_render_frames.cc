@@ -13,8 +13,8 @@
 #include <assert.h>
 
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 

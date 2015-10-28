@@ -24,7 +24,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
-#include "webrtc/system_wrappers/interface/stl_util.h"
+#include "webrtc/system_wrappers/include/stl_util.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/test/mock_transport.h"
 #include "webrtc/typedefs.h"

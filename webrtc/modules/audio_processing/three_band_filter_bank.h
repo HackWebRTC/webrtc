@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "webrtc/common_audio/sparse_fir_filter.h"
-#include "webrtc/system_wrappers/interface/scoped_vector.h"
+#include "webrtc/system_wrappers/include/scoped_vector.h"
 
 namespace webrtc {
 

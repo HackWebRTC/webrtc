@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
 
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 

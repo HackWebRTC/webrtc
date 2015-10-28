@@ -33,7 +33,7 @@
 
 #include <string>
 
-#include "webrtc/system_wrappers/interface/data_log_impl.h"
+#include "webrtc/system_wrappers/include/data_log_impl.h"
 
 namespace webrtc {
 

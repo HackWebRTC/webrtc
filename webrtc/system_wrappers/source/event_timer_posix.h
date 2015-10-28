@@ -11,12 +11,12 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
 
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
 
 #include <pthread.h>
 #include <time.h>
 
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace webrtc {
 

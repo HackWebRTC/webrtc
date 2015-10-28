@@ -11,7 +11,7 @@
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/atomic32.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 

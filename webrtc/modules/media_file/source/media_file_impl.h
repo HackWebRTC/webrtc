@@ -16,7 +16,7 @@
 #include "webrtc/modules/media_file/interface/media_file.h"
 #include "webrtc/modules/media_file/interface/media_file_defines.h"
 #include "webrtc/modules/media_file/source/media_file_utility.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 class MediaFileImpl : public MediaFile

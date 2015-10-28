@@ -19,7 +19,7 @@
 #include "webrtc/modules/video_capture/ios/device_info_ios.h"
 #include "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 using namespace webrtc;
 using namespace videocapturemodule;

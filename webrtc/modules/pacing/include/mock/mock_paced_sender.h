@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "webrtc/modules/pacing/include/paced_sender.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 

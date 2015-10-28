@@ -13,7 +13,7 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/fake_network_pipe.h"
 
 using ::testing::_;

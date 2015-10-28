@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 
 class TestSenderReceiver;

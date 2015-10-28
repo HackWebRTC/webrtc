@@ -13,7 +13,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 
 namespace webrtc {
 namespace test {

@@ -14,8 +14,8 @@
 #include <ApplicationServices/ApplicationServices.h>
 
 #include "webrtc/modules/desktop_capture/window_capturer.h"
-#include "webrtc/system_wrappers/interface/atomic32.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 

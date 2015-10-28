@@ -12,7 +12,7 @@
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H
 
 #include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/system_wrappers/interface/file_wrapper.h"
+#include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

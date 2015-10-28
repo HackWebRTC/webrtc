@@ -12,7 +12,7 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/media_file/interface/media_file.h"
 #include "webrtc/modules/utility/source/file_recorder_impl.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 FileRecorder* FileRecorder::CreateFileRecorder(uint32_t instanceID,

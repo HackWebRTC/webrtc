@@ -20,7 +20,7 @@
 #include <string>
 
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/system_wrappers/interface/atomic32.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 

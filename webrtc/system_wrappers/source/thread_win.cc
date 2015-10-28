@@ -16,7 +16,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 namespace {

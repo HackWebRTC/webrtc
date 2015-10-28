@@ -13,8 +13,8 @@
 #endif
 
 #include "webrtc/modules/video_render/ios/video_render_ios_gles20.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
 
 using namespace webrtc;
 

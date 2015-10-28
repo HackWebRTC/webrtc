@@ -32,7 +32,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace cricket {
 ///////////////////////////////////////////////////////////////////////

@@ -17,7 +17,7 @@
 
 // TODO(sjlee): unify this copy with the android one.
 #include "webrtc/modules/video_render/ios/open_gles20.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 using namespace webrtc;
 

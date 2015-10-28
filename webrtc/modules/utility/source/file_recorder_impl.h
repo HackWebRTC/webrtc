@@ -25,9 +25,9 @@
 #include "webrtc/modules/media_file/interface/media_file_defines.h"
 #include "webrtc/modules/utility/interface/file_recorder.h"
 #include "webrtc/modules/utility/source/coder.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

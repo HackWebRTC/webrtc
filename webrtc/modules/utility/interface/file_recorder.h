@@ -15,7 +15,7 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/media_file/interface/media_file_defines.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
 

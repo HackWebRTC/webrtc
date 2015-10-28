@@ -13,7 +13,7 @@
 
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/win/audio_mixer_manager_win.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 #pragma comment( lib, "winmm.lib" )
 

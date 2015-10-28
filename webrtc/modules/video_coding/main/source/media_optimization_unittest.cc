@@ -10,7 +10,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/video_coding/main/source/media_optimization.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace media_optimization {

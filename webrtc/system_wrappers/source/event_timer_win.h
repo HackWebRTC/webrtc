@@ -13,7 +13,7 @@
 
 #include <windows.h>
 
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
 
 #include "webrtc/typedefs.h"
 

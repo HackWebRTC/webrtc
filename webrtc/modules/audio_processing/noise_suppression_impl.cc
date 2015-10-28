@@ -18,7 +18,7 @@
 #elif defined(WEBRTC_NS_FIXED)
 #include "webrtc/modules/audio_processing/ns/include/noise_suppression_x.h"
 #endif
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 
 namespace webrtc {

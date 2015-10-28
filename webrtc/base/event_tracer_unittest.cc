@@ -12,7 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/system_wrappers/interface/static_instance.h"
+#include "webrtc/system_wrappers/include/static_instance.h"
 
 namespace {
 

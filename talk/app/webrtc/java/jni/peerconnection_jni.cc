@@ -80,8 +80,8 @@
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringutils.h"
-#include "webrtc/system_wrappers/interface/field_trial_default.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/field_trial_default.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
@@ -91,7 +91,7 @@
 #include "talk/app/webrtc/java/jni/androidvideocapturer_jni.h"
 #include "talk/app/webrtc/java/jni/androidnetworkmonitor_jni.h"
 #include "webrtc/modules/video_render/video_render_internal.h"
-#include "webrtc/system_wrappers/interface/logcat_trace_context.h"
+#include "webrtc/system_wrappers/include/logcat_trace_context.h"
 using webrtc::LogcatTraceContext;
 #endif
 

@@ -14,7 +14,7 @@
 
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 
 namespace {
   static const unsigned int kReflectorSsrc = 0x0000;

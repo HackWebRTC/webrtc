@@ -17,7 +17,7 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
-#include "webrtc/system_wrappers/interface/atomic32.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {
 

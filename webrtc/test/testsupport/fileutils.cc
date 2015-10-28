@@ -18,7 +18,7 @@
 #include <windows.h>
 #include <algorithm>
 
-#include "webrtc/system_wrappers/interface/utf_util_win.h"
+#include "webrtc/system_wrappers/include/utf_util_win.h"
 #define GET_CURRENT_DIR _getcwd
 #else
 #include <unistd.h>

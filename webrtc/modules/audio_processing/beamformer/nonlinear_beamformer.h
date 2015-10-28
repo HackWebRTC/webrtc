@@ -17,7 +17,7 @@
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/beamformer.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
-#include "webrtc/system_wrappers/interface/scoped_vector.h"
+#include "webrtc/system_wrappers/include/scoped_vector.h"
 
 namespace webrtc {
 

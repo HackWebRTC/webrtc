@@ -13,9 +13,9 @@
 
 #include <assert.h>
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #ifdef _WIN32
-#include "webrtc/system_wrappers/interface/fix_interlocked_exchange_pointer_win.h"
+#include "webrtc/system_wrappers/include/fix_interlocked_exchange_pointer_win.h"
 #endif
 
 namespace webrtc {

@@ -15,7 +15,7 @@
  */
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 /* Declare function pointers. */
 MaxAbsValueW16 WebRtcSpl_MaxAbsValueW16;

@@ -15,9 +15,9 @@
 
 #include "webrtc/base/format_macros.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 

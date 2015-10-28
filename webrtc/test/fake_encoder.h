@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "webrtc/common_types.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video_encoder.h"
 
 namespace webrtc {

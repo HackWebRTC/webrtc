@@ -9,7 +9,7 @@
  */
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 static const int kSamples = FRAMESAMPLES/2;
 static const int32_t spec2time_out_expected_1[kSamples] = {

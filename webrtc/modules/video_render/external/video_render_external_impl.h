@@ -13,7 +13,7 @@
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_render/i_video_render.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 

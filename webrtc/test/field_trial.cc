@@ -17,7 +17,7 @@
 #include <map>
 #include <string>
 
-#include "webrtc/system_wrappers/interface/field_trial.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {

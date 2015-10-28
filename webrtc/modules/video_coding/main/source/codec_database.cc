@@ -27,7 +27,7 @@
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #endif
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 namespace {
 const size_t kDefaultPayloadSize = 1440;

@@ -25,7 +25,7 @@
 #include <mediaobj.h>        // IMediaObject
 
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment( lib, "avrt.lib" )

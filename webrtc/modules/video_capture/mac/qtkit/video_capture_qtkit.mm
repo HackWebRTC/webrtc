@@ -12,8 +12,8 @@
 #import "webrtc/modules/video_capture/mac/qtkit/video_capture_qtkit_info_objc.h"
 #import "webrtc/modules/video_capture/mac/qtkit/video_capture_qtkit_objc.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc
 {

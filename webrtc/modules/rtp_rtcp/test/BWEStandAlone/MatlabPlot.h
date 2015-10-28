@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "webrtc/typedefs.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;

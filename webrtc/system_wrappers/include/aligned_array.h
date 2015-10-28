@@ -12,7 +12,7 @@
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_ALIGNED_ARRAY_
 
 #include "webrtc/base/checks.h"
-#include "webrtc/system_wrappers/interface/aligned_malloc.h"
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 namespace webrtc {
 

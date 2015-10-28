@@ -26,8 +26,8 @@
 #include "webrtc/modules/video_coding/main/source/receiver.h"
 #include "webrtc/modules/video_coding/main/source/timing.h"
 #include "webrtc/modules/video_coding/utility/include/qp_parser.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 

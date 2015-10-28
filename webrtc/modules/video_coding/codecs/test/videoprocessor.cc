@@ -16,7 +16,7 @@
 #include <limits>
 #include <vector>
 
-#include "webrtc/system_wrappers/interface/cpu_info.h"
+#include "webrtc/system_wrappers/include/cpu_info.h"
 
 namespace webrtc {
 namespace test {

@@ -13,7 +13,7 @@
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_tables.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
 
 class FilterBanksTest : public testing::Test {

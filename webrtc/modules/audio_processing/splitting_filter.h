@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "webrtc/modules/audio_processing/three_band_filter_bank.h"
-#include "webrtc/system_wrappers/interface/scoped_vector.h"
+#include "webrtc/system_wrappers/include/scoped_vector.h"
 
 namespace webrtc {
 

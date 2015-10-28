@@ -16,7 +16,7 @@
 #endif
 
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {

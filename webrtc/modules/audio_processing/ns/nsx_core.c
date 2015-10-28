@@ -17,7 +17,7 @@
 
 #include "webrtc/common_audio/signal_processing/include/real_fft.h"
 #include "webrtc/modules/audio_processing/ns/nsx_core.h"
-#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
 #if (defined WEBRTC_DETECT_NEON || defined WEBRTC_HAS_NEON)
 /* Tables are defined in ARM assembly files. */

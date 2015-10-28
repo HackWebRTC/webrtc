@@ -11,7 +11,7 @@
 #ifndef SYSTEM_WRAPPERS_INTERFACE_TIMESTAMP_EXTRAPOLATOR_H_
 #define SYSTEM_WRAPPERS_INTERFACE_TIMESTAMP_EXTRAPOLATOR_H_
 
-#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc

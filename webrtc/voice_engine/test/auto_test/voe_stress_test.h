@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_STRESS_TEST_H
 #define WEBRTC_VOICE_ENGINE_VOE_STRESS_TEST_H
 
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace voetest {
 // TODO(andrew): using directives are not permitted.
