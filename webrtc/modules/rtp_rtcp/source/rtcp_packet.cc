@@ -11,8 +11,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 
 using webrtc::RTCPUtility::kBtDlrr;
 using webrtc::RTCPUtility::kBtReceiverReferenceTime;

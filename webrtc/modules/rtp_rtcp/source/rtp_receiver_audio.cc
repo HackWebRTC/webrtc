@@ -14,9 +14,9 @@
 #include <math.h>   // pow()
 #include <string.h>  // memcpy()
 
+#include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 RTPReceiverStrategy* RTPReceiverStrategy::CreateAudioStrategy(

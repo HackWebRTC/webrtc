@@ -18,13 +18,13 @@
 #include <limits>     // max
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 

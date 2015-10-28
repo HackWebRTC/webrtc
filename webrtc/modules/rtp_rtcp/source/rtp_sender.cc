@@ -14,13 +14,13 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
 namespace webrtc {

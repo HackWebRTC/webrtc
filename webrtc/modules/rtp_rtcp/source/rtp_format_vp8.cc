@@ -15,8 +15,8 @@
 
 #include <vector>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/vp8_partition_aggregator.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 namespace {

@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/h264_sps_parser.h"
 
-#include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/bitbuffer.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/logging.h"
 
 #define RETURN_FALSE_ON_FAIL(x) \
   if (!(x)) {                   \

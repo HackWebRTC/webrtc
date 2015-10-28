@@ -17,7 +17,7 @@
 
 #include "webrtc/base/bitbuffer.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/base/logging.h"
 
 #define RETURN_FALSE_ON_ERROR(x) \
   if (!(x)) {                    \

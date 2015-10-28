@@ -12,11 +12,11 @@
 
 #include <assert.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 
 // RFC 5109
 namespace webrtc {

@@ -17,10 +17,10 @@
 #include <algorithm>
 #include <iterator>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 

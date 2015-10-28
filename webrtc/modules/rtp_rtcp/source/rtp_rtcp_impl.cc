@@ -15,8 +15,8 @@
 #include <set>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
-#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef _WIN32
