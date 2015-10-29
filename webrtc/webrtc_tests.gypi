@@ -347,6 +347,19 @@
           ],
         },
         {
+          'target_name': 'webrtc_nonparallel_tests_run',
+          'type': 'none',
+          'dependencies': [
+            'webrtc_nonparallel_tests',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+          ],
+          'sources': [
+            'webrtc_nonparallel_tests.isolate',
+          ],
+        },
+        {
           'target_name': 'webrtc_perf_tests_run',
           'type': 'none',
           'dependencies': [

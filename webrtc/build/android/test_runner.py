@@ -52,6 +52,7 @@ def main():
         'webrtc/video_engine/video_engine_core_unittests.isolate',
     'voice_engine_unittests':
         'webrtc/voice_engine/voice_engine_unittests.isolate',
+    'webrtc_nonparallel_tests': 'webrtc/webrtc_nonparallel_tests.isolate',
     'webrtc_perf_tests': 'webrtc/webrtc_perf_tests.isolate',
   })
   # Override environment variable to make it possible for the scripts to find
