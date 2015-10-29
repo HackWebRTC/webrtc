@@ -340,7 +340,7 @@ TEST_F(RtpPacketizerVp9Test, TestRefIdxFailsWithoutPictureId) {
 
 TEST_F(RtpPacketizerVp9Test, TestSsDataWithoutSpatialResolutionPresent) {
   const size_t kFrameSize = 21;
-  const size_t kPacketSize = 25;
+  const size_t kPacketSize = 26;
 
   expected_.ss_data_available = true;
   expected_.num_spatial_layers = 1;
@@ -353,18 +353,38 @@ TEST_F(RtpPacketizerVp9Test, TestSsDataWithoutSpatialResolutionPresent) {
   Init(kFrameSize, kPacketSize);
 
   // One packet:
-  // I:0, P:0, L:0, F:0, B:1, E:1, V:1 (4hdr + 21 payload)
-  // N_S:0, Y:0, N_G:0
+  // I:0, P:0, L:0, F:0, B:1, E:1, V:1 (5hdr + 21 payload)
+  // N_S:0, Y:0, G:1
+  // N_G:1
   // T:0, U:1, R:1 | P_DIFF[0][0]:4
-  const size_t kExpectedHdrSizes[] = {4};
-  const size_t kExpectedSizes[] = {25};
+  const size_t kExpectedHdrSizes[] = {5};
+  const size_t kExpectedSizes[] = {26};
+  const size_t kExpectedNum = GTEST_ARRAY_SIZE_(kExpectedSizes);
+  CreateParseAndCheckPackets(kExpectedHdrSizes, kExpectedSizes, kExpectedNum);
+}
+
+TEST_F(RtpPacketizerVp9Test, TestSsDataWithoutGbitPresent) {
+  const size_t kFrameSize = 21;
+  const size_t kPacketSize = 23;
+
+  expected_.ss_data_available = true;
+  expected_.num_spatial_layers = 1;
+  expected_.spatial_layer_resolution_present = false;
+  expected_.gof.num_frames_in_gof = 0;
+  Init(kFrameSize, kPacketSize);
+
+  // One packet:
+  // I:0, P:0, L:0, F:0, B:1, E:1, V:1 (2hdr + 21 payload)
+  // N_S:0, Y:0, G:0
+  const size_t kExpectedHdrSizes[] = {2};
+  const size_t kExpectedSizes[] = {23};
   const size_t kExpectedNum = GTEST_ARRAY_SIZE_(kExpectedSizes);
   CreateParseAndCheckPackets(kExpectedHdrSizes, kExpectedSizes, kExpectedNum);
 }
 
 TEST_F(RtpPacketizerVp9Test, TestSsData) {
   const size_t kFrameSize = 21;
-  const size_t kPacketSize = 39;
+  const size_t kPacketSize = 40;
 
   expected_.ss_data_available = true;
   expected_.num_spatial_layers = 2;
@@ -391,17 +411,18 @@ TEST_F(RtpPacketizerVp9Test, TestSsData) {
   Init(kFrameSize, kPacketSize);
 
   // One packet:
-  // I:0, P:0, L:0, F:0, B:1, E:1, V:1 (18hdr + 21 payload)
-  // N_S:1, Y:1, N_G:2
+  // I:0, P:0, L:0, F:0, B:1, E:1, V:1 (19hdr + 21 payload)
+  // N_S:1, Y:1, G:1
   // WIDTH:640   // 2 bytes
   // HEIGHT:360  // 2 bytes
   // WIDTH:1280  // 2 bytes
   // HEIGHT:720  // 2 bytes
+  // N_G:3
   // T:0, U:1, R:0
   // T:1, U:1, R:3 | P_DIFF[1][0]:5 | P_DIFF[1][1]:6 | P_DIFF[1][2]:7
   // T:2, U:0, R:2 | P_DIFF[2][0]:8 | P_DIFF[2][0]:9
-  const size_t kExpectedHdrSizes[] = {18};
-  const size_t kExpectedSizes[] = {39};
+  const size_t kExpectedHdrSizes[] = {19};
+  const size_t kExpectedSizes[] = {40};
   const size_t kExpectedNum = GTEST_ARRAY_SIZE_(kExpectedSizes);
   CreateParseAndCheckPackets(kExpectedHdrSizes, kExpectedSizes, kExpectedNum);
 }
@@ -580,16 +601,17 @@ TEST_F(RtpDepacketizerVp9Test, ParseRefIdxFailsWithTooManyRefPics) {
 }
 
 TEST_F(RtpDepacketizerVp9Test, ParseSsData) {
-  const uint8_t kHeaderLength = 5;
+  const uint8_t kHeaderLength = 6;
   const uint8_t kYbit = 0;
   const size_t kNs = 2;
   const size_t kNg = 2;
   uint8_t packet[23] = {0};
   packet[0] = 0x0A;  // I:0 P:0 L:0 F:0 B:1 E:0 V:1 R:0
-  packet[1] = ((kNs - 1) << 5) | (kYbit << 4) | (kNg - 1);  // N_S Y N_G
-  packet[2] = (0 << 5) | (1 << 4) | (0 << 2) | 0;           // T:0 U:1 R:0 -
-  packet[3] = (2 << 5) | (0 << 4) | (1 << 2) | 0;           // T:2 U:0 R:1 -
-  packet[4] = 33;
+  packet[1] = ((kNs - 1) << 5) | (kYbit << 4) | (1 << 3);  // N_S Y G:1 -
+  packet[2] = kNg;                                         // N_G
+  packet[3] = (0 << 5) | (1 << 4) | (0 << 2) | 0;          // T:0 U:1 R:0 -
+  packet[4] = (2 << 5) | (0 << 4) | (1 << 2) | 0;          // T:2 U:0 R:1 -
+  packet[5] = 33;
 
   expected_.beginning_of_frame = true;
   expected_.ss_data_available = true;
@@ -631,7 +653,7 @@ TEST_F(RtpDepacketizerVp9Test, ParseResolution) {
   const uint16_t kHeight[2] = {360, 720};
   uint8_t packet[20] = {0};
   packet[0] = 0x0A;  // I:0 P:0 L:0 F:0 B:1 E:0 V:1 R:0
-  packet[1] = (1 << 5) | (1 << 4) | 0;  // N_S:1 Y:1 N_G:0
+  packet[1] = (1 << 5) | (1 << 4) | 0;  // N_S:1 Y:1 G:0
   packet[2] = kWidth[0] >> 8;
   packet[3] = kWidth[0] & 0xFF;
   packet[4] = kHeight[0] >> 8;
@@ -640,7 +662,6 @@ TEST_F(RtpDepacketizerVp9Test, ParseResolution) {
   packet[7] = kWidth[1] & 0xFF;
   packet[8] = kHeight[1] >> 8;
   packet[9] = kHeight[1] & 0xFF;
-  packet[10] = 0;  // T:0 U:0 R:0 -
 
   RtpDepacketizer::ParsedPayload parsed;
   ASSERT_TRUE(depacketizer_->Parse(&parsed, packet, sizeof(packet)));
