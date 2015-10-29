@@ -103,6 +103,7 @@
       'dependencies': [
         'field_trial',
         'histogram',
+        'test_support',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
       ],

@@ -202,6 +202,20 @@
       ],
     },
     {
+      'target_name': 'webrtc_nonparallel_tests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'webrtc_nonparallel_tests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)webrtc_nonparallel_tests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/webrtc.gyp:webrtc_nonparallel_tests',
+      ],
+      'includes': [
+        '../../build/apk_test.gypi',
+      ],
+    },
+    {
       'target_name': 'audio_codec_speed_tests_apk',
       'type': 'none',
       'variables': {
