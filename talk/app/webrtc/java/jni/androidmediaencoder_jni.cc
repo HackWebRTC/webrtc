@@ -772,6 +772,8 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       image->_frameType =
           (key_frame ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta);
       image->_completeFrame = true;
+      image->adapt_reason_.quality_resolution_downscales =
+          scale_ ? quality_scaler_.downscale_shift() : -1;
 
       webrtc::CodecSpecificInfo info;
       memset(&info, 0, sizeof(info));
