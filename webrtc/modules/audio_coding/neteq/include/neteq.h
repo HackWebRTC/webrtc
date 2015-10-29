@@ -175,7 +175,7 @@ class NetEq {
 
   // Associates |rtp_payload_type| with |codec| and stores the information in
   // the codec database. Returns 0 on success, -1 on failure.
-  virtual int RegisterPayloadType(enum NetEqDecoder codec,
+  virtual int RegisterPayloadType(NetEqDecoder codec,
                                   uint8_t rtp_payload_type) = 0;
 
   // Provides an externally created decoder object |decoder| to insert in the
@@ -183,7 +183,7 @@ class NetEq {
   // associates it with |rtp_payload_type|. The decoder will produce samples
   // at the rate |sample_rate_hz|. Returns kOK on success, kFail on failure.
   virtual int RegisterExternalDecoder(AudioDecoder* decoder,
-                                      enum NetEqDecoder codec,
+                                      NetEqDecoder codec,
                                       uint8_t rtp_payload_type,
                                       int sample_rate_hz) = 0;
 

@@ -409,15 +409,17 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               int channels,
                               int sample_rate_hz,
                               AudioDecoder* audio_decoder) {
-  assert(acm_codec_id >= -1);  // -1 means external decoder
-  NetEqDecoder neteq_decoder = (acm_codec_id == -1)
-                                   ? kDecoderArbitrary
-                                   : ACMCodecDB::neteq_decoders_[acm_codec_id];
-
-  // Make sure the right decoder is registered for Opus.
-  if (neteq_decoder == kDecoderOpus && channels == 2) {
-    neteq_decoder = kDecoderOpus_2ch;
-  }
+  const auto neteq_decoder = [acm_codec_id, channels]() -> NetEqDecoder {
+    if (acm_codec_id == -1)
+      return NetEqDecoder::kDecoderArbitrary;  // External decoder.
+    const rtc::Maybe<RentACodec::CodecId> cid =
+        RentACodec::CodecIdFromIndex(acm_codec_id);
+    RTC_DCHECK(cid) << "Invalid codec index: " << acm_codec_id;
+    const rtc::Maybe<NetEqDecoder> ned =
+        RentACodec::NetEqDecoderFromCodecId(*cid, channels);
+    RTC_DCHECK(ned) << "Invalid codec ID: " << static_cast<int>(*cid);
+    return *ned;
+  }();
 
   CriticalSectionScoped lock(crit_sect_.get());
 

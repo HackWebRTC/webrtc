@@ -20,6 +20,7 @@
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 #endif
+#include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -56,35 +57,7 @@ class AudioDecoderCng : public AudioDecoder {
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderCng);
 };
 
-enum NetEqDecoder {
-  kDecoderPCMu,
-  kDecoderPCMa,
-  kDecoderPCMu_2ch,
-  kDecoderPCMa_2ch,
-  kDecoderILBC,
-  kDecoderISAC,
-  kDecoderISACswb,
-  kDecoderPCM16B,
-  kDecoderPCM16Bwb,
-  kDecoderPCM16Bswb32kHz,
-  kDecoderPCM16Bswb48kHz,
-  kDecoderPCM16B_2ch,
-  kDecoderPCM16Bwb_2ch,
-  kDecoderPCM16Bswb32kHz_2ch,
-  kDecoderPCM16Bswb48kHz_2ch,
-  kDecoderPCM16B_5ch,
-  kDecoderG722,
-  kDecoderG722_2ch,
-  kDecoderRED,
-  kDecoderAVT,
-  kDecoderCNGnb,
-  kDecoderCNGwb,
-  kDecoderCNGswb32kHz,
-  kDecoderCNGswb48kHz,
-  kDecoderArbitrary,
-  kDecoderOpus,
-  kDecoderOpus_2ch,
-};
+using NetEqDecoder = acm2::RentACodec::NetEqDecoder;
 
 // Returns true if |codec_type| is supported.
 bool CodecSupported(NetEqDecoder codec_type);

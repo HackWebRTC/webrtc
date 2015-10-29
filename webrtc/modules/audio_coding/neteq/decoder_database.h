@@ -37,11 +37,10 @@ class DecoderDatabase {
   struct DecoderInfo {
     // Constructors.
     DecoderInfo()
-        : codec_type(kDecoderArbitrary),
+        : codec_type(NetEqDecoder::kDecoderArbitrary),
           fs_hz(8000),
           decoder(NULL),
-          external(false) {
-    }
+          external(false) {}
     DecoderInfo(NetEqDecoder ct, int fs, AudioDecoder* dec, bool ext)
         : codec_type(ct),
           fs_hz(fs),

@@ -123,7 +123,7 @@ NetEqOpusQualityTest::NetEqOpusQualityTest()
     : NetEqQualityTest(kOpusBlockDurationMs * FLAGS_sub_packets,
                        kOpusSamplingKhz,
                        kOpusSamplingKhz,
-                       kDecoderOpus),
+                       NetEqDecoder::kDecoderOpus),
       opus_encoder_(NULL),
       repacketizer_(NULL),
       sub_block_size_samples_(
@@ -137,7 +137,7 @@ NetEqOpusQualityTest::NetEqOpusQualityTest()
       sub_packets_(FLAGS_sub_packets) {
   // Redefine decoder type if input is stereo.
   if (channels_ > 1) {
-    decoder_type_ = kDecoderOpus_2ch;
+    decoder_type_ = NetEqDecoder::kDecoderOpus_2ch;
   }
   application_ = FLAGS_application;
 }

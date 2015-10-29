@@ -304,31 +304,32 @@ void NetEqDecodingTest::TearDown() {
 
 void NetEqDecodingTest::LoadDecoders() {
   // Load PCMu.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCMu, 0));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCMu, 0));
   // Load PCMa.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCMa, 8));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCMa, 8));
 #ifdef WEBRTC_CODEC_ILBC
   // Load iLBC.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderILBC, 102));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderILBC, 102));
 #endif
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
   // Load iSAC.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISAC, 103));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderISAC, 103));
 #endif
 #ifdef WEBRTC_CODEC_ISAC
   // Load iSAC SWB.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISACswb, 104));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderISACswb, 104));
 #endif
   // Load PCM16B nb.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16B, 93));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16B, 93));
   // Load PCM16B wb.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16Bwb, 94));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16Bwb, 94));
   // Load PCM16B swb32.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16Bswb32kHz, 95));
+  ASSERT_EQ(
+      0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16Bswb32kHz, 95));
   // Load CNG 8 kHz.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGnb, 13));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGnb, 13));
   // Load CNG 16 kHz.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGwb, 98));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGwb, 98));
 }
 
 void NetEqDecodingTest::OpenInputFile(const std::string &rtp_file) {
@@ -1079,17 +1080,22 @@ TEST_F(NetEqDecodingTest, IF_ISAC(SyncPacketInsert)) {
   uint8_t kIsacPayloadType = 9;  // Payload type 8 is already registered.
 
   // Register decoders.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16Bwb,
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16Bwb,
                                            kPcm16WbPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGnb, kCngNbPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGwb, kCngWbPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGswb32kHz,
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGnb,
+                                           kCngNbPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGwb,
+                                           kCngWbPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGswb32kHz,
                                            kCngSwb32PayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGswb48kHz,
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGswb48kHz,
                                            kCngSwb48PayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderAVT, kAvtPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderRED, kRedPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISAC, kIsacPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderAVT,
+                                           kAvtPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderRED,
+                                           kRedPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderISAC,
+                                           kIsacPayloadType));
 
   PopulateRtpInfo(0, 0, &rtp_info);
   rtp_info.header.payloadType = kPcm16WbPayloadType;

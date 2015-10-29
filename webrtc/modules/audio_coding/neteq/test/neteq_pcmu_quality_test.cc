@@ -47,8 +47,7 @@ class NetEqPcmuQualityTest : public NetEqQualityTest {
       : NetEqQualityTest(FLAGS_frame_size_ms,
                          kInputSampleRateKhz,
                          kOutputSampleRateKhz,
-                         kDecoderPCMu) {
-  }
+                         NetEqDecoder::kDecoderPCMu) {}
 
   void SetUp() override {
     ASSERT_EQ(1, channels_) << "PCMu supports only mono audio.";

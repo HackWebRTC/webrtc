@@ -173,49 +173,44 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 // Create a database of all NetEQ decoders at compile time.
 const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    kDecoderISAC,
+    NetEqDecoder::kDecoderISAC,
 # if (defined(WEBRTC_CODEC_ISAC))
-    kDecoderISACswb,
+    NetEqDecoder::kDecoderISACswb,
 # endif
 #endif
     // Mono
-    kDecoderPCM16B,
-    kDecoderPCM16Bwb,
-    kDecoderPCM16Bswb32kHz,
+    NetEqDecoder::kDecoderPCM16B, NetEqDecoder::kDecoderPCM16Bwb,
+    NetEqDecoder::kDecoderPCM16Bswb32kHz,
     // Stereo
-    kDecoderPCM16B_2ch,
-    kDecoderPCM16Bwb_2ch,
-    kDecoderPCM16Bswb32kHz_2ch,
+    NetEqDecoder::kDecoderPCM16B_2ch, NetEqDecoder::kDecoderPCM16Bwb_2ch,
+    NetEqDecoder::kDecoderPCM16Bswb32kHz_2ch,
     // G.711, PCM mu-las and A-law.
     // Mono
-    kDecoderPCMu,
-    kDecoderPCMa,
+    NetEqDecoder::kDecoderPCMu, NetEqDecoder::kDecoderPCMa,
     // Stereo
-    kDecoderPCMu_2ch,
-    kDecoderPCMa_2ch,
+    NetEqDecoder::kDecoderPCMu_2ch, NetEqDecoder::kDecoderPCMa_2ch,
 #ifdef WEBRTC_CODEC_ILBC
-    kDecoderILBC,
+    NetEqDecoder::kDecoderILBC,
 #endif
 #ifdef WEBRTC_CODEC_G722
     // Mono
-    kDecoderG722,
+    NetEqDecoder::kDecoderG722,
     // Stereo
-    kDecoderG722_2ch,
+    NetEqDecoder::kDecoderG722_2ch,
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     // Mono and stereo.
-    kDecoderOpus,
+    NetEqDecoder::kDecoderOpus,
 #endif
     // Comfort noise for three different sampling frequencies.
-    kDecoderCNGnb,
-    kDecoderCNGwb,
-    kDecoderCNGswb32kHz
+    NetEqDecoder::kDecoderCNGnb, NetEqDecoder::kDecoderCNGwb,
+    NetEqDecoder::kDecoderCNGswb32kHz,
 #ifdef ENABLE_48000_HZ
-    , kDecoderCNGswb48kHz
+    NetEqDecoder::kDecoderCNGswb48kHz,
 #endif
-    , kDecoderAVT
+    NetEqDecoder::kDecoderAVT,
 #ifdef WEBRTC_CODEC_RED
-    , kDecoderRED
+    NetEqDecoder::kDecoderRED,
 #endif
 };
 

@@ -75,43 +75,43 @@ int AudioDecoderCng::DecodeInternal(const uint8_t* encoded,
 
 bool CodecSupported(NetEqDecoder codec_type) {
   switch (codec_type) {
-    case kDecoderPCMu:
-    case kDecoderPCMa:
-    case kDecoderPCMu_2ch:
-    case kDecoderPCMa_2ch:
+    case NetEqDecoder::kDecoderPCMu:
+    case NetEqDecoder::kDecoderPCMa:
+    case NetEqDecoder::kDecoderPCMu_2ch:
+    case NetEqDecoder::kDecoderPCMa_2ch:
 #ifdef WEBRTC_CODEC_ILBC
-    case kDecoderILBC:
+    case NetEqDecoder::kDecoderILBC:
 #endif
 #if defined(WEBRTC_CODEC_ISACFX) || defined(WEBRTC_CODEC_ISAC)
-    case kDecoderISAC:
+    case NetEqDecoder::kDecoderISAC:
 #endif
 #ifdef WEBRTC_CODEC_ISAC
-    case kDecoderISACswb:
+    case NetEqDecoder::kDecoderISACswb:
 #endif
-    case kDecoderPCM16B:
-    case kDecoderPCM16Bwb:
-    case kDecoderPCM16Bswb32kHz:
-    case kDecoderPCM16Bswb48kHz:
-    case kDecoderPCM16B_2ch:
-    case kDecoderPCM16Bwb_2ch:
-    case kDecoderPCM16Bswb32kHz_2ch:
-    case kDecoderPCM16Bswb48kHz_2ch:
-    case kDecoderPCM16B_5ch:
+    case NetEqDecoder::kDecoderPCM16B:
+    case NetEqDecoder::kDecoderPCM16Bwb:
+    case NetEqDecoder::kDecoderPCM16Bswb32kHz:
+    case NetEqDecoder::kDecoderPCM16Bswb48kHz:
+    case NetEqDecoder::kDecoderPCM16B_2ch:
+    case NetEqDecoder::kDecoderPCM16Bwb_2ch:
+    case NetEqDecoder::kDecoderPCM16Bswb32kHz_2ch:
+    case NetEqDecoder::kDecoderPCM16Bswb48kHz_2ch:
+    case NetEqDecoder::kDecoderPCM16B_5ch:
 #ifdef WEBRTC_CODEC_G722
-    case kDecoderG722:
-    case kDecoderG722_2ch:
+    case NetEqDecoder::kDecoderG722:
+    case NetEqDecoder::kDecoderG722_2ch:
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-    case kDecoderOpus:
-    case kDecoderOpus_2ch:
+    case NetEqDecoder::kDecoderOpus:
+    case NetEqDecoder::kDecoderOpus_2ch:
 #endif
-    case kDecoderRED:
-    case kDecoderAVT:
-    case kDecoderCNGnb:
-    case kDecoderCNGwb:
-    case kDecoderCNGswb32kHz:
-    case kDecoderCNGswb48kHz:
-    case kDecoderArbitrary: {
+    case NetEqDecoder::kDecoderRED:
+    case NetEqDecoder::kDecoderAVT:
+    case NetEqDecoder::kDecoderCNGnb:
+    case NetEqDecoder::kDecoderCNGwb:
+    case NetEqDecoder::kDecoderCNGswb32kHz:
+    case NetEqDecoder::kDecoderCNGswb48kHz:
+    case NetEqDecoder::kDecoderArbitrary: {
       return true;
     }
     default: {
@@ -122,50 +122,50 @@ bool CodecSupported(NetEqDecoder codec_type) {
 
 int CodecSampleRateHz(NetEqDecoder codec_type) {
   switch (codec_type) {
-    case kDecoderPCMu:
-    case kDecoderPCMa:
-    case kDecoderPCMu_2ch:
-    case kDecoderPCMa_2ch:
+    case NetEqDecoder::kDecoderPCMu:
+    case NetEqDecoder::kDecoderPCMa:
+    case NetEqDecoder::kDecoderPCMu_2ch:
+    case NetEqDecoder::kDecoderPCMa_2ch:
 #ifdef WEBRTC_CODEC_ILBC
-    case kDecoderILBC:
+    case NetEqDecoder::kDecoderILBC:
 #endif
-    case kDecoderPCM16B:
-    case kDecoderPCM16B_2ch:
-    case kDecoderPCM16B_5ch:
-    case kDecoderCNGnb: {
+    case NetEqDecoder::kDecoderPCM16B:
+    case NetEqDecoder::kDecoderPCM16B_2ch:
+    case NetEqDecoder::kDecoderPCM16B_5ch:
+    case NetEqDecoder::kDecoderCNGnb: {
       return 8000;
     }
 #if defined(WEBRTC_CODEC_ISACFX) || defined(WEBRTC_CODEC_ISAC)
-    case kDecoderISAC:
+    case NetEqDecoder::kDecoderISAC:
 #endif
-    case kDecoderPCM16Bwb:
-    case kDecoderPCM16Bwb_2ch:
+    case NetEqDecoder::kDecoderPCM16Bwb:
+    case NetEqDecoder::kDecoderPCM16Bwb_2ch:
 #ifdef WEBRTC_CODEC_G722
-    case kDecoderG722:
-    case kDecoderG722_2ch:
+    case NetEqDecoder::kDecoderG722:
+    case NetEqDecoder::kDecoderG722_2ch:
 #endif
-    case kDecoderCNGwb: {
+    case NetEqDecoder::kDecoderCNGwb: {
       return 16000;
     }
 #ifdef WEBRTC_CODEC_ISAC
-    case kDecoderISACswb:
+    case NetEqDecoder::kDecoderISACswb:
 #endif
-    case kDecoderPCM16Bswb32kHz:
-    case kDecoderPCM16Bswb32kHz_2ch:
-    case kDecoderCNGswb32kHz: {
+    case NetEqDecoder::kDecoderPCM16Bswb32kHz:
+    case NetEqDecoder::kDecoderPCM16Bswb32kHz_2ch:
+    case NetEqDecoder::kDecoderCNGswb32kHz: {
       return 32000;
     }
-    case kDecoderPCM16Bswb48kHz:
-    case kDecoderPCM16Bswb48kHz_2ch: {
+    case NetEqDecoder::kDecoderPCM16Bswb48kHz:
+    case NetEqDecoder::kDecoderPCM16Bswb48kHz_2ch: {
       return 48000;
     }
 #ifdef WEBRTC_CODEC_OPUS
-    case kDecoderOpus:
-    case kDecoderOpus_2ch: {
+    case NetEqDecoder::kDecoderOpus:
+    case NetEqDecoder::kDecoderOpus_2ch: {
       return 48000;
     }
 #endif
-    case kDecoderCNGswb48kHz: {
+    case NetEqDecoder::kDecoderCNGswb48kHz: {
       // TODO(tlegrand): Remove limitation once ACM has full 48 kHz support.
       return 32000;
     }
@@ -180,58 +180,58 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
     return NULL;
   }
   switch (codec_type) {
-    case kDecoderPCMu:
+    case NetEqDecoder::kDecoderPCMu:
       return new AudioDecoderPcmU(1);
-    case kDecoderPCMa:
+    case NetEqDecoder::kDecoderPCMa:
       return new AudioDecoderPcmA(1);
-    case kDecoderPCMu_2ch:
+    case NetEqDecoder::kDecoderPCMu_2ch:
       return new AudioDecoderPcmU(2);
-    case kDecoderPCMa_2ch:
+    case NetEqDecoder::kDecoderPCMa_2ch:
       return new AudioDecoderPcmA(2);
 #ifdef WEBRTC_CODEC_ILBC
-    case kDecoderILBC:
+    case NetEqDecoder::kDecoderILBC:
       return new AudioDecoderIlbc;
 #endif
 #if defined(WEBRTC_CODEC_ISACFX)
-    case kDecoderISAC:
+    case NetEqDecoder::kDecoderISAC:
       return new AudioDecoderIsacFix();
 #elif defined(WEBRTC_CODEC_ISAC)
-    case kDecoderISAC:
-    case kDecoderISACswb:
+    case NetEqDecoder::kDecoderISAC:
+    case NetEqDecoder::kDecoderISACswb:
       return new AudioDecoderIsac();
 #endif
-    case kDecoderPCM16B:
-    case kDecoderPCM16Bwb:
-    case kDecoderPCM16Bswb32kHz:
-    case kDecoderPCM16Bswb48kHz:
+    case NetEqDecoder::kDecoderPCM16B:
+    case NetEqDecoder::kDecoderPCM16Bwb:
+    case NetEqDecoder::kDecoderPCM16Bswb32kHz:
+    case NetEqDecoder::kDecoderPCM16Bswb48kHz:
       return new AudioDecoderPcm16B(1);
-    case kDecoderPCM16B_2ch:
-    case kDecoderPCM16Bwb_2ch:
-    case kDecoderPCM16Bswb32kHz_2ch:
-    case kDecoderPCM16Bswb48kHz_2ch:
+    case NetEqDecoder::kDecoderPCM16B_2ch:
+    case NetEqDecoder::kDecoderPCM16Bwb_2ch:
+    case NetEqDecoder::kDecoderPCM16Bswb32kHz_2ch:
+    case NetEqDecoder::kDecoderPCM16Bswb48kHz_2ch:
       return new AudioDecoderPcm16B(2);
-    case kDecoderPCM16B_5ch:
+    case NetEqDecoder::kDecoderPCM16B_5ch:
       return new AudioDecoderPcm16B(5);
 #ifdef WEBRTC_CODEC_G722
-    case kDecoderG722:
+    case NetEqDecoder::kDecoderG722:
       return new AudioDecoderG722;
-    case kDecoderG722_2ch:
+    case NetEqDecoder::kDecoderG722_2ch:
       return new AudioDecoderG722Stereo;
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-    case kDecoderOpus:
+    case NetEqDecoder::kDecoderOpus:
       return new AudioDecoderOpus(1);
-    case kDecoderOpus_2ch:
+    case NetEqDecoder::kDecoderOpus_2ch:
       return new AudioDecoderOpus(2);
 #endif
-    case kDecoderCNGnb:
-    case kDecoderCNGwb:
-    case kDecoderCNGswb32kHz:
-    case kDecoderCNGswb48kHz:
+    case NetEqDecoder::kDecoderCNGnb:
+    case NetEqDecoder::kDecoderCNGwb:
+    case NetEqDecoder::kDecoderCNGswb32kHz:
+    case NetEqDecoder::kDecoderCNGswb48kHz:
       return new AudioDecoderCng;
-    case kDecoderRED:
-    case kDecoderAVT:
-    case kDecoderArbitrary:
+    case NetEqDecoder::kDecoderRED:
+    case NetEqDecoder::kDecoderAVT:
+    case NetEqDecoder::kDecoderArbitrary:
     default: {
       return NULL;
     }

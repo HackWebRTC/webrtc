@@ -66,7 +66,7 @@ class NetEqQualityTest : public ::testing::Test {
   NetEqQualityTest(int block_duration_ms,
                    int in_sampling_khz,
                    int out_sampling_khz,
-                   enum NetEqDecoder decoder_type);
+                   NetEqDecoder decoder_type);
   virtual ~NetEqQualityTest();
 
   void SetUp() override;
@@ -98,7 +98,7 @@ class NetEqQualityTest : public ::testing::Test {
   // Write to log file. Usage Log() << ...
   std::ofstream& Log();
 
-  enum NetEqDecoder decoder_type_;
+  NetEqDecoder decoder_type_;
   const int channels_;
 
  private:

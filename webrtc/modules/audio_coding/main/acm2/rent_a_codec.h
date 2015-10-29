@@ -97,6 +97,36 @@ class RentACodec {
     kNone = -1
   };
 
+  enum class NetEqDecoder {
+    kDecoderPCMu,
+    kDecoderPCMa,
+    kDecoderPCMu_2ch,
+    kDecoderPCMa_2ch,
+    kDecoderILBC,
+    kDecoderISAC,
+    kDecoderISACswb,
+    kDecoderPCM16B,
+    kDecoderPCM16Bwb,
+    kDecoderPCM16Bswb32kHz,
+    kDecoderPCM16Bswb48kHz,
+    kDecoderPCM16B_2ch,
+    kDecoderPCM16Bwb_2ch,
+    kDecoderPCM16Bswb32kHz_2ch,
+    kDecoderPCM16Bswb48kHz_2ch,
+    kDecoderPCM16B_5ch,
+    kDecoderG722,
+    kDecoderG722_2ch,
+    kDecoderRED,
+    kDecoderAVT,
+    kDecoderCNGnb,
+    kDecoderCNGwb,
+    kDecoderCNGswb32kHz,
+    kDecoderCNGswb48kHz,
+    kDecoderArbitrary,
+    kDecoderOpus,
+    kDecoderOpus_2ch,
+  };
+
   static inline size_t NumberOfCodecs() {
     return static_cast<size_t>(CodecId::kNumCodecs);
   }
@@ -121,6 +151,9 @@ class RentACodec {
                                                  int channels);
   static bool IsCodecValid(const CodecInst& codec_inst);
   static rtc::ArrayView<const CodecInst> Database();
+
+  static rtc::Maybe<NetEqDecoder> NetEqDecoderFromCodecId(CodecId codec_id,
+                                                          int num_channels);
 };
 
 }  // namespace acm2

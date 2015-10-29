@@ -170,18 +170,20 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
   static const size_t kMaxBlockSize = 480;  // 10 ms @ 48 kHz.
 
   NetEqExternalVsInternalDecoderTest()
-      : NetEqExternalDecoderUnitTest(kDecoderPCM16Bswb32kHz,
+      : NetEqExternalDecoderUnitTest(NetEqDecoder::kDecoderPCM16Bswb32kHz,
                                      new MockExternalPcm16B),
-        sample_rate_hz_(CodecSampleRateHz(kDecoderPCM16Bswb32kHz)) {
+        sample_rate_hz_(
+            CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb32kHz)) {
     NetEq::Config config;
-    config.sample_rate_hz = CodecSampleRateHz(kDecoderPCM16Bswb32kHz);
+    config.sample_rate_hz =
+        CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb32kHz);
     neteq_internal_.reset(NetEq::Create(config));
   }
 
   void SetUp() override {
     ASSERT_EQ(NetEq::kOK,
-              neteq_internal_->RegisterPayloadType(kDecoderPCM16Bswb32kHz,
-                                                   kPayloadType));
+              neteq_internal_->RegisterPayloadType(
+                  NetEqDecoder::kDecoderPCM16Bswb32kHz, kPayloadType));
   }
 
   void GetAndVerifyOutput() override {
@@ -250,7 +252,7 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
   };
 
   LargeTimestampJumpTest()
-      : NetEqExternalDecoderUnitTest(kDecoderPCM16B,
+      : NetEqExternalDecoderUnitTest(NetEqDecoder::kDecoderPCM16B,
                                      new MockExternalPcm16B),
         test_state_(kInitialPhase) {
     EXPECT_CALL(*external_decoder(), HasDecodePlc())

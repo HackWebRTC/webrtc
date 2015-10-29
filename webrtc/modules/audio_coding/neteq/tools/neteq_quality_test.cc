@@ -208,7 +208,7 @@ static double ProbTrans00Solver(int units, double loss_rate,
 NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
                                    int in_sampling_khz,
                                    int out_sampling_khz,
-                                   enum NetEqDecoder decoder_type)
+                                   NetEqDecoder decoder_type)
     : decoder_type_(decoder_type),
       channels_(FLAGS_channels),
       decoded_time_ms_(0),

@@ -44,15 +44,15 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
     return external_timestamp;
   }
   switch (info->codec_type) {
-    case kDecoderG722:
-    case kDecoderG722_2ch: {
+    case NetEqDecoder::kDecoderG722:
+    case NetEqDecoder::kDecoderG722_2ch: {
       // Use timestamp scaling with factor 2 (two output samples per RTP
       // timestamp).
       numerator_ = 2;
       denominator_ = 1;
       break;
     }
-    case kDecoderCNGswb48kHz: {
+    case NetEqDecoder::kDecoderCNGswb48kHz: {
       // Use timestamp scaling with factor 2/3 (32 kHz sample rate, but RTP
       // timestamps run on 48 kHz).
       // TODO(tlegrand): Remove scaling for kDecoderCNGswb48kHz once ACM has
@@ -61,10 +61,10 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
       denominator_ = 3;
       break;
     }
-    case kDecoderAVT:
-    case kDecoderCNGnb:
-    case kDecoderCNGwb:
-    case kDecoderCNGswb32kHz: {
+    case NetEqDecoder::kDecoderAVT:
+    case NetEqDecoder::kDecoderCNGnb:
+    case NetEqDecoder::kDecoderCNGwb:
+    case NetEqDecoder::kDecoderCNGswb32kHz: {
       // Do not change the timestamp scaling settings for DTMF or CNG.
       break;
     }

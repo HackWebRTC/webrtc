@@ -32,7 +32,8 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   const std::string kInputFileName =
       webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
   const int kSampRateHz = 32000;
-  const webrtc::NetEqDecoder kDecoderType = webrtc::kDecoderPCM16Bswb32kHz;
+  const webrtc::NetEqDecoder kDecoderType =
+      webrtc::NetEqDecoder::kDecoderPCM16Bswb32kHz;
   const int kPayloadType = 95;
 
   // Initialize NetEq instance.

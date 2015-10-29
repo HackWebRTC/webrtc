@@ -174,11 +174,12 @@ int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
   return kOK;
 }
 
-int NetEqImpl::RegisterPayloadType(enum NetEqDecoder codec,
+int NetEqImpl::RegisterPayloadType(NetEqDecoder codec,
                                    uint8_t rtp_payload_type) {
   CriticalSectionScoped lock(crit_sect_.get());
   LOG(LS_VERBOSE) << "RegisterPayloadType "
-                  << static_cast<int>(rtp_payload_type) << " " << codec;
+                  << static_cast<int>(rtp_payload_type) << " "
+                  << static_cast<int>(codec);
   int ret = decoder_database_->RegisterPayload(rtp_payload_type, codec);
   if (ret != DecoderDatabase::kOK) {
     switch (ret) {
@@ -200,12 +201,13 @@ int NetEqImpl::RegisterPayloadType(enum NetEqDecoder codec,
 }
 
 int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
-                                       enum NetEqDecoder codec,
+                                       NetEqDecoder codec,
                                        uint8_t rtp_payload_type,
                                        int sample_rate_hz) {
   CriticalSectionScoped lock(crit_sect_.get());
   LOG(LS_VERBOSE) << "RegisterExternalDecoder "
-                  << static_cast<int>(rtp_payload_type) << " " << codec;
+                  << static_cast<int>(rtp_payload_type) << " "
+                  << static_cast<int>(codec);
   if (!decoder) {
     LOG(LS_ERROR) << "Cannot register external decoder with NULL pointer";
     assert(false);
@@ -1677,16 +1679,16 @@ int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
       // Clearly wrong, but will maintain bit-exactness with legacy.
       if (fs_hz_ == 8000) {
         packet->header.payloadType =
-            decoder_database_->GetRtpPayloadType(kDecoderCNGnb);
+            decoder_database_->GetRtpPayloadType(NetEqDecoder::kDecoderCNGnb);
       } else if (fs_hz_ == 16000) {
         packet->header.payloadType =
-            decoder_database_->GetRtpPayloadType(kDecoderCNGwb);
+            decoder_database_->GetRtpPayloadType(NetEqDecoder::kDecoderCNGwb);
       } else if (fs_hz_ == 32000) {
-        packet->header.payloadType =
-            decoder_database_->GetRtpPayloadType(kDecoderCNGswb32kHz);
+        packet->header.payloadType = decoder_database_->GetRtpPayloadType(
+            NetEqDecoder::kDecoderCNGswb32kHz);
       } else if (fs_hz_ == 48000) {
-        packet->header.payloadType =
-            decoder_database_->GetRtpPayloadType(kDecoderCNGswb48kHz);
+        packet->header.payloadType = decoder_database_->GetRtpPayloadType(
+            NetEqDecoder::kDecoderCNGswb48kHz);
       }
       assert(decoder_database_->IsComfortNoise(packet->header.payloadType));
 #else

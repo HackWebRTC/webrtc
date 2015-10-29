@@ -55,5 +55,16 @@ rtc::ArrayView<const CodecInst> RentACodec::Database() {
                                          NumberOfCodecs());
 }
 
+rtc::Maybe<NetEqDecoder> RentACodec::NetEqDecoderFromCodecId(CodecId codec_id,
+                                                             int num_channels) {
+  rtc::Maybe<int> i = CodecIndexFromId(codec_id);
+  if (!i)
+    return rtc::Maybe<NetEqDecoder>();
+  const NetEqDecoder ned = ACMCodecDB::neteq_decoders_[*i];
+  return (ned == NetEqDecoder::kDecoderOpus && num_channels == 2)
+             ? NetEqDecoder::kDecoderOpus_2ch
+             : ned;
+}
+
 }  // namespace acm2
 }  // namespace webrtc
