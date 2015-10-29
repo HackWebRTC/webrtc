@@ -8,19 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/acm2/nack.h"
+#include "webrtc/modules/audio_coding/neteq/nack.h"
 
 #include <assert.h>  // For assert.
 
 #include <algorithm>  // For std::max.
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
-
-namespace acm2 {
-
 namespace {
 
 const int kDefaultSampleRateKhz = 48;
@@ -89,10 +87,10 @@ void Nack::UpdateLastReceivedPacket(uint16_t sequence_number,
 
 void Nack::UpdateSamplesPerPacket(uint16_t sequence_number_current_received_rtp,
                                   uint32_t timestamp_current_received_rtp) {
-  uint32_t timestamp_increase = timestamp_current_received_rtp -
-      timestamp_last_received_rtp_;
-  uint16_t sequence_num_increase = sequence_number_current_received_rtp -
-      sequence_num_last_received_rtp_;
+  uint32_t timestamp_increase =
+      timestamp_current_received_rtp - timestamp_last_received_rtp_;
+  uint16_t sequence_num_increase =
+      sequence_number_current_received_rtp - sequence_num_last_received_rtp_;
 
   samples_per_packet_ = timestamp_increase / sequence_num_increase;
 }
@@ -108,9 +106,9 @@ void Nack::UpdateList(uint16_t sequence_number_current_received_rtp) {
 
 void Nack::ChangeFromLateToMissing(
     uint16_t sequence_number_current_received_rtp) {
-  NackList::const_iterator lower_bound = nack_list_.lower_bound(
-      static_cast<uint16_t>(sequence_number_current_received_rtp -
-                            nack_threshold_packets_));
+  NackList::const_iterator lower_bound =
+      nack_list_.lower_bound(static_cast<uint16_t>(
+          sequence_number_current_received_rtp - nack_threshold_packets_));
 
   for (NackList::iterator it = nack_list_.begin(); it != lower_bound; ++it)
     it->second.is_missing = true;
@@ -122,16 +120,17 @@ uint32_t Nack::EstimateTimestamp(uint16_t sequence_num) {
 }
 
 void Nack::AddToList(uint16_t sequence_number_current_received_rtp) {
-  assert(!any_rtp_decoded_ || IsNewerSequenceNumber(
-      sequence_number_current_received_rtp, sequence_num_last_decoded_rtp_));
+  assert(!any_rtp_decoded_ ||
+         IsNewerSequenceNumber(sequence_number_current_received_rtp,
+                               sequence_num_last_decoded_rtp_));
 
   // Packets with sequence numbers older than |upper_bound_missing| are
   // considered missing, and the rest are considered late.
-  uint16_t upper_bound_missing = sequence_number_current_received_rtp -
-      nack_threshold_packets_;
+  uint16_t upper_bound_missing =
+      sequence_number_current_received_rtp - nack_threshold_packets_;
 
   for (uint16_t n = sequence_num_last_received_rtp_ + 1;
-      IsNewerSequenceNumber(sequence_number_current_received_rtp, n); ++n) {
+       IsNewerSequenceNumber(sequence_number_current_received_rtp, n); ++n) {
     bool is_missing = IsNewerSequenceNumber(upper_bound_missing, n);
     uint32_t timestamp = EstimateTimestamp(n);
     NackElement nack_element(TimeToPlay(timestamp), timestamp, is_missing);
@@ -141,7 +140,7 @@ void Nack::AddToList(uint16_t sequence_number_current_received_rtp) {
 
 void Nack::UpdateEstimatedPlayoutTimeBy10ms() {
   while (!nack_list_.empty() &&
-      nack_list_.begin()->second.time_to_play_ms <= 10)
+         nack_list_.begin()->second.time_to_play_ms <= 10)
     nack_list_.erase(nack_list_.begin());
 
   for (NackList::iterator it = nack_list_.begin(); it != nack_list_.end(); ++it)
@@ -157,12 +156,12 @@ void Nack::UpdateLastDecodedPacket(uint16_t sequence_number,
     // Packets in the list with sequence numbers less than the
     // sequence number of the decoded RTP should be removed from the lists.
     // They will be discarded by the jitter buffer if they arrive.
-    nack_list_.erase(nack_list_.begin(), nack_list_.upper_bound(
-        sequence_num_last_decoded_rtp_));
+    nack_list_.erase(nack_list_.begin(),
+                     nack_list_.upper_bound(sequence_num_last_decoded_rtp_));
 
     // Update estimated time-to-play.
     for (NackList::iterator it = nack_list_.begin(); it != nack_list_.end();
-        ++it)
+         ++it)
       it->second.time_to_play_ms = TimeToPlay(it->second.estimated_timestamp);
   } else {
     assert(sequence_number == sequence_num_last_decoded_rtp_);
@@ -195,17 +194,19 @@ void Nack::Reset() {
   samples_per_packet_ = sample_rate_khz_ * kDefaultPacketSizeMs;
 }
 
-int Nack::SetMaxNackListSize(size_t max_nack_list_size) {
-  if (max_nack_list_size == 0 || max_nack_list_size > kNackListSizeLimit)
-    return -1;
+void Nack::SetMaxNackListSize(size_t max_nack_list_size) {
+  RTC_CHECK_GT(max_nack_list_size, 0u);
+  // Ugly hack to get around the problem of passing static consts by reference.
+  const size_t kNackListSizeLimitLocal = Nack::kNackListSizeLimit;
+  RTC_CHECK_LE(max_nack_list_size, kNackListSizeLimitLocal);
+
   max_nack_list_size_ = max_nack_list_size;
   LimitNackListSize();
-  return 0;
 }
 
 void Nack::LimitNackListSize() {
   uint16_t limit = sequence_num_last_received_rtp_ -
-      static_cast<uint16_t>(max_nack_list_size_) - 1;
+                   static_cast<uint16_t>(max_nack_list_size_) - 1;
   nack_list_.erase(nack_list_.begin(), nack_list_.upper_bound(limit));
 }
 
@@ -216,16 +217,15 @@ int64_t Nack::TimeToPlay(uint32_t timestamp) const {
 
 // We don't erase elements with time-to-play shorter than round-trip-time.
 std::vector<uint16_t> Nack::GetNackList(int64_t round_trip_time_ms) const {
+  RTC_DCHECK_GE(round_trip_time_ms, 0);
   std::vector<uint16_t> sequence_numbers;
   for (NackList::const_iterator it = nack_list_.begin(); it != nack_list_.end();
-      ++it) {
+       ++it) {
     if (it->second.is_missing &&
         it->second.time_to_play_ms > round_trip_time_ms)
       sequence_numbers.push_back(it->first);
   }
   return sequence_numbers;
 }
-
-}  // namespace acm2
 
 }  // namespace webrtc

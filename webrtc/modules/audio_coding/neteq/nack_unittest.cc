@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/acm2/nack.h"
+#include "webrtc/modules/audio_coding/neteq/nack.h"
 
 #include <stdint.h>
 
@@ -20,9 +20,6 @@
 #include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
 
 namespace webrtc {
-
-namespace acm2 {
-
 namespace {
 
 const int kNackThreshold = 3;
@@ -90,8 +87,9 @@ TEST(NackTest, NoNackIfReorderWithinNackThreshold) {
 
   // Push in reverse order
   while (num_late_packets > 0) {
-    nack->UpdateLastReceivedPacket(seq_num + num_late_packets, timestamp +
-                            num_late_packets * kTimestampIncrement);
+    nack->UpdateLastReceivedPacket(
+        seq_num + num_late_packets,
+        timestamp + num_late_packets * kTimestampIncrement);
     nack_list = nack->GetNackList(kShortRoundTripTimeMs);
     EXPECT_TRUE(nack_list.empty());
     num_late_packets--;
@@ -99,9 +97,9 @@ TEST(NackTest, NoNackIfReorderWithinNackThreshold) {
 }
 
 TEST(NackTest, LatePacketsMovedToNackThenNackListDoesNotChange) {
-  const uint16_t kSequenceNumberLostPackets[] = { 2, 3, 4, 5, 6, 7, 8, 9 };
+  const uint16_t kSequenceNumberLostPackets[] = {2, 3, 4, 5, 6, 7, 8, 9};
   static const int kNumAllLostPackets = sizeof(kSequenceNumberLostPackets) /
-      sizeof(kSequenceNumberLostPackets[0]);
+                                        sizeof(kSequenceNumberLostPackets[0]);
 
   for (int k = 0; k < 2; k++) {  // Two iteration with/without wrap around.
     rtc::scoped_ptr<Nack> nack(Nack::Create(kNackThreshold));
@@ -109,8 +107,9 @@ TEST(NackTest, LatePacketsMovedToNackThenNackListDoesNotChange) {
 
     uint16_t sequence_num_lost_packets[kNumAllLostPackets];
     for (int n = 0; n < kNumAllLostPackets; n++) {
-      sequence_num_lost_packets[n] = kSequenceNumberLostPackets[n] + k *
-          65531;  // Have wrap around in sequence numbers for |k == 1|.
+      sequence_num_lost_packets[n] =
+          kSequenceNumberLostPackets[n] +
+          k * 65531;  // Have wrap around in sequence numbers for |k == 1|.
     }
     uint16_t seq_num = sequence_num_lost_packets[0] - 1;
 
@@ -147,9 +146,9 @@ TEST(NackTest, LatePacketsMovedToNackThenNackListDoesNotChange) {
 }
 
 TEST(NackTest, ArrivedPacketsAreRemovedFromNackList) {
-  const uint16_t kSequenceNumberLostPackets[] = { 2, 3, 4, 5, 6, 7, 8, 9 };
+  const uint16_t kSequenceNumberLostPackets[] = {2, 3, 4, 5, 6, 7, 8, 9};
   static const int kNumAllLostPackets = sizeof(kSequenceNumberLostPackets) /
-      sizeof(kSequenceNumberLostPackets[0]);
+                                        sizeof(kSequenceNumberLostPackets[0]);
 
   for (int k = 0; k < 2; ++k) {  // Two iteration with/without wrap around.
     rtc::scoped_ptr<Nack> nack(Nack::Create(kNackThreshold));
@@ -157,8 +156,8 @@ TEST(NackTest, ArrivedPacketsAreRemovedFromNackList) {
 
     uint16_t sequence_num_lost_packets[kNumAllLostPackets];
     for (int n = 0; n < kNumAllLostPackets; ++n) {
-      sequence_num_lost_packets[n] = kSequenceNumberLostPackets[n] + k *
-          65531;  // Wrap around for |k == 1|.
+      sequence_num_lost_packets[n] = kSequenceNumberLostPackets[n] +
+                                     k * 65531;  // Wrap around for |k == 1|.
     }
 
     uint16_t seq_num = sequence_num_lost_packets[0] - 1;
@@ -208,11 +207,10 @@ TEST(NackTest, ArrivedPacketsAreRemovedFromNackList) {
 // Assess if estimation of timestamps and time-to-play is correct. Introduce all
 // combinations that timestamps and sequence numbers might have wrap around.
 TEST(NackTest, EstimateTimestampAndTimeToPlay) {
-  const uint16_t kLostPackets[] = { 2, 3, 4, 5, 6, 7, 8, 9, 10,
-      11, 12, 13, 14, 15 };
-  static const int kNumAllLostPackets = sizeof(kLostPackets) /
-      sizeof(kLostPackets[0]);
-
+  const uint16_t kLostPackets[] = {2, 3,  4,  5,  6,  7,  8,
+                                   9, 10, 11, 12, 13, 14, 15};
+  static const int kNumAllLostPackets =
+      sizeof(kLostPackets) / sizeof(kLostPackets[0]);
 
   for (int k = 0; k < 4; ++k) {
     rtc::scoped_ptr<Nack> nack(Nack::Create(kNackThreshold));
@@ -222,14 +220,14 @@ TEST(NackTest, EstimateTimestampAndTimeToPlay) {
     int seq_num_offset = (k < 2) ? 0 : 65531;
 
     // Timestamp wrap around if |k| is 1 or 3.
-    uint32_t timestamp_offset = (k & 0x1) ?
-        static_cast<uint32_t>(0xffffffff) - 6 : 0;
+    uint32_t timestamp_offset =
+        (k & 0x1) ? static_cast<uint32_t>(0xffffffff) - 6 : 0;
 
     uint32_t timestamp_lost_packets[kNumAllLostPackets];
     uint16_t seq_num_lost_packets[kNumAllLostPackets];
     for (int n = 0; n < kNumAllLostPackets; ++n) {
-      timestamp_lost_packets[n] = timestamp_offset + kLostPackets[n] *
-          kTimestampIncrement;
+      timestamp_lost_packets[n] =
+          timestamp_offset + kLostPackets[n] * kTimestampIncrement;
       seq_num_lost_packets[n] = seq_num_offset + kLostPackets[n];
     }
 
@@ -248,8 +246,8 @@ TEST(NackTest, EstimateTimestampAndTimeToPlay) {
 
     // A packet after the last one which is supposed to be lost.
     seq_num = seq_num_lost_packets[kNumAllLostPackets - 1] + 1;
-    timestamp = timestamp_lost_packets[kNumAllLostPackets - 1] +
-        kTimestampIncrement;
+    timestamp =
+        timestamp_lost_packets[kNumAllLostPackets - 1] + kTimestampIncrement;
     nack->UpdateLastReceivedPacket(seq_num, timestamp);
 
     Nack::NackList nack_list = nack->GetNackList();
@@ -292,16 +290,16 @@ TEST(NackTest, MissingPacketsPriorToLastDecodedRtpShouldNotBeInNackList) {
     // Two consecutive packets to have a correct estimate of timestamp increase.
     uint16_t seq_num = 0;
     nack->UpdateLastReceivedPacket(seq_num_offset + seq_num,
-      seq_num * kTimestampIncrement);
+                                   seq_num * kTimestampIncrement);
     seq_num++;
     nack->UpdateLastReceivedPacket(seq_num_offset + seq_num,
-      seq_num * kTimestampIncrement);
+                                   seq_num * kTimestampIncrement);
 
     // Skip 10 packets (larger than NACK threshold).
     const int kNumLostPackets = 10;
     seq_num += kNumLostPackets + 1;
     nack->UpdateLastReceivedPacket(seq_num_offset + seq_num,
-      seq_num * kTimestampIncrement);
+                                   seq_num * kTimestampIncrement);
 
     const size_t kExpectedListSize = kNumLostPackets - kNackThreshold;
     std::vector<uint16_t> nack_list = nack->GetNackList(kShortRoundTripTimeMs);
@@ -319,7 +317,7 @@ TEST(NackTest, MissingPacketsPriorToLastDecodedRtpShouldNotBeInNackList) {
 
     // Decoding of the last received packet.
     nack->UpdateLastDecodedPacket(seq_num + seq_num_offset,
-      seq_num * kTimestampIncrement);
+                                  seq_num * kTimestampIncrement);
     nack_list = nack->GetNackList(kShortRoundTripTimeMs);
     EXPECT_TRUE(nack_list.empty());
 
@@ -329,7 +327,7 @@ TEST(NackTest, MissingPacketsPriorToLastDecodedRtpShouldNotBeInNackList) {
     for (int n = 0; n < kNackThreshold + 10; ++n) {
       seq_num++;
       nack->UpdateLastReceivedPacket(seq_num_offset + seq_num,
-       seq_num * kTimestampIncrement);
+                                     seq_num * kTimestampIncrement);
       nack_list = nack->GetNackList(kShortRoundTripTimeMs);
       EXPECT_TRUE(nack_list.empty());
     }
@@ -480,7 +478,5 @@ TEST(NackTest, RoudTripTimeIsApplied) {
   EXPECT_EQ(4, nack_list[0]);
   EXPECT_EQ(5, nack_list[1]);
 }
-
-}  // namespace acm2
 
 }  // namespace webrtc

@@ -96,6 +96,8 @@
         'expand.h',
         'merge.cc',
         'merge.h',
+        'nack.h',
+        'nack.cc',
         'neteq_impl.cc',
         'neteq_impl.h',
         'neteq.cc',

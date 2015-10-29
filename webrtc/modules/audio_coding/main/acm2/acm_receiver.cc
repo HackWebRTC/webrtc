@@ -24,7 +24,6 @@
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/main/acm2/call_statistics.h"
-#include "webrtc/modules/audio_coding/main/acm2/nack.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -36,8 +35,6 @@ namespace webrtc {
 namespace acm2 {
 
 namespace {
-
-const int kNackThresholdPackets = 2;
 
 // |vad_activity_| field of |audio_frame| is set to |previous_audio_activity_|
 // before the call to this function.
@@ -130,8 +127,6 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
       current_sample_rate_hz_(config.neteq_config.sample_rate_hz),
       audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
       last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
-      nack_(),
-      nack_enabled_(false),
       neteq_(NetEq::Create(config.neteq_config)),
       vad_enabled_(true),
       clock_(config.clock),
@@ -254,24 +249,9 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
         // Therefore, either NetEq buffer is empty or will be flushed when this
         // packet is inserted.
         new_codec = true;
-
-        // Updating NACK'sampling rate is required, either first packet is
-        // received or codec is changed. Furthermore, reset is required if codec
-        // is changed (NetEq flushes its buffer so NACK should reset its list).
-        if (nack_enabled_) {
-          assert(nack_.get());
-          nack_->Reset();
-          nack_->UpdateSampleRate(sample_rate_hz);
-        }
         last_audio_decoder_ = decoder;
       }
       packet_type = InitialDelayManager::kAudioPacket;
-    }
-
-    if (nack_enabled_) {
-      assert(nack_.get());
-      nack_->UpdateLastReceivedPacket(header->sequenceNumber,
-                                      header->timestamp);
     }
 
     if (av_sync_) {
@@ -342,16 +322,6 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
                        &type) != NetEq::kOK) {
     LOG(LERROR) << "AcmReceiver::GetAudio - NetEq Failed.";
     return -1;
-  }
-
-  // Update NACK.
-  int decoded_sequence_num = 0;
-  uint32_t decoded_timestamp = 0;
-  bool update_nack = nack_enabled_ &&  // Update NACK only if it is enabled.
-      neteq_->DecodedRtpInfo(&decoded_sequence_num, &decoded_timestamp);
-  if (update_nack) {
-    assert(nack_.get());
-    nack_->UpdateLastDecodedPacket(decoded_sequence_num, decoded_timestamp);
   }
 
   // NetEq always returns 10 ms of audio.
@@ -640,45 +610,17 @@ int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
 }
 
 int AcmReceiver::EnableNack(size_t max_nack_list_size) {
-  // Don't do anything if |max_nack_list_size| is out of range.
-  if (max_nack_list_size == 0 || max_nack_list_size > Nack::kNackListSizeLimit)
-    return -1;
-
-  CriticalSectionScoped lock(crit_sect_.get());
-  if (!nack_enabled_) {
-    nack_.reset(Nack::Create(kNackThresholdPackets));
-    nack_enabled_ = true;
-
-    // Sampling rate might need to be updated if we change from disable to
-    // enable. Do it if the receive codec is valid.
-    if (last_audio_decoder_) {
-      nack_->UpdateSampleRate(
-          ACMCodecDB::database_[last_audio_decoder_->acm_codec_id].plfreq);
-    }
-  }
-  return nack_->SetMaxNackListSize(max_nack_list_size);
+  neteq_->EnableNack(max_nack_list_size);
+  return 0;
 }
 
 void AcmReceiver::DisableNack() {
-  CriticalSectionScoped lock(crit_sect_.get());
-  nack_.reset();  // Memory is released.
-  nack_enabled_ = false;
+  neteq_->DisableNack();
 }
 
 std::vector<uint16_t> AcmReceiver::GetNackList(
     int64_t round_trip_time_ms) const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  if (round_trip_time_ms < 0) {
-    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
-                 "GetNackList: round trip time cannot be negative."
-                 " round_trip_time_ms=%" PRId64, round_trip_time_ms);
-  }
-  if (nack_enabled_ && round_trip_time_ms >= 0) {
-    assert(nack_.get());
-    return nack_->GetNackList(round_trip_time_ms);
-  }
-  std::vector<uint16_t> empty_list;
-  return empty_list;
+  return neteq_->GetNackList(round_trip_time_ms);
 }
 
 void AcmReceiver::ResetInitialDelay() {

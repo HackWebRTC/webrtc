@@ -35,8 +35,6 @@ class NetEq;
 
 namespace acm2 {
 
-class Nack;
-
 class AcmReceiver {
  public:
   struct Decoder {
@@ -321,8 +319,6 @@ class AcmReceiver {
   // TODO(henrik.lundin) Stack-allocate in GetAudio instead?
   rtc::scoped_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
   rtc::scoped_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
-  bool nack_enabled_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
   NetEq* neteq_;
   // Decoders map is keyed by payload type

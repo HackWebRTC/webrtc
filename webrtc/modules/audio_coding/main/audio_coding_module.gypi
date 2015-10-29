@@ -108,8 +108,6 @@
         'acm2/codec_owner.h',
         'acm2/initial_delay_manager.cc',
         'acm2/initial_delay_manager.h',
-        'acm2/nack.cc',
-        'acm2/nack.h',
         'include/audio_coding_module.h',
         'include/audio_coding_module_typedefs.h',
       ],

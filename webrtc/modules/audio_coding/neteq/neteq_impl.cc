@@ -33,6 +33,7 @@
 #include "webrtc/modules/audio_coding/neteq/dtmf_tone_generator.h"
 #include "webrtc/modules/audio_coding/neteq/expand.h"
 #include "webrtc/modules/audio_coding/neteq/merge.h"
+#include "webrtc/modules/audio_coding/neteq/nack.h"
 #include "webrtc/modules/audio_coding/neteq/normal.h"
 #include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
@@ -86,7 +87,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       new_codec_(false),
       timestamp_(0),
       reset_decoder_(false),
-      current_rtp_payload_type_(0xFF),  // Invalid RTP payload type.
+      current_rtp_payload_type_(0xFF),      // Invalid RTP payload type.
       current_cng_rtp_payload_type_(0xFF),  // Invalid RTP payload type.
       ssrc_(0),
       first_packet_(true),
@@ -95,8 +96,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       background_noise_mode_(config.background_noise_mode),
       playout_mode_(config.playout_mode),
       enable_fast_accelerate_(config.enable_fast_accelerate),
-      decoded_packet_sequence_number_(-1),
-      decoded_packet_timestamp_(0) {
+      nack_enabled_(false) {
   LOG(LS_INFO) << "NetEq config: " << config.ToString();
   int fs = config.sample_rate_hz;
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {
@@ -405,13 +405,30 @@ void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
   packet_buffer_->BufferStat(current_num_packets, max_num_packets);
 }
 
-int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const {
+void NetEqImpl::EnableNack(size_t max_nack_list_size) {
   CriticalSectionScoped lock(crit_sect_.get());
-  if (decoded_packet_sequence_number_ < 0)
-    return -1;
-  *sequence_number = decoded_packet_sequence_number_;
-  *timestamp = decoded_packet_timestamp_;
-  return 0;
+  if (!nack_enabled_) {
+    const int kNackThresholdPackets = 2;
+    nack_.reset(Nack::Create(kNackThresholdPackets));
+    nack_enabled_ = true;
+    nack_->UpdateSampleRate(fs_hz_);
+  }
+  nack_->SetMaxNackListSize(max_nack_list_size);
+}
+
+void NetEqImpl::DisableNack() {
+  CriticalSectionScoped lock(crit_sect_.get());
+  nack_.reset();
+  nack_enabled_ = false;
+}
+
+std::vector<uint16_t> NetEqImpl::GetNackList(int64_t round_trip_time_ms) const {
+  CriticalSectionScoped lock(crit_sect_.get());
+  if (!nack_enabled_) {
+    return std::vector<uint16_t>();
+  }
+  RTC_DCHECK(nack_.get());
+  return nack_->GetNackList(round_trip_time_ms);
 }
 
 const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
@@ -611,6 +628,15 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                             receive_timestamp);
   }
 
+  if (nack_enabled_) {
+    RTC_DCHECK(nack_);
+    if (update_sample_rate_and_channels) {
+      nack_->Reset();
+    }
+    nack_->UpdateLastReceivedPacket(packet_list.front()->header.sequenceNumber,
+                                    packet_list.front()->header.timestamp);
+  }
+
   // Insert packets in buffer.
   const size_t buffer_length_before_insert =
       packet_buffer_->NumPacketsInBuffer();
@@ -658,8 +684,14 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
         decoder_database_->GetDecoderInfo(payload_type);
     assert(decoder_info);
     if (decoder_info->fs_hz != fs_hz_ ||
-        decoder->Channels() != algorithm_buffer_->Channels())
+        decoder->Channels() != algorithm_buffer_->Channels()) {
       SetSampleRateAndChannels(decoder_info->fs_hz, decoder->Channels());
+    }
+    if (nack_enabled_) {
+      RTC_DCHECK(nack_);
+      // Update the sample rate even if the rate is not new, because of Reset().
+      nack_->UpdateSampleRate(fs_hz_);
+    }
   }
 
   // TODO(hlundin): Move this code to DelayManager class.
@@ -1863,9 +1895,14 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
 
     if (first_packet) {
       first_packet = false;
-      decoded_packet_sequence_number_ = prev_sequence_number =
-          packet->header.sequenceNumber;
-      decoded_packet_timestamp_ = prev_timestamp = packet->header.timestamp;
+      if (nack_enabled_) {
+        RTC_DCHECK(nack_);
+        // TODO(henrik.lundin): Should we update this for all decoded packets?
+        nack_->UpdateLastDecodedPacket(packet->header.sequenceNumber,
+                                       packet->header.timestamp);
+      }
+      prev_sequence_number = packet->header.sequenceNumber;
+      prev_timestamp = packet->header.timestamp;
       prev_payload_type = packet->header.payloadType;
     }
 

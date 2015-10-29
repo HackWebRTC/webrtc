@@ -67,8 +67,6 @@ source_set("audio_coding") {
     "main/acm2/codec_owner.h",
     "main/acm2/initial_delay_manager.cc",
     "main/acm2/initial_delay_manager.h",
-    "main/acm2/nack.cc",
-    "main/acm2/nack.h",
     "main/include/audio_coding_module.h",
     "main/include/audio_coding_module_typedefs.h",
   ]
@@ -799,6 +797,8 @@ source_set("neteq") {
     "neteq/include/neteq.h",
     "neteq/merge.cc",
     "neteq/merge.h",
+    "neteq/nack.cc",
+    "neteq/nack.h",
     "neteq/neteq.cc",
     "neteq/neteq_impl.cc",
     "neteq/neteq_impl.h",

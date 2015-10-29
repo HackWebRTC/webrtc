@@ -272,10 +272,17 @@ class NetEq {
   virtual void PacketBufferStatistics(int* current_num_packets,
                                       int* max_num_packets) const = 0;
 
-  // Get sequence number and timestamp of the latest RTP.
-  // This method is to facilitate NACK.
-  virtual int DecodedRtpInfo(int* sequence_number,
-                             uint32_t* timestamp) const = 0;
+  // Enables NACK and sets the maximum size of the NACK list, which should be
+  // positive and no larger than Nack::kNackListSizeLimit. If NACK is already
+  // enabled then the maximum NACK list size is modified accordingly.
+  virtual void EnableNack(size_t max_nack_list_size) = 0;
+
+  virtual void DisableNack() = 0;
+
+  // Returns a list of RTP sequence numbers corresponding to packets to be
+  // retransmitted, given an estimate of the round-trip time in milliseconds.
+  virtual std::vector<uint16_t> GetNackList(
+      int64_t round_trip_time_ms) const = 0;
 
  protected:
   NetEq() {}

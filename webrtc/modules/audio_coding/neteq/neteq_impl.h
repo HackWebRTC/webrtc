@@ -39,6 +39,7 @@ class DtmfBuffer;
 class DtmfToneGenerator;
 class Expand;
 class Merge;
+class Nack;
 class Normal;
 class PacketBuffer;
 class PayloadSplitter;
@@ -187,9 +188,11 @@ class NetEqImpl : public webrtc::NetEq {
   void PacketBufferStatistics(int* current_num_packets,
                               int* max_num_packets) const override;
 
-  // Get sequence number and timestamp of the latest RTP.
-  // This method is to facilitate NACK.
-  int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const override;
+  void EnableNack(size_t max_nack_list_size) override;
+
+  void DisableNack() override;
+
+  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms) const override;
 
   // This accessor method is only intended for testing purposes.
   const SyncBuffer* sync_buffer_for_test() const;
@@ -393,16 +396,8 @@ class NetEqImpl : public webrtc::NetEq {
   const BackgroundNoiseMode background_noise_mode_ GUARDED_BY(crit_sect_);
   NetEqPlayoutMode playout_mode_ GUARDED_BY(crit_sect_);
   bool enable_fast_accelerate_ GUARDED_BY(crit_sect_);
-
-  // These values are used by NACK module to estimate time-to-play of
-  // a missing packet. Occasionally, NetEq might decide to decode more
-  // than one packet. Therefore, these values store sequence number and
-  // timestamp of the first packet pulled from the packet buffer. In
-  // such cases, these values do not exactly represent the sequence number
-  // or timestamp associated with a 10ms audio pulled from NetEq. NACK
-  // module is designed to compensate for this.
-  int decoded_packet_sequence_number_ GUARDED_BY(crit_sect_);
-  uint32_t decoded_packet_timestamp_ GUARDED_BY(crit_sect_);
+  rtc::scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
+  bool nack_enabled_ GUARDED_BY(crit_sect_);
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);

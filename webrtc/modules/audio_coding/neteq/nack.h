@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_NACK_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_NACK_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_H_
 
 #include <vector>
 #include <map>
@@ -49,8 +49,6 @@
 //
 namespace webrtc {
 
-namespace acm2 {
-
 class Nack {
  public:
   // A limit for the size of the NACK list.
@@ -66,7 +64,7 @@ class Nack {
   // with sequence number earlier than N - |max_nack_list_size|.
   //
   // The largest maximum size is defined by |kNackListSizeLimit|
-  int SetMaxNackListSize(size_t max_nack_list_size);
+  void SetMaxNackListSize(size_t max_nack_list_size);
 
   // Set the sampling rate.
   //
@@ -124,8 +122,8 @@ class Nack {
 
   class NackListCompare {
    public:
-    bool operator() (uint16_t sequence_number_old,
-                     uint16_t sequence_number_new) const {
+    bool operator()(uint16_t sequence_number_old,
+                    uint16_t sequence_number_new) const {
       return IsNewerSequenceNumber(sequence_number_new, sequence_number_old);
     }
   };
@@ -206,8 +204,6 @@ class Nack {
   size_t max_nack_list_size_;
 };
 
-}  // namespace acm2
-
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_NACK_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_H_
