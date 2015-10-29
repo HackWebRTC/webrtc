@@ -73,10 +73,6 @@ class I420Encoder : public VideoEncoder {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
-  int CodecConfigParameters(uint8_t* /*buffer*/, int /*size*/) override {
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-
   void OnDroppedFrame() override {}
 
  private:

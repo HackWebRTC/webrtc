@@ -90,10 +90,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   int32_t SetEncoder(const VideoCodec& video_codec);
   int32_t GetEncoder(VideoCodec* video_codec);
 
-  int32_t GetCodecConfigParameters(
-    unsigned char config_parameters[kConfigParameterSize],
-    unsigned char& config_parameters_size);
-
   // Scale or crop/pad image.
   int32_t ScaleInputImage(bool enable);
 

@@ -133,10 +133,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
         externalEncoder, payloadType, internalSource);
   }
 
-  int32_t CodecConfigParameters(uint8_t* buffer, int32_t size) override {
-    return sender_->CodecConfigParameters(buffer, size);
-  }
-
   int Bitrate(unsigned int* bitrate) const override {
     return sender_->Bitrate(bitrate);
   }

@@ -26,6 +26,13 @@ namespace media_optimization {
 class MediaOptimization;
 }  // namespace media_optimization
 
+struct EncoderParameters {
+  uint32_t target_bitrate;
+  uint8_t loss_rate;
+  int64_t rtt;
+  uint32_t input_frame_rate;
+};
+
 /*************************************/
 /* VCMEncodeFrameCallback class     */
 /***********************************/
@@ -102,33 +109,16 @@ public:
     int32_t Encode(const VideoFrame& inputFrame,
                    const CodecSpecificInfo* codecSpecificInfo,
                    const std::vector<FrameType>& frameTypes);
-    /**
-    * Set new target bitrate (bits/s) and framerate.
-    * Return Value: new bit rate if OK, otherwise <0s.
-    */
-    // TODO(tommi): We could replace BitRate and FrameRate below with a GetRates
-    // method that matches SetRates. For fetching current rates, we'd then only
-    // grab the lock once instead of twice.
-    int32_t SetRates(uint32_t target_bitrate, uint32_t frameRate);
-    /**
-    * Set a new packet loss rate and a new round-trip time in milliseconds.
-    */
-    int32_t SetChannelParameters(int32_t packetLoss, int64_t rtt);
-    int32_t CodecConfigParameters(uint8_t* buffer, int32_t size);
+
+    void SetEncoderParameters(const EncoderParameters& params);
     /**
     * Register a transport callback which will be called to deliver the encoded
     * buffers
     */
     int32_t RegisterEncodeCallback(
         VCMEncodedFrameCallback* VCMencodedFrameCallback);
-    /**
-    * Get encoder bit rate
-    */
-    uint32_t BitRate() const;
-     /**
-    * Get encoder frame rate
-    */
-    uint32_t FrameRate() const;
+
+    EncoderParameters GetEncoderParameters() const;
 
     int32_t SetPeriodicKeyFrames(bool enable);
 
@@ -146,10 +136,9 @@ private:
     VideoEncoder* const encoder_;
     VideoEncoderRateObserver* const rate_observer_;
     VCMEncodedFrameCallback*  vcm_encoded_frame_callback_;
-    uint32_t bit_rate_;
-    uint32_t frame_rate_;
+    EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
     const bool internal_source_;
-    mutable rtc::CriticalSection rates_lock_;
+    mutable rtc::CriticalSection params_lock_;
     VideoRotation rotation_;
     bool is_screenshare_;
 }; // end of VCMGenericEncoder class

@@ -121,9 +121,6 @@ class VideoEncoder {
   virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate) = 0;
 
   virtual int32_t SetPeriodicKeyFrames(bool enable) { return -1; }
-  virtual int32_t CodecConfigParameters(uint8_t* /*buffer*/, int32_t /*size*/) {
-    return -1;
-  }
   virtual void OnDroppedFrame() {}
   virtual int GetTargetFramerate() { return -1; }
   virtual bool SupportsNativeHandle() const { return false; }

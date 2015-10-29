@@ -185,16 +185,6 @@ public:
                                             uint8_t payloadType,
                                             bool internalSource = false) = 0;
 
-    // API to get codec config parameters to be sent out-of-band to a receiver.
-    //
-    // Input:
-    //      - buffer          : Memory where the codec config parameters should be written.
-    //      - size            : Size of the memory available.
-    //
-    // Return value      : Number of bytes written, on success.
-    //                     < 0,                     on error.
-    virtual int32_t CodecConfigParameters(uint8_t* buffer, int32_t size) = 0;
-
     // API to get currently configured encoder target bitrate in bits/s.
     //
     // Return value      : 0,   on success.

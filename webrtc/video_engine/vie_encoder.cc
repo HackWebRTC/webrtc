@@ -258,19 +258,6 @@ int32_t ViEEncoder::GetEncoder(VideoCodec* video_codec) {
   return 0;
 }
 
-int32_t ViEEncoder::GetCodecConfigParameters(
-    unsigned char config_parameters[kConfigParameterSize],
-    unsigned char& config_parameters_size) {
-  int32_t num_parameters =
-      vcm_->CodecConfigParameters(config_parameters, kConfigParameterSize);
-  if (num_parameters <= 0) {
-    config_parameters_size = 0;
-    return -1;
-  }
-  config_parameters_size = static_cast<unsigned char>(num_parameters);
-  return 0;
-}
-
 int32_t ViEEncoder::ScaleInputImage(bool enable) {
   VideoFrameResampling resampling_mode = kFastRescaling;
   // TODO(mflodman) What?

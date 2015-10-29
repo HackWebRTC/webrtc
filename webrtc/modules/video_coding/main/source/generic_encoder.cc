@@ -94,12 +94,10 @@ VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
     : encoder_(encoder),
       rate_observer_(rate_observer),
       vcm_encoded_frame_callback_(nullptr),
-      bit_rate_(0),
-      frame_rate_(0),
+      encoder_params_({0, 0, 0, 0}),
       internal_source_(internalSource),
       rotation_(kVideoRotation_0),
-      is_screenshare_(false) {
-}
+      is_screenshare_(false) {}
 
 VCMGenericEncoder::~VCMGenericEncoder()
 {
@@ -108,9 +106,8 @@ VCMGenericEncoder::~VCMGenericEncoder()
 int32_t VCMGenericEncoder::Release()
 {
     {
-      rtc::CritScope lock(&rates_lock_);
-      bit_rate_ = 0;
-      frame_rate_ = 0;
+      rtc::CritScope lock(&params_lock_);
+      encoder_params_ = {0, 0, 0, 0};
       vcm_encoded_frame_callback_ = nullptr;
     }
 
@@ -123,9 +120,9 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                               size_t maxPayloadSize)
 {
     {
-      rtc::CritScope lock(&rates_lock_);
-      bit_rate_ = settings->startBitrate * 1000;
-      frame_rate_ = settings->maxFramerate;
+      rtc::CritScope lock(&params_lock_);
+      encoder_params_.target_bitrate = settings->startBitrate * 1000;
+      encoder_params_.input_frame_rate = settings->maxFramerate;
     }
 
     is_screenshare_ = settings->mode == VideoCodecMode::kScreensharing;
@@ -162,54 +159,34 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
   return result;
 }
 
-int32_t
-VCMGenericEncoder::SetChannelParameters(int32_t packetLoss, int64_t rtt)
-{
-    return encoder_->SetChannelParameters(packetLoss, rtt);
-}
-
-int32_t
-VCMGenericEncoder::SetRates(uint32_t newBitRate, uint32_t frameRate)
-{
-    uint32_t target_bitrate_kbps = (newBitRate + 500) / 1000;
-    int32_t ret = encoder_->SetRates(target_bitrate_kbps, frameRate);
-    if (ret < 0)
-    {
-        return ret;
+void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
+  bool channel_parameters_have_changed;
+  bool rates_have_changed;
+  {
+    rtc::CritScope lock(&params_lock_);
+    channel_parameters_have_changed =
+        params.loss_rate != encoder_params_.loss_rate ||
+        params.rtt != encoder_params_.rtt;
+    rates_have_changed =
+        params.target_bitrate != encoder_params_.target_bitrate ||
+        params.input_frame_rate != encoder_params_.input_frame_rate;
+    encoder_params_ = params;
+  }
+  if (channel_parameters_have_changed)
+    encoder_->SetChannelParameters(params.loss_rate, params.rtt);
+  if (rates_have_changed) {
+    uint32_t target_bitrate_kbps = (params.target_bitrate + 500) / 1000;
+    encoder_->SetRates(target_bitrate_kbps, params.input_frame_rate);
+    if (rate_observer_ != nullptr) {
+      rate_observer_->OnSetRates(params.target_bitrate,
+                                 params.input_frame_rate);
     }
-
-    {
-      rtc::CritScope lock(&rates_lock_);
-      bit_rate_ = newBitRate;
-      frame_rate_ = frameRate;
-    }
-
-    if (rate_observer_ != nullptr)
-      rate_observer_->OnSetRates(newBitRate, frameRate);
-    return VCM_OK;
+  }
 }
 
-int32_t
-VCMGenericEncoder::CodecConfigParameters(uint8_t* buffer, int32_t size)
-{
-    int32_t ret = encoder_->CodecConfigParameters(buffer, size);
-    if (ret < 0)
-    {
-        return ret;
-    }
-    return ret;
-}
-
-uint32_t VCMGenericEncoder::BitRate() const
-{
-    rtc::CritScope lock(&rates_lock_);
-    return bit_rate_;
-}
-
-uint32_t VCMGenericEncoder::FrameRate() const
-{
-    rtc::CritScope lock(&rates_lock_);
-    return frame_rate_;
+EncoderParameters VCMGenericEncoder::GetEncoderParameters() const {
+  rtc::CritScope lock(&params_lock_);
+  return encoder_params_;
 }
 
 int32_t

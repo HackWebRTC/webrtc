@@ -86,7 +86,6 @@ class VideoSender {
                                   uint8_t payloadType,
                                   bool internalSource);
 
-  int32_t CodecConfigParameters(uint8_t* buffer, int32_t size) const;
   int Bitrate(unsigned int* bitrate) const;
   int FrameRate(unsigned int* framerate) const;
 
@@ -113,14 +112,6 @@ class VideoSender {
   int32_t Process();
 
  private:
-  struct EncoderParameters {
-    uint32_t target_bitrate;
-    uint8_t loss_rate;
-    int64_t rtt;
-    uint32_t input_frame_rate;
-    bool updated;
-  };
-
   void SetEncoderParameters(EncoderParameters params)
       EXCLUSIVE_LOCKS_REQUIRED(send_crit_);
 

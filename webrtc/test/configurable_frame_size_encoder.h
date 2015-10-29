@@ -43,8 +43,6 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
 
   int32_t SetPeriodicKeyFrames(bool enable) override;
 
-  int32_t CodecConfigParameters(uint8_t* buffer, int32_t size) override;
-
   int32_t SetFrameSize(size_t size);
 
  private:

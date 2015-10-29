@@ -318,7 +318,7 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
 }
 
 TEST_F(TestVideoSenderWithMockEncoder, EncoderFramerateUpdatedViaProcess) {
-  sender_->SetChannelParameters(settings_.startBitrate, 0, 200);
+  sender_->SetChannelParameters(settings_.startBitrate * 1000, 0, 200);
   const int64_t kRateStatsWindowMs = 2000;
   const uint32_t kInputFps = 20;
   int64_t start_time = clock_.TimeInMilliseconds();
@@ -328,6 +328,39 @@ TEST_F(TestVideoSenderWithMockEncoder, EncoderFramerateUpdatedViaProcess) {
   }
   EXPECT_CALL(encoder_, SetRates(_, kInputFps)).Times(1).WillOnce(Return(0));
   sender_->Process();
+  AddFrame();
+}
+
+TEST_F(TestVideoSenderWithMockEncoder,
+       NoRedundantSetChannelParameterOrSetRatesCalls) {
+  const uint8_t kLossRate = 4;
+  const uint8_t kRtt = 200;
+  const int64_t kRateStatsWindowMs = 2000;
+  const uint32_t kInputFps = 20;
+  int64_t start_time = clock_.TimeInMilliseconds();
+  // Expect initial call to SetChannelParameters. Rates are initialized through
+  // InitEncode and expects no additional call before the framerate (or bitrate)
+  // updates.
+  EXPECT_CALL(encoder_, SetChannelParameters(kLossRate, kRtt))
+      .Times(1)
+      .WillOnce(Return(0));
+  sender_->SetChannelParameters(settings_.startBitrate * 1000, kLossRate, kRtt);
+  while (clock_.TimeInMilliseconds() < start_time + kRateStatsWindowMs) {
+    AddFrame();
+    clock_.AdvanceTimeMilliseconds(1000 / kInputFps);
+  }
+  // After process, input framerate should be updated but not ChannelParameters
+  // as they are the same as before.
+  EXPECT_CALL(encoder_, SetRates(_, kInputFps)).Times(1).WillOnce(Return(0));
+  sender_->Process();
+  AddFrame();
+  // Call to SetChannelParameters with changed bitrate should call encoder
+  // SetRates but not encoder SetChannelParameters (that are unchanged).
+  EXPECT_CALL(encoder_, SetRates(2 * settings_.startBitrate, kInputFps))
+      .Times(1)
+      .WillOnce(Return(0));
+  sender_->SetChannelParameters(2 * settings_.startBitrate * 1000, kLossRate,
+                                kRtt);
   AddFrame();
 }
 
