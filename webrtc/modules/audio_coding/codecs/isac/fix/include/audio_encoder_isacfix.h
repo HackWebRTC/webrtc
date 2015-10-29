@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INTERFACE_AUDIO_ENCODER_ISACFIX_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INTERFACE_AUDIO_ENCODER_ISACFIX_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INCLUDE_AUDIO_ENCODER_ISACFIX_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INCLUDE_AUDIO_ENCODER_ISACFIX_H_
 
 #include "webrtc/modules/audio_coding/codecs/isac/audio_encoder_isac_t.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/isac_fix_type.h"
@@ -19,4 +19,4 @@ namespace webrtc {
 using AudioEncoderIsacFix = AudioEncoderIsacT<IsacFix>;
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INTERFACE_AUDIO_ENCODER_ISACFIX_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INCLUDE_AUDIO_ENCODER_ISACFIX_H_

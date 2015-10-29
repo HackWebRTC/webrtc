@@ -10,7 +10,7 @@
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/isac.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 struct WebRtcISACStruct;

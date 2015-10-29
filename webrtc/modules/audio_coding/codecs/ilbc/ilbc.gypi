@@ -16,19 +16,19 @@
         'audio_encoder_interface',
       ],
       'include_dirs': [
-        'interface',
+        'include',
         '<(webrtc_root)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          'include',
           '<(webrtc_root)',
         ],
       },
       'sources': [
-        'interface/audio_decoder_ilbc.h',
-        'interface/audio_encoder_ilbc.h',
-        'interface/ilbc.h',
+        'include/audio_decoder_ilbc.h',
+        'include/audio_encoder_ilbc.h',
+        'include/ilbc.h',
         'abs_quant.c',
         'abs_quant_loop.c',
         'audio_decoder_ilbc.cc',

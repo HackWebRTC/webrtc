@@ -18,19 +18,19 @@
         'isac_common',
       ],
       'include_dirs': [
-        'main/interface',
+        'main/include',
         '<(webrtc_root)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'main/interface',
+          'main/include',
           '<(webrtc_root)',
         ],
       },
       'sources': [
-        'main/interface/audio_decoder_isac.h',
-        'main/interface/audio_encoder_isac.h',
-        'main/interface/isac.h',
+        'main/include/audio_decoder_isac.h',
+        'main/include/audio_encoder_isac.h',
+        'main/include/isac.h',
         'main/source/arith_routines.c',
         'main/source/arith_routines_hist.c',
         'main/source/arith_routines_logist.c',

@@ -56,7 +56,7 @@
         '<@(neteq_defines)',
       ],
       'sources': [
-        'interface/neteq.h',
+        'include/neteq.h',
         'accelerate.cc',
         'accelerate.h',
         'audio_classifier.cc',

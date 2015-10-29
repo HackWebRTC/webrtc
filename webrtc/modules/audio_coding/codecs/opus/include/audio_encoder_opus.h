@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_AUDIO_ENCODER_OPUS_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_AUDIO_ENCODER_OPUS_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INCLUDE_AUDIO_ENCODER_OPUS_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INCLUDE_AUDIO_ENCODER_OPUS_H_
 
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/include/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
 namespace webrtc {
@@ -99,4 +99,4 @@ class AudioEncoderOpus final : public AudioEncoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_AUDIO_ENCODER_OPUS_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INCLUDE_AUDIO_ENCODER_OPUS_H_

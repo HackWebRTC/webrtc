@@ -80,13 +80,13 @@
         'rent_a_codec',
       ],
       'include_dirs': [
-        'interface',
+        'include',
         '../../interface',
         '<(webrtc_root)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          'include',
           '../../interface',
           '<(webrtc_root)',
         ],
@@ -110,8 +110,8 @@
         'acm2/initial_delay_manager.h',
         'acm2/nack.cc',
         'acm2/nack.h',
-        'interface/audio_coding_module.h',
-        'interface/audio_coding_module_typedefs.h',
+        'include/audio_coding_module.h',
+        'include/audio_coding_module_typedefs.h',
       ],
     },
   ],

@@ -19,7 +19,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_STRUCTS_H_
 
 #include "webrtc/modules/audio_coding/codecs/isac/bandwidth_info.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/isac.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/source/settings.h"
 #include "webrtc/typedefs.h"
 

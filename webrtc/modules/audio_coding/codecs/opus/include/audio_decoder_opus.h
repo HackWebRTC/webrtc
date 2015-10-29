@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_AUDIO_DECODER_OPUS_H
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_AUDIO_DECODER_OPUS_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INCLUDE_AUDIO_DECODER_OPUS_H
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INCLUDE_AUDIO_DECODER_OPUS_H
 
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/include/opus_interface.h"
 
 namespace webrtc {
 
@@ -48,4 +48,4 @@ class AudioDecoderOpus final : public AudioDecoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_AUDIO_DECODER_OPUS_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INCLUDE_AUDIO_DECODER_OPUS_H

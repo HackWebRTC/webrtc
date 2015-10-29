@@ -15,7 +15,7 @@
  *
  */
 
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/isac.h"
 
 #include <assert.h>
 #include <math.h>

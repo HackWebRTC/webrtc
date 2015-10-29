@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_INTERFACE_AUDIO_CODING_MODULE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_INTERFACE_AUDIO_CODING_MODULE_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_INCLUDE_AUDIO_CODING_MODULE_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_INCLUDE_AUDIO_CODING_MODULE_H_
 
 #include <vector>
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
+#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
@@ -755,4 +755,4 @@ class AudioCodingModule {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_INTERFACE_AUDIO_CODING_MODULE_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_INCLUDE_AUDIO_CODING_MODULE_H_

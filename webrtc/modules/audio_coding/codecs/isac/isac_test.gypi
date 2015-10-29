@@ -17,7 +17,7 @@
       ],
       'include_dirs': [
         './main/test',
-        './main/interface',
+        './main/include',
         './main/util',
         '<(webrtc_root)',
       ],
@@ -35,7 +35,7 @@
       ],
       'include_dirs': [
         './main/test',
-        './main/interface',
+        './main/include',
         './main/util',
         '<(webrtc_root)',
       ],
@@ -53,7 +53,7 @@
       ],
       'include_dirs': [
         './main/test',
-        './main/interface',
+        './main/include',
         '../../../../common_audio/signal_processing/include',
         './main/util',
         '<(webrtc_root)',

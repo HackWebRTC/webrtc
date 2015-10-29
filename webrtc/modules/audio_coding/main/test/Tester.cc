@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/test/APITest.h"
 #include "webrtc/modules/audio_coding/main/test/EncodeDecodeTest.h"
 #include "webrtc/modules/audio_coding/main/test/iSACTest.h"

@@ -18,7 +18,7 @@
       ],
       'include_dirs': [
         './fix/test',
-        './fix/interface',
+        './fix/include',
         '<(webrtc_root)',
       ],
       'sources': [

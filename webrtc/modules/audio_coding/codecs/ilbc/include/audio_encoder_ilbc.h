@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INTERFACE_AUDIO_ENCODER_ILBC_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INTERFACE_AUDIO_ENCODER_ILBC_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INCLUDE_AUDIO_ENCODER_ILBC_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INCLUDE_AUDIO_ENCODER_ILBC_H_
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/ilbc/include/ilbc.h"
 
 namespace webrtc {
 
@@ -60,4 +60,4 @@ class AudioEncoderIlbc final : public AudioEncoder {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INTERFACE_AUDIO_ENCODER_ILBC_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INCLUDE_AUDIO_ENCODER_ILBC_H_
