@@ -65,10 +65,9 @@ TEST_F(TestMediaOptimization, VerifyMuting) {
 
   uint32_t target_bitrate_kbps = 100;
   media_opt_.SetTargetRates(target_bitrate_kbps * 1000,
-                            0,  // Lossrate.
-                            100,
-                            NULL,
-                            NULL);  // RTT in ms.
+                            0,    // Lossrate.
+                            100,  // RTT in ms.
+                            nullptr, nullptr);
   media_opt_.EnableFrameDropper(true);
   for (int time = 0; time < 2000; time += frame_time_ms_) {
     ASSERT_NO_FATAL_FAILURE(AddFrameAndAdvanceTime(target_bitrate_kbps, false));
@@ -76,10 +75,9 @@ TEST_F(TestMediaOptimization, VerifyMuting) {
 
   // Set the target rate below the limit for muting.
   media_opt_.SetTargetRates(kThresholdBps - 1000,
-                            0,  // Lossrate.
-                            100,
-                            NULL,
-                            NULL);  // RTT in ms.
+                            0,    // Lossrate.
+                            100,  // RTT in ms.
+                            nullptr, nullptr);
   // Expect the muter to engage immediately and stay muted.
   // Test during 2 seconds.
   for (int time = 0; time < 2000; time += frame_time_ms_) {
@@ -90,11 +88,10 @@ TEST_F(TestMediaOptimization, VerifyMuting) {
   // Set the target above the limit for muting, but not above the
   // limit + window.
   media_opt_.SetTargetRates(kThresholdBps + 1000,
-                            0,  // Lossrate.
-                            100,
-                            NULL,
-                            NULL);  // RTT in ms.
-                                    // Expect the muter to stay muted.
+                            0,    // Lossrate.
+                            100,  // RTT in ms.
+                            nullptr, nullptr);
+  // Expect the muter to stay muted.
   // Test during 2 seconds.
   for (int time = 0; time < 2000; time += frame_time_ms_) {
     EXPECT_TRUE(media_opt_.IsVideoSuspended());
@@ -103,10 +100,9 @@ TEST_F(TestMediaOptimization, VerifyMuting) {
 
   // Set the target above limit + window.
   media_opt_.SetTargetRates(kThresholdBps + kWindowBps + 1000,
-                            0,  // Lossrate.
-                            100,
-                            NULL,
-                            NULL);  // RTT in ms.
+                            0,    // Lossrate.
+                            100,  // RTT in ms.
+                            nullptr, nullptr);
   // Expect the muter to disengage immediately.
   // Test during 2 seconds.
   for (int time = 0; time < 2000; time += frame_time_ms_) {
@@ -114,6 +110,45 @@ TEST_F(TestMediaOptimization, VerifyMuting) {
     ASSERT_NO_FATAL_FAILURE(
         AddFrameAndAdvanceTime((kThresholdBps + kWindowBps) / 1000, false));
   }
+}
+
+TEST_F(TestMediaOptimization, ProtectsUsingFecBitrateAboveCodecMax) {
+  static const int kCodecBitrateBps = 100000;
+  static const int kMaxBitrateBps = 130000;
+
+  class ProtectionCallback : public VCMProtectionCallback {
+    int ProtectionRequest(const FecProtectionParams* delta_params,
+                          const FecProtectionParams* key_params,
+                          uint32_t* sent_video_rate_bps,
+                          uint32_t* sent_nack_rate_bps,
+                          uint32_t* sent_fec_rate_bps) override {
+      *sent_video_rate_bps = kCodecBitrateBps;
+      *sent_nack_rate_bps = 0;
+      *sent_fec_rate_bps = fec_rate_bps_;
+      return 0;
+    }
+
+   public:
+    uint32_t fec_rate_bps_;
+  } protection_callback;
+
+  media_opt_.SetProtectionMethod(kFec);
+  media_opt_.SetEncodingData(kVideoCodecVP8, kCodecBitrateBps, kCodecBitrateBps,
+                             640, 480, 30, 1, 1000);
+
+  // Using 10% of codec bitrate for FEC, should still be able to use all of it.
+  protection_callback.fec_rate_bps_ = kCodecBitrateBps / 10;
+  uint32_t target_bitrate = media_opt_.SetTargetRates(
+      kMaxBitrateBps, 0, 0, &protection_callback, nullptr);
+
+  EXPECT_EQ(kCodecBitrateBps, static_cast<int>(target_bitrate));
+
+  // Using as much for codec bitrate as fec rate, new target rate should share
+  // both equally, but only be half of max (since that ceiling should be hit).
+  protection_callback.fec_rate_bps_ = kCodecBitrateBps;
+  target_bitrate = media_opt_.SetTargetRates(kMaxBitrateBps, 128, 100,
+                                             &protection_callback, nullptr);
+  EXPECT_EQ(kMaxBitrateBps / 2, static_cast<int>(target_bitrate));
 }
 
 }  // namespace media_optimization

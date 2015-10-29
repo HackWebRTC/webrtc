@@ -121,8 +121,8 @@ class MediaOptimization {
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Checks conditions for suspending the video. The method compares
-  // |target_bit_rate_| with the threshold values for suspension, and changes
-  // the state of |video_suspended_| accordingly.
+  // |video_target_bitrate_| with the threshold values for suspension, and
+  // changes the state of |video_suspended_| accordingly.
   void CheckSuspendConditions() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   void SetEncodingDataInternal(VideoCodecType send_codec_type,
@@ -155,7 +155,7 @@ class MediaOptimization {
   uint32_t send_statistics_[4] GUARDED_BY(crit_sect_);
   uint32_t send_statistics_zero_encode_ GUARDED_BY(crit_sect_);
   int32_t max_payload_size_ GUARDED_BY(crit_sect_);
-  int target_bit_rate_ GUARDED_BY(crit_sect_);
+  int video_target_bitrate_ GUARDED_BY(crit_sect_);
   float incoming_frame_rate_ GUARDED_BY(crit_sect_);
   int64_t incoming_frame_times_[kFrameCountHistorySize] GUARDED_BY(crit_sect_);
   bool enable_qm_ GUARDED_BY(crit_sect_);

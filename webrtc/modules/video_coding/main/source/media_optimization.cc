@@ -88,7 +88,7 @@ MediaOptimization::MediaOptimization(Clock* clock)
       fraction_lost_(0),
       send_statistics_zero_encode_(0),
       max_payload_size_(1460),
-      target_bit_rate_(0),
+      video_target_bitrate_(0),
       incoming_frame_rate_(0),
       enable_qm_(false),
       encoded_frame_samples_(),
@@ -127,7 +127,7 @@ void MediaOptimization::Reset() {
   loss_prot_logic_->UpdateFrameRate(incoming_frame_rate_);
   loss_prot_logic_->Reset(clock_->TimeInMilliseconds());
   send_statistics_zero_encode_ = 0;
-  target_bit_rate_ = 0;
+  video_target_bitrate_ = 0;
   codec_width_ = 0;
   codec_height_ = 0;
   user_frame_rate_ = 0;
@@ -177,7 +177,7 @@ void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
 
   max_bit_rate_ = max_bit_rate;
   send_codec_type_ = send_codec_type;
-  target_bit_rate_ = target_bitrate;
+  video_target_bitrate_ = target_bitrate;
   float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
   loss_prot_logic_->UpdateBitRate(target_bitrate_kbps);
   loss_prot_logic_->UpdateFrameRate(static_cast<float>(frame_rate));
@@ -204,12 +204,6 @@ uint32_t MediaOptimization::SetTargetRates(
     VCMProtectionCallback* protection_callback,
     VCMQMSettingsCallback* qmsettings_callback) {
   CriticalSectionScoped lock(crit_sect_.get());
-  // TODO(holmer): Consider putting this threshold only on the video bitrate,
-  // and not on protection.
-  if (max_bit_rate_ > 0 &&
-      target_bitrate > static_cast<uint32_t>(max_bit_rate_)) {
-    target_bitrate = max_bit_rate_;
-  }
   VCMProtectionMethod* selected_method = loss_prot_logic_->SelectedMethod();
   float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
   loss_prot_logic_->UpdateBitRate(target_bitrate_kbps);
@@ -241,7 +235,7 @@ uint32_t MediaOptimization::SetTargetRates(
   loss_prot_logic_->UpdateFilteredLossPr(packet_loss_enc);
 
   // Rate cost of the protection methods.
-  uint32_t protection_overhead_bps = 0;
+  float protection_overhead_rate = 0.0f;
 
   // Update protection settings, when applicable.
   float sent_video_rate_kbps = 0.0f;
@@ -273,15 +267,13 @@ uint32_t MediaOptimization::SetTargetRates(
     // Estimate the overhead costs of the next second as staying the same
     // wrt the source bitrate.
     if (sent_total_rate_bps > 0) {
-      protection_overhead_bps = static_cast<uint32_t>(
-          target_bitrate *
-              static_cast<double>(sent_nack_rate_bps + sent_fec_rate_bps) /
-              sent_total_rate_bps +
-          0.5);
+      protection_overhead_rate =
+          static_cast<float>(sent_nack_rate_bps + sent_fec_rate_bps) /
+          sent_total_rate_bps;
     }
     // Cap the overhead estimate to 50%.
-    if (protection_overhead_bps > target_bitrate / 2)
-      protection_overhead_bps = target_bitrate / 2;
+    if (protection_overhead_rate > 0.5)
+      protection_overhead_rate = 0.5;
 
     // Get the effective packet loss for encoder ER when applicable. Should be
     // passed to encoder via fraction_lost.
@@ -290,11 +282,16 @@ uint32_t MediaOptimization::SetTargetRates(
   }
 
   // Source coding rate: total rate - protection overhead.
-  target_bit_rate_ = target_bitrate - protection_overhead_bps;
+  video_target_bitrate_ = target_bitrate * (1.0 - protection_overhead_rate);
+
+  // Cap target video bitrate to codec maximum.
+  if (max_bit_rate_ > 0 && video_target_bitrate_ > max_bit_rate_) {
+    video_target_bitrate_ = max_bit_rate_;
+  }
 
   // Update encoding rates following protection settings.
   float target_video_bitrate_kbps =
-      static_cast<float>(target_bit_rate_) / 1000.0f;
+      static_cast<float>(video_target_bitrate_) / 1000.0f;
   frame_dropper_->SetRates(target_video_bitrate_kbps, incoming_frame_rate_);
 
   if (enable_qm_ && qmsettings_callback) {
@@ -314,7 +311,7 @@ uint32_t MediaOptimization::SetTargetRates(
 
   CheckSuspendConditions();
 
-  return target_bit_rate_;
+  return video_target_bitrate_;
 }
 
 void MediaOptimization::SetProtectionMethod(VCMProtectionMethodEnum method) {
@@ -628,17 +625,18 @@ void MediaOptimization::ProcessIncomingFrameRate(int64_t now) {
 }
 
 void MediaOptimization::CheckSuspendConditions() {
-  // Check conditions for SuspendBelowMinBitrate. |target_bit_rate_| is in bps.
+  // Check conditions for SuspendBelowMinBitrate. |video_target_bitrate_| is in
+  // bps.
   if (suspension_enabled_) {
     if (!video_suspended_) {
       // Check if we just went below the threshold.
-      if (target_bit_rate_ < suspension_threshold_bps_) {
+      if (video_target_bitrate_ < suspension_threshold_bps_) {
         video_suspended_ = true;
       }
     } else {
       // Video is already suspended. Check if we just went over the threshold
       // with a margin.
-      if (target_bit_rate_ >
+      if (video_target_bitrate_ >
           suspension_threshold_bps_ + suspension_window_bps_) {
         video_suspended_ = false;
       }
