@@ -14,3 +14,5 @@ P2PTransportChannelMultihomedTest.TestDrain
 PortAllocatorTest.TestDisableAllPorts
 PortAllocatorTest.TestGetAllPortsNoUdpSockets
 PortAllocatorTest.TestGetAllPortsNoUdpSocketsNoTcpListen
+# Flaky; WebRTC issue 5136
+P2PTransportChannelMultihomedTest.TestFailoverControlledSide
