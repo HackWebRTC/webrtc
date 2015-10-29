@@ -17,6 +17,7 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/test/constants.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_send_stream.h"
@@ -60,7 +61,14 @@ class RtpRtcpObserver {
   explicit RtpRtcpObserver(unsigned int event_timeout_ms)
       : observation_complete_(EventWrapper::Create()),
         parser_(RtpHeaderParser::Create()),
-        timeout_ms_(event_timeout_ms) {}
+        timeout_ms_(event_timeout_ms) {
+    parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
+                                        kTOffsetExtensionId);
+    parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
+                                        kAbsSendTimeExtensionId);
+    parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
+                                        kTransportSequenceNumberExtensionId);
+  }
 
   const rtc::scoped_ptr<EventWrapper> observation_complete_;
   const rtc::scoped_ptr<RtpHeaderParser> parser_;

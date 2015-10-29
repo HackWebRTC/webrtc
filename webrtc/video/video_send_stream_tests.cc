@@ -163,7 +163,6 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
 }
 
 TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
-  static const uint8_t kTOffsetExtensionId = 13;
   static const int kEncodeDelayMs = 5;
   class TransmissionTimeOffsetObserver : public test::SendTest {
    public:
@@ -171,7 +170,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
         : SendTest(kDefaultTimeoutMs),
           encoder_(Clock::GetRealTimeClock(), kEncodeDelayMs) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionTransmissionTimeOffset, kTOffsetExtensionId));
+          kRtpExtensionTransmissionTimeOffset, test::kTOffsetExtensionId));
     }
 
    private:
@@ -192,8 +191,9 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = &encoder_;
+      send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTOffset, kTOffsetExtensionId));
+          RtpExtension(RtpExtension::kTOffset, test::kTOffsetExtensionId));
     }
 
     void PerformTest() override {
@@ -235,6 +235,7 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = &encoder_;
+      send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
     }

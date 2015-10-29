@@ -186,7 +186,6 @@ const uint32_t CallTest::kSendRtxSsrcs[kNumSsrcs] = {0xBADCAFD, 0xBADCAFE,
 const uint32_t CallTest::kSendSsrcs[kNumSsrcs] = {0xC0FFED, 0xC0FFEE, 0xC0FFEF};
 const uint32_t CallTest::kReceiverLocalSsrc = 0x123456;
 const int CallTest::kNackRtpHistoryMs = 1000;
-const int CallTest::kAbsSendTimeExtensionId = 7;
 
 BaseTest::BaseTest(unsigned int timeout_ms) : RtpRtcpObserver(timeout_ms) {
 }

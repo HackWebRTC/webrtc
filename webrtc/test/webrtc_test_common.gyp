@@ -18,6 +18,8 @@
         'call_test.h',
         'configurable_frame_size_encoder.cc',
         'configurable_frame_size_encoder.h',
+        'constants.cc',
+        'constants.h',
         'direct_transport.cc',
         'direct_transport.h',
         'encoder_settings.cc',
