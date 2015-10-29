@@ -62,7 +62,7 @@ class AlsaDeviceLocator : public SoundDeviceLocator {
                                &name_);
   }
 
-  virtual SoundDeviceLocator *Copy() const {
+  SoundDeviceLocator *Copy() const override {
     return new AlsaDeviceLocator(*this);
   }
 };
@@ -242,46 +242,46 @@ class AlsaInputStream :
         buffer_size_(0) {
   }
 
-  virtual ~AlsaInputStream() {
+  ~AlsaInputStream() override {
     bool success = StopReading();
     // We need that to live.
     VERIFY(success);
   }
 
-  virtual bool StartReading() {
+  bool StartReading() override {
     return StartWork();
   }
 
-  virtual bool StopReading() {
+  bool StopReading() override {
     return StopWork();
   }
 
-  virtual bool GetVolume(int *volume) {
+  bool GetVolume(int *volume) override {
     // TODO: Implement this.
     return false;
   }
 
-  virtual bool SetVolume(int volume) {
+  bool SetVolume(int volume) override {
     // TODO: Implement this.
     return false;
   }
 
-  virtual bool Close() {
+  bool Close() override {
     return StopReading() && stream_.Close();
   }
 
-  virtual int LatencyUsecs() {
+  int LatencyUsecs() override {
     return stream_.CurrentDelayUsecs();
   }
 
  private:
   // Inherited from Worker.
-  virtual void OnStart() {
+  void OnStart() override {
     HaveWork();
   }
 
   // Inherited from Worker.
-  virtual void OnHaveWork() {
+  void OnHaveWork() override {
     // Block waiting for data.
     snd_pcm_uframes_t avail = stream_.Wait();
     if (avail > 0) {
@@ -317,7 +317,7 @@ class AlsaInputStream :
   }
 
   // Inherited from Worker.
-  virtual void OnStop() {
+  void OnStop() override {
     // Nothing to do.
   }
 
@@ -334,9 +334,8 @@ class AlsaInputStream :
 
 // Implementation of an output stream. See soundoutputstreaminterface.h
 // regarding thread-safety.
-class AlsaOutputStream :
-    public SoundOutputStreamInterface,
-    private rtc::Worker {
+class AlsaOutputStream : public SoundOutputStreamInterface,
+                         private rtc::Worker {
  public:
   AlsaOutputStream(AlsaSoundSystem *alsa,
                    snd_pcm_t *handle,
@@ -347,22 +346,21 @@ class AlsaOutputStream :
       : stream_(alsa, handle, frame_size, wait_timeout_ms, flags, freq) {
   }
 
-  virtual ~AlsaOutputStream() {
+  ~AlsaOutputStream() override {
     bool success = DisableBufferMonitoring();
     // We need that to live.
     VERIFY(success);
   }
 
-  virtual bool EnableBufferMonitoring() {
+  bool EnableBufferMonitoring() override {
     return StartWork();
   }
 
-  virtual bool DisableBufferMonitoring() {
+  bool DisableBufferMonitoring() override {
     return StopWork();
   }
 
-  virtual bool WriteSamples(const void *sample_data,
-                            size_t size) {
+  bool WriteSamples(const void *sample_data, size_t size) override {
     if (size % stream_.frame_size() != 0) {
       // No client of SoundSystemInterface does this, so let's not support it.
       // (If we wanted to support it, we'd basically just buffer the fractional
@@ -389,32 +387,32 @@ class AlsaOutputStream :
     return true;
   }
 
-  virtual bool GetVolume(int *volume) {
+  bool GetVolume(int *volume) override {
     // TODO: Implement this.
     return false;
   }
 
-  virtual bool SetVolume(int volume) {
+  bool SetVolume(int volume) override {
     // TODO: Implement this.
     return false;
   }
 
-  virtual bool Close() {
+  bool Close() override {
     return DisableBufferMonitoring() && stream_.Close();
   }
 
-  virtual int LatencyUsecs() {
+  int LatencyUsecs() override {
     return stream_.CurrentDelayUsecs();
   }
 
  private:
   // Inherited from Worker.
-  virtual void OnStart() {
+  void OnStart() override {
     HaveWork();
   }
 
   // Inherited from Worker.
-  virtual void OnHaveWork() {
+  void OnHaveWork() override {
     snd_pcm_uframes_t avail = stream_.Wait();
     if (avail > 0) {
       size_t space = avail * stream_.frame_size();
@@ -424,7 +422,7 @@ class AlsaOutputStream :
   }
 
   // Inherited from Worker.
-  virtual void OnStop() {
+  void OnStop() override {
     // Nothing to do.
   }
 
