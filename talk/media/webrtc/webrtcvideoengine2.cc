@@ -36,6 +36,7 @@
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/webrtc/constants.h"
 #include "talk/media/webrtc/simulcast.h"
+#include "talk/media/webrtc/webrtcmediaengine.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
@@ -1544,7 +1545,8 @@ bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
     return false;
 
   std::vector<webrtc::RtpExtension> filtered_extensions =
-      FilterRtpExtensions(extensions);
+      FilterRtpExtensions(FilterRedundantRtpExtensions(
+          extensions, kBweExtensionPriorities, kBweExtensionPrioritiesLength));
   if (!RtpExtensionsHaveChanged(send_rtp_extensions_, filtered_extensions)) {
     LOG(LS_INFO) << "Ignoring call to SetSendRtpHeaderExtensions because "
                     "header extensions haven't changed.";

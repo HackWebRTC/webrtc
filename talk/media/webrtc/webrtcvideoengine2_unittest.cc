@@ -1066,6 +1066,29 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     EXPECT_EQ(webrtc_ext, recv_stream->GetConfig().rtp.extensions[0].name);
   }
 
+  void TestExtensionFilter(const std::vector<std::string>& extensions,
+                           const std::string& expected_extension) {
+    cricket::VideoSendParameters parameters = send_parameters_;
+    int expected_id = -1;
+    int id = 1;
+    for (const std::string& extension : extensions) {
+      if (extension == expected_extension)
+        expected_id = id;
+      parameters.extensions.push_back(
+          cricket::RtpHeaderExtension(extension, id++));
+    }
+    EXPECT_TRUE(channel_->SetSendParameters(parameters));
+    FakeVideoSendStream* send_stream =
+        AddSendStream(cricket::StreamParams::CreateLegacy(123));
+
+    // Verify that only one of them has been set, and that it is the one with
+    // highest priority (transport sequence number).
+    ASSERT_EQ(1u, send_stream->GetConfig().rtp.extensions.size());
+    EXPECT_EQ(expected_id, send_stream->GetConfig().rtp.extensions[0].id);
+    EXPECT_EQ(expected_extension,
+              send_stream->GetConfig().rtp.extensions[0].name);
+  }
+
   void TestCpuAdaptation(bool enable_overuse, bool is_screenshare);
   void TestReceiverLocalSsrcConfiguration(bool receiver_first);
   void TestReceiveUnsignalledSsrcPacket(uint8_t payload_type,
@@ -1199,6 +1222,23 @@ TEST_F(WebRtcVideoChannel2Test, RecvAbsoluteSendTimeHeaderExtensions) {
                                  webrtc::RtpExtension::kAbsSendTime);
 }
 
+TEST_F(WebRtcVideoChannel2Test, FiltersExtensionsPicksTransportSeqNum) {
+  // Enable three redundant extensions.
+  std::vector<std::string> extensions;
+  extensions.push_back(kRtpAbsoluteSenderTimeHeaderExtension);
+  extensions.push_back(kRtpTimestampOffsetHeaderExtension);
+  extensions.push_back(kRtpTransportSequenceNumberHeaderExtension);
+  TestExtensionFilter(extensions, kRtpTransportSequenceNumberHeaderExtension);
+}
+
+TEST_F(WebRtcVideoChannel2Test, FiltersExtensionsPicksAbsSendTime) {
+  // Enable two redundant extensions.
+  std::vector<std::string> extensions;
+  extensions.push_back(kRtpAbsoluteSenderTimeHeaderExtension);
+  extensions.push_back(kRtpTimestampOffsetHeaderExtension);
+  TestExtensionFilter(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+}
+
 class WebRtcVideoChannel2WithSendSideBweTest : public WebRtcVideoChannel2Test {
  public:
   WebRtcVideoChannel2WithSendSideBweTest()
@@ -1230,13 +1270,10 @@ TEST_F(WebRtcVideoChannel2Test, RecvVideoRotationHeaderExtensions) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, IdenticalSendExtensionsDoesntRecreateStream) {
-  const int kTOffsetId = 1;
-  const int kAbsSendTimeId = 2;
-  const int kVideoRotationId = 3;
+  const int kAbsSendTimeId = 1;
+  const int kVideoRotationId = 2;
   send_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
       kRtpAbsoluteSenderTimeHeaderExtension, kAbsSendTimeId));
-  send_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-      kRtpTimestampOffsetHeaderExtension, kTOffsetId));
   send_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
       kRtpVideoRotationHeaderExtension, kVideoRotationId));
 
@@ -1245,7 +1282,7 @@ TEST_F(WebRtcVideoChannel2Test, IdenticalSendExtensionsDoesntRecreateStream) {
       AddSendStream(cricket::StreamParams::CreateLegacy(123));
 
   EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
-  ASSERT_EQ(3u, send_stream->GetConfig().rtp.extensions.size());
+  ASSERT_EQ(2u, send_stream->GetConfig().rtp.extensions.size());
 
   // Setting the same extensions (even if in different order) shouldn't
   // reallocate the stream.

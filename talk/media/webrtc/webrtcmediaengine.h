@@ -48,6 +48,14 @@ class WebRtcMediaEngineFactory {
       WebRtcVideoDecoderFactory* decoder_factory);
 };
 
+extern const char* kBweExtensionPriorities[];
+extern const size_t kBweExtensionPrioritiesLength;
+
+std::vector<RtpHeaderExtension> FilterRedundantRtpExtensions(
+    const std::vector<RtpHeaderExtension>& extensions,
+    const char* extension_prios[],
+    size_t extension_prios_length);
+
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_WEBRTCMEDIAENGINE_H_

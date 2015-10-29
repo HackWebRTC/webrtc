@@ -68,4 +68,44 @@ MediaEngineInterface* WebRtcMediaEngineFactory::Create(
   return CreateWebRtcMediaEngine(adm, encoder_factory, decoder_factory);
 }
 
+const char* kBweExtensionPriorities[] = {
+    kRtpTransportSequenceNumberHeaderExtension,
+    kRtpAbsoluteSenderTimeHeaderExtension, kRtpTimestampOffsetHeaderExtension};
+
+const size_t kBweExtensionPrioritiesLength =
+    ARRAY_SIZE(kBweExtensionPriorities);
+
+int GetPriority(const RtpHeaderExtension& extension,
+                const char* extension_prios[],
+                size_t extension_prios_length) {
+  for (size_t i = 0; i < extension_prios_length; ++i) {
+    if (extension.uri == extension_prios[i])
+      return static_cast<int>(i);
+  }
+  return -1;
+}
+
+std::vector<RtpHeaderExtension> FilterRedundantRtpExtensions(
+    const std::vector<RtpHeaderExtension>& extensions,
+    const char* extension_prios[],
+    size_t extension_prios_length) {
+  if (extensions.empty())
+    return std::vector<RtpHeaderExtension>();
+  std::vector<RtpHeaderExtension> filtered;
+  std::map<int, const RtpHeaderExtension*> sorted;
+  for (auto& extension : extensions) {
+    int priority =
+        GetPriority(extension, extension_prios, extension_prios_length);
+    if (priority == -1) {
+      filtered.push_back(extension);
+      continue;
+    } else {
+      sorted[priority] = &extension;
+    }
+  }
+  if (!sorted.empty())
+    filtered.push_back(*sorted.begin()->second);
+  return filtered;
+}
+
 }  // namespace cricket
