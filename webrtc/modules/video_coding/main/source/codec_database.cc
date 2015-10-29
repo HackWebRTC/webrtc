@@ -101,7 +101,8 @@ VCMExtDecoderMapItem::VCMExtDecoderMapItem(
 }
 
 VCMCodecDataBase::VCMCodecDataBase(
-    VideoEncoderRateObserver* encoder_rate_observer)
+    VideoEncoderRateObserver* encoder_rate_observer,
+    VCMEncodedFrameCallback* encoded_frame_callback)
     : number_of_cores_(0),
       max_payload_size_(kDefaultPayloadSize),
       periodic_key_frames_(false),
@@ -112,10 +113,10 @@ VCMCodecDataBase::VCMCodecDataBase(
       external_encoder_(NULL),
       internal_source_(false),
       encoder_rate_observer_(encoder_rate_observer),
+      encoded_frame_callback_(encoded_frame_callback),
       ptr_decoder_(NULL),
       dec_map_(),
-      dec_external_map_() {
-}
+      dec_external_map_() {}
 
 VCMCodecDataBase::~VCMCodecDataBase() {
   ResetSender();
@@ -235,11 +236,9 @@ void VCMCodecDataBase::ResetSender() {
 }
 
 // Assuming only one registered encoder - since only one used, no need for more.
-bool VCMCodecDataBase::SetSendCodec(
-    const VideoCodec* send_codec,
-    int number_of_cores,
-    size_t max_payload_size,
-    VCMEncodedFrameCallback* encoded_frame_callback) {
+bool VCMCodecDataBase::SetSendCodec(const VideoCodec* send_codec,
+                                    int number_of_cores,
+                                    size_t max_payload_size) {
   RTC_DCHECK(send_codec);
   if (max_payload_size == 0) {
     max_payload_size = kDefaultPayloadSize;
@@ -284,11 +283,7 @@ bool VCMCodecDataBase::SetSendCodec(
   memcpy(&send_codec_, &new_send_codec, sizeof(send_codec_));
 
   if (!reset_required) {
-    encoded_frame_callback->SetPayloadType(send_codec_.plType);
-    if (ptr_encoder_->RegisterEncodeCallback(encoded_frame_callback) < 0) {
-      LOG(LS_ERROR) << "Failed to register encoded-frame callback.";
-      return false;
-    }
+    encoded_frame_callback_->SetPayloadType(send_codec_.plType);
     return true;
   }
 
@@ -296,16 +291,14 @@ bool VCMCodecDataBase::SetSendCodec(
   DeleteEncoder();
   RTC_DCHECK_EQ(encoder_payload_type_, send_codec_.plType)
       << "Encoder not registered for payload type " << send_codec_.plType;
-  ptr_encoder_.reset(new VCMGenericEncoder(
-      external_encoder_, encoder_rate_observer_, internal_source_));
-  encoded_frame_callback->SetPayloadType(send_codec_.plType);
+  ptr_encoder_.reset(
+      new VCMGenericEncoder(external_encoder_, encoder_rate_observer_,
+                            encoded_frame_callback_, internal_source_));
+  encoded_frame_callback_->SetPayloadType(send_codec_.plType);
+  encoded_frame_callback_->SetInternalSource(internal_source_);
   if (ptr_encoder_->InitEncode(&send_codec_, number_of_cores_,
                                max_payload_size_) < 0) {
     LOG(LS_ERROR) << "Failed to initialize video encoder.";
-    DeleteEncoder();
-    return false;
-  } else if (ptr_encoder_->RegisterEncodeCallback(encoded_frame_callback) < 0) {
-    LOG(LS_ERROR) << "Failed to register encoded-frame callback.";
     DeleteEncoder();
     return false;
   }

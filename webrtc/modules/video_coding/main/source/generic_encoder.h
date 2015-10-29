@@ -87,6 +87,7 @@ class VCMGenericEncoder
 public:
     VCMGenericEncoder(VideoEncoder* encoder,
                       VideoEncoderRateObserver* rate_observer,
+                      VCMEncodedFrameCallback* encoded_frame_callback,
                       bool internalSource);
     ~VCMGenericEncoder();
     /**
@@ -111,13 +112,6 @@ public:
                    const std::vector<FrameType>& frameTypes);
 
     void SetEncoderParameters(const EncoderParameters& params);
-    /**
-    * Register a transport callback which will be called to deliver the encoded
-    * buffers
-    */
-    int32_t RegisterEncodeCallback(
-        VCMEncodedFrameCallback* VCMencodedFrameCallback);
-
     EncoderParameters GetEncoderParameters() const;
 
     int32_t SetPeriodicKeyFrames(bool enable);
@@ -135,10 +129,10 @@ public:
 private:
     VideoEncoder* const encoder_;
     VideoEncoderRateObserver* const rate_observer_;
-    VCMEncodedFrameCallback*  vcm_encoded_frame_callback_;
-    EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
+    VCMEncodedFrameCallback* const vcm_encoded_frame_callback_;
     const bool internal_source_;
     mutable rtc::CriticalSection params_lock_;
+    EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
     VideoRotation rotation_;
     bool is_screenshare_;
 }; // end of VCMGenericEncoder class

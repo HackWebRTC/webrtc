@@ -88,50 +88,43 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
 
 //#define DEBUG_ENCODER_BIT_STREAM
 
-VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
-                                     VideoEncoderRateObserver* rate_observer,
-                                     bool internalSource)
+VCMGenericEncoder::VCMGenericEncoder(
+    VideoEncoder* encoder,
+    VideoEncoderRateObserver* rate_observer,
+    VCMEncodedFrameCallback* encoded_frame_callback,
+    bool internalSource)
     : encoder_(encoder),
       rate_observer_(rate_observer),
-      vcm_encoded_frame_callback_(nullptr),
-      encoder_params_({0, 0, 0, 0}),
+      vcm_encoded_frame_callback_(encoded_frame_callback),
       internal_source_(internalSource),
+      encoder_params_({0, 0, 0, 0}),
       rotation_(kVideoRotation_0),
       is_screenshare_(false) {}
 
-VCMGenericEncoder::~VCMGenericEncoder()
-{
+VCMGenericEncoder::~VCMGenericEncoder() {}
+
+int32_t VCMGenericEncoder::Release() {
+  return encoder_->Release();
 }
 
-int32_t VCMGenericEncoder::Release()
-{
-    {
-      rtc::CritScope lock(&params_lock_);
-      encoder_params_ = {0, 0, 0, 0};
-      vcm_encoded_frame_callback_ = nullptr;
-    }
+int32_t VCMGenericEncoder::InitEncode(const VideoCodec* settings,
+                                      int32_t numberOfCores,
+                                      size_t maxPayloadSize) {
+  {
+    rtc::CritScope lock(&params_lock_);
+    encoder_params_.target_bitrate = settings->startBitrate * 1000;
+    encoder_params_.input_frame_rate = settings->maxFramerate;
+  }
 
-    return encoder_->Release();
-}
-
-int32_t
-VCMGenericEncoder::InitEncode(const VideoCodec* settings,
-                              int32_t numberOfCores,
-                              size_t maxPayloadSize)
-{
-    {
-      rtc::CritScope lock(&params_lock_);
-      encoder_params_.target_bitrate = settings->startBitrate * 1000;
-      encoder_params_.input_frame_rate = settings->maxFramerate;
-    }
-
-    is_screenshare_ = settings->mode == VideoCodecMode::kScreensharing;
-    if (encoder_->InitEncode(settings, numberOfCores, maxPayloadSize) != 0) {
-      LOG(LS_ERROR) << "Failed to initialize the encoder associated with "
-                       "payload name: " << settings->plName;
-      return -1;
-    }
-    return 0;
+  is_screenshare_ = settings->mode == VideoCodecMode::kScreensharing;
+  if (encoder_->InitEncode(settings, numberOfCores, maxPayloadSize) != 0) {
+    LOG(LS_ERROR) << "Failed to initialize the encoder associated with "
+                     "payload name: "
+                  << settings->plName;
+    return -1;
+  }
+  encoder_->RegisterEncodeCompleteCallback(vcm_encoded_frame_callback_);
+  return 0;
 }
 
 int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
@@ -142,12 +135,12 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
 
   rotation_ = inputFrame.rotation();
 
-  if (vcm_encoded_frame_callback_) {
-    // Keep track of the current frame rotation and apply to the output of the
-    // encoder. There might not be exact as the encoder could have one frame
-    // delay but it should be close enough.
-    vcm_encoded_frame_callback_->SetRotation(rotation_);
-  }
+  // Keep track of the current frame rotation and apply to the output of the
+  // encoder. There might not be exact as the encoder could have one frame delay
+  // but it should be close enough.
+  // TODO(pbos): Map from timestamp, this is racy (even if rotation_ is locked
+  // properly, which it isn't). More than one frame may be in the pipeline.
+  vcm_encoded_frame_callback_->SetRotation(rotation_);
 
   int32_t result = encoder_->Encode(inputFrame, codecSpecificInfo, &frameTypes);
   if (is_screenshare_ &&
@@ -199,14 +192,6 @@ int32_t VCMGenericEncoder::RequestFrame(
     const std::vector<FrameType>& frame_types) {
   VideoFrame image;
   return encoder_->Encode(image, NULL, &frame_types);
-}
-
-int32_t
-VCMGenericEncoder::RegisterEncodeCallback(VCMEncodedFrameCallback* VCMencodedFrameCallback)
-{
-    VCMencodedFrameCallback->SetInternalSource(internal_source_);
-    vcm_encoded_frame_callback_ = VCMencodedFrameCallback;
-    return encoder_->RegisterEncodeCompleteCallback(VCMencodedFrameCallback);
 }
 
 bool

@@ -35,7 +35,7 @@ VideoSender::VideoSender(Clock* clock,
       _nextFrameTypes(1, kVideoFrameDelta),
       _mediaOpt(clock_),
       _sendStatsCallback(nullptr),
-      _codecDataBase(encoder_rate_observer),
+      _codecDataBase(encoder_rate_observer, &_encodedFrameCallback),
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
       current_codec_(),
@@ -89,8 +89,8 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
     return VCM_PARAMETER_ERROR;
   }
 
-  bool ret = _codecDataBase.SetSendCodec(
-      sendCodec, numberOfCores, maxPayloadSize, &_encodedFrameCallback);
+  bool ret =
+      _codecDataBase.SetSendCodec(sendCodec, numberOfCores, maxPayloadSize);
 
   // Update encoder regardless of result to make sure that we're not holding on
   // to a deleted instance.

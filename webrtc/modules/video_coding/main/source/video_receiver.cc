@@ -45,7 +45,7 @@ VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
       _scheduleKeyRequest(false),
       max_nack_list_size_(0),
       pre_decode_image_callback_(NULL),
-      _codecDataBase(NULL),
+      _codecDataBase(nullptr, nullptr),
       _receiveStatsTimer(1000, clock_),
       _retransmissionTimer(10, clock_),
       _keyRequestTimer(500, clock_) {

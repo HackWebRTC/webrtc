@@ -46,7 +46,8 @@ struct VCMExtDecoderMapItem {
 
 class VCMCodecDataBase {
  public:
-  explicit VCMCodecDataBase(VideoEncoderRateObserver* encoder_rate_observer);
+  VCMCodecDataBase(VideoEncoderRateObserver* encoder_rate_observer,
+                   VCMEncodedFrameCallback* encoded_frame_callback);
   ~VCMCodecDataBase();
 
   // Sender Side
@@ -66,8 +67,7 @@ class VCMCodecDataBase {
   // Returns true if the codec was successfully registered, false otherwise.
   bool SetSendCodec(const VideoCodec* send_codec,
                     int number_of_cores,
-                    size_t max_payload_size,
-                    VCMEncodedFrameCallback* encoded_frame_callback);
+                    size_t max_payload_size);
 
   // Gets the current send codec. Relevant for internal codecs only.
   // Returns true if there is a send codec, false otherwise.
@@ -172,6 +172,7 @@ class VCMCodecDataBase {
   VideoEncoder* external_encoder_;
   bool internal_source_;
   VideoEncoderRateObserver* const encoder_rate_observer_;
+  VCMEncodedFrameCallback* const encoded_frame_callback_;
   rtc::scoped_ptr<VCMGenericEncoder> ptr_encoder_;
   VCMGenericDecoder* ptr_decoder_;
   DecoderMap dec_map_;
