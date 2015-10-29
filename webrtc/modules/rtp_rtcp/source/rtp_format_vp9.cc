@@ -95,24 +95,18 @@ bool LayerInfoPresent(const RTPVideoHeaderVP9& hdr) {
 
 // Reference indices:
 //
-//      +-+-+-+-+-+-+-+-+  -|           P=1,F=1: At least one reference index
-// P,F: | P_DIFF    |X|N|   .                    has to be specified.
-//      +-+-+-+-+-+-+-+-+   . up to 3 times
-// X:   |EXTENDED P_DIFF|   .               X=1: Extended P_DIFF is used (14
-//      +-+-+-+-+-+-+-+-+  -|                    bits). Else 6 bits are used.
-//                                          N=1: An additional P_DIFF follows
-//                                               current P_DIFF.
+//      +-+-+-+-+-+-+-+-+                P=1,F=1: At least one reference index
+// P,F: | P_DIFF      |N|  up to 3 times          has to be specified.
+//      +-+-+-+-+-+-+-+-+                    N=1: An additional P_DIFF follows
+//                                                current P_DIFF.
+//
 size_t RefIndicesLength(const RTPVideoHeaderVP9& hdr) {
   if (!hdr.inter_pic_predicted || !hdr.flexible_mode)
     return 0;
 
   RTC_DCHECK_GT(hdr.num_ref_pics, 0U);
   RTC_DCHECK_LE(hdr.num_ref_pics, kMaxVp9RefPics);
-  size_t length = 0;
-  for (size_t i = 0; i < hdr.num_ref_pics; ++i) {
-    length += hdr.pid_diff[i] > 0x3F ? 2 : 1;   // P_DIFF > 6 bits => extended
-  }
-  return length;
+  return hdr.num_ref_pics;
 }
 
 // Scalability structure (SS).
@@ -237,13 +231,11 @@ bool WriteLayerInfo(const RTPVideoHeaderVP9& vp9,
 
 // Reference indices:
 //
-//      +-+-+-+-+-+-+-+-+  -|           P=1,F=1: At least one reference index
-// P,F: | P_DIFF    |X|N|   .                    has to be specified.
-//      +-+-+-+-+-+-+-+-+   . up to 3 times
-// X:   |EXTENDED P_DIFF|   .               X=1: Extended P_DIFF is used (14
-//      +-+-+-+-+-+-+-+-+  -|                    bits). Else 6 bits are used.
-//                                          N=1: An additional P_DIFF follows
-//                                               current P_DIFF.
+//      +-+-+-+-+-+-+-+-+                P=1,F=1: At least one reference index
+// P,F: | P_DIFF      |N|  up to 3 times          has to be specified.
+//      +-+-+-+-+-+-+-+-+                    N=1: An additional P_DIFF follows
+//                                                current P_DIFF.
+//
 bool WriteRefIndices(const RTPVideoHeaderVP9& vp9,
                      rtc::BitBufferWriter* writer) {
   if (!PictureIdPresent(vp9) ||
@@ -251,18 +243,9 @@ bool WriteRefIndices(const RTPVideoHeaderVP9& vp9,
     return false;
   }
   for (size_t i = 0; i < vp9.num_ref_pics; ++i) {
-    bool x_bit = (vp9.pid_diff[i] > 0x3F);
     bool n_bit = !(i == vp9.num_ref_pics - 1);
-    if (x_bit) {
-      RETURN_FALSE_ON_ERROR(writer->WriteBits(vp9.pid_diff[i] >> 8, 6));
-      RETURN_FALSE_ON_ERROR(writer->WriteBits(x_bit ? 1 : 0, 1));
-      RETURN_FALSE_ON_ERROR(writer->WriteBits(n_bit ? 1 : 0, 1));
-      RETURN_FALSE_ON_ERROR(writer->WriteUInt8(vp9.pid_diff[i]));
-    } else {
-      RETURN_FALSE_ON_ERROR(writer->WriteBits(vp9.pid_diff[i], 6));
-      RETURN_FALSE_ON_ERROR(writer->WriteBits(x_bit ? 1 : 0, 1));
-      RETURN_FALSE_ON_ERROR(writer->WriteBits(n_bit ? 1 : 0, 1));
-    }
+    RETURN_FALSE_ON_ERROR(writer->WriteBits(vp9.pid_diff[i], 7));
+    RETURN_FALSE_ON_ERROR(writer->WriteBits(n_bit ? 1 : 0, 1));
   }
   return true;
 }
@@ -391,13 +374,11 @@ bool ParseLayerInfo(rtc::BitBuffer* parser, RTPVideoHeaderVP9* vp9) {
 
 // Reference indices:
 //
-//      +-+-+-+-+-+-+-+-+  -|           P=1,F=1: At least one reference index
-// P,F: | P_DIFF    |X|N|   .                    has to be specified.
-//      +-+-+-+-+-+-+-+-+   . up to 3 times
-// X:   |EXTENDED P_DIFF|   .               X=1: Extended P_DIFF is used (14
-//      +-+-+-+-+-+-+-+-+  -|                    bits). Else 6 bits are used.
-//                                          N=1: An additional P_DIFF follows
-//                                               current P_DIFF.
+//      +-+-+-+-+-+-+-+-+                P=1,F=1: At least one reference index
+// P,F: | P_DIFF      |N|  up to 3 times          has to be specified.
+//      +-+-+-+-+-+-+-+-+                    N=1: An additional P_DIFF follows
+//                                                current P_DIFF.
+//
 bool ParseRefIndices(rtc::BitBuffer* parser, RTPVideoHeaderVP9* vp9) {
   if (vp9->picture_id == kNoPictureId)
     return false;
@@ -408,21 +389,14 @@ bool ParseRefIndices(rtc::BitBuffer* parser, RTPVideoHeaderVP9* vp9) {
     if (vp9->num_ref_pics == kMaxVp9RefPics)
       return false;
 
-    uint32_t p_diff, x_bit;
-    RETURN_FALSE_ON_ERROR(parser->ReadBits(&p_diff, 6));
-    RETURN_FALSE_ON_ERROR(parser->ReadBits(&x_bit, 1));
+    uint32_t p_diff;
+    RETURN_FALSE_ON_ERROR(parser->ReadBits(&p_diff, 7));
     RETURN_FALSE_ON_ERROR(parser->ReadBits(&n_bit, 1));
-
-    if (x_bit) {
-      // P_DIFF is 14 bits.
-      uint8_t ext_p_diff;
-      RETURN_FALSE_ON_ERROR(parser->ReadUInt8(&ext_p_diff));
-      p_diff = (p_diff << 8) + ext_p_diff;
-    }
 
     vp9->pid_diff[vp9->num_ref_pics] = p_diff;
     uint32_t scaled_pid = vp9->picture_id;
-    while (p_diff > scaled_pid) {
+    if (p_diff > scaled_pid) {
+      // TODO(asapersson): Max should correspond to the picture id of last wrap.
       scaled_pid += vp9->max_picture_id + 1;
     }
     vp9->ref_picture_id[vp9->num_ref_pics++] = scaled_pid - p_diff;
@@ -597,9 +571,7 @@ bool RtpPacketizerVp9::NextPacket(uint8_t* buffer,
 //      +-+-+-+-+-+-+-+-+
 // L:   |  T  |U|  S  |D| (CONDITIONALLY RECOMMENDED)
 //      +-+-+-+-+-+-+-+-+                             -|
-// P,F: | P_DIFF    |X|N| (CONDITIONALLY RECOMMENDED)  .
-//      +-+-+-+-+-+-+-+-+                              . up to 3 times
-// X:   |EXTENDED P_DIFF|                              .
+// P,F: | P_DIFF      |N| (CONDITIONALLY RECOMMENDED)  . up to 3 times
 //      +-+-+-+-+-+-+-+-+                             -|
 // V:   | SS            |
 //      | ..            |
