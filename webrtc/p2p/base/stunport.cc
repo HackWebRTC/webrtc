@@ -116,7 +116,10 @@ UDPPort::AddressResolver::AddressResolver(
 UDPPort::AddressResolver::~AddressResolver() {
   for (ResolverMap::iterator it = resolvers_.begin();
        it != resolvers_.end(); ++it) {
-    it->second->Destroy(true);
+    // TODO(guoweis): Change to asynchronous DNS resolution to prevent the hang
+    // when passing true to the Destroy() which is a safer way to avoid the code
+    // unloaded before the thread exits. Please see webrtc bug 5139.
+    it->second->Destroy(false);
   }
 }
 
