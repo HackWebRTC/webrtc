@@ -11,6 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 
+// MSVC++ requires this to be set before any other includes to get M_PI.
+#define _USE_MATH_DEFINES
+
+#include <math.h>
 #include <stddef.h>  // size_t
 #include <stdio.h>  // FILE
 #include <vector>
@@ -109,12 +113,23 @@ struct ExperimentalNs {
 struct Beamforming {
   Beamforming()
       : enabled(false),
-        array_geometry() {}
+        array_geometry(),
+        target_direction(
+            SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {}
   Beamforming(bool enabled, const std::vector<Point>& array_geometry)
+      : Beamforming(enabled,
+                    array_geometry,
+                    SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {
+  }
+  Beamforming(bool enabled,
+              const std::vector<Point>& array_geometry,
+              SphericalPointf target_direction)
       : enabled(enabled),
-        array_geometry(array_geometry) {}
+        array_geometry(array_geometry),
+        target_direction(target_direction) {}
   const bool enabled;
   const std::vector<Point> array_geometry;
+  const SphericalPointf target_direction;
 };
 
 // Use to enable intelligibility enhancer in audio processing. Must be provided

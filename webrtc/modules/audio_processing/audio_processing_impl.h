@@ -208,6 +208,7 @@ class AudioProcessingImpl : public AudioProcessing {
   const bool beamformer_enabled_;
   rtc::scoped_ptr<Beamformer<float>> beamformer_;
   const std::vector<Point> array_geometry_;
+  const SphericalPointf target_direction_;
 
   bool intelligibility_enabled_;
   rtc::scoped_ptr<IntelligibilityEnhancer> intelligibility_enhancer_;

@@ -16,6 +16,11 @@
 #include "webrtc/base/checks.h"
 
 namespace webrtc {
+namespace {
+
+const float kMaxDotProduct = 1e-6f;
+
+}  // namespace
 
 float GetMinimumSpacing(const std::vector<Point>& array_geometry) {
   RTC_CHECK_GT(array_geometry.size(), 1u);
@@ -27,6 +32,87 @@ float GetMinimumSpacing(const std::vector<Point>& array_geometry) {
     }
   }
   return mic_spacing;
+}
+
+Point PairDirection(const Point& a, const Point& b) {
+  return {b.x() - a.x(), b.y() - a.y(), b.z() - a.z()};
+}
+
+float DotProduct(const Point& a, const Point& b) {
+  return a.x() * b.x() + a.y() * b.y() + a.z() * b.z();
+}
+
+Point CrossProduct(const Point& a, const Point& b) {
+  return {a.y() * b.z() - a.z() * b.y(), a.z() * b.x() - a.x() * b.z(),
+          a.x() * b.y() - a.y() * b.x()};
+}
+
+bool AreParallel(const Point& a, const Point& b) {
+  Point cross_product = CrossProduct(a, b);
+  return DotProduct(cross_product, cross_product) < kMaxDotProduct;
+}
+
+bool ArePerpendicular(const Point& a, const Point& b) {
+  return std::abs(DotProduct(a, b)) < kMaxDotProduct;
+}
+
+rtc::Maybe<Point> GetDirectionIfLinear(
+    const std::vector<Point>& array_geometry) {
+  RTC_DCHECK_GT(array_geometry.size(), 1u);
+  const Point first_pair_direction =
+      PairDirection(array_geometry[0], array_geometry[1]);
+  for (size_t i = 2u; i < array_geometry.size(); ++i) {
+    const Point pair_direction =
+        PairDirection(array_geometry[i - 1], array_geometry[i]);
+    if (!AreParallel(first_pair_direction, pair_direction)) {
+      return rtc::Maybe<Point>();
+    }
+  }
+  return first_pair_direction;
+}
+
+rtc::Maybe<Point> GetNormalIfPlanar(const std::vector<Point>& array_geometry) {
+  RTC_DCHECK_GT(array_geometry.size(), 1u);
+  const Point first_pair_direction =
+      PairDirection(array_geometry[0], array_geometry[1]);
+  Point pair_direction(0.f, 0.f, 0.f);
+  size_t i = 2u;
+  bool is_linear = true;
+  for (; i < array_geometry.size() && is_linear; ++i) {
+    pair_direction = PairDirection(array_geometry[i - 1], array_geometry[i]);
+    if (!AreParallel(first_pair_direction, pair_direction)) {
+      is_linear = false;
+    }
+  }
+  if (is_linear) {
+    return rtc::Maybe<Point>();
+  }
+  const Point normal_direction =
+      CrossProduct(first_pair_direction, pair_direction);
+  for (; i < array_geometry.size(); ++i) {
+    pair_direction = PairDirection(array_geometry[i - 1], array_geometry[i]);
+    if (!ArePerpendicular(normal_direction, pair_direction)) {
+      return rtc::Maybe<Point>();
+    }
+  }
+  return normal_direction;
+}
+
+rtc::Maybe<Point> GetArrayNormalIfExists(
+    const std::vector<Point>& array_geometry) {
+  const rtc::Maybe<Point> direction = GetDirectionIfLinear(array_geometry);
+  if (direction) {
+    return Point(direction->y(), -direction->x(), 0.f);
+  }
+  const rtc::Maybe<Point> normal = GetNormalIfPlanar(array_geometry);
+  if (normal && normal->z() < kMaxDotProduct) {
+    return normal;
+  }
+  return rtc::Maybe<Point>();
+}
+
+Point AzimuthToPoint(float azimuth) {
+  return Point(std::cos(azimuth), std::sin(azimuth), 0.f);
 }
 
 }  // namespace webrtc

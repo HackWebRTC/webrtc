@@ -29,13 +29,6 @@ const float kKbdAlpha = 1.5f;
 
 const float kSpeedOfSoundMeterSeconds = 343;
 
-// For both target and interference angles, PI / 2 is perpendicular to the
-// microphone array, facing forwards. The positive direction goes
-// counterclockwise.
-// The angle at which we amplify sound.
-// TODO(aluebs): Make the target angle dynamically settable.
-const float kTargetAngleRadians = static_cast<float>(M_PI) / 2.f;
-
 // The minimum separation in radians between the target direction and an
 // interferer scenario.
 const float kMinAwayRadians = 0.2f;
@@ -49,8 +42,6 @@ const float kAwaySlope = 0.008f;
 // covariance matrix.
 // Rpsi = Rpsi_angled * kBalance + Rpsi_uniform * (1 - kBalance)
 const float kBalance = 0.95f;
-
-const float kHalfBeamWidthRadians = static_cast<float>(M_PI) * 20.f / 180.f;
 
 // Alpha coefficients for mask smoothing.
 const float kMaskTimeSmoothAlpha = 0.2f;
@@ -187,14 +178,23 @@ std::vector<Point> GetCenteredArray(std::vector<Point> array_geometry) {
 
 }  // namespace
 
+const float NonlinearBeamformer::kHalfBeamWidthRadians = DegreesToRadians(20.f);
+
 // static
 const size_t NonlinearBeamformer::kNumFreqBins;
 
 NonlinearBeamformer::NonlinearBeamformer(
-    const std::vector<Point>& array_geometry)
+    const std::vector<Point>& array_geometry,
+    SphericalPointf target_direction)
     : num_input_channels_(array_geometry.size()),
       array_geometry_(GetCenteredArray(array_geometry)),
-      min_mic_spacing_(GetMinimumSpacing(array_geometry)) {
+      array_normal_(GetArrayNormalIfExists(array_geometry)),
+      min_mic_spacing_(GetMinimumSpacing(array_geometry)),
+      target_angle_radians_(target_direction.azimuth()),
+      away_radians_(std::min(
+          static_cast<float>(M_PI),
+          std::max(kMinAwayRadians,
+                   kAwaySlope * static_cast<float>(M_PI) / min_mic_spacing_))) {
   WindowGenerator::KaiserBesselDerived(kKbdAlpha, kFftSize, window_);
 }
 
@@ -202,7 +202,6 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   chunk_length_ =
       static_cast<size_t>(sample_rate_hz / (1000.f / chunk_size_ms));
   sample_rate_hz_ = sample_rate_hz;
-  InitFrequencyCorrectionRanges();
 
   high_pass_postfilter_mask_ = 1.f;
   is_target_present_ = false;
@@ -223,75 +222,86 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
     wave_numbers_[i] = 2 * M_PI * freq_hz / kSpeedOfSoundMeterSeconds;
   }
 
-  // Initialize all nonadaptive values before looping through the frames.
-  InitInterfAngles();
-  InitDelaySumMasks();
-  InitTargetCovMats();
-  InitInterfCovMats();
-
-  for (size_t i = 0; i < kNumFreqBins; ++i) {
-    rxiws_[i] = Norm(target_cov_mats_[i], delay_sum_masks_[i]);
-    rpsiws_[i].clear();
-    for (size_t j = 0; j < interf_angles_radians_.size(); ++j) {
-      rpsiws_[i].push_back(Norm(*interf_cov_mats_[i][j], delay_sum_masks_[i]));
-    }
-  }
+  InitLowFrequencyCorrectionRanges();
+  InitDiffuseCovMats();
+  AimAt(SphericalPointf(target_angle_radians_, 0.f, 1.f));
 }
 
-void NonlinearBeamformer::InitFrequencyCorrectionRanges() {
+// These bin indexes determine the regions over which a mean is taken. This is
+// applied as a constant value over the adjacent end "frequency correction"
+// regions.
+//
+//             low_mean_start_bin_     high_mean_start_bin_
+//                   v                         v              constant
+// |----------------|--------|----------------|-------|----------------|
+//   constant               ^                        ^
+//             low_mean_end_bin_       high_mean_end_bin_
+//
+void NonlinearBeamformer::InitLowFrequencyCorrectionRanges() {
+  low_mean_start_bin_ = Round(kLowMeanStartHz * kFftSize / sample_rate_hz_);
+  low_mean_end_bin_ = Round(kLowMeanEndHz * kFftSize / sample_rate_hz_);
+
+  RTC_DCHECK_GT(low_mean_start_bin_, 0U);
+  RTC_DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
+}
+
+void NonlinearBeamformer::InitHighFrequencyCorrectionRanges() {
   const float kAliasingFreqHz =
       kSpeedOfSoundMeterSeconds /
-      (min_mic_spacing_ * (1.f + std::abs(std::cos(kTargetAngleRadians))));
+      (min_mic_spacing_ * (1.f + std::abs(std::cos(target_angle_radians_))));
   const float kHighMeanStartHz = std::min(0.5f *  kAliasingFreqHz,
                                           sample_rate_hz_ / 2.f);
   const float kHighMeanEndHz = std::min(0.75f *  kAliasingFreqHz,
                                         sample_rate_hz_ / 2.f);
-
-  low_mean_start_bin_ = Round(kLowMeanStartHz * kFftSize / sample_rate_hz_);
-  low_mean_end_bin_ = Round(kLowMeanEndHz * kFftSize / sample_rate_hz_);
   high_mean_start_bin_ = Round(kHighMeanStartHz * kFftSize / sample_rate_hz_);
   high_mean_end_bin_ = Round(kHighMeanEndHz * kFftSize / sample_rate_hz_);
-  // These bin indexes determine the regions over which a mean is taken. This
-  // is applied as a constant value over the adjacent end "frequency correction"
-  // regions.
-  //
-  //             low_mean_start_bin_     high_mean_start_bin_
-  //                   v                         v              constant
-  // |----------------|--------|----------------|-------|----------------|
-  //   constant               ^                        ^
-  //             low_mean_end_bin_       high_mean_end_bin_
-  //
-  RTC_DCHECK_GT(low_mean_start_bin_, 0U);
-  RTC_DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
+
   RTC_DCHECK_LT(low_mean_end_bin_, high_mean_end_bin_);
   RTC_DCHECK_LT(high_mean_start_bin_, high_mean_end_bin_);
   RTC_DCHECK_LT(high_mean_end_bin_, kNumFreqBins - 1);
 }
 
-
 void NonlinearBeamformer::InitInterfAngles() {
-  const float kAwayRadians =
-      std::min(static_cast<float>(M_PI),
-               std::max(kMinAwayRadians, kAwaySlope * static_cast<float>(M_PI) /
-                                             min_mic_spacing_));
-
   interf_angles_radians_.clear();
-  // TODO(aluebs): When the target angle is settable, make sure the interferer
-  // scenarios aren't reflected over the target one for linear geometries.
-  interf_angles_radians_.push_back(kTargetAngleRadians - kAwayRadians);
-  interf_angles_radians_.push_back(kTargetAngleRadians + kAwayRadians);
+  const Point target_direction = AzimuthToPoint(target_angle_radians_);
+  const Point clockwise_interf_direction =
+      AzimuthToPoint(target_angle_radians_ - away_radians_);
+  if (!array_normal_ ||
+      DotProduct(*array_normal_, target_direction) *
+              DotProduct(*array_normal_, clockwise_interf_direction) >=
+          0.f) {
+    // The target and clockwise interferer are in the same half-plane defined
+    // by the array.
+    interf_angles_radians_.push_back(target_angle_radians_ - away_radians_);
+  } else {
+    // Otherwise, the interferer will begin reflecting back at the target.
+    // Instead rotate it away 180 degrees.
+    interf_angles_radians_.push_back(target_angle_radians_ - away_radians_ +
+                                     M_PI);
+  }
+  const Point counterclock_interf_direction =
+      AzimuthToPoint(target_angle_radians_ + away_radians_);
+  if (!array_normal_ ||
+      DotProduct(*array_normal_, target_direction) *
+              DotProduct(*array_normal_, counterclock_interf_direction) >=
+          0.f) {
+    // The target and counter-clockwise interferer are in the same half-plane
+    // defined by the array.
+    interf_angles_radians_.push_back(target_angle_radians_ + away_radians_);
+  } else {
+    // Otherwise, the interferer will begin reflecting back at the target.
+    // Instead rotate it away 180 degrees.
+    interf_angles_radians_.push_back(target_angle_radians_ + away_radians_ -
+                                     M_PI);
+  }
 }
 
 void NonlinearBeamformer::InitDelaySumMasks() {
   for (size_t f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
     delay_sum_masks_[f_ix].Resize(1, num_input_channels_);
-    CovarianceMatrixGenerator::PhaseAlignmentMasks(f_ix,
-                                                   kFftSize,
-                                                   sample_rate_hz_,
-                                                   kSpeedOfSoundMeterSeconds,
-                                                   array_geometry_,
-                                                   kTargetAngleRadians,
-                                                   &delay_sum_masks_[f_ix]);
+    CovarianceMatrixGenerator::PhaseAlignmentMasks(
+        f_ix, kFftSize, sample_rate_hz_, kSpeedOfSoundMeterSeconds,
+        array_geometry_, target_angle_radians_, &delay_sum_masks_[f_ix]);
 
     complex_f norm_factor = sqrt(
         ConjugateDotProduct(delay_sum_masks_[f_ix], delay_sum_masks_[f_ix]));
@@ -309,15 +319,19 @@ void NonlinearBeamformer::InitTargetCovMats() {
   }
 }
 
+void NonlinearBeamformer::InitDiffuseCovMats() {
+  for (size_t i = 0; i < kNumFreqBins; ++i) {
+    uniform_cov_mat_[i].Resize(num_input_channels_, num_input_channels_);
+    CovarianceMatrixGenerator::UniformCovarianceMatrix(
+        wave_numbers_[i], array_geometry_, &uniform_cov_mat_[i]);
+    complex_f normalization_factor = uniform_cov_mat_[i].elements()[0][0];
+    uniform_cov_mat_[i].Scale(1.f / normalization_factor);
+    uniform_cov_mat_[i].Scale(1 - kBalance);
+  }
+}
+
 void NonlinearBeamformer::InitInterfCovMats() {
   for (size_t i = 0; i < kNumFreqBins; ++i) {
-    ComplexMatrixF uniform_cov_mat(num_input_channels_, num_input_channels_);
-    CovarianceMatrixGenerator::UniformCovarianceMatrix(wave_numbers_[i],
-                                                       array_geometry_,
-                                                       &uniform_cov_mat);
-    complex_f normalization_factor = uniform_cov_mat.elements()[0][0];
-    uniform_cov_mat.Scale(1.f / normalization_factor);
-    uniform_cov_mat.Scale(1 - kBalance);
     interf_cov_mats_[i].clear();
     for (size_t j = 0; j < interf_angles_radians_.size(); ++j) {
       interf_cov_mats_[i].push_back(new ComplexMatrixF(num_input_channels_,
@@ -333,11 +347,21 @@ void NonlinearBeamformer::InitInterfCovMats() {
           array_geometry_,
           &angled_cov_mat);
       // Normalize matrices before averaging them.
-      normalization_factor = angled_cov_mat.elements()[0][0];
+      complex_f normalization_factor = angled_cov_mat.elements()[0][0];
       angled_cov_mat.Scale(1.f / normalization_factor);
       // Weighted average of matrices.
       angled_cov_mat.Scale(kBalance);
-      interf_cov_mats_[i][j]->Add(uniform_cov_mat, angled_cov_mat);
+      interf_cov_mats_[i][j]->Add(uniform_cov_mat_[i], angled_cov_mat);
+    }
+  }
+}
+
+void NonlinearBeamformer::NormalizeCovMats() {
+  for (size_t i = 0; i < kNumFreqBins; ++i) {
+    rxiws_[i] = Norm(target_cov_mats_[i], delay_sum_masks_[i]);
+    rpsiws_[i].clear();
+    for (size_t j = 0; j < interf_angles_radians_.size(); ++j) {
+      rpsiws_[i].push_back(Norm(*interf_cov_mats_[i][j], delay_sum_masks_[i]));
     }
   }
 }
@@ -354,28 +378,32 @@ void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
   const float ramp_increment =
       (high_pass_postfilter_mask_ - old_high_pass_mask) /
       input.num_frames_per_band();
-  // Apply delay and sum and post-filter in the time domain. WARNING: only works
-  // because delay-and-sum is not frequency dependent.
+  // Apply the smoothed high-pass mask to the first channel of each band.
+  // This can be done because the effct of the linear beamformer is negligible
+  // compared to the post-filter.
   for (size_t i = 1; i < input.num_bands(); ++i) {
     float smoothed_mask = old_high_pass_mask;
     for (size_t j = 0; j < input.num_frames_per_band(); ++j) {
       smoothed_mask += ramp_increment;
-
-      // Applying the delay and sum (at zero degrees, this is equivalent to
-      // averaging).
-      float sum = 0.f;
-      for (int k = 0; k < input.num_channels(); ++k) {
-        sum += input.channels(i)[k][j];
-      }
-      output->channels(i)[0][j] = sum / input.num_channels() * smoothed_mask;
+      output->channels(i)[0][j] = input.channels(i)[0][j] * smoothed_mask;
     }
   }
+}
+
+void NonlinearBeamformer::AimAt(const SphericalPointf& target_direction) {
+  target_angle_radians_ = target_direction.azimuth();
+  InitHighFrequencyCorrectionRanges();
+  InitInterfAngles();
+  InitDelaySumMasks();
+  InitTargetCovMats();
+  InitInterfCovMats();
+  NormalizeCovMats();
 }
 
 bool NonlinearBeamformer::IsInBeam(const SphericalPointf& spherical_point) {
   // If more than half-beamwidth degrees away from the beam's center,
   // you are out of the beam.
-  return fabs(spherical_point.azimuth() - kTargetAngleRadians) <
+  return fabs(spherical_point.azimuth() - target_angle_radians_) <
          kHalfBeamWidthRadians;
 }
 

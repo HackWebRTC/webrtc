@@ -37,6 +37,7 @@ DEFINE_string(mic_positions, "",
     "Space delimited cartesian coordinates of microphones in meters. "
     "The coordinates of each point are contiguous. "
     "For a two element array: \"x1 y1 z1 x2 y2 z2\"");
+DEFINE_double(target_angle_degrees, 90, "The azimuth of the target in radians");
 
 DEFINE_bool(aec, false, "Enable echo cancellation.");
 DEFINE_bool(agc, false, "Enable automatic gain control.");
@@ -107,7 +108,10 @@ int main(int argc, char* argv[]) {
         ParseArrayGeometry(FLAGS_mic_positions, num_mics);
     RTC_CHECK_EQ(array_geometry.size(), num_mics);
 
-    config.Set<Beamforming>(new Beamforming(true, array_geometry));
+    config.Set<Beamforming>(new Beamforming(
+        true, array_geometry,
+        SphericalPointf(DegreesToRadians(FLAGS_target_angle_degrees), 0.f,
+                        1.f)));
   }
 
   rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));

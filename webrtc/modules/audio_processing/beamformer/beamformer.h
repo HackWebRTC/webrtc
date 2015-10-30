@@ -32,6 +32,9 @@ class Beamformer {
   // Needs to be called before the the Beamformer can be used.
   virtual void Initialize(int chunk_size_ms, int sample_rate_hz) = 0;
 
+  // Aim the beamformer at a point in space.
+  virtual void AimAt(const SphericalPointf& spherical_point) = 0;
+
   // Indicates whether a given point is inside of the beam.
   virtual bool IsInBeam(const SphericalPointf& spherical_point) { return true; }
 
