@@ -113,6 +113,7 @@ int main(int argc, char* argv[]) {
                  ap->noise_suppression()->set_level(
                      static_cast<NoiseSuppression::Level>(FLAGS_ns_level)));
   }
+  ap->set_stream_key_pressed(FLAGS_ts);
 
   rtc::scoped_ptr<AudioFileProcessor> processor;
   auto out_file = rtc_make_scoped_ptr(
