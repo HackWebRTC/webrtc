@@ -215,8 +215,9 @@ TEST_F(PhysicalSocketTest, MAYBE_TestUdpIPv6) {
 // https://code.google.com/p/webrtc/issues/detail?id=4958
 // TODO(deadbeef): Enable again once test is reimplemented to be unflaky.
 // Also disable for ASan.
+// Disabled on Android: https://code.google.com/p/webrtc/issues/detail?id=4364
 #if defined(THREAD_SANITIZER) || defined(MEMORY_SANITIZER) || \
-  defined(ADDRESS_SANITIZER)
+  defined(ADDRESS_SANITIZER) || defined(WEBRTC_ANDROID)
 #define MAYBE_TestUdpReadyToSendIPv4 DISABLED_TestUdpReadyToSendIPv4
 #else
 #define MAYBE_TestUdpReadyToSendIPv4 TestUdpReadyToSendIPv4
