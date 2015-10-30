@@ -511,14 +511,14 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
       PIP_ADAPTER_PREFIX prefixlist = adapter_addrs->FirstPrefix;
       std::string name;
       std::string description;
-#ifdef _DEBUG
+#if !defined(NDEBUG)
       name = ToUtf8(adapter_addrs->FriendlyName,
                     wcslen(adapter_addrs->FriendlyName));
 #endif
       description = ToUtf8(adapter_addrs->Description,
                            wcslen(adapter_addrs->Description));
       for (; address; address = address->Next) {
-#ifndef _DEBUG
+#if defined(NDEBUG)
         name = rtc::ToString(count);
 #endif
 

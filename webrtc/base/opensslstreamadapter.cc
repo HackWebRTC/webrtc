@@ -994,7 +994,7 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
     return NULL;
   }
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   SSL_CTX_set_info_callback(ctx, OpenSSLAdapter::SSLInfoCallback);
 #endif
 

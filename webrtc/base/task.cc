@@ -68,7 +68,7 @@ void Task::Start() {
 
 void Task::Step() {
   if (done_) {
-#ifdef _DEBUG
+#if !defined(NDEBUG)
     // we do not know how !blocked_ happens when done_ - should be impossible.
     // But it causes problems, so in retail build, we force blocked_, and
     // under debug we assert.
@@ -88,7 +88,7 @@ void Task::Step() {
 //   SignalDone();
 
     Stop();
-#ifdef _DEBUG
+#if !defined(NDEBUG)
     // verify that stop removed this from its parent
     ASSERT(!parent()->IsChildTask(this));
 #endif
@@ -125,7 +125,7 @@ void Task::Step() {
 //    SignalDone();
 
     Stop();
-#if _DEBUG
+#if !defined(NDEBUG)
     // verify that stop removed this from its parent
     ASSERT(!parent()->IsChildTask(this));
 #endif
@@ -150,7 +150,7 @@ void Task::Abort(bool nowake) {
     // "done_" is set before calling "Stop()" to ensure that this code 
     // doesn't execute more than once (recursively) for the same task.
     Stop();
-#ifdef _DEBUG
+#if !defined(NDEBUG)
     // verify that stop removed this from its parent
     ASSERT(!parent()->IsChildTask(this));
 #endif

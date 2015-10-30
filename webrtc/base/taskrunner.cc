@@ -23,7 +23,7 @@ TaskRunner::TaskRunner()
   : TaskParent(this),
     next_timeout_task_(NULL),
     tasks_running_(false)
-#ifdef _DEBUG
+#if !defined(NDEBUG)
     , abort_count_(0),
     deleting_task_(NULL)
 #endif
@@ -88,11 +88,11 @@ void TaskRunner::InternalRunTasks(bool in_destructor) {
         need_timeout_recalc = true;
       }
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
       deleting_task_ = task;
 #endif
       delete task;
-#ifdef _DEBUG
+#if !defined(NDEBUG)
       deleting_task_ = NULL;
 #endif
       tasks_[i] = NULL;

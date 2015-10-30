@@ -112,12 +112,12 @@ int main(int argc, char* argv[]) {
   char version_number[20];
   int mode = -1, tmp, nbTest = 0; /*,sss;*/
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   FILE* fy;
   double kbps;
   size_t totalbits = 0;
   int totalsmpls = 0;
-#endif /* _DEBUG */
+#endif
 
   /* only one structure used for ISAC encoder */
   ISAC_MainStruct* ISAC_main_inst;
@@ -126,12 +126,12 @@ int main(int argc, char* argv[]) {
   BottleNeckModel BN_data;
   f_bn = NULL;
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   fy = fopen("bit_rate.dat", "w");
   fclose(fy);
   fy = fopen("bytes_frames.dat", "w");
   fclose(fy);
-#endif /* _DEBUG */
+#endif
 
   // histfile = fopen("histo.dat", "ab");
   // ratefile = fopen("rates.dat", "ab");
@@ -589,7 +589,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "  \rframe = %d", framecnt);
     framecnt++;
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
 
     totalsmpls += declen;
     totalbits += 8 * stream_len;
@@ -598,15 +598,15 @@ int main(int argc, char* argv[]) {
     fprintf(fy, "Frame %i = %0.14f\n", framecnt, kbps);
     fclose(fy);
 
-#endif /* _DEBUG */
+#endif
   }
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   printf("\n\ntotal bits               = %" PRIuS " bits", totalbits);
   printf("\nmeasured average bitrate = %0.3f kbits/s",
          (double)totalbits * (FS / 1000) / totalsmpls);
   printf("\n");
-#endif /* _DEBUG */
+#endif
 
   /* Runtime statistics */
   runtime = (double)(clock() / (double)CLOCKS_PER_SEC - starttime);

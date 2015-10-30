@@ -345,7 +345,7 @@ bool Thread::SetAllowBlockingCalls(bool allow) {
 
 // static
 void Thread::AssertBlockingIsAllowedOnCurrentThread() {
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   Thread* current = Thread::Current();
   ASSERT(!current || current->blocking_calls_allowed_);
 #endif

@@ -186,7 +186,7 @@ void OpenSSLKeyPair::AddReference() {
 #endif
 }
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
 // Print a certificate to the log, for debugging.
 static void PrintCert(X509* x509) {
   BIO* temp_memory_bio = BIO_new(BIO_s_mem());
@@ -215,7 +215,7 @@ OpenSSLCertificate* OpenSSLCertificate::Generate(
     LogSSLErrors("Generating certificate");
     return NULL;
   }
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   PrintCert(x509);
 #endif
   OpenSSLCertificate* ret = new OpenSSLCertificate(x509);

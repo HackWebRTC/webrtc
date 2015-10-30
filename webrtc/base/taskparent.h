@@ -32,7 +32,7 @@ class TaskParent {
 
   bool AllChildrenDone();
   bool AnyChildError();
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   bool IsChildTask(Task *task);
 #endif
 

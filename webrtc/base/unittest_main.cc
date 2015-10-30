@@ -78,12 +78,12 @@ int main(int argc, char** argv) {
     _CrtSetReportHook2(_CRT_RPTHOOK_INSTALL, TestCrtReportHandler);
   }
 
-#ifdef _DEBUG  // Turn on memory leak checking on Windows.
+#if !defined(NDEBUG)  // Turn on memory leak checking on Windows.
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF |_CRTDBG_LEAK_CHECK_DF);
   if (FLAG_crt_break_alloc >= 0) {
     _crtBreakAlloc = FLAG_crt_break_alloc;
   }
-#endif  // _DEBUG
+#endif
 #endif  // WEBRTC_WIN
 
   rtc::Filesystem::SetOrganizationName("google");

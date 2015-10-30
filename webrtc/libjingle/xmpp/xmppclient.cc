@@ -362,7 +362,7 @@ void XmppClient::Private::OnSocketRead() {
     if (bytes_read == 0)
       return;
 
-//#ifdef _DEBUG
+//#if !defined(NDEBUG)
     client_->SignalLogInput(bytes, static_cast<int>(bytes_read));
 //#endif
 
@@ -386,7 +386,7 @@ void XmppClient::Private::OnStateChange(int state) {
 }
 
 void XmppClient::Private::WriteOutput(const char* bytes, size_t len) {
-//#ifdef _DEBUG
+//#if !defined(NDEBUG)
   client_->SignalLogOutput(bytes, static_cast<int>(len));
 //#endif
 

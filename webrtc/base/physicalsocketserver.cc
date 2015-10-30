@@ -171,12 +171,12 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     sockaddr* addr = reinterpret_cast<sockaddr*>(&addr_storage);
     int err = ::bind(s_, addr, static_cast<int>(len));
     UpdateLastError();
-#ifdef _DEBUG
+#if !defined(NDEBUG)
     if (0 == err) {
       dbg_addr_ = "Bound @ ";
       dbg_addr_.append(GetLocalAddress().ToString());
     }
-#endif  // _DEBUG
+#endif
     return err;
   }
 
@@ -361,10 +361,10 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     if (err == 0) {
       state_ = CS_CONNECTING;
       enabled_events_ |= DE_ACCEPT;
-#ifdef _DEBUG
+#if !defined(NDEBUG)
       dbg_addr_ = "Listening @ ";
       dbg_addr_.append(GetLocalAddress().ToString());
-#endif  // _DEBUG
+#endif
     }
     return err;
   }
@@ -549,9 +549,9 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   ConnState state_;
   AsyncResolver* resolver_;
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   std::string dbg_addr_;
-#endif  // _DEBUG;
+#endif
 };
 
 #if defined(WEBRTC_POSIX)
@@ -1088,10 +1088,10 @@ class SocketDispatcher : public Dispatcher, public PhysicalSocket {
       if (ff != DE_CONNECT)
         LOG(LS_VERBOSE) << "Signalled with DE_CONNECT: " << ff;
       enabled_events_ &= ~DE_CONNECT;
-#ifdef _DEBUG
+#if !defined(NDEBUG)
       dbg_addr_ = "Connected @ ";
       dbg_addr_.append(GetRemoteAddress().ToString());
-#endif  // _DEBUG
+#endif
       SignalConnectEvent(this);
     }
     if (((ff & DE_ACCEPT) != 0) && (id_ == cache_id)) {

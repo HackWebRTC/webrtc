@@ -77,9 +77,9 @@ private:
 
   rtc::scoped_ptr<SaslMechanism> sasl_mech_;
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   static const rtc::ConstantLabel LOGINTASK_STATES[];
-#endif  // _DEBUG
+#endif
 };
 
 }

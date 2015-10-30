@@ -135,7 +135,7 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
   stat.SetLastError(VE_FUNC_NOT_SUPPORTED); \
   return -1;
 
-#if (defined(_DEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
+#if (!defined(NDEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
 #include <windows.h>
 #include <stdio.h>
 #define DEBUG_PRINT(...)       \
@@ -147,7 +147,7 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 #else
 // special fix for visual 2003
 #define DEBUG_PRINT(exp) ((void)0)
-#endif  // defined(_DEBUG) && defined(_WIN32)
+#endif  // !defined(NDEBUG) && defined(_WIN32)
 
 #define CHECK_CHANNEL(channel)     \
   if (CheckChannel(channel) == -1) \

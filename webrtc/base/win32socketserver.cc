@@ -55,7 +55,7 @@ static const int ICMP_HEADER_SIZE = 8u;
 static const int ICMP_PING_TIMEOUT_MILLIS = 10000u;
 
 // TODO: Enable for production builds also? Use FormatMessage?
-#ifdef _DEBUG
+#if !defined(NDEBUG)
 LPCSTR WSAErrorToString(int error, LPCSTR *description_result) {
   LPCSTR string = "Unspecified";
   LPCSTR description = "Unspecified description";
@@ -626,7 +626,7 @@ void Win32Socket::OnSocketNotify(SOCKET socket, int event, int error) {
     case FD_CONNECT:
       if (error != ERROR_SUCCESS) {
         ReportWSAError("WSAAsync:connect notify", error, addr_);
-#ifdef _DEBUG
+#if !defined(NDEBUG)
         int32_t duration = TimeSince(connect_time_);
         LOG(LS_INFO) << "WSAAsync:connect error (" << duration
                      << " ms), faking close";
@@ -639,7 +639,7 @@ void Win32Socket::OnSocketNotify(SOCKET socket, int event, int error) {
         // though the connect event never did occur.
         SignalCloseEvent(this, error);
       } else {
-#ifdef _DEBUG
+#if !defined(NDEBUG)
         int32_t duration = TimeSince(connect_time_);
         LOG(LS_INFO) << "WSAAsync:connect (" << duration << " ms)";
 #endif

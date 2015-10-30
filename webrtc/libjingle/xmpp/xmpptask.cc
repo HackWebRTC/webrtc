@@ -24,7 +24,7 @@ XmppClientInterface::~XmppClientInterface() {
 XmppTask::XmppTask(XmppTaskParentInterface* parent,
                    XmppEngine::HandlerLevel level)
     : XmppTaskBase(parent), stopped_(false) {
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   debug_force_timeout_ = false;
 #endif
 
@@ -70,7 +70,7 @@ void XmppTask::OnDisconnect() {
 }
 
 void XmppTask::QueueStanza(const XmlElement* stanza) {
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   if (debug_force_timeout_)
     return;
 #endif

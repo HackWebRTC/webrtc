@@ -44,7 +44,7 @@ class TaskRunner : public TaskParent, public sigslot::has_slots<> {
 
   void UpdateTaskTimeout(Task* task, int64_t previous_task_timeout_time);
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   bool is_ok_to_delete(Task* task) {
     return task == deleting_task_;
   }
@@ -87,7 +87,7 @@ class TaskRunner : public TaskParent, public sigslot::has_slots<> {
   std::vector<Task *> tasks_;
   Task *next_timeout_task_;
   bool tasks_running_;
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   int abort_count_;
   Task* deleting_task_;
 #endif

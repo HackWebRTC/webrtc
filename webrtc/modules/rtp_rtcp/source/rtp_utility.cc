@@ -23,7 +23,7 @@
 #include <sys/time.h>  // gettimeofday
 #include <time.h>
 #endif
-#if (defined(_DEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
+#if (!defined(NDEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
 #include <stdio.h>
 #endif
 
@@ -31,7 +31,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
-#if (defined(_DEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
+#if (!defined(NDEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
 #define DEBUG_PRINT(...)           \
   {                                \
     char msg[256];                 \
@@ -41,7 +41,7 @@
 #else
 // special fix for visual 2003
 #define DEBUG_PRINT(exp)        ((void)0)
-#endif  // defined(_DEBUG) && defined(_WIN32)
+#endif  // !defined(NDEBUG) && defined(_WIN32)
 
 namespace webrtc {
 

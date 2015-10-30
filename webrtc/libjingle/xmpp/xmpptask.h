@@ -119,7 +119,7 @@ class XmppTask : public XmppTaskBase,
   std::string task_id() const { return id_; }
   void set_task_id(std::string id) { id_ = id; }
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   void set_debug_force_timeout(const bool f) { debug_force_timeout_ = f; }
 #endif
 
@@ -162,7 +162,7 @@ private:
   rtc::scoped_ptr<XmlElement> next_stanza_;
   std::string id_;
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
   bool debug_force_timeout_;
 #endif
 };
