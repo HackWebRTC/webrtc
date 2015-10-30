@@ -43,13 +43,12 @@ import org.webrtc.Logging;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import javax.microedition.khronos.egl.EGLContext;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.
-// MediaCodec is thread-hostile so this class must be operated on a single
-// thread.
 public class MediaCodecVideoDecoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this
@@ -66,9 +65,13 @@ public class MediaCodecVideoDecoder {
   }
 
   private static final int DEQUEUE_INPUT_TIMEOUT = 500000;  // 500 ms timeout.
+  private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000; // Timeout for codec releasing.
   // Active running decoder instance. Set in initDecode() (called from native code)
   // and reset to null in release() call.
   private static MediaCodecVideoDecoder runningInstance = null;
+  private static MediaCodecVideoDecoderErrorCallback errorCallback = null;
+  private static int codecErrors = 0;
+
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] inputBuffers;
@@ -103,6 +106,18 @@ public class MediaCodecVideoDecoder {
   private EglBase eglBase;
 
   private MediaCodecVideoDecoder() {
+  }
+
+  // MediaCodec error handler - invoked when critical error happens which may prevent
+  // further use of media codec API. Now it means that one of media codec instances
+  // is hanging and can no longer be used in the next call.
+  public static interface MediaCodecVideoDecoderErrorCallback {
+    void onMediaCodecVideoDecoderCriticalError(int codecErrors);
+  }
+
+  public static void setErrorCallback(MediaCodecVideoDecoderErrorCallback errorCallback) {
+    Logging.d(TAG, "Set error callback");
+    MediaCodecVideoDecoder.errorCallback = errorCallback;
   }
 
   // Helper struct for findVp8Decoder() below.
@@ -273,12 +288,36 @@ public class MediaCodecVideoDecoder {
   private void release() {
     Logging.d(TAG, "Java releaseDecoder");
     checkOnMediaCodecThread();
-    try {
-      mediaCodec.stop();
-      mediaCodec.release();
-    } catch (IllegalStateException e) {
-      Logging.e(TAG, "release failed", e);
+
+    // Run Mediacodec stop() and release() on separate thread since sometime
+    // Mediacodec.stop() may hang.
+    final CountDownLatch releaseDone = new CountDownLatch(1);
+
+    Runnable runMediaCodecRelease = new Runnable() {
+      @Override
+      public void run() {
+        try {
+          Logging.d(TAG, "Java releaseDecoder on release thread");
+          mediaCodec.stop();
+          mediaCodec.release();
+          Logging.d(TAG, "Java releaseDecoder on release thread done");
+        } catch (Exception e) {
+          Logging.e(TAG, "Media decoder release failed", e);
+        }
+        releaseDone.countDown();
+      }
+    };
+    new Thread(runMediaCodecRelease).start();
+
+    if (!ThreadUtils.awaitUninterruptibly(releaseDone, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
+      Logging.e(TAG, "Media decoder release timeout");
+      codecErrors++;
+      if (errorCallback != null) {
+        Logging.e(TAG, "Invoke codec error callback. Errors: " + codecErrors);
+        errorCallback.onMediaCodecVideoDecoderCriticalError(codecErrors);
+      }
     }
+
     mediaCodec = null;
     mediaCodecThread = null;
     runningInstance = null;
@@ -354,6 +393,7 @@ public class MediaCodecVideoDecoder {
   private Object dequeueOutputBuffer(int dequeueTimeoutUs)
       throws IllegalStateException, MediaCodec.CodecException {
     checkOnMediaCodecThread();
+
     // Drain the decoder until receiving a decoded buffer or hitting
     // MediaCodec.INFO_TRY_AGAIN_LATER.
     final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();

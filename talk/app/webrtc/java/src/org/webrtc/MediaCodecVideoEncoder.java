@@ -40,11 +40,10 @@ import org.webrtc.Logging;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
 // This class is an implementation detail of the Java PeerConnection API.
-// MediaCodec is thread-hostile so this class must be operated on a single
-// thread.
 public class MediaCodecVideoEncoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this
@@ -60,10 +59,14 @@ public class MediaCodecVideoEncoder {
     VIDEO_CODEC_H264
   }
 
+  private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000; // Timeout for codec releasing.
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
   // Active running encoder instance. Set in initDecode() (called from native code)
   // and reset to null in release() call.
   private static MediaCodecVideoEncoder runningInstance = null;
+  private static MediaCodecVideoEncoderErrorCallback errorCallback = null;
+  private static int codecErrors = 0;
+
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
@@ -108,6 +111,18 @@ public class MediaCodecVideoEncoder {
   private MediaCodecVideoEncoder() {
   }
 
+  // MediaCodec error handler - invoked when critical error happens which may prevent
+  // further use of media codec API. Now it means that one of media codec instances
+  // is hanging and can no longer be used in the next call.
+  public static interface MediaCodecVideoEncoderErrorCallback {
+    void onMediaCodecVideoEncoderCriticalError(int codecErrors);
+  }
+
+  public static void setErrorCallback(MediaCodecVideoEncoderErrorCallback errorCallback) {
+    Logging.d(TAG, "Set error callback");
+    MediaCodecVideoEncoder.errorCallback = errorCallback;
+  }
+
   // Helper struct for findHwEncoder() below.
   private static class EncoderProperties {
     public EncoderProperties(String codecName, int colorFormat) {
@@ -130,8 +145,7 @@ public class MediaCodecVideoEncoder {
     if (mime.equals(H264_MIME_TYPE)) {
       List<String> exceptionModels = Arrays.asList(H264_HW_EXCEPTION_MODELS);
       if (exceptionModels.contains(Build.MODEL)) {
-        Logging.w(TAG, "Model: " + Build.MODEL +
-            " has black listed H.264 encoder.");
+        Logging.w(TAG, "Model: " + Build.MODEL + " has black listed H.264 encoder.");
         return null;
       }
     }
@@ -306,12 +320,36 @@ public class MediaCodecVideoEncoder {
   private void release() {
     Logging.d(TAG, "Java releaseEncoder");
     checkOnMediaCodecThread();
-    try {
-      mediaCodec.stop();
-      mediaCodec.release();
-    } catch (IllegalStateException e) {
-      Logging.e(TAG, "release failed", e);
+
+    // Run Mediacodec stop() and release() on separate thread since sometime
+    // Mediacodec.stop() may hang.
+    final CountDownLatch releaseDone = new CountDownLatch(1);
+
+    Runnable runMediaCodecRelease = new Runnable() {
+      @Override
+      public void run() {
+        try {
+          Logging.d(TAG, "Java releaseEncoder on release thread");
+          mediaCodec.stop();
+          mediaCodec.release();
+          Logging.d(TAG, "Java releaseEncoder on release thread done");
+        } catch (Exception e) {
+          Logging.e(TAG, "Media encoder release failed", e);
+        }
+        releaseDone.countDown();
+      }
+    };
+    new Thread(runMediaCodecRelease).start();
+
+    if (!ThreadUtils.awaitUninterruptibly(releaseDone, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
+      Logging.e(TAG, "Media encoder release timeout");
+      codecErrors++;
+      if (errorCallback != null) {
+        Logging.e(TAG, "Invoke codec error callback. Errors: " + codecErrors);
+        errorCallback.onMediaCodecVideoEncoderCriticalError(codecErrors);
+      }
     }
+
     mediaCodec = null;
     mediaCodecThread = null;
     runningInstance = null;

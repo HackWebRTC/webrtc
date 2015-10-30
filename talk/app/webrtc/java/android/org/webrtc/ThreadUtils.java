@@ -28,9 +28,11 @@
 package org.webrtc;
 
 import android.os.Handler;
+import android.os.SystemClock;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 final class ThreadUtils {
   /**
@@ -102,6 +104,30 @@ final class ThreadUtils {
         latch.await();
       }
     });
+  }
+
+  public static boolean awaitUninterruptibly(CountDownLatch barrier, long timeoutMs) {
+    final long startTimeMs = SystemClock.elapsedRealtime();
+    long timeRemainingMs = timeoutMs;
+    boolean wasInterrupted = false;
+    boolean result = false;
+    do {
+      try {
+        result = barrier.await(timeRemainingMs, TimeUnit.MILLISECONDS);
+        break;
+      } catch (InterruptedException e) {
+        // Someone is asking us to return early at our convenience. We can't cancel this operation,
+        // but we should preserve the information and pass it along.
+        wasInterrupted = true;
+        final long elapsedTimeMs = SystemClock.elapsedRealtime() - startTimeMs;
+        timeRemainingMs = timeoutMs - elapsedTimeMs;
+      }
+    } while (timeRemainingMs > 0);
+    // Pass interruption information along.
+    if (wasInterrupted) {
+      Thread.currentThread().interrupt();
+    }
+    return result;
   }
 
   /**
