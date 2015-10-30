@@ -133,12 +133,14 @@ class RentACodec {
 
   static inline rtc::Maybe<int> CodecIndexFromId(CodecId codec_id) {
     const int i = static_cast<int>(codec_id);
-    return i < static_cast<int>(NumberOfCodecs()) ? i : rtc::Maybe<int>();
+    return i < static_cast<int>(NumberOfCodecs()) ? rtc::Maybe<int>(i)
+                                                  : rtc::Maybe<int>();
   }
 
   static inline rtc::Maybe<CodecId> CodecIdFromIndex(int codec_index) {
     return static_cast<size_t>(codec_index) < NumberOfCodecs()
-               ? static_cast<RentACodec::CodecId>(codec_index)
+               ? rtc::Maybe<RentACodec::CodecId>(
+                     static_cast<RentACodec::CodecId>(codec_index))
                : rtc::Maybe<RentACodec::CodecId>();
   }
 

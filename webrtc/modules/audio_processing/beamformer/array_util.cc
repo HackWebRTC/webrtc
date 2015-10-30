@@ -68,7 +68,7 @@ rtc::Maybe<Point> GetDirectionIfLinear(
       return rtc::Maybe<Point>();
     }
   }
-  return first_pair_direction;
+  return rtc::Maybe<Point>(first_pair_direction);
 }
 
 rtc::Maybe<Point> GetNormalIfPlanar(const std::vector<Point>& array_geometry) {
@@ -95,14 +95,14 @@ rtc::Maybe<Point> GetNormalIfPlanar(const std::vector<Point>& array_geometry) {
       return rtc::Maybe<Point>();
     }
   }
-  return normal_direction;
+  return rtc::Maybe<Point>(normal_direction);
 }
 
 rtc::Maybe<Point> GetArrayNormalIfExists(
     const std::vector<Point>& array_geometry) {
   const rtc::Maybe<Point> direction = GetDirectionIfLinear(array_geometry);
   if (direction) {
-    return Point(direction->y(), -direction->x(), 0.f);
+    return rtc::Maybe<Point>(Point(direction->y(), -direction->x(), 0.f));
   }
   const rtc::Maybe<Point> normal = GetNormalIfPlanar(array_geometry);
   if (normal && normal->z() < kMaxDotProduct) {

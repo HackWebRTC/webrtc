@@ -368,20 +368,20 @@ void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
 // ns, and highpass) and the rest hardcoded in InitInternal.
 AudioOptions GetDefaultEngineOptions() {
   AudioOptions options;
-  options.echo_cancellation.Set(true);
-  options.auto_gain_control.Set(true);
-  options.noise_suppression.Set(true);
-  options.highpass_filter.Set(true);
-  options.stereo_swapping.Set(false);
-  options.audio_jitter_buffer_max_packets.Set(50);
-  options.audio_jitter_buffer_fast_accelerate.Set(false);
-  options.typing_detection.Set(true);
-  options.adjust_agc_delta.Set(0);
-  options.experimental_agc.Set(false);
-  options.extended_filter_aec.Set(false);
-  options.delay_agnostic_aec.Set(false);
-  options.experimental_ns.Set(false);
-  options.aec_dump.Set(false);
+  options.echo_cancellation = rtc::Maybe<bool>(true);
+  options.auto_gain_control = rtc::Maybe<bool>(true);
+  options.noise_suppression = rtc::Maybe<bool>(true);
+  options.highpass_filter = rtc::Maybe<bool>(true);
+  options.stereo_swapping = rtc::Maybe<bool>(false);
+  options.audio_jitter_buffer_max_packets = rtc::Maybe<int>(50);
+  options.audio_jitter_buffer_fast_accelerate = rtc::Maybe<bool>(false);
+  options.typing_detection = rtc::Maybe<bool>(true);
+  options.adjust_agc_delta = rtc::Maybe<int>(0);
+  options.experimental_agc = rtc::Maybe<bool>(false);
+  options.extended_filter_aec = rtc::Maybe<bool>(false);
+  options.delay_agnostic_aec = rtc::Maybe<bool>(false);
+  options.experimental_ns = rtc::Maybe<bool>(false);
+  options.aec_dump = rtc::Maybe<bool>(false);
   return options;
 }
 
@@ -619,16 +619,16 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   webrtc::AecmModes aecm_mode = webrtc::kAecmSpeakerphone;
   webrtc::AgcModes agc_mode = webrtc::kAgcAdaptiveAnalog;
   webrtc::NsModes ns_mode = webrtc::kNsHighSuppression;
-  bool aecm_comfort_noise = false;
-  if (options.aecm_generate_comfort_noise.Get(&aecm_comfort_noise)) {
+  if (options.aecm_generate_comfort_noise) {
     LOG(LS_VERBOSE) << "Comfort noise explicitly set to "
-                    << aecm_comfort_noise << " (default is false).";
+                    << *options.aecm_generate_comfort_noise
+                    << " (default is false).";
   }
 
 #if defined(IOS)
   // On iOS, VPIO provides built-in EC and AGC.
-  options.echo_cancellation.Set(false);
-  options.auto_gain_control.Set(false);
+  options.echo_cancellation = rtc::Maybe<bool>(false);
+  options.auto_gain_control = rtc::Maybe<bool>(false);
   LOG(LS_INFO) << "Always disable AEC and AGC on iOS. Use built-in instead.";
 #elif defined(ANDROID)
   ec_mode = webrtc::kEcAecm;
@@ -638,20 +638,21 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   // Set the AGC mode for iOS as well despite disabling it above, to avoid
   // unsupported configuration errors from webrtc.
   agc_mode = webrtc::kAgcFixedDigital;
-  options.typing_detection.Set(false);
-  options.experimental_agc.Set(false);
-  options.extended_filter_aec.Set(false);
-  options.experimental_ns.Set(false);
+  options.typing_detection = rtc::Maybe<bool>(false);
+  options.experimental_agc = rtc::Maybe<bool>(false);
+  options.extended_filter_aec = rtc::Maybe<bool>(false);
+  options.experimental_ns = rtc::Maybe<bool>(false);
 #endif
 
   // Delay Agnostic AEC automatically turns on EC if not set except on iOS
   // where the feature is not supported.
   bool use_delay_agnostic_aec = false;
 #if !defined(IOS)
-  if (options.delay_agnostic_aec.Get(&use_delay_agnostic_aec)) {
+  if (options.delay_agnostic_aec) {
+    use_delay_agnostic_aec = *options.delay_agnostic_aec;
     if (use_delay_agnostic_aec) {
-      options.echo_cancellation.Set(true);
-      options.extended_filter_aec.Set(true);
+      options.echo_cancellation = rtc::Maybe<bool>(true);
+      options.extended_filter_aec = rtc::Maybe<bool>(true);
       ec_mode = webrtc::kEcConference;
     }
   }
@@ -659,8 +660,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();
 
-  bool echo_cancellation = false;
-  if (options.echo_cancellation.Get(&echo_cancellation)) {
+  if (options.echo_cancellation) {
     // Check if platform supports built-in EC. Currently only supported on
     // Android and in combination with Java based audio layer.
     // TODO(henrika): investigate possibility to support built-in EC also
@@ -671,63 +671,61 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       // overriding it. Enable/Disable it according to the echo_cancellation
       // audio option.
       const bool enable_built_in_aec =
-          echo_cancellation && !use_delay_agnostic_aec;
+          *options.echo_cancellation && !use_delay_agnostic_aec;
       if (voe_wrapper_->hw()->EnableBuiltInAEC(enable_built_in_aec) == 0 &&
           enable_built_in_aec) {
         // Disable internal software EC if built-in EC is enabled,
         // i.e., replace the software EC with the built-in EC.
-        options.echo_cancellation.Set(false);
-        echo_cancellation = false;
+        options.echo_cancellation = rtc::Maybe<bool>(false);
         LOG(LS_INFO) << "Disabling EC since built-in EC will be used instead";
       }
     }
-    if (voep->SetEcStatus(echo_cancellation, ec_mode) == -1) {
-      LOG_RTCERR2(SetEcStatus, echo_cancellation, ec_mode);
+    if (voep->SetEcStatus(*options.echo_cancellation, ec_mode) == -1) {
+      LOG_RTCERR2(SetEcStatus, *options.echo_cancellation, ec_mode);
       return false;
     } else {
-      LOG(LS_INFO) << "Echo control set to " << echo_cancellation
+      LOG(LS_INFO) << "Echo control set to " << *options.echo_cancellation
                    << " with mode " << ec_mode;
     }
 #if !defined(ANDROID)
     // TODO(ajm): Remove the error return on Android from webrtc.
-    if (voep->SetEcMetricsStatus(echo_cancellation) == -1) {
-      LOG_RTCERR1(SetEcMetricsStatus, echo_cancellation);
+    if (voep->SetEcMetricsStatus(*options.echo_cancellation) == -1) {
+      LOG_RTCERR1(SetEcMetricsStatus, *options.echo_cancellation);
       return false;
     }
 #endif
     if (ec_mode == webrtc::kEcAecm) {
-      if (voep->SetAecmMode(aecm_mode, aecm_comfort_noise) != 0) {
-        LOG_RTCERR2(SetAecmMode, aecm_mode, aecm_comfort_noise);
+      bool cn = options.aecm_generate_comfort_noise.value_or(false);
+      if (voep->SetAecmMode(aecm_mode, cn) != 0) {
+        LOG_RTCERR2(SetAecmMode, aecm_mode, cn);
         return false;
       }
     }
   }
 
-  bool auto_gain_control = false;
-  if (options.auto_gain_control.Get(&auto_gain_control)) {
+  if (options.auto_gain_control) {
     const bool built_in_agc = voe_wrapper_->hw()->BuiltInAGCIsAvailable();
     if (built_in_agc) {
-      if (voe_wrapper_->hw()->EnableBuiltInAGC(auto_gain_control) == 0 &&
-          auto_gain_control) {
+      if (voe_wrapper_->hw()->EnableBuiltInAGC(*options.auto_gain_control) ==
+              0 &&
+          *options.auto_gain_control) {
         // Disable internal software AGC if built-in AGC is enabled,
         // i.e., replace the software AGC with the built-in AGC.
-        options.auto_gain_control.Set(false);
-        auto_gain_control = false;
+        options.auto_gain_control = rtc::Maybe<bool>(false);
         LOG(LS_INFO) << "Disabling AGC since built-in AGC will be used instead";
       }
     }
-    if (voep->SetAgcStatus(auto_gain_control, agc_mode) == -1) {
-      LOG_RTCERR2(SetAgcStatus, auto_gain_control, agc_mode);
+    if (voep->SetAgcStatus(*options.auto_gain_control, agc_mode) == -1) {
+      LOG_RTCERR2(SetAgcStatus, *options.auto_gain_control, agc_mode);
       return false;
     } else {
-      LOG(LS_INFO) << "Auto gain set to " << auto_gain_control << " with mode "
-                   << agc_mode;
+      LOG(LS_INFO) << "Auto gain set to " << *options.auto_gain_control
+                   << " with mode " << agc_mode;
     }
   }
 
-  if (options.tx_agc_target_dbov.IsSet() ||
-      options.tx_agc_digital_compression_gain.IsSet() ||
-      options.tx_agc_limiter.IsSet()) {
+  if (options.tx_agc_target_dbov || options.tx_agc_digital_compression_gain ||
+      options.tx_agc_limiter) {
     // Override default_agc_config_. Generally, an unset option means "leave
     // the VoE bits alone" in this function, so we want whatever is set to be
     // stored as the new "default". If we didn't, then setting e.g.
@@ -736,15 +734,13 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     // Also, if we don't update default_agc_config_, then adjust_agc_delta
     // would be an offset from the original values, and not whatever was set
     // explicitly.
-    default_agc_config_.targetLeveldBOv =
-        options.tx_agc_target_dbov.GetWithDefaultIfUnset(
-            default_agc_config_.targetLeveldBOv);
+    default_agc_config_.targetLeveldBOv = options.tx_agc_target_dbov.value_or(
+        default_agc_config_.targetLeveldBOv);
     default_agc_config_.digitalCompressionGaindB =
-        options.tx_agc_digital_compression_gain.GetWithDefaultIfUnset(
+        options.tx_agc_digital_compression_gain.value_or(
             default_agc_config_.digitalCompressionGaindB);
     default_agc_config_.limiterEnable =
-        options.tx_agc_limiter.GetWithDefaultIfUnset(
-            default_agc_config_.limiterEnable);
+        options.tx_agc_limiter.value_or(default_agc_config_.limiterEnable);
     if (voe_wrapper_->processing()->SetAgcConfig(default_agc_config_) == -1) {
       LOG_RTCERR3(SetAgcConfig,
                   default_agc_config_.targetLeveldBOv,
@@ -754,84 +750,79 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  bool noise_suppression = false;
-  if (options.noise_suppression.Get(&noise_suppression)) {
+  if (options.noise_suppression) {
     const bool built_in_ns = voe_wrapper_->hw()->BuiltInNSIsAvailable();
     if (built_in_ns) {
-      if (voe_wrapper_->hw()->EnableBuiltInNS(noise_suppression) == 0 &&
-          noise_suppression) {
+      if (voe_wrapper_->hw()->EnableBuiltInNS(*options.noise_suppression) ==
+              0 &&
+          *options.noise_suppression) {
         // Disable internal software NS if built-in NS is enabled,
         // i.e., replace the software NS with the built-in NS.
-        options.noise_suppression.Set(false);
-        noise_suppression = false;
+        options.noise_suppression = rtc::Maybe<bool>(false);
         LOG(LS_INFO) << "Disabling NS since built-in NS will be used instead";
       }
     }
-    if (voep->SetNsStatus(noise_suppression, ns_mode) == -1) {
-      LOG_RTCERR2(SetNsStatus, noise_suppression, ns_mode);
+    if (voep->SetNsStatus(*options.noise_suppression, ns_mode) == -1) {
+      LOG_RTCERR2(SetNsStatus, *options.noise_suppression, ns_mode);
       return false;
     } else {
-      LOG(LS_INFO) << "Noise suppression set to " << noise_suppression
+      LOG(LS_INFO) << "Noise suppression set to " << *options.noise_suppression
                    << " with mode " << ns_mode;
     }
   }
 
-  bool highpass_filter;
-  if (options.highpass_filter.Get(&highpass_filter)) {
-    LOG(LS_INFO) << "High pass filter enabled? " << highpass_filter;
-    if (voep->EnableHighPassFilter(highpass_filter) == -1) {
-      LOG_RTCERR1(SetHighpassFilterStatus, highpass_filter);
+  if (options.highpass_filter) {
+    LOG(LS_INFO) << "High pass filter enabled? " << *options.highpass_filter;
+    if (voep->EnableHighPassFilter(*options.highpass_filter) == -1) {
+      LOG_RTCERR1(SetHighpassFilterStatus, *options.highpass_filter);
       return false;
     }
   }
 
-  bool stereo_swapping;
-  if (options.stereo_swapping.Get(&stereo_swapping)) {
-    LOG(LS_INFO) << "Stereo swapping enabled? " << stereo_swapping;
-    voep->EnableStereoChannelSwapping(stereo_swapping);
-    if (voep->IsStereoChannelSwappingEnabled() != stereo_swapping) {
-      LOG_RTCERR1(EnableStereoChannelSwapping, stereo_swapping);
+  if (options.stereo_swapping) {
+    LOG(LS_INFO) << "Stereo swapping enabled? " << *options.stereo_swapping;
+    voep->EnableStereoChannelSwapping(*options.stereo_swapping);
+    if (voep->IsStereoChannelSwappingEnabled() != *options.stereo_swapping) {
+      LOG_RTCERR1(EnableStereoChannelSwapping, *options.stereo_swapping);
       return false;
     }
   }
 
-  int audio_jitter_buffer_max_packets;
-  if (options.audio_jitter_buffer_max_packets.Get(
-          &audio_jitter_buffer_max_packets)) {
-    LOG(LS_INFO) << "NetEq capacity is " << audio_jitter_buffer_max_packets;
+  if (options.audio_jitter_buffer_max_packets) {
+    LOG(LS_INFO) << "NetEq capacity is "
+                 << *options.audio_jitter_buffer_max_packets;
     voe_config_.Set<webrtc::NetEqCapacityConfig>(
-        new webrtc::NetEqCapacityConfig(audio_jitter_buffer_max_packets));
+        new webrtc::NetEqCapacityConfig(
+            *options.audio_jitter_buffer_max_packets));
   }
 
-  bool audio_jitter_buffer_fast_accelerate;
-  if (options.audio_jitter_buffer_fast_accelerate.Get(
-          &audio_jitter_buffer_fast_accelerate)) {
-    LOG(LS_INFO) << "NetEq fast mode? " << audio_jitter_buffer_fast_accelerate;
+  if (options.audio_jitter_buffer_fast_accelerate) {
+    LOG(LS_INFO) << "NetEq fast mode? "
+                 << *options.audio_jitter_buffer_fast_accelerate;
     voe_config_.Set<webrtc::NetEqFastAccelerate>(
-        new webrtc::NetEqFastAccelerate(audio_jitter_buffer_fast_accelerate));
+        new webrtc::NetEqFastAccelerate(
+            *options.audio_jitter_buffer_fast_accelerate));
   }
 
-  bool typing_detection;
-  if (options.typing_detection.Get(&typing_detection)) {
-    LOG(LS_INFO) << "Typing detection is enabled? " << typing_detection;
-    if (voep->SetTypingDetectionStatus(typing_detection) == -1) {
+  if (options.typing_detection) {
+    LOG(LS_INFO) << "Typing detection is enabled? "
+                 << *options.typing_detection;
+    if (voep->SetTypingDetectionStatus(*options.typing_detection) == -1) {
       // In case of error, log the info and continue
-      LOG_RTCERR1(SetTypingDetectionStatus, typing_detection);
+      LOG_RTCERR1(SetTypingDetectionStatus, *options.typing_detection);
     }
   }
 
-  int adjust_agc_delta;
-  if (options.adjust_agc_delta.Get(&adjust_agc_delta)) {
-    LOG(LS_INFO) << "Adjust agc delta is " << adjust_agc_delta;
-    if (!AdjustAgcLevel(adjust_agc_delta)) {
+  if (options.adjust_agc_delta) {
+    LOG(LS_INFO) << "Adjust agc delta is " << *options.adjust_agc_delta;
+    if (!AdjustAgcLevel(*options.adjust_agc_delta)) {
       return false;
     }
   }
 
-  bool aec_dump;
-  if (options.aec_dump.Get(&aec_dump)) {
-    LOG(LS_INFO) << "Aec dump is enabled? " << aec_dump;
-    if (aec_dump)
+  if (options.aec_dump) {
+    LOG(LS_INFO) << "Aec dump is enabled? " << *options.aec_dump;
+    if (*options.aec_dump)
       StartAecDump(kAecDumpByAudioOptionFilename);
     else
       StopAecDump();
@@ -839,28 +830,30 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   webrtc::Config config;
 
-  delay_agnostic_aec_.SetFrom(options.delay_agnostic_aec);
-  bool delay_agnostic_aec;
-  if (delay_agnostic_aec_.Get(&delay_agnostic_aec)) {
-    LOG(LS_INFO) << "Delay agnostic aec is enabled? " << delay_agnostic_aec;
+  if (options.delay_agnostic_aec)
+    delay_agnostic_aec_ = options.delay_agnostic_aec;
+  if (delay_agnostic_aec_) {
+    LOG(LS_INFO) << "Delay agnostic aec is enabled? " << *delay_agnostic_aec_;
     config.Set<webrtc::DelayAgnostic>(
-        new webrtc::DelayAgnostic(delay_agnostic_aec));
+        new webrtc::DelayAgnostic(*delay_agnostic_aec_));
   }
 
-  extended_filter_aec_.SetFrom(options.extended_filter_aec);
-  bool extended_filter;
-  if (extended_filter_aec_.Get(&extended_filter)) {
-    LOG(LS_INFO) << "Extended filter aec is enabled? " << extended_filter;
+  if (options.extended_filter_aec) {
+    extended_filter_aec_ = options.extended_filter_aec;
+  }
+  if (extended_filter_aec_) {
+    LOG(LS_INFO) << "Extended filter aec is enabled? " << *extended_filter_aec_;
     config.Set<webrtc::ExtendedFilter>(
-        new webrtc::ExtendedFilter(extended_filter));
+        new webrtc::ExtendedFilter(*extended_filter_aec_));
   }
 
-  experimental_ns_.SetFrom(options.experimental_ns);
-  bool experimental_ns;
-  if (experimental_ns_.Get(&experimental_ns)) {
-    LOG(LS_INFO) << "Experimental ns is enabled? " << experimental_ns;
+  if (options.experimental_ns) {
+    experimental_ns_ = options.experimental_ns;
+  }
+  if (experimental_ns_) {
+    LOG(LS_INFO) << "Experimental ns is enabled? " << *experimental_ns_;
     config.Set<webrtc::ExperimentalNs>(
-        new webrtc::ExperimentalNs(experimental_ns));
+        new webrtc::ExperimentalNs(*experimental_ns_));
   }
 
   // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
@@ -870,19 +863,20 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     audioproc->SetExtraOptions(config);
   }
 
-  uint32_t recording_sample_rate;
-  if (options.recording_sample_rate.Get(&recording_sample_rate)) {
-    LOG(LS_INFO) << "Recording sample rate is " << recording_sample_rate;
-    if (voe_wrapper_->hw()->SetRecordingSampleRate(recording_sample_rate)) {
-      LOG_RTCERR1(SetRecordingSampleRate, recording_sample_rate);
+  if (options.recording_sample_rate) {
+    LOG(LS_INFO) << "Recording sample rate is "
+                 << *options.recording_sample_rate;
+    if (voe_wrapper_->hw()->SetRecordingSampleRate(
+            *options.recording_sample_rate)) {
+      LOG_RTCERR1(SetRecordingSampleRate, *options.recording_sample_rate);
     }
   }
 
-  uint32_t playout_sample_rate;
-  if (options.playout_sample_rate.Get(&playout_sample_rate)) {
-    LOG(LS_INFO) << "Playout sample rate is " << playout_sample_rate;
-    if (voe_wrapper_->hw()->SetPlayoutSampleRate(playout_sample_rate)) {
-      LOG_RTCERR1(SetPlayoutSampleRate, playout_sample_rate);
+  if (options.playout_sample_rate) {
+    LOG(LS_INFO) << "Playout sample rate is " << *options.playout_sample_rate;
+    if (voe_wrapper_->hw()->SetPlayoutSampleRate(
+            *options.playout_sample_rate)) {
+      LOG_RTCERR1(SetPlayoutSampleRate, *options.playout_sample_rate);
     }
   }
 
@@ -1514,7 +1508,7 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
 
   if (dscp_option_changed) {
     rtc::DiffServCodePoint dscp = rtc::DSCP_DEFAULT;
-    if (options_.dscp.GetWithDefaultIfUnset(false))
+    if (options_.dscp.value_or(false))
       dscp = kAudioDscpValue;
     if (MediaChannel::SetDscp(dscp) != 0) {
       LOG(LS_WARNING) << "Failed to set DSCP settings for audio channel";
@@ -2857,7 +2851,7 @@ void WebRtcVoiceMediaChannel::AddAudioReceiveStream(uint32_t ssrc) {
   // Only add RTP extensions if we support combined A/V BWE.
   config.rtp.extensions = recv_rtp_extensions_;
   config.combined_audio_video_bwe =
-      options_.combined_audio_video_bwe.GetWithDefaultIfUnset(false);
+      options_.combined_audio_video_bwe.value_or(false);
   config.voe_channel_id = stream->channel();
   config.sync_group = receive_stream_params_[ssrc].sync_label;
   webrtc::AudioReceiveStream* s = call_->CreateAudioReceiveStream(config);

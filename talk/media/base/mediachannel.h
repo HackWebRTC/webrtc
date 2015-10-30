@@ -38,6 +38,7 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/maybe.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/window.h"
@@ -63,75 +64,13 @@ const int kMinRtpHeaderExtensionId = 1;
 const int kMaxRtpHeaderExtensionId = 255;
 const int kScreencastDefaultFps = 5;
 
-// Used in AudioOptions and VideoOptions to signify "unset" values.
 template <class T>
-class Settable {
- public:
-  Settable() : set_(false), val_() {}
-  explicit Settable(T val) : set_(true), val_(val) {}
-
-  bool IsSet() const {
-    return set_;
-  }
-
-  bool Get(T* out) const {
-    *out = val_;
-    return set_;
-  }
-
-  T GetWithDefaultIfUnset(const T& default_value) const {
-    return set_ ? val_ : default_value;
-  }
-
-  void Set(T val) {
-    set_ = true;
-    val_ = val;
-  }
-
-  void Clear() {
-    Set(T());
-    set_ = false;
-  }
-
-  void SetFrom(const Settable<T>& o) {
-    // Set this value based on the value of o, iff o is set.  If this value is
-    // set and o is unset, the current value will be unchanged.
-    T val;
-    if (o.Get(&val)) {
-      Set(val);
-    }
-  }
-
-  std::string ToString() const {
-    return set_ ? rtc::ToString(val_) : "";
-  }
-
-  bool operator==(const Settable<T>& o) const {
-    // Equal if both are unset with any value or both set with the same value.
-    return (set_ == o.set_) && (!set_ || (val_ == o.val_));
-  }
-
-  bool operator!=(const Settable<T>& o) const {
-    return !operator==(o);
-  }
-
- protected:
-  void InitializeValue(const T &val) {
-    val_ = val;
-  }
-
- private:
-  bool set_;
-  T val_;
-};
-
-template <class T>
-static std::string ToStringIfSet(const char* key, const Settable<T>& val) {
+static std::string ToStringIfSet(const char* key, const rtc::Maybe<T>& val) {
   std::string str;
-  if (val.IsSet()) {
+  if (val) {
     str = key;
     str += ": ";
-    str += val.ToString();
+    str += val ? rtc::ToString(*val) : "";
     str += ", ";
   }
   return str;
@@ -157,32 +96,32 @@ static std::string VectorToString(const std::vector<T>& vals) {
 // but some things currently still use flags.
 struct AudioOptions {
   void SetAll(const AudioOptions& change) {
-    echo_cancellation.SetFrom(change.echo_cancellation);
-    auto_gain_control.SetFrom(change.auto_gain_control);
-    noise_suppression.SetFrom(change.noise_suppression);
-    highpass_filter.SetFrom(change.highpass_filter);
-    stereo_swapping.SetFrom(change.stereo_swapping);
-    audio_jitter_buffer_max_packets.SetFrom(
-        change.audio_jitter_buffer_max_packets);
-    audio_jitter_buffer_fast_accelerate.SetFrom(
-        change.audio_jitter_buffer_fast_accelerate);
-    typing_detection.SetFrom(change.typing_detection);
-    aecm_generate_comfort_noise.SetFrom(change.aecm_generate_comfort_noise);
-    conference_mode.SetFrom(change.conference_mode);
-    adjust_agc_delta.SetFrom(change.adjust_agc_delta);
-    experimental_agc.SetFrom(change.experimental_agc);
-    extended_filter_aec.SetFrom(change.extended_filter_aec);
-    delay_agnostic_aec.SetFrom(change.delay_agnostic_aec);
-    experimental_ns.SetFrom(change.experimental_ns);
-    aec_dump.SetFrom(change.aec_dump);
-    tx_agc_target_dbov.SetFrom(change.tx_agc_target_dbov);
-    tx_agc_digital_compression_gain.SetFrom(
-        change.tx_agc_digital_compression_gain);
-    tx_agc_limiter.SetFrom(change.tx_agc_limiter);
-    recording_sample_rate.SetFrom(change.recording_sample_rate);
-    playout_sample_rate.SetFrom(change.playout_sample_rate);
-    dscp.SetFrom(change.dscp);
-    combined_audio_video_bwe.SetFrom(change.combined_audio_video_bwe);
+    SetFrom(&echo_cancellation, change.echo_cancellation);
+    SetFrom(&auto_gain_control, change.auto_gain_control);
+    SetFrom(&noise_suppression, change.noise_suppression);
+    SetFrom(&highpass_filter, change.highpass_filter);
+    SetFrom(&stereo_swapping, change.stereo_swapping);
+    SetFrom(&audio_jitter_buffer_max_packets,
+            change.audio_jitter_buffer_max_packets);
+    SetFrom(&audio_jitter_buffer_fast_accelerate,
+            change.audio_jitter_buffer_fast_accelerate);
+    SetFrom(&typing_detection, change.typing_detection);
+    SetFrom(&aecm_generate_comfort_noise, change.aecm_generate_comfort_noise);
+    SetFrom(&conference_mode, change.conference_mode);
+    SetFrom(&adjust_agc_delta, change.adjust_agc_delta);
+    SetFrom(&experimental_agc, change.experimental_agc);
+    SetFrom(&extended_filter_aec, change.extended_filter_aec);
+    SetFrom(&delay_agnostic_aec, change.delay_agnostic_aec);
+    SetFrom(&experimental_ns, change.experimental_ns);
+    SetFrom(&aec_dump, change.aec_dump);
+    SetFrom(&tx_agc_target_dbov, change.tx_agc_target_dbov);
+    SetFrom(&tx_agc_digital_compression_gain,
+            change.tx_agc_digital_compression_gain);
+    SetFrom(&tx_agc_limiter, change.tx_agc_limiter);
+    SetFrom(&recording_sample_rate, change.recording_sample_rate);
+    SetFrom(&playout_sample_rate, change.playout_sample_rate);
+    SetFrom(&dscp, change.dscp);
+    SetFrom(&combined_audio_video_bwe, change.combined_audio_video_bwe);
   }
 
   bool operator==(const AudioOptions& o) const {
@@ -247,39 +186,47 @@ struct AudioOptions {
 
   // Audio processing that attempts to filter away the output signal from
   // later inbound pickup.
-  Settable<bool> echo_cancellation;
+  rtc::Maybe<bool> echo_cancellation;
   // Audio processing to adjust the sensitivity of the local mic dynamically.
-  Settable<bool> auto_gain_control;
+  rtc::Maybe<bool> auto_gain_control;
   // Audio processing to filter out background noise.
-  Settable<bool> noise_suppression;
+  rtc::Maybe<bool> noise_suppression;
   // Audio processing to remove background noise of lower frequencies.
-  Settable<bool> highpass_filter;
+  rtc::Maybe<bool> highpass_filter;
   // Audio processing to swap the left and right channels.
-  Settable<bool> stereo_swapping;
+  rtc::Maybe<bool> stereo_swapping;
   // Audio receiver jitter buffer (NetEq) max capacity in number of packets.
-  Settable<int> audio_jitter_buffer_max_packets;
+  rtc::Maybe<int> audio_jitter_buffer_max_packets;
   // Audio receiver jitter buffer (NetEq) fast accelerate mode.
-  Settable<bool> audio_jitter_buffer_fast_accelerate;
+  rtc::Maybe<bool> audio_jitter_buffer_fast_accelerate;
   // Audio processing to detect typing.
-  Settable<bool> typing_detection;
-  Settable<bool> aecm_generate_comfort_noise;
-  Settable<bool> conference_mode;
-  Settable<int> adjust_agc_delta;
-  Settable<bool> experimental_agc;
-  Settable<bool> extended_filter_aec;
-  Settable<bool> delay_agnostic_aec;
-  Settable<bool> experimental_ns;
-  Settable<bool> aec_dump;
+  rtc::Maybe<bool> typing_detection;
+  rtc::Maybe<bool> aecm_generate_comfort_noise;
+  rtc::Maybe<bool> conference_mode;
+  rtc::Maybe<int> adjust_agc_delta;
+  rtc::Maybe<bool> experimental_agc;
+  rtc::Maybe<bool> extended_filter_aec;
+  rtc::Maybe<bool> delay_agnostic_aec;
+  rtc::Maybe<bool> experimental_ns;
+  rtc::Maybe<bool> aec_dump;
   // Note that tx_agc_* only applies to non-experimental AGC.
-  Settable<uint16_t> tx_agc_target_dbov;
-  Settable<uint16_t> tx_agc_digital_compression_gain;
-  Settable<bool> tx_agc_limiter;
-  Settable<uint32_t> recording_sample_rate;
-  Settable<uint32_t> playout_sample_rate;
+  rtc::Maybe<uint16_t> tx_agc_target_dbov;
+  rtc::Maybe<uint16_t> tx_agc_digital_compression_gain;
+  rtc::Maybe<bool> tx_agc_limiter;
+  rtc::Maybe<uint32_t> recording_sample_rate;
+  rtc::Maybe<uint32_t> playout_sample_rate;
   // Set DSCP value for packet sent from audio channel.
-  Settable<bool> dscp;
+  rtc::Maybe<bool> dscp;
   // Enable combined audio+bandwidth BWE.
-  Settable<bool> combined_audio_video_bwe;
+  rtc::Maybe<bool> combined_audio_video_bwe;
+
+ private:
+  template <typename T>
+  static void SetFrom(rtc::Maybe<T>* s, const rtc::Maybe<T>& o) {
+    if (o) {
+      *s = o;
+    }
+  }
 };
 
 // Options that can be applied to a VideoMediaChannel or a VideoMediaEngine.
@@ -287,38 +234,39 @@ struct AudioOptions {
 // We are moving all of the setting of options to structs like this,
 // but some things currently still use flags.
 struct VideoOptions {
-  VideoOptions() {
-    process_adaptation_threshhold.Set(kProcessCpuThreshold);
-    system_low_adaptation_threshhold.Set(kLowSystemCpuThreshold);
-    system_high_adaptation_threshhold.Set(kHighSystemCpuThreshold);
-    unsignalled_recv_stream_limit.Set(kNumDefaultUnsignalledVideoRecvStreams);
-  }
+  VideoOptions()
+      : process_adaptation_threshhold(kProcessCpuThreshold),
+        system_low_adaptation_threshhold(kLowSystemCpuThreshold),
+        system_high_adaptation_threshhold(kHighSystemCpuThreshold),
+        unsignalled_recv_stream_limit(kNumDefaultUnsignalledVideoRecvStreams) {}
 
   void SetAll(const VideoOptions& change) {
-    adapt_input_to_cpu_usage.SetFrom(change.adapt_input_to_cpu_usage);
-    adapt_cpu_with_smoothing.SetFrom(change.adapt_cpu_with_smoothing);
-    video_adapt_third.SetFrom(change.video_adapt_third);
-    video_noise_reduction.SetFrom(change.video_noise_reduction);
-    video_start_bitrate.SetFrom(change.video_start_bitrate);
-    cpu_overuse_detection.SetFrom(change.cpu_overuse_detection);
-    cpu_underuse_threshold.SetFrom(change.cpu_underuse_threshold);
-    cpu_overuse_threshold.SetFrom(change.cpu_overuse_threshold);
-    cpu_underuse_encode_rsd_threshold.SetFrom(
-        change.cpu_underuse_encode_rsd_threshold);
-    cpu_overuse_encode_rsd_threshold.SetFrom(
-        change.cpu_overuse_encode_rsd_threshold);
-    cpu_overuse_encode_usage.SetFrom(change.cpu_overuse_encode_usage);
-    conference_mode.SetFrom(change.conference_mode);
-    process_adaptation_threshhold.SetFrom(change.process_adaptation_threshhold);
-    system_low_adaptation_threshhold.SetFrom(
-        change.system_low_adaptation_threshhold);
-    system_high_adaptation_threshhold.SetFrom(
-        change.system_high_adaptation_threshhold);
-    dscp.SetFrom(change.dscp);
-    suspend_below_min_bitrate.SetFrom(change.suspend_below_min_bitrate);
-    unsignalled_recv_stream_limit.SetFrom(change.unsignalled_recv_stream_limit);
-    use_simulcast_adapter.SetFrom(change.use_simulcast_adapter);
-    screencast_min_bitrate.SetFrom(change.screencast_min_bitrate);
+    SetFrom(&adapt_input_to_cpu_usage, change.adapt_input_to_cpu_usage);
+    SetFrom(&adapt_cpu_with_smoothing, change.adapt_cpu_with_smoothing);
+    SetFrom(&video_adapt_third, change.video_adapt_third);
+    SetFrom(&video_noise_reduction, change.video_noise_reduction);
+    SetFrom(&video_start_bitrate, change.video_start_bitrate);
+    SetFrom(&cpu_overuse_detection, change.cpu_overuse_detection);
+    SetFrom(&cpu_underuse_threshold, change.cpu_underuse_threshold);
+    SetFrom(&cpu_overuse_threshold, change.cpu_overuse_threshold);
+    SetFrom(&cpu_underuse_encode_rsd_threshold,
+            change.cpu_underuse_encode_rsd_threshold);
+    SetFrom(&cpu_overuse_encode_rsd_threshold,
+            change.cpu_overuse_encode_rsd_threshold);
+    SetFrom(&cpu_overuse_encode_usage, change.cpu_overuse_encode_usage);
+    SetFrom(&conference_mode, change.conference_mode);
+    SetFrom(&process_adaptation_threshhold,
+            change.process_adaptation_threshhold);
+    SetFrom(&system_low_adaptation_threshhold,
+            change.system_low_adaptation_threshhold);
+    SetFrom(&system_high_adaptation_threshhold,
+            change.system_high_adaptation_threshhold);
+    SetFrom(&dscp, change.dscp);
+    SetFrom(&suspend_below_min_bitrate, change.suspend_below_min_bitrate);
+    SetFrom(&unsignalled_recv_stream_limit,
+            change.unsignalled_recv_stream_limit);
+    SetFrom(&use_simulcast_adapter, change.use_simulcast_adapter);
+    SetFrom(&screencast_min_bitrate, change.screencast_min_bitrate);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -381,56 +329,64 @@ struct VideoOptions {
   }
 
   // Enable CPU adaptation?
-  Settable<bool> adapt_input_to_cpu_usage;
+  rtc::Maybe<bool> adapt_input_to_cpu_usage;
   // Enable CPU adaptation smoothing?
-  Settable<bool> adapt_cpu_with_smoothing;
+  rtc::Maybe<bool> adapt_cpu_with_smoothing;
   // Enable video adapt third?
-  Settable<bool> video_adapt_third;
+  rtc::Maybe<bool> video_adapt_third;
   // Enable denoising?
-  Settable<bool> video_noise_reduction;
+  rtc::Maybe<bool> video_noise_reduction;
   // Experimental: Enable WebRtc higher start bitrate?
-  Settable<int> video_start_bitrate;
+  rtc::Maybe<int> video_start_bitrate;
   // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU
   // adaptation algorithm. So this option will override the
   // |adapt_input_to_cpu_usage|.
-  Settable<bool> cpu_overuse_detection;
+  rtc::Maybe<bool> cpu_overuse_detection;
   // Low threshold (t1) for cpu overuse adaptation.  (Adapt up)
   // Metric: encode usage (m1). m1 < t1 => underuse.
-  Settable<int> cpu_underuse_threshold;
+  rtc::Maybe<int> cpu_underuse_threshold;
   // High threshold (t1) for cpu overuse adaptation.  (Adapt down)
   // Metric: encode usage (m1). m1 > t1 => overuse.
-  Settable<int> cpu_overuse_threshold;
+  rtc::Maybe<int> cpu_overuse_threshold;
   // Low threshold (t2) for cpu overuse adaptation. (Adapt up)
   // Metric: relative standard deviation of encode time (m2).
   // Optional threshold. If set, (m1 < t1 && m2 < t2) => underuse.
   // Note: t2 will have no effect if t1 is not set.
-  Settable<int> cpu_underuse_encode_rsd_threshold;
+  rtc::Maybe<int> cpu_underuse_encode_rsd_threshold;
   // High threshold (t2) for cpu overuse adaptation. (Adapt down)
   // Metric: relative standard deviation of encode time (m2).
   // Optional threshold. If set, (m1 > t1 || m2 > t2) => overuse.
   // Note: t2 will have no effect if t1 is not set.
-  Settable<int> cpu_overuse_encode_rsd_threshold;
+  rtc::Maybe<int> cpu_overuse_encode_rsd_threshold;
   // Use encode usage for cpu detection.
-  Settable<bool> cpu_overuse_encode_usage;
+  rtc::Maybe<bool> cpu_overuse_encode_usage;
   // Use conference mode?
-  Settable<bool> conference_mode;
+  rtc::Maybe<bool> conference_mode;
   // Threshhold for process cpu adaptation.  (Process limit)
-  Settable<float> process_adaptation_threshhold;
+  rtc::Maybe<float> process_adaptation_threshhold;
   // Low threshhold for cpu adaptation.  (Adapt up)
-  Settable<float> system_low_adaptation_threshhold;
+  rtc::Maybe<float> system_low_adaptation_threshhold;
   // High threshhold for cpu adaptation.  (Adapt down)
-  Settable<float> system_high_adaptation_threshhold;
+  rtc::Maybe<float> system_high_adaptation_threshhold;
   // Set DSCP value for packet sent from video channel.
-  Settable<bool> dscp;
+  rtc::Maybe<bool> dscp;
   // Enable WebRTC suspension of video. No video frames will be sent when the
   // bitrate is below the configured minimum bitrate.
-  Settable<bool> suspend_below_min_bitrate;
+  rtc::Maybe<bool> suspend_below_min_bitrate;
   // Limit on the number of early receive channels that can be created.
-  Settable<int> unsignalled_recv_stream_limit;
+  rtc::Maybe<int> unsignalled_recv_stream_limit;
   // Enable use of simulcast adapter.
-  Settable<bool> use_simulcast_adapter;
+  rtc::Maybe<bool> use_simulcast_adapter;
   // Force screencast to use a minimum bitrate
-  Settable<int> screencast_min_bitrate;
+  rtc::Maybe<int> screencast_min_bitrate;
+
+ private:
+  template <typename T>
+  static void SetFrom(rtc::Maybe<T>* s, const rtc::Maybe<T>& o) {
+    if (o) {
+      *s = o;
+    }
+  }
 };
 
 struct RtpHeaderExtension {

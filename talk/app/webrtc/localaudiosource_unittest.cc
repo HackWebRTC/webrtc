@@ -58,23 +58,14 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
 
-  bool value;
-  EXPECT_TRUE(source->options().echo_cancellation.Get(&value));
-  EXPECT_FALSE(value);
-  EXPECT_TRUE(source->options().extended_filter_aec.Get(&value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(source->options().delay_agnostic_aec.Get(&value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(source->options().auto_gain_control.Get(&value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(source->options().experimental_agc.Get(&value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(source->options().noise_suppression.Get(&value));
-  EXPECT_FALSE(value);
-  EXPECT_TRUE(source->options().highpass_filter.Get(&value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(source->options().aec_dump.Get(&value));
-  EXPECT_TRUE(value);
+  EXPECT_EQ(rtc::Maybe<bool>(false), source->options().echo_cancellation);
+  EXPECT_EQ(rtc::Maybe<bool>(true), source->options().extended_filter_aec);
+  EXPECT_EQ(rtc::Maybe<bool>(true), source->options().delay_agnostic_aec);
+  EXPECT_EQ(rtc::Maybe<bool>(true), source->options().auto_gain_control);
+  EXPECT_EQ(rtc::Maybe<bool>(true), source->options().experimental_agc);
+  EXPECT_EQ(rtc::Maybe<bool>(false), source->options().noise_suppression);
+  EXPECT_EQ(rtc::Maybe<bool>(true), source->options().highpass_filter);
+  EXPECT_EQ(rtc::Maybe<bool>(true), source->options().aec_dump);
 }
 
 TEST(LocalAudioSourceTest, OptionNotSet) {
@@ -82,8 +73,7 @@ TEST(LocalAudioSourceTest, OptionNotSet) {
   rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
-  bool value;
-  EXPECT_FALSE(source->options().highpass_filter.Get(&value));
+  EXPECT_EQ(rtc::Maybe<bool>(), source->options().highpass_filter);
 }
 
 TEST(LocalAudioSourceTest, MandatoryOverridesOptional) {
@@ -97,9 +87,7 @@ TEST(LocalAudioSourceTest, MandatoryOverridesOptional) {
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
 
-  bool value;
-  EXPECT_TRUE(source->options().echo_cancellation.Get(&value));
-  EXPECT_FALSE(value);
+  EXPECT_EQ(rtc::Maybe<bool>(false), source->options().echo_cancellation);
 }
 
 TEST(LocalAudioSourceTest, InvalidOptional) {
@@ -112,9 +100,7 @@ TEST(LocalAudioSourceTest, InvalidOptional) {
                                &constraints);
 
   EXPECT_EQ(MediaSourceInterface::kLive, source->state());
-  bool value;
-  EXPECT_TRUE(source->options().highpass_filter.Get(&value));
-  EXPECT_FALSE(value);
+  EXPECT_EQ(rtc::Maybe<bool>(false), source->options().highpass_filter);
 }
 
 TEST(LocalAudioSourceTest, InvalidMandatory) {
@@ -127,7 +113,5 @@ TEST(LocalAudioSourceTest, InvalidMandatory) {
                                &constraints);
 
   EXPECT_EQ(MediaSourceInterface::kLive, source->state());
-  bool value;
-  EXPECT_TRUE(source->options().highpass_filter.Get(&value));
-  EXPECT_FALSE(value);
+  EXPECT_EQ(rtc::Maybe<bool>(false), source->options().highpass_filter);
 }

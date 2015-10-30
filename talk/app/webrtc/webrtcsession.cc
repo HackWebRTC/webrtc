@@ -441,10 +441,11 @@ static std::string MakeTdErrorString(const std::string& desc) {
 
 // Set |option| to the highest-priority value of |key| in the optional
 // constraints if the key is found and has a valid value.
-template<typename T>
+template <typename T>
 static void SetOptionFromOptionalConstraint(
     const MediaConstraintsInterface* constraints,
-    const std::string& key, cricket::Settable<T>* option) {
+    const std::string& key,
+    rtc::Maybe<T>* option) {
   if (!constraints) {
     return;
   }
@@ -452,7 +453,7 @@ static void SetOptionFromOptionalConstraint(
   T value;
   if (constraints->GetOptional().FindFirst(key, &string_value)) {
     if (rtc::FromString(string_value, &value)) {
-      option->Set(value);
+      *option = rtc::Maybe<T>(value);
     }
   }
 }
@@ -644,8 +645,8 @@ bool WebRtcSession::Initialize(
         constraints,
         MediaConstraintsInterface::kEnableDscp,
         &value, NULL)) {
-    audio_options_.dscp.Set(value);
-    video_options_.dscp.Set(value);
+    audio_options_.dscp = rtc::Maybe<bool>(value);
+    video_options_.dscp = rtc::Maybe<bool>(value);
   }
 
   // Find Suspend Below Min Bitrate constraint.
@@ -654,7 +655,7 @@ bool WebRtcSession::Initialize(
           MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
           &value,
           NULL)) {
-    video_options_.suspend_below_min_bitrate.Set(value);
+    video_options_.suspend_below_min_bitrate = rtc::Maybe<bool>(value);
   }
 
   SetOptionFromOptionalConstraint(constraints,
@@ -684,12 +685,10 @@ bool WebRtcSession::Initialize(
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kNumUnsignalledRecvStreams,
       &video_options_.unsignalled_recv_stream_limit);
-  if (video_options_.unsignalled_recv_stream_limit.IsSet()) {
-    int stream_limit;
-    video_options_.unsignalled_recv_stream_limit.Get(&stream_limit);
-    stream_limit = std::min(kMaxUnsignalledRecvStreams, stream_limit);
-    stream_limit = std::max(0, stream_limit);
-    video_options_.unsignalled_recv_stream_limit.Set(stream_limit);
+  if (video_options_.unsignalled_recv_stream_limit) {
+    video_options_.unsignalled_recv_stream_limit = rtc::Maybe<int>(
+        std::max(0, std::min(kMaxUnsignalledRecvStreams,
+                             *video_options_.unsignalled_recv_stream_limit)));
   }
 
   SetOptionFromOptionalConstraint(constraints,
@@ -700,11 +699,11 @@ bool WebRtcSession::Initialize(
       MediaConstraintsInterface::kCombinedAudioVideoBwe,
       &audio_options_.combined_audio_video_bwe);
 
-  audio_options_.audio_jitter_buffer_max_packets.Set(
-      rtc_configuration.audio_jitter_buffer_max_packets);
+  audio_options_.audio_jitter_buffer_max_packets =
+      rtc::Maybe<int>(rtc_configuration.audio_jitter_buffer_max_packets);
 
-  audio_options_.audio_jitter_buffer_fast_accelerate.Set(
-      rtc_configuration.audio_jitter_buffer_fast_accelerate);
+  audio_options_.audio_jitter_buffer_fast_accelerate =
+      rtc::Maybe<bool>(rtc_configuration.audio_jitter_buffer_fast_accelerate);
 
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,

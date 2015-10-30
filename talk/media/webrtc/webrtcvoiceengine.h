@@ -171,9 +171,9 @@ class WebRtcVoiceEngine
   // values, and apply them in case they are missing in the audio options. We
   // need to do this because SetExtraOptions() will revert to defaults for
   // options which are not provided.
-  Settable<bool> extended_filter_aec_;
-  Settable<bool> delay_agnostic_aec_;
-  Settable<bool> experimental_ns_;
+  rtc::Maybe<bool> extended_filter_aec_;
+  rtc::Maybe<bool> delay_agnostic_aec_;
+  rtc::Maybe<bool> experimental_ns_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcVoiceEngine);
 };

@@ -789,7 +789,7 @@ class WebRtcSessionTest
     ASSERT_TRUE(video_channel_ != NULL);
     const cricket::VideoOptions& video_options = video_channel_->options();
     EXPECT_EQ(value_expected,
-        video_options.unsignalled_recv_stream_limit.GetWithDefaultIfUnset(-1));
+              video_options.unsignalled_recv_stream_limit.value_or(-1));
   }
 
   void CompareIceUfragAndPassword(const cricket::SessionDescription* desc1,
@@ -3297,20 +3297,18 @@ TEST_F(WebRtcSessionTest, SetAudioSend) {
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
 
   cricket::AudioOptions options;
-  options.echo_cancellation.Set(true);
+  options.echo_cancellation = rtc::Maybe<bool>(true);
 
   rtc::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
   session_->SetAudioSend(send_ssrc, false, options, renderer.get());
   EXPECT_TRUE(channel->IsStreamMuted(send_ssrc));
-  EXPECT_FALSE(channel->options().echo_cancellation.IsSet());
+  EXPECT_EQ(rtc::Maybe<bool>(), channel->options().echo_cancellation);
   EXPECT_TRUE(renderer->sink() != NULL);
 
   // This will trigger SetSink(NULL) to the |renderer|.
   session_->SetAudioSend(send_ssrc, true, options, NULL);
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
-  bool value;
-  EXPECT_TRUE(channel->options().echo_cancellation.Get(&value));
-  EXPECT_TRUE(value);
+  EXPECT_EQ(rtc::Maybe<bool>(true), channel->options().echo_cancellation);
   EXPECT_TRUE(renderer->sink() == NULL);
 }
 
@@ -3993,10 +3991,8 @@ TEST_F(WebRtcSessionTest, TestDscpConstraint) {
   ASSERT_TRUE(voice_channel_ != NULL);
   const cricket::AudioOptions& audio_options = voice_channel_->options();
   const cricket::VideoOptions& video_options = video_channel_->options();
-  EXPECT_TRUE(audio_options.dscp.IsSet());
-  EXPECT_TRUE(audio_options.dscp.GetWithDefaultIfUnset(false));
-  EXPECT_TRUE(video_options.dscp.IsSet());
-  EXPECT_TRUE(video_options.dscp.GetWithDefaultIfUnset(false));
+  EXPECT_EQ(rtc::Maybe<bool>(true), audio_options.dscp);
+  EXPECT_EQ(rtc::Maybe<bool>(true), video_options.dscp);
 }
 
 TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
@@ -4014,8 +4010,7 @@ TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
 
   ASSERT_TRUE(video_channel_ != NULL);
   const cricket::VideoOptions& video_options = video_channel_->options();
-  EXPECT_TRUE(
-      video_options.suspend_below_min_bitrate.GetWithDefaultIfUnset(false));
+  EXPECT_EQ(rtc::Maybe<bool>(true), video_options.suspend_below_min_bitrate);
 }
 
 TEST_F(WebRtcSessionTest, TestNumUnsignalledRecvStreamsConstraint) {
@@ -4042,8 +4037,7 @@ TEST_F(WebRtcSessionTest, TestCombinedAudioVideoBweConstraint) {
 
   ASSERT_TRUE(voice_channel_ != NULL);
   const cricket::AudioOptions& audio_options = voice_channel_->options();
-  EXPECT_TRUE(
-      audio_options.combined_audio_video_bwe.GetWithDefaultIfUnset(false));
+  EXPECT_EQ(rtc::Maybe<bool>(true), audio_options.combined_audio_video_bwe);
 }
 
 // Tests that we can renegotiate new media content with ICE candidates in the

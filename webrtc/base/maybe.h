@@ -36,10 +36,9 @@ class Maybe final {
   // Construct an empty Maybe.
   Maybe() : has_value_(false) {}
 
-  // Construct a Maybe that contains a value. Note: These are non-explicit, so
-  // that a T will implicitly convert to Maybe<T>.
-  Maybe(const T& val) : value_(val), has_value_(true) {}
-  Maybe(T&& val) : value_(static_cast<T&&>(val)), has_value_(true) {}
+  // Construct a Maybe that contains a value.
+  explicit Maybe(const T& val) : value_(val), has_value_(true) {}
+  explicit Maybe(T&& val) : value_(static_cast<T&&>(val)), has_value_(true) {}
 
   // Copy and move constructors.
   // TODO(kwiberg): =default the move constructor when MSVC supports it.
@@ -47,22 +46,12 @@ class Maybe final {
   Maybe(Maybe&& m)
       : value_(static_cast<T&&>(m.value_)), has_value_(m.has_value_) {}
 
-  // Assignment. Note that we allow assignment from either Maybe<T> or plain T.
+  // Assignment.
   // TODO(kwiberg): =default the move assignment op when MSVC supports it.
   Maybe& operator=(const Maybe&) = default;
   Maybe& operator=(Maybe&& m) {
     value_ = static_cast<T&&>(m.value_);
     has_value_ = m.has_value_;
-    return *this;
-  }
-  Maybe& operator=(const T& val) {
-    value_ = val;
-    has_value_ = true;
-    return *this;
-  }
-  Maybe& operator=(T&& val) {
-    value_ = static_cast<T&&>(val);
-    has_value_ = true;
     return *this;
   }
 

@@ -1097,7 +1097,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
   FakeVideoSendStream* SetDenoisingOption(
       const cricket::VideoSendParameters& parameters, bool enabled) {
     cricket::VideoSendParameters params = parameters;
-    params.options.video_noise_reduction.Set(enabled);
+    params.options.video_noise_reduction = rtc::Maybe<bool>(enabled);
     channel_->SetSendParameters(params);
     return fake_call_->GetVideoSendStreams().back();
   }
@@ -1148,7 +1148,7 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamWithSimAndRtx) {
   parameters.codecs = engine_.codecs();
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   EXPECT_TRUE(channel_->SetSend(true));
-  parameters.options.conference_mode.Set(true);
+  parameters.options.conference_mode = rtc::Maybe<bool>(true);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
   // Send side.
@@ -1558,7 +1558,8 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   cricket::VideoCodec codec = kVp8Codec360p;
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(codec);
-  parameters.options.screencast_min_bitrate.Set(kScreenshareMinBitrateKbps);
+  parameters.options.screencast_min_bitrate =
+      rtc::Maybe<int>(kScreenshareMinBitrateKbps);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
   AddSendStream();
@@ -1612,7 +1613,7 @@ TEST_F(WebRtcVideoChannel2Test,
        ConferenceModeScreencastConfiguresTemporalLayer) {
   static const int kConferenceScreencastTemporalBitrateBps =
       ScreenshareLayerConfig::GetDefault().tl0_bitrate_kbps * 1000;
-  send_parameters_.options.conference_mode.Set(true);
+  send_parameters_.options.conference_mode = rtc::Maybe<bool>(true);
   channel_->SetSendParameters(send_parameters_);
 
   AddSendStream();
@@ -1659,13 +1660,13 @@ TEST_F(WebRtcVideoChannel2Test, SuspendBelowMinBitrateDisabledByDefault) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetOptionsWithSuspendBelowMinBitrate) {
-  send_parameters_.options.suspend_below_min_bitrate.Set(true);
+  send_parameters_.options.suspend_below_min_bitrate = rtc::Maybe<bool>(true);
   channel_->SetSendParameters(send_parameters_);
 
   FakeVideoSendStream* stream = AddSendStream();
   EXPECT_TRUE(stream->GetConfig().suspend_below_min_bitrate);
 
-  send_parameters_.options.suspend_below_min_bitrate.Set(false);
+  send_parameters_.options.suspend_below_min_bitrate = rtc::Maybe<bool>(false);
   channel_->SetSendParameters(send_parameters_);
 
   stream = fake_call_->GetVideoSendStreams()[0];
@@ -1853,7 +1854,7 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(codec);
   if (!enable_overuse) {
-    parameters.options.cpu_overuse_detection.Set(false);
+    parameters.options.cpu_overuse_detection = rtc::Maybe<bool>(false);
   }
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
@@ -2375,14 +2376,14 @@ TEST_F(WebRtcVideoChannel2Test, TestSetDscpOptions) {
   cricket::VideoSendParameters parameters = send_parameters_;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   EXPECT_EQ(rtc::DSCP_NO_CHANGE, network_interface->dscp());
-  parameters.options.dscp.Set(true);
+  parameters.options.dscp = rtc::Maybe<bool>(true);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
   // Verify previous value is not modified if dscp option is not set.
   cricket::VideoSendParameters parameters1 = send_parameters_;
   EXPECT_TRUE(channel_->SetSendParameters(parameters1));
   EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
-  parameters1.options.dscp.Set(false);
+  parameters1.options.dscp = rtc::Maybe<bool>(false);
   EXPECT_TRUE(channel_->SetSendParameters(parameters1));
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
   channel_->SetInterface(NULL);
@@ -2460,7 +2461,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   EXPECT_TRUE(channel_->SetSend(true));
 
   // Verify that the CpuOveruseObserver is registered and trigger downgrade.
-  parameters.options.cpu_overuse_detection.Set(true);
+  parameters.options.cpu_overuse_detection = rtc::Maybe<bool>(true);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
   // Trigger overuse.

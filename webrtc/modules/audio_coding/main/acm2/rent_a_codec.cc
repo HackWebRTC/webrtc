@@ -61,9 +61,10 @@ rtc::Maybe<NetEqDecoder> RentACodec::NetEqDecoderFromCodecId(CodecId codec_id,
   if (!i)
     return rtc::Maybe<NetEqDecoder>();
   const NetEqDecoder ned = ACMCodecDB::neteq_decoders_[*i];
-  return (ned == NetEqDecoder::kDecoderOpus && num_channels == 2)
-             ? NetEqDecoder::kDecoderOpus_2ch
-             : ned;
+  return rtc::Maybe<NetEqDecoder>(
+      (ned == NetEqDecoder::kDecoderOpus && num_channels == 2)
+          ? NetEqDecoder::kDecoderOpus_2ch
+          : ned);
 }
 
 }  // namespace acm2

@@ -250,7 +250,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         WebRtcVideoEncoderFactory* external_encoder_factory,
         const VideoOptions& options,
         int max_bitrate_bps,
-        const Settable<VideoCodecSettings>& codec_settings,
+        const rtc::Maybe<VideoCodecSettings>& codec_settings,
         const std::vector<webrtc::RtpExtension>& rtp_extensions);
     ~WebRtcVideoSendStream();
 
@@ -286,11 +286,11 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
           const webrtc::VideoSendStream::Config& config,
           const VideoOptions& options,
           int max_bitrate_bps,
-          const Settable<VideoCodecSettings>& codec_settings);
+          const rtc::Maybe<VideoCodecSettings>& codec_settings);
       webrtc::VideoSendStream::Config config;
       VideoOptions options;
       int max_bitrate_bps;
-      Settable<VideoCodecSettings> codec_settings;
+      rtc::Maybe<VideoCodecSettings> codec_settings;
       // Sent resolutions + bitrates etc. by the underlying VideoSendStream,
       // typically changes when setting a new resolution or reconfiguring
       // bitrates.
@@ -512,7 +512,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   std::set<uint32_t> send_ssrcs_ GUARDED_BY(stream_crit_);
   std::set<uint32_t> receive_ssrcs_ GUARDED_BY(stream_crit_);
 
-  Settable<VideoCodecSettings> send_codec_;
+  rtc::Maybe<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
   WebRtcVideoEncoderFactory* const external_encoder_factory_;

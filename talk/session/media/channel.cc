@@ -1502,7 +1502,7 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   AudioSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription(audio, &send_params);
   if (audio->agc_minus_10db()) {
-    send_params.options.adjust_agc_delta.Set(kAgcMinus10db);
+    send_params.options.adjust_agc_delta = rtc::Maybe<int>(kAgcMinus10db);
   }
   if (!media_channel()->SetSendParameters(send_params)) {
     SafeSetError("Failed to set remote audio description send parameters.",
@@ -1789,7 +1789,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   VideoSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription(video, &send_params);
   if (video->conference_mode()) {
-    send_params.options.conference_mode.Set(true);
+    send_params.options.conference_mode = rtc::Maybe<bool>(true);
   }
   if (!media_channel()->SetSendParameters(send_params)) {
     SafeSetError("Failed to set remote video description send parameters.",

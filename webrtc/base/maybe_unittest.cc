@@ -144,7 +144,7 @@ TEST(MaybeTest, TestConstructCopyFull) {
   auto log = Logger::Setup();
   {
     Logger a;
-    Maybe<Logger> x = a;
+    Maybe<Logger> x(a);
     EXPECT_TRUE(x);
     log->push_back("---");
     auto y = x;
@@ -173,7 +173,7 @@ TEST(MaybeTest, TestConstructMoveEmpty) {
 TEST(MaybeTest, TestConstructMoveFull) {
   auto log = Logger::Setup();
   {
-    Maybe<Logger> x = Logger(17);
+    Maybe<Logger> x(Logger(17));
     EXPECT_TRUE(x);
     log->push_back("---");
     auto y = static_cast<Maybe<Logger>&&>(x);
@@ -203,7 +203,7 @@ TEST(MaybeTest, TestCopyAssignToEmptyFromEmpty) {
 TEST(MaybeTest, TestCopyAssignToFullFromEmpty) {
   auto log = Logger::Setup();
   {
-    Maybe<Logger> x = Logger(17);
+    Maybe<Logger> x(Logger(17));
     Maybe<Logger> y;
     log->push_back("---");
     x = y;
@@ -221,7 +221,7 @@ TEST(MaybeTest, TestCopyAssignToEmptyFromFull) {
   auto log = Logger::Setup();
   {
     Maybe<Logger> x;
-    Maybe<Logger> y = Logger(17);
+    Maybe<Logger> y(Logger(17));
     log->push_back("---");
     x = y;
     log->push_back("---");
@@ -236,8 +236,8 @@ TEST(MaybeTest, TestCopyAssignToEmptyFromFull) {
 TEST(MaybeTest, TestCopyAssignToFullFromFull) {
   auto log = Logger::Setup();
   {
-    Maybe<Logger> x = Logger(17);
-    Maybe<Logger> y = Logger(42);
+    Maybe<Logger> x(Logger(17));
+    Maybe<Logger> y(Logger(42));
     log->push_back("---");
     x = y;
     log->push_back("---");
@@ -257,29 +257,31 @@ TEST(MaybeTest, TestCopyAssignToEmptyFromT) {
     Maybe<Logger> x;
     Logger y(17);
     log->push_back("---");
-    x = y;
+    x = rtc::Maybe<Logger>(y);
     log->push_back("---");
   }
   EXPECT_EQ(V("0:0. default constructor", "1:17. explicit constructor", "---",
-              "0:17. operator= copy (from 1:17)", "---", "1:17. destructor",
-              "0:17. destructor"),
+              "2:17. copy constructor (from 1:17)",
+              "0:17. operator= move (from 2:17)", "2:17. destructor", "---",
+              "1:17. destructor", "0:17. destructor"),
             *log);
 }
 
 TEST(MaybeTest, TestCopyAssignToFullFromT) {
   auto log = Logger::Setup();
   {
-    Maybe<Logger> x = Logger(17);
+    Maybe<Logger> x(Logger(17));
     Logger y(42);
     log->push_back("---");
-    x = y;
+    x = rtc::Maybe<Logger>(y);
     log->push_back("---");
   }
   EXPECT_EQ(
       V("0:17. explicit constructor", "1:17. move constructor (from 0:17)",
         "0:17. destructor", "2:42. explicit constructor", "---",
-        "1:42. operator= copy (from 2:42)", "---", "2:42. destructor",
-        "1:42. destructor"),
+        "3:42. copy constructor (from 2:42)",
+        "1:42. operator= move (from 3:42)", "3:42. destructor", "---",
+        "2:42. destructor", "1:42. destructor"),
       *log);
 }
 
@@ -298,7 +300,7 @@ TEST(MaybeTest, TestMoveAssignToEmptyFromEmpty) {
 TEST(MaybeTest, TestMoveAssignToFullFromEmpty) {
   auto log = Logger::Setup();
   {
-    Maybe<Logger> x = Logger(17);
+    Maybe<Logger> x(Logger(17));
     Maybe<Logger> y;
     log->push_back("---");
     x = static_cast<Maybe<Logger>&&>(y);
@@ -316,7 +318,7 @@ TEST(MaybeTest, TestMoveAssignToEmptyFromFull) {
   auto log = Logger::Setup();
   {
     Maybe<Logger> x;
-    Maybe<Logger> y = Logger(17);
+    Maybe<Logger> y(Logger(17));
     log->push_back("---");
     x = static_cast<Maybe<Logger>&&>(y);
     log->push_back("---");
@@ -331,8 +333,8 @@ TEST(MaybeTest, TestMoveAssignToEmptyFromFull) {
 TEST(MaybeTest, TestMoveAssignToFullFromFull) {
   auto log = Logger::Setup();
   {
-    Maybe<Logger> x = Logger(17);
-    Maybe<Logger> y = Logger(42);
+    Maybe<Logger> x(Logger(17));
+    Maybe<Logger> y(Logger(42));
     log->push_back("---");
     x = static_cast<Maybe<Logger>&&>(y);
     log->push_back("---");
@@ -352,36 +354,38 @@ TEST(MaybeTest, TestMoveAssignToEmptyFromT) {
     Maybe<Logger> x;
     Logger y(17);
     log->push_back("---");
-    x = static_cast<Logger&&>(y);
+    x = rtc::Maybe<Logger>(static_cast<Logger&&>(y));
     log->push_back("---");
   }
   EXPECT_EQ(V("0:0. default constructor", "1:17. explicit constructor", "---",
-              "0:17. operator= move (from 1:17)", "---", "1:17. destructor",
-              "0:17. destructor"),
+              "2:17. move constructor (from 1:17)",
+              "0:17. operator= move (from 2:17)", "2:17. destructor", "---",
+              "1:17. destructor", "0:17. destructor"),
             *log);
 }
 
 TEST(MaybeTest, TestMoveAssignToFullFromT) {
   auto log = Logger::Setup();
   {
-    Maybe<Logger> x = Logger(17);
+    Maybe<Logger> x(Logger(17));
     Logger y(42);
     log->push_back("---");
-    x = static_cast<Logger&&>(y);
+    x = rtc::Maybe<Logger>(static_cast<Logger&&>(y));
     log->push_back("---");
   }
   EXPECT_EQ(
       V("0:17. explicit constructor", "1:17. move constructor (from 0:17)",
         "0:17. destructor", "2:42. explicit constructor", "---",
-        "1:42. operator= move (from 2:42)", "---", "2:42. destructor",
-        "1:42. destructor"),
+        "3:42. move constructor (from 2:42)",
+        "1:42. operator= move (from 3:42)", "3:42. destructor", "---",
+        "2:42. destructor", "1:42. destructor"),
       *log);
 }
 
 TEST(MaybeTest, TestDereference) {
   auto log = Logger::Setup();
   {
-    Maybe<Logger> x = Logger(42);
+    Maybe<Logger> x(Logger(42));
     const auto& y = x;
     log->push_back("---");
     x->Foo();
