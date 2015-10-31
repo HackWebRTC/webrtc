@@ -61,7 +61,11 @@ inline void RtcUnused(const void*) {}
 /////////////////////////////////////////////////////////////////////////////
 
 #ifndef ENABLE_DEBUG
-#define ENABLE_DEBUG _DEBUG
+#if !defined(NDEBUG)
+#define ENABLE_DEBUG 1
+#else
+#define ENABLE_DEBUG 0
+#endif
 #endif  // !defined(ENABLE_DEBUG)
 
 // Even for release builds, allow for the override of LogAssert. Though no
