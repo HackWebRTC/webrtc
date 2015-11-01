@@ -569,6 +569,7 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock_(&crit_);
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
@@ -619,6 +620,7 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock_(&crit_);
       if (state_ == kVerifyFecPacketNotInNackList) {
         test::RtcpPacketParser rtcp_parser;
         rtcp_parser.Parse(packet, length);
@@ -666,7 +668,8 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
       kVerifyFecPacketNotInNackList,
     } state_;
 
-    uint16_t fec_sequence_number_;
+    rtc::CriticalSection crit_;
+    uint16_t fec_sequence_number_ GUARDED_BY(&crit_);
     bool has_last_sequence_number_;
     uint16_t last_sequence_number_;
   } test;
@@ -1762,6 +1765,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       if (++sent_rtp_packets_ == kPacketNumberToDrop) {
         rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
         RTPHeader header;
@@ -1774,6 +1778,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       test::RtcpPacketParser rtcp_parser;
       rtcp_parser.Parse(packet, length);
       std::vector<uint16_t> nacks = rtcp_parser.nack_item()->last_nack_list();
@@ -1784,7 +1789,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
       return SEND_PACKET;
     }
 
-    void VerifyStats() {
+    void VerifyStats() EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
       if (!dropped_rtp_packet_requested_)
         return;
       int send_stream_nack_packets = 0;
@@ -1837,9 +1842,10 @@ TEST_F(EndToEndTest, VerifyNackStats) {
           << "Timed out waiting for packet to be NACKed.";
     }
 
+    rtc::CriticalSection crit_;
     uint64_t sent_rtp_packets_;
-    uint16_t dropped_rtp_packet_;
-    bool dropped_rtp_packet_requested_;
+    uint16_t dropped_rtp_packet_ GUARDED_BY(&crit_);
+    bool dropped_rtp_packet_requested_ GUARDED_BY(&crit_);
     std::vector<VideoReceiveStream*> receive_streams_;
     VideoSendStream* send_stream_;
     int64_t start_runtime_ms_;
@@ -2050,6 +2056,7 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
    private:
     // Receive stream should send RR packets (and RRTR packets if enabled).
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTCPUtility::RTCPParserV2 parser(packet, length, true);
       EXPECT_TRUE(parser.IsValid());
 
@@ -2070,6 +2077,7 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
     }
     // Send stream should send SR packets (and DLRR packets if enabled).
     virtual Action OnSendRtcp(const uint8_t* packet, size_t length) {
+      rtc::CritScope lock(&crit_);
       RTCPUtility::RTCPParserV2 parser(packet, length, true);
       EXPECT_TRUE(parser.IsValid());
 
@@ -2112,10 +2120,11 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
           << "Timed out while waiting for RTCP SR/RR packets to be sent.";
     }
 
+    rtc::CriticalSection crit_;
     bool enable_rrtr_;
     int sent_rtcp_sr_;
-    int sent_rtcp_rr_;
-    int sent_rtcp_rrtr_;
+    int sent_rtcp_rr_ GUARDED_BY(&crit_);
+    int sent_rtcp_rrtr_ GUARDED_BY(&crit_);
     int sent_rtcp_dlrr_;
   } test(enable_rrtr);
 
