@@ -280,7 +280,6 @@ public:
     bool GetDelayEstimate(int* jitter_buffer_delay_ms,
                           int* playout_buffer_delay_ms) const;
     int LeastRequiredDelayMs() const;
-    int SetInitialPlayoutDelay(int delay_ms);
     int SetMinimumPlayoutDelay(int delayMs);
     int GetPlayoutTimestamp(unsigned int& timestamp);
     int SetInitTimestamp(unsigned int timestamp);

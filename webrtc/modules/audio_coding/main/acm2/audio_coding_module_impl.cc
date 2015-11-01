@@ -765,17 +765,6 @@ int AudioCodingModuleImpl::UnregisterReceiveCodec(uint8_t payload_type) {
   return receiver_.RemoveCodec(payload_type);
 }
 
-int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
-  {
-    CriticalSectionScoped lock(acm_crit_sect_.get());
-    // Initialize receiver, if it is not initialized. Otherwise, initial delay
-    // is reset upon initialization of the receiver.
-    if (!receiver_initialized_)
-      InitializeReceiverSafe();
-  }
-  return receiver_.SetInitialDelay(delay_ms);
-}
-
 int AudioCodingModuleImpl::EnableNack(size_t max_nack_list_size) {
   return receiver_.EnableNack(max_nack_list_size);
 }

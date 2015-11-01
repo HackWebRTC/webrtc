@@ -3414,29 +3414,6 @@ int Channel::LeastRequiredDelayMs() const {
   return audio_coding_->LeastRequiredDelayMs();
 }
 
-int Channel::SetInitialPlayoutDelay(int delay_ms)
-{
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-               "Channel::SetInitialPlayoutDelay()");
-  if ((delay_ms < kVoiceEngineMinMinPlayoutDelayMs) ||
-      (delay_ms > kVoiceEngineMaxMinPlayoutDelayMs))
-  {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_ARGUMENT, kTraceError,
-        "SetInitialPlayoutDelay() invalid min delay");
-    return -1;
-  }
-  if (audio_coding_->SetInitialPlayoutDelay(delay_ms) != 0)
-  {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetInitialPlayoutDelay() failed to set min playout delay");
-    return -1;
-  }
-  return 0;
-}
-
-
 int
 Channel::SetMinimumPlayoutDelay(int delayMs)
 {

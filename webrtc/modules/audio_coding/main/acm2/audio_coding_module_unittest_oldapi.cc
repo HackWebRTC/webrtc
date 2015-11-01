@@ -249,30 +249,6 @@ TEST_F(AudioCodingModuleTestOldApi, DISABLED_ON_ANDROID(InitializedToZero)) {
   EXPECT_EQ(0, stats.decoded_plc_cng);
 }
 
-// Apply an initial playout delay. Calls to AudioCodingModule::PlayoutData10ms()
-// should result in generating silence, check the associated field.
-TEST_F(AudioCodingModuleTestOldApi,
-       DISABLED_ON_ANDROID(SilenceGeneratorCalled)) {
-  RegisterCodec();
-  AudioDecodingCallStats stats;
-  const int kInitialDelay = 100;
-
-  acm_->SetInitialPlayoutDelay(kInitialDelay);
-
-  int num_calls = 0;
-  for (int time_ms = 0; time_ms < kInitialDelay;
-       time_ms += kFrameSizeMs, ++num_calls) {
-    InsertPacketAndPullAudio();
-  }
-  acm_->GetDecodingCallStatistics(&stats);
-  EXPECT_EQ(0, stats.calls_to_neteq);
-  EXPECT_EQ(num_calls, stats.calls_to_silence_generator);
-  EXPECT_EQ(0, stats.decoded_normal);
-  EXPECT_EQ(0, stats.decoded_cng);
-  EXPECT_EQ(0, stats.decoded_plc);
-  EXPECT_EQ(0, stats.decoded_plc_cng);
-}
-
 // Insert some packets and pull audio. Check statistics are valid. Then,
 // simulate packet loss and check if PLC and PLC-to-CNG statistics are
 // correctly updated.

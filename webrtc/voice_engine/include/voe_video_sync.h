@@ -64,13 +64,6 @@ class WEBRTC_DLLEXPORT VoEVideoSync {
   // computes based on inter-arrival times and its playout mode.
   virtual int SetMinimumPlayoutDelay(int channel, int delay_ms) = 0;
 
-  // Sets an initial delay for the playout jitter buffer. The playout of the
-  // audio is delayed by |delay_ms| in milliseconds. Thereafter, the delay is
-  // maintained, unless NetEq's internal mechanism requires a higher latency.
-  // Such a latency is computed based on inter-arrival times and NetEq's
-  // playout mode.
-  virtual int SetInitialPlayoutDelay(int channel, int delay_ms) = 0;
-
   // Gets the |jitter_buffer_delay_ms| (including the algorithmic delay), and
   // the |playout_buffer_delay_ms| for a specified |channel|.
   virtual int GetDelayEstimate(int channel,

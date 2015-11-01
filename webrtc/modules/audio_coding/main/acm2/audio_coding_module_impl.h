@@ -150,10 +150,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Smallest latency NetEq will maintain.
   int LeastRequiredDelayMs() const override;
 
-  // Impose an initial delay on playout. ACM plays silence until |delay_ms|
-  // audio is accumulated in NetEq buffer, then starts decoding payloads.
-  int SetInitialPlayoutDelay(int delay_ms) override;
-
   // Get playout timestamp.
   int PlayoutTimestamp(uint32_t* timestamp) override;
 

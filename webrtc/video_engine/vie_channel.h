@@ -108,7 +108,6 @@ class ViEChannel : public VCMFrameTypeCallback,
                          int payload_type_fec);
   bool IsSendingFecEnabled();
   int SetSenderBufferingMode(int target_delay_ms);
-  int SetReceiverBufferingMode(int target_delay_ms);
   int SetSendTimestampOffsetStatus(bool enable, int id);
   int SetReceiveTimestampOffsetStatus(bool enable, int id);
   int SetSendAbsoluteSendTimeStatus(bool enable, int id);

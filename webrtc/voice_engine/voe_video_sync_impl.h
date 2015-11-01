@@ -23,8 +23,6 @@ class VoEVideoSyncImpl : public VoEVideoSync {
 
   int SetMinimumPlayoutDelay(int channel, int delayMs) override;
 
-  int SetInitialPlayoutDelay(int channel, int delay_ms) override;
-
   int GetDelayEstimate(int channel,
                        int* jitter_buffer_delay_ms,
                        int* playout_buffer_delay_ms) override;

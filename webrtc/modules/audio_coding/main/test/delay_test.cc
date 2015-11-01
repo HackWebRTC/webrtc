@@ -33,7 +33,6 @@ DEFINE_int32(sample_rate_hz, 16000, "Sampling rate in Hertz.");
 DEFINE_int32(num_channels, 1, "Number of Channels.");
 DEFINE_string(input_file, "", "Input file, PCM16 32 kHz, optional.");
 DEFINE_int32(delay, 0, "Delay in millisecond.");
-DEFINE_int32(init_delay, 0, "Initial delay in millisecond.");
 DEFINE_bool(dtx, false, "Enable DTX at the sender side.");
 DEFINE_bool(packet_loss, false, "Apply packet loss, c.f. Channel{.cc, .h}.");
 DEFINE_bool(fec, false, "Use Forward Error Correction (FEC).");
@@ -89,10 +88,6 @@ class DelayTest {
         "Couldn't initialize receiver.\n";
     ASSERT_EQ(0, acm_b_->InitializeReceiver()) <<
         "Couldn't initialize receiver.\n";
-    if (FLAGS_init_delay > 0) {
-      ASSERT_EQ(0, acm_b_->SetInitialPlayoutDelay(FLAGS_init_delay)) <<
-          "Failed to set initial delay.\n";
-    }
 
     if (FLAGS_delay > 0) {
       ASSERT_EQ(0, acm_b_->SetMinimumPlayoutDelay(FLAGS_delay)) <<
@@ -172,7 +167,7 @@ class DelayTest {
   void OpenOutFile(const char* output_id) {
     std::stringstream file_stream;
     file_stream << "delay_test_" << FLAGS_codec << "_" << FLAGS_sample_rate_hz
-        << "Hz" << "_" << FLAGS_init_delay << "ms_" << FLAGS_delay << "ms.pcm";
+        << "Hz" << "_" << FLAGS_delay << "ms.pcm";
     std::cout << "Output file: " << file_stream.str() << std::endl << std::endl;
     std::string file_name = webrtc::test::OutputPath() + file_stream.str();
     out_file_b_.Open(file_name.c_str(), 32000, "wb");

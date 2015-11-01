@@ -116,25 +116,6 @@ int VoEVideoSyncImpl::SetMinimumPlayoutDelay(int channel, int delayMs) {
   return channelPtr->SetMinimumPlayoutDelay(delayMs);
 }
 
-int VoEVideoSyncImpl::SetInitialPlayoutDelay(int channel, int delay_ms) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "SetInitialPlayoutDelay(channel=%d, delay_ms=%d)", channel,
-               delay_ms);
-
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "SetInitialPlayoutDelay() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->SetInitialPlayoutDelay(delay_ms);
-}
-
 int VoEVideoSyncImpl::GetDelayEstimate(int channel,
                                        int* jitter_buffer_delay_ms,
                                        int* playout_buffer_delay_ms) {

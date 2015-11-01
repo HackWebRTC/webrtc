@@ -441,7 +441,6 @@ class FakeVoiceEngine final : public VoiceEngineImpl {
   // VoEVideoSync
   int GetPlayoutBufferSize(int& buffer_ms) override { return -1; }
   int SetMinimumPlayoutDelay(int channel, int delay_ms) override { return -1; }
-  int SetInitialPlayoutDelay(int channel, int delay_ms) override { return -1; }
   int GetDelayEstimate(int channel,
                        int* jitter_buffer_delay_ms,
                        int* playout_buffer_delay_ms) override {

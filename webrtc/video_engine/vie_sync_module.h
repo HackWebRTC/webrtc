@@ -40,9 +40,6 @@ class ViESyncModule : public Module {
 
   int VoiceChannel();
 
-  // Set target delay for buffering mode (0 = real-time mode).
-  int SetTargetBufferingDelay(int target_delay_ms);
-
   // Implements Module.
   int64_t TimeUntilNextProcess() override;
   int32_t Process() override;
