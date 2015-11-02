@@ -533,21 +533,6 @@ int AcmReceiver::last_audio_codec_id() const {
   return last_audio_decoder_ ? last_audio_decoder_->acm_codec_id : -1;
 }
 
-int AcmReceiver::RedPayloadType() const {
-  const auto red_index =
-      RentACodec::CodecIndexFromId(RentACodec::CodecId::kRED);
-  if (red_index) {
-    CriticalSectionScoped lock(crit_sect_.get());
-    for (const auto& decoder_pair : decoders_) {
-      const Decoder& decoder = decoder_pair.second;
-      if (decoder.acm_codec_id == *red_index)
-        return decoder.payload_type;
-    }
-  }
-  LOG(WARNING) << "RED is not registered.";
-  return -1;
-}
-
 int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
   CriticalSectionScoped lock(crit_sect_.get());
   if (!last_audio_decoder_) {

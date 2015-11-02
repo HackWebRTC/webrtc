@@ -245,11 +245,6 @@ class AcmReceiver {
   int LastAudioCodec(CodecInst* codec) const;
 
   //
-  // Return payload type of RED if it is registered, otherwise return -1;
-  //
-  int RedPayloadType() const;
-
-  //
   // Get a decoder given its registered payload-type.
   //
   // Input:
