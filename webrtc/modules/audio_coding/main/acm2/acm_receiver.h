@@ -151,19 +151,6 @@ class AcmReceiver {
   int LeastRequiredDelayMs() const;
 
   //
-  // Sets an initial delay of |delay_ms| milliseconds. This introduces a playout
-  // delay. Silence (zero signal) is played out until equivalent of |delay_ms|
-  // millisecond of audio is buffered. Then, NetEq maintains the delay.
-  //
-  // Input:
-  //   - delay_ms             : initial delay in milliseconds.
-  //
-  // Return value             : 0 if OK.
-  //                           <0 if NetEq returned an error.
-  //
-  int SetInitialDelay(int delay_ms);
-
-  //
   // Resets the initial delay to zero.
   //
   void ResetInitialDelay();
@@ -291,18 +278,11 @@ class AcmReceiver {
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
 
  private:
-  bool GetSilence(int desired_sample_rate_hz, AudioFrame* frame)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
-  int GetNumSyncPacketToInsert(uint16_t received_squence_number);
-
   const Decoder* RtpHeaderToDecoder(const RTPHeader& rtp_header,
                                     const uint8_t* payload) const
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   uint32_t NowInTimestamp(int decoder_sampling_rate) const;
-
-  void InsertStreamOfSyncPackets(InitialDelayManager::SyncStream* sync_stream);
 
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   int id_;  // TODO(henrik.lundin) Make const.
@@ -321,19 +301,6 @@ class AcmReceiver {
   bool vad_enabled_;
   Clock* clock_;  // TODO(henrik.lundin) Make const if possible.
   bool resampled_last_output_frame_ GUARDED_BY(crit_sect_);
-
-  // Indicates if a non-zero initial delay is set, and the receiver is in
-  // AV-sync mode.
-  bool av_sync_;
-  rtc::scoped_ptr<InitialDelayManager> initial_delay_manager_;
-
-  // The following are defined as members to avoid creating them in every
-  // iteration. |missing_packets_sync_stream_| is *ONLY* used in InsertPacket().
-  // |late_packets_sync_stream_| is only used in GetAudio(). Both of these
-  // member variables are allocated only when we AV-sync is enabled, i.e.
-  // initial delay is set.
-  rtc::scoped_ptr<InitialDelayManager::SyncStream> missing_packets_sync_stream_;
-  rtc::scoped_ptr<InitialDelayManager::SyncStream> late_packets_sync_stream_;
 };
 
 }  // namespace acm2

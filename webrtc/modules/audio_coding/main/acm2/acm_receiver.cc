@@ -21,7 +21,6 @@
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/main/acm2/call_statistics.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
@@ -130,11 +129,7 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
       neteq_(NetEq::Create(config.neteq_config)),
       vad_enabled_(config.neteq_config.enable_post_decode_vad),
       clock_(config.clock),
-      resampled_last_output_frame_(true),
-      av_sync_(false),
-      initial_delay_manager_(),
-      missing_packets_sync_stream_(),
-      late_packets_sync_stream_() {
+      resampled_last_output_frame_(true) {
   assert(clock_);
   memset(audio_buffer_.get(), 0, AudioFrame::kMaxDataSizeSamples);
   memset(last_audio_buffer_.get(), 0, AudioFrame::kMaxDataSizeSamples);
@@ -149,42 +144,6 @@ int AcmReceiver::SetMinimumDelay(int delay_ms) {
     return 0;
   LOG(LERROR) << "AcmReceiver::SetExtraDelay " << delay_ms;
   return -1;
-}
-
-int AcmReceiver::SetInitialDelay(int delay_ms) {
-  if (delay_ms < 0 || delay_ms > 10000) {
-    return -1;
-  }
-  CriticalSectionScoped lock(crit_sect_.get());
-
-  if (delay_ms == 0) {
-    av_sync_ = false;
-    initial_delay_manager_.reset();
-    missing_packets_sync_stream_.reset();
-    late_packets_sync_stream_.reset();
-    neteq_->SetMinimumDelay(0);
-    return 0;
-  }
-
-  if (av_sync_ && initial_delay_manager_->PacketBuffered()) {
-    // Too late for this API. Only works before a call is started.
-    return -1;
-  }
-
-  // Most of places NetEq calls are not within AcmReceiver's critical section to
-  // improve performance. Here, this call has to be placed before the following
-  // block, therefore, we keep it inside critical section. Otherwise, we have to
-  // release |neteq_crit_sect_| and acquire it again, which seems an overkill.
-  if (!neteq_->SetMinimumDelay(delay_ms))
-    return -1;
-
-  const int kLatePacketThreshold = 5;
-  av_sync_ = true;
-  initial_delay_manager_.reset(new InitialDelayManager(delay_ms,
-                                                       kLatePacketThreshold));
-  missing_packets_sync_stream_.reset(new InitialDelayManager::SyncStream);
-  late_packets_sync_stream_.reset(new InitialDelayManager::SyncStream);
-  return 0;
 }
 
 int AcmReceiver::SetMaximumDelay(int delay_ms) {
@@ -207,9 +166,6 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
                               const uint8_t* incoming_payload,
                               size_t length_payload) {
   uint32_t receive_timestamp = 0;
-  InitialDelayManager::PacketType packet_type =
-      InitialDelayManager::kUndefinedPacket;
-  bool new_codec = false;
   const RTPHeader* header = &rtp_header.header;  // Just a shorthand.
 
   {
@@ -225,44 +181,18 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
     const int sample_rate_hz = ACMCodecDB::CodecFreq(decoder->acm_codec_id);
     receive_timestamp = NowInTimestamp(sample_rate_hz);
 
-    if (IsCng(decoder->acm_codec_id)) {
-      // If this is a CNG while the audio codec is not mono skip pushing in
-      // packets into NetEq.
-      if (last_audio_decoder_ && last_audio_decoder_->channels > 1)
+    // If this is a CNG while the audio codec is not mono, skip pushing in
+    // packets into NetEq.
+    if (IsCng(decoder->acm_codec_id) && last_audio_decoder_ &&
+        last_audio_decoder_->channels > 1)
         return 0;
-      packet_type = InitialDelayManager::kCngPacket;
-    } else if (decoder->acm_codec_id ==
-               *RentACodec::CodecIndexFromId(RentACodec::CodecId::kAVT)) {
-      packet_type = InitialDelayManager::kAvtPacket;
-    } else {
-      if (decoder != last_audio_decoder_) {
-        // This is either the first audio packet or send codec is changed.
-        // Therefore, either NetEq buffer is empty or will be flushed when this
-        // packet is inserted.
-        new_codec = true;
-        last_audio_decoder_ = decoder;
-      }
-      packet_type = InitialDelayManager::kAudioPacket;
+    if (!IsCng(decoder->acm_codec_id) &&
+        decoder->acm_codec_id !=
+            *RentACodec::CodecIndexFromId(RentACodec::CodecId::kAVT)) {
+      last_audio_decoder_ = decoder;
     }
 
-    if (av_sync_) {
-      assert(initial_delay_manager_.get());
-      assert(missing_packets_sync_stream_.get());
-      // This updates |initial_delay_manager_| and specifies an stream of
-      // sync-packets, if required to be inserted. We insert the sync-packets
-      // when AcmReceiver lock is released and |decoder_lock_| is acquired.
-      initial_delay_manager_->UpdateLastReceivedPacket(
-          rtp_header, receive_timestamp, packet_type, new_codec, sample_rate_hz,
-          missing_packets_sync_stream_.get());
-    }
   }  // |crit_sect_| is released.
-
-  // If |missing_packets_sync_stream_| is allocated then we are in AV-sync and
-  // we may need to insert sync-packets. We don't check |av_sync_| as we are
-  // outside AcmReceiver's critical section.
-  if (missing_packets_sync_stream_.get()) {
-    InsertStreamOfSyncPackets(missing_packets_sync_stream_.get());
-  }
 
   if (neteq_->InsertPacket(rtp_header, incoming_payload, length_payload,
                            receive_timestamp) < 0) {
@@ -278,29 +208,6 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   enum NetEqOutputType type;
   size_t samples_per_channel;
   int num_channels;
-  bool return_silence = false;
-
-  {
-    // Accessing members, take the lock.
-    CriticalSectionScoped lock(crit_sect_.get());
-
-    if (av_sync_) {
-      assert(initial_delay_manager_.get());
-      assert(late_packets_sync_stream_.get());
-      return_silence = GetSilence(desired_freq_hz, audio_frame);
-      uint32_t timestamp_now = NowInTimestamp(current_sample_rate_hz_);
-      initial_delay_manager_->LatePackets(timestamp_now,
-                                          late_packets_sync_stream_.get());
-    }
-  }
-
-  // If |late_packets_sync_stream_| is allocated then we have been in AV-sync
-  // mode and we might have to insert sync-packets.
-  if (late_packets_sync_stream_.get()) {
-    InsertStreamOfSyncPackets(late_packets_sync_stream_.get());
-    if (return_silence)  // Silence generated, don't pull from NetEq.
-      return 0;
-  }
 
   // Accessing members, take the lock.
   CriticalSectionScoped lock(crit_sect_.get());
@@ -519,12 +426,6 @@ void AcmReceiver::set_id(int id) {
 }
 
 bool AcmReceiver::GetPlayoutTimestamp(uint32_t* timestamp) {
-  if (av_sync_) {
-    assert(initial_delay_manager_.get());
-    if (initial_delay_manager_->buffering()) {
-      return initial_delay_manager_->GetPlayoutTimestamp(timestamp);
-    }
-  }
   return neteq_->GetPlayoutTimestamp(timestamp);
 }
 
@@ -602,62 +503,8 @@ std::vector<uint16_t> AcmReceiver::GetNackList(
 }
 
 void AcmReceiver::ResetInitialDelay() {
-  {
-    CriticalSectionScoped lock(crit_sect_.get());
-    av_sync_ = false;
-    initial_delay_manager_.reset(NULL);
-    missing_packets_sync_stream_.reset(NULL);
-    late_packets_sync_stream_.reset(NULL);
-  }
   neteq_->SetMinimumDelay(0);
   // TODO(turajs): Should NetEq Buffer be flushed?
-}
-
-// This function is called within critical section, no need to acquire a lock.
-bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
-  assert(av_sync_);
-  assert(initial_delay_manager_.get());
-  if (!initial_delay_manager_->buffering()) {
-    return false;
-  }
-
-  // We stop accumulating packets, if the number of packets or the total size
-  // exceeds a threshold.
-  int num_packets;
-  int max_num_packets;
-  const float kBufferingThresholdScale = 0.9f;
-  neteq_->PacketBufferStatistics(&num_packets, &max_num_packets);
-  if (num_packets > max_num_packets * kBufferingThresholdScale) {
-    initial_delay_manager_->DisableBuffering();
-    return false;
-  }
-
-  // Update statistics.
-  call_stats_.DecodedBySilenceGenerator();
-
-  // Set the values if already got a packet, otherwise set to default values.
-  if (last_audio_decoder_) {
-    current_sample_rate_hz_ =
-        ACMCodecDB::database_[last_audio_decoder_->acm_codec_id].plfreq;
-    frame->num_channels_ = last_audio_decoder_->channels;
-  } else {
-    frame->num_channels_ = 1;
-  }
-
-  // Set the audio frame's sampling frequency.
-  if (desired_sample_rate_hz > 0) {
-    frame->sample_rate_hz_ = desired_sample_rate_hz;
-  } else {
-    frame->sample_rate_hz_ = current_sample_rate_hz_;
-  }
-
-  frame->samples_per_channel_ =
-      static_cast<size_t>(frame->sample_rate_hz_ / 100);  // Always 10 ms.
-  frame->speech_type_ = AudioFrame::kCNG;
-  frame->vad_activity_ = AudioFrame::kVadPassive;
-  size_t samples = frame->samples_per_channel_ * frame->num_channels_;
-  memset(frame->data_, 0, samples * sizeof(int16_t));
-  return true;
 }
 
 const AcmReceiver::Decoder* AcmReceiver::RtpHeaderToDecoder(
@@ -685,23 +532,6 @@ uint32_t AcmReceiver::NowInTimestamp(int decoder_sampling_rate) const {
       clock_->TimeInMilliseconds() & 0x03ffffff);
   return static_cast<uint32_t>(
       (decoder_sampling_rate / 1000) * now_in_ms);
-}
-
-// This function only interacts with |neteq_|, therefore, it does not have to
-// be within critical section of AcmReceiver. It is inserting packets
-// into NetEq, so we call it when |decode_lock_| is acquired. However, this is
-// not essential as sync-packets do not interact with codecs (especially BWE).
-void AcmReceiver::InsertStreamOfSyncPackets(
-    InitialDelayManager::SyncStream* sync_stream) {
-  assert(sync_stream);
-  assert(av_sync_);
-  for (int n = 0; n < sync_stream->num_sync_packets; ++n) {
-    neteq_->InsertSyncPacket(sync_stream->rtp_info,
-                             sync_stream->receive_timestamp);
-    ++sync_stream->rtp_info.header.sequenceNumber;
-    sync_stream->rtp_info.header.timestamp += sync_stream->timestamp_step;
-    sync_stream->receive_timestamp += sync_stream->timestamp_step;
-  }
 }
 
 void AcmReceiver::GetDecodingCallStatistics(
