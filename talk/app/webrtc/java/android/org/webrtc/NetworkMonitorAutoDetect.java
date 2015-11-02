@@ -55,7 +55,7 @@ import android.util.Log;
  * ACCESS_NETWORK_STATE permission.
  */
 public class NetworkMonitorAutoDetect extends BroadcastReceiver {
-  static enum ConnectionType {
+  public static enum ConnectionType {
     CONNECTION_UNKNOWN,
     CONNECTION_ETHERNET,
     CONNECTION_WIFI,
@@ -240,7 +240,6 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
   static final int INVALID_NET_ID = -1;
   private static final String TAG = "NetworkMonitorAutoDetect";
-  private static final int UNKNOWN_LINK_SPEED = -1;
   private final IntentFilter intentFilter;
 
   // Observer for the connection type change.
