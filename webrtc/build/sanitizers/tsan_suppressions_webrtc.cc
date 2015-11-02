@@ -42,6 +42,10 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc/modules/audio_processing/aec/aec_core.c\n"
 "race:webrtc/modules/audio_processing/aec/aec_rdft.c\n"
 
+// Race in pulse initialization.
+// https://code.google.com/p/webrtc/issues/detail?id=5152
+"race:webrtc::AudioDeviceLinuxPulse::Init\n"
+
 // rtc_unittest
 // https://code.google.com/p/webrtc/issues/detail?id=3911 for details.
 "race:rtc::AsyncInvoker::OnMessage\n"
