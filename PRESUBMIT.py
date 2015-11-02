@@ -68,13 +68,6 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
   # pylint: disable=W0212
   cpplint._cpplint_state.ResetErrorCounts()
 
-  # Justifications for each filter:
-  #
-  # - build/header_guard  : WebRTC coding style says they should be prefixed
-  #                         with WEBRTC_, which is not possible to configure in
-  #                         cpplint.py.
-  cpplint._SetFilters('-build/header_guard')
-
   # Use the strictest verbosity level for cpplint.py (level 1) which is the
   # default when running cpplint.py from command line.
   # To make it possible to work with not-yet-converted code, we're only applying
