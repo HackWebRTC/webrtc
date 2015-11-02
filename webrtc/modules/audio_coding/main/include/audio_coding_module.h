@@ -60,7 +60,11 @@ class AudioCodingModule {
 
  public:
   struct Config {
-    Config() : id(0), neteq_config(), clock(Clock::GetRealTimeClock()) {}
+    Config() : id(0), neteq_config(), clock(Clock::GetRealTimeClock()) {
+      // Post-decode VAD is disabled by default in NetEq, however, Audio
+      // Conference Mixer relies on VAD decisions and fails without them.
+      neteq_config.enable_post_decode_vad = true;
+    }
 
     int id;
     NetEq::Config neteq_config;

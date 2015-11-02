@@ -112,6 +112,10 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
   if (create_components) {
     SetSampleRateAndChannels(fs, 1);  // Default is 1 channel.
   }
+  RTC_DCHECK(!vad_->enabled());
+  if (config.enable_post_decode_vad) {
+    vad_->Enable();
+  }
 }
 
 NetEqImpl::~NetEqImpl() = default;

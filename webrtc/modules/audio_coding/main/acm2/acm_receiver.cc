@@ -128,7 +128,7 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
       audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
       last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
       neteq_(NetEq::Create(config.neteq_config)),
-      vad_enabled_(true),
+      vad_enabled_(config.neteq_config.enable_post_decode_vad),
       clock_(config.clock),
       resampled_last_output_frame_(true),
       av_sync_(false),
@@ -136,15 +136,6 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
       missing_packets_sync_stream_(),
       late_packets_sync_stream_() {
   assert(clock_);
-
-  // Make sure we are on the same page as NetEq. Post-decode VAD is disabled by
-  // default in NetEq4, however, Audio Conference Mixer relies on VAD decision
-  // and fails if VAD decision is not provided.
-  if (vad_enabled_)
-    neteq_->EnableVad();
-  else
-    neteq_->DisableVad();
-
   memset(audio_buffer_.get(), 0, AudioFrame::kMaxDataSizeSamples);
   memset(last_audio_buffer_.get(), 0, AudioFrame::kMaxDataSizeSamples);
 }
