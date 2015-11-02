@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SYSTEM_WRAPPERS_INTERFACE_REF_COUNT_H_
-#define SYSTEM_WRAPPERS_INTERFACE_REF_COUNT_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_REF_COUNT_H_
+#define SYSTEM_WRAPPERS_INCLUDE_REF_COUNT_H_
 
 #include "webrtc/system_wrappers/include/atomic32.h"
 
@@ -79,4 +79,4 @@ class RefCountImpl : public T {
 
 }  // namespace webrtc
 
-#endif  // SYSTEM_WRAPPERS_INTERFACE_REF_COUNT_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_REF_COUNT_H_

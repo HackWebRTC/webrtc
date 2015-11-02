@@ -12,8 +12,8 @@
 // mapped here except for InsertCell as C does not support templates.
 // See data_log.h for a description of the functions.
 
-#ifndef SRC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_C_H_
-#define SRC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_C_H_
+#ifndef SRC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_C_H_
+#define SRC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_C_H_
 
 #include <stddef.h>  // size_t
 
@@ -82,4 +82,4 @@ int WebRtcDataLog_NextRow(const char* table_name);
 }  // end of extern "C"
 #endif
 
-#endif  // SRC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_C_H_  // NOLINT
+#endif  // SRC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_C_H_  // NOLINT

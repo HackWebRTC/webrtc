@@ -10,8 +10,8 @@
 
 // Generic unstable sorting routines.
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SORT_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SORT_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SORT_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SORT_H_
 
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
@@ -62,4 +62,4 @@ int32_t KeySort(void* data, void* key, uint32_t num_of_elements,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SORT_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SORT_H_

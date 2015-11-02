@@ -9,8 +9,8 @@
  */
 // An OS-independent sleep function.
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SLEEP_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SLEEP_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SLEEP_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SLEEP_H_
 
 namespace webrtc {
 
@@ -21,4 +21,4 @@ void SleepMs(int msecs);
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SLEEP_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SLEEP_H_

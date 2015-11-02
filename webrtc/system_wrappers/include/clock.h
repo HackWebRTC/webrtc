@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
@@ -81,4 +81,4 @@ class SimulatedClock : public Clock {
 
 };  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_

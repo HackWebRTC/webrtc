@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_LOGCAT_TRACE_CONTEXT_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_LOGCAT_TRACE_CONTEXT_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_
 
 #include "webrtc/system_wrappers/include/trace.h"
 
@@ -32,4 +32,4 @@ class LogcatTraceContext : public webrtc::TraceCallback {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_LOGCAT_TRACE_CONTEXT_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_LOGCAT_TRACE_CONTEXT_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CPU_FEATURES_WRAPPER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CPU_FEATURES_WRAPPER_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -48,4 +48,4 @@ extern uint64_t WebRtc_GetCPUFeaturesARM(void);
 }  // extern "C"
 #endif
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CPU_FEATURES_WRAPPER_H_
+#endif // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_

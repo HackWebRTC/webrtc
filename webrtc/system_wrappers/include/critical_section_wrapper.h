@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CRITICAL_SECTION_WRAPPER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CRITICAL_SECTION_WRAPPER_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CRITICAL_SECTION_WRAPPER_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CRITICAL_SECTION_WRAPPER_H_
 
 // If the critical section is heavily contended it may be beneficial to use
 // read/write locks instead.
@@ -51,4 +51,4 @@ class SCOPED_LOCKABLE CriticalSectionScoped {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CRITICAL_SECTION_WRAPPER_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CRITICAL_SECTION_WRAPPER_H_

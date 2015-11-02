@@ -13,8 +13,8 @@
 // Note: The callback function is expected to return every 2 seconds or more
 // often.
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_THREAD_WRAPPER_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_THREAD_WRAPPER_H_
 
 #if defined(WEBRTC_WIN)
 #include <windows.h>
@@ -92,4 +92,4 @@ class ThreadWrapper {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_THREAD_WRAPPER_H_

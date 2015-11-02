@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_ALIGNED_ARRAY_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_ALIGNED_ARRAY_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ALIGNED_ARRAY_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ALIGNED_ARRAY_
 
 #include "webrtc/base/checks.h"
 #include "webrtc/system_wrappers/include/aligned_malloc.h"
@@ -85,4 +85,4 @@ template<typename T> class AlignedArray {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_ALIGNED_ARRAY_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ALIGNED_ARRAY_

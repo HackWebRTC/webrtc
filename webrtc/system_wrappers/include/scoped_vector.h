@@ -10,8 +10,8 @@
 
 // Borrowed from Chromium's src/base/memory/scoped_vector.h.
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SCOPED_VECTOR_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SCOPED_VECTOR_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SCOPED_VECTOR_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SCOPED_VECTOR_H_
 
 #include <vector>
 
@@ -154,4 +154,4 @@ class ScopedVector {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SCOPED_VECTOR_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_SCOPED_VECTOR_H_

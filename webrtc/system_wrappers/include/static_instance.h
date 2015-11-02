@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATIC_INSTANCE_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATIC_INSTANCE_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_
 
 #include <assert.h>
 
@@ -150,4 +150,4 @@ static T* GetStaticInstance(CountOperation count_operation) {
 
 }  // namspace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATIC_INSTANCE_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STATIC_INSTANCE_H_

@@ -8,8 +8,8 @@
 // be found in the AUTHORS file in the root of the source tree.
 //
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_FIELD_TRIAL_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_FIELD_TRIAL_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_H_
 
 #include <string>
 
@@ -65,4 +65,4 @@ std::string FindFullName(const std::string& name);
 }  // namespace field_trial
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_FIELD_TRIAL_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_H_

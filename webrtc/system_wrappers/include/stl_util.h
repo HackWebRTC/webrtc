@@ -10,8 +10,8 @@
 
 // Borrowed from Chromium's src/base/stl_util.h.
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STL_UTIL_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STL_UTIL_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STL_UTIL_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STL_UTIL_H_
 
 #include <assert.h>
 #include <algorithm>
@@ -262,4 +262,4 @@ bool STLIncludes(const Arg1& a1, const Arg2& a2) {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STL_UTIL_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_STL_UTIL_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_RW_LOCK_WRAPPER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_RW_LOCK_WRAPPER_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_
 
 #include "webrtc/base/thread_annotations.h"
 
@@ -65,4 +65,4 @@ class SCOPED_LOCKABLE WriteLockScoped {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_RW_LOCK_WRAPPER_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_RW_LOCK_WRAPPER_H_

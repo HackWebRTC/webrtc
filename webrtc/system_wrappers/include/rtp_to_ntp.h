@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SYSTEM_WRAPPERS_INTERFACE_RTP_TO_NTP_H_
-#define SYSTEM_WRAPPERS_INTERFACE_RTP_TO_NTP_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_H_
+#define SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_H_
 
 #include <list>
 
@@ -47,4 +47,4 @@ int CheckForWrapArounds(uint32_t rtp_timestamp, uint32_t rtcp_rtp_timestamp);
 
 }  // namespace webrtc
 
-#endif  // SYSTEM_WRAPPERS_INTERFACE_RTP_TO_NTP_H_
+#endif  // SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_H_

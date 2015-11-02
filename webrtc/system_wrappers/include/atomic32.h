@@ -12,8 +12,8 @@
 // doing, use locks instead! :-)
 //
 // Note: assumes 32-bit (or higher) system
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_ATOMIC32_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_ATOMIC32_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ATOMIC32_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ATOMIC32_H_
 
 #include <stddef.h>
 
@@ -63,4 +63,4 @@ class Atomic32 {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_ATOMIC32_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_ATOMIC32_H_

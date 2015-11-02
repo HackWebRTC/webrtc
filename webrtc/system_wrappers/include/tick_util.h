@@ -11,8 +11,8 @@
 // System independant wrapper for polling elapsed time in ms and us.
 // The implementation works in the tick domain which can be mapped over to the
 // time domain.
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_TICK_UTIL_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_TICK_UTIL_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_TICK_UTIL_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_TICK_UTIL_H_
 
 #if _WIN32
 // Note: The Windows header must always be included before mmsystem.h
@@ -294,4 +294,4 @@ inline TickInterval& TickInterval::operator-=(const TickInterval& rhs) {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_TICK_UTIL_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_TICK_UTIL_H_

@@ -23,11 +23,11 @@
 //
 // Parameters for the above two functions are described in trace_event.h.
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_EVENT_TRACER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_EVENT_TRACER_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_EVENT_TRACER_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_EVENT_TRACER_H_
 
 // This file has moved.
 // TODO(tommi): Delete after removing dependencies and updating Chromium.
 #include "webrtc/base/event_tracer.h"
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_EVENT_TRACER_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_EVENT_TRACER_H_

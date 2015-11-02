@@ -28,8 +28,8 @@
 //
 // Table names and column names are case sensitive.
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_H_
 
 #include <string>
 
@@ -116,4 +116,4 @@ class DataLog {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_COMPILE_ASSERT_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_COMPILE_ASSERT_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_COMPILE_ASSERT_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_COMPILE_ASSERT_H_
 
 #ifdef __cplusplus
 #error "Only use this for C files. For C++, use static_assert."
@@ -21,4 +21,4 @@
 //   COMPILE_ASSERT(sizeof(foo) < 128);
 #define COMPILE_ASSERT(expression) switch (0) {case 0: case expression:;}
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_COMPILE_ASSERT_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_COMPILE_ASSERT_H_

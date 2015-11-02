@@ -10,8 +10,8 @@
 
 // Conversion functions for UTF-8 and UTF-16 strings on Windows.
 // Duplicated from talk/base/win32.h.
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_UTF_UTIL_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_UTF_UTIL_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_UTF_UTIL_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_UTF_UTIL_H_
 
 #ifdef WIN32
 #include <windows.h>
@@ -54,4 +54,4 @@ inline std::string ToUtf8(const std::wstring& wstr) {
 }  // namespace webrtc
 
 #endif  // WIN32
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_UTF_UTIL_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_UTF_UTIL_H_

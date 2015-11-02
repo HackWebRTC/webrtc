@@ -8,8 +8,8 @@
 // be found in the AUTHORS file in the root of the source tree.
 //
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_METRICS_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_METRICS_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
 
 #include <string>
 
@@ -135,5 +135,5 @@ void HistogramAdd(
 }  // namespace metrics
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_METRICS_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
 

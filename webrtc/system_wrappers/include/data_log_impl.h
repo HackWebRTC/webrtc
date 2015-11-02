@@ -14,8 +14,8 @@
 // These classes are helper classes used for logging data for offline
 // processing. Data logged with these classes can conveniently be parsed and
 // processed with e.g. Matlab.
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_IMPL_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_IMPL_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_IMPL_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_IMPL_H_
 
 #include <map>
 #include <sstream>
@@ -152,4 +152,4 @@ class DataLogImpl {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_IMPL_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_IMPL_H_
