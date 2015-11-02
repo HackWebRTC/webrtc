@@ -68,6 +68,9 @@ char kTSanDefaultSuppressions[] =
 // TODO(jiayl): https://code.google.com/p/webrtc/issues/detail?id=3492
 "race:user_sctp_timer_iterate\n"
 
+// https://code.google.com/p/webrtc/issues/detail?id=5151
+"race:sctp_close\n"
+
 // Potential deadlocks detected after roll in r6516.
 // https://code.google.com/p/webrtc/issues/detail?id=3509
 "deadlock:webrtc::RTCPReceiver::SetSsrcs\n"
