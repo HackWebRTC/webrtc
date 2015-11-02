@@ -85,7 +85,7 @@ char kTSanDefaultSuppressions[] =
 
 // Race between InitCpuFlags and TestCpuFlag in libyuv.
 // https://code.google.com/p/libyuv/issues/detail?id=508
-"race:libyuv::TestCpuFlag\n"
+"race:InitCpuFlags\n"
 
 // End of suppressions.
 ;  // Please keep this semicolon.
