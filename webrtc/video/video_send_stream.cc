@@ -370,6 +370,16 @@ bool VideoSendStream::ReconfigureVideoEncoder(
       static_cast<unsigned char>(streams.size());
   video_codec.minBitrate = streams[0].min_bitrate_bps / 1000;
   RTC_DCHECK_LE(streams.size(), static_cast<size_t>(kMaxSimulcastStreams));
+  if (video_codec.codecType == kVideoCodecVP9) {
+    // If the vector is empty, bitrates will be configured automatically.
+    RTC_DCHECK(config.spatial_layers.empty() ||
+               config.spatial_layers.size() ==
+                   video_codec.codecSpecific.VP9.numberOfSpatialLayers);
+    RTC_DCHECK_LE(video_codec.codecSpecific.VP9.numberOfSpatialLayers,
+                  kMaxSimulcastStreams);
+    for (size_t i = 0; i < config.spatial_layers.size(); ++i)
+      video_codec.spatialLayers[i] = config.spatial_layers[i];
+  }
   for (size_t i = 0; i < streams.size(); ++i) {
     SimulcastStream* sim_stream = &video_codec.simulcastStream[i];
     RTC_DCHECK_GT(streams[i].width, 0u);
