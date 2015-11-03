@@ -267,7 +267,7 @@ void TurnPort::PrepareAddress() {
     server_address_.address.SetPort(TURN_DEFAULT_PORT);
   }
 
-  if (server_address_.address.IsUnresolved()) {
+  if (server_address_.address.IsUnresolvedIP()) {
     ResolveTurnAddress(server_address_.address);
   } else {
     // If protocol family of server address doesn't match with local, return.
@@ -380,7 +380,7 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   }
 
   state_ = STATE_CONNECTED;  // It is ready to send stun requests.
-  if (server_address_.address.IsUnresolved()) {
+  if (server_address_.address.IsUnresolvedIP()) {
     server_address_.address = socket_->GetRemoteAddress();
   }
 

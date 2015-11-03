@@ -141,7 +141,6 @@ class SocketAddress {
 
   // Determines whether the hostname has been resolved to an IP.
   bool IsUnresolvedIP() const;
-  inline bool IsUnresolved() const { return IsUnresolvedIP(); }  // deprecated
 
   // Determines whether this address is identical to the given one.
   bool operator ==(const SocketAddress& addr) const;

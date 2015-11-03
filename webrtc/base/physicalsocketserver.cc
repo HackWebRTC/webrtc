@@ -187,7 +187,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
       SetError(EALREADY);
       return SOCKET_ERROR;
     }
-    if (addr.IsUnresolved()) {
+    if (addr.IsUnresolvedIP()) {
       LOG(LS_VERBOSE) << "Resolving addr in PhysicalSocket::Connect";
       resolver_ = new AsyncResolver();
       resolver_->SignalDone.connect(this, &PhysicalSocket::OnResolveResult);

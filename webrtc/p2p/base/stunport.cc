@@ -310,12 +310,13 @@ void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
   MaybePrepareStunCandidate();
 }
 
-void UDPPort::OnReadPacket(
-  rtc::AsyncPacketSocket* socket, const char* data, size_t size,
-  const rtc::SocketAddress& remote_addr,
-  const rtc::PacketTime& packet_time) {
+void UDPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
+                           const char* data,
+                           size_t size,
+                           const rtc::SocketAddress& remote_addr,
+                           const rtc::PacketTime& packet_time) {
   ASSERT(socket == socket_);
-  ASSERT(!remote_addr.IsUnresolved());
+  ASSERT(!remote_addr.IsUnresolvedIP());
 
   // Look for a response from the STUN server.
   // Even if the response doesn't match one of our outstanding requests, we
@@ -383,9 +384,8 @@ void UDPPort::OnResolveResult(const rtc::SocketAddress& input,
   }
 }
 
-void UDPPort::SendStunBindingRequest(
-    const rtc::SocketAddress& stun_addr) {
-  if (stun_addr.IsUnresolved()) {
+void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
+  if (stun_addr.IsUnresolvedIP()) {
     ResolveStunAddress(stun_addr);
 
   } else if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {

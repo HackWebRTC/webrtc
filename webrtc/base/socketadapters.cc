@@ -688,7 +688,7 @@ void AsyncSocksProxySocket::SendConnect() {
   request.WriteUInt8(5);              // Socks Version
   request.WriteUInt8(1);              // CONNECT
   request.WriteUInt8(0);              // Reserved
-  if (dest_.IsUnresolved()) {
+  if (dest_.IsUnresolvedIP()) {
     std::string hostname = dest_.hostname();
     request.WriteUInt8(3);            // DOMAINNAME
     request.WriteUInt8(static_cast<uint8_t>(hostname.size()));

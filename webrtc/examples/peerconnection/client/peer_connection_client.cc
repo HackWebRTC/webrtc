@@ -114,7 +114,7 @@ void PeerConnectionClient::Connect(const std::string& server, int port,
   server_address_.SetPort(port);
   client_name_ = client_name;
 
-  if (server_address_.IsUnresolved()) {
+  if (server_address_.IsUnresolvedIP()) {
     state_ = RESOLVING;
     resolver_ = new rtc::AsyncResolver();
     resolver_->SignalDone.connect(this, &PeerConnectionClient::OnResolveResult);
