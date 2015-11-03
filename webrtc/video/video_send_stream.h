@@ -72,6 +72,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
  private:
   bool SetSendCodec(VideoCodec video_codec);
   void ConfigureSsrcs();
+
+  SendStatisticsProxy stats_proxy_;
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoSendStream::Config config_;
@@ -91,8 +93,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   // start bitrate initially, instead of the one reported by VideoEngine (which
   // defaults to too high).
   bool use_config_bitrate_;
-
-  SendStatisticsProxy stats_proxy_;
 };
 }  // namespace internal
 }  // namespace webrtc
