@@ -130,20 +130,6 @@ class OpenSLESPlayer {
   // AudioManager.
   const AudioParameters audio_parameters_;
 
-  // Contains the stream type provided to this class at construction by the
-  // AudioManager. Possible input values are:
-  //  - AudioManager.STREAM_VOICE_CALL = 0
-  //  - AudioManager.STREAM_RING = 2
-  //  - AudioManager.STREAM_MUSIC = 3
-  // These value are mapped to the corresponding audio playback stream type
-  // values in the "OpenSL ES domain":
-  // - SL_ANDROID_STREAM_VOICE <=> STREAM_VOICE_CALL (0)
-  // - SL_ANDROID_STREAM_RING <=> STREAM_RING (2)
-  // - SL_ANDROID_STREAM_MEDIA <=> STREAM_MUSIC (3)
-  // when creating the audio player. See SLES/OpenSLES_AndroidConfiguration.h
-  // for details.
-  const int stream_type_;
-
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
   // AudioDeviceModuleImpl class and called by AudioDeviceModuleImpl::Create().
   AudioDeviceBuffer* audio_device_buffer_;

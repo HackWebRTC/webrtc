@@ -38,7 +38,6 @@ namespace webrtc {
 
 OpenSLESPlayer::OpenSLESPlayer(AudioManager* audio_manager)
     : audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
-      stream_type_(audio_manager->OutputStreamType()),
       audio_device_buffer_(NULL),
       initialized_(false),
       playing_(false),
@@ -49,9 +48,6 @@ OpenSLESPlayer::OpenSLESPlayer(AudioManager* audio_manager)
       simple_buffer_queue_(nullptr),
       volume_(nullptr) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
-  RTC_DCHECK(stream_type_ == SL_ANDROID_STREAM_VOICE ||
-             stream_type_ == SL_ANDROID_STREAM_RING ||
-             stream_type_ == SL_ANDROID_STREAM_MEDIA) << stream_type_;
   // Use native audio output parameters provided by the audio manager and
   // define the PCM format structure.
   pcm_format_ = CreatePCMConfiguration(audio_parameters_.channels(),
@@ -351,7 +347,7 @@ bool OpenSLESPlayer::CreateAudioPlayer() {
       false);
   // Set audio player configuration to SL_ANDROID_STREAM_VOICE which
   // corresponds to android.media.AudioManager.STREAM_VOICE_CALL.
-  SLint32 stream_type = stream_type_;
+  SLint32 stream_type = SL_ANDROID_STREAM_VOICE;
   RETURN_ON_ERROR(
       (*player_config)
           ->SetConfiguration(player_config, SL_ANDROID_KEY_STREAM_TYPE,

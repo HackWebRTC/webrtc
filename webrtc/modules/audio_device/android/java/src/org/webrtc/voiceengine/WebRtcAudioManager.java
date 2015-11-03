@@ -71,7 +71,6 @@ class WebRtcAudioManager {
   private int channels;
   private int outputBufferSize;
   private int inputBufferSize;
-  private int outputStreamType;
 
   WebRtcAudioManager(Context context, long nativeAudioManager) {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
@@ -85,7 +84,7 @@ class WebRtcAudioManager {
     storeAudioParameters();
     nativeCacheAudioParameters(
         sampleRate, channels, hardwareAEC, hardwareAGC, hardwareNS,
-        lowLatencyOutput, outputBufferSize, inputBufferSize, outputStreamType,
+        lowLatencyOutput, outputBufferSize, inputBufferSize,
         nativeAudioManager);
   }
 
@@ -133,8 +132,6 @@ class WebRtcAudioManager {
         getMinOutputFrameSize(sampleRate, channels);
     // TODO(henrika): add support for low-latency input.
     inputBufferSize = getMinInputFrameSize(sampleRate, channels);
-    outputStreamType = WebRtcAudioUtils.getOutputStreamTypeFromAudioMode(
-        audioManager.getMode());
   }
 
   // Gets the current earpiece state.
@@ -270,5 +267,5 @@ class WebRtcAudioManager {
   private native void nativeCacheAudioParameters(
     int sampleRate, int channels, boolean hardwareAEC, boolean hardwareAGC,
     boolean hardwareNS, boolean lowLatencyOutput, int outputBufferSize,
-    int inputBufferSize, int outputStreamType, long nativeAudioManager);
+    int inputBufferSize, long nativeAudioManager);
 }

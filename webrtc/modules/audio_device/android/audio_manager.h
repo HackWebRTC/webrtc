@@ -93,8 +93,6 @@ class AudioManager {
   // webrtc::kHighLatencyModeDelayEstimateInMilliseconds.
   int GetDelayEstimateInMilliseconds() const;
 
-  int OutputStreamType() const { return output_stream_type_; }
-
  private:
   // Called from Java side so we can cache the native audio parameters.
   // This method will be called by the WebRtcAudioManager constructor, i.e.
@@ -109,7 +107,6 @@ class AudioManager {
                                            jboolean low_latency_output,
                                            jint output_buffer_size,
                                            jint input_buffer_size,
-                                           jint output_stream_type,
                                            jlong native_audio_manager);
   void OnCacheAudioParameters(JNIEnv* env,
                               jint sample_rate,
@@ -119,8 +116,7 @@ class AudioManager {
                               jboolean hardware_ns,
                               jboolean low_latency_output,
                               jint output_buffer_size,
-                              jint input_buffer_size,
-                              jint output_stream_type);
+                              jint input_buffer_size);
 
   // Stores thread ID in the constructor.
   // We can then use ThreadChecker::CalledOnValidThread() to ensure that
@@ -158,13 +154,6 @@ class AudioManager {
   // The delay estimate can take one of two fixed values depending on if the
   // device supports low-latency output or not.
   int delay_estimate_in_milliseconds_;
-
-  // Contains the output stream type provided to this class at construction by
-  // the AudioManager in Java land. Possible values are:
-  //  - AudioManager.STREAM_VOICE_CALL = 0
-  //  - AudioManager.STREAM_RING = 2
-  //  - AudioManager.STREAM_MUSIC = 3
-  int output_stream_type_;
 
   // Contains native parameters (e.g. sample rate, channel configuration).
   // Set at construction in OnCacheAudioParameters() which is called from
