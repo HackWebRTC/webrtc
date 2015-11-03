@@ -63,8 +63,14 @@ int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
     return -1;
   }
 
-  if (ACMCodecDB::codec_settings_[codec_id].channel_support <
-      send_codec.channels) {
+  const rtc::Maybe<bool> supported_num_channels = [codec_id, &send_codec] {
+    auto cid = RentACodec::CodecIdFromIndex(codec_id);
+    return cid ? RentACodec::IsSupportedNumChannels(*cid, send_codec.channels)
+               : rtc::Maybe<bool>();
+  }();
+  if (!supported_num_channels)
+    return -1;
+  if (!*supported_num_channels) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                  "%d number of channels not supportedn for %s.",
                  send_codec.channels, send_codec.plname);

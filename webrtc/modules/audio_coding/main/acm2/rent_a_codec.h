@@ -154,6 +154,9 @@ class RentACodec {
   static bool IsCodecValid(const CodecInst& codec_inst);
   static rtc::ArrayView<const CodecInst> Database();
 
+  static rtc::Maybe<bool> IsSupportedNumChannels(CodecId codec_id,
+                                                 int num_channels);
+
   static rtc::Maybe<NetEqDecoder> NetEqDecoderFromCodecId(CodecId codec_id,
                                                           int num_channels);
 };

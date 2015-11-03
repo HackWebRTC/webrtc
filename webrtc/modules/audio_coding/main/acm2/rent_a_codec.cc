@@ -50,6 +50,14 @@ bool RentACodec::IsCodecValid(const CodecInst& codec_inst) {
   return ACMCodecDB::CodecNumber(codec_inst) >= 0;
 }
 
+rtc::Maybe<bool> RentACodec::IsSupportedNumChannels(CodecId codec_id,
+                                                    int num_channels) {
+  auto i = CodecIndexFromId(codec_id);
+  return i ? rtc::Maybe<bool>(ACMCodecDB::codec_settings_[*i].channel_support >=
+                              num_channels)
+           : rtc::Maybe<bool>();
+}
+
 rtc::ArrayView<const CodecInst> RentACodec::Database() {
   return rtc::ArrayView<const CodecInst>(ACMCodecDB::database_,
                                          NumberOfCodecs());

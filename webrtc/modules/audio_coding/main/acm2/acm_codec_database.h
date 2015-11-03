@@ -100,9 +100,9 @@ class ACMCodecDB {
   //                   samples, and max number of channels that are supported.
   // neteq_decoders_ - list of supported decoders in NetEQ.
   static const CodecInst database_[kMaxNumCodecs];
-  static const CodecSettings codec_settings_[kMaxNumCodecs];
 
  private:
+  static const CodecSettings codec_settings_[kMaxNumCodecs];
   static const NetEqDecoder neteq_decoders_[kMaxNumCodecs];
 
   friend class RentACodec;
