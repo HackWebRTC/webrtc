@@ -179,10 +179,6 @@ source_set("field_trial_default") {
 
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
-
-  deps = [
-    ":system_wrappers",
-  ]
 }
 
 source_set("metrics_default") {
@@ -192,10 +188,6 @@ source_set("metrics_default") {
 
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
-
-  deps = [
-    ":system_wrappers",
-  ]
 }
 
 source_set("system_wrappers_default") {
@@ -203,6 +195,7 @@ source_set("system_wrappers_default") {
   public_configs = [ "..:common_inherited_config" ]
 
   deps = [
+    ":system_wrappers",
     ":field_trial_default",
     ":metrics_default",
   ]

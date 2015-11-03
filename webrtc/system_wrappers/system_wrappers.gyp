@@ -206,13 +206,11 @@
       'sources': [
         'source/metrics_default.cc',
       ],
-      'dependencies': [
-        'system_wrappers',
-      ]
     }, {
       'target_name': 'system_wrappers_default',
       'type': 'static_library',
       'dependencies': [
+        'system_wrappers',
         'field_trial_default',
         'metrics_default',
       ]
