@@ -25,7 +25,7 @@
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/fake_voice_engine.h"
+#include "webrtc/test/mock_voice_engine.h"
 #include "webrtc/test/frame_generator_capturer.h"
 
 namespace webrtc {
@@ -43,9 +43,7 @@ class TraceObserver {
     // Call webrtc trace to initialize the tracer that would otherwise trigger a
     // data-race if left to be initialized by multiple threads (i.e. threads
     // spawned by test::DirectTransport members in BitrateEstimatorTest).
-    WEBRTC_TRACE(kTraceStateInfo,
-                 kTraceUtility,
-                 -1,
+    WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                  "Instantiate without data races.");
   }
 
@@ -58,9 +56,7 @@ class TraceObserver {
     callback_.PushExpectedLogLine(expected_log_line);
   }
 
-  EventTypeWrapper Wait() {
-    return callback_.Wait();
-  }
+  EventTypeWrapper Wait() { return callback_.Wait(); }
 
  private:
   class Callback : public TraceCallback {
@@ -118,13 +114,14 @@ class BitrateEstimatorTest : public test::CallTest {
  public:
   BitrateEstimatorTest() : receive_config_(nullptr) {}
 
-  virtual ~BitrateEstimatorTest() {
-    EXPECT_TRUE(streams_.empty());
-  }
+  virtual ~BitrateEstimatorTest() { EXPECT_TRUE(streams_.empty()); }
 
   virtual void SetUp() {
+    EXPECT_CALL(mock_voice_engine_, GetEventLog())
+        .WillRepeatedly(testing::Return(nullptr));
+
     Call::Config config;
-    config.voice_engine = &fake_voice_engine_;
+    config.voice_engine = &mock_voice_engine_;
     receiver_call_.reset(Call::Create(config));
     sender_call_.reset(Call::Create(config));
 
@@ -154,7 +151,7 @@ class BitrateEstimatorTest : public test::CallTest {
 
   virtual void TearDown() {
     std::for_each(streams_.begin(), streams_.end(),
-        std::mem_fun(&Stream::StopSending));
+                  std::mem_fun(&Stream::StopSending));
 
     send_transport_->StopSending();
     receive_transport_->StopSending();
@@ -187,10 +184,8 @@ class BitrateEstimatorTest : public test::CallTest {
           test_->send_config_, test_->encoder_config_);
       RTC_DCHECK_EQ(1u, test_->encoder_config_.streams.size());
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
-          send_stream_->Input(),
-          test_->encoder_config_.streams[0].width,
-          test_->encoder_config_.streams[0].height,
-          30,
+          send_stream_->Input(), test_->encoder_config_.streams[0].width,
+          test_->encoder_config_.streams[0].height, 30,
           Clock::GetRealTimeClock()));
       send_stream_->Start();
       frame_generator_capturer_->Start();
@@ -262,7 +257,7 @@ class BitrateEstimatorTest : public test::CallTest {
     test::FakeDecoder fake_decoder_;
   };
 
-  test::FakeVoiceEngine fake_voice_engine_;
+  test::MockVoiceEngine mock_voice_engine_;
   TraceObserver receiver_trace_;
   rtc::scoped_ptr<test::DirectTransport> send_transport_;
   rtc::scoped_ptr<test::DirectTransport> receive_transport_;

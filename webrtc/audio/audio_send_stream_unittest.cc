@@ -12,64 +12,114 @@
 
 #include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/audio/conversion.h"
-#include "webrtc/test/fake_voice_engine.h"
+#include "webrtc/test/mock_voice_engine.h"
 
 namespace webrtc {
 namespace test {
+namespace {
+
+const int kChannelId = 1;
+const uint32_t kSsrc = 1234;
+}  // namespace
 
 TEST(AudioSendStreamTest, ConfigToString) {
   const int kAbsSendTimeId = 3;
   AudioSendStream::Config config(nullptr);
-  config.rtp.ssrc = 1234;
+  config.rtp.ssrc = kSsrc;
   config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
-  config.voe_channel_id = 1;
+  config.voe_channel_id = kChannelId;
   config.cng_payload_type = 42;
   config.red_payload_type = 17;
-  EXPECT_EQ("{rtp: {ssrc: 1234, extensions: [{name: "
+  EXPECT_EQ(
+      "{rtp: {ssrc: 1234, extensions: [{name: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}]}, "
       "voe_channel_id: 1, cng_payload_type: 42, red_payload_type: 17}",
       config.ToString());
 }
 
 TEST(AudioSendStreamTest, ConstructDestruct) {
-  FakeVoiceEngine voice_engine;
+  MockVoiceEngine voice_engine;
   AudioSendStream::Config config(nullptr);
-  config.voe_channel_id = 1;
+  config.voe_channel_id = kChannelId;
   internal::AudioSendStream send_stream(config, &voice_engine);
 }
 
 TEST(AudioSendStreamTest, GetStats) {
-  FakeVoiceEngine voice_engine;
+  const int kEchoDelayMedian = 254;
+  const int kEchoDelayStdDev = -3;
+  const int kEchoReturnLoss = -65;
+  const int kEchoReturnLossEnhancement = 101;
+  const unsigned int kSpeechInputLevel = 96;
+
+  const CallStatistics kCallStats = {1345,  1678,  1901, 1234,  112,
+                                     13456, 17890, 1567, -1890, -1123};
+
+  const CodecInst kCodecInst = {-121, "codec_name_send", 48000, -231, -451,
+                                -671};
+
+  const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
+
+  std::vector<ReportBlock> report_blocks;
+  {
+    webrtc::ReportBlock block = kReportBlock;
+    report_blocks.push_back(block);  // Has wrong SSRC.
+    block.source_SSRC = kSsrc;
+    report_blocks.push_back(block);  // Correct block.
+    block.fraction_lost = 0;
+    report_blocks.push_back(block);  // Duplicate SSRC, bad fraction_lost.
+  }
+
+  MockVoiceEngine voice_engine;
   AudioSendStream::Config config(nullptr);
-  config.rtp.ssrc = FakeVoiceEngine::kSendSsrc;
-  config.voe_channel_id = FakeVoiceEngine::kSendChannelId;
+  config.rtp.ssrc = kSsrc;
+  config.voe_channel_id = kChannelId;
   internal::AudioSendStream send_stream(config, &voice_engine);
 
+  using testing::_;
+  using testing::DoAll;
+  using testing::Return;
+  using testing::SetArgPointee;
+  using testing::SetArgReferee;
+  EXPECT_CALL(voice_engine, GetLocalSSRC(kChannelId, _))
+      .WillOnce(DoAll(SetArgReferee<1>(0), Return(0)));
+  EXPECT_CALL(voice_engine, GetRTCPStatistics(kChannelId, _))
+      .WillOnce(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
+  EXPECT_CALL(voice_engine, GetSendCodec(kChannelId, _))
+      .WillOnce(DoAll(SetArgReferee<1>(kCodecInst), Return(0)));
+  EXPECT_CALL(voice_engine, GetRemoteRTCPReportBlocks(kChannelId, _))
+      .WillOnce(DoAll(SetArgPointee<1>(report_blocks), Return(0)));
+  EXPECT_CALL(voice_engine, GetSpeechInputLevelFullRange(_))
+      .WillOnce(DoAll(SetArgReferee<0>(kSpeechInputLevel), Return(0)));
+  EXPECT_CALL(voice_engine, GetEcMetricsStatus(_))
+      .WillOnce(DoAll(SetArgReferee<0>(true), Return(0)));
+  EXPECT_CALL(voice_engine, GetEchoMetrics(_, _, _, _))
+      .WillOnce(DoAll(SetArgReferee<0>(kEchoReturnLoss),
+                      SetArgReferee<1>(kEchoReturnLossEnhancement), Return(0)));
+  EXPECT_CALL(voice_engine, GetEcDelayMetrics(_, _, _))
+      .WillOnce(DoAll(SetArgReferee<0>(kEchoDelayMedian),
+                      SetArgReferee<1>(kEchoDelayStdDev), Return(0)));
+
   AudioSendStream::Stats stats = send_stream.GetStats();
-  const CallStatistics& call_stats = FakeVoiceEngine::kSendCallStats;
-  const CodecInst& codec_inst = FakeVoiceEngine::kSendCodecInst;
-  const ReportBlock& report_block = FakeVoiceEngine::kSendReportBlock;
-  EXPECT_EQ(FakeVoiceEngine::kSendSsrc, stats.local_ssrc);
-  EXPECT_EQ(static_cast<int64_t>(call_stats.bytesSent), stats.bytes_sent);
-  EXPECT_EQ(call_stats.packetsSent, stats.packets_sent);
-  EXPECT_EQ(static_cast<int32_t>(report_block.cumulative_num_packets_lost),
+  EXPECT_EQ(kSsrc, stats.local_ssrc);
+  EXPECT_EQ(static_cast<int64_t>(kCallStats.bytesSent), stats.bytes_sent);
+  EXPECT_EQ(kCallStats.packetsSent, stats.packets_sent);
+  EXPECT_EQ(static_cast<int32_t>(kReportBlock.cumulative_num_packets_lost),
             stats.packets_lost);
-  EXPECT_EQ(Q8ToFloat(report_block.fraction_lost), stats.fraction_lost);
-  EXPECT_EQ(std::string(codec_inst.plname), stats.codec_name);
-  EXPECT_EQ(static_cast<int32_t>(report_block.extended_highest_sequence_number),
+  EXPECT_EQ(Q8ToFloat(kReportBlock.fraction_lost), stats.fraction_lost);
+  EXPECT_EQ(std::string(kCodecInst.plname), stats.codec_name);
+  EXPECT_EQ(static_cast<int32_t>(kReportBlock.extended_highest_sequence_number),
             stats.ext_seqnum);
-  EXPECT_EQ(static_cast<int32_t>(report_block.interarrival_jitter /
-                (codec_inst.plfreq / 1000)), stats.jitter_ms);
-  EXPECT_EQ(call_stats.rttMs, stats.rtt_ms);
-  EXPECT_EQ(static_cast<int32_t>(FakeVoiceEngine::kSendSpeechInputLevel),
-            stats.audio_level);
+  EXPECT_EQ(static_cast<int32_t>(kReportBlock.interarrival_jitter /
+                                 (kCodecInst.plfreq / 1000)),
+            stats.jitter_ms);
+  EXPECT_EQ(kCallStats.rttMs, stats.rtt_ms);
+  EXPECT_EQ(static_cast<int32_t>(kSpeechInputLevel), stats.audio_level);
   EXPECT_EQ(-1, stats.aec_quality_min);
-  EXPECT_EQ(FakeVoiceEngine::kSendEchoDelayMedian, stats.echo_delay_median_ms);
-  EXPECT_EQ(FakeVoiceEngine::kSendEchoDelayStdDev, stats.echo_delay_std_ms);
-  EXPECT_EQ(FakeVoiceEngine::kSendEchoReturnLoss, stats.echo_return_loss);
-  EXPECT_EQ(FakeVoiceEngine::kSendEchoReturnLossEnhancement,
-            stats.echo_return_loss_enhancement);
+  EXPECT_EQ(kEchoDelayMedian, stats.echo_delay_median_ms);
+  EXPECT_EQ(kEchoDelayStdDev, stats.echo_delay_std_ms);
+  EXPECT_EQ(kEchoReturnLoss, stats.echo_return_loss);
+  EXPECT_EQ(kEchoReturnLossEnhancement, stats.echo_return_loss_enhancement);
   EXPECT_FALSE(stats.typing_noise_detected);
 }
 }  // namespace test

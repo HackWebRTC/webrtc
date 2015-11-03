@@ -201,20 +201,6 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
     return -1;
   }
 
-  // Sets the Forward Error Correction (FEC) status on a specific |channel|.
-  // TODO(minyue): Remove SetFECStatus() when SetFECStatus() is replaced by
-  // SetREDStatus() in fakewebrtcvoiceengine.
-  virtual int SetFECStatus(int channel, bool enable, int redPayloadtype = -1) {
-    return SetREDStatus(channel, enable, redPayloadtype);
-  };
-
-  // Gets the FEC status on a specific |channel|.
-  // TODO(minyue): Remove GetFECStatus() when GetFECStatus() is replaced by
-  // GetREDStatus() in fakewebrtcvoiceengine.
-  virtual int GetFECStatus(int channel, bool& enabled, int& redPayloadtype) {
-    return SetREDStatus(channel, enabled, redPayloadtype);
-  }
-
   // This function enables Negative Acknowledgment (NACK) using RTCP,
   // implemented based on RFC 4585. NACK retransmits RTP packets if lost on
   // the network. This creates a lossless transport at the expense of delay.

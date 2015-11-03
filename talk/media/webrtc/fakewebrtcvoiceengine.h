@@ -776,22 +776,12 @@ class FakeWebRtcVoiceEngine
                                  unsigned int& discardedPackets));
   WEBRTC_STUB(GetRTCPStatistics, (int channel, webrtc::CallStatistics& stats));
   WEBRTC_FUNC(SetREDStatus, (int channel, bool enable, int redPayloadtype)) {
-    return SetFECStatus(channel, enable, redPayloadtype);
-  }
-  // TODO(minyue): remove the below function when transition to SetREDStatus
-  //               is finished.
-  WEBRTC_FUNC(SetFECStatus, (int channel, bool enable, int redPayloadtype)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->red = enable;
     channels_[channel]->red_type = redPayloadtype;
     return 0;
   }
   WEBRTC_FUNC(GetREDStatus, (int channel, bool& enable, int& redPayloadtype)) {
-    return GetFECStatus(channel, enable, redPayloadtype);
-  }
-  // TODO(minyue): remove the below function when transition to GetREDStatus
-  //               is finished.
-  WEBRTC_FUNC(GetFECStatus, (int channel, bool& enable, int& redPayloadtype)) {
     WEBRTC_CHECK_CHANNEL(channel);
     enable = channels_[channel]->red;
     redPayloadtype = channels_[channel]->red_type;

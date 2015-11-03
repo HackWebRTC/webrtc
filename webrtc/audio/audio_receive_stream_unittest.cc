@@ -14,12 +14,15 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/test/fake_voice_engine.h"
+#include "webrtc/test/mock_voice_engine.h"
 
+namespace webrtc {
+namespace test {
 namespace {
 
-using webrtc::ByteWriter;
-
+const int kChannelId = 2;
+const uint32_t kRemoteSsrc = 1234;
+const uint32_t kLocalSsrc = 5678;
 const size_t kAbsoluteSendTimeLength = 4;
 
 void BuildAbsoluteSendTimeExtension(uint8_t* buffer,
@@ -58,39 +61,38 @@ size_t CreateRtpHeaderWithAbsSendTime(uint8_t* header,
 }
 }  // namespace
 
-namespace webrtc {
-namespace test {
-
 TEST(AudioReceiveStreamTest, ConfigToString) {
   const int kAbsSendTimeId = 3;
   AudioReceiveStream::Config config;
-  config.rtp.remote_ssrc = 1234;
-  config.rtp.local_ssrc = 5678;
+  config.rtp.remote_ssrc = kRemoteSsrc;
+  config.rtp.local_ssrc = kLocalSsrc;
   config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
-  config.voe_channel_id = 1;
+  config.voe_channel_id = kChannelId;
   config.combined_audio_video_bwe = true;
-  EXPECT_EQ("{rtp: {remote_ssrc: 1234, local_ssrc: 5678, extensions: [{name: "
+  EXPECT_EQ(
+      "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, extensions: [{name: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}]}, "
       "receive_transport: nullptr, rtcp_send_transport: nullptr, "
-      "voe_channel_id: 1, combined_audio_video_bwe: true}", config.ToString());
+      "voe_channel_id: 2, combined_audio_video_bwe: true}",
+      config.ToString());
 }
 
 TEST(AudioReceiveStreamTest, ConstructDestruct) {
   MockRemoteBitrateEstimator remote_bitrate_estimator;
-  FakeVoiceEngine voice_engine;
+  MockVoiceEngine voice_engine;
   AudioReceiveStream::Config config;
-  config.voe_channel_id = 1;
+  config.voe_channel_id = kChannelId;
   internal::AudioReceiveStream recv_stream(&remote_bitrate_estimator, config,
                                            &voice_engine);
 }
 
 TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweWithTimestamp) {
   MockRemoteBitrateEstimator remote_bitrate_estimator;
-  FakeVoiceEngine voice_engine;
+  MockVoiceEngine voice_engine;
   AudioReceiveStream::Config config;
   config.combined_audio_video_bwe = true;
-  config.voe_channel_id = FakeVoiceEngine::kRecvChannelId;
+  config.voe_channel_id = kChannelId;
   const int kAbsSendTimeId = 3;
   config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
@@ -102,60 +104,100 @@ TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweWithTimestamp) {
   PacketTime packet_time(5678000, 0);
   const size_t kExpectedHeaderLength = 20;
   EXPECT_CALL(remote_bitrate_estimator,
-      IncomingPacket(packet_time.timestamp / 1000,
-          sizeof(rtp_packet) - kExpectedHeaderLength, testing::_, false))
+              IncomingPacket(packet_time.timestamp / 1000,
+                             sizeof(rtp_packet) - kExpectedHeaderLength,
+                             testing::_, false))
       .Times(1);
   EXPECT_TRUE(
       recv_stream.DeliverRtp(rtp_packet, sizeof(rtp_packet), packet_time));
 }
 
 TEST(AudioReceiveStreamTest, GetStats) {
+  const int kJitterBufferDelay = -7;
+  const int kPlayoutBufferDelay = 302;
+  const unsigned int kSpeechOutputLevel = 99;
+  const CallStatistics kCallStats = {345,  678,  901, 234, -12,
+                                     3456, 7890, 567, 890, 123};
+
+  const CodecInst kCodecInst = {123, "codec_name_recv", 96000, -187, -198,
+                                -103};
+
+  const NetworkStatistics kNetworkStats = {
+      123, 456, false, 0, 0, 789, 12, 345, 678, 901, -1, -1, -1, -1, -1, 0};
+
+  webrtc::AudioDecodingCallStats audio_decode_stats;
+  {
+    audio_decode_stats.calls_to_silence_generator = 234;
+    audio_decode_stats.calls_to_neteq = 567;
+    audio_decode_stats.decoded_normal = 890;
+    audio_decode_stats.decoded_plc = 123;
+    audio_decode_stats.decoded_cng = 456;
+    audio_decode_stats.decoded_plc_cng = 789;
+  }
+
   MockRemoteBitrateEstimator remote_bitrate_estimator;
-  FakeVoiceEngine voice_engine;
+  MockVoiceEngine voice_engine;
   AudioReceiveStream::Config config;
-  config.rtp.remote_ssrc = FakeVoiceEngine::kRecvSsrc;
-  config.voe_channel_id = FakeVoiceEngine::kRecvChannelId;
+  config.rtp.remote_ssrc = kRemoteSsrc;
+  config.voe_channel_id = kChannelId;
   internal::AudioReceiveStream recv_stream(&remote_bitrate_estimator, config,
                                            &voice_engine);
 
+  using testing::_;
+  using testing::DoAll;
+  using testing::Return;
+  using testing::SetArgPointee;
+  using testing::SetArgReferee;
+  EXPECT_CALL(voice_engine, GetRemoteSSRC(kChannelId, _))
+      .WillOnce(DoAll(SetArgReferee<1>(0), Return(0)));
+  EXPECT_CALL(voice_engine, GetRTCPStatistics(kChannelId, _))
+      .WillOnce(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
+  EXPECT_CALL(voice_engine, GetRecCodec(kChannelId, _))
+      .WillOnce(DoAll(SetArgReferee<1>(kCodecInst), Return(0)));
+  EXPECT_CALL(voice_engine, GetDelayEstimate(kChannelId, _, _))
+      .WillOnce(DoAll(SetArgPointee<1>(kJitterBufferDelay),
+                      SetArgPointee<2>(kPlayoutBufferDelay), Return(0)));
+  EXPECT_CALL(voice_engine, GetSpeechOutputLevelFullRange(kChannelId, _))
+      .WillOnce(DoAll(SetArgReferee<1>(kSpeechOutputLevel), Return(0)));
+  EXPECT_CALL(voice_engine, GetNetworkStatistics(kChannelId, _))
+      .WillOnce(DoAll(SetArgReferee<1>(kNetworkStats), Return(0)));
+  EXPECT_CALL(voice_engine, GetDecodingCallStatistics(kChannelId, _))
+      .WillOnce(DoAll(SetArgPointee<1>(audio_decode_stats), Return(0)));
+
   AudioReceiveStream::Stats stats = recv_stream.GetStats();
-  const CallStatistics& call_stats = FakeVoiceEngine::kRecvCallStats;
-  const CodecInst& codec_inst = FakeVoiceEngine::kRecvCodecInst;
-  const NetworkStatistics& net_stats = FakeVoiceEngine::kRecvNetworkStats;
-  const AudioDecodingCallStats& decode_stats =
-      FakeVoiceEngine::kRecvAudioDecodingCallStats;
-  EXPECT_EQ(FakeVoiceEngine::kRecvSsrc, stats.remote_ssrc);
-  EXPECT_EQ(static_cast<int64_t>(call_stats.bytesReceived), stats.bytes_rcvd);
-  EXPECT_EQ(static_cast<uint32_t>(call_stats.packetsReceived),
+  EXPECT_EQ(kRemoteSsrc, stats.remote_ssrc);
+  EXPECT_EQ(static_cast<int64_t>(kCallStats.bytesReceived), stats.bytes_rcvd);
+  EXPECT_EQ(static_cast<uint32_t>(kCallStats.packetsReceived),
             stats.packets_rcvd);
-  EXPECT_EQ(call_stats.cumulativeLost, stats.packets_lost);
-  EXPECT_EQ(Q8ToFloat(call_stats.fractionLost), stats.fraction_lost);
-  EXPECT_EQ(std::string(codec_inst.plname), stats.codec_name);
-  EXPECT_EQ(call_stats.extendedMax, stats.ext_seqnum);
-  EXPECT_EQ(call_stats.jitterSamples / (codec_inst.plfreq / 1000),
+  EXPECT_EQ(kCallStats.cumulativeLost, stats.packets_lost);
+  EXPECT_EQ(Q8ToFloat(kCallStats.fractionLost), stats.fraction_lost);
+  EXPECT_EQ(std::string(kCodecInst.plname), stats.codec_name);
+  EXPECT_EQ(kCallStats.extendedMax, stats.ext_seqnum);
+  EXPECT_EQ(kCallStats.jitterSamples / (kCodecInst.plfreq / 1000),
             stats.jitter_ms);
-  EXPECT_EQ(net_stats.currentBufferSize, stats.jitter_buffer_ms);
-  EXPECT_EQ(net_stats.preferredBufferSize, stats.jitter_buffer_preferred_ms);
-  EXPECT_EQ(static_cast<uint32_t>(FakeVoiceEngine::kRecvJitterBufferDelay +
-      FakeVoiceEngine::kRecvPlayoutBufferDelay), stats.delay_estimate_ms);
-  EXPECT_EQ(static_cast<int32_t>(FakeVoiceEngine::kRecvSpeechOutputLevel),
-            stats.audio_level);
-  EXPECT_EQ(Q14ToFloat(net_stats.currentExpandRate), stats.expand_rate);
-  EXPECT_EQ(Q14ToFloat(net_stats.currentSpeechExpandRate),
+  EXPECT_EQ(kNetworkStats.currentBufferSize, stats.jitter_buffer_ms);
+  EXPECT_EQ(kNetworkStats.preferredBufferSize,
+            stats.jitter_buffer_preferred_ms);
+  EXPECT_EQ(static_cast<uint32_t>(kJitterBufferDelay + kPlayoutBufferDelay),
+            stats.delay_estimate_ms);
+  EXPECT_EQ(static_cast<int32_t>(kSpeechOutputLevel), stats.audio_level);
+  EXPECT_EQ(Q14ToFloat(kNetworkStats.currentExpandRate), stats.expand_rate);
+  EXPECT_EQ(Q14ToFloat(kNetworkStats.currentSpeechExpandRate),
             stats.speech_expand_rate);
-  EXPECT_EQ(Q14ToFloat(net_stats.currentSecondaryDecodedRate),
+  EXPECT_EQ(Q14ToFloat(kNetworkStats.currentSecondaryDecodedRate),
             stats.secondary_decoded_rate);
-  EXPECT_EQ(Q14ToFloat(net_stats.currentAccelerateRate), stats.accelerate_rate);
-  EXPECT_EQ(Q14ToFloat(net_stats.currentPreemptiveRate),
+  EXPECT_EQ(Q14ToFloat(kNetworkStats.currentAccelerateRate),
+            stats.accelerate_rate);
+  EXPECT_EQ(Q14ToFloat(kNetworkStats.currentPreemptiveRate),
             stats.preemptive_expand_rate);
-  EXPECT_EQ(decode_stats.calls_to_silence_generator,
+  EXPECT_EQ(audio_decode_stats.calls_to_silence_generator,
             stats.decoding_calls_to_silence_generator);
-  EXPECT_EQ(decode_stats.calls_to_neteq, stats.decoding_calls_to_neteq);
-  EXPECT_EQ(decode_stats.decoded_normal, stats.decoding_normal);
-  EXPECT_EQ(decode_stats.decoded_plc, stats.decoding_plc);
-  EXPECT_EQ(decode_stats.decoded_cng, stats.decoding_cng);
-  EXPECT_EQ(decode_stats.decoded_plc_cng, stats.decoding_plc_cng);
-  EXPECT_EQ(call_stats.capture_start_ntp_time_ms_,
+  EXPECT_EQ(audio_decode_stats.calls_to_neteq, stats.decoding_calls_to_neteq);
+  EXPECT_EQ(audio_decode_stats.decoded_normal, stats.decoding_normal);
+  EXPECT_EQ(audio_decode_stats.decoded_plc, stats.decoding_plc);
+  EXPECT_EQ(audio_decode_stats.decoded_cng, stats.decoding_cng);
+  EXPECT_EQ(audio_decode_stats.decoded_plc_cng, stats.decoding_plc_cng);
+  EXPECT_EQ(kCallStats.capture_start_ntp_time_ms_,
             stats.capture_start_ntp_time_ms);
 }
 }  // namespace test
