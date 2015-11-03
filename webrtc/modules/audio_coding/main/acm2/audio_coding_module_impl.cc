@@ -528,10 +528,9 @@ int AudioCodingModuleImpl::ReceiveFrequency() const {
 
   CriticalSectionScoped lock(acm_crit_sect_.get());
 
-  int codec_id = receiver_.last_audio_codec_id();
-
-  return codec_id < 0 ? receiver_.current_sample_rate_hz() :
-                        ACMCodecDB::database_[codec_id].plfreq;
+  auto codec_id = RentACodec::CodecIdFromIndex(receiver_.last_audio_codec_id());
+  return codec_id ? RentACodec::CodecInstById(*codec_id)->plfreq
+                  : receiver_.current_sample_rate_hz();
 }
 
 // Get current playout frequency.

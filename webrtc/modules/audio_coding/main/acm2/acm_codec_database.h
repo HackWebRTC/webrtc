@@ -91,6 +91,7 @@ class ACMCodecDB {
   //   [payload_type] - payload type.
   static bool ValidPayloadType(int payload_type);
 
+ private:
   // Databases with information about the supported codecs
   // database_ - stored information about all codecs: payload type, name,
   //             sampling frequency, packet size in samples, default channel
@@ -100,8 +101,6 @@ class ACMCodecDB {
   //                   samples, and max number of channels that are supported.
   // neteq_decoders_ - list of supported decoders in NetEQ.
   static const CodecInst database_[kMaxNumCodecs];
-
- private:
   static const CodecSettings codec_settings_[kMaxNumCodecs];
   static const NetEqDecoder neteq_decoders_[kMaxNumCodecs];
 

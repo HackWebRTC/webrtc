@@ -29,11 +29,6 @@ namespace acm2 {
 
 namespace {
 
-// Checks if the bitrate is valid for the codec.
-bool IsRateValid(int codec_id, int rate) {
-  return ACMCodecDB::database_[codec_id].rate == rate;
-}
-
 // Checks if the bitrate is valid for iSAC.
 bool IsISACRateValid(int rate) {
   return (rate == -1) || ((rate <= 56000) && (rate >= 10000));
@@ -298,8 +293,7 @@ int ACMCodecDB::CodecNumber(const CodecInst& codec_inst) {
         ? codec_id : kInvalidRate;
   }
 
-  return IsRateValid(codec_id, codec_inst.rate) ?
-      codec_id : kInvalidRate;
+  return database_[codec_id].rate == codec_inst.rate ? codec_id : kInvalidRate;
 }
 
 // Looks for a matching payload name, frequency, and channels in the

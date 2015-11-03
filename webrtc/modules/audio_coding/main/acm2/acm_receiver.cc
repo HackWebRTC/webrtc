@@ -439,8 +439,8 @@ int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
   if (!last_audio_decoder_) {
     return -1;
   }
-  memcpy(codec, &ACMCodecDB::database_[last_audio_decoder_->acm_codec_id],
-         sizeof(CodecInst));
+  *codec = *RentACodec::CodecInstById(
+      *RentACodec::CodecIdFromIndex(last_audio_decoder_->acm_codec_id));
   codec->pltype = last_audio_decoder_->payload_type;
   codec->channels = last_audio_decoder_->channels;
   codec->plfreq = last_audio_decoder_->sample_rate_hz;
@@ -480,8 +480,8 @@ int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
     return -1;
   }
   const Decoder& decoder = it->second;
-  memcpy(codec, &ACMCodecDB::database_[decoder.acm_codec_id],
-         sizeof(CodecInst));
+  *codec = *RentACodec::CodecInstById(
+      *RentACodec::CodecIdFromIndex(decoder.acm_codec_id));
   codec->pltype = decoder.payload_type;
   codec->channels = decoder.channels;
   codec->plfreq = decoder.sample_rate_hz;
