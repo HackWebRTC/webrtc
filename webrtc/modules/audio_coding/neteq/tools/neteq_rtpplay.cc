@@ -399,23 +399,12 @@ int main(int argc, char* argv[]) {
 
   printf("Input file: %s\n", argv[1]);
 
-  // TODO(ivoc): Modify the RtpFileSource::Create and RtcEventLogSource::Create
-  //             functions to return a nullptr on failure instead of crashing
-  //             the program.
-
-  // This temporary solution uses a RtpFileReader directly to check if the file
-  // is a valid RtpDump file.
   bool is_rtp_dump = false;
-  {
-    rtc::scoped_ptr<webrtc::test::RtpFileReader> rtp_reader(
-        webrtc::test::RtpFileReader::Create(
-            webrtc::test::RtpFileReader::kRtpDump, argv[1]));
-    if (rtp_reader)
-      is_rtp_dump = true;
-  }
   rtc::scoped_ptr<webrtc::test::PacketSource> file_source;
   webrtc::test::RtcEventLogSource* event_log_source = nullptr;
-  if (is_rtp_dump) {
+  if (webrtc::test::RtpFileSource::ValidRtpDump(argv[1]) ||
+      webrtc::test::RtpFileSource::ValidPcap(argv[1])) {
+    is_rtp_dump = true;
     file_source.reset(webrtc::test::RtpFileSource::Create(argv[1]));
   } else {
     event_log_source = webrtc::test::RtcEventLogSource::Create(argv[1]);

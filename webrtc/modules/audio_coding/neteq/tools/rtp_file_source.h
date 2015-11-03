@@ -34,6 +34,10 @@ class RtpFileSource : public PacketSource {
   // opened, or has the wrong format, NULL will be returned.
   static RtpFileSource* Create(const std::string& file_name);
 
+  // Checks whether a files is a valid RTP dump or PCAP (Wireshark) file.
+  static bool ValidRtpDump(const std::string& file_name);
+  static bool ValidPcap(const std::string& file_name);
+
   virtual ~RtpFileSource();
 
   // Registers an RTP header extension and binds it to |id|.

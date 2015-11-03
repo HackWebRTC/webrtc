@@ -32,6 +32,18 @@ RtpFileSource* RtpFileSource::Create(const std::string& file_name) {
   return source;
 }
 
+bool RtpFileSource::ValidRtpDump(const std::string& file_name) {
+  rtc::scoped_ptr<RtpFileReader> temp_file(
+      RtpFileReader::Create(RtpFileReader::kRtpDump, file_name));
+  return !!temp_file;
+}
+
+bool RtpFileSource::ValidPcap(const std::string& file_name) {
+  rtc::scoped_ptr<RtpFileReader> temp_file(
+      RtpFileReader::Create(RtpFileReader::kPcap, file_name));
+  return !!temp_file;
+}
+
 RtpFileSource::~RtpFileSource() {
 }
 
