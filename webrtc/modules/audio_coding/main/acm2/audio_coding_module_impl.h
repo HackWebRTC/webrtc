@@ -48,7 +48,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
       AudioEncoder* external_speech_encoder) override;
 
   // Get current send codec.
-  int SendCodec(CodecInst* current_codec) const override;
+  rtc::Maybe<CodecInst> SendCodec() const override;
 
   // Get current send frequency.
   int SendFrequency() const override;

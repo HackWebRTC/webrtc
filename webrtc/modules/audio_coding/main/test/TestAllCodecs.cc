@@ -477,8 +477,7 @@ void TestAllCodecs::OpenOutFile(int test_number) {
 
 void TestAllCodecs::DisplaySendReceiveCodec() {
   CodecInst my_codec_param;
-  acm_a_->SendCodec(&my_codec_param);
-  printf("%s -> ", my_codec_param.plname);
+  printf("%s -> ", acm_a_->SendCodec()->plname);
   acm_b_->ReceiveCodec(&my_codec_param);
   printf("%s\n", my_codec_param.plname);
 }

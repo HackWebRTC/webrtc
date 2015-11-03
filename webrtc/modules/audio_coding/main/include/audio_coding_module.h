@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/maybe.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
@@ -210,14 +211,10 @@ class AudioCodingModule {
   // int32_t SendCodec()
   // Get parameters for the codec currently registered as send codec.
   //
-  // Output:
-  //   -current_send_codec          : parameters of the send codec.
-  //
   // Return value:
-  //   -1 if failed to get send codec,
-  //    0 if succeeded.
+  //   The send codec, or nothing if we don't have one
   //
-  virtual int32_t SendCodec(CodecInst* current_send_codec) const = 0;
+  virtual rtc::Maybe<CodecInst> SendCodec() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t SendFrequency()

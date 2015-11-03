@@ -343,7 +343,7 @@ void CodecManager::RegisterEncoder(AudioEncoder* external_speech_encoder) {
   codec_owner_.SetEncoders(external_speech_encoder, cng_pt, vad_mode_, red_pt);
 }
 
-int CodecManager::GetCodecInst(CodecInst* current_codec) const {
+rtc::Maybe<CodecInst> CodecManager::GetCodecInst() const {
   int dummy_id = 0;
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, dummy_id,
                "SendCodec()");
@@ -351,10 +351,9 @@ int CodecManager::GetCodecInst(CodecInst* current_codec) const {
   if (!codec_owner_.Encoder()) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, dummy_id,
                  "SendCodec Failed, no codec is registered");
-    return -1;
+    return rtc::Maybe<CodecInst>();
   }
-  *current_codec = send_codec_inst_;
-  return 0;
+  return rtc::Maybe<CodecInst>(send_codec_inst_);
 }
 
 bool CodecManager::SetCopyRed(bool enable) {

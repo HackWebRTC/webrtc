@@ -823,14 +823,15 @@ void TestStereo::OpenOutFile(int16_t test_number) {
 }
 
 void TestStereo::DisplaySendReceiveCodec() {
-  CodecInst my_codec_param;
-  acm_a_->SendCodec(&my_codec_param);
+  auto send_codec = acm_a_->SendCodec();
   if (test_mode_ != 0) {
-    printf("%s -> ", my_codec_param.plname);
+    ASSERT_TRUE(send_codec);
+    printf("%s -> ", send_codec->plname);
   }
-  acm_b_->ReceiveCodec(&my_codec_param);
+  CodecInst receive_codec;
+  acm_b_->ReceiveCodec(&receive_codec);
   if (test_mode_ != 0) {
-    printf("%s\n", my_codec_param.plname);
+    printf("%s\n", receive_codec.plname);
   }
 }
 

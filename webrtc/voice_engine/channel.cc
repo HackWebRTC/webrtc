@@ -1242,7 +1242,12 @@ Channel::DeRegisterVoiceEngineObserver()
 int32_t
 Channel::GetSendCodec(CodecInst& codec)
 {
-    return (audio_coding_->SendCodec(&codec));
+  auto send_codec = audio_coding_->SendCodec();
+  if (send_codec) {
+    codec = *send_codec;
+    return 0;
+  }
+  return -1;
 }
 
 int32_t

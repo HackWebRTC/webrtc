@@ -250,10 +250,8 @@ void TwoWayCommunication::Perform() {
 
   AudioFrame audioFrame;
 
-  CodecInst codecInst_B;
-  CodecInst dummy;
-
-  EXPECT_EQ(0, _acmB->SendCodec(&codecInst_B));
+  auto codecInst_B = _acmB->SendCodec();
+  ASSERT_TRUE(codecInst_B);
 
   // In the following loop we tests that the code can handle misuse of the APIs.
   // In the middle of a session with data flowing between two sides, called A
@@ -285,15 +283,15 @@ void TwoWayCommunication::Perform() {
     }
     // Re-register send codec on side B.
     if (((secPassed % 5) == 4) && (msecPassed >= 990)) {
-      EXPECT_EQ(0, _acmB->RegisterSendCodec(codecInst_B));
-      EXPECT_EQ(0, _acmB->SendCodec(&dummy));
+      EXPECT_EQ(0, _acmB->RegisterSendCodec(*codecInst_B));
+      EXPECT_TRUE(_acmB->SendCodec());
     }
     // Initialize receiver on side A.
     if (((secPassed % 7) == 6) && (msecPassed == 0))
       EXPECT_EQ(0, _acmA->InitializeReceiver());
     // Re-register codec on side A.
     if (((secPassed % 7) == 6) && (msecPassed >= 990)) {
-      EXPECT_EQ(0, _acmA->RegisterReceiveCodec(codecInst_B));
+      EXPECT_EQ(0, _acmA->RegisterReceiveCodec(*codecInst_B));
     }
   }
 }

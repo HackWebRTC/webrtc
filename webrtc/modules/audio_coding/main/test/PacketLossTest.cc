@@ -143,8 +143,7 @@ void PacketLossTest::Perform() {
 
   sender_->Setup(acm.get(), &rtpFile, in_file_name_, sample_rate_hz_, channels_,
                  expected_loss_rate_);
-  struct CodecInst sendCodecInst;
-  if (acm->SendCodec(&sendCodecInst) >= 0) {
+  if (acm->SendCodec()) {
     sender_->Run();
   }
   sender_->Teardown();

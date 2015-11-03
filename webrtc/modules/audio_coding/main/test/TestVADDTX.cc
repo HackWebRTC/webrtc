@@ -209,9 +209,9 @@ void TestWebRtcVadDtx::SetVAD(bool enable_dtx, bool enable_vad,
   EXPECT_EQ(0, acm_send_->SetVAD(enable_dtx, enable_vad, vad_mode));
   EXPECT_EQ(0, acm_send_->VAD(&dtx_enabled_, &vad_enabled_, &mode));
 
-  CodecInst codec_param;
-  acm_send_->SendCodec(&codec_param);
-  if (STR_CASE_CMP(codec_param.plname, "opus") == 0) {
+  auto codec_param = acm_send_->SendCodec();
+  ASSERT_TRUE(codec_param);
+  if (STR_CASE_CMP(codec_param->plname, "opus") == 0) {
     // If send codec is Opus, WebRTC VAD/DTX cannot be used.
     enable_dtx = enable_vad = false;
   }

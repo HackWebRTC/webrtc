@@ -47,21 +47,21 @@ int16_t SetISAConfig(ACMTestISACConfig& isacConfig, AudioCodingModule* acm,
 
   if ((isacConfig.currentRateBitPerSec != 0)
       || (isacConfig.currentFrameSizeMsec != 0)) {
-    CodecInst sendCodec;
-    EXPECT_EQ(0, acm->SendCodec(&sendCodec));
+    auto sendCodec = acm->SendCodec();
+    EXPECT_TRUE(sendCodec);
     if (isacConfig.currentRateBitPerSec < 0) {
       // Register iSAC in adaptive (channel-dependent) mode.
-      sendCodec.rate = -1;
-      EXPECT_EQ(0, acm->RegisterSendCodec(sendCodec));
+      sendCodec->rate = -1;
+      EXPECT_EQ(0, acm->RegisterSendCodec(*sendCodec));
     } else {
       if (isacConfig.currentRateBitPerSec != 0) {
-        sendCodec.rate = isacConfig.currentRateBitPerSec;
+        sendCodec->rate = isacConfig.currentRateBitPerSec;
       }
       if (isacConfig.currentFrameSizeMsec != 0) {
-        sendCodec.pacsize = isacConfig.currentFrameSizeMsec
-            * (sendCodec.plfreq / 1000);
+        sendCodec->pacsize = isacConfig.currentFrameSizeMsec
+            * (sendCodec->plfreq / 1000);
       }
-      EXPECT_EQ(0, acm->RegisterSendCodec(sendCodec));
+      EXPECT_EQ(0, acm->RegisterSendCodec(*sendCodec));
     }
   }
 
@@ -238,7 +238,6 @@ void ISACTest::EncodeDecode(int testNr, ACMTestISACConfig& wbISACConfig,
   _channel_B2A->ResetStats();
 
   char currentTime[500];
-  CodecInst sendCodec;
   EventTimerWrapper* myEvent = EventTimerWrapper::Create();
   EXPECT_TRUE(myEvent->StartTimer(true, 10));
   while (!(_inFileA.EndOfFile() || _inFileA.Rewinded())) {
@@ -248,8 +247,8 @@ void ISACTest::EncodeDecode(int testNr, ACMTestISACConfig& wbISACConfig,
 
     if ((adaptiveMode) && (_testMode != 0)) {
       myEvent->Wait(5000);
-      EXPECT_EQ(0, _acmA->SendCodec(&sendCodec));
-      EXPECT_EQ(0, _acmB->SendCodec(&sendCodec));
+      EXPECT_TRUE(_acmA->SendCodec());
+      EXPECT_TRUE(_acmB->SendCodec());
     }
   }
 

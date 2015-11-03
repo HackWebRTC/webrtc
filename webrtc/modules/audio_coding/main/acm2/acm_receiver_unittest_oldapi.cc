@@ -93,9 +93,9 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     if (timestamp_ == 0) {  // This is the first time inserting audio.
       ASSERT_EQ(0, acm_->RegisterSendCodec(codec));
     } else {
-      CodecInst current_codec;
-      ASSERT_EQ(0, acm_->SendCodec(&current_codec));
-      if (!CodecsEqual(codec, current_codec))
+      auto current_codec = acm_->SendCodec();
+      ASSERT_TRUE(current_codec);
+      if (!CodecsEqual(codec, *current_codec))
         ASSERT_EQ(0, acm_->RegisterSendCodec(codec));
     }
     AudioFrame frame;

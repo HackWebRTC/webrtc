@@ -339,8 +339,7 @@ std::string EncodeDecodeTest::EncodeToFile(int fileType,
   _sender.codeId = codeId;
 
   _sender.Setup(acm.get(), &rtpFile, "audio_coding/testfile32kHz", 32000, 1);
-  struct CodecInst sendCodecInst;
-  if (acm->SendCodec(&sendCodecInst) >= 0) {
+  if (acm->SendCodec()) {
     _sender.Run();
   }
   _sender.Teardown();
