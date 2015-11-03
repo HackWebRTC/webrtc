@@ -2748,9 +2748,5 @@ INSTANTIATE_TEST_CASE_P(
                     std::tr1::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 #endif
 
-// TODO(henrike): re-implement functionality lost when removing the old main
-//                function. See
-//                https://code.google.com/p/webrtc/issues/detail?id=1981
-
 }  // namespace
 }  // namespace webrtc
