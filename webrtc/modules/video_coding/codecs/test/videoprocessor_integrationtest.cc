@@ -731,10 +731,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
 // spatial_resize is on, and for this low bitrate expect two resizes during the
 // sequence; first resize is 3/4, second is 1/2 (from original).
 // Resize happens on delta frame. Expect only one key frame (first frame).
-// Disable for msan, see
-// https://code.google.com/p/webrtc/issues/detail?id=5110 for details.
-#if !defined(MEMORY_SANITIZER)
-TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
+TEST_F(VideoProcessorIntegrationTest,
+       DISABLED_ProcessNoLossSpatialResizeFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
@@ -756,7 +754,6 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
                          process_settings,
                          rc_metrics);
 }
-#endif
 
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
 // vp9 wrapper for this.
