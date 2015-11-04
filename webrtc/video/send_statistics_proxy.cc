@@ -121,6 +121,15 @@ void SendStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_ENUMERATION(
         "WebRTC.Video.BandwidthLimitedResolutionsDisabled", num_disabled, 10);
   }
+  int delay_ms = delay_counter_.Avg(kMinRequiredSamples);
+  if (delay_ms != -1)
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.SendSideDelayInMs", delay_ms);
+
+  int max_delay_ms = max_delay_counter_.Avg(kMinRequiredSamples);
+  if (max_delay_ms != -1) {
+    RTC_HISTOGRAM_COUNTS_100000(
+        "WebRTC.Video.SendSideDelayMaxInMs", max_delay_ms);
+  }
 }
 
 void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
@@ -337,6 +346,9 @@ void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
     return;
   stats->avg_delay_ms = avg_delay_ms;
   stats->max_delay_ms = max_delay_ms;
+
+  delay_counter_.Add(avg_delay_ms);
+  max_delay_counter_.Add(max_delay_ms);
 }
 
 void SendStatisticsProxy::SampleCounter::Add(int sample) {
