@@ -117,14 +117,6 @@ bool VoETestManager::Init() {
   if (initialized_)
     return true;
 
-  if (VoiceEngine::SetTraceFile(NULL) != -1) {
-    // should not be possible to call a Trace method before the VoE is
-    // created
-    TEST_LOG("\nError at line: %i (VoiceEngine::SetTraceFile()"
-      "should fail)!\n", __LINE__);
-    return false;
-  }
-
   voice_engine_ = VoiceEngine::Create();
   if (!voice_engine_) {
     TEST_LOG("Failed to create VoiceEngine\n");
@@ -228,11 +220,6 @@ int VoETestManager::ReleaseInterfaces() {
   if (false == VoiceEngine::Delete(voice_engine_)) {
     TEST_LOG("\n\nVoiceEngine::Delete() failed. \n");
     releaseOK = false;
-  }
-
-  if (VoiceEngine::SetTraceFile(NULL) != -1) {
-    TEST_LOG("\nError at line: %i (VoiceEngine::SetTraceFile()"
-      "should fail)!\n", __LINE__);
   }
 
   return (releaseOK == true) ? 0 : -1;
