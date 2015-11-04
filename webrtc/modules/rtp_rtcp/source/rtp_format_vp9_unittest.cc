@@ -55,7 +55,7 @@ void VerifyHeader(const RTPVideoHeaderVP9& expected,
                 actual.gof.temporal_up_switch[i]);
       EXPECT_EQ(expected.gof.temporal_idx[i], actual.gof.temporal_idx[i]);
       EXPECT_EQ(expected.gof.num_ref_pics[i], actual.gof.num_ref_pics[i]);
-      for (uint8_t j = 0; j < expected.gof.num_ref_pics[i]; j++) {
+      for (size_t j = 0; j < expected.gof.num_ref_pics[i]; j++) {
         EXPECT_EQ(expected.gof.pid_diff[i][j], actual.gof.pid_diff[i][j]);
       }
     }
@@ -545,9 +545,9 @@ TEST_F(RtpDepacketizerVp9Test, ParseLayerInfoWithFlexibleMode) {
 TEST_F(RtpDepacketizerVp9Test, ParseRefIdx) {
   const uint8_t kHeaderLength = 6;
   const int16_t kPictureId = 17;
-  const uint8_t kPdiff1 = 17;
-  const uint8_t kPdiff2 = 18;
-  const uint8_t kPdiff3 = 127;
+  const int16_t kPdiff1 = 17;
+  const int16_t kPdiff2 = 18;
+  const int16_t kPdiff3 = 127;
   uint8_t packet[13] = {0};
   packet[0] = 0xD8;  // I:1 P:1 L:0 F:1 B:1 E:0 V:0 R:0
   packet[1] = 0x80 | ((kPictureId >> 8) & 0x7F);  // Two byte pictureID.
@@ -577,7 +577,7 @@ TEST_F(RtpDepacketizerVp9Test, ParseRefIdx) {
 }
 
 TEST_F(RtpDepacketizerVp9Test, ParseRefIdxFailsWithNoPictureId) {
-  const uint8_t kPdiff = 3;
+  const int16_t kPdiff = 3;
   uint8_t packet[13] = {0};
   packet[0] = 0x58;            // I:0 P:1 L:0 F:1 B:1 E:0 V:0 R:0
   packet[1] = (kPdiff << 1);   // P,F:  P_DIFF:3 N:0
@@ -587,7 +587,7 @@ TEST_F(RtpDepacketizerVp9Test, ParseRefIdxFailsWithNoPictureId) {
 }
 
 TEST_F(RtpDepacketizerVp9Test, ParseRefIdxFailsWithTooManyRefPics) {
-  const uint8_t kPdiff = 3;
+  const int16_t kPdiff = 3;
   uint8_t packet[13] = {0};
   packet[0] = 0xD8;                  // I:1 P:1 L:0 F:1 B:1 E:0 V:0 R:0
   packet[1] = kMaxOneBytePictureId;  // I:    PICTURE ID:127
