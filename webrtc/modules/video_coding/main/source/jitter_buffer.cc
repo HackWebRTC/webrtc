@@ -168,6 +168,7 @@ void Vp9SsMap::AdvanceFront(uint32_t timestamp) {
   ss_map_[timestamp] = gof;
 }
 
+// TODO(asapersson): Update according to updates in RTP payload profile.
 bool Vp9SsMap::UpdatePacket(VCMPacket* packet) {
   uint8_t gof_idx = packet->codecSpecificHeader.codecHeader.VP9.gof_idx;
   if (gof_idx == kNoGofIdx)
@@ -186,7 +187,7 @@ bool Vp9SsMap::UpdatePacket(VCMPacket* packet) {
 
   // TODO(asapersson): Set vp9.ref_picture_id[i] and add usage.
   vp9->num_ref_pics = it->second.num_ref_pics[gof_idx];
-  for (size_t i = 0; i < it->second.num_ref_pics[gof_idx]; ++i) {
+  for (uint8_t i = 0; i < it->second.num_ref_pics[gof_idx]; ++i) {
     vp9->pid_diff[i] = it->second.pid_diff[gof_idx][i];
   }
   return true;
