@@ -2190,3 +2190,31 @@ TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
   conn3->Prune();
   EXPECT_TRUE_WAIT(ch.connections().empty(), 1000);
 }
+
+// Test that after a port allocator session is started, it will be stopped
+// when a new connection becomes writable and receiving. Also test that this
+// holds even if the transport channel did not lose the writability.
+TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceConfig(CreateIceConfig(2000, false));
+  ch.Connect();
+  ch.MaybeStartGathering();
+  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 100));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  conn1->ReceivedPingResponse();  // Becomes writable and receiving
+  EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
+
+  // Restart gathering even if the transport channel is still writable.
+  // It should stop getting ports after a new connection becomes strongly
+  // connected.
+  ch.SetIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  ch.MaybeStartGathering();
+  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 100));
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn2 != nullptr);
+  conn2->ReceivedPingResponse();  // Becomes writable and receiving
+  EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
+}

@@ -215,7 +215,6 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       best_connection_(NULL),
       pending_best_connection_(NULL),
       sort_dirty_(false),
-      was_writable_(false),
       remote_ice_mode_(ICEMODE_FULL),
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
@@ -241,6 +240,8 @@ P2PTransportChannel::~P2PTransportChannel() {
 // Add the allocator session to our list so that we know which sessions
 // are still active.
 void P2PTransportChannel::AddAllocatorSession(PortAllocatorSession* session) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
   session->set_generation(static_cast<uint32_t>(allocator_sessions_.size()));
   allocator_sessions_.push_back(session);
 
@@ -1078,11 +1079,8 @@ void P2PTransportChannel::UpdateChannelState() {
   set_receiving(receiving);
 }
 
-// We checked the status of our connections and we had at least one that
-// was writable, go into the writable state.
-void P2PTransportChannel::HandleWritable() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (writable()) {
+void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
+  if (!IsGettingPorts()) {
     return;
   }
 
@@ -1098,16 +1096,20 @@ void P2PTransportChannel::HandleWritable() {
     }
     session->StopGettingPorts();
   }
+}
 
-  was_writable_ = true;
-  set_writable(true);
+// Go into the writable state and notify upper layer if it was not before.
+void P2PTransportChannel::HandleWritable() {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+  if (!writable()) {
+    set_writable(true);
+  }
 }
 
 // Notify upper layer about channel not writable state, if it was before.
 void P2PTransportChannel::HandleNotWritable() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (was_writable_) {
-    was_writable_ = false;
+  if (writable()) {
     set_writable(false);
   }
 }
@@ -1289,6 +1291,14 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
                    << " because it's now writable: " << connection->ToString();
       SwitchBestConnectionTo(connection);
     }
+  }
+
+  // May stop the allocator session when at least one connection becomes
+  // strongly connected after starting to get ports. It is not enough to check
+  // that the connection becomes weakly connected because the connection may be
+  // changing from (writable, receiving) to (writable, not receiving).
+  if (!connection->weak()) {
+    MaybeStopPortAllocatorSessions();
   }
 
   // We have to unroll the stack before doing this because we may be changing

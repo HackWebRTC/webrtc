@@ -161,11 +161,14 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Public for unit tests.
   const std::vector<Connection*>& connections() const { return connections_; }
 
- private:
-  rtc::Thread* thread() { return worker_thread_; }
+  // Public for unit tests.
   PortAllocatorSession* allocator_session() {
     return allocator_sessions_.back();
   }
+
+ private:
+  rtc::Thread* thread() { return worker_thread_; }
+  bool IsGettingPorts() { return allocator_session()->IsGettingPorts(); }
 
   // A transport channel is weak if the current best connection is either
   // not receiving or not writable, or if there is no best connection at all.
@@ -178,6 +181,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   void HandleWritable();
   void HandleNotWritable();
   void HandleAllTimedOut();
+  void MaybeStopPortAllocatorSessions();
 
   Connection* GetBestConnectionOnNetwork(rtc::Network* network) const;
   bool CreateConnections(const Candidate& remote_candidate,
@@ -239,7 +243,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   Connection* pending_best_connection_;
   std::vector<RemoteCandidate> remote_candidates_;
   bool sort_dirty_;  // indicates whether another sort is needed right now
-  bool was_writable_;
   bool had_connection_ = false;  // if connections_ has ever been nonempty
   typedef std::map<rtc::Socket::Option, int> OptionMap;
   OptionMap options_;
