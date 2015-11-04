@@ -18,7 +18,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_coding/main/source/decoding_state.h"

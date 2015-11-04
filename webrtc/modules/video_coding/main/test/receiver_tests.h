@@ -12,8 +12,8 @@
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/modules/video_coding/main/test/video_source.h"

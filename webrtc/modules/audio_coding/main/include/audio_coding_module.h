@@ -18,7 +18,7 @@
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
-#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/include/module.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
 

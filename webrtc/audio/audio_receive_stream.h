@@ -14,7 +14,7 @@
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
 namespace webrtc {

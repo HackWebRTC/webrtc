@@ -17,8 +17,8 @@
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       ],
       'sources': [
-        'interface/media_file.h',
-        'interface/media_file_defines.h',
+        'include/media_file.h',
+        'include/media_file_defines.h',
         'source/media_file_impl.cc',
         'source/media_file_impl.h',
         'source/media_file_utility.cc',

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_FRAME_BUFFER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_FRAME_BUFFER_H_
 
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"

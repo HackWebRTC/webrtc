@@ -45,7 +45,7 @@ source_set("rent_a_codec") {
 config("audio_coding_config") {
   include_dirs = [
     "main/include",
-    "../interface",
+    "../include",
   ]
 }
 

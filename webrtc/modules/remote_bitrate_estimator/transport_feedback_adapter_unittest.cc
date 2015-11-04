@@ -18,9 +18,9 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
+#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 using ::testing::_;

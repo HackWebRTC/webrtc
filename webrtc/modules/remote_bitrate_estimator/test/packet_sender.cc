@@ -15,7 +15,7 @@
 #include <sstream>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
 

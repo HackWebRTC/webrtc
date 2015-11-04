@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
+
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include dir.")
 
 #include <stddef.h>
 #include <list>
 
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
 
@@ -437,4 +439,4 @@ class TransportSequenceNumberAllocator {
 };
 
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
+#endif // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_

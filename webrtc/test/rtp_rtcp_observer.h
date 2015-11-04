@@ -16,7 +16,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/test/constants.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/typedefs.h"

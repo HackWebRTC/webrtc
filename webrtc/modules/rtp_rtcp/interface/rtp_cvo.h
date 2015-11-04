@@ -7,8 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_CVO__H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_CVO__H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
+
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include dir.")
 
 #include "webrtc/common_video/rotation.h"
 
@@ -51,4 +53,4 @@ inline VideoRotation ConvertCVOByteToVideoRotation(uint8_t rotation) {
 }
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_CVO__H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_

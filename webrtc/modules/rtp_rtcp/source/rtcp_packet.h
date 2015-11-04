@@ -18,7 +18,7 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

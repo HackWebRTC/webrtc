@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"

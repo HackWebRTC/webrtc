@@ -14,7 +14,7 @@
 #include "webrtc/modules/audio_processing/agc/agc.h"
 
 #include "gmock/gmock.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 

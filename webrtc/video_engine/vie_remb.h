@@ -16,9 +16,9 @@
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/include/module.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 

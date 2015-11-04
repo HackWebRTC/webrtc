@@ -11,7 +11,7 @@
 #include "webrtc/modules/utility/source/process_thread_impl.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/include/module.h"
 #include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 

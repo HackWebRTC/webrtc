@@ -10,14 +10,14 @@ import("../../build/webrtc.gni")
 
 source_set("rtp_rtcp") {
   sources = [
-    "interface/fec_receiver.h",
-    "interface/receive_statistics.h",
-    "interface/remote_ntp_time_estimator.h",
-    "interface/rtp_header_parser.h",
-    "interface/rtp_payload_registry.h",
-    "interface/rtp_receiver.h",
-    "interface/rtp_rtcp.h",
-    "interface/rtp_rtcp_defines.h",
+    "include/fec_receiver.h",
+    "include/receive_statistics.h",
+    "include/remote_ntp_time_estimator.h",
+    "include/rtp_header_parser.h",
+    "include/rtp_payload_registry.h",
+    "include/rtp_receiver.h",
+    "include/rtp_rtcp.h",
+    "include/rtp_rtcp_defines.h",
     "mocks/mock_rtp_rtcp.h",
     "source/bitrate.cc",
     "source/bitrate.h",

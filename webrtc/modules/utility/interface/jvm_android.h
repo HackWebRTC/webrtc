@@ -8,15 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_SOURCE_JVM_H_
-#define WEBRTC_MODULES_UTILITY_SOURCE_JVM_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
+
+#pragma message("WARNING: utility/interface is DEPRECATED; use utility/include")
 
 #include <jni.h>
 #include <string>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/utility/interface/helpers_android.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
 
 namespace webrtc {
 
@@ -182,4 +184,4 @@ class JVM {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_UTILITY_SOURCE_JVM_H_
+#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_

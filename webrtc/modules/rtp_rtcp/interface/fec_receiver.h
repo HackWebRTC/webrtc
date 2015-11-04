@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_FEC_RECEIVER_H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_FEC_RECEIVER_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_FEC_RECEIVER_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_FEC_RECEIVER_H_
+
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include")
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
@@ -43,4 +45,4 @@ class FecReceiver {
   virtual FecPacketCounter GetPacketCounter() const = 0;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_FEC_RECEIVER_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_FEC_RECEIVER_H_

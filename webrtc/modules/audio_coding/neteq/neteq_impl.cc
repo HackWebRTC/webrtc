@@ -42,7 +42,7 @@
 #include "webrtc/modules/audio_coding/neteq/preemptive_expand.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 // Modify the code to obtain backwards bit-exactness. Once bit-exactness is no

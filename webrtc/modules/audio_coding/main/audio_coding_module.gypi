@@ -81,13 +81,13 @@
       ],
       'include_dirs': [
         'include',
-        '../../interface',
+        '../../include',
         '<(webrtc_root)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           'include',
-          '../../interface',
+          '../../include',
           '<(webrtc_root)',
         ],
       },

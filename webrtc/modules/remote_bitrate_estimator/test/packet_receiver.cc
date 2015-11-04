@@ -14,10 +14,10 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/common.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
-#include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
+#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

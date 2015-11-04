@@ -10,8 +10,8 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer.h"
-#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
+#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
+#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 
 namespace webrtc {
 

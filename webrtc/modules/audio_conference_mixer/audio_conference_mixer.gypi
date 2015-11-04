@@ -17,8 +17,8 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        'interface/audio_conference_mixer.h',
-        'interface/audio_conference_mixer_defines.h',
+        'include/audio_conference_mixer.h',
+        'include/audio_conference_mixer_defines.h',
         'source/audio_frame_manipulator.cc',
         'source/audio_frame_manipulator.h',
         'source/memory_pool.h',

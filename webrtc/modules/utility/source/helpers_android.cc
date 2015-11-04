@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/utility/interface/helpers_android.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
 
 #include <android/log.h>
 #include <assert.h>

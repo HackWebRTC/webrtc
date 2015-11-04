@@ -11,7 +11,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
+#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

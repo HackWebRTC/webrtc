@@ -17,7 +17,7 @@
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/send_statistics_proxy.h"

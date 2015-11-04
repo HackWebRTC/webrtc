@@ -20,8 +20,8 @@
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_encoder.h"
 

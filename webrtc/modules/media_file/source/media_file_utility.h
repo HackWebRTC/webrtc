@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/media_file/interface/media_file_defines.h"
+#include "webrtc/modules/media_file/include/media_file_defines.h"
 
 namespace webrtc {
 class InStream;

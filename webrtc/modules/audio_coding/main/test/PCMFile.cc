@@ -15,7 +15,7 @@
 #include <string.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 

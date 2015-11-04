@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H_
-#define WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_AUDIO_FRAME_OPERATIONS_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_AUDIO_FRAME_OPERATIONS_H_
+
+#pragma message("WARNING: utility/interface is DEPRECATED; use utility/include")
 
 #include "webrtc/typedefs.h"
 
@@ -55,4 +57,4 @@ class AudioFrameOperations {
 
 }  // namespace webrtc
 
-#endif  // #ifndef WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H_
+#endif  // #ifndef WEBRTC_MODULES_UTILITY_INCLUDE_AUDIO_FRAME_OPERATIONS_H_

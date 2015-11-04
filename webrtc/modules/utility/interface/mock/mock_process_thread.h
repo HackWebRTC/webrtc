@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INTERFACE_MOCK_PROCESS_THREAD_H_
-#define WEBRTC_MODULES_UTILITY_INTERFACE_MOCK_PROCESS_THREAD_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_MOCK_MOCK_PROCESS_THREAD_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_MOCK_MOCK_PROCESS_THREAD_H_
 
-#include "webrtc/modules/utility/interface/process_thread.h"
+#pragma message("WARNING: utility/interface is DEPRECATED; use utility/include")
+
+#include "webrtc/modules/utility/include/process_thread.h"
 
 #include "testing/gmock/include/gmock/gmock.h"
 
@@ -35,4 +37,4 @@ class MockProcessThread : public ProcessThread {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_UTILITY_INTERFACE_MOCK_PROCESS_THREAD_H_
+#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_MOCK_MOCK_PROCESS_THREAD_H_

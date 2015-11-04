@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/video_engine/vie_encoder.h"
 

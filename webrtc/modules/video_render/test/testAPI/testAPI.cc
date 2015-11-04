@@ -32,8 +32,8 @@
 #endif
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_render/include/video_render.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/system_wrappers/include/sleep.h"

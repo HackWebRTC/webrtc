@@ -20,13 +20,13 @@
       ],
       'include_dirs': [
         '.',
-        '../interface',
+        '../include',
         'include',
         'dummy',  # Contains dummy audio device implementations.
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          '../include',
           'include',
         ],
       },

@@ -19,7 +19,7 @@
 
 #include "webrtc/modules/audio_processing/agc/gain_map_internal.h"
 #include "webrtc/modules/audio_processing/gain_control_impl.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {

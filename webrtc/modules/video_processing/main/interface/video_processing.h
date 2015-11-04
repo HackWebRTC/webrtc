@@ -18,8 +18,8 @@
 #ifndef WEBRTC_MODULES_INTERFACE_VIDEO_PROCESSING_H
 #define WEBRTC_MODULES_INTERFACE_VIDEO_PROCESSING_H
 
-#include "webrtc/modules/interface/module.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing_defines.h"
 #include "webrtc/video_frame.h"
 

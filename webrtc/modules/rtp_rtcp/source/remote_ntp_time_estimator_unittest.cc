@@ -11,7 +11,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
+#include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 using ::testing::_;

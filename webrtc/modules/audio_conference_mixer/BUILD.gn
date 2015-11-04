@@ -9,15 +9,15 @@
 config("audio_conference_mixer_config") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   include_dirs = [
-    "interface",
-    "../interface",
+    "include",
+    "../include",
   ]
 }
 
 source_set("audio_conference_mixer") {
   sources = [
-    "interface/audio_conference_mixer.h",
-    "interface/audio_conference_mixer_defines.h",
+    "include/audio_conference_mixer.h",
+    "include/audio_conference_mixer_defines.h",
     "source/audio_conference_mixer_impl.cc",
     "source/audio_conference_mixer_impl.h",
     "source/audio_frame_manipulator.cc",

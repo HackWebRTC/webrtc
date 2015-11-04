@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_TEST_BWESTANDALONE_TESTSENDERRECEIVER_H_
 #define WEBRTC_MODULES_RTP_RTCP_TEST_BWESTANDALONE_TESTSENDERRECEIVER_H_
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/test/channel_transport/udp_transport.h"
 #include "webrtc/typedefs.h"

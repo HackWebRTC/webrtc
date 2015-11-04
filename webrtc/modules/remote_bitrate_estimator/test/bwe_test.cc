@@ -14,7 +14,7 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_receiver.h"

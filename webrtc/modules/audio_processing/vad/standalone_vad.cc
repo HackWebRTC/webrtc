@@ -12,8 +12,8 @@
 
 #include <assert.h>
 
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/utility/interface/audio_frame_operations.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

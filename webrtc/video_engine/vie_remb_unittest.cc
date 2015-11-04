@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
-#include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
+#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video_engine/vie_remb.h"
 

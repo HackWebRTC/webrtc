@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_VIDEO_DECIMATOR_H
 #define WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_VIDEO_DECIMATOR_H
 
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

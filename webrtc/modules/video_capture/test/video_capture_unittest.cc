@@ -17,7 +17,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_capture/include/video_capture.h"
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"

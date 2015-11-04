@@ -15,7 +15,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/interface/video_image.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 

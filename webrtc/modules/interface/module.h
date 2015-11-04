@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_INTERFACE_MODULE_H_
-#define MODULES_INTERFACE_MODULE_H_
+#ifndef WEBRTC_MODULES_INCLUDE_MODULE_H_
+#define WEBRTC_MODULES_INCLUDE_MODULE_H_
+
+#pragma message("WARNING: webrtc/modules/include is DEPRECATED; use webrtc/modules/include")
 
 #include "webrtc/typedefs.h"
 
@@ -78,4 +80,4 @@ class RefCountedModule : public Module {
 
 }  // namespace webrtc
 
-#endif  // MODULES_INTERFACE_MODULE_H_
+#endif  // WEBRTC_MODULES_INCLUDE_MODULE_H_

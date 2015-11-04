@@ -18,7 +18,7 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/examples/android/media_demo/jni/jni_helpers.h"
-#include "webrtc/modules/utility/interface/helpers_android.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"

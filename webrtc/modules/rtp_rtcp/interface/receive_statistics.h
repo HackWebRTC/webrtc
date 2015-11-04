@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RECEIVE_STATISTICS_H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RECEIVE_STATISTICS_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_
+
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include dir.")
 
 #include <map>
 
-#include "webrtc/modules/interface/module.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -99,4 +101,4 @@ class NullReceiveStatistics : public ReceiveStatistics {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RECEIVE_STATISTICS_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RECEIVE_STATISTICS_H_

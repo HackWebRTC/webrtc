@@ -13,7 +13,7 @@
 
 #include "webrtc/voice_engine/include/voe_base.h"
 
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/voice_engine/shared_data.h"
 
 namespace webrtc {

@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INTERFACE_PROCESS_THREAD_H_
-#define WEBRTC_MODULES_UTILITY_INTERFACE_PROCESS_THREAD_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
+
+#pragma message("WARNING: utility/interface is DEPRECATED; use utility/include")
 
 #include "webrtc/typedefs.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -63,4 +65,4 @@ class ProcessThread {
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_UTILITY_INTERFACE_PROCESS_THREAD_H_
+#endif // WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_

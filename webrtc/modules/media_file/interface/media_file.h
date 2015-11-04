@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_MEDIA_FILE_INTERFACE_MEDIA_FILE_H_
-#define WEBRTC_MODULES_MEDIA_FILE_INTERFACE_MEDIA_FILE_H_
+#ifndef WEBRTC_MODULES_MEDIA_FILE_INCLUDE_MEDIA_FILE_H_
+#define WEBRTC_MODULES_MEDIA_FILE_INCLUDE_MEDIA_FILE_H_
+
+#pragma message("WARNING: media_file/interface is DEPRECATED; use media_file/include")
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/interface/module.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/media_file/interface/media_file_defines.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/media_file/include/media_file_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -177,4 +179,4 @@ protected:
     virtual ~MediaFile() {}
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_MEDIA_FILE_INTERFACE_MEDIA_FILE_H_
+#endif // WEBRTC_MODULES_MEDIA_FILE_INCLUDE_MEDIA_FILE_H_

@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RECEIVER_H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RECEIVER_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RECEIVER_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RECEIVER_H_
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include dir.")
+
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -100,4 +102,4 @@ class RtpReceiver {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RECEIVER_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RECEIVER_H_

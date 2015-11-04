@@ -22,7 +22,7 @@
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 

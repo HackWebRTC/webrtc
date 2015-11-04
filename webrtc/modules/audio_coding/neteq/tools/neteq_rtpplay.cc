@@ -34,7 +34,7 @@
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtc_event_log_source.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/rtp_file_reader.h"
 #include "webrtc/test/testsupport/fileutils.h"

@@ -14,7 +14,7 @@
 #include <list>
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
 #include "webrtc/modules/video_coding/main/source/qm_select.h"

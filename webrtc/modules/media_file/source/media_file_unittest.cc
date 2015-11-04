@@ -9,7 +9,7 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/media_file/interface/media_file.h"
+#include "webrtc/modules/media_file/include/media_file.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"

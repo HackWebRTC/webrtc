@@ -21,7 +21,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_processing/vad/common.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {

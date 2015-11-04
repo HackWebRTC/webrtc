@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 
 namespace webrtc {

@@ -17,7 +17,7 @@
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/include/module.h"
 
 namespace webrtc {
 

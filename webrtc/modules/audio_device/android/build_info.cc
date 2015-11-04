@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_device/android/build_info.h"
 
-#include "webrtc/modules/utility/interface/helpers_android.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
 
 namespace webrtc {
 

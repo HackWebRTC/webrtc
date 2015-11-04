@@ -10,7 +10,7 @@ import("../../build/webrtc.gni")
 
 config("audio_device_config") {
   include_dirs = [
-    "../interface",
+    "../include",
     "include",
     "dummy",  # Contains dummy audio device implementations.
   ]

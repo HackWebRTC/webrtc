@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/test/auto_test/fakes/fake_media_process.h"
 #include "webrtc/voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"

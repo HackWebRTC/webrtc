@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INTERFACE_HELPERS_IOS_H_
-#define WEBRTC_MODULES_UTILITY_INTERFACE_HELPERS_IOS_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_
+
+#pragma message("WARNING: utility/interface is DEPRECATED; use utility/include")
 
 #if defined(WEBRTC_IOS)
 
@@ -56,4 +58,4 @@ std::string GetDeviceName();
 
 #endif  // defined(WEBRTC_IOS)
 
-#endif  // WEBRTC_MODULES_UTILITY_INTERFACE_HELPERS_IOS_H_
+#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_

@@ -15,7 +15,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/include/module.h"
 
 namespace webrtc {
 

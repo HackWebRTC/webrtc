@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 
 namespace webrtc {

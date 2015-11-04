@@ -15,7 +15,7 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 
 namespace webrtc {
 

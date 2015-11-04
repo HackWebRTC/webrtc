@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_PACKET_H_
 #define WEBRTC_MODULES_VIDEO_CODING_PACKET_H_
 
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
 #include "webrtc/typedefs.h"
 

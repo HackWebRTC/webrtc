@@ -20,7 +20,7 @@
 #include <list>
 #include <map>
 
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/voice_engine/channel.h"
 

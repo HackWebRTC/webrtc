@@ -15,7 +15,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
-#include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
+#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/ref_count.h"

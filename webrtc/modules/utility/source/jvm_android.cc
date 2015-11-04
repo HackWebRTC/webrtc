@@ -10,7 +10,7 @@
 
 #include <android/log.h>
 
-#include "webrtc/modules/utility/interface/jvm_android.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 
 #include "webrtc/base/checks.h"
 

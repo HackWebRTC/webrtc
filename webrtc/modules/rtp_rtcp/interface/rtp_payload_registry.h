@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
+
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include dir.")
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
@@ -190,4 +192,4 @@ class RTPPayloadRegistry {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_

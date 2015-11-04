@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULE_COMMON_TYPES_H
-#define MODULE_COMMON_TYPES_H
+#ifndef WEBRTC_MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
+#define WEBRTC_MODULES_INCLUDE_MODULE_COMMON_TYPES_H_
+
+#pragma message("WARNING: webrtc/modules/include is DEPRECATED; use webrtc/modules/include")
 
 #include <assert.h>
 #include <string.h>  // memcpy
@@ -807,4 +809,4 @@ class SequenceNumberUnwrapper {
 
 }  // namespace webrtc
 
-#endif  // MODULE_COMMON_TYPES_H
+#endif  // WEBRTC_MODULES_INCLUDE_MODULE_COMMON_TYPES_H_

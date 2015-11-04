@@ -24,7 +24,7 @@
 #include "webrtc/modules/audio_processing/vad/common.h"
 #include "webrtc/modules/audio_processing/vad/pitch_based_vad.h"
 #include "webrtc/modules/audio_processing/vad/standalone_vad.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 static const int kAgcAnalWindowSamples = 100;
 static const double kDefaultActivityThreshold = 0.3;

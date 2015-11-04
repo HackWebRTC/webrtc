@@ -16,10 +16,10 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer.h"
+#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/source/memory_pool.h"
 #include "webrtc/modules/audio_conference_mixer/source/time_scheduler.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 class AudioProcessing;

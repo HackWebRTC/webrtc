@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
-#define WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
+
+#pragma message("WARNING: utility/interface is DEPRECATED; use utility/include")
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/media_file/interface/media_file_defines.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/media_file/include/media_file_defines.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
@@ -81,4 +83,4 @@ protected:
 
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
+#endif // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_

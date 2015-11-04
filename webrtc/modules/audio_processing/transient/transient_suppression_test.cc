@@ -19,7 +19,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/modules/audio_processing/agc/agc.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
 

@@ -15,7 +15,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/modules/utility/include/process_thread.h"
 
 namespace webrtc {
 

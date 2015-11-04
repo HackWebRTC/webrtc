@@ -15,8 +15,8 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/vie_defines.h"
 

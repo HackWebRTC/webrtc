@@ -11,7 +11,7 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 
 #include "webrtc/base/format_macros.h"
-#include "webrtc/modules/utility/interface/audio_frame_operations.h"
+#include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/logging.h"

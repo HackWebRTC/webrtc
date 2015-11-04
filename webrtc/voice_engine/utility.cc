@@ -13,8 +13,8 @@
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/utility/interface/audio_frame_operations.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 

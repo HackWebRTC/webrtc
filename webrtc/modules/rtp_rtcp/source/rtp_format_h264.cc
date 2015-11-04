@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_sps_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_h264.h"

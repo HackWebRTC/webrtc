@@ -12,7 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video_engine/vie_defines.h"

@@ -14,7 +14,7 @@
 #include <jni.h>
 #include <string>
 
-#include "webrtc/modules/utility/interface/jvm_android.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 
 namespace webrtc {
 

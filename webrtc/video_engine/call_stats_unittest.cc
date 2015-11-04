@@ -12,7 +12,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video_engine/call_stats.h"
 

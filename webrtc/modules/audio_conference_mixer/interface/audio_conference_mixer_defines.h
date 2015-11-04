@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INTERFACE_AUDIO_CONFERENCE_MIXER_DEFINES_H_
-#define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INTERFACE_AUDIO_CONFERENCE_MIXER_DEFINES_H_
+#ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INCLUDE_AUDIO_CONFERENCE_MIXER_DEFINES_H_
+#define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INCLUDE_AUDIO_CONFERENCE_MIXER_DEFINES_H_
 
-#include "webrtc/modules/interface/module_common_types.h"
+#pragma message("WARNING: audio_conference_mixer/interface is DEPRECATED; use include")
+
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -57,4 +59,4 @@ protected:
 };
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INTERFACE_AUDIO_CONFERENCE_MIXER_DEFINES_H_
+#endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INCLUDE_AUDIO_CONFERENCE_MIXER_DEFINES_H_
