@@ -105,6 +105,7 @@ if 'ios' in target_os:
   DIRECTORIES.append('third_party/class-dump')
 
 FILES = {
+  'chrome/VERSION': None,  # TODO(kjellander): Get rid of this; webrtc:5160.
   'tools/find_depot_tools.py': None,
   'tools/isolate_driver.py': None,
   'third_party/BUILD.gn': None,

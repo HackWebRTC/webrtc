@@ -39,6 +39,7 @@
 /base
 /build
 /buildtools
+/chrome
 /chromium/.gclient.tmp
 /chromium/.gclient.tmp_entries
 /chromium/.last_sync_chromium
