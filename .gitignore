@@ -45,11 +45,9 @@
 /chromium/.last_sync_chromium
 /chromium/_bad_scm
 /chromium/src
-/google_apis
 /gyp-mac-tool
 /links
 /links.db
-/net
 /out
 /resources/**/*.aecdump
 /resources/**/*.bin
@@ -80,7 +78,6 @@
 /testing
 /third_party/WebKit/Tools/Scripts
 /third_party/android_platform
-/third_party/android_testrunner
 /third_party/android_tools
 /third_party/appurify-python
 /third_party/asan
@@ -149,7 +146,6 @@
 /tools/memory
 /tools/protoc_wrapper
 /tools/python
-/tools/relocation_packer
 /tools/sanitizer_options
 /tools/swarming_client
 /tools/tsan_suppressions
