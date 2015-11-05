@@ -77,6 +77,11 @@ class RtcEventLog {
   // Logs an audio playout event
   virtual void LogAudioPlayout(uint32_t ssrc) = 0;
 
+  // Logs a bitrate update from the bandwidth estimator based on packet loss.
+  virtual void LogBwePacketLossEvent(int32_t bitrate,
+                                     uint8_t fraction_loss,
+                                     int32_t total_packets) = 0;
+
   // Reads an RtcEventLog file and returns true when reading was successful.
   // The result is stored in the given EventStream object.
   static bool ParseRtcEventLog(const std::string& file_name,

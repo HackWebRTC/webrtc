@@ -276,6 +276,21 @@ void VerifyPlayoutEvent(const rtclog::Event& event, uint32_t ssrc) {
   EXPECT_EQ(ssrc, playout_event.local_ssrc());
 }
 
+void VerifyBweLossEvent(const rtclog::Event& event,
+                        int32_t bitrate,
+                        uint8_t fraction_loss,
+                        int32_t total_packets) {
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  ASSERT_EQ(rtclog::Event::BWE_PACKET_LOSS_EVENT, event.type());
+  const rtclog::BwePacketLossEvent& bwe_event = event.bwe_packet_loss_event();
+  ASSERT_TRUE(bwe_event.has_bitrate());
+  EXPECT_EQ(bitrate, bwe_event.bitrate());
+  ASSERT_TRUE(bwe_event.has_fraction_loss());
+  EXPECT_EQ(fraction_loss, bwe_event.fraction_loss());
+  ASSERT_TRUE(bwe_event.has_total_packets());
+  EXPECT_EQ(total_packets, bwe_event.total_packets());
+}
+
 void VerifyLogStartEvent(const rtclog::Event& event) {
   ASSERT_TRUE(IsValidBasicEvent(event));
   EXPECT_EQ(rtclog::Event::LOG_START, event.type());
@@ -398,15 +413,18 @@ void GenerateVideoSendConfig(uint32_t extensions_bitvector,
 void LogSessionAndReadBack(size_t rtp_count,
                            size_t rtcp_count,
                            size_t playout_count,
+                           size_t bwe_loss_count,
                            uint32_t extensions_bitvector,
                            uint32_t csrcs_count,
                            unsigned int random_seed) {
   ASSERT_LE(rtcp_count, rtp_count);
   ASSERT_LE(playout_count, rtp_count);
+  ASSERT_LE(bwe_loss_count, rtp_count);
   std::vector<rtc::Buffer> rtp_packets;
   std::vector<rtc::Buffer> rtcp_packets;
   std::vector<size_t> rtp_header_sizes;
   std::vector<uint32_t> playout_ssrcs;
+  std::vector<std::pair<int32_t, uint8_t> > bwe_loss_updates;
 
   VideoReceiveStream::Config receiver_config(nullptr);
   VideoSendStream::Config sender_config(nullptr);
@@ -431,6 +449,10 @@ void LogSessionAndReadBack(size_t rtp_count,
   for (size_t i = 0; i < playout_count; i++) {
     playout_ssrcs.push_back(static_cast<uint32_t>(rand()));
   }
+  // Create bwe_loss_count random bitrate updates for BwePacketLoss.
+  for (size_t i = 0; i < bwe_loss_count; i++) {
+    bwe_loss_updates.push_back(std::pair<int32_t, uint8_t>(rand(), rand()));
+  }
   // Create configurations for the video streams.
   GenerateVideoReceiveConfig(extensions_bitvector, &receiver_config);
   GenerateVideoSendConfig(extensions_bitvector, &sender_config);
@@ -448,7 +470,9 @@ void LogSessionAndReadBack(size_t rtp_count,
     rtc::scoped_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
     log_dumper->LogVideoReceiveStreamConfig(receiver_config);
     log_dumper->LogVideoSendStreamConfig(sender_config);
-    size_t rtcp_index = 1, playout_index = 1;
+    size_t rtcp_index = 1;
+    size_t playout_index = 1;
+    size_t bwe_loss_index = 1;
     for (size_t i = 1; i <= rtp_count; i++) {
       log_dumper->LogRtpHeader(
           (i % 2 == 0),  // Every second packet is incoming.
@@ -466,6 +490,12 @@ void LogSessionAndReadBack(size_t rtp_count,
         log_dumper->LogAudioPlayout(playout_ssrcs[playout_index - 1]);
         playout_index++;
       }
+      if (i * bwe_loss_count >= bwe_loss_index * rtp_count) {
+        log_dumper->LogBwePacketLossEvent(
+            bwe_loss_updates[bwe_loss_index - 1].first,
+            bwe_loss_updates[bwe_loss_index - 1].second, i);
+        bwe_loss_index++;
+      }
       if (i == rtp_count / 2) {
         log_dumper->StartLogging(temp_filename, 10000000);
       }
@@ -480,12 +510,15 @@ void LogSessionAndReadBack(size_t rtp_count,
   // Verify that what we read back from the event log is the same as
   // what we wrote down. For RTCP we log the full packets, but for
   // RTP we should only log the header.
-  const int event_count =
-      config_count + playout_count + rtcp_count + rtp_count + 1;
+  const int event_count = config_count + playout_count + bwe_loss_count +
+                          rtcp_count + rtp_count + 1;
   EXPECT_EQ(event_count, parsed_stream.stream_size());
   VerifyReceiveStreamConfig(parsed_stream.stream(0), receiver_config);
   VerifySendStreamConfig(parsed_stream.stream(1), sender_config);
-  size_t event_index = config_count, rtcp_index = 1, playout_index = 1;
+  size_t event_index = config_count;
+  size_t rtcp_index = 1;
+  size_t playout_index = 1;
+  size_t bwe_loss_index = 1;
   for (size_t i = 1; i <= rtp_count; i++) {
     VerifyRtpEvent(parsed_stream.stream(event_index),
                    (i % 2 == 0),  // Every second packet is incoming.
@@ -508,6 +541,13 @@ void LogSessionAndReadBack(size_t rtp_count,
       event_index++;
       playout_index++;
     }
+    if (i * bwe_loss_count >= bwe_loss_index * rtp_count) {
+      VerifyBweLossEvent(parsed_stream.stream(event_index),
+                         bwe_loss_updates[bwe_loss_index - 1].first,
+                         bwe_loss_updates[bwe_loss_index - 1].second, i);
+      event_index++;
+      bwe_loss_index++;
+    }
     if (i == rtp_count / 2) {
       VerifyLogStartEvent(parsed_stream.stream(event_index));
       event_index++;
@@ -519,10 +559,11 @@ void LogSessionAndReadBack(size_t rtp_count,
 }
 
 TEST(RtcEventLogTest, LogSessionAndReadBack) {
-  // Log 5 RTP, 2 RTCP, and 0 playout events with no header extensions or CSRCS.
-  LogSessionAndReadBack(5, 2, 0, 0, 0, 321);
+  // Log 5 RTP, 2 RTCP, 0 playout events and 0 BWE events
+  // with no header extensions or CSRCS.
+  LogSessionAndReadBack(5, 2, 0, 0, 0, 0, 321);
 
-  // Enable AbsSendTime and TransportSequenceNumbers
+  // Enable AbsSendTime and TransportSequenceNumbers.
   uint32_t extensions = 0;
   for (uint32_t i = 0; i < kNumExtensions; i++) {
     if (kExtensionTypes[i] == RTPExtensionType::kRtpExtensionAbsoluteSendTime ||
@@ -531,19 +572,20 @@ TEST(RtcEventLogTest, LogSessionAndReadBack) {
       extensions |= 1u << i;
     }
   }
-  LogSessionAndReadBack(8, 2, 0, extensions, 0, 3141592653u);
+  LogSessionAndReadBack(8, 2, 0, 0, extensions, 0, 3141592653u);
 
-  extensions = (1u << kNumExtensions) - 1;  // Enable all header extensions
-  LogSessionAndReadBack(9, 2, 3, extensions, 2, 2718281828u);
+  extensions = (1u << kNumExtensions) - 1;  // Enable all header extensions.
+  LogSessionAndReadBack(9, 2, 3, 2, extensions, 2, 2718281828u);
 
   // Try all combinations of header extensions and up to 2 CSRCS.
   for (extensions = 0; extensions < (1u << kNumExtensions); extensions++) {
     for (uint32_t csrcs_count = 0; csrcs_count < 3; csrcs_count++) {
       LogSessionAndReadBack(5 + extensions,   // Number of RTP packets.
                             2 + csrcs_count,  // Number of RTCP packets.
-                            3 + csrcs_count,  // Number of playout events
-                            extensions,       // Bit vector choosing extensions
-                            csrcs_count,      // Number of contributing sources
+                            3 + csrcs_count,  // Number of playout events.
+                            1 + csrcs_count,  // Number of BWE loss events.
+                            extensions,       // Bit vector choosing extensions.
+                            csrcs_count,      // Number of contributing sources.
                             rand());
     }
   }

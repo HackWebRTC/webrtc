@@ -19,6 +19,9 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
+
+class RtcEventLog;
+
 class SendSideBandwidthEstimation {
  public:
   SendSideBandwidthEstimation();
@@ -41,6 +44,8 @@ class SendSideBandwidthEstimation {
   void SetSendBitrate(int bitrate);
   void SetMinMaxBitrate(int min_bitrate, int max_bitrate);
   int GetMinBitrate() const;
+
+  void SetEventLog(RtcEventLog* event_log);
 
  private:
   enum UmaState { kNoUpdate, kFirstDone, kDone };
@@ -81,6 +86,7 @@ class SendSideBandwidthEstimation {
   int bitrate_at_2_seconds_kbps_;
   UmaState uma_update_state_;
   std::vector<bool> rampup_uma_stats_updated_;
+  RtcEventLog* event_log_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_

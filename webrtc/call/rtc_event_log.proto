@@ -34,10 +34,12 @@ message Event {
     RTP_EVENT = 3;
     RTCP_EVENT = 4;
     AUDIO_PLAYOUT_EVENT = 5;
-    VIDEO_RECEIVER_CONFIG_EVENT = 6;
-    VIDEO_SENDER_CONFIG_EVENT = 7;
-    AUDIO_RECEIVER_CONFIG_EVENT = 8;
-    AUDIO_SENDER_CONFIG_EVENT = 9;
+    BWE_PACKET_LOSS_EVENT = 6;
+    BWE_PACKET_DELAY_EVENT = 7;
+    VIDEO_RECEIVER_CONFIG_EVENT = 8;
+    VIDEO_SENDER_CONFIG_EVENT = 9;
+    AUDIO_RECEIVER_CONFIG_EVENT = 10;
+    AUDIO_SENDER_CONFIG_EVENT = 11;
   }
 
   // required - Indicates the type of this event
@@ -52,17 +54,20 @@ message Event {
   // optional - but required if type == AUDIO_PLAYOUT_EVENT
   optional AudioPlayoutEvent audio_playout_event = 5;
 
+  // optional - but required if type == BWE_PACKET_LOSS_EVENT
+  optional BwePacketLossEvent bwe_packet_loss_event = 6;
+
   // optional - but required if type == VIDEO_RECEIVER_CONFIG_EVENT
-  optional VideoReceiveConfig video_receiver_config = 6;
+  optional VideoReceiveConfig video_receiver_config = 8;
 
   // optional - but required if type == VIDEO_SENDER_CONFIG_EVENT
-  optional VideoSendConfig video_sender_config = 7;
+  optional VideoSendConfig video_sender_config = 9;
 
   // optional - but required if type == AUDIO_RECEIVER_CONFIG_EVENT
-  optional AudioReceiveConfig audio_receiver_config = 8;
+  optional AudioReceiveConfig audio_receiver_config = 10;
 
   // optional - but required if type == AUDIO_SENDER_CONFIG_EVENT
-  optional AudioSendConfig audio_sender_config = 9;
+  optional AudioSendConfig audio_sender_config = 11;
 }
 
 
@@ -99,6 +104,19 @@ message AudioPlayoutEvent {
   optional uint32 local_ssrc = 2;
 }
 
+message BwePacketLossEvent {
+  // required - Bandwidth estimate (in bps) after the update.
+  optional int32 bitrate = 1;
+
+  // required - Fraction of lost packets since last receiver report
+  // computed as floor( 256 * (#lost_packets / #total_packets) ).
+  // The possible values range from 0 to 255.
+  optional uint32 fraction_loss = 2;
+
+  // TODO(terelius): Is this really needed? Remove or make optional?
+  // required - Total number of packets that the BWE update is based on.
+  optional int32 total_packets = 3;
+}
 
 // TODO(terelius): Video and audio streams could in principle share SSRC,
 // so identifying a stream based only on SSRC might not work.
@@ -142,7 +160,7 @@ message DecoderConfig {
   optional string name = 1;
 
   // required
-  optional sint32 payload_type = 2;
+  optional int32 payload_type = 2;
 }
 
 
@@ -152,7 +170,7 @@ message RtpHeaderExtension {
   optional string name = 1;
 
   // required
-  optional sint32 id = 2;
+  optional int32 id = 2;
 }
 
 
@@ -163,13 +181,13 @@ message RtxConfig {
   optional uint32 rtx_ssrc = 1;
 
   // required - Payload type to use for the RTX stream.
-  optional sint32 rtx_payload_type = 2;
+  optional int32 rtx_payload_type = 2;
 }
 
 
 message RtxMap {
   // required
-  optional sint32 payload_type = 1;
+  optional int32 payload_type = 1;
 
   // required
   optional RtxConfig config = 2;
@@ -189,7 +207,7 @@ message VideoSendConfig {
   repeated uint32 rtx_ssrcs = 3;
 
   // required if rtx_ssrcs is used - Payload type for retransmitted packets.
-  optional sint32 rtx_payload_type = 4;
+  optional int32 rtx_payload_type = 4;
 
   // required - Canonical end-point identifier.
   optional string c_name = 5;
@@ -205,7 +223,7 @@ message EncoderConfig {
   optional string name = 1;
 
   // required
-  optional sint32 payload_type = 2;
+  optional int32 payload_type = 2;
 }
 
 

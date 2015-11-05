@@ -41,6 +41,8 @@ class BitrateControllerImpl : public BitrateController {
 
   void SetReservedBitrate(uint32_t reserved_bitrate_bps) override;
 
+  void SetEventLog(RtcEventLog* event_log) override;
+
   int64_t TimeUntilNextProcess() override;
   int32_t Process() override;
 

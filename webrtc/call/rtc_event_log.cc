@@ -54,6 +54,9 @@ class RtcEventLogImpl final : public RtcEventLog {
                      const uint8_t* packet,
                      size_t length) override {}
   void LogAudioPlayout(uint32_t ssrc) override {}
+  void LogBwePacketLossEvent(int32_t bitrate,
+                             uint8_t fraction_loss,
+                             int32_t total_packets) override {}
 };
 
 #else  // ENABLE_RTC_EVENT_LOG is defined
@@ -78,6 +81,9 @@ class RtcEventLogImpl final : public RtcEventLog {
                      const uint8_t* packet,
                      size_t length) override;
   void LogAudioPlayout(uint32_t ssrc) override;
+  void LogBwePacketLossEvent(int32_t bitrate,
+                             uint8_t fraction_loss,
+                             int32_t total_packets) override;
 
  private:
   // Starts logging. This function assumes the file_ has been opened succesfully
@@ -254,8 +260,7 @@ void RtcEventLogImpl::LogVideoReceiveStreamConfig(
   rtc::CritScope lock(&crit_);
 
   rtclog::Event event;
-  const int64_t timestamp = clock_->TimeInMicroseconds();
-  event.set_timestamp_us(timestamp);
+  event.set_timestamp_us(clock_->TimeInMicroseconds());
   event.set_type(rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT);
 
   rtclog::VideoReceiveConfig* receiver_config =
@@ -296,8 +301,7 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
   rtc::CritScope lock(&crit_);
 
   rtclog::Event event;
-  const int64_t timestamp = clock_->TimeInMicroseconds();
-  event.set_timestamp_us(timestamp);
+  event.set_timestamp_us(clock_->TimeInMicroseconds());
   event.set_type(rtclog::Event::VIDEO_SENDER_CONFIG_EVENT);
 
   rtclog::VideoSendConfig* sender_config = event.mutable_video_sender_config();
@@ -348,8 +352,7 @@ void RtcEventLogImpl::LogRtpHeader(bool incoming,
 
   rtc::CritScope lock(&crit_);
   rtclog::Event rtp_event;
-  const int64_t timestamp = clock_->TimeInMicroseconds();
-  rtp_event.set_timestamp_us(timestamp);
+  rtp_event.set_timestamp_us(clock_->TimeInMicroseconds());
   rtp_event.set_type(rtclog::Event::RTP_EVENT);
   rtp_event.mutable_rtp_packet()->set_incoming(incoming);
   rtp_event.mutable_rtp_packet()->set_type(ConvertMediaType(media_type));
@@ -364,8 +367,7 @@ void RtcEventLogImpl::LogRtcpPacket(bool incoming,
                                     size_t length) {
   rtc::CritScope lock(&crit_);
   rtclog::Event rtcp_event;
-  const int64_t timestamp = clock_->TimeInMicroseconds();
-  rtcp_event.set_timestamp_us(timestamp);
+  rtcp_event.set_timestamp_us(clock_->TimeInMicroseconds());
   rtcp_event.set_type(rtclog::Event::RTCP_EVENT);
   rtcp_event.mutable_rtcp_packet()->set_incoming(incoming);
   rtcp_event.mutable_rtcp_packet()->set_type(ConvertMediaType(media_type));
@@ -376,11 +378,24 @@ void RtcEventLogImpl::LogRtcpPacket(bool incoming,
 void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   rtclog::Event event;
-  const int64_t timestamp = clock_->TimeInMicroseconds();
-  event.set_timestamp_us(timestamp);
+  event.set_timestamp_us(clock_->TimeInMicroseconds());
   event.set_type(rtclog::Event::AUDIO_PLAYOUT_EVENT);
   auto playout_event = event.mutable_audio_playout_event();
   playout_event->set_local_ssrc(ssrc);
+  HandleEvent(&event);
+}
+
+void RtcEventLogImpl::LogBwePacketLossEvent(int32_t bitrate,
+                                            uint8_t fraction_loss,
+                                            int32_t total_packets) {
+  rtc::CritScope lock(&crit_);
+  rtclog::Event event;
+  event.set_timestamp_us(clock_->TimeInMicroseconds());
+  event.set_type(rtclog::Event::BWE_PACKET_LOSS_EVENT);
+  auto bwe_event = event.mutable_bwe_packet_loss_event();
+  bwe_event->set_bitrate(bitrate);
+  bwe_event->set_fraction_loss(fraction_loss);
+  bwe_event->set_total_packets(total_packets);
   HandleEvent(&event);
 }
 
@@ -389,8 +404,7 @@ void RtcEventLogImpl::StopLoggingLocked() {
     currently_logging_ = false;
     // Create a LogEnd event
     rtclog::Event event;
-    int64_t timestamp = clock_->TimeInMicroseconds();
-    event.set_timestamp_us(timestamp);
+    event.set_timestamp_us(clock_->TimeInMicroseconds());
     event.set_type(rtclog::Event::LOG_END);
     // Store the event and close the file
     RTC_DCHECK(file_->Open());

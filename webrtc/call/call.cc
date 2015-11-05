@@ -168,6 +168,8 @@ Call::Call(const Call::Config& config)
       config_.bitrate_config.min_bitrate_bps,
       config_.bitrate_config.start_bitrate_bps,
       config_.bitrate_config.max_bitrate_bps);
+
+  congestion_controller_->GetBitrateController()->SetEventLog(event_log_);
 }
 
 Call::~Call() {
