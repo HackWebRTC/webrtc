@@ -316,7 +316,6 @@ void VCMJitterBuffer::Start() {
   first_packet_since_reset_ = true;
   rtt_ms_ = kDefaultRtt;
   last_decoded_state_.Reset();
-  vp9_ss_map_.Reset();
 }
 
 void VCMJitterBuffer::Stop() {
@@ -324,7 +323,6 @@ void VCMJitterBuffer::Stop() {
   UpdateHistograms();
   running_ = false;
   last_decoded_state_.Reset();
-  vp9_ss_map_.Reset();
 
   // Make sure all frames are free and reset.
   for (FrameList::iterator it = decodable_frames_.begin();
@@ -356,7 +354,6 @@ void VCMJitterBuffer::Flush() {
   decodable_frames_.Reset(&free_frames_);
   incomplete_frames_.Reset(&free_frames_);
   last_decoded_state_.Reset();  // TODO(mikhal): sync reset.
-  vp9_ss_map_.Reset();
   num_consecutive_old_packets_ = 0;
   // Also reset the jitter and delay estimates
   jitter_estimate_.Reset();
@@ -688,19 +685,10 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
 
   num_consecutive_old_packets_ = 0;
 
-  if (packet.codec == kVideoCodecVP9) {
-    if (packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
-      // TODO(asapersson): Add support for flexible mode.
-      return kGeneralError;
-    }
-    if (!packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
-      if (vp9_ss_map_.Insert(packet))
-        vp9_ss_map_.UpdateFrames(&incomplete_frames_);
-
-      vp9_ss_map_.UpdatePacket(const_cast<VCMPacket*>(&packet));
-    }
-    if (!last_decoded_state_.in_initial_state())
-      vp9_ss_map_.RemoveOld(last_decoded_state_.time_stamp());
+  if (packet.codec == kVideoCodecVP9 &&
+      packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
+    // TODO(asapersson): Add support for flexible mode.
+    return kGeneralError;
   }
 
   VCMFrameBuffer* frame;

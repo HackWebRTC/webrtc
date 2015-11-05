@@ -885,7 +885,6 @@ TEST_F(TestBasicJitterBuffer, TestSkipForwardVp9) {
   packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 0;
   packet_->codecSpecificHeader.codecHeader.VP9.beginning_of_frame = true;
   packet_->codecSpecificHeader.codecHeader.VP9.end_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = kNoTemporalIdx;
   packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
 
   packet_->seqNum = 65485;
@@ -893,7 +892,7 @@ TEST_F(TestBasicJitterBuffer, TestSkipForwardVp9) {
   packet_->frameType = kVideoFrameKey;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 5;
   packet_->codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = 200;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 0;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
   packet_->codecSpecificHeader.codecHeader.VP9.ss_data_available = true;
   packet_->codecSpecificHeader.codecHeader.VP9.gof.SetGofInfoVP9(
       kTemporalStructureMode3);  // kTemporalStructureMode3: 0-2-1-2..
@@ -905,7 +904,7 @@ TEST_F(TestBasicJitterBuffer, TestSkipForwardVp9) {
   packet_->frameType = kVideoFrameDelta;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 9;
   packet_->codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = 201;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 0;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
   packet_->codecSpecificHeader.codecHeader.VP9.ss_data_available = false;
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
@@ -939,22 +938,22 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_3TlLayers) {
   packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 0;
   packet_->codecSpecificHeader.codecHeader.VP9.beginning_of_frame = true;
   packet_->codecSpecificHeader.codecHeader.VP9.end_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = kNoTemporalIdx;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
   packet_->codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = 200;
 
   packet_->seqNum = 65486;
   packet_->timestamp = 6000;
   packet_->frameType = kVideoFrameDelta;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 6;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 1;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 2;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = true;
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
   packet_->seqNum = 65487;
   packet_->timestamp = 9000;
   packet_->frameType = kVideoFrameDelta;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 7;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 2;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 1;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = true;
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
   // Insert first frame with SS data.
@@ -964,7 +963,8 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_3TlLayers) {
   packet_->width = 352;
   packet_->height = 288;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 5;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 0;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
   packet_->codecSpecificHeader.codecHeader.VP9.ss_data_available = true;
   packet_->codecSpecificHeader.codecHeader.VP9.gof.SetGofInfoVP9(
       kTemporalStructureMode3);  // kTemporalStructureMode3: 0-2-1-2..
@@ -1011,8 +1011,6 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   packet_->codecSpecificHeader.codecHeader.VP9.flexible_mode = false;
   packet_->codecSpecificHeader.codecHeader.VP9.beginning_of_frame = true;
   packet_->codecSpecificHeader.codecHeader.VP9.end_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = kNoTemporalIdx;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
   packet_->codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = 200;
 
   packet_->isFirstPacket = true;
@@ -1022,7 +1020,8 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   packet_->frameType = kVideoFrameDelta;
   packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 0;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 6;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 1;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 1;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = true;
   EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_, &re));
 
   packet_->isFirstPacket = false;
@@ -1031,7 +1030,8 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   packet_->frameType = kVideoFrameDelta;
   packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 1;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 6;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 1;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 1;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = true;
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
   packet_->isFirstPacket = false;
@@ -1041,7 +1041,8 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   packet_->frameType = kVideoFrameKey;
   packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 1;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 5;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 0;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
   EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_, &re));
 
   // Insert first frame with SS data.
@@ -1053,7 +1054,8 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   packet_->height = 288;
   packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 0;
   packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 5;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof_idx = 0;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
+  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
   packet_->codecSpecificHeader.codecHeader.VP9.ss_data_available = true;
   packet_->codecSpecificHeader.codecHeader.VP9.gof.SetGofInfoVP9(
       kTemporalStructureMode2);  // kTemporalStructureMode3: 0-1-0-1..

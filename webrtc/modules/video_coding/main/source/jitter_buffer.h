@@ -338,8 +338,6 @@ class VCMJitterBuffer {
   FrameList incomplete_frames_ GUARDED_BY(crit_sect_);
   VCMDecodingState last_decoded_state_ GUARDED_BY(crit_sect_);
   bool first_packet_since_reset_;
-  // Contains scalability structure data for VP9.
-  Vp9SsMap vp9_ss_map_ GUARDED_BY(crit_sect_);
 
   // Statistics.
   VCMReceiveStatisticsCallback* stats_callback_ GUARDED_BY(crit_sect_);

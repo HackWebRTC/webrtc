@@ -112,7 +112,7 @@ void ParseAndCheckPacket(const uint8_t* packet,
 //        +-+-+-+-+-+-+-+-+
 //   M:   | EXTENDED PID  | (RECOMMENDED)
 //        +-+-+-+-+-+-+-+-+
-//   L:   |GOF_IDX|  S  |D| (CONDITIONALLY RECOMMENDED)
+//   L:   |  T  |U|  S  |D| (CONDITIONALLY RECOMMENDED)
 //        +-+-+-+-+-+-+-+-+
 //        |   TL0PICIDX   | (CONDITIONALLY REQUIRED)
 //        +-+-+-+-+-+-+-+-+
@@ -255,7 +255,8 @@ TEST_F(RtpPacketizerVp9Test, TestLayerInfoWithNonFlexibleMode) {
   const size_t kFrameSize = 30;
   const size_t kPacketSize = 25;
 
-  expected_.gof_idx = 3;
+  expected_.temporal_idx = 3;
+  expected_.temporal_up_switch = true;  // U
   expected_.num_spatial_layers = 3;
   expected_.spatial_idx = 2;
   expected_.inter_layer_predicted = true;  // D
@@ -264,9 +265,9 @@ TEST_F(RtpPacketizerVp9Test, TestLayerInfoWithNonFlexibleMode) {
 
   // Two packets:
   //    | I:0, P:0, L:1, F:0, B:1, E:0, V:0 | (3hdr + 15 payload)
-  // L: | GOF_IDX:3, S:2, D:1 | TL0PICIDX:117 |
+  // L: | T:3, U:1, S:2, D:1 | TL0PICIDX:117 |
   //    | I:0, P:0, L:1, F:0, B:0, E:1, V:0 | (3hdr + 15 payload)
-  // L: | GOF_IDX:3, S:2, D:1 | TL0PICIDX:117 |
+  // L: | T:3, U:1, S:2, D:1 | TL0PICIDX:117 |
   const size_t kExpectedHdrSizes[] = {3, 3};
   const size_t kExpectedSizes[] = {18, 18};
   const size_t kExpectedNum = GTEST_ARRAY_SIZE_(kExpectedSizes);
@@ -505,16 +506,20 @@ TEST_F(RtpDepacketizerVp9Test, ParseTwoBytePictureId) {
 
 TEST_F(RtpDepacketizerVp9Test, ParseLayerInfoWithNonFlexibleMode) {
   const uint8_t kHeaderLength = 3;
-  const uint8_t kGofIdx = 7;
+  const uint8_t kTemporalIdx = 2;
+  const uint8_t kUbit = 1;
   const uint8_t kSpatialIdx = 1;
   const uint8_t kDbit = 1;
   const uint8_t kTl0PicIdx = 17;
   uint8_t packet[13] = {0};
   packet[0] = 0x20;  // I:0 P:0 L:1 F:0 B:0 E:0 V:0 R:0
-  packet[1] = (kGofIdx << 4) | (kSpatialIdx << 1) | kDbit;  // GOF_IDX:7 S:1 D:1
-  packet[2] = kTl0PicIdx;                                   // TL0PICIDX:17
+  packet[1] = (kTemporalIdx << 5) | (kUbit << 4) | (kSpatialIdx << 1) | kDbit;
+  packet[2] = kTl0PicIdx;
 
-  expected_.gof_idx = kGofIdx;
+  // T:2 U:1 S:1 D:1
+  // TL0PICIDX:17
+  expected_.temporal_idx = kTemporalIdx;
+  expected_.temporal_up_switch = kUbit ? true : false;
   expected_.spatial_idx = kSpatialIdx;
   expected_.inter_layer_predicted = kDbit ? true : false;
   expected_.tl0_pic_idx = kTl0PicIdx;
