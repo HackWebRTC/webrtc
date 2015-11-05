@@ -8,6 +8,5 @@ AudioCodingModuleTest.TestStereo*
 AudioCodingModuleTest.TestVADDTX*
 AudioCodingModuleTest.TestOpus*
 FecTest.FecTest
-TestVp8Impl.BaseUnitTest
 VideoProcessorIntegrationTest.ProcessNoLossChangeBitRateVP8
 VideoProcessorIntegrationTest.*VP9
