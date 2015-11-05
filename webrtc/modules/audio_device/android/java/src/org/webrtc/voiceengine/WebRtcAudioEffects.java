@@ -208,15 +208,6 @@ class WebRtcAudioEffects {
 
   private WebRtcAudioEffects() {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
-    for (Descriptor d : AudioEffect.queryEffects()) {
-      if (effectTypeIsVoIP(d.type) || DEBUG) {
-        // Only log information for VoIP effects (AEC, AEC and NS).
-        Logging.d(TAG, "name: " + d.name + ", "
-            + "mode: " + d.connectMode + ", "
-            + "implementor: " + d.implementor + ", "
-            + "UUID: " + d.uuid);
-      }
-    }
   }
 
   // Call this method to enable or disable the platform AEC. It modifies
@@ -281,6 +272,17 @@ class WebRtcAudioEffects {
     assertTrue(aec == null);
     assertTrue(agc == null);
     assertTrue(ns == null);
+
+    // Add logging of supported effects but filter out "VoIP effects", i.e.,
+    // AEC, AEC and NS.
+    for (Descriptor d : AudioEffect.queryEffects()) {
+      if (effectTypeIsVoIP(d.type) || DEBUG) {
+        Logging.d(TAG, "name: " + d.name + ", "
+            + "mode: " + d.connectMode + ", "
+            + "implementor: " + d.implementor + ", "
+            + "UUID: " + d.uuid);
+      }
+    }
 
     if (isAcousticEchoCancelerSupported()) {
       // Create an AcousticEchoCanceler and attach it to the AudioRecord on
