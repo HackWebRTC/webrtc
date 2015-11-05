@@ -46,16 +46,6 @@ int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
     return -1;
   }
 
-  // TODO(tlegrand): Remove this check. Already taken care of in
-  // ACMCodecDB::CodecNumber().
-  // Check if the payload-type is valid
-  if (!ACMCodecDB::ValidPayloadType(send_codec.pltype)) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                 "Invalid payload-type %d for %s.", send_codec.pltype,
-                 send_codec.plname);
-    return -1;
-  }
-
   // Telephone-event cannot be a send codec.
   if (!STR_CASE_CMP(send_codec.plname, "telephone-event")) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
@@ -198,7 +188,7 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     // TODO(tlegrand): Remove this check. Already taken care of in
     // ACMCodecDB::CodecNumber().
     // Check if the payload-type is valid
-    if (!ACMCodecDB::ValidPayloadType(send_codec.pltype)) {
+    if (!RentACodec::IsPayloadTypeValid(send_codec.pltype)) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                    "Invalid payload-type %d for %s.", send_codec.pltype,
                    send_codec.plname);

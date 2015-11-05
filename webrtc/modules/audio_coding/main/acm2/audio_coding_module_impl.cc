@@ -563,7 +563,7 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   RTC_CHECK(codec_index) << "Invalid codec ID: " << static_cast<int>(*codec_id);
 
   // Check if the payload-type is valid.
-  if (!ACMCodecDB::ValidPayloadType(codec.pltype)) {
+  if (!RentACodec::IsPayloadTypeValid(codec.pltype)) {
     LOG_F(LS_ERROR) << "Invalid payload type " << codec.pltype << " for "
                     << codec.plname;
     return -1;
@@ -589,7 +589,7 @@ int AudioCodingModuleImpl::RegisterExternalReceiveCodec(
   }
 
   // Check if the payload-type is valid.
-  if (!ACMCodecDB::ValidPayloadType(rtp_payload_type)) {
+  if (!RentACodec::IsPayloadTypeValid(rtp_payload_type)) {
     LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
                     << " for external decoder.";
     return -1;

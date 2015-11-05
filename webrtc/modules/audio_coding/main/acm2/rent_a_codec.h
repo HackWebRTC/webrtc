@@ -152,6 +152,11 @@ class RentACodec {
                                                  int sampling_freq_hz,
                                                  int channels);
   static bool IsCodecValid(const CodecInst& codec_inst);
+
+  static inline bool IsPayloadTypeValid(int payload_type) {
+    return payload_type >= 0 && payload_type <= 127;
+  }
+
   static rtc::ArrayView<const CodecInst> Database();
 
   static rtc::Maybe<bool> IsSupportedNumChannels(CodecId codec_id,

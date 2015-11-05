@@ -85,12 +85,6 @@ class ACMCodecDB {
   //   codec sampling frequency if successful, otherwise -1.
   static int CodecFreq(int codec_id);
 
-  // Check if the payload type is valid, meaning that it is in the valid range
-  // of 0 to 127.
-  // Input:
-  //   [payload_type] - payload type.
-  static bool ValidPayloadType(int payload_type);
-
  private:
   // Databases with information about the supported codecs
   // database_ - stored information about all codecs: payload type, name,

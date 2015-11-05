@@ -244,7 +244,7 @@ int ACMCodecDB::CodecNumber(const CodecInst& codec_inst) {
   }
 
   // Checks the validity of payload type
-  if (!ValidPayloadType(codec_inst.pltype)) {
+  if (!RentACodec::IsPayloadTypeValid(codec_inst.pltype)) {
     return kInvalidPayloadtype;
   }
 
@@ -346,11 +346,6 @@ int ACMCodecDB::CodecFreq(int codec_id) {
   const size_t i = static_cast<size_t>(codec_id);
   const auto db = RentACodec::Database();
   return i < db.size() ? db[i].plfreq : -1;
-}
-
-// Checks if the payload type is in the valid range.
-bool ACMCodecDB::ValidPayloadType(int payload_type) {
-  return (payload_type >= 0) && (payload_type <= 127);
 }
 
 }  // namespace acm2
