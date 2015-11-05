@@ -31,9 +31,12 @@ class BitrateAllocator {
  public:
   BitrateAllocator();
 
-  void OnNetworkChanged(uint32_t target_bitrate,
-                        uint8_t fraction_loss,
-                        int64_t rtt);
+  // Allocate target_bitrate across the registered BitrateObservers.
+  // Returns actual bitrate allocated (might be higher than target_bitrate if
+  // for instance EnforceMinBitrate() is enabled.
+  uint32_t OnNetworkChanged(uint32_t target_bitrate,
+                            uint8_t fraction_loss,
+                            int64_t rtt);
 
   // Set the start and max send bitrate used by the bandwidth management.
   //

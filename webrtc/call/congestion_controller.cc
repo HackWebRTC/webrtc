@@ -282,16 +282,22 @@ void CongestionController::SignalNetworkState(NetworkState state) {
 void CongestionController::OnNetworkChanged(uint32_t target_bitrate_bps,
                                             uint8_t fraction_loss,
                                             int64_t rtt) {
-  bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt);
+  uint32_t allocated_bitrate_bps = bitrate_allocator_->OnNetworkChanged(
+      target_bitrate_bps, fraction_loss, rtt);
   int pad_up_to_bitrate_bps = 0;
   {
     rtc::CritScope lock(&encoder_crit_);
     for (const auto& encoder : encoders_)
       pad_up_to_bitrate_bps += encoder->GetPaddingNeededBps();
   }
+  // Allocated bitrate might be higher than bitrate estimate if enforcing min
+  // bitrate, or lower if estimate is higher than the sum of max bitrates, so
+  // set the pacer bitrate to the maximum of the two.
+  uint32_t pacer_bitrate_bps =
+      std::max(target_bitrate_bps, allocated_bitrate_bps);
   pacer_->UpdateBitrate(
-      target_bitrate_bps / 1000,
-      PacedSender::kDefaultPaceMultiplier * target_bitrate_bps / 1000,
+      pacer_bitrate_bps / 1000,
+      PacedSender::kDefaultPaceMultiplier * pacer_bitrate_bps / 1000,
       pad_up_to_bitrate_bps / 1000);
 }
 

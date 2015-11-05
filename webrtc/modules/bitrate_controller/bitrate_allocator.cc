@@ -26,23 +26,26 @@ const int kDefaultBitrateBps = 300000;
 BitrateAllocator::BitrateAllocator()
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       bitrate_observers_(),
+      bitrate_observers_modified_(false),
       enforce_min_bitrate_(true),
       last_bitrate_bps_(kDefaultBitrateBps),
       last_fraction_loss_(0),
-      last_rtt_(0) {
-}
+      last_rtt_(0) {}
 
-
-void BitrateAllocator::OnNetworkChanged(uint32_t bitrate,
-                                        uint8_t fraction_loss,
-                                        int64_t rtt) {
+uint32_t BitrateAllocator::OnNetworkChanged(uint32_t bitrate,
+                                            uint8_t fraction_loss,
+                                            int64_t rtt) {
   CriticalSectionScoped lock(crit_sect_.get());
   last_bitrate_bps_ = bitrate;
   last_fraction_loss_ = fraction_loss;
   last_rtt_ = rtt;
+  uint32_t allocated_bitrate_bps = 0;
   ObserverBitrateMap allocation = AllocateBitrates();
-  for (const auto& kv : allocation)
+  for (const auto& kv : allocation) {
     kv.first->OnNetworkChanged(kv.second, last_fraction_loss_, last_rtt_);
+    allocated_bitrate_bps += kv.second;
+  }
+  return allocated_bitrate_bps;
 }
 
 BitrateAllocator::ObserverBitrateMap BitrateAllocator::AllocateBitrates() {
