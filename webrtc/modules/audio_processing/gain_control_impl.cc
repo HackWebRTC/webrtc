@@ -296,7 +296,9 @@ int GainControlImpl::Initialize() {
     return err;
   }
 
-  capture_levels_.assign(num_handles(), analog_capture_level_);
+  const int n = num_handles();
+  RTC_CHECK_GE(n, 0) << "Bad number of handles: " << n;
+  capture_levels_.assign(n, analog_capture_level_);
   return apm_->kNoError;
 }
 
