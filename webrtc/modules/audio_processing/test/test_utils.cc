@@ -31,35 +31,6 @@ void RawFile::WriteSamples(const float* samples, size_t num_samples) {
   fwrite(samples, sizeof(*samples), num_samples, file_handle_);
 }
 
-ChannelBufferWavReader::ChannelBufferWavReader(rtc::scoped_ptr<WavReader> file)
-    : file_(file.Pass()) {}
-
-bool ChannelBufferWavReader::Read(ChannelBuffer<float>* buffer) {
-  RTC_CHECK_EQ(file_->num_channels(), buffer->num_channels());
-  interleaved_.resize(buffer->size());
-  if (file_->ReadSamples(interleaved_.size(), &interleaved_[0]) !=
-      interleaved_.size()) {
-    return false;
-  }
-
-  FloatS16ToFloat(&interleaved_[0], interleaved_.size(), &interleaved_[0]);
-  Deinterleave(&interleaved_[0], buffer->num_frames(), buffer->num_channels(),
-               buffer->channels());
-  return true;
-}
-
-ChannelBufferWavWriter::ChannelBufferWavWriter(rtc::scoped_ptr<WavWriter> file)
-    : file_(file.Pass()) {}
-
-void ChannelBufferWavWriter::Write(const ChannelBuffer<float>& buffer) {
-  RTC_CHECK_EQ(file_->num_channels(), buffer.num_channels());
-  interleaved_.resize(buffer.size());
-  Interleave(buffer.channels(), buffer.num_frames(), buffer.num_channels(),
-             &interleaved_[0]);
-  FloatToFloatS16(&interleaved_[0], interleaved_.size(), &interleaved_[0]);
-  file_->WriteSamples(&interleaved_[0], interleaved_.size());
-}
-
 void WriteIntData(const int16_t* data,
                   size_t length,
                   WavWriter* wav_file,
@@ -121,32 +92,28 @@ AudioProcessing::ChannelLayout LayoutFromChannels(int num_channels) {
     case 2:
       return AudioProcessing::kStereo;
     default:
-      RTC_CHECK(false);
+      assert(false);
       return AudioProcessing::kMono;
   }
 }
 
-std::vector<Point> ParseArrayGeometry(const std::string& mic_positions) {
+std::vector<Point> ParseArrayGeometry(const std::string& mic_positions,
+                                      size_t num_mics) {
   const std::vector<float> values = ParseList<float>(mic_positions);
-  const size_t num_mics =
-      rtc::CheckedDivExact(values.size(), static_cast<size_t>(3));
-  RTC_CHECK_GT(num_mics, 0u) << "mic_positions is not large enough.";
+  RTC_CHECK_EQ(values.size(), 3 * num_mics)
+      << "Could not parse mic_positions or incorrect number of points.";
 
   std::vector<Point> result;
   result.reserve(num_mics);
   for (size_t i = 0; i < values.size(); i += 3) {
-    result.push_back(Point(values[i + 0], values[i + 1], values[i + 2]));
+    double x = values[i + 0];
+    double y = values[i + 1];
+    double z = values[i + 2];
+    result.push_back(Point(x, y, z));
   }
 
   return result;
 }
 
-std::vector<Point> ParseArrayGeometry(const std::string& mic_positions,
-                                      size_t num_mics) {
-  std::vector<Point> result = ParseArrayGeometry(mic_positions);
-  RTC_CHECK_EQ(result.size(), num_mics)
-      << "Could not parse mic_positions or incorrect number of points.";
-  return result;
-}
 
 }  // namespace webrtc
