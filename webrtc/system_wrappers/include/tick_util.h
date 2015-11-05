@@ -83,6 +83,7 @@ class TickTime {
 class TickInterval {
  public:
   TickInterval();
+  explicit TickInterval(int64_t interval);
 
   int64_t Milliseconds() const;
   int64_t Microseconds() const;
@@ -103,8 +104,6 @@ class TickInterval {
   friend bool operator>=(const TickInterval& lhs, const TickInterval& rhs);
 
  private:
-  explicit TickInterval(int64_t interval);
-
   friend class TickTime;
   friend TickInterval operator-(const TickTime& lhs, const TickTime& rhs);
 
