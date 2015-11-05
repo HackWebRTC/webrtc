@@ -9,6 +9,21 @@
 {
   'targets': [
     {
+      'target_name': 'audioproc_test_utils',
+      'type': 'static_library',
+      'dependencies': [
+        'audioproc_debug_proto',
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+      ],
+      'sources': [
+        'test/audio_file_processor.cc',
+        'test/audio_file_processor.h',
+        'test/test_utils.cc',
+        'test/test_utils.h',
+      ],
+    },
+    {
       'target_name': 'transient_suppression_test',
       'type': 'executable',
       'dependencies': [
@@ -65,21 +80,6 @@
   'conditions': [
     ['enable_protobuf==1', {
       'targets': [
-        {
-          'target_name': 'audioproc_test_utils',
-          'type': 'static_library',
-          'dependencies': [
-            'audioproc_debug_proto',
-            '<(webrtc_root)/base/base.gyp:rtc_base_approved',
-            '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
-          ],
-          'sources': [
-            'test/audio_file_processor.cc',
-            'test/audio_file_processor.h',
-            'test/test_utils.cc',
-            'test/test_utils.h',
-          ],
-        },
         {
           'target_name': 'audioproc_unittest_proto',
           'type': 'static_library',
