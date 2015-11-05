@@ -38,7 +38,7 @@ CHECKOUT_ROOT_DIR = os.path.realpath(os.path.join(SCRIPT_DIR, os.pardir,
 sys.path.append(CHECKOUT_ROOT_DIR)
 import setup_links
 
-sys.path.append(os.path.join(CHECKOUT_ROOT_DIR, 'tools'))
+sys.path.append(os.path.join(CHECKOUT_ROOT_DIR, 'build'))
 import find_depot_tools
 find_depot_tools.add_depot_tools_to_path()
 from gclient import GClientKeywords
