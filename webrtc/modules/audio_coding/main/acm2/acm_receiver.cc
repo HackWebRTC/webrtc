@@ -178,7 +178,10 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
                       << " is not registered.";
       return -1;
     }
-    const int sample_rate_hz = ACMCodecDB::CodecFreq(decoder->acm_codec_id);
+    const int sample_rate_hz = [&decoder] {
+      const auto ci = RentACodec::CodecIdFromIndex(decoder->acm_codec_id);
+      return ci ? RentACodec::CodecInstById(*ci)->plfreq : -1;
+    }();
     receive_timestamp = NowInTimestamp(sample_rate_hz);
 
     // If this is a CNG while the audio codec is not mono, skip pushing in

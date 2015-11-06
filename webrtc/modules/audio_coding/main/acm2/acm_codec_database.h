@@ -74,17 +74,6 @@ class ACMCodecDB {
   static int CodecId(const char* payload_name, int frequency, int channels);
   static int ReceiverCodecNumber(const CodecInst& codec_inst);
 
-  // Returns the codec sampling frequency for codec with id = "codec_id" in
-  // database.
-  // TODO(tlegrand): Check if function is needed, or if we can change
-  // to access database directly.
-  // Input:
-  //   [codec_id] - number that specifies at what position in the database to
-  //                get the information.
-  // Return:
-  //   codec sampling frequency if successful, otherwise -1.
-  static int CodecFreq(int codec_id);
-
  private:
   // Databases with information about the supported codecs
   // database_ - stored information about all codecs: payload type, name,

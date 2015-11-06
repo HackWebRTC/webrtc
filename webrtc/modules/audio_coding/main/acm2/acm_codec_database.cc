@@ -340,14 +340,6 @@ int ACMCodecDB::ReceiverCodecNumber(const CodecInst& codec_inst) {
   return CodecId(codec_inst);
 }
 
-// Returns the codec sampling frequency for codec with id = "codec_id" in
-// database.
-int ACMCodecDB::CodecFreq(int codec_id) {
-  const size_t i = static_cast<size_t>(codec_id);
-  const auto db = RentACodec::Database();
-  return i < db.size() ? db[i].plfreq : -1;
-}
-
 }  // namespace acm2
 
 }  // namespace webrtc
