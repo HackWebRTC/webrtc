@@ -12,10 +12,6 @@
 
 #include <limits>
 
-#include "unicode/unistr.h"
-
-using icu::UnicodeString;
-
 jmethodID GetMethodID(JNIEnv* jni, jclass c, const std::string& name,
                       const char* signature) {
   jmethodID m = jni->GetMethodID(c, name.c_str(), signature);
@@ -36,14 +32,13 @@ jlong jlongFromPointer(void* ptr) {
 
 // Given a (UTF-16) jstring return a new UTF-8 native string.
 std::string JavaToStdString(JNIEnv* jni, const jstring& j_string) {
-  const jchar* jchars = jni->GetStringChars(j_string, NULL);
-  CHECK_JNI_EXCEPTION(jni, "Error during GetStringChars");
-  UnicodeString ustr(jchars, jni->GetStringLength(j_string));
-  CHECK_JNI_EXCEPTION(jni, "Error during GetStringLength");
-  jni->ReleaseStringChars(j_string, jchars);
-  CHECK_JNI_EXCEPTION(jni, "Error during ReleaseStringChars");
-  std::string ret;
-  return ustr.toUTF8String(ret);
+  const char* chars = jni->GetStringUTFChars(j_string, NULL);
+  CHECK_JNI_EXCEPTION(jni, "Error during GetStringUTFChars");
+  std::string str(chars, jni->GetStringUTFLength(j_string));
+  CHECK_JNI_EXCEPTION(jni, "Error during GetStringUTFLength");
+  jni->ReleaseStringUTFChars(j_string, chars);
+  CHECK_JNI_EXCEPTION(jni, "Error during ReleaseStringUTFChars");
+  return str;
 }
 
 ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni, const char** classes,

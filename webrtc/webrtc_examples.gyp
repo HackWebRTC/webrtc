@@ -26,13 +26,6 @@
             'examples/android/media_demo/jni/on_load.cc',
             'examples/android/media_demo/jni/voice_engine_jni.cc',
           ],
-          'conditions': [
-            ['build_icu==1', {
-              'dependencies': [
-                '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
-              ],
-            }],
-          ],
           'variables': {
             # This library uses native JNI exports; tell GYP so that the
             # required symbols will be kept.

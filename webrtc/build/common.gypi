@@ -89,7 +89,6 @@
 
     # Disable these to not build components which can be externally provided.
     'build_expat%': 1,
-    'build_icu%': 1,
     'build_json%': 1,
     'build_libjpeg%': 1,
     'build_libvpx%': 1,

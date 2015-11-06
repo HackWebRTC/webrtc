@@ -1,4 +1,3 @@
-
 /*
  * libjingle
  * Copyright 2015 Google Inc.
@@ -33,8 +32,6 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "unicode/unistr.h"
-
 namespace webrtc_jni {
 
 static JavaVM* g_jvm = nullptr;
@@ -45,8 +42,6 @@ static pthread_once_t g_jni_ptr_once = PTHREAD_ONCE_INIT;
 // AttachCurrentThreadIfNeeded(), NULL in unattached threads and threads that
 // were attached by the JVM because of a Java->native call.
 static pthread_key_t g_jni_ptr;
-
-using icu::UnicodeString;
 
 JavaVM *GetJVM() {
   RTC_CHECK(g_jvm) << "JNI_OnLoad failed to run?";
@@ -232,22 +227,20 @@ bool IsNull(JNIEnv* jni, jobject obj) {
 
 // Given a UTF-8 encoded |native| string return a new (UTF-16) jstring.
 jstring JavaStringFromStdString(JNIEnv* jni, const std::string& native) {
-  UnicodeString ustr(UnicodeString::fromUTF8(native));
-  jstring jstr = jni->NewString(ustr.getBuffer(), ustr.length());
-  CHECK_EXCEPTION(jni) << "error during NewString";
+  jstring jstr = jni->NewStringUTF(native.c_str());
+  CHECK_EXCEPTION(jni) << "error during NewStringUTF";
   return jstr;
 }
 
 // Given a (UTF-16) jstring return a new UTF-8 native string.
 std::string JavaToStdString(JNIEnv* jni, const jstring& j_string) {
-  const jchar* jchars = jni->GetStringChars(j_string, NULL);
-  CHECK_EXCEPTION(jni) << "Error during GetStringChars";
-  UnicodeString ustr(jchars, jni->GetStringLength(j_string));
-  CHECK_EXCEPTION(jni) << "Error during GetStringLength";
-  jni->ReleaseStringChars(j_string, jchars);
-  CHECK_EXCEPTION(jni) << "Error during ReleaseStringChars";
-  std::string ret;
-  return ustr.toUTF8String(ret);
+  const char* chars = jni->GetStringUTFChars(j_string, NULL);
+  CHECK_EXCEPTION(jni) << "Error during GetStringUTFChars";
+  std::string str(chars, jni->GetStringUTFLength(j_string));
+  CHECK_EXCEPTION(jni) << "Error during GetStringUTFLength";
+  jni->ReleaseStringUTFChars(j_string, chars);
+  CHECK_EXCEPTION(jni) << "Error during ReleaseStringUTFChars";
+  return str;
 }
 
 // Return the (singleton) Java Enum object corresponding to |index|;

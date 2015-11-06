@@ -62,11 +62,6 @@
             '<(libyuv_dir)/include',
           ],
           'conditions': [
-            ['build_icu==1', {
-              'dependencies': [
-                '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
-              ],
-            }],
             ['OS=="linux"', {
               'defines': [
                 'HAVE_GTK',

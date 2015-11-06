@@ -41,7 +41,6 @@
     ],
     # Disable these to not build components which can be externally provided.
     'build_expat%': 1,
-    'build_icu%': 1,
     'build_json%': 1,
     'build_libsrtp%': 1,
     'build_libyuv%': 1,
