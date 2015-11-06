@@ -39,8 +39,8 @@ int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
     return -1;
   }
 
-  int codec_id = ACMCodecDB::CodecNumber(send_codec);
-  if (codec_id < 0) {
+  auto maybe_codec_id = RentACodec::CodecIdByInst(send_codec);
+  if (!maybe_codec_id) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                  "Invalid codec setting for the send codec.");
     return -1;
@@ -53,14 +53,8 @@ int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
     return -1;
   }
 
-  const rtc::Maybe<bool> supported_num_channels = [codec_id, &send_codec] {
-    auto cid = RentACodec::CodecIdFromIndex(codec_id);
-    return cid ? RentACodec::IsSupportedNumChannels(*cid, send_codec.channels)
-               : rtc::Maybe<bool>();
-  }();
-  if (!supported_num_channels)
-    return -1;
-  if (!*supported_num_channels) {
+  if (!RentACodec::IsSupportedNumChannels(*maybe_codec_id, send_codec.channels)
+           .value_or(false)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                  "%d number of channels not supportedn for %s.",
                  send_codec.channels, send_codec.plname);
@@ -82,7 +76,7 @@ int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
       return -1;
     }
   }
-  return codec_id;
+  return RentACodec::CodecIndexFromId(*maybe_codec_id).value_or(-1);
 }
 
 bool IsIsac(const CodecInst& codec) {
@@ -251,9 +245,10 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   // Check if the codec is already registered as send codec.
   bool new_codec = true;
   if (codec_owner_.Encoder()) {
-    int new_codec_id = ACMCodecDB::CodecNumber(send_codec_inst_);
-    RTC_DCHECK_GE(new_codec_id, 0);
-    new_codec = new_codec_id != codec_id;
+    auto new_codec_id = RentACodec::CodecIdByInst(send_codec_inst_);
+    RTC_DCHECK(new_codec_id);
+    auto old_codec_id = RentACodec::CodecIdFromIndex(codec_id);
+    new_codec = !old_codec_id || *new_codec_id != *old_codec_id;
   }
 
   if (RedPayloadType(send_codec.plfreq) == -1) {

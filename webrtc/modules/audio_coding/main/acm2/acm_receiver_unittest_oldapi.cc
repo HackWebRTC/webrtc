@@ -88,8 +88,8 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
   void TearDown() override {}
 
   void InsertOnePacketOfSilence(int codec_id) {
-    CodecInst codec;
-    ACMCodecDB::Codec(codec_id, &codec);
+    CodecInst codec =
+        *RentACodec::CodecInstById(*RentACodec::CodecIdFromIndex(codec_id));
     if (timestamp_ == 0) {  // This is the first time inserting audio.
       ASSERT_EQ(0, acm_->RegisterSendCodec(codec));
     } else {

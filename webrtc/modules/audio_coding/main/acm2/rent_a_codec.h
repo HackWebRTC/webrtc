@@ -148,6 +148,7 @@ class RentACodec {
                                              int sampling_freq_hz,
                                              int channels);
   static rtc::Maybe<CodecInst> CodecInstById(CodecId codec_id);
+  static rtc::Maybe<CodecId> CodecIdByInst(const CodecInst& codec_inst);
   static rtc::Maybe<CodecInst> CodecInstByParams(const char* payload_name,
                                                  int sampling_freq_hz,
                                                  int channels);

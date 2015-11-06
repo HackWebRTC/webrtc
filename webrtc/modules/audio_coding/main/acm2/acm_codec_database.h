@@ -27,7 +27,7 @@ namespace acm2 {
 
 // TODO(tlegrand): replace class ACMCodecDB with a namespace.
 class ACMCodecDB {
- public:
+ private:
   // kMaxNumCodecs - Maximum number of codecs that can be activated in one
   //                 build.
   // kMaxNumPacketSize - Maximum number of allowed packet sizes for one codec.
@@ -51,17 +51,6 @@ class ACMCodecDB {
     int channel_support;
   };
 
-  // Gets codec information from database at the position in database given by
-  // [codec_id].
-  // Input:
-  //   [codec_id] - number that specifies at what position in the database to
-  //                get the information.
-  // Output:
-  //   [codec_inst] - filled with information about the codec.
-  // Return:
-  //   0 if successful, otherwise -1.
-  static int Codec(int codec_id, CodecInst* codec_inst);
-
   // Returns codec id from database, given the information received in the input
   // [codec_inst].
   // Input:
@@ -74,7 +63,6 @@ class ACMCodecDB {
   static int CodecId(const char* payload_name, int frequency, int channels);
   static int ReceiverCodecNumber(const CodecInst& codec_inst);
 
- private:
   // Databases with information about the supported codecs
   // database_ - stored information about all codecs: payload type, name,
   //             sampling frequency, packet size in samples, default channel

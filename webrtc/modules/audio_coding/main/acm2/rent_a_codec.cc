@@ -29,6 +29,11 @@ rtc::Maybe<CodecInst> RentACodec::CodecInstById(CodecId codec_id) {
   return mi ? rtc::Maybe<CodecInst>(Database()[*mi]) : rtc::Maybe<CodecInst>();
 }
 
+rtc::Maybe<RentACodec::CodecId> RentACodec::CodecIdByInst(
+    const CodecInst& codec_inst) {
+  return CodecIdFromIndex(ACMCodecDB::CodecNumber(codec_inst));
+}
+
 rtc::Maybe<CodecInst> RentACodec::CodecInstByParams(const char* payload_name,
                                                     int sampling_freq_hz,
                                                     int channels) {

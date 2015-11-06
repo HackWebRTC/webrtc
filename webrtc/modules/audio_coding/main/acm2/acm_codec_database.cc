@@ -209,20 +209,6 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
 #endif
 };
 
-// Get codec information from database.
-// TODO(tlegrand): replace memcpy with a pointer to the data base memory.
-int ACMCodecDB::Codec(int codec_id, CodecInst* codec_inst) {
-  // Error check to see that codec_id is not out of bounds.
-  if (static_cast<size_t>(codec_id) >= RentACodec::NumberOfCodecs()) {
-    return -1;
-  }
-
-  // Copy database information for the codec to the output.
-  memcpy(codec_inst, &database_[codec_id], sizeof(CodecInst));
-
-  return 0;
-}
-
 // Enumerator for error codes when asking for codec database id.
 enum {
   kInvalidCodec = -10,
