@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/codecs/ilbc/include/audio_encoder_ilbc.h"
 
-#include <cstring>
+#include <algorithm>
 #include <limits>
 #include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
@@ -91,7 +91,7 @@ int AudioEncoderIlbc::GetTargetBitrate() const {
 
 AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
     uint32_t rtp_timestamp,
-    const int16_t* audio,
+    rtc::ArrayView<const int16_t> audio,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
   RTC_DCHECK_GE(max_encoded_bytes, RequiredOutputSizeBytes());
@@ -101,9 +101,9 @@ AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
     first_timestamp_in_buffer_ = rtp_timestamp;
 
   // Buffer input.
-  std::memcpy(input_buffer_ + kSampleRateHz / 100 * num_10ms_frames_buffered_,
-              audio,
-              kSampleRateHz / 100 * sizeof(audio[0]));
+  RTC_DCHECK_EQ(static_cast<size_t>(kSampleRateHz / 100), audio.size());
+  std::copy(audio.cbegin(), audio.cend(),
+            input_buffer_ + kSampleRateHz / 100 * num_10ms_frames_buffered_);
 
   // If we don't yet have enough buffered input for a whole packet, we're done
   // for now.

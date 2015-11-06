@@ -149,7 +149,9 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
 
   encode_buffer_.SetSize(audio_encoder->MaxEncodedBytes());
   encoded_info = audio_encoder->Encode(
-      rtp_timestamp, input_data.audio, input_data.length_per_channel,
+      rtp_timestamp, rtc::ArrayView<const int16_t>(
+                         input_data.audio, input_data.audio_channel *
+                                               input_data.length_per_channel),
       encode_buffer_.size(), encode_buffer_.data());
   encode_buffer_.SetSize(encoded_info.encoded_bytes);
   bitrate_logger_.MaybeLog(audio_encoder->GetTargetBitrate() / 1000);

@@ -61,6 +61,7 @@ class ArrayView final {
   // is const, because the ArrayView doesn't own the array. (To prevent
   // mutation, use ArrayView<const T>.)
   size_t size() const { return size_; }
+  bool empty() const { return size_ == 0; }
   T* data() const { return data_; }
   T& operator[](size_t idx) const {
     RTC_DCHECK_LT(idx, size_);
@@ -71,6 +72,15 @@ class ArrayView final {
   T* end() const { return data_ + size_; }
   const T* cbegin() const { return data_; }
   const T* cend() const { return data_ + size_; }
+
+  // Comparing two ArrayViews compares their (pointer,size) pairs; it does
+  // *not* dereference the pointers.
+  friend bool operator==(const ArrayView& a, const ArrayView& b) {
+    return a.data_ == b.data_ && a.size_ == b.size_;
+  }
+  friend bool operator!=(const ArrayView& a, const ArrayView& b) {
+    return !(a == b);
+  }
 
  private:
   // Invariant: !data_ iff size_ == 0.

@@ -32,7 +32,7 @@ class MockAudioEncoder final : public AudioEncoder {
   // Note, we explicitly chose not to create a mock for the Encode method.
   MOCK_METHOD4(EncodeInternal,
                EncodedInfo(uint32_t timestamp,
-                           const int16_t* audio,
+                           rtc::ArrayView<const int16_t> audio,
                            size_t max_encoded_bytes,
                            uint8_t* encoded));
   MOCK_METHOD0(Reset, void());

@@ -75,8 +75,10 @@ class AudioEncoderCngTest : public ::testing::Test {
 
   void Encode() {
     ASSERT_TRUE(cng_) << "Must call CreateCng() first.";
-    encoded_info_ = cng_->Encode(timestamp_, audio_, num_audio_samples_10ms_,
-                                 encoded_.size(), &encoded_[0]);
+    encoded_info_ = cng_->Encode(
+        timestamp_,
+        rtc::ArrayView<const int16_t>(audio_, num_audio_samples_10ms_),
+        encoded_.size(), &encoded_[0]);
     timestamp_ += static_cast<uint32_t>(num_audio_samples_10ms_);
   }
 

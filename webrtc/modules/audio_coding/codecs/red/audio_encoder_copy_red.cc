@@ -54,12 +54,11 @@ int AudioEncoderCopyRed::GetTargetBitrate() const {
 
 AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeInternal(
     uint32_t rtp_timestamp,
-    const int16_t* audio,
+    rtc::ArrayView<const int16_t> audio,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
-  EncodedInfo info = speech_encoder_->Encode(
-      rtp_timestamp, audio, static_cast<size_t>(SampleRateHz() / 100),
-      max_encoded_bytes, encoded);
+  EncodedInfo info =
+      speech_encoder_->Encode(rtp_timestamp, audio, max_encoded_bytes, encoded);
   RTC_CHECK_GE(max_encoded_bytes,
                info.encoded_bytes + secondary_info_.encoded_bytes);
   RTC_CHECK(info.redundant.empty()) << "Cannot use nested redundant encoders.";

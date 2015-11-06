@@ -214,4 +214,20 @@ TEST(ArrayViewTest, TestIteration) {
   }
 }
 
+TEST(ArrayViewTest, TestEmpty) {
+  EXPECT_TRUE(ArrayView<int>().empty());
+  const int a[] = {1, 2, 3};
+  EXPECT_FALSE(ArrayView<const int>(a).empty());
+}
+
+TEST(ArrayViewTest, TestCompare) {
+  int a[] = {1, 2, 3};
+  int b[] = {1, 2, 3};
+  EXPECT_EQ(ArrayView<int>(a), ArrayView<int>(a));
+  EXPECT_EQ(ArrayView<int>(), ArrayView<int>());
+  EXPECT_NE(ArrayView<int>(a), ArrayView<int>(b));
+  EXPECT_NE(ArrayView<int>(a), ArrayView<int>());
+  EXPECT_NE(ArrayView<int>(a), ArrayView<int>(a, 2));
+}
+
 }  // namespace rtc

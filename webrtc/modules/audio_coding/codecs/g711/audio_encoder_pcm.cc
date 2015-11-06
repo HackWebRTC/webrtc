@@ -88,16 +88,13 @@ int AudioEncoderPcm::GetTargetBitrate() const {
 
 AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
     uint32_t rtp_timestamp,
-    const int16_t* audio,
+    rtc::ArrayView<const int16_t> audio,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
-  const int num_samples = SampleRateHz() / 100 * NumChannels();
   if (speech_buffer_.empty()) {
     first_timestamp_in_buffer_ = rtp_timestamp;
   }
-  for (int i = 0; i < num_samples; ++i) {
-    speech_buffer_.push_back(audio[i]);
-  }
+  speech_buffer_.insert(speech_buffer_.end(), audio.begin(), audio.end());
   if (speech_buffer_.size() < full_frame_samples_) {
     return EncodedInfo();
   }

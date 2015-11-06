@@ -158,7 +158,10 @@ class AudioDecoderTest : public ::testing::Test {
                                                  interleaved_input.get());
 
       encoded_info_ = audio_encoder_->Encode(
-          0, interleaved_input.get(), audio_encoder_->SampleRateHz() / 100,
+          0, rtc::ArrayView<const int16_t>(interleaved_input.get(),
+                                           audio_encoder_->NumChannels() *
+                                               audio_encoder_->SampleRateHz() /
+                                               100),
           data_length_ * 2, output);
     }
     EXPECT_EQ(payload_type_, encoded_info_.payload_type);

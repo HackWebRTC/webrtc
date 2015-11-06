@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -91,13 +92,12 @@ class AudioEncoder {
   // Encode() checks some preconditions, calls EncodeInternal() which does the
   // actual work, and then checks some postconditions.
   EncodedInfo Encode(uint32_t rtp_timestamp,
-                     const int16_t* audio,
-                     size_t num_samples_per_channel,
+                     rtc::ArrayView<const int16_t> audio,
                      size_t max_encoded_bytes,
                      uint8_t* encoded);
 
   virtual EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                                     const int16_t* audio,
+                                     rtc::ArrayView<const int16_t> audio,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded) = 0;
 

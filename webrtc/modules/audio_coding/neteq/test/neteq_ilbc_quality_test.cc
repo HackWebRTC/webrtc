@@ -66,8 +66,10 @@ class NetEqIlbcQualityTest : public NetEqQualityTest {
     uint32_t dummy_timestamp = 0;
     AudioEncoder::EncodedInfo info;
     do {
-      info = encoder_->Encode(dummy_timestamp, &in_data[encoded_samples],
-                              kFrameSizeSamples, max_bytes, payload);
+      info = encoder_->Encode(dummy_timestamp,
+                              rtc::ArrayView<const int16_t>(
+                                  in_data + encoded_samples, kFrameSizeSamples),
+                              max_bytes, payload);
       encoded_samples += kFrameSizeSamples;
     } while (info.encoded_bytes == 0);
     return rtc::checked_cast<int>(info.encoded_bytes);

@@ -97,7 +97,7 @@ int AudioEncoderCng::GetTargetBitrate() const {
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
     uint32_t rtp_timestamp,
-    const int16_t* audio,
+    rtc::ArrayView<const int16_t> audio,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
   RTC_CHECK_GE(max_encoded_bytes,
@@ -106,9 +106,8 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
   RTC_CHECK_EQ(speech_buffer_.size(),
                rtp_timestamps_.size() * samples_per_10ms_frame);
   rtp_timestamps_.push_back(rtp_timestamp);
-  for (size_t i = 0; i < samples_per_10ms_frame; ++i) {
-    speech_buffer_.push_back(audio[i]);
-  }
+  RTC_DCHECK_EQ(samples_per_10ms_frame, audio.size());
+  speech_buffer_.insert(speech_buffer_.end(), audio.cbegin(), audio.cend());
   const size_t frames_to_encode = speech_encoder_->Num10MsFramesInNextPacket();
   if (rtp_timestamps_.size() < frames_to_encode) {
     return EncodedInfo();
@@ -242,9 +241,12 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeActive(
   const size_t samples_per_10ms_frame = SamplesPer10msFrame();
   AudioEncoder::EncodedInfo info;
   for (size_t i = 0; i < frames_to_encode; ++i) {
-    info = speech_encoder_->Encode(
-        rtp_timestamps_.front(), &speech_buffer_[i * samples_per_10ms_frame],
-        samples_per_10ms_frame, max_encoded_bytes, encoded);
+    info =
+        speech_encoder_->Encode(rtp_timestamps_.front(),
+                                rtc::ArrayView<const int16_t>(
+                                    &speech_buffer_[i * samples_per_10ms_frame],
+                                    samples_per_10ms_frame),
+                                max_encoded_bytes, encoded);
     if (i + 1 == frames_to_encode) {
       RTC_CHECK_GT(info.encoded_bytes, 0u) << "Encoder didn't deliver data.";
     } else {

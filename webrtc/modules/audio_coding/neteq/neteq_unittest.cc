@@ -939,8 +939,10 @@ class NetEqBgnTest : public NetEqDecodingTest {
 
     uint32_t receive_timestamp = 0;
     for (int n = 0; n < 10; ++n) {  // Insert few packets and get audio.
-      size_t enc_len_bytes = WebRtcPcm16b_Encode(
-          input.GetNextBlock(), expected_samples_per_channel, payload);
+      auto block = input.GetNextBlock();
+      ASSERT_EQ(expected_samples_per_channel, block.size());
+      size_t enc_len_bytes =
+          WebRtcPcm16b_Encode(block.data(), block.size(), payload);
       ASSERT_EQ(enc_len_bytes, expected_samples_per_channel * 2);
 
       number_channels = 0;

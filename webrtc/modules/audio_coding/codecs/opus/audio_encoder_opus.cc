@@ -132,13 +132,13 @@ int AudioEncoderOpus::GetTargetBitrate() const {
 
 AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
     uint32_t rtp_timestamp,
-    const int16_t* audio,
+    rtc::ArrayView<const int16_t> audio,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
   if (input_buffer_.empty())
     first_timestamp_in_buffer_ = rtp_timestamp;
-  input_buffer_.insert(input_buffer_.end(), audio,
-                       audio + SamplesPer10msFrame());
+  RTC_DCHECK_EQ(static_cast<size_t>(SamplesPer10msFrame()), audio.size());
+  input_buffer_.insert(input_buffer_.end(), audio.cbegin(), audio.cend());
   if (input_buffer_.size() <
       (static_cast<size_t>(Num10msFramesPerPacket()) * SamplesPer10msFrame())) {
     return EncodedInfo();

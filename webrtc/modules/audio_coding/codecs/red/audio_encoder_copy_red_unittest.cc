@@ -60,8 +60,10 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
 
   void Encode() {
     ASSERT_TRUE(red_.get() != NULL);
-    encoded_info_ = red_->Encode(timestamp_, audio_, num_audio_samples_10ms,
-                                 encoded_.size(), &encoded_[0]);
+    encoded_info_ = red_->Encode(
+        timestamp_,
+        rtc::ArrayView<const int16_t>(audio_, num_audio_samples_10ms),
+        encoded_.size(), &encoded_[0]);
     timestamp_ += num_audio_samples_10ms;
   }
 
@@ -83,7 +85,7 @@ class MockEncodeHelper {
   }
 
   AudioEncoder::EncodedInfo Encode(uint32_t timestamp,
-                                   const int16_t* audio,
+                                   rtc::ArrayView<const int16_t> audio,
                                    size_t max_encoded_bytes,
                                    uint8_t* encoded) {
     if (write_payload_) {

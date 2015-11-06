@@ -656,7 +656,11 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   }
 
   void InsertAudio() {
-    memcpy(input_frame_.data_, audio_loop_.GetNextBlock(), kNumSamples10ms);
+    // TODO(kwiberg): Use std::copy here. Might be complications because AFAICS
+    // this call confuses the number of samples with the number of bytes, and
+    // ends up copying only half of what it should.
+    memcpy(input_frame_.data_, audio_loop_.GetNextBlock().data(),
+           kNumSamples10ms);
     AudioCodingModuleTestOldApi::InsertAudio();
   }
 
@@ -774,9 +778,9 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
       // Encode new frame.
       uint32_t input_timestamp = rtp_header_.header.timestamp;
       while (info.encoded_bytes == 0) {
-        info = isac_encoder_->Encode(
-            input_timestamp, audio_loop_.GetNextBlock(), kNumSamples10ms,
-            max_encoded_bytes, encoded.get());
+        info =
+            isac_encoder_->Encode(input_timestamp, audio_loop_.GetNextBlock(),
+                                  max_encoded_bytes, encoded.get());
         input_timestamp += 160;  // 10 ms at 16 kHz.
       }
       EXPECT_EQ(rtp_header_.header.timestamp + kPacketSizeSamples,

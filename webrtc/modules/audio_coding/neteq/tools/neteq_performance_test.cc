@@ -62,11 +62,12 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   bool drift_flipped = false;
   int32_t packet_input_time_ms =
       rtp_gen.GetRtpHeader(kPayloadType, kInputBlockSizeSamples, &rtp_header);
-  const int16_t* input_samples = audio_loop.GetNextBlock();
-  if (!input_samples) exit(1);
+  auto input_samples = audio_loop.GetNextBlock();
+  if (input_samples.empty())
+    exit(1);
   uint8_t input_payload[kInputBlockSizeSamples * sizeof(int16_t)];
-  size_t payload_len =
-      WebRtcPcm16b_Encode(input_samples, kInputBlockSizeSamples, input_payload);
+  size_t payload_len = WebRtcPcm16b_Encode(input_samples.data(),
+                                           input_samples.size(), input_payload);
   assert(payload_len == kInputBlockSizeSamples * sizeof(int16_t));
 
   // Main loop.
@@ -93,10 +94,10 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
                                                   kInputBlockSizeSamples,
                                                   &rtp_header);
       input_samples = audio_loop.GetNextBlock();
-      if (!input_samples) return -1;
-      payload_len = WebRtcPcm16b_Encode(const_cast<int16_t*>(input_samples),
-                                        kInputBlockSizeSamples,
-                                        input_payload);
+      if (input_samples.empty())
+        return -1;
+      payload_len = WebRtcPcm16b_Encode(input_samples.data(),
+                                        input_samples.size(), input_payload);
       assert(payload_len == kInputBlockSizeSamples * sizeof(int16_t));
     }
 

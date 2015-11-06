@@ -115,7 +115,7 @@ int AudioEncoderIsacT<T>::GetTargetBitrate() const {
 template <typename T>
 AudioEncoder::EncodedInfo AudioEncoderIsacT<T>::EncodeInternal(
     uint32_t rtp_timestamp,
-    const int16_t* audio,
+    rtc::ArrayView<const int16_t> audio,
     size_t max_encoded_bytes,
     uint8_t* encoded) {
   if (!packet_in_progress_) {
@@ -127,7 +127,7 @@ AudioEncoder::EncodedInfo AudioEncoderIsacT<T>::EncodeInternal(
     IsacBandwidthInfo bwinfo = bwinfo_->Get();
     T::SetBandwidthInfo(isac_state_, &bwinfo);
   }
-  int r = T::Encode(isac_state_, audio, encoded);
+  int r = T::Encode(isac_state_, audio.data(), encoded);
   RTC_CHECK_GE(r, 0) << "Encode failed (error code "
                      << T::GetErrorCode(isac_state_) << ")";
 
