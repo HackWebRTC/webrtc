@@ -23,7 +23,6 @@
         'source/clock_unittest.cc',
         'source/condition_variable_unittest.cc',
         'source/critical_section_unittest.cc',
-        'source/event_tracer_unittest.cc',
         'source/logging_unittest.cc',
         'source/data_log_unittest.cc',
         'source/data_log_unittest_disabled.cc',
