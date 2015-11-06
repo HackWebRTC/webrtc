@@ -137,20 +137,17 @@ message VideoReceiveConfig {
   // required - RTCP mode to use.
   optional RtcpMode rtcp_mode = 3;
 
-  // required - Extended RTCP settings.
-  optional bool receiver_reference_time_report = 4;
-
   // required - Receiver estimated maximum bandwidth.
-  optional bool remb = 5;
+  optional bool remb = 4;
 
   // Map from video RTP payload type -> RTX config.
-  repeated RtxMap rtx_map = 6;
+  repeated RtxMap rtx_map = 5;
 
   // RTP header extensions used for the received stream.
-  repeated RtpHeaderExtension header_extensions = 7;
+  repeated RtpHeaderExtension header_extensions = 6;
 
   // List of decoders associated with the stream.
-  repeated DecoderConfig decoders = 8;
+  repeated DecoderConfig decoders = 7;
 }
 
 
@@ -209,11 +206,8 @@ message VideoSendConfig {
   // required if rtx_ssrcs is used - Payload type for retransmitted packets.
   optional int32 rtx_payload_type = 4;
 
-  // required - Canonical end-point identifier.
-  optional string c_name = 5;
-
   // required - Encoder associated with the stream.
-  optional EncoderConfig encoder = 6;
+  optional EncoderConfig encoder = 5;
 }
 
 

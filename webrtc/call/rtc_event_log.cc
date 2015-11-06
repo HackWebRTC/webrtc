@@ -17,7 +17,9 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
@@ -269,9 +271,6 @@ void RtcEventLogImpl::LogVideoReceiveStreamConfig(
   receiver_config->set_local_ssrc(config.rtp.local_ssrc);
 
   receiver_config->set_rtcp_mode(ConvertRtcpMode(config.rtp.rtcp_mode));
-
-  receiver_config->set_receiver_reference_time_report(
-      config.rtp.rtcp_xr.receiver_reference_time_report);
   receiver_config->set_remb(config.rtp.remb);
 
   for (const auto& kv : config.rtp.rtx) {
@@ -322,8 +321,6 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
   }
   sender_config->set_rtx_payload_type(config.rtp.rtx.payload_type);
 
-  sender_config->set_c_name(config.rtp.c_name);
-
   rtclog::EncoderConfig* encoder = sender_config->mutable_encoder();
   encoder->set_name(config.encoder_settings.payload_name);
   encoder->set_payload_type(config.encoder_settings.payload_type);
@@ -371,7 +368,52 @@ void RtcEventLogImpl::LogRtcpPacket(bool incoming,
   rtcp_event.set_type(rtclog::Event::RTCP_EVENT);
   rtcp_event.mutable_rtcp_packet()->set_incoming(incoming);
   rtcp_event.mutable_rtcp_packet()->set_type(ConvertMediaType(media_type));
-  rtcp_event.mutable_rtcp_packet()->set_packet_data(packet, length);
+
+  RTCPUtility::RtcpCommonHeader header;
+  const uint8_t* block_begin = packet;
+  const uint8_t* packet_end = packet + length;
+  RTC_DCHECK(length <= IP_PACKET_SIZE);
+  uint8_t buffer[IP_PACKET_SIZE];
+  uint32_t buffer_length = 0;
+  while (block_begin < packet_end) {
+    if (!RtcpParseCommonHeader(block_begin, packet_end - block_begin,
+                               &header)) {
+      break;  // Incorrect message header.
+    }
+    uint32_t block_size = header.BlockSize();
+    switch (header.packet_type) {
+      case RTCPUtility::PT_SR:
+        FALLTHROUGH();
+      case RTCPUtility::PT_RR:
+        FALLTHROUGH();
+      case RTCPUtility::PT_BYE:
+        FALLTHROUGH();
+      case RTCPUtility::PT_IJ:
+        FALLTHROUGH();
+      case RTCPUtility::PT_RTPFB:
+        FALLTHROUGH();
+      case RTCPUtility::PT_PSFB:
+        FALLTHROUGH();
+      case RTCPUtility::PT_XR:
+        // We log sender reports, receiver reports, bye messages
+        // inter-arrival jitter, third-party loss reports, payload-specific
+        // feedback and extended reports.
+        memcpy(buffer + buffer_length, block_begin, block_size);
+        buffer_length += block_size;
+        break;
+      case RTCPUtility::PT_SDES:
+        FALLTHROUGH();
+      case RTCPUtility::PT_APP:
+        FALLTHROUGH();
+      default:
+        // We don't log sender descriptions, application defined messages
+        // or message blocks of unknown type.
+        break;
+    }
+
+    block_begin += block_size;
+  }
+  rtcp_event.mutable_rtcp_packet()->set_packet_data(buffer, buffer_length);
   HandleEvent(&rtcp_event);
 }
 
