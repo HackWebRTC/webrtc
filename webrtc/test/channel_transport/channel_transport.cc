@@ -16,7 +16,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #endif
 #include "webrtc/test/channel_transport/udp_transport.h"
-#include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
@@ -66,10 +65,11 @@ void VoiceChannelTransport::IncomingRTCPPacket(
 }
 
 int VoiceChannelTransport::SetLocalReceiver(uint16_t rtp_port) {
+  static const int kNumReceiveSocketBuffers = 500;
   int return_value = socket_transport_->InitializeReceiveSockets(this,
                                                                  rtp_port);
   if (return_value == 0) {
-    return socket_transport_->StartReceiving(kViENumReceiveSocketBuffers);
+    return socket_transport_->StartReceiving(kNumReceiveSocketBuffers);
   }
   return return_value;
 }

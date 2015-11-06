@@ -25,7 +25,6 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {

@@ -25,7 +25,6 @@
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video/video_capture_input.h"
-#include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
 

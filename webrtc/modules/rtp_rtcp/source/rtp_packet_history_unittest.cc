@@ -15,7 +15,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -29,7 +28,7 @@ class RtpPacketHistoryTest : public ::testing::Test {
   ~RtpPacketHistoryTest() {
     delete hist_;
   }
-  
+
   SimulatedClock fake_clock_;
   RTPPacketHistory* hist_;
   enum {kPayload = 127};
@@ -54,7 +53,7 @@ class RtpPacketHistoryTest : public ::testing::Test {
     array[(*cur_pos)++] = ssrc >> 16;
     array[(*cur_pos)++] = ssrc >> 8;
     array[(*cur_pos)++] = ssrc;
-  } 
+  }
 };
 
 TEST_F(RtpPacketHistoryTest, SetStoreStatus) {
@@ -268,6 +267,7 @@ TEST_F(RtpPacketHistoryTest, DynamicExpansion) {
 }
 
 TEST_F(RtpPacketHistoryTest, FullExpansion) {
+  static const int kSendSidePacketHistorySize = 600;
   hist_->SetStorePacketsStatus(true, kSendSidePacketHistorySize);
   size_t len;
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();

@@ -26,7 +26,6 @@
 #include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_channel.h"
-#include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_send_stream.h"
 
@@ -528,6 +527,7 @@ int64_t VideoSendStream::GetRtt() const {
 }
 
 bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {
+  static const int kEncoderMinBitrate = 30;
   if (video_codec.maxBitrate == 0) {
     // Unset max bitrate -> cap to one bit per pixel.
     video_codec.maxBitrate =
@@ -535,10 +535,10 @@ bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {
         1000;
   }
 
-  if (video_codec.minBitrate < kViEMinCodecBitrate)
-    video_codec.minBitrate = kViEMinCodecBitrate;
-  if (video_codec.maxBitrate < kViEMinCodecBitrate)
-    video_codec.maxBitrate = kViEMinCodecBitrate;
+  if (video_codec.minBitrate < kEncoderMinBitrate)
+    video_codec.minBitrate = kEncoderMinBitrate;
+  if (video_codec.maxBitrate < kEncoderMinBitrate)
+    video_codec.maxBitrate = kEncoderMinBitrate;
 
   // Stop the media flow while reconfiguring.
   vie_encoder_->Pause();

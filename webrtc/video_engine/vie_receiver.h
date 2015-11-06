@@ -18,7 +18,6 @@
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
 
@@ -118,7 +117,7 @@ class ViEReceiver : public RtpData {
   rtc::scoped_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
 
   bool receiving_;
-  uint8_t restored_packet_[kViEMaxMtu];
+  uint8_t restored_packet_[IP_PACKET_SIZE];
   bool restored_packet_in_use_;
   bool receiving_ast_enabled_;
   bool receiving_cvo_enabled_;

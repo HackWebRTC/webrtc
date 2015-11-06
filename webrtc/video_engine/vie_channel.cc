@@ -34,12 +34,14 @@
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/report_block_stats.h"
-#include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
 
 const int kMaxDecodeWaitTimeMs = 50;
 static const int kMaxTargetDelayMs = 10000;
+const int kMinSendSidePacketHistorySize = 600;
+const int kMaxPacketAgeToNack = 450;
+const int kMaxNackListSize = 250;
 
 // Helper class receiving statistics callbacks.
 class ChannelStatsObserver : public CallStatsObserver {
@@ -108,7 +110,7 @@ ViEChannel::ViEChannel(uint32_t number_of_cores,
       packet_router_(packet_router),
       bandwidth_observer_(bandwidth_observer),
       transport_feedback_observer_(transport_feedback_observer),
-      nack_history_size_sender_(kSendSidePacketHistorySize),
+      nack_history_size_sender_(kMinSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
       report_block_stats_sender_(new ReportBlockStats()),
@@ -138,6 +140,7 @@ ViEChannel::ViEChannel(uint32_t number_of_cores,
 }
 
 int32_t ViEChannel::Init() {
+  static const int kDefaultRenderDelayMs = 10;
   module_process_thread_->RegisterModule(vie_receiver_.GetReceiveStatistics());
 
   // RTP/RTCP initialization.
@@ -160,7 +163,7 @@ int32_t ViEChannel::Init() {
   vcm_->RegisterFrameTypeCallback(this);
   vcm_->RegisterReceiveStatisticsCallback(this);
   vcm_->RegisterDecoderTimingCallback(this);
-  vcm_->SetRenderDelay(kViEDefaultRenderDelayMs);
+  vcm_->SetRenderDelay(kDefaultRenderDelayMs);
 
   module_process_thread_->RegisterModule(vcm_);
   module_process_thread_->RegisterModule(&vie_sync_);
@@ -561,12 +564,12 @@ int ViEChannel::SetSenderBufferingMode(int target_delay_ms) {
   }
   if (target_delay_ms == 0) {
     // Real-time mode.
-    nack_history_size_sender_ = kSendSidePacketHistorySize;
+    nack_history_size_sender_ = kMinSendSidePacketHistorySize;
   } else {
     nack_history_size_sender_ = GetRequiredNackListSize(target_delay_ms);
     // Don't allow a number lower than the default value.
-    if (nack_history_size_sender_ < kSendSidePacketHistorySize) {
-      nack_history_size_sender_ = kSendSidePacketHistorySize;
+    if (nack_history_size_sender_ < kMinSendSidePacketHistorySize) {
+      nack_history_size_sender_ = kMinSendSidePacketHistorySize;
     }
   }
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)

@@ -33,7 +33,6 @@
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_engine/payload_router.h"
-#include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
 
@@ -45,6 +44,8 @@ static const float kEncoderPausePacerMargin = 2.0f;
 static const int kMinPacingDelayMs = 200;
 
 static const float kStopPaddingThresholdMs = 2000;
+
+static const int kMinKeyFrameRequestIntervalMs = 300;
 
 std::vector<uint32_t> AllocateStreamBitrates(
     uint32_t total_bitrate,
@@ -587,7 +588,8 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
     }
 
     int64_t now = TickTime::MillisecondTimestamp();
-    if (time_last_intra_request_ms_[ssrc] + kViEMinKeyRequestIntervalMs > now) {
+    if (time_last_intra_request_ms_[ssrc] + kMinKeyFrameRequestIntervalMs
+        > now) {
       return;
     }
     time_last_intra_request_ms_[ssrc] = now;

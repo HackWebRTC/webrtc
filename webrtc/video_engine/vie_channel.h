@@ -22,7 +22,6 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_receiver.h"
 #include "webrtc/video_engine/vie_sync_module.h"
 
