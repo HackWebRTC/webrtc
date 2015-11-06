@@ -37,6 +37,7 @@
 #include "talk/media/webrtc/webrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "talk/session/media/channel.h"
+#include "webrtc/audio_state.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/logging.h"
@@ -57,9 +58,7 @@ class WebRtcVoiceMediaChannel;
 
 // WebRtcVoiceEngine is a class to be used with CompositeMediaEngine.
 // It uses the WebRtc VoiceEngine library for audio handling.
-class WebRtcVoiceEngine
-    : public webrtc::VoiceEngineObserver,
-      public webrtc::TraceCallback  {
+class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   friend class WebRtcVoiceMediaChannel;
 
  public:
@@ -70,7 +69,7 @@ class WebRtcVoiceEngine
   bool Init(rtc::Thread* worker_thread);
   void Terminate();
 
-  webrtc::VoiceEngine* GetVoE() { return voe()->engine(); }
+  rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const;
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                    const AudioOptions& options);
 
@@ -133,9 +132,6 @@ class WebRtcVoiceEngine
   // webrtc::TraceCallback:
   void Print(webrtc::TraceLevel level, const char* trace, int length) override;
 
-  // webrtc::VoiceEngineObserver:
-  void CallbackOnError(int channel_id, int errCode) override;
-
   // Given the device type, name, and id, find device id. Return true and
   // set the output parameter rtc_id if successful.
   bool FindWebRtcAudioDeviceId(
@@ -146,25 +142,26 @@ class WebRtcVoiceEngine
 
   static const int kDefaultLogSeverity = rtc::LS_WARNING;
 
+  rtc::ThreadChecker signal_thread_checker_;
+  rtc::ThreadChecker worker_thread_checker_;
+
   // The primary instance of WebRtc VoiceEngine.
   rtc::scoped_ptr<VoEWrapper> voe_wrapper_;
   rtc::scoped_ptr<VoETraceWrapper> tracing_;
+  rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   // The external audio device manager
-  webrtc::AudioDeviceModule* adm_;
+  webrtc::AudioDeviceModule* adm_ = nullptr;
   int log_filter_;
   std::string log_options_;
-  bool is_dumping_aec_;
+  bool is_dumping_aec_ = false;
   std::vector<AudioCodec> codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
   std::vector<WebRtcVoiceMediaChannel*> channels_;
-  // channels_ can be read from WebRtc callback thread. We need a lock on that
-  // callback as well as the RegisterChannel/UnregisterChannel.
-  rtc::CriticalSection channels_cs_;
   webrtc::AgcConfig default_agc_config_;
 
   webrtc::Config voe_config_;
 
-  bool initialized_;
+  bool initialized_ = false;
   AudioOptions options_;
 
   // Cache received extended_filter_aec, delay_agnostic_aec and experimental_ns
@@ -180,8 +177,8 @@ class WebRtcVoiceEngine
 
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses
 // WebRtc Voice Engine.
-class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
-                                public webrtc::Transport {
+class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
+                                      public webrtc::Transport {
  public:
   WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
                           const AudioOptions& options,
@@ -243,8 +240,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
     return VoiceMediaChannel::SendRtcp(&packet, rtc::PacketOptions());
   }
 
-  void OnError(int error);
-
   int GetReceiveChannelId(uint32_t ssrc) const;
   int GetSendChannelId(uint32_t ssrc) const;
 
@@ -267,7 +262,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                        const std::vector<AudioCodec>& all_codecs,
                        webrtc::CodecInst* send_codec);
   bool SetPlayout(int channel, bool playout);
-  static Error WebRtcErrorToChannelError(int err_code);
 
   typedef int (webrtc::VoERTP_RTCP::* ExtensionSetterFunction)(int, bool,
       unsigned char);
@@ -300,23 +294,22 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
     int channel_id,
     const std::vector<RtpHeaderExtension>& extensions);
 
-  rtc::ThreadChecker thread_checker_;
+  rtc::ThreadChecker worker_thread_checker_;
 
-  WebRtcVoiceEngine* const engine_;
+  WebRtcVoiceEngine* const engine_ = nullptr;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   rtc::scoped_ptr<webrtc::CodecInst> send_codec_;
-  bool send_bitrate_setting_;
-  int send_bitrate_bps_;
+  bool send_bitrate_setting_ = false;
+  int send_bitrate_bps_ = 0;
   AudioOptions options_;
-  bool dtmf_allowed_;
-  bool desired_playout_;
-  bool nack_enabled_;
-  bool playout_;
-  bool typing_noise_detected_;
-  SendFlags desired_send_;
-  SendFlags send_;
-  webrtc::Call* const call_;
+  bool dtmf_allowed_ = false;
+  bool desired_playout_ = false;
+  bool nack_enabled_ = false;
+  bool playout_ = false;
+  SendFlags desired_send_ = SEND_NOTHING;
+  SendFlags send_ = SEND_NOTHING;
+  webrtc::Call* const call_ = nullptr;
 
   // SSRC of unsignalled receive stream, or -1 if there isn't one.
   int64_t default_recv_ssrc_ = -1;
@@ -342,7 +335,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceMediaChannel);
 };
-
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_WEBRTCVOICEENGINE_H_

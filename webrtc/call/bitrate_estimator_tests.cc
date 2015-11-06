@@ -13,6 +13,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/audio_state.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -117,11 +118,17 @@ class BitrateEstimatorTest : public test::CallTest {
   virtual ~BitrateEstimatorTest() { EXPECT_TRUE(streams_.empty()); }
 
   virtual void SetUp() {
+    EXPECT_CALL(mock_voice_engine_,
+        RegisterVoiceEngineObserver(testing::_)).WillOnce(testing::Return(0));
+    EXPECT_CALL(mock_voice_engine_,
+        DeRegisterVoiceEngineObserver()).WillOnce(testing::Return(0));
     EXPECT_CALL(mock_voice_engine_, GetEventLog())
         .WillRepeatedly(testing::Return(nullptr));
 
+    AudioState::Config audio_state_config;
+    audio_state_config.voice_engine = &mock_voice_engine_;
     Call::Config config;
-    config.voice_engine = &mock_voice_engine_;
+    config.audio_state = AudioState::Create(audio_state_config);
     receiver_call_.reset(Call::Create(config));
     sender_call_.reset(Call::Create(config));
 
@@ -162,6 +169,7 @@ class BitrateEstimatorTest : public test::CallTest {
     }
 
     receiver_call_.reset();
+    sender_call_.reset();
   }
 
  protected:

@@ -15,6 +15,8 @@
 
 #include "webrtc/audio/audio_receive_stream.h"
 #include "webrtc/audio/audio_send_stream.h"
+#include "webrtc/audio/audio_state.h"
+#include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -94,6 +96,15 @@ class Call : public webrtc::Call, public PacketReceiver {
   void ConfigureSync(const std::string& sync_group)
       EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
 
+  VoiceEngine* voice_engine() {
+    internal::AudioState* audio_state =
+        static_cast<internal::AudioState*>(config_.audio_state.get());
+    if (audio_state)
+      return audio_state->voice_engine();
+    else
+      return nullptr;
+  }
+
   const int num_cpu_cores_;
   const rtc::scoped_ptr<ProcessThread> module_process_thread_;
   const rtc::scoped_ptr<CallStats> call_stats_;
@@ -123,7 +134,6 @@ class Call : public webrtc::Call, public PacketReceiver {
   VideoSendStream::RtpStateMap suspended_video_send_ssrcs_;
 
   RtcEventLog* event_log_ = nullptr;
-  VoECodec* voe_codec_ = nullptr;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -152,12 +162,9 @@ Call::Call(const Call::Config& config)
     RTC_DCHECK_GE(config.bitrate_config.max_bitrate_bps,
                   config.bitrate_config.start_bitrate_bps);
   }
-  if (config.voice_engine) {
-    // Keep a reference to VoECodec, so we're sure the VoiceEngine lives for the
-    // duration of the call.
-    voe_codec_ = VoECodec::GetInterface(config.voice_engine);
-    if (voe_codec_)
-      event_log_ = voe_codec_->GetEventLog();
+  if (config.audio_state.get()) {
+    ScopedVoEInterface<VoECodec> voe_codec(voice_engine());
+    event_log_ = voe_codec->GetEventLog();
   }
 
   Trace::CreateTrace();
@@ -184,9 +191,6 @@ Call::~Call() {
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
   Trace::ReturnTrace();
-
-  if (voe_codec_)
-    voe_codec_->Release();
 }
 
 PacketReceiver* Call::Receiver() {
@@ -201,7 +205,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioSendStream* send_stream =
-      new AudioSendStream(config, config_.voice_engine);
+      new AudioSendStream(config, config_.audio_state);
   if (!network_enabled_)
     send_stream->SignalNetworkState(kNetworkDown);
   {
@@ -237,7 +241,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       congestion_controller_->GetRemoteBitrateEstimator(false), config,
-      config_.voice_engine);
+      config_.audio_state);
   {
     WriteLockScoped write_lock(*receive_crit_);
     RTC_DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
@@ -340,7 +344,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       num_cpu_cores_, congestion_controller_.get(), config,
-      config_.voice_engine, module_process_thread_.get(), call_stats_.get());
+      voice_engine(), module_process_thread_.get(), call_stats_.get());
 
   WriteLockScoped write_lock(*receive_crit_);
   RTC_DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
@@ -470,7 +474,7 @@ void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
 
 void Call::ConfigureSync(const std::string& sync_group) {
   // Set sync only if there was no previous one.
-  if (config_.voice_engine == nullptr || sync_group.empty())
+  if (voice_engine() == nullptr || sync_group.empty())
     return;
 
   AudioReceiveStream* sync_audio_stream = nullptr;
@@ -508,10 +512,10 @@ void Call::ConfigureSync(const std::string& sync_group) {
     }
     // Only sync the first A/V pair within this sync group.
     if (sync_audio_stream != nullptr && num_synced_streams == 1) {
-      video_stream->SetSyncChannel(config_.voice_engine,
+      video_stream->SetSyncChannel(voice_engine(),
                                    sync_audio_stream->config().voe_channel_id);
     } else {
-      video_stream->SetSyncChannel(config_.voice_engine, -1);
+      video_stream->SetSyncChannel(voice_engine(), -1);
     }
   }
 }

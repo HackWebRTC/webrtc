@@ -12,7 +12,9 @@
 
 #include <string>
 
+#include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
+#include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
@@ -48,14 +50,14 @@ std::string AudioSendStream::Config::ToString() const {
 }
 
 namespace internal {
-AudioSendStream::AudioSendStream(const webrtc::AudioSendStream::Config& config,
-                                 VoiceEngine* voice_engine)
-    : config_(config),
-      voice_engine_(voice_engine),
-      voe_base_(voice_engine) {
+
+AudioSendStream::AudioSendStream(
+    const webrtc::AudioSendStream::Config& config,
+    const rtc::scoped_refptr<webrtc::AudioState>& audio_state)
+    : config_(config), audio_state_(audio_state) {
   LOG(LS_INFO) << "AudioSendStream: " << config_.ToString();
-  RTC_DCHECK_NE(config.voe_channel_id, -1);
-  RTC_DCHECK(voice_engine_);
+  RTC_DCHECK_NE(config_.voe_channel_id, -1);
+  RTC_DCHECK(audio_state_.get());
 }
 
 AudioSendStream::~AudioSendStream() {
@@ -67,10 +69,13 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   webrtc::AudioSendStream::Stats stats;
   stats.local_ssrc = config_.rtp.ssrc;
-  ScopedVoEInterface<VoEAudioProcessing> processing(voice_engine_);
-  ScopedVoEInterface<VoECodec> codec(voice_engine_);
-  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine_);
-  ScopedVoEInterface<VoEVolumeControl> volume(voice_engine_);
+  internal::AudioState* audio_state =
+      static_cast<internal::AudioState*>(audio_state_.get());
+  VoiceEngine* voice_engine = audio_state->voice_engine();
+  ScopedVoEInterface<VoEAudioProcessing> processing(voice_engine);
+  ScopedVoEInterface<VoECodec> codec(voice_engine);
+  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine);
+  ScopedVoEInterface<VoEVolumeControl> volume(voice_engine);
   unsigned int ssrc = 0;
   webrtc::CallStatistics call_stats = {0};
   if (rtp->GetLocalSSRC(config_.voe_channel_id, ssrc) == -1 ||
@@ -148,8 +153,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
     }
   }
 
-  // TODO(solenberg): Collect typing noise warnings here too!
-  // bool typing_noise_detected = typing_noise_detected_;
+  stats.typing_noise_detected = audio_state->typing_noise_detected();
 
   return stats;
 }

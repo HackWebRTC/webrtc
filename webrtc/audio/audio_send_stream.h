@@ -12,20 +12,16 @@
 #define WEBRTC_AUDIO_AUDIO_SEND_STREAM_H_
 
 #include "webrtc/audio_send_stream.h"
-#include "webrtc/audio/scoped_voe_interface.h"
+#include "webrtc/audio_state.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/voice_engine/include/voe_base.h"
 
 namespace webrtc {
-
-class VoiceEngine;
-
 namespace internal {
 
 class AudioSendStream final : public webrtc::AudioSendStream {
  public:
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
-                  VoiceEngine* voice_engine);
+                  const rtc::scoped_refptr<webrtc::AudioState>& audio_state);
   ~AudioSendStream() override;
 
   // webrtc::SendStream implementation.
@@ -42,9 +38,7 @@ class AudioSendStream final : public webrtc::AudioSendStream {
  private:
   rtc::ThreadChecker thread_checker_;
   const webrtc::AudioSendStream::Config config_;
-  VoiceEngine* voice_engine_;
-  // We hold one interface pointer to the VoE to make sure it is kept alive.
-  ScopedVoEInterface<VoEBase> voe_base_;
+  rtc::scoped_refptr<webrtc::AudioState> audio_state_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };

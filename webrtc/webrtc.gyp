@@ -98,6 +98,7 @@
       'sources': [
         'audio_receive_stream.h',
         'audio_send_stream.h',
+        'audio_state.h',
         'call.h',
         'config.h',
         'frame_callback.h',

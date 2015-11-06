@@ -47,11 +47,10 @@ class MediaController : public webrtc::MediaControllerInterface,
     RTC_DCHECK(nullptr != worker_thread);
     worker_thread_->Invoke<void>(
         rtc::Bind(&MediaController::Construct_w, this,
-                  channel_manager_->media_engine()->GetVoE()));
+                  channel_manager_->media_engine()));
   }
   ~MediaController() override {
-    worker_thread_->Invoke<void>(
-        rtc::Bind(&MediaController::Destruct_w, this));
+    worker_thread_->Invoke<void>(rtc::Bind(&MediaController::Destruct_w, this));
   }
 
   webrtc::Call* call_w() override {
@@ -64,10 +63,11 @@ class MediaController : public webrtc::MediaControllerInterface,
   }
 
  private:
-  void Construct_w(webrtc::VoiceEngine* voice_engine)  {
+  void Construct_w(cricket::MediaEngineInterface* media_engine) {
     RTC_DCHECK(worker_thread_->IsCurrent());
+    RTC_DCHECK(media_engine);
     webrtc::Call::Config config;
-    config.voice_engine = voice_engine;
+    config.audio_state = media_engine->GetAudioState();
     config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
     config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
     config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
@@ -84,7 +84,7 @@ class MediaController : public webrtc::MediaControllerInterface,
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MediaController);
 };
-} // namespace {
+}  // namespace {
 
 namespace webrtc {
 
@@ -93,4 +93,4 @@ MediaControllerInterface* MediaControllerInterface::Create(
     cricket::ChannelManager* channel_manager) {
   return new MediaController(worker_thread, channel_manager);
 }
-} // namespace webrtc
+}  // namespace webrtc

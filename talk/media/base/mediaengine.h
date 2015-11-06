@@ -42,6 +42,7 @@
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/voiceprocessor.h"
 #include "talk/media/devices/devicemanager.h"
+#include "webrtc/audio_state.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/sigslotrepeater.h"
 
@@ -51,7 +52,6 @@
 
 namespace webrtc {
 class Call;
-class VoiceEngine;
 }
 
 namespace cricket {
@@ -72,7 +72,7 @@ class MediaEngineInterface {
   // Shuts down the engine.
   virtual void Terminate() = 0;
   // TODO(solenberg): Remove once VoE API refactoring is done.
-  virtual webrtc::VoiceEngine* GetVoE() = 0;
+  virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const = 0;
 
   // MediaChannel creation
   // Creates a voice media channel. Returns NULL on failure.
@@ -167,8 +167,8 @@ class CompositeMediaEngine : public MediaEngineInterface {
     voice_.Terminate();
   }
 
-  virtual webrtc::VoiceEngine* GetVoE() {
-    return voice_.GetVoE();
+  virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const {
+    return voice_.GetAudioState();
   }
   virtual VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                            const AudioOptions& options) {

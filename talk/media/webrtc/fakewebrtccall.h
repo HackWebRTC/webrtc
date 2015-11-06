@@ -47,11 +47,9 @@
 #include "webrtc/video_send_stream.h"
 
 namespace cricket {
-
-class FakeAudioSendStream : public webrtc::AudioSendStream {
+class FakeAudioSendStream final : public webrtc::AudioSendStream {
  public:
-  explicit FakeAudioSendStream(
-      const webrtc::AudioSendStream::Config& config);
+  explicit FakeAudioSendStream(const webrtc::AudioSendStream::Config& config);
 
   const webrtc::AudioSendStream::Config& GetConfig() const;
   void SetStats(const webrtc::AudioSendStream::Stats& stats);
@@ -72,7 +70,7 @@ class FakeAudioSendStream : public webrtc::AudioSendStream {
   webrtc::AudioSendStream::Stats stats_;
 };
 
-class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
+class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
  public:
   explicit FakeAudioReceiveStream(
       const webrtc::AudioReceiveStream::Config& config);
@@ -104,8 +102,8 @@ class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
   int received_packets_;
 };
 
-class FakeVideoSendStream : public webrtc::VideoSendStream,
-                            public webrtc::VideoCaptureInput {
+class FakeVideoSendStream final : public webrtc::VideoSendStream,
+                                  public webrtc::VideoCaptureInput {
  public:
   FakeVideoSendStream(const webrtc::VideoSendStream::Config& config,
                       const webrtc::VideoEncoderConfig& encoder_config);
@@ -153,7 +151,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
   webrtc::VideoSendStream::Stats stats_;
 };
 
-class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
+class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
  public:
   explicit FakeVideoReceiveStream(
       const webrtc::VideoReceiveStream::Config& config);
@@ -188,7 +186,7 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
   webrtc::VideoReceiveStream::Stats stats_;
 };
 
-class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
+class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
  public:
   explicit FakeCall(const webrtc::Call::Config& config);
   ~FakeCall() override;

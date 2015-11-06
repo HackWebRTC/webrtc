@@ -12,22 +12,31 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/audio_state.h"
 #include "webrtc/call.h"
 #include "webrtc/test/mock_voice_engine.h"
 
 namespace {
 
 struct CallHelper {
-  CallHelper() : voice_engine_(new webrtc::test::MockVoiceEngine()) {
+  CallHelper() {
+    EXPECT_CALL(voice_engine_,
+        RegisterVoiceEngineObserver(testing::_)).WillOnce(testing::Return(0));
+    EXPECT_CALL(voice_engine_,
+        DeRegisterVoiceEngineObserver()).WillOnce(testing::Return(0));
+    EXPECT_CALL(voice_engine_,
+        GetEventLog()).WillOnce(testing::Return(nullptr));
+    webrtc::AudioState::Config audio_state_config;
+    audio_state_config.voice_engine = &voice_engine_;
     webrtc::Call::Config config;
-    config.voice_engine = voice_engine_.get();
+    config.audio_state = webrtc::AudioState::Create(audio_state_config);
     call_.reset(webrtc::Call::Create(config));
   }
 
   webrtc::Call* operator->() { return call_.get(); }
 
  private:
-  rtc::scoped_ptr<webrtc::test::MockVoiceEngine> voice_engine_;
+  webrtc::test::MockVoiceEngine voice_engine_;
   rtc::scoped_ptr<webrtc::Call> call_;
 };
 }  // namespace

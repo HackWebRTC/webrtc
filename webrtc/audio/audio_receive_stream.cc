@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -60,19 +61,18 @@ std::string AudioReceiveStream::Config::ToString() const {
 
 namespace internal {
 AudioReceiveStream::AudioReceiveStream(
-      RemoteBitrateEstimator* remote_bitrate_estimator,
-      const webrtc::AudioReceiveStream::Config& config,
-      VoiceEngine* voice_engine)
+    RemoteBitrateEstimator* remote_bitrate_estimator,
+    const webrtc::AudioReceiveStream::Config& config,
+    const rtc::scoped_refptr<webrtc::AudioState>& audio_state)
     : remote_bitrate_estimator_(remote_bitrate_estimator),
       config_(config),
-      voice_engine_(voice_engine),
-      voe_base_(voice_engine),
+      audio_state_(audio_state),
       rtp_header_parser_(RtpHeaderParser::Create()) {
   LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
-  RTC_DCHECK(config.voe_channel_id != -1);
-  RTC_DCHECK(remote_bitrate_estimator_ != nullptr);
-  RTC_DCHECK(voice_engine_ != nullptr);
-  RTC_DCHECK(rtp_header_parser_ != nullptr);
+  RTC_DCHECK_NE(config_.voe_channel_id, -1);
+  RTC_DCHECK(remote_bitrate_estimator_);
+  RTC_DCHECK(audio_state_.get());
+  RTC_DCHECK(rtp_header_parser_);
   for (const auto& ext : config.rtp.extensions) {
     // One-byte-extension local identifiers are in the range 1-14 inclusive.
     RTC_DCHECK_GE(ext.id, 1);
@@ -101,11 +101,14 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
-  ScopedVoEInterface<VoECodec> codec(voice_engine_);
-  ScopedVoEInterface<VoENetEqStats> neteq(voice_engine_);
-  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine_);
-  ScopedVoEInterface<VoEVideoSync> sync(voice_engine_);
-  ScopedVoEInterface<VoEVolumeControl> volume(voice_engine_);
+  internal::AudioState* audio_state =
+      static_cast<internal::AudioState*>(audio_state_.get());
+  VoiceEngine* voice_engine = audio_state->voice_engine();
+  ScopedVoEInterface<VoECodec> codec(voice_engine);
+  ScopedVoEInterface<VoENetEqStats> neteq(voice_engine);
+  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine);
+  ScopedVoEInterface<VoEVideoSync> sync(voice_engine);
+  ScopedVoEInterface<VoEVolumeControl> volume(voice_engine);
   unsigned int ssrc = 0;
   webrtc::CallStatistics call_stats = {0};
   webrtc::CodecInst codec_inst = {0};
@@ -132,13 +135,12 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
     int playout_buffer_delay_ms = 0;
     sync->GetDelayEstimate(config_.voe_channel_id, &jitter_buffer_delay_ms,
                            &playout_buffer_delay_ms);
-    stats.delay_estimate_ms =
-        jitter_buffer_delay_ms + playout_buffer_delay_ms;
+    stats.delay_estimate_ms = jitter_buffer_delay_ms + playout_buffer_delay_ms;
   }
   {
     unsigned int level = 0;
-    if (volume->GetSpeechOutputLevelFullRange(config_.voe_channel_id, level)
-        != -1) {
+    if (volume->GetSpeechOutputLevelFullRange(config_.voe_channel_id, level) !=
+        -1) {
       stats.audio_level = static_cast<int32_t>(level);
     }
   }
@@ -157,8 +159,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
 
   webrtc::AudioDecodingCallStats ds;
   if (neteq->GetDecodingCallStatistics(config_.voe_channel_id, &ds) != -1) {
-    stats.decoding_calls_to_silence_generator =
-        ds.calls_to_silence_generator;
+    stats.decoding_calls_to_silence_generator = ds.calls_to_silence_generator;
     stats.decoding_calls_to_neteq = ds.calls_to_neteq;
     stats.decoding_normal = ds.decoded_normal;
     stats.decoding_plc = ds.decoded_plc;

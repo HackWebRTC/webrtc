@@ -20,10 +20,84 @@ namespace webrtc {
 namespace test {
 namespace {
 
+AudioDecodingCallStats MakeAudioDecodeStatsForTest() {
+  AudioDecodingCallStats audio_decode_stats;
+  audio_decode_stats.calls_to_silence_generator = 234;
+  audio_decode_stats.calls_to_neteq = 567;
+  audio_decode_stats.decoded_normal = 890;
+  audio_decode_stats.decoded_plc = 123;
+  audio_decode_stats.decoded_cng = 456;
+  audio_decode_stats.decoded_plc_cng = 789;
+  return audio_decode_stats;
+}
+
 const int kChannelId = 2;
 const uint32_t kRemoteSsrc = 1234;
 const uint32_t kLocalSsrc = 5678;
 const size_t kAbsoluteSendTimeLength = 4;
+const int kAbsSendTimeId = 3;
+const int kJitterBufferDelay = -7;
+const int kPlayoutBufferDelay = 302;
+const unsigned int kSpeechOutputLevel = 99;
+const CallStatistics kCallStats = {
+    345,  678,  901, 234, -12, 3456, 7890, 567, 890, 123};
+const CodecInst kCodecInst = {
+    123, "codec_name_recv", 96000, -187, -198, -103};
+const NetworkStatistics kNetworkStats = {
+    123, 456, false, 0, 0, 789, 12, 345, 678, 901, -1, -1, -1, -1, -1, 0};
+const AudioDecodingCallStats kAudioDecodeStats = MakeAudioDecodeStatsForTest();
+
+struct ConfigHelper {
+  ConfigHelper() {
+    EXPECT_CALL(voice_engine_,
+        RegisterVoiceEngineObserver(testing::_)).WillOnce(testing::Return(0));
+    EXPECT_CALL(voice_engine_,
+        DeRegisterVoiceEngineObserver()).WillOnce(testing::Return(0));
+    AudioState::Config config;
+    config.voice_engine = &voice_engine_;
+    audio_state_ = AudioState::Create(config);
+    stream_config_.voe_channel_id = kChannelId;
+    stream_config_.rtp.local_ssrc = kLocalSsrc;
+    stream_config_.rtp.remote_ssrc = kRemoteSsrc;
+  }
+
+  MockRemoteBitrateEstimator* remote_bitrate_estimator() {
+    return &remote_bitrate_estimator_;
+  }
+  AudioReceiveStream::Config& config() { return stream_config_; }
+  rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
+  MockVoiceEngine& voice_engine() { return voice_engine_; }
+
+  void SetupMockForGetStats() {
+    using testing::_;
+    using testing::DoAll;
+    using testing::Return;
+    using testing::SetArgPointee;
+    using testing::SetArgReferee;
+    EXPECT_CALL(voice_engine_, GetRemoteSSRC(kChannelId, _))
+        .WillOnce(DoAll(SetArgReferee<1>(0), Return(0)));
+    EXPECT_CALL(voice_engine_, GetRTCPStatistics(kChannelId, _))
+        .WillOnce(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
+    EXPECT_CALL(voice_engine_, GetRecCodec(kChannelId, _))
+        .WillOnce(DoAll(SetArgReferee<1>(kCodecInst), Return(0)));
+    EXPECT_CALL(voice_engine_, GetDelayEstimate(kChannelId, _, _))
+        .WillOnce(DoAll(SetArgPointee<1>(kJitterBufferDelay),
+                        SetArgPointee<2>(kPlayoutBufferDelay), Return(0)));
+    EXPECT_CALL(voice_engine_,
+        GetSpeechOutputLevelFullRange(kChannelId, _)).WillOnce(
+            DoAll(SetArgReferee<1>(kSpeechOutputLevel), Return(0)));
+    EXPECT_CALL(voice_engine_, GetNetworkStatistics(kChannelId, _))
+        .WillOnce(DoAll(SetArgReferee<1>(kNetworkStats), Return(0)));
+    EXPECT_CALL(voice_engine_, GetDecodingCallStatistics(kChannelId, _))
+        .WillOnce(DoAll(SetArgPointee<1>(kAudioDecodeStats), Return(0)));
+  }
+
+ private:
+  MockRemoteBitrateEstimator remote_bitrate_estimator_;
+  MockVoiceEngine voice_engine_;
+  rtc::scoped_refptr<AudioState> audio_state_;
+  AudioReceiveStream::Config stream_config_;
+};
 
 void BuildAbsoluteSendTimeExtension(uint8_t* buffer,
                                     int id,
@@ -62,7 +136,6 @@ size_t CreateRtpHeaderWithAbsSendTime(uint8_t* header,
 }  // namespace
 
 TEST(AudioReceiveStreamTest, ConfigToString) {
-  const int kAbsSendTimeId = 3;
   AudioReceiveStream::Config config;
   config.rtp.remote_ssrc = kRemoteSsrc;
   config.rtp.local_ssrc = kLocalSsrc;
@@ -79,31 +152,24 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
 }
 
 TEST(AudioReceiveStreamTest, ConstructDestruct) {
-  MockRemoteBitrateEstimator remote_bitrate_estimator;
-  MockVoiceEngine voice_engine;
-  AudioReceiveStream::Config config;
-  config.voe_channel_id = kChannelId;
-  internal::AudioReceiveStream recv_stream(&remote_bitrate_estimator, config,
-                                           &voice_engine);
+  ConfigHelper helper;
+  internal::AudioReceiveStream recv_stream(
+      helper.remote_bitrate_estimator(), helper.config(), helper.audio_state());
 }
 
 TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweWithTimestamp) {
-  MockRemoteBitrateEstimator remote_bitrate_estimator;
-  MockVoiceEngine voice_engine;
-  AudioReceiveStream::Config config;
-  config.combined_audio_video_bwe = true;
-  config.voe_channel_id = kChannelId;
-  const int kAbsSendTimeId = 3;
-  config.rtp.extensions.push_back(
+  ConfigHelper helper;
+  helper.config().combined_audio_video_bwe = true;
+  helper.config().rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
-  internal::AudioReceiveStream recv_stream(&remote_bitrate_estimator, config,
-                                           &voice_engine);
+  internal::AudioReceiveStream recv_stream(
+      helper.remote_bitrate_estimator(), helper.config(), helper.audio_state());
   uint8_t rtp_packet[30];
   const int kAbsSendTimeValue = 1234;
   CreateRtpHeaderWithAbsSendTime(rtp_packet, kAbsSendTimeId, kAbsSendTimeValue);
   PacketTime packet_time(5678000, 0);
   const size_t kExpectedHeaderLength = 20;
-  EXPECT_CALL(remote_bitrate_estimator,
+  EXPECT_CALL(*helper.remote_bitrate_estimator(),
               IncomingPacket(packet_time.timestamp / 1000,
                              sizeof(rtp_packet) - kExpectedHeaderLength,
                              testing::_, false))
@@ -113,57 +179,10 @@ TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweWithTimestamp) {
 }
 
 TEST(AudioReceiveStreamTest, GetStats) {
-  const int kJitterBufferDelay = -7;
-  const int kPlayoutBufferDelay = 302;
-  const unsigned int kSpeechOutputLevel = 99;
-  const CallStatistics kCallStats = {345,  678,  901, 234, -12,
-                                     3456, 7890, 567, 890, 123};
-
-  const CodecInst kCodecInst = {123, "codec_name_recv", 96000, -187, -198,
-                                -103};
-
-  const NetworkStatistics kNetworkStats = {
-      123, 456, false, 0, 0, 789, 12, 345, 678, 901, -1, -1, -1, -1, -1, 0};
-
-  webrtc::AudioDecodingCallStats audio_decode_stats;
-  {
-    audio_decode_stats.calls_to_silence_generator = 234;
-    audio_decode_stats.calls_to_neteq = 567;
-    audio_decode_stats.decoded_normal = 890;
-    audio_decode_stats.decoded_plc = 123;
-    audio_decode_stats.decoded_cng = 456;
-    audio_decode_stats.decoded_plc_cng = 789;
-  }
-
-  MockRemoteBitrateEstimator remote_bitrate_estimator;
-  MockVoiceEngine voice_engine;
-  AudioReceiveStream::Config config;
-  config.rtp.remote_ssrc = kRemoteSsrc;
-  config.voe_channel_id = kChannelId;
-  internal::AudioReceiveStream recv_stream(&remote_bitrate_estimator, config,
-                                           &voice_engine);
-
-  using testing::_;
-  using testing::DoAll;
-  using testing::Return;
-  using testing::SetArgPointee;
-  using testing::SetArgReferee;
-  EXPECT_CALL(voice_engine, GetRemoteSSRC(kChannelId, _))
-      .WillOnce(DoAll(SetArgReferee<1>(0), Return(0)));
-  EXPECT_CALL(voice_engine, GetRTCPStatistics(kChannelId, _))
-      .WillOnce(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
-  EXPECT_CALL(voice_engine, GetRecCodec(kChannelId, _))
-      .WillOnce(DoAll(SetArgReferee<1>(kCodecInst), Return(0)));
-  EXPECT_CALL(voice_engine, GetDelayEstimate(kChannelId, _, _))
-      .WillOnce(DoAll(SetArgPointee<1>(kJitterBufferDelay),
-                      SetArgPointee<2>(kPlayoutBufferDelay), Return(0)));
-  EXPECT_CALL(voice_engine, GetSpeechOutputLevelFullRange(kChannelId, _))
-      .WillOnce(DoAll(SetArgReferee<1>(kSpeechOutputLevel), Return(0)));
-  EXPECT_CALL(voice_engine, GetNetworkStatistics(kChannelId, _))
-      .WillOnce(DoAll(SetArgReferee<1>(kNetworkStats), Return(0)));
-  EXPECT_CALL(voice_engine, GetDecodingCallStatistics(kChannelId, _))
-      .WillOnce(DoAll(SetArgPointee<1>(audio_decode_stats), Return(0)));
-
+  ConfigHelper helper;
+  internal::AudioReceiveStream recv_stream(
+      helper.remote_bitrate_estimator(), helper.config(), helper.audio_state());
+  helper.SetupMockForGetStats();
   AudioReceiveStream::Stats stats = recv_stream.GetStats();
   EXPECT_EQ(kRemoteSsrc, stats.remote_ssrc);
   EXPECT_EQ(static_cast<int64_t>(kCallStats.bytesReceived), stats.bytes_rcvd);
@@ -190,13 +209,13 @@ TEST(AudioReceiveStreamTest, GetStats) {
             stats.accelerate_rate);
   EXPECT_EQ(Q14ToFloat(kNetworkStats.currentPreemptiveRate),
             stats.preemptive_expand_rate);
-  EXPECT_EQ(audio_decode_stats.calls_to_silence_generator,
+  EXPECT_EQ(kAudioDecodeStats.calls_to_silence_generator,
             stats.decoding_calls_to_silence_generator);
-  EXPECT_EQ(audio_decode_stats.calls_to_neteq, stats.decoding_calls_to_neteq);
-  EXPECT_EQ(audio_decode_stats.decoded_normal, stats.decoding_normal);
-  EXPECT_EQ(audio_decode_stats.decoded_plc, stats.decoding_plc);
-  EXPECT_EQ(audio_decode_stats.decoded_cng, stats.decoding_cng);
-  EXPECT_EQ(audio_decode_stats.decoded_plc_cng, stats.decoding_plc_cng);
+  EXPECT_EQ(kAudioDecodeStats.calls_to_neteq, stats.decoding_calls_to_neteq);
+  EXPECT_EQ(kAudioDecodeStats.decoded_normal, stats.decoding_normal);
+  EXPECT_EQ(kAudioDecodeStats.decoded_plc, stats.decoding_plc);
+  EXPECT_EQ(kAudioDecodeStats.decoded_cng, stats.decoding_cng);
+  EXPECT_EQ(kAudioDecodeStats.decoded_plc_cng, stats.decoding_plc_cng);
   EXPECT_EQ(kCallStats.capture_start_ntp_time_ms_,
             stats.capture_start_ntp_time_ms);
 }

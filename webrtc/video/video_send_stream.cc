@@ -97,7 +97,7 @@ std::string VideoSendStream::Config::ToString() const {
   ss << ", post_encode_callback: " << (post_encode_callback != nullptr
                                            ? "(EncodedFrameObserver)"
                                            : "nullptr");
-  ss << "local_renderer: " << (local_renderer != nullptr ? "(VideoRenderer)"
+  ss << ", local_renderer: " << (local_renderer != nullptr ? "(VideoRenderer)"
                                                          : "nullptr");
   ss << ", render_delay_ms: " << render_delay_ms;
   ss << ", target_delay_ms: " << target_delay_ms;

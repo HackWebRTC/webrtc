@@ -733,7 +733,9 @@ class FakeVoiceEngine : public FakeBaseEngine {
   }
   bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
-  webrtc::VoiceEngine* GetVoE() { return nullptr; }
+  rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const {
+    return rtc::scoped_refptr<webrtc::AudioState>();
+  }
   AudioOptions GetOptions() const {
     return options_;
   }

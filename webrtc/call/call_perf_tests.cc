@@ -232,8 +232,10 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
 
   SyncRtcpObserver audio_observer;
 
+  AudioState::Config audio_state_config;
+  audio_state_config.voice_engine = voice_engine;
   Call::Config receiver_config;
-  receiver_config.voice_engine = voice_engine;
+  receiver_config.audio_state = AudioState::Create(audio_state_config);
   CreateCalls(Call::Config(), receiver_config);
 
   CodecInst isac = {103, "ISAC", 16000, 480, 1, 32000};

@@ -16,16 +16,14 @@
 #include "webrtc/common_types.h"
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/audio_send_stream.h"
+#include "webrtc/audio_state.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
 
-class AudioDeviceModule;
 class AudioProcessing;
-class VoiceEngine;
-class VoiceEngineObserver;
 
 const char* Version();
 
@@ -74,9 +72,6 @@ class Call {
   struct Config {
     static const int kDefaultStartBitrateBps;
 
-    // VoiceEngine used for audio/video synchronization for this Call.
-    VoiceEngine* voice_engine = nullptr;
-
     // Bitrate config used until valid bitrate estimates are calculated. Also
     // used to cap total bitrate used.
     struct BitrateConfig {
@@ -85,11 +80,13 @@ class Call {
       int max_bitrate_bps = -1;
     } bitrate_config;
 
-    struct AudioConfig {
-      AudioDeviceModule* audio_device_module = nullptr;
-      AudioProcessing* audio_processing = nullptr;
-      VoiceEngineObserver* voice_engine_observer = nullptr;
-    } audio_config;
+    // AudioState which is possibly shared between multiple calls.
+    // TODO(solenberg): Change this to a shared_ptr once we can use C++11.
+    rtc::scoped_refptr<AudioState> audio_state;
+
+    // Audio Processing Module to be used in this call.
+    // TODO(solenberg): Change this to a shared_ptr once we can use C++11.
+    AudioProcessing* audio_processing = nullptr;
   };
 
   struct Stats {

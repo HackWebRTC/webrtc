@@ -313,7 +313,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
       s->SetStats(GetAudioSendStreamStats());
     }
   }
-  void VerifyVoiceSenderInfo(const cricket::VoiceSenderInfo& info) {
+  void VerifyVoiceSenderInfo(const cricket::VoiceSenderInfo& info,
+                             bool is_sending) {
     const auto stats = GetAudioSendStreamStats();
     EXPECT_EQ(info.ssrc(), stats.local_ssrc);
     EXPECT_EQ(info.bytes_sent, stats.bytes_sent);
@@ -331,8 +332,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(info.echo_return_loss, stats.echo_return_loss);
     EXPECT_EQ(info.echo_return_loss_enhancement,
               stats.echo_return_loss_enhancement);
-    // TODO(solenberg): Move typing noise detection into AudioSendStream.
-    // EXPECT_EQ(info.typing_noise_detected, stats.typing_noise_detected);
+    EXPECT_EQ(info.typing_noise_detected,
+              stats.typing_noise_detected && is_sending);
   }
 
   webrtc::AudioReceiveStream::Stats GetAudioReceiveStreamStats() const {
@@ -2089,7 +2090,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     // We have added 4 send streams. We should see empty stats for all.
     EXPECT_EQ(static_cast<size_t>(ARRAY_SIZE(kSsrcs4)), info.senders.size());
     for (const auto& sender : info.senders) {
-      VerifyVoiceSenderInfo(sender);
+      VerifyVoiceSenderInfo(sender, false);
     }
 
     // We have added one receive stream. We should see empty stats.
@@ -2359,10 +2360,18 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStats) {
 
     // We have added one send stream. We should see the stats we've set.
     EXPECT_EQ(1u, info.senders.size());
-    VerifyVoiceSenderInfo(info.senders[0]);
+    VerifyVoiceSenderInfo(info.senders[0], false);
     // We have added one receive stream. We should see empty stats.
     EXPECT_EQ(info.receivers.size(), 1u);
     EXPECT_EQ(info.receivers[0].ssrc(), 0);
+  }
+
+  // Start sending - this affects some reported stats.
+  {
+    cricket::VoiceMediaInfo info;
+    EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
+    EXPECT_EQ(true, channel_->GetStats(&info));
+    VerifyVoiceSenderInfo(info.senders[0], true);
   }
 
   // Remove the kSsrc2 stream. No receiver stats.
