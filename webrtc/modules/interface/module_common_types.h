@@ -133,7 +133,7 @@ struct GofInfoVP9 {
       temporal_idx[i] = src.temporal_idx[i];
       temporal_up_switch[i] = src.temporal_up_switch[i];
       num_ref_pics[i] = src.num_ref_pics[i];
-      for (size_t r = 0; r < num_ref_pics[i]; ++r) {
+      for (uint8_t r = 0; r < num_ref_pics[i]; ++r) {
         pid_diff[i][r] = src.pid_diff[i][r];
       }
     }
@@ -142,8 +142,8 @@ struct GofInfoVP9 {
   size_t num_frames_in_gof;
   uint8_t temporal_idx[kMaxVp9FramesInGof];
   bool temporal_up_switch[kMaxVp9FramesInGof];
-  size_t num_ref_pics[kMaxVp9FramesInGof];
-  int16_t pid_diff[kMaxVp9FramesInGof][kMaxVp9RefPics];
+  uint8_t num_ref_pics[kMaxVp9FramesInGof];
+  uint8_t pid_diff[kMaxVp9FramesInGof][kMaxVp9RefPics];
 };
 
 struct RTPVideoHeaderVP9 {
@@ -187,9 +187,9 @@ struct RTPVideoHeaderVP9 {
 
   uint8_t gof_idx;  // Index to predefined temporal frame info in SS data.
 
-  size_t num_ref_pics;  // Number of reference pictures used by this layer
-                        // frame.
-  int16_t pid_diff[kMaxVp9RefPics];  // P_DIFF signaled to derive the PictureID
+  uint8_t num_ref_pics;  // Number of reference pictures used by this layer
+                         // frame.
+  uint8_t pid_diff[kMaxVp9RefPics];  // P_DIFF signaled to derive the PictureID
                                      // of the reference pictures.
   int16_t ref_picture_id[kMaxVp9RefPics];  // PictureID of reference pictures.
 

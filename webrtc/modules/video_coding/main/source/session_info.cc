@@ -126,7 +126,7 @@ void VCMSessionInfo::SetGofInfo(const GofInfoVP9& gof_info, size_t idx) {
       gof_info.temporal_up_switch[idx];
   packets_.front().codecSpecificHeader.codecHeader.VP9.num_ref_pics =
       gof_info.num_ref_pics[idx];
-  for (size_t i = 0; i < gof_info.num_ref_pics[idx]; ++i) {
+  for (uint8_t i = 0; i < gof_info.num_ref_pics[idx]; ++i) {
     packets_.front().codecSpecificHeader.codecHeader.VP9.pid_diff[i] =
         gof_info.pid_diff[idx][i];
   }

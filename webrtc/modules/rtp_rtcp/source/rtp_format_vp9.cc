@@ -239,7 +239,7 @@ bool WriteRefIndices(const RTPVideoHeaderVP9& vp9,
       vp9.num_ref_pics == 0 || vp9.num_ref_pics > kMaxVp9RefPics) {
     return false;
   }
-  for (size_t i = 0; i < vp9.num_ref_pics; ++i) {
+  for (uint8_t i = 0; i < vp9.num_ref_pics; ++i) {
     bool n_bit = !(i == vp9.num_ref_pics - 1);
     RETURN_FALSE_ON_ERROR(writer->WriteBits(vp9.pid_diff[i], 7));
     RETURN_FALSE_ON_ERROR(writer->WriteBits(n_bit ? 1 : 0, 1));
@@ -294,7 +294,7 @@ bool WriteSsData(const RTPVideoHeaderVP9& vp9, rtc::BitBufferWriter* writer) {
         writer->WriteBits(vp9.gof.temporal_up_switch[i] ? 1 : 0, 1));
     RETURN_FALSE_ON_ERROR(writer->WriteBits(vp9.gof.num_ref_pics[i], 2));
     RETURN_FALSE_ON_ERROR(writer->WriteBits(kReservedBitValue0, 2));
-    for (size_t r = 0; r < vp9.gof.num_ref_pics[i]; ++r) {
+    for (uint8_t r = 0; r < vp9.gof.num_ref_pics[i]; ++r) {
       RETURN_FALSE_ON_ERROR(writer->WriteUInt8(vp9.gof.pid_diff[i][r]));
     }
   }
@@ -453,7 +453,7 @@ bool ParseSsData(rtc::BitBuffer* parser, RTPVideoHeaderVP9* vp9) {
     vp9->gof.temporal_up_switch[i] = u_bit ? true : false;
     vp9->gof.num_ref_pics[i] = r;
 
-    for (size_t p = 0; p < vp9->gof.num_ref_pics[i]; ++p) {
+    for (uint8_t p = 0; p < vp9->gof.num_ref_pics[i]; ++p) {
       uint8_t p_diff;
       RETURN_FALSE_ON_ERROR(parser->ReadUInt8(&p_diff));
       vp9->gof.pid_diff[i][p] = p_diff;
