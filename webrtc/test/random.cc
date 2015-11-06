@@ -21,7 +21,23 @@ namespace test {
 Random::Random(uint32_t seed) : a_(0x531FDB97 ^ seed), b_(0x6420ECA8 + seed) {
 }
 
-float Random::Rand() {
+uint32_t Random::Rand(uint32_t t) {
+  // If b / 2^32 is uniform on [0,1), then b / 2^32 * (t+1) is uniform on
+  // the interval [0,t+1), so the integer part is uniform on [0,t].
+  uint64_t result = b_ * (static_cast<uint64_t>(t) + 1);
+  result >>= 32;
+  a_ ^= b_;
+  b_ += a_;
+  return result;
+}
+
+uint32_t Random::Rand(uint32_t low, uint32_t high) {
+  RTC_DCHECK(low <= high);
+  return Rand(high - low) + low;
+}
+
+template <>
+float Random::Rand<float>() {
   const double kScale = 1.0f / (static_cast<uint64_t>(1) << 32);
   double result = kScale * b_;
   a_ ^= b_;
@@ -29,10 +45,9 @@ float Random::Rand() {
   return static_cast<float>(result);
 }
 
-int Random::Rand(int low, int high) {
-  RTC_DCHECK(low <= high);
-  float uniform = Rand() * (high - low + 1) + low;
-  return static_cast<int>(uniform);
+template <>
+bool Random::Rand<bool>() {
+  return Rand(0, 1) == 1;
 }
 
 int Random::Gaussian(int mean, int standard_deviation) {
@@ -50,7 +65,7 @@ int Random::Gaussian(int mean, int standard_deviation) {
 }
 
 int Random::Exponential(float lambda) {
-  float uniform = Rand();
+  float uniform = Rand<float>();
   return static_cast<int>(-log(uniform) / lambda);
 }
 }  // namespace test

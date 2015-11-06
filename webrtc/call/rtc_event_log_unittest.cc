@@ -10,7 +10,6 @@
 
 #ifdef ENABLE_RTC_EVENT_LOG
 
-#include <stdio.h>
 #include <string>
 #include <vector>
 
@@ -23,6 +22,7 @@
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/random.h"
 #include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -304,7 +304,8 @@ void VerifyLogStartEvent(const rtclog::Event& event) {
 size_t GenerateRtpPacket(uint32_t extensions_bitvector,
                          uint32_t csrcs_count,
                          uint8_t* packet,
-                         size_t packet_size) {
+                         size_t packet_size,
+                         test::Random* prng) {
   RTC_CHECK_GE(packet_size, 16 + 4 * csrcs_count + 4 * kNumExtensions);
   Clock* clock = Clock::GetRealTimeClock();
 
@@ -321,12 +322,12 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
 
   std::vector<uint32_t> csrcs;
   for (unsigned i = 0; i < csrcs_count; i++) {
-    csrcs.push_back(rand());
+    csrcs.push_back(prng->Rand<uint32_t>());
   }
   rtp_sender.SetCsrcs(csrcs);
-  rtp_sender.SetSSRC(rand());
-  rtp_sender.SetStartTimestamp(rand(), true);
-  rtp_sender.SetSequenceNumber(rand());
+  rtp_sender.SetSSRC(prng->Rand<uint32_t>());
+  rtp_sender.SetStartTimestamp(prng->Rand<uint32_t>(), true);
+  rtp_sender.SetSequenceNumber(prng->Rand<uint16_t>());
 
   for (unsigned i = 0; i < kNumExtensions; i++) {
     if (extensions_bitvector & (1u << i)) {
@@ -334,76 +335,80 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
     }
   }
 
-  int8_t payload_type = rand() % 128;
-  bool marker_bit = (rand() % 2 == 1);
-  uint32_t capture_timestamp = rand();
-  int64_t capture_time_ms = rand();
-  bool timestamp_provided = (rand() % 2 == 1);
-  bool inc_sequence_number = (rand() % 2 == 1);
+  int8_t payload_type = prng->Rand(0, 127);
+  bool marker_bit = prng->Rand<bool>();
+  uint32_t capture_timestamp = prng->Rand<uint32_t>();
+  int64_t capture_time_ms = prng->Rand<uint32_t>();
+  bool timestamp_provided = prng->Rand<bool>();
+  bool inc_sequence_number = prng->Rand<bool>();
 
   size_t header_size = rtp_sender.BuildRTPheader(
       packet, payload_type, marker_bit, capture_timestamp, capture_time_ms,
       timestamp_provided, inc_sequence_number);
 
   for (size_t i = header_size; i < packet_size; i++) {
-    packet[i] = rand();
+    packet[i] = prng->Rand<uint8_t>();
   }
 
   return header_size;
 }
 
-void GenerateRtcpPacket(uint8_t* packet, size_t packet_size) {
+void GenerateRtcpPacket(uint8_t* packet,
+                        size_t packet_size,
+                        test::Random* prng) {
   for (size_t i = 0; i < packet_size; i++) {
-    packet[i] = rand();
+    packet[i] = prng->Rand<uint8_t>();
   }
 }
 
 void GenerateVideoReceiveConfig(uint32_t extensions_bitvector,
-                                VideoReceiveStream::Config* config) {
+                                VideoReceiveStream::Config* config,
+                                test::Random* prng) {
   // Create a map from a payload type to an encoder name.
   VideoReceiveStream::Decoder decoder;
-  decoder.payload_type = rand();
-  decoder.payload_name = (rand() % 2 ? "VP8" : "H264");
+  decoder.payload_type = prng->Rand(0, 127);
+  decoder.payload_name = (prng->Rand<bool>() ? "VP8" : "H264");
   config->decoders.push_back(decoder);
   // Add SSRCs for the stream.
-  config->rtp.remote_ssrc = rand();
-  config->rtp.local_ssrc = rand();
+  config->rtp.remote_ssrc = prng->Rand<uint32_t>();
+  config->rtp.local_ssrc = prng->Rand<uint32_t>();
   // Add extensions and settings for RTCP.
   config->rtp.rtcp_mode =
-      rand() % 2 ? RtcpMode::kCompound : RtcpMode::kReducedSize;
-  config->rtp.rtcp_xr.receiver_reference_time_report = (rand() % 2 == 1);
-  config->rtp.remb = (rand() % 2 == 1);
+      prng->Rand<bool>() ? RtcpMode::kCompound : RtcpMode::kReducedSize;
+  config->rtp.rtcp_xr.receiver_reference_time_report = prng->Rand<bool>();
+  config->rtp.remb = prng->Rand<bool>();
   // Add a map from a payload type to a new ssrc and a new payload type for RTX.
   VideoReceiveStream::Config::Rtp::Rtx rtx_pair;
-  rtx_pair.ssrc = rand();
-  rtx_pair.payload_type = rand();
-  config->rtp.rtx.insert(std::make_pair(rand(), rtx_pair));
+  rtx_pair.ssrc = prng->Rand<uint32_t>();
+  rtx_pair.payload_type = prng->Rand(0, 127);
+  config->rtp.rtx.insert(std::make_pair(prng->Rand(0, 127), rtx_pair));
   // Add header extensions.
   for (unsigned i = 0; i < kNumExtensions; i++) {
     if (extensions_bitvector & (1u << i)) {
       config->rtp.extensions.push_back(
-          RtpExtension(kExtensionNames[i], rand()));
+          RtpExtension(kExtensionNames[i], prng->Rand<int>()));
     }
   }
 }
 
 void GenerateVideoSendConfig(uint32_t extensions_bitvector,
-                             VideoSendStream::Config* config) {
+                             VideoSendStream::Config* config,
+                             test::Random* prng) {
   // Create a map from a payload type to an encoder name.
-  config->encoder_settings.payload_type = rand();
-  config->encoder_settings.payload_name = (rand() % 2 ? "VP8" : "H264");
+  config->encoder_settings.payload_type = prng->Rand(0, 127);
+  config->encoder_settings.payload_name = (prng->Rand<bool>() ? "VP8" : "H264");
   // Add SSRCs for the stream.
-  config->rtp.ssrcs.push_back(rand());
+  config->rtp.ssrcs.push_back(prng->Rand<uint32_t>());
   // Add a map from a payload type to new ssrcs and a new payload type for RTX.
-  config->rtp.rtx.ssrcs.push_back(rand());
-  config->rtp.rtx.payload_type = rand();
+  config->rtp.rtx.ssrcs.push_back(prng->Rand<uint32_t>());
+  config->rtp.rtx.payload_type = prng->Rand(0, 127);
   // Add a CNAME.
   config->rtp.c_name = "some.user@some.host";
   // Add header extensions.
   for (unsigned i = 0; i < kNumExtensions; i++) {
     if (extensions_bitvector & (1u << i)) {
       config->rtp.extensions.push_back(
-          RtpExtension(kExtensionNames[i], rand()));
+          RtpExtension(kExtensionNames[i], prng->Rand<int>()));
     }
   }
 }
@@ -429,33 +434,34 @@ void LogSessionAndReadBack(size_t rtp_count,
   VideoReceiveStream::Config receiver_config(nullptr);
   VideoSendStream::Config sender_config(nullptr);
 
-  srand(random_seed);
+  test::Random prng(random_seed);
 
   // Create rtp_count RTP packets containing random data.
   for (size_t i = 0; i < rtp_count; i++) {
-    size_t packet_size = 1000 + rand() % 64;
+    size_t packet_size = prng.Rand(1000, 1100);
     rtp_packets.push_back(rtc::Buffer(packet_size));
-    size_t header_size = GenerateRtpPacket(extensions_bitvector, csrcs_count,
-                                           rtp_packets[i].data(), packet_size);
+    size_t header_size =
+        GenerateRtpPacket(extensions_bitvector, csrcs_count,
+                          rtp_packets[i].data(), packet_size, &prng);
     rtp_header_sizes.push_back(header_size);
   }
   // Create rtcp_count RTCP packets containing random data.
   for (size_t i = 0; i < rtcp_count; i++) {
-    size_t packet_size = 1000 + rand() % 64;
+    size_t packet_size = prng.Rand(1000, 1100);
     rtcp_packets.push_back(rtc::Buffer(packet_size));
-    GenerateRtcpPacket(rtcp_packets[i].data(), packet_size);
+    GenerateRtcpPacket(rtcp_packets[i].data(), packet_size, &prng);
   }
   // Create playout_count random SSRCs to use when logging AudioPlayout events.
   for (size_t i = 0; i < playout_count; i++) {
-    playout_ssrcs.push_back(static_cast<uint32_t>(rand()));
+    playout_ssrcs.push_back(prng.Rand<uint32_t>());
   }
   // Create bwe_loss_count random bitrate updates for BwePacketLoss.
   for (size_t i = 0; i < bwe_loss_count; i++) {
     bwe_loss_updates.push_back(std::pair<int32_t, uint8_t>(rand(), rand()));
   }
   // Create configurations for the video streams.
-  GenerateVideoReceiveConfig(extensions_bitvector, &receiver_config);
-  GenerateVideoSendConfig(extensions_bitvector, &sender_config);
+  GenerateVideoReceiveConfig(extensions_bitvector, &receiver_config, &prng);
+  GenerateVideoSendConfig(extensions_bitvector, &sender_config, &prng);
   const int config_count = 2;
 
   // Find the name of the current test, in order to use it as a temporary
@@ -586,7 +592,7 @@ TEST(RtcEventLogTest, LogSessionAndReadBack) {
                             1 + csrcs_count,  // Number of BWE loss events.
                             extensions,       // Bit vector choosing extensions.
                             csrcs_count,      // Number of contributing sources.
-                            rand());
+                            extensions + csrcs_count);  // Random seed.
     }
   }
 }
@@ -604,29 +610,30 @@ void DropOldEvents(uint32_t extensions_bitvector,
   VideoReceiveStream::Config receiver_config(nullptr);
   VideoSendStream::Config sender_config(nullptr);
 
-  srand(random_seed);
+  test::Random prng(random_seed);
 
   // Create two RTP packets containing random data.
-  size_t packet_size = 1000 + rand() % 64;
+  size_t packet_size = prng.Rand(1000, 1100);
   old_rtp_packet.SetSize(packet_size);
   GenerateRtpPacket(extensions_bitvector, csrcs_count, old_rtp_packet.data(),
-                    packet_size);
-  packet_size = 1000 + rand() % 64;
+                    packet_size, &prng);
+  packet_size = prng.Rand(1000, 1100);
   recent_rtp_packet.SetSize(packet_size);
-  size_t recent_header_size = GenerateRtpPacket(
-      extensions_bitvector, csrcs_count, recent_rtp_packet.data(), packet_size);
+  size_t recent_header_size =
+      GenerateRtpPacket(extensions_bitvector, csrcs_count,
+                        recent_rtp_packet.data(), packet_size, &prng);
 
   // Create two RTCP packets containing random data.
-  packet_size = 1000 + rand() % 64;
+  packet_size = prng.Rand(1000, 1100);
   old_rtcp_packet.SetSize(packet_size);
-  GenerateRtcpPacket(old_rtcp_packet.data(), packet_size);
-  packet_size = 1000 + rand() % 64;
+  GenerateRtcpPacket(old_rtcp_packet.data(), packet_size, &prng);
+  packet_size = prng.Rand(1000, 1100);
   recent_rtcp_packet.SetSize(packet_size);
-  GenerateRtcpPacket(recent_rtcp_packet.data(), packet_size);
+  GenerateRtcpPacket(recent_rtcp_packet.data(), packet_size, &prng);
 
   // Create configurations for the video streams.
-  GenerateVideoReceiveConfig(extensions_bitvector, &receiver_config);
-  GenerateVideoSendConfig(extensions_bitvector, &sender_config);
+  GenerateVideoReceiveConfig(extensions_bitvector, &receiver_config, &prng);
+  GenerateVideoSendConfig(extensions_bitvector, &sender_config, &prng);
 
   // Find the name of the current test, in order to use it as a temporary
   // filename.

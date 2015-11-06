@@ -283,9 +283,9 @@ TEST_P(BweSimulation, PacedSelfFairness50msTest) {
   const int64_t kAverageOffsetMs = 20 * 1000;
   const int kNumRmcatFlows = 4;
   int64_t offsets_ms[kNumRmcatFlows];
-  offsets_ms[0] = random_.Rand(0, 2 * kAverageOffsetMs);
+  offsets_ms[0] = random_.Rand(2 * kAverageOffsetMs);
   for (int i = 1; i < kNumRmcatFlows; ++i) {
-    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(0, 2 * kAverageOffsetMs);
+    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(2 * kAverageOffsetMs);
   }
   RunFairnessTest(GetParam(), kNumRmcatFlows, 0, 1000, 3000, 50, 50, 0,
                   offsets_ms);
@@ -295,9 +295,9 @@ TEST_P(BweSimulation, PacedSelfFairness500msTest) {
   const int64_t kAverageOffsetMs = 20 * 1000;
   const int kNumRmcatFlows = 4;
   int64_t offsets_ms[kNumRmcatFlows];
-  offsets_ms[0] = random_.Rand(0, 2 * kAverageOffsetMs);
+  offsets_ms[0] = random_.Rand(2 * kAverageOffsetMs);
   for (int i = 1; i < kNumRmcatFlows; ++i) {
-    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(0, 2 * kAverageOffsetMs);
+    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(2 * kAverageOffsetMs);
   }
   RunFairnessTest(GetParam(), kNumRmcatFlows, 0, 1000, 3000, 500, 50, 0,
                   offsets_ms);
@@ -307,28 +307,28 @@ TEST_P(BweSimulation, PacedSelfFairness1000msTest) {
   const int64_t kAverageOffsetMs = 20 * 1000;
   const int kNumRmcatFlows = 4;
   int64_t offsets_ms[kNumRmcatFlows];
-  offsets_ms[0] = random_.Rand(0, 2 * kAverageOffsetMs);
+  offsets_ms[0] = random_.Rand(2 * kAverageOffsetMs);
   for (int i = 1; i < kNumRmcatFlows; ++i) {
-    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(0, 2 * kAverageOffsetMs);
+    offsets_ms[i] = offsets_ms[i - 1] + random_.Rand(2 * kAverageOffsetMs);
   }
   RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 1000, 50, 0, offsets_ms);
 }
 
 TEST_P(BweSimulation, TcpFairness50msTest) {
   const int64_t kAverageOffsetMs = 20 * 1000;
-  int64_t offset_ms[] = {random_.Rand(0, 2 * kAverageOffsetMs), 0};
+  int64_t offset_ms[] = {random_.Rand(2 * kAverageOffsetMs), 0};
   RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 50, 50, 0, offset_ms);
 }
 
 TEST_P(BweSimulation, TcpFairness500msTest) {
   const int64_t kAverageOffsetMs = 20 * 1000;
-  int64_t offset_ms[] = {random_.Rand(0, 2 * kAverageOffsetMs), 0};
+  int64_t offset_ms[] = {random_.Rand(2 * kAverageOffsetMs), 0};
   RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 500, 50, 0, offset_ms);
 }
 
 TEST_P(BweSimulation, TcpFairness1000msTest) {
   const int kAverageOffsetMs = 20 * 1000;
-  int64_t offset_ms[] = {random_.Rand(0, 2 * kAverageOffsetMs), 0};
+  int64_t offset_ms[] = {random_.Rand(2 * kAverageOffsetMs), 0};
   RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 1000, 50, 0, offset_ms);
 }
 

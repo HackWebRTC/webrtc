@@ -323,7 +323,7 @@ void LossFilter::SetLoss(float loss_percent) {
 void LossFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
   for (PacketsIt it = in_out->begin(); it != in_out->end(); ) {
-    if (random_.Rand() < loss_fraction_) {
+    if (random_.Rand<float>() < loss_fraction_) {
       delete *it;
       it = in_out->erase(it);
     } else {
@@ -459,7 +459,7 @@ void ReorderFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
     PacketsIt last_it = in_out->begin();
     PacketsIt it = last_it;
     while (++it != in_out->end()) {
-      if (random_.Rand() < reorder_fraction_) {
+      if (random_.Rand<float>() < reorder_fraction_) {
         int64_t t1 = (*last_it)->send_time_us();
         int64_t t2 = (*it)->send_time_us();
         std::swap(*last_it, *it);
