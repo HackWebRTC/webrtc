@@ -27,7 +27,7 @@ namespace acm2 {
 
 // TODO(tlegrand): replace class ACMCodecDB with a namespace.
 class ACMCodecDB {
- private:
+ public:
   // kMaxNumCodecs - Maximum number of codecs that can be activated in one
   //                 build.
   // kMaxNumPacketSize - Maximum number of allowed packet sizes for one codec.
@@ -74,8 +74,6 @@ class ACMCodecDB {
   static const CodecInst database_[kMaxNumCodecs];
   static const CodecSettings codec_settings_[kMaxNumCodecs];
   static const NetEqDecoder neteq_decoders_[kMaxNumCodecs];
-
-  friend class RentACodec;
 };
 
 }  // namespace acm2
