@@ -72,6 +72,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     SurfaceTextureHelper.OnTextureFrameAvailableListener {
   private final static String TAG = "VideoCapturerAndroid";
   private final static int CAMERA_OBSERVER_PERIOD_MS = 2000;
+  private final static int CAMERA_FREEZE_REPORT_TIMOUT_MS = 6000;
 
   private Camera camera;  // Only non-null while capturing.
   private HandlerThread cameraThread;
@@ -120,6 +121,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // Camera observer - monitors camera framerate. Observer is executed on camera thread.
   private final Runnable cameraObserver = new Runnable() {
+    private int freezePeriodCount;
     @Override
     public void run() {
       int cameraFramesCount = cameraStatistics.getAndResetFrameCount();
@@ -129,13 +131,21 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       Logging.d(TAG, "Camera fps: " + cameraFps +
           ". Pending buffers: " + cameraStatistics.pendingFramesTimeStamps());
       if (cameraFramesCount == 0) {
-        Logging.e(TAG, "Camera freezed.");
-        if (eventsHandler != null) {
-          eventsHandler.onCameraError("Camera failure.");
+        ++freezePeriodCount;
+        if (CAMERA_OBSERVER_PERIOD_MS * freezePeriodCount > CAMERA_FREEZE_REPORT_TIMOUT_MS &&
+            eventsHandler != null) {
+          Logging.e(TAG, "Camera freezed.");
+          if (cameraStatistics.pendingFramesCount() > 0) {
+            eventsHandler.onCameraError("Camera failure. Client must return video buffers.");
+          } else {
+            eventsHandler.onCameraError("Camera failure.");
+          }
+          return;
         }
       } else {
-        cameraThreadHandler.postDelayed(this, CAMERA_OBSERVER_PERIOD_MS);
+        freezePeriodCount = 0;
       }
+      cameraThreadHandler.postDelayed(this, CAMERA_OBSERVER_PERIOD_MS);
     }
   };
 

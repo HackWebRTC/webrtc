@@ -174,9 +174,16 @@ public class VideoCapturerAndroidTestFixtures {
       VideoCapturerAndroid.CameraEventsHandler {
     public boolean onCameraOpeningCalled;
     public boolean onFirstFrameAvailableCalled;
+    public final Object onCameraErrorLock = new Object();
+    private String onCameraErrorDescription;
 
     @Override
-    public void onCameraError(String errorDescription) { }
+    public void onCameraError(String errorDescription) {
+      synchronized (onCameraErrorLock) {
+        onCameraErrorDescription = errorDescription;
+        onCameraErrorLock.notifyAll();
+      }
+    }
 
     @Override
     public void onCameraOpening(int cameraId) {
@@ -190,6 +197,13 @@ public class VideoCapturerAndroidTestFixtures {
 
     @Override
     public void onCameraClosed() { }
+
+    public String WaitForCameraError() throws InterruptedException {
+      synchronized (onCameraErrorLock) {
+        onCameraErrorLock.wait();
+        return onCameraErrorDescription;
+      }
+    }
   }
 
   static public CameraEvents createCameraEvents() {
@@ -438,6 +452,27 @@ public class VideoCapturerAndroidTestFixtures {
     returnThread.join();
 
     // Check that frames have successfully returned. This will cause |capturer| to be released.
+    assertTrue(capturer.isReleased());
+  }
+
+  static public void cameraErrorEventOnBufferStarvation(VideoCapturerAndroid capturer,
+      CameraEvents events, Context appContext) throws InterruptedException {
+    final List<CaptureFormat> formats = capturer.getSupportedFormats();
+    final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+
+    final FakeCapturerObserver observer = new FakeCapturerObserver();
+    capturer.startCapture(format.width, format.height, format.maxFramerate,
+        appContext, observer);
+    // Make sure camera is started.
+    assertTrue(observer.WaitForCapturerToStart());
+    // Since we don't call returnBuffer, we should get a starvation message.
+    assertEquals("Camera failure. Client must return video buffers.", events.WaitForCameraError());
+
+    capturer.stopCapture();
+    for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {
+      capturer.returnBuffer(timeStamp);
+    }
+    capturer.dispose();
     assertTrue(capturer.isReleased());
   }
 }
