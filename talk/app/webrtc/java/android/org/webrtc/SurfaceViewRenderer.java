@@ -278,22 +278,22 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         Logging.d(TAG, "Dropping frame - SurfaceViewRenderer not initialized or already released.");
-      } else {
-        synchronized (frameLock) {
-          if (pendingFrame == null) {
-            updateFrameDimensionsAndReportEvents(frame);
-            pendingFrame = frame;
-            renderThreadHandler.post(renderFrameRunnable);
-            return;
+        VideoRenderer.renderFrameDone(frame);
+        return;
+      }
+      synchronized (frameLock) {
+        if (pendingFrame != null) {
+          // Drop old frame.
+          synchronized (statisticsLock) {
+            ++framesDropped;
           }
+          VideoRenderer.renderFrameDone(pendingFrame);
         }
+        pendingFrame = frame;
+        updateFrameDimensionsAndReportEvents(frame);
+        renderThreadHandler.post(renderFrameRunnable);
       }
     }
-    // Drop frame.
-    synchronized (statisticsLock) {
-      ++framesDropped;
-    }
-    VideoRenderer.renderFrameDone(frame);
   }
 
   // Returns desired layout size given current measure specification and video aspect ratio.
