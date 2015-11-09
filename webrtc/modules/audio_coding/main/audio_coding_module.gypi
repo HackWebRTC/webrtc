@@ -91,6 +91,11 @@
           '<(webrtc_root)',
         ],
       },
+      'conditions': [
+        ['include_opus==1', {
+          'export_dependent_settings': ['webrtc_opus'],
+        }],
+      ],
       'sources': [
         'acm2/acm_common_defs.h',
         'acm2/acm_receiver.cc',
