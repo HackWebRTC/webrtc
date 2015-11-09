@@ -83,7 +83,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private int id;
   private Camera.CameraInfo info;
   private final FramePool videoBuffers;
-  private final CameraStatistics cameraStatistics = new CameraStatistics();
+  private final CameraStatistics cameraStatistics;
   // Remember the requested format in case we want to switch cameras.
   private int requestedWidth;
   private int requestedHeight;
@@ -138,10 +138,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           ". Pending buffers: " + cameraStatistics.pendingFramesTimeStamps());
       if (cameraFramesCount == 0) {
         ++freezePeriodCount;
-        if (CAMERA_OBSERVER_PERIOD_MS * freezePeriodCount > CAMERA_FREEZE_REPORT_TIMOUT_MS &&
-            eventsHandler != null) {
+        if (CAMERA_OBSERVER_PERIOD_MS * freezePeriodCount > CAMERA_FREEZE_REPORT_TIMOUT_MS
+            && eventsHandler != null) {
           Logging.e(TAG, "Camera freezed.");
-          if (cameraStatistics.pendingFramesCount() > 0) {
+          if (cameraStatistics.pendingFramesCount() == cameraStatistics.maxPendingFrames) {
             eventsHandler.onCameraError("Camera failure. Client must return video buffers.");
           } else {
             eventsHandler.onCameraError("Camera failure.");
@@ -159,8 +159,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     private int frameCount = 0;
     private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
     private final Set<Long> timeStampsNs = new HashSet<Long>();
+    public final int maxPendingFrames;
 
-    CameraStatistics() {
+    CameraStatistics(int maxPendingFrames) {
+      this.maxPendingFrames = maxPendingFrames;
       threadChecker.detachThread();
     }
 
@@ -354,6 +356,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     cameraThreadHandler = new Handler(cameraThread.getLooper());
     videoBuffers = new FramePool(cameraThread);
     isCapturingToTexture = (sharedContext != null);
+    cameraStatistics =
+        new CameraStatistics(isCapturingToTexture ? 1 : videoBuffers.numCaptureBuffers);
     surfaceHelper = SurfaceTextureHelper.create(
         isCapturingToTexture ? sharedContext : EGL10.EGL_NO_CONTEXT, cameraThreadHandler);
     if (isCapturingToTexture) {
@@ -475,7 +479,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           return;
         }
         openCameraAttempts = 0;
-        throw new RuntimeException(e);
+        throw e;
       }
 
       try {
@@ -772,7 +776,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     // Arbitrary queue depth.  Higher number means more memory allocated & held,
     // lower number means more sensitivity to processing time in the client (and
     // potentially stalling the capturer if it runs out of buffers to write to).
-    private static final int numCaptureBuffers = 3;
+    public static final int numCaptureBuffers = 3;
     // This container tracks the buffers added as camera callback buffers. It is needed for finding
     // the corresponding ByteBuffer given a byte[].
     private final Map<byte[], ByteBuffer> queuedBuffers = new IdentityHashMap<byte[], ByteBuffer>();
