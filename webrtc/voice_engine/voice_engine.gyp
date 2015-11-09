@@ -28,9 +28,6 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/webrtc.gyp:rtc_event_log',
       ],
-      'export_dependent_settings': [
-        '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
-      ],
       'sources': [
         'include/voe_audio_processing.h',
         'include/voe_base.h',
@@ -157,7 +154,6 @@
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
             '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/test/test.gyp:test_support',
-            '<(webrtc_root)/test/webrtc_test_common.gyp:webrtc_test_common',
             '<(webrtc_root)/webrtc.gyp:rtc_event_log',
            ],
           'sources': [
@@ -198,7 +194,6 @@
             'test/auto_test/voe_conference_test.cc',
             'test/auto_test/voe_cpu_test.cc',
             'test/auto_test/voe_cpu_test.h',
-            'test/auto_test/voe_output_test.cc',
             'test/auto_test/voe_standard_test.cc',
             'test/auto_test/voe_standard_test.h',
             'test/auto_test/voe_stress_test.cc',
