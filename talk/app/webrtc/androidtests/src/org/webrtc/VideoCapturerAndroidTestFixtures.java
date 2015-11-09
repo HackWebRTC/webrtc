@@ -29,6 +29,7 @@ package org.webrtc;
 import android.content.Context;
 import android.hardware.Camera;
 
+import org.webrtc.VideoCapturerAndroidTestFixtures;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import org.webrtc.VideoRenderer.I420Frame;
 
@@ -380,6 +381,71 @@ public class VideoCapturerAndroidTestFixtures {
     }
     capturer.dispose();
     assertTrue(capturer.isReleased());
+  }
+
+  static void waitUntilIdle(VideoCapturerAndroid capturer) throws InterruptedException {
+    final CountDownLatch barrier = new CountDownLatch(1);
+    capturer.getCameraThreadHandler().post(new Runnable() {
+        @Override public void run() {
+          barrier.countDown();
+        }
+    });
+    barrier.await();
+  }
+
+  static public void startWhileCameraIsAlreadyOpen(
+      VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
+    Camera camera = Camera.open(capturer.getCurrentCameraId());
+    final List<CaptureFormat> formats = capturer.getSupportedFormats();
+    final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+
+    final FakeCapturerObserver observer = new FakeCapturerObserver();
+    capturer.startCapture(format.width, format.height, format.maxFramerate,
+        appContext, observer);
+
+    assertFalse(observer.WaitForCapturerToStart());
+    capturer.dispose();
+    camera.release();
+  }
+
+  static public void startWhileCameraIsAlreadyOpenAndCloseCamera(
+      VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
+    Camera camera = Camera.open(capturer.getCurrentCameraId());
+
+    final List<CaptureFormat> formats = capturer.getSupportedFormats();
+    final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+
+    final FakeCapturerObserver observer = new FakeCapturerObserver();
+    capturer.startCapture(format.width, format.height, format.maxFramerate,
+        appContext, observer);
+    waitUntilIdle(capturer);
+
+    camera.release();
+
+    // Make sure camera is started and first frame is received and then stop it.
+    assertTrue(observer.WaitForCapturerToStart());
+    observer.WaitForNextCapturedFrame();
+    capturer.stopCapture();
+    for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {
+      capturer.returnBuffer(timeStamp);
+    }
+    capturer.dispose();
+    assertTrue(capturer.isReleased());
+  }
+
+  static public void startWhileCameraIsAlreadyOpenAndStop(
+      VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
+    Camera camera = Camera.open(capturer.getCurrentCameraId());
+    final List<CaptureFormat> formats = capturer.getSupportedFormats();
+    final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+
+    final FakeCapturerObserver observer = new FakeCapturerObserver();
+    capturer.startCapture(format.width, format.height, format.maxFramerate,
+        appContext, observer);
+    capturer.stopCapture();
+    capturer.dispose();
+    assertTrue(capturer.isReleased());
+    camera.release();
   }
 
   static public void returnBufferLate(VideoCapturerAndroid capturer,

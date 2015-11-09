@@ -29,7 +29,6 @@ package org.webrtc;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
-import android.util.Log;
 import android.util.Size;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
@@ -223,6 +222,41 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   }
 
   @SmallTest
+  // This test that an error is reported if the camera is already opened
+  // when VideoCapturerAndroid is started.
+  public void testStartWhileCameraAlreadyOpened() throws InterruptedException {
+    String deviceName = CameraEnumerationAndroid.getDeviceName(0);
+    VideoCapturerAndroid capturer =
+        VideoCapturerAndroid.create(deviceName, null);
+    VideoCapturerAndroidTestFixtures.startWhileCameraIsAlreadyOpen(
+        capturer, getInstrumentation().getContext());
+  }
+
+  @SmallTest
+  // This test that VideoCapturerAndroid can be started, even if the camera is already opened
+  // if the camera is closed while VideoCapturerAndroid is re-trying to start.
+  public void testStartWhileCameraIsAlreadyOpenAndCloseCamera() throws InterruptedException {
+    String deviceName = CameraEnumerationAndroid.getDeviceName(0);
+    VideoCapturerAndroid capturer =
+        VideoCapturerAndroid.create(deviceName, null);
+    VideoCapturerAndroidTestFixtures.startWhileCameraIsAlreadyOpenAndCloseCamera(
+        capturer, getInstrumentation().getContext());
+  }
+
+  @SmallTest
+  // This test that VideoCapturerAndroid.stop can be called while VideoCapturerAndroid is
+  // re-trying to start.
+  public void startWhileCameraIsAlreadyOpenAndStop() throws InterruptedException {
+    String deviceName = CameraEnumerationAndroid.getDeviceName(0);
+    VideoCapturerAndroid capturer =
+        VideoCapturerAndroid.create(deviceName, null);
+    VideoCapturerAndroidTestFixtures.startWhileCameraIsAlreadyOpenAndStop(
+        capturer, getInstrumentation().getContext());
+  }
+
+
+
+  @SmallTest
   // This test what happens if buffers are returned after the capturer have
   // been stopped and restarted. It does not test or use the C++ layer.
   public void testReturnBufferLate() throws InterruptedException {
@@ -258,7 +292,6 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
         VideoCapturerAndroid.create("", null, EGL10.EGL_NO_CONTEXT);
     VideoCapturerAndroidTestFixtures.returnBufferLateEndToEnd(capturer);
   }
-
 
   @MediumTest
   // This test that CameraEventsHandler.onError is triggered if video buffers are not returned to

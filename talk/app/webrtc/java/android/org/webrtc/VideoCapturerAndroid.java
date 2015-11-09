@@ -100,6 +100,12 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // The camera API can output one old frame after the camera has been switched or the resolution
   // has been changed. This flag is used for dropping the first frame after camera restart.
   private boolean dropNextFrame = false;
+  // |openCameraOnCodecThreadRunner| is used for retrying to open the camera if it is in use by
+  // another application when startCaptureOnCameraThread is called.
+  private Runnable openCameraOnCodecThreadRunner;
+  private final static int MAX_OPEN_CAMERA_ATTEMPTS = 3;
+  private final static int OPEN_CAMERA_DELAY_MS = 300;
+  private int openCameraAttempts;
 
   // Camera error callback.
   private final Camera.ErrorCallback cameraErrorCallback =
@@ -313,7 +319,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // Helper function to retrieve the current camera id synchronously. Note that the camera id might
   // change at any point by switchCamera() calls.
-  private int getCurrentCameraId() {
+  int getCurrentCameraId() {
     synchronized (cameraIdLock) {
       return id;
     }
@@ -423,6 +429,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     if (frameObserver == null) {
       throw new RuntimeException("frameObserver not set.");
     }
+
     cameraThreadHandler.post(new Runnable() {
       @Override public void run() {
         startCaptureOnCameraThread(width, height, framerate, frameObserver,
@@ -432,8 +439,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   private void startCaptureOnCameraThread(
-      int width, int height, int framerate, CapturerObserver frameObserver,
-      Context applicationContext) {
+      final int width, final int height, final int framerate, final CapturerObserver frameObserver,
+      final Context applicationContext) {
     Throwable error = null;
     checkIsOnCameraThread();
     if (camera != null) {
@@ -441,17 +448,36 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
     this.applicationContext = applicationContext;
     this.frameObserver = frameObserver;
+    this.firstFrameReported = false;
+
     try {
-      synchronized (cameraIdLock) {
-        Logging.d(TAG, "Opening camera " + id);
-        firstFrameReported = false;
-        if (eventsHandler != null) {
-          eventsHandler.onCameraOpening(id);
+      try {
+        synchronized (cameraIdLock) {
+          Logging.d(TAG, "Opening camera " + id);
+          if (eventsHandler != null) {
+            eventsHandler.onCameraOpening(id);
+          }
+          camera = Camera.open(id);
+          info = new Camera.CameraInfo();
+          Camera.getCameraInfo(id, info);
         }
-        camera = Camera.open(id);
-        info = new Camera.CameraInfo();
-        Camera.getCameraInfo(id, info);
+      } catch (RuntimeException e) {
+        openCameraAttempts++;
+        if (openCameraAttempts < MAX_OPEN_CAMERA_ATTEMPTS) {
+          Logging.e(TAG, "Camera.open failed, retrying", e);
+          openCameraOnCodecThreadRunner = new Runnable() {
+            @Override public void run() {
+              startCaptureOnCameraThread(width, height, framerate, frameObserver,
+                  applicationContext);
+            }
+          };
+          cameraThreadHandler.postDelayed(openCameraOnCodecThreadRunner, OPEN_CAMERA_DELAY_MS);
+          return;
+        }
+        openCameraAttempts = 0;
+        throw new RuntimeException(e);
       }
+
       try {
         camera.setPreviewTexture(surfaceHelper.getSurfaceTexture());
       } catch (IOException e) {
@@ -571,6 +597,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private void stopCaptureOnCameraThread() {
     checkIsOnCameraThread();
     Logging.d(TAG, "stopCaptureOnCameraThread");
+    if (openCameraOnCodecThreadRunner != null) {
+      cameraThreadHandler.removeCallbacks(openCameraOnCodecThreadRunner);
+    }
+    openCameraAttempts = 0;
     if (camera == null) {
       Logging.e(TAG, "Calling stopCapture() for already stopped camera.");
       return;
@@ -620,6 +650,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     Logging.d(TAG, "onOutputFormatRequestOnCameraThread: " + width + "x" + height +
         "@" + framerate);
     frameObserver.onOutputFormatRequest(width, height, framerate);
+  }
+
+  // Exposed for testing purposes only.
+  Handler getCameraThreadHandler() {
+    return cameraThreadHandler;
   }
 
   public void returnBuffer(final long timeStamp) {
