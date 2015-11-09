@@ -87,6 +87,7 @@ source_set("common_audio") {
     "signal_processing/vector_scaling_operations.c",
     "sparse_fir_filter.cc",
     "sparse_fir_filter.h",
+    "swap_queue.h",
     "vad/include/vad.h",
     "vad/include/webrtc_vad.h",
     "vad/vad.cc",
