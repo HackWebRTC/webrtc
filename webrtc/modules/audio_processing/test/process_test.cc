@@ -1049,7 +1049,9 @@ void void_main(int argc, char* argv[]) {
       }
     }
   }
-  printf("100%% complete\r");
+  if (progress) {
+    printf("100%% complete\r");
+  }
 
   if (aecm_echo_path_out_file != NULL) {
     const size_t path_size =
