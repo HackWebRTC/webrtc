@@ -15,6 +15,7 @@
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
 #include "webrtc/modules/audio_coding/main/acm2/codec_owner.h"
+#include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 
 namespace webrtc {
 namespace acm2 {
@@ -36,8 +37,9 @@ class CodecOwnerTest : public ::testing::Test {
   CodecOwnerTest() : timestamp_(0) {}
 
   void CreateCodec() {
-    ASSERT_TRUE(
-        codec_owner_.SetEncoders(kDefaultCodecInst, kCngPt, VADNormal, -1));
+    AudioEncoder *enc = rent_a_codec_.RentEncoder(kDefaultCodecInst);
+    ASSERT_TRUE(enc);
+    codec_owner_.SetEncoders(enc, kCngPt, VADNormal, -1);
   }
 
   void EncodeAndVerify(size_t expected_out_length,
@@ -95,6 +97,7 @@ class CodecOwnerTest : public ::testing::Test {
   }
 
   CodecOwner codec_owner_;
+  RentACodec rent_a_codec_;
   uint32_t timestamp_;
 };
 
@@ -172,7 +175,9 @@ TEST_F(CodecOwnerTest, ExternalEncoder) {
   // Change to internal encoder.
   CodecInst codec_inst = kDefaultCodecInst;
   codec_inst.pacsize = kPacketSizeSamples;
-  ASSERT_TRUE(codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1));
+  AudioEncoder* enc = rent_a_codec_.RentEncoder(codec_inst);
+  ASSERT_TRUE(enc);
+  codec_owner_.SetEncoders(enc, -1, VADNormal, -1);
   // Don't expect any more calls to the external encoder.
   info = codec_owner_.Encoder()->Encode(1, audio, arraysize(encoded), encoded);
   external_encoder.Mark("B");
@@ -197,13 +202,6 @@ TEST_F(CodecOwnerTest, CngAndRedResetsSpeechEncoder) {
 
 TEST_F(CodecOwnerTest, NoCngAndRedNoSpeechEncoderReset) {
   TestCngAndRedResetSpeechEncoder(false, false);
-}
-
-TEST_F(CodecOwnerTest, SetEncodersError) {
-  CodecInst codec_inst = kDefaultCodecInst;
-  static const char bad_name[] = "Robert'); DROP TABLE Students;";
-  std::memcpy(codec_inst.plname, bad_name, sizeof bad_name);
-  EXPECT_FALSE(codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1));
 }
 
 }  // namespace acm2

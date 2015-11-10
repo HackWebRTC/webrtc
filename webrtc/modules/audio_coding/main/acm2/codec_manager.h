@@ -16,6 +16,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_coding/main/acm2/codec_owner.h"
+#include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
 #include "webrtc/common_types.h"
 
@@ -81,6 +82,7 @@ class CodecManager final {
   bool red_enabled_;
   bool codec_fec_enabled_;
   CodecOwner codec_owner_;
+  RentACodec rent_a_codec_;
   bool encoder_is_opus_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(CodecManager);

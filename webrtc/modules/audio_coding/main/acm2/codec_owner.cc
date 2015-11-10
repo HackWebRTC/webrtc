@@ -77,17 +77,6 @@ void CreateCngEncoder(int cng_payload_type,
 }
 }  // namespace
 
-bool CodecOwner::SetEncoders(const CodecInst& speech_inst,
-                             int cng_payload_type,
-                             ACMVADMode vad_mode,
-                             int red_payload_type) {
-  AudioEncoder* speech_encoder = rent_a_codec_.RentEncoder(speech_inst);
-  if (!speech_encoder)
-    return false;
-  SetEncoders(speech_encoder, cng_payload_type, vad_mode, red_payload_type);
-  return true;
-}
-
 void CodecOwner::SetEncoders(AudioEncoder* external_speech_encoder,
                              int cng_payload_type,
                              ACMVADMode vad_mode,
@@ -108,10 +97,6 @@ void CodecOwner::ChangeCngAndRed(int cng_payload_type,
   AudioEncoder* encoder = CreateRedEncoder(
       red_payload_type, speech_encoder_, &red_encoder_);
   CreateCngEncoder(cng_payload_type, vad_mode, encoder, &cng_encoder_);
-}
-
-AudioDecoder* CodecOwner::GetIsacDecoder() {
-  return rent_a_codec_.RentIsacDecoder();
 }
 
 AudioEncoder* CodecOwner::Encoder() {

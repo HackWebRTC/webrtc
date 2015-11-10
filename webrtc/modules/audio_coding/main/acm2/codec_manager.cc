@@ -264,14 +264,16 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
       // VAD/DTX not supported.
       dtx_enabled_ = false;
     }
-    if (!codec_owner_.SetEncoders(
-            send_codec, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
-            vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1))
+    AudioEncoder* enc = rent_a_codec_.RentEncoder(send_codec);
+    if (!enc)
       return -1;
+    codec_owner_.SetEncoders(
+        enc, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
+        vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1);
     RTC_DCHECK(codec_owner_.Encoder());
 
     codec_fec_enabled_ = codec_fec_enabled_ &&
-                         codec_owner_.Encoder()->SetFec(codec_fec_enabled_);
+                         enc->SetFec(codec_fec_enabled_);
 
     send_codec_inst_ = send_codec;
     return 0;
@@ -281,10 +283,12 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   if (send_codec_inst_.plfreq != send_codec.plfreq ||
       send_codec_inst_.pacsize != send_codec.pacsize ||
       send_codec_inst_.channels != send_codec.channels) {
-    if (!codec_owner_.SetEncoders(
-            send_codec, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
-            vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1))
+    AudioEncoder* enc = rent_a_codec_.RentEncoder(send_codec);
+    if (!enc)
       return -1;
+    codec_owner_.SetEncoders(
+        enc, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
+        vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1);
     RTC_DCHECK(codec_owner_.Encoder());
   }
   send_codec_inst_.plfreq = send_codec.plfreq;
@@ -418,7 +422,7 @@ int CodecManager::SetCodecFEC(bool enable_codec_fec) {
 }
 
 AudioDecoder* CodecManager::GetAudioDecoder(const CodecInst& codec) {
-  return IsIsac(codec) ? codec_owner_.GetIsacDecoder() : nullptr;
+  return IsIsac(codec) ? rent_a_codec_.RentIsacDecoder() : nullptr;
 }
 
 int CodecManager::CngPayloadType(int sample_rate_hz) const {

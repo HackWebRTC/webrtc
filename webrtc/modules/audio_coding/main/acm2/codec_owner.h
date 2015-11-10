@@ -16,7 +16,6 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
 
 namespace webrtc {
@@ -27,13 +26,6 @@ class CodecOwner {
   CodecOwner();
   ~CodecOwner();
 
-  // Start using the specified encoder. Returns false on error.
-  // TODO(kwiberg): Don't handle errors here (bug 5033)
-  bool SetEncoders(const CodecInst& speech_inst,
-                   int cng_payload_type,
-                   ACMVADMode vad_mode,
-                   int red_payload_type) WARN_UNUSED_RESULT;
-
   void SetEncoders(AudioEncoder* external_speech_encoder,
                    int cng_payload_type,
                    ACMVADMode vad_mode,
@@ -42,10 +34,6 @@ class CodecOwner {
   void ChangeCngAndRed(int cng_payload_type,
                        ACMVADMode vad_mode,
                        int red_payload_type);
-
-  // Returns a pointer to an iSAC decoder owned by the CodecOwner. The decoder
-  // will live as long as the CodecOwner exists.
-  AudioDecoder* GetIsacDecoder();
 
   AudioEncoder* Encoder();
   const AudioEncoder* Encoder() const;
@@ -57,8 +45,6 @@ class CodecOwner {
   // are active.
   rtc::scoped_ptr<AudioEncoder> cng_encoder_;
   rtc::scoped_ptr<AudioEncoder> red_encoder_;
-
-  RentACodec rent_a_codec_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(CodecOwner);
 };
