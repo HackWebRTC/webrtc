@@ -21,11 +21,6 @@ class VCMPacket;
 
 class VCMDecodingState {
  public:
-  // The max number of bits used to reference back
-  // to a previous frame when using flexible mode.
-  static const uint16_t kNumRefBits = 7;
-  static const uint16_t kFrameDecodedLength = 1 << kNumRefBits;
-
   VCMDecodingState();
   ~VCMDecodingState();
   // Check for old frame
@@ -57,10 +52,7 @@ class VCMDecodingState {
   bool ContinuousPictureId(int picture_id) const;
   bool ContinuousSeqNum(uint16_t seq_num) const;
   bool ContinuousLayer(int temporal_id, int tl0_pic_id) const;
-  bool ContinuousFrameRefs(const VCMFrameBuffer* frame) const;
   bool UsingPictureId(const VCMFrameBuffer* frame) const;
-  bool UsingFlexibleMode(const VCMFrameBuffer* frame) const;
-  bool AheadOfFramesDecodedClearedTo(uint16_t index) const;
 
   // Keep state of last decoded frame.
   // TODO(mikhal/stefan): create designated classes to handle these types.
@@ -71,10 +63,6 @@ class VCMDecodingState {
   int         tl0_pic_id_;
   bool        full_sync_;  // Sync flag when temporal layers are used.
   bool        in_initial_state_;
-
-  // Used to check references in flexible mode.
-  bool frame_decoded_[kFrameDecodedLength];
-  uint16_t frame_decoded_cleared_to_;
 };
 
 }  // namespace webrtc

@@ -145,15 +145,12 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
   RunTest(config);
 }
 
-TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
+TEST_F(FullStackTest, ScreenshareSlidesVP9_2TL) {
   VideoQualityTest::Params screenshare = {
-      {1850, 1110, 5, 50000, 200000, 2000000, "VP9", 1, 0, 400000},
+      {1850, 1110, 5, 50000, 200000, 2000000, "VP9", 2, 1, 400000},
       {},
       {true, 10},
-      {"screenshare_slides_vp9_2tl", 0.0, 0.0, kFullStackTestDurationSecs},
-      {},
-      false,
-      {std::vector<VideoStream>(), 0, 2, 1}};
+      {"screenshare_slides_vp9_2tl", 0.0, 0.0, kFullStackTestDurationSecs}};
   RunTest(screenshare);
 }
 }  // namespace webrtc

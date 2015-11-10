@@ -686,6 +686,12 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
 
   num_consecutive_old_packets_ = 0;
 
+  if (packet.codec == kVideoCodecVP9 &&
+      packet.codecSpecificHeader.codecHeader.VP9.flexible_mode) {
+    // TODO(asapersson): Add support for flexible mode.
+    return kGeneralError;
+  }
+
   VCMFrameBuffer* frame;
   FrameList* frame_list;
   const VCMFrameBufferEnum error = GetFrame(packet, &frame, &frame_list);

@@ -54,9 +54,11 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
       rtp->codecHeader.VP9.inter_layer_predicted =
           info->codecSpecific.VP9.inter_layer_predicted;
       rtp->codecHeader.VP9.gof_idx = info->codecSpecific.VP9.gof_idx;
+
+      // Packetizer needs to know the number of spatial layers to correctly set
+      // the marker bit, even when the number won't be written in the packet.
       rtp->codecHeader.VP9.num_spatial_layers =
           info->codecSpecific.VP9.num_spatial_layers;
-
       if (info->codecSpecific.VP9.ss_data_available) {
         rtp->codecHeader.VP9.spatial_layer_resolution_present =
             info->codecSpecific.VP9.spatial_layer_resolution_present;
@@ -69,10 +71,6 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
         }
         rtp->codecHeader.VP9.gof.CopyGofInfoVP9(info->codecSpecific.VP9.gof);
       }
-
-      rtp->codecHeader.VP9.num_ref_pics = info->codecSpecific.VP9.num_ref_pics;
-      for (int i = 0; i < info->codecSpecific.VP9.num_ref_pics; ++i)
-        rtp->codecHeader.VP9.pid_diff[i] = info->codecSpecific.VP9.p_diff[i];
       return;
     }
     case kVideoCodecH264:

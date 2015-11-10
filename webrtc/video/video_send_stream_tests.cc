@@ -1793,10 +1793,7 @@ class VP9HeaderObeserver : public test::SendTest {
   VP9HeaderObeserver()
       : SendTest(VideoSendStreamTest::kDefaultTimeoutMs),
         vp9_encoder_(VP9Encoder::Create()),
-        vp9_settings_(VideoEncoder::GetDefaultVp9Settings()) {
-    vp9_settings_.numberOfTemporalLayers = 1;
-    vp9_settings_.numberOfSpatialLayers = 2;
-  }
+        vp9_settings_(VideoEncoder::GetDefaultVp9Settings()) {}
 
   virtual void ModifyConfigsHook(
       VideoSendStream::Config* send_config,
@@ -1812,7 +1809,6 @@ class VP9HeaderObeserver : public test::SendTest {
                      std::vector<VideoReceiveStream::Config>* receive_configs,
                      VideoEncoderConfig* encoder_config) override {
     encoder_config->encoder_specific_settings = &vp9_settings_;
-    encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     send_config->encoder_settings.encoder = vp9_encoder_.get();
     send_config->encoder_settings.payload_name = "VP9";
     send_config->encoder_settings.payload_type = kVp9PayloadType;
@@ -1861,6 +1857,17 @@ class VP9HeaderObeserver : public test::SendTest {
   VideoCodecVP9 vp9_settings_;
 };
 
+TEST_F(VideoSendStreamTest, VP9NoFlexMode) {
+  class NoFlexibleMode : public VP9HeaderObeserver {
+    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
+      EXPECT_FALSE(vp9videoHeader->flexible_mode);
+      observation_complete_->Set();
+    }
+  } test;
+
+  RunBaseTest(&test, FakeNetworkPipe::Config());
+}
+
 TEST_F(VideoSendStreamTest, DISABLED_VP9FlexMode) {
   class FlexibleMode : public VP9HeaderObeserver {
     void ModifyConfigsHook(
@@ -1873,66 +1880,6 @@ TEST_F(VideoSendStreamTest, DISABLED_VP9FlexMode) {
     void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
       EXPECT_TRUE(vp9videoHeader->flexible_mode);
       observation_complete_->Set();
-    }
-  } test;
-
-  RunBaseTest(&test, FakeNetworkPipe::Config());
-}
-
-TEST_F(VideoSendStreamTest, VP9FlexModeHasPictureId) {
-  class FlexibleMode : public VP9HeaderObeserver {
-    void ModifyConfigsHook(
-        VideoSendStream::Config* send_config,
-        std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-      vp9_settings_.flexibleMode = true;
-    }
-
-    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
-      EXPECT_NE(vp9videoHeader->picture_id, kNoPictureId);
-      observation_complete_->Set();
-    }
-  } test;
-
-  RunBaseTest(&test, FakeNetworkPipe::Config());
-}
-
-TEST_F(VideoSendStreamTest, VP9FlexModeRefCount) {
-  class FlexibleMode : public VP9HeaderObeserver {
-    void ModifyConfigsHook(
-        VideoSendStream::Config* send_config,
-        std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-      vp9_settings_.flexibleMode = true;
-    }
-
-    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
-      EXPECT_TRUE(vp9videoHeader->flexible_mode);
-      if (vp9videoHeader->inter_pic_predicted) {
-        EXPECT_GT(vp9videoHeader->num_ref_pics, 0u);
-        observation_complete_->Set();
-      }
-    }
-  } test;
-
-  RunBaseTest(&test, FakeNetworkPipe::Config());
-}
-
-TEST_F(VideoSendStreamTest, VP9FlexModeRefs) {
-  class FlexibleMode : public VP9HeaderObeserver {
-    void ModifyConfigsHook(
-        VideoSendStream::Config* send_config,
-        std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-      vp9_settings_.flexibleMode = true;
-    }
-
-    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
-      EXPECT_TRUE(vp9videoHeader->flexible_mode);
-      if (vp9videoHeader->inter_pic_predicted) {
-        EXPECT_GT(vp9videoHeader->num_ref_pics, 0u);
-        observation_complete_->Set();
-      }
     }
 
   } test;

@@ -24,9 +24,7 @@ VCMDecodingState::VCMDecodingState()
       temporal_id_(kNoTemporalIdx),
       tl0_pic_id_(kNoTl0PicIdx),
       full_sync_(true),
-      in_initial_state_(true) {
-  memset(frame_decoded_, 0, sizeof(frame_decoded_));
-}
+      in_initial_state_(true) {}
 
 VCMDecodingState::~VCMDecodingState() {}
 
@@ -39,7 +37,6 @@ void VCMDecodingState::Reset() {
   tl0_pic_id_ = kNoTl0PicIdx;
   full_sync_ = true;
   in_initial_state_ = true;
-  memset(frame_decoded_, 0, sizeof(frame_decoded_));
 }
 
 uint32_t VCMDecodingState::time_stamp() const {
@@ -66,33 +63,12 @@ bool VCMDecodingState::IsOldPacket(const VCMPacket* packet) const {
 
 void VCMDecodingState::SetState(const VCMFrameBuffer* frame) {
   assert(frame != NULL && frame->GetHighSeqNum() >= 0);
-  if (!UsingFlexibleMode(frame))
-    UpdateSyncState(frame);
+  UpdateSyncState(frame);
   sequence_num_ = static_cast<uint16_t>(frame->GetHighSeqNum());
   time_stamp_ = frame->TimeStamp();
   picture_id_ = frame->PictureId();
   temporal_id_ = frame->TemporalId();
   tl0_pic_id_ = frame->Tl0PicId();
-
-  if (UsingFlexibleMode(frame)) {
-    uint16_t frame_index = picture_id_ % kFrameDecodedLength;
-    if (in_initial_state_) {
-      frame_decoded_cleared_to_ = frame_index;
-    } else if (frame->FrameType() == kVideoFrameKey) {
-      memset(frame_decoded_, 0, sizeof(frame_decoded_));
-      frame_decoded_cleared_to_ = frame_index;
-    } else {
-      if (AheadOfFramesDecodedClearedTo(frame_index)) {
-        while (frame_decoded_cleared_to_ != frame_index) {
-          frame_decoded_cleared_to_ =
-              (frame_decoded_cleared_to_ + 1) % kFrameDecodedLength;
-          frame_decoded_[frame_decoded_cleared_to_] = false;
-        }
-      }
-    }
-    frame_decoded_[frame_index] = true;
-  }
-
   in_initial_state_ = false;
 }
 
@@ -104,8 +80,6 @@ void VCMDecodingState::CopyFrom(const VCMDecodingState& state) {
   tl0_pic_id_ = state.tl0_pic_id_;
   full_sync_ = state.full_sync_;
   in_initial_state_ = state.in_initial_state_;
-  frame_decoded_cleared_to_ = state.frame_decoded_cleared_to_;
-  memcpy(frame_decoded_, state.frame_decoded_, sizeof(frame_decoded_));
 }
 
 bool VCMDecodingState::UpdateEmptyFrame(const VCMFrameBuffer* frame) {
@@ -199,11 +173,7 @@ bool VCMDecodingState::ContinuousFrame(const VCMFrameBuffer* frame) const {
   if (!full_sync_ && !frame->LayerSync())
     return false;
   if (UsingPictureId(frame)) {
-    if (UsingFlexibleMode(frame)) {
-      return ContinuousFrameRefs(frame);
-    } else {
-      return ContinuousPictureId(frame->PictureId());
-    }
+    return ContinuousPictureId(frame->PictureId());
   } else {
     return ContinuousSeqNum(static_cast<uint16_t>(frame->GetLowSeqNum()));
   }
@@ -246,41 +216,8 @@ bool VCMDecodingState::ContinuousLayer(int temporal_id,
   return (static_cast<uint8_t>(tl0_pic_id_ + 1) == tl0_pic_id);
 }
 
-bool VCMDecodingState::ContinuousFrameRefs(const VCMFrameBuffer* frame) const {
-  uint8_t num_refs = frame->CodecSpecific()->codecSpecific.VP9.num_ref_pics;
-  for (uint8_t r = 0; r < num_refs; ++r) {
-    uint16_t frame_ref = frame->PictureId() -
-                         frame->CodecSpecific()->codecSpecific.VP9.p_diff[r];
-    uint16_t frame_index = frame_ref % kFrameDecodedLength;
-    if (AheadOfFramesDecodedClearedTo(frame_index) ||
-        !frame_decoded_[frame_index]) {
-      return false;
-    }
-  }
-  return true;
-}
-
 bool VCMDecodingState::UsingPictureId(const VCMFrameBuffer* frame) const {
   return (frame->PictureId() != kNoPictureId && picture_id_ != kNoPictureId);
-}
-
-bool VCMDecodingState::UsingFlexibleMode(const VCMFrameBuffer* frame) const {
-  return frame->CodecSpecific()->codecType == kVideoCodecVP9 &&
-         frame->CodecSpecific()->codecSpecific.VP9.flexible_mode;
-}
-
-// TODO(philipel): change how check work, this check practially
-// limits the max p_diff to 64.
-bool VCMDecodingState::AheadOfFramesDecodedClearedTo(uint16_t index) const {
-  // No way of knowing for sure if we are actually ahead of
-  // frame_decoded_cleared_to_. We just make the assumption
-  // that we are not trying to reference back to a very old
-  // index, but instead are referencing a newer index.
-  uint16_t diff =
-      index > frame_decoded_cleared_to_
-          ? kFrameDecodedLength - (index - frame_decoded_cleared_to_)
-          : frame_decoded_cleared_to_ - index;
-  return diff > kFrameDecodedLength / 2;
 }
 
 }  // namespace webrtc

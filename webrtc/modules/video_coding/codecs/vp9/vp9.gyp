@@ -28,8 +28,6 @@
         ['build_vp9==1', {
           'sources': [
             'include/vp9.h',
-            'screenshare_layers.cc',
-            'screenshare_layers.h',
             'vp9_frame_buffer_pool.cc',
             'vp9_frame_buffer_pool.h',
             'vp9_impl.cc',
