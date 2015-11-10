@@ -77,10 +77,14 @@ public class MediaCodecVideoDecoder {
   private ByteBuffer[] inputBuffers;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
+  private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
   private static final String H264_MIME_TYPE = "video/avc";
   // List of supported HW VP8 decoders.
   private static final String[] supportedVp8HwCodecPrefixes =
     {"OMX.qcom.", "OMX.Nvidia.", "OMX.Exynos.", "OMX.Intel." };
+  // List of supported HW VP9 decoders.
+  private static final String[] supportedVp9HwCodecPrefixes =
+    {"OMX.qcom."};
   // List of supported HW H.264 decoders.
   private static final String[] supportedH264HwCodecPrefixes =
     {"OMX.qcom.", "OMX.Intel." };
@@ -135,6 +139,7 @@ public class MediaCodecVideoDecoder {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       return null; // MediaCodec.setParameters is missing.
     }
+    Logging.d(TAG, "Trying to find HW decoder for mime " + mime);
     for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
       MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
       if (info.isEncoder()) {
@@ -150,7 +155,7 @@ public class MediaCodecVideoDecoder {
       if (name == null) {
         continue;  // No HW support in this codec; try the next one.
       }
-      Logging.v(TAG, "Found candidate decoder " + name);
+      Logging.d(TAG, "Found candidate decoder " + name);
 
       // Check if this is supported decoder.
       boolean supportedCodec = false;
@@ -181,11 +186,16 @@ public class MediaCodecVideoDecoder {
         }
       }
     }
+    Logging.d(TAG, "No HW decoder found for mime " + mime);
     return null;  // No HW decoder.
   }
 
   public static boolean isVp8HwSupported() {
     return findDecoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null;
+  }
+
+  public static boolean isVp9HwSupported() {
+    return findDecoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes) != null;
   }
 
   public static boolean isH264HwSupported() {
@@ -223,6 +233,9 @@ public class MediaCodecVideoDecoder {
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
       supportedCodecPrefixes = supportedVp8HwCodecPrefixes;
+    } else if (type == VideoCodecType.VIDEO_CODEC_VP9) {
+      mime = VP9_MIME_TYPE;
+      supportedCodecPrefixes = supportedVp9HwCodecPrefixes;
     } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
       mime = H264_MIME_TYPE;
       supportedCodecPrefixes = supportedH264HwCodecPrefixes;

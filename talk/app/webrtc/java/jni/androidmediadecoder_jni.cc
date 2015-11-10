@@ -62,6 +62,7 @@ using webrtc::VideoCodec;
 using webrtc::VideoCodecType;
 using webrtc::kVideoCodecH264;
 using webrtc::kVideoCodecVP8;
+using webrtc::kVideoCodecVP9;
 
 namespace webrtc_jni {
 
@@ -331,6 +332,9 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   switch (codecType_) {
     case kVideoCodecVP8:
       max_pending_frames_ = kMaxPendingFramesVp8;
+      break;
+    case kVideoCodecVP9:
+      max_pending_frames_ = kMaxPendingFramesVp9;
       break;
     case kVideoCodecH264:
       max_pending_frames_ = kMaxPendingFramesH264;
@@ -788,6 +792,17 @@ MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() :
   if (is_vp8_hw_supported) {
     ALOGD << "VP8 HW Decoder supported.";
     supported_codec_types_.push_back(kVideoCodecVP8);
+  }
+
+  bool is_vp9_hw_supported = jni->CallStaticBooleanMethod(
+      j_decoder_class,
+      GetStaticMethodID(jni, j_decoder_class, "isVp9HwSupported", "()Z"));
+  if (CheckException(jni)) {
+    is_vp9_hw_supported = false;
+  }
+  if (is_vp9_hw_supported) {
+    ALOGD << "VP9 HW Decoder supported.";
+    supported_codec_types_.push_back(kVideoCodecVP9);
   }
 
   bool is_h264_hw_supported = jni->CallStaticBooleanMethod(
