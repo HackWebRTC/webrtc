@@ -10,6 +10,26 @@
 
 #include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 
+#include "webrtc/base/logging.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
+#ifdef WEBRTC_CODEC_G722
+#include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
+#endif
+#ifdef WEBRTC_CODEC_ILBC
+#include "webrtc/modules/audio_coding/codecs/ilbc/include/audio_encoder_ilbc.h"
+#endif
+#ifdef WEBRTC_CODEC_ISACFX
+#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"
+#endif
+#ifdef WEBRTC_CODEC_ISAC
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
+#endif
+#ifdef WEBRTC_CODEC_OPUS
+#include "webrtc/modules/audio_coding/codecs/opus/include/audio_encoder_opus.h"
+#endif
+#include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 
@@ -78,6 +98,75 @@ rtc::Maybe<NetEqDecoder> RentACodec::NetEqDecoderFromCodecId(CodecId codec_id,
       (ned == NetEqDecoder::kDecoderOpus && num_channels == 2)
           ? NetEqDecoder::kDecoderOpus_2ch
           : ned);
+}
+
+namespace {
+
+// Returns a new speech encoder, or null on error.
+// TODO(kwiberg): Don't handle errors here (bug 5033)
+rtc::scoped_ptr<AudioEncoder> CreateEncoder(
+    const CodecInst& speech_inst,
+    LockedIsacBandwidthInfo* bwinfo) {
+#if defined(WEBRTC_CODEC_ISACFX)
+  if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderIsacFix(speech_inst, bwinfo));
+#endif
+#if defined(WEBRTC_CODEC_ISAC)
+  if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderIsac(speech_inst, bwinfo));
+#endif
+#ifdef WEBRTC_CODEC_OPUS
+  if (STR_CASE_CMP(speech_inst.plname, "opus") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderOpus(speech_inst));
+#endif
+  if (STR_CASE_CMP(speech_inst.plname, "pcmu") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderPcmU(speech_inst));
+  if (STR_CASE_CMP(speech_inst.plname, "pcma") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderPcmA(speech_inst));
+  if (STR_CASE_CMP(speech_inst.plname, "l16") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderPcm16B(speech_inst));
+#ifdef WEBRTC_CODEC_ILBC
+  if (STR_CASE_CMP(speech_inst.plname, "ilbc") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderIlbc(speech_inst));
+#endif
+#ifdef WEBRTC_CODEC_G722
+  if (STR_CASE_CMP(speech_inst.plname, "g722") == 0)
+    return rtc_make_scoped_ptr(new AudioEncoderG722(speech_inst));
+#endif
+  LOG_F(LS_ERROR) << "Could not create encoder of type " << speech_inst.plname;
+  return rtc::scoped_ptr<AudioEncoder>();
+}
+
+rtc::scoped_ptr<AudioDecoder> CreateIsacDecoder(
+    LockedIsacBandwidthInfo* bwinfo) {
+#if defined(WEBRTC_CODEC_ISACFX)
+  return rtc_make_scoped_ptr(new AudioDecoderIsacFix(bwinfo));
+#elif defined(WEBRTC_CODEC_ISAC)
+  return rtc_make_scoped_ptr(new AudioDecoderIsac(bwinfo));
+#else
+  FATAL() << "iSAC is not supported.";
+  return rtc::scoped_ptr<AudioDecoder>();
+#endif
+}
+
+}  // namespace
+
+RentACodec::RentACodec() = default;
+RentACodec::~RentACodec() = default;
+
+AudioEncoder* RentACodec::RentEncoder(const CodecInst& codec_inst) {
+  rtc::scoped_ptr<AudioEncoder> enc =
+      CreateEncoder(codec_inst, &isac_bandwidth_info_);
+  if (!enc)
+    return nullptr;
+  encoder_ = enc.Pass();
+  return encoder_.get();
+}
+
+AudioDecoder* RentACodec::RentIsacDecoder() {
+  if (!isac_decoder_)
+    isac_decoder_ = CreateIsacDecoder(&isac_bandwidth_info_);
+  return isac_decoder_.get();
 }
 
 }  // namespace acm2

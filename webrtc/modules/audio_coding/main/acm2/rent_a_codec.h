@@ -14,8 +14,21 @@
 #include <stddef.h>
 
 #include "webrtc/base/array_view.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/maybe.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
+#else
+// Dummy implementation, for when we don't have iSAC.
+namespace webrtc {
+class LockedIsacBandwidthInfo {};
+}
+#endif
 
 namespace webrtc {
 
@@ -165,6 +178,26 @@ class RentACodec {
 
   static rtc::Maybe<NetEqDecoder> NetEqDecoderFromCodecId(CodecId codec_id,
                                                           int num_channels);
+
+  RentACodec();
+  ~RentACodec();
+
+  // Creates and returns an audio encoder built to the given specification.
+  // Returns null in case of error. The returned encoder is live until the next
+  // successful call to this function, or until the Rent-A-Codec is destroyed.
+  AudioEncoder* RentEncoder(const CodecInst& codec_inst);
+
+  // Creates and returns an iSAC decoder, which will remain live until the
+  // Rent-A-Codec is destroyed. Subsequent calls will simply return the same
+  // object.
+  AudioDecoder* RentIsacDecoder();
+
+ private:
+  rtc::scoped_ptr<AudioEncoder> encoder_;
+  rtc::scoped_ptr<AudioDecoder> isac_decoder_;
+  LockedIsacBandwidthInfo isac_bandwidth_info_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(RentACodec);
 };
 
 }  // namespace acm2

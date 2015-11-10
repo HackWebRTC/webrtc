@@ -16,16 +16,8 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+#include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
-
-#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
-#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
-#else
-// Dummy implementation, for when we don't have iSAC.
-namespace webrtc {
-class LockedIsacBandwidthInfo {};
-}
-#endif
 
 namespace webrtc {
 namespace acm2 {
@@ -59,24 +51,14 @@ class CodecOwner {
   const AudioEncoder* Encoder() const;
 
  private:
-  AudioEncoder* SpeechEncoder();
-  const AudioEncoder* SpeechEncoder() const;
-
-  // At most one of these is non-null:
-  rtc::scoped_ptr<AudioEncoder> speech_encoder_;
-  AudioEncoder* external_speech_encoder_;
-
-  // If we've created an iSAC decoder because someone called GetIsacDecoder,
-  // store it here.
-  rtc::scoped_ptr<AudioDecoder> isac_decoder_;
-
-  // iSAC bandwidth estimation info, for use with iSAC encoders and decoders.
-  LockedIsacBandwidthInfo isac_bandwidth_info_;
+  AudioEncoder* speech_encoder_;
 
   // |cng_encoder_| and |red_encoder_| are valid iff CNG or RED, respectively,
   // are active.
   rtc::scoped_ptr<AudioEncoder> cng_encoder_;
   rtc::scoped_ptr<AudioEncoder> red_encoder_;
+
+  RentACodec rent_a_codec_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(CodecOwner);
 };
