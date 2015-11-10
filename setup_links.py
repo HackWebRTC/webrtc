@@ -84,6 +84,7 @@ if 'android' in target_os:
     'third_party/android_tools',
     'third_party/appurify-python',
     'third_party/ashmem',
+    'third_party/icu',
     'third_party/ijar',
     'third_party/jsr-305',
     'third_party/junit',

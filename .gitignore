@@ -94,6 +94,7 @@
 /third_party/gaeunit
 /third_party/gflags/src
 /third_party/google-visualization-python
+/third_party/icu
 /third_party/instrumented_libraries
 /third_party/ijar
 /third_party/jsoncpp
