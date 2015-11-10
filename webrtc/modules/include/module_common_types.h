@@ -38,6 +38,7 @@ const int16_t kNoTl0PicIdx = -1;
 const uint8_t kNoTemporalIdx = 0xFF;
 const uint8_t kNoSpatialIdx = 0xFF;
 const uint8_t kNoGofIdx = 0xFF;
+const uint8_t kNumVp9Buffers = 8;
 const size_t kMaxVp9RefPics = 3;
 const size_t kMaxVp9FramesInGof = 0xFF;  // 8 bits
 const size_t kMaxVp9NumberOfSpatialLayers = 8;

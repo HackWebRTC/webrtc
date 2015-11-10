@@ -725,7 +725,8 @@ bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
       parsed_payload->type.Video.height = vp9->height[0];
     }
   }
-  parsed_payload->type.Video.isFirstPacket = b_bit && (vp9->spatial_idx == 0);
+  parsed_payload->type.Video.isFirstPacket =
+      b_bit && (!l_bit || !vp9->inter_layer_predicted);
 
   uint64_t rem_bits = parser.RemainingBitCount();
   assert(rem_bits % 8 == 0);
