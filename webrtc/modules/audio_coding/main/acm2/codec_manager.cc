@@ -137,7 +137,6 @@ CodecManager::CodecManager()
       cng_swb_pltype_(255),
       cng_fb_pltype_(255),
       red_nb_pltype_(255),
-      stereo_send_(false),
       dtx_enabled_(false),
       vad_mode_(VADNormal),
       send_codec_inst_(kEmptyCodecInst),
@@ -231,15 +230,12 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   }
 
   // Set Stereo, and make sure VAD and DTX is turned off.
-  if (send_codec.channels == 2) {
-    stereo_send_ = true;
+  if (send_codec.channels != 1) {
     if (dtx_enabled_) {
       WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, dummy_id,
                    "VAD/DTX is turned off, not supported when sending stereo.");
     }
     dtx_enabled_ = false;
-  } else {
-    stereo_send_ = false;
   }
 
   // Check if the codec is already registered as send codec.
@@ -321,7 +317,7 @@ void CodecManager::RegisterEncoder(AudioEncoder* external_speech_encoder) {
   static const char kName[] = "external";
   memcpy(send_codec_inst_.plname, kName, sizeof(kName));
 
-  if (stereo_send_)
+  if (send_codec_inst_.channels != 1)
     dtx_enabled_ = false;
   codec_fec_enabled_ =
       codec_fec_enabled_ && codec_owner_.Encoder()->SetFec(codec_fec_enabled_);
@@ -374,7 +370,9 @@ int CodecManager::SetVAD(bool enable, ACMVADMode mode) {
 
   // Check that the send codec is mono. We don't support VAD/DTX for stereo
   // sending.
-  if (enable && stereo_send_) {
+  const auto* enc = codec_owner_.Encoder();
+  const bool stereo_send = enc ? (enc->NumChannels() != 1) : false;
+  if (enable && stereo_send) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
                  "VAD/DTX not supported for stereo sending");
     dtx_enabled_ = false;
@@ -391,7 +389,7 @@ int CodecManager::SetVAD(bool enable, ACMVADMode mode) {
   if (dtx_enabled_ != enable || vad_mode_ != mode) {
     dtx_enabled_ = enable;
     vad_mode_ = mode;
-    if (codec_owner_.Encoder()) {
+    if (enc) {
       int cng_pt = dtx_enabled_ ? CngPayloadType(send_codec_inst_.plfreq) : -1;
       int red_pt = red_enabled_ ? RedPayloadType(send_codec_inst_.plfreq) : -1;
       codec_owner_.ChangeCngAndRed(cng_pt, vad_mode_, red_pt);

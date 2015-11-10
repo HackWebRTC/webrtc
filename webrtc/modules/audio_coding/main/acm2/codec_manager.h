@@ -53,8 +53,6 @@ class CodecManager final {
   // null.
   AudioDecoder* GetAudioDecoder(const CodecInst& codec);
 
-  bool stereo_send() const { return stereo_send_; }
-
   bool red_enabled() const { return red_enabled_; }
 
   bool codec_fec_enabled() const { return codec_fec_enabled_; }
@@ -75,7 +73,6 @@ class CodecManager final {
   uint8_t cng_swb_pltype_;
   uint8_t cng_fb_pltype_;
   uint8_t red_nb_pltype_;
-  bool stereo_send_;
   bool dtx_enabled_;
   ACMVADMode vad_mode_;
   CodecInst send_codec_inst_;
