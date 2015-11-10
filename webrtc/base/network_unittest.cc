@@ -10,6 +10,7 @@
 
 #include "webrtc/base/network.h"
 
+#include "webrtc/base/nethelpers.h"
 #include "webrtc/base/networkmonitor.h"
 #include <vector>
 #if defined(WEBRTC_POSIX)
@@ -94,6 +95,11 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
 
  protected:
   bool callback_called_;
+};
+
+class TestBasicNetworkManager : public BasicNetworkManager {
+ public:
+  using BasicNetworkManager::QueryDefaultLocalAddress;
 };
 
 // Test that the Network ctor works properly.
@@ -840,6 +846,21 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
   EXPECT_TRUE(GetNetworkMonitor(manager) == nullptr);
 
   NetworkMonitorFactory::ReleaseFactory(factory);
+}
+
+TEST_F(NetworkTest, DefaultPrivateAddress) {
+  TestBasicNetworkManager manager;
+  manager.StartUpdating();
+  std::vector<Network*> networks;
+  manager.GetNetworks(&networks);
+  for (auto& network : networks) {
+    if (network->GetBestIP().family() == AF_INET) {
+      EXPECT_TRUE(manager.QueryDefaultLocalAddress(AF_INET) != IPAddress());
+    } else if (network->GetBestIP().family() == AF_INET6) {
+      EXPECT_TRUE(manager.QueryDefaultLocalAddress(AF_INET6) != IPAddress());
+    }
+  }
+  manager.StopUpdating();
 }
 
 }  // namespace rtc

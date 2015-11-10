@@ -436,7 +436,8 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
 
   // When adapter enumeration is disabled, disable CF_HOST at port level so
   // local address is not leaked by stunport in the candidate's related address.
-  if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
+  if ((flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) &&
+      (flags() & PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE)) {
     candidate_filter &= ~CF_HOST;
   }
   port->set_candidate_filter(candidate_filter);
@@ -598,25 +599,6 @@ bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
       // only server-reflexive candidates won't work right when the host
       // candidates have public IPs.
       return true;
-    }
-
-    // If PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE is specified and it's
-    // loopback address, we should allow it as it's for demo page connectivity
-    // when no TURN/STUN specified.
-    if (c.address().IsLoopbackIP() &&
-        (flags() & PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE) != 0) {
-      return true;
-    }
-
-    // This is just to prevent the case when binding to any address (all 0s), if
-    // somehow the host candidate address is not all 0s. Either because local
-    // installed proxy changes the address or a packet has been sent for any
-    // reason before getsockname is called.
-    if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
-      LOG(LS_WARNING) << "Received non-0 host address: "
-                      << c.address().ToString()
-                      << " when adapter enumeration is disabled";
-      return false;
     }
 
     return ((filter & CF_HOST) != 0);
@@ -882,19 +864,19 @@ void AllocationSequence::CreateUDPPorts() {
   // TODO(mallinath) - Remove UDPPort creating socket after shared socket
   // is enabled completely.
   UDPPort* port = NULL;
-  bool emit_localhost_for_anyaddress =
-    IsFlagSet(PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
+  bool emit_local_candidate_for_anyaddress =
+      !IsFlagSet(PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) && udp_socket_) {
     port = UDPPort::Create(
         session_->network_thread(), session_->socket_factory(), network_,
         udp_socket_.get(), session_->username(), session_->password(),
-        session_->allocator()->origin(), emit_localhost_for_anyaddress);
+        session_->allocator()->origin(), emit_local_candidate_for_anyaddress);
   } else {
     port = UDPPort::Create(
         session_->network_thread(), session_->socket_factory(), network_, ip_,
         session_->allocator()->min_port(), session_->allocator()->max_port(),
         session_->username(), session_->password(),
-        session_->allocator()->origin(), emit_localhost_for_anyaddress);
+        session_->allocator()->origin(), emit_local_candidate_for_anyaddress);
   }
 
   if (port) {

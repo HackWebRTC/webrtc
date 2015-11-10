@@ -506,4 +506,15 @@ IPAddress GetLoopbackIP(int family) {
   }
   return rtc::IPAddress();
 }
+
+IPAddress GetAnyIP(int family) {
+  if (family == AF_INET) {
+    return rtc::IPAddress(INADDR_ANY);
+  }
+  if (family == AF_INET6) {
+    return rtc::IPAddress(in6addr_any);
+  }
+  return rtc::IPAddress();
+}
+
 }  // Namespace rtc

@@ -456,9 +456,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   UDPPort* CreateUdpPort(const SocketAddress& addr,
                          PacketSocketFactory* socket_factory) {
-    return UDPPort::Create(main_, socket_factory, &network_,
-                           addr.ipaddr(), 0, 0, username_, password_,
-                           std::string(), false);
+    return UDPPort::Create(main_, socket_factory, &network_, addr.ipaddr(), 0,
+                           0, username_, password_, std::string(), true);
   }
   TCPPort* CreateTcpPort(const SocketAddress& addr) {
     return CreateTcpPort(addr, &socket_factory_);

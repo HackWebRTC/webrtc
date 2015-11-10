@@ -76,6 +76,7 @@ class FakeNetworkManager : public NetworkManagerBase,
   }
 
   using NetworkManagerBase::set_enumeration_permission;
+  using NetworkManagerBase::set_default_local_addresses;
 
  private:
   void DoUpdateNetworks() {
@@ -95,6 +96,7 @@ class FakeNetworkManager : public NetworkManagerBase,
                                           it->hostname(),
                                           prefix,
                                           prefix_length));
+      net->set_default_local_address_provider(this);
       net->AddIP(it->ipaddr());
       networks.push_back(net.release());
     }
@@ -111,6 +113,9 @@ class FakeNetworkManager : public NetworkManagerBase,
   int next_index_ = 0;
   int start_count_ = 0;
   bool sent_first_update_ = false;
+
+  IPAddress default_local_ipv4_address_;
+  IPAddress default_local_ipv6_address_;
 };
 
 }  // namespace rtc

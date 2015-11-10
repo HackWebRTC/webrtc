@@ -35,10 +35,9 @@ class UDPPort : public Port {
                          const std::string& username,
                          const std::string& password,
                          const std::string& origin,
-                         bool emit_localhost_for_anyaddress) {
-    UDPPort* port = new UDPPort(thread, factory, network, socket,
-                                username, password, origin,
-                                emit_localhost_for_anyaddress);
+                         bool emit_local_for_anyaddress) {
+    UDPPort* port = new UDPPort(thread, factory, network, socket, username,
+                                password, origin, emit_local_for_anyaddress);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -55,11 +54,10 @@ class UDPPort : public Port {
                          const std::string& username,
                          const std::string& password,
                          const std::string& origin,
-                         bool emit_localhost_for_anyaddress) {
-    UDPPort* port = new UDPPort(thread, factory, network,
-                                ip, min_port, max_port,
-                                username, password, origin,
-                                emit_localhost_for_anyaddress);
+                         bool emit_local_for_anyaddress) {
+    UDPPort* port =
+        new UDPPort(thread, factory, network, ip, min_port, max_port, username,
+                    password, origin, emit_local_for_anyaddress);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -115,7 +113,7 @@ class UDPPort : public Port {
           const std::string& username,
           const std::string& password,
           const std::string& origin,
-          bool emit_localhost_for_anyaddress);
+          bool emit_local_for_anyaddress);
 
   UDPPort(rtc::Thread* thread,
           rtc::PacketSocketFactory* factory,
@@ -124,7 +122,7 @@ class UDPPort : public Port {
           const std::string& username,
           const std::string& password,
           const std::string& origin,
-          bool emit_localhost_for_anyaddress);
+          bool emit_local_for_anyaddress);
 
   bool Init();
 
@@ -149,6 +147,10 @@ class UDPPort : public Port {
   void MaybePrepareStunCandidate();
 
   void SendStunBindingRequests();
+
+  // Helper function which will set |addr|'s IP to the default local address if
+  // |addr| is the "any" address and |emit_local_for_anyaddress_| is true.
+  void MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const;
 
  private:
   // A helper class which can be called repeatedly to resolve multiple
@@ -211,8 +213,9 @@ class UDPPort : public Port {
   bool ready_;
   int stun_keepalive_delay_;
 
-  // This is true when PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE is specified.
-  bool emit_localhost_for_anyaddress_;
+  // This is true by default and false when
+  // PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE is specified.
+  bool emit_local_for_anyaddress_;
 
   friend class StunBindingRequest;
 };

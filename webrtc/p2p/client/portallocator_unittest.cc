@@ -114,6 +114,12 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   void AddInterface(const SocketAddress& addr, const std::string& if_name) {
     network_manager_.AddInterface(addr, if_name);
   }
+  // The default route is the public address that STUN server will observe when
+  // the endpoint is sitting on the public internet and the local port is bound
+  // to the "any" address. This may be different from the default local address
+  // which the endpoint observes. This can occur if the route to the public
+  // endpoint like 8.8.8.8 (specified as the default local address) is
+  // different from the route to the STUN server (the default route).
   void AddInterfaceAsDefaultRoute(const SocketAddress& addr) {
     AddInterface(addr);
     // When a binding comes from the any address, the |addr| will be used as the
@@ -254,6 +260,8 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
       const rtc::IPAddress& stun_candidate_addr,
       const rtc::IPAddress& relay_candidate_udp_transport_addr,
       const rtc::IPAddress& relay_candidate_tcp_transport_addr) {
+    network_manager_.set_default_local_addresses(kPrivateAddr.ipaddr(),
+                                                 rtc::IPAddress());
     if (!session_) {
       EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
     }
@@ -268,16 +276,20 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     if (!host_candidate_addr.IsNil()) {
       EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
                    cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
-                   rtc::SocketAddress(host_candidate_addr, 0));
+                   rtc::SocketAddress(kPrivateAddr.ipaddr(), 0));
       ++total_candidates;
     }
     if (!stun_candidate_addr.IsNil()) {
       EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
                    cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
                    rtc::SocketAddress(stun_candidate_addr, 0));
-      EXPECT_EQ(rtc::EmptySocketAddressWithFamily(
-                    candidates_[total_candidates].address().family()),
-                candidates_[total_candidates].related_address());
+      rtc::IPAddress related_address = host_candidate_addr;
+      if (host_candidate_addr.IsNil()) {
+        related_address =
+            rtc::GetAnyIP(candidates_[total_candidates].address().family());
+      }
+      EXPECT_EQ(related_address,
+                candidates_[total_candidates].related_address().ipaddr());
       ++total_candidates;
     }
     if (!relay_candidate_udp_transport_addr.IsNil()) {
@@ -589,7 +601,6 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoAdapters) {
 // candidate_filter() is set to CF_RELAY and no relay is specified.
 TEST_F(PortAllocatorTest,
        TestDisableAdapterEnumerationWithoutNatRelayTransportOnly) {
-  AddInterfaceAsDefaultRoute(kClientAddr);
   ResetWithStunServerNoNat(kStunAddr);
   allocator().set_candidate_filter(cricket::CF_RELAY);
   // Expect to see no ports and no candidates.
@@ -597,86 +608,88 @@ TEST_F(PortAllocatorTest,
                                  rtc::IPAddress(), rtc::IPAddress());
 }
 
-// Test that we should only get STUN and TURN candidates when adapter
-// enumeration is disabled.
-TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationBehindNat) {
-  AddInterface(kClientAddr);
-  // GTURN is not configured here.
-  ResetWithStunServerAndNat(kStunAddr);
-  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
-  // Expect to see 3 ports: STUN, TURN/UDP and TCP ports, and both STUN and
-  // TURN/UDP candidates.
-  CheckDisableAdapterEnumeration(3U, rtc::IPAddress(), kNatUdpAddr.ipaddr(),
-                                 kTurnUdpExtAddr.ipaddr(), rtc::IPAddress());
-}
-
-// Test that even with multiple interfaces, the result should still be one STUN
-// and one TURN candidate since we bind to any address (i.e. all 0s).
+// Test that even with multiple interfaces, the result should still be a single
+// default private, one STUN and one TURN candidate since we bind to any address
+// (i.e. all 0s).
 TEST_F(PortAllocatorTest,
        TestDisableAdapterEnumerationBehindNatMultipleInterfaces) {
   AddInterface(kPrivateAddr);
   AddInterface(kPrivateAddr2);
   ResetWithStunServerAndNat(kStunAddr);
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
-  // Expect to see 3 ports: STUN, TURN/UDP and TCP ports, and both STUN and
-  // TURN/UDP candidates.
-  CheckDisableAdapterEnumeration(3U, rtc::IPAddress(), kNatUdpAddr.ipaddr(),
-                                 kTurnUdpExtAddr.ipaddr(), rtc::IPAddress());
+  // Expect to see 3 ports: STUN, TURN/UDP and TCP ports, and a default private,
+  // STUN and TURN/UDP candidates.
+  CheckDisableAdapterEnumeration(3U, kPrivateAddr.ipaddr(),
+                                 kNatUdpAddr.ipaddr(), kTurnUdpExtAddr.ipaddr(),
+                                 rtc::IPAddress());
 }
 
-// Test that we should get STUN, TURN/UDP and TURN/TCP candidates when a
-// TURN/TCP server is specified.
+// Test that we should get a default private, STUN, TURN/UDP and TURN/TCP
+// candidates when both TURN/UDP and TURN/TCP servers are specified.
 TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationBehindNatWithTcp) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
-  AddInterface(kClientAddr);
-  // GTURN is not configured here.
+  AddInterface(kPrivateAddr);
   ResetWithStunServerAndNat(kStunAddr);
   AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
-  // Expect to see 4 ports - STUN, TURN/UDP, TURN/TCP and TCP port. STUN,
-  // TURN/UDP, and TURN/TCP candidates.
-  CheckDisableAdapterEnumeration(4U, rtc::IPAddress(), kNatUdpAddr.ipaddr(),
-                                 kTurnUdpExtAddr.ipaddr(),
+  // Expect to see 4 ports - STUN, TURN/UDP, TURN/TCP and TCP port. A default
+  // private, STUN, TURN/UDP, and TURN/TCP candidates.
+  CheckDisableAdapterEnumeration(4U, kPrivateAddr.ipaddr(),
+                                 kNatUdpAddr.ipaddr(), kTurnUdpExtAddr.ipaddr(),
                                  kTurnUdpExtAddr.ipaddr());
 }
 
-// Test that we should only get STUN and TURN candidates when adapter
-// enumeration is disabled. Since the endpoint is not behind NAT, the srflx
-// address should be the public client interface.
-TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationWithoutNat) {
-  AddInterfaceAsDefaultRoute(kClientAddr);
-  ResetWithStunServerNoNat(kStunAddr);
-  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
-  // Expect to see 3 ports: STUN, TURN/UDP and TCP ports, but only both STUN and
-  // TURN candidates. The STUN candidate should have kClientAddr as srflx
-  // address, and TURN candidate with kClientAddr as the related address.
-  CheckDisableAdapterEnumeration(3U, rtc::IPAddress(), kClientAddr.ipaddr(),
-                                 kTurnUdpExtAddr.ipaddr(), rtc::IPAddress());
+// Test that when adapter enumeration is disabled, for endpoints without
+// STUN/TURN specified, a default private candidate is still generated.
+TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationWithoutNatOrServers) {
+  ResetWithNoServersOrNat();
+  // Expect to see 2 ports: STUN and TCP ports, one default private candidate.
+  CheckDisableAdapterEnumeration(2U, kPrivateAddr.ipaddr(), rtc::IPAddress(),
+                                 rtc::IPAddress(), rtc::IPAddress());
 }
 
-// Test that when adapter enumeration is disabled, for endpoints without
-// STUN/TURN specified, no candidate is generated.
-TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationWithoutNatOrServers) {
-  AddInterfaceAsDefaultRoute(kClientAddr);
-  ResetWithNoServersOrNat();
-  // Expect to see 2 ports: STUN and TCP ports, but no candidate.
+// Test that when adapter enumeration is disabled, with
+// PORTALLOCATOR_DISABLE_LOCALHOST_CANDIDATE specified, for endpoints not behind
+// a NAT, there is no local candidate.
+TEST_F(PortAllocatorTest,
+       TestDisableAdapterEnumerationWithoutNatLocalhostCandidateDisabled) {
+  ResetWithStunServerNoNat(kStunAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
+  // Expect to see 2 ports: STUN and TCP ports, localhost candidate and STUN
+  // candidate.
   CheckDisableAdapterEnumeration(2U, rtc::IPAddress(), rtc::IPAddress(),
                                  rtc::IPAddress(), rtc::IPAddress());
 }
 
 // Test that when adapter enumeration is disabled, with
-// PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE specified, for endpoints not behind
-// a NAT, there are a localhost candidate in addition to a STUN candidate.
-TEST_F(PortAllocatorTest,
-       TestDisableAdapterEnumerationWithoutNatLocalhostCandidateRequested) {
-  AddInterfaceAsDefaultRoute(kClientAddr);
+// PORTALLOCATOR_DISABLE_LOCALHOST_CANDIDATE specified, for endpoints not behind
+// a NAT, there is no local candidate. However, this specified default route
+// (kClientAddr) which was discovered when sending STUN requests, will become
+// the srflx addresses.
+TEST_F(
+    PortAllocatorTest,
+    TestDisableAdapterEnumerationWithoutNatLocalhostCandidateDisabledWithDifferentDefaultRoute) {
   ResetWithStunServerNoNat(kStunAddr);
+  AddInterfaceAsDefaultRoute(kClientAddr);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  session_->set_flags(cricket::PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
   // Expect to see 2 ports: STUN and TCP ports, localhost candidate and STUN
   // candidate.
-  CheckDisableAdapterEnumeration(2U, rtc::GetLoopbackIP(AF_INET),
-                                 kClientAddr.ipaddr(), rtc::IPAddress(),
-                                 rtc::IPAddress());
+  CheckDisableAdapterEnumeration(2U, rtc::IPAddress(), kClientAddr.ipaddr(),
+                                 rtc::IPAddress(), rtc::IPAddress());
+}
+
+// Test that when adapter enumeration is disabled, with
+// PORTALLOCATOR_DISABLE_LOCALHOST_CANDIDATE specified, for endpoints behind a
+// NAT, there is only one STUN candidate.
+TEST_F(PortAllocatorTest,
+       TestDisableAdapterEnumerationWithNatLocalhostCandidateDisabled) {
+  ResetWithStunServerAndNat(kStunAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
+  // Expect to see 2 ports: STUN and TCP ports, and single STUN candidate.
+  CheckDisableAdapterEnumeration(2U, rtc::IPAddress(), kNatUdpAddr.ipaddr(),
+                                 rtc::IPAddress(), rtc::IPAddress());
 }
 
 // Test that we disable relay over UDP, and only TCP is used when connecting to
@@ -1244,7 +1257,8 @@ TEST_F(PortAllocatorTest, TestSharedSocketNoUdpAllowed) {
 // adapters, the PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION is specified
 // automatically.
 TEST_F(PortAllocatorTest, TestNetworkPermissionBlocked) {
-  AddInterface(kClientAddr);
+  network_manager_.set_default_local_addresses(kPrivateAddr.ipaddr(),
+                                               rtc::IPAddress());
   network_manager_.set_enumeration_permission(
       rtc::NetworkManager::ENUMERATION_BLOCKED);
   allocator().set_flags(allocator().flags() |
@@ -1258,7 +1272,10 @@ TEST_F(PortAllocatorTest, TestNetworkPermissionBlocked) {
                     cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
   session_->StartGettingPorts();
   EXPECT_EQ_WAIT(1U, ports_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(0U, candidates_.size());
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+               cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+               kPrivateAddr);
   EXPECT_TRUE((session_->flags() &
                cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) != 0);
 }

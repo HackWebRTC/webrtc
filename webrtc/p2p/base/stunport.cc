@@ -13,6 +13,7 @@
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/stun.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/ipaddress.h"
@@ -169,15 +170,19 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  const std::string& username,
                  const std::string& password,
                  const std::string& origin,
-                 bool emit_localhost_for_anyaddress)
-    : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
-           username, password),
+                 bool emit_local_for_anyaddress)
+    : Port(thread,
+           factory,
+           network,
+           socket->GetLocalAddress().ipaddr(),
+           username,
+           password),
       requests_(thread),
       socket_(socket),
       error_(0),
       ready_(false),
       stun_keepalive_delay_(KEEPALIVE_DELAY),
-      emit_localhost_for_anyaddress_(emit_localhost_for_anyaddress) {
+      emit_local_for_anyaddress_(emit_local_for_anyaddress) {
   requests_.set_origin(origin);
 }
 
@@ -190,7 +195,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  const std::string& username,
                  const std::string& password,
                  const std::string& origin,
-                 bool emit_localhost_for_anyaddress)
+                 bool emit_local_for_anyaddress)
     : Port(thread,
            LOCAL_PORT_TYPE,
            factory,
@@ -205,7 +210,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
       error_(0),
       ready_(false),
       stun_keepalive_delay_(KEEPALIVE_DELAY),
-      emit_localhost_for_anyaddress_(emit_localhost_for_anyaddress) {
+      emit_local_for_anyaddress_(emit_local_for_anyaddress) {
   requests_.set_origin(origin);
 }
 
@@ -297,13 +302,11 @@ int UDPPort::GetError() {
 void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                                   const rtc::SocketAddress& address) {
   // When adapter enumeration is disabled and binding to the any address, the
-  // loopback address will be issued as a candidate instead if
-  // |emit_localhost_for_anyaddress| is true. This is to allow connectivity on
-  // demo pages without STUN/TURN to work.
+  // default local address will be issued as a candidate instead if
+  // |emit_local_for_anyaddress| is true. This is to allow connectivity for
+  // applications which absolutely requires a HOST candidate.
   rtc::SocketAddress addr = address;
-  if (addr.IsAnyIP() && emit_localhost_for_anyaddress_) {
-    addr.SetIP(rtc::GetLoopbackIP(addr.family()));
-  }
+  MaybeSetDefaultLocalAddress(&addr);
 
   AddAddress(addr, addr, rtc::SocketAddress(), UDP_PROTOCOL_NAME, "", "",
              LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST, 0, false);
@@ -401,6 +404,19 @@ void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
   }
 }
 
+void UDPPort::MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const {
+  if (!addr->IsAnyIP() || !emit_local_for_anyaddress_ ||
+      !Network()->default_local_address_provider()) {
+    return;
+  }
+  rtc::IPAddress default_address;
+  bool result =
+      Network()->default_local_address_provider()->GetDefaultLocalAddress(
+          addr->family(), &default_address);
+  RTC_DCHECK(result && !default_address.IsNil());
+  addr->SetIP(default_address);
+}
+
 void UDPPort::OnStunBindingRequestSucceeded(
     const rtc::SocketAddress& stun_server_addr,
     const rtc::SocketAddress& stun_reflected_addr) {
@@ -418,6 +434,7 @@ void UDPPort::OnStunBindingRequestSucceeded(
       !HasCandidateWithAddress(stun_reflected_addr)) {
 
     rtc::SocketAddress related_address = socket_->GetLocalAddress();
+    MaybeSetDefaultLocalAddress(&related_address);
     if (!(candidate_filter() & CF_HOST)) {
       // If candidate filter doesn't have CF_HOST specified, empty raddr to
       // avoid local address leakage.

@@ -46,10 +46,14 @@ enum {
   PORTALLOCATOR_ENABLE_SHARED_UFRAG = 0x80,
   PORTALLOCATOR_ENABLE_SHARED_SOCKET = 0x100,
   PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE = 0x200,
+  // When specified, we'll only allocate the STUN candidate for the public
+  // interface as seen by regular http traffic and the HOST candidate associated
+  // with the default local interface.
   PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION = 0x400,
-  // When specified, a loopback candidate will be generated if
-  // PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION is specified.
-  PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE = 0x800,
+  // When specified along with PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION, the
+  // default local candidate mentioned above will not be allocated. Only the
+  // STUN candidate will be.
+  PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE = 0x800,
   // Disallow use of UDP when connecting to a relay server. Since proxy servers
   // usually don't handle UDP, using UDP will leak the IP address.
   PORTALLOCATOR_DISABLE_UDP_RELAY = 0x1000,

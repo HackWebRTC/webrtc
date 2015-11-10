@@ -743,12 +743,6 @@ bool WebRtcSession::Initialize(
   port_allocator()->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(rtc_configuration.type));
 
-  if (rtc_configuration.enable_localhost_ice_candidate) {
-    port_allocator()->set_flags(
-        port_allocator()->flags() |
-        cricket::PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
-  }
-
   return true;
 }
 
