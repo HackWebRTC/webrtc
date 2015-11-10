@@ -147,6 +147,12 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header)
             header->codecHeader.VP9.inter_pic_predicted;
         _codecSpecificInfo.codecSpecific.VP9.flexible_mode =
             header->codecHeader.VP9.flexible_mode;
+        _codecSpecificInfo.codecSpecific.VP9.num_ref_pics =
+            header->codecHeader.VP9.num_ref_pics;
+        for (uint8_t r = 0; r < header->codecHeader.VP9.num_ref_pics; ++r) {
+          _codecSpecificInfo.codecSpecific.VP9.p_diff[r] =
+              header->codecHeader.VP9.pid_diff[r];
+        }
         _codecSpecificInfo.codecSpecific.VP9.ss_data_available =
             header->codecHeader.VP9.ss_data_available;
         if (header->codecHeader.VP9.picture_id != kNoPictureId) {

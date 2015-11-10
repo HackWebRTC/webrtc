@@ -68,6 +68,10 @@ struct CodecSpecificInfoVP9 {
   uint16_t width[kMaxVp9NumberOfSpatialLayers];
   uint16_t height[kMaxVp9NumberOfSpatialLayers];
   GofInfoVP9 gof;
+
+  // Frame reference data.
+  uint8_t num_ref_pics;
+  uint8_t p_diff[kMaxVp9RefPics];
 };
 
 struct CodecSpecificInfoGeneric {

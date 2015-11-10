@@ -446,4 +446,254 @@ TEST(TestDecodingState, PictureIdRepeat) {
   EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
 }
 
+TEST(TestDecodingState, FrameContinuityFlexibleModeKeyFrame) {
+  VCMDecodingState dec_state;
+  VCMFrameBuffer frame;
+  VCMPacket packet;
+  packet.isFirstPacket = true;
+  packet.timestamp = 1;
+  packet.seqNum = 0xffff;
+  uint8_t data[] = "I need a data pointer for this test!";
+  packet.sizeBytes = sizeof(data);
+  packet.dataPtr = data;
+  packet.codecSpecificHeader.codec = kRtpVideoVp9;
+
+  RTPVideoHeaderVP9& vp9_hdr = packet.codecSpecificHeader.codecHeader.VP9;
+  vp9_hdr.picture_id = 10;
+  vp9_hdr.flexible_mode = true;
+
+  FrameData frame_data;
+  frame_data.rtt_ms = 0;
+  frame_data.rolling_average_packets_per_frame = -1;
+
+  // Key frame as first frame
+  packet.frameType = kVideoFrameKey;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Key frame again
+  vp9_hdr.picture_id = 11;
+  frame.Reset();
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Ref to 11, continuous
+  frame.Reset();
+  packet.frameType = kVideoFrameDelta;
+  vp9_hdr.picture_id = 12;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.pid_diff[0] = 1;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+}
+
+TEST(TestDecodingState, FrameContinuityFlexibleModeOutOfOrderFrames) {
+  VCMDecodingState dec_state;
+  VCMFrameBuffer frame;
+  VCMPacket packet;
+  packet.isFirstPacket = true;
+  packet.timestamp = 1;
+  packet.seqNum = 0xffff;
+  uint8_t data[] = "I need a data pointer for this test!";
+  packet.sizeBytes = sizeof(data);
+  packet.dataPtr = data;
+  packet.codecSpecificHeader.codec = kRtpVideoVp9;
+
+  RTPVideoHeaderVP9& vp9_hdr = packet.codecSpecificHeader.codecHeader.VP9;
+  vp9_hdr.picture_id = 10;
+  vp9_hdr.flexible_mode = true;
+
+  FrameData frame_data;
+  frame_data.rtt_ms = 0;
+  frame_data.rolling_average_packets_per_frame = -1;
+
+  // Key frame as first frame
+  packet.frameType = kVideoFrameKey;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Ref to 10, continuous
+  frame.Reset();
+  packet.frameType = kVideoFrameDelta;
+  vp9_hdr.picture_id = 15;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.pid_diff[0] = 5;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Out of order, last id 15, this id 12, ref to 10, continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 12;
+  vp9_hdr.pid_diff[0] = 2;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Ref 10, 12, 15, continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 20;
+  vp9_hdr.num_ref_pics = 3;
+  vp9_hdr.pid_diff[0] = 10;
+  vp9_hdr.pid_diff[1] = 8;
+  vp9_hdr.pid_diff[2] = 5;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+}
+
+TEST(TestDecodingState, FrameContinuityFlexibleModeGeneral) {
+  VCMDecodingState dec_state;
+  VCMFrameBuffer frame;
+  VCMPacket packet;
+  packet.isFirstPacket = true;
+  packet.timestamp = 1;
+  packet.seqNum = 0xffff;
+  uint8_t data[] = "I need a data pointer for this test!";
+  packet.sizeBytes = sizeof(data);
+  packet.dataPtr = data;
+  packet.codecSpecificHeader.codec = kRtpVideoVp9;
+
+  RTPVideoHeaderVP9& vp9_hdr = packet.codecSpecificHeader.codecHeader.VP9;
+  vp9_hdr.picture_id = 10;
+  vp9_hdr.flexible_mode = true;
+
+  FrameData frame_data;
+  frame_data.rtt_ms = 0;
+  frame_data.rolling_average_packets_per_frame = -1;
+
+  // Key frame as first frame
+  packet.frameType = kVideoFrameKey;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+
+  // Delta frame as first frame
+  frame.Reset();
+  packet.frameType = kVideoFrameDelta;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
+
+  // Key frame then delta frame
+  frame.Reset();
+  packet.frameType = kVideoFrameKey;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  dec_state.SetState(&frame);
+  frame.Reset();
+  packet.frameType = kVideoFrameDelta;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.picture_id = 15;
+  vp9_hdr.pid_diff[0] = 5;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Ref to 11, not continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 16;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
+
+  // Ref to 15, continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 16;
+  vp9_hdr.pid_diff[0] = 1;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Ref to 11 and 15, not continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 20;
+  vp9_hdr.num_ref_pics = 2;
+  vp9_hdr.pid_diff[0] = 9;
+  vp9_hdr.pid_diff[1] = 5;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
+
+  // Ref to 10, 15 and 16, continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 22;
+  vp9_hdr.num_ref_pics = 3;
+  vp9_hdr.pid_diff[0] = 12;
+  vp9_hdr.pid_diff[1] = 7;
+  vp9_hdr.pid_diff[2] = 6;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Key Frame, continuous
+  frame.Reset();
+  packet.frameType = kVideoFrameKey;
+  vp9_hdr.picture_id = VCMDecodingState::kFrameDecodedLength - 2;
+  vp9_hdr.num_ref_pics = 0;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Frame at last index, ref to KF, continuous
+  frame.Reset();
+  packet.frameType = kVideoFrameDelta;
+  vp9_hdr.picture_id = VCMDecodingState::kFrameDecodedLength - 1;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.pid_diff[0] = 1;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Frame after wrapping buffer length, ref to last index, continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 0;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.pid_diff[0] = 1;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Frame after wrapping start frame, ref to 0, continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 20;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.pid_diff[0] = 20;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Frame after wrapping start frame, ref to 10, not continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 23;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.pid_diff[0] = 13;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
+
+  // Key frame, continuous
+  frame.Reset();
+  packet.frameType = kVideoFrameKey;
+  vp9_hdr.picture_id = 25;
+  vp9_hdr.num_ref_pics = 0;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Ref to KF, continuous
+  frame.Reset();
+  packet.frameType = kVideoFrameDelta;
+  vp9_hdr.picture_id = 26;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.pid_diff[0] = 1;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+
+  // Ref to frame previous to KF, not continuous
+  frame.Reset();
+  vp9_hdr.picture_id = 30;
+  vp9_hdr.num_ref_pics = 1;
+  vp9_hdr.pid_diff[0] = 30;
+  EXPECT_LE(0, frame.InsertPacket(packet, 0, kNoErrors, frame_data));
+  EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
+}
+
 }  // namespace webrtc
