@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/scaler.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
@@ -248,6 +249,11 @@ class VideoProcessorImpl : public VideoProcessor {
       : video_processor_(vp) {
     }
       int32_t Decoded(webrtc::VideoFrame& image) override;
+      int32_t Decoded(
+          webrtc::VideoFrame& image, int64_t decode_time_ms) override {
+        RTC_NOTREACHED();
+        return -1;
+      }
 
    private:
     VideoProcessorImpl* video_processor_;

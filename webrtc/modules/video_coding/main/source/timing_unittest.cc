@@ -85,8 +85,10 @@ TEST(ReceiverTiming, Tests) {
   for (int i = 0; i < 10; i++) {
     int64_t startTimeMs = clock.TimeInMilliseconds();
     clock.AdvanceTimeMilliseconds(10);
-    timing.StopDecodeTimer(timeStamp, startTimeMs,
-                           clock.TimeInMilliseconds(), timing.RenderTimeMs(
+    timing.StopDecodeTimer(timeStamp,
+                           clock.TimeInMilliseconds() - startTimeMs,
+                           clock.TimeInMilliseconds(),
+                           timing.RenderTimeMs(
                                timeStamp, clock.TimeInMilliseconds()));
     timeStamp += 90000 / 25;
     clock.AdvanceTimeMilliseconds(1000 / 25 - 10);

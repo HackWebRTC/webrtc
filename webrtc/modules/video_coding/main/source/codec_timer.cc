@@ -28,13 +28,6 @@ _history()
     Reset();
 }
 
-int32_t VCMCodecTimer::StopTimer(int64_t startTimeMs, int64_t nowMs)
-{
-    const int32_t timeDiff = static_cast<int32_t>(nowMs - startTimeMs);
-    MaxFilter(timeDiff, nowMs);
-    return timeDiff;
-}
-
 void VCMCodecTimer::Reset()
 {
     _filteredMax = 0;

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -123,7 +124,7 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
   Vp8TestDecodedImageCallback()
       : decoded_frames_(0) {
   }
-  virtual int32_t Decoded(VideoFrame& decoded_image) {
+  int32_t Decoded(VideoFrame& decoded_image) override {
     for (int i = 0; i < decoded_image.width(); ++i) {
       EXPECT_NEAR(kColorY, decoded_image.buffer(kYPlane)[i], 1);
     }
@@ -135,6 +136,10 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
     }
     decoded_frames_++;
     return 0;
+  }
+  int32_t Decoded(VideoFrame& decoded_image, int64_t decode_time_ms) override {
+    RTC_NOTREACHED();
+    return -1;
   }
   int DecodedFrames() {
     return decoded_frames_;

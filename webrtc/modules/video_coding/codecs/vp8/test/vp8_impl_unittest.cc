@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -78,7 +79,11 @@ class Vp8UnitTestDecodeCompleteCallback : public webrtc::DecodedImageCallback {
  public:
   explicit Vp8UnitTestDecodeCompleteCallback(VideoFrame* frame)
       : decoded_frame_(frame), decode_complete(false) {}
-  int Decoded(webrtc::VideoFrame& frame);
+  int32_t Decoded(VideoFrame& frame) override;
+  int32_t Decoded(VideoFrame& frame, int64_t decode_time_ms) override {
+    RTC_NOTREACHED();
+    return -1;
+  }
   bool DecodeComplete();
 
  private:

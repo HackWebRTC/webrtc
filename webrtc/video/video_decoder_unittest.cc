@@ -11,6 +11,7 @@
 #include "webrtc/video_decoder.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_error_codes.h"
 
 namespace webrtc {
@@ -148,6 +149,11 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
        ForwardsRegisterDecodeCompleteCallback) {
   class FakeDecodedImageCallback : public DecodedImageCallback {
     int32_t Decoded(VideoFrame& decodedImage) override { return 0; }
+    int32_t Decoded(
+        webrtc::VideoFrame& decodedImage, int64_t decode_time_ms) override {
+      RTC_NOTREACHED();
+      return -1;
+    }
   } callback, callback2;
 
   VideoCodec codec = {};
