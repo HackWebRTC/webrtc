@@ -40,7 +40,6 @@ DIRECTORIES = [
   'third_party/colorama',
   'third_party/drmemory',
   'third_party/expat',
-  'third_party/icu',
   'third_party/instrumented_libraries',
   'third_party/jsoncpp',
   'third_party/libjpeg',
