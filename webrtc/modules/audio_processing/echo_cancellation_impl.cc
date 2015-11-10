@@ -94,7 +94,7 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
           audio->num_frames_per_band());
 
       if (err != apm_->kNoError) {
-        return GetHandleError(my_handle);  // TODO(ajm): warning possible?
+        return MapError(err);  // TODO(ajm): warning possible?
       }
 
       handle_index++;
@@ -138,7 +138,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
           stream_drift_samples_);
 
       if (err != apm_->kNoError) {
-        err = GetHandleError(my_handle);
+        err = MapError(err);
         // TODO(ajm): Figure out how to return warnings properly.
         if (err != apm_->kBadStreamParameterWarning) {
           return err;
@@ -148,7 +148,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       int status = 0;
       err = WebRtcAec_get_echo_status(my_handle, &status);
       if (err != apm_->kNoError) {
-        return GetHandleError(my_handle);
+        return MapError(err);
       }
 
       if (status == 1) {
@@ -240,7 +240,7 @@ int EchoCancellationImpl::GetMetrics(Metrics* metrics) {
   Handle* my_handle = static_cast<Handle*>(handle(0));
   int err = WebRtcAec_GetMetrics(my_handle, &my_metrics);
   if (err != apm_->kNoError) {
-    return GetHandleError(my_handle);
+    return MapError(err);
   }
 
   metrics->residual_echo_return_loss.instant = my_metrics.rerl.instant;
@@ -309,9 +309,10 @@ int EchoCancellationImpl::GetDelayMetrics(int* median, int* std,
   }
 
   Handle* my_handle = static_cast<Handle*>(handle(0));
-  if (WebRtcAec_GetDelayMetrics(my_handle, median, std, fraction_poor_delays) !=
-      apm_->kNoError) {
-    return GetHandleError(my_handle);
+  const int err =
+      WebRtcAec_GetDelayMetrics(my_handle, median, std, fraction_poor_delays);
+  if (err != apm_->kNoError) {
+    return MapError(err);
   }
 
   return apm_->kNoError;
@@ -384,6 +385,6 @@ int EchoCancellationImpl::num_handles_required() const {
 
 int EchoCancellationImpl::GetHandleError(void* handle) const {
   assert(handle != NULL);
-  return MapError(WebRtcAec_get_error_code(static_cast<Handle*>(handle)));
+  return AudioProcessing::kUnspecifiedError;
 }
 }  // namespace webrtc

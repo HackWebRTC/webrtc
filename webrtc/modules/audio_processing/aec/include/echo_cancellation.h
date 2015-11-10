@@ -109,11 +109,30 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq);
  * Outputs                      Description
  * -------------------------------------------------------------------
  * int32_t        return        0: OK
- *                             -1: error
+ *                              12000-12050: error code
  */
 int32_t WebRtcAec_BufferFarend(void* aecInst,
                                const float* farend,
                                size_t nrOfSamples);
+
+/*
+ * Reports any errors that would arise if buffering a farend buffer
+ *
+ * Inputs                       Description
+ * -------------------------------------------------------------------
+ * void*          aecInst       Pointer to the AEC instance
+ * const float*   farend        In buffer containing one frame of
+ *                              farend signal for L band
+ * int16_t        nrOfSamples   Number of samples in farend buffer
+ *
+ * Outputs                      Description
+ * -------------------------------------------------------------------
+ * int32_t        return        0: OK
+ *                              12000-12050: error code
+ */
+int32_t WebRtcAec_GetBufferFarendError(void* aecInst,
+                                       const float* farend,
+                                       size_t nrOfSamples);
 
 /*
  * Runs the echo canceller on an 80 or 160 sample blocks of data.
@@ -136,7 +155,7 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
  * float* const* out            Out buffer, one frame of processed nearend
  *                              for each band
  * int32_t       return         0: OK
- *                             -1: error
+ *                              12000-12050: error code
  */
 int32_t WebRtcAec_Process(void* aecInst,
                           const float* const* nearend,
@@ -157,8 +176,8 @@ int32_t WebRtcAec_Process(void* aecInst,
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
- * int            return         0: OK
- *                              -1: error
+ * int            return        0: OK
+ *                              12000-12050: error code
  */
 int WebRtcAec_set_config(void* handle, AecConfig config);
 
@@ -173,8 +192,8 @@ int WebRtcAec_set_config(void* handle, AecConfig config);
  * -------------------------------------------------------------------
  * int*           status        0: Almost certainly nearend single-talk
  *                              1: Might not be neared single-talk
- * int            return         0: OK
- *                              -1: error
+ * int            return        0: OK
+ *                              12000-12050: error code
  */
 int WebRtcAec_get_echo_status(void* handle, int* status);
 
@@ -189,8 +208,8 @@ int WebRtcAec_get_echo_status(void* handle, int* status);
  * -------------------------------------------------------------------
  * AecMetrics*    metrics       Struct which will be filled out with the
  *                              current echo metrics.
- * int            return         0: OK
- *                              -1: error
+ * int            return        0: OK
+ *                              12000-12050: error code
  */
 int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics);
 
@@ -208,26 +227,13 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics);
  * float*  fraction_poor_delays Fraction of the delay estimates that may
  *                              cause the AEC to perform poorly.
  *
- * int     return                0: OK
- *                              -1: error
+ * int            return        0: OK
+ *                              12000-12050: error code
  */
 int WebRtcAec_GetDelayMetrics(void* handle,
                               int* median,
                               int* std,
                               float* fraction_poor_delays);
-
-/*
- * Gets the last error code.
- *
- * Inputs                       Description
- * -------------------------------------------------------------------
- * void*          aecInst       Pointer to the AEC instance
- *
- * Outputs                      Description
- * -------------------------------------------------------------------
- * int32_t        return        11000-11100: error code
- */
-int32_t WebRtcAec_get_error_code(void* aecInst);
 
 // Returns a pointer to the low level AEC handle.
 //
