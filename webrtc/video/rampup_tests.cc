@@ -273,10 +273,8 @@ void RampUpTester::TriggerTestDone() {
 void RampUpTester::PerformTest() {
   test_start_ms_ = clock_->TimeInMilliseconds();
   poller_thread_->Start();
-  if (Wait() != kEventSignaled) {
-    printf("Timed out while waiting for ramp-up to complete.");
-    return;
-  }
+  EXPECT_EQ(kEventSignaled, Wait())
+      << "Timed out while waiting for ramp-up to complete.";
   TriggerTestDone();
   poller_thread_->Stop();
 }

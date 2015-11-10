@@ -196,8 +196,8 @@ VideoSendStream::VideoSendStream(
   vie_channel_->SetProtectionMode(enable_protection_nack, enable_protection_fec,
                                   config_.rtp.fec.red_payload_type,
                                   config_.rtp.fec.ulpfec_payload_type);
-  vie_encoder_->UpdateProtectionMethod(enable_protection_nack,
-                                       enable_protection_fec);
+  vie_encoder_->SetProtectionMethod(enable_protection_nack,
+                                    enable_protection_fec);
 
   ConfigureSsrcs();
 
@@ -563,13 +563,7 @@ bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {
   // to send on all SSRCs at once etc.)
   std::vector<uint32_t> used_ssrcs = config_.rtp.ssrcs;
   used_ssrcs.resize(static_cast<size_t>(video_codec.numberOfSimulcastStreams));
-
-  // Update used SSRCs.
   vie_encoder_->SetSsrcs(used_ssrcs);
-
-  // Update the protection mode, we might be switching NACK/FEC.
-  vie_encoder_->UpdateProtectionMethod(vie_encoder_->nack_enabled(),
-                                       vie_channel_->IsSendingFecEnabled());
 
   // Restart the media flow
   vie_encoder_->Restart();

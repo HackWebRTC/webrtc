@@ -369,7 +369,6 @@ void VideoSender::SuspendBelowMinBitrate() {
 }
 
 bool VideoSender::VideoSuspended() const {
-  rtc::CritScope lock(&send_crit_);
   return _mediaOpt.IsVideoSuspended();
 }
 }  // namespace vcm

@@ -87,7 +87,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
                                   bool internal_source);
   int32_t DeRegisterExternalEncoder(uint8_t pl_type);
   int32_t SetEncoder(const VideoCodec& video_codec);
-  int32_t GetEncoder(VideoCodec* video_codec);
 
   // Scale or crop/pad image.
   int32_t ScaleInputImage(bool enable);
@@ -99,9 +98,11 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   uint32_t LastObservedBitrateBps() const;
   int CodecTargetBitrate(uint32_t* bitrate) const;
-  // Loss protection.
-  int32_t UpdateProtectionMethod(bool nack, bool fec);
-  bool nack_enabled() const { return nack_enabled_; }
+  // Loss protection. Must be called before SetEncoder() to have max packet size
+  // updated according to protection.
+  // TODO(pbos): Set protection method on construction or extract vcm_ outside
+  // this class and set it on construction there.
+  void SetProtectionMethod(bool nack, bool fec);
 
   // Buffering mode.
   void SetSenderBufferingMode(int target_delay_ms);
@@ -126,7 +127,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) override;
 
   // Sets SSRCs for all streams.
-  bool SetSsrcs(const std::vector<uint32_t>& ssrcs);
+  void SetSsrcs(const std::vector<uint32_t>& ssrcs);
 
   void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
 
@@ -171,7 +172,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   // track when video is stopped long enough that we also want to stop sending
   // padding.
   int64_t time_of_last_frame_activity_ms_ GUARDED_BY(data_cs_);
-  bool simulcast_enabled_ GUARDED_BY(data_cs_);
+  VideoCodec encoder_config_ GUARDED_BY(data_cs_);
   int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
   int target_delay_ms_ GUARDED_BY(data_cs_);
@@ -180,9 +181,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
   std::map<unsigned int, int64_t> time_last_intra_request_ms_
       GUARDED_BY(data_cs_);
-
-  bool fec_enabled_;
-  bool nack_enabled_;
 
   ProcessThread* module_process_thread_;
 
