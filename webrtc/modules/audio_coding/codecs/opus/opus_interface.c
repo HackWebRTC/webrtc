@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/codecs/opus/include/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -29,48 +30,61 @@ enum {
 
   /* Default frame size, 20 ms @ 48 kHz, in samples (for one channel). */
   kWebRtcOpusDefaultFrameSize = 960,
+
+  // Maximum number of consecutive zeros, beyond or equal to which DTX can fail.
+  kZeroBreakCount = 157,
+
+#if defined(OPUS_FIXED_POINT)
+  kZeroBreakValue = 10,
+#else
+  kZeroBreakValue = 1,
+#endif
 };
 
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
                                  int32_t channels,
                                  int32_t application) {
-  OpusEncInst* state;
-  if (inst != NULL) {
-    state = (OpusEncInst*) calloc(1, sizeof(OpusEncInst));
-    if (state) {
-      int opus_app;
-      switch (application) {
-        case 0: {
-          opus_app = OPUS_APPLICATION_VOIP;
-          break;
-        }
-        case 1: {
-          opus_app = OPUS_APPLICATION_AUDIO;
-          break;
-        }
-        default: {
-          free(state);
-          return -1;
-        }
-      }
+  int opus_app;
+  if (!inst)
+    return -1;
 
-      int error;
-      state->encoder = opus_encoder_create(48000, channels, opus_app,
-                                           &error);
-      state->in_dtx_mode = 0;
-      if (error == OPUS_OK && state->encoder != NULL) {
-        *inst = state;
-        return 0;
-      }
-      free(state);
-    }
+  switch (application) {
+    case 0:
+      opus_app = OPUS_APPLICATION_VOIP;
+      break;
+    case 1:
+      opus_app = OPUS_APPLICATION_AUDIO;
+      break;
+    default:
+      return -1;
   }
-  return -1;
+
+  OpusEncInst* state = calloc(1, sizeof(OpusEncInst));
+  assert(state);
+
+  // Allocate zero counters.
+  state->zero_counts = calloc(channels, sizeof(size_t));
+  assert(state->zero_counts);
+
+  int error;
+  state->encoder = opus_encoder_create(48000, channels, opus_app,
+                                       &error);
+  if (error != OPUS_OK || !state->encoder) {
+    WebRtcOpus_EncoderFree(state);
+    return -1;
+  }
+
+  state->in_dtx_mode = 0;
+  state->channels = channels;
+
+  *inst = state;
+  return 0;
 }
 
 int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst) {
   if (inst) {
     opus_encoder_destroy(inst->encoder);
+    free(inst->zero_counts);
     free(inst);
     return 0;
   } else {
@@ -84,13 +98,42 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
                       size_t length_encoded_buffer,
                       uint8_t* encoded) {
   int res;
+  size_t i;
+  int c;
+
+  int16_t buffer[2 * 48 * kWebRtcOpusMaxEncodeFrameSizeMs];
 
   if (samples > 48 * kWebRtcOpusMaxEncodeFrameSizeMs) {
     return -1;
   }
 
+  const int channels = inst->channels;
+  int use_buffer = 0;
+
+  // Break long consecutive zeros by forcing a "1" every |kZeroBreakCount|
+  // samples.
+  if (inst->in_dtx_mode) {
+    for (i = 0; i < samples; ++i) {
+      for (c = 0; c < channels; ++c) {
+        if (audio_in[i * channels + c] == 0) {
+          ++inst->zero_counts[c];
+          if (inst->zero_counts[c] == kZeroBreakCount) {
+            if (!use_buffer) {
+              memcpy(buffer, audio_in, samples * channels * sizeof(int16_t));
+              use_buffer = 1;
+            }
+            buffer[i * channels + c] = kZeroBreakValue;
+            inst->zero_counts[c] = 0;
+          }
+        } else {
+          inst->zero_counts[c] = 0;
+        }
+      }
+    }
+  }
+
   res = opus_encode(inst->encoder,
-                    (const opus_int16*)audio_in,
+                    use_buffer ? buffer : audio_in,
                     (int)samples,
                     encoded,
                     (opus_int32)length_encoded_buffer);

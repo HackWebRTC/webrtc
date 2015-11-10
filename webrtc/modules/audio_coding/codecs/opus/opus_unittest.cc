@@ -36,7 +36,7 @@ class OpusTest : public TestWithParam<::testing::tuple<int, int>> {
  protected:
   OpusTest();
 
-  void TestDtxEffect(bool dtx);
+  void TestDtxEffect(bool dtx, int block_length_ms);
 
   // Prepare |speech_data_| for encoding, read from a hard-coded file.
   // After preparation, |speech_data_.GetNextBlock()| returns a pointer to a
@@ -52,6 +52,9 @@ class OpusTest : public TestWithParam<::testing::tuple<int, int>> {
 
   void SetMaxPlaybackRate(WebRtcOpusEncInst* encoder,
                           opus_int32 expect, int32_t set);
+
+  void CheckAudioBounded(const int16_t* audio, size_t samples, int channels,
+                         uint16_t bound) const;
 
   WebRtcOpusEncInst* opus_encoder_;
   WebRtcOpusDecInst* opus_decoder_;
@@ -95,6 +98,16 @@ void OpusTest::SetMaxPlaybackRate(WebRtcOpusEncInst* encoder,
   EXPECT_EQ(expect, bandwidth);
 }
 
+void OpusTest::CheckAudioBounded(const int16_t* audio, size_t samples,
+                                 int channels, uint16_t bound) const {
+  for (size_t i = 0; i < samples; ++i) {
+    for (int c = 0; c < channels; ++c) {
+      ASSERT_GE(audio[i * channels + c], -bound);
+      ASSERT_LE(audio[i * channels + c], bound);
+    }
+  }
+}
+
 int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
                            rtc::ArrayView<const int16_t> input_audio,
                            WebRtcOpusDecInst* decoder,
@@ -116,8 +129,9 @@ int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
 
 // Test if encoder/decoder can enter DTX mode properly and do not enter DTX when
 // they should not. This test is signal dependent.
-void OpusTest::TestDtxEffect(bool dtx) {
-  PrepareSpeechData(channels_, 20, 2000);
+void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
+  PrepareSpeechData(channels_, block_length_ms, 2000);
+  const size_t samples = kOpusRateKhz * block_length_ms;
 
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_encoder_,
@@ -130,17 +144,17 @@ void OpusTest::TestDtxEffect(bool dtx) {
                                      channels_ == 1 ? 32000 : 64000));
 
   // Set input audio as silence.
-  std::vector<int16_t> silence(kOpus20msFrameSamples * channels_, 0);
+  std::vector<int16_t> silence(samples * channels_, 0);
 
   // Setting DTX.
   EXPECT_EQ(0, dtx ? WebRtcOpus_EnableDtx(opus_encoder_) :
       WebRtcOpus_DisableDtx(opus_encoder_));
 
   int16_t audio_type;
-  int16_t* output_data_decode = new int16_t[kOpus20msFrameSamples * channels_];
+  int16_t* output_data_decode = new int16_t[samples * channels_];
 
   for (int i = 0; i < 100; ++i) {
-    EXPECT_EQ(kOpus20msFrameSamples,
+    EXPECT_EQ(samples,
               static_cast<size_t>(EncodeDecode(
                   opus_encoder_, speech_data_.GetNextBlock(), opus_decoder_,
                   output_data_decode, &audio_type)));
@@ -157,9 +171,10 @@ void OpusTest::TestDtxEffect(bool dtx) {
   // We input some silent segments. In DTX mode, the encoder will stop sending.
   // However, DTX may happen after a while.
   for (int i = 0; i < 30; ++i) {
-    EXPECT_EQ(kOpus20msFrameSamples, static_cast<size_t>(EncodeDecode(
-                                         opus_encoder_, silence, opus_decoder_,
-                                         output_data_decode, &audio_type)));
+    EXPECT_EQ(samples,
+              static_cast<size_t>(EncodeDecode(
+                  opus_encoder_, silence, opus_decoder_, output_data_decode,
+                  &audio_type)));
     if (!dtx) {
       EXPECT_GT(encoded_bytes_, 1U);
       EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
@@ -175,21 +190,47 @@ void OpusTest::TestDtxEffect(bool dtx) {
 
   // When Opus is in DTX, it wakes up in a regular basis. It sends two packets,
   // one with an arbitrary size and the other of 1-byte, then stops sending for
-  // 19 frames.
-  const int cycles = 5;
-  for (int j = 0; j < cycles; ++j) {
-    // DTX mode is maintained 19 frames.
-    for (int i = 0; i < 19; ++i) {
-      EXPECT_EQ(kOpus20msFrameSamples,
-                static_cast<size_t>(
-                    EncodeDecode(opus_encoder_, silence, opus_decoder_,
-                                 output_data_decode, &audio_type)));
+  // a certain number of frames.
+
+  // |max_dtx_frames| is the maximum number of frames Opus can stay in DTX.
+  const int max_dtx_frames = 400 / block_length_ms + 1;
+
+  // We run |kRunTimeMs| milliseconds of pure silence.
+  const int kRunTimeMs = 2000;
+
+  // We check that, after a |kCheckTimeMs| milliseconds (given that the CNG in
+  // Opus needs time to adapt), the absolute values of DTX decoded signal are
+  // bounded by |kOutputValueBound|.
+  const int kCheckTimeMs = 1500;
+
+#if defined(OPUS_FIXED_POINT)
+  const uint16_t kOutputValueBound = 20;
+#else
+  const uint16_t kOutputValueBound = 2;
+#endif
+
+  int time = 0;
+  while (time < kRunTimeMs) {
+    // DTX mode is maintained for maximum |max_dtx_frames| frames.
+    int i = 0;
+    for (; i < max_dtx_frames; ++i) {
+      time += block_length_ms;
+      EXPECT_EQ(samples,
+                static_cast<size_t>(EncodeDecode(
+                    opus_encoder_, silence, opus_decoder_, output_data_decode,
+                    &audio_type)));
       if (dtx) {
+        if (encoded_bytes_ > 1)
+          break;
         EXPECT_EQ(0U, encoded_bytes_)  // Send 0 byte.
             << "Opus should have entered DTX mode.";
         EXPECT_EQ(1, opus_encoder_->in_dtx_mode);
         EXPECT_EQ(1, opus_decoder_->in_dtx_mode);
         EXPECT_EQ(2, audio_type);  // Comfort noise.
+        if (time >= kCheckTimeMs) {
+          CheckAudioBounded(output_data_decode, samples, channels_,
+                            kOutputValueBound);
+        }
       } else {
         EXPECT_GT(encoded_bytes_, 1U);
         EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
@@ -198,25 +239,31 @@ void OpusTest::TestDtxEffect(bool dtx) {
       }
     }
 
-    // Quit DTX after 19 frames.
-    EXPECT_EQ(kOpus20msFrameSamples, static_cast<size_t>(EncodeDecode(
-                                         opus_encoder_, silence, opus_decoder_,
-                                         output_data_decode, &audio_type)));
+    if (dtx) {
+      // With DTX, Opus must stop transmission for some time.
+      EXPECT_GT(i, 1);
+    }
 
-    EXPECT_GT(encoded_bytes_, 1U);
+    // We expect a normal payload.
     EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
     EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
     EXPECT_EQ(0, audio_type);  // Speech.
 
     // Enters DTX again immediately.
-    EXPECT_EQ(kOpus20msFrameSamples, static_cast<size_t>(EncodeDecode(
-                                         opus_encoder_, silence, opus_decoder_,
-                                         output_data_decode, &audio_type)));
+    time += block_length_ms;
+    EXPECT_EQ(samples,
+              static_cast<size_t>(EncodeDecode(
+                  opus_encoder_, silence, opus_decoder_, output_data_decode,
+                  &audio_type)));
     if (dtx) {
       EXPECT_EQ(1U, encoded_bytes_);  // Send 1 byte.
       EXPECT_EQ(1, opus_encoder_->in_dtx_mode);
       EXPECT_EQ(1, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(2, audio_type);  // Comfort noise.
+      if (time >= kCheckTimeMs) {
+        CheckAudioBounded(output_data_decode, samples, channels_,
+                          kOutputValueBound);
+      }
     } else {
       EXPECT_GT(encoded_bytes_, 1U);
       EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
@@ -228,9 +275,10 @@ void OpusTest::TestDtxEffect(bool dtx) {
   silence[0] = 10000;
   if (dtx) {
     // Verify that encoder/decoder can jump out from DTX mode.
-    EXPECT_EQ(kOpus20msFrameSamples, static_cast<size_t>(EncodeDecode(
-                                         opus_encoder_, silence, opus_decoder_,
-                                         output_data_decode, &audio_type)));
+    EXPECT_EQ(samples,
+              static_cast<size_t>(EncodeDecode(
+                  opus_encoder_, silence, opus_decoder_, output_data_decode,
+                  &audio_type)));
     EXPECT_GT(encoded_bytes_, 1U);
     EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
     EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
@@ -436,11 +484,15 @@ TEST_P(OpusTest, OpusEnableDisableDtx) {
 }
 
 TEST_P(OpusTest, OpusDtxOff) {
-  TestDtxEffect(false);
+  TestDtxEffect(false, 10);
+  TestDtxEffect(false, 20);
+  TestDtxEffect(false, 40);
 }
 
 TEST_P(OpusTest, OpusDtxOn) {
-  TestDtxEffect(true);
+  TestDtxEffect(true, 10);
+  TestDtxEffect(true, 20);
+  TestDtxEffect(true, 40);
 }
 
 TEST_P(OpusTest, OpusSetPacketLossRate) {
