@@ -152,9 +152,7 @@ bool CodecIsInternallySupported(const std::string& codec_name) {
     return true;
   }
   if (CodecNamesEq(codec_name, kVp9CodecName)) {
-    const std::string group_name =
-        webrtc::field_trial::FindFullName("WebRTC-SupportVP9");
-    return group_name == "Enabled" || group_name == "EnabledByFlag";
+    return true;
   }
   if (CodecNamesEq(codec_name, kH264CodecName)) {
     return webrtc::H264Encoder::IsSupported() &&
@@ -303,7 +301,8 @@ static void MergeFecConfig(const webrtc::FecConfig& other,
 
 // Returns true if the given codec is disallowed from doing simulcast.
 bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
-  return CodecNamesEq(codec_name, kH264CodecName);
+  return CodecNamesEq(codec_name, kH264CodecName) ||
+         CodecNamesEq(codec_name, kVp9CodecName);
 }
 
 // The selected thresholds for QVGA and VGA corresponded to a QP around 10.
@@ -339,13 +338,13 @@ static const int kDefaultRtcpReceiverReportSsrc = 1;
 
 std::vector<VideoCodec> DefaultVideoCodecList() {
   std::vector<VideoCodec> codecs;
+  codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType,
+                                                           kVp8CodecName));
   if (CodecIsInternallySupported(kVp9CodecName)) {
     codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp9PlType,
                                                              kVp9CodecName));
     // TODO(andresp): Add rtx codec for vp9 and verify it works.
   }
-  codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType,
-                                                           kVp8CodecName));
   if (CodecIsInternallySupported(kH264CodecName)) {
     codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultH264PlType,
                                                              kH264CodecName));
