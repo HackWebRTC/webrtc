@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/base/maybe.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
@@ -213,7 +213,7 @@ class AudioCodingModule {
   // Return value:
   //   The send codec, or nothing if we don't have one
   //
-  virtual rtc::Maybe<CodecInst> SendCodec() const = 0;
+  virtual rtc::Optional<CodecInst> SendCodec() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t SendFrequency()

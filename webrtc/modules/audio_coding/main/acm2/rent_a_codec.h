@@ -15,7 +15,7 @@
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/maybe.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
@@ -144,27 +144,28 @@ class RentACodec {
     return static_cast<size_t>(CodecId::kNumCodecs);
   }
 
-  static inline rtc::Maybe<int> CodecIndexFromId(CodecId codec_id) {
+  static inline rtc::Optional<int> CodecIndexFromId(CodecId codec_id) {
     const int i = static_cast<int>(codec_id);
-    return i >= 0 && i < static_cast<int>(NumberOfCodecs()) ? rtc::Maybe<int>(i)
-                                                            : rtc::Maybe<int>();
+    return i >= 0 && i < static_cast<int>(NumberOfCodecs())
+               ? rtc::Optional<int>(i)
+               : rtc::Optional<int>();
   }
 
-  static inline rtc::Maybe<CodecId> CodecIdFromIndex(int codec_index) {
+  static inline rtc::Optional<CodecId> CodecIdFromIndex(int codec_index) {
     return static_cast<size_t>(codec_index) < NumberOfCodecs()
-               ? rtc::Maybe<RentACodec::CodecId>(
+               ? rtc::Optional<RentACodec::CodecId>(
                      static_cast<RentACodec::CodecId>(codec_index))
-               : rtc::Maybe<RentACodec::CodecId>();
+               : rtc::Optional<RentACodec::CodecId>();
   }
 
-  static rtc::Maybe<CodecId> CodecIdByParams(const char* payload_name,
-                                             int sampling_freq_hz,
-                                             int channels);
-  static rtc::Maybe<CodecInst> CodecInstById(CodecId codec_id);
-  static rtc::Maybe<CodecId> CodecIdByInst(const CodecInst& codec_inst);
-  static rtc::Maybe<CodecInst> CodecInstByParams(const char* payload_name,
-                                                 int sampling_freq_hz,
-                                                 int channels);
+  static rtc::Optional<CodecId> CodecIdByParams(const char* payload_name,
+                                                int sampling_freq_hz,
+                                                int channels);
+  static rtc::Optional<CodecInst> CodecInstById(CodecId codec_id);
+  static rtc::Optional<CodecId> CodecIdByInst(const CodecInst& codec_inst);
+  static rtc::Optional<CodecInst> CodecInstByParams(const char* payload_name,
+                                                    int sampling_freq_hz,
+                                                    int channels);
   static bool IsCodecValid(const CodecInst& codec_inst);
 
   static inline bool IsPayloadTypeValid(int payload_type) {
@@ -173,11 +174,11 @@ class RentACodec {
 
   static rtc::ArrayView<const CodecInst> Database();
 
-  static rtc::Maybe<bool> IsSupportedNumChannels(CodecId codec_id,
-                                                 int num_channels);
+  static rtc::Optional<bool> IsSupportedNumChannels(CodecId codec_id,
+                                                    int num_channels);
 
-  static rtc::Maybe<NetEqDecoder> NetEqDecoderFromCodecId(CodecId codec_id,
-                                                          int num_channels);
+  static rtc::Optional<NetEqDecoder> NetEqDecoderFromCodecId(CodecId codec_id,
+                                                             int num_channels);
 
   RentACodec();
   ~RentACodec();

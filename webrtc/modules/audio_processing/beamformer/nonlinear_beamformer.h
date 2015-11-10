@@ -134,7 +134,7 @@ class NonlinearBeamformer
 
   const std::vector<Point> array_geometry_;
   // The normal direction of the array if it has one and it is in the xy-plane.
-  const rtc::Maybe<Point> array_normal_;
+  const rtc::Optional<Point> array_normal_;
 
   // Minimum spacing between microphone pairs.
   const float min_mic_spacing_;

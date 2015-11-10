@@ -827,7 +827,7 @@ void APITest::TestRegisteration(char sendSide) {
   if (!myCodec) {
     CodecInst ci;
     AudioCodingModule::Codec(_codecCntrA, &ci);
-    myCodec = rtc::Maybe<CodecInst>(ci);
+    myCodec = rtc::Optional<CodecInst>(ci);
   }
 
   if (!_randomTest) {

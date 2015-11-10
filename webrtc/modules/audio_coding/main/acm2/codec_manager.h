@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_CODEC_MANAGER_H_
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/maybe.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_coding/main/acm2/codec_owner.h"
@@ -36,7 +36,7 @@ class CodecManager final {
 
   void RegisterEncoder(AudioEncoder* external_speech_encoder);
 
-  rtc::Maybe<CodecInst> GetCodecInst() const;
+  rtc::Optional<CodecInst> GetCodecInst() const;
 
   bool SetCopyRed(bool enable);
 

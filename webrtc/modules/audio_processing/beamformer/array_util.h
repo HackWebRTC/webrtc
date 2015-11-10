@@ -14,7 +14,7 @@
 #include <cmath>
 #include <vector>
 
-#include "webrtc/base/maybe.h"
+#include "webrtc/base/optional.h"
 
 namespace webrtc {
 
@@ -59,15 +59,16 @@ float GetMinimumSpacing(const std::vector<Point>& array_geometry);
 
 // If the given array geometry is linear it returns the direction without
 // normalizing.
-rtc::Maybe<Point> GetDirectionIfLinear(
+rtc::Optional<Point> GetDirectionIfLinear(
     const std::vector<Point>& array_geometry);
 
 // If the given array geometry is planar it returns the normal without
 // normalizing.
-rtc::Maybe<Point> GetNormalIfPlanar(const std::vector<Point>& array_geometry);
+rtc::Optional<Point> GetNormalIfPlanar(
+    const std::vector<Point>& array_geometry);
 
 // Returns the normal of an array if it has one and it is in the xy-plane.
-rtc::Maybe<Point> GetArrayNormalIfExists(
+rtc::Optional<Point> GetArrayNormalIfExists(
     const std::vector<Point>& array_geometry);
 
 // The resulting Point will be in the xy-plane.

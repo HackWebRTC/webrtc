@@ -49,7 +49,7 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
   // a different algorithm will be required.
   struct {
     const char* name;
-    rtc::Maybe<bool>& value;
+    rtc::Optional<bool>& value;
   } key_to_value[] = {
       {MediaConstraintsInterface::kGoogEchoCancellation,
        options->echo_cancellation},
@@ -78,7 +78,7 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
 
     for (auto& entry : key_to_value) {
       if (constraint.key.compare(entry.name) == 0)
-        entry.value = rtc::Maybe<bool>(value);
+        entry.value = rtc::Optional<bool>(value);
     }
   }
 }

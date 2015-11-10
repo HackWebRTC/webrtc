@@ -268,11 +268,11 @@ const cricket::VideoFormat& GetBestCaptureFormat(
 // Return false if the key is mandatory, and the value is invalid.
 bool ExtractOption(const MediaConstraintsInterface* all_constraints,
                    const std::string& key,
-                   rtc::Maybe<bool>* option) {
+                   rtc::Optional<bool>* option) {
   size_t mandatory = 0;
   bool value;
   if (FindConstraint(all_constraints, key, &value, &mandatory)) {
-    *option = rtc::Maybe<bool>(value);
+    *option = rtc::Optional<bool>(value);
     return true;
   }
 

@@ -368,20 +368,20 @@ void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
 // ns, and highpass) and the rest hardcoded in InitInternal.
 AudioOptions GetDefaultEngineOptions() {
   AudioOptions options;
-  options.echo_cancellation = rtc::Maybe<bool>(true);
-  options.auto_gain_control = rtc::Maybe<bool>(true);
-  options.noise_suppression = rtc::Maybe<bool>(true);
-  options.highpass_filter = rtc::Maybe<bool>(true);
-  options.stereo_swapping = rtc::Maybe<bool>(false);
-  options.audio_jitter_buffer_max_packets = rtc::Maybe<int>(50);
-  options.audio_jitter_buffer_fast_accelerate = rtc::Maybe<bool>(false);
-  options.typing_detection = rtc::Maybe<bool>(true);
-  options.adjust_agc_delta = rtc::Maybe<int>(0);
-  options.experimental_agc = rtc::Maybe<bool>(false);
-  options.extended_filter_aec = rtc::Maybe<bool>(false);
-  options.delay_agnostic_aec = rtc::Maybe<bool>(false);
-  options.experimental_ns = rtc::Maybe<bool>(false);
-  options.aec_dump = rtc::Maybe<bool>(false);
+  options.echo_cancellation = rtc::Optional<bool>(true);
+  options.auto_gain_control = rtc::Optional<bool>(true);
+  options.noise_suppression = rtc::Optional<bool>(true);
+  options.highpass_filter = rtc::Optional<bool>(true);
+  options.stereo_swapping = rtc::Optional<bool>(false);
+  options.audio_jitter_buffer_max_packets = rtc::Optional<int>(50);
+  options.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(false);
+  options.typing_detection = rtc::Optional<bool>(true);
+  options.adjust_agc_delta = rtc::Optional<int>(0);
+  options.experimental_agc = rtc::Optional<bool>(false);
+  options.extended_filter_aec = rtc::Optional<bool>(false);
+  options.delay_agnostic_aec = rtc::Optional<bool>(false);
+  options.experimental_ns = rtc::Optional<bool>(false);
+  options.aec_dump = rtc::Optional<bool>(false);
   return options;
 }
 
@@ -640,8 +640,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
 #if defined(IOS)
   // On iOS, VPIO provides built-in EC and AGC.
-  options.echo_cancellation = rtc::Maybe<bool>(false);
-  options.auto_gain_control = rtc::Maybe<bool>(false);
+  options.echo_cancellation = rtc::Optional<bool>(false);
+  options.auto_gain_control = rtc::Optional<bool>(false);
   LOG(LS_INFO) << "Always disable AEC and AGC on iOS. Use built-in instead.";
 #elif defined(ANDROID)
   ec_mode = webrtc::kEcAecm;
@@ -651,10 +651,10 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   // Set the AGC mode for iOS as well despite disabling it above, to avoid
   // unsupported configuration errors from webrtc.
   agc_mode = webrtc::kAgcFixedDigital;
-  options.typing_detection = rtc::Maybe<bool>(false);
-  options.experimental_agc = rtc::Maybe<bool>(false);
-  options.extended_filter_aec = rtc::Maybe<bool>(false);
-  options.experimental_ns = rtc::Maybe<bool>(false);
+  options.typing_detection = rtc::Optional<bool>(false);
+  options.experimental_agc = rtc::Optional<bool>(false);
+  options.extended_filter_aec = rtc::Optional<bool>(false);
+  options.experimental_ns = rtc::Optional<bool>(false);
 #endif
 
   // Delay Agnostic AEC automatically turns on EC if not set except on iOS
@@ -664,8 +664,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.delay_agnostic_aec) {
     use_delay_agnostic_aec = *options.delay_agnostic_aec;
     if (use_delay_agnostic_aec) {
-      options.echo_cancellation = rtc::Maybe<bool>(true);
-      options.extended_filter_aec = rtc::Maybe<bool>(true);
+      options.echo_cancellation = rtc::Optional<bool>(true);
+      options.extended_filter_aec = rtc::Optional<bool>(true);
       ec_mode = webrtc::kEcConference;
     }
   }
@@ -689,7 +689,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
           enable_built_in_aec) {
         // Disable internal software EC if built-in EC is enabled,
         // i.e., replace the software EC with the built-in EC.
-        options.echo_cancellation = rtc::Maybe<bool>(false);
+        options.echo_cancellation = rtc::Optional<bool>(false);
         LOG(LS_INFO) << "Disabling EC since built-in EC will be used instead";
       }
     }
@@ -724,7 +724,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
           *options.auto_gain_control) {
         // Disable internal software AGC if built-in AGC is enabled,
         // i.e., replace the software AGC with the built-in AGC.
-        options.auto_gain_control = rtc::Maybe<bool>(false);
+        options.auto_gain_control = rtc::Optional<bool>(false);
         LOG(LS_INFO) << "Disabling AGC since built-in AGC will be used instead";
       }
     }
@@ -771,7 +771,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
           *options.noise_suppression) {
         // Disable internal software NS if built-in NS is enabled,
         // i.e., replace the software NS with the built-in NS.
-        options.noise_suppression = rtc::Maybe<bool>(false);
+        options.noise_suppression = rtc::Optional<bool>(false);
         LOG(LS_INFO) << "Disabling NS since built-in NS will be used instead";
       }
     }

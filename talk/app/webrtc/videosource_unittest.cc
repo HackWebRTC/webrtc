@@ -392,13 +392,14 @@ TEST_F(VideoSourceTest, SetValidOptionValues) {
 
   CreateVideoSource(&constraints);
 
-  EXPECT_EQ(rtc::Maybe<bool>(false), source_->options()->video_noise_reduction);
+  EXPECT_EQ(rtc::Optional<bool>(false),
+            source_->options()->video_noise_reduction);
 }
 
 TEST_F(VideoSourceTest, OptionNotSet) {
   FakeConstraints constraints;
   CreateVideoSource(&constraints);
-  EXPECT_EQ(rtc::Maybe<bool>(), source_->options()->video_noise_reduction);
+  EXPECT_EQ(rtc::Optional<bool>(), source_->options()->video_noise_reduction);
 }
 
 TEST_F(VideoSourceTest, MandatoryOptionOverridesOptional) {
@@ -410,7 +411,8 @@ TEST_F(VideoSourceTest, MandatoryOptionOverridesOptional) {
 
   CreateVideoSource(&constraints);
 
-  EXPECT_EQ(rtc::Maybe<bool>(true), source_->options()->video_noise_reduction);
+  EXPECT_EQ(rtc::Optional<bool>(true),
+            source_->options()->video_noise_reduction);
 }
 
 TEST_F(VideoSourceTest, InvalidOptionKeyOptional) {
@@ -423,7 +425,8 @@ TEST_F(VideoSourceTest, InvalidOptionKeyOptional) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
       kMaxWaitMs);
-  EXPECT_EQ(rtc::Maybe<bool>(false), source_->options()->video_noise_reduction);
+  EXPECT_EQ(rtc::Optional<bool>(false),
+            source_->options()->video_noise_reduction);
 }
 
 TEST_F(VideoSourceTest, InvalidOptionKeyMandatory) {
@@ -436,7 +439,7 @@ TEST_F(VideoSourceTest, InvalidOptionKeyMandatory) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
       kMaxWaitMs);
-  EXPECT_EQ(rtc::Maybe<bool>(), source_->options()->video_noise_reduction);
+  EXPECT_EQ(rtc::Optional<bool>(), source_->options()->video_noise_reduction);
 }
 
 TEST_F(VideoSourceTest, InvalidOptionValueOptional) {
@@ -448,7 +451,7 @@ TEST_F(VideoSourceTest, InvalidOptionValueOptional) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
       kMaxWaitMs);
-  EXPECT_EQ(rtc::Maybe<bool>(), source_->options()->video_noise_reduction);
+  EXPECT_EQ(rtc::Optional<bool>(), source_->options()->video_noise_reduction);
 }
 
 TEST_F(VideoSourceTest, InvalidOptionValueMandatory) {
@@ -464,7 +467,7 @@ TEST_F(VideoSourceTest, InvalidOptionValueMandatory) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
       kMaxWaitMs);
-  EXPECT_EQ(rtc::Maybe<bool>(), source_->options()->video_noise_reduction);
+  EXPECT_EQ(rtc::Optional<bool>(), source_->options()->video_noise_reduction);
 }
 
 TEST_F(VideoSourceTest, MixedOptionsAndConstraints) {
@@ -487,7 +490,8 @@ TEST_F(VideoSourceTest, MixedOptionsAndConstraints) {
   EXPECT_EQ(288, format->height);
   EXPECT_EQ(30, format->framerate());
 
-  EXPECT_EQ(rtc::Maybe<bool>(false), source_->options()->video_noise_reduction);
+  EXPECT_EQ(rtc::Optional<bool>(false),
+            source_->options()->video_noise_reduction);
 }
 
 // Tests that the source starts video with the default resolution for

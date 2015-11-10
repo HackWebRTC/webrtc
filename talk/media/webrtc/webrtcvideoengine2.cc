@@ -786,10 +786,10 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
 }
 
 void WebRtcVideoChannel2::SetDefaultOptions() {
-  options_.cpu_overuse_detection = rtc::Maybe<bool>(true);
-  options_.dscp = rtc::Maybe<bool>(false);
-  options_.suspend_below_min_bitrate = rtc::Maybe<bool>(false);
-  options_.screencast_min_bitrate = rtc::Maybe<int>(0);
+  options_.cpu_overuse_detection = rtc::Optional<bool>(true);
+  options_.dscp = rtc::Optional<bool>(false);
+  options_.suspend_below_min_bitrate = rtc::Optional<bool>(false);
+  options_.screencast_min_bitrate = rtc::Optional<int>(0);
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -960,7 +960,7 @@ bool WebRtcVideoChannel2::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
     return true;
   }
 
-  send_codec_ = rtc::Maybe<WebRtcVideoChannel2::VideoCodecSettings>(
+  send_codec_ = rtc::Optional<WebRtcVideoChannel2::VideoCodecSettings>(
       supported_codecs.front());
 
   rtc::CritScope stream_lock(&stream_crit_);
@@ -1704,7 +1704,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::VideoSendStreamParameters::
         const webrtc::VideoSendStream::Config& config,
         const VideoOptions& options,
         int max_bitrate_bps,
-        const rtc::Maybe<VideoCodecSettings>& codec_settings)
+        const rtc::Optional<VideoCodecSettings>& codec_settings)
     : config(config),
       options(options),
       max_bitrate_bps(max_bitrate_bps),
@@ -1732,7 +1732,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     WebRtcVideoEncoderFactory* external_encoder_factory,
     const VideoOptions& options,
     int max_bitrate_bps,
-    const rtc::Maybe<VideoCodecSettings>& codec_settings,
+    const rtc::Optional<VideoCodecSettings>& codec_settings,
     const std::vector<webrtc::RtpExtension>& rtp_extensions)
     : ssrcs_(sp.ssrcs),
       ssrc_groups_(sp.ssrc_groups),
@@ -2047,7 +2047,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
       *options.suspend_below_min_bitrate;
 
   parameters_.codec_settings =
-      rtc::Maybe<WebRtcVideoChannel2::VideoCodecSettings>(codec_settings);
+      rtc::Optional<WebRtcVideoChannel2::VideoCodecSettings>(codec_settings);
   parameters_.options = options;
 
   LOG(LS_INFO)

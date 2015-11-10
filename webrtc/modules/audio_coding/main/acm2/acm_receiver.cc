@@ -313,10 +313,10 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   const auto neteq_decoder = [acm_codec_id, channels]() -> NetEqDecoder {
     if (acm_codec_id == -1)
       return NetEqDecoder::kDecoderArbitrary;  // External decoder.
-    const rtc::Maybe<RentACodec::CodecId> cid =
+    const rtc::Optional<RentACodec::CodecId> cid =
         RentACodec::CodecIdFromIndex(acm_codec_id);
     RTC_DCHECK(cid) << "Invalid codec index: " << acm_codec_id;
-    const rtc::Maybe<NetEqDecoder> ned =
+    const rtc::Optional<NetEqDecoder> ned =
         RentACodec::NetEqDecoderFromCodecId(*cid, channels);
     RTC_DCHECK(ned) << "Invalid codec ID: " << static_cast<int>(*cid);
     return *ned;

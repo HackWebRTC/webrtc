@@ -36,7 +36,7 @@
 namespace webrtc {
 namespace acm2 {
 
-rtc::Maybe<RentACodec::CodecId> RentACodec::CodecIdByParams(
+rtc::Optional<RentACodec::CodecId> RentACodec::CodecIdByParams(
     const char* payload_name,
     int sampling_freq_hz,
     int channels) {
@@ -44,24 +44,25 @@ rtc::Maybe<RentACodec::CodecId> RentACodec::CodecIdByParams(
       ACMCodecDB::CodecId(payload_name, sampling_freq_hz, channels));
 }
 
-rtc::Maybe<CodecInst> RentACodec::CodecInstById(CodecId codec_id) {
-  rtc::Maybe<int> mi = CodecIndexFromId(codec_id);
-  return mi ? rtc::Maybe<CodecInst>(Database()[*mi]) : rtc::Maybe<CodecInst>();
+rtc::Optional<CodecInst> RentACodec::CodecInstById(CodecId codec_id) {
+  rtc::Optional<int> mi = CodecIndexFromId(codec_id);
+  return mi ? rtc::Optional<CodecInst>(Database()[*mi])
+            : rtc::Optional<CodecInst>();
 }
 
-rtc::Maybe<RentACodec::CodecId> RentACodec::CodecIdByInst(
+rtc::Optional<RentACodec::CodecId> RentACodec::CodecIdByInst(
     const CodecInst& codec_inst) {
   return CodecIdFromIndex(ACMCodecDB::CodecNumber(codec_inst));
 }
 
-rtc::Maybe<CodecInst> RentACodec::CodecInstByParams(const char* payload_name,
-                                                    int sampling_freq_hz,
-                                                    int channels) {
-  rtc::Maybe<CodecId> codec_id =
+rtc::Optional<CodecInst> RentACodec::CodecInstByParams(const char* payload_name,
+                                                       int sampling_freq_hz,
+                                                       int channels) {
+  rtc::Optional<CodecId> codec_id =
       CodecIdByParams(payload_name, sampling_freq_hz, channels);
   if (!codec_id)
-    return rtc::Maybe<CodecInst>();
-  rtc::Maybe<CodecInst> ci = CodecInstById(*codec_id);
+    return rtc::Optional<CodecInst>();
+  rtc::Optional<CodecInst> ci = CodecInstById(*codec_id);
   RTC_DCHECK(ci);
 
   // Keep the number of channels from the function call. For most codecs it
@@ -75,12 +76,13 @@ bool RentACodec::IsCodecValid(const CodecInst& codec_inst) {
   return ACMCodecDB::CodecNumber(codec_inst) >= 0;
 }
 
-rtc::Maybe<bool> RentACodec::IsSupportedNumChannels(CodecId codec_id,
-                                                    int num_channels) {
+rtc::Optional<bool> RentACodec::IsSupportedNumChannels(CodecId codec_id,
+                                                       int num_channels) {
   auto i = CodecIndexFromId(codec_id);
-  return i ? rtc::Maybe<bool>(ACMCodecDB::codec_settings_[*i].channel_support >=
-                              num_channels)
-           : rtc::Maybe<bool>();
+  return i ? rtc::Optional<bool>(
+                 ACMCodecDB::codec_settings_[*i].channel_support >=
+                 num_channels)
+           : rtc::Optional<bool>();
 }
 
 rtc::ArrayView<const CodecInst> RentACodec::Database() {
@@ -88,13 +90,14 @@ rtc::ArrayView<const CodecInst> RentACodec::Database() {
                                          NumberOfCodecs());
 }
 
-rtc::Maybe<NetEqDecoder> RentACodec::NetEqDecoderFromCodecId(CodecId codec_id,
-                                                             int num_channels) {
-  rtc::Maybe<int> i = CodecIndexFromId(codec_id);
+rtc::Optional<NetEqDecoder> RentACodec::NetEqDecoderFromCodecId(
+    CodecId codec_id,
+    int num_channels) {
+  rtc::Optional<int> i = CodecIndexFromId(codec_id);
   if (!i)
-    return rtc::Maybe<NetEqDecoder>();
+    return rtc::Optional<NetEqDecoder>();
   const NetEqDecoder ned = ACMCodecDB::neteq_decoders_[*i];
-  return rtc::Maybe<NetEqDecoder>(
+  return rtc::Optional<NetEqDecoder>(
       (ned == NetEqDecoder::kDecoderOpus && num_channels == 2)
           ? NetEqDecoder::kDecoderOpus_2ch
           : ned);

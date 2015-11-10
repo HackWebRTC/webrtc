@@ -168,9 +168,9 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // values, and apply them in case they are missing in the audio options. We
   // need to do this because SetExtraOptions() will revert to defaults for
   // options which are not provided.
-  rtc::Maybe<bool> extended_filter_aec_;
-  rtc::Maybe<bool> delay_agnostic_aec_;
-  rtc::Maybe<bool> experimental_ns_;
+  rtc::Optional<bool> extended_filter_aec_;
+  rtc::Optional<bool> delay_agnostic_aec_;
+  rtc::Optional<bool> experimental_ns_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcVoiceEngine);
 };

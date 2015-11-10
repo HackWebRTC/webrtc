@@ -875,7 +875,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
     cricket::VideoSendParameters parameters;
     parameters.codecs.push_back(DefaultCodec());
-    parameters.options.conference_mode = rtc::Maybe<bool>(true);
+    parameters.options.conference_mode = rtc::Optional<bool>(true);
     EXPECT_TRUE(channel_->SetSendParameters(parameters));
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(channel_->AddRecvStream(
@@ -926,7 +926,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
     cricket::VideoSendParameters parameters;
     parameters.codecs.push_back(DefaultCodec());
-    parameters.options.conference_mode = rtc::Maybe<bool>(true);
+    parameters.options.conference_mode = rtc::Optional<bool>(true);
     EXPECT_TRUE(channel_->SetSendParameters(parameters));
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrc)));
@@ -1236,7 +1236,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetDefaultCodec());
     cricket::VideoSendParameters parameters;
     parameters.codecs.push_back(DefaultCodec());
-    parameters.options.conference_mode = rtc::Maybe<bool>(true);
+    parameters.options.conference_mode = rtc::Optional<bool>(true);
     EXPECT_TRUE(channel_->SetSendParameters(parameters));
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(channel_->AddRecvStream(
@@ -1746,8 +1746,8 @@ class VideoMediaChannelTest : public testing::Test,
   // Tests that we can send and receive frames with early receive.
   void TwoStreamsSendAndUnsignalledRecv(const cricket::VideoCodec& codec) {
     cricket::VideoSendParameters parameters;
-    parameters.options.conference_mode = rtc::Maybe<bool>(true);
-    parameters.options.unsignalled_recv_stream_limit = rtc::Maybe<int>(1);
+    parameters.options.conference_mode = rtc::Optional<bool>(true);
+    parameters.options.unsignalled_recv_stream_limit = rtc::Optional<int>(1);
     EXPECT_TRUE(channel_->SetSendParameters(parameters));
     SetUpSecondStreamWithNoRecv();
     // Test sending and receiving on first stream.
@@ -1780,8 +1780,8 @@ class VideoMediaChannelTest : public testing::Test,
   void TwoStreamsAddAndRemoveUnsignalledRecv(
       const cricket::VideoCodec& codec) {
     cricket::VideoOptions vmo;
-    vmo.conference_mode = rtc::Maybe<bool>(true);
-    vmo.unsignalled_recv_stream_limit = rtc::Maybe<int>(1);
+    vmo.conference_mode = rtc::Optional<bool>(true);
+    vmo.unsignalled_recv_stream_limit = rtc::Optional<int>(1);
     EXPECT_TRUE(channel_->SetOptions(vmo));
     SetUpSecondStreamWithNoRecv();
     // Sending and receiving on first stream.

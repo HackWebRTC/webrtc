@@ -38,7 +38,7 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/maybe.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/window.h"
@@ -65,7 +65,7 @@ const int kMaxRtpHeaderExtensionId = 255;
 const int kScreencastDefaultFps = 5;
 
 template <class T>
-static std::string ToStringIfSet(const char* key, const rtc::Maybe<T>& val) {
+static std::string ToStringIfSet(const char* key, const rtc::Optional<T>& val) {
   std::string str;
   if (val) {
     str = key;
@@ -186,43 +186,43 @@ struct AudioOptions {
 
   // Audio processing that attempts to filter away the output signal from
   // later inbound pickup.
-  rtc::Maybe<bool> echo_cancellation;
+  rtc::Optional<bool> echo_cancellation;
   // Audio processing to adjust the sensitivity of the local mic dynamically.
-  rtc::Maybe<bool> auto_gain_control;
+  rtc::Optional<bool> auto_gain_control;
   // Audio processing to filter out background noise.
-  rtc::Maybe<bool> noise_suppression;
+  rtc::Optional<bool> noise_suppression;
   // Audio processing to remove background noise of lower frequencies.
-  rtc::Maybe<bool> highpass_filter;
+  rtc::Optional<bool> highpass_filter;
   // Audio processing to swap the left and right channels.
-  rtc::Maybe<bool> stereo_swapping;
+  rtc::Optional<bool> stereo_swapping;
   // Audio receiver jitter buffer (NetEq) max capacity in number of packets.
-  rtc::Maybe<int> audio_jitter_buffer_max_packets;
+  rtc::Optional<int> audio_jitter_buffer_max_packets;
   // Audio receiver jitter buffer (NetEq) fast accelerate mode.
-  rtc::Maybe<bool> audio_jitter_buffer_fast_accelerate;
+  rtc::Optional<bool> audio_jitter_buffer_fast_accelerate;
   // Audio processing to detect typing.
-  rtc::Maybe<bool> typing_detection;
-  rtc::Maybe<bool> aecm_generate_comfort_noise;
-  rtc::Maybe<bool> conference_mode;
-  rtc::Maybe<int> adjust_agc_delta;
-  rtc::Maybe<bool> experimental_agc;
-  rtc::Maybe<bool> extended_filter_aec;
-  rtc::Maybe<bool> delay_agnostic_aec;
-  rtc::Maybe<bool> experimental_ns;
-  rtc::Maybe<bool> aec_dump;
+  rtc::Optional<bool> typing_detection;
+  rtc::Optional<bool> aecm_generate_comfort_noise;
+  rtc::Optional<bool> conference_mode;
+  rtc::Optional<int> adjust_agc_delta;
+  rtc::Optional<bool> experimental_agc;
+  rtc::Optional<bool> extended_filter_aec;
+  rtc::Optional<bool> delay_agnostic_aec;
+  rtc::Optional<bool> experimental_ns;
+  rtc::Optional<bool> aec_dump;
   // Note that tx_agc_* only applies to non-experimental AGC.
-  rtc::Maybe<uint16_t> tx_agc_target_dbov;
-  rtc::Maybe<uint16_t> tx_agc_digital_compression_gain;
-  rtc::Maybe<bool> tx_agc_limiter;
-  rtc::Maybe<uint32_t> recording_sample_rate;
-  rtc::Maybe<uint32_t> playout_sample_rate;
+  rtc::Optional<uint16_t> tx_agc_target_dbov;
+  rtc::Optional<uint16_t> tx_agc_digital_compression_gain;
+  rtc::Optional<bool> tx_agc_limiter;
+  rtc::Optional<uint32_t> recording_sample_rate;
+  rtc::Optional<uint32_t> playout_sample_rate;
   // Set DSCP value for packet sent from audio channel.
-  rtc::Maybe<bool> dscp;
+  rtc::Optional<bool> dscp;
   // Enable combined audio+bandwidth BWE.
-  rtc::Maybe<bool> combined_audio_video_bwe;
+  rtc::Optional<bool> combined_audio_video_bwe;
 
  private:
   template <typename T>
-  static void SetFrom(rtc::Maybe<T>* s, const rtc::Maybe<T>& o) {
+  static void SetFrom(rtc::Optional<T>* s, const rtc::Optional<T>& o) {
     if (o) {
       *s = o;
     }
@@ -329,60 +329,60 @@ struct VideoOptions {
   }
 
   // Enable CPU adaptation?
-  rtc::Maybe<bool> adapt_input_to_cpu_usage;
+  rtc::Optional<bool> adapt_input_to_cpu_usage;
   // Enable CPU adaptation smoothing?
-  rtc::Maybe<bool> adapt_cpu_with_smoothing;
+  rtc::Optional<bool> adapt_cpu_with_smoothing;
   // Enable video adapt third?
-  rtc::Maybe<bool> video_adapt_third;
+  rtc::Optional<bool> video_adapt_third;
   // Enable denoising?
-  rtc::Maybe<bool> video_noise_reduction;
+  rtc::Optional<bool> video_noise_reduction;
   // Experimental: Enable WebRtc higher start bitrate?
-  rtc::Maybe<int> video_start_bitrate;
+  rtc::Optional<int> video_start_bitrate;
   // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU
   // adaptation algorithm. So this option will override the
   // |adapt_input_to_cpu_usage|.
-  rtc::Maybe<bool> cpu_overuse_detection;
+  rtc::Optional<bool> cpu_overuse_detection;
   // Low threshold (t1) for cpu overuse adaptation.  (Adapt up)
   // Metric: encode usage (m1). m1 < t1 => underuse.
-  rtc::Maybe<int> cpu_underuse_threshold;
+  rtc::Optional<int> cpu_underuse_threshold;
   // High threshold (t1) for cpu overuse adaptation.  (Adapt down)
   // Metric: encode usage (m1). m1 > t1 => overuse.
-  rtc::Maybe<int> cpu_overuse_threshold;
+  rtc::Optional<int> cpu_overuse_threshold;
   // Low threshold (t2) for cpu overuse adaptation. (Adapt up)
   // Metric: relative standard deviation of encode time (m2).
   // Optional threshold. If set, (m1 < t1 && m2 < t2) => underuse.
   // Note: t2 will have no effect if t1 is not set.
-  rtc::Maybe<int> cpu_underuse_encode_rsd_threshold;
+  rtc::Optional<int> cpu_underuse_encode_rsd_threshold;
   // High threshold (t2) for cpu overuse adaptation. (Adapt down)
   // Metric: relative standard deviation of encode time (m2).
   // Optional threshold. If set, (m1 > t1 || m2 > t2) => overuse.
   // Note: t2 will have no effect if t1 is not set.
-  rtc::Maybe<int> cpu_overuse_encode_rsd_threshold;
+  rtc::Optional<int> cpu_overuse_encode_rsd_threshold;
   // Use encode usage for cpu detection.
-  rtc::Maybe<bool> cpu_overuse_encode_usage;
+  rtc::Optional<bool> cpu_overuse_encode_usage;
   // Use conference mode?
-  rtc::Maybe<bool> conference_mode;
+  rtc::Optional<bool> conference_mode;
   // Threshhold for process cpu adaptation.  (Process limit)
-  rtc::Maybe<float> process_adaptation_threshhold;
+  rtc::Optional<float> process_adaptation_threshhold;
   // Low threshhold for cpu adaptation.  (Adapt up)
-  rtc::Maybe<float> system_low_adaptation_threshhold;
+  rtc::Optional<float> system_low_adaptation_threshhold;
   // High threshhold for cpu adaptation.  (Adapt down)
-  rtc::Maybe<float> system_high_adaptation_threshhold;
+  rtc::Optional<float> system_high_adaptation_threshhold;
   // Set DSCP value for packet sent from video channel.
-  rtc::Maybe<bool> dscp;
+  rtc::Optional<bool> dscp;
   // Enable WebRTC suspension of video. No video frames will be sent when the
   // bitrate is below the configured minimum bitrate.
-  rtc::Maybe<bool> suspend_below_min_bitrate;
+  rtc::Optional<bool> suspend_below_min_bitrate;
   // Limit on the number of early receive channels that can be created.
-  rtc::Maybe<int> unsignalled_recv_stream_limit;
+  rtc::Optional<int> unsignalled_recv_stream_limit;
   // Enable use of simulcast adapter.
-  rtc::Maybe<bool> use_simulcast_adapter;
+  rtc::Optional<bool> use_simulcast_adapter;
   // Force screencast to use a minimum bitrate
-  rtc::Maybe<int> screencast_min_bitrate;
+  rtc::Optional<int> screencast_min_bitrate;
 
  private:
   template <typename T>
-  static void SetFrom(rtc::Maybe<T>* s, const rtc::Maybe<T>& o) {
+  static void SetFrom(rtc::Optional<T>* s, const rtc::Optional<T>& o) {
     if (o) {
       *s = o;
     }

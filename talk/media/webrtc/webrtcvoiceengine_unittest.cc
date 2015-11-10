@@ -97,7 +97,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
         channel_(nullptr) {
     send_parameters_.codecs.push_back(kPcmuCodec);
     recv_parameters_.codecs.push_back(kPcmuCodec);
-    options_adjust_agc_.adjust_agc_delta = rtc::Maybe<int>(-10);
+    options_adjust_agc_.adjust_agc_delta = rtc::Optional<int>(-10);
   }
   bool SetupEngine() {
     if (!engine_.Init(rtc::Thread::Current())) {
@@ -2282,10 +2282,10 @@ TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
   EXPECT_EQ(0, agc_config.targetLeveldBOv);
 
   cricket::AudioOptions options;
-  options.tx_agc_target_dbov = rtc::Maybe<uint16_t>(3);
-  options.tx_agc_digital_compression_gain = rtc::Maybe<uint16_t>(9);
-  options.tx_agc_limiter = rtc::Maybe<bool>(true);
-  options.auto_gain_control = rtc::Maybe<bool>(true);
+  options.tx_agc_target_dbov = rtc::Optional<uint16_t>(3);
+  options.tx_agc_digital_compression_gain = rtc::Optional<uint16_t>(9);
+  options.tx_agc_limiter = rtc::Optional<bool>(true);
+  options.auto_gain_control = rtc::Optional<bool>(true);
   EXPECT_TRUE(engine_.SetOptions(options));
 
   EXPECT_EQ(0, voe_.GetAgcConfig(agc_config));
@@ -2295,7 +2295,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
 
   // Check interaction with adjust_agc_delta. Both should be respected, for
   // backwards compatibility.
-  options.adjust_agc_delta = rtc::Maybe<int>(-10);
+  options.adjust_agc_delta = rtc::Optional<int>(-10);
   EXPECT_TRUE(engine_.SetOptions(options));
 
   EXPECT_EQ(0, voe_.GetAgcConfig(agc_config));
@@ -2305,8 +2305,8 @@ TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
 TEST_F(WebRtcVoiceEngineTestFake, SampleRatesViaOptions) {
   EXPECT_TRUE(SetupEngineWithSendStream());
   cricket::AudioOptions options;
-  options.recording_sample_rate = rtc::Maybe<uint32_t>(48000);
-  options.playout_sample_rate = rtc::Maybe<uint32_t>(44100);
+  options.recording_sample_rate = rtc::Optional<uint32_t>(48000);
+  options.playout_sample_rate = rtc::Optional<uint32_t>(44100);
   EXPECT_TRUE(engine_.SetOptions(options));
 
   unsigned int recording_sample_rate, playout_sample_rate;
@@ -2639,14 +2639,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
       voe_.GetNetEqFastAccelerate());  // From GetDefaultEngineOptions().
 
   // Turn echo cancellation off
-  options.echo_cancellation = rtc::Maybe<bool>(false);
+  options.echo_cancellation = rtc::Optional<bool>(false);
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetEcStatus(ec_enabled, ec_mode);
   EXPECT_FALSE(ec_enabled);
 
   // Turn echo cancellation back on, with settings, and make sure
   // nothing else changed.
-  options.echo_cancellation = rtc::Maybe<bool>(true);
+  options.echo_cancellation = rtc::Optional<bool>(true);
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetEcStatus(ec_enabled, ec_mode);
   voe_.GetAecmMode(aecm_mode, cng_enabled);
@@ -2669,7 +2669,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
 
   // Turn on delay agnostic aec and make sure nothing change w.r.t. echo
   // control.
-  options.delay_agnostic_aec = rtc::Maybe<bool>(true);
+  options.delay_agnostic_aec = rtc::Optional<bool>(true);
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetEcStatus(ec_enabled, ec_mode);
   voe_.GetAecmMode(aecm_mode, cng_enabled);
@@ -2678,14 +2678,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_EQ(ec_mode, webrtc::kEcConference);
 
   // Turn off echo cancellation and delay agnostic aec.
-  options.delay_agnostic_aec = rtc::Maybe<bool>(false);
-  options.extended_filter_aec = rtc::Maybe<bool>(false);
-  options.echo_cancellation = rtc::Maybe<bool>(false);
+  options.delay_agnostic_aec = rtc::Optional<bool>(false);
+  options.extended_filter_aec = rtc::Optional<bool>(false);
+  options.echo_cancellation = rtc::Optional<bool>(false);
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetEcStatus(ec_enabled, ec_mode);
   EXPECT_FALSE(ec_enabled);
   // Turning delay agnostic aec back on should also turn on echo cancellation.
-  options.delay_agnostic_aec = rtc::Maybe<bool>(true);
+  options.delay_agnostic_aec = rtc::Optional<bool>(true);
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetEcStatus(ec_enabled, ec_mode);
   EXPECT_TRUE(ec_enabled);
@@ -2693,14 +2693,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_EQ(ec_mode, webrtc::kEcConference);
 
   // Turn off AGC
-  options.auto_gain_control = rtc::Maybe<bool>(false);
+  options.auto_gain_control = rtc::Optional<bool>(false);
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   EXPECT_FALSE(agc_enabled);
 
   // Turn AGC back on
-  options.auto_gain_control = rtc::Maybe<bool>(true);
-  options.adjust_agc_delta = rtc::Maybe<int>();
+  options.auto_gain_control = rtc::Optional<bool>(true);
+  options.adjust_agc_delta = rtc::Optional<int>();
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   EXPECT_TRUE(agc_enabled);
@@ -2708,10 +2708,10 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_EQ(0, agc_config.targetLeveldBOv);
 
   // Turn off other options (and stereo swapping on).
-  options.noise_suppression = rtc::Maybe<bool>(false);
-  options.highpass_filter = rtc::Maybe<bool>(false);
-  options.typing_detection = rtc::Maybe<bool>(false);
-  options.stereo_swapping = rtc::Maybe<bool>(true);
+  options.noise_suppression = rtc::Optional<bool>(false);
+  options.highpass_filter = rtc::Optional<bool>(false);
+  options.typing_detection = rtc::Optional<bool>(false);
+  options.stereo_swapping = rtc::Optional<bool>(true);
   ASSERT_TRUE(engine_.SetOptions(options));
   voe_.GetNsStatus(ns_enabled, ns_mode);
   highpass_filter_enabled = voe_.IsHighPassFilterEnabled();
@@ -2794,9 +2794,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
 
   // AEC and AGC and NS
   cricket::AudioSendParameters parameters_options_all = send_parameters_;
-  parameters_options_all.options.echo_cancellation = rtc::Maybe<bool>(true);
-  parameters_options_all.options.auto_gain_control = rtc::Maybe<bool>(true);
-  parameters_options_all.options.noise_suppression = rtc::Maybe<bool>(true);
+  parameters_options_all.options.echo_cancellation = rtc::Optional<bool>(true);
+  parameters_options_all.options.auto_gain_control = rtc::Optional<bool>(true);
+  parameters_options_all.options.noise_suppression = rtc::Optional<bool>(true);
   ASSERT_TRUE(channel1->SetSendParameters(parameters_options_all));
   EXPECT_EQ(parameters_options_all.options, channel1->options());
   ASSERT_TRUE(channel2->SetSendParameters(parameters_options_all));
@@ -2804,21 +2804,23 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
 
   // unset NS
   cricket::AudioSendParameters parameters_options_no_ns = send_parameters_;
-  parameters_options_no_ns.options.noise_suppression = rtc::Maybe<bool>(false);
+  parameters_options_no_ns.options.noise_suppression =
+      rtc::Optional<bool>(false);
   ASSERT_TRUE(channel1->SetSendParameters(parameters_options_no_ns));
   cricket::AudioOptions expected_options = parameters_options_all.options;
-  expected_options.echo_cancellation = rtc::Maybe<bool>(true);
-  expected_options.auto_gain_control = rtc::Maybe<bool>(true);
-  expected_options.noise_suppression = rtc::Maybe<bool>(false);
+  expected_options.echo_cancellation = rtc::Optional<bool>(true);
+  expected_options.auto_gain_control = rtc::Optional<bool>(true);
+  expected_options.noise_suppression = rtc::Optional<bool>(false);
   EXPECT_EQ(expected_options, channel1->options());
 
   // unset AGC
   cricket::AudioSendParameters parameters_options_no_agc = send_parameters_;
-  parameters_options_no_agc.options.auto_gain_control = rtc::Maybe<bool>(false);
+  parameters_options_no_agc.options.auto_gain_control =
+      rtc::Optional<bool>(false);
   ASSERT_TRUE(channel2->SetSendParameters(parameters_options_no_agc));
-  expected_options.echo_cancellation = rtc::Maybe<bool>(true);
-  expected_options.auto_gain_control = rtc::Maybe<bool>(false);
-  expected_options.noise_suppression = rtc::Maybe<bool>(true);
+  expected_options.echo_cancellation = rtc::Optional<bool>(true);
+  expected_options.auto_gain_control = rtc::Optional<bool>(false);
+  expected_options.noise_suppression = rtc::Optional<bool>(true);
   EXPECT_EQ(expected_options, channel2->options());
 
   ASSERT_TRUE(engine_.SetOptions(parameters_options_all.options));
@@ -2872,14 +2874,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   cricket::AudioSendParameters parameters_options_no_agc_nor_ns =
       send_parameters_;
   parameters_options_no_agc_nor_ns.options.auto_gain_control =
-      rtc::Maybe<bool>(false);
+      rtc::Optional<bool>(false);
   parameters_options_no_agc_nor_ns.options.noise_suppression =
-      rtc::Maybe<bool>(false);
+      rtc::Optional<bool>(false);
   channel2->SetSend(cricket::SEND_MICROPHONE);
   channel2->SetSendParameters(parameters_options_no_agc_nor_ns);
-  expected_options.echo_cancellation = rtc::Maybe<bool>(true);
-  expected_options.auto_gain_control = rtc::Maybe<bool>(false);
-  expected_options.noise_suppression = rtc::Maybe<bool>(false);
+  expected_options.echo_cancellation = rtc::Optional<bool>(true);
+  expected_options.auto_gain_control = rtc::Optional<bool>(false);
+  expected_options.noise_suppression = rtc::Optional<bool>(false);
   EXPECT_EQ(expected_options, channel2->options());
   voe_.GetEcStatus(ec_enabled, ec_mode);
   voe_.GetAgcStatus(agc_enabled, agc_mode);
@@ -2898,13 +2900,13 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
       new cricket::FakeNetworkInterface);
   channel->SetInterface(network_interface.get());
   cricket::AudioSendParameters parameters = send_parameters_;
-  parameters.options.dscp = rtc::Maybe<bool>(true);
+  parameters.options.dscp = rtc::Optional<bool>(true);
   EXPECT_TRUE(channel->SetSendParameters(parameters));
   EXPECT_EQ(rtc::DSCP_EF, network_interface->dscp());
   // Verify previous value is not modified if dscp option is not set.
   EXPECT_TRUE(channel->SetSendParameters(send_parameters_));
   EXPECT_EQ(rtc::DSCP_EF, network_interface->dscp());
-  parameters.options.dscp = rtc::Maybe<bool>(false);
+  parameters.options.dscp = rtc::Optional<bool>(false);
   EXPECT_TRUE(channel->SetSendParameters(parameters));
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 }
@@ -3013,7 +3015,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CanChangeCombinedBweOption) {
   }
 
   // Enable combined BWE option - now it should be set up.
-  send_parameters_.options.combined_audio_video_bwe = rtc::Maybe<bool>(true);
+  send_parameters_.options.combined_audio_video_bwe = rtc::Optional<bool>(true);
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
   for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
@@ -3022,7 +3024,8 @@ TEST_F(WebRtcVoiceEngineTestFake, CanChangeCombinedBweOption) {
   }
 
   // Disable combined BWE option - should be disabled again.
-  send_parameters_.options.combined_audio_video_bwe = rtc::Maybe<bool>(false);
+  send_parameters_.options.combined_audio_video_bwe =
+      rtc::Optional<bool>(false);
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
   for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
@@ -3039,7 +3042,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
   EXPECT_TRUE(SetupEngineWithSendStream());
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  send_parameters_.options.combined_audio_video_bwe = rtc::Maybe<bool>(true);
+  send_parameters_.options.combined_audio_video_bwe = rtc::Optional<bool>(true);
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
 
   static const uint32_t kSsrcs[] = {1, 2, 3, 4};
@@ -3061,7 +3064,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   EXPECT_TRUE(SetupEngineWithSendStream());
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  send_parameters_.options.combined_audio_video_bwe = rtc::Maybe<bool>(true);
+  send_parameters_.options.combined_audio_video_bwe = rtc::Optional<bool>(true);
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
   for (uint32_t ssrc : ssrcs) {
     EXPECT_TRUE(media_channel->AddRecvStream(
@@ -3120,7 +3123,7 @@ TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   EXPECT_TRUE(SetupEngineWithSendStream());
   cricket::WebRtcVoiceMediaChannel* media_channel =
       static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
-  send_parameters_.options.combined_audio_video_bwe = rtc::Maybe<bool>(true);
+  send_parameters_.options.combined_audio_video_bwe = rtc::Optional<bool>(true);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   EXPECT_TRUE(media_channel->AddRecvStream(
       cricket::StreamParams::CreateLegacy(kAudioSsrc)));

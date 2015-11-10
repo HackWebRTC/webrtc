@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_BASE_MAYBE_H_
-#define WEBRTC_BASE_MAYBE_H_
+#ifndef WEBRTC_BASE_OPTIONAL_H_
+#define WEBRTC_BASE_OPTIONAL_H_
 
 #include <algorithm>
 #include <utility>
@@ -24,38 +24,67 @@ namespace rtc {
 // contain a value; use e.g. rtc::scoped_ptr<T> instead if that's too
 // expensive.
 //
-// A moved-from Maybe<T> may only be destroyed, and assigned to if T allows
+// A moved-from Optional<T> may only be destroyed, and assigned to if T allows
 // being assigned to after having been moved from. Specifically, you may not
 // assume that it just doesn't contain a value anymore.
+//
+// Examples of good places to use Optional:
+//
+// - As a class or struct member, when the member doesn't always have a value:
+//     struct Prisoner {
+//       std::string name;
+//       Optional<int> cell_number;  // Empty if not currently incarcerated.
+//     };
+//
+// - As a return value for functions that may fail to return a value on all
+//   allowed inputs. For example, a function that searches an array might
+//   return an Optional<size_t> (the index where it found the element, or
+//   nothing if it didn't find it); and a function that parses numbers might
+//   return Optional<double> (the parsed number, or nothing if parsing failed).
+//
+// Examples of bad places to use Optional:
+//
+// - As a return value for functions that may fail because of disallowed
+//   inputs. For example, a string length function should not return
+//   Optional<size_t> so that it can return nothing in case the caller passed
+//   it a null pointer; the function should probably use RTC_[D]CHECK instead,
+//   and return plain size_t.
+//
+// - As a return value for functions that may fail to return a value on all
+//   allowed inputs, but need to tell the caller what went wrong. Returning
+//   Optional<double> when parsing a single number as in the example above
+//   might make sense, but any larger parse job is probably going to need to
+//   tell the caller what the problem was, not just that there was one.
 //
 // TODO(kwiberg): Get rid of this class when the standard library has
 // std::optional (and we're allowed to use it).
 template <typename T>
-class Maybe final {
+class Optional final {
  public:
-  // Construct an empty Maybe.
-  Maybe() : has_value_(false) {}
+  // Construct an empty Optional.
+  Optional() : has_value_(false) {}
 
-  // Construct a Maybe that contains a value.
-  explicit Maybe(const T& val) : value_(val), has_value_(true) {}
-  explicit Maybe(T&& val) : value_(static_cast<T&&>(val)), has_value_(true) {}
+  // Construct an Optional that contains a value.
+  explicit Optional(const T& val) : value_(val), has_value_(true) {}
+  explicit Optional(T&& val)
+      : value_(static_cast<T&&>(val)), has_value_(true) {}
 
   // Copy and move constructors.
   // TODO(kwiberg): =default the move constructor when MSVC supports it.
-  Maybe(const Maybe&) = default;
-  Maybe(Maybe&& m)
+  Optional(const Optional&) = default;
+  Optional(Optional&& m)
       : value_(static_cast<T&&>(m.value_)), has_value_(m.has_value_) {}
 
   // Assignment.
   // TODO(kwiberg): =default the move assignment op when MSVC supports it.
-  Maybe& operator=(const Maybe&) = default;
-  Maybe& operator=(Maybe&& m) {
+  Optional& operator=(const Optional&) = default;
+  Optional& operator=(Optional&& m) {
     value_ = static_cast<T&&>(m.value_);
     has_value_ = m.has_value_;
     return *this;
   }
 
-  friend void swap(Maybe& m1, Maybe& m2) {
+  friend void swap(Optional& m1, Optional& m2) {
     using std::swap;
     swap(m1.value_, m2.value_);
     swap(m1.has_value_, m2.has_value_);
@@ -87,13 +116,14 @@ class Maybe final {
     return has_value_ ? value_ : default_val;
   }
 
-  // Equality tests. Two Maybes are equal if they contain equivalent values, or
+  // Equality tests. Two Optionals are equal if they contain equivalent values,
+  // or
   // if they're both empty.
-  friend bool operator==(const Maybe& m1, const Maybe& m2) {
+  friend bool operator==(const Optional& m1, const Optional& m2) {
     return m1.has_value_ && m2.has_value_ ? m1.value_ == m2.value_
                                           : m1.has_value_ == m2.has_value_;
   }
-  friend bool operator!=(const Maybe& m1, const Maybe& m2) {
+  friend bool operator!=(const Optional& m1, const Optional& m2) {
     return m1.has_value_ && m2.has_value_ ? m1.value_ != m2.value_
                                           : m1.has_value_ != m2.has_value_;
   }
@@ -107,4 +137,4 @@ class Maybe final {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_BASE_MAYBE_H_
+#endif  // WEBRTC_BASE_OPTIONAL_H_

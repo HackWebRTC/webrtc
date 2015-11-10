@@ -445,7 +445,7 @@ template <typename T>
 static void SetOptionFromOptionalConstraint(
     const MediaConstraintsInterface* constraints,
     const std::string& key,
-    rtc::Maybe<T>* option) {
+    rtc::Optional<T>* option) {
   if (!constraints) {
     return;
   }
@@ -453,7 +453,7 @@ static void SetOptionFromOptionalConstraint(
   T value;
   if (constraints->GetOptional().FindFirst(key, &string_value)) {
     if (rtc::FromString(string_value, &value)) {
-      *option = rtc::Maybe<T>(value);
+      *option = rtc::Optional<T>(value);
     }
   }
 }
@@ -645,8 +645,8 @@ bool WebRtcSession::Initialize(
         constraints,
         MediaConstraintsInterface::kEnableDscp,
         &value, NULL)) {
-    audio_options_.dscp = rtc::Maybe<bool>(value);
-    video_options_.dscp = rtc::Maybe<bool>(value);
+    audio_options_.dscp = rtc::Optional<bool>(value);
+    video_options_.dscp = rtc::Optional<bool>(value);
   }
 
   // Find Suspend Below Min Bitrate constraint.
@@ -655,7 +655,7 @@ bool WebRtcSession::Initialize(
           MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
           &value,
           NULL)) {
-    video_options_.suspend_below_min_bitrate = rtc::Maybe<bool>(value);
+    video_options_.suspend_below_min_bitrate = rtc::Optional<bool>(value);
   }
 
   SetOptionFromOptionalConstraint(constraints,
@@ -686,7 +686,7 @@ bool WebRtcSession::Initialize(
       MediaConstraintsInterface::kNumUnsignalledRecvStreams,
       &video_options_.unsignalled_recv_stream_limit);
   if (video_options_.unsignalled_recv_stream_limit) {
-    video_options_.unsignalled_recv_stream_limit = rtc::Maybe<int>(
+    video_options_.unsignalled_recv_stream_limit = rtc::Optional<int>(
         std::max(0, std::min(kMaxUnsignalledRecvStreams,
                              *video_options_.unsignalled_recv_stream_limit)));
   }
@@ -700,10 +700,10 @@ bool WebRtcSession::Initialize(
       &audio_options_.combined_audio_video_bwe);
 
   audio_options_.audio_jitter_buffer_max_packets =
-      rtc::Maybe<int>(rtc_configuration.audio_jitter_buffer_max_packets);
+      rtc::Optional<int>(rtc_configuration.audio_jitter_buffer_max_packets);
 
-  audio_options_.audio_jitter_buffer_fast_accelerate =
-      rtc::Maybe<bool>(rtc_configuration.audio_jitter_buffer_fast_accelerate);
+  audio_options_.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(
+      rtc_configuration.audio_jitter_buffer_fast_accelerate);
 
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,

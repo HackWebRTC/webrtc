@@ -57,7 +57,7 @@ int AudioCodingModule::Codec(const char* payload_name,
                              CodecInst* codec,
                              int sampling_freq_hz,
                              int channels) {
-  rtc::Maybe<CodecInst> ci = acm2::RentACodec::CodecInstByParams(
+  rtc::Optional<CodecInst> ci = acm2::RentACodec::CodecInstByParams(
       payload_name, sampling_freq_hz, channels);
   if (ci) {
     *codec = *ci;
@@ -77,11 +77,12 @@ int AudioCodingModule::Codec(const char* payload_name,
 int AudioCodingModule::Codec(const char* payload_name,
                              int sampling_freq_hz,
                              int channels) {
-  rtc::Maybe<acm2::RentACodec::CodecId> ci = acm2::RentACodec::CodecIdByParams(
-      payload_name, sampling_freq_hz, channels);
+  rtc::Optional<acm2::RentACodec::CodecId> ci =
+      acm2::RentACodec::CodecIdByParams(payload_name, sampling_freq_hz,
+                                        channels);
   if (!ci)
     return -1;
-  rtc::Maybe<int> i = acm2::RentACodec::CodecIndexFromId(*ci);
+  rtc::Optional<int> i = acm2::RentACodec::CodecIndexFromId(*ci);
   return i ? *i : -1;
 }
 

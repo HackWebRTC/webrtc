@@ -208,7 +208,7 @@ void AudioCodingModuleImpl::RegisterExternalSendCodec(
 }
 
 // Get current send codec.
-rtc::Maybe<CodecInst> AudioCodingModuleImpl::SendCodec() const {
+rtc::Optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
   CriticalSectionScoped lock(acm_crit_sect_.get());
   return codec_manager_.GetCodecInst();
 }

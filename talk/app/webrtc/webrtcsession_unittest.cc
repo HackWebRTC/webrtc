@@ -3297,18 +3297,18 @@ TEST_F(WebRtcSessionTest, SetAudioSend) {
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
 
   cricket::AudioOptions options;
-  options.echo_cancellation = rtc::Maybe<bool>(true);
+  options.echo_cancellation = rtc::Optional<bool>(true);
 
   rtc::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
   session_->SetAudioSend(send_ssrc, false, options, renderer.get());
   EXPECT_TRUE(channel->IsStreamMuted(send_ssrc));
-  EXPECT_EQ(rtc::Maybe<bool>(), channel->options().echo_cancellation);
+  EXPECT_EQ(rtc::Optional<bool>(), channel->options().echo_cancellation);
   EXPECT_TRUE(renderer->sink() != NULL);
 
   // This will trigger SetSink(NULL) to the |renderer|.
   session_->SetAudioSend(send_ssrc, true, options, NULL);
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
-  EXPECT_EQ(rtc::Maybe<bool>(true), channel->options().echo_cancellation);
+  EXPECT_EQ(rtc::Optional<bool>(true), channel->options().echo_cancellation);
   EXPECT_TRUE(renderer->sink() == NULL);
 }
 
@@ -3991,8 +3991,8 @@ TEST_F(WebRtcSessionTest, TestDscpConstraint) {
   ASSERT_TRUE(voice_channel_ != NULL);
   const cricket::AudioOptions& audio_options = voice_channel_->options();
   const cricket::VideoOptions& video_options = video_channel_->options();
-  EXPECT_EQ(rtc::Maybe<bool>(true), audio_options.dscp);
-  EXPECT_EQ(rtc::Maybe<bool>(true), video_options.dscp);
+  EXPECT_EQ(rtc::Optional<bool>(true), audio_options.dscp);
+  EXPECT_EQ(rtc::Optional<bool>(true), video_options.dscp);
 }
 
 TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
@@ -4010,7 +4010,7 @@ TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
 
   ASSERT_TRUE(video_channel_ != NULL);
   const cricket::VideoOptions& video_options = video_channel_->options();
-  EXPECT_EQ(rtc::Maybe<bool>(true), video_options.suspend_below_min_bitrate);
+  EXPECT_EQ(rtc::Optional<bool>(true), video_options.suspend_below_min_bitrate);
 }
 
 TEST_F(WebRtcSessionTest, TestNumUnsignalledRecvStreamsConstraint) {
@@ -4037,7 +4037,7 @@ TEST_F(WebRtcSessionTest, TestCombinedAudioVideoBweConstraint) {
 
   ASSERT_TRUE(voice_channel_ != NULL);
   const cricket::AudioOptions& audio_options = voice_channel_->options();
-  EXPECT_EQ(rtc::Maybe<bool>(true), audio_options.combined_audio_video_bwe);
+  EXPECT_EQ(rtc::Optional<bool>(true), audio_options.combined_audio_video_bwe);
 }
 
 // Tests that we can renegotiate new media content with ICE candidates in the
