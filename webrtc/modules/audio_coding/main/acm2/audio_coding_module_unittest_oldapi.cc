@@ -1647,6 +1647,9 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   EXPECT_CALL(mock_encoder, EncodeInternal(_, _, _, _))
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::EncodeInternal));
+  EXPECT_CALL(mock_encoder, SetFec(_))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::SetFec));
   ASSERT_NO_FATAL_FAILURE(
       SetUpTestExternalEncoder(&mock_encoder, codec_inst.pltype));
   Run("81a9d4c0bb72e9becc43aef124c981e9", "8f9b8750bd80fe26b6cbf6659b89f0f9",

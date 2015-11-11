@@ -319,8 +319,15 @@ void CodecManager::RegisterEncoder(AudioEncoder* external_speech_encoder) {
 
   if (send_codec_inst_.channels != 1)
     dtx_enabled_ = false;
-  codec_fec_enabled_ =
-      codec_fec_enabled_ && codec_owner_.Encoder()->SetFec(codec_fec_enabled_);
+  if (codec_fec_enabled_) {
+    // Switch FEC on. On failure, remember that FEC is off.
+    if (!external_speech_encoder->SetFec(true))
+      codec_fec_enabled_ = false;
+  } else {
+    // Switch FEC off. This shouldn't fail.
+    const bool success = external_speech_encoder->SetFec(false);
+    RTC_DCHECK(success);
+  }
   int cng_pt = dtx_enabled_
                    ? CngPayloadType(external_speech_encoder->SampleRateHz())
                    : -1;
