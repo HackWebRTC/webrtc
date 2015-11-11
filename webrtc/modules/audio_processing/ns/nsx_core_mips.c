@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "webrtc/modules/audio_processing/ns/include/noise_suppression_x.h"
+#include "webrtc/modules/audio_processing/ns/noise_suppression_x.h"
 #include "webrtc/modules/audio_processing/ns/nsx_core.h"
 
 static const int16_t kIndicatorTable[17] = {

@@ -41,11 +41,11 @@
         'aec/aec_resampler.h',
         'aec/echo_cancellation.c',
         'aec/echo_cancellation_internal.h',
-        'aec/include/echo_cancellation.h',
+        'aec/echo_cancellation.h',
         'aecm/aecm_core.c',
         'aecm/aecm_core.h',
         'aecm/echo_control_mobile.c',
-        'aecm/include/echo_control_mobile.h',
+        'aecm/echo_control_mobile.h',
         'agc/agc.cc',
         'agc/agc.h',
         'agc/agc_manager_direct.cc',
@@ -162,7 +162,7 @@
         ['prefer_fixed_point==1', {
           'defines': ['WEBRTC_NS_FIXED'],
           'sources': [
-            'ns/include/noise_suppression_x.h',
+            'ns/noise_suppression_x.h',
             'ns/noise_suppression_x.c',
             'ns/nsx_core.c',
             'ns/nsx_core.h',
@@ -183,7 +183,7 @@
           'defines': ['WEBRTC_NS_FLOAT'],
           'sources': [
             'ns/defines.h',
-            'ns/include/noise_suppression.h',
+            'ns/noise_suppression.h',
             'ns/noise_suppression.c',
             'ns/ns_core.c',
             'ns/ns_core.h',

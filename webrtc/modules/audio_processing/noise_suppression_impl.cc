@@ -14,9 +14,9 @@
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #if defined(WEBRTC_NS_FLOAT)
-#include "webrtc/modules/audio_processing/ns/include/noise_suppression.h"
+#include "webrtc/modules/audio_processing/ns/noise_suppression.h"
 #elif defined(WEBRTC_NS_FIXED)
-#include "webrtc/modules/audio_processing/ns/include/noise_suppression_x.h"
+#include "webrtc/modules/audio_processing/ns/noise_suppression_x.h"
 #endif
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 

@@ -10,7 +10,7 @@
 
 // TODO(bjornv): Make this a comprehensive test.
 
-#include "webrtc/modules/audio_processing/aec/include/echo_cancellation.h"
+#include "webrtc/modules/audio_processing/aec/echo_cancellation.h"
 
 #include <stdlib.h>
 #include <time.h>
