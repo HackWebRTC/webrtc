@@ -33,6 +33,7 @@
 #include "talk/app/webrtc/java/jni/androidmediacodeccommon.h"
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
 #include "talk/app/webrtc/java/jni/native_handle_impl.h"
+#include "talk/app/webrtc/java/jni/surfacetexturehelper_jni.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -112,7 +113,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   bool use_surface_;
   VideoCodec codec_;
   webrtc::I420BufferPool decoded_frame_pool_;
-  NativeHandleImpl native_handle_;
+  rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper_;
   DecodedImageCallback* callback_;
   int frames_received_;  // Number of frames received by decoder.
   int frames_decoded_;  // Number of frames decoded by decoder.
@@ -123,8 +124,6 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   uint32_t max_pending_frames_;  // Maximum number of pending input frames
   std::vector<int32_t> timestamps_;
   std::vector<int64_t> ntp_times_ms_;
-  std::vector<int64_t> frame_rtc_times_ms_;  // Time when video frame is sent to
-                                             // decoder input.
 
   // State that is constant for the lifetime of this object once the ctor
   // returns.
@@ -135,7 +134,8 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   jmethodID j_release_method_;
   jmethodID j_dequeue_input_buffer_method_;
   jmethodID j_queue_input_buffer_method_;
-  jmethodID j_dequeue_output_buffer_method_;
+  jmethodID j_dequeue_byte_buffer_method_;
+  jmethodID j_dequeue_texture_buffer_method_;
   jmethodID j_return_decoded_byte_buffer_method_;
   // MediaCodecVideoDecoder fields.
   jfieldID j_input_buffers_field_;
@@ -145,20 +145,21 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   jfieldID j_height_field_;
   jfieldID j_stride_field_;
   jfieldID j_slice_height_field_;
-  jfieldID j_surface_texture_field_;
   // MediaCodecVideoDecoder.DecodedTextureBuffer fields.
-  jfieldID j_textureID_field_;
+  jfieldID j_texture_id_field_;
+  jfieldID j_transform_matrix_field_;
   jfieldID j_texture_presentation_timestamp_us_field_;
-  // MediaCodecVideoDecoder.DecodedByteBuffer fields.
+  jfieldID j_texture_decode_time_ms_field_;
+  jfieldID j_texture_frame_delay_ms_field_;
+  // MediaCodecVideoDecoder.DecodedOutputBuffer fields.
   jfieldID j_info_index_field_;
   jfieldID j_info_offset_field_;
   jfieldID j_info_size_field_;
   jfieldID j_info_presentation_timestamp_us_field_;
+  jfieldID j_byte_buffer_decode_time_ms_field_;
 
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
-  jobject surface_texture_;
-  jobject previous_surface_texture_;
 
   // Render EGL context - owned by factory, should not be allocated/destroyed
   // by VideoDecoder.
@@ -172,8 +173,6 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
     key_frame_required_(true),
     inited_(false),
     sw_fallback_required_(false),
-    surface_texture_(NULL),
-    previous_surface_texture_(NULL),
     codec_thread_(new Thread()),
     j_media_codec_video_decoder_class_(
         jni,
@@ -192,19 +191,22 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
   j_init_decode_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "initDecode",
       "(Lorg/webrtc/MediaCodecVideoDecoder$VideoCodecType;"
-      "IILjavax/microedition/khronos/egl/EGLContext;)Z");
+      "IILorg/webrtc/SurfaceTextureHelper;)Z");
   j_release_method_ =
       GetMethodID(jni, *j_media_codec_video_decoder_class_, "release", "()V");
   j_dequeue_input_buffer_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "dequeueInputBuffer", "()I");
   j_queue_input_buffer_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "queueInputBuffer", "(IIJ)Z");
-  j_dequeue_output_buffer_method_ = GetMethodID(
+  j_dequeue_byte_buffer_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "dequeueOutputBuffer",
-      "(I)Ljava/lang/Object;");
+      "(I)Lorg/webrtc/MediaCodecVideoDecoder$DecodedOutputBuffer;");
+  j_dequeue_texture_buffer_method_ = GetMethodID(
+      jni, *j_media_codec_video_decoder_class_, "dequeueTextureBuffer",
+      "(I)Lorg/webrtc/MediaCodecVideoDecoder$DecodedTextureBuffer;");
   j_return_decoded_byte_buffer_method_ =
       GetMethodID(jni, *j_media_codec_video_decoder_class_,
-                  "returnDecodedByteBuffer", "(I)V");
+                  "returnDecodedOutputBuffer", "(I)V");
 
   j_input_buffers_field_ = GetFieldID(
       jni, *j_media_codec_video_decoder_class_,
@@ -222,28 +224,32 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, *j_media_codec_video_decoder_class_, "stride", "I");
   j_slice_height_field_ = GetFieldID(
       jni, *j_media_codec_video_decoder_class_, "sliceHeight", "I");
-  j_surface_texture_field_ = GetFieldID(
-      jni, *j_media_codec_video_decoder_class_, "surfaceTexture",
-      "Landroid/graphics/SurfaceTexture;");
 
-  jclass j_decoder_decoded_texture_buffer_class = FindClass(jni,
+  jclass j_decoded_texture_buffer_class = FindClass(jni,
       "org/webrtc/MediaCodecVideoDecoder$DecodedTextureBuffer");
-  j_textureID_field_ = GetFieldID(
-      jni, j_decoder_decoded_texture_buffer_class, "textureID", "I");
-  j_texture_presentation_timestamp_us_field_ =
-      GetFieldID(jni, j_decoder_decoded_texture_buffer_class,
-                 "presentationTimestampUs", "J");
+  j_texture_id_field_ = GetFieldID(
+      jni, j_decoded_texture_buffer_class, "textureID", "I");
+  j_transform_matrix_field_ = GetFieldID(
+      jni, j_decoded_texture_buffer_class, "transformMatrix", "[F");
+  j_texture_presentation_timestamp_us_field_ = GetFieldID(
+      jni, j_decoded_texture_buffer_class, "presentationTimestampUs", "J");
+  j_texture_decode_time_ms_field_ = GetFieldID(
+      jni, j_decoded_texture_buffer_class, "decodeTimeMs", "J");
+  j_texture_frame_delay_ms_field_ = GetFieldID(
+      jni, j_decoded_texture_buffer_class, "frameDelayMs", "J");
 
-  jclass j_decoder_decoded_byte_buffer_class = FindClass(jni,
-      "org/webrtc/MediaCodecVideoDecoder$DecodedByteBuffer");
+  jclass j_decoded_output_buffer_class = FindClass(jni,
+      "org/webrtc/MediaCodecVideoDecoder$DecodedOutputBuffer");
   j_info_index_field_ = GetFieldID(
-      jni, j_decoder_decoded_byte_buffer_class, "index", "I");
+      jni, j_decoded_output_buffer_class, "index", "I");
   j_info_offset_field_ = GetFieldID(
-      jni, j_decoder_decoded_byte_buffer_class, "offset", "I");
+      jni, j_decoded_output_buffer_class, "offset", "I");
   j_info_size_field_ = GetFieldID(
-      jni, j_decoder_decoded_byte_buffer_class, "size", "I");
+      jni, j_decoded_output_buffer_class, "size", "I");
   j_info_presentation_timestamp_us_field_ = GetFieldID(
-      jni, j_decoder_decoded_byte_buffer_class, "presentationTimestampUs", "J");
+      jni, j_decoded_output_buffer_class, "presentationTimestampUs", "J");
+  j_byte_buffer_decode_time_ms_field_ = GetFieldID(
+      jni, j_decoded_output_buffer_class, "decodeTimeMs", "J");
 
   CHECK_EXCEPTION(jni) << "MediaCodecVideoDecoder ctor failed";
   use_surface_ = (render_egl_context_ != NULL);
@@ -255,14 +261,6 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
 MediaCodecVideoDecoder::~MediaCodecVideoDecoder() {
   // Call Release() to ensure no more callbacks to us after we are deleted.
   Release();
-  // Delete global references.
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  if (previous_surface_texture_ != NULL) {
-    jni->DeleteGlobalRef(previous_surface_texture_);
-  }
-  if (surface_texture_ != NULL) {
-    jni->DeleteGlobalRef(surface_texture_);
-  }
 }
 
 int32_t MediaCodecVideoDecoder::InitDecode(const VideoCodec* inst,
@@ -313,6 +311,11 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   frames_received_ = 0;
   frames_decoded_ = 0;
 
+  if (use_surface_) {
+    surface_texture_helper_ = new rtc::RefCountedObject<SurfaceTextureHelper>(
+        jni, render_egl_context_);
+  }
+
   jobject j_video_codec_enum = JavaEnumFromIndex(
       jni, "MediaCodecVideoDecoder$VideoCodecType", codecType_);
   bool success = jni->CallBooleanMethod(
@@ -321,7 +324,8 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
       j_video_codec_enum,
       codec_.width,
       codec_.height,
-      use_surface_ ? render_egl_context_ : nullptr);
+      use_surface_ ? surface_texture_helper_->GetJavaSurfaceTextureHelper()
+                   : nullptr);
   if (CheckException(jni) || !success) {
     ALOGE << "Codec initialization error - fallback to SW codec.";
     sw_fallback_required_ = true;
@@ -348,7 +352,6 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   current_decoding_time_ms_ = 0;
   timestamps_.clear();
   ntp_times_ms_.clear();
-  frame_rtc_times_ms_.clear();
 
   jobjectArray input_buffers = (jobjectArray)GetObjectField(
       jni, *j_media_codec_video_decoder_, j_input_buffers_field_);
@@ -365,15 +368,6 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
     }
   }
 
-  if (use_surface_) {
-    jobject surface_texture = GetObjectField(
-        jni, *j_media_codec_video_decoder_, j_surface_texture_field_);
-    if (previous_surface_texture_ != NULL) {
-      jni->DeleteGlobalRef(previous_surface_texture_);
-    }
-    previous_surface_texture_ = surface_texture_;
-    surface_texture_ = jni->NewGlobalRef(surface_texture);
-  }
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
 
   return WEBRTC_VIDEO_CODEC_OK;
@@ -399,6 +393,7 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
   }
   input_buffers_.clear();
   jni->CallVoidMethod(*j_media_codec_video_decoder_, j_release_method_);
+  surface_texture_helper_ = nullptr;
   inited_ = false;
   rtc::MessageQueueManager::Clear(this);
   if (CheckException(jni)) {
@@ -508,7 +503,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   if (frames_received_ > frames_decoded_ + max_pending_frames_) {
     ALOGV("Received: %d. Decoded: %d. Wait for output...",
         frames_received_, frames_decoded_);
-    if (!DeliverPendingOutputs(jni, kMediaCodecTimeoutMs * 1000)) {
+    if (!DeliverPendingOutputs(jni, kMediaCodecTimeoutMs)) {
       ALOGE << "DeliverPendingOutputs error. Frames received: " <<
           frames_received_ << ". Frames decoded: " << frames_decoded_;
       return ProcessHWErrorOnCodecThread();
@@ -553,7 +548,6 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   current_bytes_ += inputImage._length;
   timestamps_.push_back(inputImage._timeStamp);
   ntp_times_ms_.push_back(inputImage.ntp_time_ms_);
-  frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
 
   // Feed input to decoder.
   bool success = jni->CallBooleanMethod(*j_media_codec_video_decoder_,
@@ -576,16 +570,18 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
 }
 
 bool MediaCodecVideoDecoder::DeliverPendingOutputs(
-    JNIEnv* jni, int dequeue_timeout_us) {
+    JNIEnv* jni, int dequeue_timeout_ms) {
   if (frames_received_ <= frames_decoded_) {
     // No need to query for output buffers - decoder is drained.
     return true;
   }
   // Get decoder output.
-  jobject j_decoder_output_buffer = jni->CallObjectMethod(
-      *j_media_codec_video_decoder_,
-      j_dequeue_output_buffer_method_,
-      dequeue_timeout_us);
+  jobject j_decoder_output_buffer =
+      jni->CallObjectMethod(*j_media_codec_video_decoder_,
+          use_surface_ ? j_dequeue_texture_buffer_method_
+                       : j_dequeue_byte_buffer_method_,
+          dequeue_timeout_ms);
+
   if (CheckException(jni)) {
     ALOGE << "dequeueOutputBuffer() error";
     return false;
@@ -605,19 +601,30 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       j_slice_height_field_);
 
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> frame_buffer;
-  long output_timestamps_ms = 0;
+  int64_t output_timestamps_ms = 0;
+  int decode_time_ms = 0;
+  int64_t frame_delayed_ms = 0;
   if (use_surface_) {
     // Extract data from Java DecodedTextureBuffer.
     const int texture_id =
-        GetIntField(jni, j_decoder_output_buffer, j_textureID_field_);
-    const int64_t timestamp_us =
-        GetLongField(jni, j_decoder_output_buffer,
-                     j_texture_presentation_timestamp_us_field_);
-    output_timestamps_ms = timestamp_us / rtc::kNumMicrosecsPerMillisec;
-    // Create webrtc::VideoFrameBuffer with native texture handle.
-    native_handle_.SetTextureObject(surface_texture_, texture_id);
-    frame_buffer = new rtc::RefCountedObject<JniNativeHandleBuffer>(
-        &native_handle_, width, height);
+        GetIntField(jni, j_decoder_output_buffer, j_texture_id_field_);
+    if (texture_id != 0) {  // |texture_id| == 0 represents a dropped frame.
+      const jfloatArray j_transform_matrix =
+          reinterpret_cast<jfloatArray>(GetObjectField(
+              jni, j_decoder_output_buffer, j_transform_matrix_field_));
+      const int64_t timestamp_us =
+          GetLongField(jni, j_decoder_output_buffer,
+              j_texture_presentation_timestamp_us_field_);
+      output_timestamps_ms = timestamp_us / rtc::kNumMicrosecsPerMillisec;
+      decode_time_ms = GetLongField(jni, j_decoder_output_buffer,
+          j_texture_decode_time_ms_field_);
+      frame_delayed_ms = GetLongField(jni, j_decoder_output_buffer,
+          j_texture_frame_delay_ms_field_);
+
+      // Create webrtc::VideoFrameBuffer with native texture handle.
+      frame_buffer = surface_texture_helper_->CreateTextureFrame(
+          width, height, NativeHandleImpl(jni, texture_id, j_transform_matrix));
+    }
   } else {
     // Extract data from Java ByteBuffer and create output yuv420 frame -
     // for non surface decoding only.
@@ -630,6 +637,8 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     const int64_t timestamp_us = GetLongField(
         jni, j_decoder_output_buffer, j_info_presentation_timestamp_us_field_);
     output_timestamps_ms = timestamp_us / rtc::kNumMicrosecsPerMillisec;
+    decode_time_ms = GetLongField(jni, j_decoder_output_buffer,
+                                  j_byte_buffer_decode_time_ms_field_);
 
     if (output_buffer_size < width * height * 3 / 2) {
       ALOGE << "Insufficient output buffer size: " << output_buffer_size;
@@ -687,7 +696,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
         j_return_decoded_byte_buffer_method_,
         output_buffer_index);
     if (CheckException(jni)) {
-      ALOGE << "returnDecodedByteBuffer error";
+      ALOGE << "returnDecodedOutputBuffer error";
       return false;
     }
   }
@@ -702,26 +711,24 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     decoded_frame.set_ntp_time_ms(ntp_times_ms_.front());
     ntp_times_ms_.erase(ntp_times_ms_.begin());
   }
-  int64_t frame_decoding_time_ms = 0;
-  if (frame_rtc_times_ms_.size() > 0) {
-    frame_decoding_time_ms = GetCurrentTimeMs() - frame_rtc_times_ms_.front();
-    frame_rtc_times_ms_.erase(frame_rtc_times_ms_.begin());
-  }
+
   if (frames_decoded_ < kMaxDecodedLogFrames) {
     ALOGD << "Decoder frame out # " << frames_decoded_ << ". " << width <<
         " x " << height << ". " << stride << " x " <<  slice_height <<
         ". Color: " << color_format << ". TS:" << (int)output_timestamps_ms <<
-        ". DecTime: " << (int)frame_decoding_time_ms;
+        ". DecTime: " << (int)decode_time_ms <<
+        ". DelayTime: " << (int)frame_delayed_ms;
   }
 
   // Calculate and print decoding statistics - every 3 seconds.
   frames_decoded_++;
   current_frames_++;
-  current_decoding_time_ms_ += frame_decoding_time_ms;
+  current_decoding_time_ms_ += decode_time_ms;
   int statistic_time_ms = GetCurrentTimeMs() - start_time_ms_;
   if (statistic_time_ms >= kMediaCodecStatisticsIntervalMs &&
       current_frames_ > 0) {
-    ALOGD << "Decoded frames: " << frames_decoded_ << ". Bitrate: " <<
+    ALOGD << "Decoded frames: " << frames_decoded_ <<  ". Received frames: "
+        <<  frames_received_ << ".  Bitrate: " <<
         (current_bytes_ * 8 / statistic_time_ms) << " kbps, fps: " <<
         ((current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms)
         << ". decTime: " << (current_decoding_time_ms_ / current_frames_) <<
@@ -732,12 +739,15 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     current_decoding_time_ms_ = 0;
   }
 
-  // Callback - output decoded frame.
-  const int32_t callback_status = callback_->Decoded(decoded_frame);
-  if (callback_status > 0) {
-    ALOGE << "callback error";
+  // |.IsZeroSize())| returns true when a frame has been dropped.
+  if (!decoded_frame.IsZeroSize()) {
+    // Callback - output decoded frame.
+    const int32_t callback_status =
+        callback_->Decoded(decoded_frame, decode_time_ms);
+    if (callback_status > 0) {
+      ALOGE << "callback error";
+    }
   }
-
   return true;
 }
 
