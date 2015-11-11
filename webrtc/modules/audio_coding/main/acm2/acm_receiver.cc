@@ -163,15 +163,14 @@ int AcmReceiver::current_sample_rate_hz() const {
 }
 
 int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
-                              const uint8_t* incoming_payload,
-                              size_t length_payload) {
+                              rtc::ArrayView<const uint8_t> incoming_payload) {
   uint32_t receive_timestamp = 0;
   const RTPHeader* header = &rtp_header.header;  // Just a shorthand.
 
   {
     CriticalSectionScoped lock(crit_sect_.get());
 
-    const Decoder* decoder = RtpHeaderToDecoder(*header, incoming_payload);
+    const Decoder* decoder = RtpHeaderToDecoder(*header, incoming_payload[0]);
     if (!decoder) {
       LOG_F(LS_ERROR) << "Payload-type "
                       << static_cast<int>(header->payloadType)
@@ -197,8 +196,8 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
 
   }  // |crit_sect_| is released.
 
-  if (neteq_->InsertPacket(rtp_header, incoming_payload, length_payload,
-                           receive_timestamp) < 0) {
+  if (neteq_->InsertPacket(rtp_header, incoming_payload, receive_timestamp) <
+      0) {
     LOG(LERROR) << "AcmReceiver::InsertPacket "
                 << static_cast<int>(header->payloadType)
                 << " Failed to insert packet";
@@ -512,14 +511,14 @@ void AcmReceiver::ResetInitialDelay() {
 
 const AcmReceiver::Decoder* AcmReceiver::RtpHeaderToDecoder(
     const RTPHeader& rtp_header,
-    const uint8_t* payload) const {
+    uint8_t payload_type) const {
   auto it = decoders_.find(rtp_header.payloadType);
   const auto red_index =
       RentACodec::CodecIndexFromId(RentACodec::CodecId::kRED);
   if (red_index &&  // This ensures that RED is defined in WebRTC.
       it != decoders_.end() && it->second.acm_codec_id == *red_index) {
     // This is a RED packet, get the payload of the audio codec.
-    it = decoders_.find(payload[0] & 0x7F);
+    it = decoders_.find(payload_type & 0x7F);
   }
 
   // Check if the payload is registered.

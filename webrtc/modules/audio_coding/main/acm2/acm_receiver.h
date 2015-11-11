@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
@@ -65,8 +66,7 @@ class AcmReceiver {
   //                           <0 if NetEq returned an error.
   //
   int InsertPacket(const WebRtcRTPHeader& rtp_header,
-                   const uint8_t* incoming_payload,
-                   size_t length_payload);
+                   rtc::ArrayView<const uint8_t> incoming_payload);
 
   //
   // Asks NetEq for 10 milliseconds of decoded audio.
@@ -278,7 +278,7 @@ class AcmReceiver {
 
  private:
   const Decoder* RtpHeaderToDecoder(const RTPHeader& rtp_header,
-                                    const uint8_t* payload) const
+                                    uint8_t payload_type) const
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   uint32_t NowInTimestamp(int decoder_sampling_rate) const;

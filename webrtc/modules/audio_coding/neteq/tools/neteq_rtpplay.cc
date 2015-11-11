@@ -547,7 +547,7 @@ int main(int argc, char* argv[]) {
         payload_ptr = payload.get();
       }
       int error = neteq->InsertPacket(
-          rtp_header, payload_ptr, payload_len,
+          rtp_header, rtc::ArrayView<const uint8_t>(payload_ptr, payload_len),
           static_cast<uint32_t>(packet->time_ms() * sample_rate_hz / 1000));
       if (error != NetEq::kOK) {
         if (neteq->LastError() == NetEq::kUnknownRtpPayloadType) {

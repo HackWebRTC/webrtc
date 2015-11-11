@@ -141,8 +141,9 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
       rtp_header_.type.Audio.isCNG = true;
     rtp_header_.header.timestamp = timestamp;
 
-    int ret_val = receiver_->InsertPacket(rtp_header_, payload_data,
-                                          payload_len_bytes);
+    int ret_val = receiver_->InsertPacket(
+        rtp_header_,
+        rtc::ArrayView<const uint8_t>(payload_data, payload_len_bytes));
     if (ret_val < 0) {
       assert(false);
       return -1;

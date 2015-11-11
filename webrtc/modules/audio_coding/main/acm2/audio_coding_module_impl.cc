@@ -611,7 +611,9 @@ int AudioCodingModuleImpl::ReceiveCodec(CodecInst* current_codec) const {
 int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
                                           const size_t payload_length,
                                           const WebRtcRTPHeader& rtp_header) {
-  return receiver_.InsertPacket(rtp_header, incoming_payload, payload_length);
+  return receiver_.InsertPacket(
+      rtp_header,
+      rtc::ArrayView<const uint8_t>(incoming_payload, payload_length));
 }
 
 // Minimum playout delay (Used for lip-sync).

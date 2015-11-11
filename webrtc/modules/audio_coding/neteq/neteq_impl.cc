@@ -121,17 +121,16 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
 NetEqImpl::~NetEqImpl() = default;
 
 int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
-                            const uint8_t* payload,
-                            size_t length_bytes,
+                            rtc::ArrayView<const uint8_t> payload,
                             uint32_t receive_timestamp) {
   CriticalSectionScoped lock(crit_sect_.get());
-  LOG(LS_VERBOSE) << "InsertPacket: ts=" << rtp_header.header.timestamp <<
-      ", sn=" << rtp_header.header.sequenceNumber <<
-      ", pt=" << static_cast<int>(rtp_header.header.payloadType) <<
-      ", ssrc=" << rtp_header.header.ssrc <<
-      ", len=" << length_bytes;
-  int error = InsertPacketInternal(rtp_header, payload, length_bytes,
-                                   receive_timestamp, false);
+  LOG(LS_VERBOSE) << "InsertPacket: ts=" << rtp_header.header.timestamp
+                  << ", sn=" << rtp_header.header.sequenceNumber
+                  << ", pt=" << static_cast<int>(rtp_header.header.payloadType)
+                  << ", ssrc=" << rtp_header.header.ssrc
+                  << ", len=" << payload.size();
+  int error =
+      InsertPacketInternal(rtp_header, payload, receive_timestamp, false);
   if (error != 0) {
     error_code_ = error;
     return kFail;
@@ -149,8 +148,8 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
       ", ssrc=" << rtp_header.header.ssrc;
 
   const uint8_t kSyncPayload[] = { 's', 'y', 'n', 'c' };
-  int error = InsertPacketInternal(
-      rtp_header, kSyncPayload, sizeof(kSyncPayload), receive_timestamp, true);
+  int error =
+      InsertPacketInternal(rtp_header, kSyncPayload, receive_timestamp, true);
 
   if (error != 0) {
     error_code_ = error;
@@ -445,12 +444,11 @@ const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
 // Methods below this line are private.
 
 int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
-                                    const uint8_t* payload,
-                                    size_t length_bytes,
+                                    rtc::ArrayView<const uint8_t> payload,
                                     uint32_t receive_timestamp,
                                     bool is_sync_packet) {
-  if (!payload) {
-    LOG_F(LS_ERROR) << "payload == NULL";
+  if (payload.empty()) {
+    LOG_F(LS_ERROR) << "payload is empty";
     return kInvalidPointer;
   }
   // Sanity checks for sync-packets.
@@ -486,7 +484,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     packet->header.timestamp = rtp_header.header.timestamp;
     packet->header.ssrc = rtp_header.header.ssrc;
     packet->header.numCSRCs = 0;
-    packet->payload_length = length_bytes;
+    packet->payload_length = payload.size();
     packet->primary = true;
     packet->waiting_time = 0;
     packet->payload = new uint8_t[packet->payload_length];
@@ -494,8 +492,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     if (!packet->payload) {
       LOG_F(LS_ERROR) << "Payload pointer is NULL.";
     }
-    assert(payload);  // Already checked above.
-    memcpy(packet->payload, payload, packet->payload_length);
+    assert(!payload.empty());  // Already checked above.
+    memcpy(packet->payload, payload.data(), packet->payload_length);
     // Insert packet in a packet list.
     packet_list.push_back(packet);
     // Save main payloads header for later.

@@ -68,7 +68,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   uint8_t input_payload[kInputBlockSizeSamples * sizeof(int16_t)];
   size_t payload_len = WebRtcPcm16b_Encode(input_samples.data(),
                                            input_samples.size(), input_payload);
-  assert(payload_len == kInputBlockSizeSamples * sizeof(int16_t));
+  RTC_CHECK_EQ(sizeof(input_payload), payload_len);
 
   // Main loop.
   webrtc::Clock* clock = webrtc::Clock::GetRealTimeClock();
@@ -82,9 +82,9 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
       }
       if (!lost) {
         // Insert packet.
-        int error = neteq->InsertPacket(
-            rtp_header, input_payload, payload_len,
-            packet_input_time_ms * kSampRateHz / 1000);
+        int error =
+            neteq->InsertPacket(rtp_header, input_payload,
+                                packet_input_time_ms * kSampRateHz / 1000);
         if (error != NetEq::kOK)
           return -1;
       }

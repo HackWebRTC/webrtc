@@ -33,14 +33,12 @@ void NetEqExternalDecoderTest::Init() {
                             decoder_, codec_, kPayloadType, sample_rate_hz_));
 }
 
-void NetEqExternalDecoderTest::InsertPacket(WebRtcRTPHeader rtp_header,
-                                            const uint8_t* payload,
-                                            size_t payload_size_bytes,
-                                            uint32_t receive_timestamp) {
-  ASSERT_EQ(
-      NetEq::kOK,
-      neteq_->InsertPacket(
-          rtp_header, payload, payload_size_bytes, receive_timestamp));
+void NetEqExternalDecoderTest::InsertPacket(
+    WebRtcRTPHeader rtp_header,
+    rtc::ArrayView<const uint8_t> payload,
+    uint32_t receive_timestamp) {
+  ASSERT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(rtp_header, payload, receive_timestamp));
 }
 
 size_t NetEqExternalDecoderTest::GetOutputAudio(size_t max_length,

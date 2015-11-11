@@ -36,8 +36,8 @@ class NetEqExternalDecoderTest {
   // |payload_size_bytes| bytes. The |receive_timestamp| is an indication
   // of the time when the packet was received, and should be measured with
   // the same tick rate as the RTP timestamp of the current payload.
-  virtual void InsertPacket(WebRtcRTPHeader rtp_header, const uint8_t* payload,
-                            size_t payload_size_bytes,
+  virtual void InsertPacket(WebRtcRTPHeader rtp_header,
+                            rtc::ArrayView<const uint8_t> payload,
                             uint32_t receive_timestamp);
 
   // Get 10 ms of audio data. The data is written to |output|, which can hold

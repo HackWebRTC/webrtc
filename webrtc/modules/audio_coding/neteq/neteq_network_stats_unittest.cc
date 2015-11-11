@@ -191,8 +191,7 @@ struct NetEqNetworkStatsCheck {
                                                       frame_size_samples_,
                                                       &rtp_header_);
         if (!Lost(next_send_time)) {
-          InsertPacket(rtp_header_, payload_, kPayloadSizeByte,
-                       next_send_time);
+          InsertPacket(rtp_header_, payload_, next_send_time);
         }
       }
       GetOutputAudio(kMaxOutputSize, output_, &output_type);

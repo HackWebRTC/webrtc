@@ -79,8 +79,7 @@ class NetEqImpl : public webrtc::NetEq {
   // the same tick rate as the RTP timestamp of the current payload.
   // Returns 0 on success, -1 on failure.
   int InsertPacket(const WebRtcRTPHeader& rtp_header,
-                   const uint8_t* payload,
-                   size_t length_bytes,
+                   rtc::ArrayView<const uint8_t> payload,
                    uint32_t receive_timestamp) override;
 
   // Inserts a sync-packet into packet queue. Sync-packets are decoded to
@@ -207,8 +206,7 @@ class NetEqImpl : public webrtc::NetEq {
   // above. Returns 0 on success, otherwise an error code.
   // TODO(hlundin): Merge this with InsertPacket above?
   int InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
-                           const uint8_t* payload,
-                           size_t length_bytes,
+                           rtc::ArrayView<const uint8_t> payload,
                            uint32_t receive_timestamp,
                            bool is_sync_packet)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);

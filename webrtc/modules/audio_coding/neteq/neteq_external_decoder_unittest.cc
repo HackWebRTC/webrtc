@@ -105,7 +105,8 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
     uint32_t time_now = 0;
     for (int k = 0; k < num_loops; ++k) {
       while (time_now >= next_arrival_time) {
-        InsertPacket(rtp_header_, encoded_, payload_size_bytes_,
+        InsertPacket(rtp_header_, rtc::ArrayView<const uint8_t>(
+                                      encoded_, payload_size_bytes_),
                      next_arrival_time);
         // Get next input packet.
         do {
@@ -124,17 +125,14 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
     }
   }
 
-  void InsertPacket(WebRtcRTPHeader rtp_header, const uint8_t* payload,
-                    size_t payload_size_bytes,
+  void InsertPacket(WebRtcRTPHeader rtp_header,
+                    rtc::ArrayView<const uint8_t> payload,
                     uint32_t receive_timestamp) override {
-    EXPECT_CALL(*external_decoder_,
-                IncomingPacket(_,
-                               payload_size_bytes,
-                               rtp_header.header.sequenceNumber,
-                               rtp_header.header.timestamp,
-                               receive_timestamp));
+    EXPECT_CALL(
+        *external_decoder_,
+        IncomingPacket(_, payload.size(), rtp_header.header.sequenceNumber,
+                       rtp_header.header.timestamp, receive_timestamp));
     NetEqExternalDecoderTest::InsertPacket(rtp_header, payload,
-                                           payload_size_bytes,
                                            receive_timestamp);
   }
 
@@ -210,18 +208,15 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
     }
   }
 
-  void InsertPacket(WebRtcRTPHeader rtp_header, const uint8_t* payload,
-                    size_t payload_size_bytes,
+  void InsertPacket(WebRtcRTPHeader rtp_header,
+                    rtc::ArrayView<const uint8_t> payload,
                     uint32_t receive_timestamp) override {
     // Insert packet in internal decoder.
-    ASSERT_EQ(
-        NetEq::kOK,
-        neteq_internal_->InsertPacket(
-            rtp_header, payload, payload_size_bytes, receive_timestamp));
+    ASSERT_EQ(NetEq::kOK, neteq_internal_->InsertPacket(rtp_header, payload,
+                                                        receive_timestamp));
 
     // Insert packet in external decoder instance.
     NetEqExternalDecoderUnitTest::InsertPacket(rtp_header, payload,
-                                               payload_size_bytes,
                                                receive_timestamp);
   }
 
