@@ -71,7 +71,14 @@ class StunProber : public sigslot::has_slots<> {
   struct Stats {
     Stats() {}
 
+    // |raw_num_request_sent| is the total number of requests
+    // sent. |num_request_sent| is the count of requests against a server where
+    // we see at least one response. |num_request_sent| is designed to protect
+    // against DNS resolution failure or the STUN server is not responsive
+    // which could skew the result.
+    int raw_num_request_sent = 0;
     int num_request_sent = 0;
+
     int num_response_received = 0;
     NatType nat_type = NATTYPE_INVALID;
     int average_rtt_ms = -1;

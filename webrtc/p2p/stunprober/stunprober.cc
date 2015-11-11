@@ -460,6 +460,7 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) const {
         continue;
       }
 
+      ++stats.raw_num_request_sent;
       IncrementCounterByAddress(&num_request_per_server, request->server_addr);
 
       if (!first_sent_time) {
@@ -503,11 +504,6 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) const {
     num_sent += num_request_per_server[kv.first];
   }
 
-  // Not receiving any response, the trial is inconclusive.
-  if (!num_received) {
-    return false;
-  }
-
   // Shared mode is only true if we use the shared socket and there are more
   // than 1 responding servers.
   stats.shared_socket_mode =
@@ -519,7 +515,8 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) const {
 
   // If we could find a local IP matching srflx, we're not behind a NAT.
   rtc::SocketAddress srflx_addr;
-  if (!srflx_addr.FromString(*(stats.srflx_addrs.begin()))) {
+  if (stats.srflx_addrs.size() &&
+      !srflx_addr.FromString(*(stats.srflx_addrs.begin()))) {
     return false;
   }
   for (const auto& net : networks_) {
@@ -544,9 +541,10 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) const {
     stats.success_percent = static_cast<int>(100 * num_received / num_sent);
   }
 
-  if (num_sent > 1) {
+  if (stats.raw_num_request_sent > 1) {
     stats.actual_request_interval_ns =
-        (1000 * (last_sent_time - first_sent_time)) / (num_sent - 1);
+        (1000 * (last_sent_time - first_sent_time)) /
+        (stats.raw_num_request_sent - 1);
   }
 
   if (num_received) {
