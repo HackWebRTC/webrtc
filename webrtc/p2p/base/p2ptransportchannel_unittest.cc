@@ -1932,7 +1932,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
 // The controlled side will select a connection as the "best connection" based
 // on requests from an unknown address before the controlling side nominates
 // a connection, and will nominate a connection from an unknown address if the
-// request contains the use_candidate attribute.
+// request contains the use_candidate attribute. Plus, it will also sends back
+// a ping response.
 TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
@@ -1948,14 +1949,16 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   uint32_t prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
   request.AddAttribute(new cricket::StunUInt32Attribute(
       cricket::STUN_ATTR_PRIORITY, prflx_priority));
-  cricket::Port* port = GetPort(&ch);
+  cricket::TestUDPPort* port = static_cast<cricket::TestUDPPort*>(GetPort(&ch));
   port->SignalUnknownAddress(port, rtc::SocketAddress("1.1.1.1", 1),
                              cricket::PROTO_UDP, &request, kIceUfrag[1], false);
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_TRUE(port->sent_binding_response());
   EXPECT_EQ(conn1, ch.best_connection());
   conn1->ReceivedPingResponse();
   EXPECT_EQ(conn1, ch.best_connection());
+  port->set_sent_binding_response(false);
 
   // Another connection is nominated via use_candidate.
   ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
@@ -1977,8 +1980,10 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
                              cricket::PROTO_UDP, &request, kIceUfrag[1], false);
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
+  EXPECT_TRUE(port->sent_binding_response());
   conn3->ReceivedPingResponse();  // Become writable.
   EXPECT_EQ(conn2, ch.best_connection());
+  port->set_sent_binding_response(false);
 
   // However if the request contains use_candidate attribute, it will be
   // selected as the best connection.
@@ -1988,6 +1993,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
                              cricket::PROTO_UDP, &request, kIceUfrag[1], false);
   cricket::Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
   ASSERT_TRUE(conn4 != nullptr);
+  EXPECT_TRUE(port->sent_binding_response());
   // conn4 is not the best connection yet because it is not writable.
   EXPECT_EQ(conn2, ch.best_connection());
   conn4->ReceivedPingResponse();  // Become writable.

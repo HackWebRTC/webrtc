@@ -605,14 +605,7 @@ void P2PTransportChannel::OnUnknownAddress(
                << (remote_candidate_is_new ? "peer reflexive" : "resurrected")
                << " candidate: " << remote_candidate.ToString();
   AddConnection(connection);
-  connection->ReceivedPing();
-
-  bool received_use_candidate =
-      stun_msg->GetByteString(STUN_ATTR_USE_CANDIDATE) != nullptr;
-  if (received_use_candidate && ice_role_ == ICEROLE_CONTROLLED) {
-    connection->set_nominated(true);
-    OnNominated(connection);
-  }
+  connection->HandleBindingRequest(stun_msg);
 
   // Update the list of connections since we just added another.  We do this
   // after sending the response since it could (in principle) delete the

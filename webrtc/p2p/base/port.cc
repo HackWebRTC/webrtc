@@ -567,10 +567,6 @@ void Port::SendBindingResponse(StunMessage* request,
   response.AddMessageIntegrity(password_);
   response.AddFingerprint();
 
-  // The fact that we received a successful request means that this connection
-  // (if one exists) should now be receiving.
-  Connection* conn = GetConnection(addr);
-
   // Send the response message.
   rtc::ByteBuffer buf;
   response.Write(&buf);
@@ -585,6 +581,7 @@ void Port::SendBindingResponse(StunMessage* request,
   } else {
     // Log at LS_INFO if we send a stun ping response on an unwritable
     // connection.
+    Connection* conn = GetConnection(addr);
     rtc::LoggingSeverity sev = (conn && !conn->writable()) ?
         rtc::LS_INFO : rtc::LS_VERBOSE;
     LOG_JV(sev, this)
@@ -592,10 +589,6 @@ void Port::SendBindingResponse(StunMessage* request,
         << ", to=" << addr.ToSensitiveString()
         << ", id=" << rtc::hex_encode(response.transaction_id());
   }
-
-  ASSERT(conn != NULL);
-  if (conn)
-    conn->ReceivedPing();
 }
 
 void Port::SendBindingErrorResponse(StunMessage* request,
@@ -924,29 +917,7 @@ void Connection::OnReadPacket(
                           << ", id=" << rtc::hex_encode(msg->transaction_id());
 
         if (remote_ufrag == remote_candidate_.username()) {
-          // Check for role conflicts.
-          if (!port_->MaybeIceRoleConflict(addr, msg.get(), remote_ufrag)) {
-            // Received conflicting role from the peer.
-            LOG(LS_INFO) << "Received conflicting role from the peer.";
-            return;
-          }
-
-          // Incoming, validated stun request from remote peer.
-          // This call will also set the connection receiving.
-          port_->SendBindingResponse(msg.get(), addr);
-
-          // If timed out sending writability checks, start up again
-          if (!pruned_ && (write_state_ == STATE_WRITE_TIMEOUT))
-            set_write_state(STATE_WRITE_INIT);
-
-          if (port_->GetIceRole() == ICEROLE_CONTROLLED) {
-            const StunByteStringAttribute* use_candidate_attr =
-                msg->GetByteString(STUN_ATTR_USE_CANDIDATE);
-            if (use_candidate_attr) {
-              set_nominated(true);
-              SignalNominated(this);
-            }
-          }
+          HandleBindingRequest(msg.get());
         } else {
           // The packet had the right local username, but the remote username
           // was not the right one for the remote address.
@@ -982,6 +953,37 @@ void Connection::OnReadPacket(
       default:
         ASSERT(false);
         break;
+    }
+  }
+}
+
+void Connection::HandleBindingRequest(IceMessage* msg) {
+  // This connection should now be receiving.
+  ReceivedPing();
+
+  const rtc::SocketAddress& remote_addr = remote_candidate_.address();
+  const std::string& remote_ufrag = remote_candidate_.username();
+  // Check for role conflicts.
+  if (!port_->MaybeIceRoleConflict(remote_addr, msg, remote_ufrag)) {
+    // Received conflicting role from the peer.
+    LOG(LS_INFO) << "Received conflicting role from the peer.";
+    return;
+  }
+
+  // This is a validated stun request from remote peer.
+  port_->SendBindingResponse(msg, remote_addr);
+
+  // If it timed out on writing check, start up again
+  if (!pruned_ && write_state_ == STATE_WRITE_TIMEOUT) {
+    set_write_state(STATE_WRITE_INIT);
+  }
+
+  if (port_->GetIceRole() == ICEROLE_CONTROLLED) {
+    const StunByteStringAttribute* use_candidate_attr =
+        msg->GetByteString(STUN_ATTR_USE_CANDIDATE);
+    if (use_candidate_attr) {
+      set_nominated(true);
+      SignalNominated(this);
     }
   }
 }

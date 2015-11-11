@@ -523,6 +523,8 @@ class Connection : public rtc::MessageHandler,
   // public because the connection intercepts the first ping for us.
   uint32_t last_ping_received() const { return last_ping_received_; }
   void ReceivedPing();
+  // Handles the binding request; sends a response if this is a valid request.
+  void HandleBindingRequest(IceMessage* msg);
 
   // Debugging description of this connection
   std::string ToDebugId() const;
