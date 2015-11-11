@@ -1943,7 +1943,16 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
   test::ClearHistograms();
   RunBaseTest(&test, FakeNetworkPipe::Config());
 
+  // Delete the call for Call stats to be reported.
+  receiver_call_.reset();
+
   // Verify that stats have been updated once.
+  EXPECT_EQ(
+      1, test::NumHistogramSamples("WebRTC.Call.VideoBitrateReceivedInKbps"));
+  EXPECT_EQ(1,
+            test::NumHistogramSamples("WebRTC.Call.RtcpBitrateReceivedInBps"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Call.BitrateReceivedInKbps"));
+
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.NackPacketsSentPerMinute"));
   EXPECT_EQ(1, test::NumHistogramSamples(
