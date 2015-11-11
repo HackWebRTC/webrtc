@@ -25,6 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/call.h"
@@ -91,7 +92,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
  public:
   WebRtcVoiceEngineTestFake()
       : call_(webrtc::Call::Config()),
-        voe_(kAudioCodecs, ARRAY_SIZE(kAudioCodecs)),
+        voe_(kAudioCodecs, arraysize(kAudioCodecs)),
         trace_wrapper_(new FakeVoETraceWrapper()),
         engine_(new FakeVoEWrapper(&voe_), trace_wrapper_),
         channel_(nullptr) {
@@ -493,14 +494,13 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecs) {
       cricket::StreamParams::CreateLegacy(kSsrc1)));
   int channel_num = voe_.GetLastChannel();
   webrtc::CodecInst gcodec;
-  rtc::strcpyn(gcodec.plname, ARRAY_SIZE(gcodec.plname), "ISAC");
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "ISAC");
   gcodec.plfreq = 16000;
   gcodec.channels = 1;
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, gcodec));
   EXPECT_EQ(106, gcodec.pltype);
   EXPECT_STREQ("ISAC", gcodec.plname);
-  rtc::strcpyn(gcodec.plname, ARRAY_SIZE(gcodec.plname),
-      "telephone-event");
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "telephone-event");
   gcodec.plfreq = 8000;
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, gcodec));
   EXPECT_EQ(126, gcodec.pltype);
@@ -607,14 +607,13 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWithMultipleStreams) {
       cricket::StreamParams::CreateLegacy(kSsrc1)));
   int channel_num2 = voe_.GetLastChannel();
   webrtc::CodecInst gcodec;
-  rtc::strcpyn(gcodec.plname, ARRAY_SIZE(gcodec.plname), "ISAC");
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "ISAC");
   gcodec.plfreq = 16000;
   gcodec.channels = 1;
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
   EXPECT_EQ(106, gcodec.pltype);
   EXPECT_STREQ("ISAC", gcodec.plname);
-  rtc::strcpyn(gcodec.plname, ARRAY_SIZE(gcodec.plname),
-      "telephone-event");
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "telephone-event");
   gcodec.plfreq = 8000;
   gcodec.channels = 1;
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
@@ -631,7 +630,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsAfterAddingStreams) {
 
   int channel_num2 = voe_.GetLastChannel();
   webrtc::CodecInst gcodec;
-  rtc::strcpyn(gcodec.plname, ARRAY_SIZE(gcodec.plname), "ISAC");
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "ISAC");
   gcodec.plfreq = 16000;
   gcodec.channels = 1;
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
@@ -1983,7 +1982,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateAndDeleteMultipleSendStreams) {
     int channel_num = voe_.GetChannelFromLocalSsrc(ssrc);
     EXPECT_TRUE(voe_.GetSend(channel_num));
   }
-  EXPECT_EQ(ARRAY_SIZE(kSsrcs4), call_.GetAudioSendStreams().size());
+  EXPECT_EQ(arraysize(kSsrcs4), call_.GetAudioSendStreams().size());
 
   // Delete the send streams.
   for (uint32_t ssrc : kSsrcs4) {
@@ -2088,7 +2087,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     EXPECT_EQ(true, channel_->GetStats(&info));
 
     // We have added 4 send streams. We should see empty stats for all.
-    EXPECT_EQ(static_cast<size_t>(ARRAY_SIZE(kSsrcs4)), info.senders.size());
+    EXPECT_EQ(static_cast<size_t>(arraysize(kSsrcs4)), info.senders.size());
     for (const auto& sender : info.senders) {
       VerifyVoiceSenderInfo(sender, false);
     }
@@ -2103,7 +2102,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     cricket::VoiceMediaInfo info;
     EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc2));
     EXPECT_EQ(true, channel_->GetStats(&info));
-    EXPECT_EQ(static_cast<size_t>(ARRAY_SIZE(kSsrcs4)), info.senders.size());
+    EXPECT_EQ(static_cast<size_t>(arraysize(kSsrcs4)), info.senders.size());
     EXPECT_EQ(0u, info.receivers.size());
   }
 
@@ -2114,7 +2113,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
     SetAudioReceiveStreamStats();
     EXPECT_EQ(true, channel_->GetStats(&info));
-    EXPECT_EQ(static_cast<size_t>(ARRAY_SIZE(kSsrcs4)), info.senders.size());
+    EXPECT_EQ(static_cast<size_t>(arraysize(kSsrcs4)), info.senders.size());
     EXPECT_EQ(1u, info.receivers.size());
     VerifyVoiceReceiverInfo(info.receivers[0]);
   }
@@ -2442,7 +2441,7 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvWithMultipleStreams) {
   int channel_num3 = voe_.GetLastChannel();
   // Create packets with the right SSRCs.
   char packets[4][sizeof(kPcmuFrame)];
-  for (size_t i = 0; i < ARRAY_SIZE(packets); ++i) {
+  for (size_t i = 0; i < arraysize(packets); ++i) {
     memcpy(packets[i], kPcmuFrame, sizeof(kPcmuFrame));
     rtc::SetBE32(packets[i] + 8, static_cast<uint32_t>(i));
   }
@@ -2507,7 +2506,7 @@ TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamUnsupportedCodec) {
       cricket::StreamParams::CreateLegacy(kSsrc1)));
   int channel_num2 = voe_.GetLastChannel();
   webrtc::CodecInst gcodec;
-  rtc::strcpyn(gcodec.plname, ARRAY_SIZE(gcodec.plname), "opus");
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "opus");
   gcodec.plfreq = 48000;
   gcodec.channels = 2;
   EXPECT_EQ(-1, voe_.GetRecPayloadType(channel_num2, gcodec));
@@ -3046,12 +3045,12 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
   EXPECT_TRUE(media_channel->SetSendParameters(send_parameters_));
 
   static const uint32_t kSsrcs[] = {1, 2, 3, 4};
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs); ++i) {
+  for (unsigned int i = 0; i < arraysize(kSsrcs); ++i) {
     EXPECT_TRUE(media_channel->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrcs[i])));
     EXPECT_NE(nullptr, call_.GetAudioReceiveStream(kSsrcs[i]));
   }
-  EXPECT_EQ(ARRAY_SIZE(kSsrcs), call_.GetAudioReceiveStreams().size());
+  EXPECT_EQ(arraysize(kSsrcs), call_.GetAudioReceiveStreams().size());
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
@@ -3296,7 +3295,7 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
 
   cricket::VoiceMediaChannel* channels[32];
   int num_channels = 0;
-  while (num_channels < ARRAY_SIZE(channels)) {
+  while (num_channels < arraysize(channels)) {
     cricket::VoiceMediaChannel* channel =
         engine.CreateChannel(call.get(), cricket::AudioOptions());
     if (!channel)
@@ -3304,7 +3303,7 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
     channels[num_channels++] = channel;
   }
 
-  int expected = ARRAY_SIZE(channels);
+  int expected = arraysize(channels);
   EXPECT_EQ(expected, num_channels);
 
   while (num_channels > 0) {

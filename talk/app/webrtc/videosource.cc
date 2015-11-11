@@ -32,6 +32,7 @@
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/session/media/channelmanager.h"
+#include "webrtc/base/arraysize.h"
 
 using cricket::CaptureState;
 using webrtc::MediaConstraintsInterface;
@@ -369,7 +370,7 @@ void VideoSource::Initialize(
     } else {
       // The VideoCapturer implementation doesn't support capability
       // enumeration. We need to guess what the camera supports.
-      for (int i = 0; i < ARRAY_SIZE(kVideoFormats); ++i) {
+      for (int i = 0; i < arraysize(kVideoFormats); ++i) {
         formats.push_back(cricket::VideoFormat(kVideoFormats[i]));
       }
     }

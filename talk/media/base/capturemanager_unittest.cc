@@ -29,6 +29,7 @@
 
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/sigslot.h"
 
@@ -57,7 +58,7 @@ class CaptureManagerTest : public ::testing::Test, public sigslot::has_slots<> {
   }
   void PopulateSupportedFormats() {
     std::vector<cricket::VideoFormat> formats;
-    for (int i = 0; i < ARRAY_SIZE(kCameraFormats); ++i) {
+    for (int i = 0; i < arraysize(kCameraFormats); ++i) {
       formats.push_back(cricket::VideoFormat(kCameraFormats[i]));
     }
     video_capturer_.ResetSupportedFormats(formats);

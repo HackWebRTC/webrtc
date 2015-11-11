@@ -46,11 +46,12 @@
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/media/sctp/sctpdataengine.h"
-#include "webrtc/p2p/client/basicportallocator.h"
 #include "talk/session/media/channelmanager.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/p2p/client/basicportallocator.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {
@@ -95,7 +96,7 @@ enum ServiceType {
   TURNS,     // Indicates a TURN server used with a TLS session.
   INVALID,   // Unknown.
 };
-static_assert(INVALID == ARRAY_SIZE(kValidIceServiceTypes),
+static_assert(INVALID == arraysize(kValidIceServiceTypes),
               "kValidIceServiceTypes must have as many strings as ServiceType "
               "has values.");
 
@@ -156,7 +157,7 @@ bool GetServiceTypeAndHostnameFromUri(const std::string& in_str,
     return false;
   }
   *service_type = INVALID;
-  for (size_t i = 0; i < ARRAY_SIZE(kValidIceServiceTypes); ++i) {
+  for (size_t i = 0; i < arraysize(kValidIceServiceTypes); ++i) {
     if (in_str.compare(0, colonpos, kValidIceServiceTypes[i]) == 0) {
       *service_type = static_cast<ServiceType>(i);
       break;

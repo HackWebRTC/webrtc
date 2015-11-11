@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringencode.h"
@@ -48,7 +49,7 @@ TEST(Utf8EncodeTest, EncodeDecode) {
     }
 
     char buffer[5];
-    memset(buffer, 0x01, ARRAY_SIZE(buffer));
+    memset(buffer, 0x01, arraysize(buffer));
     ASSERT_EQ(kTests[i].enclen, utf8_encode(buffer,
                                             kTests[i].encsize,
                                             kTests[i].decoded));
@@ -56,7 +57,7 @@ TEST(Utf8EncodeTest, EncodeDecode) {
     // Make sure remainder of buffer is unchanged
     ASSERT_TRUE(memory_check(buffer + kTests[i].enclen,
                              0x1,
-                             ARRAY_SIZE(buffer) - kTests[i].enclen));
+                             arraysize(buffer) - kTests[i].enclen));
   }
 }
 

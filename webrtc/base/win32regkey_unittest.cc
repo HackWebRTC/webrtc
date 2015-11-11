@@ -10,6 +10,7 @@
 
 // Unittest for registry access API
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/win32regkey.h"
@@ -564,8 +565,8 @@ void RegKeyStaticFunctionsTest() {
 #ifdef IS_PRIVATE_BUILD
   // get a temp file name
   wchar_t temp_path[MAX_PATH] = {0};
-  EXPECT_LT(::GetTempPath(ARRAY_SIZE(temp_path), temp_path),
-            static_cast<DWORD>(ARRAY_SIZE(temp_path)));
+  EXPECT_LT(::GetTempPath(arraysize(temp_path), temp_path),
+            static_cast<DWORD>(arraysize(temp_path)));
   wchar_t temp_file[MAX_PATH] = {0};
   EXPECT_NE(::GetTempFileName(temp_path, L"rkut_",
                               ::GetTickCount(), temp_file), 0);

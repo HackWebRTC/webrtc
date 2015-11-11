@@ -17,6 +17,7 @@
 #include "webrtc/libjingle/xmpp/chatroommodule.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/moduleimpl.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 
 namespace buzz {
@@ -535,7 +536,7 @@ XmppChatroomModuleImpl::ChangePresence(XmppChatroomState new_state,
 
   // find the right transition description
   StateTransitionDescription* transition_desc = NULL;
-  for (int i=0; i < ARRAY_SIZE(Transitions); i++) {
+  for (size_t i = 0; i < arraysize(Transitions); i++) {
     if (Transitions[i].old_state == old_state &&
         Transitions[i].new_state == new_state) {
         transition_desc = &Transitions[i];

@@ -10,6 +10,7 @@
 
 #include "webrtc/base/socket_unittest.h"
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/nethelpers.h"
@@ -827,7 +828,7 @@ void SocketTest::SingleFlowControlCallbackInternal(const IPAddress& loopback) {
   // Fill the socket buffer.
   char buf[1024 * 16] = {0};
   int sends = 0;
-  while (++sends && accepted->Send(&buf, ARRAY_SIZE(buf)) != -1) {}
+  while (++sends && accepted->Send(&buf, arraysize(buf)) != -1) {}
   EXPECT_TRUE(accepted->IsBlocking());
 
   // Wait until data is available.
@@ -835,7 +836,7 @@ void SocketTest::SingleFlowControlCallbackInternal(const IPAddress& loopback) {
 
   // Pull data.
   for (int i = 0; i < sends; ++i) {
-    client->Recv(buf, ARRAY_SIZE(buf));
+    client->Recv(buf, arraysize(buf));
   }
 
   // Expect at least one additional writable callback.
@@ -845,7 +846,7 @@ void SocketTest::SingleFlowControlCallbackInternal(const IPAddress& loopback) {
   // callbacks.
   int extras = 0;
   for (int i = 0; i < 100; ++i) {
-    accepted->Send(&buf, ARRAY_SIZE(buf));
+    accepted->Send(&buf, arraysize(buf));
     rtc::Thread::Current()->ProcessMessages(1);
     if (sink.Check(accepted.get(), testing::SSE_WRITE)) {
       extras++;

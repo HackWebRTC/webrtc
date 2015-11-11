@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <numeric>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
@@ -357,7 +358,7 @@ TEST_F(NadaReceiverSideTest, FeedbackIncreasingDelay) {
   // Baseline delay will be 50 ms.
   // Delay signals should be: [0 10 20 30 40 50 60 70] ms.
   const int64_t kMedianFilteredDelaysMs[] = {0, 5, 10, 15, 20, 30, 40, 50};
-  const int kNumPackets = ARRAY_SIZE(kMedianFilteredDelaysMs);
+  const int kNumPackets = arraysize(kMedianFilteredDelaysMs);
   const float kAlpha = 0.1f;  // Used for exponential smoothing.
 
   int64_t exp_smoothed_delays_ms[kNumPackets];
@@ -426,7 +427,7 @@ TEST_F(NadaReceiverSideTest, FeedbackWarpedDelay) {
   // Delay signals should be: [0 200 400 600 800 1000 1200 1400] ms.
   const int64_t kMedianFilteredDelaysMs[] = {
       0, 100, 200, 300, 400, 600, 800, 1000};
-  const int kNumPackets = ARRAY_SIZE(kMedianFilteredDelaysMs);
+  const int kNumPackets = arraysize(kMedianFilteredDelaysMs);
   const float kAlpha = 0.1f;  // Used for exponential smoothing.
 
   int64_t exp_smoothed_delays_ms[kNumPackets];
@@ -480,7 +481,7 @@ TEST_F(FilterTest, ExponentialSmoothingConstantArray) {
 
 TEST_F(FilterTest, ExponentialSmoothingInitialPertubation) {
   const int64_t kSignal[] = {90000, 0, 0, 0, 0, 0};
-  const int kNumElements = ARRAY_SIZE(kSignal);
+  const int kNumElements = arraysize(kSignal);
   int64_t exp_smoothed[kNumElements];
   ExponentialSmoothingFilter(kSignal, kNumElements, exp_smoothed);
   for (int i = 1; i < kNumElements; ++i) {

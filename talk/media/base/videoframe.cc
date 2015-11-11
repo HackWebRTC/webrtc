@@ -33,6 +33,7 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/scale.h"
 #include "talk/media/base/videocommon.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
@@ -318,7 +319,7 @@ bool VideoFrame::Validate(uint32_t fourcc,
   }
   // TODO(fbarchard): Make function to dump information about frames.
   uint8_t four_samples[4] = {0, 0, 0, 0};
-  for (size_t i = 0; i < ARRAY_SIZE(four_samples) && i < sample_size; ++i) {
+  for (size_t i = 0; i < arraysize(four_samples) && i < sample_size; ++i) {
     four_samples[i] = sample[i];
   }
   if (sample_size < expected_size) {

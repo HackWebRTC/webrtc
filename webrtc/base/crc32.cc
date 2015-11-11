@@ -10,6 +10,7 @@
 
 #include "webrtc/base/crc32.h"
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/basicdefs.h"
 
 namespace rtc {
@@ -22,9 +23,9 @@ static const uint32_t kCrc32Polynomial = 0xEDB88320;
 static uint32_t kCrc32Table[256] = {0};
 
 static void EnsureCrc32TableInited() {
-  if (kCrc32Table[ARRAY_SIZE(kCrc32Table) - 1])
+  if (kCrc32Table[arraysize(kCrc32Table) - 1])
     return;  // already inited
-  for (uint32_t i = 0; i < ARRAY_SIZE(kCrc32Table); ++i) {
+  for (uint32_t i = 0; i < arraysize(kCrc32Table); ++i) {
     uint32_t c = i;
     for (size_t j = 0; j < 8; ++j) {
       if (c & 1) {

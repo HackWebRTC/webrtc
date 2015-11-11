@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_HTTPCOMMON_INL_H__
 #define WEBRTC_BASE_HTTPCOMMON_INL_H__
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/httpcommon.h"
 
@@ -80,7 +81,7 @@ void Url<CTYPE>::do_set_full_path(const CTYPE* val, size_t len) {
 template<class CTYPE>
 void Url<CTYPE>::do_get_url(string* val) const {
   CTYPE protocol[9];
-  asccpyn(protocol, ARRAY_SIZE(protocol), secure_ ? "https://" : "http://");
+  asccpyn(protocol, arraysize(protocol), secure_ ? "https://" : "http://");
   val->append(protocol);
   do_get_address(val);
   do_get_full_path(val);
@@ -91,8 +92,8 @@ void Url<CTYPE>::do_get_address(string* val) const {
   val->append(host_);
   if (port_ != HttpDefaultPort(secure_)) {
     CTYPE format[5], port[32];
-    asccpyn(format, ARRAY_SIZE(format), ":%hu");
-    sprintfn(port, ARRAY_SIZE(port), format, port_);
+    asccpyn(format, arraysize(format), ":%hu");
+    sprintfn(port, arraysize(port), format, port_);
     val->append(port);
   }
 }

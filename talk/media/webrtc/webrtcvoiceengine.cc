@@ -43,6 +43,7 @@
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/media/webrtc/webrtcvoe.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
@@ -212,7 +213,7 @@ bool IsCodec(const webrtc::CodecInst& codec, const char* ref_name) {
 }
 
 bool IsCodecMultiRate(const webrtc::CodecInst& codec) {
-  for (size_t i = 0; i < ARRAY_SIZE(kCodecPrefs); ++i) {
+  for (size_t i = 0; i < arraysize(kCodecPrefs); ++i) {
     if (IsCodec(codec, kCodecPrefs[i].name) &&
         kCodecPrefs[i].clockrate == codec.plfreq) {
       return kCodecPrefs[i].is_multi_rate;
@@ -455,7 +456,7 @@ void WebRtcVoiceEngine::ConstructCodecs() {
       }
 
       const CodecPref* pref = NULL;
-      for (size_t j = 0; j < ARRAY_SIZE(kCodecPrefs); ++j) {
+      for (size_t j = 0; j < arraysize(kCodecPrefs); ++j) {
         if (IsCodec(voe_codec, kCodecPrefs[j].name) &&
             kCodecPrefs[j].clockrate == voe_codec.plfreq &&
             kCodecPrefs[j].channels == voe_codec.channels) {
@@ -467,9 +468,10 @@ void WebRtcVoiceEngine::ConstructCodecs() {
       if (pref) {
         // Use the payload type that we've configured in our pref table;
         // use the offset in our pref table to determine the sort order.
-        AudioCodec codec(pref->payload_type, voe_codec.plname, voe_codec.plfreq,
-                         voe_codec.rate, voe_codec.channels,
-                         ARRAY_SIZE(kCodecPrefs) - (pref - kCodecPrefs));
+        AudioCodec codec(
+            pref->payload_type, voe_codec.plname, voe_codec.plfreq,
+            voe_codec.rate, voe_codec.channels,
+            static_cast<int>(arraysize(kCodecPrefs)) - (pref - kCodecPrefs));
         LOG(LS_INFO) << ToString(codec);
         if (IsCodec(codec, kIsacCodecName)) {
           // Indicate auto-bitrate in signaling.

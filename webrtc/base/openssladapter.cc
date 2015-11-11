@@ -31,6 +31,7 @@
 #include "config.h"
 #endif  // HAVE_CONFIG_H
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/openssl.h"
@@ -915,7 +916,7 @@ OpenSSLAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
 bool OpenSSLAdapter::ConfigureTrustedRootCertificates(SSL_CTX* ctx) {
   // Add the root cert that we care about to the SSL context
   int count_of_added_certs = 0;
-  for (int i = 0; i < ARRAY_SIZE(kSSLCertCertificateList); i++) {
+  for (size_t i = 0; i < arraysize(kSSLCertCertificateList); i++) {
     const unsigned char* cert_buffer = kSSLCertCertificateList[i];
     size_t cert_buffer_len = kSSLCertCertificateSizeList[i];
     X509* cert = d2i_X509(NULL, &cert_buffer,

@@ -13,6 +13,7 @@
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/presenceouttask.h"
 #include "webrtc/libjingle/xmpp/xmppclient.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/stringencode.h"
 
 namespace buzz {
@@ -128,7 +129,7 @@ PresenceOutTask::TranslateStatus(const PresenceStatus & s) {
       time(&current_time_seconds);
       struct tm* current_time = gmtime(&current_time_seconds);
       char output[256];
-      strftime(output, ARRAY_SIZE(output), "%Y%m%dT%H:%M:%S", current_time);
+      strftime(output, arraysize(output), "%Y%m%dT%H:%M:%S", current_time);
       result->AddAttr(kQnStamp, output, 1);
     }
   }

@@ -15,6 +15,7 @@
 #endif
 
 #include <algorithm>
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/diskcache.h"
 #include "webrtc/base/fileutils.h"
@@ -263,7 +264,7 @@ std::string DiskCache::IdToFilename(const std::string& id, size_t index) const {
 #endif  // !TRANSPARENT_CACHE_NAMES
 
   char extension[32];
-  sprintfn(extension, ARRAY_SIZE(extension), ".%u", index);
+  sprintfn(extension, arraysize(extension), ".%u", index);
 
   Pathname pathname;
   pathname.SetFolder(folder_);

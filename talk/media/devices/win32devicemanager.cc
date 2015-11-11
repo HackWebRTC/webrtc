@@ -48,6 +48,7 @@ EXTERN_C const PROPERTYKEY PKEY_AudioEndpoint_GUID = { {
   } }, 4
 };
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
@@ -148,7 +149,7 @@ bool Win32DeviceManager::GetDefaultVideoCaptureDevice(Device* device) {
     *device = devices[0];
     for (size_t i = 0; i < devices.size(); ++i) {
       if (strnicmp(devices[i].id.c_str(), kUsbDevicePathPrefix,
-                   ARRAY_SIZE(kUsbDevicePathPrefix) - 1) == 0) {
+                   arraysize(kUsbDevicePathPrefix) - 1) == 0) {
         *device = devices[i];
         break;
       }

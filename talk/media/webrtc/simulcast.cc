@@ -29,9 +29,11 @@
 
 #include "talk/media/base/streamparams.h"
 #include "talk/media/webrtc/simulcast.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
+
 namespace cricket {
 
 struct SimulcastFormat {
@@ -93,7 +95,7 @@ void MaybeExchangeWidthHeight(int* width, int* height) {
 int FindSimulcastFormatIndex(int width, int height) {
   MaybeExchangeWidthHeight(&width, &height);
 
-  for (int i = 0; i < ARRAY_SIZE(kSimulcastFormats); ++i) {
+  for (int i = 0; i < arraysize(kSimulcastFormats); ++i) {
     if (width >= kSimulcastFormats[i].width &&
         height >= kSimulcastFormats[i].height) {
       return i;
@@ -105,7 +107,7 @@ int FindSimulcastFormatIndex(int width, int height) {
 int FindSimulcastFormatIndex(int width, int height, size_t max_layers) {
   MaybeExchangeWidthHeight(&width, &height);
 
-  for (int i = 0; i < ARRAY_SIZE(kSimulcastFormats); ++i) {
+  for (int i = 0; i < arraysize(kSimulcastFormats); ++i) {
     if (width >= kSimulcastFormats[i].width &&
         height >= kSimulcastFormats[i].height &&
         max_layers == kSimulcastFormats[i].max_layers) {

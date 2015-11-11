@@ -28,6 +28,7 @@
 #include "talk/media/webrtc/webrtcmediaengine.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
+#include "webrtc/base/arraysize.h"
 
 namespace cricket {
 
@@ -72,8 +73,7 @@ const char* kBweExtensionPriorities[] = {
     kRtpTransportSequenceNumberHeaderExtension,
     kRtpAbsoluteSenderTimeHeaderExtension, kRtpTimestampOffsetHeaderExtension};
 
-const size_t kBweExtensionPrioritiesLength =
-    ARRAY_SIZE(kBweExtensionPriorities);
+const size_t kBweExtensionPrioritiesLength = arraysize(kBweExtensionPriorities);
 
 int GetPriority(const RtpHeaderExtension& extension,
                 const char* extension_prios[],

@@ -17,6 +17,7 @@
 #include "webrtc/p2p/base/testturnserver.h"
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/turnport.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
@@ -2223,7 +2224,7 @@ TEST_F(PortTest, TestWritableState) {
 
   // Data should be unsendable until the connection is accepted.
   char data[] = "abcd";
-  int data_size = ARRAY_SIZE(data);
+  int data_size = arraysize(data);
   rtc::PacketOptions options;
   EXPECT_EQ(SOCKET_ERROR, ch1.conn()->Send(data, data_size, options));
 

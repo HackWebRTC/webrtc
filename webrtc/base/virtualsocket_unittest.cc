@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #endif
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/testclient.h"
@@ -1022,9 +1023,9 @@ TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
   const double kTestDev[] = { 0.25, 0.1, 0.01 };
   // TODO: The current code only works for 1000 data points or more.
   const uint32_t kTestSamples[] = {/*10, 100,*/ 1000};
-  for (size_t midx = 0; midx < ARRAY_SIZE(kTestMean); ++midx) {
-    for (size_t didx = 0; didx < ARRAY_SIZE(kTestDev); ++didx) {
-      for (size_t sidx = 0; sidx < ARRAY_SIZE(kTestSamples); ++sidx) {
+  for (size_t midx = 0; midx < arraysize(kTestMean); ++midx) {
+    for (size_t didx = 0; didx < arraysize(kTestDev); ++didx) {
+      for (size_t sidx = 0; sidx < arraysize(kTestSamples); ++sidx) {
         ASSERT_LT(0u, kTestSamples[sidx]);
         const uint32_t kStdDev =
             static_cast<uint32_t>(kTestDev[didx] * kTestMean[midx]);

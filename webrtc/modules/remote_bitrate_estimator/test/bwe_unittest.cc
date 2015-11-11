@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/arraysize.h"
 
 namespace webrtc {
 namespace testing {
@@ -241,7 +242,7 @@ TEST_F(BweReceiverTest, PacketLossDuplicatedPackets) {
 
   // Missing the element 5.
   const uint16_t kSequenceNumbers[] = {1, 2, 3, 4, 6, 7, 8};
-  const int kNumPackets = ARRAY_SIZE(kSequenceNumbers);
+  const int kNumPackets = arraysize(kSequenceNumbers);
 
   // Insert each sequence number twice.
   for (int i = 0; i < 2; ++i) {

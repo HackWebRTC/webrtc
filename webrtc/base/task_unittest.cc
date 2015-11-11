@@ -20,6 +20,7 @@
 #include "webrtc/base/win32.h"
 #endif  // WEBRTC_WIN
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
@@ -408,7 +409,7 @@ TEST(start_task_test, AbortShouldWake) {
 class TimeoutChangeTest : public sigslot::has_slots<> {
  public:
   TimeoutChangeTest()
-    : task_count_(ARRAY_SIZE(stuck_tasks_)) {}
+    : task_count_(arraysize(stuck_tasks_)) {}
 
   // no need to delete any tasks; the task runner owns them
   ~TimeoutChangeTest() {}
@@ -463,7 +464,7 @@ class TimeoutChangeTest : public sigslot::has_slots<> {
 
  private:
   void OnTimeoutId(const int id) {
-    for (int i = 0; i < ARRAY_SIZE(stuck_tasks_); ++i) {
+    for (size_t i = 0; i < arraysize(stuck_tasks_); ++i) {
       if (stuck_tasks_[i] && stuck_tasks_[i]->unique_id() == id) {
         task_count_--;
         stuck_tasks_[i] = NULL;

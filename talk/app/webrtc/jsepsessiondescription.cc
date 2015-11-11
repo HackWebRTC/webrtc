@@ -29,6 +29,7 @@
 
 #include "talk/app/webrtc/webrtcsdp.h"
 #include "talk/session/media/mediasession.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/stringencode.h"
 
 using rtc::scoped_ptr;
@@ -44,7 +45,7 @@ static const char* kSupportedTypes[] = {
 
 static bool IsTypeSupported(const std::string& type) {
   bool type_supported = false;
-  for (size_t i = 0; i < ARRAY_SIZE(kSupportedTypes); ++i) {
+  for (size_t i = 0; i < arraysize(kSupportedTypes); ++i) {
     if (kSupportedTypes[i] == type) {
       type_supported = true;
       break;

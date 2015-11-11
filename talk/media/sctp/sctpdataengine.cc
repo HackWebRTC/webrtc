@@ -36,6 +36,7 @@
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
 #include "usrsctplib/usrsctp.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -76,7 +77,7 @@ std::string ListFlags(int flags) {
     MAKEFLAG(SCTP_STREAM_CHANGE_DENIED)
   };
 #undef MAKEFLAG
-  for (int i = 0; i < ARRAY_SIZE(flaginfo); ++i) {
+  for (int i = 0; i < arraysize(flaginfo); ++i) {
     if (flags & flaginfo[i].value) {
       if (!first) result << " | ";
       result << flaginfo[i].name;
@@ -473,7 +474,7 @@ bool SctpDataMediaChannel::OpenSctpSocket() {
   struct sctp_event event = {0};
   event.se_assoc_id = SCTP_ALL_ASSOC;
   event.se_on = 1;
-  for (size_t i = 0; i < ARRAY_SIZE(event_types); i++) {
+  for (size_t i = 0; i < arraysize(event_types); i++) {
     event.se_type = event_types[i];
     if (usrsctp_setsockopt(sock_, IPPROTO_SCTP, SCTP_EVENT, &event,
                            sizeof(event)) < 0) {

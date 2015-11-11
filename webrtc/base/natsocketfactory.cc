@@ -10,6 +10,7 @@
 
 #include "webrtc/base/natsocketfactory.h"
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/virtualsocketserver.h"
@@ -270,7 +271,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
   // Sends the destination address to the server to tell it to connect.
   void SendConnectRequest() {
     char buf[kNATEncodedIPv6AddressSize];
-    size_t length = PackAddressForNAT(buf, ARRAY_SIZE(buf), remote_addr_);
+    size_t length = PackAddressForNAT(buf, arraysize(buf), remote_addr_);
     socket_->Send(buf, length);
   }
 

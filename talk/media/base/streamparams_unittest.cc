@@ -27,6 +27,7 @@
 
 #include "talk/media/base/streamparams.h"
 #include "talk/media/base/testutils.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 
 static const uint32_t kSsrcs1[] = {1};
@@ -54,8 +55,8 @@ TEST(SsrcGroup, EqualNotEqual) {
     cricket::SsrcGroup("abc", MAKE_VECTOR(kSsrcs2)),
   };
 
-  for (size_t i = 0; i < ARRAY_SIZE(ssrc_groups); ++i) {
-    for (size_t j = 0; j < ARRAY_SIZE(ssrc_groups); ++j) {
+  for (size_t i = 0; i < arraysize(ssrc_groups); ++i) {
+    for (size_t j = 0; j < arraysize(ssrc_groups); ++j) {
       EXPECT_EQ((ssrc_groups[i] == ssrc_groups[j]), (i == j));
       EXPECT_EQ((ssrc_groups[i] != ssrc_groups[j]), (i != j));
     }
@@ -92,7 +93,7 @@ TEST(StreamParams, CreateLegacy) {
 
 TEST(StreamParams, HasSsrcGroup) {
   cricket::StreamParams sp =
-      CreateStreamParamsWithSsrcGroup("XYZ", kSsrcs2, ARRAY_SIZE(kSsrcs2));
+      CreateStreamParamsWithSsrcGroup("XYZ", kSsrcs2, arraysize(kSsrcs2));
   EXPECT_EQ(2U, sp.ssrcs.size());
   EXPECT_EQ(kSsrcs2[0], sp.first_ssrc());
   EXPECT_TRUE(sp.has_ssrcs());
@@ -107,7 +108,7 @@ TEST(StreamParams, HasSsrcGroup) {
 
 TEST(StreamParams, GetSsrcGroup) {
   cricket::StreamParams sp =
-      CreateStreamParamsWithSsrcGroup("XYZ", kSsrcs2, ARRAY_SIZE(kSsrcs2));
+      CreateStreamParamsWithSsrcGroup("XYZ", kSsrcs2, arraysize(kSsrcs2));
   EXPECT_EQ(NULL, sp.get_ssrc_group("xyz"));
   EXPECT_EQ(&sp.ssrc_groups[0], sp.get_ssrc_group("XYZ"));
 }
@@ -116,17 +117,17 @@ TEST(StreamParams, EqualNotEqual) {
   cricket::StreamParams l1 = cricket::StreamParams::CreateLegacy(1);
   cricket::StreamParams l2 = cricket::StreamParams::CreateLegacy(2);
   cricket::StreamParams sg1 =
-      CreateStreamParamsWithSsrcGroup("ABC", kSsrcs1, ARRAY_SIZE(kSsrcs1));
+      CreateStreamParamsWithSsrcGroup("ABC", kSsrcs1, arraysize(kSsrcs1));
   cricket::StreamParams sg2 =
-      CreateStreamParamsWithSsrcGroup("ABC", kSsrcs2, ARRAY_SIZE(kSsrcs2));
+      CreateStreamParamsWithSsrcGroup("ABC", kSsrcs2, arraysize(kSsrcs2));
   cricket::StreamParams sg3 =
-      CreateStreamParamsWithSsrcGroup("Abc", kSsrcs2, ARRAY_SIZE(kSsrcs2));
+      CreateStreamParamsWithSsrcGroup("Abc", kSsrcs2, arraysize(kSsrcs2));
   cricket::StreamParams sg4 =
-      CreateStreamParamsWithSsrcGroup("abc", kSsrcs2, ARRAY_SIZE(kSsrcs2));
+      CreateStreamParamsWithSsrcGroup("abc", kSsrcs2, arraysize(kSsrcs2));
   cricket::StreamParams sps[] = {l1, l2, sg1, sg2, sg3, sg4};
 
-  for (size_t i = 0; i < ARRAY_SIZE(sps); ++i) {
-    for (size_t j = 0; j < ARRAY_SIZE(sps); ++j) {
+  for (size_t i = 0; i < arraysize(sps); ++i) {
+    for (size_t j = 0; j < arraysize(sps); ++j) {
       EXPECT_EQ((sps[i] == sps[j]), (i == j));
       EXPECT_EQ((sps[i] != sps[j]), (i != j));
     }
@@ -195,7 +196,7 @@ TEST(StreamParams, GetPrimaryAndFidSsrcs) {
 
 TEST(StreamParams, ToString) {
   cricket::StreamParams sp =
-      CreateStreamParamsWithSsrcGroup("XYZ", kSsrcs2, ARRAY_SIZE(kSsrcs2));
+      CreateStreamParamsWithSsrcGroup("XYZ", kSsrcs2, arraysize(kSsrcs2));
   EXPECT_STREQ("{ssrcs:[1,2];ssrc_groups:{semantics:XYZ;ssrcs:[1,2]};}",
                sp.ToString().c_str());
 }

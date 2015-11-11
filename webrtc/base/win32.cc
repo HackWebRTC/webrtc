@@ -14,6 +14,7 @@
 #include <ws2tcpip.h>
 #include <algorithm>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
@@ -87,7 +88,7 @@ const char* inet_ntop_v6(const void* src, char* dst, socklen_t size) {
   int current = 1;
   int max = 0;
   int maxpos = -1;
-  int run_array_size = ARRAY_SIZE(runpos);
+  int run_array_size = arraysize(runpos);
   // Run over the address marking runs of 0s.
   for (int i = 0; i < run_array_size; ++i) {
     if (as_shorts[i] == 0) {

@@ -44,6 +44,7 @@
 #include <sys/syslimits.h>
 #endif
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stream.h"
@@ -176,7 +177,7 @@ bool UnixFilesystem::GetTemporaryFolder(Pathname &pathname, bool create,
                         kCreateFolder, &fr))
     return false;
   unsigned char buffer[NAME_MAX+1];
-  if (0 != FSRefMakePath(&fr, buffer, ARRAY_SIZE(buffer)))
+  if (0 != FSRefMakePath(&fr, buffer, arraysize(buffer)))
     return false;
   pathname.SetPathname(reinterpret_cast<char*>(buffer), "");
 #elif defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
@@ -303,7 +304,7 @@ bool UnixFilesystem::IsTemporaryPath(const Pathname& pathname) {
 #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS)
 #endif  // WEBRTC_ANDROID || WEBRTC_IOS
   };
-  for (size_t i = 0; i < ARRAY_SIZE(kTempPrefixes); ++i) {
+  for (size_t i = 0; i < arraysize(kTempPrefixes); ++i) {
     if (0 == strncmp(pathname.pathname().c_str(), kTempPrefixes[i],
                      strlen(kTempPrefixes[i])))
       return true;
@@ -377,7 +378,7 @@ bool UnixFilesystem::GetAppPathname(Pathname* path) {
   return true;
 #else  // WEBRTC_MAC && !defined(WEBRTC_IOS)
   char buffer[PATH_MAX + 2];
-  ssize_t len = readlink("/proc/self/exe", buffer, ARRAY_SIZE(buffer) - 1);
+  ssize_t len = readlink("/proc/self/exe", buffer, arraysize(buffer) - 1);
   if ((len <= 0) || (len == PATH_MAX + 1))
     return false;
   buffer[len] = '\0';
@@ -399,7 +400,7 @@ bool UnixFilesystem::GetAppDataFolder(Pathname* path, bool per_user) {
                           kCreateFolder, &fr))
       return false;
     unsigned char buffer[NAME_MAX+1];
-    if (0 != FSRefMakePath(&fr, buffer, ARRAY_SIZE(buffer)))
+    if (0 != FSRefMakePath(&fr, buffer, arraysize(buffer)))
       return false;
     path->SetPathname(reinterpret_cast<char*>(buffer), "");
   } else {
@@ -487,7 +488,7 @@ bool UnixFilesystem::GetAppTempFolder(Pathname* path) {
 
   // Create a random directory as /tmp/<appname>-<pid>-<timestamp>
   char buffer[128];
-  sprintfn(buffer, ARRAY_SIZE(buffer), "-%d-%d",
+  sprintfn(buffer, arraysize(buffer), "-%d-%d",
            static_cast<int>(getpid()),
            static_cast<int>(time(0)));
   std::string folder(application_name_);

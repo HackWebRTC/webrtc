@@ -13,6 +13,7 @@
 #include <math.h>
 
 #include "webrtc/examples/peerconnection/client/defaults.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 
@@ -241,7 +242,7 @@ void MainWnd::OnPaint() {
 
       // Set the map mode so that the ratio will be maintained for us.
       HDC all_dc[] = { ps.hdc, dc_mem };
-      for (int i = 0; i < ARRAY_SIZE(all_dc); ++i) {
+      for (int i = 0; i < arraysize(all_dc); ++i) {
         SetMapMode(all_dc[i], MM_ISOTROPIC);
         SetWindowExtEx(all_dc[i], width, height, NULL);
         SetViewportExtEx(all_dc[i], rc.right, rc.bottom, NULL);

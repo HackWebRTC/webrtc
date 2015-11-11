@@ -19,6 +19,7 @@
 #include <unistd.h>
 #endif
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 
 const char kAudioLabel[] = "audio_label";
@@ -49,7 +50,7 @@ std::string GetDefaultServerName() {
 
 std::string GetPeerName() {
   char computer_name[256];
-  if (gethostname(computer_name, ARRAY_SIZE(computer_name)) != 0)
+  if (gethostname(computer_name, arraysize(computer_name)) != 0)
     strcpy(computer_name, "host");
   std::string ret(GetEnvVarOrDefault("USERNAME", "user"));
   ret += '@';

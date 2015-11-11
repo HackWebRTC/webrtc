@@ -39,6 +39,7 @@
 #include "talk/media/base/videocapturerfactory.h"
 #include "talk/media/devices/filevideocapturer.h"
 #include "talk/media/devices/v4llookup.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
@@ -269,19 +270,19 @@ TEST(DeviceManagerTest, VerifyFilterDevices) {
       "device5",
   };
   std::vector<Device> devices;
-  for (int i = 0; i < ARRAY_SIZE(kTotalDevicesName); ++i) {
+  for (int i = 0; i < arraysize(kTotalDevicesName); ++i) {
     devices.push_back(Device(kTotalDevicesName[i], i));
   }
   EXPECT_TRUE(CompareDeviceList(devices, kTotalDevicesName,
-                                ARRAY_SIZE(kTotalDevicesName)));
+                                arraysize(kTotalDevicesName)));
   // Return false if given NULL as the exclusion list.
   EXPECT_TRUE(DeviceManager::FilterDevices(&devices, NULL));
   // The devices should not change.
   EXPECT_TRUE(CompareDeviceList(devices, kTotalDevicesName,
-                                ARRAY_SIZE(kTotalDevicesName)));
+                                arraysize(kTotalDevicesName)));
   EXPECT_TRUE(DeviceManager::FilterDevices(&devices, kFilteredDevicesName));
   EXPECT_TRUE(CompareDeviceList(devices, kDevicesName,
-                                ARRAY_SIZE(kDevicesName)));
+                                arraysize(kDevicesName)));
 }
 
 #ifdef LINUX

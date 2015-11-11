@@ -45,6 +45,7 @@
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/port.h"
 #include "talk/session/media/mediasession.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
@@ -1525,7 +1526,7 @@ bool IsFmtpParam(const std::string& name) {
     kCodecParamMaxAverageBitrate, kCodecParamMaxPlaybackRate,
     kCodecParamAssociatedPayloadType
   };
-  for (size_t i = 0; i < ARRAY_SIZE(kFmtpParams); ++i) {
+  for (size_t i = 0; i < arraysize(kFmtpParams); ++i) {
     if (_stricmp(name.c_str(), kFmtpParams[i]) == 0) {
       return true;
     }
@@ -2082,7 +2083,7 @@ void MaybeCreateStaticPayloadAudioCodecs(
     int payload_type = *it;
     if (!media_desc->HasCodec(payload_type) &&
         payload_type >= 0 &&
-        payload_type < ARRAY_SIZE(kStaticPayloadAudioCodecs)) {
+        payload_type < arraysize(kStaticPayloadAudioCodecs)) {
       std::string encoding_name = kStaticPayloadAudioCodecs[payload_type].name;
       int clock_rate = kStaticPayloadAudioCodecs[payload_type].clockrate;
       int channels = kStaticPayloadAudioCodecs[payload_type].channels;

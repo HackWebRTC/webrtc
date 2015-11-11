@@ -34,6 +34,7 @@
 
 #include <map>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
@@ -398,7 +399,7 @@ bool GetFirefoxProfilePath(Pathname* path) {
   }
   char buffer[NAME_MAX + 1];
   if (0 != FSRefMakePath(&fr, reinterpret_cast<uint8_t*>(buffer),
-                         ARRAY_SIZE(buffer))) {
+                         arraysize(buffer))) {
     LOG(LS_ERROR) << "FSRefMakePath failed";
     return false;
   }

@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <set>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/byteorder.h"
@@ -187,7 +188,7 @@ void ReportStats() {
   char buffer[256];
   size_t len = 0;
   for (int i = 0; i < S_NUM_STATS; ++i) {
-    len += rtc::sprintfn(buffer, ARRAY_SIZE(buffer), "%s%s:%d",
+    len += rtc::sprintfn(buffer, arraysize(buffer), "%s%s:%d",
                                (i == 0) ? "" : ",", STAT_NAMES[i], g_stats[i]);
     g_stats[i] = 0;
   }

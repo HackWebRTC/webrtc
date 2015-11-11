@@ -33,8 +33,9 @@
 #include "talk/media/base/rtpdump.h"
 #include "talk/media/base/screencastid.h"
 #include "talk/media/base/testutils.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
 #include "talk/session/media/channel.h"
+#include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
@@ -2253,21 +2254,19 @@ TEST_F(VoiceChannelTest, TestScaleVolumeMultiwayCall) {
 }
 
 TEST_F(VoiceChannelTest, SendBundleToBundle) {
-  Base::SendBundleToBundle(kAudioPts, ARRAY_SIZE(kAudioPts), false, false);
+  Base::SendBundleToBundle(kAudioPts, arraysize(kAudioPts), false, false);
 }
 
 TEST_F(VoiceChannelTest, SendBundleToBundleSecure) {
-  Base::SendBundleToBundle(kAudioPts, ARRAY_SIZE(kAudioPts), false, true);
+  Base::SendBundleToBundle(kAudioPts, arraysize(kAudioPts), false, true);
 }
 
 TEST_F(VoiceChannelTest, SendBundleToBundleWithRtcpMux) {
-  Base::SendBundleToBundle(
-      kAudioPts, ARRAY_SIZE(kAudioPts), true, false);
+  Base::SendBundleToBundle(kAudioPts, arraysize(kAudioPts), true, false);
 }
 
 TEST_F(VoiceChannelTest, SendBundleToBundleWithRtcpMuxSecure) {
-  Base::SendBundleToBundle(
-      kAudioPts, ARRAY_SIZE(kAudioPts), true, true);
+  Base::SendBundleToBundle(kAudioPts, arraysize(kAudioPts), true, true);
 }
 
 // VideoChannelTest
@@ -2501,21 +2500,19 @@ TEST_F(VideoChannelTest, TestFlushRtcp) {
 }
 
 TEST_F(VideoChannelTest, SendBundleToBundle) {
-  Base::SendBundleToBundle(kVideoPts, ARRAY_SIZE(kVideoPts), false, false);
+  Base::SendBundleToBundle(kVideoPts, arraysize(kVideoPts), false, false);
 }
 
 TEST_F(VideoChannelTest, SendBundleToBundleSecure) {
-  Base::SendBundleToBundle(kVideoPts, ARRAY_SIZE(kVideoPts), false, true);
+  Base::SendBundleToBundle(kVideoPts, arraysize(kVideoPts), false, true);
 }
 
 TEST_F(VideoChannelTest, SendBundleToBundleWithRtcpMux) {
-  Base::SendBundleToBundle(
-      kVideoPts, ARRAY_SIZE(kVideoPts), true, false);
+  Base::SendBundleToBundle(kVideoPts, arraysize(kVideoPts), true, false);
 }
 
 TEST_F(VideoChannelTest, SendBundleToBundleWithRtcpMuxSecure) {
-  Base::SendBundleToBundle(
-      kVideoPts, ARRAY_SIZE(kVideoPts), true, true);
+  Base::SendBundleToBundle(kVideoPts, arraysize(kVideoPts), true, true);
 }
 
 TEST_F(VideoChannelTest, TestSrtpError) {

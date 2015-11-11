@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <map>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
@@ -628,8 +629,8 @@ class PosixSignalHandler {
 
   // Returns true if the given signal number is set.
   bool IsSignalSet(int signum) const {
-    ASSERT(signum < ARRAY_SIZE(received_signal_));
-    if (signum < ARRAY_SIZE(received_signal_)) {
+    ASSERT(signum < static_cast<int>(arraysize(received_signal_)));
+    if (signum < static_cast<int>(arraysize(received_signal_))) {
       return received_signal_[signum];
     } else {
       return false;
@@ -638,8 +639,8 @@ class PosixSignalHandler {
 
   // Clears the given signal number.
   void ClearSignal(int signum) {
-    ASSERT(signum < ARRAY_SIZE(received_signal_));
-    if (signum < ARRAY_SIZE(received_signal_)) {
+    ASSERT(signum < static_cast<int>(arraysize(received_signal_)));
+    if (signum < static_cast<int>(arraysize(received_signal_))) {
       received_signal_[signum] = false;
     }
   }
@@ -654,7 +655,7 @@ class PosixSignalHandler {
   // user-level state of the process, since the handler could be executed at any
   // time on any thread.
   void OnPosixSignalReceived(int signum) {
-    if (signum >= ARRAY_SIZE(received_signal_)) {
+    if (signum >= static_cast<int>(arraysize(received_signal_))) {
       // We don't have space in our array for this.
       return;
     }

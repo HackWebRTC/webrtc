@@ -13,14 +13,16 @@
 #ifdef HAVE_LIBPULSE
 
 #include <algorithm>
-#include "webrtc/sound/sounddevicelocator.h"
-#include "webrtc/sound/soundinputstreaminterface.h"
-#include "webrtc/sound/soundoutputstreaminterface.h"
+
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/fileutils.h"  // for GetApplicationName()
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/worker.h"
+#include "webrtc/sound/sounddevicelocator.h"
+#include "webrtc/sound/soundinputstreaminterface.h"
+#include "webrtc/sound/soundoutputstreaminterface.h"
 
 namespace rtc {
 
@@ -1373,7 +1375,7 @@ StreamInterface *PulseAudioSoundSystem::OpenDevice(
 
   StreamInterface *stream_interface = NULL;
 
-  ASSERT(params.format < ARRAY_SIZE(kCricketFormatToPulseFormatTable));
+  ASSERT(params.format < arraysize(kCricketFormatToPulseFormatTable));
 
   pa_sample_spec spec;
   spec.format = kCricketFormatToPulseFormatTable[params.format];

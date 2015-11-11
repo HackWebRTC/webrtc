@@ -35,6 +35,7 @@
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/window.h"
@@ -54,7 +55,7 @@ namespace cricket {
 template <class T> inline std::vector<T> MakeVector(const T a[], size_t s) {
   return std::vector<T>(a, a + s);
 }
-#define MAKE_VECTOR(a) cricket::MakeVector(a, ARRAY_SIZE(a))
+#define MAKE_VECTOR(a) cricket::MakeVector(a, arraysize(a))
 
 struct RtpDumpPacket;
 class RtpDumpWriter;

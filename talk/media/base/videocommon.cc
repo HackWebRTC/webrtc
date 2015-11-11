@@ -31,6 +31,7 @@
 #include <math.h>
 #include <sstream>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 
 namespace cricket {
@@ -58,7 +59,7 @@ static const FourCCAliasEntry kFourCCAliases[] = {
 };
 
 uint32_t CanonicalFourCC(uint32_t fourcc) {
-  for (int i = 0; i < ARRAY_SIZE(kFourCCAliases); ++i) {
+  for (int i = 0; i < arraysize(kFourCCAliases); ++i) {
     if (kFourCCAliases[i].alias == fourcc) {
       return kFourCCAliases[i].canonical;
     }
@@ -75,7 +76,7 @@ static float kScaleFactors[] = {
   1.f / 16.f  // 1/16 scale.
 };
 
-static const int kNumScaleFactors = ARRAY_SIZE(kScaleFactors);
+static const int kNumScaleFactors = arraysize(kScaleFactors);
 
 // Finds the scale factor that, when applied to width and height, produces
 // fewer than num_pixels.

@@ -132,8 +132,8 @@ const RawRtcpPacket RtpTestUtility::kTestRawRtcpPackets[] = {
 };
 
 size_t RtpTestUtility::GetTestPacketCount() {
-  return std::min(ARRAY_SIZE(kTestRawRtpPackets),
-                  ARRAY_SIZE(kTestRawRtcpPackets));
+  return std::min(arraysize(kTestRawRtpPackets),
+                  arraysize(kTestRawRtcpPackets));
 }
 
 bool RtpTestUtility::WriteTestPackets(size_t count,

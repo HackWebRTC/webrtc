@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/bitbuffer.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/common.h"
@@ -301,11 +302,11 @@ TEST(BitBufferWriterTest, SymmetricGolomb) {
   char test_string[] = "my precious";
   uint8_t bytes[64] = {0};
   BitBufferWriter buffer(bytes, 64);
-  for (size_t i = 0; i < ARRAY_SIZE(test_string); ++i) {
+  for (size_t i = 0; i < arraysize(test_string); ++i) {
     EXPECT_TRUE(buffer.WriteExponentialGolomb(test_string[i]));
   }
   buffer.Seek(0, 0);
-  for (size_t i = 0; i < ARRAY_SIZE(test_string); ++i) {
+  for (size_t i = 0; i < arraysize(test_string); ++i) {
     uint32_t val;
     EXPECT_TRUE(buffer.ReadExponentialGolomb(&val));
     EXPECT_LE(val, std::numeric_limits<uint8_t>::max());

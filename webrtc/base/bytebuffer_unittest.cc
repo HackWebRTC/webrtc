@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
@@ -114,7 +115,7 @@ TEST(ByteBufferTest, TestGetSetReadPosition) {
 TEST(ByteBufferTest, TestReadWriteBuffer) {
   ByteBuffer::ByteOrder orders[2] = { ByteBuffer::ORDER_HOST,
                                       ByteBuffer::ORDER_NETWORK };
-  for (size_t i = 0; i < ARRAY_SIZE(orders); i++) {
+  for (size_t i = 0; i < arraysize(orders); i++) {
     ByteBuffer buffer(orders[i]);
     EXPECT_EQ(orders[i], buffer.Order());
     uint8_t ru8;

@@ -11,15 +11,17 @@
 #include "webrtc/sound/alsasoundsystem.h"
 
 #include <algorithm>
-#include "webrtc/sound/sounddevicelocator.h"
-#include "webrtc/sound/soundinputstreaminterface.h"
-#include "webrtc/sound/soundoutputstreaminterface.h"
+
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/worker.h"
+#include "webrtc/sound/sounddevicelocator.h"
+#include "webrtc/sound/soundinputstreaminterface.h"
+#include "webrtc/sound/soundoutputstreaminterface.h"
 
 namespace rtc {
 
@@ -606,8 +608,6 @@ bool AlsaSoundSystem::GetDefaultDevice(SoundDeviceLocator **device) {
 }
 
 inline size_t AlsaSoundSystem::FrameSize(const OpenParams &params) {
-  ASSERT(static_cast<int>(params.format) <
-         ARRAY_SIZE(kCricketFormatToSampleSizeTable));
   return kCricketFormatToSampleSizeTable[params.format] * params.channels;
 }
 
@@ -662,8 +662,7 @@ StreamInterface *AlsaSoundSystem::OpenDevice(
     latency = std::max(latency, kMinimumLatencyUsecs);
   }
 
-  ASSERT(static_cast<int>(params.format) <
-         ARRAY_SIZE(kCricketFormatToAlsaFormatTable));
+  ASSERT(params.format < arraysize(kCricketFormatToAlsaFormatTable));
 
   err = symbol_table_.snd_pcm_set_params()(
       handle,

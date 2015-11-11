@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <map>
 #include <vector>
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/asyncsocket.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
@@ -357,7 +358,7 @@ private:
   }
   void OnReadEvent(AsyncSocket* socket) {
     char data[64 * 1024];
-    int result = socket_->Recv(data, ARRAY_SIZE(data));
+    int result = socket_->Recv(data, arraysize(data));
     if (result > 0) {
       recv_buffer_.insert(recv_buffer_.end(), data, data + result);
     }
