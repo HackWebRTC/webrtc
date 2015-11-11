@@ -1522,6 +1522,7 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
       ++rtp_packets_sent_;
@@ -1530,6 +1531,7 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
     }
 
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       RTCPUtility::RTCPParserV2 parser(packet, length, true);
       EXPECT_TRUE(parser.IsValid());
 
@@ -1556,8 +1558,9 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
           << "Timed out while waiting for RTCP sender report.";
     }
 
-    size_t rtp_packets_sent_;
-    size_t media_bytes_sent_;
+    rtc::CriticalSection crit_;
+    size_t rtp_packets_sent_ GUARDED_BY(&crit_);
+    size_t media_bytes_sent_ GUARDED_BY(&crit_);
   } test;
 
   RunBaseTest(&test, FakeNetworkPipe::Config());
