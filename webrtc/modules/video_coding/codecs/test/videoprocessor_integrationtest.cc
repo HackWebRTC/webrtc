@@ -746,7 +746,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
   SetQualityMetrics(&quality_metrics, 25.0, 13.0, 0.70, 0.40);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 185, 70, 130, 15, 80, 1, 1);
+  SetRateControlMetrics(rc_metrics, 0, 190, 70, 135, 15, 80, 1, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
