@@ -12,7 +12,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/channel_transport/include/channel_transport.h"
+#include "webrtc/test/channel_transport/channel_transport.h"
 #include "webrtc/test/random.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"

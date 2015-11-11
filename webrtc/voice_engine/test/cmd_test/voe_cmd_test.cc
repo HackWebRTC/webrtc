@@ -23,7 +23,7 @@
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/test/channel_transport/include/channel_transport.h"
+#include "webrtc/test/channel_transport/channel_transport.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"

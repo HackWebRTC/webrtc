@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/channel_transport/include/channel_transport.h"
+#include "webrtc/test/channel_transport/channel_transport.h"
 
 #include <stdio.h>
 

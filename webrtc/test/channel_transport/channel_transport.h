@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_CHANNEL_TRANSPORT_INCLUDE_CHANNEL_TRANSPORT_H_
-#define WEBRTC_TEST_CHANNEL_TRANSPORT_INCLUDE_CHANNEL_TRANSPORT_H_
+#ifndef WEBRTC_TEST_CHANNEL_TRANSPORT_CHANNEL_TRANSPORT_H_
+#define WEBRTC_TEST_CHANNEL_TRANSPORT_CHANNEL_TRANSPORT_H_
 
 #include "webrtc/test/channel_transport/udp_transport.h"
 
@@ -53,4 +53,4 @@ class VoiceChannelTransport : public UdpTransportData {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_INCLUDE_CHANNEL_TRANSPORT_H_
+#endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_CHANNEL_TRANSPORT_H_

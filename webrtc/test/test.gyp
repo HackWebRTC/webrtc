@@ -22,7 +22,7 @@
       ],
       'sources': [
         'channel_transport/channel_transport.cc',
-        'channel_transport/include/channel_transport.h',
+        'channel_transport/channel_transport.h',
         'channel_transport/traffic_control_win.cc',
         'channel_transport/traffic_control_win.h',
         'channel_transport/udp_socket_manager_posix.cc',
