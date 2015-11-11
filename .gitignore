@@ -152,12 +152,6 @@
 /tools/win
 /tools/xdisplaycheck
 /tools/whitespace.txt
-/webrtc/examples/android/media_demo/bin
-/webrtc/examples/android/media_demo/gen
-/webrtc/examples/android/media_demo/libs
-/webrtc/examples/android/media_demo/local.properties
-/webrtc/examples/android/media_demo/obj
-/webrtc/examples/android/media_demo/proguard-project.txt
 /webrtc/examples/android/opensl_loopback/bin
 /webrtc/examples/android/opensl_loopback/gen
 /webrtc/examples/android/opensl_loopback/libs

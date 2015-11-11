@@ -378,7 +378,7 @@
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
-            '<(webrtc_root)/libjingle_examples.gyp:apprtc_signaling',
+            '<(webrtc_root)/webrtc_examples.gyp:apprtc_signaling',
           ],
           'sources': [
             'app/webrtc/objctests/mac/main.mm',

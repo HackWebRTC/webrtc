@@ -24,7 +24,6 @@
       'conditions': [
         ['include_examples==1', {
           'dependencies': [
-            'webrtc/libjingle_examples.gyp:*',
             'webrtc/webrtc_examples.gyp:*',
           ],
         }],
