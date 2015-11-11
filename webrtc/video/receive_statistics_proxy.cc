@@ -44,9 +44,9 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   int samples = static_cast<int>(render_fps_tracker_.TotalSampleCount());
   if (samples > kMinRequiredSamples) {
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.RenderFramesPerSecond",
-        static_cast<int>(render_fps_tracker_.ComputeTotalRate()));
+        round(render_fps_tracker_.ComputeTotalRate()));
     RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.RenderSqrtPixelsPerSecond",
-        static_cast<int>(render_pixel_tracker_.ComputeTotalRate()));
+        round(render_pixel_tracker_.ComputeTotalRate()));
   }
   int width = render_width_counter_.Avg(kMinRequiredSamples);
   int height = render_height_counter_.Avg(kMinRequiredSamples);

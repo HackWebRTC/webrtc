@@ -11,6 +11,7 @@
 #include "webrtc/video/send_statistics_proxy.h"
 
 #include <algorithm>
+#include <cmath>
 #include <map>
 
 #include "webrtc/base/checks.h"
@@ -70,11 +71,11 @@ SendStatisticsProxy::~SendStatisticsProxy() {
 
 void SendStatisticsProxy::UpdateHistograms() {
   int input_fps =
-      static_cast<int>(input_frame_rate_tracker_.ComputeTotalRate());
+      round(input_frame_rate_tracker_.ComputeTotalRate());
   if (input_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.InputFramesPerSecond", input_fps);
   int sent_fps =
-      static_cast<int>(sent_frame_rate_tracker_.ComputeTotalRate());
+      round(sent_frame_rate_tracker_.ComputeTotalRate());
   if (sent_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.SentFramesPerSecond", sent_fps);
 
@@ -155,7 +156,7 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() {
   rtc::CritScope lock(&crit_);
   PurgeOldStats();
   stats_.input_frame_rate =
-      static_cast<int>(input_frame_rate_tracker_.ComputeRate());
+      round(input_frame_rate_tracker_.ComputeRate());
   return stats_;
 }
 

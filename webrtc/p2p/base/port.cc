@@ -1308,7 +1308,7 @@ uint32_t Connection::last_received() {
 }
 
 size_t Connection::recv_bytes_second() {
-  return recv_rate_tracker_.ComputeRate();
+  return round(recv_rate_tracker_.ComputeRate());
 }
 
 size_t Connection::recv_total_bytes() {
@@ -1316,7 +1316,7 @@ size_t Connection::recv_total_bytes() {
 }
 
 size_t Connection::sent_bytes_second() {
-  return send_rate_tracker_.ComputeRate();
+  return round(send_rate_tracker_.ComputeRate());
 }
 
 size_t Connection::sent_total_bytes() {
