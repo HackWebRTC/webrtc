@@ -263,6 +263,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
              // Restore normal framebuffer.
              GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+             GLES20.glFinish();
           }
           copyTimeNs += (System.nanoTime() - now);
           VideoRenderer.renderFrameDone(pendingFrame);
@@ -299,7 +300,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           ". Dropped: " + framesDropped + ". Rendered: " + framesRendered);
       if (framesReceived > 0 && framesRendered > 0) {
         Logging.d(TAG, "Duration: " + (int)(timeSinceFirstFrameNs / 1e6) +
-            " ms. FPS: " + (float)framesRendered * 1e9 / timeSinceFirstFrameNs);
+            " ms. FPS: " + framesRendered * 1e9 / timeSinceFirstFrameNs);
         Logging.d(TAG, "Draw time: " +
             (int) (drawTimeNs / (1000 * framesRendered)) + " us. Copy time: " +
             (int) (copyTimeNs / (1000 * framesReceived)) + " us");
@@ -483,6 +484,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         // rendering list.
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         instance.surface.queueEvent(new Runnable() {
+          @Override
           public void run() {
             yuvImageRenderer.createTextures();
             yuvImageRenderer.setScreenSize(
