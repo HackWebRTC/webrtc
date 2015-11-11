@@ -1009,8 +1009,10 @@ class VideoMediaChannelTest : public testing::Test,
     rtc::scoped_ptr<const rtc::Buffer> p(GetRtpPacket(0));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(kSsrc, ssrc);
-    EXPECT_EQ(NumRtpPackets(), NumRtpPackets(ssrc));
-    EXPECT_EQ(NumRtpBytes(), NumRtpBytes(ssrc));
+    // Packets are being paced out, so these can mismatch between the first and
+    // second call to NumRtpPackets until pending packets are paced out.
+    EXPECT_EQ_WAIT(NumRtpPackets(), NumRtpPackets(ssrc), kTimeout);
+    EXPECT_EQ_WAIT(NumRtpBytes(), NumRtpBytes(ssrc), kTimeout);
     EXPECT_EQ(1, NumSentSsrcs());
     EXPECT_EQ(0, NumRtpPackets(kSsrc - 1));
     EXPECT_EQ(0, NumRtpBytes(kSsrc - 1));
@@ -1031,8 +1033,10 @@ class VideoMediaChannelTest : public testing::Test,
     rtc::scoped_ptr<const rtc::Buffer> p(GetRtpPacket(0));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(999u, ssrc);
-    EXPECT_EQ(NumRtpPackets(), NumRtpPackets(ssrc));
-    EXPECT_EQ(NumRtpBytes(), NumRtpBytes(ssrc));
+    // Packets are being paced out, so these can mismatch between the first and
+    // second call to NumRtpPackets until pending packets are paced out.
+    EXPECT_EQ_WAIT(NumRtpPackets(), NumRtpPackets(ssrc), kTimeout);
+    EXPECT_EQ_WAIT(NumRtpBytes(), NumRtpBytes(ssrc), kTimeout);
     EXPECT_EQ(1, NumSentSsrcs());
     EXPECT_EQ(0, NumRtpPackets(kSsrc));
     EXPECT_EQ(0, NumRtpBytes(kSsrc));
