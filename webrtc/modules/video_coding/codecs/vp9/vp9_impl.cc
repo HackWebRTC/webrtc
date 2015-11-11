@@ -562,8 +562,6 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                                  !codec_.codecSpecific.VP9.flexibleMode)
                                     ? true
                                     : false;
-  if (pkt.data.frame.flags & VPX_FRAME_IS_KEY)
-    frames_since_kf_ = 0;
 
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
@@ -601,9 +599,14 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
     picture_id_ = (picture_id_ + 1) & 0x7FFF;
     // TODO(asapersson): this info has to be obtained from the encoder.
     vp9_info->inter_layer_predicted = false;
+    ++frames_since_kf_;
   } else {
     // TODO(asapersson): this info has to be obtained from the encoder.
     vp9_info->inter_layer_predicted = true;
+  }
+
+  if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {
+    frames_since_kf_ = 0;
   }
 
   vp9_info->picture_id = picture_id_;
@@ -629,8 +632,8 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   } else {
     vp9_info->gof_idx =
         static_cast<uint8_t>(frames_since_kf_ % gof_.num_frames_in_gof);
+    vp9_info->temporal_up_switch = gof_.temporal_up_switch[vp9_info->gof_idx];
   }
-  ++frames_since_kf_;
 
   if (vp9_info->ss_data_available) {
     vp9_info->spatial_layer_resolution_present = true;
