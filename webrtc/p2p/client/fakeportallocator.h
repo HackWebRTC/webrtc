@@ -101,11 +101,24 @@ class FakePortAllocator : public cricket::PortAllocator {
     }
   }
 
+  void SetIceServers(
+      const ServerAddresses& stun_servers,
+      const std::vector<RelayServerConfig>& turn_servers) override {
+    stun_servers_ = stun_servers;
+    turn_servers_ = turn_servers;
+  }
+
+  const ServerAddresses& stun_servers() const { return stun_servers_; }
+
+  const std::vector<RelayServerConfig>& turn_servers() const {
+    return turn_servers_;
+  }
+
   virtual cricket::PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
       int component,
       const std::string& ice_ufrag,
-      const std::string& ice_pwd) {
+      const std::string& ice_pwd) override {
     return new FakePortAllocatorSession(
         worker_thread_, factory_, content_name, component, ice_ufrag, ice_pwd);
   }
@@ -114,6 +127,8 @@ class FakePortAllocator : public cricket::PortAllocator {
   rtc::Thread* worker_thread_;
   rtc::PacketSocketFactory* factory_;
   rtc::scoped_ptr<rtc::BasicPacketSocketFactory> owned_factory_;
+  ServerAddresses stun_servers_;
+  std::vector<RelayServerConfig> turn_servers_;
 };
 
 }  // namespace cricket

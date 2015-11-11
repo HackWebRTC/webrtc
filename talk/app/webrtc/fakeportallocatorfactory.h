@@ -49,7 +49,9 @@ class FakePortAllocatorFactory : public PortAllocatorFactoryInterface {
       const std::vector<TurnConfiguration>& turn_configurations) {
     stun_configs_ = stun_configurations;
     turn_configs_ = turn_configurations;
-    return new cricket::FakePortAllocator(rtc::Thread::Current(), NULL);
+    last_created_allocator_ =
+        new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr);
+    return last_created_allocator_;
   }
 
   const std::vector<StunConfiguration>& stun_configs() const {
@@ -62,6 +64,12 @@ class FakePortAllocatorFactory : public PortAllocatorFactoryInterface {
 
   void SetNetworkIgnoreMask(int network_ignore_mask) {}
 
+  // Up to caller to ensure this isn't called after the allocator has been
+  // destroyed.
+  cricket::FakePortAllocator* last_created_allocator() {
+    return last_created_allocator_;
+  }
+
  protected:
   FakePortAllocatorFactory() {}
   ~FakePortAllocatorFactory() {}
@@ -69,6 +77,7 @@ class FakePortAllocatorFactory : public PortAllocatorFactoryInterface {
  private:
   std::vector<PortAllocatorFactoryInterface::StunConfiguration> stun_configs_;
   std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turn_configs_;
+  cricket::FakePortAllocator* last_created_allocator_ = nullptr;
 };
 
 }  // namespace webrtc

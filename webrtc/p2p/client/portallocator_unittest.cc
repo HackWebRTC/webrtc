@@ -154,19 +154,19 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
 
   void AddTurnServers(const rtc::SocketAddress& udp_turn,
                       const rtc::SocketAddress& tcp_turn) {
-    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+    cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
     cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
-    relay_server.credentials = credentials;
+    turn_server.credentials = credentials;
 
     if (!udp_turn.IsNil()) {
-      relay_server.ports.push_back(cricket::ProtocolAddress(
-          kTurnUdpIntAddr, cricket::PROTO_UDP, false));
+      turn_server.ports.push_back(
+          cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
     }
     if (!tcp_turn.IsNil()) {
-      relay_server.ports.push_back(cricket::ProtocolAddress(
-          kTurnTcpIntAddr, cricket::PROTO_TCP, false));
+      turn_server.ports.push_back(
+          cricket::ProtocolAddress(kTurnTcpIntAddr, cricket::PROTO_TCP, false));
     }
-    allocator_->AddRelay(relay_server);
+    allocator_->AddTurnServer(turn_server);
   }
 
   bool CreateSession(int component) {
@@ -332,8 +332,8 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   bool HasRelayAddress(const cricket::ProtocolAddress& proto_addr) {
-    for (size_t i = 0; i < allocator_->relays().size(); ++i) {
-      cricket::RelayServerConfig server_config = allocator_->relays()[i];
+    for (size_t i = 0; i < allocator_->turn_servers().size(); ++i) {
+      cricket::RelayServerConfig server_config = allocator_->turn_servers()[i];
       cricket::PortList::const_iterator relay_port;
       for (relay_port = server_config.ports.begin();
           relay_port != server_config.ports.end(); ++relay_port) {
@@ -386,11 +386,11 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
 TEST_F(PortAllocatorTest, TestBasic) {
   EXPECT_EQ(&network_manager_, allocator().network_manager());
   EXPECT_EQ(kStunAddr, *allocator().stun_servers().begin());
-  ASSERT_EQ(1u, allocator().relays().size());
-  EXPECT_EQ(cricket::RELAY_GTURN, allocator().relays()[0].type);
+  ASSERT_EQ(1u, allocator().turn_servers().size());
+  EXPECT_EQ(cricket::RELAY_GTURN, allocator().turn_servers()[0].type);
   // Empty relay credentials are used for GTURN.
-  EXPECT_TRUE(allocator().relays()[0].credentials.username.empty());
-  EXPECT_TRUE(allocator().relays()[0].credentials.password.empty());
+  EXPECT_TRUE(allocator().turn_servers()[0].credentials.username.empty());
+  EXPECT_TRUE(allocator().turn_servers()[0].credentials.password.empty());
   EXPECT_TRUE(HasRelayAddress(cricket::ProtocolAddress(
       kRelayUdpIntAddr, cricket::PROTO_UDP)));
   EXPECT_TRUE(HasRelayAddress(cricket::ProtocolAddress(
@@ -1039,13 +1039,12 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
                                  cricket::PROTO_UDP);
   AddInterface(kClientAddr);
   allocator_.reset(new cricket::BasicPortAllocator(&network_manager_));
-  cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+  cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
   cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
-  relay_server.credentials = credentials;
-  relay_server.ports.push_back(cricket::ProtocolAddress(
-      rtc::SocketAddress("localhost", 3478),
-      cricket::PROTO_UDP, false));
-  allocator_->AddRelay(relay_server);
+  turn_server.credentials = credentials;
+  turn_server.ports.push_back(cricket::ProtocolAddress(
+      rtc::SocketAddress("localhost", 3478), cricket::PROTO_UDP, false));
+  allocator_->AddTurnServer(turn_server);
 
   allocator_->set_step_delay(cricket::kMinimumStepDelay);
   allocator_->set_flags(allocator().flags() |

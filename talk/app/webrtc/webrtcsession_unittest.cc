@@ -1442,12 +1442,12 @@ class WebRtcSessionTest
   }
 
   void ConfigureAllocatorWithTurn() {
-    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+    cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
     cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
-    relay_server.credentials = credentials;
-    relay_server.ports.push_back(cricket::ProtocolAddress(
-        kTurnUdpIntAddr, cricket::PROTO_UDP, false));
-    allocator_->AddRelay(relay_server);
+    turn_server.credentials = credentials;
+    turn_server.ports.push_back(
+        cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
+    allocator_->AddTurnServer(turn_server);
     allocator_->set_step_delay(cricket::kMinimumStepDelay);
     allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP);
   }

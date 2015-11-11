@@ -331,6 +331,40 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   return true;
 }
 
+void ConvertToCricketIceServers(
+    const std::vector<StunConfiguration>& stuns,
+    const std::vector<TurnConfiguration>& turns,
+    cricket::ServerAddresses* cricket_stuns,
+    std::vector<cricket::RelayServerConfig>* cricket_turns) {
+  RTC_DCHECK(cricket_stuns && cricket_turns);
+  for (const StunConfiguration& stun : stuns) {
+    cricket_stuns->insert(stun.server);
+  }
+
+  int priority = static_cast<int>(turns.size() - 1);
+  for (const TurnConfiguration& turn : turns) {
+    cricket::RelayCredentials credentials(turn.username, turn.password);
+    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+    cricket::ProtocolType protocol;
+    // Using VERIFY because ParseIceServers should have already caught an
+    // invalid transport type.
+    if (!VERIFY(
+            cricket::StringToProto(turn.transport_type.c_str(), &protocol))) {
+      LOG(LS_WARNING) << "Ignoring TURN server " << turn.server << ". "
+                      << "Reason= Incorrect " << turn.transport_type
+                      << " transport parameter.";
+    } else {
+      relay_server.ports.push_back(
+          cricket::ProtocolAddress(turn.server, protocol, turn.secure));
+      relay_server.credentials = credentials;
+      relay_server.priority = priority;
+      cricket_turns->push_back(relay_server);
+    }
+    // First in the list gets highest priority.
+    --priority;
+  }
+}
+
 // Check if we can send |new_stream| on a PeerConnection.
 bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
                             webrtc::MediaStreamInterface* new_stream) {
@@ -590,15 +624,45 @@ bool PeerConnection::Initialize(
   if (!observer) {
     return false;
   }
+
+  // This Initialize function parses ICE servers an extra time, but it will
+  // be removed once all PortAllocaotrs support SetIceServers.
+  std::vector<PortAllocatorFactoryInterface::StunConfiguration> stun_config;
+  std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turn_config;
+  if (!ParseIceServers(configuration.servers, &stun_config, &turn_config)) {
+    return false;
+  }
+  rtc::scoped_ptr<cricket::PortAllocator> allocator(
+      allocator_factory->CreatePortAllocator(stun_config, turn_config));
+  return Initialize(configuration, constraints, allocator.Pass(),
+                    dtls_identity_store.Pass(), observer);
+}
+
+bool PeerConnection::Initialize(
+    const PeerConnectionInterface::RTCConfiguration& configuration,
+    const MediaConstraintsInterface* constraints,
+    rtc::scoped_ptr<cricket::PortAllocator> allocator,
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    PeerConnectionObserver* observer) {
+  RTC_DCHECK(observer != nullptr);
+  if (!observer) {
+    return false;
+  }
   observer_ = observer;
+
+  port_allocator_ = allocator.Pass();
 
   std::vector<PortAllocatorFactoryInterface::StunConfiguration> stun_config;
   std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turn_config;
   if (!ParseIceServers(configuration.servers, &stun_config, &turn_config)) {
     return false;
   }
-  port_allocator_.reset(
-      allocator_factory->CreatePortAllocator(stun_config, turn_config));
+
+  cricket::ServerAddresses cricket_stuns;
+  std::vector<cricket::RelayServerConfig> cricket_turns;
+  ConvertToCricketIceServers(stun_config, turn_config, &cricket_stuns,
+                             &cricket_turns);
+  port_allocator_->SetIceServers(cricket_stuns, cricket_turns);
 
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
@@ -1087,36 +1151,10 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& config) {
       return false;
     }
 
-    std::vector<rtc::SocketAddress> stun_hosts;
-    typedef std::vector<StunConfiguration>::const_iterator StunIt;
-    for (StunIt stun_it = stuns.begin(); stun_it != stuns.end(); ++stun_it) {
-      stun_hosts.push_back(stun_it->server);
-    }
-
-    rtc::SocketAddress stun_addr;
-    if (!stun_hosts.empty()) {
-      stun_addr = stun_hosts.front();
-      LOG(LS_INFO) << "SetConfiguration: StunServer Address: "
-                   << stun_addr.ToString();
-    }
-
-    for (size_t i = 0; i < turns.size(); ++i) {
-      cricket::RelayCredentials credentials(turns[i].username,
-                                            turns[i].password);
-      cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
-      cricket::ProtocolType protocol;
-      if (cricket::StringToProto(turns[i].transport_type.c_str(), &protocol)) {
-        relay_server.ports.push_back(cricket::ProtocolAddress(
-            turns[i].server, protocol, turns[i].secure));
-        relay_server.credentials = credentials;
-        LOG(LS_INFO) << "SetConfiguration: TurnServer Address: "
-                     << turns[i].server.ToString();
-      } else {
-        LOG(LS_WARNING) << "Ignoring TURN server " << turns[i].server << ". "
-                        << "Reason= Incorrect " << turns[i].transport_type
-                        << " transport parameter.";
-      }
-    }
+    cricket::ServerAddresses cricket_stuns;
+    std::vector<cricket::RelayServerConfig> cricket_turns;
+    ConvertToCricketIceServers(stuns, turns, &cricket_stuns, &cricket_turns);
+    port_allocator_->SetIceServers(cricket_stuns, cricket_turns);
   }
   session_->SetIceConfig(session_->ParseIceConfig(config));
   return session_->SetIceTransports(config.type);

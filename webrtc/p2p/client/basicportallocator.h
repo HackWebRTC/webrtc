@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/network.h"
@@ -22,28 +21,6 @@
 #include "webrtc/base/thread.h"
 
 namespace cricket {
-
-struct RelayCredentials {
-  RelayCredentials() {}
-  RelayCredentials(const std::string& username,
-                   const std::string& password)
-      : username(username),
-        password(password) {
-  }
-
-  std::string username;
-  std::string password;
-};
-
-typedef std::vector<ProtocolAddress> PortList;
-struct RelayServerConfig {
-  RelayServerConfig(RelayType type) : type(type), priority(0) {}
-
-  RelayType type;
-  PortList ports;
-  RelayCredentials credentials;
-  int priority;
-};
 
 class BasicPortAllocator : public PortAllocator {
  public:
@@ -60,6 +37,13 @@ class BasicPortAllocator : public PortAllocator {
                      const rtc::SocketAddress& relay_server_ssl);
   virtual ~BasicPortAllocator();
 
+  void SetIceServers(
+      const ServerAddresses& stun_servers,
+      const std::vector<RelayServerConfig>& turn_servers) override {
+    stun_servers_ = stun_servers;
+    turn_servers_ = turn_servers;
+  }
+
   rtc::NetworkManager* network_manager() { return network_manager_; }
 
   // If socket_factory() is set to NULL each PortAllocatorSession
@@ -70,26 +54,26 @@ class BasicPortAllocator : public PortAllocator {
     return stun_servers_;
   }
 
-  const std::vector<RelayServerConfig>& relays() const {
-    return relays_;
+  const std::vector<RelayServerConfig>& turn_servers() const {
+    return turn_servers_;
   }
-  virtual void AddRelay(const RelayServerConfig& relay) {
-    relays_.push_back(relay);
+  virtual void AddTurnServer(const RelayServerConfig& turn_server) {
+    turn_servers_.push_back(turn_server);
   }
 
-  virtual PortAllocatorSession* CreateSessionInternal(
+  PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
       int component,
       const std::string& ice_ufrag,
-      const std::string& ice_pwd);
+      const std::string& ice_pwd) override;
 
  private:
   void Construct();
 
   rtc::NetworkManager* network_manager_;
   rtc::PacketSocketFactory* socket_factory_;
-  const ServerAddresses stun_servers_;
-  std::vector<RelayServerConfig> relays_;
+  ServerAddresses stun_servers_;
+  std::vector<RelayServerConfig> turn_servers_;
   bool allow_tcp_listen_;
 };
 
@@ -110,10 +94,10 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   rtc::Thread* network_thread() { return network_thread_; }
   rtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
 
-  virtual void StartGettingPorts();
-  virtual void StopGettingPorts();
-  virtual void ClearGettingPorts();
-  virtual bool IsGettingPorts() { return running_; }
+  void StartGettingPorts() override;
+  void StopGettingPorts() override;
+  void ClearGettingPorts() override;
+  bool IsGettingPorts() override { return running_; }
 
  protected:
   // Starts the process of getting the port configurations.
@@ -124,7 +108,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   virtual void ConfigReady(PortConfiguration* config);
 
   // MessageHandler.  Can be overriden if message IDs do not conflict.
-  virtual void OnMessage(rtc::Message *message);
+  void OnMessage(rtc::Message* message) override;
 
  private:
   class PortData {
@@ -204,6 +188,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 };
 
 // Records configuration information useful in creating ports.
+// TODO(deadbeef): Rename "relay" to "turn_server" in this struct.
 struct PortConfiguration : public rtc::MessageData {
   // TODO(jiayl): remove |stun_address| when Chrome is updated.
   rtc::SocketAddress stun_address;

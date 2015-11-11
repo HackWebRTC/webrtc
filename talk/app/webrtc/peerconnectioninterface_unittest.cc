@@ -1660,6 +1660,23 @@ TEST_F(PeerConnectionInterfaceTest, CreateSubsequentInactiveOffer) {
   ASSERT_EQ(cricket::MD_INACTIVE, audio_desc->direction());
 }
 
+// Test that we can use SetConfiguration to change the ICE servers of the
+// PortAllocator.
+TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesIceServers) {
+  CreatePeerConnection();
+
+  PeerConnectionInterface::RTCConfiguration config;
+  PeerConnectionInterface::IceServer server;
+  server.uri = "stun:test_hostname";
+  config.servers.push_back(server);
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+
+  cricket::FakePortAllocator* allocator =
+      port_allocator_factory_->last_created_allocator();
+  EXPECT_EQ(1u, allocator->stun_servers().size());
+  EXPECT_EQ("test_hostname", allocator->stun_servers().begin()->hostname());
+}
+
 // Test that PeerConnection::Close changes the states to closed and all remote
 // tracks change state to ended.
 TEST_F(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
