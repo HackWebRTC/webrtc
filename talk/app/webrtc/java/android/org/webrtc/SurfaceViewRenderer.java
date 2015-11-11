@@ -28,6 +28,7 @@
 package org.webrtc;
 
 import android.content.Context;
+import android.content.res.Resources.NotFoundException;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
@@ -152,9 +153,9 @@ public class SurfaceViewRenderer extends SurfaceView
       EGLContext sharedContext, RendererCommon.RendererEvents rendererEvents) {
     synchronized (handlerLock) {
       if (renderThreadHandler != null) {
-        throw new IllegalStateException("Already initialized");
+        throw new IllegalStateException(getResourceName() + "Already initialized");
       }
-      Logging.d(TAG, "Initializing");
+      Logging.d(TAG, getResourceName() + "Initializing.");
       this.rendererEvents = rendererEvents;
       renderThread = new HandlerThread(TAG);
       renderThread.start();
@@ -195,7 +196,7 @@ public class SurfaceViewRenderer extends SurfaceView
     final CountDownLatch eglCleanupBarrier = new CountDownLatch(1);
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
-        Logging.d(TAG, "Already released");
+        Logging.d(TAG, getResourceName() + "Already released");
         return;
       }
       // Release EGL and GL resources on render thread.
@@ -212,8 +213,7 @@ public class SurfaceViewRenderer extends SurfaceView
           }
           if (eglBase.hasSurface()) {
             // Clear last rendered image to black.
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-            eglBase.swapBuffers();
+            makeBlack();
           }
           eglBase.release();
           eglBase = null;
@@ -277,7 +277,8 @@ public class SurfaceViewRenderer extends SurfaceView
     }
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
-        Logging.d(TAG, "Dropping frame - SurfaceViewRenderer not initialized or already released.");
+        Logging.d(TAG, getResourceName()
+            + "Dropping frame - Not initialized or already released.");
         VideoRenderer.renderFrameDone(frame);
         return;
       }
@@ -337,7 +338,7 @@ public class SurfaceViewRenderer extends SurfaceView
   // SurfaceHolder.Callback interface.
   @Override
   public void surfaceCreated(final SurfaceHolder holder) {
-    Logging.d(TAG, "Surface created");
+    Logging.d(TAG, getResourceName() + "Surface created.");
     synchronized (layoutLock) {
       isSurfaceCreated = true;
     }
@@ -346,7 +347,7 @@ public class SurfaceViewRenderer extends SurfaceView
 
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
-    Logging.d(TAG, "Surface destroyed");
+    Logging.d(TAG, getResourceName() + "Surface destroyed.");
     synchronized (layoutLock) {
       isSurfaceCreated = false;
       surfaceWidth = 0;
@@ -361,7 +362,7 @@ public class SurfaceViewRenderer extends SurfaceView
 
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    Logging.d(TAG, "Surface changed: " + width + "x" + height);
+    Logging.d(TAG, getResourceName() + "Surface changed: " + width + "x" + height);
     synchronized (layoutLock) {
       surfaceWidth = width;
       surfaceHeight = height;
@@ -381,6 +382,23 @@ public class SurfaceViewRenderer extends SurfaceView
     }
   }
 
+  private String getResourceName() {
+    try {
+      return getResources().getResourceEntryName(getId()) + ": ";
+    } catch (NotFoundException e) {
+      return "";
+    }
+  }
+
+  private void makeBlack() {
+    if (Thread.currentThread() != renderThread) {
+      throw new IllegalStateException(getResourceName() + "Wrong thread.");
+    }
+    GLES20.glClearColor(0, 0, 0, 0);
+    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+    eglBase.swapBuffers();
+  }
+
   /**
    * Requests new layout if necessary. Returns true if layout and surface size are consistent.
    */
@@ -388,7 +406,7 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (layoutLock) {
       final Point desiredLayoutSize = getDesiredLayoutSize();
       if (desiredLayoutSize.x != layoutWidth || desiredLayoutSize.y != layoutHeight) {
-        Logging.d(TAG, "Requesting new layout with size: "
+        Logging.d(TAG, getResourceName() + "Requesting new layout with size: "
             + desiredLayoutSize.x + "x" + desiredLayoutSize.y);
         // Request layout update on UI thread.
         post(new Runnable() {
@@ -408,14 +426,16 @@ public class SurfaceViewRenderer extends SurfaceView
    * Renders and releases |pendingFrame|.
    */
   private void renderFrameOnRenderThread() {
+    if (Thread.currentThread() != renderThread) {
+      throw new IllegalStateException(getResourceName() + "Wrong thread.");
+    }
     if (eglBase == null || !eglBase.hasSurface()) {
-      Logging.d(TAG, "No surface to draw on");
+      Logging.d(TAG, getResourceName() + "No surface to draw on");
       return;
     }
     if (!checkConsistentLayout()) {
       // Output intermediate black frames while the layout is updated.
-      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-      eglBase.swapBuffers();
+      makeBlack();
       return;
     }
     // After a surface size change, the EGLSurface might still have a buffer of the old size in the
@@ -423,8 +443,7 @@ public class SurfaceViewRenderer extends SurfaceView
     // changed. Such a buffer will be rendered incorrectly, so flush it with a black frame.
     synchronized (layoutLock) {
       if (eglBase.surfaceWidth() != surfaceWidth || eglBase.surfaceHeight() != surfaceHeight) {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        eglBase.swapBuffers();
+        makeBlack();
       }
     }
     // Fetch and render |pendingFrame|.
@@ -509,12 +528,11 @@ public class SurfaceViewRenderer extends SurfaceView
       if (frameWidth != frame.width || frameHeight != frame.height
           || frameRotation != frame.rotationDegree) {
         if (rendererEvents != null) {
-          final String id = getResources().getResourceEntryName(getId());
           if (frameWidth == 0 || frameHeight == 0) {
-            Logging.d(TAG, "ID: " + id + ". Reporting first rendered frame.");
+            Logging.d(TAG, getResourceName() + "Reporting first rendered frame.");
             rendererEvents.onFirstFrameRendered();
           }
-          Logging.d(TAG, "ID: " + id + ". Reporting frame resolution changed to "
+          Logging.d(TAG, getResourceName() + "Reporting frame resolution changed to "
               + frame.width + "x" + frame.height + " with rotation " + frame.rotationDegree);
           rendererEvents.onFrameResolutionChanged(frame.width, frame.height, frame.rotationDegree);
         }
@@ -527,13 +545,13 @@ public class SurfaceViewRenderer extends SurfaceView
 
   private void logStatistics() {
     synchronized (statisticsLock) {
-      Logging.d(TAG, "ID: " + getResources().getResourceEntryName(getId()) + ". Frames received: "
+      Logging.d(TAG, getResourceName() + "Frames received: "
           + framesReceived + ". Dropped: " + framesDropped + ". Rendered: " + framesRendered);
       if (framesReceived > 0 && framesRendered > 0) {
         final long timeSinceFirstFrameNs = System.nanoTime() - firstFrameTimeNs;
-        Logging.d(TAG, "Duration: " + (int) (timeSinceFirstFrameNs / 1e6) +
+        Logging.d(TAG, getResourceName() + "Duration: " + (int) (timeSinceFirstFrameNs / 1e6) +
             " ms. FPS: " + (float) framesRendered * 1e9 / timeSinceFirstFrameNs);
-        Logging.d(TAG, "Average render time: "
+        Logging.d(TAG, getResourceName() + "Average render time: "
             + (int) (renderTimeNs / (1000 * framesRendered)) + " us.");
       }
     }
