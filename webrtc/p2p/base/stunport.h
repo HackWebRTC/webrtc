@@ -149,8 +149,10 @@ class UDPPort : public Port {
   void SendStunBindingRequests();
 
   // Helper function which will set |addr|'s IP to the default local address if
-  // |addr| is the "any" address and |emit_local_for_anyaddress_| is true.
-  void MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const;
+  // |addr| is the "any" address and |emit_local_for_anyaddress_| is true. When
+  // returning false, it indicates that the operation has failed and the
+  // address shouldn't be used by any candidate.
+  bool MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const;
 
  private:
   // A helper class which can be called repeatedly to resolve multiple

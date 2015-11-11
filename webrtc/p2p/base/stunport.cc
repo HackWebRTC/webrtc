@@ -306,6 +306,9 @@ void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
   // |emit_local_for_anyaddress| is true. This is to allow connectivity for
   // applications which absolutely requires a HOST candidate.
   rtc::SocketAddress addr = address;
+
+  // If MaybeSetDefaultLocalAddress fails, we keep the "any" IP so that at
+  // least the port is listening.
   MaybeSetDefaultLocalAddress(&addr);
 
   AddAddress(addr, addr, rtc::SocketAddress(), UDP_PROTOCOL_NAME, "", "",
@@ -404,17 +407,21 @@ void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
   }
 }
 
-void UDPPort::MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const {
+bool UDPPort::MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const {
   if (!addr->IsAnyIP() || !emit_local_for_anyaddress_ ||
       !Network()->default_local_address_provider()) {
-    return;
+    return true;
   }
   rtc::IPAddress default_address;
   bool result =
       Network()->default_local_address_provider()->GetDefaultLocalAddress(
           addr->family(), &default_address);
-  RTC_DCHECK(result && !default_address.IsNil());
+  if (!result || default_address.IsNil()) {
+    return false;
+  }
+
   addr->SetIP(default_address);
+  return true;
 }
 
 void UDPPort::OnStunBindingRequestSucceeded(
@@ -434,8 +441,9 @@ void UDPPort::OnStunBindingRequestSucceeded(
       !HasCandidateWithAddress(stun_reflected_addr)) {
 
     rtc::SocketAddress related_address = socket_->GetLocalAddress();
-    MaybeSetDefaultLocalAddress(&related_address);
-    if (!(candidate_filter() & CF_HOST)) {
+    // If we can't stamp the related address correctly, empty it to avoid leak.
+    if (!MaybeSetDefaultLocalAddress(&related_address) ||
+        !(candidate_filter() & CF_HOST)) {
       // If candidate filter doesn't have CF_HOST specified, empty raddr to
       // avoid local address leakage.
       related_address = rtc::EmptySocketAddressWithFamily(

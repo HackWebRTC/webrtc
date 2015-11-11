@@ -58,7 +58,8 @@ class DefaultLocalAddressProvider {
  public:
   virtual ~DefaultLocalAddressProvider() = default;
   // The default local address is the local address used in multi-homed endpoint
-  // when the any address (0.0.0.0 or ::) is used as the local address.
+  // when the any address (0.0.0.0 or ::) is used as the local address. It's
+  // important to check the return value as a IP family may not be enabled.
   virtual bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const = 0;
 };
 
