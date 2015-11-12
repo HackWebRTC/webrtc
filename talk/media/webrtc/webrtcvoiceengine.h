@@ -315,9 +315,10 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   int64_t default_recv_ssrc_ = -1;
   // Volume for unsignalled stream, which may be set before the stream exists.
   double default_recv_volume_ = 1.0;
-  // SSRC to use for RTCP receiver reports; default to 1 in case of no signaled
+  // Default SSRC to use for RTCP receiver reports in case of no signaled
   // send streams. See: https://code.google.com/p/webrtc/issues/detail?id=4740
-  uint32_t receiver_reports_ssrc_ = 1;
+  // and https://code.google.com/p/chromium/issues/detail?id=547661
+  uint32_t receiver_reports_ssrc_ = 0xFA17FA17u;
 
   class WebRtcAudioSendStream;
   std::map<uint32_t, WebRtcAudioSendStream*> send_streams_;
