@@ -246,6 +246,10 @@ class PeerConnection : public PeerConnectionInterface,
       const MediaConstraintsInterface* constraints,
       cricket::MediaSessionOptions* session_options);
 
+  // Remove all local and remote tracks of type |media_type|.
+  // Called when a media type is rejected (m-line set to port 0).
+  void RemoveTracks(cricket::MediaType media_type);
+
   // Makes sure a MediaStream Track is created for each StreamParam in
   // |streams|. |media_type| is the type of the |streams| and can be either
   // audio or video.

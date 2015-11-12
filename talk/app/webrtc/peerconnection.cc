@@ -1014,19 +1014,27 @@ void PeerConnection::SetLocalDescription(
   const cricket::ContentInfo* audio_content =
       GetFirstAudioContent(desc->description());
   if (audio_content) {
-    const cricket::AudioContentDescription* audio_desc =
-        static_cast<const cricket::AudioContentDescription*>(
-            audio_content->description);
-    UpdateLocalTracks(audio_desc->streams(), audio_desc->type());
+    if (audio_content->rejected) {
+      RemoveTracks(cricket::MEDIA_TYPE_AUDIO);
+    } else {
+      const cricket::AudioContentDescription* audio_desc =
+          static_cast<const cricket::AudioContentDescription*>(
+              audio_content->description);
+      UpdateLocalTracks(audio_desc->streams(), audio_desc->type());
+    }
   }
 
   const cricket::ContentInfo* video_content =
       GetFirstVideoContent(desc->description());
   if (video_content) {
-    const cricket::VideoContentDescription* video_desc =
-        static_cast<const cricket::VideoContentDescription*>(
-            video_content->description);
-    UpdateLocalTracks(video_desc->streams(), video_desc->type());
+    if (video_content->rejected) {
+      RemoveTracks(cricket::MEDIA_TYPE_VIDEO);
+    } else {
+      const cricket::VideoContentDescription* video_desc =
+          static_cast<const cricket::VideoContentDescription*>(
+              video_content->description);
+      UpdateLocalTracks(video_desc->streams(), video_desc->type());
+    }
   }
 
   const cricket::ContentInfo* data_content =
@@ -1088,26 +1096,36 @@ void PeerConnection::SetRemoteDescription(
   // and MediaStreams.
   const cricket::ContentInfo* audio_content = GetFirstAudioContent(remote_desc);
   if (audio_content) {
-    const cricket::AudioContentDescription* desc =
-        static_cast<const cricket::AudioContentDescription*>(
-            audio_content->description);
-    UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams);
-    remote_info_.default_audio_track_needed =
-        !remote_desc->msid_supported() && desc->streams().empty() &&
-        MediaContentDirectionHasSend(desc->direction());
+    if (audio_content->rejected) {
+      RemoveTracks(cricket::MEDIA_TYPE_AUDIO);
+    } else {
+      const cricket::AudioContentDescription* desc =
+          static_cast<const cricket::AudioContentDescription*>(
+              audio_content->description);
+      UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(),
+                              new_streams);
+      remote_info_.default_audio_track_needed =
+          !remote_desc->msid_supported() && desc->streams().empty() &&
+          MediaContentDirectionHasSend(desc->direction());
+    }
   }
 
   // Find all video rtp streams and create corresponding remote VideoTracks
   // and MediaStreams.
   const cricket::ContentInfo* video_content = GetFirstVideoContent(remote_desc);
   if (video_content) {
-    const cricket::VideoContentDescription* desc =
-        static_cast<const cricket::VideoContentDescription*>(
-            video_content->description);
-    UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams);
-    remote_info_.default_video_track_needed =
-        !remote_desc->msid_supported() && desc->streams().empty() &&
-        MediaContentDirectionHasSend(desc->direction());
+    if (video_content->rejected) {
+      RemoveTracks(cricket::MEDIA_TYPE_VIDEO);
+    } else {
+      const cricket::VideoContentDescription* desc =
+          static_cast<const cricket::VideoContentDescription*>(
+              video_content->description);
+      UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(),
+                              new_streams);
+      remote_info_.default_video_track_needed =
+          !remote_desc->msid_supported() && desc->streams().empty() &&
+          MediaContentDirectionHasSend(desc->direction());
+    }
   }
 
   // Update the DataChannels with the information from the remote peer.
@@ -1470,6 +1488,12 @@ bool PeerConnection::GetOptionsForAnswer(
     session_options->data_channel_type = cricket::DCT_SCTP;
   }
   return true;
+}
+
+void PeerConnection::RemoveTracks(cricket::MediaType media_type) {
+  UpdateLocalTracks(std::vector<cricket::StreamParams>(), media_type);
+  UpdateRemoteStreamsList(std::vector<cricket::StreamParams>(), media_type,
+                          nullptr);
 }
 
 void PeerConnection::UpdateRemoteStreamsList(

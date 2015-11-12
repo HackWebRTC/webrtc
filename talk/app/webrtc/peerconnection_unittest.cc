@@ -78,11 +78,13 @@ using webrtc::DtmfSenderInterface;
 using webrtc::DtmfSenderObserverInterface;
 using webrtc::FakeConstraints;
 using webrtc::MediaConstraintsInterface;
+using webrtc::MediaStreamInterface;
 using webrtc::MediaStreamTrackInterface;
 using webrtc::MockCreateSessionDescriptionObserver;
 using webrtc::MockDataChannelObserver;
 using webrtc::MockSetSessionDescriptionObserver;
 using webrtc::MockStatsObserver;
+using webrtc::ObserverInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionFactory;
 using webrtc::SessionDescriptionInterface;
@@ -139,7 +141,8 @@ class SignalingMessageReceiver {
 };
 
 class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
-                                 public SignalingMessageReceiver {
+                                 public SignalingMessageReceiver,
+                                 public ObserverInterface {
  public:
   static PeerConnectionTestClient* CreateClient(
       const std::string& id,
@@ -206,7 +209,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       webrtc::PeerConnectionInterface::SignalingState new_state) override {
     EXPECT_EQ(pc()->signaling_state(), new_state);
   }
-  void OnAddStream(webrtc::MediaStreamInterface* media_stream) override {
+  void OnAddStream(MediaStreamInterface* media_stream) override {
+    media_stream->RegisterObserver(this);
     for (size_t i = 0; i < media_stream->GetVideoTracks().size(); ++i) {
       const std::string id = media_stream->GetVideoTracks()[i]->id();
       ASSERT_TRUE(fake_video_renderers_.find(id) ==
@@ -215,7 +219,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
           new webrtc::FakeVideoTrackRenderer(media_stream->GetVideoTracks()[i]);
     }
   }
-  void OnRemoveStream(webrtc::MediaStreamInterface* media_stream) override {}
+  void OnRemoveStream(MediaStreamInterface* media_stream) override {}
   void OnRenegotiationNeeded() override {}
   void OnIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override {
@@ -238,6 +242,40 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         candidate->sdp_mid(), candidate->sdp_mline_index(), ice_sdp);
   }
 
+  // MediaStreamInterface callback
+  void OnChanged() override {
+    // Track added or removed from MediaStream, so update our renderers.
+    rtc::scoped_refptr<StreamCollectionInterface> remote_streams =
+        pc()->remote_streams();
+    // Remove renderers for tracks that were removed.
+    for (auto it = fake_video_renderers_.begin();
+         it != fake_video_renderers_.end();) {
+      if (remote_streams->FindVideoTrack(it->first) == nullptr) {
+        auto to_delete = it++;
+        delete to_delete->second;
+        fake_video_renderers_.erase(to_delete);
+      } else {
+        ++it;
+      }
+    }
+    // Create renderers for new video tracks.
+    for (size_t stream_index = 0; stream_index < remote_streams->count();
+         ++stream_index) {
+      MediaStreamInterface* remote_stream = remote_streams->at(stream_index);
+      for (size_t track_index = 0;
+           track_index < remote_stream->GetVideoTracks().size();
+           ++track_index) {
+        const std::string id =
+            remote_stream->GetVideoTracks()[track_index]->id();
+        if (fake_video_renderers_.find(id) != fake_video_renderers_.end()) {
+          continue;
+        }
+        fake_video_renderers_[id] = new webrtc::FakeVideoTrackRenderer(
+            remote_stream->GetVideoTracks()[track_index]);
+      }
+    }
+  }
+
   void SetVideoConstraints(const webrtc::FakeConstraints& video_constraint) {
     video_constraints_ = video_constraint;
   }
@@ -246,7 +284,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     std::string stream_label =
         kStreamLabelBase +
         rtc::ToString<int>(static_cast<int>(pc()->local_streams()->count()));
-    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
+    rtc::scoped_refptr<MediaStreamInterface> stream =
         peer_connection_factory_->CreateLocalMediaStream(stream_label);
 
     if (audio && can_receive_audio()) {
@@ -274,6 +312,12 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   bool SessionActive() {
     return pc()->signaling_state() == webrtc::PeerConnectionInterface::kStable;
+  }
+
+  // Automatically add a stream when receiving an offer, if we don't have one.
+  // Defaults to true.
+  void set_auto_add_stream(bool auto_add_stream) {
+    auto_add_stream_ = auto_add_stream;
   }
 
   void set_signaling_message_receiver(
@@ -705,7 +749,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   void HandleIncomingOffer(const std::string& msg) {
     LOG(INFO) << id_ << "HandleIncomingOffer ";
-    if (NumberOfLocalMediaStreams() == 0) {
+    if (NumberOfLocalMediaStreams() == 0 && auto_add_stream_) {
       // If we are not sending any streams ourselves it is time to add some.
       AddMediaStream(true, true);
     }
@@ -811,6 +855,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
+
+  bool auto_add_stream_ = true;
 
   typedef std::pair<std::string, std::string> IceUfragPwdPair;
   std::map<int, IceUfragPwdPair> ice_ufrag_pwd_;
@@ -962,7 +1008,6 @@ class JsepPeerConnectionP2PTestClient : public testing::Test {
     // would eat up 5 seconds.
     ASSERT_TRUE_WAIT(SessionActive(), kMaxWaitForActivationMs);
     VerifySessionDescriptions();
-
 
     int audio_frame_count = kEndAudioFrameCount;
     // TODO(ronghuawu): Add test to cover the case of sendonly and recvonly.
@@ -1560,6 +1605,29 @@ TEST_F(JsepPeerConnectionP2PTestClient, IceRestart) {
   // changed.
   EXPECT_NE(initiator_candidate, initiator_candidate_restart);
   EXPECT_NE(receiver_candidate, receiver_candidate_restart);
+}
+
+// This test sets up a call between two parties with audio, and video.
+// It then renegotiates setting the video m-line to "port 0", then later
+// renegotiates again, enabling video.
+TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestVideoDisableEnable) {
+  ASSERT_TRUE(CreateTestClients());
+
+  // Do initial negotiation. Will result in video and audio sendonly m-lines.
+  receiving_client()->set_auto_add_stream(false);
+  initializing_client()->AddMediaStream(true, true);
+  initializing_client()->Negotiate();
+
+  // Negotiate again, disabling the video m-line (receiving client will
+  // set port to 0 due to mandatory "OfferToReceiveVideo: false" constraint).
+  receiving_client()->SetReceiveVideo(false);
+  initializing_client()->Negotiate();
+
+  // Enable video and do negotiation again, making sure video is received
+  // end-to-end.
+  receiving_client()->SetReceiveVideo(true);
+  receiving_client()->AddMediaStream(true, true);
+  LocalP2PTest();
 }
 
 // This test sets up a Jsep call between two parties with external
