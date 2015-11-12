@@ -33,10 +33,23 @@ import java.lang.Math;
 // recommended to always use AudioManager.MODE_IN_COMMUNICATION.
 // This class also adds support for output volume control of the
 // STREAM_VOICE_CALL-type stream.
-class WebRtcAudioManager {
+public class WebRtcAudioManager {
   private static final boolean DEBUG = false;
 
   private static final String TAG = "WebRtcAudioManager";
+
+  private static boolean blacklistDeviceForOpenSLESUsage = false;
+  private static boolean blacklistDeviceForOpenSLESUsageIsOverridden = false;
+
+  // Call this method to override the deault list of blacklisted devices
+  // specified in WebRtcAudioUtils.BLACKLISTED_OPEN_SL_ES_MODELS.
+  // Allows an app to take control over which devices to exlude from using
+  // the OpenSL ES audio output path
+  public static synchronized void setBlacklistDeviceForOpenSLESUsage(
+      boolean enable) {
+    blacklistDeviceForOpenSLESUsageIsOverridden = true;
+    blacklistDeviceForOpenSLESUsage = enable;
+  }
 
   // Default audio data format is PCM 16 bit per sample.
   // Guaranteed to be supported by all devices.
@@ -110,7 +123,8 @@ class WebRtcAudioManager {
   }
 
    private boolean isDeviceBlacklistedForOpenSLESUsage() {
-    boolean blacklisted =
+    boolean blacklisted = blacklistDeviceForOpenSLESUsageIsOverridden ?
+        blacklistDeviceForOpenSLESUsage :
         WebRtcAudioUtils.deviceIsBlacklistedForOpenSLESUsage();
     if (blacklisted) {
       Logging.e(TAG, Build.MODEL + " is blacklisted for OpenSL ES usage!");

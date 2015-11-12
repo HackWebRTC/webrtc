@@ -52,7 +52,7 @@ class OpenSLESPlayer {
   // buffer count of 2 or more, and a buffer size and sample rate that are
   // compatible with the device's native output configuration provided via the
   // audio manager at construction.
-  static const int kNumOfOpenSLESBuffers = 2;
+  static const int kNumOfOpenSLESBuffers = 4;
 
   // There is no need for this class to use JNI.
   static int32_t SetAndroidAudioDeviceObjects(void* javaVM, void* context) {
@@ -195,6 +195,9 @@ class OpenSLESPlayer {
   // This interface exposes controls for manipulating the object’s audio volume
   // properties. This interface is supported on the Audio Player object.
   SLVolumeItf volume_;
+
+  // Last time the OpenSL ES layer asked for audio data to play out.
+  uint32_t last_play_time_;
 };
 
 }  // namespace webrtc
