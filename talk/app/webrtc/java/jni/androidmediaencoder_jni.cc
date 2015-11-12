@@ -33,6 +33,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
@@ -79,7 +80,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
                                public rtc::MessageHandler {
  public:
   virtual ~MediaCodecVideoEncoder();
-  explicit MediaCodecVideoEncoder(JNIEnv* jni, VideoCodecType codecType);
+  MediaCodecVideoEncoder(JNIEnv* jni,
+                         VideoCodecType codecType);
 
   // webrtc::VideoEncoder implementation.  Everything trampolines to
   // |codec_thread_| for execution.
@@ -104,12 +106,10 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int GetTargetFramerate() override;
 
  private:
-  // CHECK-fail if not running on |codec_thread_|.
-  void CheckOnCodecThread();
-
-  // Release() and InitEncode() in an attempt to restore the codec to an
+  // ResetCodecOnCodecThread() calls ReleaseOnCodecThread() and
+  // InitEncodeOnCodecThread() in an attempt to restore the codec to an
   // operable state.  Necessary after all manner of OMX-layer errors.
-  void ResetCodec();
+  bool ResetCodecOnCodecThread();
 
   // Implementation of webrtc::VideoEncoder methods above, all running on the
   // codec thread exclusively.
@@ -118,9 +118,15 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // previously-current values are reused instead of the passed parameters
   // (makes it easier to reason about thread-safety).
   int32_t InitEncodeOnCodecThread(int width, int height, int kbps, int fps);
+  // Reconfigure to match |frame| in width, height. Returns false if
+  // reconfiguring fails.
+  bool MaybeReconfigureEncoderOnCodecThread(const webrtc::VideoFrame& frame);
   int32_t EncodeOnCodecThread(
       const webrtc::VideoFrame& input_image,
       const std::vector<webrtc::FrameType>* frame_types);
+  bool EncodeByteBufferOnCodecThread(JNIEnv* jni,
+      bool key_frame, const webrtc::VideoFrame& frame, int input_buffer_index);
+
   int32_t RegisterEncodeCompleteCallbackOnCodecThread(
       webrtc::EncodedImageCallback* callback);
   int32_t ReleaseOnCodecThread();
@@ -150,11 +156,13 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // State that is constant for the lifetime of this object once the ctor
   // returns.
   scoped_ptr<Thread> codec_thread_;  // Thread on which to operate MediaCodec.
+  rtc::ThreadChecker codec_thread_checker_;
   ScopedGlobalRef<jclass> j_media_codec_video_encoder_class_;
   ScopedGlobalRef<jobject> j_media_codec_video_encoder_;
   jmethodID j_init_encode_method_;
+  jmethodID j_get_input_buffers_method_;
   jmethodID j_dequeue_input_buffer_method_;
-  jmethodID j_encode_method_;
+  jmethodID j_encode_buffer_method_;
   jmethodID j_release_method_;
   jmethodID j_set_rates_method_;
   jmethodID j_dequeue_output_buffer_method_;
@@ -239,19 +247,23 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
   // thread.
   codec_thread_->SetName("MediaCodecVideoEncoder", NULL);
   RTC_CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoEncoder";
-
+  codec_thread_checker_.DetachFromThread();
   jclass j_output_buffer_info_class =
       FindClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
   j_init_encode_method_ = GetMethodID(
       jni,
       *j_media_codec_video_encoder_class_,
       "initEncode",
-      "(Lorg/webrtc/MediaCodecVideoEncoder$VideoCodecType;IIII)"
-      "[Ljava/nio/ByteBuffer;");
+      "(Lorg/webrtc/MediaCodecVideoEncoder$VideoCodecType;IIII)Z");
+  j_get_input_buffers_method_ = GetMethodID(
+      jni,
+      *j_media_codec_video_encoder_class_,
+      "getInputBuffers",
+      "()[Ljava/nio/ByteBuffer;");
   j_dequeue_input_buffer_method_ = GetMethodID(
       jni, *j_media_codec_video_encoder_class_, "dequeueInputBuffer", "()I");
-  j_encode_method_ = GetMethodID(
-      jni, *j_media_codec_video_encoder_class_, "encode", "(ZIIJ)Z");
+  j_encode_buffer_method_ = GetMethodID(
+      jni, *j_media_codec_video_encoder_class_, "encodeBuffer", "(ZIIJ)Z");
   j_release_method_ =
       GetMethodID(jni, *j_media_codec_video_encoder_class_, "release", "()V");
   j_set_rates_method_ = GetMethodID(
@@ -374,6 +386,7 @@ int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
 }
 
 void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
@@ -381,7 +394,6 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
   // functor), so expect no ID/data.
   RTC_CHECK(!msg->message_id) << "Unexpected message!";
   RTC_CHECK(!msg->pdata) << "Unexpected message!";
-  CheckOnCodecThread();
   if (!inited_) {
     return;
   }
@@ -393,26 +405,23 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
 }
 
-void MediaCodecVideoEncoder::CheckOnCodecThread() {
-  RTC_CHECK(codec_thread_ == ThreadManager::Instance()->CurrentThread())
-      << "Running on wrong thread!";
-}
-
-void MediaCodecVideoEncoder::ResetCodec() {
-  ALOGE << "ResetCodec";
-  if (Release() != WEBRTC_VIDEO_CODEC_OK ||
-      codec_thread_->Invoke<int32_t>(Bind(
-          &MediaCodecVideoEncoder::InitEncodeOnCodecThread, this,
-          width_, height_, 0, 0)) != WEBRTC_VIDEO_CODEC_OK) {
+bool MediaCodecVideoEncoder::ResetCodecOnCodecThread() {
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+  ALOGE << "ResetOnCodecThread";
+  if (ReleaseOnCodecThread() != WEBRTC_VIDEO_CODEC_OK ||
+      InitEncodeOnCodecThread(width_, height_, 0, 0)
+          != WEBRTC_VIDEO_CODEC_OK) {
     // TODO(fischman): wouldn't it be nice if there was a way to gracefully
     // degrade to a SW encoder at this point?  There isn't one AFAICT :(
     // https://code.google.com/p/webrtc/issues/detail?id=2920
+    return false;
   }
+  return true;
 }
 
 int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
     int width, int height, int kbps, int fps) {
-  CheckOnCodecThread();
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
@@ -449,23 +458,27 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   frame_rtc_times_ms_.clear();
   drop_next_input_frame_ = false;
   picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
+
   // We enforce no extra stride/padding in the format creation step.
   jobject j_video_codec_enum = JavaEnumFromIndex(
       jni, "MediaCodecVideoEncoder$VideoCodecType", codecType_);
+  const bool encode_status = jni->CallBooleanMethod(
+      *j_media_codec_video_encoder_, j_init_encode_method_,
+      j_video_codec_enum, width, height, kbps, fps);
+  if (!encode_status) {
+    ALOGE << "Failed to configure encoder.";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  CHECK_EXCEPTION(jni);
+
   jobjectArray input_buffers = reinterpret_cast<jobjectArray>(
       jni->CallObjectMethod(*j_media_codec_video_encoder_,
-                            j_init_encode_method_,
-                            j_video_codec_enum,
-                            width_,
-                            height_,
-                            kbps,
-                            fps));
+          j_get_input_buffers_method_));
   CHECK_EXCEPTION(jni);
   if (IsNull(jni, input_buffers)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  inited_ = true;
   switch (GetIntField(jni, *j_media_codec_video_encoder_,
       j_color_format_field_)) {
     case COLOR_FormatYUV420Planar:
@@ -494,6 +507,8 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   }
   CHECK_EXCEPTION(jni);
 
+
+  inited_ = true;
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -501,21 +516,22 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
 int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     const webrtc::VideoFrame& frame,
     const std::vector<webrtc::FrameType>* frame_types) {
-  CheckOnCodecThread();
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
+
   frames_received_++;
   if (!DeliverPendingOutputs(jni)) {
-    ResetCodec();
-    // Continue as if everything's fine.
+    if (!ResetCodecOnCodecThread())
+      return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
   if (drop_next_input_frame_) {
-    ALOGV("Encoder drop frame - failed callback.");
+    ALOGW << "Encoder drop frame - failed callback.";
     drop_next_input_frame_ = false;
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -528,13 +544,9 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   const VideoFrame& input_frame =
       scale_ ? quality_scaler_.GetScaledFrame(frame) : frame;
 
-  if (input_frame.width() != width_ || input_frame.height() != height_) {
-    ALOGD << "Frame resolution change from " << width_ << " x " << height_ <<
-        " to " << input_frame.width() << " x " << input_frame.height();
-    width_ = input_frame.width();
-    height_ = input_frame.height();
-    ResetCodec();
-    return WEBRTC_VIDEO_CODEC_OK;
+  if (!MaybeReconfigureEncoderOnCodecThread(input_frame)) {
+    ALOGE << "Failed to reconfigure encoder.";
+    return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
   // Check if we accumulated too many frames in encoder input buffers
@@ -553,36 +565,23 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   }
 
   int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_encoder_,
-                                                j_dequeue_input_buffer_method_);
+      j_dequeue_input_buffer_method_);
   CHECK_EXCEPTION(jni);
   if (j_input_buffer_index == -1) {
     // Video codec falls behind - no input buffer available.
-    ALOGV("Encoder drop frame - no input buffers available");
+    ALOGW << "Encoder drop frame - no input buffers available";
     frames_dropped_++;
     // Report dropped frame to quality_scaler_.
     OnDroppedFrame();
     return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
   }
   if (j_input_buffer_index == -2) {
-    ResetCodec();
+    ResetCodecOnCodecThread();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  ALOGV("Encoder frame in # %d. TS: %lld. Q: %d",
-      frames_received_ - 1, current_timestamp_us_ / 1000, frames_in_queue_);
-
-  jobject j_input_buffer = input_buffers_[j_input_buffer_index];
-  uint8_t* yuv_buffer =
-      reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_input_buffer));
-  CHECK_EXCEPTION(jni);
-  RTC_CHECK(yuv_buffer) << "Indirect buffer??";
-  RTC_CHECK(!libyuv::ConvertFromI420(
-      input_frame.buffer(webrtc::kYPlane), input_frame.stride(webrtc::kYPlane),
-      input_frame.buffer(webrtc::kUPlane), input_frame.stride(webrtc::kUPlane),
-      input_frame.buffer(webrtc::kVPlane), input_frame.stride(webrtc::kVPlane),
-      yuv_buffer, width_, width_, height_, encoder_fourcc_))
-      << "ConvertFromI420 failed";
-  last_input_timestamp_ms_ = current_timestamp_us_ / 1000;
+  last_input_timestamp_ms_ =
+      current_timestamp_us_ / rtc::kNumMicrosecsPerMillisec;
   frames_in_queue_++;
 
   // Save input image timestamps for later output
@@ -590,27 +589,77 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   render_times_ms_.push_back(input_frame.render_time_ms());
   frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
 
-  bool key_frame = frame_types->front() != webrtc::kVideoFrameDelta;
+  const bool key_frame = frame_types->front() != webrtc::kVideoFrameDelta;
+  const bool encode_status =
+      EncodeByteBufferOnCodecThread(jni, key_frame, input_frame,
+          j_input_buffer_index);
+
+  current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+
+  if (!encode_status || !DeliverPendingOutputs(jni)) {
+    ALOGE << "Failed deliver pending outputs.";
+    ResetCodecOnCodecThread();
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  return WEBRTC_VIDEO_CODEC_OK;
+}
+
+bool MediaCodecVideoEncoder::MaybeReconfigureEncoderOnCodecThread(
+    const webrtc::VideoFrame& frame) {
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+
+  const bool reconfigure_due_to_size =
+      frame.width() != width_ || frame.height() != height_;
+
+  if (reconfigure_due_to_size) {
+    ALOGD << "Reconfigure encoder due to frame resolution change from "
+        << width_ << " x " << height_ << " to " << frame.width() << " x "
+        << frame.height();
+    width_ = frame.width();
+    height_ = frame.height();
+  }
+
+  if (!reconfigure_due_to_size)
+    return true;
+
+  ReleaseOnCodecThread();
+
+  return InitEncodeOnCodecThread(width_, height_, 0, 0) ==
+      WEBRTC_VIDEO_CODEC_OK;
+}
+
+bool MediaCodecVideoEncoder::EncodeByteBufferOnCodecThread(JNIEnv* jni,
+    bool key_frame, const webrtc::VideoFrame& frame, int input_buffer_index) {
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+
+  ALOGV("Encoder frame in # %d. TS: %lld. Q: %d",
+      frames_received_ - 1, current_timestamp_us_ / 1000, frames_in_queue_);
+
+  jobject j_input_buffer = input_buffers_[input_buffer_index];
+  uint8_t* yuv_buffer =
+      reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_input_buffer));
+  CHECK_EXCEPTION(jni);
+  RTC_CHECK(yuv_buffer) << "Indirect buffer??";
+  RTC_CHECK(!libyuv::ConvertFromI420(
+      frame.buffer(webrtc::kYPlane), frame.stride(webrtc::kYPlane),
+      frame.buffer(webrtc::kUPlane), frame.stride(webrtc::kUPlane),
+      frame.buffer(webrtc::kVPlane), frame.stride(webrtc::kVPlane),
+      yuv_buffer, width_, width_, height_, encoder_fourcc_))
+      << "ConvertFromI420 failed";
+
   bool encode_status = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
-                                              j_encode_method_,
+                                              j_encode_buffer_method_,
                                               key_frame,
-                                              j_input_buffer_index,
+                                              input_buffer_index,
                                               yuv_size_,
                                               current_timestamp_us_);
   CHECK_EXCEPTION(jni);
-  current_timestamp_us_ += 1000000 / last_set_fps_;
-
-  if (!encode_status || !DeliverPendingOutputs(jni)) {
-    ResetCodec();
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-
-  return WEBRTC_VIDEO_CODEC_OK;
+  return encode_status;
 }
 
 int32_t MediaCodecVideoEncoder::RegisterEncodeCompleteCallbackOnCodecThread(
     webrtc::EncodedImageCallback* callback) {
-  CheckOnCodecThread();
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   callback_ = callback;
@@ -618,10 +667,10 @@ int32_t MediaCodecVideoEncoder::RegisterEncodeCompleteCallbackOnCodecThread(
 }
 
 int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
-  CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ALOGD << "EncoderReleaseOnCodecThread: Frames received: " <<
       frames_received_ << ". Encoded: " << frames_encoded_ <<
@@ -640,7 +689,7 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
 
 int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
                                                       uint32_t frame_rate) {
-  CheckOnCodecThread();
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   if (last_set_bitrate_kbps_ == new_bit_rate &&
       last_set_fps_ == frame_rate) {
     return WEBRTC_VIDEO_CODEC_OK;
@@ -659,7 +708,7 @@ int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
                                        last_set_fps_);
   CHECK_EXCEPTION(jni);
   if (!ret) {
-    ResetCodec();
+    ResetCodecOnCodecThread();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   return WEBRTC_VIDEO_CODEC_OK;
@@ -691,6 +740,7 @@ jlong MediaCodecVideoEncoder::GetOutputBufferInfoPresentationTimestampUs(
 }
 
 bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   while (true) {
     jobject j_output_buffer_info = jni->CallObjectMethod(
         *j_media_codec_video_encoder_, j_dequeue_output_buffer_method_);
@@ -702,7 +752,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     int output_buffer_index =
         GetOutputBufferInfoIndex(jni, j_output_buffer_info);
     if (output_buffer_index == -1) {
-      ResetCodec();
+      ResetCodecOnCodecThread();
       return false;
     }
 
@@ -829,7 +879,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           ALOGE << "Data:" <<  image->_buffer[0] << " " << image->_buffer[1]
               << " " << image->_buffer[2] << " " << image->_buffer[3]
               << " " << image->_buffer[4] << " " << image->_buffer[5];
-          ResetCodec();
+          ResetCodecOnCodecThread();
           return false;
         }
         scPositions[scPositionsLength] = payload_size;
@@ -852,7 +902,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
                                           output_buffer_index);
     CHECK_EXCEPTION(jni);
     if (!success) {
-      ResetCodec();
+      ResetCodecOnCodecThread();
       return false;
     }
 
