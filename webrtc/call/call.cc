@@ -174,6 +174,7 @@ Call::Call(const Call::Config& config)
       received_audio_bytes_per_sec_(1000, 1),
       received_rtcp_bytes_per_sec_(1000, 1),
       first_rtp_packet_received_ms_(-1) {
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
                 config.bitrate_config.min_bitrate_bps);
@@ -199,8 +200,8 @@ Call::Call(const Call::Config& config)
 }
 
 Call::~Call() {
-  UpdateHistograms();
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+  UpdateHistograms();
   RTC_CHECK(audio_send_ssrcs_.empty());
   RTC_CHECK(video_send_ssrcs_.empty());
   RTC_CHECK(video_send_streams_.empty());
