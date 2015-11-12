@@ -1127,17 +1127,9 @@ bool Connection::dead(uint32_t now) const {
     return false;
   }
 
-  if (receiving_) {
-    // A connection that is receiving is alive.
-    return false;
-  }
-
-  // A connection is alive until it is inactive.
-  return !active();
-
-  // TODO(honghaiz): Move from using the write state to using the receiving
-  // state with something like the following:
-  // return (now > (last_received() + DEAD_CONNECTION_RECEIVE_TIMEOUT));
+  // It is dead if it has not received anything for
+  // DEAD_CONNECTION_RECEIVE_TIMEOUT milliseconds.
+  return (now > (last_received() + DEAD_CONNECTION_RECEIVE_TIMEOUT));
 }
 
 std::string Connection::ToDebugId() const {
@@ -1304,7 +1296,7 @@ void Connection::OnMessage(rtc::Message *pmsg) {
   delete this;
 }
 
-uint32_t Connection::last_received() {
+uint32_t Connection::last_received() const {
   return std::max(last_data_received_,
              std::max(last_ping_received_, last_ping_response_received_));
 }

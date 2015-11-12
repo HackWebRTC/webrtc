@@ -54,6 +54,10 @@ extern const char TCPTYPE_SIMOPEN_STR[];
 // it.
 const uint32_t MIN_CONNECTION_LIFETIME = 10 * 1000;  // 10 seconds.
 
+// A connection will be declared dead if it has not received anything for this
+// long.
+const uint32_t DEAD_CONNECTION_RECEIVE_TIMEOUT = 30 * 1000;  // 30 seconds.
+
 // The timeout duration when a connection does not receive anything.
 const uint32_t WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;  // 2.5 seconds
 
@@ -559,7 +563,7 @@ class Connection : public rtc::MessageHandler,
 
   // Returns the last received time of any data, stun request, or stun
   // response in milliseconds
-  uint32_t last_received();
+  uint32_t last_received() const;
 
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };

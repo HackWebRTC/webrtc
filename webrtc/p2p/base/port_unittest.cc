@@ -1235,6 +1235,51 @@ TEST_F(PortTest, TestSslTcpToSslTcpRelay) {
 }
 */
 
+// Test that a connection will be dead and deleted if
+// i) it has never received anything for MIN_CONNECTION_LIFETIME milliseconds
+//    since it was created, or
+// ii) it has not received anything for DEAD_CONNECTION_RECEIVE_TIMEOUT
+//     milliseconds since last receiving.
+TEST_F(PortTest, TestConnectionDead) {
+  UDPPort* port1 = CreateUdpPort(kLocalAddr1);
+  UDPPort* port2 = CreateUdpPort(kLocalAddr2);
+  TestChannel ch1(port1);
+  TestChannel ch2(port2);
+  // Acquire address.
+  ch1.Start();
+  ch2.Start();
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kTimeout);
+  ASSERT_EQ_WAIT(1, ch2.complete_count(), kTimeout);
+
+  uint32_t before_created = rtc::Time();
+  ch1.CreateConnection(GetCandidate(port2));
+  uint32_t after_created = rtc::Time();
+  Connection* conn = ch1.conn();
+  ASSERT(conn != nullptr);
+  // If the connection has never received anything, it will be dead after
+  // MIN_CONNECTION_LIFETIME
+  conn->UpdateState(before_created + MIN_CONNECTION_LIFETIME - 1);
+  rtc::Thread::Current()->ProcessMessages(100);
+  EXPECT_TRUE(ch1.conn() != nullptr);
+  conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
+  EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kTimeout);
+
+  // Create a connection again and receive a ping.
+  ch1.CreateConnection(GetCandidate(port2));
+  conn = ch1.conn();
+  ASSERT(conn != nullptr);
+  uint32_t before_last_receiving = rtc::Time();
+  conn->ReceivedPing();
+  uint32_t after_last_receiving = rtc::Time();
+  // The connection will be dead after DEAD_CONNECTION_RECEIVE_TIMEOUT
+  conn->UpdateState(
+      before_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT - 1);
+  rtc::Thread::Current()->ProcessMessages(100);
+  EXPECT_TRUE(ch1.conn() != nullptr);
+  conn->UpdateState(after_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT + 1);
+  EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kTimeout);
+}
+
 // This test case verifies standard ICE features in STUN messages. Currently it
 // verifies Message Integrity attribute in STUN messages and username in STUN
 // binding request will have colon (":") between remote and local username.
