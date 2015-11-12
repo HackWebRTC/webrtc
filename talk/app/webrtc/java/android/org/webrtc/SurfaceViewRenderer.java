@@ -465,6 +465,9 @@ public class SurfaceViewRenderer extends SurfaceView
     }
 
     GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight);
+    // TODO(magjed): glClear() shouldn't be necessary since every pixel is covered anyway, but it's
+    // a workaround for bug 5147. Performance will be slightly worse.
+    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
     if (frame.yuvFrame) {
       // Make sure YUV textures are allocated.
       if (yuvTextures == null) {
