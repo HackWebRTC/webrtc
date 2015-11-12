@@ -27,7 +27,6 @@
 
 package org.webrtc;
 
-import android.hardware.Camera;
 import android.os.SystemClock;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
@@ -60,11 +59,11 @@ public class CameraEnumerator implements CameraEnumerationAndroid.Enumerator {
   private List<CaptureFormat> enumerateFormats(int cameraId) {
     Logging.d(TAG, "Get supported formats for camera index " + cameraId + ".");
     final long startTimeMs = SystemClock.elapsedRealtime();
-    final Camera.Parameters parameters;
-    Camera camera = null;
+    final android.hardware.Camera.Parameters parameters;
+    android.hardware.Camera camera = null;
     try {
       Logging.d(TAG, "Opening camera with index " + cameraId);
-      camera = Camera.open(cameraId);
+      camera = android.hardware.Camera.open(cameraId);
       parameters = camera.getParameters();
     } catch (RuntimeException e) {
       Logging.e(TAG, "Open camera failed on camera index " + cameraId, e);
@@ -84,10 +83,10 @@ public class CameraEnumerator implements CameraEnumerationAndroid.Enumerator {
         // getSupportedPreviewFpsRange() returns a sorted list. Take the fps range
         // corresponding to the highest fps.
         final int[] range = listFpsRange.get(listFpsRange.size() - 1);
-        minFps = range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
-        maxFps = range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
+        minFps = range[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
+        maxFps = range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX];
       }
-      for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
+      for (android.hardware.Camera.Size size : parameters.getSupportedPreviewSizes()) {
         formatList.add(new CaptureFormat(size.width, size.height, minFps, maxFps));
       }
     } catch (Exception e) {

@@ -227,6 +227,12 @@
             'libjingle_peerconnection_so',
           ],
           'variables': {
+            # Designate as Chromium code and point to our lint settings to
+            # enable linting of the WebRTC code (this is the only way to make
+            # lint_action invoke the Android linter).
+            'android_manifest_path': '<(webrtc_root)/build/android/AndroidManifest.xml',
+            'suppressions_file': '<(webrtc_root)/build/android/suppressions.xml',
+            'chromium_code': 1,
             'java_in_dir': 'app/webrtc/java',
             'webrtc_base_dir': '<(webrtc_root)/base',
             'webrtc_modules_dir': '<(webrtc_root)/modules',

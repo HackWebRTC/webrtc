@@ -13,6 +13,7 @@ package org.webrtc.voiceengine;
 import java.lang.Thread;
 import java.nio.ByteBuffer;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -90,13 +91,9 @@ class WebRtcAudioTrack {
         assertTrue(sizeInBytes <= byteBuffer.remaining());
         int bytesWritten = 0;
         if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
-          bytesWritten = audioTrack.write(byteBuffer,
-                                          sizeInBytes,
-                                          AudioTrack.WRITE_BLOCKING);
+          bytesWritten = writeOnLollipop(audioTrack, byteBuffer, sizeInBytes);
         } else {
-          bytesWritten = audioTrack.write(byteBuffer.array(),
-                                          byteBuffer.arrayOffset(),
-                                          sizeInBytes);
+          bytesWritten = writePreLollipop(audioTrack, byteBuffer, sizeInBytes);
         }
         if (bytesWritten != sizeInBytes) {
           Logging.e(TAG, "AudioTrack.write failed: " + bytesWritten);
@@ -121,6 +118,15 @@ class WebRtcAudioTrack {
       }
       assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_STOPPED);
       audioTrack.flush();
+    }
+
+    @TargetApi(21)
+    private int writeOnLollipop(AudioTrack audioTrack, ByteBuffer byteBuffer, int sizeInBytes) {
+      return audioTrack.write(byteBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
+    }
+
+    private int writePreLollipop(AudioTrack audioTrack, ByteBuffer byteBuffer, int sizeInBytes) {
+      return audioTrack.write(byteBuffer.array(), byteBuffer.arrayOffset(), sizeInBytes);
     }
 
     public void joinThread() {
@@ -224,14 +230,19 @@ class WebRtcAudioTrack {
   private boolean setStreamVolume(int volume) {
     Logging.d(TAG, "setStreamVolume(" + volume + ")");
     assertTrue(audioManager != null);
-    if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
-      if (audioManager.isVolumeFixed()) {
-        Logging.e(TAG, "The device implements a fixed volume policy.");
-        return false;
-      }
+    if (isVolumeFixed()) {
+      Logging.e(TAG, "The device implements a fixed volume policy.");
+      return false;
     }
     audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, volume, 0);
     return true;
+  }
+
+  @TargetApi(21)
+  private boolean isVolumeFixed() {
+    if (!WebRtcAudioUtils.runningOnLollipopOrHigher())
+      return false;
+    return audioManager.isVolumeFixed();
   }
 
   /** Get current volume level for a phone call audio stream. */

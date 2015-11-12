@@ -29,8 +29,6 @@ package org.webrtc;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
-import android.hardware.Camera.PreviewCallback;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
@@ -68,20 +66,21 @@ import javax.microedition.khronos.egl.EGL10;
 // camera thread. The internal *OnCameraThread() methods must check |camera| for null to check if
 // the camera has been stopped.
 @SuppressWarnings("deprecation")
-public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallback,
+public class VideoCapturerAndroid extends VideoCapturer implements
+    android.hardware.Camera.PreviewCallback,
     SurfaceTextureHelper.OnTextureFrameAvailableListener {
   private final static String TAG = "VideoCapturerAndroid";
   private final static int CAMERA_OBSERVER_PERIOD_MS = 2000;
   private final static int CAMERA_FREEZE_REPORT_TIMOUT_MS = 6000;
 
-  private Camera camera;  // Only non-null while capturing.
+  private android.hardware.Camera camera;  // Only non-null while capturing.
   private HandlerThread cameraThread;
   private final Handler cameraThreadHandler;
   private Context applicationContext;
   // Synchronization lock for |id|.
   private final Object cameraIdLock = new Object();
   private int id;
-  private Camera.CameraInfo info;
+  private android.hardware.Camera.CameraInfo info;
   private final FramePool videoBuffers;
   private final CameraStatistics cameraStatistics;
   // Remember the requested format in case we want to switch cameras.
@@ -108,10 +107,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private int openCameraAttempts;
 
   // Camera error callback.
-  private final Camera.ErrorCallback cameraErrorCallback =
-      new Camera.ErrorCallback() {
+  private final android.hardware.Camera.ErrorCallback cameraErrorCallback =
+      new android.hardware.Camera.ErrorCallback() {
     @Override
-    public void onError(int error, Camera camera) {
+    public void onError(int error, android.hardware.Camera camera) {
       String errorMessage;
       if (error == android.hardware.Camera.CAMERA_ERROR_SERVER_DIED) {
         errorMessage = "Camera server died!";
@@ -261,7 +260,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // Switch camera to the next valid camera id. This can only be called while
   // the camera is running.
   public void switchCamera(final CameraSwitchHandler handler) {
-    if (Camera.getNumberOfCameras() < 2) {
+    if (android.hardware.Camera.getNumberOfCameras() < 2) {
       if (handler != null) {
         handler.onCameraSwitchError("No camera to switch to.");
       }
@@ -292,7 +291,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           pendingCameraSwitch = false;
         }
         if (handler != null) {
-          handler.onCameraSwitchDone(info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT);
+          handler.onCameraSwitchDone(
+              info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT);
         }
       }
     });
@@ -375,13 +375,13 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // found. If |deviceName| is empty, the first available device is used.
   private static int lookupDeviceName(String deviceName) {
     Logging.d(TAG, "lookupDeviceName: " + deviceName);
-    if (deviceName == null || Camera.getNumberOfCameras() == 0) {
+    if (deviceName == null || android.hardware.Camera.getNumberOfCameras() == 0) {
       return -1;
     }
     if (deviceName.isEmpty()) {
       return 0;
     }
-    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
       if (deviceName.equals(CameraEnumerationAndroid.getDeviceName(i))) {
         return i;
       }
@@ -461,9 +461,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           if (eventsHandler != null) {
             eventsHandler.onCameraOpening(id);
           }
-          camera = Camera.open(id);
-          info = new Camera.CameraInfo();
-          Camera.getCameraInfo(id, info);
+          camera = android.hardware.Camera.open(id);
+          info = new android.hardware.Camera.CameraInfo();
+          android.hardware.Camera.getCameraInfo(id, info);
         }
       } catch (RuntimeException e) {
         openCameraAttempts++;
@@ -525,14 +525,15 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     requestedFramerate = framerate;
 
     // Find closest supported format for |width| x |height| @ |framerate|.
-    final Camera.Parameters parameters = camera.getParameters();
+    final android.hardware.Camera.Parameters parameters = camera.getParameters();
     final int[] range = CameraEnumerationAndroid.getFramerateRange(parameters, framerate * 1000);
-    final Camera.Size previewSize = CameraEnumerationAndroid.getClosestSupportedSize(
-        parameters.getSupportedPreviewSizes(), width, height);
+    final android.hardware.Camera.Size previewSize =
+        CameraEnumerationAndroid.getClosestSupportedSize(
+            parameters.getSupportedPreviewSizes(), width, height);
     final CaptureFormat captureFormat = new CaptureFormat(
         previewSize.width, previewSize.height,
-        range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
-        range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+        range[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
+        range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
 
     // Check if we are already using this capture format, then we don't need to do anything.
     if (captureFormat.equals(this.captureFormat)) {
@@ -554,8 +555,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     parameters.setPreviewFormat(captureFormat.imageFormat);
     // Picture size is for taking pictures and not for preview/video, but we need to set it anyway
     // as a workaround for an aspect ratio problem on Nexus 7.
-    final Camera.Size pictureSize = CameraEnumerationAndroid.getClosestSupportedSize(
-        parameters.getSupportedPictureSizes(), width, height);
+    final android.hardware.Camera.Size pictureSize =
+        CameraEnumerationAndroid.getClosestSupportedSize(
+            parameters.getSupportedPictureSizes(), width, height);
     parameters.setPictureSize(pictureSize.width, pictureSize.height);
 
     // Temporarily stop preview if it's already running.
@@ -572,8 +574,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     this.captureFormat = captureFormat;
 
     List<String> focusModes = parameters.getSupportedFocusModes();
-    if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-      parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+    if (focusModes.contains(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+      parameters.setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
     }
 
     camera.setParameters(parameters);
@@ -637,7 +639,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     Logging.d(TAG, "switchCameraOnCameraThread");
     stopCaptureOnCameraThread();
     synchronized (cameraIdLock) {
-      id = (id + 1) % Camera.getNumberOfCameras();
+      id = (id + 1) % android.hardware.Camera.getNumberOfCameras();
     }
     dropNextFrame = true;
     startCaptureOnCameraThread(requestedWidth, requestedHeight, requestedFramerate, frameObserver,
@@ -699,7 +701,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   private int getFrameOrientation() {
     int rotation = getDeviceOrientation();
-    if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+    if (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK) {
       rotation = 360 - rotation;
     }
     return (info.orientation + rotation) % 360;
@@ -707,7 +709,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // Called on cameraThread so must not "synchronized".
   @Override
-  public void onPreviewFrame(byte[] data, Camera callbackCamera) {
+  public void onPreviewFrame(byte[] data, android.hardware.Camera callbackCamera) {
     checkIsOnCameraThread();
     if (camera == null) {
       return;
@@ -752,7 +754,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     int rotation = getFrameOrientation();
-    if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+    if (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT) {
       // Undo the mirror that the OS "helps" us with.
       // http://developer.android.com/reference/android/hardware/Camera.html#setDisplayOrientation(int)
       transformMatrix =
@@ -784,7 +786,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     // keeping the buffers alive and for finding the corresponding ByteBuffer given a timestamp.
     private final Map<Long, ByteBuffer> pendingBuffers = new HashMap<Long, ByteBuffer>();
     private int frameSize = 0;
-    private Camera camera;
+    private android.hardware.Camera camera;
 
     public FramePool(Thread thread) {
       this.thread = thread;
@@ -797,7 +799,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     // Discards previous queued buffers and adds new callback buffers to camera.
-    public void queueCameraBuffers(int frameSize, Camera camera) {
+    public void queueCameraBuffers(int frameSize, android.hardware.Camera camera) {
       checkIsOnValidThread();
       this.camera = camera;
       this.frameSize = frameSize;

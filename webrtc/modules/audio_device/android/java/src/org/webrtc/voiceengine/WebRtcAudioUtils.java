@@ -144,6 +144,11 @@ public final class WebRtcAudioUtils {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1;
   }
 
+  public static boolean runningOnJellyBeanMR2OrHigher() {
+    // July 24, 2013: Android 4.3. API Level 18.
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2;
+  }
+
   public static boolean runningOnLollipopOrHigher() {
     // API Level 21.
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;

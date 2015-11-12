@@ -29,7 +29,6 @@ package org.webrtc;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
-import android.hardware.Camera;
 import android.graphics.ImageFormat;
 
 import org.json.JSONArray;
@@ -127,8 +126,8 @@ public class CameraEnumerationAndroid {
 
   // Returns device names that can be used to create a new VideoCapturerAndroid.
   public static String[] getDeviceNames() {
-    String[] names = new String[Camera.getNumberOfCameras()];
-    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+    String[] names = new String[android.hardware.Camera.getNumberOfCameras()];
+    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
       names[i] = getDeviceName(i);
     }
     return names;
@@ -136,22 +135,22 @@ public class CameraEnumerationAndroid {
 
   // Returns number of cameras on device.
   public static int getDeviceCount() {
-    return Camera.getNumberOfCameras();
+    return android.hardware.Camera.getNumberOfCameras();
   }
 
   // Returns the name of the camera with camera index. Returns null if the
   // camera can not be used.
   public static String getDeviceName(int index) {
-    Camera.CameraInfo info = new Camera.CameraInfo();
+    android.hardware.Camera.CameraInfo info = new android.hardware.Camera.CameraInfo();
     try {
-      Camera.getCameraInfo(index, info);
+      android.hardware.Camera.getCameraInfo(index, info);
     } catch (Exception e) {
       Logging.e(TAG, "getCameraInfo failed on index " + index,e);
       return null;
     }
 
     String facing =
-        (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) ? "front" : "back";
+        (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT) ? "front" : "back";
     return "Camera " + index + ", Facing " + facing
         + ", Orientation " + info.orientation;
   }
@@ -159,13 +158,13 @@ public class CameraEnumerationAndroid {
   // Returns the name of the front facing camera. Returns null if the
   // camera can not be used or does not exist.
   public static String getNameOfFrontFacingDevice() {
-    return getNameOfDevice(Camera.CameraInfo.CAMERA_FACING_FRONT);
+    return getNameOfDevice(android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT);
   }
 
   // Returns the name of the back facing camera. Returns null if the
   // camera can not be used or does not exist.
   public static String getNameOfBackFacingDevice() {
-    return getNameOfDevice(Camera.CameraInfo.CAMERA_FACING_BACK);
+    return getNameOfDevice(android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK);
   }
 
   public static String getSupportedFormatsAsJson(int id) throws JSONException {
@@ -194,7 +193,8 @@ public class CameraEnumerationAndroid {
     }
   }
 
-  public static int[] getFramerateRange(Camera.Parameters parameters, final int framerate) {
+  public static int[] getFramerateRange(android.hardware.Camera.Parameters parameters,
+      final int framerate) {
     List<int[]> listFpsRange = parameters.getSupportedPreviewFpsRange();
     if (listFpsRange.isEmpty()) {
       Logging.w(TAG, "No supported preview fps range");
@@ -203,27 +203,28 @@ public class CameraEnumerationAndroid {
     return Collections.min(listFpsRange,
         new ClosestComparator<int[]>() {
           @Override int diff(int[] range) {
-            return abs(framerate - range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX])
-                + abs(framerate - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+            return abs(framerate - range[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX])
+                + abs(framerate - range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
           }
      });
   }
 
-  public static Camera.Size getClosestSupportedSize(
-      List<Camera.Size> supportedSizes, final int requestedWidth, final int requestedHeight) {
+  public static android.hardware.Camera.Size getClosestSupportedSize(
+      List<android.hardware.Camera.Size> supportedSizes, final int requestedWidth,
+      final int requestedHeight) {
     return Collections.min(supportedSizes,
-        new ClosestComparator<Camera.Size>() {
-          @Override int diff(Camera.Size size) {
+        new ClosestComparator<android.hardware.Camera.Size>() {
+          @Override int diff(android.hardware.Camera.Size size) {
             return abs(requestedWidth - size.width) + abs(requestedHeight - size.height);
           }
      });
   }
 
   private static String getNameOfDevice(int facing) {
-    final Camera.CameraInfo info = new Camera.CameraInfo();
-    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+    final android.hardware.Camera.CameraInfo info = new android.hardware.Camera.CameraInfo();
+    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
       try {
-        Camera.getCameraInfo(i, info);
+        android.hardware.Camera.getCameraInfo(i, info);
         if (info.facing == facing) {
           return getDeviceName(i);
         }

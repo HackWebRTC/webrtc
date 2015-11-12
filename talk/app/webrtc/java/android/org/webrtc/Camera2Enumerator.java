@@ -27,7 +27,9 @@
 
 package org.webrtc;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -45,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@TargetApi(21)
 public class Camera2Enumerator implements CameraEnumerationAndroid.Enumerator {
   private final static String TAG = "Camera2Enumerator";
   private final static double NANO_SECONDS_PER_SECOND = 1.0e9;

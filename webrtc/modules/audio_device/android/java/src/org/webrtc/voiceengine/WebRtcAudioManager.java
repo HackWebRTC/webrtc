@@ -10,6 +10,7 @@
 
 package org.webrtc.voiceengine;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
@@ -189,20 +190,26 @@ public class WebRtcAudioManager {
     // No overrides available. Deliver best possible estimate based on default
     // Android AudioManager APIs.
     final int sampleRateHz;
-    if (!WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {
-      sampleRateHz = WebRtcAudioUtils.getDefaultSampleRateHz();
+    if (WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {
+      sampleRateHz = getSampleRateOnJellyBeanMR10OrHigher();
     } else {
-      String sampleRateString = audioManager.getProperty(
-          AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
-      sampleRateHz = (sampleRateString == null)
-          ? WebRtcAudioUtils.getDefaultSampleRateHz()
-          : Integer.parseInt(sampleRateString);
+      sampleRateHz = WebRtcAudioUtils.getDefaultSampleRateHz();
     }
     Logging.d(TAG, "Sample rate is set to " + sampleRateHz + " Hz");
     return sampleRateHz;
   }
 
+  @TargetApi(17)
+  private int getSampleRateOnJellyBeanMR10OrHigher() {
+    String sampleRateString = audioManager.getProperty(
+        AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+    return (sampleRateString == null)
+        ? WebRtcAudioUtils.getDefaultSampleRateHz()
+        : Integer.parseInt(sampleRateString);
+  }
+
   // Returns the native output buffer size for low-latency output streams.
+  @TargetApi(17)
   private int getLowLatencyOutputFramesPerBuffer() {
     assertTrue(isLowLatencyOutputSupported());
     if (!WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {

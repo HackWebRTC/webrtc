@@ -27,6 +27,7 @@
 
 package org.webrtc;
 
+import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -48,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.
+@SuppressWarnings("deprecation")
 public class MediaCodecVideoDecoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this

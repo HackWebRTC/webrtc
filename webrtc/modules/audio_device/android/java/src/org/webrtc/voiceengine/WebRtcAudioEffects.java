@@ -10,6 +10,7 @@
 
 package org.webrtc.voiceengine;
 
+import android.annotation.TargetApi;
 import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AudioEffect;
 import android.media.audiofx.AudioEffect.Descriptor;
@@ -119,6 +120,7 @@ class WebRtcAudioEffects {
 
   // Returns true if the platform AEC should be excluded based on its UUID.
   // AudioEffect.queryEffects() can throw IllegalStateException.
+  @TargetApi(18)
   private static boolean isAcousticEchoCancelerExcludedByUUID() {
     for (Descriptor d : AudioEffect.queryEffects()) {
       if (d.type.equals(AudioEffect.EFFECT_TYPE_AEC) &&
@@ -131,6 +133,7 @@ class WebRtcAudioEffects {
 
   // Returns true if the platform AGC should be excluded based on its UUID.
   // AudioEffect.queryEffects() can throw IllegalStateException.
+  @TargetApi(18)
   private static boolean isAutomaticGainControlExcludedByUUID() {
     for (Descriptor d : AudioEffect.queryEffects()) {
       if (d.type.equals(AudioEffect.EFFECT_TYPE_AGC) &&
@@ -143,6 +146,7 @@ class WebRtcAudioEffects {
 
   // Returns true if the platform NS should be excluded based on its UUID.
   // AudioEffect.queryEffects() can throw IllegalStateException.
+  @TargetApi(18)
   private static boolean isNoiseSuppressorExcludedByUUID() {
     for (Descriptor d : AudioEffect.queryEffects()) {
       if (d.type.equals(AudioEffect.EFFECT_TYPE_NS) &&
@@ -368,7 +372,11 @@ class WebRtcAudioEffects {
   // AudioEffect.Descriptor array that are actually not available on the device.
   // As an example: Samsung Galaxy S6 includes an AGC in the descriptor but
   // AutomaticGainControl.isAvailable() returns false.
+  @TargetApi(18)
   private boolean effectTypeIsVoIP(UUID type) {
+    if (!WebRtcAudioUtils.runningOnJellyBeanMR2OrHigher())
+      return false;
+
     return (AudioEffect.EFFECT_TYPE_AEC.equals(type)
         && isAcousticEchoCancelerSupported())
         || (AudioEffect.EFFECT_TYPE_AGC.equals(type)
