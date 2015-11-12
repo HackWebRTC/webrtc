@@ -198,7 +198,8 @@ AudioDeviceIOS::AudioDeviceIOS()
       initialized_(false),
       rec_is_initialized_(false),
       play_is_initialized_(false),
-      audio_interruption_observer_(nullptr) {
+      audio_interruption_observer_(nullptr),
+      route_change_observer_(nullptr) {
   LOGI() << "ctor" << ios::GetCurrentThreadDescription();
 }
 
