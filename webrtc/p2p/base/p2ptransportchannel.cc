@@ -984,12 +984,8 @@ void P2PTransportChannel::SortConnections() {
 
   // Now update the writable state of the channel with the information we have
   // so far.
-  if (best_connection_ && best_connection_->writable()) {
-    HandleWritable();
-  } else if (all_connections_timedout) {
+  if (all_connections_timedout) {
     HandleAllTimedOut();
-  } else {
-    HandleNotWritable();
   }
 
   // Update the state of this channel.  This method is called whenever the
@@ -1055,12 +1051,8 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
 }
 
 void P2PTransportChannel::UpdateChannelState() {
-  // The Handle* functions already set the writable state.  We'll just double-
-  // check it here.
   bool writable = best_connection_ && best_connection_->writable();
-  ASSERT(writable == this->writable());
-  if (writable != this->writable())
-    LOG(LS_ERROR) << "UpdateChannelState: writable state mismatch";
+  set_writable(writable);
 
   bool receiving = false;
   for (const Connection* connection : connections_) {
@@ -1088,22 +1080,6 @@ void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
       break;
     }
     session->StopGettingPorts();
-  }
-}
-
-// Go into the writable state and notify upper layer if it was not before.
-void P2PTransportChannel::HandleWritable() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (!writable()) {
-    set_writable(true);
-  }
-}
-
-// Notify upper layer about channel not writable state, if it was before.
-void P2PTransportChannel::HandleNotWritable() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (writable()) {
-    set_writable(false);
   }
 }
 

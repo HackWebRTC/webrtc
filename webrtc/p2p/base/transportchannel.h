@@ -154,9 +154,6 @@ class TransportChannel : public sigslot::has_slots<> {
   std::string ToString() const;
 
  protected:
-  // TODO(honghaiz): Remove this once chromium's unit tests no longer call it.
-  void set_readable(bool readable) { set_receiving(readable); }
-
   // Sets the writable state, signaling if necessary.
   void set_writable(bool writable);
 

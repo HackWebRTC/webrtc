@@ -178,8 +178,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   void SortConnections();
   void SwitchBestConnectionTo(Connection* conn);
   void UpdateChannelState();
-  void HandleWritable();
-  void HandleNotWritable();
   void HandleAllTimedOut();
   void MaybeStopPortAllocatorSessions();
 
