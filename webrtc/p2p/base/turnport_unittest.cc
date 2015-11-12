@@ -715,6 +715,28 @@ TEST_F(TurnPortTest, TestTurnConnectionUsingOTUNonce) {
   TestTurnConnection();
 }
 
+// Test that CreatePermissionRequest will be scheduled after the success
+// of the first create permission request.
+TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+
+  ASSERT_TRUE(turn_port_ != NULL);
+  turn_port_->PrepareAddress();
+  ASSERT_TRUE_WAIT(turn_ready_, kTimeout);
+  CreateUdpPort();
+  udp_port_->PrepareAddress();
+  ASSERT_TRUE_WAIT(udp_ready_, kTimeout);
+
+  Connection* conn = turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                                                  Port::ORIGIN_MESSAGE);
+  ASSERT_TRUE(conn != NULL);
+  ASSERT_TRUE_WAIT(turn_create_permission_success_, kTimeout);
+  turn_create_permission_success_ = false;
+  // A create-permission-request should be pending.
+  turn_port_->FlushRequests();
+  ASSERT_TRUE_WAIT(turn_create_permission_success_, kTimeout);
+}
+
 // Do a TURN allocation, establish a UDP connection, and send some data.
 TEST_F(TurnPortTest, TestTurnSendDataTurnUdpToUdp) {
   // Create ports and prepare addresses.

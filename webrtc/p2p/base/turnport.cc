@@ -141,7 +141,7 @@ class TurnEntry : public sigslot::has_slots<> {
   BindState state() const { return state_; }
 
   // Helper methods to send permission and channel bind requests.
-  void SendCreatePermissionRequest();
+  void SendCreatePermissionRequest(int delay);
   void SendChannelBindRequest(int delay);
   // Sends a packet to the given destination address.
   // This will wrap the packet in STUN if necessary.
@@ -1289,12 +1289,12 @@ TurnEntry::TurnEntry(TurnPort* port, int channel_id,
       ext_addr_(ext_addr),
       state_(STATE_UNBOUND) {
   // Creating permission for |ext_addr_|.
-  SendCreatePermissionRequest();
+  SendCreatePermissionRequest(0);
 }
 
-void TurnEntry::SendCreatePermissionRequest() {
-  port_->SendRequest(new TurnCreatePermissionRequest(
-      port_, this, ext_addr_), 0);
+void TurnEntry::SendCreatePermissionRequest(int delay) {
+  port_->SendRequest(new TurnCreatePermissionRequest(port_, this, ext_addr_),
+                     delay);
 }
 
 void TurnEntry::SendChannelBindRequest(int delay) {
@@ -1337,12 +1337,23 @@ void TurnEntry::OnCreatePermissionSuccess() {
                         << " succeeded";
   // For success result code will be 0.
   port_->SignalCreatePermissionResult(port_, ext_addr_, 0);
+
+  // If |state_| is STATE_BOUND, the permission will be refreshed
+  // by ChannelBindRequest.
+  if (state_ != STATE_BOUND) {
+    // Refresh the permission request about 1 minute before the permission
+    // times out.
+    int delay = TURN_PERMISSION_TIMEOUT - 60000;
+    SendCreatePermissionRequest(delay);
+    LOG_J(LS_INFO, port_) << "Scheduled create-permission-request in "
+                          << delay << "ms.";
+  }
 }
 
 void TurnEntry::OnCreatePermissionError(StunMessage* response, int code) {
   if (code == STUN_ERROR_STALE_NONCE) {
     if (port_->UpdateNonce(response)) {
-      SendCreatePermissionRequest();
+      SendCreatePermissionRequest(0);
     }
   } else {
     // Send signal with error code.

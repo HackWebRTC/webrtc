@@ -32,6 +32,9 @@ class StunRequestManager {
   void Send(StunRequest* request);
   void SendDelayed(StunRequest* request, int delay);
 
+  // Sends all pending requests right away. Only for testing.
+  void Flush();
+
   // Removes a stun request that was added previously.  This will happen
   // automatically when a request succeeds, fails, or times out.
   void Remove(StunRequest* request);

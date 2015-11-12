@@ -132,6 +132,8 @@ class TurnPort : public Port {
   // This signal is only for testing purpose.
   sigslot::signal3<TurnPort*, const rtc::SocketAddress&, int>
       SignalCreatePermissionResult;
+  // For testing only.
+  void FlushRequests() { request_manager_.Flush(); }
 
  protected:
   TurnPort(rtc::Thread* thread,
