@@ -13,7 +13,7 @@
 
 #include <sys/shm.h>
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

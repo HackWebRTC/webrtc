@@ -9,7 +9,7 @@
  */
 
 #import "webrtc/modules/video_capture/mac/qtkit/video_capture_qtkit_info_objc.h"
-#include "webrtc/modules/video_capture/include/video_capture.h"
+#include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
 #include "webrtc/system_wrappers/include/trace.h"
 

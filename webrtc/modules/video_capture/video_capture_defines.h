@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_DEFINES_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_DEFINES_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
 
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
@@ -115,4 +115,4 @@ protected:
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_DEFINES_H_
+#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_

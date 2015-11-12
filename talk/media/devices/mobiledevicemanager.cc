@@ -27,7 +27,7 @@
 
 #include "talk/media/devices/devicemanager.h"
 #include "webrtc/base/arraysize.h"
-#include "webrtc/modules/video_capture/include/video_capture_factory.h"
+#include "webrtc/modules/video_capture/video_capture_factory.h"
 
 namespace cricket {
 

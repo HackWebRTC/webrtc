@@ -10,7 +10,7 @@
 
 #include "webrtc/test/vcm_capturer.h"
 
-#include "webrtc/modules/video_capture/include/video_capture_factory.h"
+#include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {

@@ -14,7 +14,7 @@
 #include <map>
 
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/modules/video_render/video_render.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;

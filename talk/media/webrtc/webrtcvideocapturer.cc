@@ -44,7 +44,7 @@
 #include "webrtc/base/timeutils.h"
 
 #include "webrtc/base/win32.h"  // Need this to #include the impl files.
-#include "webrtc/modules/video_capture/include/video_capture_factory.h"
+#include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace cricket {

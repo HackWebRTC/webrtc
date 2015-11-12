@@ -13,7 +13,7 @@
 #include "webrtc/common_video/interface/incoming_video_stream.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_render/i_video_render.h"
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/modules/video_render/video_render_impl.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"

@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/modules/video_capture/include/video_capture.h"
+#include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_delay.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 

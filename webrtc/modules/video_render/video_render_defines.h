@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_DEFINES_H_
-#define WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_DEFINES_H_
+#ifndef WEBRTC_MODULES_VIDEO_RENDER_VIDEO_RENDER_DEFINES_H_
+#define WEBRTC_MODULES_VIDEO_RENDER_VIDEO_RENDER_DEFINES_H_
 
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/interface/incoming_video_stream.h"
@@ -67,4 +67,4 @@ enum StretchMode
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_DEFINES_H_
+#endif  // WEBRTC_MODULES_VIDEO_RENDER_VIDEO_RENDER_DEFINES_H_

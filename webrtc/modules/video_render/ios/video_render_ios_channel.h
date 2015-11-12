@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_IOS_VIDEO_RENDER_IOS_CHANNEL_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_IOS_VIDEO_RENDER_IOS_CHANNEL_H_
 
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/modules/video_render/ios/video_render_ios_view.h"
 
 namespace webrtc {

@@ -13,7 +13,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_capture/include/video_capture.h"
+#include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/test/video_capturer.h"
 
 namespace webrtc {

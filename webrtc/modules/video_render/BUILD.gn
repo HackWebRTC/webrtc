@@ -13,8 +13,8 @@ source_set("video_render_module") {
     "external/video_render_external_impl.cc",
     "external/video_render_external_impl.h",
     "i_video_render.h",
-    "include/video_render.h",
-    "include/video_render_defines.h",
+    "video_render.h",
+    "video_render_defines.h",
     "video_render_impl.h",
   ]
 

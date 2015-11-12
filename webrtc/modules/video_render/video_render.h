@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_H_
-#define WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_H_
+#ifndef WEBRTC_MODULES_VIDEO_RENDER_VIDEO_RENDER_H_
+#define WEBRTC_MODULES_VIDEO_RENDER_VIDEO_RENDER_H_
 
 /*
  * video_render.h
@@ -21,7 +21,7 @@
  */
 
 #include "webrtc/modules/include/module.h"
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 
 namespace webrtc {
 
@@ -265,4 +265,4 @@ public:
                                     const uint32_t timeout) = 0;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_H_
+#endif  // WEBRTC_MODULES_VIDEO_RENDER_VIDEO_RENDER_H_

@@ -13,7 +13,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 
-#include "webrtc/modules/video_capture/include/video_capture_defines.h"
+#include "webrtc/modules/video_capture/video_capture_defines.h"
 
 @interface DeviceInfoIosObjC : NSObject
 + (int)captureDeviceCount;

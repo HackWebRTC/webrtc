@@ -23,7 +23,7 @@
 #include <map>
 
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 
 #import "webrtc/modules/video_render/mac/cocoa_full_screen_window.h"
 #import "webrtc/modules/video_render/mac/cocoa_render_view.h"
