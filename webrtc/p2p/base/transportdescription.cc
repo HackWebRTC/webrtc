@@ -11,7 +11,6 @@
 #include "webrtc/p2p/base/transportdescription.h"
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/base/basicdefs.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/p2p/base/constants.h"
 

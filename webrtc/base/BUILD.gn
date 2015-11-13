@@ -145,7 +145,6 @@ static_library("rtc_base_approved") {
 
   if (!build_with_chromium) {
     sources += [
-      "basictypes.h",
       "constructormagic.h",
       "logging.cc",
       "logging.h",

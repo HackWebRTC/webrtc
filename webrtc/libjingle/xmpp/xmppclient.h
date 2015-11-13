@@ -16,7 +16,6 @@
 #include "webrtc/libjingle/xmpp/xmppclientsettings.h"
 #include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/libjingle/xmpp/xmpptask.h"
-#include "webrtc/base/basicdefs.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/task.h"
 

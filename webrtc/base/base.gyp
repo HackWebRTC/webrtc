@@ -31,7 +31,6 @@
       'sources': [
         'array_view.h',
         'atomicops.h',
-        'basictypes.h',
         'bitbuffer.cc',
         'bitbuffer.h',
         'buffer.cc',

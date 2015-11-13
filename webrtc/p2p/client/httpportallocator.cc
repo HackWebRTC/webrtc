@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <map>
 
-#include "webrtc/base/basicdefs.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/httpcommon.h"

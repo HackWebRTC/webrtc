@@ -16,7 +16,6 @@
 #include "webrtc/libjingle/xmllite/xmlconstants.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmpp/jid.h"
-#include "webrtc/base/basicdefs.h"
 
 namespace buzz {
 

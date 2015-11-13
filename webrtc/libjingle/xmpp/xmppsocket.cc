@@ -15,7 +15,6 @@
 #endif
 
 #include <errno.h>
-#include "webrtc/base/basicdefs.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #ifdef FEATURE_ENABLE_SSL
