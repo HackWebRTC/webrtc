@@ -38,6 +38,7 @@ import javax.microedition.khronos.opengles.GL10;
 import android.annotation.SuppressLint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
@@ -240,15 +241,29 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         }
 
         if (isNewFrame) {
-          rotatedSamplingMatrix = RendererCommon.rotateTextureMatrix(
-              pendingFrame.samplingMatrix, pendingFrame.rotationDegree);
           if (pendingFrame.yuvFrame) {
             rendererType = RendererType.RENDERER_YUV;
             drawer.uploadYuvData(yuvTextures, pendingFrame.width, pendingFrame.height,
                 pendingFrame.yuvStrides, pendingFrame.yuvPlanes);
+            // The convention in WebRTC is that the first element in a ByteBuffer corresponds to the
+            // top-left corner of the image, but in glTexImage2D() the first element corresponds to
+            // the bottom-left corner. We correct this discrepancy by setting a vertical flip as
+            // sampling matrix.
+            final float[] samplingMatrix = RendererCommon.verticalFlipMatrix();
+            rotatedSamplingMatrix =
+                RendererCommon.rotateTextureMatrix(samplingMatrix, pendingFrame.rotationDegree);
           } else {
             rendererType = RendererType.RENDERER_TEXTURE;
-            // External texture rendering. Make a deep copy of the external texture.
+            // External texture rendering. Update texture image to latest and make a deep copy of
+            // the external texture.
+            // TODO(magjed): Move updateTexImage() to the video source instead.
+            final SurfaceTexture surfaceTexture = (SurfaceTexture) pendingFrame.textureObject;
+            surfaceTexture.updateTexImage();
+            final float[] samplingMatrix = new float[16];
+            surfaceTexture.getTransformMatrix(samplingMatrix);
+            rotatedSamplingMatrix =
+                RendererCommon.rotateTextureMatrix(samplingMatrix, pendingFrame.rotationDegree);
+
             // Reallocate offscreen texture if necessary.
             textureCopy.setSize(pendingFrame.rotatedWidth(), pendingFrame.rotatedHeight());
 

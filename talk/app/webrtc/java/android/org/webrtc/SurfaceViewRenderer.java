@@ -30,7 +30,9 @@ package org.webrtc;
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
 import android.graphics.Point;
+import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.AttributeSet;
@@ -455,10 +457,25 @@ public class SurfaceViewRenderer extends SurfaceView
     }
 
     final long startTimeNs = System.nanoTime();
+    final float[] samplingMatrix;
+    if (frame.yuvFrame) {
+      // The convention in WebRTC is that the first element in a ByteBuffer corresponds to the
+      // top-left corner of the image, but in glTexImage2D() the first element corresponds to the
+      // bottom-left corner. We correct this discrepancy by setting a vertical flip as sampling
+      // matrix.
+      samplingMatrix = RendererCommon.verticalFlipMatrix();
+    } else {
+      // TODO(magjed): Move updateTexImage() to the video source instead.
+      SurfaceTexture surfaceTexture = (SurfaceTexture) frame.textureObject;
+      surfaceTexture.updateTexImage();
+      samplingMatrix = new float[16];
+      surfaceTexture.getTransformMatrix(samplingMatrix);
+    }
+
     final float[] texMatrix;
     synchronized (layoutLock) {
       final float[] rotatedSamplingMatrix =
-          RendererCommon.rotateTextureMatrix(frame.samplingMatrix, frame.rotationDegree);
+          RendererCommon.rotateTextureMatrix(samplingMatrix, frame.rotationDegree);
       final float[] layoutMatrix = RendererCommon.getLayoutMatrix(
           mirror, frameAspectRatio(), (float) layoutWidth / layoutHeight);
       texMatrix = RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);
