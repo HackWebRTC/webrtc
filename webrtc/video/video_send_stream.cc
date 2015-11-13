@@ -20,6 +20,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call/congestion_controller.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/video/video_capture_input.h"
 #include "webrtc/video_engine/call_stats.h"
@@ -31,7 +32,6 @@
 
 namespace webrtc {
 
-class BitrateAllocator;
 class PacedSender;
 class RtcpIntraFrameObserver;
 class TransportFeedbackObserver;
@@ -113,6 +113,7 @@ VideoSendStream::VideoSendStream(
     ProcessThread* module_process_thread,
     CallStats* call_stats,
     CongestionController* congestion_controller,
+    BitrateAllocator* bitrate_allocator,
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs)
@@ -144,7 +145,7 @@ VideoSendStream::VideoSendStream(
   vie_encoder_.reset(new ViEEncoder(
       num_cpu_cores, module_process_thread_, &stats_proxy_,
       config.pre_encode_callback, congestion_controller_->pacer(),
-      congestion_controller_->bitrate_allocator()));
+      bitrate_allocator));
   RTC_CHECK(vie_encoder_->Init());
 
   vie_channel_.reset(new ViEChannel(
@@ -530,6 +531,10 @@ int64_t VideoSendStream::GetRtt() const {
     return rtt_ms;
   }
   return -1;
+}
+
+int VideoSendStream::GetPaddingNeededBps() const {
+  return vie_encoder_->GetPaddingNeededBps();
 }
 
 bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {

@@ -13,6 +13,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
@@ -144,9 +145,9 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 }  // namespace
 
 CongestionController::CongestionController(ProcessThread* process_thread,
-                                           CallStats* call_stats)
+                                           CallStats* call_stats,
+                                           BitrateObserver* bitrate_observer)
     : remb_(new VieRemb()),
-      bitrate_allocator_(new BitrateAllocator()),
       packet_router_(new PacketRouter()),
       pacer_(new PacedSender(Clock::GetRealTimeClock(),
                              packet_router_.get(),
@@ -166,7 +167,7 @@ CongestionController::CongestionController(ProcessThread* process_thread,
       // construction.
       bitrate_controller_(
           BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                     this)),
+                                                     bitrate_observer)),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps) {
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
 
@@ -249,6 +250,12 @@ CongestionController::GetTransportFeedbackObserver() {
   return transport_feedback_adapter_.get();
 }
 
+void CongestionController::UpdatePacerBitrate(int bitrate_kbps,
+                                              int max_bitrate_kbps,
+                                              int min_bitrate_kbps) {
+  pacer_->UpdateBitrate(bitrate_kbps, max_bitrate_kbps, min_bitrate_kbps);
+}
+
 int64_t CongestionController::GetPacerQueuingDelayMs() const {
   return pacer_->QueueInMs();
 }
@@ -276,29 +283,6 @@ void CongestionController::SignalNetworkState(NetworkState state) {
   } else {
     pacer_->Pause();
   }
-}
-
-// TODO(mflodman): Move this logic out from CongestionController.
-void CongestionController::OnNetworkChanged(uint32_t target_bitrate_bps,
-                                            uint8_t fraction_loss,
-                                            int64_t rtt) {
-  uint32_t allocated_bitrate_bps = bitrate_allocator_->OnNetworkChanged(
-      target_bitrate_bps, fraction_loss, rtt);
-  int pad_up_to_bitrate_bps = 0;
-  {
-    rtc::CritScope lock(&encoder_crit_);
-    for (const auto& encoder : encoders_)
-      pad_up_to_bitrate_bps += encoder->GetPaddingNeededBps();
-  }
-  // Allocated bitrate might be higher than bitrate estimate if enforcing min
-  // bitrate, or lower if estimate is higher than the sum of max bitrates, so
-  // set the pacer bitrate to the maximum of the two.
-  uint32_t pacer_bitrate_bps =
-      std::max(target_bitrate_bps, allocated_bitrate_bps);
-  pacer_->UpdateBitrate(
-      pacer_bitrate_bps / 1000,
-      PacedSender::kDefaultPaceMultiplier * pacer_bitrate_bps / 1000,
-      pad_up_to_bitrate_bps / 1000);
 }
 
 void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {

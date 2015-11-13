@@ -154,6 +154,7 @@
         'audio/audio_receive_stream_unittest.cc',
         'audio/audio_send_stream_unittest.cc',
         'audio/audio_state_unittest.cc',
+        'call/bitrate_allocator_unittest.cc',
         'call/bitrate_estimator_tests.cc',
         'call/call_unittest.cc',
         'call/packet_injection_tests.cc',

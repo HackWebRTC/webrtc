@@ -10,7 +10,6 @@ import("../../build/webrtc.gni")
 
 source_set("bitrate_controller") {
   sources = [
-    "bitrate_allocator.cc",
     "bitrate_controller_impl.cc",
     "bitrate_controller_impl.h",
     "include/bitrate_allocator.h",

@@ -19,7 +19,6 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/frame_callback.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_allocator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
@@ -28,6 +27,8 @@
 
 namespace webrtc {
 
+class BitrateAllocator;
+class BitrateObserver;
 class Config;
 class CriticalSectionWrapper;
 class EncodedImageCallback;

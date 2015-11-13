@@ -9,7 +9,7 @@
  *
  */
 
-#include "webrtc/modules/bitrate_controller/include/bitrate_allocator.h"
+#include "webrtc/call/bitrate_allocator.h"
 
 #include <algorithm>
 #include <utility>
@@ -136,7 +136,8 @@ void BitrateAllocator::EnforceMinBitrate(bool enforce_min_bitrate) {
 BitrateAllocator::ObserverBitrateMap BitrateAllocator::NormalRateAllocation(
     uint32_t bitrate,
     uint32_t sum_min_bitrates) {
-  uint32_t number_of_observers = bitrate_observers_.size();
+  uint32_t number_of_observers =
+      static_cast<uint32_t>(bitrate_observers_.size());
   uint32_t bitrate_per_observer =
       (bitrate - sum_min_bitrates) / number_of_observers;
   // Use map to sort list based on max bitrate.

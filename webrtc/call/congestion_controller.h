@@ -16,12 +16,12 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socket.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/stream.h"
 
 namespace webrtc {
 
-class BitrateAllocator;
+class BitrateController;
+class BitrateObserver;
 class CallStats;
 class Config;
 class PacedSender;
@@ -32,12 +32,14 @@ class RemoteEstimatorProxy;
 class RtpRtcp;
 class SendStatisticsProxy;
 class TransportFeedbackAdapter;
+class TransportFeedbackObserver;
 class ViEEncoder;
 class VieRemb;
 
-class CongestionController : public BitrateObserver {
+class CongestionController {
  public:
-  CongestionController(ProcessThread* process_thread, CallStats* call_stats);
+  CongestionController(ProcessThread* process_thread, CallStats* call_stats,
+                       BitrateObserver* bitrate_observer);
   ~CongestionController();
   void AddEncoder(ViEEncoder* encoder);
   void RemoveEncoder(ViEEncoder* encoder);
@@ -54,21 +56,15 @@ class CongestionController : public BitrateObserver {
   int64_t GetPacerQueuingDelayMs() const;
   PacedSender* pacer() const { return pacer_.get(); }
   PacketRouter* packet_router() const { return packet_router_.get(); }
-  BitrateAllocator* bitrate_allocator() const {
-      return bitrate_allocator_.get(); }
   TransportFeedbackObserver* GetTransportFeedbackObserver();
 
-  // Implements BitrateObserver.
-  void OnNetworkChanged(uint32_t target_bitrate_bps,
-                        uint8_t fraction_loss,
-                        int64_t rtt) override;
+  void UpdatePacerBitrate(int bitrate_kbps, int max_bitrate_kbps,
+                          int min_bitrate_kbps);
 
   void OnSentPacket(const rtc::SentPacket& sent_packet);
 
  private:
   rtc::scoped_ptr<VieRemb> remb_;
-  // TODO(mflodman): Move bitrate_allocator_ to Call.
-  rtc::scoped_ptr<BitrateAllocator> bitrate_allocator_;
   rtc::scoped_ptr<PacketRouter> packet_router_;
   rtc::scoped_ptr<PacedSender> pacer_;
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;

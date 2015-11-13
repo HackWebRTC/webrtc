@@ -23,10 +23,13 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"
+#include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/call/congestion_controller.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
+#include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/utility/include/process_thread.h"
@@ -47,7 +50,8 @@ const int Call::Config::kDefaultStartBitrateBps = 300000;
 
 namespace internal {
 
-class Call : public webrtc::Call, public PacketReceiver {
+class Call : public webrtc::Call, public PacketReceiver,
+             public BitrateObserver {
  public:
   explicit Call(const Call::Config& config);
   virtual ~Call();
@@ -86,6 +90,10 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
+  // Implements BitrateObserver.
+  void OnNetworkChanged(uint32_t bitrate_bps, uint8_t fraction_loss,
+                        int64_t rtt_ms) override;
+
  private:
   DeliveryStatus DeliverRtcp(MediaType media_type, const uint8_t* packet,
                              size_t length);
@@ -113,7 +121,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   const int num_cpu_cores_;
   const rtc::scoped_ptr<ProcessThread> module_process_thread_;
   const rtc::scoped_ptr<CallStats> call_stats_;
-  const rtc::scoped_ptr<CongestionController> congestion_controller_;
+  const rtc::scoped_ptr<BitrateAllocator> bitrate_allocator_;
   Call::Config config_;
   rtc::ThreadChecker configuration_thread_checker_;
 
@@ -148,6 +156,8 @@ class Call : public webrtc::Call, public PacketReceiver {
   rtc::RateTracker received_rtcp_bytes_per_sec_;
   int64_t first_rtp_packet_received_ms_;
 
+  const rtc::scoped_ptr<CongestionController> congestion_controller_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
 }  // namespace internal
@@ -163,9 +173,7 @@ Call::Call(const Call::Config& config)
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
       call_stats_(new CallStats()),
-      congestion_controller_(
-          new CongestionController(module_process_thread_.get(),
-                                   call_stats_.get())),
+      bitrate_allocator_(new BitrateAllocator()),
       config_(config),
       network_enabled_(true),
       receive_crit_(RWLockWrapper::CreateRWLock()),
@@ -173,7 +181,9 @@ Call::Call(const Call::Config& config)
       received_video_bytes_per_sec_(1000, 1),
       received_audio_bytes_per_sec_(1000, 1),
       received_rtcp_bytes_per_sec_(1000, 1),
-      first_rtp_packet_received_ms_(-1) {
+      first_rtp_packet_received_ms_(-1),
+      congestion_controller_(new CongestionController(
+          module_process_thread_.get(), call_stats_.get(), this)) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -335,8 +345,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // the call has already started.
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), call_stats_.get(),
-      congestion_controller_.get(), config, encoder_config,
-      suspended_video_send_ssrcs_);
+      congestion_controller_.get(), bitrate_allocator_.get(), config,
+      encoder_config, suspended_video_send_ssrcs_);
 
   if (!network_enabled_)
     send_stream->SignalNetworkState(kNetworkDown);
@@ -520,6 +530,32 @@ void Call::SignalNetworkState(NetworkState state) {
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
   congestion_controller_->OnSentPacket(sent_packet);
+}
+
+void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
+                            int64_t rtt_ms) {
+  uint32_t allocated_bitrate_bps = bitrate_allocator_->OnNetworkChanged(
+      target_bitrate_bps, fraction_loss, rtt_ms);
+
+  int pad_up_to_bitrate_bps = 0;
+  {
+    ReadLockScoped read_lock(*send_crit_);
+    // No need to update as long as we're not sending.
+    if (video_send_streams_.empty())
+      return;
+
+    for (VideoSendStream* stream : video_send_streams_)
+      pad_up_to_bitrate_bps += stream->GetPaddingNeededBps();
+  }
+  // Allocated bitrate might be higher than bitrate estimate if enforcing min
+  // bitrate, or lower if estimate is higher than the sum of max bitrates, so
+  // set the pacer bitrate to the maximum of the two.
+  uint32_t pacer_bitrate_bps =
+      std::max(target_bitrate_bps, allocated_bitrate_bps);
+  congestion_controller_->UpdatePacerBitrate(
+      target_bitrate_bps / 1000,
+      PacedSender::kDefaultPaceMultiplier * pacer_bitrate_bps / 1000,
+      pad_up_to_bitrate_bps / 1000);
 }
 
 void Call::ConfigureSync(const std::string& sync_group) {

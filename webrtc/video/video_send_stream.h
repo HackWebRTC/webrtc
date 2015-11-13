@@ -27,6 +27,7 @@
 
 namespace webrtc {
 
+class BitrateAllocator;
 class CallStats;
 class CongestionController;
 class EncoderStateFeedback;
@@ -43,6 +44,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   ProcessThread* module_process_thread,
                   CallStats* call_stats,
                   CongestionController* congestion_controller,
+                  BitrateAllocator* bitrate_allocator,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
                   const std::map<uint32_t, RtpState>& suspended_ssrcs);
@@ -68,6 +70,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   RtpStateMap GetRtpStates() const;
 
   int64_t GetRtt() const;
+  int GetPaddingNeededBps() const;
 
  private:
   bool SetSendCodec(VideoCodec video_codec);

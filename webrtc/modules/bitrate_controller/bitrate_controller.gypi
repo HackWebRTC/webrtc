@@ -15,11 +15,9 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        'bitrate_allocator.cc',
         'bitrate_controller_impl.cc',
         'bitrate_controller_impl.h',
         'include/bitrate_controller.h',
-        'include/bitrate_allocator.h',
         'send_side_bandwidth_estimation.cc',
         'send_side_bandwidth_estimation.h',
       ],

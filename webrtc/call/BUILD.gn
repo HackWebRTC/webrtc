@@ -10,6 +10,7 @@ import("../build/webrtc.gni")
 
 source_set("call") {
   sources = [
+    "bitrate_allocator.cc",
     "call.cc",
     "congestion_controller.cc",
     "transport_adapter.cc",

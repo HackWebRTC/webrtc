@@ -12,8 +12,8 @@
  *  and push the result to the encoders via BitrateObserver(s).
  */
 
-#ifndef WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_ALLOCATOR_H_
-#define WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_ALLOCATOR_H_
+#ifndef WEBRTC_CALL_BITRATE_ALLOCATOR_H_
+#define WEBRTC_CALL_BITRATE_ALLOCATOR_H_
 
 #include <list>
 #include <map>
@@ -99,4 +99,4 @@ class BitrateAllocator {
   int64_t last_rtt_ GUARDED_BY(crit_sect_);
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_ALLOCATOR_H_
+#endif  // WEBRTC_CALL_BITRATE_ALLOCATOR_H_

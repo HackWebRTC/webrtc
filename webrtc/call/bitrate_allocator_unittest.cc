@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_allocator.h"
+#include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 
 namespace webrtc {
@@ -53,7 +53,7 @@ TEST_F(BitrateAllocatorTest, UpdatingBitrateObserver) {
   EXPECT_EQ(200000u, bitrate_observer.last_bitrate_);
 
   // TODO(pbos): Expect capping to 1.5M instead of 3M when not boosting the max
-  // bitrate for FEC/retransmissions (see TODO in BitrateAllocator).
+  // bitrate for FEC/retransmissions (see todo in BitrateAllocator).
   allocator_->OnNetworkChanged(4000000, 0, 0);
   EXPECT_EQ(3000000u, bitrate_observer.last_bitrate_);
   start_bitrate =

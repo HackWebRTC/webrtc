@@ -196,7 +196,6 @@
             'audio_processing/vad/vad_audio_proc_unittest.cc',
             'audio_processing/vad/vad_circular_buffer_unittest.cc',
             'audio_processing/vad/voice_activity_detector_unittest.cc',
-            'bitrate_controller/bitrate_allocator_unittest.cc',
             'bitrate_controller/bitrate_controller_unittest.cc',
             'bitrate_controller/send_side_bandwidth_estimation_unittest.cc',
             'desktop_capture/desktop_and_cursor_composer_unittest.cc',

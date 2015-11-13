@@ -14,6 +14,7 @@
       '<(webrtc_root)/webrtc.gyp:rtc_event_log',
     ],
     'webrtc_call_sources': [
+      'call/bitrate_allocator.cc',
       'call/call.cc',
       'call/congestion_controller.cc',
       'call/transport_adapter.cc',
