@@ -1539,18 +1539,18 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
 
-  // Make the receiving timeout shorter for testing.
-  cricket::IceConfig config = CreateIceConfig(1000, false);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
-
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                   1000);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
   EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
       LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+  // Make the receiving timeout shorter for testing.
+  cricket::IceConfig config = CreateIceConfig(1000, false);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
@@ -1591,17 +1591,18 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
 
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
-  // Make the receiving timeout shorter for testing.
-  cricket::IceConfig config = CreateIceConfig(1000, false);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                   1000);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
   EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
       LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+  // Make the receiving timeout shorter for testing.
+  cricket::IceConfig config = CreateIceConfig(1000, false);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
