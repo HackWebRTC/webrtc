@@ -18,7 +18,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/call/congestion_controller.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_engine/call_stats.h"
@@ -161,9 +160,7 @@ VideoReceiveStream::VideoReceiveStream(
 
   vie_channel_.reset(new ViEChannel(
       num_cpu_cores, &transport_adapter_, process_thread, nullptr,
-      congestion_controller_->GetBitrateController()->
-          CreateRtcpBandwidthObserver(),
-      nullptr, bitrate_estimator, call_stats_->rtcp_rtt_stats(),
+      nullptr, nullptr, bitrate_estimator, call_stats_->rtcp_rtt_stats(),
       congestion_controller_->pacer(), congestion_controller_->packet_router(),
       1, false));
 
