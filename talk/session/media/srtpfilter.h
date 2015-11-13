@@ -40,7 +40,6 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/sslstreamadapter.h"
-#include "webrtc/base/thread_checker.h"
 
 // Forward declaration to avoid pulling in libsrtp headers here
 struct srtp_event_data_t;
@@ -241,7 +240,8 @@ class SrtpSession {
   void HandleEvent(const srtp_event_data_t* ev);
   static void HandleEventThunk(srtp_event_data_t* ev);
 
-  rtc::ThreadChecker thread_checker_;
+  static std::list<SrtpSession*>* sessions();
+
   srtp_ctx_t* session_;
   int rtp_auth_tag_len_;
   int rtcp_auth_tag_len_;
