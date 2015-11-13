@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
@@ -145,63 +146,6 @@ class Empty : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Empty);
 };
 
-// From RFC 3550, RTP: A Transport Protocol for Real-Time Applications.
-//
-// RTCP report block (RFC 3550).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |                 SSRC_1 (SSRC of first source)                 |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  | fraction lost |       cumulative number of packets lost       |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |           extended highest sequence number received           |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                      interarrival jitter                      |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                         last SR (LSR)                         |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                   delay since last SR (DLSR)                  |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-
-class ReportBlock {
- public:
-  ReportBlock() {
-    // TODO(asapersson): Consider adding a constructor to struct.
-    memset(&report_block_, 0, sizeof(report_block_));
-  }
-
-  ~ReportBlock() {}
-
-  void To(uint32_t ssrc) {
-    report_block_.SSRC = ssrc;
-  }
-  void WithFractionLost(uint8_t fraction_lost) {
-    report_block_.FractionLost = fraction_lost;
-  }
-  void WithCumulativeLost(uint32_t cumulative_lost) {
-    report_block_.CumulativeNumOfPacketsLost = cumulative_lost;
-  }
-  void WithExtHighestSeqNum(uint32_t ext_highest_seq_num) {
-    report_block_.ExtendedHighestSequenceNumber = ext_highest_seq_num;
-  }
-  void WithJitter(uint32_t jitter) {
-    report_block_.Jitter = jitter;
-  }
-  void WithLastSr(uint32_t last_sr) {
-    report_block_.LastSR = last_sr;
-  }
-  void WithDelayLastSr(uint32_t delay_last_sr) {
-    report_block_.DelayLastSR = delay_last_sr;
-  }
-
- private:
-  friend class SenderReport;
-  friend class ReceiverReport;
-  RTCPUtility::RTCPPacketReportBlockItem report_block_;
-};
-
 // RTCP sender report (RFC 3550).
 //
 //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -268,7 +212,7 @@ class SenderReport : public RtcpPacket {
   }
 
   RTCPUtility::RTCPPacketSR sr_;
-  std::vector<RTCPUtility::RTCPPacketReportBlockItem> report_blocks_;
+  std::vector<ReportBlock> report_blocks_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SenderReport);
 };
@@ -314,7 +258,7 @@ class ReceiverReport : public RtcpPacket {
   }
 
   RTCPUtility::RTCPPacketRR rr_;
-  std::vector<RTCPUtility::RTCPPacketReportBlockItem> report_blocks_;
+  std::vector<ReportBlock> report_blocks_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ReceiverReport);
 };

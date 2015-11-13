@@ -154,18 +154,12 @@ void CreateReceiverReport(const RTCPPacketRR& rr,
 //  |                   delay since last SR (DLSR)                  |
 //  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
-void CreateReportBlocks(const std::vector<RTCPPacketReportBlockItem>& blocks,
+void CreateReportBlocks(const std::vector<ReportBlock>& blocks,
                         uint8_t* buffer,
                         size_t* pos) {
-  for (std::vector<RTCPPacketReportBlockItem>::const_iterator
-       it = blocks.begin(); it != blocks.end(); ++it) {
-    AssignUWord32(buffer, pos, (*it).SSRC);
-    AssignUWord8(buffer, pos, (*it).FractionLost);
-    AssignUWord24(buffer, pos, (*it).CumulativeNumOfPacketsLost);
-    AssignUWord32(buffer, pos, (*it).ExtendedHighestSequenceNumber);
-    AssignUWord32(buffer, pos, (*it).Jitter);
-    AssignUWord32(buffer, pos, (*it).LastSR);
-    AssignUWord32(buffer, pos, (*it).DelayLastSR);
+  for (const ReportBlock& block : blocks) {
+    block.Create(buffer + *pos);
+    *pos += ReportBlock::kLength;
   }
 }
 
@@ -781,7 +775,7 @@ bool SenderReport::WithReportBlock(const ReportBlock& block) {
     LOG(LS_WARNING) << "Max report blocks reached.";
     return false;
   }
-  report_blocks_.push_back(block.report_block_);
+  report_blocks_.push_back(block);
   sr_.NumberOfReportBlocks = report_blocks_.size();
   return true;
 }
@@ -805,7 +799,7 @@ bool ReceiverReport::WithReportBlock(const ReportBlock& block) {
     LOG(LS_WARNING) << "Max report blocks reached.";
     return false;
   }
-  report_blocks_.push_back(block.report_block_);
+  report_blocks_.push_back(block);
   rr_.NumberOfReportBlocks = report_blocks_.size();
   return true;
 }

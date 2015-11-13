@@ -459,7 +459,10 @@ int32_t RTCPSender::AddReportBlock(const RTCPReportBlock& report_block) {
   rtcp::ReportBlock* block = &report_blocks_[report_block.remoteSSRC];
   block->To(report_block.remoteSSRC);
   block->WithFractionLost(report_block.fractionLost);
-  block->WithCumulativeLost(report_block.cumulativeLost);
+  if (!block->WithCumulativeLost(report_block.cumulativeLost)) {
+    LOG(LS_WARNING) << "Cumulative lost is oversized.";
+    return -1;
+  }
   block->WithExtHighestSeqNum(report_block.extendedHighSeqNum);
   block->WithJitter(report_block.jitter);
   block->WithLastSr(report_block.lastSR);
@@ -1024,6 +1027,8 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
         RTCPReportBlock report_block;
         if (PrepareReport(feedback_state, it->first, it->second,
                           &report_block)) {
+          // TODO(danilchap) AddReportBlock may fail (for 2 different reasons).
+          // Probably it shouldn't be ignored.
           AddReportBlock(report_block);
         }
       }
