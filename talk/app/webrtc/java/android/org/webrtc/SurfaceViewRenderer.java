@@ -429,13 +429,24 @@ public class SurfaceViewRenderer extends SurfaceView
     if (Thread.currentThread() != renderThread) {
       throw new IllegalStateException(getResourceName() + "Wrong thread.");
     }
+    // Fetch and render |pendingFrame|.
+    final VideoRenderer.I420Frame frame;
+    synchronized (frameLock) {
+      if (pendingFrame == null) {
+        return;
+      }
+      frame = pendingFrame;
+      pendingFrame = null;
+    }
     if (eglBase == null || !eglBase.hasSurface()) {
       Logging.d(TAG, getResourceName() + "No surface to draw on");
+      VideoRenderer.renderFrameDone(frame);
       return;
     }
     if (!checkConsistentLayout()) {
       // Output intermediate black frames while the layout is updated.
       makeBlack();
+      VideoRenderer.renderFrameDone(frame);
       return;
     }
     // After a surface size change, the EGLSurface might still have a buffer of the old size in the
@@ -445,15 +456,6 @@ public class SurfaceViewRenderer extends SurfaceView
       if (eglBase.surfaceWidth() != surfaceWidth || eglBase.surfaceHeight() != surfaceHeight) {
         makeBlack();
       }
-    }
-    // Fetch and render |pendingFrame|.
-    final VideoRenderer.I420Frame frame;
-    synchronized (frameLock) {
-      if (pendingFrame == null) {
-        return;
-      }
-      frame = pendingFrame;
-      pendingFrame = null;
     }
 
     final long startTimeNs = System.nanoTime();
