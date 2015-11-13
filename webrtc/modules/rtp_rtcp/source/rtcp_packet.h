@@ -263,51 +263,6 @@ class ReceiverReport : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(ReceiverReport);
 };
 
-// Transmission Time Offsets in RTP Streams (RFC 5450).
-//
-//      0                   1                   2                   3
-//      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// hdr |V=2|P|    RC   |   PT=IJ=195   |             length            |
-//     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//     |                      inter-arrival jitter                     |
-//     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//     .                                                               .
-//     .                                                               .
-//     .                                                               .
-//     |                      inter-arrival jitter                     |
-//     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//
-//  If present, this RTCP packet must be placed after a receiver report
-//  (inside a compound RTCP packet), and MUST have the same value for RC
-//  (reception report count) as the receiver report.
-
-class Ij : public RtcpPacket {
- public:
-  Ij() : RtcpPacket() {}
-
-  virtual ~Ij() {}
-
-  bool WithJitterItem(uint32_t jitter);
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  static const int kMaxNumberOfIjItems = 0x1f;
-
-  size_t BlockLength() const {
-    return kHeaderLength + 4 * ij_items_.size();
-  }
-
-  std::vector<uint32_t> ij_items_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Ij);
-};
-
 // Source Description (SDES) (RFC 3550).
 //
 //         0                   1                   2                   3

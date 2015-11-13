@@ -163,28 +163,6 @@ void CreateReportBlocks(const std::vector<ReportBlock>& blocks,
   }
 }
 
-// Transmission Time Offsets in RTP Streams (RFC 5450).
-//
-//      0                   1                   2                   3
-//      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// hdr |V=2|P|    RC   |   PT=IJ=195   |             length            |
-//     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//     |                      inter-arrival jitter                     |
-//     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//     .                                                               .
-//     .                                                               .
-//     .                                                               .
-//     |                      inter-arrival jitter                     |
-//     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateIj(const std::vector<uint32_t>& ij_items,
-              uint8_t* buffer,
-              size_t* pos) {
-  for (uint32_t item : ij_items)
-    AssignUWord32(buffer, pos, item);
-}
-
 // Source Description (SDES) (RFC 3550).
 //
 //         0                   1                   2                   3
@@ -801,29 +779,6 @@ bool ReceiverReport::WithReportBlock(const ReportBlock& block) {
   }
   report_blocks_.push_back(block);
   rr_.NumberOfReportBlocks = report_blocks_.size();
-  return true;
-}
-
-bool Ij::Create(uint8_t* packet,
-                size_t* index,
-                size_t max_length,
-                RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  size_t length = ij_items_.size();
-  CreateHeader(length, PT_IJ, length, packet, index);
-  CreateIj(ij_items_, packet, index);
-  return true;
-}
-
-bool Ij::WithJitterItem(uint32_t jitter) {
-  if (ij_items_.size() >= kMaxNumberOfIjItems) {
-    LOG(LS_WARNING) << "Max inter-arrival jitter items reached.";
-    return false;
-  }
-  ij_items_.push_back(jitter);
   return true;
 }
 

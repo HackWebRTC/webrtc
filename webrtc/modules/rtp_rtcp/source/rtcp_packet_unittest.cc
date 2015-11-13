@@ -23,7 +23,6 @@ using webrtc::rtcp::Bye;
 using webrtc::rtcp::Dlrr;
 using webrtc::rtcp::Empty;
 using webrtc::rtcp::Fir;
-using webrtc::rtcp::Ij;
 using webrtc::rtcp::Nack;
 using webrtc::rtcp::Pli;
 using webrtc::rtcp::Sdes;
@@ -194,50 +193,6 @@ TEST(RtcpPacketTest, SrWithTooManyReportBlocks) {
   }
   rb.To(kRemoteSsrc + kMaxReportBlocks);
   EXPECT_FALSE(sr.WithReportBlock(rb));
-}
-
-TEST(RtcpPacketTest, IjNoItem) {
-  Ij ij;
-
-  rtc::scoped_ptr<RawPacket> packet(ij.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.ij()->num_packets());
-  EXPECT_EQ(0, parser.ij_item()->num_packets());
-}
-
-TEST(RtcpPacketTest, IjOneItem) {
-  Ij ij;
-  EXPECT_TRUE(ij.WithJitterItem(0x11111111));
-
-  rtc::scoped_ptr<RawPacket> packet(ij.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.ij()->num_packets());
-  EXPECT_EQ(1, parser.ij_item()->num_packets());
-  EXPECT_EQ(0x11111111U, parser.ij_item()->Jitter());
-}
-
-TEST(RtcpPacketTest, IjTwoItems) {
-  Ij ij;
-  EXPECT_TRUE(ij.WithJitterItem(0x11111111));
-  EXPECT_TRUE(ij.WithJitterItem(0x22222222));
-
-  rtc::scoped_ptr<RawPacket> packet(ij.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.ij()->num_packets());
-  EXPECT_EQ(2, parser.ij_item()->num_packets());
-  EXPECT_EQ(0x22222222U, parser.ij_item()->Jitter());
-}
-
-TEST(RtcpPacketTest, IjTooManyItems) {
-  Ij ij;
-  const int kMaxIjItems = (1 << 5) - 1;
-  for (int i = 0; i < kMaxIjItems; ++i) {
-    EXPECT_TRUE(ij.WithJitterItem(i));
-  }
-  EXPECT_FALSE(ij.WithJitterItem(kMaxIjItems));
 }
 
 TEST(RtcpPacketTest, AppWithNoData) {

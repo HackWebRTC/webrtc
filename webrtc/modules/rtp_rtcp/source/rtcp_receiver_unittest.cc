@@ -25,6 +25,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 namespace webrtc {
@@ -384,20 +385,20 @@ TEST_F(RtcpReceiverTest, GetRtt) {
 }
 
 TEST_F(RtcpReceiverTest, InjectIjWithNoItem) {
-  rtcp::Ij ij;
+  rtcp::ExtendedJitterReport ij;
   rtc::scoped_ptr<rtcp::RawPacket> packet(ij.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
 TEST_F(RtcpReceiverTest, InjectIjWithOneItem) {
-  rtcp::Ij ij;
-  ij.WithJitterItem(0x11111111);
+  rtcp::ExtendedJitterReport ij;
+  ij.WithJitter(0x11213141);
 
   rtc::scoped_ptr<rtcp::RawPacket> packet(ij.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(kRtcpTransmissionTimeOffset, rtcp_packet_info_.rtcpPacketTypeFlags);
-  EXPECT_EQ(0x11111111U, rtcp_packet_info_.interArrivalJitter);
+  EXPECT_EQ(0x11213141U, rtcp_packet_info_.interArrivalJitter);
 }
 
 TEST_F(RtcpReceiverTest, InjectAppWithNoData) {
