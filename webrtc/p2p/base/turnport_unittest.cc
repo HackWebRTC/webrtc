@@ -385,48 +385,6 @@ class TurnPortTest : public testing::Test,
     EXPECT_TRUE(conn2->receiving());
   }
 
-  void TestDestroyTurnConnection() {
-    turn_port_->PrepareAddress();
-    ASSERT_TRUE_WAIT(turn_ready_, kTimeout);
-    // Create a remote UDP port
-    CreateUdpPort();
-    udp_port_->PrepareAddress();
-    ASSERT_TRUE_WAIT(udp_ready_, kTimeout);
-
-    // Create connections on both ends.
-    Connection* conn1 = udp_port_->CreateConnection(turn_port_->Candidates()[0],
-                                                    Port::ORIGIN_MESSAGE);
-    Connection* conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
-                                                     Port::ORIGIN_MESSAGE);
-    ASSERT_TRUE(conn2 != NULL);
-    ASSERT_TRUE_WAIT(turn_create_permission_success_, kTimeout);
-    // Make sure turn connection can receive.
-    conn1->Ping(0);
-    EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, conn1->write_state(), kTimeout);
-    EXPECT_FALSE(turn_unknown_address_);
-
-    // Destroy the connection on the turn port. The TurnEntry is still
-    // there. So the turn port gets ping from unknown address if it is pinged.
-    conn2->Destroy();
-    conn1->Ping(0);
-    EXPECT_TRUE_WAIT(turn_unknown_address_, kTimeout);
-
-    // Flush all requests in the invoker to destroy the TurnEntry.
-    // Now the turn port cannot receive the ping.
-    turn_unknown_address_ = false;
-    turn_port_->invoker()->Flush(rtc::Thread::Current());
-    conn1->Ping(0);
-    rtc::Thread::Current()->ProcessMessages(500);
-    EXPECT_FALSE(turn_unknown_address_);
-
-    // If the connection is created again, it will start to receive pings.
-    conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
-                                         Port::ORIGIN_MESSAGE);
-    conn1->Ping(0);
-    EXPECT_TRUE_WAIT(conn2->receiving(), kTimeout);
-    EXPECT_FALSE(turn_unknown_address_);
-  }
-
   void TestTurnSendData() {
     turn_port_->PrepareAddress();
     EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
@@ -734,20 +692,6 @@ TEST_F(TurnPortTest, TestTurnTcpConnection) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   TestTurnConnection();
-}
-
-// Test that if a connection on a TURN port is destroyed, the TURN port can
-// still receive ping on that connection as if it is from an unknown address.
-// If the connection is created again, it will be used to receive ping.
-TEST_F(TurnPortTest, TestDestroyTurnConnection) {
-  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestDestroyTurnConnection();
-}
-
-// Similar to above, except that this test will use the shared socket.
-TEST_F(TurnPortTest, TestDestroyTurnConnectionUsingSharedSocket) {
-  CreateSharedTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestDestroyTurnConnection();
 }
 
 // Test that we fail to create a connection when we want to use TLS over TCP.

@@ -16,10 +16,9 @@
 #include <set>
 #include <string>
 
-#include "webrtc/base/asyncinvoker.h"
-#include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/client/basicportallocator.h"
+#include "webrtc/base/asyncpacketsocket.h"
 
 namespace rtc {
 class AsyncResolver;
@@ -123,9 +122,6 @@ class TurnPort : public Port {
     return socket_;
   }
 
-  // For testing only.
-  rtc::AsyncInvoker* invoker() { return &invoker_; }
-
   // Signal with resolved server address.
   // Parameters are port, server address and resolved server address.
   // This signal will be sent only if server address is resolved successfully.
@@ -219,13 +215,8 @@ class TurnPort : public Port {
   bool HasPermission(const rtc::IPAddress& ipaddr) const;
   TurnEntry* FindEntry(const rtc::SocketAddress& address) const;
   TurnEntry* FindEntry(int channel_id) const;
-  void CreateOrRefreshEntry(const rtc::SocketAddress& address);
-  void DestroyEntry(TurnEntry* entry);
-  // Destroys the entry only if |timestamp| matches the destruction timestamp
-  // in |entry|.
-  void DestroyEntryIfNotCancelled(TurnEntry* entry, uint32_t timestamp);
-  void ScheduleEntryDestruction(TurnEntry* entry);
-  void CancelEntryDestruction(TurnEntry* entry);
+  TurnEntry* CreateEntry(const rtc::SocketAddress& address);
+  void DestroyEntry(const rtc::SocketAddress& address);
   void OnConnectionDestroyed(Connection* conn);
 
   ProtocolAddress server_address_;
@@ -252,8 +243,6 @@ class TurnPort : public Port {
 
   // The number of retries made due to allocate mismatch error.
   size_t allocate_mismatch_retries_;
-
-  rtc::AsyncInvoker invoker_;
 
   friend class TurnEntry;
   friend class TurnAllocateRequest;

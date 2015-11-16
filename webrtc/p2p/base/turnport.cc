@@ -140,11 +140,6 @@ class TurnEntry : public sigslot::has_slots<> {
   const rtc::SocketAddress& address() const { return ext_addr_; }
   BindState state() const { return state_; }
 
-  uint32_t destruction_timestamp() { return destruction_timestamp_; }
-  void set_destruction_timestamp(uint32_t destruction_timestamp) {
-    destruction_timestamp_ = destruction_timestamp;
-  }
-
   // Helper methods to send permission and channel bind requests.
   void SendCreatePermissionRequest(int delay);
   void SendChannelBindRequest(int delay);
@@ -165,11 +160,6 @@ class TurnEntry : public sigslot::has_slots<> {
   int channel_id_;
   rtc::SocketAddress ext_addr_;
   BindState state_;
-  // A non-zero value indicates that this entry is scheduled to be destroyed.
-  // It is also used as an ID of the event scheduling. When the destruction
-  // event actually fires, the TurnEntry will be destroyed only if the
-  // timestamp here matches the one in the firing event.
-  uint32_t destruction_timestamp_ = 0;
 };
 
 TurnPort::TurnPort(rtc::Thread* thread,
@@ -249,7 +239,7 @@ TurnPort::~TurnPort() {
   }
 
   while (!entries_.empty()) {
-    DestroyEntry(entries_.front());
+    DestroyEntry(entries_.front()->address());
   }
   if (resolver_) {
     resolver_->Destroy(false);
@@ -448,7 +438,7 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
   }
 
   // Create an entry, if needed, so we can get our permissions set up correctly.
-  CreateOrRefreshEntry(address.address());
+  CreateEntry(address.address());
 
   // A TURN port will have two candiates, STUN and TURN. STUN may not
   // present in all cases. If present stun candidate will be added first
@@ -723,6 +713,7 @@ void TurnPort::OnMessage(rtc::Message* message) {
     }
     return;
   }
+
   Port::OnMessage(message);
 }
 
@@ -907,55 +898,24 @@ TurnEntry* TurnPort::FindEntry(int channel_id) const {
   return (it != entries_.end()) ? *it : NULL;
 }
 
-void TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr) {
-  TurnEntry* entry = FindEntry(addr);
-  if (entry == nullptr) {
-    entry = new TurnEntry(this, next_channel_number_++, addr);
-    entries_.push_back(entry);
-  } else {
-    // The channel binding request for the entry will be refreshed automatically
-    // until the entry is destroyed.
-    CancelEntryDestruction(entry);
-  }
+TurnEntry* TurnPort::CreateEntry(const rtc::SocketAddress& addr) {
+  ASSERT(FindEntry(addr) == NULL);
+  TurnEntry* entry = new TurnEntry(this, next_channel_number_++, addr);
+  entries_.push_back(entry);
+  return entry;
 }
 
-void TurnPort::DestroyEntry(TurnEntry* entry) {
+void TurnPort::DestroyEntry(const rtc::SocketAddress& addr) {
+  TurnEntry* entry = FindEntry(addr);
   ASSERT(entry != NULL);
   entry->SignalDestroyed(entry);
   entries_.remove(entry);
   delete entry;
 }
 
-void TurnPort::DestroyEntryIfNotCancelled(TurnEntry* entry,
-                                          uint32_t timestamp) {
-  bool cancelled = timestamp != entry->destruction_timestamp();
-  if (!cancelled) {
-    DestroyEntry(entry);
-  }
-}
-
 void TurnPort::OnConnectionDestroyed(Connection* conn) {
-  // Schedule an event to destroy TurnEntry for the connection, which is
-  // already destroyed.
-  const rtc::SocketAddress& remote_address = conn->remote_candidate().address();
-  TurnEntry* entry = FindEntry(remote_address);
-  ASSERT(entry != NULL);
-  ScheduleEntryDestruction(entry);
-}
-
-void TurnPort::ScheduleEntryDestruction(TurnEntry* entry) {
-  ASSERT(entry->destruction_timestamp() == 0);
-  uint32_t timestamp = rtc::Time();
-  entry->set_destruction_timestamp(timestamp);
-  invoker_.AsyncInvokeDelayed<void>(
-      thread(),
-      rtc::Bind(&TurnPort::DestroyEntryIfNotCancelled, this, entry, timestamp),
-      TURN_PERMISSION_TIMEOUT);
-}
-
-void TurnPort::CancelEntryDestruction(TurnEntry* entry) {
-  ASSERT(entry->destruction_timestamp() != 0);
-  entry->set_destruction_timestamp(0);
+  // Destroying TurnEntry for the connection, which is already destroyed.
+  DestroyEntry(conn->remote_candidate().address());
 }
 
 TurnAllocateRequest::TurnAllocateRequest(TurnPort* port)
