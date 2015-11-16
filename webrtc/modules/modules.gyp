@@ -102,7 +102,6 @@
             'audio_coding/main/acm2/audio_coding_module_unittest_oldapi.cc',
             'audio_coding/main/acm2/call_statistics_unittest.cc',
             'audio_coding/main/acm2/codec_manager_unittest.cc',
-            'audio_coding/main/acm2/codec_owner_unittest.cc',
             'audio_coding/main/acm2/initial_delay_manager_unittest.cc',
             'audio_coding/main/acm2/rent_a_codec_unittest.cc',
             'audio_coding/codecs/cng/cng_unittest.cc',

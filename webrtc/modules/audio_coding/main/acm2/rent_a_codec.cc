@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/audio_coding/codecs/cng/include/audio_encoder_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
@@ -30,6 +31,9 @@
 #include "webrtc/modules/audio_coding/codecs/opus/include/audio_encoder_opus.h"
 #endif
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
+#ifdef WEBRTC_CODEC_RED
+#include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
+#endif
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 
@@ -140,6 +144,44 @@ rtc::scoped_ptr<AudioEncoder> CreateEncoder(
   return rtc::scoped_ptr<AudioEncoder>();
 }
 
+rtc::scoped_ptr<AudioEncoder> CreateRedEncoder(AudioEncoder* encoder,
+                                               int red_payload_type) {
+#ifdef WEBRTC_CODEC_RED
+  AudioEncoderCopyRed::Config config;
+  config.payload_type = red_payload_type;
+  config.speech_encoder = encoder;
+  return rtc::scoped_ptr<AudioEncoder>(new AudioEncoderCopyRed(config));
+#else
+  return rtc::scoped_ptr<AudioEncoder>();
+#endif
+}
+
+rtc::scoped_ptr<AudioEncoder> CreateCngEncoder(
+    AudioEncoder* encoder,
+    RentACodec::CngConfig cng_config) {
+  AudioEncoderCng::Config config;
+  config.num_channels = encoder->NumChannels();
+  config.payload_type = cng_config.cng_payload_type;
+  config.speech_encoder = encoder;
+  switch (cng_config.vad_mode) {
+    case VADNormal:
+      config.vad_mode = Vad::kVadNormal;
+      break;
+    case VADLowBitrate:
+      config.vad_mode = Vad::kVadLowBitrate;
+      break;
+    case VADAggr:
+      config.vad_mode = Vad::kVadAggressive;
+      break;
+    case VADVeryAggr:
+      config.vad_mode = Vad::kVadVeryAggressive;
+      break;
+    default:
+      FATAL();
+  }
+  return rtc::scoped_ptr<AudioEncoder>(new AudioEncoderCng(config));
+}
+
 rtc::scoped_ptr<AudioDecoder> CreateIsacDecoder(
     LockedIsacBandwidthInfo* bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
@@ -162,8 +204,35 @@ AudioEncoder* RentACodec::RentEncoder(const CodecInst& codec_inst) {
       CreateEncoder(codec_inst, &isac_bandwidth_info_);
   if (!enc)
     return nullptr;
-  encoder_ = enc.Pass();
-  return encoder_.get();
+  speech_encoder_ = enc.Pass();
+  return speech_encoder_.get();
+}
+
+AudioEncoder* RentACodec::RentEncoderStack(
+    AudioEncoder* speech_encoder,
+    rtc::Optional<CngConfig> cng_config,
+    rtc::Optional<int> red_payload_type) {
+  RTC_DCHECK(speech_encoder);
+  if (cng_config || red_payload_type) {
+    // The RED and CNG encoders need to be in sync with the speech encoder, so
+    // reset the latter to ensure its buffer is empty.
+    speech_encoder->Reset();
+  }
+  encoder_stack_ = speech_encoder;
+  if (red_payload_type) {
+    red_encoder_ = CreateRedEncoder(encoder_stack_, *red_payload_type);
+    if (red_encoder_)
+      encoder_stack_ = red_encoder_.get();
+  } else {
+    red_encoder_.reset();
+  }
+  if (cng_config) {
+    cng_encoder_ = CreateCngEncoder(encoder_stack_, *cng_config);
+    encoder_stack_ = cng_encoder_.get();
+  } else {
+    cng_encoder_.reset();
+  }
+  return encoder_stack_;
 }
 
 AudioDecoder* RentACodec::RentIsacDecoder() {

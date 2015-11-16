@@ -15,7 +15,6 @@
 #include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/audio_coding/main/acm2/codec_owner.h"
 #include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
 #include "webrtc/common_types.h"
@@ -57,15 +56,17 @@ class CodecManager final {
 
   bool codec_fec_enabled() const { return codec_fec_enabled_; }
 
-  AudioEncoder* CurrentEncoder() { return codec_owner_.Encoder(); }
-  const AudioEncoder* CurrentEncoder() const { return codec_owner_.Encoder(); }
+  AudioEncoder* CurrentEncoder() { return rent_a_codec_.GetEncoderStack(); }
+  const AudioEncoder* CurrentEncoder() const {
+    return rent_a_codec_.GetEncoderStack();
+  }
 
   bool CurrentEncoderIsOpus() const { return encoder_is_opus_; }
 
  private:
   int CngPayloadType(int sample_rate_hz) const;
-
   int RedPayloadType(int sample_rate_hz) const;
+  void RentEncoderStack(AudioEncoder* speech_encoder, int sample_rate_hz);
 
   rtc::ThreadChecker thread_checker_;
   uint8_t cng_nb_pltype_;
@@ -78,7 +79,6 @@ class CodecManager final {
   CodecInst send_codec_inst_;
   bool red_enabled_;
   bool codec_fec_enabled_;
-  CodecOwner codec_owner_;
   RentACodec rent_a_codec_;
   bool encoder_is_opus_;
 

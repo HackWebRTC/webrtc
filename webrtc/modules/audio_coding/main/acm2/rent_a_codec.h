@@ -17,9 +17,10 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
+#include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
 #include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
@@ -188,14 +189,35 @@ class RentACodec {
   // successful call to this function, or until the Rent-A-Codec is destroyed.
   AudioEncoder* RentEncoder(const CodecInst& codec_inst);
 
+  // Creates and returns an audio encoder stack where the given speech encoder
+  // is augmented with the specified CNG/VAD and RED encoders. Leave either
+  // optional field blank if you don't want the corresponding gizmo in the
+  // stack. The returned encoder is live until the next successful call to this
+  // function, or until the Rent-A-Codec is destroyed.
+  struct CngConfig {
+    int cng_payload_type;
+    ACMVADMode vad_mode;
+  };
+  AudioEncoder* RentEncoderStack(AudioEncoder* speech_encoder,
+                                 rtc::Optional<CngConfig> cng_config,
+                                 rtc::Optional<int> red_payload_type);
+
+  // Get the last return values of RentEncoder and RentEncoderStack, or null if
+  // they haven't been called.
+  AudioEncoder* GetEncoder() const { return speech_encoder_.get(); }
+  AudioEncoder* GetEncoderStack() const { return encoder_stack_; }
+
   // Creates and returns an iSAC decoder, which will remain live until the
   // Rent-A-Codec is destroyed. Subsequent calls will simply return the same
   // object.
   AudioDecoder* RentIsacDecoder();
 
  private:
-  rtc::scoped_ptr<AudioEncoder> encoder_;
+  rtc::scoped_ptr<AudioEncoder> speech_encoder_;
+  rtc::scoped_ptr<AudioEncoder> cng_encoder_;
+  rtc::scoped_ptr<AudioEncoder> red_encoder_;
   rtc::scoped_ptr<AudioDecoder> isac_decoder_;
+  AudioEncoder* encoder_stack_ = nullptr;
   LockedIsacBandwidthInfo isac_bandwidth_info_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RentACodec);
