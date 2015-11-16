@@ -88,6 +88,29 @@ final class ThreadUtils {
     }
   }
 
+  public static boolean joinUninterruptibly(final Thread thread, long timeoutMs) {
+    final long startTimeMs = SystemClock.elapsedRealtime();
+    long timeRemainingMs = timeoutMs;
+    boolean wasInterrupted = false;
+    while (timeRemainingMs > 0) {
+      try {
+        thread.join(timeRemainingMs);
+        break;
+      } catch (InterruptedException e) {
+        // Someone is asking us to return early at our convenience. We can't cancel this operation,
+        // but we should preserve the information and pass it along.
+        wasInterrupted = true;
+        final long elapsedTimeMs = SystemClock.elapsedRealtime() - startTimeMs;
+        timeRemainingMs = timeoutMs - elapsedTimeMs;
+      }
+    }
+    // Pass interruption information along.
+    if (wasInterrupted) {
+      Thread.currentThread().interrupt();
+    }
+    return !thread.isAlive();
+  }
+
   public static void joinUninterruptibly(final Thread thread) {
     executeUninterruptibly(new BlockingOperation() {
       @Override
