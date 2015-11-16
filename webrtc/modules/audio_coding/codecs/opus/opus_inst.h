@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INST_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INST_H_
 
+#include <stddef.h>
+
 #include "opus.h"
 
 struct WebRtcOpusEncInst {
