@@ -30,7 +30,7 @@ struct ConfigHelper {
   MockVoiceEngine& voice_engine() { return voice_engine_; }
 
  private:
-  MockVoiceEngine voice_engine_;
+  testing::StrictMock<MockVoiceEngine> voice_engine_;
   AudioState::Config config_;
 };
 }  // namespace

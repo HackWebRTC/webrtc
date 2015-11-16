@@ -20,12 +20,6 @@ namespace {
 
 struct CallHelper {
   CallHelper() {
-    EXPECT_CALL(voice_engine_,
-        RegisterVoiceEngineObserver(testing::_)).WillOnce(testing::Return(0));
-    EXPECT_CALL(voice_engine_,
-        DeRegisterVoiceEngineObserver()).WillOnce(testing::Return(0));
-    EXPECT_CALL(voice_engine_,
-        GetEventLog()).WillOnce(testing::Return(nullptr));
     webrtc::AudioState::Config audio_state_config;
     audio_state_config.voice_engine = &voice_engine_;
     webrtc::Call::Config config;
@@ -36,7 +30,7 @@ struct CallHelper {
   webrtc::Call* operator->() { return call_.get(); }
 
  private:
-  webrtc::test::MockVoiceEngine voice_engine_;
+  testing::NiceMock<webrtc::test::MockVoiceEngine> voice_engine_;
   rtc::scoped_ptr<webrtc::Call> call_;
 };
 }  // namespace

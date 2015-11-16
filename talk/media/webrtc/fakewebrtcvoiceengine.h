@@ -188,9 +188,7 @@ class FakeWebRtcVoiceEngine
           red_type(117),
           nack_max_packets(0),
           send_ssrc(0),
-          send_audio_level_ext_(-1),
           receive_audio_level_ext_(-1),
-          send_absolute_sender_time_ext_(-1),
           receive_absolute_sender_time_ext_(-1),
           associate_send_channel(-1),
           neteq_capacity(-1),
@@ -213,9 +211,7 @@ class FakeWebRtcVoiceEngine
     int red_type;
     int nack_max_packets;
     uint32_t send_ssrc;
-    int send_audio_level_ext_;
     int receive_audio_level_ext_;
-    int send_absolute_sender_time_ext_;
     int receive_absolute_sender_time_ext_;
     int associate_send_channel;
     DtmfInfo dtmf_info;
@@ -267,14 +263,6 @@ class FakeWebRtcVoiceEngine
 
   bool IsInited() const { return inited_; }
   int GetLastChannel() const { return last_channel_; }
-  int GetChannelFromLocalSsrc(uint32_t local_ssrc) const {
-    for (std::map<int, Channel*>::const_iterator iter = channels_.begin();
-         iter != channels_.end(); ++iter) {
-      if (local_ssrc == iter->second->send_ssrc)
-        return iter->first;
-    }
-    return -1;
-  }
   int GetNumChannels() const { return static_cast<int>(channels_.size()); }
   uint32_t GetLocalSSRC(int channel) {
     return channels_[channel]->send_ssrc;
@@ -363,15 +351,6 @@ class FakeWebRtcVoiceEngine
         config.Get<webrtc::NetEqFastAccelerate>().enabled;
     channels_[++last_channel_] = ch;
     return last_channel_;
-  }
-  int GetSendRtpExtensionId(int channel, const std::string& extension) {
-    WEBRTC_ASSERT_CHANNEL(channel);
-    if (extension == kRtpAudioLevelHeaderExtension) {
-      return channels_[channel]->send_audio_level_ext_;
-    } else if (extension == kRtpAbsoluteSenderTimeHeaderExtension) {
-      return channels_[channel]->send_absolute_sender_time_ext_;
-    }
-    return -1;
   }
   int GetReceiveRtpExtensionId(int channel, const std::string& extension) {
     WEBRTC_ASSERT_CHANNEL(channel);
@@ -729,13 +708,8 @@ class FakeWebRtcVoiceEngine
   }
   WEBRTC_STUB(GetLocalSSRC, (int channel, unsigned int& ssrc));
   WEBRTC_STUB(GetRemoteSSRC, (int channel, unsigned int& ssrc));
-  WEBRTC_FUNC(SetSendAudioLevelIndicationStatus, (int channel, bool enable,
-      unsigned char id)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
-    channels_[channel]->send_audio_level_ext_ = (enable) ? id : -1;
-    return 0;
-  }
+  WEBRTC_STUB(SetSendAudioLevelIndicationStatus, (int channel, bool enable,
+      unsigned char id));
   WEBRTC_FUNC(SetReceiveAudioLevelIndicationStatus, (int channel, bool enable,
       unsigned char id)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -743,13 +717,8 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->receive_audio_level_ext_ = (enable) ? id : -1;
    return 0;
   }
-  WEBRTC_FUNC(SetSendAbsoluteSenderTimeStatus, (int channel, bool enable,
-      unsigned char id)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
-    channels_[channel]->send_absolute_sender_time_ext_ = (enable) ? id : -1;
-    return 0;
-  }
+  WEBRTC_STUB(SetSendAbsoluteSenderTimeStatus, (int channel, bool enable,
+      unsigned char id));
   WEBRTC_FUNC(SetReceiveAbsoluteSenderTimeStatus, (int channel, bool enable,
       unsigned char id)) {
     WEBRTC_CHECK_CHANNEL(channel);

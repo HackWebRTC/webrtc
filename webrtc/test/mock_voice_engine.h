@@ -19,7 +19,7 @@ namespace test {
 
 // NOTE: This class inherits from VoiceEngineImpl so that its clients will be
 // able to get the various interfaces as usual, via T::GetInterface().
-class MockVoiceEngine final : public VoiceEngineImpl {
+class MockVoiceEngine : public VoiceEngineImpl {
  public:
   MockVoiceEngine() : VoiceEngineImpl(new Config(), true) {
     // Increase ref count so this object isn't automatically deleted whenever

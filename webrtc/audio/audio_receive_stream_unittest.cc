@@ -20,6 +20,9 @@ namespace webrtc {
 namespace test {
 namespace {
 
+using testing::_;
+using testing::Return;
+
 AudioDecodingCallStats MakeAudioDecodeStatsForTest() {
   AudioDecodingCallStats audio_decode_stats;
   audio_decode_stats.calls_to_silence_generator = 234;
@@ -50,9 +53,9 @@ const AudioDecodingCallStats kAudioDecodeStats = MakeAudioDecodeStatsForTest();
 struct ConfigHelper {
   ConfigHelper() {
     EXPECT_CALL(voice_engine_,
-        RegisterVoiceEngineObserver(testing::_)).WillOnce(testing::Return(0));
+        RegisterVoiceEngineObserver(_)).WillOnce(Return(0));
     EXPECT_CALL(voice_engine_,
-        DeRegisterVoiceEngineObserver()).WillOnce(testing::Return(0));
+        DeRegisterVoiceEngineObserver()).WillOnce(Return(0));
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
     audio_state_ = AudioState::Create(config);
@@ -69,9 +72,7 @@ struct ConfigHelper {
   MockVoiceEngine& voice_engine() { return voice_engine_; }
 
   void SetupMockForGetStats() {
-    using testing::_;
     using testing::DoAll;
-    using testing::Return;
     using testing::SetArgPointee;
     using testing::SetArgReferee;
     EXPECT_CALL(voice_engine_, GetRemoteSSRC(kChannelId, _))
@@ -94,7 +95,7 @@ struct ConfigHelper {
 
  private:
   MockRemoteBitrateEstimator remote_bitrate_estimator_;
-  MockVoiceEngine voice_engine_;
+  testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioReceiveStream::Config stream_config_;
 };

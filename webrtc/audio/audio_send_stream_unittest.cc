@@ -19,8 +19,14 @@ namespace webrtc {
 namespace test {
 namespace {
 
+using testing::_;
+using testing::Return;
+
 const int kChannelId = 1;
 const uint32_t kSsrc = 1234;
+const char* kCName = "foo_name";
+const int kAudioLevelId = 2;
+const int kAbsSendTimeId = 3;
 const int kEchoDelayMedian = 254;
 const int kEchoDelayStdDev = -3;
 const int kEchoReturnLoss = -65;
@@ -33,21 +39,45 @@ const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
 
 struct ConfigHelper {
   ConfigHelper() : stream_config_(nullptr) {
+    using testing::StrEq;
+
     EXPECT_CALL(voice_engine_,
-        RegisterVoiceEngineObserver(testing::_)).WillOnce(testing::Return(0));
+        RegisterVoiceEngineObserver(_)).WillOnce(Return(0));
     EXPECT_CALL(voice_engine_,
-        DeRegisterVoiceEngineObserver()).WillOnce(testing::Return(0));
+        DeRegisterVoiceEngineObserver()).WillOnce(Return(0));
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
     audio_state_ = AudioState::Create(config);
+
+    EXPECT_CALL(voice_engine_, SetRTCPStatus(kChannelId, true))
+        .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_, SetLocalSSRC(kChannelId, kSsrc))
+        .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_, SetRTCP_CNAME(kChannelId, StrEq(kCName)))
+        .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_,
+        SetSendAbsoluteSenderTimeStatus(kChannelId, true, kAbsSendTimeId))
+            .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_,
+        SetSendAudioLevelIndicationStatus(kChannelId, true, kAudioLevelId))
+            .WillOnce(Return(0));
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.ssrc = kSsrc;
+    stream_config_.rtp.c_name = kCName;
+    stream_config_.rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kAudioLevel, kAudioLevelId));
+    stream_config_.rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
   }
 
   AudioSendStream::Config& config() { return stream_config_; }
   rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
 
   void SetupMockForGetStats() {
+    using testing::DoAll;
+    using testing::SetArgPointee;
+    using testing::SetArgReferee;
+
     std::vector<ReportBlock> report_blocks;
     webrtc::ReportBlock block = kReportBlock;
     report_blocks.push_back(block);  // Has wrong SSRC.
@@ -56,11 +86,6 @@ struct ConfigHelper {
     block.fraction_lost = 0;
     report_blocks.push_back(block);  // Duplicate SSRC, bad fraction_lost.
 
-    using testing::_;
-    using testing::DoAll;
-    using testing::Return;
-    using testing::SetArgPointee;
-    using testing::SetArgReferee;
     EXPECT_CALL(voice_engine_, GetLocalSSRC(kChannelId, _))
         .WillRepeatedly(DoAll(SetArgReferee<1>(0), Return(0)));
     EXPECT_CALL(voice_engine_, GetRTCPStatistics(kChannelId, _))
@@ -83,25 +108,26 @@ struct ConfigHelper {
   }
 
  private:
-  MockVoiceEngine voice_engine_;
+  testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
 };
 }  // namespace
 
 TEST(AudioSendStreamTest, ConfigToString) {
-  const int kAbsSendTimeId = 3;
   AudioSendStream::Config config(nullptr);
   config.rtp.ssrc = kSsrc;
   config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
+  config.rtp.c_name = kCName;
   config.voe_channel_id = kChannelId;
   config.cng_payload_type = 42;
   config.red_payload_type = 17;
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extensions: [{name: "
-      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}]}, "
-      "voe_channel_id: 1, cng_payload_type: 42, red_payload_type: 17}",
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}], "
+      "c_name: foo_name}, voe_channel_id: 1, cng_payload_type: 42, "
+      "red_payload_type: 17}",
       config.ToString());
 }
 

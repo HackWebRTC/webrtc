@@ -16,6 +16,9 @@
 #include "webrtc/base/thread_checker.h"
 
 namespace webrtc {
+
+class VoiceEngine;
+
 namespace internal {
 
 class AudioSendStream final : public webrtc::AudioSendStream {
@@ -36,6 +39,8 @@ class AudioSendStream final : public webrtc::AudioSendStream {
   const webrtc::AudioSendStream::Config& config() const;
 
  private:
+  VoiceEngine* voice_engine() const;
+
   rtc::ThreadChecker thread_checker_;
   const webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;

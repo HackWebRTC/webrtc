@@ -245,8 +245,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
  private:
   bool SetSendCodecs(const std::vector<AudioCodec>& codecs);
-  bool SetSendRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions);
   bool SetOptions(const AudioOptions& options);
   bool SetMaxSendBandwidth(int bps);
   bool SetRecvCodecs(const std::vector<AudioCodec>& codecs);
@@ -290,9 +288,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool SetChannelRecvRtpHeaderExtensions(
     int channel_id,
     const std::vector<RtpHeaderExtension>& extensions);
-  bool SetChannelSendRtpHeaderExtensions(
-    int channel_id,
-    const std::vector<RtpHeaderExtension>& extensions);
 
   rtc::ThreadChecker worker_thread_checker_;
 
@@ -322,7 +317,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
   class WebRtcAudioSendStream;
   std::map<uint32_t, WebRtcAudioSendStream*> send_streams_;
-  std::vector<RtpHeaderExtension> send_extensions_;
+  std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
   class WebRtcAudioReceiveStream;
   std::map<uint32_t, WebRtcAudioReceiveStream*> receive_channels_;

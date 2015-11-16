@@ -61,6 +61,9 @@ class AudioSendStream : public SendStream {
 
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
+
+      // RTCP CNAME, see RFC 3550.
+      std::string c_name;
     } rtp;
 
     // Transport for outgoing packets. The transport is expected to exist for

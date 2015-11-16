@@ -118,13 +118,6 @@ class BitrateEstimatorTest : public test::CallTest {
   virtual ~BitrateEstimatorTest() { EXPECT_TRUE(streams_.empty()); }
 
   virtual void SetUp() {
-    EXPECT_CALL(mock_voice_engine_,
-        RegisterVoiceEngineObserver(testing::_)).WillOnce(testing::Return(0));
-    EXPECT_CALL(mock_voice_engine_,
-        DeRegisterVoiceEngineObserver()).WillOnce(testing::Return(0));
-    EXPECT_CALL(mock_voice_engine_, GetEventLog())
-        .WillRepeatedly(testing::Return(nullptr));
-
     AudioState::Config audio_state_config;
     audio_state_config.voice_engine = &mock_voice_engine_;
     Call::Config config;
@@ -265,7 +258,7 @@ class BitrateEstimatorTest : public test::CallTest {
     test::FakeDecoder fake_decoder_;
   };
 
-  test::MockVoiceEngine mock_voice_engine_;
+  testing::NiceMock<test::MockVoiceEngine> mock_voice_engine_;
   TraceObserver receiver_trace_;
   rtc::scoped_ptr<test::DirectTransport> send_transport_;
   rtc::scoped_ptr<test::DirectTransport> receive_transport_;
