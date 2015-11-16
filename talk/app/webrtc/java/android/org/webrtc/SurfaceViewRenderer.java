@@ -176,7 +176,7 @@ public class SurfaceViewRenderer extends SurfaceView
       @Override public void run() {
         synchronized (layoutLock) {
           if (isSurfaceCreated) {
-            eglBase.createSurface(getHolder());
+            eglBase.createSurface(getHolder().getSurface());
             eglBase.makeCurrent();
             // Necessary for YUV frames with odd width.
             GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);

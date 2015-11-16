@@ -27,7 +27,10 @@
 
 package org.webrtc;
 
+import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
+import android.graphics.Rect;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 
 import org.webrtc.Logging;
@@ -86,9 +89,71 @@ public final class EglBase {
     eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
   }
 
-  // Create EGLSurface from the Android SurfaceHolder.
-  public void createSurface(SurfaceHolder surfaceHolder) {
-    createSurfaceInternal(surfaceHolder);
+  // Create EGLSurface from the Android Surface.
+  public void createSurface(Surface surface) {
+    /**
+     * We have to wrap Surface in a SurfaceHolder because for some reason eglCreateWindowSurface
+     * couldn't actually take a Surface object until API 17. Older versions fortunately just call
+     * SurfaceHolder.getSurface(), so we'll do that. No other methods are relevant.
+     */
+    class FakeSurfaceHolder implements SurfaceHolder {
+      private final Surface surface;
+
+      FakeSurfaceHolder(Surface surface) {
+        this.surface = surface;
+      }
+
+      @Override
+      public void addCallback(Callback callback) {}
+
+      @Override
+      public void removeCallback(Callback callback) {}
+
+      @Override
+      public boolean isCreating() {
+        return false;
+      }
+
+      @Override
+      public void setType(int i) {}
+
+      @Override
+      public void setFixedSize(int i, int i2) {}
+
+      @Override
+      public void setSizeFromLayout() {}
+
+      @Override
+      public void setFormat(int i) {}
+
+      @Override
+      public void setKeepScreenOn(boolean b) {}
+
+      @Override
+      public Canvas lockCanvas() {
+        return null;
+      }
+
+      @Override
+      public Canvas lockCanvas(Rect rect) {
+        return null;
+      }
+
+      @Override
+      public void unlockCanvasAndPost(Canvas canvas) {}
+
+      @Override
+      public Rect getSurfaceFrame() {
+        return null;
+      }
+
+      @Override
+      public Surface getSurface() {
+        return surface;
+      }
+    }
+
+    createSurfaceInternal(new FakeSurfaceHolder(surface));
   }
 
   // Create EGLSurface from the Android SurfaceTexture.
