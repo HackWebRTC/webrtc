@@ -109,13 +109,12 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine);
   ScopedVoEInterface<VoEVideoSync> sync(voice_engine);
   ScopedVoEInterface<VoEVolumeControl> volume(voice_engine);
-  unsigned int ssrc = 0;
+
   webrtc::CallStatistics call_stats = {0};
+  int error = rtp->GetRTCPStatistics(config_.voe_channel_id, call_stats);
+  RTC_DCHECK_EQ(0, error);
   webrtc::CodecInst codec_inst = {0};
-  // Only collect stats if we have seen some traffic with the SSRC.
-  if (rtp->GetRemoteSSRC(config_.voe_channel_id, ssrc) == -1 ||
-      rtp->GetRTCPStatistics(config_.voe_channel_id, call_stats) == -1 ||
-      codec->GetRecCodec(config_.voe_channel_id, codec_inst) == -1) {
+  if (codec->GetRecCodec(config_.voe_channel_id, codec_inst) == -1) {
     return stats;
   }
 
@@ -123,6 +122,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.packets_rcvd = call_stats.packetsReceived;
   stats.packets_lost = call_stats.cumulativeLost;
   stats.fraction_lost = Q8ToFloat(call_stats.fractionLost);
+  stats.capture_start_ntp_time_ms = call_stats.capture_start_ntp_time_ms_;
   if (codec_inst.pltype != -1) {
     stats.codec_name = codec_inst.plname;
   }
@@ -139,35 +139,33 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   }
   {
     unsigned int level = 0;
-    if (volume->GetSpeechOutputLevelFullRange(config_.voe_channel_id, level) !=
-        -1) {
-      stats.audio_level = static_cast<int32_t>(level);
-    }
+    error = volume->GetSpeechOutputLevelFullRange(config_.voe_channel_id,
+                                                  level);
+    RTC_DCHECK_EQ(0, error);
+    stats.audio_level = static_cast<int32_t>(level);
   }
 
+  // Get jitter buffer and total delay (alg + jitter + playout) stats.
   webrtc::NetworkStatistics ns = {0};
-  if (neteq->GetNetworkStatistics(config_.voe_channel_id, ns) != -1) {
-    // Get jitter buffer and total delay (alg + jitter + playout) stats.
-    stats.jitter_buffer_ms = ns.currentBufferSize;
-    stats.jitter_buffer_preferred_ms = ns.preferredBufferSize;
-    stats.expand_rate = Q14ToFloat(ns.currentExpandRate);
-    stats.speech_expand_rate = Q14ToFloat(ns.currentSpeechExpandRate);
-    stats.secondary_decoded_rate = Q14ToFloat(ns.currentSecondaryDecodedRate);
-    stats.accelerate_rate = Q14ToFloat(ns.currentAccelerateRate);
-    stats.preemptive_expand_rate = Q14ToFloat(ns.currentPreemptiveRate);
-  }
+  error = neteq->GetNetworkStatistics(config_.voe_channel_id, ns);
+  RTC_DCHECK_EQ(0, error);
+  stats.jitter_buffer_ms = ns.currentBufferSize;
+  stats.jitter_buffer_preferred_ms = ns.preferredBufferSize;
+  stats.expand_rate = Q14ToFloat(ns.currentExpandRate);
+  stats.speech_expand_rate = Q14ToFloat(ns.currentSpeechExpandRate);
+  stats.secondary_decoded_rate = Q14ToFloat(ns.currentSecondaryDecodedRate);
+  stats.accelerate_rate = Q14ToFloat(ns.currentAccelerateRate);
+  stats.preemptive_expand_rate = Q14ToFloat(ns.currentPreemptiveRate);
 
   webrtc::AudioDecodingCallStats ds;
-  if (neteq->GetDecodingCallStatistics(config_.voe_channel_id, &ds) != -1) {
-    stats.decoding_calls_to_silence_generator = ds.calls_to_silence_generator;
-    stats.decoding_calls_to_neteq = ds.calls_to_neteq;
-    stats.decoding_normal = ds.decoded_normal;
-    stats.decoding_plc = ds.decoded_plc;
-    stats.decoding_cng = ds.decoded_cng;
-    stats.decoding_plc_cng = ds.decoded_plc_cng;
-  }
-
-  stats.capture_start_ntp_time_ms = call_stats.capture_start_ntp_time_ms_;
+  error = neteq->GetDecodingCallStatistics(config_.voe_channel_id, &ds);
+  RTC_DCHECK_EQ(0, error);
+  stats.decoding_calls_to_silence_generator = ds.calls_to_silence_generator;
+  stats.decoding_calls_to_neteq = ds.calls_to_neteq;
+  stats.decoding_normal = ds.decoded_normal;
+  stats.decoding_plc = ds.decoded_plc;
+  stats.decoding_cng = ds.decoded_cng;
+  stats.decoding_plc_cng = ds.decoded_plc_cng;
 
   return stats;
 }
@@ -205,7 +203,6 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
   // thread. Then this check can be enabled.
   // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
   RTPHeader header;
-
   if (!rtp_header_parser_->Parse(packet, length, &header)) {
     return false;
   }

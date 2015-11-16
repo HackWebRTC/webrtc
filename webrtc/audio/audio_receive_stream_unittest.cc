@@ -75,8 +75,6 @@ struct ConfigHelper {
     using testing::DoAll;
     using testing::SetArgPointee;
     using testing::SetArgReferee;
-    EXPECT_CALL(voice_engine_, GetRemoteSSRC(kChannelId, _))
-        .WillOnce(DoAll(SetArgReferee<1>(0), Return(0)));
     EXPECT_CALL(voice_engine_, GetRTCPStatistics(kChannelId, _))
         .WillOnce(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
     EXPECT_CALL(voice_engine_, GetRecCodec(kChannelId, _))

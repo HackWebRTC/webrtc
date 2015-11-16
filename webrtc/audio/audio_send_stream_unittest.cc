@@ -86,8 +86,6 @@ struct ConfigHelper {
     block.fraction_lost = 0;
     report_blocks.push_back(block);  // Duplicate SSRC, bad fraction_lost.
 
-    EXPECT_CALL(voice_engine_, GetLocalSSRC(kChannelId, _))
-        .WillRepeatedly(DoAll(SetArgReferee<1>(0), Return(0)));
     EXPECT_CALL(voice_engine_, GetRTCPStatistics(kChannelId, _))
         .WillRepeatedly(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
     EXPECT_CALL(voice_engine_, GetSendCodec(kChannelId, _))

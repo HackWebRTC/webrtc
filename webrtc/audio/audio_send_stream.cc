@@ -119,17 +119,20 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   ScopedVoEInterface<VoECodec> codec(voice_engine());
   ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
   ScopedVoEInterface<VoEVolumeControl> volume(voice_engine());
-  unsigned int ssrc = 0;
-  webrtc::CallStatistics call_stats = {0};
-  // TODO(solenberg): Change error code checking to RTC_CHECK_EQ(..., -1), if
-  //                  possible...
-  if (rtp->GetLocalSSRC(config_.voe_channel_id, ssrc) == -1 ||
-      rtp->GetRTCPStatistics(config_.voe_channel_id, call_stats) == -1) {
-    return stats;
-  }
 
+  webrtc::CallStatistics call_stats = {0};
+  int error = rtp->GetRTCPStatistics(config_.voe_channel_id, call_stats);
+  RTC_DCHECK_EQ(0, error);
   stats.bytes_sent = call_stats.bytesSent;
   stats.packets_sent = call_stats.packetsSent;
+  // RTT isn't known until a RTCP report is received. Until then, VoiceEngine
+  // returns 0 to indicate an error value.
+  if (call_stats.rttMs > 0) {
+    stats.rtt_ms = call_stats.rttMs;
+  }
+  // TODO(solenberg): [was ajm]: Re-enable this metric once we have a reliable
+  //                  implementation.
+  stats.aec_quality_min = -1;
 
   webrtc::CodecInst codec_inst = {0};
   if (codec->GetSendCodec(config_.voe_channel_id, codec_inst) != -1) {
@@ -138,53 +141,45 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
 
     // Get data from the last remote RTCP report.
     std::vector<webrtc::ReportBlock> blocks;
-    if (rtp->GetRemoteRTCPReportBlocks(config_.voe_channel_id, &blocks) != -1) {
-      for (const webrtc::ReportBlock& block : blocks) {
-        // Lookup report for send ssrc only.
-        if (block.source_SSRC == stats.local_ssrc) {
-          stats.packets_lost = block.cumulative_num_packets_lost;
-          stats.fraction_lost = Q8ToFloat(block.fraction_lost);
-          stats.ext_seqnum = block.extended_highest_sequence_number;
-          // Convert samples to milliseconds.
-          if (codec_inst.plfreq / 1000 > 0) {
-            stats.jitter_ms =
-                block.interarrival_jitter / (codec_inst.plfreq / 1000);
-          }
-          break;
+    error = rtp->GetRemoteRTCPReportBlocks(config_.voe_channel_id, &blocks);
+    RTC_DCHECK_EQ(0, error);
+    for (const webrtc::ReportBlock& block : blocks) {
+      // Lookup report for send ssrc only.
+      if (block.source_SSRC == stats.local_ssrc) {
+        stats.packets_lost = block.cumulative_num_packets_lost;
+        stats.fraction_lost = Q8ToFloat(block.fraction_lost);
+        stats.ext_seqnum = block.extended_highest_sequence_number;
+        // Convert samples to milliseconds.
+        if (codec_inst.plfreq / 1000 > 0) {
+          stats.jitter_ms =
+              block.interarrival_jitter / (codec_inst.plfreq / 1000);
         }
+        break;
       }
     }
-  }
-
-  // RTT isn't known until a RTCP report is received. Until then, VoiceEngine
-  // returns 0 to indicate an error value.
-  if (call_stats.rttMs > 0) {
-    stats.rtt_ms = call_stats.rttMs;
   }
 
   // Local speech level.
   {
     unsigned int level = 0;
-    if (volume->GetSpeechInputLevelFullRange(level) != -1) {
-      stats.audio_level = static_cast<int32_t>(level);
-    }
+    error = volume->GetSpeechInputLevelFullRange(level);
+    RTC_DCHECK_EQ(0, error);
+    stats.audio_level = static_cast<int32_t>(level);
   }
 
-  // TODO(ajm): Re-enable this metric once we have a reliable implementation.
-  stats.aec_quality_min = -1;
-
   bool echo_metrics_on = false;
-  if (processing->GetEcMetricsStatus(echo_metrics_on) != -1 &&
-      echo_metrics_on) {
+  error = processing->GetEcMetricsStatus(echo_metrics_on);
+  RTC_DCHECK_EQ(0, error);
+  if (echo_metrics_on) {
     // These can also be negative, but in practice -1 is only used to signal
     // insufficient data, since the resolution is limited to multiples of 4 ms.
     int median = -1;
     int std = -1;
     float dummy = 0.0f;
-    if (processing->GetEcDelayMetrics(median, std, dummy) != -1) {
-      stats.echo_delay_median_ms = median;
-      stats.echo_delay_std_ms = std;
-    }
+    error = processing->GetEcDelayMetrics(median, std, dummy);
+    RTC_DCHECK_EQ(0, error);
+    stats.echo_delay_median_ms = median;
+    stats.echo_delay_std_ms = std;
 
     // These can take on valid negative values, so use the lowest possible level
     // as default rather than -1.
@@ -192,10 +187,10 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
     int erle = -100;
     int dummy1 = 0;
     int dummy2 = 0;
-    if (processing->GetEchoMetrics(erl, erle, dummy1, dummy2) != -1) {
-      stats.echo_return_loss = erl;
-      stats.echo_return_loss_enhancement = erle;
-    }
+    error = processing->GetEchoMetrics(erl, erle, dummy1, dummy2);
+    RTC_DCHECK_EQ(0, error);
+    stats.echo_return_loss = erl;
+    stats.echo_return_loss_enhancement = erle;
   }
 
   internal::AudioState* audio_state =
