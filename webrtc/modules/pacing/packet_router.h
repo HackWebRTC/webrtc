@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_PACING_INCLUDE_PACKET_ROUTER_H_
-#define WEBRTC_MODULES_PACING_INCLUDE_PACKET_ROUTER_H_
+#ifndef WEBRTC_MODULES_PACING_PACKET_ROUTER_H_
+#define WEBRTC_MODULES_PACING_PACKET_ROUTER_H_
 
 #include <list>
 
@@ -18,7 +18,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/pacing/include/paced_sender.h"
+#include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -63,4 +63,4 @@ class PacketRouter : public PacedSender::Callback,
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketRouter);
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_PACING_INCLUDE_PACKET_ROUTER_H_
+#endif  // WEBRTC_MODULES_PACING_PACKET_ROUTER_H_

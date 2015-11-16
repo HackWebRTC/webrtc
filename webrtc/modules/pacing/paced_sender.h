@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_PACING_INCLUDE_PACED_SENDER_H_
-#define WEBRTC_MODULES_PACING_INCLUDE_PACED_SENDER_H_
+#ifndef WEBRTC_MODULES_PACING_PACED_SENDER_H_
+#define WEBRTC_MODULES_PACING_PACED_SENDER_H_
 
 #include <list>
 #include <set>
@@ -150,4 +150,4 @@ class PacedSender : public Module, public RtpPacketSender {
   uint64_t packet_counter_;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_PACING_INCLUDE_PACED_SENDER_H_
+#endif  // WEBRTC_MODULES_PACING_PACED_SENDER_H_

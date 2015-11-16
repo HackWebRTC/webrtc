@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/media_file/source/media_file_utility.h"
+#include "webrtc/modules/media_file/media_file_utility.h"
 
 #include <assert.h>
 #include <sys/stat.h>

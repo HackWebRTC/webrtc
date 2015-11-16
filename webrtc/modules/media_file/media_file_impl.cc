@@ -11,7 +11,7 @@
 #include <assert.h>
 
 #include "webrtc/base/format_macros.h"
-#include "webrtc/modules/media_file/source/media_file_impl.h"
+#include "webrtc/modules/media_file/media_file_impl.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"

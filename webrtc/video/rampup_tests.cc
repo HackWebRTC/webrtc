@@ -12,7 +12,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/event.h"
-#include "webrtc/modules/pacing/include/packet_router.h"
+#include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"

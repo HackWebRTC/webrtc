@@ -211,7 +211,7 @@
             'desktop_capture/win/cursor_unittest.cc',
             'desktop_capture/win/cursor_unittest_resources.h',
             'desktop_capture/win/cursor_unittest_resources.rc',
-            'media_file/source/media_file_unittest.cc',
+            'media_file/media_file_unittest.cc',
             'module_common_types_unittest.cc',
             'pacing/bitrate_prober_unittest.cc',
             'pacing/paced_sender_unittest.cc',

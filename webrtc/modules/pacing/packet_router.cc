@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/pacing/include/packet_router.h"
+#include "webrtc/modules/pacing/packet_router.h"
 
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"

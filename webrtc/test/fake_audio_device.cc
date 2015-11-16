@@ -13,7 +13,7 @@
 #include <algorithm>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/media_file/source/media_file_utility.h"
+#include "webrtc/modules/media_file/media_file_utility.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
