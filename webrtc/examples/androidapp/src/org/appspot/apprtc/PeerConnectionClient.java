@@ -55,7 +55,6 @@ public class PeerConnectionClient {
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
   private static final String TAG = "PCRTCClient";
-  private static final String FIELD_TRIAL_VP9 = "WebRTC-SupportVP9/Enabled/";
   private static final String FIELD_TRIAL_AUTOMATIC_RESIZE =
       "WebRTC-MediaCodecVideoEncoder-AutomaticResize/Enabled/";
   private static final String VIDEO_CODEC_VP8 = "VP8";
@@ -94,7 +93,7 @@ public class PeerConnectionClient {
   private VideoSource videoSource;
   private boolean videoCallEnabled;
   private boolean preferIsac;
-  private boolean preferH264;
+  private String preferredVideoCodec;
   private boolean videoSourceStopped;
   private boolean isError;
   private Timer statsTimer;
@@ -228,7 +227,6 @@ public class PeerConnectionClient {
     factory = null;
     peerConnection = null;
     preferIsac = false;
-    preferH264 = false;
     videoSourceStopped = false;
     isError = false;
     queuedRemoteCandidates = null;
@@ -288,20 +286,19 @@ public class PeerConnectionClient {
     isError = false;
 
     // Initialize field trials.
-    String field_trials = FIELD_TRIAL_AUTOMATIC_RESIZE;
-    // Check if VP9 is used by default.
-    if (videoCallEnabled && peerConnectionParameters.videoCodec != null
-        && peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_VP9)) {
-      field_trials += FIELD_TRIAL_VP9;
-    }
-    PeerConnectionFactory.initializeFieldTrials(field_trials);
+    PeerConnectionFactory.initializeFieldTrials(FIELD_TRIAL_AUTOMATIC_RESIZE);
 
-    // Check if H.264 is used by default.
-    preferH264 = false;
-    if (videoCallEnabled && peerConnectionParameters.videoCodec != null
-        && peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_H264)) {
-      preferH264 = true;
+    // Check preferred video codec.
+    preferredVideoCodec = VIDEO_CODEC_VP8;
+    if (videoCallEnabled && peerConnectionParameters.videoCodec != null) {
+      if (peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_VP9)) {
+        preferredVideoCodec = VIDEO_CODEC_VP9;
+      } else if (peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_H264)) {
+        preferredVideoCodec = VIDEO_CODEC_H264;
+      }
     }
+    Log.d(TAG, "Pereferred video codec: " + preferredVideoCodec);
+
     // Check if ISAC is used by default.
     preferIsac = false;
     if (peerConnectionParameters.audioCodec != null
@@ -623,8 +620,8 @@ public class PeerConnectionClient {
         if (preferIsac) {
           sdpDescription = preferCodec(sdpDescription, AUDIO_CODEC_ISAC, true);
         }
-        if (videoCallEnabled && preferH264) {
-          sdpDescription = preferCodec(sdpDescription, VIDEO_CODEC_H264, false);
+        if (videoCallEnabled) {
+          sdpDescription = preferCodec(sdpDescription, preferredVideoCodec, false);
         }
         if (videoCallEnabled && peerConnectionParameters.videoStartBitrate > 0) {
           sdpDescription = setStartBitrate(VIDEO_CODEC_VP8, true,
@@ -972,8 +969,8 @@ public class PeerConnectionClient {
       if (preferIsac) {
         sdpDescription = preferCodec(sdpDescription, AUDIO_CODEC_ISAC, true);
       }
-      if (videoCallEnabled && preferH264) {
-        sdpDescription = preferCodec(sdpDescription, VIDEO_CODEC_H264, false);
+      if (videoCallEnabled) {
+        sdpDescription = preferCodec(sdpDescription, preferredVideoCodec, false);
       }
       final SessionDescription sdp = new SessionDescription(
           origSdp.type, sdpDescription);
