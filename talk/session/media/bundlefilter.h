@@ -28,6 +28,8 @@
 #ifndef TALK_SESSION_MEDIA_BUNDLEFILTER_H_
 #define TALK_SESSION_MEDIA_BUNDLEFILTER_H_
 
+#include <stdint.h>
+
 #include <set>
 #include <vector>
 
@@ -37,42 +39,31 @@
 namespace cricket {
 
 // In case of single RTP session and single transport channel, all session
-// ( or media) channels share a common transport channel. Hence they all get
+// (or media) channels share a common transport channel. Hence they all get
 // SignalReadPacket when packet received on transport channel. This requires
 // cricket::BaseChannel to know all the valid sources, else media channel
 // will decode invalid packets.
 //
 // This class determines whether a packet is destined for cricket::BaseChannel.
-// For rtp packets, this is decided based on the payload type. For rtcp packets,
-// this is decided based on the sender ssrc values.
+// This is only to be used for RTP packets as RTCP packets are not filtered.
+// For RTP packets, this is decided based on the payload type.
 class BundleFilter {
  public:
   BundleFilter();
   ~BundleFilter();
 
-  // Determines packet belongs to valid cricket::BaseChannel.
-  bool DemuxPacket(const char* data, size_t len, bool rtcp);
+  // Determines if a RTP packet belongs to valid cricket::BaseChannel.
+  bool DemuxPacket(const uint8_t* data, size_t len);
 
   // Adds the supported payload type.
   void AddPayloadType(int payload_type);
 
-  // Adding a valid source to the filter.
-  bool AddStream(const StreamParams& stream);
-
-  // Removes source from the filter.
-  bool RemoveStream(uint32_t ssrc);
-
-  // Utility methods added for unitest.
-  // True if |streams_| is not empty.
-  bool HasStreams() const;
-  bool FindStream(uint32_t ssrc) const;
+  // Public for unittests.
   bool FindPayloadType(int pl_type) const;
   void ClearAllPayloadTypes();
 
-
  private:
   std::set<int> payload_types_;
-  std::vector<StreamParams> streams_;
 };
 
 }  // namespace cricket

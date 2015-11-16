@@ -628,9 +628,12 @@ bool BaseChannel::WantsPacket(bool rtcp, rtc::Buffer* packet) {
                   << " packet: wrong size=" << packet->size();
     return false;
   }
-
-  // Bundle filter handles both rtp and rtcp packets.
-  return bundle_filter_.DemuxPacket(packet->data<char>(), packet->size(), rtcp);
+  if (rtcp) {
+    // Permit all (seemingly valid) RTCP packets.
+    return true;
+  }
+  // Check whether we handle this payload.
+  return bundle_filter_.DemuxPacket(packet->data<uint8_t>(), packet->size());
 }
 
 void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
@@ -1075,15 +1078,11 @@ bool BaseChannel::SetRtcpMux_w(bool enable, ContentAction action,
 
 bool BaseChannel::AddRecvStream_w(const StreamParams& sp) {
   ASSERT(worker_thread() == rtc::Thread::Current());
-  if (!media_channel()->AddRecvStream(sp))
-    return false;
-
-  return bundle_filter_.AddStream(sp);
+  return media_channel()->AddRecvStream(sp);
 }
 
 bool BaseChannel::RemoveRecvStream_w(uint32_t ssrc) {
   ASSERT(worker_thread() == rtc::Thread::Current());
-  bundle_filter_.RemoveStream(ssrc);
   return media_channel()->RemoveRecvStream(ssrc);
 }
 

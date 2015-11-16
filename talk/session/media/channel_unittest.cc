@@ -1474,12 +1474,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(channel2_->bundle_filter()->FindPayloadType(pl_type1));
     EXPECT_FALSE(channel1_->bundle_filter()->FindPayloadType(pl_type2));
     EXPECT_FALSE(channel2_->bundle_filter()->FindPayloadType(pl_type2));
-    // channel1 - should only have media_content2 as remote. i.e. kSsrc2
-    EXPECT_TRUE(channel1_->bundle_filter()->FindStream(kSsrc2));
-    EXPECT_FALSE(channel1_->bundle_filter()->FindStream(kSsrc1));
-    // channel2 - should only have media_content1 as remote. i.e. kSsrc1
-    EXPECT_TRUE(channel2_->bundle_filter()->FindStream(kSsrc1));
-    EXPECT_FALSE(channel2_->bundle_filter()->FindStream(kSsrc2));
 
     // Both channels can receive pl_type1 only.
     EXPECT_TRUE(SendCustomRtp1(kSsrc1, ++sequence_number1_1, pl_type1));
@@ -1504,8 +1498,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     EXPECT_TRUE(SendCustomRtcp1(kSsrc2));
     EXPECT_TRUE(SendCustomRtcp2(kSsrc1));
-    EXPECT_FALSE(CheckCustomRtcp1(kSsrc1));
-    EXPECT_FALSE(CheckCustomRtcp2(kSsrc2));
+    // Bundle filter shouldn't filter out any RTCP.
+    EXPECT_TRUE(CheckCustomRtcp1(kSsrc1));
+    EXPECT_TRUE(CheckCustomRtcp2(kSsrc2));
   }
 
   // Test that the media monitor can be run and gives timely callbacks.
