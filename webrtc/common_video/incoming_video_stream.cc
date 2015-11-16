@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_video/interface/incoming_video_stream.h"
+#include "webrtc/common_video/include/incoming_video_stream.h"
 
 #include <assert.h>
 

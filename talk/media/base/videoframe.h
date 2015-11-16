@@ -30,7 +30,7 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/stream.h"
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
 
 namespace cricket {

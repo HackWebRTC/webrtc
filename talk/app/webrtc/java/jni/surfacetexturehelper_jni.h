@@ -35,7 +35,7 @@
 #include "talk/app/webrtc/java/jni/native_handle_impl.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
 
 namespace webrtc_jni {
 

@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/common_video/interface/video_image.h"
+#include "webrtc/common_video/include/video_image.h"
 
 namespace webrtc {
 namespace test {

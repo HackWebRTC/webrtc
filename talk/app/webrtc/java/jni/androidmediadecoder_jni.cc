@@ -39,7 +39,7 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/common_video/interface/i420_buffer_pool.h"
+#include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
 #include "webrtc/system_wrappers/include/tick_util.h"

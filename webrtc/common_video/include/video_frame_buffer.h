@@ -11,8 +11,6 @@
 #ifndef WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
 #define WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
 
-#pragma message("WARNING: common_video/include is DEPRECATED; use common_video/include")
-
 #include "webrtc/base/callback.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"

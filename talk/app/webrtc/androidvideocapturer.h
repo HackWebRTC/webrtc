@@ -32,7 +32,7 @@
 
 #include "talk/media/base/videocapturer.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
 
 namespace webrtc {
 

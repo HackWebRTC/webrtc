@@ -14,7 +14,7 @@
       'type': 'static_library',
       'include_dirs': [
         '<(webrtc_root)/modules/interface/',
-        'interface',
+        'include',
         'libyuv/include',
       ],
       'dependencies': [
@@ -23,7 +23,7 @@
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          'include',
           'libyuv/include',
         ],
       },
@@ -42,9 +42,9 @@
         'i420_buffer_pool.cc',
         'video_frame.cc',
         'incoming_video_stream.cc',
-        'interface/i420_buffer_pool.h',
-        'interface/incoming_video_stream.h',
-        'interface/video_frame_buffer.h',
+        'include/i420_buffer_pool.h',
+        'include/incoming_video_stream.h',
+        'include/video_frame_buffer.h',
         'libyuv/include/scaler.h',
         'libyuv/include/webrtc_libyuv.h',
         'libyuv/scaler.cc',

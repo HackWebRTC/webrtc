@@ -11,8 +11,6 @@
 #ifndef WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_IMAGE_H_
 #define WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_IMAGE_H_
 
-#pragma message("WARNING: common_video/include is DEPRECATED; use common_video/include")
-
 // TODO(pbos): Remove this file and include webrtc/video_frame.h instead.
 #include "webrtc/video_frame.h"
 

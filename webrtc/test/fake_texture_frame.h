@@ -11,7 +11,7 @@
 #define WEBRTC_TEST_FAKE_TEXTURE_FRAME_H_
 
 #include "webrtc/base/checks.h"
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {

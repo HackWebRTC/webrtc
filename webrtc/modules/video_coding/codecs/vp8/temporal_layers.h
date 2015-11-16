@@ -14,7 +14,7 @@
 
 #include "vpx/vpx_encoder.h"
 
-#include "webrtc/common_video/interface/video_image.h"
+#include "webrtc/common_video/include/video_image.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -18,7 +18,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call/bitrate_allocator.h"
-#include "webrtc/common_video/interface/video_image.h"
+#include "webrtc/common_video/include/video_image.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"

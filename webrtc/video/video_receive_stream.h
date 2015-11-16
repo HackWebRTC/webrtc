@@ -16,7 +16,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
-#include "webrtc/common_video/interface/incoming_video_stream.h"
+#include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"

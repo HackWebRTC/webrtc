@@ -16,7 +16,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common.h"
-#include "webrtc/common_video/interface/incoming_video_stream.h"
+#include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/pacing/paced_sender.h"

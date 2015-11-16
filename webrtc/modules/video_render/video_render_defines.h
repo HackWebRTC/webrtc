@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_RENDER_VIDEO_RENDER_DEFINES_H_
 
 #include "webrtc/common_types.h"
-#include "webrtc/common_video/interface/incoming_video_stream.h"
+#include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc

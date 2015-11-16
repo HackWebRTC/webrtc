@@ -11,8 +11,6 @@
 #ifndef WEBRTC_COMMON_VIDEO_INCLUDE_INCOMING_VIDEO_STREAM_H_
 #define WEBRTC_COMMON_VIDEO_INCLUDE_INCOMING_VIDEO_STREAM_H_
 
-#pragma message("WARNING: common_video/include is DEPRECATED; use common_video/include")
-
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_video/video_render_frames.h"

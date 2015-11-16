@@ -11,8 +11,6 @@
 #ifndef WEBRTC_COMMON_VIDEO_INCLUDE_I420_BUFFER_POOL_H_
 #define WEBRTC_COMMON_VIDEO_INCLUDE_I420_BUFFER_POOL_H_
 
-#pragma message("WARNING: common_video/include is DEPRECATED; use common_video/include")
-
 #include <list>
 
 #include "webrtc/base/thread_checker.h"

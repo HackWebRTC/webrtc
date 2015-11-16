@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"

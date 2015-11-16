@@ -13,7 +13,7 @@
 
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
 
