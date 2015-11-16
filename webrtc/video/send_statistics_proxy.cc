@@ -70,27 +70,22 @@ SendStatisticsProxy::~SendStatisticsProxy() {
 }
 
 void SendStatisticsProxy::UpdateHistograms() {
-  int input_fps =
-      round(input_frame_rate_tracker_.ComputeTotalRate());
-  if (input_fps > 0)
-    RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.InputFramesPerSecond", input_fps);
-  int sent_fps =
-      round(sent_frame_rate_tracker_.ComputeTotalRate());
-  if (sent_fps > 0)
-    RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.SentFramesPerSecond", sent_fps);
-
   const int kMinRequiredSamples = 200;
   int in_width = input_width_counter_.Avg(kMinRequiredSamples);
   int in_height = input_height_counter_.Avg(kMinRequiredSamples);
+  int in_fps = round(input_frame_rate_tracker_.ComputeTotalRate());
   if (in_width != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InputWidthInPixels", in_width);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.InputHeightInPixels", in_height);
+    RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.InputFramesPerSecond", in_fps);
   }
   int sent_width = sent_width_counter_.Avg(kMinRequiredSamples);
   int sent_height = sent_height_counter_.Avg(kMinRequiredSamples);
+  int sent_fps = round(sent_frame_rate_tracker_.ComputeTotalRate());
   if (sent_width != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SentWidthInPixels", sent_width);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SentHeightInPixels", sent_height);
+    RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.SentFramesPerSecond", sent_fps);
   }
   int encode_ms = encode_time_counter_.Avg(kMinRequiredSamples);
   if (encode_ms != -1)

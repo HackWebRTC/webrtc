@@ -2003,6 +2003,10 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
       "WebRTC.Video.DecodedFramesPerSecond"));
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.RenderFramesPerSecond"));
 
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.OnewayDelayInMs"));
+  EXPECT_EQ(
+      1, test::NumHistogramSamples("WebRTC.Video.RenderSqrtPixelsPerSecond"));
+
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.EncodeTimeInMs"));
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.DecodeTimeInMs"));
 
@@ -2022,6 +2026,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
       "WebRTC.Video.RetransmittedBitrateSentInKbps"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.RetransmittedBitrateReceivedInKbps"));
+
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SendSideDelayInMs"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SendSideDelayMaxInMs"));
 
   int num_rtx_samples = use_rtx ? 1 : 0;
   EXPECT_EQ(num_rtx_samples, test::NumHistogramSamples(
