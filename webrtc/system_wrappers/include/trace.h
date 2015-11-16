@@ -16,6 +16,7 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_TRACE_H_
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -84,7 +85,7 @@ class Trace {
                   const char* msg, ...);
 
  private:
-  static volatile int level_filter_;
+  static rtc::AtomicInt level_filter_;
 };
 
 }  // namespace webrtc

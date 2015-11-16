@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -81,7 +82,7 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   rtc::scoped_ptr<ThreadWrapper> encoder_thread_;
   rtc::scoped_ptr<EventWrapper> capture_event_;
 
-  volatile int stop_;
+  rtc::AtomicInt stop_;
 
   VideoFrame captured_frame_ GUARDED_BY(capture_cs_.get());
   // Used to make sure incoming time stamp is increasing for every frame.

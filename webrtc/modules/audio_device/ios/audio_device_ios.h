@@ -13,6 +13,7 @@
 
 #include <AudioUnit/AudioUnit.h>
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
@@ -53,11 +54,15 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
 
   int32_t StartPlayout() override;
   int32_t StopPlayout() override;
-  bool Playing() const override { return playing_; }
+  bool Playing() const override {
+    return rtc::AtomicInt::AcquireLoad(&playing_) != 0;
+  }
 
   int32_t StartRecording() override;
   int32_t StopRecording() override;
-  bool Recording() const override { return recording_; }
+  bool Recording() const override {
+    return rtc::AtomicInt::AcquireLoad(&recording_) != 0;
+  }
 
   int32_t SetLoudspeakerStatus(bool enable) override;
   int32_t GetLoudspeakerStatus(bool& enabled) const override;
@@ -268,10 +273,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   rtc::scoped_ptr<SInt8[]> record_audio_buffer_;
 
   // Set to 1 when recording is active and 0 otherwise.
-  volatile int recording_;
+  rtc::AtomicInt recording_;
 
   // Set to 1 when playout is active and 0 otherwise.
-  volatile int playing_;
+  rtc::AtomicInt playing_;
 
   // Set to true after successful call to Init(), false otherwise.
   bool initialized_;

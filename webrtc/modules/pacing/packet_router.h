@@ -13,6 +13,7 @@
 
 #include <list>
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -58,7 +59,7 @@ class PacketRouter : public PacedSender::Callback,
   // Map from ssrc to sending rtp module.
   std::list<RtpRtcp*> rtp_modules_ GUARDED_BY(modules_lock_);
 
-  volatile int transport_seq_;
+  rtc::AtomicInt transport_seq_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketRouter);
 };
