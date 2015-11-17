@@ -195,10 +195,6 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
       debug_file_(FileWrapper::Create()),
       event_msg_(new audioproc::Event()),
 #endif
-      api_format_({{{kSampleRate16kHz, 1, false},
-                    {kSampleRate16kHz, 1, false},
-                    {kSampleRate16kHz, 1, false},
-                    {kSampleRate16kHz, 1, false}}}),
       fwd_proc_format_(kSampleRate16kHz),
       rev_proc_format_(kSampleRate16kHz, 1),
       split_rate_(kSampleRate16kHz),
@@ -310,26 +306,37 @@ int AudioProcessingImpl::Initialize(const ProcessingConfig& processing_config) {
   return InitializeLocked(processing_config);
 }
 
+// Calls InitializeLocked() if any of the audio parameters have changed from
+// their current values.
+int AudioProcessingImpl::MaybeInitializeLocked(
+    const ProcessingConfig& processing_config) {
+  if (processing_config == shared_state_.api_format_) {
+    return kNoError;
+  }
+  return InitializeLocked(processing_config);
+}
+
 int AudioProcessingImpl::InitializeLocked() {
   const int fwd_audio_buffer_channels =
-      beamformer_enabled_ ? api_format_.input_stream().num_channels()
-                          : api_format_.output_stream().num_channels();
+      beamformer_enabled_
+          ? shared_state_.api_format_.input_stream().num_channels()
+          : shared_state_.api_format_.output_stream().num_channels();
   const int rev_audio_buffer_out_num_frames =
-      api_format_.reverse_output_stream().num_frames() == 0
+      shared_state_.api_format_.reverse_output_stream().num_frames() == 0
           ? rev_proc_format_.num_frames()
-          : api_format_.reverse_output_stream().num_frames();
-  if (api_format_.reverse_input_stream().num_channels() > 0) {
+          : shared_state_.api_format_.reverse_output_stream().num_frames();
+  if (shared_state_.api_format_.reverse_input_stream().num_channels() > 0) {
     render_audio_.reset(new AudioBuffer(
-        api_format_.reverse_input_stream().num_frames(),
-        api_format_.reverse_input_stream().num_channels(),
+        shared_state_.api_format_.reverse_input_stream().num_frames(),
+        shared_state_.api_format_.reverse_input_stream().num_channels(),
         rev_proc_format_.num_frames(), rev_proc_format_.num_channels(),
         rev_audio_buffer_out_num_frames));
     if (rev_conversion_needed()) {
       render_converter_ = AudioConverter::Create(
-          api_format_.reverse_input_stream().num_channels(),
-          api_format_.reverse_input_stream().num_frames(),
-          api_format_.reverse_output_stream().num_channels(),
-          api_format_.reverse_output_stream().num_frames());
+          shared_state_.api_format_.reverse_input_stream().num_channels(),
+          shared_state_.api_format_.reverse_input_stream().num_frames(),
+          shared_state_.api_format_.reverse_output_stream().num_channels(),
+          shared_state_.api_format_.reverse_output_stream().num_frames());
     } else {
       render_converter_.reset(nullptr);
     }
@@ -337,10 +344,11 @@ int AudioProcessingImpl::InitializeLocked() {
     render_audio_.reset(nullptr);
     render_converter_.reset(nullptr);
   }
-  capture_audio_.reset(new AudioBuffer(
-      api_format_.input_stream().num_frames(),
-      api_format_.input_stream().num_channels(), fwd_proc_format_.num_frames(),
-      fwd_audio_buffer_channels, api_format_.output_stream().num_frames()));
+  capture_audio_.reset(
+      new AudioBuffer(shared_state_.api_format_.input_stream().num_frames(),
+                      shared_state_.api_format_.input_stream().num_channels(),
+                      fwd_proc_format_.num_frames(), fwd_audio_buffer_channels,
+                      shared_state_.api_format_.output_stream().num_frames()));
 
   // Initialize all components.
   for (auto item : component_list_) {
@@ -396,12 +404,12 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
     return kBadNumberChannelsError;
   }
 
-  api_format_ = config;
+  shared_state_.api_format_ = config;
 
   // We process at the closest native rate >= min(input rate, output rate)...
   const int min_proc_rate =
-      std::min(api_format_.input_stream().sample_rate_hz(),
-               api_format_.output_stream().sample_rate_hz());
+      std::min(shared_state_.api_format_.input_stream().sample_rate_hz(),
+               shared_state_.api_format_.output_stream().sample_rate_hz());
   int fwd_proc_rate;
   for (size_t i = 0; i < kNumNativeSampleRates; ++i) {
     fwd_proc_rate = kNativeSampleRatesHz[i];
@@ -423,7 +431,7 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
     // ...the forward stream is at 8 kHz.
     rev_proc_rate = kSampleRate8kHz;
   } else {
-    if (api_format_.reverse_input_stream().sample_rate_hz() ==
+    if (shared_state_.api_format_.reverse_input_stream().sample_rate_hz() ==
         kSampleRate32kHz) {
       // ...or the input is at 32 kHz, in which case we use the splitting
       // filter rather than the resampler.
@@ -445,15 +453,6 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
   return InitializeLocked();
 }
 
-// Calls InitializeLocked() if any of the audio parameters have changed from
-// their current values.
-int AudioProcessingImpl::MaybeInitializeLocked(
-    const ProcessingConfig& processing_config) {
-  if (processing_config == api_format_) {
-    return kNoError;
-  }
-  return InitializeLocked(processing_config);
-}
 
 void AudioProcessingImpl::SetExtraOptions(const Config& config) {
   CriticalSectionScoped crit_scoped(crit_);
@@ -481,11 +480,11 @@ int AudioProcessingImpl::num_reverse_channels() const {
 }
 
 int AudioProcessingImpl::num_input_channels() const {
-  return api_format_.input_stream().num_channels();
+  return shared_state_.api_format_.input_stream().num_channels();
 }
 
 int AudioProcessingImpl::num_output_channels() const {
-  return api_format_.output_stream().num_channels();
+  return shared_state_.api_format_.output_stream().num_channels();
 }
 
 void AudioProcessingImpl::set_output_will_be_muted(bool muted) {
@@ -505,12 +504,12 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
                                        ChannelLayout output_layout,
                                        float* const* dest) {
   CriticalSectionScoped crit_scoped(crit_);
-  StreamConfig input_stream = api_format_.input_stream();
+  StreamConfig input_stream = shared_state_.api_format_.input_stream();
   input_stream.set_sample_rate_hz(input_sample_rate_hz);
   input_stream.set_num_channels(ChannelsFromLayout(input_layout));
   input_stream.set_has_keyboard(LayoutHasKeyboard(input_layout));
 
-  StreamConfig output_stream = api_format_.output_stream();
+  StreamConfig output_stream = shared_state_.api_format_.output_stream();
   output_stream.set_sample_rate_hz(output_sample_rate_hz);
   output_stream.set_num_channels(ChannelsFromLayout(output_layout));
   output_stream.set_has_keyboard(LayoutHasKeyboard(output_layout));
@@ -534,13 +533,13 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   echo_control_mobile_->ReadQueuedRenderData();
   gain_control_->ReadQueuedRenderData();
 
-  ProcessingConfig processing_config = api_format_;
+  ProcessingConfig processing_config = shared_state_.api_format_;
   processing_config.input_stream() = input_config;
   processing_config.output_stream() = output_config;
 
   RETURN_ON_ERR(MaybeInitializeLocked(processing_config));
   assert(processing_config.input_stream().num_frames() ==
-         api_format_.input_stream().num_frames());
+         shared_state_.api_format_.input_stream().num_frames());
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
@@ -549,22 +548,24 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     event_msg_->set_type(audioproc::Event::STREAM);
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t channel_size =
-        sizeof(float) * api_format_.input_stream().num_frames();
-    for (int i = 0; i < api_format_.input_stream().num_channels(); ++i)
+        sizeof(float) * shared_state_.api_format_.input_stream().num_frames();
+    for (int i = 0; i < shared_state_.api_format_.input_stream().num_channels();
+         ++i)
       msg->add_input_channel(src[i], channel_size);
   }
 #endif
 
-  capture_audio_->CopyFrom(src, api_format_.input_stream());
+  capture_audio_->CopyFrom(src, shared_state_.api_format_.input_stream());
   RETURN_ON_ERR(ProcessStreamLocked());
-  capture_audio_->CopyTo(api_format_.output_stream(), dest);
+  capture_audio_->CopyTo(shared_state_.api_format_.output_stream(), dest);
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t channel_size =
-        sizeof(float) * api_format_.output_stream().num_frames();
-    for (int i = 0; i < api_format_.output_stream().num_channels(); ++i)
+        sizeof(float) * shared_state_.api_format_.output_stream().num_frames();
+    for (int i = 0;
+         i < shared_state_.api_format_.output_stream().num_channels(); ++i)
       msg->add_output_channel(dest[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile());
   }
@@ -589,6 +590,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
       frame->sample_rate_hz_ != kSampleRate48kHz) {
     return kBadSampleRateError;
   }
+
   if (echo_control_mobile_->is_enabled() &&
       frame->sample_rate_hz_ > kMaxAECMSampleRateHz) {
     LOG(LS_ERROR) << "AECM only supports 16 or 8 kHz sample rates";
@@ -597,14 +599,15 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 
   // TODO(ajm): The input and output rates and channels are currently
   // constrained to be identical in the int16 interface.
-  ProcessingConfig processing_config = api_format_;
+  ProcessingConfig processing_config = shared_state_.api_format_;
   processing_config.input_stream().set_sample_rate_hz(frame->sample_rate_hz_);
   processing_config.input_stream().set_num_channels(frame->num_channels_);
   processing_config.output_stream().set_sample_rate_hz(frame->sample_rate_hz_);
   processing_config.output_stream().set_num_channels(frame->num_channels_);
 
   RETURN_ON_ERR(MaybeInitializeLocked(processing_config));
-  if (frame->samples_per_channel_ != api_format_.input_stream().num_frames()) {
+  if (frame->samples_per_channel_ !=
+      shared_state_.api_format_.input_stream().num_frames()) {
     return kBadDataLengthError;
   }
 
@@ -734,7 +737,8 @@ int AudioProcessingImpl::ProcessReverseStream(
   RETURN_ON_ERR(
       AnalyzeReverseStream(src, reverse_input_config, reverse_output_config));
   if (is_rev_processed()) {
-    render_audio_->CopyTo(api_format_.reverse_output_stream(), dest);
+    render_audio_->CopyTo(shared_state_.api_format_.reverse_output_stream(),
+                          dest);
   } else if (rev_conversion_needed()) {
     render_converter_->Convert(src, reverse_input_config.num_samples(), dest,
                                reverse_output_config.num_samples());
@@ -759,27 +763,31 @@ int AudioProcessingImpl::AnalyzeReverseStream(
     return kBadNumberChannelsError;
   }
 
-  ProcessingConfig processing_config = api_format_;
+  ProcessingConfig processing_config = shared_state_.api_format_;
   processing_config.reverse_input_stream() = reverse_input_config;
   processing_config.reverse_output_stream() = reverse_output_config;
 
   RETURN_ON_ERR(MaybeInitializeLocked(processing_config));
   assert(reverse_input_config.num_frames() ==
-         api_format_.reverse_input_stream().num_frames());
+         shared_state_.api_format_.reverse_input_stream().num_frames());
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
     event_msg_->set_type(audioproc::Event::REVERSE_STREAM);
     audioproc::ReverseStream* msg = event_msg_->mutable_reverse_stream();
     const size_t channel_size =
-        sizeof(float) * api_format_.reverse_input_stream().num_frames();
-    for (int i = 0; i < api_format_.reverse_input_stream().num_channels(); ++i)
+        sizeof(float) *
+        shared_state_.api_format_.reverse_input_stream().num_frames();
+    for (int i = 0;
+         i < shared_state_.api_format_.reverse_input_stream().num_channels();
+         ++i)
       msg->add_channel(src[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile());
   }
 #endif
 
-  render_audio_->CopyFrom(src, api_format_.reverse_input_stream());
+  render_audio_->CopyFrom(src,
+                          shared_state_.api_format_.reverse_input_stream());
   return ProcessReverseStreamLocked();
 }
 
@@ -805,7 +813,8 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
     return kBadSampleRateError;
   }
   // This interface does not tolerate different forward and reverse rates.
-  if (frame->sample_rate_hz_ != api_format_.input_stream().sample_rate_hz()) {
+  if (frame->sample_rate_hz_ !=
+      shared_state_.api_format_.input_stream().sample_rate_hz()) {
     return kBadSampleRateError;
   }
 
@@ -813,7 +822,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
     return kBadNumberChannelsError;
   }
 
-  ProcessingConfig processing_config = api_format_;
+  ProcessingConfig processing_config = shared_state_.api_format_;
   processing_config.reverse_input_stream().set_sample_rate_hz(
       frame->sample_rate_hz_);
   processing_config.reverse_input_stream().set_num_channels(
@@ -825,7 +834,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
 
   RETURN_ON_ERR(MaybeInitializeLocked(processing_config));
   if (frame->samples_per_channel_ !=
-      api_format_.reverse_input_stream().num_frames()) {
+      shared_state_.api_format_.reverse_input_stream().num_frames()) {
     return kBadDataLengthError;
   }
 
@@ -1049,8 +1058,8 @@ bool AudioProcessingImpl::is_data_processed() const {
 
 bool AudioProcessingImpl::output_copy_needed(bool is_data_processed) const {
   // Check if we've upmixed or downmixed the audio.
-  return ((api_format_.output_stream().num_channels() !=
-           api_format_.input_stream().num_channels()) ||
+  return ((shared_state_.api_format_.output_stream().num_channels() !=
+           shared_state_.api_format_.input_stream().num_channels()) ||
           is_data_processed || transient_suppressor_enabled_);
 }
 
@@ -1078,8 +1087,8 @@ bool AudioProcessingImpl::is_rev_processed() const {
 }
 
 bool AudioProcessingImpl::rev_conversion_needed() const {
-  return (api_format_.reverse_input_stream() !=
-          api_format_.reverse_output_stream());
+  return (shared_state_.api_format_.reverse_input_stream() !=
+          shared_state_.api_format_.reverse_output_stream());
 }
 
 void AudioProcessingImpl::InitializeExperimentalAgc() {
@@ -1101,7 +1110,7 @@ void AudioProcessingImpl::InitializeTransient() {
     }
     transient_suppressor_->Initialize(
         fwd_proc_format_.sample_rate_hz(), split_rate_,
-        api_format_.output_stream().num_channels());
+        shared_state_.api_format_.output_stream().num_channels());
   }
 }
 
@@ -1220,14 +1229,18 @@ int AudioProcessingImpl::WriteMessageToDebugFile() {
 int AudioProcessingImpl::WriteInitMessage() {
   event_msg_->set_type(audioproc::Event::INIT);
   audioproc::Init* msg = event_msg_->mutable_init();
-  msg->set_sample_rate(api_format_.input_stream().sample_rate_hz());
-  msg->set_num_input_channels(api_format_.input_stream().num_channels());
-  msg->set_num_output_channels(api_format_.output_stream().num_channels());
+  msg->set_sample_rate(
+      shared_state_.api_format_.input_stream().sample_rate_hz());
+  msg->set_num_input_channels(
+      shared_state_.api_format_.input_stream().num_channels());
+  msg->set_num_output_channels(
+      shared_state_.api_format_.output_stream().num_channels());
   msg->set_num_reverse_channels(
-      api_format_.reverse_input_stream().num_channels());
+      shared_state_.api_format_.reverse_input_stream().num_channels());
   msg->set_reverse_sample_rate(
-      api_format_.reverse_input_stream().sample_rate_hz());
-  msg->set_output_sample_rate(api_format_.output_stream().sample_rate_hz());
+      shared_state_.api_format_.reverse_input_stream().sample_rate_hz());
+  msg->set_output_sample_rate(
+      shared_state_.api_format_.output_stream().sample_rate_hz());
   // TODO(ekmeyerson): Add reverse output fields to event_msg_.
 
   RETURN_ON_ERR(WriteMessageToDebugFile());

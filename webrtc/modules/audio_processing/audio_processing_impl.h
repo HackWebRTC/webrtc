@@ -176,8 +176,17 @@ class AudioProcessingImpl : public AudioProcessing {
   std::string last_serialized_config_;
 #endif
 
-  // Format of processing streams at input/output call sites.
-  ProcessingConfig api_format_;
+  // State that is written to while holding both the render and capture locks
+  // but can be read while holding only one of the locks.
+  struct SharedState {
+    SharedState()
+        :  // Format of processing streams at input/output call sites.
+          api_format_({{{kSampleRate16kHz, 1, false},
+                        {kSampleRate16kHz, 1, false},
+                        {kSampleRate16kHz, 1, false},
+                        {kSampleRate16kHz, 1, false}}}) {}
+    ProcessingConfig api_format_;
+  } shared_state_;
 
   // Only the rate and samples fields of fwd_proc_format_ are used because the
   // forward processing number of channels is mutable and is tracked by the
