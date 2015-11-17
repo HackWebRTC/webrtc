@@ -22,7 +22,6 @@ import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
 import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
-import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
@@ -252,7 +251,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
         new PeerConnectionParameters(
             enableVideo, true, // videoCallEnabled, loopback.
             0, 0, 0, 0, videoCodec, true, // video codec parameters.
-            0, "OPUS", false, true); // audio codec parameters.
+            0, "OPUS", false, false); // audio codec parameters.
     return peerConnectionParameters;
   }
 

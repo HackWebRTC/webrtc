@@ -72,8 +72,8 @@ public class CallActivity extends Activity
       "org.appspot.apprtc.AUDIOCODEC";
   public static final String EXTRA_NOAUDIOPROCESSING_ENABLED =
       "org.appspot.apprtc.NOAUDIOPROCESSING";
-  public static final String EXTRA_CPUOVERUSE_DETECTION =
-      "org.appspot.apprtc.CPUOVERUSE_DETECTION";
+  public static final String EXTRA_OPENSLES_ENABLED =
+      "org.appspot.apprtc.OPENSLES";
   public static final String EXTRA_DISPLAY_HUD =
       "org.appspot.apprtc.DISPLAY_HUD";
   public static final String EXTRA_CMDLINE =
@@ -223,7 +223,7 @@ public class CallActivity extends Activity
         intent.getIntExtra(EXTRA_AUDIO_BITRATE, 0),
         intent.getStringExtra(EXTRA_AUDIOCODEC),
         intent.getBooleanExtra(EXTRA_NOAUDIOPROCESSING_ENABLED, false),
-        intent.getBooleanExtra(EXTRA_CPUOVERUSE_DETECTION, true));
+        intent.getBooleanExtra(EXTRA_OPENSLES_ENABLED, false));
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 

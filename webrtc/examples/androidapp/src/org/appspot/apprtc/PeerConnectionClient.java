@@ -34,6 +34,7 @@ import org.webrtc.VideoCapturerAndroid;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
+import org.webrtc.voiceengine.WebRtcAudioManager;
 
 import java.util.EnumSet;
 import java.util.LinkedList;
@@ -135,14 +136,14 @@ public class PeerConnectionClient {
     public final int audioStartBitrate;
     public final String audioCodec;
     public final boolean noAudioProcessing;
-    public final boolean cpuOveruseDetection;
+    public final boolean useOpenSLES;
 
     public PeerConnectionParameters(
         boolean videoCallEnabled, boolean loopback,
         int videoWidth, int videoHeight, int videoFps, int videoStartBitrate,
         String videoCodec, boolean videoCodecHwAcceleration,
         int audioStartBitrate, String audioCodec,
-        boolean noAudioProcessing, boolean cpuOveruseDetection) {
+        boolean noAudioProcessing, boolean useOpenSLES) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.videoWidth = videoWidth;
@@ -154,7 +155,7 @@ public class PeerConnectionClient {
       this.audioStartBitrate = audioStartBitrate;
       this.audioCodec = audioCodec;
       this.noAudioProcessing = noAudioProcessing;
-      this.cpuOveruseDetection = cpuOveruseDetection;
+      this.useOpenSLES = useOpenSLES;
     }
   }
 
@@ -305,6 +306,14 @@ public class PeerConnectionClient {
         && peerConnectionParameters.audioCodec.equals(AUDIO_CODEC_ISAC)) {
       preferIsac = true;
     }
+
+    // Enable/disable OpenSL ES playback.
+    if (!peerConnectionParameters.useOpenSLES) {
+      Log.d(TAG, "Disable OpenSL ES audio");
+      WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(true /* enable */);
+    }
+
+    // Create peer connection factory.
     if (!PeerConnectionFactory.initializeAndroidGlobals(context, true, true,
         peerConnectionParameters.videoCodecHwAcceleration)) {
       events.onPeerConnectionError("Failed to initializeAndroidGlobals");

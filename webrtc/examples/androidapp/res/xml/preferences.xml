@@ -94,17 +94,17 @@
             android:title="@string/pref_noaudioprocessing_title"
             android:dialogTitle="@string/pref_noaudioprocessing_dlg"
             android:defaultValue="@string/pref_noaudioprocessing_default" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_opensles_key"
+            android:title="@string/pref_opensles_title"
+            android:dialogTitle="@string/pref_opensles_dlg"
+            android:defaultValue="@string/pref_opensles_default" />
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="@string/pref_miscsettings_key"
         android:title="@string/pref_miscsettings_title">
-
-        <CheckBoxPreference
-            android:key="@string/pref_cpu_usage_detection_key"
-            android:title="@string/pref_cpu_usage_detection_title"
-            android:dialogTitle="@string/pref_cpu_usage_detection_dlg"
-            android:defaultValue="@string/pref_cpu_usage_detection_default" />
 
         <EditTextPreference
             android:key="@string/pref_room_server_url_key"

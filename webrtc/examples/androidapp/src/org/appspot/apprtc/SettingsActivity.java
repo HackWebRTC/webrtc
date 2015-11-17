@@ -35,8 +35,8 @@ public class SettingsActivity extends Activity
   private String keyprefStartAudioBitrateValue;
   private String keyPrefAudioCodec;
   private String keyprefNoAudioProcessing;
+  private String keyprefOpenSLES;
 
-  private String keyprefCpuUsageDetection;
   private String keyPrefRoomServerUrl;
   private String keyPrefDisplayHud;
 
@@ -56,8 +56,8 @@ public class SettingsActivity extends Activity
     keyprefStartAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
     keyPrefAudioCodec = getString(R.string.pref_audiocodec_key);
     keyprefNoAudioProcessing = getString(R.string.pref_noaudioprocessing_key);
+    keyprefOpenSLES = getString(R.string.pref_opensles_key);
 
-    keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyPrefDisplayHud = getString(R.string.pref_displayhud_key);
 
@@ -90,8 +90,8 @@ public class SettingsActivity extends Activity
     setAudioBitrateEnable(sharedPreferences);
     updateSummary(sharedPreferences, keyPrefAudioCodec);
     updateSummaryB(sharedPreferences, keyprefNoAudioProcessing);
+    updateSummaryB(sharedPreferences, keyprefOpenSLES);
 
-    updateSummaryB(sharedPreferences, keyprefCpuUsageDetection);
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
     updateSummaryB(sharedPreferences, keyPrefDisplayHud);
   }
@@ -122,7 +122,7 @@ public class SettingsActivity extends Activity
         || key.equals(keyprefCaptureQualitySlider)
         || key.equals(keyprefHwCodec)
         || key.equals(keyprefNoAudioProcessing)
-        || key.equals(keyprefCpuUsageDetection)
+        || key.equals(keyprefOpenSLES)
         || key.equals(keyPrefDisplayHud)) {
       updateSummaryB(sharedPreferences, key);
     }

@@ -66,7 +66,7 @@ public class ConnectActivity extends Activity {
   private String keyprefAudioCodec;
   private String keyprefHwCodecAcceleration;
   private String keyprefNoAudioProcessingPipeline;
-  private String keyprefCpuUsageDetection;
+  private String keyprefOpenSLES;
   private String keyprefDisplayHud;
   private String keyprefRoomServerUrl;
   private String keyprefRoom;
@@ -93,7 +93,7 @@ public class ConnectActivity extends Activity {
     keyprefAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
     keyprefAudioCodec = getString(R.string.pref_audiocodec_key);
     keyprefNoAudioProcessingPipeline = getString(R.string.pref_noaudioprocessing_key);
-    keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
+    keyprefOpenSLES = getString(R.string.pref_opensles_key);
     keyprefDisplayHud = getString(R.string.pref_displayhud_key);
     keyprefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyprefRoom = getString(R.string.pref_room_key);
@@ -258,6 +258,11 @@ public class ConnectActivity extends Activity {
         keyprefNoAudioProcessingPipeline,
         Boolean.valueOf(getString(R.string.pref_noaudioprocessing_default)));
 
+    // Check OpenSL ES enabled flag.
+    boolean useOpenSLES = sharedPref.getBoolean(
+        keyprefOpenSLES,
+        Boolean.valueOf(getString(R.string.pref_opensles_default)));
+
     // Get video resolution from settings.
     int videoWidth = 0;
     int videoHeight = 0;
@@ -313,12 +318,6 @@ public class ConnectActivity extends Activity {
       audioStartBitrate = Integer.parseInt(bitrateValue);
     }
 
-    // Test if CpuOveruseDetection should be disabled. By default is on.
-    boolean cpuOveruseDetection = sharedPref.getBoolean(
-        keyprefCpuUsageDetection,
-        Boolean.valueOf(
-            getString(R.string.pref_cpu_usage_detection_default)));
-
     // Check statistics display option.
     boolean displayHud = sharedPref.getBoolean(keyprefDisplayHud,
         Boolean.valueOf(getString(R.string.pref_displayhud_default)));
@@ -342,10 +341,9 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_HWCODEC_ENABLED, hwCodec);
       intent.putExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED,
           noAudioProcessing);
+      intent.putExtra(CallActivity.EXTRA_OPENSLES_ENABLED, useOpenSLES);
       intent.putExtra(CallActivity.EXTRA_AUDIO_BITRATE, audioStartBitrate);
       intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);
-      intent.putExtra(CallActivity.EXTRA_CPUOVERUSE_DETECTION,
-          cpuOveruseDetection);
       intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);
       intent.putExtra(CallActivity.EXTRA_CMDLINE, commandLineRun);
       intent.putExtra(CallActivity.EXTRA_RUNTIME, runTimeMs);
