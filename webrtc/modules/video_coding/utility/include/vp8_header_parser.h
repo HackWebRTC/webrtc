@@ -11,6 +11,9 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_VP8_PARSE_HEADER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_UTILITY_VP8_PARSE_HEADER_H_
 
+#include <stdint.h>
+#include <stdio.h>
+
 namespace webrtc {
 
 namespace vp8 {

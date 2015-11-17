@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/engine_configurations.h"
 #ifdef VIDEOCODEC_H264
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
@@ -27,7 +28,6 @@
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #endif
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 namespace {
 const size_t kDefaultPayloadSize = 1440;

@@ -10,11 +10,11 @@
 
 #include "webrtc/modules/video_coding/main/source/media_optimization.h"
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/main/source/content_metrics_processing.h"
 #include "webrtc/modules/video_coding/main/source/qm_select.h"
 #include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 namespace media_optimization {
