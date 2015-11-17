@@ -10,6 +10,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/generic_encoder.h"
@@ -112,6 +113,7 @@ int32_t VCMGenericEncoder::Release() {
 int32_t VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                                       int32_t numberOfCores,
                                       size_t maxPayloadSize) {
+  TRACE_EVENT0("webrtc", "VCMGenericEncoder::InitEncode");
   {
     rtc::CritScope lock(&params_lock_);
     encoder_params_.target_bitrate = settings->startBitrate * 1000;
@@ -132,6 +134,9 @@ int32_t VCMGenericEncoder::InitEncode(const VideoCodec* settings,
 int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
                                   const CodecSpecificInfo* codecSpecificInfo,
                                   const std::vector<FrameType>& frameTypes) {
+  TRACE_EVENT1("webrtc", "VCMGenericEncoder::Encode", "timestamp",
+               inputFrame.timestamp());
+
   for (FrameType frame_type : frameTypes)
     RTC_DCHECK(frame_type == kVideoFrameKey || frame_type == kVideoFrameDelta);
 
@@ -253,6 +258,8 @@ int32_t VCMEncodedFrameCallback::Encoded(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentationHeader) {
+  TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
+                       "timestamp", encodedImage._timeStamp);
   RTC_DCHECK(encodedImage._frameType == kVideoFrameKey ||
              encodedImage._frameType == kVideoFrameDelta);
   post_encode_callback_->Encoded(encodedImage, NULL, NULL);

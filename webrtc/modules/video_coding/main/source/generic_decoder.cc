@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/generic_decoder.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
@@ -52,6 +53,8 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage) {
 
 int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                          int64_t decode_time_ms) {
+    TRACE_EVENT_INSTANT1("webrtc", "VCMDecodedFrameCallback::Decoded",
+                         "timestamp", decodedImage.timestamp());
     // TODO(holmer): We should improve this so that we can handle multiple
     // callbacks from one call to Decode().
     VCMFrameInformation* frameInfo;
@@ -147,14 +150,15 @@ VCMGenericDecoder::~VCMGenericDecoder()
 int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
                                       int32_t numberOfCores)
 {
+    TRACE_EVENT0("webrtc", "VCMGenericDecoder::InitDecode");
     _codecType = settings->codecType;
 
     return _decoder.InitDecode(settings, numberOfCores);
 }
 
-int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame,
-                                        int64_t nowMs)
-{
+int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
+    TRACE_EVENT1("webrtc", "VCMGenericDecoder::Decode", "timestamp",
+                 frame.EncodedImage()._timeStamp);
     _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = nowMs;
     _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
     _frameInfos[_nextFrameInfoIdx].rotation = frame.rotation();
