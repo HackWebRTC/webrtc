@@ -35,20 +35,26 @@ int16_t MapSetting(GainControl::Mode mode) {
 }
 }  // namespace
 
+const size_t GainControlImpl::kAllowedValuesOfSamplesPerFrame1;
+const size_t GainControlImpl::kAllowedValuesOfSamplesPerFrame2;
+
 GainControlImpl::GainControlImpl(const AudioProcessing* apm,
                                  CriticalSectionWrapper* crit)
-  : ProcessingComponent(),
-    apm_(apm),
-    crit_(crit),
-    mode_(kAdaptiveAnalog),
-    minimum_capture_level_(0),
-    maximum_capture_level_(255),
-    limiter_enabled_(true),
-    target_level_dbfs_(3),
-    compression_gain_db_(9),
-    analog_capture_level_(0),
-    was_analog_level_set_(false),
-    stream_is_saturated_(false) {}
+    : ProcessingComponent(),
+      apm_(apm),
+      crit_(crit),
+      mode_(kAdaptiveAnalog),
+      minimum_capture_level_(0),
+      maximum_capture_level_(255),
+      limiter_enabled_(true),
+      target_level_dbfs_(3),
+      compression_gain_db_(9),
+      analog_capture_level_(0),
+      was_analog_level_set_(false),
+      stream_is_saturated_(false),
+      render_queue_element_max_size_(0) {
+  AllocateRenderQueue();
+}
 
 GainControlImpl::~GainControlImpl() {}
 
@@ -59,19 +65,51 @@ int GainControlImpl::ProcessRenderAudio(AudioBuffer* audio) {
 
   assert(audio->num_frames_per_band() <= 160);
 
+  render_queue_buffer_.resize(0);
   for (int i = 0; i < num_handles(); i++) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
-    int err = WebRtcAgc_AddFarend(
-        my_handle,
-        audio->mixed_low_pass_data(),
-        audio->num_frames_per_band());
+    int err =
+        WebRtcAgc_GetAddFarendError(my_handle, audio->num_frames_per_band());
 
-    if (err != apm_->kNoError) {
+    if (err != apm_->kNoError)
       return GetHandleError(my_handle);
-    }
+
+    // Buffer the samples in the render queue.
+    render_queue_buffer_.insert(
+        render_queue_buffer_.end(), audio->mixed_low_pass_data(),
+        (audio->mixed_low_pass_data() + audio->num_frames_per_band()));
+  }
+
+  // Insert the samples into the queue.
+  if (!render_signal_queue_->Insert(&render_queue_buffer_)) {
+    ReadQueuedRenderData();
+
+    // Retry the insert (should always work).
+    RTC_DCHECK_EQ(render_signal_queue_->Insert(&render_queue_buffer_), true);
   }
 
   return apm_->kNoError;
+}
+
+// Read chunks of data that were received and queued on the render side from
+// a queue. All the data chunks are buffered into the farend signal of the AGC.
+void GainControlImpl::ReadQueuedRenderData() {
+  if (!is_component_enabled()) {
+    return;
+  }
+
+  while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
+    int buffer_index = 0;
+    const int num_frames_per_band =
+        capture_queue_buffer_.size() / num_handles();
+    for (int i = 0; i < num_handles(); i++) {
+      Handle* my_handle = static_cast<Handle*>(handle(i));
+      WebRtcAgc_AddFarend(my_handle, &capture_queue_buffer_[buffer_index],
+                          num_frames_per_band);
+
+      buffer_index += num_frames_per_band;
+    }
+  }
 }
 
 int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
@@ -179,6 +217,12 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 
 // TODO(ajm): ensure this is called under kAdaptiveAnalog.
 int GainControlImpl::set_stream_analog_level(int level) {
+  // TODO(peah): Verify that this is really needed to do the reading
+  // here as well as in ProcessStream. It works since these functions
+  // are called from the same thread, but it is not nice to do it in two
+  // places if not needed.
+  ReadQueuedRenderData();
+
   CriticalSectionScoped crit_scoped(crit_);
   was_analog_level_set_ = true;
   if (level < minimum_capture_level_ || level > maximum_capture_level_) {
@@ -296,10 +340,34 @@ int GainControlImpl::Initialize() {
     return err;
   }
 
+  AllocateRenderQueue();
+
   const int n = num_handles();
   RTC_CHECK_GE(n, 0) << "Bad number of handles: " << n;
   capture_levels_.assign(n, analog_capture_level_);
   return apm_->kNoError;
+}
+
+void GainControlImpl::AllocateRenderQueue() {
+  const size_t max_frame_size = std::max<size_t>(
+      kAllowedValuesOfSamplesPerFrame1, kAllowedValuesOfSamplesPerFrame2);
+
+  const size_t new_render_queue_element_max_size = std::max<size_t>(
+      static_cast<size_t>(1), (max_frame_size * num_handles()));
+
+  if (new_render_queue_element_max_size > render_queue_element_max_size_) {
+    std::vector<int16_t> template_queue_element(render_queue_element_max_size_);
+
+    render_signal_queue_.reset(
+        new SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>(
+            kMaxNumFramesToBuffer, template_queue_element,
+            RenderQueueItemVerifier<int16_t>(render_queue_element_max_size_)));
+  } else {
+    render_signal_queue_->Clear();
+  }
+
+  render_queue_buffer_.resize(new_render_queue_element_max_size);
+  capture_queue_buffer_.resize(new_render_queue_element_max_size);
 }
 
 void* GainControlImpl::CreateHandle() const {

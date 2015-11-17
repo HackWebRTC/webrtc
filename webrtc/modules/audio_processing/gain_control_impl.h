@@ -13,6 +13,8 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
 
@@ -41,7 +43,16 @@ class GainControlImpl : public GainControl,
   bool is_limiter_enabled() const override;
   Mode mode() const override;
 
+  // Reads render side data that has been queued on the render call.
+  void ReadQueuedRenderData();
+
  private:
+  static const size_t kAllowedValuesOfSamplesPerFrame1 = 80;
+  static const size_t kAllowedValuesOfSamplesPerFrame2 = 160;
+  // TODO(peah): Decrease this once we properly handle hugely unbalanced
+  // reverse and forward call numbers.
+  static const size_t kMaxNumFramesToBuffer = 100;
+
   // GainControl implementation.
   int Enable(bool enable) override;
   int set_stream_analog_level(int level) override;
@@ -64,6 +75,8 @@ class GainControlImpl : public GainControl,
   int num_handles_required() const override;
   int GetHandleError(void* handle) const override;
 
+  void AllocateRenderQueue();
+
   const AudioProcessing* apm_;
   CriticalSectionWrapper* crit_;
   Mode mode_;
@@ -76,6 +89,13 @@ class GainControlImpl : public GainControl,
   int analog_capture_level_;
   bool was_analog_level_set_;
   bool stream_is_saturated_;
+
+  size_t render_queue_element_max_size_;
+  std::vector<int16_t> render_queue_buffer_;
+  std::vector<int16_t> capture_queue_buffer_;
+  rtc::scoped_ptr<
+      SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
+      render_signal_queue_;
 };
 }  // namespace webrtc
 

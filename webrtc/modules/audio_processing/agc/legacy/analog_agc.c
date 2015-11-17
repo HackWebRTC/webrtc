@@ -250,34 +250,35 @@ int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, size_t num_bands,
     return 0;
 }
 
-int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, size_t samples)
-{
+int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, size_t samples) {
+  LegacyAgc* stt = (LegacyAgc*)state;
+
+    int err =  WebRtcAgc_GetAddFarendError(state, samples);
+
+    if (err != 0)
+      return err;
+
+    return WebRtcAgc_AddFarendToDigital(&stt->digitalAgc, in_far, samples);
+}
+
+int WebRtcAgc_GetAddFarendError(void *state, size_t samples) {
   LegacyAgc* stt;
   stt = (LegacyAgc*)state;
 
-    if (stt == NULL)
-    {
-        return -1;
-    }
+  if (stt == NULL)
+    return -1;
 
-    if (stt->fs == 8000)
-    {
-        if (samples != 80)
-        {
-            return -1;
-        }
-    } else if (stt->fs == 16000 || stt->fs == 32000 || stt->fs == 48000)
-    {
-        if (samples != 160)
-        {
-            return -1;
-        }
-    } else
-    {
-        return -1;
-    }
+  if (stt->fs == 8000) {
+    if (samples != 80)
+      return -1;
+  } else if (stt->fs == 16000 || stt->fs == 32000 || stt->fs == 48000) {
+    if (samples != 160)
+      return -1;
+  } else {
+    return -1;
+  }
 
-    return WebRtcAgc_AddFarendToDigital(&stt->digitalAgc, in_far, samples);
+  return 0;
 }
 
 int WebRtcAgc_VirtualMic(void *agcInst, int16_t* const* in_near,

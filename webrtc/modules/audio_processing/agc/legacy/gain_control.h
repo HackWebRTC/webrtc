@@ -50,6 +50,20 @@ extern "C"
 #endif
 
 /*
+ * This function analyses the number of samples passed to
+ * farend and produces any error code that could arise.
+ *
+ * Input:
+ *      - agcInst           : AGC instance.
+ *      - samples           : Number of samples in input vector.
+ *
+ * Return value:
+ *                          :  0 - Normal operation.
+ *                          : -1 - Error.
+ */
+int WebRtcAgc_GetAddFarendError(void* state, size_t samples);
+
+/*
  * This function processes a 10 ms frame of far-end speech to determine
  * if there is active speech. The length of the input speech vector must be
  * given in samples (80 when FS=8000, and 160 when FS=16000, FS=32000 or
