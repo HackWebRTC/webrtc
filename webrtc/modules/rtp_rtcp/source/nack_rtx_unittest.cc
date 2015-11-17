@@ -105,10 +105,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     if (ssrc == rtx_ssrc_) count_rtx_ssrc_++;
     uint16_t sequence_number = (ptr[2] << 8) + ptr[3];
     size_t packet_length = len;
-    // TODO(pbos): Figure out why this needs to be initialized. Likely this
-    // is hiding a bug either in test setup or other code.
-    // https://code.google.com/p/webrtc/issues/detail?id=3183
-    uint8_t restored_packet[1500] = {0};
+    uint8_t restored_packet[1500];
     RTPHeader header;
     rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     if (!parser->Parse(ptr, len, &header)) {
@@ -136,21 +133,19 @@ class RtxLoopBackTransport : public webrtc::Transport {
       if (!parser->Parse(restored_packet, packet_length, &header)) {
         return false;
       }
+      ptr = restored_packet;
     } else {
       rtp_payload_registry_->SetIncomingPayloadType(header);
     }
 
-    const uint8_t* restored_packet_payload =
-        restored_packet + header.headerLength;
-    packet_length -= header.headerLength;
     PayloadUnion payload_specific;
     if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
                                                     &payload_specific)) {
       return false;
     }
-    if (!rtp_receiver_->IncomingRtpPacket(header, restored_packet_payload,
-                                          packet_length, payload_specific,
-                                          true)) {
+    if (!rtp_receiver_->IncomingRtpPacket(header, ptr + header.headerLength,
+                                          packet_length - header.headerLength,
+                                          payload_specific, true)) {
       return false;
     }
     return true;
