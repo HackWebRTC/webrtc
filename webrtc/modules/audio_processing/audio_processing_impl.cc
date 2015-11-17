@@ -530,6 +530,9 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     return kNullPointerError;
   }
 
+  echo_cancellation_->ReadQueuedRenderData();
+  echo_control_mobile_->ReadQueuedRenderData();
+
   ProcessingConfig processing_config = api_format_;
   processing_config.input_stream() = input_config;
   processing_config.output_stream() = output_config;
@@ -571,6 +574,9 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
 
 int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   CriticalSectionScoped crit_scoped(crit_);
+  echo_cancellation_->ReadQueuedRenderData();
+  echo_control_mobile_->ReadQueuedRenderData();
+
   if (!frame) {
     return kNullPointerError;
   }

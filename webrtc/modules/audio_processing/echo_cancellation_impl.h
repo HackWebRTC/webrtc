@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
 
@@ -42,7 +44,16 @@ class EchoCancellationImpl : public EchoCancellation,
   bool is_delay_agnostic_enabled() const;
   bool is_extended_filter_enabled() const;
 
+  // Reads render side data that has been queued on the render call.
+  void ReadQueuedRenderData();
+
  private:
+  static const size_t kAllowedValuesOfSamplesPerFrame1 = 80;
+  static const size_t kAllowedValuesOfSamplesPerFrame2 = 160;
+  // TODO(peah): Decrease this once we properly handle hugely unbalanced
+  // reverse and forward call numbers.
+  static const size_t kMaxNumFramesToBuffer = 100;
+
   // EchoCancellation implementation.
   int Enable(bool enable) override;
   int enable_drift_compensation(bool enable) override;
@@ -68,6 +79,8 @@ class EchoCancellationImpl : public EchoCancellation,
   int num_handles_required() const override;
   int GetHandleError(void* handle) const override;
 
+  void AllocateRenderQueue();
+
   const AudioProcessing* apm_;
   CriticalSectionWrapper* crit_;
   bool drift_compensation_enabled_;
@@ -79,6 +92,12 @@ class EchoCancellationImpl : public EchoCancellation,
   bool delay_logging_enabled_;
   bool extended_filter_enabled_;
   bool delay_agnostic_enabled_;
+
+  size_t render_queue_element_max_size_;
+  std::vector<float> render_queue_buffer_;
+  std::vector<float> capture_queue_buffer_;
+  rtc::scoped_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
+      render_signal_queue_;
 };
 
 }  // namespace webrtc

@@ -55,6 +55,9 @@ AudioProcessing::Error MapError(int err) {
 }
 }  // namespace
 
+const size_t EchoCancellationImpl::kAllowedValuesOfSamplesPerFrame1;
+const size_t EchoCancellationImpl::kAllowedValuesOfSamplesPerFrame2;
+
 EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
                                            CriticalSectionWrapper* crit)
     : ProcessingComponent(),
@@ -68,7 +71,9 @@ EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
       stream_has_echo_(false),
       delay_logging_enabled_(false),
       extended_filter_enabled_(false),
-      delay_agnostic_enabled_(false) {
+      delay_agnostic_enabled_(false),
+      render_queue_element_max_size_(0) {
+  AllocateRenderQueue();
 }
 
 EchoCancellationImpl::~EchoCancellationImpl() {}
@@ -85,23 +90,63 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
 
   // The ordering convention must be followed to pass to the correct AEC.
   size_t handle_index = 0;
+  render_queue_buffer_.clear();
   for (int i = 0; i < apm_->num_output_channels(); i++) {
     for (int j = 0; j < audio->num_channels(); j++) {
       Handle* my_handle = static_cast<Handle*>(handle(handle_index));
-      err = WebRtcAec_BufferFarend(
-          my_handle,
-          audio->split_bands_const_f(j)[kBand0To8kHz],
+      // Retrieve any error code produced by the buffering of the farend
+      // signal
+      err = WebRtcAec_GetBufferFarendError(
+          my_handle, audio->split_bands_const_f(j)[kBand0To8kHz],
           audio->num_frames_per_band());
 
       if (err != apm_->kNoError) {
         return MapError(err);  // TODO(ajm): warning possible?
       }
 
-      handle_index++;
+      // Buffer the samples in the render queue.
+      render_queue_buffer_.insert(render_queue_buffer_.end(),
+                                  audio->split_bands_const_f(j)[kBand0To8kHz],
+                                  (audio->split_bands_const_f(j)[kBand0To8kHz] +
+                                   audio->num_frames_per_band()));
     }
   }
 
+  // Insert the samples into the queue.
+  if (!render_signal_queue_->Insert(&render_queue_buffer_)) {
+    ReadQueuedRenderData();
+
+    // Retry the insert (should always work).
+    RTC_DCHECK_EQ(render_signal_queue_->Insert(&render_queue_buffer_), true);
+  }
+
   return apm_->kNoError;
+}
+
+// Read chunks of data that were received and queued on the render side from
+// a queue. All the data chunks are buffered into the farend signal of the AEC.
+void EchoCancellationImpl::ReadQueuedRenderData() {
+  if (!is_component_enabled()) {
+    return;
+  }
+
+  while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
+    size_t handle_index = 0;
+    int buffer_index = 0;
+    const int num_frames_per_band =
+        capture_queue_buffer_.size() /
+        (apm_->num_output_channels() * apm_->num_reverse_channels());
+    for (int i = 0; i < apm_->num_output_channels(); i++) {
+      for (int j = 0; j < apm_->num_reverse_channels(); j++) {
+        Handle* my_handle = static_cast<Handle*>(handle(handle_index));
+        WebRtcAec_BufferFarend(my_handle, &capture_queue_buffer_[buffer_index],
+                               num_frames_per_band);
+
+        buffer_index += num_frames_per_band;
+        handle_index++;
+      }
+    }
+  }
 }
 
 int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
@@ -333,7 +378,35 @@ int EchoCancellationImpl::Initialize() {
     return err;
   }
 
+  AllocateRenderQueue();
+
   return apm_->kNoError;
+}
+
+void EchoCancellationImpl::AllocateRenderQueue() {
+  const size_t max_frame_size = std::max<size_t>(
+      kAllowedValuesOfSamplesPerFrame1, kAllowedValuesOfSamplesPerFrame2);
+
+  const size_t new_render_queue_element_max_size = std::max<size_t>(
+      static_cast<size_t>(1), max_frame_size * num_handles_required());
+
+  // Reallocate the queue if the queue item size is too small to fit the
+  // data to put in the queue.
+  if (new_render_queue_element_max_size > render_queue_element_max_size_) {
+    render_queue_element_max_size_ = new_render_queue_element_max_size;
+
+    std::vector<float> template_queue_element(render_queue_element_max_size_);
+
+    render_signal_queue_.reset(
+        new SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>(
+            kMaxNumFramesToBuffer, template_queue_element,
+            RenderQueueItemVerifier<float>(render_queue_element_max_size_)));
+  } else {
+    render_signal_queue_->Clear();
+  }
+
+  render_queue_buffer_.resize(new_render_queue_element_max_size);
+  capture_queue_buffer_.resize(new_render_queue_element_max_size);
 }
 
 void EchoCancellationImpl::SetExtraOptions(const Config& config) {

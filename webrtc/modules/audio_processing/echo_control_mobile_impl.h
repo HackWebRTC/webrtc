@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CONTROL_MOBILE_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CONTROL_MOBILE_IMPL_H_
 
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
 
@@ -37,7 +39,16 @@ class EchoControlMobileImpl : public EchoControlMobile,
   // ProcessingComponent implementation.
   int Initialize() override;
 
+  // Reads render side data that has been queued on the render call.
+  void ReadQueuedRenderData();
+
  private:
+  static const size_t kAllowedValuesOfSamplesPerFrame1 = 80;
+  static const size_t kAllowedValuesOfSamplesPerFrame2 = 160;
+  // TODO(peah): Decrease this once we properly handle hugely unbalanced
+  // reverse and forward call numbers.
+  static const size_t kMaxNumFramesToBuffer = 100;
+
   // EchoControlMobile implementation.
   int Enable(bool enable) override;
   int set_routing_mode(RoutingMode mode) override;
@@ -53,11 +64,20 @@ class EchoControlMobileImpl : public EchoControlMobile,
   int num_handles_required() const override;
   int GetHandleError(void* handle) const override;
 
+  void AllocateRenderQueue();
+
   const AudioProcessing* apm_;
   CriticalSectionWrapper* crit_;
   RoutingMode routing_mode_;
   bool comfort_noise_enabled_;
   unsigned char* external_echo_path_;
+
+  size_t render_queue_element_max_size_;
+  std::vector<int16_t> render_queue_buffer_;
+  std::vector<int16_t> capture_queue_buffer_;
+  rtc::scoped_ptr<
+      SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
+      render_signal_queue_;
 };
 }  // namespace webrtc
 

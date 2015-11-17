@@ -40,7 +40,26 @@ int16_t MapSetting(EchoControlMobile::RoutingMode mode) {
   return -1;
 }
 
+AudioProcessing::Error MapError(int err) {
+  switch (err) {
+    case AECM_UNSUPPORTED_FUNCTION_ERROR:
+      return AudioProcessing::kUnsupportedFunctionError;
+    case AECM_NULL_POINTER_ERROR:
+      return AudioProcessing::kNullPointerError;
+    case AECM_BAD_PARAMETER_ERROR:
+      return AudioProcessing::kBadParameterError;
+    case AECM_BAD_PARAMETER_WARNING:
+      return AudioProcessing::kBadStreamParameterWarning;
+    default:
+      // AECM_UNSPECIFIED_ERROR
+      // AECM_UNINITIALIZED_ERROR
+      return AudioProcessing::kUnspecifiedError;
+  }
+}
 }  // namespace
+
+const size_t EchoControlMobileImpl::kAllowedValuesOfSamplesPerFrame1;
+const size_t EchoControlMobileImpl::kAllowedValuesOfSamplesPerFrame2;
 
 size_t EchoControlMobile::echo_path_size_bytes() {
     return WebRtcAecm_echo_path_size_bytes();
@@ -48,12 +67,15 @@ size_t EchoControlMobile::echo_path_size_bytes() {
 
 EchoControlMobileImpl::EchoControlMobileImpl(const AudioProcessing* apm,
                                              CriticalSectionWrapper* crit)
-  : ProcessingComponent(),
-    apm_(apm),
-    crit_(crit),
-    routing_mode_(kSpeakerphone),
-    comfort_noise_enabled_(true),
-    external_echo_path_(NULL) {}
+    : ProcessingComponent(),
+      apm_(apm),
+      crit_(crit),
+      routing_mode_(kSpeakerphone),
+      comfort_noise_enabled_(true),
+      external_echo_path_(NULL),
+      render_queue_element_max_size_(0) {
+  AllocateRenderQueue();
+}
 
 EchoControlMobileImpl::~EchoControlMobileImpl() {
     if (external_echo_path_ != NULL) {
@@ -74,23 +96,62 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
 
   // The ordering convention must be followed to pass to the correct AECM.
   size_t handle_index = 0;
+  render_queue_buffer_.clear();
   for (int i = 0; i < apm_->num_output_channels(); i++) {
     for (int j = 0; j < audio->num_channels(); j++) {
       Handle* my_handle = static_cast<Handle*>(handle(handle_index));
-      err = WebRtcAecm_BufferFarend(
-          my_handle,
-          audio->split_bands_const(j)[kBand0To8kHz],
+      err = WebRtcAecm_GetBufferFarendError(
+          my_handle, audio->split_bands_const(j)[kBand0To8kHz],
           audio->num_frames_per_band());
 
-      if (err != apm_->kNoError) {
-        return GetHandleError(my_handle);  // TODO(ajm): warning possible?
-      }
+      if (err != apm_->kNoError)
+        return MapError(err);  // TODO(ajm): warning possible?);
+
+      // Buffer the samples in the render queue.
+      render_queue_buffer_.insert(render_queue_buffer_.end(),
+                                  audio->split_bands_const(j)[kBand0To8kHz],
+                                  (audio->split_bands_const(j)[kBand0To8kHz] +
+                                   audio->num_frames_per_band()));
 
       handle_index++;
     }
   }
 
+  // Insert the samples into the queue.
+  if (!render_signal_queue_->Insert(&render_queue_buffer_)) {
+    ReadQueuedRenderData();
+
+    // Retry the insert (should always work).
+    RTC_DCHECK_EQ(render_signal_queue_->Insert(&render_queue_buffer_), true);
+  }
+
   return apm_->kNoError;
+}
+
+// Read chunks of data that were received and queued on the render side from
+// a queue. All the data chunks are buffered into the farend signal of the AEC.
+void EchoControlMobileImpl::ReadQueuedRenderData() {
+  if (!is_component_enabled()) {
+    return;
+  }
+
+  while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
+    size_t handle_index = 0;
+    int buffer_index = 0;
+    const int num_frames_per_band =
+        capture_queue_buffer_.size() /
+        (apm_->num_output_channels() * apm_->num_reverse_channels());
+    for (int i = 0; i < apm_->num_output_channels(); i++) {
+      for (int j = 0; j < apm_->num_reverse_channels(); j++) {
+        Handle* my_handle = static_cast<Handle*>(handle(handle_index));
+        WebRtcAecm_BufferFarend(my_handle, &capture_queue_buffer_[buffer_index],
+                                num_frames_per_band);
+
+        buffer_index += num_frames_per_band;
+        handle_index++;
+      }
+    }
+  }
 }
 
 int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
@@ -128,9 +189,8 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
           audio->num_frames_per_band(),
           apm_->stream_delay_ms());
 
-      if (err != apm_->kNoError) {
-        return GetHandleError(my_handle);  // TODO(ajm): warning possible?
-      }
+      if (err != apm_->kNoError)
+        return MapError(err);
 
       handle_index++;
     }
@@ -213,9 +273,9 @@ int EchoControlMobileImpl::GetEchoPath(void* echo_path,
 
   // Get the echo path from the first channel
   Handle* my_handle = static_cast<Handle*>(handle(0));
-  if (WebRtcAecm_GetEchoPath(my_handle, echo_path, size_bytes) != 0) {
-      return GetHandleError(my_handle);
-  }
+  int32_t err = WebRtcAecm_GetEchoPath(my_handle, echo_path, size_bytes);
+  if (err != 0)
+    return MapError(err);
 
   return apm_->kNoError;
 }
@@ -230,7 +290,39 @@ int EchoControlMobileImpl::Initialize() {
     return apm_->kBadSampleRateError;
   }
 
-  return ProcessingComponent::Initialize();
+  int err = ProcessingComponent::Initialize();
+  if (err != apm_->kNoError) {
+    return err;
+  }
+
+  AllocateRenderQueue();
+
+  return apm_->kNoError;
+}
+
+void EchoControlMobileImpl::AllocateRenderQueue() {
+  const size_t max_frame_size = std::max<size_t>(
+      kAllowedValuesOfSamplesPerFrame1, kAllowedValuesOfSamplesPerFrame2);
+  const size_t new_render_queue_element_max_size = std::max<size_t>(
+      static_cast<size_t>(1), max_frame_size * num_handles_required());
+
+  // Reallocate the queue if the queue item size is too small to fit the
+  // data to put in the queue.
+  if (new_render_queue_element_max_size > render_queue_element_max_size_) {
+    render_queue_element_max_size_ = new_render_queue_element_max_size;
+
+    std::vector<int16_t> template_queue_element(render_queue_element_max_size_);
+
+    render_signal_queue_.reset(
+        new SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>(
+            kMaxNumFramesToBuffer, template_queue_element,
+            RenderQueueItemVerifier<int16_t>(render_queue_element_max_size_)));
+  } else {
+    render_signal_queue_->Clear();
+  }
+
+  render_queue_buffer_.resize(new_render_queue_element_max_size);
+  capture_queue_buffer_.resize(new_render_queue_element_max_size);
 }
 
 void* EchoControlMobileImpl::CreateHandle() const {
