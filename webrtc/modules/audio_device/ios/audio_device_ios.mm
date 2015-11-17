@@ -86,13 +86,21 @@ static void ActivateAudioSession(AVAudioSession* session, bool activate) {
     NSError* error = nil;
     BOOL success = NO;
 
-    // Deactivate the audio session and return if |activate| is false.
     if (!activate) {
-      success = [session setActive:NO error:&error];
+      // Deactivate the audio session using an extra option and then return.
+      // AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation is used to
+      // ensure that other audio sessions that were interrupted by our session
+      // can return to their active state. It is recommended for VoIP apps to
+      // use this option.
+      success = [session
+            setActive:NO
+          withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
+                error:&error];
       RTC_DCHECK(CheckAndLogError(success, error));
       return;
     }
 
+    // Go ahead and active our own audio session since |activate| is true.
     // Use a category which supports simultaneous recording and playback.
     // By default, using this category implies that our app’s audio is
     // nonmixable, hence activating the session will interrupt any other
