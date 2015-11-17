@@ -114,7 +114,8 @@ class Call : public webrtc::Call, public PacketReceiver,
       return nullptr;
   }
 
-  void UpdateHistograms();
+  void UpdateSendHistograms();
+  void UpdateReceiveHistograms();
 
   const Clock* const clock_;
 
@@ -148,13 +149,23 @@ class Call : public webrtc::Call, public PacketReceiver,
 
   RtcEventLog* event_log_ = nullptr;
 
-  // The RateTrackers are only accessed (exclusively) from DeliverRtp or
-  // DeliverRtcp, and from the destructor, and therefore doesn't need any
-  // explicit synchronization.
+  // The following members are only accessed (exclusively) from one thread and
+  // from the destructor, and therefore doesn't need any explicit
+  // synchronization.
   rtc::RateTracker received_video_bytes_per_sec_;
   rtc::RateTracker received_audio_bytes_per_sec_;
   rtc::RateTracker received_rtcp_bytes_per_sec_;
+  int64_t first_packet_sent_ms_;
   int64_t first_rtp_packet_received_ms_;
+
+  // TODO(holmer): Remove this lock once BitrateController no longer calls
+  // OnNetworkChanged from multiple threads.
+  rtc::CriticalSection bitrate_crit_;
+  rtc::RateTracker estimated_send_bitrate_kbps_ GUARDED_BY(&bitrate_crit_);
+  rtc::RateTracker pacer_bitrate_kbps_ GUARDED_BY(&bitrate_crit_);
+  uint32_t target_bitrate_bps_ GUARDED_BY(&bitrate_crit_);
+  uint32_t pacer_bitrate_bps_ GUARDED_BY(&bitrate_crit_);
+  int64_t last_bitrate_update_ms_ GUARDED_BY(&bitrate_crit_);
 
   const rtc::scoped_ptr<CongestionController> congestion_controller_;
 
@@ -181,9 +192,17 @@ Call::Call(const Call::Config& config)
       received_video_bytes_per_sec_(1000, 1),
       received_audio_bytes_per_sec_(1000, 1),
       received_rtcp_bytes_per_sec_(1000, 1),
+      first_packet_sent_ms_(-1),
       first_rtp_packet_received_ms_(-1),
-      congestion_controller_(new CongestionController(
-          module_process_thread_.get(), call_stats_.get(), this)) {
+      estimated_send_bitrate_kbps_(1000, 1),
+      pacer_bitrate_kbps_(1000, 1),
+      target_bitrate_bps_(0),
+      pacer_bitrate_bps_(0),
+      last_bitrate_update_ms_(-1),
+      congestion_controller_(
+          new CongestionController(module_process_thread_.get(),
+                                   call_stats_.get(),
+                                   this)) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -211,7 +230,8 @@ Call::Call(const Call::Config& config)
 
 Call::~Call() {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  UpdateHistograms();
+  UpdateSendHistograms();
+  UpdateReceiveHistograms();
   RTC_CHECK(audio_send_ssrcs_.empty());
   RTC_CHECK(video_send_ssrcs_.empty());
   RTC_CHECK(video_send_streams_.empty());
@@ -224,7 +244,27 @@ Call::~Call() {
   Trace::ReturnTrace();
 }
 
-void Call::UpdateHistograms() {
+void Call::UpdateSendHistograms() {
+  if (first_packet_sent_ms_ == -1)
+    return;
+  int64_t elapsed_sec =
+      (clock_->TimeInMilliseconds() - first_packet_sent_ms_) / 1000;
+  if (elapsed_sec < metrics::kMinRunTimeInSeconds)
+    return;
+  rtc::CritScope lock(&bitrate_crit_);
+  int send_bitrate_kbps = estimated_send_bitrate_kbps_.ComputeTotalRate();
+  int pacer_bitrate_kbps = pacer_bitrate_kbps_.ComputeTotalRate();
+  if (send_bitrate_kbps > 0) {
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.EstimatedSendBitrateInKbps",
+                                send_bitrate_kbps);
+  }
+  if (pacer_bitrate_kbps > 0) {
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.PacerBitrateInKbps",
+                                pacer_bitrate_kbps);
+  }
+}
+
+void Call::UpdateReceiveHistograms() {
   if (first_rtp_packet_received_ms_ == -1)
     return;
   int64_t elapsed_sec =
@@ -529,11 +569,26 @@ void Call::SignalNetworkState(NetworkState state) {
 }
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
+  if (first_packet_sent_ms_ == -1)
+    first_packet_sent_ms_ = clock_->TimeInMilliseconds();
   congestion_controller_->OnSentPacket(sent_packet);
 }
 
 void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
                             int64_t rtt_ms) {
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  int64_t time_since_last_update_ms = 0;
+  {
+    rtc::CritScope lock(&bitrate_crit_);
+    if (last_bitrate_update_ms_ >= 0)
+      time_since_last_update_ms = now_ms - last_bitrate_update_ms_;
+    estimated_send_bitrate_kbps_.AddSamples(
+        time_since_last_update_ms * (target_bitrate_bps_ / 1000) / 1000);
+    pacer_bitrate_kbps_.AddSamples(time_since_last_update_ms *
+                                   (pacer_bitrate_bps_ / 1000) / 1000);
+    target_bitrate_bps_ = target_bitrate_bps;
+    last_bitrate_update_ms_ = now_ms;
+  }
   uint32_t allocated_bitrate_bps = bitrate_allocator_->OnNetworkChanged(
       target_bitrate_bps, fraction_loss, rtt_ms);
 
@@ -552,6 +607,10 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
   // set the pacer bitrate to the maximum of the two.
   uint32_t pacer_bitrate_bps =
       std::max(target_bitrate_bps, allocated_bitrate_bps);
+  {
+    rtc::CritScope lock(&bitrate_crit_);
+    pacer_bitrate_bps_ = pacer_bitrate_bps;
+  }
   congestion_controller_->UpdatePacerBitrate(
       target_bitrate_bps / 1000,
       PacedSender::kDefaultPaceMultiplier * pacer_bitrate_bps / 1000,
