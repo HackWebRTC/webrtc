@@ -23,6 +23,7 @@ import android.os.Process;
 import android.os.SystemClock;
 
 import org.webrtc.Logging;
+import org.webrtc.ThreadUtils;
 
 class  WebRtcAudioRecord {
   private static final boolean DEBUG = false;
@@ -103,12 +104,8 @@ class  WebRtcAudioRecord {
 
     public void joinThread() {
       keepAlive = false;
-      while (isAlive()) {
-        try {
-          join();
-        } catch (InterruptedException e) {
-          // Ignore.
-        }
+      if (!ThreadUtils.joinUninterruptibly(this, 1000)) {
+        Logging.e(TAG, "Timeout in WebRtcAudioRecord.joinThread()");
       }
     }
   }
