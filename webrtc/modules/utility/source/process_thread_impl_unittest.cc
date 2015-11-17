@@ -251,8 +251,9 @@ TEST(ProcessThreadImpl, WakeUp) {
   rtc::scoped_ptr<EventWrapper> called(EventWrapper::Create());
 
   MockModule module;
-  int64_t start_time = 0;
-  int64_t called_time = 0;
+  int64_t start_time;
+  int64_t called_time;
+
   // Ask for a callback after 1000ms.
   // TimeUntilNextProcess will be called twice.
   // The first time we use it to get the thread into a waiting state.
@@ -281,8 +282,6 @@ TEST(ProcessThreadImpl, WakeUp) {
   EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
   thread.Stop();
 
-  ASSERT_GT(start_time, 0);
-  ASSERT_GT(called_time, 0);
   EXPECT_GE(called_time, start_time);
   uint32_t diff = called_time - start_time;
   // We should have been called back much quicker than 1sec.
