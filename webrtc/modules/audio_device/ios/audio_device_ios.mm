@@ -193,6 +193,8 @@ static void LogDeviceInfo() {
 AudioDeviceIOS::AudioDeviceIOS()
     : audio_device_buffer_(nullptr),
       vpio_unit_(nullptr),
+      recording_(0),
+      playing_(0),
       initialized_(false),
       rec_is_initialized_(false),
       play_is_initialized_(false),
@@ -254,7 +256,7 @@ int32_t AudioDeviceIOS::InitPlayout() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(initialized_);
   RTC_DCHECK(!play_is_initialized_);
-  RTC_DCHECK(!Playing());
+  RTC_DCHECK(!playing_);
   if (!rec_is_initialized_) {
     if (!InitPlayOrRecord()) {
       LOG_F(LS_ERROR) << "InitPlayOrRecord failed!";
@@ -270,7 +272,7 @@ int32_t AudioDeviceIOS::InitRecording() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(initialized_);
   RTC_DCHECK(!rec_is_initialized_);
-  RTC_DCHECK(!Recording());
+  RTC_DCHECK(!recording_);
   if (!play_is_initialized_) {
     if (!InitPlayOrRecord()) {
       LOG_F(LS_ERROR) << "InitPlayOrRecord failed!";
@@ -285,30 +287,30 @@ int32_t AudioDeviceIOS::StartPlayout() {
   LOGI() << "StartPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(play_is_initialized_);
-  RTC_DCHECK(!Playing());
+  RTC_DCHECK(!playing_);
   fine_audio_buffer_->ResetPlayout();
-  if (!Recording()) {
+  if (!recording_) {
     OSStatus result = AudioOutputUnitStart(vpio_unit_);
     if (result != noErr) {
       LOG_F(LS_ERROR) << "AudioOutputUnitStart failed: " << result;
       return -1;
     }
   }
-  rtc::AtomicInt::ReleaseStore(&playing_, 1);
+  rtc::AtomicOps::ReleaseStore(&playing_, 1);
   return 0;
 }
 
 int32_t AudioDeviceIOS::StopPlayout() {
   LOGI() << "StopPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!play_is_initialized_ || !Playing()) {
+  if (!play_is_initialized_ || !playing_) {
     return 0;
   }
-  if (!Recording()) {
+  if (!recording_) {
     ShutdownPlayOrRecord();
   }
   play_is_initialized_ = false;
-  rtc::AtomicInt::ReleaseStore(&playing_, 0);
+  rtc::AtomicOps::ReleaseStore(&playing_, 0);
   return 0;
 }
 
@@ -316,30 +318,30 @@ int32_t AudioDeviceIOS::StartRecording() {
   LOGI() << "StartRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(rec_is_initialized_);
-  RTC_DCHECK(!Recording());
+  RTC_DCHECK(!recording_);
   fine_audio_buffer_->ResetRecord();
-  if (!Playing()) {
+  if (!playing_) {
     OSStatus result = AudioOutputUnitStart(vpio_unit_);
     if (result != noErr) {
       LOG_F(LS_ERROR) << "AudioOutputUnitStart failed: " << result;
       return -1;
     }
   }
-  rtc::AtomicInt::ReleaseStore(&recording_, 1);
+  rtc::AtomicOps::ReleaseStore(&recording_, 1);
   return 0;
 }
 
 int32_t AudioDeviceIOS::StopRecording() {
   LOGI() << "StopRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!rec_is_initialized_ || !Recording()) {
+  if (!rec_is_initialized_ || !recording_) {
     return 0;
   }
-  if (!Playing()) {
+  if (!playing_) {
     ShutdownPlayOrRecord();
   }
   rec_is_initialized_ = false;
-  rtc::AtomicInt::ReleaseStore(&recording_, 0);
+  rtc::AtomicOps::ReleaseStore(&recording_, 0);
   return 0;
 }
 
@@ -849,7 +851,7 @@ OSStatus AudioDeviceIOS::OnRecordedDataIsAvailable(
     UInt32 in_number_frames) {
   OSStatus result = noErr;
   // Simply return if recording is not enabled.
-  if (!Recording())
+  if (!rtc::AtomicOps::AcquireLoad(&recording_))
     return result;
   if (in_number_frames != record_parameters_.frames_per_buffer()) {
     // We have seen short bursts (1-2 frames) where |in_number_frames| changes.
@@ -908,7 +910,7 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(
   SInt8* destination = static_cast<SInt8*>(io_data->mBuffers[0].mData);
   // Produce silence and give audio unit a hint about it if playout is not
   // activated.
-  if (!Playing()) {
+  if (!rtc::AtomicOps::AcquireLoad(&playing_)) {
     *io_action_flags |= kAudioUnitRenderAction_OutputIsSilence;
     memset(destination, 0, dataSizeInBytes);
     return noErr;

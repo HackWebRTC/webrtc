@@ -106,10 +106,13 @@ class LOCKABLE GlobalLockPod {
 
   void Unlock() UNLOCK_FUNCTION();
 
-  AtomicInt lock_acquired;
+  volatile int lock_acquired;
 };
 
-class GlobalLock : public GlobalLockPod {};
+class GlobalLock : public GlobalLockPod {
+ public:
+  GlobalLock();
+};
 
 // GlobalLockScope, for serializing execution through a scope.
 class SCOPED_LOCKABLE GlobalLockScope {

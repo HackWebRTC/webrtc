@@ -46,6 +46,7 @@ VideoCaptureInput::VideoCaptureInput(
                                                   this,
                                                   "EncoderThread")),
       capture_event_(EventWrapper::Create()),
+      stop_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -
@@ -64,7 +65,7 @@ VideoCaptureInput::~VideoCaptureInput() {
   module_process_thread_->DeRegisterModule(overuse_detector_.get());
 
   // Stop the thread.
-  rtc::AtomicInt::ReleaseStore(&stop_, 1);
+  rtc::AtomicOps::ReleaseStore(&stop_, 1);
   capture_event_->Set();
   encoder_thread_->Stop();
 }
@@ -128,7 +129,7 @@ bool VideoCaptureInput::EncoderProcess() {
   static const int kThreadWaitTimeMs = 100;
   int64_t capture_time = -1;
   if (capture_event_->Wait(kThreadWaitTimeMs) == kEventSignaled) {
-    if (rtc::AtomicInt::AcquireLoad(&stop_))
+    if (rtc::AtomicOps::AcquireLoad(&stop_))
       return false;
 
     int64_t encode_start_time = -1;

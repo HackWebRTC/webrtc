@@ -20,10 +20,7 @@
 #include <windows.h>
 #endif  // defined(WEBRTC_WIN)
 
-#include "webrtc/base/constructormagic.h"
-
 namespace rtc {
-
 class AtomicOps {
  public:
 #if defined(WEBRTC_WIN)
@@ -64,46 +61,8 @@ class AtomicOps {
 #endif
 };
 
-// POD struct version of AtomicOps, prevents accidental non-atomic operator
-// usage (such as ++, -- or =). Functions are static, so that the AtomicInt::
-// prefix must be present in the code, clearly labeling the operations as
-// atomic.
-struct AtomicInt {
-  AtomicInt() : AtomicInt(0) {}
-  explicit AtomicInt(int value) : value_(value) {}
 
-  // Atomically increments |i|, returns the resulting incremented value.
-  static int Increment(AtomicInt* i) {
-    return AtomicOps::Increment(&i->value_);
-  }
 
-  // Atomically decrements |i|, returns the resulting decremented value.
-  static int Decrement(AtomicInt* i) {
-    return AtomicOps::Decrement(&i->value_);
-  }
-
-  // Atomically loads |i|.
-  static int AcquireLoad(const AtomicInt* i) {
-    return AtomicOps::AcquireLoad(&i->value_);
-  }
-
-  // Atomically stores |value| in |i|.
-  static void ReleaseStore(AtomicInt* i, int value) {
-    AtomicOps::ReleaseStore(&i->value_, value);
-  }
-
-  // Attempts to compare-and-swaps |old_value| for |new_value| in |i| , returns
-  // |i|'s initial value. If equal to |old_value|, then the CAS succeeded,
-  // otherwise no operation is performed.
-  static int CompareAndSwap(AtomicInt* i, int old_value, int new_value) {
-    return AtomicOps::CompareAndSwap(&i->value_, old_value, new_value);
-  }
-
- private:
-  volatile int value_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(AtomicInt);
-};
 }
 
 #endif  // WEBRTC_BASE_ATOMICOPS_H_

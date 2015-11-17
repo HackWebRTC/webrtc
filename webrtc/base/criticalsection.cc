@@ -139,7 +139,7 @@ void GlobalLockPod::Lock() {
   const struct timespec ts_null = {0};
 #endif
 
-  while (AtomicInt::CompareAndSwap(&lock_acquired, 0, 1)) {
+  while (AtomicOps::CompareAndSwap(&lock_acquired, 0, 1)) {
 #if defined(WEBRTC_WIN)
     ::Sleep(0);
 #else
@@ -149,11 +149,16 @@ void GlobalLockPod::Lock() {
 }
 
 void GlobalLockPod::Unlock() {
-  int old_value = AtomicInt::CompareAndSwap(&lock_acquired, 1, 0);
+  int old_value = AtomicOps::CompareAndSwap(&lock_acquired, 1, 0);
   RTC_DCHECK_EQ(1, old_value) << "Unlock called without calling Lock first";
 }
 
-GlobalLockScope::GlobalLockScope(GlobalLockPod* lock) : lock_(lock) {
+GlobalLock::GlobalLock() {
+  lock_acquired = 0;
+}
+
+GlobalLockScope::GlobalLockScope(GlobalLockPod* lock)
+    : lock_(lock) {
   lock_->Lock();
 }
 
