@@ -158,10 +158,12 @@ static int kDefaultSslCipher12 =
 static int kDefaultSslEcCipher12 =
     static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256);
 // Fallback cipher for DTLS 1.2 if hardware-accelerated AES-GCM is unavailable.
+// TODO(davidben): Switch to the standardized CHACHA20_POLY1305 variant when
+// available.
 static int kDefaultSslCipher12NoAesGcm =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_CHACHA20_POLY1305);
+    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_CHACHA20_POLY1305_OLD);
 static int kDefaultSslEcCipher12NoAesGcm =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_CHACHA20_POLY1305);
+    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_CHACHA20_POLY1305_OLD);
 #else  // !OPENSSL_IS_BORINGSSL
 // OpenSSL sorts differently than BoringSSL, so the default cipher doesn't
 // change between TLS 1.0 and TLS 1.2 with the current setup.
