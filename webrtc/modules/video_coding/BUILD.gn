@@ -209,21 +209,15 @@ source_set("webrtc_vp8") {
 }
 
 source_set("webrtc_vp9") {
-  if (rtc_build_vp9) {
-    sources = [
-      "codecs/vp9/include/vp9.h",
-      "codecs/vp9/screenshare_layers.cc",
-      "codecs/vp9/screenshare_layers.h",
-      "codecs/vp9/vp9_frame_buffer_pool.cc",
-      "codecs/vp9/vp9_frame_buffer_pool.h",
-      "codecs/vp9/vp9_impl.cc",
-      "codecs/vp9/vp9_impl.h",
-    ]
-  } else {
-    sources = [
-      "codecs/vp9/vp9_dummy_impl.cc",
-    ]
-  }
+  sources = [
+    "codecs/vp9/include/vp9.h",
+    "codecs/vp9/screenshare_layers.cc",
+    "codecs/vp9/screenshare_layers.h",
+    "codecs/vp9/vp9_frame_buffer_pool.cc",
+    "codecs/vp9/vp9_frame_buffer_pool.h",
+    "codecs/vp9/vp9_impl.cc",
+    "codecs/vp9/vp9_impl.h",
+  ]
 
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
