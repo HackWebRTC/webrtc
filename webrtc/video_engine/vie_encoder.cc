@@ -255,19 +255,6 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   return 0;
 }
 
-int32_t ViEEncoder::ScaleInputImage(bool enable) {
-  VideoFrameResampling resampling_mode = kFastRescaling;
-  // TODO(mflodman) What?
-  if (enable) {
-    // kInterpolation is currently not supported.
-    LOG_F(LS_ERROR) << "Not supported.";
-    return -1;
-  }
-  vpm_->SetInputFrameResampleMode(resampling_mode);
-
-  return 0;
-}
-
 int ViEEncoder::GetPaddingNeededBps() const {
   int64_t time_of_last_frame_activity_ms;
   int min_transmit_bitrate_bps;

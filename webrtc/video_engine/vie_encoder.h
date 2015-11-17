@@ -89,9 +89,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   int32_t DeRegisterExternalEncoder(uint8_t pl_type);
   int32_t SetEncoder(const VideoCodec& video_codec);
 
-  // Scale or crop/pad image.
-  int32_t ScaleInputImage(bool enable);
-
   // Implementing VideoCaptureCallback.
   void DeliverFrame(VideoFrame video_frame) override;
 
