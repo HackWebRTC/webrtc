@@ -123,7 +123,7 @@ public class WebRtcAudioManager {
     return (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION);
   }
 
-   private boolean isDeviceBlacklistedForOpenSLESUsage() {
+  private boolean isDeviceBlacklistedForOpenSLESUsage() {
     boolean blacklisted = blacklistDeviceForOpenSLESUsageIsOverridden ?
         blacklistDeviceForOpenSLESUsage :
         WebRtcAudioUtils.deviceIsBlacklistedForOpenSLESUsage();
