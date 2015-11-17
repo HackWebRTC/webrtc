@@ -17,71 +17,6 @@ namespace webrtc {
 bool TickTime::use_fake_clock_ = false;
 int64_t TickTime::fake_ticks_ = 0;
 
-int64_t TickTime::MillisecondTimestamp() {
-  return TicksToMilliseconds(TickTime::Now().Ticks());
-}
-
-int64_t TickTime::MicrosecondTimestamp() {
-  return TicksToMicroseconds(TickTime::Now().Ticks());
-}
-
-int64_t TickTime::MillisecondsToTicks(const int64_t ms) {
-#if _WIN32
-  return ms;
-#elif defined(WEBRTC_LINUX)
-  return ms * 1000000LL;
-#elif defined(WEBRTC_MAC)
-  // TODO(pbos): Fix unsafe use of static locals.
-  static double timebase_from_millisecond_fract = 0.0;
-  if (timebase_from_millisecond_fract == 0.0) {
-    mach_timebase_info_data_t timebase;
-    (void)mach_timebase_info(&timebase);
-    timebase_from_millisecond_fract = (timebase.denom * 1e6) / timebase.numer;
-  }
-  return ms * timebase_from_millisecond_fract;
-#else
-  return ms * 1000LL;
-#endif
-}
-
-int64_t TickTime::TicksToMilliseconds(const int64_t ticks) {
-#if _WIN32
-  return ticks;
-#elif defined(WEBRTC_LINUX)
-  return ticks / 1000000LL;
-#elif defined(WEBRTC_MAC)
-  // TODO(pbos): Fix unsafe use of static locals.
-  static double timebase_microsecond_fract = 0.0;
-  if (timebase_microsecond_fract == 0.0) {
-    mach_timebase_info_data_t timebase;
-    (void)mach_timebase_info(&timebase);
-    timebase_microsecond_fract = timebase.numer / (timebase.denom * 1e6);
-  }
-  return ticks * timebase_microsecond_fract;
-#else
-  return ticks;
-#endif
-}
-
-int64_t TickTime::TicksToMicroseconds(const int64_t ticks) {
-#if _WIN32
-  return ticks * 1000LL;
-#elif defined(WEBRTC_LINUX)
-  return ticks / 1000LL;
-#elif defined(WEBRTC_MAC)
-  // TODO(pbos): Fix unsafe use of static locals.
-  static double timebase_microsecond_fract = 0.0;
-  if (timebase_microsecond_fract == 0.0) {
-    mach_timebase_info_data_t timebase;
-    (void)mach_timebase_info(&timebase);
-    timebase_microsecond_fract = timebase.numer / (timebase.denom * 1e3);
-  }
-  return ticks * timebase_microsecond_fract;
-#else
-  return ticks;
-#endif
-}
-
 void TickTime::UseFakeClock(int64_t start_millisecond) {
   use_fake_clock_ = true;
   fake_ticks_ = MillisecondsToTicks(start_millisecond);
@@ -92,14 +27,20 @@ void TickTime::AdvanceFakeClock(int64_t milliseconds) {
   fake_ticks_ += MillisecondsToTicks(milliseconds);
 }
 
-// Gets the native system tick count. The actual unit, resolution, and epoch
-// varies by platform:
-// Windows: Milliseconds of uptime with rollover count in the upper 32-bits.
-// Linux/Android: Nanoseconds since the Unix epoch.
-// Mach (Mac/iOS): "absolute" time since first call.
-// Unknown POSIX: Microseconds since the Unix epoch.
 int64_t TickTime::QueryOsForTicks() {
+  TickTime result;
 #if _WIN32
+  // TODO(wu): Remove QueryPerformanceCounter implementation.
+#ifdef USE_QUERY_PERFORMANCE_COUNTER
+  // QueryPerformanceCounter returns the value from the TSC which is
+  // incremented at the CPU frequency. The algorithm used requires
+  // the CPU frequency to be constant. Technology like speed stepping
+  // which has variable CPU frequency will therefore yield unpredictable,
+  // incorrect time estimations.
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+  result.ticks_ = qpcnt.QuadPart;
+#else
   static volatile LONG last_time_get_time = 0;
   static volatile int64_t num_wrap_time_get_time = 0;
   volatile LONG* last_time_get_time_ptr = &last_time_get_time;
@@ -112,11 +53,11 @@ int64_t TickTime::QueryOsForTicks() {
     // 0x0fffffff ~3.1 days, the code will not take that long to execute
     // so it must have been a wrap around.
     if (old > 0xf0000000 && now < 0x0fffffff) {
-      // TODO(pbos): Fix unsafe use of static locals.
       num_wrap_time_get_time++;
     }
   }
-  return now + (num_wrap_time_get_time << 32);
+  result.ticks_ = now + (num_wrap_time_get_time << 32);
+#endif
 #elif defined(WEBRTC_LINUX)
   struct timespec ts;
   // TODO(wu): Remove CLOCK_REALTIME implementation.
@@ -125,24 +66,33 @@ int64_t TickTime::QueryOsForTicks() {
 #else
   clock_gettime(CLOCK_MONOTONIC, &ts);
 #endif
-  return 1000000000LL * ts.tv_sec + ts.tv_nsec;
+  result.ticks_ = 1000000000LL * static_cast<int64_t>(ts.tv_sec) +
+      static_cast<int64_t>(ts.tv_nsec);
 #elif defined(WEBRTC_MAC)
-  // Return absolute time as an offset from the first call to this function, so
-  // that we can do floating-point (double) operations on it without losing
-  // precision. This holds true until the elapsed time is ~11 days,
-  // at which point we'll start to lose some precision, though not enough to
-  // matter for millisecond accuracy for another couple years after that.
-  // TODO(pbos): Fix unsafe use of static locals.
-  static uint64_t timebase_start = 0;
-  if (timebase_start == 0) {
-    timebase_start = mach_absolute_time();
+  static mach_timebase_info_data_t timebase;
+  if (timebase.denom == 0) {
+    // Get the timebase if this is the first time we run.
+    // Recommended by Apple's QA1398.
+    kern_return_t retval = mach_timebase_info(&timebase);
+    if (retval != KERN_SUCCESS) {
+      // TODO(wu): Implement RTC_CHECK for all the platforms. Then replace this
+      // with a RTC_CHECK_EQ(retval, KERN_SUCCESS);
+#ifndef WEBRTC_IOS
+      asm("int3");
+#else
+      __builtin_trap();
+#endif  // WEBRTC_IOS
+    }
   }
-  return mach_absolute_time() - timebase_start;
+  // Use timebase to convert absolute time tick units into nanoseconds.
+  result.ticks_ = mach_absolute_time() * timebase.numer / timebase.denom;
 #else
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  return 1000000LL * tv.tv_sec + tv.tv_usec;
+  result.ticks_ = 1000000LL * static_cast<int64_t>(tv.tv_sec) +
+      static_cast<int64_t>(tv.tv_usec);
 #endif
+  return result.ticks_;
 }
 
 }  // namespace webrtc
