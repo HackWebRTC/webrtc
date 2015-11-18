@@ -462,7 +462,9 @@ void VideoSource::OnStateChange(cricket::VideoCapturer* capturer,
 }
 
 void VideoSource::SetState(SourceState new_state) {
-  if (VERIFY(state_ != new_state)) {
+  // TODO(hbos): Temporarily disabled VERIFY due to webrtc:4776.
+  // if (VERIFY(state_ != new_state)) {
+  if (state_ != new_state) {
     state_ = new_state;
     FireOnChanged();
   }
