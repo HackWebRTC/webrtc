@@ -184,10 +184,13 @@ void TCPPort::PrepareAddress() {
   } else {
     LOG_J(LS_INFO, this) << "Not listening due to firewall restrictions.";
     // Note: We still add the address, since otherwise the remote side won't
-    // recognize our incoming TCP connections.
-    AddAddress(rtc::SocketAddress(ip(), 0), rtc::SocketAddress(ip(), 0),
-               rtc::SocketAddress(), TCP_PROTOCOL_NAME, "", TCPTYPE_ACTIVE_STR,
-               LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
+    // recognize our incoming TCP connections. According to
+    // https://tools.ietf.org/html/rfc6544#section-4.5, for active candidate,
+    // the port must be set to the discard port, i.e. 9.
+    AddAddress(rtc::SocketAddress(ip(), DISCARD_PORT),
+               rtc::SocketAddress(ip(), 0), rtc::SocketAddress(),
+               TCP_PROTOCOL_NAME, "", TCPTYPE_ACTIVE_STR, LOCAL_PORT_TYPE,
+               ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
   }
 }
 

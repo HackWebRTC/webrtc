@@ -650,6 +650,21 @@ class P2PTransportChannelTestBase : public testing::Test,
     GetEndpoint(endpoint)->save_candidates_ = true;
   }
 
+  // Tcp candidate verification has to be done when they are generated.
+  void VerifySavedTcpCandidates(int endpoint, const std::string& tcptype) {
+    for (auto& data : GetEndpoint(endpoint)->saved_candidates_) {
+      EXPECT_EQ(data->candidate.protocol(), cricket::TCP_PROTOCOL_NAME);
+      EXPECT_EQ(data->candidate.tcptype(), tcptype);
+      if (data->candidate.tcptype() == cricket::TCPTYPE_ACTIVE_STR) {
+        EXPECT_EQ(data->candidate.address().port(), cricket::DISCARD_PORT);
+      } else if (data->candidate.tcptype() == cricket::TCPTYPE_PASSIVE_STR) {
+        EXPECT_NE(data->candidate.address().port(), cricket::DISCARD_PORT);
+      } else {
+        FAIL() << "Unknown tcptype: " << data->candidate.tcptype();
+      }
+    }
+  }
+
   void ResumeCandidates(int endpoint) {
     Endpoint* ed = GetEndpoint(endpoint);
     std::vector<CandidateData*>::iterator it = ed->saved_candidates_.begin();
@@ -1290,7 +1305,18 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
   SetAllowTcpListen(0, true);   // actpass.
   SetAllowTcpListen(1, false);  // active.
 
+  // Pause candidate so we could verify the candidate properties.
+  PauseCandidates(0);
+  PauseCandidates(1);
   CreateChannels(1);
+
+  // Verify tcp candidates.
+  VerifySavedTcpCandidates(0, cricket::TCPTYPE_PASSIVE_STR);
+  VerifySavedTcpCandidates(1, cricket::TCPTYPE_ACTIVE_STR);
+
+  // Resume candidates.
+  ResumeCandidates(0);
+  ResumeCandidates(1);
 
   EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                    ep2_ch1()->receiving() && ep2_ch1()->writable(),
@@ -1299,12 +1325,6 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
       LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
-
-  std::string kTcpProtocol = "tcp";
-  EXPECT_EQ(kTcpProtocol, RemoteCandidate(ep1_ch1())->protocol());
-  EXPECT_EQ(kTcpProtocol, LocalCandidate(ep1_ch1())->protocol());
-  EXPECT_EQ(kTcpProtocol, RemoteCandidate(ep2_ch1())->protocol());
-  EXPECT_EQ(kTcpProtocol, LocalCandidate(ep2_ch1())->protocol());
 
   TestSendRecv(1);
   DestroyChannels();
