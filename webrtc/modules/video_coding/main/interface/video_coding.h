@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
-#define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_
+#define WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_
+
+#pragma message("WARNING: video_coding/main/interface is DEPRECATED; use video_coding/include")
 
 #if defined(WEBRTC_WIN)
 // This is a workaround on Windows due to the fact that some Windows
@@ -23,7 +25,7 @@
 
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/video_frame.h"
 
@@ -541,4 +543,4 @@ public:
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
+#endif // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_

@@ -12,7 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_error_codes.h"
+#include "webrtc/modules/video_coding/include/video_error_codes.h"
 
 namespace webrtc {
 

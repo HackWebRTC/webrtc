@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_INTERFACE_MOCK_MOCK_VCM_CALLBACKS_H_
-#define WEBRTC_MODULES_VIDEO_CODING_MAIN_INTERFACE_MOCK_MOCK_VCM_CALLBACKS_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_INCLUDE_MOCK_MOCK_VCM_CALLBACKS_H_
+#define WEBRTC_MODULES_VIDEO_CODING_INCLUDE_MOCK_MOCK_VCM_CALLBACKS_H_
+
+#pragma message("WARNING: video_coding/main/interface is DEPRECATED; use video_coding/include")
 
 #include "testing/gmock/include/gmock/gmock.h"
-#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -32,4 +34,4 @@ class MockPacketRequestCallback : public VCMPacketRequestCallback {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_MAIN_INTERFACE_MOCK_MOCK_VCM_CALLBACKS_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_MOCK_MOCK_VCM_CALLBACKS_H_

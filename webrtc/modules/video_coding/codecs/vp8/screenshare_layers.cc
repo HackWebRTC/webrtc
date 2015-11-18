@@ -14,7 +14,7 @@
 #include "webrtc/base/checks.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 

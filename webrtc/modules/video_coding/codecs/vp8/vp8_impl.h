@@ -23,7 +23,7 @@
 #include "vpx/vp8dx.h"
 
 #include "webrtc/common_video/include/i420_buffer_pool.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
 #include "webrtc/modules/video_coding/utility/include/frame_dropper.h"

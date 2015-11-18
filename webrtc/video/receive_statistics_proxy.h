@@ -19,7 +19,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
-#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/video_engine/report_block_stats.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_receive_stream.h"

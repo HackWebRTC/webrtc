@@ -11,7 +11,7 @@
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
+#include "webrtc/modules/video_coding/encoded_frame.h"
 
 namespace webrtc {
 namespace internal {

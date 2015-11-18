@@ -12,7 +12,7 @@
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/utility/include/mock/mock_frame_dropper.h"
 

@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -41,7 +41,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_error_codes.h"
+#include "webrtc/modules/video_coding/include/video_error_codes.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_QP_PARSER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_UTILITY_QP_PARSER_H_
 
-#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
+#include "webrtc/modules/video_coding/encoded_frame.h"
 
 namespace webrtc {
 

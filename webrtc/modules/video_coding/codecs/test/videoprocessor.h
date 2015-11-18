@@ -16,7 +16,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/scaler.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/stats.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
