@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_RENT_A_CODEC_H_
 
 #include <stddef.h>
+#include <map>
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/constructormagic.h"
@@ -180,6 +181,16 @@ class RentACodec {
 
   static rtc::Optional<NetEqDecoder> NetEqDecoderFromCodecId(CodecId codec_id,
                                                              int num_channels);
+
+  // Parse codec_inst and extract payload types. If the given CodecInst was for
+  // the wrong sort of codec, return kSkip; otherwise, if the rate was illegal,
+  // return kBadFreq; otherwise, update the given RTP timestamp rate (Hz) ->
+  // payload type map and return kOk.
+  enum class RegistrationResult { kOk, kSkip, kBadFreq };
+  static RegistrationResult RegisterCngPayloadType(std::map<int, int>* pt_map,
+                                                   const CodecInst& codec_inst);
+  static RegistrationResult RegisterRedPayloadType(std::map<int, int>* pt_map,
+                                                   const CodecInst& codec_inst);
 
   RentACodec();
   ~RentACodec();

@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_CODEC_MANAGER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_CODEC_MANAGER_H_
 
+#include <map>
+
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -69,17 +71,17 @@ class CodecManager final {
   void RentEncoderStack(AudioEncoder* speech_encoder, int sample_rate_hz);
 
   rtc::ThreadChecker thread_checker_;
-  uint8_t cng_nb_pltype_;
-  uint8_t cng_wb_pltype_;
-  uint8_t cng_swb_pltype_;
-  uint8_t cng_fb_pltype_;
-  uint8_t red_nb_pltype_;
   bool dtx_enabled_;
   ACMVADMode vad_mode_;
   CodecInst send_codec_inst_;
   bool red_enabled_;
   bool codec_fec_enabled_;
   RentACodec rent_a_codec_;
+
+  // Maps from RTP timestamp rate (in Hz) to payload type.
+  std::map<int, int> cng_payload_types_;
+  std::map<int, int> red_payload_types_;
+
   bool encoder_is_opus_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(CodecManager);

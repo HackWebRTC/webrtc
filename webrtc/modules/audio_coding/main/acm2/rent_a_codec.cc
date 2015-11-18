@@ -107,6 +107,37 @@ rtc::Optional<NetEqDecoder> RentACodec::NetEqDecoderFromCodecId(
           : ned);
 }
 
+RentACodec::RegistrationResult RentACodec::RegisterCngPayloadType(
+    std::map<int, int>* pt_map,
+    const CodecInst& codec_inst) {
+  if (STR_CASE_CMP(codec_inst.plname, "CN") != 0)
+    return RegistrationResult::kSkip;
+  switch (codec_inst.plfreq) {
+    case 8000:
+    case 16000:
+    case 32000:
+    case 48000:
+      (*pt_map)[codec_inst.plfreq] = codec_inst.pltype;
+      return RegistrationResult::kOk;
+    default:
+      return RegistrationResult::kBadFreq;
+  }
+}
+
+RentACodec::RegistrationResult RentACodec::RegisterRedPayloadType(
+    std::map<int, int>* pt_map,
+    const CodecInst& codec_inst) {
+  if (STR_CASE_CMP(codec_inst.plname, "RED") != 0)
+    return RegistrationResult::kSkip;
+  switch (codec_inst.plfreq) {
+    case 8000:
+      (*pt_map)[codec_inst.plfreq] = codec_inst.pltype;
+      return RegistrationResult::kOk;
+    default:
+      return RegistrationResult::kBadFreq;
+  }
+}
+
 namespace {
 
 // Returns a new speech encoder, or null on error.

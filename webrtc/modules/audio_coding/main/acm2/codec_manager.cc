@@ -132,33 +132,16 @@ const CodecInst kEmptyCodecInst = {-1, "noCodecRegistered", 0, 0, 0, 0};
 }  // namespace
 
 CodecManager::CodecManager()
-    : cng_nb_pltype_(255),
-      cng_wb_pltype_(255),
-      cng_swb_pltype_(255),
-      cng_fb_pltype_(255),
-      red_nb_pltype_(255),
-      dtx_enabled_(false),
+    : dtx_enabled_(false),
       vad_mode_(VADNormal),
       send_codec_inst_(kEmptyCodecInst),
       red_enabled_(false),
       codec_fec_enabled_(false),
       encoder_is_opus_(false) {
-  // Register the default payload type for RED and for CNG at sampling rates of
-  // 8, 16, 32 and 48 kHz.
+  // Register the default payload types for RED and CNG.
   for (const CodecInst& ci : RentACodec::Database()) {
-    if (IsCodecRED(ci) && ci.plfreq == 8000) {
-      red_nb_pltype_ = static_cast<uint8_t>(ci.pltype);
-    } else if (IsCodecCN(ci)) {
-      if (ci.plfreq == 8000) {
-        cng_nb_pltype_ = static_cast<uint8_t>(ci.pltype);
-      } else if (ci.plfreq == 16000) {
-        cng_wb_pltype_ = static_cast<uint8_t>(ci.pltype);
-      } else if (ci.plfreq == 32000) {
-        cng_swb_pltype_ = static_cast<uint8_t>(ci.pltype);
-      } else if (ci.plfreq == 48000) {
-        cng_fb_pltype_ = static_cast<uint8_t>(ci.pltype);
-      }
-    }
+    RentACodec::RegisterCngPayloadType(&cng_payload_types_, ci);
+    RentACodec::RegisterRedPayloadType(&red_payload_types_, ci);
   }
   thread_checker_.DetachFromThread();
 }
@@ -175,58 +158,27 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   }
 
   int dummy_id = 0;
-  // RED can be registered with other payload type. If not registered a default
-  // payload type is used.
-  if (IsCodecRED(send_codec)) {
-    // TODO(tlegrand): Remove this check. Already taken care of in
-    // ACMCodecDB::CodecNumber().
-    // Check if the payload-type is valid
-    if (!RentACodec::IsPayloadTypeValid(send_codec.pltype)) {
+  switch (RentACodec::RegisterRedPayloadType(&red_payload_types_, send_codec)) {
+    case RentACodec::RegistrationResult::kOk:
+      return 0;
+    case RentACodec::RegistrationResult::kBadFreq:
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                   "Invalid payload-type %d for %s.", send_codec.pltype,
-                   send_codec.plname);
+                   "RegisterSendCodec() failed, invalid frequency for RED"
+                   " registration");
       return -1;
-    }
-    // Set RED payload type.
-    if (send_codec.plfreq == 8000) {
-      red_nb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-    } else {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                   "RegisterSendCodec() failed, invalid frequency for RED "
-                   "registration");
-      return -1;
-    }
-    return 0;
+    case RentACodec::RegistrationResult::kSkip:
+      break;
   }
-
-  // CNG can be registered with other payload type. If not registered the
-  // default payload types from codec database will be used.
-  if (IsCodecCN(send_codec)) {
-    // CNG is registered.
-    switch (send_codec.plfreq) {
-      case 8000: {
-        cng_nb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-        return 0;
-      }
-      case 16000: {
-        cng_wb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-        return 0;
-      }
-      case 32000: {
-        cng_swb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-        return 0;
-      }
-      case 48000: {
-        cng_fb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-        return 0;
-      }
-      default: {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                     "RegisterSendCodec() failed, invalid frequency for CNG "
-                     "registration");
-        return -1;
-      }
-    }
+  switch (RentACodec::RegisterCngPayloadType(&cng_payload_types_, send_codec)) {
+    case RentACodec::RegistrationResult::kOk:
+      return 0;
+    case RentACodec::RegistrationResult::kBadFreq:
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
+                   "RegisterSendCodec() failed, invalid frequency for CNG"
+                   " registration");
+      return -1;
+    case RentACodec::RegistrationResult::kSkip:
+      break;
   }
 
   // Set Stereo, and make sure VAD and DTX is turned off.
@@ -418,34 +370,20 @@ AudioDecoder* CodecManager::GetAudioDecoder(const CodecInst& codec) {
   return IsIsac(codec) ? rent_a_codec_.RentIsacDecoder() : nullptr;
 }
 
-int CodecManager::CngPayloadType(int sample_rate_hz) const {
-  switch (sample_rate_hz) {
-    case 8000:
-      return cng_nb_pltype_;
-    case 16000:
-      return cng_wb_pltype_;
-    case 32000:
-      return cng_swb_pltype_;
-    case 48000:
-      return cng_fb_pltype_;
-    default:
-      FATAL() << sample_rate_hz << " Hz is not supported";
-      return -1;
-  }
+int CodecManager::CngPayloadType(int rtp_timestamp_rate_hz) const {
+  RTC_CHECK(rtp_timestamp_rate_hz == 8000 || rtp_timestamp_rate_hz == 16000 ||
+            rtp_timestamp_rate_hz == 32000 || rtp_timestamp_rate_hz == 48000)
+      << rtp_timestamp_rate_hz << " Hz is not supported";
+  auto it = cng_payload_types_.find(rtp_timestamp_rate_hz);
+  return it == cng_payload_types_.end() ? -1 : it->second;
 }
 
-int CodecManager::RedPayloadType(int sample_rate_hz) const {
-  switch (sample_rate_hz) {
-    case 8000:
-      return red_nb_pltype_;
-    case 16000:
-    case 32000:
-    case 48000:
-      return -1;
-    default:
-      FATAL() << sample_rate_hz << " Hz is not supported";
-      return -1;
-  }
+int CodecManager::RedPayloadType(int rtp_timestamp_rate_hz) const {
+  RTC_CHECK(rtp_timestamp_rate_hz == 8000 || rtp_timestamp_rate_hz == 16000 ||
+            rtp_timestamp_rate_hz == 32000 || rtp_timestamp_rate_hz == 48000)
+      << rtp_timestamp_rate_hz << " Hz is not supported";
+  auto it = red_payload_types_.find(rtp_timestamp_rate_hz);
+  return it == red_payload_types_.end() ? -1 : it->second;
 }
 
 void CodecManager::RentEncoderStack(AudioEncoder* speech_encoder,
