@@ -585,7 +585,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   }
 
   // TODO(asapersson): this info has to be obtained from the encoder.
-  vp9_info->temporal_up_switch = true;
+  vp9_info->temporal_up_switch = false;
 
   bool is_first_frame = false;
   if (is_flexible_mode_) {
