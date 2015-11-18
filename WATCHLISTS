@@ -99,7 +99,7 @@
     'common_audio': ['aluebs@webrtc.org',
                      'andrew@webrtc.org',
                      'bjornv@webrtc.org',
-                     'peah@webrtc.org'
+                     'peah@webrtc.org',
                      'minyue@webrtc.org'],
     'video_engine': ['andresp@webrtc.org',
                      'mflodman@webrtc.org',
