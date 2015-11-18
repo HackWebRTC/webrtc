@@ -33,10 +33,15 @@ int16_t MapSetting(GainControl::Mode mode) {
   assert(false);
   return -1;
 }
-}  // namespace
 
-const size_t GainControlImpl::kAllowedValuesOfSamplesPerFrame1;
-const size_t GainControlImpl::kAllowedValuesOfSamplesPerFrame2;
+// Maximum length that a frame of samples can have.
+static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
+// Maximum number of frames to buffer in the render queue.
+// TODO(peah): Decrease this once we properly handle hugely unbalanced
+// reverse and forward call numbers.
+static const size_t kMaxNumFramesToBuffer = 100;
+
+}  // namespace
 
 GainControlImpl::GainControlImpl(const AudioProcessing* apm,
                                  CriticalSectionWrapper* crit)
@@ -52,9 +57,7 @@ GainControlImpl::GainControlImpl(const AudioProcessing* apm,
       analog_capture_level_(0),
       was_analog_level_set_(false),
       stream_is_saturated_(false),
-      render_queue_element_max_size_(0) {
-  AllocateRenderQueue();
-}
+      render_queue_element_max_size_(0) {}
 
 GainControlImpl::~GainControlImpl() {}
 
@@ -217,12 +220,6 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 
 // TODO(ajm): ensure this is called under kAdaptiveAnalog.
 int GainControlImpl::set_stream_analog_level(int level) {
-  // TODO(peah): Verify that this is really needed to do the reading
-  // here as well as in ProcessStream. It works since these functions
-  // are called from the same thread, but it is not nice to do it in two
-  // places if not needed.
-  ReadQueuedRenderData();
-
   CriticalSectionScoped crit_scoped(crit_);
   was_analog_level_set_ = true;
   if (level < minimum_capture_level_ || level > maximum_capture_level_) {
@@ -349,25 +346,24 @@ int GainControlImpl::Initialize() {
 }
 
 void GainControlImpl::AllocateRenderQueue() {
-  const size_t max_frame_size = std::max<size_t>(
-      kAllowedValuesOfSamplesPerFrame1, kAllowedValuesOfSamplesPerFrame2);
+  const size_t new_render_queue_element_max_size =
+      std::max<size_t>(static_cast<size_t>(1),
+                       kMaxAllowedValuesOfSamplesPerFrame * num_handles());
 
-  const size_t new_render_queue_element_max_size = std::max<size_t>(
-      static_cast<size_t>(1), (max_frame_size * num_handles()));
-
-  if (new_render_queue_element_max_size > render_queue_element_max_size_) {
+  if (render_queue_element_max_size_ < new_render_queue_element_max_size) {
+    render_queue_element_max_size_ = new_render_queue_element_max_size;
     std::vector<int16_t> template_queue_element(render_queue_element_max_size_);
 
     render_signal_queue_.reset(
         new SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>(
             kMaxNumFramesToBuffer, template_queue_element,
             RenderQueueItemVerifier<int16_t>(render_queue_element_max_size_)));
+
+    render_queue_buffer_.resize(render_queue_element_max_size_);
+    capture_queue_buffer_.resize(render_queue_element_max_size_);
   } else {
     render_signal_queue_->Clear();
   }
-
-  render_queue_buffer_.resize(new_render_queue_element_max_size);
-  capture_queue_buffer_.resize(new_render_queue_element_max_size);
 }
 
 void* GainControlImpl::CreateHandle() const {

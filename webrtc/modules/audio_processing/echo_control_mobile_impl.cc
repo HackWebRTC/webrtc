@@ -56,10 +56,13 @@ AudioProcessing::Error MapError(int err) {
       return AudioProcessing::kUnspecifiedError;
   }
 }
+// Maximum length that a frame of samples can have.
+static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
+// Maximum number of frames to buffer in the render queue.
+// TODO(peah): Decrease this once we properly handle hugely unbalanced
+// reverse and forward call numbers.
+static const size_t kMaxNumFramesToBuffer = 100;
 }  // namespace
-
-const size_t EchoControlMobileImpl::kAllowedValuesOfSamplesPerFrame1;
-const size_t EchoControlMobileImpl::kAllowedValuesOfSamplesPerFrame2;
 
 size_t EchoControlMobile::echo_path_size_bytes() {
     return WebRtcAecm_echo_path_size_bytes();
@@ -73,9 +76,7 @@ EchoControlMobileImpl::EchoControlMobileImpl(const AudioProcessing* apm,
       routing_mode_(kSpeakerphone),
       comfort_noise_enabled_(true),
       external_echo_path_(NULL),
-      render_queue_element_max_size_(0) {
-  AllocateRenderQueue();
-}
+      render_queue_element_max_size_(0) {}
 
 EchoControlMobileImpl::~EchoControlMobileImpl() {
     if (external_echo_path_ != NULL) {
@@ -301,14 +302,13 @@ int EchoControlMobileImpl::Initialize() {
 }
 
 void EchoControlMobileImpl::AllocateRenderQueue() {
-  const size_t max_frame_size = std::max<size_t>(
-      kAllowedValuesOfSamplesPerFrame1, kAllowedValuesOfSamplesPerFrame2);
   const size_t new_render_queue_element_max_size = std::max<size_t>(
-      static_cast<size_t>(1), max_frame_size * num_handles_required());
+      static_cast<size_t>(1),
+      kMaxAllowedValuesOfSamplesPerFrame * num_handles_required());
 
   // Reallocate the queue if the queue item size is too small to fit the
   // data to put in the queue.
-  if (new_render_queue_element_max_size > render_queue_element_max_size_) {
+  if (render_queue_element_max_size_ < new_render_queue_element_max_size) {
     render_queue_element_max_size_ = new_render_queue_element_max_size;
 
     std::vector<int16_t> template_queue_element(render_queue_element_max_size_);
@@ -317,12 +317,12 @@ void EchoControlMobileImpl::AllocateRenderQueue() {
         new SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>(
             kMaxNumFramesToBuffer, template_queue_element,
             RenderQueueItemVerifier<int16_t>(render_queue_element_max_size_)));
+
+    render_queue_buffer_.resize(render_queue_element_max_size_);
+    capture_queue_buffer_.resize(render_queue_element_max_size_);
   } else {
     render_signal_queue_->Clear();
   }
-
-  render_queue_buffer_.resize(new_render_queue_element_max_size);
-  capture_queue_buffer_.resize(new_render_queue_element_max_size);
 }
 
 void* EchoControlMobileImpl::CreateHandle() const {

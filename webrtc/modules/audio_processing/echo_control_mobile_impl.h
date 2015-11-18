@@ -43,12 +43,6 @@ class EchoControlMobileImpl : public EchoControlMobile,
   void ReadQueuedRenderData();
 
  private:
-  static const size_t kAllowedValuesOfSamplesPerFrame1 = 80;
-  static const size_t kAllowedValuesOfSamplesPerFrame2 = 160;
-  // TODO(peah): Decrease this once we properly handle hugely unbalanced
-  // reverse and forward call numbers.
-  static const size_t kMaxNumFramesToBuffer = 100;
-
   // EchoControlMobile implementation.
   int Enable(bool enable) override;
   int set_routing_mode(RoutingMode mode) override;

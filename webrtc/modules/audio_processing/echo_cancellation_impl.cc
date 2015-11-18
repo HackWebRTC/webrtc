@@ -53,10 +53,14 @@ AudioProcessing::Error MapError(int err) {
       return AudioProcessing::kUnspecifiedError;
   }
 }
-}  // namespace
 
-const size_t EchoCancellationImpl::kAllowedValuesOfSamplesPerFrame1;
-const size_t EchoCancellationImpl::kAllowedValuesOfSamplesPerFrame2;
+// Maximum length that a frame of samples can have.
+static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
+// Maximum number of frames to buffer in the render queue.
+// TODO(peah): Decrease this once we properly handle hugely unbalanced
+// reverse and forward call numbers.
+static const size_t kMaxNumFramesToBuffer = 100;
+}  // namespace
 
 EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
                                            CriticalSectionWrapper* crit)
@@ -72,9 +76,7 @@ EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
       delay_logging_enabled_(false),
       extended_filter_enabled_(false),
       delay_agnostic_enabled_(false),
-      render_queue_element_max_size_(0) {
-  AllocateRenderQueue();
-}
+      render_queue_element_max_size_(0) {}
 
 EchoCancellationImpl::~EchoCancellationImpl() {}
 
@@ -384,15 +386,13 @@ int EchoCancellationImpl::Initialize() {
 }
 
 void EchoCancellationImpl::AllocateRenderQueue() {
-  const size_t max_frame_size = std::max<size_t>(
-      kAllowedValuesOfSamplesPerFrame1, kAllowedValuesOfSamplesPerFrame2);
-
   const size_t new_render_queue_element_max_size = std::max<size_t>(
-      static_cast<size_t>(1), max_frame_size * num_handles_required());
+      static_cast<size_t>(1),
+      kMaxAllowedValuesOfSamplesPerFrame * num_handles_required());
 
   // Reallocate the queue if the queue item size is too small to fit the
   // data to put in the queue.
-  if (new_render_queue_element_max_size > render_queue_element_max_size_) {
+  if (render_queue_element_max_size_ < new_render_queue_element_max_size) {
     render_queue_element_max_size_ = new_render_queue_element_max_size;
 
     std::vector<float> template_queue_element(render_queue_element_max_size_);
@@ -401,12 +401,12 @@ void EchoCancellationImpl::AllocateRenderQueue() {
         new SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>(
             kMaxNumFramesToBuffer, template_queue_element,
             RenderQueueItemVerifier<float>(render_queue_element_max_size_)));
+
+    render_queue_buffer_.resize(render_queue_element_max_size_);
+    capture_queue_buffer_.resize(render_queue_element_max_size_);
   } else {
     render_signal_queue_->Clear();
   }
-
-  render_queue_buffer_.resize(new_render_queue_element_max_size);
-  capture_queue_buffer_.resize(new_render_queue_element_max_size);
 }
 
 void EchoCancellationImpl::SetExtraOptions(const Config& config) {
