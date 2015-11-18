@@ -14,25 +14,15 @@
       'dependencies': [
         'audio_encoder_interface',
       ],
-      'include_dirs': [
-        'include',
-        '<(webrtc_root)',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'include',
-          '<(webrtc_root)',
-        ],
-      },
       'sources': [
-        'include/g711_interface.h',
-        'include/audio_decoder_pcm.h',
-        'include/audio_encoder_pcm.h',
+        'audio_decoder_pcm.cc',
+        'audio_decoder_pcm.h',
+        'audio_encoder_pcm.cc',
+        'audio_encoder_pcm.h',
         'g711_interface.c',
+        'g711_interface.h',
         'g711.c',
         'g711.h',
-        'audio_decoder_pcm.cc',
-        'audio_encoder_pcm.cc',
       ],
     },
   ], # targets

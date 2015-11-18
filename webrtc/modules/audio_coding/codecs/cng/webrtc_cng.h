@@ -9,8 +9,8 @@
  */
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_MAIN_INCLUDE_WEBRTC_CNG_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_MAIN_INCLUDE_WEBRTC_CNG_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_WEBRTC_CNG_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_WEBRTC_CNG_H_
 
 #include <stddef.h>
 #include "webrtc/typedefs.h"
@@ -144,7 +144,7 @@ int16_t WebRtcCng_Generate(CNG_dec_inst* cng_inst, int16_t* outData,
  * WebRtcCng_GetErrorCodeEnc/Dec(...)
  *
  * This functions can be used to check the error code of a CNG instance. When
- * a function returns -1 a error code will be set for that instance. The 
+ * a function returns -1 a error code will be set for that instance. The
  * function below extract the code of the last error that occurred in the
  * specified instance.
  *
@@ -160,4 +160,4 @@ int16_t WebRtcCng_GetErrorCodeDec(CNG_dec_inst* cng_inst);
 }
 #endif
 
-#endif // WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_MAIN_INCLUDE_WEBRTC_CNG_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_WEBRTC_CNG_H_

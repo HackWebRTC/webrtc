@@ -18,7 +18,7 @@
 #include "webrtc/typedefs.h"
 
 /* include API */
-#include "g722_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 
 /* Runtime statistics */
 #include <time.h>

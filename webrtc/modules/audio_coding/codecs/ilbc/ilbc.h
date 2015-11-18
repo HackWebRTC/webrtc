@@ -15,8 +15,8 @@
  *
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INCLUDE_ILBC_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INCLUDE_ILBC_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_ILBC_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_ILBC_H_
 
 #include <stddef.h>
 
@@ -53,10 +53,10 @@ extern "C" {
    * memory location
    *
    * Input:
-   *      - XXX_xxxinst       : Pointer to created instance that should be
-   *                            assigned
-   *      - ILBCXXX_inst_Addr : Pointer to the desired memory space
-   *      - size              : The size that this structure occupies (in Word16)
+   *     - XXX_xxxinst       : Pointer to created instance that should be
+   *                           assigned
+   *     - ILBCXXX_inst_Addr : Pointer to the desired memory space
+   *     - size              : The size that this structure occupies (in Word16)
    *
    * Return value             :  0 - Ok
    *                            -1 - Error
@@ -76,10 +76,10 @@ extern "C" {
    * These functions create a instance to the specified structure
    *
    * Input:
-   *      - XXX_inst          : Pointer to created instance that should be created
+   *      - XXX_inst        : Pointer to created instance that should be created
    *
-   * Return value             :  0 - Ok
-   *                            -1 - Error
+   * Return value           :  0 - Ok
+   *                          -1 - Error
    */
 
   int16_t WebRtcIlbcfix_EncoderCreate(IlbcEncoderInstance **iLBC_encinst);
@@ -255,4 +255,4 @@ extern "C" {
 }
 #endif
 
-#endif
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_ILBC_H_

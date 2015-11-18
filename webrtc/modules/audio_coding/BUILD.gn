@@ -164,11 +164,11 @@ config("cng_config") {
 source_set("cng") {
   sources = [
     "codecs/cng/audio_encoder_cng.cc",
+    "codecs/cng/audio_encoder_cng.h",
     "codecs/cng/cng_helpfuns.c",
     "codecs/cng/cng_helpfuns.h",
-    "codecs/cng/include/audio_encoder_cng.h",
-    "codecs/cng/include/webrtc_cng.h",
     "codecs/cng/webrtc_cng.c",
+    "codecs/cng/webrtc_cng.h",
   ]
 
   configs += [ "../..:common_config" ]
@@ -217,13 +217,13 @@ config("g711_config") {
 source_set("g711") {
   sources = [
     "codecs/g711/audio_decoder_pcm.cc",
+    "codecs/g711/audio_decoder_pcm.h",
     "codecs/g711/audio_encoder_pcm.cc",
+    "codecs/g711/audio_encoder_pcm.h",
     "codecs/g711/g711.c",
     "codecs/g711/g711.h",
     "codecs/g711/g711_interface.c",
-    "codecs/g711/include/audio_decoder_pcm.h",
-    "codecs/g711/include/audio_encoder_pcm.h",
-    "codecs/g711/include/g711_interface.h",
+    "codecs/g711/g711_interface.h",
   ]
 
   configs += [ "../..:common_config" ]
@@ -248,14 +248,14 @@ config("g722_config") {
 source_set("g722") {
   sources = [
     "codecs/g722/audio_decoder_g722.cc",
+    "codecs/g722/audio_decoder_g722.h",
     "codecs/g722/audio_encoder_g722.cc",
+    "codecs/g722/audio_encoder_g722.h",
     "codecs/g722/g722_decode.c",
     "codecs/g722/g722_enc_dec.h",
     "codecs/g722/g722_encode.c",
     "codecs/g722/g722_interface.c",
-    "codecs/g722/include/audio_decoder_g722.h",
-    "codecs/g722/include/audio_encoder_g722.h",
-    "codecs/g722/include/g722_interface.h",
+    "codecs/g722/g722_interface.h",
   ]
 
   configs += [ "../..:common_config" ]
@@ -284,7 +284,9 @@ source_set("ilbc") {
     "codecs/ilbc/abs_quant_loop.c",
     "codecs/ilbc/abs_quant_loop.h",
     "codecs/ilbc/audio_decoder_ilbc.cc",
+    "codecs/ilbc/audio_decoder_ilbc.h",
     "codecs/ilbc/audio_encoder_ilbc.cc",
+    "codecs/ilbc/audio_encoder_ilbc.h",
     "codecs/ilbc/augmented_cb_corr.c",
     "codecs/ilbc/augmented_cb_corr.h",
     "codecs/ilbc/bw_expand.c",
@@ -349,9 +351,7 @@ source_set("ilbc") {
     "codecs/ilbc/hp_output.c",
     "codecs/ilbc/hp_output.h",
     "codecs/ilbc/ilbc.c",
-    "codecs/ilbc/include/audio_decoder_ilbc.h",
-    "codecs/ilbc/include/audio_encoder_ilbc.h",
-    "codecs/ilbc/include/ilbc.h",
+    "codecs/ilbc/ilbc.h",
     "codecs/ilbc/index_conv_dec.c",
     "codecs/ilbc/index_conv_dec.h",
     "codecs/ilbc/index_conv_enc.c",
@@ -694,11 +694,11 @@ config("pcm16b_config") {
 source_set("pcm16b") {
   sources = [
     "codecs/pcm16b/audio_decoder_pcm16b.cc",
+    "codecs/pcm16b/audio_decoder_pcm16b.h",
     "codecs/pcm16b/audio_encoder_pcm16b.cc",
-    "codecs/pcm16b/include/audio_decoder_pcm16b.h",
-    "codecs/pcm16b/include/audio_encoder_pcm16b.h",
-    "codecs/pcm16b/include/pcm16b.h",
+    "codecs/pcm16b/audio_encoder_pcm16b.h",
     "codecs/pcm16b/pcm16b.c",
+    "codecs/pcm16b/pcm16b.h",
   ]
 
   deps = [
@@ -721,12 +721,12 @@ config("opus_config") {
 source_set("webrtc_opus") {
   sources = [
     "codecs/opus/audio_decoder_opus.cc",
+    "codecs/opus/audio_decoder_opus.h",
     "codecs/opus/audio_encoder_opus.cc",
-    "codecs/opus/include/audio_decoder_opus.h",
-    "codecs/opus/include/audio_encoder_opus.h",
-    "codecs/opus/include/opus_interface.h",
+    "codecs/opus/audio_encoder_opus.h",
     "codecs/opus/opus_inst.h",
     "codecs/opus/opus_interface.c",
+    "codecs/opus/opus_interface.h",
   ]
 
   deps = [

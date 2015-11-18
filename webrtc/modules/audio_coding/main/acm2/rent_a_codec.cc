@@ -11,13 +11,13 @@
 #include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/audio_coding/codecs/cng/include/audio_encoder_cng.h"
-#include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
+#include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"
+#include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #ifdef WEBRTC_CODEC_G722
-#include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
+#include "webrtc/modules/audio_coding/codecs/g722/audio_encoder_g722.h"
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-#include "webrtc/modules/audio_coding/codecs/ilbc/include/audio_encoder_ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
 #include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
@@ -28,9 +28,9 @@
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-#include "webrtc/modules/audio_coding/codecs/opus/include/audio_encoder_opus.h"
+#include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #endif
-#include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
+#include "webrtc/modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 #ifdef WEBRTC_CODEC_RED
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #endif

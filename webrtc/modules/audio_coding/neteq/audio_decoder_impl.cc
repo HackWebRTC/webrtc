@@ -13,13 +13,13 @@
 #include <assert.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
-#include "webrtc/modules/audio_coding/codecs/g711/include/audio_decoder_pcm.h"
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #ifdef WEBRTC_CODEC_G722
-#include "webrtc/modules/audio_coding/codecs/g722/include/audio_decoder_g722.h"
+#include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-#include "webrtc/modules/audio_coding/codecs/ilbc/include/audio_decoder_ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
 #include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
@@ -30,9 +30,9 @@
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-#include "webrtc/modules/audio_coding/codecs/opus/include/audio_decoder_opus.h"
+#include "webrtc/modules/audio_coding/codecs/opus/audio_decoder_opus.h"
 #endif
-#include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_decoder_pcm16b.h"
+#include "webrtc/modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
 
 namespace webrtc {
 

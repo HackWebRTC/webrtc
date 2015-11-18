@@ -126,10 +126,10 @@ void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride);
 #include "webrtc_vad.h"
 
 #if ((defined CODEC_PCM16B) || (defined NETEQ_ARBITRARY_CODEC))
-#include "pcm16b.h"
+#include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #endif
 #ifdef CODEC_G711
-#include "g711_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g711/g711_interface.h"
 #endif
 #ifdef CODEC_G729
 #include "G729Interface.h"
@@ -146,19 +146,19 @@ void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride);
 #include "AMRWBCreation.h"
 #endif
 #ifdef CODEC_ILBC
-#include "ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
 #endif
 #if (defined CODEC_ISAC || defined CODEC_ISAC_SWB)
-#include "isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/isac.h"
 #endif
 #ifdef NETEQ_ISACFIX_CODEC
-#include "isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/include/isacfix.h"
 #ifdef CODEC_ISAC
 #error Cannot have both ISAC and ISACfix defined. Please de-select one.
 #endif
 #endif
 #ifdef CODEC_G722
-#include "g722_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 #endif
 #ifdef CODEC_G722_1_24
 #include "G722_1Interface.h"
@@ -188,7 +188,7 @@ void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride);
 #endif
 #if (defined(CODEC_CNGCODEC8) || defined(CODEC_CNGCODEC16) || \
      defined(CODEC_CNGCODEC32) || defined(CODEC_CNGCODEC48))
-#include "webrtc_cng.h"
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #endif
 #if ((defined CODEC_SPEEX_8) || (defined CODEC_SPEEX_16))
 #include "SpeexInterface.h"

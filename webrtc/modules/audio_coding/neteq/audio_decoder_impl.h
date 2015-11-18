@@ -16,9 +16,9 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #ifdef WEBRTC_CODEC_G722
-#include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 #endif
 #include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
 #include "webrtc/typedefs.h"

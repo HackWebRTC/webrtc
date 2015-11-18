@@ -8,35 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INCLUDE_AUDIO_ENCODER_ILBC_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INCLUDE_AUDIO_ENCODER_ILBC_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_G722_AUDIO_ENCODER_G722_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_G722_AUDIO_ENCODER_G722_H_
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/codecs/ilbc/include/ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 
 namespace webrtc {
 
 struct CodecInst;
 
-class AudioEncoderIlbc final : public AudioEncoder {
+class AudioEncoderG722 final : public AudioEncoder {
  public:
   struct Config {
     bool IsOk() const;
 
-    int payload_type = 102;
-    int frame_size_ms = 30;  // Valid values are 20, 30, 40, and 60 ms.
-    // Note that frame size 40 ms produces encodings with two 20 ms frames in
-    // them, and frame size 60 ms consists of two 30 ms frames.
+    int payload_type = 9;
+    int frame_size_ms = 20;
+    int num_channels = 1;
   };
 
-  explicit AudioEncoderIlbc(const Config& config);
-  explicit AudioEncoderIlbc(const CodecInst& codec_inst);
-  ~AudioEncoderIlbc() override;
+  explicit AudioEncoderG722(const Config& config);
+  explicit AudioEncoderG722(const CodecInst& codec_inst);
+  ~AudioEncoderG722() override;
 
   size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   int NumChannels() const override;
+  int RtpTimestampRateHz() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
@@ -47,17 +48,26 @@ class AudioEncoderIlbc final : public AudioEncoder {
   void Reset() override;
 
  private:
-  size_t RequiredOutputSizeBytes() const;
+  // The encoder state for one channel.
+  struct EncoderState {
+    G722EncInst* encoder;
+    rtc::scoped_ptr<int16_t[]> speech_buffer;   // Queued up for encoding.
+    rtc::Buffer encoded_buffer;                 // Already encoded.
+    EncoderState();
+    ~EncoderState();
+  };
 
-  static const size_t kMaxSamplesPerPacket = 480;
-  const Config config_;
+  size_t SamplesPerChannel() const;
+
+  const int num_channels_;
+  const int payload_type_;
   const size_t num_10ms_frames_per_packet_;
   size_t num_10ms_frames_buffered_;
   uint32_t first_timestamp_in_buffer_;
-  int16_t input_buffer_[kMaxSamplesPerPacket];
-  IlbcEncoderInstance* encoder_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderIlbc);
+  const rtc::scoped_ptr<EncoderState[]> encoders_;
+  rtc::Buffer interleave_buffer_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderG722);
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INCLUDE_AUDIO_ENCODER_ILBC_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_G722_AUDIO_ENCODER_G722_H_

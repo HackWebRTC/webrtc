@@ -14,7 +14,7 @@
 #include <stdlib.h>  // NULL
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
