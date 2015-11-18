@@ -11,13 +11,13 @@
 /*
  * frame_preprocessor.h
  */
-#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_FRAME_PREPROCESSOR_H
-#define WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_FRAME_PREPROCESSOR_H
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_
 
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
-#include "webrtc/modules/video_processing/main/source/content_analysis.h"
-#include "webrtc/modules/video_processing/main/source/spatial_resampler.h"
-#include "webrtc/modules/video_processing/main/source/video_decimator.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
+#include "webrtc/modules/video_processing/content_analysis.h"
+#include "webrtc/modules/video_processing/spatial_resampler.h"
+#include "webrtc/modules/video_processing/video_decimator.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -76,4 +76,4 @@ class VPMFramePreprocessor {
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_FRAME_PREPROCESSOR_H
+#endif // WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_

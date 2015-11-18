@@ -298,11 +298,11 @@
             'video_coding/test/stream_generator.cc',
             'video_coding/test/stream_generator.h',
             'video_coding/utility/quality_scaler_unittest.cc',
-            'video_processing/main/test/unit_test/brightness_detection_test.cc',
-            'video_processing/main/test/unit_test/content_metrics_test.cc',
-            'video_processing/main/test/unit_test/deflickering_test.cc',
-            'video_processing/main/test/unit_test/video_processing_unittest.cc',
-            'video_processing/main/test/unit_test/video_processing_unittest.h',
+            'video_processing/test/brightness_detection_test.cc',
+            'video_processing/test/content_metrics_test.cc',
+            'video_processing/test/deflickering_test.cc',
+            'video_processing/test/video_processing_unittest.cc',
+            'video_processing/test/video_processing_unittest.h',
           ],
           'conditions': [
             ['enable_bwe_test_logging==1', {

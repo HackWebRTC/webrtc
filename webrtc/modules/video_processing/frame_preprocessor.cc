@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_processing/main/source/frame_preprocessor.h"
+#include "webrtc/modules/video_processing/frame_preprocessor.h"
 
 namespace webrtc {
 

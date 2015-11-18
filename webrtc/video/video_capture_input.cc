@@ -16,7 +16,7 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"

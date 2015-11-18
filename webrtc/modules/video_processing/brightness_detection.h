@@ -8,12 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * brightness_detection.h
- */
-#ifndef MODULES_VIDEO_PROCESSING_MAIN_SOURCE_BRIGHTNESS_DETECTION_H
-#define MODULES_VIDEO_PROCESSING_MAIN_SOURCE_BRIGHTNESS_DETECTION_H
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_BRIGHTNESS_DETECTION_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_BRIGHTNESS_DETECTION_H_
+
+#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -34,4 +32,4 @@ class VPMBrightnessDetection {
 
 }  // namespace webrtc
 
-#endif // MODULES_VIDEO_PROCESSING_MAIN_SOURCE_BRIGHTNESS_DETECTION_H
+#endif // WEBRTC_MODULES_VIDEO_PROCESSING_BRIGHTNESS_DETECTION_H_

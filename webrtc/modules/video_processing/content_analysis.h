@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_CONTENT_ANALYSIS_H
-#define WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_CONTENT_ANALYSIS_H
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_CONTENT_ANALYSIS_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_CONTENT_ANALYSIS_H_
 
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_processing/main/interface/video_processing_defines.h"
+#include "webrtc/modules/video_processing/include/video_processing_defines.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
 
@@ -84,4 +84,4 @@ class VPMContentAnalysis {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_CONTENT_ANALYSIS_H
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_CONTENT_ANALYSIS_H_

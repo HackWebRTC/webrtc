@@ -7,9 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/modules/video_processing/main/source/video_processing_impl.h"
-
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/video_processing/video_processing_impl.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 #include <assert.h>

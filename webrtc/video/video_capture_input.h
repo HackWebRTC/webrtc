@@ -21,7 +21,7 @@
 #include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/typedefs.h"

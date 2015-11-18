@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_VIDEO_PROCESSING_MAIN_SOURCE_BRIGHTEN_H_
-#define MODULES_VIDEO_PROCESSING_MAIN_SOURCE_BRIGHTEN_H_
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_BRIGHTEN_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_BRIGHTEN_H_
 
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -22,4 +22,4 @@ int32_t Brighten(VideoFrame* frame, int delta);
 }  // namespace VideoProcessing
 }  // namespace webrtc
 
-#endif  // MODULES_VIDEO_PROCESSING_MAIN_SOURCE_BRIGHTEN_H_
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_BRIGHTEN_H_

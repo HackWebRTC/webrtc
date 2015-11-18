@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCEdeflickering__H
-#define WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCEdeflickering__H
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_DEFLICKERING_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_DEFLICKERING_H_
 
 #include <string.h>  // NULL
 
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -53,4 +53,4 @@ class VPMDeflickering {
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCEdeflickering__H
+#endif // WEBRTC_MODULES_VIDEO_PROCESSING_DEFLICKERING_H_

@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_TEST_UNIT_TEST_VIDEO_PROCESSING_UNITTEST_H
-#define WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_TEST_UNIT_TEST_VIDEO_PROCESSING_UNITTEST_H
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_TEST_VIDEO_PROCESSING_UNITTEST_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_TEST_VIDEO_PROCESSING_UNITTEST_H_
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -44,4 +44,4 @@ class VideoProcessingModuleTest : public ::testing::Test {
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_TEST_UNIT_TEST_VIDEO_PROCESSING_UNITTEST_H
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_TEST_VIDEO_PROCESSING_UNITTEST_H_

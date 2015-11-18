@@ -31,7 +31,7 @@ A=(1-B)/r0;
 f0=A*x0.^2+B*x0; % compander function in zone 1
 
 % equation system for finding second zone parameters
-M=[r0^3 r0^2 r0 1; 
+M=[r0^3 r0^2 r0 1;
     3*r0^2 2*r0 1 0;
     3*r1^2 2*r1 1 0;
     r1^3 r1^2 r1 1];
@@ -173,7 +173,7 @@ for k=1:size(y,3)
         end
     end
 end
-      
+
 fprintf('\nWriting modified test file...')
 writeYUV420file('../out/Debug/foremanColorEnhanced.yuv',y,unew,vnew);
 fprintf(' done\n');

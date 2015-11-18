@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_processing/main/source/deflickering.h"
+#include "webrtc/modules/video_processing/deflickering.h"
 
 #include <math.h>
 #include <stdlib.h>

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULE_VIDEO_PROCESSING_IMPL_H
-#define WEBRTC_MODULE_VIDEO_PROCESSING_IMPL_H
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_PROCESSING_IMPL_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_PROCESSING_IMPL_H_
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
-#include "webrtc/modules/video_processing/main/source/brighten.h"
-#include "webrtc/modules/video_processing/main/source/brightness_detection.h"
-#include "webrtc/modules/video_processing/main/source/deflickering.h"
-#include "webrtc/modules/video_processing/main/source/frame_preprocessor.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
+#include "webrtc/modules/video_processing/brighten.h"
+#include "webrtc/modules/video_processing/brightness_detection.h"
+#include "webrtc/modules/video_processing/deflickering.h"
+#include "webrtc/modules/video_processing/frame_preprocessor.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
@@ -72,4 +72,4 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
 
 }  // namespace
 
-#endif
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_PROCESSING_IMPL_H_

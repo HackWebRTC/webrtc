@@ -22,7 +22,7 @@
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video/video_capture_input.h"
 

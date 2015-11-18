@@ -9,9 +9,9 @@
  */
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
-#include "webrtc/modules/video_processing/main/source/content_analysis.h"
-#include "webrtc/modules/video_processing/main/test/unit_test/video_processing_unittest.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
+#include "webrtc/modules/video_processing/content_analysis.h"
+#include "webrtc/modules/video_processing/test/video_processing_unittest.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {

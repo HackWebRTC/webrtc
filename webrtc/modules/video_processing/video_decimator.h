@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_VIDEO_DECIMATOR_H
-#define WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_VIDEO_DECIMATOR_H
+#ifndef WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_DECIMATOR_H_
+#define WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_DECIMATOR_H_
 
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
@@ -55,4 +55,4 @@ class VPMVideoDecimator {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_VIDEO_DECIMATOR_H
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_DECIMATOR_H_

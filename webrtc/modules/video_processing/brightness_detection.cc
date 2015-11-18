@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_processing/main/interface/video_processing.h"
-#include "webrtc/modules/video_processing/main/source/brightness_detection.h"
+#include "webrtc/modules/video_processing/include/video_processing.h"
+#include "webrtc/modules/video_processing/brightness_detection.h"
 
 #include <math.h>
 
