@@ -369,65 +369,6 @@ class Bye : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Bye);
 };
 
-// Application-Defined packet (APP) (RFC 3550).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |V=2|P| subtype |   PT=APP=204  |             length            |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                           SSRC/CSRC                           |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                          name (ASCII)                         |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                   application-dependent data                ...
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class App : public RtcpPacket {
- public:
-  App()
-      : RtcpPacket(),
-        ssrc_(0) {
-    memset(&app_, 0, sizeof(app_));
-  }
-
-  virtual ~App() {}
-
-  void From(uint32_t ssrc) {
-    ssrc_ = ssrc;
-  }
-  void WithSubType(uint8_t subtype) {
-    assert(subtype <= 0x1f);
-    app_.SubType = subtype;
-  }
-  void WithName(uint32_t name) {
-    app_.Name = name;
-  }
-  void WithData(const uint8_t* data, uint16_t data_length) {
-    assert(data);
-    assert(data_length <= kRtcpAppCode_DATA_SIZE);
-    assert(data_length % 4 == 0);
-    memcpy(app_.Data, data, data_length);
-    app_.Size = data_length;
-  }
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  size_t BlockLength() const {
-    return 12 + app_.Size;
-  }
-
-  uint32_t ssrc_;
-  RTCPUtility::RTCPPacketAPP app_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(App);
-};
-
 // RFC 4585: Feedback format.
 //
 // Common packet format:

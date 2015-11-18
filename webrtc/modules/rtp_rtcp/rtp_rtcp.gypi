@@ -41,6 +41,8 @@
         'source/rtp_rtcp_impl.h',
         'source/rtcp_packet.cc',
         'source/rtcp_packet.h',
+        'source/rtcp_packet/app.cc',
+        'source/rtcp_packet/app.h',
         'source/rtcp_packet/extended_jitter_report.cc',
         'source/rtcp_packet/extended_jitter_report.h',
         'source/rtcp_packet/report_block.cc',

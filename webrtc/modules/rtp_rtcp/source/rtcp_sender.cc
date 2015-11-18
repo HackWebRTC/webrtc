@@ -22,6 +22,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"

@@ -227,30 +227,6 @@ void CreateBye(const RTCPPacketBYE& bye,
     AssignUWord32(buffer, pos, csrc);
 }
 
-// Application-Defined packet (APP) (RFC 3550).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |V=2|P| subtype |   PT=APP=204  |             length            |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                           SSRC/CSRC                           |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                          name (ASCII)                         |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                   application-dependent data                ...
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateApp(const RTCPPacketAPP& app,
-               uint32_t ssrc,
-               uint8_t* buffer,
-               size_t* pos) {
-  AssignUWord32(buffer, pos, ssrc);
-  AssignUWord32(buffer, pos, app.Name);
-  memcpy(buffer + *pos, app.Data, app.Size);
-  *pos += app.Size;
-}
-
 // RFC 4585: Feedback format.
 //
 // Common packet format:
@@ -845,19 +821,6 @@ bool Bye::WithCsrc(uint32_t csrc) {
     return false;
   }
   csrcs_.push_back(csrc);
-  return true;
-}
-
-bool App::Create(uint8_t* packet,
-                 size_t* index,
-                 size_t max_length,
-                 RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  CreateHeader(app_.SubType, PT_APP, HeaderLength(), packet, index);
-  CreateApp(app_, ssrc_, packet, index);
   return true;
 }
 

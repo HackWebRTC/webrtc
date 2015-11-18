@@ -14,6 +14,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/test/rtcp_packet_parser.h"
 
 using ::testing::ElementsAre;

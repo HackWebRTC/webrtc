@@ -25,6 +25,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
