@@ -19,23 +19,15 @@ namespace webrtc {
 namespace acm2 {
 
 namespace {
-bool IsCodecRED(const CodecInst& codec) {
-  return (STR_CASE_CMP(codec.plname, "RED") == 0);
-}
-
-bool IsCodecCN(const CodecInst& codec) {
-  return (STR_CASE_CMP(codec.plname, "CN") == 0);
-}
 
 // Check if the given codec is a valid to be registered as send codec.
-int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
+int IsValidSendCodec(const CodecInst& send_codec) {
   int dummy_id = 0;
   if ((send_codec.channels != 1) && (send_codec.channels != 2)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                  "Wrong number of channels (%d, only mono and stereo are "
-                 "supported) for %s encoder",
-                 send_codec.channels,
-                 is_primary_encoder ? "primary" : "secondary");
+                 "supported)",
+                 send_codec.channels);
     return -1;
   }
 
@@ -59,22 +51,6 @@ int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
                  "%d number of channels not supportedn for %s.",
                  send_codec.channels, send_codec.plname);
     return -1;
-  }
-
-  if (!is_primary_encoder) {
-    // If registering the secondary encoder, then RED and CN are not valid
-    // choices as encoder.
-    if (IsCodecRED(send_codec)) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                   "RED cannot be secondary codec");
-      return -1;
-    }
-
-    if (IsCodecCN(send_codec)) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                   "DTX cannot be secondary codec");
-      return -1;
-    }
   }
   return RentACodec::CodecIndexFromId(*maybe_codec_id).value_or(-1);
 }
@@ -150,7 +126,7 @@ CodecManager::~CodecManager() = default;
 
 int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  int codec_id = IsValidSendCodec(send_codec, true);
+  int codec_id = IsValidSendCodec(send_codec);
 
   // Check for reported errors from function IsValidSendCodec().
   if (codec_id < 0) {
