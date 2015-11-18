@@ -74,10 +74,14 @@ public class MediaCodecVideoEncoder {
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
+  private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
   private static final String H264_MIME_TYPE = "video/avc";
   // List of supported HW VP8 codecs.
   private static final String[] supportedVp8HwCodecPrefixes =
     {"OMX.qcom.", "OMX.Intel." };
+  // List of supported HW VP9 decoders.
+  private static final String[] supportedVp9HwCodecPrefixes =
+    {"OMX.qcom."};
   // List of supported HW H.264 codecs.
   private static final String[] supportedH264HwCodecPrefixes =
     {"OMX.qcom." };
@@ -196,13 +200,16 @@ public class MediaCodecVideoEncoder {
         }
       }
     }
-    return null;  // No HW VP8 encoder.
+    return null;  // No HW encoder.
   }
 
   public static boolean isVp8HwSupported() {
     return findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null;
   }
 
+  public static boolean isVp9HwSupported() {
+    return findHwEncoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes) != null;
+  }
   public static boolean isH264HwSupported() {
     return findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null;
   }
@@ -251,6 +258,10 @@ public class MediaCodecVideoEncoder {
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
       properties = findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes);
+      keyFrameIntervalSec = 100;
+    } else if (type == VideoCodecType.VIDEO_CODEC_VP9) {
+      mime = VP9_MIME_TYPE;
+      properties = findHwEncoder(VP9_MIME_TYPE, supportedH264HwCodecPrefixes);
       keyFrameIntervalSec = 100;
     } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
       mime = H264_MIME_TYPE;

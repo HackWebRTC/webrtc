@@ -57,6 +57,7 @@ using webrtc::VideoCodec;
 using webrtc::VideoCodecType;
 using webrtc::kVideoCodecH264;
 using webrtc::kVideoCodecVP8;
+using webrtc::kVideoCodecVP9;
 
 namespace webrtc_jni {
 
@@ -213,6 +214,12 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
 
   // H264 bitstream parser, used to extract QP from encoded bitstreams.
   webrtc::H264BitstreamParser h264_bitstream_parser_;
+
+  // VP9 variables to populate codec specific structure.
+  webrtc::GofInfoVP9 gof_; // Contains each frame's temporal information for
+                           // non-flexible VP9 mode.
+  uint8_t tl0_pic_idx_;
+  size_t gof_idx_;
 };
 
 MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
@@ -287,6 +294,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
   j_info_presentation_timestamp_us_field_ = GetFieldID(
       jni, j_output_buffer_info_class, "presentationTimestampUs", "J");
   CHECK_EXCEPTION(jni) << "MediaCodecVideoEncoder ctor failed";
+  srand(time(NULL));
   AllowBlockingCalls();
 }
 
@@ -307,8 +315,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       << codecType_;
 
   ALOGD << "InitEncode request";
-  scale_ = webrtc::field_trial::FindFullName(
-      "WebRTC-MediaCodecVideoEncoder-AutomaticResize") == "Enabled";
+  scale_ = (codecType_ != kVideoCodecVP9) && (webrtc::field_trial::FindFullName(
+        "WebRTC-MediaCodecVideoEncoder-AutomaticResize") == "Enabled");
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");
   if (scale_) {
     if (codecType_ == kVideoCodecVP8) {
@@ -458,6 +466,9 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   frame_rtc_times_ms_.clear();
   drop_next_input_frame_ = false;
   picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
+  gof_.SetGofInfoVP9(webrtc::TemporalStructureMode::kTemporalStructureMode1);
+  tl0_pic_idx_ = static_cast<uint8_t>(rand());
+  gof_idx_ = 0;
 
   // We enforce no extra stride/padding in the format creation step.
   jobject j_video_codec_enum = JavaEnumFromIndex(
@@ -836,19 +847,42 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         info.codecSpecific.VP8.layerSync = false;
         info.codecSpecific.VP8.tl0PicIdx = webrtc::kNoTl0PicIdx;
         info.codecSpecific.VP8.keyIdx = webrtc::kNoKeyIdx;
-        picture_id_ = (picture_id_ + 1) & 0x7FFF;
+      } else if (codecType_ == kVideoCodecVP9) {
+        if (key_frame) {
+          gof_idx_ = 0;
+        }
+        info.codecSpecific.VP9.picture_id = picture_id_;
+        info.codecSpecific.VP9.inter_pic_predicted = key_frame ? false : true;
+        info.codecSpecific.VP9.flexible_mode = false;
+        info.codecSpecific.VP9.ss_data_available = key_frame ? true : false;
+        info.codecSpecific.VP9.tl0_pic_idx = tl0_pic_idx_++;
+        info.codecSpecific.VP9.temporal_idx = webrtc::kNoTemporalIdx;
+        info.codecSpecific.VP9.spatial_idx = webrtc::kNoSpatialIdx;
+        info.codecSpecific.VP9.temporal_up_switch = true;
+        info.codecSpecific.VP9.inter_layer_predicted = false;
+        info.codecSpecific.VP9.gof_idx =
+            static_cast<uint8_t>(gof_idx_++ % gof_.num_frames_in_gof);
+        info.codecSpecific.VP9.num_spatial_layers = 1;
+        info.codecSpecific.VP9.spatial_layer_resolution_present = false;
+        if (info.codecSpecific.VP9.ss_data_available) {
+          info.codecSpecific.VP9.spatial_layer_resolution_present = true;
+          info.codecSpecific.VP9.width[0] = width_;
+          info.codecSpecific.VP9.height[0] = height_;
+          info.codecSpecific.VP9.gof.CopyGofInfoVP9(gof_);
+        }
       }
+      picture_id_ = (picture_id_ + 1) & 0x7FFF;
 
       // Generate a header describing a single fragment.
       webrtc::RTPFragmentationHeader header;
       memset(&header, 0, sizeof(header));
-      if (codecType_ == kVideoCodecVP8) {
+      if (codecType_ == kVideoCodecVP8 || codecType_ == kVideoCodecVP9) {
         header.VerifyAndAllocateFragmentationHeader(1);
         header.fragmentationOffset[0] = 0;
         header.fragmentationLength[0] = image->_length;
         header.fragmentationPlType[0] = 0;
         header.fragmentationTimeDiff[0] = 0;
-        if (scale_) {
+        if (codecType_ == kVideoCodecVP8 && scale_) {
           int qp;
           if (webrtc::vp8::GetQp(payload, payload_size, &qp))
             quality_scaler_.ReportQP(qp);
@@ -973,6 +1007,16 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
         MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT, MAX_VIDEO_FPS));
   }
 
+  bool is_vp9_hw_supported = jni->CallStaticBooleanMethod(
+      j_encoder_class,
+      GetStaticMethodID(jni, j_encoder_class, "isVp9HwSupported", "()Z"));
+  CHECK_EXCEPTION(jni);
+  if (is_vp9_hw_supported) {
+    ALOGD << "VP9 HW Encoder supported.";
+    supported_codecs_.push_back(VideoCodec(kVideoCodecVP9, "VP9",
+        MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT, MAX_VIDEO_FPS));
+  }
+
   bool is_h264_hw_supported = jni->CallStaticBooleanMethod(
       j_encoder_class,
       GetStaticMethodID(jni, j_encoder_class, "isH264HwSupported", "()Z"));
@@ -989,6 +1033,7 @@ MediaCodecVideoEncoderFactory::~MediaCodecVideoEncoderFactory() {}
 webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
     VideoCodecType type) {
   if (supported_codecs_.empty()) {
+    ALOGW << "No HW video encoder for type " << (int)type;
     return NULL;
   }
   for (std::vector<VideoCodec>::const_iterator it = supported_codecs_.begin();
@@ -999,6 +1044,7 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
       return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), type);
     }
   }
+  ALOGW << "Can not find HW video encoder for type " << (int)type;
   return NULL;
 }
 

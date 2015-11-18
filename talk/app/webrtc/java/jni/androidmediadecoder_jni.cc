@@ -856,7 +856,7 @@ void MediaCodecVideoDecoderFactory::SetEGLContext(
 webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
     VideoCodecType type) {
   if (supported_codec_types_.empty()) {
-    ALOGE << "No HW video decoder for type " << (int)type;
+    ALOGW << "No HW video decoder for type " << (int)type;
     return NULL;
   }
   for (VideoCodecType codec_type : supported_codec_types_) {
@@ -866,7 +866,7 @@ webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
           AttachCurrentThreadIfNeeded(), type, render_egl_context_);
     }
   }
-  ALOGE << "Can not find HW video decoder for type " << (int)type;
+  ALOGW << "Can not find HW video decoder for type " << (int)type;
   return NULL;
 }
 
