@@ -15,7 +15,7 @@
 
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
+#include "webrtc/modules/video_coding/utility/frame_dropper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

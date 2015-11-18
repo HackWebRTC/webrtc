@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/utility/include/qp_parser.h"
+#include "webrtc/modules/video_coding/utility/qp_parser.h"
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/video_coding/utility/include/vp8_header_parser.h"
+#include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
 
 namespace webrtc {
 

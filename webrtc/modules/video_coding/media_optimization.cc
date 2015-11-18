@@ -13,7 +13,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/content_metrics_processing.h"
 #include "webrtc/modules/video_coding/qm_select.h"
-#include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
+#include "webrtc/modules/video_coding/utility/frame_dropper.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

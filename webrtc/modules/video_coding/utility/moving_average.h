@@ -68,4 +68,4 @@ int MovingAverage<T>::size() {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_MOVING_AVERAGE_SCALER_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_UTILITY_MOVING_AVERAGE_H_

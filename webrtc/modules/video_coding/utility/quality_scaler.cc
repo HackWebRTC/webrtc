@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
 namespace webrtc {
 

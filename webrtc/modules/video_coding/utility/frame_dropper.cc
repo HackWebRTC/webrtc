@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
+#include "webrtc/modules/video_coding/utility/frame_dropper.h"
 
 #include "webrtc/system_wrappers/include/trace.h"
 

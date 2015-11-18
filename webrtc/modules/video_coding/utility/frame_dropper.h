@@ -8,23 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_INCLUDE_FRAME_DROPPER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_INCLUDE_FRAME_DROPPER_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
+#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_
 
 #include <cstddef>
 
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/typedefs.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
 // The Frame Dropper implements a variant of the leaky bucket algorithm
 // for keeping track of when to drop frames to avoid bit rate
 // over use when the encoder can't keep its bit rate.
-class FrameDropper
-{
-public:
+class FrameDropper {
+ public:
     FrameDropper();
     explicit FrameDropper(float max_time_drops);
     virtual ~FrameDropper() {}
@@ -69,7 +67,7 @@ public:
     //                    instruction of when to drop frames.
     virtual float ActualFrameRate(uint32_t inputFrameRate) const;
 
-private:
+ private:
     void FillBucket(float inKbits, float outKbits);
     void UpdateRatio();
     void CapAccumulator();
@@ -91,8 +89,8 @@ private:
     bool _fastMode;
     float _cap_buffer_size;
     float _max_time_drops;
-}; // end of VCMFrameDropper class
+};  // end of VCMFrameDropper class
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_UTILITY_INCLUDE_FRAME_DROPPER_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_UTILITY_FRAME_DROPPER_H_

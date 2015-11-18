@@ -17,8 +17,8 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
-#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

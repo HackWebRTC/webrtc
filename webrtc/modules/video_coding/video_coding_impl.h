@@ -25,7 +25,7 @@
 #include "webrtc/modules/video_coding/media_optimization.h"
 #include "webrtc/modules/video_coding/receiver.h"
 #include "webrtc/modules/video_coding/timing.h"
-#include "webrtc/modules/video_coding/utility/include/qp_parser.h"
+#include "webrtc/modules/video_coding/utility/qp_parser.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 

@@ -94,14 +94,14 @@ source_set("video_coding") {
 source_set("video_coding_utility") {
   sources = [
     "utility/frame_dropper.cc",
-    "utility/include/frame_dropper.h",
-    "utility/include/moving_average.h",
-    "utility/include/qp_parser.h",
-    "utility/include/quality_scaler.h",
-    "utility/include/vp8_header_parser.h",
+    "utility/frame_dropper.h",
+    "utility/moving_average.h",
     "utility/qp_parser.cc",
+    "utility/qp_parser.h",
     "utility/quality_scaler.cc",
+    "utility/quality_scaler.h",
     "utility/vp8_header_parser.cc",
+    "utility/vp8_header_parser.h",
   ]
 
   configs += [ "../..:common_config" ]

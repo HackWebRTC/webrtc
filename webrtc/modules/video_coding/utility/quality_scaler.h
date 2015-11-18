@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 
 #include "webrtc/common_video/libyuv/include/scaler.h"
-#include "webrtc/modules/video_coding/utility/include/moving_average.h"
+#include "webrtc/modules/video_coding/utility/moving_average.h"
 
 namespace webrtc {
 class QualityScaler {

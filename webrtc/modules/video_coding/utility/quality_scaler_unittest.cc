@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
