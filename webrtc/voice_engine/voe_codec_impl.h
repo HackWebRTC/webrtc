@@ -65,12 +65,6 @@ class VoECodecImpl : public VoECodec {
   ~VoECodecImpl() override;
 
  private:
-  void ACMToExternalCodecRepresentation(CodecInst& toInst,
-                                        const CodecInst& fromInst);
-
-  void ExternalToACMCodecRepresentation(CodecInst& toInst,
-                                        const CodecInst& fromInst);
-
   voe::SharedData* _shared;
 };
 

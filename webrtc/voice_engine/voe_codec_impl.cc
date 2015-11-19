@@ -51,20 +51,15 @@ int VoECodecImpl::NumOfCodecs() {
 }
 
 int VoECodecImpl::GetCodec(int index, CodecInst& codec) {
-  CodecInst acmCodec;
-  if (AudioCodingModule::Codec(index, &acmCodec) == -1) {
+  if (AudioCodingModule::Codec(index, &codec) == -1) {
     _shared->SetLastError(VE_INVALID_LISTNR, kTraceError,
                           "GetCodec() invalid index");
     return -1;
   }
-  ACMToExternalCodecRepresentation(codec, acmCodec);
   return 0;
 }
 
 int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec) {
-  CodecInst copyCodec;
-  ExternalToACMCodecRepresentation(copyCodec, codec);
-
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetSendCodec(channel=%d, codec)", channel);
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -77,20 +72,19 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec) {
     return -1;
   }
   // External sanity checks performed outside the ACM
-  if ((STR_CASE_CMP(copyCodec.plname, "L16") == 0) &&
-      (copyCodec.pacsize >= 960)) {
+  if ((STR_CASE_CMP(codec.plname, "L16") == 0) && (codec.pacsize >= 960)) {
     _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
                           "SetSendCodec() invalid L16 packet size");
     return -1;
   }
-  if (!STR_CASE_CMP(copyCodec.plname, "CN") ||
-      !STR_CASE_CMP(copyCodec.plname, "TELEPHONE-EVENT") ||
-      !STR_CASE_CMP(copyCodec.plname, "RED")) {
+  if (!STR_CASE_CMP(codec.plname, "CN") ||
+      !STR_CASE_CMP(codec.plname, "TELEPHONE-EVENT") ||
+      !STR_CASE_CMP(codec.plname, "RED")) {
     _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
                           "SetSendCodec() invalid codec name");
     return -1;
   }
-  if ((copyCodec.channels != 1) && (copyCodec.channels != 2)) {
+  if ((codec.channels != 1) && (codec.channels != 2)) {
     _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
                           "SetSendCodec() invalid number of channels");
     return -1;
@@ -102,12 +96,12 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec) {
                           "GetSendCodec() failed to locate channel");
     return -1;
   }
-  if (!AudioCodingModule::IsCodecValid((CodecInst&)copyCodec)) {
+  if (!AudioCodingModule::IsCodecValid(codec)) {
     _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
                           "SetSendCodec() invalid codec");
     return -1;
   }
-  if (channelPtr->SetSendCodec(copyCodec) != 0) {
+  if (channelPtr->SetSendCodec(codec) != 0) {
     _shared->SetLastError(VE_CANNOT_SET_SEND_CODEC, kTraceError,
                           "SetSendCodec() failed to set send codec");
     return -1;
@@ -128,13 +122,11 @@ int VoECodecImpl::GetSendCodec(int channel, CodecInst& codec) {
                           "GetSendCodec() failed to locate channel");
     return -1;
   }
-  CodecInst acmCodec;
-  if (channelPtr->GetSendCodec(acmCodec) != 0) {
+  if (channelPtr->GetSendCodec(codec) != 0) {
     _shared->SetLastError(VE_CANNOT_GET_SEND_CODEC, kTraceError,
                           "GetSendCodec() failed to get send codec");
     return -1;
   }
-  ACMToExternalCodecRepresentation(codec, acmCodec);
   return 0;
 }
 
@@ -162,12 +154,7 @@ int VoECodecImpl::GetRecCodec(int channel, CodecInst& codec) {
                           "GetRecCodec() failed to locate channel");
     return -1;
   }
-  CodecInst acmCodec;
-  if (channelPtr->GetRecCodec(acmCodec) != 0) {
-    return -1;
-  }
-  ACMToExternalCodecRepresentation(codec, acmCodec);
-  return 0;
+  return channelPtr->GetRecCodec(codec);
 }
 
 int VoECodecImpl::SetRecPayloadType(int channel, const CodecInst& codec) {
@@ -387,54 +374,6 @@ int VoECodecImpl::SetOpusDtx(int channel, bool enable_dtx) {
     return -1;
   }
   return channelPtr->SetOpusDtx(enable_dtx);
-}
-
-void VoECodecImpl::ACMToExternalCodecRepresentation(CodecInst& toInst,
-                                                    const CodecInst& fromInst) {
-  toInst = fromInst;
-  if (STR_CASE_CMP(fromInst.plname, "SILK") == 0) {
-    if (fromInst.plfreq == 12000) {
-      if (fromInst.pacsize == 320) {
-        toInst.pacsize = 240;
-      } else if (fromInst.pacsize == 640) {
-        toInst.pacsize = 480;
-      } else if (fromInst.pacsize == 960) {
-        toInst.pacsize = 720;
-      }
-    } else if (fromInst.plfreq == 24000) {
-      if (fromInst.pacsize == 640) {
-        toInst.pacsize = 480;
-      } else if (fromInst.pacsize == 1280) {
-        toInst.pacsize = 960;
-      } else if (fromInst.pacsize == 1920) {
-        toInst.pacsize = 1440;
-      }
-    }
-  }
-}
-
-void VoECodecImpl::ExternalToACMCodecRepresentation(CodecInst& toInst,
-                                                    const CodecInst& fromInst) {
-  toInst = fromInst;
-  if (STR_CASE_CMP(fromInst.plname, "SILK") == 0) {
-    if (fromInst.plfreq == 12000) {
-      if (fromInst.pacsize == 240) {
-        toInst.pacsize = 320;
-      } else if (fromInst.pacsize == 480) {
-        toInst.pacsize = 640;
-      } else if (fromInst.pacsize == 720) {
-        toInst.pacsize = 960;
-      }
-    } else if (fromInst.plfreq == 24000) {
-      if (fromInst.pacsize == 480) {
-        toInst.pacsize = 640;
-      } else if (fromInst.pacsize == 960) {
-        toInst.pacsize = 1280;
-      } else if (fromInst.pacsize == 1440) {
-        toInst.pacsize = 1920;
-      }
-    }
-  }
 }
 
 RtcEventLog* VoECodecImpl::GetEventLog() {
