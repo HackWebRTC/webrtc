@@ -29,6 +29,8 @@ using ::testing::Combine;
 using ::testing::tuple;
 
 static const int kBlockSize = 4096;
+static const char kAES_CM_HMAC_SHA1_80[] = "AES_CM_128_HMAC_SHA1_80";
+static const char kAES_CM_HMAC_SHA1_32[] = "AES_CM_128_HMAC_SHA1_32";
 static const char kExporterLabel[] = "label";
 static const unsigned char kExporterContext[] = "context";
 static int kExporterContextLen = sizeof(kExporterContext);
@@ -387,18 +389,19 @@ class SSLStreamAdapterTestBase : public testing::Test,
     handshake_wait_ = wait;
   }
 
-  void SetDtlsSrtpCryptoSuites(const std::vector<int>& ciphers, bool client) {
+  void SetDtlsSrtpCiphers(const std::vector<std::string> &ciphers,
+    bool client) {
     if (client)
-      client_ssl_->SetDtlsSrtpCryptoSuites(ciphers);
+      client_ssl_->SetDtlsSrtpCiphers(ciphers);
     else
-      server_ssl_->SetDtlsSrtpCryptoSuites(ciphers);
+      server_ssl_->SetDtlsSrtpCiphers(ciphers);
   }
 
-  bool GetDtlsSrtpCryptoSuite(bool client, int* retval) {
+  bool GetDtlsSrtpCipher(bool client, std::string *retval) {
     if (client)
-      return client_ssl_->GetDtlsSrtpCryptoSuite(retval);
+      return client_ssl_->GetDtlsSrtpCipher(retval);
     else
-      return server_ssl_->GetDtlsSrtpCryptoSuite(retval);
+      return server_ssl_->GetDtlsSrtpCipher(retval);
   }
 
   bool GetPeerCertificate(bool client, rtc::SSLCertificate** cert) {
@@ -806,74 +809,74 @@ TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSTransferWithDamage) {
 // Test DTLS-SRTP with all high ciphers
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHigh) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
-  std::vector<int> high;
-  high.push_back(rtc::SRTP_AES128_CM_SHA1_80);
-  SetDtlsSrtpCryptoSuites(high, true);
-  SetDtlsSrtpCryptoSuites(high, false);
+  std::vector<std::string> high;
+  high.push_back(kAES_CM_HMAC_SHA1_80);
+  SetDtlsSrtpCiphers(high, true);
+  SetDtlsSrtpCiphers(high, false);
   TestHandshake();
 
-  int client_cipher;
-  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
-  int server_cipher;
-  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
+  std::string client_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCipher(true, &client_cipher));
+  std::string server_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCipher(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(client_cipher, rtc::SRTP_AES128_CM_SHA1_80);
+  ASSERT_EQ(client_cipher, kAES_CM_HMAC_SHA1_80);
 };
 
 // Test DTLS-SRTP with all low ciphers
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
-  std::vector<int> low;
-  low.push_back(rtc::SRTP_AES128_CM_SHA1_32);
-  SetDtlsSrtpCryptoSuites(low, true);
-  SetDtlsSrtpCryptoSuites(low, false);
+  std::vector<std::string> low;
+  low.push_back(kAES_CM_HMAC_SHA1_32);
+  SetDtlsSrtpCiphers(low, true);
+  SetDtlsSrtpCiphers(low, false);
   TestHandshake();
 
-  int client_cipher;
-  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
-  int server_cipher;
-  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
+  std::string client_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCipher(true, &client_cipher));
+  std::string server_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCipher(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(client_cipher, rtc::SRTP_AES128_CM_SHA1_32);
+  ASSERT_EQ(client_cipher, kAES_CM_HMAC_SHA1_32);
 };
 
 
 // Test DTLS-SRTP with a mismatch -- should not converge
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
-  std::vector<int> high;
-  high.push_back(rtc::SRTP_AES128_CM_SHA1_80);
-  std::vector<int> low;
-  low.push_back(rtc::SRTP_AES128_CM_SHA1_32);
-  SetDtlsSrtpCryptoSuites(high, true);
-  SetDtlsSrtpCryptoSuites(low, false);
+  std::vector<std::string> high;
+  high.push_back(kAES_CM_HMAC_SHA1_80);
+  std::vector<std::string> low;
+  low.push_back(kAES_CM_HMAC_SHA1_32);
+  SetDtlsSrtpCiphers(high, true);
+  SetDtlsSrtpCiphers(low, false);
   TestHandshake();
 
-  int client_cipher;
-  ASSERT_FALSE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
-  int server_cipher;
-  ASSERT_FALSE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
+  std::string client_cipher;
+  ASSERT_FALSE(GetDtlsSrtpCipher(true, &client_cipher));
+  std::string server_cipher;
+  ASSERT_FALSE(GetDtlsSrtpCipher(false, &server_cipher));
 };
 
 // Test DTLS-SRTP with each side being mixed -- should select high
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
-  std::vector<int> mixed;
-  mixed.push_back(rtc::SRTP_AES128_CM_SHA1_80);
-  mixed.push_back(rtc::SRTP_AES128_CM_SHA1_32);
-  SetDtlsSrtpCryptoSuites(mixed, true);
-  SetDtlsSrtpCryptoSuites(mixed, false);
+  std::vector<std::string> mixed;
+  mixed.push_back(kAES_CM_HMAC_SHA1_80);
+  mixed.push_back(kAES_CM_HMAC_SHA1_32);
+  SetDtlsSrtpCiphers(mixed, true);
+  SetDtlsSrtpCiphers(mixed, false);
   TestHandshake();
 
-  int client_cipher;
-  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
-  int server_cipher;
-  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
+  std::string client_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCipher(true, &client_cipher));
+  std::string server_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCipher(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(client_cipher, rtc::SRTP_AES128_CM_SHA1_80);
+  ASSERT_EQ(client_cipher, kAES_CM_HMAC_SHA1_80);
 };
 
 // Test an exporter

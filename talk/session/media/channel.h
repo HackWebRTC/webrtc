@@ -236,7 +236,7 @@ class BaseChannel
   // |rtcp_channel| indicates whether to set up the RTP or RTCP filter.
   bool SetupDtlsSrtp(bool rtcp_channel);
   // Set the DTLS-SRTP cipher policy on this channel as appropriate.
-  bool SetDtlsSrtpCryptoSuites(TransportChannel* tc, bool rtcp);
+  bool SetDtlsSrtpCiphers(TransportChannel *tc, bool rtcp);
 
   virtual void ChangeState() = 0;
 
@@ -282,8 +282,9 @@ class BaseChannel
   void OnMessage(rtc::Message* pmsg) override;
 
   // Handled in derived classes
-  // Get the SRTP crypto suites to use for RTP media
-  virtual void GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const = 0;
+  // Get the SRTP ciphers to use for RTP media
+  virtual void GetSrtpCryptoSuiteNames(
+      std::vector<std::string>* ciphers) const = 0;
   virtual void OnConnectionMonitorUpdate(ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) = 0;
 
@@ -406,7 +407,7 @@ class VoiceChannel : public BaseChannel {
   bool GetStats_w(VoiceMediaInfo* stats);
 
   virtual void OnMessage(rtc::Message* pmsg);
-  virtual void GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const;
+  virtual void GetSrtpCryptoSuiteNames(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
@@ -496,7 +497,7 @@ class VideoChannel : public BaseChannel {
   bool GetStats_w(VideoMediaInfo* stats);
 
   virtual void OnMessage(rtc::Message* pmsg);
-  virtual void GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const;
+  virtual void GetSrtpCryptoSuiteNames(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
@@ -613,7 +614,7 @@ class DataChannel : public BaseChannel {
   virtual bool WantsPacket(bool rtcp, rtc::Buffer* packet);
 
   virtual void OnMessage(rtc::Message* pmsg);
-  virtual void GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const;
+  virtual void GetSrtpCryptoSuiteNames(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(

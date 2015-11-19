@@ -126,10 +126,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   // Set up the ciphers to use for DTLS-SRTP. If this method is not called
   // before DTLS starts, or |ciphers| is empty, SRTP keys won't be negotiated.
   // This method should be called before SetupDtls.
-  bool SetSrtpCryptoSuites(const std::vector<int>& ciphers) override;
+  bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override;
 
   // Find out which DTLS-SRTP cipher was negotiated
-  bool GetSrtpCryptoSuite(int* cipher) override;
+  bool GetSrtpCryptoSuite(std::string* cipher) override;
 
   bool GetSslRole(rtc::SSLRole* role) const override;
   bool SetSslRole(rtc::SSLRole role) override;
@@ -223,7 +223,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   TransportChannelImpl* const channel_;
   rtc::scoped_ptr<rtc::SSLStreamAdapter> dtls_;  // The DTLS stream
   StreamInterfaceChannel* downward_;  // Wrapper for channel_, owned by dtls_.
-  std::vector<int> srtp_ciphers_;     // SRTP ciphers to use with DTLS.
+  std::vector<std::string> srtp_ciphers_;  // SRTP ciphers to use with DTLS.
   bool dtls_active_ = false;
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   rtc::SSLRole ssl_role_;

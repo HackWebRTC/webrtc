@@ -730,20 +730,17 @@ void StatsCollector::ExtractSessionInfo() {
         channel_report->AddId(StatsReport::kStatsValueNameRemoteCertificateId,
                               remote_cert_report_id);
       }
-      int srtp_crypto_suite = channel_iter.srtp_crypto_suite;
-      if (srtp_crypto_suite != rtc::SRTP_INVALID_CRYPTO_SUITE &&
-          rtc::SrtpCryptoSuiteToName(srtp_crypto_suite).length()) {
-        channel_report->AddString(
-            StatsReport::kStatsValueNameSrtpCipher,
-            rtc::SrtpCryptoSuiteToName(srtp_crypto_suite));
+      const std::string& srtp_cipher = channel_iter.srtp_cipher;
+      if (!srtp_cipher.empty()) {
+        channel_report->AddString(StatsReport::kStatsValueNameSrtpCipher,
+                                  srtp_cipher);
       }
-      int ssl_cipher_suite = channel_iter.ssl_cipher_suite;
-      if (ssl_cipher_suite != rtc::TLS_NULL_WITH_NULL_NULL &&
-          rtc::SSLStreamAdapter::SslCipherSuiteToName(ssl_cipher_suite)
-              .length()) {
+      int ssl_cipher = channel_iter.ssl_cipher;
+      if (ssl_cipher &&
+          rtc::SSLStreamAdapter::GetSslCipherSuiteName(ssl_cipher).length()) {
         channel_report->AddString(
             StatsReport::kStatsValueNameDtlsCipher,
-            rtc::SSLStreamAdapter::SslCipherSuiteToName(ssl_cipher_suite));
+            rtc::SSLStreamAdapter::GetSslCipherSuiteName(ssl_cipher));
       }
 
       int connection_id = 0;

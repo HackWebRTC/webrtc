@@ -146,10 +146,10 @@ bool SrtpFilter::SetProvisionalAnswer(
   return DoSetAnswer(answer_params, source, false);
 }
 
-bool SrtpFilter::SetRtpParams(int send_cs,
+bool SrtpFilter::SetRtpParams(const std::string& send_cs,
                               const uint8_t* send_key,
                               int send_key_len,
-                              int recv_cs,
+                              const std::string& recv_cs,
                               const uint8_t* recv_key,
                               int recv_key_len) {
   if (IsActive()) {
@@ -179,10 +179,10 @@ bool SrtpFilter::SetRtpParams(int send_cs,
 //   SrtpSession.
 // - In the muxed case, they are keyed with the same keys, so
 //   this function is not needed
-bool SrtpFilter::SetRtcpParams(int send_cs,
+bool SrtpFilter::SetRtcpParams(const std::string& send_cs,
                                const uint8_t* send_key,
                                int send_key_len,
-                               int recv_cs,
+                               const std::string& recv_cs,
                                const uint8_t* recv_key,
                                int recv_key_len) {
   // This can only be called once, but can be safely called after
@@ -428,12 +428,10 @@ bool SrtpFilter::ApplyParams(const CryptoParams& send_params,
          ParseKeyParams(recv_params.key_params, recv_key, sizeof(recv_key)));
   if (ret) {
     CreateSrtpSessions();
-    ret = (send_session_->SetSend(
-               rtc::SrtpCryptoSuiteFromName(send_params.cipher_suite), send_key,
-               sizeof(send_key)) &&
-           recv_session_->SetRecv(
-               rtc::SrtpCryptoSuiteFromName(recv_params.cipher_suite), recv_key,
-               sizeof(recv_key)));
+    ret = (send_session_->SetSend(send_params.cipher_suite,
+                                  send_key, sizeof(send_key)) &&
+           recv_session_->SetRecv(recv_params.cipher_suite,
+                                  recv_key, sizeof(recv_key)));
   }
   if (ret) {
     LOG(LS_INFO) << "SRTP activated with negotiated parameters:"
@@ -509,11 +507,11 @@ SrtpSession::~SrtpSession() {
   }
 }
 
-bool SrtpSession::SetSend(int cs, const uint8_t* key, int len) {
+bool SrtpSession::SetSend(const std::string& cs, const uint8_t* key, int len) {
   return SetKey(ssrc_any_outbound, cs, key, len);
 }
 
-bool SrtpSession::SetRecv(int cs, const uint8_t* key, int len) {
+bool SrtpSession::SetRecv(const std::string& cs, const uint8_t* key, int len) {
   return SetKey(ssrc_any_inbound, cs, key, len);
 }
 
@@ -660,7 +658,10 @@ void SrtpSession::set_signal_silent_time(uint32_t signal_silent_time_in_ms) {
   srtp_stat_->set_signal_silent_time(signal_silent_time_in_ms);
 }
 
-bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, int len) {
+bool SrtpSession::SetKey(int type,
+                         const std::string& cs,
+                         const uint8_t* key,
+                         int len) {
   if (session_) {
     LOG(LS_ERROR) << "Failed to create SRTP session: "
                   << "SRTP session already created";
@@ -674,15 +675,15 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, int len) {
   srtp_policy_t policy;
   memset(&policy, 0, sizeof(policy));
 
-  if (cs == rtc::SRTP_AES128_CM_SHA1_80) {
+  if (cs == rtc::CS_AES_CM_128_HMAC_SHA1_80) {
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
-  } else if (cs == rtc::SRTP_AES128_CM_SHA1_32) {
+  } else if (cs == rtc::CS_AES_CM_128_HMAC_SHA1_32) {
     crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);   // rtp is 32,
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // rtcp still 80
   } else {
     LOG(LS_WARNING) << "Failed to create SRTP session: unsupported"
-                    << " cipher_suite " << cs;
+                    << " cipher_suite " << cs.c_str();
     return false;
   }
 

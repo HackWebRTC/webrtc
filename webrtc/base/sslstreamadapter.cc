@@ -30,20 +30,12 @@ namespace rtc {
 const char CS_AES_CM_128_HMAC_SHA1_80[] = "AES_CM_128_HMAC_SHA1_80";
 const char CS_AES_CM_128_HMAC_SHA1_32[] = "AES_CM_128_HMAC_SHA1_32";
 
-std::string SrtpCryptoSuiteToName(int crypto_suite) {
-  if (crypto_suite == SRTP_AES128_CM_SHA1_32)
-    return CS_AES_CM_128_HMAC_SHA1_32;
-  if (crypto_suite == SRTP_AES128_CM_SHA1_80)
-    return CS_AES_CM_128_HMAC_SHA1_80;
-  return std::string();
-}
-
-int SrtpCryptoSuiteFromName(const std::string& crypto_suite) {
-  if (crypto_suite == CS_AES_CM_128_HMAC_SHA1_32)
+int GetSrtpCryptoSuiteFromName(const std::string& cipher) {
+  if (cipher == CS_AES_CM_128_HMAC_SHA1_32)
     return SRTP_AES128_CM_SHA1_32;
-  if (crypto_suite == CS_AES_CM_128_HMAC_SHA1_80)
+  if (cipher == CS_AES_CM_128_HMAC_SHA1_80)
     return SRTP_AES128_CM_SHA1_80;
-  return SRTP_INVALID_CRYPTO_SUITE;
+  return 0;
 }
 
 SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
@@ -54,7 +46,7 @@ SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
 #endif  // SSL_USE_OPENSSL
 }
 
-bool SSLStreamAdapter::GetSslCipherSuite(int* cipher_suite) {
+bool SSLStreamAdapter::GetSslCipherSuite(int* cipher) {
   return false;
 }
 
@@ -67,12 +59,12 @@ bool SSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
   return false;  // Default is unsupported
 }
 
-bool SSLStreamAdapter::SetDtlsSrtpCryptoSuites(
-    const std::vector<int>& crypto_suites) {
+bool SSLStreamAdapter::SetDtlsSrtpCiphers(
+    const std::vector<std::string>& ciphers) {
   return false;
 }
 
-bool SSLStreamAdapter::GetDtlsSrtpCryptoSuite(int* crypto_suite) {
+bool SSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
   return false;
 }
 
@@ -91,8 +83,8 @@ int SSLStreamAdapter::GetDefaultSslCipherForTest(SSLProtocolVersion version,
   return OpenSSLStreamAdapter::GetDefaultSslCipherForTest(version, key_type);
 }
 
-std::string SSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
-  return OpenSSLStreamAdapter::SslCipherSuiteToName(cipher_suite);
+std::string SSLStreamAdapter::GetSslCipherSuiteName(int cipher) {
+  return OpenSSLStreamAdapter::GetSslCipherSuiteName(cipher);
 }
 #endif  // SSL_USE_OPENSSL
 

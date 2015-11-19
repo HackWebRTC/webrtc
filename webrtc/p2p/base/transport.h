@@ -123,8 +123,8 @@ typedef std::vector<ConnectionInfo> ConnectionInfos;
 struct TransportChannelStats {
   int component = 0;
   ConnectionInfos connection_infos;
-  int srtp_crypto_suite = rtc::SRTP_INVALID_CRYPTO_SUITE;
-  int ssl_cipher_suite = rtc::TLS_NULL_WITH_NULL_NULL;
+  std::string srtp_cipher;
+  int ssl_cipher = 0;
 };
 
 // Information about all the channels of a transport.

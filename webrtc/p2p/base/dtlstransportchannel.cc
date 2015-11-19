@@ -267,7 +267,7 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
 
   // Set up DTLS-SRTP, if it's been enabled.
   if (!srtp_ciphers_.empty()) {
-    if (!dtls_->SetDtlsSrtpCryptoSuites(srtp_ciphers_)) {
+    if (!dtls_->SetDtlsSrtpCiphers(srtp_ciphers_)) {
       LOG_J(LS_ERROR, this) << "Couldn't set DTLS-SRTP ciphers.";
       return false;
     }
@@ -279,10 +279,11 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
   return true;
 }
 
-bool DtlsTransportChannelWrapper::SetSrtpCryptoSuites(
-    const std::vector<int>& ciphers) {
-  if (srtp_ciphers_ == ciphers)
+bool DtlsTransportChannelWrapper::SetSrtpCiphers(
+    const std::vector<std::string>& ciphers) {
+  if (srtp_ciphers_ == ciphers) {
     return true;
+  }
 
   if (dtls_state() == DTLS_TRANSPORT_CONNECTING) {
     LOG(LS_WARNING) << "Ignoring new SRTP ciphers while DTLS is negotiating";
@@ -293,18 +294,18 @@ bool DtlsTransportChannelWrapper::SetSrtpCryptoSuites(
     // We don't support DTLS renegotiation currently. If new set of srtp ciphers
     // are different than what's being used currently, we will not use it.
     // So for now, let's be happy (or sad) with a warning message.
-    int current_srtp_cipher;
-    if (!dtls_->GetDtlsSrtpCryptoSuite(&current_srtp_cipher)) {
+    std::string current_srtp_cipher;
+    if (!dtls_->GetDtlsSrtpCipher(&current_srtp_cipher)) {
       LOG(LS_ERROR) << "Failed to get the current SRTP cipher for DTLS channel";
       return false;
     }
-    const std::vector<int>::const_iterator iter =
+    const std::vector<std::string>::const_iterator iter =
         std::find(ciphers.begin(), ciphers.end(), current_srtp_cipher);
     if (iter == ciphers.end()) {
       std::string requested_str;
       for (size_t i = 0; i < ciphers.size(); ++i) {
         requested_str.append(" ");
-        requested_str.append(rtc::SrtpCryptoSuiteToName(ciphers[i]));
+        requested_str.append(ciphers[i]);
         requested_str.append(" ");
       }
       LOG(LS_WARNING) << "Ignoring new set of SRTP ciphers, as DTLS "
@@ -323,12 +324,12 @@ bool DtlsTransportChannelWrapper::SetSrtpCryptoSuites(
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetSrtpCryptoSuite(int* cipher) {
+bool DtlsTransportChannelWrapper::GetSrtpCryptoSuite(std::string* cipher) {
   if (dtls_state() != DTLS_TRANSPORT_CONNECTED) {
     return false;
   }
 
-  return dtls_->GetDtlsSrtpCryptoSuite(cipher);
+  return dtls_->GetDtlsSrtpCipher(cipher);
 }
 
 

@@ -683,8 +683,8 @@ class StatsCollectorTest : public testing::Test {
     // Fake stats to process.
     cricket::TransportChannelStats channel_stats;
     channel_stats.component = 1;
-    channel_stats.srtp_crypto_suite = rtc::SRTP_AES128_CM_SHA1_80;
-    channel_stats.ssl_cipher_suite = TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;
+    channel_stats.srtp_cipher = "the-srtp-cipher";
+    channel_stats.ssl_cipher = TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;
 
     cricket::TransportStats transport_stats;
     transport_stats.transport_name = "audio";
@@ -747,17 +747,18 @@ class StatsCollectorTest : public testing::Test {
     }
 
     // Check negotiated ciphers.
-    std::string dtls_cipher_suite =
-        ExtractStatsValue(StatsReport::kStatsReportTypeComponent, reports,
-                          StatsReport::kStatsValueNameDtlsCipher);
-    EXPECT_EQ(rtc::SSLStreamAdapter::SslCipherSuiteToName(
+    std::string dtls_cipher = ExtractStatsValue(
+        StatsReport::kStatsReportTypeComponent,
+        reports,
+        StatsReport::kStatsValueNameDtlsCipher);
+    EXPECT_EQ(rtc::SSLStreamAdapter::GetSslCipherSuiteName(
                   TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA),
-              dtls_cipher_suite);
-    std::string srtp_crypto_suite =
-        ExtractStatsValue(StatsReport::kStatsReportTypeComponent, reports,
-                          StatsReport::kStatsValueNameSrtpCipher);
-    EXPECT_EQ(rtc::SrtpCryptoSuiteToName(rtc::SRTP_AES128_CM_SHA1_80),
-              srtp_crypto_suite);
+              dtls_cipher);
+    std::string srtp_cipher = ExtractStatsValue(
+        StatsReport::kStatsReportTypeComponent,
+        reports,
+        StatsReport::kStatsValueNameSrtpCipher);
+    EXPECT_EQ("the-srtp-cipher", srtp_cipher);
   }
 
   cricket::FakeMediaEngine* media_engine_;
@@ -1406,14 +1407,16 @@ TEST_F(StatsCollectorTest, NoTransport) {
   ASSERT_EQ(kNotFound, remote_certificate_id);
 
   // Check that the negotiated ciphers are absent.
-  std::string dtls_cipher_suite =
-      ExtractStatsValue(StatsReport::kStatsReportTypeComponent, reports,
-                        StatsReport::kStatsValueNameDtlsCipher);
-  ASSERT_EQ(kNotFound, dtls_cipher_suite);
-  std::string srtp_crypto_suite =
-      ExtractStatsValue(StatsReport::kStatsReportTypeComponent, reports,
-                        StatsReport::kStatsValueNameSrtpCipher);
-  ASSERT_EQ(kNotFound, srtp_crypto_suite);
+  std::string dtls_cipher = ExtractStatsValue(
+      StatsReport::kStatsReportTypeComponent,
+      reports,
+      StatsReport::kStatsValueNameDtlsCipher);
+  ASSERT_EQ(kNotFound, dtls_cipher);
+  std::string srtp_cipher = ExtractStatsValue(
+      StatsReport::kStatsReportTypeComponent,
+      reports,
+      StatsReport::kStatsValueNameSrtpCipher);
+  ASSERT_EQ(kNotFound, srtp_cipher);
 }
 
 // This test verifies that the stats are generated correctly when the transport

@@ -104,16 +104,16 @@ class SrtpFilter {
 
   // Just set up both sets of keys directly.
   // Used with DTLS-SRTP.
-  bool SetRtpParams(int send_cs,
+  bool SetRtpParams(const std::string& send_cs,
                     const uint8_t* send_key,
                     int send_key_len,
-                    int recv_cs,
+                    const std::string& recv_cs,
                     const uint8_t* recv_key,
                     int recv_key_len);
-  bool SetRtcpParams(int send_cs,
+  bool SetRtcpParams(const std::string& send_cs,
                      const uint8_t* send_key,
                      int send_key_len,
-                     int recv_cs,
+                     const std::string& recv_cs,
                      const uint8_t* recv_key,
                      int recv_key_len);
 
@@ -199,10 +199,10 @@ class SrtpSession {
 
   // Configures the session for sending data using the specified
   // cipher-suite and key. Receiving must be done by a separate session.
-  bool SetSend(int cs, const uint8_t* key, int len);
+  bool SetSend(const std::string& cs, const uint8_t* key, int len);
   // Configures the session for receiving data using the specified
   // cipher-suite and key. Sending must be done by a separate session.
-  bool SetRecv(int cs, const uint8_t* key, int len);
+  bool SetRecv(const std::string& cs, const uint8_t* key, int len);
 
   // Encrypts/signs an individual RTP/RTCP packet, in-place.
   // If an HMAC is used, this will increase the packet size.
@@ -232,7 +232,7 @@ class SrtpSession {
       SignalSrtpError;
 
  private:
-  bool SetKey(int type, int cs, const uint8_t* key, int len);
+  bool SetKey(int type, const std::string& cs, const uint8_t* key, int len);
     // Returns send stream current packet index from srtp db.
   bool GetSendStreamPacketIndex(void* data, int in_len, int64_t* index);
 

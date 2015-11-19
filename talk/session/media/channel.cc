@@ -218,11 +218,11 @@ bool BaseChannel::Init() {
     return false;
   }
 
-  if (!SetDtlsSrtpCryptoSuites(transport_channel(), false)) {
+  if (!SetDtlsSrtpCiphers(transport_channel(), false)) {
     return false;
   }
   if (rtcp_transport_enabled() &&
-      !SetDtlsSrtpCryptoSuites(rtcp_transport_channel(), true)) {
+      !SetDtlsSrtpCiphers(rtcp_transport_channel(), true)) {
     return false;
   }
 
@@ -809,16 +809,16 @@ void BaseChannel::SignalDtlsSetupFailure_s(bool rtcp) {
   SignalDtlsSetupFailure(this, rtcp);
 }
 
-bool BaseChannel::SetDtlsSrtpCryptoSuites(TransportChannel* tc, bool rtcp) {
-  std::vector<int> crypto_suites;
-  // We always use the default SRTP crypto suites for RTCP, but we may use
-  // different crypto suites for RTP depending on the media type.
+bool BaseChannel::SetDtlsSrtpCiphers(TransportChannel *tc, bool rtcp) {
+  std::vector<std::string> ciphers;
+  // We always use the default SRTP ciphers for RTCP, but we may use different
+  // ciphers for RTP depending on the media type.
   if (!rtcp) {
-    GetSrtpCryptoSuites(&crypto_suites);
+    GetSrtpCryptoSuiteNames(&ciphers);
   } else {
-    GetDefaultSrtpCryptoSuites(&crypto_suites);
+    GetDefaultSrtpCryptoSuiteNames(&ciphers);
   }
-  return tc->SetSrtpCryptoSuites(crypto_suites);
+  return tc->SetSrtpCiphers(ciphers);
 }
 
 bool BaseChannel::ShouldSetupDtlsSrtp() const {
@@ -837,10 +837,10 @@ bool BaseChannel::SetupDtlsSrtp(bool rtcp_channel) {
   if (!channel->IsDtlsActive())
     return true;
 
-  int selected_crypto_suite;
+  std::string selected_cipher;
 
-  if (!channel->GetSrtpCryptoSuite(&selected_crypto_suite)) {
-    LOG(LS_ERROR) << "No DTLS-SRTP selected crypto suite";
+  if (!channel->GetSrtpCryptoSuite(&selected_cipher)) {
+    LOG(LS_ERROR) << "No DTLS-SRTP selected cipher";
     return false;
   }
 
@@ -896,15 +896,21 @@ bool BaseChannel::SetupDtlsSrtp(bool rtcp_channel) {
   }
 
   if (rtcp_channel) {
-    ret = srtp_filter_.SetRtcpParams(selected_crypto_suite, &(*send_key)[0],
-                                     static_cast<int>(send_key->size()),
-                                     selected_crypto_suite, &(*recv_key)[0],
-                                     static_cast<int>(recv_key->size()));
+    ret = srtp_filter_.SetRtcpParams(
+        selected_cipher,
+        &(*send_key)[0],
+        static_cast<int>(send_key->size()),
+        selected_cipher,
+        &(*recv_key)[0],
+        static_cast<int>(recv_key->size()));
   } else {
-    ret = srtp_filter_.SetRtpParams(selected_crypto_suite, &(*send_key)[0],
-                                    static_cast<int>(send_key->size()),
-                                    selected_crypto_suite, &(*recv_key)[0],
-                                    static_cast<int>(recv_key->size()));
+    ret = srtp_filter_.SetRtpParams(
+        selected_cipher,
+        &(*send_key)[0],
+        static_cast<int>(send_key->size()),
+        selected_cipher,
+        &(*recv_key)[0],
+        static_cast<int>(recv_key->size()));
   }
 
   if (!ret)
@@ -1574,8 +1580,9 @@ void VoiceChannel::OnAudioMonitorUpdate(AudioMonitor* monitor,
   SignalAudioMonitor(this, info);
 }
 
-void VoiceChannel::GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const {
-  GetSupportedAudioCryptoSuites(crypto_suites);
+void VoiceChannel::GetSrtpCryptoSuiteNames(
+    std::vector<std::string>* ciphers) const {
+  GetSupportedAudioCryptoSuites(ciphers);
 }
 
 VideoChannel::VideoChannel(rtc::Thread* thread,
@@ -1963,8 +1970,9 @@ bool VideoChannel::GetLocalSsrc(const VideoCapturer* capturer, uint32_t* ssrc) {
   return false;
 }
 
-void VideoChannel::GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const {
-  GetSupportedVideoCryptoSuites(crypto_suites);
+void VideoChannel::GetSrtpCryptoSuiteNames(
+    std::vector<std::string>* ciphers) const {
+  GetSupportedVideoCryptoSuites(ciphers);
 }
 
 DataChannel::DataChannel(rtc::Thread* thread,
@@ -2270,8 +2278,9 @@ void DataChannel::OnDataChannelReadyToSend(bool writable) {
                            new DataChannelReadyToSendMessageData(writable));
 }
 
-void DataChannel::GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const {
-  GetSupportedDataCryptoSuites(crypto_suites);
+void DataChannel::GetSrtpCryptoSuiteNames(
+    std::vector<std::string>* ciphers) const {
+  GetSupportedDataCryptoSuites(ciphers);
 }
 
 bool DataChannel::ShouldSetupDtlsSrtp() const {
