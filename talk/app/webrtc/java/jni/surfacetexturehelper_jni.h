@@ -66,7 +66,7 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateTextureFrame(
       int width,
       int height,
-      const NativeTextureHandleImpl& native_handle);
+      const NativeHandleImpl& native_handle);
 
  protected:
   ~SurfaceTextureHelper();

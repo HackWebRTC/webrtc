@@ -46,7 +46,11 @@ public class VideoRenderer {
     public final int[] yuvStrides;
     public ByteBuffer[] yuvPlanes;
     public final boolean yuvFrame;
-    public Object textureObject;
+    // Matrix that transforms standard coordinates to their proper sampling locations in
+    // the texture. This transform compensates for any properties of the video source that
+    // cause it to appear different from a normalized texture. This matrix does not take
+    // |rotationDegree| into account.
+    public final float[] samplingMatrix;
     public int textureId;
     // Frame pointer in C++.
     private long nativeFramePointer;
@@ -70,19 +74,27 @@ public class VideoRenderer {
       if (rotationDegree % 90 != 0) {
         throw new IllegalArgumentException("Rotation degree not multiple of 90: " + rotationDegree);
       }
+      // The convention in WebRTC is that the first element in a ByteBuffer corresponds to the
+      // top-left corner of the image, but in glTexImage2D() the first element corresponds to the
+      // bottom-left corner. This discrepancy is corrected by setting a vertical flip as sampling
+      // matrix.
+      samplingMatrix = new float[] {
+          1,  0, 0, 0,
+          0, -1, 0, 0,
+          0,  0, 1, 0,
+          0,  1, 0, 1};
     }
 
     /**
      * Construct a texture frame of the given dimensions with data in SurfaceTexture
      */
-    I420Frame(
-        int width, int height, int rotationDegree,
-        Object textureObject, int textureId, long nativeFramePointer) {
+    I420Frame(int width, int height, int rotationDegree, int textureId, float[] samplingMatrix,
+        long nativeFramePointer) {
       this.width = width;
       this.height = height;
       this.yuvStrides = null;
       this.yuvPlanes = null;
-      this.textureObject = textureObject;
+      this.samplingMatrix = samplingMatrix;
       this.textureId = textureId;
       this.yuvFrame = false;
       this.rotationDegree = rotationDegree;
@@ -125,7 +137,6 @@ public class VideoRenderer {
     */
    public static void renderFrameDone(I420Frame frame) {
      frame.yuvPlanes = null;
-     frame.textureObject = null;
      frame.textureId = 0;
      if (frame.nativeFramePointer != 0) {
        releaseNativeFrame(frame.nativeFramePointer);
