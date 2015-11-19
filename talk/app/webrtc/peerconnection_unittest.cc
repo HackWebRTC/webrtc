@@ -1159,10 +1159,18 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
   receiving_client()->Negotiate();
 }
 
+// Flaky on Mac Debug bots. See webrtc:5231
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#define MAYBE_LocalP2PTestOfferDtlsButNotSdes \
+  DISABLED_LocalP2PTestOfferDtlsButNotSdes
+#else
+#define MAYBE_LocalP2PTestOfferDtlsButNotSdes LocalP2PTestOfferDtlsButNotSdes
+#endif
+
 // This test sets up a call between two endpoints that are configured to use
 // DTLS key agreement. The offerer don't support SDES. As a result, DTLS is
 // negotiated and used for transport.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestOfferDtlsButNotSdes) {
+TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_LocalP2PTestOfferDtlsButNotSdes) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1240,8 +1248,15 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestTwoStreams) {
   EXPECT_EQ(2u, receiving_client()->number_of_remote_streams());
 }
 
+// Flaky on Mac Debug bots. See webrtc:5231
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#define MAYBE_GetAudioOutputLevelStats DISABLED_GetAudioOutputLevelStats
+#else
+#define MAYBE_GetAudioOutputLevelStats GetAudioOutputLevelStats
+#endif
+
 // Test that we can receive the audio output level from a remote audio track.
-TEST_F(JsepPeerConnectionP2PTestClient, GetAudioOutputLevelStats) {
+TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetAudioOutputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1259,8 +1274,15 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetAudioOutputLevelStats) {
       kMaxWaitForStatsMs);
 }
 
+// Flaky on Mac Debug bots. See webrtc:5231
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#define MAYBE_GetAudioInputLevelStats DISABLED_GetAudioInputLevelStats
+#else
+#define MAYBE_GetAudioInputLevelStats GetAudioInputLevelStats
+#endif
+
 // Test that an audio input level is reported.
-TEST_F(JsepPeerConnectionP2PTestClient, GetAudioInputLevelStats) {
+TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetAudioInputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1270,8 +1292,15 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetAudioInputLevelStats) {
       kMaxWaitForStatsMs);
 }
 
+// Flaky on Mac Debug bots. See webrtc:5231
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#define MAYBE_GetBytesReceivedStats DISABLED_GetBytesReceivedStats
+#else
+#define MAYBE_GetBytesReceivedStats GetBytesReceivedStats
+#endif
+
 // Test that we can get incoming byte counts from both audio and video tracks.
-TEST_F(JsepPeerConnectionP2PTestClient, GetBytesReceivedStats) {
+TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetBytesReceivedStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1292,8 +1321,15 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetBytesReceivedStats) {
       kMaxWaitForStatsMs);
 }
 
+// Flaky on Mac Debug bots. See webrtc:5231
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#define MAYBE_GetBytesSentStats DISABLED_GetBytesSentStats
+#else
+#define MAYBE_GetBytesSentStats GetBytesSentStats
+#endif
+
 // Test that we can get outgoing byte counts from both audio and video tracks.
-TEST_F(JsepPeerConnectionP2PTestClient, GetBytesSentStats) {
+TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetBytesSentStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1345,8 +1381,15 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12None) {
                                           kDefaultSrtpCryptoSuite));
 }
 
+// Flaky on Mac Debug bots. See webrtc:5231
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#define MAYBE_GetDtls12Both DISABLED_GetDtls12Both
+#else
+#define MAYBE_GetDtls12Both GetDtls12Both
+#endif
+
 // Test that DTLS 1.2 is used if both ends support it.
-TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Both) {
+TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetDtls12Both) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   PeerConnectionFactory::Options recv_options;
@@ -1557,10 +1600,17 @@ TEST_F(JsepPeerConnectionP2PTestClient, CreateOfferWithSctpDataChannel) {
 }
 #endif
 
+// Flaky on Mac Debug bots. See webrtc:5231
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#define MAYBE_IceRestart DISABLED_IceRestart
+#else
+#define MAYBE_IceRestart IceRestart
+#endif
+
 // This test sets up a call between two parties with audio, and video.
 // During the call, the initializing side restart ice and the test verifies that
 // new ice candidates are generated and audio and video still can flow.
-TEST_F(JsepPeerConnectionP2PTestClient, IceRestart) {
+TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_IceRestart) {
   ASSERT_TRUE(CreateTestClients());
 
   // Negotiate and wait for ice completion and make sure audio and video plays.
