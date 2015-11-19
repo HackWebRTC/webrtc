@@ -108,12 +108,12 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool SetSslRole(rtc::SSLRole role) override { return false; }
 
   // Set up the ciphers to use for DTLS-SRTP.
-  bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override {
+  bool SetSrtpCryptoSuites(const std::vector<int>& ciphers) override {
     return false;
   }
 
   // Find out which DTLS-SRTP cipher was negotiated.
-  bool GetSrtpCryptoSuite(std::string* cipher) override { return false; }
+  bool GetSrtpCryptoSuite(int* cipher) override { return false; }
 
   // Find out which DTLS cipher was negotiated.
   bool GetSslCipherSuite(int* cipher) override { return false; }

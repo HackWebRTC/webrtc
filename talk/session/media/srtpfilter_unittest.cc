@@ -508,21 +508,17 @@ TEST_F(SrtpFilterTest, TestDisableEncryption) {
 
 // Test directly setting the params with AES_CM_128_HMAC_SHA1_80
 TEST_F(SrtpFilterTest, TestProtect_SetParamsDirect_AES_CM_128_HMAC_SHA1_80) {
-  EXPECT_TRUE(f1_.SetRtpParams(CS_AES_CM_128_HMAC_SHA1_80,
-                               kTestKey1, kTestKeyLen,
-                               CS_AES_CM_128_HMAC_SHA1_80,
+  EXPECT_TRUE(f1_.SetRtpParams(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1,
+                               kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_80,
                                kTestKey2, kTestKeyLen));
-  EXPECT_TRUE(f2_.SetRtpParams(CS_AES_CM_128_HMAC_SHA1_80,
-                               kTestKey2, kTestKeyLen,
-                               CS_AES_CM_128_HMAC_SHA1_80,
+  EXPECT_TRUE(f2_.SetRtpParams(rtc::SRTP_AES128_CM_SHA1_80, kTestKey2,
+                               kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_80,
                                kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(f1_.SetRtcpParams(CS_AES_CM_128_HMAC_SHA1_80,
-                                kTestKey1, kTestKeyLen,
-                                CS_AES_CM_128_HMAC_SHA1_80,
+  EXPECT_TRUE(f1_.SetRtcpParams(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1,
+                                kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_80,
                                 kTestKey2, kTestKeyLen));
-  EXPECT_TRUE(f2_.SetRtcpParams(CS_AES_CM_128_HMAC_SHA1_80,
-                                kTestKey2, kTestKeyLen,
-                                CS_AES_CM_128_HMAC_SHA1_80,
+  EXPECT_TRUE(f2_.SetRtcpParams(rtc::SRTP_AES128_CM_SHA1_80, kTestKey2,
+                                kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_80,
                                 kTestKey1, kTestKeyLen));
   EXPECT_TRUE(f1_.IsActive());
   EXPECT_TRUE(f2_.IsActive());
@@ -531,21 +527,17 @@ TEST_F(SrtpFilterTest, TestProtect_SetParamsDirect_AES_CM_128_HMAC_SHA1_80) {
 
 // Test directly setting the params with AES_CM_128_HMAC_SHA1_32
 TEST_F(SrtpFilterTest, TestProtect_SetParamsDirect_AES_CM_128_HMAC_SHA1_32) {
-  EXPECT_TRUE(f1_.SetRtpParams(CS_AES_CM_128_HMAC_SHA1_32,
-                               kTestKey1, kTestKeyLen,
-                               CS_AES_CM_128_HMAC_SHA1_32,
+  EXPECT_TRUE(f1_.SetRtpParams(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1,
+                               kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_32,
                                kTestKey2, kTestKeyLen));
-  EXPECT_TRUE(f2_.SetRtpParams(CS_AES_CM_128_HMAC_SHA1_32,
-                               kTestKey2, kTestKeyLen,
-                               CS_AES_CM_128_HMAC_SHA1_32,
+  EXPECT_TRUE(f2_.SetRtpParams(rtc::SRTP_AES128_CM_SHA1_32, kTestKey2,
+                               kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_32,
                                kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(f1_.SetRtcpParams(CS_AES_CM_128_HMAC_SHA1_32,
-                                kTestKey1, kTestKeyLen,
-                                CS_AES_CM_128_HMAC_SHA1_32,
+  EXPECT_TRUE(f1_.SetRtcpParams(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1,
+                                kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_32,
                                 kTestKey2, kTestKeyLen));
-  EXPECT_TRUE(f2_.SetRtcpParams(CS_AES_CM_128_HMAC_SHA1_32,
-                                kTestKey2, kTestKeyLen,
-                                CS_AES_CM_128_HMAC_SHA1_32,
+  EXPECT_TRUE(f2_.SetRtcpParams(rtc::SRTP_AES128_CM_SHA1_32, kTestKey2,
+                                kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_32,
                                 kTestKey1, kTestKeyLen));
   EXPECT_TRUE(f1_.IsActive());
   EXPECT_TRUE(f2_.IsActive());
@@ -554,25 +546,21 @@ TEST_F(SrtpFilterTest, TestProtect_SetParamsDirect_AES_CM_128_HMAC_SHA1_32) {
 
 // Test directly setting the params with bogus keys
 TEST_F(SrtpFilterTest, TestSetParamsKeyTooShort) {
-  EXPECT_FALSE(f1_.SetRtpParams(CS_AES_CM_128_HMAC_SHA1_80,
-                                kTestKey1, kTestKeyLen - 1,
-                                CS_AES_CM_128_HMAC_SHA1_80,
+  EXPECT_FALSE(f1_.SetRtpParams(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1,
+                                kTestKeyLen - 1, rtc::SRTP_AES128_CM_SHA1_80,
                                 kTestKey1, kTestKeyLen - 1));
-  EXPECT_FALSE(f1_.SetRtcpParams(CS_AES_CM_128_HMAC_SHA1_80,
-                                 kTestKey1, kTestKeyLen - 1,
-                                 CS_AES_CM_128_HMAC_SHA1_80,
+  EXPECT_FALSE(f1_.SetRtcpParams(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1,
+                                 kTestKeyLen - 1, rtc::SRTP_AES128_CM_SHA1_80,
                                  kTestKey1, kTestKeyLen - 1));
 }
 
 #if defined(ENABLE_EXTERNAL_AUTH)
 TEST_F(SrtpFilterTest, TestGetSendAuthParams) {
-  EXPECT_TRUE(f1_.SetRtpParams(CS_AES_CM_128_HMAC_SHA1_32,
-                               kTestKey1, kTestKeyLen,
-                               CS_AES_CM_128_HMAC_SHA1_32,
+  EXPECT_TRUE(f1_.SetRtpParams(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1,
+                               kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_32,
                                kTestKey2, kTestKeyLen));
-  EXPECT_TRUE(f1_.SetRtcpParams(CS_AES_CM_128_HMAC_SHA1_32,
-                                kTestKey1, kTestKeyLen,
-                                CS_AES_CM_128_HMAC_SHA1_32,
+  EXPECT_TRUE(f1_.SetRtcpParams(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1,
+                                kTestKeyLen, rtc::SRTP_AES128_CM_SHA1_32,
                                 kTestKey2, kTestKeyLen));
   uint8_t* auth_key = NULL;
   int auth_key_len = 0, auth_tag_len = 0;
@@ -629,28 +617,30 @@ class SrtpSessionTest : public testing::Test {
 
 // Test that we can set up the session and keys properly.
 TEST_F(SrtpSessionTest, TestGoodSetup) {
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
 }
 
 // Test that we can't change the keys once set.
 TEST_F(SrtpSessionTest, TestBadSetup) {
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_FALSE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey2, kTestKeyLen));
-  EXPECT_FALSE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey2, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_FALSE(
+      s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey2, kTestKeyLen));
+  EXPECT_FALSE(
+      s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey2, kTestKeyLen));
 }
 
 // Test that we fail keys of the wrong length.
 TEST_F(SrtpSessionTest, TestKeysTooShort) {
-  EXPECT_FALSE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, 1));
-  EXPECT_FALSE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, 1));
+  EXPECT_FALSE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, 1));
+  EXPECT_FALSE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, 1));
 }
 
 // Test that we can encrypt and decrypt RTP/RTCP using AES_CM_128_HMAC_SHA1_80.
 TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_80) {
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
   TestProtectRtp(CS_AES_CM_128_HMAC_SHA1_80);
   TestProtectRtcp(CS_AES_CM_128_HMAC_SHA1_80);
   TestUnprotectRtp(CS_AES_CM_128_HMAC_SHA1_80);
@@ -659,8 +649,8 @@ TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_80) {
 
 // Test that we can encrypt and decrypt RTP/RTCP using AES_CM_128_HMAC_SHA1_32.
 TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_32) {
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_32, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_32, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1, kTestKeyLen));
   TestProtectRtp(CS_AES_CM_128_HMAC_SHA1_32);
   TestProtectRtcp(CS_AES_CM_128_HMAC_SHA1_32);
   TestUnprotectRtp(CS_AES_CM_128_HMAC_SHA1_32);
@@ -668,7 +658,7 @@ TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_32) {
 }
 
 TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_32, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_32, kTestKey1, kTestKeyLen));
   int64_t index;
   int out_len = 0;
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_,
@@ -681,8 +671,8 @@ TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
 // Test that we fail to unprotect if someone tampers with the RTP/RTCP paylaods.
 TEST_F(SrtpSessionTest, TestTamperReject) {
   int out_len;
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
   TestProtectRtp(CS_AES_CM_128_HMAC_SHA1_80);
   TestProtectRtcp(CS_AES_CM_128_HMAC_SHA1_80);
   rtp_packet_[0] = 0x12;
@@ -694,8 +684,8 @@ TEST_F(SrtpSessionTest, TestTamperReject) {
 // Test that we fail to unprotect if the payloads are not authenticated.
 TEST_F(SrtpSessionTest, TestUnencryptReject) {
   int out_len;
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
   EXPECT_FALSE(s2_.UnprotectRtp(rtp_packet_, rtp_len_, &out_len));
   EXPECT_FALSE(s2_.UnprotectRtcp(rtcp_packet_, rtcp_len_, &out_len));
 }
@@ -703,7 +693,7 @@ TEST_F(SrtpSessionTest, TestUnencryptReject) {
 // Test that we fail when using buffers that are too small.
 TEST_F(SrtpSessionTest, TestBuffersTooSmall) {
   int out_len;
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
   EXPECT_FALSE(s1_.ProtectRtp(rtp_packet_, rtp_len_,
                               sizeof(rtp_packet_) - 10, &out_len));
   EXPECT_FALSE(s1_.ProtectRtcp(rtcp_packet_, rtcp_len_,
@@ -717,8 +707,8 @@ TEST_F(SrtpSessionTest, TestReplay) {
   static const uint16_t replay_window = 1024;
   int out_len;
 
-  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
-  EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s1_.SetSend(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
+  EXPECT_TRUE(s2_.SetRecv(rtc::SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen));
 
   // Initial sequence number.
   rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_) + 2, seqnum_big);

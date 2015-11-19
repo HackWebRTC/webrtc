@@ -108,13 +108,14 @@ class TransportChannel : public sigslot::has_slots<> {
   virtual bool GetSslRole(rtc::SSLRole* role) const = 0;
 
   // Sets up the ciphers to use for DTLS-SRTP.
-  virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers) = 0;
+  virtual bool SetSrtpCryptoSuites(const std::vector<int>& ciphers) = 0;
+  // Keep the original one for backward compatibility until all dependencies
+  // move away. TODO(guoweis): Remove this function.
+  virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers);
 
   // Finds out which DTLS-SRTP cipher was negotiated.
   // TODO(guoweis): Remove this once all dependencies implement this.
-  virtual bool GetSrtpCryptoSuite(std::string* cipher) {
-    return false;
-  }
+  virtual bool GetSrtpCryptoSuite(int* cipher) { return false; }
 
   // Finds out which DTLS cipher was negotiated.
   // TODO(guoweis): Remove this once all dependencies implement this.

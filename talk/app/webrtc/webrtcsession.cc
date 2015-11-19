@@ -2157,9 +2157,10 @@ void WebRtcSession::ReportNegotiatedCiphers(
     return;
   }
 
-  const std::string& srtp_cipher = stats.channel_stats[0].srtp_cipher;
-  int ssl_cipher = stats.channel_stats[0].ssl_cipher;
-  if (srtp_cipher.empty() && !ssl_cipher) {
+  int srtp_crypto_suite = stats.channel_stats[0].srtp_crypto_suite;
+  int ssl_cipher_suite = stats.channel_stats[0].ssl_cipher_suite;
+  if (srtp_crypto_suite == rtc::SRTP_INVALID_CRYPTO_SUITE &&
+      ssl_cipher_suite == rtc::TLS_NULL_WITH_NULL_NULL) {
     return;
   }
 
@@ -2179,12 +2180,13 @@ void WebRtcSession::ReportNegotiatedCiphers(
     return;
   }
 
-  if (!srtp_cipher.empty()) {
-    metrics_observer_->IncrementSparseEnumCounter(
-        srtp_counter_type, rtc::GetSrtpCryptoSuiteFromName(srtp_cipher));
+  if (srtp_crypto_suite != rtc::SRTP_INVALID_CRYPTO_SUITE) {
+    metrics_observer_->IncrementSparseEnumCounter(srtp_counter_type,
+                                                  srtp_crypto_suite);
   }
-  if (ssl_cipher) {
-    metrics_observer_->IncrementSparseEnumCounter(ssl_counter_type, ssl_cipher);
+  if (ssl_cipher_suite != rtc::TLS_NULL_WITH_NULL_NULL) {
+    metrics_observer_->IncrementSparseEnumCounter(ssl_counter_type,
+                                                  ssl_cipher_suite);
   }
 }
 

@@ -28,7 +28,6 @@
     return;                                         \
   }
 
-static const char AES_CM_128_HMAC_SHA1_80[] = "AES_CM_128_HMAC_SHA1_80";
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
 static const char kIcePwd1[] = "TESTICEPWD00000000000001";
 static const size_t kPacketNumOffset = 8;
@@ -150,9 +149,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
       // SRTP ciphers will be set only in the beginning.
       for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
            channels_.begin(); it != channels_.end(); ++it) {
-        std::vector<std::string> ciphers;
-        ciphers.push_back(AES_CM_128_HMAC_SHA1_80);
-        ASSERT_TRUE((*it)->SetSrtpCiphers(ciphers));
+        std::vector<int> ciphers;
+        ciphers.push_back(rtc::SRTP_AES128_CM_SHA1_80);
+        ASSERT_TRUE((*it)->SetSrtpCryptoSuites(ciphers));
       }
     }
 
@@ -215,16 +214,16 @@ class DtlsTestClient : public sigslot::has_slots<> {
     }
   }
 
-  void CheckSrtp(const std::string& expected_cipher) {
+  void CheckSrtp(int expected_crypto_suite) {
     for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
            channels_.begin(); it != channels_.end(); ++it) {
-      std::string cipher;
+      int crypto_suite;
 
-      bool rv = (*it)->GetSrtpCryptoSuite(&cipher);
-      if (negotiated_dtls_ && !expected_cipher.empty()) {
+      bool rv = (*it)->GetSrtpCryptoSuite(&crypto_suite);
+      if (negotiated_dtls_ && expected_crypto_suite) {
         ASSERT_TRUE(rv);
 
-        ASSERT_EQ(cipher, expected_cipher);
+        ASSERT_EQ(crypto_suite, expected_crypto_suite);
       } else {
         ASSERT_FALSE(rv);
       }
@@ -469,11 +468,11 @@ class DtlsTransportChannelTest : public testing::Test {
 
     // Check that we negotiated the right ciphers.
     if (use_dtls_srtp_) {
-      client1_.CheckSrtp(AES_CM_128_HMAC_SHA1_80);
-      client2_.CheckSrtp(AES_CM_128_HMAC_SHA1_80);
+      client1_.CheckSrtp(rtc::SRTP_AES128_CM_SHA1_80);
+      client2_.CheckSrtp(rtc::SRTP_AES128_CM_SHA1_80);
     } else {
-      client1_.CheckSrtp("");
-      client2_.CheckSrtp("");
+      client1_.CheckSrtp(rtc::SRTP_INVALID_CRYPTO_SUITE);
+      client2_.CheckSrtp(rtc::SRTP_INVALID_CRYPTO_SUITE);
     }
     client1_.CheckSsl(rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
         ssl_expected_version_, rtc::KT_DEFAULT));
