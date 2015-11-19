@@ -50,6 +50,17 @@ static const uint32_t kMaxSctpSid = 1023;
 
 namespace {
 const char kInline[] = "inline:";
+
+void GetSupportedCryptoSuiteNames(void (*func)(std::vector<int>*),
+                                  std::vector<std::string>* names) {
+#ifdef HAVE_SRTP
+  std::vector<int> crypto_suites;
+  func(&crypto_suites);
+  for (const auto crypto : crypto_suites) {
+    names->push_back(rtc::SrtpCryptoSuiteToName(crypto));
+  }
+#endif
+}
 }
 
 namespace cricket {
@@ -152,28 +163,48 @@ bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
 }
 
 // For audio, HMAC 32 is prefered because of the low overhead.
-void GetSupportedAudioCryptoSuites(
-    std::vector<std::string>* crypto_suites) {
+void GetSupportedAudioCryptoSuites(std::vector<int>* crypto_suites) {
 #ifdef HAVE_SRTP
-  crypto_suites->push_back(rtc::CS_AES_CM_128_HMAC_SHA1_32);
-  crypto_suites->push_back(rtc::CS_AES_CM_128_HMAC_SHA1_80);
+  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_32);
+  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 #endif
 }
 
-void GetSupportedVideoCryptoSuites(
-    std::vector<std::string>* crypto_suites) {
-  GetDefaultSrtpCryptoSuiteNames(crypto_suites);
+void GetSupportedAudioCryptoSuiteNames(
+    std::vector<std::string>* crypto_suite_names) {
+  GetSupportedCryptoSuiteNames(GetSupportedAudioCryptoSuites,
+                               crypto_suite_names);
 }
 
-void GetSupportedDataCryptoSuites(
-    std::vector<std::string>* crypto_suites) {
-  GetDefaultSrtpCryptoSuiteNames(crypto_suites);
+void GetSupportedVideoCryptoSuites(std::vector<int>* crypto_suites) {
+  GetDefaultSrtpCryptoSuites(crypto_suites);
 }
 
-void GetDefaultSrtpCryptoSuiteNames(std::vector<std::string>* crypto_suites) {
+void GetSupportedVideoCryptoSuiteNames(
+    std::vector<std::string>* crypto_suite_names) {
+  GetSupportedCryptoSuiteNames(GetSupportedVideoCryptoSuites,
+                               crypto_suite_names);
+}
+
+void GetSupportedDataCryptoSuites(std::vector<int>* crypto_suites) {
+  GetDefaultSrtpCryptoSuites(crypto_suites);
+}
+
+void GetSupportedDataCryptoSuiteNames(
+    std::vector<std::string>* crypto_suite_names) {
+  GetSupportedCryptoSuiteNames(GetSupportedDataCryptoSuites,
+                               crypto_suite_names);
+}
+
+void GetDefaultSrtpCryptoSuites(std::vector<int>* crypto_suites) {
 #ifdef HAVE_SRTP
-  crypto_suites->push_back(rtc::CS_AES_CM_128_HMAC_SHA1_80);
+  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 #endif
+}
+
+void GetDefaultSrtpCryptoSuiteNames(
+    std::vector<std::string>* crypto_suite_names) {
+  GetSupportedCryptoSuiteNames(GetDefaultSrtpCryptoSuites, crypto_suite_names);
 }
 
 // For video support only 80-bit SHA1 HMAC. For audio 32-bit HMAC is
@@ -1514,7 +1545,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
 
   scoped_ptr<AudioContentDescription> audio(new AudioContentDescription());
   std::vector<std::string> crypto_suites;
-  GetSupportedAudioCryptoSuites(&crypto_suites);
+  GetSupportedAudioCryptoSuiteNames(&crypto_suites);
   if (!CreateMediaContentOffer(
           options,
           audio_codecs,
@@ -1568,7 +1599,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
 
   scoped_ptr<VideoContentDescription> video(new VideoContentDescription());
   std::vector<std::string> crypto_suites;
-  GetSupportedVideoCryptoSuites(&crypto_suites);
+  GetSupportedVideoCryptoSuiteNames(&crypto_suites);
   if (!CreateMediaContentOffer(
           options,
           video_codecs,
@@ -1638,7 +1669,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     data->set_protocol(
         secure_transport ? kMediaProtocolDtlsSctp : kMediaProtocolSctp);
   } else {
-    GetSupportedDataCryptoSuites(&crypto_suites);
+    GetSupportedDataCryptoSuiteNames(&crypto_suites);
   }
 
   if (!CreateMediaContentOffer(

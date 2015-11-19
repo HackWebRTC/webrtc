@@ -242,20 +242,20 @@ class FakeTransportChannel : public TransportChannelImpl,
 
   bool IsDtlsActive() const override { return do_dtls_; }
 
-  bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override {
+  bool SetSrtpCryptoSuites(const std::vector<int>& ciphers) override {
     srtp_ciphers_ = ciphers;
     return true;
   }
 
-  bool GetSrtpCryptoSuite(std::string* cipher) override {
-    if (!chosen_srtp_cipher_.empty()) {
-      *cipher = chosen_srtp_cipher_;
+  bool GetSrtpCryptoSuite(int* crypto_suite) override {
+    if (chosen_crypto_suite_ != rtc::SRTP_INVALID_CRYPTO_SUITE) {
+      *crypto_suite = chosen_crypto_suite_;
       return true;
     }
     return false;
   }
 
-  bool GetSslCipherSuite(int* cipher) override { return false; }
+  bool GetSslCipherSuite(int* cipher_suite) override { return false; }
 
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const {
     return local_cert_;
@@ -275,7 +275,7 @@ class FakeTransportChannel : public TransportChannelImpl,
                             bool use_context,
                             uint8_t* result,
                             size_t result_len) override {
-    if (!chosen_srtp_cipher_.empty()) {
+    if (chosen_crypto_suite_ != rtc::SRTP_INVALID_CRYPTO_SUITE) {
       memset(result, 0xff, result_len);
       return true;
     }
@@ -284,14 +284,13 @@ class FakeTransportChannel : public TransportChannelImpl,
   }
 
   void NegotiateSrtpCiphers() {
-    for (std::vector<std::string>::const_iterator it1 = srtp_ciphers_.begin();
+    for (std::vector<int>::const_iterator it1 = srtp_ciphers_.begin();
          it1 != srtp_ciphers_.end(); ++it1) {
-      for (std::vector<std::string>::const_iterator it2 =
-               dest_->srtp_ciphers_.begin();
+      for (std::vector<int>::const_iterator it2 = dest_->srtp_ciphers_.begin();
            it2 != dest_->srtp_ciphers_.end(); ++it2) {
         if (*it1 == *it2) {
-          chosen_srtp_cipher_ = *it1;
-          dest_->chosen_srtp_cipher_ = *it2;
+          chosen_crypto_suite_ = *it1;
+          dest_->chosen_crypto_suite_ = *it2;
           return;
         }
       }
@@ -322,8 +321,8 @@ class FakeTransportChannel : public TransportChannelImpl,
   rtc::scoped_refptr<rtc::RTCCertificate> local_cert_;
   rtc::FakeSSLCertificate* remote_cert_ = nullptr;
   bool do_dtls_ = false;
-  std::vector<std::string> srtp_ciphers_;
-  std::string chosen_srtp_cipher_;
+  std::vector<int> srtp_ciphers_;
+  int chosen_crypto_suite_ = rtc::SRTP_INVALID_CRYPTO_SUITE;
   int receiving_timeout_ = -1;
   bool gather_continually_ = false;
   IceRole role_ = ICEROLE_UNKNOWN;

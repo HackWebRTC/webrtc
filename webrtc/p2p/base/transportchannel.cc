@@ -54,4 +54,17 @@ void TransportChannel::set_dtls_state(DtlsTransportState state) {
   SignalDtlsState(this);
 }
 
+bool TransportChannel::SetSrtpCryptoSuites(const std::vector<int>& ciphers) {
+  return false;
+}
+
+// TODO(guoweis): Remove this function once everything is moved away.
+bool TransportChannel::SetSrtpCiphers(const std::vector<std::string>& ciphers) {
+  std::vector<int> crypto_suites;
+  for (const auto cipher : ciphers) {
+    crypto_suites.push_back(rtc::SrtpCryptoSuiteFromName(cipher));
+  }
+  return SetSrtpCryptoSuites(crypto_suites);
+}
+
 }  // namespace cricket

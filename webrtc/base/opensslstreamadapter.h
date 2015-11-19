@@ -88,7 +88,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   StreamState GetState() const override;
 
   // TODO(guoweis): Move this away from a static class method.
-  static std::string GetSslCipherSuiteName(int cipher);
+  static std::string SslCipherSuiteToName(int crypto_suite);
 
   bool GetSslCipherSuite(int* cipher) override;
 
@@ -101,8 +101,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
                             size_t result_len) override;
 
   // DTLS-SRTP interface
-  bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers) override;
-  bool GetDtlsSrtpCipher(std::string* cipher) override;
+  bool SetDtlsSrtpCryptoSuites(const std::vector<int>& crypto_suites) override;
+  bool GetDtlsSrtpCryptoSuite(int* crypto_suite) override;
 
   // Capabilities interfaces
   static bool HaveDtls();

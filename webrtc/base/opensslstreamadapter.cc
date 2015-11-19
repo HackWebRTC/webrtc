@@ -43,17 +43,19 @@ namespace rtc {
 #endif
 
 #ifdef HAVE_DTLS_SRTP
-// SRTP cipher suite table
+// SRTP cipher suite table. |internal_name| is used to construct a
+// colon-separated profile strings which is needed by
+// SSL_CTX_set_tlsext_use_srtp().
 struct SrtpCipherMapEntry {
-  const char* external_name;
   const char* internal_name;
+  const int id;
 };
 
 // This isn't elegant, but it's better than an external reference
 static SrtpCipherMapEntry SrtpCipherMap[] = {
-    {CS_AES_CM_128_HMAC_SHA1_80, "SRTP_AES128_CM_SHA1_80"},
-    {CS_AES_CM_128_HMAC_SHA1_32, "SRTP_AES128_CM_SHA1_32"},
-    {NULL, NULL}};
+    {"SRTP_AES128_CM_SHA1_80", SRTP_AES128_CM_SHA1_80},
+    {"SRTP_AES128_CM_SHA1_32", SRTP_AES128_CM_SHA1_32},
+    {nullptr, 0}};
 #endif
 
 #ifndef OPENSSL_IS_BORINGSSL
@@ -350,9 +352,9 @@ bool OpenSSLStreamAdapter::SetPeerCertificateDigest(const std::string
   return true;
 }
 
-std::string OpenSSLStreamAdapter::GetSslCipherSuiteName(int cipher) {
+std::string OpenSSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
 #ifdef OPENSSL_IS_BORINGSSL
-  const SSL_CIPHER* ssl_cipher = SSL_get_cipher_by_value(cipher);
+  const SSL_CIPHER* ssl_cipher = SSL_get_cipher_by_value(cipher_suite);
   if (!ssl_cipher) {
     return std::string();
   }
@@ -363,7 +365,7 @@ std::string OpenSSLStreamAdapter::GetSslCipherSuiteName(int cipher) {
 #else
   for (const SslCipherMapEntry* entry = kSslCipherMap; entry->rfc_name;
        ++entry) {
-    if (cipher == entry->openssl_id) {
+    if (cipher_suite == entry->openssl_id) {
       return entry->rfc_name;
     }
   }
@@ -371,7 +373,7 @@ std::string OpenSSLStreamAdapter::GetSslCipherSuiteName(int cipher) {
 #endif
 }
 
-bool OpenSSLStreamAdapter::GetSslCipherSuite(int* cipher) {
+bool OpenSSLStreamAdapter::GetSslCipherSuite(int* cipher_suite) {
   if (state_ != SSL_CONNECTED)
     return false;
 
@@ -380,7 +382,7 @@ bool OpenSSLStreamAdapter::GetSslCipherSuite(int* cipher) {
     return false;
   }
 
-  *cipher = static_cast<uint16_t>(SSL_CIPHER_get_id(current_cipher));
+  *cipher_suite = static_cast<uint16_t>(SSL_CIPHER_get_id(current_cipher));
   return true;
 }
 
@@ -407,20 +409,20 @@ bool OpenSSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
 #endif
 }
 
-bool OpenSSLStreamAdapter::SetDtlsSrtpCiphers(
-    const std::vector<std::string>& ciphers) {
+bool OpenSSLStreamAdapter::SetDtlsSrtpCryptoSuites(
+    const std::vector<int>& ciphers) {
 #ifdef HAVE_DTLS_SRTP
   std::string internal_ciphers;
 
   if (state_ != SSL_NONE)
     return false;
 
-  for (std::vector<std::string>::const_iterator cipher = ciphers.begin();
+  for (std::vector<int>::const_iterator cipher = ciphers.begin();
        cipher != ciphers.end(); ++cipher) {
     bool found = false;
-    for (SrtpCipherMapEntry *entry = SrtpCipherMap; entry->internal_name;
+    for (SrtpCipherMapEntry* entry = SrtpCipherMap; entry->internal_name;
          ++entry) {
-      if (*cipher == entry->external_name) {
+      if (*cipher == entry->id) {
         found = true;
         if (!internal_ciphers.empty())
           internal_ciphers += ":";
@@ -445,7 +447,7 @@ bool OpenSSLStreamAdapter::SetDtlsSrtpCiphers(
 #endif
 }
 
-bool OpenSSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
+bool OpenSSLStreamAdapter::GetDtlsSrtpCryptoSuite(int* crypto_suite) {
 #ifdef HAVE_DTLS_SRTP
   ASSERT(state_ == SSL_CONNECTED);
   if (state_ != SSL_CONNECTED)
@@ -457,17 +459,9 @@ bool OpenSSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
   if (!srtp_profile)
     return false;
 
-  for (SrtpCipherMapEntry *entry = SrtpCipherMap;
-       entry->internal_name; ++entry) {
-    if (!strcmp(entry->internal_name, srtp_profile->name)) {
-      *cipher = entry->external_name;
-      return true;
-    }
-  }
-
-  ASSERT(false);  // This should never happen
-
-  return false;
+  *crypto_suite = srtp_profile->id;
+  ASSERT(!SrtpCryptoSuiteToName(*crypto_suite).empty());
+  return true;
 #else
   return false;
 #endif

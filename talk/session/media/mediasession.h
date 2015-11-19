@@ -547,10 +547,19 @@ const VideoContentDescription* GetFirstVideoContentDescription(
 const DataContentDescription* GetFirstDataContentDescription(
     const SessionDescription* sdesc);
 
-void GetSupportedAudioCryptoSuites(std::vector<std::string>* crypto_suites);
-void GetSupportedVideoCryptoSuites(std::vector<std::string>* crypto_suites);
-void GetSupportedDataCryptoSuites(std::vector<std::string>* crypto_suites);
-void GetDefaultSrtpCryptoSuiteNames(std::vector<std::string>* crypto_suites);
+void GetSupportedAudioCryptoSuites(std::vector<int>* crypto_suites);
+void GetSupportedVideoCryptoSuites(std::vector<int>* crypto_suites);
+void GetSupportedDataCryptoSuites(std::vector<int>* crypto_suites);
+void GetDefaultSrtpCryptoSuites(std::vector<int>* crypto_suites);
+void GetSupportedAudioCryptoSuiteNames(
+    std::vector<std::string>* crypto_suite_names);
+void GetSupportedVideoCryptoSuiteNames(
+    std::vector<std::string>* crypto_suite_names);
+void GetSupportedDataCryptoSuiteNames(
+    std::vector<std::string>* crypto_suite_names);
+void GetDefaultSrtpCryptoSuiteNames(
+    std::vector<std::string>* crypto_suite_names);
+
 }  // namespace cricket
 
 #endif  // TALK_SESSION_MEDIA_MEDIASESSION_H_
