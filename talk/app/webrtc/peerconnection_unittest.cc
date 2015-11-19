@@ -892,11 +892,19 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   rtc::scoped_ptr<MockDataChannelObserver> data_observer_;
 };
 
+// Flaky on Mac Debug bots. See webrtc:5231
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#define MAYBE_JsepPeerConnectionP2PTestClient \
+  DISABLED_JsepPeerConnectionP2PTestClient
+#else
+#define MAYBE_JsepPeerConnectionP2PTestClient JsepPeerConnectionP2PTestClient
+#endif
+
 // TODO(deadbeef): Rename this to P2PTestConductor once the Linux memcheck and
 // Windows DrMemory Full bots' blacklists are updated.
-class JsepPeerConnectionP2PTestClient : public testing::Test {
+class MAYBE_JsepPeerConnectionP2PTestClient : public testing::Test {
  public:
-  JsepPeerConnectionP2PTestClient()
+  MAYBE_JsepPeerConnectionP2PTestClient()
       : pss_(new rtc::PhysicalSocketServer),
         ss_(new rtc::VirtualSocketServer(pss_.get())),
         ss_scope_(ss_.get()) {}
@@ -951,7 +959,7 @@ class JsepPeerConnectionP2PTestClient : public testing::Test {
     receiving_client_->VerifyLocalIceUfragAndPassword();
   }
 
-  ~JsepPeerConnectionP2PTestClient() {
+  ~MAYBE_JsepPeerConnectionP2PTestClient() {
     if (initiating_client_) {
       initiating_client_->set_signaling_message_receiver(nullptr);
     }
@@ -1090,7 +1098,7 @@ class JsepPeerConnectionP2PTestClient : public testing::Test {
 // This test sets up a Jsep call between two parties and test Dtmf.
 // TODO(holmer): Disabled due to sometimes crashing on buildbots.
 // See issue webrtc/2378.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDtmf) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDtmf) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
   VerifyDtmf();
@@ -1098,7 +1106,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDtmf) {
 
 // This test sets up a Jsep call between two parties and test that we can get a
 // video aspect ratio of 16:9.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTest16To9) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTest16To9) {
   ASSERT_TRUE(CreateTestClients());
   FakeConstraints constraint;
   double requested_ratio = 640.0/360;
@@ -1123,7 +1131,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTest16To9) {
 // received video has a resolution of 1280*720.
 // TODO(mallinath): Enable when
 // http://code.google.com/p/webrtc/issues/detail?id=981 is fixed.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTest1280By720) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTest1280By720) {
   ASSERT_TRUE(CreateTestClients());
   FakeConstraints constraint;
   constraint.SetMandatoryMinWidth(1280);
@@ -1135,7 +1143,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTest1280By720) {
 
 // This test sets up a call between two endpoints that are configured to use
 // DTLS key agreement. As a result, DTLS is negotiated and used for transport.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtls) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDtls) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1147,7 +1155,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtls) {
 
 // This test sets up a audio call initially and then upgrades to audio/video,
 // using DTLS.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1159,18 +1167,11 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
   receiving_client()->Negotiate();
 }
 
-// Flaky on Mac Debug bots. See webrtc:5231
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#define MAYBE_LocalP2PTestOfferDtlsButNotSdes \
-  DISABLED_LocalP2PTestOfferDtlsButNotSdes
-#else
-#define MAYBE_LocalP2PTestOfferDtlsButNotSdes LocalP2PTestOfferDtlsButNotSdes
-#endif
-
 // This test sets up a call between two endpoints that are configured to use
 // DTLS key agreement. The offerer don't support SDES. As a result, DTLS is
 // negotiated and used for transport.
-TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_LocalP2PTestOfferDtlsButNotSdes) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient,
+       MAYBE_LocalP2PTestOfferDtlsButNotSdes) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1183,7 +1184,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_LocalP2PTestOfferDtlsButNotSdes) {
 
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive video.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerVideo) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerVideo) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(false, true);
   LocalP2PTest();
@@ -1191,7 +1192,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerVideo) {
 
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive audio.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerAudio) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerAudio) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(true, false);
   LocalP2PTest();
@@ -1199,7 +1200,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerAudio) {
 
 // This test sets up a Jsep call between two parties, and the callee reject both
 // audio and video.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerNone) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerNone) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(false, false);
   LocalP2PTest();
@@ -1210,7 +1211,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerNone) {
 // being rejected. Once the re-negotiation is done, the video flow should stop
 // and the audio flow should continue.
 // Disabled due to b/14955157.
-TEST_F(JsepPeerConnectionP2PTestClient,
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient,
        DISABLED_UpdateOfferWithRejectedContent) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
@@ -1220,7 +1221,8 @@ TEST_F(JsepPeerConnectionP2PTestClient,
 // This test sets up a Jsep call between two parties. The MSID is removed from
 // the SDP strings from the caller.
 // Disabled due to b/14955157.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestWithoutMsid) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient,
+       DISABLED_LocalP2PTestWithoutMsid) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->RemoveMsidFromReceivedSdp(true);
   // TODO(perkj): Currently there is a bug that cause audio to stop playing if
@@ -1235,7 +1237,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestWithoutMsid) {
 // sends two steams.
 // TODO(perkj): Disabled due to
 // https://code.google.com/p/webrtc/issues/detail?id=1454
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestTwoStreams) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestTwoStreams) {
   ASSERT_TRUE(CreateTestClients());
   // Set optional video constraint to max 320pixels to decrease CPU usage.
   FakeConstraints constraint;
@@ -1248,15 +1250,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestTwoStreams) {
   EXPECT_EQ(2u, receiving_client()->number_of_remote_streams());
 }
 
-// Flaky on Mac Debug bots. See webrtc:5231
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#define MAYBE_GetAudioOutputLevelStats DISABLED_GetAudioOutputLevelStats
-#else
-#define MAYBE_GetAudioOutputLevelStats GetAudioOutputLevelStats
-#endif
-
 // Test that we can receive the audio output level from a remote audio track.
-TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetAudioOutputLevelStats) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetAudioOutputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1274,15 +1269,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetAudioOutputLevelStats) {
       kMaxWaitForStatsMs);
 }
 
-// Flaky on Mac Debug bots. See webrtc:5231
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#define MAYBE_GetAudioInputLevelStats DISABLED_GetAudioInputLevelStats
-#else
-#define MAYBE_GetAudioInputLevelStats GetAudioInputLevelStats
-#endif
-
 // Test that an audio input level is reported.
-TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetAudioInputLevelStats) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetAudioInputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1292,15 +1280,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetAudioInputLevelStats) {
       kMaxWaitForStatsMs);
 }
 
-// Flaky on Mac Debug bots. See webrtc:5231
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#define MAYBE_GetBytesReceivedStats DISABLED_GetBytesReceivedStats
-#else
-#define MAYBE_GetBytesReceivedStats GetBytesReceivedStats
-#endif
-
 // Test that we can get incoming byte counts from both audio and video tracks.
-TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetBytesReceivedStats) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetBytesReceivedStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1321,15 +1302,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetBytesReceivedStats) {
       kMaxWaitForStatsMs);
 }
 
-// Flaky on Mac Debug bots. See webrtc:5231
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#define MAYBE_GetBytesSentStats DISABLED_GetBytesSentStats
-#else
-#define MAYBE_GetBytesSentStats GetBytesSentStats
-#endif
-
 // Test that we can get outgoing byte counts from both audio and video tracks.
-TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetBytesSentStats) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetBytesSentStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1351,7 +1325,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetBytesSentStats) {
 }
 
 // Test that DTLS 1.0 is used if both sides only support DTLS 1.0.
-TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12None) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetDtls12None) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_10;
   PeerConnectionFactory::Options recv_options;
@@ -1381,15 +1355,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12None) {
                                           kDefaultSrtpCryptoSuite));
 }
 
-// Flaky on Mac Debug bots. See webrtc:5231
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#define MAYBE_GetDtls12Both DISABLED_GetDtls12Both
-#else
-#define MAYBE_GetDtls12Both GetDtls12Both
-#endif
-
 // Test that DTLS 1.2 is used if both ends support it.
-TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetDtls12Both) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetDtls12Both) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   PeerConnectionFactory::Options recv_options;
@@ -1421,7 +1388,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_GetDtls12Both) {
 
 // Test that DTLS 1.0 is used if the initator supports DTLS 1.2 and the
 // received supports 1.0.
-TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Init) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetDtls12Init) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   PeerConnectionFactory::Options recv_options;
@@ -1453,7 +1420,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Init) {
 
 // Test that DTLS 1.0 is used if the initator supports DTLS 1.0 and the
 // received supports 1.2.
-TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Recv) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetDtls12Recv) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_10;
   PeerConnectionFactory::Options recv_options;
@@ -1484,7 +1451,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetDtls12Recv) {
 }
 
 // This test sets up a call between two parties with audio, video and data.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
@@ -1521,7 +1488,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
 // transport has detected that a channel is writable and thus data can be
 // received before the data channel state changes to open. That is hard to test
 // but the same buffering is used in that case.
-TEST_F(JsepPeerConnectionP2PTestClient, RegisterDataChannelObserver) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, RegisterDataChannelObserver) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
@@ -1551,7 +1518,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, RegisterDataChannelObserver) {
 
 // This test sets up a call between two parties with audio, video and but only
 // the initiating client support data.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestReceiverDoesntSupportData) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient,
+       LocalP2PTestReceiverDoesntSupportData) {
   FakeConstraints setup_constraints_1;
   setup_constraints_1.SetAllowRtpDataChannels();
   // Must disable DTLS to make negotiation succeed.
@@ -1570,7 +1538,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestReceiverDoesntSupportData) {
 
 // This test sets up a call between two parties with audio, video. When audio
 // and video is setup and flowing and data channel is negotiated.
-TEST_F(JsepPeerConnectionP2PTestClient, AddDataChannelAfterRenegotiation) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient,
+       AddDataChannelAfterRenegotiation) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
@@ -1589,7 +1558,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, AddDataChannelAfterRenegotiation) {
 // This test sets up a Jsep call with SCTP DataChannel and verifies the
 // negotiation is completed without error.
 #ifdef HAVE_SCTP
-TEST_F(JsepPeerConnectionP2PTestClient, CreateOfferWithSctpDataChannel) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, CreateOfferWithSctpDataChannel) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;
   constraints.SetMandatory(
@@ -1600,17 +1569,10 @@ TEST_F(JsepPeerConnectionP2PTestClient, CreateOfferWithSctpDataChannel) {
 }
 #endif
 
-// Flaky on Mac Debug bots. See webrtc:5231
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#define MAYBE_IceRestart DISABLED_IceRestart
-#else
-#define MAYBE_IceRestart IceRestart
-#endif
-
 // This test sets up a call between two parties with audio, and video.
 // During the call, the initializing side restart ice and the test verifies that
 // new ice candidates are generated and audio and video still can flow.
-TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_IceRestart) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_IceRestart) {
   ASSERT_TRUE(CreateTestClients());
 
   // Negotiate and wait for ice completion and make sure audio and video plays.
@@ -1660,7 +1622,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, MAYBE_IceRestart) {
 // This test sets up a call between two parties with audio, and video.
 // It then renegotiates setting the video m-line to "port 0", then later
 // renegotiates again, enabling video.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestVideoDisableEnable) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestVideoDisableEnable) {
   ASSERT_TRUE(CreateTestClients());
 
   // Do initial negotiation. Will result in video and audio sendonly m-lines.
@@ -1684,7 +1646,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestVideoDisableEnable) {
 // VideoDecoderFactory.
 // TODO(holmer): Disabled due to sometimes crashing on buildbots.
 // See issue webrtc/2378.
-TEST_F(JsepPeerConnectionP2PTestClient,
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient,
        DISABLED_LocalP2PTestWithVideoDecoderFactory) {
   ASSERT_TRUE(CreateTestClients());
   EnableVideoDecoderFactory();
