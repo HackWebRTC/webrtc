@@ -228,9 +228,10 @@
         },
       ],  # targets
     }],
-    ['include_tests==1', {
+    ['include_tests==1 and OS!="ios"', {
       'targets' : [
         {
+          # Does not compile on iOS: webrtc:4755.
           'target_name': 'common_audio_unittests',
           'type': '<(gtest_target_type)',
           'dependencies': [

@@ -153,9 +153,10 @@
         },
       ],
     }], # build_with_chromium==0
-    ['include_tests==1', {
+    ['include_tests==1 and OS!="ios"', {
       'targets': [
         {
+          # Does not compile on iOS: webrtc:4755.
           'target_name': 'video_render_tests',
           'type': 'executable',
           'dependencies': [
@@ -197,7 +198,7 @@
           ] # conditions
         }, # video_render_module_test
       ], # targets
-    }], # include_tests==1
+    }], # include_tests==1 and OS!=ios
   ], # conditions
 }
 
