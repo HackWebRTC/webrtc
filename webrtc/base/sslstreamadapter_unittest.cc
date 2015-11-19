@@ -253,7 +253,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
     rtc::SetRandomTestMode(false);
   }
 
-  virtual void SetUp() override {
+  void SetUp() override {
     CreateStreams();
 
     client_ssl_.reset(rtc::SSLStreamAdapter::Create(client_stream_));
@@ -275,7 +275,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
     server_ssl_->SetIdentity(server_identity_);
   }
 
-  virtual void TearDown() override {
+  void TearDown() override {
     client_ssl_.reset(nullptr);
     server_ssl_.reset(nullptr);
   }
@@ -546,7 +546,7 @@ class SSLStreamAdapterTestTLS
         server_buffer_(kFifoBufferSize) {
   }
 
-  virtual void CreateStreams() override {
+  void CreateStreams() override {
     client_stream_ =
         new SSLDummyStreamTLS(this, "c2s", &client_buffer_, &server_buffer_);
     server_stream_ =
@@ -630,7 +630,7 @@ class SSLStreamAdapterTestTLS
 
       if (r == rtc::SR_ERROR || r == rtc::SR_EOS) {
         // Unfortunately, errors are the way that the stream adapter
-        // signals close in OpenSSL
+        // signals close in OpenSSL.
         stream->Close();
         return;
       }
@@ -676,7 +676,7 @@ class SSLStreamAdapterTestDTLS
       packet_size_(1000), count_(0), sent_(0) {
   }
 
-  virtual void CreateStreams() override {
+  void CreateStreams() override {
     client_stream_ =
         new SSLDummyStreamDTLS(this, "c2s", &client_buffer_, &server_buffer_);
     server_stream_ =
@@ -687,11 +687,16 @@ class SSLStreamAdapterTestDTLS
     unsigned char *packet = new unsigned char[1600];
 
     while (sent_ < count_) {
-      memset(packet, sent_ & 0xff, packet_size_);
-      *(reinterpret_cast<uint32_t *>(packet)) = sent_;
+      unsigned int rand_state = sent_;
+      packet[0] = sent_;
+      for (size_t i = 1; i < packet_size_; i++) {
+        // This is a simple LC PRNG.  Keep in synch with identical code below.
+        rand_state = (rand_state * 251 + 19937) >> 7;
+        packet[i] = rand_state & 0xff;
+      }
 
       size_t sent;
-      int rv = client_ssl_->Write(packet, packet_size_, &sent, 0);
+      rtc::StreamResult rv = client_ssl_->Write(packet, packet_size_, &sent, 0);
       if (rv == rtc::SR_SUCCESS) {
         LOG(LS_VERBOSE) << "Sent: " << sent_;
         sent_++;
@@ -731,11 +736,13 @@ class SSLStreamAdapterTestDTLS
 
       // Now parse the datagram
       ASSERT_EQ(packet_size_, bread);
-      unsigned char* ptr_to_buffer = buffer;
-      uint32_t packet_num = *(reinterpret_cast<uint32_t *>(ptr_to_buffer));
+      unsigned char packet_num = buffer[0];
 
-      for (size_t i = 4; i < packet_size_; i++) {
-        ASSERT_EQ((packet_num & 0xff), buffer[i]);
+      unsigned int rand_state = packet_num;
+      for (size_t i = 1; i < packet_size_; i++) {
+        // This is a simple LC PRNG.  Keep in synch with identical code above.
+        rand_state = (rand_state * 251 + 19937) >> 7;
+        ASSERT_EQ(rand_state & 0xff, buffer[i]);
       }
       received_.insert(packet_num);
     }
@@ -772,14 +779,13 @@ class SSLStreamAdapterTestDTLS
 
 rtc::StreamResult SSLDummyStreamBase::Write(const void* data, size_t data_len,
                                               size_t* written, int* error) {
-  *written = data_len;
-
   LOG(LS_INFO) << "Writing to loopback " << data_len;
 
   if (first_packet_) {
     first_packet_ = false;
     if (test_base_->GetLoseFirstPacket()) {
       LOG(LS_INFO) << "Losing initial packet of length " << data_len;
+      *written = data_len;  // Fake successful writing also to writer.
       return rtc::SR_SUCCESS;
     }
   }
@@ -1012,14 +1018,14 @@ TEST_P(SSLStreamAdapterTestDTLS, TestCertExpired) {
 }
 
 // Test data transfer using certs created from strings.
-TEST_P(SSLStreamAdapterTestDTLSFromPEMStrings, TestTransfer) {
+TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestTransfer) {
   MAYBE_SKIP_TEST(HaveDtls);
   TestHandshake();
   TestTransfer(100);
 }
 
 // Test getting the remote certificate.
-TEST_P(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
+TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
   MAYBE_SKIP_TEST(HaveDtls);
 
   // Peer certificates haven't been received yet.
