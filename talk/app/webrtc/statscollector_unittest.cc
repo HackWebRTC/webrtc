@@ -35,7 +35,6 @@
 #include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
 #include "talk/app/webrtc/videotrack.h"

@@ -743,8 +743,6 @@
         'app/webrtc/mediastreaminterface.h',
         'app/webrtc/mediastreamprovider.h',
         'app/webrtc/mediastreamproxy.h',
-        'app/webrtc/mediastreamsignaling.cc',
-        'app/webrtc/mediastreamsignaling.h',
         'app/webrtc/mediastreamtrack.h',
         'app/webrtc/mediastreamtrackproxy.h',
         'app/webrtc/notifier.h',

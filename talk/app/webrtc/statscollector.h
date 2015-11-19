@@ -36,7 +36,6 @@
 #include <vector>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/statstypes.h"
 #include "talk/app/webrtc/webrtcsession.h"

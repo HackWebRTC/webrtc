@@ -33,7 +33,6 @@
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
 #include "talk/app/webrtc/peerconnection.h"
-#include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/sctputils.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/streamcollection.h"
