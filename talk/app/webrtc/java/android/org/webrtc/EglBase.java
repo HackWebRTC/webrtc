@@ -44,7 +44,7 @@ import javax.microedition.khronos.egl.EGLSurface;
 /**
  * Holds EGL state and utility methods for handling an EGLContext, an EGLDisplay, and an EGLSurface.
  */
-public final class EglBase {
+public class EglBase {
   private static final String TAG = "EglBase";
   // These constants are taken from EGL14.EGL_OPENGL_ES2_BIT and EGL14.EGL_CONTEXT_CLIENT_VERSION.
   // https://android.googlesource.com/platform/frameworks/base/+/master/opengl/java/android/opengl/EGL14.java
