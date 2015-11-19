@@ -85,7 +85,7 @@ public class MediaCodecVideoDecoder {
     {"OMX.qcom.", "OMX.Nvidia.", "OMX.Exynos.", "OMX.Intel." };
   // List of supported HW VP9 decoders.
   private static final String[] supportedVp9HwCodecPrefixes =
-    {"OMX.qcom."};
+    {"OMX.qcom.", "OMX.Exynos." };
   // List of supported HW H.264 decoders.
   private static final String[] supportedH264HwCodecPrefixes =
     {"OMX.qcom.", "OMX.Intel." };
