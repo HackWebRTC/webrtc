@@ -38,19 +38,19 @@ bool BufferQueue::ReadFront(void* buffer, size_t bytes, size_t* bytes_read) {
     return false;
   }
 
+  bool was_writable = queue_.size() < capacity_;
   Buffer* packet = queue_.front();
   queue_.pop_front();
 
-  size_t next_packet_size = packet->size();
-  if (bytes > next_packet_size) {
-    bytes = next_packet_size;
-  }
-
+  bytes = std::min(bytes, packet->size());
   memcpy(buffer, packet->data(), bytes);
   if (bytes_read) {
     *bytes_read = bytes;
   }
   free_list_.push_back(packet);
+  if (!was_writable) {
+    NotifyWritableForTest();
+  }
   return true;
 }
 
@@ -61,6 +61,7 @@ bool BufferQueue::WriteBack(const void* buffer, size_t bytes,
     return false;
   }
 
+  bool was_readable = !queue_.empty();
   Buffer* packet;
   if (!free_list_.empty()) {
     packet = free_list_.back();
@@ -74,6 +75,9 @@ bool BufferQueue::WriteBack(const void* buffer, size_t bytes,
     *bytes_written = bytes;
   }
   queue_.push_back(packet);
+  if (!was_readable) {
+    NotifyReadableForTest();
+  }
   return true;
 }
 
