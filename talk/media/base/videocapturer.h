@@ -78,10 +78,6 @@ struct CapturedFrame {
   // fourcc. Return true if succeeded.
   bool GetDataSize(uint32_t* size) const;
 
-  // TODO(guoweis): Change the type of |rotation| from int to
-  // webrtc::VideoRotation once chromium gets the code.
-  webrtc::VideoRotation GetRotation() const;
-
   // The width and height of the captured frame could be different from those
   // of VideoFormat. Once the first frame is captured, the width, height,
   // fourcc, pixel_width, and pixel_height should keep the same over frames.
@@ -90,15 +86,11 @@ struct CapturedFrame {
   uint32_t fourcc;        // compression
   uint32_t pixel_width;   // width of a pixel, default is 1
   uint32_t pixel_height;  // height of a pixel, default is 1
-  // TODO(magjed): |elapsed_time| is deprecated - remove once not used anymore.
-  int64_t elapsed_time;
   int64_t time_stamp;  // timestamp of when the frame was captured, in unix
                        // time with nanosecond units.
   uint32_t data_size;  // number of bytes of the frame data
 
-  // TODO(guoweis): This can't be converted to VideoRotation yet as it's
-  // used by chrome now.
-  int    rotation;      // rotation in degrees of the frame (0, 90, 180, 270)
+  webrtc::VideoRotation rotation; // rotation in degrees of the frame.
 
   void*  data;          // pointer to the frame data. This object allocates the
                         // memory or points to an existing memory.

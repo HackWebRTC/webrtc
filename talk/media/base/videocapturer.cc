@@ -82,7 +82,7 @@ CapturedFrame::CapturedFrame()
       pixel_height(0),
       time_stamp(0),
       data_size(0),
-      rotation(0),
+      rotation(webrtc::kVideoRotation_0),
       data(NULL) {}
 
 // TODO(fbarchard): Remove this function once lmimediaengine stops using it.
@@ -92,11 +92,6 @@ bool CapturedFrame::GetDataSize(uint32_t* size) const {
   }
   *size = data_size;
   return true;
-}
-
-webrtc::VideoRotation CapturedFrame::GetRotation() const {
-  ASSERT(rotation == 0 || rotation == 90 || rotation == 180 || rotation == 270);
-  return static_cast<webrtc::VideoRotation>(rotation);
 }
 
 /////////////////////////////////////////////////////////////////////

@@ -51,8 +51,8 @@ VideoFrame* VideoFrameFactory::CreateAliasedFrame(
 
   // If the frame is rotated, we need to switch the width and height.
   if (apply_rotation_ &&
-      (input_frame->GetRotation() == webrtc::kVideoRotation_90 ||
-       input_frame->GetRotation() == webrtc::kVideoRotation_270)) {
+      (input_frame->rotation == webrtc::kVideoRotation_90 ||
+       input_frame->rotation == webrtc::kVideoRotation_270)) {
     std::swap(output_width, output_height);
   }
 

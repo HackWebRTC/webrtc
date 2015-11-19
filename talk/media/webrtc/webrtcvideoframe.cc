@@ -56,17 +56,6 @@ WebRtcVideoFrame::WebRtcVideoFrame(
       rotation_(rotation) {
 }
 
-WebRtcVideoFrame::WebRtcVideoFrame(
-    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-    int64_t elapsed_time_ns,
-    int64_t time_stamp_ns)
-    : video_frame_buffer_(buffer),
-      pixel_width_(1),
-      pixel_height_(1),
-      time_stamp_ns_(time_stamp_ns),
-      rotation_(webrtc::kVideoRotation_0) {
-}
-
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
 bool WebRtcVideoFrame::Init(uint32_t format,
@@ -90,13 +79,7 @@ bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh,
   return Reset(frame->fourcc, frame->width, frame->height, dw, dh,
                static_cast<uint8_t*>(frame->data), frame->data_size,
                frame->pixel_width, frame->pixel_height, frame->time_stamp,
-               frame->GetRotation(), apply_rotation);
-}
-
-bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
-                                   size_t pixel_height, int64_t,
-                                   int64_t time_stamp_ns) {
-  return InitToBlack(w, h, pixel_width, pixel_height, time_stamp_ns);
+               frame->rotation, apply_rotation);
 }
 
 bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,

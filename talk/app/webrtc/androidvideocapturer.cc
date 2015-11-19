@@ -57,11 +57,13 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
       const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
       int rotation,
       int64_t time_stamp_in_ns) {
+    RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
+               rotation == 270);
     buffer_ = buffer;
     captured_frame_.width = buffer->width();
     captured_frame_.height = buffer->height();
     captured_frame_.time_stamp = time_stamp_in_ns;
-    captured_frame_.rotation = rotation;
+    captured_frame_.rotation = static_cast<webrtc::VideoRotation>(rotation);
   }
 
   void ClearCapturedFrame() {
@@ -85,7 +87,7 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
 
     rtc::scoped_ptr<cricket::VideoFrame> frame(new cricket::WebRtcVideoFrame(
         ShallowCenterCrop(buffer_, dst_width, dst_height),
-        captured_frame->time_stamp, captured_frame->GetRotation()));
+        captured_frame->time_stamp, captured_frame->rotation));
     // Caller takes ownership.
     // TODO(magjed): Change CreateAliasedFrame() to return a rtc::scoped_ptr.
     return apply_rotation_ ? frame->GetCopyWithRotationApplied()->Copy()
@@ -101,7 +103,7 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     if (buffer_->native_handle() != nullptr) {
       // TODO(perkj): Implement CreateAliasedFrame properly for textures.
       rtc::scoped_ptr<cricket::VideoFrame> frame(new cricket::WebRtcVideoFrame(
-          buffer_, input_frame->time_stamp, input_frame->GetRotation()));
+          buffer_, input_frame->time_stamp, input_frame->rotation));
       return frame.release();
     }
     return VideoFrameFactory::CreateAliasedFrame(input_frame,
