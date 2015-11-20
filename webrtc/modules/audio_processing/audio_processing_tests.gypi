@@ -128,7 +128,11 @@
             '<(webrtc_root)/test/test.gyp:test_support',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
-          'sources': [ 'test/audioproc_float.cc', ],
+          'sources': [
+            'test/audio_file_processor.cc',
+            'test/audio_file_processor.h',
+            'test/audioproc_float.cc',
+          ],
         },
         {
           'target_name': 'unpack_aecdump',

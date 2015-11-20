@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <sstream>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
@@ -37,9 +38,17 @@ class ReadableWavFile : public ReadableWav {
   FILE* file_;
 };
 
+std::string WavFile::FormatAsString() const {
+  std::ostringstream s;
+  s << "Sample rate: " << sample_rate() << " Hz, Channels: " << num_channels()
+    << ", Duration: "
+    << (1.f * num_samples()) / (num_channels() * sample_rate()) << " s";
+  return s.str();
+}
+
 WavReader::WavReader(const std::string& filename)
     : file_handle_(fopen(filename.c_str(), "rb")) {
-  RTC_CHECK(file_handle_ && "Could not open wav file for reading.");
+  RTC_CHECK(file_handle_) << "Could not open wav file for reading.";
 
   ReadableWavFile readable(file_handle_);
   WavFormat format;
@@ -96,7 +105,7 @@ WavWriter::WavWriter(const std::string& filename, int sample_rate,
       num_channels_(num_channels),
       num_samples_(0),
       file_handle_(fopen(filename.c_str(), "wb")) {
-  RTC_CHECK(file_handle_ && "Could not open wav file for writing.");
+  RTC_CHECK(file_handle_) << "Could not open wav file for writing.";
   RTC_CHECK(CheckWavParameters(num_channels_, sample_rate_, kWavFormat,
                                kBytesPerSample, num_samples_));
 

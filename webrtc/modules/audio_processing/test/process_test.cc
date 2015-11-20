@@ -636,8 +636,8 @@ void void_main(int argc, char* argv[]) {
         }
 
         if (!raw_output) {
-          // The WAV file needs to be reset every time, because it cant change
-          // it's sample rate or number of channels.
+          // The WAV file needs to be reset every time, because it can't change
+          // its sample rate or number of channels.
           output_wav_file.reset(new WavWriter(out_filename + ".wav",
                                               output_sample_rate,
                                               msg.num_output_channels()));
