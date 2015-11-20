@@ -327,7 +327,7 @@ bool ViEEncoder::EncoderPaused() const {
                static_cast<int>(target_delay_ms_ * kEncoderPausePacerMargin),
                kMinPacingDelayMs);
   }
-  if (pacer_->ExpectedQueueTimeMs() > PacedSender::kDefaultMaxQueueLengthMs) {
+  if (pacer_->ExpectedQueueTimeMs() > PacedSender::kMaxQueueLengthMs) {
     // Too much data in pacer queue, drop frame.
     return true;
   }

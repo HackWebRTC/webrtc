@@ -51,7 +51,11 @@ class PacedSender : public Module, public RtpPacketSender {
     virtual ~Callback() {}
   };
 
-  static const int64_t kDefaultMaxQueueLengthMs = 2000;
+  // Expected max pacer delay in ms. If ExpectedQueueTimeMs() is higher than
+  // this value, the packet producers should wait (eg drop frames rather than
+  // encoding them). Bitrate sent may temporarily exceed target set by
+  // UpdateBitrate() so that this limit will be upheld.
+  static const int64_t kMaxQueueLengthMs;
   // Pace in kbits/s until we receive first estimate.
   static const int kDefaultInitialPaceKbps = 2000;
   // Pacing-rate relative to our target send rate.
@@ -142,7 +146,10 @@ class PacedSender : public Module, public RtpPacketSender {
       GUARDED_BY(critsect_);
 
   rtc::scoped_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
+  // Actual configured bitrates (media_budget_ may temporarily be higher in
+  // order to meet pace time constraint).
   int bitrate_bps_ GUARDED_BY(critsect_);
+  int max_bitrate_kbps_ GUARDED_BY(critsect_);
 
   int64_t time_last_update_us_ GUARDED_BY(critsect_);
 

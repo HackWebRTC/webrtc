@@ -560,6 +560,9 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, capture_time_ms, false))
       .Times(3)
       .WillRepeatedly(Return(true));
+  EXPECT_CALL(callback_, TimeToSendPacket(_, _, second_capture_time_ms, false))
+      .Times(1)
+      .WillRepeatedly(Return(true));
   send_bucket_->Resume();
 
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
@@ -567,13 +570,6 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
 
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, second_capture_time_ms, false))
-      .Times(1)
-      .WillRepeatedly(Return(true));
-  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  clock_.AdvanceTimeMilliseconds(5);
-  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  EXPECT_EQ(0, send_bucket_->Process());
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
@@ -664,10 +660,9 @@ TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
 
   EXPECT_EQ(0, send_bucket_->ExpectedQueueTimeMs());
 
-  // Allow for aliasing, duration should be in [expected(n - 1), expected(n)].
-  EXPECT_LE(duration, queue_in_ms);
-  EXPECT_GE(duration,
-            queue_in_ms - static_cast<int64_t>(kPacketSize * 8 / kMaxBitrate));
+  // Allow for aliasing, duration should be within one pack of max time limit.
+  EXPECT_NEAR(duration, PacedSender::kMaxQueueLengthMs,
+              static_cast<int64_t>(kPacketSize * 8 / kMaxBitrate));
 }
 
 TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
