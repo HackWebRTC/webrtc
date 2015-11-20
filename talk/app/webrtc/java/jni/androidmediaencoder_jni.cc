@@ -29,13 +29,14 @@
 #include "talk/app/webrtc/java/jni/androidmediaencoder_jni.h"
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
 #include "talk/app/webrtc/java/jni/androidmediacodeccommon.h"
+#include "talk/app/webrtc/java/jni/native_handle_impl.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
@@ -82,7 +83,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
  public:
   virtual ~MediaCodecVideoEncoder();
   MediaCodecVideoEncoder(JNIEnv* jni,
-                         VideoCodecType codecType);
+                         VideoCodecType codecType,
+                         jobject egl_context);
 
   // webrtc::VideoEncoder implementation.  Everything trampolines to
   // |codec_thread_| for execution.
@@ -106,6 +108,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
 
   int GetTargetFramerate() override;
 
+  bool SupportsNativeHandle() const override { return true; }
+
  private:
   // ResetCodecOnCodecThread() calls ReleaseOnCodecThread() and
   // InitEncodeOnCodecThread() in an attempt to restore the codec to an
@@ -118,15 +122,19 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // If width==0 then this is assumed to be a re-initialization and the
   // previously-current values are reused instead of the passed parameters
   // (makes it easier to reason about thread-safety).
-  int32_t InitEncodeOnCodecThread(int width, int height, int kbps, int fps);
-  // Reconfigure to match |frame| in width, height. Returns false if
-  // reconfiguring fails.
+  int32_t InitEncodeOnCodecThread(int width, int height, int kbps, int fps,
+      bool use_surface);
+  // Reconfigure to match |frame| in width, height. Also reconfigures the
+  // encoder if |frame| is a texture/byte buffer and the encoder is initialized
+  // for byte buffer/texture. Returns false if reconfiguring fails.
   bool MaybeReconfigureEncoderOnCodecThread(const webrtc::VideoFrame& frame);
   int32_t EncodeOnCodecThread(
       const webrtc::VideoFrame& input_image,
       const std::vector<webrtc::FrameType>* frame_types);
   bool EncodeByteBufferOnCodecThread(JNIEnv* jni,
       bool key_frame, const webrtc::VideoFrame& frame, int input_buffer_index);
+  bool EncodeTextureOnCodecThread(JNIEnv* jni,
+      bool key_frame, const webrtc::VideoFrame& frame);
 
   int32_t RegisterEncodeCompleteCallbackOnCodecThread(
       webrtc::EncodedImageCallback* callback);
@@ -164,6 +172,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   jmethodID j_get_input_buffers_method_;
   jmethodID j_dequeue_input_buffer_method_;
   jmethodID j_encode_buffer_method_;
+  jmethodID j_encode_texture_method_;
   jmethodID j_release_method_;
   jmethodID j_set_rates_method_;
   jmethodID j_dequeue_output_buffer_method_;
@@ -179,6 +188,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int width_;   // Frame width in pixels.
   int height_;  // Frame height in pixels.
   bool inited_;
+  bool use_surface_;
   uint16_t picture_id_;
   enum libyuv::FourCC encoder_fourcc_;  // Encoder color space format.
   int last_set_bitrate_kbps_;  // Last-requested bitrate in kbps.
@@ -220,6 +230,10 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
                            // non-flexible VP9 mode.
   uint8_t tl0_pic_idx_;
   size_t gof_idx_;
+
+  // EGL context - owned by factory, should not be allocated/destroyed
+  // by MediaCodecVideoEncoder.
+  jobject egl_context_;
 };
 
 MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
@@ -228,10 +242,11 @@ MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
 }
 
 MediaCodecVideoEncoder::MediaCodecVideoEncoder(
-    JNIEnv* jni, VideoCodecType codecType) :
+    JNIEnv* jni, VideoCodecType codecType, jobject egl_context) :
     codecType_(codecType),
     callback_(NULL),
     inited_(false),
+    use_surface_(false),
     picture_id_(0),
     codec_thread_(new Thread()),
     j_media_codec_video_encoder_class_(
@@ -243,7 +258,8 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
                        GetMethodID(jni,
                                    *j_media_codec_video_encoder_class_,
                                    "<init>",
-                                   "()V"))) {
+                                   "()V"))),
+    egl_context_(egl_context) {
   ScopedLocalRefFrame local_ref_frame(jni);
   // It would be nice to avoid spinning up a new thread per MediaCodec, and
   // instead re-use e.g. the PeerConnectionFactory's |worker_thread_|, but bug
@@ -261,7 +277,8 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
       jni,
       *j_media_codec_video_encoder_class_,
       "initEncode",
-      "(Lorg/webrtc/MediaCodecVideoEncoder$VideoCodecType;IIII)Z");
+      "(Lorg/webrtc/MediaCodecVideoEncoder$VideoCodecType;"
+      "IIIILjavax/microedition/khronos/egl/EGLContext;)Z");
   j_get_input_buffers_method_ = GetMethodID(
       jni,
       *j_media_codec_video_encoder_class_,
@@ -271,6 +288,9 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
       jni, *j_media_codec_video_encoder_class_, "dequeueInputBuffer", "()I");
   j_encode_buffer_method_ = GetMethodID(
       jni, *j_media_codec_video_encoder_class_, "encodeBuffer", "(ZIIJ)Z");
+  j_encode_texture_method_ = GetMethodID(
+        jni, *j_media_codec_video_encoder_class_, "encodeTexture",
+        "(ZI[FJ)Z");
   j_release_method_ =
       GetMethodID(jni, *j_media_codec_video_encoder_class_, "release", "()V");
   j_set_rates_method_ = GetMethodID(
@@ -351,7 +371,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(
            codec_settings->width,
            codec_settings->height,
            codec_settings->startBitrate,
-           codec_settings->maxFramerate));
+           codec_settings->maxFramerate,
+           false /* use_surface */));
 }
 
 int32_t MediaCodecVideoEncoder::Encode(
@@ -417,8 +438,8 @@ bool MediaCodecVideoEncoder::ResetCodecOnCodecThread() {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   ALOGE << "ResetOnCodecThread";
   if (ReleaseOnCodecThread() != WEBRTC_VIDEO_CODEC_OK ||
-      InitEncodeOnCodecThread(width_, height_, 0, 0)
-          != WEBRTC_VIDEO_CODEC_OK) {
+      InitEncodeOnCodecThread(width_, height_, 0, 0, false) !=
+          WEBRTC_VIDEO_CODEC_OK) {
     // TODO(fischman): wouldn't it be nice if there was a way to gracefully
     // degrade to a SW encoder at this point?  There isn't one AFAICT :(
     // https://code.google.com/p/webrtc/issues/detail?id=2920
@@ -428,8 +449,9 @@ bool MediaCodecVideoEncoder::ResetCodecOnCodecThread() {
 }
 
 int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
-    int width, int height, int kbps, int fps) {
+    int width, int height, int kbps, int fps, bool use_surface) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+  RTC_CHECK(!use_surface || egl_context_ != nullptr) << "EGL context not set.";
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
@@ -465,6 +487,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   render_times_ms_.clear();
   frame_rtc_times_ms_.clear();
   drop_next_input_frame_ = false;
+  use_surface_ = use_surface;
   picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
   gof_.SetGofInfoVP9(webrtc::TemporalStructureMode::kTemporalStructureMode1);
   tl0_pic_idx_ = static_cast<uint8_t>(rand());
@@ -475,49 +498,52 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
       jni, "MediaCodecVideoEncoder$VideoCodecType", codecType_);
   const bool encode_status = jni->CallBooleanMethod(
       *j_media_codec_video_encoder_, j_init_encode_method_,
-      j_video_codec_enum, width, height, kbps, fps);
+      j_video_codec_enum, width, height, kbps, fps,
+      (use_surface ? egl_context_ : nullptr));
   if (!encode_status) {
     ALOGE << "Failed to configure encoder.";
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   CHECK_EXCEPTION(jni);
 
-  jobjectArray input_buffers = reinterpret_cast<jobjectArray>(
-      jni->CallObjectMethod(*j_media_codec_video_encoder_,
-          j_get_input_buffers_method_));
-  CHECK_EXCEPTION(jni);
-  if (IsNull(jni, input_buffers)) {
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-
-  switch (GetIntField(jni, *j_media_codec_video_encoder_,
-      j_color_format_field_)) {
-    case COLOR_FormatYUV420Planar:
-      encoder_fourcc_ = libyuv::FOURCC_YU12;
-      break;
-    case COLOR_FormatYUV420SemiPlanar:
-    case COLOR_QCOM_FormatYUV420SemiPlanar:
-    case COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m:
-      encoder_fourcc_ = libyuv::FOURCC_NV12;
-      break;
-    default:
-      LOG(LS_ERROR) << "Wrong color format.";
-      return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-  size_t num_input_buffers = jni->GetArrayLength(input_buffers);
-  RTC_CHECK(input_buffers_.empty())
-      << "Unexpected double InitEncode without Release";
-  input_buffers_.resize(num_input_buffers);
-  for (size_t i = 0; i < num_input_buffers; ++i) {
-    input_buffers_[i] =
-        jni->NewGlobalRef(jni->GetObjectArrayElement(input_buffers, i));
-    int64_t yuv_buffer_capacity =
-        jni->GetDirectBufferCapacity(input_buffers_[i]);
+  if (use_surface) {
+    scale_ = false; // TODO(perkj): Implement scaling when using textures.
+  } else {
+    jobjectArray input_buffers = reinterpret_cast<jobjectArray>(
+        jni->CallObjectMethod(*j_media_codec_video_encoder_,
+            j_get_input_buffers_method_));
     CHECK_EXCEPTION(jni);
-    RTC_CHECK(yuv_buffer_capacity >= yuv_size_) << "Insufficient capacity";
-  }
-  CHECK_EXCEPTION(jni);
+    if (IsNull(jni, input_buffers)) {
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
 
+    switch (GetIntField(jni, *j_media_codec_video_encoder_,
+        j_color_format_field_)) {
+      case COLOR_FormatYUV420Planar:
+        encoder_fourcc_ = libyuv::FOURCC_YU12;
+        break;
+      case COLOR_FormatYUV420SemiPlanar:
+      case COLOR_QCOM_FormatYUV420SemiPlanar:
+      case COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m:
+        encoder_fourcc_ = libyuv::FOURCC_NV12;
+        break;
+      default:
+        LOG(LS_ERROR) << "Wrong color format.";
+        return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+    size_t num_input_buffers = jni->GetArrayLength(input_buffers);
+    RTC_CHECK(input_buffers_.empty())
+        << "Unexpected double InitEncode without Release";
+    input_buffers_.resize(num_input_buffers);
+    for (size_t i = 0; i < num_input_buffers; ++i) {
+      input_buffers_[i] =
+          jni->NewGlobalRef(jni->GetObjectArrayElement(input_buffers, i));
+      int64_t yuv_buffer_capacity =
+          jni->GetDirectBufferCapacity(input_buffers_[i]);
+      CHECK_EXCEPTION(jni);
+      RTC_CHECK(yuv_buffer_capacity >= yuv_size_) << "Insufficient capacity";
+    }
+  }
 
   inited_ = true;
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
@@ -575,18 +601,32 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     }
   }
 
-  int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_encoder_,
-      j_dequeue_input_buffer_method_);
-  CHECK_EXCEPTION(jni);
-  if (j_input_buffer_index == -1) {
-    // Video codec falls behind - no input buffer available.
-    ALOGW << "Encoder drop frame - no input buffers available";
-    frames_dropped_++;
-    // Report dropped frame to quality_scaler_.
-    OnDroppedFrame();
-    return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
+  const bool key_frame = frame_types->front() != webrtc::kVideoFrameDelta;
+  bool encode_status = true;
+  if (!input_frame.native_handle()) {
+    int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_encoder_,
+        j_dequeue_input_buffer_method_);
+    CHECK_EXCEPTION(jni);
+    if (j_input_buffer_index == -1) {
+      // Video codec falls behind - no input buffer available.
+      ALOGW << "Encoder drop frame - no input buffers available";
+      frames_dropped_++;
+      // Report dropped frame to quality_scaler_.
+      OnDroppedFrame();
+      return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
+    }
+    if (j_input_buffer_index == -2) {
+      ResetCodecOnCodecThread();
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+    encode_status = EncodeByteBufferOnCodecThread(jni, key_frame, input_frame,
+        j_input_buffer_index);
+  } else {
+    encode_status = EncodeTextureOnCodecThread(jni, key_frame, input_frame);
   }
-  if (j_input_buffer_index == -2) {
+
+  if (!encode_status) {
+    ALOGE << "Failed encode frame with timestamp: " << input_frame.timestamp();
     ResetCodecOnCodecThread();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -599,15 +639,9 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   timestamps_.push_back(input_frame.timestamp());
   render_times_ms_.push_back(input_frame.render_time_ms());
   frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
-
-  const bool key_frame = frame_types->front() != webrtc::kVideoFrameDelta;
-  const bool encode_status =
-      EncodeByteBufferOnCodecThread(jni, key_frame, input_frame,
-          j_input_buffer_index);
-
   current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
 
-  if (!encode_status || !DeliverPendingOutputs(jni)) {
+  if (!DeliverPendingOutputs(jni)) {
     ALOGE << "Failed deliver pending outputs.";
     ResetCodecOnCodecThread();
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -619,9 +653,17 @@ bool MediaCodecVideoEncoder::MaybeReconfigureEncoderOnCodecThread(
     const webrtc::VideoFrame& frame) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
 
+  const bool is_texture_frame = frame.native_handle() != nullptr;
+  const bool reconfigure_due_to_format = is_texture_frame != use_surface_;
   const bool reconfigure_due_to_size =
       frame.width() != width_ || frame.height() != height_;
 
+  if (reconfigure_due_to_format) {
+      ALOGD << "Reconfigure encoder due to format change. "
+            << (use_surface_ ?
+                "Reconfiguring to encode from byte buffer." :
+                "Reconfiguring to encode from texture.");
+  }
   if (reconfigure_due_to_size) {
     ALOGD << "Reconfigure encoder due to frame resolution change from "
         << width_ << " x " << height_ << " to " << frame.width() << " x "
@@ -630,18 +672,19 @@ bool MediaCodecVideoEncoder::MaybeReconfigureEncoderOnCodecThread(
     height_ = frame.height();
   }
 
-  if (!reconfigure_due_to_size)
+  if (!reconfigure_due_to_format && !reconfigure_due_to_size)
     return true;
 
   ReleaseOnCodecThread();
 
-  return InitEncodeOnCodecThread(width_, height_, 0, 0) ==
+  return InitEncodeOnCodecThread(width_, height_, 0, 0 , is_texture_frame) ==
       WEBRTC_VIDEO_CODEC_OK;
 }
 
 bool MediaCodecVideoEncoder::EncodeByteBufferOnCodecThread(JNIEnv* jni,
     bool key_frame, const webrtc::VideoFrame& frame, int input_buffer_index) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+  RTC_CHECK(!use_surface_);
 
   ALOGV("Encoder frame in # %d. TS: %lld. Q: %d",
       frames_received_ - 1, current_timestamp_us_ / 1000, frames_in_queue_);
@@ -663,6 +706,25 @@ bool MediaCodecVideoEncoder::EncodeByteBufferOnCodecThread(JNIEnv* jni,
                                               key_frame,
                                               input_buffer_index,
                                               yuv_size_,
+                                              current_timestamp_us_);
+  CHECK_EXCEPTION(jni);
+  return encode_status;
+}
+
+bool MediaCodecVideoEncoder::EncodeTextureOnCodecThread(JNIEnv* jni,
+    bool key_frame, const webrtc::VideoFrame& frame) {
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+  RTC_CHECK(use_surface_);
+  NativeHandleImpl* handle =
+      static_cast<NativeHandleImpl*>(frame.native_handle());
+  jfloatArray sampling_matrix = jni->NewFloatArray(16);
+  jni->SetFloatArrayRegion(sampling_matrix, 0, 16, handle->sampling_matrix);
+
+  bool encode_status = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
+                                              j_encode_texture_method_,
+                                              key_frame,
+                                              handle->oes_texture_id,
+                                              sampling_matrix,
                                               current_timestamp_us_);
   CHECK_EXCEPTION(jni);
   return encode_status;
@@ -694,6 +756,7 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
   CHECK_EXCEPTION(jni);
   rtc::MessageQueueManager::Clear(this);
   inited_ = false;
+  use_surface_ = false;
   ALOGD << "EncoderReleaseOnCodecThread done.";
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -991,7 +1054,8 @@ int MediaCodecVideoEncoder::GetTargetFramerate() {
   return scale_ ? quality_scaler_.GetTargetFramerate() : -1;
 }
 
-MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
+MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
+  : egl_context_ (nullptr) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   jclass j_encoder_class = FindClass(jni, "org/webrtc/MediaCodecVideoEncoder");
@@ -1030,6 +1094,33 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
 
 MediaCodecVideoEncoderFactory::~MediaCodecVideoEncoderFactory() {}
 
+void MediaCodecVideoEncoderFactory::SetEGLContext(
+    JNIEnv* jni, jobject render_egl_context) {
+  ALOGD << "MediaCodecVideoEncoderFactory::SetEGLContext";
+  if (egl_context_) {
+    jni->DeleteGlobalRef(egl_context_);
+    egl_context_ = NULL;
+  }
+  if (!IsNull(jni, render_egl_context)) {
+    egl_context_ = jni->NewGlobalRef(render_egl_context);
+    if (CheckException(jni)) {
+      ALOGE << "error calling NewGlobalRef for EGL Context.";
+      egl_context_ = NULL;
+    } else {
+      jclass j_egl_context_class =
+          FindClass(jni, "javax/microedition/khronos/egl/EGLContext");
+      if (!jni->IsInstanceOf(egl_context_, j_egl_context_class)) {
+        ALOGE << "Wrong EGL Context.";
+        jni->DeleteGlobalRef(egl_context_);
+        egl_context_ = NULL;
+      }
+    }
+  }
+  if (egl_context_ == NULL) {
+    ALOGW << "NULL VideoDecoder EGL context - HW surface encoding is disabled.";
+  }
+}
+
 webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
     VideoCodecType type) {
   if (supported_codecs_.empty()) {
@@ -1041,7 +1132,8 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
     if (it->type == type) {
       ALOGD << "Create HW video encoder for type " << (int)type <<
           " (" << it->name << ").";
-      return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), type);
+      return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), type,
+          egl_context_);
     }
   }
   ALOGW << "Can not find HW video encoder for type " << (int)type;

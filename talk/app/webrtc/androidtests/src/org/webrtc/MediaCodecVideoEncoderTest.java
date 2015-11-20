@@ -26,19 +26,26 @@
  */
 package org.webrtc;
 
-import java.nio.ByteBuffer;
-
+import android.annotation.TargetApi;
+import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
+import android.os.Build;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 
 import org.webrtc.MediaCodecVideoEncoder.OutputBufferInfo;
 
+import java.nio.ByteBuffer;
+
+import javax.microedition.khronos.egl.EGL10;
+
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
   final static String TAG = "MediaCodecVideoEncoderTest";
 
   @SmallTest
-  public static void testInitReleaseUsingByteBuffer() {
+  public static void testInitializeUsingByteBuffer() {
     if (!MediaCodecVideoEncoder.isVp8HwSupported()) {
       Log.i(TAG,
             "Hardware does not support VP8 encoding, skipping testInitReleaseUsingByteBuffer");
@@ -46,7 +53,37 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     }
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
     assertTrue(encoder.initEncode(
-        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30));
+        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30, null));
+    encoder.release();
+  }
+
+  @SmallTest
+  public static void testInitilizeUsingTextures() {
+    if (!MediaCodecVideoEncoder.isVp8HwSupportedUsingTextures()) {
+      Log.i(TAG, "hardware does not support VP8 encoding, skipping testEncoderUsingTextures");
+      return;
+    }
+    MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
+    assertTrue(encoder.initEncode(
+        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
+        EGL10.EGL_NO_CONTEXT));
+    encoder.release();
+  }
+
+  @SmallTest
+  public static void testInitializeUsingByteBufferReInitilizeUsingTextures() {
+    if (!MediaCodecVideoEncoder.isVp8HwSupportedUsingTextures()) {
+      Log.i(TAG, "hardware does not support VP8 encoding, skipping testEncoderUsingTextures");
+      return;
+    }
+    MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
+    assertTrue(encoder.initEncode(
+        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
+        null));
+    encoder.release();
+    assertTrue(encoder.initEncode(
+        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
+        EGL10.EGL_NO_CONTEXT));
     encoder.release();
   }
 
@@ -65,7 +102,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
 
     assertTrue(encoder.initEncode(
-        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, width, height, 300, 30));
+        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, width, height, 300, 30, null));
     ByteBuffer[] inputBuffers = encoder.getInputBuffers();
     assertNotNull(inputBuffers);
     assertTrue(min_size <= inputBuffers[0].capacity());
@@ -91,5 +128,50 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     encoder.releaseOutputBuffer(info.index);
 
     encoder.release();
+  }
+
+  @SmallTest
+  public static void testEncoderUsingTextures() throws InterruptedException {
+    if (!MediaCodecVideoEncoder.isVp8HwSupportedUsingTextures()) {
+      Log.i(TAG, "Hardware does not support VP8 encoding, skipping testEncoderUsingTextures");
+      return;
+    }
+
+    final int width = 640;
+    final int height = 480;
+    final long presentationTs = 2;
+
+    final EglBase eglOesBase = new EglBase(EGL10.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    eglOesBase.createDummyPbufferSurface();
+    eglOesBase.makeCurrent();
+    int oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+
+    // TODO(perkj): This test is week since we don't fill the texture with valid data with correct
+    // width and height and verify the encoded data. Fill the OES texture and figure out a way to
+    // verify that the output make sense.
+
+    MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
+
+    assertTrue(encoder.initEncode(
+        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, width, height, 300, 30,
+        eglOesBase.getContext()));
+    assertTrue(encoder.encodeTexture(true, oesTextureId, RendererCommon.identityMatrix(),
+        presentationTs));
+    GlUtil.checkNoGLES2Error("encodeTexture");
+
+    // It should be Ok to delete the texture after calling encodeTexture.
+    GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
+
+    OutputBufferInfo info = encoder.dequeueOutputBuffer();
+    while (info == null) {
+      info = encoder.dequeueOutputBuffer();
+      Thread.sleep(20);
+    }
+    assertTrue(info.index != -1);
+    assertTrue(info.buffer.capacity() > 0);
+    encoder.releaseOutputBuffer(info.index);
+
+    encoder.release();
+    eglOesBase.release();
   }
 }

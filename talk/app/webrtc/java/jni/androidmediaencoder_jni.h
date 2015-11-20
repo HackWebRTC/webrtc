@@ -43,6 +43,8 @@ class MediaCodecVideoEncoderFactory
   MediaCodecVideoEncoderFactory();
   virtual ~MediaCodecVideoEncoderFactory();
 
+  void SetEGLContext(JNIEnv* jni, jobject render_egl_context);
+
   // WebRtcVideoEncoderFactory implementation.
   webrtc::VideoEncoder* CreateVideoEncoder(webrtc::VideoCodecType type)
       override;
@@ -50,6 +52,7 @@ class MediaCodecVideoEncoderFactory
   void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
 
  private:
+  jobject egl_context_;
   // Empty if platform support is lacking, const after ctor returns.
   std::vector<VideoCodec> supported_codecs_;
 };

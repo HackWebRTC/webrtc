@@ -33,8 +33,10 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
+import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Surface;
 
 import org.webrtc.Logging;
 
@@ -42,6 +44,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+
+import javax.microedition.khronos.egl.EGLContext;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
 // This class is an implementation detail of the Java PeerConnection API.
@@ -73,6 +77,9 @@ public class MediaCodecVideoEncoder {
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
+  private EglBase eglBase;
+  private Surface inputSurface;
+  private GlRectDrawer drawer;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
   private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
   private static final String H264_MIME_TYPE = "video/avc";
@@ -109,6 +116,9 @@ public class MediaCodecVideoEncoder {
     CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
     COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m
   };
+  private static final int[] supportedSurfaceColorList = {
+    CodecCapabilities.COLOR_FormatSurface
+  };
   private VideoCodecType type;
   private int colorFormat;  // Used by native code.
 
@@ -138,7 +148,7 @@ public class MediaCodecVideoEncoder {
   }
 
   private static EncoderProperties findHwEncoder(
-      String mime, String[] supportedHwCodecPrefixes) {
+      String mime, String[] supportedHwCodecPrefixes, int[] colorList) {
     // MediaCodec.setParameters is missing for JB and below, so bitrate
     // can not be adjusted dynamically.
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -188,8 +198,7 @@ public class MediaCodecVideoEncoder {
         Logging.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
       }
 
-      // Check if codec supports either yuv420 or nv12.
-      for (int supportedColorFormat : supportedColorList) {
+      for (int supportedColorFormat : colorList) {
         for (int codecColorFormat : capabilities.colorFormats) {
           if (codecColorFormat == supportedColorFormat) {
             // Found supported HW encoder.
@@ -204,14 +213,30 @@ public class MediaCodecVideoEncoder {
   }
 
   public static boolean isVp8HwSupported() {
-    return findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null;
+    return findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes, supportedColorList) != null;
   }
 
   public static boolean isVp9HwSupported() {
-    return findHwEncoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes) != null;
+    return findHwEncoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes, supportedColorList) != null;
   }
+
   public static boolean isH264HwSupported() {
-    return findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null;
+    return findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes, supportedColorList) != null;
+  }
+
+  public static boolean isVp8HwSupportedUsingTextures() {
+    return findHwEncoder(
+        VP8_MIME_TYPE, supportedVp8HwCodecPrefixes, supportedSurfaceColorList) != null;
+  }
+
+  public static boolean isVp9HwSupportedUsingTextures() {
+    return findHwEncoder(
+        VP9_MIME_TYPE, supportedVp9HwCodecPrefixes, supportedSurfaceColorList) != null;
+  }
+
+  public static boolean isH264HwSupportedUsingTextures() {
+    return findHwEncoder(
+        H264_MIME_TYPE, supportedH264HwCodecPrefixes, supportedSurfaceColorList) != null;
   }
 
   private void checkOnMediaCodecThread() {
@@ -244,10 +269,11 @@ public class MediaCodecVideoEncoder {
     }
   }
 
-  // Returns false if the hardware encoder currently can't be used.
-  boolean initEncode(VideoCodecType type, int width, int height, int kbps, int fps) {
+  boolean initEncode(VideoCodecType type, int width, int height, int kbps, int fps,
+      EGLContext sharedContext) {
+    final boolean useSurface = sharedContext != null;
     Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
-        ". @ " + kbps + " kbps. Fps: " + fps + ".");
+        ". @ " + kbps + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
 
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
@@ -257,15 +283,18 @@ public class MediaCodecVideoEncoder {
     int keyFrameIntervalSec = 0;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
-      properties = findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes);
+      properties = findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes,
+          useSurface ? supportedSurfaceColorList : supportedColorList);
       keyFrameIntervalSec = 100;
     } else if (type == VideoCodecType.VIDEO_CODEC_VP9) {
       mime = VP9_MIME_TYPE;
-      properties = findHwEncoder(VP9_MIME_TYPE, supportedH264HwCodecPrefixes);
+      properties = findHwEncoder(VP9_MIME_TYPE, supportedH264HwCodecPrefixes,
+          useSurface ? supportedSurfaceColorList : supportedColorList);
       keyFrameIntervalSec = 100;
     } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
       mime = H264_MIME_TYPE;
-      properties = findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes);
+      properties = findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes,
+          useSurface ? supportedSurfaceColorList : supportedColorList);
       keyFrameIntervalSec = 20;
     }
     if (properties == null) {
@@ -293,6 +322,13 @@ public class MediaCodecVideoEncoder {
       mediaCodec.configure(
           format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
+      if (useSurface) {
+        eglBase = new EglBase(sharedContext, EglBase.ConfigType.RECORDABLE);
+        // Create an input surface and keep a reference since we must release the surface when done.
+        inputSurface = mediaCodec.createInputSurface();
+        eglBase.createSurface(inputSurface);
+        drawer = new GlRectDrawer();
+      }
       mediaCodec.start();
       outputBuffers = mediaCodec.getOutputBuffers();
       Logging.d(TAG, "Output buffers: " + outputBuffers.length);
@@ -335,6 +371,29 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  boolean encodeTexture(boolean isKeyframe, int oesTextureId, float[] transformationMatrix,
+      long presentationTimestampUs) {
+    checkOnMediaCodecThread();
+    try {
+      if (isKeyframe) {
+        Logging.d(TAG, "Sync frame request");
+        Bundle b = new Bundle();
+        b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+        mediaCodec.setParameters(b);
+      }
+      eglBase.makeCurrent();
+      drawer.drawOes(oesTextureId, transformationMatrix);
+      // TODO(perkj): Do we have to call EGLExt.eglPresentationTimeANDROID ?
+      // If not, remove |presentationTimestampUs|.
+      eglBase.swapBuffers();
+      return true;
+    }
+    catch (RuntimeException e) {
+      Logging.e(TAG, "encodeTexture failed", e);
+      return false;
+    }
+  }
+
   void release() {
     Logging.d(TAG, "Java releaseEncoder");
     checkOnMediaCodecThread();
@@ -370,6 +429,18 @@ public class MediaCodecVideoEncoder {
 
     mediaCodec = null;
     mediaCodecThread = null;
+    if (drawer != null) {
+      drawer.release();
+      drawer = null;
+    }
+    if (eglBase != null) {
+      eglBase.release();
+      eglBase = null;
+    }
+    if (inputSurface != null) {
+      inputSurface.release();
+      inputSurface = null;
+    }
     runningInstance = null;
     Logging.d(TAG, "Java releaseEncoder done");
   }

@@ -1292,20 +1292,29 @@ JOW(void, PeerConnectionFactory_nativeSetOptions)(
 }
 
 JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
-    JNIEnv* jni, jclass, jlong native_factory, jobject render_egl_context) {
+    JNIEnv* jni, jclass, jlong native_factory, jobject local_egl_context,
+    jobject remote_egl_context) {
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   OwnedFactoryAndThreads* owned_factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
+
+  MediaCodecVideoEncoderFactory* encoder_factory =
+      static_cast<MediaCodecVideoEncoderFactory*>
+          (owned_factory->encoder_factory());
+  if (encoder_factory) {
+    LOG(LS_INFO) << "Set EGL context for HW encoding.";
+    encoder_factory->SetEGLContext(jni, local_egl_context);
+  }
+
   MediaCodecVideoDecoderFactory* decoder_factory =
       static_cast<MediaCodecVideoDecoderFactory*>
           (owned_factory->decoder_factory());
   if (decoder_factory) {
-    LOG(LS_INFO) << "Set EGL context for HW acceleration.";
-    decoder_factory->SetEGLContext(jni, render_egl_context);
+    LOG(LS_INFO) << "Set EGL context for HW decoding.";
+    decoder_factory->SetEGLContext(jni, remote_egl_context);
   }
 #endif
 }
-
 
 static std::string
 GetJavaEnumName(JNIEnv* jni, const std::string& className, jobject j_enum) {
