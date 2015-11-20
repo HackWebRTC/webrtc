@@ -29,6 +29,7 @@
 
 #include "talk/app/webrtc/localaudiosource.h"
 #include "talk/app/webrtc/videosourceinterface.h"
+#include "webrtc/base/helpers.h"
 
 namespace webrtc {
 
@@ -59,34 +60,49 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioRenderer::Sink* sink) {
 }
 
 AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
-                               uint32_t ssrc,
-                               AudioProviderInterface* provider)
+                               const std::string& stream_id,
+                               AudioProviderInterface* provider,
+                               StatsCollector* stats)
     : id_(track->id()),
-      track_(track),
-      ssrc_(ssrc),
+      stream_id_(stream_id),
       provider_(provider),
+      stats_(stats),
+      track_(track),
       cached_track_enabled_(track->enabled()),
       sink_adapter_(new LocalAudioSinkAdapter()) {
+  RTC_DCHECK(provider != nullptr);
   track_->RegisterObserver(this);
   track_->AddSink(sink_adapter_.get());
-  Reconfigure();
 }
 
+AudioRtpSender::AudioRtpSender(AudioProviderInterface* provider,
+                               StatsCollector* stats)
+    : id_(rtc::CreateRandomUuid()),
+      stream_id_(rtc::CreateRandomUuid()),
+      provider_(provider),
+      stats_(stats),
+      sink_adapter_(new LocalAudioSinkAdapter()) {}
+
 AudioRtpSender::~AudioRtpSender() {
-  track_->RemoveSink(sink_adapter_.get());
-  track_->UnregisterObserver(this);
   Stop();
 }
 
 void AudioRtpSender::OnChanged() {
+  RTC_DCHECK(!stopped_);
   if (cached_track_enabled_ != track_->enabled()) {
     cached_track_enabled_ = track_->enabled();
-    Reconfigure();
+    if (can_send_track()) {
+      SetAudioSend();
+    }
   }
 }
 
 bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
-  if (track->kind() != "audio") {
+  if (stopped_) {
+    LOG(LS_ERROR) << "SetTrack can't be called on a stopped RtpSender.";
+    return false;
+  }
+  if (track && track->kind() != MediaStreamTrackInterface::kAudioKind) {
     LOG(LS_ERROR) << "SetTrack called on audio RtpSender with " << track->kind()
                   << " track.";
     return false;
@@ -94,36 +110,83 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   AudioTrackInterface* audio_track = static_cast<AudioTrackInterface*>(track);
 
   // Detach from old track.
-  track_->RemoveSink(sink_adapter_.get());
-  track_->UnregisterObserver(this);
+  if (track_) {
+    track_->RemoveSink(sink_adapter_.get());
+    track_->UnregisterObserver(this);
+  }
+
+  if (can_send_track() && stats_) {
+    stats_->RemoveLocalAudioTrack(track_.get(), ssrc_);
+  }
 
   // Attach to new track.
+  bool prev_can_send_track = can_send_track();
   track_ = audio_track;
-  cached_track_enabled_ = track_->enabled();
-  track_->RegisterObserver(this);
-  track_->AddSink(sink_adapter_.get());
-  Reconfigure();
+  if (track_) {
+    cached_track_enabled_ = track_->enabled();
+    track_->RegisterObserver(this);
+    track_->AddSink(sink_adapter_.get());
+  }
+
+  // Update audio provider.
+  if (can_send_track()) {
+    SetAudioSend();
+    if (stats_) {
+      stats_->AddLocalAudioTrack(track_.get(), ssrc_);
+    }
+  } else if (prev_can_send_track) {
+    cricket::AudioOptions options;
+    provider_->SetAudioSend(ssrc_, false, options, nullptr);
+  }
   return true;
+}
+
+void AudioRtpSender::SetSsrc(uint32_t ssrc) {
+  if (stopped_ || ssrc == ssrc_) {
+    return;
+  }
+  // If we are already sending with a particular SSRC, stop sending.
+  if (can_send_track()) {
+    cricket::AudioOptions options;
+    provider_->SetAudioSend(ssrc_, false, options, nullptr);
+    if (stats_) {
+      stats_->RemoveLocalAudioTrack(track_.get(), ssrc_);
+    }
+  }
+  ssrc_ = ssrc;
+  if (can_send_track()) {
+    SetAudioSend();
+    if (stats_) {
+      stats_->AddLocalAudioTrack(track_.get(), ssrc_);
+    }
+  }
 }
 
 void AudioRtpSender::Stop() {
   // TODO(deadbeef): Need to do more here to fully stop sending packets.
-  if (!provider_) {
+  if (stopped_) {
     return;
   }
-  cricket::AudioOptions options;
-  provider_->SetAudioSend(ssrc_, false, options, nullptr);
-  provider_ = nullptr;
+  if (track_) {
+    track_->RemoveSink(sink_adapter_.get());
+    track_->UnregisterObserver(this);
+  }
+  if (can_send_track()) {
+    cricket::AudioOptions options;
+    provider_->SetAudioSend(ssrc_, false, options, nullptr);
+    if (stats_) {
+      stats_->RemoveLocalAudioTrack(track_.get(), ssrc_);
+    }
+  }
+  stopped_ = true;
 }
 
-void AudioRtpSender::Reconfigure() {
-  if (!provider_) {
-    return;
-  }
+void AudioRtpSender::SetAudioSend() {
+  RTC_DCHECK(!stopped_ && can_send_track());
   cricket::AudioOptions options;
   if (track_->enabled() && track_->GetSource()) {
     // TODO(xians): Remove this static_cast since we should be able to connect
-    // a remote audio track to peer connection.
+    // a remote audio track to a peer connection.
     options = static_cast<LocalAudioSource*>(track_->GetSource())->options();
   }
 
@@ -136,35 +199,42 @@ void AudioRtpSender::Reconfigure() {
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
-                               uint32_t ssrc,
+                               const std::string& stream_id,
                                VideoProviderInterface* provider)
     : id_(track->id()),
-      track_(track),
-      ssrc_(ssrc),
+      stream_id_(stream_id),
       provider_(provider),
+      track_(track),
       cached_track_enabled_(track->enabled()) {
+  RTC_DCHECK(provider != nullptr);
   track_->RegisterObserver(this);
-  VideoSourceInterface* source = track_->GetSource();
-  if (source) {
-    provider_->SetCaptureDevice(ssrc_, source->GetVideoCapturer());
-  }
-  Reconfigure();
 }
 
+VideoRtpSender::VideoRtpSender(VideoProviderInterface* provider)
+    : id_(rtc::CreateRandomUuid()),
+      stream_id_(rtc::CreateRandomUuid()),
+      provider_(provider) {}
+
 VideoRtpSender::~VideoRtpSender() {
-  track_->UnregisterObserver(this);
   Stop();
 }
 
 void VideoRtpSender::OnChanged() {
+  RTC_DCHECK(!stopped_);
   if (cached_track_enabled_ != track_->enabled()) {
     cached_track_enabled_ = track_->enabled();
-    Reconfigure();
+    if (can_send_track()) {
+      SetVideoSend();
+    }
   }
 }
 
 bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
-  if (track->kind() != "video") {
+  if (stopped_) {
+    LOG(LS_ERROR) << "SetTrack can't be called on a stopped RtpSender.";
+    return false;
+  }
+  if (track && track->kind() != MediaStreamTrackInterface::kVideoKind) {
     LOG(LS_ERROR) << "SetTrack called on video RtpSender with " << track->kind()
                   << " track.";
     return false;
@@ -172,30 +242,72 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   VideoTrackInterface* video_track = static_cast<VideoTrackInterface*>(track);
 
   // Detach from old track.
-  track_->UnregisterObserver(this);
+  if (track_) {
+    track_->UnregisterObserver(this);
+  }
 
   // Attach to new track.
+  bool prev_can_send_track = can_send_track();
   track_ = video_track;
-  cached_track_enabled_ = track_->enabled();
-  track_->RegisterObserver(this);
-  Reconfigure();
+  if (track_) {
+    cached_track_enabled_ = track_->enabled();
+    track_->RegisterObserver(this);
+  }
+
+  // Update video provider.
+  if (can_send_track()) {
+    VideoSourceInterface* source = track_->GetSource();
+    // TODO(deadbeef): If SetTrack is called with a disabled track, and the
+    // previous track was enabled, this could cause a frame from the new track
+    // to slip out. Really, what we need is for SetCaptureDevice and
+    // SetVideoSend
+    // to be combined into one atomic operation, all the way down to
+    // WebRtcVideoSendStream.
+    provider_->SetCaptureDevice(ssrc_,
+                                source ? source->GetVideoCapturer() : nullptr);
+    SetVideoSend();
+  } else if (prev_can_send_track) {
+    provider_->SetCaptureDevice(ssrc_, nullptr);
+    provider_->SetVideoSend(ssrc_, false, nullptr);
+  }
   return true;
+}
+
+void VideoRtpSender::SetSsrc(uint32_t ssrc) {
+  if (stopped_ || ssrc == ssrc_) {
+    return;
+  }
+  // If we are already sending with a particular SSRC, stop sending.
+  if (can_send_track()) {
+    provider_->SetCaptureDevice(ssrc_, nullptr);
+    provider_->SetVideoSend(ssrc_, false, nullptr);
+  }
+  ssrc_ = ssrc;
+  if (can_send_track()) {
+    VideoSourceInterface* source = track_->GetSource();
+    provider_->SetCaptureDevice(ssrc_,
+                                source ? source->GetVideoCapturer() : nullptr);
+    SetVideoSend();
+  }
 }
 
 void VideoRtpSender::Stop() {
   // TODO(deadbeef): Need to do more here to fully stop sending packets.
-  if (!provider_) {
+  if (stopped_) {
     return;
   }
-  provider_->SetCaptureDevice(ssrc_, nullptr);
-  provider_->SetVideoSend(ssrc_, false, nullptr);
-  provider_ = nullptr;
+  if (track_) {
+    track_->UnregisterObserver(this);
+  }
+  if (can_send_track()) {
+    provider_->SetCaptureDevice(ssrc_, nullptr);
+    provider_->SetVideoSend(ssrc_, false, nullptr);
+  }
+  stopped_ = true;
 }
 
-void VideoRtpSender::Reconfigure() {
-  if (!provider_) {
-    return;
-  }
+void VideoRtpSender::SetVideoSend() {
+  RTC_DCHECK(!stopped_ && can_send_track());
   const cricket::VideoOptions* options = nullptr;
   VideoSourceInterface* source = track_->GetSource();
   if (track_->enabled() && source) {
