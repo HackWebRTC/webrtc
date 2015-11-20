@@ -73,19 +73,35 @@ AudioReceiveStream::AudioReceiveStream(
   RTC_DCHECK(remote_bitrate_estimator_);
   RTC_DCHECK(audio_state_.get());
   RTC_DCHECK(rtp_header_parser_);
-  for (const auto& ext : config.rtp.extensions) {
+
+  const int channel_id = config.voe_channel_id;
+  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
+  int error = rtp->SetLocalSSRC(channel_id, config.rtp.local_ssrc);
+  RTC_DCHECK_EQ(0, error);
+  for (const auto& extension : config.rtp.extensions) {
     // One-byte-extension local identifiers are in the range 1-14 inclusive.
-    RTC_DCHECK_GE(ext.id, 1);
-    RTC_DCHECK_LE(ext.id, 14);
-    if (ext.name == RtpExtension::kAudioLevel) {
-      RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionAudioLevel, ext.id));
-    } else if (ext.name == RtpExtension::kAbsSendTime) {
-      RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionAbsoluteSendTime, ext.id));
-    } else if (ext.name == RtpExtension::kTransportSequenceNumber) {
-      RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionTransportSequenceNumber, ext.id));
+    RTC_DCHECK_GE(extension.id, 1);
+    RTC_DCHECK_LE(extension.id, 14);
+    if (extension.name == RtpExtension::kAudioLevel) {
+      error = rtp->SetReceiveAudioLevelIndicationStatus(channel_id, true,
+                                                        extension.id);
+      RTC_DCHECK_EQ(0, error);
+      bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionAudioLevel, extension.id);
+      RTC_DCHECK(registered);
+    } else if (extension.name == RtpExtension::kAbsSendTime) {
+      error = rtp->SetReceiveAbsoluteSenderTimeStatus(channel_id, true,
+                                                      extension.id);
+      RTC_DCHECK_EQ(0, error);
+      bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionAbsoluteSendTime, extension.id);
+      RTC_DCHECK(registered);
+    } else if (extension.name == RtpExtension::kTransportSequenceNumber) {
+      // TODO(holmer): Need to do something here or in  DeliverRtp() to actually
+      //               handle audio packets with this header extension.
+      bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionTransportSequenceNumber, extension.id);
+      RTC_DCHECK(registered);
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }
@@ -97,18 +113,61 @@ AudioReceiveStream::~AudioReceiveStream() {
   LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
 }
 
+void AudioReceiveStream::Start() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+}
+
+void AudioReceiveStream::Stop() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+}
+
+void AudioReceiveStream::SignalNetworkState(NetworkState state) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+}
+
+bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+  // TODO(solenberg): Tests call this function on a network thread, libjingle
+  // calls on the worker thread. We should move towards always using a network
+  // thread. Then this check can be enabled.
+  // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
+  return false;
+}
+
+bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
+                                    size_t length,
+                                    const PacketTime& packet_time) {
+  // TODO(solenberg): Tests call this function on a network thread, libjingle
+  // calls on the worker thread. We should move towards always using a network
+  // thread. Then this check can be enabled.
+  // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
+  RTPHeader header;
+  if (!rtp_header_parser_->Parse(packet, length, &header)) {
+    return false;
+  }
+
+  // Only forward if the parsed header has absolute sender time. RTP timestamps
+  // may have different rates for audio and video and shouldn't be mixed.
+  if (config_.combined_audio_video_bwe &&
+      header.extension.hasAbsoluteSendTime) {
+    int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
+    if (packet_time.timestamp >= 0)
+      arrival_time_ms = (packet_time.timestamp + 500) / 1000;
+    size_t payload_size = length - header.headerLength;
+    remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
+                                              header, false);
+  }
+  return true;
+}
+
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
-  internal::AudioState* audio_state =
-      static_cast<internal::AudioState*>(audio_state_.get());
-  VoiceEngine* voice_engine = audio_state->voice_engine();
-  ScopedVoEInterface<VoECodec> codec(voice_engine);
-  ScopedVoEInterface<VoENetEqStats> neteq(voice_engine);
-  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine);
-  ScopedVoEInterface<VoEVideoSync> sync(voice_engine);
-  ScopedVoEInterface<VoEVolumeControl> volume(voice_engine);
+  ScopedVoEInterface<VoECodec> codec(voice_engine());
+  ScopedVoEInterface<VoENetEqStats> neteq(voice_engine());
+  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
+  ScopedVoEInterface<VoEVideoSync> sync(voice_engine());
+  ScopedVoEInterface<VoEVolumeControl> volume(voice_engine());
 
   webrtc::CallStatistics call_stats = {0};
   int error = rtp->GetRTCPStatistics(config_.voe_channel_id, call_stats);
@@ -175,50 +234,12 @@ const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {
   return config_;
 }
 
-void AudioReceiveStream::Start() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-}
-
-void AudioReceiveStream::Stop() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-}
-
-void AudioReceiveStream::SignalNetworkState(NetworkState state) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-}
-
-bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  // TODO(solenberg): Tests call this function on a network thread, libjingle
-  // calls on the worker thread. We should move towards always using a network
-  // thread. Then this check can be enabled.
-  // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
-  return false;
-}
-
-bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
-                                    size_t length,
-                                    const PacketTime& packet_time) {
-  // TODO(solenberg): Tests call this function on a network thread, libjingle
-  // calls on the worker thread. We should move towards always using a network
-  // thread. Then this check can be enabled.
-  // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
-  RTPHeader header;
-  if (!rtp_header_parser_->Parse(packet, length, &header)) {
-    return false;
-  }
-
-  // Only forward if the parsed header has absolute sender time. RTP timestamps
-  // may have different rates for audio and video and shouldn't be mixed.
-  if (config_.combined_audio_video_bwe &&
-      header.extension.hasAbsoluteSendTime) {
-    int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
-    if (packet_time.timestamp >= 0)
-      arrival_time_ms = (packet_time.timestamp + 500) / 1000;
-    size_t payload_size = length - header.headerLength;
-    remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
-                                              header, false);
-  }
-  return true;
+VoiceEngine* AudioReceiveStream::voice_engine() const {
+  internal::AudioState* audio_state =
+      static_cast<internal::AudioState*>(audio_state_.get());
+  VoiceEngine* voice_engine = audio_state->voice_engine();
+  RTC_DCHECK(voice_engine);
+  return voice_engine;
 }
 }  // namespace internal
 }  // namespace webrtc

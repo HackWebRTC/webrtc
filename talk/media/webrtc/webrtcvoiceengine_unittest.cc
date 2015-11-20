@@ -144,6 +144,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     return send_stream->GetConfig();
   }
 
+  const webrtc::AudioReceiveStream::Config& GetRecvStreamConfig(uint32_t ssrc) {
+    const auto* recv_stream = call_.GetAudioReceiveStream(ssrc);
+    EXPECT_TRUE(recv_stream);
+    return recv_stream->GetConfig();
+  }
+
   void TestInsertDtmf(uint32_t ssrc, bool caller) {
     EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
     channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
@@ -239,7 +245,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(ext, GetSendStreamConfig(kSsrc1).rtp.extensions[0].name);
     EXPECT_EQ(id, GetSendStreamConfig(kSsrc1).rtp.extensions[0].id);
 
-    // Ensure extension is set properly on new channels.
+    // Ensure extension is set properly on new stream.
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(kSsrc2)));
     EXPECT_NE(call_.GetAudioSendStream(kSsrc1),
@@ -258,42 +264,43 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   void TestSetRecvRtpHeaderExtensions(const std::string& ext) {
     EXPECT_TRUE(SetupEngineWithRecvStream());
-    int channel_num = voe_.GetLastChannel();
 
     // Ensure extensions are off by default.
-    EXPECT_EQ(-1, voe_.GetReceiveRtpExtensionId(channel_num, ext));
+    EXPECT_EQ(0u, GetRecvStreamConfig(kSsrc1).rtp.extensions.size());
 
-    cricket::AudioRecvParameters parameters;
     // Ensure unknown extensions won't cause an error.
-    parameters.extensions.push_back(cricket::RtpHeaderExtension(
+    recv_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
         "urn:ietf:params:unknownextention", 1));
-    EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-    EXPECT_EQ(-1, voe_.GetReceiveRtpExtensionId(channel_num, ext));
+    EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
+    EXPECT_EQ(0u, GetRecvStreamConfig(kSsrc1).rtp.extensions.size());
 
     // Ensure extensions stay off with an empty list of headers.
-    parameters.extensions.clear();
-    EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-    EXPECT_EQ(-1, voe_.GetReceiveRtpExtensionId(channel_num, ext));
+    recv_parameters_.extensions.clear();
+    EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
+    EXPECT_EQ(0u, GetRecvStreamConfig(kSsrc1).rtp.extensions.size());
 
     // Ensure extension is set properly.
     const int id = 2;
-    parameters.extensions.push_back(cricket::RtpHeaderExtension(ext, id));
-    EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-    EXPECT_EQ(id, voe_.GetReceiveRtpExtensionId(channel_num, ext));
+    recv_parameters_.extensions.push_back(cricket::RtpHeaderExtension(ext, id));
+    EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
+    EXPECT_EQ(1u, GetRecvStreamConfig(kSsrc1).rtp.extensions.size());
+    EXPECT_EQ(ext, GetRecvStreamConfig(kSsrc1).rtp.extensions[0].name);
+    EXPECT_EQ(id, GetRecvStreamConfig(kSsrc1).rtp.extensions[0].id);
 
-    // Ensure extension is set properly on new channel.
-    // The first stream to occupy the default channel.
+    // Ensure extension is set properly on new stream.
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrc2)));
-    int new_channel_num = voe_.GetLastChannel();
-    EXPECT_NE(channel_num, new_channel_num);
-    EXPECT_EQ(id, voe_.GetReceiveRtpExtensionId(new_channel_num, ext));
+    EXPECT_NE(call_.GetAudioReceiveStream(kSsrc1),
+              call_.GetAudioReceiveStream(kSsrc2));
+    EXPECT_EQ(1u, GetRecvStreamConfig(kSsrc2).rtp.extensions.size());
+    EXPECT_EQ(ext, GetRecvStreamConfig(kSsrc2).rtp.extensions[0].name);
+    EXPECT_EQ(id, GetRecvStreamConfig(kSsrc2).rtp.extensions[0].id);
 
     // Ensure all extensions go back off with an empty list.
-    parameters.extensions.clear();
-    EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-    EXPECT_EQ(-1, voe_.GetReceiveRtpExtensionId(channel_num, ext));
-    EXPECT_EQ(-1, voe_.GetReceiveRtpExtensionId(new_channel_num, ext));
+    recv_parameters_.extensions.clear();
+    EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
+    EXPECT_EQ(0u, GetRecvStreamConfig(kSsrc1).rtp.extensions.size());
+    EXPECT_EQ(0u, GetRecvStreamConfig(kSsrc2).rtp.extensions.size());
   }
 
   webrtc::AudioSendStream::Stats GetAudioSendStreamStats() const {
@@ -2402,8 +2409,9 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStats) {
 TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrcWithMultipleStreams) {
   EXPECT_TRUE(SetupEngineWithSendStream());
   EXPECT_TRUE(call_.GetAudioSendStream(kSsrc1));
-  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
-  EXPECT_EQ(kSsrc1, voe_.GetLocalSSRC(voe_.GetLastChannel()));
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(kSsrc2)));
+  EXPECT_EQ(kSsrc1, GetRecvStreamConfig(kSsrc2).rtp.local_ssrc);
 }
 
 // Test that the local SSRC is the same on sending and receiving channels if the

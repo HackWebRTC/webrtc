@@ -248,8 +248,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool SetOptions(const AudioOptions& options);
   bool SetMaxSendBandwidth(int bps);
   bool SetRecvCodecs(const std::vector<AudioCodec>& codecs);
-  bool SetRecvRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions);
   bool SetLocalRenderer(uint32_t ssrc, AudioRenderer* renderer);
   bool MuteStream(uint32_t ssrc, bool mute);
 
@@ -260,34 +258,19 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
                        const std::vector<AudioCodec>& all_codecs,
                        webrtc::CodecInst* send_codec);
   bool SetPlayout(int channel, bool playout);
-
-  typedef int (webrtc::VoERTP_RTCP::* ExtensionSetterFunction)(int, bool,
-      unsigned char);
-
   void SetNack(int channel, bool nack_enabled);
   bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
   bool ChangePlayout(bool playout);
   bool ChangeSend(SendFlags send);
   bool ChangeSend(int channel, SendFlags send);
-  bool ConfigureRecvChannel(int channel);
   int CreateVoEChannel();
-  bool DeleteChannel(int channel);
+  bool DeleteVoEChannel(int channel);
   bool IsDefaultRecvStream(uint32_t ssrc) {
     return default_recv_ssrc_ == static_cast<int64_t>(ssrc);
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
   bool SetSendBitrateInternal(int bps);
-
-  bool SetHeaderExtension(ExtensionSetterFunction setter, int channel_id,
-                          const RtpHeaderExtension* extension);
-  void RecreateAudioReceiveStreams();
-  void AddAudioReceiveStream(uint32_t ssrc);
-  void RemoveAudioReceiveStream(uint32_t ssrc);
   bool SetRecvCodecsInternal(const std::vector<AudioCodec>& new_codecs);
-
-  bool SetChannelRecvRtpHeaderExtensions(
-    int channel_id,
-    const std::vector<RtpHeaderExtension>& extensions);
 
   rtc::ThreadChecker worker_thread_checker_;
 
@@ -320,13 +303,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
   class WebRtcAudioReceiveStream;
-  std::map<uint32_t, WebRtcAudioReceiveStream*> receive_channels_;
-  std::map<uint32_t, webrtc::AudioReceiveStream*> receive_streams_;
-  std::map<uint32_t, StreamParams> receive_stream_params_;
-  // receive_channels_ can be read from WebRtc callback thread.  Access from
-  // the WebRtc thread must be synchronized with edits on the worker thread.
-  // Reads on the worker thread are ok.
-  std::vector<RtpHeaderExtension> receive_extensions_;
+  std::map<uint32_t, WebRtcAudioReceiveStream*> recv_streams_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceMediaChannel);

@@ -38,7 +38,8 @@ const int kChannelId = 2;
 const uint32_t kRemoteSsrc = 1234;
 const uint32_t kLocalSsrc = 5678;
 const size_t kAbsoluteSendTimeLength = 4;
-const int kAbsSendTimeId = 3;
+const int kAbsSendTimeId = 2;
+const int kAudioLevelId = 3;
 const int kJitterBufferDelay = -7;
 const int kPlayoutBufferDelay = 302;
 const unsigned int kSpeechOutputLevel = 99;
@@ -59,10 +60,23 @@ struct ConfigHelper {
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
     audio_state_ = AudioState::Create(config);
+
+    EXPECT_CALL(voice_engine_, SetLocalSSRC(kChannelId, kLocalSsrc))
+        .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_,
+        SetReceiveAbsoluteSenderTimeStatus(kChannelId, true, kAbsSendTimeId))
+            .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_,
+        SetReceiveAudioLevelIndicationStatus(kChannelId, true, kAudioLevelId))
+            .WillOnce(Return(0));
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.local_ssrc = kLocalSsrc;
     stream_config_.rtp.remote_ssrc = kRemoteSsrc;
-  }
+    stream_config_.rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
+    stream_config_.rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kAudioLevel, kAudioLevelId));
+}
 
   MockRemoteBitrateEstimator* remote_bitrate_estimator() {
     return &remote_bitrate_estimator_;
@@ -144,7 +158,7 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
   config.combined_audio_video_bwe = true;
   EXPECT_EQ(
       "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, extensions: [{name: "
-      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}]}, "
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 2}]}, "
       "receive_transport: nullptr, rtcp_send_transport: nullptr, "
       "voe_channel_id: 2, combined_audio_video_bwe: true}",
       config.ToString());
@@ -159,8 +173,6 @@ TEST(AudioReceiveStreamTest, ConstructDestruct) {
 TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweWithTimestamp) {
   ConfigHelper helper;
   helper.config().combined_audio_video_bwe = true;
-  helper.config().rtp.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
   internal::AudioReceiveStream recv_stream(
       helper.remote_bitrate_estimator(), helper.config(), helper.audio_state());
   uint8_t rtp_packet[30];

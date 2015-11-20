@@ -44,6 +44,8 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
   const webrtc::AudioReceiveStream::Config& config() const;
 
  private:
+  VoiceEngine* voice_engine() const;
+
   rtc::ThreadChecker thread_checker_;
   RemoteBitrateEstimator* const remote_bitrate_estimator_;
   const webrtc::AudioReceiveStream::Config config_;

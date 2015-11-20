@@ -188,8 +188,6 @@ class FakeWebRtcVoiceEngine
           red_type(117),
           nack_max_packets(0),
           send_ssrc(0),
-          receive_audio_level_ext_(-1),
-          receive_absolute_sender_time_ext_(-1),
           associate_send_channel(-1),
           neteq_capacity(-1),
           neteq_fast_accelerate(false) {
@@ -211,8 +209,6 @@ class FakeWebRtcVoiceEngine
     int red_type;
     int nack_max_packets;
     uint32_t send_ssrc;
-    int receive_audio_level_ext_;
-    int receive_absolute_sender_time_ext_;
     int associate_send_channel;
     DtmfInfo dtmf_info;
     std::vector<webrtc::CodecInst> recv_codecs;
@@ -351,15 +347,6 @@ class FakeWebRtcVoiceEngine
         config.Get<webrtc::NetEqFastAccelerate>().enabled;
     channels_[++last_channel_] = ch;
     return last_channel_;
-  }
-  int GetReceiveRtpExtensionId(int channel, const std::string& extension) {
-    WEBRTC_ASSERT_CHANNEL(channel);
-    if (extension == kRtpAudioLevelHeaderExtension) {
-      return channels_[channel]->receive_audio_level_ext_;
-    } else if (extension == kRtpAbsoluteSenderTimeHeaderExtension) {
-      return channels_[channel]->receive_absolute_sender_time_ext_;
-    }
-    return -1;
   }
 
   int GetNumSetSendCodecs() const { return num_set_send_codecs_; }
@@ -710,23 +697,12 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetRemoteSSRC, (int channel, unsigned int& ssrc));
   WEBRTC_STUB(SetSendAudioLevelIndicationStatus, (int channel, bool enable,
       unsigned char id));
-  WEBRTC_FUNC(SetReceiveAudioLevelIndicationStatus, (int channel, bool enable,
-      unsigned char id)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
-    channels_[channel]->receive_audio_level_ext_ = (enable) ? id : -1;
-   return 0;
-  }
+  WEBRTC_STUB(SetReceiveAudioLevelIndicationStatus, (int channel, bool enable,
+      unsigned char id));
   WEBRTC_STUB(SetSendAbsoluteSenderTimeStatus, (int channel, bool enable,
       unsigned char id));
-  WEBRTC_FUNC(SetReceiveAbsoluteSenderTimeStatus, (int channel, bool enable,
-      unsigned char id)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
-    channels_[channel]->receive_absolute_sender_time_ext_ = (enable) ? id : -1;
-    return 0;
-  }
-
+  WEBRTC_STUB(SetReceiveAbsoluteSenderTimeStatus, (int channel, bool enable,
+      unsigned char id));
   WEBRTC_STUB(SetRTCPStatus, (int channel, bool enable));
   WEBRTC_STUB(GetRTCPStatus, (int channel, bool& enabled));
   WEBRTC_STUB(SetRTCP_CNAME, (int channel, const char cname[256]));
