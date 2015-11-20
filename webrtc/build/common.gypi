@@ -148,7 +148,6 @@
       }],
       ['OS=="ios"', {
         'build_libjpeg%': 0,
-        'enable_protobuf%': 0,
       }],
       ['target_arch=="arm" or target_arch=="arm64"', {
         'prefer_fixed_point%': 1,
