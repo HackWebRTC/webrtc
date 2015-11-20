@@ -2445,8 +2445,9 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
     return;
   }
 
-  if (receive_channels_.empty()) {
-    // Create new channel, which will be the default receive channel.
+  // If we don't have a default channel, and the SSRC is unknown, create a
+  // default channel.
+  if (default_recv_ssrc_ == -1 && GetReceiveChannelId(ssrc) == -1) {
     StreamParams sp;
     sp.ssrcs.push_back(ssrc);
     LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
@@ -2466,7 +2467,13 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
           reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
           webrtc_packet_time);
   if (webrtc::PacketReceiver::DELIVERY_OK != delivery_result) {
-    return;
+    // If the SSRC is unknown here, route it to the default channel, if we have
+    // one. See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5208
+    if (default_recv_ssrc_ == -1) {
+      return;
+    } else {
+      ssrc = default_recv_ssrc_;
+    }
   }
 
   // Find the channel to send this packet to. It must exist since webrtc::Call

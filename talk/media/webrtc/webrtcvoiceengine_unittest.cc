@@ -2424,16 +2424,15 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrcAfterCreatingReceiveChannel) {
 // Test that we can properly receive packets.
 TEST_F(WebRtcVoiceEngineTestFake, Recv) {
   EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
   DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
   int channel_num = voe_.GetLastChannel();
-  EXPECT_TRUE(voe_.CheckPacket(channel_num, kPcmuFrame,
-                               sizeof(kPcmuFrame)));
+  EXPECT_TRUE(voe_.CheckPacket(channel_num, kPcmuFrame, sizeof(kPcmuFrame)));
 }
 
 // Test that we can properly receive packets on multiple streams.
 TEST_F(WebRtcVoiceEngineTestFake, RecvWithMultipleStreams) {
-  EXPECT_TRUE(SetupEngineWithSendStream());
-  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  EXPECT_TRUE(SetupEngine());
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
   int channel_num1 = voe_.GetLastChannel();
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
@@ -2449,28 +2448,88 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvWithMultipleStreams) {
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num1));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num2));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num3));
+
   DeliverPacket(packets[0], sizeof(packets[0]));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num1));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num2));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num3));
+
   DeliverPacket(packets[1], sizeof(packets[1]));
-  EXPECT_TRUE(voe_.CheckPacket(channel_num1, packets[1],
-                               sizeof(packets[1])));
+  EXPECT_TRUE(voe_.CheckPacket(channel_num1, packets[1], sizeof(packets[1])));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num2));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num3));
+
   DeliverPacket(packets[2], sizeof(packets[2]));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num1));
-  EXPECT_TRUE(voe_.CheckPacket(channel_num2, packets[2],
-                               sizeof(packets[2])));
+  EXPECT_TRUE(voe_.CheckPacket(channel_num2, packets[2], sizeof(packets[2])));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num3));
+
   DeliverPacket(packets[3], sizeof(packets[3]));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num1));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num2));
-  EXPECT_TRUE(voe_.CheckPacket(channel_num3, packets[3],
-                               sizeof(packets[3])));
+  EXPECT_TRUE(voe_.CheckPacket(channel_num3, packets[3], sizeof(packets[3])));
+
   EXPECT_TRUE(channel_->RemoveRecvStream(3));
   EXPECT_TRUE(channel_->RemoveRecvStream(2));
   EXPECT_TRUE(channel_->RemoveRecvStream(1));
+}
+
+// Test that receiving on an unsignalled stream works (default channel will be
+// created).
+TEST_F(WebRtcVoiceEngineTestFake, RecvUnsignalled) {
+  EXPECT_TRUE(SetupEngine());
+  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  int channel_num = voe_.GetLastChannel();
+  EXPECT_TRUE(voe_.CheckPacket(channel_num, kPcmuFrame, sizeof(kPcmuFrame)));
+}
+
+// Test that receiving on an unsignalled stream works (default channel will be
+// created), and that packets will be forwarded to the default channel
+// regardless of their SSRCs.
+TEST_F(WebRtcVoiceEngineTestFake, RecvUnsignalledWithSsrcSwitch) {
+  EXPECT_TRUE(SetupEngine());
+  char packet[sizeof(kPcmuFrame)];
+  memcpy(packet, kPcmuFrame, sizeof(kPcmuFrame));
+
+  // Note that the first unknown SSRC cannot be 0, because we only support
+  // creating receive streams for SSRC!=0.
+  DeliverPacket(packet, sizeof(packet));
+  int channel_num = voe_.GetLastChannel();
+  EXPECT_TRUE(voe_.CheckPacket(channel_num, packet, sizeof(packet)));
+  // Once we have the default channel, SSRC==0 will be ok.
+  for (uint32_t ssrc = 0; ssrc < 10; ++ssrc) {
+    rtc::SetBE32(&packet[8], ssrc);
+    DeliverPacket(packet, sizeof(packet));
+    EXPECT_TRUE(voe_.CheckPacket(channel_num, packet, sizeof(packet)));
+  }
+}
+
+// Test that a default channel is created even after a signalled stream has been
+// added, and that this stream will get any packets for unknown SSRCs.
+TEST_F(WebRtcVoiceEngineTestFake, RecvUnsignalledAfterSignalled) {
+  EXPECT_TRUE(SetupEngine());
+  char packet[sizeof(kPcmuFrame)];
+  memcpy(packet, kPcmuFrame, sizeof(kPcmuFrame));
+
+  // Add a known stream, send packet and verify we got it.
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
+  int signalled_channel_num = voe_.GetLastChannel();
+  DeliverPacket(packet, sizeof(packet));
+  EXPECT_TRUE(voe_.CheckPacket(signalled_channel_num, packet, sizeof(packet)));
+
+  // Note that the first unknown SSRC cannot be 0, because we only support
+  // creating receive streams for SSRC!=0.
+  rtc::SetBE32(&packet[8], 7011);
+  DeliverPacket(packet, sizeof(packet));
+  int channel_num = voe_.GetLastChannel();
+  EXPECT_NE(channel_num, signalled_channel_num);
+  EXPECT_TRUE(voe_.CheckPacket(channel_num, packet, sizeof(packet)));
+  // Once we have the default channel, SSRC==0 will be ok.
+  for (uint32_t ssrc = 0; ssrc < 20; ssrc += 2) {
+    rtc::SetBE32(&packet[8], ssrc);
+    DeliverPacket(packet, sizeof(packet));
+    EXPECT_TRUE(voe_.CheckPacket(channel_num, packet, sizeof(packet)));
+  }
 }
 
 // Test that we properly handle failures to add a receive stream.
