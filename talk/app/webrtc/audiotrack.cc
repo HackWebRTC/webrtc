@@ -31,7 +31,7 @@
 
 namespace webrtc {
 
-const char MediaStreamTrackInterface::kAudioKind[] = "audio";
+static const char kAudioTrackKind[] = "audio";
 
 AudioTrack::AudioTrack(const std::string& label,
                        AudioSourceInterface* audio_source)
@@ -40,7 +40,7 @@ AudioTrack::AudioTrack(const std::string& label,
 }
 
 std::string AudioTrack::kind() const {
-  return kAudioKind;
+  return kAudioTrackKind;
 }
 
 rtc::scoped_refptr<AudioTrack> AudioTrack::Create(

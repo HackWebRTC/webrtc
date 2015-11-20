@@ -100,9 +100,6 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
     kFailed = 3,  // Track negotiation failed.
   };
 
-  static const char kAudioKind[];
-  static const char kVideoKind[];
-
   virtual std::string kind() const = 0;
   virtual std::string id() const = 0;
   virtual bool enabled() const = 0;

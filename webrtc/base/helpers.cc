@@ -164,20 +164,16 @@ class TestRandomGenerator : public RandomGenerator {
   int seed_;
 };
 
-namespace {
-
 // TODO: Use Base64::Base64Table instead.
-static const char kBase64[64] = {
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
+static const char BASE64[64] = {
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+};
 
-static const char kHex[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
-                              '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-static const char kUuidDigit17[4] = {'8', '9', 'a', 'b'};
+namespace {
 
 // This round about way of creating a global RNG is to safe-guard against
 // indeterminant static initialization order.
@@ -236,48 +232,13 @@ bool CreateRandomString(size_t len,
 }
 
 bool CreateRandomString(size_t len, std::string* str) {
-  return CreateRandomString(len, kBase64, 64, str);
+  return CreateRandomString(len, BASE64, 64, str);
 }
 
 bool CreateRandomString(size_t len, const std::string& table,
                         std::string* str) {
   return CreateRandomString(len, table.c_str(),
                             static_cast<int>(table.size()), str);
-}
-
-// Version 4 UUID is of the form:
-// xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
-// Where 'x' is a hex digit, and 'y' is 8, 9, a or b.
-std::string CreateRandomUuid() {
-  std::string str;
-  scoped_ptr<uint8_t[]> bytes(new uint8_t[31]);
-  if (!Rng().Generate(bytes.get(), 31)) {
-    LOG(LS_ERROR) << "Failed to generate random string!";
-    return str;
-  }
-  str.reserve(36);
-  for (size_t i = 0; i < 8; ++i) {
-    str.push_back(kHex[bytes[i] % 16]);
-  }
-  str.push_back('-');
-  for (size_t i = 8; i < 12; ++i) {
-    str.push_back(kHex[bytes[i] % 16]);
-  }
-  str.push_back('-');
-  str.push_back('4');
-  for (size_t i = 12; i < 15; ++i) {
-    str.push_back(kHex[bytes[i] % 16]);
-  }
-  str.push_back('-');
-  str.push_back(kUuidDigit17[bytes[15] % 4]);
-  for (size_t i = 16; i < 19; ++i) {
-    str.push_back(kHex[bytes[i] % 16]);
-  }
-  str.push_back('-');
-  for (size_t i = 19; i < 31; ++i) {
-    str.push_back(kHex[bytes[i] % 16]);
-  }
-  return str;
 }
 
 uint32_t CreateRandomId() {
