@@ -245,7 +245,7 @@ void OpenSLESPlayer::AllocateDataBuffers() {
       audio_parameters_.GetBytesPerBuffer());
   bytes_per_buffer_ = audio_parameters_.GetBytesPerFrame() *
       audio_parameters_.frames_per_10ms_buffer();
-  RTC_DCHECK_GT(bytes_per_buffer_, audio_parameters_.GetBytesPerBuffer());
+  RTC_DCHECK_GE(bytes_per_buffer_, audio_parameters_.GetBytesPerBuffer());
   ALOGD("native buffer size: %" PRIuS, bytes_per_buffer_);
   // Create a modified audio buffer class which allows us to ask for any number
   // of samples (and not only multiple of 10ms) to match the native OpenSL ES
