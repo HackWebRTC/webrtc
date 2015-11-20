@@ -182,7 +182,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   bool InitPlayOrRecord();
 
   // Closes and deletes the voice-processing I/O unit.
-  bool ShutdownPlayOrRecord();
+  void ShutdownPlayOrRecord();
+
+  // Helper method for destroying the existing audio unit.
+  void DisposeAudioUnit();
 
   // Callback function called on a real-time priority I/O thread from the audio
   // unit. This method is used to signal that recorded audio is available.
