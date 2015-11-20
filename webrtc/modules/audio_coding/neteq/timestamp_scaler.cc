@@ -87,8 +87,6 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
     assert(denominator_ > 0);  // Should not be possible.
     external_ref_ = external_timestamp;
     internal_ref_ += (external_diff * numerator_) / denominator_;
-    LOG(LS_VERBOSE) << "Converting timestamp: " << external_timestamp <<
-        " -> " << internal_ref_;
     return internal_ref_;
   } else {
     // No scaling.
