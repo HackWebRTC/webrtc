@@ -39,8 +39,6 @@
 #include "talk/session/media/channel.h"
 #include "webrtc/audio_state.h"
 #include "webrtc/base/buffer.h"
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread_checker.h"
@@ -52,7 +50,6 @@ namespace cricket {
 
 class AudioDeviceModule;
 class AudioRenderer;
-class VoETraceWrapper;
 class VoEWrapper;
 class WebRtcVoiceMediaChannel;
 
@@ -64,7 +61,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
  public:
   WebRtcVoiceEngine();
   // Dependency injection for testing.
-  WebRtcVoiceEngine(VoEWrapper* voe_wrapper, VoETraceWrapper* tracing);
+  explicit WebRtcVoiceEngine(VoEWrapper* voe_wrapper);
   ~WebRtcVoiceEngine();
   bool Init(rtc::Thread* worker_thread);
   void Terminate();
@@ -85,8 +82,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   bool FindWebRtcCodec(const AudioCodec& codec, webrtc::CodecInst* gcodec);
 
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
-
-  void SetLogging(int min_sev, const char* filter);
 
   // For tracking WebRtc channels. Needed because we have to pause them
   // all when switching devices.
@@ -122,8 +117,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   void ConstructCodecs();
   bool GetVoeCodec(int index, webrtc::CodecInst* codec);
   bool InitInternal();
-  void SetTraceFilter(int filter);
-  void SetTraceOptions(const std::string& options);
   // Every option that is "set" will be applied. Every option not "set" will be
   // ignored. This allows us to selectively turn on and off different options
   // easily at any time.
@@ -140,19 +133,14 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
 
-  static const int kDefaultLogSeverity = rtc::LS_WARNING;
-
   rtc::ThreadChecker signal_thread_checker_;
   rtc::ThreadChecker worker_thread_checker_;
 
   // The primary instance of WebRtc VoiceEngine.
   rtc::scoped_ptr<VoEWrapper> voe_wrapper_;
-  rtc::scoped_ptr<VoETraceWrapper> tracing_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   // The external audio device manager
   webrtc::AudioDeviceModule* adm_ = nullptr;
-  int log_filter_;
-  std::string log_options_;
   bool is_dumping_aec_ = false;
   std::vector<AudioCodec> codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;

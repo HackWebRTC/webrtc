@@ -250,33 +250,6 @@ TEST_F(ChannelManagerTest, GetSetOutputVolume) {
   EXPECT_EQ(60, level);
 }
 
-// Test that logging options set before Init are applied properly,
-// and retained even after Init.
-TEST_F(ChannelManagerTest, SetLoggingBeforeInit) {
-  cm_->SetVoiceLogging(rtc::LS_INFO, "test-voice");
-  cm_->SetVideoLogging(rtc::LS_VERBOSE, "test-video");
-  EXPECT_EQ(rtc::LS_INFO, fme_->voice_loglevel());
-  EXPECT_STREQ("test-voice", fme_->voice_logfilter().c_str());
-  EXPECT_EQ(rtc::LS_VERBOSE, fme_->video_loglevel());
-  EXPECT_STREQ("test-video", fme_->video_logfilter().c_str());
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_EQ(rtc::LS_INFO, fme_->voice_loglevel());
-  EXPECT_STREQ("test-voice", fme_->voice_logfilter().c_str());
-  EXPECT_EQ(rtc::LS_VERBOSE, fme_->video_loglevel());
-  EXPECT_STREQ("test-video", fme_->video_logfilter().c_str());
-}
-
-// Test that logging options set after Init are applied properly.
-TEST_F(ChannelManagerTest, SetLogging) {
-  EXPECT_TRUE(cm_->Init());
-  cm_->SetVoiceLogging(rtc::LS_INFO, "test-voice");
-  cm_->SetVideoLogging(rtc::LS_VERBOSE, "test-video");
-  EXPECT_EQ(rtc::LS_INFO, fme_->voice_loglevel());
-  EXPECT_STREQ("test-voice", fme_->voice_logfilter().c_str());
-  EXPECT_EQ(rtc::LS_VERBOSE, fme_->video_loglevel());
-  EXPECT_STREQ("test-video", fme_->video_logfilter().c_str());
-}
-
 TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
   std::vector<VideoCodec> codecs;
   const VideoCodec rtx_codec(96, "rtx", 0, 0, 0, 0);

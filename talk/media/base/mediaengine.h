@@ -115,10 +115,6 @@ class MediaEngineInterface {
   virtual const std::vector<RtpHeaderExtension>&
       video_rtp_header_extensions() = 0;
 
-  // Logging control
-  virtual void SetVoiceLogging(int min_sev, const char* filter) = 0;
-  virtual void SetVideoLogging(int min_sev, const char* filter) = 0;
-
   // Starts AEC dump using existing file.
   virtual bool StartAecDump(rtc::PlatformFile file) = 0;
 
@@ -217,13 +213,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
     return video_.rtp_header_extensions();
   }
 
-  virtual void SetVoiceLogging(int min_sev, const char* filter) {
-    voice_.SetLogging(min_sev, filter);
-  }
-  virtual void SetVideoLogging(int min_sev, const char* filter) {
-    video_.SetLogging(min_sev, filter);
-  }
-
   virtual bool StartAecDump(rtc::PlatformFile file) {
     return voice_.StartAecDump(file);
   }
@@ -268,7 +257,6 @@ class NullVoiceEngine {
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() {
     return rtp_header_extensions_;
   }
-  void SetLogging(int min_sev, const char* filter) {}
   bool StartAecDump(rtc::PlatformFile file) { return false; }
   bool StartRtcEventLog(rtc::PlatformFile file) { return false; }
   void StopRtcEventLog() {}
@@ -298,7 +286,6 @@ class NullVideoEngine {
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() {
     return rtp_header_extensions_;
   }
-  void SetLogging(int min_sev, const char* filter) {}
 
  private:
   std::vector<VideoCodec> codecs_;

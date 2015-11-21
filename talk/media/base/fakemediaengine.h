@@ -694,14 +694,8 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
 class FakeBaseEngine {
  public:
   FakeBaseEngine()
-      : loglevel_(-1),
-        options_changed_(false),
+      : options_changed_(false),
         fail_create_channel_(false) {}
-  void SetLogging(int level, const char* filter) {
-    loglevel_ = level;
-    logfilter_ = filter;
-  }
-
   void set_fail_create_channel(bool fail) { fail_create_channel_ = fail; }
 
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const {
@@ -713,8 +707,6 @@ class FakeBaseEngine {
   }
 
  protected:
-  int loglevel_;
-  std::string logfilter_;
   // Flag used by optionsmessagehandler_unittest for checking whether any
   // relevant setting has been updated.
   // TODO(thaloun): Replace with explicit checks of before & after values.
@@ -913,10 +905,6 @@ class FakeMediaEngine :
   }
   const std::string& audio_in_device() const { return voice_.in_device_; }
   const std::string& audio_out_device() const { return voice_.out_device_; }
-  int voice_loglevel() const { return voice_.loglevel_; }
-  const std::string& voice_logfilter() const { return voice_.logfilter_; }
-  int video_loglevel() const { return video_.loglevel_; }
-  const std::string& video_logfilter() const { return video_.logfilter_; }
   bool capture() const { return video_.capture_; }
   bool options_changed() const {
     return voice_.options_changed_ || video_.options_changed_;

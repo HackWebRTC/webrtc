@@ -136,23 +136,6 @@ class VoEWrapper {
   scoped_voe_ptr<webrtc::VoERTP_RTCP> rtp_;
   scoped_voe_ptr<webrtc::VoEVolumeControl> volume_;
 };
-
-// Adds indirection to static WebRtc functions, allowing them to be mocked.
-class VoETraceWrapper {
- public:
-  virtual ~VoETraceWrapper() {}
-
-  virtual int SetTraceFilter(const unsigned int filter) {
-    return webrtc::VoiceEngine::SetTraceFilter(filter);
-  }
-  virtual int SetTraceFile(const char* fileNameUTF8) {
-    return webrtc::VoiceEngine::SetTraceFile(fileNameUTF8);
-  }
-  virtual int SetTraceCallback(webrtc::TraceCallback* callback) {
-    return webrtc::VoiceEngine::SetTraceCallback(callback);
-  }
-};
-
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_WEBRTCVOE_H_

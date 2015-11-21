@@ -500,26 +500,6 @@ bool ChannelManager::SetDefaultVideoEncoderConfig(const VideoEncoderConfig& c) {
   return ret;
 }
 
-void ChannelManager::SetVoiceLogging(int level, const char* filter) {
-  if (initialized_) {
-    worker_thread_->Invoke<void>(
-        Bind(&MediaEngineInterface::SetVoiceLogging,
-             media_engine_.get(), level, filter));
-  } else {
-    media_engine_->SetVoiceLogging(level, filter);
-  }
-}
-
-void ChannelManager::SetVideoLogging(int level, const char* filter) {
-  if (initialized_) {
-    worker_thread_->Invoke<void>(
-        Bind(&MediaEngineInterface::SetVideoLogging,
-             media_engine_.get(), level, filter));
-  } else {
-    media_engine_->SetVideoLogging(level, filter);
-  }
-}
-
 std::vector<cricket::VideoFormat> ChannelManager::GetSupportedFormats(
     VideoCapturer* capturer) const {
   ASSERT(capturer != NULL);

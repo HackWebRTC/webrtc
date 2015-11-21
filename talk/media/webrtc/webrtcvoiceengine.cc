@@ -55,9 +55,16 @@
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 namespace cricket {
 namespace {
+
+const int kDefaultTraceFilter = webrtc::kTraceNone | webrtc::kTraceTerseInfo |
+                                webrtc::kTraceWarning | webrtc::kTraceError |
+                                webrtc::kTraceCritical;
+const int kElevatedTraceFilter = kDefaultTraceFilter | webrtc::kTraceStateInfo |
+                                 webrtc::kTraceInfo;
 
 const int kMaxNumPacketSize = 6;
 struct CodecPref {
@@ -183,25 +190,6 @@ void LogMultiline(rtc::LoggingSeverity sev, char* text) {
   for (char* tok = strtok(text, delim); tok; tok = strtok(NULL, delim)) {
     LOG_V(sev) << tok;
   }
-}
-
-// Severity is an integer because it comes is assumed to be from command line.
-int SeverityToFilter(int severity) {
-  int filter = webrtc::kTraceNone;
-  switch (severity) {
-    case rtc::LS_VERBOSE:
-      filter |= webrtc::kTraceAll;
-      FALLTHROUGH();
-    case rtc::LS_INFO:
-      filter |= (webrtc::kTraceStateInfo | webrtc::kTraceInfo);
-      FALLTHROUGH();
-    case rtc::LS_WARNING:
-      filter |= (webrtc::kTraceTerseInfo | webrtc::kTraceWarning);
-      FALLTHROUGH();
-    case rtc::LS_ERROR:
-      filter |= (webrtc::kTraceError | webrtc::kTraceCritical);
-  }
-  return filter;
 }
 
 bool IsCodec(const AudioCodec& codec, const char* ref_name) {
@@ -386,10 +374,6 @@ AudioOptions GetDefaultEngineOptions() {
   return options;
 }
 
-std::string GetEnableString(bool enable) {
-  return enable ? "enable" : "disable";
-}
-
 webrtc::AudioState::Config MakeAudioStateConfig(VoEWrapper* voe_wrapper) {
   webrtc::AudioState::Config config;
   config.voice_engine = voe_wrapper->engine();
@@ -413,30 +397,24 @@ std::vector<webrtc::RtpExtension> FindAudioRtpHeaderExtensions(
 
 WebRtcVoiceEngine::WebRtcVoiceEngine()
     : voe_wrapper_(new VoEWrapper()),
-      tracing_(new VoETraceWrapper()),
-      audio_state_(webrtc::AudioState::Create(MakeAudioStateConfig(voe()))),
-      log_filter_(SeverityToFilter(kDefaultLogSeverity)) {
+      audio_state_(webrtc::AudioState::Create(MakeAudioStateConfig(voe()))) {
   Construct();
 }
 
-WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper,
-                                     VoETraceWrapper* tracing)
-    : voe_wrapper_(voe_wrapper),
-      tracing_(tracing),
-      log_filter_(SeverityToFilter(kDefaultLogSeverity)) {
+WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper)
+    : voe_wrapper_(voe_wrapper) {
   Construct();
 }
 
 void WebRtcVoiceEngine::Construct() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  LOG(LS_VERBOSE) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
+
   signal_thread_checker_.DetachFromThread();
   std::memset(&default_agc_config_, 0, sizeof(default_agc_config_));
-  SetTraceFilter(log_filter_);
-  LOG(LS_VERBOSE) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
-  SetTraceOptions("");
-  if (tracing_->SetTraceCallback(this) == -1) {
-    LOG_RTCERR0(SetTraceCallback);
-  }
+
+  webrtc::Trace::set_level_filter(kDefaultTraceFilter);
+  webrtc::Trace::SetTraceCallback(this);
 
   // Load our audio codec list.
   ConstructCodecs();
@@ -533,8 +511,7 @@ WebRtcVoiceEngine::~WebRtcVoiceEngine() {
     adm_->Release();
     adm_ = NULL;
   }
-
-  tracing_->SetTraceCallback(NULL);
+  webrtc::Trace::SetTraceCallback(nullptr);
 }
 
 bool WebRtcVoiceEngine::Init(rtc::Thread* worker_thread) {
@@ -554,20 +531,12 @@ bool WebRtcVoiceEngine::Init(rtc::Thread* worker_thread) {
 bool WebRtcVoiceEngine::InitInternal() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   // Temporarily turn logging level up for the Init call
-  int old_filter = log_filter_;
-  int extended_filter = log_filter_ | SeverityToFilter(rtc::LS_INFO);
-  SetTraceFilter(extended_filter);
-  SetTraceOptions("");
-
-  // Init WebRtc VoiceEngine.
+  webrtc::Trace::set_level_filter(kElevatedTraceFilter);
   if (voe_wrapper_->base()->Init(adm_) == -1) {
     LOG_RTCERR0_EX(Init, voe_wrapper_->error());
-    SetTraceFilter(old_filter);
     return false;
   }
-
-  SetTraceFilter(old_filter);
-  SetTraceOptions(log_options_);
+  webrtc::Trace::set_level_filter(kDefaultTraceFilter);
 
   // Log the VoiceEngine version info
   char buffer[1024] = "";
@@ -1142,76 +1111,9 @@ WebRtcVoiceEngine::rtp_header_extensions() const {
   return rtp_header_extensions_;
 }
 
-void WebRtcVoiceEngine::SetLogging(int min_sev, const char* filter) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  // if min_sev == -1, we keep the current log level.
-  if (min_sev >= 0) {
-    SetTraceFilter(SeverityToFilter(min_sev));
-  }
-  log_options_ = filter;
-  SetTraceOptions(initialized_ ? log_options_ : "");
-}
-
 int WebRtcVoiceEngine::GetLastEngineError() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return voe_wrapper_->error();
-}
-
-void WebRtcVoiceEngine::SetTraceFilter(int filter) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  log_filter_ = filter;
-  tracing_->SetTraceFilter(filter);
-}
-
-// We suppport three different logging settings for VoiceEngine:
-// 1. Observer callback that goes into talk diagnostic logfile.
-//    Use --logfile and --loglevel
-//
-// 2. Encrypted VoiceEngine log for debugging VoiceEngine.
-//    Use --voice_loglevel --voice_logfilter "tracefile file_name"
-//
-// 3. EC log and dump for debugging QualityEngine.
-//    Use --voice_loglevel --voice_logfilter "recordEC file_name"
-//
-// For more details see: "https://sites.google.com/a/google.com/wavelet/Home/
-//    Magic-Flute--RTC-Engine-/Magic-Flute-Command-Line-Parameters"
-void WebRtcVoiceEngine::SetTraceOptions(const std::string& options) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  // Set encrypted trace file.
-  std::vector<std::string> opts;
-  rtc::tokenize(options, ' ', '"', '"', &opts);
-  std::vector<std::string>::iterator tracefile =
-      std::find(opts.begin(), opts.end(), "tracefile");
-  if (tracefile != opts.end() && ++tracefile != opts.end()) {
-    // Write encrypted debug output (at same loglevel) to file
-    // EncryptedTraceFile no longer supported.
-    if (tracing_->SetTraceFile(tracefile->c_str()) == -1) {
-      LOG_RTCERR1(SetTraceFile, *tracefile);
-    }
-  }
-
-  // Allow trace options to override the trace filter. We default
-  // it to log_filter_ (as a translation of libjingle log levels)
-  // elsewhere, but this allows clients to explicitly set webrtc
-  // log levels.
-  std::vector<std::string>::iterator tracefilter =
-      std::find(opts.begin(), opts.end(), "tracefilter");
-  if (tracefilter != opts.end() && ++tracefilter != opts.end()) {
-    if (!tracing_->SetTraceFilter(rtc::FromString<int>(*tracefilter))) {
-      LOG_RTCERR1(SetTraceFilter, *tracefilter);
-    }
-  }
-
-  // Set AEC dump file
-  std::vector<std::string>::iterator recordEC =
-      std::find(opts.begin(), opts.end(), "recordEC");
-  if (recordEC != opts.end()) {
-    ++recordEC;
-    if (recordEC != opts.end())
-      StartAecDump(recordEC->c_str());
-    else
-      StopAecDump();
-  }
 }
 
 void WebRtcVoiceEngine::Print(webrtc::TraceLevel level, const char* trace,
@@ -1809,7 +1711,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
     // Set Opus internal DTX.
     LOG(LS_INFO) << "Attempt to "
-                 << GetEnableString(enable_opus_dtx)
+                 << (enable_opus_dtx ? "enable" : "disable")
                  << " Opus DTX on channel "
                  << channel;
     if (engine()->voe()->codec()->SetOpusDtx(channel, enable_opus_dtx)) {

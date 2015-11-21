@@ -119,7 +119,6 @@ class WebRtcVideoEngine2 {
 
   const std::vector<VideoCodec>& codecs() const;
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
-  void SetLogging(int min_sev, const char* filter);
 
   // Set a WebRtcVideoDecoderFactory for external decoding. Video engine does
   // not take the ownership of |decoder_factory|. The caller needs to make sure

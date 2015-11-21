@@ -75,17 +75,6 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
                             engine) {  // volume
   }
 };
-
-class FakeVoETraceWrapper : public cricket::VoETraceWrapper {
- public:
-  int SetTraceFilter(const unsigned int filter) override {
-    filter_ = filter;
-    return 0;
-  }
-  int SetTraceFile(const char* fileNameUTF8) override { return 0; }
-  int SetTraceCallback(webrtc::TraceCallback* callback) override { return 0; }
-  unsigned int filter_;
-};
 }  // namespace
 
 class WebRtcVoiceEngineTestFake : public testing::Test {
@@ -93,8 +82,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   WebRtcVoiceEngineTestFake()
       : call_(webrtc::Call::Config()),
         voe_(kAudioCodecs, arraysize(kAudioCodecs)),
-        trace_wrapper_(new FakeVoETraceWrapper()),
-        engine_(new FakeVoEWrapper(&voe_), trace_wrapper_),
+        engine_(new FakeVoEWrapper(&voe_)),
         channel_(nullptr) {
     send_parameters_.codecs.push_back(kPcmuCodec);
     recv_parameters_.codecs.push_back(kPcmuCodec);
@@ -417,7 +405,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
  protected:
   cricket::FakeCall call_;
   cricket::FakeWebRtcVoiceEngine voe_;
-  FakeVoETraceWrapper* trace_wrapper_;
   cricket::WebRtcVoiceEngine engine_;
   cricket::VoiceMediaChannel* channel_;
 
@@ -2322,25 +2309,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SampleRatesViaOptions) {
   EXPECT_EQ(0, voe_.PlayoutSampleRate(&playout_sample_rate));
   EXPECT_EQ(48000u, recording_sample_rate);
   EXPECT_EQ(44100u, playout_sample_rate);
-}
-
-TEST_F(WebRtcVoiceEngineTestFake, TraceFilterViaTraceOptions) {
-  EXPECT_TRUE(SetupEngineWithSendStream());
-  engine_.SetLogging(rtc::LS_INFO, "");
-  EXPECT_EQ(
-      // Info:
-      webrtc::kTraceStateInfo | webrtc::kTraceInfo |
-      // Warning:
-      webrtc::kTraceTerseInfo | webrtc::kTraceWarning |
-      // Error:
-      webrtc::kTraceError | webrtc::kTraceCritical,
-      static_cast<int>(trace_wrapper_->filter_));
-  // Now set it explicitly
-  std::string filter =
-      "tracefilter " + rtc::ToString(webrtc::kTraceDefault);
-  engine_.SetLogging(rtc::LS_VERBOSE, filter.c_str());
-  EXPECT_EQ(static_cast<unsigned int>(webrtc::kTraceDefault),
-            trace_wrapper_->filter_);
 }
 
 // Test that we can set the outgoing SSRC properly.

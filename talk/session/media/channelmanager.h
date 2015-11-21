@@ -137,10 +137,6 @@ class ChannelManager : public rtc::MessageHandler,
   // Starts/stops the local microphone and enables polling of the input level.
   bool capturing() const { return capturing_; }
 
-  // Configures the logging output of the mediaengine(s).
-  void SetVoiceLogging(int level, const char* filter);
-  void SetVideoLogging(int level, const char* filter);
-
   // Gets capturer's supported formats in a thread safe manner
   std::vector<cricket::VideoFormat> GetSupportedFormats(
       VideoCapturer* capturer) const;

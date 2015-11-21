@@ -620,16 +620,6 @@ WebRtcVideoEngine2::rtp_header_extensions() const {
   return rtp_header_extensions_;
 }
 
-void WebRtcVideoEngine2::SetLogging(int min_sev, const char* filter) {
-  // TODO(pbos): Set up logging.
-  LOG(LS_VERBOSE) << "SetLogging: " << min_sev << '"' << filter << '"';
-  // if min_sev == -1, we keep the current log level.
-  if (min_sev < 0) {
-    RTC_DCHECK(min_sev == -1);
-    return;
-  }
-}
-
 void WebRtcVideoEngine2::SetExternalDecoderFactory(
     WebRtcVideoDecoderFactory* decoder_factory) {
   RTC_DCHECK(!initialized_);
