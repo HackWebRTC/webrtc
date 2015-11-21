@@ -113,6 +113,9 @@ class VideoReceiveStream : public ReceiveStream {
       // See draft-alvestrand-rmcat-remb for information.
       bool remb = false;
 
+      // See draft-holmer-rmcat-transport-wide-cc-extensions for details.
+      bool transport_cc = false;
+
       // See NackConfig for description.
       NackConfig nack;
 

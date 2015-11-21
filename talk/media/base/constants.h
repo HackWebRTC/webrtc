@@ -107,6 +107,9 @@ extern const char kRtcpFbNackParamPli[];
 // rtcp-fb messages according to
 // http://tools.ietf.org/html/draft-alvestrand-rmcat-remb-00
 extern const char kRtcpFbParamRemb[];
+// rtcp-fb messages according to
+// https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions-01
+extern const char kRtcpFbParamTransportCc[];
 // ccm submessages according to RFC 5104
 extern const char kRtcpFbParamCcm[];
 extern const char kRtcpFbCcmParamFir[];

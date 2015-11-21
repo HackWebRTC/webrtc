@@ -166,6 +166,8 @@ void AddDefaultFeedbackParams(VideoCodec* codec) {
   codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
   codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kRtcpFbNackParamPli));
   codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
+  codec->AddFeedbackParam(
+      FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
 }
 
 static VideoCodec MakeVideoCodecWithDefaultFeedbackParams(int payload_type,
@@ -960,12 +962,15 @@ bool WebRtcVideoChannel2::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
     RTC_DCHECK(kv.second != nullptr);
     kv.second->SetCodec(supported_codecs.front());
   }
-  LOG(LS_INFO) << "SetNackAndRemb on all the receive streams because the send "
-                  "codec has changed.";
+  LOG(LS_INFO)
+      << "SetFeedbackOptions on all the receive streams because the send "
+         "codec has changed.";
   for (auto& kv : receive_streams_) {
     RTC_DCHECK(kv.second != nullptr);
-    kv.second->SetNackAndRemb(HasNack(supported_codecs.front().codec),
-                              HasRemb(supported_codecs.front().codec));
+    kv.second->SetFeedbackParameters(
+        HasNack(supported_codecs.front().codec),
+        HasRemb(supported_codecs.front().codec),
+        HasTransportCc(supported_codecs.front().codec));
   }
 
   // TODO(holmer): Changing the codec parameters shouldn't necessarily mean that
@@ -1215,6 +1220,8 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   config.sync_group = sp.sync_label;
 
   config.rtp.remb = send_codec_ ? HasRemb(send_codec_->codec) : false;
+  config.rtp.transport_cc =
+      send_codec_ ? HasTransportCc(send_codec_->codec) : false;
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, config, external_decoder_factory_, default_stream,
@@ -2465,20 +2472,28 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetLocalSsrc(
   RecreateWebRtcStream();
 }
 
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetNackAndRemb(
-    bool nack_enabled, bool remb_enabled) {
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFeedbackParameters(
+    bool nack_enabled,
+    bool remb_enabled,
+    bool transport_cc_enabled) {
   int nack_history_ms = nack_enabled ? kNackHistoryMs : 0;
   if (config_.rtp.nack.rtp_history_ms == nack_history_ms &&
-      config_.rtp.remb == remb_enabled) {
-    LOG(LS_INFO) << "Ignoring call to SetNackAndRemb because parameters are "
-                    "unchanged; nack=" << nack_enabled
-                 << ", remb=" << remb_enabled;
+      config_.rtp.remb == remb_enabled &&
+      config_.rtp.transport_cc == transport_cc_enabled) {
+    LOG(LS_INFO)
+        << "Ignoring call to SetFeedbackParameters because parameters are "
+           "unchanged; nack="
+        << nack_enabled << ", remb=" << remb_enabled
+        << ", transport_cc=" << transport_cc_enabled;
     return;
   }
   config_.rtp.remb = remb_enabled;
   config_.rtp.nack.rtp_history_ms = nack_history_ms;
-  LOG(LS_INFO) << "RecreateWebRtcStream (recv) because of SetNackAndRemb; nack="
-               << nack_enabled << ", remb=" << remb_enabled;
+  config_.rtp.transport_cc = transport_cc_enabled;
+  LOG(LS_INFO)
+      << "RecreateWebRtcStream (recv) because of SetFeedbackParameters; nack="
+      << nack_enabled << ", remb=" << remb_enabled
+      << ", transport_cc=" << transport_cc_enabled;
   RecreateWebRtcStream();
 }
 

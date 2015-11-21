@@ -828,6 +828,7 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
     receive_configs_[i].rtp.rtx[kSendRtxPayloadType].ssrc = kSendRtxSsrcs[i];
     receive_configs_[i].rtp.rtx[kSendRtxPayloadType].payload_type =
         kSendRtxPayloadType;
+    receive_configs_[i].rtp.transport_cc = params_.common.send_side_bwe;
   }
 }
 

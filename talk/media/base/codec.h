@@ -271,6 +271,7 @@ bool FindCodecById(const std::vector<Codec>& codecs,
 bool CodecNamesEq(const std::string& name1, const std::string& name2);
 bool HasNack(const VideoCodec& codec);
 bool HasRemb(const VideoCodec& codec);
+bool HasTransportCc(const VideoCodec& codec);
 
 }  // namespace cricket
 

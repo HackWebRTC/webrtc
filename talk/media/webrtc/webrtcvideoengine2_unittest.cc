@@ -75,6 +75,8 @@ void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
   EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
       cricket::kRtcpFbParamRemb, cricket::kParamValueEmpty)));
   EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
+      cricket::kRtcpFbParamTransportCc, cricket::kParamValueEmpty)));
+  EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
       cricket::kRtcpFbParamCcm, cricket::kRtcpFbCcmParamFir)));
 }
 
@@ -1451,6 +1453,11 @@ TEST_F(WebRtcVideoChannel2Test, RembIsEnabledByDefault) {
   EXPECT_TRUE(stream->GetConfig().rtp.remb);
 }
 
+TEST_F(WebRtcVideoChannel2Test, TransportCcIsEnabledByDefault) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  EXPECT_TRUE(stream->GetConfig().rtp.transport_cc);
+}
+
 TEST_F(WebRtcVideoChannel2Test, RembCanBeEnabledAndDisabled) {
   FakeVideoReceiveStream* stream = AddRecvStream();
   EXPECT_TRUE(stream->GetConfig().rtp.remb);
@@ -1469,6 +1476,27 @@ TEST_F(WebRtcVideoChannel2Test, RembCanBeEnabledAndDisabled) {
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   stream = fake_call_->GetVideoReceiveStreams()[0];
   EXPECT_TRUE(stream->GetConfig().rtp.remb);
+}
+
+TEST_F(WebRtcVideoChannel2Test, TransportCcCanBeEnabledAndDisabled) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  EXPECT_TRUE(stream->GetConfig().rtp.transport_cc);
+
+  // Verify that transport cc feedback is turned off when send(!) codecs without
+  // transport cc feedback are set.
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(kVp8Codec);
+  EXPECT_TRUE(parameters.codecs[0].feedback_params.params().empty());
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  stream = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_FALSE(stream->GetConfig().rtp.transport_cc);
+
+  // Verify that transport cc feedback is turned on when setting default codecs
+  // since the default codecs have transport cc feedback enabled.
+  parameters.codecs = engine_.codecs();
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  stream = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_TRUE(stream->GetConfig().rtp.transport_cc);
 }
 
 TEST_F(WebRtcVideoChannel2Test, NackIsEnabledByDefault) {

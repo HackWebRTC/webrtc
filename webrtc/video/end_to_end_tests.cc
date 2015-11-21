@@ -1533,9 +1533,8 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
   tester.RunTest();
 }
 
-TEST_F(EndToEndTest, ReceivesTransportFeedback) {
+void TransportFeedbackTest(bool feedback_enabled) {
   static const int kExtensionId = 5;
-
   class TransportFeedbackObserver : public test::DirectTransport {
    public:
     TransportFeedbackObserver(Call* receiver_call, rtc::Event* done_event)
@@ -1563,12 +1562,16 @@ TEST_F(EndToEndTest, ReceivesTransportFeedback) {
 
   class TransportFeedbackTester : public MultiStreamTest {
    public:
-    TransportFeedbackTester() : done_(false, false) {}
+    explicit TransportFeedbackTester(bool feedback_enabled)
+        : feedback_enabled_(feedback_enabled), done_(false, false) {}
     virtual ~TransportFeedbackTester() {}
 
    protected:
     void Wait() override {
-      EXPECT_TRUE(done_.Wait(CallTest::kDefaultTimeoutMs));
+      const int64_t kDisabledFeedbackTimeoutMs = 5000;
+      EXPECT_EQ(feedback_enabled_, done_.Wait(feedback_enabled_
+                                  ? test::CallTest::kDefaultTimeoutMs
+                                  : kDisabledFeedbackTimeoutMs));
     }
 
     void UpdateSendConfig(
@@ -1585,6 +1588,7 @@ TEST_F(EndToEndTest, ReceivesTransportFeedback) {
         VideoReceiveStream::Config* receive_config) override {
       receive_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+      receive_config->rtp.transport_cc = feedback_enabled_;
     }
 
     test::DirectTransport* CreateReceiveTransport(
@@ -1593,10 +1597,20 @@ TEST_F(EndToEndTest, ReceivesTransportFeedback) {
     }
 
    private:
+    const bool feedback_enabled_;
     rtc::Event done_;
-  } tester;
+  } tester(feedback_enabled);
   tester.RunTest();
 }
+
+TEST_F(EndToEndTest, ReceivesTransportFeedback) {
+  TransportFeedbackTest(true);
+}
+
+TEST_F(EndToEndTest, TransportFeedbackNotConfigured) {
+  TransportFeedbackTest(false);
+}
+
 TEST_F(EndToEndTest, ObserversEncodedFrames) {
   class EncodedFrameTestObserver : public EncodedFrameObserver {
    public:

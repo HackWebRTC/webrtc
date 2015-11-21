@@ -334,6 +334,11 @@ bool HasRemb(const VideoCodec& codec) {
       FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
 }
 
+bool HasTransportCc(const VideoCodec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
+}
+
 bool CodecNamesEq(const std::string& name1, const std::string& name2) {
   return _stricmp(name1.c_str(), name2.c_str()) == 0;
 }

@@ -124,16 +124,20 @@ void RampUpTester::ModifyConfigs(
   send_config->rtp.extensions.clear();
 
   bool remb;
+  bool transport_cc;
   if (extension_type_ == RtpExtension::kAbsSendTime) {
     remb = true;
+    transport_cc = false;
     send_config->rtp.extensions.push_back(
         RtpExtension(extension_type_.c_str(), kAbsSendTimeExtensionId));
   } else if (extension_type_ == RtpExtension::kTransportSequenceNumber) {
     remb = false;
+    transport_cc = true;
     send_config->rtp.extensions.push_back(RtpExtension(
         extension_type_.c_str(), kTransportSequenceNumberExtensionId));
   } else {
     remb = true;
+    transport_cc = false;
     send_config->rtp.extensions.push_back(RtpExtension(
         extension_type_.c_str(), kTransmissionTimeOffsetExtensionId));
   }
@@ -153,6 +157,7 @@ void RampUpTester::ModifyConfigs(
   size_t i = 0;
   for (VideoReceiveStream::Config& recv_config : *receive_configs) {
     recv_config.rtp.remb = remb;
+    recv_config.rtp.transport_cc = transport_cc;
     recv_config.rtp.extensions = send_config->rtp.extensions;
 
     recv_config.rtp.remote_ssrc = ssrcs_[i];

@@ -81,6 +81,7 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
      << (rtcp_xr.receiver_reference_time_report ? "on" : "off");
   ss << '}';
   ss << ", remb: " << (remb ? "on" : "off");
+  ss << ", transport_cc: " << (transport_cc ? "on" : "off");
   ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
   ss << ", fec: " << fec.ToString();
   ss << ", rtx: {";
@@ -153,7 +154,8 @@ VideoReceiveStream::VideoReceiveStream(
       call_stats_(call_stats) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
-  bool send_side_bwe = UseSendSideBwe(config_.rtp.extensions);
+  bool send_side_bwe =
+      config.rtp.transport_cc && UseSendSideBwe(config_.rtp.extensions);
 
   RemoteBitrateEstimator* bitrate_estimator =
       congestion_controller_->GetRemoteBitrateEstimator(send_side_bwe);
