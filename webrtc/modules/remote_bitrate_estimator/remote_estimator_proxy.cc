@@ -20,7 +20,7 @@
 namespace webrtc {
 
 // TODO(sprang): Tune these!
-const int RemoteEstimatorProxy::kDefaultProcessIntervalMs = 200;
+const int RemoteEstimatorProxy::kDefaultProcessIntervalMs = 50;
 const int RemoteEstimatorProxy::kBackWindowMs = 500;
 
 RemoteEstimatorProxy::RemoteEstimatorProxy(Clock* clock,
