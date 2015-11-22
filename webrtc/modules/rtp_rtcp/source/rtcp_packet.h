@@ -319,56 +319,6 @@ class Sdes : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Sdes);
 };
 
-//
-// Bye packet (BYE) (RFC 3550).
-//
-//        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//       |V=2|P|    SC   |   PT=BYE=203  |             length            |
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//       |                           SSRC/CSRC                           |
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//       :                              ...                              :
-//       +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-// (opt) |     length    |               reason for leaving            ...
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Bye : public RtcpPacket {
- public:
-  Bye() : RtcpPacket() {
-    memset(&bye_, 0, sizeof(bye_));
-  }
-
-  virtual ~Bye() {}
-
-  void From(uint32_t ssrc) {
-    bye_.SenderSSRC = ssrc;
-  }
-
-  bool WithCsrc(uint32_t csrc);
-
-  // TODO(sprang): Add support for reason field?
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  static const int kMaxNumberOfCsrcs = 0x1f - 1;  // First item is sender SSRC.
-
-  size_t BlockLength() const {
-    size_t source_count = 1 + csrcs_.size();
-    return kHeaderLength + 4 * source_count;
-  }
-
-  RTCPUtility::RTCPPacketBYE bye_;
-  std::vector<uint32_t> csrcs_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Bye);
-};
-
 // RFC 4585: Feedback format.
 //
 // Common packet format:

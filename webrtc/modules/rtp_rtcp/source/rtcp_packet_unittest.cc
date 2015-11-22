@@ -15,6 +15,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/test/rtcp_packet_parser.h"
 
 using ::testing::ElementsAre;
@@ -569,43 +570,6 @@ TEST(RtcpPacketTest, AppendPacketWithOwnAppendedPacket) {
   EXPECT_EQ(1, parser.report_block()->num_packets());
   EXPECT_EQ(1, parser.bye()->num_packets());
   EXPECT_EQ(1, parser.fir()->num_packets());
-}
-
-TEST(RtcpPacketTest, Bye) {
-  Bye bye;
-  bye.From(kSenderSsrc);
-
-  rtc::scoped_ptr<RawPacket> packet(bye.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.bye()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.bye()->Ssrc());
-}
-
-TEST(RtcpPacketTest, ByeWithCsrcs) {
-  Fir fir;
-  Bye bye;
-  bye.From(kSenderSsrc);
-  EXPECT_TRUE(bye.WithCsrc(0x22222222));
-  EXPECT_TRUE(bye.WithCsrc(0x33333333));
-  bye.Append(&fir);
-
-  rtc::scoped_ptr<RawPacket> packet(bye.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.bye()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.bye()->Ssrc());
-  EXPECT_EQ(1, parser.fir()->num_packets());
-}
-
-TEST(RtcpPacketTest, ByeWithTooManyCsrcs) {
-  Bye bye;
-  bye.From(kSenderSsrc);
-  const int kMaxCsrcs = (1 << 5) - 2;  // 5 bit len, first item is sender SSRC.
-  for (int i = 0; i < kMaxCsrcs; ++i) {
-    EXPECT_TRUE(bye.WithCsrc(i));
-  }
-  EXPECT_FALSE(bye.WithCsrc(kMaxCsrcs));
 }
 
 TEST(RtcpPacketTest, BuildWithInputBuffer) {

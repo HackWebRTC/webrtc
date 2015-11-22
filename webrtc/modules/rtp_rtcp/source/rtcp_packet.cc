@@ -19,7 +19,6 @@ using webrtc::RTCPUtility::kBtReceiverReferenceTime;
 using webrtc::RTCPUtility::kBtVoipMetric;
 
 using webrtc::RTCPUtility::PT_APP;
-using webrtc::RTCPUtility::PT_BYE;
 using webrtc::RTCPUtility::PT_IJ;
 using webrtc::RTCPUtility::PT_PSFB;
 using webrtc::RTCPUtility::PT_RR;
@@ -29,7 +28,6 @@ using webrtc::RTCPUtility::PT_SR;
 using webrtc::RTCPUtility::PT_XR;
 
 using webrtc::RTCPUtility::RTCPPacketAPP;
-using webrtc::RTCPUtility::RTCPPacketBYE;
 using webrtc::RTCPUtility::RTCPPacketPSFBAPP;
 using webrtc::RTCPUtility::RTCPPacketPSFBFIR;
 using webrtc::RTCPUtility::RTCPPacketPSFBFIRItem;
@@ -203,28 +201,6 @@ void CreateSdes(const std::vector<Sdes::Chunk>& chunks,
     memset(buffer + *pos, 0, (*it).null_octets);
     *pos += (*it).null_octets;
   }
-}
-
-// Bye packet (BYE) (RFC 3550).
-//
-//        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//       |V=2|P|    SC   |   PT=BYE=203  |             length            |
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//       |                           SSRC/CSRC                           |
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//       :                              ...                              :
-//       +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-// (opt) |     length    |               reason for leaving            ...
-//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateBye(const RTCPPacketBYE& bye,
-               const std::vector<uint32_t>& csrcs,
-               uint8_t* buffer,
-               size_t* pos) {
-  AssignUWord32(buffer, pos, bye.SenderSSRC);
-  for (uint32_t csrc : csrcs)
-    AssignUWord32(buffer, pos, csrc);
 }
 
 // RFC 4585: Feedback format.
@@ -799,29 +775,6 @@ size_t Sdes::BlockLength() const {
     length += 6 + chunk.name.length() + chunk.null_octets;
   assert(length % 4 == 0);
   return length;
-}
-
-bool Bye::Create(uint8_t* packet,
-                 size_t* index,
-                 size_t max_length,
-                 RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  size_t length = HeaderLength();
-  CreateHeader(length, PT_BYE, length, packet, index);
-  CreateBye(bye_, csrcs_, packet, index);
-  return true;
-}
-
-bool Bye::WithCsrc(uint32_t csrc) {
-  if (csrcs_.size() >= kMaxNumberOfCsrcs) {
-    LOG(LS_WARNING) << "Max CSRC size reached.";
-    return false;
-  }
-  csrcs_.push_back(csrc);
-  return true;
 }
 
 bool Pli::Create(uint8_t* packet,
