@@ -641,9 +641,10 @@ void VideoQualityTest::CheckParams() {
     // use that feature with pack loss, since the NACK request would end up
     // retransmitting the wrong packets.
     RTC_CHECK(params_.ss.selected_sl == -1 ||
-              params_.ss.num_spatial_layers == 1);
+              params_.ss.selected_sl == params_.ss.num_spatial_layers - 1);
     RTC_CHECK(params_.common.selected_tl == -1 ||
-              params_.common.num_temporal_layers == 1);
+              params_.common.selected_tl ==
+                  params_.common.num_temporal_layers - 1);
   }
 
   // TODO(ivica): Should max_bitrate_bps == -1 represent inf max bitrate, as it
