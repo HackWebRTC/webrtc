@@ -70,10 +70,10 @@ source_set("test_support") {
   ]
 
   deps = [
-    "//testing/gmock",
-    "//testing/gtest",
     "..:gtest_prod",
     "../system_wrappers",
+    "//testing/gmock",
+    "//testing/gtest",
   ]
 
   if (is_android) {

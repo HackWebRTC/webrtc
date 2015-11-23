@@ -1,0 +1,35 @@
+# Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("//build/config/features.gni")
+import("//testing/test.gni")
+
+static_library("webrtc_fuzzer_main") {
+  sources = [
+    "webrtc_fuzzer_main.cc",
+  ]
+  deps = [
+    "..:field_trial",
+    "//testing/libfuzzer:libfuzzer_main",
+  ]
+}
+
+test("vp9_depacketizer_fuzzer") {
+  sources = [
+    "vp9_depacketizer_fuzzer.cc",
+  ]
+  deps = [
+    ":webrtc_fuzzer_main",
+    "../../modules/rtp_rtcp",
+  ]
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
