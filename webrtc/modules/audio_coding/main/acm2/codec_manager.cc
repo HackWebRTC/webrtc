@@ -108,17 +108,7 @@ const CodecInst kEmptyCodecInst = {-1, "noCodecRegistered", 0, 0, 0, 0};
 }  // namespace
 
 CodecManager::CodecManager()
-    : dtx_enabled_(false),
-      vad_mode_(VADNormal),
-      send_codec_inst_(kEmptyCodecInst),
-      red_enabled_(false),
-      codec_fec_enabled_(false),
-      encoder_is_opus_(false) {
-  // Register the default payload types for RED and CNG.
-  for (const CodecInst& ci : RentACodec::Database()) {
-    RentACodec::RegisterCngPayloadType(&cng_payload_types_, ci);
-    RentACodec::RegisterRedPayloadType(&red_payload_types_, ci);
-  }
+    : send_codec_inst_(kEmptyCodecInst), encoder_is_opus_(false) {
   thread_checker_.DetachFromThread();
 }
 
@@ -134,7 +124,8 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   }
 
   int dummy_id = 0;
-  switch (RentACodec::RegisterRedPayloadType(&red_payload_types_, send_codec)) {
+  switch (RentACodec::RegisterRedPayloadType(
+      &codec_stack_params_.red_payload_types, send_codec)) {
     case RentACodec::RegistrationResult::kOk:
       return 0;
     case RentACodec::RegistrationResult::kBadFreq:
@@ -145,7 +136,8 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     case RentACodec::RegistrationResult::kSkip:
       break;
   }
-  switch (RentACodec::RegisterCngPayloadType(&cng_payload_types_, send_codec)) {
+  switch (RentACodec::RegisterCngPayloadType(
+      &codec_stack_params_.cng_payload_types, send_codec)) {
     case RentACodec::RegistrationResult::kOk:
       return 0;
     case RentACodec::RegistrationResult::kBadFreq:
@@ -159,11 +151,11 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
 
   // Set Stereo, and make sure VAD and DTX is turned off.
   if (send_codec.channels != 1) {
-    if (dtx_enabled_) {
+    if (codec_stack_params_.use_cng) {
       WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, dummy_id,
                    "VAD/DTX is turned off, not supported when sending stereo.");
     }
-    dtx_enabled_ = false;
+    codec_stack_params_.use_cng = false;
   }
 
   // Check if the codec is already registered as send codec.
@@ -175,10 +167,6 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     new_codec = !old_codec_id || *new_codec_id != *old_codec_id;
   }
 
-  if (RedPayloadType(send_codec.plfreq) == -1) {
-    red_enabled_ = false;
-  }
-
   encoder_is_opus_ = IsOpus(send_codec);
 
   if (new_codec) {
@@ -186,16 +174,17 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     RTC_DCHECK(CodecSupported(send_codec));
     if (IsOpus(send_codec)) {
       // VAD/DTX not supported.
-      dtx_enabled_ = false;
+      codec_stack_params_.use_cng = false;
     }
     AudioEncoder* enc = rent_a_codec_.RentEncoder(send_codec);
     if (!enc)
       return -1;
-    RentEncoderStack(enc, send_codec.plfreq);
+    rent_a_codec_.RentEncoderStack(enc, &codec_stack_params_);
     RTC_DCHECK(CurrentEncoder());
 
-    codec_fec_enabled_ = codec_fec_enabled_ &&
-                         enc->SetFec(codec_fec_enabled_);
+    codec_stack_params_.use_codec_fec =
+        codec_stack_params_.use_codec_fec &&
+        enc->SetFec(codec_stack_params_.use_codec_fec);
 
     send_codec_inst_ = send_codec;
     return 0;
@@ -208,7 +197,7 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     AudioEncoder* enc = rent_a_codec_.RentEncoder(send_codec);
     if (!enc)
       return -1;
-    RentEncoderStack(enc, send_codec.plfreq);
+    rent_a_codec_.RentEncoderStack(enc, &codec_stack_params_);
     RTC_DCHECK(CurrentEncoder());
   }
   send_codec_inst_.plfreq = send_codec.plfreq;
@@ -222,8 +211,9 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     send_codec_inst_.rate = send_codec.rate;
   }
 
-  codec_fec_enabled_ =
-      codec_fec_enabled_ && CurrentEncoder()->SetFec(codec_fec_enabled_);
+  codec_stack_params_.use_codec_fec =
+      codec_stack_params_.use_codec_fec &&
+      CurrentEncoder()->SetFec(codec_stack_params_.use_codec_fec);
 
   return 0;
 }
@@ -242,19 +232,18 @@ void CodecManager::RegisterEncoder(AudioEncoder* external_speech_encoder) {
   memcpy(send_codec_inst_.plname, kName, sizeof(kName));
 
   if (send_codec_inst_.channels != 1)
-    dtx_enabled_ = false;
-  if (codec_fec_enabled_) {
+    codec_stack_params_.use_cng = false;
+  if (codec_stack_params_.use_codec_fec) {
     // Switch FEC on. On failure, remember that FEC is off.
     if (!external_speech_encoder->SetFec(true))
-      codec_fec_enabled_ = false;
+      codec_stack_params_.use_codec_fec = false;
   } else {
     // Switch FEC off. This shouldn't fail.
     const bool success = external_speech_encoder->SetFec(false);
     RTC_DCHECK(success);
   }
 
-  RentEncoderStack(external_speech_encoder,
-                   external_speech_encoder->SampleRateHz());
+  rent_a_codec_.RentEncoderStack(external_speech_encoder, &codec_stack_params_);
 }
 
 rtc::Optional<CodecInst> CodecManager::GetCodecInst() const {
@@ -271,20 +260,23 @@ rtc::Optional<CodecInst> CodecManager::GetCodecInst() const {
 }
 
 bool CodecManager::SetCopyRed(bool enable) {
-  if (enable && codec_fec_enabled_) {
+  if (enable && codec_stack_params_.use_codec_fec) {
     WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, 0,
                  "Codec internal FEC and RED cannot be co-enabled.");
     return false;
   }
-  if (enable && RedPayloadType(send_codec_inst_.plfreq) == -1) {
+  if (enable &&
+      codec_stack_params_.red_payload_types.count(send_codec_inst_.plfreq) <
+          1) {
     WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, 0,
                  "Cannot enable RED at %i Hz.", send_codec_inst_.plfreq);
     return false;
   }
-  if (red_enabled_ != enable) {
-    red_enabled_ = enable;
+  if (codec_stack_params_.use_red != enable) {
+    codec_stack_params_.use_red = enable;
     if (CurrentEncoder())
-      RentEncoderStack(rent_a_codec_.GetEncoder(), send_codec_inst_.plfreq);
+      rent_a_codec_.RentEncoderStack(rent_a_codec_.GetEncoder(),
+                                     &codec_stack_params_);
   }
   return true;
 }
@@ -301,22 +293,23 @@ int CodecManager::SetVAD(bool enable, ACMVADMode mode) {
   if (enable && stereo_send) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
                  "VAD/DTX not supported for stereo sending");
-    dtx_enabled_ = false;
+    codec_stack_params_.use_cng = false;
     return -1;
   }
 
   // If a send codec is registered, set VAD/DTX for the codec.
   if (IsOpus(send_codec_inst_)) {
     // VAD/DTX not supported.
-    dtx_enabled_ = false;
+    codec_stack_params_.use_cng = false;
     return 0;
   }
 
-  if (dtx_enabled_ != enable || vad_mode_ != mode) {
-    dtx_enabled_ = enable;
-    vad_mode_ = mode;
+  if (codec_stack_params_.use_cng != enable ||
+      codec_stack_params_.vad_mode != mode) {
+    codec_stack_params_.use_cng = enable;
+    codec_stack_params_.vad_mode = mode;
     if (enc)
-      RentEncoderStack(enc, send_codec_inst_.plfreq);
+      rent_a_codec_.RentEncoderStack(enc, &codec_stack_params_);
   }
   return 0;
 }
@@ -324,54 +317,25 @@ int CodecManager::SetVAD(bool enable, ACMVADMode mode) {
 void CodecManager::VAD(bool* dtx_enabled,
                        bool* vad_enabled,
                        ACMVADMode* mode) const {
-  *dtx_enabled = dtx_enabled_;
-  *vad_enabled = dtx_enabled_;
-  *mode = vad_mode_;
+  *dtx_enabled = *vad_enabled = codec_stack_params_.use_cng;
+  *mode = codec_stack_params_.vad_mode;
 }
 
 int CodecManager::SetCodecFEC(bool enable_codec_fec) {
-  if (enable_codec_fec == true && red_enabled_ == true) {
+  if (enable_codec_fec && codec_stack_params_.use_red) {
     WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, 0,
                  "Codec internal FEC and RED cannot be co-enabled.");
     return -1;
   }
 
   RTC_CHECK(CurrentEncoder());
-  codec_fec_enabled_ =
+  codec_stack_params_.use_codec_fec =
       CurrentEncoder()->SetFec(enable_codec_fec) && enable_codec_fec;
-  return codec_fec_enabled_ == enable_codec_fec ? 0 : -1;
+  return codec_stack_params_.use_codec_fec == enable_codec_fec ? 0 : -1;
 }
 
 AudioDecoder* CodecManager::GetAudioDecoder(const CodecInst& codec) {
   return IsIsac(codec) ? rent_a_codec_.RentIsacDecoder() : nullptr;
-}
-
-int CodecManager::CngPayloadType(int rtp_timestamp_rate_hz) const {
-  RTC_CHECK(rtp_timestamp_rate_hz == 8000 || rtp_timestamp_rate_hz == 16000 ||
-            rtp_timestamp_rate_hz == 32000 || rtp_timestamp_rate_hz == 48000)
-      << rtp_timestamp_rate_hz << " Hz is not supported";
-  auto it = cng_payload_types_.find(rtp_timestamp_rate_hz);
-  return it == cng_payload_types_.end() ? -1 : it->second;
-}
-
-int CodecManager::RedPayloadType(int rtp_timestamp_rate_hz) const {
-  RTC_CHECK(rtp_timestamp_rate_hz == 8000 || rtp_timestamp_rate_hz == 16000 ||
-            rtp_timestamp_rate_hz == 32000 || rtp_timestamp_rate_hz == 48000)
-      << rtp_timestamp_rate_hz << " Hz is not supported";
-  auto it = red_payload_types_.find(rtp_timestamp_rate_hz);
-  return it == red_payload_types_.end() ? -1 : it->second;
-}
-
-void CodecManager::RentEncoderStack(AudioEncoder* speech_encoder,
-                                    int sample_rate_hz) {
-  auto cng_config =
-      dtx_enabled_ ? rtc::Optional<RentACodec::CngConfig>(RentACodec::CngConfig{
-                         CngPayloadType(sample_rate_hz), vad_mode_})
-                   : rtc::Optional<RentACodec::CngConfig>();
-  auto red_pt = red_enabled_
-                    ? rtc::Optional<int>(RedPayloadType(sample_rate_hz))
-                    : rtc::Optional<int>();
-  rent_a_codec_.RentEncoderStack(speech_encoder, cng_config, red_pt);
 }
 
 }  // namespace acm2

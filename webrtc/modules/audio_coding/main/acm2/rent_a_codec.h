@@ -200,18 +200,27 @@ class RentACodec {
   // successful call to this function, or until the Rent-A-Codec is destroyed.
   AudioEncoder* RentEncoder(const CodecInst& codec_inst);
 
-  // Creates and returns an audio encoder stack where the given speech encoder
-  // is augmented with the specified CNG/VAD and RED encoders. Leave either
-  // optional field blank if you don't want the corresponding gizmo in the
-  // stack. The returned encoder is live until the next successful call to this
-  // function, or until the Rent-A-Codec is destroyed.
-  struct CngConfig {
-    int cng_payload_type;
-    ACMVADMode vad_mode;
+  struct StackParameters {
+    StackParameters();
+    ~StackParameters();
+
+    bool use_codec_fec = false;
+    bool use_red = false;
+    bool use_cng = false;
+    ACMVADMode vad_mode = VADNormal;
+
+    // Maps from RTP timestamp rate (in Hz) to payload type.
+    std::map<int, int> cng_payload_types;
+    std::map<int, int> red_payload_types;
   };
+
+  // Creates and returns an audio encoder stack constructed to the given
+  // specification. If the specification isn't compatible with the encoder, it
+  // will be changed to match (things will be switched off). The returned
+  // encoder is live until the next successful call to this function, or until
+  // the Rent-A-Codec is destroyed.
   AudioEncoder* RentEncoderStack(AudioEncoder* speech_encoder,
-                                 rtc::Optional<CngConfig> cng_config,
-                                 rtc::Optional<int> red_payload_type);
+                                 StackParameters* param);
 
   // Get the last return values of RentEncoder and RentEncoderStack, or null if
   // they haven't been called.

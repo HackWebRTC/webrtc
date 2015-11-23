@@ -54,9 +54,9 @@ class CodecManager final {
   // null.
   AudioDecoder* GetAudioDecoder(const CodecInst& codec);
 
-  bool red_enabled() const { return red_enabled_; }
+  bool red_enabled() const { return codec_stack_params_.use_red; }
 
-  bool codec_fec_enabled() const { return codec_fec_enabled_; }
+  bool codec_fec_enabled() const { return codec_stack_params_.use_codec_fec; }
 
   AudioEncoder* CurrentEncoder() { return rent_a_codec_.GetEncoderStack(); }
   const AudioEncoder* CurrentEncoder() const {
@@ -66,21 +66,10 @@ class CodecManager final {
   bool CurrentEncoderIsOpus() const { return encoder_is_opus_; }
 
  private:
-  int CngPayloadType(int sample_rate_hz) const;
-  int RedPayloadType(int sample_rate_hz) const;
-  void RentEncoderStack(AudioEncoder* speech_encoder, int sample_rate_hz);
-
   rtc::ThreadChecker thread_checker_;
-  bool dtx_enabled_;
-  ACMVADMode vad_mode_;
   CodecInst send_codec_inst_;
-  bool red_enabled_;
-  bool codec_fec_enabled_;
   RentACodec rent_a_codec_;
-
-  // Maps from RTP timestamp rate (in Hz) to payload type.
-  std::map<int, int> cng_payload_types_;
-  std::map<int, int> red_payload_types_;
+  RentACodec::StackParameters codec_stack_params_;
 
   bool encoder_is_opus_;
 

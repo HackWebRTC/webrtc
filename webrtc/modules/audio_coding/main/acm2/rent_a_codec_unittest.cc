@@ -32,10 +32,9 @@ class RentACodecTestF : public ::testing::Test {
   void CreateCodec() {
     speech_encoder_ = rent_a_codec_.RentEncoder(kDefaultCodecInst);
     ASSERT_TRUE(speech_encoder_);
-    encoder_ = rent_a_codec_.RentEncoderStack(
-        speech_encoder_, rtc::Optional<RentACodec::CngConfig>(
-                             RentACodec::CngConfig{kCngPt, VADNormal}),
-        rtc::Optional<int>());
+    RentACodec::StackParameters param;
+    param.use_cng = true;
+    encoder_ = rent_a_codec_.RentEncoderStack(speech_encoder_, &param);
   }
 
   void EncodeAndVerify(size_t expected_out_length,
@@ -104,10 +103,8 @@ TEST_F(RentACodecTestF, VerifyCngFrames) {
 TEST(RentACodecTest, ExternalEncoder) {
   MockAudioEncoder external_encoder;
   RentACodec rac;
-  EXPECT_EQ(&external_encoder,
-            rac.RentEncoderStack(&external_encoder,
-                                 rtc::Optional<RentACodec::CngConfig>(),
-                                 rtc::Optional<int>()));
+  RentACodec::StackParameters param;
+  EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&external_encoder, &param));
   const int kSampleRateHz = 8000;
   const int kPacketSizeSamples = kSampleRateHz / 100;
   int16_t audio[kPacketSizeSamples] = {0};
@@ -143,19 +140,14 @@ TEST(RentACodecTest, ExternalEncoder) {
   codec_inst.pacsize = kPacketSizeSamples;
   AudioEncoder* enc = rac.RentEncoder(codec_inst);
   ASSERT_TRUE(enc);
-  EXPECT_EQ(enc,
-            rac.RentEncoderStack(enc, rtc::Optional<RentACodec::CngConfig>(),
-                                 rtc::Optional<int>()));
+  EXPECT_EQ(enc, rac.RentEncoderStack(enc, &param));
 
   // Don't expect any more calls to the external encoder.
   info = rac.GetEncoderStack()->Encode(1, audio, arraysize(encoded), encoded);
   external_encoder.Mark("B");
 
   // Change back to external encoder again.
-  EXPECT_EQ(&external_encoder,
-            rac.RentEncoderStack(&external_encoder,
-                                 rtc::Optional<RentACodec::CngConfig>(),
-                                 rtc::Optional<int>()));
+  EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&external_encoder, &param));
   info = rac.GetEncoderStack()->Encode(2, audio, arraysize(encoded), encoded);
   EXPECT_EQ(2u, info.encoded_timestamp);
 }
@@ -177,16 +169,14 @@ void TestCngAndRedResetSpeechEncoder(bool use_cng, bool use_red) {
     EXPECT_CALL(speech_encoder, Die());
   }
 
-  auto cng_cfg = use_cng ? rtc::Optional<RentACodec::CngConfig>(
-                               RentACodec::CngConfig{17, VADNormal})
-                         : rtc::Optional<RentACodec::CngConfig>();
-  auto red_pt = use_red ? rtc::Optional<int>(19) : rtc::Optional<int>();
+  RentACodec::StackParameters param1, param2;
+  param2.use_cng = use_cng;
+  param2.use_red = use_red;
   speech_encoder.Mark("disabled");
   RentACodec rac;
-  rac.RentEncoderStack(&speech_encoder, rtc::Optional<RentACodec::CngConfig>(),
-                       rtc::Optional<int>());
+  rac.RentEncoderStack(&speech_encoder, &param1);
   speech_encoder.Mark("enabled");
-  rac.RentEncoderStack(&speech_encoder, cng_cfg, red_pt);
+  rac.RentEncoderStack(&speech_encoder, &param2);
 }
 
 TEST(RentACodecTest, CngResetsSpeechEncoder) {

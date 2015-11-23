@@ -187,14 +187,14 @@ rtc::scoped_ptr<AudioEncoder> CreateRedEncoder(AudioEncoder* encoder,
 #endif
 }
 
-rtc::scoped_ptr<AudioEncoder> CreateCngEncoder(
-    AudioEncoder* encoder,
-    RentACodec::CngConfig cng_config) {
+rtc::scoped_ptr<AudioEncoder> CreateCngEncoder(AudioEncoder* encoder,
+                                               int payload_type,
+                                               ACMVADMode vad_mode) {
   AudioEncoderCng::Config config;
   config.num_channels = encoder->NumChannels();
-  config.payload_type = cng_config.cng_payload_type;
+  config.payload_type = payload_type;
   config.speech_encoder = encoder;
-  switch (cng_config.vad_mode) {
+  switch (vad_mode) {
     case VADNormal:
       config.vad_mode = Vad::kVadNormal;
       break;
@@ -239,26 +239,45 @@ AudioEncoder* RentACodec::RentEncoder(const CodecInst& codec_inst) {
   return speech_encoder_.get();
 }
 
-AudioEncoder* RentACodec::RentEncoderStack(
-    AudioEncoder* speech_encoder,
-    rtc::Optional<CngConfig> cng_config,
-    rtc::Optional<int> red_payload_type) {
+RentACodec::StackParameters::StackParameters() {
+  // Register the default payload types for RED and CNG.
+  for (const CodecInst& ci : RentACodec::Database()) {
+    RentACodec::RegisterCngPayloadType(&cng_payload_types, ci);
+    RentACodec::RegisterRedPayloadType(&red_payload_types, ci);
+  }
+}
+
+RentACodec::StackParameters::~StackParameters() = default;
+
+AudioEncoder* RentACodec::RentEncoderStack(AudioEncoder* speech_encoder,
+                                           StackParameters* param) {
   RTC_DCHECK(speech_encoder);
-  if (cng_config || red_payload_type) {
+
+  auto pt = [&speech_encoder](const std::map<int, int>& m) {
+    auto it = m.find(speech_encoder->SampleRateHz());
+    return it == m.end() ? rtc::Optional<int>()
+                         : rtc::Optional<int>(it->second);
+  };
+  auto cng_pt = pt(param->cng_payload_types);
+  param->use_cng = param->use_cng && cng_pt;
+  auto red_pt = pt(param->red_payload_types);
+  param->use_red = param->use_red && red_pt;
+
+  if (param->use_cng || param->use_red) {
     // The RED and CNG encoders need to be in sync with the speech encoder, so
     // reset the latter to ensure its buffer is empty.
     speech_encoder->Reset();
   }
   encoder_stack_ = speech_encoder;
-  if (red_payload_type) {
-    red_encoder_ = CreateRedEncoder(encoder_stack_, *red_payload_type);
+  if (param->use_red) {
+    red_encoder_ = CreateRedEncoder(encoder_stack_, *red_pt);
     if (red_encoder_)
       encoder_stack_ = red_encoder_.get();
   } else {
     red_encoder_.reset();
   }
-  if (cng_config) {
-    cng_encoder_ = CreateCngEncoder(encoder_stack_, *cng_config);
+  if (param->use_cng) {
+    cng_encoder_ = CreateCngEncoder(encoder_stack_, *cng_pt, param->vad_mode);
     encoder_stack_ = cng_encoder_.get();
   } else {
     cng_encoder_.reset();
