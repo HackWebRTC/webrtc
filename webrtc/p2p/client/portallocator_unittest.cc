@@ -617,9 +617,17 @@ TEST_F(PortAllocatorTest,
   AddInterface(kPrivateAddr2);
   ResetWithStunServerAndNat(kStunAddr);
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
-  // Expect to see 3 ports: STUN, TURN/UDP and TCP ports, and a default private,
-  // STUN and TURN/UDP candidates.
-  CheckDisableAdapterEnumeration(3U, kPrivateAddr.ipaddr(),
+
+  // Enable IPv6 here. Since the network_manager doesn't have IPv6 default
+  // address set and we have no IPv6 STUN server, there should be no IPv6
+  // candidates.
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_ENABLE_IPV6);
+
+  // Expect to see 3 ports for IPv4: HOST/STUN, TURN/UDP and TCP ports, 2 ports
+  // for IPv6: HOST, and TCP. Only IPv4 candidates: a default private, STUN and
+  // TURN/UDP candidates.
+  CheckDisableAdapterEnumeration(5U, kPrivateAddr.ipaddr(),
                                  kNatUdpAddr.ipaddr(), kTurnUdpExtAddr.ipaddr(),
                                  rtc::IPAddress());
 }
