@@ -34,7 +34,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-final class ThreadUtils {
+public class ThreadUtils {
   /**
    * Utility class to be used for checking that a method is called on the correct thread.
    */
