@@ -21,7 +21,6 @@
 #endif
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
@@ -75,10 +74,6 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, void* obj,
       name_(thread_name ? thread_name : "webrtc"),
       thread_(0) {
   RTC_DCHECK(name_.length() < 64);
-}
-
-uint32_t ThreadWrapper::GetThreadId() {
-  return rtc::CurrentThreadId();
 }
 
 ThreadPosix::~ThreadPosix() {

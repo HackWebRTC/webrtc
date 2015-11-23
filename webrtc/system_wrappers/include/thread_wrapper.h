@@ -67,12 +67,6 @@ class ThreadWrapper {
   static rtc::scoped_ptr<ThreadWrapper> CreateThread(ThreadRunFunction func,
       void* obj, const char* thread_name);
 
-  // Get the current thread's thread ID.
-  // NOTE: This is a static method. It returns the id of the calling thread,
-  // *not* the id of the worker thread that a ThreadWrapper instance represents.
-  // TODO(tommi): Move outside of the ThreadWrapper class to avoid confusion.
-  static uint32_t GetThreadId();
-
   // Tries to spawns a thread and returns true if that was successful.
   // Additionally, it tries to set thread priority according to the priority
   // from when CreateThread was called. However, failure to set priority will

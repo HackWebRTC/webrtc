@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "webrtc/base/atomicops.h"
+#include "webrtc/base/platform_thread.h"
 #ifdef _WIN32
 #include "webrtc/system_wrappers/source/trace_win.h"
 #else
@@ -76,7 +77,7 @@ TraceImpl::~TraceImpl() {
 }
 
 int32_t TraceImpl::AddThreadId(char* trace_message) const {
-  uint32_t thread_id = ThreadWrapper::GetThreadId();
+  uint32_t thread_id = rtc::CurrentThreadId();
   // Messages is 12 characters.
   return sprintf(trace_message, "%10u; ", thread_id);
 }

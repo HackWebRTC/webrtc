@@ -15,7 +15,6 @@
 #include <windows.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
@@ -38,11 +37,6 @@ ThreadWindows::ThreadWindows(ThreadRunFunction func, void* obj,
 ThreadWindows::~ThreadWindows() {
   RTC_DCHECK(main_thread_.CalledOnValidThread());
   RTC_DCHECK(!thread_);
-}
-
-// static
-uint32_t ThreadWrapper::GetThreadId() {
-  return GetCurrentThreadId();
 }
 
 // static

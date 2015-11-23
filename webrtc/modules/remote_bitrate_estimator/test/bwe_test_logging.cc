@@ -18,8 +18,8 @@
 #include <algorithm>
 #include <sstream>
 
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace webrtc {
 namespace testing {
@@ -57,27 +57,27 @@ Logging* Logging::GetInstance() {
 
 void Logging::SetGlobalContext(uint32_t name) {
   CriticalSectionScoped cs(crit_sect_.get());
-  thread_map_[ThreadWrapper::GetThreadId()].global_state.tag = ToString(name);
+  thread_map_[rtc::CurrentThreadId()].global_state.tag = ToString(name);
 }
 
 void Logging::SetGlobalContext(const std::string& name) {
   CriticalSectionScoped cs(crit_sect_.get());
-  thread_map_[ThreadWrapper::GetThreadId()].global_state.tag = name;
+  thread_map_[rtc::CurrentThreadId()].global_state.tag = name;
 }
 
 void Logging::SetGlobalContext(const char* name) {
   CriticalSectionScoped cs(crit_sect_.get());
-  thread_map_[ThreadWrapper::GetThreadId()].global_state.tag = name;
+  thread_map_[rtc::CurrentThreadId()].global_state.tag = name;
 }
 
 void Logging::SetGlobalEnable(bool enabled) {
   CriticalSectionScoped cs(crit_sect_.get());
-  thread_map_[ThreadWrapper::GetThreadId()].global_state.enabled = enabled;
+  thread_map_[rtc::CurrentThreadId()].global_state.enabled = enabled;
 }
 
 void Logging::Log(const char format[], ...) {
   CriticalSectionScoped cs(crit_sect_.get());
-  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   if (state.enabled) {
@@ -96,7 +96,7 @@ void Logging::Plot(int figure, double value) {
 
 void Logging::Plot(int figure, double value, const std::string& alg_name) {
   CriticalSectionScoped cs(crit_sect_.get());
-  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   std::string label = state.tag + '@' + alg_name;
@@ -119,7 +119,7 @@ void Logging::PlotBar(int figure,
                       double value,
                       int flow_id) {
   CriticalSectionScoped cs(crit_sect_.get());
-  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   if (state.enabled) {
@@ -132,7 +132,7 @@ void Logging::PlotBaselineBar(int figure,
                               double value,
                               int flow_id) {
   CriticalSectionScoped cs(crit_sect_.get());
-  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   if (state.enabled) {
@@ -148,7 +148,7 @@ void Logging::PlotErrorBar(int figure,
                            const std::string& error_title,
                            int flow_id) {
   CriticalSectionScoped cs(crit_sect_.get());
-  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   if (state.enabled) {
@@ -167,7 +167,7 @@ void Logging::PlotLimitErrorBar(int figure,
                                 const std::string& limit_title,
                                 int flow_id) {
   CriticalSectionScoped cs(crit_sect_.get());
-  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   if (state.enabled) {
@@ -182,7 +182,7 @@ void Logging::PlotLabel(int figure,
                         const std::string& y_label,
                         int num_flows) {
   CriticalSectionScoped cs(crit_sect_.get());
-  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   if (state.enabled) {
@@ -219,7 +219,7 @@ void Logging::PushState(const std::string& append_to_tag, int64_t timestamp_ms,
                         bool enabled) {
   CriticalSectionScoped cs(crit_sect_.get());
   State new_state(append_to_tag, timestamp_ms, enabled);
-  ThreadState* thread_state = &thread_map_[ThreadWrapper::GetThreadId()];
+  ThreadState* thread_state = &thread_map_[rtc::CurrentThreadId()];
   std::stack<State>* stack = &thread_state->stack;
   if (stack->empty()) {
     new_state.MergePrevious(thread_state->global_state);
@@ -231,7 +231,7 @@ void Logging::PushState(const std::string& append_to_tag, int64_t timestamp_ms,
 
 void Logging::PopState() {
   CriticalSectionScoped cs(crit_sect_.get());
-  ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
+  ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   std::stack<State>* stack = &it->second.stack;
   int64_t newest_timestamp_ms = stack->top().timestamp_ms;
