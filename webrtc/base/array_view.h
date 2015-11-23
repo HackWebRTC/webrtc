@@ -11,8 +11,6 @@
 #ifndef WEBRTC_BASE_ARRAY_VIEW_H_
 #define WEBRTC_BASE_ARRAY_VIEW_H_
 
-#include <vector>
-
 #include "webrtc/base/checks.h"
 
 namespace rtc {
@@ -50,12 +48,6 @@ class ArrayView final {
   // std::vector).
   template <typename U>
   ArrayView(U& u) : ArrayView(u.data(), u.size()) {}
-  // TODO(kwiberg): Remove the special case for std::vector (and the include of
-  // <vector>); it is handled by the general case in C++11, since std::vector
-  // has a data() method there.
-  template <typename U>
-  ArrayView(std::vector<U>& u)
-      : ArrayView(u.empty() ? nullptr : &u[0], u.size()) {}
 
   // Indexing, size, and iteration. These allow mutation even if the ArrayView
   // is const, because the ArrayView doesn't own the array. (To prevent
