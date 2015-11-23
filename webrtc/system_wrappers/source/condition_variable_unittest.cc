@@ -11,9 +11,9 @@
 #include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
@@ -147,8 +147,8 @@ class CondVarTest : public ::testing::Test {
   CondVarTest() {}
 
   virtual void SetUp() {
-    thread_ = ThreadWrapper::CreateThread(&WaitingRunFunction,
-                                          &baton_, "CondVarTest");
+    thread_ = PlatformThread::CreateThread(&WaitingRunFunction, &baton_,
+                                           "CondVarTest");
     ASSERT_TRUE(thread_->Start());
   }
 
@@ -167,7 +167,7 @@ class CondVarTest : public ::testing::Test {
   Baton baton_;
 
  private:
-  rtc::scoped_ptr<ThreadWrapper> thread_;
+  rtc::scoped_ptr<PlatformThread> thread_;
 };
 
 // The SetUp and TearDown functions use condition variables.

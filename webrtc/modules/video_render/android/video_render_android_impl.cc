@@ -141,8 +141,8 @@ int32_t VideoRenderAndroid::StartRender() {
     return 0;
   }
 
-  _javaRenderThread = ThreadWrapper::CreateThread(JavaRenderThreadFun, this,
-                                                  "AndroidRenderThread");
+  _javaRenderThread = PlatformThread::CreateThread(JavaRenderThreadFun, this,
+                                                   "AndroidRenderThread");
 
   if (_javaRenderThread->Start())
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id,

@@ -40,9 +40,9 @@ ConferenceTransport::ConferenceTransport()
     : pq_crit_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       stream_crit_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       packet_event_(webrtc::EventWrapper::Create()),
-      thread_(webrtc::ThreadWrapper::CreateThread(Run,
-                                                  this,
-                                                  "ConferenceTransport")),
+      thread_(webrtc::PlatformThread::CreateThread(Run,
+                                                   this,
+                                                   "ConferenceTransport")),
       rtt_ms_(0),
       stream_count_(0),
       rtp_header_parser_(webrtc::RtpHeaderParser::Create()) {

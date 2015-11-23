@@ -19,8 +19,8 @@
 #include <Map>
 
 // Added
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 #pragma comment(lib, "d3d9.lib")       // located in DirectX SDK
 
@@ -203,7 +203,7 @@ private:
 
     CriticalSectionWrapper& _refD3DCritsect;
     Trace* _trace;
-    rtc::scoped_ptr<ThreadWrapper> _screenUpdateThread;
+    rtc::scoped_ptr<PlatformThread> _screenUpdateThread;
     EventTimerWrapper* _screenUpdateEvent;
 
     HWND _hWnd;

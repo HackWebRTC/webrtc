@@ -32,7 +32,7 @@ class Trace;
 
 namespace webrtc {
 class EventTimerWrapper;
-class ThreadWrapper;
+class PlatformThread;
 class VideoRenderNSOpenGL;
 class CriticalSectionWrapper;
 
@@ -166,7 +166,7 @@ private: // variables
     bool _fullScreen;
     int _id;
     CriticalSectionWrapper& _nsglContextCritSec;
-    rtc::scoped_ptr<ThreadWrapper> _screenUpdateThread;
+    rtc::scoped_ptr<PlatformThread> _screenUpdateThread;
     EventTimerWrapper* _screenUpdateEvent;
     NSOpenGLContext* _nsglContext;
     NSOpenGLContext* _nsglFullScreenContext;

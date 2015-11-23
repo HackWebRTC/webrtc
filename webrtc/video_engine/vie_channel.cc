@@ -15,6 +15,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -29,7 +30,6 @@
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/payload_router.h"
@@ -1150,8 +1150,8 @@ void ViEChannel::StartDecodeThread() {
   // Start the decode thread
   if (decode_thread_)
     return;
-  decode_thread_ = ThreadWrapper::CreateThread(ChannelDecodeThreadFunction,
-                                               this, "DecodingThread");
+  decode_thread_ = PlatformThread::CreateThread(ChannelDecodeThreadFunction,
+                                                this, "DecodingThread");
   decode_thread_->Start();
   decode_thread_->SetPriority(kHighestPriority);
 }

@@ -11,11 +11,11 @@
 #include "webrtc/engine_configurations.h"
 #if defined(COCOA_RENDERING)
 
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_render/mac/video_render_nsopengl.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
@@ -378,8 +378,8 @@ _renderingIsPaused (FALSE),
 _windowRefSuperView(NULL),
 _windowRefSuperViewFrame(NSMakeRect(0,0,0,0))
 {
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
-            this, "ScreenUpdateNSOpenGL");
+  _screenUpdateThread = PlatformThread::CreateThread(
+      ScreenUpdateThreadProc, this, "ScreenUpdateNSOpenGL");
 }
 
 int VideoRenderNSOpenGL::ChangeWindow(CocoaRenderView* newWindowRef)
@@ -657,7 +657,7 @@ VideoRenderNSOpenGL::~VideoRenderNSOpenGL()
     }
 
     // Signal event to exit thread, then delete it
-    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
+    PlatformThread* tmpPtr = _screenUpdateThread.release();
 
     if (tmpPtr)
     {
@@ -864,7 +864,7 @@ int32_t VideoRenderNSOpenGL::GetChannelProperties(const uint16_t streamId,
 int VideoRenderNSOpenGL::StopThread()
 {
 
-    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
+    PlatformThread* tmpPtr = _screenUpdateThread.release();
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id,
                  "%s Stopping thread ", __FUNCTION__, tmpPtr);
 

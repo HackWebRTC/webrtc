@@ -21,11 +21,11 @@
 #include <sys/time.h>
 #endif
 
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/common_video/video_render_frames.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
@@ -131,7 +131,7 @@ int32_t IncomingVideoStream::Start() {
   CriticalSectionScoped csT(thread_critsect_.get());
   assert(incoming_render_thread_ == NULL);
 
-  incoming_render_thread_ = ThreadWrapper::CreateThread(
+  incoming_render_thread_ = PlatformThread::CreateThread(
       IncomingVideoStreamThreadFun, this, "IncomingVideoStreamThread");
   if (!incoming_render_thread_) {
     return -1;
@@ -155,7 +155,7 @@ int32_t IncomingVideoStream::Stop() {
     return 0;
   }
 
-  ThreadWrapper* thread = NULL;
+  PlatformThread* thread = NULL;
   {
     CriticalSectionScoped cs_thread(thread_critsect_.get());
     if (incoming_render_thread_) {

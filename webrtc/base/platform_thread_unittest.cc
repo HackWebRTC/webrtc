@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/base/platform_thread.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -22,9 +22,9 @@ bool NullRunFunction(void* obj) {
   return true;
 }
 
-TEST(ThreadTest, StartStop) {
-  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
-      &NullRunFunction, nullptr, "ThreadTest");
+TEST(PlatformThreadTest, StartStop) {
+  rtc::scoped_ptr<PlatformThread> thread = PlatformThread::CreateThread(
+      &NullRunFunction, nullptr, "PlatformThreadTest");
   ASSERT_TRUE(thread->Start());
   EXPECT_TRUE(thread->Stop());
 }
@@ -37,9 +37,9 @@ bool SetFlagRunFunction(void* obj) {
   return true;
 }
 
-TEST(ThreadTest, RunFunctionIsCalled) {
+TEST(PlatformThreadTest, RunFunctionIsCalled) {
   bool flag = false;
-  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
+  rtc::scoped_ptr<PlatformThread> thread = PlatformThread::CreateThread(
       &SetFlagRunFunction, &flag, "RunFunctionIsCalled");
   ASSERT_TRUE(thread->Start());
 

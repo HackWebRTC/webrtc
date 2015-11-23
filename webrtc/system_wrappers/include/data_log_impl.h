@@ -22,8 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -146,7 +146,7 @@ class DataLogImpl {
   int                       counter_;
   TableMap                  tables_;
   EventWrapper*             flush_event_;
-  rtc::scoped_ptr<ThreadWrapper> file_writer_thread_;
+  rtc::scoped_ptr<PlatformThread> file_writer_thread_;
   RWLockWrapper*            tables_lock_;
 };
 

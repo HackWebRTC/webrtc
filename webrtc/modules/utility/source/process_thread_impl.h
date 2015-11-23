@@ -15,10 +15,10 @@
 #include <queue>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -70,7 +70,7 @@ class ProcessThreadImpl : public ProcessThread {
 
   rtc::ThreadChecker thread_checker_;
   const rtc::scoped_ptr<EventWrapper> wake_up_;
-  rtc::scoped_ptr<ThreadWrapper> thread_;
+  rtc::scoped_ptr<PlatformThread> thread_;
 
   ModuleList modules_;
   // TODO(tommi): Support delayed tasks.

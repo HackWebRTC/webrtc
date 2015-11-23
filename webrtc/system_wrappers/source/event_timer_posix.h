@@ -16,7 +16,7 @@
 #include <pthread.h>
 #include <time.h>
 
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/base/platform_thread.h"
 
 namespace webrtc {
 
@@ -46,7 +46,7 @@ class EventTimerPosix : public EventTimerWrapper {
   pthread_mutex_t mutex_;
   bool event_set_;
 
-  rtc::scoped_ptr<ThreadWrapper> timer_thread_;
+  rtc::scoped_ptr<PlatformThread> timer_thread_;
   rtc::scoped_ptr<EventTimerPosix> timer_event_;
   timespec       created_at_;
 

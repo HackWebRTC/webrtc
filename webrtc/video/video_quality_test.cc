@@ -91,18 +91,18 @@ class VideoAnalyzer : public PacketReceiver,
     }
 
     for (uint32_t i = 0; i < num_cores; ++i) {
-      rtc::scoped_ptr<ThreadWrapper> thread =
-          ThreadWrapper::CreateThread(&FrameComparisonThread, this, "Analyzer");
+      rtc::scoped_ptr<PlatformThread> thread = PlatformThread::CreateThread(
+          &FrameComparisonThread, this, "Analyzer");
       EXPECT_TRUE(thread->Start());
       comparison_thread_pool_.push_back(thread.release());
     }
 
     stats_polling_thread_ =
-        ThreadWrapper::CreateThread(&PollStatsThread, this, "StatsPoller");
+        PlatformThread::CreateThread(&PollStatsThread, this, "StatsPoller");
   }
 
   ~VideoAnalyzer() {
-    for (ThreadWrapper* thread : comparison_thread_pool_) {
+    for (PlatformThread* thread : comparison_thread_pool_) {
       EXPECT_TRUE(thread->Stop());
       delete thread;
     }
@@ -602,8 +602,8 @@ class VideoAnalyzer : public PacketReceiver,
   const double avg_ssim_threshold_;
 
   rtc::CriticalSection comparison_lock_;
-  std::vector<ThreadWrapper*> comparison_thread_pool_;
-  rtc::scoped_ptr<ThreadWrapper> stats_polling_thread_;
+  std::vector<PlatformThread*> comparison_thread_pool_;
+  rtc::scoped_ptr<PlatformThread> stats_polling_thread_;
   const rtc::scoped_ptr<EventWrapper> comparison_available_event_;
   std::deque<FrameComparison> comparisons_ GUARDED_BY(comparison_lock_);
   const rtc::scoped_ptr<EventWrapper> done_;

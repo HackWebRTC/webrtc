@@ -23,7 +23,7 @@ class Clock;
 class EventTimerWrapper;
 class FileWrapper;
 class ModuleFileUtility;
-class ThreadWrapper;
+class PlatformThread;
 
 namespace test {
 
@@ -59,7 +59,7 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
   Clock* clock_;
   rtc::scoped_ptr<EventTimerWrapper> tick_;
   mutable rtc::CriticalSection lock_;
-  rtc::scoped_ptr<ThreadWrapper> thread_;
+  rtc::scoped_ptr<PlatformThread> thread_;
   rtc::scoped_ptr<ModuleFileUtility> file_utility_;
   rtc::scoped_ptr<FileWrapper> input_stream_;
 };

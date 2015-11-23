@@ -32,7 +32,7 @@ VideoRenderIosGles20::VideoRenderIosGles20(VideoRenderIosView* view,
       z_order_to_channel_(),
       gles_context_([view context]),
       is_rendering_(true) {
-  screen_update_thread_ = ThreadWrapper::CreateThread(
+  screen_update_thread_ = PlatformThread::CreateThread(
       ScreenUpdateThreadProc, this, "ScreenUpdateGles20");
   screen_update_event_ = EventTimerWrapper::Create();
   GetWindowRect(window_rect_);
@@ -40,7 +40,7 @@ VideoRenderIosGles20::VideoRenderIosGles20(VideoRenderIosView* view,
 
 VideoRenderIosGles20::~VideoRenderIosGles20() {
   // Signal event to exit thread, then delete it
-  ThreadWrapper* thread_wrapper = screen_update_thread_.release();
+  PlatformThread* thread_wrapper = screen_update_thread_.release();
 
   if (thread_wrapper) {
     screen_update_event_->Set();

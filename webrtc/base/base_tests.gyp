@@ -80,6 +80,7 @@
           'optional_unittest.cc',
           'optionsfile_unittest.cc',
           'pathutils_unittest.cc',
+          'platform_thread_unittest.cc',
           'profiler_unittest.cc',
           'proxy_unittest.cc',
           'proxydetect_unittest.cc',

@@ -10,11 +10,11 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/mac/audio_device_mac.h"
 #include "webrtc/modules/audio_device/mac/portaudio/pa_ringbuffer.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 #include <ApplicationServices/ApplicationServices.h>
@@ -1666,7 +1666,7 @@ int32_t AudioDeviceMac::StartRecording()
 
     RTC_DCHECK(!capture_worker_thread_.get());
     capture_worker_thread_ =
-        ThreadWrapper::CreateThread(RunCapture, this, "CaptureWorkerThread");
+        PlatformThread::CreateThread(RunCapture, this, "CaptureWorkerThread");
     RTC_DCHECK(capture_worker_thread_.get());
     capture_worker_thread_->Start();
     capture_worker_thread_->SetPriority(kRealtimePriority);
@@ -1821,7 +1821,7 @@ int32_t AudioDeviceMac::StartPlayout()
 
     RTC_DCHECK(!render_worker_thread_.get());
     render_worker_thread_ =
-        ThreadWrapper::CreateThread(RunRender, this, "RenderWorkerThread");
+        PlatformThread::CreateThread(RunRender, this, "RenderWorkerThread");
     render_worker_thread_->Start();
     render_worker_thread_->SetPriority(kRealtimePriority);
 

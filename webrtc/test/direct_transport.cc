@@ -21,7 +21,7 @@ DirectTransport::DirectTransport(Call* send_call)
     : send_call_(send_call),
       packet_event_(EventWrapper::Create()),
       thread_(
-          ThreadWrapper::CreateThread(NetworkProcess, this, "NetworkProcess")),
+          PlatformThread::CreateThread(NetworkProcess, this, "NetworkProcess")),
       clock_(Clock::GetRealTimeClock()),
       shutting_down_(false),
       fake_network_(FakeNetworkPipe::Config()) {
@@ -33,7 +33,7 @@ DirectTransport::DirectTransport(const FakeNetworkPipe::Config& config,
     : send_call_(send_call),
       packet_event_(EventWrapper::Create()),
       thread_(
-          ThreadWrapper::CreateThread(NetworkProcess, this, "NetworkProcess")),
+          PlatformThread::CreateThread(NetworkProcess, this, "NetworkProcess")),
       clock_(Clock::GetRealTimeClock()),
       shutting_down_(false),
       fake_network_(config) {

@@ -76,8 +76,8 @@ int32_t TestLoadGenerator::Start (const char *threadName)
 
     _eventPtr = EventWrapper::Create();
 
-    _genThread = ThreadWrapper::CreateThread(SenderThreadFunction, this,
-                                             threadName);
+    _genThread =
+        PlatformThread::CreateThread(SenderThreadFunction, this, threadName);
     _running = true;
 
     _genThread->Start();

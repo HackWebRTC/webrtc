@@ -13,11 +13,11 @@
 #include <algorithm>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/media_file/media_file_utility.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace webrtc {
 namespace test {
@@ -53,8 +53,8 @@ int32_t FakeAudioDevice::Init() {
 
   if (!tick_->StartTimer(true, 10))
     return -1;
-  thread_ = ThreadWrapper::CreateThread(FakeAudioDevice::Run, this,
-                                        "FakeAudioDevice");
+  thread_ = PlatformThread::CreateThread(FakeAudioDevice::Run, this,
+                                         "FakeAudioDevice");
   if (thread_.get() == NULL)
     return -1;
   if (!thread_->Start()) {

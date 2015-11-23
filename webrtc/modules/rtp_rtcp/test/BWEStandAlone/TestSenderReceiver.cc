@@ -162,8 +162,8 @@ int32_t TestSenderReceiver::Start()
         exit(1);
     }
 
-    _procThread = ThreadWrapper::CreateThread(ProcThreadFunction, this,
-                                              "TestSenderReceiver");
+    _procThread = PlatformThread::CreateThread(ProcThreadFunction, this,
+                                               "TestSenderReceiver");
 
     _running = true;
 

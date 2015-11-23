@@ -188,8 +188,8 @@ bool UdpSocketManagerPosix::RemoveSocket(UdpSocketWrapper* s)
 UdpSocketManagerPosixImpl::UdpSocketManagerPosixImpl()
 {
     _critSectList = CriticalSectionWrapper::CreateCriticalSection();
-    _thread = ThreadWrapper::CreateThread(UdpSocketManagerPosixImpl::Run, this,
-                                          "UdpSocketManagerPosixImplThread");
+    _thread = PlatformThread::CreateThread(UdpSocketManagerPosixImpl::Run, this,
+                                           "UdpSocketManagerPosixImplThread");
     FD_ZERO(&_readFds);
     WEBRTC_TRACE(kTraceMemory,  kTraceTransport, -1,
                  "UdpSocketManagerPosix created");

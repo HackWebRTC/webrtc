@@ -22,7 +22,7 @@
 
 namespace webrtc {
 class EventWrapper;
-class ThreadWrapper;
+class PlatformThread;
 
 // This is a fake audio device which plays audio from a file as its microphone
 // and plays out into a file.
@@ -178,8 +178,8 @@ class FileAudioDevice : public AudioDeviceGeneric {
   size_t _recordingFramesIn10MS;
   size_t _playoutFramesIn10MS;
 
-  rtc::scoped_ptr<ThreadWrapper> _ptrThreadRec;
-  rtc::scoped_ptr<ThreadWrapper> _ptrThreadPlay;
+  rtc::scoped_ptr<PlatformThread> _ptrThreadRec;
+  rtc::scoped_ptr<PlatformThread> _ptrThreadPlay;
 
   bool _playing;
   bool _recording;

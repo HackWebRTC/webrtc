@@ -14,7 +14,7 @@
 #define WEBRTC_BASE_THREAD_CHECKER_IMPL_H_
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/platform_thread.h"
+#include "webrtc/base/platform_thread_types.h"
 
 namespace rtc {
 

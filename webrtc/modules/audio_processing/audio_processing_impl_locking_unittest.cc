@@ -16,12 +16,12 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/test/random.h"
 
 namespace webrtc {
@@ -456,9 +456,9 @@ class AudioProcessingImplLockTest
   const rtc::scoped_ptr<EventWrapper> test_complete_;
 
   // Thread related variables.
-  rtc::scoped_ptr<ThreadWrapper> render_thread_;
-  rtc::scoped_ptr<ThreadWrapper> capture_thread_;
-  rtc::scoped_ptr<ThreadWrapper> stats_thread_;
+  rtc::scoped_ptr<PlatformThread> render_thread_;
+  rtc::scoped_ptr<PlatformThread> capture_thread_;
+  rtc::scoped_ptr<PlatformThread> stats_thread_;
   mutable test::Random rand_gen_;
 
   rtc::scoped_ptr<AudioProcessing> apm_;
@@ -472,14 +472,15 @@ class AudioProcessingImplLockTest
 
 AudioProcessingImplLockTest::AudioProcessingImplLockTest()
     : test_complete_(EventWrapper::Create()),
-      render_thread_(ThreadWrapper::CreateThread(RenderProcessorThreadFunc,
-                                                 this,
-                                                 "render")),
-      capture_thread_(ThreadWrapper::CreateThread(CaptureProcessorThreadFunc,
+      render_thread_(PlatformThread::CreateThread(RenderProcessorThreadFunc,
                                                   this,
-                                                  "capture")),
-      stats_thread_(
-          ThreadWrapper::CreateThread(StatsProcessorThreadFunc, this, "stats")),
+                                                  "render")),
+      capture_thread_(PlatformThread::CreateThread(CaptureProcessorThreadFunc,
+                                                   this,
+                                                   "capture")),
+      stats_thread_(PlatformThread::CreateThread(StatsProcessorThreadFunc,
+                                                 this,
+                                                 "stats")),
       rand_gen_(42U),
       apm_(AudioProcessingImpl::Create()),
       render_thread_state_(kMaxFrameSize,

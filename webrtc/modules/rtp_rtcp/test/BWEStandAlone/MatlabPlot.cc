@@ -895,8 +895,8 @@ _numPlots(0)
 {
     _eventPtr = EventWrapper::Create();
 
-    _plotThread = ThreadWrapper::CreateThread(MatlabEngine::PlotThread, this,
-                                              kLowPriority, "MatlabPlot");
+    _plotThread = PlatformThread::CreateThread(MatlabEngine::PlotThread, this,
+                                               kLowPriority, "MatlabPlot");
     _running = true;
     _plotThread->Start();
 }

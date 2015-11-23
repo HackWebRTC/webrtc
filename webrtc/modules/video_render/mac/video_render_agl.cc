@@ -395,8 +395,8 @@ _renderingIsPaused( false),
 {
     //WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s");
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(
-        ScreenUpdateThreadProc, this, "ScreenUpdate");
+    _screenUpdateThread = PlatformThread::CreateThread(ScreenUpdateThreadProc,
+                                                       this, "ScreenUpdate");
     _screenUpdateEvent = EventWrapper::Create();
 
     if(!IsValidWindowPtr(_windowRef))
@@ -512,7 +512,7 @@ _renderingIsPaused( false),
     //WEBRTC_TRACE(kTraceDebug, "%s:%d Constructor", __FUNCTION__, __LINE__);
     //    _renderCritSec = CriticalSectionWrapper::CreateCriticalSection();
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(
+    _screenUpdateThread = PlatformThread::CreateThread(
         ScreenUpdateThreadProc, this, "ScreenUpdateThread");
     _screenUpdateEvent = EventWrapper::Create();
 
@@ -677,7 +677,7 @@ VideoRenderAGL::~VideoRenderAGL()
 #endif
 
     // Signal event to exit thread, then delete it
-    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
+    PlatformThread* tmpPtr = _screenUpdateThread.release();
 
     if (tmpPtr)
     {
@@ -856,7 +856,7 @@ int VideoRenderAGL::DeleteAGLChannel(int channel)
 int VideoRenderAGL::StopThread()
 {
     CriticalSectionScoped cs(&_renderCritSec);
-    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
+    PlatformThread* tmpPtr = _screenUpdateThread.release();
 
     if (tmpPtr)
     {
@@ -1891,8 +1891,8 @@ int32_t VideoRenderAGL::StartRender()
         return 0;
     }
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
-        this, "ScreenUpdate");
+    _screenUpdateThread = PlatformThread::CreateThread(ScreenUpdateThreadProc,
+                                                       this, "ScreenUpdate");
     _screenUpdateEvent = EventWrapper::Create();
 
     if (!_screenUpdateThread)

@@ -13,6 +13,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/md5digest.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
@@ -38,7 +39,6 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
@@ -457,11 +457,13 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   AudioCodingModuleMtTestOldApi()
       : AudioCodingModuleTestOldApi(),
-        send_thread_(ThreadWrapper::CreateThread(CbSendThread, this, "send")),
-        insert_packet_thread_(ThreadWrapper::CreateThread(
-            CbInsertPacketThread, this, "insert_packet")),
-        pull_audio_thread_(ThreadWrapper::CreateThread(
-            CbPullAudioThread, this, "pull_audio")),
+        send_thread_(PlatformThread::CreateThread(CbSendThread, this, "send")),
+        insert_packet_thread_(PlatformThread::CreateThread(CbInsertPacketThread,
+                                                           this,
+                                                           "insert_packet")),
+        pull_audio_thread_(PlatformThread::CreateThread(CbPullAudioThread,
+                                                        this,
+                                                        "pull_audio")),
         test_complete_(EventWrapper::Create()),
         send_count_(0),
         insert_packet_count_(0),
@@ -571,9 +573,9 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
     return true;
   }
 
-  rtc::scoped_ptr<ThreadWrapper> send_thread_;
-  rtc::scoped_ptr<ThreadWrapper> insert_packet_thread_;
-  rtc::scoped_ptr<ThreadWrapper> pull_audio_thread_;
+  rtc::scoped_ptr<PlatformThread> send_thread_;
+  rtc::scoped_ptr<PlatformThread> insert_packet_thread_;
+  rtc::scoped_ptr<PlatformThread> pull_audio_thread_;
   const rtc::scoped_ptr<EventWrapper> test_complete_;
   int send_count_;
   int insert_packet_count_;
@@ -701,11 +703,11 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   AcmReRegisterIsacMtTestOldApi()
       : AudioCodingModuleTestOldApi(),
         receive_thread_(
-            ThreadWrapper::CreateThread(CbReceiveThread, this, "receive")),
+            PlatformThread::CreateThread(CbReceiveThread, this, "receive")),
         codec_registration_thread_(
-            ThreadWrapper::CreateThread(CbCodecRegistrationThread,
-                                        this,
-                                        "codec_registration")),
+            PlatformThread::CreateThread(CbCodecRegistrationThread,
+                                         this,
+                                         "codec_registration")),
         test_complete_(EventWrapper::Create()),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         codec_registered_(false),
@@ -829,8 +831,8 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     return true;
   }
 
-  rtc::scoped_ptr<ThreadWrapper> receive_thread_;
-  rtc::scoped_ptr<ThreadWrapper> codec_registration_thread_;
+  rtc::scoped_ptr<PlatformThread> receive_thread_;
+  rtc::scoped_ptr<PlatformThread> codec_registration_thread_;
   const rtc::scoped_ptr<EventWrapper> test_complete_;
   const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   bool codec_registered_ GUARDED_BY(crit_sect_);

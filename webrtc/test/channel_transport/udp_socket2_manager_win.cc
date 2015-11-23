@@ -556,7 +556,7 @@ int32_t UdpSocket2WorkerWindows::Init()
     if(!_init)
     {
         const char* threadName = "UdpSocket2ManagerWindows_thread";
-        _pThread = ThreadWrapper::CreateThread(Run, this, threadName);
+        _pThread = PlatformThread::CreateThread(Run, this, threadName);
         _init = true;
     }
     return 0;

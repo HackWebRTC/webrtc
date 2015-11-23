@@ -207,7 +207,7 @@ int32_t AudioDeviceLinuxALSA::Terminate()
     // RECORDING
     if (_ptrThreadRec)
     {
-        ThreadWrapper* tmpThread = _ptrThreadRec.release();
+        PlatformThread* tmpThread = _ptrThreadRec.release();
         _critSect.Leave();
 
         tmpThread->Stop();
@@ -219,7 +219,7 @@ int32_t AudioDeviceLinuxALSA::Terminate()
     // PLAYOUT
     if (_ptrThreadPlay)
     {
-        ThreadWrapper* tmpThread = _ptrThreadPlay.release();
+        PlatformThread* tmpThread = _ptrThreadPlay.release();
         _critSect.Leave();
 
         tmpThread->Stop();
@@ -1364,8 +1364,8 @@ int32_t AudioDeviceLinuxALSA::StartRecording()
     }
     // RECORDING
     const char* threadName = "webrtc_audio_module_capture_thread";
-    _ptrThreadRec = ThreadWrapper::CreateThread(
-        RecThreadFunc, this, threadName);
+    _ptrThreadRec =
+        PlatformThread::CreateThread(RecThreadFunc, this, threadName);
 
     if (!_ptrThreadRec->Start())
     {
@@ -1518,8 +1518,8 @@ int32_t AudioDeviceLinuxALSA::StartPlayout()
 
     // PLAYOUT
     const char* threadName = "webrtc_audio_module_play_thread";
-    _ptrThreadPlay =  ThreadWrapper::CreateThread(PlayThreadFunc, this,
-                                                  threadName);
+    _ptrThreadPlay =
+        PlatformThread::CreateThread(PlayThreadFunc, this, threadName);
     if (!_ptrThreadPlay->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,

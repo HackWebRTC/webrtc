@@ -33,17 +33,12 @@
         'source/scoped_vector_unittest.cc',
         'source/stringize_macros_unittest.cc',
         'source/stl_util_unittest.cc',
-        'source/thread_unittest.cc',
-        'source/thread_posix_unittest.cc',
       ],
       'conditions': [
         ['enable_data_logging==1', {
           'sources!': [ 'source/data_log_unittest_disabled.cc', ],
         }, {
           'sources!': [ 'source/data_log_unittest.cc', ],
-        }],
-        ['os_posix==0', {
-          'sources!': [ 'source/thread_posix_unittest.cc', ],
         }],
         ['OS=="android"', {
           'dependencies': [

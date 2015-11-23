@@ -20,13 +20,13 @@
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/test/utility.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -522,37 +522,37 @@ void APITest::Perform() {
   //--- THREADS
   // A
   // PUSH
-  rtc::scoped_ptr<ThreadWrapper> myPushAudioThreadA =
-      ThreadWrapper::CreateThread(PushAudioThreadA, this, "PushAudioThreadA");
+  rtc::scoped_ptr<PlatformThread> myPushAudioThreadA =
+      PlatformThread::CreateThread(PushAudioThreadA, this, "PushAudioThreadA");
   CHECK_THREAD_NULLITY(myPushAudioThreadA, "Unable to start A::PUSH thread");
   // PULL
-  rtc::scoped_ptr<ThreadWrapper> myPullAudioThreadA =
-      ThreadWrapper::CreateThread(PullAudioThreadA, this, "PullAudioThreadA");
+  rtc::scoped_ptr<PlatformThread> myPullAudioThreadA =
+      PlatformThread::CreateThread(PullAudioThreadA, this, "PullAudioThreadA");
   CHECK_THREAD_NULLITY(myPullAudioThreadA, "Unable to start A::PULL thread");
   // Process
-  rtc::scoped_ptr<ThreadWrapper> myProcessThreadA = ThreadWrapper::CreateThread(
-      ProcessThreadA, this, "ProcessThreadA");
+  rtc::scoped_ptr<PlatformThread> myProcessThreadA =
+      PlatformThread::CreateThread(ProcessThreadA, this, "ProcessThreadA");
   CHECK_THREAD_NULLITY(myProcessThreadA, "Unable to start A::Process thread");
   // API
-  rtc::scoped_ptr<ThreadWrapper> myAPIThreadA = ThreadWrapper::CreateThread(
-      APIThreadA, this, "APIThreadA");
+  rtc::scoped_ptr<PlatformThread> myAPIThreadA =
+      PlatformThread::CreateThread(APIThreadA, this, "APIThreadA");
   CHECK_THREAD_NULLITY(myAPIThreadA, "Unable to start A::API thread");
   // B
   // PUSH
-  rtc::scoped_ptr<ThreadWrapper> myPushAudioThreadB =
-      ThreadWrapper::CreateThread(PushAudioThreadB, this, "PushAudioThreadB");
+  rtc::scoped_ptr<PlatformThread> myPushAudioThreadB =
+      PlatformThread::CreateThread(PushAudioThreadB, this, "PushAudioThreadB");
   CHECK_THREAD_NULLITY(myPushAudioThreadB, "Unable to start B::PUSH thread");
   // PULL
-  rtc::scoped_ptr<ThreadWrapper> myPullAudioThreadB =
-      ThreadWrapper::CreateThread(PullAudioThreadB, this, "PullAudioThreadB");
+  rtc::scoped_ptr<PlatformThread> myPullAudioThreadB =
+      PlatformThread::CreateThread(PullAudioThreadB, this, "PullAudioThreadB");
   CHECK_THREAD_NULLITY(myPullAudioThreadB, "Unable to start B::PULL thread");
   // Process
-  rtc::scoped_ptr<ThreadWrapper> myProcessThreadB = ThreadWrapper::CreateThread(
-      ProcessThreadB, this, "ProcessThreadB");
+  rtc::scoped_ptr<PlatformThread> myProcessThreadB =
+      PlatformThread::CreateThread(ProcessThreadB, this, "ProcessThreadB");
   CHECK_THREAD_NULLITY(myProcessThreadB, "Unable to start B::Process thread");
   // API
-  rtc::scoped_ptr<ThreadWrapper> myAPIThreadB = ThreadWrapper::CreateThread(
-      APIThreadB, this, "APIThreadB");
+  rtc::scoped_ptr<PlatformThread> myAPIThreadB =
+      PlatformThread::CreateThread(APIThreadB, this, "APIThreadB");
   CHECK_THREAD_NULLITY(myAPIThreadB, "Unable to start B::API thread");
 
   //_apiEventA->StartTimer(true, 5000);

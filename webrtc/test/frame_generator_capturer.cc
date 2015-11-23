@@ -11,11 +11,11 @@
 #include "webrtc/test/frame_generator_capturer.h"
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/test/frame_generator.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/test/frame_generator.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -88,8 +88,8 @@ bool FrameGeneratorCapturer::Init() {
 
   if (!tick_->StartTimer(true, 1000 / target_fps_))
     return false;
-  thread_ = ThreadWrapper::CreateThread(FrameGeneratorCapturer::Run, this,
-                                        "FrameGeneratorCapturer");
+  thread_ = PlatformThread::CreateThread(FrameGeneratorCapturer::Run, this,
+                                         "FrameGeneratorCapturer");
   if (thread_.get() == NULL)
     return false;
   if (!thread_->Start()) {

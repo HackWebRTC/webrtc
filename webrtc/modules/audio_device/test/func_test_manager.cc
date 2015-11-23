@@ -686,7 +686,7 @@ int32_t FuncTestManager::Close()
         _audioDevice = NULL;
     }
 
-    // return the ThreadWrapper (singleton)
+    // return the PlatformThread (singleton)
     Trace::ReturnTrace();
 
     // PRINT_TEST_RESULTS;

@@ -7,9 +7,9 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/audio_device/dummy/file_audio_device.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace webrtc {
 
@@ -214,8 +214,8 @@ int32_t FileAudioDevice::StartPlayout() {
   }
 
   const char* threadName = "webrtc_audio_module_play_thread";
-  _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc, this,
-                                               threadName);
+  _ptrThreadPlay =
+      PlatformThread::CreateThread(PlayThreadFunc, this, threadName);
   if (!_ptrThreadPlay->Start()) {
       _ptrThreadPlay.reset();
       _playing = false;
@@ -277,7 +277,7 @@ int32_t FileAudioDevice::StartRecording() {
   }
 
   const char* threadName = "webrtc_audio_module_capture_thread";
-  _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this, threadName);
+  _ptrThreadRec = PlatformThread::CreateThread(RecThreadFunc, this, threadName);
 
   if (!_ptrThreadRec->Start()) {
       _ptrThreadRec.reset();

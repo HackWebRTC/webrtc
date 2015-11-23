@@ -201,8 +201,8 @@ int32_t AudioDeviceLinuxPulse::Init()
 
     // RECORDING
     const char* threadName = "webrtc_audio_module_rec_thread";
-    _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this,
-                                                threadName);
+    _ptrThreadRec =
+        PlatformThread::CreateThread(RecThreadFunc, this, threadName);
     if (!_ptrThreadRec->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
@@ -216,8 +216,8 @@ int32_t AudioDeviceLinuxPulse::Init()
 
     // PLAYOUT
     threadName = "webrtc_audio_module_play_thread";
-    _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc, this,
-                                                 threadName);
+    _ptrThreadPlay =
+        PlatformThread::CreateThread(PlayThreadFunc, this, threadName);
     if (!_ptrThreadPlay->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
@@ -246,7 +246,7 @@ int32_t AudioDeviceLinuxPulse::Terminate()
     // RECORDING
     if (_ptrThreadRec)
     {
-        ThreadWrapper* tmpThread = _ptrThreadRec.release();
+        PlatformThread* tmpThread = _ptrThreadRec.release();
 
         _timeEventRec.Set();
         tmpThread->Stop();
@@ -256,7 +256,7 @@ int32_t AudioDeviceLinuxPulse::Terminate()
     // PLAYOUT
     if (_ptrThreadPlay)
     {
-        ThreadWrapper* tmpThread = _ptrThreadPlay.release();
+        PlatformThread* tmpThread = _ptrThreadPlay.release();
 
         _timeEventPlay.Set();
         tmpThread->Stop();

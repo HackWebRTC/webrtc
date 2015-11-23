@@ -15,8 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
@@ -160,7 +160,7 @@ private:
     std::vector<MatlabPlot *> _plots;
     webrtc::CriticalSectionWrapper *_critSect;
     webrtc::EventWrapper *_eventPtr;
-    rtc::scoped_ptr<webrtc::ThreadWrapper> _plotThread;
+    rtc::scoped_ptr<webrtc::PlatformThread> _plotThread;
     bool _running;
     int _numPlots;
 };

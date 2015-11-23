@@ -15,9 +15,9 @@
 #include <deque>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/test/fake_network_pipe.h"
 #include "webrtc/transport.h"
 
@@ -53,7 +53,7 @@ class DirectTransport : public Transport {
   rtc::CriticalSection lock_;
   Call* const send_call_;
   rtc::scoped_ptr<EventWrapper> packet_event_;
-  rtc::scoped_ptr<ThreadWrapper> thread_;
+  rtc::scoped_ptr<PlatformThread> thread_;
   Clock* const clock_;
 
   bool shutting_down_;

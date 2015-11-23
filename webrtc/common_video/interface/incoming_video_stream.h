@@ -20,7 +20,7 @@
 namespace webrtc {
 class CriticalSectionWrapper;
 class EventTimerWrapper;
-class ThreadWrapper;
+class PlatformThread;
 
 class VideoRenderCallback {
  public:
@@ -79,7 +79,7 @@ class IncomingVideoStream : public VideoRenderCallback {
   const rtc::scoped_ptr<CriticalSectionWrapper> stream_critsect_;
   const rtc::scoped_ptr<CriticalSectionWrapper> thread_critsect_;
   const rtc::scoped_ptr<CriticalSectionWrapper> buffer_critsect_;
-  rtc::scoped_ptr<ThreadWrapper> incoming_render_thread_
+  rtc::scoped_ptr<PlatformThread> incoming_render_thread_
       GUARDED_BY(thread_critsect_);
   rtc::scoped_ptr<EventTimerWrapper> deliver_buffer_event_;
 

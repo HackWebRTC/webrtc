@@ -12,7 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
@@ -78,7 +78,7 @@ TEST_F(CritSectTest, ThreadWakesOnce) NO_THREAD_SAFETY_ANALYSIS {
   CriticalSectionWrapper* crit_sect =
       CriticalSectionWrapper::CreateCriticalSection();
   ProtectedCount count(crit_sect);
-  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
+  rtc::scoped_ptr<PlatformThread> thread = PlatformThread::CreateThread(
       &LockUnlockThenStopRunFunction, &count, "ThreadWakesOnce");
   crit_sect->Enter();
   ASSERT_TRUE(thread->Start());
@@ -105,7 +105,7 @@ TEST_F(CritSectTest, ThreadWakesTwice) NO_THREAD_SAFETY_ANALYSIS {
   CriticalSectionWrapper* crit_sect =
       CriticalSectionWrapper::CreateCriticalSection();
   ProtectedCount count(crit_sect);
-  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
+  rtc::scoped_ptr<PlatformThread> thread = PlatformThread::CreateThread(
       &LockUnlockRunFunction, &count, "ThreadWakesTwice");
   crit_sect->Enter();  // Make sure counter stays 0 until we wait for it.
   ASSERT_TRUE(thread->Start());

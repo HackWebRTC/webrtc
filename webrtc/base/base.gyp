@@ -62,6 +62,7 @@
         'platform_file.h',
         'platform_thread.cc',
         'platform_thread.h',
+        'platform_thread_types.h',
         'ratetracker.cc',
         'ratetracker.h',
         'safe_conversions.h',

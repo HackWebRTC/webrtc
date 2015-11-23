@@ -12,6 +12,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/event.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
@@ -22,7 +23,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/rampup_tests.h"
 
@@ -60,9 +60,9 @@ RampUpTester::RampUpTester(size_t num_streams,
       extension_type_(extension_type),
       ssrcs_(GenerateSsrcs(num_streams, 100)),
       rtx_ssrcs_(GenerateSsrcs(num_streams, 200)),
-      poller_thread_(ThreadWrapper::CreateThread(&BitrateStatsPollingThread,
-                                                 this,
-                                                 "BitrateStatsPollingThread")),
+      poller_thread_(PlatformThread::CreateThread(&BitrateStatsPollingThread,
+                                                  this,
+                                                  "BitrateStatsPollingThread")),
       sender_call_(nullptr) {
   if (rtx_) {
     for (size_t i = 0; i < ssrcs_.size(); ++i)

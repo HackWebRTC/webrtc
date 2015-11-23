@@ -21,7 +21,7 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class EventTimerWrapper;
-class ThreadWrapper;
+class PlatformThread;
 
 namespace test {
 
@@ -64,7 +64,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   rtc::scoped_ptr<EventTimerWrapper> tick_;
   rtc::CriticalSection lock_;
-  rtc::scoped_ptr<ThreadWrapper> thread_;
+  rtc::scoped_ptr<PlatformThread> thread_;
   rtc::scoped_ptr<FrameGenerator> frame_generator_;
 
   int target_fps_;

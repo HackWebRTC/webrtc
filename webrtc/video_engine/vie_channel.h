@@ -41,7 +41,7 @@ class ProcessThread;
 class ReceiveStatisticsProxy;
 class ReportBlockStats;
 class RtcpRttStats;
-class ThreadWrapper;
+class PlatformThread;
 class ViEChannelProtectionCallback;
 class ViERTPObserver;
 class VideoCodingModule;
@@ -433,7 +433,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   const rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   TransportFeedbackObserver* const transport_feedback_observer_;
 
-  rtc::scoped_ptr<ThreadWrapper> decode_thread_;
+  rtc::scoped_ptr<PlatformThread> decode_thread_;
 
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;

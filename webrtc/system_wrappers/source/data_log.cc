@@ -348,8 +348,8 @@ int DataLogImpl::CreateLog() {
 }
 
 int DataLogImpl::Init() {
-  file_writer_thread_ = ThreadWrapper::CreateThread(
-      DataLogImpl::Run, instance_, "DataLog");
+  file_writer_thread_ =
+      PlatformThread::CreateThread(DataLogImpl::Run, instance_, "DataLog");
   bool success = file_writer_thread_->Start();
   if (!success)
     return -1;

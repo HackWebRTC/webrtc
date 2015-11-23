@@ -17,12 +17,12 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_file.h"
@@ -131,7 +131,7 @@ class ConferenceTransport: public webrtc::Transport {
   const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> pq_crit_;
   const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> stream_crit_;
   const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
-  const rtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
+  const rtc::scoped_ptr<webrtc::PlatformThread> thread_;
 
   unsigned int rtt_ms_;
   unsigned int stream_count_;

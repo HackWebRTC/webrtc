@@ -13,6 +13,7 @@
 
 #include <deque>
 
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -20,7 +21,6 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/voice_engine/test/auto_test/fixtures/before_initialization_fixture.h"
 
 class TestErrorObserver;
@@ -30,9 +30,9 @@ class LoopBackTransport : public webrtc::Transport {
   LoopBackTransport(webrtc::VoENetwork* voe_network, int channel)
       : crit_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
         packet_event_(webrtc::EventWrapper::Create()),
-        thread_(webrtc::ThreadWrapper::CreateThread(NetworkProcess,
-                                                    this,
-                                                    "LoopBackTransport")),
+        thread_(webrtc::PlatformThread::CreateThread(NetworkProcess,
+                                                     this,
+                                                     "LoopBackTransport")),
         channel_(channel),
         voe_network_(voe_network),
         transmitted_packets_(0) {
@@ -147,7 +147,7 @@ class LoopBackTransport : public webrtc::Transport {
 
   const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> crit_;
   const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
-  const rtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
+  const rtc::scoped_ptr<webrtc::PlatformThread> thread_;
   std::deque<Packet> packet_queue_ GUARDED_BY(crit_.get());
   const int channel_;
   std::map<uint32_t, int> channels_ GUARDED_BY(crit_.get());

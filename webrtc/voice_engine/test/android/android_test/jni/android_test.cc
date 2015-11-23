@@ -15,7 +15,7 @@
 
 #include "webrtc/voice_engine/test/android/android_test/jni/org_webrtc_voiceengine_test_AndroidTest.h"
 
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/base/platform_thread.h"
 
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -177,7 +177,7 @@ private:
     static bool Run(void* ptr);
     bool Process();
 private:
-    rtc::scoped_ptr<ThreadWrapper> _thread;
+    rtc::scoped_ptr<PlatformThread> _thread;
 };
 
 ThreadTest::~ThreadTest()
@@ -188,7 +188,7 @@ ThreadTest::~ThreadTest()
 
 ThreadTest::ThreadTest()
 {
-    _thread = ThreadWrapper::CreateThread(Run, this, "ThreadTest thread");
+    _thread = PlatformThread::CreateThread(Run, this, "ThreadTest thread");
 }
 
 bool ThreadTest::Run(void* ptr)

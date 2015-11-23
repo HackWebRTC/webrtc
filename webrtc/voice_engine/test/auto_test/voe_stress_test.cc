@@ -334,8 +334,8 @@ int VoEStressTest::MultipleThreadsTest() {
   int rnd(0);
 
   // Start extra thread
-  _ptrExtraApiThread = ThreadWrapper::CreateThread(RunExtraApi, this,
-                                                   "StressTestExtraApiThread");
+  _ptrExtraApiThread = PlatformThread::CreateThread(RunExtraApi, this,
+                                                    "StressTestExtraApiThread");
   VALIDATE_STRESS(!_ptrExtraApiThread->Start());
 
   //       Some possible extensions include:

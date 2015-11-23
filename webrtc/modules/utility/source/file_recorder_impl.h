@@ -17,6 +17,7 @@
 
 #include <list>
 
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -26,7 +27,6 @@
 #include "webrtc/modules/utility/include/file_recorder.h"
 #include "webrtc/modules/utility/source/coder.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 

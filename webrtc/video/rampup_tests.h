@@ -98,7 +98,7 @@ class RampUpTester : public test::EndToEndTest {
   std::vector<uint32_t> rtx_ssrcs_;
   SsrcMap rtx_ssrc_map_;
 
-  rtc::scoped_ptr<ThreadWrapper> poller_thread_;
+  rtc::scoped_ptr<PlatformThread> poller_thread_;
   Call* sender_call_;
 };
 
