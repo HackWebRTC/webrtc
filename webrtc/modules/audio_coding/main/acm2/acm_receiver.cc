@@ -123,7 +123,6 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
       id_(config.id),
       last_audio_decoder_(nullptr),
       previous_audio_activity_(AudioFrame::kVadPassive),
-      current_sample_rate_hz_(config.neteq_config.sample_rate_hz),
       audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
       last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
       neteq_(NetEq::Create(config.neteq_config)),
@@ -157,9 +156,8 @@ int AcmReceiver::LeastRequiredDelayMs() const {
   return neteq_->LeastRequiredDelayMs();
 }
 
-int AcmReceiver::current_sample_rate_hz() const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  return current_sample_rate_hz_;
+int AcmReceiver::last_output_sample_rate_hz() const {
+  return neteq_->last_output_sample_rate_hz();
 }
 
 int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
@@ -224,23 +222,18 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
     return -1;
   }
 
-  // NetEq always returns 10 ms of audio.
-  current_sample_rate_hz_ = static_cast<int>(samples_per_channel * 100);
+  const int current_sample_rate_hz = neteq_->last_output_sample_rate_hz();
 
   // Update if resampling is required.
-  bool need_resampling = (desired_freq_hz != -1) &&
-      (current_sample_rate_hz_ != desired_freq_hz);
+  const bool need_resampling =
+      (desired_freq_hz != -1) && (current_sample_rate_hz != desired_freq_hz);
 
   if (need_resampling && !resampled_last_output_frame_) {
     // Prime the resampler with the last frame.
     int16_t temp_output[AudioFrame::kMaxDataSizeSamples];
-    int samples_per_channel_int =
-        resampler_.Resample10Msec(last_audio_buffer_.get(),
-                                  current_sample_rate_hz_,
-                                  desired_freq_hz,
-                                  num_channels,
-                                  AudioFrame::kMaxDataSizeSamples,
-                                  temp_output);
+    int samples_per_channel_int = resampler_.Resample10Msec(
+        last_audio_buffer_.get(), current_sample_rate_hz, desired_freq_hz,
+        num_channels, AudioFrame::kMaxDataSizeSamples, temp_output);
     if (samples_per_channel_int < 0) {
       LOG(LERROR) << "AcmReceiver::GetAudio - "
                      "Resampling last_audio_buffer_ failed.";
@@ -254,13 +247,9 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   // TODO(henrik.lundin) Glitches in the output may appear if the output rate
   // from NetEq changes. See WebRTC issue 3923.
   if (need_resampling) {
-    int samples_per_channel_int =
-        resampler_.Resample10Msec(audio_buffer_.get(),
-                                  current_sample_rate_hz_,
-                                  desired_freq_hz,
-                                  num_channels,
-                                  AudioFrame::kMaxDataSizeSamples,
-                                  audio_frame->data_);
+    int samples_per_channel_int = resampler_.Resample10Msec(
+        audio_buffer_.get(), current_sample_rate_hz, desired_freq_hz,
+        num_channels, AudioFrame::kMaxDataSizeSamples, audio_frame->data_);
     if (samples_per_channel_int < 0) {
       LOG(LERROR) << "AcmReceiver::GetAudio - Resampling audio_buffer_ failed.";
       return -1;

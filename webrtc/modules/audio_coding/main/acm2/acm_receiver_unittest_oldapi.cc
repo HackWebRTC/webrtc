@@ -261,8 +261,7 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(SampleRate)) {
     for (int k = 0; k < num_10ms_frames; ++k) {
       EXPECT_EQ(0, receiver_->GetAudio(kOutSampleRateHz, &frame));
     }
-    EXPECT_EQ(std::min(32000, codec.inst.plfreq),
-              receiver_->current_sample_rate_hz());
+    EXPECT_EQ(codec.inst.plfreq, receiver_->last_output_sample_rate_hz());
   }
 }
 

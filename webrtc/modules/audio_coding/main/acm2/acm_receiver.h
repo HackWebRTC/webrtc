@@ -154,12 +154,8 @@ class AcmReceiver {
   //
   void ResetInitialDelay();
 
-  //
-  // Get the current sampling frequency in Hz.
-  //
-  // Return value             : Sampling frequency in Hz.
-  //
-  int current_sample_rate_hz() const;
+  // Returns last_output_sample_rate_hz from the NetEq instance.
+  int last_output_sample_rate_hz() const;
 
   //
   // Get the current network statistics from NetEq.
@@ -287,7 +283,6 @@ class AcmReceiver {
   int id_;  // TODO(henrik.lundin) Make const.
   const Decoder* last_audio_decoder_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity previous_audio_activity_ GUARDED_BY(crit_sect_);
-  int current_sample_rate_hz_ GUARDED_BY(crit_sect_);
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
   // Used in GetAudio, declared as member to avoid allocating every 10ms.
   // TODO(henrik.lundin) Stack-allocate in GetAudio instead?

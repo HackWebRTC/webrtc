@@ -168,6 +168,8 @@ class NetEqImpl : public webrtc::NetEq {
 
   bool GetPlayoutTimestamp(uint32_t* timestamp) override;
 
+  int last_output_sample_rate_hz() const override;
+
   int SetTargetNumberOfChannels() override;
 
   int SetTargetSampleRate() override;
@@ -375,6 +377,7 @@ class NetEqImpl : public webrtc::NetEq {
   StatisticsCalculator stats_ GUARDED_BY(crit_sect_);
   int fs_hz_ GUARDED_BY(crit_sect_);
   int fs_mult_ GUARDED_BY(crit_sect_);
+  int last_output_sample_rate_hz_ GUARDED_BY(crit_sect_);
   size_t output_size_samples_ GUARDED_BY(crit_sect_);
   size_t decoder_frame_length_ GUARDED_BY(crit_sect_);
   Modes last_mode_ GUARDED_BY(crit_sect_);

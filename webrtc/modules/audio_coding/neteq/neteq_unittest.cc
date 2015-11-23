@@ -362,6 +362,7 @@ void NetEqDecodingTest::Process(size_t* out_len) {
               (*out_len == kBlockSize16kHz) ||
               (*out_len == kBlockSize32kHz));
   output_sample_rate_ = static_cast<int>(*out_len / 10 * 1000);
+  EXPECT_EQ(output_sample_rate_, neteq_->last_output_sample_rate_hz());
 
   // Increase time.
   sim_clock_ += kTimeStepMs;
@@ -895,6 +896,8 @@ TEST_F(NetEqDecodingTest, GetAudioBeforeInsertPacket) {
     SCOPED_TRACE(ss.str());  // Print out the parameter values on failure.
     EXPECT_EQ(0, out_data_[i]);
   }
+  // Verify that the sample rate did not change from the initial configuration.
+  EXPECT_EQ(config_.sample_rate_hz, neteq_->last_output_sample_rate_hz());
 }
 
 class NetEqBgnTest : public NetEqDecodingTest {

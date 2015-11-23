@@ -532,17 +532,14 @@ int AudioCodingModuleImpl::ReceiveFrequency() const {
 
   auto codec_id = RentACodec::CodecIdFromIndex(receiver_.last_audio_codec_id());
   return codec_id ? RentACodec::CodecInstById(*codec_id)->plfreq
-                  : receiver_.current_sample_rate_hz();
+                  : receiver_.last_output_sample_rate_hz();
 }
 
 // Get current playout frequency.
 int AudioCodingModuleImpl::PlayoutFrequency() const {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                "PlayoutFrequency()");
-
-  CriticalSectionScoped lock(acm_crit_sect_.get());
-
-  return receiver_.current_sample_rate_hz();
+  return receiver_.last_output_sample_rate_hz();
 }
 
 // Register possible receive codecs, can be called multiple times,

@@ -251,6 +251,11 @@ class NetEq {
   // Returns true if the RTP timestamp is valid, otherwise false.
   virtual bool GetPlayoutTimestamp(uint32_t* timestamp) = 0;
 
+  // Returns the sample rate in Hz of the audio produced in the last GetAudio
+  // call. If GetAudio has not been called yet, the configured sample rate
+  // (Config::sample_rate_hz) is returned.
+  virtual int last_output_sample_rate_hz() const = 0;
+
   // Not implemented.
   virtual int SetTargetNumberOfChannels() = 0;
 

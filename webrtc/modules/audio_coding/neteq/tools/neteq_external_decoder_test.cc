@@ -56,6 +56,7 @@ size_t NetEqExternalDecoderTest::GetOutputAudio(size_t max_length,
   EXPECT_EQ(channels_, num_channels);
   EXPECT_EQ(static_cast<size_t>(kOutputLengthMs * sample_rate_hz_ / 1000),
             samples_per_channel);
+  EXPECT_EQ(sample_rate_hz_, neteq_->last_output_sample_rate_hz());
   return samples_per_channel;
 }
 

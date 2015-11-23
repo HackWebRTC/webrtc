@@ -106,6 +106,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
   }
   fs_hz_ = fs;
   fs_mult_ = fs / 8000;
+  last_output_sample_rate_hz_ = fs;
   output_size_samples_ = static_cast<size_t>(kOutputSizeMs * 8 * fs_mult_);
   decoder_frame_length_ = 3 * output_size_samples_;
   WebRtcSpl_Init();
@@ -160,6 +161,13 @@ int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
   if (type) {
     *type = LastOutputType();
   }
+  last_output_sample_rate_hz_ =
+      rtc::checked_cast<int>(*samples_per_channel * 100);
+  RTC_DCHECK(last_output_sample_rate_hz_ == 8000 ||
+             last_output_sample_rate_hz_ == 16000 ||
+             last_output_sample_rate_hz_ == 32000 ||
+             last_output_sample_rate_hz_ == 48000)
+      << "Unexpected sample rate " << last_output_sample_rate_hz_;
   return kOK;
 }
 
@@ -357,6 +365,11 @@ bool NetEqImpl::GetPlayoutTimestamp(uint32_t* timestamp) {
   }
   *timestamp = timestamp_scaler_->ToExternal(playout_timestamp_);
   return true;
+}
+
+int NetEqImpl::last_output_sample_rate_hz() const {
+  CriticalSectionScoped lock(crit_sect_.get());
+  return last_output_sample_rate_hz_;
 }
 
 int NetEqImpl::SetTargetNumberOfChannels() {
