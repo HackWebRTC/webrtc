@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "webrtc/base/array_view.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
@@ -154,6 +155,12 @@ class AcmReceiver {
   //
   void ResetInitialDelay();
 
+  // Returns the sample rate of the decoder associated with the last incoming
+  // packet. If no packet of a registered non-CNG codec has been received, the
+  // return value is empty. Also, if the decoder was unregistered since the last
+  // packet was inserted, the return value is empty.
+  rtc::Optional<int> last_packet_sample_rate_hz() const;
+
   // Returns last_output_sample_rate_hz from the NetEq instance.
   int last_output_sample_rate_hz() const;
 
@@ -211,13 +218,6 @@ class AcmReceiver {
   // Returns true if the RTP timestamp is valid, otherwise false.
   //
   bool GetPlayoutTimestamp(uint32_t* timestamp);
-
-  //
-  // Return the index of the codec associated with the last non-CNG/non-DTMF
-  // received payload. If no non-CNG/non-DTMF payload is received -1 is
-  // returned.
-  //
-  int last_audio_codec_id() const;  // TODO(turajs): can be inline.
 
   //
   // Get the audio codec associated with the last non-CNG/non-DTMF received
@@ -295,6 +295,7 @@ class AcmReceiver {
   bool vad_enabled_;
   Clock* clock_;  // TODO(henrik.lundin) Make const if possible.
   bool resampled_last_output_frame_ GUARDED_BY(crit_sect_);
+  rtc::Optional<int> last_packet_sample_rate_hz_ GUARDED_BY(crit_sect_);
 };
 
 }  // namespace acm2

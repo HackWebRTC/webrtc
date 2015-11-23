@@ -156,6 +156,11 @@ int AcmReceiver::LeastRequiredDelayMs() const {
   return neteq_->LeastRequiredDelayMs();
 }
 
+rtc::Optional<int> AcmReceiver::last_packet_sample_rate_hz() const {
+  CriticalSectionScoped lock(crit_sect_.get());
+  return last_packet_sample_rate_hz_;
+}
+
 int AcmReceiver::last_output_sample_rate_hz() const {
   return neteq_->last_output_sample_rate_hz();
 }
@@ -190,6 +195,7 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
         decoder->acm_codec_id !=
             *RentACodec::CodecIndexFromId(RentACodec::CodecId::kAVT)) {
       last_audio_decoder_ = decoder;
+      last_packet_sample_rate_hz_ = rtc::Optional<int>(decoder->sample_rate_hz);
     }
 
   }  // |crit_sect_| is released.
@@ -392,6 +398,7 @@ int AcmReceiver::RemoveAllCodecs() {
 
   // No codec is registered, invalidate last audio decoder.
   last_audio_decoder_ = nullptr;
+  last_packet_sample_rate_hz_ = rtc::Optional<int>();
   return ret_val;
 }
 
@@ -405,8 +412,10 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
     LOG(LERROR) << "AcmReceiver::RemoveCodec" << static_cast<int>(payload_type);
     return -1;
   }
-  if (last_audio_decoder_ == &it->second)
+  if (last_audio_decoder_ == &it->second) {
     last_audio_decoder_ = nullptr;
+    last_packet_sample_rate_hz_ = rtc::Optional<int>();
+  }
   decoders_.erase(it);
   return 0;
 }
@@ -418,11 +427,6 @@ void AcmReceiver::set_id(int id) {
 
 bool AcmReceiver::GetPlayoutTimestamp(uint32_t* timestamp) {
   return neteq_->GetPlayoutTimestamp(timestamp);
-}
-
-int AcmReceiver::last_audio_codec_id() const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  return last_audio_decoder_ ? last_audio_decoder_->acm_codec_id : -1;
 }
 
 int AcmReceiver::LastAudioCodec(CodecInst* codec) const {

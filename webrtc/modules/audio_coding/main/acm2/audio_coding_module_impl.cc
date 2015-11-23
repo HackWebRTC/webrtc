@@ -525,14 +525,9 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
 
 // Get current receive frequency.
 int AudioCodingModuleImpl::ReceiveFrequency() const {
-  WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
-               "ReceiveFrequency()");
-
-  CriticalSectionScoped lock(acm_crit_sect_.get());
-
-  auto codec_id = RentACodec::CodecIdFromIndex(receiver_.last_audio_codec_id());
-  return codec_id ? RentACodec::CodecInstById(*codec_id)->plfreq
-                  : receiver_.last_output_sample_rate_hz();
+  const auto last_packet_sample_rate = receiver_.last_packet_sample_rate_hz();
+  return last_packet_sample_rate ? *last_packet_sample_rate
+                                 : receiver_.last_output_sample_rate_hz();
 }
 
 // Get current playout frequency.
