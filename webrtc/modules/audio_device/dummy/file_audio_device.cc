@@ -7,21 +7,20 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <iostream>
 #include "webrtc/modules/audio_device/dummy/file_audio_device.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/system_wrappers/include/thread_wrapper.h"
 
 namespace webrtc {
 
-int kRecordingFixedSampleRate = 48000;
-int kRecordingNumChannels = 2;
-int kPlayoutFixedSampleRate = 48000;
-int kPlayoutNumChannels = 2;
-int kPlayoutBufferSize = kPlayoutFixedSampleRate / 100
-                         * kPlayoutNumChannels * 2;
-int kRecordingBufferSize = kRecordingFixedSampleRate / 100
-                           * kRecordingNumChannels * 2;
+const int kRecordingFixedSampleRate = 48000;
+const int kRecordingNumChannels = 2;
+const int kPlayoutFixedSampleRate = 48000;
+const int kPlayoutNumChannels = 2;
+const int kPlayoutBufferSize = kPlayoutFixedSampleRate / 100
+                               * kPlayoutNumChannels * 2;
+const int kRecordingBufferSize = kRecordingFixedSampleRate / 100
+                                 * kRecordingNumChannels * 2;
 
 FileAudioDevice::FileAudioDevice(const int32_t id,
                                  const char* inputFilename,
