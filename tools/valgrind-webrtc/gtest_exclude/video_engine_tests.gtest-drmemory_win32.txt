@@ -3,11 +3,13 @@
 EndToEndTest.CanSwitchToUseAllSsrcs
 EndToEndTest.SendsAndReceivesMultipleStreams
 EndToEndTest.ReceivesAndRetransmitsNack
+EndToEndTest.ReceivesTransportFeedback
 # Flaky: https://code.google.com/p/webrtc/issues/detail?id=3552
 EndToEndTest.RestartingSendStreamPreservesRtpState
 EndToEndTest.RestartingSendStreamPreservesRtpStatesWithRtx
 EndToEndTest.SendsAndReceivesH264
 EndToEndTest.SendsAndReceivesVP9
+EndToEndTest.TransportFeedbackNotConfigured
 VideoSendStreamTest.CanReconfigureToUseStartBitrateAbovePreviousMax
 VideoSendStreamTest.ReconfigureBitratesSetsEncoderBitratesCorrectly
 # https://code.google.com/p/webrtc/issues/detail?id=4979
