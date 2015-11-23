@@ -1834,6 +1834,12 @@ TEST_F(TestBasicJitterBuffer, ExceedNumOfFrameWithSeqNumWrap) {
   //  --------------------------------------------------------------
   // |<-----------delta frames------------->|<------key frames----->|
 
+  // Make sure the jitter doesn't request a keyframe after too much non-
+  // decodable frames.
+  jitter_buffer_->SetNackMode(kNack, -1, -1);
+  jitter_buffer_->SetNackSettings(kMaxNumberOfFrames,
+                                  kMaxNumberOfFrames, 0);
+
   int loop = 0;
   seq_num_ = 65485;
   uint32_t first_key_frame_timestamp = 0;
@@ -2131,6 +2137,11 @@ TEST_F(TestBasicJitterBuffer, NextFrameWhenIncomplete) {
 }
 
 TEST_F(TestRunningJitterBuffer, Full) {
+  // Make sure the jitter doesn't request a keyframe after too much non-
+  // decodable frames.
+  jitter_buffer_->SetNackMode(kNack, -1, -1);
+  jitter_buffer_->SetNackSettings(kMaxNumberOfFrames,
+                                  kMaxNumberOfFrames, 0);
   // Insert a key frame and decode it.
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeCompleteFrame());

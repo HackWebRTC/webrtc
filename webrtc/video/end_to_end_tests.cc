@@ -1002,8 +1002,7 @@ TEST_F(EndToEndTest, ReceivesPliAndRecoversWithNack) {
   ReceivesPliAndRecovers(1000);
 }
 
-// TODO(pbos): Enable this when 2250 is resolved.
-TEST_F(EndToEndTest, DISABLED_ReceivesPliAndRecoversWithoutNack) {
+TEST_F(EndToEndTest, ReceivesPliAndRecoversWithoutNack) {
   ReceivesPliAndRecovers(0);
 }
 

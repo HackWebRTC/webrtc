@@ -38,6 +38,10 @@ static const uint32_t kSsCleanupIntervalSec = 60;
 // Use this rtt if no value has been reported.
 static const int64_t kDefaultRtt = 200;
 
+// Request a keyframe if no continuous frame has been received for this
+// number of milliseconds and NACKs are disabled.
+static const int64_t kMaxDiscontinuousFramesTime = 1000;
+
 typedef std::pair<uint32_t, VCMFrameBuffer*> FrameListPair;
 
 bool IsKeyFrame(FrameListPair pair) {
@@ -528,16 +532,25 @@ bool VCMJitterBuffer::NextMaybeIncompleteTimestamp(uint32_t* timestamp) {
 
   CleanUpOldOrEmptyFrames();
 
+  VCMFrameBuffer* oldest_frame;
   if (decodable_frames_.empty()) {
-    return false;
-  }
-  VCMFrameBuffer* oldest_frame = decodable_frames_.Front();
-  // If we have exactly one frame in the buffer, release it only if it is
-  // complete. We know decodable_frames_ is  not empty due to the previous
-  // check.
-  if (decodable_frames_.size() == 1 && incomplete_frames_.empty()
-      && oldest_frame->GetState() != kStateComplete) {
-    return false;
+    if (nack_mode_ != kNoNack || incomplete_frames_.size() <= 1) {
+      return false;
+    }
+    oldest_frame = incomplete_frames_.Front();
+    // Frame will only be removed from buffer if it is complete (or decodable).
+    if (oldest_frame->GetState() < kStateComplete) {
+      return false;
+    }
+  } else {
+    oldest_frame = decodable_frames_.Front();
+    // If we have exactly one frame in the buffer, release it only if it is
+    // complete. We know decodable_frames_ is  not empty due to the previous
+    // check.
+    if (decodable_frames_.size() == 1 && incomplete_frames_.empty()
+        && oldest_frame->GetState() != kStateComplete) {
+      return false;
+    }
   }
 
   *timestamp = oldest_frame->TimeStamp();
@@ -779,6 +792,11 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
         FindAndInsertContinuousFrames(*frame);
       } else {
         incomplete_frames_.InsertFrame(frame);
+        // If NACKs are enabled, keyframes are triggered by |GetNackList|.
+        if (nack_mode_ == kNoNack && NonContinuousOrIncompleteDuration() >
+            90 * kMaxDiscontinuousFramesTime) {
+          return kFlushIndicator;
+        }
       }
       break;
     }
@@ -789,6 +807,11 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
         return kNoError;
       } else {
         incomplete_frames_.InsertFrame(frame);
+        // If NACKs are enabled, keyframes are triggered by |GetNackList|.
+        if (nack_mode_ == kNoNack && NonContinuousOrIncompleteDuration() >
+            90 * kMaxDiscontinuousFramesTime) {
+          return kFlushIndicator;
+        }
       }
       break;
     }
@@ -814,8 +837,6 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
 
 bool VCMJitterBuffer::IsContinuousInState(const VCMFrameBuffer& frame,
     const VCMDecodingState& decoding_state) const {
-  if (decode_error_mode_ == kWithErrors)
-    return true;
   // Is this frame (complete or decodable) and continuous?
   // kStateDecodable will never be set when decode_error_mode_ is false
   // as SessionInfo determines this state based on the error mode (and frame
