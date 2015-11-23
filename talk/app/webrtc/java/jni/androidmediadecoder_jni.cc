@@ -41,7 +41,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/include/i420_buffer_pool.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
@@ -543,8 +543,9 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   if (frames_decoded_ < kMaxDecodedLogFrames) {
     ALOGD << "Decoder frame in # " << frames_received_ << ". Type: "
         << inputImage._frameType << ". Buffer # " <<
-        j_input_buffer_index << ". TS: "
+        j_input_buffer_index << ". pTS: "
         << (int)(presentation_timestamp_us / 1000)
+        << ". TS: " << inputImage._timeStamp
         << ". Size: " << inputImage._length;
   }
   memcpy(buffer, inputImage._buffer, inputImage._length);
@@ -722,7 +723,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   if (frames_decoded_ < kMaxDecodedLogFrames) {
     ALOGD << "Decoder frame out # " << frames_decoded_ << ". " << width <<
         " x " << height << ". " << stride << " x " <<  slice_height <<
-        ". Color: " << color_format << ". TS:" << (int)output_timestamps_ms <<
+        ". Color: " << color_format << ". TS:" << decoded_frame.timestamp() <<
         ". DecTime: " << (int)decode_time_ms <<
         ". DelayTime: " << (int)frame_delayed_ms;
   }
