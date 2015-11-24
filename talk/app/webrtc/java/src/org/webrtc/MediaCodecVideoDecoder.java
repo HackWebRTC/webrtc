@@ -609,8 +609,10 @@ public class MediaCodecVideoDecoder {
       // mediaCodec.releaseOutputBuffer has already been called.
       final DecodedOutputBuffer droppedFrame = dequeuedSurfaceOutputBuffers.remove();
       if (dequeueTimeoutMs > 0) {
-        Logging.w(TAG, "Draining decoder. Dropping frame with TS: "
-            + droppedFrame.timeStampMs + ". Total number of dropped frames: " + droppedFrames);
+        // TODO(perkj): Re-add the below log when VideoRenderGUI has been removed or fixed to
+        // return the one and only texture even if it does not render.
+        // Logging.w(TAG, "Draining decoder. Dropping frame with TS: "
+        //    + droppedFrame.timeStampMs + ". Total number of dropped frames: " + droppedFrames);
       } else {
         Logging.w(TAG, "Too many output buffers. Dropping frame with TS: "
             + droppedFrame.timeStampMs + ". Total number of dropped frames: " + droppedFrames);
