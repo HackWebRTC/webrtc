@@ -23,8 +23,6 @@
 #include "webrtc/voice_engine/utility.h"
 #include "webrtc/voice_engine/voe_base_impl.h"
 
-#define WEBRTC_ABS(a) (((a) < 0) ? -(a) : (a))
-
 namespace webrtc {
 namespace voe {
 
@@ -36,12 +34,20 @@ TransmitMixer::OnPeriodicProcess()
                  "TransmitMixer::OnPeriodicProcess()");
 
 #if defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
-    if (_typingNoiseWarningPending)
+    bool send_typing_noise_warning = false;
+    bool typing_noise_detected = false;
     {
+      CriticalSectionScoped cs(&_critSect);
+      if (_typingNoiseWarningPending) {
+        send_typing_noise_warning = true;
+        typing_noise_detected = _typingNoiseDetected;
+        _typingNoiseWarningPending = false;
+      }
+    }
+    if (send_typing_noise_warning) {
         CriticalSectionScoped cs(&_callbackCritSect);
-        if (_voiceEngineObserverPtr)
-        {
-            if (_typingNoiseDetected) {
+        if (_voiceEngineObserverPtr) {
+            if (typing_noise_detected) {
                 WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
                              "TransmitMixer::OnPeriodicProcess() => "
                              "CallbackOnError(VE_TYPING_NOISE_WARNING)");
@@ -57,7 +63,6 @@ TransmitMixer::OnPeriodicProcess()
                     VE_TYPING_NOISE_OFF_WARNING);
             }
         }
-        _typingNoiseWarningPending = false;
     }
 #endif
 
@@ -1279,9 +1284,11 @@ void TransmitMixer::TypingDetection(bool keyPressed)
 
   bool vadActive = _audioFrame.vad_activity_ == AudioFrame::kVadActive;
   if (_typingDetection.Process(keyPressed, vadActive)) {
+    CriticalSectionScoped cs(&_critSect);
     _typingNoiseWarningPending = true;
     _typingNoiseDetected = true;
   } else {
+    CriticalSectionScoped cs(&_critSect);
     // If there is already a warning pending, do not change the state.
     // Otherwise set a warning pending if last callback was for noise detected.
     if (!_typingNoiseWarningPending && _typingNoiseDetected) {
