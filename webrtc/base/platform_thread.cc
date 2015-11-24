@@ -100,31 +100,6 @@ struct ThreadAttributes {
   pthread_attr_t* operator&() { return &attr; }
   pthread_attr_t attr;
 };
-
-int ConvertToSystemPriority(ThreadPriority priority,
-                            int min_prio,
-                            int max_prio) {
-  RTC_DCHECK(max_prio - min_prio > 2);
-  const int top_prio = max_prio - 1;
-  const int low_prio = min_prio + 1;
-
-  switch (priority) {
-    case kLowPriority:
-      return low_prio;
-    case kNormalPriority:
-      // The -1 ensures that the kHighPriority is always greater or equal to
-      // kNormalPriority.
-      return (low_prio + top_prio - 1) / 2;
-    case kHighPriority:
-      return std::max(top_prio - 2, low_prio);
-    case kHighestPriority:
-      return std::max(top_prio - 1, low_prio);
-    case kRealtimePriority:
-      return top_prio;
-  }
-  RTC_DCHECK(false);
-  return low_prio;
-}
 #endif  // defined(WEBRTC_WIN)
 }
 
@@ -251,13 +226,30 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
   if (max_prio - min_prio <= 2)
     return false;
 
+  // Convert webrtc priority to system priorities:
   sched_param param;
-  param.sched_priority = ConvertToSystemPriority(priority, min_prio, max_prio);
-  if (pthread_setschedparam(thread_, policy, &param) != 0) {
-    return false;
+  const int top_prio = max_prio - 1;
+  const int low_prio = min_prio + 1;
+  switch (priority) {
+    case kLowPriority:
+      param.sched_priority = low_prio;
+      break;
+    case kNormalPriority:
+      // The -1 ensures that the kHighPriority is always greater or equal to
+      // kNormalPriority.
+      param.sched_priority = (low_prio + top_prio - 1) / 2;
+      break;
+    case kHighPriority:
+      param.sched_priority = std::max(top_prio - 2, low_prio);
+      break;
+    case kHighestPriority:
+      param.sched_priority = std::max(top_prio - 1, low_prio);
+      break;
+    case kRealtimePriority:
+      param.sched_priority = top_prio;
+      break;
   }
-
-  return true;
+  return pthread_setschedparam(thread_, policy, &param) == 0;
 #endif  // defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
 #endif  // defined(WEBRTC_WIN)
 }
