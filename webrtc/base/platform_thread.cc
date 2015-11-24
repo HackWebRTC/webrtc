@@ -202,10 +202,8 @@ void PlatformThread::Run() {
 
 bool PlatformThread::SetPriority(ThreadPriority priority) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!thread_)
-    return false;
 #if defined(WEBRTC_WIN)
-  return SetThreadPriority(thread_, priority);
+  return thread_ && SetThreadPriority(thread_, priority);
 #elif defined(__native_client__)
   // Setting thread priorities is not supported in NaCl.
   return true;
@@ -214,6 +212,8 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
   // thread priorities.
   return true;
 #else
+  if (!thread_)
+    return false;
 #ifdef WEBRTC_THREAD_RR
   const int policy = SCHED_RR;
 #else
