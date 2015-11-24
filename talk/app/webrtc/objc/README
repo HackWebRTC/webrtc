@@ -12,69 +12,59 @@ Prerequisites:
   up for building for iOS-device, iOS-simulator, and Mac (resp) are:
 function wrbase() {
   cd /path/to/webrtc/trunk
-  export GYP_DEFINES="build_with_libjingle=1 build_with_chromium=0 libjingle_objc=1"
+  export GYP_DEFINES="build_with_libjingle=1 build_with_chromium=0"
   export GYP_GENERATORS="ninja"
 }
 
 function wrios() {
   wrbase
-  export GYP_DEFINES="$GYP_DEFINES OS=ios target_arch=armv7"
+  export GYP_DEFINES="$GYP_DEFINES OS=ios"
   export GYP_GENERATOR_FLAGS="$GYP_GENERATOR_FLAGS output_dir=out_ios"
   export GYP_CROSSCOMPILE=1
 }
 
+function wrios32() {
+  wrios
+  export GYP_DEFINES="$GYP_DEFINES target_arch=arm"
+}
+
+function wrios64() {
+  wrios
+  export GYP_DEFINES="$GYP_DEFINES target_arch=arm64"
+}
+
 function wrsim() {
   wrbase
-  export GYP_DEFINES="$GYP_DEFINES OS=ios target_arch=ia32"
+  export GYP_DEFINES="$GYP_DEFINES OS=ios target_subarch=arm32 target_arch=ia32"
   export GYP_GENERATOR_FLAGS="$GYP_GENERATOR_FLAGS output_dir=out_sim"
   export GYP_CROSSCOMPILE=1
 }
 
 function wrmac() {
   wrbase
-  export GYP_DEFINES="$GYP_DEFINES OS=mac target_arch=x64"
+  export GYP_DEFINES="$GYP_DEFINES OS=mac target_subarch=arm64 target_arch=x64"
   export GYP_GENERATOR_FLAGS="$GYP_GENERATOR_FLAGS output_dir=out_mac"
 }
 
-- Finally, run "gclient runhooks" to generate ninja files.
+- Finally, run "webrtc/build/gyp_webrtc" to generate ninja files.
 
 Example of building & using the unittest & app:
 
 - To build & run the unittest (must target mac):
-  wrmac && gclient runhooks && \
+  wrmac && ./webrtc/build/gyp_webrtc && \
       ninja -C out_mac/Debug libjingle_peerconnection_objc_test && \
       ./out_mac/Debug/libjingle_peerconnection_objc_test.app/Contents/MacOS/libjingle_peerconnection_objc_test
 
 - To build & launch the sample app on OSX:
-  wrmac && gclient runhooks && ninja -C out_mac/Debug AppRTCDemo && \
+  wrmac && ./webrtc/build/gyp_webrtc && ninja -C out_mac/Debug AppRTCDemo && \
       ./out_mac/Debug/AppRTCDemo.app/Contents/MacOS/AppRTCDemo
 
 - To build & launch the sample app on the iOS simulator:
-  wrsim && gclient runhooks && ninja -C out_sim/Debug iossim AppRTCDemo && \
+  wrsim && ./webrtc/build/gyp_webrtc && ninja -C out_sim/Debug iossim AppRTCDemo && \
       ./out_sim/Debug/iossim out_sim/Debug/AppRTCDemo.app
 
-- To build & sign the sample app for an iOS device:
-  wrios && gclient runhooks && ninja -C out_ios/Debug-iphoneos AppRTCDemo
+- To build & sign the sample app for an iOS device (32 bit):
+  wrios32 && ./webrtc/build/gyp_webrtc && ninja -C out_ios/Debug-iphoneos AppRTCDemo
 
-- To install the sample app on an iOS device:
-  ideviceinstaller -i out_ios/Debug-iphoneos/AppRTCDemo.app
-  (if installing ideviceinstaller from brew, use --HEAD to get support
-  for .app directories)
-- Alternatively, use iPhone Configuration Utility:
-  - Open "iPhone Configuration Utility" (http://support.apple.com/kb/DL1465)
-  - Click the "Add" icon (command-o)
-  - Open the app under out_ios/Debug-iphoneos/AppRTCDemo (should be added to the Applications tab)
-  - Click the device's name in the left-hand panel and select the Applications tab
-  - Click Install on the AppRTCDemo line.
-      (If you have any problems deploying for the first time, check
-      the Info.plist file to ensure that the Bundle Identifier matches
-      your phone provisioning profile, or use a development wildcard
-      provisioning profile.)
-- Alternately, use ios-deploy:
-  ios-deploy -d -b out_ios/Debug-iphoneos/AppRTCDemo.app
-
-- Once installed:
-  - Tap AppRTCDemo on the iOS device's home screen (might have to scroll to find it).
-  - In desktop chrome, navigate to http://apprtc.appspot.com and note
-    the r=<NNN> room number in the resulting URL; enter that number
-    into the text field on the phone.
+- To build & sign the sample app for an iOS device (64 bit):
+  wrios64 && ./webrtc/build/gyp_webrtc && ninja -C out_ios/Debug-iphoneos AppRTCDemo
