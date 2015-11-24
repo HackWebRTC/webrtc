@@ -309,22 +309,9 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 };
 }  // namespace
 
-uint8_t VideoCodingModule::NumberOfCodecs() {
-  return VCMCodecDataBase::NumberOfCodecs();
-}
-
-int32_t VideoCodingModule::Codec(uint8_t listId, VideoCodec* codec) {
-  if (codec == NULL) {
-    return VCM_PARAMETER_ERROR;
-  }
-  return VCMCodecDataBase::Codec(listId, codec) ? 0 : -1;
-}
-
 int32_t VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
-  if (codec == NULL) {
-    return VCM_PARAMETER_ERROR;
-  }
-  return VCMCodecDataBase::Codec(codecType, codec) ? 0 : -1;
+  VCMCodecDataBase::Codec(codecType, codec);
+  return 0;
 }
 
 VideoCodingModule* VideoCodingModule::Create(

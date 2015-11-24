@@ -82,8 +82,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   void Restart();
 
   // Codec settings.
-  uint8_t NumberOfCodecs();
-  int32_t GetCodec(uint8_t list_index, VideoCodec* video_codec);
   int32_t RegisterExternalEncoder(VideoEncoder* encoder,
                                   uint8_t pl_type,
                                   bool internal_source);

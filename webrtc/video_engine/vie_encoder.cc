@@ -191,23 +191,9 @@ void ViEEncoder::Restart() {
   encoder_paused_ = false;
 }
 
-uint8_t ViEEncoder::NumberOfCodecs() {
-  return vcm_->NumberOfCodecs();
-}
-
-int32_t ViEEncoder::GetCodec(uint8_t list_index, VideoCodec* video_codec) {
-  if (vcm_->Codec(list_index, video_codec) != 0) {
-    return -1;
-  }
-  return 0;
-}
-
 int32_t ViEEncoder::RegisterExternalEncoder(webrtc::VideoEncoder* encoder,
                                             uint8_t pl_type,
                                             bool internal_source) {
-  if (encoder == NULL)
-    return -1;
-
   if (vcm_->RegisterExternalEncoder(encoder, pl_type, internal_source) !=
       VCM_OK) {
     return -1;
@@ -403,7 +389,6 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
   const VideoFrame* output_frame =
       (decimated_frame != NULL) ? decimated_frame : &video_frame;
 
-#ifdef VIDEOCODEC_VP8
   if (codec_type == webrtc::kVideoCodecVP8) {
     webrtc::CodecSpecificInfo codec_specific_info;
     codec_specific_info.codecType = webrtc::kVideoCodecVP8;
@@ -425,7 +410,6 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
                         &codec_specific_info);
     return;
   }
-#endif
   vcm_->AddVideoFrame(*output_frame);
 }
 

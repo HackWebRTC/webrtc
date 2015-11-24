@@ -15,18 +15,10 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/engine_configurations.h"
-#ifdef VIDEOCODEC_H264
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
-#endif
-#ifdef VIDEOCODEC_I420
 #include "webrtc/modules/video_coding/codecs/i420/include/i420.h"
-#endif
-#ifdef VIDEOCODEC_VP8
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#endif
-#ifdef VIDEOCODEC_VP9
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
-#endif
 #include "webrtc/modules/video_coding/internal_defines.h"
 
 namespace {
@@ -123,22 +115,10 @@ VCMCodecDataBase::~VCMCodecDataBase() {
   ResetReceiver();
 }
 
-int VCMCodecDataBase::NumberOfCodecs() {
-  return VCM_NUM_VIDEO_CODECS_AVAILABLE;
-}
-
-bool VCMCodecDataBase::Codec(int list_id,
-                             VideoCodec* settings) {
-  if (!settings) {
-    return false;
-  }
-  if (list_id >= VCM_NUM_VIDEO_CODECS_AVAILABLE) {
-    return false;
-  }
+void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
   memset(settings, 0, sizeof(VideoCodec));
-  switch (list_id) {
-#ifdef VIDEOCODEC_VP8
-    case VCM_VP8_IDX: {
+  switch (codec_type) {
+    case kVideoCodecVP8:
       strncpy(settings->plName, "VP8", 4);
       settings->codecType = kVideoCodecVP8;
       // 96 to 127 dynamic payload types for video codecs.
@@ -152,11 +132,8 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
       settings->codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
-      return true;
-    }
-#endif
-#ifdef VIDEOCODEC_VP9
-    case VCM_VP9_IDX: {
+      return;
+    case kVideoCodecVP9:
       strncpy(settings->plName, "VP9", 4);
       settings->codecType = kVideoCodecVP9;
       // 96 to 127 dynamic payload types for video codecs.
@@ -170,11 +147,8 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
       settings->codecSpecific.VP9 = VideoEncoder::GetDefaultVp9Settings();
-      return true;
-    }
-#endif
-#ifdef VIDEOCODEC_H264
-    case VCM_H264_IDX: {
+      return;
+    case kVideoCodecH264:
       strncpy(settings->plName, "H264", 5);
       settings->codecType = kVideoCodecH264;
       // 96 to 127 dynamic payload types for video codecs.
@@ -188,11 +162,8 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
       settings->codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
-      return true;
-    }
-#endif
-#ifdef VIDEOCODEC_I420
-    case VCM_I420_IDX: {
+      return;
+    case kVideoCodecI420:
       strncpy(settings->plName, "I420", 5);
       settings->codecType = kVideoCodecI420;
       // 96 to 127 dynamic payload types for video codecs.
@@ -207,27 +178,14 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->minBitrate = VCM_MIN_BITRATE;
       settings->numberOfSimulcastStreams = 0;
-      return true;
-    }
-#endif
-    default: {
-      return false;
-    }
+      return;
+    case kVideoCodecRED:
+    case kVideoCodecULPFEC:
+    case kVideoCodecGeneric:
+    case kVideoCodecUnknown:
+      RTC_NOTREACHED();
+      return;
   }
-}
-
-bool VCMCodecDataBase::Codec(VideoCodecType codec_type,
-                             VideoCodec* settings) {
-  for (int i = 0; i < VCMCodecDataBase::NumberOfCodecs(); i++) {
-    const bool ret = VCMCodecDataBase::Codec(i, settings);
-    if (!ret) {
-      return false;
-    }
-    if (codec_type == settings->codecType) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void VCMCodecDataBase::ResetSender() {
@@ -641,25 +599,17 @@ void VCMCodecDataBase::DeleteEncoder() {
 
 VCMGenericDecoder* VCMCodecDataBase::CreateDecoder(VideoCodecType type) const {
   switch (type) {
-#ifdef VIDEOCODEC_VP8
     case kVideoCodecVP8:
       return new VCMGenericDecoder(*(VP8Decoder::Create()));
-#endif
-#ifdef VIDEOCODEC_VP9
     case kVideoCodecVP9:
       return new VCMGenericDecoder(*(VP9Decoder::Create()));
-#endif
-#ifdef VIDEOCODEC_I420
     case kVideoCodecI420:
       return new VCMGenericDecoder(*(new I420Decoder));
-#endif
-#ifdef VIDEOCODEC_H264
     case kVideoCodecH264:
       if (H264Decoder::IsSupported()) {
         return new VCMGenericDecoder(*(H264Decoder::Create()));
       }
       break;
-#endif
     default:
       break;
   }

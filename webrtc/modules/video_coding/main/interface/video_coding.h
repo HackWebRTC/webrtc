@@ -92,21 +92,6 @@ public:
 
     static void Destroy(VideoCodingModule* module);
 
-    // Get number of supported codecs
-    //
-    // Return value     : Number of supported codecs
-    static uint8_t NumberOfCodecs();
-
-    // Get supported codec settings with using id
-    //
-    // Input:
-    //      - listId         : Id or index of the codec to look up
-    //      - codec          : Memory where the codec settings will be stored
-    //
-    // Return value     : VCM_OK,              on success
-    //                    VCM_PARAMETER_ERROR  if codec not supported or id too high
-    static int32_t Codec(const uint8_t listId, VideoCodec* codec);
-
     // Get supported codec settings using codec type
     //
     // Input:

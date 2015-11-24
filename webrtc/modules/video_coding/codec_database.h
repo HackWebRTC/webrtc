@@ -51,14 +51,8 @@ class VCMCodecDataBase {
   ~VCMCodecDataBase();
 
   // Sender Side
-  // Returns the number of supported codecs (or -1 in case of error).
-  static int NumberOfCodecs();
-
-  // Returns the default settings for the codec with id |list_id|.
-  static bool Codec(int list_id, VideoCodec* settings);
-
   // Returns the default settings for the codec with type |codec_type|.
-  static bool Codec(VideoCodecType codec_type, VideoCodec* settings);
+  static void Codec(VideoCodecType codec_type, VideoCodec* settings);
 
   void ResetSender();
 
