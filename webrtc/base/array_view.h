@@ -15,12 +15,59 @@
 
 namespace rtc {
 
-// Keeps track of an array (a pointer and a size) that it doesn't own.
-// ArrayView objects are immutable except for assignment, and small enough to
-// be cheaply passed by value.
+// Many functions read from or write to arrays. The obvious way to do this is
+// to use two arguments, a pointer to the first element and an element count:
 //
-// Note that ArrayView<T> and ArrayView<const T> are distinct types; this is
-// how you would represent mutable and unmutable views of an array.
+//   bool Contains17(const int* arr, size_t size) {
+//     for (size_t i = 0; i < size; ++i) {
+//       if (arr[i] == 17)
+//         return true;
+//     }
+//     return false;
+//   }
+//
+// This is flexible, since it doesn't matter how the array is stored (C array,
+// std::vector, rtc::Buffer, ...), but it's error-prone because the caller has
+// to correctly specify the array length:
+//
+//   Contains17(arr, arraysize(arr));  // C array
+//   Contains17(&arr[0], arr.size());  // std::vector
+//   Contains17(arr, size);            // pointer + size
+//   ...
+//
+// It's also kind of messy to have two separate arguments for what is
+// conceptually a single thing.
+//
+// Enter rtc::ArrayView<T>. It contains a T pointer (to an array it doesn't
+// own) and a count, and supports the basic things you'd expect, such as
+// indexing and iteration. It allows us to write our function like this:
+//
+//   bool Contains17(rtc::ArrayView<const int> arr) {
+//     for (auto e : arr) {
+//       if (e == 17)
+//         return true;
+//     }
+//     return false;
+//   }
+//
+// And even better, because a bunch of things will implicitly convert to
+// ArrayView, we can call it like this:
+//
+//   Contains17(arr);                             // C array
+//   Contains17(arr);                             // std::vector
+//   Contains17(rtc::ArrayView<int>(arr, size));  // pointer + size
+//   ...
+//
+// One important point is that ArrayView<T> and ArrayView<const T> are
+// different types, which allow and don't allow mutation of the array elements,
+// respectively. The implicit conversions work just like you'd hope, so that
+// e.g. vector<int> will convert to either ArrayView<int> or ArrayView<const
+// int>, but const vector<int> will convert only to ArrayView<const int>.
+// (ArrayView itself can be the source type in such conversions, so
+// ArrayView<int> will convert to ArrayView<const int>.)
+//
+// Note: ArrayView is tiny (just a pointer and a count) and trivially copyable,
+// so it's probably cheaper to pass it by value than by const reference.
 template <typename T>
 class ArrayView final {
  public:
