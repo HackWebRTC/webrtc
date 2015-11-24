@@ -173,7 +173,7 @@ public class SurfaceViewRenderer extends SurfaceView
     runOnRenderThread(new Runnable() {
       @Override public void run() {
         synchronized (layoutLock) {
-          if (isSurfaceCreated) {
+          if (isSurfaceCreated && !eglBase.hasSurface()) {
             eglBase.createSurface(getHolder().getSurface());
             eglBase.makeCurrent();
             // Necessary for YUV frames with odd width.
