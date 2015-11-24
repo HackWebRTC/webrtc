@@ -633,6 +633,11 @@ static void PruneCryptos(const CryptoParamsVec& filter,
                         target_cryptos->end());
 }
 
+static bool IsRtpProtocol(const std::string& protocol) {
+  return protocol.empty() ||
+         (protocol.find(cricket::kMediaProtocolRtpPrefix) != std::string::npos);
+}
+
 static bool IsRtpContent(SessionDescription* sdesc,
                          const std::string& content_name) {
   bool is_rtp = false;
@@ -643,9 +648,7 @@ static bool IsRtpContent(SessionDescription* sdesc,
     if (!media_desc) {
       return false;
     }
-    is_rtp = media_desc->protocol().empty() ||
-             (media_desc->protocol().find(cricket::kMediaProtocolRtpPrefix) !=
-              std::string::npos);
+    is_rtp = IsRtpProtocol(media_desc->protocol());
   }
   return is_rtp;
 }
@@ -1067,12 +1070,16 @@ static bool CreateMediaContentAnswer(
       answer->set_direction(MD_RECVONLY);
       break;
     case MD_RECVONLY:
-      answer->set_direction(answer->streams().empty() ? MD_INACTIVE
-                                                      : MD_SENDONLY);
+      answer->set_direction(IsRtpProtocol(answer->protocol()) &&
+                                    answer->streams().empty()
+                                ? MD_INACTIVE
+                                : MD_SENDONLY);
       break;
     case MD_SENDRECV:
-      answer->set_direction(answer->streams().empty() ? MD_RECVONLY
-                                                      : MD_SENDRECV);
+      answer->set_direction(IsRtpProtocol(answer->protocol()) &&
+                                    answer->streams().empty()
+                                ? MD_RECVONLY
+                                : MD_SENDRECV);
       break;
     default:
       RTC_DCHECK(false && "MediaContentDescription has unexpected direction.");

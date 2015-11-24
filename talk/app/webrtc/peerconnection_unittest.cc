@@ -1450,8 +1450,9 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetDtls12Recv) {
                                           kDefaultSrtpCryptoSuite));
 }
 
-// This test sets up a call between two parties with audio, video and data.
-TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
+// This test sets up a call between two parties with audio, video and an RTP
+// data channel.
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestRtpDataChannel) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
@@ -1471,6 +1472,35 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
                  kMaxWaitMs);
 
   SendRtpData(receiving_client()->data_channel(), data);
+  EXPECT_EQ_WAIT(data, initializing_client()->data_observer()->last_message(),
+                 kMaxWaitMs);
+
+  receiving_client()->data_channel()->Close();
+  // Send new offer and answer.
+  receiving_client()->Negotiate();
+  EXPECT_FALSE(initializing_client()->data_observer()->IsOpen());
+  EXPECT_FALSE(receiving_client()->data_observer()->IsOpen());
+}
+
+// This test sets up a call between two parties with audio, video and an SCTP
+// data channel.
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestSctpDataChannel) {
+  ASSERT_TRUE(CreateTestClients());
+  initializing_client()->CreateDataChannel();
+  LocalP2PTest();
+  ASSERT_TRUE(initializing_client()->data_channel() != nullptr);
+  EXPECT_TRUE_WAIT(receiving_client()->data_channel() != nullptr, kMaxWaitMs);
+  EXPECT_TRUE_WAIT(initializing_client()->data_observer()->IsOpen(),
+                   kMaxWaitMs);
+  EXPECT_TRUE_WAIT(receiving_client()->data_observer()->IsOpen(), kMaxWaitMs);
+
+  std::string data = "hello world";
+
+  initializing_client()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, receiving_client()->data_observer()->last_message(),
+                 kMaxWaitMs);
+
+  receiving_client()->data_channel()->Send(DataBuffer(data));
   EXPECT_EQ_WAIT(data, initializing_client()->data_observer()->last_message(),
                  kMaxWaitMs);
 
