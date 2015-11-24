@@ -1251,6 +1251,46 @@ JOW(jlong, PeerConnectionFactory_nativeCreateAudioTrack)(
   return (jlong)track.release();
 }
 
+JOW(jboolean, PeerConnectionFactory_nativeStartAecDump)(
+    JNIEnv* jni, jclass, jlong native_factory, jint file) {
+#if defined(ANDROID)
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      factoryFromJava(native_factory));
+  return factory->StartAecDump(file);
+#else
+  return false;
+#endif
+}
+
+JOW(void, PeerConnectionFactory_nativeStopAecDump)(
+    JNIEnv* jni, jclass, jlong native_factory) {
+#if defined(ANDROID)
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      factoryFromJava(native_factory));
+  factory->StopAecDump();
+#endif
+}
+
+JOW(jboolean, PeerConnectionFactory_nativeStartRtcEventLog)(
+    JNIEnv* jni, jclass, jlong native_factory, jint file) {
+#if defined(ANDROID)
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      factoryFromJava(native_factory));
+  return factory->StartRtcEventLog(file);
+#else
+  return false;
+#endif
+}
+
+JOW(void, PeerConnectionFactory_nativeStopRtcEventLog)(
+    JNIEnv* jni, jclass, jlong native_factory) {
+#if defined(ANDROID)
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      factoryFromJava(native_factory));
+  factory->StopRtcEventLog();
+#endif
+}
+
 JOW(void, PeerConnectionFactory_nativeSetOptions)(
     JNIEnv* jni, jclass, jlong native_factory, jobject options) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(

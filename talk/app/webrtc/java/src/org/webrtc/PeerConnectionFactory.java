@@ -131,6 +131,32 @@ public class PeerConnectionFactory {
         nativeFactory, id, source.nativeSource));
   }
 
+  // Starts recording an AEC dump. Ownership of the file is transfered to the
+  // native code. If an AEC dump is already in progress, it will be stopped and
+  // a new one will start using the provided file.
+  public boolean startAecDump(int file_descriptor) {
+    return nativeStartAecDump(nativeFactory, file_descriptor);
+  }
+
+  // Stops recording an AEC dump. If no AEC dump is currently being recorded,
+  // this call will have no effect.
+  public void stopAecDump() {
+    nativeStopAecDump(nativeFactory);
+  }
+
+  // Starts recording an RTC event log. Ownership of the file is transfered to
+  // the native code. If an RTC event log is already being recorded, it will be
+  // stopped and a new one will start using the provided file.
+  public boolean startRtcEventLog(int file_descriptor) {
+    return nativeStartRtcEventLog(nativeFactory, file_descriptor);
+  }
+
+  // Stops recording an RTC event log. If no RTC event log is currently being
+  // recorded, this call will have no effect.
+  public void StopRtcEventLog() {
+    nativeStopRtcEventLog(nativeFactory);
+  }
+
   public void setOptions(Options options) {
     nativeSetOptions(nativeFactory, options);
   }
@@ -214,6 +240,14 @@ public class PeerConnectionFactory {
 
   private static native long nativeCreateAudioTrack(
       long nativeFactory, String id, long nativeSource);
+
+  private static native boolean nativeStartAecDump(long nativeFactory, int file_descriptor);
+
+  private static native void nativeStopAecDump(long nativeFactory);
+
+  private static native boolean nativeStartRtcEventLog(long nativeFactory, int file_descriptor);
+
+  private static native void nativeStopRtcEventLog(long nativeFactory);
 
   public native void nativeSetOptions(long nativeFactory, Options options);
 
