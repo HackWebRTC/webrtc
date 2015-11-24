@@ -416,11 +416,9 @@ bool UDPPort::MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const {
   bool result =
       Network()->default_local_address_provider()->GetDefaultLocalAddress(
           addr->family(), &default_address);
-  if (!result) {
+  if (!result || default_address.IsNil()) {
     return false;
   }
-
-  RTC_DCHECK(!default_address.IsNil())
 
   addr->SetIP(default_address);
   return true;

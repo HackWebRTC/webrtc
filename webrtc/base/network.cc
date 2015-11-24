@@ -345,10 +345,10 @@ void NetworkManagerBase::set_default_local_addresses(const IPAddress& ipv4,
 
 bool NetworkManagerBase::GetDefaultLocalAddress(int family,
                                                 IPAddress* ipaddr) const {
-  if (family == AF_INET && !default_local_ipv4_address_.IsNil()) {
+  if (family == AF_INET) {
     *ipaddr = default_local_ipv4_address_;
     return true;
-  } else if (family == AF_INET6 && !default_local_ipv6_address_.IsNil()) {
+  } else if (family == AF_INET6) {
     *ipaddr = default_local_ipv6_address_;
     return true;
   }

@@ -100,7 +100,6 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
 class TestBasicNetworkManager : public BasicNetworkManager {
  public:
   using BasicNetworkManager::QueryDefaultLocalAddress;
-  using BasicNetworkManager::set_default_local_addresses;
 };
 
 // Test that the Network ctor works properly.
@@ -849,17 +848,9 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
   NetworkMonitorFactory::ReleaseFactory(factory);
 }
 
-TEST_F(NetworkTest, DefaultLocalAddress) {
+TEST_F(NetworkTest, DefaultPrivateAddress) {
   TestBasicNetworkManager manager;
   manager.StartUpdating();
-  IPAddress ip;
-
-  // GetDefaultLocalAddress should return false when not set.
-  EXPECT_FALSE(manager.GetDefaultLocalAddress(AF_INET, &ip));
-  EXPECT_FALSE(manager.GetDefaultLocalAddress(AF_INET6, &ip));
-
-  // Make sure we can query default local address when an address for such
-  // address family exists.
   std::vector<Network*> networks;
   manager.GetNetworks(&networks);
   for (auto& network : networks) {
@@ -869,14 +860,6 @@ TEST_F(NetworkTest, DefaultLocalAddress) {
       EXPECT_TRUE(manager.QueryDefaultLocalAddress(AF_INET6) != IPAddress());
     }
   }
-
-  // GetDefaultLocalAddress should return the valid default address after set.
-  manager.set_default_local_addresses(GetLoopbackIP(AF_INET),
-                                      GetLoopbackIP(AF_INET6));
-  EXPECT_TRUE(manager.GetDefaultLocalAddress(AF_INET, &ip));
-  EXPECT_EQ(ip, GetLoopbackIP(AF_INET));
-  EXPECT_TRUE(manager.GetDefaultLocalAddress(AF_INET6, &ip));
-  EXPECT_EQ(ip, GetLoopbackIP(AF_INET6));
   manager.StopUpdating();
 }
 
