@@ -202,14 +202,16 @@ void PlatformThread::Run() {
 
 bool PlatformThread::SetPriority(ThreadPriority priority) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-#if defined(WEBRTC_WIN)
-  return thread_ && SetThreadPriority(thread_, priority);
-#else
   if (!thread_)
     return false;
-#if defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
-  // TODO(tommi): Switch to the same mechanism as Chromium uses for
-  // changing thread priorities.
+#if defined(WEBRTC_WIN)
+  return SetThreadPriority(thread_, priority);
+#elif defined(__native_client__)
+  // Setting thread priorities is not supported in NaCl.
+  return true;
+#elif defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
+  // TODO(tommi): Switch to the same mechanism as Chromium uses for changing
+  // thread priorities.
   return true;
 #else
 #ifdef WEBRTC_THREAD_RR
@@ -250,7 +252,6 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
       break;
   }
   return pthread_setschedparam(thread_, policy, &param) == 0;
-#endif  // defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
 #endif  // defined(WEBRTC_WIN)
 }
 
