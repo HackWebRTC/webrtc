@@ -30,6 +30,7 @@ public class SettingsActivity extends Activity
   private String keyprefStartVideoBitrateValue;
   private String keyPrefVideoCodec;
   private String keyprefHwCodec;
+  private String keyprefCaptureToTexture;
 
   private String keyprefStartAudioBitrateType;
   private String keyprefStartAudioBitrateValue;
@@ -51,6 +52,7 @@ public class SettingsActivity extends Activity
     keyprefStartVideoBitrateValue = getString(R.string.pref_startvideobitratevalue_key);
     keyPrefVideoCodec = getString(R.string.pref_videocodec_key);
     keyprefHwCodec = getString(R.string.pref_hwcodec_key);
+    keyprefCaptureToTexture = getString(R.string.pref_capturetotexture_key);
 
     keyprefStartAudioBitrateType = getString(R.string.pref_startaudiobitrate_key);
     keyprefStartAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
@@ -84,6 +86,7 @@ public class SettingsActivity extends Activity
     setVideoBitrateEnable(sharedPreferences);
     updateSummary(sharedPreferences, keyPrefVideoCodec);
     updateSummaryB(sharedPreferences, keyprefHwCodec);
+    updateSummaryB(sharedPreferences, keyprefCaptureToTexture);
 
     updateSummary(sharedPreferences, keyprefStartAudioBitrateType);
     updateSummaryBitrate(sharedPreferences, keyprefStartAudioBitrateValue);
@@ -121,6 +124,7 @@ public class SettingsActivity extends Activity
     } else if (key.equals(keyprefVideoCall)
         || key.equals(keyprefCaptureQualitySlider)
         || key.equals(keyprefHwCodec)
+        || key.equals(keyprefCaptureToTexture)
         || key.equals(keyprefNoAudioProcessing)
         || key.equals(keyprefOpenSLES)
         || key.equals(keyPrefDisplayHud)) {

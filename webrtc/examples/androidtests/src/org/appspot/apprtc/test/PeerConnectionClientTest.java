@@ -250,7 +250,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(
             enableVideo, true, // videoCallEnabled, loopback.
-            0, 0, 0, 0, videoCodec, true, // video codec parameters.
+            0, 0, 0, 0, videoCodec, true, false, // video codec parameters.
             0, "OPUS", false, false); // audio codec parameters.
     return peerConnectionParameters;
   }

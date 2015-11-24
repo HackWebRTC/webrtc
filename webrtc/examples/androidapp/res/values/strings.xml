@@ -71,6 +71,11 @@
     <string name="pref_hwcodec_dlg">Use hardware accelerated video codec (if available).</string>
     <string name="pref_hwcodec_default">true</string>
 
+    <string name="pref_capturetotexture_key">capturetotexture_preference</string>
+    <string name="pref_capturetotexture_title">Video capture to surface texture.</string>
+    <string name="pref_capturetotexture_dlg">Capture video to textures (if available).</string>
+    <string name="pref_capturetotexture_default">false</string>
+
     <string name="pref_value_enabled">Enabled</string>
     <string name="pref_value_disabled">Disabled</string>
 

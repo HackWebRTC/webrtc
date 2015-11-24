@@ -66,6 +66,8 @@ public class CallActivity extends Activity
       "org.appspot.apprtc.VIDEOCODEC";
   public static final String EXTRA_HWCODEC_ENABLED =
       "org.appspot.apprtc.HWCODEC";
+  public static final String EXTRA_CAPTURETOTEXTURE_ENABLED =
+      "org.appspot.apprtc.CAPTURETOTEXTURE";
   public static final String EXTRA_AUDIO_BITRATE =
       "org.appspot.apprtc.AUDIO_BITRATE";
   public static final String EXTRA_AUDIOCODEC =
@@ -220,6 +222,7 @@ public class CallActivity extends Activity
         intent.getIntExtra(EXTRA_VIDEO_BITRATE, 0),
         intent.getStringExtra(EXTRA_VIDEOCODEC),
         intent.getBooleanExtra(EXTRA_HWCODEC_ENABLED, true),
+        intent.getBooleanExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, false),
         intent.getIntExtra(EXTRA_AUDIO_BITRATE, 0),
         intent.getStringExtra(EXTRA_AUDIOCODEC),
         intent.getBooleanExtra(EXTRA_NOAUDIOPROCESSING_ENABLED, false),

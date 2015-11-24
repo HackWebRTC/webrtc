@@ -133,6 +133,7 @@ public class PeerConnectionClient {
     public final int videoStartBitrate;
     public final String videoCodec;
     public final boolean videoCodecHwAcceleration;
+    public final boolean captureToTexture;
     public final int audioStartBitrate;
     public final String audioCodec;
     public final boolean noAudioProcessing;
@@ -141,7 +142,7 @@ public class PeerConnectionClient {
     public PeerConnectionParameters(
         boolean videoCallEnabled, boolean loopback,
         int videoWidth, int videoHeight, int videoFps, int videoStartBitrate,
-        String videoCodec, boolean videoCodecHwAcceleration,
+        String videoCodec, boolean videoCodecHwAcceleration, boolean captureToTexture,
         int audioStartBitrate, String audioCodec,
         boolean noAudioProcessing, boolean useOpenSLES) {
       this.videoCallEnabled = videoCallEnabled;
@@ -152,6 +153,7 @@ public class PeerConnectionClient {
       this.videoStartBitrate = videoStartBitrate;
       this.videoCodec = videoCodec;
       this.videoCodecHwAcceleration = videoCodecHwAcceleration;
+      this.captureToTexture = captureToTexture;
       this.audioStartBitrate = audioStartBitrate;
       this.audioCodec = audioCodec;
       this.noAudioProcessing = noAudioProcessing;
@@ -429,7 +431,7 @@ public class PeerConnectionClient {
 
     if (videoCallEnabled) {
       Log.d(TAG, "EGLContext: " + renderEGLContext);
-      factory.setVideoHwAccelerationOptions(renderEGLContext);
+      factory.setVideoHwAccelerationOptions(renderEGLContext, renderEGLContext);
     }
 
     PeerConnection.RTCConfiguration rtcConfig =
@@ -462,7 +464,8 @@ public class PeerConnectionClient {
         cameraDeviceName = frontCameraDeviceName;
       }
       Log.d(TAG, "Opening camera: " + cameraDeviceName);
-      videoCapturer = VideoCapturerAndroid.create(cameraDeviceName, null);
+      videoCapturer = VideoCapturerAndroid.create(cameraDeviceName, null,
+            peerConnectionParameters.captureToTexture ?  renderEGLContext : null);
       if (videoCapturer == null) {
         reportError("Failed to open camera");
         return;

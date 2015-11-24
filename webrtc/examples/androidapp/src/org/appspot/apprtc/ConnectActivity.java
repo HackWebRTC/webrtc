@@ -65,6 +65,7 @@ public class ConnectActivity extends Activity {
   private String keyprefAudioBitrateValue;
   private String keyprefAudioCodec;
   private String keyprefHwCodecAcceleration;
+  private String keyprefCaptureToTexture;
   private String keyprefNoAudioProcessingPipeline;
   private String keyprefOpenSLES;
   private String keyprefDisplayHud;
@@ -89,6 +90,7 @@ public class ConnectActivity extends Activity {
     keyprefVideoBitrateValue = getString(R.string.pref_startvideobitratevalue_key);
     keyprefVideoCodec = getString(R.string.pref_videocodec_key);
     keyprefHwCodecAcceleration = getString(R.string.pref_hwcodec_key);
+    keyprefCaptureToTexture = getString(R.string.pref_capturetotexture_key);
     keyprefAudioBitrateType = getString(R.string.pref_startaudiobitrate_key);
     keyprefAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
     keyprefAudioCodec = getString(R.string.pref_audiocodec_key);
@@ -253,6 +255,10 @@ public class ConnectActivity extends Activity {
     boolean hwCodec = sharedPref.getBoolean(keyprefHwCodecAcceleration,
         Boolean.valueOf(getString(R.string.pref_hwcodec_default)));
 
+    // Check Capture to texture.
+    boolean captureToTexture = sharedPref.getBoolean(keyprefCaptureToTexture,
+        Boolean.valueOf(getString(R.string.pref_capturetotexture_default)));
+
     // Check Disable Audio Processing flag.
     boolean noAudioProcessing = sharedPref.getBoolean(
         keyprefNoAudioProcessingPipeline,
@@ -339,6 +345,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_VIDEO_BITRATE, videoStartBitrate);
       intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, videoCodec);
       intent.putExtra(CallActivity.EXTRA_HWCODEC_ENABLED, hwCodec);
+      intent.putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, captureToTexture);
       intent.putExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED,
           noAudioProcessing);
       intent.putExtra(CallActivity.EXTRA_OPENSLES_ENABLED, useOpenSLES);

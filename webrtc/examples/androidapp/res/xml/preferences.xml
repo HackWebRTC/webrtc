@@ -60,6 +60,12 @@
             android:title="@string/pref_hwcodec_title"
             android:dialogTitle="@string/pref_hwcodec_dlg"
             android:defaultValue="@string/pref_hwcodec_default" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_capturetotexture_key"
+            android:title="@string/pref_capturetotexture_title"
+            android:dialogTitle="@string/pref_capturetotexture_dlg"
+            android:defaultValue="@string/pref_capturetotexture_default" />
     </PreferenceCategory>
 
     <PreferenceCategory
