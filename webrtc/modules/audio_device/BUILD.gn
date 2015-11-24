@@ -50,6 +50,7 @@ source_set("audio_device") {
     include_dirs += [ "android" ]
   }
   defines = []
+  cflags = []
   if (rtc_include_internal_audio_device) {
     defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
     sources += [

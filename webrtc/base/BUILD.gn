@@ -10,6 +10,13 @@ import("//build/config/crypto.gni")
 import("//build/config/ui.gni")
 import("../build/webrtc.gni")
 
+# Enable OpenSSL (BoringSSL) for iOS. This is covered in webrtc/supplement.gypi
+# for the GYP build.
+import("//build_overrides/webrtc.gni")
+if (is_ios && !build_with_chromium) {
+  use_openssl = true
+}
+
 config("rtc_base_config") {
   include_dirs = [
     "//third_party/jsoncpp/overrides/include",
