@@ -407,9 +407,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
         }
       }
     });
-    surfaceHelper.disconnect();
-    cameraThread.quit();
-    ThreadUtils.joinUninterruptibly(cameraThread);
+    surfaceHelper.disconnect(cameraThreadHandler);
     cameraThread = null;
   }
 

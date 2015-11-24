@@ -95,7 +95,7 @@ class SurfaceTextureHelper {
   }
 
   private final Handler handler;
-  private final boolean isOwningThread;
+  private boolean isOwningThread;
   private final EglBase eglBase;
   private final SurfaceTexture surfaceTexture;
   private final int oesTextureId;
@@ -170,6 +170,9 @@ class SurfaceTextureHelper {
    * onTextureFrameAvailable() after this function returns.
    */
   public void disconnect() {
+    if (!isOwningThread) {
+      throw new IllegalStateException("Must call disconnect(handler).");
+    }
     if (handler.getLooper().getThread() == Thread.currentThread()) {
       isQuitting = true;
       if (!isTextureInUse) {
@@ -188,6 +191,20 @@ class SurfaceTextureHelper {
       }
     });
     ThreadUtils.awaitUninterruptibly(barrier);
+  }
+
+  /**
+   * Call disconnect() to stop receiving frames and quit the looper used by |handler|.
+   * Resources are released when the texture frame has been returned by a call to
+   * returnTextureFrame(). You are guaranteed to not receive any more
+   * onTextureFrameAvailable() after this function returns.
+   */
+  public void disconnect(Handler handler) {
+    if (this.handler != handler) {
+      throw new IllegalStateException("Wrong handler.");
+    }
+    isOwningThread = true;
+    disconnect();
   }
 
   private void tryDeliverTextureFrame() {
@@ -222,8 +239,6 @@ class SurfaceTextureHelper {
     GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
     surfaceTexture.release();
     eglBase.release();
-    if (isOwningThread) {
-      handler.getLooper().quit();
-    }
+    handler.getLooper().quit();
   }
 }
