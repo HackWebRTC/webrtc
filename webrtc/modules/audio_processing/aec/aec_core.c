@@ -175,16 +175,20 @@ static void FilterFar(AecCore* aec, float yf[2][PART_LEN1]) {
   }
 }
 
-static void ScaleErrorSignal(AecCore* aec, float ef[2][PART_LEN1]) {
-  const float mu = aec->extended_filter_enabled ? kExtendedMu : aec->normal_mu;
-  const float error_threshold = aec->extended_filter_enabled
+static void ScaleErrorSignal(int extended_filter_enabled,
+                             float normal_mu,
+                             float normal_error_threshold,
+                             float *x_pow,
+                             float ef[2][PART_LEN1]) {
+  const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
+  const float error_threshold = extended_filter_enabled
                                     ? kExtendedErrorThreshold
-                                    : aec->normal_error_threshold;
+                                    : normal_error_threshold;
   int i;
   float abs_ef;
   for (i = 0; i < (PART_LEN1); i++) {
-    ef[0][i] /= (aec->xPow[i] + 1e-10f);
-    ef[1][i] /= (aec->xPow[i] + 1e-10f);
+    ef[0][i] /= (x_pow[i] + 1e-10f);
+    ef[1][i] /= (x_pow[i] + 1e-10f);
     abs_ef = sqrtf(ef[0][i] * ef[0][i] + ef[1][i] * ef[1][i]);
 
     if (abs_ef > error_threshold) {
@@ -837,6 +841,19 @@ static void UpdateDelayMetrics(AecCore* self) {
   return;
 }
 
+static void FrequencyToTime(float freq_data[2][PART_LEN1],
+                            float time_data[PART_LEN2]) {
+  int i;
+  time_data[0] = freq_data[0][0];
+  time_data[1] = freq_data[0][PART_LEN];
+  for (i = 1; i < PART_LEN; i++) {
+    time_data[2 * i] = freq_data[0][i];
+    time_data[2 * i + 1] = freq_data[1][i];
+  }
+  aec_rdft_inverse_128(time_data);
+}
+
+
 static void TimeToFrequency(float time_data[PART_LEN2],
                             float freq_data[2][PART_LEN1],
                             int window) {
@@ -942,9 +959,63 @@ static int SignalBasedDelayCorrection(AecCore* self) {
   return delay_correction;
 }
 
-static void NonLinearProcessing(AecCore* aec,
-                                float* output,
-                                float* const* outputH) {
+static void EchoSubtraction(AecCore* aec,
+                            float* nearend_ptr) {
+  float yf[2][PART_LEN1];
+  float fft[PART_LEN2];
+  float y[PART_LEN];
+  float e[PART_LEN];
+  float ef[2][PART_LEN1];
+  float scale;
+  int i;
+  memset(yf, 0, sizeof(yf));
+
+  // Produce frequency domain echo estimate.
+  WebRtcAec_FilterFar(aec, yf);
+
+  // Inverse fft to obtain echo estimate and error.
+  FrequencyToTime(yf, fft);
+
+  // Extract the output signal and compute the time-domain error.
+  scale = 2.0f / PART_LEN2;
+  for (i = 0; i < PART_LEN; ++i) {
+    y[i] = fft[PART_LEN + i] * scale;  // fft scaling.
+    e[i] = nearend_ptr[i] - y[i];
+  }
+
+  // Error fft
+  memcpy(aec->eBuf + PART_LEN, e, sizeof(float) * PART_LEN);
+  memset(fft, 0, sizeof(float) * PART_LEN);
+  memcpy(fft + PART_LEN, e, sizeof(float) * PART_LEN);
+  TimeToFrequency(fft, ef, 0);
+
+  RTC_AEC_DEBUG_RAW_WRITE(aec->e_fft_file,
+                          &ef[0][0],
+                          sizeof(ef[0][0]) * PART_LEN1 * 2);
+
+  if (aec->metricsMode == 1) {
+    // Note that the first PART_LEN samples in fft (before transformation) are
+    // zero. Hence, the scaling by two in UpdateLevel() should not be
+    // performed. That scaling is taken care of in UpdateMetrics() instead.
+    UpdateLevel(&aec->linoutlevel, ef);
+  }
+
+  // Scale error signal inversely with far power.
+  WebRtcAec_ScaleErrorSignal(aec->extended_filter_enabled,
+                             aec->normal_mu,
+                             aec->normal_error_threshold,
+                             aec->xPow,
+                             ef);
+  WebRtcAec_FilterAdaptation(aec, fft, ef);
+
+
+  RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, e, PART_LEN);
+}
+
+
+static void EchoSuppression(AecCore* aec,
+                            float* output,
+                            float* const* outputH) {
   float efw[2][PART_LEN1], xfw[2][PART_LEN1];
   complex_t comfortNoiseHband[PART_LEN1];
   float fft[PART_LEN2];
@@ -1177,11 +1248,9 @@ static void NonLinearProcessing(AecCore* aec,
 
 static void ProcessBlock(AecCore* aec) {
   size_t i;
-  float y[PART_LEN], e[PART_LEN];
-  float scale;
 
   float fft[PART_LEN2];
-  float xf[2][PART_LEN1], yf[2][PART_LEN1], ef[2][PART_LEN1];
+  float xf[2][PART_LEN1];
   float df[2][PART_LEN1];
   float far_spectrum = 0.0f;
   float near_spectrum = 0.0f;
@@ -1201,11 +1270,11 @@ static void ProcessBlock(AecCore* aec) {
   float output[PART_LEN];
   float outputH[NUM_HIGH_BANDS_MAX][PART_LEN];
   float* outputH_ptr[NUM_HIGH_BANDS_MAX];
+  float* xf_ptr = NULL;
+
   for (i = 0; i < NUM_HIGH_BANDS_MAX; ++i) {
     outputH_ptr[i] = outputH[i];
   }
-
-  float* xf_ptr = NULL;
 
   // Concatenate old and new nearend blocks.
   for (i = 0; i < aec->num_bands - 1; ++i) {
@@ -1314,60 +1383,11 @@ static void ProcessBlock(AecCore* aec) {
          &xf_ptr[PART_LEN1],
          sizeof(float) * PART_LEN1);
 
-  memset(yf, 0, sizeof(yf));
+  // Perform echo subtraction.
+  EchoSubtraction(aec, nearend_ptr);
 
-  // Filter far
-  WebRtcAec_FilterFar(aec, yf);
-
-  // Inverse fft to obtain echo estimate and error.
-  fft[0] = yf[0][0];
-  fft[1] = yf[0][PART_LEN];
-  for (i = 1; i < PART_LEN; i++) {
-    fft[2 * i] = yf[0][i];
-    fft[2 * i + 1] = yf[1][i];
-  }
-  aec_rdft_inverse_128(fft);
-
-  scale = 2.0f / PART_LEN2;
-  for (i = 0; i < PART_LEN; i++) {
-    y[i] = fft[PART_LEN + i] * scale;  // fft scaling
-  }
-
-  for (i = 0; i < PART_LEN; i++) {
-    e[i] = nearend_ptr[i] - y[i];
-  }
-
-  // Error fft
-  memcpy(aec->eBuf + PART_LEN, e, sizeof(float) * PART_LEN);
-  memset(fft, 0, sizeof(float) * PART_LEN);
-  memcpy(fft + PART_LEN, e, sizeof(float) * PART_LEN);
-  // TODO(bjornv): Change to use TimeToFrequency().
-  aec_rdft_forward_128(fft);
-
-  ef[1][0] = 0;
-  ef[1][PART_LEN] = 0;
-  ef[0][0] = fft[0];
-  ef[0][PART_LEN] = fft[1];
-  for (i = 1; i < PART_LEN; i++) {
-    ef[0][i] = fft[2 * i];
-    ef[1][i] = fft[2 * i + 1];
-  }
-
-  RTC_AEC_DEBUG_RAW_WRITE(aec->e_fft_file,
-                          &ef[0][0],
-                          sizeof(ef[0][0]) * PART_LEN1 * 2);
-
-  if (aec->metricsMode == 1) {
-    // Note that the first PART_LEN samples in fft (before transformation) are
-    // zero. Hence, the scaling by two in UpdateLevel() should not be
-    // performed. That scaling is taken care of in UpdateMetrics() instead.
-    UpdateLevel(&aec->linoutlevel, ef);
-  }
-
-  // Scale error signal inversely with far power.
-  WebRtcAec_ScaleErrorSignal(aec, ef);
-  WebRtcAec_FilterAdaptation(aec, fft, ef);
-  NonLinearProcessing(aec, output, outputH_ptr);
+  // Perform echo suppression.
+  EchoSuppression(aec, output, outputH_ptr);
 
   if (aec->metricsMode == 1) {
     // Update power levels and echo metrics
@@ -1383,7 +1403,6 @@ static void ProcessBlock(AecCore* aec) {
     WebRtc_WriteBuffer(aec->outFrBufH[i], outputH[i], PART_LEN);
   }
 
-  RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, e, PART_LEN);
   RTC_AEC_DEBUG_WAV_WRITE(aec->outFile, output, PART_LEN);
 }
 

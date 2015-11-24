@@ -74,22 +74,26 @@ static void FilterFarSSE2(AecCore* aec, float yf[2][PART_LEN1]) {
   }
 }
 
-static void ScaleErrorSignalSSE2(AecCore* aec, float ef[2][PART_LEN1]) {
+static void ScaleErrorSignalSSE2(int extended_filter_enabled,
+                                 float normal_mu,
+                                 float normal_error_threshold,
+                                 float *x_pow,
+                                 float ef[2][PART_LEN1]) {
   const __m128 k1e_10f = _mm_set1_ps(1e-10f);
-  const __m128 kMu = aec->extended_filter_enabled ? _mm_set1_ps(kExtendedMu)
-                                                  : _mm_set1_ps(aec->normal_mu);
-  const __m128 kThresh = aec->extended_filter_enabled
+  const __m128 kMu = extended_filter_enabled ? _mm_set1_ps(kExtendedMu)
+      : _mm_set1_ps(normal_mu);
+  const __m128 kThresh = extended_filter_enabled
                              ? _mm_set1_ps(kExtendedErrorThreshold)
-                             : _mm_set1_ps(aec->normal_error_threshold);
+                             : _mm_set1_ps(normal_error_threshold);
 
   int i;
   // vectorized code (four at once)
   for (i = 0; i + 3 < PART_LEN1; i += 4) {
-    const __m128 xPow = _mm_loadu_ps(&aec->xPow[i]);
+    const __m128 x_pow_local = _mm_loadu_ps(&x_pow[i]);
     const __m128 ef_re_base = _mm_loadu_ps(&ef[0][i]);
     const __m128 ef_im_base = _mm_loadu_ps(&ef[1][i]);
 
-    const __m128 xPowPlus = _mm_add_ps(xPow, k1e_10f);
+    const __m128 xPowPlus = _mm_add_ps(x_pow_local, k1e_10f);
     __m128 ef_re = _mm_div_ps(ef_re_base, xPowPlus);
     __m128 ef_im = _mm_div_ps(ef_im_base, xPowPlus);
     const __m128 ef_re2 = _mm_mul_ps(ef_re, ef_re);
@@ -116,14 +120,14 @@ static void ScaleErrorSignalSSE2(AecCore* aec, float ef[2][PART_LEN1]) {
   // scalar code for the remaining items.
   {
     const float mu =
-        aec->extended_filter_enabled ? kExtendedMu : aec->normal_mu;
-    const float error_threshold = aec->extended_filter_enabled
+        extended_filter_enabled ? kExtendedMu : normal_mu;
+    const float error_threshold = extended_filter_enabled
                                       ? kExtendedErrorThreshold
-                                      : aec->normal_error_threshold;
+                                      : normal_error_threshold;
     for (; i < (PART_LEN1); i++) {
       float abs_ef;
-      ef[0][i] /= (aec->xPow[i] + 1e-10f);
-      ef[1][i] /= (aec->xPow[i] + 1e-10f);
+      ef[0][i] /= (x_pow[i] + 1e-10f);
+      ef[1][i] /= (x_pow[i] + 1e-10f);
       abs_ef = sqrtf(ef[0][i] * ef[0][i] + ef[1][i] * ef[1][i]);
 
       if (abs_ef > error_threshold) {

@@ -122,20 +122,24 @@ static float32x4_t vsqrtq_f32(float32x4_t s) {
 }
 #endif  // WEBRTC_ARCH_ARM64
 
-static void ScaleErrorSignalNEON(AecCore* aec, float ef[2][PART_LEN1]) {
-  const float mu = aec->extended_filter_enabled ? kExtendedMu : aec->normal_mu;
-  const float error_threshold = aec->extended_filter_enabled ?
-      kExtendedErrorThreshold : aec->normal_error_threshold;
+static void ScaleErrorSignalNEON(int extended_filter_enabled,
+                                 float normal_mu,
+                                 float normal_error_threshold,
+                                 float *x_pow,
+                                 float ef[2][PART_LEN1]) {
+  const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
+  const float error_threshold = extended_filter_enabled ?
+      kExtendedErrorThreshold : normal_error_threshold;
   const float32x4_t k1e_10f = vdupq_n_f32(1e-10f);
   const float32x4_t kMu = vmovq_n_f32(mu);
   const float32x4_t kThresh = vmovq_n_f32(error_threshold);
   int i;
   // vectorized code (four at once)
   for (i = 0; i + 3 < PART_LEN1; i += 4) {
-    const float32x4_t xPow = vld1q_f32(&aec->xPow[i]);
+    const float32x4_t x_pow_local = vld1q_f32(&x_pow[i]);
     const float32x4_t ef_re_base = vld1q_f32(&ef[0][i]);
     const float32x4_t ef_im_base = vld1q_f32(&ef[1][i]);
-    const float32x4_t xPowPlus = vaddq_f32(xPow, k1e_10f);
+    const float32x4_t xPowPlus = vaddq_f32(x_pow_local, k1e_10f);
     float32x4_t ef_re = vdivq_f32(ef_re_base, xPowPlus);
     float32x4_t ef_im = vdivq_f32(ef_im_base, xPowPlus);
     const float32x4_t ef_re2 = vmulq_f32(ef_re, ef_re);
@@ -162,8 +166,8 @@ static void ScaleErrorSignalNEON(AecCore* aec, float ef[2][PART_LEN1]) {
   // scalar code for the remaining items.
   for (; i < PART_LEN1; i++) {
     float abs_ef;
-    ef[0][i] /= (aec->xPow[i] + 1e-10f);
-    ef[1][i] /= (aec->xPow[i] + 1e-10f);
+    ef[0][i] /= (x_pow[i] + 1e-10f);
+    ef[1][i] /= (x_pow[i] + 1e-10f);
     abs_ef = sqrtf(ef[0][i] * ef[0][i] + ef[1][i] * ef[1][i]);
 
     if (abs_ef > error_threshold) {
@@ -733,4 +737,3 @@ void WebRtcAec_InitAec_neon(void) {
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressNEON;
   WebRtcAec_SubbandCoherence = SubbandCoherenceNEON;
 }
-

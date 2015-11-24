@@ -699,15 +699,18 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
   }
 }
 
-void WebRtcAec_ScaleErrorSignal_mips(AecCore* aec, float ef[2][PART_LEN1]) {
-  const float mu = aec->extended_filter_enabled ? kExtendedMu : aec->normal_mu;
-  const float error_threshold = aec->extended_filter_enabled
+void WebRtcAec_ScaleErrorSignal_mips(int extended_filter_enabled,
+                                     float normal_mu,
+                                     float normal_error_threshold,
+                                     float *x_pow,
+                                     float ef[2][PART_LEN1]) {
+  const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
+  const float error_threshold = extended_filter_enabled
                                     ? kExtendedErrorThreshold
-                                    : aec->normal_error_threshold;
+                                    : normal_error_threshold;
   int len = (PART_LEN1);
   float* ef0 = ef[0];
   float* ef1 = ef[1];
-  float* xPow = aec->xPow;
   float fac1 = 1e-10f;
   float err_th2 = error_threshold * error_threshold;
   float f0, f1, f2;
@@ -719,7 +722,7 @@ void WebRtcAec_ScaleErrorSignal_mips(AecCore* aec, float ef[2][PART_LEN1]) {
     ".set       push                                   \n\t"
     ".set       noreorder                              \n\t"
    "1:                                                 \n\t"
-    "lwc1       %[f0],     0(%[xPow])                  \n\t"
+    "lwc1       %[f0],     0(%[x_pow])                  \n\t"
     "lwc1       %[f1],     0(%[ef0])                   \n\t"
     "lwc1       %[f2],     0(%[ef1])                   \n\t"
     "add.s      %[f0],     %[f0],       %[fac1]        \n\t"
@@ -747,7 +750,7 @@ void WebRtcAec_ScaleErrorSignal_mips(AecCore* aec, float ef[2][PART_LEN1]) {
     "swc1       %[f1],     0(%[ef0])                   \n\t"
     "swc1       %[f2],     0(%[ef1])                   \n\t"
     "addiu      %[len],    %[len],      -1             \n\t"
-    "addiu      %[xPow],   %[xPow],     4              \n\t"
+    "addiu      %[x_pow],   %[x_pow],     4              \n\t"
     "addiu      %[ef0],    %[ef0],      4              \n\t"
     "bgtz       %[len],    1b                          \n\t"
     " addiu     %[ef1],    %[ef1],      4              \n\t"
@@ -756,7 +759,7 @@ void WebRtcAec_ScaleErrorSignal_mips(AecCore* aec, float ef[2][PART_LEN1]) {
 #if !defined(MIPS32_R2_LE)
       [f3] "=&f" (f3),
 #endif
-      [xPow] "+r" (xPow), [ef0] "+r" (ef0), [ef1] "+r" (ef1),
+      [x_pow] "+r" (x_pow), [ef0] "+r" (ef0), [ef1] "+r" (ef1),
       [len] "+r" (len)
     : [fac1] "f" (fac1), [err_th2] "f" (err_th2), [mu] "f" (mu),
       [err_th] "f" (error_threshold)
@@ -771,4 +774,3 @@ void WebRtcAec_InitAec_mips(void) {
   WebRtcAec_ComfortNoise = WebRtcAec_ComfortNoise_mips;
   WebRtcAec_OverdriveAndSuppress = WebRtcAec_OverdriveAndSuppress_mips;
 }
-

@@ -172,7 +172,11 @@ struct AecCore {
 
 typedef void (*WebRtcAecFilterFar)(AecCore* aec, float yf[2][PART_LEN1]);
 extern WebRtcAecFilterFar WebRtcAec_FilterFar;
-typedef void (*WebRtcAecScaleErrorSignal)(AecCore* aec, float ef[2][PART_LEN1]);
+typedef void (*WebRtcAecScaleErrorSignal)(int extended_filter_enabled,
+                                          float normal_mu,
+                                          float normal_error_threshold,
+                                          float* xPow,
+                                          float ef[2][PART_LEN1]);
 extern WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
 typedef void (*WebRtcAecFilterAdaptation)(AecCore* aec,
                                           float* fft,
