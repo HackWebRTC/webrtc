@@ -182,9 +182,9 @@ public class RendererCommon {
     }
     // Each dimension is constrained on max display size and how much we are allowed to crop.
     final int width = Math.min(maxDisplayWidth,
-        (int) (maxDisplayHeight / minVisibleFraction * videoAspectRatio));
+        Math.round(maxDisplayHeight / minVisibleFraction * videoAspectRatio));
     final int height = Math.min(maxDisplayHeight,
-        (int) (maxDisplayWidth / minVisibleFraction / videoAspectRatio));
+        Math.round(maxDisplayWidth / minVisibleFraction / videoAspectRatio));
     return new Point(width, height);
   }
 }

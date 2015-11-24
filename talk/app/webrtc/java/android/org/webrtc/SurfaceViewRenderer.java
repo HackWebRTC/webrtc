@@ -76,23 +76,22 @@ public class SurfaceViewRenderer extends SurfaceView
 
   // These variables are synchronized on |layoutLock|.
   private final Object layoutLock = new Object();
-  // These three different dimension values are used to keep track of the state in these functions:
-  // requestLayout() -> onMeasure() -> onLayout() -> surfaceChanged().
-  // requestLayout() is triggered internally by frame size changes, but can also be triggered
-  // externally by layout update requests.
-  // Most recent measurement specification from onMeasure().
-  private int widthSpec;
-  private int heightSpec;
-  // Current size on screen in pixels. Updated in onLayout(), and should be consistent with
-  // |widthSpec|/|heightSpec| after that.
-  private int layoutWidth;
-  private int layoutHeight;
-  // Current surface size of the underlying Surface. Updated in surfaceChanged(), and should be
-  // consistent with |layoutWidth|/|layoutHeight| after that.
+  // These dimension values are used to keep track of the state in these functions: onMeasure(),
+  // onLayout(), and surfaceChanged(). A new layout is triggered with requestLayout(). This happens
+  // internally when the incoming frame size changes. requestLayout() can also be triggered
+  // externally. The layout change is a two pass process: first onMeasure() is called in a top-down
+  // traversal of the View tree, followed by an onLayout() pass that is also top-down. During the
+  // onLayout() pass, each parent is responsible for positioning its children using the sizes
+  // computed in the measure pass.
+  // |desiredLayoutsize| is the layout size we have requested in onMeasure() and are waiting for to
+  // take effect.
+  private Point desiredLayoutSize = new Point();
+  // |layoutSize|/|surfaceSize| is the actual current layout/surface size. They are updated in
+  // onLayout() and surfaceChanged() respectively.
+  private final Point layoutSize = new Point();
   // TODO(magjed): Enable hardware scaler with SurfaceHolder.setFixedSize(). This will decouple
   // layout and surface size.
-  private int surfaceWidth;
-  private int surfaceHeight;
+  private final Point surfaceSize = new Point();
   // |isSurfaceCreated| keeps track of the current status in surfaceCreated()/surfaceDestroyed().
   private boolean isSurfaceCreated;
   // Last rendered frame dimensions, or 0 if no frame has been rendered yet.
@@ -120,10 +119,16 @@ public class SurfaceViewRenderer extends SurfaceView
   // Time in ns spent in renderFrameOnRenderThread() function.
   private long renderTimeNs;
 
-  // Runnable for posting frames to render thread..
+  // Runnable for posting frames to render thread.
   private final Runnable renderFrameRunnable = new Runnable() {
     @Override public void run() {
       renderFrameOnRenderThread();
+    }
+  };
+  // Runnable for clearing Surface to black.
+  private final Runnable makeBlackRunnable = new Runnable() {
+    @Override public void run() {
+      makeBlack();
     }
   };
 
@@ -209,10 +214,8 @@ public class SurfaceViewRenderer extends SurfaceView
             GLES20.glDeleteTextures(3, yuvTextures, 0);
             yuvTextures = null;
           }
-          if (eglBase.hasSurface()) {
-            // Clear last rendered image to black.
-            makeBlack();
-          }
+          // Clear last rendered image to black.
+          makeBlack();
           eglBase.release();
           eglBase = null;
           eglCleanupBarrier.countDown();
@@ -296,7 +299,7 @@ public class SurfaceViewRenderer extends SurfaceView
   }
 
   // Returns desired layout size given current measure specification and video aspect ratio.
-  private Point getDesiredLayoutSize() {
+  private Point getDesiredLayoutSize(int widthSpec, int heightSpec) {
     synchronized (layoutLock) {
       final int maxWidth = getDefaultSize(Integer.MAX_VALUE, widthSpec);
       final int maxHeight = getDefaultSize(Integer.MAX_VALUE, heightSpec);
@@ -316,18 +319,30 @@ public class SurfaceViewRenderer extends SurfaceView
   @Override
   protected void onMeasure(int widthSpec, int heightSpec) {
     synchronized (layoutLock) {
-      this.widthSpec = widthSpec;
-      this.heightSpec = heightSpec;
-      final Point size = getDesiredLayoutSize();
-      setMeasuredDimension(size.x, size.y);
+      if (frameWidth == 0 || frameHeight == 0) {
+        super.onMeasure(widthSpec, heightSpec);
+        return;
+      }
+      desiredLayoutSize = getDesiredLayoutSize(widthSpec, heightSpec);
+      if (desiredLayoutSize.x != getMeasuredWidth() || desiredLayoutSize.y != getMeasuredHeight()) {
+        // Clear the surface asap before the layout change to avoid stretched video and other
+        // render artifacs. Don't wait for it to finish because the IO thread should never be
+        // blocked, so it's a best-effort attempt.
+        synchronized (handlerLock) {
+          if (renderThreadHandler != null) {
+            renderThreadHandler.postAtFrontOfQueue(makeBlackRunnable);
+          }
+        }
+      }
+      setMeasuredDimension(desiredLayoutSize.x, desiredLayoutSize.y);
     }
   }
 
   @Override
   protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
     synchronized (layoutLock) {
-      layoutWidth = right - left;
-      layoutHeight = bottom - top;
+      layoutSize.x = right - left;
+      layoutSize.y = bottom - top;
     }
     // Might have a pending frame waiting for a layout of correct size.
     runOnRenderThread(renderFrameRunnable);
@@ -348,8 +363,8 @@ public class SurfaceViewRenderer extends SurfaceView
     Logging.d(TAG, getResourceName() + "Surface destroyed.");
     synchronized (layoutLock) {
       isSurfaceCreated = false;
-      surfaceWidth = 0;
-      surfaceHeight = 0;
+      surfaceSize.x = 0;
+      surfaceSize.y = 0;
     }
     runOnRenderThread(new Runnable() {
       @Override public void run() {
@@ -362,8 +377,8 @@ public class SurfaceViewRenderer extends SurfaceView
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
     Logging.d(TAG, getResourceName() + "Surface changed: " + width + "x" + height);
     synchronized (layoutLock) {
-      surfaceWidth = width;
-      surfaceHeight = height;
+      surfaceSize.x = width;
+      surfaceSize.y = height;
     }
     // Might have a pending frame waiting for a surface of correct size.
     runOnRenderThread(renderFrameRunnable);
@@ -392,31 +407,23 @@ public class SurfaceViewRenderer extends SurfaceView
     if (Thread.currentThread() != renderThread) {
       throw new IllegalStateException(getResourceName() + "Wrong thread.");
     }
-    GLES20.glClearColor(0, 0, 0, 0);
-    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-    eglBase.swapBuffers();
+    if (eglBase != null && eglBase.hasSurface()) {
+      GLES20.glClearColor(0, 0, 0, 0);
+      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+      eglBase.swapBuffers();
+    }
   }
 
   /**
    * Requests new layout if necessary. Returns true if layout and surface size are consistent.
    */
   private boolean checkConsistentLayout() {
+    if (Thread.currentThread() != renderThread) {
+      throw new IllegalStateException(getResourceName() + "Wrong thread.");
+    }
     synchronized (layoutLock) {
-      final Point desiredLayoutSize = getDesiredLayoutSize();
-      if (desiredLayoutSize.x != layoutWidth || desiredLayoutSize.y != layoutHeight) {
-        Logging.d(TAG, getResourceName() + "Requesting new layout with size: "
-            + desiredLayoutSize.x + "x" + desiredLayoutSize.y);
-        // Request layout update on UI thread.
-        post(new Runnable() {
-          @Override public void run() {
-            requestLayout();
-          }
-        });
-        return false;
-      }
-      // Wait for requestLayout() to propagate through this sequence before returning true:
-      // requestLayout() -> onMeasure() -> onLayout() -> surfaceChanged().
-      return surfaceWidth == layoutWidth && surfaceHeight == layoutHeight;
+      // Return false while we are in the middle of a layout change.
+      return layoutSize.equals(desiredLayoutSize) && surfaceSize.equals(layoutSize);
     }
   }
 
@@ -451,7 +458,7 @@ public class SurfaceViewRenderer extends SurfaceView
     // pipeline. Querying the EGLSurface will show if the underlying buffer dimensions haven't yet
     // changed. Such a buffer will be rendered incorrectly, so flush it with a black frame.
     synchronized (layoutLock) {
-      if (eglBase.surfaceWidth() != surfaceWidth || eglBase.surfaceHeight() != surfaceHeight) {
+      if (eglBase.surfaceWidth() != surfaceSize.x || eglBase.surfaceHeight() != surfaceSize.y) {
         makeBlack();
       }
     }
@@ -462,11 +469,11 @@ public class SurfaceViewRenderer extends SurfaceView
       final float[] rotatedSamplingMatrix =
           RendererCommon.rotateTextureMatrix(frame.samplingMatrix, frame.rotationDegree);
       final float[] layoutMatrix = RendererCommon.getLayoutMatrix(
-          mirror, frameAspectRatio(), (float) layoutWidth / layoutHeight);
+          mirror, frameAspectRatio(), (float) layoutSize.x / layoutSize.y);
       texMatrix = RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);
     }
 
-    GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight);
+    GLES20.glViewport(0, 0, surfaceSize.x, surfaceSize.y);
     // TODO(magjed): glClear() shouldn't be necessary since every pixel is covered anyway, but it's
     // a workaround for bug 5147. Performance will be slightly worse.
     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -490,6 +497,12 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (statisticsLock) {
       if (framesRendered == 0) {
         firstFrameTimeNs = startTimeNs;
+        synchronized (layoutLock) {
+          Logging.d(TAG, getResourceName() + "Reporting first rendered frame.");
+          if (rendererEvents != null) {
+            rendererEvents.onFirstFrameRendered();
+          }
+        }
       }
       ++framesRendered;
       renderTimeNs += (System.nanoTime() - startTimeNs);
@@ -515,18 +528,19 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (layoutLock) {
       if (frameWidth != frame.width || frameHeight != frame.height
           || frameRotation != frame.rotationDegree) {
+        Logging.d(TAG, getResourceName() + "Reporting frame resolution changed to "
+            + frame.width + "x" + frame.height + " with rotation " + frame.rotationDegree);
         if (rendererEvents != null) {
-          if (frameWidth == 0 || frameHeight == 0) {
-            Logging.d(TAG, getResourceName() + "Reporting first rendered frame.");
-            rendererEvents.onFirstFrameRendered();
-          }
-          Logging.d(TAG, getResourceName() + "Reporting frame resolution changed to "
-              + frame.width + "x" + frame.height + " with rotation " + frame.rotationDegree);
           rendererEvents.onFrameResolutionChanged(frame.width, frame.height, frame.rotationDegree);
         }
         frameWidth = frame.width;
         frameHeight = frame.height;
         frameRotation = frame.rotationDegree;
+        post(new Runnable() {
+          @Override public void run() {
+            requestLayout();
+          }
+        });
       }
     }
   }
