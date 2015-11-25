@@ -593,6 +593,8 @@ bool WebRtcSession::Initialize(
     const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
   bundle_policy_ = rtc_configuration.bundle_policy;
   rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
+  video_options_.disable_prerenderer_smoothing =
+      rtc::Optional<bool>(rtc_configuration.disable_prerenderer_smoothing);
   transport_controller_->SetSslMaxProtocolVersion(options.ssl_max_version);
 
   // Obtain a certificate from RTCConfiguration if any were provided (optional).

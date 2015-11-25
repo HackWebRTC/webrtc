@@ -394,7 +394,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         const webrtc::VideoReceiveStream::Config& config,
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
-        const std::vector<VideoCodecSettings>& recv_codecs);
+        const std::vector<VideoCodecSettings>& recv_codecs,
+        bool disable_prerenderer_smoothing);
     ~WebRtcVideoReceiveStream();
 
     const std::vector<uint32_t>& GetSsrcs() const;
@@ -409,6 +410,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void RenderFrame(const webrtc::VideoFrame& frame,
                      int time_to_render_ms) override;
     bool IsTextureSupported() const override;
+    bool SmoothsRenderedFrames() const override;
     bool IsDefaultStream() const;
 
     void SetRenderer(cricket::VideoRenderer* renderer);
@@ -448,6 +450,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     WebRtcVideoDecoderFactory* const external_decoder_factory_;
     std::vector<AllocatedDecoder> allocated_decoders_;
+
+    const bool disable_prerenderer_smoothing_;
 
     rtc::CriticalSection renderer_lock_;
     cricket::VideoRenderer* renderer_ GUARDED_BY(renderer_lock_);

@@ -19,6 +19,7 @@ namespace webrtc {
 class CriticalSectionWrapper;
 class EventTimerWrapper;
 class PlatformThread;
+class VideoRenderer;
 
 class VideoRenderCallback {
  public:
@@ -31,7 +32,7 @@ class VideoRenderCallback {
 
 class IncomingVideoStream : public VideoRenderCallback {
  public:
-  explicit IncomingVideoStream(uint32_t stream_id);
+  IncomingVideoStream(uint32_t stream_id, bool disable_prerenderer_smoothing);
   ~IncomingVideoStream();
 
   // Get callback to deliver frames to the module.
@@ -72,7 +73,10 @@ class IncomingVideoStream : public VideoRenderCallback {
   enum { kEventMaxWaitTimeMs = 100 };
   enum { kFrameRatePeriodMs = 1000 };
 
+  void DeliverFrame(const VideoFrame& video_frame);
+
   uint32_t const stream_id_;
+  const bool disable_prerenderer_smoothing_;
   // Critsects in allowed to enter order.
   const rtc::scoped_ptr<CriticalSectionWrapper> stream_critsect_;
   const rtc::scoped_ptr<CriticalSectionWrapper> thread_critsect_;

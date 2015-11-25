@@ -1225,7 +1225,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, config, external_decoder_factory_, default_stream,
-      recv_codecs_);
+      recv_codecs_, options_.disable_prerenderer_smoothing.value_or(false));
 
   return true;
 }
@@ -2335,7 +2335,8 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     const webrtc::VideoReceiveStream::Config& config,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
-    const std::vector<VideoCodecSettings>& recv_codecs)
+    const std::vector<VideoCodecSettings>& recv_codecs,
+    bool disable_prerenderer_smoothing)
     : call_(call),
       ssrcs_(sp.ssrcs),
       ssrc_groups_(sp.ssrc_groups),
@@ -2343,6 +2344,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       default_stream_(default_stream),
       config_(config),
       external_decoder_factory_(external_decoder_factory),
+      disable_prerenderer_smoothing_(disable_prerenderer_smoothing),
       renderer_(NULL),
       last_width_(-1),
       last_height_(-1),
@@ -2556,6 +2558,11 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
 
 bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsTextureSupported() const {
   return true;
+}
+
+bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::SmoothsRenderedFrames()
+    const {
+  return disable_prerenderer_smoothing_;
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsDefaultStream() const {

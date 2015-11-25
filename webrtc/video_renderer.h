@@ -25,6 +25,11 @@ class VideoRenderer {
 
   virtual bool IsTextureSupported() const = 0;
 
+  // This function returns true if WebRTC should not delay frames for
+  // smoothness. In general, this case means the renderer can schedule frames to
+  // optimize smoothness.
+  virtual bool SmoothsRenderedFrames() const { return false; }
+
  protected:
   virtual ~VideoRenderer() {}
 };

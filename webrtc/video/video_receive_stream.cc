@@ -272,7 +272,8 @@ VideoReceiveStream::VideoReceiveStream(
     RTC_CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
 
-  incoming_video_stream_.reset(new IncomingVideoStream(0));
+  incoming_video_stream_.reset(new IncomingVideoStream(
+      0, config.renderer ? config.renderer->SmoothsRenderedFrames() : false));
   incoming_video_stream_->SetExpectedRenderDelay(config.render_delay_ms);
   incoming_video_stream_->SetExternalCallback(this);
   vie_channel_->SetIncomingVideoStream(incoming_video_stream_.get());

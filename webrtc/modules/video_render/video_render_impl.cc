@@ -197,7 +197,8 @@ ModuleVideoRenderImpl::AddIncomingRenderStream(const uint32_t streamId,
     }
 
     // Create platform independant code
-    IncomingVideoStream* ptrIncomingStream = new IncomingVideoStream(streamId);
+    IncomingVideoStream* ptrIncomingStream =
+        new IncomingVideoStream(streamId, false);
     ptrIncomingStream->SetRenderCallback(ptrRenderCallback);
     VideoRenderCallback* moduleCallback = ptrIncomingStream->ModuleCallback();
 

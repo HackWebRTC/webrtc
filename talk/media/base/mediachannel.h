@@ -267,6 +267,8 @@ struct VideoOptions {
             change.unsignalled_recv_stream_limit);
     SetFrom(&use_simulcast_adapter, change.use_simulcast_adapter);
     SetFrom(&screencast_min_bitrate, change.screencast_min_bitrate);
+    SetFrom(&disable_prerenderer_smoothing,
+            change.disable_prerenderer_smoothing);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -293,7 +295,8 @@ struct VideoOptions {
            suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
            unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
            use_simulcast_adapter == o.use_simulcast_adapter &&
-           screencast_min_bitrate == o.screencast_min_bitrate;
+           screencast_min_bitrate == o.screencast_min_bitrate &&
+           disable_prerenderer_smoothing == o.disable_prerenderer_smoothing;
   }
 
   std::string ToString() const {
@@ -379,6 +382,13 @@ struct VideoOptions {
   rtc::Optional<bool> use_simulcast_adapter;
   // Force screencast to use a minimum bitrate
   rtc::Optional<int> screencast_min_bitrate;
+  // Set to true if the renderer has an algorithm of frame selection.
+  // If the value is true, then WebRTC will hand over a frame as soon as
+  // possible without delay, and rendering smoothness is completely the duty
+  // of the renderer;
+  // If the value is false, then WebRTC is responsible to delay frame release
+  // in order to increase rendering smoothness.
+  rtc::Optional<bool> disable_prerenderer_smoothing;
 
  private:
   template <typename T>
