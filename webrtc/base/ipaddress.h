@@ -112,16 +112,12 @@ class IPAddress {
   // Whether this is an unspecified IP address.
   bool IsNil() const;
 
-  static void set_strip_sensitive(bool enable);
-
  private:
   int family_;
   union {
     in_addr ip4;
     in6_addr ip6;
   } u_;
-
-  static bool strip_sensitive_;
 };
 
 // IP class which could represent IPv6 address flags which is only

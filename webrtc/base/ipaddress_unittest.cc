@@ -888,20 +888,16 @@ TEST(IPAddressTest, TestCategorizeIPv6) {
 
 TEST(IPAddressTest, TestToSensitiveString) {
   IPAddress addr_v4 = IPAddress(kIPv4PublicAddr);
-  EXPECT_EQ(kIPv4PublicAddrString, addr_v4.ToString());
-  EXPECT_EQ(kIPv4PublicAddrString, addr_v4.ToSensitiveString());
-  IPAddress::set_strip_sensitive(true);
-  EXPECT_EQ(kIPv4PublicAddrString, addr_v4.ToString());
-  EXPECT_EQ(kIPv4PublicAddrAnonymizedString, addr_v4.ToSensitiveString());
-  IPAddress::set_strip_sensitive(false);
-
   IPAddress addr_v6 = IPAddress(kIPv6PublicAddr);
+  EXPECT_EQ(kIPv4PublicAddrString, addr_v4.ToString());
   EXPECT_EQ(kIPv6PublicAddrString, addr_v6.ToString());
-  EXPECT_EQ(kIPv6PublicAddrString, addr_v6.ToSensitiveString());
-  IPAddress::set_strip_sensitive(true);
-  EXPECT_EQ(kIPv6PublicAddrString, addr_v6.ToString());
+#if defined(NDEBUG)
+  EXPECT_EQ(kIPv4PublicAddrAnonymizedString, addr_v4.ToSensitiveString());
   EXPECT_EQ(kIPv6PublicAddrAnonymizedString, addr_v6.ToSensitiveString());
-  IPAddress::set_strip_sensitive(false);
+#else
+  EXPECT_EQ(kIPv4PublicAddrString, addr_v4.ToSensitiveString());
+  EXPECT_EQ(kIPv6PublicAddrString, addr_v6.ToSensitiveString());
+#endif  // defined(NDEBUG)
 }
 
 TEST(IPAddressTest, TestInterfaceAddress) {

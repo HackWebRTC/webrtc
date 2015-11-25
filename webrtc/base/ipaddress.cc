@@ -41,8 +41,6 @@ static const in6_addr kTeredoPrefix = {{{0x20, 0x01, 0x00, 0x00}}};
 static const in6_addr kV4CompatibilityPrefix = {{{0}}};
 static const in6_addr k6BonePrefix = {{{0x3f, 0xfe, 0}}};
 
-bool IPAddress::strip_sensitive_ = false;
-
 static bool IsPrivateV4(uint32_t ip);
 static in_addr ExtractMappedAddress(const in6_addr& addr);
 
@@ -144,9 +142,10 @@ std::string IPAddress::ToString() const {
 }
 
 std::string IPAddress::ToSensitiveString() const {
-  if (!strip_sensitive_)
-    return ToString();
-
+#if !defined(NDEBUG)
+  // Return non-stripped in debug.
+  return ToString();
+#else
   switch (family_) {
     case AF_INET: {
       std::string address = ToString();
@@ -164,6 +163,7 @@ std::string IPAddress::ToSensitiveString() const {
     }
   }
   return std::string();
+#endif
 }
 
 IPAddress IPAddress::Normalized() const {
@@ -184,10 +184,6 @@ IPAddress IPAddress::AsIPv6Address() const {
   in6_addr v6addr = kV4MappedPrefix;
   ::memcpy(&v6addr.s6_addr[12], &u_.ip4.s_addr, sizeof(u_.ip4.s_addr));
   return IPAddress(v6addr);
-}
-
-void IPAddress::set_strip_sensitive(bool enable) {
-  strip_sensitive_ = enable;
 }
 
 bool InterfaceAddress::operator==(const InterfaceAddress &other) const {
