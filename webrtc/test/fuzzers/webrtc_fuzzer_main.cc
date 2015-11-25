@@ -7,7 +7,6 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/base/logging.h"
 
 // This file is intended to provide a common interface for fuzzing functions, so
 // whether we're running fuzzing under libFuzzer or DrFuzz the webrtc functions
@@ -15,15 +14,30 @@
 // TODO(pbos): Implement FuzzOneInput() for more than one platform (currently
 // libFuzzer).
 
+#include "webrtc/base/logging.h"
+
+namespace {
+bool g_initialized = false;
+void InitializeWebRtcFuzzDefaults() {
+  if (g_initialized)
+    return;
+
+  // Remove default logging to prevent huge slowdowns.
+  // TODO(pbos): Disable in Chromium: http://crbug.com/561667
+#if !defined(WEBRTC_CHROMIUM_BUILD)
+  rtc::LogMessage::LogToDebug(rtc::LS_NONE);
+#endif  // !defined(WEBRTC_CHROMIUM_BUILD)
+
+  g_initialized = true;
+}
+}
+
 namespace webrtc {
 extern void FuzzOneInput(const uint8_t* data, size_t size);
 }  // namespace webrtc
 
 extern "C" int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size) {
-  // TODO(pbos): Figure out whether this can be moved to common startup code and
-  // not be done per-input.
-  // Remove default logging to prevent huge slowdowns.
-  rtc::LogMessage::LogToDebug(rtc::LS_NONE);
+  InitializeWebRtcFuzzDefaults();
   webrtc::FuzzOneInput(data, size);
   return 0;
 }

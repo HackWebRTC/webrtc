@@ -14,7 +14,7 @@ static_library("webrtc_fuzzer_main") {
     "webrtc_fuzzer_main.cc",
   ]
   deps = [
-    "..:field_trial",
+    "../../system_wrappers:field_trial_default",
     "//testing/libfuzzer:libfuzzer_main",
   ]
 }
