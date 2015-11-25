@@ -97,6 +97,7 @@ if (rtc_build_ssl == 0) {
 
 # The subset of rtc_base approved for use outside of libjingle.
 static_library("rtc_base_approved") {
+  deps = []
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
@@ -151,7 +152,15 @@ static_library("rtc_base_approved") {
     "trace_event.h",
   ]
 
-  if (!build_with_chromium) {
+  if (build_with_chromium) {
+    # Dependency on chromium's logging (in //base).
+    deps += [ "//base:base" ]
+    sources += [
+      "../../webrtc_overrides/webrtc/base/logging.cc",
+      "../../webrtc_overrides/webrtc/base/logging.h",
+    ]
+    include_dirs = [ "../../webrtc_overrides" ]
+  } else {
     sources += [
       "constructormagic.h",
       "logging.cc",
@@ -325,11 +334,6 @@ static_library("rtc_base") {
   }
 
   if (build_with_chromium) {
-    sources += [
-      "../../webrtc_overrides/webrtc/base/logging.cc",
-      "../../webrtc_overrides/webrtc/base/logging.h",
-    ]
-
     deps += [ "..:webrtc_common" ]
 
     if (is_win) {

@@ -85,8 +85,15 @@
       ],
       'conditions': [
         ['build_with_chromium==1', {
+          'dependencies': [
+            '<(DEPTH)/base/base.gyp:base',
+          ],
           'include_dirs': [
             '../../webrtc_overrides',
+          ],
+          'sources': [
+            '../../webrtc_overrides/webrtc/base/logging.cc',
+            '../../webrtc_overrides/webrtc/base/logging.h',
           ],
           'sources!': [
             'logging.cc',
@@ -380,8 +387,6 @@
             '../../boringssl/src/include',
           ],
           'sources': [
-            '../../webrtc_overrides/webrtc/base/logging.cc',
-            '../../webrtc_overrides/webrtc/base/logging.h',
             '../../webrtc_overrides/webrtc/base/win32socketinit.cc',
           ],
           'sources!': [
