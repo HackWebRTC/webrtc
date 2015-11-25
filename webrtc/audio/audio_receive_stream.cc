@@ -18,12 +18,14 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
+#include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
 std::string AudioReceiveStream::Config::Rtp::ToString() const {
@@ -74,24 +76,26 @@ AudioReceiveStream::AudioReceiveStream(
   RTC_DCHECK(audio_state_.get());
   RTC_DCHECK(rtp_header_parser_);
 
+  VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
+  channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
+  channel_proxy_->SetLocalSSRC(config.rtp.local_ssrc);
+
   const int channel_id = config.voe_channel_id;
   ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
-  int error = rtp->SetLocalSSRC(channel_id, config.rtp.local_ssrc);
-  RTC_DCHECK_EQ(0, error);
   for (const auto& extension : config.rtp.extensions) {
     // One-byte-extension local identifiers are in the range 1-14 inclusive.
     RTC_DCHECK_GE(extension.id, 1);
     RTC_DCHECK_LE(extension.id, 14);
     if (extension.name == RtpExtension::kAudioLevel) {
-      error = rtp->SetReceiveAudioLevelIndicationStatus(channel_id, true,
-                                                        extension.id);
+      int error = rtp->SetReceiveAudioLevelIndicationStatus(channel_id, true,
+                                                            extension.id);
       RTC_DCHECK_EQ(0, error);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAudioLevel, extension.id);
       RTC_DCHECK(registered);
     } else if (extension.name == RtpExtension::kAbsSendTime) {
-      error = rtp->SetReceiveAbsoluteSenderTimeStatus(channel_id, true,
-                                                      extension.id);
+      int error = rtp->SetReceiveAbsoluteSenderTimeStatus(channel_id, true,
+                                                          extension.id);
       RTC_DCHECK_EQ(0, error);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAbsoluteSendTime, extension.id);

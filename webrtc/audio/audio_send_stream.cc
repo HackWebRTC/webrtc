@@ -17,10 +17,12 @@
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
+#include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
 std::string AudioSendStream::Config::Rtp::ToString() const {
@@ -51,7 +53,6 @@ std::string AudioSendStream::Config::ToString() const {
 }
 
 namespace internal {
-
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state)
@@ -60,25 +61,25 @@ AudioSendStream::AudioSendStream(
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
 
+  VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
+  channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
+  channel_proxy_->SetRTCPStatus(true);
+  channel_proxy_->SetLocalSSRC(config.rtp.ssrc);
+  channel_proxy_->SetRTCP_CNAME(config.rtp.c_name);
+
   const int channel_id = config.voe_channel_id;
   ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
-  int error = rtp->SetRTCPStatus(channel_id, true);
-  RTC_DCHECK_EQ(0, error);
-  error = rtp->SetLocalSSRC(channel_id, config.rtp.ssrc);
-  RTC_DCHECK_EQ(0, error);
-  error = rtp->SetRTCP_CNAME(channel_id, config.rtp.c_name.c_str());
-  RTC_DCHECK_EQ(0, error);
   for (const auto& extension : config.rtp.extensions) {
     // One-byte-extension local identifiers are in the range 1-14 inclusive.
     RTC_DCHECK_GE(extension.id, 1);
     RTC_DCHECK_LE(extension.id, 14);
     if (extension.name == RtpExtension::kAbsSendTime) {
-      error = rtp->SetSendAbsoluteSenderTimeStatus(channel_id, true,
-                                                   extension.id);
+      int error = rtp->SetSendAbsoluteSenderTimeStatus(channel_id, true,
+                                                       extension.id);
       RTC_DCHECK_EQ(0, error);
     } else if (extension.name == RtpExtension::kAudioLevel) {
-      error = rtp->SetSendAudioLevelIndicationStatus(channel_id, true,
-                                                     extension.id);
+      int error = rtp->SetSendAudioLevelIndicationStatus(channel_id, true,
+                                                         extension.id);
       RTC_DCHECK_EQ(0, error);
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";

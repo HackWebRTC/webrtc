@@ -14,13 +14,16 @@
 #include "webrtc/audio_send_stream.h"
 #include "webrtc/audio_state.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
-
 class VoiceEngine;
 
-namespace internal {
+namespace voe {
+class ChannelProxy;
+}  // namespace voe
 
+namespace internal {
 class AudioSendStream final : public webrtc::AudioSendStream {
  public:
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
@@ -44,6 +47,7 @@ class AudioSendStream final : public webrtc::AudioSendStream {
   rtc::ThreadChecker thread_checker_;
   const webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
+  rtc::scoped_ptr<voe::ChannelProxy> channel_proxy_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };

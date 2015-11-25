@@ -49,6 +49,8 @@
         'channel.h',
         'channel_manager.cc',
         'channel_manager.h',
+        'channel_proxy.cc',
+        'channel_proxy.h',
         'dtmf_inband.cc',
         'dtmf_inband.h',
         'dtmf_inband_queue.cc',

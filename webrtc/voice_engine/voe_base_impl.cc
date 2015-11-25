@@ -47,7 +47,7 @@ VoEBaseImpl::~VoEBaseImpl() {
   delete &callbackCritSect_;
 }
 
-void VoEBaseImpl::OnErrorIsReported(ErrorCode error) {
+void VoEBaseImpl::OnErrorIsReported(const ErrorCode error) {
   CriticalSectionScoped cs(&callbackCritSect_);
   int errCode = 0;
   if (error == AudioDeviceObserver::kRecordingError) {
@@ -63,7 +63,7 @@ void VoEBaseImpl::OnErrorIsReported(ErrorCode error) {
   }
 }
 
-void VoEBaseImpl::OnWarningIsReported(WarningCode warning) {
+void VoEBaseImpl::OnWarningIsReported(const WarningCode warning) {
   CriticalSectionScoped cs(&callbackCritSect_);
   int warningCode = 0;
   if (warning == AudioDeviceObserver::kRecordingWarning) {
@@ -79,21 +79,28 @@ void VoEBaseImpl::OnWarningIsReported(WarningCode warning) {
   }
 }
 
-int32_t VoEBaseImpl::RecordedDataIsAvailable(
-    const void* audioSamples, size_t nSamples, size_t nBytesPerSample,
-    uint8_t nChannels, uint32_t samplesPerSec, uint32_t totalDelayMS,
-    int32_t clockDrift, uint32_t micLevel, bool keyPressed,
-    uint32_t& newMicLevel) {
+int32_t VoEBaseImpl::RecordedDataIsAvailable(const void* audioSamples,
+                                             const size_t nSamples,
+                                             const size_t nBytesPerSample,
+                                             const uint8_t nChannels,
+                                             const uint32_t samplesPerSec,
+                                             const uint32_t totalDelayMS,
+                                             const int32_t clockDrift,
+                                             const uint32_t currentMicLevel,
+                                             const bool keyPressed,
+                                             uint32_t& newMicLevel) {
   newMicLevel = static_cast<uint32_t>(ProcessRecordedDataWithAPM(
       nullptr, 0, audioSamples, samplesPerSec, nChannels, nSamples,
-      totalDelayMS, clockDrift, micLevel, keyPressed));
+      totalDelayMS, clockDrift, currentMicLevel, keyPressed));
   return 0;
 }
 
-int32_t VoEBaseImpl::NeedMorePlayData(size_t nSamples,
-                                      size_t nBytesPerSample,
-                                      uint8_t nChannels, uint32_t samplesPerSec,
-                                      void* audioSamples, size_t& nSamplesOut,
+int32_t VoEBaseImpl::NeedMorePlayData(const size_t nSamples,
+                                      const size_t nBytesPerSample,
+                                      const uint8_t nChannels,
+                                      const uint32_t samplesPerSec,
+                                      void* audioSamples,
+                                      size_t& nSamplesOut,
                                       int64_t* elapsed_time_ms,
                                       int64_t* ntp_time_ms) {
   GetPlayoutData(static_cast<int>(samplesPerSec), static_cast<int>(nChannels),

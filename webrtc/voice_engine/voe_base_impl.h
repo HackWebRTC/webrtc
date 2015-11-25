@@ -54,37 +54,57 @@ class VoEBaseImpl : public VoEBase,
   int AssociateSendChannel(int channel, int accociate_send_channel) override;
 
   // AudioTransport
-  int32_t RecordedDataIsAvailable(const void* audioSamples, size_t nSamples,
-                                  size_t nBytesPerSample, uint8_t nChannels,
-                                  uint32_t samplesPerSec, uint32_t totalDelayMS,
-                                  int32_t clockDrift, uint32_t micLevel,
-                                  bool keyPressed,
+  int32_t RecordedDataIsAvailable(const void* audioSamples,
+                                  const size_t nSamples,
+                                  const size_t nBytesPerSample,
+                                  const uint8_t nChannels,
+                                  const uint32_t samplesPerSec,
+                                  const uint32_t totalDelayMS,
+                                  const int32_t clockDrift,
+                                  const uint32_t currentMicLevel,
+                                  const bool keyPressed,
                                   uint32_t& newMicLevel) override;
-  int32_t NeedMorePlayData(size_t nSamples, size_t nBytesPerSample,
-                           uint8_t nChannels, uint32_t samplesPerSec,
-                           void* audioSamples, size_t& nSamplesOut,
+  int32_t NeedMorePlayData(const size_t nSamples,
+                           const size_t nBytesPerSample,
+                           const uint8_t nChannels,
+                           const uint32_t samplesPerSec,
+                           void* audioSamples,
+                           size_t& nSamplesOut,
                            int64_t* elapsed_time_ms,
                            int64_t* ntp_time_ms) override;
-  int OnDataAvailable(const int voe_channels[], int number_of_voe_channels,
-                      const int16_t* audio_data, int sample_rate,
-                      int number_of_channels, size_t number_of_frames,
-                      int audio_delay_milliseconds, int volume,
-                      bool key_pressed, bool need_audio_processing) override;
-  void OnData(int voe_channel, const void* audio_data, int bits_per_sample,
-              int sample_rate, int number_of_channels,
+  int OnDataAvailable(const int voe_channels[],
+                      int number_of_voe_channels,
+                      const int16_t* audio_data,
+                      int sample_rate,
+                      int number_of_channels,
+                      size_t number_of_frames,
+                      int audio_delay_milliseconds,
+                      int current_volume,
+                      bool key_pressed,
+                      bool need_audio_processing) override;
+  void OnData(int voe_channel,
+              const void* audio_data,
+              int bits_per_sample,
+              int sample_rate,
+              int number_of_channels,
               size_t number_of_frames) override;
-  void PushCaptureData(int voe_channel, const void* audio_data,
-                       int bits_per_sample, int sample_rate,
+  void PushCaptureData(int voe_channel,
+                       const void* audio_data,
+                       int bits_per_sample,
+                       int sample_rate,
                        int number_of_channels,
                        size_t number_of_frames) override;
-  void PullRenderData(int bits_per_sample, int sample_rate,
-                      int number_of_channels, size_t number_of_frames,
-                      void* audio_data, int64_t* elapsed_time_ms,
+  void PullRenderData(int bits_per_sample,
+                      int sample_rate,
+                      int number_of_channels,
+                      size_t number_of_frames,
+                      void* audio_data,
+                      int64_t* elapsed_time_ms,
                       int64_t* ntp_time_ms) override;
 
   // AudioDeviceObserver
-  void OnErrorIsReported(ErrorCode error) override;
-  void OnWarningIsReported(WarningCode warning) override;
+  void OnErrorIsReported(const ErrorCode error) override;
+  void OnWarningIsReported(const WarningCode warning) override;
 
  protected:
   VoEBaseImpl(voe::SharedData* shared);

@@ -37,6 +37,7 @@
         'layer_filtering_transport.cc',
         'layer_filtering_transport.h',
         'mock_transport.h',
+        'mock_voe_channel_proxy.h',
         'mock_voice_engine.h',
         'null_transport.cc',
         'null_transport.h',

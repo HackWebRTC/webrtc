@@ -13,6 +13,7 @@
 #include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
+#include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
 
 namespace webrtc {
@@ -39,6 +40,7 @@ const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
 
 struct ConfigHelper {
   ConfigHelper() : stream_config_(nullptr) {
+    using testing::Invoke;
     using testing::StrEq;
 
     EXPECT_CALL(voice_engine_,
@@ -49,12 +51,15 @@ struct ConfigHelper {
     config.voice_engine = &voice_engine_;
     audio_state_ = AudioState::Create(config);
 
-    EXPECT_CALL(voice_engine_, SetRTCPStatus(kChannelId, true))
-        .WillOnce(Return(0));
-    EXPECT_CALL(voice_engine_, SetLocalSSRC(kChannelId, kSsrc))
-        .WillOnce(Return(0));
-    EXPECT_CALL(voice_engine_, SetRTCP_CNAME(kChannelId, StrEq(kCName)))
-        .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId))
+        .WillOnce(Invoke([this](int channel_id) {
+          EXPECT_FALSE(channel_proxy_);
+          channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
+          EXPECT_CALL(*channel_proxy_, SetRTCPStatus(true)).Times(1);
+          EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
+          EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
+          return channel_proxy_;
+        }));
     EXPECT_CALL(voice_engine_,
         SetSendAbsoluteSenderTimeStatus(kChannelId, true, kAbsSendTimeId))
             .WillOnce(Return(0));
@@ -109,6 +114,7 @@ struct ConfigHelper {
   testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
+  testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
 };
 }  // namespace
 

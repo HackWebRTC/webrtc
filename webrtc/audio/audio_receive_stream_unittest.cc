@@ -14,6 +14,7 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
 
 namespace webrtc {
@@ -53,6 +54,8 @@ const AudioDecodingCallStats kAudioDecodeStats = MakeAudioDecodeStatsForTest();
 
 struct ConfigHelper {
   ConfigHelper() {
+    using testing::Invoke;
+
     EXPECT_CALL(voice_engine_,
         RegisterVoiceEngineObserver(_)).WillOnce(Return(0));
     EXPECT_CALL(voice_engine_,
@@ -61,8 +64,13 @@ struct ConfigHelper {
     config.voice_engine = &voice_engine_;
     audio_state_ = AudioState::Create(config);
 
-    EXPECT_CALL(voice_engine_, SetLocalSSRC(kChannelId, kLocalSsrc))
-        .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId))
+        .WillOnce(Invoke([this](int channel_id) {
+          EXPECT_FALSE(channel_proxy_);
+          channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
+          EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kLocalSsrc)).Times(1);
+          return channel_proxy_;
+        }));
     EXPECT_CALL(voice_engine_,
         SetReceiveAbsoluteSenderTimeStatus(kChannelId, true, kAbsSendTimeId))
             .WillOnce(Return(0));
@@ -76,7 +84,7 @@ struct ConfigHelper {
         RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAudioLevel, kAudioLevelId));
-}
+  }
 
   MockRemoteBitrateEstimator* remote_bitrate_estimator() {
     return &remote_bitrate_estimator_;
@@ -89,6 +97,7 @@ struct ConfigHelper {
     using testing::DoAll;
     using testing::SetArgPointee;
     using testing::SetArgReferee;
+
     EXPECT_CALL(voice_engine_, GetRTCPStatistics(kChannelId, _))
         .WillOnce(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
     EXPECT_CALL(voice_engine_, GetRecCodec(kChannelId, _))
@@ -110,6 +119,7 @@ struct ConfigHelper {
   testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioReceiveStream::Config stream_config_;
+  testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
 };
 
 void BuildAbsoluteSendTimeExtension(uint8_t* buffer,

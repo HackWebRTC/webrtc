@@ -17,11 +17,13 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 
 namespace webrtc {
-
 class RemoteBitrateEstimator;
 
-namespace internal {
+namespace voe {
+class ChannelProxy;
+}  // namespace voe
 
+namespace internal {
 class AudioReceiveStream final : public webrtc::AudioReceiveStream {
  public:
   AudioReceiveStream(RemoteBitrateEstimator* remote_bitrate_estimator,
@@ -51,6 +53,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
   const webrtc::AudioReceiveStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
+  rtc::scoped_ptr<voe::ChannelProxy> channel_proxy_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioReceiveStream);
 };
