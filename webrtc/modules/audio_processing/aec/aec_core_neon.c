@@ -34,24 +34,27 @@ __inline static float MulIm(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bIm + aIm * bRe;
 }
 
-static void FilterFarNEON(AecCore* aec, float yf[2][PART_LEN1]) {
+static void FilterFarNEON(int num_partitions,
+                          int xfBufBlockPos,
+                          float xfBuf[2][kExtendedNumPartitions * PART_LEN1],
+                          float wfBuf[2][kExtendedNumPartitions * PART_LEN1],
+                          float yf[2][PART_LEN1]) {
   int i;
-  const int num_partitions = aec->num_partitions;
   for (i = 0; i < num_partitions; i++) {
     int j;
-    int xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
+    int xPos = (i + xfBufBlockPos) * PART_LEN1;
     int pos = i * PART_LEN1;
     // Check for wrap
-    if (i + aec->xfBufBlockPos >= num_partitions) {
+    if (i + xfBufBlockPos >= num_partitions) {
       xPos -= num_partitions * PART_LEN1;
     }
 
     // vectorized code (four at once)
     for (j = 0; j + 3 < PART_LEN1; j += 4) {
-      const float32x4_t xfBuf_re = vld1q_f32(&aec->xfBuf[0][xPos + j]);
-      const float32x4_t xfBuf_im = vld1q_f32(&aec->xfBuf[1][xPos + j]);
-      const float32x4_t wfBuf_re = vld1q_f32(&aec->wfBuf[0][pos + j]);
-      const float32x4_t wfBuf_im = vld1q_f32(&aec->wfBuf[1][pos + j]);
+      const float32x4_t xfBuf_re = vld1q_f32(&xfBuf[0][xPos + j]);
+      const float32x4_t xfBuf_im = vld1q_f32(&xfBuf[1][xPos + j]);
+      const float32x4_t wfBuf_re = vld1q_f32(&wfBuf[0][pos + j]);
+      const float32x4_t wfBuf_im = vld1q_f32(&wfBuf[1][pos + j]);
       const float32x4_t yf_re = vld1q_f32(&yf[0][j]);
       const float32x4_t yf_im = vld1q_f32(&yf[1][j]);
       const float32x4_t a = vmulq_f32(xfBuf_re, wfBuf_re);
@@ -65,14 +68,14 @@ static void FilterFarNEON(AecCore* aec, float yf[2][PART_LEN1]) {
     }
     // scalar code for the remaining items.
     for (; j < PART_LEN1; j++) {
-      yf[0][j] += MulRe(aec->xfBuf[0][xPos + j],
-                        aec->xfBuf[1][xPos + j],
-                        aec->wfBuf[0][pos + j],
-                        aec->wfBuf[1][pos + j]);
-      yf[1][j] += MulIm(aec->xfBuf[0][xPos + j],
-                        aec->xfBuf[1][xPos + j],
-                        aec->wfBuf[0][pos + j],
-                        aec->wfBuf[1][pos + j]);
+      yf[0][j] += MulRe(xfBuf[0][xPos + j],
+                        xfBuf[1][xPos + j],
+                        wfBuf[0][pos + j],
+                        wfBuf[1][pos + j]);
+      yf[1][j] += MulIm(xfBuf[0][xPos + j],
+                        xfBuf[1][xPos + j],
+                        wfBuf[0][pos + j],
+                        wfBuf[1][pos + j]);
     }
   }
 }

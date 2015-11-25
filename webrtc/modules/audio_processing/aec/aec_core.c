@@ -151,26 +151,30 @@ static int CmpFloat(const void* a, const void* b) {
   return (*da > *db) - (*da < *db);
 }
 
-static void FilterFar(AecCore* aec, float yf[2][PART_LEN1]) {
+static void FilterFar(int num_partitions,
+                      int x_fft_buffer_block_pos,
+                      float x_fft_buffer[2][kExtendedNumPartitions * PART_LEN1],
+                      float h_fft_buffer[2][kExtendedNumPartitions * PART_LEN1],
+                      float y_fft[2][PART_LEN1]) {
   int i;
-  for (i = 0; i < aec->num_partitions; i++) {
+  for (i = 0; i < num_partitions; i++) {
     int j;
-    int xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
+    int x_pos = (i + x_fft_buffer_block_pos) * PART_LEN1;
     int pos = i * PART_LEN1;
-    // Check for wrap
-    if (i + aec->xfBufBlockPos >= aec->num_partitions) {
-      xPos -= aec->num_partitions * (PART_LEN1);
+    // Check for wrapped buffer.
+    if (i + x_fft_buffer_block_pos >= num_partitions) {
+      x_pos -= num_partitions * (PART_LEN1);
     }
 
     for (j = 0; j < PART_LEN1; j++) {
-      yf[0][j] += MulRe(aec->xfBuf[0][xPos + j],
-                        aec->xfBuf[1][xPos + j],
-                        aec->wfBuf[0][pos + j],
-                        aec->wfBuf[1][pos + j]);
-      yf[1][j] += MulIm(aec->xfBuf[0][xPos + j],
-                        aec->xfBuf[1][xPos + j],
-                        aec->wfBuf[0][pos + j],
-                        aec->wfBuf[1][pos + j]);
+      y_fft[0][j] += MulRe(x_fft_buffer[0][x_pos + j],
+                        x_fft_buffer[1][x_pos + j],
+                        h_fft_buffer[0][pos + j],
+                        h_fft_buffer[1][pos + j]);
+      y_fft[1][j] += MulIm(x_fft_buffer[0][x_pos + j],
+                        x_fft_buffer[1][x_pos + j],
+                        h_fft_buffer[0][pos + j],
+                        h_fft_buffer[1][pos + j]);
     }
   }
 }
@@ -971,7 +975,11 @@ static void EchoSubtraction(AecCore* aec,
   memset(yf, 0, sizeof(yf));
 
   // Produce frequency domain echo estimate.
-  WebRtcAec_FilterFar(aec, yf);
+  WebRtcAec_FilterFar(aec->num_partitions,
+                      aec->xfBufBlockPos,
+                      aec->xfBuf,
+                      aec->wfBuf,
+                      yf);
 
   // Inverse fft to obtain echo estimate and error.
   FrequencyToTime(yf, fft);

@@ -320,21 +320,26 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
   }
 }
 
-void WebRtcAec_FilterFar_mips(AecCore* aec, float yf[2][PART_LEN1]) {
+void WebRtcAec_FilterFar_mips(
+    int num_partitions,
+    int xfBufBlockPos,
+    float xfBuf[2][kExtendedNumPartitions * PART_LEN1],
+    float wfBuf[2][kExtendedNumPartitions * PART_LEN1],
+    float yf[2][PART_LEN1]) {
   int i;
-  for (i = 0; i < aec->num_partitions; i++) {
-    int xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
+  for (i = 0; i < num_partitions; i++) {
+    int xPos = (i + xfBufBlockPos) * PART_LEN1;
     int pos = i * PART_LEN1;
     // Check for wrap
-    if (i + aec->xfBufBlockPos >=  aec->num_partitions) {
-      xPos -=  aec->num_partitions * (PART_LEN1);
+    if (i + xfBufBlockPos >=  num_partitions) {
+      xPos -=  num_partitions * (PART_LEN1);
     }
     float* yf0 = yf[0];
     float* yf1 = yf[1];
-    float* aRe = aec->xfBuf[0] + xPos;
-    float* aIm = aec->xfBuf[1] + xPos;
-    float* bRe = aec->wfBuf[0] + pos;
-    float* bIm = aec->wfBuf[1] + pos;
+    float* aRe = xfBuf[0] + xPos;
+    float* aIm = xfBuf[1] + xPos;
+    float* bRe = wfBuf[0] + pos;
+    float* bIm = wfBuf[1] + pos;
     float f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13;
     int len = PART_LEN1 >> 1;
 
@@ -722,7 +727,7 @@ void WebRtcAec_ScaleErrorSignal_mips(int extended_filter_enabled,
     ".set       push                                   \n\t"
     ".set       noreorder                              \n\t"
    "1:                                                 \n\t"
-    "lwc1       %[f0],     0(%[x_pow])                  \n\t"
+    "lwc1       %[f0],     0(%[x_pow])                 \n\t"
     "lwc1       %[f1],     0(%[ef0])                   \n\t"
     "lwc1       %[f2],     0(%[ef1])                   \n\t"
     "add.s      %[f0],     %[f0],       %[fac1]        \n\t"
@@ -750,7 +755,7 @@ void WebRtcAec_ScaleErrorSignal_mips(int extended_filter_enabled,
     "swc1       %[f1],     0(%[ef0])                   \n\t"
     "swc1       %[f2],     0(%[ef1])                   \n\t"
     "addiu      %[len],    %[len],      -1             \n\t"
-    "addiu      %[x_pow],   %[x_pow],     4              \n\t"
+    "addiu      %[x_pow],  %[x_pow],    4              \n\t"
     "addiu      %[ef0],    %[ef0],      4              \n\t"
     "bgtz       %[len],    1b                          \n\t"
     " addiu     %[ef1],    %[ef1],      4              \n\t"
