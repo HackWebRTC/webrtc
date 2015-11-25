@@ -1008,6 +1008,11 @@ void Connection::Destroy() {
   port_->thread()->Post(this, MSG_DELETE);
 }
 
+void Connection::FailAndDestroy() {
+  set_state(Connection::STATE_FAILED);
+  Destroy();
+}
+
 void Connection::PrintPingsSinceLastResponse(std::string* s, size_t max) {
   std::ostringstream oss;
   oss << std::boolalpha;
@@ -1242,8 +1247,7 @@ void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
     // This is not a valid connection.
     LOG_J(LS_ERROR, this) << "Received STUN error response, code="
                           << error_code << "; killing connection";
-    set_state(STATE_FAILED);
-    Destroy();
+    FailAndDestroy();
   }
 }
 
@@ -1390,10 +1394,10 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   SignalStateChange(this);
 }
 
-ProxyConnection::ProxyConnection(Port* port, size_t index,
-                                 const Candidate& candidate)
-  : Connection(port, index, candidate), error_(0) {
-}
+ProxyConnection::ProxyConnection(Port* port,
+                                 size_t index,
+                                 const Candidate& remote_candidate)
+    : Connection(port, index, remote_candidate) {}
 
 int ProxyConnection::Send(const void* data, size_t size,
                           const rtc::PacketOptions& options) {

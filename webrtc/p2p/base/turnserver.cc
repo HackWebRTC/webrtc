@@ -698,6 +698,12 @@ void TurnServerAllocation::HandleCreatePermissionRequest(
     return;
   }
 
+  if (server_->reject_private_addresses_ &&
+      rtc::IPIsPrivate(peer_attr->GetAddress().ipaddr())) {
+    SendErrorResponse(msg, STUN_ERROR_FORBIDDEN, STUN_ERROR_REASON_FORBIDDEN);
+    return;
+  }
+
   // Add this permission.
   AddPermission(peer_attr->GetAddress().ipaddr());
 

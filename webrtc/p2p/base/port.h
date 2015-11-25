@@ -514,6 +514,9 @@ class Connection : public rtc::MessageHandler,
   // Makes the connection go away.
   void Destroy();
 
+  // Makes the connection go away, in a failed state.
+  void FailAndDestroy();
+
   // Checks that the state of this connection is up-to-date.  The argument is
   // the current time, which is compared against various timeouts.
   void UpdateState(uint32_t now);
@@ -634,17 +637,18 @@ class Connection : public rtc::MessageHandler,
   friend class ConnectionRequest;
 };
 
-// ProxyConnection defers all the interesting work to the port
+// ProxyConnection defers all the interesting work to the port.
 class ProxyConnection : public Connection {
  public:
-  ProxyConnection(Port* port, size_t index, const Candidate& candidate);
+  ProxyConnection(Port* port, size_t index, const Candidate& remote_candidate);
 
-  virtual int Send(const void* data, size_t size,
-                   const rtc::PacketOptions& options);
-  virtual int GetError() { return error_; }
+  int Send(const void* data,
+           size_t size,
+           const rtc::PacketOptions& options) override;
+  int GetError() override { return error_; }
 
  private:
-  int error_;
+  int error_ = 0;
 };
 
 }  // namespace cricket

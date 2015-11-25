@@ -1398,6 +1398,12 @@ void TurnEntry::OnCreatePermissionError(StunMessage* response, int code) {
   } else {
     // Send signal with error code.
     port_->SignalCreatePermissionResult(port_, ext_addr_, code);
+    Connection* c = port_->GetConnection(ext_addr_);
+    if (c) {
+      LOG_J(LS_ERROR, c) << "Received TURN CreatePermission error response, "
+                         << "code=" << code << "; killing connection.";
+      c->FailAndDestroy();
+    }
   }
 }
 

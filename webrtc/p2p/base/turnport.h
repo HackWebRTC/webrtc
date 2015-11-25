@@ -133,7 +133,6 @@ class TurnPort : public Port {
                    const rtc::SocketAddress&,
                    const rtc::SocketAddress&> SignalResolvedServerAddress;
 
-  // This signal is only for testing purpose.
   sigslot::signal3<TurnPort*, const rtc::SocketAddress&, int>
       SignalCreatePermissionResult;
   // For testing only.

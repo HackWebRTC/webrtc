@@ -100,6 +100,24 @@ class TurnPortTestVirtualSocketServer : public rtc::VirtualSocketServer {
   using rtc::VirtualSocketServer::LookupBinding;
 };
 
+class TestConnectionWrapper : public sigslot::has_slots<> {
+ public:
+  TestConnectionWrapper(Connection* conn) : connection_(conn) {
+    conn->SignalDestroyed.connect(
+        this, &TestConnectionWrapper::OnConnectionDestroyed);
+  }
+
+  Connection* connection() { return connection_; }
+
+ private:
+  void OnConnectionDestroyed(Connection* conn) {
+    ASSERT_TRUE(conn == connection_);
+    connection_ = nullptr;
+  }
+
+  Connection* connection_;
+};
+
 class TurnPortTest : public testing::Test,
                      public sigslot::has_slots<>,
                      public rtc::MessageHandler {
@@ -256,11 +274,13 @@ class TurnPortTest : public testing::Test,
     turn_port_->SignalCreatePermissionResult.connect(this,
         &TurnPortTest::OnTurnCreatePermissionResult);
   }
-  void CreateUdpPort() {
+
+  void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
+
+  void CreateUdpPort(const SocketAddress& address) {
     udp_port_.reset(UDPPort::Create(main_, &socket_factory_, &network_,
-                                    kLocalAddr2.ipaddr(), 0, 0,
-                                    kIceUfrag2, kIcePwd2,
-                                    std::string(), false));
+                                    address.ipaddr(), 0, 0, kIceUfrag2,
+                                    kIcePwd2, std::string(), false));
     // UDP port will be controlled.
     udp_port_->SetIceRole(cricket::ICEROLE_CONTROLLED);
     udp_port_->SignalPortComplete.connect(
@@ -847,6 +867,29 @@ TEST_F(TurnPortTest, TestOriginHeader) {
   SocketAddress local_address = turn_port_->GetLocalAddress();
   ASSERT_TRUE(turn_server_.FindAllocation(local_address) != NULL);
   EXPECT_EQ(kTestOrigin, turn_server_.FindAllocation(local_address)->origin());
+}
+
+// Test that a CreatePermission failure will result in the connection being
+// destroyed.
+TEST_F(TurnPortTest, TestConnectionDestroyedOnCreatePermissionFailure) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  turn_server_.server()->set_reject_private_addresses(true);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  turn_port_->PrepareAddress();
+  ASSERT_TRUE_WAIT(turn_ready_, kTimeout);
+
+  CreateUdpPort(SocketAddress("10.0.0.10", 0));
+  udp_port_->PrepareAddress();
+  ASSERT_TRUE_WAIT(udp_ready_, kTimeout);
+  // Create a connection.
+  TestConnectionWrapper conn(turn_port_->CreateConnection(
+      udp_port_->Candidates()[0], Port::ORIGIN_MESSAGE));
+  ASSERT_TRUE(conn.connection() != nullptr);
+
+  // Asynchronously, CreatePermission request should be sent and fail, closing
+  // the connection.
+  EXPECT_TRUE_WAIT(conn.connection() == nullptr, kTimeout);
+  EXPECT_FALSE(turn_create_permission_success_);
 }
 
 // Test that a TURN allocation is released when the port is closed.
