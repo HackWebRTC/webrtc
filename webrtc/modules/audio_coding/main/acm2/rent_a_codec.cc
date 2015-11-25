@@ -259,7 +259,8 @@ AudioEncoder* RentACodec::RentEncoderStack(AudioEncoder* speech_encoder,
                          : rtc::Optional<int>(it->second);
   };
   auto cng_pt = pt(param->cng_payload_types);
-  param->use_cng = param->use_cng && cng_pt;
+  param->use_cng =
+      param->use_cng && cng_pt && speech_encoder->NumChannels() == 1;
   auto red_pt = pt(param->red_payload_types);
   param->use_red = param->use_red && red_pt;
 

@@ -149,15 +149,6 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
       break;
   }
 
-  // Set Stereo, and make sure VAD and DTX is turned off.
-  if (send_codec.channels != 1) {
-    if (codec_stack_params_.use_cng) {
-      WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, dummy_id,
-                   "VAD/DTX is turned off, not supported when sending stereo.");
-    }
-    codec_stack_params_.use_cng = false;
-  }
-
   // Check if the codec is already registered as send codec.
   bool new_codec = true;
   if (CurrentEncoder()) {
@@ -231,8 +222,6 @@ void CodecManager::RegisterEncoder(AudioEncoder* external_speech_encoder) {
   static const char kName[] = "external";
   memcpy(send_codec_inst_.plname, kName, sizeof(kName));
 
-  if (send_codec_inst_.channels != 1)
-    codec_stack_params_.use_cng = false;
   if (codec_stack_params_.use_codec_fec) {
     // Switch FEC on. On failure, remember that FEC is off.
     if (!external_speech_encoder->SetFec(true))
