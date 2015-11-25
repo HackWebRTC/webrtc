@@ -173,10 +173,6 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     rent_a_codec_.RentEncoderStack(enc, &codec_stack_params_);
     RTC_DCHECK(CurrentEncoder());
 
-    codec_stack_params_.use_codec_fec =
-        codec_stack_params_.use_codec_fec &&
-        enc->SetFec(codec_stack_params_.use_codec_fec);
-
     send_codec_inst_ = send_codec;
     return 0;
   }
@@ -202,10 +198,6 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     send_codec_inst_.rate = send_codec.rate;
   }
 
-  codec_stack_params_.use_codec_fec =
-      codec_stack_params_.use_codec_fec &&
-      CurrentEncoder()->SetFec(codec_stack_params_.use_codec_fec);
-
   return 0;
 }
 
@@ -221,16 +213,6 @@ void CodecManager::RegisterEncoder(AudioEncoder* external_speech_encoder) {
   send_codec_inst_.rate = -1;    // Not valid.
   static const char kName[] = "external";
   memcpy(send_codec_inst_.plname, kName, sizeof(kName));
-
-  if (codec_stack_params_.use_codec_fec) {
-    // Switch FEC on. On failure, remember that FEC is off.
-    if (!external_speech_encoder->SetFec(true))
-      codec_stack_params_.use_codec_fec = false;
-  } else {
-    // Switch FEC off. This shouldn't fail.
-    const bool success = external_speech_encoder->SetFec(false);
-    RTC_DCHECK(success);
-  }
 
   rent_a_codec_.RentEncoderStack(external_speech_encoder, &codec_stack_params_);
 }

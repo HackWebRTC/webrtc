@@ -101,18 +101,20 @@ TEST_F(RentACodecTestF, VerifyCngFrames) {
 }
 
 TEST(RentACodecTest, ExternalEncoder) {
+  const int kSampleRateHz = 8000;
   MockAudioEncoder external_encoder;
+  EXPECT_CALL(external_encoder, SampleRateHz())
+      .WillRepeatedly(Return(kSampleRateHz));
+  EXPECT_CALL(external_encoder, NumChannels()).WillRepeatedly(Return(1));
+  EXPECT_CALL(external_encoder, SetFec(false)).WillRepeatedly(Return(true));
+
   RentACodec rac;
   RentACodec::StackParameters param;
   EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&external_encoder, &param));
-  const int kSampleRateHz = 8000;
   const int kPacketSizeSamples = kSampleRateHz / 100;
   int16_t audio[kPacketSizeSamples] = {0};
   uint8_t encoded[kPacketSizeSamples];
   AudioEncoder::EncodedInfo info;
-  EXPECT_CALL(external_encoder, SampleRateHz())
-      .WillRepeatedly(Return(kSampleRateHz));
-  EXPECT_CALL(external_encoder, NumChannels()).WillRepeatedly(Return(1));
 
   {
     ::testing::InSequence s;
@@ -160,6 +162,7 @@ void TestCngAndRedResetSpeechEncoder(bool use_cng, bool use_red) {
   EXPECT_CALL(speech_encoder, Max10MsFramesInAPacket())
       .WillRepeatedly(Return(2));
   EXPECT_CALL(speech_encoder, SampleRateHz()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(speech_encoder, SetFec(false)).WillRepeatedly(Return(true));
   {
     ::testing::InSequence s;
     EXPECT_CALL(speech_encoder, Mark("disabled"));

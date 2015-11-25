@@ -253,6 +253,16 @@ AudioEncoder* RentACodec::RentEncoderStack(AudioEncoder* speech_encoder,
                                            StackParameters* param) {
   RTC_DCHECK(speech_encoder);
 
+  if (param->use_codec_fec) {
+    // Switch FEC on. On failure, remember that FEC is off.
+    if (!speech_encoder->SetFec(true))
+      param->use_codec_fec = false;
+  } else {
+    // Switch FEC off. This shouldn't fail.
+    const bool success = speech_encoder->SetFec(false);
+    RTC_DCHECK(success);
+  }
+
   auto pt = [&speech_encoder](const std::map<int, int>& m) {
     auto it = m.find(speech_encoder->SampleRateHz());
     return it == m.end() ? rtc::Optional<int>()
