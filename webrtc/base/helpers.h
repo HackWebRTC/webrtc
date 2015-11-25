@@ -39,6 +39,9 @@ bool CreateRandomString(size_t length, std::string* str);
 bool CreateRandomString(size_t length, const std::string& table,
                         std::string* str);
 
+// Generates a (cryptographically) random UUID version 4 string.
+std::string CreateRandomUuid();
+
 // Generates a random id.
 uint32_t CreateRandomId();
 

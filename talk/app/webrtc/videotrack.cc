@@ -31,7 +31,7 @@
 
 namespace webrtc {
 
-static const char kVideoTrackKind[] = "video";
+const char MediaStreamTrackInterface::kVideoKind[] = "video";
 
 VideoTrack::VideoTrack(const std::string& label,
                        VideoSourceInterface* video_source)
@@ -47,7 +47,7 @@ VideoTrack::~VideoTrack() {
 }
 
 std::string VideoTrack::kind() const {
-  return kVideoTrackKind;
+  return kVideoKind;
 }
 
 void VideoTrack::AddRenderer(VideoRendererInterface* renderer) {
