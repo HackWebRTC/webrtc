@@ -207,7 +207,6 @@
       'sources': [
         'call/call_perf_tests.cc',
         'modules/audio_coding/neteq/test/neteq_performance_unittest.cc',
-        'modules/audio_processing/audio_processing_performance_unittest.cc',
         'modules/remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
         'video/full_stack.cc',
         'video/rampup_tests.cc',
@@ -216,8 +215,6 @@
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/modules/modules.gyp:audio_processing',
-        '<(webrtc_root)/modules/modules.gyp:audioproc_test_utils',
         '<(webrtc_root)/modules/modules.gyp:video_capture',
         '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
