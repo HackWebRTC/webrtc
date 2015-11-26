@@ -14,6 +14,7 @@
 
 // Note: this dependency is dangerous since it reaches into Chromium's base.
 // There's a risk of e.g. macro clashes. This file may only be used in tests.
+#include "base/android/context_utils.h"
 #include "base/android/jni_android.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
