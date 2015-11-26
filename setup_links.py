@@ -42,6 +42,7 @@ DIRECTORIES = [
   'third_party/expat',
   'third_party/instrumented_libraries',
   'third_party/jsoncpp',
+  'third_party/libc++-static',
   'third_party/libjpeg',
   'third_party/libjpeg_turbo',
   'third_party/libsrtp',
