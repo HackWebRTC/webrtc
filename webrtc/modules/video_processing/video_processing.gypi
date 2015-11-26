@@ -36,10 +36,21 @@
         'video_decimator.h',
         'video_processing_impl.cc',
         'video_processing_impl.h',
+        'video_denoiser.cc',
+        'video_denoiser.h',
+        'util/denoiser_filter.cc',
+        'util/denoiser_filter.h',
+        'util/denoiser_filter_c.cc',
+        'util/denoiser_filter_c.h',
+        'util/skin_detection.cc',
+        'util/skin_detection.h',
       ],
       'conditions': [
         ['target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': [ 'video_processing_sse2', ],
+        }],
+        ['target_arch=="arm" or target_arch == "arm64"', {
+          'dependencies': [ 'video_processing_neon', ],
         }],
       ],
     },
@@ -52,6 +63,8 @@
           'type': 'static_library',
           'sources': [
             'content_analysis_sse2.cc',
+            'util/denoiser_filter_sse2.cc',
+            'util/denoiser_filter_sse2.h',
           ],
           'conditions': [
             ['os_posix==1 and OS!="mac"', {
@@ -62,6 +75,19 @@
                 'OTHER_CFLAGS': [ '-msse2', ],
               },
             }],
+          ],
+        },
+      ],
+    }],
+    ['target_arch=="arm" or target_arch == "arm64"', {
+      'targets': [
+        {
+          'target_name': 'video_processing_neon',
+          'type': 'static_library',
+          'includes': [ '../../build/arm_neon.gypi', ],
+          'sources': [
+            'util/denoiser_filter_neon.cc',
+            'util/denoiser_filter_neon.h',
           ],
         },
       ],

@@ -18,7 +18,9 @@
 #include "webrtc/modules/video_processing/content_analysis.h"
 #include "webrtc/modules/video_processing/spatial_resampler.h"
 #include "webrtc/modules/video_processing/video_decimator.h"
+#include "webrtc/modules/video_processing/video_denoiser.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -65,11 +67,14 @@ class VPMFramePreprocessor {
   enum { kSkipFrameCA = 2 };
 
   VideoContentMetrics* content_metrics_;
+  VideoFrame denoised_frame_;
   VideoFrame resampled_frame_;
   VPMSpatialResampler* spatial_resampler_;
   VPMContentAnalysis* ca_;
   VPMVideoDecimator* vd_;
+  VideoDenoiser* denoiser_;
   bool enable_ca_;
+  bool enable_denoising_;
   int frame_cnt_;
 
 };

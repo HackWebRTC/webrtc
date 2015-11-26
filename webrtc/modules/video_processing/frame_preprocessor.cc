@@ -13,26 +13,34 @@
 namespace webrtc {
 
 VPMFramePreprocessor::VPMFramePreprocessor()
-    : content_metrics_(NULL),
+    : content_metrics_(nullptr),
       resampled_frame_(),
       enable_ca_(false),
+      enable_denoising_(false),
       frame_cnt_(0) {
   spatial_resampler_ = new VPMSimpleSpatialResampler();
   ca_ = new VPMContentAnalysis(true);
   vd_ = new VPMVideoDecimator();
+  if (enable_denoising_) {
+    denoiser_ = new VideoDenoiser();
+  } else {
+    denoiser_ = nullptr;
+  }
 }
 
 VPMFramePreprocessor::~VPMFramePreprocessor() {
   Reset();
-  delete spatial_resampler_;
   delete ca_;
   delete vd_;
+  if (enable_denoising_)
+    delete denoiser_;
+  delete spatial_resampler_;
 }
 
 void  VPMFramePreprocessor::Reset() {
   ca_->Release();
   vd_->Reset();
-  content_metrics_ = NULL;
+  content_metrics_ = nullptr;
   spatial_resampler_->Reset();
   enable_ca_ = false;
   frame_cnt_ = 0;
@@ -104,11 +112,22 @@ int32_t VPMFramePreprocessor::PreprocessFrame(const VideoFrame& frame,
     return 1;  // drop 1 frame
   }
 
-  // Resizing incoming frame if needed. Otherwise, remains NULL.
+  // Resizing incoming frame if needed. Otherwise, remains nullptr.
   // We are not allowed to resample the input frame (must make a copy of it).
-  *processed_frame = NULL;
+  *processed_frame = nullptr;
+  if (denoiser_ != nullptr) {
+    denoiser_->DenoiseFrame(frame, &denoised_frame_);
+    *processed_frame = &denoised_frame_;
+  }
+
   if (spatial_resampler_->ApplyResample(frame.width(), frame.height()))  {
-    int32_t ret = spatial_resampler_->ResampleFrame(frame, &resampled_frame_);
+    int32_t ret;
+    if (enable_denoising_) {
+      ret = spatial_resampler_->ResampleFrame(denoised_frame_,
+                                              &resampled_frame_);
+    } else {
+      ret = spatial_resampler_->ResampleFrame(frame, &resampled_frame_);
+    }
     if (ret != VPM_OK) return ret;
     *processed_frame = &resampled_frame_;
   }
@@ -118,14 +137,14 @@ int32_t VPMFramePreprocessor::PreprocessFrame(const VideoFrame& frame,
     // Compute new metrics every |kSkipFramesCA| frames, starting with
     // the first frame.
     if (frame_cnt_ % kSkipFrameCA == 0) {
-      if (*processed_frame == NULL)  {
+      if (*processed_frame == nullptr)  {
         content_metrics_ = ca_->ComputeContentMetrics(frame);
       } else {
-        content_metrics_ = ca_->ComputeContentMetrics(resampled_frame_);
+        content_metrics_ = ca_->ComputeContentMetrics(**processed_frame);
       }
     }
-    ++frame_cnt_;
   }
+  ++frame_cnt_;
   return VPM_OK;
 }
 
