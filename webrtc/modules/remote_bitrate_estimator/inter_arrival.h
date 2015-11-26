@@ -24,7 +24,7 @@ namespace webrtc {
 class InterArrival {
  public:
   // A timestamp group is defined as all packets with a timestamp which are at
-  // most timestamp_group_length_ticks older than the first timestamp in that
+  // most timestamp_group_length_ticks newer than the first timestamp in that
   // group.
   InterArrival(uint32_t timestamp_group_length_ticks,
                double timestamp_to_ms_coeff,
@@ -34,30 +34,21 @@ class InterArrival {
   // group is still incomplete or if only one group has been completed.
   // |timestamp| is the timestamp.
   // |arrival_time_ms| is the local time at which the packet arrived.
-  // |packet_size| is the size of the packet.
   // |timestamp_delta| (output) is the computed timestamp delta.
   // |arrival_time_delta_ms| (output) is the computed arrival-time delta.
-  // |packet_size_delta| (output) is the computed size delta.
   bool ComputeDeltas(uint32_t timestamp,
                      int64_t arrival_time_ms,
-                     size_t packet_size,
                      uint32_t* timestamp_delta,
-                     int64_t* arrival_time_delta_ms,
-                     int* packet_size_delta);
+                     int64_t* arrival_time_delta_ms);
 
  private:
   struct TimestampGroup {
-    TimestampGroup()
-        : size(0),
-          first_timestamp(0),
-          timestamp(0),
-          complete_time_ms(-1) {}
+    TimestampGroup() : first_timestamp(0), timestamp(0), complete_time_ms(-1) {}
 
     bool IsFirstPacket() const {
       return complete_time_ms == -1;
     }
 
-    size_t size;
     uint32_t first_timestamp;
     uint32_t timestamp;
     int64_t complete_time_ms;

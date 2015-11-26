@@ -102,10 +102,6 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
       : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         observer_(observer),
         clock_(clock),
-        ssrcs_(),
-        inter_arrival_(),
-        estimator_(OverUseDetectorOptions()),
-        detector_(OverUseDetectorOptions()),
         incoming_bitrate_(kBitrateWindowMs, 8000),
         last_process_time_(-1),
         process_interval_ms_(kProcessIntervalMs),
@@ -271,7 +267,6 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
 
   uint32_t ts_delta = 0;
   int64_t t_delta = 0;
-  int size_delta = 0;
   // For now only try to detect probes while we don't have a valid estimate, and
   // make sure the packet was paced. We currently assume that only packets
   // larger than 200 bytes are paced by the sender.
@@ -301,10 +296,10 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
         new InterArrival((kTimestampGroupLengthMs << kInterArrivalShift) / 1000,
                          kTimestampToMs, true));
   }
-  if (inter_arrival_->ComputeDeltas(timestamp, arrival_time_ms, payload_size,
-                                    &ts_delta, &t_delta, &size_delta)) {
+  if (inter_arrival_->ComputeDeltas(timestamp, arrival_time_ms, &ts_delta,
+                                    &t_delta)) {
     double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
-    estimator_.Update(t_delta, ts_delta_ms, size_delta, detector_.State());
+    estimator_.Update(t_delta, ts_delta_ms, detector_.State());
     detector_.Detect(estimator_.offset(), ts_delta_ms,
                      estimator_.num_of_deltas(), arrival_time_ms);
     UpdateStats(static_cast<int>(t_delta - ts_delta_ms), now_ms);
