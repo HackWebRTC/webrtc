@@ -35,6 +35,7 @@
         'include/logcat_trace_context.h',
         'include/logging.h',
         'include/metrics.h',
+        'include/ntp_time.h',
         'include/ref_count.h',
         'include/rtp_to_ntp.h',
         'include/rw_lock_wrapper.h',

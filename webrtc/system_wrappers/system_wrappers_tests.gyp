@@ -29,6 +29,7 @@
         'source/data_log_helpers_unittest.cc',
         'source/data_log_c_helpers_unittest.c',
         'source/data_log_c_helpers_unittest.h',
+        'source/ntp_time_unittest.cc',
         'source/rtp_to_ntp_unittest.cc',
         'source/scoped_vector_unittest.cc',
         'source/stringize_macros_unittest.cc',
