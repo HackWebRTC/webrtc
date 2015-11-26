@@ -16,14 +16,14 @@
     },
     'all_webrtc': {
       # NOTE: if you like this you might like webrtc-reviews@webrtc.org!
-      'filepath': 'webrtc/.*',
+      'filepath': '^webrtc/.*',
     },
     'root_files': {
       # webrtc/build/ and non-recursive contents of ./ and webrtc/
-      'filepath': '^[^/]*$|webrtc/[^/]*$|webrtc/build/.*',
+      'filepath': '^[^/]*$|^webrtc/[^/]*$|^webrtc/build/.*',
     },
     'documented_interfaces': {
-      'filepath': 'webrtc/[^/]*\.h$|'\
+      'filepath': '^webrtc/[^/]*\.h$|'\
                   'webrtc/voice_engine/include/.*',
     },
     'build_files': {
@@ -110,7 +110,8 @@
                      'video-team@agora.io',
                      'yujie.mao@webrtc.org',
                      'zhengzhonghou@agora.io'],
-    'voice_engine': ['audio-team@agora.io',
+    'voice_engine': ['andrew@webrtc.org',
+                     'audio-team@agora.io',
                      'henrika@webrtc.org',
                      'henrik.lundin@webrtc.org',
                      'minyue@webrtc.org',
@@ -165,8 +166,7 @@
     'rtp_rtcp': ['mflodman@webrtc.org',
                  'stefan@webrtc.org',
                  'zhuangzesen@agora.io'],
-    'system_wrappers': ['andrew@webrtc.org',
-                        'fengyue@agora.io',
+    'system_wrappers': ['fengyue@agora.io',
                         'henrika@webrtc.org',
                         'mflodman@webrtc.org',
                         'peah@webrtc.org',
