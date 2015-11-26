@@ -11,10 +11,10 @@ import("../../build/webrtc.gni")
 
 source_set("rent_a_codec") {
   sources = [
-    "main/acm2/acm_codec_database.cc",
-    "main/acm2/acm_codec_database.h",
-    "main/acm2/rent_a_codec.cc",
-    "main/acm2/rent_a_codec.h",
+    "acm2/acm_codec_database.cc",
+    "acm2/acm_codec_database.h",
+    "acm2/rent_a_codec.cc",
+    "acm2/rent_a_codec.h",
   ]
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
@@ -44,29 +44,29 @@ source_set("rent_a_codec") {
 
 config("audio_coding_config") {
   include_dirs = [
-    "main/include",
+    "include",
     "../include",
   ]
 }
 
 source_set("audio_coding") {
   sources = [
-    "main/acm2/acm_common_defs.h",
-    "main/acm2/acm_receiver.cc",
-    "main/acm2/acm_receiver.h",
-    "main/acm2/acm_resampler.cc",
-    "main/acm2/acm_resampler.h",
-    "main/acm2/audio_coding_module.cc",
-    "main/acm2/audio_coding_module_impl.cc",
-    "main/acm2/audio_coding_module_impl.h",
-    "main/acm2/call_statistics.cc",
-    "main/acm2/call_statistics.h",
-    "main/acm2/codec_manager.cc",
-    "main/acm2/codec_manager.h",
-    "main/acm2/initial_delay_manager.cc",
-    "main/acm2/initial_delay_manager.h",
-    "main/include/audio_coding_module.h",
-    "main/include/audio_coding_module_typedefs.h",
+    "acm2/acm_common_defs.h",
+    "acm2/acm_receiver.cc",
+    "acm2/acm_receiver.h",
+    "acm2/acm_resampler.cc",
+    "acm2/acm_resampler.h",
+    "acm2/audio_coding_module.cc",
+    "acm2/audio_coding_module_impl.cc",
+    "acm2/audio_coding_module_impl.h",
+    "acm2/call_statistics.cc",
+    "acm2/call_statistics.h",
+    "acm2/codec_manager.cc",
+    "acm2/codec_manager.h",
+    "acm2/initial_delay_manager.cc",
+    "acm2/initial_delay_manager.h",
+    "include/audio_coding_module.h",
+    "include/audio_coding_module_typedefs.h",
   ]
 
   defines = []

@@ -13,7 +13,7 @@
 #include "webrtc/base/format_macros.h"
 #include "webrtc/common.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/main/include/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"

@@ -16,7 +16,7 @@
 #endif
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/main/include/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel_proxy.h"

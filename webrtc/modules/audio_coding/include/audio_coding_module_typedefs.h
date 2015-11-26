@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_TYPEDEFS_H_
 #define WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_TYPEDEFS_H_
 
-#pragma message("WARNING: audio_coding/main/include is DEPRECATED; use audio_coding/include")
-
 #include <map>
 
 #include "webrtc/modules/include/module_common_types.h"

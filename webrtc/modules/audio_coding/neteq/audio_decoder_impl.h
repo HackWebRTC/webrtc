@@ -20,7 +20,7 @@
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 #endif
-#include "webrtc/modules/audio_coding/main/acm2/rent_a_codec.h"
+#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -18,7 +18,7 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
-#include "webrtc/modules/audio_coding/main/include/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
