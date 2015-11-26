@@ -15,6 +15,7 @@ static_library("webrtc_fuzzer_main") {
   ]
   deps = [
     "../../system_wrappers:field_trial_default",
+    "../../system_wrappers:metrics_default",
     "//testing/libfuzzer:libfuzzer_main",
   ]
 }
@@ -27,6 +28,22 @@ test("vp9_depacketizer_fuzzer") {
     ":webrtc_fuzzer_main",
     "../../modules/rtp_rtcp",
   ]
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+test("vp8_qp_parser_fuzzer") {
+  sources = [
+    "vp8_qp_parser_fuzzer.cc",
+  ]
+  deps = [
+    ":webrtc_fuzzer_main",
+    "../../modules/video_coding/",
+  ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
