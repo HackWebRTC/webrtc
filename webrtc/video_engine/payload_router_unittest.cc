@@ -182,7 +182,7 @@ TEST_F(PayloadRouterTest, SetTargetSendBitrates) {
 
   const uint32_t bitrate_1 = 10000;
   const uint32_t bitrate_2 = 76543;
-  std::vector<uint32_t> bitrates (2, bitrate_1);
+  std::vector<uint32_t> bitrates(2, bitrate_1);
   bitrates[1] = bitrate_2;
   EXPECT_CALL(rtp_1, SetTargetSendBitrate(bitrate_1))
       .Times(1);

@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
 
 #include <list>
+#include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
@@ -84,6 +85,7 @@ class ViEReceiver : public RtpData {
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
   ReceiveStatistics* GetReceiveStatistics() const;
+
  private:
   int InsertRTPPacket(const uint8_t* rtp_packet, size_t rtp_packet_length,
                       const PacketTime& packet_time);
@@ -125,6 +127,6 @@ class ViEReceiver : public RtpData {
   int64_t last_packet_log_ms_;
 };
 
-}  // namespace webrt
+}  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_

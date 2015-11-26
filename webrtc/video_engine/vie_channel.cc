@@ -11,6 +11,7 @@
 #include "webrtc/video_engine/vie_channel.h"
 
 #include <algorithm>
+#include <map>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -60,7 +61,7 @@ class ChannelStatsObserver : public CallStatsObserver {
 
 class ViEChannelProtectionCallback : public VCMProtectionCallback {
  public:
-  ViEChannelProtectionCallback(ViEChannel* owner) : owner_(owner) {}
+  explicit ViEChannelProtectionCallback(ViEChannel* owner) : owner_(owner) {}
   ~ViEChannelProtectionCallback() {}
 
 

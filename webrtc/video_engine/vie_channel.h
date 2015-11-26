@@ -12,6 +12,8 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_H_
 
 #include <list>
+#include <map>
+#include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"

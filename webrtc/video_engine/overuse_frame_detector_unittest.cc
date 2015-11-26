@@ -188,7 +188,7 @@ TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
   ReinitializeOveruseDetector();
   EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(64);
-  for(size_t i = 0; i < 64; ++i) {
+  for (size_t i = 0; i < 64; ++i) {
     TriggerOveruse(options_.high_threshold_consecutive_count);
   }
 }

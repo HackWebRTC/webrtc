@@ -14,6 +14,12 @@ import subprocess
 import sys
 
 
+# Directories that will be scanned by cpplint by the presubmit script.
+CPPLINT_DIRS = [
+  'webrtc/video_engine',
+]
+
+
 def _CheckNoIOStreamInHeaders(input_api, output_api):
   """Checks to make sure no .h files include <iostream>."""
   files = []
@@ -54,6 +60,14 @@ def _CheckNoFRIEND_TEST(input_api, output_api):
       'use FRIEND_TEST_ALL_PREFIXES() instead.\n' + '\n'.join(problems))]
 
 
+def _IsLintWhitelisted(whitelist_dirs, file_path):
+  """ Checks if a file is whitelisted for lint check."""
+  for path in whitelist_dirs:
+    if os.path.dirname(file_path).startswith(path):
+      return True
+  return False
+
+
 def _CheckApprovedFilesLintClean(input_api, output_api,
                                  source_file_filter=None):
   """Checks that all new or whitelisted .cc and .h files pass cpplint.py.
@@ -68,6 +82,10 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
   # pylint: disable=W0212
   cpplint._cpplint_state.ResetErrorCounts()
 
+  # Create a platform independent whitelist for the CPPLINT_DIRS.
+  whitelist_dirs = [input_api.os_path.join(*path.split('/'))
+                    for path in CPPLINT_DIRS]
+
   # Use the strictest verbosity level for cpplint.py (level 1) which is the
   # default when running cpplint.py from command line.
   # To make it possible to work with not-yet-converted code, we're only applying
@@ -76,7 +94,7 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
   files = []
   for f in input_api.AffectedSourceFiles(source_file_filter):
     # Note that moved/renamed files also count as added.
-    if f.Action() == 'A':
+    if f.Action() == 'A' or _IsLintWhitelisted(whitelist_dirs, f.LocalPath()):
       files.append(f.AbsoluteLocalPath())
 
   for file_name in files:
@@ -249,6 +267,7 @@ def _RunPythonTests(input_api, output_api):
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   results = []
+  results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
   results.extend(input_api.canned_checks.RunPylint(input_api, output_api,
       black_list=(r'^.*gviz_api\.py$',
                   r'^.*gaeunit\.py$',
@@ -298,7 +317,6 @@ def _CommonChecks(input_api, output_api):
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
       input_api, output_api))
-  results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
   results.extend(_CheckGypChanges(input_api, output_api))

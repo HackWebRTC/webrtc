@@ -50,7 +50,7 @@ struct CpuOveruseOptions {
   // Method based on encode time of frames.
   bool enable_encode_usage_method;
   int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
-  int high_encode_usage_threshold_percent; // Threshold for triggering overuse.
+  int high_encode_usage_threshold_percent;  // Threshold for triggering overuse.
   bool enable_extended_processing_usage;  // Include a larger time span (in
                                           // addition to encode time) for
                                           // measuring the processing time of a
@@ -61,9 +61,9 @@ struct CpuOveruseOptions {
   int min_frame_samples;  // The minimum number of frames required.
   int min_process_count;  // The number of initial process times required before
                           // triggering an overuse/underuse.
-  int high_threshold_consecutive_count; // The number of consecutive checks
-                                        // above the high threshold before
-                                        // triggering an overuse.
+  int high_threshold_consecutive_count;  // The number of consecutive checks
+                                         // above the high threshold before
+                                         // triggering an overuse.
 };
 
 struct CpuOveruseMetrics {
@@ -71,9 +71,9 @@ struct CpuOveruseMetrics {
       : avg_encode_time_ms(-1),
         encode_usage_percent(-1) {}
 
-  int avg_encode_time_ms;   // The average encode time in ms.
-  int encode_usage_percent; // The average encode time divided by the average
-                            // time difference between incoming captured frames.
+  int avg_encode_time_ms;    // Average encode time in ms.
+  int encode_usage_percent;  // Average encode time divided by the average time
+                             // difference between incoming captured frames.
 };
 
 class CpuOveruseMetricsObserver {
