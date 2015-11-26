@@ -203,8 +203,9 @@ public class CameraEnumerationAndroid {
     return Collections.min(listFpsRange,
         new ClosestComparator<int[]>() {
           @Override int diff(int[] range) {
-            return abs(framerate - range[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX])
-                + abs(framerate - range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+            return range[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX]
+                + 10 * abs(framerate
+                    - range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
           }
      });
   }
