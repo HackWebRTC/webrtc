@@ -26,6 +26,7 @@
  */
 #include "talk/app/webrtc/androidvideocapturer.h"
 
+#include "talk/app/webrtc/java/jni/native_handle_impl.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
@@ -101,10 +102,12 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
       int output_width,
       int output_height) const override {
     if (buffer_->native_handle() != nullptr) {
-      // TODO(perkj): Implement CreateAliasedFrame properly for textures.
-      rtc::scoped_ptr<cricket::VideoFrame> frame(new cricket::WebRtcVideoFrame(
-          buffer_, input_frame->time_stamp, input_frame->rotation));
-      return frame.release();
+      rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled_buffer(
+          static_cast<webrtc_jni::AndroidTextureBuffer*>(buffer_.get())
+              ->CropAndScale(cropped_input_width, cropped_input_height,
+                             output_width, output_height));
+      return new cricket::WebRtcVideoFrame(
+          scaled_buffer, input_frame->time_stamp, input_frame->rotation);
     }
     return VideoFrameFactory::CreateAliasedFrame(input_frame,
                                                  cropped_input_width,

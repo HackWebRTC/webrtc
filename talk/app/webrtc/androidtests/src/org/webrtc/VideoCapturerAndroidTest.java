@@ -299,4 +299,20 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoCapturerAndroidTestFixtures.cameraErrorEventOnBufferStarvation(capturer,
         cameraEvents, getInstrumentation().getContext());
   }
+
+  @MediumTest
+  // This test that frames forwarded to a renderer is scaled if onOutputFormatRequest is
+  // called. This test both Java and C++ parts of of the stack.
+  public void testScaleCameraOutput() throws InterruptedException {
+    VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null);
+    VideoCapturerAndroidTestFixtures.scaleCameraOutput(capturer);
+  }
+
+  @MediumTest
+  // This test that frames forwarded to a renderer is scaled if onOutputFormatRequest is
+  // called. This test both Java and C++ parts of of the stack.
+  public void testScaleCameraOutputUsingTextures() throws InterruptedException {
+    VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null, EGL10.EGL_NO_CONTEXT);
+    VideoCapturerAndroidTestFixtures.scaleCameraOutput(capturer);
+  }
 }

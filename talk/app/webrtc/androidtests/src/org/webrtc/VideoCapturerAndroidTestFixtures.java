@@ -43,14 +43,30 @@ public class VideoCapturerAndroidTestFixtures {
   static class RendererCallbacks implements VideoRenderer.Callbacks {
     private int framesRendered = 0;
     private Object frameLock = 0;
+    private int width = 0;
+    private int height = 0;
 
     @Override
     public void renderFrame(I420Frame frame) {
       synchronized (frameLock) {
         ++framesRendered;
+        width = frame.rotatedWidth();
+        height = frame.rotatedHeight();
         frameLock.notify();
       }
       VideoRenderer.renderFrameDone(frame);
+    }
+
+    public int frameWidth() {
+      synchronized (frameLock) {
+        return width;
+      }
+    }
+
+    public int frameHeight() {
+      synchronized (frameLock) {
+        return height;
+      }
     }
 
     public int WaitForNextFrameToRender() throws InterruptedException {
@@ -541,4 +557,43 @@ public class VideoCapturerAndroidTestFixtures {
     capturer.dispose();
     assertTrue(capturer.isReleased());
   }
+
+  static public void scaleCameraOutput(VideoCapturerAndroid capturer) throws InterruptedException {
+    PeerConnectionFactory factory = new PeerConnectionFactory();
+    VideoSource source =
+        factory.createVideoSource(capturer, new MediaConstraints());
+    VideoTrack track = factory.createVideoTrack("dummy", source);
+    RendererCallbacks renderer = new RendererCallbacks();
+    track.addRenderer(new VideoRenderer(renderer));
+    assertTrue(renderer.WaitForNextFrameToRender() > 0);
+
+    final int startWidth = renderer.frameWidth();
+    final int startHeight = renderer.frameHeight();
+    final int frameRate = 30;
+    final int scaledWidth = startWidth / 2;
+    final int scaledHeight = startHeight / 2;
+
+    // Request the captured frames to be scaled.
+    capturer.onOutputFormatRequest(scaledWidth, scaledHeight, frameRate);
+
+    boolean gotExpectedResolution = false;
+    int numberOfInspectedFrames = 0;
+
+    do {
+      renderer.WaitForNextFrameToRender();
+      ++numberOfInspectedFrames;
+
+      gotExpectedResolution = (renderer.frameWidth() == scaledWidth
+          &&  renderer.frameHeight() == scaledHeight);
+    } while (!gotExpectedResolution && numberOfInspectedFrames < 30);
+
+    source.stop();
+    track.dispose();
+    source.dispose();
+    factory.dispose();
+    assertTrue(capturer.isReleased());
+
+    assertTrue(gotExpectedResolution);
+  }
+
 }

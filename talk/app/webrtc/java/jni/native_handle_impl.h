@@ -54,6 +54,12 @@ class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
   ~AndroidTextureBuffer();
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
 
+  rtc::scoped_refptr<AndroidTextureBuffer> CropAndScale(
+      int cropped_input_width,
+      int cropped_input_height,
+      int dst_widht,
+      int dst_height);
+
  private:
   NativeHandleImpl native_handle_;
   rtc::Callback0<void> no_longer_used_cb_;

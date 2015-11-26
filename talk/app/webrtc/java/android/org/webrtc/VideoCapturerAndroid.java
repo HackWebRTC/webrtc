@@ -300,6 +300,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements
 
   // Requests a new output format from the video capturer. Captured frames
   // by the camera will be scaled/or dropped by the video capturer.
+  // It does not matter if width and height are flipped. I.E, |width| = 640, |height| = 480 produce
+  // the same result as |width| = 480, |height| = 640.
   // TODO(magjed/perkj): Document what this function does. Change name?
   public void onOutputFormatRequest(final int width, final int height, final int framerate) {
     cameraThreadHandler.post(new Runnable() {
