@@ -115,6 +115,7 @@ static_library("rtc_base_approved") {
     "byteorder.h",
     "checks.cc",
     "checks.h",
+    "constructormagic.h",
     "criticalsection.cc",
     "criticalsection.h",
     "event.cc",
@@ -162,7 +163,6 @@ static_library("rtc_base_approved") {
     include_dirs = [ "../../webrtc_overrides" ]
   } else {
     sources += [
-      "constructormagic.h",
       "logging.cc",
       "logging.h",
     ]

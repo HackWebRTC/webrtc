@@ -395,7 +395,6 @@
             'bandwidthsmoother.h',
             'bind.h',
             'callback.h',
-            'constructormagic.h',
             'dbus.cc',
             'dbus.h',
             'diskcache_win32.cc',
