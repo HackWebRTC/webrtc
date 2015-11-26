@@ -64,7 +64,8 @@ class VideoRenderIosGles20 {
  private:
   rtc::scoped_ptr<CriticalSectionWrapper> gles_crit_sec_;
   EventTimerWrapper* screen_update_event_;
-  rtc::scoped_ptr<PlatformThread> screen_update_thread_;
+  // TODO(pbos): Remove scoped_ptr and use member directly.
+  rtc::scoped_ptr<rtc::PlatformThread> screen_update_thread_;
 
   VideoRenderIosView* view_;
   Rect window_rect_;

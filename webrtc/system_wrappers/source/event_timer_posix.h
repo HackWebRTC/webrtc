@@ -46,7 +46,8 @@ class EventTimerPosix : public EventTimerWrapper {
   pthread_mutex_t mutex_;
   bool event_set_;
 
-  rtc::scoped_ptr<PlatformThread> timer_thread_;
+  // TODO(pbos): Remove scoped_ptr and use PlatformThread directly.
+  rtc::scoped_ptr<rtc::PlatformThread> timer_thread_;
   rtc::scoped_ptr<EventTimerPosix> timer_event_;
   timespec       created_at_;
 

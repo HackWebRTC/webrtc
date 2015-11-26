@@ -53,7 +53,7 @@ class DirectTransport : public Transport {
   rtc::CriticalSection lock_;
   Call* const send_call_;
   rtc::scoped_ptr<EventWrapper> packet_event_;
-  rtc::scoped_ptr<PlatformThread> thread_;
+  rtc::PlatformThread thread_;
   Clock* const clock_;
 
   bool shutting_down_;

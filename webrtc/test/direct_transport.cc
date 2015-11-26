@@ -18,26 +18,17 @@ namespace webrtc {
 namespace test {
 
 DirectTransport::DirectTransport(Call* send_call)
-    : send_call_(send_call),
-      packet_event_(EventWrapper::Create()),
-      thread_(
-          PlatformThread::CreateThread(NetworkProcess, this, "NetworkProcess")),
-      clock_(Clock::GetRealTimeClock()),
-      shutting_down_(false),
-      fake_network_(FakeNetworkPipe::Config()) {
-  EXPECT_TRUE(thread_->Start());
-}
+    : DirectTransport(FakeNetworkPipe::Config(), send_call) {}
 
 DirectTransport::DirectTransport(const FakeNetworkPipe::Config& config,
                                  Call* send_call)
     : send_call_(send_call),
       packet_event_(EventWrapper::Create()),
-      thread_(
-          PlatformThread::CreateThread(NetworkProcess, this, "NetworkProcess")),
+      thread_(NetworkProcess, this, "NetworkProcess"),
       clock_(Clock::GetRealTimeClock()),
       shutting_down_(false),
       fake_network_(config) {
-  EXPECT_TRUE(thread_->Start());
+  thread_.Start();
 }
 
 DirectTransport::~DirectTransport() { StopSending(); }
@@ -53,7 +44,7 @@ void DirectTransport::StopSending() {
   }
 
   packet_event_->Set();
-  EXPECT_TRUE(thread_->Stop());
+  thread_.Stop();
 }
 
 void DirectTransport::SetReceiver(PacketReceiver* receiver) {

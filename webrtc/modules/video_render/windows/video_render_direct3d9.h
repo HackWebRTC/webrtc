@@ -203,7 +203,8 @@ private:
 
     CriticalSectionWrapper& _refD3DCritsect;
     Trace* _trace;
-    rtc::scoped_ptr<PlatformThread> _screenUpdateThread;
+    // TODO(pbos): Remove scoped_ptr and use PlatformThread directly.
+    rtc::scoped_ptr<rtc::PlatformThread> _screenUpdateThread;
     EventTimerWrapper* _screenUpdateEvent;
 
     HWND _hWnd;

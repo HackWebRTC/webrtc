@@ -36,12 +36,6 @@ namespace webrtc {
 #define TEST_DURATION_SEC 600
 #define NUMBER_OF_SENDER_TESTS 6
 #define MAX_FILE_NAME_LENGTH_BYTE 500
-#define CHECK_THREAD_NULLITY(myThread, S)                                      \
-  if(myThread != NULL) {                                                       \
-    (myThread)->Start();                                                       \
-  } else {                                                                     \
-    ADD_FAILURE() << S;                                                        \
-  }
 
 void APITest::Wait(uint32_t waitLengthMs) {
   if (_randomTest) {
@@ -522,38 +516,34 @@ void APITest::Perform() {
   //--- THREADS
   // A
   // PUSH
-  rtc::scoped_ptr<PlatformThread> myPushAudioThreadA =
-      PlatformThread::CreateThread(PushAudioThreadA, this, "PushAudioThreadA");
-  CHECK_THREAD_NULLITY(myPushAudioThreadA, "Unable to start A::PUSH thread");
+  rtc::PlatformThread myPushAudioThreadA(PushAudioThreadA, this,
+                                         "PushAudioThreadA");
+  myPushAudioThreadA.Start();
   // PULL
-  rtc::scoped_ptr<PlatformThread> myPullAudioThreadA =
-      PlatformThread::CreateThread(PullAudioThreadA, this, "PullAudioThreadA");
-  CHECK_THREAD_NULLITY(myPullAudioThreadA, "Unable to start A::PULL thread");
+  rtc::PlatformThread myPullAudioThreadA(PullAudioThreadA, this,
+                                         "PullAudioThreadA");
+  myPullAudioThreadA.Start();
   // Process
-  rtc::scoped_ptr<PlatformThread> myProcessThreadA =
-      PlatformThread::CreateThread(ProcessThreadA, this, "ProcessThreadA");
-  CHECK_THREAD_NULLITY(myProcessThreadA, "Unable to start A::Process thread");
+  rtc::PlatformThread myProcessThreadA(ProcessThreadA, this, "ProcessThreadA");
+  myProcessThreadA.Start();
   // API
-  rtc::scoped_ptr<PlatformThread> myAPIThreadA =
-      PlatformThread::CreateThread(APIThreadA, this, "APIThreadA");
-  CHECK_THREAD_NULLITY(myAPIThreadA, "Unable to start A::API thread");
+  rtc::PlatformThread myAPIThreadA(APIThreadA, this, "APIThreadA");
+  myAPIThreadA.Start();
   // B
   // PUSH
-  rtc::scoped_ptr<PlatformThread> myPushAudioThreadB =
-      PlatformThread::CreateThread(PushAudioThreadB, this, "PushAudioThreadB");
-  CHECK_THREAD_NULLITY(myPushAudioThreadB, "Unable to start B::PUSH thread");
+  rtc::PlatformThread myPushAudioThreadB(PushAudioThreadB, this,
+                                         "PushAudioThreadB");
+  myPushAudioThreadB.Start();
   // PULL
-  rtc::scoped_ptr<PlatformThread> myPullAudioThreadB =
-      PlatformThread::CreateThread(PullAudioThreadB, this, "PullAudioThreadB");
-  CHECK_THREAD_NULLITY(myPullAudioThreadB, "Unable to start B::PULL thread");
+  rtc::PlatformThread myPullAudioThreadB(PullAudioThreadB, this,
+                                         "PullAudioThreadB");
+  myPullAudioThreadB.Start();
   // Process
-  rtc::scoped_ptr<PlatformThread> myProcessThreadB =
-      PlatformThread::CreateThread(ProcessThreadB, this, "ProcessThreadB");
-  CHECK_THREAD_NULLITY(myProcessThreadB, "Unable to start B::Process thread");
+  rtc::PlatformThread myProcessThreadB(ProcessThreadB, this, "ProcessThreadB");
+  myProcessThreadB.Start();
   // API
-  rtc::scoped_ptr<PlatformThread> myAPIThreadB =
-      PlatformThread::CreateThread(APIThreadB, this, "APIThreadB");
-  CHECK_THREAD_NULLITY(myAPIThreadB, "Unable to start B::API thread");
+  rtc::PlatformThread myAPIThreadB(APIThreadB, this, "APIThreadB");
+  myAPIThreadB.Start();
 
   //_apiEventA->StartTimer(true, 5000);
   //_apiEventB->StartTimer(true, 5000);
@@ -587,15 +577,15 @@ void APITest::Perform() {
   //(unsigned long)((unsigned long)TEST_DURATION_SEC * (unsigned long)1000));
   delete completeEvent;
 
-  myPushAudioThreadA->Stop();
-  myPullAudioThreadA->Stop();
-  myProcessThreadA->Stop();
-  myAPIThreadA->Stop();
+  myPushAudioThreadA.Stop();
+  myPullAudioThreadA.Stop();
+  myProcessThreadA.Stop();
+  myAPIThreadA.Stop();
 
-  myPushAudioThreadB->Stop();
-  myPullAudioThreadB->Stop();
-  myProcessThreadB->Stop();
-  myAPIThreadB->Stop();
+  myPushAudioThreadB.Stop();
+  myPullAudioThreadB.Stop();
+  myProcessThreadB.Stop();
+  myAPIThreadB.Stop();
 }
 
 void APITest::CheckVADStatus(char side) {

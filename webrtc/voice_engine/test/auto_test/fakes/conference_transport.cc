@@ -40,9 +40,7 @@ ConferenceTransport::ConferenceTransport()
     : pq_crit_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       stream_crit_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       packet_event_(webrtc::EventWrapper::Create()),
-      thread_(webrtc::PlatformThread::CreateThread(Run,
-                                                   this,
-                                                   "ConferenceTransport")),
+      thread_(Run, this, "ConferenceTransport"),
       rtt_ms_(0),
       stream_count_(0),
       rtp_header_parser_(webrtc::RtpHeaderParser::Create()) {
@@ -79,8 +77,8 @@ ConferenceTransport::ConferenceTransport()
   EXPECT_EQ(0, remote_network_->RegisterExternalTransport(reflector_, *this));
   EXPECT_EQ(0, remote_rtp_rtcp_->SetLocalSSRC(reflector_, kReflectorSsrc));
 
-  thread_->Start();
-  thread_->SetPriority(webrtc::kHighPriority);
+  thread_.Start();
+  thread_.SetPriority(rtc::kHighPriority);
 }
 
 ConferenceTransport::~ConferenceTransport() {
@@ -93,7 +91,7 @@ ConferenceTransport::~ConferenceTransport() {
     RemoveStream(stream->first);
   }
 
-  EXPECT_TRUE(thread_->Stop());
+  thread_.Stop();
 
   remote_file_->Release();
   remote_rtp_rtcp_->Release();

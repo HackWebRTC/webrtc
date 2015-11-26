@@ -213,17 +213,10 @@ int32_t FileAudioDevice::StartPlayout() {
     return -1;
   }
 
-  const char* threadName = "webrtc_audio_module_play_thread";
-  _ptrThreadPlay =
-      PlatformThread::CreateThread(PlayThreadFunc, this, threadName);
-  if (!_ptrThreadPlay->Start()) {
-      _ptrThreadPlay.reset();
-      _playing = false;
-      delete [] _playoutBuffer;
-      _playoutBuffer = NULL;
-      return -1;
-  }
-  _ptrThreadPlay->SetPriority(kRealtimePriority);
+  _ptrThreadPlay.reset(new rtc::PlatformThread(
+      PlayThreadFunc, this, "webrtc_audio_module_play_thread"));
+  _ptrThreadPlay->Start();
+  _ptrThreadPlay->SetPriority(rtc::kRealtimePriority);
   return 0;
 }
 
@@ -276,17 +269,11 @@ int32_t FileAudioDevice::StartRecording() {
     return -1;
   }
 
-  const char* threadName = "webrtc_audio_module_capture_thread";
-  _ptrThreadRec = PlatformThread::CreateThread(RecThreadFunc, this, threadName);
+  _ptrThreadRec.reset(new rtc::PlatformThread(
+      RecThreadFunc, this, "webrtc_audio_module_capture_thread"));
 
-  if (!_ptrThreadRec->Start()) {
-      _ptrThreadRec.reset();
-      _recording = false;
-      delete [] _recordingBuffer;
-      _recordingBuffer = NULL;
-      return -1;
-  }
-  _ptrThreadRec->SetPriority(kRealtimePriority);
+  _ptrThreadRec->Start();
+  _ptrThreadRec->SetPriority(rtc::kRealtimePriority);
 
   return 0;
 }

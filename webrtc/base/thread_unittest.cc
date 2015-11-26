@@ -252,33 +252,6 @@ TEST(ThreadTest, Names) {
   delete thread;
 }
 
-// Test that setting thread priorities doesn't cause a malfunction.
-// There's no easy way to verify the priority was set properly at this time.
-TEST(ThreadTest, Priorities) {
-  Thread *thread;
-  thread = new Thread();
-  EXPECT_TRUE(thread->SetPriority(PRIORITY_HIGH));
-  EXPECT_TRUE(thread->Start());
-  thread->Stop();
-  delete thread;
-  thread = new Thread();
-  EXPECT_TRUE(thread->SetPriority(PRIORITY_ABOVE_NORMAL));
-  EXPECT_TRUE(thread->Start());
-  thread->Stop();
-  delete thread;
-
-  thread = new Thread();
-  EXPECT_TRUE(thread->Start());
-#if defined(WEBRTC_WIN)
-  EXPECT_TRUE(thread->SetPriority(PRIORITY_ABOVE_NORMAL));
-#else
-  EXPECT_FALSE(thread->SetPriority(PRIORITY_ABOVE_NORMAL));
-#endif
-  thread->Stop();
-  delete thread;
-
-}
-
 TEST(ThreadTest, Wrap) {
   Thread* current_thread = Thread::Current();
   current_thread->UnwrapCurrent();

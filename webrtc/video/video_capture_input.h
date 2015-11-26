@@ -78,7 +78,7 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   rtc::scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
   VideoFrame incoming_frame_;
 
-  rtc::scoped_ptr<PlatformThread> encoder_thread_;
+  rtc::PlatformThread encoder_thread_;
   rtc::scoped_ptr<EventWrapper> capture_event_;
 
   volatile int stop_;

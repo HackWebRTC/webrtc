@@ -284,8 +284,9 @@ private:
     EventWrapper& _recStartEvent;
     EventWrapper& _playStartEvent;
 
-    rtc::scoped_ptr<PlatformThread> _ptrThreadPlay;
-    rtc::scoped_ptr<PlatformThread> _ptrThreadRec;
+    // TODO(pbos): Remove scoped_ptr and use directly without resetting.
+    rtc::scoped_ptr<rtc::PlatformThread> _ptrThreadPlay;
+    rtc::scoped_ptr<rtc::PlatformThread> _ptrThreadRec;
     int32_t _id;
 
     AudioMixerManagerLinuxPulse _mixerManager;

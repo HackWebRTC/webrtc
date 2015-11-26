@@ -70,7 +70,8 @@ class ProcessThreadImpl : public ProcessThread {
 
   rtc::ThreadChecker thread_checker_;
   const rtc::scoped_ptr<EventWrapper> wake_up_;
-  rtc::scoped_ptr<PlatformThread> thread_;
+  // TODO(pbos): Remove scoped_ptr and stop recreating the thread.
+  rtc::scoped_ptr<rtc::PlatformThread> thread_;
 
   ModuleList modules_;
   // TODO(tommi): Support delayed tasks.

@@ -280,10 +280,10 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
     //start capture thread;
     if (!_captureThread)
     {
-        _captureThread = PlatformThread::CreateThread(
-            VideoCaptureModuleV4L2::CaptureThread, this, "CaptureThread");
+        _captureThread.reset(new rtc::PlatformThread(
+            VideoCaptureModuleV4L2::CaptureThread, this, "CaptureThread"));
         _captureThread->Start();
-        _captureThread->SetPriority(kHighPriority);
+        _captureThread->SetPriority(rtc::kHighPriority);
     }
 
     // Needed to start UVC camera - from the uvcview application

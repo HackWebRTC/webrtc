@@ -131,7 +131,7 @@ class ConferenceTransport: public webrtc::Transport {
   const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> pq_crit_;
   const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> stream_crit_;
   const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
-  const rtc::scoped_ptr<webrtc::PlatformThread> thread_;
+  rtc::PlatformThread thread_;
 
   unsigned int rtt_ms_;
   unsigned int stream_count_;

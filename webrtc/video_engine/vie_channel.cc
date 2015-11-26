@@ -111,6 +111,7 @@ ViEChannel::ViEChannel(uint32_t number_of_cores,
       packet_router_(packet_router),
       bandwidth_observer_(bandwidth_observer),
       transport_feedback_observer_(transport_feedback_observer),
+      decode_thread_(ChannelDecodeThreadFunction, this, "DecodingThread"),
       nack_history_size_sender_(kMinSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
@@ -186,9 +187,7 @@ ViEChannel::~ViEChannel() {
     module_process_thread_->DeRegisterModule(rtp_rtcp);
     delete rtp_rtcp;
   }
-  if (decode_thread_) {
-    StopDecodeThread();
-  }
+  StopDecodeThread();
   // Release modules.
   VideoCodingModule::Destroy(vcm_);
 }
@@ -1148,23 +1147,17 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
 
 void ViEChannel::StartDecodeThread() {
   RTC_DCHECK(!sender_);
-  // Start the decode thread
-  if (decode_thread_)
+  if (decode_thread_.IsRunning())
     return;
-  decode_thread_ = PlatformThread::CreateThread(ChannelDecodeThreadFunction,
-                                                this, "DecodingThread");
-  decode_thread_->Start();
-  decode_thread_->SetPriority(kHighestPriority);
+  // Start the decode thread
+  decode_thread_.Start();
+  decode_thread_.SetPriority(rtc::kHighestPriority);
 }
 
 void ViEChannel::StopDecodeThread() {
-  if (!decode_thread_)
-    return;
-
   vcm_->TriggerDecoderShutdown();
 
-  decode_thread_->Stop();
-  decode_thread_.reset();
+  decode_thread_.Stop();
 }
 
 int32_t ViEChannel::SetVoiceChannel(int32_t ve_channel_id,

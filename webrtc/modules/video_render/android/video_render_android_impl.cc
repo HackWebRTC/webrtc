@@ -141,18 +141,13 @@ int32_t VideoRenderAndroid::StartRender() {
     return 0;
   }
 
-  _javaRenderThread = PlatformThread::CreateThread(JavaRenderThreadFun, this,
-                                                   "AndroidRenderThread");
+  _javaRenderThread.reset(new rtc::PlatformThread(JavaRenderThreadFun, this,
+                                                  "AndroidRenderThread"));
 
-  if (_javaRenderThread->Start())
-    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id,
-                 "%s: thread started", __FUNCTION__);
-  else {
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s: Could not start send thread", __FUNCTION__);
-    return -1;
-  }
-  _javaRenderThread->SetPriority(kRealtimePriority);
+  _javaRenderThread->Start();
+  WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: thread started",
+               __FUNCTION__);
+  _javaRenderThread->SetPriority(rtc::kRealtimePriority);
   return 0;
 }
 

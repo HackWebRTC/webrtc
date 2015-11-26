@@ -75,7 +75,7 @@ protected:
 private:
     typedef std::list<UdpSocketWrapper*> SocketList;
     typedef std::list<SOCKET> FdList;
-    rtc::scoped_ptr<PlatformThread> _thread;
+    rtc::PlatformThread _thread;
     CriticalSectionWrapper* _critSectList;
 
     fd_set _readFds;

@@ -30,9 +30,12 @@
 
 class Trace;
 
+namespace rtc {
+class PlatformThread;
+}  // namespace rtc
+
 namespace webrtc {
 class EventTimerWrapper;
-class PlatformThread;
 class VideoRenderNSOpenGL;
 class CriticalSectionWrapper;
 
@@ -166,7 +169,8 @@ private: // variables
     bool _fullScreen;
     int _id;
     CriticalSectionWrapper& _nsglContextCritSec;
-    rtc::scoped_ptr<PlatformThread> _screenUpdateThread;
+    // TODO(pbos): Remove scoped_ptr and use PlatformThread directly.
+    rtc::scoped_ptr<rtc::PlatformThread> _screenUpdateThread;
     EventTimerWrapper* _screenUpdateEvent;
     NSOpenGLContext* _nsglContext;
     NSOpenGLContext* _nsglFullScreenContext;

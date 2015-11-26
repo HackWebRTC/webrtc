@@ -160,7 +160,7 @@ private:
     std::vector<MatlabPlot *> _plots;
     webrtc::CriticalSectionWrapper *_critSect;
     webrtc::EventWrapper *_eventPtr;
-    rtc::scoped_ptr<webrtc::PlatformThread> _plotThread;
+    rtc::scoped_ptr<rtc::PlatformThread> _plotThread;
     bool _running;
     int _numPlots;
 };

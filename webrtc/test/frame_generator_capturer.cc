@@ -65,6 +65,7 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(Clock* clock,
       clock_(clock),
       sending_(false),
       tick_(EventTimerWrapper::Create()),
+      thread_(FrameGeneratorCapturer::Run, this, "FrameGeneratorCapturer"),
       frame_generator_(frame_generator),
       target_fps_(target_fps),
       first_frame_capture_time_(-1) {
@@ -76,8 +77,7 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(Clock* clock,
 FrameGeneratorCapturer::~FrameGeneratorCapturer() {
   Stop();
 
-  if (thread_.get() != NULL)
-    thread_->Stop();
+  thread_.Stop();
 }
 
 bool FrameGeneratorCapturer::Init() {
@@ -88,15 +88,8 @@ bool FrameGeneratorCapturer::Init() {
 
   if (!tick_->StartTimer(true, 1000 / target_fps_))
     return false;
-  thread_ = PlatformThread::CreateThread(FrameGeneratorCapturer::Run, this,
-                                         "FrameGeneratorCapturer");
-  if (thread_.get() == NULL)
-    return false;
-  if (!thread_->Start()) {
-    thread_.reset();
-    return false;
-  }
-  thread_->SetPriority(webrtc::kHighPriority);
+  thread_.Start();
+  thread_.SetPriority(rtc::kHighPriority);
   return true;
 }
 

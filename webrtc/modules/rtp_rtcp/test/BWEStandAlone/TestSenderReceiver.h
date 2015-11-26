@@ -138,7 +138,7 @@ private:
     UdpTransport* _transport;
     webrtc::CriticalSectionWrapper* _critSect;
     webrtc::EventWrapper *_eventPtr;
-    rtc::scoped_ptr<webrtc::PlatformThread> _procThread;
+    rtc::PlatformThread _procThread;
     bool _running;
     int8_t _payloadType;
     TestLoadGenerator* _loadGenerator;

@@ -138,19 +138,17 @@ int32_t IncomingVideoStream::Start() {
     CriticalSectionScoped csT(thread_critsect_.get());
     assert(incoming_render_thread_ == NULL);
 
-    incoming_render_thread_ = PlatformThread::CreateThread(
-        IncomingVideoStreamThreadFun, this, "IncomingVideoStreamThread");
+    incoming_render_thread_.reset(new rtc::PlatformThread(
+        IncomingVideoStreamThreadFun, this, "IncomingVideoStreamThread"));
     if (!incoming_render_thread_) {
       return -1;
     }
 
-    if (incoming_render_thread_->Start()) {
-    } else {
-      return -1;
-    }
-    incoming_render_thread_->SetPriority(kRealtimePriority);
+    incoming_render_thread_->Start();
+    incoming_render_thread_->SetPriority(rtc::kRealtimePriority);
     deliver_buffer_event_->StartTimer(false, kEventStartupTimeMs);
   }
+
   running_ = true;
   return 0;
 }
@@ -162,7 +160,7 @@ int32_t IncomingVideoStream::Stop() {
     return 0;
   }
 
-  PlatformThread* thread = NULL;
+  rtc::PlatformThread* thread = NULL;
   {
     CriticalSectionScoped cs_thread(thread_critsect_.get());
     if (incoming_render_thread_) {
@@ -176,11 +174,8 @@ int32_t IncomingVideoStream::Stop() {
     }
   }
   if (thread) {
-    if (thread->Stop()) {
-      delete thread;
-    } else {
-      assert(false);
-    }
+    thread->Stop();
+    delete thread;
   }
   running_ = false;
   return 0;

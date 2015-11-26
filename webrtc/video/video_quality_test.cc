@@ -69,6 +69,7 @@ class VideoAnalyzer : public PacketReceiver,
         rtp_timestamp_delta_(0),
         avg_psnr_threshold_(avg_psnr_threshold),
         avg_ssim_threshold_(avg_ssim_threshold),
+        stats_polling_thread_(&PollStatsThread, this, "StatsPoller"),
         comparison_available_event_(EventWrapper::Create()),
         done_(EventWrapper::Create()) {
     // Create thread pool for CPU-expensive PSNR/SSIM calculations.
@@ -91,19 +92,17 @@ class VideoAnalyzer : public PacketReceiver,
     }
 
     for (uint32_t i = 0; i < num_cores; ++i) {
-      rtc::scoped_ptr<PlatformThread> thread = PlatformThread::CreateThread(
-          &FrameComparisonThread, this, "Analyzer");
-      EXPECT_TRUE(thread->Start());
-      comparison_thread_pool_.push_back(thread.release());
+      rtc::PlatformThread* thread =
+          new rtc::PlatformThread(&FrameComparisonThread, this, "Analyzer");
+      thread->Start();
+      comparison_thread_pool_.push_back(thread);
     }
 
-    stats_polling_thread_ =
-        PlatformThread::CreateThread(&PollStatsThread, this, "StatsPoller");
   }
 
   ~VideoAnalyzer() {
-    for (PlatformThread* thread : comparison_thread_pool_) {
-      EXPECT_TRUE(thread->Stop());
+    for (rtc::PlatformThread* thread : comparison_thread_pool_) {
+      thread->Stop();
       delete thread;
     }
   }
@@ -221,7 +220,7 @@ class VideoAnalyzer : public PacketReceiver,
     // at time-out check if frames_processed is going up. If so, give it more
     // time, otherwise fail. Hopefully this will reduce test flakiness.
 
-    EXPECT_TRUE(stats_polling_thread_->Start());
+    stats_polling_thread_.Start();
 
     int last_frames_processed = -1;
     EventTypeWrapper eventType;
@@ -257,7 +256,7 @@ class VideoAnalyzer : public PacketReceiver,
     // since it uses the send_stream_ reference that might be reclaimed after
     // returning from this method.
     done_->Set();
-    EXPECT_TRUE(stats_polling_thread_->Stop());
+    stats_polling_thread_.Stop();
   }
 
   VideoCaptureInput* input_;
@@ -602,8 +601,8 @@ class VideoAnalyzer : public PacketReceiver,
   const double avg_ssim_threshold_;
 
   rtc::CriticalSection comparison_lock_;
-  std::vector<PlatformThread*> comparison_thread_pool_;
-  rtc::scoped_ptr<PlatformThread> stats_polling_thread_;
+  std::vector<rtc::PlatformThread*> comparison_thread_pool_;
+  rtc::PlatformThread stats_polling_thread_;
   const rtc::scoped_ptr<EventWrapper> comparison_available_event_;
   std::deque<FrameComparison> comparisons_ GUARDED_BY(comparison_lock_);
   const rtc::scoped_ptr<EventWrapper> done_;

@@ -76,9 +76,9 @@ void ProcessThreadImpl::Start() {
       m.module->ProcessThreadAttached(this);
   }
 
-  thread_ =
-      PlatformThread::CreateThread(&ProcessThreadImpl::Run, this, thread_name_);
-  RTC_CHECK(thread_->Start());
+  thread_.reset(
+      new rtc::PlatformThread(&ProcessThreadImpl::Run, this, thread_name_));
+  thread_->Start();
 }
 
 void ProcessThreadImpl::Stop() {
@@ -93,7 +93,7 @@ void ProcessThreadImpl::Stop() {
 
   wake_up_->Set();
 
-  RTC_CHECK(thread_->Stop());
+  thread_->Stop();
   stop_ = false;
 
   // TODO(tommi): Since DeRegisterModule is currently being called from

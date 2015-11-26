@@ -39,6 +39,7 @@ TestSenderReceiver::TestSenderReceiver (void)
 :
 _critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _eventPtr(NULL),
+_procThread(ProcThreadFunction, this, "TestSenderReceiver"),
 _running(false),
 _payloadType(0),
 _loadGenerator(NULL),
@@ -162,9 +163,6 @@ int32_t TestSenderReceiver::Start()
         exit(1);
     }
 
-    _procThread = PlatformThread::CreateThread(ProcThreadFunction, this,
-                                               "TestSenderReceiver");
-
     _running = true;
 
     if (_isReceiver)
@@ -176,8 +174,8 @@ int32_t TestSenderReceiver::Start()
         }
     }
 
-    _procThread->Start();
-    _procThread->SetPriority(kRealtimePriority);
+    _procThread.Start();
+    _procThread.SetPriority(rtc::kRealtimePriority);
 
     return 0;
 
@@ -190,13 +188,12 @@ int32_t TestSenderReceiver::Stop ()
 
     _transport->StopReceiving();
 
-    if (_procThread)
+    if (_running)
     {
         _running = false;
         _eventPtr->Set();
 
-        _procThread->Stop();
-        _procThread.reset();
+        _procThread.Stop();
 
         delete _eventPtr;
     }

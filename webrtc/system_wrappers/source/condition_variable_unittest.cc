@@ -144,12 +144,10 @@ bool WaitingRunFunction(void* obj) {
 
 class CondVarTest : public ::testing::Test {
  public:
-  CondVarTest() {}
+  CondVarTest() : thread_(&WaitingRunFunction, &baton_, "CondVarTest") {}
 
   virtual void SetUp() {
-    thread_ = PlatformThread::CreateThread(&WaitingRunFunction, &baton_,
-                                           "CondVarTest");
-    ASSERT_TRUE(thread_->Start());
+    thread_.Start();
   }
 
   virtual void TearDown() {
@@ -160,14 +158,14 @@ class CondVarTest : public ::testing::Test {
     // and Pass).
     ASSERT_TRUE(baton_.Pass(kShortWaitMs));
     ASSERT_TRUE(baton_.Grab(kShortWaitMs));
-    ASSERT_TRUE(thread_->Stop());
+    thread_.Stop();
   }
 
  protected:
   Baton baton_;
 
  private:
-  rtc::scoped_ptr<PlatformThread> thread_;
+  rtc::PlatformThread thread_;
 };
 
 // The SetUp and TearDown functions use condition variables.

@@ -76,12 +76,12 @@ int32_t TestLoadGenerator::Start (const char *threadName)
 
     _eventPtr = EventWrapper::Create();
 
-    _genThread =
-        PlatformThread::CreateThread(SenderThreadFunction, this, threadName);
+    _genThread.reset(
+        new rtc::PlatformThread(SenderThreadFunction, this, threadName));
     _running = true;
 
     _genThread->Start();
-    _genThread->SetPriority(kRealtimePriority);
+    _genThread->SetPriority(rtc::kRealtimePriority);
 
     return 0;
 }

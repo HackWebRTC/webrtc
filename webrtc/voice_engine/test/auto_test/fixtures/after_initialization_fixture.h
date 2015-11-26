@@ -30,16 +30,14 @@ class LoopBackTransport : public webrtc::Transport {
   LoopBackTransport(webrtc::VoENetwork* voe_network, int channel)
       : crit_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
         packet_event_(webrtc::EventWrapper::Create()),
-        thread_(webrtc::PlatformThread::CreateThread(NetworkProcess,
-                                                     this,
-                                                     "LoopBackTransport")),
+        thread_(NetworkProcess, this, "LoopBackTransport"),
         channel_(channel),
         voe_network_(voe_network),
         transmitted_packets_(0) {
-    thread_->Start();
+    thread_.Start();
   }
 
-  ~LoopBackTransport() { thread_->Stop(); }
+  ~LoopBackTransport() { thread_.Stop(); }
 
   bool SendRtp(const uint8_t* data,
                size_t len,
@@ -147,7 +145,7 @@ class LoopBackTransport : public webrtc::Transport {
 
   const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> crit_;
   const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
-  const rtc::scoped_ptr<webrtc::PlatformThread> thread_;
+  rtc::PlatformThread thread_;
   std::deque<Packet> packet_queue_ GUARDED_BY(crit_.get());
   const int channel_;
   std::map<uint32_t, int> channels_ GUARDED_BY(crit_.get());

@@ -76,18 +76,6 @@ void SetCurrentThreadName(const char* name) {
 #endif
 }
 
-}  // namespace rtc
-
-namespace webrtc {
-
-rtc::scoped_ptr<PlatformThread> PlatformThread::CreateThread(
-    ThreadRunFunction func,
-    void* obj,
-    const char* thread_name) {
-  return rtc::scoped_ptr<PlatformThread>(
-      new PlatformThread(func, obj, thread_name));
-}
-
 namespace {
 #if defined(WEBRTC_WIN)
 void CALLBACK RaiseFlag(ULONG_PTR param) {
@@ -139,7 +127,7 @@ void* PlatformThread::StartThread(void* param) {
 }
 #endif  // defined(WEBRTC_WIN)
 
-bool PlatformThread::Start() {
+void PlatformThread::Start() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!thread_) << "Thread already started?";
 #if defined(WEBRTC_WIN)
@@ -158,28 +146,33 @@ bool PlatformThread::Start() {
   pthread_attr_setstacksize(&attr, 1024 * 1024);
   RTC_CHECK_EQ(0, pthread_create(&thread_, &attr, &StartThread, this));
 #endif  // defined(WEBRTC_WIN)
-  return true;
 }
 
-bool PlatformThread::Stop() {
+bool PlatformThread::IsRunning() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 #if defined(WEBRTC_WIN)
-  if (thread_) {
-    // Set stop_ to |true| on the worker thread.
-    QueueUserAPC(&RaiseFlag, thread_, reinterpret_cast<ULONG_PTR>(&stop_));
-    WaitForSingleObject(thread_, INFINITE);
-    CloseHandle(thread_);
-    thread_ = nullptr;
-  }
+  return thread_ != nullptr;
 #else
-  if (!thread_)
-    return true;
+  return thread_ != 0;
+#endif  // defined(WEBRTC_WIN)
+}
 
+void PlatformThread::Stop() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (!IsRunning())
+    return;
+
+#if defined(WEBRTC_WIN)
+  // Set stop_ to |true| on the worker thread.
+  QueueUserAPC(&RaiseFlag, thread_, reinterpret_cast<ULONG_PTR>(&stop_));
+  WaitForSingleObject(thread_, INFINITE);
+  CloseHandle(thread_);
+  thread_ = nullptr;
+#else
   stop_event_.Set();
   RTC_CHECK_EQ(0, pthread_join(thread_, nullptr));
   thread_ = 0;
 #endif  // defined(WEBRTC_WIN)
-  return true;
 }
 
 void PlatformThread::Run() {
@@ -202,8 +195,9 @@ void PlatformThread::Run() {
 
 bool PlatformThread::SetPriority(ThreadPriority priority) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(IsRunning());
 #if defined(WEBRTC_WIN)
-  return thread_ && SetThreadPriority(thread_, priority);
+  return SetThreadPriority(thread_, priority) != FALSE;
 #elif defined(__native_client__)
   // Setting thread priorities is not supported in NaCl.
   return true;
@@ -212,8 +206,6 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
   // thread priorities.
   return true;
 #else
-  if (!thread_)
-    return false;
 #ifdef WEBRTC_THREAD_RR
   const int policy = SCHED_RR;
 #else
@@ -255,4 +247,4 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
 #endif  // defined(WEBRTC_WIN)
 }
 
-}  // namespace webrtc
+}  // namespace rtc

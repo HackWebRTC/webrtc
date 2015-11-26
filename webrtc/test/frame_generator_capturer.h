@@ -13,6 +13,7 @@
 #include <string>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/typedefs.h"
@@ -21,7 +22,6 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class EventTimerWrapper;
-class PlatformThread;
 
 namespace test {
 
@@ -64,7 +64,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   rtc::scoped_ptr<EventTimerWrapper> tick_;
   rtc::CriticalSection lock_;
-  rtc::scoped_ptr<PlatformThread> thread_;
+  rtc::PlatformThread thread_;
   rtc::scoped_ptr<FrameGenerator> frame_generator_;
 
   int target_fps_;

@@ -105,7 +105,7 @@ protected:
     bool Process();
 private:
     HANDLE _ioCompletionHandle;
-    rtc::scoped_ptr<PlatformThread> _pThread;
+    rtc::PlatformThread _pThread;
     static int32_t _numOfWorkers;
     int32_t _workerNumber;
     volatile bool _stop;

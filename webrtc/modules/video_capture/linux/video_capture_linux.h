@@ -39,7 +39,8 @@ private:
     bool AllocateVideoBuffers();
     bool DeAllocateVideoBuffers();
 
-    rtc::scoped_ptr<PlatformThread> _captureThread;
+    // TODO(pbos): Stop using scoped_ptr and resetting the thread.
+    rtc::scoped_ptr<rtc::PlatformThread> _captureThread;
     CriticalSectionWrapper* _captureCritSect;
 
     int32_t _deviceId;

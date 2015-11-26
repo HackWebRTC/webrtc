@@ -185,8 +185,10 @@ private:
 
     CriticalSectionWrapper& _critSect;
 
-    rtc::scoped_ptr<PlatformThread> _ptrThreadRec;
-    rtc::scoped_ptr<PlatformThread> _ptrThreadPlay;
+    // TODO(pbos): Make plain members and start/stop instead of resetting these
+    // pointers. A thread can be reused.
+    rtc::scoped_ptr<rtc::PlatformThread> _ptrThreadRec;
+    rtc::scoped_ptr<rtc::PlatformThread> _ptrThreadPlay;
 
     int32_t _id;
 

@@ -228,15 +228,9 @@ int32_t AudioDeviceWindowsWave::Init()
     }
 
     const char* threadName = "webrtc_audio_module_thread";
-    _ptrThread = PlatformThread::CreateThread(ThreadFunc, this, threadName);
-    if (!_ptrThread->Start())
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "failed to start the audio thread");
-        _ptrThread.reset();
-        return -1;
-    }
-    _ptrThread->SetPriority(kRealtimePriority);
+    _ptrThread.reset(new rtc::PlatformThread(ThreadFunc, this, threadName));
+    _ptrThread->Start();
+    _ptrThread->SetPriority(rtc::kRealtimePriority);
 
     const bool periodic(true);
     if (!_timeEvent.StartTimer(periodic, TIMER_PERIOD_MS))
@@ -295,7 +289,7 @@ int32_t AudioDeviceWindowsWave::Terminate()
 
     if (_ptrThread)
     {
-        PlatformThread* tmpThread = _ptrThread.release();
+        rtc::PlatformThread* tmpThread = _ptrThread.release();
         _critSect.Leave();
 
         _timeEvent.Set();

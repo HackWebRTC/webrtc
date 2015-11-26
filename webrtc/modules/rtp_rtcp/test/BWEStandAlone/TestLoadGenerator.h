@@ -44,7 +44,8 @@ protected:
 
     webrtc::CriticalSectionWrapper* _critSect;
     webrtc::EventWrapper *_eventPtr;
-    rtc::scoped_ptr<webrtc::PlatformThread> _genThread;
+    // TODO(pbos): Replace without pointer usage.
+    rtc::scoped_ptr<rtc::PlatformThread> _genThread;
     int32_t _bitrateKbps;
     TestSenderReceiver *_sender;
     bool _running;

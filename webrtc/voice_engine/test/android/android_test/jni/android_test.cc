@@ -177,7 +177,7 @@ private:
     static bool Run(void* ptr);
     bool Process();
 private:
-    rtc::scoped_ptr<PlatformThread> _thread;
+    rtc::PlatformThread _thread;
 };
 
 ThreadTest::~ThreadTest()
@@ -188,7 +188,7 @@ ThreadTest::~ThreadTest()
 
 ThreadTest::ThreadTest()
 {
-    _thread = PlatformThread::CreateThread(Run, this, "ThreadTest thread");
+    _thread(Run, this, "ThreadTest thread");
 }
 
 bool ThreadTest::Run(void* ptr)

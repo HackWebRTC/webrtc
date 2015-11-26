@@ -60,9 +60,9 @@ RampUpTester::RampUpTester(size_t num_streams,
       extension_type_(extension_type),
       ssrcs_(GenerateSsrcs(num_streams, 100)),
       rtx_ssrcs_(GenerateSsrcs(num_streams, 200)),
-      poller_thread_(PlatformThread::CreateThread(&BitrateStatsPollingThread,
-                                                  this,
-                                                  "BitrateStatsPollingThread")),
+      poller_thread_(&BitrateStatsPollingThread,
+                     this,
+                     "BitrateStatsPollingThread"),
       sender_call_(nullptr) {
   if (rtx_) {
     for (size_t i = 0; i < ssrcs_.size(); ++i)
@@ -277,11 +277,11 @@ void RampUpTester::TriggerTestDone() {
 
 void RampUpTester::PerformTest() {
   test_start_ms_ = clock_->TimeInMilliseconds();
-  poller_thread_->Start();
+  poller_thread_.Start();
   EXPECT_EQ(kEventSignaled, Wait())
       << "Timed out while waiting for ramp-up to complete.";
   TriggerTestDone();
-  poller_thread_->Stop();
+  poller_thread_.Stop();
 }
 
 RampUpDownUpTester::RampUpDownUpTester(size_t num_streams,

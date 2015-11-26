@@ -457,13 +457,9 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   AudioCodingModuleMtTestOldApi()
       : AudioCodingModuleTestOldApi(),
-        send_thread_(PlatformThread::CreateThread(CbSendThread, this, "send")),
-        insert_packet_thread_(PlatformThread::CreateThread(CbInsertPacketThread,
-                                                           this,
-                                                           "insert_packet")),
-        pull_audio_thread_(PlatformThread::CreateThread(CbPullAudioThread,
-                                                        this,
-                                                        "pull_audio")),
+        send_thread_(CbSendThread, this, "send"),
+        insert_packet_thread_(CbInsertPacketThread, this, "insert_packet"),
+        pull_audio_thread_(CbPullAudioThread, this, "pull_audio"),
         test_complete_(EventWrapper::Create()),
         send_count_(0),
         insert_packet_count_(0),
@@ -481,19 +477,19 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   }
 
   void StartThreads() {
-    ASSERT_TRUE(send_thread_->Start());
-    send_thread_->SetPriority(kRealtimePriority);
-    ASSERT_TRUE(insert_packet_thread_->Start());
-    insert_packet_thread_->SetPriority(kRealtimePriority);
-    ASSERT_TRUE(pull_audio_thread_->Start());
-    pull_audio_thread_->SetPriority(kRealtimePriority);
+    send_thread_.Start();
+    send_thread_.SetPriority(rtc::kRealtimePriority);
+    insert_packet_thread_.Start();
+    insert_packet_thread_.SetPriority(rtc::kRealtimePriority);
+    pull_audio_thread_.Start();
+    pull_audio_thread_.SetPriority(rtc::kRealtimePriority);
   }
 
   void TearDown() {
     AudioCodingModuleTestOldApi::TearDown();
-    pull_audio_thread_->Stop();
-    send_thread_->Stop();
-    insert_packet_thread_->Stop();
+    pull_audio_thread_.Stop();
+    send_thread_.Stop();
+    insert_packet_thread_.Stop();
   }
 
   EventTypeWrapper RunTest() {
@@ -573,9 +569,9 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
     return true;
   }
 
-  rtc::scoped_ptr<PlatformThread> send_thread_;
-  rtc::scoped_ptr<PlatformThread> insert_packet_thread_;
-  rtc::scoped_ptr<PlatformThread> pull_audio_thread_;
+  rtc::PlatformThread send_thread_;
+  rtc::PlatformThread insert_packet_thread_;
+  rtc::PlatformThread pull_audio_thread_;
   const rtc::scoped_ptr<EventWrapper> test_complete_;
   int send_count_;
   int insert_packet_count_;
@@ -702,12 +698,10 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   AcmReRegisterIsacMtTestOldApi()
       : AudioCodingModuleTestOldApi(),
-        receive_thread_(
-            PlatformThread::CreateThread(CbReceiveThread, this, "receive")),
-        codec_registration_thread_(
-            PlatformThread::CreateThread(CbCodecRegistrationThread,
-                                         this,
-                                         "codec_registration")),
+        receive_thread_(CbReceiveThread, this, "receive"),
+        codec_registration_thread_(CbCodecRegistrationThread,
+                                   this,
+                                   "codec_registration"),
         test_complete_(EventWrapper::Create()),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         codec_registered_(false),
@@ -743,16 +737,16 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   }
 
   void StartThreads() {
-    ASSERT_TRUE(receive_thread_->Start());
-    receive_thread_->SetPriority(kRealtimePriority);
-    ASSERT_TRUE(codec_registration_thread_->Start());
-    codec_registration_thread_->SetPriority(kRealtimePriority);
+    receive_thread_.Start();
+    receive_thread_.SetPriority(rtc::kRealtimePriority);
+    codec_registration_thread_.Start();
+    codec_registration_thread_.SetPriority(rtc::kRealtimePriority);
   }
 
   void TearDown() {
     AudioCodingModuleTestOldApi::TearDown();
-    receive_thread_->Stop();
-    codec_registration_thread_->Stop();
+    receive_thread_.Stop();
+    codec_registration_thread_.Stop();
   }
 
   EventTypeWrapper RunTest() {
@@ -831,8 +825,8 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     return true;
   }
 
-  rtc::scoped_ptr<PlatformThread> receive_thread_;
-  rtc::scoped_ptr<PlatformThread> codec_registration_thread_;
+  rtc::PlatformThread receive_thread_;
+  rtc::PlatformThread codec_registration_thread_;
   const rtc::scoped_ptr<EventWrapper> test_complete_;
   const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   bool codec_registered_ GUARDED_BY(crit_sect_);

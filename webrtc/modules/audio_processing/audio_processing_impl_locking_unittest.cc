@@ -444,21 +444,21 @@ class AudioProcessingImplLockTest
 
   // Start the threads used in the test.
   void StartThreads() {
-    ASSERT_TRUE(render_thread_->Start());
-    render_thread_->SetPriority(kRealtimePriority);
-    ASSERT_TRUE(capture_thread_->Start());
-    capture_thread_->SetPriority(kRealtimePriority);
-    ASSERT_TRUE(stats_thread_->Start());
-    stats_thread_->SetPriority(kNormalPriority);
+    render_thread_.Start();
+    render_thread_.SetPriority(rtc::kRealtimePriority);
+    capture_thread_.Start();
+    capture_thread_.SetPriority(rtc::kRealtimePriority);
+    stats_thread_.Start();
+    stats_thread_.SetPriority(rtc::kNormalPriority);
   }
 
   // Event handler for the test.
   const rtc::scoped_ptr<EventWrapper> test_complete_;
 
   // Thread related variables.
-  rtc::scoped_ptr<PlatformThread> render_thread_;
-  rtc::scoped_ptr<PlatformThread> capture_thread_;
-  rtc::scoped_ptr<PlatformThread> stats_thread_;
+  rtc::PlatformThread render_thread_;
+  rtc::PlatformThread capture_thread_;
+  rtc::PlatformThread stats_thread_;
   mutable test::Random rand_gen_;
 
   rtc::scoped_ptr<AudioProcessing> apm_;
@@ -472,15 +472,9 @@ class AudioProcessingImplLockTest
 
 AudioProcessingImplLockTest::AudioProcessingImplLockTest()
     : test_complete_(EventWrapper::Create()),
-      render_thread_(PlatformThread::CreateThread(RenderProcessorThreadFunc,
-                                                  this,
-                                                  "render")),
-      capture_thread_(PlatformThread::CreateThread(CaptureProcessorThreadFunc,
-                                                   this,
-                                                   "capture")),
-      stats_thread_(PlatformThread::CreateThread(StatsProcessorThreadFunc,
-                                                 this,
-                                                 "stats")),
+      render_thread_(RenderProcessorThreadFunc, this, "render"),
+      capture_thread_(CaptureProcessorThreadFunc, this, "capture"),
+      stats_thread_(StatsProcessorThreadFunc, this, "stats"),
       rand_gen_(42U),
       apm_(AudioProcessingImpl::Create()),
       render_thread_state_(kMaxFrameSize,
@@ -553,9 +547,9 @@ void AudioProcessingImplLockTest::SetUp() {
 }
 
 void AudioProcessingImplLockTest::TearDown() {
-  render_thread_->Stop();
-  capture_thread_->Stop();
-  stats_thread_->Stop();
+  render_thread_.Stop();
+  capture_thread_.Stop();
+  stats_thread_.Stop();
 }
 
 StatsProcessor::StatsProcessor(test::Random* rand_gen,

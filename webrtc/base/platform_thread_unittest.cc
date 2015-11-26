@@ -23,10 +23,9 @@ bool NullRunFunction(void* obj) {
 }
 
 TEST(PlatformThreadTest, StartStop) {
-  rtc::scoped_ptr<PlatformThread> thread = PlatformThread::CreateThread(
-      &NullRunFunction, nullptr, "PlatformThreadTest");
-  ASSERT_TRUE(thread->Start());
-  EXPECT_TRUE(thread->Stop());
+  rtc::PlatformThread thread(&NullRunFunction, nullptr, "PlatformThreadTest");
+  thread.Start();
+  thread.Stop();
 }
 
 // Function that sets a boolean.
@@ -39,12 +38,11 @@ bool SetFlagRunFunction(void* obj) {
 
 TEST(PlatformThreadTest, RunFunctionIsCalled) {
   bool flag = false;
-  rtc::scoped_ptr<PlatformThread> thread = PlatformThread::CreateThread(
-      &SetFlagRunFunction, &flag, "RunFunctionIsCalled");
-  ASSERT_TRUE(thread->Start());
+  rtc::PlatformThread thread(&SetFlagRunFunction, &flag, "RunFunctionIsCalled");
+  thread.Start();
 
   // At this point, the flag may be either true or false.
-  EXPECT_TRUE(thread->Stop());
+  thread.Stop();
 
   // We expect the thread to have run at least once.
   EXPECT_TRUE(flag);

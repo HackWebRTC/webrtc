@@ -142,7 +142,8 @@ class VideoRenderAGL {
   bool _fullScreen;
   int _id;
   webrtc::CriticalSectionWrapper& _renderCritSec;
-  rtc::scoped_ptr<webrtc::PlatformThread> _screenUpdateThread;
+  // TODO(pbos): Remove scoped_ptr and use PlatformThread directly.
+  rtc::scoped_ptr<rtc::PlatformThread> _screenUpdateThread;
   webrtc::EventWrapper* _screenUpdateEvent;
   bool _isHIViewRef;
   AGLContext _aglContext;

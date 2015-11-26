@@ -222,7 +222,8 @@ private:
     HANDLE                                  _hShutdownSetVolumeEvent;
     HANDLE                                  _hSetCaptureVolumeEvent;
 
-    rtc::scoped_ptr<PlatformThread>          _ptrThread;
+    // TODO(pbos): Remove scoped_ptr usage and use PlatformThread directly
+    rtc::scoped_ptr<rtc::PlatformThread>    _ptrThread;
 
     CriticalSectionWrapper&                 _critSectCb;
 

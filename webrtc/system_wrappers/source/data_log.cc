@@ -318,11 +318,12 @@ int DataLog::NextRow(const std::string& table_name) {
 }
 
 DataLogImpl::DataLogImpl()
-  : counter_(1),
-    tables_(),
-    flush_event_(EventWrapper::Create()),
-    tables_lock_(RWLockWrapper::CreateRWLock()) {
-}
+    : counter_(1),
+      tables_(),
+      flush_event_(EventWrapper::Create()),
+      file_writer_thread_(
+          new rtc::PlatformThread(DataLogImpl::Run, instance_, "DataLog")),
+      tables_lock_(RWLockWrapper::CreateRWLock()) {}
 
 DataLogImpl::~DataLogImpl() {
   StopThread();
@@ -348,12 +349,8 @@ int DataLogImpl::CreateLog() {
 }
 
 int DataLogImpl::Init() {
-  file_writer_thread_ =
-      PlatformThread::CreateThread(DataLogImpl::Run, instance_, "DataLog");
-  bool success = file_writer_thread_->Start();
-  if (!success)
-    return -1;
-  file_writer_thread_->SetPriority(kHighestPriority);
+  file_writer_thread_->Start();
+  file_writer_thread_->SetPriority(rtc::kHighestPriority);
   return 0;
 }
 
@@ -406,13 +403,8 @@ int DataLogImpl::NextRow(const std::string& table_name) {
   if (tables_.count(table_name) == 0)
     return -1;
   tables_[table_name]->NextRow();
-  if (!file_writer_thread_) {
-    // Write every row to file as they get complete.
-    tables_[table_name]->Flush();
-  } else {
-    // Signal a complete row
-    flush_event_->Set();
-  }
+  // Signal a complete row
+  flush_event_->Set();
   return 0;
 }
 
@@ -435,10 +427,8 @@ void DataLogImpl::Process() {
 }
 
 void DataLogImpl::StopThread() {
-  if (file_writer_thread_) {
-    flush_event_->Set();
-    file_writer_thread_->Stop();
-  }
+  flush_event_->Set();
+  file_writer_thread_->Stop();
 }
 
 }  // namespace webrtc

@@ -30,6 +30,7 @@ FakeAudioDevice::FakeAudioDevice(Clock* clock, const std::string& filename)
       last_playout_ms_(-1),
       clock_(clock),
       tick_(EventTimerWrapper::Create()),
+      thread_(FakeAudioDevice::Run, this, "FakeAudioDevice"),
       file_utility_(new ModuleFileUtility(0)),
       input_stream_(FileWrapper::Create()) {
   memset(captured_audio_, 0, sizeof(captured_audio_));
@@ -42,8 +43,7 @@ FakeAudioDevice::FakeAudioDevice(Clock* clock, const std::string& filename)
 FakeAudioDevice::~FakeAudioDevice() {
   Stop();
 
-  if (thread_.get() != NULL)
-    thread_->Stop();
+  thread_.Stop();
 }
 
 int32_t FakeAudioDevice::Init() {
@@ -53,15 +53,8 @@ int32_t FakeAudioDevice::Init() {
 
   if (!tick_->StartTimer(true, 10))
     return -1;
-  thread_ = PlatformThread::CreateThread(FakeAudioDevice::Run, this,
-                                         "FakeAudioDevice");
-  if (thread_.get() == NULL)
-    return -1;
-  if (!thread_->Start()) {
-    thread_.reset();
-    return -1;
-  }
-  thread_->SetPriority(webrtc::kHighPriority);
+  thread_.Start();
+  thread_.SetPriority(rtc::kHighPriority);
   return 0;
 }
 

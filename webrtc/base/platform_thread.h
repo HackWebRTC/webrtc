@@ -30,11 +30,6 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b);
 // Sets the current thread name.
 void SetCurrentThreadName(const char* name);
 
-}  // namespace rtc
-
-// TODO(pbos): Merge with namespace rtc.
-namespace webrtc {
-
 // Callback function that the spawned thread will enter once spawned.
 // A return value of false is interpreted as that the function has no
 // more work to do and that the thread can be released.
@@ -59,43 +54,21 @@ enum ThreadPriority {
 // Represents a simple worker thread.  The implementation must be assumed
 // to be single threaded, meaning that all methods of the class, must be
 // called from the same thread, including instantiation.
-// TODO(tommi): There's no need for this to be a virtual interface since there's
-// only ever a single implementation of it.
 class PlatformThread {
  public:
   PlatformThread(ThreadRunFunction func, void* obj, const char* thread_name);
   virtual ~PlatformThread();
 
-  // Factory method. Constructor disabled.
-  //
-  // func        Pointer to a, by user, specified callback function.
-  // obj         Object associated with the thread. Passed in the callback
-  //             function.
-  // prio        Thread priority. May require root/admin rights.
-  // thread_name  NULL terminated thread name, will be visable in the Windows
-  //             debugger.
-  // TODO(pbos): Move users onto explicit initialization/member ownership
-  // instead of additional heap allocation due to CreateThread.
-  static rtc::scoped_ptr<PlatformThread> CreateThread(ThreadRunFunction func,
-                                                      void* obj,
-                                                      const char* thread_name);
+  // Spawns a thread and tries to set thread priority according to the priority
+  // from when CreateThread was called.
+  void Start();
 
-  // Tries to spawns a thread and returns true if that was successful.
-  // Additionally, it tries to set thread priority according to the priority
-  // from when CreateThread was called. However, failure to set priority will
-  // not result in a false return value.
-  // TODO(pbos): Make void not war.
-  bool Start();
+  bool IsRunning() const;
 
-  // Stops the spawned thread and waits for it to be reclaimed with a timeout
-  // of two seconds. Will return false if the thread was not reclaimed.
-  // Multiple tries to Stop are allowed (e.g. to wait longer than 2 seconds).
-  // It's ok to call Stop() even if the spawned thread has been reclaimed.
-  // TODO(pbos): Make void not war.
-  bool Stop();
+  // Stops (joins) the spawned thread.
+  void Stop();
 
-  // Set the priority of the worker thread.  Must be called when thread
-  // is running.
+  // Set the priority of the thread. Must be called when thread is running.
   bool SetPriority(ThreadPriority priority);
 
  private:
@@ -122,6 +95,6 @@ class PlatformThread {
   RTC_DISALLOW_COPY_AND_ASSIGN(PlatformThread);
 };
 
-}  // namespace webrtc
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_PLATFORM_THREAD_H_

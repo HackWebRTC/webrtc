@@ -45,9 +45,6 @@ class SignalThread
   // Context: Main Thread.  Call before Start to change the worker's name.
   bool SetName(const std::string& name, const void* obj);
 
-  // Context: Main Thread.  Call before Start to change the worker's priority.
-  bool SetPriority(ThreadPriority priority);
-
   // Context: Main Thread.  Call to begin the worker thread.
   void Start();
 

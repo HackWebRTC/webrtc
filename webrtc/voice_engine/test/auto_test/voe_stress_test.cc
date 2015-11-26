@@ -334,9 +334,9 @@ int VoEStressTest::MultipleThreadsTest() {
   int rnd(0);
 
   // Start extra thread
-  _ptrExtraApiThread = PlatformThread::CreateThread(RunExtraApi, this,
-                                                    "StressTestExtraApiThread");
-  VALIDATE_STRESS(!_ptrExtraApiThread->Start());
+  _ptrExtraApiThread.reset(
+      new rtc::PlatformThread(RunExtraApi, this, "StressTestExtraApiThread"));
+  _ptrExtraApiThread->Start();
 
   //       Some possible extensions include:
   //       Add more API calls to randomize
@@ -365,7 +365,7 @@ int VoEStressTest::MultipleThreadsTest() {
   ANL();
 
   // Stop extra thread
-  VALIDATE_STRESS(!_ptrExtraApiThread->Stop());
+  _ptrExtraApiThread->Stop();
 
   ///////////// End test /////////////
 
