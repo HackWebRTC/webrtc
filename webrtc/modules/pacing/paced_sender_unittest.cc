@@ -825,5 +825,50 @@ TEST_F(PacedSenderTest, PaddingOveruse) {
   send_bucket_->Process();
 }
 
+TEST_F(PacedSenderTest, AverageQueueTime) {
+  uint32_t ssrc = 12346;
+  uint16_t sequence_number = 1234;
+  const size_t kPacketSize = 1200;
+  const int kBitrateBps = 10 * kPacketSize * 8;  // 10 packets per second.
+  const int kBitrateKbps = (kBitrateBps + 500) / 1000;
+
+  send_bucket_->UpdateBitrate(kBitrateKbps, kBitrateKbps, kBitrateKbps);
+
+  EXPECT_EQ(0, send_bucket_->AverageQueueTimeMs());
+
+  int64_t first_capture_time = clock_.TimeInMilliseconds();
+  send_bucket_->InsertPacket(PacedSender::kHighPriority, ssrc, sequence_number,
+                             first_capture_time, kPacketSize, false);
+  clock_.AdvanceTimeMilliseconds(10);
+  send_bucket_->InsertPacket(PacedSender::kHighPriority, ssrc,
+                             sequence_number + 1, clock_.TimeInMilliseconds(),
+                             kPacketSize, false);
+  clock_.AdvanceTimeMilliseconds(10);
+
+  EXPECT_EQ((20 + 10) / 2, send_bucket_->AverageQueueTimeMs());
+
+  // Only first packet (queued for 20ms) should be removed, leave the second
+  // packet (queued for 10ms) alone in the queue.
+  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number,
+                                          first_capture_time, false))
+      .Times(1)
+      .WillRepeatedly(Return(true));
+  send_bucket_->Process();
+
+  EXPECT_EQ(10, send_bucket_->AverageQueueTimeMs());
+
+  clock_.AdvanceTimeMilliseconds(10);
+  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number + 1,
+                                          first_capture_time + 10, false))
+      .Times(1)
+      .WillRepeatedly(Return(true));
+  for (int i = 0; i < 3; ++i) {
+    clock_.AdvanceTimeMilliseconds(30);  // Max delta.
+    send_bucket_->Process();
+  }
+
+  EXPECT_EQ(0, send_bucket_->AverageQueueTimeMs());
+}
+
 }  // namespace test
 }  // namespace webrtc

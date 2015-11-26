@@ -113,6 +113,10 @@ class PacedSender : public Module, public RtpPacketSender {
   // packets in the queue, given the current size and bitrate, ignoring prio.
   virtual int64_t ExpectedQueueTimeMs() const;
 
+  // Returns the average time since being enqueued, in milliseconds, for all
+  // packets currently in the pacer queue, or 0 if queue is empty.
+  virtual int64_t AverageQueueTimeMs();
+
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.
   int64_t TimeUntilNextProcess() override;

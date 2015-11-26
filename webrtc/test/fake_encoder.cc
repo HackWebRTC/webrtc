@@ -57,6 +57,11 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     // at the display time of the previous frame.
     time_since_last_encode_ms = time_now_ms - last_encode_time_ms_;
   }
+  if (time_since_last_encode_ms > 3 * 1000 / config_.maxFramerate) {
+    // Rudimentary check to make sure we don't widely overshoot bitrate target
+    // when resuming encoding after a suspension.
+    time_since_last_encode_ms = 3 * 1000 / config_.maxFramerate;
+  }
 
   size_t bits_available =
       static_cast<size_t>(target_bitrate_kbps_ * time_since_last_encode_ms);
