@@ -506,9 +506,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   }
   CHECK_EXCEPTION(jni);
 
-  if (use_surface) {
-    scale_ = false; // TODO(perkj): Implement scaling when using textures.
-  } else {
+  if (!use_surface) {
     jobjectArray input_buffers = reinterpret_cast<jobjectArray>(
         jni->CallObjectMethod(*j_media_codec_video_encoder_,
             j_get_input_buffers_method_));
@@ -574,12 +572,29 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   }
 
   RTC_CHECK(frame_types->size() == 1) << "Unexpected stream count";
-  // Check framerate before spatial resolution change.
-  if (scale_)
-    quality_scaler_.OnEncodeFrame(frame);
 
-  const VideoFrame& input_frame =
-      scale_ ? quality_scaler_.GetScaledFrame(frame) : frame;
+  VideoFrame input_frame = frame;
+  if (scale_) {
+    // Check framerate before spatial resolution change.
+    quality_scaler_.OnEncodeFrame(frame);
+    const webrtc::QualityScaler::Resolution scaled_resolution =
+        quality_scaler_.GetScaledResolution();
+    if (scaled_resolution.width != frame.width() ||
+        scaled_resolution.height != frame.height()) {
+      if (frame.native_handle() != nullptr) {
+        rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled_buffer(
+            static_cast<AndroidTextureBuffer*>(
+                frame.video_frame_buffer().get())->CropAndScale(
+                    frame.width(),
+                    frame.height(),
+                    scaled_resolution.width,
+                    scaled_resolution.height));
+        input_frame.set_video_frame_buffer(scaled_buffer);
+      } else {
+        input_frame = quality_scaler_.GetScaledFrame(frame);
+      }
+    }
+  }
 
   if (!MaybeReconfigureEncoderOnCodecThread(input_frame)) {
     ALOGE << "Failed to reconfigure encoder.";
