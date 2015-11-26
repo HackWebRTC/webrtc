@@ -828,7 +828,6 @@ void CaptureProcessor::ApplyRuntimeSettingScheme() {
         ASSERT_EQ(AudioProcessing::Error::kNoError,
                   apm_->set_stream_delay_ms(30));
         apm_->set_stream_key_pressed(true);
-        apm_->set_output_will_be_muted(true);
         apm_->set_delay_offset_ms(15);
         EXPECT_EQ(apm_->delay_offset_ms(), 15);
         EXPECT_GE(apm_->num_reverse_channels(), 0);
@@ -837,7 +836,6 @@ void CaptureProcessor::ApplyRuntimeSettingScheme() {
         ASSERT_EQ(AudioProcessing::Error::kNoError,
                   apm_->set_stream_delay_ms(50));
         apm_->set_stream_key_pressed(false);
-        apm_->set_output_will_be_muted(false);
         apm_->set_delay_offset_ms(20);
         EXPECT_EQ(apm_->delay_offset_ms(), 20);
         apm_->delay_offset_ms();
