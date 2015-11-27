@@ -11,10 +11,10 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/channel_manager.h"
@@ -1241,15 +1241,13 @@ int32_t TransmitMixer::MixOrReplaceAudioWithFile(
 void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
                                  int current_mic_level, bool key_pressed) {
   if (audioproc_->set_stream_delay_ms(delay_ms) != 0) {
-    // A redundant warning is reported in AudioDevice, which we've throttled
-    // to avoid flooding the logs. Relegate this one to LS_VERBOSE to avoid
-    // repeating the problem here.
-    LOG_FERR1(LS_VERBOSE, set_stream_delay_ms, delay_ms);
+    // Silently ignore this failure to avoid flooding the logs.
   }
 
   GainControl* agc = audioproc_->gain_control();
   if (agc->set_stream_analog_level(current_mic_level) != 0) {
-    LOG_FERR1(LS_ERROR, set_stream_analog_level, current_mic_level);
+    LOG(LS_ERROR) << "set_stream_analog_level failed: current_mic_level = "
+                  << current_mic_level;
     assert(false);
   }
 

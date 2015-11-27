@@ -12,8 +12,8 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/include/voe_errors.h"

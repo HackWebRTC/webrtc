@@ -14,6 +14,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
@@ -27,7 +28,6 @@
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
@@ -1020,11 +1020,11 @@ Channel::Init()
     }
 
     if (rx_audioproc_->noise_suppression()->set_level(kDefaultNsMode) != 0) {
-      LOG_FERR1(LS_ERROR, noise_suppression()->set_level, kDefaultNsMode);
+      LOG(LS_ERROR) << "noise_suppression()->set_level(kDefaultNsMode) failed.";
       return -1;
     }
     if (rx_audioproc_->gain_control()->set_mode(kDefaultRxAgcMode) != 0) {
-      LOG_FERR1(LS_ERROR, gain_control()->set_mode, kDefaultRxAgcMode);
+      LOG(LS_ERROR) << "gain_control()->set_mode(kDefaultRxAgcMode) failed.";
       return -1;
     }
 

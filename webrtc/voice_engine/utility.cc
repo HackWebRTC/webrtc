@@ -10,12 +10,12 @@
 
 #include "webrtc/voice_engine/utility.h"
 
+#include "webrtc/base/logging.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
-#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
@@ -52,8 +52,10 @@ void RemixAndResample(const int16_t* src_data,
 
   if (resampler->InitializeIfNeeded(sample_rate_hz, dst_frame->sample_rate_hz_,
                                     audio_ptr_num_channels) == -1) {
-    LOG_FERR3(LS_ERROR, InitializeIfNeeded, sample_rate_hz,
-              dst_frame->sample_rate_hz_, audio_ptr_num_channels);
+    LOG(LS_ERROR) << "InitializeIfNeeded failed: sample_rate_hz = "
+                  << sample_rate_hz << ", dst_frame->sample_rate_hz_ = "
+                  << dst_frame->sample_rate_hz_
+                  << ", audio_ptr_num_channels = " << audio_ptr_num_channels;
     assert(false);
   }
 
@@ -61,7 +63,9 @@ void RemixAndResample(const int16_t* src_data,
   int out_length = resampler->Resample(audio_ptr, src_length, dst_frame->data_,
                                        AudioFrame::kMaxDataSizeSamples);
   if (out_length == -1) {
-    LOG_FERR3(LS_ERROR, Resample, audio_ptr, src_length, dst_frame->data_);
+    LOG(LS_ERROR) << "Resample failed: audio_ptr = " << audio_ptr
+                  << ", src_length = " << src_length
+                  << ", dst_frame->data_ = " << dst_frame->data_;
     assert(false);
   }
   dst_frame->samples_per_channel_ =
