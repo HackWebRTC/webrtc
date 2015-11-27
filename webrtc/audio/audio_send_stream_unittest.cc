@@ -58,14 +58,12 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_, SetRTCPStatus(true)).Times(1);
           EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
           EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
+          EXPECT_CALL(*channel_proxy_,
+              SetSendAbsoluteSenderTimeStatus(true, kAbsSendTimeId)).Times(1);
+          EXPECT_CALL(*channel_proxy_,
+              SetSendAudioLevelIndicationStatus(true, kAudioLevelId)).Times(1);
           return channel_proxy_;
         }));
-    EXPECT_CALL(voice_engine_,
-        SetSendAbsoluteSenderTimeStatus(kChannelId, true, kAbsSendTimeId))
-            .WillOnce(Return(0));
-    EXPECT_CALL(voice_engine_,
-        SetSendAudioLevelIndicationStatus(kChannelId, true, kAudioLevelId))
-            .WillOnce(Return(0));
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.ssrc = kSsrc;
     stream_config_.rtp.c_name = kCName;
@@ -80,7 +78,6 @@ struct ConfigHelper {
 
   void SetupMockForGetStats() {
     using testing::DoAll;
-    using testing::SetArgPointee;
     using testing::SetArgReferee;
 
     std::vector<ReportBlock> report_blocks;
@@ -91,12 +88,14 @@ struct ConfigHelper {
     block.fraction_lost = 0;
     report_blocks.push_back(block);  // Duplicate SSRC, bad fraction_lost.
 
-    EXPECT_CALL(voice_engine_, GetRTCPStatistics(kChannelId, _))
-        .WillRepeatedly(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
+    EXPECT_TRUE(channel_proxy_);
+    EXPECT_CALL(*channel_proxy_, GetRTCPStatistics())
+        .WillRepeatedly(Return(kCallStats));
+    EXPECT_CALL(*channel_proxy_, GetRemoteRTCPReportBlocks())
+        .WillRepeatedly(Return(report_blocks));
+
     EXPECT_CALL(voice_engine_, GetSendCodec(kChannelId, _))
         .WillRepeatedly(DoAll(SetArgReferee<1>(kCodecInst), Return(0)));
-    EXPECT_CALL(voice_engine_, GetRemoteRTCPReportBlocks(kChannelId, _))
-        .WillRepeatedly(DoAll(SetArgPointee<1>(report_blocks), Return(0)));
     EXPECT_CALL(voice_engine_, GetSpeechInputLevelFullRange(_))
         .WillRepeatedly(DoAll(SetArgReferee<0>(kSpeechInputLevel), Return(0)));
     EXPECT_CALL(voice_engine_, GetEcMetricsStatus(_))

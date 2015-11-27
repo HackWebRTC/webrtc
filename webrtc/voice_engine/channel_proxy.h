@@ -11,12 +11,17 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 #define WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/voice_engine/channel_manager.h"
+#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 
 #include <string>
+#include <vector>
 
 namespace webrtc {
 namespace voe {
+
+class Channel;
 
 // This class provides the "view" of a voe::Channel that we need to implement
 // webrtc::AudioSendStream and webrtc::AudioReceiveStream. It serves two
@@ -34,8 +39,22 @@ class ChannelProxy {
   virtual void SetRTCPStatus(bool enable);
   virtual void SetLocalSSRC(uint32_t ssrc);
   virtual void SetRTCP_CNAME(const std::string& c_name);
+  virtual void SetSendAbsoluteSenderTimeStatus(bool enable, int id);
+  virtual void SetSendAudioLevelIndicationStatus(bool enable, int id);
+  virtual void SetReceiveAbsoluteSenderTimeStatus(bool enable, int id);
+  virtual void SetReceiveAudioLevelIndicationStatus(bool enable, int id);
+
+  virtual CallStatistics GetRTCPStatistics() const;
+  virtual std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const;
+  virtual NetworkStatistics GetNetworkStatistics() const;
+  virtual AudioDecodingCallStats GetDecodingCallStatistics() const;
+  virtual int32_t GetSpeechOutputLevelFullRange() const;
+  virtual uint32_t GetDelayEstimate() const;
 
  private:
+  Channel* channel() const;
+
+  rtc::ThreadChecker thread_checker_;
   ChannelOwner channel_owner_;
 };
 }  // namespace voe

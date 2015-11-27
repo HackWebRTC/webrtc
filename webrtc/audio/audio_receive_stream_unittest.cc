@@ -69,14 +69,14 @@ struct ConfigHelper {
           EXPECT_FALSE(channel_proxy_);
           channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
           EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kLocalSsrc)).Times(1);
+          EXPECT_CALL(*channel_proxy_,
+              SetReceiveAbsoluteSenderTimeStatus(true, kAbsSendTimeId))
+                  .Times(1);
+          EXPECT_CALL(*channel_proxy_,
+              SetReceiveAudioLevelIndicationStatus(true, kAudioLevelId))
+                  .Times(1);
           return channel_proxy_;
         }));
-    EXPECT_CALL(voice_engine_,
-        SetReceiveAbsoluteSenderTimeStatus(kChannelId, true, kAbsSendTimeId))
-            .WillOnce(Return(0));
-    EXPECT_CALL(voice_engine_,
-        SetReceiveAudioLevelIndicationStatus(kChannelId, true, kAudioLevelId))
-            .WillOnce(Return(0));
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.local_ssrc = kLocalSsrc;
     stream_config_.rtp.remote_ssrc = kRemoteSsrc;
@@ -95,23 +95,22 @@ struct ConfigHelper {
 
   void SetupMockForGetStats() {
     using testing::DoAll;
-    using testing::SetArgPointee;
     using testing::SetArgReferee;
 
-    EXPECT_CALL(voice_engine_, GetRTCPStatistics(kChannelId, _))
-        .WillOnce(DoAll(SetArgReferee<1>(kCallStats), Return(0)));
+    EXPECT_TRUE(channel_proxy_);
+    EXPECT_CALL(*channel_proxy_, GetRTCPStatistics())
+        .WillOnce(Return(kCallStats));
+    EXPECT_CALL(*channel_proxy_, GetDelayEstimate())
+        .WillOnce(Return(kJitterBufferDelay + kPlayoutBufferDelay));
+    EXPECT_CALL(*channel_proxy_, GetSpeechOutputLevelFullRange())
+        .WillOnce(Return(kSpeechOutputLevel));
+    EXPECT_CALL(*channel_proxy_, GetNetworkStatistics())
+        .WillOnce(Return(kNetworkStats));
+    EXPECT_CALL(*channel_proxy_, GetDecodingCallStatistics())
+        .WillOnce(Return(kAudioDecodeStats));
+
     EXPECT_CALL(voice_engine_, GetRecCodec(kChannelId, _))
         .WillOnce(DoAll(SetArgReferee<1>(kCodecInst), Return(0)));
-    EXPECT_CALL(voice_engine_, GetDelayEstimate(kChannelId, _, _))
-        .WillOnce(DoAll(SetArgPointee<1>(kJitterBufferDelay),
-                        SetArgPointee<2>(kPlayoutBufferDelay), Return(0)));
-    EXPECT_CALL(voice_engine_,
-        GetSpeechOutputLevelFullRange(kChannelId, _)).WillOnce(
-            DoAll(SetArgReferee<1>(kSpeechOutputLevel), Return(0)));
-    EXPECT_CALL(voice_engine_, GetNetworkStatistics(kChannelId, _))
-        .WillOnce(DoAll(SetArgReferee<1>(kNetworkStats), Return(0)));
-    EXPECT_CALL(voice_engine_, GetDecodingCallStatistics(kChannelId, _))
-        .WillOnce(DoAll(SetArgPointee<1>(kAudioDecodeStats), Return(0)));
   }
 
  private:

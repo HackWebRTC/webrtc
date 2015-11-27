@@ -3415,6 +3415,13 @@ bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
   return true;
 }
 
+uint32_t Channel::GetDelayEstimate() const {
+  int jitter_buffer_delay_ms = 0;
+  int playout_buffer_delay_ms = 0;
+  GetDelayEstimate(&jitter_buffer_delay_ms, &playout_buffer_delay_ms);
+  return jitter_buffer_delay_ms + playout_buffer_delay_ms;
+}
+
 int Channel::LeastRequiredDelayMs() const {
   return audio_coding_->LeastRequiredDelayMs();
 }

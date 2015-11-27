@@ -79,24 +79,14 @@ AudioReceiveStream::AudioReceiveStream(
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
   channel_proxy_->SetLocalSSRC(config.rtp.local_ssrc);
-
-  const int channel_id = config.voe_channel_id;
-  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
   for (const auto& extension : config.rtp.extensions) {
-    // One-byte-extension local identifiers are in the range 1-14 inclusive.
-    RTC_DCHECK_GE(extension.id, 1);
-    RTC_DCHECK_LE(extension.id, 14);
     if (extension.name == RtpExtension::kAudioLevel) {
-      int error = rtp->SetReceiveAudioLevelIndicationStatus(channel_id, true,
-                                                            extension.id);
-      RTC_DCHECK_EQ(0, error);
+      channel_proxy_->SetReceiveAudioLevelIndicationStatus(true, extension.id);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAudioLevel, extension.id);
       RTC_DCHECK(registered);
     } else if (extension.name == RtpExtension::kAbsSendTime) {
-      int error = rtp->SetReceiveAbsoluteSenderTimeStatus(channel_id, true,
-                                                          extension.id);
-      RTC_DCHECK_EQ(0, error);
+      channel_proxy_->SetReceiveAbsoluteSenderTimeStatus(true, extension.id);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAbsoluteSendTime, extension.id);
       RTC_DCHECK(registered);
@@ -168,14 +158,8 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
   ScopedVoEInterface<VoECodec> codec(voice_engine());
-  ScopedVoEInterface<VoENetEqStats> neteq(voice_engine());
-  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
-  ScopedVoEInterface<VoEVideoSync> sync(voice_engine());
-  ScopedVoEInterface<VoEVolumeControl> volume(voice_engine());
 
-  webrtc::CallStatistics call_stats = {0};
-  int error = rtp->GetRTCPStatistics(config_.voe_channel_id, call_stats);
-  RTC_DCHECK_EQ(0, error);
+  webrtc::CallStatistics call_stats = channel_proxy_->GetRTCPStatistics();
   webrtc::CodecInst codec_inst = {0};
   if (codec->GetRecCodec(config_.voe_channel_id, codec_inst) == -1) {
     return stats;
@@ -193,25 +177,11 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   if (codec_inst.plfreq / 1000 > 0) {
     stats.jitter_ms = call_stats.jitterSamples / (codec_inst.plfreq / 1000);
   }
-  {
-    int jitter_buffer_delay_ms = 0;
-    int playout_buffer_delay_ms = 0;
-    sync->GetDelayEstimate(config_.voe_channel_id, &jitter_buffer_delay_ms,
-                           &playout_buffer_delay_ms);
-    stats.delay_estimate_ms = jitter_buffer_delay_ms + playout_buffer_delay_ms;
-  }
-  {
-    unsigned int level = 0;
-    error = volume->GetSpeechOutputLevelFullRange(config_.voe_channel_id,
-                                                  level);
-    RTC_DCHECK_EQ(0, error);
-    stats.audio_level = static_cast<int32_t>(level);
-  }
+  stats.delay_estimate_ms = channel_proxy_->GetDelayEstimate();
+  stats.audio_level = channel_proxy_->GetSpeechOutputLevelFullRange();
 
   // Get jitter buffer and total delay (alg + jitter + playout) stats.
-  webrtc::NetworkStatistics ns = {0};
-  error = neteq->GetNetworkStatistics(config_.voe_channel_id, ns);
-  RTC_DCHECK_EQ(0, error);
+  auto ns = channel_proxy_->GetNetworkStatistics();
   stats.jitter_buffer_ms = ns.currentBufferSize;
   stats.jitter_buffer_preferred_ms = ns.preferredBufferSize;
   stats.expand_rate = Q14ToFloat(ns.currentExpandRate);
@@ -220,9 +190,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.accelerate_rate = Q14ToFloat(ns.currentAccelerateRate);
   stats.preemptive_expand_rate = Q14ToFloat(ns.currentPreemptiveRate);
 
-  webrtc::AudioDecodingCallStats ds;
-  error = neteq->GetDecodingCallStatistics(config_.voe_channel_id, &ds);
-  RTC_DCHECK_EQ(0, error);
+  auto ds = channel_proxy_->GetDecodingCallStatistics();
   stats.decoding_calls_to_silence_generator = ds.calls_to_silence_generator;
   stats.decoding_calls_to_neteq = ds.calls_to_neteq;
   stats.decoding_normal = ds.decoded_normal;

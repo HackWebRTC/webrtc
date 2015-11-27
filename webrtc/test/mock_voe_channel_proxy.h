@@ -23,6 +23,16 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetRTCPStatus, void(bool enable));
   MOCK_METHOD1(SetLocalSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetRTCP_CNAME, void(const std::string& c_name));
+  MOCK_METHOD2(SetSendAbsoluteSenderTimeStatus, void(bool enable, int id));
+  MOCK_METHOD2(SetSendAudioLevelIndicationStatus, void(bool enable, int id));
+  MOCK_METHOD2(SetReceiveAbsoluteSenderTimeStatus, void(bool enable, int id));
+  MOCK_METHOD2(SetReceiveAudioLevelIndicationStatus, void(bool enable, int id));
+  MOCK_CONST_METHOD0(GetRTCPStatistics, CallStatistics());
+  MOCK_CONST_METHOD0(GetRemoteRTCPReportBlocks, std::vector<ReportBlock>());
+  MOCK_CONST_METHOD0(GetNetworkStatistics, NetworkStatistics());
+  MOCK_CONST_METHOD0(GetDecodingCallStatistics, AudioDecodingCallStats());
+  MOCK_CONST_METHOD0(GetSpeechOutputLevelFullRange, int32_t());
+  MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
 };
 }  // namespace test
 }  // namespace webrtc

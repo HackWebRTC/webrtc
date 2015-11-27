@@ -66,21 +66,11 @@ AudioSendStream::AudioSendStream(
   channel_proxy_->SetRTCPStatus(true);
   channel_proxy_->SetLocalSSRC(config.rtp.ssrc);
   channel_proxy_->SetRTCP_CNAME(config.rtp.c_name);
-
-  const int channel_id = config.voe_channel_id;
-  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
   for (const auto& extension : config.rtp.extensions) {
-    // One-byte-extension local identifiers are in the range 1-14 inclusive.
-    RTC_DCHECK_GE(extension.id, 1);
-    RTC_DCHECK_LE(extension.id, 14);
     if (extension.name == RtpExtension::kAbsSendTime) {
-      int error = rtp->SetSendAbsoluteSenderTimeStatus(channel_id, true,
-                                                       extension.id);
-      RTC_DCHECK_EQ(0, error);
+      channel_proxy_->SetSendAbsoluteSenderTimeStatus(true, extension.id);
     } else if (extension.name == RtpExtension::kAudioLevel) {
-      int error = rtp->SetSendAudioLevelIndicationStatus(channel_id, true,
-                                                         extension.id);
-      RTC_DCHECK_EQ(0, error);
+      channel_proxy_->SetSendAudioLevelIndicationStatus(true, extension.id);
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";
     }
@@ -118,12 +108,9 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   stats.local_ssrc = config_.rtp.ssrc;
   ScopedVoEInterface<VoEAudioProcessing> processing(voice_engine());
   ScopedVoEInterface<VoECodec> codec(voice_engine());
-  ScopedVoEInterface<VoERTP_RTCP> rtp(voice_engine());
   ScopedVoEInterface<VoEVolumeControl> volume(voice_engine());
 
-  webrtc::CallStatistics call_stats = {0};
-  int error = rtp->GetRTCPStatistics(config_.voe_channel_id, call_stats);
-  RTC_DCHECK_EQ(0, error);
+  webrtc::CallStatistics call_stats = channel_proxy_->GetRTCPStatistics();
   stats.bytes_sent = call_stats.bytesSent;
   stats.packets_sent = call_stats.packetsSent;
   // RTT isn't known until a RTCP report is received. Until then, VoiceEngine
@@ -141,10 +128,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
     stats.codec_name = codec_inst.plname;
 
     // Get data from the last remote RTCP report.
-    std::vector<webrtc::ReportBlock> blocks;
-    error = rtp->GetRemoteRTCPReportBlocks(config_.voe_channel_id, &blocks);
-    RTC_DCHECK_EQ(0, error);
-    for (const webrtc::ReportBlock& block : blocks) {
+    for (const auto& block : channel_proxy_->GetRemoteRTCPReportBlocks()) {
       // Lookup report for send ssrc only.
       if (block.source_SSRC == stats.local_ssrc) {
         stats.packets_lost = block.cumulative_num_packets_lost;
@@ -163,13 +147,13 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   // Local speech level.
   {
     unsigned int level = 0;
-    error = volume->GetSpeechInputLevelFullRange(level);
+    int error = volume->GetSpeechInputLevelFullRange(level);
     RTC_DCHECK_EQ(0, error);
     stats.audio_level = static_cast<int32_t>(level);
   }
 
   bool echo_metrics_on = false;
-  error = processing->GetEcMetricsStatus(echo_metrics_on);
+  int error = processing->GetEcMetricsStatus(echo_metrics_on);
   RTC_DCHECK_EQ(0, error);
   if (echo_metrics_on) {
     // These can also be negative, but in practice -1 is only used to signal
