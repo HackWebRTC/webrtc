@@ -307,6 +307,7 @@
                 'rtp_rtcp/source/rtcp_packet/app_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/bye_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/extended_jitter_report_unittest.cc',
+                'rtp_rtcp/source/rtcp_packet/pli_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/report_block_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/transport_feedback_unittest.cc',
                 'rtp_rtcp/source/rtcp_receiver_unittest.cc',

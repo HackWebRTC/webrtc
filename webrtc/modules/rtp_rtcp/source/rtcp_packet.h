@@ -319,57 +319,6 @@ class Sdes : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Sdes);
 };
 
-// RFC 4585: Feedback format.
-//
-// Common packet format:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |V=2|P|   FMT   |       PT      |          length               |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                  SSRC of packet sender                        |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                  SSRC of media source                         |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   :            Feedback Control Information (FCI)                 :
-//   :
-
-// Picture loss indication (PLI) (RFC 4585).
-//
-// FCI: no feedback control information.
-
-class Pli : public RtcpPacket {
- public:
-  Pli() : RtcpPacket() {
-    memset(&pli_, 0, sizeof(pli_));
-  }
-
-  virtual ~Pli() {}
-
-  void From(uint32_t ssrc) {
-    pli_.SenderSSRC = ssrc;
-  }
-  void To(uint32_t ssrc) {
-    pli_.MediaSSRC = ssrc;
-  }
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  size_t BlockLength() const {
-    return kCommonFbFmtLength;
-  }
-
-  RTCPUtility::RTCPPacketPSFBPLI pli_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Pli);
-};
-
 // Slice loss indication (SLI) (RFC 4585).
 //
 // FCI:

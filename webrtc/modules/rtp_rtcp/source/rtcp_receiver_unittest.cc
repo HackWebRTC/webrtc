@@ -28,6 +28,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 namespace webrtc {

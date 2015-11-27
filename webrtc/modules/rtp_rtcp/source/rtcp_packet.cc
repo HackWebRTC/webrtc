@@ -31,7 +31,6 @@ using webrtc::RTCPUtility::RTCPPacketAPP;
 using webrtc::RTCPUtility::RTCPPacketPSFBAPP;
 using webrtc::RTCPUtility::RTCPPacketPSFBFIR;
 using webrtc::RTCPUtility::RTCPPacketPSFBFIRItem;
-using webrtc::RTCPUtility::RTCPPacketPSFBPLI;
 using webrtc::RTCPUtility::RTCPPacketPSFBREMBItem;
 using webrtc::RTCPUtility::RTCPPacketPSFBRPSI;
 using webrtc::RTCPUtility::RTCPPacketPSFBSLI;
@@ -201,34 +200,6 @@ void CreateSdes(const std::vector<Sdes::Chunk>& chunks,
     memset(buffer + *pos, 0, (*it).null_octets);
     *pos += (*it).null_octets;
   }
-}
-
-// RFC 4585: Feedback format.
-//
-// Common packet format:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |V=2|P|   FMT   |       PT      |          length               |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                  SSRC of packet sender                        |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                  SSRC of media source                         |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   :            Feedback Control Information (FCI)                 :
-//   :
-//
-
-// Picture loss indication (PLI) (RFC 4585).
-//
-// FCI: no feedback control information.
-
-void CreatePli(const RTCPPacketPSFBPLI& pli,
-               uint8_t* buffer,
-               size_t* pos) {
-  AssignUWord32(buffer, pos, pli.SenderSSRC);
-  AssignUWord32(buffer, pos, pli.MediaSSRC);
 }
 
 // Slice loss indication (SLI) (RFC 4585).
@@ -775,20 +746,6 @@ size_t Sdes::BlockLength() const {
     length += 6 + chunk.name.length() + chunk.null_octets;
   assert(length % 4 == 0);
   return length;
-}
-
-bool Pli::Create(uint8_t* packet,
-                 size_t* index,
-                 size_t max_length,
-                 RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  const uint8_t kFmt = 1;
-  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
-  CreatePli(pli_, packet, index);
-  return true;
 }
 
 bool Sli::Create(uint8_t* packet,

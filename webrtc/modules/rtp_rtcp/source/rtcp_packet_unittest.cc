@@ -26,7 +26,6 @@ using webrtc::rtcp::Dlrr;
 using webrtc::rtcp::Empty;
 using webrtc::rtcp::Fir;
 using webrtc::rtcp::Nack;
-using webrtc::rtcp::Pli;
 using webrtc::rtcp::Sdes;
 using webrtc::rtcp::SenderReport;
 using webrtc::rtcp::Sli;
@@ -294,19 +293,6 @@ TEST(RtcpPacketTest, CnameItemWithEmptyString) {
   EXPECT_EQ(1, parser.sdes_chunk()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.sdes_chunk()->Ssrc());
   EXPECT_EQ("", parser.sdes_chunk()->Cname());
-}
-
-TEST(RtcpPacketTest, Pli) {
-  Pli pli;
-  pli.From(kSenderSsrc);
-  pli.To(kRemoteSsrc);
-
-  rtc::scoped_ptr<RawPacket> packet(pli.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.pli()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.pli()->Ssrc());
-  EXPECT_EQ(kRemoteSsrc, parser.pli()->MediaSsrc());
 }
 
 TEST(RtcpPacketTest, Sli) {
