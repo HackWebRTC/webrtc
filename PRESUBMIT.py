@@ -267,7 +267,14 @@ def _RunPythonTests(input_api, output_api):
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   results = []
-  results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
+  # Filter out files that are in objc or ios dirs from being cpplint-ed since
+  # they do not follow C++ lint rules.
+  black_list = input_api.DEFAULT_BLACK_LIST + (
+    r".*\bobjc[\\\/].*",
+  )
+  source_file_filter = lambda x: input_api.FilterSourceFile(x, None, black_list)
+  results.extend(_CheckApprovedFilesLintClean(
+      input_api, output_api, source_file_filter))
   results.extend(input_api.canned_checks.RunPylint(input_api, output_api,
       black_list=(r'^.*gviz_api\.py$',
                   r'^.*gaeunit\.py$',

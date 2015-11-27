@@ -605,3 +605,19 @@ static_library("rtc_base") {
     defines += [ "timezone=_timezone" ]
   }
 }
+
+if (is_ios) {
+  source_set("rtc_base_objc") {
+    deps = [
+      ":rtc_base",
+    ]
+    cflags = [ "-fobjc-arc" ]
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
+
+    sources = [
+      "objc/RTCLogging.h",
+      "objc/RTCLogging.mm",
+    ]
+  }
+}
