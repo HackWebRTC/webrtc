@@ -245,6 +245,7 @@ void VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
     // Make sure the VCM updates the decoder next time it decodes.
     _decoder = NULL;
     RTC_CHECK(_codecDataBase.DeregisterExternalDecoder(payloadType));
+    return;
   }
   _codecDataBase.RegisterExternalDecoder(externalDecoder, payloadType,
                                          internalRenderTiming);
