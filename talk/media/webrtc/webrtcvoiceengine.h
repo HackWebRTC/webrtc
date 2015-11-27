@@ -57,8 +57,10 @@ class WebRtcVoiceMediaChannel;
 // It uses the WebRtc VoiceEngine library for audio handling.
 class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   friend class WebRtcVoiceMediaChannel;
-
  public:
+  // Exposed for the WVoE/MC unit test.
+  static bool ToCodecInst(const AudioCodec& in, webrtc::CodecInst* out);
+
   WebRtcVoiceEngine();
   // Dependency injection for testing.
   explicit WebRtcVoiceEngine(VoEWrapper* voe_wrapper);
@@ -78,9 +80,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   int GetInputLevel();
 
   const std::vector<AudioCodec>& codecs();
-  bool FindCodec(const AudioCodec& codec);
-  bool FindWebRtcCodec(const AudioCodec& codec, webrtc::CodecInst* gcodec);
-
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
 
   // For tracking WebRtc channels. Needed because we have to pause them
@@ -114,8 +113,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
 
  private:
   void Construct();
-  void ConstructCodecs();
-  bool GetVoeCodec(int index, webrtc::CodecInst* codec);
   bool InitInternal();
   // Every option that is "set" will be applied. Every option not "set" will be
   // ignored. This allows us to selectively turn on and off different options
@@ -258,7 +255,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
   bool SetSendBitrateInternal(int bps);
-  bool SetRecvCodecsInternal(const std::vector<AudioCodec>& new_codecs);
 
   rtc::ThreadChecker worker_thread_checker_;
 

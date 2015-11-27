@@ -53,6 +53,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
+#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -65,32 +66,6 @@ const int kDefaultTraceFilter = webrtc::kTraceNone | webrtc::kTraceTerseInfo |
                                 webrtc::kTraceCritical;
 const int kElevatedTraceFilter = kDefaultTraceFilter | webrtc::kTraceStateInfo |
                                  webrtc::kTraceInfo;
-
-const int kMaxNumPacketSize = 6;
-struct CodecPref {
-  const char* name;
-  int clockrate;
-  int channels;
-  int payload_type;
-  bool is_multi_rate;
-  int packet_sizes_ms[kMaxNumPacketSize];
-};
-// Note: keep the supported packet sizes in ascending order.
-const CodecPref kCodecPrefs[] = {
-  { kOpusCodecName,   48000, 2, 111, true,  { 10, 20, 40, 60 } },
-  { kIsacCodecName,   16000, 1, 103, true,  { 30, 60 } },
-  { kIsacCodecName,   32000, 1, 104, true,  { 30 } },
-  // G722 should be advertised as 8000 Hz because of the RFC "bug".
-  { kG722CodecName,   8000,  1, 9,   false, { 10, 20, 30, 40, 50, 60 } },
-  { kIlbcCodecName,   8000,  1, 102, false, { 20, 30, 40, 60 } },
-  { kPcmuCodecName,   8000,  1, 0,   false, { 10, 20, 30, 40, 50, 60 } },
-  { kPcmaCodecName,   8000,  1, 8,   false, { 10, 20, 30, 40, 50, 60 } },
-  { kCnCodecName,     32000, 1, 106, false, { } },
-  { kCnCodecName,     16000, 1, 105, false, { } },
-  { kCnCodecName,     8000,  1, 13,  false, { } },
-  { kRedCodecName,    8000,  1, 127, false, { } },
-  { kDtmfCodecName,   8000,  1, 126, false, { } },
-};
 
 // For Linux/Mac, using the default device is done by specifying index 0 for
 // VoE 4.0 and not -1 (which was the case for VoE 3.5).
@@ -185,13 +160,6 @@ std::string ToString(const webrtc::CodecInst& codec) {
   return ss.str();
 }
 
-void LogMultiline(rtc::LoggingSeverity sev, char* text) {
-  const char* delim = "\r\n";
-  for (char* tok = strtok(text, delim); tok; tok = strtok(NULL, delim)) {
-    LOG_V(sev) << tok;
-  }
-}
-
 bool IsCodec(const AudioCodec& codec, const char* ref_name) {
   return (_stricmp(codec.name.c_str(), ref_name) == 0);
 }
@@ -200,19 +168,9 @@ bool IsCodec(const webrtc::CodecInst& codec, const char* ref_name) {
   return (_stricmp(codec.plname, ref_name) == 0);
 }
 
-bool IsCodecMultiRate(const webrtc::CodecInst& codec) {
-  for (size_t i = 0; i < arraysize(kCodecPrefs); ++i) {
-    if (IsCodec(codec, kCodecPrefs[i].name) &&
-        kCodecPrefs[i].clockrate == codec.plfreq) {
-      return kCodecPrefs[i].is_multi_rate;
-    }
-  }
-  return false;
-}
-
 bool FindCodec(const std::vector<AudioCodec>& codecs,
-                      const AudioCodec& codec,
-                      AudioCodec* found_codec) {
+               const AudioCodec& codec,
+               AudioCodec* found_codec) {
   for (const AudioCodec& c : codecs) {
     if (c.Matches(codec)) {
       if (found_codec != NULL) {
@@ -242,38 +200,8 @@ bool IsNackEnabled(const AudioCodec& codec) {
                                               kParamValueEmpty));
 }
 
-int SelectPacketSize(const CodecPref& codec_pref, int ptime_ms) {
-  int selected_packet_size_ms = codec_pref.packet_sizes_ms[0];
-  for (int packet_size_ms : codec_pref.packet_sizes_ms) {
-    if (packet_size_ms && packet_size_ms <= ptime_ms) {
-      selected_packet_size_ms = packet_size_ms;
-    }
-  }
-  return selected_packet_size_ms;
-}
-
-// If the AudioCodec param kCodecParamPTime is set, then we will set it to codec
-// pacsize if it's valid, or we will pick the next smallest value we support.
-// TODO(Brave): Query supported packet sizes from ACM when the API is ready.
-bool SetPTimeAsPacketSize(webrtc::CodecInst* codec, int ptime_ms) {
-  for (const CodecPref& codec_pref : kCodecPrefs) {
-    if ((IsCodec(*codec, codec_pref.name) &&
-        codec_pref.clockrate == codec->plfreq) ||
-        IsCodec(*codec, kG722CodecName)) {
-      int packet_size_ms = SelectPacketSize(codec_pref, ptime_ms);
-      if (packet_size_ms) {
-        // Convert unit from milli-seconds to samples.
-        codec->pacsize = (codec->plfreq / 1000) * packet_size_ms;
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 // Return true if codec.params[feature] == "1", false otherwise.
-bool IsCodecFeatureEnabled(const AudioCodec& codec,
-                                  const char* feature) {
+bool IsCodecFeatureEnabled(const AudioCodec& codec, const char* feature) {
   int value;
   return codec.GetParam(feature, &value) && value == 1;
 }
@@ -340,18 +268,6 @@ void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
   voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
 }
 
-// Changes RTP timestamp rate of G722. This is due to the "bug" in the RFC
-// which says that G722 should be advertised as 8 kHz although it is a 16 kHz
-// codec.
-void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
-  if (IsCodec(*voe_codec, kG722CodecName)) {
-    // If the ASSERT triggers, the codec definition in WebRTC VoiceEngine
-    // has changed, and this special case is no longer needed.
-    RTC_DCHECK(voe_codec->plfreq != new_plfreq);
-    voe_codec->plfreq = new_plfreq;
-  }
-}
-
 // Gets the default set of options applied to the engine. Historically, these
 // were supplied as a combination of flags from the channel manager (ec, agc,
 // ns, and highpass) and the rest hardcoded in InitInternal.
@@ -393,54 +309,17 @@ std::vector<webrtc::RtpExtension> FindAudioRtpHeaderExtensions(
   }
   return result;
 }
-} // namespace {
 
-WebRtcVoiceEngine::WebRtcVoiceEngine()
-    : voe_wrapper_(new VoEWrapper()),
-      audio_state_(webrtc::AudioState::Create(MakeAudioStateConfig(voe()))) {
-  Construct();
-}
-
-WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper)
-    : voe_wrapper_(voe_wrapper) {
-  Construct();
-}
-
-void WebRtcVoiceEngine::Construct() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_VERBOSE) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
-
-  signal_thread_checker_.DetachFromThread();
-  std::memset(&default_agc_config_, 0, sizeof(default_agc_config_));
-
-  webrtc::Trace::set_level_filter(kDefaultTraceFilter);
-  webrtc::Trace::SetTraceCallback(this);
-
-  // Load our audio codec list.
-  ConstructCodecs();
-
-  // Load our RTP Header extensions.
-  rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpAudioLevelHeaderExtension,
-                         kRtpAudioLevelHeaderExtensionDefaultId));
-  rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
-                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
-  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
-    rtp_header_extensions_.push_back(RtpHeaderExtension(
-        kRtpTransportSequenceNumberHeaderExtension,
-        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
-  }
-  options_ = GetDefaultEngineOptions();
-}
-
-void WebRtcVoiceEngine::ConstructCodecs() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
-  int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
-  for (int i = 0; i < ncodecs; ++i) {
-    webrtc::CodecInst voe_codec;
-    if (GetVoeCodec(i, &voe_codec)) {
+class WebRtcVoiceCodecs final {
+ public:
+  // TODO(solenberg): Do this filtering once off-line, add a simple AudioCodec
+  // list and add a test which verifies VoE supports the listed codecs.
+  static std::vector<AudioCodec> SupportedCodecs() {
+    LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
+    std::vector<AudioCodec> result;
+    for (webrtc::CodecInst voe_codec : webrtc::acm2::RentACodec::Database()) {
+      // Change the sample rate of G722 to 8000 to match SDP.
+      MaybeFixupG722(&voe_codec, 8000);
       // Skip uncompressed formats.
       if (IsCodec(voe_codec, kL16CodecName)) {
         continue;
@@ -483,24 +362,181 @@ void WebRtcVoiceEngine::ConstructCodecs() {
           // TODO(hellner): Add ptime, sprop-stereo, and stereo
           // when they can be set to values other than the default.
         }
-        codecs_.push_back(codec);
+        result.push_back(codec);
       } else {
         LOG(LS_WARNING) << "Unexpected codec: " << ToString(voe_codec);
       }
     }
+    // Make sure they are in local preference order.
+    std::sort(result.begin(), result.end(), &AudioCodec::Preferable);
+    return result;
   }
-  // Make sure they are in local preference order.
-  std::sort(codecs_.begin(), codecs_.end(), &AudioCodec::Preferable);
-}
 
-bool WebRtcVoiceEngine::GetVoeCodec(int index, webrtc::CodecInst* codec) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  if (voe_wrapper_->codec()->GetCodec(index, *codec) == -1) {
+  static bool ToCodecInst(const AudioCodec& in,
+                          webrtc::CodecInst* out) {
+    for (webrtc::CodecInst voe_codec : webrtc::acm2::RentACodec::Database()) {
+      // Change the sample rate of G722 to 8000 to match SDP.
+      MaybeFixupG722(&voe_codec, 8000);
+      AudioCodec codec(voe_codec.pltype, voe_codec.plname, voe_codec.plfreq,
+                       voe_codec.rate, voe_codec.channels, 0);
+      bool multi_rate = IsCodecMultiRate(voe_codec);
+      // Allow arbitrary rates for ISAC to be specified.
+      if (multi_rate) {
+        // Set codec.bitrate to 0 so the check for codec.Matches() passes.
+        codec.bitrate = 0;
+      }
+      if (codec.Matches(in)) {
+        if (out) {
+          // Fixup the payload type.
+          voe_codec.pltype = in.id;
+
+          // Set bitrate if specified.
+          if (multi_rate && in.bitrate != 0) {
+            voe_codec.rate = in.bitrate;
+          }
+
+          // Reset G722 sample rate to 16000 to match WebRTC.
+          MaybeFixupG722(&voe_codec, 16000);
+
+          // Apply codec-specific settings.
+          if (IsCodec(codec, kIsacCodecName)) {
+            // If ISAC and an explicit bitrate is not specified,
+            // enable auto bitrate adjustment.
+            voe_codec.rate = (in.bitrate > 0) ? in.bitrate : -1;
+          }
+          *out = voe_codec;
+        }
+        return true;
+      }
+    }
     return false;
   }
-  // Change the sample rate of G722 to 8000 to match SDP.
-  MaybeFixupG722(codec, 8000);
-  return true;
+
+  static bool IsCodecMultiRate(const webrtc::CodecInst& codec) {
+    for (size_t i = 0; i < arraysize(kCodecPrefs); ++i) {
+      if (IsCodec(codec, kCodecPrefs[i].name) &&
+          kCodecPrefs[i].clockrate == codec.plfreq) {
+        return kCodecPrefs[i].is_multi_rate;
+      }
+    }
+    return false;
+  }
+
+  // If the AudioCodec param kCodecParamPTime is set, then we will set it to
+  // codec pacsize if it's valid, or we will pick the next smallest value we
+  // support.
+  // TODO(Brave): Query supported packet sizes from ACM when the API is ready.
+  static bool SetPTimeAsPacketSize(webrtc::CodecInst* codec, int ptime_ms) {
+    for (const CodecPref& codec_pref : kCodecPrefs) {
+      if ((IsCodec(*codec, codec_pref.name) &&
+          codec_pref.clockrate == codec->plfreq) ||
+          IsCodec(*codec, kG722CodecName)) {
+        int packet_size_ms = SelectPacketSize(codec_pref, ptime_ms);
+        if (packet_size_ms) {
+          // Convert unit from milli-seconds to samples.
+          codec->pacsize = (codec->plfreq / 1000) * packet_size_ms;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+ private:
+  static const int kMaxNumPacketSize = 6;
+  struct CodecPref {
+    const char* name;
+    int clockrate;
+    int channels;
+    int payload_type;
+    bool is_multi_rate;
+    int packet_sizes_ms[kMaxNumPacketSize];
+  };
+  // Note: keep the supported packet sizes in ascending order.
+  static const CodecPref kCodecPrefs[12];
+
+  static int SelectPacketSize(const CodecPref& codec_pref, int ptime_ms) {
+    int selected_packet_size_ms = codec_pref.packet_sizes_ms[0];
+    for (int packet_size_ms : codec_pref.packet_sizes_ms) {
+      if (packet_size_ms && packet_size_ms <= ptime_ms) {
+        selected_packet_size_ms = packet_size_ms;
+      }
+    }
+    return selected_packet_size_ms;
+  }
+
+  // Changes RTP timestamp rate of G722. This is due to the "bug" in the RFC
+  // which says that G722 should be advertised as 8 kHz although it is a 16 kHz
+  // codec.
+  static void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
+    if (IsCodec(*voe_codec, kG722CodecName)) {
+      // If the ASSERT triggers, the codec definition in WebRTC VoiceEngine
+      // has changed, and this special case is no longer needed.
+      RTC_DCHECK(voe_codec->plfreq != new_plfreq);
+      voe_codec->plfreq = new_plfreq;
+    }
+  }
+};
+
+const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[12] = {
+  { kOpusCodecName,   48000, 2, 111, true,  { 10, 20, 40, 60 } },
+  { kIsacCodecName,   16000, 1, 103, true,  { 30, 60 } },
+  { kIsacCodecName,   32000, 1, 104, true,  { 30 } },
+  // G722 should be advertised as 8000 Hz because of the RFC "bug".
+  { kG722CodecName,   8000,  1, 9,   false, { 10, 20, 30, 40, 50, 60 } },
+  { kIlbcCodecName,   8000,  1, 102, false, { 20, 30, 40, 60 } },
+  { kPcmuCodecName,   8000,  1, 0,   false, { 10, 20, 30, 40, 50, 60 } },
+  { kPcmaCodecName,   8000,  1, 8,   false, { 10, 20, 30, 40, 50, 60 } },
+  { kCnCodecName,     32000, 1, 106, false, { } },
+  { kCnCodecName,     16000, 1, 105, false, { } },
+  { kCnCodecName,     8000,  1, 13,  false, { } },
+  { kRedCodecName,    8000,  1, 127, false, { } },
+  { kDtmfCodecName,   8000,  1, 126, false, { } },
+};
+} // namespace {
+
+bool WebRtcVoiceEngine::ToCodecInst(const AudioCodec& in,
+                                    webrtc::CodecInst* out) {
+  return WebRtcVoiceCodecs::ToCodecInst(in, out);
+}
+
+WebRtcVoiceEngine::WebRtcVoiceEngine()
+    : voe_wrapper_(new VoEWrapper()),
+      audio_state_(webrtc::AudioState::Create(MakeAudioStateConfig(voe()))) {
+  Construct();
+}
+
+WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper)
+    : voe_wrapper_(voe_wrapper) {
+  Construct();
+}
+
+void WebRtcVoiceEngine::Construct() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  LOG(LS_VERBOSE) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
+
+  signal_thread_checker_.DetachFromThread();
+  std::memset(&default_agc_config_, 0, sizeof(default_agc_config_));
+
+  webrtc::Trace::set_level_filter(kDefaultTraceFilter);
+  webrtc::Trace::SetTraceCallback(this);
+
+  // Load our audio codec list.
+  codecs_ = WebRtcVoiceCodecs::SupportedCodecs();
+
+  // Load our RTP Header extensions.
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpAudioLevelHeaderExtension,
+                         kRtpAudioLevelHeaderExtensionDefaultId));
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
+                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
+    rtp_header_extensions_.push_back(RtpHeaderExtension(
+        kRtpTransportSequenceNumberHeaderExtension,
+        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
+  }
+  options_ = GetDefaultEngineOptions();
 }
 
 WebRtcVoiceEngine::~WebRtcVoiceEngine() {
@@ -539,10 +575,15 @@ bool WebRtcVoiceEngine::InitInternal() {
   webrtc::Trace::set_level_filter(kDefaultTraceFilter);
 
   // Log the VoiceEngine version info
-  char buffer[1024] = "";
-  voe_wrapper_->base()->GetVersion(buffer);
-  LOG(LS_INFO) << "WebRtc VoiceEngine Version:";
-  LogMultiline(rtc::LS_INFO, buffer);
+  {
+    char buffer[1024] = "";
+    voe_wrapper_->base()->GetVersion(buffer);
+    LOG(LS_INFO) << "WebRtc VoiceEngine Version:";
+    const char* delim = "\r\n";
+    for (char* tok = strtok(buffer, delim); tok; tok = strtok(NULL, delim)) {
+      LOG(LS_INFO) << tok;
+    }
+  }
 
   // Save the default AGC configuration settings. This must happen before
   // calling SetOptions or the default will be overwritten.
@@ -1056,55 +1097,6 @@ const std::vector<AudioCodec>& WebRtcVoiceEngine::codecs() {
   return codecs_;
 }
 
-bool WebRtcVoiceEngine::FindCodec(const AudioCodec& in) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return FindWebRtcCodec(in, NULL);
-}
-
-// Get the VoiceEngine codec that matches |in|, with the supplied settings.
-bool WebRtcVoiceEngine::FindWebRtcCodec(const AudioCodec& in,
-                                        webrtc::CodecInst* out) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
-  for (int i = 0; i < ncodecs; ++i) {
-    webrtc::CodecInst voe_codec;
-    if (GetVoeCodec(i, &voe_codec)) {
-      AudioCodec codec(voe_codec.pltype, voe_codec.plname, voe_codec.plfreq,
-                       voe_codec.rate, voe_codec.channels, 0);
-      bool multi_rate = IsCodecMultiRate(voe_codec);
-      // Allow arbitrary rates for ISAC to be specified.
-      if (multi_rate) {
-        // Set codec.bitrate to 0 so the check for codec.Matches() passes.
-        codec.bitrate = 0;
-      }
-      if (codec.Matches(in)) {
-        if (out) {
-          // Fixup the payload type.
-          voe_codec.pltype = in.id;
-
-          // Set bitrate if specified.
-          if (multi_rate && in.bitrate != 0) {
-            voe_codec.rate = in.bitrate;
-          }
-
-          // Reset G722 sample rate to 16000 to match WebRTC.
-          MaybeFixupG722(&voe_codec, 16000);
-
-          // Apply codec-specific settings.
-          if (IsCodec(codec, kIsacCodecName)) {
-            // If ISAC and an explicit bitrate is not specified,
-            // enable auto bitrate adjustment.
-            voe_codec.rate = (in.bitrate > 0) ? in.bitrate : -1;
-          }
-          *out = voe_codec;
-        }
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 const std::vector<RtpHeaderExtension>&
 WebRtcVoiceEngine::rtp_header_extensions() const {
   RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
@@ -1592,7 +1584,26 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     PausePlayout();
   }
 
-  bool result = SetRecvCodecsInternal(new_codecs);
+  bool result = true;
+  for (const AudioCodec& codec : new_codecs) {
+    webrtc::CodecInst voe_codec;
+    if (WebRtcVoiceEngine::ToCodecInst(codec, &voe_codec)) {
+      LOG(LS_INFO) << ToString(codec);
+      voe_codec.pltype = codec.id;
+      for (const auto& ch : recv_streams_) {
+        if (engine()->voe()->codec()->SetRecPayloadType(
+                ch.second->channel(), voe_codec) == -1) {
+          LOG_RTCERR2(SetRecPayloadType, ch.second->channel(),
+                      ToString(voe_codec));
+          result = false;
+        }
+      }
+    } else {
+      LOG(LS_WARNING) << "Unknown codec " << ToString(codec);
+      result = false;
+      break;
+    }
+  }
   if (result) {
     recv_codecs_ = codecs;
   }
@@ -1627,7 +1638,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     // Ignore codecs we don't know about. The negotiation step should prevent
     // this, but double-check to be sure.
     webrtc::CodecInst voe_codec;
-    if (!engine()->FindWebRtcCodec(codec, &voe_codec)) {
+    if (!WebRtcVoiceEngine::ToCodecInst(codec, &voe_codec)) {
       LOG(LS_WARNING) << "Unknown codec " << ToString(codec);
       continue;
     }
@@ -1668,7 +1679,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       // Set packet size if the AudioCodec param kCodecParamPTime is set.
       int ptime_ms = 0;
       if (codec.GetParam(kCodecParamPTime, &ptime_ms)) {
-        if (!SetPTimeAsPacketSize(&send_codec, ptime_ms)) {
+        if (!WebRtcVoiceCodecs::SetPTimeAsPacketSize(&send_codec, ptime_ms)) {
           LOG(LS_WARNING) << "Failed to set packet size for codec "
                           << send_codec.plname;
           return false;
@@ -1746,7 +1757,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     // Ignore codecs we don't know about. The negotiation step should prevent
     // this, but double-check to be sure.
     webrtc::CodecInst voe_codec;
-    if (!engine()->FindWebRtcCodec(codec, &voe_codec)) {
+    if (!WebRtcVoiceEngine::ToCodecInst(codec, &voe_codec)) {
       LOG(LS_WARNING) << "Unknown codec " << ToString(codec);
       continue;
     }
@@ -2116,24 +2127,20 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   }
 
   // Turn off all supported codecs.
-  const int ncodecs = engine()->voe()->codec()->NumOfCodecs();
-  for (int i = 0; i < ncodecs; ++i) {
-    webrtc::CodecInst voe_codec;
-    if (engine()->voe()->codec()->GetCodec(i, voe_codec) != -1) {
-      voe_codec.pltype = -1;
-      if (engine()->voe()->codec()->SetRecPayloadType(
-          channel, voe_codec) == -1) {
-        LOG_RTCERR2(SetRecPayloadType, channel, ToString(voe_codec));
-        DeleteVoEChannel(channel);
-        return false;
-      }
+  // TODO(solenberg): Remove once "no codecs" is the default state of a stream.
+  for (webrtc::CodecInst voe_codec : webrtc::acm2::RentACodec::Database()) {
+    voe_codec.pltype = -1;
+    if (engine()->voe()->codec()->SetRecPayloadType(channel, voe_codec) == -1) {
+      LOG_RTCERR2(SetRecPayloadType, channel, ToString(voe_codec));
+      DeleteVoEChannel(channel);
+      return false;
     }
   }
 
   // Only enable those configured for this channel.
   for (const auto& codec : recv_codecs_) {
     webrtc::CodecInst voe_codec;
-    if (engine()->FindWebRtcCodec(codec, &voe_codec)) {
+    if (WebRtcVoiceEngine::ToCodecInst(codec, &voe_codec)) {
       voe_codec.pltype = codec.id;
       if (engine()->voe()->codec()->SetRecPayloadType(
           channel, voe_codec) == -1) {
@@ -2486,7 +2493,7 @@ bool WebRtcVoiceMediaChannel::SetSendBitrateInternal(int bps) {
     return true;
 
   webrtc::CodecInst codec = *send_codec_;
-  bool is_multi_rate = IsCodecMultiRate(codec);
+  bool is_multi_rate = WebRtcVoiceCodecs::IsCodecMultiRate(codec);
 
   if (is_multi_rate) {
     // If codec is multi-rate then just set the bitrate.
@@ -2635,7 +2642,7 @@ bool WebRtcVoiceMediaChannel::GetRedSendCodec(const AudioCodec& red_codec,
     if (codec.id == red_pt) {
       // If we find the right codec, that will be the codec we pass to
       // SetSendCodec, with the desired payload type.
-      if (engine()->FindWebRtcCodec(codec, send_codec)) {
+      if (WebRtcVoiceEngine::ToCodecInst(codec, send_codec)) {
         return true;
       } else {
         break;
@@ -2656,30 +2663,6 @@ bool WebRtcVoiceMediaChannel::SetPlayout(int channel, bool playout) {
   } else {
     LOG(LS_INFO) << "Stopping playout for channel #" << channel;
     engine()->voe()->base()->StopPlayout(channel);
-  }
-  return true;
-}
-
-bool WebRtcVoiceMediaChannel::SetRecvCodecsInternal(
-    const std::vector<AudioCodec>& new_codecs) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  for (const AudioCodec& codec : new_codecs) {
-    webrtc::CodecInst voe_codec;
-    if (engine()->FindWebRtcCodec(codec, &voe_codec)) {
-      LOG(LS_INFO) << ToString(codec);
-      voe_codec.pltype = codec.id;
-      for (const auto& ch : recv_streams_) {
-        if (engine()->voe()->codec()->SetRecPayloadType(
-                ch.second->channel(), voe_codec) == -1) {
-          LOG_RTCERR2(SetRecPayloadType, ch.second->channel(),
-                      ToString(voe_codec));
-          return false;
-        }
-      }
-    } else {
-      LOG(LS_WARNING) << "Unknown codec " << ToString(codec);
-      return false;
-    }
   }
   return true;
 }

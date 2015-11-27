@@ -41,6 +41,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/config.h"
+#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace cricket {
@@ -62,18 +63,6 @@ static const int kOpusBandwidthFb = 20000;
 
 #define WEBRTC_CHECK_CHANNEL(channel) \
   if (channels_.find(channel) == channels_.end()) return -1;
-
-#define WEBRTC_ASSERT_CHANNEL(channel) \
-  RTC_DCHECK(channels_.find(channel) != channels_.end());
-
-// Verify the header extension ID, if enabled, is within the bounds specified in
-// [RFC5285]: 1-14 inclusive.
-#define WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id) \
-  do { \
-    if (enable && (id < 1 || id > 14)) { \
-      return -1; \
-    } \
-  } while (0);
 
 class FakeAudioProcessing : public webrtc::AudioProcessing {
  public:
@@ -189,6 +178,7 @@ class FakeWebRtcVoiceEngine
           nack_max_packets(0),
           send_ssrc(0),
           associate_send_channel(-1),
+          recv_codecs(),
           neteq_capacity(-1),
           neteq_fast_accelerate(false) {
       memset(&send_codec, 0, sizeof(send_codec));
@@ -219,13 +209,10 @@ class FakeWebRtcVoiceEngine
     bool neteq_fast_accelerate;
   };
 
-  FakeWebRtcVoiceEngine(const cricket::AudioCodec* const* codecs,
-                        int num_codecs)
+  FakeWebRtcVoiceEngine()
       : inited_(false),
         last_channel_(-1),
         fail_create_channel_(false),
-        codecs_(codecs),
-        num_codecs_(num_codecs),
         num_set_send_codecs_(0),
         ec_enabled_(false),
         ec_metrics_enabled_(false),
@@ -247,12 +234,7 @@ class FakeWebRtcVoiceEngine
     memset(&agc_config_, 0, sizeof(agc_config_));
   }
   ~FakeWebRtcVoiceEngine() {
-    // Ought to have all been deleted by the WebRtcVoiceMediaChannel
-    // destructors, but just in case ...
-    for (std::map<int, Channel*>::const_iterator i = channels_.begin();
-         i != channels_.end(); ++i) {
-      delete i->second;
-    }
+    RTC_CHECK(channels_.empty());
   }
 
   bool ec_metrics_enabled() const { return ec_metrics_enabled_; }
@@ -291,7 +273,7 @@ class FakeWebRtcVoiceEngine
     return channels_[channel]->nack_max_packets;
   }
   const webrtc::PacketTime& GetLastRtpPacketTime(int channel) {
-    WEBRTC_ASSERT_CHANNEL(channel);
+    RTC_DCHECK(channels_.find(channel) != channels_.end());
     return channels_[channel]->last_rtp_packet_time;
   }
   int GetSendCNPayloadType(int channel, bool wideband) {
@@ -335,11 +317,8 @@ class FakeWebRtcVoiceEngine
       return -1;
     }
     Channel* ch = new Channel();
-    for (int i = 0; i < NumOfCodecs(); ++i) {
-      webrtc::CodecInst codec;
-      GetCodec(i, codec);
-      ch->recv_codecs.push_back(codec);
-    }
+    auto db = webrtc::acm2::RentACodec::Database();
+    ch->recv_codecs.assign(db.begin(), db.end());
     if (config.Get<webrtc::NetEqCapacityConfig>().enabled) {
       ch->neteq_capacity = config.Get<webrtc::NetEqCapacityConfig>().capacity;
     }
@@ -439,22 +418,8 @@ class FakeWebRtcVoiceEngine
   webrtc::RtcEventLog* GetEventLog() { return nullptr; }
 
   // webrtc::VoECodec
-  WEBRTC_FUNC(NumOfCodecs, ()) {
-    return num_codecs_;
-  }
-  WEBRTC_FUNC(GetCodec, (int index, webrtc::CodecInst& codec)) {
-    if (index < 0 || index >= NumOfCodecs()) {
-      return -1;
-    }
-    const cricket::AudioCodec& c(*codecs_[index]);
-    codec.pltype = c.id;
-    rtc::strcpyn(codec.plname, sizeof(codec.plname), c.name.c_str());
-    codec.plfreq = c.clockrate;
-    codec.pacsize = 0;
-    codec.channels = c.channels;
-    codec.rate = c.bitrate;
-    return 0;
-  }
+  WEBRTC_STUB(NumOfCodecs, ());
+  WEBRTC_STUB(GetCodec, (int index, webrtc::CodecInst& codec));
   WEBRTC_FUNC(SetSendCodec, (int channel, const webrtc::CodecInst& codec)) {
     WEBRTC_CHECK_CHANNEL(channel);
     // To match the behavior of the real implementation.
@@ -492,16 +457,17 @@ class FakeWebRtcVoiceEngine
       }
     }
     // Otherwise try to find this codec and update its payload type.
+    int result = -1;  // not found
     for (std::vector<webrtc::CodecInst>::iterator it = ch->recv_codecs.begin();
          it != ch->recv_codecs.end(); ++it) {
       if (strcmp(it->plname, codec.plname) == 0 &&
-          it->plfreq == codec.plfreq) {
+          it->plfreq == codec.plfreq &&
+          it->channels == codec.channels) {
         it->pltype = codec.pltype;
-        it->channels = codec.channels;
-        return 0;
+        result = 0;
       }
     }
-    return -1;  // not found
+    return result;
   }
   WEBRTC_FUNC(SetSendCNPayloadType, (int channel, int type,
                                      webrtc::PayloadFrequencies frequency)) {
@@ -932,8 +898,6 @@ class FakeWebRtcVoiceEngine
   int last_channel_;
   std::map<int, Channel*> channels_;
   bool fail_create_channel_;
-  const cricket::AudioCodec* const* codecs_;
-  int num_codecs_;
   int num_set_send_codecs_;  // how many times we call SetSendCodec().
   bool ec_enabled_;
   bool ec_metrics_enabled_;
@@ -956,8 +920,6 @@ class FakeWebRtcVoiceEngine
   DtmfInfo dtmf_info_;
   FakeAudioProcessing audio_processing_;
 };
-
-#undef WEBRTC_CHECK_HEADER_EXTENSION_ID
 
 }  // namespace cricket
 
