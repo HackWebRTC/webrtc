@@ -306,6 +306,16 @@ int AudioProcessingImpl::Initialize(const ProcessingConfig& processing_config) {
   return InitializeLocked(processing_config);
 }
 
+int AudioProcessingImpl::MaybeInitializeLockedRender(
+    const ProcessingConfig& processing_config) {
+  return MaybeInitializeLocked(processing_config);
+}
+
+int AudioProcessingImpl::MaybeInitializeLockedCapture(
+    const ProcessingConfig& processing_config) {
+  return MaybeInitializeLocked(processing_config);
+}
+
 // Calls InitializeLocked() if any of the audio parameters have changed from
 // their current values.
 int AudioProcessingImpl::MaybeInitializeLocked(
@@ -379,6 +389,7 @@ int AudioProcessingImpl::InitializeLocked() {
 }
 
 int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   for (const auto& stream : config.streams) {
     if (stream.num_channels() < 0) {
       return kBadNumberChannelsError;
@@ -453,7 +464,6 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
   return InitializeLocked();
 }
 
-
 void AudioProcessingImpl::SetExtraOptions(const Config& config) {
   CriticalSectionScoped crit_scoped(crit_);
   for (auto item : component_list_) {
@@ -468,14 +478,18 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
 
 
 int AudioProcessingImpl::proc_sample_rate_hz() const {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   return fwd_proc_format_.sample_rate_hz();
 }
 
 int AudioProcessingImpl::proc_split_sample_rate_hz() const {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
+
   return split_rate_;
 }
 
 int AudioProcessingImpl::num_reverse_channels() const {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   return rev_proc_format_.num_channels();
 }
 
@@ -484,6 +498,7 @@ int AudioProcessingImpl::num_input_channels() const {
 }
 
 int AudioProcessingImpl::num_output_channels() const {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   return shared_state_.api_format_.output_stream().num_channels();
 }
 
@@ -537,7 +552,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   processing_config.input_stream() = input_config;
   processing_config.output_stream() = output_config;
 
-  RETURN_ON_ERR(MaybeInitializeLocked(processing_config));
+  RETURN_ON_ERR(MaybeInitializeLockedCapture(processing_config));
   assert(processing_config.input_stream().num_frames() ==
          shared_state_.api_format_.input_stream().num_frames());
 
@@ -605,7 +620,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   processing_config.output_stream().set_sample_rate_hz(frame->sample_rate_hz_);
   processing_config.output_stream().set_num_channels(frame->num_channels_);
 
-  RETURN_ON_ERR(MaybeInitializeLocked(processing_config));
+  RETURN_ON_ERR(MaybeInitializeLockedCapture(processing_config));
   if (frame->samples_per_channel_ !=
       shared_state_.api_format_.input_stream().num_frames()) {
     return kBadDataLengthError;
@@ -739,7 +754,7 @@ int AudioProcessingImpl::ProcessReverseStream(
   if (is_rev_processed()) {
     render_audio_->CopyTo(shared_state_.api_format_.reverse_output_stream(),
                           dest);
-  } else if (rev_conversion_needed()) {
+  } else if (render_check_rev_conversion_needed()) {
     render_converter_->Convert(src, reverse_input_config.num_samples(), dest,
                                reverse_output_config.num_samples());
   } else {
@@ -767,7 +782,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(
   processing_config.reverse_input_stream() = reverse_input_config;
   processing_config.reverse_output_stream() = reverse_output_config;
 
-  RETURN_ON_ERR(MaybeInitializeLocked(processing_config));
+  RETURN_ON_ERR(MaybeInitializeLockedRender(processing_config));
   assert(reverse_input_config.num_frames() ==
          shared_state_.api_format_.reverse_input_stream().num_frames());
 
@@ -832,7 +847,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   processing_config.reverse_output_stream().set_num_channels(
       frame->num_channels_);
 
-  RETURN_ON_ERR(MaybeInitializeLocked(processing_config));
+  RETURN_ON_ERR(MaybeInitializeLockedRender(processing_config));
   if (frame->samples_per_channel_ !=
       shared_state_.api_format_.reverse_input_stream().num_frames()) {
     return kBadDataLengthError;
@@ -1086,12 +1101,18 @@ bool AudioProcessingImpl::is_rev_processed() const {
   return intelligibility_enabled_ && intelligibility_enhancer_->active();
 }
 
+bool AudioProcessingImpl::render_check_rev_conversion_needed() const {
+  return rev_conversion_needed();
+}
+
 bool AudioProcessingImpl::rev_conversion_needed() const {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   return (shared_state_.api_format_.reverse_input_stream() !=
           shared_state_.api_format_.reverse_output_stream());
 }
 
 void AudioProcessingImpl::InitializeExperimentalAgc() {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   if (use_new_agc_) {
     if (!agc_manager_.get()) {
       agc_manager_.reset(new AgcManagerDirect(gain_control_,
@@ -1104,6 +1125,7 @@ void AudioProcessingImpl::InitializeExperimentalAgc() {
 }
 
 void AudioProcessingImpl::InitializeTransient() {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   if (transient_suppressor_enabled_) {
     if (!transient_suppressor_.get()) {
       transient_suppressor_.reset(new TransientSuppressor());
@@ -1115,6 +1137,7 @@ void AudioProcessingImpl::InitializeTransient() {
 }
 
 void AudioProcessingImpl::InitializeBeamformer() {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   if (beamformer_enabled_) {
     if (!beamformer_) {
       beamformer_.reset(
@@ -1125,6 +1148,7 @@ void AudioProcessingImpl::InitializeBeamformer() {
 }
 
 void AudioProcessingImpl::InitializeIntelligibility() {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   if (intelligibility_enabled_) {
     IntelligibilityEnhancer::Config config;
     config.sample_rate_hz = split_rate_;
@@ -1227,6 +1251,7 @@ int AudioProcessingImpl::WriteMessageToDebugFile() {
 }
 
 int AudioProcessingImpl::WriteInitMessage() {
+  // TODO(peah): Refactor to be allowed to verify using thread annotations.
   event_msg_->set_type(audioproc::Event::INIT);
   audioproc::Init* msg = event_msg_->mutable_init();
   msg->set_sample_rate(

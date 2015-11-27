@@ -122,6 +122,10 @@ class AudioProcessingImpl : public AudioProcessing {
  private:
   int InitializeLocked(const ProcessingConfig& config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  int MaybeInitializeLockedRender(const ProcessingConfig& config)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  int MaybeInitializeLockedCapture(const ProcessingConfig& config)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
   int MaybeInitializeLocked(const ProcessingConfig& config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
   // TODO(ekm): Remove once all clients updated to new interface.
@@ -137,6 +141,8 @@ class AudioProcessingImpl : public AudioProcessing {
   bool analysis_needed(bool is_data_processed) const;
   bool is_rev_processed() const;
   bool rev_conversion_needed() const;
+  // TODO(peah): Add EXCLUSIVE_LOCKS_REQUIRED for the method below.
+  bool render_check_rev_conversion_needed() const;
   void InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void InitializeBeamformer() EXCLUSIVE_LOCKS_REQUIRED(crit_);

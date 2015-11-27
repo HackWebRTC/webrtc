@@ -77,6 +77,7 @@ class EchoCancellationImpl : public EchoCancellation,
 
   const AudioProcessing* apm_;
   CriticalSectionWrapper* crit_;
+
   bool drift_compensation_enabled_;
   bool metrics_enabled_;
   SuppressionLevel suppression_level_;
