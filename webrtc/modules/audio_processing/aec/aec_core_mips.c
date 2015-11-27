@@ -322,24 +322,24 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
 
 void WebRtcAec_FilterFar_mips(
     int num_partitions,
-    int xfBufBlockPos,
-    float xfBuf[2][kExtendedNumPartitions * PART_LEN1],
-    float wfBuf[2][kExtendedNumPartitions * PART_LEN1],
-    float yf[2][PART_LEN1]) {
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float y_fft[2][PART_LEN1]) {
   int i;
   for (i = 0; i < num_partitions; i++) {
-    int xPos = (i + xfBufBlockPos) * PART_LEN1;
+    int xPos = (i + x_fft_buf_block_pos) * PART_LEN1;
     int pos = i * PART_LEN1;
     // Check for wrap
-    if (i + xfBufBlockPos >=  num_partitions) {
+    if (i + x_fft_buf_block_pos >=  num_partitions) {
       xPos -=  num_partitions * (PART_LEN1);
     }
-    float* yf0 = yf[0];
-    float* yf1 = yf[1];
-    float* aRe = xfBuf[0] + xPos;
-    float* aIm = xfBuf[1] + xPos;
-    float* bRe = wfBuf[0] + pos;
-    float* bIm = wfBuf[1] + pos;
+    float* yf0 = y_fft[0];
+    float* yf1 = y_fft[1];
+    float* aRe = x_fft_buf[0] + xPos;
+    float* aIm = x_fft_buf[1] + xPos;
+    float* bRe = h_fft_buf[0] + pos;
+    float* bIm = h_fft_buf[1] + pos;
     float f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13;
     int len = PART_LEN1 >> 1;
 
@@ -437,23 +437,27 @@ void WebRtcAec_FilterFar_mips(
   }
 }
 
-void WebRtcAec_FilterAdaptation_mips(AecCore* aec,
-                                     float* fft,
-                                     float ef[2][PART_LEN1]) {
+void WebRtcAec_FilterAdaptation_mips(
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float e_fft[2][PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]) {
+  float fft[PART_LEN2];
   int i;
-  for (i = 0; i < aec->num_partitions; i++) {
-    int xPos = (i + aec->xfBufBlockPos)*(PART_LEN1);
+  for (i = 0; i < num_partitions; i++) {
+    int xPos = (i + x_fft_buf_block_pos)*(PART_LEN1);
     int pos;
     // Check for wrap
-    if (i + aec->xfBufBlockPos >= aec->num_partitions) {
-      xPos -= aec->num_partitions * PART_LEN1;
+    if (i + x_fft_buf_block_pos >= num_partitions) {
+      xPos -= num_partitions * PART_LEN1;
     }
 
     pos = i * PART_LEN1;
-    float* aRe = aec->xfBuf[0] + xPos;
-    float* aIm = aec->xfBuf[1] + xPos;
-    float* bRe = ef[0];
-    float* bIm = ef[1];
+    float* aRe = x_fft_buf[0] + xPos;
+    float* aIm = x_fft_buf[1] + xPos;
+    float* bRe = e_fft[0];
+    float* bIm = e_fft[1];
     float* fft_tmp;
 
     float f0, f1, f2, f3, f4, f5, f6 ,f7, f8, f9, f10, f11, f12;
@@ -578,8 +582,8 @@ void WebRtcAec_FilterAdaptation_mips(AecCore* aec,
       );
     }
     aec_rdft_forward_128(fft);
-    aRe = aec->wfBuf[0] + pos;
-    aIm = aec->wfBuf[1] + pos;
+    aRe = h_fft_buf[0] + pos;
+    aIm = h_fft_buf[1] + pos;
     __asm __volatile (
       ".set     push                                    \n\t"
       ".set     noreorder                               \n\t"
@@ -707,7 +711,7 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
 void WebRtcAec_ScaleErrorSignal_mips(int extended_filter_enabled,
                                      float normal_mu,
                                      float normal_error_threshold,
-                                     float *x_pow,
+                                     float x_pow[PART_LEN1],
                                      float ef[2][PART_LEN1]) {
   const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
   const float error_threshold = extended_filter_enabled

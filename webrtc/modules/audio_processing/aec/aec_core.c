@@ -151,30 +151,31 @@ static int CmpFloat(const void* a, const void* b) {
   return (*da > *db) - (*da < *db);
 }
 
-static void FilterFar(int num_partitions,
-                      int x_fft_buffer_block_pos,
-                      float x_fft_buffer[2][kExtendedNumPartitions * PART_LEN1],
-                      float h_fft_buffer[2][kExtendedNumPartitions * PART_LEN1],
-                      float y_fft[2][PART_LEN1]) {
+static void FilterFar(
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float y_fft[2][PART_LEN1]) {
   int i;
   for (i = 0; i < num_partitions; i++) {
     int j;
-    int x_pos = (i + x_fft_buffer_block_pos) * PART_LEN1;
+    int xPos = (i + x_fft_buf_block_pos) * PART_LEN1;
     int pos = i * PART_LEN1;
-    // Check for wrapped buffer.
-    if (i + x_fft_buffer_block_pos >= num_partitions) {
-      x_pos -= num_partitions * (PART_LEN1);
+    // Check for wrap
+    if (i + x_fft_buf_block_pos >= num_partitions) {
+      xPos -= num_partitions * (PART_LEN1);
     }
 
     for (j = 0; j < PART_LEN1; j++) {
-      y_fft[0][j] += MulRe(x_fft_buffer[0][x_pos + j],
-                        x_fft_buffer[1][x_pos + j],
-                        h_fft_buffer[0][pos + j],
-                        h_fft_buffer[1][pos + j]);
-      y_fft[1][j] += MulIm(x_fft_buffer[0][x_pos + j],
-                        x_fft_buffer[1][x_pos + j],
-                        h_fft_buffer[0][pos + j],
-                        h_fft_buffer[1][pos + j]);
+      y_fft[0][j] += MulRe(x_fft_buf[0][xPos + j],
+                           x_fft_buf[1][xPos + j],
+                           h_fft_buf[0][pos + j],
+                           h_fft_buf[1][pos + j]);
+      y_fft[1][j] += MulIm(x_fft_buf[0][xPos + j],
+                           x_fft_buf[1][xPos + j],
+                           h_fft_buf[0][pos + j],
+                           h_fft_buf[1][pos + j]);
     }
   }
 }
@@ -182,7 +183,7 @@ static void FilterFar(int num_partitions,
 static void ScaleErrorSignal(int extended_filter_enabled,
                              float normal_mu,
                              float normal_error_threshold,
-                             float *x_pow,
+                             float x_pow[PART_LEN1],
                              float ef[2][PART_LEN1]) {
   const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
   const float error_threshold = extended_filter_enabled
@@ -207,59 +208,40 @@ static void ScaleErrorSignal(int extended_filter_enabled,
   }
 }
 
-// Time-unconstrined filter adaptation.
-// TODO(andrew): consider for a low-complexity mode.
-// static void FilterAdaptationUnconstrained(AecCore* aec, float *fft,
-//                                          float ef[2][PART_LEN1]) {
-//  int i, j;
-//  for (i = 0; i < aec->num_partitions; i++) {
-//    int xPos = (i + aec->xfBufBlockPos)*(PART_LEN1);
-//    int pos;
-//    // Check for wrap
-//    if (i + aec->xfBufBlockPos >= aec->num_partitions) {
-//      xPos -= aec->num_partitions * PART_LEN1;
-//    }
-//
-//    pos = i * PART_LEN1;
-//
-//    for (j = 0; j < PART_LEN1; j++) {
-//      aec->wfBuf[0][pos + j] += MulRe(aec->xfBuf[0][xPos + j],
-//                                      -aec->xfBuf[1][xPos + j],
-//                                      ef[0][j], ef[1][j]);
-//      aec->wfBuf[1][pos + j] += MulIm(aec->xfBuf[0][xPos + j],
-//                                      -aec->xfBuf[1][xPos + j],
-//                                      ef[0][j], ef[1][j]);
-//    }
-//  }
-//}
 
-static void FilterAdaptation(AecCore* aec, float* fft, float ef[2][PART_LEN1]) {
+static void FilterAdaptation(
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float e_fft[2][PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]) {
   int i, j;
-  for (i = 0; i < aec->num_partitions; i++) {
-    int xPos = (i + aec->xfBufBlockPos) * (PART_LEN1);
+  float fft[PART_LEN2];
+  for (i = 0; i < num_partitions; i++) {
+    int xPos = (i + x_fft_buf_block_pos) * (PART_LEN1);
     int pos;
     // Check for wrap
-    if (i + aec->xfBufBlockPos >= aec->num_partitions) {
-      xPos -= aec->num_partitions * PART_LEN1;
+    if (i + x_fft_buf_block_pos >= num_partitions) {
+      xPos -= num_partitions * PART_LEN1;
     }
 
     pos = i * PART_LEN1;
 
     for (j = 0; j < PART_LEN; j++) {
 
-      fft[2 * j] = MulRe(aec->xfBuf[0][xPos + j],
-                         -aec->xfBuf[1][xPos + j],
-                         ef[0][j],
-                         ef[1][j]);
-      fft[2 * j + 1] = MulIm(aec->xfBuf[0][xPos + j],
-                             -aec->xfBuf[1][xPos + j],
-                             ef[0][j],
-                             ef[1][j]);
+      fft[2 * j] = MulRe(x_fft_buf[0][xPos + j],
+                         -x_fft_buf[1][xPos + j],
+                         e_fft[0][j],
+                         e_fft[1][j]);
+      fft[2 * j + 1] = MulIm(x_fft_buf[0][xPos + j],
+                             -x_fft_buf[1][xPos + j],
+                             e_fft[0][j],
+                             e_fft[1][j]);
     }
-    fft[1] = MulRe(aec->xfBuf[0][xPos + PART_LEN],
-                   -aec->xfBuf[1][xPos + PART_LEN],
-                   ef[0][PART_LEN],
-                   ef[1][PART_LEN]);
+    fft[1] = MulRe(x_fft_buf[0][xPos + PART_LEN],
+                   -x_fft_buf[1][xPos + PART_LEN],
+                   e_fft[0][PART_LEN],
+                   e_fft[1][PART_LEN]);
 
     aec_rdft_inverse_128(fft);
     memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
@@ -273,12 +255,12 @@ static void FilterAdaptation(AecCore* aec, float* fft, float ef[2][PART_LEN1]) {
     }
     aec_rdft_forward_128(fft);
 
-    aec->wfBuf[0][pos] += fft[0];
-    aec->wfBuf[0][pos + PART_LEN] += fft[1];
+    h_fft_buf[0][pos] += fft[0];
+    h_fft_buf[0][pos + PART_LEN] += fft[1];
 
     for (j = 1; j < PART_LEN; j++) {
-      aec->wfBuf[0][pos + j] += fft[2 * j];
-      aec->wfBuf[1][pos + j] += fft[2 * j + 1];
+      h_fft_buf[0][pos + j] += fft[2 * j];
+      h_fft_buf[1][pos + j] += fft[2 * j + 1];
     }
   }
 }
@@ -845,34 +827,26 @@ static void UpdateDelayMetrics(AecCore* self) {
   return;
 }
 
-static void FrequencyToTime(float freq_data[2][PART_LEN1],
-                            float time_data[PART_LEN2]) {
+static void InverseFft(float freq_data[2][PART_LEN1],
+                       float time_data[PART_LEN2]) {
   int i;
-  time_data[0] = freq_data[0][0];
-  time_data[1] = freq_data[0][PART_LEN];
+  const float scale = 1.0f / PART_LEN2;
+  time_data[0] = freq_data[0][0] * scale;
+  time_data[1] = freq_data[0][PART_LEN] * scale;
   for (i = 1; i < PART_LEN; i++) {
-    time_data[2 * i] = freq_data[0][i];
-    time_data[2 * i + 1] = freq_data[1][i];
+    time_data[2 * i] = freq_data[0][i] * scale;
+    time_data[2 * i + 1] = freq_data[1][i] * scale;
   }
   aec_rdft_inverse_128(time_data);
 }
 
 
-static void TimeToFrequency(float time_data[PART_LEN2],
-                            float freq_data[2][PART_LEN1],
-                            int window) {
-  int i = 0;
-
-  // TODO(bjornv): Should we have a different function/wrapper for windowed FFT?
-  if (window) {
-    for (i = 0; i < PART_LEN; i++) {
-      time_data[i] *= WebRtcAec_sqrtHanning[i];
-      time_data[PART_LEN + i] *= WebRtcAec_sqrtHanning[PART_LEN - i];
-    }
-  }
-
+static void Fft(float time_data[PART_LEN2],
+                float freq_data[2][PART_LEN1]) {
+  int i;
   aec_rdft_forward_128(time_data);
-  // Reorder.
+
+  // Reorder fft output data.
   freq_data[1][0] = 0;
   freq_data[1][PART_LEN] = 0;
   freq_data[0][0] = time_data[0];
@@ -963,61 +937,76 @@ static int SignalBasedDelayCorrection(AecCore* self) {
   return delay_correction;
 }
 
-static void EchoSubtraction(AecCore* aec,
-                            float* nearend_ptr) {
-  float yf[2][PART_LEN1];
-  float fft[PART_LEN2];
-  float y[PART_LEN];
+static void EchoSubtraction(
+    AecCore* aec,
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    int metrics_mode,
+    int extended_filter_enabled,
+    float normal_mu,
+    float normal_error_threshold,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float* const y,
+    float x_pow[PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    PowerLevel* linout_level,
+    float echo_subtractor_output[PART_LEN]) {
+  float s_fft[2][PART_LEN1];
+  float e_extended[PART_LEN2];
+  float s_extended[PART_LEN2];
+  float *s;
   float e[PART_LEN];
-  float ef[2][PART_LEN1];
-  float scale;
+  float e_fft[2][PART_LEN1];
   int i;
-  memset(yf, 0, sizeof(yf));
+  memset(s_fft, 0, sizeof(s_fft));
 
-  // Produce frequency domain echo estimate.
-  WebRtcAec_FilterFar(aec->num_partitions,
-                      aec->xfBufBlockPos,
-                      aec->xfBuf,
-                      aec->wfBuf,
-                      yf);
+  // Produce echo estimate s_fft.
+  WebRtcAec_FilterFar(num_partitions,
+                      x_fft_buf_block_pos,
+                      x_fft_buf,
+                      h_fft_buf,
+                      s_fft);
 
-  // Inverse fft to obtain echo estimate and error.
-  FrequencyToTime(yf, fft);
-
-  // Extract the output signal and compute the time-domain error.
-  scale = 2.0f / PART_LEN2;
+  // Compute the time-domain echo estimate s.
+  InverseFft(s_fft, s_extended);
+  s = &s_extended[PART_LEN];
   for (i = 0; i < PART_LEN; ++i) {
-    y[i] = fft[PART_LEN + i] * scale;  // fft scaling.
-    e[i] = nearend_ptr[i] - y[i];
+    s[i] *= 2.0f;
   }
 
-  // Error fft
-  memcpy(aec->eBuf + PART_LEN, e, sizeof(float) * PART_LEN);
-  memset(fft, 0, sizeof(float) * PART_LEN);
-  memcpy(fft + PART_LEN, e, sizeof(float) * PART_LEN);
-  TimeToFrequency(fft, ef, 0);
+  // Compute the time-domain echo prediction error.
+  for (i = 0; i < PART_LEN; ++i) {
+    e[i] = y[i] - s[i];
+  }
+
+  // Compute the frequency domain echo prediction error.
+  memset(e_extended, 0, sizeof(float) * PART_LEN);
+  memcpy(e_extended + PART_LEN, e, sizeof(float) * PART_LEN);
+  Fft(e_extended, e_fft);
 
   RTC_AEC_DEBUG_RAW_WRITE(aec->e_fft_file,
-                          &ef[0][0],
-                          sizeof(ef[0][0]) * PART_LEN1 * 2);
+                          &e_fft[0][0],
+                          sizeof(e_fft[0][0]) * PART_LEN1 * 2);
 
-  if (aec->metricsMode == 1) {
+  if (metrics_mode == 1) {
     // Note that the first PART_LEN samples in fft (before transformation) are
     // zero. Hence, the scaling by two in UpdateLevel() should not be
     // performed. That scaling is taken care of in UpdateMetrics() instead.
-    UpdateLevel(&aec->linoutlevel, ef);
+    UpdateLevel(linout_level, e_fft);
   }
 
   // Scale error signal inversely with far power.
-  WebRtcAec_ScaleErrorSignal(aec->extended_filter_enabled,
-                             aec->normal_mu,
-                             aec->normal_error_threshold,
-                             aec->xPow,
-                             ef);
-  WebRtcAec_FilterAdaptation(aec, fft, ef);
-
-
-  RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, e, PART_LEN);
+  WebRtcAec_ScaleErrorSignal(extended_filter_enabled,
+                             normal_mu,
+                             normal_error_threshold,
+                             x_pow,
+                             e_fft);
+  WebRtcAec_FilterAdaptation(num_partitions,
+                             x_fft_buf_block_pos,
+                             x_fft_buf,
+                             e_fft,
+                             h_fft_buf);
+  memcpy(echo_subtractor_output, e, sizeof(float) * PART_LEN);
 }
 
 
@@ -1274,6 +1263,7 @@ static void ProcessBlock(AecCore* aec) {
   const float gInitNoise[2] = {0.999f, 0.001f};
 
   float nearend[PART_LEN];
+  float echo_subtractor_output[PART_LEN];
   float* nearend_ptr = NULL;
   float output[PART_LEN];
   float outputH[NUM_HIGH_BANDS_MAX][PART_LEN];
@@ -1313,7 +1303,7 @@ static void ProcessBlock(AecCore* aec) {
 
   // Near fft
   memcpy(fft, aec->dBuf, sizeof(float) * PART_LEN2);
-  TimeToFrequency(fft, df, 0);
+  Fft(fft, df);
 
   // Power smoothing
   for (i = 0; i < PART_LEN1; i++) {
@@ -1392,9 +1382,26 @@ static void ProcessBlock(AecCore* aec) {
          sizeof(float) * PART_LEN1);
 
   // Perform echo subtraction.
-  EchoSubtraction(aec, nearend_ptr);
+  EchoSubtraction(aec,
+                  aec->num_partitions,
+                  aec->xfBufBlockPos,
+                  aec->metricsMode,
+                  aec->extended_filter_enabled,
+                  aec->normal_mu,
+                  aec->normal_error_threshold,
+                  aec->xfBuf,
+                  nearend_ptr,
+                  aec->xPow,
+                  aec->wfBuf,
+                  &aec->linoutlevel,
+                  echo_subtractor_output);
+
+  RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, echo_subtractor_output, PART_LEN);
 
   // Perform echo suppression.
+  memcpy(aec->eBuf + PART_LEN,
+         echo_subtractor_output,
+         sizeof(float) * PART_LEN);
   EchoSuppression(aec, output, outputH_ptr);
 
   if (aec->metricsMode == 1) {
@@ -1737,12 +1744,12 @@ void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend) {
   }
   // Convert far-end partition to the frequency domain without windowing.
   memcpy(fft, farend, sizeof(float) * PART_LEN2);
-  TimeToFrequency(fft, xf, 0);
+  Fft(fft, xf);
   WebRtc_WriteBuffer(aec->far_buf, &xf[0][0], 1);
 
   // Convert far-end partition to the frequency domain with windowing.
-  memcpy(fft, farend, sizeof(float) * PART_LEN2);
-  TimeToFrequency(fft, xf, 1);
+  WindowData(fft, farend);
+  Fft(fft, xf);
   WebRtc_WriteBuffer(aec->far_buf_windowed, &xf[0][0], 1);
 }
 

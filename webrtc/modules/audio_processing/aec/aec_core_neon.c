@@ -34,48 +34,49 @@ __inline static float MulIm(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bIm + aIm * bRe;
 }
 
-static void FilterFarNEON(int num_partitions,
-                          int xfBufBlockPos,
-                          float xfBuf[2][kExtendedNumPartitions * PART_LEN1],
-                          float wfBuf[2][kExtendedNumPartitions * PART_LEN1],
-                          float yf[2][PART_LEN1]) {
+static void FilterFarNEON(
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float y_fft[2][PART_LEN1]) {
   int i;
   for (i = 0; i < num_partitions; i++) {
     int j;
-    int xPos = (i + xfBufBlockPos) * PART_LEN1;
+    int xPos = (i + x_fft_buf_block_pos) * PART_LEN1;
     int pos = i * PART_LEN1;
     // Check for wrap
-    if (i + xfBufBlockPos >= num_partitions) {
+    if (i + x_fft_buf_block_pos >= num_partitions) {
       xPos -= num_partitions * PART_LEN1;
     }
 
     // vectorized code (four at once)
     for (j = 0; j + 3 < PART_LEN1; j += 4) {
-      const float32x4_t xfBuf_re = vld1q_f32(&xfBuf[0][xPos + j]);
-      const float32x4_t xfBuf_im = vld1q_f32(&xfBuf[1][xPos + j]);
-      const float32x4_t wfBuf_re = vld1q_f32(&wfBuf[0][pos + j]);
-      const float32x4_t wfBuf_im = vld1q_f32(&wfBuf[1][pos + j]);
-      const float32x4_t yf_re = vld1q_f32(&yf[0][j]);
-      const float32x4_t yf_im = vld1q_f32(&yf[1][j]);
-      const float32x4_t a = vmulq_f32(xfBuf_re, wfBuf_re);
-      const float32x4_t e = vmlsq_f32(a, xfBuf_im, wfBuf_im);
-      const float32x4_t c = vmulq_f32(xfBuf_re, wfBuf_im);
-      const float32x4_t f = vmlaq_f32(c, xfBuf_im, wfBuf_re);
-      const float32x4_t g = vaddq_f32(yf_re, e);
-      const float32x4_t h = vaddq_f32(yf_im, f);
-      vst1q_f32(&yf[0][j], g);
-      vst1q_f32(&yf[1][j], h);
+      const float32x4_t x_fft_buf_re = vld1q_f32(&x_fft_buf[0][xPos + j]);
+      const float32x4_t x_fft_buf_im = vld1q_f32(&x_fft_buf[1][xPos + j]);
+      const float32x4_t h_fft_buf_re = vld1q_f32(&h_fft_buf[0][pos + j]);
+      const float32x4_t h_fft_buf_im = vld1q_f32(&h_fft_buf[1][pos + j]);
+      const float32x4_t y_fft_re = vld1q_f32(&y_fft[0][j]);
+      const float32x4_t y_fft_im = vld1q_f32(&y_fft[1][j]);
+      const float32x4_t a = vmulq_f32(x_fft_buf_re, h_fft_buf_re);
+      const float32x4_t e = vmlsq_f32(a, x_fft_buf_im, h_fft_buf_im);
+      const float32x4_t c = vmulq_f32(x_fft_buf_re, h_fft_buf_im);
+      const float32x4_t f = vmlaq_f32(c, x_fft_buf_im, h_fft_buf_re);
+      const float32x4_t g = vaddq_f32(y_fft_re, e);
+      const float32x4_t h = vaddq_f32(y_fft_im, f);
+      vst1q_f32(&y_fft[0][j], g);
+      vst1q_f32(&y_fft[1][j], h);
     }
     // scalar code for the remaining items.
     for (; j < PART_LEN1; j++) {
-      yf[0][j] += MulRe(xfBuf[0][xPos + j],
-                        xfBuf[1][xPos + j],
-                        wfBuf[0][pos + j],
-                        wfBuf[1][pos + j]);
-      yf[1][j] += MulIm(xfBuf[0][xPos + j],
-                        xfBuf[1][xPos + j],
-                        wfBuf[0][pos + j],
-                        wfBuf[1][pos + j]);
+      y_fft[0][j] += MulRe(x_fft_buf[0][xPos + j],
+                           x_fft_buf[1][xPos + j],
+                           h_fft_buf[0][pos + j],
+                           h_fft_buf[1][pos + j]);
+      y_fft[1][j] += MulIm(x_fft_buf[0][xPos + j],
+                           x_fft_buf[1][xPos + j],
+                           h_fft_buf[0][pos + j],
+                           h_fft_buf[1][pos + j]);
     }
   }
 }
@@ -128,7 +129,7 @@ static float32x4_t vsqrtq_f32(float32x4_t s) {
 static void ScaleErrorSignalNEON(int extended_filter_enabled,
                                  float normal_mu,
                                  float normal_error_threshold,
-                                 float *x_pow,
+                                 float x_pow[PART_LEN1],
                                  float ef[2][PART_LEN1]) {
   const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
   const float error_threshold = extended_filter_enabled ?
@@ -185,34 +186,37 @@ static void ScaleErrorSignalNEON(int extended_filter_enabled,
   }
 }
 
-static void FilterAdaptationNEON(AecCore* aec,
-                                 float* fft,
-                                 float ef[2][PART_LEN1]) {
+static void FilterAdaptationNEON(
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float e_fft[2][PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]) {
+  float fft[PART_LEN2];
   int i;
-  const int num_partitions = aec->num_partitions;
   for (i = 0; i < num_partitions; i++) {
-    int xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
+    int xPos = (i + x_fft_buf_block_pos) * PART_LEN1;
     int pos = i * PART_LEN1;
     int j;
     // Check for wrap
-    if (i + aec->xfBufBlockPos >= num_partitions) {
+    if (i + x_fft_buf_block_pos >= num_partitions) {
       xPos -= num_partitions * PART_LEN1;
     }
 
     // Process the whole array...
     for (j = 0; j < PART_LEN; j += 4) {
-      // Load xfBuf and ef.
-      const float32x4_t xfBuf_re = vld1q_f32(&aec->xfBuf[0][xPos + j]);
-      const float32x4_t xfBuf_im = vld1q_f32(&aec->xfBuf[1][xPos + j]);
-      const float32x4_t ef_re = vld1q_f32(&ef[0][j]);
-      const float32x4_t ef_im = vld1q_f32(&ef[1][j]);
-      // Calculate the product of conjugate(xfBuf) by ef.
+      // Load x_fft_buf and e_fft.
+      const float32x4_t x_fft_buf_re = vld1q_f32(&x_fft_buf[0][xPos + j]);
+      const float32x4_t x_fft_buf_im = vld1q_f32(&x_fft_buf[1][xPos + j]);
+      const float32x4_t e_fft_re = vld1q_f32(&e_fft[0][j]);
+      const float32x4_t e_fft_im = vld1q_f32(&e_fft[1][j]);
+      // Calculate the product of conjugate(x_fft_buf) by e_fft.
       //   re(conjugate(a) * b) = aRe * bRe + aIm * bIm
       //   im(conjugate(a) * b)=  aRe * bIm - aIm * bRe
-      const float32x4_t a = vmulq_f32(xfBuf_re, ef_re);
-      const float32x4_t e = vmlaq_f32(a, xfBuf_im, ef_im);
-      const float32x4_t c = vmulq_f32(xfBuf_re, ef_im);
-      const float32x4_t f = vmlsq_f32(c, xfBuf_im, ef_re);
+      const float32x4_t a = vmulq_f32(x_fft_buf_re, e_fft_re);
+      const float32x4_t e = vmlaq_f32(a, x_fft_buf_im, e_fft_im);
+      const float32x4_t c = vmulq_f32(x_fft_buf_re, e_fft_im);
+      const float32x4_t f = vmlsq_f32(c, x_fft_buf_im, e_fft_re);
       // Interleave real and imaginary parts.
       const float32x4x2_t g_n_h = vzipq_f32(e, f);
       // Store
@@ -220,10 +224,10 @@ static void FilterAdaptationNEON(AecCore* aec,
       vst1q_f32(&fft[2 * j + 4], g_n_h.val[1]);
     }
     // ... and fixup the first imaginary entry.
-    fft[1] = MulRe(aec->xfBuf[0][xPos + PART_LEN],
-                   -aec->xfBuf[1][xPos + PART_LEN],
-                   ef[0][PART_LEN],
-                   ef[1][PART_LEN]);
+    fft[1] = MulRe(x_fft_buf[0][xPos + PART_LEN],
+                   -x_fft_buf[1][xPos + PART_LEN],
+                   e_fft[0][PART_LEN],
+                   e_fft[1][PART_LEN]);
 
     aec_rdft_inverse_128(fft);
     memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
@@ -241,21 +245,21 @@ static void FilterAdaptationNEON(AecCore* aec,
     aec_rdft_forward_128(fft);
 
     {
-      const float wt1 = aec->wfBuf[1][pos];
-      aec->wfBuf[0][pos + PART_LEN] += fft[1];
+      const float wt1 = h_fft_buf[1][pos];
+      h_fft_buf[0][pos + PART_LEN] += fft[1];
       for (j = 0; j < PART_LEN; j += 4) {
-        float32x4_t wtBuf_re = vld1q_f32(&aec->wfBuf[0][pos + j]);
-        float32x4_t wtBuf_im = vld1q_f32(&aec->wfBuf[1][pos + j]);
+        float32x4_t wtBuf_re = vld1q_f32(&h_fft_buf[0][pos + j]);
+        float32x4_t wtBuf_im = vld1q_f32(&h_fft_buf[1][pos + j]);
         const float32x4_t fft0 = vld1q_f32(&fft[2 * j + 0]);
         const float32x4_t fft4 = vld1q_f32(&fft[2 * j + 4]);
         const float32x4x2_t fft_re_im = vuzpq_f32(fft0, fft4);
         wtBuf_re = vaddq_f32(wtBuf_re, fft_re_im.val[0]);
         wtBuf_im = vaddq_f32(wtBuf_im, fft_re_im.val[1]);
 
-        vst1q_f32(&aec->wfBuf[0][pos + j], wtBuf_re);
-        vst1q_f32(&aec->wfBuf[1][pos + j], wtBuf_im);
+        vst1q_f32(&h_fft_buf[0][pos + j], wtBuf_re);
+        vst1q_f32(&h_fft_buf[1][pos + j], wtBuf_im);
       }
-      aec->wfBuf[1][pos] = wt1;
+      h_fft_buf[1][pos] = wt1;
     }
   }
 }

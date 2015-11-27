@@ -172,20 +172,23 @@ struct AecCore {
 
 typedef void (*WebRtcAecFilterFar)(
     int num_partitions,
-    int x_fft_buffer_block_pos,
-    float x_fft_buffer[2][kExtendedNumPartitions * PART_LEN1],
-    float h_fft_buffer[2][kExtendedNumPartitions * PART_LEN1],
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
     float y_fft[2][PART_LEN1]);
 extern WebRtcAecFilterFar WebRtcAec_FilterFar;
 typedef void (*WebRtcAecScaleErrorSignal)(int extended_filter_enabled,
                                           float normal_mu,
                                           float normal_error_threshold,
-                                          float* xPow,
+                                          float x_pow[PART_LEN1],
                                           float ef[2][PART_LEN1]);
 extern WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
-typedef void (*WebRtcAecFilterAdaptation)(AecCore* aec,
-                                          float* fft,
-                                          float ef[2][PART_LEN1]);
+typedef void (*WebRtcAecFilterAdaptation)(
+    int num_partitions,
+    int x_fft_buf_block_pos,
+    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
+    float e_fft[2][PART_LEN1],
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]);
 extern WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
 typedef void (*WebRtcAecOverdriveAndSuppress)(AecCore* aec,
                                               float hNl[PART_LEN1],
