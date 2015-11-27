@@ -210,6 +210,7 @@ class BitrateEstimatorTest : public test::CallTest {
             test_->send_config_.encoder_settings.payload_type;
         decoder.payload_name =
             test_->send_config_.encoder_settings.payload_name;
+        test_->receive_config_.decoders.clear();
         test_->receive_config_.decoders.push_back(decoder);
         test_->receive_config_.rtp.remote_ssrc =
             test_->send_config_.rtp.ssrcs[0];

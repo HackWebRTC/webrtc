@@ -259,9 +259,15 @@ VideoReceiveStream::VideoReceiveStream(
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(stats_proxy_.get());
 
   RTC_DCHECK(!config_.decoders.empty());
+  std::set<int> decoder_payload_types;
   for (size_t i = 0; i < config_.decoders.size(); ++i) {
     const Decoder& decoder = config_.decoders[i];
     RTC_CHECK(decoder.decoder);
+    RTC_CHECK(decoder_payload_types.find(decoder.payload_type) ==
+              decoder_payload_types.end())
+        << "Duplicate payload type (" << decoder.payload_type
+        << ") for different decoders.";
+    decoder_payload_types.insert(decoder.payload_type);
     RTC_CHECK_EQ(0,
                  vie_channel_->RegisterExternalDecoder(
                      decoder.payload_type, decoder.decoder, decoder.is_renderer,
