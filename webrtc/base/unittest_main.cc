@@ -93,6 +93,10 @@ int main(int argc, char** argv) {
   rtc::LogMessage::LogTimestamps();
   if (*FLAG_log != '\0') {
     rtc::LogMessage::ConfigureLogging(FLAG_log);
+  } else if (rtc::LogMessage::GetLogToDebug() > rtc::LS_INFO) {
+    // Default to LS_INFO, even for release builds to provide better test
+    // logging.
+    rtc::LogMessage::LogToDebug(rtc::LS_INFO);
   }
 
   // Initialize SSL which are used by several tests.
