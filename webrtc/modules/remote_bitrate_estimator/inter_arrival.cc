@@ -31,10 +31,13 @@ InterArrival::InterArrival(uint32_t timestamp_group_length_ticks,
 
 bool InterArrival::ComputeDeltas(uint32_t timestamp,
                                  int64_t arrival_time_ms,
+                                 size_t packet_size,
                                  uint32_t* timestamp_delta,
-                                 int64_t* arrival_time_delta_ms) {
+                                 int64_t* arrival_time_delta_ms,
+                                 int* packet_size_delta) {
   assert(timestamp_delta != NULL);
   assert(arrival_time_delta_ms != NULL);
+  assert(packet_size_delta != NULL);
   bool calculated_deltas = false;
   if (current_timestamp_group_.IsFirstPacket()) {
     // We don't have enough data to update the filter, so we store it until we
@@ -59,19 +62,23 @@ bool InterArrival::ComputeDeltas(uint32_t timestamp,
         return false;
       }
       assert(*arrival_time_delta_ms >= 0);
+      *packet_size_delta = static_cast<int>(current_timestamp_group_.size) -
+          static_cast<int>(prev_timestamp_group_.size);
       calculated_deltas = true;
     }
     prev_timestamp_group_ = current_timestamp_group_;
     // The new timestamp is now the current frame.
     current_timestamp_group_.first_timestamp = timestamp;
     current_timestamp_group_.timestamp = timestamp;
+    current_timestamp_group_.size = 0;
   }
   else {
     current_timestamp_group_.timestamp = LatestTimestamp(
         current_timestamp_group_.timestamp, timestamp);
   }
-  current_timestamp_group_.complete_time_ms =
-      std::max(current_timestamp_group_.complete_time_ms, arrival_time_ms);
+  // Accumulate the frame size.
+  current_timestamp_group_.size += packet_size;
+  current_timestamp_group_.complete_time_ms = arrival_time_ms;
 
   return calculated_deltas;
 }

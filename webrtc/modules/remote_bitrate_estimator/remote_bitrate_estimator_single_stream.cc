@@ -28,13 +28,14 @@ enum { kTimestampGroupLengthMs = 5 };
 static const double kTimestampToMs = 1.0 / 90.0;
 
 struct RemoteBitrateEstimatorSingleStream::Detector {
-  explicit Detector(int64_t last_packet_time_ms, bool enable_burst_grouping)
-      : last_packet_time_ms(last_packet_time_ms),
-        inter_arrival(90 * kTimestampGroupLengthMs,
-                      kTimestampToMs,
-                      enable_burst_grouping),
-        estimator(),
-        detector() {}
+    explicit Detector(int64_t last_packet_time_ms,
+                      const OverUseDetectorOptions& options,
+                      bool enable_burst_grouping)
+        : last_packet_time_ms(last_packet_time_ms),
+          inter_arrival(90 * kTimestampGroupLengthMs, kTimestampToMs,
+                        enable_burst_grouping),
+          estimator(options),
+          detector(options) {}
     int64_t last_packet_time_ms;
     InterArrival inter_arrival;
     OveruseEstimator estimator;
@@ -81,8 +82,8 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(int64_t arrival_time_ms,
     // automatically cleaned up when we have one RemoteBitrateEstimator per REMB
     // group.
     std::pair<SsrcOveruseEstimatorMap::iterator, bool> insert_result =
-        overuse_detectors_.insert(
-            std::make_pair(ssrc, new Detector(now_ms, true)));
+        overuse_detectors_.insert(std::make_pair(
+            ssrc, new Detector(now_ms, OverUseDetectorOptions(), true)));
     it = insert_result.first;
   }
   Detector* estimator = it->second;
@@ -91,10 +92,12 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(int64_t arrival_time_ms,
   const BandwidthUsage prior_state = estimator->detector.State();
   uint32_t timestamp_delta = 0;
   int64_t time_delta = 0;
+  int size_delta = 0;
   if (estimator->inter_arrival.ComputeDeltas(rtp_timestamp, arrival_time_ms,
-                                             &timestamp_delta, &time_delta)) {
+                                             payload_size, &timestamp_delta,
+                                             &time_delta, &size_delta)) {
     double timestamp_delta_ms = timestamp_delta * kTimestampToMs;
-    estimator->estimator.Update(time_delta, timestamp_delta_ms,
+    estimator->estimator.Update(time_delta, timestamp_delta_ms, size_delta,
                                 estimator->detector.State());
     estimator->detector.Detect(estimator->estimator.offset(),
                                timestamp_delta_ms,

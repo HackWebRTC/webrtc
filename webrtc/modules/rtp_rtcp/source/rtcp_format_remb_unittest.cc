@@ -61,7 +61,8 @@ class TestTransport : public Transport {
 class RtcpFormatRembTest : public ::testing::Test {
  protected:
   RtcpFormatRembTest()
-      : system_clock_(Clock::GetRealTimeClock()),
+      : over_use_detector_options_(),
+        system_clock_(Clock::GetRealTimeClock()),
         dummy_rtp_rtcp_impl_(nullptr),
         receive_statistics_(ReceiveStatistics::Create(system_clock_)),
         rtcp_sender_(nullptr),
@@ -74,6 +75,7 @@ class RtcpFormatRembTest : public ::testing::Test {
   void SetUp() override;
   void TearDown() override;
 
+  OverUseDetectorOptions over_use_detector_options_;
   Clock* system_clock_;
   ModuleRtpRtcpImpl* dummy_rtp_rtcp_impl_;
   rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;

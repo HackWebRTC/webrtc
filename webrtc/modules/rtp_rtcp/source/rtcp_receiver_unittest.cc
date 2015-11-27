@@ -66,7 +66,8 @@ class TestTransport : public Transport,
 class RtcpReceiverTest : public ::testing::Test {
  protected:
   RtcpReceiverTest()
-      : system_clock_(1335900000),
+      : over_use_detector_options_(),
+        system_clock_(1335900000),
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(
             new RemoteBitrateEstimatorSingleStream(&remote_bitrate_observer_,
@@ -130,6 +131,7 @@ class RtcpReceiverTest : public ::testing::Test {
     return 0;
   }
 
+  OverUseDetectorOptions over_use_detector_options_;
   SimulatedClock system_clock_;
   ModuleRtpRtcpImpl* rtp_rtcp_impl_;
   RTCPReceiver* rtcp_receiver_;

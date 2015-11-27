@@ -20,15 +20,14 @@ namespace webrtc {
 
 class OveruseEstimator {
  public:
-  OveruseEstimator();
+  explicit OveruseEstimator(const OverUseDetectorOptions& options);
   ~OveruseEstimator();
 
   // Update the estimator with a new sample. The deltas should represent deltas
   // between timestamp groups as defined by the InterArrival class.
   // |current_hypothesis| should be the hypothesis of the over-use detector at
   // this time.
-  void Update(double recv_delta_ms,
-              double send_delta_ms,
+  void Update(int64_t t_delta, double ts_delta, int size_delta,
               BandwidthUsage current_hypothesis);
 
   // Returns the estimated noise/jitter variance in ms^2.
@@ -48,21 +47,21 @@ class OveruseEstimator {
   }
 
  private:
-  double UpdateMinFramePeriod(double send_delta_ms);
-  void UpdateNoiseEstimate(double residual,
-                           double send_delta_ms,
-                           bool stable_state);
+  double UpdateMinFramePeriod(double ts_delta);
+  void UpdateNoiseEstimate(double residual, double ts_delta, bool stable_state);
 
   // Must be first member variable. Cannot be const because we need to be
   // copyable.
+  OverUseDetectorOptions options_;
   uint16_t num_of_deltas_;
+  double slope_;
   double offset_;
   double prev_offset_;
-  double e_;
-  double process_noise_;
+  double E_[2][2];
+  double process_noise_[2];
   double avg_noise_;
   double var_noise_;
-  std::list<double> send_delta_history_;
+  std::list<double> ts_delta_hist_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OveruseEstimator);
 };

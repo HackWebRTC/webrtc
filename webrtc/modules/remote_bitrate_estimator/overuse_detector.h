@@ -24,7 +24,7 @@ bool AdaptiveThresholdExperimentIsEnabled();
 
 class OveruseDetector {
  public:
-  OveruseDetector();
+  explicit OveruseDetector(const OverUseDetectorOptions& options);
   virtual ~OveruseDetector();
 
   // Update the detection state based on the estimated inter-arrival time delta
@@ -51,6 +51,7 @@ class OveruseDetector {
   double overusing_time_threshold_;
   // Must be first member variable. Cannot be const because we need to be
   // copyable.
+  webrtc::OverUseDetectorOptions options_;
   double threshold_;
   int64_t last_update_ms_;
   double prev_offset_;

@@ -50,11 +50,12 @@ bool ReadExperimentConstants(double* k_up, double* k_down) {
                 "%lf,%lf", k_up, k_down) == 2;
 }
 
-OveruseDetector::OveruseDetector()
+OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
     : in_experiment_(AdaptiveThresholdExperimentIsEnabled()),
       k_up_(0.01),
       k_down_(0.00018),
       overusing_time_threshold_(100),
+      options_(options),
       threshold_(12.5),
       last_update_ms_(-1),
       prev_offset_(0.0),
