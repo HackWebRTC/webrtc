@@ -122,7 +122,8 @@ class VCMCodecDataBase {
   // NULL is returned if no encoder with the specified payload type was found
   // and the function failed to create one.
   VCMGenericDecoder* GetDecoder(
-      uint8_t payload_type, VCMDecodedFrameCallback* decoded_frame_callback);
+      const VCMEncodedFrame& frame,
+      VCMDecodedFrameCallback* decoded_frame_callback);
 
   // Deletes the memory of the decoder instance |decoder|. Used to delete
   // deep copies returned by CreateDecoderCopy().
@@ -139,7 +140,7 @@ class VCMCodecDataBase {
   typedef std::map<uint8_t, VCMDecoderMapItem*> DecoderMap;
   typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;
 
-  VCMGenericDecoder* CreateAndInitDecoder(uint8_t payload_type,
+  VCMGenericDecoder* CreateAndInitDecoder(const VCMEncodedFrame& frame,
                                           VideoCodec* new_codec) const;
 
   // Determines whether a new codec has to be created or not.

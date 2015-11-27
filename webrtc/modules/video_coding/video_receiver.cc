@@ -369,8 +369,7 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
                           frame.FrameType());
   // Change decoder if payload type has changed
   const bool renderTimingBefore = _codecDataBase.SupportsRenderScheduling();
-  _decoder =
-      _codecDataBase.GetDecoder(frame.PayloadType(), &_decodedFrameCallback);
+  _decoder = _codecDataBase.GetDecoder(frame, &_decodedFrameCallback);
   if (renderTimingBefore != _codecDataBase.SupportsRenderScheduling()) {
     // Make sure we reset the decode time estimate since it will
     // be zero for codecs without render timing.

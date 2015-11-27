@@ -66,9 +66,9 @@ VideoCodecH264 VideoEncoder::GetDefaultH264Settings() {
   h264_settings.profile = kProfileBase;
   h264_settings.frameDroppingOn = true;
   h264_settings.keyFrameInterval = 3000;
-  h264_settings.spsData = NULL;
+  h264_settings.spsData = nullptr;
   h264_settings.spsLen = 0;
-  h264_settings.ppsData = NULL;
+  h264_settings.ppsData = nullptr;
   h264_settings.ppsLen = 0;
 
   return h264_settings;
@@ -102,11 +102,11 @@ VCMCodecDataBase::VCMCodecDataBase(
       send_codec_(),
       receive_codec_(),
       encoder_payload_type_(0),
-      external_encoder_(NULL),
+      external_encoder_(nullptr),
       internal_source_(false),
       encoder_rate_observer_(encoder_rate_observer),
       encoded_frame_callback_(encoded_frame_callback),
-      ptr_decoder_(NULL),
+      ptr_decoder_(nullptr),
       dec_map_(),
       dec_external_map_() {}
 
@@ -300,7 +300,7 @@ bool VCMCodecDataBase::DeregisterExternalEncoder(
     *was_send_codec = true;
   }
   encoder_payload_type_ = 0;
-  external_encoder_ = NULL;
+  external_encoder_ = nullptr;
   internal_source_ = false;
   return true;
 }
@@ -318,9 +318,8 @@ void VCMCodecDataBase::RegisterExternalEncoder(
 }
 
 bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
-  if (ptr_encoder_ == NULL) {
+  if (!ptr_encoder_)
     return true;
-  }
 
   // Does not check startBitrate or maxFramerate
   if (new_send_codec.codecType != send_codec_.codecType ||
@@ -400,7 +399,7 @@ bool VCMCodecDataBase::SetPeriodicKeyFrames(bool enable) {
 
 void VCMCodecDataBase::ResetReceiver() {
   ReleaseDecoder(ptr_decoder_);
-  ptr_decoder_ = NULL;
+  ptr_decoder_ = nullptr;
   memset(&receive_codec_, 0, sizeof(VideoCodec));
   while (!dec_map_.empty()) {
     DecoderMap::iterator it = dec_map_.begin();
@@ -423,11 +422,11 @@ bool VCMCodecDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
   // We can't use payload_type to check if the decoder is currently in use,
   // because payload type may be out of date (e.g. before we decode the first
   // frame after RegisterReceiveCodec)
-  if (ptr_decoder_ != NULL &&
+  if (ptr_decoder_ != nullptr &&
       &ptr_decoder_->_decoder == (*it).second->external_decoder_instance) {
     // Release it if it was registered and in use.
     ReleaseDecoder(ptr_decoder_);
-    ptr_decoder_ = NULL;
+    ptr_decoder_ = nullptr;
   }
   DeregisterReceiveCodec(payload_type);
   delete (*it).second;
@@ -504,28 +503,30 @@ VideoCodecType VCMCodecDataBase::ReceiveCodec() const {
 }
 
 VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
-    uint8_t payload_type, VCMDecodedFrameCallback* decoded_frame_callback) {
+    const VCMEncodedFrame& frame,
+    VCMDecodedFrameCallback* decoded_frame_callback) {
+  uint8_t payload_type = frame.PayloadType();
   if (payload_type == receive_codec_.plType || payload_type == 0) {
     return ptr_decoder_;
   }
   // Check for exisitng decoder, if exists - delete.
   if (ptr_decoder_) {
     ReleaseDecoder(ptr_decoder_);
-    ptr_decoder_ = NULL;
+    ptr_decoder_ = nullptr;
     memset(&receive_codec_, 0, sizeof(VideoCodec));
   }
-  ptr_decoder_ = CreateAndInitDecoder(payload_type, &receive_codec_);
+  ptr_decoder_ = CreateAndInitDecoder(frame, &receive_codec_);
   if (!ptr_decoder_) {
-    return NULL;
+    return nullptr;
   }
   VCMReceiveCallback* callback = decoded_frame_callback->UserReceiveCallback();
   if (callback) callback->OnIncomingPayloadType(receive_codec_.plType);
   if (ptr_decoder_->RegisterDecodeCompleteCallback(decoded_frame_callback)
       < 0) {
     ReleaseDecoder(ptr_decoder_);
-    ptr_decoder_ = NULL;
+    ptr_decoder_ = nullptr;
     memset(&receive_codec_, 0, sizeof(VideoCodec));
-    return NULL;
+    return nullptr;
   }
   return ptr_decoder_;
 }
@@ -544,7 +545,7 @@ void VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const {
 bool VCMCodecDataBase::SupportsRenderScheduling() const {
   const VCMExtDecoderMapItem* ext_item = FindExternalDecoderItem(
       receive_codec_.plType);
-  if (ext_item == nullptr)
+  if (!ext_item)
     return true;
   return ext_item->internal_render_timing;
 }
@@ -554,16 +555,17 @@ bool VCMCodecDataBase::MatchesCurrentResolution(int width, int height) const {
 }
 
 VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
-    uint8_t payload_type,
+    const VCMEncodedFrame& frame,
     VideoCodec* new_codec) const {
+  uint8_t payload_type = frame.PayloadType();
   assert(new_codec);
   const VCMDecoderMapItem* decoder_item = FindDecoderItem(payload_type);
   if (!decoder_item) {
     LOG(LS_ERROR) << "Can't find a decoder associated with payload type: "
                   << static_cast<int>(payload_type);
-    return NULL;
+    return nullptr;
   }
-  VCMGenericDecoder* ptr_decoder = NULL;
+  VCMGenericDecoder* ptr_decoder = nullptr;
   const VCMExtDecoderMapItem* external_dec_item =
       FindExternalDecoderItem(payload_type);
   if (external_dec_item) {
@@ -575,12 +577,21 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
     ptr_decoder = CreateDecoder(decoder_item->settings->codecType);
   }
   if (!ptr_decoder)
-    return NULL;
+    return nullptr;
 
+  // Copy over input resolutions to prevent codec reinitialization due to
+  // the first frame being of a different resolution than the database values.
+  // This is best effort, since there's no guarantee that width/height have been
+  // parsed yet (and may be zero).
+  if (frame.EncodedImage()._encodedWidth > 0 &&
+      frame.EncodedImage()._encodedHeight > 0) {
+    decoder_item->settings->width = frame.EncodedImage()._encodedWidth;
+    decoder_item->settings->height = frame.EncodedImage()._encodedHeight;
+  }
   if (ptr_decoder->InitDecode(decoder_item->settings.get(),
                               decoder_item->number_of_cores) < 0) {
     ReleaseDecoder(ptr_decoder);
-    return NULL;
+    return nullptr;
   }
   memcpy(new_codec, decoder_item->settings.get(), sizeof(VideoCodec));
   return ptr_decoder;
@@ -610,7 +621,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateDecoder(VideoCodecType type) const {
       break;
   }
   LOG(LS_WARNING) << "No internal decoder of this type exists.";
-  return NULL;
+  return nullptr;
 }
 
 const VCMDecoderMapItem* VCMCodecDataBase::FindDecoderItem(
@@ -619,7 +630,7 @@ const VCMDecoderMapItem* VCMCodecDataBase::FindDecoderItem(
   if (it != dec_map_.end()) {
     return (*it).second;
   }
-  return NULL;
+  return nullptr;
 }
 
 const VCMExtDecoderMapItem* VCMCodecDataBase::FindExternalDecoderItem(
@@ -628,6 +639,6 @@ const VCMExtDecoderMapItem* VCMCodecDataBase::FindExternalDecoderItem(
   if (it != dec_external_map_.end()) {
     return (*it).second;
   }
-  return NULL;
+  return nullptr;
 }
 }  // namespace webrtc
