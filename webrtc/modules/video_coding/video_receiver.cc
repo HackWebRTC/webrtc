@@ -237,19 +237,17 @@ int32_t VideoReceiver::RegisterDecoderTimingCallback(
 
 // Register an externally defined decoder/render object.
 // Can be a decoder only or a decoder coupled with a renderer.
-int32_t VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
+void VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
                                                uint8_t payloadType,
                                                bool internalRenderTiming) {
   CriticalSectionScoped cs(_receiveCritSect);
   if (externalDecoder == NULL) {
     // Make sure the VCM updates the decoder next time it decodes.
     _decoder = NULL;
-    return _codecDataBase.DeregisterExternalDecoder(payloadType) ? 0 : -1;
+    RTC_CHECK(_codecDataBase.DeregisterExternalDecoder(payloadType));
   }
-  return _codecDataBase.RegisterExternalDecoder(
-             externalDecoder, payloadType, internalRenderTiming)
-             ? 0
-             : -1;
+  _codecDataBase.RegisterExternalDecoder(externalDecoder, payloadType,
+                                         internalRenderTiming);
 }
 
 // Register a frame type request callback.

@@ -437,19 +437,15 @@ bool VCMCodecDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
 
 // Add the external encoder object to the list of external decoders.
 // Won't be registered as a receive codec until RegisterReceiveCodec is called.
-bool VCMCodecDataBase::RegisterExternalDecoder(
+void VCMCodecDataBase::RegisterExternalDecoder(
     VideoDecoder* external_decoder,
     uint8_t payload_type,
     bool internal_render_timing) {
   // Check if payload value already exists, if so  - erase old and insert new.
   VCMExtDecoderMapItem* ext_decoder = new VCMExtDecoderMapItem(
       external_decoder, payload_type, internal_render_timing);
-  if (!ext_decoder) {
-    return false;
-  }
   DeregisterExternalDecoder(payload_type);
   dec_external_map_[payload_type] = ext_decoder;
-  return true;
 }
 
 bool VCMCodecDataBase::DecoderRegistered() const {

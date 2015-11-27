@@ -181,6 +181,7 @@ public:
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,    on error.
+    // TODO(pbos): Remove return type when unused elsewhere.
     virtual int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                             uint8_t payloadType,
                                             bool internalSource = false) = 0;
@@ -334,12 +335,9 @@ public:
     //                                 registered to.
     //      - internalRenderTiming   : True if the internal renderer (if any) of the decoder
     //                                 object can make sure to render at a given time in ms.
-    //
-    // Return value      : VCM_OK, on success.
-    //                     < 0,    on error.
-    virtual int32_t RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                                            uint8_t payloadType,
-                                            bool internalRenderTiming) = 0;
+    virtual void RegisterExternalDecoder(VideoDecoder* externalDecoder,
+                                         uint8_t payloadType,
+                                         bool internalRenderTiming) = 0;
 
     // Register a receive callback. Will be called whenever there is a new frame ready
     // for rendering.

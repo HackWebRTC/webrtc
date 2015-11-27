@@ -82,9 +82,9 @@ class VideoSender {
   // Same as SendCodecBlocking.  Try to use GetSendCodec() instead.
   VideoCodecType SendCodecBlocking() const;
 
-  int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                                  uint8_t payloadType,
-                                  bool internalSource);
+  void RegisterExternalEncoder(VideoEncoder* externalEncoder,
+                               uint8_t payloadType,
+                               bool internalSource);
 
   int Bitrate(unsigned int* bitrate) const;
   int FrameRate(unsigned int* framerate) const;
@@ -150,9 +150,9 @@ class VideoReceiver {
                                int32_t numberOfCores,
                                bool requireKeyFrame);
 
-  int32_t RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                                  uint8_t payloadType,
-                                  bool internalRenderTiming);
+  void RegisterExternalDecoder(VideoDecoder* externalDecoder,
+                               uint8_t payloadType,
+                               bool internalRenderTiming);
   int32_t RegisterReceiveCallback(VCMReceiveCallback* receiveCallback);
   int32_t RegisterReceiveStatisticsCallback(
       VCMReceiveStatisticsCallback* receiveStats);

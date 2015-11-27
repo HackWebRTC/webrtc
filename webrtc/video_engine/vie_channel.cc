@@ -435,11 +435,7 @@ int32_t ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
                                             bool buffered_rendering,
                                             int32_t render_delay) {
   RTC_DCHECK(!sender_);
-  int32_t result;
-  result = vcm_->RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
-  if (result != VCM_OK) {
-    return result;
-  }
+  vcm_->RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
   return vcm_->SetRenderDelay(render_delay);
 }
 
@@ -448,9 +444,7 @@ int32_t ViEChannel::DeRegisterExternalDecoder(const uint8_t pl_type) {
   VideoCodec current_receive_codec;
   int32_t result = 0;
   result = vcm_->ReceiveCodec(&current_receive_codec);
-  if (vcm_->RegisterExternalDecoder(NULL, pl_type, false) != VCM_OK) {
-    return -1;
-  }
+  vcm_->RegisterExternalDecoder(NULL, pl_type, false);
 
   if (result == 0 && current_receive_codec.plType == pl_type) {
     result = vcm_->RegisterReceiveCodec(&current_receive_codec,

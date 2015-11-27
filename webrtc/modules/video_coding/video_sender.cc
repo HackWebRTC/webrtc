@@ -157,7 +157,7 @@ VideoCodecType VideoSender::SendCodecBlocking() const {
 
 // Register an external decoder object.
 // This can not be used together with external decoder callbacks.
-int32_t VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
+void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                              uint8_t payloadType,
                                              bool internalSource /*= false*/) {
   RTC_DCHECK(main_thread_.CalledOnValidThread());
@@ -166,17 +166,16 @@ int32_t VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
 
   if (externalEncoder == nullptr) {
     bool wasSendCodec = false;
-    const bool ret =
-        _codecDataBase.DeregisterExternalEncoder(payloadType, &wasSendCodec);
+    RTC_CHECK(
+        _codecDataBase.DeregisterExternalEncoder(payloadType, &wasSendCodec));
     if (wasSendCodec) {
       // Make sure the VCM doesn't use the de-registered codec
       _encoder = nullptr;
     }
-    return ret ? 0 : -1;
+    return;
   }
   _codecDataBase.RegisterExternalEncoder(
       externalEncoder, payloadType, internalSource);
-  return 0;
 }
 
 // Get encode bitrate

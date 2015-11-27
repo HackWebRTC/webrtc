@@ -44,9 +44,7 @@ class VCMRobustnessTest : public ::testing::Test {
     ASSERT_EQ(0, vcm_->RegisterPacketRequestCallback(&request_callback_));
     ASSERT_EQ(VCM_OK, vcm_->Codec(kVideoCodecVP8, &video_codec_));
     ASSERT_EQ(VCM_OK, vcm_->RegisterReceiveCodec(&video_codec_, 1));
-    ASSERT_EQ(VCM_OK, vcm_->RegisterExternalDecoder(&decoder_,
-                                                    video_codec_.plType,
-                                                    true));
+    vcm_->RegisterExternalDecoder(&decoder_, video_codec_.plType, true);
   }
 
   virtual void TearDown() {

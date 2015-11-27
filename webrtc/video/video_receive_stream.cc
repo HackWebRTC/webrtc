@@ -261,6 +261,7 @@ VideoReceiveStream::VideoReceiveStream(
   RTC_DCHECK(!config_.decoders.empty());
   for (size_t i = 0; i < config_.decoders.size(); ++i) {
     const Decoder& decoder = config_.decoders[i];
+    RTC_CHECK(decoder.decoder);
     RTC_CHECK_EQ(0,
                  vie_channel_->RegisterExternalDecoder(
                      decoder.payload_type, decoder.decoder, decoder.is_renderer,

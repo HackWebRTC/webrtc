@@ -34,8 +34,7 @@ class TestVideoReceiver : public ::testing::Test {
 
   virtual void SetUp() {
     receiver_.reset(new VideoReceiver(&clock_, &event_factory_));
-    EXPECT_EQ(0, receiver_->RegisterExternalDecoder(&decoder_,
-                                                    kUnusedPayloadType, true));
+    receiver_->RegisterExternalDecoder(&decoder_, kUnusedPayloadType, true);
     const size_t kMaxNackListSize = 250;
     const int kMaxPacketAgeToNack = 450;
     receiver_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);

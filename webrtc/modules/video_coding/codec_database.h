@@ -98,7 +98,7 @@ class VCMCodecDataBase {
   // |internal_render_timing| is set to true if the |external_decoder| has
   // built in rendering which is able to obey the render timestamps of the
   // encoded frames.
-  bool RegisterExternalDecoder(VideoDecoder* external_decoder,
+  void RegisterExternalDecoder(VideoDecoder* external_decoder,
                                uint8_t payload_type,
                                bool internal_render_timing);
 

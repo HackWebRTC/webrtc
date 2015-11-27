@@ -127,8 +127,9 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                   uint8_t payloadType,
                                   bool internalSource) override {
-    return sender_.RegisterExternalEncoder(externalEncoder, payloadType,
-                                           internalSource);
+    sender_.RegisterExternalEncoder(externalEncoder, payloadType,
+                                    internalSource);
+    return 0;
   }
 
   int Bitrate(unsigned int* bitrate) const override {
@@ -195,11 +196,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                                           requireKeyFrame);
   }
 
-  int32_t RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                                  uint8_t payloadType,
-                                  bool internalRenderTiming) override {
-    return receiver_.RegisterExternalDecoder(externalDecoder, payloadType,
-                                             internalRenderTiming);
+  void RegisterExternalDecoder(VideoDecoder* externalDecoder,
+                               uint8_t payloadType,
+                               bool internalRenderTiming) override {
+    receiver_.RegisterExternalDecoder(externalDecoder, payloadType,
+                                      internalRenderTiming);
   }
 
   int32_t RegisterReceiveCallback(

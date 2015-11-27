@@ -207,9 +207,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
 
   void SetUp() override {
     TestVideoSender::SetUp();
-    EXPECT_EQ(
-        0,
-        sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, false));
+    sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, false);
     memset(&settings_, 0, sizeof(settings_));
     EXPECT_EQ(0, VideoCodingModule::Codec(kVideoCodecVP8, &settings_));
     settings_.numberOfSimulcastStreams = kNumberOfStreams;
@@ -300,11 +298,9 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequests) {
 
 TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
   // De-register current external encoder.
-  EXPECT_EQ(0,
-            sender_->RegisterExternalEncoder(NULL, kUnusedPayloadType, false));
+  sender_->RegisterExternalEncoder(nullptr, kUnusedPayloadType, false);
   // Register encoder with internal capture.
-  EXPECT_EQ(
-      0, sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, true));
+  sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, true);
   EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
   ExpectIntraRequest(0);
   EXPECT_EQ(0, sender_->IntraFrameRequest(0));
@@ -384,8 +380,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
     codec_.startBitrate = codec_bitrate_kbps_;
     codec_.maxBitrate = codec_bitrate_kbps_;
     encoder_.reset(VP8Encoder::Create());
-    ASSERT_EQ(0, sender_->RegisterExternalEncoder(encoder_.get(), codec_.plType,
-                                                  false));
+    sender_->RegisterExternalEncoder(encoder_.get(), codec_.plType, false);
     EXPECT_EQ(0, sender_->RegisterSendCodec(&codec_, 1, 1200));
   }
 
