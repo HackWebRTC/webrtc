@@ -115,17 +115,17 @@ void ExtractCommonReceiveProperties(const cricket::MediaReceiverInfo& info,
   report->AddString(StatsReport::kStatsValueNameCodecName, info.codec_name);
 }
 
-void SetAudioProcessingStats(StatsReport* report, int signal_level,
-    bool typing_noise_detected, int echo_return_loss,
-    int echo_return_loss_enhancement, int echo_delay_median_ms,
-    float aec_quality_min, int echo_delay_std_ms) {
+void SetAudioProcessingStats(StatsReport* report,
+                             bool typing_noise_detected,
+                             int echo_return_loss,
+                             int echo_return_loss_enhancement,
+                             int echo_delay_median_ms,
+                             float aec_quality_min,
+                             int echo_delay_std_ms) {
   report->AddBoolean(StatsReport::kStatsValueNameTypingNoiseState,
                      typing_noise_detected);
   report->AddFloat(StatsReport::kStatsValueNameEchoCancellationQualityMin,
                    aec_quality_min);
-  // Don't overwrite the previous signal level if it's not available now.
-  if (signal_level >= 0)
-    report->AddInt(StatsReport::kStatsValueNameAudioInputLevel, signal_level);
   const IntForAdd ints[] = {
     { StatsReport::kStatsValueNameEchoReturnLoss, echo_return_loss },
     { StatsReport::kStatsValueNameEchoReturnLossEnhancement,
@@ -182,11 +182,14 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
 void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
   ExtractCommonSendProperties(info, report);
 
-  SetAudioProcessingStats(report, info.audio_level, info.typing_noise_detected,
-      info.echo_return_loss, info.echo_return_loss_enhancement,
-      info.echo_delay_median_ms, info.aec_quality_min, info.echo_delay_std_ms);
+  SetAudioProcessingStats(
+      report, info.typing_noise_detected, info.echo_return_loss,
+      info.echo_return_loss_enhancement, info.echo_delay_median_ms,
+      info.aec_quality_min, info.echo_delay_std_ms);
 
+  RTC_DCHECK_GE(info.audio_level, 0);
   const IntForAdd ints[] = {
+    { StatsReport::kStatsValueNameAudioInputLevel, info.audio_level},
     { StatsReport::kStatsValueNameJitterReceived, info.jitter_ms },
     { StatsReport::kStatsValueNamePacketsLost, info.packets_lost },
     { StatsReport::kStatsValueNamePacketsSent, info.packets_sent },
@@ -891,21 +894,24 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
   RTC_DCHECK(pc_->session()->signaling_thread()->IsCurrent());
   RTC_DCHECK(track != NULL);
 
-  int signal_level = 0;
-  if (!track->GetSignalLevel(&signal_level))
-    signal_level = -1;
+  // Don't overwrite report values if they're not available.
+  int signal_level;
+  if (track->GetSignalLevel(&signal_level)) {
+    RTC_DCHECK_GE(signal_level, 0);
+    report->AddInt(StatsReport::kStatsValueNameAudioInputLevel, signal_level);
+  }
 
-  rtc::scoped_refptr<AudioProcessorInterface> audio_processor(
-      track->GetAudioProcessor());
+  auto audio_processor(track->GetAudioProcessor());
 
-  AudioProcessorInterface::AudioProcessorStats stats;
-  if (audio_processor.get())
+  if (audio_processor.get()) {
+    AudioProcessorInterface::AudioProcessorStats stats;
     audio_processor->GetStats(&stats);
 
-  SetAudioProcessingStats(report, signal_level, stats.typing_noise_detected,
-      stats.echo_return_loss, stats.echo_return_loss_enhancement,
-      stats.echo_delay_median_ms, stats.aec_quality_min,
-      stats.echo_delay_std_ms);
+    SetAudioProcessingStats(
+        report, stats.typing_noise_detected, stats.echo_return_loss,
+        stats.echo_return_loss_enhancement, stats.echo_delay_median_ms,
+        stats.aec_quality_min, stats.echo_delay_std_ms);
+  }
 }
 
 bool StatsCollector::GetTrackIdBySsrc(uint32_t ssrc,
