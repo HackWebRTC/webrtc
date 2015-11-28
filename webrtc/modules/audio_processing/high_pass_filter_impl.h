@@ -11,18 +11,18 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_HIGH_PASS_FILTER_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_HIGH_PASS_FILTER_IMPL_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
 
 namespace webrtc {
 
 class AudioBuffer;
-class CriticalSectionWrapper;
 
 class HighPassFilterImpl : public HighPassFilter,
                            public ProcessingComponent {
  public:
-  HighPassFilterImpl(const AudioProcessing* apm, CriticalSectionWrapper* crit);
+  HighPassFilterImpl(const AudioProcessing* apm, rtc::CriticalSection* crit);
   virtual ~HighPassFilterImpl();
 
   int ProcessCaptureAudio(AudioBuffer* audio);
@@ -43,7 +43,8 @@ class HighPassFilterImpl : public HighPassFilter,
   int GetHandleError(void* handle) const override;
 
   const AudioProcessing* apm_;
-  CriticalSectionWrapper* crit_;
+
+  rtc::CriticalSection* const crit_;
 };
 }  // namespace webrtc
 

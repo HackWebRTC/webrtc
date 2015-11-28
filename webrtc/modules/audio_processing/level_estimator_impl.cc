@@ -18,13 +18,17 @@
 namespace webrtc {
 
 LevelEstimatorImpl::LevelEstimatorImpl(const AudioProcessing* apm,
-                                       CriticalSectionWrapper* crit)
-    : ProcessingComponent(),
-      crit_(crit) {}
+                                       rtc::CriticalSection* crit)
+    : ProcessingComponent(), crit_(crit) {
+  RTC_DCHECK(apm);
+  RTC_DCHECK(crit);
+}
 
 LevelEstimatorImpl::~LevelEstimatorImpl() {}
 
 int LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
+  rtc::CritScope cs(crit_);
+
   if (!is_component_enabled()) {
     return AudioProcessing::kNoError;
   }
@@ -39,15 +43,17 @@ int LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
 }
 
 int LevelEstimatorImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(crit_);
+  rtc::CritScope cs(crit_);
   return EnableComponent(enable);
 }
 
 bool LevelEstimatorImpl::is_enabled() const {
+  rtc::CritScope cs(crit_);
   return is_component_enabled();
 }
 
 int LevelEstimatorImpl::RMS() {
+  rtc::CritScope cs(crit_);
   if (!is_component_enabled()) {
     return AudioProcessing::kNotEnabledError;
   }
@@ -67,6 +73,7 @@ void LevelEstimatorImpl::DestroyHandle(void* handle) const {
 }
 
 int LevelEstimatorImpl::InitializeHandle(void* handle) const {
+  rtc::CritScope cs(crit_);
   static_cast<RMSLevel*>(handle)->Reset();
   return AudioProcessing::kNoError;
 }

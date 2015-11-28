@@ -100,18 +100,20 @@ int Filter(FilterState* hpf, int16_t* data, size_t length) {
 typedef FilterState Handle;
 
 HighPassFilterImpl::HighPassFilterImpl(const AudioProcessing* apm,
-                                       CriticalSectionWrapper* crit)
-  : ProcessingComponent(),
-    apm_(apm),
-    crit_(crit) {}
+                                       rtc::CriticalSection* crit)
+    : ProcessingComponent(), apm_(apm), crit_(crit) {
+  RTC_DCHECK(apm);
+  RTC_DCHECK(crit);
+}
 
 HighPassFilterImpl::~HighPassFilterImpl() {}
 
 int HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
-  int err = apm_->kNoError;
+  rtc::CritScope cs(crit_);
+  int err = AudioProcessing::kNoError;
 
   if (!is_component_enabled()) {
-    return apm_->kNoError;
+    return AudioProcessing::kNoError;
   }
 
   assert(audio->num_frames_per_band() <= 160);
@@ -122,20 +124,21 @@ int HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
                  audio->split_bands(i)[kBand0To8kHz],
                  audio->num_frames_per_band());
 
-    if (err != apm_->kNoError) {
+    if (err != AudioProcessing::kNoError) {
       return GetHandleError(my_handle);
     }
   }
 
-  return apm_->kNoError;
+  return AudioProcessing::kNoError;
 }
 
 int HighPassFilterImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(crit_);
+  rtc::CritScope cs(crit_);
   return EnableComponent(enable);
 }
 
 bool HighPassFilterImpl::is_enabled() const {
+  rtc::CritScope cs(crit_);
   return is_component_enabled();
 }
 
@@ -148,12 +151,15 @@ void HighPassFilterImpl::DestroyHandle(void* handle) const {
 }
 
 int HighPassFilterImpl::InitializeHandle(void* handle) const {
+  // TODO(peah): Remove dependency on apm for the
+  // capture side sample rate.
+  rtc::CritScope cs(crit_);
   return InitializeFilter(static_cast<Handle*>(handle),
                           apm_->proc_sample_rate_hz());
 }
 
 int HighPassFilterImpl::ConfigureHandle(void* /*handle*/) const {
-  return apm_->kNoError; // Not configurable.
+  return AudioProcessing::kNoError;  // Not configurable.
 }
 
 int HighPassFilterImpl::num_handles_required() const {
@@ -163,6 +169,6 @@ int HighPassFilterImpl::num_handles_required() const {
 int HighPassFilterImpl::GetHandleError(void* handle) const {
   // The component has no detailed errors.
   assert(handle != NULL);
-  return apm_->kUnspecifiedError;
+  return AudioProcessing::kUnspecifiedError;
 }
 }  // namespace webrtc

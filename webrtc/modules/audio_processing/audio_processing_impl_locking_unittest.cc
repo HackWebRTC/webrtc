@@ -30,41 +30,6 @@ namespace {
 
 class AudioProcessingImplLockTest;
 
-// Sleeps a random time between 0 and max_sleep milliseconds.
-void SleepRandomMs(int max_sleep, test::Random* rand_gen) {
-  int sleeptime = rand_gen->Rand(0, max_sleep);
-  SleepMs(sleeptime);
-}
-
-// Populates a float audio frame with random data.
-void PopulateAudioFrame(float** frame,
-                        float amplitude,
-                        size_t num_channels,
-                        size_t samples_per_channel,
-                        test::Random* rand_gen) {
-  for (size_t ch = 0; ch < num_channels; ch++) {
-    for (size_t k = 0; k < samples_per_channel; k++) {
-      // Store random 16 bit quantized float number between +-amplitude.
-      frame[ch][k] = amplitude * (2 * rand_gen->Rand<float>() - 1);
-    }
-  }
-}
-
-// Populates an audioframe frame of AudioFrame type with random data.
-void PopulateAudioFrame(AudioFrame* frame,
-                        int16_t amplitude,
-                        test::Random* rand_gen) {
-  ASSERT_GT(amplitude, 0);
-  ASSERT_LE(amplitude, 32767);
-  for (int ch = 0; ch < frame->num_channels_; ch++) {
-    for (int k = 0; k < static_cast<int>(frame->samples_per_channel_); k++) {
-      // Store random 16 bit number between -(amplitude+1) and
-      // amplitude.
-      frame->data_[k * ch] = rand_gen->Rand(2 * amplitude + 1) - amplitude - 1;
-    }
-  }
-}
-
 // Type of the render thread APM API call to use in the test.
 enum class RenderApiImpl {
   ProcessReverseStreamImpl1,
@@ -95,6 +60,31 @@ enum class AecType {
   BasicWebRtcAecSettingsWithExtentedFilter,
   BasicWebRtcAecSettingsWithDelayAgnosticAec,
   BasicWebRtcAecSettingsWithAecMobile
+};
+
+// Thread-safe random number generator wrapper.
+class RandomGenerator {
+ public:
+  RandomGenerator() : rand_gen_(42U) {}
+
+  int RandInt(int min, int max) {
+    rtc::CritScope cs(&crit_);
+    return rand_gen_.Rand(min, max);
+  }
+
+  int RandInt(int max) {
+    rtc::CritScope cs(&crit_);
+    return rand_gen_.Rand(max);
+  }
+
+  float RandFloat() {
+    rtc::CritScope cs(&crit_);
+    return rand_gen_.Rand<float>();
+  }
+
+ private:
+  rtc::CriticalSection crit_;
+  test::Random rand_gen_ GUARDED_BY(crit_);
 };
 
 // Variables related to the audio data and formats.
@@ -331,7 +321,7 @@ class CaptureSideCalledChecker {
 class CaptureProcessor {
  public:
   CaptureProcessor(int max_frame_size,
-                   test::Random* rand_gen,
+                   RandomGenerator* rand_gen,
                    FrameCounters* shared_counters_state,
                    CaptureSideCalledChecker* capture_call_checker,
                    AudioProcessingImplLockTest* test_framework,
@@ -348,7 +338,7 @@ class CaptureProcessor {
   void CallApmCaptureSide();
   void ApplyRuntimeSettingScheme();
 
-  test::Random* rand_gen_ = nullptr;
+  RandomGenerator* rand_gen_ = nullptr;
   FrameCounters* frame_counters_ = nullptr;
   CaptureSideCalledChecker* capture_call_checker_ = nullptr;
   AudioProcessingImplLockTest* test_ = nullptr;
@@ -360,13 +350,13 @@ class CaptureProcessor {
 // Class for handling the stats processing.
 class StatsProcessor {
  public:
-  StatsProcessor(test::Random* rand_gen,
+  StatsProcessor(RandomGenerator* rand_gen,
                  TestConfig* test_config,
                  AudioProcessing* apm);
   bool Process();
 
  private:
-  test::Random* rand_gen_ = nullptr;
+  RandomGenerator* rand_gen_ = nullptr;
   TestConfig* test_config_ = nullptr;
   AudioProcessing* apm_ = nullptr;
 };
@@ -375,7 +365,7 @@ class StatsProcessor {
 class RenderProcessor {
  public:
   RenderProcessor(int max_frame_size,
-                  test::Random* rand_gen,
+                  RandomGenerator* rand_gen,
                   FrameCounters* shared_counters_state,
                   CaptureSideCalledChecker* capture_call_checker,
                   AudioProcessingImplLockTest* test_framework,
@@ -392,7 +382,7 @@ class RenderProcessor {
   void CallApmRenderSide();
   void ApplyRuntimeSettingScheme();
 
-  test::Random* rand_gen_ = nullptr;
+  RandomGenerator* rand_gen_ = nullptr;
   FrameCounters* frame_counters_ = nullptr;
   CaptureSideCalledChecker* capture_call_checker_ = nullptr;
   AudioProcessingImplLockTest* test_ = nullptr;
@@ -459,7 +449,7 @@ class AudioProcessingImplLockTest
   rtc::PlatformThread render_thread_;
   rtc::PlatformThread capture_thread_;
   rtc::PlatformThread stats_thread_;
-  mutable test::Random rand_gen_;
+  mutable RandomGenerator rand_gen_;
 
   rtc::scoped_ptr<AudioProcessing> apm_;
   TestConfig test_config_;
@@ -470,12 +460,47 @@ class AudioProcessingImplLockTest
   StatsProcessor stats_thread_state_;
 };
 
+// Sleeps a random time between 0 and max_sleep milliseconds.
+void SleepRandomMs(int max_sleep, RandomGenerator* rand_gen) {
+  int sleeptime = rand_gen->RandInt(0, max_sleep);
+  SleepMs(sleeptime);
+}
+
+// Populates a float audio frame with random data.
+void PopulateAudioFrame(float** frame,
+                        float amplitude,
+                        size_t num_channels,
+                        size_t samples_per_channel,
+                        RandomGenerator* rand_gen) {
+  for (size_t ch = 0; ch < num_channels; ch++) {
+    for (size_t k = 0; k < samples_per_channel; k++) {
+      // Store random 16 bit quantized float number between +-amplitude.
+      frame[ch][k] = amplitude * (2 * rand_gen->RandFloat() - 1);
+    }
+  }
+}
+
+// Populates an audioframe frame of AudioFrame type with random data.
+void PopulateAudioFrame(AudioFrame* frame,
+                        int16_t amplitude,
+                        RandomGenerator* rand_gen) {
+  ASSERT_GT(amplitude, 0);
+  ASSERT_LE(amplitude, 32767);
+  for (int ch = 0; ch < frame->num_channels_; ch++) {
+    for (int k = 0; k < static_cast<int>(frame->samples_per_channel_); k++) {
+      // Store random 16 bit number between -(amplitude+1) and
+      // amplitude.
+      frame->data_[k * ch] =
+          rand_gen->RandInt(2 * amplitude + 1) - amplitude - 1;
+    }
+  }
+}
+
 AudioProcessingImplLockTest::AudioProcessingImplLockTest()
     : test_complete_(EventWrapper::Create()),
       render_thread_(RenderProcessorThreadFunc, this, "render"),
       capture_thread_(CaptureProcessorThreadFunc, this, "capture"),
       stats_thread_(StatsProcessorThreadFunc, this, "stats"),
-      rand_gen_(42U),
       apm_(AudioProcessingImpl::Create()),
       render_thread_state_(kMaxFrameSize,
                            &rand_gen_,
@@ -513,7 +538,7 @@ void AudioProcessingImplLockTest::SetUp() {
   ASSERT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
 
   ASSERT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_mode(GainControl::kAdaptiveAnalog));
+            apm_->gain_control()->set_mode(GainControl::kAdaptiveDigital));
   ASSERT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
 
   ASSERT_EQ(apm_->kNoError, apm_->noise_suppression()->Enable(true));
@@ -552,7 +577,7 @@ void AudioProcessingImplLockTest::TearDown() {
   stats_thread_.Stop();
 }
 
-StatsProcessor::StatsProcessor(test::Random* rand_gen,
+StatsProcessor::StatsProcessor(RandomGenerator* rand_gen,
                                TestConfig* test_config,
                                AudioProcessing* apm)
     : rand_gen_(rand_gen), test_config_(test_config), apm_(apm) {}
@@ -586,7 +611,7 @@ const float CaptureProcessor::kCaptureInputFloatLevel = 0.03125f;
 
 CaptureProcessor::CaptureProcessor(
     int max_frame_size,
-    test::Random* rand_gen,
+    RandomGenerator* rand_gen,
     FrameCounters* shared_counters_state,
     CaptureSideCalledChecker* capture_call_checker,
     AudioProcessingImplLockTest* test_framework,
@@ -824,8 +849,6 @@ void CaptureProcessor::ApplyRuntimeSettingScheme() {
         apm_->set_stream_key_pressed(true);
         apm_->set_delay_offset_ms(15);
         EXPECT_EQ(apm_->delay_offset_ms(), 15);
-        EXPECT_GE(apm_->num_reverse_channels(), 0);
-        EXPECT_LE(apm_->num_reverse_channels(), 2);
       } else {
         ASSERT_EQ(AudioProcessing::Error::kNoError,
                   apm_->set_stream_delay_ms(50));
@@ -833,9 +856,6 @@ void CaptureProcessor::ApplyRuntimeSettingScheme() {
         apm_->set_delay_offset_ms(20);
         EXPECT_EQ(apm_->delay_offset_ms(), 20);
         apm_->delay_offset_ms();
-        apm_->num_reverse_channels();
-        EXPECT_GE(apm_->num_reverse_channels(), 0);
-        EXPECT_LE(apm_->num_reverse_channels(), 2);
       }
       break;
     default:
@@ -852,7 +872,7 @@ void CaptureProcessor::ApplyRuntimeSettingScheme() {
 const float RenderProcessor::kRenderInputFloatLevel = 0.5f;
 
 RenderProcessor::RenderProcessor(int max_frame_size,
-                                 test::Random* rand_gen,
+                                 RandomGenerator* rand_gen,
                                  FrameCounters* shared_counters_state,
                                  CaptureSideCalledChecker* capture_call_checker,
                                  AudioProcessingImplLockTest* test_framework,
@@ -1104,7 +1124,7 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::ValuesIn(TestConfig::GenerateExtensiveTestConfigs()));
 
 INSTANTIATE_TEST_CASE_P(
-    DISABLED_AudioProcessingImplLockBrief,
+    AudioProcessingImplLockBrief,
     AudioProcessingImplLockTest,
     ::testing::ValuesIn(TestConfig::GenerateBriefTestConfigs()));
 

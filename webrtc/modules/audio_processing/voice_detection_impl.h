@@ -11,18 +11,18 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VOICE_DETECTION_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_VOICE_DETECTION_IMPL_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
 
 namespace webrtc {
 
 class AudioBuffer;
-class CriticalSectionWrapper;
 
 class VoiceDetectionImpl : public VoiceDetection,
                            public ProcessingComponent {
  public:
-  VoiceDetectionImpl(const AudioProcessing* apm, CriticalSectionWrapper* crit);
+  VoiceDetectionImpl(const AudioProcessing* apm, rtc::CriticalSection* crit);
   virtual ~VoiceDetectionImpl();
 
   int ProcessCaptureAudio(AudioBuffer* audio);
@@ -51,13 +51,16 @@ class VoiceDetectionImpl : public VoiceDetection,
   int num_handles_required() const override;
   int GetHandleError(void* handle) const override;
 
+  // Not guarded as its public API is thread safe.
   const AudioProcessing* apm_;
-  CriticalSectionWrapper* crit_;
-  bool stream_has_voice_;
-  bool using_external_vad_;
-  Likelihood likelihood_;
-  int frame_size_ms_;
-  size_t frame_size_samples_;
+
+  rtc::CriticalSection* const crit_;
+
+  bool stream_has_voice_ GUARDED_BY(crit_);
+  bool using_external_vad_ GUARDED_BY(crit_);
+  Likelihood likelihood_ GUARDED_BY(crit_);
+  int frame_size_ms_ GUARDED_BY(crit_);
+  size_t frame_size_samples_ GUARDED_BY(crit_);
 };
 }  // namespace webrtc
 

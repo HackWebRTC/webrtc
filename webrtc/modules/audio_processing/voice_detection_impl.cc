@@ -12,9 +12,10 @@
 
 #include <assert.h>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -38,19 +39,23 @@ int MapSetting(VoiceDetection::Likelihood likelihood) {
 }  // namespace
 
 VoiceDetectionImpl::VoiceDetectionImpl(const AudioProcessing* apm,
-                                       CriticalSectionWrapper* crit)
-  : ProcessingComponent(),
-    apm_(apm),
-    crit_(crit),
-    stream_has_voice_(false),
-    using_external_vad_(false),
-    likelihood_(kLowLikelihood),
-    frame_size_ms_(10),
-    frame_size_samples_(0) {}
+                                       rtc::CriticalSection* crit)
+    : ProcessingComponent(),
+      apm_(apm),
+      crit_(crit),
+      stream_has_voice_(false),
+      using_external_vad_(false),
+      likelihood_(kLowLikelihood),
+      frame_size_ms_(10),
+      frame_size_samples_(0) {
+  RTC_DCHECK(apm);
+  RTC_DCHECK(crit);
+}
 
 VoiceDetectionImpl::~VoiceDetectionImpl() {}
 
 int VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
+  rtc::CritScope cs(crit_);
   if (!is_component_enabled()) {
     return apm_->kNoError;
   }
@@ -81,28 +86,31 @@ int VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 }
 
 int VoiceDetectionImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(crit_);
+  rtc::CritScope cs(crit_);
   return EnableComponent(enable);
 }
 
 bool VoiceDetectionImpl::is_enabled() const {
+  rtc::CritScope cs(crit_);
   return is_component_enabled();
 }
 
 int VoiceDetectionImpl::set_stream_has_voice(bool has_voice) {
+  rtc::CritScope cs(crit_);
   using_external_vad_ = true;
   stream_has_voice_ = has_voice;
   return apm_->kNoError;
 }
 
 bool VoiceDetectionImpl::stream_has_voice() const {
+  rtc::CritScope cs(crit_);
   // TODO(ajm): enable this assertion?
   //assert(using_external_vad_ || is_component_enabled());
   return stream_has_voice_;
 }
 
 int VoiceDetectionImpl::set_likelihood(VoiceDetection::Likelihood likelihood) {
-  CriticalSectionScoped crit_scoped(crit_);
+  rtc::CritScope cs(crit_);
   if (MapSetting(likelihood) == -1) {
     return apm_->kBadParameterError;
   }
@@ -112,11 +120,12 @@ int VoiceDetectionImpl::set_likelihood(VoiceDetection::Likelihood likelihood) {
 }
 
 VoiceDetection::Likelihood VoiceDetectionImpl::likelihood() const {
+  rtc::CritScope cs(crit_);
   return likelihood_;
 }
 
 int VoiceDetectionImpl::set_frame_size_ms(int size) {
-  CriticalSectionScoped crit_scoped(crit_);
+  rtc::CritScope cs(crit_);
   assert(size == 10); // TODO(ajm): remove when supported.
   if (size != 10 &&
       size != 20 &&
@@ -130,11 +139,14 @@ int VoiceDetectionImpl::set_frame_size_ms(int size) {
 }
 
 int VoiceDetectionImpl::frame_size_ms() const {
+  rtc::CritScope cs(crit_);
   return frame_size_ms_;
 }
 
 int VoiceDetectionImpl::Initialize() {
   int err = ProcessingComponent::Initialize();
+
+  rtc::CritScope cs(crit_);
   if (err != apm_->kNoError || !is_component_enabled()) {
     return err;
   }
@@ -160,6 +172,7 @@ int VoiceDetectionImpl::InitializeHandle(void* handle) const {
 }
 
 int VoiceDetectionImpl::ConfigureHandle(void* handle) const {
+  rtc::CritScope cs(crit_);
   return WebRtcVad_set_mode(static_cast<Handle*>(handle),
                             MapSetting(likelihood_));
 }

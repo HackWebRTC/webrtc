@@ -13,7 +13,9 @@
 
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
@@ -21,13 +23,13 @@
 namespace webrtc {
 
 class AudioBuffer;
-class CriticalSectionWrapper;
 
 class GainControlImpl : public GainControl,
                         public ProcessingComponent {
  public:
   GainControlImpl(const AudioProcessing* apm,
-                  CriticalSectionWrapper* crit);
+                  rtc::CriticalSection* crit_render,
+                  rtc::CriticalSection* crit_capture);
   virtual ~GainControlImpl();
 
   int ProcessRenderAudio(AudioBuffer* audio);
@@ -71,22 +73,29 @@ class GainControlImpl : public GainControl,
 
   void AllocateRenderQueue();
 
+  // Not guarded as its public API is thread safe.
   const AudioProcessing* apm_;
-  CriticalSectionWrapper* crit_;
-  Mode mode_;
-  int minimum_capture_level_;
-  int maximum_capture_level_;
-  bool limiter_enabled_;
-  int target_level_dbfs_;
-  int compression_gain_db_;
-  std::vector<int> capture_levels_;
-  int analog_capture_level_;
-  bool was_analog_level_set_;
-  bool stream_is_saturated_;
 
-  size_t render_queue_element_max_size_;
-  std::vector<int16_t> render_queue_buffer_;
-  std::vector<int16_t> capture_queue_buffer_;
+  rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
+  rtc::CriticalSection* const crit_capture_;
+
+  Mode mode_ GUARDED_BY(crit_capture_);
+  int minimum_capture_level_ GUARDED_BY(crit_capture_);
+  int maximum_capture_level_ GUARDED_BY(crit_capture_);
+  bool limiter_enabled_ GUARDED_BY(crit_capture_);
+  int target_level_dbfs_ GUARDED_BY(crit_capture_);
+  int compression_gain_db_ GUARDED_BY(crit_capture_);
+  std::vector<int> capture_levels_ GUARDED_BY(crit_capture_);
+  int analog_capture_level_ GUARDED_BY(crit_capture_);
+  bool was_analog_level_set_ GUARDED_BY(crit_capture_);
+  bool stream_is_saturated_ GUARDED_BY(crit_capture_);
+
+  size_t render_queue_element_max_size_ GUARDED_BY(crit_render_)
+      GUARDED_BY(crit_capture_);
+  std::vector<int16_t> render_queue_buffer_ GUARDED_BY(crit_render_);
+  std::vector<int16_t> capture_queue_buffer_ GUARDED_BY(crit_capture_);
+
+  // Lock protection not needed.
   rtc::scoped_ptr<
       SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
       render_signal_queue_;

@@ -11,19 +11,18 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_IMPL_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
 
 namespace webrtc {
 
 class AudioBuffer;
-class CriticalSectionWrapper;
 
 class NoiseSuppressionImpl : public NoiseSuppression,
                              public ProcessingComponent {
  public:
-  NoiseSuppressionImpl(const AudioProcessing* apm,
-                       CriticalSectionWrapper* crit);
+  NoiseSuppressionImpl(const AudioProcessing* apm, rtc::CriticalSection* crit);
   virtual ~NoiseSuppressionImpl();
 
   int AnalyzeCaptureAudio(AudioBuffer* audio);
@@ -47,9 +46,12 @@ class NoiseSuppressionImpl : public NoiseSuppression,
   int num_handles_required() const override;
   int GetHandleError(void* handle) const override;
 
+  // Not guarded as its public API is thread safe.
   const AudioProcessing* apm_;
-  CriticalSectionWrapper* crit_;
-  Level level_;
+
+  rtc::CriticalSection* const crit_;
+
+  Level level_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

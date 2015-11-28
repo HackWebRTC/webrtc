@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_ESTIMATOR_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_ESTIMATOR_IMPL_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
 #include "webrtc/modules/audio_processing/rms_level.h"
@@ -18,13 +19,11 @@
 namespace webrtc {
 
 class AudioBuffer;
-class CriticalSectionWrapper;
 
 class LevelEstimatorImpl : public LevelEstimator,
                            public ProcessingComponent {
  public:
-  LevelEstimatorImpl(const AudioProcessing* apm,
-                     CriticalSectionWrapper* crit);
+  LevelEstimatorImpl(const AudioProcessing* apm, rtc::CriticalSection* crit);
   virtual ~LevelEstimatorImpl();
 
   int ProcessStream(AudioBuffer* audio);
@@ -45,7 +44,7 @@ class LevelEstimatorImpl : public LevelEstimator,
   int num_handles_required() const override;
   int GetHandleError(void* handle) const override;
 
-  CriticalSectionWrapper* crit_;
+  rtc::CriticalSection* const crit_;
 };
 
 }  // namespace webrtc
