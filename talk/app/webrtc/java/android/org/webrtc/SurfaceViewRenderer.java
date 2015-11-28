@@ -243,6 +243,14 @@ public class SurfaceViewRenderer extends SurfaceView
       frameRotation = 0;
       rendererEvents = null;
     }
+    resetStatistics();
+  }
+
+  /**
+   * Reset statistics. This will reset the logged statistics in logStatistics(), and
+   * RendererEvents.onFirstFrameRendered() will be called for the next frame.
+   */
+  public void resetStatistics() {
     synchronized (statisticsLock) {
       framesReceived = 0;
       framesDropped = 0;
