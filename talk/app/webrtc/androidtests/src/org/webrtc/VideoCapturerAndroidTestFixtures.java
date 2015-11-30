@@ -191,14 +191,18 @@ public class VideoCapturerAndroidTestFixtures {
       VideoCapturerAndroid.CameraEventsHandler {
     public boolean onCameraOpeningCalled;
     public boolean onFirstFrameAvailableCalled;
-    public final Object onCameraErrorLock = new Object();
-    private String onCameraErrorDescription;
+    public final Object onCameraFreezedLock = new Object();
+    private String onCameraFreezedDescription;
 
     @Override
     public void onCameraError(String errorDescription) {
-      synchronized (onCameraErrorLock) {
-        onCameraErrorDescription = errorDescription;
-        onCameraErrorLock.notifyAll();
+    }
+
+    @Override
+    public void onCameraFreezed(String errorDescription) {
+      synchronized (onCameraFreezedLock) {
+        onCameraFreezedDescription = errorDescription;
+        onCameraFreezedLock.notifyAll();
       }
     }
 
@@ -215,10 +219,10 @@ public class VideoCapturerAndroidTestFixtures {
     @Override
     public void onCameraClosed() { }
 
-    public String WaitForCameraError() throws InterruptedException {
-      synchronized (onCameraErrorLock) {
-        onCameraErrorLock.wait();
-        return onCameraErrorDescription;
+    public String WaitForCameraFreezed() throws InterruptedException {
+      synchronized (onCameraFreezedLock) {
+        onCameraFreezedLock.wait();
+        return onCameraFreezedDescription;
       }
     }
   }
@@ -537,7 +541,7 @@ public class VideoCapturerAndroidTestFixtures {
     assertTrue(capturer.isReleased());
   }
 
-  static public void cameraErrorEventOnBufferStarvation(VideoCapturerAndroid capturer,
+  static public void cameraFreezedEventOnBufferStarvation(VideoCapturerAndroid capturer,
       CameraEvents events, Context appContext) throws InterruptedException {
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
@@ -548,7 +552,8 @@ public class VideoCapturerAndroidTestFixtures {
     // Make sure camera is started.
     assertTrue(observer.WaitForCapturerToStart());
     // Since we don't call returnBuffer, we should get a starvation message.
-    assertEquals("Camera failure. Client must return video buffers.", events.WaitForCameraError());
+    assertEquals("Camera failure. Client must return video buffers.",
+        events.WaitForCameraFreezed());
 
     capturer.stopCapture();
     for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {

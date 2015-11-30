@@ -292,11 +292,11 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   @MediumTest
   // This test that CameraEventsHandler.onError is triggered if video buffers are not returned to
   // the capturer.
-  public void testCameraErrorEventOnBufferStarvation() throws InterruptedException {
+  public void testCameraFreezedEventOnBufferStarvation() throws InterruptedException {
     VideoCapturerAndroidTestFixtures.CameraEvents cameraEvents =
         VideoCapturerAndroidTestFixtures.createCameraEvents();
     VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", cameraEvents);
-    VideoCapturerAndroidTestFixtures.cameraErrorEventOnBufferStarvation(capturer,
+    VideoCapturerAndroidTestFixtures.cameraFreezedEventOnBufferStarvation(capturer,
         cameraEvents, getInstrumentation().getContext());
   }
 

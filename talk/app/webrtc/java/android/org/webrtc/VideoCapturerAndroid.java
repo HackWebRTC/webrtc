@@ -28,7 +28,6 @@
 package org.webrtc;
 
 import android.content.Context;
-import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
@@ -103,7 +102,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
   // another application when startCaptureOnCameraThread is called.
   private Runnable openCameraOnCodecThreadRunner;
   private final static int MAX_OPEN_CAMERA_ATTEMPTS = 3;
-  private final static int OPEN_CAMERA_DELAY_MS = 300;
+  private final static int OPEN_CAMERA_DELAY_MS = 500;
   private int openCameraAttempts;
 
   // Camera error callback.
@@ -141,9 +140,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements
             && eventsHandler != null) {
           Logging.e(TAG, "Camera freezed.");
           if (cameraStatistics.pendingFramesCount() == cameraStatistics.maxPendingFrames) {
-            eventsHandler.onCameraError("Camera failure. Client must return video buffers.");
+            eventsHandler.onCameraFreezed("Camera failure. Client must return video buffers.");
           } else {
-            eventsHandler.onCameraError("Camera failure.");
+            eventsHandler.onCameraFreezed("Camera failure.");
           }
           return;
         }
@@ -204,9 +203,12 @@ public class VideoCapturerAndroid extends VideoCapturer implements
   }
 
   public static interface CameraEventsHandler {
-    // Camera error handler - invoked when camera stops receiving frames
+    // Camera error handler - invoked when camera can not be opened
     // or any camera exception happens on camera thread.
     void onCameraError(String errorDescription);
+
+    // Invoked when camera stops receiving frames
+    void onCameraFreezed(String errorDescription);
 
     // Callback invoked when camera is opening.
     void onCameraOpening(int cameraId);
