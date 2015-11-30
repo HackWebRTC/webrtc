@@ -102,6 +102,7 @@
 /third_party/junit
 /third_party/junit-jar
 /third_party/libc++
+/third_party/libc++-static
 /third_party/libc++abi
 /third_party/libevent
 /third_party/libjingle
