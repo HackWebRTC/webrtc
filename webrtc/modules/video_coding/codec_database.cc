@@ -423,7 +423,7 @@ bool VCMCodecDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
   // because payload type may be out of date (e.g. before we decode the first
   // frame after RegisterReceiveCodec)
   if (ptr_decoder_ != nullptr &&
-      &ptr_decoder_->_decoder == (*it).second->external_decoder_instance) {
+      ptr_decoder_->_decoder == (*it).second->external_decoder_instance) {
     // Release it if it was registered and in use.
     ReleaseDecoder(ptr_decoder_);
     ptr_decoder_ = nullptr;
@@ -571,7 +571,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   if (external_dec_item) {
     // External codec.
     ptr_decoder = new VCMGenericDecoder(
-        *external_dec_item->external_decoder_instance, true);
+        external_dec_item->external_decoder_instance, true);
   } else {
     // Create decoder.
     ptr_decoder = CreateDecoder(decoder_item->settings->codecType);
@@ -607,14 +607,14 @@ void VCMCodecDataBase::DeleteEncoder() {
 VCMGenericDecoder* VCMCodecDataBase::CreateDecoder(VideoCodecType type) const {
   switch (type) {
     case kVideoCodecVP8:
-      return new VCMGenericDecoder(*(VP8Decoder::Create()));
+      return new VCMGenericDecoder(VP8Decoder::Create(), false);
     case kVideoCodecVP9:
-      return new VCMGenericDecoder(*(VP9Decoder::Create()));
+      return new VCMGenericDecoder(VP9Decoder::Create(), false);
     case kVideoCodecI420:
-      return new VCMGenericDecoder(*(new I420Decoder));
+      return new VCMGenericDecoder(new I420Decoder(), false);
     case kVideoCodecH264:
       if (H264Decoder::IsSupported()) {
-        return new VCMGenericDecoder(*(H264Decoder::Create()));
+        return new VCMGenericDecoder(H264Decoder::Create(), false);
       }
       break;
     default:
