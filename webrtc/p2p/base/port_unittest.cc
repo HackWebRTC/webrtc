@@ -202,7 +202,7 @@ class TestPort : public Port {
  private:
   rtc::scoped_ptr<ByteBuffer> last_stun_buf_;
   rtc::scoped_ptr<IceMessage> last_stun_msg_;
-  int type_preference_;
+  int type_preference_ = 0;
 };
 
 class TestChannel : public sigslot::has_slots<> {
