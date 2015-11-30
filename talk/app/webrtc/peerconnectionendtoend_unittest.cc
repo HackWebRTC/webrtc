@@ -217,12 +217,16 @@ class PeerConnectionEndToEndTest
   DataChannelList callee_signaled_data_channels_;
 };
 
+// Disabled for TSan v2, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=4719 for details.
+#if !defined(THREAD_SANITIZER)
 TEST_F(PeerConnectionEndToEndTest, Call) {
   CreatePcs();
   GetAndAddUserMedia();
   Negotiate();
   WaitForCallEstablished();
 }
+#endif // if !defined(THREAD_SANITIZER)
 
 // Disabled per b/14899892
 TEST_F(PeerConnectionEndToEndTest, DISABLED_CallWithLegacySdp) {
