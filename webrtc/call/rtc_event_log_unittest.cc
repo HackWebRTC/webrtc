@@ -11,6 +11,7 @@
 #ifdef ENABLE_RTC_EVENT_LOG
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"

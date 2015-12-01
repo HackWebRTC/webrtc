@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string>
+
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/audio/audio_receive_stream.h"

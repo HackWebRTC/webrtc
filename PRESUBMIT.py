@@ -16,6 +16,8 @@ import sys
 
 # Directories that will be scanned by cpplint by the presubmit script.
 CPPLINT_DIRS = [
+  'webrtc/audio',
+  'webrtc/call',
   'webrtc/video_engine',
 ]
 

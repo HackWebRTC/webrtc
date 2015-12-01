@@ -126,7 +126,7 @@ class Call : public webrtc::Call, public PacketReceiver,
   Call::Config config_;
   rtc::ThreadChecker configuration_thread_checker_;
 
- bool network_enabled_;
+  bool network_enabled_;
 
   rtc::scoped_ptr<RWLockWrapper> receive_crit_;
   // Audio and Video receive streams are owned by the client that creates them.
