@@ -65,7 +65,7 @@ class VCMGenericDecoder
 {
     friend class VCMCodecDataBase;
 public:
-    VCMGenericDecoder(VideoDecoder& decoder, bool isExternal = false);
+    VCMGenericDecoder(VideoDecoder* decoder, bool isExternal = false);
     ~VCMGenericDecoder();
 
     /**
@@ -102,7 +102,7 @@ private:
     VCMDecodedFrameCallback*    _callback;
     VCMFrameInformation         _frameInfos[kDecoderFrameMemoryLength];
     uint32_t                    _nextFrameInfoIdx;
-    VideoDecoder&               _decoder;
+    VideoDecoder* const         _decoder;
     VideoCodecType              _codecType;
     bool                        _isExternal;
     bool                        _keyFrameDecoded;

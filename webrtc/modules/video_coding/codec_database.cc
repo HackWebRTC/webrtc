@@ -111,8 +111,12 @@ VCMCodecDataBase::VCMCodecDataBase(
       dec_external_map_() {}
 
 VCMCodecDataBase::~VCMCodecDataBase() {
-  ResetSender();
-  ResetReceiver();
+  DeleteEncoder();
+  ReleaseDecoder(ptr_decoder_);
+  for (auto& kv : dec_map_)
+    delete kv.second;
+  for (auto& kv : dec_external_map_)
+    delete kv.second;
 }
 
 void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
@@ -186,11 +190,6 @@ void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
       RTC_NOTREACHED();
       return;
   }
-}
-
-void VCMCodecDataBase::ResetSender() {
-  DeleteEncoder();
-  periodic_key_frames_ = false;
 }
 
 // Assuming only one registered encoder - since only one used, no need for more.
@@ -397,22 +396,6 @@ bool VCMCodecDataBase::SetPeriodicKeyFrames(bool enable) {
   return true;
 }
 
-void VCMCodecDataBase::ResetReceiver() {
-  ReleaseDecoder(ptr_decoder_);
-  ptr_decoder_ = nullptr;
-  memset(&receive_codec_, 0, sizeof(VideoCodec));
-  while (!dec_map_.empty()) {
-    DecoderMap::iterator it = dec_map_.begin();
-    delete (*it).second;
-    dec_map_.erase(it);
-  }
-  while (!dec_external_map_.empty()) {
-    ExternalDecoderMap::iterator external_it = dec_external_map_.begin();
-    delete (*external_it).second;
-    dec_external_map_.erase(external_it);
-  }
-}
-
 bool VCMCodecDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
   ExternalDecoderMap::iterator it = dec_external_map_.find(payload_type);
   if (it == dec_external_map_.end()) {
@@ -423,13 +406,13 @@ bool VCMCodecDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
   // because payload type may be out of date (e.g. before we decode the first
   // frame after RegisterReceiveCodec)
   if (ptr_decoder_ != nullptr &&
-      &ptr_decoder_->_decoder == (*it).second->external_decoder_instance) {
+      ptr_decoder_->_decoder == (*it).second->external_decoder_instance) {
     // Release it if it was registered and in use.
     ReleaseDecoder(ptr_decoder_);
     ptr_decoder_ = nullptr;
   }
   DeregisterReceiveCodec(payload_type);
-  delete (*it).second;
+  delete it->second;
   dec_external_map_.erase(it);
   return true;
 }
@@ -476,8 +459,7 @@ bool VCMCodecDataBase::DeregisterReceiveCodec(
   if (it == dec_map_.end()) {
     return false;
   }
-  VCMDecoderMapItem* dec_item = (*it).second;
-  delete dec_item;
+  delete it->second;
   dec_map_.erase(it);
   if (receive_codec_.plType == payload_type) {
     // This codec is currently in use.
@@ -533,10 +515,10 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
 
 void VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const {
   if (decoder) {
-    assert(&decoder->_decoder);
+    assert(decoder->_decoder);
     decoder->Release();
     if (!decoder->External()) {
-      delete &decoder->_decoder;
+      delete decoder->_decoder;
     }
     delete decoder;
   }
@@ -571,7 +553,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   if (external_dec_item) {
     // External codec.
     ptr_decoder = new VCMGenericDecoder(
-        *external_dec_item->external_decoder_instance, true);
+        external_dec_item->external_decoder_instance, true);
   } else {
     // Create decoder.
     ptr_decoder = CreateDecoder(decoder_item->settings->codecType);
@@ -607,14 +589,14 @@ void VCMCodecDataBase::DeleteEncoder() {
 VCMGenericDecoder* VCMCodecDataBase::CreateDecoder(VideoCodecType type) const {
   switch (type) {
     case kVideoCodecVP8:
-      return new VCMGenericDecoder(*(VP8Decoder::Create()));
+      return new VCMGenericDecoder(VP8Decoder::Create());
     case kVideoCodecVP9:
-      return new VCMGenericDecoder(*(VP9Decoder::Create()));
+      return new VCMGenericDecoder(VP9Decoder::Create());
     case kVideoCodecI420:
-      return new VCMGenericDecoder(*(new I420Decoder));
+      return new VCMGenericDecoder(new I420Decoder());
     case kVideoCodecH264:
       if (H264Decoder::IsSupported()) {
-        return new VCMGenericDecoder(*(H264Decoder::Create()));
+        return new VCMGenericDecoder(H264Decoder::Create());
       }
       break;
     default:

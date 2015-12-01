@@ -131,21 +131,16 @@ int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp)
     return VCM_OK;
 }
 
-VCMGenericDecoder::VCMGenericDecoder(VideoDecoder& decoder, bool isExternal)
-:
-_callback(NULL),
-_frameInfos(),
-_nextFrameInfoIdx(0),
-_decoder(decoder),
-_codecType(kVideoCodecUnknown),
-_isExternal(isExternal),
-_keyFrameDecoded(false)
-{
-}
+VCMGenericDecoder::VCMGenericDecoder(VideoDecoder* decoder, bool isExternal)
+    : _callback(NULL),
+      _frameInfos(),
+      _nextFrameInfoIdx(0),
+      _decoder(decoder),
+      _codecType(kVideoCodecUnknown),
+      _isExternal(isExternal),
+      _keyFrameDecoded(false) {}
 
-VCMGenericDecoder::~VCMGenericDecoder()
-{
-}
+VCMGenericDecoder::~VCMGenericDecoder() {}
 
 int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
                                       int32_t numberOfCores)
@@ -153,7 +148,7 @@ int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
     TRACE_EVENT0("webrtc", "VCMGenericDecoder::InitDecode");
     _codecType = settings->codecType;
 
-    return _decoder.InitDecode(settings, numberOfCores);
+    return _decoder->InitDecode(settings, numberOfCores);
 }
 
 int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
@@ -165,11 +160,9 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
     _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
 
     _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
-    int32_t ret = _decoder.Decode(frame.EncodedImage(),
-                                        frame.MissingFrame(),
-                                        frame.FragmentationHeader(),
-                                        frame.CodecSpecific(),
-                                        frame.RenderTimeMs());
+    int32_t ret = _decoder->Decode(frame.EncodedImage(), frame.MissingFrame(),
+                                   frame.FragmentationHeader(),
+                                   frame.CodecSpecific(), frame.RenderTimeMs());
 
     if (ret < WEBRTC_VIDEO_CODEC_OK)
     {
@@ -187,26 +180,22 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
     return ret;
 }
 
-int32_t
-VCMGenericDecoder::Release()
-{
-    return _decoder.Release();
+int32_t VCMGenericDecoder::Release() {
+  return _decoder->Release();
 }
 
-int32_t VCMGenericDecoder::Reset()
-{
-    return _decoder.Reset();
+int32_t VCMGenericDecoder::Reset() {
+  return _decoder->Reset();
 }
 
-int32_t VCMGenericDecoder::RegisterDecodeCompleteCallback(VCMDecodedFrameCallback* callback)
-{
-    _callback = callback;
-    return _decoder.RegisterDecodeCompleteCallback(callback);
+int32_t VCMGenericDecoder::RegisterDecodeCompleteCallback(
+    VCMDecodedFrameCallback* callback) {
+  _callback = callback;
+  return _decoder->RegisterDecodeCompleteCallback(callback);
 }
 
-bool VCMGenericDecoder::External() const
-{
-    return _isExternal;
+bool VCMGenericDecoder::External() const {
+  return _isExternal;
 }
 
 }  // namespace

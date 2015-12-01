@@ -295,9 +295,6 @@ VideoReceiveStream::~VideoReceiveStream() {
   vie_channel_->RegisterPreRenderCallback(nullptr);
   vie_channel_->RegisterPreDecodeImageCallback(nullptr);
 
-  for (size_t i = 0; i < config_.decoders.size(); ++i)
-    vie_channel_->DeRegisterExternalDecoder(config_.decoders[i].payload_type);
-
   call_stats_->DeregisterStatsObserver(vie_channel_->GetStatsObserver());
   congestion_controller_->SetChannelRembStatus(false, false,
                                                vie_channel_->rtp_rtcp());

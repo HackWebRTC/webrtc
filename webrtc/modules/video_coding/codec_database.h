@@ -54,8 +54,6 @@ class VCMCodecDataBase {
   // Returns the default settings for the codec with type |codec_type|.
   static void Codec(VideoCodecType codec_type, VideoCodec* settings);
 
-  void ResetSender();
-
   // Sets the sender side codec and initiates the desired codec given the
   // VideoCodec struct.
   // Returns true if the codec was successfully registered, false otherwise.
@@ -87,9 +85,6 @@ class VCMCodecDataBase {
   VCMGenericEncoder* GetEncoder();
 
   bool SetPeriodicKeyFrames(bool enable);
-
-  // Receiver Side
-  void ResetReceiver();
 
   // Deregisters an external decoder object specified by |payload_type|.
   bool DeregisterExternalDecoder(uint8_t payload_type);

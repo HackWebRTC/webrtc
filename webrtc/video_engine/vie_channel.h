@@ -94,7 +94,6 @@ class ViEChannel : public VCMFrameTypeCallback,
                                   VideoDecoder* decoder,
                                   bool buffered_rendering,
                                   int32_t render_delay);
-  int32_t DeRegisterExternalDecoder(const uint8_t pl_type);
   int32_t ReceiveCodecStatistics(uint32_t* num_key_frames,
                                  uint32_t* num_delta_frames);
   uint32_t DiscardedPackets() const;

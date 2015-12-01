@@ -187,7 +187,8 @@ ViEChannel::~ViEChannel() {
     module_process_thread_->DeRegisterModule(rtp_rtcp);
     delete rtp_rtcp;
   }
-  StopDecodeThread();
+  if (!sender_)
+    StopDecodeThread();
   // Release modules.
   VideoCodingModule::Destroy(vcm_);
 }
@@ -437,20 +438,6 @@ int32_t ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
   RTC_DCHECK(!sender_);
   vcm_->RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
   return vcm_->SetRenderDelay(render_delay);
-}
-
-int32_t ViEChannel::DeRegisterExternalDecoder(const uint8_t pl_type) {
-  RTC_DCHECK(!sender_);
-  VideoCodec current_receive_codec;
-  int32_t result = 0;
-  result = vcm_->ReceiveCodec(&current_receive_codec);
-  vcm_->RegisterExternalDecoder(NULL, pl_type, false);
-
-  if (result == 0 && current_receive_codec.plType == pl_type) {
-    result = vcm_->RegisterReceiveCodec(&current_receive_codec,
-                                        number_of_cores_, false);
-  }
-  return result;
 }
 
 int32_t ViEChannel::ReceiveCodecStatistics(uint32_t* num_key_frames,
