@@ -86,6 +86,7 @@
 #include "webrtc/base/rtccertificate.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/socketaddress.h"
+#include "webrtc/p2p/base/portallocator.h"
 
 namespace rtc {
 class SSLIdentity;
@@ -93,7 +94,6 @@ class Thread;
 }
 
 namespace cricket {
-class PortAllocator;
 class WebRtcVideoDecoderFactory;
 class WebRtcVideoEncoderFactory;
 }
@@ -565,13 +565,27 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 
   virtual void SetOptions(const Options& options) = 0;
 
-  virtual rtc::scoped_refptr<PeerConnectionInterface>
-      CreatePeerConnection(
-          const PeerConnectionInterface::RTCConfiguration& configuration,
-          const MediaConstraintsInterface* constraints,
-          PortAllocatorFactoryInterface* allocator_factory,
-          rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-          PeerConnectionObserver* observer) = 0;
+  // TODO(deadbeef): Remove this overload of CreatePeerConnection once clients
+  // are moved to the new version.
+  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      const MediaConstraintsInterface* constraints,
+      PortAllocatorFactoryInterface* allocator_factory,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      PeerConnectionObserver* observer) {
+    return nullptr;
+  }
+
+  // TODO(deadbeef): Make this pure virtual once it's implemented by all
+  // subclasses.
+  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      const MediaConstraintsInterface* constraints,
+      rtc::scoped_ptr<cricket::PortAllocator> allocator,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      PeerConnectionObserver* observer) {
+    return nullptr;
+  }
 
   // TODO(hbos): Remove below version after clients are updated to above method.
   // In latest W3C WebRTC draft, PC constructor will take RTCConfiguration,

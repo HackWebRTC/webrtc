@@ -47,8 +47,18 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
       rtc::scoped_ptr<DtlsIdentityStoreInterface> a4,
       PeerConnectionObserver* a5) override {
     return owner_thread_->Invoke<rtc::scoped_refptr<PeerConnectionInterface>>(
-        rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot, this,
+        rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot1, this,
                   a1, a2, a3, a4.release(), a5));
+  }
+  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& a1,
+      const MediaConstraintsInterface* a2,
+      rtc::scoped_ptr<cricket::PortAllocator> a3,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> a4,
+      PeerConnectionObserver* a5) override {
+    return owner_thread_->Invoke<rtc::scoped_refptr<PeerConnectionInterface>>(
+        rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot2, this,
+                  a1, a2, a3.release(), a4.release(), a5));
   }
   PROXY_METHOD1(rtc::scoped_refptr<MediaStreamInterface>,
                 CreateLocalMediaStream, const std::string&)
@@ -67,7 +77,7 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
   PROXY_METHOD0(void, StopRtcEventLog)
 
  private:
-  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_ot(
+  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_ot1(
       const PeerConnectionInterface::RTCConfiguration& a1,
       const MediaConstraintsInterface* a2,
       PortAllocatorFactoryInterface* a3,
@@ -75,6 +85,17 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
       PeerConnectionObserver* a5) {
     rtc::scoped_ptr<DtlsIdentityStoreInterface> ptr_a4(a4);
     return c_->CreatePeerConnection(a1, a2, a3, ptr_a4.Pass(), a5);
+  }
+
+  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_ot2(
+      const PeerConnectionInterface::RTCConfiguration& a1,
+      const MediaConstraintsInterface* a2,
+      cricket::PortAllocator* a3,
+      DtlsIdentityStoreInterface* a4,
+      PeerConnectionObserver* a5) {
+    rtc::scoped_ptr<cricket::PortAllocator> ptr_a3(a3);
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> ptr_a4(a4);
+    return c_->CreatePeerConnection(a1, a2, ptr_a3.Pass(), ptr_a4.Pass(), a5);
   }
 END_PROXY()
 

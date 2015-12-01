@@ -39,6 +39,11 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread.h"
 
+namespace rtc {
+class BasicNetworkManager;
+class BasicPacketSocketFactory;
+}
+
 namespace webrtc {
 
 typedef rtc::RefCountedObject<DtlsIdentityStoreImpl>
@@ -51,6 +56,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   }
 
   // webrtc::PeerConnectionFactoryInterface override;
+  // TODO(deadbeef): Get rid of this overload once clients are moved to the
+  // new version.
   rtc::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
           const PeerConnectionInterface::RTCConfiguration& configuration,
@@ -58,6 +65,13 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
           PortAllocatorFactoryInterface* allocator_factory,
           rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
           PeerConnectionObserver* observer) override;
+
+  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      const MediaConstraintsInterface* constraints,
+      rtc::scoped_ptr<cricket::PortAllocator> allocator,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      PeerConnectionObserver* observer) override;
 
   bool Initialize();
 
@@ -119,6 +133,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   // injected any. In that case, video engine will use the internal SW decoder.
   rtc::scoped_ptr<cricket::WebRtcVideoDecoderFactory>
       video_decoder_factory_;
+  rtc::scoped_ptr<rtc::BasicNetworkManager> default_network_manager_;
+  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> default_socket_factory_;
 
   rtc::scoped_refptr<RefCountedDtlsIdentityStore> dtls_identity_store_;
 };

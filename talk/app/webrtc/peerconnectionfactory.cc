@@ -44,6 +44,8 @@
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "webrtc/p2p/client/basicportallocator.h"
 
 namespace webrtc {
 
@@ -156,8 +158,11 @@ PeerConnectionFactory::~PeerConnectionFactory() {
   default_allocator_factory_ = nullptr;
 
   // Make sure |worker_thread_| and |signaling_thread_| outlive
-  // |dtls_identity_store_|.
+  // |dtls_identity_store_|, |default_socket_factory_| and
+  // |default_network_manager_|.
   dtls_identity_store_ = nullptr;
+  default_socket_factory_ = nullptr;
+  default_network_manager_ = nullptr;
 
   if (owns_ptrs_) {
     if (wraps_current_thread_)
@@ -171,8 +176,20 @@ bool PeerConnectionFactory::Initialize() {
   rtc::InitRandom(rtc::Time());
 
   default_allocator_factory_ = PortAllocatorFactory::Create(worker_thread_);
-  if (!default_allocator_factory_)
+  if (!default_allocator_factory_) {
     return false;
+  }
+
+  default_network_manager_.reset(new rtc::BasicNetworkManager());
+  if (!default_network_manager_) {
+    return false;
+  }
+
+  default_socket_factory_.reset(
+      new rtc::BasicPacketSocketFactory(worker_thread_));
+  if (!default_socket_factory_) {
+    return false;
+  }
 
   // TODO:  Need to make sure only one VoE is created inside
   // WebRtcMediaEngine.
@@ -264,6 +281,39 @@ PeerConnectionFactory::CreatePeerConnection(
       dtls_identity_store.Pass(),
       observer)) {
     return NULL;
+  }
+  return PeerConnectionProxy::Create(signaling_thread(), pc);
+}
+
+rtc::scoped_refptr<PeerConnectionInterface>
+PeerConnectionFactory::CreatePeerConnection(
+    const PeerConnectionInterface::RTCConfiguration& configuration,
+    const MediaConstraintsInterface* constraints,
+    rtc::scoped_ptr<cricket::PortAllocator> allocator,
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    PeerConnectionObserver* observer) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+
+  if (!dtls_identity_store.get()) {
+    // Because |pc|->Initialize takes ownership of the store we need a new
+    // wrapper object that can be deleted without deleting the underlying
+    // |dtls_identity_store_|, protecting it from being deleted multiple times.
+    dtls_identity_store.reset(
+        new DtlsIdentityStoreWrapper(dtls_identity_store_));
+  }
+
+  if (!allocator) {
+    allocator.reset(new cricket::BasicPortAllocator(
+        default_network_manager_.get(), default_socket_factory_.get()));
+  }
+  default_network_manager_->set_network_ignore_mask(
+      options_.network_ignore_mask);
+
+  rtc::scoped_refptr<PeerConnection> pc(
+      new rtc::RefCountedObject<PeerConnection>(this));
+  if (!pc->Initialize(configuration, constraints, std::move(allocator),
+                      std::move(dtls_identity_store), observer)) {
+    return nullptr;
   }
   return PeerConnectionProxy::Create(signaling_thread(), pc);
 }
