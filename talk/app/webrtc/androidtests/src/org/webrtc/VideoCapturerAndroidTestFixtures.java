@@ -416,6 +416,7 @@ public class VideoCapturerAndroidTestFixtures {
   static public void startWhileCameraIsAlreadyOpen(
       VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
     Camera camera = Camera.open(capturer.getCurrentCameraId());
+
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
 
@@ -423,7 +424,14 @@ public class VideoCapturerAndroidTestFixtures {
     capturer.startCapture(format.width, format.height, format.maxFramerate,
         appContext, observer);
 
-    assertFalse(observer.WaitForCapturerToStart());
+    if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
+      // The first opened camera client will be evicted.
+      assertTrue(observer.WaitForCapturerToStart());
+      capturer.stopCapture();
+    } else {
+      assertFalse(observer.WaitForCapturerToStart());
+    }
+
     capturer.dispose();
     camera.release();
   }
