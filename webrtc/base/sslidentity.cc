@@ -15,6 +15,7 @@
 
 #include "webrtc/base/sslidentity.h"
 
+#include <ctime>
 #include <string>
 
 #include "webrtc/base/base64.h"
@@ -176,5 +177,75 @@ SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
 #error "No SSL implementation"
 
 #endif  // SSL_USE_OPENSSL
+
+// Read |n| bytes from ASN1 number string at *|pp| and return the numeric value.
+// Update *|pp| and *|np| to reflect number of read bytes.
+static inline int ASN1ReadInt(const unsigned char** pp, size_t* np, size_t n) {
+  const unsigned char* p = *pp;
+  int x = 0;
+  for (size_t i = 0; i < n; i++)
+    x = 10 * x + p[i] - '0';
+  *pp = p + n;
+  *np = *np - n;
+  return x;
+}
+
+int64_t ASN1TimeToSec(const unsigned char* s, size_t length, bool long_format) {
+  size_t bytes_left = length;
+
+  // Make sure the string ends with Z.  Doing it here protects the strspn call
+  // from running off the end of the string in Z's absense.
+  if (length == 0 || s[length - 1] != 'Z')
+    return -1;
+
+  // Make sure we only have ASCII digits so that we don't need to clutter the
+  // code below and ASN1ReadInt with error checking.
+  size_t n = strspn(reinterpret_cast<const char*>(s), "0123456789");
+  if (n + 1 != length)
+    return -1;
+
+  int year;
+
+  // Read out ASN1 year, in either 2-char "UTCTIME" or 4-char "GENERALIZEDTIME"
+  // format.  Both format use UTC in this context.
+  if (long_format) {
+    // ASN1 format: yyyymmddhh[mm[ss[.fff]]]Z where the Z is literal, but
+    // RFC 5280 requires us to only support exactly yyyymmddhhmmssZ.
+
+    if (bytes_left < 11)
+      return -1;
+
+    year = ASN1ReadInt(&s, &bytes_left, 4);
+    year -= 1900;
+  } else {
+    // ASN1 format: yymmddhhmm[ss]Z where the Z is literal, but RFC 5280
+    // requires us to only support exactly yymmddhhmmssZ.
+
+    if (bytes_left < 9)
+      return -1;
+
+    year = ASN1ReadInt(&s, &bytes_left, 2);
+    if (year < 50)  // Per RFC 5280 4.1.2.5.1
+      year += 100;
+  }
+
+  std::tm tm;
+  tm.tm_year = year;
+
+  // Read out remaining ASN1 time data and store it in |tm| in documented
+  // std::tm format.
+  tm.tm_mon = ASN1ReadInt(&s, &bytes_left, 2) - 1;
+  tm.tm_mday = ASN1ReadInt(&s, &bytes_left, 2);
+  tm.tm_hour = ASN1ReadInt(&s, &bytes_left, 2);
+  tm.tm_min = ASN1ReadInt(&s, &bytes_left, 2);
+  tm.tm_sec = ASN1ReadInt(&s, &bytes_left, 2);
+
+  if (bytes_left != 1) {
+    // Now just Z should remain.  Its existence was asserted above.
+    return -1;
+  }
+
+  return TmToSeconds(tm);
+}
 
 }  // namespace rtc

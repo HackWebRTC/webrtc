@@ -11,6 +11,7 @@
 #include <string>
 
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslidentity.h"
 
@@ -294,4 +295,120 @@ TEST_F(SSLIdentityTest, PemDerConversion) {
 
 TEST_F(SSLIdentityTest, GetSignatureDigestAlgorithm) {
   TestGetSignatureDigestAlgorithm();
+}
+
+class SSLIdentityExpirationTest : public testing::Test {
+ public:
+  SSLIdentityExpirationTest() {
+    // Set use of the test RNG to get deterministic expiration timestamp.
+    rtc::SetRandomTestMode(true);
+  }
+  ~SSLIdentityExpirationTest() {
+    // Put it back for the next test.
+    rtc::SetRandomTestMode(false);
+  }
+
+  void TestASN1TimeToSec() {
+    struct asn_example {
+      const char* string;
+      bool long_format;
+      int64_t want;
+    } static const data[] = {
+      // Valid examples.
+      {"19700101000000Z",  true,  0},
+      {"700101000000Z",    false, 0},
+      {"19700101000001Z",  true,  1},
+      {"700101000001Z",    false, 1},
+      {"19700101000100Z",  true,  60},
+      {"19700101000101Z",  true,  61},
+      {"19700101010000Z",  true,  3600},
+      {"19700101010001Z",  true,  3601},
+      {"19700101010100Z",  true,  3660},
+      {"19700101010101Z",  true,  3661},
+      {"710911012345Z",    false, 53400225},
+      {"20000101000000Z",  true,  946684800},
+      {"20000101000000Z",  true,  946684800},
+      {"20151130140156Z",  true,  1448892116},
+      {"151130140156Z",    false, 1448892116},
+      {"20491231235959Z",  true,  2524607999},
+      {"491231235959Z",    false, 2524607999},
+      {"20500101000000Z",  true,  2524607999+1},
+      {"20700101000000Z",  true,  3155760000},
+      {"21000101000000Z",  true,  4102444800},
+      {"24000101000000Z",  true,  13569465600},
+
+      // Invalid examples.
+      {"19700101000000",    true,  -1},  // missing Z long format
+      {"19700101000000X",   true,  -1},  // X instead of Z long format
+      {"197001010000000",   true,  -1},  // 0 instead of Z long format
+      {"1970010100000000Z", true,  -1},  // excess digits long format
+      {"700101000000",      false, -1},  // missing Z short format
+      {"700101000000X",     false, -1},  // X instead of Z short format
+      {"7001010000000",     false, -1},  // 0 instead of Z short format
+      {"70010100000000Z",   false, -1},  // excess digits short format
+      {":9700101000000Z",   true,  -1},  // invalid character
+      {"1:700101000001Z",   true,  -1},  // invalid character
+      {"19:00101000100Z",   true,  -1},  // invalid character
+      {"197:0101000101Z",   true,  -1},  // invalid character
+      {"1970:101010000Z",   true,  -1},  // invalid character
+      {"19700:01010001Z",   true,  -1},  // invalid character
+      {"197001:1010100Z",   true,  -1},  // invalid character
+      {"1970010:010101Z",   true,  -1},  // invalid character
+      {"70010100:000Z",     false, -1},  // invalid character
+      {"700101000:01Z",     false, -1},  // invalid character
+      {"2000010100:000Z",   true,  -1},  // invalid character
+      {"21000101000:00Z",   true,  -1},  // invalid character
+      {"240001010000:0Z",   true,  -1},  // invalid character
+      {"500101000000Z",     false, -1},  // but too old for epoch
+      {"691231235959Z",     false, -1},  // too old for epoch
+      {"19611118043000Z",   false, -1},  // way too old for epoch
+    };
+
+    unsigned char buf[20];
+
+    // Run all examples and check for the expected result.
+    for (const auto& entry : data) {
+      size_t length = strlen(entry.string);
+      memcpy(buf, entry.string, length);    // Copy the ASN1 string...
+      buf[length] = rtc::CreateRandomId();  // ...and terminate it with junk.
+      int64_t res = rtc::ASN1TimeToSec(buf, length, entry.long_format);
+      LOG(LS_VERBOSE) << entry.string;
+      ASSERT_EQ(entry.want, res);
+    }
+    // Run all examples again, but with an invalid length.
+    for (const auto& entry : data) {
+      size_t length = strlen(entry.string);
+      memcpy(buf, entry.string, length);    // Copy the ASN1 string...
+      buf[length] = rtc::CreateRandomId();  // ...and terminate it with junk.
+      int64_t res = rtc::ASN1TimeToSec(buf, length - 1, entry.long_format);
+      LOG(LS_VERBOSE) << entry.string;
+      ASSERT_EQ(-1, res);
+    }
+  }
+
+  void TestExpireTime(int times) {
+    for (int i = 0; i < times; i++) {
+      rtc::SSLIdentityParams params;
+      params.common_name = "";
+      params.not_before = 0;
+      // We limit the time to < 2^31 here, i.e., we stay before 2038, since else
+      // we hit time offset limitations in OpenSSL on some 32-bit systems.
+      params.not_after = rtc::CreateRandomId() % 0x80000000;
+      // We test just ECDSA here since what we're out to exercise here is the
+      // code for expiration setting and reading.
+      params.key_params = rtc::KeyParams::ECDSA(rtc::EC_NIST_P256);
+      SSLIdentity* identity = rtc::SSLIdentity::GenerateForTest(params);
+      EXPECT_EQ(params.not_after,
+                identity->certificate().CertificateExpirationTime());
+      delete identity;
+    }
+  }
+};
+
+TEST_F(SSLIdentityExpirationTest, TestASN1TimeToSec) {
+  TestASN1TimeToSec();
+}
+
+TEST_F(SSLIdentityExpirationTest, TestExpireTime) {
+  TestExpireTime(500);
 }

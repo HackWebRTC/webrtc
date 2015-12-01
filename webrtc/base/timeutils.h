@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_TIMEUTILS_H_
 #define WEBRTC_BASE_TIMEUTILS_H_
 
+#include <ctime>
 #include <time.h>
 
 #include "webrtc/base/basictypes.h"
@@ -92,6 +93,11 @@ class TimestampWrapAroundHandler {
   uint32_t last_ts_;
   int64_t num_wrap_;
 };
+
+// Convert from std::tm, which is relative to 1900-01-01 00:00 to number of
+// seconds from 1970-01-01 00:00 ("epoch").  Don't return time_t since that
+// is still 32 bits on many systems.
+int64_t TmToSeconds(const std::tm& tm);
 
 }  // namespace rtc
 

@@ -294,18 +294,20 @@ class SSLStreamAdapterTestBase : public testing::Test,
     client_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
     server_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
 
+    time_t now = time(nullptr);
+
     rtc::SSLIdentityParams client_params;
     client_params.key_params = rtc::KeyParams(rtc::KT_DEFAULT);
     client_params.common_name = "client";
-    client_params.not_before = not_before;
-    client_params.not_after = not_after;
+    client_params.not_before = now + not_before;
+    client_params.not_after = now + not_after;
     client_identity_ = rtc::SSLIdentity::GenerateForTest(client_params);
 
     rtc::SSLIdentityParams server_params;
     server_params.key_params = rtc::KeyParams(rtc::KT_DEFAULT);
     server_params.common_name = "server";
-    server_params.not_before = not_before;
-    server_params.not_after = not_after;
+    server_params.not_before = now + not_before;
+    server_params.not_after = now + not_after;
     server_identity_ = rtc::SSLIdentity::GenerateForTest(server_params);
 
     client_ssl_->SetIdentity(client_identity_);

@@ -45,6 +45,7 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
     VERIFY(SSLIdentity::PemToDer(kPemTypeCertificate, data_, &der_string));
     der_buffer->SetData(der_string.c_str(), der_string.size());
   }
+  int64_t CertificateExpirationTime() const override { return -1; }
   void set_digest_algorithm(const std::string& algorithm) {
     digest_algorithm_ = algorithm;
   }

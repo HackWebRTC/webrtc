@@ -19,6 +19,7 @@
 
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/messagedigest.h"
+#include "webrtc/base/timeutils.h"
 
 namespace rtc {
 
@@ -68,6 +69,9 @@ class SSLCertificate {
                              unsigned char* digest,
                              size_t size,
                              size_t* length) const = 0;
+
+  // Returns the time in seconds relative to epoch.
+  virtual int64_t CertificateExpirationTime() const = 0;
 };
 
 // SSLCertChain is a simple wrapper for a vector of SSLCertificates. It serves
@@ -168,8 +172,8 @@ KeyType IntKeyTypeFamilyToKeyType(int key_type_family);
 // random string will be used.
 struct SSLIdentityParams {
   std::string common_name;
-  int not_before;  // offset from current time in seconds.
-  int not_after;   // offset from current time in seconds.
+  time_t not_before;  // Absolute time since epoch in seconds.
+  time_t not_after;   // Absolute time since epoch in seconds.
   KeyParams key_params;
 };
 
@@ -216,6 +220,11 @@ class SSLIdentity {
                               const unsigned char* data,
                               size_t length);
 };
+
+// Convert from ASN1 time as restricted by RFC 5280 to seconds from 1970-01-01
+// 00.00 ("epoch").  If the ASN1 time cannot be read, return -1.  The data at
+// |s| is not 0-terminated; its char count is defined by |length|.
+int64_t ASN1TimeToSec(const unsigned char* s, size_t length, bool long_format);
 
 extern const char kPemTypeCertificate[];
 extern const char kPemTypeRsaPrivateKey[];
