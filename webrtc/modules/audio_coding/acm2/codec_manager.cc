@@ -149,55 +149,28 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
       break;
   }
 
-  // Check if the codec is already registered as send codec.
-  bool new_codec = true;
-  if (CurrentEncoder()) {
-    auto new_codec_id = RentACodec::CodecIdByInst(send_codec_inst_);
-    RTC_DCHECK(new_codec_id);
-    auto old_codec_id = RentACodec::CodecIdFromIndex(codec_id);
-    new_codec = !old_codec_id || *new_codec_id != *old_codec_id;
-  }
-
   encoder_is_opus_ = IsOpus(send_codec);
-
-  if (new_codec) {
-    // This is a new codec. Register it and return.
-    RTC_DCHECK(CodecSupported(send_codec));
-    if (IsOpus(send_codec)) {
-      // VAD/DTX not supported.
-      codec_stack_params_.use_cng = false;
-    }
-    AudioEncoder* enc = rent_a_codec_.RentEncoder(send_codec);
-    if (!enc)
-      return -1;
-    rent_a_codec_.RentEncoderStack(enc, &codec_stack_params_);
-    RTC_DCHECK(CurrentEncoder());
-
-    send_codec_inst_ = send_codec;
-    return 0;
+  if (encoder_is_opus_) {
+    // VAD/DTX not supported.
+    codec_stack_params_.use_cng = false;
   }
 
-  // This is an existing codec; re-create it if any parameters have changed.
-  if (send_codec_inst_.plfreq != send_codec.plfreq ||
+  // Recreate the encoder if anything except the send bitrate has changed.
+  if (!CurrentEncoder() || send_codec_inst_.pltype != send_codec.pltype ||
+      STR_CASE_CMP(send_codec_inst_.plname, send_codec.plname) != 0 ||
+      send_codec_inst_.plfreq != send_codec.plfreq ||
       send_codec_inst_.pacsize != send_codec.pacsize ||
       send_codec_inst_.channels != send_codec.channels) {
+    RTC_DCHECK(CodecSupported(send_codec));
     AudioEncoder* enc = rent_a_codec_.RentEncoder(send_codec);
     if (!enc)
       return -1;
     rent_a_codec_.RentEncoderStack(enc, &codec_stack_params_);
     RTC_DCHECK(CurrentEncoder());
   }
-  send_codec_inst_.plfreq = send_codec.plfreq;
-  send_codec_inst_.pacsize = send_codec.pacsize;
-  send_codec_inst_.channels = send_codec.channels;
-  send_codec_inst_.pltype = send_codec.pltype;
 
-  // Check if a change in Rate is required.
-  if (send_codec.rate != send_codec_inst_.rate) {
-    CurrentEncoder()->SetTargetBitrate(send_codec.rate);
-    send_codec_inst_.rate = send_codec.rate;
-  }
-
+  send_codec_inst_ = send_codec;
+  CurrentEncoder()->SetTargetBitrate(send_codec_inst_.rate);
   return 0;
 }
 
