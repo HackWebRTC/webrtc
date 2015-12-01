@@ -28,16 +28,12 @@
 #include "talk/app/webrtc/java/jni/native_handle_impl.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/bind.h"
+#include "webrtc/base/keep_ref_until_done.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
-using rtc::scoped_refptr;
 using webrtc::NativeHandleBuffer;
 
 namespace webrtc_jni {
-
-namespace {
-void ScaledFrameNotInUse(scoped_refptr<NativeHandleBuffer> original) {}
-}  // anonymous namespace
 
 NativeHandleImpl::NativeHandleImpl(JNIEnv* jni,
                                    jint j_oes_texture_id,
@@ -87,7 +83,7 @@ rtc::scoped_refptr<AndroidTextureBuffer> AndroidTextureBuffer::CropAndScale(
   // will be decreased by one.
   return new rtc::RefCountedObject<AndroidTextureBuffer>(
       dst_widht, dst_height, native_handle_,
-      rtc::Bind(&ScaledFrameNotInUse, this));
+      rtc::KeepRefUntilDone(this));
 }
 
 }  // namespace webrtc_jni

@@ -21,8 +21,8 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
-#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common.h"
@@ -30,16 +30,6 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp9/screenshare_layers.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
-
-namespace {
-
-// VP9DecoderImpl::ReturnFrame helper function used with WrappedI420Buffer.
-static void WrappedI420BufferNoLongerUsedCb(
-    webrtc::Vp9FrameBufferPool::Vp9FrameBuffer* img_buffer) {
-  img_buffer->Release();
-}
-
-}  // anonymous namespace
 
 namespace webrtc {
 
@@ -933,12 +923,10 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
   }
 
   // This buffer contains all of |img|'s image data, a reference counted
-  // Vp9FrameBuffer. Performing AddRef/Release ensures it is not released and
-  // recycled during use (libvpx is done with the buffers after a few
+  // Vp9FrameBuffer. (libvpx is done with the buffers after a few
   // vpx_codec_decode calls or vpx_codec_destroy).
   Vp9FrameBufferPool::Vp9FrameBuffer* img_buffer =
       static_cast<Vp9FrameBufferPool::Vp9FrameBuffer*>(img->fb_priv);
-  img_buffer->AddRef();
   // The buffer can be used directly by the VideoFrame (without copy) by
   // using a WrappedI420Buffer.
   rtc::scoped_refptr<WrappedI420Buffer> img_wrapped_buffer(
@@ -950,7 +938,7 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
           // WrappedI420Buffer's mechanism for allowing the release of its frame
           // buffer is through a callback function. This is where we should
           // release |img_buffer|.
-          rtc::Bind(&WrappedI420BufferNoLongerUsedCb, img_buffer)));
+          rtc::KeepRefUntilDone(img_buffer)));
 
   VideoFrame decoded_image;
   decoded_image.set_video_frame_buffer(img_wrapped_buffer);

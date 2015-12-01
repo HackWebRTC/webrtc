@@ -10,19 +10,13 @@
 
 #include "webrtc/common_video/include/video_frame_buffer.h"
 
-#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/keep_ref_until_done.h"
 
 // Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
 static const int kBufferAlignment = 64;
 
 namespace webrtc {
-namespace {
-
-// Used in rtc::Bind to keep a buffer alive until destructor is called.
-static void NoLongerUsedCallback(rtc::scoped_refptr<VideoFrameBuffer> dummy) {}
-
-}  // anonymous namespace
 
 uint8_t* VideoFrameBuffer::MutableData(PlaneType type) {
   RTC_NOTREACHED();
@@ -238,7 +232,7 @@ rtc::scoped_refptr<VideoFrameBuffer> ShallowCenterCrop(
       y_plane, buffer->stride(kYPlane),
       u_plane, buffer->stride(kUPlane),
       v_plane, buffer->stride(kVPlane),
-      rtc::Bind(&NoLongerUsedCallback, buffer));
+      rtc::KeepRefUntilDone(buffer));
 }
 
 }  // namespace webrtc
