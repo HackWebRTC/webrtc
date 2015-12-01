@@ -8,11 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/modules/video_coding/generic_decoder.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/generic_decoder.h"
 #include "webrtc/modules/video_coding/internal_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -132,15 +131,16 @@ int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp)
     return VCM_OK;
 }
 
-VCMGenericDecoder::VCMGenericDecoder(VideoDecoder* decoder, bool isExternal)
-    : _callback(NULL),
-      _frameInfos(),
-      _nextFrameInfoIdx(0),
-      _decoder(decoder),
-      _codecType(kVideoCodecUnknown),
-      _isExternal(isExternal),
-      _keyFrameDecoded(false) {
-  RTC_CHECK(_decoder);
+VCMGenericDecoder::VCMGenericDecoder(VideoDecoder& decoder, bool isExternal)
+:
+_callback(NULL),
+_frameInfos(),
+_nextFrameInfoIdx(0),
+_decoder(decoder),
+_codecType(kVideoCodecUnknown),
+_isExternal(isExternal),
+_keyFrameDecoded(false)
+{
 }
 
 VCMGenericDecoder::~VCMGenericDecoder()
@@ -153,7 +153,7 @@ int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
     TRACE_EVENT0("webrtc", "VCMGenericDecoder::InitDecode");
     _codecType = settings->codecType;
 
-    return _decoder->InitDecode(settings, numberOfCores);
+    return _decoder.InitDecode(settings, numberOfCores);
 }
 
 int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
@@ -165,7 +165,7 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
     _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
 
     _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
-    int32_t ret = _decoder->Decode(frame.EncodedImage(),
+    int32_t ret = _decoder.Decode(frame.EncodedImage(),
                                         frame.MissingFrame(),
                                         frame.FragmentationHeader(),
                                         frame.CodecSpecific(),
@@ -190,18 +190,18 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
 int32_t
 VCMGenericDecoder::Release()
 {
-    return _decoder->Release();
+    return _decoder.Release();
 }
 
 int32_t VCMGenericDecoder::Reset()
 {
-    return _decoder->Reset();
+    return _decoder.Reset();
 }
 
 int32_t VCMGenericDecoder::RegisterDecodeCompleteCallback(VCMDecodedFrameCallback* callback)
 {
     _callback = callback;
-    return _decoder->RegisterDecodeCompleteCallback(callback);
+    return _decoder.RegisterDecodeCompleteCallback(callback);
 }
 
 bool VCMGenericDecoder::External() const
