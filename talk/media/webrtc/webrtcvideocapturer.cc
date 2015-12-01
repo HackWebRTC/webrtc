@@ -350,6 +350,7 @@ void WebRtcVideoCapturer::Stop() {
 
   SetCaptureFormat(NULL);
   start_thread_ = nullptr;
+  SetCaptureState(CS_STOPPED);
 }
 
 bool WebRtcVideoCapturer::IsRunning() {

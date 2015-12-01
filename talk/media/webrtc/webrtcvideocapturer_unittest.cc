@@ -111,6 +111,7 @@ TEST_F(WebRtcVideoCapturerTest, TestCapture) {
   capturer_->Stop();
   EXPECT_FALSE(capturer_->IsRunning());
   EXPECT_TRUE(capturer_->GetCaptureFormat() == NULL);
+  EXPECT_EQ_WAIT(cricket::CS_STOPPED, listener_.last_capture_state(), 1000);
 }
 
 TEST_F(WebRtcVideoCapturerTest, TestCaptureVcm) {
