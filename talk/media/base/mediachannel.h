@@ -447,12 +447,6 @@ enum VoiceMediaChannelOptions {
   OPT_AGC_MINUS_10DB = 0x80000000
 };
 
-// DTMF flags to control if a DTMF tone should be played and/or sent.
-enum DtmfFlags {
-  DF_PLAY = 0x01,
-  DF_SEND = 0x02,
-};
-
 class MediaChannel : public sigslot::has_slots<> {
  public:
   class NetworkInterface {
@@ -1022,16 +1016,12 @@ class VoiceMediaChannel : public MediaChannel {
   // Set speaker output volume of the specified ssrc.
   virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
   // Returns if the telephone-event has been negotiated.
-  virtual bool CanInsertDtmf() { return false; }
-  // Send and/or play a DTMF |event| according to the |flags|.
-  // The DTMF out-of-band signal will be used on sending.
+  virtual bool CanInsertDtmf() = 0;
+  // Send a DTMF |event|. The DTMF out-of-band signal will be used.
   // The |ssrc| should be either 0 or a valid send stream ssrc.
   // The valid value for the |event| are 0 to 15 which corresponding to
   // DTMF event 0-9, *, #, A-D.
-  virtual bool InsertDtmf(uint32_t ssrc,
-                          int event,
-                          int duration,
-                          int flags) = 0;
+  virtual bool InsertDtmf(uint32_t ssrc, int event, int duration) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VoiceMediaInfo* info) = 0;
 };

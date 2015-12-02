@@ -199,7 +199,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool SetOutputVolume(uint32_t ssrc, double volume) override;
 
   bool CanInsertDtmf() override;
-  bool InsertDtmf(uint32_t ssrc, int event, int duration, int flags) override;
+  bool InsertDtmf(uint32_t ssrc, int event, int duration) override;
 
   void OnPacketReceived(rtc::Buffer* packet,
                         const rtc::PacketTime& packet_time) override;

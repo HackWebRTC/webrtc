@@ -1403,8 +1403,7 @@ bool WebRtcSession::InsertDtmf(const std::string& track_id,
     LOG(LS_ERROR) << "InsertDtmf: Track does not exist: " << track_id;
     return false;
   }
-  if (!voice_channel_->InsertDtmf(send_ssrc, code, duration,
-                                  cricket::DF_SEND)) {
+  if (!voice_channel_->InsertDtmf(send_ssrc, code, duration)) {
     LOG(LS_ERROR) << "Failed to insert DTMF to channel.";
     return false;
   }

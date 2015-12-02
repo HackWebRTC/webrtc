@@ -560,7 +560,6 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->dtmf_info.dtmf_length_ms = length_ms;
     return 0;
   }
-
   WEBRTC_FUNC(SetSendTelephoneEventPayloadType,
       (int channel, unsigned char type)) {
     channels_[channel]->dtmf_type = type;
@@ -568,16 +567,10 @@ class FakeWebRtcVoiceEngine
   };
   WEBRTC_STUB(GetSendTelephoneEventPayloadType,
       (int channel, unsigned char& type));
-
   WEBRTC_STUB(SetDtmfFeedbackStatus, (bool enable, bool directFeedback));
   WEBRTC_STUB(GetDtmfFeedbackStatus, (bool& enabled, bool& directFeedback));
-
-  WEBRTC_FUNC(PlayDtmfTone,
-      (int event_code, int length_ms = 200, int attenuation_db = 10)) {
-    dtmf_info_.dtmf_event_code = event_code;
-    dtmf_info_.dtmf_length_ms = length_ms;
-    return 0;
-  }
+  WEBRTC_STUB(PlayDtmfTone,
+      (int event_code, int length_ms = 200, int attenuation_db = 10));
 
   // webrtc::VoEHardware
   WEBRTC_FUNC(GetNumOfRecordingDevices, (int& num)) {

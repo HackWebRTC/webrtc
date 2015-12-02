@@ -229,15 +229,13 @@ template <class Base> class RtpHelper : public Base {
 class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
  public:
   struct DtmfInfo {
-    DtmfInfo(uint32_t ssrc, int event_code, int duration, int flags)
+    DtmfInfo(uint32_t ssrc, int event_code, int duration)
         : ssrc(ssrc),
           event_code(event_code),
-          duration(duration),
-          flags(flags) {}
+          duration(duration) {}
     uint32_t ssrc;
     int event_code;
     int duration;
-    int flags;
   };
   explicit FakeVoiceMediaChannel(FakeVoiceEngine* engine,
                                  const AudioOptions& options)
@@ -321,9 +319,8 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   }
   virtual bool InsertDtmf(uint32_t ssrc,
                           int event_code,
-                          int duration,
-                          int flags) {
-    dtmf_info_queue_.push_back(DtmfInfo(ssrc, event_code, duration, flags));
+                          int duration) {
+    dtmf_info_queue_.push_back(DtmfInfo(ssrc, event_code, duration));
     return true;
   }
 
@@ -427,10 +424,9 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
 inline bool CompareDtmfInfo(const FakeVoiceMediaChannel::DtmfInfo& info,
                             uint32_t ssrc,
                             int event_code,
-                            int duration,
-                            int flags) {
+                            int duration) {
   return (info.duration == duration && info.event_code == event_code &&
-          info.flags == flags && info.ssrc == ssrc);
+          info.ssrc == ssrc);
 }
 
 class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {

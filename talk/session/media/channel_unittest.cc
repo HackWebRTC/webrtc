@@ -2112,23 +2112,6 @@ TEST_F(VoiceChannelTest, TestMediaMonitor) {
   Base::TestMediaMonitor();
 }
 
-// Test that PressDTMF properly forwards to the media channel.
-TEST_F(VoiceChannelTest, TestDtmf) {
-  CreateChannels(0, 0);
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-  EXPECT_EQ(0U, media_channel1_->dtmf_info_queue().size());
-
-  EXPECT_TRUE(channel1_->PressDTMF(1, true));
-  EXPECT_TRUE(channel1_->PressDTMF(8, false));
-
-  ASSERT_EQ(2U, media_channel1_->dtmf_info_queue().size());
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[0],
-                              0, 1, 160, cricket::DF_PLAY | cricket::DF_SEND));
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[1],
-                              0, 8, 160, cricket::DF_SEND));
-}
-
 // Test that InsertDtmf properly forwards to the media channel.
 TEST_F(VoiceChannelTest, TestInsertDtmf) {
   CreateChannels(0, 0);
@@ -2136,18 +2119,17 @@ TEST_F(VoiceChannelTest, TestInsertDtmf) {
   EXPECT_TRUE(SendAccept());
   EXPECT_EQ(0U, media_channel1_->dtmf_info_queue().size());
 
-  EXPECT_TRUE(channel1_->InsertDtmf(1, 3, 100, cricket::DF_SEND));
-  EXPECT_TRUE(channel1_->InsertDtmf(2, 5, 110, cricket::DF_PLAY));
-  EXPECT_TRUE(channel1_->InsertDtmf(3, 7, 120,
-                                    cricket::DF_PLAY | cricket::DF_SEND));
+  EXPECT_TRUE(channel1_->InsertDtmf(1, 3, 100));
+  EXPECT_TRUE(channel1_->InsertDtmf(2, 5, 110));
+  EXPECT_TRUE(channel1_->InsertDtmf(3, 7, 120));
 
   ASSERT_EQ(3U, media_channel1_->dtmf_info_queue().size());
   EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[0],
-                              1, 3, 100, cricket::DF_SEND));
+                              1, 3, 100));
   EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[1],
-                              2, 5, 110, cricket::DF_PLAY));
+                              2, 5, 110));
   EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[2],
-                              3, 7, 120, cricket::DF_PLAY | cricket::DF_SEND));
+                              3, 7, 120));
 }
 
 TEST_F(VoiceChannelTest, TestSetContentFailure) {

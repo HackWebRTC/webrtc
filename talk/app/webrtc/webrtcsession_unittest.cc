@@ -71,8 +71,6 @@
     return;                                         \
   }
 
-using cricket::DF_PLAY;
-using cricket::DF_SEND;
 using cricket::FakeVoiceMediaChannel;
 using cricket::TransportInfo;
 using rtc::SocketAddress;
@@ -3384,7 +3382,6 @@ TEST_F(WebRtcSessionTest, InsertDtmf) {
   EXPECT_EQ(0U, channel->dtmf_info_queue().size());
 
   // Insert DTMF
-  const int expected_flags = DF_SEND;
   const int expected_duration = 90;
   session_->InsertDtmf(kAudioTrack1, 0, expected_duration);
   session_->InsertDtmf(kAudioTrack1, 1, expected_duration);
@@ -3394,11 +3391,11 @@ TEST_F(WebRtcSessionTest, InsertDtmf) {
   ASSERT_EQ(3U, channel->dtmf_info_queue().size());
   const uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
   EXPECT_TRUE(CompareDtmfInfo(channel->dtmf_info_queue()[0], send_ssrc, 0,
-                              expected_duration, expected_flags));
+                              expected_duration));
   EXPECT_TRUE(CompareDtmfInfo(channel->dtmf_info_queue()[1], send_ssrc, 1,
-                              expected_duration, expected_flags));
+                              expected_duration));
   EXPECT_TRUE(CompareDtmfInfo(channel->dtmf_info_queue()[2], send_ssrc, 2,
-                              expected_duration, expected_flags));
+                              expected_duration));
 }
 
 // This test verifies the |initial_offerer| flag when session initiates the

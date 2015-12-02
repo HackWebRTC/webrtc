@@ -1317,15 +1317,6 @@ void VoiceChannel::SetEarlyMedia(bool enable) {
   }
 }
 
-bool VoiceChannel::PressDTMF(int digit, bool playout) {
-  int flags = DF_SEND;
-  if (playout) {
-    flags |= DF_PLAY;
-  }
-  int duration_ms = 160;
-  return InsertDtmf(0, digit, duration_ms, flags);
-}
-
 bool VoiceChannel::CanInsertDtmf() {
   return InvokeOnWorker(Bind(&VoiceMediaChannel::CanInsertDtmf,
                              media_channel()));
@@ -1333,10 +1324,9 @@ bool VoiceChannel::CanInsertDtmf() {
 
 bool VoiceChannel::InsertDtmf(uint32_t ssrc,
                               int event_code,
-                              int duration,
-                              int flags) {
+                              int duration) {
   return InvokeOnWorker(Bind(&VoiceChannel::InsertDtmf_w, this,
-                             ssrc, event_code, duration, flags));
+                             ssrc, event_code, duration));
 }
 
 bool VoiceChannel::SetOutputVolume(uint32_t ssrc, double volume) {
@@ -1532,13 +1522,11 @@ void VoiceChannel::HandleEarlyMediaTimeout() {
 
 bool VoiceChannel::InsertDtmf_w(uint32_t ssrc,
                                 int event,
-                                int duration,
-                                int flags) {
+                                int duration) {
   if (!enabled()) {
     return false;
   }
-
-  return media_channel()->InsertDtmf(ssrc, event, duration, flags);
+  return media_channel()->InsertDtmf(ssrc, event, duration);
 }
 
 void VoiceChannel::OnMessage(rtc::Message *pmsg) {

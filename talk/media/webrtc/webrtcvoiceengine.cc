@@ -2285,45 +2285,32 @@ bool WebRtcVoiceMediaChannel::CanInsertDtmf() {
   return dtmf_allowed_;
 }
 
-bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc,
-                                         int event,
-                                         int duration,
-                                         int flags) {
+bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc, int event,
+                                         int duration) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (!dtmf_allowed_) {
     return false;
   }
 
   // Send the event.
-  if (flags & cricket::DF_SEND) {
-    int channel = -1;
-    if (ssrc == 0) {
-      if (send_streams_.size() > 0) {
-        channel = send_streams_.begin()->second->channel();
-      }
-    } else {
-      channel = GetSendChannelId(ssrc);
+  int channel = -1;
+  if (ssrc == 0) {
+    if (send_streams_.size() > 0) {
+      channel = send_streams_.begin()->second->channel();
     }
-    if (channel == -1) {
-      LOG(LS_WARNING) << "InsertDtmf - The specified ssrc "
-                      << ssrc << " is not in use.";
-      return false;
-    }
-    // Send DTMF using out-of-band DTMF. ("true", as 3rd arg)
-    if (engine()->voe()->dtmf()->SendTelephoneEvent(
-            channel, event, true, duration) == -1) {
-      LOG_RTCERR4(SendTelephoneEvent, channel, event, true, duration);
-      return false;
-    }
+  } else {
+    channel = GetSendChannelId(ssrc);
   }
-
-  // Play the event.
-  if (flags & cricket::DF_PLAY) {
-    // Play DTMF tone locally.
-    if (engine()->voe()->dtmf()->PlayDtmfTone(event, duration) == -1) {
-      LOG_RTCERR2(PlayDtmfTone, event, duration);
-      return false;
-    }
+  if (channel == -1) {
+    LOG(LS_WARNING) << "InsertDtmf - The specified ssrc "
+                    << ssrc << " is not in use.";
+    return false;
+  }
+  // Send DTMF using out-of-band DTMF. ("true", as 3rd arg)
+  if (engine()->voe()->dtmf()->SendTelephoneEvent(
+          channel, event, true, duration) == -1) {
+    LOG_RTCERR4(SendTelephoneEvent, channel, event, true, duration);
+    return false;
   }
 
   return true;

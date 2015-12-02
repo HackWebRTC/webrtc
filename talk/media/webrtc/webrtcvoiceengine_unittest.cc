@@ -148,39 +148,26 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
     EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
     EXPECT_FALSE(channel_->CanInsertDtmf());
-    EXPECT_FALSE(channel_->InsertDtmf(ssrc, 1, 111, cricket::DF_SEND));
+    EXPECT_FALSE(channel_->InsertDtmf(ssrc, 1, 111));
     send_parameters_.codecs.push_back(kTelephoneEventCodec);
     EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
     EXPECT_TRUE(channel_->CanInsertDtmf());
 
     if (!caller) {
       // If this is callee, there's no active send channel yet.
-      EXPECT_FALSE(channel_->InsertDtmf(ssrc, 2, 123, cricket::DF_SEND));
+      EXPECT_FALSE(channel_->InsertDtmf(ssrc, 2, 123));
       EXPECT_TRUE(channel_->AddSendStream(
           cricket::StreamParams::CreateLegacy(kSsrc1)));
     }
 
     // Check we fail if the ssrc is invalid.
-    EXPECT_FALSE(channel_->InsertDtmf(-1, 1, 111, cricket::DF_SEND));
+    EXPECT_FALSE(channel_->InsertDtmf(-1, 1, 111));
 
     // Test send
     int channel_id = voe_.GetLastChannel();
     EXPECT_FALSE(voe_.WasSendTelephoneEventCalled(channel_id, 2, 123));
-    EXPECT_TRUE(channel_->InsertDtmf(ssrc, 2, 123, cricket::DF_SEND));
+    EXPECT_TRUE(channel_->InsertDtmf(ssrc, 2, 123));
     EXPECT_TRUE(voe_.WasSendTelephoneEventCalled(channel_id, 2, 123));
-
-    // Test play
-    EXPECT_FALSE(voe_.WasPlayDtmfToneCalled(3, 134));
-    EXPECT_TRUE(channel_->InsertDtmf(ssrc, 3, 134, cricket::DF_PLAY));
-    EXPECT_TRUE(voe_.WasPlayDtmfToneCalled(3, 134));
-
-    // Test send and play
-    EXPECT_FALSE(voe_.WasSendTelephoneEventCalled(channel_id, 4, 145));
-    EXPECT_FALSE(voe_.WasPlayDtmfToneCalled(4, 145));
-    EXPECT_TRUE(channel_->InsertDtmf(ssrc, 4, 145,
-                                     cricket::DF_PLAY | cricket::DF_SEND));
-    EXPECT_TRUE(voe_.WasSendTelephoneEventCalled(channel_id, 4, 145));
-    EXPECT_TRUE(voe_.WasPlayDtmfToneCalled(4, 145));
   }
 
   // Test that send bandwidth is set correctly.
