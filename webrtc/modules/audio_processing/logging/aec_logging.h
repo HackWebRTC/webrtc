@@ -43,6 +43,20 @@
     (void) fwrite(data, data_size, 1, file);           \
   } while (0)
 
+// Dumps a raw scalar int32 to file.
+#define RTC_AEC_DEBUG_RAW_WRITE_SCALAR_INT32(file, data)             \
+  do {                                                               \
+    int32_t value_to_store = data;                                   \
+    (void) fwrite(&value_to_store, sizeof(value_to_store), 1, file); \
+  } while (0)
+
+// Dumps a raw scalar double to file.
+#define RTC_AEC_DEBUG_RAW_WRITE_SCALAR_DOUBLE(file, data)            \
+  do {                                                               \
+    double value_to_store = data;                                    \
+    (void) fwrite(&value_to_store, sizeof(value_to_store), 1, file); \
+  } while (0)
+
 // Opens a raw data file for writing using the specified sample rate.
 #define RTC_AEC_DEBUG_RAW_OPEN(name, instance_counter, file) \
   do {                                                       \
@@ -71,6 +85,14 @@
 
 #define RTC_AEC_DEBUG_RAW_WRITE(file, data, data_size) \
   do {                                                 \
+  } while (0)
+
+#define RTC_AEC_DEBUG_RAW_WRITE_SCALAR_INT32(file, data) \
+  do {                                                   \
+  } while (0)
+
+#define RTC_AEC_DEBUG_RAW_WRITE_SCALAR_DOUBLE(file, data) \
+  do {                                                    \
   } while (0)
 
 #define RTC_AEC_DEBUG_RAW_OPEN(file, name, instance_counter) \
