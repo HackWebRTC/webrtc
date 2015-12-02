@@ -26,9 +26,11 @@
  */
 
 #include "talk/media/webrtc/webrtcmediaengine.h"
+
+#include <algorithm>
+
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
-#include "webrtc/base/arraysize.h"
 
 namespace cricket {
 
@@ -69,43 +71,85 @@ MediaEngineInterface* WebRtcMediaEngineFactory::Create(
   return CreateWebRtcMediaEngine(adm, encoder_factory, decoder_factory);
 }
 
-const char* kBweExtensionPriorities[] = {
-    kRtpTransportSequenceNumberHeaderExtension,
-    kRtpAbsoluteSenderTimeHeaderExtension, kRtpTimestampOffsetHeaderExtension};
-
-const size_t kBweExtensionPrioritiesLength = arraysize(kBweExtensionPriorities);
-
-int GetPriority(const RtpHeaderExtension& extension,
-                const char* extension_prios[],
-                size_t extension_prios_length) {
-  for (size_t i = 0; i < extension_prios_length; ++i) {
-    if (extension.uri == extension_prios[i])
-      return static_cast<int>(i);
-  }
-  return -1;
-}
-
-std::vector<RtpHeaderExtension> FilterRedundantRtpExtensions(
-    const std::vector<RtpHeaderExtension>& extensions,
-    const char* extension_prios[],
-    size_t extension_prios_length) {
-  if (extensions.empty())
-    return std::vector<RtpHeaderExtension>();
-  std::vector<RtpHeaderExtension> filtered;
-  std::map<int, const RtpHeaderExtension*> sorted;
-  for (auto& extension : extensions) {
-    int priority =
-        GetPriority(extension, extension_prios, extension_prios_length);
-    if (priority == -1) {
-      filtered.push_back(extension);
-      continue;
-    } else {
-      sorted[priority] = &extension;
+namespace {
+// Remove mutually exclusive extensions with lower priority.
+void DiscardRedundantExtensions(
+    std::vector<webrtc::RtpExtension>* extensions,
+    rtc::ArrayView<const char*> extensions_decreasing_prio) {
+  RTC_DCHECK(extensions);
+  bool found = false;
+  for (const char* name : extensions_decreasing_prio) {
+    auto it = std::find_if(extensions->begin(), extensions->end(),
+        [name](const webrtc::RtpExtension& rhs) {
+          return rhs.name == name;
+        });
+    if (it != extensions->end()) {
+      if (found) {
+        extensions->erase(it);
+      }
+      found = true;
     }
   }
-  if (!sorted.empty())
-    filtered.push_back(*sorted.begin()->second);
-  return filtered;
+}
+}  // namespace
+
+bool ValidateRtpExtensions(const std::vector<RtpHeaderExtension>& extensions) {
+  bool id_used[14] = {false};
+  for (const auto& extension : extensions) {
+    if (extension.id <= 0 || extension.id >= 15) {
+      LOG(LS_ERROR) << "Bad RTP extension ID: " << extension.ToString();
+      return false;
+    }
+    if (id_used[extension.id - 1]) {
+      LOG(LS_ERROR) << "Duplicate RTP extension ID: " << extension.ToString();
+      return false;
+    }
+    id_used[extension.id - 1] = true;
+  }
+  return true;
 }
 
+std::vector<webrtc::RtpExtension> FilterRtpExtensions(
+    const std::vector<RtpHeaderExtension>& extensions,
+    bool (*supported)(const std::string&),
+    bool filter_redundant_extensions) {
+  RTC_DCHECK(ValidateRtpExtensions(extensions));
+  RTC_DCHECK(supported);
+  std::vector<webrtc::RtpExtension> result;
+
+  // Ignore any extensions that we don't recognize.
+  for (const auto& extension : extensions) {
+    if (supported(extension.uri)) {
+      result.push_back({extension.uri, extension.id});
+    } else {
+      LOG(LS_WARNING) << "Unsupported RTP extension: " << extension.ToString();
+    }
+  }
+
+  // Sort by name, ascending, so that we don't reset extensions if they were
+  // specified in a different order (also allows us to use std::unique below).
+  std::sort(result.begin(), result.end(),
+      [](const webrtc::RtpExtension& rhs, const webrtc::RtpExtension& lhs) {
+        return rhs.name < lhs.name;
+      });
+
+  // Remove unnecessary extensions (used on send side).
+  if (filter_redundant_extensions) {
+    auto it = std::unique(result.begin(), result.end(),
+        [](const webrtc::RtpExtension& rhs, const webrtc::RtpExtension& lhs) {
+          return rhs.name == lhs.name;
+        });
+    result.erase(it, result.end());
+
+    // Keep just the highest priority extension of any in the following list.
+    static const char* kBweExtensionPriorities[] = {
+      kRtpTransportSequenceNumberHeaderExtension,
+      kRtpAbsoluteSenderTimeHeaderExtension,
+      kRtpTimestampOffsetHeaderExtension
+    };
+    DiscardRedundantExtensions(&result, kBweExtensionPriorities);
+  }
+
+  return result;
+}
 }  // namespace cricket

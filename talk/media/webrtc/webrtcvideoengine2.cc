@@ -243,20 +243,6 @@ static bool ValidateStreamParams(const StreamParams& sp) {
   return true;
 }
 
-static std::string RtpExtensionsToString(
-    const std::vector<RtpHeaderExtension>& extensions) {
-  std::stringstream out;
-  out << '{';
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    out << "{" << extensions[i].uri << ": " << extensions[i].id << "}";
-    if (i != extensions.size() - 1) {
-      out << ", ";
-    }
-  }
-  out << '}';
-  return out.str();
-}
-
 inline const webrtc::RtpExtension* FindHeaderExtension(
     const std::vector<webrtc::RtpExtension>& extensions,
     const std::string& name) {
@@ -366,60 +352,6 @@ static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
       *matching_codec = codecs[i];
       return true;
     }
-  }
-  return false;
-}
-
-static bool ValidateRtpHeaderExtensionIds(
-    const std::vector<RtpHeaderExtension>& extensions) {
-  std::set<int> extensions_used;
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    if (extensions[i].id <= 0 || extensions[i].id >= 15 ||
-        !extensions_used.insert(extensions[i].id).second) {
-      LOG(LS_ERROR) << "RTP extensions are with incorrect or duplicate ids.";
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool CompareRtpHeaderExtensionIds(
-    const webrtc::RtpExtension& extension1,
-    const webrtc::RtpExtension& extension2) {
-  // Sorting on ID is sufficient, more than one extension per ID is unsupported.
-  return extension1.id > extension2.id;
-}
-
-static std::vector<webrtc::RtpExtension> FilterRtpExtensions(
-    const std::vector<RtpHeaderExtension>& extensions) {
-  std::vector<webrtc::RtpExtension> webrtc_extensions;
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    // Unsupported extensions will be ignored.
-    if (webrtc::RtpExtension::IsSupportedForVideo(extensions[i].uri)) {
-      webrtc_extensions.push_back(webrtc::RtpExtension(
-          extensions[i].uri, extensions[i].id));
-    } else {
-      LOG(LS_WARNING) << "Unsupported RTP extension: " << extensions[i].uri;
-    }
-  }
-
-  // Sort filtered headers to make sure that they can later be compared
-  // regardless of in which order they were entered.
-  std::sort(webrtc_extensions.begin(), webrtc_extensions.end(),
-            CompareRtpHeaderExtensionIds);
-  return webrtc_extensions;
-}
-
-static bool RtpExtensionsHaveChanged(
-    const std::vector<webrtc::RtpExtension>& before,
-    const std::vector<webrtc::RtpExtension>& after) {
-  if (before.size() != after.size())
-    return true;
-  for (size_t i = 0; i < before.size(); ++i) {
-    if (before[i].id != after[i].id)
-      return true;
-    if (before[i].name != after[i].name)
-      return true;
   }
   return false;
 }
@@ -856,6 +788,7 @@ bool WebRtcVideoChannel2::ReceiveCodecsHaveChanged(
 }
 
 bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
+  LOG(LS_INFO) << "SetSendParameters: " << params.ToString();
   // TODO(pbos): Refactor this to only recreate the send streams once
   // instead of 4 times.
   return (SetSendCodecs(params.codecs) &&
@@ -865,6 +798,7 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
 }
 
 bool WebRtcVideoChannel2::SetRecvParameters(const VideoRecvParameters& params) {
+  LOG(LS_INFO) << "SetRecvParameters: " << params.ToString();
   // TODO(pbos): Refactor this to only recreate the recv streams once
   // instead of twice.
   return (SetRecvCodecs(params.codecs) &&
@@ -1507,20 +1441,17 @@ bool WebRtcVideoChannel2::MuteStream(uint32_t ssrc, bool mute) {
 bool WebRtcVideoChannel2::SetRecvRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRecvRtpHeaderExtensions");
-  LOG(LS_INFO) << "SetRecvRtpHeaderExtensions: "
-               << RtpExtensionsToString(extensions);
-  if (!ValidateRtpHeaderExtensionIds(extensions))
+  if (!ValidateRtpExtensions(extensions)) {
     return false;
-
-  std::vector<webrtc::RtpExtension> filtered_extensions =
-      FilterRtpExtensions(extensions);
-  if (!RtpExtensionsHaveChanged(recv_rtp_extensions_, filtered_extensions)) {
+  }
+  std::vector<webrtc::RtpExtension> filtered_extensions = FilterRtpExtensions(
+      extensions, webrtc::RtpExtension::IsSupportedForVideo, false);
+  if (recv_rtp_extensions_ == filtered_extensions) {
     LOG(LS_INFO) << "Ignoring call to SetRecvRtpHeaderExtensions because "
                     "header extensions haven't changed.";
     return true;
   }
-
-  recv_rtp_extensions_ = filtered_extensions;
+  recv_rtp_extensions_.swap(filtered_extensions);
 
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32_t, WebRtcVideoReceiveStream*>::iterator it =
@@ -1534,21 +1465,17 @@ bool WebRtcVideoChannel2::SetRecvRtpHeaderExtensions(
 bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetSendRtpHeaderExtensions");
-  LOG(LS_INFO) << "SetSendRtpHeaderExtensions: "
-               << RtpExtensionsToString(extensions);
-  if (!ValidateRtpHeaderExtensionIds(extensions))
+  if (!ValidateRtpExtensions(extensions)) {
     return false;
-
-  std::vector<webrtc::RtpExtension> filtered_extensions =
-      FilterRtpExtensions(FilterRedundantRtpExtensions(
-          extensions, kBweExtensionPriorities, kBweExtensionPrioritiesLength));
-  if (!RtpExtensionsHaveChanged(send_rtp_extensions_, filtered_extensions)) {
-    LOG(LS_INFO) << "Ignoring call to SetSendRtpHeaderExtensions because "
+  }
+  std::vector<webrtc::RtpExtension> filtered_extensions = FilterRtpExtensions(
+      extensions, webrtc::RtpExtension::IsSupportedForVideo, true);
+  if (send_rtp_extensions_ == filtered_extensions) {
+    LOG(LS_INFO) << "Ignoring call to SetRecvRtpHeaderExtensions because "
                     "header extensions haven't changed.";
     return true;
   }
-
-  send_rtp_extensions_ = filtered_extensions;
+  send_rtp_extensions_.swap(filtered_extensions);
 
   const webrtc::RtpExtension* cvo_extension = FindHeaderExtension(
       send_rtp_extensions_, kRtpVideoRotationHeaderExtension);

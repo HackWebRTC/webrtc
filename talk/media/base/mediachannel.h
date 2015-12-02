@@ -413,8 +413,8 @@ struct RtpHeaderExtension {
   std::string ToString() const {
     std::ostringstream ost;
     ost << "{";
-    ost << "id: , " << id;
     ost << "uri: " << uri;
+    ost << ", id: " << id;
     ost << "}";
     return ost.str();
   }
@@ -936,7 +936,7 @@ struct DataMediaInfo {
 
 template <class Codec>
 struct RtpParameters {
-  virtual std::string ToString() {
+  virtual std::string ToString() const {
     std::ostringstream ost;
     ost << "{";
     ost << "codecs: " << VectorToString(codecs) << ", ";
@@ -952,7 +952,7 @@ struct RtpParameters {
 
 template <class Codec, class Options>
 struct RtpSendParameters : RtpParameters<Codec> {
-  std::string ToString() override {
+  std::string ToString() const override {
     std::ostringstream ost;
     ost << "{";
     ost << "codecs: " << VectorToString(this->codecs) << ", ";
@@ -1160,13 +1160,13 @@ struct SendDataParams {
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
 
 struct DataOptions {
-  std::string ToString() {
+  std::string ToString() const {
     return "{}";
   }
 };
 
 struct DataSendParameters : RtpSendParameters<DataCodec, DataOptions> {
-  std::string ToString() {
+  std::string ToString() const {
     std::ostringstream ost;
     // Options and extensions aren't used.
     ost << "{";

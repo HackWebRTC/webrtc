@@ -42,6 +42,7 @@
 #include "talk/media/base/audiorenderer.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
+#include "talk/media/webrtc/webrtcmediaengine.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/base64.h"
@@ -294,20 +295,6 @@ webrtc::AudioState::Config MakeAudioStateConfig(VoEWrapper* voe_wrapper) {
   webrtc::AudioState::Config config;
   config.voice_engine = voe_wrapper->engine();
   return config;
-}
-
-std::vector<webrtc::RtpExtension> FindAudioRtpHeaderExtensions(
-    const std::vector<RtpHeaderExtension>& extensions) {
-  std::vector<webrtc::RtpExtension> result;
-  for (const auto& extension : extensions) {
-    if (extension.uri == kRtpAbsoluteSenderTimeHeaderExtension ||
-        extension.uri == kRtpAudioLevelHeaderExtension) {
-      result.push_back({extension.uri, extension.id});
-    } else {
-      LOG(LS_WARNING) << "Unsupported RTP extension: " << extension.ToString();
-    }
-  }
-  return result;
 }
 
 class WebRtcVoiceCodecs final {
@@ -1450,6 +1437,8 @@ WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
 bool WebRtcVoiceMediaChannel::SetSendParameters(
     const AudioSendParameters& params) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendParameters: "
+               << params.ToString();
   // TODO(pthatcher): Refactor this to be more clean now that we have
   // all the information at once.
 
@@ -1457,10 +1446,14 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
     return false;
   }
 
-  std::vector<webrtc::RtpExtension> send_rtp_extensions =
-      FindAudioRtpHeaderExtensions(params.extensions);
-  if (send_rtp_extensions_ != send_rtp_extensions) {
-    send_rtp_extensions_.swap(send_rtp_extensions);
+  if (!ValidateRtpExtensions(params.extensions)) {
+    return false;
+  }
+  std::vector<webrtc::RtpExtension> filtered_extensions =
+      FilterRtpExtensions(params.extensions,
+                          webrtc::RtpExtension::IsSupportedForAudio, true);
+  if (send_rtp_extensions_ != filtered_extensions) {
+    send_rtp_extensions_.swap(filtered_extensions);
     for (auto& it : send_streams_) {
       it.second->RecreateAudioSendStream(send_rtp_extensions_);
     }
@@ -1475,6 +1468,8 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
 bool WebRtcVoiceMediaChannel::SetRecvParameters(
     const AudioRecvParameters& params) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetRecvParameters: "
+               << params.ToString();
   // TODO(pthatcher): Refactor this to be more clean now that we have
   // all the information at once.
 
@@ -1482,10 +1477,14 @@ bool WebRtcVoiceMediaChannel::SetRecvParameters(
     return false;
   }
 
-  std::vector<webrtc::RtpExtension> recv_rtp_extensions =
-      FindAudioRtpHeaderExtensions(params.extensions);
-  if (recv_rtp_extensions_ != recv_rtp_extensions) {
-    recv_rtp_extensions_.swap(recv_rtp_extensions);
+  if (!ValidateRtpExtensions(params.extensions)) {
+    return false;
+  }
+  std::vector<webrtc::RtpExtension> filtered_extensions =
+      FilterRtpExtensions(params.extensions,
+                          webrtc::RtpExtension::IsSupportedForAudio, false);
+  if (recv_rtp_extensions_ != filtered_extensions) {
+    recv_rtp_extensions_.swap(filtered_extensions);
     for (auto& it : recv_streams_) {
       it.second->RecreateAudioReceiveStream(recv_rtp_extensions_);
     }

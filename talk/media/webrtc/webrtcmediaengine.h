@@ -28,7 +28,11 @@
 #ifndef TALK_MEDIA_WEBRTCMEDIAENGINE_H_
 #define TALK_MEDIA_WEBRTCMEDIAENGINE_H_
 
+#include <string>
+#include <vector>
+
 #include "talk/media/base/mediaengine.h"
+#include "webrtc/config.h"
 
 namespace webrtc {
 class AudioDeviceModule;
@@ -48,13 +52,18 @@ class WebRtcMediaEngineFactory {
       WebRtcVideoDecoderFactory* decoder_factory);
 };
 
-extern const char* kBweExtensionPriorities[];
-extern const size_t kBweExtensionPrioritiesLength;
+// Verify that extension IDs are within 1-byte extension range and are not
+// overlapping.
+bool ValidateRtpExtensions(const std::vector<RtpHeaderExtension>& extensions);
 
-std::vector<RtpHeaderExtension> FilterRedundantRtpExtensions(
+// Convert cricket::RtpHeaderExtension:s to webrtc::RtpExtension:s, discarding
+// any extensions not validated by the 'supported' predicate. Duplicate
+// extensions are removed if 'filter_redundant_extensions' is set, and also any
+// mutually exclusive extensions (see implementation for details).
+std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     const std::vector<RtpHeaderExtension>& extensions,
-    const char* extension_prios[],
-    size_t extension_prios_length);
+    bool (*supported)(const std::string&),
+    bool filter_redundant_extensions);
 
 }  // namespace cricket
 
