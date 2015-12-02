@@ -636,6 +636,55 @@ TEST_F(AudioDeviceTest, StopPlayoutRequiresInitToRestart) {
   EXPECT_FALSE(audio_device()->PlayoutIsInitialized());
 }
 
+// Verify that we can create two ADMs and start playing on the second ADM.
+// Only the first active instance shall activate an audio session and the
+// last active instace shall deactivate the audio session.
+TEST_F(AudioDeviceTest, StartPlayoutOnTwoInstances) {
+  // Create and initialize a second/extra ADM instance. The default ADM is
+  // created by the test harness.
+  rtc::scoped_refptr<AudioDeviceModule> second_audio_device =
+      CreateAudioDevice(AudioDeviceModule::kPlatformDefaultAudio);
+  EXPECT_NE(second_audio_device.get(), nullptr);
+  EXPECT_EQ(0, second_audio_device->Init());
+
+  // Start playout for the default ADM. Ignore the callback sequence.
+  NiceMock<MockAudioTransport> mock(kPlayout);
+  EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
+  StartPlayout();
+
+  // Initialize playout for the second ADM. If all is OK, the second ADM shall
+  // reuse the audio session activated when the first ADM started playing.
+  // This call will also ensure that we avoid a problem related to initializing
+  // two different audio unit instances back to back (see webrtc:5166 for
+  // details).
+  EXPECT_EQ(0, second_audio_device->InitPlayout());
+  EXPECT_TRUE(second_audio_device->PlayoutIsInitialized());
+
+  // Stop playout for the default ADM. The audio session shall not be
+  // deactivated since it is used by the second ADM.
+  StopPlayout();
+
+  // Start playout for the second ADM and verify that it starts as intended.
+  // Passing this test ensures that initialization of the second audio unit
+  // has been done successfully.
+  MockAudioTransport mock2(kPlayout);
+  mock2.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
+  EXPECT_CALL(
+      mock2, NeedMorePlayData(playout_frames_per_10ms_buffer(), kBytesPerSample,
+                              playout_channels(), playout_sample_rate(),
+                              NotNull(), _, _, _))
+      .Times(AtLeast(kNumCallbacks));
+  EXPECT_EQ(0, second_audio_device->RegisterAudioCallback(&mock2));
+  EXPECT_EQ(0, second_audio_device->StartPlayout());
+  EXPECT_TRUE(second_audio_device->Playing());
+  test_is_done_->Wait(kTestTimeOutInMilliseconds);
+  EXPECT_EQ(0, second_audio_device->StopPlayout());
+  EXPECT_FALSE(second_audio_device->Playing());
+  EXPECT_FALSE(second_audio_device->PlayoutIsInitialized());
+
+  EXPECT_EQ(0, second_audio_device->Terminate());
+}
+
 // Start playout and verify that the native audio layer starts asking for real
 // audio samples to play out using the NeedMorePlayData callback.
 TEST_F(AudioDeviceTest, StartPlayoutVerifyCallbacks) {

@@ -86,6 +86,12 @@ const UInt32 kBytesPerSample = 2;
 // Can most likely be removed.
 const UInt16 kFixedPlayoutDelayEstimate = 30;
 const UInt16 kFixedRecordDelayEstimate = 30;
+// Calls to AudioUnitInitialize() can fail if called back-to-back on different
+// ADM instances. A fall-back solution is to allow multiple sequential calls
+// with as small delay between each. This factor sets the max number of allowed
+// initialization attempts.
+const int kMaxNumberOfAudioUnitInitializeAttempts = 5;
+
 
 using ios::CheckAndLogError;
 
@@ -741,6 +747,7 @@ bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
   vpio_unit_description.componentManufacturer = kAudioUnitManufacturer_Apple;
   vpio_unit_description.componentFlags = 0;
   vpio_unit_description.componentFlagsMask = 0;
+
   // Obtain an audio unit instance given the description.
   AudioComponent found_vpio_unit_ref =
       AudioComponentFindNext(nullptr, &vpio_unit_description);
@@ -876,17 +883,28 @@ bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
   }
 
   // Initialize the Voice-Processing I/O unit instance.
+  // Calls to AudioUnitInitialize() can fail if called back-to-back on
+  // different ADM instances. The error message in this case is -66635 which is
+  // undocumented. Tests have shown that calling AudioUnitInitialize a second
+  // time, after a short sleep, avoids this issue.
+  // See webrtc:5166 for details.
+  int failed_initalize_attempts = 0;
   result = AudioUnitInitialize(vpio_unit_);
-  if (result != noErr) {
-    result = AudioUnitUninitialize(vpio_unit_);
-    if (result != noErr) {
-      LOG_F(LS_ERROR) << "AudioUnitUninitialize failed: " << result;
-    }
-    DisposeAudioUnit();
+  while (result != noErr) {
     LOG(LS_ERROR) << "Failed to initialize the Voice-Processing I/O unit: "
                   << result;
-    return false;
+    ++failed_initalize_attempts;
+    if (failed_initalize_attempts == kMaxNumberOfAudioUnitInitializeAttempts) {
+      // Max number of initialization attempts exceeded, hence abort.
+      LOG(LS_WARNING) << "Too many initialization attempts";
+      DisposeAudioUnit();
+      return false;
+    }
+    LOG(LS_INFO) << "pause 100ms and try audio unit initialization again...";
+    [NSThread sleepForTimeInterval:0.1f];
+    result = AudioUnitInitialize(vpio_unit_);
   }
+  LOG(LS_INFO) << "Voice-Processing I/O unit is now initialized";
   return true;
 }
 
