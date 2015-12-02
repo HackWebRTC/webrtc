@@ -17,6 +17,7 @@ import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.DataChannel;
+import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.MediaCodecVideoEncoder;
@@ -465,7 +466,7 @@ public class PeerConnectionClient {
       }
       Log.d(TAG, "Opening camera: " + cameraDeviceName);
       videoCapturer = VideoCapturerAndroid.create(cameraDeviceName, null,
-            peerConnectionParameters.captureToTexture ?  renderEGLContext : null);
+          peerConnectionParameters.captureToTexture ? new EglBase.Context(renderEGLContext) : null);
       if (videoCapturer == null) {
         reportError("Failed to open camera");
         return;

@@ -36,8 +36,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.microedition.khronos.egl.EGL10;
-
 public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
   /**
    * List with all possible scaling types.
@@ -111,7 +109,7 @@ public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
     }
 
    // Test behaviour after SurfaceViewRenderer.init() is called, but still no frame.
-    surfaceViewRenderer.init(EGL10.EGL_NO_CONTEXT, null);
+    surfaceViewRenderer.init((EglBase.Context) null, null);
     for (RendererCommon.ScalingType scalingType : scalingTypes) {
       for (int measureSpecMode : measureSpecModes) {
         final int zeroMeasureSize = MeasureSpec.makeMeasureSpec(0, measureSpecMode);
@@ -134,7 +132,7 @@ public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
   public void testFrame1280x720() {
     final SurfaceViewRenderer surfaceViewRenderer =
         new SurfaceViewRenderer(getInstrumentation().getContext());
-    surfaceViewRenderer.init(EGL10.EGL_NO_CONTEXT, null);
+    surfaceViewRenderer.init((EglBase.Context) null, null);
 
     // Test different rotation degress, but same rotated size.
     for (int rotationDegree : new int[] {0, 90, 180, 270}) {

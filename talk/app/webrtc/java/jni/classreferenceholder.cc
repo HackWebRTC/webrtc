@@ -79,6 +79,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid");
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid$NativeObserver");
   LoadClass(jni, "org/webrtc/EglBase");
+  LoadClass(jni, "org/webrtc/EglBase$Context");
   LoadClass(jni, "org/webrtc/NetworkMonitor");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");

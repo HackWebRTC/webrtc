@@ -39,8 +39,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.microedition.khronos.egl.EGLContext;
-
 /**
  * Helper class to create and synchronize access to a SurfaceTexture. The caller will get notified
  * of new frames in onTextureFrameAvailable(), and should call returnTextureFrame() when done with
@@ -65,7 +63,7 @@ class SurfaceTextureHelper {
         int oesTextureId, float[] transformMatrix, long timestampNs);
   }
 
-  public static SurfaceTextureHelper create(EGLContext sharedContext) {
+  public static SurfaceTextureHelper create(EglBase.Context sharedContext) {
     return create(sharedContext, null);
   }
 
@@ -74,7 +72,8 @@ class SurfaceTextureHelper {
    * |handler| is non-null, the callback will be executed on that handler's thread. If |handler| is
    * null, a dedicated private thread is created for the callbacks.
    */
-  public static SurfaceTextureHelper create(final EGLContext sharedContext, final Handler handler) {
+  public static SurfaceTextureHelper create(final EglBase.Context sharedContext,
+      final Handler handler) {
     final Handler finalHandler;
     if (handler != null) {
       finalHandler = handler;
@@ -105,14 +104,15 @@ class SurfaceTextureHelper {
   private boolean isTextureInUse = false;
   private boolean isQuitting = false;
 
-  private SurfaceTextureHelper(EGLContext sharedContext, Handler handler, boolean isOwningThread) {
+  private SurfaceTextureHelper(EglBase.Context sharedContext,
+      Handler handler, boolean isOwningThread) {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("SurfaceTextureHelper must be created on the handler thread");
     }
     this.handler = handler;
     this.isOwningThread = isOwningThread;
 
-    eglBase = new EglBase(sharedContext, EglBase.ConfigType.PIXEL_BUFFER);
+    eglBase = EglBase.create(sharedContext, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createDummyPbufferSurface();
     eglBase.makeCurrent();
 

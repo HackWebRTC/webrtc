@@ -28,16 +28,12 @@ package org.webrtc;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
-import android.opengl.Matrix;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
-
-import javax.microedition.khronos.egl.EGL10;
-import javax.microedition.khronos.egl.EGLContext;
 
 public final class GlRectDrawerTest extends ActivityTestCase {
   // Resolution of the test image.
@@ -46,7 +42,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
   // Seed for random pixel creation.
   private static final int SEED = 42;
   // When comparing pixels, allow some slack for float arithmetic and integer rounding.
-  private static final float MAX_DIFF = 1.0f;
+  private static final float MAX_DIFF = 1.5f;
 
   private static float normalizedByte(byte b) {
     return (b & 0xFF) / 255.0f;
@@ -100,7 +96,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
   @SmallTest
   public void testRgbRendering() {
     // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = new EglBase(EGL10.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
     eglBase.makeCurrent();
 
@@ -137,7 +133,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
   @SmallTest
   public void testYuvRendering() {
     // Create EGL base with a pixel buffer as display output.
-    EglBase eglBase = new EglBase(EGL10.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
     eglBase.makeCurrent();
 
@@ -231,8 +227,9 @@ public final class GlRectDrawerTest extends ActivityTestCase {
       private final int rgbTexture;
 
       public StubOesTextureProducer(
-          EGLContext sharedContext, SurfaceTexture surfaceTexture, int width, int height) {
-        eglBase = new EglBase(sharedContext, EglBase.ConfigType.PLAIN);
+          EglBase.Context sharedContext, SurfaceTexture surfaceTexture, int width,
+          int height) {
+        eglBase = EglBase.create(sharedContext, EglBase.ConfigType.PLAIN);
         surfaceTexture.setDefaultBufferSize(width, height);
         eglBase.createSurface(surfaceTexture);
         assertEquals(eglBase.surfaceWidth(), width);
@@ -266,14 +263,14 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     }
 
     // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = new EglBase(EGL10.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
 
     // Create resources for generating OES textures.
     final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(eglBase.getContext());
+        SurfaceTextureHelper.create(eglBase.getEglBaseContext());
     final StubOesTextureProducer oesProducer = new StubOesTextureProducer(
-        eglBase.getContext(), surfaceTextureHelper.getSurfaceTexture(), WIDTH, HEIGHT);
+        eglBase.getEglBaseContext(), surfaceTextureHelper.getSurfaceTexture(), WIDTH, HEIGHT);
     final SurfaceTextureHelperTest.MockTextureListener listener =
         new SurfaceTextureHelperTest.MockTextureListener();
     surfaceTextureHelper.setListener(listener);

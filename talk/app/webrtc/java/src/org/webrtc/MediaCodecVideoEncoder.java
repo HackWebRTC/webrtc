@@ -45,8 +45,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import javax.microedition.khronos.egl.EGLContext;
-
 // Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
 // This class is an implementation detail of the Java PeerConnection API.
 @TargetApi(19)
@@ -270,7 +268,7 @@ public class MediaCodecVideoEncoder {
   }
 
   boolean initEncode(VideoCodecType type, int width, int height, int kbps, int fps,
-      EGLContext sharedContext) {
+      EglBase.Context sharedContext) {
     final boolean useSurface = sharedContext != null;
     Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
         ". @ " + kbps + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
@@ -323,7 +321,7 @@ public class MediaCodecVideoEncoder {
           format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
       if (useSurface) {
-        eglBase = new EglBase(sharedContext, EglBase.ConfigType.RECORDABLE);
+        eglBase = EglBase.create(sharedContext, EglBase.ConfigType.RECORDABLE);
         // Create an input surface and keep a reference since we must release the surface when done.
         inputSurface = mediaCodec.createInputSurface();
         eglBase.createSurface(inputSurface);

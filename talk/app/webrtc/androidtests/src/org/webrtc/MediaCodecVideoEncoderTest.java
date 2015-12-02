@@ -38,8 +38,6 @@ import org.webrtc.MediaCodecVideoEncoder.OutputBufferInfo;
 
 import java.nio.ByteBuffer;
 
-import javax.microedition.khronos.egl.EGL10;
-
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
   final static String TAG = "MediaCodecVideoEncoderTest";
@@ -63,11 +61,13 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
       Log.i(TAG, "hardware does not support VP8 encoding, skipping testEncoderUsingTextures");
       return;
     }
+    EglBase eglBase = EglBase.create();
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
     assertTrue(encoder.initEncode(
         MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
-        EGL10.EGL_NO_CONTEXT));
+        eglBase.getEglBaseContext()));
     encoder.release();
+    eglBase.release();
   }
 
   @SmallTest
@@ -81,10 +81,12 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
         MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
         null));
     encoder.release();
+    EglBase eglBase = EglBase.create();
     assertTrue(encoder.initEncode(
         MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
-        EGL10.EGL_NO_CONTEXT));
+        eglBase.getEglBaseContext()));
     encoder.release();
+    eglBase.release();
   }
 
   @SmallTest
@@ -141,7 +143,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     final int height = 480;
     final long presentationTs = 2;
 
-    final EglBase eglOesBase = new EglBase(EGL10.EGL_NO_CONTEXT, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglOesBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
     eglOesBase.createDummyPbufferSurface();
     eglOesBase.makeCurrent();
     int oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
@@ -154,7 +156,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
 
     assertTrue(encoder.initEncode(
         MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, width, height, 300, 30,
-        eglOesBase.getContext()));
+        eglOesBase.getEglBaseContext()));
     assertTrue(encoder.encodeTexture(true, oesTextureId, RendererCommon.identityMatrix(),
         presentationTs));
     GlUtil.checkNoGLES2Error("encodeTexture");

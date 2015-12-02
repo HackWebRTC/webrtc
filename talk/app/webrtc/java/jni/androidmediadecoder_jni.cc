@@ -858,7 +858,7 @@ void MediaCodecVideoDecoderFactory::SetEGLContext(
       render_egl_context_ = NULL;
     } else {
       jclass j_egl_context_class =
-          FindClass(jni, "javax/microedition/khronos/egl/EGLContext");
+          FindClass(jni, "org/webrtc/EglBase$Context");
       if (!jni->IsInstanceOf(render_egl_context_, j_egl_context_class)) {
         ALOGE << "Wrong EGL Context.";
         jni->DeleteGlobalRef(render_egl_context_);

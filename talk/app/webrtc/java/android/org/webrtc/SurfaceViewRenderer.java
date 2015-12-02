@@ -153,7 +153,7 @@ public class SurfaceViewRenderer extends SurfaceView
    * reinitialize the renderer after a previous init()/release() cycle.
    */
   public void init(
-      EGLContext sharedContext, RendererCommon.RendererEvents rendererEvents) {
+      EglBase.Context sharedContext, RendererCommon.RendererEvents rendererEvents) {
     synchronized (handlerLock) {
       if (renderThreadHandler != null) {
         throw new IllegalStateException(getResourceName() + "Already initialized");
@@ -163,10 +163,17 @@ public class SurfaceViewRenderer extends SurfaceView
       renderThread = new HandlerThread(TAG);
       renderThread.start();
       drawer = new GlRectDrawer();
-      eglBase = new EglBase(sharedContext, EglBase.ConfigType.PLAIN);
+      eglBase = EglBase.create(sharedContext, EglBase.ConfigType.PLAIN);
       renderThreadHandler = new Handler(renderThread.getLooper());
     }
     tryCreateEglSurface();
+  }
+
+  @Deprecated
+  // TODO(perkj): Remove when applications has been updated.
+  public void init(
+      EGLContext sharedContext, RendererCommon.RendererEvents rendererEvents) {
+    init(sharedContext != null ? new EglBase.Context(sharedContext) : null, rendererEvents);
   }
 
   /**
@@ -560,7 +567,7 @@ public class SurfaceViewRenderer extends SurfaceView
       if (framesReceived > 0 && framesRendered > 0) {
         final long timeSinceFirstFrameNs = System.nanoTime() - firstFrameTimeNs;
         Logging.d(TAG, getResourceName() + "Duration: " + (int) (timeSinceFirstFrameNs / 1e6) +
-            " ms. FPS: " + (float) framesRendered * 1e9 / timeSinceFirstFrameNs);
+            " ms. FPS: " + framesRendered * 1e9 / timeSinceFirstFrameNs);
         Logging.d(TAG, getResourceName() + "Average render time: "
             + (int) (renderTimeNs / (1000 * framesRendered)) + " us.");
       }

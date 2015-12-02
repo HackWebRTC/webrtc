@@ -34,6 +34,8 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 
 import org.webrtc.Logging;
+import org.webrtc.EglBase.ConfigType;
+import org.webrtc.EglBase.Context;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -42,7 +44,8 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 
 /**
- * Holds EGL state and utility methods for handling an EGLContext, an EGLDisplay, and an EGLSurface.
+ * Holds EGL state and utility methods for handling an egl 1.0 EGLContext, an EGLDisplay,
+ * and an EGLSurface.
  */
 public class EglBase {
   private static final String TAG = "EglBase";
@@ -62,6 +65,15 @@ public class EglBase {
   private EGLDisplay eglDisplay;
   private EGLSurface eglSurface = EGL10.EGL_NO_SURFACE;
 
+  // EGL wrapper for an actual EGLContext.
+  public static class Context {
+    private final EGLContext eglContext;
+
+    public Context(EGLContext eglContext) {
+      this.eglContext = eglContext;
+    }
+  }
+
   // EGLConfig constructor type. Influences eglChooseConfig arguments.
   public static enum ConfigType {
     // No special parameters.
@@ -74,14 +86,39 @@ public class EglBase {
     RECORDABLE
   }
 
-  // Create root context without any EGLSurface or parent EGLContext. This can be used for branching
+  // Create a new context with the specified config type, sharing data with sharedContext.
+  // |sharedContext| can be null.
+  public static EglBase create(Context sharedContext, ConfigType configType) {
+    return (EglBase14.isEGL14Supported()
+        && (sharedContext == null || sharedContext instanceof EglBase14.Context))
+            ? new EglBase14((EglBase14.Context) sharedContext, configType)
+            : new EglBase(sharedContext, configType);
+  }
+
+  public static EglBase create() {
+    return create(null, ConfigType.PLAIN);
+  }
+
+  //Create root context without any EGLSurface or parent EGLContext. This can be used for branching
   // new contexts that share data.
+  @Deprecated
   public EglBase() {
-    this(EGL10.EGL_NO_CONTEXT, ConfigType.PLAIN);
+    this((Context) null, ConfigType.PLAIN);
+  }
+
+  @Deprecated
+  public EglBase(EGLContext sharedContext, ConfigType configType) {
+    this(new Context(sharedContext), configType);
+    Logging.d(TAG, "EglBase created");
+  }
+
+  @Deprecated
+  public EGLContext getContext() {
+    return eglContext;
   }
 
   // Create a new context with the specified config type, sharing data with sharedContext.
-  public EglBase(EGLContext sharedContext, ConfigType configType) {
+  EglBase(Context sharedContext, ConfigType configType) {
     this.egl = (EGL10) EGLContext.getEGL();
     this.configType = configType;
     eglDisplay = getEglDisplay();
@@ -89,7 +126,13 @@ public class EglBase {
     eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
   }
 
-  // Create EGLSurface from the Android Surface.
+  // TODO(perkj): This is a hacky ctor used to allow us to create an EGLBase14. Remove this and
+  // make EglBase an abstract class once all applications have started using the create factory
+  // method.
+  protected EglBase(boolean dummy) {
+    this.egl = null;
+  }
+
   public void createSurface(Surface surface) {
     /**
      * We have to wrap Surface in a SurfaceHolder because for some reason eglCreateWindowSurface
@@ -114,6 +157,7 @@ public class EglBase {
         return false;
       }
 
+      @Deprecated
       @Override
       public void setType(int i) {}
 
@@ -201,8 +245,8 @@ public class EglBase {
     }
   }
 
-  public EGLContext getContext() {
-    return eglContext;
+  public Context getEglBaseContext() {
+    return new Context(eglContext);
   }
 
   public boolean hasSurface() {
@@ -324,10 +368,12 @@ public class EglBase {
 
   // Return an EGLConfig, or die trying.
   private EGLContext createEglContext(
-      EGLContext sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
+      Context sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
     int[] contextAttributes = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
+    EGLContext rootContext =
+        sharedContext == null ? EGL10.EGL_NO_CONTEXT : sharedContext.eglContext;
     EGLContext eglContext =
-        egl.eglCreateContext(eglDisplay, eglConfig, sharedContext, contextAttributes);
+        egl.eglCreateContext(eglDisplay, eglConfig, rootContext, contextAttributes);
     if (eglContext == EGL10.EGL_NO_CONTEXT) {
       throw new RuntimeException("Failed to create EGL context");
     }

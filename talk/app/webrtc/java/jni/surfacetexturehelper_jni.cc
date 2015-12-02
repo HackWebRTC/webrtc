@@ -47,7 +47,7 @@ SurfaceTextureHelper::SurfaceTextureHelper(JNIEnv* jni,
               GetStaticMethodID(jni,
                                 *j_surface_texture_helper_class_,
                                 "create",
-                                "(Ljavax/microedition/khronos/egl/EGLContext;)"
+                                "(Lorg/webrtc/EglBase$Context;)"
                                 "Lorg/webrtc/SurfaceTextureHelper;"),
               egl_shared_context)),
       j_return_texture_method_(GetMethodID(jni,

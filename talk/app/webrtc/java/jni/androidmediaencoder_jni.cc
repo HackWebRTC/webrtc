@@ -278,7 +278,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
       *j_media_codec_video_encoder_class_,
       "initEncode",
       "(Lorg/webrtc/MediaCodecVideoEncoder$VideoCodecType;"
-      "IIIILjavax/microedition/khronos/egl/EGLContext;)Z");
+      "IIIILorg/webrtc/EglBase$Context;)Z");
   j_get_input_buffers_method_ = GetMethodID(
       jni,
       *j_media_codec_video_encoder_class_,
@@ -1123,7 +1123,7 @@ void MediaCodecVideoEncoderFactory::SetEGLContext(
       egl_context_ = NULL;
     } else {
       jclass j_egl_context_class =
-          FindClass(jni, "javax/microedition/khronos/egl/EGLContext");
+          FindClass(jni, "org/webrtc/EglBase$Context");
       if (!jni->IsInstanceOf(egl_context_, j_egl_context_class)) {
         ALOGE << "Wrong EGL Context.";
         jni->DeleteGlobalRef(egl_context_);

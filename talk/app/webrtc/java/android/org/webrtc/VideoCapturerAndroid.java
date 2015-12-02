@@ -50,9 +50,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.microedition.khronos.egl.EGLContext;
-import javax.microedition.khronos.egl.EGL10;
-
 // Android specific implementation of VideoCapturer.
 // An instance of this class can be created by an application using
 // VideoCapturerAndroid.create();
@@ -235,7 +232,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
   }
 
   public static VideoCapturerAndroid create(String name,
-      CameraEventsHandler eventsHandler, EGLContext sharedEglContext) {
+      CameraEventsHandler eventsHandler, EglBase.Context sharedEglContext) {
     final int cameraId = lookupDeviceName(name);
     if (cameraId == -1) {
       return null;
@@ -351,7 +348,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
   }
 
   private VideoCapturerAndroid(int cameraId, CameraEventsHandler eventsHandler,
-      EGLContext sharedContext) {
+      EglBase.Context sharedContext) {
     Logging.d(TAG, "VideoCapturerAndroid");
     this.id = cameraId;
     this.eventsHandler = eventsHandler;
@@ -362,8 +359,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     isCapturingToTexture = (sharedContext != null);
     cameraStatistics =
         new CameraStatistics(isCapturingToTexture ? 1 : videoBuffers.numCaptureBuffers);
-    surfaceHelper = SurfaceTextureHelper.create(
-        isCapturingToTexture ? sharedContext : EGL10.EGL_NO_CONTEXT, cameraThreadHandler);
+    surfaceHelper = SurfaceTextureHelper.create(sharedContext, cameraThreadHandler);
     if (isCapturingToTexture) {
       surfaceHelper.setListener(this);
     }
