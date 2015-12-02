@@ -745,9 +745,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements
       surfaceHelper.returnTextureFrame();
       return;
     }
-    if (!dropNextFrame)  {
+    if (dropNextFrame)  {
      surfaceHelper.returnTextureFrame();
-     dropNextFrame = true;
+     dropNextFrame = false;
      return;
     }
 
