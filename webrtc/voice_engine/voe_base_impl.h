@@ -134,14 +134,9 @@ class VoEBaseImpl : public VoEBase,
                       void* audio_data, int64_t* elapsed_time_ms,
                       int64_t* ntp_time_ms);
 
-  int32_t AddVoEVersion(char* str) const;
-
   // Initialize channel by setting Engine Information then initializing
   // channel.
   int InitializeChannel(voe::ChannelOwner* channel_owner);
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
-  int32_t AddExternalTransportBuild(char* str) const;
-#endif
   VoiceEngineObserver* voiceEngineObserverPtr_;
   CriticalSectionWrapper& callbackCritSect_;
 

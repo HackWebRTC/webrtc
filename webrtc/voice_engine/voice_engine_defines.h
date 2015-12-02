@@ -57,9 +57,6 @@ enum { kVoiceEngineMaxIpPacketSizeBytes = 1500 };  // assumes Ethernet
 
 enum { kVoiceEngineMaxModuleVersionSize = 960 };
 
-// Base
-enum { kVoiceEngineVersionMaxMessageSize = 1024 };
-
 // Audio processing
 const NoiseSuppression::Level kDefaultNsMode = NoiseSuppression::kModerate;
 const GainControl::Mode kDefaultAgcMode =

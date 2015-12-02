@@ -165,4 +165,12 @@ int VoiceEngine::SetAndroidObjects(void* javaVM, void* context) {
 }
 #endif
 
+std::string VoiceEngine::GetVersionString() {
+  std::string version = "VoiceEngine 4.1.0";
+#ifdef WEBRTC_EXTERNAL_TRANSPORT
+  version += " (External transport build)";
+#endif
+  return version;
+}
+
 }  // namespace webrtc

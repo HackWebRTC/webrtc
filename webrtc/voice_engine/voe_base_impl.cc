@@ -582,68 +582,18 @@ int VoEBaseImpl::StopSend(int channel) {
 }
 
 int VoEBaseImpl::GetVersion(char version[1024]) {
-  static_assert(kVoiceEngineVersionMaxMessageSize == 1024, "");
-
   if (version == nullptr) {
     shared_->SetLastError(VE_INVALID_ARGUMENT, kTraceError);
-    return (-1);
-  }
-
-  char versionBuf[kVoiceEngineVersionMaxMessageSize];
-  char* versionPtr = versionBuf;
-
-  int32_t len = 0;
-  int32_t accLen = 0;
-
-  len = AddVoEVersion(versionPtr);
-  if (len == -1) {
     return -1;
   }
-  versionPtr += len;
-  accLen += len;
-  assert(accLen < kVoiceEngineVersionMaxMessageSize);
 
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
-  len = AddExternalTransportBuild(versionPtr);
-  if (len == -1) {
-    return -1;
-  }
-  versionPtr += len;
-  accLen += len;
-  assert(accLen < kVoiceEngineVersionMaxMessageSize);
-#endif
-
-  memcpy(version, versionBuf, accLen);
-  version[accLen] = '\0';
-
-  // to avoid the truncation in the trace, split the string into parts
-  char partOfVersion[256];
-  for (int partStart = 0; partStart < accLen;) {
-    memset(partOfVersion, 0, sizeof(partOfVersion));
-    int partEnd = partStart + 180;
-    while (version[partEnd] != '\n' && version[partEnd] != '\0') {
-      partEnd--;
-    }
-    if (partEnd < accLen) {
-      memcpy(partOfVersion, &version[partStart], partEnd - partStart);
-    } else {
-      memcpy(partOfVersion, &version[partStart], accLen - partStart);
-    }
-    partStart = partEnd;
-  }
-
+  std::string versionString = VoiceEngine::GetVersionString();
+  RTC_DCHECK_GT(1024u, versionString.size() + 1);
+  char* end = std::copy(versionString.cbegin(), versionString.cend(), version);
+  end[0] = '\n';
+  end[1] = '\0';
   return 0;
 }
-
-int32_t VoEBaseImpl::AddVoEVersion(char* str) const {
-  return sprintf(str, "VoiceEngine 4.1.0\n");
-}
-
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
-int32_t VoEBaseImpl::AddExternalTransportBuild(char* str) const {
-  return sprintf(str, "External transport build\n");
-}
-#endif
 
 int VoEBaseImpl::LastError() { return (shared_->statistics().LastError()); }
 

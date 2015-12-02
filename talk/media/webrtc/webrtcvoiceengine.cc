@@ -568,22 +568,12 @@ bool WebRtcVoiceEngine::InitInternal() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   // Temporarily turn logging level up for the Init call
   webrtc::Trace::set_level_filter(kElevatedTraceFilter);
+  LOG(LS_INFO) << webrtc::VoiceEngine::GetVersionString();
   if (voe_wrapper_->base()->Init(adm_) == -1) {
     LOG_RTCERR0_EX(Init, voe_wrapper_->error());
     return false;
   }
   webrtc::Trace::set_level_filter(kDefaultTraceFilter);
-
-  // Log the VoiceEngine version info
-  {
-    char buffer[1024] = "";
-    voe_wrapper_->base()->GetVersion(buffer);
-    LOG(LS_INFO) << "WebRtc VoiceEngine Version:";
-    const char* delim = "\r\n";
-    for (char* tok = strtok(buffer, delim); tok; tok = strtok(NULL, delim)) {
-      LOG(LS_INFO) << tok;
-    }
-  }
 
   // Save the default AGC configuration settings. This must happen before
   // calling SetOptions or the default will be overwritten.

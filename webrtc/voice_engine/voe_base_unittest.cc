@@ -78,4 +78,10 @@ TEST_F(VoEBaseTest, AssociateSendChannel) {
   EXPECT_EQ(1, reference.use_count());
 }
 
+TEST_F(VoEBaseTest, GetVersion) {
+  char v1[1024] = {75};
+  base_->GetVersion(v1);
+  std::string v2 = VoiceEngine::GetVersionString() + "\n";
+  EXPECT_EQ(v2, v1);
+}
 }  // namespace webrtc
