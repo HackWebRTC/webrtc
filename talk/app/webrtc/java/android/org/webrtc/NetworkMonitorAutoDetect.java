@@ -96,6 +96,10 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
   /** Queries the ConnectivityManager for information about the current connection. */
   static class ConnectivityManagerDelegate {
+    /**
+     *  Note: In some rare Android systems connectivityManager is null.  We handle that
+     *  gracefully below.
+     */
     private final ConnectivityManager connectivityManager;
 
     ConnectivityManagerDelegate(Context context) {
@@ -114,6 +118,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      * default network.
      */
     NetworkState getNetworkState() {
+      if (connectivityManager == null) {
+        return new NetworkState(false, -1, -1);
+      }
       return getNetworkState(connectivityManager.getActiveNetworkInfo());
     }
 
@@ -123,6 +130,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      */
     @SuppressLint("NewApi")
     NetworkState getNetworkState(Network network) {
+      if (connectivityManager == null) {
+        return new NetworkState(false, -1, -1);
+      }
       return getNetworkState(connectivityManager.getNetworkInfo(network));
     }
 
@@ -142,6 +152,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      */
     @SuppressLint("NewApi")
     Network[] getAllNetworks() {
+      if (connectivityManager == null) {
+        return new Network[0];
+      }
       return connectivityManager.getAllNetworks();
     }
 
@@ -152,6 +165,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      */
     @SuppressLint("NewApi")
     int getDefaultNetId() {
+      if (connectivityManager == null) {
+        return INVALID_NET_ID;
+      }
       // Android Lollipop had no API to get the default network; only an
       // API to return the NetworkInfo for the default network. To
       // determine the default network one can find the network with
@@ -188,6 +204,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      */
     @SuppressLint("NewApi")
     boolean hasInternetCapability(Network network) {
+      if (connectivityManager == null) {
+        return false;
+      }
       final NetworkCapabilities capabilities =
           connectivityManager.getNetworkCapabilities(network);
       return capabilities != null && capabilities.hasCapability(NET_CAPABILITY_INTERNET);
