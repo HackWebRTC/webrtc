@@ -306,9 +306,6 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (inst->codecSpecific.VP9.keyFrameInterval  > 0) {
     config_->kf_mode = VPX_KF_AUTO;
     config_->kf_max_dist = inst->codecSpecific.VP9.keyFrameInterval;
-    // Needs to be set (in svc mode) to get correct periodic key frame interval
-    // (will have no effect in non-svc).
-    config_->kf_min_dist = config_->kf_max_dist;
   } else {
     config_->kf_mode = VPX_KF_DISABLED;
   }
@@ -547,7 +544,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   assert(codec_specific != NULL);
   codec_specific->codecType = kVideoCodecVP9;
   CodecSpecificInfoVP9 *vp9_info = &(codec_specific->codecSpecific.VP9);
-  // TODO(asapersson): Set correct value.
+  // TODO(asapersson): Set correct values.
   vp9_info->inter_pic_predicted =
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? false : true;
   vp9_info->flexible_mode = codec_.codecSpecific.VP9.flexibleMode;

@@ -58,9 +58,6 @@ class VideoSendStreamTest : public test::CallTest {
   void TestNackRetransmission(uint32_t retransmit_ssrc,
                               uint8_t retransmit_payload_type);
   void TestPacketFragmentationSize(VideoFormat format, bool with_fec);
-
-  void TestVp9NonFlexMode(uint8_t num_temporal_layers,
-                          uint8_t num_spatial_layers);
 };
 
 TEST_F(VideoSendStreamTest, CanStartStartedStream) {
@@ -1794,21 +1791,22 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
   RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
-class Vp9HeaderObserver : public test::SendTest {
+class VP9HeaderObeserver : public test::SendTest {
  public:
-  Vp9HeaderObserver()
+  VP9HeaderObeserver()
       : SendTest(VideoSendStreamTest::kDefaultTimeoutMs),
         vp9_encoder_(VP9Encoder::Create()),
-        vp9_settings_(VideoEncoder::GetDefaultVp9Settings()),
-        packets_sent_(0),
-        frames_sent_(0) {}
+        vp9_settings_(VideoEncoder::GetDefaultVp9Settings()) {
+    vp9_settings_.numberOfTemporalLayers = 1;
+    vp9_settings_.numberOfSpatialLayers = 2;
+  }
 
   virtual void ModifyConfigsHook(
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) {}
 
-  virtual void InspectHeader(const RTPVideoHeaderVP9& vp9) = 0;
+  virtual void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) = 0;
 
  private:
   const int kVp9PayloadType = 105;
@@ -1817,14 +1815,11 @@ class Vp9HeaderObserver : public test::SendTest {
                      std::vector<VideoReceiveStream::Config>* receive_configs,
                      VideoEncoderConfig* encoder_config) override {
     encoder_config->encoder_specific_settings = &vp9_settings_;
+    encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     send_config->encoder_settings.encoder = vp9_encoder_.get();
     send_config->encoder_settings.payload_name = "VP9";
     send_config->encoder_settings.payload_type = kVp9PayloadType;
     ModifyConfigsHook(send_config, receive_configs, encoder_config);
-    EXPECT_EQ(1u, encoder_config->streams.size());
-    encoder_config->streams[0].temporal_layer_thresholds_bps.resize(
-        vp9_settings_.numberOfTemporalLayers - 1);
-    encoder_config_ = *encoder_config;
   }
 
   void PerformTest() override {
@@ -1836,340 +1831,113 @@ class Vp9HeaderObserver : public test::SendTest {
     RTPHeader header;
     EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-    EXPECT_EQ(kVp9PayloadType, header.payloadType);
-    const uint8_t* payload = packet + header.headerLength;
-    size_t payload_length = length - header.headerLength - header.paddingLength;
+    if (header.payloadType == kVp9PayloadType) {
+      RtpDepacketizerVp9 vp9depacketizer;
+      RtpDepacketizer::ParsedPayload vp9payload;
+      const uint8_t* vp9_packet = packet + header.headerLength;
+      size_t payload_length =
+          length - header.headerLength - header.paddingLength;
 
-    bool new_packet = packets_sent_ == 0 ||
-                      IsNewerSequenceNumber(header.sequenceNumber,
-                                            last_header_.sequenceNumber);
-    if (payload_length > 0 && new_packet) {
-      RtpDepacketizer::ParsedPayload parsed;
-      RtpDepacketizerVp9 depacketizer;
-      EXPECT_TRUE(depacketizer.Parse(&parsed, payload, payload_length));
-      EXPECT_EQ(RtpVideoCodecTypes::kRtpVideoVp9, parsed.type.Video.codec);
-      // Verify common fields for all configurations.
-      VerifyCommonHeader(parsed.type.Video.codecHeader.VP9);
-      CompareConsecutiveFrames(header, parsed.type.Video);
-      // Verify configuration specific settings.
-      InspectHeader(parsed.type.Video.codecHeader.VP9);
+      if (payload_length > 0) {
+        bool parse_vp9header_successful =
+            vp9depacketizer.Parse(&vp9payload, vp9_packet, payload_length);
+        bool is_vp9_codec_type =
+            vp9payload.type.Video.codec == RtpVideoCodecTypes::kRtpVideoVp9;
+        EXPECT_TRUE(parse_vp9header_successful);
+        EXPECT_TRUE(is_vp9_codec_type);
 
-      ++packets_sent_;
-      if (header.markerBit) {
-        ++frames_sent_;
+        RTPVideoHeaderVP9* vp9videoHeader =
+            &vp9payload.type.Video.codecHeader.VP9;
+        if (parse_vp9header_successful && is_vp9_codec_type) {
+          InspectHeader(vp9videoHeader);
+        } else {
+          observation_complete_->Set();
+        }
       }
-      last_header_ = header;
-      last_vp9_ = parsed.type.Video.codecHeader.VP9;
     }
+
     return SEND_PACKET;
   }
 
  protected:
-  bool ContinuousPictureId(const RTPVideoHeaderVP9& vp9) const {
-    if (last_vp9_.picture_id > vp9.picture_id) {
-      return vp9.picture_id == 0;  // Wrap.
-    } else {
-      return vp9.picture_id == last_vp9_.picture_id + 1;
-    }
-  }
-
-  void VerifySpatialIdxWithinFrame(const RTPVideoHeaderVP9& vp9) const {
-    if (frames_sent_ == 0)
-      return;
-
-    bool new_layer = vp9.spatial_idx != last_vp9_.spatial_idx;
-    EXPECT_EQ(new_layer, vp9.beginning_of_frame);
-    EXPECT_EQ(new_layer, last_vp9_.end_of_frame);
-    EXPECT_EQ(new_layer ? last_vp9_.spatial_idx + 1 : last_vp9_.spatial_idx,
-              vp9.spatial_idx);
-  }
-
-  void VerifyFixedTemporalLayerStructure(const RTPVideoHeaderVP9& vp9,
-                                         uint8_t num_layers) const {
-    switch (num_layers) {
-      case 0:
-        VerifyTemporalLayerStructure0(vp9);
-        break;
-      case 1:
-        VerifyTemporalLayerStructure1(vp9);
-        break;
-      case 2:
-        VerifyTemporalLayerStructure2(vp9);
-        break;
-      case 3:
-        VerifyTemporalLayerStructure3(vp9);
-        break;
-      default:
-        RTC_NOTREACHED();
-    }
-  }
-
-  void VerifyTemporalLayerStructure0(const RTPVideoHeaderVP9& vp9) const {
-    EXPECT_EQ(kNoTl0PicIdx, vp9.tl0_pic_idx);
-    EXPECT_EQ(kNoTemporalIdx, vp9.temporal_idx);  // no tid
-    EXPECT_FALSE(vp9.temporal_up_switch);
-  }
-
-  void VerifyTemporalLayerStructure1(const RTPVideoHeaderVP9& vp9) const {
-    EXPECT_NE(kNoTl0PicIdx, vp9.tl0_pic_idx);
-    EXPECT_EQ(0, vp9.temporal_idx);  // 0,0,0,...
-    EXPECT_FALSE(vp9.temporal_up_switch);
-  }
-
-  void VerifyTemporalLayerStructure2(const RTPVideoHeaderVP9& vp9) const {
-    EXPECT_NE(kNoTl0PicIdx, vp9.tl0_pic_idx);
-    EXPECT_GE(vp9.temporal_idx, 0);  // 0,1,0,1,... (tid reset on I-frames).
-    EXPECT_LE(vp9.temporal_idx, 1);
-    EXPECT_EQ(vp9.temporal_idx > 0, vp9.temporal_up_switch);
-    if (IsNewPictureId(vp9)) {
-      uint8_t expected_tid =
-          (!vp9.inter_pic_predicted || last_vp9_.temporal_idx == 1) ? 0 : 1;
-      EXPECT_EQ(expected_tid, vp9.temporal_idx);
-    }
-  }
-
-  void VerifyTemporalLayerStructure3(const RTPVideoHeaderVP9& vp9) const {
-    EXPECT_NE(kNoTl0PicIdx, vp9.tl0_pic_idx);
-    EXPECT_GE(vp9.temporal_idx, 0);  // 0,2,1,2,... (tid reset on I-frames).
-    EXPECT_LE(vp9.temporal_idx, 2);
-    if (IsNewPictureId(vp9) && vp9.inter_pic_predicted) {
-      EXPECT_NE(vp9.temporal_idx, last_vp9_.temporal_idx);
-      switch (vp9.temporal_idx) {
-        case 0:
-          EXPECT_EQ(2, last_vp9_.temporal_idx);
-          EXPECT_FALSE(vp9.temporal_up_switch);
-          break;
-        case 1:
-          EXPECT_EQ(2, last_vp9_.temporal_idx);
-          EXPECT_TRUE(vp9.temporal_up_switch);
-          break;
-        case 2:
-          EXPECT_EQ(last_vp9_.temporal_idx == 0, vp9.temporal_up_switch);
-          break;
-      }
-    }
-  }
-
-  void VerifyTl0Idx(const RTPVideoHeaderVP9& vp9) const {
-    if (vp9.tl0_pic_idx == kNoTl0PicIdx)
-      return;
-
-    uint8_t expected_tl0_idx = last_vp9_.tl0_pic_idx;
-    if (vp9.temporal_idx == 0)
-      ++expected_tl0_idx;
-    EXPECT_EQ(expected_tl0_idx, vp9.tl0_pic_idx);
-  }
-
-  bool IsNewPictureId(const RTPVideoHeaderVP9& vp9) const {
-    return frames_sent_ > 0 && (vp9.picture_id != last_vp9_.picture_id);
-  }
-
-  // Flexible mode (F=1):    Non-flexible mode (F=0):
-  //
-  //      +-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+
-  //      |I|P|L|F|B|E|V|-|     |I|P|L|F|B|E|V|-|
-  //      +-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+
-  // I:   |M| PICTURE ID  |  I: |M| PICTURE ID  |
-  //      +-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+
-  // M:   | EXTENDED PID  |  M: | EXTENDED PID  |
-  //      +-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+
-  // L:   |  T  |U|  S  |D|  L: |  T  |U|  S  |D|
-  //      +-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+
-  // P,F: | P_DIFF    |X|N|     |   TL0PICIDX   |
-  //      +-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+
-  // X:   |EXTENDED P_DIFF|  V: | SS  ..        |
-  //      +-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+
-  // V:   | SS  ..        |
-  //      +-+-+-+-+-+-+-+-+
-  void VerifyCommonHeader(const RTPVideoHeaderVP9& vp9) const {
-    EXPECT_EQ(kMaxTwoBytePictureId, vp9.max_picture_id);       // M:1
-    EXPECT_NE(kNoPictureId, vp9.picture_id);                   // I:1
-    EXPECT_EQ(vp9_settings_.flexibleMode, vp9.flexible_mode);  // F
-    EXPECT_GE(vp9.spatial_idx, 0);                             // S
-    EXPECT_LT(vp9.spatial_idx, vp9_settings_.numberOfSpatialLayers);
-    if (vp9.ss_data_available)  // V
-      VerifySsData(vp9);
-
-    if (frames_sent_ == 0)
-      EXPECT_FALSE(vp9.inter_pic_predicted);  // P
-
-    if (!vp9.inter_pic_predicted) {
-      EXPECT_TRUE(vp9.temporal_idx == 0 || vp9.temporal_idx == kNoTemporalIdx);
-      EXPECT_FALSE(vp9.temporal_up_switch);
-    }
-  }
-
-  // Scalability structure (SS).
-  //
-  //      +-+-+-+-+-+-+-+-+
-  // V:   | N_S |Y|G|-|-|-|
-  //      +-+-+-+-+-+-+-+-+
-  // Y:   |    WIDTH      |  N_S + 1 times
-  //      +-+-+-+-+-+-+-+-+
-  //      |    HEIGHT     |
-  //      +-+-+-+-+-+-+-+-+
-  // G:   |      N_G      |
-  //      +-+-+-+-+-+-+-+-+
-  // N_G: |  T  |U| R |-|-|  N_G times
-  //      +-+-+-+-+-+-+-+-+
-  //      |    P_DIFF     |  R times
-  //      +-+-+-+-+-+-+-+-+
-  void VerifySsData(const RTPVideoHeaderVP9& vp9) const {
-    EXPECT_TRUE(vp9.ss_data_available);             // V
-    EXPECT_EQ(vp9_settings_.numberOfSpatialLayers,  // N_S + 1
-              vp9.num_spatial_layers);
-    EXPECT_TRUE(vp9.spatial_layer_resolution_present);  // Y:1
-    size_t expected_width = encoder_config_.streams[0].width;
-    size_t expected_height = encoder_config_.streams[0].height;
-    for (int i = vp9.num_spatial_layers - 1; i >= 0; --i) {
-      EXPECT_EQ(expected_width, vp9.width[i]);    // WIDTH
-      EXPECT_EQ(expected_height, vp9.height[i]);  // HEIGHT
-      expected_width /= 2;
-      expected_height /= 2;
-    }
-  }
-
-  void CompareConsecutiveFrames(const RTPHeader& header,
-                                const RTPVideoHeader& video) const {
-    const RTPVideoHeaderVP9& vp9 = video.codecHeader.VP9;
-
-    bool new_frame = packets_sent_ == 0 ||
-                     IsNewerTimestamp(header.timestamp, last_header_.timestamp);
-    EXPECT_EQ(new_frame, video.isFirstPacket);
-    if (!new_frame) {
-      EXPECT_FALSE(last_header_.markerBit);
-      EXPECT_EQ(last_header_.timestamp, header.timestamp);
-      EXPECT_EQ(last_vp9_.picture_id, vp9.picture_id);
-      EXPECT_EQ(last_vp9_.temporal_idx, vp9.temporal_idx);
-      EXPECT_EQ(last_vp9_.tl0_pic_idx, vp9.tl0_pic_idx);
-      VerifySpatialIdxWithinFrame(vp9);
-      return;
-    }
-    // New frame.
-    EXPECT_TRUE(vp9.beginning_of_frame);
-
-    // Compare with last packet in previous frame.
-    if (frames_sent_ == 0)
-      return;
-    EXPECT_TRUE(last_vp9_.end_of_frame);
-    EXPECT_TRUE(last_header_.markerBit);
-    EXPECT_TRUE(ContinuousPictureId(vp9));
-    VerifyTl0Idx(vp9);
-  }
-
   rtc::scoped_ptr<VP9Encoder> vp9_encoder_;
   VideoCodecVP9 vp9_settings_;
-  webrtc::VideoEncoderConfig encoder_config_;
-  RTPHeader last_header_;
-  RTPVideoHeaderVP9 last_vp9_;
-  size_t packets_sent_;
-  size_t frames_sent_;
 };
 
-TEST_F(VideoSendStreamTest, Vp9NonFlexMode_1Tl1SLayers) {
-  const uint8_t kNumTemporalLayers = 1;
-  const uint8_t kNumSpatialLayers = 1;
-  TestVp9NonFlexMode(kNumTemporalLayers, kNumSpatialLayers);
-}
-
-TEST_F(VideoSendStreamTest, Vp9NonFlexMode_2Tl1SLayers) {
-  const uint8_t kNumTemporalLayers = 2;
-  const uint8_t kNumSpatialLayers = 1;
-  TestVp9NonFlexMode(kNumTemporalLayers, kNumSpatialLayers);
-}
-
-TEST_F(VideoSendStreamTest, Vp9NonFlexMode_3Tl1SLayers) {
-  const uint8_t kNumTemporalLayers = 3;
-  const uint8_t kNumSpatialLayers = 1;
-  TestVp9NonFlexMode(kNumTemporalLayers, kNumSpatialLayers);
-}
-
-TEST_F(VideoSendStreamTest, Vp9NonFlexMode_1Tl2SLayers) {
-  const uint8_t kNumTemporalLayers = 1;
-  const uint8_t kNumSpatialLayers = 2;
-  TestVp9NonFlexMode(kNumTemporalLayers, kNumSpatialLayers);
-}
-
-TEST_F(VideoSendStreamTest, Vp9NonFlexMode_2Tl2SLayers) {
-  const uint8_t kNumTemporalLayers = 2;
-  const uint8_t kNumSpatialLayers = 2;
-  TestVp9NonFlexMode(kNumTemporalLayers, kNumSpatialLayers);
-}
-
-TEST_F(VideoSendStreamTest, Vp9NonFlexMode_3Tl2SLayers) {
-  const uint8_t kNumTemporalLayers = 3;
-  const uint8_t kNumSpatialLayers = 2;
-  TestVp9NonFlexMode(kNumTemporalLayers, kNumSpatialLayers);
-}
-
-void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
-                                             uint8_t num_spatial_layers) {
-  static const size_t kNumFramesToSend = 100;
-  // Set to < kNumFramesToSend and coprime to length of temporal layer
-  // structures to verify temporal id reset on key frame.
-  static const int kKeyFrameInterval = 31;
-  class NonFlexibleMode : public Vp9HeaderObserver {
-   public:
-    NonFlexibleMode(uint8_t num_temporal_layers, uint8_t num_spatial_layers)
-        : num_temporal_layers_(num_temporal_layers),
-          num_spatial_layers_(num_spatial_layers),
-          l_field_(num_temporal_layers > 1 || num_spatial_layers > 1) {}
+TEST_F(VideoSendStreamTest, DISABLED_VP9FlexMode) {
+  class FlexibleMode : public VP9HeaderObeserver {
     void ModifyConfigsHook(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      vp9_settings_.flexibleMode = false;
-      vp9_settings_.frameDroppingOn = false;
-      vp9_settings_.keyFrameInterval = kKeyFrameInterval;
-      vp9_settings_.numberOfTemporalLayers = num_temporal_layers_;
-      vp9_settings_.numberOfSpatialLayers = num_spatial_layers_;
+      vp9_settings_.flexibleMode = true;
     }
 
-    void InspectHeader(const RTPVideoHeaderVP9& vp9) override {
-      bool ss_data_expected = !vp9.inter_pic_predicted &&
-                              vp9.beginning_of_frame && vp9.spatial_idx == 0;
-      EXPECT_EQ(ss_data_expected, vp9.ss_data_available);
-      EXPECT_EQ(vp9.spatial_idx > 0, vp9.inter_layer_predicted);  // D
-
-      if (IsNewPictureId(vp9)) {
-        EXPECT_EQ(0, vp9.spatial_idx);
-        EXPECT_EQ(num_spatial_layers_ - 1, last_vp9_.spatial_idx);
-      }
-
-      VerifyFixedTemporalLayerStructure(vp9,
-                                        l_field_ ? num_temporal_layers_ : 0);
-
-      if (frames_sent_ > kNumFramesToSend)
-        observation_complete_->Set();
+    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
+      EXPECT_TRUE(vp9videoHeader->flexible_mode);
+      observation_complete_->Set();
     }
-    const uint8_t num_temporal_layers_;
-    const uint8_t num_spatial_layers_;
-    const bool l_field_;
-  } test(num_temporal_layers, num_spatial_layers);
+  } test;
 
   RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
-TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
-  class FlexibleMode : public Vp9HeaderObserver {
+TEST_F(VideoSendStreamTest, VP9FlexModeHasPictureId) {
+  class FlexibleMode : public VP9HeaderObeserver {
     void ModifyConfigsHook(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
       vp9_settings_.flexibleMode = true;
-      vp9_settings_.numberOfTemporalLayers = 1;
-      vp9_settings_.numberOfSpatialLayers = 2;
     }
 
-    void InspectHeader(const RTPVideoHeaderVP9& vp9_header) override {
-      EXPECT_TRUE(vp9_header.flexible_mode);
-      EXPECT_EQ(kNoTl0PicIdx, vp9_header.tl0_pic_idx);
-      if (vp9_header.inter_pic_predicted) {
-        EXPECT_GT(vp9_header.num_ref_pics, 0u);
+    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
+      EXPECT_NE(vp9videoHeader->picture_id, kNoPictureId);
+      observation_complete_->Set();
+    }
+  } test;
+
+  RunBaseTest(&test, FakeNetworkPipe::Config());
+}
+
+TEST_F(VideoSendStreamTest, VP9FlexModeRefCount) {
+  class FlexibleMode : public VP9HeaderObeserver {
+    void ModifyConfigsHook(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      vp9_settings_.flexibleMode = true;
+    }
+
+    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
+      EXPECT_TRUE(vp9videoHeader->flexible_mode);
+      if (vp9videoHeader->inter_pic_predicted) {
+        EXPECT_GT(vp9videoHeader->num_ref_pics, 0u);
         observation_complete_->Set();
       }
     }
+  } test;
+
+  RunBaseTest(&test, FakeNetworkPipe::Config());
+}
+
+TEST_F(VideoSendStreamTest, VP9FlexModeRefs) {
+  class FlexibleMode : public VP9HeaderObeserver {
+    void ModifyConfigsHook(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      vp9_settings_.flexibleMode = true;
+    }
+
+    void InspectHeader(RTPVideoHeaderVP9* vp9videoHeader) override {
+      EXPECT_TRUE(vp9videoHeader->flexible_mode);
+      if (vp9videoHeader->inter_pic_predicted) {
+        EXPECT_GT(vp9videoHeader->num_ref_pics, 0u);
+        observation_complete_->Set();
+      }
+    }
+
   } test;
 
   RunBaseTest(&test, FakeNetworkPipe::Config());
