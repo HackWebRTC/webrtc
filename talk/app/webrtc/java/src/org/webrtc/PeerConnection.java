@@ -28,7 +28,6 @@
 
 package org.webrtc;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -223,6 +222,14 @@ public class PeerConnection {
     localStreams.remove(stream);
   }
 
+  public RtpSender createSender(String kind) {
+    RtpSender new_sender = nativeCreateSender(kind);
+    if (new_sender != null) {
+      senders.add(new_sender);
+    }
+    return new_sender;
+  }
+
   // Note that calling getSenders will dispose of the senders previously
   // returned (and same goes for getReceivers).
   public List<RtpSender> getSenders() {
@@ -287,6 +294,8 @@ public class PeerConnection {
 
   private native boolean nativeGetStats(
       StatsObserver observer, long nativeTrack);
+
+  private native RtpSender nativeCreateSender(String kind);
 
   private native List<RtpSender> nativeGetSenders();
 
