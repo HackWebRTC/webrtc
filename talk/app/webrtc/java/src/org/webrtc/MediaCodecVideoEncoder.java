@@ -380,6 +380,9 @@ public class MediaCodecVideoEncoder {
         mediaCodec.setParameters(b);
       }
       eglBase.makeCurrent();
+      // TODO(perkj): glClear() shouldn't be necessary since every pixel is covered anyway,
+      // but it's a workaround for bug webrtc:5147.
+      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
       drawer.drawOes(oesTextureId, transformationMatrix);
       // TODO(perkj): Do we have to call EGLExt.eglPresentationTimeANDROID ?
       // If not, remove |presentationTimestampUs|.
