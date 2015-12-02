@@ -219,14 +219,16 @@ class PeerConnectionEndToEndTest
 
 // Disabled for TSan v2, see
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=4719 for details.
-#if !defined(THREAD_SANITIZER)
+// Disabled for Mac, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5231 for details.
+#if !defined(THREAD_SANITIZER) && !defined(WEBRTC_MAC)
 TEST_F(PeerConnectionEndToEndTest, Call) {
   CreatePcs();
   GetAndAddUserMedia();
   Negotiate();
   WaitForCallEstablished();
 }
-#endif // if !defined(THREAD_SANITIZER)
+#endif // if !defined(THREAD_SANITIZER) && !defined(WEBRTC_MAC)
 
 // Disabled per b/14899892
 TEST_F(PeerConnectionEndToEndTest, DISABLED_CallWithLegacySdp) {
