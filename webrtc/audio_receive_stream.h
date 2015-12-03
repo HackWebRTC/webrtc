@@ -24,6 +24,11 @@ namespace webrtc {
 
 class AudioDecoder;
 
+// WORK IN PROGRESS
+// This class is under development and is not yet intended for for use outside
+// of WebRtc/Libjingle. Please use the VoiceEngine API instead.
+// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4690
+
 class AudioReceiveStream : public ReceiveStream {
  public:
   struct Stats {
