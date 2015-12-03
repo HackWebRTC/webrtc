@@ -218,6 +218,7 @@ class TurnPort : public Port {
   bool HasPermission(const rtc::IPAddress& ipaddr) const;
   TurnEntry* FindEntry(const rtc::SocketAddress& address) const;
   TurnEntry* FindEntry(int channel_id) const;
+  bool EntryExists(TurnEntry* e);
   void CreateOrRefreshEntry(const rtc::SocketAddress& address);
   void DestroyEntry(TurnEntry* entry);
   // Destroys the entry only if |timestamp| matches the destruction timestamp

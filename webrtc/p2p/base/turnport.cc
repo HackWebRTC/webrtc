@@ -907,6 +907,11 @@ TurnEntry* TurnPort::FindEntry(int channel_id) const {
   return (it != entries_.end()) ? *it : NULL;
 }
 
+bool TurnPort::EntryExists(TurnEntry* e) {
+  auto it = std::find(entries_.begin(), entries_.end(), e);
+  return it != entries_.end();
+}
+
 void TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr) {
   TurnEntry* entry = FindEntry(addr);
   if (entry == nullptr) {
@@ -928,6 +933,9 @@ void TurnPort::DestroyEntry(TurnEntry* entry) {
 
 void TurnPort::DestroyEntryIfNotCancelled(TurnEntry* entry,
                                           uint32_t timestamp) {
+  if (!EntryExists(entry)) {
+    return;
+  }
   bool cancelled = timestamp != entry->destruction_timestamp();
   if (!cancelled) {
     DestroyEntry(entry);
