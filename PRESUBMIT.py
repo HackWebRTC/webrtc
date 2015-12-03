@@ -21,6 +21,74 @@ CPPLINT_DIRS = [
   'webrtc/video_engine',
 ]
 
+NATIVE_API_DIRS = (
+  'talk/app/webrtc',
+  'webrtc',
+  'webrtc/common_audio/include',  # DEPRECATED (will go away).
+  'webrtc/modules/audio_coding/include',
+  'webrtc/modules/audio_conference_mixer/include',  # DEPRECATED (will go away).
+  'webrtc/modules/audio_device/include',
+  'webrtc/modules/audio_processing/include',
+  'webrtc/modules/bitrate_controller/include',
+  'webrtc/modules/include',
+  'webrtc/modules/remote_bitrate_estimator/include',
+  'webrtc/modules/rtp_rtcp/include',
+  'webrtc/modules/rtp_rtcp/source',  # DEPRECATED (will go away).
+  'webrtc/modules/utility/include',
+  'webrtc/modules/video_coding/codecs/h264/include',
+  'webrtc/modules/video_coding/codecs/i420/include',
+  'webrtc/modules/video_coding/codecs/vp8/include',
+  'webrtc/modules/video_coding/codecs/vp9/include',
+  'webrtc/modules/video_coding/include',
+  'webrtc/system_wrappers/include',  # DEPRECATED (will go away).
+  'webrtc/voice_engine/include',
+)
+
+
+def _VerifyNativeApiHeadersListIsValid(input_api, output_api):
+  """Ensures the list of native API header directories is up to date."""
+  non_existing_paths = []
+  native_api_full_paths = [
+      input_api.os_path.join(input_api.PresubmitLocalPath(),
+                             *path.split('/')) for path in NATIVE_API_DIRS]
+  for path in native_api_full_paths:
+    if not os.path.isdir(path):
+      non_existing_paths.append(path)
+  if non_existing_paths:
+    return [output_api.PresubmitError(
+        'Directories to native API headers have changed which has made the '
+        'list in PRESUBMIT.py outdated.\nPlease update it to the current '
+        'location of our native APIs.',
+        non_existing_paths)]
+  return []
+
+
+def _CheckNativeApiHeaderChanges(input_api, output_api):
+  """Checks to remind proper changing of native APIs."""
+  files = []
+  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
+    if f.LocalPath().endswith('.h'):
+      for path in NATIVE_API_DIRS:
+        if os.path.dirname(f.LocalPath()) == path:
+          files.append(f)
+
+  if files:
+    return [output_api.PresubmitPromptWarning(
+        'You seem to be changing native API header files. Please make sure '
+        'you:\n'
+        '  1. Make compatible changes that don\'t break existing clients.\n'
+        '  2. Mark the old APIs as deprecated.\n'
+        '  3. Create a timeline and plan for when the deprecated method will '
+        'be removed (preferably 3 months or so).\n'
+        '  4. Update/inform existing downstream code owners to stop using the '
+        'deprecated APIs: \n'
+        'send announcement to discuss-webrtc@googlegroups.com and '
+        'webrtc-users@google.com.\n'
+        '  5. (after ~3 months) remove the deprecated API.\n'
+        'Related files:',
+        files)]
+  return []
+
 
 def _CheckNoIOStreamInHeaders(input_api, output_api):
   """Checks to make sure no .h files include <iostream>."""
@@ -326,6 +394,8 @@ def _CommonChecks(input_api, output_api):
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
       input_api, output_api))
+  results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
+  results.extend(_CheckNativeApiHeaderChanges(input_api, output_api))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
   results.extend(_CheckGypChanges(input_api, output_api))
@@ -345,6 +415,7 @@ def CheckChangeOnUpload(input_api, output_api):
 def CheckChangeOnCommit(input_api, output_api):
   results = []
   results.extend(_CommonChecks(input_api, output_api))
+  results.extend(_VerifyNativeApiHeadersListIsValid(input_api, output_api))
   results.extend(input_api.canned_checks.CheckOwners(input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeWasUploaded(
       input_api, output_api))
