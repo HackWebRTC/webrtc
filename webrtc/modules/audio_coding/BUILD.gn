@@ -179,8 +179,8 @@ source_set("cng") {
   ]
 
   deps = [
-    "../../common_audio",
     ":audio_encoder_interface",
+    "../../common_audio",
   ]
 }
 
@@ -202,8 +202,8 @@ source_set("red") {
   ]
 
   deps = [
-    "../../common_audio",
     ":audio_encoder_interface",
+    "../../common_audio",
   ]
 }
 
@@ -234,6 +234,7 @@ source_set("g711") {
   ]
 
   deps = [
+    ":audio_decoder_interface",
     ":audio_encoder_interface",
   ]
 }
@@ -266,6 +267,7 @@ source_set("g722") {
   ]
 
   deps = [
+    ":audio_decoder_interface",
     ":audio_encoder_interface",
   ]
 }
@@ -432,8 +434,9 @@ source_set("ilbc") {
   ]
 
   deps = [
-    "../../common_audio",
+    ":audio_decoder_interface",
     ":audio_encoder_interface",
+    "../../common_audio",
   ]
 }
 
@@ -602,6 +605,7 @@ source_set("isac_fix") {
   ]
 
   deps = [
+    ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":isac_common",
     "../../common_audio",
@@ -702,6 +706,7 @@ source_set("pcm16b") {
   ]
 
   deps = [
+    ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":g711",
   ]
@@ -730,7 +735,9 @@ source_set("webrtc_opus") {
   ]
 
   deps = [
+    ":audio_decoder_interface",
     ":audio_encoder_interface",
+    "../../base:rtc_base_approved",
   ]
 
   if (rtc_build_opus) {
