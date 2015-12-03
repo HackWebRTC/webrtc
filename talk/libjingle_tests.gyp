@@ -332,7 +332,7 @@
         },
       ],  # targets
     }],  # OS=="android"
-    ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.7")', {
+    ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
       # The >=10.7 above is required to make ARC link cleanly (e.g. as
       # opposed to _compile_ cleanly, which the library under test
       # does just fine on 10.6 too).

@@ -27,7 +27,7 @@
 {
   'includes': ['common.gypi',],
   'conditions': [
-    ['OS=="ios" or (OS=="mac" and mac_sdk>="10.8")', {
+    ['OS=="ios" or OS=="mac"', {
       'targets': [
         {
           'target_name': 'libjingle_peerconnection_objc_no_op',

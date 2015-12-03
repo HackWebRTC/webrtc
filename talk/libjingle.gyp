@@ -248,7 +248,7 @@
         }, # libjingle_peerconnection_java
       ]
     }],
-    ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.7")', {
+    ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
       # The >= 10.7 above is required for ARC.
       'targets': [
         {

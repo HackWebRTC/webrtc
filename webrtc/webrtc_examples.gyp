@@ -132,7 +132,7 @@
       ], # targets
     }],  # OS=="linux" or OS=="win"
 
-    ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.8")', {
+    ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
       'targets': [
         {
           'target_name': 'apprtc_common',
@@ -332,6 +332,7 @@
             'CLANG_ENABLE_OBJC_ARC': 'YES',
             'WARNING_CFLAGS': [
               '-Wno-deprecated-declarations',
+              '-Wno-nonnull',
             ],
           },
           'link_settings': {
@@ -344,7 +345,7 @@
           }
         },  # target socketrocket
       ],  # targets
-    }],  # OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.8")
+    }],  # OS=="ios" or (OS=="mac" and target_arch!="ia32")
 
     ['OS=="android"', {
       'targets': [
