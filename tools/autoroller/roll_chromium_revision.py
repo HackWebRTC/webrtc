@@ -43,9 +43,9 @@ import find_depot_tools
 find_depot_tools.add_depot_tools_to_path()
 from gclient import GClientKeywords
 
-CLANG_UPDATE_SCRIPT_URL_PATH = 'tools/clang/scripts/update.sh'
+CLANG_UPDATE_SCRIPT_URL_PATH = 'tools/clang/scripts/update.py'
 CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join('tools', 'clang', 'scripts',
-                                              'update.sh')
+                                              'update.py')
 
 DepsEntry = collections.namedtuple('DepsEntry', 'path url revision')
 ChangedDep = collections.namedtuple('ChangedDep',
