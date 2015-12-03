@@ -81,7 +81,7 @@ class EndToEndTest : public test::CallTest {
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
   void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
   void TestRtpStatePreservation(bool use_rtx);
-  void VerifyHistogramStats(bool use_rtx, bool use_red);
+  void VerifyHistogramStats(bool use_rtx, bool use_red, bool screenshare);
 };
 
 TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
@@ -1877,13 +1877,16 @@ TEST_F(EndToEndTest, VerifyNackStats) {
       "WebRTC.Video.NackPacketsReceivedPerMinute"), 0);
 }
 
-void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
+void EndToEndTest::VerifyHistogramStats(bool use_rtx,
+                                        bool use_red,
+                                        bool screenshare) {
   class StatsObserver : public test::EndToEndTest {
    public:
-    StatsObserver(bool use_rtx, bool use_red)
+    StatsObserver(bool use_rtx, bool use_red, bool screenshare)
         : EndToEndTest(kLongTimeoutMs),
           use_rtx_(use_rtx),
           use_red_(use_red),
+          screenshare_(screenshare),
           sender_call_(nullptr),
           receiver_call_(nullptr),
           start_runtime_ms_(-1) {}
@@ -1934,6 +1937,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
         (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].payload_type =
             kSendRtxPayloadType;
       }
+      encoder_config->content_type =
+          screenshare_ ? VideoEncoderConfig::ContentType::kScreen
+                       : VideoEncoderConfig::ContentType::kRealtimeVideo;
     }
 
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
@@ -1946,12 +1952,13 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
           << "Timed out waiting for packet to be NACKed.";
     }
 
-    bool use_rtx_;
-    bool use_red_;
+    const bool use_rtx_;
+    const bool use_red_;
+    const bool screenshare_;
     Call* sender_call_;
     Call* receiver_call_;
     int64_t start_runtime_ms_;
-  } test(use_rtx, use_red);
+  } test(use_rtx, use_red, screenshare);
 
   test::ClearHistograms();
   RunBaseTest(&test, FakeNetworkPipe::Config());
@@ -1959,6 +1966,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
   // Delete the call for Call stats to be reported.
   sender_call_.reset();
   receiver_call_.reset();
+
+  std::string video_prefix =
+      screenshare ? "WebRTC.Video.Screenshare." : "WebRTC.Video.";
 
   // Verify that stats have been updated once.
   EXPECT_EQ(
@@ -1983,8 +1993,8 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.PliPacketsReceivedPerMinute"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.KeyFramesSentInPermille"));
+  EXPECT_EQ(
+      1, test::NumHistogramSamples(video_prefix + "KeyFramesSentInPermille"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.KeyFramesReceivedInPermille"));
 
@@ -1993,29 +2003,30 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.ReceivedPacketsLostInPercent"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.InputWidthInPixels"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.InputHeightInPixels"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SentWidthInPixels"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SentHeightInPixels"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "InputWidthInPixels"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "InputHeightInPixels"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SentWidthInPixels"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SentHeightInPixels"));
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.ReceivedWidthInPixels"));
   EXPECT_EQ(1,
             test::NumHistogramSamples("WebRTC.Video.ReceivedHeightInPixels"));
 
   EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].width),
-            test::LastHistogramSample("WebRTC.Video.InputWidthInPixels"));
+            test::LastHistogramSample(video_prefix + "InputWidthInPixels"));
   EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].height),
-            test::LastHistogramSample("WebRTC.Video.InputHeightInPixels"));
+            test::LastHistogramSample(video_prefix + "InputHeightInPixels"));
   EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].width),
-            test::LastHistogramSample("WebRTC.Video.SentWidthInPixels"));
+            test::LastHistogramSample(video_prefix + "SentWidthInPixels"));
   EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].height),
-            test::LastHistogramSample("WebRTC.Video.SentHeightInPixels"));
+            test::LastHistogramSample(video_prefix + "SentHeightInPixels"));
   EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].width),
             test::LastHistogramSample("WebRTC.Video.ReceivedWidthInPixels"));
   EXPECT_EQ(static_cast<int>(encoder_config_.streams[0].height),
             test::LastHistogramSample("WebRTC.Video.ReceivedHeightInPixels"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.InputFramesPerSecond"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SentFramesPerSecond"));
+  EXPECT_EQ(1,
+            test::NumHistogramSamples(video_prefix + "InputFramesPerSecond"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SentFramesPerSecond"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.DecodedFramesPerSecond"));
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.RenderFramesPerSecond"));
@@ -2024,7 +2035,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
   EXPECT_EQ(
       1, test::NumHistogramSamples("WebRTC.Video.RenderSqrtPixelsPerSecond"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.EncodeTimeInMs"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "EncodeTimeInMs"));
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.DecodeTimeInMs"));
 
   EXPECT_EQ(1, test::NumHistogramSamples(
@@ -2044,8 +2055,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.RetransmittedBitrateReceivedInKbps"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SendSideDelayInMs"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SendSideDelayMaxInMs"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SendSideDelayInMs"));
+  EXPECT_EQ(1,
+            test::NumHistogramSamples(video_prefix + "SendSideDelayMaxInMs"));
 
   int num_rtx_samples = use_rtx ? 1 : 0;
   EXPECT_EQ(num_rtx_samples, test::NumHistogramSamples(
@@ -2065,13 +2077,22 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
 TEST_F(EndToEndTest, VerifyHistogramStatsWithRtx) {
   const bool kEnabledRtx = true;
   const bool kEnabledRed = false;
-  VerifyHistogramStats(kEnabledRtx, kEnabledRed);
+  const bool kScreenshare = false;
+  VerifyHistogramStats(kEnabledRtx, kEnabledRed, kScreenshare);
 }
 
 TEST_F(EndToEndTest, VerifyHistogramStatsWithRed) {
   const bool kEnabledRtx = false;
   const bool kEnabledRed = true;
-  VerifyHistogramStats(kEnabledRtx, kEnabledRed);
+  const bool kScreenshare = false;
+  VerifyHistogramStats(kEnabledRtx, kEnabledRed, kScreenshare);
+}
+
+TEST_F(EndToEndTest, VerifyHistogramStatsWithScreenshare) {
+  const bool kEnabledRtx = false;
+  const bool kEnabledRed = false;
+  const bool kScreenshare = true;
+  VerifyHistogramStats(kEnabledRtx, kEnabledRed, kScreenshare);
 }
 
 void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {

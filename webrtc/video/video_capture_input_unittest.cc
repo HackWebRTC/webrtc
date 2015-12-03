@@ -53,7 +53,8 @@ class VideoCaptureInputTest : public ::testing::Test {
         mock_frame_callback_(new NiceMock<MockVideoCaptureCallback>),
         output_frame_event_(EventWrapper::Create()),
         stats_proxy_(Clock::GetRealTimeClock(),
-                     webrtc::VideoSendStream::Config(nullptr)) {}
+                     webrtc::VideoSendStream::Config(nullptr),
+                     webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo) {}
 
   virtual void SetUp() {
     EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_))

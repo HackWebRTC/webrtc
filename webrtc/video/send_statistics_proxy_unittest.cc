@@ -28,8 +28,9 @@ class SendStatisticsProxyTest : public ::testing::Test {
 
  protected:
   virtual void SetUp() {
-    statistics_proxy_.reset(
-        new SendStatisticsProxy(&fake_clock_, GetTestConfig()));
+    statistics_proxy_.reset(new SendStatisticsProxy(
+        &fake_clock_, GetTestConfig(),
+        VideoEncoderConfig::ContentType::kRealtimeVideo));
     expected_ = VideoSendStream::Stats();
   }
 

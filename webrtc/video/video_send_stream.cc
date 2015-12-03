@@ -117,7 +117,9 @@ VideoSendStream::VideoSendStream(
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs)
-    : stats_proxy_(Clock::GetRealTimeClock(), config),
+    : stats_proxy_(Clock::GetRealTimeClock(),
+                   config,
+                   encoder_config.content_type),
       transport_adapter_(config.send_transport),
       encoded_frame_proxy_(config.post_encode_callback),
       config_(config),
@@ -434,6 +436,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
        i < config_.rtp.ssrcs.size(); ++i) {
     stats_proxy_.OnInactiveSsrc(config_.rtp.ssrcs[i]);
   }
+
+  stats_proxy_.SetContentType(config.content_type);
 
   RTC_DCHECK_GE(config.min_transmit_bitrate_bps, 0);
   vie_encoder_->SetMinTransmitBitrate(config.min_transmit_bitrate_bps / 1000);
