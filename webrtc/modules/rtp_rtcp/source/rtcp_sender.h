@@ -149,77 +149,53 @@ public:
  bool SendFeedbackPacket(const rtcp::TransportFeedback& packet);
 
 private:
- struct RtcpContext;
+ class RtcpContext;
 
- // The BuildResult indicates the outcome of a call to a builder method,
- // constructing a part of an RTCP packet:
- //
- // kError
- //   Building RTCP packet failed, propagate error out to caller.
- // kAbort
- //   The (partial) block being build should not be included. Reset current
- //   buffer position to the state before the method call and proceed to the
- //   next packet type.
- // kTruncated
- //   There is not enough room in the buffer to fit the data being constructed.
- //   (IP packet is full). Proceed to the next packet type, and call this
- //   method again when a new buffer has been allocated.
- // TODO(sprang): Actually allocate multiple packets if needed.
- // kSuccess
- //   Data has been successfully placed in the buffer.
-
- enum class BuildResult { kError, kAborted, kTruncated, kSuccess };
-
- int32_t SendToNetwork(const uint8_t* dataBuffer, size_t length);
+ // Determine which RTCP messages should be sent and setup flags.
+ void PrepareReport(const std::set<RTCPPacketType>& packetTypes,
+                    const FeedbackState& feedback_state)
+     EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
  int32_t AddReportBlock(const RTCPReportBlock& report_block)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
- bool PrepareReport(const FeedbackState& feedback_state,
-                    uint32_t ssrc,
-                    StreamStatistician* statistician,
-                    RTCPReportBlock* report_block);
+ bool PrepareReportBlock(const FeedbackState& feedback_state,
+                         uint32_t ssrc,
+                         StreamStatistician* statistician,
+                         RTCPReportBlock* report_block);
 
- int PrepareRTCP(const FeedbackState& feedback_state,
-                 const std::set<RTCPPacketType>& packetTypes,
-                 int32_t nackSize,
-                 const uint16_t* nackList,
-                 bool repeat,
-                 uint64_t pictureID,
-                 uint8_t* rtcp_buffer,
-                 int buffer_size);
-
- BuildResult BuildSR(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildSR(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildRR(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildRR(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildSDES(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildSDES(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildPLI(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildPLI(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildREMB(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildREMB(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildTMMBR(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildTMMBR(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildTMMBN(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildTMMBN(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildAPP(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildAPP(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildVoIPMetric(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildVoIPMetric(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildBYE(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildBYE(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildFIR(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildFIR(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildSLI(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildSLI(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildRPSI(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildRPSI(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildNACK(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildNACK(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildReceiverReferenceTime(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildReceiverReferenceTime(
+     const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildDlrr(RtcpContext* context)
+ rtc::scoped_ptr<rtcp::RtcpPacket> BuildDlrr(const RtcpContext& context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
 private:
@@ -316,10 +292,9 @@ private:
 
  std::set<ReportFlag> report_flags_ GUARDED_BY(critical_section_rtcp_sender_);
 
- typedef BuildResult (RTCPSender::*Builder)(RtcpContext*);
- std::map<RTCPPacketType, Builder> builders_;
-
- class PacketBuiltCallback;
+ typedef rtc::scoped_ptr<rtcp::RtcpPacket> (RTCPSender::*BuilderFunc)(
+     const RtcpContext&);
+ std::map<RTCPPacketType, BuilderFunc> builders_;
 };
 }  // namespace webrtc
 

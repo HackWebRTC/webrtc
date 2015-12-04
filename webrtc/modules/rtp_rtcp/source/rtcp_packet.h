@@ -116,14 +116,13 @@ class RtcpPacket {
   size_t HeaderLength() const;
 
   static const size_t kHeaderLength = 4;
+  std::vector<RtcpPacket*> appended_packets_;
 
  private:
   bool CreateAndAddAppended(uint8_t* packet,
                             size_t* index,
                             size_t max_length,
                             PacketReadyCallback* callback) const;
-
-  std::vector<RtcpPacket*> appended_packets_;
 };
 
 // TODO(sprang): Move RtcpPacket subclasses out to separate files.
