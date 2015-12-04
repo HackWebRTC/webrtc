@@ -21,7 +21,6 @@ using webrtc::RTCPUtility::kBtVoipMetric;
 using webrtc::RTCPUtility::PT_APP;
 using webrtc::RTCPUtility::PT_IJ;
 using webrtc::RTCPUtility::PT_PSFB;
-using webrtc::RTCPUtility::PT_RR;
 using webrtc::RTCPUtility::PT_RTPFB;
 using webrtc::RTCPUtility::PT_SDES;
 using webrtc::RTCPUtility::PT_SR;
@@ -36,7 +35,6 @@ using webrtc::RTCPUtility::RTCPPacketPSFBRPSI;
 using webrtc::RTCPUtility::RTCPPacketPSFBSLI;
 using webrtc::RTCPUtility::RTCPPacketPSFBSLIItem;
 using webrtc::RTCPUtility::RTCPPacketReportBlockItem;
-using webrtc::RTCPUtility::RTCPPacketRR;
 using webrtc::RTCPUtility::RTCPPacketRTPFBNACK;
 using webrtc::RTCPUtility::RTCPPacketRTPFBNACKItem;
 using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBN;
@@ -117,21 +115,6 @@ void CreateSenderReport(const RTCPPacketSR& sr,
   AssignUWord32(buffer, pos, sr.RTPTimestamp);
   AssignUWord32(buffer, pos, sr.SenderPacketCount);
   AssignUWord32(buffer, pos, sr.SenderOctetCount);
-}
-
-//  Receiver report (RR), header (RFC 3550).
-//
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |V=2|P|    RC   |   PT=RR=201   |             length            |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                     SSRC of packet sender                     |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-
-void CreateReceiverReport(const RTCPPacketRR& rr,
-                          uint8_t* buffer,
-                          size_t* pos) {
-  AssignUWord32(buffer, pos, rr.SenderSSRC);
 }
 
 //  Report block (RFC 3550).
@@ -678,30 +661,6 @@ bool SenderReport::WithReportBlock(const ReportBlock& block) {
   }
   report_blocks_.push_back(block);
   sr_.NumberOfReportBlocks = report_blocks_.size();
-  return true;
-}
-
-bool ReceiverReport::Create(uint8_t* packet,
-                            size_t* index,
-                            size_t max_length,
-                            RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  CreateHeader(rr_.NumberOfReportBlocks, PT_RR, HeaderLength(), packet, index);
-  CreateReceiverReport(rr_, packet, index);
-  CreateReportBlocks(report_blocks_, packet, index);
-  return true;
-}
-
-bool ReceiverReport::WithReportBlock(const ReportBlock& block) {
-  if (report_blocks_.size() >= kMaxNumberOfReportBlocks) {
-    LOG(LS_WARNING) << "Max report blocks reached.";
-    return false;
-  }
-  report_blocks_.push_back(block);
-  rr_.NumberOfReportBlocks = report_blocks_.size();
   return true;
 }
 

@@ -51,6 +51,8 @@
         'source/rtcp_packet/pli.h',
         'source/rtcp_packet/psfb.cc',
         'source/rtcp_packet/psfb.h',
+        'source/rtcp_packet/receiver_report.cc',
+        'source/rtcp_packet/receiver_report.h',
         'source/rtcp_packet/report_block.cc',
         'source/rtcp_packet/report_block.h',
         'source/rtcp_packet/transport_feedback.cc',
