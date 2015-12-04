@@ -11,6 +11,7 @@
 #include "webrtc/call/congestion_controller.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
@@ -24,7 +25,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_encoder.h"

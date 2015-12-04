@@ -16,8 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 

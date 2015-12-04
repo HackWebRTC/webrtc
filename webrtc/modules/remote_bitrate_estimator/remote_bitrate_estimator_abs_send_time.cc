@@ -13,13 +13,13 @@
 #include <math.h>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -241,6 +241,7 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacket(int64_t arrival_time_ms,
   if (!header.extension.hasAbsoluteSendTime) {
     LOG(LS_WARNING) << "RemoteBitrateEstimatorAbsSendTimeImpl: Incoming packet "
                        "is missing absolute send time extension!";
+    return;
   }
   IncomingPacketInfo(arrival_time_ms, header.extension.absoluteSendTime,
                      payload_size, header.ssrc, was_paced);
