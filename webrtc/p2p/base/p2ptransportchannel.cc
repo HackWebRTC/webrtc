@@ -187,6 +187,7 @@ namespace cricket {
 // well on a 28.8K modem, which is the slowest connection on which the voice
 // quality is reasonable at all.
 static const uint32_t PING_PACKET_SIZE = 60 * 8;
+// TODO(honghaiz): Change the word DELAY to INTERVAL whenever appropriate.
 // STRONG_PING_DELAY (480ms) is applied when the best connection is both
 // writable and receiving.
 static const uint32_t STRONG_PING_DELAY = 1000 * PING_PACKET_SIZE / 1000;
@@ -200,7 +201,6 @@ const uint32_t WEAK_PING_DELAY = 1000 * PING_PACKET_SIZE / 10000;
 static const uint32_t MAX_CURRENT_STRONG_DELAY = 900;
 
 static const int MIN_CHECK_RECEIVING_DELAY = 50;  // ms
-
 
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
@@ -221,7 +221,8 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       remote_candidate_generation_(0),
       gathering_state_(kIceGatheringNew),
       check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
-      receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50) {
+      receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50),
+      backup_connection_ping_interval_(0) {
   uint32_t weak_ping_delay = ::strtoul(
       webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
       nullptr, 10);
@@ -296,9 +297,13 @@ void P2PTransportChannel::SetIceTiebreaker(uint64_t tiebreaker) {
   tiebreaker_ = tiebreaker;
 }
 
+TransportChannelState P2PTransportChannel::GetState() const {
+  return state_;
+}
+
 // A channel is considered ICE completed once there is at most one active
 // connection per network and at least one active connection.
-TransportChannelState P2PTransportChannel::GetState() const {
+TransportChannelState P2PTransportChannel::ComputeState() const {
   if (!had_connection_) {
     return TransportChannelState::STATE_INIT;
   }
@@ -372,18 +377,26 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   gather_continually_ = config.gather_continually;
   LOG(LS_INFO) << "Set gather_continually to " << gather_continually_;
 
-  if (config.receiving_timeout_ms < 0) {
-    return;
+  if (config.backup_connection_ping_interval >= 0 &&
+      backup_connection_ping_interval_ !=
+          config.backup_connection_ping_interval) {
+    backup_connection_ping_interval_ = config.backup_connection_ping_interval;
+    LOG(LS_INFO) << "Set backup connection ping interval to "
+                 << backup_connection_ping_interval_ << " milliseconds.";
   }
-  receiving_timeout_ = config.receiving_timeout_ms;
-  check_receiving_delay_ =
-      std::max(MIN_CHECK_RECEIVING_DELAY, receiving_timeout_ / 10);
 
-  for (Connection* connection : connections_) {
-    connection->set_receiving_timeout(receiving_timeout_);
+  if (config.receiving_timeout_ms >= 0 &&
+      receiving_timeout_ != config.receiving_timeout_ms) {
+    receiving_timeout_ = config.receiving_timeout_ms;
+    check_receiving_delay_ =
+        std::max(MIN_CHECK_RECEIVING_DELAY, receiving_timeout_ / 10);
+
+    for (Connection* connection : connections_) {
+      connection->set_receiving_timeout(receiving_timeout_);
+    }
+    LOG(LS_INFO) << "Set ICE receiving timeout to " << receiving_timeout_
+                 << " milliseconds";
   }
-  LOG(LS_INFO) << "Set ICE receiving timeout to " << receiving_timeout_
-               << " milliseconds";
 }
 
 // Go into the state of processing candidates, and running in general
@@ -990,7 +1003,7 @@ void P2PTransportChannel::SortConnections() {
 
   // Update the state of this channel.  This method is called whenever the
   // state of any connection changes, so this is a good place to do this.
-  UpdateChannelState();
+  UpdateState();
 }
 
 Connection* P2PTransportChannel::best_nominated_connection() const {
@@ -1050,7 +1063,15 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
   }
 }
 
-void P2PTransportChannel::UpdateChannelState() {
+// Warning: UpdateState should eventually be called whenever a connection
+// is added, deleted, or the write state of any connection changes so that the
+// transport controller will get the up-to-date channel state. However it
+// should not be called too often; in the case that multiple connection states
+// change, it should be called after all the connection states have changed. For
+// example, we call this at the end of SortConnections.
+void P2PTransportChannel::UpdateState() {
+  state_ = ComputeState();
+
   bool writable = best_connection_ && best_connection_->writable();
   set_writable(writable);
 
@@ -1150,10 +1171,17 @@ void P2PTransportChannel::OnCheckAndPing() {
   thread()->PostDelayed(check_delay, this, MSG_CHECK_AND_PING);
 }
 
+// A connection is considered a backup connection if the channel state
+// is completed, the connection is not the best connection and it is active.
+bool P2PTransportChannel::IsBackupConnection(Connection* conn) const {
+  return state_ == STATE_COMPLETED && conn != best_connection_ &&
+         conn->active();
+}
+
 // Is the connection in a state for us to even consider pinging the other side?
 // We consider a connection pingable even if it's not connected because that's
 // how a TCP connection is kicked into reconnecting on the active side.
-bool P2PTransportChannel::IsPingable(Connection* conn) {
+bool P2PTransportChannel::IsPingable(Connection* conn, uint32_t now) {
   const Candidate& remote = conn->remote_candidate();
   // We should never get this far with an empty remote ufrag.
   ASSERT(!remote.username().empty());
@@ -1169,9 +1197,18 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
     return false;
   }
 
-  // If the channel is weak, ping all candidates. Otherwise, we only
-  // want to ping connections that have not timed out on writing.
-  return weak() || conn->write_state() != Connection::STATE_WRITE_TIMEOUT;
+  // If the channel is weakly connected, ping all connections.
+  if (weak()) {
+    return true;
+  }
+
+  // Always ping active connections regardless whether the channel is completed
+  // or not, but backup connections are pinged at a slower rate.
+  if (IsBackupConnection(conn)) {
+    return (now >= conn->last_ping_response_received() +
+                       backup_connection_ping_interval_);
+  }
+  return conn->active();
 }
 
 // Returns the next pingable connection to ping.  This will be the oldest
@@ -1195,7 +1232,7 @@ Connection* P2PTransportChannel::FindNextPingableConnection() {
   Connection* oldest_needing_triggered_check = nullptr;
   Connection* oldest = nullptr;
   for (Connection* conn : connections_) {
-    if (!IsPingable(conn)) {
+    if (!IsPingable(conn, now)) {
       continue;
     }
     bool needs_triggered_check =
@@ -1307,6 +1344,9 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
     RequestSort();
   }
 
+  UpdateState();
+  // SignalConnectionRemoved should be called after the channel state is
+  // updated because the receiver of the event may access the channel state.
   SignalConnectionRemoved(this);
 }
 

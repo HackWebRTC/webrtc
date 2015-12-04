@@ -140,7 +140,11 @@ struct TransportStats {
 // Information about ICE configuration.
 struct IceConfig {
   // The ICE connection receiving timeout value.
+  // TODO(honghaiz): Remove suffix _ms to be consistent.
   int receiving_timeout_ms = -1;
+  // Time interval in milliseconds to ping a backup connection when the ICE
+  // channel is strongly connected.
+  int backup_connection_ping_interval = -1;
   // If true, the most recent port allocator session will keep on running.
   bool gather_continually = false;
 };

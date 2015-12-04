@@ -1244,6 +1244,8 @@ cricket::IceConfig WebRtcSession::ParseIceConfig(
     const PeerConnectionInterface::RTCConfiguration& config) const {
   cricket::IceConfig ice_config;
   ice_config.receiving_timeout_ms = config.ice_connection_receiving_timeout;
+  ice_config.backup_connection_ping_interval =
+      config.ice_backup_candidate_pair_ping_interval;
   ice_config.gather_continually = (config.continual_gathering_policy ==
                                    PeerConnectionInterface::GATHER_CONTINUALLY);
   return ice_config;

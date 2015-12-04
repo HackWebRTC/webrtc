@@ -150,6 +150,7 @@ public class PeerConnection {
     public int audioJitterBufferMaxPackets;
     public boolean audioJitterBufferFastAccelerate;
     public int iceConnectionReceivingTimeout;
+    public int iceBackupCandidatePairPingInterval;
     public KeyType keyType;
     public ContinualGatheringPolicy continualGatheringPolicy;
 
@@ -162,6 +163,7 @@ public class PeerConnection {
       audioJitterBufferMaxPackets = 50;
       audioJitterBufferFastAccelerate = false;
       iceConnectionReceivingTimeout = -1;
+      iceBackupCandidatePairPingInterval = -1;
       keyType = KeyType.ECDSA;
       continualGatheringPolicy = ContinualGatheringPolicy.GATHER_ONCE;
     }

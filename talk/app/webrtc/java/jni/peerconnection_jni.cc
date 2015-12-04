@@ -1580,6 +1580,9 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   jfieldID j_ice_connection_receiving_timeout_id =
       GetFieldID(jni, j_rtc_config_class, "iceConnectionReceivingTimeout", "I");
 
+  jfieldID j_ice_backup_candidate_pair_ping_interval_id = GetFieldID(
+      jni, j_rtc_config_class, "iceBackupCandidatePairPingInterval", "I");
+
   jfieldID j_continual_gathering_policy_id =
       GetFieldID(jni, j_rtc_config_class, "continualGatheringPolicy",
                  "Lorg/webrtc/PeerConnection$ContinualGatheringPolicy;");
@@ -1601,6 +1604,8 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
       jni, j_rtc_config, j_audio_jitter_buffer_fast_accelerate_id);
   rtc_config->ice_connection_receiving_timeout =
       GetIntField(jni, j_rtc_config, j_ice_connection_receiving_timeout_id);
+  rtc_config->ice_backup_candidate_pair_ping_interval = GetIntField(
+      jni, j_rtc_config, j_ice_backup_candidate_pair_ping_interval_id);
   rtc_config->continual_gathering_policy =
       JavaContinualGatheringPolicyToNativeType(
           jni, j_continual_gathering_policy);

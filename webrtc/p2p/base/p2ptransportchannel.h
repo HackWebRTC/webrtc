@@ -177,9 +177,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   void RequestSort();
   void SortConnections();
   void SwitchBestConnectionTo(Connection* conn);
-  void UpdateChannelState();
+  void UpdateState();
   void HandleAllTimedOut();
   void MaybeStopPortAllocatorSessions();
+  TransportChannelState ComputeState() const;
 
   Connection* GetBestConnectionOnNetwork(rtc::Network* network) const;
   bool CreateConnections(const Candidate& remote_candidate,
@@ -193,7 +194,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool IsDuplicateRemoteCandidate(const Candidate& candidate);
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
-  bool IsPingable(Connection* conn);
+  bool IsPingable(Connection* conn, uint32_t now);
   void PingConnection(Connection* conn);
   void AddAllocatorSession(PortAllocatorSession* session);
   void AddConnection(Connection* connection);
@@ -226,6 +227,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   void PruneConnections();
   Connection* best_nominated_connection() const;
+  bool IsBackupConnection(Connection* conn) const;
 
   P2PTransport* transport_;
   PortAllocator* allocator_;
@@ -256,9 +258,11 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   int check_receiving_delay_;
   int receiving_timeout_;
+  int backup_connection_ping_interval_;
   uint32_t last_ping_sent_ms_ = 0;
   bool gather_continually_ = false;
   int weak_ping_delay_ = WEAK_PING_DELAY;
+  TransportChannelState state_ = TransportChannelState::STATE_INIT;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

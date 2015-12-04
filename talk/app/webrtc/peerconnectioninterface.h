@@ -253,7 +253,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     TcpCandidatePolicy tcp_candidate_policy;
     int audio_jitter_buffer_max_packets;
     bool audio_jitter_buffer_fast_accelerate;
-    int ice_connection_receiving_timeout;
+    int ice_connection_receiving_timeout;         // ms
+    int ice_backup_candidate_pair_ping_interval;  // ms
     ContinualGatheringPolicy continual_gathering_policy;
     std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
     bool disable_prerenderer_smoothing;
@@ -265,6 +266,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
           audio_jitter_buffer_max_packets(kAudioJitterBufferMaxPackets),
           audio_jitter_buffer_fast_accelerate(false),
           ice_connection_receiving_timeout(kUndefined),
+          ice_backup_candidate_pair_ping_interval(kUndefined),
           continual_gathering_policy(GATHER_ONCE),
           disable_prerenderer_smoothing(false) {}
   };

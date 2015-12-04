@@ -446,7 +446,6 @@ class Connection : public rtc::MessageHandler,
   bool connected() const { return connected_; }
   bool weak() const { return !(writable() && receiving() && connected()); }
   bool active() const {
-    // TODO(honghaiz): Move from using |write_state_| to using |pruned_|.
     return write_state_ != STATE_WRITE_TIMEOUT;
   }
   // A connection is dead if it can be safely deleted.
@@ -525,6 +524,9 @@ class Connection : public rtc::MessageHandler,
   uint32_t last_ping_sent() const { return last_ping_sent_; }
   void Ping(uint32_t now);
   void ReceivedPingResponse();
+  uint32_t last_ping_response_received() const {
+    return last_ping_response_received_;
+  }
 
   // Called whenever a valid ping is received on this connection.  This is
   // public because the connection intercepts the first ping for us.

@@ -39,6 +39,7 @@
 @synthesize tcpCandidatePolicy = _tcpCandidatePolicy;
 @synthesize audioJitterBufferMaxPackets = _audioJitterBufferMaxPackets;
 @synthesize iceConnectionReceivingTimeout = _iceConnectionReceivingTimeout;
+@synthesize iceBackupCandidatePairPingInterval = _iceBackupCandidatePairPingInterval;
 
 - (instancetype)init {
   if (self = [super init]) {
@@ -51,6 +52,7 @@
         [RTCEnumConverter tcpCandidatePolicyForNativeEnum:config.tcp_candidate_policy];
     _audioJitterBufferMaxPackets = config.audio_jitter_buffer_max_packets;
     _iceConnectionReceivingTimeout = config.ice_connection_receiving_timeout;
+    _iceBackupCandidatePairPingInterval = config.ice_backup_candidate_pair_ping_interval;
   }
   return self;
 }
@@ -60,7 +62,8 @@
                             rtcpMuxPolicy:(RTCRtcpMuxPolicy)rtcpMuxPolicy
                        tcpCandidatePolicy:(RTCTcpCandidatePolicy)tcpCandidatePolicy
               audioJitterBufferMaxPackets:(int)audioJitterBufferMaxPackets
-            iceConnectionReceivingTimeout:(int)iceConnectionReceivingTimeout {
+            iceConnectionReceivingTimeout:(int)iceConnectionReceivingTimeout
+       iceBackupCandidatePairPingInterval:(int)iceBackupCandidatePairPingInterval {
   if (self = [super init]) {
     _iceTransportsType = iceTransportsType;
     _bundlePolicy = bundlePolicy;
@@ -68,6 +71,7 @@
     _tcpCandidatePolicy = tcpCandidatePolicy;
     _audioJitterBufferMaxPackets = audioJitterBufferMaxPackets;
     _iceConnectionReceivingTimeout = iceConnectionReceivingTimeout;
+    _iceBackupCandidatePairPingInterval = iceBackupCandidatePairPingInterval;
   }
   return self;
 }
@@ -85,8 +89,8 @@
   nativeConfig.tcp_candidate_policy =
       [RTCEnumConverter nativeEnumForTcpCandidatePolicy:_tcpCandidatePolicy];
   nativeConfig.audio_jitter_buffer_max_packets = _audioJitterBufferMaxPackets;
-  nativeConfig.ice_connection_receiving_timeout =
-      _iceConnectionReceivingTimeout;
+  nativeConfig.ice_connection_receiving_timeout = _iceConnectionReceivingTimeout;
+  nativeConfig.ice_backup_candidate_pair_ping_interval = _iceBackupCandidatePairPingInterval;
   return nativeConfig;
 }
 

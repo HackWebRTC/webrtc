@@ -101,10 +101,12 @@ enum {
 };
 
 static cricket::IceConfig CreateIceConfig(int receiving_timeout_ms,
-                                          bool gather_continually) {
+                                          bool gather_continually,
+                                          int backup_ping_interval = -1) {
   cricket::IceConfig config;
   config.receiving_timeout_ms = receiving_timeout_ms;
   config.gather_continually = gather_continually;
+  config.backup_connection_ping_interval = backup_ping_interval;
   return config;
 }
 
@@ -1648,6 +1650,43 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   DestroyChannels();
 }
 
+// Test that the backup connection is pinged at a rate no faster than
+// what was configured.
+TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
+  AddAddress(0, kPublicAddrs[0]);
+  // Adding alternate address will make sure |kPublicAddrs| has the higher
+  // priority than others. This is due to FakeNetwork::AddInterface method.
+  AddAddress(1, kAlternateAddrs[1]);
+  AddAddress(1, kPublicAddrs[1]);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  int backup_ping_interval = 2000;
+  ep2_ch1()->SetIceConfig(CreateIceConfig(2000, false, backup_ping_interval));
+  // After the state becomes COMPLETED, the backup connection will be pinged
+  // once every |backup_ping_interval| milliseconds.
+  ASSERT_TRUE_WAIT(ep2_ch1()->GetState() == cricket::STATE_COMPLETED, 1000);
+  const std::vector<cricket::Connection*>& connections =
+      ep2_ch1()->connections();
+  ASSERT_EQ(2U, connections.size());
+  cricket::Connection* backup_conn = connections[1];
+  EXPECT_TRUE_WAIT(backup_conn->writable(), 3000);
+  uint32_t last_ping_response_ms = backup_conn->last_ping_response_received();
+  EXPECT_TRUE_WAIT(
+      last_ping_response_ms < backup_conn->last_ping_response_received(), 5000);
+  int time_elapsed =
+      backup_conn->last_ping_response_received() - last_ping_response_ms;
+  LOG(LS_INFO) << "Time elapsed: " << time_elapsed;
+  EXPECT_GE(time_elapsed, backup_ping_interval);
+}
+
 TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
   AddAddress(0, kAlternateAddrs[0]);
   AddAddress(0, kPublicAddrs[0]);
@@ -2141,7 +2180,9 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   EXPECT_TRUE_WAIT(conn2->pruned(), 1000);
   EXPECT_EQ(cricket::TransportChannelState::STATE_COMPLETED, ch.GetState());
   conn1->Prune();  // All connections are pruned.
-  EXPECT_EQ(cricket::TransportChannelState::STATE_FAILED, ch.GetState());
+  // Need to wait until the channel state is updated.
+  EXPECT_EQ_WAIT(cricket::TransportChannelState::STATE_FAILED, ch.GetState(),
+                 1000);
 }
 
 // Test that when a low-priority connection is pruned, it is not deleted
