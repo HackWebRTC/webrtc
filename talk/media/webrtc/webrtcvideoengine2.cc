@@ -2376,10 +2376,10 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
   config_.rtp.nack.rtp_history_ms =
       HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
 
-  ClearDecoders(&old_decoders);
   LOG(LS_INFO) << "RecreateWebRtcStream (recv) because of SetRecvCodecs: "
                << CodecSettingsVectorToString(recv_codecs);
   RecreateWebRtcStream();
+  ClearDecoders(&old_decoders);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetLocalSsrc(
