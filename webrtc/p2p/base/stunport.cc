@@ -24,15 +24,19 @@ namespace cricket {
 
 // TODO: Move these to a common place (used in relayport too)
 const int KEEPALIVE_DELAY = 10 * 1000;  // 10 seconds - sort timeouts
-const int RETRY_DELAY = 50;             // 50ms, from ICE spec
 const int RETRY_TIMEOUT = 50 * 1000;    // ICE says 50 secs
+// Stop sending STUN binding requests after this amount of time
+// (in milliseconds) because the connection binding requests should keep
+// the NAT binding alive.
+const int KEEP_ALIVE_TIMEOUT = 2 * 60 * 1000;  // 2 minutes
 
 // Handles a binding request sent to the STUN server.
 class StunBindingRequest : public StunRequest {
  public:
-  StunBindingRequest(UDPPort* port, bool keep_alive,
-                     const rtc::SocketAddress& addr)
-    : port_(port), keep_alive_(keep_alive), server_addr_(addr) {
+  StunBindingRequest(UDPPort* port,
+                     const rtc::SocketAddress& addr,
+                     uint32_t deadline)
+      : port_(port), server_addr_(addr), deadline_(deadline) {
     start_time_ = rtc::Time();
   }
 
@@ -59,10 +63,10 @@ class StunBindingRequest : public StunRequest {
     }
 
     // We will do a keep-alive regardless of whether this request succeeds.
-    // This should have almost no impact on network usage.
-    if (keep_alive_) {
+    // It will be stopped after |deadline_| mostly to conserve the battery life.
+    if (rtc::Time() <= deadline_) {
       port_->requests_.SendDelayed(
-          new StunBindingRequest(port_, true, server_addr_),
+          new StunBindingRequest(port_, server_addr_, deadline_),
           port_->stun_keepalive_delay());
     }
   }
@@ -80,10 +84,10 @@ class StunBindingRequest : public StunRequest {
 
     port_->OnStunBindingOrResolveRequestFailed(server_addr_);
 
-    if (keep_alive_
-        && (rtc::TimeSince(start_time_) <= RETRY_TIMEOUT)) {
+    uint32_t now = rtc::Time();
+    if (now <= deadline_ && rtc::TimeDiff(now, start_time_) <= RETRY_TIMEOUT) {
       port_->requests_.SendDelayed(
-          new StunBindingRequest(port_, true, server_addr_),
+          new StunBindingRequest(port_, server_addr_, deadline_),
           port_->stun_keepalive_delay());
     }
   }
@@ -94,20 +98,13 @@ class StunBindingRequest : public StunRequest {
       << " (" << port_->Network()->name() << ")";
 
     port_->OnStunBindingOrResolveRequestFailed(server_addr_);
-
-    if (keep_alive_
-        && (rtc::TimeSince(start_time_) <= RETRY_TIMEOUT)) {
-      port_->requests_.SendDelayed(
-          new StunBindingRequest(port_, true, server_addr_),
-          RETRY_DELAY);
-    }
   }
 
  private:
   UDPPort* port_;
-  bool keep_alive_;
   const rtc::SocketAddress server_addr_;
   uint32_t start_time_;
+  uint32_t deadline_;
 };
 
 UDPPort::AddressResolver::AddressResolver(
@@ -351,7 +348,7 @@ void UDPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
 
 void UDPPort::SendStunBindingRequests() {
   // We will keep pinging the stun server to make sure our NAT pin-hole stays
-  // open during the call.
+  // open until the deadline (specified in SendStunBindingRequest).
   ASSERT(requests_.empty());
 
   for (ServerAddresses::const_iterator it = server_addresses_.begin();
@@ -397,7 +394,8 @@ void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
   } else if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {
     // Check if |server_addr_| is compatible with the port's ip.
     if (IsCompatibleAddress(stun_addr)) {
-      requests_.Send(new StunBindingRequest(this, true, stun_addr));
+      requests_.Send(new StunBindingRequest(this, stun_addr,
+                                            rtc::Time() + KEEP_ALIVE_TIMEOUT));
     } else {
       // Since we can't send stun messages to the server, we should mark this
       // port ready.
