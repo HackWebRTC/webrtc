@@ -231,68 +231,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   VIDEO video_;
 };
 
-// NullVoiceEngine can be used with CompositeMediaEngine in the case where only
-// a video engine is desired.
-class NullVoiceEngine {
- public:
-  bool Init(rtc::Thread* worker_thread) { return true; }
-  void Terminate() {}
-  // If you need this to return an actual channel, use FakeMediaEngine instead.
-  VoiceMediaChannel* CreateChannel(const AudioOptions& options) {
-    return nullptr;
-  }
-  AudioOptions GetOptions() const { return AudioOptions(); }
-  bool SetOptions(const AudioOptions& options) { return true; }
-  bool SetDevices(const Device* in_device, const Device* out_device) {
-    return true;
-  }
-  bool GetOutputVolume(int* level) {
-    *level = 0;
-    return true;
-  }
-  bool SetOutputVolume(int level) { return true; }
-  int GetInputLevel() { return 0; }
-  const std::vector<AudioCodec>& codecs() { return codecs_; }
-  const std::vector<RtpHeaderExtension>& rtp_header_extensions() {
-    return rtp_header_extensions_;
-  }
-  bool StartAecDump(rtc::PlatformFile file) { return false; }
-  bool StartRtcEventLog(rtc::PlatformFile file) { return false; }
-  void StopRtcEventLog() {}
-
- private:
-  std::vector<AudioCodec> codecs_;
-  std::vector<RtpHeaderExtension> rtp_header_extensions_;
-};
-
-// NullVideoEngine can be used with CompositeMediaEngine in the case where only
-// a voice engine is desired.
-class NullVideoEngine {
- public:
-  bool Init(rtc::Thread* worker_thread) { return true; }
-  void Terminate() {}
-  // If you need this to return an actual channel, use FakeMediaEngine instead.
-  VideoMediaChannel* CreateChannel(
-      const VideoOptions& options,
-      VoiceMediaChannel* voice_media_channel) {
-    return NULL;
-  }
-  bool SetOptions(const VideoOptions& options) { return true; }
-  bool SetDefaultEncoderConfig(const VideoEncoderConfig& config) {
-    return true;
-  }
-  const std::vector<VideoCodec>& codecs() { return codecs_; }
-  const std::vector<RtpHeaderExtension>& rtp_header_extensions() {
-    return rtp_header_extensions_;
-  }
-
- private:
-  std::vector<VideoCodec> codecs_;
-  std::vector<RtpHeaderExtension> rtp_header_extensions_;
-};
-
-typedef CompositeMediaEngine<NullVoiceEngine, NullVideoEngine> NullMediaEngine;
-
 enum DataChannelType {
   DCT_NONE = 0,
   DCT_RTP = 1,
