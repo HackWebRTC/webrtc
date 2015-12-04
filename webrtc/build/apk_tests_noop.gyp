@@ -46,10 +46,6 @@
       'type': 'none',
     },
     {
-      'target_name': 'video_engine_core_unittests_apk',
-      'type': 'none',
-    },
-    {
       'target_name': 'video_engine_tests_apk',
       'type': 'none',
     },

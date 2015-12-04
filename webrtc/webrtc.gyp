@@ -86,7 +86,6 @@
             'test/metrics.gyp:*',
             'test/test.gyp:*',
             'test/webrtc_test_common.gyp:*',
-            'video_engine/video_engine_core_unittests.gyp:*',
             'webrtc_tests',
           ],
         }],
