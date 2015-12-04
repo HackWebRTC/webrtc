@@ -21,26 +21,36 @@ CPPLINT_DIRS = [
   'webrtc/video_engine',
 ]
 
+# List of directories of "supported" native APIs. That means changes to headers
+# will be done in a compatible way following this scheme:
+# 1. Non-breaking changes are made.
+# 2. The old APIs as marked as deprecated (with comments).
+# 3. Deprecation is announced to discuss-webrtc@googlegroups.com and
+#    webrtc-users@google.com (internal list).
+# 4. (later) The deprecated APIs are removed.
+# Directories marked as DEPRECATED should not be used. They're only present in
+# the list to support legacy downstream code.
 NATIVE_API_DIRS = (
   'talk/app/webrtc',
   'webrtc',
-  'webrtc/common_audio/include',  # DEPRECATED (will go away).
+  'webrtc/base',  # DEPRECATED.
+  'webrtc/common_audio/include',  # DEPRECATED.
   'webrtc/modules/audio_coding/include',
-  'webrtc/modules/audio_conference_mixer/include',  # DEPRECATED (will go away).
+  'webrtc/modules/audio_conference_mixer/include',  # DEPRECATED.
   'webrtc/modules/audio_device/include',
   'webrtc/modules/audio_processing/include',
   'webrtc/modules/bitrate_controller/include',
   'webrtc/modules/include',
   'webrtc/modules/remote_bitrate_estimator/include',
   'webrtc/modules/rtp_rtcp/include',
-  'webrtc/modules/rtp_rtcp/source',  # DEPRECATED (will go away).
+  'webrtc/modules/rtp_rtcp/source',  # DEPRECATED.
   'webrtc/modules/utility/include',
   'webrtc/modules/video_coding/codecs/h264/include',
   'webrtc/modules/video_coding/codecs/i420/include',
   'webrtc/modules/video_coding/codecs/vp8/include',
   'webrtc/modules/video_coding/codecs/vp9/include',
   'webrtc/modules/video_coding/include',
-  'webrtc/system_wrappers/include',  # DEPRECATED (will go away).
+  'webrtc/system_wrappers/include',  # DEPRECATED.
   'webrtc/voice_engine/include',
 )
 
