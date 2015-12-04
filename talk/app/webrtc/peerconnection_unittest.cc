@@ -1172,8 +1172,7 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
 // This test sets up a call between two endpoints that are configured to use
 // DTLS key agreement. The offerer don't support SDES. As a result, DTLS is
 // negotiated and used for transport.
-TEST_F(MAYBE_JsepPeerConnectionP2PTestClient,
-       MAYBE_LocalP2PTestOfferDtlsButNotSdes) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestOfferDtlsButNotSdes) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1253,7 +1252,7 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestTwoStreams) {
 }
 
 // Test that we can receive the audio output level from a remote audio track.
-TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetAudioOutputLevelStats) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetAudioOutputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1272,7 +1271,7 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetAudioOutputLevelStats) {
 }
 
 // Test that an audio input level is reported.
-TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetAudioInputLevelStats) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetAudioInputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1283,7 +1282,7 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetAudioInputLevelStats) {
 }
 
 // Test that we can get incoming byte counts from both audio and video tracks.
-TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetBytesReceivedStats) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetBytesReceivedStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1305,7 +1304,7 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetBytesReceivedStats) {
 }
 
 // Test that we can get outgoing byte counts from both audio and video tracks.
-TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetBytesSentStats) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetBytesSentStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
@@ -1358,7 +1357,7 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetDtls12None) {
 }
 
 // Test that DTLS 1.2 is used if both ends support it.
-TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_GetDtls12Both) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, GetDtls12Both) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   PeerConnectionFactory::Options recv_options;
@@ -1604,7 +1603,7 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, CreateOfferWithSctpDataChannel) {
 // This test sets up a call between two parties with audio, and video.
 // During the call, the initializing side restart ice and the test verifies that
 // new ice candidates are generated and audio and video still can flow.
-TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, MAYBE_IceRestart) {
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, IceRestart) {
   ASSERT_TRUE(CreateTestClients());
 
   // Negotiate and wait for ice completion and make sure audio and video plays.
